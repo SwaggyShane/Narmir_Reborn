@@ -1,0 +1,1020 @@
+const LORE = {
+  narmir: [
+    {
+      id: "narmir_1",
+      title: "The First Age",
+      msg: "Before the kingdoms rose, Narmir was a vast wilderness of raw magic — mountains that breathed, rivers that sang, and forests whose roots reached the core of the world. No map could hold it. No name could contain it.",
+    },
+    {
+      id: "narmir_2",
+      title: "The Sundering",
+      msg: "The world was once whole. Then the Arch-Mages of the Third Conclave attempted to bind all magic into a single point. The resulting explosion shattered the Weave, splitting the continent into the broken landmass players now contest.",
+    },
+    {
+      id: "narmir_3",
+      title: "The Weave",
+      msg: "Magic in Narmir does not come from a god or a source — it comes from the Weave, an invisible lattice of energy that runs through all living things. Mages do not create magic. They listen for it, coax it, and sometimes wrestle it into submission.",
+    },
+    {
+      id: "narmir_4",
+      title: "The Age of Crowns",
+      msg: "Following the Sundering came three hundred years of endless war as every warlord, elder, and petty chief claimed dominion over the broken land. Historians call this the Age of Crowns — not because many were worn, but because so many were taken.",
+    },
+    {
+      id: "narmir_5",
+      title: "The Compact of Five",
+      msg: "The first lasting peace came through an unlikely alliance of five kingdoms — a dwarf stronghold, a human city-state, an elven grove, an orcish warband, and a dark elf conclave. Their treaty, hammered out over seventeen days in a neutral tavern, became the foundation of modern diplomacy.",
+    },
+    {
+      id: "narmir_6",
+      title: "The Calendar of Seasons",
+      msg: "Narmir does not measure time in years. It measures time in Seasons — each cycle lasting thirteen days as the moons align. Spring for growth, Summer for war, Fall for harvest, Winter for survival. Every ruler learns to read the skies.",
+    },
+    {
+      id: "narmir_7",
+      title: "The Dead Roads",
+      msg: "Beneath every major city lie the Dead Roads — ancient trade tunnels carved by the first civilisations. They still connect distant cities, but their original builders have been gone so long that no one agrees which race made them. All six races claim credit.",
+    },
+    {
+      id: "narmir_8",
+      title: "The War of Salt",
+      msg: "The bloodiest conflict in recorded history began over a salt flat the size of a small town. Seventeen kingdoms fought for forty years. The salt flat was destroyed in the final battle. It is now a lake.",
+    },
+    {
+      id: "narmir_9",
+      title: "The Academies",
+      msg: "Three great academies of learning exist in Narmir: the Ironveil for warfare, the Silversong for magic, and the Roothold for engineering. All three were founded by the same woman — a human scholar named Oryn — who lived to two hundred and twelve and is still the only person to have graduated from all three.",
+    },
+    {
+      id: "narmir_10",
+      title: "The Merchant Guilds",
+      msg: "No army has conquered as much territory as the Merchant Guilds. Operating across all race lines, they control the price of salt, iron, scrolls, and silence. It is said the Guild Masters meet once per season in a location no map shows.",
+    },
+    {
+      id: "narmir_11",
+      title: "The Wandering City",
+      msg: "Once per generation a city appears on no map, in no established territory, lasting only a few seasons before vanishing. Those who have seen it describe marble towers, streets paved in something warm, and markets selling things that should not exist. Scholars argue whether it is real. Those who have traded there do not argue.",
+    },
+    {
+      id: "narmir_12",
+      title: "The Hollow Mountains",
+      msg: "The mountain range at the centre of the continent is entirely hollow. Nobody built them that way — they were found hollow. Expeditions that enter the cave systems rarely return, and those that do come back speaking in languages no one recognises.",
+    },
+    {
+      id: "narmir_13",
+      title: "The Pale Tide",
+      msg: "Every fifth Winter, a supernatural fog rolls in from the eastern sea. Creatures emerge from it that are not animals, not monsters — something in between. Every race has a different name for them. None of the names are the same.",
+    },
+    {
+      id: "narmir_14",
+      title: "The Godless Age",
+      msg: "Narmir has no gods in the traditional sense. There were divine beings once — the Eldest — but they vanished during the Sundering. What clerics and shrine-keepers tap into is disputed: residual divine energy, collective belief, or something that does not have a name yet.",
+    },
+    {
+      id: "narmir_15",
+      title: "Mana Storms",
+      msg: "When the Weave is disturbed by large magical events — great battles, catastrophic spells, the death of mages — it can produce a Mana Storm. Buildings shake. Animals flee. Spells cast during a storm have unpredictable effects. Every ruler dreads them. Some try to cause them.",
+    },
+    {
+      id: "narmir_16",
+      title: "The Tower Registry",
+      msg: "All mage towers in Narmir are technically registered with a body called the Registry, which theoretically has authority to inspect, restrict, or dismantle them. The Registry has seventeen clerks and no army. Nevertheless, it sends strongly worded letters and most rulers comply.",
+    },
+    {
+      id: "narmir_17",
+      title: "The Language of Blades",
+      msg: 'There is a gesture-based language used exclusively by soldiers across all races — developed on battlefields where shouting gets you killed. It has over four hundred signs. The sign for "retreat" looks identical to the sign for "we won" and this has caused several historical disasters.',
+    },
+    {
+      id: "narmir_18",
+      title: "The First Maps",
+      msg: "The oldest surviving map of Narmir is wrong in almost every respect — mountains in the wrong places, seas where there are plains, cities that do not exist. Scholars believe it is not wrong. They believe the land has moved.",
+    },
+    {
+      id: "narmir_19",
+      title: "The Runaway Courts",
+      msg: "A legal tradition exists in three kingdoms whereby any citizen who can reach the nearest foreign territory without being caught by a royal guard is granted amnesty for one minor crime. This has led to elaborate public chases that have, on several occasions, accidentally started wars.",
+    },
+    {
+      id: "narmir_20",
+      title: "Blueprints of the Ancients",
+      msg: "Some architectural blueprints found in ruins do not match any known building technique. The structures they describe should collapse under their own weight — and yet the ruins of structures built from them still stand, perfectly intact, while everything around them has crumbled.",
+    },
+    {
+      id: "narmir_21",
+      title: "The Eclipse Compact",
+      msg: "During a total solar eclipse — which occurs in Narmir roughly every eleven years — all hostilities are traditionally suspended. This is not a law. It is not enforced. And yet in eight hundred years of recorded history, no war has ever been fought during an eclipse. No one can explain why.",
+    },
+    {
+      id: "narmir_22",
+      title: "The Sea That Flows Up",
+      msg: "On the western coast, there is a body of water that flows inland rather than out to sea. Ships have sailed it for hundreds of miles into the interior. It ends abruptly at a wall of rock. What power drives it upstream has never been determined.",
+    },
+    {
+      id: "narmir_23",
+      title: "The Word Forgers",
+      msg: "A sect of scholars believes that writing words in the correct sequence, in the correct ink, on the correct surface creates reality rather than recording it. They have been trying to write a city into existence for two hundred years. So far, they have a very good doorstep.",
+    },
+    {
+      id: "narmir_24",
+      title: "The Eternal Market",
+      msg: "In the ruins of the first city to fall in the Age of Crowns, a market still operates. No one owns it. No one polices it. Every day traders appear, goods change hands, and by nightfall it is empty again. Even during active sieges, the market operates.",
+    },
+    {
+      id: "narmir_25",
+      title: "The Unwritten Law",
+      msg: "Every legal system in Narmir, regardless of race, contains a final clause — worded differently each time but meaning the same thing: some acts are so terrible that no punishment exists for them because no lawmaker could bring themselves to imagine them clearly enough to write them down.",
+    },
+  ],
+  general: [
+    {
+      id: "general_1",
+      title: "A Wanderer's Note",
+      msg: 'A mysterious traveller left this note behind at the local tavern: "Don\'t trust the roads west of the Hollow Mountains after dark. The shadows move independently of the light."',
+    },
+    {
+      id: "general_2",
+      title: "The Tavern Keeper's Wisdom",
+      msg: '"Every war ends at a table," said the old tavern keeper, pouring ale for the third general this season. "The question is whether the men sitting at it are the same ones who started the fighting."',
+    },
+    {
+      id: "general_3",
+      title: "On the Nature of Gold",
+      msg: "Gold does not rust, does not rot, and does not lie. This is why every race trusts it. A gold coin from a destroyed kingdom is still worth a gold coin. The kingdom is gone. The gold remains. Think on that.",
+    },
+    {
+      id: "general_4",
+      title: "The Soldier's Calculation",
+      msg: "Before any battle, a veteran soldier asks three questions: Can we win? Can we survive losing? Can we afford either? Two out of three yes answers means you fight. One means you negotiate. Zero means you retreat and pretend it was a strategic withdrawal.",
+    },
+    {
+      id: "general_5",
+      title: "Maps and Territory",
+      msg: "A map is a lie agreed upon. The territory does not know it is being mapped. Rivers move. Mountains erode. Borders are drawn by the victors and redrawn by their children. The only honest map is the one you draw yourself, with your own feet.",
+    },
+    {
+      id: "general_6",
+      title: "The Scribe's Burden",
+      msg: "Everything that ever mattered was written down by someone who was tired, underpaid, and working by bad light. Most of history is a function of eyestrain and poor ink quality. This does not make it less true. It makes it more human.",
+    },
+    {
+      id: "general_7",
+      title: "On Siege Warfare",
+      msg: "A siege is not a battle. A siege is a negotiation conducted with starvation. The attacker is saying: your walls are impressive but your granary is finite. The defender is saying: perhaps, but winter affects both sides. The city that survives is the one that calculated correctly.",
+    },
+    {
+      id: "general_8",
+      title: "The Merchant's Proverb",
+      msg: '"The first trade is always a loss. The second trade pays for the first. The third trade is where the money is. Anyone who doesn\'t make it to the third trade was not a merchant. They were a customer."',
+    },
+    {
+      id: "general_9",
+      title: "On Alliances",
+      msg: "An alliance lasts exactly as long as both parties fear the alternative more than they resent each other. This is not cynicism. This is the entire foundation of diplomacy, and understanding it will keep you alive longer than any army.",
+    },
+    {
+      id: "general_10",
+      title: "The Weight of a Crown",
+      msg: "Leadership is not the ability to command. Any fool can shout orders. Leadership is the ability to make ten people who disagree with each other, each of whom thinks they know better, work toward the same goal long enough to accomplish it.",
+    },
+    {
+      id: "general_11",
+      title: "Weather and War",
+      msg: "More campaigns have been decided by rain than by tactics. Mud stops cavalry. Fog hides movement. Frost freezes bowstrings. Any commander who has not studied the seasonal weather patterns of the territory they intend to fight in has already lost.",
+    },
+    {
+      id: "general_12",
+      title: "The Engineer's Creed",
+      msg: '"A wall built in a week will fall in a month. A wall built in a year will stand for a century. A wall built in a century will become a mountain. We do not build for now. We build for whoever has to defend this after we are gone."',
+    },
+    {
+      id: "general_13",
+      title: "On Spies",
+      msg: "A good spy does not look like a spy. They look like a merchant, a beggar, a scribe, a cook. The worst spies are the ones who look like spies — too quiet, too watchful, too good at not being noticed. True invisibility is being completely ordinary.",
+    },
+    {
+      id: "general_14",
+      title: "The Healer's Oath",
+      msg: "All healers in Narmir take a version of the same oath: to treat the wounded regardless of which side they fought on, to preserve life over victory, and to remember that the body does not know which kingdom it serves — only that it is in pain.",
+    },
+    {
+      id: "general_15",
+      title: "On Magic and Power",
+      msg: "Magic is not power. Gold is not power. An army is not power. Power is the ability to make other people act as you wish without having to use any of the above. The ruler who must resort to magic, gold, or soldiers has already started losing.",
+    },
+    {
+      id: "general_16",
+      title: "The Three Hungers",
+      msg: "Every kingdom is driven by three hungers: land (to feed the people), gold (to move the world), and safety (to sleep at night). A kingdom that satisfies all three becomes comfortable. A comfortable kingdom becomes slow. A slow kingdom becomes a target.",
+    },
+    {
+      id: "general_17",
+      title: "The Ranger's Rule",
+      msg: '"Never camp where you scouted. Never scout where you camped. Never take the same path twice. Never take a new path without knowing where it ends. The wilderness is not trying to kill you. It simply does not care whether you live."',
+    },
+    {
+      id: "general_18",
+      title: "On Researching the Enemy",
+      msg: "The greatest strategic advantage is not a bigger army. It is knowing something the enemy does not know you know. Study your opponents as carefully as your own kingdom. Their weaknesses are gifts. Their strengths are warnings.",
+    },
+    {
+      id: "general_19",
+      title: "The Builder's Paradox",
+      msg: "Every building is built to last forever and falls eventually. Every builder knows this and builds anyway. This is not foolishness — it is the clearest expression of hope that exists: the belief that what you make today will matter to someone you will never meet.",
+    },
+    {
+      id: "general_20",
+      title: "Night Watch",
+      msg: "The soldiers who stand night watch are the most important soldiers in any army and the most overlooked. Battles are won by the fighters. Wars are won by the people who stayed awake long enough to notice the enemy moving in the dark.",
+    },
+    {
+      id: "general_21",
+      title: "On Taxes",
+      msg: "A tax rate is a conversation. Too low, and the kingdom starves while the rich grow fat. Too high, and the people leave, revolt, or hide their wealth in holes in the ground. The correct rate is the highest number that still feels fair. No one agrees on what that number is.",
+    },
+    {
+      id: "general_22",
+      title: "The Mage's Warning",
+      msg: '"Do not confuse the ability to cast a spell with the wisdom to know when to cast it. The most powerful mage I ever knew died because he cast the right spell at the wrong moment. The spell worked perfectly. That was the problem."',
+    },
+    {
+      id: "general_23",
+      title: "Morale and Its Absence",
+      msg: "An army with low morale is not an army. It is a group of people who have not yet decided to stop fighting. The moment they make that decision, no wall, weapon, or war machine will hold them. Morale is the invisible foundation everything else rests on.",
+    },
+    {
+      id: "general_24",
+      title: "The Library's Promise",
+      msg: "Knowledge does not age. A scroll written five hundred years ago describing how to irrigate a field is as useful today as the day it was written. The library is not a monument to the past. It is a practical tool for the present that happens to be very old.",
+    },
+    {
+      id: "general_25",
+      title: "What Kingdoms Are Made Of",
+      msg: "A kingdom is not its walls, its army, its gold, or its ruler. It is the daily decisions of ten thousand ordinary people — to plant, to build, to trade, to stay. The moment enough of them decide to stop making those decisions, the kingdom ends. Not with a battle. With silence.",
+    },
+  ],
+  dwarf: [
+    {
+      id: "dwarf_1",
+      title: "The Deep Origins",
+      msg: "Dwarves did not descend into the mountains. They emerged from them. The oldest dwarf chronicles describe the First Clans not as miners who went underground, but as beings who remember the time before the surface existed — who watched the sky appear and found it unsettling.",
+    },
+    {
+      id: "dwarf_2",
+      title: "The Stonememory",
+      msg: "Every dwarf carries a fragment of a geological memory passed down through bloodlines — an instinctive understanding of stone composition, fault lines, and load-bearing angles. A dwarf mason can identify the age of a wall by pressing their palm against it.",
+    },
+    {
+      id: "dwarf_3",
+      title: "The Forge Gods",
+      msg: "Dwarves do not worship gods in the conventional sense. They revere the Seven Forge Aspects — not beings, but principles: Heat, Pressure, Patience, Precision, Strength, Purpose, and Endurance. A dwarf who embodies all seven is considered holy. None ever have.",
+    },
+    {
+      id: "dwarf_4",
+      title: "The Grudge Ledgers",
+      msg: "Every dwarf clan maintains a Grudge Ledger — a physical book, bound in iron, listing every wrong done to the clan since its founding. When a grudge is settled, the entry is crossed out in red ink. The oldest ledgers have entries in scripts no living dwarf can read, crossed out in ink that has never dried.",
+    },
+    {
+      id: "dwarf_5",
+      title: "The Hundred-Year Build",
+      msg: "The greatest honour in dwarf culture is not conquest or wealth. It is completing a Hundred-Year Build — a construction project begun knowing it will not be finished in one lifetime. Dwarf engineers who begin one are celebrated at death as having given the best gift: something for their children to finish.",
+    },
+    {
+      id: "dwarf_6",
+      title: "Hammers and Identity",
+      msg: "A dwarf's hammer is not a tool. It is a biography. Each hammer is forged by its owner's parents before birth, carried throughout life, and buried with its owner. Dwarf smiths can read a life's story in the wear patterns of a hammer's head.",
+    },
+    {
+      id: "dwarf_7",
+      title: "The War Machine Tradition",
+      msg: "Dwarf war machines are not inventions. They are arguments — physical proof that a dwarf engineer has thought of something no enemy has. Every war machine has a name, a lineage, and a technical manual written in verse. The verse is considered the more important document.",
+    },
+    {
+      id: "dwarf_8",
+      title: "Gold as Language",
+      msg: "Dwarves do not treat gold as currency. They treat it as vocabulary. Complex transactions are conducted through precisely weighted payments where the denomination chosen communicates as much as the amount. Paying a dwarf in the wrong denomination is a social offense equivalent to shouting at a funeral.",
+    },
+    {
+      id: "dwarf_9",
+      title: "The Deep Roads",
+      msg: "Beneath the mountain ranges run the Deep Roads — dwarf-built tunnels connecting every major stronghold. Their full extent is unknown even to dwarves. The oldest sections were dug before recorded history. Some passages have been sealed for so long that the dwarves who sealed them are now mythological figures.",
+    },
+    {
+      id: "dwarf_10",
+      title: "Stone Singing",
+      msg: "An obscure dwarf art form involves singing at a specific resonant frequency to cause stone to shift, crack, or — in the hands of masters — to flow like slow water. The technique requires twenty years of training and ruins the singer's voice for normal conversation. Practitioners are deeply respected and impossible to have a quiet dinner with.",
+    },
+    {
+      id: "dwarf_11",
+      title: "The Iron Oath",
+      msg: "The most binding promise in dwarf culture is the Iron Oath — spoken once, never repeated, never written down, and honoured until death or the explicit release of the person you made it to. A dwarf who breaks an Iron Oath loses the right to be buried with their hammer. This has happened four times in recorded history. All four are still spoken of with horror.",
+    },
+    {
+      id: "dwarf_12",
+      title: "Dwarf Cuisine",
+      msg: "Dwarf cooking is technically impressive and culinarily bewildering. Underground agriculture produces mushrooms, fungi, cave fish, and root vegetables of extraordinary flavour, prepared using heat sources that would melt the cookware of every other race. Dwarf bread is famously used as a substitute building material in emergencies.",
+    },
+    {
+      id: "dwarf_13",
+      title: "The Ancestor Halls",
+      msg: "Every dwarf stronghold contains an Ancestor Hall — a chamber where the faces of every deceased clan member are carved into the walls. As strongholds grow older, the walls have run out of space and now extend into floors, ceilings, and dedicated tunnels. The largest known Ancestor Hall is four miles long.",
+    },
+    {
+      id: "dwarf_14",
+      title: "Dwarf Mathematics",
+      msg: "Dwarves developed a base-twelve number system independently of every other race, on the logic that twelve is more evenly divisible than ten. This makes dwarf engineering calculations extraordinarily precise and completely incomprehensible to anyone educated in the standard base-ten system.",
+    },
+    {
+      id: "dwarf_15",
+      title: "The Scaffold Masters",
+      msg: "The most elite class of dwarf engineer is not the weapons-maker or the fortress builder — it is the Scaffold Master, who specialises in making construction possible in physically impossible locations. Several of their techniques violate what other races understand about gravity.",
+    },
+    {
+      id: "dwarf_16",
+      title: "Trade Caravans",
+      msg: "Dwarf trade caravans travel overground only when necessary and only in the most heavily fortified wagons ever built. They are slow, armoured, and arrive exactly when they said they would arrive — to the minute. The penalty for tardiness in dwarf trade contracts is written in small print and enforced with enormous seriousness.",
+    },
+    {
+      id: "dwarf_17",
+      title: "The Gem Tongue",
+      msg: "Dwarf gemcutters communicate through a secret language of facet cuts visible only to trained eyes. A gem's value in dwarf markets is determined partly by its cut, partly by its quality, and partly by what it says — messages that have been passed under the noses of every customs official in Narmir for three hundred years.",
+    },
+    {
+      id: "dwarf_18",
+      title: "Dwarf Architecture",
+      msg: "All dwarf buildings are designed to function as fortifications at a moment's notice — every door reinforceable, every window a potential arrow slit, every open space designed to funnel attackers into killzones. A dwarf home has a guest room with a murder hole above the bed. This is considered hospitable.",
+    },
+    {
+      id: "dwarf_19",
+      title: "The Durability Philosophy",
+      msg: '"If it can break, build it so that breaking it costs more than it\'s worth." This principle governs every aspect of dwarf construction, from belt buckles to city gates. The corollary is: "If it must eventually break, make sure you\'re not inside it when it does." Both are taught to children before they can walk.',
+    },
+    {
+      id: "dwarf_20",
+      title: "Dwarf Medicine",
+      msg: "Dwarf medicine is primarily structural — broken bones are set with engineering precision, wounds are closed with mechanical fasteners, and recovery is managed with the same project planning used for construction. Dwarf surgeons speak of the body as a load-bearing structure that has experienced a failure event.",
+    },
+    {
+      id: "dwarf_21",
+      title: "The Naming Stones",
+      msg: "A dwarf is given three names: a birth name (private, known only to family), a work name (used in all professional contexts), and an eventual stone name (carved at death, summarising a life in seven words or fewer). The challenge of the stone name — saying everything in seven words — is considered the final creative act of a dwarf life.",
+    },
+    {
+      id: "dwarf_22",
+      title: "Dwarf Diplomacy",
+      msg: "Dwarves do not negotiate. They calculate. A dwarf diplomat arrives with precise figures: what they have, what they need, what the fair exchange value is, and what the cost of not reaching agreement will be to both parties. Meetings are short. Agreements are long. Both sides leave knowing exactly what they agreed to.",
+    },
+    {
+      id: "dwarf_23",
+      title: "Echoes of the Deep",
+      msg: "In the deepest tunnels, where no light has ever reached, dwarf children report hearing sounds that engineers have never been able to source — a regular, rhythmic tapping from somewhere below the lowest shafts. The official explanation is geological settlement. The unofficial explanation is that the dwarves who went deepest never stopped digging.",
+    },
+    {
+      id: "dwarf_24",
+      title: "The Patience of Stone",
+      msg: '"We are not slow," a dwarf elder once told a human diplomat who had been waiting three days for a response. "We are accurate. If you wanted a fast answer, you should have asked a fast question. You asked about the future. The future requires thought."',
+    },
+    {
+      id: "dwarf_25",
+      title: "What Dwarves Fear",
+      msg: "Dwarves are not afraid of the dark, depth, heat, or enemies. What they fear — the one thing that keeps dwarf engineers awake — is the flaw in the foundation. The hairline crack. The oversight in the calculation. The thing that seemed solid and wasn't. Most dwarf nightmares involve a wall that should not have moved.",
+    },
+  ],
+  high_elf: [
+    {
+      id: "high_elf_1",
+      title: "The Memory Inheritance",
+      msg: "High Elves do not simply live long lives. They accumulate them. Each High Elf carries the emotional residue of their ancestors' experiences — not as memories exactly, but as instincts, preferences, and occasional moments of recognition when encountering something their great-grandparents once loved.",
+    },
+    {
+      id: "high_elf_2",
+      title: "The Silversong Tradition",
+      msg: "High Elf children are taught to sing before they are taught to speak. The Silversong — a complex harmonic tradition dating back beyond recorded history — is believed to be the original language of the Weave itself. Even partially performed, it causes subtle magical effects in the surrounding environment.",
+    },
+    {
+      id: "high_elf_3",
+      title: "The Long Patience",
+      msg: 'A High Elf diplomatic strategy that has played out over several centuries is still considered "in progress" by its architects. They have descendants. They wrote it down. From their perspective, waiting three generations for a political opening is not patience. It is planning.',
+    },
+    {
+      id: "high_elf_4",
+      title: "Scroll Architecture",
+      msg: "High Elf libraries are not storage facilities. They are arguments made physical — scrolls and volumes arranged so that reading them in sequence leads the reader toward specific conclusions. The greatest High Elf scholars do not write books. They design reading paths through other books.",
+    },
+    {
+      id: "high_elf_5",
+      title: "The Mana Courts",
+      msg: 'High Elf governance is conducted through Mana Courts — judicial bodies where disputes are resolved by determining which party\'s argument is most harmonically aligned with the Weave. Non-elven observers describe the proceedings as "beautiful, incomprehensible, and extremely slow."',
+    },
+    {
+      id: "high_elf_6",
+      title: "Elven Starcraft",
+      msg: "High Elves navigate by stars with a precision that goes beyond astronomy. They maintain charts recording every star's position over thousands of years, allowing them to calculate not just where a traveller is but when they are — identifying the season and year from a single clear night sky.",
+    },
+    {
+      id: "high_elf_7",
+      title: "The Quiet War",
+      msg: 'High Elves and Dark Elves have been at war for nine hundred years. Neither side discusses it. Both sides deny it. The conflict is conducted entirely through economic manipulation, strategic marriage alliances, subtle magical interference, and the occasional assassination that both sides call "an unfortunate accident."',
+    },
+    {
+      id: "high_elf_8",
+      title: "Mage Tower Philosophy",
+      msg: "A High Elf mage tower is not a military installation. It is a research instrument. Every architectural decision — window placement, chamber dimensions, spiral angle of the stairs — is designed to maximise Weave interaction. The most powerful towers took two hundred years to build and look nothing like towers to non-elven eyes.",
+    },
+    {
+      id: "high_elf_9",
+      title: "The Price of Long Life",
+      msg: "High Elves experience time differently from mortal races — not slowly, but with a different weight. Human friendships last decades and feel like lifetimes. High Elf friendships last centuries and still end. Every High Elf who lives long enough collects a private archive of everyone they have outlived. It is the heaviest thing they carry.",
+    },
+    {
+      id: "high_elf_10",
+      title: "The Woven Script",
+      msg: "Written High Elven is not a representation of spoken language. It is a representation of magical structure — each character a Weave configuration, each sentence a spell that describes rather than creates. High Elven documents can be read as literature or cast as ritual. Occasionally, both at once.",
+    },
+    {
+      id: "high_elf_11",
+      title: "Scroll Craft",
+      msg: "A High Elf-crafted scroll is not ink on parchment. It is a compressed magical event waiting to be released. The parchment is prepared over months. The ink is alchemical. The writing process is itself a form of casting. A scroll made carelessly is not less powerful — it is unpredictable, which is worse.",
+    },
+    {
+      id: "high_elf_12",
+      title: "The Grove Courts",
+      msg: "High Elf settlements are grown rather than built. Trees are trained over generations into structural shapes; plants are alchemically treated to have the load-bearing properties of stone. The oldest High Elf cities are indistinguishable from old-growth forest to the untrained eye. This is intentional.",
+    },
+    {
+      id: "high_elf_13",
+      title: "Elven Music and Memory",
+      msg: "High Elf music is not entertainment. It is recordkeeping. Complex historical events are encoded in musical compositions — every melody a fact, every harmony a relationship, every rest a silence that speaks. The full history of the Sundering exists as a four-hour orchestral piece that licensed historians must learn to perform in order to quote it accurately.",
+    },
+    {
+      id: "high_elf_14",
+      title: "The Spellbinders",
+      msg: "The most powerful High Elf mages do not cast spells. They bind them — creating standing magical effects that persist indefinitely, maintained by Weave resonance rather than active concentration. The oldest known bound spell has been running for four hundred years. No one knows what it does. No one dares to dispel it.",
+    },
+    {
+      id: "high_elf_15",
+      title: "Trade Through Proxies",
+      msg: "High Elves rarely trade directly. They maintain networks of agents — non-elven merchants who buy, sell, and negotiate on their behalf at three levels of remove. This is not arrogance. It is strategic ambiguity: if no one knows what High Elves want, no one can accurately calculate what they're willing to pay.",
+    },
+    {
+      id: "high_elf_16",
+      title: "The Art of Forgetting",
+      msg: "With such long memories, High Elves have developed the Art of Forgetting — a mental discipline allowing deliberate release of accumulated emotional weight. It is considered the most difficult skill to master and the most necessary. Elves who cannot forget eventually stop engaging with the present entirely.",
+    },
+    {
+      id: "high_elf_17",
+      title: "The Second Tongue",
+      msg: 'All High Elves are fluent in at least one non-elven language before they are considered adults. The reasoning is diplomatic: "You cannot understand what someone wants if you cannot think in their language." The most educated High Elves are fluent in all six major racial languages and several extinct ones.',
+    },
+    {
+      id: "high_elf_18",
+      title: "Elven Perception of Magic",
+      msg: "Non-elven mages describe magic as a force they use. High Elves describe it as a presence they coexist with. The distinction, which sounds philosophical, has profound practical implications: High Elf spells are less powerful individually but more harmonically stable — they do not fight the Weave, they converse with it.",
+    },
+    {
+      id: "high_elf_19",
+      title: "The Thousand-Year Grudge",
+      msg: "High Elves do not maintain Grudge Ledgers like dwarves. Instead, they maintain the Long Consideration — a mental catalogue of unresolved debts, both owed and owing, which informs every interaction without being spoken. A High Elf who brings up a Long Consideration in conversation is issuing a formal warning.",
+    },
+    {
+      id: "high_elf_20",
+      title: "Diplomatic Architecture",
+      msg: "The design of meeting spaces matters deeply to High Elves. They will refuse to negotiate in a room with poor acoustics, bad light, or furniture arranged to give either party a positional advantage. The preparation of a meeting room is considered as important as the negotiation itself.",
+    },
+    {
+      id: "high_elf_21",
+      title: "The Bloodline Schools",
+      msg: "High Elf magical ability is not entirely innate — it is cultivated through Bloodline Schools, intensive multi-generational training programs that shape magical development across family lines. A student enters a Bloodline School knowing that their children will inherit the benefits of their training. This is the most extreme form of delayed gratification known to exist.",
+    },
+    {
+      id: "high_elf_22",
+      title: "On Human Allies",
+      msg: "High Elves find humans baffling and fascinating in equal measure — creatures of extraordinary urgency who accomplish in a single lifetime what elves spend centuries planning. The most common High Elf reaction to humans is not contempt but something closer to awe mixed with anxiety: what could they accomplish if they slowed down?",
+    },
+    {
+      id: "high_elf_23",
+      title: "The Elven Silence",
+      msg: "High Elves use silence communicatively in ways that no other race has decoded. The length, texture, and context of an elven pause carries as much meaning as the words around it. Non-elven diplomats are advised never to fill an elven silence — what you say into it becomes part of the conversation in ways you may not intend.",
+    },
+    {
+      id: "high_elf_24",
+      title: "Magic Without Words",
+      msg: "The highest achievement in High Elf magic is wordless casting — producing magical effects through pure Weave harmonics without incantation, gesture, or material components. It is indistinguishable from doing nothing. The most powerful High Elf mages in history are rumoured to have resolved wars by sitting quietly in adjacent rooms.",
+    },
+    {
+      id: "high_elf_25",
+      title: "The Weight of Memory",
+      msg: '"We remember everything," an elderly elf once told a human historian. "Which means we forget nothing — not the good things, not the terrible things. Not the friends who died before us, not the mistakes we made three centuries ago. You ask why elves seem sad. It is not sadness. It is the weight of a very full library."',
+    },
+  ],
+  orc: [
+    {
+      id: "orc_1",
+      title: "The War Cry Tradition",
+      msg: "An orcish war cry is not just a sound. It is a rhythmic magical signature that coordinates thousands of warriors across miles without a single word. Every clan has its own frequency, its own sub-patterns, and its own silence.",
+    },
+    {
+      id: "orc_2",
+      title: "Blood Bound Forges",
+      msg: "Orcish weapons are not simply hammered into shape. They are blood-forged — tempered in a mixture of iron-rich mud and ceremonial intent. An orcish blade is heavier than its human equivalent, designed to break shields as much as to cut flesh.",
+    },
+    {
+      id: "orc_3",
+      title: "The Great Migration",
+      msg: "The orcs were the first race to cross the Bloodplains after the Sundering. Their records — oral traditions passed through the Shamans — describe a journey of a thousand miles through storms of raw mana that would have killed any other race.",
+    },
+    {
+      id: "orc_4",
+      title: "On Orcish Diplomacy",
+      msg: '"We don\'t negotiate with words that have no weight," an orcish chieftain once told a human envoy. "We negotiate with results. You want peace? Show us you are strong enough to keep it. You want war? Show us you are ready to lose everything."',
+    },
+    {
+      id: "orc_5",
+      title: "The Shamanic Totems",
+      msg: "Orcish shamans carry totems carved from the bone of the great beasts that once roamed Narmir. These totems act as anchors for the Weave, allowing orcs to channel magic that is raw, elemental, and incredibly destructive in short bursts.",
+    },
+    {
+      id: "orc_6",
+      title: "The Hierarchy of Scars",
+      msg: "In orcish culture, a scar is a record. Every major conflict, every narrow escape, every personal victory is marked on the skin. A veteran orcish warrior is a living map of their own history. Touching another orc's scar without permission is an invitation to a duel.",
+    },
+    {
+      id: "orc_7",
+      title: "Siege Mastery",
+      msg: "Contrary to popular belief, orcs are not just berserkers. They are the most efficient siege engineers in Narmir. Their philosophy is simple: find the point where the structure is weakest and hit it with enough force to make physics irrelevant.",
+    },
+    {
+      id: "orc_8",
+      title: "The Clan Oaths",
+      msg: 'An orc belongs first to their clan, then to their kingdom. Clan loyalty is absolute. To betray your clan is to become a "Nameless One" — an exile who exists in no records and possesses no history. Most choose death over exile.',
+    },
+    {
+      id: "orc_9",
+      title: "Orcish Agriculture",
+      msg: 'Orcs do not farm like humans. They "cultivate the struggle." Their crops are grown in harsh soils, requiring constant care and protection. The result is food that is exceptionally hardy and provides more energy per ounce than any other racial diet.',
+    },
+    {
+      id: "orc_10",
+      title: "The Language of Drums",
+      msg: "Orcish drums can be heard for miles. They are used for communication, for intimidation, and for ritual. A master drummer can convey complex tactical instructions during the heat of battle through a sequence of beats that sounds like chaos to anyone else.",
+    },
+    {
+      id: "orc_11",
+      title: "Death and Memory",
+      msg: 'When an orcish hero dies, their deeds are added to the "Song of the Blood." Every orc child learns the song. By the time they are adults, they know the names and stories of five hundred years of ancestors.',
+    },
+    {
+      id: "orc_12",
+      title: "The Iron Will",
+      msg: "Orcish morale is tied to their sense of purpose. An orc who knows *why* they are fighting is almost impossible to stop. Their mental resilience allows them to ignore pain and fatigue that would break other soldiers.",
+    },
+    {
+      id: "orc_13",
+      title: "Trade Through Strength",
+      msg: "Orcs trade by value, not by gold. They exchange weapons for food, iron for textiles, and strength for security. A trade agreement with an orcish clan is considered settled only when both parties have physically inspected the goods.",
+    },
+    {
+      id: "orc_14",
+      title: "The Great Hunt",
+      msg: "Once per season, orcish clans gather for the Great Hunt — a ritualistic tracking of a dangerous predator. The hunt is not for food, but for prestige. The clan that brings down the beast earns the right to lead the next season's military council.",
+    },
+    {
+      id: "orc_15",
+      title: "Orcish Engineering",
+      msg: "Orcish buildings are built for utility and endurance. They are modular, easy to repair, and designed to withstand the harshest weather. An orcish fortress is not beautiful, but it will still be standing after the marble towers around it have crumbled.",
+    },
+    {
+      id: "orc_16",
+      title: "The Shaman's Dream",
+      msg: "Shamans believe they can see the future in the patterns of Mana Storms. While their predictions are often cryptic, they are rarely wrong. Rulers who ignore a shaman's warning usually regret it within a season.",
+    },
+    {
+      id: "orc_17",
+      title: "On Human Urgency",
+      msg: 'Orcs find the human obsession with speed amusing. "They rush to their deaths," says an orcish proverb. "We wait for our victory. The mountain does not move because the ant is in a hurry."',
+    },
+    {
+      id: "orc_18",
+      title: "The Weight of the Axe",
+      msg: "An orc's axe is their primary tool and their final defense. It is balanced for their specific grip and weighted for their specific strength. Every axe has a history, and many are named after the first enemy they slew.",
+    },
+    {
+      id: "orc_19",
+      title: "The Bloodplains History",
+      msg: "Orcs claim the Bloodplains were created by the sweat of the first orcs as they fought the raw magic of the Weave. It is a land that demands respect, and orcs are the only ones who truly know how to live off it.",
+    },
+    {
+      id: "orc_20",
+      title: "Orcish Medicine",
+      msg: "Orcish medicine is brutal but effective. It involves high-heat cauterisation, primitive but functional prosthetics, and herbal tonics that would be considered poison by any other race. It prioritises getting the warrior back into the fight as quickly as possible.",
+    },
+    {
+      id: "orc_21",
+      title: "The Ritual of Names",
+      msg: "An orc earns their true name through a deed of significance. Until then, they are known only by their clan and their birth order. Your name is what you *did*, not what your parents wanted you to be.",
+    },
+    {
+      id: "orc_22",
+      title: "The Silence After Battle",
+      msg: "After a victory, orcish camps are famously quiet. They do not celebrate with noise like humans; they celebrate with reflection. The loss of warriors is felt deeply, and the silence is a sign of respect for the fallen.",
+    },
+    {
+      id: "orc_23",
+      title: "Orcish Art",
+      msg: "Orcish art is primarily relief carving and metalwork. It depicts scenes of struggle, of nature, and of the great heroes of the past. It is designed to be felt as much as seen, with deep textures that tell a story to the touch.",
+    },
+    {
+      id: "orc_24",
+      title: "The Mercenary Code",
+      msg: "Orcish mercenaries are highly sought after because they never break a contract. To do so would be to shame their clan. They are expensive, they are difficult to manage, but they are absolutely reliable.",
+    },
+    {
+      id: "orc_25",
+      title: "The Strength of many",
+      msg: '"One orc is a problem. Ten orcs are a battle. A thousand orcs are a changing of the map." This human saying captures the reality of orcish warfare: their strength is not just in their muscles, but in their coordination.',
+    },
+  ],
+  dark_elf: [
+    {
+      id: "dark_elf_1",
+      title: "The Shadow Weave",
+      msg: 'Dark Elves do not use the Weave like High Elves. They use its shadow — the residual energy left behind when magic interacts with the physical world. This "Shadow Weave" is more difficult to perceive but allows for magic that is inherently stealthy and manipulative.',
+    },
+    {
+      id: "dark_elf_2",
+      title: "The Underspire Origins",
+      msg: "The Dark Elves did not move underground out of fear. They moved there to be closer to the roots of the world, where the Weave is most stable. The Underspire is not a cave; it is a meticulously carved cathedral city that spans miles.",
+    },
+    {
+      id: "dark_elf_3",
+      title: "The Silent Markets",
+      msg: "Dark Elf markets are completely silent. All transactions are conducted through sign language, subtle magical cues, and written contracts. They deal in things other races find distasteful: information, refined poisons, and secrets from the Age of Crowns.",
+    },
+    {
+      id: "dark_elf_4",
+      title: "On Dark Elf Diplomacy",
+      msg: '"If you know what we want, we have already failed," says a Dark Elf diplomat. Their strategy is one of layered deception. What appears to be a trade agreement is often a strategic diversion intended to weaken a rival decades later.',
+    },
+    {
+      id: "dark_elf_5",
+      title: "The Art of the Dagger",
+      msg: 'A Dark Elf dagger is not for combat. It is for precision. Every blade is balanced for throwing and coated in custom alchemical salts that react to the target\'s blood. A Dark Elf does not "fight" an opponent; they "solve" them.',
+    },
+    {
+      id: "dark_elf_6",
+      title: "The Web of Secrets",
+      msg: "Dark Elf society is a meritocracy of intelligence. Those who know the most secrets hold the most power. Information is the primary currency in the Underspire, more valuable even than gold or mana.",
+    },
+    {
+      id: "dark_elf_7",
+      title: "Stealth and Perception",
+      msg: "Dark Elves perceive the world through vibrations and thermal signatures as much as sight. This allows them to navigate perfectly in total darkness. A non-elf in the Underspire is as visible to them as a torch in a midnight field.",
+    },
+    {
+      id: "dark_elf_8",
+      title: "The Poisoner's Guild",
+      msg: "The refinement of alchemical toxins is considered a high art form. A master poisoner can create substances that induce sleep, madness, or instant loyalty — all without the victim ever knowing they were targeted.",
+    },
+    {
+      id: "dark_elf_9",
+      title: "On High Elf Resilience",
+      msg: 'Dark Elves view their surface cousins with a mixture of pity and resentment. "They live in the light and see nothing," they say. "We live in the dark and see everything. The sun is a distraction from the truth."',
+    },
+    {
+      id: "dark_elf_10",
+      title: "The Shadow Schools",
+      msg: "Training for a Dark Elf starts with the Shadow Schools — institutes where children are taught to move without sound, to observe without being seen, and to think three steps ahead of any opponent. Only the most gifted survive to adulthood.",
+    },
+    {
+      id: "dark_elf_11",
+      title: "Dark Elf Architecture",
+      msg: "Everything in the Underspire is designed to confuse intruders. Streets curve unexpectedly, stairs lead to nowhere, and rooms are hidden behind illusory walls. To a Dark Elf, a straight line is an offensive lack of imagination.",
+    },
+    {
+      id: "dark_elf_12",
+      title: "The Night Market",
+      msg: "The Night Market is where Dark Elves trade with other races. It is located on the edge of their territory, in a neutral zone where the rules of the surface apply — mostly. It is the only place in Narmir where you can buy a map of the Dead Roads.",
+    },
+    {
+      id: "dark_elf_13",
+      title: "The Ethics of Manipulation",
+      msg: '"Manipulation is just a form of education," a Dark Elf philosopher once wrote. "We are simply helping others arrive at the conclusion that benefits us both. If they don\'t realise they were helped, that is our gift to their pride."',
+    },
+    {
+      id: "dark_elf_14",
+      title: "Dark Elf Religion",
+      msg: 'Dark Elves do not worship. they observe. They believe the Eldest did not vanish, but simply became part of the Shadow Weave. Their "religious" practices involve deep meditation and attempts to harmonize with the residual echoes of divinity.',
+    },
+    {
+      id: "dark_elf_15",
+      title: "The Invisibility Cloaks",
+      msg: "Dark Elf weavers create cloaks from the silk of spiders that live in the deep Underspire. These cloaks don't just hide the wearer; they absorb sound and heat, making them effectively undetectable to most sensors.",
+    },
+    {
+      id: "dark_elf_16",
+      title: "On Human Shortness",
+      msg: 'Dark Elves find human lives tragically brief. "A human is like a spark from a forge," they say. "Bright, hot, and gone before you can even memorise its shape. They accomplish much because they have no choice but to rush."',
+    },
+    {
+      id: "dark_elf_17",
+      title: "The Assassination Code",
+      msg: 'Assassination is a formal legal process in the Underspire. If a noble wants a rival removed, they must file a "Notice of Intent" with the Shadow Courts. The target is then given three days to convince the courts why they should live. If they fail, the contract is issued.',
+    },
+    {
+      id: "dark_elf_18",
+      title: "Dark Elf Music",
+      msg: 'Dark Elf music is composed of subsonic frequencies that evoke emotions directly in the listener\'s mind without being "heard." A Dark Elf concert can leave an audience feeling overwhelming joy, terror, or calm — all in total silence.',
+    },
+    {
+      id: "dark_elf_19",
+      title: "The Memory Crystals",
+      msg: "Instead of books, Dark Elves use Memory Crystals. By touching a crystal, a user can experience the memories and knowledge encoded within it. This allows for the instant transfer of complex skills, though the mental strain is immense.",
+    },
+    {
+      id: "dark_elf_20",
+      title: "The Poisoners Oath",
+      msg: "All poisoners take an oath never to use their craft for personal gain. Every toxin must be used in service of the kingdom or the guild. To use poison for petty revenge is a capital crime.",
+    },
+    {
+      id: "dark_elf_21",
+      title: "On Dwarven Stubbornness",
+      msg: 'Dark Elves respect Dwarves more than any other race. "The Dwarves built the mountain," they say. "We just learned to live inside it. Both require a certain kind of madness."',
+    },
+    {
+      id: "dark_elf_22",
+      title: "The Language of Shadows",
+      msg: "Dark Elves have a secondary language composed entirely of finger movements and eye shifts. It allows them to hold two completely different conversations at the same time: one for the ears, and one for the truth.",
+    },
+    {
+      id: "dark_elf_23",
+      title: "The Shadow Guard",
+      msg: "The elite defenders of the Underspire are the Shadow Guard. They are trained to fight in total darkness, using enchanted blades that ignore physical armour and strike directly at the target's life force.",
+    },
+    {
+      id: "dark_elf_24",
+      title: "Dark Elf Diplomacy",
+      msg: '"We never say what we mean, but we always mean what we say." This riddle is the key to understanding Dark Elf diplomacy. Every word is chosen for its multiple meanings, and the true intent is found in the intersection of all of them.',
+    },
+    {
+      id: "dark_elf_25",
+      title: "The End of the Web",
+      msg: "Dark Elves believe the world will end when the Weave and the Shadow Weave finally merge back into one. Until then, they will continue to manipulate the strings of history from the darkness, ensuring their survival at any cost.",
+    },
+  ],
+  human: [
+    {
+      id: "human_1",
+      title: "The Heartlands Origin",
+      msg: "Humans did not come from a single place. They appeared simultaneously across the Heartlands — small tribes of survivors from the Sundering who possessed an extraordinary ability to adapt and build. While other races look back, humans only look forward.",
+    },
+    {
+      id: "human_2",
+      title: "The Adaptation Gene",
+      msg: "The greatest human strength is not their magic, their weapons, or their numbers. It is their flexibility. A human kingdom can be a trade hub today, a military fortress tomorrow, and a centre of learning the day after. They change because they must.",
+    },
+    {
+      id: "human_3",
+      title: "The Trade Hubs",
+      msg: "Human cities are the crossroads of Narmir. They are messy, crowded, and loud, but they are where the world meets. If you want a dwarf hammer, an elven scroll, and an orcish axe, you go to a human market.",
+    },
+    {
+      id: "human_4",
+      title: "On Human Diplomacy",
+      msg: '"A human diplomat is someone who tells you to go to hell in a way that makes you look forward to the trip." This orcish proverb captures the human approach to negotiation: charm, persistence, and an occasional healthy dose of bribery.',
+    },
+    {
+      id: "human_5",
+      title: "The Knightly Orders",
+      msg: "Human military power is built around the Knightly Orders — specialised groups of warriors who combine traditional combat skills with a strict code of conduct. Each order has its own history, its own heraldry, and its own secret techniques.",
+    },
+    {
+      id: "human_6",
+      title: "Human Engineering",
+      msg: "Human construction is fast and functional. They don't build for eternity like dwarves; they build for next season. If a wall falls, they just build a bigger one. This constant cycle of building and rebuilding leads to rapid innovation.",
+    },
+    {
+      id: "human_7",
+      title: "The Merchant Kings",
+      msg: "Leadership in human kingdoms is often tied to wealth. The Merchant Kings are those who have built vast trade empires, using their resources to fund armies, research, and infrastructure. They prove that in the Heartlands, gold is as powerful as steel.",
+    },
+    {
+      id: "human_8",
+      title: "On Elven Patience",
+      msg: 'Humans find elven longevity frustrating. "By the time an elf decides what to have for dinner, I\'ve already raised a family, built a house, and started a business," says a human merchant. "They have time. We have urgency."',
+    },
+    {
+      id: "human_9",
+      title: "The Arcane Universities",
+      msg: "Human magic is academic. They study the Weave through textbooks, experiments, and peer-reviewed research. While they lack the innate connection of elves, their methodical approach allows them to produce mages with a vast range of practical spells.",
+    },
+    {
+      id: "human_10",
+      title: "Human Diversity",
+      msg: "No two human kingdoms are the same. Some are peaceful democracies, others are brutal autocracies, and some are governed entirely by merchant guilds. This diversity makes them unpredictable and difficult for other races to categorize.",
+    },
+    {
+      id: "human_11",
+      title: "The Language of Profit",
+      msg: 'Humans invented the modern system of coinage and banking used across most of Narmir. They understood early on that a stable economy is a better defense than a thousand walls. Most of the world now speaks the language of "interest rates."',
+    },
+    {
+      id: "human_12",
+      title: "Human Resilience",
+      msg: "Humans have survived plagues, mana storms, and wars that should have ended them. Their ability to recover from disaster — to plant again, to build again, to hope again — is seen by other races as either inspiring or deeply suspicious.",
+    },
+    {
+      id: "human_13",
+      title: "The Sea Traders",
+      msg: "Human ships dominate the coastal trade routes. They are faster, lighter, and more numerous than any other race's vessels. To a human sailor, the ocean is not a barrier; it is a highway.",
+    },
+    {
+      id: "human_14",
+      title: "On Dwarven Smithing",
+      msg: 'Humans respect the quality of dwarven work but often find it over-engineered. "A dwarf will spend a year making a shovel that lasts ten centuries," a human farmer says. "I just need a shovel that gets me through the spring. I\'ll buy a new one next year."',
+    },
+    {
+      id: "human_15",
+      title: "The Tavern Culture",
+      msg: "The tavern is the center of human social and political life. Contracts are signed over ale, wars are planned in back rooms, and news spreads from the hearth. To understand a human kingdom, you don't talk to the king; you talk to the bartender.",
+    },
+    {
+      id: "human_16",
+      title: "Human Ambition",
+      msg: "Ambition is the engine of human history. They are never satisfied with what they have. They want more land, more knowledge, more prestige. This drive makes them a constant threat to the status quo and a constant source of progress.",
+    },
+    {
+      id: "human_17",
+      title: "The Legal Maze",
+      msg: 'Human law is famously complex. They have a rule for everything, a counter-rule for the exceptions, and a professional class of "lawyers" whose entire job is to navigate the mess. Other races find it impenetrable. Humans find it profitable.',
+    },
+    {
+      id: "human_18",
+      title: "On Orcish Strength",
+      msg: 'Humans fear orcish power but admire their discipline. "You don\'t fight an orc; you survive them," says a human general. Human tactics against orcs rely on mobility and range — never letting the orc get close enough to use that strength.',
+    },
+    {
+      id: "human_19",
+      title: " The Bardic Tradition",
+      msg: "Humans love stories. Their bards travel the world, collecting news and legends, and turning them into songs that are sung in every tavern. A popular bard has as much influence over public opinion as a royal decree.",
+    },
+    {
+      id: "human_20",
+      title: "Human Curiosity",
+      msg: "A human will open a door just to see what is behind it, even if they know there is a dragon on the other side. This curiosity has led to many disasters, but it has also led to every major human discovery.",
+    },
+    {
+      id: "human_21",
+      title: "The Church of Progress",
+      msg: 'While they have no formal gods, many humans believe in the "Great Path" — the idea that through hard work and innovation, they can build a better world. It is a religion of doing, rather than dreaming.',
+    },
+    {
+      id: "human_22",
+      title: "On Dark Elf Deception",
+      msg: "Humans are the only race that regularly out-manipulates Dark Elves. This is because humans are often so chaotic and self-interested that even the most elaborate Dark Elf plan cannot account for their unpredictability.",
+    },
+    {
+      id: "human_23",
+      title: "The Royal Bloodlines",
+      msg: "Human nobility is obsessed with genealogy. They trace their lineages back to the first kings of the Age of Crowns, using their ancestors' deeds to justify their current power. These bloodlines are a constant source of internal conflict and political drama.",
+    },
+    {
+      id: "human_24",
+      title: "Human Architecture",
+      msg: "Human buildings are a mix of every other race's styles. You will find dwarven foundations, elven aesthetics, and orcish utility all in the same human city. It shouldn't work, but it does.",
+    },
+    {
+      id: "human_25",
+      title: "The Human Spirit",
+      msg: '"We have so little time," says the final entry in the Chronicles of Oryn. "So we must fill it with as much life as possible. We build, we love, we fight, we fail. And then we do it all over again. That is what it means to be human."',
+    },
+  ],
+  dire_wolf: [
+    {
+      id: "dire_wolf_1",
+      title: " The Pack Bond",
+      msg: 'Dire Wolves are not just animals. They are a communal consciousness. The "Pack Bond" is a mental link that allows a pack to move and think as a single unit. An individual Dire Wolf is dangerous; a pack is a force of nature.',
+    },
+    {
+      id: "dire_wolf_2",
+      title: " The Ashfang Origins",
+      msg: "The Dire Wolves trace their lineage back to the Great Pack-Mother, a divine being who survived the Sundering by merging her spirit with the land itself. They consider the Ashfang Wilds to be her living body.",
+    },
+    {
+      id: "dire_wolf_3",
+      title: " The Language of Howls",
+      msg: "A howl is not just a call. It is a data transfer. Through subtle variations in pitch and frequency, a Dire Wolf can communicate complex information about terrain, prey, and threats over vast distances.",
+    },
+    {
+      id: "dire_wolf_4",
+      title: " On Dire Wolf Diplomacy",
+      msg: '"A Dire Wolf doesn\'t talk. They decide." Diplomacy with the pack involves mutual respect for territory. If you enter their land without permission, there is no negotiation — only the hunt.',
+    },
+    {
+      id: "dire_wolf_5",
+      title: " The Instinctual Weave",
+      msg: 'Dire Wolves interact with the Weave through instinct. They can sense mana flows like a scent. This allows them to "track" magic, making them exceptionally effective at hunting mages.',
+    },
+    {
+      id: "dire_wolf_6",
+      title: " The Great Hunt History",
+      msg: "The Wilds have been the site of the Great Hunt for a thousand years. It is a ritual that balances the ecosystem and ensures the strength of the pack. To the Dire Wolf, the hunt is a sacred act of preservation.",
+    },
+    {
+      id: "dire_wolf_7",
+      title: " Dire Wolf Elders",
+      msg: "An Elder Dire Wolf has lived through a hundred seasons. Their knowledge is shared with the pack through the bond, ensuring that the hard-won wisdom of the past is never lost.",
+    },
+    {
+      id: "dire_wolf_8",
+      title: " Territory Marking",
+      msg: "The borders of the Ashfang Wilds are marked with more than just scent. They are marked with a psychic residue that warns other races to stay away. To cross into the Wilds is to feel the weight of a thousand eyes watching you.",
+    },
+    {
+      id: "dire_wolf_9",
+      title: " On Dwarven Fortresses",
+      msg: 'Dire Wolves view dwarf strongholds as "the stone that cannot be eaten." They find the dwarf obsession with enclosure baffling. To a wolf, safety is found in movement and the strength of the pack, not in being trapped inside a mountain.',
+    },
+    {
+      id: "dire_wolf_10",
+      title: "The Rite of Passage",
+      msg: "A young Dire Wolf earns their place in the pack by successfully leading a hunt. It is a test of coordination and instinct. Those who fail are not killed, but they are relegated to the edges of the pack until they prove themselves.",
+    },
+    {
+      id: "dire_wolf_11",
+      title: "Dire Wolf Engineering",
+      msg: 'The pack does not build in the traditional sense. They "shape" their environment. They guide the growth of trees, divert streams, and create natural fortifications that appear to be part of the landscape. An intruder will find themselves trapped in a killzone they never saw coming.',
+    },
+    {
+      id: "dire_wolf_12",
+      title: "The Spirit-Kin",
+      msg: 'There are those among the other races — especially rangers — who have formed a version of the pack bond with Dire Wolves. These "Spirit-Kin" are allowed to travel the Wilds, acting as intermediaries between the pack and the civilized kingdoms.',
+    },
+    {
+      id: "dire_wolf_13",
+      title: "On High Elf Magic",
+      msg: 'The pack finds elven magic "too loud." It disturbs the natural flow of the Weave. When an elven mage enters the Wilds, every wolf for miles knows exactly where they are. The silence of the forest is their best defense.',
+    },
+    {
+      id: "dire_wolf_14",
+      title: "The Winter Hunger",
+      msg: "During the harshest winters, the pack bond strengthens. They share calories, warmth, and even consciousness to ensure the survival of the weakest members. It is the most extreme form of communal survival in Narmir.",
+    },
+    {
+      id: "dire_wolf_15",
+      title: "Dire Wolf Art",
+      msg: 'Wolf "art" is found in the physical marks they leave on the world — the way a tree is pruned, the arrangement of stones in a clearing, the specific pattern of a den. It is an aesthetic of functionality and presence.',
+    },
+    {
+      id: "dire_wolf_16",
+      title: "The Scent of Fear",
+      msg: "Dire Wolves don't just smell fear; they feed on the disorientation it causes. Their presence in the dark is designed to induce panic, making the prey easier to separate from the herd.",
+    },
+    {
+      id: "dire_wolf_17",
+      title: "On Orcish Aggression",
+      msg: 'The pack respects the orcish clans. "They fight like the storm," says a spirit-kin translation. "But they do not know how to wait for the calm." The relationship between the pack and the orcs is one of wary mutual respect.',
+    },
+    {
+      id: "dire_wolf_18",
+      title: "The Seasonal Migration",
+      msg: "The pack moves with the seasons, following the migration of the great herds. This movement is perfectly synchronized across hundreds of miles, a feat of coordination that several human generals have tried to copy without success.",
+    },
+    {
+      id: "dire_wolf_19",
+      title: "The Memory of the Land",
+      msg: "The pack bond carries the memory of the land itself. An Elder Wolf remembers where a stream flowed before the Sundering, where a forest stood before it was burned, and where the first cities of the humans were built.",
+    },
+    {
+      id: "dire_wolf_20",
+      title: "The Language of Eyes",
+      msg: "Communication within a pack at close range is done through subtle eye movements and posture. A single glance from an Alpha can relay a complex military maneuver. It is the fastest form of communication in Narmir.",
+    },
+    {
+      id: "dire_wolf_21",
+      title: "On Dark Elf Shadows",
+      msg: 'The pack finds Dark Elves "unnatural." They move like shadows but lack the weight of real living things. A Dire Wolf will often hunt a Dark Elf just to see if they can catch something that chooses to be invisible.',
+    },
+    {
+      id: "dire_wolf_22",
+      title: "The Final Howl",
+      msg: "When a pack is finally destroyed, their last act is a collective howl that carries the entire history of that pack into the Weave. It is said that in the quietest parts of the Wilds, you can still hear the echoes of packs that died centuries ago.",
+    },
+    {
+      id: "dire_wolf_23",
+      title: "Dire Wolf Protection",
+      msg: 'The pack protects those it deems "part of the forest." This includes several rare species of plants and animals that exist nowhere else in Narmir. To harm one of these is to invite the full wrath of the pack.',
+    },
+    {
+      id: "dire_wolf_24",
+      title: "The Instinct of Harmony",
+      msg: "Everything the pack does is aimed at maintaining the balance of the Wilds. They cull the weak, protect the young, and ensure that no single species dominates the others. They are the unofficial gardeners of Narmir.",
+    },
+    {
+      id: "dire_wolf_25",
+      title: "The One Truth",
+      msg: '"The pack survives. The individual remains part of the pack." This is the only law of the Dire Wolves. It is the reason they have survived while every other civilization has risen and fallen. They do not fight for themselves; they fight for the bond.',
+    },
+  ],
+};
+
+module.exports = LORE;

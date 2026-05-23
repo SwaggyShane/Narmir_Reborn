@@ -1,0 +1,33 @@
+{
+  "name": "narmir-server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node index.js",
+    "start": "node index.js",
+    "build": "vite build",
+    "lint": "eslint . --ext js --report-unused-disable-directives"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^6.0.2",
+    "@vitejs/plugin-vue": "^6.0.6",
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^17.2.3",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.1.1",
+    "pg": "^8.21.0",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "socket.io": "^4.7.4",
+    "vite": "^8.0.12",
+    "vue": "^3.5.34"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.0",
+    "eslint": "^10.2.1",
+    "globals": "^15.0.0",
+    "tsx": "^4.21.0"
+  }
+}

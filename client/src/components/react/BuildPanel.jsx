@@ -1,0 +1,348 @@
+import React, { useState, useEffect } from 'react';
+
+const BUILDINGS = [
+  { id: 'farms', name: 'Farm', wood: 100, stone: 0, iron: 0, time: 28, land: 1 },
+  { id: 'granaries', name: 'Granary', wood: 75, stone: 15, iron: 0, time: 24, land: 1 },
+  { id: 'housing', name: 'Housing', wood: 95, stone: 10, iron: 5, time: 28, land: 1 },
+  { id: 'schools', name: 'School', wood: 120, stone: 30, iron: 5, time: 40, land: 1 },
+  { id: 'libraries', name: 'Library', wood: 150, stone: 60, iron: 20, time: 70, land: 1 },
+  { id: 'mage_towers', name: 'Mage Tower', wood: 200, stone: 150, iron: 40, time: 100, land: 1 },
+  { id: 'shrines', name: 'Shrine', wood: 60, stone: 40, iron: 10, time: 30, land: 1 },
+  { id: 'mausoleums', name: 'Mausoleum', wood: 60, stone: 80, iron: 10, time: 40, land: 1 }, // Vampire only
+  { id: 'markets', name: 'Market', wood: 70, stone: 20, iron: 10, time: 30, land: 1 },
+  { id: 'taverns', name: 'Tavern', wood: 80, stone: 10, iron: 5, time: 25, land: 1 },
+  { id: 'smithies', name: 'Smithy', wood: 50, stone: 100, iron: 80, time: 60, land: 1 },
+  { id: 'vaults', name: 'Vault', wood: 40, stone: 120, iron: 50, time: 70, land: 1 },
+  { id: 'armories', name: 'Armory', wood: 150, stone: 80, iron: 40, time: 65, land: 1 },
+  { id: 'barracks', name: 'Barracks', wood: 120, stone: 10, iron: 20, time: 50, land: 1 },
+  { id: 'walls', name: 'Wall', wood: 20, stone: 80, iron: 10, time: 30, land: 0 },
+  { id: 'guard_towers', name: 'Guard Tower', wood: 90, stone: 60, iron: 15, time: 45, land: 1 },
+  { id: 'outposts', name: 'Outpost', wood: 70, stone: 25, iron: 10, time: 35, land: 1 },
+  { id: 'training', name: 'Training Field', wood: 30, stone: 10, iron: 60, time: 20, land: 1 },
+  { id: 'castles', name: 'Castle', wood: 800, stone: 1200, iron: 400, time: 500, land: 5 },
+  { id: 'wm', name: 'War Machine', wood: 200, stone: 0, iron: 50, time: 100, land: 0 },
+  { id: 'ladders', name: 'Ladder', wood: 20, stone: 0, iron: 2, time: 8, land: 0 },
+  { id: 'weapons', name: 'Weapons', wood: 30, stone: 0, iron: 80, time: 20, land: 0 },
+  { id: 'armor', name: 'Armor', wood: 10, stone: 0, iron: 110, time: 25, land: 0 },
+];
+
+const BuildPanel = () => {
+  const [showBuildingRef, setShowBuildingRef] = useState(false);
+  const [gameState, setGameState] = useState({
+    engineers: 0,
+    wood: 0,
+    stone: 0,
+    iron: 0,
+    steel: 0,
+    coal: 0,
+    land: 0,
+    built_land: 0,
+    race: 'human'
+  });
+
+  useEffect(() => {
+    // Update local state by reading from the global game obj during react mount/updates
+    if (window.game) {
+      setGameState({
+        engineers: window.game.resources?.engineers || 0,
+        wood: window.game.resources?.wood || 0,
+        stone: window.game.resources?.stone || 0,
+        iron: window.game.resources?.iron || 0,
+        steel: window.game.resources?.steel || 0,
+        coal: window.game.resources?.coal || 0,
+        land: window.game.land || 0,
+        built_land: window.game.built_land || 0,
+        race: window.game.race || 'human'
+      });
+    }
+
+    const unreg = window.registerPanelReactHook && window.registerPanelReactHook('build', () => {
+      if (window.game) {
+        setGameState({
+          engineers: window.game.resources?.engineers || 0,
+          wood: window.game.resources?.wood || 0,
+          stone: window.game.resources?.stone || 0,
+          iron: window.game.resources?.iron || 0,
+          steel: window.game.resources?.steel || 0,
+          coal: window.game.resources?.coal || 0,
+          land: window.game.land || 0,
+          built_land: window.game.built_land || 0,
+          race: window.game.race || 'human'
+        });
+      }
+    });
+    return () => { if (unreg) unreg(); };
+  }, []);
+
+  const fmt = (num) => Math.floor(num).toLocaleString();
+  const getAvailableLand = () => gameState.land - gameState.built_land;
+  
+  const formatReq = (bld) => {
+    return `${bld.time} turns`;
+  };
+
+  const getTooltip = (b) => {
+    return `${b.name}\nBase: ${b.time} turns | ${b.land ? b.land + " land" : ""}\n🪵 ${b.wood} 🪨 ${b.stone} 🔗 ${b.iron}`;
+  };
+
+  // Wrapper calls:
+  const distributeBuildEvenly = () => { if (window.distributeBuildEvenly) window.distributeBuildEvenly(); };
+  const releaseAllEngineers = () => { if (window.releaseAllEngineers) window.releaseAllEngineers(); };
+  const saveBuildAllocation = () => { if (window.saveBuildAllocation) window.saveBuildAllocation(); };
+  const updateBuildDisplay = () => { if (window.updateBuildDisplay) window.updateBuildDisplay(); };
+  const setMaxValue = (id, type) => { if (window.setMaxValue) window.setMaxValue(id, type); };
+  const setBuildMax = (id, type) => { if (window.setBuildMax) window.setBuildMax(id, type); };
+  const demolishB = (type) => { if (window.demolishB) window.demolishB(type); };
+  const buySmithyTool = (type) => { if (window.buySmithyTool) window.buySmithyTool(type); };
+  const setSmithyMax = (type) => { if (window.setSmithyMax) window.setSmithyMax(type); };
+
+  const renderBuildingRow = (b, icon, baId, demoAmountId) => {
+    const isShrine = b.id === 'shrines';
+    const isMausoleum = b.id === 'mausoleums';
+
+    if (isShrine && gameState.race === 'vampire') return null;
+    if (isMausoleum && gameState.race !== 'vampire') return null;
+
+    const isEng = !['wm', 'weapons', 'armor'].includes(b.id);
+
+    return (
+      <div className="trow" title={getTooltip(b)} key={b.id}>
+        <div className="bld-main">
+          <span className="bld-icon" style={{ background: icon.color }}>{icon.emoji}</span>
+          <span className="name">{b.name}</span>
+        </div>
+        <span className="count" id={`bld-${b.id}`}>0</span>
+        {b.id !== 'wm' && b.id !== 'ladders' && b.id !== 'weapons' && b.id !== 'armor' ? (
+          <div className="bld-demolish">
+            <input type="number" className="input" id={demoAmountId} defaultValue="1" min="1" style={{ textAlign: 'center' }} />
+            <button className="base-btn variant-red" style={{ padding: '4px 6px', fontSize: '10px' }} onClick={() => demolishB(b.id)}>🗑️</button>
+          </div>
+        ) : <span></span>}
+        
+        <div className="bld-eng">
+          <input
+            type="number"
+            className="input"
+            id={baId}
+            min="0"
+            defaultValue="0"
+            onChange={updateBuildDisplay}
+            style={{ textAlign: 'right' }}
+            placeholder="Qty"
+          />
+          <button
+            className="base-btn"
+            style={{ padding: '4px 8px', fontSize: '10px' }}
+            onClick={() => {
+              if (isEng) setMaxValue(baId, 'avail_units');
+              else if (b.id === 'wm') setBuildMax(baId, 'war_machine');
+              else if (b.id === 'weapons') setBuildMax(baId, 'weapons');
+              else if (b.id === 'armor') setBuildMax(baId, 'armor');
+              else setMaxValue(baId, 'avail_units');
+            }}
+          >
+            Max
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div id="build" className="panel" style={{ display: 'none' }}>
+      <div className="build-sticky-header">
+        <div className="card" style={{ margin: 0, boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+            <div>
+              <div className="card-title" style={{ marginBottom: '2px' }}>Construction</div>
+              <div style={{ fontSize: '12px', color: 'var(--text3)' }}>
+                Engineers: <span style={{ color: 'var(--text)' }}>{fmt(gameState.engineers)}</span> available · 
+                <span id="b-total-assigned" style={{ color: 'var(--gold)', margin: '0 4px' }}>0</span> assigned · 
+                <span id="b-total-unassigned" style={{ color: 'var(--green)', margin: '0 4px' }}>0</span> unassigned
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '2px' }}>
+                Resources: 
+                <span style={{ color: 'var(--text)', margin: '0 2px' }}>{fmt(gameState.wood)}</span>🪵 · 
+                <span style={{ color: 'var(--text)', margin: '0 2px' }}>{fmt(gameState.stone)}</span>🪨 · 
+                <span style={{ color: 'var(--text)', margin: '0 2px' }}>{fmt(gameState.iron)}</span>🔗 · 
+                <span style={{ color: 'var(--text)', margin: '0 2px' }}>{fmt(gameState.steel)}</span>📏 · 
+                <span style={{ color: 'var(--text)', margin: '0 2px' }}>{fmt(gameState.coal)}</span>🌑
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '2px' }}>
+                Land: <span style={{ color: 'var(--text)' }}>{fmt(getAvailableLand())}</span> / 
+                <span style={{ color: 'var(--text)' }}>{fmt(gameState.land)}</span> available
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button className="base-btn variant-accent" style={{ whiteSpace: 'nowrap', padding: '6px 12px', fontSize: '11px', background: 'var(--accent1)' }} onClick={distributeBuildEvenly}>
+                Distribute Evenly
+              </button>
+              <button className="base-btn variant-red" style={{ whiteSpace: 'nowrap', padding: '6px 12px', fontSize: '11px', background: 'var(--red)' }} onClick={releaseAllEngineers}>
+                Release All
+              </button>
+              <button className="base-btn variant-gold" style={{ whiteSpace: 'nowrap', padding: '6px 16px', fontSize: '12px', background: 'var(--gold)', color: '#000' }} onClick={saveBuildAllocation}>
+                Save Allocation
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="build-content-scroll">
+
+        <div className="card" style={{ marginTop: '14px' }}>
+          <div style={{ padding: '12px 0', borderBottom: '1px solid var(--border)', marginBottom: '12px' }}>
+            <button 
+              onClick={() => setShowBuildingRef(!showBuildingRef)} 
+              style={{ background: 'none', border: '2px solid var(--orange)', borderRadius: '4px', cursor: 'pointer', padding: '8px 12px', width: '100%', textAlign: 'left', boxSizing: 'border-box', marginBottom: showBuildingRef ? '8px' : '0' }}
+            >
+              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '10px' }}>{showBuildingRef ? '▼' : '▶'}</span>
+                Building Requirements Reference
+              </div>
+            </button>
+            {showBuildingRef && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '8px', fontSize: '11px' }}>
+                {BUILDINGS.map(b => (
+                  <div key={b.name} style={{ padding: '8px', background: 'var(--bg3)', borderRadius: '4px' }}>
+                    <div style={{ fontWeight: 600, color: 'var(--gold)', marginBottom: '4px' }}>{b.name}</div>
+                    <div>{formatReq(b)}{b.land ? ` | 📍 ${b.land} Land` : ''}</div>
+                    <div style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '4px' }}>🪵 {b.wood} · 🪨 {b.stone} · 🔗 {b.iron}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="card" style={{ marginTop: '14px' }}>
+          <div id="build-rows">
+            <div id="build-header">
+              <span>Building</span>
+              <span style={{ textAlign: 'right' }}>Built</span>
+              <span style={{ textAlign: 'center' }}>Demolish</span>
+              <span style={{ textAlign: 'center' }}>Engineers</span>
+            </div>
+
+            {renderBuildingRow(BUILDINGS[0], { emoji: '🌾', color: '#4a7c3f' }, 'ba-farm', 'demolish-amount-farms')}
+            {renderBuildingRow(BUILDINGS[1], { emoji: '🛖', color: '#a08453' }, 'ba-granary', 'demolish-amount-granaries')}
+            {renderBuildingRow(BUILDINGS[2], { emoji: '🏘️', color: '#4a5a3a' }, 'ba-housing', 'demolish-amount-housing')}
+            {renderBuildingRow(BUILDINGS[3], { emoji: '🏫', color: '#3a5a7a' }, 'ba-school', 'demolish-amount-schools')}
+            {renderBuildingRow(BUILDINGS[4], { emoji: '📖', color: '#2a3a6a' }, 'ba-library', 'demolish-amount-libraries')}
+            {renderBuildingRow(BUILDINGS[5], { emoji: '⛪', color: '#4a2a7a' }, 'ba-mage_tower', 'demolish-amount-mage_towers')}
+            {renderBuildingRow(BUILDINGS[6], { emoji: '⛩️', color: '#3a6a4a' }, 'ba-shrine', 'demolish-amount-shrines')}
+            {renderBuildingRow(BUILDINGS[7], { emoji: '⚰️', color: '#333' }, 'ba-mausoleum', 'demolish-amount-mausoleums')}
+            {renderBuildingRow(BUILDINGS[8], { emoji: '🏪', color: '#1a5a5a' }, 'ba-market', 'demolish-amount-markets')}
+            {renderBuildingRow(BUILDINGS[9], { emoji: '🍺', color: '#3a2a1a' }, 'ba-tavern', 'demolish-amount-taverns')}
+            {renderBuildingRow(BUILDINGS[10], { emoji: '⚒️', color: '#7a4a1a' }, 'ba-smithy', 'demolish-amount-smithies')}
+            {renderBuildingRow(BUILDINGS[11], { emoji: '💰', color: '#3a6a3a' }, 'ba-vault', 'demolish-amount-vaults')}
+            {renderBuildingRow(BUILDINGS[12], { emoji: '🛡️', color: '#6a3a1e' }, 'ba-armory', 'demolish-amount-armories')}
+            {renderBuildingRow(BUILDINGS[13], { emoji: '🏠', color: '#7b3030' }, 'ba-barracks', 'demolish-amount-barracks')}
+            {renderBuildingRow(BUILDINGS[14], { emoji: '🧱', color: '#3a3a3a' }, 'ba-walls', 'demolish-amount-walls')}
+            {renderBuildingRow(BUILDINGS[15], { emoji: '🗼', color: '#2a4a6e' }, 'ba-tower', 'demolish-amount-guard_towers')}
+            {renderBuildingRow(BUILDINGS[16], { emoji: '🏴', color: '#5a4a1e' }, 'ba-outpost', 'demolish-amount-outposts')}
+            {renderBuildingRow(BUILDINGS[17], { emoji: '⚔️', color: '#1a4a2a' }, 'ba-training', 'demolish-amount-training')}
+            {renderBuildingRow(BUILDINGS[18], { emoji: '🏰', color: '#5a1a1a' }, 'ba-castle', 'demolish-amount-castles')}
+
+            <div style={{ fontSize: '11px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', padding: '14px 0 6px' }}>
+              Equipment & War Machines
+            </div>
+
+            {renderBuildingRow(BUILDINGS[19], { emoji: '🪖', color: '#5a3a1a' }, 'ba-wm', '')}
+            {renderBuildingRow(BUILDINGS[20], { emoji: '🪜', color: '#3a2a1a' }, 'ba-ladders', '')}
+            {renderBuildingRow(BUILDINGS[21], { emoji: '🗡️', color: '#6a1a1a' }, 'ba-weapons', '')}
+            <div style={{ borderBottom: 'none' }}>
+              {renderBuildingRow(BUILDINGS[22], { emoji: '🔰', color: '#1a3a6a' }, 'ba-armor', '')}
+            </div>
+
+          </div>
+        </div>
+
+        {/* Build queue */}
+        <div className="card" style={{ marginTop: 0 }}>
+          <div className="card-title">
+            Build queue — engineers work each turn automatically
+          </div>
+          <div id="build-queue-display">
+            <div style={{ color: 'var(--text3)', fontSize: '13px', padding: '8px 0' }}>
+              No buildings queued.
+            </div>
+          </div>
+        </div>
+
+        {/* Tools */}
+        <div className="card" style={{ marginTop: 0 }}>
+          <div className="card-title" style={{ marginBottom: '4px' }}>⚒️ Smithy</div>
+          <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '14px' }}>
+            Hammers and scaffolding can be purchased here. Blueprints are crafted in the Library by scribes.
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px', marginBottom: '16px' }}>
+            <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '12px', textAlign: 'center' }}>
+              <div style={{ fontSize: '20px', marginBottom: '4px' }}>🔨</div>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)' }}>Hammers</div>
+              <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '6px' }}>+5% speed each · degrade</div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--gold)' }} id="tools-hammers">0</div>
+              <div style={{ fontSize: '11px', color: 'var(--text3)' }}>/ <span id="hammers-cap">0</span> cap</div>
+              <div style={{ fontSize: '11px', color: 'var(--amber)', marginTop: '3px' }} id="hammers-durability"></div>
+            </div>
+            <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '12px', textAlign: 'center' }}>
+              <div style={{ fontSize: '20px', marginBottom: '4px' }}>🏗️</div>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)' }}>Scaffolding</div>
+              <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '6px' }}>req &gt;100t · bonus &lt;100t</div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--gold)' }} id="tools-scaffolding">0</div>
+              <div style={{ fontSize: '11px', color: 'var(--text3)' }}>/ <span id="scaffolding-cap">0</span> cap</div>
+            </div>
+            <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '12px', textAlign: 'center' }}>
+              <div style={{ fontSize: '20px', marginBottom: '4px' }}>📐</div>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)' }}>Blueprints</div>
+              <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '6px' }}>req for 100t+ buildings</div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--gold)' }} id="tools-blueprints">0</div>
+              <div style={{ fontSize: '11px', color: 'var(--text3)' }}>/ <span id="blueprints-cap">0</span> cap</div>
+            </div>
+          </div>
+
+          <div style={{ background: 'var(--bg4)', borderRadius: 'var(--radius)', padding: '12px', marginBottom: '12px' }}>
+            <div style={{ fontSize: '12px', color: 'var(--text2)', fontWeight: 600, marginBottom: '14px', textAlign: 'center' }}>
+              Purchase tools <span style={{ color: 'var(--text3)', fontWeight: 400 }}>— instant gold purchase · requires at least 1 smithy</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '6px' }}>
+                  🔨 Hammers — <strong style={{ color: 'var(--gold)' }}>25 GC each</strong>
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '8px' }}>
+                  Stored: <span id="smith-hammers-stored" style={{ color: 'var(--text)' }}>0</span> / <span id="smith-hammers-cap">0</span> · Max afford: <span id="smith-hammers-afford" style={{ color: 'var(--gold)' }}>0</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                  <input type="number" className="input" id="smith-buy-hammers" min="1" defaultValue="0" style={{ width: '160px', textAlign: 'right' }} placeholder="Qty" />
+                  <div style={{ display: 'flex', gap: '8px', width: '160px' }}>
+                    <button className="base-btn variant-gold" style={{ flex: 1, fontSize: '12px', padding: '6px 12px', background: 'var(--gold)', color: '#000' }} onClick={() => buySmithyTool('hammers')}>Buy</button>
+                    <button className="base-btn" style={{ flex: 1, fontSize: '11px', padding: '6px 8px' }} onClick={() => setSmithyMax('hammers')}>Max</button>
+                  </div>
+                </div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '6px' }}>
+                  🏗️ Scaffolding — <strong style={{ color: 'var(--gold)' }}>2,500 GC each</strong>
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '8px' }}>
+                  Stored: <span id="smith-scaffolding-stored" style={{ color: 'var(--text)' }}>0</span> / <span id="smith-scaffolding-cap">0</span> · Max afford: <span id="smith-scaffolding-afford" style={{ color: 'var(--gold)' }}>0</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                  <input type="number" className="input" id="smith-buy-scaffolding" min="1" defaultValue="0" style={{ width: '160px', textAlign: 'right' }} placeholder="Qty" />
+                  <div style={{ display: 'flex', gap: '8px', width: '160px' }}>
+                    <button className="base-btn variant-gold" style={{ flex: 1, fontSize: '12px', padding: '6px 12px', background: 'var(--gold)', color: '#000' }} onClick={() => buySmithyTool('scaffolding')}>Buy</button>
+                    <button className="base-btn" style={{ flex: 1, fontSize: '11px', padding: '6px 8px' }} onClick={() => setSmithyMax('scaffolding')}>Max</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default BuildPanel;

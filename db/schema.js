@@ -1,0 +1,1164 @@
+// Translate SQLite-specific SQL syntax to PostgreSQL syntax
+function translateSqlForPg(sql) {
+  if (typeof sql !== 'string') return sql;
+  let translated = sql;
+
+  // Replace DATETIME with TIMESTAMP
+  translated = translated.replace(/\bDATETIME\b/gi, "TIMESTAMP");
+
+  // Handle INSERT OR REPLACE on server_state
+  if (/INSERT\s+OR\s+REPLACE\s+INTO\s+server_state/i.test(translated)) {
+    translated = translated.replace(
+      /INSERT\s+OR\s+REPLACE\s+INTO\s+server_state\s*\((.*?)\)\s*VALUES\s*\((.*?)\)/i,
+      "INSERT INTO server_state ($1) VALUES ($2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value"
+    );
+  }
+
+  // Handle other INSERT OR IGNORE statements
+  if (/INSERT\s+OR\s+IGNORE\s+INTO\s+regions/i.test(translated)) {
+    translated = translated.replace(/INSERT\s+OR\s+IGNORE\s+INTO\s+regions/i, "INSERT INTO regions");
+    if (!/ON\s+CONFLICT/i.test(translated)) {
+      translated += " ON CONFLICT (name) DO NOTHING";
+    }
+  } else if (/INSERT\s+OR\s+IGNORE\s+INTO\s+market_prices/i.test(translated)) {
+    translated = translated.replace(/INSERT\s+OR\s+IGNORE\s+INTO\s+market_prices/i, "INSERT INTO market_prices");
+    if (!/ON\s+CONFLICT/i.test(translated)) {
+      translated += " ON CONFLICT (id) DO NOTHING";
+    }
+  } else if (/INSERT\s+OR\s+IGNORE\s+INTO\s+server_state/i.test(translated)) {
+    translated = translated.replace(/INSERT\s+OR\s+IGNORE\s+INTO\s+server_state/i, "INSERT INTO server_state");
+    if (!/ON\s+CONFLICT/i.test(translated)) {
+      translated += " ON CONFLICT (key) DO NOTHING";
+    }
+  } else if (/INSERT\s+OR\s+IGNORE\s+INTO\s+events/i.test(translated)) {
+    translated = translated.replace(/INSERT\s+OR\s+IGNORE\s+INTO\s+events/i, "INSERT INTO events");
+    if (!/ON\s+CONFLICT/i.test(translated)) {
+      translated += " ON CONFLICT (key) DO NOTHING";
+    }
+  }
+
+  // AUTOINCREMENT type translation
+  translated = translated.replace(/INTEGER\s+PRIMARY\s+KEY\s+AUTOINCREMENT/gi, "SERIAL PRIMARY KEY");
+
+  // unixepoch() translation
+  translated = translated.replace(/unixepoch\(\)/gi, "date_part('epoch', now())::integer");
+  translated = translated.replace(/CAST\(unixepoch\(\) AS TEXT\)/gi, "CAST(date_part('epoch', now())::integer AS TEXT)");
+
+  // Translate scalar MIN(...) and MAX(...) to LEAST and GREATEST
+  translated = translated.replace(/MIN\(([^)]*,[^)]*)\)/gi, "LEAST($1)");
+  translated = translated.replace(/MAX\(([^)]*,[^)]*)\)/gi, "GREATEST($1)");
+
+  // Translate parameter query markers ? to $1, $2...
+  let paramIndex = 1;
+  translated = translated.replace(/\?/g, () => `$${paramIndex++}`);
+
+  return translated;
+}
+
+// PostgreSQL adapter mimicking the sqlite / sqlite3 interface
+class PgDbAdapter {
+  constructor(pool) {
+    this.pool = pool;
+    this.transactionDepth = 0;
+  }
+
+  async get(sql, params) {
+    if (/PRAGMA\s+table_info\((.*?)\)/i.test(sql)) {
+      const match = sql.match(/PRAGMA\s+table_info\((.*?)\)/i);
+      const tableName = match[1].replace(/['"`]/g, '').trim();
+      try {
+        const pgResult = await this.pool.query(`
+          SELECT column_name AS name 
+          FROM information_schema.columns 
+          WHERE table_name = $1
+        `, [tableName]);
+        return pgResult.rows;
+      } catch (err) {
+        console.error("[db] PostgreSQL table_info failed for table:", tableName);
+        throw err;
+      }
+    }
+
+    if (/PRAGMA\s+user_version/i.test(sql)) {
+      return { user_version: 0 };
+    }
+
+    const translatedSql = translateSqlForPg(sql);
+    try {
+      const res = await this.pool.query(translatedSql, params || []);
+      return res.rows[0];
+    } catch (err) {
+      console.error("[db] PostgreSQL get failed for statement:", translatedSql, "with params:", params);
+      throw err;
+    }
+  }
+
+  async all(sql, params) {
+    if (/PRAGMA\s+table_info\((.*?)\)/i.test(sql)) {
+      const match = sql.match(/PRAGMA\s+table_info\((.*?)\)/i);
+      const tableName = match[1].replace(/['"`]/g, '').trim();
+      try {
+        const pgResult = await this.pool.query(`
+          SELECT column_name AS name 
+          FROM information_schema.columns 
+          WHERE table_name = $1
+        `, [tableName]);
+        return pgResult.rows;
+      } catch (err) {
+        console.error("[db] PostgreSQL table_info failed for table:", tableName);
+        throw err;
+      }
+    }
+
+    const translatedSql = translateSqlForPg(sql);
+    try {
+      const res = await this.pool.query(translatedSql, params || []);
+      return res.rows;
+    } catch (err) {
+      console.error("[db] PostgreSQL all failed for statement:", translatedSql, "with params:", params);
+      throw err;
+    }
+  }
+
+  async run(sql, params) {
+    let translatedSql = translateSqlForPg(sql);
+
+    // Handle nested transactions with savepoints instead of failing
+    if (/^\s*BEGIN\s+TRANSACTION/i.test(translatedSql)) {
+      this.transactionDepth++;
+      if (this.transactionDepth === 1) {
+        translatedSql = 'BEGIN TRANSACTION';
+      } else {
+        translatedSql = `SAVEPOINT sp_${this.transactionDepth}`;
+      }
+    } else if (/^\s*COMMIT/i.test(translatedSql)) {
+      if (this.transactionDepth === 1) {
+        translatedSql = 'COMMIT';
+      } else {
+        translatedSql = `RELEASE SAVEPOINT sp_${this.transactionDepth}`;
+      }
+      this.transactionDepth = Math.max(0, this.transactionDepth - 1);
+    } else if (/^\s*ROLLBACK/i.test(translatedSql)) {
+      if (this.transactionDepth === 1) {
+        translatedSql = 'ROLLBACK';
+      } else {
+        translatedSql = `ROLLBACK TO SAVEPOINT sp_${this.transactionDepth}`;
+      }
+      this.transactionDepth = Math.max(0, this.transactionDepth - 1);
+    }
+
+    const isInsert = /^\s*INSERT\s+/i.test(translatedSql);
+
+    // Append RETURNING id to inserts where needed for sqlite database compatibility
+    if (isInsert && !/RETURNING/i.test(translatedSql)) {
+      if (!/alliance_members/i.test(translatedSql) && !/server_state/i.test(translatedSql) && !/regions/i.test(translatedSql)) {
+        translatedSql += " RETURNING id";
+      }
+    }
+
+    try {
+      const res = await this.pool.query(translatedSql, params || []);
+      const lastID = (res.rows && res.rows[0]) ? (res.rows[0].id || res.rows[0].alliance_id || null) : null;
+      return {
+        lastID: lastID,
+        changes: res.rowCount
+      };
+    } catch (err) {
+      console.error("[db] PostgreSQL run failed for statement:", translatedSql, "with params:", params);
+      throw err;
+    }
+  }
+
+  async exec(sql) {
+    const statements = sql
+      .split(';')
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+    for (const statement of statements) {
+      if (/^PRAGMA/gi.test(statement)) {
+        continue;
+      }
+      const translated = translateSqlForPg(statement);
+      if (translated) {
+        try {
+          await this.pool.query(translated);
+        } catch (err) {
+          console.error("[db] PostgreSQL exec failed for statement:", translated);
+          console.error("[db] PostgreSQL error details:", err);
+          throw err;
+        }
+      }
+    }
+  }
+}
+
+let _db = null;
+
+async function initDb() {
+  if (_db) return _db;
+
+  if (!process.env.DATABASE_URL) {
+    throw new Error("[db] ⚠️ CRITICAL: DATABASE_URL environment variable is NOT SET. PostgreSQL is required.");
+  }
+
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: (!process.env.DATABASE_URL.includes('localhost') && !process.env.DATABASE_URL.includes('127.0.0.1') && !process.env.DATABASE_URL.includes('0.0.0.0'))
+      ? { rejectUnauthorized: false }
+      : false
+  });
+
+  let currentAttempt = 1;
+  const maxAttempts = 4;
+  const delay = 3000;
+
+  while (currentAttempt <= maxAttempts) {
+    try {
+      console.log(`[db] Connecting to PostgreSQL database (Attempt ${currentAttempt}/${maxAttempts})...`);
+      const client = await pool.connect();
+      try {
+        await client.query('SELECT 1');
+      } finally {
+        client.release();
+      }
+      _db = new PgDbAdapter(pool);
+      console.log("[db] ✅ PostgreSQL connected successfully! Connection established.");
+      break;
+    } catch (pgError) {
+      console.error(`[db] PostgreSQL connection attempt ${currentAttempt} failed:`, pgError.message);
+      if (currentAttempt < maxAttempts) {
+        console.log(`[db] Retrying in ${delay / 1000} seconds...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        throw new Error(`[db] ⚠️ CRITICAL: PostgreSQL connection failed after ${maxAttempts} attempts: ${pgError.message}`, { cause: pgError });
+      }
+    }
+    currentAttempt++;
+  }
+
+  await _db.exec(`
+    CREATE TABLE IF NOT EXISTS players (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      username    TEXT    NOT NULL UNIQUE,
+      password    TEXT    NOT NULL,
+      is_admin    INTEGER NOT NULL DEFAULT 0,
+      is_banned   INTEGER NOT NULL DEFAULT 0,
+      is_ai       INTEGER NOT NULL DEFAULT 0,
+      ban_reason  TEXT,
+      created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+    CREATE TABLE IF NOT EXISTS kingdoms (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      player_id   INTEGER NOT NULL UNIQUE REFERENCES players(id),
+      name        TEXT    NOT NULL,
+      race        TEXT    NOT NULL DEFAULT 'human',
+      gold        INTEGER NOT NULL DEFAULT 10000,
+      land        INTEGER NOT NULL DEFAULT 500,
+      population  INTEGER NOT NULL DEFAULT 50000,
+      morale      INTEGER NOT NULL DEFAULT 100,
+      tax         INTEGER NOT NULL DEFAULT 42,
+      mana        INTEGER NOT NULL DEFAULT 5000,
+      food        INTEGER NOT NULL DEFAULT 0,
+      turn        INTEGER NOT NULL DEFAULT 0,
+      last_turn_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      turns_stored INTEGER NOT NULL DEFAULT 400,
+      res_economy       INTEGER NOT NULL DEFAULT 100,
+      res_weapons       INTEGER NOT NULL DEFAULT 100,
+      res_armor         INTEGER NOT NULL DEFAULT 100,
+      res_military      INTEGER NOT NULL DEFAULT 100,
+      res_spellbook     INTEGER NOT NULL DEFAULT 0,
+      res_attack_magic  INTEGER NOT NULL DEFAULT 100,
+      res_defense_magic INTEGER NOT NULL DEFAULT 100,
+      res_entertainment INTEGER NOT NULL DEFAULT 100,
+      res_construction  INTEGER NOT NULL DEFAULT 100,
+      res_war_machines  INTEGER NOT NULL DEFAULT 100,
+      bld_farms         INTEGER NOT NULL DEFAULT 200,
+      bld_granaries     INTEGER NOT NULL DEFAULT 0,
+      bld_barracks      INTEGER NOT NULL DEFAULT 0,
+      bld_outposts      INTEGER NOT NULL DEFAULT 0,
+      bld_guard_towers  INTEGER NOT NULL DEFAULT 0,
+      bld_schools       INTEGER NOT NULL DEFAULT 0,
+      bld_armories      INTEGER NOT NULL DEFAULT 0,
+      bld_vaults        INTEGER NOT NULL DEFAULT 0,
+      bld_smithies      INTEGER NOT NULL DEFAULT 0,
+      bld_markets       INTEGER NOT NULL DEFAULT 0,
+      bld_mage_towers    INTEGER NOT NULL DEFAULT 0,
+      bld_shrines       INTEGER NOT NULL DEFAULT 0,
+      mage_tower_allocation TEXT NOT NULL DEFAULT '{}',
+      shrine_allocation TEXT NOT NULL DEFAULT '{}',
+      bld_training      INTEGER NOT NULL DEFAULT 0,
+      bld_castles       INTEGER NOT NULL DEFAULT 0,
+      bld_housing       INTEGER NOT NULL DEFAULT 100,
+      fighters    INTEGER NOT NULL DEFAULT 0,
+      rangers     INTEGER NOT NULL DEFAULT 0,
+      clerics     INTEGER NOT NULL DEFAULT 0,
+      mages       INTEGER NOT NULL DEFAULT 0,
+      thieves     INTEGER NOT NULL DEFAULT 0,
+      ninjas      INTEGER NOT NULL DEFAULT 0,
+      researchers INTEGER NOT NULL DEFAULT 0,
+      engineers   INTEGER NOT NULL DEFAULT 0,
+      war_machines     INTEGER NOT NULL DEFAULT 0,
+      weapons_stockpile INTEGER NOT NULL DEFAULT 0,
+      armor_stockpile   INTEGER NOT NULL DEFAULT 0,
+      ladders          INTEGER NOT NULL DEFAULT 0,
+      research_allocation TEXT NOT NULL DEFAULT '{}',
+      build_queue       TEXT NOT NULL DEFAULT '{}',
+      build_progress    TEXT NOT NULL DEFAULT '{}',
+      build_allocation  TEXT NOT NULL DEFAULT '{}',
+      tools_hammers     INTEGER NOT NULL DEFAULT 0,
+      tools_scaffolding INTEGER NOT NULL DEFAULT 0,
+      tools_blueprints  INTEGER NOT NULL DEFAULT 0,
+      scaffolding_stored INTEGER NOT NULL DEFAULT 0,
+      hammers_stored     INTEGER NOT NULL DEFAULT 0,
+      xp                REAL NOT NULL DEFAULT 0,
+      xp_sources        TEXT NOT NULL DEFAULT '{"turn":0,"gold":0,"combat_win":0,"combat_loss":0,"research":0,"construction":0,"exploration":0,"spell_cast":0,"covert_op":0}',
+      level             INTEGER NOT NULL DEFAULT 1,
+      troop_levels      TEXT NOT NULL DEFAULT '{}',
+      training_allocation TEXT NOT NULL DEFAULT '{}',
+      scribes     INTEGER NOT NULL DEFAULT 0,
+      bld_libraries     INTEGER NOT NULL DEFAULT 0,
+      library_allocation TEXT NOT NULL DEFAULT '{}',
+      wounded_troops TEXT NOT NULL DEFAULT '{}',
+      library_progress   TEXT NOT NULL DEFAULT '{}',
+      tower_progress     TEXT NOT NULL DEFAULT '{}',
+      scrolls           TEXT NOT NULL DEFAULT '{}',
+      maps              INTEGER NOT NULL DEFAULT 0,
+      blueprints_stored INTEGER NOT NULL DEFAULT 0,
+      active_effects    TEXT NOT NULL DEFAULT '{}',
+      coal              INTEGER NOT NULL DEFAULT 0,
+      steel             INTEGER NOT NULL DEFAULT 0,
+      created_at  INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at  INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+    CREATE TABLE IF NOT EXISTS alliances (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      name        TEXT    NOT NULL UNIQUE,
+      leader_id   INTEGER NOT NULL REFERENCES kingdoms(id),
+      created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+    CREATE TABLE IF NOT EXISTS alliance_members (
+      alliance_id INTEGER NOT NULL REFERENCES alliances(id),
+      kingdom_id  INTEGER NOT NULL REFERENCES kingdoms(id),
+      pledge      INTEGER NOT NULL DEFAULT 3,
+      joined_at   INTEGER NOT NULL DEFAULT (unixepoch()),
+      PRIMARY KEY (alliance_id, kingdom_id)
+    );
+    CREATE TABLE IF NOT EXISTS news (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      kingdom_id  INTEGER NOT NULL REFERENCES kingdoms(id),
+      type        TEXT    NOT NULL,
+      message     TEXT    NOT NULL,
+      turn_num    INTEGER NOT NULL DEFAULT 0,
+      is_read     INTEGER NOT NULL DEFAULT 0,
+      combat_log_id INTEGER,
+      created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+    CREATE TABLE IF NOT EXISTS war_log (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      action_type     TEXT    NOT NULL,
+      attacker_id     INTEGER REFERENCES kingdoms(id),
+      attacker_name   TEXT,
+      defender_id     INTEGER REFERENCES kingdoms(id),
+      defender_name   TEXT,
+      outcome         TEXT    NOT NULL,
+      detail          TEXT,
+      obscured        INTEGER NOT NULL DEFAULT 0,
+      created_at      INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+    CREATE INDEX IF NOT EXISTS idx_war_log_time ON war_log(created_at DESC);
+    CREATE TABLE IF NOT EXISTS expeditions (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      kingdom_id  INTEGER NOT NULL REFERENCES kingdoms(id),
+      type        TEXT    NOT NULL,
+      turns_left  INTEGER NOT NULL,
+      rangers     INTEGER NOT NULL DEFAULT 0,
+      fighters    INTEGER NOT NULL DEFAULT 0,
+      rewards     TEXT,
+      created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+    CREATE INDEX IF NOT EXISTS idx_exp_kingdom ON expeditions(kingdom_id);
+    CREATE TABLE IF NOT EXISTS combat_log (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      attacker_id     INTEGER NOT NULL REFERENCES kingdoms(id),
+      defender_id     INTEGER NOT NULL REFERENCES kingdoms(id),
+      type            TEXT    NOT NULL,
+      attacker_won    INTEGER NOT NULL DEFAULT 0,
+      land_transferred INTEGER NOT NULL DEFAULT 0,
+      detail          TEXT,
+      created_at      INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+    CREATE TABLE IF NOT EXISTS chat_messages (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      kingdom_id  INTEGER NOT NULL REFERENCES kingdoms(id),
+      room        TEXT    NOT NULL DEFAULT 'global',
+      message     TEXT    NOT NULL,
+      created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+    CREATE TABLE IF NOT EXISTS server_state (
+      key   TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS heroes (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      kingdom_id  INTEGER NOT NULL REFERENCES kingdoms(id),
+      name        TEXT    NOT NULL,
+      class       TEXT    NOT NULL,
+      level       INTEGER NOT NULL DEFAULT 1,
+      xp          REAL NOT NULL DEFAULT 0,
+      abilities   TEXT    NOT NULL DEFAULT '[]',
+      status      TEXT    NOT NULL DEFAULT 'idle',
+      hp          INTEGER NOT NULL DEFAULT 100,
+      max_hp      INTEGER NOT NULL DEFAULT 100,
+      created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+    CREATE INDEX IF NOT EXISTS idx_heroes_kingdom ON heroes(kingdom_id);
+    CREATE INDEX IF NOT EXISTS idx_news_kingdom    ON news(kingdom_id, is_read);
+    CREATE INDEX IF NOT EXISTS idx_combat_attacker ON combat_log(attacker_id);
+    CREATE INDEX IF NOT EXISTS idx_combat_defender ON combat_log(defender_id);
+    CREATE INDEX IF NOT EXISTS idx_chat_room       ON chat_messages(room, created_at);
+    CREATE INDEX IF NOT EXISTS idx_kingdoms_player ON kingdoms(player_id);
+    CREATE INDEX IF NOT EXISTS idx_kingdoms_land   ON kingdoms(land DESC);
+    CREATE INDEX IF NOT EXISTS idx_expeditions_kingdom ON expeditions(kingdom_id, turns_left);
+    CREATE INDEX IF NOT EXISTS idx_war_log_defender ON war_log(defender_id);
+    CREATE INDEX IF NOT EXISTS idx_news_turn        ON news(kingdom_id, turn_num DESC);
+    CREATE TABLE IF NOT EXISTS spy_reports (
+      id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+      kingdom_id          INTEGER NOT NULL REFERENCES kingdoms(id),
+      target_id           INTEGER NOT NULL REFERENCES kingdoms(id),
+      target_name         TEXT    NOT NULL,
+      outcome             TEXT    NOT NULL,
+      report              TEXT,
+      shared_to_alliance  INTEGER NOT NULL DEFAULT 0,
+      created_at          INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+    CREATE INDEX IF NOT EXISTS idx_spy_reports_kingdom ON spy_reports(kingdom_id);
+    CREATE INDEX IF NOT EXISTS idx_spy_reports_target  ON spy_reports(target_id);
+    CREATE INDEX IF NOT EXISTS idx_spy_reports_created ON spy_reports(created_at DESC);
+  `);
+
+  // ── Migrations — safe, idempotent, never crash on duplicate ─────────────────
+  async function addColumn(table, col, def) {
+    try {
+      await _db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${def}`);
+      console.log(`[db] Migration: added ${col} to ${table}`);
+    } catch (e) {
+      if (!e.message.includes('duplicate column') && !e.message.includes('already exists')) throw e;
+    }
+  }
+
+  // Ensure key indexes exist
+  await _db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_kingdoms_player ON kingdoms(player_id);
+    CREATE INDEX IF NOT EXISTS idx_kingdoms_land   ON kingdoms(land DESC);
+    CREATE INDEX IF NOT EXISTS idx_news_created    ON news(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_exp_turns       ON expeditions(turns_left);
+  `);
+
+  const cols = (await _db.all('PRAGMA table_info(kingdoms)')).map(c => c.name);
+  if (!cols.includes('turns_stored'))        await addColumn('kingdoms', 'turns_stored',        'INTEGER NOT NULL DEFAULT 400');
+  if (!cols.includes('alliance_buffs'))      await addColumn('kingdoms', 'alliance_buffs',      "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('goals'))               await addColumn('kingdoms', 'goals',               "TEXT NOT NULL DEFAULT '{}'");
+  
+  const allianceCols = (await _db.all('PRAGMA table_info(alliances)')).map(c => c.name);
+  if (!allianceCols.includes('vault_gold'))  await addColumn('alliances', 'vault_gold', 'INTEGER NOT NULL DEFAULT 0');
+  if (!allianceCols.includes('projects'))    await addColumn('alliances', 'projects', "TEXT NOT NULL DEFAULT '{}'");
+  if (!allianceCols.includes('vault_log'))   await addColumn('alliances', 'vault_log', "TEXT NOT NULL DEFAULT '[]'");
+  if (!cols.includes('research_allocation')) await addColumn('kingdoms', 'research_allocation', "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('build_queue'))         await addColumn('kingdoms', 'build_queue',         "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('build_progress'))      await addColumn('kingdoms', 'build_progress',      "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('research_progress'))   await addColumn('kingdoms', 'research_progress',   "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('build_allocation'))    await addColumn('kingdoms', 'build_allocation',    "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('prestige_level'))      await addColumn('kingdoms', 'prestige_level',      'INTEGER NOT NULL DEFAULT 0');
+  if (!cols.includes('trade_routes'))       await addColumn('kingdoms', 'trade_routes',       'INTEGER NOT NULL DEFAULT 0');
+  if (!cols.includes('tools_hammers'))       await addColumn('kingdoms', 'tools_hammers',       'INTEGER NOT NULL DEFAULT 0');
+  if (!cols.includes('tools_scaffolding'))   await addColumn('kingdoms', 'tools_scaffolding',   'INTEGER NOT NULL DEFAULT 0');
+  if (!cols.includes('tools_blueprints'))    await addColumn('kingdoms', 'tools_blueprints',    'INTEGER NOT NULL DEFAULT 0');
+  if (!cols.includes('scaffolding_stored'))  await addColumn('kingdoms', 'scaffolding_stored',  'INTEGER NOT NULL DEFAULT 0');
+  if (!cols.includes('hammers_stored'))      await addColumn('kingdoms', 'hammers_stored',      'INTEGER NOT NULL DEFAULT 0');
+  if (!cols.includes('xp'))                  await addColumn('kingdoms', 'xp',                  'REAL NOT NULL DEFAULT 0');
+  if (!cols.includes('xp_sources'))          await addColumn('kingdoms', 'xp_sources',          'TEXT NOT NULL DEFAULT \'{"turn":0,"gold":0,"combat_win":0,"combat_loss":0,"research":0,"construction":0,"exploration":0,"spell_cast":0,"covert_op":0}\'');
+  if (!cols.includes('level'))               await addColumn('kingdoms', 'level',               'INTEGER NOT NULL DEFAULT 1');
+  if (!cols.includes('troop_levels'))        await addColumn('kingdoms', 'troop_levels',        "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('training_allocation')) await addColumn('kingdoms', 'training_allocation', "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('weapons_stockpile'))   await addColumn('kingdoms', 'weapons_stockpile',   'INTEGER NOT NULL DEFAULT 0');
+  if (!cols.includes('armor_stockpile'))     await addColumn('kingdoms', 'armor_stockpile',     'INTEGER NOT NULL DEFAULT 0');
+  if (!cols.includes('ladders'))             await addColumn('kingdoms', 'ladders',             'INTEGER NOT NULL DEFAULT 0');
+  if (!cols.includes('description'))         await addColumn('kingdoms', 'description',         'TEXT');
+  if (!cols.includes('collected_lore'))      await addColumn('kingdoms', 'collected_lore',      "TEXT NOT NULL DEFAULT '[]'");
+  if (!cols.includes('last_lore_id'))        await addColumn('kingdoms', 'last_lore_id',        'TEXT');
+  if (!cols.includes('collected_events'))    await addColumn('kingdoms', 'collected_events',    "TEXT NOT NULL DEFAULT '[]'");
+  if (!cols.includes('last_event_id'))       await addColumn('kingdoms', 'last_event_id',       'TEXT');
+  if (!cols.includes('achievements'))        await addColumn('kingdoms', 'achievements',        "TEXT NOT NULL DEFAULT '[]'");
+  if (!cols.includes('active_trade_routes'))   await addColumn('kingdoms', 'active_trade_routes', "TEXT NOT NULL DEFAULT '[]'");
+  if (!cols.includes('milestones_claimed'))  await addColumn('kingdoms', 'milestones_claimed',  "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('milestone_bonuses'))   await addColumn('kingdoms', 'milestone_bonuses',   "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('milestone_title'))     await addColumn('kingdoms', 'milestone_title',     "TEXT NOT NULL DEFAULT ''");
+
+  // Combat v2 - Injury tracking and wall HP
+  if (!cols.includes('injured_troops'))       await addColumn('kingdoms', 'injured_troops',       "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('wall_hp'))              await addColumn('kingdoms', 'wall_hp',              'INTEGER NOT NULL DEFAULT 0');
+  if (!cols.includes('wall_defense_type'))    await addColumn('kingdoms', 'wall_defense_type',    "TEXT NOT NULL DEFAULT ''");
+
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS trade_routes (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      kingdom_id      INTEGER NOT NULL REFERENCES kingdoms(id),
+      partner_id      INTEGER NOT NULL REFERENCES kingdoms(id),
+      distance        INTEGER NOT NULL DEFAULT 0,
+      stability       INTEGER NOT NULL DEFAULT 100,
+      efficiency      REAL    NOT NULL DEFAULT 1.0,
+      last_raid_at    INTEGER DEFAULT 0,
+      created_at      INTEGER NOT NULL DEFAULT (unixepoch())
+    )
+  `);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_trade_routes_k ON trade_routes(kingdom_id)`);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_trade_routes_p ON trade_routes(partner_id)`);
+
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS messages (
+      id                INTEGER PRIMARY KEY AUTOINCREMENT,
+      sender_id         INTEGER NOT NULL REFERENCES players(id),
+      recipient_id      INTEGER NOT NULL REFERENCES players(id),
+      content           TEXT NOT NULL,
+      is_read           INTEGER NOT NULL DEFAULT 0,
+      created_at        INTEGER NOT NULL DEFAULT (unixepoch())
+    )
+  `);
+
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender_id)`);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_messages_recipient ON messages(recipient_id)`);
+
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS bounties (
+      id                INTEGER PRIMARY KEY AUTOINCREMENT,
+      placer_id         INTEGER NOT NULL REFERENCES players(id),
+      target_id         INTEGER NOT NULL REFERENCES kingdoms(id),
+      amount            INTEGER NOT NULL,
+      status            TEXT NOT NULL DEFAULT 'active',
+      claimed_by_id     INTEGER REFERENCES kingdoms(id),
+      created_at        INTEGER NOT NULL DEFAULT (unixepoch())
+    )
+  `);
+
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_bounties_target ON bounties(target_id, status)`);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_bounties_active ON bounties(status, amount DESC)`);
+
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS lore_entries (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL DEFAULT '',
+      content TEXT NOT NULL,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch())
+    )
+  `);
+
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS random_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      content TEXT NOT NULL,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch())
+    )
+  `);
+
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS junk_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      content TEXT NOT NULL,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch())
+    )
+  `);
+
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS tax_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      content TEXT NOT NULL,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch())
+    )
+  `);
+
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS regions (
+      name              TEXT PRIMARY KEY,
+      owner_alliance_id INTEGER REFERENCES alliances(id),
+      contest_alliance_id INTEGER REFERENCES alliances(id),
+      contest_progress  INTEGER NOT NULL DEFAULT 0,
+      bonus_type        TEXT,
+      lore              TEXT,
+      created_at        INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at        INTEGER NOT NULL DEFAULT (unixepoch())
+    )
+  `);
+
+  // Initialize regions if they don't exist
+  const REGION_DATA_LOCAL = [
+    ['The Iron Holds',      'construction'],
+    ['The Silverwood',      'magic'],
+    ['The Bloodplains',     'military'],
+    ['The Underspire',      'stealth'],
+    ['The Heartlands',      'economy'],
+    ['The Ashfang Wilds',   'military']
+  ];
+  for (const [name, bonus] of REGION_DATA_LOCAL) {
+    await _db.run('INSERT OR IGNORE INTO regions (name, bonus_type) VALUES (?, ?)', [name, bonus]);
+  }
+
+  const pCols = (await _db.all('PRAGMA table_info(players)')).map(c => c.name);
+  if (!pCols.includes('is_admin'))   await addColumn('players', 'is_admin',   'INTEGER NOT NULL DEFAULT 0');
+  if (!pCols.includes('is_banned'))  await addColumn('players', 'is_banned',  'INTEGER NOT NULL DEFAULT 0');
+  if (!pCols.includes('ban_reason')) await addColumn('players', 'ban_reason', 'TEXT');
+  if (!pCols.includes('is_ai'))      await addColumn('players', 'is_ai',      'INTEGER NOT NULL DEFAULT 0');
+
+  const nCols = (await _db.all('PRAGMA table_info(news)')).map(c => c.name);
+  if (!nCols.includes('turn_num')) await addColumn('news', 'turn_num', 'INTEGER NOT NULL DEFAULT 0');
+  if (!nCols.includes('combat_log_id')) await addColumn('news', 'combat_log_id', 'INTEGER');
+
+  if (!pCols.includes('is_chat_mod'))  await addColumn('players', 'is_chat_mod',  'INTEGER NOT NULL DEFAULT 0');
+  if (!pCols.includes('chat_banned'))  await addColumn('players', 'chat_banned',  'INTEGER NOT NULL DEFAULT 0');
+  if (!pCols.includes('chat_ban_reason')) await addColumn('players', 'chat_ban_reason', 'TEXT');
+  if (!pCols.includes('chat_color'))  await addColumn('players', 'chat_color',  "TEXT DEFAULT NULL");
+  if (!pCols.includes('chat_name'))   await addColumn('players', 'chat_name',   "TEXT DEFAULT NULL");
+
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS suggestions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      player_id INTEGER,
+      kingdom_id INTEGER,
+      message TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS admin_notes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      author_name TEXT,
+      message TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS wishlist (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      category TEXT,
+      description TEXT,
+      completed INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  
+  const cmCols = (await _db.all('PRAGMA table_info(chat_messages)')).map(c => c.name);
+  if (!cmCols.includes('username')) await addColumn('chat_messages', 'username', 'TEXT NOT NULL DEFAULT \'\'');
+  if (!cmCols.includes('player_id')) await addColumn('chat_messages', 'player_id', 'INTEGER NOT NULL DEFAULT 0');
+  if (!cmCols.includes('deleted'))  await addColumn('chat_messages', 'deleted',  'INTEGER NOT NULL DEFAULT 0');
+
+  if (!cols.includes('region')) {
+    await addColumn('kingdoms', 'region', "TEXT NOT NULL DEFAULT ''");
+    // Backfill existing kingdoms
+    const RACE_REGIONS = {
+      dwarf:'The Iron Holds', high_elf:'The Silverwood', orc:'The Bloodplains',
+      dark_elf:'The Underspire', human:'The Heartlands', dire_wolf:'The Ashfang Wilds',
+    };
+    const existing = await _db.all('SELECT id, race FROM kingdoms');
+    for (const k of existing) {
+      await _db.run('UPDATE kingdoms SET region = ? WHERE id = ?', [RACE_REGIONS[k.race] || 'The Unknown Lands', k.id]);
+    }
+  }
+  if (!cols.includes('smithy_allocation'))          await addColumn('kingdoms', 'smithy_allocation',          "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('hammer_turns_used'))          await addColumn('kingdoms', 'hammer_turns_used',          'INTEGER NOT NULL DEFAULT 0');
+  if (!cols.includes('racial_bonuses_unlocked'))    await addColumn('kingdoms', 'racial_bonuses_unlocked',    "TEXT NOT NULL DEFAULT '{}'");
+
+  // Expeditions — seen flag so completed rows persist until frontend acknowledges
+  const expCols = (await _db.all('PRAGMA table_info(expeditions)')).map(c => c.name);
+  if (!expCols.includes('seen')) {
+    await addColumn('expeditions', 'seen', 'INTEGER NOT NULL DEFAULT 0');
+    // Clean up any old stuck completed rows that predate the seen column
+    await _db.run('DELETE FROM expeditions WHERE turns_left = 0');
+  }
+  if (!expCols.includes('food_taken')) {
+    await addColumn('expeditions', 'food_taken', 'INTEGER NOT NULL DEFAULT 0');
+  }
+
+  // Resource expeditions — food_taken column
+  const resExpCols = (await _db.all('PRAGMA table_info(resource_expeditions)')).map(c => c.name);
+  if (resExpCols.length > 0 && !resExpCols.includes('food_taken')) {
+    await addColumn('resource_expeditions', 'food_taken', 'INTEGER NOT NULL DEFAULT 0');
+  }
+  if (!cols.includes('bld_housing'))             await addColumn('kingdoms', 'bld_housing',             'INTEGER NOT NULL DEFAULT 100');
+  if (!cols.includes('mage_tower_allocation'))   await addColumn('kingdoms', 'mage_tower_allocation',   "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('shrine_allocation'))       await addColumn('kingdoms', 'shrine_allocation',       "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('scribes'))             await addColumn('kingdoms', 'scribes',             'INTEGER NOT NULL DEFAULT 0');
+  if (!cols.includes('bld_libraries'))       await addColumn('kingdoms', 'bld_libraries',       'INTEGER NOT NULL DEFAULT 0');
+  if (!cols.includes('wounded_troops'))      await addColumn('kingdoms', 'wounded_troops',      "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('bld_taverns'))         await addColumn('kingdoms', 'bld_taverns',         'INTEGER NOT NULL DEFAULT 0');
+  if (!cols.includes('bld_granaries'))       await addColumn('kingdoms', 'bld_granaries',       'INTEGER NOT NULL DEFAULT 0');
+  if (!cols.includes('granary_upgrades'))    await addColumn('kingdoms', 'granary_upgrades',    "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('bld_mage_towers'))     await addColumn('kingdoms', 'bld_mage_towers',     'INTEGER NOT NULL DEFAULT 0');
+  if (!cols.includes('world_fragments'))      await addColumn('kingdoms', 'world_fragments',     "TEXT NOT NULL DEFAULT '[]'");
+  if (!cols.includes('hybrid_blueprints'))    await addColumn('kingdoms', 'hybrid_blueprints',   "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('fragment_bonuses'))     await addColumn('kingdoms', 'fragment_bonuses',    "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('fortified_blueprints')) await addColumn('kingdoms', 'fortified_blueprints','INTEGER NOT NULL DEFAULT 0');
+  if (!cols.includes('fortified_buildings'))  await addColumn('kingdoms', 'fortified_buildings', "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('library_allocation'))  await addColumn('kingdoms', 'library_allocation',  "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('library_progress'))    await addColumn('kingdoms', 'library_progress',    "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('tower_progress'))      await addColumn('kingdoms', 'tower_progress',      "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('scrolls'))             await addColumn('kingdoms', 'scrolls',             "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('maps'))                await addColumn('kingdoms', 'maps',                'INTEGER NOT NULL DEFAULT 0');
+  if (!cols.includes('blueprints_stored'))   await addColumn('kingdoms', 'blueprints_stored',   'INTEGER NOT NULL DEFAULT 0');
+  if (!cols.includes('certified_blueprints_stored')) await addColumn('kingdoms', 'certified_blueprints_stored', 'INTEGER NOT NULL DEFAULT 0');
+  if (!cols.includes('active_effects'))      await addColumn('kingdoms', 'active_effects',      "TEXT NOT NULL DEFAULT '{}'");
+
+  if (!cols.includes('bld_walls'))          await addColumn('kingdoms', 'bld_walls',          'INTEGER NOT NULL DEFAULT 0');
+  if (!cols.includes('wall_upgrades'))      await addColumn('kingdoms', 'wall_upgrades',      "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('tower_def_upgrades')) await addColumn('kingdoms', 'tower_def_upgrades', "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('outpost_upgrades'))   await addColumn('kingdoms', 'outpost_upgrades',   "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('defense_upgrades'))   await addColumn('kingdoms', 'defense_upgrades',   "TEXT NOT NULL DEFAULT '{}'");
+
+  // Legacy data migration: if defence_upgrades exists but defense_upgrades is empty, copy it
+  if (cols.includes('defence_upgrades') && cols.includes('defense_upgrades')) {
+    await _db.run(`UPDATE kingdoms SET defense_upgrades = defence_upgrades WHERE defense_upgrades = '{}' AND defence_upgrades != '{}'`);
+  }
+  if (!cols.includes('tower_upgrades'))    await addColumn('kingdoms', 'tower_upgrades',    "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('school_upgrades'))   await addColumn('kingdoms', 'school_upgrades',   "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('shrine_upgrades'))   await addColumn('kingdoms', 'shrine_upgrades',   "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('library_upgrades'))  await addColumn('kingdoms', 'library_upgrades',  "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('research_focus'))    await addColumn('kingdoms', 'research_focus',     "TEXT NOT NULL DEFAULT '[]'");
+  if (!cols.includes('divine_sanctuary_used')) await addColumn('kingdoms', 'divine_sanctuary_used', 'INTEGER NOT NULL DEFAULT 0');
+  if (!cols.includes('farm_upgrades'))       await addColumn('kingdoms', 'farm_upgrades',       "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('market_upgrades'))     await addColumn('kingdoms', 'market_upgrades',     "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('tavern_upgrades'))     await addColumn('kingdoms', 'tavern_upgrades',     "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('bank_upgrades'))       await addColumn('kingdoms', 'bank_upgrades',       "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('bank_deposits'))       await addColumn('kingdoms', 'bank_deposits',       "TEXT NOT NULL DEFAULT '[]'");
+  if (!cols.includes('ledger'))              await addColumn('kingdoms', 'ledger',              "TEXT NOT NULL DEFAULT '[]'");
+  if (!cols.includes('bld_mausoleums'))      await addColumn('kingdoms', 'bld_mausoleums',      'INTEGER NOT NULL DEFAULT 0');
+  if (!cols.includes('thralls'))             await addColumn('kingdoms', 'thralls',             'INTEGER NOT NULL DEFAULT 0');
+  if (!cols.includes('mausoleum_upgrades'))   await addColumn('kingdoms', 'mausoleum_upgrades',   "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('mausoleum_allocation')) await addColumn('kingdoms', 'mausoleum_allocation', "TEXT NOT NULL DEFAULT '{}'");
+
+  // Data migration: tools_* -> *_stored
+  if (cols.includes('tools_scaffolding') && cols.includes('scaffolding_stored')) {
+    await _db.run("UPDATE kingdoms SET scaffolding_stored = tools_scaffolding WHERE scaffolding_stored = 0 AND tools_scaffolding > 0");
+  }
+  if (cols.includes('tools_hammers') && cols.includes('hammers_stored')) {
+    await _db.run("UPDATE kingdoms SET hammers_stored = tools_hammers WHERE hammers_stored = 0 AND tools_hammers > 0");
+  }
+
+  if (!cols.includes('food_shortage_turns')) await addColumn('kingdoms', 'food_shortage_turns', 'INTEGER NOT NULL DEFAULT 0');
+  if (!cols.includes('food_surplus_turns'))  await addColumn('kingdoms', 'food_surplus_turns',  'INTEGER NOT NULL DEFAULT 0');
+  if (!cols.includes('mercenaries'))         await addColumn('kingdoms', 'mercenaries',         "TEXT NOT NULL DEFAULT '[]'");
+
+  // Trade offers table
+  await _db.exec(`
+    CREATE TABLE IF NOT EXISTS trade_offers (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      sender_id     INTEGER NOT NULL REFERENCES kingdoms(id),
+      sender_name   TEXT    NOT NULL,
+      receiver_id   INTEGER NOT NULL REFERENCES kingdoms(id),
+      receiver_name TEXT    NOT NULL,
+      offer         TEXT    NOT NULL,
+      request       TEXT    NOT NULL,
+      status        TEXT    NOT NULL DEFAULT 'pending',
+      created_at    INTEGER NOT NULL DEFAULT (unixepoch()),
+      expires_at    INTEGER NOT NULL DEFAULT (unixepoch() + 3600)
+    );
+    CREATE INDEX IF NOT EXISTS idx_trade_offers_receiver ON trade_offers(receiver_id, status);
+    CREATE INDEX IF NOT EXISTS idx_trade_offers_sender   ON trade_offers(sender_id, status);
+  `);
+
+  // Mercenaries table
+  await _db.exec(`
+    CREATE TABLE IF NOT EXISTS mercenaries (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      kingdom_id      INTEGER NOT NULL REFERENCES kingdoms(id),
+      unit_type       TEXT    NOT NULL,
+      level           INTEGER NOT NULL,
+      count           INTEGER NOT NULL,
+      tier            TEXT    NOT NULL,
+      hired_at_turn   INTEGER NOT NULL DEFAULT 0,
+      duration_turns  INTEGER NOT NULL DEFAULT 20,
+      upkeep_per_turn INTEGER NOT NULL DEFAULT 0,
+      created_at      INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+    CREATE INDEX IF NOT EXISTS idx_mercs_kingdom ON mercenaries(kingdom_id);
+  `);
+
+  // Market Prices table
+  await _db.exec(`
+    CREATE TABLE IF NOT EXISTS market_prices (
+      id            TEXT PRIMARY KEY,
+      current_price REAL NOT NULL,
+      base_price    REAL NOT NULL,
+      updated_at    DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  // Seed default market prices
+  const defaultPrices = [
+    ['food',    0.5, 0.5],
+    ['wood',    1.0, 1.0],
+    ['stone',   2.0, 2.0],
+    ['iron',    4.0, 4.0],
+    ['coal',    3.0, 3.0],
+    ['steel',   8.0, 8.0],
+    ['mana',    2.0, 2.0],
+    ['weapons', 5.0, 5.0],
+    ['armor',   10.0, 10.0],
+    ['war_machines', 500.0, 500.0],
+    ['land',    2000.0, 2000.0]
+  ];
+  for (const [id, current, base] of defaultPrices) {
+    await _db.run('INSERT OR IGNORE INTO market_prices (id, current_price, base_price) VALUES (?, ?, ?)', [id, current, base]);
+  }
+
+  await _db.exec(`
+    CREATE TABLE IF NOT EXISTS war_log (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      action_type     TEXT    NOT NULL,
+      attacker_id     INTEGER REFERENCES kingdoms(id),
+      attacker_name   TEXT,
+      defender_id     INTEGER REFERENCES kingdoms(id),
+      defender_name   TEXT,
+      outcome         TEXT    NOT NULL,
+      detail          TEXT,
+      obscured        INTEGER NOT NULL DEFAULT 0,
+      created_at      INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+    CREATE INDEX IF NOT EXISTS idx_war_log_time ON war_log(created_at DESC);
+  `);
+
+  // ── Season & events migrations ────────────────────────────────────────────────
+  if (!cols.includes('last_event_at'))         await addColumn('kingdoms', 'last_event_at',         'INTEGER NOT NULL DEFAULT 0');
+  if (!cols.includes('active_event'))          await addColumn('kingdoms', 'active_event',          "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('discovered_kingdoms'))   await addColumn('kingdoms', 'discovered_kingdoms',   "TEXT NOT NULL DEFAULT '{}'");
+  if (!cols.includes('location_maps_wip'))     await addColumn('kingdoms', 'location_maps_wip',     "TEXT NOT NULL DEFAULT '[]'");
+  
+  // Market Prices table procedural check
+  await _db.exec(`
+    CREATE TABLE IF NOT EXISTS market_prices (
+      id            TEXT PRIMARY KEY,
+      current_price REAL NOT NULL,
+      base_price    REAL NOT NULL,
+      updated_at    DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+  const freshDefaultPrices = [
+    ['food',    0.5, 0.5],
+    ['wood',    1.0, 1.0],
+    ['stone',   2.0, 2.0],
+    ['iron',    4.0, 4.0],
+    ['coal',    3.0, 3.0],
+    ['steel',   8.0, 8.0],
+    ['mana',    2.0, 2.0],
+    ['weapons', 5.0, 5.0],
+    ['armor',   10.0, 10.0],
+    ['war_machines', 500.0, 500.0],
+    ['land',    2000.0, 2000.0]
+  ];
+  for (const [id, current, base] of freshDefaultPrices) {
+    await _db.run('INSERT OR IGNORE INTO market_prices (id, current_price, base_price) VALUES (?, ?, ?)', [id, current, base]);
+  }
+
+  // Events table
+  await _db.exec(`
+    CREATE TABLE IF NOT EXISTS events (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      key         TEXT    NOT NULL UNIQUE,
+      name        TEXT    NOT NULL,
+      description TEXT    NOT NULL,
+      season      TEXT    NOT NULL DEFAULT 'all',
+      effect_type TEXT    NOT NULL DEFAULT 'morale',
+      effect_value REAL   NOT NULL DEFAULT 5,
+      effect_duration INTEGER NOT NULL DEFAULT 1,
+      race_only   TEXT    DEFAULT NULL,
+      is_positive INTEGER NOT NULL DEFAULT 1,
+      is_active   INTEGER NOT NULL DEFAULT 1,
+      created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+  `);
+
+  // Event log table
+  await _db.exec(`
+    CREATE TABLE IF NOT EXISTS event_log (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      kingdom_id  INTEGER NOT NULL REFERENCES kingdoms(id),
+      kingdom_name TEXT   NOT NULL,
+      event_key   TEXT    NOT NULL,
+      event_name  TEXT    NOT NULL,
+      season      TEXT    NOT NULL,
+      fired_at    INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+    CREATE INDEX IF NOT EXISTS idx_event_log_fired ON event_log(fired_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_event_log_kingdom ON event_log(kingdom_id);
+  `);
+
+  // Seed season state
+  await _db.run(`INSERT OR IGNORE INTO server_state (key, value) VALUES ('current_season', 'spring')`);
+  await _db.run(`INSERT OR IGNORE INTO server_state (key, value) VALUES ('season_started_at', CAST(unixepoch() AS TEXT))`);
+
+  // Seed default events
+  const defaultEvents = [
+    // Spring
+    ['spring_bloom',      'Spring Bloom',         'Warm rains encourage growth.',                  'spring', 'farm_yield', 0.10, 5, null, 1],
+    ['spring_floods',     'Spring Floods',         'Rising rivers damage farmland.',                'spring', 'morale',   -5,   3, null, 0],
+    ['pollination_boom',  'Pollination Boom',      'A great flowering swells the population.',      'spring', 'population', 500, 1, null, 1],
+    ['warm_winds',        'Warm Winds',            'A pleasant breeze lifts spirits.',              'spring', 'morale',    5,   1, null, 1],
+    // Summer
+    ['abundant_harvest',  'Abundant Harvest',      'Exceptional sun yields record crops.',          'summer', 'food',      0.15, 1, null, 1],
+    ['heat_wave',         'Heat Wave',             'Scorching heat wilts crops and morale.',        'summer', 'farm_yield',-0.10,3, null, 0],
+    ['travelling_merch',  'Travelling Merchants',  'Exotic goods boost market income.',             'summer', 'gold',      0.02, 3, null, 1],
+    ['border_skirmish',   'Border Skirmish',       'Bandits raid your outlying farms.',             'summer', 'food',     -0.05,1, null, 0],
+    // Fall
+    ['harvest_festival',  'Harvest Festival',      'The kingdom celebrates a bountiful autumn.',    'fall',   'morale',    10,  1, null, 1],
+    ['early_frost',       'Early Frost',           'An unexpected frost kills late crops.',         'fall',   'farm_yield',-0.15,2, null, 0],
+    ['trade_boom',        'Trade Boom',            'Merchants flock to your markets.',              'fall',   'gold',      0.05, 3, null, 1],
+    ['rat_infestation',   'Rat Infestation',       'Vermin consume stored food.',                   'fall',   'food',     -0.10,1, null, 0],
+    // Winter
+    ['blizzard',          'Blizzard',              'A fierce storm cripples farms and morale.',     'winter', 'farm_yield',-0.20,2, null, 0],
+    ['refugees',          'Refugees Arrive',       'Displaced families seek shelter.',              'winter', 'population', 1000,1, null, 1],
+    ['winter_plague',     'Winter Plague',         'Disease spreads through the cold months.',      'winter', 'population',-0.02,1, null, 0],
+    ['wolf_raids',        'Wolf Raids',            'Dire wolves raid border farms.',                'winter', 'food',     -0.08,1, null, 0],
+    // Race-specific
+    ['ice_trade',         'Ice Trade',             'Dwarven merchants profit from winter routes.',  'winter', 'gold',      0.05, 2, 'dwarf',    1],
+    ['dire_wolf_hunt',    'Great Hunt',            'Dire Wolf hunters return laden with prey.',     'fall',   'food',      0.20, 1, 'dire_wolf', 1],
+    ['elven_bloom',       'Elven Bloom',           'High Elf mages channel spring energy.',        'spring', 'mana',      0.15, 3, 'high_elf', 1],
+    ['dark_elf_shadow',   'Shadow Markets',        'Dark Elf smugglers exploit the long nights.',  'winter', 'gold',      0.08, 2, 'dark_elf', 1],
+    ['orc_rampage',       'Orc Rampage',           'Summer heat fuels Orcish aggression.',         'summer', 'military',  0.10, 2, 'orc',      1],
+  ];
+  for (const [key,name,description,season,effect_type,effect_value,effect_duration,race_only,is_positive] of defaultEvents) {
+    await _db.run(`INSERT OR IGNORE INTO events (key,name,description,season,effect_type,effect_value,effect_duration,race_only,is_positive) VALUES (?,?,?,?,?,?,?,?,?)`,
+      [key,name,description,season,effect_type,effect_value,effect_duration,race_only,is_positive]);
+  }
+
+  const hasEvents = await _db.get("SELECT 1 FROM random_events LIMIT 1");
+  if (!hasEvents) {
+    const defaultRandomEvents = [
+      'a suspiciously damp sock',
+      'a map to a location that no longer exists',
+      'a very confident fortune cookie with no fortune inside',
+      'a half-eaten ration bar of unknown vintage',
+      'a decorative rock (it does nothing)',
+      'a pamphlet titled "10 Reasons Orcs Are Actually Quite Misunderstood"',
+      'a jar of mysterious grey paste (do not eat)',
+      'a slightly bent sword that the previous owner called "Destiny"',
+      'a tiny flag from a kingdom that fell 300 years ago',
+      'a love letter addressed to someone named Grimbold',
+      'a collection of 47 different types of dirt',
+      'a boot (just the one)',
+      'a certificate of participation from the Third Annual Swamp Festival',
+      'a wheel of cheese that has achieved sentience (probably)',
+      'a bag of magic beans that are, on closer inspection, just beans',
+      'a very thorough guide to knitting (no one in your kingdom knows how to read)',
+      'a suspicious smell that follows rangers home',
+      'a crystal ball showing only static',
+      'an extremely detailed painting of a cloud',
+      'a dwarf\'s shopping list (mostly cheese)',
+      'a torch that only works in daylight',
+      'a book called "How To Stop Being Poor" — all pages blank',
+      'a rusty key to an unknown lock',
+      'a proclamation declaring your kingdom "pretty good, probably"',
+      'a coupon for 10% off at an inn that burned down decades ago',
+    ];
+    for (const e of defaultRandomEvents) {
+      await _db.run("INSERT INTO random_events (content) VALUES (?)", [e]);
+    }
+  }
+
+  const hasTaxEvents = await _db.get("SELECT 1 FROM tax_events LIMIT 1");
+  if (!hasTaxEvents) {
+    const defaultTaxEvents = [
+      'Citizens held a spontaneous parade in your honor. +Morale!',
+      'A grateful merchant left a small chest of exotic spices at the keep.',
+      'Happy farmers brought in an unexpected surplus harvest this turn.',
+      'The local bard wrote a popular song praising your generosity.',
+      'A wealthy citizen made a voluntary donation to the treasury.',
+      'Children are playing in the streets, pretending to be you. It is adorable.',
+      'A baker sent a massive, intricately decorated cake to the castle.',
+      'Local craftsmen repaired the city gates for free out of gratitude.',
+      'A passing trade caravan heard of your fairness and gave a discount on goods.',
+      'A minor skirmish in the market was broken up peacefully by happy citizens.',
+      'The militia actually showed up to training with a smile today.',
+      'A rare flower bloomed in the plaza, which the locals view as a blessing on your reign.',
+      'Citizens volunteered to clean the slums, improving public health.',
+      'A traveling scholar decided to settle here, impressed by the high morale.',
+      'Toasted effigies of rival lords were burned in a joyful festival.',
+      'Someone anonymously paid off the debts of several poor families.',
+      'A mysterious benefactor repaired the old bell tower.',
+      'A group of rangers brought back extra pelts as a gift for the crown.',
+      'The town square is bustling with cheerful traders and artisans.',
+      'The tavern is giving out free ale in your name tonight!',
+      'You found a small bag of gold coins left on the throne as a tribute.',
+      'A guild of artisans crafted a new banner for your kingdom.',
+      'The local clergy reported unusually high attendance and high spirits.',
+      'A flock of doves settled on the castle walls, seen as a good omen.',
+      'The citizens built a small, slightly crooked statue of you in the park.'
+    ];
+    for (const e of defaultTaxEvents) {
+      await _db.run("INSERT INTO tax_events (content) VALUES (?)", [e]);
+    }
+  }
+
+  const loreColsRes = await _db.all("PRAGMA table_info(lore_entries)");
+  const loreCols = loreColsRes.map(c => c.name);
+  if (!loreCols.includes('title')) await addColumn('lore_entries', 'title', "TEXT NOT NULL DEFAULT ''");
+  if (!loreCols.includes('category')) await addColumn('lore_entries', 'category', "TEXT NOT NULL DEFAULT 'general'");
+  if (!loreCols.includes('key_id')) await addColumn('lore_entries', 'key_id', "TEXT NOT NULL DEFAULT ''");
+
+  const oldLore = await _db.get("SELECT 1 FROM lore_entries WHERE category IS NULL OR category = 'general' LIMIT 1");
+  if (oldLore) {
+    await _db.run("DELETE FROM lore_entries"); // We will wipe and seed from the full game/lore.js
+  }
+
+  const hasLore = await _db.get("SELECT 1 FROM lore_entries LIMIT 1");
+  if (!hasLore) {
+    const LORE_SEED = require('../game/lore');
+    for (const cat of Object.keys(LORE_SEED)) {
+      for (const item of LORE_SEED[cat]) {
+        await _db.run("INSERT INTO lore_entries (key_id, category, title, content) VALUES (?, ?, ?, ?)", [item.id, cat, item.title, item.msg]);
+      }
+    }
+  }
+
+  const hasWishlist = await _db.get("SELECT 1 FROM wishlist LIMIT 1");
+  if (!hasWishlist) {
+    const defaultWishlist = [
+      { category: 'Gameplay', desc: 'Spell casting target history — remember last target per spell' },
+      { category: 'Gameplay', desc: 'Diplomacy — formal non-aggression pacts and tribute' },
+      { category: 'Gameplay', desc: 'Resource loans — player-run debt and interest mechanics' },
+      { category: 'Combat', desc: 'Alliance war — alliances can declare war on each other' },
+      { category: 'Combat', desc: 'Artifact hunting — high-risk expeditions for unique items' },
+      { category: 'Combat', desc: 'Naval combat — build ships to contest ocean territories' },
+      { category: 'Economy', desc: 'Auction house — bid on unique gear and captured heroes' },
+      { category: 'Economy', desc: 'Prestige economy — prestige kingdoms get permanent market bonuses' },
+      { category: 'World', desc: 'More races — Gnome (inventor), Troll (regenerating), Halfling (stealth)' },
+      { category: 'World', desc: 'Dungeons & Raids — PvE multi-kingdom boss battles' },
+      { category: 'World', desc: 'Resource biomes — specific lands granting unique materials' },
+      { category: 'Polish & Management', desc: 'Custom kingdom banner/sigil generator' },
+      { category: 'Polish & Management', desc: 'Full iOS / Android PWA wrapping' },
+      { category: 'Polish & Management', desc: 'Dark/light/high-contrast theme toggles' },
+      { category: 'Polish & Management', desc: 'Email/Push notifications — optional alerts for attacks, expedition return' },
+      { category: 'Polish & Management', desc: 'Step-by-step interactive new player tutorial' },
+      { category: 'Economy', desc: 'Caravans — physical trade routes that can be ambushed' },
+      { category: 'Combat', desc: 'Generals — train commanding officers that boost army morale during battles' },
+      { category: 'World', desc: 'Weather Systems — dynamic weather impacting crop yields and battle visibility' },
+      { category: 'Gameplay', desc: 'Espionage Network — permanent passive intel gathering on nearby kingdoms' },
+      { category: 'Combat', desc: 'Mercenary Guilds — hire specialized factions with unique unit types' },
+      { category: 'Polish & Management', desc: 'Global Market History — graphs showing price fluctuations over time' },
+      { category: 'World', desc: 'Dynamic World Events — comets, earthquakes, eclipses that provide global modifiers' },
+      { category: 'Gameplay', desc: 'Religion/Pantheon — worship different gods for diverse domain bonuses' },
+      { category: 'Combat', desc: 'Terrain Advantages — defending in mountains, forests, or plains affects combat stats' },
+      { category: 'Gameplay', desc: 'Laws & Edicts — enact kingdom-wide policies with pros and cons' },
+      { category: 'Economy', desc: 'Smuggling Rings — illegal market trades that bypass taxes' },
+      { category: 'World', desc: 'Wandering Beasts — powerful monsters that attack random kingdoms until defeated' },
+      { category: 'Polish & Management', desc: 'Customizable Palace UI — visually upgrade the player dashboard as level increases' },
+      { category: 'Gameplay', desc: 'Prisoners of War — ransom captured enemy troops for gold or execute for morale' },
+      { category: 'Combat', desc: 'Naval Trade Routes — ocean routes for faster gold generation but higher risk' }
+    ];
+    for (const w of defaultWishlist) {
+      await _db.run("INSERT INTO wishlist (category, description) VALUES (?, ?)", [w.category, w.desc]);
+    }
+  }
+
+  // Seed default server_state row for regen tracking
+  await _db.run(`
+    INSERT OR IGNORE INTO server_state (key, value)
+    VALUES ('last_regen_at', CAST(unixepoch() AS TEXT))
+  `);
+
+  try {
+    await _db.run("UPDATE players SET is_admin = 1 WHERE username = 'Stieny'");
+    console.log("[db] Promoted Stieny to admin automatically");
+  } catch {
+    // Ignore error
+  }
+
+  // ── Resource Gathering System Migrations ─────────────────────────────────────
+  // Re-read cols since earlier migrations may have added columns
+  const cols2 = (await _db.all('PRAGMA table_info(kingdoms)')).map(c => c.name);
+
+  // Resource stockpile columns
+  if (!cols2.includes('wood'))               await addColumn('kingdoms', 'wood',               'INTEGER NOT NULL DEFAULT 0');
+  if (!cols2.includes('stone'))              await addColumn('kingdoms', 'stone',              'INTEGER NOT NULL DEFAULT 0');
+  if (!cols2.includes('iron'))               await addColumn('kingdoms', 'iron',               'INTEGER NOT NULL DEFAULT 0');
+  if (!cols2.includes('coal'))               await addColumn('kingdoms', 'coal',               'INTEGER NOT NULL DEFAULT 0');
+  if (!cols2.includes('steel'))              await addColumn('kingdoms', 'steel',              'INTEGER NOT NULL DEFAULT 0');
+
+  // Wood buildings
+  if (!cols2.includes('bld_woodyard'))       await addColumn('kingdoms', 'bld_woodyard',       'INTEGER NOT NULL DEFAULT 0');
+  if (!cols2.includes('bld_lumber_camp'))    await addColumn('kingdoms', 'bld_lumber_camp',    'INTEGER NOT NULL DEFAULT 0');
+  if (!cols2.includes('bld_sawmill'))        await addColumn('kingdoms', 'bld_sawmill',        'INTEGER NOT NULL DEFAULT 0');
+
+  // Stone buildings
+  if (!cols2.includes('bld_gravel_pit'))     await addColumn('kingdoms', 'bld_gravel_pit',     'INTEGER NOT NULL DEFAULT 0');
+  if (!cols2.includes('bld_blockfield'))     await addColumn('kingdoms', 'bld_blockfield',     'INTEGER NOT NULL DEFAULT 0');
+  if (!cols2.includes('bld_stone_quarry'))   await addColumn('kingdoms', 'bld_stone_quarry',   'INTEGER NOT NULL DEFAULT 0');
+
+  // Iron buildings
+  if (!cols2.includes('bld_open_pit'))       await addColumn('kingdoms', 'bld_open_pit',       'INTEGER NOT NULL DEFAULT 0');
+  if (!cols2.includes('bld_strip_mine'))     await addColumn('kingdoms', 'bld_strip_mine',     'INTEGER NOT NULL DEFAULT 0');
+  if (!cols2.includes('bld_deep_mine'))      await addColumn('kingdoms', 'bld_deep_mine',      'INTEGER NOT NULL DEFAULT 0');
+
+  // Items inventory (JSON array)
+  if (!cols2.includes('items'))              await addColumn('kingdoms', 'items',              "TEXT NOT NULL DEFAULT '[]'");
+
+  // Resource sequence (bracket lock tracking)
+  if (!cols2.includes('resource_sequence'))  await addColumn('kingdoms', 'resource_sequence',  "TEXT NOT NULL DEFAULT '{}'");
+
+  // Resource nodes table
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS resource_nodes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      kingdom_id INTEGER NOT NULL REFERENCES kingdoms(id),
+      name TEXT NOT NULL,
+      type TEXT NOT NULL,
+      distance INTEGER NOT NULL,
+      richness INTEGER NOT NULL,
+      discovered_at INTEGER NOT NULL DEFAULT (unixepoch())
+    )
+  `);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_resource_nodes_kingdom ON resource_nodes(kingdom_id)`);
+
+  // Resource expeditions table
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS resource_expeditions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      kingdom_id INTEGER NOT NULL REFERENCES kingdoms(id),
+      node_id INTEGER NOT NULL REFERENCES resource_nodes(id),
+      population_sent INTEGER NOT NULL,
+      depart_at INTEGER NOT NULL,
+      arrive_at INTEGER NOT NULL,
+      harvest_ends_at INTEGER,
+      return_at INTEGER,
+      status TEXT NOT NULL DEFAULT 'outbound',
+      loot TEXT NOT NULL DEFAULT '{}'
+    )
+  `);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_res_expeditions_kingdom ON resource_expeditions(kingdom_id, status)`);
+
+  return _db;
+}
+
+let _kingdomCols = null;
+
+async function getKingdomCols() {
+  if (!_kingdomCols) {
+    const rows = await _db.all("PRAGMA table_info(kingdoms)");
+    _kingdomCols = new Set(rows.map(r => r.name));
+  }
+  return _kingdomCols;
+}
+
+async function applyKingdomUpdates(kingdomId, updates) {
+  if (!updates || Object.keys(updates).length === 0) return [];
+  const validCols = await getKingdomCols();
+  const safe = Object.fromEntries(
+    Object.entries(updates).filter(([col, val]) => validCols.has(col) && val !== undefined && val !== null)
+  );
+  if (Object.keys(safe).length === 0) return [];
+  const cols = Object.keys(safe).map(k => `${k} = ?`).join(', ');
+  const vals = [...Object.values(safe), kingdomId];
+  await _db.run(`UPDATE kingdoms SET ${cols} WHERE id = ?`, vals);
+  return Object.keys(safe);
+}
+
+module.exports = { initDb, applyKingdomUpdates };

@@ -1,0 +1,982 @@
+const express = require("express");
+const { requireAdmin } = require("./middleware");
+const router = express.Router();
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+
+const soundsPath = path.join(__dirname, "..", "public", "sounds");
+if (!fs.existsSync(soundsPath)) {
+  fs.mkdirSync(soundsPath, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, soundsPath);
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.originalname);
+  },
+});
+const upload = multer({ storage: storage });
+
+module.exports = function (db, io) {
+  // All admin routes require admin JWT
+  router.use(requireAdmin);
+
+  // GET /api/admin/kingdoms — all kingdoms with player info
+  router.get("/kingdoms", async (_req, res) => {
+    const rows = await db.all(`
+      SELECT k.id, k.name, k.race, k.land, k.gold, k.turn, k.turns_stored,
+             k.fighters, k.mages, k.created_at,
+             p.username, p.is_banned, p.ban_reason, p.is_admin, p.id AS player_id
+      FROM kingdoms k JOIN players p ON k.player_id = p.id
+      ORDER BY k.land DESC
+    `);
+    res.json(rows);
+  });
+
+  // GET /api/admin/stats — server overview
+  router.get("/stats", async (_req, res) => {
+    const playerCount = await db.get("SELECT COUNT(*) as c FROM players");
+    const kingdomCount = await db.get("SELECT COUNT(*) as c FROM kingdoms");
+    const bannedCount = await db.get(
+      "SELECT COUNT(*) as c FROM players WHERE is_banned = 1",
+    );
+    const combatCount = await db.get("SELECT COUNT(*) as c FROM combat_log");
+    const chatCount = await db.get("SELECT COUNT(*) as c FROM chat_messages");
+    const lastRegen = await db.get(
+      "SELECT value FROM server_state WHERE key = 'last_regen_at'",
+    );
+    res.json({
+      players: playerCount.c,
+      kingdoms: kingdomCount.c,
+      banned: bannedCount.c,
+      combats: combatCount.c,
+      messages: chatCount.c,
+      lastRegen: lastRegen ? Number(lastRegen.value) : null,
+    });
+  });
+
+  // POST /api/admin/ban — ban a player
+  router.post("/ban", async (req, res) => {
+    const { playerId, reason } = req.body;
+    if (!playerId) return res.status(400).json({ error: "playerId required" });
+    await db.run(
+      "UPDATE players SET is_banned = 1, ban_reason = ? WHERE id = ?",
+      [reason || "Banned by admin", playerId],
+    );
+    res.json({ ok: true });
+  });
+
+  // POST /api/admin/unban — unban a player
+  router.post("/unban", async (req, res) => {
+    const { playerId } = req.body;
+    if (!playerId) return res.status(400).json({ error: "playerId required" });
+    await db.run(
+      "UPDATE players SET is_banned = 0, ban_reason = NULL WHERE id = ?",
+      [playerId],
+    );
+    res.json({ ok: true });
+  });
+
+  // POST /api/admin/reset-turns — reset a kingdom's turns to 400
+  router.post("/reset-turns", async (req, res) => {
+    const { kingdomId } = req.body;
+    if (!kingdomId)
+      return res.status(400).json({ error: "kingdomId required" });
+    await db.run("UPDATE kingdoms SET turns_stored = 400 WHERE id = ?", [
+      kingdomId,
+    ]);
+    res.json({ ok: true });
+  });
+
+  // POST /api/admin/reset-turns-all — give all kingdoms full turns
+  router.post("/reset-turns-all", async (_req, res) => {
+    await db.run("UPDATE kingdoms SET turns_stored = 400");
+    res.json({ ok: true });
+  });
+
+  const resetKingdomLogic = async (db, kingdomId, race) => {
+    const buildings = {
+      bld_farms: 10,
+      bld_schools: 1,
+      bld_barracks: 1,
+      bld_armories: 1,
+      bld_housing: 100,
+      bld_markets: 0,
+      bld_smithies: 0,
+      bld_mage_towers: 0,
+      bld_shrines: 0,
+      bld_outposts: 0,
+      bld_training: 0,
+    };
+    let fighters = 0,
+      rangers = 50,
+      food = 5000;
+
+    if (race === "human") buildings.bld_markets = 1;
+    if (race === "dwarf") buildings.bld_smithies = 1;
+    if (race === "high_elf") buildings.bld_mage_towers = 1;
+    if (race === "dark_elf") buildings.bld_shrines = 1;
+    if (race === "orc") buildings.bld_training = 1;
+    if (race === "dire_wolf") {
+      buildings.bld_barracks = 2; // Extra barracks for wolf
+      fighters = 100;
+      rangers = 100;
+    }
+
+    await db.run(
+      `UPDATE kingdoms SET
+      gold = 10000, mana = 0, land = 504, population = 50000, food = ?, morale = 100,
+      turn = 0, turns_stored = 400,
+      fighters = ?, rangers = ?, clerics = 0, mages = 0, thieves = 0, ninjas = 0,
+      researchers = 100, engineers = 100, scribes = 0,
+      war_machines = 0, weapons_stockpile = 0, armor_stockpile = 0,
+      bld_farms = ?, bld_barracks = ?, bld_outposts = ?, bld_guard_towers = 0,
+      bld_schools = ?, bld_armories = ?, bld_vaults = 0, bld_smithies = ?,
+      bld_markets = ?, bld_mage_towers = ?, bld_training = ?,
+      bld_castles = 0, bld_shrines = ?, bld_libraries = 0, bld_taverns = 0, bld_housing = ?,
+      bld_walls = 0, bld_granaries = 0, bld_mausoleums = 0,
+      res_economy = 100, res_weapons = 100, res_armor = 100, res_military = 100,
+      res_attack_magic = 100, res_defense_magic = 100, res_entertainment = 100,
+      res_construction = 100, res_war_machines = 100, res_spellbook = 0,
+      xp = 0, level = 1, xp_sources = '{}', troop_levels = '{}',
+      research_allocation = '{}', build_allocation = '{}', build_queue = '{}',
+      mage_tower_allocation = '{}', shrine_allocation = '{}', library_allocation = '{}',
+      library_progress = '{}', tower_progress = '{}', scrolls = '{}', active_effects = '{}',
+      world_fragments = '[]', collected_lore = '[]', collected_events = '[]',
+      achievements = '[]', fortified_blueprints = '{}', fortified_buildings = '{}',
+      hybrid_blueprints = '{}', maps = 0, blueprints_stored = 0,
+      scaffolding_stored = 0, hammers_stored = 0,
+      certified_blueprints_stored = 0, prestige_level = 0,
+      thralls = 0, last_event_at = 0, active_event = '{}',
+      discovered_kingdoms = '{}', location_maps_wip = '[]',
+      farm_upgrades = '{}', market_upgrades = '{}', tavern_upgrades = '{}',
+      tower_upgrades = '{}', school_upgrades = '{}', shrine_upgrades = '{}', library_upgrades = '{}',
+      wall_upgrades = '{}', tower_def_upgrades = '{}', outpost_upgrades = '{}',
+      defense_upgrades = '{}', granary_upgrades = '{}', mausoleum_upgrades = '{}',
+      food_shortage_turns = 0, food_surplus_turns = 0, mercenaries = '[]',
+      wood = 0, stone = 0, iron = 0, coal = 0, steel = 0,
+      bld_woodyard = 0, bld_lumber_camp = 0, bld_sawmill = 0,
+      bld_gravel_pit = 0, bld_blockfield = 0, bld_stone_quarry = 0,
+      bld_open_pit = 0, bld_strip_mine = 0, bld_deep_mine = 0,
+      resource_sequence = '{}', ladders = 0, trade_routes = 0, active_trade_routes = '[]',
+      milestones_claimed = '[]', milestone_bonuses = '{}', milestone_title = ''
+      WHERE id = ?`,
+      [
+        food,
+        fighters,
+        rangers,
+        buildings.bld_farms,
+        buildings.bld_barracks,
+        buildings.bld_outposts,
+        buildings.bld_schools,
+        buildings.bld_armories,
+        buildings.bld_smithies,
+        buildings.bld_markets,
+        buildings.bld_mage_towers,
+        buildings.bld_training,
+        buildings.bld_shrines,
+        buildings.bld_housing,
+        kingdomId,
+      ],
+    );
+
+    // Clear all related tables and data
+    await db.run("DELETE FROM expeditions WHERE kingdom_id = ?", [kingdomId]);
+    await db.run("DELETE FROM news WHERE kingdom_id = ?", [kingdomId]);
+    await db.run(
+      "DELETE FROM war_log WHERE attacker_id = ? OR defender_id = ?",
+      [kingdomId, kingdomId],
+    );
+    await db.run("DELETE FROM heroes WHERE kingdom_id = ?", [kingdomId]);
+    await db.run("DELETE FROM trade_routes WHERE kingdom_id = ? OR partner_id = ?", [kingdomId, kingdomId]);
+    await db.run("DELETE FROM bounties WHERE target_id = ?", [kingdomId]);
+    await db.run("DELETE FROM spy_reports WHERE kingdom_id = ? OR target_id = ?", [kingdomId, kingdomId]);
+  };
+
+  // POST /api/admin/reset-kingdom — wipe a single kingdom back to starting stats
+  router.post("/reset-kingdom", async (req, res) => {
+    const { kingdomId } = req.body;
+    if (!kingdomId)
+      return res.status(400).json({ error: "kingdomId required" });
+    const k = await db.get("SELECT id, race FROM kingdoms WHERE id = ?", [
+      kingdomId,
+    ]);
+    if (!k) return res.status(404).json({ error: "Kingdom not found" });
+
+    await resetKingdomLogic(db, k.id, k.race);
+    res.json({ ok: true });
+  });
+
+  // POST /api/admin/reset-all-kingdoms — wipe all kingdoms back to starting stats
+  router.post("/reset-all-kingdoms", async (_req, res) => {
+    const kingdoms = await db.all("SELECT id, race FROM kingdoms");
+    for (const k of kingdoms) {
+      await resetKingdomLogic(db, k.id, k.race);
+    }
+
+    await db.run("DELETE FROM expeditions");
+    await db.run("DELETE FROM news");
+    await db.run("DELETE FROM war_log");
+    await db.run("DELETE FROM trade_offers");
+    res.json({ ok: true });
+  });
+
+  // POST /api/admin/set-gold — set a kingdom's gold
+  router.post("/set-gold", async (req, res) => {
+    const { kingdomId, amount } = req.body;
+    if (!kingdomId || amount === undefined)
+      return res.status(400).json({ error: "kingdomId and amount required" });
+    await db.run("UPDATE kingdoms SET gold = ? WHERE id = ?", [
+      Number(amount),
+      kingdomId,
+    ]);
+    res.json({ ok: true });
+  });
+
+  // POST /api/admin/set-building — set a specific building count on a kingdom
+  router.post("/set-building", async (req, res) => {
+    const { kingdomId, building, amount } = req.body;
+    if (!kingdomId || !building || amount === undefined)
+      return res.status(400).json({ error: "kingdomId, building, and amount required" });
+    const col = 'bld_' + building.replace(/-/g, '_');
+    const allowed = [
+      'bld_woodyard','bld_lumber_camp','bld_sawmill',
+      'bld_gravel_pit','bld_blockfield','bld_stone_quarry',
+      'bld_open_pit','bld_strip_mine','bld_deep_mine',
+    ];
+    if (!allowed.includes(col))
+      return res.status(400).json({ error: `Unknown building column: ${col}` });
+    await db.run(`UPDATE kingdoms SET ${col} = ? WHERE id = ?`, [Math.max(0, Number(amount)), kingdomId]);
+    res.json({ ok: true, col, amount: Math.max(0, Number(amount)) });
+  });
+
+  // GET /api/admin/chat-mods
+  router.get("/chat-mods", async (_req, res) => {
+    const mods = await db.all(
+      "SELECT username FROM players WHERE is_chat_mod = 1 AND is_ai = 0 ORDER BY username",
+    );
+    res.json(mods);
+  });
+
+  // GET /api/admin/chat-bans
+  router.get("/chat-bans", async (_req, res) => {
+    const banned = await db.all(
+      "SELECT username, chat_ban_reason FROM players WHERE chat_banned = 1 AND is_ai = 0 ORDER BY username",
+    );
+    res.json(banned);
+  });
+
+  // POST /api/admin/chat-mod — promote/demote
+  router.post("/chat-mod", async (req, res) => {
+    const { username, action } = req.body; // action: 'promote' | 'demote'
+    if (!username || !action)
+      return res.status(400).json({ error: "username and action required" });
+    const val = action === "promote" ? 1 : 0;
+    const p = await db.get("SELECT id FROM players WHERE username = ?", [
+      username,
+    ]);
+    if (!p)
+      return res.status(404).json({ error: `Player "${username}" not found` });
+    await db.run("UPDATE players SET is_chat_mod = ? WHERE id = ?", [
+      val,
+      p.id,
+    ]);
+    res.json({ ok: true });
+  });
+
+  // POST /api/admin/chat-unban
+  router.post("/chat-unban", async (req, res) => {
+    const { username } = req.body;
+    if (!username) return res.status(400).json({ error: "username required" });
+    await db.run(
+      "UPDATE players SET chat_banned = 0, chat_ban_reason = NULL WHERE username = ?",
+      [username],
+    );
+    res.json({ ok: true });
+  });
+
+  // GET /api/admin/kingdom-detail/:id — fetch single kingdom with all fields
+  router.get("/kingdom-detail/:id", async (req, res) => {
+    try {
+      const k = await db.get(
+        `
+        SELECT k.*, p.username, p.is_admin, p.is_banned
+        FROM kingdoms k JOIN players p ON k.player_id = p.id
+        WHERE k.id = ?
+      `,
+        [req.params.id],
+      );
+      if (!k) return res.status(404).json({ error: "Kingdom not found" });
+      res.json(k);
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // POST /api/admin/promote — make a player admin
+  router.post("/promote", async (req, res) => {
+    const { playerId, username } = req.body;
+    if (!playerId && !username)
+      return res.status(400).json({ error: "playerId or username required" });
+    let player;
+    if (username) {
+      player = await db.get("SELECT id FROM players WHERE username = ?", [
+        username,
+      ]);
+      if (!player)
+        return res
+          .status(404)
+          .json({ error: `Player "${username}" not found` });
+    }
+    const id = playerId || player.id;
+    await db.run("UPDATE players SET is_admin = 1 WHERE id = ?", [id]);
+    res.json({ ok: true });
+  });
+
+  // POST /api/admin/announce — broadcast a global message via Socket.io
+  router.post("/set-kingdom", async (req, res) => {
+    const { kingdomId, fields } = req.body;
+    if (!kingdomId || !fields || typeof fields !== "object")
+      return res.status(400).json({ error: "kingdomId and fields required" });
+
+    // Whitelist every settable kingdom column
+    const ALLOWED = new Set([
+      "name",
+      "race",
+      "gold",
+      "mana",
+      "land",
+      "population",
+      "morale",
+      "food",
+      "turn",
+      "turns_stored",
+      "tax",
+      "fighters",
+      "rangers",
+      "clerics",
+      "mages",
+      "thieves",
+      "ninjas",
+      "thralls",
+      "ladders",
+      "researchers",
+      "engineers",
+      "scribes",
+      "war_machines",
+      "weapons_stockpile",
+      "armor_stockpile",
+      "maps",
+      "blueprints_stored",
+      "scaffolding_stored",
+      "hammers_stored",
+      "bld_farms",
+      "bld_granaries",
+      "bld_barracks",
+      "bld_outposts",
+      "bld_guard_towers",
+      "bld_schools",
+      "bld_armories",
+      "bld_vaults",
+      "bld_smithies",
+      "bld_markets",
+      "bld_mage_towers",
+      "bld_training",
+      "bld_taverns",
+      "bld_castles",
+      "bld_libraries",
+      "bld_shrines",
+      "bld_housing",
+      "bld_walls",
+      "bld_mausoleums",
+      "bld_woodyard",
+      "bld_lumber_camp",
+      "bld_sawmill",
+      "bld_gravel_pit",
+      "bld_blockfield",
+      "bld_stone_quarry",
+      "bld_open_pit",
+      "bld_strip_mine",
+      "bld_deep_mine",
+      "wood",
+      "stone",
+      "iron",
+      "coal",
+      "steel",
+      "res_economy",
+      "res_weapons",
+      "res_armor",
+      "res_military",
+      "res_attack_magic",
+      "res_defense_magic",
+      "res_entertainment",
+      "res_construction",
+      "res_war_machines",
+      "res_spellbook",
+      "xp",
+      "level",
+      "description",
+      "region",
+      "prestige_level",
+      "active_effects",
+      "troop_levels",
+      "research_allocation",
+      "build_queue",
+      "build_progress",
+      "build_allocation",
+      "scrolls",
+    ]);
+
+    const safe = Object.fromEntries(
+      Object.entries(fields)
+        .filter(
+          ([k, v]) =>
+            ALLOWED.has(k) && v !== null && v !== undefined,
+        )
+        .map(([k, v]) => {
+          // If it's empty string and ALLOWED, we might want to clear it or set to 0/def
+          if (v === "") return [k, null];
+
+          // Try to cast to number if it's a numeric-only string
+          // This allows "123" -> 123, but "Orc" -> "Orc"
+          if (typeof v === "string" && v.trim() !== "" && !isNaN(Number(v))) {
+            return [k, Number(v)];
+          }
+          return [k, v];
+        }),
+    );
+
+    if (Object.keys(safe).length === 0)
+      return res.status(400).json({ error: "No valid fields to update" });
+
+    const cols = Object.keys(safe)
+      .map((c) => `${c} = ?`)
+      .join(", ");
+    await db.run(`UPDATE kingdoms SET ${cols} WHERE id = ?`, [
+      ...Object.values(safe),
+      kingdomId,
+    ]);
+    res.json({ ok: true, updated: Object.keys(safe) });
+  });
+
+  // POST /api/admin/announce — broadcast a global message via Socket.io
+  router.post("/announce", async (req, res) => {
+    const { message } = req.body;
+    if (!message?.trim())
+      return res.status(400).json({ error: "message required" });
+    io.to("global").emit("chat:message", {
+      room: "global",
+      from: "[ADMIN]",
+      race: "admin",
+      message: message.trim(),
+      ts: Date.now(),
+    });
+    res.json({ ok: true });
+  });
+
+  // GET /api/admin/ai-hiatus — check current AI hiatus status
+  router.get("/ai-hiatus", async (_req, res) => {
+    try {
+      const row = await db.get("SELECT value FROM server_state WHERE key = 'ai_hiatus'");
+      res.json({ hiatus: row ? row.value === 'true' : false });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // POST /api/admin/ai-hiatus — update AI hiatus status
+  router.post("/ai-hiatus", async (req, res) => {
+    try {
+      const { hiatus } = req.body;
+      const hiatusValue = hiatus ? 'true' : 'false';
+      await db.run("INSERT OR REPLACE INTO server_state (key, value) VALUES ('ai_hiatus', ?)", [hiatusValue]);
+      res.json({ ok: true, hiatus });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // GET /api/admin/ai-synopsis — snapshot of all AI kingdom states
+  router.get("/ai-synopsis", async (_req, res) => {
+    const aiPlayers = await db.all(
+      "SELECT id, username FROM players WHERE is_ai = 1",
+    );
+    if (aiPlayers.length === 0) return res.json([]);
+
+    const rows = [];
+    for (const p of aiPlayers) {
+      const k = await db.get(
+        `
+        SELECT k.*, p.username
+        FROM kingdoms k JOIN players p ON k.player_id = p.id
+        WHERE k.player_id = ?`,
+        [p.id],
+      );
+      if (!k) continue;
+
+      // Count war log actions by this AI as attacker
+      const attacks = await db.get(
+        "SELECT COUNT(*) as c FROM war_log WHERE attacker_id = ? AND action_type = ?",
+        [k.id, "attack"],
+      );
+      const coverts = await db.get(
+        "SELECT COUNT(*) as c FROM war_log WHERE attacker_id = ? AND action_type IN (?,?,?,?,?)",
+        [k.id, "spy", "loot", "assassinate", "sabotage", "covert"],
+      );
+      const wins = await db.get(
+        "SELECT COUNT(*) as c FROM war_log WHERE attacker_id = ? AND outcome = ?",
+        [k.id, "victory"],
+      );
+      const losses = await db.get(
+        "SELECT COUNT(*) as c FROM war_log WHERE attacker_id = ? AND action_type = ? AND outcome = ?",
+        [k.id, "attack", "repelled"],
+      );
+      const timesHit = await db.get(
+        "SELECT COUNT(*) as c FROM war_log WHERE defender_id = ?",
+        [k.id],
+      );
+
+      // Parse JSON fields safely
+      let buildAlloc = {};
+      let resAlloc = {};
+      try {
+        buildAlloc = JSON.parse(k.build_allocation || "{}");
+      } catch {}
+      try {
+        resAlloc = JSON.parse(k.research_allocation || "{}");
+      } catch {}
+
+      const topBuild =
+        Object.entries(buildAlloc)
+          .filter(([, v]) => v > 0)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 3)
+          .map(([k, v]) => `${k}:${v}`)
+          .join(", ") || "none";
+
+      const topResearch =
+        Object.entries(resAlloc)
+          .filter(([, v]) => v > 0)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 3)
+          .map(([k, v]) => `${k}:${v}`)
+          .join(", ") || "none";
+
+      rows.push({
+        id: k.id,
+        name: k.name,
+        race: k.race,
+        level: k.level || 1,
+        land: k.land,
+        gold: k.gold,
+        population: k.population,
+        turns_stored: k.turns_stored,
+        morale: k.morale,
+        food: k.food,
+        fighters: k.fighters,
+        rangers: k.rangers,
+        mages: k.mages,
+        thieves: k.thieves,
+        ninjas: k.ninjas,
+        bld_farms: k.bld_farms,
+        bld_barracks: k.bld_barracks,
+        bld_housing: k.bld_housing,
+        bld_schools: k.bld_schools,
+        res_military: k.res_military,
+        res_economy: k.res_economy,
+        res_spellbook: k.res_spellbook,
+        top_build: topBuild,
+        top_research: topResearch,
+        attacks: attacks?.c || 0,
+        covert_ops: coverts?.c || 0,
+        wins: wins?.c || 0,
+        losses: losses?.c || 0,
+        times_hit: timesHit?.c || 0,
+      });
+    }
+    res.json(rows);
+  });
+
+  // DELETE /api/admin/kingdom/:id — delete a kingdom and all related records
+  router.delete("/kingdom/:id", async (req, res) => {
+    const kid = req.params.id;
+    try {
+      // Clear out relations so foreign keys don't block
+      await db.run("DELETE FROM alliance_members WHERE kingdom_id = ?", [kid]);
+      await db.run("DELETE FROM alliances WHERE leader_id = ?", [kid]); // Or pick a new leader, but taking easiest route
+      await db.run("DELETE FROM news WHERE kingdom_id = ?", [kid]);
+      await db.run("DELETE FROM war_log WHERE attacker_id = ? OR defender_id = ?", [kid, kid]);
+      await db.run("DELETE FROM expeditions WHERE kingdom_id = ?", [kid]);
+      await db.run("DELETE FROM combat_log WHERE attacker_id = ? OR defender_id = ?", [kid, kid]);
+      await db.run("DELETE FROM chat_messages WHERE kingdom_id = ?", [kid]);
+      await db.run("DELETE FROM heroes WHERE kingdom_id = ?", [kid]);
+      await db.run("DELETE FROM spy_reports WHERE kingdom_id = ? OR target_id = ?", [kid, kid]);
+      await db.run("DELETE FROM trade_routes WHERE kingdom_id = ? OR partner_id = ?", [kid, kid]);
+      await db.run("DELETE FROM bounties WHERE target_id = ? OR claimed_by_id = ?", [kid, kid]);
+      await db.run("DELETE FROM trade_offers WHERE sender_id = ? OR receiver_id = ?", [kid, kid]);
+      await db.run("DELETE FROM mercenaries WHERE kingdom_id = ?", [kid]);
+      await db.run("DELETE FROM event_log WHERE kingdom_id = ?", [kid]);
+      // Finally delete the kingdom
+      await db.run("DELETE FROM kingdoms WHERE id = ?", [kid]);
+      res.json({ ok: true });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: "Failed to delete: " + e.message });
+    }
+  });
+
+  router.get("/config", async (_req, res) => {
+    const fs = require("fs");
+    const path = require("path");
+    const config = require("../game/config");
+    let overrides = {};
+    try {
+      const overridesPath = path.join(
+        __dirname,
+        "../game/config_overrides.json",
+      );
+      if (fs.existsSync(overridesPath)) {
+        overrides = JSON.parse(fs.readFileSync(overridesPath, "utf8"));
+      }
+    } catch {}
+    res.json({ config, overrides });
+  });
+
+  router.post("/config", async (req, res) => {
+    const fs = require("fs");
+    const path = require("path");
+    const config = require("../game/config");
+    const { overrides } = req.body;
+    if (!overrides)
+      return res.status(400).json({ error: "overrides required" });
+
+    const overridesPath = path.join(__dirname, "../game/config_overrides.json");
+    let existing = {};
+    try {
+      if (fs.existsSync(overridesPath)) {
+        existing = JSON.parse(fs.readFileSync(overridesPath, "utf8"));
+      }
+    } catch {}
+
+    // Merge existing overrides and new overrides
+    for (const key of Object.keys(overrides)) {
+      if (
+        typeof overrides[key] === "object" &&
+        config[key] &&
+        !Array.isArray(config[key])
+      ) {
+        existing[key] = { ...(existing[key] || {}), ...overrides[key] };
+        // Apply immediately to memory
+        Object.assign(config[key], overrides[key]);
+      } else {
+        existing[key] = overrides[key];
+        config[key] = overrides[key];
+      }
+    }
+
+    fs.writeFileSync(overridesPath, JSON.stringify(existing, null, 2));
+    res.json({ ok: true, existing });
+  });
+
+  // ── Flush all location data ───────────────────────────────────────────────────
+  router.post("/flush-locations", async (_req, res) => {
+    await db.run(
+      "UPDATE kingdoms SET discovered_kingdoms='{}', location_maps_wip='[]', world_fragments='[]', hybrid_blueprints='{}'",
+    );
+    console.log("[admin] All location data flushed");
+    res.json({
+      ok: true,
+      message:
+        "All kingdom location data cleared. Players must rediscover kingdoms.",
+    });
+  });
+
+  router.post("/flush-support-troops", async (_req, res) => {
+    await db.run("UPDATE kingdoms SET researchers=0, engineers=0, scribes=0");
+    console.log("[admin] All support troops flushed");
+    res.json({
+      ok: true,
+      message:
+        "All support troops (researchers, engineers, scribes) set to 0 for all players.",
+    });
+  });
+  router.get("/events/log", async (_req, res) => {
+    const rows = await db.all(
+      `SELECT * FROM event_log ORDER BY fired_at DESC LIMIT 200`,
+    );
+    res.json(rows);
+  });
+
+  router.get("/events/list", async (_req, res) => {
+    const rows = await db.all(`SELECT * FROM events ORDER BY season, name`);
+    res.json(rows);
+  });
+
+  router.get("/suggestions", async (_req, res) => {
+    const rows = await db.all(`
+      SELECT s.*, k.name as kingdom_name, p.username 
+      FROM suggestions s
+      LEFT JOIN kingdoms k ON s.kingdom_id = k.id
+      LEFT JOIN players p ON s.player_id = p.id
+      ORDER BY s.created_at DESC
+    `);
+    res.json(rows);
+  });
+
+  // ── Admin Notes ───────────────────────────────────────────────────────────────
+  router.get("/admin_notes", async (_req, res) => {
+    const rows = await db.all(
+      `SELECT * FROM admin_notes ORDER BY created_at DESC`,
+    );
+    res.json(rows);
+  });
+
+  router.post("/admin_notes", async (req, res) => {
+    const { message } = req.body;
+    if (!message) return res.status(400).json({ error: "Message required" });
+    const author = req.player ? req.player.username : "Unknown Admin";
+    await db.run(
+      `INSERT INTO admin_notes (author_name, message) VALUES (?, ?)`,
+      [author, message],
+    );
+    res.json({ ok: true });
+  });
+
+  router.delete("/admin_notes/:id", async (req, res) => {
+    await db.run(`DELETE FROM admin_notes WHERE id = ?`, [req.params.id]);
+    res.json({ ok: true });
+  });
+
+  // ── Wishlist ───────────────────────────────────────────────────────────────
+  router.get("/wishlist", async (_req, res) => {
+    const rows = await db.all(`SELECT * FROM wishlist ORDER BY id DESC`);
+    res.json(rows);
+  });
+
+  router.post("/wishlist", async (req, res) => {
+    const { category, description } = req.body;
+    if (!description || !category) return res.status(400).json({ error: "Category and description required" });
+    await db.run(
+      `INSERT INTO wishlist (category, description, completed) VALUES (?, ?, 0)`,
+      [category, description]
+    );
+    res.json({ ok: true });
+  });
+
+  router.post("/wishlist/:id/complete", async (req, res) => {
+    await db.run(`UPDATE wishlist SET completed = 1 WHERE id = ?`, [req.params.id]);
+    res.json({ ok: true });
+  });
+
+  router.post("/events/create", async (req, res) => {
+    const {
+      key,
+      name,
+      description,
+      season,
+      effect_type,
+      effect_value,
+      effect_duration,
+      race_only,
+      is_active,
+      is_positive,
+    } = req.body;
+    if (!key || !name)
+      return res.status(400).json({ error: "Key and name required" });
+    await db.run(
+      `INSERT INTO events (key,name,description,season,effect_type,effect_value,effect_duration,race_only,is_active,is_positive) VALUES (?,?,?,?,?,?,?,?,?,?)`,
+      [
+        key,
+        name,
+        description || "",
+        season || "all",
+        effect_type || "morale",
+        effect_value || 0,
+        effect_duration || 1,
+        race_only || null,
+        is_active ? 1 : 0,
+        is_positive ? 1 : 0,
+      ],
+    );
+    res.json({ ok: true });
+  });
+
+  router.post("/events/update", async (req, res) => {
+    const {
+      id,
+      key,
+      name,
+      description,
+      season,
+      effect_type,
+      effect_value,
+      effect_duration,
+      race_only,
+      is_active,
+      is_positive,
+    } = req.body;
+    if (!id) return res.status(400).json({ error: "ID required" });
+    await db.run(
+      `UPDATE events SET key=?,name=?,description=?,season=?,effect_type=?,effect_value=?,effect_duration=?,race_only=?,is_active=?,is_positive=? WHERE id=?`,
+      [
+        key,
+        name,
+        description || "",
+        season || "all",
+        effect_type || "morale",
+        effect_value || 0,
+        effect_duration || 1,
+        race_only || null,
+        is_active ? 1 : 0,
+        is_positive ? 1 : 0,
+        id,
+      ],
+    );
+    res.json({ ok: true });
+  });
+
+  router.post("/events/delete", async (req, res) => {
+    const { id } = req.body;
+    if (!id) return res.status(400).json({ error: "ID required" });
+    await db.run("DELETE FROM events WHERE id = ?", [id]);
+    res.json({ ok: true });
+  });
+
+  router.get("/lore", async (_req, res) => {
+    const list = await db.all(
+      "SELECT * FROM lore_entries ORDER BY category ASC, id ASC",
+    );
+    res.json({ ok: true, list });
+  });
+  router.post("/lore", async (req, res) => {
+    const { key_id, category, title, content } = req.body;
+    await db.run(
+      "INSERT INTO lore_entries (key_id, category, title, content) VALUES (?, ?, ?, ?)",
+      [key_id || "", category || "general", title || "", content || ""],
+    );
+    await require("../../index").refreshLore();
+    res.json({ ok: true });
+  });
+  router.put("/lore/:id", async (req, res) => {
+    const { key_id, category, title, content } = req.body;
+    await db.run(
+      "UPDATE lore_entries SET key_id=?, category=?, title=?, content=? WHERE id=?",
+      [
+        key_id || "",
+        category || "general",
+        title || "",
+        content || "",
+        req.params.id,
+      ],
+    );
+    await require("../../index").refreshLore();
+    res.json({ ok: true });
+  });
+  router.delete("/lore/:id", async (req, res) => {
+    await db.run("DELETE FROM lore_entries WHERE id=?", [req.params.id]);
+    await require("../../index").refreshLore();
+    res.json({ ok: true });
+  });
+
+  router.get("/random_events", async (_req, res) => {
+    const list = await db.all("SELECT * FROM random_events ORDER BY id ASC");
+    res.json({ ok: true, list });
+  });
+  router.post("/random_events", async (req, res) => {
+    await db.run("INSERT INTO random_events (content) VALUES (?)", [
+      req.body.content || "",
+    ]);
+    await require("../../index").refreshLore();
+    res.json({ ok: true });
+  });
+  router.put("/random_events/:id", async (req, res) => {
+    await db.run("UPDATE random_events SET content=? WHERE id=?", [
+      req.body.content || "",
+      req.params.id,
+    ]);
+    await require("../../index").refreshLore();
+    res.json({ ok: true });
+  });
+  router.delete("/random_events/:id", async (req, res) => {
+    await db.run("DELETE FROM random_events WHERE id=?", [req.params.id]);
+    await require("../../index").refreshLore();
+    res.json({ ok: true });
+  });
+
+  router.get("/junk_events", async (_req, res) => {
+    const list = await db.all("SELECT * FROM junk_events ORDER BY id ASC");
+    res.json({ ok: true, list });
+  });
+  router.post("/junk_events", async (req, res) => {
+    await db.run("INSERT INTO junk_events (content) VALUES (?)", [
+      req.body.content || "",
+    ]);
+    await require("../../index").refreshLore();
+    res.json({ ok: true });
+  });
+  router.delete("/junk_events/:id", async (req, res) => {
+    await db.run("DELETE FROM junk_events WHERE id=?", [req.params.id]);
+    await require("../../index").refreshLore();
+    res.json({ ok: true });
+  });
+
+  router.get("/tax_events", async (_req, res) => {
+    const list = await db.all("SELECT * FROM tax_events ORDER BY id ASC");
+    res.json({ ok: true, list });
+  });
+  router.post("/tax_events", async (req, res) => {
+    await db.run("INSERT INTO tax_events (content) VALUES (?)", [
+      req.body.content || "",
+    ]);
+    await require("../../index").refreshLore();
+    res.json({ ok: true });
+  });
+  router.delete("/tax_events/:id", async (req, res) => {
+    await db.run("DELETE FROM tax_events WHERE id=?", [req.params.id]);
+    await require("../../index").refreshLore();
+    res.json({ ok: true });
+  });
+
+  router.get("/sounds", (req, res) => {
+    fs.readdir(soundsPath, (err, files) => {
+      if (err)
+        return res
+          .status(500)
+          .json({ error: "Failed to read sounds directory" });
+      const sounds = files.filter(
+        (f) => f.endsWith(".mp3") || f.endsWith(".wav"),
+      );
+      res.json({ ok: true, sounds });
+    });
+  });
+
+  router.post("/sounds/upload", upload.single("soundFile"), (req, res) => {
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+    let finalName = req.file.originalname;
+    if (req.body.actionName && req.body.actionName !== "custom") {
+      const ext = path.extname(req.file.originalname);
+      finalName = req.body.actionName + ext;
+      const oldPath = path.join(soundsPath, req.file.originalname);
+      const newPath = path.join(soundsPath, finalName);
+      if (fs.existsSync(oldPath)) {
+        fs.renameSync(oldPath, newPath);
+      }
+    }
+    res.json({ ok: true, filename: finalName });
+  });
+
+  router.post("/sounds/delete", (req, res) => {
+    if (!req.body.filename)
+      return res.status(400).json({ error: "Filename required" });
+    const targetPath = path.join(soundsPath, req.body.filename);
+    if (fs.existsSync(targetPath)) {
+      fs.unlinkSync(targetPath);
+    }
+    res.json({ ok: true });
+  });
+
+  return router;
+};

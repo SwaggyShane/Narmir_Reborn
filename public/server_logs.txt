@@ -1,0 +1,19 @@
+=== SERVER LOG STARTED AT 2026-05-22T06:34:03.044Z ===
+NODE_ENV: development
+
+[LOG] [2026-05-22T06:34:03.134Z] [boot] Starting Narmir server...
+[LOG] [2026-05-22T06:34:03.529Z] [vite] Dev server created with root: /app/applet
+[LOG] [2026-05-22T06:34:03.631Z] [db] Promoted Stieny to admin automatically
+[LOG] [2026-05-22T06:34:03.635Z] [lore] Lore and Random events refreshed
+[LOG] [2026-05-22T06:34:03.645Z] [ai] AI kingdoms already exist
+[LOG] [2026-05-22T06:34:03.646Z] [turns] Regen timer started — +7 every 25 min (max 400)
+[LOG] [2026-05-22T06:34:03.680Z] [vite] Vite middleware active
+[LOG] [2026-05-22T06:34:03.682Z] [socket.io] Real-time handlers registered
+[LOG] [2026-05-22T06:34:03.683Z] [boot] Startup sequence complete. Server is ready.
+[LOG] [2026-05-22T06:34:03.687Z] [boot] Server listening on http://localhost:3000
+[LOG] [2026-05-22T06:34:03.699Z] [market] Prices fluctuated
+[LOG] [2026-05-22T06:34:03.708Z] [db] Fixed 297 corrupted JSON rows.
+[LOG] [2026-05-22T06:34:03.872Z] [socket] Stieny (Stolice) connected
+[LOG] [2026-05-22T06:34:53.696Z] [debug] [2026-05-22T06:34:53.696Z] Request for main.js: /src/main.js. Physical path: /app/applet/src/main.js. Exists: false
+[LOG] [2026-05-22T06:34:53.703Z] [debug] [2026-05-22T06:34:53.703Z] Request for index: GET /
+[LOG] [2026-05-22T06:35:23.747Z] [debug] [2026-05-22T06:35:23.747Z] Request for index: GET /
