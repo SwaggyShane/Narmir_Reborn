@@ -288,12 +288,14 @@ async function processAiTurns(db) {
   const aiPlayers = await db.all('SELECT id FROM players WHERE is_ai = 1');
   if (aiPlayers.length === 0) return;
 
-  // Run all AI kingdoms in parallel
-  await Promise.all(aiPlayers.map(p =>
-    runAiKingdom(db, engine, p.id).catch(e =>
-      console.error(`[ai] error for player ${p.id}:`, e.message)
-    )
-  ));
+  // Run all AI kingdoms sequentially to avoid concurrent resource contention
+  for (const p of aiPlayers) {
+    try {
+      await runAiKingdom(db, engine, p.id);
+    } catch (e) {
+      console.error(`[ai] error for player ${p.id}:`, e.message);
+    }
+  }
   console.log(`[ai] Processed ${aiPlayers.length} AI kingdoms`);
 }
 

@@ -55,6 +55,9 @@ function translateSqlForPg(sql) {
   return translated;
 }
 
+const { AsyncLocalStorage } = require('async_hooks');
+const transactionStorage = new AsyncLocalStorage();
+
 // PostgreSQL adapter mimicking the sqlite / sqlite3 interface
 class PgDbAdapter {
   constructor(pool, isPgMem = false) {
@@ -64,11 +67,14 @@ class PgDbAdapter {
   }
 
   async get(sql, params) {
+    const store = transactionStorage.getStore();
+    const connection = store ? store.client : this.pool;
+
     if (/PRAGMA\s+table_info\((.*?)\)/i.test(sql)) {
       const match = sql.match(/PRAGMA\s+table_info\((.*?)\)/i);
       const tableName = match[1].replace(/['"`]/g, '').trim();
       try {
-        const pgResult = await this.pool.query(`
+        const pgResult = await connection.query(`
           SELECT column_name AS name 
           FROM information_schema.columns 
           WHERE table_name = $1
@@ -86,7 +92,7 @@ class PgDbAdapter {
 
     const translatedSql = translateSqlForPg(sql);
     try {
-      const res = await this.pool.query(translatedSql, params || []);
+      const res = await connection.query(translatedSql, params || []);
       return res.rows[0];
     } catch (err) {
       console.error("[db] PostgreSQL get failed for statement:", translatedSql, "with params:", params);
@@ -95,11 +101,14 @@ class PgDbAdapter {
   }
 
   async all(sql, params) {
+    const store = transactionStorage.getStore();
+    const connection = store ? store.client : this.pool;
+
     if (/PRAGMA\s+table_info\((.*?)\)/i.test(sql)) {
       const match = sql.match(/PRAGMA\s+table_info\((.*?)\)/i);
       const tableName = match[1].replace(/['"`]/g, '').trim();
       try {
-        const pgResult = await this.pool.query(`
+        const pgResult = await connection.query(`
           SELECT column_name AS name 
           FROM information_schema.columns 
           WHERE table_name = $1
@@ -113,7 +122,7 @@ class PgDbAdapter {
 
     const translatedSql = translateSqlForPg(sql);
     try {
-      const res = await this.pool.query(translatedSql, params || []);
+      const res = await connection.query(translatedSql, params || []);
       return res.rows;
     } catch (err) {
       console.error("[db] PostgreSQL all failed for statement:", translatedSql, "with params:", params);
@@ -123,34 +132,70 @@ class PgDbAdapter {
 
   async run(sql, params) {
     let translatedSql = translateSqlForPg(sql);
+    const isBegin = /^\s*BEGIN\s+TRANSACTION/i.test(translatedSql);
+    const isCommit = /^\s*COMMIT/i.test(translatedSql);
+    const isRollback = /^\s*ROLLBACK/i.test(translatedSql);
 
-    // Handle nested transactions with savepoints instead of failing
-    if (/^\s*BEGIN\s+TRANSACTION/i.test(translatedSql)) {
-      this.transactionDepth++;
-      if (this.transactionDepth === 1) {
-        translatedSql = 'BEGIN TRANSACTION';
+    const store = transactionStorage.getStore();
+
+    if (isBegin) {
+      if (store) {
+        // Nested transaction: track depth and use savepoint
+        store.depth++;
+        translatedSql = `SAVEPOINT sp_${store.depth}`;
       } else {
-        translatedSql = `SAVEPOINT sp_${this.transactionDepth}`;
+        // Acquire dedicated client from the pool for the duration of the transaction
+        const client = await this.pool.connect();
+        try {
+          await client.query('BEGIN');
+          // Start async context for all nested queries to reuse this client
+          transactionStorage.enterWith({ client, depth: 1 });
+          return { lastID: null, changes: 0 };
+        } catch (err) {
+          client.release();
+          throw err;
+        }
       }
-    } else if (/^\s*COMMIT/i.test(translatedSql)) {
-      if (this.transactionDepth === 1) {
-        translatedSql = 'COMMIT';
+    } else if (isCommit) {
+      if (store) {
+        if (store.depth > 1) {
+          translatedSql = `RELEASE SAVEPOINT sp_${store.depth}`;
+          store.depth--;
+        } else {
+          try {
+            await store.client.query('COMMIT');
+          } finally {
+            store.client.release();
+            transactionStorage.enterWith(null);
+          }
+          return { lastID: null, changes: 0 };
+        }
       } else {
-        translatedSql = `RELEASE SAVEPOINT sp_${this.transactionDepth}`;
+        // No transaction started in this block, execute a no-op / warning-less BEGIN/COMMIT
+        translatedSql = 'SELECT 1';
       }
-      this.transactionDepth = Math.max(0, this.transactionDepth - 1);
-    } else if (/^\s*ROLLBACK/i.test(translatedSql)) {
-      if (this.transactionDepth === 1) {
-        translatedSql = 'ROLLBACK';
+    } else if (isRollback) {
+      if (store) {
+        if (store.depth > 1) {
+          translatedSql = `ROLLBACK TO SAVEPOINT sp_${store.depth}`;
+          store.depth--;
+        } else {
+          try {
+            await store.client.query('ROLLBACK');
+          } finally {
+            store.client.release();
+            transactionStorage.enterWith(null);
+          }
+          return { lastID: null, changes: 0 };
+        }
       } else {
-        translatedSql = `ROLLBACK TO SAVEPOINT sp_${this.transactionDepth}`;
+        // No transaction started in this block, execute a no-op
+        translatedSql = 'SELECT 1';
       }
-      this.transactionDepth = Math.max(0, this.transactionDepth - 1);
     }
 
     const isInsert = /^\s*INSERT\s+/i.test(translatedSql);
 
-    // Append RETURNING id to inserts where needed for sqlite database compatibility
     if (isInsert && !/RETURNING/i.test(translatedSql)) {
       if (!/alliance_members/i.test(translatedSql) && !/server_state/i.test(translatedSql) && !/regions/i.test(translatedSql)) {
         translatedSql += " RETURNING id";
@@ -158,7 +203,8 @@ class PgDbAdapter {
     }
 
     try {
-      const res = await this.pool.query(translatedSql, params || []);
+      const activeConnection = store ? store.client : this.pool;
+      const res = await activeConnection.query(translatedSql, params || []);
       const lastID = (res.rows && res.rows[0]) ? (res.rows[0].id || res.rows[0].alliance_id || null) : null;
       return {
         lastID: lastID,
