@@ -996,6 +996,7 @@ module.exports = function (db, io) {
     const result = {};
     for (const [name, blds] of Object.entries(FRAGMENT_BONUSES)) {
       const meta = FRAGMENT_METADATA[name] || { emoji: "✨", description: "Ancient world anomaly" };
+      
       result[name] = {
         emoji: meta.emoji,
         description: meta.description,

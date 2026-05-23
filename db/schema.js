@@ -64,11 +64,13 @@ class PgDbAdapter {
     this.pool = pool;
     this.transactionDepth = 0;
     this.isPgMem = isPgMem;
+    this.transactionStorage = transactionStorage;
   }
 
   async get(sql, params) {
     const store = transactionStorage.getStore();
-    const connection = store ? store.client : this.pool;
+    const isStoreActive = store && !store.released;
+    const connection = isStoreActive ? store.client : this.pool;
 
     if (/PRAGMA\s+table_info\((.*?)\)/i.test(sql)) {
       const match = sql.match(/PRAGMA\s+table_info\((.*?)\)/i);
@@ -102,7 +104,8 @@ class PgDbAdapter {
 
   async all(sql, params) {
     const store = transactionStorage.getStore();
-    const connection = store ? store.client : this.pool;
+    const isStoreActive = store && !store.released;
+    const connection = isStoreActive ? store.client : this.pool;
 
     if (/PRAGMA\s+table_info\((.*?)\)/i.test(sql)) {
       const match = sql.match(/PRAGMA\s+table_info\((.*?)\)/i);
@@ -137,9 +140,10 @@ class PgDbAdapter {
     const isRollback = /^\s*ROLLBACK/i.test(translatedSql);
 
     const store = transactionStorage.getStore();
+    const isStoreActive = store && !store.released;
 
     if (isBegin) {
-      if (store) {
+      if (isStoreActive) {
         // Nested transaction: track depth and use savepoint
         store.depth++;
         translatedSql = `SAVEPOINT sp_${store.depth}`;
@@ -149,7 +153,7 @@ class PgDbAdapter {
         try {
           await client.query('BEGIN');
           // Start async context for all nested queries to reuse this client
-          transactionStorage.enterWith({ client, depth: 1 });
+          transactionStorage.enterWith({ client, depth: 1, released: false });
           return { lastID: null, changes: 0 };
         } catch (err) {
           client.release();
@@ -157,12 +161,13 @@ class PgDbAdapter {
         }
       }
     } else if (isCommit) {
-      if (store) {
+      if (isStoreActive) {
         if (store.depth > 1) {
           translatedSql = `RELEASE SAVEPOINT sp_${store.depth}`;
           store.depth--;
         } else {
           try {
+            store.released = true;
             await store.client.query('COMMIT');
           } finally {
             store.client.release();
@@ -175,12 +180,13 @@ class PgDbAdapter {
         translatedSql = 'SELECT 1';
       }
     } else if (isRollback) {
-      if (store) {
+      if (isStoreActive) {
         if (store.depth > 1) {
           translatedSql = `ROLLBACK TO SAVEPOINT sp_${store.depth}`;
           store.depth--;
         } else {
           try {
+            store.released = true;
             await store.client.query('ROLLBACK');
           } finally {
             store.client.release();
@@ -203,7 +209,7 @@ class PgDbAdapter {
     }
 
     try {
-      const activeConnection = store ? store.client : this.pool;
+      const activeConnection = isStoreActive ? store.client : this.pool;
       const res = await activeConnection.query(translatedSql, params || []);
       const lastID = (res.rows && res.rows[0]) ? (res.rows[0].id || res.rows[0].alliance_id || null) : null;
       return {

@@ -291,7 +291,13 @@ async function processAiTurns(db) {
   // Run all AI kingdoms sequentially to avoid concurrent resource contention
   for (const p of aiPlayers) {
     try {
-      await runAiKingdom(db, engine, p.id);
+      if (db.transactionStorage && typeof db.transactionStorage.run === 'function') {
+        await db.transactionStorage.run(null, async () => {
+          await runAiKingdom(db, engine, p.id);
+        });
+      } else {
+        await runAiKingdom(db, engine, p.id);
+      }
     } catch (e) {
       console.error(`[ai] error for player ${p.id}:`, e.message);
     }
