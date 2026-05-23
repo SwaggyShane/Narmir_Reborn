@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 const BUILDINGS = [
   { id: 'farms', name: 'Farm', wood: 100, stone: 0, iron: 0, time: 28, land: 1 },
@@ -28,45 +28,7 @@ const BUILDINGS = [
 
 const BuildPanel = () => {
   const [showBuildingRef, setShowBuildingRef] = useState(false);
-  const [gameState, setGameState] = useState({
-    engineers: 0,
-    wood: 0,
-    stone: 0,
-    iron: 0,
-    steel: 0,
-    coal: 0,
-    land: 0,
-    built_land: 0,
-    race: 'human'
-  });
 
-  useEffect(() => {
-    // Update local state by reading from the global game obj during react mount/updates
-    const syncWithGlobalState = () => {
-      if (window.gameState) {
-        setGameState({
-          engineers: window.gameState.engineers || 0,
-          wood: window.gameState.wood || 0,
-          stone: window.gameState.stone || 0,
-          iron: window.gameState.iron || 0,
-          steel: window.gameState.steel || 0,
-          coal: window.gameState.coal || 0,
-          land: window.gameState.land || 0,
-          built_land: window.gameState.built_land || 0,
-          race: window.gameState.race || 'human'
-        });
-      }
-    };
-
-    syncWithGlobalState();
-
-    const unreg = window.registerPanelReactHook && window.registerPanelReactHook('build', syncWithGlobalState);
-    return () => { if (unreg) unreg(); };
-  }, []);
-
-  const fmt = (num) => Math.floor(num).toLocaleString();
-  const getAvailableLand = () => gameState.land - gameState.built_land;
-  
   const formatReq = (bld) => {
     return `${bld.time} turns`;
   };
@@ -87,12 +49,6 @@ const BuildPanel = () => {
   const setSmithyMax = (type) => { if (window.setSmithyMax) window.setSmithyMax(type); };
 
   const renderBuildingRow = (b, icon, baId, demoAmountId) => {
-    const isShrine = b.id === 'shrines';
-    const isMausoleum = b.id === 'mausoleums';
-
-    if (isShrine && gameState.race === 'vampire') return null;
-    if (isMausoleum && gameState.race !== 'vampire') return null;
-
     const isEng = !['wm', 'weapons', 'armor'].includes(b.id);
 
     return (
@@ -146,21 +102,20 @@ const BuildPanel = () => {
             <div>
               <div className="card-title" style={{ marginBottom: '2px' }}>Construction</div>
               <div style={{ fontSize: '12px', color: 'var(--text3)' }}>
-                Engineers: <span style={{ color: 'var(--text)' }}>{fmt(gameState.engineers)}</span> available · 
+                Engineers: <span id="b-engineers-available" style={{ color: 'var(--text)' }}>0</span> available · 
                 <span id="b-total-assigned" style={{ color: 'var(--gold)', margin: '0 4px' }}>0</span> assigned · 
                 <span id="b-total-unassigned" style={{ color: 'var(--green)', margin: '0 4px' }}>0</span> unassigned
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '2px' }}>
                 Resources: 
-                <span style={{ color: 'var(--text)', margin: '0 2px' }}>{fmt(gameState.wood)}</span>🪵 · 
-                <span style={{ color: 'var(--text)', margin: '0 2px' }}>{fmt(gameState.stone)}</span>🪨 · 
-                <span style={{ color: 'var(--text)', margin: '0 2px' }}>{fmt(gameState.iron)}</span>🔗 · 
-                <span style={{ color: 'var(--text)', margin: '0 2px' }}>{fmt(gameState.steel)}</span>📏 · 
-                <span style={{ color: 'var(--text)', margin: '0 2px' }}>{fmt(gameState.coal)}</span>🌑
+                <span id="b-wood" style={{ color: 'var(--text)', margin: '0 2px' }}>0</span>🪵 · 
+                <span id="b-stone" style={{ color: 'var(--text)', margin: '0 2px' }}>0</span>🪨 · 
+                <span id="b-iron" style={{ color: 'var(--text)', margin: '0 2px' }}>0</span>🔗 · 
+                <span id="b-steel" style={{ color: 'var(--text)', margin: '0 2px' }}>0</span>📏 · 
+                <span id="b-coal" style={{ color: 'var(--text)', margin: '0 2px' }}>0</span>🌑
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '2px' }}>
-                Land: <span style={{ color: 'var(--text)' }}>{fmt(getAvailableLand())}</span> / 
-                <span style={{ color: 'var(--text)' }}>{fmt(gameState.land)}</span> available
+                Land: <span id="b-land-available" style={{ color: 'var(--text)' }}>0</span> available
               </div>
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>

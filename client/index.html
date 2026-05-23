@@ -8982,6 +8982,10 @@
         var total = state.engineers || 0;
         var allocated = getAllocatedEngineers();
         var remaining = Math.max(0, total - allocated);
+
+        var tea = document.getElementById("b-engineers-available");
+        if (tea) tea.textContent = fmt(total);
+
         var ta = document.getElementById("b-total-assigned");
         var tu = document.getElementById("b-total-unassigned");
         if (ta) ta.textContent = fmt(allocated);
@@ -8989,6 +8993,32 @@
           tu.textContent = fmt(remaining);
           tu.style.color = allocated > total ? "var(--red)" : "var(--green)";
         }
+
+        // Live Resource updates on the build panel
+        var bWood = document.getElementById("b-wood");
+        if (bWood) bWood.textContent = fmt(state.wood || 0);
+        var bStone = document.getElementById("b-stone");
+        if (bStone) bStone.textContent = fmt(state.stone || 0);
+        var bIron = document.getElementById("b-iron");
+        if (bIron) bIron.textContent = fmt(state.iron || 0);
+        var bSteel = document.getElementById("b-steel");
+        if (bSteel) bSteel.textContent = fmt(state.steel || 0);
+        var bCoal = document.getElementById("b-coal");
+        if (bCoal) bCoal.textContent = fmt(state.coal || 0);
+
+        // Land
+        var bLand = document.getElementById("b-land-available");
+        if (bLand) {
+          var availLand = (state.land || 0) - (state.built_land || 0);
+          bLand.textContent = fmt(availLand) + " / " + fmt(state.land || 0);
+        }
+
+        // Shrines/Mausoleums visibility toggle
+        var isVampire = state.race === "vampire";
+        var shrineRow = document.getElementById("ba-shrine")?.closest(".trow");
+        var mausoleumRow = document.getElementById("ba-mausoleum")?.closest(".trow");
+        if (shrineRow) shrineRow.style.display = isVampire ? "none" : "flex";
+        if (mausoleumRow) mausoleumRow.style.display = isVampire ? "flex" : "none";
 
         // Blueprint/scaffolding requirement notices beside buildings
         var BLUEPRINT_REQUIRED = new Set([
