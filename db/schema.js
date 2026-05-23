@@ -203,94 +203,48 @@ let _db = null;
 async function initDb() {
   if (_db) return _db;
 
-  let usePg = false;
-  if (process.env.DATABASE_URL) {
-    const isRailwayInternalInAIStudio = 
-      process.env.DATABASE_URL.includes('.railway.internal');
-
-    if (isRailwayInternalInAIStudio) {
-      console.log("[db] ℹ️ Detected Railway internal database URL while running in development sandbox/AI Studio.");
-      console.log("[db] Bypassing connection to unreachable internal network address to avoid DNS lookup timeouts and connection errors.");
-    } else {
-      const { Pool } = require('pg');
-      const pool = new Pool({
-        connectionString: process.env.DATABASE_URL,
-        ssl: (!process.env.DATABASE_URL.includes('localhost') && !process.env.DATABASE_URL.includes('127.0.0.1') && !process.env.DATABASE_URL.includes('0.0.0.0'))
-          ? { rejectUnauthorized: false }
-          : false
-      });
-
-      let currentAttempt = 1;
-      const maxAttempts = 2; // Fast fail/fallback in dev/test sandbox to ensure high availability
-      const delay = 1500;
-
-      while (currentAttempt <= maxAttempts) {
-        try {
-          console.log(`[db] Connecting to PostgreSQL database (Attempt ${currentAttempt}/${maxAttempts})...`);
-          const client = await pool.connect();
-          try {
-            await client.query('SELECT 1');
-          } finally {
-            client.release();
-          }
-          _db = new PgDbAdapter(pool);
-          console.log("[db] ✅ PostgreSQL connected successfully! Connection established.");
-          usePg = true;
-          break;
-        } catch (pgError) {
-          console.error(`[db] PostgreSQL connection attempt ${currentAttempt} failed:`, pgError.message);
-          if (currentAttempt < maxAttempts) {
-            console.log(`[db] Retrying in ${delay / 1000} seconds...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
-          }
-        }
-        currentAttempt++;
-      }
-    }
+  if (!process.env.DATABASE_URL) {
+    throw new Error("[db] ❌ Critical: DATABASE_URL is not set! A persistent PostgreSQL database connection structure is strictly required.");
   }
 
-  if (!usePg) {
-    console.warn("[db] ⚠️ Warning: PostgreSQL connection is offline or invalid (check raw logs to debug).");
-    console.warn("[db] Launching pure-JS in-memory PostgreSQL fallback (pg-mem) so build/preview remains 100% ONLINE.");
-    
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: (!process.env.DATABASE_URL.includes('localhost') && !process.env.DATABASE_URL.includes('127.0.0.1') && !process.env.DATABASE_URL.includes('0.0.0.0'))
+      ? { rejectUnauthorized: false }
+      : false
+  });
+
+  let currentAttempt = 1;
+  const maxAttempts = 5; // Robust retries to withstand transient server startups
+  const delay = 2000;
+  let connected = false;
+
+  while (currentAttempt <= maxAttempts) {
     try {
-      const { newDb } = require('pg-mem');
-      const pgMemDb = newDb({ noAstCoverageCheck: true });
-      
-      // Register custom SQL functions to map PostgreSQL-specific routines
-      pgMemDb.public.registerFunction({
-        name: 'now',
-        returns: 'timestamp with time zone',
-        implementation: () => new Date()
-      });
-      pgMemDb.public.registerFunction({
-        name: 'date_part',
-        args: ['text', 'timestamp'],
-        returns: 'integer',
-        implementation: (unit, val) => Math.floor(new Date(val || Date.now()).getTime() / 1000)
-      });
-      pgMemDb.public.registerFunction({
-        name: 'date_part',
-        args: ['text', 'timestamp with time zone'],
-        returns: 'integer',
-        implementation: (unit, val) => Math.floor(new Date(val || Date.now()).getTime() / 1000)
-      });
-      pgMemDb.public.registerFunction({
-        name: 'length',
-        args: ['text'],
-        returns: 'integer',
-        implementation: (str) => (str ? str.length : 0)
-      });
-      
-      const Pool = pgMemDb.adapters.createPg().Pool;
-      const memPool = new Pool();
-      
-      _db = new PgDbAdapter(memPool, true);
-      console.log("[db] ✅ Standard In-Memory PostgreSQL started successfully!");
-    } catch (err) {
-      console.error("[db] ⚠️ Failed to initialize in-memory PostgreSQL engine:", err.message);
-      throw err;
+      console.log(`[db] Connecting to PostgreSQL database (Attempt ${currentAttempt}/${maxAttempts})...`);
+      const client = await pool.connect();
+      try {
+        await client.query('SELECT 1');
+      } finally {
+        client.release();
+      }
+      _db = new PgDbAdapter(pool);
+      console.log("[db] ✅ PostgreSQL connected successfully! Connection established.");
+      connected = true;
+      break;
+    } catch (pgError) {
+      console.error(`[db] PostgreSQL connection attempt ${currentAttempt} failed:`, pgError.message);
+      if (currentAttempt < maxAttempts) {
+        console.log(`[db] Retrying in ${delay / 1000} seconds...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
     }
+    currentAttempt++;
+  }
+
+  if (!connected) {
+    throw new Error("[db] ❌ Critical: Failed to connect to PostgreSQL database after multiple attempts. Boot sequence aborted to preserve database persistence and prevent silent data loss.");
   }
 
   await _db.exec(`
