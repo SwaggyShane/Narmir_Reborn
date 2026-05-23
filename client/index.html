@@ -6344,13 +6344,20 @@
         var token = getToken();
         if (token) headers["x-auth-token"] = token;
 
+        var controller = new AbortController();
+        var timeout = setTimeout(function () {
+          controller.abort();
+        }, 10000);
+
         fetch(endpoint, {
           method: "POST",
           headers: headers,
           credentials: "include",
           body: body,
+          signal: controller.signal,
         })
           .then(function (res) {
+            clearTimeout(timeout);
             return res.text();
           })
           .then(function (text) {
@@ -6391,6 +6398,7 @@
             loadKingdom();
           })
           .catch(function (e) {
+            clearTimeout(timeout);
             document.getElementById("btn-login").disabled = false;
             document.getElementById("btn-register").disabled = false;
             errEl.textContent = "Connection error: " + e.message;
