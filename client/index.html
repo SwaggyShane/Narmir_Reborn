@@ -6312,6 +6312,7 @@
           errEl.textContent = "Username and password required";
           return;
         }
+        console.log("[auth] Attempting login for user:", username);
 
         var body;
         if (endpoint === "/api/auth/register") {
@@ -6346,9 +6347,11 @@
 
         var controller = new AbortController();
         var timeout = setTimeout(function () {
+          console.log("[auth] Login request timed out after 10s");
           controller.abort();
         }, 10000);
 
+        console.log("[auth] Sending fetch to:", endpoint);
         fetch(endpoint, {
           method: "POST",
           headers: headers,
@@ -6357,6 +6360,7 @@
           signal: controller.signal,
         })
           .then(function (res) {
+            console.log("[auth] Login fetch completed with status:", res.status);
             clearTimeout(timeout);
             return res.text();
           })
@@ -6379,7 +6383,10 @@
             } catch (e) {}
             state.username = username;
             _registerMode = false;
+            console.log("[auth] Login successful, hiding modal and loading kingdom");
             hideLoginModal();
+            console.log("[auth] Calling loadKingdom()");
+            loadKingdom();
             if (window.mountReactApps) {
               console.log("[react] Mounting React apps on login success");
               window.mountReactApps();
@@ -6395,13 +6402,19 @@
                 }
               }, 100);
             }
-            loadKingdom();
           })
           .catch(function (e) {
             clearTimeout(timeout);
+            console.log("[auth] Login fetch error:", e.name, e.message, e);
             document.getElementById("btn-login").disabled = false;
             document.getElementById("btn-register").disabled = false;
-            errEl.textContent = "Connection error: " + e.message;
+            if (e.name === "AbortError" || e.message.includes("aborted")) {
+              errEl.textContent = "Request timed out — check your connection and try again";
+            } else if (e.message && e.message.length > 0) {
+              errEl.textContent = "Connection error: " + e.message;
+            } else {
+              errEl.textContent = "Connection failed — please try again";
+            }
           });
       }
 
@@ -6709,8 +6722,11 @@
       }
 
       async function loadKingdom() {
+        console.log("[auth] loadKingdom() starting - fetching /api/kingdom/me");
         var kingdom = await apiCall("GET", "/api/kingdom/me");
+        console.log("[auth] loadKingdom() received response:", kingdom.error ? "ERROR" : "OK");
         if (kingdom.error) {
+          console.error("[auth] Kingdom load error:", kingdom.error);
           toast("Failed to load kingdom: " + kingdom.error, "error");
           return;
         }
