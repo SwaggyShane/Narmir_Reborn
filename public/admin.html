@@ -2505,10 +2505,27 @@
       }
 
       // World Fragments Display Functions
-      const WORLD_FRAGMENTS_DATA = {};
+      let WORLD_FRAGMENTS_DATA = null;
 
-      function loadFragmentsDisplay() {
+      async function loadFragmentsDisplay() {
         const container = document.getElementById('fragments-container');
+        container.innerHTML = '<div style="font-size: 13px; color: var(--text3); padding: 20px 0;">Loading fragments reference...</div>';
+
+        try {
+          if (!WORLD_FRAGMENTS_DATA) {
+            const res = await api("GET", "/api/admin/fragments");
+            if (res && !res.error) {
+              WORLD_FRAGMENTS_DATA = res;
+            } else {
+              container.innerHTML = `<div style="font-size: 13px; color: var(--red); padding: 20px 0;">Error loading fragments: ${res ? res.error : 'Unknown error'}</div>`;
+              return;
+            }
+          }
+        } catch (err) {
+          container.innerHTML = `<div style="font-size: 13px; color: var(--red); padding: 20px 0;">Error fetching fragments list: ${err.message}</div>`;
+          return;
+        }
+
         let html = '';
 
         for (const [fragmentName, fragmentData] of Object.entries(WORLD_FRAGMENTS_DATA)) {
