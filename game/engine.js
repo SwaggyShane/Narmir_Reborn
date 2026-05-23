@@ -273,7 +273,11 @@ function foodBalance(k) {
 }
 
 function naturalMoraleCap(k) {
-  return k.res_entertainment || 100;
+  let cap = k.res_entertainment || 100;
+  // Apply dynamic housing passive bonuses on morale / happiness (e.g., Celestial Realm, Ancient Elven Wood)
+  const housingMoraleMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'morale');
+  const housingHappinessMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'happiness');
+  return Math.floor(cap * housingMoraleMult * housingHappinessMult);
 }
 
 function effectiveMorale(k) {
@@ -327,6 +331,10 @@ function popGrowth(k) {
   if (effects.bless) {
     growthMult *= 1.5; // 50% growth boost from bless
   }
+
+  // Apply world fragment bonuses for housing growth (e.g., Tears of the World Tree)
+  const housingGrowthMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'growth');
+  growthMult *= housingGrowthMult;
 
   if (housingCap > 0 && pop >= housingCap * 2) return 0;
   if (housingCap > 0 && pop > housingCap) growthMult = 0.1;
@@ -1324,11 +1332,28 @@ function processFoodEconomy(k, events) {
         }
       }
       if (shortTurns >= 5) {
-        updates.population = Math.max(1000, k.population - 500);
-        events.push({
-          type: "system",
-          message: `👥 Population fleeing starvation: -500 people.`,
-        });
+        let fleeCount = 500;
+        const activeHousingSpecial = fragmentBonusManager.getSpecialEffect(k, 'housing');
+        if (activeHousingSpecial?.name === "Sanctified Homes") {
+          fleeCount = 0; // citizens never leave!
+        } else if (activeHousingSpecial?.name === "Elven Halls") {
+          fleeCount = 100; // 80% reduction in fleeing
+        } else if (activeHousingSpecial?.name === "Life Dwellings") {
+          fleeCount = 250; // 50% reduction in fleeing
+        }
+
+        if (fleeCount > 0) {
+          updates.population = Math.max(1000, k.population - fleeCount);
+          events.push({
+            type: "system",
+            message: `👥 Population fleeing starvation: -${fleeCount} people.`,
+          });
+        } else {
+          events.push({
+            type: "system",
+            message: `👥 Population refused to leave their Sanctified Homes despite starvation!`,
+          });
+        }
       }
       if (shortTurns >= 8) {
         const desert = Math.floor(k.fighters * 0.02);
@@ -1800,11 +1825,18 @@ function processTurn(k) {
   // ── 6. Morale ─────────────────────────────────────────────────────────────────
   {
     const capPerBuilding = housingCapPerBuilding(k);
-    const housingCap = k.bld_housing * capPerBuilding;
+    let housingCap = k.bld_housing * capPerBuilding;
+    // Apply world fragment bonuses for housing capacity
+    const housingMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'capacity');
+    housingCap *= housingMult;
     const overcrowded = housingCap > 0 && k.population > housingCap;
 
     // Race overcrowding penalty modifiers
-    const overcrowdMult = { dire_wolf: 0.5, high_elf: 2.0 }[k.race] || 1.0;
+    let overcrowdMult = { dire_wolf: 0.5, high_elf: 2.0 }[k.race] || 1.0;
+    const activeHousingSpecial = fragmentBonusManager.getSpecialEffect(k, 'housing');
+    if (activeHousingSpecial?.name === "Titan Halls") {
+      overcrowdMult *= 0.2; // 80% reduction in overcrowding penalty, since they are spacious
+    }
     const overcrowdPenalty = overcrowded
       ? Math.max(
           0,
@@ -7003,7 +7035,14 @@ function processActiveEffects(k, events) {
           (updates.food !== undefined ? updates.food : k.food) - damage,
         );
       } else if (effect === "plague") {
-        const lost = Math.floor(k.population * 0.02);
+        let lost = Math.floor(k.population * 0.02);
+        // Special housing effects (Celestial Realm: Sanctified Homes, Ancient Elven Wood: Elven Halls)
+        const activeHousingSpecial = fragmentBonusManager.getSpecialEffect(k, 'housing');
+        if (activeHousingSpecial?.name === "Sanctified Homes") {
+          lost = Math.floor(lost * 0.2); // 80% reduction in plague loss
+        } else if (activeHousingSpecial?.name === "Elven Halls") {
+          lost = Math.floor(lost * 0.5); // 50% reduction in plague loss
+        }
         updates.population = Math.max(0, k.population - lost);
         events.push({
           type: "attack",
