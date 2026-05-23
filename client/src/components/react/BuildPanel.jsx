@@ -42,35 +42,25 @@ const BuildPanel = () => {
 
   useEffect(() => {
     // Update local state by reading from the global game obj during react mount/updates
-    if (window.game) {
-      setGameState({
-        engineers: window.game.resources?.engineers || 0,
-        wood: window.game.resources?.wood || 0,
-        stone: window.game.resources?.stone || 0,
-        iron: window.game.resources?.iron || 0,
-        steel: window.game.resources?.steel || 0,
-        coal: window.game.resources?.coal || 0,
-        land: window.game.land || 0,
-        built_land: window.game.built_land || 0,
-        race: window.game.race || 'human'
-      });
-    }
-
-    const unreg = window.registerPanelReactHook && window.registerPanelReactHook('build', () => {
-      if (window.game) {
+    const syncWithGlobalState = () => {
+      if (window.gameState) {
         setGameState({
-          engineers: window.game.resources?.engineers || 0,
-          wood: window.game.resources?.wood || 0,
-          stone: window.game.resources?.stone || 0,
-          iron: window.game.resources?.iron || 0,
-          steel: window.game.resources?.steel || 0,
-          coal: window.game.resources?.coal || 0,
-          land: window.game.land || 0,
-          built_land: window.game.built_land || 0,
-          race: window.game.race || 'human'
+          engineers: window.gameState.engineers || 0,
+          wood: window.gameState.wood || 0,
+          stone: window.gameState.stone || 0,
+          iron: window.gameState.iron || 0,
+          steel: window.gameState.steel || 0,
+          coal: window.gameState.coal || 0,
+          land: window.gameState.land || 0,
+          built_land: window.gameState.built_land || 0,
+          race: window.gameState.race || 'human'
         });
       }
-    });
+    };
+
+    syncWithGlobalState();
+
+    const unreg = window.registerPanelReactHook && window.registerPanelReactHook('build', syncWithGlobalState);
     return () => { if (unreg) unreg(); };
   }, []);
 

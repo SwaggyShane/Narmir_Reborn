@@ -206,8 +206,7 @@ async function initDb() {
   let usePg = false;
   if (process.env.DATABASE_URL) {
     const isRailwayInternalInAIStudio = 
-      process.env.DATABASE_URL.includes('.railway.internal') && 
-      (process.env.APPLET_ID || process.env.GOOGLE_RUNTIME || !process.env.RAILWAY_STATIC_URL);
+      process.env.DATABASE_URL.includes('.railway.internal');
 
     if (isRailwayInternalInAIStudio) {
       console.log("[db] ℹ️ Detected Railway internal database URL while running in development sandbox/AI Studio.");

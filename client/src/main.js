@@ -31,6 +31,19 @@ console.log("[react] main.js execution started at", new Date().toISOString());
 export const gameState = {};
 window.gameState = gameState;
 
+const reactHooks = new Map();
+window.registerPanelReactHook = (panelId, callback) => {
+  reactHooks.set(panelId, callback);
+  return () => {
+    reactHooks.delete(panelId);
+  };
+};
+window.triggerReactUpdates = () => {
+  reactHooks.forEach(cb => {
+    try { cb(); } catch (e) { console.error("[react] Hook update error:", e); }
+  });
+};
+
 if (window.setGameStateObj) {
   window.setGameStateObj(gameState);
 }

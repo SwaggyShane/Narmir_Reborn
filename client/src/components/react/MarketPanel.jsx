@@ -24,14 +24,14 @@ const MarketPanel = () => {
 
   useEffect(() => {
     // Initial state copy
-    if (window.game) setState({ ...window.game });
+    if (window.gameState) setState({ ...window.gameState });
 
     const updateState = () => {
-      if (window.game) {
-        setState({ ...window.game });
+      if (window.gameState) {
+        setState({ ...window.gameState });
         let mult = 0.7;
-        if (window.game.prestige_level && window.game.prestige_level > 0) {
-          mult += Math.min(0.1, window.game.prestige_level * 0.02);
+        if (window.gameState.prestige_level && window.gameState.prestige_level > 0) {
+          mult += Math.min(0.1, window.gameState.prestige_level * 0.02);
         }
         setSellMultiplier(mult);
       }

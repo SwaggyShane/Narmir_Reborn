@@ -1663,10 +1663,13 @@
           border-radius: 12px;
         }
         .metric .val {
-          font-size: 17px;
+          font-size: 21px;
         }
         .metric .lbl {
-          font-size: 9px;
+          font-size: 10.5px;
+        }
+        .metric .sub {
+          font-size: 10px;
         }
         .card {
           padding: 24px;
@@ -7165,6 +7168,7 @@
         renderShrinePanel();
         initSocket();
         if (window.refreshResourcesPanel) window.refreshResourcesPanel();
+        if (window.triggerReactUpdates) window.triggerReactUpdates();
       }
 
       window.refreshKingdom = loadKingdom;
@@ -8892,6 +8896,7 @@
         }
         if (u.xp !== undefined || u.level !== undefined) updateXpDisplay();
         if (window.refreshResourcesPanel) window.refreshResourcesPanel();
+        if (window.triggerReactUpdates) window.triggerReactUpdates();
 
         // Safeguard: if a turn was processed and exploration panel is visible, re-render expeditions
         if ((u.turn !== undefined || u.turns_stored !== undefined)) {
