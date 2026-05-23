@@ -6405,13 +6405,15 @@
           })
           .catch(function (e) {
             clearTimeout(timeout);
-            console.log("[auth] Login fetch error:", e.name, e.message);
+            console.log("[auth] Login fetch error:", e.name, e.message, e);
             document.getElementById("btn-login").disabled = false;
             document.getElementById("btn-register").disabled = false;
-            if (e.name === "AbortError") {
-              errEl.textContent = "Request timed out — please check your connection and try again";
-            } else {
+            if (e.name === "AbortError" || e.message.includes("aborted")) {
+              errEl.textContent = "Request timed out — check your connection and try again";
+            } else if (e.message && e.message.length > 0) {
               errEl.textContent = "Connection error: " + e.message;
+            } else {
+              errEl.textContent = "Connection failed — please try again";
             }
           });
       }
