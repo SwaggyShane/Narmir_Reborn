@@ -1,19 +1,117 @@
-=== SERVER LOG STARTED AT 2026-05-22T06:34:03.044Z ===
+=== SERVER LOG STARTED AT 2026-05-23T18:36:29.946Z ===
 NODE_ENV: development
 
-[LOG] [2026-05-22T06:34:03.134Z] [boot] Starting Narmir server...
-[LOG] [2026-05-22T06:34:03.529Z] [vite] Dev server created with root: /app/applet
-[LOG] [2026-05-22T06:34:03.631Z] [db] Promoted Stieny to admin automatically
-[LOG] [2026-05-22T06:34:03.635Z] [lore] Lore and Random events refreshed
-[LOG] [2026-05-22T06:34:03.645Z] [ai] AI kingdoms already exist
-[LOG] [2026-05-22T06:34:03.646Z] [turns] Regen timer started — +7 every 25 min (max 400)
-[LOG] [2026-05-22T06:34:03.680Z] [vite] Vite middleware active
-[LOG] [2026-05-22T06:34:03.682Z] [socket.io] Real-time handlers registered
-[LOG] [2026-05-22T06:34:03.683Z] [boot] Startup sequence complete. Server is ready.
-[LOG] [2026-05-22T06:34:03.687Z] [boot] Server listening on http://localhost:3000
-[LOG] [2026-05-22T06:34:03.699Z] [market] Prices fluctuated
-[LOG] [2026-05-22T06:34:03.708Z] [db] Fixed 297 corrupted JSON rows.
-[LOG] [2026-05-22T06:34:03.872Z] [socket] Stieny (Stolice) connected
-[LOG] [2026-05-22T06:34:53.696Z] [debug] [2026-05-22T06:34:53.696Z] Request for main.js: /src/main.js. Physical path: /app/applet/src/main.js. Exists: false
-[LOG] [2026-05-22T06:34:53.703Z] [debug] [2026-05-22T06:34:53.703Z] Request for index: GET /
-[LOG] [2026-05-22T06:35:23.747Z] [debug] [2026-05-22T06:35:23.747Z] Request for index: GET /
+[LOG] [2026-05-23T18:36:30.006Z] [boot] Starting Narmir server...
+[LOG] [2026-05-23T18:36:30.307Z] [vite] Dev server created with root: /app/applet
+[LOG] [2026-05-23T18:36:30.309Z] [db] ℹ️ Detected Railway internal database URL while running in development sandbox/AI Studio.
+[LOG] [2026-05-23T18:36:30.310Z] [db] Bypassing connection to unreachable internal network address to avoid DNS lookup timeouts and connection errors.
+[WARN] [2026-05-23T18:36:30.310Z] [db] ⚠️ Warning: PostgreSQL connection is offline or invalid (check raw logs to debug).
+[WARN] [2026-05-23T18:36:30.310Z] [db] Launching pure-JS in-memory PostgreSQL fallback (pg-mem) so build/preview remains 100% ONLINE.
+[LOG] [2026-05-23T18:36:30.403Z] [db] ✅ Standard In-Memory PostgreSQL started successfully!
+[LOG] [2026-05-23T18:36:30.523Z] [db] Migration: added alliance_buffs to kingdoms
+[LOG] [2026-05-23T18:36:30.525Z] [db] Migration: added goals to kingdoms
+[LOG] [2026-05-23T18:36:30.530Z] [db] Migration: added vault_gold to alliances
+[LOG] [2026-05-23T18:36:30.531Z] [db] Migration: added projects to alliances
+[LOG] [2026-05-23T18:36:30.533Z] [db] Migration: added vault_log to alliances
+[LOG] [2026-05-23T18:36:30.535Z] [db] Migration: added research_progress to kingdoms
+[LOG] [2026-05-23T18:36:30.537Z] [db] Migration: added prestige_level to kingdoms
+[LOG] [2026-05-23T18:36:30.538Z] [db] Migration: added trade_routes to kingdoms
+[LOG] [2026-05-23T18:36:30.539Z] [db] Migration: added description to kingdoms
+[LOG] [2026-05-23T18:36:30.541Z] [db] Migration: added collected_lore to kingdoms
+[LOG] [2026-05-23T18:36:30.542Z] [db] Migration: added last_lore_id to kingdoms
+[LOG] [2026-05-23T18:36:30.544Z] [db] Migration: added collected_events to kingdoms
+[LOG] [2026-05-23T18:36:30.545Z] [db] Migration: added last_event_id to kingdoms
+[LOG] [2026-05-23T18:36:30.546Z] [db] Migration: added achievements to kingdoms
+[LOG] [2026-05-23T18:36:30.548Z] [db] Migration: added active_trade_routes to kingdoms
+[LOG] [2026-05-23T18:36:30.549Z] [db] Migration: added milestones_claimed to kingdoms
+[LOG] [2026-05-23T18:36:30.551Z] [db] Migration: added milestone_bonuses to kingdoms
+[LOG] [2026-05-23T18:36:30.553Z] [db] Migration: added milestone_title to kingdoms
+[LOG] [2026-05-23T18:36:30.555Z] [db] Migration: added injured_troops to kingdoms
+[LOG] [2026-05-23T18:36:30.556Z] [db] Migration: added wall_hp to kingdoms
+[LOG] [2026-05-23T18:36:30.557Z] [db] Migration: added wall_defense_type to kingdoms
+[LOG] [2026-05-23T18:36:30.592Z] [db] Migration: added is_chat_mod to players
+[LOG] [2026-05-23T18:36:30.593Z] [db] Migration: added chat_banned to players
+[LOG] [2026-05-23T18:36:30.594Z] [db] Migration: added chat_ban_reason to players
+[LOG] [2026-05-23T18:36:30.595Z] [db] Migration: added chat_color to players
+[LOG] [2026-05-23T18:36:30.596Z] [db] Migration: added chat_name to players
+[LOG] [2026-05-23T18:36:30.601Z] [db] Migration: added username to chat_messages
+[LOG] [2026-05-23T18:36:30.602Z] [db] Migration: added player_id to chat_messages
+[LOG] [2026-05-23T18:36:30.602Z] [db] Migration: added deleted to chat_messages
+[LOG] [2026-05-23T18:36:30.603Z] [db] Migration: added region to kingdoms
+[LOG] [2026-05-23T18:36:30.606Z] [db] Migration: added smithy_allocation to kingdoms
+[LOG] [2026-05-23T18:36:30.606Z] [db] Migration: added hammer_turns_used to kingdoms
+[LOG] [2026-05-23T18:36:30.607Z] [db] Migration: added racial_bonuses_unlocked to kingdoms
+[LOG] [2026-05-23T18:36:30.611Z] [db] Migration: added seen to expeditions
+[LOG] [2026-05-23T18:36:30.614Z] [db] Migration: added food_taken to expeditions
+[LOG] [2026-05-23T18:36:30.616Z] [db] Migration: added bld_taverns to kingdoms
+[LOG] [2026-05-23T18:36:30.617Z] [db] Migration: added granary_upgrades to kingdoms
+[LOG] [2026-05-23T18:36:30.618Z] [db] Migration: added world_fragments to kingdoms
+[LOG] [2026-05-23T18:36:30.619Z] [db] Migration: added hybrid_blueprints to kingdoms
+[LOG] [2026-05-23T18:36:30.620Z] [db] Migration: added fragment_bonuses to kingdoms
+[LOG] [2026-05-23T18:36:30.621Z] [db] Migration: added fortified_blueprints to kingdoms
+[LOG] [2026-05-23T18:36:30.622Z] [db] Migration: added fortified_buildings to kingdoms
+[LOG] [2026-05-23T18:36:30.623Z] [db] Migration: added certified_blueprints_stored to kingdoms
+[LOG] [2026-05-23T18:36:30.624Z] [db] Migration: added bld_walls to kingdoms
+[LOG] [2026-05-23T18:36:30.625Z] [db] Migration: added wall_upgrades to kingdoms
+[LOG] [2026-05-23T18:36:30.626Z] [db] Migration: added tower_def_upgrades to kingdoms
+[LOG] [2026-05-23T18:36:30.626Z] [db] Migration: added outpost_upgrades to kingdoms
+[LOG] [2026-05-23T18:36:30.627Z] [db] Migration: added defense_upgrades to kingdoms
+[LOG] [2026-05-23T18:36:30.628Z] [db] Migration: added tower_upgrades to kingdoms
+[LOG] [2026-05-23T18:36:30.629Z] [db] Migration: added school_upgrades to kingdoms
+[LOG] [2026-05-23T18:36:30.630Z] [db] Migration: added shrine_upgrades to kingdoms
+[LOG] [2026-05-23T18:36:30.631Z] [db] Migration: added library_upgrades to kingdoms
+[LOG] [2026-05-23T18:36:30.632Z] [db] Migration: added research_focus to kingdoms
+[LOG] [2026-05-23T18:36:30.633Z] [db] Migration: added divine_sanctuary_used to kingdoms
+[LOG] [2026-05-23T18:36:30.633Z] [db] Migration: added farm_upgrades to kingdoms
+[LOG] [2026-05-23T18:36:30.634Z] [db] Migration: added market_upgrades to kingdoms
+[LOG] [2026-05-23T18:36:30.635Z] [db] Migration: added tavern_upgrades to kingdoms
+[LOG] [2026-05-23T18:36:30.636Z] [db] Migration: added bank_upgrades to kingdoms
+[LOG] [2026-05-23T18:36:30.637Z] [db] Migration: added bank_deposits to kingdoms
+[LOG] [2026-05-23T18:36:30.637Z] [db] Migration: added ledger to kingdoms
+[LOG] [2026-05-23T18:36:30.638Z] [db] Migration: added bld_mausoleums to kingdoms
+[LOG] [2026-05-23T18:36:30.639Z] [db] Migration: added thralls to kingdoms
+[LOG] [2026-05-23T18:36:30.640Z] [db] Migration: added mausoleum_upgrades to kingdoms
+[LOG] [2026-05-23T18:36:30.640Z] [db] Migration: added mausoleum_allocation to kingdoms
+[LOG] [2026-05-23T18:36:30.648Z] [db] Migration: added food_shortage_turns to kingdoms
+[LOG] [2026-05-23T18:36:30.649Z] [db] Migration: added food_surplus_turns to kingdoms
+[LOG] [2026-05-23T18:36:30.650Z] [db] Migration: added mercenaries to kingdoms
+[LOG] [2026-05-23T18:36:30.677Z] [db] Migration: added last_event_at to kingdoms
+[LOG] [2026-05-23T18:36:30.678Z] [db] Migration: added active_event to kingdoms
+[LOG] [2026-05-23T18:36:30.679Z] [db] Migration: added discovered_kingdoms to kingdoms
+[LOG] [2026-05-23T18:36:30.680Z] [db] Migration: added location_maps_wip to kingdoms
+[LOG] [2026-05-23T18:36:30.783Z] [db] Migration: added category to lore_entries
+[LOG] [2026-05-23T18:36:30.783Z] [db] Migration: added key_id to lore_entries
+[LOG] [2026-05-23T18:36:31.034Z] [db] Promoted Stieny to admin automatically
+[LOG] [2026-05-23T18:36:31.037Z] [db] Migration: added wood to kingdoms
+[LOG] [2026-05-23T18:36:31.038Z] [db] Migration: added stone to kingdoms
+[LOG] [2026-05-23T18:36:31.039Z] [db] Migration: added iron to kingdoms
+[LOG] [2026-05-23T18:36:31.040Z] [db] Migration: added bld_woodyard to kingdoms
+[LOG] [2026-05-23T18:36:31.041Z] [db] Migration: added bld_lumber_camp to kingdoms
+[LOG] [2026-05-23T18:36:31.042Z] [db] Migration: added bld_sawmill to kingdoms
+[LOG] [2026-05-23T18:36:31.043Z] [db] Migration: added bld_gravel_pit to kingdoms
+[LOG] [2026-05-23T18:36:31.044Z] [db] Migration: added bld_blockfield to kingdoms
+[LOG] [2026-05-23T18:36:31.045Z] [db] Migration: added bld_stone_quarry to kingdoms
+[LOG] [2026-05-23T18:36:31.046Z] [db] Migration: added bld_open_pit to kingdoms
+[LOG] [2026-05-23T18:36:31.047Z] [db] Migration: added bld_strip_mine to kingdoms
+[LOG] [2026-05-23T18:36:31.048Z] [db] Migration: added bld_deep_mine to kingdoms
+[LOG] [2026-05-23T18:36:31.048Z] [db] Migration: added items to kingdoms
+[LOG] [2026-05-23T18:36:31.049Z] [db] Migration: added resource_sequence to kingdoms
+[LOG] [2026-05-23T18:36:31.060Z] [lore] Lore and Random events refreshed
+[LOG] [2026-05-23T18:36:31.113Z] [ai] Seeded: Ironforge Hold (dwarf)
+[LOG] [2026-05-23T18:36:31.146Z] [ai] Seeded: Shadowveil Enclave (dark_elf)
+[LOG] [2026-05-23T18:36:31.183Z] [ai] Seeded: Stormfang Warpack (dire_wolf)
+[LOG] [2026-05-23T18:36:31.219Z] [ai] Seeded: Silverwind Spire (high_elf)
+[LOG] [2026-05-23T18:36:31.257Z] [ai] Seeded: Grimtusk Horde (orc)
+[LOG] [2026-05-23T18:36:31.295Z] [ai] Seeded: Ashenvale Republic (human)
+[LOG] [2026-05-23T18:36:31.335Z] [ai] Seeded: Deepdelve Citadel (dwarf)
+[LOG] [2026-05-23T18:36:31.370Z] [ai] Seeded: Nightshade Court (dark_elf)
+[LOG] [2026-05-23T18:36:31.432Z] [ai] Seeded: Bloodmoon Clan (orc)
+[LOG] [2026-05-23T18:36:31.471Z] [ai] Seeded: Crystalpeak Tower (high_elf)
+[LOG] [2026-05-23T18:36:31.471Z] [ai] Seeded 10 new AI kingdoms
+[LOG] [2026-05-23T18:36:31.475Z] [turns] Regen timer started — +7 every 25 min (max 400)
+[LOG] [2026-05-23T18:36:31.543Z] [vite] Vite middleware active
+[LOG] [2026-05-23T18:36:31.546Z] [socket.io] Real-time handlers registered
+[LOG] [2026-05-23T18:36:31.546Z] [boot] Startup sequence complete. Server is ready.
+[LOG] [2026-05-23T18:36:31.551Z] [boot] Server listening on http://localhost:3000
+[LOG] [2026-05-23T18:36:31.646Z] [market] Prices fluctuated
+[LOG] [2026-05-23T18:36:31.665Z] [db] Fixed 180 corrupted JSON rows.

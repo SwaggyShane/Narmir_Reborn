@@ -937,91 +937,120 @@ async function start() {
     if (process.env.NODE_ENV !== 'production') {
       await setupVite();
     }
-    const db = await initDb();
     
-    await refreshLore(db);
-    console.log('[lore] Lore and Random events refreshed');
+    let db = null;
+    try {
+      db = await initDb();
+      
+      await refreshLore(db);
+      console.log('[lore] Lore and Random events refreshed');
 
-    // -- Fix database corruption --
-    (async () => {
-      const cols = [
-        "active_effects", "troop_levels", "research_allocation", "build_queue", "build_progress",
-        "build_allocation", "scrolls", "mage_tower_allocation", "shrine_allocation",
-        "library_allocation", "mausoleum_allocation", "library_progress", "tower_progress",
-        "bank_upgrades", "bank_deposits", "market_upgrades", "mausoleum_upgrades",
-        "shrine_upgrades", "school_upgrades", "tower_upgrades", "tower_def_upgrades",
-        "outpost_upgrades", "wall_upgrades", "tavern_upgrades", "farm_upgrades",
-        "granary_upgrades", "library_upgrades"
-      ];
-      const validCols = new Set(cols);
-      let fixedRows = 0;
-      for (let c of cols) {
-        if (!validCols.has(c)) continue;
-        let res = await db.run(`UPDATE kingdoms SET ${c} = '{}' WHERE ${c} LIKE '{%' AND length(${c}) < 5`);
-        if (res.changes) fixedRows += res.changes;
-        res = await db.run(`UPDATE kingdoms SET ${c} = '[]' WHERE ${c} LIKE '[%' AND length(${c}) < 5`);
-        if (res.changes) fixedRows += res.changes;
+      // -- Fix database corruption --
+      (async () => {
+        try {
+          const cols = [
+            "active_effects", "troop_levels", "research_allocation", "build_queue", "build_progress",
+            "build_allocation", "scrolls", "mage_tower_allocation", "shrine_allocation",
+            "library_allocation", "mausoleum_allocation", "library_progress", "tower_progress",
+            "bank_upgrades", "bank_deposits", "market_upgrades", "mausoleum_upgrades",
+            "shrine_upgrades", "school_upgrades", "tower_upgrades", "tower_def_upgrades",
+            "outpost_upgrades", "wall_upgrades", "tavern_upgrades", "farm_upgrades",
+            "granary_upgrades", "library_upgrades"
+          ];
+          const validCols = new Set(cols);
+          let fixedRows = 0;
+          for (let c of cols) {
+            if (!validCols.has(c)) continue;
+            let res = await db.run(`UPDATE kingdoms SET ${c} = '{}' WHERE ${c} LIKE '{%' AND length(${c}) < 5`);
+            if (res.changes) fixedRows += res.changes;
+            res = await db.run(`UPDATE kingdoms SET ${c} = '[]' WHERE ${c} LIKE '[%' AND length(${c}) < 5`);
+            if (res.changes) fixedRows += res.changes;
+          }
+          if (fixedRows > 0) console.log(`[db] Fixed ${fixedRows} corrupted JSON rows.`);
+        } catch (err) {
+          console.error('[db] Error in fixing corrupted JSON rows:', err.message);
+        }
+      })();
+
+      // ── Crash-safe regen on boot ─────────────────────────────────────────────────
+      // Calculate how many 15-min windows passed since last regen and apply them now
+      const regenRow = await db.get("SELECT value FROM server_state WHERE key = 'last_regen_at'");
+      if (regenRow) {
+        const lastRegen = Number(regenRow.value);
+        const now       = Math.floor(Date.now() / 1000);
+        const elapsed   = now - lastRegen;
+        const windows   = Math.floor(elapsed / (REGEN_MS / 1000));
+        if (windows > 0) {
+          const catchUp = Math.min(windows * REGEN_AMOUNT, REGEN_MAX);
+          await db.run(`
+            UPDATE kingdoms SET turns_stored = MIN(?, turns_stored + ?)
+          `, [REGEN_MAX, catchUp]);
+          await db.run(
+            "UPDATE server_state SET value = CAST(unixepoch() AS TEXT) WHERE key = 'last_regen_at'"
+          );
+          console.log('[turns] Boot catch-up: applied ' + windows + ' missed window(s), +'  + catchUp + ' turns');
+        }
       }
-      if (fixedRows > 0) console.log(`[db] Fixed ${fixedRows} corrupted JSON rows.`);
-    })();
 
-  // ── Crash-safe regen on boot ─────────────────────────────────────────────────
-  // Calculate how many 15-min windows passed since last regen and apply them now
-  const regenRow = await db.get("SELECT value FROM server_state WHERE key = 'last_regen_at'");
-  if (regenRow) {
-    const lastRegen = Number(regenRow.value);
-    const now       = Math.floor(Date.now() / 1000);
-    const elapsed   = now - lastRegen;
-    const windows   = Math.floor(elapsed / (REGEN_MS / 1000));
-    if (windows > 0) {
-      const catchUp = Math.min(windows * REGEN_AMOUNT, REGEN_MAX);
-      await db.run(`
-        UPDATE kingdoms SET turns_stored = MIN(?, turns_stored + ?)
-      `, [REGEN_MAX, catchUp]);
-      await db.run(
-        "UPDATE server_state SET value = CAST(unixepoch() AS TEXT) WHERE key = 'last_regen_at'"
-      );
-      console.log('[turns] Boot catch-up: applied ' + windows + ' missed window(s), +'  + catchUp + ' turns');
+      // Auto-seed AI kingdoms on boot if they don't exist
+      try {
+        const seeded = await seedAiKingdoms(db);
+        if (seeded > 0) console.log(`[ai] Seeded ${seeded} new AI kingdoms`);
+        else console.log('[ai] AI kingdoms already exist');
+      } catch(e) { console.error('[ai] Seed error:', e.message); }
+
+      try {
+        const heroes = await db.all('SELECT id, class FROM heroes');
+        const getHeroConfig = () => ({
+          paladin: [{name: "Protective Aura", description: "+10% Military Power"}],
+          archmage: [{name: "Arcane Infusion", description: "Harvest +100 mana per turn per level"}],
+          warlord: [{name: "War Cry", description: "+25% Military Power"}],
+          shadowblade: [{name: "Deadly Strike", description: "Massively boosts assassination success rates"}],
+          sovereign: [{name: "Royal Decree", description: "+10% Population Growth"}]
+        });
+        const c = getHeroConfig();
+        for (const h of heroes) {
+            if (c[h.class]) await db.run('UPDATE heroes SET abilities = ? WHERE class = ?', [JSON.stringify(c[h.class]), h.class]);
+        }
+      } catch (err) {
+        console.error('[heroes] Error setting hero abilities:', err.message);
+      }
+
+      // Schedule ongoing regen
+      setInterval(() => runRegen(db), REGEN_MS);
+      console.log('[turns] Regen timer started — +' + REGEN_AMOUNT + ' every 25 min (max ' + REGEN_MAX + ')');
+
+      // Market pulse
+      setInterval(() => updateMarketPrices(db), 3600000); 
+      try {
+        updateMarketPrices(db);
+      } catch (err) {
+        console.error('[market] Error in market pulse:', err.message);
+      }
+
+    } catch (err) {
+      bootError = err;
+      console.error('[boot] ⚠️ DATABASE ERROR: Server starting up in OFFLINE/ERROR state', err);
     }
-  }
 
-  // Auto-seed AI kingdoms on boot if they don't exist
-  try {
-    const seeded = await seedAiKingdoms(db);
-    if (seeded > 0) console.log(`[ai] Seeded ${seeded} new AI kingdoms`);
-    else console.log('[ai] AI kingdoms already exist');
-  } catch(e) { console.error('[ai] Seed error:', e.message); }
-
-  try {
-    const heroes = await db.all('SELECT id, class FROM heroes');
-    const getHeroConfig = () => ({
-      paladin: [{name: "Protective Aura", description: "+10% Military Power"}],
-      archmage: [{name: "Arcane Infusion", description: "Harvest +100 mana per turn per level"}],
-      warlord: [{name: "War Cry", description: "+25% Military Power"}],
-      shadowblade: [{name: "Deadly Strike", description: "Massively boosts assassination success rates"}],
-      sovereign: [{name: "Royal Decree", description: "+10% Population Growth"}]
+    // Intercept API routes if database is not connected
+    app.use('/api/', (req, res, next) => {
+      if (bootError) {
+        return res.status(500).json({
+          status: 'error',
+          error: 'PostgreSQL Database Connection Offline',
+          details: bootError.message || String(bootError)
+        });
+      }
+      next();
     });
-    const c = getHeroConfig();
-    for (const h of heroes) {
-        if (c[h.class]) await db.run('UPDATE heroes SET abilities = ? WHERE class = ?', [JSON.stringify(c[h.class]), h.class]);
-    }
-  } catch {}
 
-
-  // Schedule ongoing regen
-  setInterval(() => runRegen(db), REGEN_MS);
-  console.log('[turns] Regen timer started — +' + REGEN_AMOUNT + ' every 25 min (max ' + REGEN_MAX + ')');
-
-  // Market pulse
-  setInterval(() => updateMarketPrices(db), 3600000); 
-  updateMarketPrices(db);
-
-  // ── Routes ────────────────────────────────────────────────────────────────────
-  app.use('/api/auth',         authLimiter,  require('./routes/auth')(db));
-  app.use('/api/kingdom',      turnLimiter,  require('./routes/kingdom')(db));
-  app.use('/api/hero',         turnLimiter,  require('./routes/hero')(db));
-  app.use('/api/ai-warfare',               require('./routes/ai-warfare')(db));
-  app.use('/api/admin',                    require('./routes/admin')(db, io));
+    // ── Routes ────────────────────────────────────────────────────────────────────
+    app.use('/api/auth',         authLimiter,  require('./routes/auth')(db));
+    app.use('/api/kingdom',      turnLimiter,  require('./routes/kingdom')(db));
+    app.use('/api/hero',         turnLimiter,  require('./routes/hero')(db));
+    app.use('/api/ai-warfare',               require('./routes/ai-warfare')(db));
+    app.use('/api/admin',                    require('./routes/admin')(db, io));
 
   app.get('/api/alliance/list', requireAuth, async (req, res) => {
     const rows = await db.all(`
@@ -1324,6 +1353,13 @@ async function start() {
     }
     res.json({ ok: true });
   });
+
+  app.get(['/admin', '/admin.html'], (_req, res) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+  });
   
   // Vite as middleware should be checked BEFORE static serving but AFTER API routes
   if (vite) {
@@ -1333,7 +1369,7 @@ async function start() {
 
   // Platform health check
   app.get('/health', (req, res) => {
-    if (bootError) return res.status(500).json({ status: 'error', error: String(bootError) });
+    if (bootError) return res.status(200).json({ status: 'error', error: String(bootError), database_offline: true });
     if (!isBooted) return res.status(503).json({ status: 'booting' });
     res.json({ status: 'ok', uptime: Math.floor(process.uptime()) });
   });
@@ -1381,13 +1417,6 @@ async function start() {
     if (!player) return res.status(404).json({ error: 'Player not found' });
     await db.run('UPDATE players SET is_admin = 1 WHERE id = ?', [player.id]);
     res.json({ ok: true, message: username + ' is now an admin. Log out and back in to get the admin token.' });
-  });
-
-  app.get('/admin', (_req, res) => {
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
   });
 
   app.post('/api/suggestions', requireAuth, async (req, res) => {
