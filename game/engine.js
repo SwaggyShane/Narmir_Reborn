@@ -1653,7 +1653,8 @@ function processTurn(k) {
   const resourceUpdates = processResourceYield({ ...k, ...updates }, events);
   Object.assign(updates, resourceUpdates);
 
-  // ── 4c. Tavern entertainment bonus ────────────────────────────────────────────
+  // ── 4c. Tavern entertainment bonus (Disabled: taverns no longer grant entertainment study per turn) ──
+  /*
   const entBonus = tavernEntertainmentBonus(k);
   if (entBonus > 0) {
     updates.res_entertainment = Math.min(
@@ -1661,6 +1662,7 @@ function processTurn(k) {
       k.res_entertainment + Math.floor(entBonus / 10),
     );
   }
+  */
 
   // ── 4c. Mercenary upkeep and expiry ───────────────────────────────────────────
   const mercUpdates = processMercenaries({ ...k, ...updates }, events);

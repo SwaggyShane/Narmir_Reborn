@@ -50,6 +50,7 @@ const StatusPanel = () => {
     .trim()
     .replace(/\s+/g, '_');
   const portraitUrl = RACE_PORTRAITS[currentRaceKey] || '';
+  const isVampire = currentRaceKey === 'vampire' || (window.gameState && window.gameState.race === 'vampire');
 
   return (
     <div id="status" className="panel active">
@@ -181,13 +182,13 @@ const StatusPanel = () => {
             <span style={{ textAlign: 'center', fontSize: '11px', fontWeight: 600 }} id="s-lv-rangers">—</span>
             <span className="badge badge-blue" style={{ textAlign: 'center', fontSize: '9px' }}>Ranged</span>
           </div>
-          <div id="s-row-clerics" style={{ display: 'grid', gridTemplateColumns: '100px 1fr 52px 52px', gap: '4px', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid var(--border)' }}>
+          <div id="s-row-clerics" style={{ display: isVampire ? 'none' : 'grid', gridTemplateColumns: '100px 1fr 52px 52px', gap: '4px', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid var(--border)' }}>
             <span style={{ fontSize: '13px', color: 'var(--text)' }} id="s-label-clerics">Clerics</span>
             <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-clerics">0</span>
             <span style={{ textAlign: 'center', fontSize: '11px', fontWeight: 600 }} id="s-lv-clerics">—</span>
             <span className="badge badge-green" style={{ textAlign: 'center', fontSize: '9px' }}>Heal</span>
           </div>
-          <div id="s-row-thralls" style={{ display: 'grid', gridTemplateColumns: '100px 1fr 52px 52px', gap: '4px', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid var(--border)' }}>
+          <div id="s-row-thralls" style={{ display: isVampire ? 'grid' : 'none', gridTemplateColumns: '100px 1fr 52px 52px', gap: '4px', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid var(--border)' }}>
             <span style={{ fontSize: '13px', color: 'var(--text)' }} id="s-label-thralls">Thralls</span>
             <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-thralls">0</span>
             <span style={{ textAlign: 'center', fontSize: '11px', fontWeight: 600 }} id="s-lv-thralls">—</span>

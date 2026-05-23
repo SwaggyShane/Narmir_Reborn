@@ -1,6 +1,7 @@
 import React from 'react';
 
 const HirePanel = () => {
+  const isVampire = window.gameState?.race === 'vampire';
   const setMaxValue = (inputId, type) => {
     if (window.setMaxValue) window.setMaxValue(inputId, type);
   };
@@ -88,7 +89,7 @@ const HirePanel = () => {
           </div>
         </div>
 
-        <div className="hire-row" id="hire-row-clerics">
+        <div className="hire-row" id="hire-row-clerics" style={{ display: isVampire ? 'none' : '' }}>
           <div>
              <div className="hname">💚 Clerics</div>
              <div className="hdesc">Heal · morale aura · shrine</div>

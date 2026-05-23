@@ -1,6 +1,7 @@
 import React from 'react';
 
 const TrainingPanel = () => {
+  const isVampire = window.gameState?.race === 'vampire';
   const distributeTrainingEvenly = () => {
     if (window.distributeTrainingEvenly) window.distributeTrainingEvenly();
   };
@@ -115,7 +116,7 @@ const TrainingPanel = () => {
           </div>
         </div>
 
-        <div className="trow" id="training-row-clerics">
+        <div className="trow" id="training-row-clerics" style={{ display: isVampire ? 'none' : '' }}>
           <span className="name">Clerics</span>
           <div className="prog-wrap">
              <div id="tr-bar-clerics" className="prog-bar" style={{ width: '0%', background: 'var(--green)' }}></div>
