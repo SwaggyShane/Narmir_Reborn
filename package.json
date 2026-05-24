@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "node index.js",
     "start": "node index.js",
+    "bot": "node discord-bot.js",
     "build": "vite build",
     "lint": "eslint . --ext js --report-unused-disable-directives"
   },
@@ -14,6 +15,7 @@
     "bcryptjs": "^2.4.3",
     "better-sqlite3": "^12.10.0",
     "cookie-parser": "^1.4.6",
+    "discord.js": "^14.14.0",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
