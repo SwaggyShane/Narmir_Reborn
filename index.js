@@ -1277,6 +1277,14 @@ async function start() {
     res.json(msgs.reverse());
   });
 
+  app.get('/api/spell-definitions', (_req, res) => {
+    // Return spell definitions and magic schools for admin panel
+    res.json({
+      SPELL_DEFS: engine.SPELL_DEFS,
+      MAGIC_SCHOOLS: engine.MAGIC_SCHOOLS
+    });
+  });
+
   app.get('/api/health', (_req, res) => res.json({ ok: true, uptime: Math.floor(process.uptime()) }));
   
   app.post('/api/log-error', (req, res) => {

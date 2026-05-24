@@ -101,8 +101,6 @@ const BottomNav = () => {
           id="admin-bnav-link"
           className="bnav-item"
           href="/admin"
-          target="_blank"
-          rel="noopener noreferrer"
           style={{ textDecoration: 'none' }}
         >
           <span className="bicon" style={{ color: '#ff9800' }}>👑</span>Admin
