@@ -6190,6 +6190,7 @@ async function resolveExpeditions(db, k, engine) {
         "troop_levels",
         "xp",
         "level",
+        "xp_sources",
         "discovered_kingdoms",
         "world_fragments",
         "collected_events",
@@ -6208,6 +6209,15 @@ async function resolveExpeditions(db, k, engine) {
           40 * exp.fighters,
         );
         updates.troop_levels = fXp.troop_levels;
+      }
+
+      // Award kingdom-level exploration XP
+      const kingdomXp = awardXp(freshK, "exploration", expXpAmount * (exp.rangers + (exp.fighters || 0)));
+      updates.xp = kingdomXp.xp;
+      updates.level = kingdomXp.level;
+      updates.xp_sources = JSON.stringify(kingdomXp.xp_sources);
+      if (kingdomXp.events.length > 0) {
+        events.push(...kingdomXp.events);
       }
 
       if (updates._achievement_unlocked) {
