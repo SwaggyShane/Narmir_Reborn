@@ -1580,7 +1580,7 @@ function calculateTradeIncome(k) {
 
   const base = config.TRADE_ROUTE_BASE_GOLD || 1500;
   let raceMult = config.TRADE_RATE_MULT[k.race] || 1.0;
-  
+
   if (k.prestige_level > 0) {
     const tierMod = PRESTIGE_MODIFIERS[Math.min(k.prestige_level, 5)]?.econ || 1.0;
     raceMult *= tierMod;
@@ -1588,6 +1588,10 @@ function calculateTradeIncome(k) {
 
   const econRes = (k.res_economy || 100) / 100;
   const marketBonus = 1 + k.bld_markets * 0.002;
+
+  // Merchant King achievement: +10% trade route income
+  let achievements = safeJsonParse(k.achievements, [], "calculateTradeIncome:achievements");
+  const merchantKingBonus = achievements.includes("ach_wealthy") ? 1.1 : 1.0;
 
   let total = 0;
   for (const r of routes) {
@@ -1602,7 +1606,7 @@ function calculateTradeIncome(k) {
     total += routeIncome;
   }
 
-  return Math.floor(total * raceMult * econRes * marketBonus);
+  return Math.floor(total * raceMult * econRes * marketBonus * merchantKingBonus);
 }
 
 function efficiencyMult(route) {
@@ -2727,14 +2731,10 @@ function checkAchievements(k, updates, events) {
   const currentGold = updates.gold !== undefined ? updates.gold : k.gold;
   if (!ach.includes("ach_wealthy") && currentGold >= 10000000) {
     ach.push("ach_wealthy");
-    updates.scaffolding_stored =
-      (updates.scaffolding_stored !== undefined
-        ? updates.scaffolding_stored
-        : k.scaffolding_stored) + 5000;
     events.push({
       type: "system",
       message:
-        "🏆 ACHIEVEMENT UNLOCKED: Merchant King! Rewarded +5000 Scaffolding.",
+        "🏆 ACHIEVEMENT UNLOCKED: Merchant King! All trade routes now generate +10% income permanently.",
     });
     achUpdated = true;
   }
