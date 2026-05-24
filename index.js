@@ -549,45 +549,68 @@ async function aiDevelopment(db, engine, ai, _playerId) {
  * AI upgrades resource buildings with wood, stone, iron resources
  */
 async function aiUpgradeResourceBuildings(db, ai) {
-  const wood = ai.wood || 0;
-  const stone = ai.stone || 0;
-  const iron = ai.iron || 0;
+  let wood = ai.wood || 0;
+  let stone = ai.stone || 0;
+  let iron = ai.iron || 0;
 
   const updates = {};
-  let upgraded = false;
+  const upgrades = [];
 
   // Farm upgrades: prioritize iron_plows (costs 50 iron)
   if (iron >= 50 && ai.bld_farms > 0) {
     const farmUpgrades = safeJsonParse(ai.farm_upgrades, {});
     if (!farmUpgrades.iron_plows) {
-      updates.iron = iron - 50;
-      updates.farm_upgrades = JSON.stringify({ ...farmUpgrades, iron_plows: true });
-      upgraded = true;
+      iron -= 50;
+      farmUpgrades.iron_plows = true;
+      updates.farm_upgrades = JSON.stringify(farmUpgrades);
+      upgrades.push('Iron Plows');
     }
   }
 
   // Granary upgrades: prioritize silos (costs 30 wood)
-  if (wood >= 30 && ai.bld_granaries > 0 && !upgraded) {
+  if (wood >= 30 && ai.bld_granaries > 0) {
     const granaryUpgrades = safeJsonParse(ai.granary_upgrades, {});
     if (!granaryUpgrades.silos) {
-      updates.wood = (wood || 0) - 30;
-      updates.granary_upgrades = JSON.stringify({ ...granaryUpgrades, silos: true });
-      upgraded = true;
+      wood -= 30;
+      granaryUpgrades.silos = true;
+      updates.granary_upgrades = JSON.stringify(granaryUpgrades);
+      upgrades.push('Tall Silos');
     }
   }
 
   // Market upgrades: prioritize trading_post (costs 10 iron)
-  if (iron >= 10 && ai.bld_markets > 0 && !upgraded) {
+  if (iron >= 10 && ai.bld_markets > 0) {
     const marketUpgrades = safeJsonParse(ai.market_upgrades, {});
     if (!marketUpgrades.trading_post) {
-      updates.iron = (iron || 0) - 10;
-      updates.market_upgrades = JSON.stringify({ ...marketUpgrades, trading_post: true });
-      upgraded = true;
+      iron -= 10;
+      marketUpgrades.trading_post = true;
+      updates.market_upgrades = JSON.stringify(marketUpgrades);
+      upgrades.push('Trading Post');
     }
   }
 
-  if (upgraded) {
+  if (upgrades.length > 0) {
+    // Update in-memory state to maintain consistency
+    updates.iron = iron;
+    updates.wood = wood;
+    updates.stone = stone;
+    ai.iron = iron;
+    ai.wood = wood;
+    ai.stone = stone;
+    if (updates.farm_upgrades) ai.farm_upgrades = updates.farm_upgrades;
+    if (updates.granary_upgrades) ai.granary_upgrades = updates.granary_upgrades;
+    if (updates.market_upgrades) ai.market_upgrades = updates.market_upgrades;
+
     await applyKingdomUpdates(ai.id, updates);
+
+    // Generate news event for upgrade completion (uses "Completed:" format for modal parsing)
+    const message = `🏗️ Completed: ${upgrades.join(', ')}.`;
+    try {
+      await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)',
+        [ai.id, 'system', message, ai.turn]);
+    } catch (err) {
+      console.error(`[AI Upgrades] Failed to insert news for ${ai.name}:`, err.message);
+    }
   }
 }
 
