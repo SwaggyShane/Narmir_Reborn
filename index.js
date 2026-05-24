@@ -446,7 +446,7 @@ async function runAiKingdom(db, engine, playerId) {
 
 /**
  * AI Development Phase (Turns 1-∞)
- * Focus on race-specific strengths and resource development
+ * Focus on resource development, unit hiring, and infrastructure
  */
 async function aiDevelopment(db, engine, ai, _playerId) {
   const gold = ai.gold;
@@ -460,14 +460,12 @@ async function aiDevelopment(db, engine, ai, _playerId) {
   const schoolTarget = 20;
   const marketTarget = 30;
   const grainTarget = 15;
-  const wareTarget = 20;
 
   const buildPriority = [
     { type: 'farms', cost: 1500, count: ai.bld_farms, target: farmTarget },
     { type: 'granaries', cost: 1200, count: ai.bld_granaries, target: grainTarget },
     { type: 'schools', cost: 4000, count: ai.bld_schools, target: schoolTarget },
     { type: 'markets', cost: 3000, count: ai.bld_markets, target: marketTarget },
-    { type: 'warehouses', cost: 2000, count: ai.bld_warehouses, target: wareTarget },
   ];
 
   let goldLeft = spendable;
@@ -480,8 +478,91 @@ async function aiDevelopment(db, engine, ai, _playerId) {
     }
   }
 
+  // Hire rangers for exploration
+  const rangerTarget = Math.floor(ai.land / 200);
+  const currentRangers = ai.rangers || 0;
+  if (currentRangers < rangerTarget && goldLeft >= 250) {
+    const rangerHires = Math.min(
+      Math.floor(goldLeft / 250),
+      rangerTarget - currentRangers
+    );
+    if (rangerHires > 0) {
+      updates.rangers = currentRangers + rangerHires;
+      updates.gold = (updates.gold || ai.gold) - (rangerHires * 250);
+      goldLeft = updates.gold - ((updates.gold || ai.gold) - (updates.gold || ai.gold));
+    }
+  }
+
+  // Hire engineers for building and resource development
+  const engineerTarget = Math.min(50, Math.floor((ai.bld_farms || 0) / 10) + 10);
+  const currentEngineers = ai.engineers || 0;
+  if (currentEngineers < engineerTarget && (updates.gold || ai.gold) >= 250) {
+    const goldAvail = updates.gold || ai.gold;
+    const engineerHires = Math.min(
+      Math.floor(goldAvail / 250),
+      engineerTarget - currentEngineers
+    );
+    if (engineerHires > 0) {
+      updates.engineers = currentEngineers + engineerHires;
+      updates.gold = goldAvail - (engineerHires * 250);
+    }
+  }
+
   // Apply accumulated updates in a single database call
   if (Object.keys(updates).length > 0) {
+    await applyKingdomUpdates(ai.id, updates);
+  }
+
+  // Build resource upgrades (farms, granaries, markets) with available resources
+  try {
+    await aiUpgradeResourceBuildings(db, ai);
+  } catch (err) {
+    console.error(`[AI Upgrades] Error for ${ai.name}:`, err.message);
+  }
+}
+
+/**
+ * AI upgrades resource buildings with wood, stone, iron resources
+ */
+async function aiUpgradeResourceBuildings(db, ai) {
+  const wood = ai.wood || 0;
+  const stone = ai.stone || 0;
+  const iron = ai.iron || 0;
+
+  const updates = {};
+  let upgraded = false;
+
+  // Farm upgrades: prioritize iron_plows (costs 50 iron)
+  if (iron >= 50 && ai.bld_farms > 0) {
+    const farmUpgrades = safeJsonParse(ai.farm_upgrades, {});
+    if (!farmUpgrades.iron_plows) {
+      updates.iron = iron - 50;
+      updates.farm_upgrades = JSON.stringify({ ...farmUpgrades, iron_plows: true });
+      upgraded = true;
+    }
+  }
+
+  // Granary upgrades: prioritize silos (costs 30 wood)
+  if (wood >= 30 && ai.bld_granaries > 0 && !upgraded) {
+    const granaryUpgrades = safeJsonParse(ai.granary_upgrades, {});
+    if (!granaryUpgrades.silos) {
+      updates.wood = (wood || 0) - 30;
+      updates.granary_upgrades = JSON.stringify({ ...granaryUpgrades, silos: true });
+      upgraded = true;
+    }
+  }
+
+  // Market upgrades: prioritize trading_post (costs 10 iron)
+  if (iron >= 10 && ai.bld_markets > 0 && !upgraded) {
+    const marketUpgrades = safeJsonParse(ai.market_upgrades, {});
+    if (!marketUpgrades.trading_post) {
+      updates.iron = (iron || 0) - 10;
+      updates.market_upgrades = JSON.stringify({ ...marketUpgrades, trading_post: true });
+      upgraded = true;
+    }
+  }
+
+  if (upgraded) {
     await applyKingdomUpdates(ai.id, updates);
   }
 }
