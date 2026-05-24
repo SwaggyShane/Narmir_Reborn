@@ -5656,10 +5656,15 @@ function junkPrize(k, updates) {
     inventory[ev.id]++;
     updates.items = JSON.stringify(inventory);
 
-    // Check for 100 suspicious rocks achievement
+    // Check for 100 suspicious rocks achievement (only trigger once)
     if (ev.id === "suspicious_rock" && inventory.suspicious_rock >= 100) {
-      updates.stone = (updates.stone || k.stone || 0) + 1000;
-      updates._suspicious_rocks_achievement = true;
+      let achievements = safeJsonParse(updates.achievements || k.achievements, [], "junkPrize:achievements");
+      if (!achievements.includes("suspicious_rocks_100")) {
+        achievements.push("suspicious_rocks_100");
+        updates.achievements = JSON.stringify(achievements);
+        updates.stone = (updates.stone ?? k.stone ?? 0) + 1000;
+        updates._suspicious_rocks_achievement = true;
+      }
     }
 
     return ev.msg || ev.content || "a mysterious rock";

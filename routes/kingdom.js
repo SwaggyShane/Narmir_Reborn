@@ -4271,20 +4271,36 @@ module.exports = function (db) {
       const k = await db.get('SELECT items FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
       if (!k) return res.status(404).json({ error: 'Kingdom not found' });
 
-      const { INVENTORY_ITEMS } = require('../game/config');
+      let INVENTORY_ITEMS;
+      try {
+        ({ INVENTORY_ITEMS } = require('../game/config'));
+      } catch (configErr) {
+        console.error('[inventory] Failed to load config:', configErr.message);
+        return res.status(500).json({ error: 'Server configuration error' });
+      }
       const items = safeJsonParse(k.items, {}, 'inventory:items');
 
       // Format inventory with descriptions
       const formatted = {};
+      const deprecated = [];
       for (const [itemId, count] of Object.entries(items)) {
-        if (count > 0 && INVENTORY_ITEMS[itemId]) {
-          formatted[itemId] = {
-            name: INVENTORY_ITEMS[itemId].name,
-            desc: INVENTORY_ITEMS[itemId].desc,
-            count,
-            rarity: INVENTORY_ITEMS[itemId].rarity
-          };
+        if (count > 0) {
+          if (INVENTORY_ITEMS[itemId]) {
+            formatted[itemId] = {
+              name: INVENTORY_ITEMS[itemId].name,
+              desc: INVENTORY_ITEMS[itemId].desc,
+              count,
+              rarity: INVENTORY_ITEMS[itemId].rarity
+            };
+          } else {
+            deprecated.push(`${itemId}×${count}`);
+          }
         }
+      }
+
+      // Log deprecated items for debugging
+      if (deprecated.length > 0) {
+        console.warn(`[inventory] Kingdom ${k.id} has deprecated items: ${deprecated.join(', ')}`);
       }
 
       res.json(formatted);
