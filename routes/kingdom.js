@@ -202,37 +202,22 @@ module.exports = function (db) {
     );
     if (!pk) return res.status(404).json({ error: "Kingdom not found" });
 
+    // Optimized: Use subqueries instead of LEFT JOIN OR (better index utilization)
     let rows = await db.all(`
-      SELECT k.*, p.id as player_id, p.username, p.is_ai
-      FROM kingdoms k JOIN players p ON k.player_id = p.id
+      SELECT
+        k.*,
+        p.id as player_id,
+        p.username,
+        p.is_ai,
+        (
+          SELECT MAX(created_at) FROM war_log
+          WHERE attacker_id = k.id OR defender_id = k.id
+          LIMIT 1
+        ) as last_combat_at
+      FROM kingdoms k
+      JOIN players p ON k.player_id = p.id
+      ORDER BY k.id
     `);
-
-    // Fetch max created_at separately from war_log per kingdom to support pg-mem/Postgres fallback transparently
-    let combatTimes = {};
-    try {
-      const logs = await db.all(`
-        SELECT attacker_id, defender_id, created_at FROM war_log
-      `);
-      for (const log of logs) {
-        const t = log.created_at;
-        if (log.attacker_id) {
-          if (!combatTimes[log.attacker_id] || combatTimes[log.attacker_id] < t) {
-            combatTimes[log.attacker_id] = t;
-          }
-        }
-        if (log.defender_id) {
-          if (!combatTimes[log.defender_id] || combatTimes[log.defender_id] < t) {
-            combatTimes[log.defender_id] = t;
-          }
-        }
-      }
-    } catch (e) {
-      console.error("Error fetching combat times for rankings:", e.message);
-    }
-
-    for (let r of rows) {
-      r.last_combat_at = combatTimes[r.id] || null;
-    }
 
     // Calculate score
     for (let r of rows) {

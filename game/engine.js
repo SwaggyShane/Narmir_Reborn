@@ -123,6 +123,8 @@ function isNight() {
 }
 
 const _parseCache = new Map();
+const MAX_CACHE_SIZE = 5000; // Prevent unbounded memory growth
+
 function clearParseCache() {
   _parseCache.clear();
 }
@@ -131,10 +133,21 @@ function safeJsonParse(str, fallback = {}, context = "unknown") {
   if (!str) return fallback;
   if (typeof str === "object") return str;
   const cacheKey = `${context}:${str}`;
-  if (_parseCache.has(cacheKey)) return _parseCache.get(cacheKey);
+  if (_parseCache.has(cacheKey)) {
+    // Move to end (most recently used)
+    const val = _parseCache.get(cacheKey);
+    _parseCache.delete(cacheKey);
+    _parseCache.set(cacheKey, val);
+    return val;
+  }
 
   try {
     const val = JSON.parse(str);
+    // Evict oldest entry if cache is full
+    if (_parseCache.size >= MAX_CACHE_SIZE) {
+      const oldestKey = _parseCache.keys().next().value;
+      _parseCache.delete(oldestKey);
+    }
     _parseCache.set(cacheKey, val);
     return val;
   } catch (e) {
