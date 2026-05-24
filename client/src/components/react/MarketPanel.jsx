@@ -57,10 +57,10 @@ const MarketPanel = () => {
     if (n === undefined || n === null || isNaN(n)) return "0";
     // Show up to 3 decimal places, removing trailing zeros
     if (n >= 0.01) {
-      return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
+      return n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 3 });
     }
     // For very small prices, show more precision
-    return n.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 6 });
+    return n.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 6 });
   };
 
   const formatLabel = (id) => {
