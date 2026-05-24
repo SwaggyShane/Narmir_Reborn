@@ -332,9 +332,12 @@ async function runAiKingdom(db, engine, playerId) {
     return updates; // We return the original object or whatever applyK needs
   }
 
-  // Process only the turns granted this regen cycle (7 turns every 25 min)
-  // This spreads turn usage throughout the day instead of consuming all at once
-  const turnsToSpend = Math.min(ai.turns_stored, 7);
+  // Calculate turns to process per cycle to exhaust max daily allocation
+  // Example: 400 max / 57.6 cycles per day ≈ 7 turns per cycle
+  const minutesPerDay = 24 * 60;
+  const cyclesPerDay = minutesPerDay / (REGEN_MS / (60 * 1000));
+  const turnsPerRegenCycle = Math.ceil(REGEN_MAX / cyclesPerDay);
+  const turnsToSpend = Math.min(ai.turns_stored, turnsPerRegenCycle);
   const inDevelopmentPhase = ai.turn < 800;
   const turnsPerCycle = 1; // Process one turn at a time for smoother progression
 
