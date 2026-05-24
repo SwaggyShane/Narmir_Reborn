@@ -2617,7 +2617,8 @@
           1: { label: '①', title: 'Foundational', icon: '📖' },
           2: { label: '②', title: 'Intermediate', icon: '⚔️' },
           3: { label: '③', title: 'Advanced', icon: '🔥' },
-          4: { label: '④', title: 'Ultimate', icon: '💀' }
+          4: { label: '④', title: 'Ultimate', icon: '💀' },
+          5: { label: '⑤', title: 'Ascendant', icon: '✨' }
         };
 
         // ===== SECTION 1: ORIGINAL SPELLBOOK BY TIER =====
@@ -2676,15 +2677,28 @@
         // ===== SECTION 2: SCHOOLS WITH SPELLS BY TIER =====
         html = '<div><h3 style="color: var(--gold); margin-bottom: 16px; font-size: 14px;">🔮 SCHOOLS OF MAGIC</h3>';
 
+        const schoolInfo = {
+          abjuration: { name: 'Abjuration', icon: '🛡️', desc: 'Protection & Defense' },
+          conjuration: { name: 'Conjuration', icon: '✨', desc: 'Creation & Summoning' },
+          divination: { name: 'Divination', icon: '🔮', desc: 'Foresight & Information' },
+          enchantment: { name: 'Enchantment', icon: '💫', desc: 'Charm & Influence' },
+          evocation: { name: 'Evocation', icon: '⚡', desc: 'Damage & Force' },
+          illusion: { name: 'Illusion', icon: '👁️', desc: 'Deception & Trickery' },
+          necromancy: { name: 'Necromancy', icon: '💀', desc: 'Death & Undeath' },
+          transmutation: { name: 'Transmutation', icon: '🔄', desc: 'Change & Transformation' }
+        };
+
         const schoolOrder = ['abjuration', 'conjuration', 'divination', 'enchantment', 'evocation', 'illusion', 'necromancy', 'transmutation'];
 
         schoolOrder.forEach(schoolKey => {
-          const school = MAGIC_SCHOOLS[schoolKey];
-          if (!school.spells) return;
+          const schoolSpells = MAGIC_SCHOOLS[schoolKey];
+          if (!schoolSpells || schoolSpells.length === 0) return;
+
+          const schoolMeta = schoolInfo[schoolKey];
 
           // Organize school spells by tier
-          const schoolSpellsByTier = { 1: [], 2: [], 3: [], 4: [] };
-          school.spells.forEach(spellId => {
+          const schoolSpellsByTier = { 1: [], 2: [], 3: [], 4: [], 5: [] };
+          schoolSpells.forEach(spellId => {
             const spell = SPELL_DEFS[spellId];
             if (spell) schoolSpellsByTier[spell.tier].push(spellId);
           });
@@ -2694,17 +2708,14 @@
             schoolSpellsByTier[tier].sort((a, b) => SPELL_DEFS[a].minSB - SPELL_DEFS[b].minSB);
           });
 
-          // Get total spell count
-          const totalSpells = school.spells.length;
-
           html += `
             <div class="spell-school">
               <div class="spell-school-header" onclick="toggleSpell(this)">
                 <div class="spell-school-title">
-                  <span style="font-size: 16px;">${school.icon}</span>
-                  <span>${school.name}</span>
-                  <span style="font-size: 11px; color: var(--text3);">${school.desc}</span>
-                  <span style="font-size: 11px; color: var(--text3); margin-left: auto;">${totalSpells} spells</span>
+                  <span style="font-size: 16px;">${schoolMeta.icon}</span>
+                  <span>${schoolMeta.name}</span>
+                  <span style="font-size: 11px; color: var(--text3);">${schoolMeta.desc}</span>
+                  <span style="font-size: 11px; color: var(--text3); margin-left: auto;">25 spells</span>
                 </div>
                 <span class="spell-toggle">▼</span>
               </div>
@@ -2712,8 +2723,8 @@
                 <div style="padding: 12px 0;">
           `;
 
-          // Display tiers within school
-          [1, 2, 3, 4].forEach(tier => {
+          // Display all 5 tiers within school
+          [1, 2, 3, 4, 5].forEach(tier => {
             const spells = schoolSpellsByTier[tier];
             if (spells.length === 0) return;
 
@@ -2728,11 +2739,12 @@
 
             spells.forEach(spellId => {
               const spell = SPELL_DEFS[spellId];
+              const schoolMinSB = Math.ceil(spell.minSB * 0.85);
               html += `
                 <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px; font-size: 11px;">
                   <div style="font-weight: 600; color: var(--gold); margin-bottom: 4px;">${spellId.replace(/_/g, ' ')}</div>
                   <div style="color: var(--text2); margin-bottom: 6px; line-height: 1.3;">${spell.desc}</div>
-                  <div style="color: var(--text3); font-size: 10px;"><strong>Spellbook:</strong> ${spell.minSB} (${Math.ceil(spell.minSB * 0.85)} with school)</div>
+                  <div style="color: var(--text3); font-size: 10px;"><strong>School Spellbook:</strong> ${schoolMinSB} (15% reduction)</div>
                 </div>
               `;
             });
