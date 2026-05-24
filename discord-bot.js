@@ -16,11 +16,24 @@ const UPDATES_CHANNEL_ID = process.env.DISCORD_UPDATES_CHANNEL_ID;
 console.log('🔍 Environment Variables Check:');
 console.log('  DISCORD_BOT_TOKEN:', DISCORD_TOKEN ? `✓ Set (${DISCORD_TOKEN.length} chars)` : '❌ NOT SET');
 console.log('  DISCORD_UPDATES_CHANNEL_ID:', UPDATES_CHANNEL_ID || '⚠️  Not set');
-console.log('  All env vars:', Object.keys(process.env).filter(k => !k.includes('NODE')).join(', '));
 
 if (!DISCORD_TOKEN) {
   console.error('❌ CRITICAL: DISCORD_BOT_TOKEN is missing!');
   console.error('Make sure DISCORD_BOT_TOKEN is set as an environment variable in Railway.');
+  process.exit(1);
+}
+
+// Validate token format
+if (!/^[\w\-\.]+$/.test(DISCORD_TOKEN)) {
+  console.error('❌ CRITICAL: DISCORD_BOT_TOKEN contains invalid characters!');
+  console.error('Token contains: ' + DISCORD_TOKEN.split('').filter(c => !/[\w\-\.]/.test(c)).join(', '));
+  console.error('Valid characters are: alphanumeric, hyphen (-), underscore (_), period (.)');
+  process.exit(1);
+}
+
+if (DISCORD_TOKEN.length < 50) {
+  console.error('❌ CRITICAL: DISCORD_BOT_TOKEN is too short!');
+  console.error(`Token length: ${DISCORD_TOKEN.length} (expected 70+)`);
   process.exit(1);
 }
 
@@ -119,4 +132,12 @@ client.on('messageCreate', async (message) => {
   }
 });
 
-client.login(DISCORD_TOKEN);
+client.login(DISCORD_TOKEN).catch(error => {
+  console.error('❌ Failed to login to Discord:');
+  console.error('  Error:', error.message);
+  if (error.code === 'UND_ERR_INVALID_ARG') {
+    console.error('  This usually means the token contains invalid characters.');
+    console.error('  Check that DISCORD_BOT_TOKEN is set correctly in Railway.');
+  }
+  process.exit(1);
+});
