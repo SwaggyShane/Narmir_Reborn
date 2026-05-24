@@ -904,7 +904,6 @@
 
       /* ── Build panel: 2×2 grid layout per building row ── */
       #build-header {
-        display: var(--panel-display);
         display: grid;
         grid-template-columns: 1fr 80px 110px 120px;
         gap: 12px;
@@ -923,6 +922,24 @@
         align-items: center;
         padding: 12px 10px;
         border-bottom: 1px solid var(--border);
+      }
+      @media (max-width: 768px) {
+        #build-header {
+          grid-template-columns: 1fr 60px 60px 60px;
+          gap: 6px;
+          padding: 10px 8px;
+          font-size: 11px;
+        }
+        #build-rows .trow {
+          grid-template-columns: 1fr 60px 60px 60px;
+          gap: 6px;
+          padding: 10px 8px;
+        }
+        #build-rows .trow input {
+          width: 50px;
+          font-size: 11px;
+          padding: 3px 4px;
+        }
       }
       #build-rows .trow .bld-main {
         grid-column: 1;
