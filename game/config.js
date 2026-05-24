@@ -1045,6 +1045,18 @@ const config = {
     armor: 0,
   },
 
+  // D&D-style schools of magic with spell assignments
+  MAGIC_SCHOOLS: {
+    abjuration: ["shield", "dispel"],                              // Protection & defense
+    conjuration: ["mend", "bless"],                                // Creation & healing
+    divination: ["fog_of_war"],                                    // Foresight & information
+    enchantment: ["silence", "amnesia"],                           // Mind control & charm
+    evocation: ["spark", "lightning", "rain", "tempest", "earthquake"], // Raw elemental damage
+    illusion: ["fog_of_war"],                                      // Trickery & deception
+    necromancy: ["drain", "plague", "armageddon"],                 // Death & life drain
+    transmutation: ["mend", "blight"],                             // Transformation & alteration
+  },
+
   SPELL_DEFS: {
     spark: {
       minSB: 100,
@@ -1245,6 +1257,7 @@ const config = {
     armor: "res_armor",
     military: "res_military",
     spellbook: "res_spellbook",
+    school_spellbook: "school_spellbook",
     attack_magic: "res_attack_magic",
     defense_magic: "res_defense_magic",
     entertainment: "res_entertainment",

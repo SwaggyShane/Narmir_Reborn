@@ -50,6 +50,7 @@ const {
   BUILDING_GOLD_COST,
   BUILDING_LAND_COST,
   SPELL_DEFS,
+  MAGIC_SCHOOLS,
   SCROLL_REQUIREMENTS,
   SCRIBE_ITEMS,
   SUPPORT_CAP_RACE,
@@ -373,7 +374,7 @@ function researchIncrement(k, discipline, researchersAssigned, currentLevel) {
   const schoolOutputMult = fragmentBonusManager.getBonusMultiplier(k, 'schools', 'output');
   schoolBonus *= (schoolSpeedMult * schoolOutputMult);
   const raceMulti =
-    discipline === "spellbook"
+    discipline === "spellbook" || discipline === "school_spellbook"
       ? raceBonus(k, "magic")
       : raceBonus(k, "research");
   const resLevelMult = unitLevelMult(k, "researchers");
@@ -2933,7 +2934,7 @@ function studyDiscipline(k, discipline, researchersAssigned) {
     return { error: "Need more researchers for any progress" };
 
   let cap = MAX_RESEARCH;
-  if (discipline === "spellbook") {
+  if (discipline === "spellbook" || discipline === "school_spellbook") {
     cap = Infinity;
   } else {
     // Apply race-specific hard cap for this discipline (if any)
@@ -2945,6 +2946,32 @@ function studyDiscipline(k, discipline, researchersAssigned) {
   return {
     updates: { [col]: newVal, updated_at: Math.floor(Date.now() / 1000) },
     increment,
+  };
+}
+
+// ── Magic Schools ─────────────────────────────────────────────────────────────
+
+// Select a school of magic (one-time choice when res_spellbook >= 100)
+function selectSchool(k, schoolName) {
+  // Validate school name
+  if (!MAGIC_SCHOOLS[schoolName]) {
+    return { error: `Unknown school: ${schoolName}` };
+  }
+
+  // Can only choose if: school_of_magic is null AND res_spellbook >= 100
+  if (k.school_of_magic) {
+    return { error: `You have already chosen the school of ${k.school_of_magic}` };
+  }
+
+  if (k.res_spellbook < 100) {
+    return { error: `You must reach spellbook research level 100 to choose a school` };
+  }
+
+  // Set school choice
+  const schoolLabel = schoolName.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  return {
+    updates: { school_of_magic: schoolName, school_spellbook: 0 },
+    events: [{ type: 'system', message: `🔮 You have chosen the school of ${schoolLabel}. You can now research school-specific spells!` }]
   };
 }
 
@@ -4861,10 +4888,25 @@ function processPrestige(k) {
 function castSpell(caster, target, spellId, obscure) {
   const def = SPELL_DEFS[spellId];
   if (!def) return { error: "Unknown spell" };
-  if ((caster.res_spellbook || 0) < def.minSB)
+
+  // Check if spell can be cast from school spellbook
+  let canCastFromSchool = false;
+  if (caster.school_of_magic && MAGIC_SCHOOLS[caster.school_of_magic]) {
+    const schoolSpells = MAGIC_SCHOOLS[caster.school_of_magic];
+    if (schoolSpells.includes(spellId) && (caster.school_spellbook || 0) >= def.minSB) {
+      canCastFromSchool = true;
+    }
+  }
+
+  // Check if spell can be cast from general spellbook
+  const canCastFromGeneral = (caster.res_spellbook || 0) >= def.minSB;
+
+  // Must be able to cast from at least one source
+  if (!canCastFromSchool && !canCastFromGeneral) {
     return {
-      error: `Spellbook too low — need ${def.minSB}, have ${caster.res_spellbook}`,
+      error: `Spellbook too low — need ${def.minSB}, have general ${caster.res_spellbook}${caster.school_of_magic ? ` / school ${caster.school_spellbook}` : ""}`,
     };
+  }
 
   // Scroll check — must have a crafted scroll to cast
   let scrolls = {};

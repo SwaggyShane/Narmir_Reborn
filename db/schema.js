@@ -406,6 +406,8 @@ async function initDb() {
       active_effects    TEXT NOT NULL DEFAULT '{}',
       coal              INTEGER NOT NULL DEFAULT 0,
       steel             INTEGER NOT NULL DEFAULT 0,
+      school_of_magic   TEXT,
+      school_spellbook  INTEGER NOT NULL DEFAULT 0,
       created_at  INTEGER NOT NULL DEFAULT (unixepoch()),
       updated_at  INTEGER NOT NULL DEFAULT (unixepoch())
     );
@@ -1194,6 +1196,10 @@ async function initDb() {
 
   // Resource sequence (bracket lock tracking)
   if (!cols2.includes('resource_sequence'))  await addColumn('kingdoms', 'resource_sequence',  "TEXT NOT NULL DEFAULT '{}'");
+
+  // Magic schools - school selection and school-specific spellbook
+  if (!cols2.includes('school_of_magic'))   await addColumn('kingdoms', 'school_of_magic',   "TEXT");
+  if (!cols2.includes('school_spellbook'))  await addColumn('kingdoms', 'school_spellbook',  "INTEGER NOT NULL DEFAULT 0");
 
   // Resource nodes table
   await _db.run(`

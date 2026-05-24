@@ -2280,6 +2280,8 @@
         bounties: [],
         conversations: {},
         activeConversationPeerId: null,
+        school_of_magic: null,
+        school_spellbook: 0,
       };
 
       window.setGameStateObj = function (vueState) {
@@ -5285,7 +5287,17 @@
         }
         
         await loadActiveExpeditions();
+        checkSchoolSelection();
         takingTurn = false;
+      }
+
+      function checkSchoolSelection() {
+        const res_spellbook = state.res_spellbook || 0;
+        const school_of_magic = state.school_of_magic || null;
+        const modal = document.getElementById("school-modal");
+        if (modal && res_spellbook >= 100 && !school_of_magic && modal.style.display === "none") {
+          openSchoolModal();
+        }
       }
 
       function syncUI() {
@@ -8888,9 +8900,11 @@
           "res_entertainment",
           "res_construction",
           "res_war_machines",
+          "school_spellbook",
         ].forEach(function (k) {
           if (u[k] !== undefined) state[k] = u[k];
         });
+        if (u.school_of_magic !== undefined) state.school_of_magic = u.school_of_magic;
         [
           "bld_farms",
           "bld_granaries",
@@ -15307,6 +15321,103 @@
         }
       }
 
+      const MAGIC_SCHOOLS = {
+        abjuration: { name: "Abjuration", icon: "🛡️", desc: "Protection & Defense" },
+        conjuration: { name: "Conjuration", icon: "✨", desc: "Summoning & Creation" },
+        divination: { name: "Divination", icon: "🔮", desc: "Information & Foresight" },
+        enchantment: { name: "Enchantment", icon: "💫", desc: "Charm & Influence" },
+        evocation: { name: "Evocation", icon: "⚡", desc: "Damage & Force" },
+        illusion: { name: "Illusion", icon: "👁️", desc: "Deception & Trickery" },
+        necromancy: { name: "Necromancy", icon: "💀", desc: "Death & Undeath" },
+        transmutation: { name: "Transmutation", icon: "🔄", desc: "Change & Transformation" },
+      };
+
+      function openSchoolModal() {
+        const modal = document.getElementById("school-modal");
+        if (modal) {
+          const optionsDiv = document.getElementById("school-options");
+          optionsDiv.innerHTML = "";
+
+          Object.keys(MAGIC_SCHOOLS).forEach(key => {
+            const school = MAGIC_SCHOOLS[key];
+            const btn = document.createElement("button");
+            btn.className = "btn";
+            btn.style.cssText = `
+              padding: 12px;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              cursor: pointer;
+              border: 2px solid var(--border2);
+              background: var(--bg3);
+              color: var(--text1);
+              border-radius: var(--radius);
+              transition: all 0.2s ease;
+            `;
+            btn.innerHTML = `
+              <div style="font-size: 24px; margin-bottom: 4px;">${school.icon}</div>
+              <div style="font-size: 13px; font-weight: bold;">${school.name}</div>
+              <div style="font-size: 11px; color: var(--text3); margin-top: 2px;">${school.desc}</div>
+            `;
+            btn.onmouseover = () => {
+              btn.style.borderColor = "var(--gold)";
+              btn.style.background = "var(--bg2)";
+            };
+            btn.onmouseout = () => {
+              btn.style.borderColor = "var(--border2)";
+              btn.style.background = "var(--bg3)";
+            };
+            btn.onclick = () => selectSchool(key);
+            optionsDiv.appendChild(btn);
+          });
+
+          modal.style.display = "flex";
+          document.body.style.overflow = "hidden";
+        }
+      }
+
+      function closeSchoolModal() {
+        const modal = document.getElementById("school-modal");
+        if (modal) {
+          modal.style.display = "none";
+          document.body.style.overflow = "";
+        }
+      }
+
+      async function selectSchool(schoolKey) {
+        try {
+          const res = await fetch('/api/select-school', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ school: schoolKey })
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            toast(data.error || 'Failed to select school', 'error');
+            return;
+          }
+
+          const schoolName = MAGIC_SCHOOLS[data.school]?.name || data.school;
+          toast(`🔮 You have chosen the school of ${schoolName}! You can now research school-specific spells!`, 'success');
+          closeSchoolModal();
+
+          if (data.events && data.events.length > 0) {
+            data.events.forEach(evt => {
+              if (evt.message) {
+                toast(evt.message, evt.type || 'system');
+              }
+            });
+          }
+
+          // Refresh kingdom data
+          await refreshData();
+        } catch (err) {
+          console.error('Error selecting school:', err);
+          toast('Network error', 'error');
+        }
+      }
+
       function openHeroXpModal() {
         var tableHtml =
           '<div style="max-height:60vh;overflow-y:auto;padding-right:10px">';
@@ -16611,6 +16722,47 @@
           id="prestige-modal-text"
           style="font-size: 12px; color: var(--text3); margin-top: 12px"
         ></p>
+      </div>
+    </div>
+
+    <!-- School Selection Modal -->
+    <div
+      id="school-modal"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 5000;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      "
+      onclick="if (event.target === this) closeSchoolModal();"
+    >
+      <div
+        style="
+          background: var(--bg2);
+          border: 1px solid var(--border2);
+          border-radius: var(--radius-lg);
+          padding: 28px;
+          max-width: 600px;
+          width: 100%;
+          position: relative;
+        "
+      >
+        <h2 style="text-align: center; margin-top: 0; margin-bottom: 8px">🔮 Choose Your School of Magic</h2>
+        <p style="text-align: center; color: var(--text3); margin: 0 0 24px 0; font-size: 13px">
+          You have reached Spellbook research level 100. Select one school to unlock school-specific spells.
+        </p>
+
+        <div id="school-options" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 20px">
+          <!-- School buttons will be inserted here -->
+        </div>
+
+        <p id="school-selected-msg" style="text-align: center; color: var(--gold); display: none; margin: 0">
+          Selected: <span id="school-selected-name" style="font-weight: bold;"></span>
+        </p>
       </div>
     </div>
 
