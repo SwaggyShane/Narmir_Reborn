@@ -554,6 +554,7 @@ async function aiUpgradeResourceBuildings(db, ai) {
   const iron = ai.iron || 0;
 
   const updates = {};
+  const upgrades = [];
   let upgraded = false;
 
   // Farm upgrades: prioritize iron_plows (costs 50 iron)
@@ -562,6 +563,7 @@ async function aiUpgradeResourceBuildings(db, ai) {
     if (!farmUpgrades.iron_plows) {
       updates.iron = iron - 50;
       updates.farm_upgrades = JSON.stringify({ ...farmUpgrades, iron_plows: true });
+      upgrades.push('Iron Plows');
       upgraded = true;
     }
   }
@@ -572,6 +574,7 @@ async function aiUpgradeResourceBuildings(db, ai) {
     if (!granaryUpgrades.silos) {
       updates.wood = (wood || 0) - 30;
       updates.granary_upgrades = JSON.stringify({ ...granaryUpgrades, silos: true });
+      upgrades.push('Tall Silos');
       upgraded = true;
     }
   }
@@ -582,12 +585,24 @@ async function aiUpgradeResourceBuildings(db, ai) {
     if (!marketUpgrades.trading_post) {
       updates.iron = (iron || 0) - 10;
       updates.market_upgrades = JSON.stringify({ ...marketUpgrades, trading_post: true });
+      upgrades.push('Trading Post');
       upgraded = true;
     }
   }
 
   if (upgraded) {
     await applyKingdomUpdates(ai.id, updates);
+
+    // Generate news event for upgrade completion
+    if (upgrades.length > 0) {
+      const message = `🏗️ Resource building upgrade completed: ${upgrades.join(', ')}.`;
+      try {
+        await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)',
+          [ai.id, 'system', message, ai.turn]);
+      } catch (err) {
+        console.error(`[AI Upgrades] Failed to insert news for ${ai.name}:`, err.message);
+      }
+    }
   }
 }
 
