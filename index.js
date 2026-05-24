@@ -26,7 +26,17 @@ console.log = function(...args) {
 console.error = function(...args) {
   originalError.apply(console, args);
   try {
-    fs.appendFileSync(logFilePath, `[ERROR] [${new Date().toISOString()}] ${args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ')}\n`);
+    // Sanitize errors: log only message/code, not full stack traces (prevent data leaks)
+    const sanitized = args.map(a => {
+      if (a instanceof Error) {
+        return `${a.name}: ${a.message}`;
+      } else if (typeof a === 'object') {
+        // Don't log full objects that might contain sensitive data
+        return a.code || a.message || '[Object]';
+      }
+      return String(a);
+    }).join(' ');
+    fs.appendFileSync(logFilePath, `[ERROR] [${new Date().toISOString()}] ${sanitized}\n`);
   } catch (e) {}
 };
 console.warn = function(...args) {
@@ -1044,10 +1054,14 @@ async function start() {
     // Intercept API routes if database is not connected
     app.use('/api/', (req, res, next) => {
       if (bootError) {
+        // Don't leak internal error details in production
+        const details = process.env.NODE_ENV === 'production'
+          ? 'Service temporarily unavailable'
+          : (bootError.message || String(bootError));
         return res.status(500).json({
           status: 'error',
-          error: 'PostgreSQL Database Connection Offline',
-          details: bootError.message || String(bootError)
+          error: 'Service Unavailable',
+          details: details
         });
       }
       next();
@@ -1490,15 +1504,45 @@ if (process.env.NODE_ENV !== 'production' && vite) {
   };
 
   const multer = require('multer');
-  const upload = multer({ dest: path.join(__dirname, 'public') });
+
+  // Secure multer configuration with validation
+  const upload = multer({
+    dest: path.join(__dirname, 'public'),
+    limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit
+    fileFilter: (req, file, cb) => {
+      // Only allow video MIME types
+      if (!file.mimetype.startsWith('video/')) {
+        return cb(new Error('Only video files are allowed'));
+      }
+      // Whitelist allowed extensions
+      const ext = path.extname(file.originalname).toLowerCase();
+      const allowedExts = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv'];
+      if (!allowedExts.includes(ext)) {
+        return cb(new Error('File type not allowed'));
+      }
+      cb(null, true);
+    }
+  });
+
   app.post('/api/upload-bg', authLimiter, upload.single('video'), (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No video provided' });
-    const ext = path.extname(req.file.originalname) || '.mp4';
+
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    const allowedExts = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv'];
+    if (!allowedExts.includes(ext)) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ error: 'Invalid file type' });
+    }
+
     const newPath = path.join(__dirname, 'public', 'custom-bg' + ext);
-    fs.renameSync(req.file.path, newPath);
-    // Write the selected background URL so it persists
-    fs.writeFileSync(path.join(__dirname, 'public', 'bg-config.txt'), '/custom-bg' + ext);
-    res.json({ url: '/custom-bg' + ext + '?t=' + Date.now() });
+    try {
+      fs.renameSync(req.file.path, newPath);
+      fs.writeFileSync(path.join(__dirname, 'public', 'bg-config.txt'), '/custom-bg' + ext);
+      res.json({ url: '/custom-bg' + ext + '?t=' + Date.now() });
+    } catch (e) {
+      console.error('[upload] File handling error:', e.message);
+      res.status(500).json({ error: 'Upload failed' });
+    }
   });
 
   app.get('/api/bg-video', (req, res) => {
