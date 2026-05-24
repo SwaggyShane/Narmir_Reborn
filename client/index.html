@@ -942,12 +942,12 @@
         }
       }
       #build-rows .trow .bld-main {
-        grid-column: 1;
         display: flex;
         align-items: center;
         gap: 8px;
         overflow: hidden;
         min-width: 0;
+        grid-column: 1;
       }
       #build-rows .trow .name {
         font-size: 13px;
@@ -975,6 +975,9 @@
         align-items: center;
         gap: 4px;
         justify-content: center;
+      }
+      #build-rows .trow .bld-demolish:empty {
+        visibility: hidden;
       }
       #build-rows .trow .bld-eng {
         grid-column: 4;
