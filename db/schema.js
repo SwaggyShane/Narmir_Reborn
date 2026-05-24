@@ -876,16 +876,16 @@ async function initDb() {
   // Seed default market prices
   const defaultPrices = [
     ['food',    0.5, 0.5],
-    ['wood',    1.0, 1.0],
-    ['stone',   2.0, 2.0],
-    ['iron',    4.0, 4.0],
-    ['coal',    3.0, 3.0],
-    ['steel',   8.0, 8.0],
+    ['wood',    10.0, 10.0],
+    ['stone',   25.0, 25.0],
+    ['iron',    50.0, 50.0],
+    ['coal',    50.0, 50.0],
+    ['steel',   500.0, 500.0],
     ['mana',    2.0, 2.0],
-    ['weapons', 5.0, 5.0],
-    ['armor',   10.0, 10.0],
-    ['war_machines', 500.0, 500.0],
-    ['land',    2000.0, 2000.0]
+    ['weapons', 25.0, 25.0],
+    ['armor',   25.0, 25.0],
+    ['war_machines', 1000.0, 1000.0],
+    ['land',    5000.0, 5000.0]
   ];
   for (const [id, current, base] of defaultPrices) {
     await _db.run('INSERT OR IGNORE INTO market_prices (id, current_price, base_price) VALUES (?, ?, ?)', [id, current, base]);
@@ -924,19 +924,19 @@ async function initDb() {
   `);
   const freshDefaultPrices = [
     ['food',    0.5, 0.5],
-    ['wood',    1.0, 1.0],
-    ['stone',   2.0, 2.0],
-    ['iron',    4.0, 4.0],
-    ['coal',    3.0, 3.0],
-    ['steel',   8.0, 8.0],
+    ['wood',    10.0, 10.0],
+    ['stone',   25.0, 25.0],
+    ['iron',    50.0, 50.0],
+    ['coal',    50.0, 50.0],
+    ['steel',   500.0, 500.0],
     ['mana',    2.0, 2.0],
-    ['weapons', 5.0, 5.0],
-    ['armor',   10.0, 10.0],
-    ['war_machines', 500.0, 500.0],
-    ['land',    2000.0, 2000.0]
+    ['weapons', 25.0, 25.0],
+    ['armor',   25.0, 25.0],
+    ['war_machines', 1000.0, 1000.0],
+    ['land',    5000.0, 5000.0]
   ];
   for (const [id, current, base] of freshDefaultPrices) {
-    await _db.run('INSERT OR IGNORE INTO market_prices (id, current_price, base_price) VALUES (?, ?, ?)', [id, current, base]);
+    await _db.run('INSERT OR REPLACE INTO market_prices (id, current_price, base_price, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)', [id, current, base]);
   }
 
   // Events table
