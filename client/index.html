@@ -6296,6 +6296,73 @@
         }
       }
 
+      function updatePasswordRequirements() {
+        const pass = document.getElementById("auth-pass").value;
+        const reqs = document.getElementById("password-requirements");
+        const reqLength = document.getElementById("req-length");
+        const reqUpper = document.getElementById("req-upper");
+        const reqLower = document.getElementById("req-lower");
+        const reqNumber = document.getElementById("req-number");
+        const reqSpecial = document.getElementById("req-special");
+
+        if (!pass) {
+          reqs.style.display = "none";
+          return;
+        }
+
+        reqs.style.display = "block";
+
+        const hasLength = pass.length >= 8;
+        const hasUpper = /[A-Z]/.test(pass);
+        const hasLower = /[a-z]/.test(pass);
+        const hasNumber = /[0-9]/.test(pass);
+        const hasSpecial = /[@$!%*?&]/.test(pass);
+
+        reqLength.textContent = hasLength ? "✓ 8+ characters" : "✗ 8+ characters";
+        reqLength.style.color = hasLength ? "#10b981" : "#e05c5c";
+
+        reqUpper.textContent = hasUpper ? "✓ Uppercase letter" : "✗ Uppercase letter";
+        reqUpper.style.color = hasUpper ? "#10b981" : "#e05c5c";
+
+        reqLower.textContent = hasLower ? "✓ Lowercase letter" : "✗ Lowercase letter";
+        reqLower.style.color = hasLower ? "#10b981" : "#e05c5c";
+
+        reqNumber.textContent = hasNumber ? "✓ Number (0-9)" : "✗ Number (0-9)";
+        reqNumber.style.color = hasNumber ? "#10b981" : "#e05c5c";
+
+        reqSpecial.textContent = hasSpecial ? "✓ Special char (@$!%*?&)" : "✗ Special char (@$!%*?&)";
+        reqSpecial.style.color = hasSpecial ? "#10b981" : "#e05c5c";
+      }
+
+      function showPasswordReset() {
+        const username = document.getElementById("auth-user").value.trim();
+        if (!username) {
+          alert("Please enter your username first");
+          return;
+        }
+
+        const resetMsg = `Password Reset Instructions:
+
+Since you have an existing account, here's how to reset your password:
+
+1. Use a strong password meeting these requirements:
+   • 8+ characters
+   • Uppercase letter (A-Z)
+   • Lowercase letter (a-z)
+   • Number (0-9)
+   • Special character (@$!%*?&)
+
+2. Example: MyKingdom123!
+
+3. Try logging in with your old password first.
+
+4. If you've forgotten your old password, please contact an administrator or check your email for recovery instructions.
+
+Note: Administrators can reset passwords from the admin panel.`;
+
+        alert(resetMsg);
+      }
+
       function doLogin() {
         doAttempt("/api/auth/login");
       }
@@ -15739,8 +15806,23 @@
             border-radius: 8px;
             color: #e8e9f0;
             box-sizing: border-box;
+            margin-bottom: 8px;
           "
+          oninput="updatePasswordRequirements()"
         />
+        <div id="password-requirements" style="display: none; font-size: 12px; background: rgba(224, 92, 92, 0.1); border: 1px solid rgba(224, 92, 92, 0.3); border-radius: 6px; padding: 10px; margin-bottom: 10px; color: #e8b84b; line-height: 1.6">
+          <div style="font-weight: 600; margin-bottom: 6px">Password Requirements:</div>
+          <div id="req-length" style="color: #e05c5c">✗ 8+ characters</div>
+          <div id="req-upper" style="color: #e05c5c">✗ Uppercase letter</div>
+          <div id="req-lower" style="color: #e05c5c">✗ Lowercase letter</div>
+          <div id="req-number" style="color: #e05c5c">✗ Number (0-9)</div>
+          <div id="req-special" style="color: #e05c5c">✗ Special char (@$!%*?&)</div>
+        </div>
+        <div style="text-align: right; margin-bottom: 12px">
+          <button onclick="showPasswordReset()" style="background: none; border: none; color: #7880b0; font-size: 12px; cursor: pointer; text-decoration: underline; padding: 0">
+            Forgot password?
+          </button>
+        </div>
         <div id="register-fields" style="display: none; margin-top: 10px">
           <div
             style="
