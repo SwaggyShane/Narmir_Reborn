@@ -2713,13 +2713,13 @@ function checkAchievements(k, updates, events) {
 
   const currentPop =
     updates.population !== undefined ? updates.population : k.population;
-  if (!ach.includes("ach_warlord") && currentPop >= 10000) {
+  if (!ach.includes("ach_warlord") && currentPop >= 50000) {
     ach.push("ach_warlord");
     updates.land =
-      (updates.land !== undefined ? updates.land : k.land) + 5000;
+      (updates.land !== undefined ? updates.land : k.land) + 10000;
     events.push({
       type: "system",
-      message: "🏆 ACHIEVEMENT UNLOCKED: Warlord! Rewarded +5000 Land.",
+      message: "🏆 ACHIEVEMENT UNLOCKED: Warlord! Rewarded +10000 Land.",
     });
     achUpdated = true;
   }
