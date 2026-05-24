@@ -749,13 +749,13 @@ const config = {
   },
 
   XP_BASE: {
-    turn: 25,
+    turn: 30,
     gold_earned: 0.0001,  // 1 XP per 10,000 gold
     combat_win: 55,
     combat_loss: -10,
-    research: 0.025,
+    research: 0.05,
     construction: 2,
-    exploration: 1,
+    exploration: 5,
     spell_cast: 10,
     covert_op: 10,
   },
