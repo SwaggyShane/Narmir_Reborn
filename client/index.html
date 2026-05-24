@@ -905,24 +905,31 @@
       /* ── Build panel: 2×2 grid layout per building row ── */
       #build-header {
         display: var(--panel-display);
+        display: grid;
+        grid-template-columns: 1fr 80px 110px 120px;
+        gap: 12px;
+        padding: 12px 10px;
+        font-weight: 600;
+        font-size: 12px;
+        color: var(--text3);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid var(--border);
       }
       #build-rows .trow {
         display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 8px 12px;
+        grid-template-columns: 1fr 80px 110px 120px;
+        gap: 12px;
         align-items: center;
         padding: 12px 10px;
         border-bottom: 1px solid var(--border);
-        flex-wrap: unset;
       }
       #build-rows .trow .bld-main {
         grid-column: 1;
-        grid-row: 1;
         display: flex;
         align-items: center;
         gap: 8px;
         overflow: hidden;
-        flex: unset;
         min-width: 0;
       }
       #build-rows .trow .name {
@@ -931,49 +938,44 @@
         overflow: hidden;
         text-overflow: ellipsis;
         font-weight: 500;
-        flex: unset;
+        flex: 1;
         min-width: 0;
       }
       #build-rows .trow .count {
-        grid-column: 1;
-        grid-row: 2;
-        text-align: left;
+        grid-column: 2;
+        text-align: right;
         font-weight: 600;
-        font-size: 11px;
-        color: var(--text2);
+        font-size: 12px;
+        color: var(--text);
         white-space: nowrap;
-        min-width: 0;
       }
       #build-rows .trow .count::before {
-        content: "Built: ";
-        color: var(--text3);
-        font-weight: normal;
-      }
-      #build-rows .trow .bld-eng {
-        grid-column: 2;
-        grid-row: 1;
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 4px;
+        content: "";
       }
       #build-rows .trow .bld-demolish {
-        grid-column: 2;
-        grid-row: 2;
+        grid-column: 3;
         display: flex;
         align-items: center;
-        justify-content: flex-end;
+        gap: 4px;
+        justify-content: center;
+      }
+      #build-rows .trow .bld-eng {
+        grid-column: 4;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         gap: 4px;
       }
       #build-rows .trow input {
-        width: 65px;
+        width: 60px;
         min-width: 0;
         background: var(--bg3);
         color: var(--text);
         border: 1px solid var(--border2);
         border-radius: 2px;
         font-size: 12px;
-        padding: 4px;
+        padding: 4px 6px;
+        text-align: center;
       }
 
       /* ── Build panel sticky header ── */
