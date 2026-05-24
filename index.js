@@ -593,9 +593,9 @@ async function aiUpgradeResourceBuildings(db, ai) {
   if (upgraded) {
     await applyKingdomUpdates(ai.id, updates);
 
-    // Generate news event for upgrade completion
+    // Generate news event for upgrade completion (uses "Completed:" format for modal parsing)
     if (upgrades.length > 0) {
-      const message = `🏗️ Resource building upgrade completed: ${upgrades.join(', ')}.`;
+      const message = `🏗️ Completed: ${upgrades.join(', ')}.`;
       try {
         await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)',
           [ai.id, 'system', message, ai.turn]);
