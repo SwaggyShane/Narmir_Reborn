@@ -2840,17 +2840,17 @@ module.exports = function (db) {
   });
 
   const MARKET_LIQUIDITY = {
-    food: 100000,
-    wood: 50000,
-    stone: 25000,
-    iron: 10000,
-    coal: 15000,
-    steel: 7500,
-    mana: 50000,
-    weapons: 5000,
-    armor: 2500,
-    war_machines: 500,
-    land: 100
+    food: 10000,
+    wood: 5000,
+    stone: 2500,
+    iron: 1000,
+    coal: 1500,
+    steel: 750,
+    mana: 5000,
+    weapons: 500,
+    armor: 250,
+    war_machines: 50,
+    land: 10
   };
 
   router.post("/market/buy", requireAuth, async (req, res) => {
