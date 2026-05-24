@@ -1034,12 +1034,24 @@ async function start() {
         console.error('[heroes] Error setting hero abilities:', err.message);
       }
 
-      // Schedule ongoing regen
-      setInterval(() => runRegen(db), REGEN_MS);
+      // Schedule ongoing regen with error handling
+      setInterval(async () => {
+        try {
+          await runRegen(db);
+        } catch (err) {
+          console.error('[turns] CRITICAL: Regen failed:', err.message);
+        }
+      }, REGEN_MS);
       console.log('[turns] Regen timer started — +' + REGEN_AMOUNT + ' every 25 min (max ' + REGEN_MAX + ')');
 
-      // Market pulse
-      setInterval(() => updateMarketPrices(db), 3600000); 
+      // Market pulse with error handling
+      setInterval(async () => {
+        try {
+          await updateMarketPrices(db);
+        } catch (err) {
+          console.error('[market] CRITICAL: Market pulse failed:', err.message);
+        }
+      }, 3600000); 
       try {
         updateMarketPrices(db);
       } catch (err) {
