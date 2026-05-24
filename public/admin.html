@@ -1988,6 +1988,7 @@
         loadAiSynopsis();
         loadMods();
         loadChatBans();
+        loadSpellDefinitions();
       }
 
       function renderTable(rows) {
@@ -2534,80 +2535,33 @@
         }
       }
 
-      const SPELL_DEFS = {
-        spark: { minSB: 100, tier: 1, desc: "Burns a small number of enemy farms" },
-        fog_of_war: { minSB: 150, tier: 1, desc: "Blinds enemy rangers for 3 turns" },
-        mend: { minSB: 200, tier: 1, desc: "Heals your own troop casualties from last battle" },
-        blight: { minSB: 250, tier: 1, desc: "Poisons enemy food supply for 5 turns" },
-        rain: { minSB: 300, tier: 1, desc: "Floods enemy farms — more damage than Spark" },
-        dispel: { minSB: 400, tier: 1, desc: "Removes all active curses and debuffs from your kingdom" },
-        lightning: { minSB: 500, tier: 2, desc: "Strikes down enemy fighters" },
-        bless: { minSB: 600, tier: 2, desc: "Boosts morale and population growth for 5 turns" },
-        silence: { minSB: 700, tier: 2, desc: "Suppresses enemy research progress for 3 turns" },
-        amnesia: { minSB: 800, tier: 2, desc: "Permanently wipes a chunk of enemy economy research" },
-        drain: { minSB: 900, tier: 2, desc: "Siphons mana from enemy kingdom to yours" },
-        plague: { minSB: 1000, tier: 3, desc: "Kills enemy population over 5 turns" },
-        earthquake: { minSB: 1200, tier: 3, desc: "Destroys buildings across all types" },
-        tempest: { minSB: 1400, tier: 3, desc: "Kills all troop types simultaneously" },
-        shield: { minSB: 1500, tier: 3, desc: "Reduces incoming spell damage by 50% for 5 turns" },
-        armageddon: { minSB: 2000, tier: 4, desc: "Destroys land, buildings, and population simultaneously. One cast, total devastation." },
+      // Will be populated from server
+      let SPELL_DEFS = {};
+
+      let MAGIC_SCHOOLS = {
+        abjuration: ["arcane_ward", "fortify_stones", "warding_circle", "banish_hex", "mystic_lock", "counterspell_aura", "dimensional_shroud", "protective_blessing", "null_field", "seal_the_breach", "greater_barrier", "reflect_curse", "sanctuary", "iron_skin_enchantment", "unbreakable_resolve", "complete_negation", "prismatic_shield", "planar_anchor", "divine_intervention", "eternal_vigilance", "absolute_protection", "temporal_rewind", "fortress_eternal", "divine_aegis", "unmaking_ward"],
+        conjuration: ["create_food", "summon_servants", "materialize_gold", "conjure_supplies", "summon_light", "summon_beasts", "greater_healing", "conjure_arsenal", "create_shelter", "summon_messenger", "summon_rats", "conjure_guardian", "mass_resurrection", "materialize_wealth", "summon_scholar", "summon_avatar", "conjure_abundance", "summon_plague_doctor", "materialize_army", "conjure_fortress", "summon_echo", "conjure_realm", "ultimate_resurrection", "summon_ascendant", "conjure_paradise"],
+        divination: ["detect_presence", "scry_library", "read_aura", "glimpse_future", "minds_eye", "true_sight", "oracles_vision", "foresee_battle", "scry_wealth", "divination_circle", "far_seeing", "chrono_vision", "soul_reading", "cosmic_sight", "prophecy", "all_knowing_eye", "foresee_disaster", "temporal_sight", "scry_sanctum", "prophetic_dream", "omniscience", "see_all_timelines", "divine_blueprint", "fates_thread", "perfect_foresight"],
+        enchantment: ["minor_charm", "fascinate_crowd", "command_word", "enthrall_scout", "whisper", "dominate_soldier", "mass_confusion", "charm_leader", "compulsion", "enchant_minds", "dominate_will", "mass_enthrallment", "command_legion", "overwhelming_charm", "psychic_dominion", "total_domination", "break_will", "mass_enslavement", "control_kingdom", "unbreakable_bond", "absolute_domination", "eternal_thralldom", "shatter_consciousness", "puppet_master", "ascendant_will"],
+        evocation: ["inferno_burst", "frost_sting", "stone_missile", "chain_bolt", "wind_shear", "meteor_shower", "acid_cloud", "inferno_wall", "sonic_blast", "blizzard", "cataclysm", "immolation", "disintegration_ray", "gravitational_crush", "absolute_zero", "reality_rip", "solar_flare", "void_storm", "apocalyptic_wave", "supernova", "extinction_event", "dimensional_collapse", "infinite_inferno", "entropy_unleashed", "cosmic_annihilation"],
+        illusion: ["mirage_city", "disguise_force", "false_wealth", "shadow_clones", "phantom_wall", "mass_hallucination", "false_army", "twisted_landscape", "phantom_spells", "deceptive_echo", "great_masquerade", "reality_warping", "phantom_army", "false_victory", "perception_shatter", "ultimate_deception", "temporal_mirage", "false_apocalypse", "multiversal_echo", "existence_masked", "perfect_illusion", "infinite_reflection", "paradox_engine", "false_reality", "unreality"],
+        necromancy: ["touch_of_death", "deaths_mark", "corpse_animation", "siphon_life", "death_knell", "undead_army", "soul_trap", "plague_of_death", "life_drain_aura", "summon_wraith", "mass_undeath", "death_curse", "soulbind", "withering_touch", "zombify_population", "undead_plague", "death_immortal", "soulflare", "cursed_existence", "necromantic_ascension", "death_dominion", "eternal_undeath", "apocalyptic_undeath", "deaths_embrace", "lich_king"],
+        transmutation: ["transform_lead_to_gold", "reshape_matter", "flesh_to_stone", "mutate_crops", "transmute_population", "mass_petrification", "metallic_skin", "transform_army", "alchemical_conversion", "bestial_transformation", "ultimate_petrification", "divine_form", "population_metamorphosis", "landscape_shift", "weapon_corruption", "complete_transformation", "dragon_form", "kingdom_alteration", "transcendence", "mass_metamorphosis", "ascendant_transformation", "reality_reconstruction", "ultimate_metamorphosis", "civilization_upheaval", "eternal_transmutation"]
       };
 
-      const MAGIC_SCHOOLS = {
-        general: {
-          name: "General Spells",
-          icon: "📖",
-          desc: "Spells available to all schools"
-        },
-        abjuration: {
-          name: "Abjuration",
-          icon: "🛡️",
-          desc: "Protection & Defense",
-          spells: ["shield", "dispel"]
-        },
-        conjuration: {
-          name: "Conjuration",
-          icon: "✨",
-          desc: "Creation & Healing",
-          spells: ["mend", "bless"]
-        },
-        divination: {
-          name: "Divination",
-          icon: "🔮",
-          desc: "Foresight & Information",
-          spells: ["fog_of_war"]
-        },
-        enchantment: {
-          name: "Enchantment",
-          icon: "💫",
-          desc: "Charm & Influence",
-          spells: ["silence", "amnesia"]
-        },
-        evocation: {
-          name: "Evocation",
-          icon: "⚡",
-          desc: "Damage & Force",
-          spells: ["spark", "lightning", "rain", "tempest", "earthquake"]
-        },
-        illusion: {
-          name: "Illusion",
-          icon: "👁️",
-          desc: "Deception & Trickery",
-          spells: ["fog_of_war"]
-        },
-        necromancy: {
-          name: "Necromancy",
-          icon: "💀",
-          desc: "Death & Undeath",
-          spells: ["drain", "plague", "armageddon"]
-        },
-        transmutation: {
-          name: "Transmutation",
-          icon: "🔄",
-          desc: "Change & Transformation",
-          spells: ["mend", "blight"]
-        },
-      };
+      // Load spell definitions from server
+      async function loadSpellDefinitions() {
+        try {
+          const res = await fetch('/api/spell-definitions');
+          if (res.ok) {
+            const data = await res.json();
+            SPELL_DEFS = data.SPELL_DEFS || {};
+            MAGIC_SCHOOLS = data.MAGIC_SCHOOLS || MAGIC_SCHOOLS;
+          }
+        } catch (err) {
+          console.error('Failed to load spell definitions:', err);
+        }
+      }
 
       async function loadSpellsDisplay() {
         const container = document.getElementById('spells-container');
