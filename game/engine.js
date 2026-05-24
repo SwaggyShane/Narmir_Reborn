@@ -11,8 +11,7 @@ const {
   REGION_DATA,
   UNIT_COST,
   MAX_RESEARCH,
-  RESEARCH_HARDCAPS,
-  ECONOMY_HARDCAPS,
+  RESEARCH_DISCIPLINE_CAPS,
   HOUSING_CAP_BY_RACE,
   TROOP_RACE_BONUS,
   WALL_STRENGTH_MULT,
@@ -2937,8 +2936,9 @@ function studyDiscipline(k, discipline, researchersAssigned) {
   if (discipline === "spellbook") {
     cap = Infinity;
   } else {
-    // Apply race-specific hard cap for research
-    cap = RESEARCH_HARDCAPS[k.race] || MAX_RESEARCH;
+    // Apply race-specific hard cap for this discipline (if any)
+    const raceCaps = RESEARCH_DISCIPLINE_CAPS[k.race] || {};
+    cap = raceCaps[discipline] || MAX_RESEARCH;
   }
   const newVal = Math.min(cap, k[col] + increment);
 

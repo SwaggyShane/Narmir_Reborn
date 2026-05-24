@@ -170,25 +170,11 @@ const config = {
   UNIT_COST: 250,
   MAX_RESEARCH: 1000,
 
-  // Race-specific hard caps for research and economy
-  RESEARCH_HARDCAPS: {
-    human: 1500,      // Bonus: 1.0x → 1500
-    high_elf: 1250,   // Bonus: 1.25x → 1250
-    dwarf: 1000,      // Bonus: 0.9x → 1000
-    orc: 1000,        // Bonus: 0.8x → 1000
-    dire_wolf: 1000,  // Bonus: 0.6x → 1000
-    dark_elf: 1000,   // Bonus: 1.0x → 1000
-    vampire: 1000,    // Bonus: 1.0x → 1000
-  },
-
-  ECONOMY_HARDCAPS: {
-    human: 1500,      // Bonus: 1.5x → 1500
-    dwarf: 1200,      // Bonus: 1.202x → 1200
-    high_elf: 1050,   // Bonus: 1.05x → 1050
-    orc: 1100,        // Bonus: 1.1x → 1100
-    dire_wolf: 1000,  // Bonus: 0.8x → 1000
-    dark_elf: 1000,   // Bonus: 0.9x → 1000
-    vampire: 1000,    // Bonus: 0.9x → 1000
+  // Race-specific research discipline hard caps (default 1000 for all disciplines)
+  RESEARCH_DISCIPLINE_CAPS: {
+    human: { economy: 1500 },           // Humans excel at economy
+    high_elf: { attack_magic: 1500 },   // High Elves excel at attack magic
+    // All other races: 1000 baseline for all disciplines
   },
 
   HOUSING_CAP_BY_RACE: {
