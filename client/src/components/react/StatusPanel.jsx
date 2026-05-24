@@ -35,13 +35,13 @@ const StatusPanel = () => {
   }, []);
 
   const RACE_PORTRAITS = {
-    high_elf: '/heroes/lunar_sentinel.png',
-    dwarf: '/heroes/siegebreaker.png',
-    human: '/heroes/grand_chancellor.png',
-    orc: '/heroes/high_chieftain.png',
-    dark_elf: '/heroes/shadowmaster.png',
-    dire_wolf: '/heroes/warshaman.png',
-    vampire: '/heroes/void_weaver.png',
+    high_elf: '/race/high_elf.png',
+    dwarf: '/race/dwarf.png',
+    human: '/race/human.png',
+    orc: '/race/orc.png',
+    dark_elf: '/race/dark_elf.png',
+    dire_wolf: '/race/dire_wolf.png',
+    vampire: '/race/vampire.png',
   };
 
   const currentRaceKey = (raceInfo.key || '') || (raceInfo.label || '')
