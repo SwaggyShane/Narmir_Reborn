@@ -1,6 +1,6 @@
 const express = require("express");
 const engine = require("../game/engine");
-const { requireAuth, requireCsrfToken } = require("./middleware");
+const { requireAuth } = require("./middleware");
 const { progressGoal } = require('../game/goals');
 
 const router = express.Router();
@@ -535,7 +535,7 @@ module.exports = function (db) {
   }
 
   // ── Take turn (advance game state) ───────────────────────────────────────────
-  router.post("/turn", requireAuth, requireCsrfToken, async (req, res) => {
+  router.post("/turn", requireAuth, async (req, res) => {
     try {
       const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
         req.player.playerId,
@@ -1321,7 +1321,7 @@ module.exports = function (db) {
   });
 
   // ── Military attack ───────────────────────────────────────────────────────────
-  router.post("/attack", requireAuth, requireCsrfToken, async (req, res) => {
+  router.post("/attack", requireAuth, async (req, res) => {
     const {
       targetId,
       fighters,
