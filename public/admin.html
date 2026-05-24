@@ -2613,14 +2613,19 @@
         const container = document.getElementById('spells-container');
         container.innerHTML = '';
 
-        // Organize spells by tier
-        const spellsByTier = {
-          1: [],
-          2: [],
-          3: [],
-          4: []
+        const tierInfo = {
+          1: { label: '①', title: 'Foundational', icon: '📖' },
+          2: { label: '②', title: 'Intermediate', icon: '⚔️' },
+          3: { label: '③', title: 'Advanced', icon: '🔥' },
+          4: { label: '④', title: 'Ultimate', icon: '💀' }
         };
 
+        // ===== SECTION 1: ORIGINAL SPELLBOOK BY TIER =====
+        let html = '<div style="margin-bottom: 32px;">';
+        html += '<h3 style="color: var(--gold); margin-bottom: 16px; font-size: 14px;">📚 ORIGINAL SPELLBOOK</h3>';
+
+        // Organize all spells by tier
+        const spellsByTier = { 1: [], 2: [], 3: [], 4: [] };
         Object.entries(SPELL_DEFS).forEach(([spellId, spell]) => {
           spellsByTier[spell.tier].push(spellId);
         });
@@ -2630,20 +2635,12 @@
           spellsByTier[tier].sort((a, b) => SPELL_DEFS[a].minSB - SPELL_DEFS[b].minSB);
         });
 
-        // Tier labels and descriptions
-        const tierInfo = {
-          1: { label: '①', title: 'Foundational', icon: '📖', color: 'var(--green)' },
-          2: { label: '②', title: 'Intermediate', icon: '⚔️', color: 'var(--blue)' },
-          3: { label: '③', title: 'Advanced', icon: '🔥', color: 'var(--gold)' },
-          4: { label: '④', title: 'Ultimate', icon: '💀', color: 'var(--red)' }
-        };
-
-        // Display each tier
+        // Display original spellbook tiers
         [1, 2, 3, 4].forEach(tier => {
           const spells = spellsByTier[tier];
           const tierData = tierInfo[tier];
 
-          let html = `
+          html += `
             <div class="spell-school">
               <div class="spell-school-header expanded" onclick="toggleSpell(this)">
                 <div class="spell-school-title">
@@ -2671,8 +2668,83 @@
           });
 
           html += `</div></div></div>`;
-          container.innerHTML += html;
         });
+
+        html += '</div>';
+        container.innerHTML += html;
+
+        // ===== SECTION 2: SCHOOLS WITH SPELLS BY TIER =====
+        html = '<div><h3 style="color: var(--gold); margin-bottom: 16px; font-size: 14px;">🔮 SCHOOLS OF MAGIC</h3>';
+
+        const schoolOrder = ['abjuration', 'conjuration', 'divination', 'enchantment', 'evocation', 'illusion', 'necromancy', 'transmutation'];
+
+        schoolOrder.forEach(schoolKey => {
+          const school = MAGIC_SCHOOLS[schoolKey];
+          if (!school.spells) return;
+
+          // Organize school spells by tier
+          const schoolSpellsByTier = { 1: [], 2: [], 3: [], 4: [] };
+          school.spells.forEach(spellId => {
+            const spell = SPELL_DEFS[spellId];
+            if (spell) schoolSpellsByTier[spell.tier].push(spellId);
+          });
+
+          // Sort each tier by minSB
+          Object.keys(schoolSpellsByTier).forEach(tier => {
+            schoolSpellsByTier[tier].sort((a, b) => SPELL_DEFS[a].minSB - SPELL_DEFS[b].minSB);
+          });
+
+          // Get total spell count
+          const totalSpells = school.spells.length;
+
+          html += `
+            <div class="spell-school">
+              <div class="spell-school-header" onclick="toggleSpell(this)">
+                <div class="spell-school-title">
+                  <span style="font-size: 16px;">${school.icon}</span>
+                  <span>${school.name}</span>
+                  <span style="font-size: 11px; color: var(--text3);">${school.desc}</span>
+                  <span style="font-size: 11px; color: var(--text3); margin-left: auto;">${totalSpells} spells</span>
+                </div>
+                <span class="spell-toggle">▼</span>
+              </div>
+              <div class="spell-content">
+                <div style="padding: 12px 0;">
+          `;
+
+          // Display tiers within school
+          [1, 2, 3, 4].forEach(tier => {
+            const spells = schoolSpellsByTier[tier];
+            if (spells.length === 0) return;
+
+            const tierData = tierInfo[tier];
+            html += `
+              <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border);">
+                <div style="font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 8px;">
+                  <span>${tierData.icon}</span> Tier ${tierData.label} - ${tierData.title}
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 8px;">
+            `;
+
+            spells.forEach(spellId => {
+              const spell = SPELL_DEFS[spellId];
+              html += `
+                <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px; font-size: 11px;">
+                  <div style="font-weight: 600; color: var(--gold); margin-bottom: 4px;">${spellId.replace(/_/g, ' ')}</div>
+                  <div style="color: var(--text2); margin-bottom: 6px; line-height: 1.3;">${spell.desc}</div>
+                  <div style="color: var(--text3); font-size: 10px;"><strong>Spellbook:</strong> ${spell.minSB} (${Math.ceil(spell.minSB * 0.85)} with school)</div>
+                </div>
+              `;
+            });
+
+            html += `</div></div>`;
+          });
+
+          html += `</div></div></div>`;
+        });
+
+        html += '</div>';
+        container.innerHTML += html;
       }
 
       function toggleSpell(header) {
