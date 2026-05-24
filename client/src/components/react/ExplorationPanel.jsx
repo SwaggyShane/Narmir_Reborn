@@ -42,40 +42,46 @@ const ExplorationPanel = () => {
       </div>
 
       {/* Inventory Section */}
-      {inventoryCount > 0 && (
-        <div className="card" style={{ marginBottom: '12px' }}>
-          <div
-            className="card-title"
-            onClick={() => setInventoryOpen(!inventoryOpen)}
-            style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-          >
-            <span>🎒 Expedition Finds ({inventoryCount} items)</span>
-            <span style={{ fontSize: '12px' }}>{inventoryOpen ? '▼' : '▶'}</span>
-          </div>
-          {inventoryOpen && (
-            <div style={{ marginTop: '10px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
-              {Object.entries(inventory).map(([itemId, item]) => (
-                <div
-                  key={itemId}
-                  style={{
-                    padding: '10px',
-                    borderRadius: '4px',
-                    background: 'rgba(255,255,255,0.05)',
-                    borderLeft: `3px solid ${item.rarity === 'junk' ? 'var(--text3)' : 'var(--accent1)'}`
-                  }}
-                >
-                  <div style={{ fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>
-                    {item.name} <span style={{ color: 'var(--gold)', fontWeight: 700 }}>×{item.count}</span>
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text3)', lineHeight: 1.4 }}>
-                    {item.desc}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+      <div className="card" style={{ marginBottom: '12px' }}>
+        <div
+          className="card-title"
+          onClick={() => setInventoryOpen(!inventoryOpen)}
+          style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+        >
+          <span>🎒 Expedition Finds {inventoryCount > 0 ? `(${inventoryCount} items)` : '(empty)'}</span>
+          <span style={{ fontSize: '12px' }}>{inventoryOpen ? '▼' : '▶'}</span>
         </div>
-      )}
+        {inventoryOpen && (
+          <>
+            {inventoryCount > 0 ? (
+              <div style={{ marginTop: '10px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
+                {Object.entries(inventory).map(([itemId, item]) => (
+                  <div
+                    key={itemId}
+                    style={{
+                      padding: '10px',
+                      borderRadius: '4px',
+                      background: 'rgba(255,255,255,0.05)',
+                      borderLeft: `3px solid ${item.rarity === 'junk' ? 'var(--text3)' : 'var(--accent1)'}`
+                    }}
+                  >
+                    <div style={{ fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>
+                      {item.name} <span style={{ color: 'var(--gold)', fontWeight: 700 }}>×{item.count}</span>
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text3)', lineHeight: 1.4 }}>
+                      {item.desc}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ fontSize: '12px', color: 'var(--text3)', padding: '16px 0', textAlign: 'center' }}>
+                No items collected yet. Send expeditions to find treasures and curiosities!
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
       {/* Left col: instant search + three expedition launchers */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
