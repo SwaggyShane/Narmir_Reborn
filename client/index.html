@@ -6347,9 +6347,9 @@
 
         var controller = new AbortController();
         var timeout = setTimeout(function () {
-          console.log("[auth] Login request timed out after 10s");
+          console.log("[auth] Login request timed out after 20s");
           controller.abort();
-        }, 10000);
+        }, 20000);
 
         console.log("[auth] Sending fetch to:", endpoint);
         fetch(endpoint, {
