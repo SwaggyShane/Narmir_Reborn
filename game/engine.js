@@ -4889,11 +4889,14 @@ function castSpell(caster, target, spellId, obscure) {
   const def = SPELL_DEFS[spellId];
   if (!def) return { error: "Unknown spell" };
 
+  // School-specific spells get 15% minSB reduction (incentive for specialization)
+  const schoolMinSB = Math.ceil(def.minSB * 0.85);
+
   // Check if spell can be cast from school spellbook
   let canCastFromSchool = false;
   if (caster.school_of_magic && MAGIC_SCHOOLS[caster.school_of_magic]) {
     const schoolSpells = MAGIC_SCHOOLS[caster.school_of_magic];
-    if (schoolSpells.includes(spellId) && (caster.school_spellbook || 0) >= def.minSB) {
+    if (schoolSpells.includes(spellId) && (caster.school_spellbook || 0) >= schoolMinSB) {
       canCastFromSchool = true;
     }
   }
@@ -4904,7 +4907,7 @@ function castSpell(caster, target, spellId, obscure) {
   // Must be able to cast from at least one source
   if (!canCastFromSchool && !canCastFromGeneral) {
     return {
-      error: `Spellbook too low — need ${def.minSB}, have general ${caster.res_spellbook}${caster.school_of_magic ? ` / school ${caster.school_spellbook}` : ""}`,
+      error: `Spellbook too low — need ${def.minSB}, have general ${caster.res_spellbook}${caster.school_of_magic ? ` / school ${caster.school_spellbook} (${schoolMinSB} for school spells)` : ""}`,
     };
   }
 

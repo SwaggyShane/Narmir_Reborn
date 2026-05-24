@@ -5291,12 +5291,20 @@
         takingTurn = false;
       }
 
+      let schoolSelectionPrompted = false;
+
       function checkSchoolSelection() {
         const res_spellbook = state.res_spellbook || 0;
         const school_of_magic = state.school_of_magic || null;
         const modal = document.getElementById("school-modal");
-        if (modal && res_spellbook >= 100 && !school_of_magic && modal.style.display === "none") {
+        // Only show modal once per session when threshold is first reached
+        if (modal && res_spellbook >= 100 && !school_of_magic && !schoolSelectionPrompted) {
+          schoolSelectionPrompted = true;
           openSchoolModal();
+        }
+        // Reset flag if school was selected (player dismissed and came back)
+        if (school_of_magic) {
+          schoolSelectionPrompted = false;
         }
       }
 
@@ -15398,10 +15406,9 @@
             return;
           }
 
-          const schoolName = MAGIC_SCHOOLS[data.school]?.name || data.school;
-          toast(`🔮 You have chosen the school of ${schoolName}! You can now research school-specific spells!`, 'success');
           closeSchoolModal();
 
+          // Server-side events already include school selection message
           if (data.events && data.events.length > 0) {
             data.events.forEach(evt => {
               if (evt.message) {
@@ -16756,13 +16763,9 @@
           You have reached Spellbook research level 100. Select one school to unlock school-specific spells.
         </p>
 
-        <div id="school-options" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 20px">
+        <div id="school-options" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 0">
           <!-- School buttons will be inserted here -->
         </div>
-
-        <p id="school-selected-msg" style="text-align: center; color: var(--gold); display: none; margin: 0">
-          Selected: <span id="school-selected-name" style="font-weight: bold;"></span>
-        </p>
       </div>
     </div>
 
