@@ -4278,22 +4278,24 @@ module.exports = function (db) {
         console.error('[inventory] Failed to load config:', configErr.message);
         return res.status(500).json({ error: 'Server configuration error' });
       }
-      const items = safeJsonParse(k.items, {}, 'inventory:items');
+      let items = safeJsonParse(k.items, [], 'inventory:items');
+      if (!Array.isArray(items)) items = [];
 
       // Format inventory with descriptions
       const formatted = {};
       const deprecated = [];
-      for (const [itemId, count] of Object.entries(items)) {
-        if (count > 0) {
-          if (INVENTORY_ITEMS[itemId]) {
-            formatted[itemId] = {
-              name: INVENTORY_ITEMS[itemId].name,
-              desc: INVENTORY_ITEMS[itemId].desc,
-              count,
-              rarity: INVENTORY_ITEMS[itemId].rarity
+      for (const item of items) {
+        if (item.qty && item.qty > 0) {
+          if (INVENTORY_ITEMS[item.id]) {
+            formatted[item.id] = {
+              name: INVENTORY_ITEMS[item.id].name,
+              desc: INVENTORY_ITEMS[item.id].desc,
+              count: item.qty,
+              rarity: INVENTORY_ITEMS[item.id].rarity
             };
-          } else {
-            deprecated.push(`${itemId}×${count}`);
+          } else if (!item.name?.includes('Fragment')) {
+            // Log non-fragment deprecated items
+            deprecated.push(`${item.id}×${item.qty}`);
           }
         }
       }

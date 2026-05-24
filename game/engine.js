@@ -60,6 +60,7 @@ const {
   RACIAL_UNITS,
   WORLD_FRAGMENTS,
   JUNK_PRIZES,
+  INVENTORY_ITEMS,
   ULTRA_RARE_PRIZES,
   THRONE_OF_NAZDREG,
   EXPEDITION_TURNS,
@@ -5651,19 +5652,30 @@ function junkPrize(k, updates) {
     updates.last_event_id = ev.id;
 
     // Add item to inventory
-    let inventory = safeJsonParse(updates.items || k.items, {}, "junkPrize:items");
-    if (!inventory[ev.id]) inventory[ev.id] = 0;
-    inventory[ev.id]++;
+    let inventory = safeJsonParse(updates.items || k.items, [], "junkPrize:items");
+    if (!Array.isArray(inventory)) inventory = [];
+
+    const existingItem = inventory.find((i) => i.id === ev.id);
+    if (existingItem) {
+      existingItem.qty = (existingItem.qty || 0) + 1;
+    } else {
+      // Get item name from INVENTORY_ITEMS if available
+      const itemDef = INVENTORY_ITEMS[ev.id];
+      inventory.push({ id: ev.id, name: itemDef?.name || ev.id, qty: 1 });
+    }
     updates.items = JSON.stringify(inventory);
 
     // Check for 100 suspicious rocks achievement (only trigger once)
-    if (ev.id === "suspicious_rock" && inventory.suspicious_rock >= 100) {
-      let achievements = safeJsonParse(updates.achievements || k.achievements, [], "junkPrize:achievements");
-      if (!achievements.includes("suspicious_rocks_100")) {
-        achievements.push("suspicious_rocks_100");
-        updates.achievements = JSON.stringify(achievements);
-        updates.stone = (updates.stone ?? k.stone ?? 0) + 1000;
-        updates._suspicious_rocks_achievement = true;
+    if (ev.id === "suspicious_rock") {
+      const rockCount = (existingItem?.qty || 0) + 1;
+      if (rockCount >= 100) {
+        let achievements = safeJsonParse(updates.achievements || k.achievements, [], "junkPrize:achievements");
+        if (!achievements.includes("suspicious_rocks_100")) {
+          achievements.push("suspicious_rocks_100");
+          updates.achievements = JSON.stringify(achievements);
+          updates.stone = (updates.stone ?? k.stone ?? 0) + 1000;
+          updates._suspicious_rocks_achievement = true;
+        }
       }
     }
 
