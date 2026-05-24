@@ -45,6 +45,7 @@ module.exports = function (db) {
 
     try {
       const hash = bcrypt.hashSync(password, 10);
+      const isAdminUser = false;
       const playerResult = await db.run(
         "INSERT INTO players (username, password, is_admin) VALUES (?, ?, ?)",
         [username, hash, 0],

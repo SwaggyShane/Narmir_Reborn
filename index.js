@@ -30,7 +30,7 @@ console.error = function(...args) {
     const sanitized = args.map(a => {
       if (a instanceof Error) {
         return `${a.name}: ${a.message}`;
-      } else if (typeof a === 'object') {
+      } else if (a !== null && typeof a === 'object') {
         // Don't log full objects that might contain sensitive data
         return a.code || a.message || '[Object]';
       }
@@ -1528,12 +1528,6 @@ if (process.env.NODE_ENV !== 'production' && vite) {
     if (!req.file) return res.status(400).json({ error: 'No video provided' });
 
     const ext = path.extname(req.file.originalname).toLowerCase();
-    const allowedExts = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv'];
-    if (!allowedExts.includes(ext)) {
-      fs.unlinkSync(req.file.path);
-      return res.status(400).json({ error: 'Invalid file type' });
-    }
-
     const newPath = path.join(__dirname, 'public', 'custom-bg' + ext);
     try {
       fs.renameSync(req.file.path, newPath);
