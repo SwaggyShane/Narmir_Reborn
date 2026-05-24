@@ -942,7 +942,6 @@
         }
       }
       #build-rows .trow .bld-main {
-        grid-column: 1;
         display: flex;
         align-items: center;
         gap: 8px;
@@ -959,7 +958,6 @@
         min-width: 0;
       }
       #build-rows .trow .count {
-        grid-column: 2;
         text-align: right;
         font-weight: 600;
         font-size: 12px;
@@ -970,14 +968,15 @@
         content: "";
       }
       #build-rows .trow .bld-demolish {
-        grid-column: 3;
         display: flex;
         align-items: center;
         gap: 4px;
         justify-content: center;
       }
+      #build-rows .trow .bld-demolish:empty {
+        display: none;
+      }
       #build-rows .trow .bld-eng {
-        grid-column: 4;
         display: flex;
         align-items: center;
         justify-content: center;
