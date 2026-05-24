@@ -353,9 +353,6 @@ async function runAiKingdom(db, engine, playerId) {
     const priceMap = {};
     priceRows.forEach(p => { priceMap[p.id] = p.current_price; });
 
-    // Wrap turn processing in transaction for atomicity
-    await db.run('BEGIN TRANSACTION');
-
     for (let i = 0; i < turnsToSpend; i += turnsPerCycle) {
     if (ai.turns_stored < turnsPerCycle) break;
     if (ai.turns_stored < 1) break;
@@ -446,12 +443,7 @@ async function runAiKingdom(db, engine, playerId) {
       await aiTradeMarket(ai, priceMap);
     }
     }
-
-    // Commit transaction on successful completion
-    await db.run('COMMIT');
   } catch (error) {
-    // Rollback on any error to maintain consistency
-    await db.run('ROLLBACK').catch(err => console.error('[AI] Rollback failed:', err.message));
     console.error(`[AI] Turn processing failed for player ${playerId}:`, error.message);
   }
 }
