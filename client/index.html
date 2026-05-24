@@ -6296,6 +6296,58 @@
         }
       }
 
+      function updatePasswordRequirements() {
+        const pass = document.getElementById("auth-pass").value;
+        const reqs = document.getElementById("password-requirements");
+        const reqLength = document.getElementById("req-length");
+        const reqUpper = document.getElementById("req-upper");
+        const reqLower = document.getElementById("req-lower");
+        const reqNumber = document.getElementById("req-number");
+        const reqSpecial = document.getElementById("req-special");
+
+        if (!pass) {
+          reqs.style.display = "none";
+          return;
+        }
+
+        reqs.style.display = "block";
+
+        const hasLength = pass.length >= 8;
+        const hasUpper = /[A-Z]/.test(pass);
+        const hasLower = /[a-z]/.test(pass);
+        const hasNumber = /[0-9]/.test(pass);
+        const hasSpecial = /[@$!%*?&]/.test(pass);
+
+        reqLength.textContent = hasLength ? "✓ 8+ characters" : "✗ 8+ characters";
+        reqLength.style.color = hasLength ? "#10b981" : "#e05c5c";
+
+        reqUpper.textContent = hasUpper ? "✓ Uppercase letter" : "✗ Uppercase letter";
+        reqUpper.style.color = hasUpper ? "#10b981" : "#e05c5c";
+
+        reqLower.textContent = hasLower ? "✓ Lowercase letter" : "✗ Lowercase letter";
+        reqLower.style.color = hasLower ? "#10b981" : "#e05c5c";
+
+        reqNumber.textContent = hasNumber ? "✓ Number (0-9)" : "✗ Number (0-9)";
+        reqNumber.style.color = hasNumber ? "#10b981" : "#e05c5c";
+
+        reqSpecial.textContent = hasSpecial ? "✓ Special char (@$!%*?&)" : "✗ Special char (@$!%*?&)";
+        reqSpecial.style.color = hasSpecial ? "#10b981" : "#e05c5c";
+      }
+
+      function showPasswordReset() {
+        const username = document.getElementById("auth-user").value.trim();
+        if (!username) {
+          const errEl = document.getElementById("auth-error");
+          if (errEl) errEl.textContent = "Please enter your username first";
+          return;
+        }
+
+        const modal = document.getElementById("password-reset-modal");
+        if (modal) {
+          modal.style.display = "flex";
+        }
+      }
+
       function doLogin() {
         doAttempt("/api/auth/login");
       }
@@ -15739,8 +15791,23 @@
             border-radius: 8px;
             color: #e8e9f0;
             box-sizing: border-box;
+            margin-bottom: 8px;
           "
+          oninput="updatePasswordRequirements()"
         />
+        <div id="password-requirements" style="display: none; font-size: 12px; background: rgba(224, 92, 92, 0.1); border: 1px solid rgba(224, 92, 92, 0.3); border-radius: 6px; padding: 10px; margin-bottom: 10px; color: #e8b84b; line-height: 1.6">
+          <div style="font-weight: 600; margin-bottom: 6px">Password Requirements:</div>
+          <div id="req-length" style="color: #e05c5c">✗ 8+ characters</div>
+          <div id="req-upper" style="color: #e05c5c">✗ Uppercase letter</div>
+          <div id="req-lower" style="color: #e05c5c">✗ Lowercase letter</div>
+          <div id="req-number" style="color: #e05c5c">✗ Number (0-9)</div>
+          <div id="req-special" style="color: #e05c5c">✗ Special char (@$!%*?&)</div>
+        </div>
+        <div style="text-align: right; margin-bottom: 12px">
+          <button onclick="showPasswordReset()" style="background: none; border: none; color: #7880b0; font-size: 12px; cursor: pointer; text-decoration: underline; padding: 0">
+            Forgot password?
+          </button>
+        </div>
         <div id="register-fields" style="display: none; margin-top: 10px">
           <div
             style="
@@ -15905,6 +15972,62 @@
         >
           New to Narmir? Click Register to create your kingdom.
         </div>
+      </div>
+    </div>
+
+    <!-- Password Reset Modal -->
+    <div
+      id="password-reset-modal"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: var(--z-modal);
+        background: rgba(0, 0, 0, 0.75);
+        backdrop-filter: blur(4px);
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      "
+      onclick="if (event.target === this) { this.style.display = 'none'; }"
+    >
+      <div style="
+        background: #0a0a0b;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 24px;
+        max-width: 400px;
+        width: 100%;
+        color: #f8fafc;
+      ">
+        <div style="font-size: 18px; font-weight: 700; margin-bottom: 16px; color: #f06202">
+          Password Requirements
+        </div>
+        <div style="font-size: 13px; line-height: 1.7; color: #cbd5e1; margin-bottom: 16px">
+          <strong>Your password must contain:</strong><br>
+          • 8 or more characters<br>
+          • Uppercase letter (A-Z)<br>
+          • Lowercase letter (a-z)<br>
+          • Number (0-9)<br>
+          • Special character: @$!%*?&<br>
+          <br>
+          <strong>Example:</strong> <code style="background: rgba(255, 255, 255, 0.05); padding: 2px 6px; border-radius: 3px">MyKingdom123!</code><br>
+          <br>
+          If you've forgotten your password, contact an administrator for assistance.
+        </div>
+        <button onclick="document.getElementById('password-reset-modal').style.display = 'none'" style="
+          width: 100%;
+          padding: 10px;
+          background: #f06202;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+        ">
+          Close
+        </button>
       </div>
     </div>
 

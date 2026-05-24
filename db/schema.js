@@ -14,8 +14,19 @@ function translateSqlForPg(sql) {
     );
   }
 
-  // Handle other INSERT OR IGNORE statements
-  if (/INSERT\s+OR\s+IGNORE\s+INTO\s+regions/i.test(translated)) {
+  // Handle INSERT OR REPLACE statements for market_prices
+  if (/INSERT\s+OR\s+REPLACE\s+INTO\s+market_prices/i.test(translated)) {
+    translated = translated.replace(
+      /INSERT\s+OR\s+REPLACE\s+INTO\s+market_prices/i,
+      "INSERT INTO market_prices"
+    );
+    if (!/ON\s+CONFLICT/i.test(translated)) {
+      translated = translated.replace(
+        /VALUES\s*\((.*?)\)/i,
+        "VALUES ($1) ON CONFLICT (id) DO UPDATE SET current_price = EXCLUDED.current_price, base_price = EXCLUDED.base_price, updated_at = EXCLUDED.updated_at"
+      );
+    }
+  } else if (/INSERT\s+OR\s+IGNORE\s+INTO\s+regions/i.test(translated)) {
     translated = translated.replace(/INSERT\s+OR\s+IGNORE\s+INTO\s+regions/i, "INSERT INTO regions");
     if (!/ON\s+CONFLICT/i.test(translated)) {
       translated += " ON CONFLICT (name) DO NOTHING";
@@ -936,7 +947,7 @@ async function initDb() {
     ['land',    5000.0, 5000.0]
   ];
   for (const [id, current, base] of freshDefaultPrices) {
-    await _db.run('INSERT OR REPLACE INTO market_prices (id, current_price, base_price, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)', [id, current, base]);
+    await _db.run('INSERT OR REPLACE INTO market_prices (id, current_price, base_price) VALUES (?, ?, ?)', [id, current, base]);
   }
 
   // Events table
