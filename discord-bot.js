@@ -31,6 +31,11 @@ client.on('messageCreate', async (message) => {
   if (!message.content.startsWith('!update')) return;
 
   try {
+    // Security: Restrict to administrators and ensure we are in a guild context
+    if (!message.guild || !message.member?.permissions.has('Administrator')) {
+      return message.reply('❌ This command can only be used by administrators within a server.');
+    }
+
     // Parse command: !update title:"Title" description:"Description" date:"2026-05-24"
     const args = message.content.slice(8).trim(); // Remove "!update "
 
@@ -55,10 +60,10 @@ client.on('messageCreate', async (message) => {
     const description = descMatch[1];
     const date = dateMatch[1];
 
-    // Validate date format
+    // Validate date format and validity
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(date)) {
-      return message.reply('❌ Invalid date format. Use YYYY-MM-DD');
+    if (!dateRegex.test(date) || isNaN(Date.parse(date))) {
+      return message.reply('❌ Invalid date. Please use a valid YYYY-MM-DD format.');
     }
 
     // Get or create updates channel
@@ -66,6 +71,10 @@ client.on('messageCreate', async (message) => {
 
     if (UPDATES_CHANNEL_ID) {
       updatesChannel = await client.channels.fetch(UPDATES_CHANNEL_ID).catch(() => null);
+      // Verify channel is text-based
+      if (updatesChannel && !updatesChannel.isTextBased()) {
+        updatesChannel = null;
+      }
     }
 
     if (!updatesChannel) {
@@ -88,7 +97,7 @@ client.on('messageCreate', async (message) => {
       .setDescription(description)
       .setFooter({
         text: `Narmir Reborn • ${date}`,
-        iconURL: 'https://cdn.discordapp.com/app-icons/1234567890/abcdef.png' // Optional: replace with Narmir icon
+        iconURL: client.user.displayAvatarURL()
       })
       .setTimestamp();
 
