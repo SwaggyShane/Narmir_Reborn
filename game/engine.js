@@ -6219,8 +6219,9 @@ async function resolveExpeditions(db, k, engine) {
         updates.troop_levels = fXp.troop_levels;
       }
 
-      // Award kingdom-level exploration XP
-      const kingdomXp = awardXp(freshK, "exploration", expXpAmount * (exp.rangers + (exp.fighters || 0)));
+      // Award kingdom-level exploration XP (divide by XP_BASE.exploration=5 to get final amounts matching stated values)
+      const kingdomXpBase = { scout: 1, deep: 4, dungeon: 8 }[exp.type] || 1;
+      const kingdomXp = awardXp(freshK, "exploration", kingdomXpBase * (exp.rangers + (exp.fighters || 0)));
       updates.xp = kingdomXp.xp;
       updates.level = kingdomXp.level;
       updates.xp_sources = JSON.stringify(kingdomXp.xp_sources);
