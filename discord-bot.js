@@ -13,8 +13,14 @@ const client = new Client({
 const DISCORD_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const UPDATES_CHANNEL_ID = process.env.DISCORD_UPDATES_CHANNEL_ID;
 
+console.log('🔍 Environment Variables Check:');
+console.log('  DISCORD_BOT_TOKEN:', DISCORD_TOKEN ? `✓ Set (${DISCORD_TOKEN.length} chars)` : '❌ NOT SET');
+console.log('  DISCORD_UPDATES_CHANNEL_ID:', UPDATES_CHANNEL_ID || '⚠️  Not set');
+console.log('  All env vars:', Object.keys(process.env).filter(k => !k.includes('NODE')).join(', '));
+
 if (!DISCORD_TOKEN) {
-  console.error('❌ Error: DISCORD_BOT_TOKEN not set in environment variables');
+  console.error('❌ CRITICAL: DISCORD_BOT_TOKEN is missing!');
+  console.error('Make sure DISCORD_BOT_TOKEN is set as an environment variable in Railway.');
   process.exit(1);
 }
 
