@@ -334,7 +334,7 @@ async function runAiKingdom(db, engine, playerId) {
 
   const turnsToSpend = ai.turns_stored;
   const inDevelopmentPhase = ai.turn < 800;
-  const turnsPerCycle = 2; // Double turns for faster development
+  const turnsPerCycle = 1; // Process one turn at a time for smoother progression
 
   try {
     // Pre-fetch region/alliance data outside the loop (doesn't change per turn)
@@ -428,11 +428,13 @@ async function runAiKingdom(db, engine, playerId) {
 
     await engine.resolveExpeditions(db, ai, engine);
 
-    // ── Turn 1: Resource Development ──
-    await aiDevelopment(db, engine, ai, playerId);
-
-    // ── Turn 2: Market Trading ──
-    await aiTradeMarket(db, ai);
+    // ── Resource Development & Trading (every turn) ──
+    // Run on alternating turns: development on odd, market on even
+    if (ai.turn % 2 === 1) {
+      await aiDevelopment(db, engine, ai, playerId);
+    } else {
+      await aiTradeMarket(db, ai);
+    }
     }
 
     // Commit transaction on successful completion
