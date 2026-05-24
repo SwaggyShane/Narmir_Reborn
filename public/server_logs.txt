@@ -1,0 +1,10 @@
+=== SERVER LOG STARTED AT 2026-05-23T22:39:52.422Z ===
+NODE_ENV: undefined
+
+[LOG] [2026-05-23T22:39:52.463Z] [boot] Starting Narmir server...
+[LOG] [2026-05-23T22:39:52.747Z] [vite] Dev server created with root: /home/user/Narmir_Reborn
+[ERROR] [2026-05-23T22:39:52.748Z] [boot] ⚠️ DATABASE ERROR: Server starting up in OFFLINE/ERROR state {}
+[LOG] [2026-05-23T22:39:52.773Z] [vite] Vite middleware active
+[LOG] [2026-05-23T22:39:52.774Z] [socket.io] Real-time handlers registered
+[LOG] [2026-05-23T22:39:52.775Z] [boot] Startup sequence complete. Server is ready.
+[LOG] [2026-05-23T22:39:52.779Z] [boot] Server listening on http://localhost:3000

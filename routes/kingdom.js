@@ -202,26 +202,22 @@ module.exports = function (db) {
     );
     if (!pk) return res.status(404).json({ error: "Kingdom not found" });
 
-    // Optimized: Use single JOIN query instead of separate query + loop
+    // Optimized: Use subqueries instead of LEFT JOIN OR (better index utilization)
     let rows = await db.all(`
       SELECT
         k.*,
         p.id as player_id,
         p.username,
         p.is_ai,
-        MAX(CASE WHEN wl.attacker_id = k.id THEN wl.created_at END) as attacker_combat_at,
-        MAX(CASE WHEN wl.defender_id = k.id THEN wl.created_at END) as defender_combat_at
+        (
+          SELECT MAX(created_at) FROM war_log
+          WHERE attacker_id = k.id OR defender_id = k.id
+          LIMIT 1
+        ) as last_combat_at
       FROM kingdoms k
       JOIN players p ON k.player_id = p.id
-      LEFT JOIN war_log wl ON (wl.attacker_id = k.id OR wl.defender_id = k.id)
-      GROUP BY k.id, p.id, p.username, p.is_ai
+      ORDER BY k.id
     `);
-
-    // Combine combat times (most recent of attacker or defender role)
-    for (let r of rows) {
-      const times = [r.attacker_combat_at, r.defender_combat_at].filter(t => t);
-      r.last_combat_at = times.length > 0 ? Math.max(...times) : null;
-    }
 
     // Calculate score
     for (let r of rows) {
