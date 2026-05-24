@@ -57,7 +57,7 @@ let bootError = null;
 const { initDb, applyKingdomUpdates } = require('./db/schema');
 const setupSockets    = require('./game/sockets');
 const engine          = require('./game/engine');
-const { requireAuth } = require('./routes/middleware');
+const { requireAuth, requireAdmin } = require('./routes/middleware');
 const config = require('./game/config');
 
 const app    = express();
@@ -252,6 +252,9 @@ const REGEN_AMOUNT = 7;   // +7 turns every 25 minutes = ~400/day
 const REGEN_MAX    = 400;
 const REGEN_MS     = 25 * 60 * 1000;
 
+// ── Authentication constants ────────────────────────────────────────────────────
+const BCRYPT_SALT_ROUNDS = 10;
+
 const AI_KINGDOMS = [
   { username: 'ai_ironforge',   kingdomName: 'Ironforge Hold',     race: 'dwarf'     },
   { username: 'ai_shadowveil',  kingdomName: 'Shadowveil Enclave', race: 'dark_elf'  },
@@ -270,7 +273,7 @@ async function seedAiKingdoms(db) {
   for (const ai of AI_KINGDOMS) {
     const existing = await db.get('SELECT id FROM players WHERE username = ?', [ai.username]);
     if (existing) continue;
-    const hash = bcrypt.hashSync(Math.random().toString(36), 8);
+    const hash = bcrypt.hashSync(Math.random().toString(36), BCRYPT_SALT_ROUNDS);
     const player = await db.run(
       'INSERT INTO players (username, password, is_ai) VALUES (?, ?, 1)',
       [ai.username, hash]
@@ -1529,7 +1532,7 @@ if (process.env.NODE_ENV !== 'production' && vite) {
     }
   });
 
-  app.post('/api/upload-bg', authLimiter, upload.single('video'), (req, res) => {
+  app.post('/api/upload-bg', requireAdmin, authLimiter, upload.single('video'), (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No video provided' });
 
     const ext = path.extname(req.file.originalname).toLowerCase();
@@ -1542,6 +1545,19 @@ if (process.env.NODE_ENV !== 'production' && vite) {
       console.error('[upload] File handling error:', e.message);
       res.status(500).json({ error: 'Upload failed' });
     }
+  });
+
+  app.use((err, req, res, next) => {
+    if (err.code === 'LIMIT_PART_COUNT' || err.code === 'LIMIT_FILE_SIZE' || err.code === 'LIMIT_FILE_COUNT') {
+      return res.status(400).json({ error: 'File size or field limit exceeded' });
+    }
+    if (err.message && err.message.includes('Only video')) {
+      return res.status(400).json({ error: err.message });
+    }
+    if (err.message && err.message.includes('Not allowed')) {
+      return res.status(400).json({ error: 'File type not allowed' });
+    }
+    next(err);
   });
 
   app.get('/api/bg-video', (req, res) => {

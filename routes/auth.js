@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const engine = require("../game/engine");
+const { generateCsrfToken, csrfTokens, requireAuth } = require("./middleware");
 
 const router = express.Router();
 
@@ -9,6 +10,10 @@ if (!process.env.JWT_SECRET) {
   throw new Error("CRITICAL: JWT_SECRET environment variable is required. Set it before starting the server.");
 }
 const JWT_SECRET = process.env.JWT_SECRET;
+
+const BCRYPT_SALT_ROUNDS = 10;
+const JWT_EXPIRY = "30d";
+const COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
 module.exports = function (db) {
   router.post("/register", async (req, res) => {
@@ -48,7 +53,7 @@ module.exports = function (db) {
     const chosenRace = validRaces.includes(race) ? race : "human";
 
     try {
-      const hash = bcrypt.hashSync(password, 10);
+      const hash = bcrypt.hashSync(password, BCRYPT_SALT_ROUNDS);
       const isAdminUser = false;
       const playerResult = await db.run(
         "INSERT INTO players (username, password, is_admin) VALUES (?, ?, ?)",
@@ -125,11 +130,11 @@ module.exports = function (db) {
       const token = jwt.sign(
         { playerId: playerResult.lastID, username, isAdmin: isAdminUser },
         JWT_SECRET,
-        { expiresIn: "30d" },
+        { expiresIn: JWT_EXPIRY },
       );
       const cookieOpts = {
         httpOnly: true,
-        maxAge: 30 * 24 * 60 * 60 * 1000,
+        maxAge: COOKIE_MAX_AGE_MS,
         sameSite: "none",
         secure: true,
       };
@@ -166,11 +171,11 @@ module.exports = function (db) {
     const token = jwt.sign(
       { playerId: player.id, username, isAdmin: player.is_admin === 1 },
       JWT_SECRET,
-      { expiresIn: "30d" },
+      { expiresIn: JWT_EXPIRY },
     );
     const cookieOpts = {
       httpOnly: true,
-      maxAge: 30 * 24 * 60 * 60 * 1000,
+      maxAge: COOKIE_MAX_AGE_MS,
       sameSite: "none",
       secure: true,
     };
@@ -184,6 +189,11 @@ module.exports = function (db) {
       secure: true,
     });
     res.json({ ok: true });
+  });
+
+  router.get("/csrf-token", requireAuth, (req, res) => {
+    const token = generateCsrfToken(req.player.playerId);
+    res.json({ csrf_token: token });
   });
 
   router.get("/me", async (req, res) => {
