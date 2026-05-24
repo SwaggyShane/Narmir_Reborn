@@ -20,13 +20,14 @@ const StatusPanel = () => {
         });
       } else if (window.currentRaceHtml) {
         const temp = document.createElement('div');
-        temp.innerHTML = window.currentRaceHtml;
-        const label = temp.querySelector('strong')?.textContent || temp.textContent || '—';
-        const parts = temp.textContent.split(' · ');
+        temp.textContent = window.currentRaceHtml;
+        const text = temp.textContent;
+        const parts = text.split(' · ');
+        const label = parts[0] || '—';
         const bonus = parts.length > 1 ? parts.slice(1).join(' · ') : '';
         setRaceInfo({
           label,
-          bonus: bonus || (temp.textContent.replace(label, '').replace(/^\s*·\s*/, '').trim()),
+          bonus: bonus || (text.replace(label, '').replace(/^\s*·\s*/, '').trim()),
           key: ''
         });
       }
