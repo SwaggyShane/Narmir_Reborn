@@ -2684,14 +2684,19 @@ function checkAchievements(k, updates, events) {
     updates.bld_mage_towers !== undefined
       ? updates.bld_mage_towers
       : k.bld_mage_towers;
-  const currentCastles =
-    updates.bld_castles !== undefined
-      ? updates.bld_castles
-      : k.bld_castles;
+  const currentLibraries =
+    updates.bld_libraries !== undefined
+      ? updates.bld_libraries
+      : k.bld_libraries;
+  const currentSchools =
+    updates.bld_schools !== undefined
+      ? updates.bld_schools
+      : k.bld_schools;
   if (
     !ach.includes("ach_grandmaster") &&
-    currentTowers >= 100 &&
-    currentCastles >= 100
+    currentTowers >= 25 &&
+    currentLibraries >= 25 &&
+    currentSchools >= 25
   ) {
     ach.push("ach_grandmaster");
     updates.land =
