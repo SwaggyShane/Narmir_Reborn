@@ -332,9 +332,14 @@ async function runAiKingdom(db, engine, playerId) {
     return updates; // We return the original object or whatever applyK needs
   }
 
-  const turnsToSpend = ai.turns_stored;
+  // Calculate turns to process per cycle to exhaust max daily allocation
+  // Example: 400 max / 57.6 cycles per day ≈ 7 turns per cycle
+  const minutesPerDay = 24 * 60;
+  const cyclesPerDay = minutesPerDay / (REGEN_MS / (60 * 1000));
+  const turnsPerRegenCycle = Math.ceil(REGEN_MAX / cyclesPerDay);
+  const turnsToSpend = Math.min(ai.turns_stored, turnsPerRegenCycle);
   const inDevelopmentPhase = ai.turn < 800;
-  const turnsPerCycle = 2; // Double turns for faster development
+  const turnsPerCycle = 1; // Process one turn at a time for smoother progression
 
   try {
     // Pre-fetch region/alliance data outside the loop (doesn't change per turn)
@@ -342,6 +347,11 @@ async function runAiKingdom(db, engine, playerId) {
     const myAlliance = await db.get('SELECT alliance_id FROM alliance_members WHERE kingdom_id = ?', [ai.id]);
     ai._region_owned_by_my_alliance = (regionStatus && myAlliance && regionStatus.owner_alliance_id === myAlliance.alliance_id);
     ai._region_bonus_type = regionStatus?.bonus_type;
+
+    // Pre-fetch market prices once (doesn't change per turn, only during specific market updates)
+    const priceRows = await db.all(`SELECT id, current_price FROM market_prices`);
+    const priceMap = {};
+    priceRows.forEach(p => { priceMap[p.id] = p.current_price; });
 
     // Wrap turn processing in transaction for atomicity
     await db.run('BEGIN TRANSACTION');
@@ -378,33 +388,6 @@ async function runAiKingdom(db, engine, playerId) {
       }
     }
 
-    // ── Process heroes ──
-    const heroes = await db.all("SELECT * FROM heroes WHERE kingdom_id = ? AND status = 'idle'", [ai.id]);
-
-    // Batch update heroes
-    if (heroes.length > 0) {
-      for (const hero of heroes) {
-        const resHero = engine.awardHeroXp(hero, 10);
-        await db.run('UPDATE heroes SET level = ?, xp = ? WHERE id = ?', [resHero.level, resHero.xp, hero.id]);
-        engine.applyHeroTurnBonuses(hero, ai, updates, events);
-      }
-    }
-
-    // AI Hero Recruitment
-    if (heroes.length === 0 && ai.gold > 150000 && ai.bld_castles > 0) {
-      const classes = ['paladin', 'archmage', 'warlord', 'shadowblade', 'sovereign'];
-      const myClass = classes[Math.floor(Math.random() * classes.length)];
-      const { hero, cost, error } = engine.recruitHero(ai, `${ai.name}'s Hero`, myClass);
-      if (hero && !error) {
-        await db.run(
-          `INSERT INTO heroes (kingdom_id, name, class, level, xp, abilities, status, hp, max_hp)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [ai.id, hero.name, hero.class, hero.level, hero.xp, hero.abilities, hero.status, hero.hp, hero.max_hp]
-        );
-        updates.gold = (updates.gold || ai.gold) - cost.gold;
-        updates.mana = (updates.mana || ai.mana) - cost.mana;
-      }
-    }
 
     // ── Engineer allocation — race-aware ──
     const eng = ai.engineers;
@@ -455,18 +438,13 @@ async function runAiKingdom(db, engine, playerId) {
 
     await engine.resolveExpeditions(db, ai, engine);
 
-    // ── Turn 1: Development/Hiring ──
-    if (inDevelopmentPhase) {
+    // ── Resource Development & Trading (every turn) ──
+    // Run on alternating turns: development on odd, market on even
+    if (ai.turn % 2 === 1) {
       await aiDevelopment(db, engine, ai, playerId);
     } else {
-      await aiHire(db, engine, ai);
+      await aiTradeMarket(ai, priceMap);
     }
-
-      // ── Turn 2: Action/Warfare ──
-      if (!inDevelopmentPhase || Math.random() < 0.3) {
-        // During development: 30% chance to war. After: always try to war
-        await aiAction(db, engine, ai);
-      }
     }
 
     // Commit transaction on successful completion
@@ -479,111 +457,78 @@ async function runAiKingdom(db, engine, playerId) {
 }
 
 /**
- * AI Development Phase (Turns 1-799)
- * Focus on race-specific strengths, building defense and economy
+ * AI Development Phase (Turns 1-∞)
+ * Focus on resource development, unit hiring, and infrastructure
  */
 async function aiDevelopment(db, engine, ai, _playerId) {
   const gold = ai.gold;
-  const spendable = Math.floor(gold * 0.5); // spend up to 50% during development
+  const spendable = Math.floor(gold * 0.5); // spend up to 50% on infrastructure
   if (spendable < 250) return;
 
-  // Race-specific development strategies
-  const strategies = {
-    dwarf: {
-      buildings: ['barracks', 'armories', 'walls', 'guard_towers', 'markets', 'warehouses'],
-      units: ['fighters', 'engineers', 'rangers'],
-      unitCost: 250,
-    },
-    high_elf: {
-      buildings: ['barracks', 'mage_towers', 'schools', 'walls', 'outposts'],
-      units: ['mages', 'rangers', 'clerics'],
-      unitCost: 250,
-    },
-    orc: {
-      buildings: ['barracks', 'training_grounds', 'walls', 'guard_towers', 'armories'],
-      units: ['fighters', 'rangers', 'ninjas'],
-      unitCost: 250,
-    },
-    dark_elf: {
-      buildings: ['barracks', 'mage_towers', 'walls', 'outposts', 'schools'],
-      units: ['ninjas', 'thieves', 'mages', 'rangers'],
-      unitCost: 250,
-    },
-    human: {
-      buildings: ['barracks', 'markets', 'walls', 'guard_towers', 'schools'],
-      units: ['fighters', 'rangers', 'clerics', 'engineers'],
-      unitCost: 250,
-    },
-    dire_wolf: {
-      buildings: ['barracks', 'training_grounds', 'walls', 'guard_towers', 'armories'],
-      units: ['fighters', 'rangers', 'clerics'],
-      unitCost: 250,
-    },
-  };
-
-  const strat = strategies[ai.race] || strategies.human;
   const updates = {};
 
-  // Phase 1 (Turns 1-300): Build economy and defense infrastructure
-  if (ai.turn < 300) {
-    // 60% defense buildings, 40% economy
-    const buildPct = Math.random() < 0.6 ? 0.7 : 0.3;
-    const goldForBuilding = Math.floor(spendable * buildPct);
+  // Build resource production infrastructure
+  const farmTarget = Math.floor(ai.land / 3);
+  const schoolTarget = 20;
+  const marketTarget = 30;
+  const grainTarget = 15;
 
-    // Prioritize walls and guard towers for defense
-    const defensePriority = [
-      { type: 'walls', cost: 2000, count: ai.bld_walls, target: Math.floor(ai.land / 50) },
-      { type: 'guard_towers', cost: 3000, count: ai.bld_guard_towers, target: Math.floor(ai.land / 100) },
-      { type: 'barracks', cost: 5000, count: ai.bld_barracks, target: 20 },
-    ];
+  const buildPriority = [
+    { type: 'farms', cost: 1500, count: ai.bld_farms, target: farmTarget },
+    { type: 'granaries', cost: 1200, count: ai.bld_granaries, target: grainTarget },
+    { type: 'schools', cost: 4000, count: ai.bld_schools, target: schoolTarget },
+    { type: 'markets', cost: 3000, count: ai.bld_markets, target: marketTarget },
+  ];
 
-    for (const item of defensePriority) {
-      if (item.count < item.target && goldForBuilding >= item.cost) {
-        updates.gold = ai.gold - item.cost;
-        updates[`bld_${item.type}`] = (ai[`bld_${item.type}`] || 0) + 1;
-        ai.gold = updates.gold;
-        ai[`bld_${item.type}`] = updates[`bld_${item.type}`];
-        break;
-      }
+  let goldLeft = spendable;
+  for (const item of buildPriority) {
+    while (item.count < item.target && goldLeft >= item.cost) {
+      const newGold = (updates.gold !== undefined ? updates.gold : ai.gold) - item.cost;
+      const buildCount = (updates[`bld_${item.type}`] !== undefined ? updates[`bld_${item.type}`] : ai[`bld_${item.type}`] || 0) + 1;
+
+      updates.gold = newGold;
+      updates[`bld_${item.type}`] = buildCount;
+      ai.gold = newGold;
+      ai[`bld_${item.type}`] = buildCount;
+
+      goldLeft -= item.cost;
+      item.count += 1;
     }
   }
 
-  // Phase 2 (Turns 300-600): Build military production and economy
-  if (ai.turn >= 300 && ai.turn < 600) {
-    // 40% military, 60% economy/tech
-    const buildPct = Math.random() < 0.4 ? 0.8 : 0.2;
-    const goldForBuilding = Math.floor(spendable * buildPct);
-
-    const econPriority = [
-      { type: 'schools', cost: 4000, count: ai.bld_schools, target: 15 },
-      { type: 'markets', cost: 3000, count: ai.bld_markets, target: 25 },
-    ];
-
-    for (const item of econPriority) {
-      if (item.count < item.target && goldForBuilding >= item.cost) {
-        updates.gold = ai.gold - item.cost;
-        updates[`bld_${item.type}`] = (ai[`bld_${item.type}`] || 0) + 1;
-        ai.gold = updates.gold;
-        ai[`bld_${item.type}`] = updates[`bld_${item.type}`];
-        break;
-      }
+  // Hire rangers for exploration
+  const rangerTarget = Math.floor(ai.land / 200);
+  const currentRangers = updates.rangers !== undefined ? updates.rangers : (ai.rangers || 0);
+  if (currentRangers < rangerTarget && goldLeft >= 250) {
+    const rangerHires = Math.min(
+      Math.floor(goldLeft / 250),
+      rangerTarget - currentRangers
+    );
+    if (rangerHires > 0) {
+      const newGold = (updates.gold !== undefined ? updates.gold : ai.gold) - (rangerHires * 250);
+      updates.rangers = currentRangers + rangerHires;
+      updates.gold = newGold;
+      ai.rangers = currentRangers + rangerHires;
+      ai.gold = newGold;
+      goldLeft = newGold;
     }
   }
 
-  // Phase 3 (Turns 600-799): Ramp up military production
-  if (ai.turn >= 600) {
-    // 80% military units, 20% buildings
-    const unitSpend = Math.random() < 0.8 ? spendable * 0.8 : spendable * 0.2;
-    const unitCount = Math.floor(unitSpend / strat.unitCost);
-
-    if (unitCount > 0) {
-      // Hire race-specific units
-      const unitType = strat.units[Math.floor(Math.random() * strat.units.length)];
-      const result = engine.hireUnits(ai, unitType, unitCount);
-      if (!result.error && result.updates) {
-        Object.assign(updates, result.updates);
-        Object.assign(ai, result.updates);
-      }
+  // Hire engineers for building and resource development
+  const engineerTarget = Math.min(50, Math.floor((ai.bld_farms || 0) / 10) + 10);
+  const currentEngineers = updates.engineers !== undefined ? updates.engineers : (ai.engineers || 0);
+  if (currentEngineers < engineerTarget && goldLeft >= 250) {
+    const goldAvail = updates.gold !== undefined ? updates.gold : ai.gold;
+    const engineerHires = Math.min(
+      Math.floor(goldAvail / 250),
+      engineerTarget - currentEngineers
+    );
+    if (engineerHires > 0) {
+      const newGold = goldAvail - (engineerHires * 250);
+      updates.engineers = currentEngineers + engineerHires;
+      updates.gold = newGold;
+      ai.engineers = currentEngineers + engineerHires;
+      ai.gold = newGold;
     }
   }
 
@@ -591,197 +536,144 @@ async function aiDevelopment(db, engine, ai, _playerId) {
   if (Object.keys(updates).length > 0) {
     await applyKingdomUpdates(ai.id, updates);
   }
-}
 
-async function aiHire(db, engine, ai) {
-  const gold = ai.gold;
-  const spendable = Math.floor(gold * 0.3); // spend up to 30% of gold on hiring
-  if (spendable < 250) return;
-
-  const UNIT_COST = 250;
-  const barracksCap = ai.bld_barracks * 500;
-  const currentTroops = (ai.fighters||0) + (ai.rangers||0) + (ai.clerics||0) + (ai.thieves||0) + (ai.ninjas||0);
-  const barracksRoom = Math.max(0, barracksCap - currentTroops);
-  if (barracksRoom <= 0) return;
-
-  const maxAffordable = Math.min(Math.floor(spendable / UNIT_COST), barracksRoom,
-    Math.floor(ai.population * 0.1));
-  if (maxAffordable <= 0) return;
-
-  // Race-based unit preference
-  const unitPref = {
-    high_elf:  ['clerics','mages','rangers','fighters','thieves','ninjas'],
-    dwarf:     ['fighters','engineers','rangers','clerics','thieves','ninjas'],
-    dire_wolf: ['fighters','rangers','clerics','ninjas','thieves','mages'],
-    dark_elf:  ['ninjas','thieves','rangers','fighters','clerics','mages'],
-    human:     ['fighters','rangers','clerics','thieves','ninjas','mages'],
-    orc:       ['fighters','rangers','clerics','ninjas','thieves','mages'],
-  }[ai.race] || ['fighters','rangers'];
-
-  let goldLeft = spendable;
-  for (const unit of unitPref) {
-    if (goldLeft < UNIT_COST) break;
-    // Check school/barracks caps
-    if (unit === 'researchers') continue; // AI doesn't hire researchers this way
-    const BARRACKS_UNITS = ['fighters','rangers','clerics','thieves','ninjas'];
-    if (BARRACKS_UNITS.includes(unit) && barracksCap === 0) continue;
-    const canHire = Math.min(Math.floor(goldLeft / UNIT_COST), Math.floor(maxAffordable / unitPref.length));
-    if (canHire <= 0) continue;
-    const result = engine.hireUnits(ai, unit, canHire);
-    if (!result.error && result.updates) {
-      await applyKingdomUpdates(ai.id, result.updates);
-      Object.assign(ai, result.updates);
-      goldLeft = ai.gold * 0.3;
-    }
-    break; // hire one type per tick
-  }
-}
-
-async function aiAction(db, engine, ai) {
+  // Build resource upgrades (farms, granaries, markets) with available resources
   try {
-    // Frequent action to focus on war (act 90% of the time, up from 50%)
-    if (Math.random() > 0.90) return;
+    await aiUpgradeResourceBuildings(db, ai);
+  } catch (err) {
+    console.error(`[AI Upgrades] Error for ${ai.name}:`, err.message);
+  }
+}
 
-  // Per-target cooldown — don't act on the same kingdom more than once every 20 minutes
-  const cooldownSecs = 20 * 60;
-  const recentActions = await db.all(
-    `SELECT defender_id FROM war_log WHERE attacker_id = ? AND created_at > ?`,
-    [ai.id, Math.floor(Date.now()/1000) - cooldownSecs]
-  );
-  const recentTargetIds = new Set(recentActions.map(r => r.defender_id));
+/**
+ * AI upgrades resource buildings with wood, stone, iron resources
+ */
+async function aiUpgradeResourceBuildings(db, ai) {
+  const wood = ai.wood || 0;
+  const stone = ai.stone || 0;
+  const iron = ai.iron || 0;
 
-  // Get potential targets — strictly AI only and ignore humans
-  const targets = await db.all(`
-    SELECT k.* FROM kingdoms k
-    JOIN players p ON k.player_id = p.id
-    WHERE k.id != ? AND k.land > 100 AND p.is_ai = 1
-    ORDER BY RANDOM() LIMIT 10
-  `, [ai.id]);
+  const updates = {};
+  let upgraded = false;
 
-  // Filter out recently attacked targets
-  const validTargets = targets.filter(t => !recentTargetIds.has(t.id));
-  if (validTargets.length === 0) return;
-
-  // Pick weakest valid target (easier win)
-  const target = validTargets.sort((a, b) => (a.fighters || 0) - (b.fighters || 0))[0];
-
-  // Ensure AI has maps for warfare (batch with combat updates)
-  const aiUpdates = {};
-  if (ai.maps < 1) {
-    aiUpdates.maps = 1;
-    ai.maps = 1;
+  // Farm upgrades: prioritize iron_plows (costs 50 iron)
+  if (iron >= 50 && ai.bld_farms > 0) {
+    const farmUpgrades = safeJsonParse(ai.farm_upgrades, {});
+    if (!farmUpgrades.iron_plows) {
+      updates.iron = iron - 50;
+      updates.farm_upgrades = JSON.stringify({ ...farmUpgrades, iron_plows: true });
+      upgraded = true;
+    }
   }
 
-  const fighters = ai.fighters;
-  const mages    = ai.mages;
-  const ninjas   = ai.ninjas;
-  const thieves  = ai.thieves;
-
-  const roll = Math.random();
-
-  // Military attack — only if AI has meaningful power advantage (>20% win estimate)
-  if (fighters >= 50 && roll < 0.7) {
-    const sendFighters = Math.floor(fighters * (0.4 + Math.random() * 0.3));
-    const sendMages    = Math.floor(mages    * (0.3 + Math.random() * 0.2));
-
-    // Power ratio check — don't attack into certain defeat
-    const aiPower     = sendFighters + sendMages * 2.5;
-    const defPower    = (target.fighters || 0) + (target.mages || 0) * 2.5;
-    const winChance   = defPower > 0 ? aiPower / (aiPower + defPower) : 0.9;
-    if (winChance < 0.20) return; // lower threshold to encourage more wars
-
-    const sentUnits = { fighters: sendFighters, mages: sendMages, rangers: 0, warMachines: 0, ninjas: 0, thieves: 0, clerics: 0, engineers: 0 };
-    const result = engine.resolveMilitaryAttack(ai, target, sentUnits, [], []);
-    if (!result.error) {
-      const VALID_ATK = new Set(['gold','mana','land','fighters','mages','weapons_stockpile','xp','level','troop_levels']);
-      const aSafe = Object.fromEntries(Object.entries(result.attackerUpdates).filter(([c,v]) => VALID_ATK.has(c) && v !== undefined && !isNaN(v)));
-      const dSafe = Object.fromEntries(Object.entries(result.defenderUpdates).filter(([c,v]) => VALID_ATK.has(c) && v !== undefined && !isNaN(v)));
-
-      // Batch attacker updates with maps update if needed
-      Object.assign(aiUpdates, aSafe);
-
-      // Apply both attacker updates and defender updates in batched calls
-      if (Object.keys(aiUpdates).length) {
-        await applyKingdomUpdates(ai.id, aiUpdates);
-      }
-      if (Object.keys(dSafe).length) {
-        await applyKingdomUpdates(target.id, dSafe);
-      }
-
-      // War log
-      const outcome = result.win ? 'victory' : 'repelled';
-      const detail  = JSON.stringify({
-        ...result.report,
-        landTaken: result.report?.landTransferred || 0,
-        attackerLost: result.report?.atkFightersLost || 0,
-        defenderLost: result.report?.defFightersLost || 0
-      });
-      const logRes = await db.run(`INSERT INTO war_log (action_type, attacker_id, attacker_name, defender_id, defender_name, outcome, detail, obscured) VALUES (?,?,?,?,?,?,?,?)`,
-        ['attack', ai.id, ai.name, target.id, target.name, outcome, detail, 0]);
-      const reportId = logRes.lastID;
-
-      // News for defender with replay link
-      if (result.defEvent) {
-        await db.run('INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES (?,?,?,?,?)',
-          [target.id, 'attack', result.defEvent, target.turn, reportId]);
-      }
+  // Granary upgrades: prioritize silos (costs 30 wood)
+  if (wood >= 30 && ai.bld_granaries > 0 && !upgraded) {
+    const granaryUpgrades = safeJsonParse(ai.granary_upgrades, {});
+    if (!granaryUpgrades.silos) {
+      updates.wood = (wood || 0) - 30;
+      updates.granary_upgrades = JSON.stringify({ ...granaryUpgrades, silos: true });
+      upgraded = true;
     }
+  }
 
-  // Covert loot — needs thieves
-  } else if (thieves >= 20 && roll < 0.85) {
-    const lootTypes = ['gold','research','war_machines'];
-    const lootType  = lootTypes[Math.floor(Math.random() * lootTypes.length)];
-    const result    = engine.covertLoot(ai, target, lootType, Math.floor(thieves * 0.5));
-    if (!result.error && result.success && result.targetUpdates) {
-      const VALID_LOOT = new Set(['gold','res_economy','res_weapons','war_machines']);
-      const tSafe = Object.fromEntries(Object.entries(result.targetUpdates).filter(([c,v]) => VALID_LOOT.has(c) && v !== undefined && !isNaN(v)));
-
-      // Apply maps + loot updates in batched call
-      if (Object.keys(aiUpdates).length) {
-        await applyKingdomUpdates(ai.id, aiUpdates);
-      }
-      if (Object.keys(tSafe).length) {
-        await applyKingdomUpdates(target.id, tSafe);
-      }
-
-      if (result.targetEvent) {
-        await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)',
-          [target.id, 'covert', result.targetEvent, target.turn]);
-      }
-      await db.run(`INSERT INTO war_log (action_type, attacker_id, attacker_name, defender_id, defender_name, outcome, detail, obscured) VALUES (?,?,?,?,?,?,?,?)`,
-        ['loot', ai.id, ai.name, target.id, target.name, 'success', JSON.stringify({ stolen: result.stolen, type: lootType }), 1]);
+  // Market upgrades: prioritize trading_post (costs 10 iron)
+  if (iron >= 10 && ai.bld_markets > 0 && !upgraded) {
+    const marketUpgrades = safeJsonParse(ai.market_upgrades, {});
+    if (!marketUpgrades.trading_post) {
+      updates.iron = (iron || 0) - 10;
+      updates.market_upgrades = JSON.stringify({ ...marketUpgrades, trading_post: true });
+      upgraded = true;
     }
+  }
 
-  // Assassination — needs ninjas
-  } else if (ninjas >= 20) {
-    const unitTypes = ['fighters','researchers','engineers'];
-    const unitType  = unitTypes[Math.floor(Math.random() * unitTypes.length)];
-    const result    = engine.covertAssassinate(ai, target, Math.floor(ninjas * 0.4), unitType);
-    if (!result.error && result.success && result.targetUpdates) {
-      const validUnits = new Set(['fighters','researchers','engineers']);
-      const col    = unitType;
-      const newVal = result.targetUpdates[col];
-      if (newVal !== undefined && validUnits.has(col)) {
-        const tUpdates = { [col]: Math.max(0, newVal) };
+  if (upgraded) {
+    await applyKingdomUpdates(ai.id, updates);
+  }
+}
 
-        // Apply maps update for attacker if needed
-        if (Object.keys(aiUpdates).length) {
-          await applyKingdomUpdates(ai.id, aiUpdates);
+/**
+ * AI Market Trading
+ * Buy underpriced resources to boost production, sell excess at profit
+ */
+async function aiTradeMarket(ai, priceMap) {
+  try {
+    const gold = ai.gold;
+    const spendableGold = Math.floor(gold * 0.2); // Use up to 20% of gold for market trading
+    if (spendableGold < 500) return;
+
+    const updates = {};
+    let goldUsed = 0;
+
+    // Buy underpriced resources to boost production
+    const buyTargets = [
+      { resource: 'food', ownedKey: 'food', target: 100000 },
+      { resource: 'wood', ownedKey: 'wood', target: 50000 },
+      { resource: 'stone', ownedKey: 'stone', target: 30000 },
+      { resource: 'iron', ownedKey: 'iron', target: 20000 },
+    ];
+
+    for (const target of buyTargets) {
+      const owned = ai[target.ownedKey] || 0;
+      if (owned < target.target && goldUsed < spendableGold) {
+        const price = priceMap[target.resource] || 1;
+        const budget = spendableGold - goldUsed;
+        const canBuy = Math.floor(budget / price);
+        if (canBuy > 0) {
+          const buyAmount = Math.min(canBuy, Math.floor(target.target * 0.5));
+          if (buyAmount > 0) {
+            const totalCost = buyAmount * price;
+            const newAmount = owned + buyAmount;
+            updates[target.ownedKey] = newAmount;
+            ai[target.ownedKey] = newAmount;
+            goldUsed += totalCost;
+          }
         }
-        // Apply assassination update for target
-        await applyKingdomUpdates(target.id, tUpdates);
       }
-
-      if (result.targetEvent) {
-        await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)',
-          [target.id, 'covert', result.targetEvent, target.turn]);
-      }
-      await db.run(`INSERT INTO war_log (action_type, attacker_id, attacker_name, defender_id, defender_name, outcome, detail, obscured) VALUES (?,?,?,?,?,?,?,?)`,
-        ['assassinate', ai.id, ai.name, target.id, target.name, 'success', JSON.stringify({ killed: result.killed, unit: unitType }), 1]);
     }
+
+    if (goldUsed > 0) {
+      const newGold = Math.max(0, gold - goldUsed);
+      updates.gold = newGold;
+      ai.gold = newGold;
+    }
+
+    // Sell excess resources for profit
+    const sellTargets = [
+      { resource: 'coal', ownedKey: 'coal', keepAmount: 10000 },
+      { resource: 'mana', ownedKey: 'mana', keepAmount: 5000 },
+      { resource: 'steel', ownedKey: 'steel', keepAmount: 5000 },
+    ];
+
+    let goldGained = 0;
+    for (const target of sellTargets) {
+      const owned = updates[target.ownedKey] !== undefined ? updates[target.ownedKey] : (ai[target.ownedKey] || 0);
+      const excess = Math.max(0, owned - target.keepAmount);
+      if (excess > 0) {
+        const price = priceMap[target.resource] || 1;
+        const sellAmount = Math.floor(excess * 0.3); // Sell 30% of excess
+        if (sellAmount > 0) {
+          const totalGain = sellAmount * price * 0.7; // Apply 70% sell multiplier
+          const newAmount = owned - sellAmount;
+          updates[target.ownedKey] = newAmount;
+          ai[target.ownedKey] = newAmount;
+          goldGained += totalGain;
+        }
+      }
+    }
+
+    if (goldGained > 0) {
+      const currentGold = updates.gold !== undefined ? updates.gold : ai.gold;
+      const newGold = currentGold + Math.floor(goldGained);
+      updates.gold = newGold;
+      ai.gold = newGold;
+    }
+
+    // Apply updates
+    if (Object.keys(updates).length > 0) {
+      await applyKingdomUpdates(ai.id, updates);
     }
   } catch (error) {
-    console.error(`[AI Action] Error for ${ai.name}:`, error.message);
+    console.error(`[AI Market Trading] Error for ${ai.name}:`, error.message);
   }
 }
 
@@ -1079,7 +971,6 @@ async function start() {
     app.use('/api/auth',         authLimiter,  require('./routes/auth')(db));
     app.use('/api/kingdom',      turnLimiter,  require('./routes/kingdom')(db));
     app.use('/api/hero',         turnLimiter,  require('./routes/hero')(db));
-    app.use('/api/ai-warfare',               require('./routes/ai-warfare')(db));
     app.use('/api/admin',                    require('./routes/admin')(db, io));
 
   app.get('/api/alliance/list', requireAuth, async (req, res) => {
