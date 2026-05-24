@@ -709,7 +709,7 @@
           🧬 Evolution
         </button>
         <button class="admin-tab" onclick="showAdminTab('fragments', this)">
-          ✨ World Fragments
+          📊 Detailed Lists
         </button>
       </div>
 
@@ -1700,8 +1700,8 @@
         <!-- Spells Sub-tab -->
         <div id="spells-subtab" style="display: none;">
           <div class="card">
-            <h2 style="margin-top: 0">🔮 Magic Spells by School</h2>
-            <p style="color: var(--text2); margin-bottom: 16px;">Complete reference of all spells organized by school of magic. Click to expand each school.</p>
+            <h2 style="margin-top: 0">📚 Original Spellbook</h2>
+            <p style="color: var(--text2); margin-bottom: 16px;">Complete reference of all 16 spells in the original spellbook, organized by tier. Click to expand each tier.</p>
           </div>
 
           <div id="spells-container" style="display: flex; flex-direction: column; gap: 12px;">
@@ -2613,30 +2613,43 @@
         const container = document.getElementById('spells-container');
         container.innerHTML = '';
 
-        // Get all school spells
-        const schoolSpells = new Set();
-        Object.values(MAGIC_SCHOOLS).forEach(school => {
-          if (school.spells) {
-            school.spells.forEach(spell => schoolSpells.add(spell));
-          }
+        // Organize spells by tier
+        const spellsByTier = {
+          1: [],
+          2: [],
+          3: [],
+          4: []
+        };
+
+        Object.entries(SPELL_DEFS).forEach(([spellId, spell]) => {
+          spellsByTier[spell.tier].push(spellId);
         });
 
-        // Find general spells (those not in any school or in multiple schools)
-        const allSpells = Object.keys(SPELL_DEFS);
-        const generalSpells = allSpells.filter(spell => {
-          const count = Object.values(MAGIC_SCHOOLS).filter(s => s.spells && s.spells.includes(spell)).length;
-          return count === 0 || count > 2; // General if not in schools or in multiple schools
+        // Sort each tier by minSB
+        Object.keys(spellsByTier).forEach(tier => {
+          spellsByTier[tier].sort((a, b) => SPELL_DEFS[a].minSB - SPELL_DEFS[b].minSB);
         });
 
-        // Display General Spells first
-        if (generalSpells.length > 0) {
+        // Tier labels and descriptions
+        const tierInfo = {
+          1: { label: '①', title: 'Foundational', icon: '📖', color: 'var(--green)' },
+          2: { label: '②', title: 'Intermediate', icon: '⚔️', color: 'var(--blue)' },
+          3: { label: '③', title: 'Advanced', icon: '🔥', color: 'var(--gold)' },
+          4: { label: '④', title: 'Ultimate', icon: '💀', color: 'var(--red)' }
+        };
+
+        // Display each tier
+        [1, 2, 3, 4].forEach(tier => {
+          const spells = spellsByTier[tier];
+          const tierData = tierInfo[tier];
+
           let html = `
             <div class="spell-school">
               <div class="spell-school-header expanded" onclick="toggleSpell(this)">
                 <div class="spell-school-title">
-                  <span>📖</span>
-                  <span>General Spells</span>
-                  <span style="font-size: 11px; color: var(--text3); margin-left: auto;">${generalSpells.length} spells</span>
+                  <span style="font-size: 16px;">${tierData.icon}</span>
+                  <span>Tier ${tierData.label} - ${tierData.title}</span>
+                  <span style="font-size: 11px; color: var(--text3); margin-left: auto;">${spells.length} spells</span>
                 </div>
                 <span class="spell-toggle expanded">▼</span>
               </div>
@@ -2644,63 +2657,21 @@
                 <div class="spell-list">
           `;
 
-          generalSpells.forEach(spellId => {
+          spells.forEach(spellId => {
             const spell = SPELL_DEFS[spellId];
-            const tierLabel = ['', '①', '②', '③', '④'][spell.tier] || '';
             html += `
               <div class="spell-item">
                 <div class="spell-name">${spellId.replace(/_/g, ' ')}</div>
                 <div class="spell-desc">${spell.desc}</div>
                 <div class="spell-meta">
-                  <div><strong>Spellbook:</strong> ${spell.minSB}</div>
-                  <div><strong>Tier:</strong> ${tierLabel}</div>
+                  <div><strong>Spellbook Required:</strong> ${spell.minSB}</div>
                 </div>
               </div>
             `;
           });
 
           html += `</div></div></div>`;
-          container.innerHTML = html;
-        }
-
-        // Display each school
-        const schoolOrder = ['abjuration', 'conjuration', 'divination', 'enchantment', 'evocation', 'illusion', 'necromancy', 'transmutation'];
-        schoolOrder.forEach(schoolKey => {
-          const school = MAGIC_SCHOOLS[schoolKey];
-          if (school.spells) {
-            let html = `
-              <div class="spell-school">
-                <div class="spell-school-header" onclick="toggleSpell(this)">
-                  <div class="spell-school-title">
-                    <span>${school.icon}</span>
-                    <span>${school.name}</span>
-                    <span style="font-size: 11px; color: var(--text3);">${school.desc}</span>
-                    <span style="font-size: 11px; color: var(--text3); margin-left: auto;">${school.spells.length} spells</span>
-                  </div>
-                  <span class="spell-toggle">▼</span>
-                </div>
-                <div class="spell-content">
-                  <div class="spell-list">
-            `;
-
-            school.spells.forEach(spellId => {
-              const spell = SPELL_DEFS[spellId];
-              const tierLabel = ['', '①', '②', '③', '④'][spell.tier] || '';
-              html += `
-                <div class="spell-item">
-                  <div class="spell-name">${spellId.replace(/_/g, ' ')}</div>
-                  <div class="spell-desc">${spell.desc}</div>
-                  <div class="spell-meta">
-                    <div><strong>Spellbook:</strong> ${spell.minSB}</div>
-                    <div><strong>Tier:</strong> ${tierLabel}</div>
-                  </div>
-                </div>
-              `;
-            });
-
-            html += `</div></div></div>`;
-            container.innerHTML += html;
-          }
+          container.innerHTML += html;
         });
       }
 
