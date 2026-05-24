@@ -2749,10 +2749,12 @@ function checkAchievements(k, updates, events) {
     );
     scrolls.blank_scroll = (scrolls.blank_scroll || 0) + 10000;
     updates.scrolls = JSON.stringify(scrolls);
+    updates.res_spellbook =
+      (updates.res_spellbook !== undefined ? updates.res_spellbook : k.res_spellbook || 0) + 10000;
     events.push({
       type: "system",
       message:
-        "🏆 ACHIEVEMENT UNLOCKED: Arcane Overlord! Rewarded +10,000 Blank Scrolls.",
+        "🏆 ACHIEVEMENT UNLOCKED: Arcane Overlord! Rewarded +10,000 Spellbook and +10,000 Blank Scrolls.",
     });
     achUpdated = true;
   }
