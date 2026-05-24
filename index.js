@@ -348,6 +348,11 @@ async function runAiKingdom(db, engine, playerId) {
     ai._region_owned_by_my_alliance = (regionStatus && myAlliance && regionStatus.owner_alliance_id === myAlliance.alliance_id);
     ai._region_bonus_type = regionStatus?.bonus_type;
 
+    // Pre-fetch market prices once (doesn't change per turn, only during specific market updates)
+    const priceRows = await db.all(`SELECT id, current_price FROM market_prices`);
+    const priceMap = {};
+    priceRows.forEach(p => { priceMap[p.id] = p.current_price; });
+
     // Wrap turn processing in transaction for atomicity
     await db.run('BEGIN TRANSACTION');
 
@@ -438,7 +443,7 @@ async function runAiKingdom(db, engine, playerId) {
     if (ai.turn % 2 === 1) {
       await aiDevelopment(db, engine, ai, playerId);
     } else {
-      await aiTradeMarket(db, ai);
+      await aiTradeMarket(ai, priceMap);
     }
     }
 
@@ -478,8 +483,14 @@ async function aiDevelopment(db, engine, ai, _playerId) {
   let goldLeft = spendable;
   for (const item of buildPriority) {
     while (item.count < item.target && goldLeft >= item.cost) {
-      updates.gold = (updates.gold || ai.gold) - item.cost;
-      updates[`bld_${item.type}`] = (ai[`bld_${item.type}`] || 0) + 1;
+      const newGold = (updates.gold !== undefined ? updates.gold : ai.gold) - item.cost;
+      const buildCount = (updates[`bld_${item.type}`] !== undefined ? updates[`bld_${item.type}`] : ai[`bld_${item.type}`] || 0) + 1;
+
+      updates.gold = newGold;
+      updates[`bld_${item.type}`] = buildCount;
+      ai.gold = newGold;
+      ai[`bld_${item.type}`] = buildCount;
+
       goldLeft -= item.cost;
       item.count += 1;
     }
@@ -487,31 +498,37 @@ async function aiDevelopment(db, engine, ai, _playerId) {
 
   // Hire rangers for exploration
   const rangerTarget = Math.floor(ai.land / 200);
-  const currentRangers = ai.rangers || 0;
+  const currentRangers = updates.rangers !== undefined ? updates.rangers : (ai.rangers || 0);
   if (currentRangers < rangerTarget && goldLeft >= 250) {
     const rangerHires = Math.min(
       Math.floor(goldLeft / 250),
       rangerTarget - currentRangers
     );
     if (rangerHires > 0) {
+      const newGold = (updates.gold !== undefined ? updates.gold : ai.gold) - (rangerHires * 250);
       updates.rangers = currentRangers + rangerHires;
-      updates.gold = (updates.gold || ai.gold) - (rangerHires * 250);
-      goldLeft = updates.gold - ((updates.gold || ai.gold) - (updates.gold || ai.gold));
+      updates.gold = newGold;
+      ai.rangers = currentRangers + rangerHires;
+      ai.gold = newGold;
+      goldLeft = newGold;
     }
   }
 
   // Hire engineers for building and resource development
   const engineerTarget = Math.min(50, Math.floor((ai.bld_farms || 0) / 10) + 10);
-  const currentEngineers = ai.engineers || 0;
-  if (currentEngineers < engineerTarget && (updates.gold || ai.gold) >= 250) {
-    const goldAvail = updates.gold || ai.gold;
+  const currentEngineers = updates.engineers !== undefined ? updates.engineers : (ai.engineers || 0);
+  if (currentEngineers < engineerTarget && goldLeft >= 250) {
+    const goldAvail = updates.gold !== undefined ? updates.gold : ai.gold;
     const engineerHires = Math.min(
       Math.floor(goldAvail / 250),
       engineerTarget - currentEngineers
     );
     if (engineerHires > 0) {
+      const newGold = goldAvail - (engineerHires * 250);
       updates.engineers = currentEngineers + engineerHires;
-      updates.gold = goldAvail - (engineerHires * 250);
+      updates.gold = newGold;
+      ai.engineers = currentEngineers + engineerHires;
+      ai.gold = newGold;
     }
   }
 
@@ -578,16 +595,11 @@ async function aiUpgradeResourceBuildings(db, ai) {
  * AI Market Trading
  * Buy underpriced resources to boost production, sell excess at profit
  */
-async function aiTradeMarket(db, ai) {
+async function aiTradeMarket(ai, priceMap) {
   try {
     const gold = ai.gold;
     const spendableGold = Math.floor(gold * 0.2); // Use up to 20% of gold for market trading
     if (spendableGold < 500) return;
-
-    // Fetch current market prices
-    const prices = await db.all(`SELECT id, current_price FROM market_prices`);
-    const priceMap = {};
-    prices.forEach(p => { priceMap[p.id] = p.current_price; });
 
     const updates = {};
     let goldUsed = 0;
@@ -610,7 +622,9 @@ async function aiTradeMarket(db, ai) {
           const buyAmount = Math.min(canBuy, Math.floor(target.target * 0.5));
           if (buyAmount > 0) {
             const totalCost = buyAmount * price;
-            updates[target.ownedKey] = (owned || 0) + buyAmount;
+            const newAmount = owned + buyAmount;
+            updates[target.ownedKey] = newAmount;
+            ai[target.ownedKey] = newAmount;
             goldUsed += totalCost;
           }
         }
@@ -618,7 +632,9 @@ async function aiTradeMarket(db, ai) {
     }
 
     if (goldUsed > 0) {
-      updates.gold = Math.max(0, gold - goldUsed);
+      const newGold = Math.max(0, gold - goldUsed);
+      updates.gold = newGold;
+      ai.gold = newGold;
     }
 
     // Sell excess resources for profit
@@ -630,21 +646,26 @@ async function aiTradeMarket(db, ai) {
 
     let goldGained = 0;
     for (const target of sellTargets) {
-      const owned = updates[target.ownedKey] || ai[target.ownedKey] || 0;
+      const owned = updates[target.ownedKey] !== undefined ? updates[target.ownedKey] : (ai[target.ownedKey] || 0);
       const excess = Math.max(0, owned - target.keepAmount);
       if (excess > 0) {
         const price = priceMap[target.resource] || 1;
         const sellAmount = Math.floor(excess * 0.3); // Sell 30% of excess
         if (sellAmount > 0) {
           const totalGain = sellAmount * price * 0.7; // Apply 70% sell multiplier
-          updates[target.ownedKey] = owned - sellAmount;
+          const newAmount = owned - sellAmount;
+          updates[target.ownedKey] = newAmount;
+          ai[target.ownedKey] = newAmount;
           goldGained += totalGain;
         }
       }
     }
 
     if (goldGained > 0) {
-      updates.gold = (updates.gold || ai.gold) + Math.floor(goldGained);
+      const currentGold = updates.gold !== undefined ? updates.gold : ai.gold;
+      const newGold = currentGold + Math.floor(goldGained);
+      updates.gold = newGold;
+      ai.gold = newGold;
     }
 
     // Apply updates
