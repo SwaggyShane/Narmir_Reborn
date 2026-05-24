@@ -156,8 +156,19 @@ module.exports = function (db) {
     const player = await db.get("SELECT * FROM players WHERE username = ?", [
       username,
     ]);
-    if (!player || !bcrypt.compareSync(password, player.password))
+    if (!player) {
       return res.status(401).json({ error: "Invalid username or password" });
+    }
+
+    try {
+      const passwordMatch = await bcrypt.compare(password, player.password);
+      if (!passwordMatch) {
+        return res.status(401).json({ error: "Invalid username or password" });
+      }
+    } catch (err) {
+      console.error("[auth] Password comparison error:", err.message);
+      return res.status(500).json({ error: "Authentication failed" });
+    }
 
     if (player.is_banned)
       return res
