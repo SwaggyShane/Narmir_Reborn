@@ -2,7 +2,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const engine = require("../game/engine");
-const { generateCsrfToken, csrfTokens } = require("./middleware");
+const { generateCsrfToken, csrfTokens, requireAuth } = require("./middleware");
 
 const router = express.Router();
 
@@ -191,9 +191,8 @@ module.exports = function (db) {
     res.json({ ok: true });
   });
 
-  router.get("/csrf-token", (req, res) => {
-    const token = generateCsrfToken();
-    csrfTokens.set(token, Date.now());
+  router.get("/csrf-token", requireAuth, (req, res) => {
+    const token = generateCsrfToken(req.player.playerId);
     res.json({ csrf_token: token });
   });
 

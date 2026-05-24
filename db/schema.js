@@ -300,6 +300,11 @@ async function initDb() {
   }
 
   await _db.exec(`
+    CREATE TABLE IF NOT EXISTS migrations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE,
+      applied_at INTEGER NOT NULL DEFAULT (unixepoch())
+    );
     CREATE TABLE IF NOT EXISTS players (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
       username    TEXT    NOT NULL UNIQUE,
@@ -1206,11 +1211,6 @@ async function initDb() {
       return_at INTEGER,
       status TEXT NOT NULL DEFAULT 'outbound',
       loot TEXT NOT NULL DEFAULT '{}'
-    );
-    CREATE TABLE IF NOT EXISTS migrations (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL UNIQUE,
-      applied_at INTEGER NOT NULL DEFAULT (unixepoch())
     )
   `);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_res_expeditions_kingdom ON resource_expeditions(kingdom_id, status)`);

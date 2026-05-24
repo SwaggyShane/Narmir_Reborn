@@ -7,9 +7,13 @@ if (!process.env.JWT_SECRET) {
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const csrfTokens = new Map();
+const CSRF_TOKEN_TTL_MS = 15 * 60 * 1000;
 
-function generateCsrfToken() {
-  return crypto.randomBytes(32).toString("hex");
+function generateCsrfToken(playerId) {
+  const token = crypto.randomBytes(32).toString("hex");
+  const expiresAt = Date.now() + CSRF_TOKEN_TTL_MS;
+  csrfTokens.set(token, { playerId, expiresAt });
+  return token;
 }
 
 function requireAuth(req, res, next) {
@@ -44,9 +48,24 @@ function requireAdmin(req, res, next) {
 
 function requireCsrfToken(req, res, next) {
   const token = req.headers["x-csrf-token"] || req.body?.csrf_token;
-  if (!token || !csrfTokens.has(token)) {
+  if (!token) {
+    return res.status(403).json({ error: "CSRF token required" });
+  }
+
+  const tokenData = csrfTokens.get(token);
+  if (!tokenData) {
     return res.status(403).json({ error: "Invalid CSRF token" });
   }
+
+  if (Date.now() > tokenData.expiresAt) {
+    csrfTokens.delete(token);
+    return res.status(403).json({ error: "CSRF token expired" });
+  }
+
+  if (tokenData.playerId !== req.player.playerId) {
+    return res.status(403).json({ error: "CSRF token does not match user session" });
+  }
+
   csrfTokens.delete(token);
   next();
 }

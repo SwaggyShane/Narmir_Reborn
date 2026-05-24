@@ -19,9 +19,7 @@ const StatusPanel = () => {
           key: window.currentRace.key || ''
         });
       } else if (window.currentRaceHtml) {
-        const temp = document.createElement('div');
-        temp.textContent = window.currentRaceHtml;
-        const text = temp.textContent;
+        const text = window.currentRaceHtml.replace(/<[^>]*>/g, '');
         const parts = text.split(' · ');
         const label = parts[0] || '—';
         const bonus = parts.length > 1 ? parts.slice(1).join(' · ') : '';
