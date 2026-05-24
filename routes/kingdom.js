@@ -536,16 +536,23 @@ module.exports = function (db) {
 
   // ── Take turn (advance game state) ───────────────────────────────────────────
   router.post("/turn", requireAuth, async (req, res) => {
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
-      req.player.playerId,
-    ]);
-    if (!k) return res.status(404).json({ error: "Kingdom not found" });
-    if (k.turns_stored < 1)
-      return res
-        .status(429)
-        .json({ error: "No turns available — next +7 turns in 25 minutes" });
     try {
+      await db.run("BEGIN TRANSACTION");
+      const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
+        req.player.playerId,
+      ]);
+      if (!k) {
+        await db.run("ROLLBACK");
+        return res.status(404).json({ error: "Kingdom not found" });
+      }
+      if (k.turns_stored < 1) {
+        await db.run("ROLLBACK");
+        return res
+          .status(429)
+          .json({ error: "No turns available — next +7 turns in 25 minutes" });
+      }
       const { updates, events } = await runTurn(db, k);
+      await db.run("COMMIT");
       res.json({
         ok: true,
         updates,
@@ -553,6 +560,7 @@ module.exports = function (db) {
         turns_stored: updates.turns_stored,
       });
     } catch (err) {
+      await db.run("ROLLBACK").catch(() => {});
       console.error("[turn] failed:", err.message);
       res
         .status(500)
@@ -1485,12 +1493,19 @@ module.exports = function (db) {
 
     progressGoal(k, result.attackerUpdates, 'attack_made', 1);
 
-    await applyKingdomUpdates(k.id, result.attackerUpdates);
-    await applyKingdomUpdates(target.id, result.defenderUpdates);
-    await db.run(
-      "UPDATE kingdoms SET turns_stored = turns_stored - 1 WHERE id = ?",
-      [k.id],
-    );
+    await db.run("BEGIN TRANSACTION");
+    try {
+      await applyKingdomUpdates(k.id, result.attackerUpdates);
+      await applyKingdomUpdates(target.id, result.defenderUpdates);
+      await db.run(
+        "UPDATE kingdoms SET turns_stored = turns_stored - 1 WHERE id = ?",
+        [k.id],
+      );
+      await db.run("COMMIT");
+    } catch (err) {
+      await db.run("ROLLBACK").catch(() => {});
+      throw err;
+    }
 
     // Bounty claiming
     if (result.win) {

@@ -360,48 +360,37 @@ async function runAiKingdom(db, engine, playerId) {
           );
         } catch (err) {
           console.error(`[AI] Failed to batch insert news for ${ai.name}:`, err.message);
+          throw err;
         }
       }
     }
 
     // ── Process heroes ──
-    try {
-      const heroes = await db.all("SELECT * FROM heroes WHERE kingdom_id = ? AND status = 'idle'", [ai.id]);
+    const heroes = await db.all("SELECT * FROM heroes WHERE kingdom_id = ? AND status = 'idle'", [ai.id]);
 
-      // Batch update heroes
-      if (heroes.length > 0) {
-        try {
-          for (const hero of heroes) {
-            const resHero = engine.awardHeroXp(hero, 10);
-            await db.run('UPDATE heroes SET level = ?, xp = ? WHERE id = ?', [resHero.level, resHero.xp, hero.id]);
-            engine.applyHeroTurnBonuses(hero, ai, updates, events);
-          }
-        } catch (err) {
-          console.error(`[AI] Failed to batch update heroes for ${ai.name}:`, err.message);
-        }
+    // Batch update heroes
+    if (heroes.length > 0) {
+      for (const hero of heroes) {
+        const resHero = engine.awardHeroXp(hero, 10);
+        await db.run('UPDATE heroes SET level = ?, xp = ? WHERE id = ?', [resHero.level, resHero.xp, hero.id]);
+        engine.applyHeroTurnBonuses(hero, ai, updates, events);
       }
+    }
 
-      // AI Hero Recruitment
-      if (heroes.length === 0 && ai.gold > 150000 && ai.bld_castles > 0) {
-        const classes = ['paladin', 'archmage', 'warlord', 'shadowblade', 'sovereign'];
-        const myClass = classes[Math.floor(Math.random() * classes.length)];
-        const { hero, cost, error } = engine.recruitHero(ai, `${ai.name}'s Hero`, myClass);
-        if (hero && !error) {
-          try {
-            await db.run(
-              `INSERT INTO heroes (kingdom_id, name, class, level, xp, abilities, status, hp, max_hp)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-              [ai.id, hero.name, hero.class, hero.level, hero.xp, hero.abilities, hero.status, hero.hp, hero.max_hp]
-            );
-            updates.gold = (updates.gold || ai.gold) - cost.gold;
-            updates.mana = (updates.mana || ai.mana) - cost.mana;
-          } catch (err) {
-            console.error(`[AI] Failed to recruit hero for ${ai.name}:`, err.message);
-          }
-        }
+    // AI Hero Recruitment
+    if (heroes.length === 0 && ai.gold > 150000 && ai.bld_castles > 0) {
+      const classes = ['paladin', 'archmage', 'warlord', 'shadowblade', 'sovereign'];
+      const myClass = classes[Math.floor(Math.random() * classes.length)];
+      const { hero, cost, error } = engine.recruitHero(ai, `${ai.name}'s Hero`, myClass);
+      if (hero && !error) {
+        await db.run(
+          `INSERT INTO heroes (kingdom_id, name, class, level, xp, abilities, status, hp, max_hp)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [ai.id, hero.name, hero.class, hero.level, hero.xp, hero.abilities, hero.status, hero.hp, hero.max_hp]
+        );
+        updates.gold = (updates.gold || ai.gold) - cost.gold;
+        updates.mana = (updates.mana || ai.mana) - cost.mana;
       }
-    } catch (err) {
-      console.error(`[AI] Hero processing failed for ${ai.name}:`, err.message);
     }
 
     // ── Engineer allocation — race-aware ──

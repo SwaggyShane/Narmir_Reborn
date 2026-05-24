@@ -17,10 +17,14 @@ module.exports = function (db) {
       return res
         .status(400)
         .json({ error: "username, password and kingdomName are required" });
-    if (password.length < 6)
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(password))
       return res
         .status(400)
-        .json({ error: "Password must be at least 6 characters" });
+        .json({
+          error:
+            "Password must be at least 8 characters and contain uppercase, lowercase, number, and special character (@$!%*?&)",
+        });
     if (username.length < 3 || username.length > 20)
       return res
         .status(400)
