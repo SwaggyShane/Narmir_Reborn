@@ -242,6 +242,9 @@ const REGEN_AMOUNT = 7;   // +7 turns every 25 minutes = ~400/day
 const REGEN_MAX    = 400;
 const REGEN_MS     = 25 * 60 * 1000;
 
+// ── Authentication constants ────────────────────────────────────────────────────
+const BCRYPT_SALT_ROUNDS = 10;
+
 const AI_KINGDOMS = [
   { username: 'ai_ironforge',   kingdomName: 'Ironforge Hold',     race: 'dwarf'     },
   { username: 'ai_shadowveil',  kingdomName: 'Shadowveil Enclave', race: 'dark_elf'  },
@@ -260,7 +263,7 @@ async function seedAiKingdoms(db) {
   for (const ai of AI_KINGDOMS) {
     const existing = await db.get('SELECT id FROM players WHERE username = ?', [ai.username]);
     if (existing) continue;
-    const hash = bcrypt.hashSync(Math.random().toString(36), 8);
+    const hash = bcrypt.hashSync(Math.random().toString(36), BCRYPT_SALT_ROUNDS);
     const player = await db.run(
       'INSERT INTO players (username, password, is_ai) VALUES (?, ?, 1)',
       [ai.username, hash]

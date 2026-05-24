@@ -780,7 +780,13 @@ async function initDb() {
 
   // Legacy data migration: if defence_upgrades exists but defense_upgrades is empty, copy it
   if (cols.includes('defence_upgrades') && cols.includes('defense_upgrades')) {
-    await _db.run(`UPDATE kingdoms SET defense_upgrades = defence_upgrades WHERE defense_upgrades = '{}' AND defence_upgrades != '{}'`);
+    const migrationName = '001_migrate_defence_to_defense_upgrades';
+    const existing = await _db.get('SELECT id FROM migrations WHERE name = ?', [migrationName]);
+    if (!existing) {
+      await _db.run(`UPDATE kingdoms SET defense_upgrades = defence_upgrades WHERE defense_upgrades = '{}' AND defence_upgrades != '{}'`);
+      await _db.run('INSERT INTO migrations (name) VALUES (?)', [migrationName]);
+      console.log('[db] Migration applied:', migrationName);
+    }
   }
   if (!cols.includes('tower_upgrades'))    await addColumn('kingdoms', 'tower_upgrades',    "TEXT NOT NULL DEFAULT '{}'");
   if (!cols.includes('school_upgrades'))   await addColumn('kingdoms', 'school_upgrades',   "TEXT NOT NULL DEFAULT '{}'");
@@ -800,11 +806,17 @@ async function initDb() {
   if (!cols.includes('mausoleum_allocation')) await addColumn('kingdoms', 'mausoleum_allocation', "TEXT NOT NULL DEFAULT '{}'");
 
   // Data migration: tools_* -> *_stored
-  if (cols.includes('tools_scaffolding') && cols.includes('scaffolding_stored')) {
-    await _db.run("UPDATE kingdoms SET scaffolding_stored = tools_scaffolding WHERE scaffolding_stored = 0 AND tools_scaffolding > 0");
-  }
-  if (cols.includes('tools_hammers') && cols.includes('hammers_stored')) {
-    await _db.run("UPDATE kingdoms SET hammers_stored = tools_hammers WHERE hammers_stored = 0 AND tools_hammers > 0");
+  const toolsMigrationName = '002_migrate_tools_to_stored';
+  const toolsMigrationExists = await _db.get('SELECT id FROM migrations WHERE name = ?', [toolsMigrationName]);
+  if (!toolsMigrationExists) {
+    if (cols.includes('tools_scaffolding') && cols.includes('scaffolding_stored')) {
+      await _db.run("UPDATE kingdoms SET scaffolding_stored = tools_scaffolding WHERE scaffolding_stored = 0 AND tools_scaffolding > 0");
+    }
+    if (cols.includes('tools_hammers') && cols.includes('hammers_stored')) {
+      await _db.run("UPDATE kingdoms SET hammers_stored = tools_hammers WHERE hammers_stored = 0 AND tools_hammers > 0");
+    }
+    await _db.run('INSERT INTO migrations (name) VALUES (?)', [toolsMigrationName]);
+    console.log('[db] Migration applied:', toolsMigrationName);
   }
 
   if (!cols.includes('food_shortage_turns')) await addColumn('kingdoms', 'food_shortage_turns', 'INTEGER NOT NULL DEFAULT 0');
@@ -1194,6 +1206,11 @@ async function initDb() {
       return_at INTEGER,
       status TEXT NOT NULL DEFAULT 'outbound',
       loot TEXT NOT NULL DEFAULT '{}'
+    );
+    CREATE TABLE IF NOT EXISTS migrations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE,
+      applied_at INTEGER NOT NULL DEFAULT (unixepoch())
     )
   `);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_res_expeditions_kingdom ON resource_expeditions(kingdom_id, status)`);
