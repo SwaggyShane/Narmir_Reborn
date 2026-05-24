@@ -947,11 +947,7 @@ async function initDb() {
     ['land',    5000.0, 5000.0]
   ];
   for (const [id, current, base] of freshDefaultPrices) {
-    await _db.run('UPDATE market_prices SET current_price = ?, base_price = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [current, base, id]);
-    const exists = await _db.get('SELECT id FROM market_prices WHERE id = ?', [id]);
-    if (!exists) {
-      await _db.run('INSERT INTO market_prices (id, current_price, base_price) VALUES (?, ?, ?)', [id, current, base]);
-    }
+    await _db.run('INSERT OR REPLACE INTO market_prices (id, current_price, base_price) VALUES (?, ?, ?)', [id, current, base]);
   }
 
   // Events table

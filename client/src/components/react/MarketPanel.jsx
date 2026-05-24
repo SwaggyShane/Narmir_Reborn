@@ -201,13 +201,13 @@ const MarketPanel = () => {
               <div style={{ background: 'rgba(0, 255, 0, 0.05)', padding: '8px', borderRadius: '4px', textAlign: 'center' }}>
                 <div style={{ fontSize: '10px', color: 'var(--green)' }}>BUY</div>
                 <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)' }}>
-                  {fmtPrice(p.current_price)}
+                  {fmt(Math.ceil(p.current_price))}
                 </div>
               </div>
               <div style={{ background: 'rgba(255, 165, 0, 0.05)', padding: '8px', borderRadius: '4px', textAlign: 'center' }}>
                 <div style={{ fontSize: '10px', color: 'var(--gold)' }}>SELL</div>
                 <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)' }}>
-                  {fmtPrice(p.current_price * sellMultiplier)}
+                  {fmt(Math.floor(p.current_price * sellMultiplier))}
                 </div>
               </div>
             </div>

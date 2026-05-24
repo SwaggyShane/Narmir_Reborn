@@ -6337,30 +6337,15 @@
       function showPasswordReset() {
         const username = document.getElementById("auth-user").value.trim();
         if (!username) {
-          alert("Please enter your username first");
+          const errEl = document.getElementById("auth-error");
+          if (errEl) errEl.textContent = "Please enter your username first";
           return;
         }
 
-        const resetMsg = `Password Reset Instructions:
-
-Since you have an existing account, here's how to reset your password:
-
-1. Use a strong password meeting these requirements:
-   • 8+ characters
-   • Uppercase letter (A-Z)
-   • Lowercase letter (a-z)
-   • Number (0-9)
-   • Special character (@$!%*?&)
-
-2. Example: MyKingdom123!
-
-3. Try logging in with your old password first.
-
-4. If you've forgotten your old password, please contact an administrator or check your email for recovery instructions.
-
-Note: Administrators can reset passwords from the admin panel.`;
-
-        alert(resetMsg);
+        const modal = document.getElementById("password-reset-modal");
+        if (modal) {
+          modal.style.display = "flex";
+        }
       }
 
       function doLogin() {
@@ -15987,6 +15972,62 @@ Note: Administrators can reset passwords from the admin panel.`;
         >
           New to Narmir? Click Register to create your kingdom.
         </div>
+      </div>
+    </div>
+
+    <!-- Password Reset Modal -->
+    <div
+      id="password-reset-modal"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: var(--z-modal);
+        background: rgba(0, 0, 0, 0.75);
+        backdrop-filter: blur(4px);
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      "
+      onclick="if (event.target === this) { this.style.display = 'none'; }"
+    >
+      <div style="
+        background: #0a0a0b;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 24px;
+        max-width: 400px;
+        width: 100%;
+        color: #f8fafc;
+      ">
+        <div style="font-size: 18px; font-weight: 700; margin-bottom: 16px; color: #f06202">
+          Password Requirements
+        </div>
+        <div style="font-size: 13px; line-height: 1.7; color: #cbd5e1; margin-bottom: 16px">
+          <strong>Your password must contain:</strong><br>
+          • 8 or more characters<br>
+          • Uppercase letter (A-Z)<br>
+          • Lowercase letter (a-z)<br>
+          • Number (0-9)<br>
+          • Special character: @$!%*?&<br>
+          <br>
+          <strong>Example:</strong> <code style="background: rgba(255, 255, 255, 0.05); padding: 2px 6px; border-radius: 3px">MyKingdom123!</code><br>
+          <br>
+          If you've forgotten your password, contact an administrator for assistance.
+        </div>
+        <button onclick="document.getElementById('password-reset-modal').style.display = 'none'" style="
+          width: 100%;
+          padding: 10px;
+          background: #f06202;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+        ">
+          Close
+        </button>
       </div>
     </div>
 
