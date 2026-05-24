@@ -2700,13 +2700,13 @@ function checkAchievements(k, updates, events) {
   ) {
     ach.push("ach_grandmaster");
     updates.land =
-      (updates.land !== undefined ? updates.land : k.land) + 1000;
+      (updates.land !== undefined ? updates.land : k.land) + 10000;
     updates.maps =
-      (updates.maps !== undefined ? updates.maps : k.maps) + 1000;
+      (updates.maps !== undefined ? updates.maps : k.maps) + 5000;
     events.push({
       type: "system",
       message:
-        "🏆 ACHIEVEMENT UNLOCKED: Grandmaster! Rewarded +1000 Land and +1000 Maps.",
+        "🏆 ACHIEVEMENT UNLOCKED: Grandmaster! Rewarded +10000 Land and +5000 Maps.",
     });
     achUpdated = true;
   }
