@@ -170,6 +170,13 @@ const config = {
   UNIT_COST: 250,
   MAX_RESEARCH: 1000,
 
+  // Race-specific research discipline hard caps (default 1000 for all disciplines)
+  RESEARCH_DISCIPLINE_CAPS: {
+    human: { economy: 1500 },           // Humans excel at economy
+    high_elf: { attack_magic: 1500 },   // High Elves excel at attack magic
+    // All other races: 1000 baseline for all disciplines
+  },
+
   HOUSING_CAP_BY_RACE: {
     dwarf: 975,
     orc: 900,
