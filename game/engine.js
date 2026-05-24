@@ -2764,12 +2764,15 @@ function checkAchievements(k, updates, events) {
     if (!ach.includes("collector")) {
       ach.push("collector");
       achUpdated = true;
-      updates.maps =
-        (updates.maps !== undefined ? updates.maps : k.maps) + 5000;
+      // Reveal all kingdom locations
+      let disc = safeJsonParse(updates.discovered_kingdoms || k.discovered_kingdoms, {}, "collector:discovered_kingdoms");
+      // This would need database access to get all kingdoms - for now, we'll mark this achievement
+      // and handle the revelation in the achievement processor with db context
+      updates._reveal_all_locations = true;
       events.push({
         type: "system",
         message:
-          "🏆 ACHIEVEMENT UNLOCKED: Field Collector (Found all expedition events). Rewarded +5000 Maps.",
+          "🏆 ACHIEVEMENT UNLOCKED: Field Collector (Found all 50 expedition events). All world locations have been revealed!",
       });
     }
     delete updates._collector_unlocked;
@@ -5652,7 +5655,7 @@ function junkPrize(k, updates) {
       eventsCollected.push(ev.id);
       updates.collected_events = JSON.stringify(eventsCollected);
 
-      if (eventsCollected.length >= 25) {
+      if (eventsCollected.length >= 50) {
         updates._collector_unlocked = true;
       }
     }
