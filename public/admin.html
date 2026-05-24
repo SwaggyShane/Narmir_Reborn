@@ -482,6 +482,86 @@
       .special-mechanic strong {
         color: var(--green);
       }
+      /* Spell styles */
+      .spell-school {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        transition: all 0.2s;
+      }
+      .spell-school-header {
+        background: linear-gradient(135deg, rgba(180, 60, 200, 0.1) 0%, rgba(100, 50, 150, 0.05) 100%);
+        padding: 14px 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--border);
+        transition: all 0.2s;
+        user-select: none;
+      }
+      .spell-school-header:hover {
+        background: linear-gradient(135deg, rgba(180, 60, 200, 0.15) 0%, rgba(100, 50, 150, 0.1) 100%);
+      }
+      .spell-school-header.expanded {
+        border-bottom-color: var(--gold);
+      }
+      .spell-school-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .spell-toggle {
+        font-size: 12px;
+        color: var(--text3);
+        transition: transform 0.2s;
+      }
+      .spell-toggle.expanded {
+        transform: rotate(180deg);
+      }
+      .spell-content {
+        display: none;
+        padding: 16px;
+        max-height: 800px;
+        overflow-y: auto;
+      }
+      .spell-content.expanded {
+        display: block;
+      }
+      .spell-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 12px;
+      }
+      .spell-item {
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 12px;
+      }
+      .spell-name {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--gold);
+        margin-bottom: 6px;
+        text-transform: capitalize;
+      }
+      .spell-desc {
+        font-size: 11px;
+        color: var(--text2);
+        line-height: 1.4;
+      }
+      .spell-meta {
+        font-size: 10px;
+        color: var(--text3);
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border);
+      }
       @media (max-width: 600px) {
         body { padding: 8px; }
         .topbar { flex-direction: column; align-items: stretch; gap: 12px; }
@@ -1593,15 +1673,40 @@
       </div>
       <!-- end atab-changelog -->
 
-      <!-- TAB: World Fragments -->
+      <!-- TAB: World Fragments & Spells -->
       <div id="atab-fragments" class="atab" style="display: none">
-        <div class="card">
-          <h2 style="margin-top: 0">✨ World Fragment Bonuses</h2>
-          <p style="color: var(--text2); margin-bottom: 16px;">Complete reference of all 10 world fragments and their building bonuses. Click to expand each fragment.</p>
+        <!-- Sub-tabs for fragments and spells -->
+        <div style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid var(--border2); padding-bottom: 12px;">
+          <button class="admin-tab" id="sub-tab-fragments-btn" onclick="showFragmentsSubTab('fragments', this)" style="border-bottom: 2px solid var(--gold);">
+            ✨ World Fragments
+          </button>
+          <button class="admin-tab" id="sub-tab-spells-btn" onclick="showFragmentsSubTab('spells', this)">
+            🔮 Spells
+          </button>
         </div>
 
-        <div id="fragments-container" style="display: flex; flex-direction: column; gap: 12px;">
-          <!-- Populated by JavaScript -->
+        <!-- World Fragments Sub-tab -->
+        <div id="fragments-subtab" style="display: block;">
+          <div class="card">
+            <h2 style="margin-top: 0">✨ World Fragment Bonuses</h2>
+            <p style="color: var(--text2); margin-bottom: 16px;">Complete reference of all 10 world fragments and their building bonuses. Click to expand each fragment.</p>
+          </div>
+
+          <div id="fragments-container" style="display: flex; flex-direction: column; gap: 12px;">
+            <!-- Populated by JavaScript -->
+          </div>
+        </div>
+
+        <!-- Spells Sub-tab -->
+        <div id="spells-subtab" style="display: none;">
+          <div class="card">
+            <h2 style="margin-top: 0">🔮 Magic Spells by School</h2>
+            <p style="color: var(--text2); margin-bottom: 16px;">Complete reference of all spells organized by school of magic. Click to expand each school.</p>
+          </div>
+
+          <div id="spells-container" style="display: flex; flex-direction: column; gap: 12px;">
+            <!-- Populated by JavaScript -->
+          </div>
         </div>
       </div>
 
@@ -2405,6 +2510,203 @@
       function toggleFragment(header) {
         header.classList.toggle('expanded');
         header.querySelector('.fragment-toggle').classList.toggle('expanded');
+        header.nextElementSibling.classList.toggle('expanded');
+      }
+
+      function showFragmentsSubTab(subTab, btn) {
+        const fragmentsTab = document.getElementById('fragments-subtab');
+        const spellsTab = document.getElementById('spells-subtab');
+        const fragmentsBtn = document.getElementById('sub-tab-fragments-btn');
+        const spellsBtn = document.getElementById('sub-tab-spells-btn');
+
+        if (subTab === 'fragments') {
+          fragmentsTab.style.display = 'block';
+          spellsTab.style.display = 'none';
+          fragmentsBtn.style.borderBottom = '2px solid var(--gold)';
+          spellsBtn.style.borderBottom = 'none';
+          loadFragmentsDisplay();
+        } else {
+          fragmentsTab.style.display = 'none';
+          spellsTab.style.display = 'block';
+          fragmentsBtn.style.borderBottom = 'none';
+          spellsBtn.style.borderBottom = '2px solid var(--gold)';
+          loadSpellsDisplay();
+        }
+      }
+
+      const SPELL_DEFS = {
+        spark: { minSB: 100, tier: 1, desc: "Burns a small number of enemy farms" },
+        fog_of_war: { minSB: 150, tier: 1, desc: "Blinds enemy rangers for 3 turns" },
+        mend: { minSB: 200, tier: 1, desc: "Heals your own troop casualties from last battle" },
+        blight: { minSB: 250, tier: 1, desc: "Poisons enemy food supply for 5 turns" },
+        rain: { minSB: 300, tier: 1, desc: "Floods enemy farms — more damage than Spark" },
+        dispel: { minSB: 400, tier: 1, desc: "Removes all active curses and debuffs from your kingdom" },
+        lightning: { minSB: 500, tier: 2, desc: "Strikes down enemy fighters" },
+        bless: { minSB: 600, tier: 2, desc: "Boosts morale and population growth for 5 turns" },
+        silence: { minSB: 700, tier: 2, desc: "Suppresses enemy research progress for 3 turns" },
+        amnesia: { minSB: 800, tier: 2, desc: "Permanently wipes a chunk of enemy economy research" },
+        drain: { minSB: 900, tier: 2, desc: "Siphons mana from enemy kingdom to yours" },
+        plague: { minSB: 1000, tier: 3, desc: "Kills enemy population over 5 turns" },
+        earthquake: { minSB: 1200, tier: 3, desc: "Destroys buildings across all types" },
+        tempest: { minSB: 1400, tier: 3, desc: "Kills all troop types simultaneously" },
+        shield: { minSB: 1500, tier: 3, desc: "Reduces incoming spell damage by 50% for 5 turns" },
+        armageddon: { minSB: 2000, tier: 4, desc: "Destroys land, buildings, and population simultaneously. One cast, total devastation." },
+      };
+
+      const MAGIC_SCHOOLS = {
+        general: {
+          name: "General Spells",
+          icon: "📖",
+          desc: "Spells available to all schools"
+        },
+        abjuration: {
+          name: "Abjuration",
+          icon: "🛡️",
+          desc: "Protection & Defense",
+          spells: ["shield", "dispel"]
+        },
+        conjuration: {
+          name: "Conjuration",
+          icon: "✨",
+          desc: "Creation & Healing",
+          spells: ["mend", "bless"]
+        },
+        divination: {
+          name: "Divination",
+          icon: "🔮",
+          desc: "Foresight & Information",
+          spells: ["fog_of_war"]
+        },
+        enchantment: {
+          name: "Enchantment",
+          icon: "💫",
+          desc: "Charm & Influence",
+          spells: ["silence", "amnesia"]
+        },
+        evocation: {
+          name: "Evocation",
+          icon: "⚡",
+          desc: "Damage & Force",
+          spells: ["spark", "lightning", "rain", "tempest", "earthquake"]
+        },
+        illusion: {
+          name: "Illusion",
+          icon: "👁️",
+          desc: "Deception & Trickery",
+          spells: ["fog_of_war"]
+        },
+        necromancy: {
+          name: "Necromancy",
+          icon: "💀",
+          desc: "Death & Undeath",
+          spells: ["drain", "plague", "armageddon"]
+        },
+        transmutation: {
+          name: "Transmutation",
+          icon: "🔄",
+          desc: "Change & Transformation",
+          spells: ["mend", "blight"]
+        },
+      };
+
+      async function loadSpellsDisplay() {
+        const container = document.getElementById('spells-container');
+        container.innerHTML = '';
+
+        // Get all school spells
+        const schoolSpells = new Set();
+        Object.values(MAGIC_SCHOOLS).forEach(school => {
+          if (school.spells) {
+            school.spells.forEach(spell => schoolSpells.add(spell));
+          }
+        });
+
+        // Find general spells (those not in any school or in multiple schools)
+        const allSpells = Object.keys(SPELL_DEFS);
+        const generalSpells = allSpells.filter(spell => {
+          const count = Object.values(MAGIC_SCHOOLS).filter(s => s.spells && s.spells.includes(spell)).length;
+          return count === 0 || count > 2; // General if not in schools or in multiple schools
+        });
+
+        // Display General Spells first
+        if (generalSpells.length > 0) {
+          let html = `
+            <div class="spell-school">
+              <div class="spell-school-header expanded" onclick="toggleSpell(this)">
+                <div class="spell-school-title">
+                  <span>📖</span>
+                  <span>General Spells</span>
+                  <span style="font-size: 11px; color: var(--text3); margin-left: auto;">${generalSpells.length} spells</span>
+                </div>
+                <span class="spell-toggle expanded">▼</span>
+              </div>
+              <div class="spell-content expanded">
+                <div class="spell-list">
+          `;
+
+          generalSpells.forEach(spellId => {
+            const spell = SPELL_DEFS[spellId];
+            const tierLabel = ['', '①', '②', '③', '④'][spell.tier] || '';
+            html += `
+              <div class="spell-item">
+                <div class="spell-name">${spellId.replace(/_/g, ' ')}</div>
+                <div class="spell-desc">${spell.desc}</div>
+                <div class="spell-meta">
+                  <div><strong>Spellbook:</strong> ${spell.minSB}</div>
+                  <div><strong>Tier:</strong> ${tierLabel}</div>
+                </div>
+              </div>
+            `;
+          });
+
+          html += `</div></div></div>`;
+          container.innerHTML = html;
+        }
+
+        // Display each school
+        const schoolOrder = ['abjuration', 'conjuration', 'divination', 'enchantment', 'evocation', 'illusion', 'necromancy', 'transmutation'];
+        schoolOrder.forEach(schoolKey => {
+          const school = MAGIC_SCHOOLS[schoolKey];
+          if (school.spells) {
+            let html = `
+              <div class="spell-school">
+                <div class="spell-school-header" onclick="toggleSpell(this)">
+                  <div class="spell-school-title">
+                    <span>${school.icon}</span>
+                    <span>${school.name}</span>
+                    <span style="font-size: 11px; color: var(--text3);">${school.desc}</span>
+                    <span style="font-size: 11px; color: var(--text3); margin-left: auto;">${school.spells.length} spells</span>
+                  </div>
+                  <span class="spell-toggle">▼</span>
+                </div>
+                <div class="spell-content">
+                  <div class="spell-list">
+            `;
+
+            school.spells.forEach(spellId => {
+              const spell = SPELL_DEFS[spellId];
+              const tierLabel = ['', '①', '②', '③', '④'][spell.tier] || '';
+              html += `
+                <div class="spell-item">
+                  <div class="spell-name">${spellId.replace(/_/g, ' ')}</div>
+                  <div class="spell-desc">${spell.desc}</div>
+                  <div class="spell-meta">
+                    <div><strong>Spellbook:</strong> ${spell.minSB}</div>
+                    <div><strong>Tier:</strong> ${tierLabel}</div>
+                  </div>
+                </div>
+              `;
+            });
+
+            html += `</div></div></div>`;
+            container.innerHTML += html;
+          }
+        });
+      }
+
+      function toggleSpell(header) {
+        header.classList.toggle('expanded');
+        header.querySelector('.spell-toggle').classList.toggle('expanded');
         header.nextElementSibling.classList.toggle('expanded');
       }
 
