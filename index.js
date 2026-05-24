@@ -910,8 +910,8 @@ async function updateMarketPrices(db) {
   try {
     const prices = await db.all('SELECT * FROM market_prices');
     for (const p of prices) {
-      const drift = (p.base_price - p.current_price) / p.base_price * 0.08;
-      const change = 1 + (Math.random() * 0.12 - 0.06) + drift; // increased volatility to [-6%, +6%] per pulse
+      const drift = (p.base_price - p.current_price) / p.base_price * 0.22;
+      const change = 1 + (Math.random() * 0.54 - 0.27) + drift; // extreme volatility: [-27%, +27%] per pulse with scaled drift
       let newPrice = p.current_price * change;
       newPrice = Math.max(p.base_price * 0.15, Math.min(p.base_price * 6.0, newPrice));
       await db.run('UPDATE market_prices SET current_price = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [newPrice, p.id]);
