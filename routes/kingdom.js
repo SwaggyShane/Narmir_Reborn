@@ -4265,6 +4265,35 @@ module.exports = function (db) {
   // Attach this helper to be callable from the processTurn route
   router._processResourceExpeditions = processResourceExpeditionsDb;
 
+  // ── Inventory ────────────────────────────────────────────────────────────
+  router.get('/inventory', requireAuth, async (req, res) => {
+    try {
+      const k = await db.get('SELECT items FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
+      if (!k) return res.status(404).json({ error: 'Kingdom not found' });
+
+      const { INVENTORY_ITEMS } = require('../game/config');
+      const items = safeJsonParse(k.items, {}, 'inventory:items');
+
+      // Format inventory with descriptions
+      const formatted = {};
+      for (const [itemId, count] of Object.entries(items)) {
+        if (count > 0 && INVENTORY_ITEMS[itemId]) {
+          formatted[itemId] = {
+            name: INVENTORY_ITEMS[itemId].name,
+            desc: INVENTORY_ITEMS[itemId].desc,
+            count,
+            rarity: INVENTORY_ITEMS[itemId].rarity
+          };
+        }
+      }
+
+      res.json(formatted);
+    } catch (err) {
+      console.error('[inventory] failed:', err.message);
+      res.status(500).json({ error: 'Failed to fetch inventory' });
+    }
+  });
+
   return router;
 };
 

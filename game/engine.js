@@ -5636,7 +5636,7 @@ function junkPrize(k, updates) {
   const lastId = updates.last_event_id || k.last_event_id;
 
   let available = JUNK_PRIZES.filter((p) => p.id !== lastId);
-  if (available.length === 0) available = JUNK_PRIZES; // Fallback if 1 event in total
+  if (available.length === 0) available = JUNK_PRIZES;
   const ev = available[Math.floor(Math.random() * available.length)];
 
   if (ev) {
@@ -5649,6 +5649,19 @@ function junkPrize(k, updates) {
       }
     }
     updates.last_event_id = ev.id;
+
+    // Add item to inventory
+    let inventory = safeJsonParse(updates.items || k.items, {}, "junkPrize:items");
+    if (!inventory[ev.id]) inventory[ev.id] = 0;
+    inventory[ev.id]++;
+    updates.items = JSON.stringify(inventory);
+
+    // Check for 100 suspicious rocks achievement
+    if (ev.id === "suspicious_rock" && inventory.suspicious_rock >= 100) {
+      updates.stone = (updates.stone || k.stone || 0) + 1000;
+      updates._suspicious_rocks_achievement = true;
+    }
+
     return ev.msg || ev.content || "a mysterious rock";
   }
   return "a strange pebble";
@@ -6182,6 +6195,17 @@ async function resolveExpeditions(db, k, engine) {
         events.push({
           type: "system",
           message: `🔮 A World Fragment (${frag}) was discovered during the expedition.`,
+        });
+      }
+
+      if (updates._suspicious_rocks_achievement) {
+        delete updates._suspicious_rocks_achievement;
+        rewards.unshift({
+          text: `🏆 ACHIEVEMENT UNLOCKED: Found 100 mysterious rocks! +1000 stone awarded.`,
+        });
+        events.push({
+          type: "system",
+          message: `🏆 ACHIEVEMENT: ${freshK.name} collected 100 mysterious rocks and was rewarded with 1000 stone!`,
         });
       }
 
