@@ -1298,7 +1298,7 @@ async function start() {
     res.json({ ok: true });
   });
 
-  app.get('/wipe-admin.html', requireAdmin, (_req, res) => {
+  app.get('/wipe-admin.html', (_req, res) => {
     res.sendFile(path.join(__dirname, 'public/wipe-admin.html'));
   });
 
