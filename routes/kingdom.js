@@ -1488,13 +1488,21 @@ module.exports = function (db) {
       );
       if (activeBounties.length > 0) {
         let totalClaimed = 0;
+        const bountyIds = [];
         for (const b of activeBounties) {
           totalClaimed += b.amount;
+          bountyIds.push(b.id);
+        }
+
+        // Batch update all bounties in single query
+        if (bountyIds.length > 0) {
+          const placeholders = bountyIds.map((_, i) => `$${i + 1}`).join(',');
           await db.run(
-            "UPDATE bounties SET status = ?, claimed_by_id = ? WHERE id = ?",
-            ["claimed", k.id, b.id],
+            `UPDATE bounties SET status = ?, claimed_by_id = ? WHERE id IN (${placeholders})`,
+            ["claimed", k.id, ...bountyIds],
           );
         }
+
         if (totalClaimed > 0) {
           await db.run("UPDATE kingdoms SET gold = gold + ? WHERE id = ?", [
             totalClaimed,
