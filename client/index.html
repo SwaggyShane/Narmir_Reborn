@@ -1175,23 +1175,6 @@
       .btn-green:active {
         background: rgba(76, 175, 130, 0.15);
       }
-      #prestige-button {
-        padding: 2px 8px;
-        font-size: 10px;
-        background: linear-gradient(135deg, #FFD700, #FFA500);
-        color: #000;
-        border: 1px solid #FF8C00;
-        border-radius: 3px;
-        cursor: pointer;
-        font-weight: 600;
-        white-space: nowrap;
-        display: none;
-        transition: all 0.2s ease;
-      }
-      /* #prestige-button:hover disabled */
-      #prestige-button:active {
-        transform: scale(0.98);
-      }
       .btn-amber {
         background: transparent;
         border-color: var(--amber);
@@ -1988,13 +1971,6 @@
                   onclick="showXpModal()"
                   >0/100 XP</span
                 >
-                <button
-                  id="prestige-button"
-                  onclick="openPrestigeModal()"
-                  title="You've reached max level! Click to explore prestige."
-                >
-                  ✨ Prestige
-                </button>
               </div>
             </div>
           </div>
@@ -4287,23 +4263,6 @@
           if (resource === "armor") key = "armor_stockpile";
           input.value = state[key] || 0;
         }
-      }
-
-      async function initiateRebirth() {
-        if (state.level < 50)
-          return toast("Level 50 required for Rebirth", "error");
-        if (
-          !confirm(
-            "Are you sure you want to ASCEND? Your kingdom will reset but you will gain permanent prestige and a new title!",
-          )
-        )
-          return;
-
-        const res = await apiCall("POST", "/api/kingdom/rebirth");
-        if (res.error) return toast(res.error, "error");
-
-        toast("🌌 THE WORLD SHAKES. YOU HAVE TRANSCENDED!", "success");
-        setTimeout(() => window.location.reload(), 3000);
       }
 
       // Ensure loadMarket is hooked into tab switching
@@ -13718,12 +13677,10 @@
         var levelEl = document.getElementById("kingdom-level");
         var barEl = document.getElementById("xp-bar");
         var labelEl = document.getElementById("xp-label");
-        var prestigeBtn = document.getElementById("prestige-button");
         if (levelEl) levelEl.textContent = level;
         if (barEl) barEl.style.width = pct + "%";
         if (labelEl)
           labelEl.textContent = fmt(xpInLevel) + " / " + fmt(xpNeeded) + " XP";
-        if (prestigeBtn) prestigeBtn.style.display = level >= 50 ? "inline-block" : "none";
       }
 
       // ── Training panel ────────────────────────────────────────────────────────────
@@ -15295,53 +15252,6 @@
         document.body.style.overflow = "";
       }
 
-      function openPrestigeModal() {
-        const modal = document.getElementById("prestige-modal");
-        if (modal) {
-          const curPrestige = state.prestige_level || 0;
-          const nextPrestige = curPrestige + 1;
-          
-          const romanNumerals = ['I', 'II', 'III', 'IV', 'V'];
-          const numeral = curPrestige < 5 ? romanNumerals[curPrestige] : (curPrestige + 1);
-          document.getElementById("prestige-modal-title").textContent = "✨ Prestige " + numeral;
-          
-          let tierDetails = "";
-          if (nextPrestige === 1) tierDetails = "<strong style='color:var(--green)'>+25%</strong> Building Caps<br/><strong style='color:var(--green)'>+5%</strong> Market/Trade bonuses";
-          if (nextPrestige === 2) tierDetails = "<strong style='color:var(--green)'>+50%</strong> Building Caps<br/><strong style='color:var(--green)'>+10%</strong> Market/Trade bonuses<br/><strong style='color:var(--accent1)'>✨ Unlocks Race-specific Building</strong>";
-          if (nextPrestige === 3) tierDetails = "<strong style='color:var(--green)'>+75%</strong> Building Caps<br/><strong style='color:var(--green)'>+15%</strong> Market/Trade bonuses<br/><strong style='color:var(--gold)'>+5%</strong> Combat Power";
-          if (nextPrestige === 4) tierDetails = "<strong style='color:var(--green)'>+100%</strong> Building Caps<br/><strong style='color:var(--green)'>+20%</strong> Market/Trade bonuses<br/><strong style='color:var(--gold)'>+5%</strong> Combat Power<br/><strong style='color:var(--accent1)'>✨ Unlocks Legends (Elite unit)</strong>";
-          if (nextPrestige === 5) tierDetails = "<strong style='color:var(--green)'>+150%</strong> Building Caps<br/><strong style='color:var(--green)'>+30%</strong> Market/Trade bonuses<br/><strong style='color:var(--gold)'>+10%</strong> Combat Power<br/><strong style='color:var(--gold)'>+25%</strong> Population Capacity";
-          
-          if (nextPrestige > 5) {
-             tierDetails = "You have reached the maximum prestige limit!";
-          }
-
-          document.getElementById("prestige-modal-status").innerHTML = 
-            "<p style='margin-top:0'>Prestige resets your land, wealth, and population, but retains heroes and trade routes. Ascending to <strong>Tier " + nextPrestige + "</strong> grants:</p>" +
-            "<div style='margin-left: 10px'>" + tierDetails + "</div>" +
-            "<p style='margin-bottom:0; margin-top:14px; font-size:12px; color:var(--text3)'>XP scaling: Leveling up will take 20% more XP per Tier.</p>";
-          
-          document.getElementById("prestige-modal-text").textContent = (state.level < 50) ? "(You must be Level 50 to ascend.)" : "";
-          
-          const btn = document.getElementById("prestige-modal-btn");
-          if (state.level >= 50 && nextPrestige <= 5) {
-             btn.style.display = "block";
-          } else {
-             btn.style.display = "none";
-          }
-          
-          modal.style.display = "flex";
-          document.body.style.overflow = "hidden";
-        }
-      }
-
-      function closePrestigeModal() {
-        const modal = document.getElementById("prestige-modal");
-        if (modal) {
-          modal.style.display = "none";
-          document.body.style.overflow = "";
-        }
-      }
 
       const MAGIC_SCHOOLS = {
         abjuration: { name: "Abjuration", icon: "🛡️", desc: "Protection & Defense" },
@@ -16680,85 +16590,6 @@
             Loading...
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- PRESTIGE MODAL -->
-    <div
-      id="prestige-modal"
-      style="
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.8);
-        z-index: 5000;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-      "
-      onclick="if (event.target === this) closePrestigeModal();"
-    >
-      <div
-        style="
-          background: var(--bg2);
-          border: 1px solid var(--border2);
-          border-radius: var(--radius-lg);
-          padding: 28px;
-          max-width: 480px;
-          width: 100%;
-          position: relative;
-          text-align: center;
-        "
-      >
-        <button
-          onclick="closePrestigeModal()"
-          style="
-            position: absolute;
-            top: 12px;
-            right: 14px;
-            background: none;
-            border: none;
-            color: var(--text3);
-            font-size: 20px;
-            cursor: pointer;
-            line-height: 1;
-          "
-        >
-          ✕
-        </button>
-        <div
-          id="prestige-modal-title"
-          style="
-            font-size: 28px;
-            font-weight: 800;
-            color: var(--gold);
-            margin-bottom: 12px;
-          "
-        ></div>
-        <div
-          id="prestige-modal-status"
-          style="
-            font-size: 14px;
-            color: var(--text);
-            margin-bottom: 20px;
-            line-height: 1.6;
-            text-align: left;
-            background: var(--bg3);
-            padding: 16px;
-            border-radius: var(--radius);
-          "
-        ></div>
-        <button
-          id="prestige-modal-btn"
-          class="btn btn-gold"
-          onclick="initiateRebirth()"
-          style="width: 100%; padding: 12px; font-size: 16px; margin-top: 10px;"
-          display="none"
-        >Transcend Now</button>
-        <p
-          id="prestige-modal-text"
-          style="font-size: 12px; color: var(--text3); margin-top: 12px"
-        ></p>
       </div>
     </div>
 
