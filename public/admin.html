@@ -1913,19 +1913,27 @@
           </div>
           <div>
             <label style="color: var(--text3); font-size: 12px;">Min Target</label>
-            <input type="number" id="edit-goal-min" placeholder="1-500" min="1" max="500" style="width: 100%; padding: 6px; background: var(--bg2); color: var(--text1); border: 1px solid var(--border); border-radius: var(--radius);">
+            <input type="number" id="edit-goal-min" placeholder="1-500" min="1" max="500" data-qty-fixed="true" style="width: 100%; padding: 6px; background: var(--bg2); color: var(--text1); border: 1px solid var(--border); border-radius: var(--radius);">
           </div>
           <div>
             <label style="color: var(--text3); font-size: 12px;">Max Target</label>
-            <input type="number" id="edit-goal-max" placeholder="2-1000" min="2" max="1000" style="width: 100%; padding: 6px; background: var(--bg2); color: var(--text1); border: 1px solid var(--border); border-radius: var(--radius);">
+            <input type="number" id="edit-goal-max" placeholder="2-1000" min="2" max="1000" data-qty-fixed="true" style="width: 100%; padding: 6px; background: var(--bg2); color: var(--text1); border: 1px solid var(--border); border-radius: var(--radius);">
           </div>
           <div>
             <label style="color: var(--text3); font-size: 12px;">Prize Type</label>
-            <input type="text" id="edit-goal-prize-type" placeholder="e.g., gold, mana" style="width: 100%; padding: 6px; background: var(--bg2); color: var(--text1); border: 1px solid var(--border); border-radius: var(--radius);">
+            <select id="edit-goal-prize-type" style="width: 100%; padding: 6px; background: var(--bg2); color: var(--text1); border: 1px solid var(--border); border-radius: var(--radius);">
+              <option value="">Select Prize Type</option>
+              <option value="gold">gold</option>
+              <option value="mana">mana</option>
+              <option value="rangers">rangers</option>
+              <option value="researchers">researchers</option>
+              <option value="war_machines">war_machines</option>
+              <option value="world_fragment">world_fragment</option>
+            </select>
           </div>
           <div>
             <label style="color: var(--text3); font-size: 12px;">Prize Multiplier</label>
-            <input type="number" id="edit-goal-prize-mult" placeholder="0.5-100" min="0.5" max="100" step="0.1" style="width: 100%; padding: 6px; background: var(--bg2); color: var(--text1); border: 1px solid var(--border); border-radius: var(--radius);">
+            <input type="number" id="edit-goal-prize-mult" placeholder="0.5-100" min="0.5" max="100" step="0.1" data-qty-fixed="true" style="width: 100%; padding: 6px; background: var(--bg2); color: var(--text1); border: 1px solid var(--border); border-radius: var(--radius);">
           </div>
         </div>
         <div class="modal-btns">
@@ -1941,6 +1949,7 @@
       var allKingdoms = [];
       var banTarget = null;
       var editTarget = null;
+      var goalsCache = null;
 
       var EDIT_SECTIONS = [
         {
@@ -2954,11 +2963,13 @@
 
       // ── GOALS MANAGEMENT ──────────────────────────────────────────
       async function loadGoalsConfig() {
+        goalsCache = null;
         const data = await api("GET", "/api/admin/goals");
         if (data.error) {
           toast("Error loading goals: " + data.error, "error");
           return;
         }
+        goalsCache = data;
 
         // Render Daily Goals
         const dailyHtml = (data.daily || []).map(goal => `
@@ -3056,12 +3067,15 @@
       }
 
       async function showEditGoalModal(tier, goalId) {
-        const data = await api("GET", "/api/admin/goals");
-        if (data.error) {
-          toast("Error loading goals: " + data.error, "error");
-          return;
+        if (!goalsCache) {
+          const data = await api("GET", "/api/admin/goals");
+          if (data.error) {
+            toast("Error loading goals: " + data.error, "error");
+            return;
+          }
+          goalsCache = data;
         }
-        const goal = (data[tier] || []).find(g => g.id === goalId);
+        const goal = (goalsCache[tier] || []).find(g => g.id === goalId);
         if (!goal) {
           toast("Goal not found", "error");
           return;
@@ -3093,17 +3107,27 @@
         }
 
         toast("Goal deleted successfully", "success");
+        goalsCache = null;
         loadGoalsConfig();
       }
 
       async function submitEditGoal() {
+        const minInput = document.getElementById('edit-goal-min');
+        const maxInput = document.getElementById('edit-goal-max');
+        const multInput = document.getElementById('edit-goal-prize-mult');
+
+        if (!minInput.checkValidity() || !maxInput.checkValidity() || !multInput.checkValidity()) {
+          toast("All fields are required and must be within their allowed ranges.", "error");
+          return;
+        }
+
         const tier = document.getElementById('edit-goal-tier').value;
         const goalId = document.getElementById('edit-goal-id').value;
         const label = document.getElementById('edit-goal-label').value.trim();
-        const minTarget = parseInt(document.getElementById('edit-goal-min').value);
-        const maxTarget = parseInt(document.getElementById('edit-goal-max').value);
+        const minTarget = parseInt(minInput.value);
+        const maxTarget = parseInt(maxInput.value);
         const prizeType = document.getElementById('edit-goal-prize-type').value.trim();
-        const prizeMultiplier = parseFloat(document.getElementById('edit-goal-prize-mult').value);
+        const prizeMultiplier = parseFloat(multInput.value);
 
         if (!label || !prizeType || isNaN(minTarget) || isNaN(maxTarget) || isNaN(prizeMultiplier)) {
           toast("All fields required and must be valid numbers", "error");
@@ -3125,6 +3149,7 @@
         }
 
         toast("Goal updated successfully", "success");
+        goalsCache = null;
         closeEditGoalModal();
         loadGoalsConfig();
       }
