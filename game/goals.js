@@ -155,7 +155,6 @@ function claimGoal(k, updates, events, groupId, goalId) {
    updates.goals = JSON.stringify(goals);
 
    if (goal.prizeType === 'world_fragment') {
-     const frag = WORLD_FRAGMENTS[Math.floor(Math.random() * WORLD_FRAGMENTS.length)];
      let frags = safeJsonParse(updates.world_fragments || k.world_fragments, []);
      const prizeAmount = goal.prizeAmount || 1;
      for(let i = 0; i < prizeAmount; i++) {
