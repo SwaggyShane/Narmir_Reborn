@@ -2752,10 +2752,10 @@ function checkAchievements(k, updates, events) {
   if (!ach.includes("ach_founder") && totalBuildings >= 1) {
     ach.push("ach_founder");
     updates.gold =
-      (updates.gold !== undefined ? updates.gold : k.gold) + 500;
+      (updates.gold !== undefined ? updates.gold : k.gold) + 5000;
     events.push({
       type: "system",
-      message: "🏆 ACHIEVEMENT UNLOCKED: Founder! You've built your first structure. Rewarded +500 Gold.",
+      message: "🏆 ACHIEVEMENT UNLOCKED: Founder! You've built your first structure. Rewarded +5000 Gold.",
     });
     achUpdated = true;
   }
@@ -2779,12 +2779,12 @@ function checkAchievements(k, updates, events) {
     updates.land =
       (updates.land !== undefined ? updates.land : k.land) + 50000;
     updates.mana =
-      (updates.mana !== undefined ? updates.mana : k.mana) + 10000;
+      (updates.mana !== undefined ? updates.mana : k.mana) + 100000;
     updates.gold =
-      (updates.gold !== undefined ? updates.gold : k.gold) + 100000;
+      (updates.gold !== undefined ? updates.gold : k.gold) + 1000000;
     events.push({
       type: "system",
-      message: "🏆 ACHIEVEMENT UNLOCKED: Colossus! Your empire has swollen to 10 million souls. Rewarded +50000 Land, +10000 Mana, and +100000 Gold.",
+      message: "🏆 ACHIEVEMENT UNLOCKED: Colossus! Your empire has swollen to 10 million souls. Rewarded +50000 Land, +100000 Mana, and +1000000 Gold.",
     });
     achUpdated = true;
   }
