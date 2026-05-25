@@ -204,24 +204,50 @@ module.exports = function (db) {
         ) as last_combat_at
       FROM kingdoms k
       JOIN players p ON k.player_id = p.id
-      ORDER BY k.id
+      ORDER BY k.land DESC, k.population DESC
+      LIMIT 1000
     `);
 
-    // Calculate score
-    for (let r of rows) {
-      r.score = engine.calculateScore(r);
-    }
-
-    // Sort by score DESC
-    rows.sort((a, b) => b.score - a.score);
-
-    // Limit and discovery
+    // Get discovered kingdoms for user
     let disc = {};
     try {
       disc = safeJsonParse(pk.discovered_kingdoms, {}, "auto:discovered_kingdoms");
     } catch {}
 
-    const rankings = rows
+    // Calculate scores only for top 1000 candidates + discovered
+    const scoredRows = [];
+    const discoveredIds = new Set(Object.keys(disc).map(id => parseInt(id)));
+
+    for (let r of rows) {
+      r.score = engine.calculateScore(r);
+      scoredRows.push(r);
+    }
+
+    // Add any discovered kingdoms not in top 1000 (but skip expensive calculation if not needed)
+    if (discoveredIds.size > 0) {
+      const topIds = new Set(scoredRows.map(r => r.id));
+      if (discoveredIds.size > topIds.size) {
+        // Some discovered kingdoms aren't in top 1000, need to fetch and score them
+        const missingIds = Array.from(discoveredIds).filter(id => !topIds.has(id));
+        if (missingIds.length > 0) {
+          const placeholders = missingIds.map((_, i) => `$${i + 1}`).join(',');
+          const missingRows = await db.all(`
+            SELECT k.*, p.id as player_id, p.username, p.is_ai FROM kingdoms k
+            JOIN players p ON k.player_id = p.id
+            WHERE k.id IN (${placeholders})
+          `, missingIds);
+          for (let r of missingRows) {
+            r.score = engine.calculateScore(r);
+            scoredRows.push(r);
+          }
+        }
+      }
+    }
+
+    // Sort by score DESC
+    scoredRows.sort((a, b) => b.score - a.score);
+
+    const rankings = scoredRows
       .filter((r, i) => i < 500 || disc[r.id])
       .map((r, i) => ({
         id: r.id,
@@ -246,29 +272,46 @@ module.exports = function (db) {
 
   router.get("/alliance-rankings", requireAuth, async (req, res) => {
     try {
-      const rows = await db.all(`
-        SELECT a.id, a.name, k.*
+      // First, aggregate alliance data without expensive score calculations
+      const allianceStatsRows = await db.all(`
+        SELECT
+          a.id,
+          a.name,
+          COUNT(am.kingdom_id) as member_count,
+          SUM(k.land) as total_land,
+          SUM(k.population) as total_pop
+        FROM alliances a
+        LEFT JOIN alliance_members am ON a.id = am.alliance_id
+        LEFT JOIN kingdoms k ON am.kingdom_id = k.id
+        GROUP BY a.id, a.name
+      `);
+
+      // Now get all members for score calculation
+      const memberRows = await db.all(`
+        SELECT k.*, a.id as alliance_id
         FROM alliances a
         JOIN alliance_members am ON a.id = am.alliance_id
         JOIN kingdoms k ON am.kingdom_id = k.id
       `);
 
+      // Build alliance map with scores
       const allianceMap = {};
-      for (const r of rows) {
-        if (!allianceMap[r.id]) {
-          allianceMap[r.id] = {
-            id: r.id,
-            name: r.name,
-            member_count: 0,
-            total_land: 0,
-            total_pop: 0,
-            total_score: 0,
-          };
+      for (const stats of allianceStatsRows) {
+        allianceMap[stats.id] = {
+          id: stats.id,
+          name: stats.name,
+          member_count: stats.member_count || 0,
+          total_land: stats.total_land || 0,
+          total_pop: stats.total_pop || 0,
+          total_score: 0,
+        };
+      }
+
+      // Calculate scores for members and aggregate
+      for (const k of memberRows) {
+        if (allianceMap[k.alliance_id]) {
+          allianceMap[k.alliance_id].total_score += engine.calculateScore(k);
         }
-        allianceMap[r.id].member_count++;
-        allianceMap[r.id].total_land += r.land || 0;
-        allianceMap[r.id].total_pop += r.population || 0;
-        allianceMap[r.id].total_score += engine.calculateScore(r);
       }
 
       const results = Object.values(allianceMap);
