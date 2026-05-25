@@ -1891,6 +1891,50 @@
       </div>
     </div>
 
+    <div class="modal-overlay" id="edit-goal-modal" style="display: none;">
+      <div class="modal">
+        <h3>✎ Edit Goal</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+          <div>
+            <label style="color: var(--text3); font-size: 12px;">Tier</label>
+            <select id="edit-goal-tier" disabled style="width: 100%; padding: 6px; background: var(--bg2); color: var(--text3); border: 1px solid var(--border); border-radius: var(--radius);">
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+          <div>
+            <label style="color: var(--text3); font-size: 12px;">Goal ID</label>
+            <input type="text" id="edit-goal-id" disabled placeholder="e.g., spell_cast" style="width: 100%; padding: 6px; background: var(--bg2); color: var(--text3); border: 1px solid var(--border); border-radius: var(--radius);">
+          </div>
+          <div>
+            <label style="color: var(--text3); font-size: 12px;">Label</label>
+            <input type="text" id="edit-goal-label" placeholder="e.g., Cast Spells" style="width: 100%; padding: 6px; background: var(--bg2); color: var(--text1); border: 1px solid var(--border); border-radius: var(--radius);">
+          </div>
+          <div>
+            <label style="color: var(--text3); font-size: 12px;">Min Target</label>
+            <input type="number" id="edit-goal-min" placeholder="1-500" min="1" max="500" style="width: 100%; padding: 6px; background: var(--bg2); color: var(--text1); border: 1px solid var(--border); border-radius: var(--radius);">
+          </div>
+          <div>
+            <label style="color: var(--text3); font-size: 12px;">Max Target</label>
+            <input type="number" id="edit-goal-max" placeholder="2-1000" min="2" max="1000" style="width: 100%; padding: 6px; background: var(--bg2); color: var(--text1); border: 1px solid var(--border); border-radius: var(--radius);">
+          </div>
+          <div>
+            <label style="color: var(--text3); font-size: 12px;">Prize Type</label>
+            <input type="text" id="edit-goal-prize-type" placeholder="e.g., gold, mana" style="width: 100%; padding: 6px; background: var(--bg2); color: var(--text1); border: 1px solid var(--border); border-radius: var(--radius);">
+          </div>
+          <div>
+            <label style="color: var(--text3); font-size: 12px;">Prize Multiplier</label>
+            <input type="number" id="edit-goal-prize-mult" placeholder="0.5-100" min="0.5" max="100" step="0.1" style="width: 100%; padding: 6px; background: var(--bg2); color: var(--text1); border: 1px solid var(--border); border-radius: var(--radius);">
+          </div>
+        </div>
+        <div class="modal-btns">
+          <button class="btn" onclick="closeEditGoalModal()">Cancel</button>
+          <button class="btn btn-gold" onclick="submitEditGoal()">Save Changes</button>
+        </div>
+      </div>
+    </div>
+
     <div class="toast" id="toast"></div>
 
     <script>
@@ -2920,10 +2964,14 @@
         const dailyHtml = (data.daily || []).map(goal => `
           <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px;">
             <div style="font-weight: 600; color: var(--gold); margin-bottom: 8px;">${escHtml(goal.label)}</div>
-            <div style="color: var(--text3); font-size: 12px; line-height: 1.6;">
+            <div style="color: var(--text3); font-size: 12px; line-height: 1.6; margin-bottom: 8px;">
               <div><strong>ID:</strong> ${escHtml(goal.id)}</div>
               <div><strong>Target:</strong> ${goal.min} - ${goal.max}</div>
               <div><strong>Prize:</strong> ${goal.prizeMult}x ${escHtml(goal.prizeType)}</div>
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <button class="btn" style="flex: 1; padding: 6px; font-size: 12px;" onclick="showEditGoalModal('daily', ${escHtml(JSON.stringify(goal))})">✎ Edit</button>
+              <button class="btn" style="flex: 1; padding: 6px; font-size: 12px; background: var(--red);" onclick="deleteGoal('daily', '${escHtml(goal.id)}')">🗑 Delete</button>
             </div>
           </div>
         `).join('');
@@ -2933,10 +2981,14 @@
         const weeklyHtml = (data.weekly || []).map(goal => `
           <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px;">
             <div style="font-weight: 600; color: var(--gold); margin-bottom: 8px;">${escHtml(goal.label)}</div>
-            <div style="color: var(--text3); font-size: 12px; line-height: 1.6;">
+            <div style="color: var(--text3); font-size: 12px; line-height: 1.6; margin-bottom: 8px;">
               <div><strong>ID:</strong> ${escHtml(goal.id)}</div>
               <div><strong>Target:</strong> ${goal.min} - ${goal.max}</div>
               <div><strong>Prize:</strong> ${goal.prizeMult}x ${escHtml(goal.prizeType)}</div>
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <button class="btn" style="flex: 1; padding: 6px; font-size: 12px;" onclick="showEditGoalModal('weekly', ${escHtml(JSON.stringify(goal))})">✎ Edit</button>
+              <button class="btn" style="flex: 1; padding: 6px; font-size: 12px; background: var(--red);" onclick="deleteGoal('weekly', '${escHtml(goal.id)}')">🗑 Delete</button>
             </div>
           </div>
         `).join('');
@@ -2946,10 +2998,14 @@
         const monthlyHtml = (data.monthly || []).map(goal => `
           <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px;">
             <div style="font-weight: 600; color: var(--gold); margin-bottom: 8px;">${escHtml(goal.label)}</div>
-            <div style="color: var(--text3); font-size: 12px; line-height: 1.6;">
+            <div style="color: var(--text3); font-size: 12px; line-height: 1.6; margin-bottom: 8px;">
               <div><strong>ID:</strong> ${escHtml(goal.id)}</div>
               <div><strong>Target:</strong> ${goal.min} - ${goal.max}</div>
               <div><strong>Prize:</strong> ${goal.prizeMult}x ${escHtml(goal.prizeType)}</div>
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <button class="btn" style="flex: 1; padding: 6px; font-size: 12px;" onclick="showEditGoalModal('monthly', ${escHtml(JSON.stringify(goal))})">✎ Edit</button>
+              <button class="btn" style="flex: 1; padding: 6px; font-size: 12px; background: var(--red);" onclick="deleteGoal('monthly', '${escHtml(goal.id)}')">🗑 Delete</button>
             </div>
           </div>
         `).join('');
@@ -2996,6 +3052,65 @@
 
         toast("Goal added successfully", "success");
         closeAddGoalModal();
+        loadGoalsConfig();
+      }
+
+      function showEditGoalModal(tier, goal) {
+        document.getElementById('edit-goal-modal').style.display = 'flex';
+        document.getElementById('edit-goal-tier').value = tier;
+        document.getElementById('edit-goal-id').value = goal.id;
+        document.getElementById('edit-goal-label').value = goal.label;
+        document.getElementById('edit-goal-min').value = goal.min;
+        document.getElementById('edit-goal-max').value = goal.max;
+        document.getElementById('edit-goal-prize-type').value = goal.prizeType;
+        document.getElementById('edit-goal-prize-mult').value = goal.prizeMult;
+      }
+
+      function closeEditGoalModal() {
+        document.getElementById('edit-goal-modal').style.display = 'none';
+      }
+
+      async function submitEditGoal() {
+        const tier = document.getElementById('edit-goal-tier').value;
+        const goalId = document.getElementById('edit-goal-id').value;
+        const label = document.getElementById('edit-goal-label').value.trim();
+        const minTarget = parseInt(document.getElementById('edit-goal-min').value);
+        const maxTarget = parseInt(document.getElementById('edit-goal-max').value);
+        const prizeType = document.getElementById('edit-goal-prize-type').value.trim();
+        const prizeMultiplier = parseFloat(document.getElementById('edit-goal-prize-mult').value);
+
+        if (!label || !prizeType || isNaN(minTarget) || isNaN(maxTarget) || isNaN(prizeMultiplier)) {
+          toast("All fields required and must be valid numbers", "error");
+          return;
+        }
+
+        const r = await api("POST", "/api/admin/goals/edit", {
+          tier, goalId, label, minTarget, maxTarget, prizeType, prizeMultiplier
+        });
+
+        if (r.error) {
+          toast("Error: " + r.error, "error");
+          return;
+        }
+
+        toast("Goal updated successfully", "success");
+        closeEditGoalModal();
+        loadGoalsConfig();
+      }
+
+      async function deleteGoal(tier, goalId) {
+        if (!confirm("Are you sure you want to delete this goal?")) {
+          return;
+        }
+
+        const r = await api("POST", "/api/admin/goals/remove", { tier, goalId });
+
+        if (r.error) {
+          toast("Error: " + r.error, "error");
+          return;
+        }
+
+        toast("Goal deleted successfully", "success");
         loadGoalsConfig();
       }
 
