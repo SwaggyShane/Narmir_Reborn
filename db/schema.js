@@ -320,7 +320,7 @@ async function initDb() {
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
       username    TEXT    NOT NULL UNIQUE,
       password    TEXT    NOT NULL,
-      email       TEXT    NOT NULL UNIQUE,
+      email       TEXT    UNIQUE,
       is_admin    INTEGER NOT NULL DEFAULT 0,
       is_banned   INTEGER NOT NULL DEFAULT 0,
       is_ai       INTEGER NOT NULL DEFAULT 0,
@@ -520,12 +520,27 @@ async function initDb() {
   `);
 
   // ── Migrations — safe, idempotent, never crash on duplicate ─────────────────
+  async function getTableColumns(table) {
+    try {
+      const result = await _db.all(`PRAGMA table_info(${table})`);
+      if (!result || !Array.isArray(result)) {
+        console.warn(`[db] Migration: column check returned invalid result for ${table}`);
+        return [];
+      }
+      return result.map(c => c.name);
+    } catch (e) {
+      console.error(`[db] Migration: error fetching columns for ${table}:`, e.message);
+      return [];
+    }
+  }
+
   async function addColumn(table, col, def) {
     try {
       await _db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${def}`);
       console.log(`[db] Migration: added ${col} to ${table}`);
     } catch (e) {
       if (!e.message.includes('duplicate column') && !e.message.includes('already exists')) throw e;
+      console.log(`[db] Migration: column ${col} already exists in ${table}`);
     }
   }
 
@@ -537,53 +552,52 @@ async function initDb() {
     CREATE INDEX IF NOT EXISTS idx_exp_turns       ON expeditions(turns_left);
   `);
 
-  const cols = (await _db.all('PRAGMA table_info(kingdoms)')).map(c => c.name);
-  if (!cols.includes('turns_stored'))        await addColumn('kingdoms', 'turns_stored',        'INTEGER NOT NULL DEFAULT 400');
-  if (!cols.includes('alliance_buffs'))      await addColumn('kingdoms', 'alliance_buffs',      "TEXT NOT NULL DEFAULT '{}'");
-  if (!cols.includes('goals'))               await addColumn('kingdoms', 'goals',               "TEXT NOT NULL DEFAULT '{}'");
+  // Batch column checks by table for performance (single schema fetch per table)
+  const kingdomsCols = await getTableColumns('kingdoms');
+  if (!kingdomsCols.includes('turns_stored'))        await addColumn('kingdoms', 'turns_stored',        'INTEGER NOT NULL DEFAULT 400');
+  if (!kingdomsCols.includes('alliance_buffs'))      await addColumn('kingdoms', 'alliance_buffs',      "TEXT NOT NULL DEFAULT '{}'");
+  if (!kingdomsCols.includes('goals'))               await addColumn('kingdoms', 'goals',               "TEXT NOT NULL DEFAULT '{}'");
+  if (!kingdomsCols.includes('research_allocation')) await addColumn('kingdoms', 'research_allocation', "TEXT NOT NULL DEFAULT '{}'");
+  if (!kingdomsCols.includes('build_queue'))         await addColumn('kingdoms', 'build_queue',         "TEXT NOT NULL DEFAULT '{}'");
+  if (!kingdomsCols.includes('build_progress'))      await addColumn('kingdoms', 'build_progress',      "TEXT NOT NULL DEFAULT '{}'");
+  if (!kingdomsCols.includes('research_progress'))   await addColumn('kingdoms', 'research_progress',   "TEXT NOT NULL DEFAULT '{}'");
+  if (!kingdomsCols.includes('build_allocation'))    await addColumn('kingdoms', 'build_allocation',    "TEXT NOT NULL DEFAULT '{}'");
+  if (!kingdomsCols.includes('prestige_level'))      await addColumn('kingdoms', 'prestige_level',      'INTEGER NOT NULL DEFAULT 0');
+  if (!kingdomsCols.includes('trade_routes'))       await addColumn('kingdoms', 'trade_routes',       'INTEGER NOT NULL DEFAULT 0');
+  if (!kingdomsCols.includes('tools_hammers'))       await addColumn('kingdoms', 'tools_hammers',       'INTEGER NOT NULL DEFAULT 0');
+  if (!kingdomsCols.includes('tools_scaffolding'))   await addColumn('kingdoms', 'tools_scaffolding',   'INTEGER NOT NULL DEFAULT 0');
+  if (!kingdomsCols.includes('tools_blueprints'))    await addColumn('kingdoms', 'tools_blueprints',    'INTEGER NOT NULL DEFAULT 0');
+  if (!kingdomsCols.includes('scaffolding_stored'))  await addColumn('kingdoms', 'scaffolding_stored',  'INTEGER NOT NULL DEFAULT 0');
+  if (!kingdomsCols.includes('hammers_stored'))      await addColumn('kingdoms', 'hammers_stored',      'INTEGER NOT NULL DEFAULT 0');
+  if (!kingdomsCols.includes('xp'))                  await addColumn('kingdoms', 'xp',                  'REAL NOT NULL DEFAULT 0');
+  if (!kingdomsCols.includes('xp_sources'))          await addColumn('kingdoms', 'xp_sources',          'TEXT NOT NULL DEFAULT \'{"turn":0,"gold":0,"combat_win":0,"combat_loss":0,"research":0,"construction":0,"exploration":0,"spell_cast":0,"covert_op":0}\'');
+  if (!kingdomsCols.includes('level'))               await addColumn('kingdoms', 'level',               'INTEGER NOT NULL DEFAULT 1');
+  if (!kingdomsCols.includes('troop_levels'))        await addColumn('kingdoms', 'troop_levels',        "TEXT NOT NULL DEFAULT '{}'");
+  if (!kingdomsCols.includes('training_allocation')) await addColumn('kingdoms', 'training_allocation', "TEXT NOT NULL DEFAULT '{}'");
+  if (!kingdomsCols.includes('weapons_stockpile'))   await addColumn('kingdoms', 'weapons_stockpile',   'INTEGER NOT NULL DEFAULT 0');
+  if (!kingdomsCols.includes('armor_stockpile'))     await addColumn('kingdoms', 'armor_stockpile',     'INTEGER NOT NULL DEFAULT 0');
+  if (!kingdomsCols.includes('ladders'))             await addColumn('kingdoms', 'ladders',             'INTEGER NOT NULL DEFAULT 0');
+  if (!kingdomsCols.includes('description'))         await addColumn('kingdoms', 'description',         'TEXT');
+  if (!kingdomsCols.includes('collected_lore'))      await addColumn('kingdoms', 'collected_lore',      "TEXT NOT NULL DEFAULT '[]'");
+  if (!kingdomsCols.includes('last_lore_id'))        await addColumn('kingdoms', 'last_lore_id',        'TEXT');
+  if (!kingdomsCols.includes('collected_events'))    await addColumn('kingdoms', 'collected_events',    "TEXT NOT NULL DEFAULT '[]'");
+  if (!kingdomsCols.includes('last_event_id'))       await addColumn('kingdoms', 'last_event_id',       'TEXT');
+  if (!kingdomsCols.includes('achievements'))        await addColumn('kingdoms', 'achievements',        "TEXT NOT NULL DEFAULT '[]'");
+  if (!kingdomsCols.includes('active_trade_routes'))   await addColumn('kingdoms', 'active_trade_routes', "TEXT NOT NULL DEFAULT '[]'");
+  if (!kingdomsCols.includes('milestones_claimed'))  await addColumn('kingdoms', 'milestones_claimed',  "TEXT NOT NULL DEFAULT '{}'");
+  if (!kingdomsCols.includes('milestone_bonuses'))   await addColumn('kingdoms', 'milestone_bonuses',   "TEXT NOT NULL DEFAULT '{}'");
+  if (!kingdomsCols.includes('milestone_title'))     await addColumn('kingdoms', 'milestone_title',     "TEXT NOT NULL DEFAULT ''");
+  if (!kingdomsCols.includes('injured_troops'))       await addColumn('kingdoms', 'injured_troops',       "TEXT NOT NULL DEFAULT '{}'");
+  if (!kingdomsCols.includes('wall_hp'))              await addColumn('kingdoms', 'wall_hp',              'INTEGER NOT NULL DEFAULT 0');
+  if (!kingdomsCols.includes('wall_defense_type'))    await addColumn('kingdoms', 'wall_defense_type',    "TEXT NOT NULL DEFAULT ''");
 
-  const playerCols = (await _db.all('PRAGMA table_info(players)')).map(c => c.name);
-  if (!playerCols.includes('email'))         await addColumn('players', 'email',                "TEXT UNIQUE DEFAULT ''");
-  
-  const allianceCols = (await _db.all('PRAGMA table_info(alliances)')).map(c => c.name);
+  const playerCols = await getTableColumns('players');
+  if (!playerCols.includes('email')) await addColumn('players', 'email', 'TEXT');
+
+  const allianceCols = await getTableColumns('alliances');
   if (!allianceCols.includes('vault_gold'))  await addColumn('alliances', 'vault_gold', 'INTEGER NOT NULL DEFAULT 0');
   if (!allianceCols.includes('projects'))    await addColumn('alliances', 'projects', "TEXT NOT NULL DEFAULT '{}'");
   if (!allianceCols.includes('vault_log'))   await addColumn('alliances', 'vault_log', "TEXT NOT NULL DEFAULT '[]'");
-  if (!cols.includes('research_allocation')) await addColumn('kingdoms', 'research_allocation', "TEXT NOT NULL DEFAULT '{}'");
-  if (!cols.includes('build_queue'))         await addColumn('kingdoms', 'build_queue',         "TEXT NOT NULL DEFAULT '{}'");
-  if (!cols.includes('build_progress'))      await addColumn('kingdoms', 'build_progress',      "TEXT NOT NULL DEFAULT '{}'");
-  if (!cols.includes('research_progress'))   await addColumn('kingdoms', 'research_progress',   "TEXT NOT NULL DEFAULT '{}'");
-  if (!cols.includes('build_allocation'))    await addColumn('kingdoms', 'build_allocation',    "TEXT NOT NULL DEFAULT '{}'");
-  if (!cols.includes('prestige_level'))      await addColumn('kingdoms', 'prestige_level',      'INTEGER NOT NULL DEFAULT 0');
-  if (!cols.includes('trade_routes'))       await addColumn('kingdoms', 'trade_routes',       'INTEGER NOT NULL DEFAULT 0');
-  if (!cols.includes('tools_hammers'))       await addColumn('kingdoms', 'tools_hammers',       'INTEGER NOT NULL DEFAULT 0');
-  if (!cols.includes('tools_scaffolding'))   await addColumn('kingdoms', 'tools_scaffolding',   'INTEGER NOT NULL DEFAULT 0');
-  if (!cols.includes('tools_blueprints'))    await addColumn('kingdoms', 'tools_blueprints',    'INTEGER NOT NULL DEFAULT 0');
-  if (!cols.includes('scaffolding_stored'))  await addColumn('kingdoms', 'scaffolding_stored',  'INTEGER NOT NULL DEFAULT 0');
-  if (!cols.includes('hammers_stored'))      await addColumn('kingdoms', 'hammers_stored',      'INTEGER NOT NULL DEFAULT 0');
-  if (!cols.includes('xp'))                  await addColumn('kingdoms', 'xp',                  'REAL NOT NULL DEFAULT 0');
-  if (!cols.includes('xp_sources'))          await addColumn('kingdoms', 'xp_sources',          'TEXT NOT NULL DEFAULT \'{"turn":0,"gold":0,"combat_win":0,"combat_loss":0,"research":0,"construction":0,"exploration":0,"spell_cast":0,"covert_op":0}\'');
-  if (!cols.includes('level'))               await addColumn('kingdoms', 'level',               'INTEGER NOT NULL DEFAULT 1');
-  if (!cols.includes('troop_levels'))        await addColumn('kingdoms', 'troop_levels',        "TEXT NOT NULL DEFAULT '{}'");
-  if (!cols.includes('training_allocation')) await addColumn('kingdoms', 'training_allocation', "TEXT NOT NULL DEFAULT '{}'");
-  if (!cols.includes('weapons_stockpile'))   await addColumn('kingdoms', 'weapons_stockpile',   'INTEGER NOT NULL DEFAULT 0');
-  if (!cols.includes('armor_stockpile'))     await addColumn('kingdoms', 'armor_stockpile',     'INTEGER NOT NULL DEFAULT 0');
-  if (!cols.includes('ladders'))             await addColumn('kingdoms', 'ladders',             'INTEGER NOT NULL DEFAULT 0');
-  if (!cols.includes('description'))         await addColumn('kingdoms', 'description',         'TEXT');
-  if (!cols.includes('collected_lore'))      await addColumn('kingdoms', 'collected_lore',      "TEXT NOT NULL DEFAULT '[]'");
-  if (!cols.includes('last_lore_id'))        await addColumn('kingdoms', 'last_lore_id',        'TEXT');
-  if (!cols.includes('collected_events'))    await addColumn('kingdoms', 'collected_events',    "TEXT NOT NULL DEFAULT '[]'");
-  if (!cols.includes('last_event_id'))       await addColumn('kingdoms', 'last_event_id',       'TEXT');
-  if (!cols.includes('achievements'))        await addColumn('kingdoms', 'achievements',        "TEXT NOT NULL DEFAULT '[]'");
-  if (!cols.includes('active_trade_routes'))   await addColumn('kingdoms', 'active_trade_routes', "TEXT NOT NULL DEFAULT '[]'");
-  if (!cols.includes('milestones_claimed'))  await addColumn('kingdoms', 'milestones_claimed',  "TEXT NOT NULL DEFAULT '{}'");
-  if (!cols.includes('milestone_bonuses'))   await addColumn('kingdoms', 'milestone_bonuses',   "TEXT NOT NULL DEFAULT '{}'");
-  if (!cols.includes('milestone_title'))     await addColumn('kingdoms', 'milestone_title',     "TEXT NOT NULL DEFAULT ''");
-
-  // Combat v2 - Injury tracking and wall HP
-  if (!cols.includes('injured_troops'))       await addColumn('kingdoms', 'injured_troops',       "TEXT NOT NULL DEFAULT '{}'");
-  if (!cols.includes('wall_hp'))              await addColumn('kingdoms', 'wall_hp',              'INTEGER NOT NULL DEFAULT 0');
-  if (!cols.includes('wall_defense_type'))    await addColumn('kingdoms', 'wall_defense_type',    "TEXT NOT NULL DEFAULT ''");
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS trade_routes (
