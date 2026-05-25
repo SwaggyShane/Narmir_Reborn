@@ -4,6 +4,8 @@ const router = express.Router();
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const config = require("../game/config");
+const { GOAL_COUNTS, DAILY_GOALS, WEEKLY_GOALS, MONTHLY_GOALS } = require("../game/goals");
 
 const soundsPath = path.join(__dirname, "..", "public", "sounds");
 if (!fs.existsSync(soundsPath)) {
@@ -1008,7 +1010,6 @@ module.exports = function (db, io) {
 
   // ── GOALS MANAGEMENT ──────────────────────────────────────────────────────
   router.get("/goals", async (_req, res) => {
-    const { DAILY_GOALS, WEEKLY_GOALS, MONTHLY_GOALS } = require('../game/goals');
     res.json({
       daily: DAILY_GOALS,
       weekly: WEEKLY_GOALS,
@@ -1044,30 +1045,22 @@ module.exports = function (db, io) {
     const constants = {
       gameplay: {
         maxLevel: 500,
-        startingGold: 500,
-        startingMana: 100,
-        turnCost: 1,
-        baseTurnRegenRate: 1
+        unitCost: config.UNIT_COST,
+        maxResearch: config.MAX_RESEARCH,
+        tradeRouteMax: config.TRADE_ROUTE_MAX,
+        tradeRouteBaseGold: config.TRADE_ROUTE_BASE_GOLD,
+        tradeRouteEstablishCost: config.TRADE_ROUTE_ESTABLISH_COST
       },
       goals: {
-        dailyCount: 3,
-        dailyResetHours: 24,
-        weeklyCount: 7,
-        weeklyResetDays: 7,
-        monthlyCount: 4,
-        monthlyResetDays: 30
+        dailyCount: GOAL_COUNTS.daily.count,
+        dailyResetMs: GOAL_COUNTS.daily.resetMs,
+        weeklyCount: GOAL_COUNTS.weekly.count,
+        weeklyResetMs: GOAL_COUNTS.weekly.resetMs,
+        monthlyCount: GOAL_COUNTS.monthly.count,
+        monthlyResetMs: GOAL_COUNTS.monthly.resetMs
       },
-      expeditions: {
-        deepFragmentChance: 0.05,
-        dungeonFragmentChance: 0.1,
-        deepUltraRareChance: 0.005,
-        dungeonUltraRareChance: 0.01
-      },
-      combat: {
-        baseAttackCost: 10,
-        baseSpellCost: 5,
-        baseCovertCost: 3
-      }
+      expeditions: config.EXPEDITION_CONSTANTS,
+      combat: config.COMBAT_CONSTANTS
     };
     res.json(constants);
   });

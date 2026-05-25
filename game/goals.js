@@ -1,4 +1,5 @@
 const { safeJsonParse, roll, rand } = require('../utils/helpers');
+const config = require('./config');
 
 const DAILY_GOALS = [
   { id: 'turn_taken', label: 'Take Turns', min: 20, max: 80, prizeStr: 'gold', prizeType: 'gold', prizeMult: 100 },
@@ -21,11 +22,11 @@ const MONTHLY_GOALS = [
   { id: 'building_built', label: 'Construct Buildings', min: 200, max: 500, prizeStr: 'world_fragment', prizeType: 'world_fragment', prizeMult: 1 }
 ];
 
-const WORLD_FRAGMENTS = [
-  "Volcanic Rock", "Ancient Elven Wood", "Dragon Scale", "Abyssal Crystal",
-  "Celestial Feather", "Dwarven Star-Metal", "Cursed Bloodstone",
-  "Tears of the World Tree", "Void Essence", "Titan Bone"
-];
+const GOAL_COUNTS = {
+  daily: { count: 3, resetMs: 24 * 60 * 60 * 1000 },
+  weekly: { count: 7, resetMs: 7 * 24 * 60 * 60 * 1000 },
+  monthly: { count: 4, resetMs: 30 * 24 * 60 * 60 * 1000 }
+};
 
 function generateGoals(k) {
   let goals = { daily: { expiresAt: 0, goals: [] }, weekly: { expiresAt: 0, goals: [] }, monthly: { expiresAt: 0, goals: [] } };
@@ -51,7 +52,7 @@ function generateGoals(k) {
        const def = pool[i % pool.length];
        const target = rand(def.min, def.max);
        goals.daily.goals.push({
-         id: def.id + '_' + Date.now() + '_' + i,
+         id: def.id + '_' + now + '_' + i,
          type: def.id,
          label: def.label,
          target: target,
@@ -73,14 +74,14 @@ function generateGoals(k) {
        const def = pool[i % pool.length];
        const target = rand(def.min, def.max);
        goals.weekly.goals.push({
-         id: def.id + '_' + Date.now() + '_' + i,
+         id: def.id + '_' + now + '_' + i,
          type: def.id,
          label: def.label,
          target: target,
          progress: 0,
          claimed: false,
          prizeType: def.prizeType,
-         prizeAmount: def.prizeType === 'war_machines' ? rand(1, 2) : Math.max(1, Math.floor(target * def.prizeMult * (roll(0.5) ? 1.5 : 1)))
+         prizeAmount: ['world_fragment', 'war_machines'].includes(def.prizeType) ? rand(1, 2) : Math.max(1, Math.floor(target * def.prizeMult * (roll(0.5) ? 1.5 : 1)))
        });
     }
     updated = true;
@@ -88,14 +89,14 @@ function generateGoals(k) {
 
   // Monthly reset (30d)
   if (now > goals.monthly.expiresAt) {
-    goals.monthly.expiresAt = now + 30 * 24 * 60 * 60 * 1000;
+    goals.monthly.expiresAt = now + GOAL_COUNTS.monthly.resetMs;
     goals.monthly.goals = [];
     const pool = [...MONTHLY_GOALS].sort(() => 0.5 - Math.random());
-    for(let i=0; i<4; i++) {
+    for(let i=0; i<GOAL_COUNTS.monthly.count; i++) {
        const def = pool[i % pool.length];
        const target = rand(def.min, def.max);
        goals.monthly.goals.push({
-         id: def.id + '_' + Date.now() + '_' + i,
+         id: def.id + '_' + now + '_' + i,
          type: def.id,
          label: def.label,
          target: target,
@@ -155,12 +156,13 @@ function claimGoal(k, updates, events, groupId, goalId) {
 
    if (goal.prizeType === 'world_fragment') {
      let frags = safeJsonParse(updates.world_fragments || k.world_fragments, []);
-     for(let i = 0; i < goal.prizeAmount; i++) {
-       frags.push(WORLD_FRAGMENTS[Math.floor(Math.random() * WORLD_FRAGMENTS.length)]);
+     const prizeAmount = goal.prizeAmount || 1;
+     for(let i = 0; i < prizeAmount; i++) {
+       frags.push(config.WORLD_FRAGMENTS[Math.floor(Math.random() * config.WORLD_FRAGMENTS.length)]);
      }
      updates.world_fragments = JSON.stringify(frags);
-     events.push({ type: 'system', message: `Goal fulfilled: Obtained ${goal.prizeAmount} World Fragments!` });
-     return { success: true, message: `Claimed ${goal.prizeAmount} world fragments!` };
+     events.push({ type: 'system', message: `Goal fulfilled: Obtained ${prizeAmount} World Fragments!` });
+     return { success: true, message: `Claimed ${prizeAmount} world fragments!` };
    } else {
      updates[goal.prizeType] = (updates[goal.prizeType] || k[goal.prizeType] || 0) + goal.prizeAmount;
      events.push({ type: 'system', message: `Goal fulfilled: Gained ${goal.prizeAmount} ${goal.prizeType}!` });
@@ -175,5 +177,5 @@ module.exports = {
   DAILY_GOALS,
   WEEKLY_GOALS,
   MONTHLY_GOALS,
-  WORLD_FRAGMENTS
+  GOAL_COUNTS
 };
