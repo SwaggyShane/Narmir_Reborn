@@ -1363,6 +1363,22 @@ async function start() {
     res.json({ ok: true, message: username + ' is now an admin. Log out and back in to get the admin token.' });
   });
 
+  app.post('/api/admin/wipe-players', async (req, res) => {
+    const { secret } = req.body;
+    const adminSecret = process.env.ADMIN_SECRET;
+    if (!adminSecret) return res.status(500).json({ error: 'ADMIN_SECRET not set on server' });
+    if (!secret || secret !== adminSecret) return res.status(403).json({ error: 'Invalid secret' });
+
+    try {
+      await db.run('DELETE FROM kingdoms');
+      await db.run('DELETE FROM players');
+      res.json({ ok: true, message: 'All players and kingdoms wiped. Ready for re-registration.' });
+    } catch (err) {
+      console.error('Wipe error:', err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   app.post('/api/suggestions', requireAuth, async (req, res) => {
     try {
       const { message } = req.body;
