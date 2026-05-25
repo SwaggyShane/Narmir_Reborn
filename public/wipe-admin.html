@@ -175,6 +175,10 @@
         return;
       }
 
+      if (!confirm('⚠️ CRITICAL: Are you absolutely sure you want to WIPE ALL DATA? This will permanently delete all players, kingdoms, and progress. This action cannot be undone.')) {
+        return;
+      }
+
       wipeBtn.disabled = true;
       wipeBtn.innerHTML = '<span class="spinner"></span>Wiping...';
       statusEl.className = 'status';
