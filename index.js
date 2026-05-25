@@ -1298,6 +1298,10 @@ async function start() {
     res.json({ ok: true });
   });
 
+  app.get('/wipe-admin.html', (_req, res) => {
+    res.sendFile(path.join(__dirname, 'public/wipe-admin.html'));
+  });
+
   app.get(['/admin', '/admin.html'], (_req, res) => {
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
