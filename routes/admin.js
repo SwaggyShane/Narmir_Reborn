@@ -1017,27 +1017,112 @@ module.exports = function (db, io) {
     });
   });
 
-  // POST /api/admin/goals/update — update a goal definition
-  router.post("/goals/update", async (req, res) => {
-    const { tier, goalId, updates } = req.body;
-    if (!tier || !goalId || !updates) {
-      return res.status(400).json({ error: "tier, goalId, and updates required" });
+  // POST /api/admin/goals/edit — update an existing goal definition
+  router.post("/goals/edit", async (req, res) => {
+    const { tier, goalId, label, minTarget, maxTarget, prizeType, prizeMultiplier } = req.body;
+
+    if (!tier || !goalId) {
+      return res.status(400).json({ error: "tier and goalId required" });
     }
 
     const validTiers = ['daily', 'weekly', 'monthly'];
     if (!validTiers.includes(tier)) {
-      return res.status(400).json({ error: "Invalid tier" });
+      return res.status(400).json({ error: "Invalid tier (daily/weekly/monthly)" });
     }
 
-    // Note: In a production system, goals would be stored in database
-    // For now, this validates the request structure
-    res.json({
-      ok: true,
-      message: "Goal update endpoint ready - database storage needed for persistence",
-      tier,
-      goalId,
-      updates
-    });
+    // Validation
+    if (minTarget !== undefined && (minTarget < 1 || minTarget > 500)) {
+      return res.status(400).json({ error: "minTarget must be between 1 and 500" });
+    }
+    if (maxTarget !== undefined && (maxTarget < 2 || maxTarget > 1000)) {
+      return res.status(400).json({ error: "maxTarget must be between 2 and 1000" });
+    }
+    if (minTarget !== undefined && maxTarget !== undefined && minTarget >= maxTarget) {
+      return res.status(400).json({ error: "minTarget must be less than maxTarget" });
+    }
+    if (prizeMultiplier !== undefined && (prizeMultiplier < 0.5 || prizeMultiplier > 100)) {
+      return res.status(400).json({ error: "prizeMultiplier must be between 0.5 and 100" });
+    }
+
+    try {
+      await db.run(
+        `UPDATE admin_goal_definitions
+         SET label = COALESCE(?, label),
+             min_target = COALESCE(?, min_target),
+             max_target = COALESCE(?, max_target),
+             prize_type = COALESCE(?, prize_type),
+             prize_multiplier = COALESCE(?, prize_multiplier),
+             updated_at = CURRENT_TIMESTAMP
+         WHERE tier = ? AND goal_id = ? AND active = 1`,
+        [label, minTarget, maxTarget, prizeType, prizeMultiplier, tier, goalId]
+      );
+      res.json({ ok: true, message: "Goal updated successfully" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // POST /api/admin/goals/add — add a new goal
+  router.post("/goals/add", async (req, res) => {
+    const { tier, goalId, label, minTarget, maxTarget, prizeType, prizeMultiplier } = req.body;
+
+    if (!tier || !goalId || !label || minTarget === undefined || maxTarget === undefined || !prizeType || prizeMultiplier === undefined) {
+      return res.status(400).json({ error: "All fields required: tier, goalId, label, minTarget, maxTarget, prizeType, prizeMultiplier" });
+    }
+
+    const validTiers = ['daily', 'weekly', 'monthly'];
+    if (!validTiers.includes(tier)) {
+      return res.status(400).json({ error: "Invalid tier (daily/weekly/monthly)" });
+    }
+
+    // Validation
+    if (minTarget < 1 || minTarget > 500) {
+      return res.status(400).json({ error: "minTarget must be between 1 and 500" });
+    }
+    if (maxTarget < 2 || maxTarget > 1000) {
+      return res.status(400).json({ error: "maxTarget must be between 2 and 1000" });
+    }
+    if (minTarget >= maxTarget) {
+      return res.status(400).json({ error: "minTarget must be less than maxTarget" });
+    }
+    if (prizeMultiplier < 0.5 || prizeMultiplier > 100) {
+      return res.status(400).json({ error: "prizeMultiplier must be between 0.5 and 100" });
+    }
+
+    try {
+      await db.run(
+        `INSERT INTO admin_goal_definitions (tier, goal_id, label, min_target, max_target, prize_type, prize_multiplier)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [tier, goalId, label, minTarget, maxTarget, prizeType, prizeMultiplier]
+      );
+      res.json({ ok: true, message: "Goal added successfully" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // POST /api/admin/goals/remove — soft-delete a goal
+  router.post("/goals/remove", async (req, res) => {
+    const { tier, goalId } = req.body;
+
+    if (!tier || !goalId) {
+      return res.status(400).json({ error: "tier and goalId required" });
+    }
+
+    const validTiers = ['daily', 'weekly', 'monthly'];
+    if (!validTiers.includes(tier)) {
+      return res.status(400).json({ error: "Invalid tier (daily/weekly/monthly)" });
+    }
+
+    try {
+      await db.run(
+        `UPDATE admin_goal_definitions SET active = 0, updated_at = CURRENT_TIMESTAMP WHERE tier = ? AND goal_id = ?`,
+        [tier, goalId]
+      );
+      res.json({ ok: true, message: "Goal removed successfully" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   // ── GAME CONSTANTS ────────────────────────────────────────────────────────

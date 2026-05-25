@@ -1255,6 +1255,25 @@ async function initDb() {
   `);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_resource_nodes_kingdom ON resource_nodes(kingdom_id)`);
 
+  // Admin goal definitions table (overrides defaults from game/goals.js)
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS admin_goal_definitions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tier TEXT NOT NULL,
+      goal_id TEXT NOT NULL,
+      label TEXT NOT NULL,
+      min_target INTEGER NOT NULL,
+      max_target INTEGER NOT NULL,
+      prize_type TEXT NOT NULL,
+      prize_multiplier NUMERIC NOT NULL,
+      active INTEGER NOT NULL DEFAULT 1,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(tier, goal_id)
+    )
+  `);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_admin_goals_tier ON admin_goal_definitions(tier, active)`);
+
   // Resource expeditions table
   await _db.run(`
     CREATE TABLE IF NOT EXISTS resource_expeditions (
