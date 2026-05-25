@@ -4,6 +4,7 @@ const router = express.Router();
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const config = require("../game/config");
 
 const soundsPath = path.join(__dirname, "..", "public", "sounds");
 if (!fs.existsSync(soundsPath)) {
@@ -1044,10 +1045,11 @@ module.exports = function (db, io) {
     const constants = {
       gameplay: {
         maxLevel: 500,
-        startingGold: 500,
-        startingMana: 100,
-        turnCost: 1,
-        baseTurnRegenRate: 1
+        unitCost: config.UNIT_COST,
+        maxResearch: config.MAX_RESEARCH,
+        tradeRouteMax: config.TRADE_ROUTE_MAX,
+        tradeRouteBasGold: config.TRADE_ROUTE_BASE_GOLD,
+        tradeRouteEstablishCost: config.TRADE_ROUTE_ESTABLISH_COST
       },
       goals: {
         dailyCount: 3,

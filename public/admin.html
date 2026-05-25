@@ -2921,30 +2921,30 @@
           return Object.entries(obj).map(([key, value]) => `
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid var(--border); color: var(--text2); font-size: 13px;">
               <span>${escHtml(key)}:</span>
-              <span style="color: var(--gold); font-weight: 600;">${typeof value === 'object' ? JSON.stringify(value) : value}</span>
+              <span style="color: var(--gold); font-weight: 600;">${escHtml(typeof value === 'object' ? JSON.stringify(value) : String(value))}</span>
             </div>
           `).join('');
         };
 
         // Render Gameplay Constants
-        if (data.gameplay) {
-          document.getElementById('constants-gameplay').innerHTML = renderConstantSection(data.gameplay);
-        }
+        document.getElementById('constants-gameplay').innerHTML = data.gameplay
+          ? renderConstantSection(data.gameplay)
+          : '<div style="padding: 12px; color: var(--text3);">No gameplay constants found</div>';
 
         // Render Goals Constants
-        if (data.goals) {
-          document.getElementById('constants-goals').innerHTML = renderConstantSection(data.goals);
-        }
+        document.getElementById('constants-goals').innerHTML = data.goals
+          ? renderConstantSection(data.goals)
+          : '<div style="padding: 12px; color: var(--text3);">No goals constants found</div>';
 
         // Render Expeditions Constants
-        if (data.expeditions) {
-          document.getElementById('constants-expeditions').innerHTML = renderConstantSection(data.expeditions);
-        }
+        document.getElementById('constants-expeditions').innerHTML = data.expeditions
+          ? renderConstantSection(data.expeditions)
+          : '<div style="padding: 12px; color: var(--text3);">No expeditions constants found</div>';
 
         // Render Combat Constants
-        if (data.combat) {
-          document.getElementById('constants-combat').innerHTML = renderConstantSection(data.combat);
-        }
+        document.getElementById('constants-combat').innerHTML = data.combat
+          ? renderConstantSection(data.combat)
+          : '<div style="padding: 12px; color: var(--text3);">No combat constants found</div>';
       }
 
       function showAdminTab(id, btn) {

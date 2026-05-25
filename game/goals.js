@@ -51,7 +51,7 @@ function generateGoals(k) {
        const def = pool[i % pool.length];
        const target = rand(def.min, def.max);
        goals.daily.goals.push({
-         id: def.id + '_' + Date.now() + '_' + i,
+         id: def.id + '_' + now + '_' + i,
          type: def.id,
          label: def.label,
          target: target,
@@ -73,14 +73,14 @@ function generateGoals(k) {
        const def = pool[i % pool.length];
        const target = rand(def.min, def.max);
        goals.weekly.goals.push({
-         id: def.id + '_' + Date.now() + '_' + i,
+         id: def.id + '_' + now + '_' + i,
          type: def.id,
          label: def.label,
          target: target,
          progress: 0,
          claimed: false,
          prizeType: def.prizeType,
-         prizeAmount: def.prizeType === 'war_machines' ? rand(1, 2) : Math.max(1, Math.floor(target * def.prizeMult * (roll(0.5) ? 1.5 : 1)))
+         prizeAmount: def.prizeType === 'world_fragment' ? rand(1, 2) : (def.prizeType === 'war_machines' ? rand(1, 2) : Math.max(1, Math.floor(target * def.prizeMult * (roll(0.5) ? 1.5 : 1))))
        });
     }
     updated = true;
@@ -95,7 +95,7 @@ function generateGoals(k) {
        const def = pool[i % pool.length];
        const target = rand(def.min, def.max);
        goals.monthly.goals.push({
-         id: def.id + '_' + Date.now() + '_' + i,
+         id: def.id + '_' + now + '_' + i,
          type: def.id,
          label: def.label,
          target: target,
@@ -155,12 +155,13 @@ function claimGoal(k, updates, events, groupId, goalId) {
 
    if (goal.prizeType === 'world_fragment') {
      let frags = safeJsonParse(updates.world_fragments || k.world_fragments, []);
-     for(let i = 0; i < goal.prizeAmount; i++) {
+     const prizeAmount = goal.prizeAmount || 1;
+     for(let i = 0; i < prizeAmount; i++) {
        frags.push(WORLD_FRAGMENTS[Math.floor(Math.random() * WORLD_FRAGMENTS.length)]);
      }
      updates.world_fragments = JSON.stringify(frags);
-     events.push({ type: 'system', message: `Goal fulfilled: Obtained ${goal.prizeAmount} World Fragments!` });
-     return { success: true, message: `Claimed ${goal.prizeAmount} world fragments!` };
+     events.push({ type: 'system', message: `Goal fulfilled: Obtained ${prizeAmount} World Fragments!` });
+     return { success: true, message: `Claimed ${prizeAmount} world fragments!` };
    } else {
      updates[goal.prizeType] = (updates[goal.prizeType] || k[goal.prizeType] || 0) + goal.prizeAmount;
      events.push({ type: 'system', message: `Goal fulfilled: Gained ${goal.prizeAmount} ${goal.prizeType}!` });
