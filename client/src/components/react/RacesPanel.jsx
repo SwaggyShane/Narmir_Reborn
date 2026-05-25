@@ -1,6 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 const RacesPanel = () => {
+  useEffect(() => {
+    // Call renderRaces when component mounts to populate race list
+    if (window.renderRaces) {
+      window.renderRaces();
+    }
+  }, []);
+
   return (
     <div id="races" className="panel" style={{ display: 'none' }}>
       <div className="card" style={{ marginTop: 0 }}>
