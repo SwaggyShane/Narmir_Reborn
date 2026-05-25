@@ -66,6 +66,24 @@ function translateSqlForPg(sql) {
   return translated;
 }
 
+// Convert numeric string fields to numbers (PostgreSQL NUMERIC returns strings)
+function convertNumericFields(row) {
+  if (!row) return row;
+  const numericFields = {
+    gold: true, mana: true, turn: true, xp: true, research_progress: true,
+    population: true, morale: true, tax: true, land: true, food: true,
+    food_surplus_turns: true, food_shortage_turns: true, turns_stored: true,
+    level: true, prestige_level: true, progress: true
+  };
+  const converted = { ...row };
+  for (const [key, isNumeric] of Object.entries(numericFields)) {
+    if (isNumeric && key in converted && typeof converted[key] === 'string') {
+      converted[key] = parseFloat(converted[key]);
+    }
+  }
+  return converted;
+}
+
 const { AsyncLocalStorage } = require('async_hooks');
 const transactionStorage = new AsyncLocalStorage();
 
@@ -106,7 +124,7 @@ class PgDbAdapter {
     const translatedSql = translateSqlForPg(sql);
     try {
       const res = await connection.query(translatedSql, params || []);
-      return res.rows[0];
+      return convertNumericFields(res.rows[0]);
     } catch (err) {
       console.error("[db] PostgreSQL get failed for statement:", translatedSql, "with params:", params);
       throw err;
@@ -137,7 +155,7 @@ class PgDbAdapter {
     const translatedSql = translateSqlForPg(sql);
     try {
       const res = await connection.query(translatedSql, params || []);
-      return res.rows;
+      return res.rows.map(convertNumericFields);
     } catch (err) {
       console.error("[db] PostgreSQL all failed for statement:", translatedSql, "with params:", params);
       throw err;
