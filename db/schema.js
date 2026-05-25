@@ -66,6 +66,24 @@ function translateSqlForPg(sql) {
   return translated;
 }
 
+// Cache numeric field names for efficient conversion (PostgreSQL NUMERIC returns strings)
+const NUMERIC_FIELDS = [
+  'gold', 'mana', 'turn', 'xp', 'research_progress',
+  'population', 'morale', 'tax', 'land', 'food',
+  'food_surplus_turns', 'food_shortage_turns', 'turns_stored',
+  'level', 'prestige_level', 'progress'
+];
+
+function convertNumericFields(row) {
+  if (!row) return row;
+  for (const field of NUMERIC_FIELDS) {
+    if (typeof row[field] === 'string') {
+      row[field] = parseFloat(row[field]);
+    }
+  }
+  return row;
+}
+
 const { AsyncLocalStorage } = require('async_hooks');
 const transactionStorage = new AsyncLocalStorage();
 
@@ -106,7 +124,7 @@ class PgDbAdapter {
     const translatedSql = translateSqlForPg(sql);
     try {
       const res = await connection.query(translatedSql, params || []);
-      return res.rows[0];
+      return convertNumericFields(res.rows[0]);
     } catch (err) {
       console.error("[db] PostgreSQL get failed for statement:", translatedSql, "with params:", params);
       throw err;
@@ -137,7 +155,7 @@ class PgDbAdapter {
     const translatedSql = translateSqlForPg(sql);
     try {
       const res = await connection.query(translatedSql, params || []);
-      return res.rows;
+      return res.rows.map(convertNumericFields);
     } catch (err) {
       console.error("[db] PostgreSQL all failed for statement:", translatedSql, "with params:", params);
       throw err;
