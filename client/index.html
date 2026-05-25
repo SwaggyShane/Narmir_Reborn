@@ -4290,8 +4290,8 @@
       }
 
       async function initiateRebirth() {
-        if (state.level < 50)
-          return toast("Level 50 required for Rebirth", "error");
+        if (state.level < 500)
+          return toast("Level 500 required for Rebirth", "error");
         if (
           !confirm(
             "Are you sure you want to ASCEND? Your kingdom will reset but you will gain permanent prestige and a new title!",
@@ -15321,10 +15321,10 @@
             "<div style='margin-left: 10px'>" + tierDetails + "</div>" +
             "<p style='margin-bottom:0; margin-top:14px; font-size:12px; color:var(--text3)'>XP scaling: Leveling up will take 20% more XP per Tier.</p>";
           
-          document.getElementById("prestige-modal-text").textContent = (state.level < 50) ? "(You must be Level 50 to ascend.)" : "";
+          document.getElementById("prestige-modal-text").textContent = (state.level < 500) ? "(You must be Level 500 to ascend.)" : "";
           
           const btn = document.getElementById("prestige-modal-btn");
-          if (state.level >= 50 && nextPrestige <= 5) {
+          if (state.level >= 500 && nextPrestige <= 5) {
              btn.style.display = "block";
           } else {
              btn.style.display = "none";
