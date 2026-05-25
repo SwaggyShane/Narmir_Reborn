@@ -320,6 +320,7 @@ async function initDb() {
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
       username    TEXT    NOT NULL UNIQUE,
       password    TEXT    NOT NULL,
+      email       TEXT,
       is_admin    INTEGER NOT NULL DEFAULT 0,
       is_banned   INTEGER NOT NULL DEFAULT 0,
       is_ai       INTEGER NOT NULL DEFAULT 0,

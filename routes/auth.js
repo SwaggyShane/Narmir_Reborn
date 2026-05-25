@@ -17,11 +17,17 @@ const COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
 module.exports = function (db) {
   router.post("/register", async (req, res) => {
-    const { username, password, kingdomName, race } = req.body;
-    if (!username || !password || !kingdomName)
+    const { username, password, kingdomName, race, email } = req.body;
+    if (!username || !password || !kingdomName || !email)
       return res
         .status(400)
-        .json({ error: "username, password and kingdomName are required" });
+        .json({ error: "username, password, kingdomName, and email are required" });
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email))
+      return res
+        .status(400)
+        .json({ error: "Please provide a valid email address" });
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     if (!passwordRegex.test(password))
       return res
@@ -56,8 +62,8 @@ module.exports = function (db) {
       const hash = bcrypt.hashSync(password, BCRYPT_SALT_ROUNDS);
       const isAdminUser = false;
       const playerResult = await db.run(
-        "INSERT INTO players (username, password, is_admin) VALUES (?, ?, ?)",
-        [username, hash, 0],
+        "INSERT INTO players (username, password, email, is_admin) VALUES (?, ?, ?, ?)",
+        [username, hash, email, 0],
       );
       const region = engine.assignRegion(chosenRace);
 
