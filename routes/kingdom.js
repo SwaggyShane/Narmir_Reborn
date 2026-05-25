@@ -6,6 +6,33 @@ const { safeJsonParse } = require('../utils/helpers');
 
 const router = express.Router();
 
+// Parse all JSON fields on a kingdom object (used by /me endpoint)
+const JSON_FIELDS = {
+  'research_allocation': {}, 'mage_tower_allocation': {}, 'shrine_allocation': {},
+  'library_allocation': {}, 'library_progress': {}, 'tower_progress': {},
+  'scrolls': {}, 'active_effects': {}, 'discovered_kingdoms': {},
+  'build_queue': {}, 'build_progress': {}, 'build_allocation': {},
+  'troop_levels': {}, 'training_allocation': {}, 'smithy_allocation': {},
+  'racial_bonuses_unlocked': {}, 'active_event': {}, 'location_maps_wip': [],
+  'wall_upgrades': {}, 'tower_def_upgrades': {}, 'tower_upgrades': {},
+  'school_upgrades': {}, 'shrine_upgrades': {}, 'library_upgrades': {},
+  'farm_upgrades': {}, 'market_upgrades': {}, 'tavern_upgrades': {},
+  'bank_upgrades': {}, 'bank_deposits': [], 'mausoleum_upgrades': {},
+  'mausoleum_allocation': {}, 'ledger': [], 'mercenaries': [],
+  'collected_lore': [], 'collected_events': [], 'achievements': [],
+  'items': [], 'resource_sequence': {}, 'goals': {},
+  'outpost_upgrades': {}, 'defense_upgrades': {}, 'granary_upgrades': {},
+};
+
+function parseKingdomJson(k) {
+  for (const [field, defaultVal] of Object.entries(JSON_FIELDS)) {
+    if (k[field] !== undefined && k[field] !== null) {
+      k[field] = safeJsonParse(k[field], defaultVal, `me:${field}`);
+    }
+  }
+  return k;
+}
+
 module.exports = function (db) {
   router.get("/me", requireAuth, async (req, res) => {
     const k = await db.get(
@@ -13,134 +40,8 @@ module.exports = function (db) {
       [req.player.playerId],
     );
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
-    k.research_allocation = safeJsonParse(
-      k.research_allocation,
-      {},
-      "me:research_allocation",
-    );
-    k.mage_tower_allocation = safeJsonParse(
-      k.mage_tower_allocation,
-      {},
-      "me:mage_tower_allocation",
-    );
-    k.shrine_allocation = safeJsonParse(
-      k.shrine_allocation,
-      {},
-      "me:shrine_allocation",
-    );
-    k.library_allocation = safeJsonParse(
-      k.library_allocation,
-      {},
-      "me:library_allocation",
-    );
-    k.library_progress = safeJsonParse(
-      k.library_progress,
-      {},
-      "me:library_progress",
-    );
-    k.tower_progress = safeJsonParse(k.tower_progress, {}, "me:tower_progress");
-    k.scrolls = safeJsonParse(k.scrolls, {}, "me:scrolls");
-    k.active_effects = safeJsonParse(k.active_effects, {}, "me:active_effects");
-    k.discovered_kingdoms = safeJsonParse(
-      k.discovered_kingdoms,
-      {},
-      "me:discovered_kingdoms",
-    );
-    k.build_queue = safeJsonParse(k.build_queue, {}, "me:build_queue");
-    k.build_progress = safeJsonParse(k.build_progress, {}, "me:build_progress");
-    k.build_allocation = safeJsonParse(
-      k.build_allocation,
-      {},
-      "me:build_allocation",
-    );
-    k.troop_levels = safeJsonParse(k.troop_levels, {}, "me:troop_levels");
-    k.training_allocation = safeJsonParse(
-      k.training_allocation,
-      {},
-      "me:training_allocation",
-    );
-    k.smithy_allocation = safeJsonParse(
-      k.smithy_allocation,
-      {},
-      "me:smithy_allocation",
-    );
-    k.racial_bonuses_unlocked = safeJsonParse(
-      k.racial_bonuses_unlocked,
-      {},
-      "me:racial_bonuses_unlocked",
-    );
-    k.active_event = safeJsonParse(k.active_event, {}, "me:active_event");
-    k.location_maps_wip = safeJsonParse(
-      k.location_maps_wip,
-      [],
-      "me:location_maps_wip",
-    );
-    k.wall_upgrades = safeJsonParse(k.wall_upgrades, {}, "me:wall_upgrades");
-    k.tower_def_upgrades = safeJsonParse(
-      k.tower_def_upgrades,
-      {},
-      "me:tower_def_upgrades",
-    );
-    k.outpost_upgrades = safeJsonParse(
-      k.outpost_upgrades,
-      {},
-      "me:outpost_upgrades",
-    );
-    k.defense_upgrades = safeJsonParse(
-      k.defense_upgrades,
-      {},
-      "me:defense_upgrades",
-    );
-    k.tower_upgrades = safeJsonParse(k.tower_upgrades, {}, "me:tower_upgrades");
-    k.school_upgrades = safeJsonParse(
-      k.school_upgrades,
-      {},
-      "me:school_upgrades",
-    );
-    k.shrine_upgrades = safeJsonParse(
-      k.shrine_upgrades,
-      {},
-      "me:shrine_upgrades",
-    );
-    k.library_upgrades = safeJsonParse(
-      k.library_upgrades,
-      {},
-      "me:library_upgrades",
-    );
-    k.farm_upgrades = safeJsonParse(k.farm_upgrades, {}, "me:farm_upgrades");
-    k.market_upgrades = safeJsonParse(
-      k.market_upgrades,
-      {},
-      "me:market_upgrades",
-    );
-    k.tavern_upgrades = safeJsonParse(
-      k.tavern_upgrades,
-      {},
-      "me:tavern_upgrades",
-    );
-    k.bank_upgrades = safeJsonParse(k.bank_upgrades, {}, "me:bank_upgrades");
-    k.bank_deposits = safeJsonParse(k.bank_deposits, [], "me:bank_deposits");
-    k.mausoleum_upgrades = safeJsonParse(
-      k.mausoleum_upgrades,
-      {},
-      "me:mausoleum_upgrades",
-    );
-    k.mausoleum_allocation = safeJsonParse(
-      k.mausoleum_allocation,
-      {},
-      "me:mausoleum_allocation",
-    );
-    k.ledger = safeJsonParse(k.ledger, [], "me:ledger");
-    k.mercenaries = safeJsonParse(k.mercenaries, [], "me:mercenaries");
-    k.collected_lore = safeJsonParse(k.collected_lore, [], "me:collected_lore");
-    k.collected_events = safeJsonParse(
-      k.collected_events,
-      [],
-      "me:collected_events",
-    );
-    k.achievements = safeJsonParse(k.achievements, [], "me:achievements");
-    k.items = safeJsonParse(k.items, [], "me:items");
-    k.resource_sequence = safeJsonParse(k.resource_sequence, {}, "me:resource_sequence");
+
+    parseKingdomJson(k);
 
     k.score = engine.calculateScore(k);
     k.defense_rating = engine.defenseRating(k);
