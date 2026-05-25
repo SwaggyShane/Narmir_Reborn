@@ -543,7 +543,7 @@ async function initDb() {
   if (!cols.includes('goals'))               await addColumn('kingdoms', 'goals',               "TEXT NOT NULL DEFAULT '{}'");
 
   const playerCols = (await _db.all('PRAGMA table_info(players)')).map(c => c.name);
-  if (!playerCols.includes('email'))         await addColumn('players', 'email',                'TEXT UNIQUE');
+  if (!playerCols.includes('email'))         await addColumn('players', 'email',                "TEXT UNIQUE DEFAULT ''");
   
   const allianceCols = (await _db.all('PRAGMA table_info(alliances)')).map(c => c.name);
   if (!allianceCols.includes('vault_gold'))  await addColumn('alliances', 'vault_gold', 'INTEGER NOT NULL DEFAULT 0');
