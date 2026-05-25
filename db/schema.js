@@ -827,19 +827,19 @@ async function initDb() {
   if (!kingdomsCols.includes('tower_upgrades'))    await addColumn('kingdoms', 'tower_upgrades',    "TEXT NOT NULL DEFAULT '{}'");
   if (!kingdomsCols.includes('school_upgrades'))   await addColumn('kingdoms', 'school_upgrades',   "TEXT NOT NULL DEFAULT '{}'");
   if (!kingdomsCols.includes('shrine_upgrades'))   await addColumn('kingdoms', 'shrine_upgrades',   "TEXT NOT NULL DEFAULT '{}'");
-  if (!cols.includes('library_upgrades'))  await addColumn('kingdoms', 'library_upgrades',  "TEXT NOT NULL DEFAULT '{}'");
-  if (!cols.includes('research_focus'))    await addColumn('kingdoms', 'research_focus',     "TEXT NOT NULL DEFAULT '[]'");
-  if (!cols.includes('divine_sanctuary_used')) await addColumn('kingdoms', 'divine_sanctuary_used', 'INTEGER NOT NULL DEFAULT 0');
-  if (!cols.includes('farm_upgrades'))       await addColumn('kingdoms', 'farm_upgrades',       "TEXT NOT NULL DEFAULT '{}'");
-  if (!cols.includes('market_upgrades'))     await addColumn('kingdoms', 'market_upgrades',     "TEXT NOT NULL DEFAULT '{}'");
-  if (!cols.includes('tavern_upgrades'))     await addColumn('kingdoms', 'tavern_upgrades',     "TEXT NOT NULL DEFAULT '{}'");
-  if (!cols.includes('bank_upgrades'))       await addColumn('kingdoms', 'bank_upgrades',       "TEXT NOT NULL DEFAULT '{}'");
-  if (!cols.includes('bank_deposits'))       await addColumn('kingdoms', 'bank_deposits',       "TEXT NOT NULL DEFAULT '[]'");
-  if (!cols.includes('ledger'))              await addColumn('kingdoms', 'ledger',              "TEXT NOT NULL DEFAULT '[]'");
-  if (!cols.includes('bld_mausoleums'))      await addColumn('kingdoms', 'bld_mausoleums',      'INTEGER NOT NULL DEFAULT 0');
-  if (!cols.includes('thralls'))             await addColumn('kingdoms', 'thralls',             'INTEGER NOT NULL DEFAULT 0');
-  if (!cols.includes('mausoleum_upgrades'))   await addColumn('kingdoms', 'mausoleum_upgrades',   "TEXT NOT NULL DEFAULT '{}'");
-  if (!cols.includes('mausoleum_allocation')) await addColumn('kingdoms', 'mausoleum_allocation', "TEXT NOT NULL DEFAULT '{}'");
+  if (!kingdomsCols.includes('library_upgrades'))  await addColumn('kingdoms', 'library_upgrades',  "TEXT NOT NULL DEFAULT '{}'");
+  if (!kingdomsCols.includes('research_focus'))    await addColumn('kingdoms', 'research_focus',     "TEXT NOT NULL DEFAULT '[]'");
+  if (!kingdomsCols.includes('divine_sanctuary_used')) await addColumn('kingdoms', 'divine_sanctuary_used', 'INTEGER NOT NULL DEFAULT 0');
+  if (!kingdomsCols.includes('farm_upgrades'))       await addColumn('kingdoms', 'farm_upgrades',       "TEXT NOT NULL DEFAULT '{}'");
+  if (!kingdomsCols.includes('market_upgrades'))     await addColumn('kingdoms', 'market_upgrades',     "TEXT NOT NULL DEFAULT '{}'");
+  if (!kingdomsCols.includes('tavern_upgrades'))     await addColumn('kingdoms', 'tavern_upgrades',     "TEXT NOT NULL DEFAULT '{}'");
+  if (!kingdomsCols.includes('bank_upgrades'))       await addColumn('kingdoms', 'bank_upgrades',       "TEXT NOT NULL DEFAULT '{}'");
+  if (!kingdomsCols.includes('bank_deposits'))       await addColumn('kingdoms', 'bank_deposits',       "TEXT NOT NULL DEFAULT '[]'");
+  if (!kingdomsCols.includes('ledger'))              await addColumn('kingdoms', 'ledger',              "TEXT NOT NULL DEFAULT '[]'");
+  if (!kingdomsCols.includes('bld_mausoleums'))      await addColumn('kingdoms', 'bld_mausoleums',      'INTEGER NOT NULL DEFAULT 0');
+  if (!kingdomsCols.includes('thralls'))             await addColumn('kingdoms', 'thralls',             'INTEGER NOT NULL DEFAULT 0');
+  if (!kingdomsCols.includes('mausoleum_upgrades'))   await addColumn('kingdoms', 'mausoleum_upgrades',   "TEXT NOT NULL DEFAULT '{}'");
+  if (!kingdomsCols.includes('mausoleum_allocation')) await addColumn('kingdoms', 'mausoleum_allocation', "TEXT NOT NULL DEFAULT '{}'");
 
   // Data migration: tools_* -> *_stored
   const toolsMigrationName = '002_migrate_tools_to_stored';
@@ -855,9 +855,9 @@ async function initDb() {
     console.log('[db] Migration applied:', toolsMigrationName);
   }
 
-  if (!cols.includes('food_shortage_turns')) await addColumn('kingdoms', 'food_shortage_turns', 'INTEGER NOT NULL DEFAULT 0');
-  if (!cols.includes('food_surplus_turns'))  await addColumn('kingdoms', 'food_surplus_turns',  'INTEGER NOT NULL DEFAULT 0');
-  if (!cols.includes('mercenaries'))         await addColumn('kingdoms', 'mercenaries',         "TEXT NOT NULL DEFAULT '[]'");
+  if (!kingdomsCols.includes('food_shortage_turns')) await addColumn('kingdoms', 'food_shortage_turns', 'INTEGER NOT NULL DEFAULT 0');
+  if (!kingdomsCols.includes('food_surplus_turns'))  await addColumn('kingdoms', 'food_surplus_turns',  'INTEGER NOT NULL DEFAULT 0');
+  if (!kingdomsCols.includes('mercenaries'))         await addColumn('kingdoms', 'mercenaries',         "TEXT NOT NULL DEFAULT '[]'");
 
   // Trade offers table
   await _db.exec(`
@@ -939,10 +939,10 @@ async function initDb() {
   `);
 
   // ── Season & events migrations ────────────────────────────────────────────────
-  if (!cols.includes('last_event_at'))         await addColumn('kingdoms', 'last_event_at',         'INTEGER NOT NULL DEFAULT 0');
-  if (!cols.includes('active_event'))          await addColumn('kingdoms', 'active_event',          "TEXT NOT NULL DEFAULT '{}'");
-  if (!cols.includes('discovered_kingdoms'))   await addColumn('kingdoms', 'discovered_kingdoms',   "TEXT NOT NULL DEFAULT '{}'");
-  if (!cols.includes('location_maps_wip'))     await addColumn('kingdoms', 'location_maps_wip',     "TEXT NOT NULL DEFAULT '[]'");
+  if (!kingdomsCols.includes('last_event_at'))         await addColumn('kingdoms', 'last_event_at',         'INTEGER NOT NULL DEFAULT 0');
+  if (!kingdomsCols.includes('active_event'))          await addColumn('kingdoms', 'active_event',          "TEXT NOT NULL DEFAULT '{}'");
+  if (!kingdomsCols.includes('discovered_kingdoms'))   await addColumn('kingdoms', 'discovered_kingdoms',   "TEXT NOT NULL DEFAULT '{}'");
+  if (!kingdomsCols.includes('location_maps_wip'))     await addColumn('kingdoms', 'location_maps_wip',     "TEXT NOT NULL DEFAULT '[]'");
   
   // Market Prices table procedural check
   await _db.exec(`
