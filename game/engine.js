@@ -6382,6 +6382,23 @@ async function resolveExpeditions(db, k, engine) {
         delete updates._achievement_unlocked;
       }
 
+      // Handle location revelation for Field Collector achievement
+      if (updates._reveal_all_locations) {
+        try {
+          const allKingdoms = await db.all("SELECT id, name, race, region FROM kingdoms");
+          let disc = safeJsonParse(updates.discovered_kingdoms || k.discovered_kingdoms, {}, "reveal_all:discovered_kingdoms");
+          for (const kd of allKingdoms) {
+            if (kd.id !== k.id) {
+              disc[kd.id] = { name: kd.name, race: kd.race, region: kd.region };
+            }
+          }
+          updates.discovered_kingdoms = JSON.stringify(disc);
+        } catch (err) {
+          console.error("[resolveExpeditions] Error revealing all locations:", err);
+        }
+        delete updates._reveal_all_locations;
+      }
+
       const safeUpdates = Object.fromEntries(
         Object.entries(updates).filter(
           ([k2, v]) =>
