@@ -2737,12 +2737,13 @@ function checkAchievements(k, updates, events) {
 
   if (!ach.includes("ach_constructor") && totalBuildings >= 500) {
     ach.push("ach_constructor");
-    updates.bld_smithies =
-      (updates.bld_smithies !== undefined ? updates.bld_smithies : k.bld_smithies || 0) + 100;
+    const currentSmithies = updates.bld_smithies !== undefined ? updates.bld_smithies : k.bld_smithies || 0;
+    const smithiesToAdd = Math.max(0, 100 - currentSmithies);
+    updates.bld_smithies = currentSmithies + smithiesToAdd;
     events.push({
       type: "system",
       message:
-        "🏆 ACHIEVEMENT UNLOCKED: Constructor! Your expertise grants +100 Smithies instantly, regardless of land capacity.",
+        `🏆 ACHIEVEMENT UNLOCKED: Constructor! Your expertise grants ${smithiesToAdd} Smithies, bringing your total to 100.`,
     });
     achUpdated = true;
   }
