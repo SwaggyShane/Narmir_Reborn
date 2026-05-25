@@ -6387,10 +6387,12 @@ async function resolveExpeditions(db, k, engine) {
       // Throne broadcast only
       if (serverAnnounce) {
         const allKingdoms = await db.all("SELECT id FROM kingdoms");
-        for (const ak of allKingdoms) {
+        if (allKingdoms.length > 0) {
+          const placeholders = allKingdoms.map((_, i) => `($${i + 1},'system','$${allKingdoms.length + 1}',$${allKingdoms.length + 2})`).join(',');
+          const values = [...allKingdoms.map(ak => ak.id), serverAnnounce, k.turn];
           await db.run(
-            "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?, ?, ?, ?)",
-            [ak.id, "system", serverAnnounce, k.turn],
+            `INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ${placeholders}`,
+            values,
           );
         }
         if (engine.io)
