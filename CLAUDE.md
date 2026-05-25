@@ -55,7 +55,7 @@ Always push high-priority fixes as draft PRs for feedback before merging to main
 
 ### pgAdmin4 Access
 - User has pgAdmin4 available locally
-- Connection string: `postgresql://postgres:cmHnJWjFFDMgeEXTckuskBZugyTlqxJl@kodama.proxy.rlwy.net:53393/railway`
+- Use pgAdmin4's connection dialog to configure the Railway PostgreSQL database connection
 - For database migrations: paste SQL in pgAdmin4's Query Tool and Execute
 
 ### Future Database Changes

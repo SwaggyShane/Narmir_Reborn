@@ -66,22 +66,22 @@ function translateSqlForPg(sql) {
   return translated;
 }
 
-// Convert numeric string fields to numbers (PostgreSQL NUMERIC returns strings)
+// Cache numeric field names for efficient conversion (PostgreSQL NUMERIC returns strings)
+const NUMERIC_FIELDS = [
+  'gold', 'mana', 'turn', 'xp', 'research_progress',
+  'population', 'morale', 'tax', 'land', 'food',
+  'food_surplus_turns', 'food_shortage_turns', 'turns_stored',
+  'level', 'prestige_level', 'progress'
+];
+
 function convertNumericFields(row) {
   if (!row) return row;
-  const numericFields = {
-    gold: true, mana: true, turn: true, xp: true, research_progress: true,
-    population: true, morale: true, tax: true, land: true, food: true,
-    food_surplus_turns: true, food_shortage_turns: true, turns_stored: true,
-    level: true, prestige_level: true, progress: true
-  };
-  const converted = { ...row };
-  for (const [key, isNumeric] of Object.entries(numericFields)) {
-    if (isNumeric && key in converted && typeof converted[key] === 'string') {
-      converted[key] = parseFloat(converted[key]);
+  for (const field of NUMERIC_FIELDS) {
+    if (typeof row[field] === 'string') {
+      row[field] = parseFloat(row[field]);
     }
   }
-  return converted;
+  return row;
 }
 
 const { AsyncLocalStorage } = require('async_hooks');
