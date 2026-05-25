@@ -45,6 +45,25 @@ When fixing high-priority issues:
 
 Always push high-priority fixes as draft PRs for feedback before merging to main.
 
+## Database & Deployment Notes
+
+### Railway Limitations
+- **Railway does NOT have a Shell feature** for this deployment
+- For database operations, use **pgAdmin4** (available locally)
+- Cannot run Node.js scripts directly on Railway via web console
+- Migration scripts should be created but executed locally via pgAdmin4
+
+### pgAdmin4 Access
+- User has pgAdmin4 available locally
+- Connection string: `postgresql://postgres:cmHnJWjFFDMgeEXTckuskBZugyTlqxJl@kodama.proxy.rlwy.net:53393/railway`
+- For database migrations: paste SQL in pgAdmin4's Query Tool and Execute
+
+### Future Database Changes
+When making database schema changes:
+1. Create migration SQL statements (or Node.js migration script for reference)
+2. Execute via pgAdmin4 Query Tool (NOT via Railway Shell)
+3. Test on local dev environment if possible
+
 ## Notes
 
 - Hook feedback requires clean working tree (no uncommitted changes)
