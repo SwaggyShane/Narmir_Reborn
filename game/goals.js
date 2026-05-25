@@ -81,7 +81,7 @@ function generateGoals(k) {
          progress: 0,
          claimed: false,
          prizeType: def.prizeType,
-         prizeAmount: def.prizeType === 'world_fragment' ? rand(1, 2) : (def.prizeType === 'war_machines' ? rand(1, 2) : Math.max(1, Math.floor(target * def.prizeMult * (roll(0.5) ? 1.5 : 1))))
+         prizeAmount: ['world_fragment', 'war_machines'].includes(def.prizeType) ? rand(1, 2) : Math.max(1, Math.floor(target * def.prizeMult * (roll(0.5) ? 1.5 : 1)))
        });
     }
     updated = true;
@@ -89,10 +89,10 @@ function generateGoals(k) {
 
   // Monthly reset (30d)
   if (now > goals.monthly.expiresAt) {
-    goals.monthly.expiresAt = now + 30 * 24 * 60 * 60 * 1000;
+    goals.monthly.expiresAt = now + GOAL_COUNTS.monthly.resetMs;
     goals.monthly.goals = [];
     const pool = [...MONTHLY_GOALS].sort(() => 0.5 - Math.random());
-    for(let i=0; i<4; i++) {
+    for(let i=0; i<GOAL_COUNTS.monthly.count; i++) {
        const def = pool[i % pool.length];
        const target = rand(def.min, def.max);
        goals.monthly.goals.push({

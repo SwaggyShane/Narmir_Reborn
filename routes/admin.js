@@ -5,7 +5,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const config = require("../game/config");
-const { GOAL_COUNTS } = require("../game/goals");
+const { GOAL_COUNTS, DAILY_GOALS, WEEKLY_GOALS, MONTHLY_GOALS } = require("../game/goals");
 
 const soundsPath = path.join(__dirname, "..", "public", "sounds");
 if (!fs.existsSync(soundsPath)) {
@@ -1010,7 +1010,6 @@ module.exports = function (db, io) {
 
   // ── GOALS MANAGEMENT ──────────────────────────────────────────────────────
   router.get("/goals", async (_req, res) => {
-    const { DAILY_GOALS, WEEKLY_GOALS, MONTHLY_GOALS } = require('../game/goals');
     res.json({
       daily: DAILY_GOALS,
       weekly: WEEKLY_GOALS,
@@ -1060,17 +1059,8 @@ module.exports = function (db, io) {
         monthlyCount: GOAL_COUNTS.monthly.count,
         monthlyResetMs: GOAL_COUNTS.monthly.resetMs
       },
-      expeditions: {
-        deepFragmentChance: 0.05,
-        dungeonFragmentChance: 0.1,
-        deepUltraRareChance: 0.005,
-        dungeonUltraRareChance: 0.01
-      },
-      combat: {
-        baseAttackCost: 10,
-        baseSpellCost: 5,
-        baseCovertCost: 3
-      }
+      expeditions: config.EXPEDITION_CONSTANTS,
+      combat: config.COMBAT_CONSTANTS
     };
     res.json(constants);
   });

@@ -1816,6 +1816,19 @@ const config = {
     "Titan Bone",
   ],
 
+  EXPEDITION_CONSTANTS: {
+    deepFragmentChance: 0.05,
+    dungeonFragmentChance: 0.1,
+    deepUltraRareChance: 0.005,
+    dungeonUltraRareChance: 0.01,
+  },
+
+  COMBAT_CONSTANTS: {
+    baseAttackCost: 10,
+    baseSpellCost: 5,
+    baseCovertCost: 3,
+  },
+
   JUNK_EVENTS: [],
   TAX_EVENTS: [],
 
