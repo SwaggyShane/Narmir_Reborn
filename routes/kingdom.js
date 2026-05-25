@@ -864,12 +864,16 @@ module.exports = function (db) {
       ]);
       if (!target) return res.status(404).json({ error: "Target not found" });
 
-      // Check caps
-      const currentRoutes = await db.get(
-        "SELECT COUNT(*) as count FROM trade_routes WHERE kingdom_id=? OR partner_id=?",
+      // Check caps (UNION allows index optimization vs OR)
+      const routeCount = await db.get(
+        `SELECT COUNT(*) as count FROM (
+          SELECT id FROM trade_routes WHERE kingdom_id=?
+          UNION ALL
+          SELECT id FROM trade_routes WHERE partner_id=?
+        ) t`,
         [k.id, k.id],
       );
-      if (currentRoutes.count >= (engine.TRADE_ROUTE_MAX || 5)) {
+      if (routeCount.count >= (engine.TRADE_ROUTE_MAX || 5)) {
         return res
           .status(400)
           .json({
