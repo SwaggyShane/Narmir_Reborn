@@ -1422,11 +1422,6 @@ module.exports = function (db) {
     }
 
     if (heroUpdates.length > 0) {
-      const values = [];
-      const cases = heroUpdates.map((_, i) => {
-        values.push(heroUpdates[i][2]);
-        return `WHEN $${i + 1} THEN (xp := $${heroUpdates.length + i + 1}, level := $${heroUpdates.length * 2 + i + 1})`;
-      });
       const heroIds = heroUpdates.map(u => u[2]);
       const xps = heroUpdates.map(u => u[0]);
       const levels = heroUpdates.map(u => u[1]);
@@ -1465,9 +1460,9 @@ module.exports = function (db) {
 
         // Batch update all bounties in single query
         if (bountyIds.length > 0) {
-          const placeholders = bountyIds.map((_, i) => `$${i + 1}`).join(',');
+          const placeholders = bountyIds.map((_, i) => `$${i + 3}`).join(',');
           await db.run(
-            `UPDATE bounties SET status = ?, claimed_by_id = ? WHERE id IN (${placeholders})`,
+            `UPDATE bounties SET status = $1, claimed_by_id = $2 WHERE id IN (${placeholders})`,
             ["claimed", k.id, ...bountyIds],
           );
         }

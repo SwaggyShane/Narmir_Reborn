@@ -6366,6 +6366,8 @@ async function resolveExpeditions(db, k, engine) {
           ...Object.values(safeUpdates),
           k.id,
         ]);
+        // Update in-memory freshK so next expedition sees the changes
+        Object.assign(freshK, safeUpdates);
       }
       if (rangersReturned > 0)
         await db.run(
@@ -6378,6 +6380,10 @@ async function resolveExpeditions(db, k, engine) {
           [fightersReturned, k.id],
         );
 
+      // Update in-memory freshK for returned units
+      if (rangersReturned > 0) freshK.rangers = (freshK.rangers || 0) + rangersReturned;
+      if (fightersReturned > 0) freshK.fighters = (freshK.fighters || 0) + fightersReturned;
+
       // ONE news line only — rewards go to expedition log, not news feed
       const completionMsg = `${label} expedition returned — check the Explore tab for rewards.`;
       expeditionEvents.push({ type: "system", message: completionMsg });
@@ -6386,7 +6392,7 @@ async function resolveExpeditions(db, k, engine) {
       if (serverAnnounce) {
         const allKingdoms = await db.all("SELECT id FROM kingdoms");
         if (allKingdoms.length > 0) {
-          const placeholders = allKingdoms.map((_, i) => `($${i + 1},'system','$${allKingdoms.length + 1}',$${allKingdoms.length + 2})`).join(',');
+          const placeholders = allKingdoms.map((_, i) => `($${i + 1},'system',$${allKingdoms.length + 1},$${allKingdoms.length + 2})`).join(',');
           const values = [...allKingdoms.map(ak => ak.id), serverAnnounce, k.turn];
           await db.run(
             `INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ${placeholders}`,
