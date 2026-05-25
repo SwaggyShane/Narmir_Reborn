@@ -845,10 +845,10 @@ async function initDb() {
   const toolsMigrationName = '002_migrate_tools_to_stored';
   const toolsMigrationExists = await _db.get('SELECT id FROM migrations WHERE name = ?', [toolsMigrationName]);
   if (!toolsMigrationExists) {
-    if (cols.includes('tools_scaffolding') && cols.includes('scaffolding_stored')) {
+    if (kingdomsCols.includes('tools_scaffolding') && kingdomsCols.includes('scaffolding_stored')) {
       await _db.run("UPDATE kingdoms SET scaffolding_stored = tools_scaffolding WHERE scaffolding_stored = 0 AND tools_scaffolding > 0");
     }
-    if (cols.includes('tools_hammers') && cols.includes('hammers_stored')) {
+    if (kingdomsCols.includes('tools_hammers') && kingdomsCols.includes('hammers_stored')) {
       await _db.run("UPDATE kingdoms SET hammers_stored = tools_hammers WHERE hammers_stored = 0 AND tools_hammers > 0");
     }
     await _db.run('INSERT INTO migrations (name) VALUES (?)', [toolsMigrationName]);
