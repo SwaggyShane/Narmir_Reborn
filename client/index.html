@@ -13376,22 +13376,13 @@
           '<div style="margin-bottom:20px; text-align:center;">' +
           '<img src="' +
           heroPortrait(heroClassKey) +
-          '" width="120" height="120" style="border-radius:50%;border:2px solid var(--gold);object-fit:cover;display:block;margin:0 auto 12px auto;box-shadow:0 0 20px rgba(200,150,42,0.4)" onerror="this.style.display=\'none\'" alt="' +
+          '" width="240" height="240" style="max-width:100%;height:auto;object-fit:cover;display:block;margin:0 auto 12px auto;" onerror="this.style.display=\'none\'" alt="' +
           (hero.name || "") +
           '"/>' +
           '<div style="font-size:20px; font-weight:700; color:var(--text);">' +
           hero.name +
           "</div>" +
           '<div style="font-size:12px; color:var(--text3); text-transform:uppercase; letter-spacing:1px;">Legendary Hero Class</div>' +
-          "</div>" +
-          '<div style="background:var(--bg3); border-radius:var(--radius); padding:16px; margin-bottom:20px;">' +
-          '<div style="font-size:14px; color:var(--text2); line-height:1.6; font-style:italic; margin-bottom: 12px;">"' +
-          hero.description +
-          '"</div>' +
-          '<div style="font-size:12px; color:var(--text3); border-top:1px dashed var(--border); padding-top:12px; line-height:1.5;">' +
-          '<strong style="color:var(--text2);">Level Progression:</strong> Heroes start at Level 1 and gain XP through combat and idle turns. Their abilities scale with level.<br>' +
-          '<strong style="color:var(--text2);">Requirements:</strong> 1 Castle (1st Hero), 10 Castles (2nd), 50 Castles (3rd).' +
-          "</div>" +
           "</div>" +
           '<div style="margin-bottom:20px;">' +
           '<div style="font-size:11px; font-weight:700; color:var(--gold); margin-bottom:10px; text-transform:uppercase; letter-spacing:1px;">Signature Abilities</div>' +
@@ -13641,7 +13632,6 @@
         if (content)
           content.innerHTML =
             '<div style="text-align:center;margin-bottom:20px">' +
-            '<div style="font-size:32px;margin-bottom:8px">📜</div>' +
             '<h2 style="color:var(--gold);margin:0 0 4px;font-size:20px">' +
             escHtml(title) +
             "</h2>" +
