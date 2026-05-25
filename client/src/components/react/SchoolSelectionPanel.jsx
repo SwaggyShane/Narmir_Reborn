@@ -44,9 +44,14 @@ export default function SchoolSelectionPanel() {
     const gameState = window.gameState || {};
     gameState.school_of_magic = data.school;
 
+    // Notify other panels of state change
+    if (window.triggerReactUpdates) {
+      window.triggerReactUpdates();
+    }
+
     // Show success message
-    if (window.addAlert) {
-      window.addAlert(`🔮 You have chosen the school of ${data.school.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}!`, 'success');
+    if (window.toast) {
+      window.toast(`🔮 You have chosen the school of ${data.school.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}!`, 'success');
     }
   };
 

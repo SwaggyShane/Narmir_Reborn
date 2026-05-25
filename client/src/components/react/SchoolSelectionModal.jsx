@@ -66,6 +66,7 @@ export default function SchoolSelectionModal({ onClose, onSuccess }) {
   const [error, setError] = useState(null);
 
   const handleSelectSchool = async (schoolId) => {
+    if (loading) return;
     setSelectedSchool(schoolId);
     setLoading(true);
     setError(null);
@@ -131,13 +132,12 @@ export default function SchoolSelectionModal({ onClose, onSuccess }) {
 function SchoolCard({ school, isSelected, isLoading, onSelect }) {
   return (
     <div
-      className={`school-card ${isSelected ? 'selected' : ''}`}
-      onClick={onSelect}
+      className={`school-card ${isSelected ? 'selected' : ''} ${isLoading ? 'disabled' : ''}`}
+      onClick={isLoading ? undefined : onSelect}
       style={{
         borderColor: isSelected ? school.color : undefined,
         backgroundColor: isSelected ? `${school.color}20` : undefined,
       }}
-      disabled={isLoading}
     >
       <div className="school-icon">{school.emoji}</div>
       <h3>{school.name}</h3>

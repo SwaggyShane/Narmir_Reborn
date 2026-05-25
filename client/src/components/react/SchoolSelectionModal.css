@@ -78,7 +78,7 @@
   transform: scale(1.02);
 }
 
-.school-card[disabled] {
+.school-card.disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
