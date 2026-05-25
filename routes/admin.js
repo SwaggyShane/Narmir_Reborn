@@ -5,6 +5,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const config = require("../game/config");
+const { GOAL_COUNTS } = require("../game/goals");
 
 const soundsPath = path.join(__dirname, "..", "public", "sounds");
 if (!fs.existsSync(soundsPath)) {
@@ -1048,16 +1049,16 @@ module.exports = function (db, io) {
         unitCost: config.UNIT_COST,
         maxResearch: config.MAX_RESEARCH,
         tradeRouteMax: config.TRADE_ROUTE_MAX,
-        tradeRouteBasGold: config.TRADE_ROUTE_BASE_GOLD,
+        tradeRouteBaseGold: config.TRADE_ROUTE_BASE_GOLD,
         tradeRouteEstablishCost: config.TRADE_ROUTE_ESTABLISH_COST
       },
       goals: {
-        dailyCount: 3,
-        dailyResetHours: 24,
-        weeklyCount: 7,
-        weeklyResetDays: 7,
-        monthlyCount: 4,
-        monthlyResetDays: 30
+        dailyCount: GOAL_COUNTS.daily.count,
+        dailyResetMs: GOAL_COUNTS.daily.resetMs,
+        weeklyCount: GOAL_COUNTS.weekly.count,
+        weeklyResetMs: GOAL_COUNTS.weekly.resetMs,
+        monthlyCount: GOAL_COUNTS.monthly.count,
+        monthlyResetMs: GOAL_COUNTS.monthly.resetMs
       },
       expeditions: {
         deepFragmentChance: 0.05,

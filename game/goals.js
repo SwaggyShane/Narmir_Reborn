@@ -1,4 +1,5 @@
 const { safeJsonParse, roll, rand } = require('../utils/helpers');
+const config = require('./config');
 
 const DAILY_GOALS = [
   { id: 'turn_taken', label: 'Take Turns', min: 20, max: 80, prizeStr: 'gold', prizeType: 'gold', prizeMult: 100 },
@@ -21,11 +22,11 @@ const MONTHLY_GOALS = [
   { id: 'building_built', label: 'Construct Buildings', min: 200, max: 500, prizeStr: 'world_fragment', prizeType: 'world_fragment', prizeMult: 1 }
 ];
 
-const WORLD_FRAGMENTS = [
-  "Volcanic Rock", "Ancient Elven Wood", "Dragon Scale", "Abyssal Crystal",
-  "Celestial Feather", "Dwarven Star-Metal", "Cursed Bloodstone",
-  "Tears of the World Tree", "Void Essence", "Titan Bone"
-];
+const GOAL_COUNTS = {
+  daily: { count: 3, resetMs: 24 * 60 * 60 * 1000 },
+  weekly: { count: 7, resetMs: 7 * 24 * 60 * 60 * 1000 },
+  monthly: { count: 4, resetMs: 30 * 24 * 60 * 60 * 1000 }
+};
 
 function generateGoals(k) {
   let goals = { daily: { expiresAt: 0, goals: [] }, weekly: { expiresAt: 0, goals: [] }, monthly: { expiresAt: 0, goals: [] } };
@@ -157,7 +158,7 @@ function claimGoal(k, updates, events, groupId, goalId) {
      let frags = safeJsonParse(updates.world_fragments || k.world_fragments, []);
      const prizeAmount = goal.prizeAmount || 1;
      for(let i = 0; i < prizeAmount; i++) {
-       frags.push(WORLD_FRAGMENTS[Math.floor(Math.random() * WORLD_FRAGMENTS.length)]);
+       frags.push(config.WORLD_FRAGMENTS[Math.floor(Math.random() * config.WORLD_FRAGMENTS.length)]);
      }
      updates.world_fragments = JSON.stringify(frags);
      events.push({ type: 'system', message: `Goal fulfilled: Obtained ${prizeAmount} World Fragments!` });
@@ -176,5 +177,5 @@ module.exports = {
   DAILY_GOALS,
   WEEKLY_GOALS,
   MONTHLY_GOALS,
-  WORLD_FRAGMENTS
+  GOAL_COUNTS
 };
