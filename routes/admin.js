@@ -1006,5 +1006,88 @@ module.exports = function (db, io) {
     res.json(result);
   });
 
+  // ── GOALS MANAGEMENT ──────────────────────────────────────────────────────
+  router.get("/goals", async (_req, res) => {
+    const { DAILY_GOALS, WEEKLY_GOALS, MONTHLY_GOALS } = require('../game/goals');
+    res.json({
+      daily: DAILY_GOALS,
+      weekly: WEEKLY_GOALS,
+      monthly: MONTHLY_GOALS
+    });
+  });
+
+  // POST /api/admin/goals/update — update a goal definition
+  router.post("/goals/update", async (req, res) => {
+    const { tier, goalId, updates } = req.body;
+    if (!tier || !goalId || !updates) {
+      return res.status(400).json({ error: "tier, goalId, and updates required" });
+    }
+
+    const validTiers = ['daily', 'weekly', 'monthly'];
+    if (!validTiers.includes(tier)) {
+      return res.status(400).json({ error: "Invalid tier" });
+    }
+
+    // Note: In a production system, goals would be stored in database
+    // For now, this validates the request structure
+    res.json({
+      ok: true,
+      message: "Goal update endpoint ready - database storage needed for persistence",
+      tier,
+      goalId,
+      updates
+    });
+  });
+
+  // ── GAME CONSTANTS ────────────────────────────────────────────────────────
+  router.get("/constants", async (_req, res) => {
+    const constants = {
+      gameplay: {
+        maxLevel: 500,
+        startingGold: 500,
+        startingMana: 100,
+        turnCost: 1,
+        baseTurnRegenRate: 1
+      },
+      goals: {
+        dailyCount: 3,
+        dailyResetHours: 24,
+        weeklyCount: 7,
+        weeklyResetDays: 7,
+        monthlyCount: 4,
+        monthlyResetDays: 30
+      },
+      expeditions: {
+        deepFragmentChance: 0.05,
+        dungeonFragmentChance: 0.1,
+        deepUltraRareChance: 0.005,
+        dungeonUltraRareChance: 0.01
+      },
+      combat: {
+        baseAttackCost: 10,
+        baseSpellCost: 5,
+        baseCovertCost: 3
+      }
+    };
+    res.json(constants);
+  });
+
+  // POST /api/admin/constants/update — update a game constant
+  router.post("/constants/update", async (req, res) => {
+    const { path, value } = req.body;
+    if (!path || value === undefined) {
+      return res.status(400).json({ error: "path and value required" });
+    }
+
+    // Note: In a production system, constants would be stored in database
+    // For now, this validates the request structure
+    res.json({
+      ok: true,
+      message: "Constant update endpoint ready - database storage needed for persistence",
+      path,
+      value
+    });
+  });
+
   return router;
 };
