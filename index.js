@@ -1370,9 +1370,29 @@ async function start() {
     if (!secret || secret !== adminSecret) return res.status(403).json({ error: 'Invalid secret' });
 
     try {
+      // Delete all kingdom-related data
+      await db.run('DELETE FROM expeditions');
+      await db.run('DELETE FROM news');
+      await db.run('DELETE FROM war_log');
+      await db.run('DELETE FROM combat_log');
+      await db.run('DELETE FROM chat_messages');
+      await db.run('DELETE FROM heroes');
+      await db.run('DELETE FROM spy_reports');
+      await db.run('DELETE FROM trade_routes');
+      await db.run('DELETE FROM messages');
+      await db.run('DELETE FROM bounties');
+      await db.run('DELETE FROM suggestions');
+      await db.run('DELETE FROM trade_offers');
+
+      // Delete kingdoms and alliance data
+      await db.run('DELETE FROM alliance_members');
+      await db.run('DELETE FROM alliances');
       await db.run('DELETE FROM kingdoms');
+
+      // Delete players last
       await db.run('DELETE FROM players');
-      res.json({ ok: true, message: 'All players and kingdoms wiped. Ready for re-registration.' });
+
+      res.json({ ok: true, message: 'All players, kingdoms, and related data wiped. Ready for re-registration.' });
     } catch (err) {
       console.error('Wipe error:', err);
       res.status(500).json({ error: err.message });
