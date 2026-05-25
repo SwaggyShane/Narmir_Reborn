@@ -4,19 +4,24 @@
  * Preserves admin and AI accounts.
  *
  * Usage: ADMIN_SECRET=your_secret node admin-wipe-players.js
+ * Note: Pass secret via environment variable only (not command-line args for security)
  */
 
 require('dotenv').config();
 const { Pool } = require('pg');
 
 const ADMIN_SECRET = process.env.ADMIN_SECRET;
+const CONFIRM_SECRET = process.env.CONFIRM_SECRET;
+
 if (!ADMIN_SECRET) {
   console.error('❌ Error: ADMIN_SECRET environment variable is required');
   process.exit(1);
 }
 
-if (process.argv[2] !== ADMIN_SECRET) {
-  console.error('❌ Error: Invalid admin secret');
+// Require explicit confirmation via environment variable for safety
+if (CONFIRM_SECRET !== ADMIN_SECRET) {
+  console.error('❌ Error: Must set CONFIRM_SECRET=ADMIN_SECRET to confirm wipe');
+  console.error('   Usage: ADMIN_SECRET=xxx CONFIRM_SECRET=xxx node admin-wipe-players.js');
   process.exit(1);
 }
 
@@ -48,15 +53,38 @@ async function wipePlayerAccounts() {
       return;
     }
 
-    // Delete kingdoms first (foreign key constraint)
-    const kingdomsDeleted = await client.query(`
-      DELETE FROM kingdoms
-      WHERE player_id IN (
-        SELECT id FROM players
-        WHERE is_admin = 0 AND is_ai = 0
-      )
-    `);
-    console.log(`\n✅ Deleted ${kingdomsDeleted.rowCount} kingdom(s)`);
+    // Delete all dependent records in order (foreign key constraints)
+    const tables = [
+      { name: 'messages', col: 'sender_id' },
+      { name: 'messages', col: 'recipient_id' },
+      { name: 'bounties', col: 'placer_id' },
+      { name: 'chat_messages', col: 'player_id' },
+      { name: 'heroes', col: 'player_id' },
+      { name: 'news', col: 'player_id' },
+      { name: 'kingdoms', col: 'player_id' },
+    ];
+
+    let totalDeleted = 0;
+    for (const table of tables) {
+      try {
+        const result = await client.query(`
+          DELETE FROM ${table.name}
+          WHERE ${table.col} IN (
+            SELECT id FROM players
+            WHERE is_admin = 0 AND is_ai = 0
+          )
+        `);
+        if (result.rowCount > 0) {
+          console.log(`✅ Deleted ${result.rowCount} record(s) from ${table.name}`);
+          totalDeleted += result.rowCount;
+        }
+      } catch (err) {
+        // Table might not exist or might already be empty
+        if (!err.message.includes('does not exist')) {
+          throw err;
+        }
+      }
+    }
 
     // Delete the player accounts
     const playersDeleted = await client.query(`
@@ -64,9 +92,10 @@ async function wipePlayerAccounts() {
       WHERE is_admin = 0 AND is_ai = 0
     `);
     console.log(`✅ Deleted ${playersDeleted.rowCount} player account(s)`);
+    totalDeleted += playersDeleted.rowCount;
 
     await client.query('COMMIT');
-    console.log('\n🎉 Successfully wiped all human player accounts');
+    console.log(`\n🎉 Successfully wiped all human player accounts (${totalDeleted} total records deleted)`);
 
     // Show remaining accounts
     const remaining = await client.query(`
@@ -79,12 +108,20 @@ async function wipePlayerAccounts() {
     });
 
   } catch (err) {
-    await client.query('ROLLBACK');
+    try {
+      await client.query('ROLLBACK');
+    } catch (rollbackErr) {
+      // Ignore rollback errors
+    }
     console.error('❌ Error:', err.message);
     process.exit(1);
   } finally {
     client.release();
-    await pool.end();
+    try {
+      await pool.end();
+    } catch (poolErr) {
+      console.error('Warning: Error closing connection pool:', poolErr.message);
+    }
   }
 }
 
