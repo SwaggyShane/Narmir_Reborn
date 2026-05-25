@@ -711,6 +711,12 @@
         <button class="admin-tab" onclick="showAdminTab('fragments', this)">
           📊 Detailed Lists
         </button>
+        <button class="admin-tab" onclick="showAdminTab('goals', this)">
+          🎯 Goals
+        </button>
+        <button class="admin-tab" onclick="showAdminTab('constants', this)">
+          ⚡ Constants
+        </button>
       </div>
 
       <!-- TAB: Manage -->
@@ -1706,6 +1712,84 @@
 
           <div id="spells-container" style="display: flex; flex-direction: column; gap: 12px;">
             <!-- Populated by JavaScript -->
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: Goals Management -->
+      <div id="atab-goals" class="atab" style="display: none">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h2 style="margin: 0">🎯 Goals Configuration</h2>
+          <button class="btn" onclick="loadGoalsConfig()">↻ Refresh</button>
+        </div>
+        <p style="color: var(--text3); font-size: 13px; margin-bottom: 16px;">
+          Daily, weekly, and monthly goal definitions. Phase 2 displays current configuration. Phase 3 will add edit capabilities.
+        </p>
+
+        <!-- Daily Goals -->
+        <div class="card" style="margin-bottom: 20px;">
+          <h2 style="margin-top: 0">📅 Daily Goals (3 goals per day, 24h reset)</h2>
+          <div id="goals-daily" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px;">
+            <div style="padding: 24px; color: var(--text3);">Loading...</div>
+          </div>
+        </div>
+
+        <!-- Weekly Goals -->
+        <div class="card" style="margin-bottom: 20px;">
+          <h2 style="margin-top: 0">📆 Weekly Goals (7 goals per week, 7d reset)</h2>
+          <div id="goals-weekly" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px;">
+            <div style="padding: 24px; color: var(--text3);">Loading...</div>
+          </div>
+        </div>
+
+        <!-- Monthly Goals -->
+        <div class="card">
+          <h2 style="margin-top: 0">📊 Monthly Goals (4 goals per month, 30d reset)</h2>
+          <div id="goals-monthly" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px;">
+            <div style="padding: 24px; color: var(--text3);">Loading...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: Game Constants -->
+      <div id="atab-constants" class="atab" style="display: none">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h2 style="margin: 0">⚡ Game Constants</h2>
+          <button class="btn" onclick="loadGameConstants()">↻ Refresh</button>
+        </div>
+        <p style="color: var(--text3); font-size: 13px; margin-bottom: 16px;">
+          Core game constants that define gameplay mechanics. Phase 2 displays current values. Phase 4 will add edit capabilities.
+        </p>
+
+        <!-- Gameplay Constants -->
+        <div class="card" style="margin-bottom: 20px;">
+          <h2 style="margin-top: 0">🎮 Gameplay</h2>
+          <div id="constants-gameplay" style="display: grid; gap: 8px;">
+            <div style="padding: 12px; color: var(--text3);">Loading...</div>
+          </div>
+        </div>
+
+        <!-- Goals Constants -->
+        <div class="card" style="margin-bottom: 20px;">
+          <h2 style="margin-top: 0">🎯 Goals Configuration</h2>
+          <div id="constants-goals" style="display: grid; gap: 8px;">
+            <div style="padding: 12px; color: var(--text3);">Loading...</div>
+          </div>
+        </div>
+
+        <!-- Expeditions Constants -->
+        <div class="card" style="margin-bottom: 20px;">
+          <h2 style="margin-top: 0">🗺️ Expeditions</h2>
+          <div id="constants-expeditions" style="display: grid; gap: 8px;">
+            <div style="padding: 12px; color: var(--text3);">Loading...</div>
+          </div>
+        </div>
+
+        <!-- Combat Constants -->
+        <div class="card">
+          <h2 style="margin-top: 0">⚔️ Combat</h2>
+          <div id="constants-combat" style="display: grid; gap: 8px;">
+            <div style="padding: 12px; color: var(--text3);">Loading...</div>
           </div>
         </div>
       </div>
@@ -2776,6 +2860,93 @@
         loadData();
       }
 
+      // ── GOALS MANAGEMENT ──────────────────────────────────────────
+      async function loadGoalsConfig() {
+        const data = await api("GET", "/api/admin/goals");
+        if (data.error) {
+          toast("Error loading goals: " + data.error, "error");
+          return;
+        }
+
+        // Render Daily Goals
+        const dailyHtml = (data.daily || []).map(goal => `
+          <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px;">
+            <div style="font-weight: 600; color: var(--gold); margin-bottom: 8px;">${escHtml(goal.label)}</div>
+            <div style="color: var(--text3); font-size: 12px; line-height: 1.6;">
+              <div><strong>ID:</strong> ${escHtml(goal.id)}</div>
+              <div><strong>Target:</strong> ${goal.min} - ${goal.max}</div>
+              <div><strong>Prize:</strong> ${goal.prizeMult}x ${escHtml(goal.prizeType)}</div>
+            </div>
+          </div>
+        `).join('');
+        document.getElementById('goals-daily').innerHTML = dailyHtml || '<div style="color: var(--text3);">No daily goals</div>';
+
+        // Render Weekly Goals
+        const weeklyHtml = (data.weekly || []).map(goal => `
+          <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px;">
+            <div style="font-weight: 600; color: var(--gold); margin-bottom: 8px;">${escHtml(goal.label)}</div>
+            <div style="color: var(--text3); font-size: 12px; line-height: 1.6;">
+              <div><strong>ID:</strong> ${escHtml(goal.id)}</div>
+              <div><strong>Target:</strong> ${goal.min} - ${goal.max}</div>
+              <div><strong>Prize:</strong> ${goal.prizeMult}x ${escHtml(goal.prizeType)}</div>
+            </div>
+          </div>
+        `).join('');
+        document.getElementById('goals-weekly').innerHTML = weeklyHtml || '<div style="color: var(--text3);">No weekly goals</div>';
+
+        // Render Monthly Goals
+        const monthlyHtml = (data.monthly || []).map(goal => `
+          <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px;">
+            <div style="font-weight: 600; color: var(--gold); margin-bottom: 8px;">${escHtml(goal.label)}</div>
+            <div style="color: var(--text3); font-size: 12px; line-height: 1.6;">
+              <div><strong>ID:</strong> ${escHtml(goal.id)}</div>
+              <div><strong>Target:</strong> ${goal.min} - ${goal.max}</div>
+              <div><strong>Prize:</strong> ${goal.prizeMult}x ${escHtml(goal.prizeType)}</div>
+            </div>
+          </div>
+        `).join('');
+        document.getElementById('goals-monthly').innerHTML = monthlyHtml || '<div style="color: var(--text3);">No monthly goals</div>';
+      }
+
+      // ── GAME CONSTANTS ────────────────────────────────────────────
+      async function loadGameConstants() {
+        const data = await api("GET", "/api/admin/constants");
+        if (data.error) {
+          toast("Error loading constants: " + data.error, "error");
+          return;
+        }
+
+        // Helper to render key-value pairs
+        const renderConstantSection = (obj) => {
+          return Object.entries(obj).map(([key, value]) => `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid var(--border); color: var(--text2); font-size: 13px;">
+              <span>${escHtml(key)}:</span>
+              <span style="color: var(--gold); font-weight: 600;">${typeof value === 'object' ? JSON.stringify(value) : value}</span>
+            </div>
+          `).join('');
+        };
+
+        // Render Gameplay Constants
+        if (data.gameplay) {
+          document.getElementById('constants-gameplay').innerHTML = renderConstantSection(data.gameplay);
+        }
+
+        // Render Goals Constants
+        if (data.goals) {
+          document.getElementById('constants-goals').innerHTML = renderConstantSection(data.goals);
+        }
+
+        // Render Expeditions Constants
+        if (data.expeditions) {
+          document.getElementById('constants-expeditions').innerHTML = renderConstantSection(data.expeditions);
+        }
+
+        // Render Combat Constants
+        if (data.combat) {
+          document.getElementById('constants-combat').innerHTML = renderConstantSection(data.combat);
+        }
+      }
+
       function showAdminTab(id, btn) {
         document.querySelectorAll(".atab").forEach(function (t) {
           t.style.display = "none";
@@ -2806,6 +2977,12 @@
         }
         if (id === "fragments") {
           loadFragmentsDisplay();
+        }
+        if (id === "goals") {
+          loadGoalsConfig();
+        }
+        if (id === "constants") {
+          loadGameConstants();
         }
       }
 
