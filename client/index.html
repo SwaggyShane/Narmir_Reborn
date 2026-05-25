@@ -15615,17 +15615,6 @@
         location.reload();
       }
 
-      function racePortraitPath(key) {
-        var portraitMap = {
-          human: '/race/human.png',
-          high_elf: '/race/high_elf.png',
-          dark_elf: '/race/dark_elf.png',
-          orc: '/race/orc.png',
-          vampire: '/race/vampire.png'
-        };
-        return portraitMap[key] || null;
-      }
-
       function renderRaces() {
         var racePanel = document.getElementById("races-list");
         if (!racePanel) return;
@@ -15642,9 +15631,9 @@
               ";"
             : "background: var(--bg3);";
 
-          var portraitPath = racePortraitPath(key);
-          var portraitHtml = portraitPath
-            ? '<img src="' + portraitPath + '" style="width: 100%; height: 200px; object-fit: cover; border-radius: var(--radius); margin-bottom: 12px;" alt="' + (r.title || r.label || key) + '" />'
+          var portraitUrl = RACE_PORTRAITS[key];
+          var portraitHtml = portraitUrl
+            ? '<img src="' + portraitUrl + '" style="width: 100%; height: 200px; object-fit: cover; border-radius: var(--radius); margin-bottom: 12px;" alt="' + (r.title || r.label || key) + '" />'
             : '';
 
           html.push(
