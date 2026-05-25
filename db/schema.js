@@ -1267,8 +1267,8 @@ async function initDb() {
       prize_type TEXT NOT NULL,
       prize_multiplier NUMERIC NOT NULL,
       active INTEGER NOT NULL DEFAULT 1,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(tier, goal_id)
     )
   `);

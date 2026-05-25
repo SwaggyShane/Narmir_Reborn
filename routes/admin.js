@@ -9,11 +9,9 @@ const { GOAL_COUNTS, DAILY_GOALS, WEEKLY_GOALS, MONTHLY_GOALS } = require("../ga
 
 const ALLOWED_PRIZE_TYPES = ['gold', 'mana', 'rangers', 'researchers', 'war_machines', 'world_fragment'];
 
-let inMemoryGoals = {
-  daily: [...DAILY_GOALS],
-  weekly: [...WEEKLY_GOALS],
-  monthly: [...MONTHLY_GOALS]
-};
+const DAILY_GOALS_DEFAULTS = DAILY_GOALS.map(g => ({ ...g }));
+const WEEKLY_GOALS_DEFAULTS = WEEKLY_GOALS.map(g => ({ ...g }));
+const MONTHLY_GOALS_DEFAULTS = MONTHLY_GOALS.map(g => ({ ...g }));
 
 const soundsPath = path.join(__dirname, "..", "public", "sounds");
 if (!fs.existsSync(soundsPath)) {
@@ -21,17 +19,14 @@ if (!fs.existsSync(soundsPath)) {
 }
 
 async function refreshInMemoryGoals(db) {
-  const defaults = {
-    daily: DAILY_GOALS.map(g => ({ ...g })),
-    weekly: WEEKLY_GOALS.map(g => ({ ...g })),
-    monthly: MONTHLY_GOALS.map(g => ({ ...g }))
-  };
+  DAILY_GOALS.length = 0;
+  DAILY_GOALS.push(...DAILY_GOALS_DEFAULTS.map(g => ({ ...g })));
 
-  inMemoryGoals = {
-    daily: [...defaults.daily],
-    weekly: [...defaults.weekly],
-    monthly: [...defaults.monthly]
-  };
+  WEEKLY_GOALS.length = 0;
+  WEEKLY_GOALS.push(...WEEKLY_GOALS_DEFAULTS.map(g => ({ ...g })));
+
+  MONTHLY_GOALS.length = 0;
+  MONTHLY_GOALS.push(...MONTHLY_GOALS_DEFAULTS.map(g => ({ ...g })));
 
   try {
     const overrides = await db.all(
@@ -41,18 +36,19 @@ async function refreshInMemoryGoals(db) {
 
     for (const override of overrides) {
       const tier = override.tier;
-      if (!inMemoryGoals[tier]) continue;
+      const pool = tier === 'daily' ? DAILY_GOALS : tier === 'weekly' ? WEEKLY_GOALS : tier === 'monthly' ? MONTHLY_GOALS : null;
+      if (!pool) continue;
 
-      const idx = inMemoryGoals[tier].findIndex(g => g.id === override.goal_id);
+      const idx = pool.findIndex(g => g.id === override.goal_id);
 
       if (override.active === 0) {
         if (idx !== -1) {
-          inMemoryGoals[tier].splice(idx, 1);
+          pool.splice(idx, 1);
         }
       } else {
         if (idx !== -1) {
-          inMemoryGoals[tier][idx] = {
-            ...inMemoryGoals[tier][idx],
+          pool[idx] = {
+            ...pool[idx],
             label: override.label,
             min: override.min_target,
             max: override.max_target,
@@ -61,7 +57,7 @@ async function refreshInMemoryGoals(db) {
             prizeMult: override.prize_multiplier
           };
         } else {
-          inMemoryGoals[tier].push({
+          pool.push({
             id: override.goal_id,
             label: override.label,
             min: override.min_target,
@@ -1076,7 +1072,11 @@ module.exports = function (db, io) {
 
   // ── GOALS MANAGEMENT ──────────────────────────────────────────────────────
   router.get("/goals", async (_req, res) => {
-    res.json(inMemoryGoals);
+    res.json({
+      daily: DAILY_GOALS,
+      weekly: WEEKLY_GOALS,
+      monthly: MONTHLY_GOALS
+    });
   });
 
   // POST /api/admin/goals/edit — update an existing goal definition
@@ -1110,17 +1110,53 @@ module.exports = function (db, io) {
     }
 
     try {
-      await db.run(
-        `UPDATE admin_goal_definitions
-         SET label = COALESCE(?, label),
-             min_target = COALESCE(?, min_target),
-             max_target = COALESCE(?, max_target),
-             prize_type = COALESCE(?, prize_type),
-             prize_multiplier = COALESCE(?, prize_multiplier),
-             updated_at = CURRENT_TIMESTAMP
-         WHERE tier = ? AND goal_id = ? AND active = 1`,
-        [label, minTarget, maxTarget, prizeType, prizeMultiplier, tier, goalId]
+      const existing = await db.get(
+        `SELECT 1 FROM admin_goal_definitions WHERE tier = ? AND goal_id = ?`,
+        [tier, goalId]
       );
+
+      if (existing) {
+        await db.run(
+          `UPDATE admin_goal_definitions
+           SET label = COALESCE(?, label),
+               min_target = COALESCE(?, min_target),
+               max_target = COALESCE(?, max_target),
+               prize_type = COALESCE(?, prize_type),
+               prize_multiplier = COALESCE(?, prize_multiplier),
+               updated_at = CURRENT_TIMESTAMP
+           WHERE tier = ? AND goal_id = ? AND active = 1`,
+          [
+            label !== undefined ? label : null,
+            minTarget !== undefined ? minTarget : null,
+            maxTarget !== undefined ? maxTarget : null,
+            prizeType !== undefined ? prizeType : null,
+            prizeMultiplier !== undefined ? prizeMultiplier : null,
+            tier,
+            goalId
+          ]
+        );
+      } else {
+        const defaultsPool = tier === 'daily' ? DAILY_GOALS_DEFAULTS : tier === 'weekly' ? WEEKLY_GOALS_DEFAULTS : tier === 'monthly' ? MONTHLY_GOALS_DEFAULTS : [];
+        const defaultGoal = defaultsPool.find(g => g.id === goalId);
+        if (!defaultGoal) {
+          return res.status(404).json({ error: "Goal not found in defaults or overrides" });
+        }
+
+        await db.run(
+          `INSERT INTO admin_goal_definitions (tier, goal_id, label, min_target, max_target, prize_type, prize_multiplier, active)
+           VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
+          [
+            tier,
+            goalId,
+            label !== undefined ? label : defaultGoal.label,
+            minTarget !== undefined ? minTarget : defaultGoal.min,
+            maxTarget !== undefined ? maxTarget : defaultGoal.max,
+            prizeType !== undefined ? prizeType : defaultGoal.prizeType,
+            prizeMultiplier !== undefined ? prizeMultiplier : defaultGoal.prizeMult
+          ]
+        );
+      }
+
       await refreshInMemoryGoals(db);
       res.json({ ok: true, message: "Goal updated successfully" });
     } catch (err) {
@@ -1193,10 +1229,30 @@ module.exports = function (db, io) {
     }
 
     try {
-      await db.run(
-        `UPDATE admin_goal_definitions SET active = 0, updated_at = CURRENT_TIMESTAMP WHERE tier = ? AND goal_id = ?`,
+      const existing = await db.get(
+        `SELECT 1 FROM admin_goal_definitions WHERE tier = ? AND goal_id = ?`,
         [tier, goalId]
       );
+
+      if (existing) {
+        await db.run(
+          `UPDATE admin_goal_definitions SET active = 0, updated_at = CURRENT_TIMESTAMP WHERE tier = ? AND goal_id = ?`,
+          [tier, goalId]
+        );
+      } else {
+        const defaultsPool = tier === 'daily' ? DAILY_GOALS_DEFAULTS : tier === 'weekly' ? WEEKLY_GOALS_DEFAULTS : tier === 'monthly' ? MONTHLY_GOALS_DEFAULTS : [];
+        const defaultGoal = defaultsPool.find(g => g.id === goalId);
+        if (!defaultGoal) {
+          return res.status(404).json({ error: "Goal not found" });
+        }
+
+        await db.run(
+          `INSERT INTO admin_goal_definitions (tier, goal_id, label, min_target, max_target, prize_type, prize_multiplier, active)
+           VALUES (?, ?, ?, ?, ?, ?, ?, 0)`,
+          [tier, goalId, defaultGoal.label, defaultGoal.min, defaultGoal.max, defaultGoal.prizeType, defaultGoal.prizeMult]
+        );
+      }
+
       await refreshInMemoryGoals(db);
       res.json({ ok: true, message: "Goal removed successfully" });
     } catch (err) {
