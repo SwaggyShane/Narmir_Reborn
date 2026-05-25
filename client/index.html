@@ -15631,10 +15631,16 @@
               ";"
             : "background: var(--bg3);";
 
+          var portraitUrl = RACE_PORTRAITS[key];
+          var portraitHtml = portraitUrl
+            ? '<img src="' + portraitUrl + '" style="width: 100%; height: 200px; object-fit: cover; border-radius: var(--radius); margin-bottom: 12px;" alt="' + (r.title || r.label || key) + '" />'
+            : '';
+
           html.push(
             '<div style="' +
               bg +
               ' padding: 16px; border-radius: var(--radius);">' +
+              portraitHtml +
               '<div onclick="window.openRaceLore(\'' + key + '\')" style="cursor: pointer; font-size: 16px; font-weight: bold; color: var(--gold); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;" title="Click for detailed lore & details">' +
               (r.icon || "👤") +
               " " +
