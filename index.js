@@ -59,27 +59,21 @@ const setupSockets    = require('./game/sockets');
 const engine          = require('./game/engine');
 const { requireAuth, requireAdmin } = require('./routes/middleware');
 const config = require('./game/config');
+const { safeJsonParse } = require('./utils/helpers');
 
 const app    = express();
 const server = http.createServer(app);
-const io     = new Server(server, { 
-  cors: { 
-    origin: process.env.NODE_ENV === 'production' ? (process.env.CORS_ORIGIN || false) : '*', 
-    credentials: true 
-  } 
+const io     = new Server(server, {
+  cors: {
+    origin: process.env.NODE_ENV === 'production' ? (process.env.CORS_ORIGIN || false) : '*',
+    credentials: true
+  }
 });
 
 const PORT = 3000;
 const HOST = '0.0.0.0';
 
 // ── Utility functions ────────────────────────────────────────────────────────
-function safeJsonParse(jsonString, defaultValue = {}) {
-  try {
-    return JSON.parse(jsonString || (typeof defaultValue === 'object' ? JSON.stringify(defaultValue) : defaultValue));
-  } catch {
-    return defaultValue;
-  }
-}
 
 // Normalize kingdom objects to ensure all expected numeric properties exist with defaults
 function normalizeKingdom(kingdom) {

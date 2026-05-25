@@ -2,21 +2,9 @@ const express = require("express");
 const engine = require("../game/engine");
 const { requireAuth } = require("./middleware");
 const { progressGoal } = require('../game/goals');
+const { safeJsonParse } = require('../utils/helpers');
 
 const router = express.Router();
-
-function safeJsonParse(str, fallback = {}, context = "unknown") {
-  if (!str) return fallback;
-  if (typeof str === "object") return str;
-  try {
-    return JSON.parse(str);
-  } catch (e) {
-    console.error(
-      `[JSON Parse Error] Context: ${context}. Error: ${e.message}. Data: ${str}`,
-    );
-    return fallback;
-  }
-}
 
 module.exports = function (db) {
   router.get("/me", requireAuth, async (req, res) => {

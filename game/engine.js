@@ -5,6 +5,7 @@
 const config = require("./config");
 const { progressGoal } = require('./goals');
 const fragmentBonusManager = require("./fragment-bonus-manager");
+const { safeJsonParse, roll, rand } = require('../utils/helpers');
 
 const {
   RACE_BONUSES,
@@ -125,41 +126,6 @@ function isNight() {
   return h >= 1 && h < 13; // 8PM EST to 8AM EST (EST is UTC-5)
 }
 
-const _parseCache = new Map();
-const MAX_CACHE_SIZE = 5000; // Prevent unbounded memory growth
-
-function clearParseCache() {
-  _parseCache.clear();
-}
-
-function safeJsonParse(str, fallback = {}, context = "unknown") {
-  if (!str) return fallback;
-  if (typeof str === "object") return str;
-  const cacheKey = `${context}:${str}`;
-  if (_parseCache.has(cacheKey)) {
-    // Move to end (most recently used)
-    const val = _parseCache.get(cacheKey);
-    _parseCache.delete(cacheKey);
-    _parseCache.set(cacheKey, val);
-    return val;
-  }
-
-  try {
-    const val = JSON.parse(str);
-    // Evict oldest entry if cache is full
-    if (_parseCache.size >= MAX_CACHE_SIZE) {
-      const oldestKey = _parseCache.keys().next().value;
-      _parseCache.delete(oldestKey);
-    }
-    _parseCache.set(cacheKey, val);
-    return val;
-  } catch (e) {
-    console.error(
-      `[JSON Parse Error] Context: ${context}. Error: ${e.message}. Data: ${str}`,
-    );
-    return fallback;
-  }
-}
 
 function raceBonus(kingdom, stat) {
   const bonuses = RACE_BONUSES[kingdom.race] || {};
@@ -5675,12 +5641,6 @@ function resolveAllianceDefense(attackResult, allies) {
 }
 
 // ── Expedition rewards ──────────────────────────────────────────────────────
-function roll(chance) {
-  return Math.random() < chance;
-}
-function rand(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
 
 function junkPrize(k, updates) {
   if (!JUNK_PRIZES || JUNK_PRIZES.length === 0)

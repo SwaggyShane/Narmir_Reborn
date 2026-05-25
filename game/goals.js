@@ -1,20 +1,4 @@
-function safeJsonParse(str, fallback, context) {
-  if (typeof str === 'object' && str !== null) return str;
-  if (!str) return fallback;
-  try {
-    return JSON.parse(str);
-  } catch (e) {
-    return fallback;
-  }
-}
-
-function rand(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function roll(prob) {
-  return Math.random() < prob;
-}
+const { safeJsonParse, roll, rand } = require('../utils/helpers');
 
 const DAILY_GOALS = [
   { id: 'turn_taken', label: 'Take Turns', min: 20, max: 80, prizeStr: 'gold', prizeType: 'gold', prizeMult: 100 },
