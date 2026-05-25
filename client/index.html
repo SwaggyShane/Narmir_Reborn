@@ -9110,8 +9110,8 @@
         var isVampire = state.race === "vampire";
         var shrineRow = document.getElementById("ba-shrine")?.closest(".trow");
         var mausoleumRow = document.getElementById("ba-mausoleum")?.closest(".trow");
-        if (shrineRow) shrineRow.style.display = isVampire ? "none" : "grid";
-        if (mausoleumRow) mausoleumRow.style.display = isVampire ? "grid" : "none";
+        if (shrineRow) shrineRow.style.display = isVampire ? "none" : "";
+        if (mausoleumRow) mausoleumRow.style.display = isVampire ? "" : "none";
 
         // Blueprint/scaffolding requirement notices beside buildings
         var BLUEPRINT_REQUIRED = new Set([
