@@ -821,13 +821,27 @@ async function runRegen(db) {
 async function updateMarketPrices(db) {
   try {
     const prices = await db.all('SELECT * FROM market_prices');
+    if (prices.length === 0) return;
+
+    const priceIds = [];
+    const newPrices = [];
+
     for (const p of prices) {
       const drift = (p.base_price - p.current_price) / p.base_price * 0.22;
-      const change = 1 + (Math.random() * 0.54 - 0.27) + drift; // extreme volatility: [-27%, +27%] per pulse with scaled drift
+      const change = 1 + (Math.random() * 0.54 - 0.27) + drift;
       let newPrice = p.current_price * change;
       newPrice = Math.max(p.base_price * 0.15, Math.min(p.base_price * 6.0, newPrice));
-      await db.run('UPDATE market_prices SET current_price = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [newPrice, p.id]);
+      priceIds.push(p.id);
+      newPrices.push(newPrice);
     }
+
+    // Batch update all prices in single query
+    const placeholders = priceIds.map((_, i) => `$${i + 1}`).join(',');
+    await db.run(
+      `UPDATE market_prices SET current_price = CASE id ${priceIds.map((_, i) => `WHEN $${i + 1} THEN $${priceIds.length + i + 1}`).join(' ')} END,
+       updated_at = CURRENT_TIMESTAMP WHERE id IN (${placeholders})`,
+      [...priceIds, ...newPrices]
+    );
     console.log('[market] Prices fluctuated');
   } catch (e) {
     console.error('[market] Fluctuation failed:', e.message);
