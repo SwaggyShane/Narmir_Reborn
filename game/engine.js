@@ -2748,6 +2748,18 @@ function checkAchievements(k, updates, events) {
     achUpdated = true;
   }
 
+  // Founder achievement: Build first building
+  if (!ach.includes("ach_founder") && totalBuildings >= 1) {
+    ach.push("ach_founder");
+    updates.gold =
+      (updates.gold !== undefined ? updates.gold : k.gold) + 500;
+    events.push({
+      type: "system",
+      message: "🏆 ACHIEVEMENT UNLOCKED: Founder! You've built your first structure. Rewarded +500 Gold.",
+    });
+    achUpdated = true;
+  }
+
   const currentPop =
     updates.population !== undefined ? updates.population : k.population;
   if (!ach.includes("ach_warlord") && currentPop >= 50000) {
@@ -2757,6 +2769,22 @@ function checkAchievements(k, updates, events) {
     events.push({
       type: "system",
       message: "🏆 ACHIEVEMENT UNLOCKED: Warlord! Rewarded +10000 Land.",
+    });
+    achUpdated = true;
+  }
+
+  // Colossus achievement: 10 million+ population
+  if (!ach.includes("ach_colossus") && currentPop >= 10000000) {
+    ach.push("ach_colossus");
+    updates.land =
+      (updates.land !== undefined ? updates.land : k.land) + 50000;
+    updates.mana =
+      (updates.mana !== undefined ? updates.mana : k.mana) + 10000;
+    updates.gold =
+      (updates.gold !== undefined ? updates.gold : k.gold) + 100000;
+    events.push({
+      type: "system",
+      message: "🏆 ACHIEVEMENT UNLOCKED: Colossus! Your empire has swollen to 10 million souls. Rewarded +50000 Land, +10000 Mana, and +100000 Gold.",
     });
     achUpdated = true;
   }
