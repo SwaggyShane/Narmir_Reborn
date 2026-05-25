@@ -396,13 +396,22 @@ module.exports = function (db) {
 
     try {
       await applyUpdates(db, k.id, updates);
-      for (const h of heroBatch) {
-        await db.run("UPDATE heroes SET level = ?, xp = ? WHERE id = ?", [
-          h.level,
-          h.xp,
-          h.id,
-        ]);
+
+      // Batch hero XP updates
+      if (heroBatch.length > 0) {
+        const heroIds = heroBatch.map(h => h.id);
+        const levels = heroBatch.map(h => h.level);
+        const xps = heroBatch.map(h => h.xp);
+        const placeholders = heroIds.map((_, i) => `$${i + 1}`).join(',');
+
+        await db.run(
+          `UPDATE heroes SET level = CASE id ${heroIds.map((_, i) => `WHEN $${i + 1} THEN $${heroIds.length + i + 1}`).join(' ')} END,
+           xp = CASE id ${heroIds.map((_, i) => `WHEN $${i + 1} THEN $${heroIds.length * 2 + i + 1}`).join(' ')} END
+           WHERE id IN (${placeholders})`,
+          [...heroIds, ...levels, ...xps]
+        );
       }
+
       const turnNum = updates.turn || k.turn;
       if (filteredEvents.length > 0) {
         await bulkInsertNews(
@@ -1453,22 +1462,34 @@ module.exports = function (db) {
     );
     if (result.error) return res.status(400).json({ error: result.error });
 
-    // Update heroes in DB
+    // Update heroes in DB (batch updates)
+    const heroUpdates = [];
     for (const h of attackerHeroes) {
       const resHero = engine.awardHeroXp(h, result.win ? 500 : 100);
-      await db.run("UPDATE heroes SET xp = ?, level = ? WHERE id = ?", [
-        resHero.xp,
-        resHero.level,
-        h.id,
-      ]);
+      heroUpdates.push([resHero.xp, resHero.level, h.id]);
     }
     for (const h of defenderHeroes) {
       const resHero = engine.awardHeroXp(h, result.win ? 100 : 500);
-      await db.run("UPDATE heroes SET xp = ?, level = ? WHERE id = ?", [
-        resHero.xp,
-        resHero.level,
-        h.id,
-      ]);
+      heroUpdates.push([resHero.xp, resHero.level, h.id]);
+    }
+
+    if (heroUpdates.length > 0) {
+      const values = [];
+      const cases = heroUpdates.map((_, i) => {
+        values.push(heroUpdates[i][2]);
+        return `WHEN $${i + 1} THEN (xp := $${heroUpdates.length + i + 1}, level := $${heroUpdates.length * 2 + i + 1})`;
+      });
+      const heroIds = heroUpdates.map(u => u[2]);
+      const xps = heroUpdates.map(u => u[0]);
+      const levels = heroUpdates.map(u => u[1]);
+      const placeholders = heroIds.map((_, i) => `$${i + 1}`).join(',');
+
+      await db.run(
+        `UPDATE heroes SET xp = CASE id ${heroIds.map((id, i) => `WHEN $${i + 1} THEN $${heroIds.length + i + 1}`).join(' ')} END,
+         level = CASE id ${heroIds.map((id, i) => `WHEN $${i + 1} THEN $${heroIds.length * 2 + i + 1}`).join(' ')} END
+         WHERE id IN (${placeholders})`,
+        [...heroIds, ...xps, ...levels]
+      );
     }
 
     progressGoal(k, result.attackerUpdates, 'attack_made', 1);
