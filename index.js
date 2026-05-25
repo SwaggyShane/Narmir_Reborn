@@ -744,6 +744,8 @@ async function runRegen(db) {
 
   // Fire daily events for all kingdoms
   const kingdoms = await db.all('SELECT * FROM kingdoms WHERE turn > 0');
+  const newsInserts = [];
+
   for (const k of kingdoms) {
     const result = await fireDailyEvent(db, k, season);
     if (result) {
@@ -752,9 +754,18 @@ async function runRegen(db) {
           await db.run(`UPDATE kingdoms SET ${col}=? WHERE id=?`, [val, k.id]);
         }
       }
-      await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)',
-        [k.id, 'system', result.message, k.turn]);
+      newsInserts.push([k.id, 'system', result.message, k.turn]);
     }
+  }
+
+  // Batch insert all news in single query
+  if (newsInserts.length > 0) {
+    const placeholders = newsInserts.map((_, i) => `($${i*4+1},$${i*4+2},$${i*4+3},$${i*4+4})`).join(',');
+    const values = newsInserts.flat();
+    await db.run(
+      `INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ${placeholders}`,
+      values
+    );
   }
 
   // Resolve regions - calculate dominance and capture progress
