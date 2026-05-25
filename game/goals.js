@@ -80,7 +80,7 @@ function generateGoals(k) {
          progress: 0,
          claimed: false,
          prizeType: def.prizeType,
-         prizeAmount: def.prizeType === 'war_machines' ? rand(1, 2) : Math.max(1, Math.floor(target * def.prizeMult * (roll(0.5) ? 1.5 : 1)))
+         prizeAmount: Math.max(1, Math.floor(target * def.prizeMult * (roll(0.5) ? 1.5 : 1)))
        });
     }
     updated = true;
@@ -154,6 +154,7 @@ function claimGoal(k, updates, events, groupId, goalId) {
    updates.goals = JSON.stringify(goals);
 
    if (goal.prizeType === 'world_fragment') {
+     const frag = WORLD_FRAGMENTS[Math.floor(Math.random() * WORLD_FRAGMENTS.length)];
      let frags = safeJsonParse(updates.world_fragments || k.world_fragments, []);
      for(let i = 0; i < goal.prizeAmount; i++) {
        frags.push(WORLD_FRAGMENTS[Math.floor(Math.random() * WORLD_FRAGMENTS.length)]);
