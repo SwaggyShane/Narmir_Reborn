@@ -6292,6 +6292,8 @@
         if (authError) authError.textContent = "";
         var regFields = document.getElementById("register-fields");
         if (regFields) regFields.style.display = "none";
+        var authEmail = document.getElementById("auth-email");
+        if (authEmail) authEmail.value = "";
         var btnLogin = document.getElementById("btn-login");
         if (btnLogin) btnLogin.disabled = false;
         var btnReg = document.getElementById("btn-register");
@@ -6412,11 +6414,22 @@
         if (endpoint === "/api/auth/register") {
           const kEl = document.getElementById("auth-kingdom");
           const rEl = document.getElementById("auth-race");
-          if (!kEl || !rEl) return;
+          const eEl = document.getElementById("auth-email");
+          if (!kEl || !rEl || !eEl) return;
           var kingdomName = kEl.value.trim();
           var race = rEl.value;
+          var email = eEl.value.trim();
           if (!kingdomName) {
             errEl.textContent = "Kingdom name required";
+            return;
+          }
+          if (!email) {
+            errEl.textContent = "Email address required";
+            return;
+          }
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(email)) {
+            errEl.textContent = "Please enter a valid email address";
             return;
           }
           body = JSON.stringify({
@@ -6424,6 +6437,7 @@
             password: password,
             kingdomName: kingdomName,
             race: race,
+            email: email,
           });
         } else {
           body = JSON.stringify({ username: username, password: password });
@@ -15949,6 +15963,22 @@
           </button>
         </div>
         <div id="register-fields" style="display: none; margin-top: 10px">
+          <input
+            id="auth-email"
+            type="email"
+            placeholder="Email address"
+            style="
+              width: 100%;
+              margin-bottom: 10px;
+              padding: 10px 12px;
+              font-size: 16px;
+              background: #1a1c27;
+              border: 1px solid #363a52;
+              border-radius: 8px;
+              color: #e8e9f0;
+              box-sizing: border-box;
+            "
+          />
           <div
             style="
               font-size: 11px;
