@@ -6121,15 +6121,15 @@ async function resolveExpeditions(db, k, engine) {
   console.log(
     `[expedition] kingdom=${k.id} active/stuck: ${exps.map((e) => `${e.type}(${e.turns_left}t)`).join(", ") || "none"}`,
   );
+
+  // Fetch fresh kingdom state once instead of once per expedition
+  const freshK = (await db.get("SELECT * FROM kingdoms WHERE id = ?", [k.id])) || k;
+
   const expeditionEvents = [];
   for (const exp of exps) {
     if (exp.turns_left > 0) {
-      // Fetch fresh k for racial bonus check
-      const freshKCheck =
-        (await db.get("SELECT race, troop_levels FROM kingdoms WHERE id = ?", [
-          k.id,
-        ])) || k;
-      const direWolfBonus = racialUnitBonus(freshKCheck, "rangers");
+      // Use pre-fetched freshK instead of fetching again
+      const direWolfBonus = racialUnitBonus(freshK, "rangers");
       const tickDown = direWolfBonus.earlyReturn ? 2 : 1;
       const newTurns = Math.max(0, exp.turns_left - tickDown);
       console.log(
@@ -6160,9 +6160,7 @@ async function resolveExpeditions(db, k, engine) {
     }
 
     try {
-      // Fetch fresh kingdom state to avoid stale merged values
-      const freshK =
-        (await db.get("SELECT * FROM kingdoms WHERE id = ?", [k.id])) || k;
+      // Use pre-fetched kingdom state to avoid stale merged values
       const { rewards, updates, events } = expeditionRewards(
         exp.type,
         exp.rangers,
