@@ -19,20 +19,20 @@ if (!fs.existsSync(soundsPath)) {
 }
 
 async function refreshInMemoryGoals(db) {
-  DAILY_GOALS.length = 0;
-  DAILY_GOALS.push(...DAILY_GOALS_DEFAULTS.map(g => ({ ...g })));
-
-  WEEKLY_GOALS.length = 0;
-  WEEKLY_GOALS.push(...WEEKLY_GOALS_DEFAULTS.map(g => ({ ...g })));
-
-  MONTHLY_GOALS.length = 0;
-  MONTHLY_GOALS.push(...MONTHLY_GOALS_DEFAULTS.map(g => ({ ...g })));
-
   try {
     const overrides = await db.all(
       `SELECT tier, goal_id, label, min_target, max_target, prize_type, prize_multiplier, active
        FROM admin_goal_definitions ORDER BY tier, goal_id`
     );
+
+    DAILY_GOALS.length = 0;
+    DAILY_GOALS.push(...DAILY_GOALS_DEFAULTS.map(g => ({ ...g })));
+
+    WEEKLY_GOALS.length = 0;
+    WEEKLY_GOALS.push(...WEEKLY_GOALS_DEFAULTS.map(g => ({ ...g })));
+
+    MONTHLY_GOALS.length = 0;
+    MONTHLY_GOALS.push(...MONTHLY_GOALS_DEFAULTS.map(g => ({ ...g })));
 
     for (const override of overrides) {
       const tier = override.tier;
@@ -1099,9 +1099,6 @@ module.exports = function (db, io) {
     if (maxTarget !== undefined && (maxTarget < 2 || maxTarget > 1000)) {
       return res.status(400).json({ error: "maxTarget must be between 2 and 1000" });
     }
-    if (minTarget !== undefined && maxTarget !== undefined && minTarget >= maxTarget) {
-      return res.status(400).json({ error: "minTarget must be less than maxTarget" });
-    }
     if (prizeMultiplier !== undefined && (prizeMultiplier < 0.5 || prizeMultiplier > 100)) {
       return res.status(400).json({ error: "prizeMultiplier must be between 0.5 and 100" });
     }
@@ -1111,9 +1108,24 @@ module.exports = function (db, io) {
 
     try {
       const existing = await db.get(
-        `SELECT 1 FROM admin_goal_definitions WHERE tier = ? AND goal_id = ?`,
+        `SELECT min_target, max_target FROM admin_goal_definitions WHERE tier = ? AND goal_id = ? AND active = 1`,
         [tier, goalId]
       );
+
+      const defaultsPool = tier === 'daily' ? DAILY_GOALS_DEFAULTS : tier === 'weekly' ? WEEKLY_GOALS_DEFAULTS : tier === 'monthly' ? MONTHLY_GOALS_DEFAULTS : [];
+      const defaultGoal = defaultsPool.find(g => g.id === goalId);
+      if (!existing && !defaultGoal) {
+        return res.status(404).json({ error: "Goal not found in defaults or overrides" });
+      }
+
+      const currentMin = existing ? existing.min_target : defaultGoal.min;
+      const currentMax = existing ? existing.max_target : defaultGoal.max;
+      const finalMin = minTarget !== undefined ? minTarget : currentMin;
+      const finalMax = maxTarget !== undefined ? maxTarget : currentMax;
+
+      if (finalMin >= finalMax) {
+        return res.status(400).json({ error: "minTarget must be less than maxTarget" });
+      }
 
       if (existing) {
         await db.run(
@@ -1136,12 +1148,6 @@ module.exports = function (db, io) {
           ]
         );
       } else {
-        const defaultsPool = tier === 'daily' ? DAILY_GOALS_DEFAULTS : tier === 'weekly' ? WEEKLY_GOALS_DEFAULTS : tier === 'monthly' ? MONTHLY_GOALS_DEFAULTS : [];
-        const defaultGoal = defaultsPool.find(g => g.id === goalId);
-        if (!defaultGoal) {
-          return res.status(404).json({ error: "Goal not found in defaults or overrides" });
-        }
-
         await db.run(
           `INSERT INTO admin_goal_definitions (tier, goal_id, label, min_target, max_target, prize_type, prize_multiplier, active)
            VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
