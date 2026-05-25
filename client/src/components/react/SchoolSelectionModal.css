@@ -1,0 +1,184 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(2px);
+}
+
+.modal-content.school-modal {
+  background: linear-gradient(135deg, var(--card-bg) 0%, rgba(255, 255, 255, 0.05) 100%);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  max-width: 900px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  padding: 32px;
+}
+
+.modal-header {
+  text-align: center;
+  margin-bottom: 32px;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 20px;
+}
+
+.modal-header h2 {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  color: var(--text1);
+}
+
+.modal-subtitle {
+  font-size: 14px;
+  color: var(--text3);
+  margin: 0;
+  font-weight: 500;
+}
+
+.schools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.school-card {
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.school-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  border-color: var(--accent1);
+}
+
+.school-card.selected {
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+  transform: scale(1.02);
+}
+
+.school-card[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.school-icon {
+  font-size: 40px;
+  line-height: 1;
+}
+
+.school-card h3 {
+  margin: 8px 0 4px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text1);
+}
+
+.school-card p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text3);
+  line-height: 1.4;
+}
+
+.selected-checkmark {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: var(--accent1);
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.school-card-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+.modal-footer {
+  text-align: center;
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+}
+
+.info-text {
+  font-size: 13px;
+  color: var(--text3);
+  margin: 0;
+  font-style: italic;
+}
+
+.error-message {
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid #FF6B6B;
+  color: #FF6B6B;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+@media (max-width: 600px) {
+  .modal-content.school-modal {
+    padding: 20px;
+    max-height: 90vh;
+  }
+
+  .modal-header h2 {
+    font-size: 22px;
+  }
+
+  .schools-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .school-card {
+    padding: 12px;
+  }
+
+  .school-icon {
+    font-size: 32px;
+  }
+}
