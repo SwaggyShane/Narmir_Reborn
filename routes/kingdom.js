@@ -2,20 +2,35 @@ const express = require("express");
 const engine = require("../game/engine");
 const { requireAuth } = require("./middleware");
 const { progressGoal } = require('../game/goals');
+const { safeJsonParse } = require('../utils/helpers');
 
 const router = express.Router();
 
-function safeJsonParse(str, fallback = {}, context = "unknown") {
-  if (!str) return fallback;
-  if (typeof str === "object") return str;
-  try {
-    return JSON.parse(str);
-  } catch (e) {
-    console.error(
-      `[JSON Parse Error] Context: ${context}. Error: ${e.message}. Data: ${str}`,
-    );
-    return fallback;
+// Parse all JSON fields on a kingdom object (used by /me endpoint)
+const JSON_FIELDS = {
+  'research_allocation': {}, 'mage_tower_allocation': {}, 'shrine_allocation': {},
+  'library_allocation': {}, 'library_progress': {}, 'tower_progress': {},
+  'scrolls': {}, 'active_effects': {}, 'discovered_kingdoms': {},
+  'build_queue': {}, 'build_progress': {}, 'build_allocation': {},
+  'troop_levels': {}, 'training_allocation': {}, 'smithy_allocation': {},
+  'racial_bonuses_unlocked': {}, 'active_event': {}, 'location_maps_wip': [],
+  'wall_upgrades': {}, 'tower_def_upgrades': {}, 'tower_upgrades': {},
+  'school_upgrades': {}, 'shrine_upgrades': {}, 'library_upgrades': {},
+  'farm_upgrades': {}, 'market_upgrades': {}, 'tavern_upgrades': {},
+  'bank_upgrades': {}, 'bank_deposits': [], 'mausoleum_upgrades': {},
+  'mausoleum_allocation': {}, 'ledger': [], 'mercenaries': [],
+  'collected_lore': [], 'collected_events': [], 'achievements': [],
+  'items': [], 'resource_sequence': {}, 'goals': {},
+  'outpost_upgrades': {}, 'defense_upgrades': {}, 'granary_upgrades': {},
+};
+
+function parseKingdomJson(k) {
+  for (const [field, defaultVal] of Object.entries(JSON_FIELDS)) {
+    if (k[field] !== undefined && k[field] !== null) {
+      k[field] = safeJsonParse(k[field], defaultVal, `me:${field}`);
+    }
   }
+  return k;
 }
 
 module.exports = function (db) {
@@ -25,134 +40,8 @@ module.exports = function (db) {
       [req.player.playerId],
     );
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
-    k.research_allocation = safeJsonParse(
-      k.research_allocation,
-      {},
-      "me:research_allocation",
-    );
-    k.mage_tower_allocation = safeJsonParse(
-      k.mage_tower_allocation,
-      {},
-      "me:mage_tower_allocation",
-    );
-    k.shrine_allocation = safeJsonParse(
-      k.shrine_allocation,
-      {},
-      "me:shrine_allocation",
-    );
-    k.library_allocation = safeJsonParse(
-      k.library_allocation,
-      {},
-      "me:library_allocation",
-    );
-    k.library_progress = safeJsonParse(
-      k.library_progress,
-      {},
-      "me:library_progress",
-    );
-    k.tower_progress = safeJsonParse(k.tower_progress, {}, "me:tower_progress");
-    k.scrolls = safeJsonParse(k.scrolls, {}, "me:scrolls");
-    k.active_effects = safeJsonParse(k.active_effects, {}, "me:active_effects");
-    k.discovered_kingdoms = safeJsonParse(
-      k.discovered_kingdoms,
-      {},
-      "me:discovered_kingdoms",
-    );
-    k.build_queue = safeJsonParse(k.build_queue, {}, "me:build_queue");
-    k.build_progress = safeJsonParse(k.build_progress, {}, "me:build_progress");
-    k.build_allocation = safeJsonParse(
-      k.build_allocation,
-      {},
-      "me:build_allocation",
-    );
-    k.troop_levels = safeJsonParse(k.troop_levels, {}, "me:troop_levels");
-    k.training_allocation = safeJsonParse(
-      k.training_allocation,
-      {},
-      "me:training_allocation",
-    );
-    k.smithy_allocation = safeJsonParse(
-      k.smithy_allocation,
-      {},
-      "me:smithy_allocation",
-    );
-    k.racial_bonuses_unlocked = safeJsonParse(
-      k.racial_bonuses_unlocked,
-      {},
-      "me:racial_bonuses_unlocked",
-    );
-    k.active_event = safeJsonParse(k.active_event, {}, "me:active_event");
-    k.location_maps_wip = safeJsonParse(
-      k.location_maps_wip,
-      [],
-      "me:location_maps_wip",
-    );
-    k.wall_upgrades = safeJsonParse(k.wall_upgrades, {}, "me:wall_upgrades");
-    k.tower_def_upgrades = safeJsonParse(
-      k.tower_def_upgrades,
-      {},
-      "me:tower_def_upgrades",
-    );
-    k.outpost_upgrades = safeJsonParse(
-      k.outpost_upgrades,
-      {},
-      "me:outpost_upgrades",
-    );
-    k.defense_upgrades = safeJsonParse(
-      k.defense_upgrades,
-      {},
-      "me:defense_upgrades",
-    );
-    k.tower_upgrades = safeJsonParse(k.tower_upgrades, {}, "me:tower_upgrades");
-    k.school_upgrades = safeJsonParse(
-      k.school_upgrades,
-      {},
-      "me:school_upgrades",
-    );
-    k.shrine_upgrades = safeJsonParse(
-      k.shrine_upgrades,
-      {},
-      "me:shrine_upgrades",
-    );
-    k.library_upgrades = safeJsonParse(
-      k.library_upgrades,
-      {},
-      "me:library_upgrades",
-    );
-    k.farm_upgrades = safeJsonParse(k.farm_upgrades, {}, "me:farm_upgrades");
-    k.market_upgrades = safeJsonParse(
-      k.market_upgrades,
-      {},
-      "me:market_upgrades",
-    );
-    k.tavern_upgrades = safeJsonParse(
-      k.tavern_upgrades,
-      {},
-      "me:tavern_upgrades",
-    );
-    k.bank_upgrades = safeJsonParse(k.bank_upgrades, {}, "me:bank_upgrades");
-    k.bank_deposits = safeJsonParse(k.bank_deposits, [], "me:bank_deposits");
-    k.mausoleum_upgrades = safeJsonParse(
-      k.mausoleum_upgrades,
-      {},
-      "me:mausoleum_upgrades",
-    );
-    k.mausoleum_allocation = safeJsonParse(
-      k.mausoleum_allocation,
-      {},
-      "me:mausoleum_allocation",
-    );
-    k.ledger = safeJsonParse(k.ledger, [], "me:ledger");
-    k.mercenaries = safeJsonParse(k.mercenaries, [], "me:mercenaries");
-    k.collected_lore = safeJsonParse(k.collected_lore, [], "me:collected_lore");
-    k.collected_events = safeJsonParse(
-      k.collected_events,
-      [],
-      "me:collected_events",
-    );
-    k.achievements = safeJsonParse(k.achievements, [], "me:achievements");
-    k.items = safeJsonParse(k.items, [], "me:items");
-    k.resource_sequence = safeJsonParse(k.resource_sequence, {}, "me:resource_sequence");
+
+    parseKingdomJson(k);
 
     k.score = engine.calculateScore(k);
     k.defense_rating = engine.defenseRating(k);
@@ -216,24 +105,50 @@ module.exports = function (db) {
         ) as last_combat_at
       FROM kingdoms k
       JOIN players p ON k.player_id = p.id
-      ORDER BY k.id
+      ORDER BY k.land DESC, k.population DESC
+      LIMIT 1000
     `);
 
-    // Calculate score
-    for (let r of rows) {
-      r.score = engine.calculateScore(r);
-    }
-
-    // Sort by score DESC
-    rows.sort((a, b) => b.score - a.score);
-
-    // Limit and discovery
+    // Get discovered kingdoms for user
     let disc = {};
     try {
       disc = safeJsonParse(pk.discovered_kingdoms, {}, "auto:discovered_kingdoms");
     } catch {}
 
-    const rankings = rows
+    // Calculate scores only for top 1000 candidates + discovered
+    const scoredRows = [];
+    const discoveredIds = new Set(Object.keys(disc).map(id => parseInt(id)));
+
+    for (let r of rows) {
+      r.score = engine.calculateScore(r);
+      scoredRows.push(r);
+    }
+
+    // Add any discovered kingdoms not in top 1000 (but skip expensive calculation if not needed)
+    if (discoveredIds.size > 0) {
+      const topIds = new Set(scoredRows.map(r => r.id));
+      if (discoveredIds.size > topIds.size) {
+        // Some discovered kingdoms aren't in top 1000, need to fetch and score them
+        const missingIds = Array.from(discoveredIds).filter(id => !topIds.has(id));
+        if (missingIds.length > 0) {
+          const placeholders = missingIds.map((_, i) => `$${i + 1}`).join(',');
+          const missingRows = await db.all(`
+            SELECT k.*, p.id as player_id, p.username, p.is_ai FROM kingdoms k
+            JOIN players p ON k.player_id = p.id
+            WHERE k.id IN (${placeholders})
+          `, missingIds);
+          for (let r of missingRows) {
+            r.score = engine.calculateScore(r);
+            scoredRows.push(r);
+          }
+        }
+      }
+    }
+
+    // Sort by score DESC
+    scoredRows.sort((a, b) => b.score - a.score);
+
+    const rankings = scoredRows
       .filter((r, i) => i < 500 || disc[r.id])
       .map((r, i) => ({
         id: r.id,
@@ -258,29 +173,46 @@ module.exports = function (db) {
 
   router.get("/alliance-rankings", requireAuth, async (req, res) => {
     try {
-      const rows = await db.all(`
-        SELECT a.id, a.name, k.*
+      // First, aggregate alliance data without expensive score calculations
+      const allianceStatsRows = await db.all(`
+        SELECT
+          a.id,
+          a.name,
+          COUNT(am.kingdom_id) as member_count,
+          SUM(k.land) as total_land,
+          SUM(k.population) as total_pop
+        FROM alliances a
+        LEFT JOIN alliance_members am ON a.id = am.alliance_id
+        LEFT JOIN kingdoms k ON am.kingdom_id = k.id
+        GROUP BY a.id, a.name
+      `);
+
+      // Now get all members for score calculation
+      const memberRows = await db.all(`
+        SELECT k.*, a.id as alliance_id
         FROM alliances a
         JOIN alliance_members am ON a.id = am.alliance_id
         JOIN kingdoms k ON am.kingdom_id = k.id
       `);
 
+      // Build alliance map with scores
       const allianceMap = {};
-      for (const r of rows) {
-        if (!allianceMap[r.id]) {
-          allianceMap[r.id] = {
-            id: r.id,
-            name: r.name,
-            member_count: 0,
-            total_land: 0,
-            total_pop: 0,
-            total_score: 0,
-          };
+      for (const stats of allianceStatsRows) {
+        allianceMap[stats.id] = {
+          id: stats.id,
+          name: stats.name,
+          member_count: stats.member_count || 0,
+          total_land: stats.total_land || 0,
+          total_pop: stats.total_pop || 0,
+          total_score: 0,
+        };
+      }
+
+      // Calculate scores for members and aggregate
+      for (const k of memberRows) {
+        if (allianceMap[k.alliance_id]) {
+          allianceMap[k.alliance_id].total_score += engine.calculateScore(k);
         }
-        allianceMap[r.id].member_count++;
-        allianceMap[r.id].total_land += r.land || 0;
-        allianceMap[r.id].total_pop += r.population || 0;
-        allianceMap[r.id].total_score += engine.calculateScore(r);
       }
 
       const results = Object.values(allianceMap);
@@ -408,13 +340,22 @@ module.exports = function (db) {
 
     try {
       await applyUpdates(db, k.id, updates);
-      for (const h of heroBatch) {
-        await db.run("UPDATE heroes SET level = ?, xp = ? WHERE id = ?", [
-          h.level,
-          h.xp,
-          h.id,
-        ]);
+
+      // Batch hero XP updates
+      if (heroBatch.length > 0) {
+        const heroIds = heroBatch.map(h => h.id);
+        const levels = heroBatch.map(h => h.level);
+        const xps = heroBatch.map(h => h.xp);
+        const placeholders = heroIds.map((_, i) => `$${i + 1}`).join(',');
+
+        await db.run(
+          `UPDATE heroes SET level = CASE id ${heroIds.map((_, i) => `WHEN $${i + 1} THEN $${heroIds.length + i + 1}`).join(' ')} END,
+           xp = CASE id ${heroIds.map((_, i) => `WHEN $${i + 1} THEN $${heroIds.length * 2 + i + 1}`).join(' ')} END
+           WHERE id IN (${placeholders})`,
+          [...heroIds, ...levels, ...xps]
+        );
       }
+
       const turnNum = updates.turn || k.turn;
       if (filteredEvents.length > 0) {
         await bulkInsertNews(
@@ -923,12 +864,16 @@ module.exports = function (db) {
       ]);
       if (!target) return res.status(404).json({ error: "Target not found" });
 
-      // Check caps
-      const currentRoutes = await db.get(
-        "SELECT COUNT(*) as count FROM trade_routes WHERE kingdom_id=? OR partner_id=?",
+      // Check caps (UNION allows index optimization vs OR)
+      const routeCount = await db.get(
+        `SELECT COUNT(*) as count FROM (
+          SELECT id FROM trade_routes WHERE kingdom_id=?
+          UNION ALL
+          SELECT id FROM trade_routes WHERE partner_id=?
+        ) t`,
         [k.id, k.id],
       );
-      if (currentRoutes.count >= (engine.TRADE_ROUTE_MAX || 5)) {
+      if (routeCount.count >= (engine.TRADE_ROUTE_MAX || 5)) {
         return res
           .status(400)
           .json({
@@ -1465,22 +1410,29 @@ module.exports = function (db) {
     );
     if (result.error) return res.status(400).json({ error: result.error });
 
-    // Update heroes in DB
+    // Update heroes in DB (batch updates)
+    const heroUpdates = [];
     for (const h of attackerHeroes) {
       const resHero = engine.awardHeroXp(h, result.win ? 500 : 100);
-      await db.run("UPDATE heroes SET xp = ?, level = ? WHERE id = ?", [
-        resHero.xp,
-        resHero.level,
-        h.id,
-      ]);
+      heroUpdates.push([resHero.xp, resHero.level, h.id]);
     }
     for (const h of defenderHeroes) {
       const resHero = engine.awardHeroXp(h, result.win ? 100 : 500);
-      await db.run("UPDATE heroes SET xp = ?, level = ? WHERE id = ?", [
-        resHero.xp,
-        resHero.level,
-        h.id,
-      ]);
+      heroUpdates.push([resHero.xp, resHero.level, h.id]);
+    }
+
+    if (heroUpdates.length > 0) {
+      const heroIds = heroUpdates.map(u => u[2]);
+      const xps = heroUpdates.map(u => u[0]);
+      const levels = heroUpdates.map(u => u[1]);
+      const placeholders = heroIds.map((_, i) => `$${i + 1}`).join(',');
+
+      await db.run(
+        `UPDATE heroes SET xp = CASE id ${heroIds.map((id, i) => `WHEN $${i + 1} THEN $${heroIds.length + i + 1}`).join(' ')} END,
+         level = CASE id ${heroIds.map((id, i) => `WHEN $${i + 1} THEN $${heroIds.length * 2 + i + 1}`).join(' ')} END
+         WHERE id IN (${placeholders})`,
+        [...heroIds, ...xps, ...levels]
+      );
     }
 
     progressGoal(k, result.attackerUpdates, 'attack_made', 1);
@@ -1500,13 +1452,21 @@ module.exports = function (db) {
       );
       if (activeBounties.length > 0) {
         let totalClaimed = 0;
+        const bountyIds = [];
         for (const b of activeBounties) {
           totalClaimed += b.amount;
+          bountyIds.push(b.id);
+        }
+
+        // Batch update all bounties in single query
+        if (bountyIds.length > 0) {
+          const placeholders = bountyIds.map((_, i) => `$${i + 3}`).join(',');
           await db.run(
-            "UPDATE bounties SET status = ?, claimed_by_id = ? WHERE id = ?",
-            ["claimed", k.id, b.id],
+            `UPDATE bounties SET status = $1, claimed_by_id = $2 WHERE id IN (${placeholders})`,
+            ["claimed", k.id, ...bountyIds],
           );
         }
+
         if (totalClaimed > 0) {
           await db.run("UPDATE kingdoms SET gold = gold + ? WHERE id = ?", [
             totalClaimed,

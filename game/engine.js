@@ -5,6 +5,7 @@
 const config = require("./config");
 const { progressGoal } = require('./goals');
 const fragmentBonusManager = require("./fragment-bonus-manager");
+const { safeJsonParse, roll, rand } = require('../utils/helpers');
 
 const {
   RACE_BONUSES,
@@ -125,41 +126,6 @@ function isNight() {
   return h >= 1 && h < 13; // 8PM EST to 8AM EST (EST is UTC-5)
 }
 
-const _parseCache = new Map();
-const MAX_CACHE_SIZE = 5000; // Prevent unbounded memory growth
-
-function clearParseCache() {
-  _parseCache.clear();
-}
-
-function safeJsonParse(str, fallback = {}, context = "unknown") {
-  if (!str) return fallback;
-  if (typeof str === "object") return str;
-  const cacheKey = `${context}:${str}`;
-  if (_parseCache.has(cacheKey)) {
-    // Move to end (most recently used)
-    const val = _parseCache.get(cacheKey);
-    _parseCache.delete(cacheKey);
-    _parseCache.set(cacheKey, val);
-    return val;
-  }
-
-  try {
-    const val = JSON.parse(str);
-    // Evict oldest entry if cache is full
-    if (_parseCache.size >= MAX_CACHE_SIZE) {
-      const oldestKey = _parseCache.keys().next().value;
-      _parseCache.delete(oldestKey);
-    }
-    _parseCache.set(cacheKey, val);
-    return val;
-  } catch (e) {
-    console.error(
-      `[JSON Parse Error] Context: ${context}. Error: ${e.message}. Data: ${str}`,
-    );
-    return fallback;
-  }
-}
 
 function raceBonus(kingdom, stat) {
   const bonuses = RACE_BONUSES[kingdom.race] || {};
@@ -5675,12 +5641,6 @@ function resolveAllianceDefense(attackResult, allies) {
 }
 
 // ── Expedition rewards ──────────────────────────────────────────────────────
-function roll(chance) {
-  return Math.random() < chance;
-}
-function rand(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
 
 function junkPrize(k, updates) {
   if (!JUNK_PRIZES || JUNK_PRIZES.length === 0)
@@ -6161,15 +6121,15 @@ async function resolveExpeditions(db, k, engine) {
   console.log(
     `[expedition] kingdom=${k.id} active/stuck: ${exps.map((e) => `${e.type}(${e.turns_left}t)`).join(", ") || "none"}`,
   );
+
+  // Fetch fresh kingdom state once instead of once per expedition
+  const freshK = (await db.get("SELECT * FROM kingdoms WHERE id = ?", [k.id])) || k;
+
   const expeditionEvents = [];
   for (const exp of exps) {
     if (exp.turns_left > 0) {
-      // Fetch fresh k for racial bonus check
-      const freshKCheck =
-        (await db.get("SELECT race, troop_levels FROM kingdoms WHERE id = ?", [
-          k.id,
-        ])) || k;
-      const direWolfBonus = racialUnitBonus(freshKCheck, "rangers");
+      // Use pre-fetched freshK instead of fetching again
+      const direWolfBonus = racialUnitBonus(freshK, "rangers");
       const tickDown = direWolfBonus.earlyReturn ? 2 : 1;
       const newTurns = Math.max(0, exp.turns_left - tickDown);
       console.log(
@@ -6200,9 +6160,7 @@ async function resolveExpeditions(db, k, engine) {
     }
 
     try {
-      // Fetch fresh kingdom state to avoid stale merged values
-      const freshK =
-        (await db.get("SELECT * FROM kingdoms WHERE id = ?", [k.id])) || k;
+      // Use pre-fetched kingdom state to avoid stale merged values
       const { rewards, updates, events } = expeditionRewards(
         exp.type,
         exp.rangers,
@@ -6408,6 +6366,8 @@ async function resolveExpeditions(db, k, engine) {
           ...Object.values(safeUpdates),
           k.id,
         ]);
+        // Update in-memory freshK so next expedition sees the changes
+        Object.assign(freshK, safeUpdates);
       }
       if (rangersReturned > 0)
         await db.run(
@@ -6420,6 +6380,10 @@ async function resolveExpeditions(db, k, engine) {
           [fightersReturned, k.id],
         );
 
+      // Update in-memory freshK for returned units
+      if (rangersReturned > 0) freshK.rangers = (freshK.rangers || 0) + rangersReturned;
+      if (fightersReturned > 0) freshK.fighters = (freshK.fighters || 0) + fightersReturned;
+
       // ONE news line only — rewards go to expedition log, not news feed
       const completionMsg = `${label} expedition returned — check the Explore tab for rewards.`;
       expeditionEvents.push({ type: "system", message: completionMsg });
@@ -6427,10 +6391,12 @@ async function resolveExpeditions(db, k, engine) {
       // Throne broadcast only
       if (serverAnnounce) {
         const allKingdoms = await db.all("SELECT id FROM kingdoms");
-        for (const ak of allKingdoms) {
+        if (allKingdoms.length > 0) {
+          const placeholders = allKingdoms.map((_, i) => `($${i + 1},'system',$${allKingdoms.length + 1},$${allKingdoms.length + 2})`).join(',');
+          const values = [...allKingdoms.map(ak => ak.id), serverAnnounce, k.turn];
           await db.run(
-            "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?, ?, ?, ?)",
-            [ak.id, "system", serverAnnounce, k.turn],
+            `INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ${placeholders}`,
+            values,
           );
         }
         if (engine.io)

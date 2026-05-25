@@ -59,27 +59,21 @@ const setupSockets    = require('./game/sockets');
 const engine          = require('./game/engine');
 const { requireAuth, requireAdmin } = require('./routes/middleware');
 const config = require('./game/config');
+const { safeJsonParse } = require('./utils/helpers');
 
 const app    = express();
 const server = http.createServer(app);
-const io     = new Server(server, { 
-  cors: { 
-    origin: process.env.NODE_ENV === 'production' ? (process.env.CORS_ORIGIN || false) : '*', 
-    credentials: true 
-  } 
+const io     = new Server(server, {
+  cors: {
+    origin: process.env.NODE_ENV === 'production' ? (process.env.CORS_ORIGIN || false) : '*',
+    credentials: true
+  }
 });
 
 const PORT = 3000;
 const HOST = '0.0.0.0';
 
 // ── Utility functions ────────────────────────────────────────────────────────
-function safeJsonParse(jsonString, defaultValue = {}) {
-  try {
-    return JSON.parse(jsonString || (typeof defaultValue === 'object' ? JSON.stringify(defaultValue) : defaultValue));
-  } catch {
-    return defaultValue;
-  }
-}
 
 // Normalize kingdom objects to ensure all expected numeric properties exist with defaults
 function normalizeKingdom(kingdom) {
@@ -750,6 +744,8 @@ async function runRegen(db) {
 
   // Fire daily events for all kingdoms
   const kingdoms = await db.all('SELECT * FROM kingdoms WHERE turn > 0');
+  const newsInserts = [];
+
   for (const k of kingdoms) {
     const result = await fireDailyEvent(db, k, season);
     if (result) {
@@ -758,9 +754,18 @@ async function runRegen(db) {
           await db.run(`UPDATE kingdoms SET ${col}=? WHERE id=?`, [val, k.id]);
         }
       }
-      await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)',
-        [k.id, 'system', result.message, k.turn]);
+      newsInserts.push([k.id, 'system', result.message, k.turn]);
     }
+  }
+
+  // Batch insert all news in single query
+  if (newsInserts.length > 0) {
+    const placeholders = newsInserts.map((_, i) => `($${i*4+1},$${i*4+2},$${i*4+3},$${i*4+4})`).join(',');
+    const values = newsInserts.flat();
+    await db.run(
+      `INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ${placeholders}`,
+      values
+    );
   }
 
   // Resolve regions - calculate dominance and capture progress
@@ -816,13 +821,27 @@ async function runRegen(db) {
 async function updateMarketPrices(db) {
   try {
     const prices = await db.all('SELECT * FROM market_prices');
+    if (prices.length === 0) return;
+
+    const priceIds = [];
+    const newPrices = [];
+
     for (const p of prices) {
       const drift = (p.base_price - p.current_price) / p.base_price * 0.22;
-      const change = 1 + (Math.random() * 0.54 - 0.27) + drift; // extreme volatility: [-27%, +27%] per pulse with scaled drift
+      const change = 1 + (Math.random() * 0.54 - 0.27) + drift;
       let newPrice = p.current_price * change;
       newPrice = Math.max(p.base_price * 0.15, Math.min(p.base_price * 6.0, newPrice));
-      await db.run('UPDATE market_prices SET current_price = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [newPrice, p.id]);
+      priceIds.push(p.id);
+      newPrices.push(newPrice);
     }
+
+    // Batch update all prices in single query
+    const placeholders = priceIds.map((_, i) => `$${i + 1}`).join(',');
+    await db.run(
+      `UPDATE market_prices SET current_price = CASE id ${priceIds.map((_, i) => `WHEN $${i + 1} THEN $${priceIds.length + i + 1}`).join(' ')} END,
+       updated_at = CURRENT_TIMESTAMP WHERE id IN (${placeholders})`,
+      [...priceIds, ...newPrices]
+    );
     console.log('[market] Prices fluctuated');
   } catch (e) {
     console.error('[market] Fluctuation failed:', e.message);
