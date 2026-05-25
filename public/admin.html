@@ -1720,10 +1720,13 @@
       <div id="atab-goals" class="atab" style="display: none">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
           <h2 style="margin: 0">🎯 Goals Configuration</h2>
-          <button class="btn" onclick="loadGoalsConfig()">↻ Refresh</button>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn" onclick="loadGoalsConfig()">↻ Refresh</button>
+            <button class="btn btn-gold" onclick="showAddGoalModal()">➕ Add Goal</button>
+          </div>
         </div>
         <p style="color: var(--text3); font-size: 13px; margin-bottom: 16px;">
-          Daily, weekly, and monthly goal definitions. Phase 2 displays current configuration. Phase 3 will add edit capabilities.
+          Click a goal card to edit. Use the Add Goal button to create new goals.
         </p>
 
         <!-- Daily Goals -->
@@ -1839,6 +1842,51 @@
           <button class="btn btn-gold" onclick="confirmEdit()">
             Save all changes
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Add Goal -->
+    <div class="modal-overlay" id="add-goal-modal" style="display: none;">
+      <div class="modal">
+        <h3>➕ Add New Goal</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+          <div>
+            <label style="color: var(--text3); font-size: 12px;">Tier</label>
+            <select id="add-goal-tier" style="width: 100%; padding: 6px; background: var(--bg2); color: var(--text1); border: 1px solid var(--border); border-radius: var(--radius);">
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+          <div>
+            <label style="color: var(--text3); font-size: 12px;">Goal ID</label>
+            <input type="text" id="add-goal-id" placeholder="e.g., spell_cast" style="width: 100%; padding: 6px; background: var(--bg2); color: var(--text1); border: 1px solid var(--border); border-radius: var(--radius);">
+          </div>
+          <div>
+            <label style="color: var(--text3); font-size: 12px;">Label</label>
+            <input type="text" id="add-goal-label" placeholder="e.g., Cast Spells" style="width: 100%; padding: 6px; background: var(--bg2); color: var(--text1); border: 1px solid var(--border); border-radius: var(--radius);">
+          </div>
+          <div>
+            <label style="color: var(--text3); font-size: 12px;">Min Target</label>
+            <input type="number" id="add-goal-min" placeholder="1-500" min="1" max="500" style="width: 100%; padding: 6px; background: var(--bg2); color: var(--text1); border: 1px solid var(--border); border-radius: var(--radius);">
+          </div>
+          <div>
+            <label style="color: var(--text3); font-size: 12px;">Max Target</label>
+            <input type="number" id="add-goal-max" placeholder="2-1000" min="2" max="1000" style="width: 100%; padding: 6px; background: var(--bg2); color: var(--text1); border: 1px solid var(--border); border-radius: var(--radius);">
+          </div>
+          <div>
+            <label style="color: var(--text3); font-size: 12px;">Prize Type</label>
+            <input type="text" id="add-goal-prize-type" placeholder="e.g., gold, mana" style="width: 100%; padding: 6px; background: var(--bg2); color: var(--text1); border: 1px solid var(--border); border-radius: var(--radius);">
+          </div>
+          <div>
+            <label style="color: var(--text3); font-size: 12px;">Prize Multiplier</label>
+            <input type="number" id="add-goal-prize-mult" placeholder="0.5-100" min="0.5" max="100" step="0.1" style="width: 100%; padding: 6px; background: var(--bg2); color: var(--text1); border: 1px solid var(--border); border-radius: var(--radius);">
+          </div>
+        </div>
+        <div class="modal-btns">
+          <button class="btn" onclick="closeAddGoalModal()">Cancel</button>
+          <button class="btn btn-gold" onclick="submitAddGoal()">Add Goal</button>
         </div>
       </div>
     </div>
@@ -2906,6 +2954,49 @@
           </div>
         `).join('');
         document.getElementById('goals-monthly').innerHTML = monthlyHtml || '<div style="color: var(--text3);">No monthly goals</div>';
+      }
+
+      function showAddGoalModal() {
+        document.getElementById('add-goal-modal').style.display = 'flex';
+        document.getElementById('add-goal-tier').value = 'daily';
+        document.getElementById('add-goal-id').value = '';
+        document.getElementById('add-goal-label').value = '';
+        document.getElementById('add-goal-min').value = '';
+        document.getElementById('add-goal-max').value = '';
+        document.getElementById('add-goal-prize-type').value = '';
+        document.getElementById('add-goal-prize-mult').value = '';
+      }
+
+      function closeAddGoalModal() {
+        document.getElementById('add-goal-modal').style.display = 'none';
+      }
+
+      async function submitAddGoal() {
+        const tier = document.getElementById('add-goal-tier').value;
+        const goalId = document.getElementById('add-goal-id').value.trim();
+        const label = document.getElementById('add-goal-label').value.trim();
+        const minTarget = parseInt(document.getElementById('add-goal-min').value);
+        const maxTarget = parseInt(document.getElementById('add-goal-max').value);
+        const prizeType = document.getElementById('add-goal-prize-type').value.trim();
+        const prizeMultiplier = parseFloat(document.getElementById('add-goal-prize-mult').value);
+
+        if (!goalId || !label || !prizeType || isNaN(minTarget) || isNaN(maxTarget) || isNaN(prizeMultiplier)) {
+          toast("All fields required and must be valid numbers", "error");
+          return;
+        }
+
+        const r = await api("POST", "/api/admin/goals/add", {
+          tier, goalId, label, minTarget, maxTarget, prizeType, prizeMultiplier
+        });
+
+        if (r.error) {
+          toast("Error: " + r.error, "error");
+          return;
+        }
+
+        toast("Goal added successfully", "success");
+        closeAddGoalModal();
+        loadGoalsConfig();
       }
 
       // ── GAME CONSTANTS ────────────────────────────────────────────
