@@ -2715,25 +2715,10 @@ function checkAchievements(k, updates, events) {
     achUpdated = true;
   }
 
-  // Constructor achievement: 500 buildings built
-  const totalBuildings =
-    (updates.bld_walls !== undefined ? updates.bld_walls : k.bld_walls || 0) +
-    (updates.bld_granaries !== undefined ? updates.bld_granaries : k.bld_granaries || 0) +
-    (updates.bld_barracks !== undefined ? updates.bld_barracks : k.bld_barracks || 0) +
-    (updates.bld_outposts !== undefined ? updates.bld_outposts : k.bld_outposts || 0) +
-    (updates.bld_guard_towers !== undefined ? updates.bld_guard_towers : k.bld_guard_towers || 0) +
-    (updates.bld_schools !== undefined ? updates.bld_schools : k.bld_schools || 0) +
-    (updates.bld_armories !== undefined ? updates.bld_armories : k.bld_armories || 0) +
-    (updates.bld_vaults !== undefined ? updates.bld_vaults : k.bld_vaults || 0) +
-    (updates.bld_smithies !== undefined ? updates.bld_smithies : k.bld_smithies || 0) +
-    (updates.bld_markets !== undefined ? updates.bld_markets : k.bld_markets || 0) +
-    (updates.bld_mage_towers !== undefined ? updates.bld_mage_towers : k.bld_mage_towers || 0) +
-    (updates.bld_shrines !== undefined ? updates.bld_shrines : k.bld_shrines || 0) +
-    (updates.bld_mausoleums !== undefined ? updates.bld_mausoleums : k.bld_mausoleums || 0) +
-    (updates.bld_taverns !== undefined ? updates.bld_taverns : k.bld_taverns || 0) +
-    (updates.bld_libraries !== undefined ? updates.bld_libraries : k.bld_libraries || 0) +
-    (updates.bld_training !== undefined ? updates.bld_training : k.bld_training || 0) +
-    (updates.bld_castles !== undefined ? updates.bld_castles : k.bld_castles || 0);
+  // Calculate total buildings from all building types
+  const totalBuildings = Object.values(BUILDING_COL)
+    .filter(col => col.startsWith('bld_'))
+    .reduce((sum, col) => sum + (updates[col] !== undefined ? updates[col] : k[col] || 0), 0);
 
   if (!ach.includes("ach_constructor") && totalBuildings >= 500) {
     ach.push("ach_constructor");
@@ -2743,7 +2728,7 @@ function checkAchievements(k, updates, events) {
     events.push({
       type: "system",
       message:
-        `🏆 ACHIEVEMENT UNLOCKED: Constructor! Your expertise grants ${smithiesToAdd} Smithies, bringing your total to 100.`,
+        `🏆 ACHIEVEMENT UNLOCKED: Constructor! Your expertise grants ${smithiesToAdd} Smithies, bringing your total to ${currentSmithies + smithiesToAdd}.`,
     });
     achUpdated = true;
   }
