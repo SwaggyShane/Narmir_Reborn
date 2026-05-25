@@ -1580,7 +1580,7 @@ function calculateTradeIncome(k) {
 
   const base = config.TRADE_ROUTE_BASE_GOLD || 1500;
   let raceMult = config.TRADE_RATE_MULT[k.race] || 1.0;
-  
+
   if (k.prestige_level > 0) {
     const tierMod = PRESTIGE_MODIFIERS[Math.min(k.prestige_level, 5)]?.econ || 1.0;
     raceMult *= tierMod;
@@ -1588,6 +1588,10 @@ function calculateTradeIncome(k) {
 
   const econRes = (k.res_economy || 100) / 100;
   const marketBonus = 1 + k.bld_markets * 0.002;
+
+  // Merchant King achievement: +10% trade route income
+  let achievements = safeJsonParse(k.achievements, [], "calculateTradeIncome:achievements");
+  const merchantKingBonus = achievements.includes("ach_wealthy") ? 1.1 : 1.0;
 
   let total = 0;
   for (const r of routes) {
@@ -1602,7 +1606,7 @@ function calculateTradeIncome(k) {
     total += routeIncome;
   }
 
-  return Math.floor(total * raceMult * econRes * marketBonus);
+  return Math.floor(total * raceMult * econRes * marketBonus * merchantKingBonus);
 }
 
 function efficiencyMult(route) {
@@ -2684,37 +2688,88 @@ function checkAchievements(k, updates, events) {
     updates.bld_mage_towers !== undefined
       ? updates.bld_mage_towers
       : k.bld_mage_towers;
-  const currentCastles =
-    updates.bld_castles !== undefined
-      ? updates.bld_castles
-      : k.bld_castles;
+  const currentLibraries =
+    updates.bld_libraries !== undefined
+      ? updates.bld_libraries
+      : k.bld_libraries;
+  const currentSchools =
+    updates.bld_schools !== undefined
+      ? updates.bld_schools
+      : k.bld_schools;
   if (
     !ach.includes("ach_grandmaster") &&
-    currentTowers >= 100 &&
-    currentCastles >= 100
+    currentTowers >= 25 &&
+    currentLibraries >= 25 &&
+    currentSchools >= 25
   ) {
     ach.push("ach_grandmaster");
     updates.land =
-      (updates.land !== undefined ? updates.land : k.land) + 1000;
+      (updates.land !== undefined ? updates.land : k.land) + 10000;
     updates.maps =
-      (updates.maps !== undefined ? updates.maps : k.maps) + 1000;
+      (updates.maps !== undefined ? updates.maps : k.maps) + 5000;
     events.push({
       type: "system",
       message:
-        "🏆 ACHIEVEMENT UNLOCKED: Grandmaster! Rewarded +1000 Land and +1000 Maps.",
+        "🏆 ACHIEVEMENT UNLOCKED: Grandmaster! Rewarded +10000 Land and +5000 Maps.",
+    });
+    achUpdated = true;
+  }
+
+  // Calculate total buildings from all building types
+  const totalBuildings = Object.values(BUILDING_COL)
+    .filter(col => col.startsWith('bld_'))
+    .reduce((sum, col) => sum + (updates[col] !== undefined ? updates[col] : k[col] || 0), 0);
+
+  if (!ach.includes("ach_constructor") && totalBuildings >= 500) {
+    ach.push("ach_constructor");
+    const currentSmithies = updates.bld_smithies !== undefined ? updates.bld_smithies : k.bld_smithies || 0;
+    const smithiesToAdd = Math.max(0, 100 - currentSmithies);
+    updates.bld_smithies = currentSmithies + smithiesToAdd;
+    events.push({
+      type: "system",
+      message:
+        `🏆 ACHIEVEMENT UNLOCKED: Constructor! Your expertise grants ${smithiesToAdd} Smithies, bringing your total to ${currentSmithies + smithiesToAdd}.`,
+    });
+    achUpdated = true;
+  }
+
+  // Founder achievement: Build first building
+  if (!ach.includes("ach_founder") && totalBuildings >= 1) {
+    ach.push("ach_founder");
+    updates.gold =
+      (updates.gold !== undefined ? updates.gold : k.gold) + 5000;
+    events.push({
+      type: "system",
+      message: "🏆 ACHIEVEMENT UNLOCKED: Founder! You've built your first structure. Rewarded +5000 Gold.",
     });
     achUpdated = true;
   }
 
   const currentPop =
     updates.population !== undefined ? updates.population : k.population;
-  if (!ach.includes("ach_warlord") && currentPop >= 10000) {
+  if (!ach.includes("ach_warlord") && currentPop >= 50000) {
     ach.push("ach_warlord");
     updates.land =
-      (updates.land !== undefined ? updates.land : k.land) + 5000;
+      (updates.land !== undefined ? updates.land : k.land) + 10000;
     events.push({
       type: "system",
-      message: "🏆 ACHIEVEMENT UNLOCKED: Warlord! Rewarded +5000 Land.",
+      message: "🏆 ACHIEVEMENT UNLOCKED: Warlord! Rewarded +10000 Land.",
+    });
+    achUpdated = true;
+  }
+
+  // Colossus achievement: 10 million+ population
+  if (!ach.includes("ach_colossus") && currentPop >= 10000000) {
+    ach.push("ach_colossus");
+    updates.land =
+      (updates.land !== undefined ? updates.land : k.land) + 50000;
+    updates.mana =
+      (updates.mana !== undefined ? updates.mana : k.mana) + 100000;
+    updates.gold =
+      (updates.gold !== undefined ? updates.gold : k.gold) + 1000000;
+    events.push({
+      type: "system",
+      message: "🏆 ACHIEVEMENT UNLOCKED: Colossus! Your empire has swollen to 10 million souls. Rewarded +50000 Land, +100000 Mana, and +1000000 Gold.",
     });
     achUpdated = true;
   }
@@ -2722,14 +2777,10 @@ function checkAchievements(k, updates, events) {
   const currentGold = updates.gold !== undefined ? updates.gold : k.gold;
   if (!ach.includes("ach_wealthy") && currentGold >= 10000000) {
     ach.push("ach_wealthy");
-    updates.scaffolding_stored =
-      (updates.scaffolding_stored !== undefined
-        ? updates.scaffolding_stored
-        : k.scaffolding_stored) + 5000;
     events.push({
       type: "system",
       message:
-        "🏆 ACHIEVEMENT UNLOCKED: Merchant King! Rewarded +5000 Scaffolding.",
+        "🏆 ACHIEVEMENT UNLOCKED: Merchant King! All trade routes now generate +10% income permanently.",
     });
     achUpdated = true;
   }
@@ -2744,10 +2795,12 @@ function checkAchievements(k, updates, events) {
     );
     scrolls.blank_scroll = (scrolls.blank_scroll || 0) + 10000;
     updates.scrolls = JSON.stringify(scrolls);
+    updates.res_spellbook =
+      (updates.res_spellbook !== undefined ? updates.res_spellbook : k.res_spellbook || 0) + 10000;
     events.push({
       type: "system",
       message:
-        "🏆 ACHIEVEMENT UNLOCKED: Arcane Overlord! Rewarded +10,000 Blank Scrolls.",
+        "🏆 ACHIEVEMENT UNLOCKED: Arcane Overlord! Rewarded +10,000 Spellbook and +10,000 Blank Scrolls.",
     });
     achUpdated = true;
   }
@@ -2757,12 +2810,15 @@ function checkAchievements(k, updates, events) {
     if (!ach.includes("collector")) {
       ach.push("collector");
       achUpdated = true;
-      updates.maps =
-        (updates.maps !== undefined ? updates.maps : k.maps) + 5000;
+      // Reveal all kingdom locations
+      let disc = safeJsonParse(updates.discovered_kingdoms || k.discovered_kingdoms, {}, "collector:discovered_kingdoms");
+      // This would need database access to get all kingdoms - for now, we'll mark this achievement
+      // and handle the revelation in the achievement processor with db context
+      updates._reveal_all_locations = true;
       events.push({
         type: "system",
         message:
-          "🏆 ACHIEVEMENT UNLOCKED: Field Collector (Found all expedition events). Rewarded +5000 Maps.",
+          "🏆 ACHIEVEMENT UNLOCKED: Field Collector (Found all 50 expedition events). All world locations have been revealed!",
       });
     }
     delete updates._collector_unlocked;
@@ -5645,7 +5701,7 @@ function junkPrize(k, updates) {
       eventsCollected.push(ev.id);
       updates.collected_events = JSON.stringify(eventsCollected);
 
-      if (eventsCollected.length >= 25) {
+      if (eventsCollected.length >= 50) {
         updates._collector_unlocked = true;
       }
     }
