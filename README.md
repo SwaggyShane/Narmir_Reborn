@@ -1,6 +1,6 @@
 # Narmir — Land of Magic and Conquest
 
-A browser-based multiplayer kingdom management game with real-time chat, turn-based strategy, and deep race customisation. Built with Node.js, Express, Socket.io, and SQLite.
+A browser-based multiplayer kingdom management game with real-time chat, turn-based strategy, and deep race customisation. Built with Node.js, Express, Socket.io, and PostgreSQL.
 
 ---
 
@@ -18,10 +18,10 @@ A browser-based multiplayer kingdom management game with real-time chat, turn-ba
 | Runtime | Node.js |
 | Framework | Express |
 | Real-time | Socket.io |
-| Database | SQLite (via `better-sqlite3` wrapper) |
+| Database | PostgreSQL (via `pg` driver) |
 | Auth | JWT — httpOnly cookie + localStorage fallback |
 | Frontend | Vanilla JS, single-file HTML/CSS |
-| Hosting | Render (persistent disk at `/data/narmir.db`) |
+| Hosting | Render (persistent PostgreSQL database) |
 
 ---
 
@@ -38,7 +38,7 @@ node index.js
 |---|---|
 | `JWT_SECRET` | Secret key for JWT signing |
 | `ADMIN_SECRET` | Password for admin panel access |
-| `DB_PATH` | Path to SQLite database (default: `/data/narmir.db`) |
+| `DATABASE_URL` | PostgreSQL connection string (e.g., `postgres://user:pass@host:5432/narmir`) |
 | `PORT` | Server port (default: 3000) |
 
 ---
