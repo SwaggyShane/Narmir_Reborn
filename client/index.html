@@ -15633,7 +15633,7 @@
 
           var portraitUrl = RACE_PORTRAITS[key];
           var portraitHtml = portraitUrl
-            ? '<img src="' + portraitUrl + '" style="width: 100%; max-height: 180px; aspect-ratio: auto; object-fit: cover; border-radius: var(--radius); margin-bottom: 12px; display: block;" alt="' + (r.title || r.label || key) + '" onerror="this.style.display=\'none\'" />'
+            ? '<img src="' + portraitUrl + '" style="width: 100%; max-height: 180px; aspect-ratio: 3 / 4; object-fit: cover; border-radius: var(--radius); margin-bottom: 12px; display: block;" alt="' + (r.title || r.label || key) + '" onerror="this.style.display=\'none\'" />'
             : '';
 
           html.push(
