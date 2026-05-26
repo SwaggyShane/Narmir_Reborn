@@ -838,7 +838,7 @@ async function updateMarketPrices(db) {
     // Batch update all prices in single query
     const placeholders = priceIds.map((_, i) => `$${i + 1}`).join(',');
     await db.run(
-      `UPDATE market_prices SET current_price = CASE id ${priceIds.map((_, i) => `WHEN $${i + 1} THEN $${priceIds.length + i + 1}`).join(' ')} END,
+      `UPDATE market_prices SET current_price = CASE id ${priceIds.map((_, i) => `WHEN $${i + 1} THEN $${priceIds.length + i + 1}::REAL`).join(' ')} END,
        updated_at = CURRENT_TIMESTAMP WHERE id IN (${placeholders})`,
       [...priceIds, ...newPrices]
     );
