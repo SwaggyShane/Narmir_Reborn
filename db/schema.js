@@ -68,7 +68,7 @@ function translateSqlForPg(sql) {
 
 // Cache numeric field names for efficient conversion (PostgreSQL NUMERIC returns strings)
 const NUMERIC_FIELDS = [
-  'gold', 'mana', 'turn', 'xp', 'research_progress',
+  'gold', 'mana', 'turn', 'xp',
   'population', 'morale', 'tax', 'land', 'food',
   'food_surplus_turns', 'food_shortage_turns', 'turns_stored',
   'level', 'prestige_level', 'progress'
