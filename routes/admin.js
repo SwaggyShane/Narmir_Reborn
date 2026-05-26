@@ -1193,8 +1193,8 @@ module.exports = function (db, io) {
     if (minTarget >= maxTarget) {
       return res.status(400).json({ error: "minTarget must be less than maxTarget" });
     }
-    if (prizeMultiplier < 0.5 || prizeMultiplier > 100) {
-      return res.status(400).json({ error: "prizeMultiplier must be between 0.5 and 100" });
+    if (prizeMultiplier < 0.5 || prizeMultiplier > 10000) {
+      return res.status(400).json({ error: "prizeMultiplier must be between 0.5 and 10000" });
     }
     if (!ALLOWED_PRIZE_TYPES.includes(prizeType)) {
       return res.status(400).json({ error: `Invalid prizeType. Allowed: ${ALLOWED_PRIZE_TYPES.join(', ')}` });
