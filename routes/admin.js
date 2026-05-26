@@ -1267,45 +1267,90 @@ module.exports = function (db, io) {
   });
 
   // ── GAME CONSTANTS ────────────────────────────────────────────────────────
+  const { validateConstant, getSectionConstants } = require('../game/constants-schema');
+  const { getConstantsForSection, refreshConstants } = require('../game/constants-loader');
+
   router.get("/constants", async (_req, res) => {
-    const constants = {
-      gameplay: {
-        maxLevel: 500,
-        unitCost: config.UNIT_COST,
-        maxResearch: config.MAX_RESEARCH,
-        tradeRouteMax: config.TRADE_ROUTE_MAX,
-        tradeRouteBaseGold: config.TRADE_ROUTE_BASE_GOLD,
-        tradeRouteEstablishCost: config.TRADE_ROUTE_ESTABLISH_COST
-      },
-      goals: {
-        dailyCount: GOAL_COUNTS.daily.count,
-        dailyResetMs: GOAL_COUNTS.daily.resetMs,
-        weeklyCount: GOAL_COUNTS.weekly.count,
-        weeklyResetMs: GOAL_COUNTS.weekly.resetMs,
-        monthlyCount: GOAL_COUNTS.monthly.count,
-        monthlyResetMs: GOAL_COUNTS.monthly.resetMs
-      },
-      expeditions: config.EXPEDITION_CONSTANTS,
-      combat: config.COMBAT_CONSTANTS
-    };
-    res.json(constants);
+    try {
+      // Fetch all overrides from database
+      const overrides = await db.all(`
+        SELECT section, constant_key, override_value, data_type
+        FROM admin_game_constants
+        ORDER BY section, constant_key
+      `);
+
+      // Build response with all sections and override status
+      const sections = ['gameplay', 'goals', 'expeditions', 'combat'];
+      const response = {};
+
+      for (const section of sections) {
+        response[section] = getConstantsForSection(section, overrides);
+      }
+
+      res.json(response);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   // POST /api/admin/constants/update — update a game constant
   router.post("/constants/update", async (req, res) => {
-    const { path, value } = req.body;
-    if (!path || value === undefined) {
-      return res.status(400).json({ error: "path and value required" });
+    const { section, constantKey, value } = req.body;
+
+    if (!section || !constantKey || value === undefined) {
+      return res.status(400).json({ error: "section, constantKey, and value required" });
     }
 
-    // Note: In a production system, constants would be stored in database
-    // For now, this validates the request structure
-    res.json({
-      ok: true,
-      message: "Constant update endpoint ready - database storage needed for persistence",
-      path,
-      value
-    });
+    // Validate against schema
+    const validation = validateConstant(section, constantKey, value);
+    if (!validation.valid) {
+      return res.status(400).json({ error: validation.error });
+    }
+
+    try {
+      const numValue = parseFloat(value);
+
+      // Insert or update override in database
+      await db.run(
+        `INSERT INTO admin_game_constants (section, constant_key, override_value, data_type, created_at, updated_at)
+         VALUES (?, ?, ?, 'number', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+         ON CONFLICT (section, constant_key) DO UPDATE SET
+           override_value = EXCLUDED.override_value,
+           updated_at = CURRENT_TIMESTAMP`,
+        [section, constantKey, String(numValue)]
+      );
+
+      // Refresh merged constants in memory
+      await refreshConstants(db);
+
+      res.json({ ok: true, message: "Constant updated successfully", newValue: numValue });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // POST /api/admin/constants/revert — revert a constant to default
+  router.post("/constants/revert", async (req, res) => {
+    const { section, constantKey } = req.body;
+
+    if (!section || !constantKey) {
+      return res.status(400).json({ error: "section and constantKey required" });
+    }
+
+    try {
+      // Delete override from database
+      await db.run(
+        `DELETE FROM admin_game_constants WHERE section = ? AND constant_key = ?`,
+        [section, constantKey]
+      );
+
+      // Refresh merged constants in memory
+      await refreshConstants(db);
+
+      res.json({ ok: true, message: "Constant reverted to default" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   return router;

@@ -1588,6 +1588,10 @@ if (process.env.NODE_ENV !== 'production' && vite) {
   await refreshInMemoryGoals(db);
   console.log('[boot] In-memory goals loaded from database');
 
+  const { initializeConstants } = require('./game/constants-loader');
+  await initializeConstants(db);
+  console.log('[boot] Game constants loaded from database');
+
   server.listen(PORT, HOST, () => {
     console.log(`[boot] Server listening on http://localhost:${PORT}`);
   });
