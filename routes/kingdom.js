@@ -608,6 +608,16 @@ module.exports = function (db) {
     });
   });
 
+  // ── Get training allocation ────────────────────────────────────────────────
+  router.get("/training-allocation", requireAuth, async (req, res) => {
+    const k = await db.get("SELECT training_allocation FROM kingdoms WHERE player_id = ?", [
+      req.player.playerId,
+    ]);
+    if (!k) return res.status(404).json({ error: "Kingdom not found" });
+    const allocation = safeJsonParse(k.training_allocation, {}, "GET /training-allocation");
+    res.json({ allocation });
+  });
+
   // ── Save training allocation ───────────────────────────────────────────────
   router.post("/training-allocation", requireAuth, async (req, res) => {
     const { allocation } = req.body;
