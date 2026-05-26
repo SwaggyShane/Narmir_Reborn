@@ -1881,7 +1881,7 @@
           </div>
           <div>
             <label style="color: var(--text3); font-size: 12px;">Prize Multiplier</label>
-            <input type="number" id="add-goal-prize-mult" placeholder="0.5-10000" min="0.5" max="10000" step="0.1" style="width: 100%; padding: 6px; background: var(--bg2); color: var(--text1); border: 1px solid var(--border); border-radius: var(--radius);">
+            <input type="number" id="add-goal-prize-mult" placeholder="0.5-10000" min="0.5" max="10000" step="0.1" data-qty-fixed="true" style="width: 100%; padding: 6px; background: var(--bg2); color: var(--text1); border: 1px solid var(--border); border-radius: var(--radius);">
           </div>
         </div>
         <div class="modal-btns">
@@ -3042,8 +3042,8 @@
         const tier = document.getElementById('add-goal-tier').value;
         const goalId = document.getElementById('add-goal-id').value.trim();
         const label = document.getElementById('add-goal-label').value.trim();
-        const minTarget = parseInt(document.getElementById('add-goal-min').value);
-        const maxTarget = parseInt(document.getElementById('add-goal-max').value);
+        const minTarget = parseInt(document.getElementById('add-goal-min').value, 10);
+        const maxTarget = parseInt(document.getElementById('add-goal-max').value, 10);
         const prizeType = document.getElementById('add-goal-prize-type').value.trim();
         const prizeMultiplier = parseFloat(document.getElementById('add-goal-prize-mult').value);
 
@@ -3124,8 +3124,8 @@
         const tier = document.getElementById('edit-goal-tier').value;
         const goalId = document.getElementById('edit-goal-id').value;
         const label = document.getElementById('edit-goal-label').value.trim();
-        const minTarget = parseInt(minInput.value);
-        const maxTarget = parseInt(maxInput.value);
+        const minTarget = parseInt(minInput.value, 10);
+        const maxTarget = parseInt(maxInput.value, 10);
         const prizeType = document.getElementById('edit-goal-prize-type').value.trim();
         const prizeMultiplier = parseFloat(multInput.value);
 
