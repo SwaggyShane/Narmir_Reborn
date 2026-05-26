@@ -1005,7 +1005,8 @@ async function start() {
     app.use('/api/auth',         authLimiter,  require('./routes/auth')(db));
     app.use('/api/kingdom',      turnLimiter,  require('./routes/kingdom')(db));
     app.use('/api/hero',         turnLimiter,  require('./routes/hero')(db));
-    app.use('/api/admin',                    require('./routes/admin')(db, io));
+    const adminRouter = require('./routes/admin')(db, io);
+    app.use('/api/admin', adminRouter);
 
   app.get('/api/alliance/list', requireAuth, async (req, res) => {
     const rows = await db.all(`
@@ -1582,6 +1583,14 @@ if (process.env.NODE_ENV !== 'production' && vite) {
   engine.io = io;
   global._narmir_io = io;
   console.log('[socket.io] Real-time handlers registered');
+
+  const { refreshInMemoryGoals } = require('./routes/admin');
+  await refreshInMemoryGoals(db);
+  console.log('[boot] In-memory goals loaded from database');
+
+  const { initializeConstants } = require('./game/constants-loader');
+  await initializeConstants(db);
+  console.log('[boot] Game constants loaded from database');
 
   server.listen(PORT, HOST, () => {
     console.log(`[boot] Server listening on http://localhost:${PORT}`);

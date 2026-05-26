@@ -7,9 +7,71 @@ const fs = require("fs");
 const config = require("../game/config");
 const { GOAL_COUNTS, DAILY_GOALS, WEEKLY_GOALS, MONTHLY_GOALS } = require("../game/goals");
 
+const ALLOWED_PRIZE_TYPES = ['gold', 'mana', 'rangers', 'researchers', 'war_machines', 'world_fragment'];
+
+const DAILY_GOALS_DEFAULTS = DAILY_GOALS.map(g => ({ ...g }));
+const WEEKLY_GOALS_DEFAULTS = WEEKLY_GOALS.map(g => ({ ...g }));
+const MONTHLY_GOALS_DEFAULTS = MONTHLY_GOALS.map(g => ({ ...g }));
+
 const soundsPath = path.join(__dirname, "..", "public", "sounds");
 if (!fs.existsSync(soundsPath)) {
   fs.mkdirSync(soundsPath, { recursive: true });
+}
+
+async function refreshInMemoryGoals(db) {
+  try {
+    const overrides = await db.all(
+      `SELECT tier, goal_id, label, min_target, max_target, prize_type, prize_multiplier, active
+       FROM admin_goal_definitions ORDER BY tier, goal_id`
+    );
+
+    DAILY_GOALS.length = 0;
+    DAILY_GOALS.push(...DAILY_GOALS_DEFAULTS.map(g => ({ ...g })));
+
+    WEEKLY_GOALS.length = 0;
+    WEEKLY_GOALS.push(...WEEKLY_GOALS_DEFAULTS.map(g => ({ ...g })));
+
+    MONTHLY_GOALS.length = 0;
+    MONTHLY_GOALS.push(...MONTHLY_GOALS_DEFAULTS.map(g => ({ ...g })));
+
+    for (const override of overrides) {
+      const tier = override.tier;
+      const pool = tier === 'daily' ? DAILY_GOALS : tier === 'weekly' ? WEEKLY_GOALS : tier === 'monthly' ? MONTHLY_GOALS : null;
+      if (!pool) continue;
+
+      const idx = pool.findIndex(g => g.id === override.goal_id);
+
+      if (override.active === 0) {
+        if (idx !== -1) {
+          pool.splice(idx, 1);
+        }
+      } else {
+        if (idx !== -1) {
+          pool[idx] = {
+            ...pool[idx],
+            label: override.label,
+            min: override.min_target,
+            max: override.max_target,
+            prizeStr: override.prize_type,
+            prizeType: override.prize_type,
+            prizeMult: override.prize_multiplier
+          };
+        } else {
+          pool.push({
+            id: override.goal_id,
+            label: override.label,
+            min: override.min_target,
+            max: override.max_target,
+            prizeStr: override.prize_type,
+            prizeType: override.prize_type,
+            prizeMult: override.prize_multiplier
+          });
+        }
+      }
+    }
+  } catch (err) {
+    console.error("[admin] Error refreshing goals:", err.message);
+  }
 }
 
 const storage = multer.diskStorage({
@@ -1017,70 +1079,281 @@ module.exports = function (db, io) {
     });
   });
 
-  // POST /api/admin/goals/update — update a goal definition
-  router.post("/goals/update", async (req, res) => {
-    const { tier, goalId, updates } = req.body;
-    if (!tier || !goalId || !updates) {
-      return res.status(400).json({ error: "tier, goalId, and updates required" });
+  // POST /api/admin/goals/edit — update an existing goal definition
+  router.post("/goals/edit", async (req, res) => {
+    const { tier, goalId, label, minTarget, maxTarget, prizeType, prizeMultiplier } = req.body;
+
+    if (!tier || !goalId) {
+      return res.status(400).json({ error: "tier and goalId required" });
     }
 
     const validTiers = ['daily', 'weekly', 'monthly'];
     if (!validTiers.includes(tier)) {
-      return res.status(400).json({ error: "Invalid tier" });
+      return res.status(400).json({ error: "Invalid tier (daily/weekly/monthly)" });
     }
 
-    // Note: In a production system, goals would be stored in database
-    // For now, this validates the request structure
-    res.json({
-      ok: true,
-      message: "Goal update endpoint ready - database storage needed for persistence",
-      tier,
-      goalId,
-      updates
-    });
+    // Validation
+    if (minTarget !== undefined && (minTarget < 1 || minTarget > 500)) {
+      return res.status(400).json({ error: "minTarget must be between 1 and 500" });
+    }
+    if (maxTarget !== undefined && (maxTarget < 2 || maxTarget > 1000)) {
+      return res.status(400).json({ error: "maxTarget must be between 2 and 1000" });
+    }
+    if (prizeMultiplier !== undefined && (prizeMultiplier < 0.5 || prizeMultiplier > 100)) {
+      return res.status(400).json({ error: "prizeMultiplier must be between 0.5 and 100" });
+    }
+    if (prizeType !== undefined && !ALLOWED_PRIZE_TYPES.includes(prizeType)) {
+      return res.status(400).json({ error: `Invalid prizeType. Allowed: ${ALLOWED_PRIZE_TYPES.join(', ')}` });
+    }
+
+    try {
+      const existing = await db.get(
+        `SELECT min_target, max_target FROM admin_goal_definitions WHERE tier = ? AND goal_id = ? AND active = 1`,
+        [tier, goalId]
+      );
+
+      const defaultsPool = tier === 'daily' ? DAILY_GOALS_DEFAULTS : tier === 'weekly' ? WEEKLY_GOALS_DEFAULTS : tier === 'monthly' ? MONTHLY_GOALS_DEFAULTS : [];
+      const defaultGoal = defaultsPool.find(g => g.id === goalId);
+      if (!existing && !defaultGoal) {
+        return res.status(404).json({ error: "Goal not found in defaults or overrides" });
+      }
+
+      const currentMin = existing ? existing.min_target : defaultGoal.min;
+      const currentMax = existing ? existing.max_target : defaultGoal.max;
+      const finalMin = minTarget !== undefined ? minTarget : currentMin;
+      const finalMax = maxTarget !== undefined ? maxTarget : currentMax;
+
+      if (finalMin >= finalMax) {
+        return res.status(400).json({ error: "minTarget must be less than maxTarget" });
+      }
+
+      if (existing) {
+        await db.run(
+          `UPDATE admin_goal_definitions
+           SET label = COALESCE(?, label),
+               min_target = COALESCE(?, min_target),
+               max_target = COALESCE(?, max_target),
+               prize_type = COALESCE(?, prize_type),
+               prize_multiplier = COALESCE(?, prize_multiplier),
+               updated_at = CURRENT_TIMESTAMP
+           WHERE tier = ? AND goal_id = ? AND active = 1`,
+          [
+            label !== undefined ? label : null,
+            minTarget !== undefined ? minTarget : null,
+            maxTarget !== undefined ? maxTarget : null,
+            prizeType !== undefined ? prizeType : null,
+            prizeMultiplier !== undefined ? prizeMultiplier : null,
+            tier,
+            goalId
+          ]
+        );
+      } else {
+        await db.run(
+          `INSERT INTO admin_goal_definitions (tier, goal_id, label, min_target, max_target, prize_type, prize_multiplier, active)
+           VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
+          [
+            tier,
+            goalId,
+            label !== undefined ? label : defaultGoal.label,
+            minTarget !== undefined ? minTarget : defaultGoal.min,
+            maxTarget !== undefined ? maxTarget : defaultGoal.max,
+            prizeType !== undefined ? prizeType : defaultGoal.prizeType,
+            prizeMultiplier !== undefined ? prizeMultiplier : defaultGoal.prizeMult
+          ]
+        );
+      }
+
+      await refreshInMemoryGoals(db);
+      res.json({ ok: true, message: "Goal updated successfully" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // POST /api/admin/goals/add — add a new goal
+  router.post("/goals/add", async (req, res) => {
+    const { tier, goalId, label, minTarget, maxTarget, prizeType, prizeMultiplier } = req.body;
+
+    if (!tier || !goalId || !label || minTarget === undefined || maxTarget === undefined || !prizeType || prizeMultiplier === undefined) {
+      return res.status(400).json({ error: "All fields required: tier, goalId, label, minTarget, maxTarget, prizeType, prizeMultiplier" });
+    }
+
+    const validTiers = ['daily', 'weekly', 'monthly'];
+    if (!validTiers.includes(tier)) {
+      return res.status(400).json({ error: "Invalid tier (daily/weekly/monthly)" });
+    }
+
+    // Validation
+    if (minTarget < 1 || minTarget > 500) {
+      return res.status(400).json({ error: "minTarget must be between 1 and 500" });
+    }
+    if (maxTarget < 2 || maxTarget > 1000) {
+      return res.status(400).json({ error: "maxTarget must be between 2 and 1000" });
+    }
+    if (minTarget >= maxTarget) {
+      return res.status(400).json({ error: "minTarget must be less than maxTarget" });
+    }
+    if (prizeMultiplier < 0.5 || prizeMultiplier > 10000) {
+      return res.status(400).json({ error: "prizeMultiplier must be between 0.5 and 10000" });
+    }
+    if (!ALLOWED_PRIZE_TYPES.includes(prizeType)) {
+      return res.status(400).json({ error: `Invalid prizeType. Allowed: ${ALLOWED_PRIZE_TYPES.join(', ')}` });
+    }
+
+    try {
+      await db.run(
+        `INSERT INTO admin_goal_definitions (tier, goal_id, label, min_target, max_target, prize_type, prize_multiplier, active)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+         ON CONFLICT (tier, goal_id) DO UPDATE SET
+           label = EXCLUDED.label,
+           min_target = EXCLUDED.min_target,
+           max_target = EXCLUDED.max_target,
+           prize_type = EXCLUDED.prize_type,
+           prize_multiplier = EXCLUDED.prize_multiplier,
+           active = 1,
+           updated_at = CURRENT_TIMESTAMP`,
+        [tier, goalId, label, minTarget, maxTarget, prizeType, prizeMultiplier]
+      );
+      await refreshInMemoryGoals(db);
+      res.json({ ok: true, message: "Goal added successfully" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // POST /api/admin/goals/remove — soft-delete a goal
+  router.post("/goals/remove", async (req, res) => {
+    const { tier, goalId } = req.body;
+
+    if (!tier || !goalId) {
+      return res.status(400).json({ error: "tier and goalId required" });
+    }
+
+    const validTiers = ['daily', 'weekly', 'monthly'];
+    if (!validTiers.includes(tier)) {
+      return res.status(400).json({ error: "Invalid tier (daily/weekly/monthly)" });
+    }
+
+    try {
+      const existing = await db.get(
+        `SELECT 1 FROM admin_goal_definitions WHERE tier = ? AND goal_id = ?`,
+        [tier, goalId]
+      );
+
+      if (existing) {
+        await db.run(
+          `UPDATE admin_goal_definitions SET active = 0, updated_at = CURRENT_TIMESTAMP WHERE tier = ? AND goal_id = ?`,
+          [tier, goalId]
+        );
+      } else {
+        const defaultsPool = tier === 'daily' ? DAILY_GOALS_DEFAULTS : tier === 'weekly' ? WEEKLY_GOALS_DEFAULTS : tier === 'monthly' ? MONTHLY_GOALS_DEFAULTS : [];
+        const defaultGoal = defaultsPool.find(g => g.id === goalId);
+        if (!defaultGoal) {
+          return res.status(404).json({ error: "Goal not found" });
+        }
+
+        await db.run(
+          `INSERT INTO admin_goal_definitions (tier, goal_id, label, min_target, max_target, prize_type, prize_multiplier, active)
+           VALUES (?, ?, ?, ?, ?, ?, ?, 0)`,
+          [tier, goalId, defaultGoal.label, defaultGoal.min, defaultGoal.max, defaultGoal.prizeType, defaultGoal.prizeMult]
+        );
+      }
+
+      await refreshInMemoryGoals(db);
+      res.json({ ok: true, message: "Goal removed successfully" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   // ── GAME CONSTANTS ────────────────────────────────────────────────────────
+  const { validateConstant, getSectionConstants } = require('../game/constants-schema');
+  const { getConstantsForSection, refreshConstants } = require('../game/constants-loader');
+
   router.get("/constants", async (_req, res) => {
-    const constants = {
-      gameplay: {
-        maxLevel: 500,
-        unitCost: config.UNIT_COST,
-        maxResearch: config.MAX_RESEARCH,
-        tradeRouteMax: config.TRADE_ROUTE_MAX,
-        tradeRouteBaseGold: config.TRADE_ROUTE_BASE_GOLD,
-        tradeRouteEstablishCost: config.TRADE_ROUTE_ESTABLISH_COST
-      },
-      goals: {
-        dailyCount: GOAL_COUNTS.daily.count,
-        dailyResetMs: GOAL_COUNTS.daily.resetMs,
-        weeklyCount: GOAL_COUNTS.weekly.count,
-        weeklyResetMs: GOAL_COUNTS.weekly.resetMs,
-        monthlyCount: GOAL_COUNTS.monthly.count,
-        monthlyResetMs: GOAL_COUNTS.monthly.resetMs
-      },
-      expeditions: config.EXPEDITION_CONSTANTS,
-      combat: config.COMBAT_CONSTANTS
-    };
-    res.json(constants);
+    try {
+      // Fetch all overrides from database
+      const overrides = await db.all(`
+        SELECT section, constant_key, override_value, data_type
+        FROM admin_game_constants
+        ORDER BY section, constant_key
+      `);
+
+      // Build response with all sections and override status
+      const sections = ['gameplay', 'goals', 'expeditions', 'combat'];
+      const response = {};
+
+      for (const section of sections) {
+        response[section] = getConstantsForSection(section, overrides);
+      }
+
+      res.json(response);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   // POST /api/admin/constants/update — update a game constant
   router.post("/constants/update", async (req, res) => {
-    const { path, value } = req.body;
-    if (!path || value === undefined) {
-      return res.status(400).json({ error: "path and value required" });
+    const { section, constantKey, value } = req.body;
+
+    if (!section || !constantKey || value === undefined) {
+      return res.status(400).json({ error: "section, constantKey, and value required" });
     }
 
-    // Note: In a production system, constants would be stored in database
-    // For now, this validates the request structure
-    res.json({
-      ok: true,
-      message: "Constant update endpoint ready - database storage needed for persistence",
-      path,
-      value
-    });
+    // Validate against schema
+    const validation = validateConstant(section, constantKey, value);
+    if (!validation.valid) {
+      return res.status(400).json({ error: validation.error });
+    }
+
+    try {
+      const numValue = parseFloat(value);
+
+      // Insert or update override in database
+      await db.run(
+        `INSERT INTO admin_game_constants (section, constant_key, override_value, data_type, created_at, updated_at)
+         VALUES (?, ?, ?, 'number', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+         ON CONFLICT (section, constant_key) DO UPDATE SET
+           override_value = EXCLUDED.override_value,
+           updated_at = CURRENT_TIMESTAMP`,
+        [section, constantKey, String(numValue)]
+      );
+
+      // Refresh merged constants in memory
+      await refreshConstants(db);
+
+      res.json({ ok: true, message: "Constant updated successfully", newValue: numValue });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // POST /api/admin/constants/revert — revert a constant to default
+  router.post("/constants/revert", async (req, res) => {
+    const { section, constantKey } = req.body;
+
+    if (!section || !constantKey) {
+      return res.status(400).json({ error: "section and constantKey required" });
+    }
+
+    try {
+      // Delete override from database
+      await db.run(
+        `DELETE FROM admin_game_constants WHERE section = ? AND constant_key = ?`,
+        [section, constantKey]
+      );
+
+      // Refresh merged constants in memory
+      await refreshConstants(db);
+
+      res.json({ ok: true, message: "Constant reverted to default" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   return router;
 };
+
+module.exports.refreshInMemoryGoals = refreshInMemoryGoals;
