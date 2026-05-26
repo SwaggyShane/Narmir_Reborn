@@ -169,6 +169,15 @@ const config = {
 
   UNIT_COST: 250,
   MAX_RESEARCH: 1000,
+  MAX_POPULATION: 50000,
+  MOVE_ARMY: 5,
+  EXPEDITION_BASE_SPEED: 25,
+  EXPEDITION_YIELD_MULT: 1.0,
+  GOAL_RESET_HOURS: {
+    daily: 24,
+    weekly: 168,
+    monthly: 720,
+  },
 
   // Race-specific research discipline hard caps (default 1000 for all disciplines)
   RESEARCH_DISCIPLINE_CAPS: {
@@ -1827,6 +1836,7 @@ const config = {
     baseAttackCost: 10,
     baseSpellCost: 5,
     baseCovertCost: 3,
+    defenseDifficulty: 1.0,
   },
 
   JUNK_EVENTS: [],
