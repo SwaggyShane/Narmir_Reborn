@@ -5,7 +5,7 @@
 const config = require("./config");
 const { progressGoal } = require('./goals');
 const fragmentBonusManager = require("./fragment-bonus-manager");
-const { safeJsonParse, roll, rand } = require('../utils/helpers');
+const { safeJsonParse, roll, rand, clearParseCache } = require('../utils/helpers');
 
 const {
   RACE_BONUSES,
