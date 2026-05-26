@@ -1761,7 +1761,7 @@
           <button class="btn" onclick="loadGameConstants()">↻ Refresh</button>
         </div>
         <p style="color: var(--text3); font-size: 13px; margin-bottom: 16px;">
-          Core game constants that define gameplay mechanics. Phase 2 displays current values. Phase 4 will add edit capabilities.
+          Core game constants that define gameplay mechanics. Click Edit to override defaults temporarily.
         </p>
 
         <!-- Gameplay Constants -->
@@ -1797,6 +1797,43 @@
         </div>
       </div>
 
+    </div>
+
+    <!-- Modal: Edit Constant -->
+    <div class="modal-overlay" id="edit-constant-modal">
+      <div class="modal">
+        <h3>✎ Edit Constant</h3>
+        <div style="display: grid; gap: 12px; margin-bottom: 16px;">
+          <div>
+            <label style="color: var(--text3); font-size: 12px;">Constant</label>
+            <input type="text" id="edit-const-label" disabled placeholder="Constant name" style="width: 100%; padding: 6px; background: var(--bg2); color: var(--text3); border: 1px solid var(--border); border-radius: var(--radius);">
+          </div>
+          <div>
+            <label style="color: var(--text3); font-size: 12px;">Description</label>
+            <div style="width: 100%; padding: 6px; background: var(--bg2); color: var(--text2); border: 1px solid var(--border); border-radius: var(--radius); font-size: 12px; line-height: 1.4; min-height: 40px;" id="edit-const-description"></div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div>
+              <label style="color: var(--text3); font-size: 12px;">Default</label>
+              <input type="text" id="edit-const-default" disabled placeholder="Default value" style="width: 100%; padding: 6px; background: var(--bg2); color: var(--text3); border: 1px solid var(--border); border-radius: var(--radius);">
+            </div>
+            <div>
+              <label style="color: var(--text3); font-size: 12px;">Current</label>
+              <input type="text" id="edit-const-current" disabled placeholder="Current value" style="width: 100%; padding: 6px; background: var(--bg2); color: var(--text3); border: 1px solid var(--border); border-radius: var(--radius);">
+            </div>
+          </div>
+          <div>
+            <label style="color: var(--text3); font-size: 12px;">New Value</label>
+            <input type="number" id="edit-const-value" placeholder="Enter new value" style="width: 100%; padding: 6px; background: var(--bg2); color: var(--text1); border: 1px solid var(--border); border-radius: var(--radius);">
+            <div style="font-size: 11px; color: var(--text3); margin-top: 4px;" id="edit-const-range"></div>
+          </div>
+        </div>
+        <div class="modal-btns">
+          <button class="btn btn-red" onclick="revertConstant()" style="flex: 1;">↻ Reset to Default</button>
+          <button class="btn" onclick="closeEditConstantModal()">Cancel</button>
+          <button class="btn btn-gold" onclick="submitEditConstant()">Save Changes</button>
+        </div>
+      </div>
     </div>
 
     <!-- Ban modal -->
@@ -3162,35 +3199,144 @@
           return;
         }
 
-        // Helper to render key-value pairs
-        const renderConstantSection = (obj) => {
-          return Object.entries(obj).map(([key, value]) => `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid var(--border); color: var(--text2); font-size: 13px;">
-              <span>${escHtml(key)}:</span>
-              <span style="color: var(--gold); font-weight: 600;">${escHtml(typeof value === 'object' ? JSON.stringify(value) : String(value))}</span>
-            </div>
-          `).join('');
+        // Render constants with edit buttons
+        const renderConstantSection = (section, obj) => {
+          return Object.entries(obj).map(([key, def]) => {
+            const overriddenStyle = def.isOverridden ? 'background: rgba(240, 98, 2, 0.1); border: 1px solid var(--gold);' : '';
+            return `
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); color: var(--text2); font-size: 13px; ${overriddenStyle}">
+                <div style="flex: 1;">
+                  <div style="font-weight: 600; color: ${def.isOverridden ? 'var(--gold)' : 'var(--text)'};">${escHtml(def.label)}</div>
+                  <div style="font-size: 11px; color: var(--text3); margin-top: 2px;">${escHtml(def.value)}</div>
+                </div>
+                <button class="btn" style="padding: 6px 12px; font-size: 12px;" data-section="${section}" data-key="${escHtml(key)}" onclick="showEditConstantModal(this.dataset.section, this.dataset.key)">✎ Edit</button>
+              </div>
+            `;
+          }).join('');
         };
+
+        // Store data globally for modal access
+        window.constantsData = data;
 
         // Render Gameplay Constants
         document.getElementById('constants-gameplay').innerHTML = data.gameplay
-          ? renderConstantSection(data.gameplay)
+          ? renderConstantSection('gameplay', data.gameplay)
           : '<div style="padding: 12px; color: var(--text3);">No gameplay constants found</div>';
 
         // Render Goals Constants
         document.getElementById('constants-goals').innerHTML = data.goals
-          ? renderConstantSection(data.goals)
+          ? renderConstantSection('goals', data.goals)
           : '<div style="padding: 12px; color: var(--text3);">No goals constants found</div>';
 
         // Render Expeditions Constants
         document.getElementById('constants-expeditions').innerHTML = data.expeditions
-          ? renderConstantSection(data.expeditions)
+          ? renderConstantSection('expeditions', data.expeditions)
           : '<div style="padding: 12px; color: var(--text3);">No expeditions constants found</div>';
 
         // Render Combat Constants
         document.getElementById('constants-combat').innerHTML = data.combat
-          ? renderConstantSection(data.combat)
+          ? renderConstantSection('combat', data.combat)
           : '<div style="padding: 12px; color: var(--text3);">No combat constants found</div>';
+      }
+
+      async function showEditConstantModal(section, constantKey) {
+        const data = window.constantsData;
+        if (!data || !data[section] || !data[section][constantKey]) {
+          toast("Constant not found", "error");
+          return;
+        }
+
+        const def = data[section][constantKey];
+
+        // Populate modal
+        document.getElementById('edit-const-label').value = def.label;
+        document.getElementById('edit-const-description').textContent = def.description;
+        document.getElementById('edit-const-default').value = def.defaultValue;
+        document.getElementById('edit-const-current').value = def.value;
+        document.getElementById('edit-const-value').value = def.value;
+        document.getElementById('edit-const-value').min = def.min;
+        document.getElementById('edit-const-value').max = def.max;
+        document.getElementById('edit-const-value').step = def.step;
+        document.getElementById('edit-const-range').textContent = `Range: ${def.min} to ${def.max}`;
+
+        // Store for submit
+        window.editingConstant = { section, constantKey, def };
+
+        document.getElementById('edit-constant-modal').classList.add('open');
+      }
+
+      function closeEditConstantModal() {
+        document.getElementById('edit-constant-modal').classList.remove('open');
+        window.editingConstant = null;
+      }
+
+      async function submitEditConstant() {
+        const valueInput = document.getElementById('edit-const-value');
+
+        if (!valueInput.checkValidity()) {
+          toast("Value must be within allowed range", "error");
+          return;
+        }
+
+        const value = parseFloat(valueInput.value);
+        if (isNaN(value)) {
+          toast("Invalid number", "error");
+          return;
+        }
+
+        if (!window.editingConstant) {
+          toast("No constant selected", "error");
+          return;
+        }
+
+        const { section, constantKey, def } = window.editingConstant;
+
+        if (value < def.min || value > def.max) {
+          toast(`Value must be between ${def.min} and ${def.max}`, "error");
+          return;
+        }
+
+        const r = await api("POST", "/api/admin/constants/update", {
+          section,
+          constantKey,
+          value
+        });
+
+        if (r.error) {
+          toast("Error: " + r.error, "error");
+          return;
+        }
+
+        toast("Constant updated successfully", "success");
+        closeEditConstantModal();
+        loadGameConstants();
+      }
+
+      async function revertConstant() {
+        if (!window.editingConstant) {
+          toast("No constant selected", "error");
+          return;
+        }
+
+        if (!confirm("Revert this constant to its default value?")) {
+          return;
+        }
+
+        const { section, constantKey } = window.editingConstant;
+
+        const r = await api("POST", "/api/admin/constants/revert", {
+          section,
+          constantKey
+        });
+
+        if (r.error) {
+          toast("Error: " + r.error, "error");
+          return;
+        }
+
+        toast("Constant reverted to default", "success");
+        closeEditConstantModal();
+        loadGameConstants();
       }
 
       function showAdminTab(id, btn) {
