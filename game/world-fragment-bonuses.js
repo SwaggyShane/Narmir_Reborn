@@ -27,6 +27,10 @@ const POPULATED_FRAGMENTS = {
       passive: { output: 0.15, mana_output: 0.10 },
       special: { name: "Thermal Computing", desc: "Underground volcanic steam vents drive mechanical sorting gears, accelerating calculation speeds" },
     },
+    mage_towers: {
+      passive: { mana: 0.15, spellcasting: 0.10 },
+      special: { name: "Magma Conduit", desc: "Plugging direct volcanic channels into the focus prisms overcharges flame and geothermal attacks with raw kinetic force" },
+    },
   },
 
   "Ancient Elven Wood": {
@@ -49,6 +53,10 @@ const POPULATED_FRAGMENTS = {
     schools: {
       passive: { output: 0.20, stability: 0.25 },
       special: { name: "Sylvan Whispers", desc: "Communing with the ancient soil opens forgotten histories. Academic morale remains perfectly stabilized" },
+    },
+    mage_towers: {
+      passive: { mana: 0.20, forest_sight: 0.25 },
+      special: { name: "Sylvan Wards", desc: "Roots weave directly into the tower's foundational circle, naturally absorbing spell backlash and stabilizing nearby soil" },
     },
   },
 
@@ -73,6 +81,10 @@ const POPULATED_FRAGMENTS = {
       passive: { output: 0.05, spell_defense: 0.35 },
       special: { name: "Draconic Isolation", desc: "Scale-plated shingles reflect hostile magical attacks, insulating laboratories from enemy sabotage" },
     },
+    mage_towers: {
+      passive: { mana: 0.10, spell_resistance: 0.40 },
+      special: { name: "Wyrmfire Focus", desc: "Scale-reinforced glass walls form a natural cage, shielding channelling wizards from external disruption and curses" },
+    },
   },
 
   "Abyssal Crystal": {
@@ -91,6 +103,10 @@ const POPULATED_FRAGMENTS = {
     schools: {
       passive: { spellbook_cost: -0.15, dark_magic_output: 0.15 },
       special: { name: "Void Transcription", desc: "Obsidian crystal glow uncovers ancient underdark runes, reducing all school spellbook costs by 15%" },
+    },
+    mage_towers: {
+      passive: { mana: 0.30, dark_magic_output: 0.15 },
+      special: { name: "Singularity Focus", desc: "Deep crystalline focus-stones bend local atmospheric magic, vastly reducing processing cooldowns on underworld spells" },
     },
   },
 
@@ -115,6 +131,10 @@ const POPULATED_FRAGMENTS = {
       passive: { output: 0.25, cleric_power: 0.20 },
       special: { name: "Angelic Tutelage", desc: "Holy instructions from celestial visions empower your Cleric recruits, eliminating all school unrest" },
     },
+    mage_towers: {
+      passive: { mana: 0.25, divine_light: 0.30 },
+      special: { name: "Nimbus Shields", desc: "Angelic grace focuses natural sky lumens, casting a soft dome of pure defensive light that neutralizes negative curses" },
+    },
   },
 
   "Dwarven Star-Metal": {
@@ -134,6 +154,10 @@ const POPULATED_FRAGMENTS = {
       passive: { output: 0.40, siege_power: 0.10 },
       special: { name: "Star-Metal Calculators", desc: "Brass differential engines automate repetitive calculations, vastly speeding up scientific research" },
     },
+    mage_towers: {
+      passive: { mana: 0.15, spell_precision: 0.50 },
+      special: { name: "Harmonic Concentrators", desc: "Perfect clockwork lenses focus spell arrays down to micro-millimeter precision, making bolts impossible to deflect or dodge" },
+    },
   },
 
   "Cursed Bloodstone": {
@@ -152,6 +176,10 @@ const POPULATED_FRAGMENTS = {
     schools: {
       passive: { output: 0.50, chaos_index: 0.20 },
       special: { name: "Taboo Alchemical Arts", desc: "High-intensity experiments with forbidden humors speed up breakthrough turns but raise local chaos" },
+    },
+    mage_towers: {
+      passive: { mana: 0.50, chaos_index: 0.20 },
+      special: { name: "Sanguine Battery", desc: "Capping local ley-lines in bloodstone lets summoners feed minor lifeforce pools directly from housing to double spellpower" },
     },
   },
 
@@ -176,6 +204,10 @@ const POPULATED_FRAGMENTS = {
       passive: { output: 0.35, magic_output: 0.30 },
       special: { name: "Botanical Courtyards", desc: "Drinking from World Tree dew fonts doubles student comprehension speeds and magic regeneration" },
     },
+    mage_towers: {
+      passive: { mana: 0.35, mana_efficiency: 0.30 },
+      special: { name: "Mana Geyser", desc: "Pristine tree dew floods the cooling pool, allowing active spellbooks to regenerate passive spell slots automatically" },
+    },
   },
 
   "Void Essence": {
@@ -199,6 +231,10 @@ const POPULATED_FRAGMENTS = {
       passive: { output: 1.20, comfort: -0.40 },
       special: { name: "Quantum Paradoxes", desc: "Multi-dimensional lecture halls stretch students' minds, spikes research output but causes odd absences" },
     },
+    mage_towers: {
+      passive: { mana: 1.20, mind_stability: -0.40 },
+      special: { name: "Portal Conduits", desc: "Rips open direct holes in reality, funneling raw astral energies that hypercharge output but trigger local portal leaks" },
+    },
   },
 
   "Titan Bone": {
@@ -217,6 +253,10 @@ const POPULATED_FRAGMENTS = {
     schools: {
       passive: { output: 0.30, efficiency: 0.15 },
       special: { name: "Anatomical Blueprinting", desc: "Fossilized titanic skeletons provide perfect structural architectural models, making buildings cheaper to construct" },
+    },
+    mage_towers: {
+      passive: { mana: 0.30, tower_integrity: 0.15 },
+      special: { name: "Goliath Spire", desc: "Fossilized giant bones serve as massive tuning forks, expanding spell casting ranges across adjacent kingdom provinces" },
     },
   },
 };
