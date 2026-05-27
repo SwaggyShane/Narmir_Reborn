@@ -51,6 +51,10 @@ const POPULATED_FRAGMENTS = {
       passive: { gold_security: 0.30, economy_output: 0.15 },
       special: { name: "Thermal Ingot Vaults", desc: "Constant magma pipes keep vault alloy gates heat-fused, making them completely immune to physical lockpicking or tunneling" },
     },
+    armories: {
+      passive: { garrison_defense: 0.30, siege_output: 0.15 },
+      special: { name: "Volcanic Core Mail", desc: "Plates quenched in thermal lava canals gain heat-retentive guards, making them highly resistant to frost weapons or cold fatigue" },
+    },
   },
 
   "Ancient Elven Wood": {
@@ -97,6 +101,10 @@ const POPULATED_FRAGMENTS = {
     vaults: {
       passive: { espionage_shield: 0.30, forest_growth: 0.15 },
       special: { name: "Root-Bound Safes", desc: "Living Elven wood roots tightly wrap gold chests; any tampering triggers roots to constrict and lock down the treasury" },
+    },
+    armories: {
+      passive: { espionage_guard: 0.30, ranged_offense: 0.15 },
+      special: { name: "Sylvan Camouflage", desc: "Arming soldiers in living ironwood armor blends them seamlessly into local forests, making patrols extremely hard to spot" },
     },
   },
 
@@ -145,6 +153,10 @@ const POPULATED_FRAGMENTS = {
       passive: { gold_security: 0.15, hoard_protection: 0.40 },
       special: { name: "Golden Hoard Lairs", desc: "Lining gold piles with scales activates a draconic curse on intruders, burning up to 50% of successful thievish units" },
     },
+    armories: {
+      passive: { garrison_defense: 0.15, flame_resistance: 0.40 },
+      special: { name: "Dragonscale Cuirasses", desc: "Garrison forces receive armor plating forged from actual dragon scales, neutralizing up to 40% of magical fire damage" },
+    },
   },
 
   "Abyssal Crystal": {
@@ -187,6 +199,10 @@ const POPULATED_FRAGMENTS = {
     vaults: {
       passive: { secret_decryption: 0.30, shadow_trade: 0.15 },
       special: { name: "Crystalline Shadow Pools", desc: "Underdark crystals refract light, concealing accurate treasury valuations and making total gold immune to scout spells" },
+    },
+    armories: {
+      passive: { infiltration_defense: 0.30, stealth_detection: 0.15 },
+      special: { name: "Resonant Focusing Shields", desc: "Installing deep violet crystalline arrays in arsenals reveals subtle sound vibrations, catching stealthy intruders instantly" },
     },
   },
 
@@ -235,6 +251,10 @@ const POPULATED_FRAGMENTS = {
       passive: { gold_security: 0.25, grace_index: 0.35 },
       special: { name: "Empyrean Sanctuaries", desc: "Blessed vaults emit divine light, keeping currency stored inside fully immune to curses, corruption, or tax rot" },
     },
+    armories: {
+      passive: { garrison_defense: 0.25, morale_recovery: 0.35 },
+      special: { name: "Aureole Plating", desc: "Blessed armors radiate an absolute aura of purity, keeping soldiers inspired and speeding up combat morale recovery" },
+    },
   },
 
   "Dwarven Star-Metal": {
@@ -278,6 +298,10 @@ const POPULATED_FRAGMENTS = {
       passive: { gold_security: 0.40, core_lockboxes: 1.00 },
       special: { name: "Chronos Gear Locks", desc: "Gears forged of Star-Metal lock main vaults. Treasury cannot be bankrupted or looted, preserving basic transaction safety" },
     },
+    armories: {
+      passive: { garrison_defense: 0.40, armor_longevity: 1.00 },
+      special: { name: "Star-Metal Rivets", desc: "Armor suits are reinforced with clockwork frames. Equipment never breaks, guaranteeing absolute safety in harsh operations" },
+    },
   },
 
   "Cursed Bloodstone": {
@@ -320,6 +344,10 @@ const POPULATED_FRAGMENTS = {
     vaults: {
       passive: { economy_output: 0.50, stability: -0.20 },
       special: { name: "Sanguine Vault Tax", desc: "Storing gold in bloodstone alters currency with dark magic, amplifying kingdom tax revenues at high local stability costs" },
+    },
+    armories: {
+      passive: { combat_damage: 0.50, unit_recovery: -0.20 },
+      special: { name: "Sanguine Sharpness", desc: "Smearing arsenal blades with cursed ichor converts standard strikes into life-draining hits, but drains troop rest" },
     },
   },
 
@@ -368,6 +396,10 @@ const POPULATED_FRAGMENTS = {
       passive: { gold_security: 0.35, life_growth: 0.30 },
       special: { name: "Yggdrasil Resin Casings", desc: "Wrapping logs and chests in petrified amber resin ensures financial systems and credit indexes thrive without decay" },
     },
+    armories: {
+      passive: { garrison_defense: 0.35, health_recovery: 0.30 },
+      special: { name: "Amber Breastplates", desc: "Infusing breastplates with glowing petrified sap accelerates natural wound closures, helping soldiers stand" },
+    },
   },
 
   "Void Essence": {
@@ -415,6 +447,10 @@ const POPULATED_FRAGMENTS = {
       passive: { gold_security: 1.20, trade_stability: -0.40 },
       special: { name: "Dimensional Pocket Vaults", desc: "Moving gold reserves into sub-spatial pocket dimensions guarantees perfect safety, though loans experience mild delays" },
     },
+    armories: {
+      passive: { garrison_defense: 1.20, structural_stability: -0.40 },
+      special: { name: "Phase-Shifting Arsenals", desc: "Armors are tethered to sub-spatial folds, allowing soldiers to phase through blades, though at structural lag costs" },
+    },
   },
 
   "Titan Bone": {
@@ -457,6 +493,10 @@ const POPULATED_FRAGMENTS = {
     vaults: {
       passive: { storage_capacity: 0.30, density_bounds: 0.15 },
       special: { name: "Megastructure Sub-Vaults", desc: "Massive load-bearing bone pillars allow drilling incredibly deep, secure chambers, expanding storage scale" },
+    },
+    armories: {
+      passive: { holding_capacity: 0.30, armor_heavy_density: 0.15 },
+      special: { name: "Colossal Aegis Slabs", desc: "Massive bone supports allow stocking colossal titan-sized shields, turning local walls into impenetrable monoliths" },
     },
   },
 };
