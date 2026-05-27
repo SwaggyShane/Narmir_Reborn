@@ -16920,6 +16920,7 @@
 
           toast(`✓ ${fragmentName} attuned to ${buildingType}!`, "success");
           await loadAttunementData();
+          await loadKingdom();
 
           if (loadingEl) loadingEl.style.display = "none";
         } catch (err) {
@@ -16947,6 +16948,7 @@
 
           toast(`✓ Attunement removed from ${buildingType}!`, "success");
           await loadAttunementData();
+          await loadKingdom();
 
         } catch (err) {
           toast("Error: " + err.message, "error");
@@ -17020,6 +17022,7 @@
         width: 100%;
         max-height: 85vh;
         overflow-y: auto;
+        position: relative;
       ">
         <div style="position: absolute; top: 16px; right: 20px; cursor: pointer; color: var(--text3); font-size: 20px;" onclick="closeAttunementModal()">✕</div>
         <div style="font-size: 20px; font-weight: 700; margin-bottom: 20px; color: var(--gold); font-family: Cinzel, serif;">

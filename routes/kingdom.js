@@ -4383,7 +4383,7 @@ module.exports = function (db) {
       const currentAttunements = getKingdomAttunements(kingdom.fragment_bonuses || '{}');
 
       // Check if building has attunement
-      if (!currentAttunements[buildingType]) {
+      if (!Object.prototype.hasOwnProperty.call(currentAttunements, buildingType)) {
         return res.status(400).json({ error: `${buildingType} has no attunement` });
       }
 
