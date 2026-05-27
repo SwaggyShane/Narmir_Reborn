@@ -247,6 +247,10 @@ function manaPerTurn(k) {
   const manaPowerMult = fragmentBonusManager.getBonusMultiplier(k, 'mage_towers', 'power');
   manaGen = Math.floor(manaGen * manaMult * manaRegenMult * manaPowerMult);
 
+  // Apply housing magic output bonus (e.g., Abyssal Crystal)
+  const housingMagicMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'magic_output');
+  manaGen = Math.floor(manaGen * housingMagicMult);
+
   return manaGen;
 }
 
@@ -259,7 +263,17 @@ function naturalMoraleCap(k) {
   // Apply dynamic housing passive bonuses on morale / happiness (e.g., Celestial Realm, Ancient Elven Wood)
   const housingMoraleMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'morale');
   const housingHappinessMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'happiness');
-  return Math.floor(cap * housingMoraleMult * housingHappinessMult);
+  cap = Math.floor(cap * housingMoraleMult * housingHappinessMult);
+
+  // Apply housing stability modifier cap (Void Essence reduces max morale)
+  const { getKingdomAttunements } = require('./fragment-attunements');
+  const housingAttune = getKingdomAttunements(k.fragment_bonuses || '{}').housing;
+  if (housingAttune && housingAttune.fragment === 'Void Essence') {
+    // Void Essence reduces morale cap by 30%
+    cap = Math.floor(cap * 0.7);
+  }
+
+  return cap;
 }
 
 function effectiveMorale(k) {
@@ -1338,12 +1352,17 @@ function processFoodEconomy(k, events) {
       if (shortTurns >= 5) {
         let fleeCount = 500;
         const activeHousingSpecial = fragmentBonusManager.getSpecialEffect(k, 'housing');
-        if (activeHousingSpecial?.name === "Sanctified Homes") {
-          fleeCount = 0; // citizens never leave!
-        } else if (activeHousingSpecial?.name === "Elven Halls") {
-          fleeCount = 100; // 80% reduction in fleeing
-        } else if (activeHousingSpecial?.name === "Life Dwellings") {
-          fleeCount = 250; // 50% reduction in fleeing
+
+        // Apply housing special abilities to reduce population fleeing
+        if (activeHousingSpecial?.name === "Holy Sanctuaries") {
+          // Celestial Feather: Partially prevent unrest (25% reduction)
+          fleeCount = Math.floor(fleeCount * 0.75);
+        } else if (activeHousingSpecial?.name === "Treehouse Canopy") {
+          // Ancient Elven Wood: 80% reduction in fleeing
+          fleeCount = 100;
+        } else if (activeHousingSpecial?.name === "Lifespring Spores") {
+          // Tears of World Tree: 50% reduction in fleeing
+          fleeCount = 250;
         }
 
         if (fleeCount > 0) {
@@ -1355,7 +1374,7 @@ function processFoodEconomy(k, events) {
         } else {
           events.push({
             type: "system",
-            message: `👥 Population refused to leave their Sanctified Homes despite starvation!`,
+            message: `👥 Holy Sanctuaries: Population refuses to abandon their sacred homes despite starvation!`,
           });
         }
       }
