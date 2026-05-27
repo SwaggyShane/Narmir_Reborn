@@ -965,7 +965,6 @@ async function initDb() {
   if (!kingdomsCols.includes('active_event'))          await addColumn('kingdoms', 'active_event',          "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('discovered_kingdoms'))   await addColumn('kingdoms', 'discovered_kingdoms',   "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('location_maps_wip'))     await addColumn('kingdoms', 'location_maps_wip',     "TEXT NOT NULL DEFAULT '[]'", kingdomsCols);
-  if (!kingdomsCols.includes('fragment_attunements'))  await addColumn('kingdoms', 'fragment_attunements',  "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
 
   // Market Prices table procedural check
   await _db.exec(`
