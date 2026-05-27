@@ -23,6 +23,10 @@ const POPULATED_FRAGMENTS = {
       passive: { lore_generation: 0.15, warmth: 0.10 },
       special: { name: "Heat-Hardened Archive", desc: "Warm dry air circulates continuously, preventing parchment decay and humidity damage" },
     },
+    schools: {
+      passive: { output: 0.15, mana_output: 0.10 },
+      special: { name: "Thermal Computing", desc: "Underground volcanic steam vents drive mechanical sorting gears, accelerating calculation speeds" },
+    },
   },
 
   "Ancient Elven Wood": {
@@ -41,6 +45,10 @@ const POPULATED_FRAGMENTS = {
     libraries: {
       passive: { lore_generation: 0.20, forest_sight: 0.25 },
       special: { name: "Sylvan Whispers", desc: "Living paper pages whisper ancient secrets directly to librarians" },
+    },
+    schools: {
+      passive: { output: 0.20, stability: 0.25 },
+      special: { name: "Sylvan Whispers", desc: "Communing with the ancient soil opens forgotten histories. Academic morale remains perfectly stabilized" },
     },
   },
 
@@ -61,6 +69,10 @@ const POPULATED_FRAGMENTS = {
       passive: { lore_generation: 0.05, document_armor: 0.40 },
       special: { name: "Fireproof Scriptorium", desc: "Dragon scale coatings make all historical papers immune to fire" },
     },
+    schools: {
+      passive: { output: 0.05, spell_defense: 0.35 },
+      special: { name: "Draconic Isolation", desc: "Scale-plated shingles reflect hostile magical attacks, insulating laboratories from enemy sabotage" },
+    },
   },
 
   "Abyssal Crystal": {
@@ -75,6 +87,10 @@ const POPULATED_FRAGMENTS = {
     libraries: {
       passive: { decoding_speed: 0.30, magic_output: 0.10 },
       special: { name: "Shadow Scripts", desc: "Illuminates invisible texts on ancient scrolls under purple crystal light" },
+    },
+    schools: {
+      passive: { spellbook_cost: -0.15, dark_magic_output: 0.15 },
+      special: { name: "Void Transcription", desc: "Obsidian crystal glow uncovers ancient underdark runes, reducing all school spellbook costs by 15%" },
     },
   },
 
@@ -95,6 +111,10 @@ const POPULATED_FRAGMENTS = {
       passive: { lore_generation: 0.25, morale_sight: 0.35 },
       special: { name: "Heavenly Revelations", desc: "Angelic scriptures float down from skylights, resolving complex studies automatically" },
     },
+    schools: {
+      passive: { output: 0.25, cleric_power: 0.20 },
+      special: { name: "Angelic Tutelage", desc: "Holy instructions from celestial visions empower your Cleric recruits, eliminating all school unrest" },
+    },
   },
 
   "Dwarven Star-Metal": {
@@ -110,6 +130,10 @@ const POPULATED_FRAGMENTS = {
       passive: { lore_generation: 0.40, record_impenetrability: 1.00 },
       special: { name: "Impenetrable Star-Metal Lockboxes", desc: "Maps, locations, and relic coordinates cannot be lost, stolen, or erased by curses" },
     },
+    schools: {
+      passive: { output: 0.40, siege_power: 0.10 },
+      special: { name: "Star-Metal Calculators", desc: "Brass differential engines automate repetitive calculations, vastly speeding up scientific research" },
+    },
   },
 
   "Cursed Bloodstone": {
@@ -124,6 +148,10 @@ const POPULATED_FRAGMENTS = {
     libraries: {
       passive: { lore_generation: 0.50, chaos_index: 0.15 },
       special: { name: "Sanguine Cartography", desc: "Maps drawn in blood update geography in real-time but cause intense psychological stress" },
+    },
+    schools: {
+      passive: { output: 0.50, chaos_index: 0.20 },
+      special: { name: "Taboo Alchemical Arts", desc: "High-intensity experiments with forbidden humors speed up breakthrough turns but raise local chaos" },
     },
   },
 
@@ -144,6 +172,10 @@ const POPULATED_FRAGMENTS = {
       passive: { lore_generation: 0.35, spell_efficiency: 0.30 },
       special: { name: "Dew of Understanding", desc: "Sipping microscopic water drops doubles comprehension speed and memory retention" },
     },
+    schools: {
+      passive: { output: 0.35, magic_output: 0.30 },
+      special: { name: "Botanical Courtyards", desc: "Drinking from World Tree dew fonts doubles student comprehension speeds and magic regeneration" },
+    },
   },
 
   "Void Essence": {
@@ -163,6 +195,10 @@ const POPULATED_FRAGMENTS = {
       passive: { research_speed: -0.30, chaos_index: 0.20 },
       special: { name: "Void Codex", desc: "Research becomes unpredictable; studies may jump forward rapidly or regress without warning" },
     },
+    schools: {
+      passive: { output: 1.20, comfort: -0.40 },
+      special: { name: "Quantum Paradoxes", desc: "Multi-dimensional lecture halls stretch students' minds, spikes research output but causes odd absences" },
+    },
   },
 
   "Titan Bone": {
@@ -177,6 +213,10 @@ const POPULATED_FRAGMENTS = {
     libraries: {
       passive: { lore_generation: 0.75, record_capacity: 0.50 },
       special: { name: "Colossal Archives", desc: "Titanic skeletal supports allow libraries to expand indefinitely with vault-like record storage" },
+    },
+    schools: {
+      passive: { output: 0.30, efficiency: 0.15 },
+      special: { name: "Anatomical Blueprinting", desc: "Fossilized titanic skeletons provide perfect structural architectural models, making buildings cheaper to construct" },
     },
   },
 };
