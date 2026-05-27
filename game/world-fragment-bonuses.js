@@ -31,6 +31,10 @@ const POPULATED_FRAGMENTS = {
       passive: { mana: 0.15, spellcasting: 0.10 },
       special: { name: "Magma Conduit", desc: "Plugging direct volcanic channels into the focus prisms overcharges flame and geothermal attacks with raw kinetic force" },
     },
+    shrines: {
+      passive: { morale: 0.15, healing: 0.10 },
+      special: { name: "Geothermal Hearth", desc: "Thermal hot springs heat consecrated bathing basins, accelerating soldier and civilian recovery rates during cold turns" },
+    },
   },
 
   "Ancient Elven Wood": {
@@ -57,6 +61,10 @@ const POPULATED_FRAGMENTS = {
     mage_towers: {
       passive: { mana: 0.20, forest_sight: 0.25 },
       special: { name: "Sylvan Wards", desc: "Roots weave directly into the tower's foundational circle, naturally absorbing spell backlash and stabilizing nearby soil" },
+    },
+    shrines: {
+      passive: { healing: 0.20, forest_sight: 0.25 },
+      special: { name: "Yggdrasil Communion", desc: "Shrines sprout living roots that merge with natural ley-lines, granting nearby scouts panoramic forest visibility" },
     },
   },
 
@@ -85,6 +93,10 @@ const POPULATED_FRAGMENTS = {
       passive: { mana: 0.10, spell_resistance: 0.40 },
       special: { name: "Wyrmfire Focus", desc: "Scale-reinforced glass walls form a natural cage, shielding channelling wizards from external disruption and curses" },
     },
+    shrines: {
+      passive: { power: 0.10, raid_protection: 0.35 },
+      special: { name: "Draconic Sanctuary", desc: "Consecrated vaults are layered with gold dragon scales, preventing dynamic resources or magical relies from being stolen during raids" },
+    },
   },
 
   "Abyssal Crystal": {
@@ -107,6 +119,10 @@ const POPULATED_FRAGMENTS = {
     mage_towers: {
       passive: { mana: 0.30, dark_magic_output: 0.15 },
       special: { name: "Singularity Focus", desc: "Deep crystalline focus-stones bend local atmospheric magic, vastly reducing processing cooldowns on underworld spells" },
+    },
+    shrines: {
+      passive: { spell_resistance: 0.30, dark_magic_output: 0.15 },
+      special: { name: "Penance Shards", desc: "Harnessing underdark radiation forces deep spiritual introspection, doubling defense values against enemy shadow spells" },
     },
   },
 
@@ -135,6 +151,10 @@ const POPULATED_FRAGMENTS = {
       passive: { mana: 0.25, divine_light: 0.30 },
       special: { name: "Nimbus Shields", desc: "Angelic grace focuses natural sky lumens, casting a soft dome of pure defensive light that neutralizes negative curses" },
     },
+    shrines: {
+      passive: { healing: 0.35, faith_morale: 0.40 },
+      special: { name: "Blessed Resurrections", desc: "Heavenly light baths the healing chambers; wounded units revive with +10% maximum health and zero morale fatigue" },
+    },
   },
 
   "Dwarven Star-Metal": {
@@ -158,6 +178,10 @@ const POPULATED_FRAGMENTS = {
       passive: { mana: 0.15, spell_precision: 0.50 },
       special: { name: "Harmonic Concentrators", desc: "Perfect clockwork lenses focus spell arrays down to micro-millimeter precision, making bolts impossible to deflect or dodge" },
     },
+    shrines: {
+      passive: { morale: 0.15, defense_armor: 0.50 },
+      special: { name: "Star-Metal Sentinels", desc: "Mechanical incense burners distribute gold dust across armor plates, naturally fortifying defenders against siege attacks" },
+    },
   },
 
   "Cursed Bloodstone": {
@@ -180,6 +204,10 @@ const POPULATED_FRAGMENTS = {
     mage_towers: {
       passive: { mana: 0.50, chaos_index: 0.20 },
       special: { name: "Sanguine Battery", desc: "Capping local ley-lines in bloodstone lets summoners feed minor lifeforce pools directly from housing to double spellpower" },
+    },
+    shrines: {
+      passive: { healing: 0.50, chaos_index: 0.20 },
+      special: { name: "Sanguine Transfusion", desc: "Clerics transmute raw life force directly. Revives units instantly at high speeds but raises chaotic corruption" },
     },
   },
 
@@ -208,6 +236,10 @@ const POPULATED_FRAGMENTS = {
       passive: { mana: 0.35, mana_efficiency: 0.30 },
       special: { name: "Mana Geyser", desc: "Pristine tree dew floods the cooling pool, allowing active spellbooks to regenerate passive spell slots automatically" },
     },
+    shrines: {
+      passive: { healing: 0.40, cleric_efficacy: 0.30 },
+      special: { name: "Nectar of Life", desc: "Dew collected from wild tree leaves heals injured troops without spending material herbs, cutting upkeep costs" },
+    },
   },
 
   "Void Essence": {
@@ -235,6 +267,10 @@ const POPULATED_FRAGMENTS = {
       passive: { mana: 1.20, mind_stability: -0.40 },
       special: { name: "Portal Conduits", desc: "Rips open direct holes in reality, funneling raw astral energies that hypercharge output but trigger local portal leaks" },
     },
+    shrines: {
+      passive: { morale: 1.20, mind_stability: -0.40 },
+      special: { name: "Telescopic Epiphany", desc: "Shrine ceilings fold directly into cosmic rifts, granting astronomical knowledge but driving scholars to eccentricity" },
+    },
   },
 
   "Titan Bone": {
@@ -257,6 +293,10 @@ const POPULATED_FRAGMENTS = {
     mage_towers: {
       passive: { mana: 0.30, tower_integrity: 0.15 },
       special: { name: "Goliath Spire", desc: "Fossilized giant bones serve as massive tuning forks, expanding spell casting ranges across adjacent kingdom provinces" },
+    },
+    shrines: {
+      passive: { capacity: 0.30, fortifications: 0.15 },
+      special: { name: "Goliath Temples", desc: "Monolithic bone arches support towering prayer chambers, expanding the maximum space to store wounded soldiers" },
     },
   },
 };
