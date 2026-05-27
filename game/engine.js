@@ -265,13 +265,9 @@ function naturalMoraleCap(k) {
   const housingHappinessMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'happiness');
   cap = Math.floor(cap * housingMoraleMult * housingHappinessMult);
 
-  // Apply housing stability modifier cap (Void Essence reduces max morale)
-  const { getKingdomAttunements } = require('./fragment-attunements');
-  const housingAttune = getKingdomAttunements(k.fragment_bonuses || '{}').housing;
-  if (housingAttune && housingAttune.fragment === 'Void Essence') {
-    // Void Essence reduces morale cap by 30%
-    cap = Math.floor(cap * 0.7);
-  }
+  // Apply housing stability modifier cap (e.g., Void Essence, Cursed Bloodstone reduce max morale)
+  const housingStabilityMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'stability');
+  cap = Math.floor(cap * housingStabilityMult);
 
   return cap;
 }
@@ -1148,20 +1144,14 @@ function processFoodEconomy(k, events) {
   let rotRate = upgrades.preservation ? 0.05 * 0.7 : 0.05; // 5% base degradation, lowered by 30% with salt curing
 
   // Apply fragment attunement decay reduction
-  const { getKingdomAttunements } = require('./fragment-attunements');
-  const granaryAttune = getKingdomAttunements(k.fragment_bonuses || '{}').granaries;
+  const granaryAttune = fragmentBonusManager.getFragmentForBuilding(k, 'granaries');
 
-  // Check for Geothermal Dehydration (eliminates 100% spoilage)
-  if (granaryAttune && granaryAttune.fragment === 'Volcanic Rock') {
-    rotRate = 0;
-  } else if (granaryAttune && granaryAttune.fragment === 'Ancient Elven Wood') {
-    // Ancient Elven Wood: -15% decay reduction (direct elimination)
-    rotRate = 0;
-  } else if (granaryAttune && granaryAttune.fragment === 'Abyssal Crystal') {
-    // Abyssal Crystal: Glacial Cryostasis permanently halts breakdown
+  // Check for fragments with complete decay elimination
+  if (granaryAttune && (granaryAttune.fragment === 'Volcanic Rock' || granaryAttune.fragment === 'Abyssal Crystal')) {
+    // Geothermal Dehydration & Glacial Cryostasis: eliminate 100% spoilage
     rotRate = 0;
   } else {
-    // Other fragments: apply decay_reduction multiplier if present
+    // Other fragments: apply decay_reduction multiplier (including Ancient Elven Wood)
     const decayReduction = fragmentBonusManager.getBonusMultiplier(k, 'granaries', 'decay_reduction');
     if (decayReduction > 1.0) {
       rotRate = rotRate * (1.0 - (decayReduction - 1.0));
@@ -1399,12 +1389,9 @@ function processFoodEconomy(k, events) {
  */
 function processGranaryAttunements(k, events) {
   const updates = {};
-  const { getKingdomAttunements } = require('./fragment-attunements');
+  const granaryAttune = fragmentBonusManager.getFragmentForBuilding(k, 'granaries');
 
-  const attunements = getKingdomAttunements(k.fragment_bonuses || '{}');
-  const granaryAttune = attunements.granaries;
-
-  if (!granaryAttune || !granaryAttune.fragment) {
+  if (!granaryAttune) {
     return updates;
   }
 
@@ -1449,7 +1436,7 @@ function processGranaryAttunements(k, events) {
           type: 'system',
           message: `🪶 Manna Manifestation: ${moraleFoodCost.toLocaleString()} food distributed for morale (+5%).`
         });
-        updates.morale = Math.min(100, (k.morale || 0) + 5);
+        updates.morale = Math.min(naturalMoraleCap(k), (k.morale || 0) + 5);
       }
       break;
 
