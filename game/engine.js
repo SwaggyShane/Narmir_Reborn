@@ -1352,6 +1352,78 @@ function processFoodEconomy(k, events) {
   return updates;
 }
 
+/**
+ * Process granary attunement special abilities
+ * Executes automated effects like food replication, vanishing, spoilage prevention
+ */
+function processGranaryAttunements(k, events) {
+  const updates = {};
+  const { getKingdomAttunements } = require('./fragment-attunements');
+
+  const attunements = getKingdomAttunements(k.fragment_bonuses || '{}');
+  const granaryAttune = attunements.granaries;
+
+  if (!granaryAttune || !granaryAttune.fragment) {
+    return updates;
+  }
+
+  const fragmentName = granaryAttune.fragment;
+  let foodChange = 0;
+  let abilityTriggered = false;
+
+  switch (fragmentName) {
+    case 'Tears of the World Tree':
+      // +2% food self-replication per turn based on current food stored
+      foodChange = Math.floor((k.food || 0) * 0.02);
+      if (foodChange > 0) {
+        abilityTriggered = true;
+        events.push({
+          type: 'system',
+          message: `💧 Tears of the World Tree: +${foodChange.toLocaleString()} food replicated from stored reserves.`
+        });
+      }
+      break;
+
+    case 'Void Essence':
+      // 5% chance per turn food vanishes based on current food stored
+      if (Math.random() < 0.05) {
+        const voidLoss = Math.floor((k.food || 0) * (0.1 + Math.random() * 0.3));
+        foodChange = -voidLoss;
+        abilityTriggered = true;
+        events.push({
+          type: 'system',
+          message: `🌌 Void Essence: ${voidLoss.toLocaleString()} food consumed by the void!`
+        });
+      }
+      break;
+
+    case 'Celestial Feather':
+      // Portion of reserves distributed to boost morale on unstable turns
+      const morale = displayMorale(k);
+      if (morale < 30) {
+        const moraleFoodCost = Math.floor((k.food || 0) * 0.05);
+        foodChange = -moraleFoodCost;
+        abilityTriggered = true;
+        events.push({
+          type: 'system',
+          message: `🪶 Manna Manifestation: ${moraleFoodCost.toLocaleString()} food distributed for morale (+5%).`
+        });
+        updates.morale = Math.min(100, (k.morale || 0) + 5);
+      }
+      break;
+
+    // Other fragments with passive-only abilities don't trigger special events
+    // (Geothermal, Ancient Elven Wood, Dragon Scale, Abyssal Crystal, etc.)
+  }
+
+  if (foodChange !== 0) {
+    const newFood = Math.max(0, (k.food || 0) + foodChange);
+    updates.food = newFood;
+  }
+
+  return updates;
+}
+
 function processMercenaries(k, events) {
   const updates = {};
   const mercs = safeJsonParse(
@@ -1659,6 +1731,10 @@ function processTurn(k) {
   // ── 4. Food economy — farms, consumption, shortage consequences ──────────────
   const foodUpdates = processFoodEconomy({ ...k, ...updates }, events);
   Object.assign(updates, foodUpdates);
+
+  // ── 4a. Granary attunement special abilities ──────────────────────────────────
+  const granaryAbilityUpdates = processGranaryAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, granaryAbilityUpdates);
 
   // ── 4b. Resource production (wood / stone / iron) ────────────────────────────
   const resourceUpdates = processResourceYield({ ...k, ...updates }, events);
@@ -7419,6 +7495,7 @@ module.exports = {
   tavernEntertainmentBonus,
   commodityPrice,
   processFoodEconomy,
+  processGranaryAttunements,
   processMercenaries,
   hireMercenaries,
   purchaseUpgrade,

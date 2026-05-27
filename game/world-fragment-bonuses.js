@@ -12,8 +12,8 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Geothermal Fertility", desc: "Heat accelerates growth but increases population hunger" },
     },
     granaries: {
-      passive: { capacity: 0.20 },
-      special: { name: "Heat Preservation", desc: "Food preserved by constant warmth; immune to cold spoilage" },
+      passive: { storage: 0.20, dryness: 0.10 },
+      special: { name: "Geothermal Dehydration", desc: "Constant heat cures crops. Eliminates 100% of moisture-induced mold and spoilage" },
     },
   },
 
@@ -23,8 +23,8 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Primordial Fertility", desc: "Crops never fail; immune to blight and natural disasters" },
     },
     granaries: {
-      passive: { capacity: 0.50 },
-      special: { name: "Eternal Storage", desc: "Food stored in Elven wood ages like fine wine; value increases over time" },
+      passive: { storage: 0.25, decay_reduction: 0.15 },
+      special: { name: "Organic Preservation", desc: "Roots cocoon stored crops in suspended animation. Food decay over winters reduced to zero" },
     },
     housing: {
       passive: { capacity: 0.15, morale: 0.10 },
@@ -38,15 +38,15 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Dragon's Shadow", desc: "Crops grow but workers fear the land; morale penalty but high yield" },
     },
     granaries: {
-      passive: { capacity: 0.15, security: 0.30 },
-      special: { name: "Hoard Guard", desc: "Granaries protected with draconic magic; impossible to steal from" },
+      passive: { storage: 0.15, raid_security: 0.50 },
+      special: { name: "Draconic Ward", desc: "Granary walls lined with draconic scales. Blocks 100% of rats, pests, and enemy food theft" },
     },
   },
 
   "Abyssal Crystal": {
     granaries: {
-      passive: { capacity: 1.00, instability: 0.20 },
-      special: { name: "Void Pantry", desc: "Unlimited food storage but food becomes unstable; occasional spontaneous spoilage" },
+      passive: { storage: 0.35, magic_output: 0.05 },
+      special: { name: "Glacial Cryostasis", desc: "Deep underdark crystals lock granary in lightless frost. Permanently halts organic breakdown" },
     },
   },
 
@@ -54,6 +54,10 @@ const POPULATED_FRAGMENTS = {
     farms: {
       passive: { production: 0.25, stability: 0.30 },
       special: { name: "Blessed Fields", desc: "Crops blessed by heaven; harvests are guaranteed and bountiful" },
+    },
+    granaries: {
+      passive: { storage: 0.25, morale_stability: 0.20 },
+      special: { name: "Manna Manifestation", desc: "Stored food is blessed. Portion of reserves auto-distributed to boost morale on unstable turns" },
     },
     housing: {
       passive: { capacity: 0.15, happiness: 0.20 },
@@ -63,15 +67,15 @@ const POPULATED_FRAGMENTS = {
 
   "Dwarven Star-Metal": {
     granaries: {
-      passive: { capacity: 0.30 },
-      special: { name: "Star-Metal Granaries", desc: "Food storage secured; no theft possible, quality preserved" },
+      passive: { storage: 0.50, defensive_armor: 0.15 },
+      special: { name: "Piston Silos", desc: "Motorized steam pistons continuously compress and aerate grains, maximizing holding density" },
     },
   },
 
   "Cursed Bloodstone": {
     granaries: {
-      passive: { capacity: 0.30, taint: 0.15 },
-      special: { name: "Bloodstone Stores", desc: "Food stained with blood; attracts scavengers but lasts longer" },
+      passive: { storage: 0.30, combat_attunement: 0.20 },
+      special: { name: "Vampiric Silos", desc: "Spoiling food distilled into dark elixir. Increases military attack speed but spikes chaos" },
     },
   },
 
@@ -81,8 +85,8 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Eternal Harvest", desc: "Crops blessed by world-tree; never fail, multiply if overabundant" },
     },
     granaries: {
-      passive: { capacity: 0.25, vitality: 0.30 },
-      special: { name: "Living Stores", desc: "Food becomes living; never spoils, grants +1% population growth bonus" },
+      passive: { storage: 0.40, growth_rate: 0.50 },
+      special: { name: "Cellular Biosphere", desc: "World Tree spores seed reserves. Stored grains self-replicate at +2% per turn" },
     },
     housing: {
       passive: { capacity: 0.30, growth: 0.25 },
@@ -96,15 +100,15 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Void Crops", desc: "Food yields doubled but becomes unpredictable; crops either triple or fail" },
     },
     granaries: {
-      passive: { capacity: 2.00, volatility: 0.50 },
-      special: { name: "Void Pantry", desc: "Infinite storage but unstable; food randomly appears/disappears" },
+      passive: { storage: 2.00, quantum_flux: 0.15 },
+      special: { name: "Void Pantry", desc: "Granary folds into pocket dimension for massive volume. 5% chance per turn food vanishes" },
     },
   },
 
   "Titan Bone": {
     granaries: {
-      passive: { capacity: 0.50 },
-      special: { name: "Titan Stores", desc: "Granaries grow enormous; food storage for years, never runs out" },
+      passive: { storage: 1.00, fortifications: 0.20 },
+      special: { name: "Megastructures", desc: "Fossilized skeletal columns support towering silos. Storage capabilities scale exponentially" },
     },
     housing: {
       passive: { capacity: 0.40 },
