@@ -6,11 +6,9 @@
 const {
   FRAGMENT_BONUSES,
   getKingdomAttunements,
-  isFragmentAttuned,
-  getFragmentAttunedBuilding,
 } = require('./fragment-attunements');
 
-const { fragmentBonusManager } = require('./fragment-bonus-manager');
+const fragmentBonusManager = require('./fragment-bonus-manager');
 
 /**
  * Validate that a fragment can be attuned to a building
@@ -36,13 +34,15 @@ function validateAttunement(kingdom, fragmentName, buildingType) {
   // Check if building already has a fragment
   const currentAttunements = getKingdomAttunements(kingdom.fragment_bonuses || '{}');
   if (currentAttunements[buildingType]) {
-    return { error: `${buildingType} already has fragment '${currentAttunements[buildingType]}' attuned` };
+    return { error: `${buildingType} already has fragment '${currentAttunements[buildingType].fragment}' attuned` };
   }
 
   // Check if fragment is already attuned elsewhere
-  if (isFragmentAttuned(currentAttunements, fragmentName)) {
-    const attachedTo = getFragmentAttunedBuilding(currentAttunements, fragmentName);
-    return { error: `Fragment '${fragmentName}' is already attuned to ${attachedTo} (single fragment constraint)` };
+  const alreadyAttunedBuilding = Object.entries(currentAttunements).find(
+    ([_, att]) => att && att.fragment === fragmentName
+  )?.[0];
+  if (alreadyAttunedBuilding) {
+    return { error: `Fragment '${fragmentName}' is already attuned to ${alreadyAttunedBuilding} (single fragment constraint)` };
   }
 
   return { ok: true };
@@ -98,7 +98,10 @@ function getAvailableAttunements(kingdom) {
   // For each fragment, check if it can be attuned
   for (const [fragmentName, buildingBonuses] of Object.entries(FRAGMENT_BONUSES)) {
     // Skip if fragment is already attuned
-    if (isFragmentAttuned(currentAttunements, fragmentName)) {
+    const isAttuned = Object.values(currentAttunements).some(
+      (att) => att && att.fragment === fragmentName
+    );
+    if (isAttuned) {
       continue;
     }
 

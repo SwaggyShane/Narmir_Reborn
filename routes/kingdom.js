@@ -4288,7 +4288,11 @@ module.exports = function (db) {
   // GET /api/kingdom/attunements — Get current attunement status
   router.get('/attunements', requireAuth, async (req, res) => {
     try {
-      const kingdom = req.kingdom;
+      const kingdom = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
+        req.player.playerId,
+      ]);
+      if (!kingdom) return res.status(404).json({ error: "Kingdom not found" });
+
       const status = attunementManager.getAttunementStatus(kingdom);
       res.json({
         ok: true,
@@ -4304,7 +4308,11 @@ module.exports = function (db) {
   // GET /api/kingdom/available-attunements — Get available attunement options
   router.get('/available-attunements', requireAuth, async (req, res) => {
     try {
-      const kingdom = req.kingdom;
+      const kingdom = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
+        req.player.playerId,
+      ]);
+      if (!kingdom) return res.status(404).json({ error: "Kingdom not found" });
+
       const available = attunementManager.getAvailableAttunements(kingdom);
       res.json({
         ok: true,
@@ -4321,27 +4329,26 @@ module.exports = function (db) {
   router.post('/attune-fragment', requireAuth, async (req, res) => {
     try {
       const { fragmentName, buildingType } = req.body;
-      const kingdomId = req.kingdom.id;
 
       // Validate input
       if (!fragmentName || !buildingType) {
         return res.status(400).json({ error: 'fragmentName and buildingType required' });
       }
 
+      const kingdom = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
+        req.player.playerId,
+      ]);
+      if (!kingdom) return res.status(404).json({ error: "Kingdom not found" });
+
       // Apply attunement logic
-      const result = attunementManager.applyAttunement(req.kingdom, fragmentName, buildingType);
+      const result = attunementManager.applyAttunement(kingdom, fragmentName, buildingType);
       if (result.error) {
         return res.status(400).json({ error: result.error });
       }
 
-      // Update kingdom with new attunements
-      const updates = {
-        fragment_bonuses: result.fragment_bonuses,
-      };
-
       await db.run(
         `UPDATE kingdoms SET fragment_bonuses = ? WHERE id = ?`,
-        [result.fragment_bonuses, kingdomId]
+        [result.fragment_bonuses, kingdom.id]
       );
 
       res.json({
@@ -4350,7 +4357,7 @@ module.exports = function (db) {
         message: `${fragmentName} attuned to ${buildingType}`,
       });
 
-      console.log(`[attunement] Kingdom ${kingdomId}: ${fragmentName} → ${buildingType}`);
+      console.log(`[attunement] Kingdom ${kingdom.id}: ${fragmentName} → ${buildingType}`);
     } catch (err) {
       console.error('[attunement] apply failed:', err.message);
       res.status(500).json({ error: 'Failed to apply attunement' });
