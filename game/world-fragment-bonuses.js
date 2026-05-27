@@ -63,6 +63,10 @@ const POPULATED_FRAGMENTS = {
       passive: { training_speed: 0.30, siege_firepower: 0.15 },
       special: { name: "Pyroclastic Billeting", desc: "Thermal vents located under troop quarters provide constant heating. Troops stay active even in freezing outdoor blizzards, accelerating preparation rounds" },
     },
+    walls: {
+      passive: { wall_hp: 0.30, siege_defense: 0.15 },
+      special: { name: "Magma Parapets", desc: "Thermal insulation warms the bricks. Pouring lava-infused liquids down the battlements melts climbing equipment, damaging enemy engineers" },
+    },
   },
 
   "Ancient Elven Wood": {
@@ -121,6 +125,10 @@ const POPULATED_FRAGMENTS = {
     barracks: {
       passive: { garrison_defense: 0.30, ranged_training: 0.15 },
       special: { name: "Sylvan Archery Hubs", desc: "Archery ranges set within ancient majestic elven trees improve rangers' natural aiming abilities, granting bonus garrison arrows" },
+    },
+    walls: {
+      passive: { wall_hp: 0.30, root_grip: 0.15 },
+      special: { name: "Sylvan Bramble-Weaves", desc: "Living tree roots tightly wrap around the masonry, holding the wall together during catastrophic earth-shake or heavy siege fire" },
     },
   },
 
@@ -181,6 +189,10 @@ const POPULATED_FRAGMENTS = {
       passive: { training_speed: 0.15, flame_endurance: 0.40 },
       special: { name: "Fire-Drake Billeting", desc: "Coating training shields in red wyrmscale increases recruits' heat tolerances enormously, fully protecting them from environmental scorch effects" },
     },
+    walls: {
+      passive: { wall_hp: 0.15, flame_immunity: 0.40 },
+      special: { name: "Wyrmscale Bastions", desc: "Coating guard turrets in obsidian scales shrugs off incoming siege fireballs, granting immune indicators against burning effects" },
+    },
   },
 
   "Abyssal Crystal": {
@@ -235,6 +247,10 @@ const POPULATED_FRAGMENTS = {
     barracks: {
       passive: { infiltration_speed: 0.30, night_vision: 0.15 },
       special: { name: "Crystalline Echo Ranges", desc: "Shadow crystals capture echo patterns of movement, training troops in silent footfalls and making stealth squads virtually silent" },
+    },
+    walls: {
+      passive: { alarm_range: 0.30, tunnel_detection: 0.15 },
+      special: { name: "Resonant Earth-Siren", desc: "Quartz crystal arrays resonate deep in the earth, sounding immediate alarms when miners attempt to tunnel under the fort" },
     },
   },
 
@@ -295,6 +311,10 @@ const POPULATED_FRAGMENTS = {
       passive: { training_efficiency: 0.25, healing_speed: 0.35 },
       special: { name: "Seraphic Parade Grounds", desc: "Recruits study sacred angelic tactical scrolls. Morale failure rates drop to zero, keeping troop units highly disciplined" },
     },
+    walls: {
+      passive: { wall_hp: 0.25, healing_grace: 0.35 },
+      special: { name: "Empyrean Divine Barriers", desc: "The wall emits a soothing holy light, regenerating the active HP of defending archers and garrison units stationed on top" },
+    },
   },
 
   "Dwarven Star-Metal": {
@@ -350,6 +370,10 @@ const POPULATED_FRAGMENTS = {
       passive: { troop_capacity: 0.40, training_precision: 1.00 },
       special: { name: "Clockwork Training Dummies", desc: "Steam-powered automatons spar with recruits, maximizing combat precision without risking fatal physical training injuries" },
     },
+    walls: {
+      passive: { wall_hp: 0.40, repair_speed: 1.00 },
+      special: { name: "Geared Self-Construction", desc: "Auxiliary clockwork cog-wheels nested within the walls automatically raise fallen bricks, self-repairing wall damage in real-time" },
+    },
   },
 
   "Cursed Bloodstone": {
@@ -404,6 +428,10 @@ const POPULATED_FRAGMENTS = {
     barracks: {
       passive: { recruits_output: 0.50, morale_stability: -0.20 },
       special: { name: "Sanguine Ritual Circles", desc: "Dipping barracks banners in bloody crucible pools sparks a dark bloodlust, multiplying recruit generation rates at high civil unrest costs" },
+    },
+    walls: {
+      passive: { retaliation_dmg: 0.50, wall_durability: -0.20 },
+      special: { name: "Sanguine Blood-Thorns", desc: "Pouring dark magic over the stones triggers razor-sharp bloodstone thorns to erupt, shredding any unit that attempts to scale the walls" },
     },
   },
 
@@ -464,6 +492,10 @@ const POPULATED_FRAGMENTS = {
       passive: { troop_capacity: 0.35, unit_health: 0.30 },
       special: { name: "Yggdrasil Rest Chambers", desc: "Sleeping quarters carved adjacent to glowing root nodes revitalize injured soldiers overnight, boosting their overall constitutional healing" },
     },
+    walls: {
+      passive: { wall_hp: 0.35, bark_reconstitute: 0.30 },
+      special: { name: "Amber-Slick Ramparts", desc: "Coating walls in Yggdrasil sap makes them incredibly sticky and slippery at the same time, increasing climbing ladder fail rates by 30%" },
+    },
   },
 
   "Void Essence": {
@@ -523,6 +555,10 @@ const POPULATED_FRAGMENTS = {
       passive: { troop_capacity: 1.20, garrison_order: -0.40 },
       special: { name: "Sub-Spatial Barracks", desc: "Trainees are housed in folding localized pocket-dimension bunks, creating infinite barracks storage space, though space lag delays deployment" },
     },
+    walls: {
+      passive: { wall_hp: 1.20, gravity_anchor: -0.40 },
+      special: { name: "Phased Spatial Displacement", desc: "The wall system fluctuates dimensionally. Up to 40% of standard incoming catapult projectiles pass completely through into the void without doing damage" },
+    },
   },
 
   "Titan Bone": {
@@ -577,6 +613,10 @@ const POPULATED_FRAGMENTS = {
     barracks: {
       passive: { military_fortitude: 0.30, siege_counters: 0.15 },
       special: { name: "Titan-Rib Palisades", desc: "Walls constructed out of gargantuan marrow bones reinforce the training grounds, converting barracks into impenetrable sub-citadels during siege times" },
+    },
+    walls: {
+      passive: { wall_hp: 0.30, direct_fortitude: 0.15 },
+      special: { name: "Colossal Rib-Buttresses", desc: "Megalithic fossilized bones reinforce the support pillars, completely neutralizing standard wooden battering rams" },
     },
   },
 };
