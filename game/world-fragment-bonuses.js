@@ -19,6 +19,10 @@ const POPULATED_FRAGMENTS = {
       passive: { capacity: 0.10, stability: 0.05 },
       special: { name: "Geothermal Hearth", desc: "Underfloor heating pipes tap volcanic veins. Citizens stay warm through brutal winters" },
     },
+    libraries: {
+      passive: { lore_generation: 0.15, warmth: 0.10 },
+      special: { name: "Heat-Hardened Archive", desc: "Warm dry air circulates continuously, preventing parchment decay and humidity damage" },
+    },
   },
 
   "Ancient Elven Wood": {
@@ -33,6 +37,10 @@ const POPULATED_FRAGMENTS = {
     housing: {
       passive: { capacity: 0.20, stability: 0.30 },
       special: { name: "Treehouse Canopy", desc: "Dwellings weave into living canopies. Citizens remain in maximum happiness" },
+    },
+    libraries: {
+      passive: { lore_generation: 0.20, forest_sight: 0.25 },
+      special: { name: "Sylvan Whispers", desc: "Living paper pages whisper ancient secrets directly to librarians" },
     },
   },
 
@@ -49,6 +57,10 @@ const POPULATED_FRAGMENTS = {
       passive: { capacity: 0.10, defenses: 0.25 },
       special: { name: "Fortified Keeps", desc: "Draconic scales line outer walls. Shelters are highly secure and flame-retardant" },
     },
+    libraries: {
+      passive: { lore_generation: 0.05, document_armor: 0.40 },
+      special: { name: "Fireproof Scriptorium", desc: "Dragon scale coatings make all historical papers immune to fire" },
+    },
   },
 
   "Abyssal Crystal": {
@@ -59,6 +71,10 @@ const POPULATED_FRAGMENTS = {
     housing: {
       passive: { capacity: 0.15, magic_output: 0.10 },
       special: { name: "Shadow Attunement", desc: "Crystalline-infused houses produce magical output as citizens meditate and rest" },
+    },
+    libraries: {
+      passive: { decoding_speed: 0.30, magic_output: 0.10 },
+      special: { name: "Shadow Scripts", desc: "Illuminates invisible texts on ancient scrolls under purple crystal light" },
     },
   },
 
@@ -75,6 +91,10 @@ const POPULATED_FRAGMENTS = {
       passive: { capacity: 0.25, stability: 0.35 },
       special: { name: "Holy Sanctuaries", desc: "Angelic grace prevents civil unrest. Rioting and immigration desertion are greatly reduced" },
     },
+    libraries: {
+      passive: { lore_generation: 0.25, morale_sight: 0.35 },
+      special: { name: "Heavenly Revelations", desc: "Angelic scriptures float down from skylights, resolving complex studies automatically" },
+    },
   },
 
   "Dwarven Star-Metal": {
@@ -86,6 +106,10 @@ const POPULATED_FRAGMENTS = {
       passive: { capacity: 0.40, defenses: 0.10 },
       special: { name: "Retractable Apartments", desc: "Dwarven clockwork bunks and fold-out structures fit more citizens in less space" },
     },
+    libraries: {
+      passive: { lore_generation: 0.40, record_impenetrability: 1.00 },
+      special: { name: "Impenetrable Star-Metal Lockboxes", desc: "Maps, locations, and relic coordinates cannot be lost, stolen, or erased by curses" },
+    },
   },
 
   "Cursed Bloodstone": {
@@ -96,6 +120,10 @@ const POPULATED_FRAGMENTS = {
     housing: {
       passive: { capacity: 0.50, stability: -0.20 },
       special: { name: "Blood Pact Lodgings", desc: "Explosive population density powered by dark covenant. Raw workforce expansion at stability cost" },
+    },
+    libraries: {
+      passive: { lore_generation: 0.50, chaos_index: 0.15 },
+      special: { name: "Sanguine Cartography", desc: "Maps drawn in blood update geography in real-time but cause intense psychological stress" },
     },
   },
 
@@ -112,6 +140,10 @@ const POPULATED_FRAGMENTS = {
       passive: { capacity: 0.35, stability: 0.25 },
       special: { name: "Lifespring Spores", desc: "Curing waters fill district fonts. Zero infant mortality, natural growth boosted +50%" },
     },
+    libraries: {
+      passive: { lore_generation: 0.35, spell_efficiency: 0.30 },
+      special: { name: "Dew of Understanding", desc: "Sipping microscopic water drops doubles comprehension speed and memory retention" },
+    },
   },
 
   "Void Essence": {
@@ -127,6 +159,10 @@ const POPULATED_FRAGMENTS = {
       passive: { capacity: 1.20, stability: -0.30 },
       special: { name: "Void Pocket Lofts", desc: "Living rooms fold into pocket dimensions. Massive capacity with mild disorientation penalty" },
     },
+    libraries: {
+      passive: { research_speed: -0.30, chaos_index: 0.20 },
+      special: { name: "Void Codex", desc: "Research becomes unpredictable; studies may jump forward rapidly or regress without warning" },
+    },
   },
 
   "Titan Bone": {
@@ -137,6 +173,10 @@ const POPULATED_FRAGMENTS = {
     housing: {
       passive: { capacity: 0.60, defenses: 0.15 },
       special: { name: "Goliath Dwellings", desc: "Colossal foundations built on titanic skeletons. Allows massive multi-story structures" },
+    },
+    libraries: {
+      passive: { lore_generation: 0.75, record_capacity: 0.50 },
+      special: { name: "Colossal Archives", desc: "Titanic skeletal supports allow libraries to expand indefinitely with vault-like record storage" },
     },
   },
 };
