@@ -1438,21 +1438,35 @@ async function start() {
   });
 
   app.post('/api/select-school', requireAuth, async (req, res) => {
-    const { school } = req.body;
-    if (!school?.trim()) return res.status(400).json({ error: 'School name required' });
+    try {
+      const { school } = req.body;
+      if (!school?.trim()) return res.status(400).json({ error: 'School name required' });
 
-    const kingdom = await db.get('SELECT * FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
-    if (!kingdom) return res.status(404).json({ error: 'Kingdom not found' });
+      const kingdom = await db.get('SELECT * FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
+      if (!kingdom) return res.status(404).json({ error: 'Kingdom not found' });
 
-    const result = engine.selectSchool(kingdom, school.trim().toLowerCase());
-    if (result.error) return res.status(400).json({ error: result.error });
+      const result = engine.selectSchool(kingdom, school.trim().toLowerCase());
+      if (result.error) return res.status(400).json({ error: result.error });
 
-    await db.run(
-      'UPDATE kingdoms SET school_of_magic = ?, school_spellbook = ? WHERE id = ?',
-      [result.updates.school_of_magic, result.updates.school_spellbook, kingdom.id]
-    );
+      await db.run('BEGIN TRANSACTION');
+      await db.run(
+        'UPDATE kingdoms SET school_of_magic = ?, school_spellbook = ? WHERE id = ?',
+        [result.updates.school_of_magic, result.updates.school_spellbook, kingdom.id]
+      );
 
-    res.json({ ok: true, school: result.updates.school_of_magic, events: result.events });
+      if (result.events && result.events.length > 0) {
+        await db.run(
+          'INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?, ?, ?, ?)',
+          [kingdom.id, result.events[0].type || 'system', result.events[0].message, kingdom.turn]
+        );
+      }
+      await db.run('COMMIT');
+
+      res.json({ ok: true, school: result.updates.school_of_magic, events: result.events });
+    } catch (e) {
+      await db.run('ROLLBACK').catch(() => {});
+      res.status(500).json({ error: e.message });
+    }
   });
 
   // Catch-all for API 404s to prevent HTML responses for API calls
