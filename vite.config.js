@@ -16,7 +16,7 @@ export default defineConfig(({ command, mode }) => {
     },
     server: {
       hmr: false, // HMR is disabled in this environment
-      allowedHosts: ['narmirreborn.com']
+      allowedHosts: ['narmirreborn.com', 'localhost', '127.0.0.1']
     },
     css: {
       devSourcemap: false
