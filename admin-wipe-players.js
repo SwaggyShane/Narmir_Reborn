@@ -110,7 +110,8 @@ async function wipePlayerAccounts() {
   } catch (err) {
     try {
       await client.query('ROLLBACK');
-    } catch (rollbackErr) {
+      // eslint-disable-next-line no-unused-vars
+    } catch (_rollbackErr) {
       // Ignore rollback errors
     }
     console.error('❌ Error:', err.message);

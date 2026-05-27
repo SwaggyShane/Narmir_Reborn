@@ -2777,7 +2777,7 @@ function checkAchievements(k, updates, events) {
       ach.push("collector");
       achUpdated = true;
       // Reveal all kingdom locations
-      let disc = safeJsonParse(updates.discovered_kingdoms || k.discovered_kingdoms, {}, "collector:discovered_kingdoms");
+      let _disc = safeJsonParse(updates.discovered_kingdoms || k.discovered_kingdoms, {}, "collector:discovered_kingdoms");
       // This would need database access to get all kingdoms - for now, we'll mark this achievement
       // and handle the revelation in the achievement processor with db context
       updates._reveal_all_locations = true;
@@ -2975,7 +2975,7 @@ function studyDiscipline(k, discipline, researchersAssigned) {
 // ── Magic Schools ─────────────────────────────────────────────────────────────
 
 // Select a school of magic (one-time choice when res_spellbook >= 100)
-function selectSchool(k, schoolName) {
+function _selectSchool(k, schoolName) {
   // Validate school name
   if (!MAGIC_SCHOOLS[schoolName]) {
     return { error: `Unknown school: ${schoolName}` };

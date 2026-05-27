@@ -2,7 +2,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const engine = require("../game/engine");
-const { generateCsrfToken, csrfTokens, requireAuth } = require("./middleware");
+const { generateCsrfToken, _csrfTokens, requireAuth } = require("./middleware");
 
 const router = express.Router();
 

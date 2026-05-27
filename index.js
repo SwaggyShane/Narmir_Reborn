@@ -15,7 +15,8 @@ if (!fs.existsSync(logsDir)) {
 const logFilePath = path.join(logsDir, 'server.log');
 try {
   fs.writeFileSync(logFilePath, `=== SERVER LOG STARTED AT ${new Date().toISOString()} ===\nNODE_ENV: ${process.env.NODE_ENV}\n\n`);
-} catch(e) {}
+  // eslint-disable-next-line no-unused-vars
+} catch(_e) {}
 
 const originalLog = console.log;
 const originalError = console.error;
@@ -25,7 +26,8 @@ console.log = function(...args) {
   originalLog.apply(console, args);
   try {
     fs.appendFileSync(logFilePath, `[LOG] [${new Date().toISOString()}] ${args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ')}\n`);
-  } catch (e) {}
+    // eslint-disable-next-line no-unused-vars
+  } catch (_e) {}
 };
 console.error = function(...args) {
   originalError.apply(console, args);
@@ -41,13 +43,15 @@ console.error = function(...args) {
       return String(a);
     }).join(' ');
     fs.appendFileSync(logFilePath, `[ERROR] [${new Date().toISOString()}] ${sanitized}\n`);
-  } catch (e) {}
+    // eslint-disable-next-line no-unused-vars
+  } catch (_e) {}
 };
 console.warn = function(...args) {
   originalWarn.apply(console, args);
   try {
     fs.appendFileSync(logFilePath, `[WARN] [${new Date().toISOString()}] ${args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ')}\n`);
-  } catch (e) {}
+    // eslint-disable-next-line no-unused-vars
+  } catch (_e) {}
 };
 
 // Initial boot state
@@ -332,7 +336,7 @@ async function runAiKingdom(db, engine, playerId) {
   const cyclesPerDay = minutesPerDay / (REGEN_MS / (60 * 1000));
   const turnsPerRegenCycle = Math.ceil(REGEN_MAX / cyclesPerDay);
   const turnsToSpend = Math.min(ai.turns_stored, turnsPerRegenCycle);
-  const inDevelopmentPhase = ai.turn < 800;
+  const _inDevelopmentPhase = ai.turn < 800;
   const turnsPerCycle = 1; // Process one turn at a time for smoother progression
 
   try {
