@@ -39,6 +39,10 @@ const POPULATED_FRAGMENTS = {
       passive: { capacity: 0.15, power: 0.10 },
       special: { name: "Geothermal Reanimation", desc: "Underground lava vents heat sarcophagi, curing necrotic sinew faster and accelerating reanimation turnover" },
     },
+    markets: {
+      passive: { income: 0.15, metal_trading: 0.10 },
+      special: { name: "Geothermal Foundry-Market", desc: "Warm open-air foundries facilitate metal smelting and ingot trade-guilds directly on site, speeding up gold cycles" },
+    },
   },
 
   "Ancient Elven Wood": {
@@ -73,6 +77,10 @@ const POPULATED_FRAGMENTS = {
     mausoleums: {
       passive: { power: 0.20, forest_sight: 0.25 },
       special: { name: "Deep Forest Catacombs", desc: "Twisted roots lock coffin vaults, channeling forest shadows to grant scouts enhanced sensory vision" },
+    },
+    markets: {
+      passive: { income: 0.20, forest_trade: 0.25 },
+      special: { name: "Sylvan Whispering Bazaars", desc: "Trade booths constructed inside living wood receive woodland wisdom, maintaining stable prices and boosting barter ratios" },
     },
   },
 
@@ -109,6 +117,10 @@ const POPULATED_FRAGMENTS = {
       passive: { capacity: 0.10, defenses: 0.40 },
       special: { name: "Obsidian Spire Wards", desc: "Lining catacomb walls with dragon scales forms standard flame-proof plating, absorbing incoming siege attacks" },
     },
+    markets: {
+      passive: { income: 0.05, anti_theft_security: 0.40 },
+      special: { name: "Draconic Coinage", desc: "Coinage pressed under scaled scales glows if counterfeit, and vaults become impervious to sabotage or raid theft" },
+    },
   },
 
   "Abyssal Crystal": {
@@ -139,6 +151,10 @@ const POPULATED_FRAGMENTS = {
     mausoleums: {
       passive: { capacity: 0.30, spell_resistance: 0.15 },
       special: { name: "Umbral Cryostasis", desc: "Crystalline spires focus absolute shadow light, shielding resting Thralls from holy light or banishing spells" },
+    },
+    markets: {
+      passive: { secret_decoding: 0.30, dark_trade_gains: 0.15 },
+      special: { name: "Shadow Exchanges", desc: "Subterranean black-markets use dark crystal lights to evaluate smuggling contracts, significantly boosting dark magical currency income" },
     },
   },
 
@@ -175,6 +191,10 @@ const POPULATED_FRAGMENTS = {
       passive: { capacity: 0.25, power: 0.35 },
       special: { name: "Penitent Sentinels", desc: "Winds of grace whisper through crypt pillars, keeping the baseline undead completely loyal and free from revolt" },
     },
+    markets: {
+      passive: { income: 0.25, merchant_morale: 0.35 },
+      special: { name: "Heavenly Tithes", desc: "Mercantile angels bless standard exchanges, removing commercial greed or unrest and stabilizing transaction safety" },
+    },
   },
 
   "Dwarven Star-Metal": {
@@ -206,6 +226,10 @@ const POPULATED_FRAGMENTS = {
       passive: { capacity: 0.40, record_defense: 1.00 },
       special: { name: "Impenetrable Iron Crypts", desc: "Encasing coordinates, blueprints, and relics in seamless Star-Metal boxes makes them incapable of being lost, stolen, or removed by amnesia" },
     },
+    markets: {
+      passive: { income: 0.40, core_protection: 1.00 },
+      special: { name: "Star-Metal Lockbox Ledgers", desc: "Financial records are stored inside clockwork Star-Metal matrices. Accounts cannot be falsified, lost, stolen, or forgotten due to amnesia" },
+    },
   },
 
   "Cursed Bloodstone": {
@@ -236,6 +260,10 @@ const POPULATED_FRAGMENTS = {
     mausoleums: {
       passive: { capacity: 0.50, chaos_index: 0.20 },
       special: { name: "Cruor Coils", desc: "Infusing channels with pure vampire bloodstone triples reanimation yields, but causes local populations to panic" },
+    },
+    markets: {
+      passive: { income: 0.50, chaos_index: 0.15 },
+      special: { name: "Sanguine Auction Guilds", desc: "Elite auction houses deal in forbidden alchemical drops and life contracts, yielding extreme tax profits at high chaotic costs" },
     },
   },
 
@@ -272,6 +300,10 @@ const POPULATED_FRAGMENTS = {
       passive: { capacity: 0.35, growth_rate: 0.30 },
       special: { name: "Verdant Rejuvenation", desc: "Dew droplets seep down to graves; flesh and muscle fibers regenerate perfectly, boosting Thrall health" },
     },
+    markets: {
+      passive: { income: 0.35, trade_stability: 0.30 },
+      special: { name: "Oasis Bazaars", desc: "Merchant caravans drinking tree dew experience exceptional stamina, establishing continuous trades without delay" },
+    },
   },
 
   "Void Essence": {
@@ -307,6 +339,10 @@ const POPULATED_FRAGMENTS = {
       passive: { capacity: 1.20, mind_stability: -0.40 },
       special: { name: "Shattered Portal Sarcophagi", desc: "Undead rise from tear-rifts in reality, allowing infinite capacity expansion at the cost of mild local disorientation" },
     },
+    markets: {
+      passive: { income: 1.20, mind_stability: -0.40 },
+      special: { name: "Quantum Shopping Matrix", desc: "Connects trade districts to multi-planar channels, generating outrageous gold flows while causing temporary citizen absences" },
+    },
   },
 
   "Titan Bone": {
@@ -337,6 +373,10 @@ const POPULATED_FRAGMENTS = {
     mausoleums: {
       passive: { power: 0.30, tower_integrity: 0.15 },
       special: { name: "Titan Bone Sentinels", desc: "Weaving fossilized titan rib-cages into the architecture fortifies defenses, creating colossal towers that expand unit ranges" },
+    },
+    markets: {
+      passive: { income: 0.30, capacity_expansion: 0.15 },
+      special: { name: "Goliath Trade Halls", desc: "Gigantic columns carved from titan skulls support monumental domes with massive stall capacity, maximizing trader retention" },
     },
   },
 };
