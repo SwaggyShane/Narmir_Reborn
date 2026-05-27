@@ -59,6 +59,10 @@ const POPULATED_FRAGMENTS = {
       passive: { crafting_speed: 0.15, metal_yields: 0.10 },
       special: { name: "Geothermal Blast Forge", desc: "Thermal heat fuels high-temperature bellow vents, accelerating tool-crafting and weapon-forging turn cycles" },
     },
+    barracks: {
+      passive: { training_speed: 0.30, siege_firepower: 0.15 },
+      special: { name: "Pyroclastic Billeting", desc: "Thermal vents located under troop quarters provide constant heating. Troops stay active even in freezing outdoor blizzards, accelerating preparation rounds" },
+    },
   },
 
   "Ancient Elven Wood": {
@@ -113,6 +117,10 @@ const POPULATED_FRAGMENTS = {
     smithies: {
       passive: { crafting_quality: 0.20, forest_sight: 0.25 },
       special: { name: "Living Wood Forges", desc: "Fusing wood-sap with iron makes tools lightweight, flexible, and virtually unbreakable, boosting smithy yields" },
+    },
+    barracks: {
+      passive: { garrison_defense: 0.30, ranged_training: 0.15 },
+      special: { name: "Sylvan Archery Hubs", desc: "Archery ranges set within ancient majestic elven trees improve rangers' natural aiming abilities, granting bonus garrison arrows" },
     },
   },
 
@@ -169,6 +177,10 @@ const POPULATED_FRAGMENTS = {
       passive: { crafting_quality: 0.05, smelting_speed: 0.40 },
       special: { name: "Wyrmfire Blast Furnaces", desc: "Dragon-scale insulation allows containing intense draconic flames, accelerating smithy manufacture speeds" },
     },
+    barracks: {
+      passive: { training_speed: 0.15, flame_endurance: 0.40 },
+      special: { name: "Fire-Drake Billeting", desc: "Coating training shields in red wyrmscale increases recruits' heat tolerances enormously, fully protecting them from environmental scorch effects" },
+    },
   },
 
   "Abyssal Crystal": {
@@ -219,6 +231,10 @@ const POPULATED_FRAGMENTS = {
     smithies: {
       passive: { crafting_quality: 0.30, dark_focus: 0.15 },
       special: { name: "Void-Crystalline Forges", desc: "Infusing hammers with resonant underdark crystals raises the quality of blades and locks under dark light" },
+    },
+    barracks: {
+      passive: { infiltration_speed: 0.30, night_vision: 0.15 },
+      special: { name: "Crystalline Echo Ranges", desc: "Shadow crystals capture echo patterns of movement, training troops in silent footfalls and making stealth squads virtually silent" },
     },
   },
 
@@ -275,6 +291,10 @@ const POPULATED_FRAGMENTS = {
       passive: { crafting_quality: 0.25, purified_armor: 0.35 },
       special: { name: "Aureole Forging", desc: "Heavenly light purifies raw metals, forging pristine, flawless instruments with blessed precision" },
     },
+    barracks: {
+      passive: { training_efficiency: 0.25, healing_speed: 0.35 },
+      special: { name: "Seraphic Parade Grounds", desc: "Recruits study sacred angelic tactical scrolls. Morale failure rates drop to zero, keeping troop units highly disciplined" },
+    },
   },
 
   "Dwarven Star-Metal": {
@@ -326,6 +346,10 @@ const POPULATED_FRAGMENTS = {
       passive: { crafting_speed: 0.40, alloy_quality: 1.00 },
       special: { name: "Clockwork Star-Metal Forges", desc: "Automated clockwork anvils forge indestructible blueprints, gearsets, and hammers with pristine quality" },
     },
+    barracks: {
+      passive: { troop_capacity: 0.40, training_precision: 1.00 },
+      special: { name: "Clockwork Training Dummies", desc: "Steam-powered automatons spar with recruits, maximizing combat precision without risking fatal physical training injuries" },
+    },
   },
 
   "Cursed Bloodstone": {
@@ -376,6 +400,10 @@ const POPULATED_FRAGMENTS = {
     smithies: {
       passive: { smelting_output: 0.50, smelting_speed: 0.15 },
       special: { name: "Sanguine Crucible", desc: "Sacrificing lifeforce into crucible pools supercharges blacksmith yield rates at dynamic chaotic costs" },
+    },
+    barracks: {
+      passive: { recruits_output: 0.50, morale_stability: -0.20 },
+      special: { name: "Sanguine Ritual Circles", desc: "Dipping barracks banners in bloody crucible pools sparks a dark bloodlust, multiplying recruit generation rates at high civil unrest costs" },
     },
   },
 
@@ -432,6 +460,10 @@ const POPULATED_FRAGMENTS = {
       passive: { crafting_speed: 0.35, tool_stability: 0.30 },
       special: { name: "Yggdrasil Fuel Glands", desc: "Soaking furnaces in glowing sap reduces fuel requirements, keeping bellows pumping continuously" },
     },
+    barracks: {
+      passive: { troop_capacity: 0.35, unit_health: 0.30 },
+      special: { name: "Yggdrasil Rest Chambers", desc: "Sleeping quarters carved adjacent to glowing root nodes revitalize injured soldiers overnight, boosting their overall constitutional healing" },
+    },
   },
 
   "Void Essence": {
@@ -487,6 +519,10 @@ const POPULATED_FRAGMENTS = {
       passive: { smelting_output: 1.20, crafting_speed: -0.40 },
       special: { name: "Quantum Portal Anvils", desc: "Anvils are tethered across multiple spatial dimensions, duplicating weapons but introducing spatial lag" },
     },
+    barracks: {
+      passive: { troop_capacity: 1.20, garrison_order: -0.40 },
+      special: { name: "Sub-Spatial Barracks", desc: "Trainees are housed in folding localized pocket-dimension bunks, creating infinite barracks storage space, though space lag delays deployment" },
+    },
   },
 
   "Titan Bone": {
@@ -537,6 +573,10 @@ const POPULATED_FRAGMENTS = {
     smithies: {
       passive: { smelting_output: 0.30, space_density: 0.15 },
       special: { name: "Mammoth Anvil Pillars", desc: "Anvils constructed over mammoth fossilized jawbones increase capacity for high-volume metalworking" },
+    },
+    barracks: {
+      passive: { military_fortitude: 0.30, siege_counters: 0.15 },
+      special: { name: "Titan-Rib Palisades", desc: "Walls constructed out of gargantuan marrow bones reinforce the training grounds, converting barracks into impenetrable sub-citadels during siege times" },
     },
   },
 };
