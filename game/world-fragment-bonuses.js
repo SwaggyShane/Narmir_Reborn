@@ -55,6 +55,10 @@ const POPULATED_FRAGMENTS = {
       passive: { garrison_defense: 0.30, siege_output: 0.15 },
       special: { name: "Volcanic Core Mail", desc: "Plates quenched in thermal lava canals gain heat-retentive guards, making them highly resistant to frost weapons or cold fatigue" },
     },
+    smithies: {
+      passive: { crafting_speed: 0.15, metal_yields: 0.10 },
+      special: { name: "Geothermal Blast Forge", desc: "Thermal heat fuels high-temperature bellow vents, accelerating tool-crafting and weapon-forging turn cycles" },
+    },
   },
 
   "Ancient Elven Wood": {
@@ -105,6 +109,10 @@ const POPULATED_FRAGMENTS = {
     armories: {
       passive: { espionage_guard: 0.30, ranged_offense: 0.15 },
       special: { name: "Sylvan Camouflage", desc: "Arming soldiers in living ironwood armor blends them seamlessly into local forests, making patrols extremely hard to spot" },
+    },
+    smithies: {
+      passive: { crafting_quality: 0.20, forest_sight: 0.25 },
+      special: { name: "Living Wood Forges", desc: "Fusing wood-sap with iron makes tools lightweight, flexible, and virtually unbreakable, boosting smithy yields" },
     },
   },
 
@@ -157,6 +165,10 @@ const POPULATED_FRAGMENTS = {
       passive: { garrison_defense: 0.15, flame_resistance: 0.40 },
       special: { name: "Dragonscale Cuirasses", desc: "Garrison forces receive armor plating forged from actual dragon scales, neutralizing up to 40% of magical fire damage" },
     },
+    smithies: {
+      passive: { crafting_quality: 0.05, smelting_speed: 0.40 },
+      special: { name: "Wyrmfire Blast Furnaces", desc: "Dragon-scale insulation allows containing intense draconic flames, accelerating smithy manufacture speeds" },
+    },
   },
 
   "Abyssal Crystal": {
@@ -203,6 +215,10 @@ const POPULATED_FRAGMENTS = {
     armories: {
       passive: { infiltration_defense: 0.30, stealth_detection: 0.15 },
       special: { name: "Resonant Focusing Shields", desc: "Installing deep violet crystalline arrays in arsenals reveals subtle sound vibrations, catching stealthy intruders instantly" },
+    },
+    smithies: {
+      passive: { crafting_quality: 0.30, dark_focus: 0.15 },
+      special: { name: "Void-Crystalline Forges", desc: "Infusing hammers with resonant underdark crystals raises the quality of blades and locks under dark light" },
     },
   },
 
@@ -255,6 +271,10 @@ const POPULATED_FRAGMENTS = {
       passive: { garrison_defense: 0.25, morale_recovery: 0.35 },
       special: { name: "Aureole Plating", desc: "Blessed armors radiate an absolute aura of purity, keeping soldiers inspired and speeding up combat morale recovery" },
     },
+    smithies: {
+      passive: { crafting_quality: 0.25, purified_armor: 0.35 },
+      special: { name: "Aureole Forging", desc: "Heavenly light purifies raw metals, forging pristine, flawless instruments with blessed precision" },
+    },
   },
 
   "Dwarven Star-Metal": {
@@ -302,6 +322,10 @@ const POPULATED_FRAGMENTS = {
       passive: { garrison_defense: 0.40, armor_longevity: 1.00 },
       special: { name: "Star-Metal Rivets", desc: "Armor suits are reinforced with clockwork frames. Equipment never breaks, guaranteeing absolute safety in harsh operations" },
     },
+    smithies: {
+      passive: { crafting_speed: 0.40, alloy_quality: 1.00 },
+      special: { name: "Clockwork Star-Metal Forges", desc: "Automated clockwork anvils forge indestructible blueprints, gearsets, and hammers with pristine quality" },
+    },
   },
 
   "Cursed Bloodstone": {
@@ -348,6 +372,10 @@ const POPULATED_FRAGMENTS = {
     armories: {
       passive: { combat_damage: 0.50, unit_recovery: -0.20 },
       special: { name: "Sanguine Sharpness", desc: "Smearing arsenal blades with cursed ichor converts standard strikes into life-draining hits, but drains troop rest" },
+    },
+    smithies: {
+      passive: { smelting_output: 0.50, smelting_speed: 0.15 },
+      special: { name: "Sanguine Crucible", desc: "Sacrificing lifeforce into crucible pools supercharges blacksmith yield rates at dynamic chaotic costs" },
     },
   },
 
@@ -400,6 +428,10 @@ const POPULATED_FRAGMENTS = {
       passive: { garrison_defense: 0.35, health_recovery: 0.30 },
       special: { name: "Amber Breastplates", desc: "Infusing breastplates with glowing petrified sap accelerates natural wound closures, helping soldiers stand" },
     },
+    smithies: {
+      passive: { crafting_speed: 0.35, tool_stability: 0.30 },
+      special: { name: "Yggdrasil Fuel Glands", desc: "Soaking furnaces in glowing sap reduces fuel requirements, keeping bellows pumping continuously" },
+    },
   },
 
   "Void Essence": {
@@ -451,6 +483,10 @@ const POPULATED_FRAGMENTS = {
       passive: { garrison_defense: 1.20, structural_stability: -0.40 },
       special: { name: "Phase-Shifting Arsenals", desc: "Armors are tethered to sub-spatial folds, allowing soldiers to phase through blades, though at structural lag costs" },
     },
+    smithies: {
+      passive: { smelting_output: 1.20, crafting_speed: -0.40 },
+      special: { name: "Quantum Portal Anvils", desc: "Anvils are tethered across multiple spatial dimensions, duplicating weapons but introducing spatial lag" },
+    },
   },
 
   "Titan Bone": {
@@ -497,6 +533,10 @@ const POPULATED_FRAGMENTS = {
     armories: {
       passive: { holding_capacity: 0.30, armor_heavy_density: 0.15 },
       special: { name: "Colossal Aegis Slabs", desc: "Massive bone supports allow stocking colossal titan-sized shields, turning local walls into impenetrable monoliths" },
+    },
+    smithies: {
+      passive: { smelting_output: 0.30, space_density: 0.15 },
+      special: { name: "Mammoth Anvil Pillars", desc: "Anvils constructed over mammoth fossilized jawbones increase capacity for high-volume metalworking" },
     },
   },
 };
