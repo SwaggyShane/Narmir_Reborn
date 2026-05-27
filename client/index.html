@@ -16700,6 +16700,53 @@
         </div>
       </div>
     </div>
+    <!-- Fragment Attunement Modal -->
+    <div id="attunement-modal" style="
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: var(--z-modal);
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow-y: auto;
+    " onclick="if (event.target === this) closeAttunementModal();">
+      <div style="
+        background: var(--bg2);
+        border: 1px solid var(--border2);
+        border-radius: var(--radius-lg);
+        padding: 28px 32px;
+        max-width: 600px;
+        width: 100%;
+        max-height: 85vh;
+        overflow-y: auto;
+      ">
+        <div style="position: absolute; top: 16px; right: 20px; cursor: pointer; color: var(--text3); font-size: 20px;" onclick="closeAttunementModal()">✕</div>
+        <div style="font-size: 20px; font-weight: 700; margin-bottom: 20px; color: var(--gold); font-family: Cinzel, serif;">
+          🔮 World Fragment Attunements
+        </div>
+
+        <!-- Current Attunements Section -->
+        <div id="attunement-current-section" style="margin-bottom: 24px; padding: 16px; background: rgba(255, 255, 255, 0.02); border-radius: 8px; border: 1px solid var(--border);">
+          <div style="font-weight: 600; color: var(--gold); margin-bottom: 12px; font-size: 13px; text-transform: uppercase;">Active Attunements</div>
+          <div id="attunement-current-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        </div>
+
+        <!-- Available Attunements Section -->
+        <div style="margin-bottom: 16px;">
+          <div style="font-weight: 600; color: var(--gold); margin-bottom: 12px; font-size: 13px; text-transform: uppercase;">Available Fragments</div>
+          <div id="attunement-available-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: auto;"></div>
+        </div>
+
+        <!-- Loading/Error States -->
+        <div id="attunement-loading" style="text-align: center; color: var(--text3); display: none;">
+          Loading attunements...
+        </div>
+        <div id="attunement-error" style="color: var(--red); padding: 12px; background: rgba(180, 60, 0, 0.1); border-radius: 6px; display: none;"></div>
+      </div>
+    </div>
     <!-- School Selection Modal Mount Point -->
     <div id="vue-panel-school-selection" style="display: contents"></div>
   </body>
