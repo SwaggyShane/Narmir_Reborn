@@ -1131,7 +1131,29 @@ function processFoodEconomy(k, events) {
   const maxStore = Math.floor((Math.floor(BASE_FOOD_STORAGE * storageRaceMult) + k.bld_granaries * granaryPer) * granaryCapacityMult);
 
   // Apply degradation before checking balance
-  const rotRate = upgrades.preservation ? 0.05 * 0.7 : 0.05; // 5% base degradation, lowered by 30% with salt curing
+  let rotRate = upgrades.preservation ? 0.05 * 0.7 : 0.05; // 5% base degradation, lowered by 30% with salt curing
+
+  // Apply fragment attunement decay reduction
+  const { getKingdomAttunements } = require('./fragment-attunements');
+  const granaryAttune = getKingdomAttunements(k.fragment_bonuses || '{}').granaries;
+
+  // Check for Geothermal Dehydration (eliminates 100% spoilage)
+  if (granaryAttune && granaryAttune.fragment === 'Volcanic Rock') {
+    rotRate = 0;
+  } else if (granaryAttune && granaryAttune.fragment === 'Ancient Elven Wood') {
+    // Ancient Elven Wood: -15% decay reduction (direct elimination)
+    rotRate = 0;
+  } else if (granaryAttune && granaryAttune.fragment === 'Abyssal Crystal') {
+    // Abyssal Crystal: Glacial Cryostasis permanently halts breakdown
+    rotRate = 0;
+  } else {
+    // Other fragments: apply decay_reduction multiplier if present
+    const decayReduction = fragmentBonusManager.getBonusMultiplier(k, 'granaries', 'decay_reduction');
+    if (decayReduction > 1.0) {
+      rotRate = rotRate * (1.0 - (decayReduction - 1.0));
+    }
+  }
+
   const spoilage = Math.floor(food * rotRate);
   if (spoilage > 0) {
     food -= spoilage;
