@@ -9,7 +9,7 @@ const combatCalc = require('./combat-new');
  * Execute full combat between attacker and defender
  * Returns detailed results with injuries, wall damage, deaths, etc.
  */
-async function executeCombat(db, attacker, defender, combatType, targetFocus, engineerLevel = 1) {
+async function executeCombat(db, attacker, defender, combatType, targetFocus, _engineerLevel = 1) {
   const result = {
     win: false,
     outcome: 'repelled',
@@ -119,7 +119,7 @@ function calculateCombatPower(kingdom, opponent, combatType) {
   let power = 0;
 
   const weaponResearch = kingdom.res_weapons || 100;
-  const armorResearch = kingdom.res_armor || 100;
+  const _armorResearch = kingdom.res_armor || 100;
 
   // Restrict units based on combat type
   if (combatType === 'military') {
@@ -171,7 +171,7 @@ function calculateCombatPower(kingdom, opponent, combatType) {
   let defenderPower = 0;
   const defenseResearch = opponent.res_defense_magic || 100;
   const opponentWeaponResearch = opponent.res_weapons || 100;
-  const opponentArmorResearch = opponent.res_armor || 100;
+  const _opponentArmorResearch = opponent.res_armor || 100;
   const defenderMorale = calculateMorale(opponent.morale);
 
   if (combatType === 'military') {
@@ -237,7 +237,7 @@ function calculateTargetDistance(targetFocus) {
  * Apply damage to troops, converting them to injured state
  * Decrements healthy troop counts and moves to injured pool
  */
-function applyDamageToTroops(injuredTroops, kingdom, totalDamage, result) {
+function applyDamageToTroops(injuredTroops, kingdom, totalDamage, _result) {
   let remaining = totalDamage;
 
   // Priority: Apply damage to all troop types
@@ -247,7 +247,7 @@ function applyDamageToTroops(injuredTroops, kingdom, totalDamage, result) {
     if (remaining <= 0) break;
     if (!kingdom[troopType] || kingdom[troopType] <= 0) continue;
 
-    const base = combatCalc.TROOP_BASE_STATS[troopType];
+    const _base = combatCalc.TROOP_BASE_STATS[troopType];
     const avgHp = combatCalc.calculateIndividualTroopHp(
       troopType,
       kingdom.res_armor || 100,

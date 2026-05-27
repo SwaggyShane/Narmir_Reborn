@@ -83,11 +83,11 @@ async function refreshConstants(db) {
 function getConstantsForSection(section, overrides = []) {
   const constants = getConstants();
   const sectionDefs = EDITABLE_CONSTANTS[section] || {};
-  const sectionConstants = constants[section === 'combat' ? 'COMBAT_CONSTANTS' : section.toUpperCase()] || {};
+  const _sectionConstants = constants[section === 'combat' ? 'COMBAT_CONSTANTS' : section.toUpperCase()] || {};
 
   const result = {};
 
-  for (const [key, def] of Object.entries(sectionDefs)) {
+  for (const [_key, def] of Object.entries(sectionDefs)) {
     const keys = def.key.split('.');
     let value = getConstant(def.key);
 

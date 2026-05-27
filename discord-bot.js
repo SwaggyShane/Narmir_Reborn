@@ -24,9 +24,9 @@ if (!DISCORD_TOKEN) {
 }
 
 // Validate token format
-if (!/^[\w\-\.]+$/.test(DISCORD_TOKEN)) {
+if (!/^[\w\-.]+$/.test(DISCORD_TOKEN)) {
   console.error('❌ CRITICAL: DISCORD_BOT_TOKEN contains invalid characters!');
-  console.error('Token contains: ' + DISCORD_TOKEN.split('').filter(c => !/[\w\-\.]/.test(c)).join(', '));
+  console.error('Token contains: ' + DISCORD_TOKEN.split('').filter(c => !/[\w\-.]/.test(c)).join(', '));
   console.error('Valid characters are: alphanumeric, hyphen (-), underscore (_), period (.)');
   process.exit(1);
 }

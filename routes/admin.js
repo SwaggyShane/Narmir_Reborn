@@ -4,8 +4,8 @@ const router = express.Router();
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
-const config = require("../game/config");
-const { GOAL_COUNTS, DAILY_GOALS, WEEKLY_GOALS, MONTHLY_GOALS } = require("../game/goals");
+const _config = require("../game/config");
+const { _GOAL_COUNTS, DAILY_GOALS, WEEKLY_GOALS, MONTHLY_GOALS } = require("../game/goals");
 
 const ALLOWED_PRIZE_TYPES = ['gold', 'mana', 'rangers', 'researchers', 'war_machines', 'world_fragment'];
 
@@ -1267,7 +1267,7 @@ module.exports = function (db, io) {
   });
 
   // ── GAME CONSTANTS ────────────────────────────────────────────────────────
-  const { validateConstant, getSectionConstants } = require('../game/constants-schema');
+  const { validateConstant, _getSectionConstants } = require('../game/constants-schema');
   const { getConstantsForSection, refreshConstants } = require('../game/constants-loader');
 
   router.get("/constants", async (_req, res) => {
