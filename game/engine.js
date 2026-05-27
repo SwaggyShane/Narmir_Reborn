@@ -359,9 +359,9 @@ function researchIncrement(k, discipline, researchersAssigned, currentLevel) {
       ? raceBonus(k, "magic")
       : raceBonus(k, "research");
   const resLevelMult = unitLevelMult(k, "researchers");
-  const librarySpeedMult = fragmentBonusManager.getBonusMultiplier(k, 'libraries', 'speed');
+  const libraryResearchMult = fragmentBonusManager.getBonusMultiplier(k, 'libraries', 'research_speed');
   const effective = Math.floor(
-    researchersAssigned * schoolBonus * raceMulti * resLevelMult * librarySpeedMult,
+    researchersAssigned * schoolBonus * raceMulti * resLevelMult * libraryResearchMult,
   );
 
   let factor = 1.0;
@@ -4689,9 +4689,13 @@ function resolveMilitaryAttack(
   const winnerUpdates = win ? attackerUpdates : defenderUpdates;
   const loserUpdates = win ? defenderUpdates : attackerUpdates;
 
+  // Check if loser has Dwarven Star-Metal or Dragon Scale protecting maps
+  const loserFragment = fragmentBonusManager.getFragmentForBuilding(loser, 'libraries');
+  const canStealMaps = !loserFragment || (loserFragment.fragment !== 'Dwarven Star-Metal' && loserFragment.fragment !== 'Dragon Scale');
+
   const lootRaceBonus =
     winner.race === "orc" || winner.race === "dire_wolf" ? 1.5 : 1.0;
-  if (Math.random() < baseChance * lootRaceBonus) {
+  if (canStealMaps && Math.random() < baseChance * lootRaceBonus) {
     const winnerDisc = safeJsonParse(
       winnerUpdates.discovered_kingdoms || winner.discovered_kingdoms,
       {},
@@ -5064,8 +5068,10 @@ function castSpell(caster, target, spellId, obscure) {
   // Mana cost: base cost scales with tier
   const TIER_MANA = { 1: 500, 2: 2000, 3: 8000, 4: 50000 };
   const baseMana = TIER_MANA[def.tier] || 500;
-  const obscureCost = obscure ? Math.floor(baseMana * 0.5) : 0;
-  const totalMana = baseMana + obscureCost;
+  const spellEfficiencyMult = fragmentBonusManager.getBonusMultiplier(caster, 'libraries', 'spell_efficiency');
+  const adjustedBaseMana = Math.floor(baseMana / spellEfficiencyMult);
+  const obscureCost = obscure ? Math.floor(adjustedBaseMana * 0.5) : 0;
+  const totalMana = adjustedBaseMana + obscureCost;
   if ((caster.mana || 0) < totalMana)
     return {
       error: `Not enough mana — need ${totalMana.toLocaleString()}, have ${(caster.mana || 0).toLocaleString()}`,
@@ -5555,10 +5561,18 @@ function covertLoot(thief, target, lootType, thievesSent) {
     targetUpdates.food = Math.max(0, target.food - stolen);
     desc = `${stolen.toLocaleString()} food`;
   } else if (lootType === "maps") {
-    stolen = Math.floor(thievesSent * 0.05 * thiefLvMult);
-    stolen = Math.min(stolen, target.maps || 0);
-    targetUpdates.maps = (target.maps || 0) - stolen;
-    desc = `${stolen} map(s)`;
+    const targetFragment = fragmentBonusManager.getFragmentForBuilding(target, 'libraries');
+    const hasProtection = targetFragment && (targetFragment.fragment === 'Dwarven Star-Metal' || targetFragment.fragment === 'Dragon Scale');
+
+    if (hasProtection) {
+      stolen = 0;
+      desc = `0 map(s) — protected by ancient magic`;
+    } else {
+      stolen = Math.floor(thievesSent * 0.05 * thiefLvMult);
+      stolen = Math.min(stolen, target.maps || 0);
+      targetUpdates.maps = (target.maps || 0) - stolen;
+      desc = `${stolen} map(s)`;
+    }
   } else if (lootType === "scrolls") {
     const targetScrolls = safeJsonParse(
       target.scrolls,
@@ -6801,7 +6815,7 @@ function processLibrary(k, events) {
   } catch {}
   const capacityPerLib = 20;
   const scribeSpeedMult = raceBonus(k, "scribe"); // Or similar? I will look up how other racial modifiers are done. Let's look at raceBonus.
-  const libraryWorkSpeedMult = fragmentBonusManager.getBonusMultiplier(k, 'libraries', 'speed');
+  const libraryWorkSpeedMult = fragmentBonusManager.getBonusMultiplier(k, 'libraries', 'decoding_speed');
 
   const capacity = libs * capacityPerLib;
   const effectiveScribes = Math.min(k.scribes, capacity);
