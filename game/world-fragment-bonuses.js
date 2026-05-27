@@ -12,7 +12,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Geothermal Fertility", desc: "Heat accelerates growth but increases population hunger" },
     },
     granaries: {
-      passive: { storage: 0.20, dryness: 0.10 },
+      passive: { capacity: 0.20, dryness: 0.10 },
       special: { name: "Geothermal Dehydration", desc: "Constant heat cures crops. Eliminates 100% of moisture-induced mold and spoilage" },
     },
     housing: {
@@ -31,7 +31,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Primordial Fertility", desc: "Crops never fail; immune to blight and natural disasters" },
     },
     granaries: {
-      passive: { storage: 0.25, decay_reduction: 0.15 },
+      passive: { capacity: 0.25, decay_reduction: 0.15 },
       special: { name: "Organic Preservation", desc: "Roots cocoon stored crops in suspended animation. Food decay over winters reduced to zero" },
     },
     housing: {
@@ -50,7 +50,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Dragon's Shadow", desc: "Crops grow but workers fear the land; morale penalty but high yield" },
     },
     granaries: {
-      passive: { storage: 0.15, raid_security: 0.50 },
+      passive: { capacity: 0.15, raid_security: 0.50 },
       special: { name: "Draconic Ward", desc: "Granary walls lined with draconic scales. Blocks 100% of rats, pests, and enemy food theft" },
     },
     housing: {
@@ -65,7 +65,7 @@ const POPULATED_FRAGMENTS = {
 
   "Abyssal Crystal": {
     granaries: {
-      passive: { storage: 0.35, magic_output: 0.05 },
+      passive: { capacity: 0.35, magic_output: 0.05 },
       special: { name: "Glacial Cryostasis", desc: "Deep underdark crystals lock granary in lightless frost. Permanently halts organic breakdown" },
     },
     housing: {
@@ -84,7 +84,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Blessed Fields", desc: "Crops blessed by heaven; harvests are guaranteed and bountiful" },
     },
     granaries: {
-      passive: { storage: 0.25, morale_stability: 0.20 },
+      passive: { capacity: 0.25, morale_stability: 0.20 },
       special: { name: "Manna Manifestation", desc: "Stored food is blessed. Portion of reserves auto-distributed to boost morale on unstable turns" },
     },
     housing: {
@@ -99,7 +99,7 @@ const POPULATED_FRAGMENTS = {
 
   "Dwarven Star-Metal": {
     granaries: {
-      passive: { storage: 0.50, defensive_armor: 0.15 },
+      passive: { capacity: 0.50, defensive_armor: 0.15 },
       special: { name: "Piston Silos", desc: "Motorized steam pistons continuously compress and aerate grains, maximizing holding density" },
     },
     housing: {
@@ -114,7 +114,7 @@ const POPULATED_FRAGMENTS = {
 
   "Cursed Bloodstone": {
     granaries: {
-      passive: { storage: 0.30, combat_attunement: 0.20 },
+      passive: { capacity: 0.30, combat_attunement: 0.20 },
       special: { name: "Vampiric Silos", desc: "Spoiling food distilled into dark elixir. Increases military attack speed but spikes chaos" },
     },
     housing: {
@@ -133,7 +133,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Eternal Harvest", desc: "Crops blessed by world-tree; never fail, multiply if overabundant" },
     },
     granaries: {
-      passive: { storage: 0.40, growth_rate: 0.50 },
+      passive: { capacity: 0.40, growth_rate: 0.50 },
       special: { name: "Cellular Biosphere", desc: "World Tree spores seed reserves. Stored grains self-replicate at +2% per turn" },
     },
     housing: {
@@ -152,7 +152,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Void Crops", desc: "Food yields doubled but becomes unpredictable; crops either triple or fail" },
     },
     granaries: {
-      passive: { storage: 2.00, quantum_flux: 0.15 },
+      passive: { capacity: 2.00, quantum_flux: 0.15 },
       special: { name: "Void Pantry", desc: "Granary folds into pocket dimension for massive volume. 5% chance per turn food vanishes" },
     },
     housing: {
@@ -167,7 +167,7 @@ const POPULATED_FRAGMENTS = {
 
   "Titan Bone": {
     granaries: {
-      passive: { storage: 1.00, fortifications: 0.20 },
+      passive: { capacity: 1.00, fortifications: 0.20 },
       special: { name: "Megastructures", desc: "Fossilized skeletal columns support towering silos. Storage capabilities scale exponentially" },
     },
     housing: {

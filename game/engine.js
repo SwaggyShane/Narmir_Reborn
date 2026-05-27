@@ -5068,8 +5068,9 @@ function castSpell(caster, target, spellId, obscure) {
   // Mana cost: base cost scales with tier
   const TIER_MANA = { 1: 500, 2: 2000, 3: 8000, 4: 50000 };
   const baseMana = TIER_MANA[def.tier] || 500;
-  const spellEfficiencyMult = fragmentBonusManager.getBonusMultiplier(caster, 'libraries', 'spell_efficiency');
-  const adjustedBaseMana = Math.floor(baseMana / spellEfficiencyMult);
+  const spellLibraryBonus = fragmentBonusManager.getFragmentForBuilding(caster, 'libraries');
+  const spellEfficiency = spellLibraryBonus?.passive?.spell_efficiency || 0;
+  const adjustedBaseMana = Math.floor(baseMana * (1 - spellEfficiency));
   const obscureCost = obscure ? Math.floor(adjustedBaseMana * 0.5) : 0;
   const totalMana = adjustedBaseMana + obscureCost;
   if ((caster.mana || 0) < totalMana)
