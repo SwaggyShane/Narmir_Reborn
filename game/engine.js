@@ -7461,6 +7461,7 @@ module.exports = {
   processTurn,
   hireUnits,
   studyDiscipline,
+  selectSchool: _selectSchool,
   queueBuildings,
   processBuildQueue,
   processLibrary,
