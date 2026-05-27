@@ -43,6 +43,10 @@ const POPULATED_FRAGMENTS = {
       passive: { income: 0.15, metal_trading: 0.10 },
       special: { name: "Geothermal Foundry-Market", desc: "Warm open-air foundries facilitate metal smelting and ingot trade-guilds directly on site, speeding up gold cycles" },
     },
+    taverns: {
+      passive: { morale_output: 0.25, stout_strength: 0.10 },
+      special: { name: "Molten Mug Distilleries", desc: "Underground thermal pipe coils heat copper brewing tanks, distilling volatile, hot stouts that keep the working population incredibly merry and motivated" },
+    },
   },
 
   "Ancient Elven Wood": {
@@ -81,6 +85,10 @@ const POPULATED_FRAGMENTS = {
     markets: {
       passive: { income: 0.20, forest_trade: 0.25 },
       special: { name: "Sylvan Whispering Bazaars", desc: "Trade booths constructed inside living wood receive woodland wisdom, maintaining stable prices and boosting barter ratios" },
+    },
+    taverns: {
+      passive: { morale_output: 0.30, forest_sight: 0.25 },
+      special: { name: "Sylvan Forest Bars", desc: "Constructing bars directly within ancient hollow trunks connects drinkers with woodland spirits, ensuring zero brawls and stable peace" },
     },
   },
 
@@ -121,6 +129,10 @@ const POPULATED_FRAGMENTS = {
       passive: { income: 0.05, anti_theft_security: 0.40 },
       special: { name: "Draconic Coinage", desc: "Coinage pressed under scaled scales glows if counterfeit, and vaults become impervious to sabotage or raid theft" },
     },
+    taverns: {
+      passive: { morale_output: 0.15, anti_arson_shield: 0.40 },
+      special: { name: "The Fire-Drake Hearth", desc: "Insulating fireboxes and furniture boards with dragon scales makes taverns totally flameproof, neutralizing structural fires" },
+    },
   },
 
   "Abyssal Crystal": {
@@ -155,6 +167,10 @@ const POPULATED_FRAGMENTS = {
     markets: {
       passive: { secret_decoding: 0.30, dark_trade_gains: 0.15 },
       special: { name: "Shadow Exchanges", desc: "Subterranean black-markets use dark crystal lights to evaluate smuggling contracts, significantly boosting dark magical currency income" },
+    },
+    taverns: {
+      passive: { counter_espionage: 0.40, shadow_spells: 0.15 },
+      special: { name: "Whispering Crystal Parlors", desc: "Subterranean violet crystals capture soundwaves from conversations. Makes it incredibly easy to detect, intercept, or defuse enemy spy networks" },
     },
   },
 
@@ -195,6 +211,10 @@ const POPULATED_FRAGMENTS = {
       passive: { income: 0.25, merchant_morale: 0.35 },
       special: { name: "Heavenly Tithes", desc: "Mercantile angels bless standard exchanges, removing commercial greed or unrest and stabilizing transaction safety" },
     },
+    taverns: {
+      passive: { morale_output: 0.40, grace_index: 0.35 },
+      special: { name: "The Heavenly Angel Tavern", desc: "Bards sing angelic melodies from the rafters, removing baseline societal grief or rioting. Citizen happiness never drops below 50%" },
+    },
   },
 
   "Dwarven Star-Metal": {
@@ -230,6 +250,10 @@ const POPULATED_FRAGMENTS = {
       passive: { income: 0.40, core_protection: 1.00 },
       special: { name: "Star-Metal Lockbox Ledgers", desc: "Financial records are stored inside clockwork Star-Metal matrices. Accounts cannot be falsified, lost, stolen, or forgotten due to amnesia" },
     },
+    taverns: {
+      passive: { morale_output: 0.20, brew_preservation: 1.00 },
+      special: { name: "The Vault of Vintage Lockboxes", desc: "Legendary recipes, coordinates, and resources are locked inside code-encrypted Star-Metal drums. Blueprints cannot be lost, stolen, or forgotten by mind curses" },
+    },
   },
 
   "Cursed Bloodstone": {
@@ -264,6 +288,10 @@ const POPULATED_FRAGMENTS = {
     markets: {
       passive: { income: 0.50, chaos_index: 0.15 },
       special: { name: "Sanguine Auction Guilds", desc: "Elite auction houses deal in forbidden alchemical drops and life contracts, yielding extreme tax profits at high chaotic costs" },
+    },
+    taverns: {
+      passive: { morale_output: 0.50, stability: -0.20 },
+      special: { name: "The Cruor Blood Club", desc: "Infusing brewing reservoirs with forbidden nectar maximizes citizen and military morale instantly, but spikes civil chaos indexes" },
     },
   },
 
@@ -304,6 +332,10 @@ const POPULATED_FRAGMENTS = {
       passive: { income: 0.35, trade_stability: 0.30 },
       special: { name: "Oasis Bazaars", desc: "Merchant caravans drinking tree dew experience exceptional stamina, establishing continuous trades without delay" },
     },
+    taverns: {
+      passive: { morale_output: 0.35, mercenary_rent: 0.30 },
+      special: { name: "World-Tree Elixir Fonts", desc: "Drinking the dew improves vitality, reducing the hire cost of tavern mercenaries by 15% and doubling their rest recovery" },
+    },
   },
 
   "Void Essence": {
@@ -343,6 +375,10 @@ const POPULATED_FRAGMENTS = {
       passive: { income: 1.20, mind_stability: -0.40 },
       special: { name: "Quantum Shopping Matrix", desc: "Connects trade districts to multi-planar channels, generating outrageous gold flows while causing temporary citizen absences" },
     },
+    taverns: {
+      passive: { morale_output: 1.20, mind_stability: -0.40 },
+      special: { name: "The Singularity Saloon", desc: "Connects fireplaces and hallways directly to interdimensional taprooms, providing absolute morale boosts at the price of brief spatial absences" },
+    },
   },
 
   "Titan Bone": {
@@ -377,6 +413,10 @@ const POPULATED_FRAGMENTS = {
     markets: {
       passive: { income: 0.30, capacity_expansion: 0.15 },
       special: { name: "Goliath Trade Halls", desc: "Gigantic columns carved from titan skulls support monumental domes with massive stall capacity, maximizing trader retention" },
+    },
+    taverns: {
+      passive: { morale_output: 0.30, capacity_bounds: 0.15 },
+      special: { name: "Goliath Drink Halls", desc: "Massive tables and columns carved out of fossilized titanic ribs support massive halls with immense capacity for holding grand festivals" },
     },
   },
 };
