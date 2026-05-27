@@ -3,6 +3,7 @@ const engine = require("../game/engine");
 const { requireAuth } = require("./middleware");
 const { progressGoal } = require('../game/goals');
 const { safeJsonParse } = require('../utils/helpers');
+const { getKingdomAttunements } = require('../game/fragment-attunements');
 
 const router = express.Router();
 
@@ -4361,6 +4362,48 @@ module.exports = function (db) {
     } catch (err) {
       console.error('[attunement] apply failed:', err.message);
       res.status(500).json({ error: 'Failed to apply attunement' });
+    }
+  });
+
+  // POST /api/kingdom/remove-attunement — Remove fragment attunement from building
+  router.post('/remove-attunement', requireAuth, async (req, res) => {
+    try {
+      const { buildingType } = req.body;
+
+      if (!buildingType) {
+        return res.status(400).json({ error: 'buildingType required' });
+      }
+
+      const kingdom = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
+        req.player.playerId,
+      ]);
+      if (!kingdom) return res.status(404).json({ error: "Kingdom not found" });
+
+      // Get current attunements
+      const currentAttunements = getKingdomAttunements(kingdom.fragment_bonuses || '{}');
+
+      // Check if building has attunement
+      if (!Object.prototype.hasOwnProperty.call(currentAttunements, buildingType)) {
+        return res.status(400).json({ error: `${buildingType} has no attunement` });
+      }
+
+      // Remove the attunement
+      delete currentAttunements[buildingType];
+
+      await db.run(
+        `UPDATE kingdoms SET fragment_bonuses = ? WHERE id = ?`,
+        [JSON.stringify(currentAttunements), kingdom.id]
+      );
+
+      res.json({
+        ok: true,
+        message: `Attunement removed from ${buildingType}`,
+      });
+
+      console.log(`[attunement] Kingdom ${kingdom.id}: Removed from ${buildingType}`);
+    } catch (err) {
+      console.error('[attunement] remove failed:', err.message);
+      res.status(500).json({ error: 'Failed to remove attunement' });
     }
   });
 
