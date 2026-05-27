@@ -35,6 +35,10 @@ const POPULATED_FRAGMENTS = {
       passive: { morale: 0.15, healing: 0.10 },
       special: { name: "Geothermal Hearth", desc: "Thermal hot springs heat consecrated bathing basins, accelerating soldier and civilian recovery rates during cold turns" },
     },
+    mausoleums: {
+      passive: { capacity: 0.15, power: 0.10 },
+      special: { name: "Geothermal Reanimation", desc: "Underground lava vents heat sarcophagi, curing necrotic sinew faster and accelerating reanimation turnover" },
+    },
   },
 
   "Ancient Elven Wood": {
@@ -65,6 +69,10 @@ const POPULATED_FRAGMENTS = {
     shrines: {
       passive: { healing: 0.20, forest_sight: 0.25 },
       special: { name: "Yggdrasil Communion", desc: "Shrines sprout living roots that merge with natural ley-lines, granting nearby scouts panoramic forest visibility" },
+    },
+    mausoleums: {
+      passive: { power: 0.20, forest_sight: 0.25 },
+      special: { name: "Deep Forest Catacombs", desc: "Twisted roots lock coffin vaults, channeling forest shadows to grant scouts enhanced sensory vision" },
     },
   },
 
@@ -97,6 +105,10 @@ const POPULATED_FRAGMENTS = {
       passive: { power: 0.10, raid_protection: 0.35 },
       special: { name: "Draconic Sanctuary", desc: "Consecrated vaults are layered with gold dragon scales, preventing dynamic resources or magical relies from being stolen during raids" },
     },
+    mausoleums: {
+      passive: { capacity: 0.10, defenses: 0.40 },
+      special: { name: "Obsidian Spire Wards", desc: "Lining catacomb walls with dragon scales forms standard flame-proof plating, absorbing incoming siege attacks" },
+    },
   },
 
   "Abyssal Crystal": {
@@ -123,6 +135,10 @@ const POPULATED_FRAGMENTS = {
     shrines: {
       passive: { spell_resistance: 0.30, dark_magic_output: 0.15 },
       special: { name: "Penance Shards", desc: "Harnessing underdark radiation forces deep spiritual introspection, doubling defense values against enemy shadow spells" },
+    },
+    mausoleums: {
+      passive: { capacity: 0.30, spell_resistance: 0.15 },
+      special: { name: "Umbral Cryostasis", desc: "Crystalline spires focus absolute shadow light, shielding resting Thralls from holy light or banishing spells" },
     },
   },
 
@@ -155,6 +171,10 @@ const POPULATED_FRAGMENTS = {
       passive: { healing: 0.35, faith_morale: 0.40 },
       special: { name: "Blessed Resurrections", desc: "Heavenly light baths the healing chambers; wounded units revive with +10% maximum health and zero morale fatigue" },
     },
+    mausoleums: {
+      passive: { capacity: 0.25, power: 0.35 },
+      special: { name: "Penitent Sentinels", desc: "Winds of grace whisper through crypt pillars, keeping the baseline undead completely loyal and free from revolt" },
+    },
   },
 
   "Dwarven Star-Metal": {
@@ -182,6 +202,10 @@ const POPULATED_FRAGMENTS = {
       passive: { morale: 0.15, defense_armor: 0.50 },
       special: { name: "Star-Metal Sentinels", desc: "Mechanical incense burners distribute gold dust across armor plates, naturally fortifying defenders against siege attacks" },
     },
+    mausoleums: {
+      passive: { capacity: 0.40, record_defense: 1.00 },
+      special: { name: "Impenetrable Iron Crypts", desc: "Encasing coordinates, blueprints, and relics in seamless Star-Metal boxes makes them incapable of being lost, stolen, or removed by amnesia" },
+    },
   },
 
   "Cursed Bloodstone": {
@@ -208,6 +232,10 @@ const POPULATED_FRAGMENTS = {
     shrines: {
       passive: { healing: 0.50, chaos_index: 0.20 },
       special: { name: "Sanguine Transfusion", desc: "Clerics transmute raw life force directly. Revives units instantly at high speeds but raises chaotic corruption" },
+    },
+    mausoleums: {
+      passive: { capacity: 0.50, chaos_index: 0.20 },
+      special: { name: "Cruor Coils", desc: "Infusing channels with pure vampire bloodstone triples reanimation yields, but causes local populations to panic" },
     },
   },
 
@@ -240,6 +268,10 @@ const POPULATED_FRAGMENTS = {
       passive: { healing: 0.40, cleric_efficacy: 0.30 },
       special: { name: "Nectar of Life", desc: "Dew collected from wild tree leaves heals injured troops without spending material herbs, cutting upkeep costs" },
     },
+    mausoleums: {
+      passive: { capacity: 0.35, growth_rate: 0.30 },
+      special: { name: "Verdant Rejuvenation", desc: "Dew droplets seep down to graves; flesh and muscle fibers regenerate perfectly, boosting Thrall health" },
+    },
   },
 
   "Void Essence": {
@@ -271,6 +303,10 @@ const POPULATED_FRAGMENTS = {
       passive: { morale: 1.20, mind_stability: -0.40 },
       special: { name: "Telescopic Epiphany", desc: "Shrine ceilings fold directly into cosmic rifts, granting astronomical knowledge but driving scholars to eccentricity" },
     },
+    mausoleums: {
+      passive: { capacity: 1.20, mind_stability: -0.40 },
+      special: { name: "Shattered Portal Sarcophagi", desc: "Undead rise from tear-rifts in reality, allowing infinite capacity expansion at the cost of mild local disorientation" },
+    },
   },
 
   "Titan Bone": {
@@ -297,6 +333,10 @@ const POPULATED_FRAGMENTS = {
     shrines: {
       passive: { capacity: 0.30, fortifications: 0.15 },
       special: { name: "Goliath Temples", desc: "Monolithic bone arches support towering prayer chambers, expanding the maximum space to store wounded soldiers" },
+    },
+    mausoleums: {
+      passive: { power: 0.30, tower_integrity: 0.15 },
+      special: { name: "Titan Bone Sentinels", desc: "Weaving fossilized titan rib-cages into the architecture fortifies defenses, creating colossal towers that expand unit ranges" },
     },
   },
 };
