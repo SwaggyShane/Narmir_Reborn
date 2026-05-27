@@ -171,7 +171,7 @@ When found, every kingdom receives a news event and a global chat broadcast. The
 Before pushing to a public repository, ensure you have completed these steps:
 
 1. **Environment Variables**: Never commit your real `.env` file. Ensure `.env.example` is up to date and contains placeholders (e.g., `DATABASE_URL`, `JWT_SECRET`, `ADMIN_SECRET`).
-2. **Database**: Verify that all sensitive database credentials are excluded from `.env`. The `.gitignore` correctly excludes `.env*` files except `.env.example`.
+2. **Database**: Verify that all sensitive database credentials are kept in the `.env` file and excluded from version control. The `.gitignore` correctly excludes `.env*` files except `.env.example`.
 3. **Secrets Audit**: Scan your code for any hardcoded API keys, passwords, or tokens (use `npm run lint` to verify).
 4. **README Update**: Ensure URLs and instructions in this README match your target environment.
 
