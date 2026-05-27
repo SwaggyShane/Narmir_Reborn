@@ -47,6 +47,10 @@ const POPULATED_FRAGMENTS = {
       passive: { morale_output: 0.25, stout_strength: 0.10 },
       special: { name: "Molten Mug Distilleries", desc: "Underground thermal pipe coils heat copper brewing tanks, distilling volatile, hot stouts that keep the working population incredibly merry and motivated" },
     },
+    vaults: {
+      passive: { gold_security: 0.30, economy_output: 0.15 },
+      special: { name: "Thermal Ingot Vaults", desc: "Constant magma pipes keep vault alloy gates heat-fused, making them completely immune to physical lockpicking or tunneling" },
+    },
   },
 
   "Ancient Elven Wood": {
@@ -89,6 +93,10 @@ const POPULATED_FRAGMENTS = {
     taverns: {
       passive: { morale_output: 0.30, forest_sight: 0.25 },
       special: { name: "Sylvan Forest Bars", desc: "Constructing bars directly within ancient hollow trunks connects drinkers with woodland spirits, ensuring zero brawls and stable peace" },
+    },
+    vaults: {
+      passive: { espionage_shield: 0.30, forest_growth: 0.15 },
+      special: { name: "Root-Bound Safes", desc: "Living Elven wood roots tightly wrap gold chests; any tampering triggers roots to constrict and lock down the treasury" },
     },
   },
 
@@ -133,6 +141,10 @@ const POPULATED_FRAGMENTS = {
       passive: { morale_output: 0.15, anti_arson_shield: 0.40 },
       special: { name: "The Fire-Drake Hearth", desc: "Insulating fireboxes and furniture boards with dragon scales makes taverns totally flameproof, neutralizing structural fires" },
     },
+    vaults: {
+      passive: { gold_security: 0.15, hoard_protection: 0.40 },
+      special: { name: "Golden Hoard Lairs", desc: "Lining gold piles with scales activates a draconic curse on intruders, burning up to 50% of successful thievish units" },
+    },
   },
 
   "Abyssal Crystal": {
@@ -171,6 +183,10 @@ const POPULATED_FRAGMENTS = {
     taverns: {
       passive: { counter_espionage: 0.40, shadow_spells: 0.15 },
       special: { name: "Whispering Crystal Parlors", desc: "Subterranean violet crystals capture soundwaves from conversations. Makes it incredibly easy to detect, intercept, or defuse enemy spy networks" },
+    },
+    vaults: {
+      passive: { secret_decryption: 0.30, shadow_trade: 0.15 },
+      special: { name: "Crystalline Shadow Pools", desc: "Underdark crystals refract light, concealing accurate treasury valuations and making total gold immune to scout spells" },
     },
   },
 
@@ -215,6 +231,10 @@ const POPULATED_FRAGMENTS = {
       passive: { morale_output: 0.40, grace_index: 0.35 },
       special: { name: "The Heavenly Angel Tavern", desc: "Bards sing angelic melodies from the rafters, removing baseline societal grief or rioting. Citizen happiness never drops below 50%" },
     },
+    vaults: {
+      passive: { gold_security: 0.25, grace_index: 0.35 },
+      special: { name: "Empyrean Sanctuaries", desc: "Blessed vaults emit divine light, keeping currency stored inside fully immune to curses, corruption, or tax rot" },
+    },
   },
 
   "Dwarven Star-Metal": {
@@ -254,6 +274,10 @@ const POPULATED_FRAGMENTS = {
       passive: { morale_output: 0.20, brew_preservation: 1.00 },
       special: { name: "The Vault of Vintage Lockboxes", desc: "Legendary recipes, coordinates, and resources are locked inside code-encrypted Star-Metal drums. Blueprints cannot be lost, stolen, or forgotten by mind curses" },
     },
+    vaults: {
+      passive: { gold_security: 0.40, core_lockboxes: 1.00 },
+      special: { name: "Chronos Gear Locks", desc: "Gears forged of Star-Metal lock main vaults. Treasury cannot be bankrupted or looted, preserving basic transaction safety" },
+    },
   },
 
   "Cursed Bloodstone": {
@@ -292,6 +316,10 @@ const POPULATED_FRAGMENTS = {
     taverns: {
       passive: { morale_output: 0.50, stability: -0.20 },
       special: { name: "The Cruor Blood Club", desc: "Infusing brewing reservoirs with forbidden nectar maximizes citizen and military morale instantly, but spikes civil chaos indexes" },
+    },
+    vaults: {
+      passive: { economy_output: 0.50, stability: -0.20 },
+      special: { name: "Sanguine Vault Tax", desc: "Storing gold in bloodstone alters currency with dark magic, amplifying kingdom tax revenues at high local stability costs" },
     },
   },
 
@@ -336,6 +364,10 @@ const POPULATED_FRAGMENTS = {
       passive: { morale_output: 0.35, mercenary_rent: 0.30 },
       special: { name: "World-Tree Elixir Fonts", desc: "Drinking the dew improves vitality, reducing the hire cost of tavern mercenaries by 15% and doubling their rest recovery" },
     },
+    vaults: {
+      passive: { gold_security: 0.35, life_growth: 0.30 },
+      special: { name: "Yggdrasil Resin Casings", desc: "Wrapping logs and chests in petrified amber resin ensures financial systems and credit indexes thrive without decay" },
+    },
   },
 
   "Void Essence": {
@@ -379,6 +411,10 @@ const POPULATED_FRAGMENTS = {
       passive: { morale_output: 1.20, mind_stability: -0.40 },
       special: { name: "The Singularity Saloon", desc: "Connects fireplaces and hallways directly to interdimensional taprooms, providing absolute morale boosts at the price of brief spatial absences" },
     },
+    vaults: {
+      passive: { gold_security: 1.20, trade_stability: -0.40 },
+      special: { name: "Dimensional Pocket Vaults", desc: "Moving gold reserves into sub-spatial pocket dimensions guarantees perfect safety, though loans experience mild delays" },
+    },
   },
 
   "Titan Bone": {
@@ -417,6 +453,10 @@ const POPULATED_FRAGMENTS = {
     taverns: {
       passive: { morale_output: 0.30, capacity_bounds: 0.15 },
       special: { name: "Goliath Drink Halls", desc: "Massive tables and columns carved out of fossilized titanic ribs support massive halls with immense capacity for holding grand festivals" },
+    },
+    vaults: {
+      passive: { storage_capacity: 0.30, density_bounds: 0.15 },
+      special: { name: "Megastructure Sub-Vaults", desc: "Massive load-bearing bone pillars allow drilling incredibly deep, secure chambers, expanding storage scale" },
     },
   },
 };
