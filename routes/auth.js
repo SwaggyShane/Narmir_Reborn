@@ -1,5 +1,5 @@
 const express = require("express");
-const bcrypt = require("bcryptjs");
+const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const engine = require("../game/engine");
 const { generateCsrfToken, _csrfTokens, requireAuth } = require("./middleware");
@@ -59,7 +59,7 @@ module.exports = function (db) {
     const chosenRace = validRaces.includes(race) ? race : "human";
 
     try {
-      const hash = bcrypt.hashSync(password, BCRYPT_SALT_ROUNDS);
+      const hash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
       const isAdminUser = false;
       const playerResult = await db.run(
         "INSERT INTO players (username, password, email, is_admin) VALUES (?, ?, ?, ?)",

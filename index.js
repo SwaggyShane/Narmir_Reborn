@@ -3,7 +3,7 @@ const express      = require('express');
 const http         = require('http');
 const { Server }   = require('socket.io');
 const cookieParser = require('cookie-parser');
-const bcrypt       = require('bcryptjs');
+const bcrypt       = require('bcrypt');
 const path         = require('path');
 const fs           = require('fs');
 
@@ -271,7 +271,7 @@ async function seedAiKingdoms(db) {
   for (const ai of AI_KINGDOMS) {
     const existing = await db.get('SELECT id FROM players WHERE username = ?', [ai.username]);
     if (existing) continue;
-    const hash = bcrypt.hashSync(Math.random().toString(36), BCRYPT_SALT_ROUNDS);
+    const hash = await bcrypt.hash(Math.random().toString(36), BCRYPT_SALT_ROUNDS);
     const player = await db.run(
       'INSERT INTO players (username, password, is_ai) VALUES (?, ?, 1)',
       [ai.username, hash]
