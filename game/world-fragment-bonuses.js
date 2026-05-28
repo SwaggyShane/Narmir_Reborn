@@ -95,7 +95,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Organic Preservation", desc: "Roots cocoon stored crops in suspended animation. Food decay over winters reduced to zero" },
     },
     housing: {
-      passive: { capacity: 0.20, stability: 0.30, growth: 0.10 },
+      passive: { capacity: 0.20, stability: 0.30, morale: 0.10, happiness: 0.25, growth: 0.10 },
       special: { name: "Treehouse Canopy", desc: "Dwellings weave into living canopies. Citizens remain in maximum happiness" },
     },
     libraries: {
@@ -174,7 +174,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Draconic Ward", desc: "Granary walls lined with draconic scales. Blocks 100% of rats, pests, and enemy food theft" },
     },
     housing: {
-      passive: { capacity: 0.10, defenses: 0.25, growth: 0.05 },
+      passive: { capacity: 0.10, morale: 0.05, happiness: 0.10, defenses: 0.25, growth: 0.05 },
       special: { name: "Fortified Keeps", desc: "Draconic scales line outer walls. Shelters are highly secure and flame-retardant" },
     },
     libraries: {
@@ -253,7 +253,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Glacial Cryostasis", desc: "Deep underdark crystals lock granary in lightless frost. Permanently halts organic breakdown" },
     },
     housing: {
-      passive: { capacity: 0.15, magic_output: 0.10, growth: 0.05 },
+      passive: { capacity: 0.15, morale: 0.05, happiness: 0.08, magic_output: 0.10, growth: 0.05 },
       special: { name: "Shadow Attunement", desc: "Crystalline-infused houses produce magical output as citizens meditate and rest" },
     },
     libraries: {
@@ -332,7 +332,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Manna Manifestation", desc: "Stored food is blessed. Portion of reserves auto-distributed to boost morale on unstable turns" },
     },
     housing: {
-      passive: { capacity: 0.25, stability: 0.35, growth: 0.20 },
+      passive: { capacity: 0.25, stability: 0.35, morale: 0.20, happiness: 0.30, growth: 0.20 },
       special: { name: "Holy Sanctuaries", desc: "Angelic grace prevents civil unrest. Rioting and immigration desertion are greatly reduced" },
     },
     libraries: {
@@ -411,7 +411,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Piston Silos", desc: "Motorized steam pistons continuously compress and aerate grains, maximizing holding density" },
     },
     housing: {
-      passive: { capacity: 0.40, defenses: 0.10, growth: 0.10 },
+      passive: { capacity: 0.40, morale: 0.10, happiness: 0.15, defenses: 0.10, growth: 0.10 },
       special: { name: "Retractable Apartments", desc: "Dwarven clockwork bunks and fold-out structures fit more citizens in less space" },
     },
     libraries: {
@@ -490,7 +490,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Vampiric Silos", desc: "Spoiling food distilled into dark elixir. Increases military attack speed but spikes chaos" },
     },
     housing: {
-      passive: { capacity: 0.50, stability: -0.20, growth: -0.10 },
+      passive: { capacity: 0.50, stability: -0.20, morale: 0.25, happiness: 0.15, growth: -0.10 },
       special: { name: "Blood Pact Lodgings", desc: "Explosive population density powered by dark covenant. Raw workforce expansion at stability cost" },
     },
     libraries: {
@@ -569,7 +569,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Cellular Biosphere", desc: "World Tree spores seed reserves. Stored grains self-replicate at +2% per turn" },
     },
     housing: {
-      passive: { capacity: 0.35, stability: 0.25, growth: 0.25 },
+      passive: { capacity: 0.35, stability: 0.25, morale: 0.15, happiness: 0.20, growth: 0.25 },
       special: { name: "Lifespring Spores", desc: "Curing waters fill district fonts. Zero infant mortality, natural growth boosted +50%" },
     },
     libraries: {
@@ -648,7 +648,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Void Pantry", desc: "Granary folds into pocket dimension for massive volume. 5% chance per turn food vanishes" },
     },
     housing: {
-      passive: { capacity: 1.20, stability: -0.30, growth: -0.20 },
+      passive: { capacity: 1.20, stability: -0.30, morale: 0.60, happiness: 0.50, growth: -0.20 },
       special: { name: "Void Pocket Lofts", desc: "Living rooms fold into pocket dimensions. Massive capacity with mild disorientation penalty" },
     },
     libraries: {
@@ -727,7 +727,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Megastructures", desc: "Fossilized skeletal columns support towering silos. Storage capabilities scale exponentially" },
     },
     housing: {
-      passive: { capacity: 0.60, defenses: 0.15, growth: 0.15 },
+      passive: { capacity: 0.60, morale: 0.10, happiness: 0.15, defenses: 0.15, growth: 0.15 },
       special: { name: "Goliath Dwellings", desc: "Colossal foundations built on titanic skeletons. Allows massive multi-story structures" },
     },
     libraries: {
