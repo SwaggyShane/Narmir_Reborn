@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 
 const StudiesPanel = () => {
   const [activeTab, setActiveTab] = useState('tower');
+  const [activeSchoolSubTab, setActiveSchoolSubTab] = useState('general');
 
   const handleTabClick = (tabId) => {
     setActiveTab(tabId);
@@ -87,67 +88,188 @@ const StudiesPanel = () => {
 
       {/* SCHOOL TAB */}
       <div style={{ display: activeTab === 'school' ? 'block' : 'none' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-          <div className="card" style={{ margin: 0 }}>
-            <div className="card-title" style={{ marginBottom: '10px' }}>School overview</div>
-            <div className="trow">
-              <span className="name">Schools</span><span className="count" id="st-schools">0</span>
+        {/* School Sub-tabs */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '16px', borderBottom: '2px solid var(--border2)', paddingBottom: 0 }}>
+          <button
+            className={`base-btn admin-tab ${activeSchoolSubTab === 'general' ? 'active' : ''}`}
+            onClick={() => setActiveSchoolSubTab('general')}
+            style={{ borderRadius: 0 }}
+          >
+            📚 General Studies
+          </button>
+          {window.gameState?.school_of_magic && (
+            <button
+              className={`base-btn admin-tab ${activeSchoolSubTab === 'school' ? 'active' : ''}`}
+              onClick={() => setActiveSchoolSubTab('school')}
+              style={{ borderRadius: 0 }}
+            >
+              🔮 {window.gameState?.school_of_magic?.charAt(0).toUpperCase() + window.gameState?.school_of_magic?.slice(1)}
+            </button>
+          )}
+        </div>
+
+        {/* GENERAL STUDIES SUB-TAB */}
+        <div style={{ display: activeSchoolSubTab === 'general' ? 'block' : 'none' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+            <div className="card" style={{ margin: 0 }}>
+              <div className="card-title" style={{ marginBottom: '10px' }}>General Spellbook</div>
+              <div className="trow">
+                <span className="name">Researchers</span><span className="count" id="st-researchers">0</span>
+              </div>
+              <div className="trow">
+                <span className="name">Capacity</span><span className="count" id="st-school-cap">0</span>
+              </div>
+              <div className="trow">
+                <span className="name">Spellbook Level</span><span className="count" id="st-general-spellbook-level">0%</span>
+              </div>
             </div>
-            <div className="trow">
-              <span className="name">Researchers</span><span className="count" id="st-researchers">0</span>
-            </div>
-            <div className="trow">
-              <span className="name">Capacity</span><span className="count" id="st-school-cap">0</span>
+            <div className="card" style={{ margin: 0 }}>
+              <div className="card-title" style={{ marginBottom: '10px' }}>School upgrades</div>
+              <div id="school-upgrade-list"></div>
             </div>
           </div>
-          <div className="card" style={{ margin: 0 }}>
-            <div className="card-title" style={{ marginBottom: '10px' }}>School upgrades</div>
-            <div id="school-upgrade-list"></div>
+
+          {/* Research focus - locked to spellbook */}
+          <div className="card">
+            <div className="card-title" style={{ marginBottom: '8px' }}>Researcher Focus</div>
+            <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '12px' }}>
+              Researchers study the general spellbook. Once you reach level 100, you can choose a school of magic.
+            </div>
+            <div id="research-focus-slot-1" style={{ marginBottom: '12px' }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text2)', marginBottom: '6px' }}>Primary discipline</div>
+              <select className="input" id="focus-select-1" style={{ width: '100%', marginBottom: '6px' }} onChange={updateFocusPreview}>
+                <option value="economy">Economy</option>
+                <option value="weapons">Weapons</option>
+                <option value="armor">Armor</option>
+                <option value="military">Military tactics</option>
+                <option value="attack_magic">Attack magic</option>
+                <option value="defense_magic">Defense magic</option>
+                <option value="entertainment">Entertainment</option>
+                <option value="construction">Construction</option>
+                <option value="war_machines">War machines</option>
+                {!window.gameState?.school_of_magic && <option value="spellbook">Spellbook</option>}
+              </select>
+              <div style={{ fontSize: '11px', color: 'var(--text3)' }} id="focus-current-1"></div>
+            </div>
+            <div id="research-focus-slot-2" style={{ display: 'none', marginBottom: '12px' }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text2)', marginBottom: '6px' }}>
+                Secondary discipline <span style={{ color: 'var(--gold)', fontSize: '10px' }}>Repository</span>
+              </div>
+              <select className="input" id="focus-select-2" style={{ width: '100%', marginBottom: '6px' }} onChange={updateFocusPreview}>
+                <option value="economy">Economy</option>
+                <option value="weapons">Weapons</option>
+                <option value="armor">Armor</option>
+                <option value="military">Military tactics</option>
+                <option value="attack_magic">Attack magic</option>
+                <option value="defense_magic">Defense magic</option>
+                <option value="entertainment">Entertainment</option>
+                <option value="construction">Construction</option>
+                <option value="war_machines">War machines</option>
+                {!window.gameState?.school_of_magic && <option value="spellbook">Spellbook</option>}
+              </select>
+            </div>
+            <button className="base-btn variant-green w-full" onClick={saveResearchFocus} style={{ width: '100%', background: 'var(--green)' }}>Save focus</button>
+            <div id="study-progress-list"></div>
+
+            {window.gameState?.res_spellbook >= 100 && !window.gameState?.school_of_magic && (
+              <div style={{ marginTop: '16px', padding: '12px', background: 'var(--bg3)', borderRadius: 'var(--radius)', border: '1px solid var(--gold)', color: 'var(--gold)', fontSize: '13px', textAlign: 'center' }}>
+                ✨ <strong>School selection available!</strong> You can now choose a school of magic. Visit the school selection panel.
+              </div>
+            )}
           </div>
         </div>
-        
-        {/* Research focus */}
-        <div className="card">
-          <div className="card-title" style={{ marginBottom: '8px' }}>Research focus</div>
-          <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '12px' }}>
-            Choose one discipline to study. Repository upgrade unlocks a second slot.
-          </div>
-          <div id="research-focus-slot-1" style={{ marginBottom: '12px' }}>
-            <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text2)', marginBottom: '6px' }}>Primary discipline</div>
-            <select className="input" id="focus-select-1" style={{ width: '100%', marginBottom: '6px' }} onChange={updateFocusPreview}>
-              <option value="economy">Economy</option>
-              <option value="weapons">Weapons</option>
-              <option value="armor">Armor</option>
-              <option value="military">Military tactics</option>
-              <option value="attack_magic">Attack magic</option>
-              <option value="defense_magic">Defense magic</option>
-              <option value="entertainment">Entertainment</option>
-              <option value="construction">Construction</option>
-              <option value="war_machines">War machines</option>
-              <option value="spellbook">Spellbook</option>
-            </select>
-            <div style={{ fontSize: '11px', color: 'var(--text3)' }} id="focus-current-1"></div>
-          </div>
-          <div id="research-focus-slot-2" style={{ display: 'none', marginBottom: '12px' }}>
-            <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text2)', marginBottom: '6px' }}>
-              Secondary discipline <span style={{ color: 'var(--gold)', fontSize: '10px' }}>Repository</span>
+
+        {/* SCHOOL OF MAGIC SUB-TAB */}
+        {window.gameState?.school_of_magic && (
+          <div style={{ display: activeSchoolSubTab === 'school' ? 'block' : 'none' }}>
+            {/* School Header */}
+            <div className="card" style={{ marginBottom: '12px', textAlign: 'center' }}>
+              <div style={{ fontSize: '32px', marginBottom: '8px' }}>🔮</div>
+              <div className="card-title" style={{ marginBottom: '4px', textTransform: 'capitalize' }}>
+                {window.gameState?.school_of_magic?.replace('_', ' ')}
+              </div>
+              <div style={{ fontSize: '13px', color: 'var(--text3)', marginBottom: '8px' }}>
+                School of Magic
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--text2)', lineHeight: 1.5, marginTop: '8px' }} id="school-lore">
+                Loading school information...
+              </div>
             </div>
-            <select className="input" id="focus-select-2" style={{ width: '100%', marginBottom: '6px' }} onChange={updateFocusPreview}>
-              <option value="economy">Economy</option>
-              <option value="weapons">Weapons</option>
-              <option value="armor">Armor</option>
-              <option value="military">Military tactics</option>
-              <option value="attack_magic">Attack magic</option>
-              <option value="defense_magic">Defense magic</option>
-              <option value="entertainment">Entertainment</option>
-              <option value="construction">Construction</option>
-              <option value="war_machines">War machines</option>
-              <option value="spellbook">Spellbook</option>
-            </select>
+
+            {/* Mage Research Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+              {/* Card 1: Spellbook Continuation */}
+              <div className="card" style={{ margin: 0, padding: '16px' }}>
+                <div style={{ fontSize: '24px', marginBottom: '8px' }}>📖</div>
+                <div className="card-title" style={{ marginBottom: '2px', fontSize: '14px' }}>Spellbook</div>
+                <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '12px' }}>Mages continuing study</div>
+
+                <div className="trow">
+                  <span className="name">Level</span>
+                  <span className="count" id="school-spellbook-level">100%</span>
+                </div>
+                <div className="trow">
+                  <span className="name">Progress</span>
+                  <span className="count" id="school-spellbook-progress">—</span>
+                </div>
+                <div className="trow">
+                  <span className="name">Mages assigned</span>
+                  <span className="count" id="school-spellbook-mages">0</span>
+                </div>
+
+                <div style={{ marginTop: '12px', fontSize: '11px', color: 'var(--text3)' }} id="school-spellbook-turns">
+                  Turns to next level: —
+                </div>
+              </div>
+
+              {/* Card 2: School Spellbook */}
+              <div className="card" style={{ margin: 0, padding: '16px' }}>
+                <div style={{ fontSize: '24px', marginBottom: '8px' }}>🔮</div>
+                <div className="card-title" style={{ marginBottom: '2px', fontSize: '14px' }} id="school-spellbook-title">School Spellbook</div>
+                <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '12px' }}>Mages specializing</div>
+
+                <div className="trow">
+                  <span className="name">Level</span>
+                  <span className="count" id="school-specific-level">0%</span>
+                </div>
+                <div className="trow">
+                  <span className="name">Progress</span>
+                  <span className="count" id="school-specific-progress">—</span>
+                </div>
+                <div className="trow">
+                  <span className="name">Mages assigned</span>
+                  <span className="count" id="school-specific-mages">0</span>
+                </div>
+
+                <div style={{ marginTop: '12px', fontSize: '11px', color: 'var(--text3)' }} id="school-specific-turns">
+                  Turns to next level: —
+                </div>
+              </div>
+            </div>
+
+            {/* Mage Allocation & Spells */}
+            <div className="card">
+              <div className="card-title" style={{ marginBottom: '8px' }}>Mage Research</div>
+              <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '12px' }}>
+                Allocate your Mages between Spellbook continuation and School Spellbook specialization.
+              </div>
+              <div id="mage-allocation-ui">
+                <div style={{ fontSize: '13px', color: 'var(--text3)' }}>Loading mage allocation...</div>
+              </div>
+            </div>
+
+            {/* Spell Tiers Reveal */}
+            <div className="card">
+              <div className="card-title" style={{ marginBottom: '12px' }}>Spell Tiers</div>
+              <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '16px' }}>
+                As your mages study the {window.gameState?.school_of_magic?.replace('_', ' ')} school, spells become available.
+              </div>
+              <div id="school-spell-tiers" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ fontSize: '13px', color: 'var(--text3)' }}>Loading spell structure...</div>
+              </div>
+            </div>
           </div>
-          <button className="base-btn variant-green w-full" onClick={saveResearchFocus} style={{ width: '100%', background: 'var(--green)' }}>Save focus</button>
-          <div id="study-progress-list"></div>
-        </div>
+        )}
       </div>
 
       {/* SHRINE TAB */}
