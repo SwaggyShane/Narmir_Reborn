@@ -20,7 +20,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Geothermal Hearth", desc: "Underfloor heating pipes tap volcanic veins. Citizens stay warm through brutal winters" },
     },
     libraries: {
-      passive: { lore_generation: 0.15, warmth: 0.10 },
+      passive: { research_speed: 0.15, warmth: 0.10 },
       special: { name: "Heat-Hardened Archive", desc: "Warm dry air circulates continuously, preventing parchment decay and humidity damage" },
     },
     schools: {
@@ -99,7 +99,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Treehouse Canopy", desc: "Dwellings weave into living canopies. Citizens remain in maximum happiness" },
     },
     libraries: {
-      passive: { lore_generation: 0.20, forest_sight: 0.25 },
+      passive: { research_speed: 0.20, forest_sight: 0.25 },
       special: { name: "Sylvan Whispers", desc: "Living paper pages whisper ancient secrets directly to librarians" },
     },
     schools: {
@@ -178,7 +178,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Fortified Keeps", desc: "Draconic scales line outer walls. Shelters are highly secure and flame-retardant" },
     },
     libraries: {
-      passive: { lore_generation: 0.05, document_armor: 0.40 },
+      passive: { research_speed: 0.05, document_armor: 0.40 },
       special: { name: "Fireproof Scriptorium", desc: "Dragon scale coatings make all historical papers immune to fire" },
     },
     schools: {
@@ -244,6 +244,10 @@ const POPULATED_FRAGMENTS = {
   },
 
   "Abyssal Crystal": {
+    farms: {
+      passive: { production: 0.20, chaos: 0.15 },
+      special: { name: "Abyssal Growth", desc: "Crops grown in crystalline deep-dark soil produce chaotic, unpredictable yields" },
+    },
     granaries: {
       passive: { capacity: 0.35, magic_output: 0.05 },
       special: { name: "Glacial Cryostasis", desc: "Deep underdark crystals lock granary in lightless frost. Permanently halts organic breakdown" },
@@ -332,7 +336,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Holy Sanctuaries", desc: "Angelic grace prevents civil unrest. Rioting and immigration desertion are greatly reduced" },
     },
     libraries: {
-      passive: { lore_generation: 0.25, morale_sight: 0.35 },
+      passive: { research_speed: 0.25, morale_sight: 0.35 },
       special: { name: "Heavenly Revelations", desc: "Angelic scriptures float down from skylights, resolving complex studies automatically" },
     },
     schools: {
@@ -398,6 +402,10 @@ const POPULATED_FRAGMENTS = {
   },
 
   "Dwarven Star-Metal": {
+    farms: {
+      passive: { production: 0.30, stability: 0.40 },
+      special: { name: "Mechanical Harvest", desc: "Automated dwarven harvesters use precision clockwork to maximize crop efficiency" },
+    },
     granaries: {
       passive: { capacity: 0.50, defensive_armor: 0.15 },
       special: { name: "Piston Silos", desc: "Motorized steam pistons continuously compress and aerate grains, maximizing holding density" },
@@ -407,7 +415,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Retractable Apartments", desc: "Dwarven clockwork bunks and fold-out structures fit more citizens in less space" },
     },
     libraries: {
-      passive: { lore_generation: 0.40, record_impenetrability: 1.00 },
+      passive: { research_speed: 0.40, record_impenetrability: 1.00 },
       special: { name: "Impenetrable Star-Metal Lockboxes", desc: "Maps, locations, and relic coordinates cannot be lost, stolen, or erased by curses" },
     },
     schools: {
@@ -473,6 +481,10 @@ const POPULATED_FRAGMENTS = {
   },
 
   "Cursed Bloodstone": {
+    farms: {
+      passive: { production: 0.25, chaos: 0.35 },
+      special: { name: "Bloodsoaked Fields", desc: "Cursed soil grows crops stained with dark power - massive yields but unstable harvests" },
+    },
     granaries: {
       passive: { capacity: 0.30, combat_attunement: 0.20 },
       special: { name: "Vampiric Silos", desc: "Spoiling food distilled into dark elixir. Increases military attack speed but spikes chaos" },
@@ -482,7 +494,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Blood Pact Lodgings", desc: "Explosive population density powered by dark covenant. Raw workforce expansion at stability cost" },
     },
     libraries: {
-      passive: { lore_generation: 0.50, chaos_index: 0.15 },
+      passive: { research_speed: 0.50, chaos_index: 0.15 },
       special: { name: "Sanguine Cartography", desc: "Maps drawn in blood update geography in real-time but cause intense psychological stress" },
     },
     schools: {
@@ -561,7 +573,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Lifespring Spores", desc: "Curing waters fill district fonts. Zero infant mortality, natural growth boosted +50%" },
     },
     libraries: {
-      passive: { lore_generation: 0.35, spell_efficiency: 0.30 },
+      passive: { research_speed: 0.35, spell_efficiency: 0.30 },
       special: { name: "Dew of Understanding", desc: "Sipping microscopic water drops doubles comprehension speed and memory retention" },
     },
     schools: {
@@ -706,6 +718,10 @@ const POPULATED_FRAGMENTS = {
   },
 
   "Titan Bone": {
+    farms: {
+      passive: { production: 0.35, stability: 0.20 },
+      special: { name: "Colossus Fields", desc: "Enormous fossilized bones buried in soil create naturally rich, stable farmland" },
+    },
     granaries: {
       passive: { capacity: 1.00, fortifications: 0.20 },
       special: { name: "Megastructures", desc: "Fossilized skeletal columns support towering silos. Storage capabilities scale exponentially" },
@@ -715,7 +731,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Goliath Dwellings", desc: "Colossal foundations built on titanic skeletons. Allows massive multi-story structures" },
     },
     libraries: {
-      passive: { lore_generation: 0.75, record_capacity: 0.50 },
+      passive: { research_speed: 0.75, record_capacity: 0.50 },
       special: { name: "Colossal Archives", desc: "Titanic skeletal supports allow libraries to expand indefinitely with vault-like record storage" },
     },
     schools: {
