@@ -14,9 +14,35 @@ const fragmentBonusManager = require('./fragment-bonus-manager');
  * Validate that a fragment can be attuned to a building
  */
 function validateAttunement(kingdom, fragmentName, buildingType) {
-  // Check fragment exists
+  // Check fragment exists in constants
   if (!FRAGMENT_BONUSES[fragmentName]) {
     return { error: `Fragment '${fragmentName}' does not exist` };
+  }
+
+  // Check kingdom owns and has studied this fragment
+  let worldFragments = [];
+  if (Array.isArray(kingdom.world_fragments)) {
+    worldFragments = kingdom.world_fragments;
+  } else if (typeof kingdom.world_fragments === 'string') {
+    try {
+      worldFragments = JSON.parse(kingdom.world_fragments || '[]') || [];
+    } catch {
+      worldFragments = [];
+    }
+  }
+
+  const ownedFragment = Array.isArray(worldFragments)
+    ? worldFragments.find(f => f && f.type === fragmentName)
+    : null;
+
+  if (!ownedFragment) {
+    return { error: `Kingdom does not own fragment '${fragmentName}'` };
+  }
+
+  // Check if studied (object format only, string format is not studied)
+  const isStudied = typeof ownedFragment === 'object' && ownedFragment.studied === true;
+  if (!isStudied) {
+    return { error: `Fragment '${fragmentName}' must be studied before attunement` };
   }
 
   // Check building type is valid
@@ -89,14 +115,38 @@ function applyAttunement(kingdom, fragmentName, buildingType) {
 
 /**
  * Get all available attunement options for a kingdom
- * Returns list of fragments that can be attuned
+ * Returns list of studied fragments that can be attuned
  */
 function getAvailableAttunements(kingdom) {
   const currentAttunements = getKingdomAttunements(kingdom.fragment_bonuses || '{}');
   const available = [];
 
-  // For each fragment, check if it can be attuned
-  for (const [fragmentName, buildingBonuses] of Object.entries(FRAGMENT_BONUSES)) {
+  // Get kingdom's owned fragments
+  let worldFragments = [];
+  if (Array.isArray(kingdom.world_fragments)) {
+    worldFragments = kingdom.world_fragments;
+  } else if (typeof kingdom.world_fragments === 'string') {
+    try {
+      worldFragments = JSON.parse(kingdom.world_fragments || '[]') || [];
+    } catch {
+      worldFragments = [];
+    }
+  }
+
+  // Only include studied fragments (object format with studied: true)
+  const studiedFragments = Array.isArray(worldFragments)
+    ? worldFragments.filter(f => f && typeof f === 'object' && f.studied === true)
+    : [];
+
+  // For each studied fragment, check if it can be attuned
+  for (const ownedFragment of studiedFragments) {
+    const fragmentName = ownedFragment.type;
+    const buildingBonuses = FRAGMENT_BONUSES[fragmentName];
+
+    if (!buildingBonuses) {
+      continue; // Fragment type not found in bonuses config
+    }
+
     // Skip if fragment is already attuned
     const isAttuned = Object.values(currentAttunements).some(
       (att) => att && att.fragment === fragmentName
