@@ -247,6 +247,10 @@ function manaPerTurn(k) {
   const manaPowerMult = fragmentBonusManager.getBonusMultiplier(k, 'mage_towers', 'power');
   manaGen = Math.floor(manaGen * manaMult * manaRegenMult * manaPowerMult);
 
+  // Apply housing magic output bonus (e.g., Abyssal Crystal)
+  const housingMagicMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'magic_output');
+  manaGen = Math.floor(manaGen * housingMagicMult);
+
   return manaGen;
 }
 
@@ -259,7 +263,13 @@ function naturalMoraleCap(k) {
   // Apply dynamic housing passive bonuses on morale / happiness (e.g., Celestial Realm, Ancient Elven Wood)
   const housingMoraleMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'morale');
   const housingHappinessMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'happiness');
-  return Math.floor(cap * housingMoraleMult * housingHappinessMult);
+  cap = Math.floor(cap * housingMoraleMult * housingHappinessMult);
+
+  // Apply housing stability modifier cap (e.g., Void Essence, Cursed Bloodstone reduce max morale)
+  const housingStabilityMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'stability');
+  cap = Math.floor(cap * housingStabilityMult);
+
+  return cap;
 }
 
 function effectiveMorale(k) {
@@ -345,9 +355,9 @@ function researchIncrement(k, discipline, researchersAssigned, currentLevel) {
       ? raceBonus(k, "magic")
       : raceBonus(k, "research");
   const resLevelMult = unitLevelMult(k, "researchers");
-  const librarySpeedMult = fragmentBonusManager.getBonusMultiplier(k, 'libraries', 'speed');
+  const libraryResearchMult = fragmentBonusManager.getBonusMultiplier(k, 'libraries', 'research_speed');
   const effective = Math.floor(
-    researchersAssigned * schoolBonus * raceMulti * resLevelMult * librarySpeedMult,
+    researchersAssigned * schoolBonus * raceMulti * resLevelMult * libraryResearchMult,
   );
 
   let factor = 1.0;
@@ -1131,7 +1141,23 @@ function processFoodEconomy(k, events) {
   const maxStore = Math.floor((Math.floor(BASE_FOOD_STORAGE * storageRaceMult) + k.bld_granaries * granaryPer) * granaryCapacityMult);
 
   // Apply degradation before checking balance
-  const rotRate = upgrades.preservation ? 0.05 * 0.7 : 0.05; // 5% base degradation, lowered by 30% with salt curing
+  let rotRate = upgrades.preservation ? 0.05 * 0.7 : 0.05; // 5% base degradation, lowered by 30% with salt curing
+
+  // Apply fragment attunement decay reduction
+  const granaryAttune = fragmentBonusManager.getFragmentForBuilding(k, 'granaries');
+
+  // Check for fragments with complete decay elimination
+  if (granaryAttune && (granaryAttune.fragment === 'Volcanic Rock' || granaryAttune.fragment === 'Abyssal Crystal')) {
+    // Geothermal Dehydration & Glacial Cryostasis: eliminate 100% spoilage
+    rotRate = 0;
+  } else {
+    // Other fragments: apply decay_reduction multiplier (including Ancient Elven Wood)
+    const decayReduction = fragmentBonusManager.getBonusMultiplier(k, 'granaries', 'decay_reduction');
+    if (decayReduction > 1.0) {
+      rotRate = Math.max(0, rotRate * (2.0 - decayReduction));
+    }
+  }
+
   const spoilage = Math.floor(food * rotRate);
   if (spoilage > 0) {
     food -= spoilage;
@@ -1316,12 +1342,17 @@ function processFoodEconomy(k, events) {
       if (shortTurns >= 5) {
         let fleeCount = 500;
         const activeHousingSpecial = fragmentBonusManager.getSpecialEffect(k, 'housing');
-        if (activeHousingSpecial?.name === "Sanctified Homes") {
-          fleeCount = 0; // citizens never leave!
-        } else if (activeHousingSpecial?.name === "Elven Halls") {
-          fleeCount = 100; // 80% reduction in fleeing
-        } else if (activeHousingSpecial?.name === "Life Dwellings") {
-          fleeCount = 250; // 50% reduction in fleeing
+
+        // Apply housing special abilities to reduce population fleeing
+        if (activeHousingSpecial?.name === "Holy Sanctuaries") {
+          // Celestial Feather: Completely prevent unrest
+          fleeCount = 0;
+        } else if (activeHousingSpecial?.name === "Treehouse Canopy") {
+          // Ancient Elven Wood: 80% reduction in fleeing
+          fleeCount = Math.floor(fleeCount * 0.2);
+        } else if (activeHousingSpecial?.name === "Lifespring Spores") {
+          // Tears of World Tree: 50% reduction in fleeing
+          fleeCount = Math.floor(fleeCount * 0.5);
         }
 
         if (fleeCount > 0) {
@@ -1330,10 +1361,10 @@ function processFoodEconomy(k, events) {
             type: "system",
             message: `👥 Population fleeing starvation: -${fleeCount} people.`,
           });
-        } else {
+        } else if (activeHousingSpecial?.name === "Holy Sanctuaries") {
           events.push({
             type: "system",
-            message: `👥 Population refused to leave their Sanctified Homes despite starvation!`,
+            message: `👥 Holy Sanctuaries: Population refuses to abandon their sacred homes despite starvation!`,
           });
         }
       }
@@ -1349,6 +1380,72 @@ function processFoodEconomy(k, events) {
       }
     }
   }
+  return updates;
+}
+
+/**
+ * Process granary attunement special abilities
+ * Executes automated effects like food replication, vanishing, spoilage prevention
+ */
+function processGranaryAttunements(k, events) {
+  const updates = {};
+  const granaryAttune = fragmentBonusManager.getFragmentForBuilding(k, 'granaries');
+
+  if (!granaryAttune) {
+    return updates;
+  }
+
+  const fragmentName = granaryAttune.fragment;
+  let foodChange = 0;
+
+  switch (fragmentName) {
+    case 'Tears of the World Tree':
+      // +2% food self-replication per turn based on current food stored
+      foodChange = Math.floor((k.food || 0) * 0.02);
+      if (foodChange > 0) {
+        events.push({
+          type: 'system',
+          message: `💧 Tears of the World Tree: +${foodChange.toLocaleString()} food replicated from stored reserves.`
+        });
+      }
+      break;
+
+    case 'Void Essence':
+      // 5% chance per turn food vanishes based on current food stored
+      if (Math.random() < 0.05 && (k.food || 0) > 0) {
+        const voidLoss = Math.floor((k.food || 0) * (0.1 + Math.random() * 0.3));
+        foodChange = -voidLoss;
+        events.push({
+          type: 'system',
+          message: `🌌 Void Essence: ${voidLoss.toLocaleString()} food consumed by the void!`
+        });
+      }
+      break;
+
+    case 'Celestial Feather':
+      // Portion of reserves distributed to boost morale on unstable turns
+      const morale = displayMorale(k);
+      if (morale < 30 && (k.food || 0) > 0) {
+        const moraleFoodCost = Math.max(1, Math.floor((k.food || 0) * 0.05));
+        const moraleBoost = Math.floor(naturalMoraleCap(k) * 0.05);
+        foodChange = -moraleFoodCost;
+        events.push({
+          type: 'system',
+          message: `🪶 Manna Manifestation: ${moraleFoodCost.toLocaleString()} food distributed for morale (+5%).`
+        });
+        updates.morale = Math.min(naturalMoraleCap(k), (k.morale || 0) + moraleBoost);
+      }
+      break;
+
+    // Other fragments with passive-only abilities don't trigger special events
+    // (Geothermal, Ancient Elven Wood, Dragon Scale, Abyssal Crystal, etc.)
+  }
+
+  if (foodChange !== 0) {
+    const newFood = Math.max(0, (k.food || 0) + foodChange);
+    updates.food = newFood;
+  }
+
   return updates;
 }
 
@@ -1660,6 +1757,10 @@ function processTurn(k) {
   const foodUpdates = processFoodEconomy({ ...k, ...updates }, events);
   Object.assign(updates, foodUpdates);
 
+  // ── 4a. Granary attunement special abilities ──────────────────────────────────
+  const granaryAbilityUpdates = processGranaryAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, granaryAbilityUpdates);
+
   // ── 4b. Resource production (wood / stone / iron) ────────────────────────────
   const resourceUpdates = processResourceYield({ ...k, ...updates }, events);
   Object.assign(updates, resourceUpdates);
@@ -1820,7 +1921,7 @@ function processTurn(k) {
     // Race overcrowding penalty modifiers
     let overcrowdMult = { dire_wolf: 0.5, high_elf: 2.0 }[k.race] || 1.0;
     const activeHousingSpecial = fragmentBonusManager.getSpecialEffect(k, 'housing');
-    if (activeHousingSpecial?.name === "Titan Halls") {
+    if (activeHousingSpecial?.name === "Goliath Dwellings") {
       overcrowdMult *= 0.2; // 80% reduction in overcrowding penalty, since they are spacious
     }
     const overcrowdPenalty = overcrowded
@@ -2201,6 +2302,9 @@ function processTurn(k) {
     focus = focus.slice(0, maxSlots);
     const perSlot = Math.floor(researchers / focus.length);
 
+    // Get library research speed multiplier
+    const libraryResearchMult = fragmentBonusManager.getBonusMultiplier(k, 'libraries', 'research_speed');
+
     let rProgress = safeJsonParse(
       k.research_progress,
       {},
@@ -2219,7 +2323,7 @@ function processTurn(k) {
       if (current >= cap) return; // At cap, no progress
 
       const effective = Math.floor(
-        perSlot * schoolBonus * d.multi * curriculumMult,
+        perSlot * schoolBonus * d.multi * curriculumMult * libraryResearchMult,
       );
       rProgress[d.col] = (rProgress[d.col] || 0) + effective;
 
@@ -4572,9 +4676,13 @@ function resolveMilitaryAttack(
   const winnerUpdates = win ? attackerUpdates : defenderUpdates;
   const loserUpdates = win ? defenderUpdates : attackerUpdates;
 
+  // Check if loser has Dwarven Star-Metal or Dragon Scale protecting maps
+  const loserFragment = fragmentBonusManager.getFragmentForBuilding(loser, 'libraries');
+  const canStealMaps = !loserFragment || (loserFragment.fragment !== 'Dwarven Star-Metal' && loserFragment.fragment !== 'Dragon Scale');
+
   const lootRaceBonus =
     winner.race === "orc" || winner.race === "dire_wolf" ? 1.5 : 1.0;
-  if (Math.random() < baseChance * lootRaceBonus) {
+  if (canStealMaps && Math.random() < baseChance * lootRaceBonus) {
     const winnerDisc = safeJsonParse(
       winnerUpdates.discovered_kingdoms || winner.discovered_kingdoms,
       {},
@@ -4947,8 +5055,11 @@ function castSpell(caster, target, spellId, obscure) {
   // Mana cost: base cost scales with tier
   const TIER_MANA = { 1: 500, 2: 2000, 3: 8000, 4: 50000 };
   const baseMana = TIER_MANA[def.tier] || 500;
-  const obscureCost = obscure ? Math.floor(baseMana * 0.5) : 0;
-  const totalMana = baseMana + obscureCost;
+  const spellLibraryBonus = fragmentBonusManager.getFragmentForBuilding(caster, 'libraries');
+  const spellEfficiency = spellLibraryBonus?.passive?.spell_efficiency || 0;
+  const adjustedBaseMana = Math.floor(baseMana * (1 - spellEfficiency));
+  const obscureCost = obscure ? Math.floor(adjustedBaseMana * 0.5) : 0;
+  const totalMana = adjustedBaseMana + obscureCost;
   if ((caster.mana || 0) < totalMana)
     return {
       error: `Not enough mana — need ${totalMana.toLocaleString()}, have ${(caster.mana || 0).toLocaleString()}`,
@@ -5409,14 +5520,21 @@ function covertLoot(thief, target, lootType, thievesSent) {
     stolen = Math.floor(thievesSent * (50 + Math.random() * 50) * thiefLvMult);
     stolen = Math.min(stolen, Math.floor(target.gold * 0.05));
 
-    // Protect gold
-    if (target.gold - stolen < goldFloor) {
-      stolen = target.gold - goldFloor;
-      if (stolen < 0) stolen = 0;
-    }
+    // Dwarven Star-Metal vaults prevent the treasury from being looted
+    const vaultFragment = fragmentBonusManager.getFragmentForBuilding(target, 'vaults');
+    if (vaultFragment && vaultFragment.fragment === 'Dwarven Star-Metal') {
+      stolen = 0;
+      desc = `0 gold — protected by Star-Metal gear locks`;
+    } else {
+      // Protect gold
+      if (target.gold - stolen < goldFloor) {
+        stolen = target.gold - goldFloor;
+        if (stolen < 0) stolen = 0;
+      }
 
-    targetUpdates.gold = target.gold - stolen;
-    desc = `${stolen.toLocaleString()} gold`;
+      targetUpdates.gold = target.gold - stolen;
+      desc = `${stolen.toLocaleString()} gold`;
+    }
   } else if (lootType === "research") {
     stolen = Math.floor(thievesSent * 0.2 * thiefLvMult);
     targetUpdates.res_economy = Math.max(0, target.res_economy - stolen);
@@ -5435,13 +5553,29 @@ function covertLoot(thief, target, lootType, thievesSent) {
       thievesSent * (100 + Math.random() * 100) * thiefLvMult,
     );
     stolen = Math.min(stolen, Math.floor(target.food * 0.1));
-    targetUpdates.food = Math.max(0, target.food - stolen);
-    desc = `${stolen.toLocaleString()} food`;
+
+    // Dragon Scale granaries block 100% of food theft
+    const granaryFragment = fragmentBonusManager.getFragmentForBuilding(target, 'granaries');
+    if (granaryFragment && granaryFragment.fragment === 'Dragon Scale') {
+      stolen = 0;
+      desc = `0 food — protected by draconic scales`;
+    } else {
+      targetUpdates.food = Math.max(0, target.food - stolen);
+      desc = `${stolen.toLocaleString()} food`;
+    }
   } else if (lootType === "maps") {
-    stolen = Math.floor(thievesSent * 0.05 * thiefLvMult);
-    stolen = Math.min(stolen, target.maps || 0);
-    targetUpdates.maps = (target.maps || 0) - stolen;
-    desc = `${stolen} map(s)`;
+    const targetFragment = fragmentBonusManager.getFragmentForBuilding(target, 'libraries');
+    const hasProtection = targetFragment && (targetFragment.fragment === 'Dwarven Star-Metal' || targetFragment.fragment === 'Dragon Scale');
+
+    if (hasProtection) {
+      stolen = 0;
+      desc = `0 map(s) — protected by ancient magic`;
+    } else {
+      stolen = Math.floor(thievesSent * 0.05 * thiefLvMult);
+      stolen = Math.min(stolen, target.maps || 0);
+      targetUpdates.maps = (target.maps || 0) - stolen;
+      desc = `${stolen} map(s)`;
+    }
   } else if (lootType === "scrolls") {
     const targetScrolls = safeJsonParse(
       target.scrolls,
@@ -5457,8 +5591,16 @@ function covertLoot(thief, target, lootType, thievesSent) {
   } else if (lootType === "blueprints") {
     stolen = Math.floor(thievesSent * 0.01 * thiefLvMult);
     stolen = Math.min(stolen, target.blueprints_stored || 0);
-    targetUpdates.blueprints_stored = (target.blueprints_stored || 0) - stolen;
-    desc = `${stolen} blueprint(s)`;
+
+    // Dwarven Star-Metal mausoleums protect blueprints from theft
+    const mausoleumFragment = fragmentBonusManager.getFragmentForBuilding(target, 'mausoleums');
+    if (mausoleumFragment && mausoleumFragment.fragment === 'Dwarven Star-Metal') {
+      stolen = 0;
+      desc = `0 blueprint(s) — protected by Star-Metal safeguards`;
+    } else {
+      targetUpdates.blueprints_stored = (target.blueprints_stored || 0) - stolen;
+      desc = `${stolen} blueprint(s)`;
+    }
   } else if (lootType === "scaffolding") {
     stolen = Math.floor(thievesSent * 0.05 * thiefLvMult);
     stolen = Math.min(stolen, target.scaffolding_stored || 0);
@@ -6684,7 +6826,7 @@ function processLibrary(k, events) {
   } catch {}
   const capacityPerLib = 20;
   const scribeSpeedMult = raceBonus(k, "scribe"); // Or similar? I will look up how other racial modifiers are done. Let's look at raceBonus.
-  const libraryWorkSpeedMult = fragmentBonusManager.getBonusMultiplier(k, 'libraries', 'speed');
+  const libraryWorkSpeedMult = fragmentBonusManager.getBonusMultiplier(k, 'libraries', 'decoding_speed');
 
   const capacity = libs * capacityPerLib;
   const effectiveScribes = Math.min(k.scribes, capacity);
@@ -7188,11 +7330,11 @@ function processActiveEffects(k, events) {
         );
       } else if (effect === "plague") {
         let lost = Math.floor(k.population * 0.02);
-        // Special housing effects (Celestial Realm: Sanctified Homes, Ancient Elven Wood: Elven Halls)
+        // Special housing effects (Celestial Feather: Holy Sanctuaries, Ancient Elven Wood: Treehouse Canopy)
         const activeHousingSpecial = fragmentBonusManager.getSpecialEffect(k, 'housing');
-        if (activeHousingSpecial?.name === "Sanctified Homes") {
+        if (activeHousingSpecial?.name === "Holy Sanctuaries") {
           lost = Math.floor(lost * 0.2); // 80% reduction in plague loss
-        } else if (activeHousingSpecial?.name === "Elven Halls") {
+        } else if (activeHousingSpecial?.name === "Treehouse Canopy") {
           lost = Math.floor(lost * 0.5); // 50% reduction in plague loss
         }
         updates.population = Math.max(0, k.population - lost);
@@ -7419,6 +7561,7 @@ module.exports = {
   tavernEntertainmentBonus,
   commodityPrice,
   processFoodEconomy,
+  processGranaryAttunements,
   processMercenaries,
   hireMercenaries,
   purchaseUpgrade,
