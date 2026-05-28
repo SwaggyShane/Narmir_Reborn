@@ -1031,10 +1031,16 @@ async function start() {
       const { amount } = req.body;
       const goldAmount = parseInt(amount) || 0;
       if (goldAmount <= 0) return res.status(400).json({ error: 'Invalid amount' });
-      if (kingdom.gold < goldAmount) return res.status(400).json({ error: 'Not enough gold' });
-    
+
       await db.run('BEGIN TRANSACTION');
       try {
+        // Check balance inside transaction with row locking
+        const k = await db.get('SELECT gold FROM kingdoms WHERE id = ? FOR UPDATE', [kingdom.id]);
+        if (k.gold < goldAmount) {
+          await db.run('ROLLBACK');
+          return res.status(400).json({ error: 'Not enough gold' });
+        }
+
         await db.run('UPDATE kingdoms SET gold = gold - ? WHERE id = ?', [goldAmount, kingdom.id]);
         await db.run('UPDATE alliances SET vault_gold = vault_gold + ? WHERE id = ?', [goldAmount, membership.alliance_id]);
         const alliance = await db.get('SELECT vault_log FROM alliances WHERE id = ?', [membership.alliance_id]);
@@ -1045,7 +1051,7 @@ async function start() {
         await db.run('COMMIT');
         res.json({ ok: true, deposited: goldAmount });
       } catch(e) {
-        await db.run('ROLLBACK');
+        await db.run('ROLLBACK').catch(() => {});
         console.error(e);
         res.status(500).json({ error: 'Deposit failed' });
       }
@@ -1055,40 +1061,47 @@ async function start() {
       const kingdom = await db.get('SELECT id, name FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
       const alliance = await db.get('SELECT * FROM alliances WHERE leader_id = ?', [kingdom.id]);
       if (!alliance) return res.status(403).json({ error: 'Only leader can fund projects' });
-    
+
       const { project } = req.body;
       const allowedProjects = ['merchant_guild', 'shadow_network', 'mercenary_subsidy', 'fortress_walls'];
       if (!allowedProjects.includes(project)) return res.status(400).json({ error: 'Invalid project' });
 
-      let projects = safeJsonParse(alliance.projects, {});
-      const currentLevel = projects[project] || 0;
-      if (currentLevel >= 10) return res.status(400).json({ error: 'Project is max level' });
-    
-      const cost = 50000 * (currentLevel + 1);
-      if (alliance.vault_gold < cost) return res.status(400).json({ error: 'Not enough vault gold' });
-    
       await db.run('BEGIN TRANSACTION');
       try {
-        projects[project] = currentLevel + 1;
-        await db.run('UPDATE alliances SET vault_gold = vault_gold - ?, projects = ? WHERE id = ?', [cost, JSON.stringify(projects), alliance.id]);
+        // Re-fetch alliance with row locking and check state inside transaction
+        const a = await db.get('SELECT * FROM alliances WHERE id = ? FOR UPDATE', [alliance.id]);
 
-        let logs = safeJsonParse(alliance.vault_log, []);
+        let projects = safeJsonParse(a.projects, {});
+        const currentLevel = projects[project] || 0;
+        if (currentLevel >= 10) {
+          await db.run('ROLLBACK');
+          return res.status(400).json({ error: 'Project is max level' });
+        }
+
+        const cost = 50000 * (currentLevel + 1);
+        if (a.vault_gold < cost) {
+          await db.run('ROLLBACK');
+          return res.status(400).json({ error: 'Not enough vault gold' });
+        }
+
+        projects[project] = currentLevel + 1;
+        await db.run('UPDATE alliances SET vault_gold = vault_gold - ?, projects = ? WHERE id = ?', [cost, JSON.stringify(projects), a.id]);
+
+        let logs = safeJsonParse(a.vault_log, []);
         logs.unshift({ type: 'project', name: project.replace('_', ' '), level: currentLevel + 1, cost: cost, date: new Date().toLocaleString() });
         if(logs.length > 20) logs = logs.slice(0, 20);
-        await db.run('UPDATE alliances SET vault_log = ? WHERE id = ?', [JSON.stringify(logs), alliance.id]);
-      
-        // Sync buffs to all members with single JOIN query
-        const members = await db.all('SELECT k.id, k.alliance_buffs FROM kingdoms k JOIN alliance_members am ON k.id = am.kingdom_id WHERE am.alliance_id = ?', [alliance.id]);
-        for (const m of members) {
-           let buffs = safeJsonParse(m.alliance_buffs, {});
-           buffs[project] = currentLevel + 1;
-           await db.run('UPDATE kingdoms SET alliance_buffs = ? WHERE id = ?', [JSON.stringify(buffs), m.id]);
-        }
-      
+        await db.run('UPDATE alliances SET vault_log = ? WHERE id = ?', [JSON.stringify(logs), a.id]);
+
+        // Sync buffs to all members with a single bulk UPDATE query
+        await db.run(
+          'UPDATE kingdoms SET alliance_buffs = ? WHERE id IN (SELECT kingdom_id FROM alliance_members WHERE alliance_id = ?)',
+          [JSON.stringify(projects), a.id]
+        );
+
         await db.run('COMMIT');
         res.json({ ok: true });
       } catch(e) {
-        await db.run('ROLLBACK');
+        await db.run('ROLLBACK').catch(() => {});
         console.error(e);
         res.status(500).json({ error: 'Project funding failed' });
       }
@@ -1135,12 +1148,24 @@ async function start() {
       if (!name?.trim()) return res.status(400).json({ error: 'Alliance name required' });
       const kingdom = await db.get('SELECT * FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
       if (!kingdom) return res.status(404).json({ error: 'Kingdom not found' });
-      await db.run('DELETE FROM alliance_members WHERE kingdom_id = ?', [kingdom.id]);
+
+      await db.run('BEGIN TRANSACTION');
       try {
+        // Prevent alliance leaders from abandoning their alliance without disbanding it
+        const leading = await db.get('SELECT id FROM alliances WHERE leader_id = ?', [kingdom.id]);
+        if (leading) {
+          await db.run('ROLLBACK');
+          return res.status(400).json({ error: 'You cannot create a new alliance while leading an existing one. Disband it first.' });
+        }
+
+        // Remove from any existing alliance and create new one atomically
+        await db.run('DELETE FROM alliance_members WHERE kingdom_id = ?', [kingdom.id]);
         const result = await db.run('INSERT INTO alliances (name, leader_id) VALUES (?, ?)', [name.trim(), kingdom.id]);
         await db.run('INSERT INTO alliance_members (alliance_id, kingdom_id, pledge) VALUES (?, ?, 3)', [result.lastID, kingdom.id]);
+        await db.run('COMMIT');
         res.json({ ok: true, allianceId: result.lastID });
       } catch (err) {
+        await db.run('ROLLBACK').catch(() => {});
         if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Alliance name taken' });
         res.status(500).json({ error: 'Server error' });
       }
@@ -1152,27 +1177,56 @@ async function start() {
       if (!membership) return res.status(400).json({ error: 'You are not in an alliance' });
       const alliance = await db.get('SELECT * FROM alliances WHERE id = ?', [membership.alliance_id]);
       if (alliance.leader_id !== kingdom.id) return res.status(403).json({ error: 'Only the leader can invite' });
+
+      const targetKingdomId = req.body.targetKingdomId;
+      await db.run('BEGIN TRANSACTION');
       try {
-        await db.run('INSERT INTO alliance_members (alliance_id, kingdom_id) VALUES (?, ?)', [membership.alliance_id, req.body.targetKingdomId]);
-        await db.run('UPDATE kingdoms SET alliance_buffs = ? WHERE id = ?', [alliance.projects || '{}', req.body.targetKingdomId]);
+        // Lock target kingdom to prevent concurrent alliance membership changes
+        const target = await db.get('SELECT id FROM kingdoms WHERE id = ? FOR UPDATE', [targetKingdomId]);
+        if (!target) {
+          await db.run('ROLLBACK');
+          return res.status(404).json({ error: 'Target kingdom not found' });
+        }
+
+        const existingMembership = await db.get('SELECT alliance_id FROM alliance_members WHERE kingdom_id = ?', [targetKingdomId]);
+        if (existingMembership) {
+          await db.run('ROLLBACK');
+          return res.status(400).json({ error: 'Target kingdom is already in an alliance' });
+        }
+
+        await db.run('INSERT INTO alliance_members (alliance_id, kingdom_id) VALUES (?, ?)', [membership.alliance_id, targetKingdomId]);
+        await db.run('UPDATE kingdoms SET alliance_buffs = ? WHERE id = ?', [alliance.projects || '{}', targetKingdomId]);
+        await db.run('COMMIT');
         res.json({ ok: true });
-      } catch {
-        res.status(409).json({ error: 'Already a member' });
+      } catch (err) {
+        await db.run('ROLLBACK').catch(() => {});
+        res.status(409).json({ error: 'Failed to invite kingdom' });
       }
     });
 
     app.post('/api/alliance/leave', requireAuth, async (req, res) => {
       const kingdom = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
-      const alliance = await db.get('SELECT * FROM alliances WHERE leader_id = ?', [kingdom.id]);
-      if (alliance) {
-        await db.run('DELETE FROM alliance_members WHERE alliance_id = ?', [alliance.id]);
-        await db.run('DELETE FROM alliances WHERE id = ?', [alliance.id]);
-        await db.run('UPDATE kingdoms SET alliance_buffs = \'{}\' WHERE alliance_buffs != \'{}\' AND id NOT IN (SELECT kingdom_id FROM alliance_members)');
-      } else {
-        await db.run('DELETE FROM alliance_members WHERE kingdom_id = ?', [kingdom.id]);
-        await db.run('UPDATE kingdoms SET alliance_buffs = \'{}\' WHERE id = ?', [kingdom.id]);
+
+      await db.run('BEGIN TRANSACTION');
+      try {
+        const alliance = await db.get('SELECT * FROM alliances WHERE leader_id = ? FOR UPDATE', [kingdom.id]);
+        if (alliance) {
+          // Leader leaving: disband entire alliance
+          await db.run('UPDATE kingdoms SET alliance_buffs = \'{}\' WHERE id IN (SELECT kingdom_id FROM alliance_members WHERE alliance_id = ?)', [alliance.id]);
+          await db.run('DELETE FROM alliance_members WHERE alliance_id = ?', [alliance.id]);
+          await db.run('DELETE FROM alliances WHERE id = ?', [alliance.id]);
+        } else {
+          // Non-leader leaving: remove from alliance
+          await db.run('DELETE FROM alliance_members WHERE kingdom_id = ?', [kingdom.id]);
+          await db.run('UPDATE kingdoms SET alliance_buffs = \'{}\' WHERE id = ?', [kingdom.id]);
+        }
+        await db.run('COMMIT');
+        res.json({ ok: true });
+      } catch (err) {
+        await db.run('ROLLBACK').catch(() => {});
+        console.error(err);
+        res.status(500).json({ error: 'Failed to leave alliance' });
       }
-      res.json({ ok: true });
     });
 
     app.get('/api/regions', requireAuth, async (req, res) => {
@@ -1210,19 +1264,41 @@ async function start() {
         const { target_id, amount } = req.body;
         if (!target_id || !amount || amount <= 0) return res.status(400).json({ error: 'Invalid target or amount' });
 
-        // Check if player has enough gold
-        const k = await db.get('SELECT id, gold FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
-        if (!k) return res.status(404).json({ error: 'Kingdom not found' });
-        if (k.gold < amount) return res.status(400).json({ error: 'Not enough gold' });
-        if (k.id === target_id) return res.status(400).json({ error: 'Cannot place bounty on yourself' });
+        await db.run('BEGIN TRANSACTION');
+        try {
+          // Check gold and lock inside transaction
+          const k = await db.get('SELECT id, gold FROM kingdoms WHERE player_id = ? FOR UPDATE', [req.player.playerId]);
+          if (!k) {
+            await db.run('ROLLBACK');
+            return res.status(404).json({ error: 'Kingdom not found' });
+          }
+          if (k.gold < amount) {
+            await db.run('ROLLBACK');
+            return res.status(400).json({ error: 'Not enough gold' });
+          }
+          if (k.id === target_id) {
+            await db.run('ROLLBACK');
+            return res.status(400).json({ error: 'Cannot place bounty on yourself' });
+          }
 
-        await db.run('UPDATE kingdoms SET gold = gold - ? WHERE id = ?', [amount, k.id]);
-        await db.run(
-          'INSERT INTO bounties (placer_id, target_id, amount) VALUES (?, ?, ?)',
-          [req.player.playerId, target_id, amount]
-        );
+          const target = await db.get('SELECT id FROM kingdoms WHERE id = ?', [target_id]);
+          if (!target) {
+            await db.run('ROLLBACK');
+            return res.status(404).json({ error: 'Target kingdom not found' });
+          }
 
-        res.json({ ok: true, message: 'Bounty placed!' });
+          await db.run('UPDATE kingdoms SET gold = gold - ? WHERE id = ?', [amount, k.id]);
+          await db.run(
+            'INSERT INTO bounties (placer_id, target_id, amount) VALUES (?, ?, ?)',
+            [req.player.playerId, target_id, amount]
+          );
+
+          await db.run('COMMIT');
+          res.json({ ok: true, message: 'Bounty placed!' });
+        } catch (txErr) {
+          await db.run('ROLLBACK').catch(() => {});
+          throw txErr;
+        }
       } catch (e) {
         res.status(500).json({ error: e.message });
       }
@@ -1443,30 +1519,42 @@ async function start() {
         const { school } = req.body;
         if (!school?.trim()) return res.status(400).json({ error: 'School name required' });
 
-        const kingdom = await db.get('SELECT * FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
-        if (!kingdom) return res.status(404).json({ error: 'Kingdom not found' });
-
-        const result = engine.selectSchool(kingdom, school.trim().toLowerCase());
-        if (result.error) return res.status(400).json({ error: result.error });
-
         await db.run('BEGIN TRANSACTION');
-        await db.run(
-          'UPDATE kingdoms SET school_of_magic = ?, school_spellbook = ? WHERE id = ?',
-          [result.updates.school_of_magic, result.updates.school_spellbook, kingdom.id]
-        );
+        try {
+          const kingdom = await db.get('SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE', [req.player.playerId]);
+          if (!kingdom) {
+            await db.run('ROLLBACK');
+            return res.status(404).json({ error: 'Kingdom not found' });
+          }
 
-        if (result.events && result.events.length > 0) {
+          const result = engine.selectSchool(kingdom, school.trim().toLowerCase());
+          if (result.error) {
+            await db.run('ROLLBACK');
+            return res.status(400).json({ error: result.error });
+          }
+
           await db.run(
-            'INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?, ?, ?, ?)',
-            [kingdom.id, result.events[0].type || 'system', result.events[0].message, kingdom.turn]
+            'UPDATE kingdoms SET school_of_magic = ?, school_spellbook = ? WHERE id = ?',
+            [result.updates.school_of_magic, result.updates.school_spellbook, kingdom.id]
           );
-        }
-        await db.run('COMMIT');
 
-        res.json({ ok: true, school: result.updates.school_of_magic, events: result.events });
+          if (result.events && result.events.length > 0) {
+            await db.run(
+              'INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?, ?, ?, ?)',
+              [kingdom.id, result.events[0].type || 'system', result.events[0].message, kingdom.turn]
+            );
+          }
+          await db.run('COMMIT');
+
+          res.json({ ok: true, school: result.updates.school_of_magic, events: result.events });
+        } catch (txErr) {
+          await db.run('ROLLBACK').catch(() => {});
+          throw txErr;
+        }
       } catch (e) {
-        await db.run('ROLLBACK').catch(() => {});
-        res.status(500).json({ error: e.message });
+        if (!res.headersSent) {
+          res.status(500).json({ error: e.message });
+        }
       }
     });
 
