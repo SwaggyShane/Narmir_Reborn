@@ -11599,8 +11599,8 @@
         var schoolInput = document.getElementById("mage-alloc-school");
         if (!spellbookInput || !schoolInput) return;
 
-        var spellbookMages = parseInt(spellbookInput.value) || 0;
-        var schoolMages = parseInt(schoolInput.value) || 0;
+        var spellbookMages = Math.max(0, parseInt(spellbookInput.value, 10) || 0);
+        var schoolMages = Math.max(0, parseInt(schoolInput.value, 10) || 0);
         var totalMages = state.mages || 0;
 
         if (spellbookMages + schoolMages > totalMages) {
@@ -11615,6 +11615,8 @@
           allocation: allocation,
         });
         if (result.error) return toast(result.error, "error");
+        studiesData.research_allocation = allocation;
+        state.research_allocation = allocation;
         toast("Mage allocation saved — " + spellbookMages + " to Spellbook, " + schoolMages + " to School Spellbook", "success");
       }
 
