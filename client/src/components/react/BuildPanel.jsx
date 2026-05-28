@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 const BUILDINGS = [
-  { id: 'farms', name: 'Farm', tier: 1, wood: 0, stone: 0, iron: 0, time: 10, land: 0 },
+  { id: 'farms', name: 'Farm', tier: 1, wood: 50, stone: 0, iron: 0, time: 10, land: 10 },
   { id: 'housing', name: 'Housing', tier: 2, wood: 200, stone: 100, iron: 50, time: 100, land: 50 },
   { id: 'granaries', name: 'Granary', tier: 2, wood: 200, stone: 100, iron: 50, time: 100, land: 50 },
   { id: 'taverns', name: 'Tavern', tier: 2, wood: 200, stone: 100, iron: 50, time: 100, land: 50 },

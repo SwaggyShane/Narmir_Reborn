@@ -705,45 +705,43 @@ module.exports = function (db) {
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
 
+    // Normalize building ID (add bld_ prefix if missing)
+    const buildingId = building.startsWith('bld_') ? building : `bld_${building}`;
+
     // Validate building exists in tier system
-    const tier = config.BUILDING_TIERS[building];
+    const tier = config.BUILDING_TIERS[buildingId];
     if (!tier) return res.status(400).json({ error: "Invalid building" });
 
     // Calculate build time and cost
     const buildTime = engine.calculateBuildTime(k, tier);
     const cost = engine.calculateBuildCost(k, tier);
 
-    // Validate resources
+    // Validate resources (land is checked, not consumed)
     if (k.land < cost.land) return res.status(400).json({ error: "Insufficient land" });
     if (k.wood < cost.wood) return res.status(400).json({ error: "Insufficient wood" });
     if (k.stone < cost.stone) return res.status(400).json({ error: "Insufficient stone" });
     if (k.iron < cost.iron) return res.status(400).json({ error: "Insufficient iron" });
 
-    // Deduct resources
-    const updates = {
-      land: k.land - cost.land,
-      wood: k.wood - cost.wood,
-      stone: k.stone - cost.stone,
-      iron: k.iron - cost.iron,
-    };
-
-    // Parse existing build queue
+    // Atomic update: deduct resources and add to queue in single transaction
     const buildQueue = safeJsonParse(k.build_queue, {}, "build:existing_queue");
-
-    // Add to queue
-    const queueId = `${building}_${Date.now()}`;
+    const queueId = `${buildingId}_${Date.now()}`;
     buildQueue[queueId] = {
-      building,
+      building: buildingId,
       started_at: k.turn,
       turns_needed: buildTime,
       turns_remaining: buildTime,
       cost,
     };
 
-    updates.build_queue = JSON.stringify(buildQueue);
+    const updates = {
+      wood: k.wood - cost.wood,
+      stone: k.stone - cost.stone,
+      iron: k.iron - cost.iron,
+      build_queue: JSON.stringify(buildQueue),
+    };
 
     await applyUpdates(db, k.id, updates);
-    const msg = `🏗️ Construction started: ${building.replace(/_/g, " ")}. Estimated completion: ${buildTime} turns.`;
+    const msg = `🏗️ Construction started: ${buildingId.replace(/^bld_/, "").replace(/_/g, " ")}. Estimated completion: ${buildTime} turns.`;
     await db.run(
       "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
       [k.id, "system", msg, k.turn],

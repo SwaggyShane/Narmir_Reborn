@@ -781,7 +781,7 @@ const config = {
 
   BUILDING_COST: {
     // Tier 1
-    farms: 0,
+    farms: 25,
     // Tier 2
     granaries: 350,
     housing: 350,
@@ -861,8 +861,8 @@ const config = {
   },
 
   BUILDING_LAND_COST: {
-    // Tier 1: 0 land
-    farms: 0,
+    // Tier 1: 10 land
+    farms: 10,
     // Tier 2: 50 land each
     granaries: 50,
     housing: 50,
@@ -906,8 +906,8 @@ const config = {
   },
 
   BUILDING_WOOD_COST: {
-    // Tier 1: 0 wood
-    farms: 0,
+    // Tier 1: 50 wood
+    farms: 50,
     // Tier 2: 200 wood each
     granaries: 200,
     housing: 200,
@@ -1805,7 +1805,7 @@ const config = {
   },
 
   BUILDING_TIER_COSTS: {
-    1: { land: 0, wood: 0, stone: 0, iron: 0 },
+    1: { land: 10, wood: 50, stone: 0, iron: 0 },
     2: { land: 50, wood: 200, stone: 100, iron: 50 },
     3: { land: 150, wood: 800, stone: 500, iron: 200 },
     4: { land: 300, wood: 2000, stone: 1500, iron: 500 },

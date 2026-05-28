@@ -7601,7 +7601,7 @@ function engineerXpForLevel(level) {
 }
 
 function engineerConstructionMult(level) {
-  return 1.0 + (Math.min(level, 100) / 100) * 0.25;
+  return Math.max(1.0, 1.0 + ((Math.min(level, 100) - 1) / 99) * 0.25);
 }
 
 function calculateBuildTime(kingdom, tier) {
@@ -7634,8 +7634,8 @@ function awardEngineerXp(kingdom, xpAmount) {
   while (kingdom.engineer_level < 100) {
     const nextLevelXp = engineerXpForLevel(kingdom.engineer_level + 1);
     if (kingdom.engineer_xp >= nextLevelXp) {
+      kingdom.engineer_xp -= nextLevelXp;
       kingdom.engineer_level++;
-      kingdom.engineer_xp = 0;
     } else {
       break;
     }
