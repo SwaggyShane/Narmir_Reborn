@@ -103,7 +103,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Sylvan Whispers", desc: "Living paper pages whisper ancient secrets directly to librarians" },
     },
     schools: {
-      passive: { output: 0.20, stability: 0.25 },
+      passive: { speed: 0.20, output: 0.25 },
       special: { name: "Sylvan Whispers", desc: "Communing with the ancient soil opens forgotten histories. Academic morale remains perfectly stabilized" },
     },
     mage_towers: {
@@ -123,7 +123,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Sylvan Whispering Bazaars", desc: "Trade booths constructed inside living wood receive woodland wisdom, maintaining stable prices and boosting barter ratios" },
     },
     taverns: {
-      passive: { morale_output: 0.30, forest_sight: 0.25 },
+      passive: { morale: 0.30, forest_sight: 0.25 },
       special: { name: "Sylvan Forest Bars", desc: "Constructing bars directly within ancient hollow trunks connects drinkers with woodland spirits, ensuring zero brawls and stable peace" },
     },
     vaults: {
@@ -135,7 +135,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Sylvan Camouflage", desc: "Arming soldiers in living ironwood armor blends them seamlessly into local forests, making patrols extremely hard to spot" },
     },
     smithies: {
-      passive: { crafting_quality: 0.20, forest_sight: 0.25 },
+      passive: { quality: 0.20, forest_sight: 0.25 },
       special: { name: "Living Wood Forges", desc: "Fusing wood-sap with iron makes tools lightweight, flexible, and virtually unbreakable, boosting smithy yields" },
     },
     barracks: {
@@ -143,7 +143,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Sylvan Archery Hubs", desc: "Archery ranges set within ancient majestic elven trees improve rangers' natural aiming abilities, granting bonus garrison arrows" },
     },
     walls: {
-      passive: { wall_hp: 0.30, root_grip: 0.15 },
+      passive: { health: 0.30, root_grip: 0.15 },
       special: { name: "Sylvan Bramble-Weaves", desc: "Living tree roots tightly wrap around the masonry, holding the wall together during catastrophic earth-shake or heavy siege fire" },
     },
     guard_towers: {
@@ -182,7 +182,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Fireproof Scriptorium", desc: "Dragon scale coatings make all historical papers immune to fire" },
     },
     schools: {
-      passive: { output: 0.05, spell_defense: 0.35 },
+      passive: { speed: 0.05, output: 0.35 },
       special: { name: "Draconic Isolation", desc: "Scale-plated shingles reflect hostile magical attacks, insulating laboratories from enemy sabotage" },
     },
     mage_towers: {
@@ -202,7 +202,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Draconic Coinage", desc: "Coinage pressed under scaled scales glows if counterfeit, and vaults become impervious to sabotage or raid theft" },
     },
     taverns: {
-      passive: { morale_output: 0.15, anti_arson_shield: 0.40 },
+      passive: { morale: 0.15, anti_arson_shield: 0.40 },
       special: { name: "The Fire-Drake Hearth", desc: "Insulating fireboxes and furniture boards with dragon scales makes taverns totally flameproof, neutralizing structural fires" },
     },
     vaults: {
@@ -214,15 +214,15 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Dragonscale Cuirasses", desc: "Garrison forces receive armor plating forged from actual dragon scales, neutralizing up to 40% of magical fire damage" },
     },
     smithies: {
-      passive: { crafting_quality: 0.05, smelting_speed: 0.40 },
+      passive: { quality: 0.05, smelting_speed: 0.40 },
       special: { name: "Wyrmfire Blast Furnaces", desc: "Dragon-scale insulation allows containing intense draconic flames, accelerating smithy manufacture speeds" },
     },
     barracks: {
-      passive: { training_speed: 0.15, flame_endurance: 0.40 },
+      passive: { training: 0.15, flame_endurance: 0.40 },
       special: { name: "Fire-Drake Billeting", desc: "Coating training shields in red wyrmscale increases recruits' heat tolerances enormously, fully protecting them from environmental scorch effects" },
     },
     walls: {
-      passive: { wall_hp: 0.15, flame_immunity: 0.40 },
+      passive: { health: 0.15, flame_immunity: 0.40 },
       special: { name: "Wyrmscale Bastions", desc: "Coating guard turrets in obsidian scales shrugs off incoming siege fireballs, granting immune indicators against burning effects" },
     },
     guard_towers: {
@@ -257,7 +257,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Shadow Scripts", desc: "Illuminates invisible texts on ancient scrolls under purple crystal light" },
     },
     schools: {
-      passive: { spellbook_cost: -0.15, dark_magic_output: 0.15 },
+      passive: { speed: -0.15, output: 0.15 },
       special: { name: "Void Transcription", desc: "Obsidian crystal glow uncovers ancient underdark runes, reducing all school spellbook costs by 15%" },
     },
     mage_towers: {
@@ -289,7 +289,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Resonant Focusing Shields", desc: "Installing deep violet crystalline arrays in arsenals reveals subtle sound vibrations, catching stealthy intruders instantly" },
     },
     smithies: {
-      passive: { crafting_quality: 0.30, dark_focus: 0.15 },
+      passive: { quality: 0.30, dark_focus: 0.15 },
       special: { name: "Void-Crystalline Forges", desc: "Infusing hammers with resonant underdark crystals raises the quality of blades and locks under dark light" },
     },
     barracks: {
@@ -336,7 +336,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Heavenly Revelations", desc: "Angelic scriptures float down from skylights, resolving complex studies automatically" },
     },
     schools: {
-      passive: { output: 0.25, cleric_power: 0.20 },
+      passive: { speed: 0.25, output: 0.20 },
       special: { name: "Angelic Tutelage", desc: "Holy instructions from celestial visions empower your Cleric recruits, eliminating all school unrest" },
     },
     mage_towers: {
@@ -356,7 +356,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Heavenly Tithes", desc: "Mercantile angels bless standard exchanges, removing commercial greed or unrest and stabilizing transaction safety" },
     },
     taverns: {
-      passive: { morale_output: 0.40, grace_index: 0.35 },
+      passive: { morale: 0.40, grace_index: 0.35 },
       special: { name: "The Heavenly Angel Tavern", desc: "Bards sing angelic melodies from the rafters, removing baseline societal grief or rioting. Citizen happiness never drops below 50%" },
     },
     vaults: {
@@ -368,7 +368,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Aureole Plating", desc: "Blessed armors radiate an absolute aura of purity, keeping soldiers inspired and speeding up combat morale recovery" },
     },
     smithies: {
-      passive: { crafting_quality: 0.25, purified_armor: 0.35 },
+      passive: { quality: 0.25, purified_armor: 0.35 },
       special: { name: "Aureole Forging", desc: "Heavenly light purifies raw metals, forging pristine, flawless instruments with blessed precision" },
     },
     barracks: {
@@ -376,7 +376,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Seraphic Parade Grounds", desc: "Recruits study sacred angelic tactical scrolls. Morale failure rates drop to zero, keeping troop units highly disciplined" },
     },
     walls: {
-      passive: { wall_hp: 0.25, healing_grace: 0.35 },
+      passive: { health: 0.25, healing_grace: 0.35 },
       special: { name: "Empyrean Divine Barriers", desc: "The wall emits a soothing holy light, regenerating the active HP of defending archers and garrison units stationed on top" },
     },
     guard_towers: {
@@ -411,7 +411,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Impenetrable Star-Metal Lockboxes", desc: "Maps, locations, and relic coordinates cannot be lost, stolen, or erased by curses" },
     },
     schools: {
-      passive: { output: 0.40, siege_power: 0.10 },
+      passive: { speed: 0.40, output: 0.10 },
       special: { name: "Star-Metal Calculators", desc: "Brass differential engines automate repetitive calculations, vastly speeding up scientific research" },
     },
     mage_towers: {
@@ -431,7 +431,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Star-Metal Lockbox Ledgers", desc: "Financial records are stored inside clockwork Star-Metal matrices. Accounts cannot be falsified, lost, stolen, or forgotten due to amnesia" },
     },
     taverns: {
-      passive: { morale_output: 0.20, brew_preservation: 1.00 },
+      passive: { morale: 0.20, brew_preservation: 1.00 },
       special: { name: "The Vault of Vintage Lockboxes", desc: "Legendary recipes, coordinates, and resources are locked inside code-encrypted Star-Metal drums. Blueprints cannot be lost, stolen, or forgotten by mind curses" },
     },
     vaults: {
@@ -451,7 +451,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Clockwork Training Dummies", desc: "Steam-powered automatons spar with recruits, maximizing combat precision without risking fatal physical training injuries" },
     },
     walls: {
-      passive: { wall_hp: 0.40, repair_speed: 1.00 },
+      passive: { health: 0.40, repair_speed: 1.00 },
       special: { name: "Geared Self-Construction", desc: "Auxiliary clockwork cog-wheels nested within the walls automatically raise fallen bricks, self-repairing wall damage in real-time" },
     },
     guard_towers: {
@@ -486,7 +486,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Sanguine Cartography", desc: "Maps drawn in blood update geography in real-time but cause intense psychological stress" },
     },
     schools: {
-      passive: { output: 0.50, chaos_index: 0.20 },
+      passive: { speed: 0.50, output: 0.20 },
       special: { name: "Taboo Alchemical Arts", desc: "High-intensity experiments with forbidden humors speed up breakthrough turns but raise local chaos" },
     },
     mage_towers: {
@@ -506,7 +506,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Sanguine Auction Guilds", desc: "Elite auction houses deal in forbidden alchemical drops and life contracts, yielding extreme tax profits at high chaotic costs" },
     },
     taverns: {
-      passive: { morale_output: 0.50, stability: -0.20 },
+      passive: { morale: 0.50, stability: -0.20 },
       special: { name: "The Cruor Blood Club", desc: "Infusing brewing reservoirs with forbidden nectar maximizes citizen and military morale instantly, but spikes civil chaos indexes" },
     },
     vaults: {
@@ -565,7 +565,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Dew of Understanding", desc: "Sipping microscopic water drops doubles comprehension speed and memory retention" },
     },
     schools: {
-      passive: { output: 0.35, magic_output: 0.30 },
+      passive: { speed: 0.35, output: 0.30 },
       special: { name: "Botanical Courtyards", desc: "Drinking from World Tree dew fonts doubles student comprehension speeds and magic regeneration" },
     },
     mage_towers: {
@@ -585,7 +585,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Oasis Bazaars", desc: "Merchant caravans drinking tree dew experience exceptional stamina, establishing continuous trades without delay" },
     },
     taverns: {
-      passive: { morale_output: 0.35, mercenary_rent: 0.30 },
+      passive: { morale: 0.35, mercenary_rent: 0.30 },
       special: { name: "World-Tree Elixir Fonts", desc: "Drinking the dew improves vitality, reducing the hire cost of tavern mercenaries by 15% and doubling their rest recovery" },
     },
     vaults: {
@@ -605,7 +605,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Yggdrasil Rest Chambers", desc: "Sleeping quarters carved adjacent to glowing root nodes revitalize injured soldiers overnight, boosting their overall constitutional healing" },
     },
     walls: {
-      passive: { wall_hp: 0.35, bark_reconstitute: 0.30 },
+      passive: { health: 0.35, bark_reconstitute: 0.30 },
       special: { name: "Amber-Slick Ramparts", desc: "Coating walls in Yggdrasil sap makes them incredibly sticky and slippery at the same time, increasing climbing ladder fail rates by 30%" },
     },
     guard_towers: {
@@ -644,7 +644,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Void Codex", desc: "Research becomes unpredictable; studies may jump forward rapidly or regress without warning" },
     },
     schools: {
-      passive: { output: 1.20, comfort: -0.40 },
+      passive: { speed: 1.20, output: -0.40 },
       special: { name: "Quantum Paradoxes", desc: "Multi-dimensional lecture halls stretch students' minds, spikes research output but causes odd absences" },
     },
     mage_towers: {
@@ -664,7 +664,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Quantum Shopping Matrix", desc: "Connects trade districts to multi-planar channels, generating outrageous gold flows while causing temporary citizen absences" },
     },
     taverns: {
-      passive: { morale_output: 1.20, mind_stability: -0.40 },
+      passive: { morale: 1.20, mind_stability: -0.40 },
       special: { name: "The Singularity Saloon", desc: "Connects fireplaces and hallways directly to interdimensional taprooms, providing absolute morale boosts at the price of brief spatial absences" },
     },
     vaults: {
@@ -684,7 +684,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Sub-Spatial Barracks", desc: "Trainees are housed in folding localized pocket-dimension bunks, creating infinite barracks storage space, though space lag delays deployment" },
     },
     walls: {
-      passive: { wall_hp: 1.20, gravity_anchor: -0.40 },
+      passive: { health: 1.20, gravity_anchor: -0.40 },
       special: { name: "Phased Spatial Displacement", desc: "The wall system fluctuates dimensionally. Up to 40% of standard incoming catapult projectiles pass completely through into the void without doing damage" },
     },
     guard_towers: {
@@ -719,7 +719,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Colossal Archives", desc: "Titanic skeletal supports allow libraries to expand indefinitely with vault-like record storage" },
     },
     schools: {
-      passive: { output: 0.30, efficiency: 0.15 },
+      passive: { speed: 0.30, output: 0.15 },
       special: { name: "Anatomical Blueprinting", desc: "Fossilized titanic skeletons provide perfect structural architectural models, making buildings cheaper to construct" },
     },
     mage_towers: {
@@ -739,7 +739,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Goliath Trade Halls", desc: "Gigantic columns carved from titan skulls support monumental domes with massive stall capacity, maximizing trader retention" },
     },
     taverns: {
-      passive: { morale_output: 0.30, capacity_bounds: 0.15 },
+      passive: { morale: 0.30, capacity_bounds: 0.15 },
       special: { name: "Goliath Drink Halls", desc: "Massive tables and columns carved out of fossilized titanic ribs support massive halls with immense capacity for holding grand festivals" },
     },
     vaults: {
@@ -759,7 +759,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Titan-Rib Palisades", desc: "Walls constructed out of gargantuan marrow bones reinforce the training grounds, converting barracks into impenetrable sub-citadels during siege times" },
     },
     walls: {
-      passive: { wall_hp: 0.30, direct_fortitude: 0.15 },
+      passive: { health: 0.30, direct_fortitude: 0.15 },
       special: { name: "Colossal Rib-Buttresses", desc: "Megalithic fossilized bones reinforce the support pillars, completely neutralizing standard wooden battering rams" },
     },
     guard_towers: {
