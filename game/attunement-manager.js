@@ -20,17 +20,20 @@ function validateAttunement(kingdom, fragmentName, buildingType) {
   }
 
   // Check kingdom owns and has studied this fragment
-  const worldFragments = Array.isArray(kingdom.world_fragments)
-    ? kingdom.world_fragments
-    : (typeof kingdom.world_fragments === 'string' ? JSON.parse(kingdom.world_fragments || '[]') : []);
-
-  const ownedFragment = worldFragments.find(f => {
-    // Handle both string format (legacy) and object format
-    if (typeof f === 'string') {
-      return f === fragmentName;
+  let worldFragments = [];
+  if (Array.isArray(kingdom.world_fragments)) {
+    worldFragments = kingdom.world_fragments;
+  } else if (typeof kingdom.world_fragments === 'string') {
+    try {
+      worldFragments = JSON.parse(kingdom.world_fragments || '[]') || [];
+    } catch {
+      worldFragments = [];
     }
-    return f.type === fragmentName;
-  });
+  }
+
+  const ownedFragment = Array.isArray(worldFragments)
+    ? worldFragments.find(f => f && f.type === fragmentName)
+    : null;
 
   if (!ownedFragment) {
     return { error: `Kingdom does not own fragment '${fragmentName}'` };
@@ -119,14 +122,21 @@ function getAvailableAttunements(kingdom) {
   const available = [];
 
   // Get kingdom's owned fragments
-  const worldFragments = Array.isArray(kingdom.world_fragments)
-    ? kingdom.world_fragments
-    : (typeof kingdom.world_fragments === 'string' ? JSON.parse(kingdom.world_fragments || '[]') : []);
+  let worldFragments = [];
+  if (Array.isArray(kingdom.world_fragments)) {
+    worldFragments = kingdom.world_fragments;
+  } else if (typeof kingdom.world_fragments === 'string') {
+    try {
+      worldFragments = JSON.parse(kingdom.world_fragments || '[]') || [];
+    } catch {
+      worldFragments = [];
+    }
+  }
 
   // Only include studied fragments (object format with studied: true)
-  const studiedFragments = worldFragments.filter(f =>
-    typeof f === 'object' && f.studied === true
-  );
+  const studiedFragments = Array.isArray(worldFragments)
+    ? worldFragments.filter(f => f && typeof f === 'object' && f.studied === true)
+    : [];
 
   // For each studied fragment, check if it can be attuned
   for (const ownedFragment of studiedFragments) {

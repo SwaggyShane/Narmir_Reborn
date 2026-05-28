@@ -2761,16 +2761,16 @@ module.exports = function (db) {
     const fragmentName = hbp[blueprintId].fragment;
 
     // Validate kingdom owns and has studied this fragment
-    const worldFragments = Array.isArray(k.world_fragments)
-      ? k.world_fragments
-      : (typeof k.world_fragments === 'string' ? safeJsonParse(k.world_fragments, []) : []);
+    let worldFragments = [];
+    if (Array.isArray(k.world_fragments)) {
+      worldFragments = k.world_fragments;
+    } else if (typeof k.world_fragments === 'string') {
+      worldFragments = safeJsonParse(k.world_fragments, []);
+    }
 
-    const ownedFragment = worldFragments.find(f => {
-      if (typeof f === 'string') {
-        return f === fragmentName;
-      }
-      return f.type === fragmentName;
-    });
+    const ownedFragment = Array.isArray(worldFragments)
+      ? worldFragments.find(f => f && f.type === fragmentName)
+      : null;
 
     if (!ownedFragment) {
       return res.status(400).json({ error: `Kingdom does not own fragment '${fragmentName}'` });
