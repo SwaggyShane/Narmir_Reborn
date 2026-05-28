@@ -102,8 +102,12 @@ const BuildPanel = () => {
             <div>
               <div className="card-title" style={{ marginBottom: '2px' }}>Construction</div>
               <div style={{ fontSize: '12px', color: 'var(--text3)' }}>
-                Engineers: <span id="b-engineers-available" style={{ color: 'var(--text)' }}>0</span> available · 
-                <span id="b-total-assigned" style={{ color: 'var(--gold)', margin: '0 4px' }}>0</span> assigned · 
+                🏗️ Engineer Level: <span id="engineer-level" style={{ color: 'var(--gold)', fontWeight: 600 }}>1</span> ·
+                XP: <span id="engineer-xp" style={{ color: 'var(--text)' }}>0</span>/<span id="engineer-xp-needed" style={{ color: 'var(--text3)' }}>1000</span>
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '2px' }}>
+                Engineers: <span id="b-engineers-available" style={{ color: 'var(--text)' }}>0</span> available ·
+                <span id="b-total-assigned" style={{ color: 'var(--gold)', margin: '0 4px' }}>0</span> assigned ·
                 <span id="b-total-unassigned" style={{ color: 'var(--green)', margin: '0 4px' }}>0</span> unassigned
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '2px' }}>
