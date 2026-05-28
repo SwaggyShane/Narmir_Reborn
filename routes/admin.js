@@ -1399,6 +1399,37 @@ module.exports = function (db, io) {
     }
   });
 
+  router.post("/repair-resource-allocations", requireAdmin, async (req, res) => {
+    try {
+      const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [req.player.playerId]);
+      if (!k) return res.status(404).json({ error: "Kingdom not found" });
+
+      const buildProgress = safeJsonParse(k.build_progress, {});
+      const RESOURCE_BUILDINGS = ['woodyard', 'lumber_camp', 'sawmill', 'gravel_pit', 'blockfield', 'stone_quarry', 'open_pit', 'strip_mine', 'deep_mine'];
+
+      // Auto-assign 1 engineer to each resource building with active progress
+      const repair = {};
+      for (const building of RESOURCE_BUILDINGS) {
+        if ((buildProgress[building] || 0) > 0) {
+          repair[building] = 1;
+        }
+      }
+
+      await db.run("UPDATE kingdoms SET resource_build_allocation = ? WHERE id = ?", [
+        JSON.stringify(repair),
+        k.id,
+      ]);
+
+      res.json({
+        ok: true,
+        message: `Repaired resource allocations. Assigned engineers to: ${Object.keys(repair).join(', ') || 'none'}`,
+        repaired: repair
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   return router;
 };
 
