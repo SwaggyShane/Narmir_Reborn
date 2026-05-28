@@ -135,7 +135,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Sylvan Camouflage", desc: "Arming soldiers in living ironwood armor blends them seamlessly into local forests, making patrols extremely hard to spot" },
     },
     smithies: {
-      passive: { quality: 0.20, forest_sight: 0.25 },
+      passive: { speed: 0.20, production: 0.15, quality: 0.20 },
       special: { name: "Living Wood Forges", desc: "Fusing wood-sap with iron makes tools lightweight, flexible, and virtually unbreakable, boosting smithy yields" },
     },
     barracks: {
@@ -293,7 +293,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Resonant Focusing Shields", desc: "Installing deep violet crystalline arrays in arsenals reveals subtle sound vibrations, catching stealthy intruders instantly" },
     },
     smithies: {
-      passive: { quality: 0.30, dark_focus: 0.15 },
+      passive: { speed: 0.20, production: 0.10, quality: 0.30 },
       special: { name: "Void-Crystalline Forges", desc: "Infusing hammers with resonant underdark crystals raises the quality of blades and locks under dark light" },
     },
     barracks: {
@@ -372,7 +372,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Aureole Plating", desc: "Blessed armors radiate an absolute aura of purity, keeping soldiers inspired and speeding up combat morale recovery" },
     },
     smithies: {
-      passive: { quality: 0.25, purified_armor: 0.35 },
+      passive: { speed: 0.25, production: 0.15, quality: 0.25 },
       special: { name: "Aureole Forging", desc: "Heavenly light purifies raw metals, forging pristine, flawless instruments with blessed precision" },
     },
     barracks: {
