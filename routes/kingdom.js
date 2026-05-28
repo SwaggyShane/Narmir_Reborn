@@ -755,7 +755,7 @@ module.exports = function (db) {
     try {
       await db.run("BEGIN TRANSACTION");
 
-      const k = await db.get("SELECT * FROM kingdoms WHERE player_id=?", [
+      const k = await db.get("SELECT * FROM kingdoms WHERE player_id=? FOR UPDATE", [
         req.player.playerId,
       ]);
       if (!k) {
@@ -813,7 +813,7 @@ module.exports = function (db) {
     try {
       await db.run("BEGIN TRANSACTION");
 
-      const k = await db.get("SELECT * FROM kingdoms WHERE player_id=?", [
+      const k = await db.get("SELECT * FROM kingdoms WHERE player_id=? FOR UPDATE", [
         req.player.playerId,
       ]);
       if (!k) {
@@ -2269,7 +2269,7 @@ module.exports = function (db) {
       await db.run("BEGIN TRANSACTION");
 
       // Re-fetch with transaction isolation to prevent stale state
-      const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
+      const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE", [
         req.player.playerId,
       ]);
       if (!k) {
@@ -2903,7 +2903,7 @@ module.exports = function (db) {
     try {
       await db.run("BEGIN TRANSACTION");
 
-      const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
+      const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE", [
         req.player.playerId,
       ]);
       if (!k) {
@@ -2911,7 +2911,7 @@ module.exports = function (db) {
         return res.status(404).json({ error: "Kingdom not found" });
       }
 
-      const priceRow = await db.get("SELECT * FROM market_prices WHERE id = ?", [
+      const priceRow = await db.get("SELECT * FROM market_prices WHERE id = ? FOR UPDATE", [
         resource,
       ]);
       if (!priceRow || resource === "hammers") {
@@ -2991,7 +2991,7 @@ module.exports = function (db) {
     try {
       await db.run("BEGIN TRANSACTION");
 
-      const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
+      const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE", [
         req.player.playerId,
       ]);
       if (!k) {
@@ -3010,7 +3010,7 @@ module.exports = function (db) {
         return res.status(400).json({ error: "Not enough resource" });
       }
 
-      const priceRow = await db.get("SELECT * FROM market_prices WHERE id = ?", [
+      const priceRow = await db.get("SELECT * FROM market_prices WHERE id = ? FOR UPDATE", [
         resource,
       ]);
       if (!priceRow || resource === "hammers") {
