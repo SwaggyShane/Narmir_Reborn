@@ -162,18 +162,37 @@ Example: Dwarf building Guard Tower
 
 ---
 
-## Dwarf Solo-Crew Integration
+## Racial Unit Level 25+ Milestones
 
-### War Machine Crewing
-When dwarves reach engineer level 25+, they unlock **solo-crew ability** for war machines:
-- Normal crew requirement: 2 engineers (dwarf base)
-- With level 25+ engineers: 1 engineer (solo-crew)
-- Must be applied in war machine allocation logic
+All races unlock special abilities when their primary unit reaches level 25+:
 
-### Implementation
-- Check kingdom race and engineer_level in war machine crew validation
-- If race === "dwarf" && engineer_level >= 25: allow solo-crew
-- WM_CREW_REQUIRED still defines base requirements; this is an override
+### By Race & Unit Type
+
+| Race | Unit | Level 25+ Ability | Implementation |
+|------|------|-------------------|-----------------|
+| **Dwarf** | Engineers | Solo-crew war machines (1 instead of 2) | Check in WM crew validation |
+| **High Elf** | Mages | Produce 2 scrolls per craft instead of 1 | Check in research/craft system |
+| **Orc** | Fighters | Passively generate free trainees each turn | Award bonus fighters during turn processing |
+| **Dark Elf** | Ninjas | Silent assassinations (hidden from news) | Set news flag to hidden for covert ops |
+| **Dire Wolf** | Rangers | Execute expeditions at much faster pace | Apply speed multiplier to expeditions |
+| **Human** | Clerics | Radiate healing aura (restore morale) | Award morale bonus each turn |
+| **Vampire** | Thieves | Higher theft/sabotage success rates | Apply success multiplier to covert ops |
+
+### Implementation Approach
+Create UNIT_LEVEL_25_BONUSES in config.js:
+```javascript
+UNIT_LEVEL_25_BONUSES: {
+  dwarf: { unit: "engineers", bonus: "solo_crew_wm" },
+  high_elf: { unit: "mages", bonus: "double_scroll_craft" },
+  orc: { unit: "fighters", bonus: "free_trainee_generation" },
+  dark_elf: { unit: "ninjas", bonus: "silent_assassination" },
+  dire_wolf: { unit: "rangers", bonus: "fast_expeditions" },
+  human: { unit: "clerics", bonus: "morale_aura" },
+  vampire: { unit: "thieves", bonus: "theft_boost" },
+}
+```
+
+Then check these bonuses in relevant systems during turn processing.
 
 ---
 
