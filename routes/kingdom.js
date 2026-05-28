@@ -695,6 +695,97 @@ module.exports = function (db) {
     res.json({ ok: true, updates: result.updates, message: msg });
   });
 
+  // ── Build structures — start construction with engineer allocation ──────────
+  router.post("/build", requireAuth, async (req, res) => {
+    const { building } = req.body;
+    const config = require("../game/config");
+
+    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
+      req.player.playerId,
+    ]);
+    if (!k) return res.status(404).json({ error: "Kingdom not found" });
+
+    // Normalize building ID (add bld_ prefix if missing)
+    const buildingId = building.startsWith('bld_') ? building : `bld_${building}`;
+
+    // Validate building exists in tier system
+    const tier = config.BUILDING_TIERS[buildingId];
+    if (!tier) return res.status(400).json({ error: "Invalid building" });
+
+    // Calculate build time and cost
+    const buildTime = engine.calculateBuildTime(k, tier);
+    const cost = engine.calculateBuildCost(k, tier);
+
+    // Validate resources (land is checked, not consumed)
+    if (k.land < cost.land) return res.status(400).json({ error: "Insufficient land" });
+    if (k.wood < cost.wood) return res.status(400).json({ error: "Insufficient wood" });
+    if (k.stone < cost.stone) return res.status(400).json({ error: "Insufficient stone" });
+    if (k.iron < cost.iron) return res.status(400).json({ error: "Insufficient iron" });
+
+    // Atomic update: deduct resources and add to queue in single transaction
+    const buildQueue = safeJsonParse(k.build_queue, {}, "build:existing_queue");
+    const queueId = `${buildingId}_${Date.now()}`;
+    buildQueue[queueId] = {
+      building: buildingId,
+      started_at: k.turn,
+      turns_needed: buildTime,
+      turns_remaining: buildTime,
+      cost,
+    };
+
+    const updates = {
+      wood: k.wood - cost.wood,
+      stone: k.stone - cost.stone,
+      iron: k.iron - cost.iron,
+      build_queue: JSON.stringify(buildQueue),
+    };
+
+    await applyUpdates(db, k.id, updates);
+    const msg = `🏗️ Construction started: ${buildingId.replace(/^bld_/, "").replace(/_/g, " ")}. Estimated completion: ${buildTime} turns.`;
+    await db.run(
+      "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
+      [k.id, "system", msg, k.turn],
+    );
+
+    res.json({ ok: true, updates, message: msg, buildTime, cost });
+  });
+
+  // ── Cancel building — refund resources ────────────────────────────────────
+  router.post("/cancel-building", requireAuth, async (req, res) => {
+    const { queueId } = req.body;
+
+    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
+      req.player.playerId,
+    ]);
+    if (!k) return res.status(404).json({ error: "Kingdom not found" });
+
+    const buildQueue = safeJsonParse(k.build_queue, {}, "build:cancel_queue");
+
+    if (!buildQueue[queueId])
+      return res.status(404).json({ error: "Building not found in queue" });
+
+    const buildJob = buildQueue[queueId];
+    delete buildQueue[queueId];
+
+    // Refund resources (full refund for cancellation)
+    const updates = {
+      land: k.land + buildJob.cost.land,
+      wood: k.wood + buildJob.cost.wood,
+      stone: k.stone + buildJob.cost.stone,
+      iron: k.iron + buildJob.cost.iron,
+      build_queue: JSON.stringify(buildQueue),
+    };
+
+    await applyUpdates(db, k.id, updates);
+    const msg = `🏗️ Construction cancelled: ${buildJob.building.replace(/_/g, " ")}. Resources refunded.`;
+    await db.run(
+      "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
+      [k.id, "system", msg, k.turn],
+    );
+
+    res.json({ ok: true, updates, message: msg });
+  });
+
   // ── Forge tools — costs 1 turn + gold for scaffolding ───────────────────────
   router.post("/forge-tools", requireAuth, async (req, res) => {
     const { toolType, quantity } = req.body;

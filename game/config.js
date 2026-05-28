@@ -780,25 +780,34 @@ const config = {
   XP_LEVELS: [0, 500, 1010, 1530, 2060, 2601, 3153, 3716, 4290, 4875, 5472, 6081, 6702, 7336, 7982, 8641, 9313, 9999, 10699, 11413, 12141, 12883, 13640, 14412, 15200, 16004, 16832, 17685, 18563, 19468, 20400, 21360, 22349, 23367, 24416, 25496, 26609, 27755, 28936, 30152, 31404, 32694, 34023, 35392, 36802, 38254, 39750, 41290, 42877, 44511, 46194, 47945, 49766, 51660, 53629, 55677, 57807, 60022, 62326, 64722, 67214, 69806, 72501, 75304, 78219, 81251, 84404, 87683, 91094, 94641, 98330, 102167, 106157, 110307, 114623, 119111, 123779, 128634, 133683, 138934, 144395, 150074, 155981, 162124, 168513, 175157, 182067, 189253, 196727, 204500, 212584, 220991, 229734, 238827, 248284, 258119, 268348, 278986, 290049, 301555, 313521, 330487, 352453, 379419, 411385, 448351, 490317, 537283, 589249, 646215, 708181, 775147, 847113, 924079, 1006045, 1093011, 1184977, 1281943, 1383909, 1490875, 1602841, 1719807, 1841773, 1968739, 2100705, 2237671, 2379637, 2526603, 2678569, 2835535, 2997501, 3164467, 3336433, 3513399, 3695365, 3882331, 4074297, 4271263, 4473229, 4680195, 4892161, 5109127, 5331093, 5558059, 5790025, 6026991, 6268957, 6515923, 6767889, 7024855, 7286821, 7553787, 7825753, 8102719, 8384685, 8671651, 8963617, 9260583, 9562549, 9869515, 10181481, 10498447, 10820413, 11147379, 11479345, 11816311, 12158277, 12505243, 12857209, 13214175, 13576141, 13943107, 14315073, 14692039, 15074005, 15460971, 15852937, 16249903, 16651869, 17058835, 17470801, 17887767, 18309733, 18736699, 19168665, 19605631, 20047597, 20494563, 20946529, 21403495, 21865461, 22332427, 22804393, 23281359, 23763325, 24250291, 24742257, 25239223, 25741189, 26248155, 26760121, 27277087, 27799053, 28326019, 28857985, 29394951, 29936917, 30483883, 31035849, 31592815, 32154781, 32721747, 33293713, 33870679, 34452645, 35039611, 35631577, 36228543, 36830509, 37437475, 38049441, 38666407, 39288373, 39915339, 40547305, 41184271, 41826237, 42473203, 43125169, 43782135, 44444101, 45111067, 45783033, 46459999, 47141965, 47828931, 48520897, 49217863, 49919829, 50626795, 51338761, 52055727, 52777693, 53504659, 54236625, 54973591, 55715557, 56462523, 57214489, 57971455, 58733421, 59500387, 60272353, 61049319, 61831285, 62618251, 63410217, 64207183, 65009149, 65816115, 66628081, 67445047, 68267013, 69093979, 69925945, 70762911, 71604877, 72451843, 73303809, 74160775, 75022741, 75889707, 76761673, 77638639, 78520605, 79407571, 80299537, 81196503, 82098469, 83005435, 83917401, 84834367, 85756333, 86683299, 87615265, 88552231, 89494197, 90441163, 91393129, 92350095, 93312061, 94279027, 95250993, 96227959, 97209925, 98196891, 99188857, 100185823, 101187789, 102194755, 103206721, 104223687, 105245653, 106272619, 107304585, 108341551, 109383517, 110430483, 111482449, 112539415, 113601381, 114668347, 115740313, 116817279, 117899245, 118986211, 120078177, 121175143, 122277109, 123384075, 124496041, 125613007, 126734973, 127861939, 128993905, 130130871, 131272837, 132419803, 133571769, 134728735, 135890701, 137057667, 138229633, 139406599, 140588565, 141775531, 142967497, 144164463, 145366429, 146573395, 147785361, 149002327, 150224293, 151451259, 152683225, 153920191, 155162157, 156409123, 157661089, 158918055, 160180021, 161446987, 162718953, 163995919, 165277885, 166564851, 167856817, 169153783, 170455749, 171762715, 173074681, 174391647, 175713613, 177040579, 178372545, 179709511, 181051477, 182398443, 183750409, 185107375, 186469341, 187836307, 189208273, 190585239, 191967205, 193354171, 194746137, 196143103, 197545069, 198952035, 200364001, 201780967, 203202933, 204629899, 206061865, 207498831, 208940797, 210387763, 211839729, 213296695, 214758661, 216225627, 217697593, 219174559, 220656525, 222143491, 223635457, 225132423, 226634389, 228141355, 229653321, 231170287, 232692253, 234219219, 235751185, 237288151, 238830117, 240377083, 241929049, 243486015, 245047981, 246614947, 248186913, 249763879, 251345845, 252932811, 254524777, 256121743, 257723709, 259330675, 260942641, 262559607, 264181573, 265808539, 267440505, 269077471, 270719437, 272366403, 274018369, 275675335, 277337301, 279004267, 280676233, 282353199, 284035165, 285722131, 287414097, 289111063, 290813029, 292519995, 294231961, 295948927, 297670893, 299397859, 301129825, 302866791, 304608757, 306355723, 308107689, 309864655, 311626621, 313393587, 315165553, 316942519, 318724485, 320511451, 322303417, 324100383, 325902349, 327709315, 329521281, 331338247, 333160213, 334987179, 336819145, 338656111, 340498077, 342345043, 344197009, 346053975, 347915941, 349782907, 351654873, 353531839, 355413805, 357300771, 359192737, 361089703, 362991669, 364898635, 366810601, 368727567, 370649533, 372576499, 374508465, 376445431, 378387397, 380334363, 382286329, 384243295, 386205261, 388172227, 390144193, 392121159, 394103125, 396090091, 398082057, 400079023, 402080989, 404087955, 406099921],
 
   BUILDING_COST: {
-    farms: 2500,
-    granaries: 2500,
-    barracks: 5000,
-    outposts: 7500,
-    guard_towers: 2500,
-    schools: 7500,
-    armories: 2500,
-    vaults: 10000,
-    smithies: 10000,
-    markets: 10000,
-    mage_towers: 15000,
-    shrines: 500,
-    training: 20000,
-    castles: 100000,
-    libraries: 10000,
-    housing: 5000,
-    walls: 500,
-    taverns: 3000,
-    mausoleums: 1000,
+    // Tier 1
+    farms: 25,
+    // Tier 2
+    granaries: 350,
+    housing: 350,
+    taverns: 350,
+    // Tier 3
+    barracks: 1500,
+    markets: 1500,
+    libraries: 1500,
+    schools: 1500,
+    shrines: 1500,
+    mausoleums: 1500,
+    // Tier 4
+    guard_towers: 3500,
+    // Tier 5
+    outposts: 7000,
+    smithies: 7000,
+    walls: 7000,
+    // Tier 6
+    armories: 13000,
+    vaults: 13000,
+    mage_towers: 13000,
+    // Tier 7
+    training: 18000,
+    // Tier 8
+    castles: 40000,
+    // Non-tiered (legacy)
     war_machines: 1000,
     weapons: 10,
     armor: 10,
@@ -852,25 +861,34 @@ const config = {
   },
 
   BUILDING_LAND_COST: {
-    farms: 1,
-    granaries: 2,
-    barracks: 3,
-    outposts: 5,
-    guard_towers: 5,
-    armories: 5,
-    vaults: 10,
-    schools: 10,
-    smithies: 20,
-    markets: 25,
-    shrines: 10,
-    libraries: 20,
-    housing: 2,
-    mausoleums: 25,
-    mage_towers: 75,
-    training: 250,
+    // Tier 1: 10 land
+    farms: 10,
+    // Tier 2: 50 land each
+    granaries: 50,
+    housing: 50,
+    taverns: 50,
+    // Tier 3: 150 land each
+    barracks: 150,
+    markets: 150,
+    libraries: 150,
+    schools: 150,
+    shrines: 150,
+    mausoleums: 150,
+    // Tier 4: 300 land
+    guard_towers: 300,
+    // Tier 5: 500 land each
+    outposts: 500,
+    smithies: 500,
+    walls: 500,
+    // Tier 6: 750 land each
+    armories: 750,
+    vaults: 750,
+    mage_towers: 750,
+    // Tier 7: 850 land
+    training: 850,
+    // Tier 8: 1000 land
     castles: 1000,
-    taverns: 5,
-    walls: 3,
+    // Non-tiered
     war_machines: 0,
     weapons: 0,
     armor: 0,
@@ -888,27 +906,34 @@ const config = {
   },
 
   BUILDING_WOOD_COST: {
-    // Main buildings
-    farms: 0,
-    granaries: 5,
-    housing: 10,
-    schools: 5,
-    libraries: 8,
-    mage_towers: 10,
-    shrines: 0,
-    mausoleums: 0,
-    markets: 10,
-    taverns: 3,
-    smithies: 5,
-    vaults: 0,
-    armories: 0,
-    barracks: 8,
-    walls: 0,
-    guard_towers: 0,
-    outposts: 5,
-    training: 20,
-    castles: 500,
-    // Equipment
+    // Tier 1: 50 wood
+    farms: 50,
+    // Tier 2: 200 wood each
+    granaries: 200,
+    housing: 200,
+    taverns: 200,
+    // Tier 3: 800 wood each
+    barracks: 800,
+    markets: 800,
+    libraries: 800,
+    schools: 800,
+    shrines: 800,
+    mausoleums: 800,
+    // Tier 4: 2000 wood
+    guard_towers: 2000,
+    // Tier 5: 5000 wood each
+    outposts: 5000,
+    smithies: 5000,
+    walls: 5000,
+    // Tier 6: 7500 wood each
+    armories: 7500,
+    vaults: 7500,
+    mage_towers: 7500,
+    // Tier 7: 8500 wood
+    training: 8500,
+    // Tier 8: 10000 wood
+    castles: 10000,
+    // Non-tiered
     war_machines: 1,
     ladders: 1,
     weapons: 0,
@@ -926,27 +951,34 @@ const config = {
   },
 
   BUILDING_STONE_COST: {
-    // Main buildings
+    // Tier 1: 0 stone
     farms: 0,
-    granaries: 0,
-    housing: 0,
-    schools: 0,
-    libraries: 4,
-    mage_towers: 15,
-    shrines: 5,
-    mausoleums: 8,
-    markets: 8,
-    taverns: 0,
-    smithies: 0,
-    vaults: 5,
-    armories: 0,
-    barracks: 0,
-    walls: 15,
-    guard_towers: 8,
-    outposts: 5,
-    training: 15,
-    castles: 1000,
-    // Equipment
+    // Tier 2: 100 stone each
+    granaries: 100,
+    housing: 100,
+    taverns: 100,
+    // Tier 3: 500 stone each
+    barracks: 500,
+    markets: 500,
+    libraries: 500,
+    schools: 500,
+    shrines: 500,
+    mausoleums: 500,
+    // Tier 4: 1500 stone
+    guard_towers: 1500,
+    // Tier 5: 5000 stone each
+    outposts: 5000,
+    smithies: 5000,
+    walls: 5000,
+    // Tier 6: 12500 stone each
+    armories: 12500,
+    vaults: 12500,
+    mage_towers: 12500,
+    // Tier 7: 17500 stone
+    training: 17500,
+    // Tier 8: 25000 stone
+    castles: 25000,
+    // Non-tiered
     war_machines: 0,
     ladders: 0,
     weapons: 0,
@@ -964,27 +996,34 @@ const config = {
   },
 
   BUILDING_IRON_COST: {
-    // Main buildings
+    // Tier 1: 0 iron
     farms: 0,
-    granaries: 0,
-    housing: 0,
-    schools: 0,
-    libraries: 0,
-    mage_towers: 12,
-    shrines: 0,
-    mausoleums: 0,
-    markets: 10,
-    taverns: 0,
-    smithies: 5,
-    vaults: 3,
-    armories: 2,
-    barracks: 4,
-    walls: 0,
-    guard_towers: 2,
-    outposts: 3,
-    training: 10,
-    castles: 250,
-    // Equipment
+    // Tier 2: 50 iron each
+    granaries: 50,
+    housing: 50,
+    taverns: 50,
+    // Tier 3: 200 iron each
+    barracks: 200,
+    markets: 200,
+    libraries: 200,
+    schools: 200,
+    shrines: 200,
+    mausoleums: 200,
+    // Tier 4: 500 iron
+    guard_towers: 500,
+    // Tier 5: 1500 iron each
+    outposts: 1500,
+    smithies: 1500,
+    walls: 1500,
+    // Tier 6: 3000 iron each
+    armories: 3000,
+    vaults: 3000,
+    mage_towers: 3000,
+    // Tier 7: 4000 iron
+    training: 4000,
+    // Tier 8: 5000 iron
+    castles: 5000,
+    // Non-tiered
     war_machines: 1,
     ladders: 0,
     weapons: 1,
@@ -1755,6 +1794,68 @@ const config = {
     orc: 5,
     dire_wolf: 6,
     vampire: 4,
+  },
+
+  ENGINEER_PROGRESSION: {
+    10: 100,
+    25: 300,
+    50: 800,
+    75: 2000,
+    100: 5000,
+  },
+
+  BUILDING_TIER_COSTS: {
+    1: { land: 10, wood: 50, stone: 0, iron: 0 },
+    2: { land: 50, wood: 200, stone: 100, iron: 50 },
+    3: { land: 150, wood: 800, stone: 500, iron: 200 },
+    4: { land: 300, wood: 2000, stone: 1500, iron: 500 },
+    5: { land: 500, wood: 5000, stone: 5000, iron: 1500 },
+    6: { land: 750, wood: 7500, stone: 12500, iron: 3000 },
+    7: { land: 850, wood: 8500, stone: 17500, iron: 4000 },
+    8: { land: 1000, wood: 10000, stone: 25000, iron: 5000 },
+  },
+
+  BUILDING_TIER_TIMES: {
+    1: 10,
+    2: 100,
+    3: 500,
+    4: 2500,
+    5: 10000,
+    6: 25000,
+    7: 35000,
+    8: 50000,
+  },
+
+  BUILDING_TIERS: {
+    bld_farms: 1,
+    bld_housing: 2,
+    bld_granaries: 2,
+    bld_taverns: 2,
+    bld_markets: 3,
+    bld_barracks: 3,
+    bld_libraries: 3,
+    bld_schools: 3,
+    bld_shrines: 3,
+    bld_mausoleums: 3,
+    bld_guard_towers: 4,
+    bld_walls: 5,
+    bld_outposts: 5,
+    bld_smithies: 5,
+    bld_armories: 6,
+    bld_vaults: 6,
+    bld_mage_towers: 6,
+    bld_training: 7,
+    bld_castles: 8,
+  },
+
+  UNIT_LEVEL_25_BONUSES: {
+    dwarf: { unit: "engineers", bonus: "solo_crew_wm" },
+    high_elf: { unit: "mages", bonus: "double_scroll_craft" },
+    orc: { unit: "fighters", bonus: "free_trainee_generation" },
+    dark_elf: { unit: "ninjas", bonus: "silent_assassination" },
+    dire_wolf: { unit: "rangers", bonus: "fast_expeditions" },
+    human: { unit: "clerics", bonus: "morale_aura" },
+    vampire: { unit: "thieves", bonus: "theft_boost" },
   },
 
   RESEARCH_MAP: {

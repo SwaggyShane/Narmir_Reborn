@@ -1836,6 +1836,48 @@ function processTurn(k) {
     }
   }
 
+  // ── 5b. Building completion ───────────────────────────────────────────────────
+  const buildQueue = safeJsonParse(k.build_queue || "{}", {}, "processTurn:build_queue");
+  let buildQueueChanged = false;
+  const completedBuildings = [];
+
+  for (const [queueId, buildJob] of Object.entries(buildQueue)) {
+    buildJob.turns_remaining--;
+
+    if (buildJob.turns_remaining <= 0) {
+      completedBuildings.push(buildJob);
+      delete buildQueue[queueId];
+      buildQueueChanged = true;
+
+      // Increment building count
+      if (!updates[buildJob.building]) {
+        updates[buildJob.building] = (k[buildJob.building] || 0) + 1;
+      } else {
+        updates[buildJob.building]++;
+      }
+
+      // Award engineer XP (preserve existing troop_levels)
+      const xpGain = Math.ceil(buildJob.turns_needed / 100);
+      const mergedK = { ...k, ...updates };
+      const newTroopLevels = awardUnitXp(mergedK, "engineers", xpGain);
+      if (newTroopLevels) updates.troop_levels = newTroopLevels;
+
+      // Apply engineer level progression
+      awardEngineerXp(mergedK, xpGain);
+      updates.engineer_level = mergedK.engineer_level;
+      updates.engineer_xp = mergedK.engineer_xp;
+
+      events.push({
+        type: "system",
+        message: `✅ Construction complete: ${buildJob.building.replace(/_/g, " ")}! Engineers gained ${xpGain} XP.`,
+      });
+    }
+  }
+
+  if (buildQueueChanged) {
+    updates.build_queue = JSON.stringify(buildQueue);
+  }
+
   // ── 6. Troop upkeep ───────────────────────────────────────────────────────────
   // Researchers, engineers, scribes are exempt if housed in their buildings.
   // Overflow (unhomed) units pay normal upkeep.
@@ -7549,6 +7591,59 @@ function calculateScore(k) {
   return Math.floor(score);
 }
 
+function engineerXpForLevel(level) {
+  if (level <= 1) return 0;
+  if (level <= 10) return level * 100;
+  if (level <= 25) return level * 300;
+  if (level <= 50) return level * 800;
+  if (level <= 75) return level * 2000;
+  return level * 5000;
+}
+
+function engineerConstructionMult(level) {
+  return Math.max(1.0, 1.0 + ((Math.min(level, 100) - 1) / 99) * 0.25);
+}
+
+function calculateBuildTime(kingdom, tier) {
+  const config = require('./config');
+  const baseTime = config.BUILDING_TIER_TIMES[tier] || 0;
+  const engineerLevel = kingdom.engineer_level || 1;
+  const engineerMult = engineerConstructionMult(engineerLevel);
+  const raceMult = config.RACE_BONUSES[kingdom.race]?.construction || 1.0;
+
+  const adjustedTime = baseTime / engineerMult / raceMult;
+  return Math.ceil(adjustedTime);
+}
+
+function calculateBuildCost(kingdom, tier) {
+  const config = require('./config');
+  const baseCost = config.BUILDING_TIER_COSTS[tier] || {};
+  const raceMult = config.RACE_BONUSES[kingdom.race]?.construction || 1.0;
+
+  return {
+    land: Math.ceil((baseCost.land || 0) / raceMult),
+    wood: Math.ceil((baseCost.wood || 0) / raceMult),
+    stone: Math.ceil((baseCost.stone || 0) / raceMult),
+    iron: Math.ceil((baseCost.iron || 0) / raceMult),
+  };
+}
+
+function awardEngineerXp(kingdom, xpAmount) {
+  kingdom.engineer_xp = (kingdom.engineer_xp || 0) + xpAmount;
+
+  while (kingdom.engineer_level < 100) {
+    const nextLevelXp = engineerXpForLevel(kingdom.engineer_level + 1);
+    if (kingdom.engineer_xp >= nextLevelXp) {
+      kingdom.engineer_xp -= nextLevelXp;
+      kingdom.engineer_level++;
+    } else {
+      break;
+    }
+  }
+
+  return kingdom;
+}
+
 module.exports = {
   calculateScore,
   totalHiredUnits,
@@ -7677,4 +7772,9 @@ module.exports = {
   BUILDING_STONE_COST,
   BUILDING_IRON_COST,
   raceBonus,
+  calculateBuildTime,
+  calculateBuildCost,
+  awardEngineerXp,
+  engineerXpForLevel,
+  engineerConstructionMult,
 };
