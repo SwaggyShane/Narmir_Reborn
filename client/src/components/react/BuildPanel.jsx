@@ -174,8 +174,8 @@ const BuildPanel = () => {
             </div>
 
             {renderBuildingRow(BUILDINGS[0], { emoji: '🌾', color: '#4a7c3f' }, 'ba-farm', 'demolish-amount-farms')}
-            {renderBuildingRow(BUILDINGS[1], { emoji: '🛖', color: '#a08453' }, 'ba-granary', 'demolish-amount-granaries')}
-            {renderBuildingRow(BUILDINGS[2], { emoji: '🏘️', color: '#4a5a3a' }, 'ba-housing', 'demolish-amount-housing')}
+            {renderBuildingRow(BUILDINGS[1], { emoji: '🛖', color: '#a08453' }, 'ba-housing', 'demolish-amount-housing')}
+            {renderBuildingRow(BUILDINGS[2], { emoji: '🏘️', color: '#4a5a3a' }, 'ba-granary', 'demolish-amount-granaries')}
             {renderBuildingRow(BUILDINGS[3], { emoji: '🏫', color: '#3a5a7a' }, 'ba-school', 'demolish-amount-schools')}
             {renderBuildingRow(BUILDINGS[4], { emoji: '📖', color: '#2a3a6a' }, 'ba-library', 'demolish-amount-libraries')}
             {renderBuildingRow(BUILDINGS[5], { emoji: '⛪', color: '#4a2a7a' }, 'ba-mage_tower', 'demolish-amount-mage_towers')}
