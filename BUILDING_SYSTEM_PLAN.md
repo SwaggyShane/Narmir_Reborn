@@ -57,15 +57,16 @@ engineer_xp INTEGER NOT NULL DEFAULT 0
 ```
 
 ### Config Changes (game/config.js)
-Create ENGINEER_LEVELS object:
+Create ENGINEER_LEVELS object (scales to level 25+ for dwarf solo-crew):
 ```javascript
 ENGINEER_LEVELS: {
   1: { xp_needed: 0, construction_mult: 1.0, description: "Apprentice Mason" },
   2: { xp_needed: 1000, construction_mult: 1.05, description: "Journeyman Mason" },
-  3: { xp_needed: 3000, construction_mult: 1.1, description: "Master Mason" },
-  4: { xp_needed: 6000, construction_mult: 1.15, description: "Grand Architect" },
-  5: { xp_needed: 10000, construction_mult: 1.2, description: "Supreme Builder" },
-  // ...continue as needed
+  5: { xp_needed: 5000, construction_mult: 1.1, description: "Master Mason" },
+  10: { xp_needed: 15000, construction_mult: 1.15, description: "Grand Architect" },
+  15: { xp_needed: 30000, construction_mult: 1.18, description: "Supreme Builder" },
+  25: { xp_needed: 75000, construction_mult: 1.25, description: "Legendary Craftsman", dwarf_solo_crew: true },
+  // Level 25+ grants dwarves solo-crew ability for war machines
 }
 ```
 
@@ -161,9 +162,25 @@ Example: Dwarf building Guard Tower
 
 ---
 
+## Dwarf Solo-Crew Integration
+
+### War Machine Crewing
+When dwarves reach engineer level 25+, they unlock **solo-crew ability** for war machines:
+- Normal crew requirement: 2 engineers (dwarf base)
+- With level 25+ engineers: 1 engineer (solo-crew)
+- Must be applied in war machine allocation logic
+
+### Implementation
+- Check kingdom race and engineer_level in war machine crew validation
+- If race === "dwarf" && engineer_level >= 25: allow solo-crew
+- WM_CREW_REQUIRED still defines base requirements; this is an override
+
+---
+
 ## Notes
 
 - Buildings are persistent (not removed when complete, just increment count)
-- Engineer level caps at some reasonable max (suggested: level 5-10)
-- XP requirement scales per level (could be linear, exponential, etc.)
+- Engineer level caps at 25 (allows dwarf solo-crew unlock)
+- XP requirement scales per level (exponential: 1k, 5k, 15k, 30k, 75k)
 - Multiple buildings can be queued simultaneously (if design allows)
+- Dwarf solo-crew milestone at level 25 is critical for late-game war machine economy
