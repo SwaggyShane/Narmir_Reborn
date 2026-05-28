@@ -962,34 +962,6 @@ async function initDb() {
     CREATE INDEX IF NOT EXISTS idx_mercs_kingdom ON mercenaries(kingdom_id);
   `);
 
-  // Market Prices table
-  await _db.exec(`
-    CREATE TABLE IF NOT EXISTS market_prices (
-      id            TEXT PRIMARY KEY,
-      current_price REAL NOT NULL,
-      base_price    REAL NOT NULL,
-      updated_at    DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-  `);
-
-  // Seed default market prices
-  const defaultPrices = [
-    ['food',    0.5, 0.5],
-    ['wood',    10.0, 10.0],
-    ['stone',   25.0, 25.0],
-    ['iron',    50.0, 50.0],
-    ['coal',    50.0, 50.0],
-    ['steel',   500.0, 500.0],
-    ['mana',    2.0, 2.0],
-    ['weapons', 25.0, 25.0],
-    ['armor',   25.0, 25.0],
-    ['war_machines', 1000.0, 1000.0],
-    ['land',    5000.0, 5000.0]
-  ];
-  for (const [id, current, base] of defaultPrices) {
-    await _db.run('INSERT OR IGNORE INTO market_prices (id, current_price, base_price) VALUES (?, ?, ?)', [id, current, base]);
-  }
-
   await _db.exec(`
     CREATE TABLE IF NOT EXISTS war_log (
       id              INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1023,11 +995,11 @@ async function initDb() {
   `);
   const freshDefaultPrices = [
     ['food',    0.5, 0.5],
-    ['wood',    10.0, 10.0],
-    ['stone',   25.0, 25.0],
-    ['iron',    50.0, 50.0],
-    ['coal',    50.0, 50.0],
-    ['steel',   500.0, 500.0],
+    ['wood',    1000.0, 1000.0],
+    ['stone',   5000.0, 5000.0],
+    ['iron',    10000.0, 10000.0],
+    ['coal',    2000.0, 2000.0],
+    ['steel',   20000.0, 20000.0],
     ['mana',    2.0, 2.0],
     ['weapons', 25.0, 25.0],
     ['armor',   25.0, 25.0],
