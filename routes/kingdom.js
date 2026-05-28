@@ -351,8 +351,8 @@ module.exports = function (db) {
         const placeholders = heroIds.map((_, i) => `$${i + 1}`).join(',');
 
         await db.run(
-          `UPDATE heroes SET level = CASE id ${heroIds.map((_, i) => `WHEN $${i + 1} THEN $${heroIds.length + i + 1}`).join(' ')} END,
-           xp = CASE id ${heroIds.map((_, i) => `WHEN $${i + 1} THEN $${heroIds.length * 2 + i + 1}`).join(' ')} END
+          `UPDATE heroes SET level = CAST(CASE id ${heroIds.map((_, i) => `WHEN $${i + 1} THEN $${heroIds.length + i + 1}`).join(' ')} END AS integer),
+           xp = CAST(CASE id ${heroIds.map((_, i) => `WHEN $${i + 1} THEN $${heroIds.length * 2 + i + 1}`).join(' ')} END AS real)
            WHERE id IN (${placeholders})`,
           [...heroIds, ...levels, ...xps]
         );
@@ -1500,8 +1500,8 @@ module.exports = function (db) {
       const placeholders = heroIds.map((_, i) => `$${i + 1}`).join(',');
 
       await db.run(
-        `UPDATE heroes SET xp = CASE id ${heroIds.map((id, i) => `WHEN $${i + 1} THEN $${heroIds.length + i + 1}`).join(' ')} END,
-         level = CASE id ${heroIds.map((id, i) => `WHEN $${i + 1} THEN $${heroIds.length * 2 + i + 1}`).join(' ')} END
+        `UPDATE heroes SET xp = CAST(CASE id ${heroIds.map((id, i) => `WHEN $${i + 1} THEN $${heroIds.length + i + 1}`).join(' ')} END AS real),
+         level = CAST(CASE id ${heroIds.map((id, i) => `WHEN $${i + 1} THEN $${heroIds.length * 2 + i + 1}`).join(' ')} END AS integer)
          WHERE id IN (${placeholders})`,
         [...heroIds, ...xps, ...levels]
       );
