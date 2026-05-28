@@ -960,24 +960,39 @@ module.exports = function (db) {
       // Simple distance calculation
       const distance = Math.floor(Math.random() * 50) + 10;
 
-      await db.run("UPDATE kingdoms SET gold = gold - ? WHERE id = ?", [
-        cost,
-        k.id,
-      ]);
-      await db.run(
-        "INSERT INTO trade_routes (kingdom_id, partner_id, distance, stability) VALUES (?, ?, ?, ?)",
-        [k.id, targetId, distance, 100],
-      );
-
-      await db.run(
-        "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?, ?, ?, ?)",
-        [
-          target.id,
-          "system",
-          `🤝 The merchants of ${k.name} have established a permanent trade route to your kingdom!`,
-          target.turn,
-        ],
-      );
+      await db.run("BEGIN TRANSACTION");
+      try {
+        // Atomic balance check: verify sufficient gold within the UPDATE statement to prevent
+        // concurrent requests from both bypassing the check and creating negative balances
+        const goldResult = await db.run("UPDATE kingdoms SET gold = gold - ? WHERE id = ? AND gold >= ?", [
+          cost,
+          k.id,
+          cost,
+        ]);
+        if (goldResult.changes === 0) {
+          await db.run("ROLLBACK");
+          return res.status(400).json({
+            error: `Establishing a permanent trade route costs ${cost.toLocaleString()} gold. You only have ${Math.floor(k.gold).toLocaleString()}.`,
+          });
+        }
+        await db.run(
+          "INSERT INTO trade_routes (kingdom_id, partner_id, distance, stability) VALUES (?, ?, ?, ?)",
+          [k.id, targetId, distance, 100],
+        );
+        await db.run(
+          "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?, ?, ?, ?)",
+          [
+            target.id,
+            "system",
+            `🤝 The merchants of ${k.name} have established a permanent trade route to your kingdom!`,
+            target.turn,
+          ],
+        );
+        await db.run("COMMIT");
+      } catch (txErr) {
+        await db.run("ROLLBACK");
+        throw txErr;
+      }
 
       res.json({
         ok: true,
@@ -4039,11 +4054,24 @@ module.exports = function (db) {
       const namePool = RESOURCE_NODE_NAMES[nodeType] || RESOURCE_NODE_NAMES.wood;
       const name = namePool[Math.floor(Math.random() * namePool.length)];
 
-      await db.run('UPDATE kingdoms SET gold = gold - 500 WHERE id = ?', [k.id]);
-      const result = await db.run(
-        'INSERT INTO resource_nodes (kingdom_id, name, type, distance, richness) VALUES (?, ?, ?, ?, ?)',
-        [k.id, name, nodeType, distance, richness]
-      );
+      let result;
+      await db.run("BEGIN TRANSACTION");
+      try {
+        // Atomic balance check: verify sufficient gold within UPDATE to prevent race conditions
+        const goldResult = await db.run('UPDATE kingdoms SET gold = gold - 500 WHERE id = ? AND gold >= 500', [k.id]);
+        if (goldResult.changes === 0) {
+          await db.run("ROLLBACK");
+          return res.status(400).json({ error: 'Need 500 gold to scout a node.' });
+        }
+        result = await db.run(
+          'INSERT INTO resource_nodes (kingdom_id, name, type, distance, richness) VALUES (?, ?, ?, ?, ?)',
+          [k.id, name, nodeType, distance, richness]
+        );
+        await db.run("COMMIT");
+      } catch (txErr) {
+        await db.run("ROLLBACK");
+        throw txErr;
+      }
 
       res.json({
         ok: true,
@@ -4105,11 +4133,23 @@ module.exports = function (db) {
       const arrive_at = now + travelTime;
 
       // Depart: remove population and food from kingdom for the duration
-      await db.run('UPDATE kingdoms SET food = MAX(0, food - ?), population = MAX(0, population - ?) WHERE id = ?', [foodNeeded, populationSent, k.id]);
-      await db.run(
-        'INSERT INTO resource_expeditions (kingdom_id, node_id, population_sent, depart_at, arrive_at, status, loot, food_taken) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [k.id, nodeId, populationSent, now, arrive_at, 'outbound', '{}', foodNeeded]
-      );
+      await db.run("BEGIN TRANSACTION");
+      try {
+        // Atomic food check: verify sufficient food within UPDATE to prevent race conditions
+        const foodResult = await db.run('UPDATE kingdoms SET food = MAX(0, food - ?), population = MAX(0, population - ?) WHERE id = ? AND food >= ?', [foodNeeded, populationSent, k.id, foodNeeded]);
+        if (foodResult.changes === 0) {
+          await db.run("ROLLBACK");
+          return res.status(400).json({ error: `Expedition requires ${foodNeeded.toLocaleString()} food for the journey (you have ${k.food.toLocaleString()}).` });
+        }
+        await db.run(
+          'INSERT INTO resource_expeditions (kingdom_id, node_id, population_sent, depart_at, arrive_at, status, loot, food_taken) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+          [k.id, nodeId, populationSent, now, arrive_at, 'outbound', '{}', foodNeeded]
+        );
+        await db.run("COMMIT");
+      } catch (txErr) {
+        await db.run("ROLLBACK");
+        throw txErr;
+      }
 
       res.json({ ok: true, arrive_at, travelTime, foodTaken: foodNeeded });
     } catch (e) {
@@ -4243,11 +4283,9 @@ module.exports = function (db) {
         updatedSeq[type].s2_paid_at_bracket = currentBracket;
 
         await db.run(
-          'UPDATE kingdoms SET gold = gold - 10000, resource_sequence = ? WHERE id = ?',
+          `UPDATE kingdoms SET gold = gold - 10000, ${resCol} = ${resCol} - 200, resource_sequence = ? WHERE id = ?`,
           [JSON.stringify(updatedSeq), k.id]
         );
-        // Also deduct the resource
-        await db.run(`UPDATE kingdoms SET ${resCol} = ${resCol} - 200 WHERE id = ?`, [k.id]);
 
         return res.json({ ok: true, message: `Stage 2 ${type} upgrade purchased.` });
       }
@@ -4272,12 +4310,9 @@ module.exports = function (db) {
         updatedSeq[type].s3_paid_at_bracket = currentBracket;
 
         await db.run(
-          'UPDATE kingdoms SET gold = gold - 100000, resource_sequence = ? WHERE id = ?',
+          `UPDATE kingdoms SET gold = gold - 100000, ${type} = ${type} - 1000, ${crossResCol} = ${crossResCol} - 500, resource_sequence = ? WHERE id = ?`,
           [JSON.stringify(updatedSeq), k.id]
         );
-        // Deduct resources
-        await db.run(`UPDATE kingdoms SET ${type} = ${type} - 1000 WHERE id = ?`, [k.id]);
-        await db.run(`UPDATE kingdoms SET ${crossResCol} = ${crossResCol} - 500 WHERE id = ?`, [k.id]);
 
         return res.json({ ok: true, message: `Stage 3 ${type} upgrade purchased.` });
       }
