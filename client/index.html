@@ -6217,6 +6217,14 @@
         }
       }
 
+      function getCsrfToken() {
+        try {
+          var m = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
+          if (m) return decodeURIComponent(m[1]);
+        } catch (e) {}
+        return null;
+      }
+
       async function apiCall(method, path, body) {
         try {
           var headers = { "Content-Type": "application/json" };
@@ -6225,6 +6233,10 @@
             storedToken = getToken();
           } catch (e) {}
           if (storedToken) headers["x-auth-token"] = storedToken;
+          if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+            var csrfToken = getCsrfToken();
+            if (csrfToken) headers["x-csrf-token"] = csrfToken;
+          }
           var controller = new AbortController();
           var timeout = setTimeout(function () {
             controller.abort();
