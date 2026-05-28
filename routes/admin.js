@@ -1,5 +1,5 @@
 const express = require("express");
-const { requireAdmin } = require("./middleware");
+const { requireAdmin, requireCsrfToken } = require("./middleware");
 const router = express.Router();
 const multer = require("multer");
 const path = require("path");
@@ -87,6 +87,14 @@ const upload = multer({ storage: storage });
 module.exports = function (db, io) {
   // All admin routes require admin JWT
   router.use(requireAdmin);
+
+  // CSRF protection for state-changing requests
+  router.use((req, res, next) => {
+    if (['POST', 'PUT', 'DELETE'].includes(req.method)) {
+      return requireCsrfToken(req, res, next);
+    }
+    next();
+  });
 
   // GET /api/admin/kingdoms — all kingdoms with player info
   router.get("/kingdoms", async (_req, res) => {
