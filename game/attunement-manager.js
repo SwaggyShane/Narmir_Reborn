@@ -14,9 +14,23 @@ const fragmentBonusManager = require('./fragment-bonus-manager');
  * Validate that a fragment can be attuned to a building
  */
 function validateAttunement(kingdom, fragmentName, buildingType) {
-  // Check fragment exists
+  // Check fragment exists in constants
   if (!FRAGMENT_BONUSES[fragmentName]) {
     return { error: `Fragment '${fragmentName}' does not exist` };
+  }
+
+  // Check kingdom owns and has studied this fragment
+  const worldFragments = Array.isArray(kingdom.world_fragments)
+    ? kingdom.world_fragments
+    : (typeof kingdom.world_fragments === 'string' ? JSON.parse(kingdom.world_fragments || '[]') : []);
+
+  const ownedFragment = worldFragments.find(f => f.type === fragmentName);
+  if (!ownedFragment) {
+    return { error: `Kingdom does not own fragment '${fragmentName}'` };
+  }
+
+  if (!ownedFragment.studied) {
+    return { error: `Fragment '${fragmentName}' must be studied before attunement` };
   }
 
   // Check building type is valid
@@ -89,14 +103,29 @@ function applyAttunement(kingdom, fragmentName, buildingType) {
 
 /**
  * Get all available attunement options for a kingdom
- * Returns list of fragments that can be attuned
+ * Returns list of studied fragments that can be attuned
  */
 function getAvailableAttunements(kingdom) {
   const currentAttunements = getKingdomAttunements(kingdom.fragment_bonuses || '{}');
   const available = [];
 
-  // For each fragment, check if it can be attuned
-  for (const [fragmentName, buildingBonuses] of Object.entries(FRAGMENT_BONUSES)) {
+  // Get kingdom's owned fragments
+  const worldFragments = Array.isArray(kingdom.world_fragments)
+    ? kingdom.world_fragments
+    : (typeof kingdom.world_fragments === 'string' ? JSON.parse(kingdom.world_fragments || '[]') : []);
+
+  // Only include studied fragments that the kingdom owns
+  const studiedFragments = worldFragments.filter(f => f.studied === true);
+
+  // For each studied fragment, check if it can be attuned
+  for (const ownedFragment of studiedFragments) {
+    const fragmentName = ownedFragment.type;
+    const buildingBonuses = FRAGMENT_BONUSES[fragmentName];
+
+    if (!buildingBonuses) {
+      continue; // Fragment type not found in bonuses config
+    }
+
     // Skip if fragment is already attuned
     const isAttuned = Object.values(currentAttunements).some(
       (att) => att && att.fragment === fragmentName
