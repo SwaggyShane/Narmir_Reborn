@@ -1514,7 +1514,7 @@ async function start() {
     });
 
     app.post('/api/select-school', requireAuth, async (req, res) => {
-      console.log('[select-school] Request received', { playerId: req.player?.playerId, body: req.body });
+      console.log('[select-school] Request received', { playerId: req.player?.playerId, school: req.body?.school });
       try {
         const { school } = req.body;
         if (!school?.trim()) return res.status(400).json({ error: 'School name required' });

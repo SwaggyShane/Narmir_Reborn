@@ -69,11 +69,11 @@ const POPULATED_FRAGMENTS = {
     },
     guard_towers: {
       passive: { detection: 0.30, power: 0.15, reach: 0.15 },
-      special: { name: "Magma Scrying Lenses", desc: "Lava obsidian crystals ground into precision scrying mirrors capture thermal body heats, making cold invisible units glow vividly" },
+      special: { name: "Magma Scrying Lenses", desc: "Lava obsidian crystals ground into precision scrying mirrors capture thermal body heat, making cold invisible units glow vividly" },
     },
     outposts: {
       passive: { power: 0.30, effectiveness: 0.15, scouts: 0.10 },
-      special: { name: "Sulfur Smoke Signals", desc: "Continuous volcanic smoke flares billowed from outpost peaks mask local troop redeployments while illuminating the surrounding landscape" },
+      special: { name: "Sulfur Smoke Signals", desc: "Continuous volcanic smoke flares billowing from outpost peaks mask local troop redeployments while illuminating the surrounding landscape" },
     },
     training: {
       passive: { speed: 0.30, power: 0.15, output: 0.10 },
@@ -160,7 +160,7 @@ const POPULATED_FRAGMENTS = {
     },
     castles: {
       passive: { prestige: 0.30, income: 0.15 },
-      special: { name: "Yggdrasil Embassy Pillars", desc: "Inlaid elven ironwood beams elevate the castle's diplomatic standing, double diplomatic weight during trade negotiation councils" },
+      special: { name: "Yggdrasil Embassy Pillars", desc: "Inlaid elven ironwood beams elevate the castle's diplomatic standing, doubling diplomatic weight during trade negotiation councils" },
     },
   },
 
@@ -318,7 +318,7 @@ const POPULATED_FRAGMENTS = {
     },
     castles: {
       passive: { income: 0.30, prestige: 0.15 },
-      special: { name: "Dark Quartz Spire Network", desc: "Crystal focus crystals harness deep underdark energy lines to channel warning defensive barriers, absorbing incoming hostile projectile forces" },
+      special: { name: "Dark Quartz Spire Network", desc: "Quartz focus crystals harness deep underdark energy lines to channel warning defensive barriers, absorbing incoming hostile projectile forces" },
     },
   },
 
@@ -397,7 +397,7 @@ const POPULATED_FRAGMENTS = {
     },
     castles: {
       passive: { prestige: 0.35, income: 0.25 },
-      special: { name: "Radiant Sovereign Spire", desc: "A towering holy anchor at the castle's peak continuously baths the surrounding courtyard in a bright celestial glow, repelling shadow curses and keeping morale high" },
+      special: { name: "Radiant Sovereign Spire", desc: "A towering holy anchor at the castle's peak continuously bathes the surrounding courtyard in a bright celestial glow, repelling shadow curses and keeping morale high" },
     },
   },
 
@@ -555,7 +555,7 @@ const POPULATED_FRAGMENTS = {
     },
     castles: {
       passive: { income: 0.50, prestige: -0.20 },
-      special: { name: "Blood-Sacrifice Vaults", desc: "Underground chambers dedicated to dark bloodstones convert dead siege soldiers as defensive energy, raising defense but scaring away foreign envoys" },
+      special: { name: "Blood-Sacrifice Vaults", desc: "Underground chambers dedicated to dark bloodstones convert dead siege soldiers into defensive energy, raising defense but scaring away foreign envoys" },
     },
   },
 

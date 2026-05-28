@@ -29,7 +29,7 @@ function requireAuth(req, res, next) {
     req.player = jwt.verify(token, JWT_SECRET);
     next();
   } catch (err) {
-    console.log('[requireAuth] Token verification failed:', err.message);
+    console.log('[requireAuth] Token verification failed:', err?.message || err);
     res.status(401).json({ error: "Invalid or expired token" });
   }
 }
