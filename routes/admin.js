@@ -24,7 +24,7 @@ const ALLOWED_SOUND_EXTENSIONS = new Set([".mp3", ".wav"]);
 // Returns null if the input is unsafe (traversal, wrong extension, or escapes the dir).
 function safeSoundPath(rawName) {
   if (typeof rawName !== "string" || !rawName.trim()) return null;
-  const base = path.basename(rawName);
+  const base = rawName.split(/[\/\\]/).pop();
   if (!base || base === "." || base === "..") return null;
   const ext = path.extname(base).toLowerCase();
   if (!ALLOWED_SOUND_EXTENSIONS.has(ext)) return null;
@@ -94,7 +94,7 @@ const storage = multer.diskStorage({
     cb(null, soundsPath);
   },
   filename: function (req, file, cb) {
-    const base = path.basename(file.originalname || "");
+    const base = (file.originalname || "").split(/[\/\\]/).pop();
     const ext = path.extname(base).toLowerCase();
     if (!base || !ALLOWED_SOUND_EXTENSIONS.has(ext)) {
       return cb(new Error("Invalid filename or extension"));
@@ -105,7 +105,8 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   fileFilter: function (req, file, cb) {
-    const ext = path.extname(file.originalname || "").toLowerCase();
+    const base = (file.originalname || "").split(/[\/\\]/).pop();
+    const ext = path.extname(base).toLowerCase();
     if (!ALLOWED_SOUND_EXTENSIONS.has(ext)) {
       return cb(new Error("Only .mp3 and .wav files are allowed"));
     }
@@ -1046,27 +1047,32 @@ module.exports = function (db, io) {
     });
   });
 
-  router.post("/sounds/upload", upload.single("soundFile"), (req, res) => {
-    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
-    let finalName = req.file.filename;
-    if (req.body.actionName && req.body.actionName !== "custom") {
-      const ext = path.extname(req.file.filename);
-      const requestedBase = path.basename(req.body.actionName);
-      if (!requestedBase || requestedBase === "." || requestedBase === "..") {
-        return res.status(400).json({ error: "Invalid action name" });
+  router.post("/sounds/upload", (req, res) => {
+    upload.single("soundFile")(req, res, (err) => {
+      if (err) {
+        return res.status(400).json({ error: err.message });
       }
-      const candidateName = requestedBase + ext;
-      const newPath = safeSoundPath(candidateName);
-      const oldPath = safeSoundPath(req.file.filename);
-      if (!newPath || !oldPath) {
-        return res.status(400).json({ error: "Invalid filename" });
+      if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+      let finalName = req.file.filename;
+      if (typeof req.body.actionName === "string" && req.body.actionName !== "custom") {
+        const ext = path.extname(req.file.filename);
+        const requestedBase = req.body.actionName.split(/[\/\\]/).pop();
+        if (!requestedBase || requestedBase === "." || requestedBase === "..") {
+          return res.status(400).json({ error: "Invalid action name" });
+        }
+        const candidateName = requestedBase + ext;
+        const newPath = safeSoundPath(candidateName);
+        const oldPath = safeSoundPath(req.file.filename);
+        if (!newPath || !oldPath) {
+          return res.status(400).json({ error: "Invalid filename" });
+        }
+        if (fs.existsSync(oldPath)) {
+          fs.renameSync(oldPath, newPath);
+          finalName = path.basename(newPath);
+        }
       }
-      if (fs.existsSync(oldPath)) {
-        fs.renameSync(oldPath, newPath);
-        finalName = path.basename(newPath);
-      }
-    }
-    res.json({ ok: true, filename: finalName });
+      res.json({ ok: true, filename: finalName });
+    });
   });
 
   router.post("/sounds/delete", (req, res) => {
