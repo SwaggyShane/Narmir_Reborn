@@ -1,8 +1,8 @@
 /**
  * World Fragment Bonuses System
- * Each of 10 world fragments provides unique bonuses to each building type.
- * Farms, granaries, housing, guard_towers, outposts, training, and castles are fully populated.
- * All other buildings from the build panel are defined but empty.
+ * Each of 10 world fragments provides unique bonuses to each of the 19 building types.
+ * All buildings from the build panel are fully populated with balanced passive bonuses,
+ * special abilities, and strategic synergies.
  */
 
 const POPULATED_FRAGMENTS = {
@@ -16,7 +16,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Geothermal Dehydration", desc: "Constant heat cures crops. Eliminates 100% of moisture-induced mold and spoilage" },
     },
     housing: {
-      passive: { capacity: 0.10, stability: 0.05, morale: 0.05, happiness: 0.05 },
+      passive: { capacity: 0.10, stability: 0.05, morale: 0.05, happiness: 0.05, growth: 0.05 },
       special: { name: "Geothermal Hearth", desc: "Underfloor heating pipes tap volcanic veins. Citizens stay warm through brutal winters" },
     },
     libraries: {
@@ -95,7 +95,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Organic Preservation", desc: "Roots cocoon stored crops in suspended animation. Food decay over winters reduced to zero" },
     },
     housing: {
-      passive: { capacity: 0.20, stability: 0.30 },
+      passive: { capacity: 0.20, stability: 0.30, growth: 0.10 },
       special: { name: "Treehouse Canopy", desc: "Dwellings weave into living canopies. Citizens remain in maximum happiness" },
     },
     libraries: {
@@ -143,7 +143,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Sylvan Archery Hubs", desc: "Archery ranges set within ancient majestic elven trees improve rangers' natural aiming abilities, granting bonus garrison arrows" },
     },
     walls: {
-      passive: { health: 0.30, root_grip: 0.15 },
+      passive: { health: 0.30, defense: 0.15 },
       special: { name: "Sylvan Bramble-Weaves", desc: "Living tree roots tightly wrap around the masonry, holding the wall together during catastrophic earth-shake or heavy siege fire" },
     },
     guard_towers: {
@@ -174,7 +174,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Draconic Ward", desc: "Granary walls lined with draconic scales. Blocks 100% of rats, pests, and enemy food theft" },
     },
     housing: {
-      passive: { capacity: 0.10, defenses: 0.25 },
+      passive: { capacity: 0.10, defenses: 0.25, growth: 0.05 },
       special: { name: "Fortified Keeps", desc: "Draconic scales line outer walls. Shelters are highly secure and flame-retardant" },
     },
     libraries: {
@@ -222,7 +222,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Fire-Drake Billeting", desc: "Coating training shields in red wyrmscale increases recruits' heat tolerances enormously, fully protecting them from environmental scorch effects" },
     },
     walls: {
-      passive: { health: 0.15, flame_immunity: 0.40 },
+      passive: { health: 0.15, defense: 0.40 },
       special: { name: "Wyrmscale Bastions", desc: "Coating guard turrets in obsidian scales shrugs off incoming siege fireballs, granting immune indicators against burning effects" },
     },
     guard_towers: {
@@ -253,7 +253,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Glacial Cryostasis", desc: "Deep underdark crystals lock granary in lightless frost. Permanently halts organic breakdown" },
     },
     housing: {
-      passive: { capacity: 0.15, magic_output: 0.10 },
+      passive: { capacity: 0.15, magic_output: 0.10, growth: 0.05 },
       special: { name: "Shadow Attunement", desc: "Crystalline-infused houses produce magical output as citizens meditate and rest" },
     },
     libraries: {
@@ -301,7 +301,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Crystalline Echo Ranges", desc: "Shadow crystals capture echo patterns of movement, training troops in silent footfalls and making stealth squads virtually silent" },
     },
     walls: {
-      passive: { alarm_range: 0.30, tunnel_detection: 0.15 },
+      passive: { health: 0.30, defense: 0.15 },
       special: { name: "Resonant Earth-Siren", desc: "Quartz crystal arrays resonate deep in the earth, sounding immediate alarms when miners attempt to tunnel under the fort" },
     },
     guard_towers: {
@@ -332,7 +332,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Manna Manifestation", desc: "Stored food is blessed. Portion of reserves auto-distributed to boost morale on unstable turns" },
     },
     housing: {
-      passive: { capacity: 0.25, stability: 0.35 },
+      passive: { capacity: 0.25, stability: 0.35, growth: 0.20 },
       special: { name: "Holy Sanctuaries", desc: "Angelic grace prevents civil unrest. Rioting and immigration desertion are greatly reduced" },
     },
     libraries: {
@@ -380,7 +380,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Seraphic Parade Grounds", desc: "Recruits study sacred angelic tactical scrolls. Morale failure rates drop to zero, keeping troop units highly disciplined" },
     },
     walls: {
-      passive: { health: 0.25, healing_grace: 0.35 },
+      passive: { health: 0.25, defense: 0.35 },
       special: { name: "Empyrean Divine Barriers", desc: "The wall emits a soothing holy light, regenerating the active HP of defending archers and garrison units stationed on top" },
     },
     guard_towers: {
@@ -411,7 +411,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Piston Silos", desc: "Motorized steam pistons continuously compress and aerate grains, maximizing holding density" },
     },
     housing: {
-      passive: { capacity: 0.40, defenses: 0.10 },
+      passive: { capacity: 0.40, defenses: 0.10, growth: 0.10 },
       special: { name: "Retractable Apartments", desc: "Dwarven clockwork bunks and fold-out structures fit more citizens in less space" },
     },
     libraries: {
@@ -455,11 +455,11 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Clockwork Star-Metal Forges", desc: "Automated clockwork anvils forge indestructible blueprints, gearsets, and hammers with pristine quality" },
     },
     barracks: {
-      passive: { troop_capacity: 0.40, training_precision: 1.00 },
+      passive: { capacity: 0.40, training_precision: 1.00 },
       special: { name: "Clockwork Training Dummies", desc: "Steam-powered automatons spar with recruits, maximizing combat precision without risking fatal physical training injuries" },
     },
     walls: {
-      passive: { health: 0.40, repair_speed: 1.00 },
+      passive: { health: 0.40, defense: 1.00 },
       special: { name: "Geared Self-Construction", desc: "Auxiliary clockwork cog-wheels nested within the walls automatically raise fallen bricks, self-repairing wall damage in real-time" },
     },
     guard_towers: {
@@ -490,7 +490,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Vampiric Silos", desc: "Spoiling food distilled into dark elixir. Increases military attack speed but spikes chaos" },
     },
     housing: {
-      passive: { capacity: 0.50, stability: -0.20 },
+      passive: { capacity: 0.50, stability: -0.20, growth: -0.10 },
       special: { name: "Blood Pact Lodgings", desc: "Explosive population density powered by dark covenant. Raw workforce expansion at stability cost" },
     },
     libraries: {
@@ -538,7 +538,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Sanguine Ritual Circles", desc: "Dipping barracks banners in bloody crucible pools sparks a dark bloodlust, multiplying recruit generation rates at high civil unrest costs" },
     },
     walls: {
-      passive: { retaliation_dmg: 0.50, wall_durability: -0.20 },
+      passive: { health: 0.50, defense: -0.20 },
       special: { name: "Sanguine Blood-Thorns", desc: "Pouring dark magic over the stones triggers razor-sharp bloodstone thorns to erupt, shredding any unit that attempts to scale the walls" },
     },
     guard_towers: {
@@ -569,7 +569,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Cellular Biosphere", desc: "World Tree spores seed reserves. Stored grains self-replicate at +2% per turn" },
     },
     housing: {
-      passive: { capacity: 0.35, stability: 0.25 },
+      passive: { capacity: 0.35, stability: 0.25, growth: 0.25 },
       special: { name: "Lifespring Spores", desc: "Curing waters fill district fonts. Zero infant mortality, natural growth boosted +50%" },
     },
     libraries: {
@@ -613,11 +613,11 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Yggdrasil Fuel Glands", desc: "Soaking furnaces in glowing sap reduces fuel requirements, keeping bellows pumping continuously" },
     },
     barracks: {
-      passive: { troop_capacity: 0.35, unit_health: 0.30 },
+      passive: { capacity: 0.35, unit_health: 0.30 },
       special: { name: "Yggdrasil Rest Chambers", desc: "Sleeping quarters carved adjacent to glowing root nodes revitalize injured soldiers overnight, boosting their overall constitutional healing" },
     },
     walls: {
-      passive: { health: 0.35, bark_reconstitute: 0.30 },
+      passive: { health: 0.35, defense: 0.30 },
       special: { name: "Amber-Slick Ramparts", desc: "Coating walls in Yggdrasil sap makes them incredibly sticky and slippery at the same time, increasing climbing ladder fail rates by 30%" },
     },
     guard_towers: {
@@ -648,7 +648,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Void Pantry", desc: "Granary folds into pocket dimension for massive volume. 5% chance per turn food vanishes" },
     },
     housing: {
-      passive: { capacity: 1.20, stability: -0.30 },
+      passive: { capacity: 1.20, stability: -0.30, growth: -0.20 },
       special: { name: "Void Pocket Lofts", desc: "Living rooms fold into pocket dimensions. Massive capacity with mild disorientation penalty" },
     },
     libraries: {
@@ -692,11 +692,11 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Quantum Portal Anvils", desc: "Anvils are tethered across multiple spatial dimensions, duplicating weapons but introducing spatial lag" },
     },
     barracks: {
-      passive: { troop_capacity: 1.20, garrison_order: -0.40 },
+      passive: { capacity: 1.20, garrison_order: -0.40 },
       special: { name: "Sub-Spatial Barracks", desc: "Trainees are housed in folding localized pocket-dimension bunks, creating infinite barracks storage space, though space lag delays deployment" },
     },
     walls: {
-      passive: { health: 1.20, gravity_anchor: -0.40 },
+      passive: { health: 1.20, defense: -0.40 },
       special: { name: "Phased Spatial Displacement", desc: "The wall system fluctuates dimensionally. Up to 40% of standard incoming catapult projectiles pass completely through into the void without doing damage" },
     },
     guard_towers: {
@@ -727,7 +727,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Megastructures", desc: "Fossilized skeletal columns support towering silos. Storage capabilities scale exponentially" },
     },
     housing: {
-      passive: { capacity: 0.60, defenses: 0.15 },
+      passive: { capacity: 0.60, defenses: 0.15, growth: 0.15 },
       special: { name: "Goliath Dwellings", desc: "Colossal foundations built on titanic skeletons. Allows massive multi-story structures" },
     },
     libraries: {
@@ -775,7 +775,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Titan-Rib Palisades", desc: "Walls constructed out of gargantuan marrow bones reinforce the training grounds, converting barracks into impenetrable sub-citadels during siege times" },
     },
     walls: {
-      passive: { health: 0.30, direct_fortitude: 0.15 },
+      passive: { health: 0.30, defense: 0.15 },
       special: { name: "Colossal Rib-Buttresses", desc: "Megalithic fossilized bones reinforce the support pillars, completely neutralizing standard wooden battering rams" },
     },
     guard_towers: {

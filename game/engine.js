@@ -1154,7 +1154,7 @@ function processFoodEconomy(k, events) {
     // Other fragments: apply decay_reduction multiplier (including Ancient Elven Wood)
     const decayReduction = fragmentBonusManager.getBonusMultiplier(k, 'granaries', 'decay_reduction');
     if (decayReduction > 1.0) {
-      rotRate = rotRate * (1.0 - (decayReduction - 1.0));
+      rotRate = Math.max(0, rotRate * (2.0 - decayReduction));
     }
   }
 
@@ -1397,14 +1397,12 @@ function processGranaryAttunements(k, events) {
 
   const fragmentName = granaryAttune.fragment;
   let foodChange = 0;
-  let abilityTriggered = false;
 
   switch (fragmentName) {
     case 'Tears of the World Tree':
       // +2% food self-replication per turn based on current food stored
       foodChange = Math.floor((k.food || 0) * 0.02);
       if (foodChange > 0) {
-        abilityTriggered = true;
         events.push({
           type: 'system',
           message: `💧 Tears of the World Tree: +${foodChange.toLocaleString()} food replicated from stored reserves.`
@@ -1414,10 +1412,9 @@ function processGranaryAttunements(k, events) {
 
     case 'Void Essence':
       // 5% chance per turn food vanishes based on current food stored
-      if (Math.random() < 0.05) {
+      if (Math.random() < 0.05 && (k.food || 0) > 0) {
         const voidLoss = Math.floor((k.food || 0) * (0.1 + Math.random() * 0.3));
         foodChange = -voidLoss;
-        abilityTriggered = true;
         events.push({
           type: 'system',
           message: `🌌 Void Essence: ${voidLoss.toLocaleString()} food consumed by the void!`
@@ -1428,15 +1425,15 @@ function processGranaryAttunements(k, events) {
     case 'Celestial Feather':
       // Portion of reserves distributed to boost morale on unstable turns
       const morale = displayMorale(k);
-      if (morale < 30) {
-        const moraleFoodCost = Math.floor((k.food || 0) * 0.05);
+      if (morale < 30 && (k.food || 0) > 0) {
+        const moraleFoodCost = Math.max(1, Math.floor((k.food || 0) * 0.05));
+        const moraleBoost = Math.floor(naturalMoraleCap(k) * 0.05);
         foodChange = -moraleFoodCost;
-        abilityTriggered = true;
         events.push({
           type: 'system',
           message: `🪶 Manna Manifestation: ${moraleFoodCost.toLocaleString()} food distributed for morale (+5%).`
         });
-        updates.morale = Math.min(naturalMoraleCap(k), (k.morale || 0) + 5);
+        updates.morale = Math.min(naturalMoraleCap(k), (k.morale || 0) + moraleBoost);
       }
       break;
 
@@ -2305,6 +2302,9 @@ function processTurn(k) {
     focus = focus.slice(0, maxSlots);
     const perSlot = Math.floor(researchers / focus.length);
 
+    // Get library research speed multiplier
+    const libraryResearchMult = fragmentBonusManager.getBonusMultiplier(k, 'libraries', 'research_speed');
+
     let rProgress = safeJsonParse(
       k.research_progress,
       {},
@@ -2323,7 +2323,7 @@ function processTurn(k) {
       if (current >= cap) return; // At cap, no progress
 
       const effective = Math.floor(
-        perSlot * schoolBonus * d.multi * curriculumMult,
+        perSlot * schoolBonus * d.multi * curriculumMult * libraryResearchMult,
       );
       rProgress[d.col] = (rProgress[d.col] || 0) + effective;
 
