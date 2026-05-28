@@ -21,11 +21,15 @@ function requireAuth(req, res, next) {
     req.cookies?.token ||
     req.headers.authorization?.replace("Bearer ", "") ||
     req.headers["x-auth-token"];
-  if (!token) return res.status(401).json({ error: "Authentication required" });
+  if (!token) {
+    console.log('[requireAuth] No token found. Cookies:', Object.keys(req.cookies || {}), 'Headers:', { auth: req.headers.authorization ? 'present' : 'missing', custom: req.headers["x-auth-token"] ? 'present' : 'missing' });
+    return res.status(401).json({ error: "Authentication required" });
+  }
   try {
     req.player = jwt.verify(token, JWT_SECRET);
     next();
-  } catch {
+  } catch (err) {
+    console.log('[requireAuth] Token verification failed:', err.message);
     res.status(401).json({ error: "Invalid or expired token" });
   }
 }
