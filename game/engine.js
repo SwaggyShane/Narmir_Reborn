@@ -5520,14 +5520,21 @@ function covertLoot(thief, target, lootType, thievesSent) {
     stolen = Math.floor(thievesSent * (50 + Math.random() * 50) * thiefLvMult);
     stolen = Math.min(stolen, Math.floor(target.gold * 0.05));
 
-    // Protect gold
-    if (target.gold - stolen < goldFloor) {
-      stolen = target.gold - goldFloor;
-      if (stolen < 0) stolen = 0;
-    }
+    // Dwarven Star-Metal vaults prevent the treasury from being looted
+    const vaultFragment = fragmentBonusManager.getFragmentForBuilding(target, 'vaults');
+    if (vaultFragment && vaultFragment.fragment === 'Dwarven Star-Metal') {
+      stolen = 0;
+      desc = `0 gold — protected by Star-Metal gear locks`;
+    } else {
+      // Protect gold
+      if (target.gold - stolen < goldFloor) {
+        stolen = target.gold - goldFloor;
+        if (stolen < 0) stolen = 0;
+      }
 
-    targetUpdates.gold = target.gold - stolen;
-    desc = `${stolen.toLocaleString()} gold`;
+      targetUpdates.gold = target.gold - stolen;
+      desc = `${stolen.toLocaleString()} gold`;
+    }
   } else if (lootType === "research") {
     stolen = Math.floor(thievesSent * 0.2 * thiefLvMult);
     targetUpdates.res_economy = Math.max(0, target.res_economy - stolen);
@@ -5546,8 +5553,16 @@ function covertLoot(thief, target, lootType, thievesSent) {
       thievesSent * (100 + Math.random() * 100) * thiefLvMult,
     );
     stolen = Math.min(stolen, Math.floor(target.food * 0.1));
-    targetUpdates.food = Math.max(0, target.food - stolen);
-    desc = `${stolen.toLocaleString()} food`;
+
+    // Dragon Scale granaries block 100% of food theft
+    const granaryFragment = fragmentBonusManager.getFragmentForBuilding(target, 'granaries');
+    if (granaryFragment && granaryFragment.fragment === 'Dragon Scale') {
+      stolen = 0;
+      desc = `0 food — protected by draconic scales`;
+    } else {
+      targetUpdates.food = Math.max(0, target.food - stolen);
+      desc = `${stolen.toLocaleString()} food`;
+    }
   } else if (lootType === "maps") {
     const targetFragment = fragmentBonusManager.getFragmentForBuilding(target, 'libraries');
     const hasProtection = targetFragment && (targetFragment.fragment === 'Dwarven Star-Metal' || targetFragment.fragment === 'Dragon Scale');
@@ -5576,8 +5591,16 @@ function covertLoot(thief, target, lootType, thievesSent) {
   } else if (lootType === "blueprints") {
     stolen = Math.floor(thievesSent * 0.01 * thiefLvMult);
     stolen = Math.min(stolen, target.blueprints_stored || 0);
-    targetUpdates.blueprints_stored = (target.blueprints_stored || 0) - stolen;
-    desc = `${stolen} blueprint(s)`;
+
+    // Dwarven Star-Metal mausoleums protect blueprints from theft
+    const mausoleumFragment = fragmentBonusManager.getFragmentForBuilding(target, 'mausoleums');
+    if (mausoleumFragment && mausoleumFragment.fragment === 'Dwarven Star-Metal') {
+      stolen = 0;
+      desc = `0 blueprint(s) — protected by Star-Metal safeguards`;
+    } else {
+      targetUpdates.blueprints_stored = (target.blueprints_stored || 0) - stolen;
+      desc = `${stolen} blueprint(s)`;
+    }
   } else if (lootType === "scaffolding") {
     stolen = Math.floor(thievesSent * 0.05 * thiefLvMult);
     stolen = Math.min(stolen, target.scaffolding_stored || 0);
