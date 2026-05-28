@@ -697,7 +697,7 @@ module.exports = function (db) {
 
   // ── Build structures — start construction with engineer allocation ──────────
   router.post("/build", requireAuth, async (req, res) => {
-    const { building, turnsToAllocate } = req.body;
+    const { building } = req.body;
     const config = require("../game/config");
 
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
@@ -728,12 +728,7 @@ module.exports = function (db) {
     };
 
     // Parse existing build queue
-    let buildQueue = {};
-    try {
-      buildQueue = JSON.parse(k.build_queue || "{}");
-    } catch (e) {
-      buildQueue = {};
-    }
+    const buildQueue = safeJsonParse(k.build_queue, {}, "build:existing_queue");
 
     // Add to queue
     const queueId = `${building}_${Date.now()}`;
@@ -766,12 +761,7 @@ module.exports = function (db) {
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
 
-    let buildQueue = {};
-    try {
-      buildQueue = JSON.parse(k.build_queue || "{}");
-    } catch (e) {
-      return res.status(400).json({ error: "Invalid build queue" });
-    }
+    const buildQueue = safeJsonParse(k.build_queue, {}, "build:cancel_queue");
 
     if (!buildQueue[queueId])
       return res.status(404).json({ error: "Building not found in queue" });

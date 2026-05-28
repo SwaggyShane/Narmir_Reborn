@@ -1856,15 +1856,16 @@ function processTurn(k) {
         updates[buildJob.building]++;
       }
 
-      // Award engineer XP
+      // Award engineer XP (preserve existing troop_levels)
       const xpGain = Math.ceil(buildJob.turns_needed / 100);
-      updates.troop_levels = awardUnitXp({ ...k, ...updates }, "engineers", xpGain);
+      const mergedK = { ...k, ...updates };
+      const newTroopLevels = awardUnitXp(mergedK, "engineers", xpGain);
+      if (newTroopLevels) updates.troop_levels = newTroopLevels;
 
-      // Apply engineer level up if any
-      const updatedK = { ...k, ...updates };
-      awardEngineerXp(updatedK, xpGain);
-      updates.engineer_level = updatedK.engineer_level;
-      updates.engineer_xp = updatedK.engineer_xp;
+      // Apply engineer level progression
+      awardEngineerXp(mergedK, xpGain);
+      updates.engineer_level = mergedK.engineer_level;
+      updates.engineer_xp = mergedK.engineer_xp;
 
       events.push({
         type: "system",
