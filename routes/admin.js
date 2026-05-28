@@ -18,6 +18,21 @@ if (!fs.existsSync(soundsPath)) {
   fs.mkdirSync(soundsPath, { recursive: true });
 }
 
+const ALLOWED_SOUND_EXTENSIONS = new Set([".mp3", ".wav"]);
+
+// Resolve a user-supplied filename to an absolute path inside soundsPath.
+// Returns null if the input is unsafe (traversal, wrong extension, or escapes the dir).
+function safeSoundPath(rawName) {
+  if (typeof rawName !== "string" || !rawName.trim()) return null;
+  const base = path.basename(rawName);
+  if (!base || base === "." || base === "..") return null;
+  const ext = path.extname(base).toLowerCase();
+  if (!ALLOWED_SOUND_EXTENSIONS.has(ext)) return null;
+  const resolved = path.resolve(soundsPath, base);
+  if (path.relative(soundsPath, resolved).startsWith("..")) return null;
+  return resolved;
+}
+
 async function refreshInMemoryGoals(db) {
   try {
     const overrides = await db.all(
@@ -79,10 +94,24 @@ const storage = multer.diskStorage({
     cb(null, soundsPath);
   },
   filename: function (req, file, cb) {
-    cb(null, file.originalname);
+    const base = path.basename(file.originalname || "");
+    const ext = path.extname(base).toLowerCase();
+    if (!base || !ALLOWED_SOUND_EXTENSIONS.has(ext)) {
+      return cb(new Error("Invalid filename or extension"));
+    }
+    cb(null, base);
   },
 });
-const upload = multer({ storage: storage });
+const upload = multer({
+  storage: storage,
+  fileFilter: function (req, file, cb) {
+    const ext = path.extname(file.originalname || "").toLowerCase();
+    if (!ALLOWED_SOUND_EXTENSIONS.has(ext)) {
+      return cb(new Error("Only .mp3 and .wav files are allowed"));
+    }
+    cb(null, true);
+  },
+});
 
 module.exports = function (db, io) {
   // All admin routes require admin JWT
@@ -1019,14 +1048,22 @@ module.exports = function (db, io) {
 
   router.post("/sounds/upload", upload.single("soundFile"), (req, res) => {
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
-    let finalName = req.file.originalname;
+    let finalName = req.file.filename;
     if (req.body.actionName && req.body.actionName !== "custom") {
-      const ext = path.extname(req.file.originalname);
-      finalName = req.body.actionName + ext;
-      const oldPath = path.join(soundsPath, req.file.originalname);
-      const newPath = path.join(soundsPath, finalName);
+      const ext = path.extname(req.file.filename);
+      const requestedBase = path.basename(req.body.actionName);
+      if (!requestedBase || requestedBase === "." || requestedBase === "..") {
+        return res.status(400).json({ error: "Invalid action name" });
+      }
+      const candidateName = requestedBase + ext;
+      const newPath = safeSoundPath(candidateName);
+      const oldPath = safeSoundPath(req.file.filename);
+      if (!newPath || !oldPath) {
+        return res.status(400).json({ error: "Invalid filename" });
+      }
       if (fs.existsSync(oldPath)) {
         fs.renameSync(oldPath, newPath);
+        finalName = path.basename(newPath);
       }
     }
     res.json({ ok: true, filename: finalName });
@@ -1035,7 +1072,10 @@ module.exports = function (db, io) {
   router.post("/sounds/delete", (req, res) => {
     if (!req.body.filename)
       return res.status(400).json({ error: "Filename required" });
-    const targetPath = path.join(soundsPath, req.body.filename);
+    const targetPath = safeSoundPath(req.body.filename);
+    if (!targetPath) {
+      return res.status(400).json({ error: "Invalid filename" });
+    }
     if (fs.existsSync(targetPath)) {
       fs.unlinkSync(targetPath);
     }
