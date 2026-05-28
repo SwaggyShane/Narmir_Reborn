@@ -2,7 +2,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const engine = require("../game/engine");
-const { generateCsrfToken, _csrfTokens, requireAuth } = require("./middleware");
+const { generateCsrfToken, requireAuth } = require("./middleware");
 
 const router = express.Router();
 
@@ -144,7 +144,15 @@ module.exports = function (db) {
         sameSite: "none",
         secure: true,
       };
+      const csrfToken = generateCsrfToken();
+      const csrfCookieOpts = {
+        httpOnly: false,
+        maxAge: COOKIE_MAX_AGE_MS,
+        sameSite: "none",
+        secure: true,
+      };
       res.cookie("token", token, cookieOpts);
+      res.cookie("csrf_token", csrfToken, csrfCookieOpts);
       res.json({ ok: true, username, kingdomName, token });
     } catch (err) {
       if (err.message.includes("UNIQUE"))
@@ -196,7 +204,15 @@ module.exports = function (db) {
       sameSite: "none",
       secure: true,
     };
+    const csrfToken = generateCsrfToken();
+    const csrfCookieOpts = {
+      httpOnly: false,
+      maxAge: COOKIE_MAX_AGE_MS,
+      sameSite: "none",
+      secure: true,
+    };
     res.cookie("token", token, cookieOpts);
+    res.cookie("csrf_token", csrfToken, csrfCookieOpts);
     res.json({ ok: true, username, isAdmin: player.is_admin === 1, token });
   });
 
@@ -208,10 +224,6 @@ module.exports = function (db) {
     res.json({ ok: true });
   });
 
-  router.get("/csrf-token", requireAuth, (req, res) => {
-    const token = generateCsrfToken(req.player.playerId);
-    res.json({ csrf_token: token });
-  });
 
   router.get("/me", async (req, res) => {
     const token =
