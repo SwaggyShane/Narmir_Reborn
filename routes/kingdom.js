@@ -3142,6 +3142,24 @@ module.exports = function (db) {
         ).key,
       ];
     }
+    let schoolSpells = null;
+    if (k.school_of_magic && CONFIG.MAGIC_SCHOOLS[k.school_of_magic]) {
+      const spellNames = CONFIG.MAGIC_SCHOOLS[k.school_of_magic];
+      schoolSpells = spellNames.map(name => {
+        const def = CONFIG.SPELL_DEFS[name] || {};
+        return {
+          id: name,
+          name: name.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+          tier: def.tier || 1,
+          min_school_spellbook: def.minSB || 0,
+          desc: def.desc || 'Unknown spell',
+        };
+      }).sort((a, b) => {
+        if (a.tier !== b.tier) return a.tier - b.tier;
+        return a.min_school_spellbook - b.min_school_spellbook;
+      });
+    }
+
     res.json({
       tower_upgrades: safeJsonParse(k.tower_upgrades, {}, "studies:tower_upgrades"),
       school_upgrades: safeJsonParse(k.school_upgrades, {}, "studies:school_upgrades"),
@@ -3167,6 +3185,10 @@ module.exports = function (db) {
       scrolls: safeJsonParse(k.scrolls, {}, "studies:scrolls"),
       library_progress: safeJsonParse(k.library_progress, {}, "studies:library_progress"),
       tower_progress: safeJsonParse(k.tower_progress, {}, "studies:tower_progress"),
+      res_spellbook: k.res_spellbook || 0,
+      school_spellbook: k.school_spellbook || 0,
+      school_of_magic: k.school_of_magic || null,
+      school_spells: schoolSpells,
     });
   });
   router.post("/economy/bank-deposit", requireAuth, async (req, res) => {
