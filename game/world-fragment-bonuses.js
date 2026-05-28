@@ -123,7 +123,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Sylvan Whispering Bazaars", desc: "Trade booths constructed inside living wood receive woodland wisdom, maintaining stable prices and boosting barter ratios" },
     },
     taverns: {
-      passive: { morale: 0.30, forest_sight: 0.25 },
+      passive: { morale: 0.30, happiness: 0.25 },
       special: { name: "Sylvan Forest Bars", desc: "Constructing bars directly within ancient hollow trunks connects drinkers with woodland spirits, ensuring zero brawls and stable peace" },
     },
     vaults: {
@@ -202,7 +202,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Draconic Coinage", desc: "Coinage pressed under scaled scales glows if counterfeit, and vaults become impervious to sabotage or raid theft" },
     },
     taverns: {
-      passive: { morale: 0.15, anti_arson_shield: 0.40 },
+      passive: { morale: 0.15, happiness: 0.10 },
       special: { name: "The Fire-Drake Hearth", desc: "Insulating fireboxes and furniture boards with dragon scales makes taverns totally flameproof, neutralizing structural fires" },
     },
     vaults: {
@@ -214,7 +214,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Dragonscale Cuirasses", desc: "Garrison forces receive armor plating forged from actual dragon scales, neutralizing up to 40% of magical fire damage" },
     },
     smithies: {
-      passive: { quality: 0.05, smelting_speed: 0.40 },
+      passive: { speed: 0.40, production: 0.05, quality: 0.05 },
       special: { name: "Wyrmfire Blast Furnaces", desc: "Dragon-scale insulation allows containing intense draconic flames, accelerating smithy manufacture speeds" },
     },
     barracks: {
@@ -281,7 +281,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Shadow Exchanges", desc: "Subterranean black-markets use dark crystal lights to evaluate smuggling contracts, significantly boosting dark magical currency income" },
     },
     taverns: {
-      passive: { counter_espionage: 0.40, shadow_spells: 0.15 },
+      passive: { morale: 0.40, happiness: 0.15 },
       special: { name: "Whispering Crystal Parlors", desc: "Subterranean violet crystals capture soundwaves from conversations. Makes it incredibly easy to detect, intercept, or defuse enemy spy networks" },
     },
     vaults: {
@@ -297,7 +297,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Void-Crystalline Forges", desc: "Infusing hammers with resonant underdark crystals raises the quality of blades and locks under dark light" },
     },
     barracks: {
-      passive: { infiltration_speed: 0.30, night_vision: 0.15 },
+      passive: { training: 0.30, capacity: 0.15 },
       special: { name: "Crystalline Echo Ranges", desc: "Shadow crystals capture echo patterns of movement, training troops in silent footfalls and making stealth squads virtually silent" },
     },
     walls: {
@@ -360,7 +360,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Heavenly Tithes", desc: "Mercantile angels bless standard exchanges, removing commercial greed or unrest and stabilizing transaction safety" },
     },
     taverns: {
-      passive: { morale: 0.40, grace_index: 0.35 },
+      passive: { morale: 0.40, happiness: 0.35 },
       special: { name: "The Heavenly Angel Tavern", desc: "Bards sing angelic melodies from the rafters, removing baseline societal grief or rioting. Citizen happiness never drops below 50%" },
     },
     vaults: {
@@ -376,7 +376,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Aureole Forging", desc: "Heavenly light purifies raw metals, forging pristine, flawless instruments with blessed precision" },
     },
     barracks: {
-      passive: { training_efficiency: 0.25, healing_speed: 0.35 },
+      passive: { training: 0.25, capacity: 0.35 },
       special: { name: "Seraphic Parade Grounds", desc: "Recruits study sacred angelic tactical scrolls. Morale failure rates drop to zero, keeping troop units highly disciplined" },
     },
     walls: {
@@ -439,7 +439,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Star-Metal Lockbox Ledgers", desc: "Financial records are stored inside clockwork Star-Metal matrices. Accounts cannot be falsified, lost, stolen, or forgotten due to amnesia" },
     },
     taverns: {
-      passive: { morale: 0.20, brew_preservation: 1.00 },
+      passive: { morale: 0.20, happiness: 0.15 },
       special: { name: "The Vault of Vintage Lockboxes", desc: "Legendary recipes, coordinates, and resources are locked inside code-encrypted Star-Metal drums. Blueprints cannot be lost, stolen, or forgotten by mind curses" },
     },
     vaults: {
@@ -451,7 +451,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Star-Metal Rivets", desc: "Armor suits are reinforced with clockwork frames. Equipment never breaks, guaranteeing absolute safety in harsh operations" },
     },
     smithies: {
-      passive: { crafting_speed: 0.40, alloy_quality: 1.00 },
+      passive: { speed: 0.40, production: 0.10, quality: 1.00 },
       special: { name: "Clockwork Star-Metal Forges", desc: "Automated clockwork anvils forge indestructible blueprints, gearsets, and hammers with pristine quality" },
     },
     barracks: {
@@ -518,7 +518,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Sanguine Auction Guilds", desc: "Elite auction houses deal in forbidden alchemical drops and life contracts, yielding extreme tax profits at high chaotic costs" },
     },
     taverns: {
-      passive: { morale: 0.50, stability: -0.20 },
+      passive: { morale: 0.50, happiness: 0.20 },
       special: { name: "The Cruor Blood Club", desc: "Infusing brewing reservoirs with forbidden nectar maximizes citizen and military morale instantly, but spikes civil chaos indexes" },
     },
     vaults: {
@@ -530,11 +530,11 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Sanguine Sharpness", desc: "Smearing arsenal blades with cursed ichor converts standard strikes into life-draining hits, but drains troop rest" },
     },
     smithies: {
-      passive: { smelting_output: 0.50, smelting_speed: 0.15 },
+      passive: { speed: 0.15, production: 0.50, quality: 0.10 },
       special: { name: "Sanguine Crucible", desc: "Sacrificing lifeforce into crucible pools supercharges blacksmith yield rates at dynamic chaotic costs" },
     },
     barracks: {
-      passive: { recruits_output: 0.50, morale_stability: -0.20 },
+      passive: { training: 0.50, capacity: 0.20 },
       special: { name: "Sanguine Ritual Circles", desc: "Dipping barracks banners in bloody crucible pools sparks a dark bloodlust, multiplying recruit generation rates at high civil unrest costs" },
     },
     walls: {
@@ -597,7 +597,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Oasis Bazaars", desc: "Merchant caravans drinking tree dew experience exceptional stamina, establishing continuous trades without delay" },
     },
     taverns: {
-      passive: { morale: 0.35, mercenary_rent: 0.30 },
+      passive: { morale: 0.35, happiness: 0.30 },
       special: { name: "World-Tree Elixir Fonts", desc: "Drinking the dew improves vitality, reducing the hire cost of tavern mercenaries by 15% and doubling their rest recovery" },
     },
     vaults: {
@@ -609,7 +609,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Amber Breastplates", desc: "Infusing breastplates with glowing petrified sap accelerates natural wound closures, helping soldiers stand" },
     },
     smithies: {
-      passive: { crafting_speed: 0.35, tool_stability: 0.30 },
+      passive: { speed: 0.35, production: 0.20, quality: 0.30 },
       special: { name: "Yggdrasil Fuel Glands", desc: "Soaking furnaces in glowing sap reduces fuel requirements, keeping bellows pumping continuously" },
     },
     barracks: {
@@ -676,7 +676,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Quantum Shopping Matrix", desc: "Connects trade districts to multi-planar channels, generating outrageous gold flows while causing temporary citizen absences" },
     },
     taverns: {
-      passive: { morale: 1.20, mind_stability: -0.40 },
+      passive: { morale: 1.20, happiness: 0.80 },
       special: { name: "The Singularity Saloon", desc: "Connects fireplaces and hallways directly to interdimensional taprooms, providing absolute morale boosts at the price of brief spatial absences" },
     },
     vaults: {
@@ -688,7 +688,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Phase-Shifting Arsenals", desc: "Armors are tethered to sub-spatial folds, allowing soldiers to phase through blades, though at structural lag costs" },
     },
     smithies: {
-      passive: { smelting_output: 1.20, crafting_speed: -0.40 },
+      passive: { speed: -0.40, production: 1.20, quality: 0.30 },
       special: { name: "Quantum Portal Anvils", desc: "Anvils are tethered across multiple spatial dimensions, duplicating weapons but introducing spatial lag" },
     },
     barracks: {
@@ -755,7 +755,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Goliath Trade Halls", desc: "Gigantic columns carved from titan skulls support monumental domes with massive stall capacity, maximizing trader retention" },
     },
     taverns: {
-      passive: { morale: 0.30, capacity_bounds: 0.15 },
+      passive: { morale: 0.30, happiness: 0.15 },
       special: { name: "Goliath Drink Halls", desc: "Massive tables and columns carved out of fossilized titanic ribs support massive halls with immense capacity for holding grand festivals" },
     },
     vaults: {
@@ -767,11 +767,11 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Colossal Aegis Slabs", desc: "Massive bone supports allow stocking colossal titan-sized shields, turning local walls into impenetrable monoliths" },
     },
     smithies: {
-      passive: { smelting_output: 0.30, space_density: 0.15 },
+      passive: { speed: 0.15, production: 0.30, quality: 0.20 },
       special: { name: "Mammoth Anvil Pillars", desc: "Anvils constructed over mammoth fossilized jawbones increase capacity for high-volume metalworking" },
     },
     barracks: {
-      passive: { military_fortitude: 0.30, siege_counters: 0.15 },
+      passive: { training: 0.30, capacity: 0.15 },
       special: { name: "Titan-Rib Palisades", desc: "Walls constructed out of gargantuan marrow bones reinforce the training grounds, converting barracks into impenetrable sub-citadels during siege times" },
     },
     walls: {
