@@ -1092,13 +1092,11 @@ async function start() {
         if(logs.length > 20) logs = logs.slice(0, 20);
         await db.run('UPDATE alliances SET vault_log = ? WHERE id = ?', [JSON.stringify(logs), a.id]);
 
-        // Sync buffs to all members with single JOIN query
-        const members = await db.all('SELECT k.id, k.alliance_buffs FROM kingdoms k JOIN alliance_members am ON k.id = am.kingdom_id WHERE am.alliance_id = ?', [a.id]);
-        for (const m of members) {
-           let buffs = safeJsonParse(m.alliance_buffs, {});
-           buffs[project] = currentLevel + 1;
-           await db.run('UPDATE kingdoms SET alliance_buffs = ? WHERE id = ?', [JSON.stringify(buffs), m.id]);
-        }
+        // Sync buffs to all members with a single bulk UPDATE query
+        await db.run(
+          'UPDATE kingdoms SET alliance_buffs = ? WHERE id IN (SELECT kingdom_id FROM alliance_members WHERE alliance_id = ?)',
+          [JSON.stringify(projects), a.id]
+        );
 
         await db.run('COMMIT');
         res.json({ ok: true });
@@ -1153,6 +1151,13 @@ async function start() {
 
       await db.run('BEGIN TRANSACTION');
       try {
+        // Prevent alliance leaders from abandoning their alliance without disbanding it
+        const leading = await db.get('SELECT id FROM alliances WHERE leader_id = ?', [kingdom.id]);
+        if (leading) {
+          await db.run('ROLLBACK');
+          return res.status(400).json({ error: 'You cannot create a new alliance while leading an existing one. Disband it first.' });
+        }
+
         // Remove from any existing alliance and create new one atomically
         await db.run('DELETE FROM alliance_members WHERE kingdom_id = ?', [kingdom.id]);
         const result = await db.run('INSERT INTO alliances (name, leader_id) VALUES (?, ?)', [name.trim(), kingdom.id]);
@@ -1173,13 +1178,22 @@ async function start() {
       const alliance = await db.get('SELECT * FROM alliances WHERE id = ?', [membership.alliance_id]);
       if (alliance.leader_id !== kingdom.id) return res.status(403).json({ error: 'Only the leader can invite' });
 
-      // Check that target kingdom is not already in an alliance
       const targetKingdomId = req.body.targetKingdomId;
-      const existingMembership = await db.get('SELECT alliance_id FROM alliance_members WHERE kingdom_id = ?', [targetKingdomId]);
-      if (existingMembership) return res.status(400).json({ error: 'Target kingdom is already in an alliance' });
-
       await db.run('BEGIN TRANSACTION');
       try {
+        // Lock target kingdom to prevent concurrent alliance membership changes
+        const target = await db.get('SELECT id FROM kingdoms WHERE id = ? FOR UPDATE', [targetKingdomId]);
+        if (!target) {
+          await db.run('ROLLBACK');
+          return res.status(404).json({ error: 'Target kingdom not found' });
+        }
+
+        const existingMembership = await db.get('SELECT alliance_id FROM alliance_members WHERE kingdom_id = ?', [targetKingdomId]);
+        if (existingMembership) {
+          await db.run('ROLLBACK');
+          return res.status(400).json({ error: 'Target kingdom is already in an alliance' });
+        }
+
         await db.run('INSERT INTO alliance_members (alliance_id, kingdom_id) VALUES (?, ?)', [membership.alliance_id, targetKingdomId]);
         await db.run('UPDATE kingdoms SET alliance_buffs = ? WHERE id = ?', [alliance.projects || '{}', targetKingdomId]);
         await db.run('COMMIT');
@@ -1198,9 +1212,9 @@ async function start() {
         const alliance = await db.get('SELECT * FROM alliances WHERE leader_id = ? FOR UPDATE', [kingdom.id]);
         if (alliance) {
           // Leader leaving: disband entire alliance
+          await db.run('UPDATE kingdoms SET alliance_buffs = \'{}\' WHERE id IN (SELECT kingdom_id FROM alliance_members WHERE alliance_id = ?)', [alliance.id]);
           await db.run('DELETE FROM alliance_members WHERE alliance_id = ?', [alliance.id]);
           await db.run('DELETE FROM alliances WHERE id = ?', [alliance.id]);
-          await db.run('UPDATE kingdoms SET alliance_buffs = \'{}\' WHERE alliance_buffs != \'{}\'');
         } else {
           // Non-leader leaving: remove from alliance
           await db.run('DELETE FROM alliance_members WHERE kingdom_id = ?', [kingdom.id]);
@@ -1265,6 +1279,12 @@ async function start() {
           if (k.id === target_id) {
             await db.run('ROLLBACK');
             return res.status(400).json({ error: 'Cannot place bounty on yourself' });
+          }
+
+          const target = await db.get('SELECT id FROM kingdoms WHERE id = ?', [target_id]);
+          if (!target) {
+            await db.run('ROLLBACK');
+            return res.status(404).json({ error: 'Target kingdom not found' });
           }
 
           await db.run('UPDATE kingdoms SET gold = gold - ? WHERE id = ?', [amount, k.id]);
