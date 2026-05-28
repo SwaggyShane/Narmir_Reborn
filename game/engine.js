@@ -1836,6 +1836,47 @@ function processTurn(k) {
     }
   }
 
+  // ── 5b. Building completion ───────────────────────────────────────────────────
+  const buildQueue = safeJsonParse(k.build_queue || "{}", {}, "processTurn:build_queue");
+  let buildQueueChanged = false;
+  const completedBuildings = [];
+
+  for (const [queueId, buildJob] of Object.entries(buildQueue)) {
+    buildJob.turns_remaining--;
+
+    if (buildJob.turns_remaining <= 0) {
+      completedBuildings.push(buildJob);
+      delete buildQueue[queueId];
+      buildQueueChanged = true;
+
+      // Increment building count
+      if (!updates[buildJob.building]) {
+        updates[buildJob.building] = (k[buildJob.building] || 0) + 1;
+      } else {
+        updates[buildJob.building]++;
+      }
+
+      // Award engineer XP
+      const xpGain = Math.ceil(buildJob.turns_needed / 100);
+      updates.troop_levels = awardUnitXp({ ...k, ...updates }, "engineers", xpGain);
+
+      // Apply engineer level up if any
+      const updatedK = { ...k, ...updates };
+      awardEngineerXp(updatedK, xpGain);
+      updates.engineer_level = updatedK.engineer_level;
+      updates.engineer_xp = updatedK.engineer_xp;
+
+      events.push({
+        type: "system",
+        message: `✅ Construction complete: ${buildJob.building.replace(/_/g, " ")}! Engineers gained ${xpGain} XP.`,
+      });
+    }
+  }
+
+  if (buildQueueChanged) {
+    updates.build_queue = JSON.stringify(buildQueue);
+  }
+
   // ── 6. Troop upkeep ───────────────────────────────────────────────────────────
   // Researchers, engineers, scribes are exempt if housed in their buildings.
   // Overflow (unhomed) units pay normal upkeep.
