@@ -1012,495 +1012,495 @@ async function start() {
     const adminRouter = require('./routes/admin')(db, io);
     app.use('/api/admin', adminRouter);
 
-  app.get('/api/alliance/list', requireAuth, async (req, res) => {
-    const rows = await db.all(`
-      SELECT a.id, a.name, k.name AS leader_name, COUNT(am.kingdom_id) as member_count
-      FROM alliances a
-      JOIN kingdoms k ON a.leader_id = k.id
-      JOIN alliance_members am ON am.alliance_id = a.id
-      GROUP BY a.id, a.name, k.name ORDER BY member_count DESC, a.name ASC
-    `);
-    res.json(rows);
-  });
-
-  app.post('/api/alliance/vault/deposit', requireAuth, async (req, res) => {
-    const kingdom = await db.get('SELECT id, gold, name FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
-    if (!kingdom) return res.status(404).json({ error: 'Kingdom not found' });
-    const membership = await db.get('SELECT alliance_id FROM alliance_members WHERE kingdom_id = ?', [kingdom.id]);
-    if (!membership) return res.status(400).json({ error: 'Not in an alliance' });
-    const { amount } = req.body;
-    const goldAmount = parseInt(amount) || 0;
-    if (goldAmount <= 0) return res.status(400).json({ error: 'Invalid amount' });
-    if (kingdom.gold < goldAmount) return res.status(400).json({ error: 'Not enough gold' });
-    
-    await db.run('BEGIN TRANSACTION');
-    try {
-      await db.run('UPDATE kingdoms SET gold = gold - ? WHERE id = ?', [goldAmount, kingdom.id]);
-      await db.run('UPDATE alliances SET vault_gold = vault_gold + ? WHERE id = ?', [goldAmount, membership.alliance_id]);
-      const alliance = await db.get('SELECT vault_log FROM alliances WHERE id = ?', [membership.alliance_id]);
-      let logs = safeJsonParse(alliance.vault_log, []);
-      logs.unshift({ type: 'deposit', kingdom: kingdom.name, amount: goldAmount, date: new Date().toLocaleString() });
-      if(logs.length > 20) logs = logs.slice(0, 20);
-      await db.run('UPDATE alliances SET vault_log = ? WHERE id = ?', [JSON.stringify(logs), membership.alliance_id]);
-      await db.run('COMMIT');
-      res.json({ ok: true, deposited: goldAmount });
-    } catch(e) {
-      await db.run('ROLLBACK');
-      console.error(e);
-      res.status(500).json({ error: 'Deposit failed' });
-    }
-  });
-
-  app.post('/api/alliance/vault/project', requireAuth, async (req, res) => {
-    const kingdom = await db.get('SELECT id, name FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
-    const alliance = await db.get('SELECT * FROM alliances WHERE leader_id = ?', [kingdom.id]);
-    if (!alliance) return res.status(403).json({ error: 'Only leader can fund projects' });
-    
-    const { project } = req.body;
-    const allowedProjects = ['merchant_guild', 'shadow_network', 'mercenary_subsidy', 'fortress_walls'];
-    if (!allowedProjects.includes(project)) return res.status(400).json({ error: 'Invalid project' });
-
-    let projects = safeJsonParse(alliance.projects, {});
-    const currentLevel = projects[project] || 0;
-    if (currentLevel >= 10) return res.status(400).json({ error: 'Project is max level' });
-    
-    const cost = 50000 * (currentLevel + 1);
-    if (alliance.vault_gold < cost) return res.status(400).json({ error: 'Not enough vault gold' });
-    
-    await db.run('BEGIN TRANSACTION');
-    try {
-      projects[project] = currentLevel + 1;
-      await db.run('UPDATE alliances SET vault_gold = vault_gold - ?, projects = ? WHERE id = ?', [cost, JSON.stringify(projects), alliance.id]);
-
-      let logs = safeJsonParse(alliance.vault_log, []);
-      logs.unshift({ type: 'project', name: project.replace('_', ' '), level: currentLevel + 1, cost: cost, date: new Date().toLocaleString() });
-      if(logs.length > 20) logs = logs.slice(0, 20);
-      await db.run('UPDATE alliances SET vault_log = ? WHERE id = ?', [JSON.stringify(logs), alliance.id]);
-      
-      // Sync buffs to all members with single JOIN query
-      const members = await db.all('SELECT k.id, k.alliance_buffs FROM kingdoms k JOIN alliance_members am ON k.id = am.kingdom_id WHERE am.alliance_id = ?', [alliance.id]);
-      for (const m of members) {
-         let buffs = safeJsonParse(m.alliance_buffs, {});
-         buffs[project] = currentLevel + 1;
-         await db.run('UPDATE kingdoms SET alliance_buffs = ? WHERE id = ?', [JSON.stringify(buffs), m.id]);
-      }
-      
-      await db.run('COMMIT');
-      res.json({ ok: true });
-    } catch(e) {
-      await db.run('ROLLBACK');
-      console.error(e);
-      res.status(500).json({ error: 'Project funding failed' });
-    }
-  });
-
-  app.get('/api/alliance/my', requireAuth, async (req, res) => {
-    const kingdom = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
-    if (!kingdom) return res.status(404).json({ error: 'Kingdom not found' });
-    const membership = await db.get('SELECT * FROM alliance_members WHERE kingdom_id = ?', [kingdom.id]);
-    if (!membership) return res.json({ alliance: null });
-    const alliance = await db.get('SELECT * FROM alliances WHERE id = ?', [membership.alliance_id]);
-    if (!alliance) {
-      await db.run('DELETE FROM alliance_members WHERE kingdom_id = ?', [kingdom.id]);
-      return res.json({ alliance: null });
-    }
-    const members = await db.all(`
-      SELECT k.id, k.name, k.race, k.land, k.fighters, k.level, am.pledge
-      FROM kingdoms k JOIN alliance_members am ON k.id = am.kingdom_id
-      WHERE am.alliance_id = ? ORDER BY k.land DESC`, [membership.alliance_id]);
-    res.json({ alliance, members, myPledge: membership.pledge, isLeader: alliance.leader_id === kingdom.id });
-  });
-
-  app.post('/api/alliance/pledge', requireAuth, async (req, res) => {
-    const kingdom = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
-    const { pledge } = req.body;
-    const p = Math.max(0, Math.min(10, Number(pledge) || 3));
-    await db.run('UPDATE alliance_members SET pledge = ? WHERE kingdom_id = ?', [p, kingdom.id]);
-    res.json({ ok: true, pledge: p });
-  });
-
-  app.post('/api/alliance/dismiss', requireAuth, async (req, res) => {
-    const kingdom = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
-    const alliance = await db.get('SELECT * FROM alliances WHERE leader_id = ?', [kingdom.id]);
-    if (!alliance) return res.status(403).json({ error: 'Only leader can dismiss members' });
-    const { targetKingdomId } = req.body;
-    if (targetKingdomId === kingdom.id) return res.status(400).json({ error: 'Cannot dismiss yourself' });
-    await db.run('DELETE FROM alliance_members WHERE kingdom_id = ? AND alliance_id = ?', [targetKingdomId, alliance.id]);
-    await db.run('UPDATE kingdoms SET alliance_buffs = \'{}\' WHERE id = ?', [targetKingdomId]);
-    res.json({ ok: true });
-  });
-
-  app.post('/api/alliance/create', requireAuth, async (req, res) => {
-    const { name } = req.body;
-    if (!name?.trim()) return res.status(400).json({ error: 'Alliance name required' });
-    const kingdom = await db.get('SELECT * FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
-    if (!kingdom) return res.status(404).json({ error: 'Kingdom not found' });
-    await db.run('DELETE FROM alliance_members WHERE kingdom_id = ?', [kingdom.id]);
-    try {
-      const result = await db.run('INSERT INTO alliances (name, leader_id) VALUES (?, ?)', [name.trim(), kingdom.id]);
-      await db.run('INSERT INTO alliance_members (alliance_id, kingdom_id, pledge) VALUES (?, ?, 3)', [result.lastID, kingdom.id]);
-      res.json({ ok: true, allianceId: result.lastID });
-    } catch (err) {
-      if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Alliance name taken' });
-      res.status(500).json({ error: 'Server error' });
-    }
-  });
-
-  app.post('/api/alliance/invite', requireAuth, async (req, res) => {
-    const kingdom = await db.get('SELECT * FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
-    const membership = await db.get('SELECT * FROM alliance_members WHERE kingdom_id = ?', [kingdom.id]);
-    if (!membership) return res.status(400).json({ error: 'You are not in an alliance' });
-    const alliance = await db.get('SELECT * FROM alliances WHERE id = ?', [membership.alliance_id]);
-    if (alliance.leader_id !== kingdom.id) return res.status(403).json({ error: 'Only the leader can invite' });
-    try {
-      await db.run('INSERT INTO alliance_members (alliance_id, kingdom_id) VALUES (?, ?)', [membership.alliance_id, req.body.targetKingdomId]);
-      await db.run('UPDATE kingdoms SET alliance_buffs = ? WHERE id = ?', [alliance.projects || '{}', req.body.targetKingdomId]);
-      res.json({ ok: true });
-    } catch {
-      res.status(409).json({ error: 'Already a member' });
-    }
-  });
-
-  app.post('/api/alliance/leave', requireAuth, async (req, res) => {
-    const kingdom = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
-    const alliance = await db.get('SELECT * FROM alliances WHERE leader_id = ?', [kingdom.id]);
-    if (alliance) {
-      await db.run('DELETE FROM alliance_members WHERE alliance_id = ?', [alliance.id]);
-      await db.run('DELETE FROM alliances WHERE id = ?', [alliance.id]);
-      await db.run('UPDATE kingdoms SET alliance_buffs = \'{}\' WHERE alliance_buffs != \'{}\' AND id NOT IN (SELECT kingdom_id FROM alliance_members)');
-    } else {
-      await db.run('DELETE FROM alliance_members WHERE kingdom_id = ?', [kingdom.id]);
-      await db.run('UPDATE kingdoms SET alliance_buffs = \'{}\' WHERE id = ?', [kingdom.id]);
-    }
-    res.json({ ok: true });
-  });
-
-  app.get('/api/regions', requireAuth, async (req, res) => {
-    try {
+    app.get('/api/alliance/list', requireAuth, async (req, res) => {
       const rows = await db.all(`
-        SELECT r.*, a.name as owner_name, ca.name as challenger_name
-        FROM regions r
-        LEFT JOIN alliances a ON r.owner_alliance_id = a.id
-        LEFT JOIN alliances ca ON r.contest_alliance_id = ca.id
+        SELECT a.id, a.name, k.name AS leader_name, COUNT(am.kingdom_id) as member_count
+        FROM alliances a
+        JOIN kingdoms k ON a.leader_id = k.id
+        JOIN alliance_members am ON am.alliance_id = a.id
+        GROUP BY a.id, a.name, k.name ORDER BY member_count DESC, a.name ASC
       `);
       res.json(rows);
-    } catch (e) {
-      res.status(500).json({ error: e.message });
-    }
-  });
-
-  app.get('/api/world/bounties', requireAuth, async (req, res) => {
-    try {
-      const rows = await db.all(`
-        SELECT b.*, k.name as target_name, p.username as placer_name
-        FROM bounties b
-        JOIN kingdoms k ON b.target_id = k.id
-        JOIN players p ON b.placer_id = p.id
-        WHERE b.status = 'active'
-        ORDER BY b.amount DESC
-      `);
-      res.json(rows);
-    } catch (e) {
-      res.status(500).json({ error: e.message });
-    }
-  });
-
-  app.post('/api/world/bounties', requireAuth, async (req, res) => {
-    try {
-      const { target_id, amount } = req.body;
-      if (!target_id || !amount || amount <= 0) return res.status(400).json({ error: 'Invalid target or amount' });
-
-      // Check if player has enough gold
-      const k = await db.get('SELECT id, gold FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
-      if (!k) return res.status(404).json({ error: 'Kingdom not found' });
-      if (k.gold < amount) return res.status(400).json({ error: 'Not enough gold' });
-      if (k.id === target_id) return res.status(400).json({ error: 'Cannot place bounty on yourself' });
-
-      await db.run('UPDATE kingdoms SET gold = gold - ? WHERE id = ?', [amount, k.id]);
-      await db.run(
-        'INSERT INTO bounties (placer_id, target_id, amount) VALUES (?, ?, ?)',
-        [req.player.playerId, target_id, amount]
-      );
-
-      res.json({ ok: true, message: 'Bounty placed!' });
-    } catch (e) {
-      res.status(500).json({ error: e.message });
-    }
-  });
-
-  app.get('/api/messages', requireAuth, async (req, res) => {
-    try {
-      // Get unique conversations
-      const rows = await db.all(`
-        SELECT 
-          m.*, 
-          p1.username as sender_name, 
-          p2.username as recipient_name,
-          CASE WHEN m.sender_id = ? THEN m.recipient_id ELSE m.sender_id END as other_id,
-          CASE WHEN m.sender_id = ? THEN p2.username ELSE p1.username END as other_name
-        FROM messages m
-        JOIN players p1 ON m.sender_id = p1.id
-        JOIN players p2 ON m.recipient_id = p2.id
-        WHERE m.sender_id = ? OR m.recipient_id = ?
-        ORDER BY m.created_at DESC
-      `, [req.player.playerId, req.player.playerId, req.player.playerId, req.player.playerId]);
-      
-      res.json(rows);
-    } catch (e) {
-      res.status(500).json({ error: e.message });
-    }
-  });
-
-  app.post('/api/messages', requireAuth, async (req, res) => {
-    try {
-      const { recipient_id, content } = req.body;
-      if (!recipient_id || !content) return res.status(400).json({ error: 'Missing recipient or content' });
-      const myId = req.player.playerId;
-      if (myId === recipient_id) return res.status(400).json({ error: 'Cannot message yourself' });
-
-      const result = await db.run(
-        'INSERT INTO messages (sender_id, recipient_id, content) VALUES (?, ?, ?)',
-        [myId, recipient_id, content]
-      );
-
-      // Emit real-time notification
-      const senderInfo = await db.get('SELECT username FROM players WHERE id = ?', [myId]);
-      io.to(`player:${recipient_id}`).emit('message:received', {
-        id: result.lastID,
-        sender_id: myId,
-        sender_name: senderInfo?.username || 'System',
-        content,
-        created_at: Math.floor(Date.now()/1000)
-      });
-
-      res.json({ ok: true });
-    } catch (e) {
-      res.status(500).json({ error: e.message });
-    }
-  });
-
-  app.get('/api/alliance/:id', requireAuth, async (req, res) => {
-    const alliance = await db.get('SELECT * FROM alliances WHERE id = ?', [req.params.id]);
-    if (!alliance) return res.status(404).json({ error: 'Not found' });
-    const members = await db.all(`
-      SELECT k.id, k.name, k.race, k.land, am.pledge
-      FROM kingdoms k JOIN alliance_members am ON k.id = am.kingdom_id
-      WHERE am.alliance_id = ?`, [req.params.id]);
-    res.json({ ...alliance, members });
-  });
-
-  app.get('/api/chat/:room', requireAuth, async (req, res) => {
-    const msgs = await db.all(`
-      SELECT cm.id, cm.message, cm.created_at, cm.username,
-             p.is_chat_mod, p.is_admin, p.chat_color, p.chat_name, k.race
-      FROM chat_messages cm
-      JOIN players p ON cm.player_id = p.id
-      JOIN kingdoms k ON cm.kingdom_id = k.id
-      WHERE cm.room = ? AND cm.deleted = 0
-      ORDER BY cm.created_at DESC LIMIT 80`, [req.params.room]);
-    res.json(msgs.reverse());
-  });
-
-  app.get('/api/spell-definitions', (_req, res) => {
-    // Return spell definitions and magic schools for admin panel
-    res.json({
-      SPELL_DEFS: engine.SPELL_DEFS,
-      MAGIC_SCHOOLS: engine.MAGIC_SCHOOLS
     });
-  });
 
-  app.get('/api/health', (_req, res) => res.json({ ok: true, uptime: Math.floor(process.uptime()) }));
-  
-  app.post('/api/log-error', (req, res) => {
-    const logMsg = `[browser-error] ${new Date().toISOString()} MESSAGE: ${req.body.message || "none"}\nSOURCE: ${req.body.source || "none"}\nLINE: ${req.body.line || "none"}\nCOL: ${req.body.col || "none"}\nSTACK: ${req.body.stack || "none"}\n\n`;
-    console.error(logMsg);
-    try {
-      fs.appendFileSync(path.join(__dirname, 'public', 'browser_logs.txt'), logMsg);
-    } catch (e) {
-      console.error("[error-logging-failing]", e);
-    }
-    res.json({ ok: true });
-  });
-
-  app.get('/wipe-admin.html', (_req, res) => {
-    res.sendFile(path.join(__dirname, 'public/wipe-admin.html'));
-  });
-
-  app.get(['/admin', '/admin.html'], (_req, res) => {
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-  });
-  
-  // Vite as middleware should be checked BEFORE static serving but AFTER API routes
-  if (vite) {
-    app.use(vite.middlewares);
-    console.log('[vite] Vite middleware active');
-  }
-
-  // Platform health check
-  app.get('/health', (req, res) => {
-    if (bootError) return res.status(200).json({ status: 'error', error: String(bootError), database_offline: true });
-    if (!isBooted) return res.status(503).json({ status: 'booting' });
-    res.json({ status: 'ok', uptime: Math.floor(process.uptime()) });
-  });
-
-  // Admin: seed or reset AI kingdoms
-  app.post('/api/admin/seed-ai', async (req, res) => {
-    try {
-      const seeded = await seedAiKingdoms(db);
-      res.json({ ok: true, seeded, message: seeded > 0 ? `Seeded ${seeded} AI kingdoms` : 'All AI kingdoms already exist' });
-    } catch(e) { res.status(500).json({ error: e.message }); }
-  });
-
-  app.post('/api/admin/reset-ai', async (req, res) => {
-    try {
-      const aiPlayers = await db.all('SELECT id FROM players WHERE is_ai = 1');
-      for (const p of aiPlayers) {
-        const k = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [p.id]);
-        if (k) await db.run(`UPDATE kingdoms SET
-          gold=10000, mana=0, land=504, population=50000, food=0, morale=100,
-          turn=0, turns_stored=400, fighters=0, rangers=50, clerics=0, mages=0,
-          thieves=0, ninjas=0, researchers=100, engineers=100, scribes=0,
-          war_machines=0, weapons_stockpile=0, armor_stockpile=0,
-          bld_farms=200, bld_barracks=1, bld_schools=1, bld_armories=1,
-          bld_housing=100, bld_outposts=0, bld_guard_towers=0, bld_vaults=0,
-          bld_smithies=0, bld_markets=0, bld_mage_towers=0, bld_training=0,
-          bld_castles=0, bld_shrines=0, bld_libraries=0,
-          res_economy=100, res_weapons=100, res_armor=100, res_military=100,
-          res_attack_magic=100, res_defense_magic=100, res_entertainment=100,
-          res_construction=100, res_war_machines=100, res_spellbook=0,
-          xp=0, level=1, research_allocation='{}', build_allocation='{}',
-          build_queue='{}', scrolls='{}', maps=0, blueprints_stored=0, active_effects='{}'
-          WHERE id = ?`, [k.id]);
+    app.post('/api/alliance/vault/deposit', requireAuth, async (req, res) => {
+      const kingdom = await db.get('SELECT id, gold, name FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
+      if (!kingdom) return res.status(404).json({ error: 'Kingdom not found' });
+      const membership = await db.get('SELECT alliance_id FROM alliance_members WHERE kingdom_id = ?', [kingdom.id]);
+      if (!membership) return res.status(400).json({ error: 'Not in an alliance' });
+      const { amount } = req.body;
+      const goldAmount = parseInt(amount) || 0;
+      if (goldAmount <= 0) return res.status(400).json({ error: 'Invalid amount' });
+      if (kingdom.gold < goldAmount) return res.status(400).json({ error: 'Not enough gold' });
+    
+      await db.run('BEGIN TRANSACTION');
+      try {
+        await db.run('UPDATE kingdoms SET gold = gold - ? WHERE id = ?', [goldAmount, kingdom.id]);
+        await db.run('UPDATE alliances SET vault_gold = vault_gold + ? WHERE id = ?', [goldAmount, membership.alliance_id]);
+        const alliance = await db.get('SELECT vault_log FROM alliances WHERE id = ?', [membership.alliance_id]);
+        let logs = safeJsonParse(alliance.vault_log, []);
+        logs.unshift({ type: 'deposit', kingdom: kingdom.name, amount: goldAmount, date: new Date().toLocaleString() });
+        if(logs.length > 20) logs = logs.slice(0, 20);
+        await db.run('UPDATE alliances SET vault_log = ? WHERE id = ?', [JSON.stringify(logs), membership.alliance_id]);
+        await db.run('COMMIT');
+        res.json({ ok: true, deposited: goldAmount });
+      } catch(e) {
+        await db.run('ROLLBACK');
+        console.error(e);
+        res.status(500).json({ error: 'Deposit failed' });
       }
-      res.json({ ok: true, reset: aiPlayers.length });
-    } catch(e) { res.status(500).json({ error: e.message }); }
-  });
+    });
 
-  app.post('/api/setup-admin', async (req, res) => {
-    const { secret, username } = req.body;
-    const adminSecret = process.env.ADMIN_SECRET;
-    if (!adminSecret) return res.status(500).json({ error: 'ADMIN_SECRET not set on server' });
-    if (!secret || secret !== adminSecret) return res.status(403).json({ error: 'Invalid secret' });
-    if (!username) return res.status(400).json({ error: 'username required' });
-    const player = await db.get('SELECT id, username FROM players WHERE username = ?', [username]);
-    if (!player) return res.status(404).json({ error: 'Player not found' });
-    await db.run('UPDATE players SET is_admin = 1 WHERE id = ?', [player.id]);
-    res.json({ ok: true, message: username + ' is now an admin. Log out and back in to get the admin token.' });
-  });
+    app.post('/api/alliance/vault/project', requireAuth, async (req, res) => {
+      const kingdom = await db.get('SELECT id, name FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
+      const alliance = await db.get('SELECT * FROM alliances WHERE leader_id = ?', [kingdom.id]);
+      if (!alliance) return res.status(403).json({ error: 'Only leader can fund projects' });
+    
+      const { project } = req.body;
+      const allowedProjects = ['merchant_guild', 'shadow_network', 'mercenary_subsidy', 'fortress_walls'];
+      if (!allowedProjects.includes(project)) return res.status(400).json({ error: 'Invalid project' });
 
-  app.post('/api/admin/wipe-players', async (req, res) => {
-    const { secret } = req.body;
-    const adminSecret = process.env.ADMIN_SECRET;
-    if (!adminSecret) return res.status(500).json({ error: 'ADMIN_SECRET not set on server' });
-    if (!secret || secret !== adminSecret) return res.status(403).json({ error: 'Invalid secret' });
+      let projects = safeJsonParse(alliance.projects, {});
+      const currentLevel = projects[project] || 0;
+      if (currentLevel >= 10) return res.status(400).json({ error: 'Project is max level' });
+    
+      const cost = 50000 * (currentLevel + 1);
+      if (alliance.vault_gold < cost) return res.status(400).json({ error: 'Not enough vault gold' });
+    
+      await db.run('BEGIN TRANSACTION');
+      try {
+        projects[project] = currentLevel + 1;
+        await db.run('UPDATE alliances SET vault_gold = vault_gold - ?, projects = ? WHERE id = ?', [cost, JSON.stringify(projects), alliance.id]);
 
-    try {
-      // Delete all kingdom-related data
-      await db.run('DELETE FROM expeditions');
-      await db.run('DELETE FROM news');
-      await db.run('DELETE FROM war_log');
-      await db.run('DELETE FROM combat_log');
-      await db.run('DELETE FROM chat_messages');
-      await db.run('DELETE FROM heroes');
-      await db.run('DELETE FROM spy_reports');
-      await db.run('DELETE FROM trade_routes');
-      await db.run('DELETE FROM messages');
-      await db.run('DELETE FROM bounties');
-      await db.run('DELETE FROM suggestions');
-      await db.run('DELETE FROM trade_offers');
+        let logs = safeJsonParse(alliance.vault_log, []);
+        logs.unshift({ type: 'project', name: project.replace('_', ' '), level: currentLevel + 1, cost: cost, date: new Date().toLocaleString() });
+        if(logs.length > 20) logs = logs.slice(0, 20);
+        await db.run('UPDATE alliances SET vault_log = ? WHERE id = ?', [JSON.stringify(logs), alliance.id]);
+      
+        // Sync buffs to all members with single JOIN query
+        const members = await db.all('SELECT k.id, k.alliance_buffs FROM kingdoms k JOIN alliance_members am ON k.id = am.kingdom_id WHERE am.alliance_id = ?', [alliance.id]);
+        for (const m of members) {
+           let buffs = safeJsonParse(m.alliance_buffs, {});
+           buffs[project] = currentLevel + 1;
+           await db.run('UPDATE kingdoms SET alliance_buffs = ? WHERE id = ?', [JSON.stringify(buffs), m.id]);
+        }
+      
+        await db.run('COMMIT');
+        res.json({ ok: true });
+      } catch(e) {
+        await db.run('ROLLBACK');
+        console.error(e);
+        res.status(500).json({ error: 'Project funding failed' });
+      }
+    });
 
-      // Delete kingdoms and alliance data
-      await db.run('DELETE FROM alliance_members');
-      await db.run('DELETE FROM alliances');
-      await db.run('DELETE FROM kingdoms');
+    app.get('/api/alliance/my', requireAuth, async (req, res) => {
+      const kingdom = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
+      if (!kingdom) return res.status(404).json({ error: 'Kingdom not found' });
+      const membership = await db.get('SELECT * FROM alliance_members WHERE kingdom_id = ?', [kingdom.id]);
+      if (!membership) return res.json({ alliance: null });
+      const alliance = await db.get('SELECT * FROM alliances WHERE id = ?', [membership.alliance_id]);
+      if (!alliance) {
+        await db.run('DELETE FROM alliance_members WHERE kingdom_id = ?', [kingdom.id]);
+        return res.json({ alliance: null });
+      }
+      const members = await db.all(`
+        SELECT k.id, k.name, k.race, k.land, k.fighters, k.level, am.pledge
+        FROM kingdoms k JOIN alliance_members am ON k.id = am.kingdom_id
+        WHERE am.alliance_id = ? ORDER BY k.land DESC`, [membership.alliance_id]);
+      res.json({ alliance, members, myPledge: membership.pledge, isLeader: alliance.leader_id === kingdom.id });
+    });
 
-      // Delete players last
-      await db.run('DELETE FROM players');
+    app.post('/api/alliance/pledge', requireAuth, async (req, res) => {
+      const kingdom = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
+      const { pledge } = req.body;
+      const p = Math.max(0, Math.min(10, Number(pledge) || 3));
+      await db.run('UPDATE alliance_members SET pledge = ? WHERE kingdom_id = ?', [p, kingdom.id]);
+      res.json({ ok: true, pledge: p });
+    });
 
-      res.json({ ok: true, message: 'All players, kingdoms, and related data wiped. Ready for re-registration.' });
-    } catch (err) {
-      console.error('Wipe error:', err);
-      res.status(500).json({ error: err.message });
-    }
-  });
+    app.post('/api/alliance/dismiss', requireAuth, async (req, res) => {
+      const kingdom = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
+      const alliance = await db.get('SELECT * FROM alliances WHERE leader_id = ?', [kingdom.id]);
+      if (!alliance) return res.status(403).json({ error: 'Only leader can dismiss members' });
+      const { targetKingdomId } = req.body;
+      if (targetKingdomId === kingdom.id) return res.status(400).json({ error: 'Cannot dismiss yourself' });
+      await db.run('DELETE FROM alliance_members WHERE kingdom_id = ? AND alliance_id = ?', [targetKingdomId, alliance.id]);
+      await db.run('UPDATE kingdoms SET alliance_buffs = \'{}\' WHERE id = ?', [targetKingdomId]);
+      res.json({ ok: true });
+    });
 
-  app.post('/api/suggestions', requireAuth, async (req, res) => {
-    try {
-      const { message } = req.body;
-      if (!message || message.length < 5) return res.status(400).json({ error: 'Suggestion too short' });
-      const k = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
-      await db.run('INSERT INTO suggestions (player_id, kingdom_id, message) VALUES (?, ?, ?)', [req.player.playerId, k ? k.id : null, message]);
-      res.json({ ok: true, message: 'Thank you!' });
-    } catch (e) { res.status(500).json({ error: e.message }); }
-  });
-
-  app.post('/api/select-school', requireAuth, async (req, res) => {
-    console.log('[select-school] Request received', { playerId: req.player?.playerId, body: req.body });
-    try {
-      const { school } = req.body;
-      if (!school?.trim()) return res.status(400).json({ error: 'School name required' });
-
+    app.post('/api/alliance/create', requireAuth, async (req, res) => {
+      const { name } = req.body;
+      if (!name?.trim()) return res.status(400).json({ error: 'Alliance name required' });
       const kingdom = await db.get('SELECT * FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
       if (!kingdom) return res.status(404).json({ error: 'Kingdom not found' });
-
-      const result = engine.selectSchool(kingdom, school.trim().toLowerCase());
-      if (result.error) return res.status(400).json({ error: result.error });
-
-      await db.run('BEGIN TRANSACTION');
-      await db.run(
-        'UPDATE kingdoms SET school_of_magic = ?, school_spellbook = ? WHERE id = ?',
-        [result.updates.school_of_magic, result.updates.school_spellbook, kingdom.id]
-      );
-
-      if (result.events && result.events.length > 0) {
-        await db.run(
-          'INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?, ?, ?, ?)',
-          [kingdom.id, result.events[0].type || 'system', result.events[0].message, kingdom.turn]
-        );
+      await db.run('DELETE FROM alliance_members WHERE kingdom_id = ?', [kingdom.id]);
+      try {
+        const result = await db.run('INSERT INTO alliances (name, leader_id) VALUES (?, ?)', [name.trim(), kingdom.id]);
+        await db.run('INSERT INTO alliance_members (alliance_id, kingdom_id, pledge) VALUES (?, ?, 3)', [result.lastID, kingdom.id]);
+        res.json({ ok: true, allianceId: result.lastID });
+      } catch (err) {
+        if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Alliance name taken' });
+        res.status(500).json({ error: 'Server error' });
       }
-      await db.run('COMMIT');
+    });
 
-      res.json({ ok: true, school: result.updates.school_of_magic, events: result.events });
-    } catch (e) {
-      await db.run('ROLLBACK').catch(() => {});
-      res.status(500).json({ error: e.message });
-    }
-  });
+    app.post('/api/alliance/invite', requireAuth, async (req, res) => {
+      const kingdom = await db.get('SELECT * FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
+      const membership = await db.get('SELECT * FROM alliance_members WHERE kingdom_id = ?', [kingdom.id]);
+      if (!membership) return res.status(400).json({ error: 'You are not in an alliance' });
+      const alliance = await db.get('SELECT * FROM alliances WHERE id = ?', [membership.alliance_id]);
+      if (alliance.leader_id !== kingdom.id) return res.status(403).json({ error: 'Only the leader can invite' });
+      try {
+        await db.run('INSERT INTO alliance_members (alliance_id, kingdom_id) VALUES (?, ?)', [membership.alliance_id, req.body.targetKingdomId]);
+        await db.run('UPDATE kingdoms SET alliance_buffs = ? WHERE id = ?', [alliance.projects || '{}', req.body.targetKingdomId]);
+        res.json({ ok: true });
+      } catch {
+        res.status(409).json({ error: 'Already a member' });
+      }
+    });
 
-  // Catch-all for API 404s to prevent HTML responses for API calls
-  app.all('/api/*', (req, res) => {
-    res.status(404).json({ error: `API route ${req.method} ${req.url} not found` });
-  });
-
-  const serveIndex = async (req, res, next) => {
-    console.log(`[serveIndex] HIT: ${req.method} ${req.url}`);
-    if (req.url === '/admin.html') return next();
-    if (req.url.includes('.') && !req.url.endsWith('.html')) return next();
-    try {
-      const indexPath = path.join(__dirname, 'client', 'index.html');
-      let html = fs.readFileSync(indexPath, 'utf-8');
-      
-if (process.env.NODE_ENV !== 'production' && vite) {
-        html = await vite.transformIndexHtml(req.url || '/', html);
+    app.post('/api/alliance/leave', requireAuth, async (req, res) => {
+      const kingdom = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
+      const alliance = await db.get('SELECT * FROM alliances WHERE leader_id = ?', [kingdom.id]);
+      if (alliance) {
+        await db.run('DELETE FROM alliance_members WHERE alliance_id = ?', [alliance.id]);
+        await db.run('DELETE FROM alliances WHERE id = ?', [alliance.id]);
+        await db.run('UPDATE kingdoms SET alliance_buffs = \'{}\' WHERE alliance_buffs != \'{}\' AND id NOT IN (SELECT kingdom_id FROM alliance_members)');
       } else {
-        const distPath = path.join(__dirname, 'public', 'dist');
-        if (fs.existsSync(distPath)) {
-          // If Vite produced an index.html in dist, use that instead of the source one
-          const distIndexHtml = path.join(distPath, 'index.html');
-          if (fs.existsSync(distIndexHtml)) {
-             html = fs.readFileSync(distIndexHtml, 'utf-8');
-          } else {
-            // Fallback: manually inject main.js if index.html isn't in dist
-            const files = fs.readdirSync(distPath);
-            const mainJs = files.find(f => f.startsWith('main') && f.endsWith('.js'));
-            if (mainJs) {
-              html = html.replace('</head>', `<script type="module" src="/dist/${mainJs}"></script></head>`);
+        await db.run('DELETE FROM alliance_members WHERE kingdom_id = ?', [kingdom.id]);
+        await db.run('UPDATE kingdoms SET alliance_buffs = \'{}\' WHERE id = ?', [kingdom.id]);
+      }
+      res.json({ ok: true });
+    });
+
+    app.get('/api/regions', requireAuth, async (req, res) => {
+      try {
+        const rows = await db.all(`
+          SELECT r.*, a.name as owner_name, ca.name as challenger_name
+          FROM regions r
+          LEFT JOIN alliances a ON r.owner_alliance_id = a.id
+          LEFT JOIN alliances ca ON r.contest_alliance_id = ca.id
+        `);
+        res.json(rows);
+      } catch (e) {
+        res.status(500).json({ error: e.message });
+      }
+    });
+
+    app.get('/api/world/bounties', requireAuth, async (req, res) => {
+      try {
+        const rows = await db.all(`
+          SELECT b.*, k.name as target_name, p.username as placer_name
+          FROM bounties b
+          JOIN kingdoms k ON b.target_id = k.id
+          JOIN players p ON b.placer_id = p.id
+          WHERE b.status = 'active'
+          ORDER BY b.amount DESC
+        `);
+        res.json(rows);
+      } catch (e) {
+        res.status(500).json({ error: e.message });
+      }
+    });
+
+    app.post('/api/world/bounties', requireAuth, async (req, res) => {
+      try {
+        const { target_id, amount } = req.body;
+        if (!target_id || !amount || amount <= 0) return res.status(400).json({ error: 'Invalid target or amount' });
+
+        // Check if player has enough gold
+        const k = await db.get('SELECT id, gold FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
+        if (!k) return res.status(404).json({ error: 'Kingdom not found' });
+        if (k.gold < amount) return res.status(400).json({ error: 'Not enough gold' });
+        if (k.id === target_id) return res.status(400).json({ error: 'Cannot place bounty on yourself' });
+
+        await db.run('UPDATE kingdoms SET gold = gold - ? WHERE id = ?', [amount, k.id]);
+        await db.run(
+          'INSERT INTO bounties (placer_id, target_id, amount) VALUES (?, ?, ?)',
+          [req.player.playerId, target_id, amount]
+        );
+
+        res.json({ ok: true, message: 'Bounty placed!' });
+      } catch (e) {
+        res.status(500).json({ error: e.message });
+      }
+    });
+
+    app.get('/api/messages', requireAuth, async (req, res) => {
+      try {
+        // Get unique conversations
+        const rows = await db.all(`
+          SELECT 
+            m.*, 
+            p1.username as sender_name, 
+            p2.username as recipient_name,
+            CASE WHEN m.sender_id = ? THEN m.recipient_id ELSE m.sender_id END as other_id,
+            CASE WHEN m.sender_id = ? THEN p2.username ELSE p1.username END as other_name
+          FROM messages m
+          JOIN players p1 ON m.sender_id = p1.id
+          JOIN players p2 ON m.recipient_id = p2.id
+          WHERE m.sender_id = ? OR m.recipient_id = ?
+          ORDER BY m.created_at DESC
+        `, [req.player.playerId, req.player.playerId, req.player.playerId, req.player.playerId]);
+      
+        res.json(rows);
+      } catch (e) {
+        res.status(500).json({ error: e.message });
+      }
+    });
+
+    app.post('/api/messages', requireAuth, async (req, res) => {
+      try {
+        const { recipient_id, content } = req.body;
+        if (!recipient_id || !content) return res.status(400).json({ error: 'Missing recipient or content' });
+        const myId = req.player.playerId;
+        if (myId === recipient_id) return res.status(400).json({ error: 'Cannot message yourself' });
+
+        const result = await db.run(
+          'INSERT INTO messages (sender_id, recipient_id, content) VALUES (?, ?, ?)',
+          [myId, recipient_id, content]
+        );
+
+        // Emit real-time notification
+        const senderInfo = await db.get('SELECT username FROM players WHERE id = ?', [myId]);
+        io.to(`player:${recipient_id}`).emit('message:received', {
+          id: result.lastID,
+          sender_id: myId,
+          sender_name: senderInfo?.username || 'System',
+          content,
+          created_at: Math.floor(Date.now()/1000)
+        });
+
+        res.json({ ok: true });
+      } catch (e) {
+        res.status(500).json({ error: e.message });
+      }
+    });
+
+    app.get('/api/alliance/:id', requireAuth, async (req, res) => {
+      const alliance = await db.get('SELECT * FROM alliances WHERE id = ?', [req.params.id]);
+      if (!alliance) return res.status(404).json({ error: 'Not found' });
+      const members = await db.all(`
+        SELECT k.id, k.name, k.race, k.land, am.pledge
+        FROM kingdoms k JOIN alliance_members am ON k.id = am.kingdom_id
+        WHERE am.alliance_id = ?`, [req.params.id]);
+      res.json({ ...alliance, members });
+    });
+
+    app.get('/api/chat/:room', requireAuth, async (req, res) => {
+      const msgs = await db.all(`
+        SELECT cm.id, cm.message, cm.created_at, cm.username,
+               p.is_chat_mod, p.is_admin, p.chat_color, p.chat_name, k.race
+        FROM chat_messages cm
+        JOIN players p ON cm.player_id = p.id
+        JOIN kingdoms k ON cm.kingdom_id = k.id
+        WHERE cm.room = ? AND cm.deleted = 0
+        ORDER BY cm.created_at DESC LIMIT 80`, [req.params.room]);
+      res.json(msgs.reverse());
+    });
+
+    app.get('/api/spell-definitions', (_req, res) => {
+      // Return spell definitions and magic schools for admin panel
+      res.json({
+        SPELL_DEFS: engine.SPELL_DEFS,
+        MAGIC_SCHOOLS: engine.MAGIC_SCHOOLS
+      });
+    });
+
+    app.get('/api/health', (_req, res) => res.json({ ok: true, uptime: Math.floor(process.uptime()) }));
+  
+    app.post('/api/log-error', (req, res) => {
+      const logMsg = `[browser-error] ${new Date().toISOString()} MESSAGE: ${req.body.message || "none"}\nSOURCE: ${req.body.source || "none"}\nLINE: ${req.body.line || "none"}\nCOL: ${req.body.col || "none"}\nSTACK: ${req.body.stack || "none"}\n\n`;
+      console.error(logMsg);
+      try {
+        fs.appendFileSync(path.join(__dirname, 'public', 'browser_logs.txt'), logMsg);
+      } catch (e) {
+        console.error("[error-logging-failing]", e);
+      }
+      res.json({ ok: true });
+    });
+
+    app.get('/wipe-admin.html', (_req, res) => {
+      res.sendFile(path.join(__dirname, 'public/wipe-admin.html'));
+    });
+
+    app.get(['/admin', '/admin.html'], (_req, res) => {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+    });
+  
+    // Vite as middleware should be checked BEFORE static serving but AFTER API routes
+    if (vite) {
+      app.use(vite.middlewares);
+      console.log('[vite] Vite middleware active');
+    }
+
+    // Platform health check
+    app.get('/health', (req, res) => {
+      if (bootError) return res.status(200).json({ status: 'error', error: String(bootError), database_offline: true });
+      if (!isBooted) return res.status(503).json({ status: 'booting' });
+      res.json({ status: 'ok', uptime: Math.floor(process.uptime()) });
+    });
+
+    // Admin: seed or reset AI kingdoms
+    app.post('/api/admin/seed-ai', async (req, res) => {
+      try {
+        const seeded = await seedAiKingdoms(db);
+        res.json({ ok: true, seeded, message: seeded > 0 ? `Seeded ${seeded} AI kingdoms` : 'All AI kingdoms already exist' });
+      } catch(e) { res.status(500).json({ error: e.message }); }
+    });
+
+    app.post('/api/admin/reset-ai', async (req, res) => {
+      try {
+        const aiPlayers = await db.all('SELECT id FROM players WHERE is_ai = 1');
+        for (const p of aiPlayers) {
+          const k = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [p.id]);
+          if (k) await db.run(`UPDATE kingdoms SET
+            gold=10000, mana=0, land=504, population=50000, food=0, morale=100,
+            turn=0, turns_stored=400, fighters=0, rangers=50, clerics=0, mages=0,
+            thieves=0, ninjas=0, researchers=100, engineers=100, scribes=0,
+            war_machines=0, weapons_stockpile=0, armor_stockpile=0,
+            bld_farms=200, bld_barracks=1, bld_schools=1, bld_armories=1,
+            bld_housing=100, bld_outposts=0, bld_guard_towers=0, bld_vaults=0,
+            bld_smithies=0, bld_markets=0, bld_mage_towers=0, bld_training=0,
+            bld_castles=0, bld_shrines=0, bld_libraries=0,
+            res_economy=100, res_weapons=100, res_armor=100, res_military=100,
+            res_attack_magic=100, res_defense_magic=100, res_entertainment=100,
+            res_construction=100, res_war_machines=100, res_spellbook=0,
+            xp=0, level=1, research_allocation='{}', build_allocation='{}',
+            build_queue='{}', scrolls='{}', maps=0, blueprints_stored=0, active_effects='{}'
+            WHERE id = ?`, [k.id]);
+        }
+        res.json({ ok: true, reset: aiPlayers.length });
+      } catch(e) { res.status(500).json({ error: e.message }); }
+    });
+
+    app.post('/api/setup-admin', async (req, res) => {
+      const { secret, username } = req.body;
+      const adminSecret = process.env.ADMIN_SECRET;
+      if (!adminSecret) return res.status(500).json({ error: 'ADMIN_SECRET not set on server' });
+      if (!secret || secret !== adminSecret) return res.status(403).json({ error: 'Invalid secret' });
+      if (!username) return res.status(400).json({ error: 'username required' });
+      const player = await db.get('SELECT id, username FROM players WHERE username = ?', [username]);
+      if (!player) return res.status(404).json({ error: 'Player not found' });
+      await db.run('UPDATE players SET is_admin = 1 WHERE id = ?', [player.id]);
+      res.json({ ok: true, message: username + ' is now an admin. Log out and back in to get the admin token.' });
+    });
+
+    app.post('/api/admin/wipe-players', async (req, res) => {
+      const { secret } = req.body;
+      const adminSecret = process.env.ADMIN_SECRET;
+      if (!adminSecret) return res.status(500).json({ error: 'ADMIN_SECRET not set on server' });
+      if (!secret || secret !== adminSecret) return res.status(403).json({ error: 'Invalid secret' });
+
+      try {
+        // Delete all kingdom-related data
+        await db.run('DELETE FROM expeditions');
+        await db.run('DELETE FROM news');
+        await db.run('DELETE FROM war_log');
+        await db.run('DELETE FROM combat_log');
+        await db.run('DELETE FROM chat_messages');
+        await db.run('DELETE FROM heroes');
+        await db.run('DELETE FROM spy_reports');
+        await db.run('DELETE FROM trade_routes');
+        await db.run('DELETE FROM messages');
+        await db.run('DELETE FROM bounties');
+        await db.run('DELETE FROM suggestions');
+        await db.run('DELETE FROM trade_offers');
+
+        // Delete kingdoms and alliance data
+        await db.run('DELETE FROM alliance_members');
+        await db.run('DELETE FROM alliances');
+        await db.run('DELETE FROM kingdoms');
+
+        // Delete players last
+        await db.run('DELETE FROM players');
+
+        res.json({ ok: true, message: 'All players, kingdoms, and related data wiped. Ready for re-registration.' });
+      } catch (err) {
+        console.error('Wipe error:', err);
+        res.status(500).json({ error: err.message });
+      }
+    });
+
+    app.post('/api/suggestions', requireAuth, async (req, res) => {
+      try {
+        const { message } = req.body;
+        if (!message || message.length < 5) return res.status(400).json({ error: 'Suggestion too short' });
+        const k = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
+        await db.run('INSERT INTO suggestions (player_id, kingdom_id, message) VALUES (?, ?, ?)', [req.player.playerId, k ? k.id : null, message]);
+        res.json({ ok: true, message: 'Thank you!' });
+      } catch (e) { res.status(500).json({ error: e.message }); }
+    });
+
+    app.post('/api/select-school', requireAuth, async (req, res) => {
+      console.log('[select-school] Request received', { playerId: req.player?.playerId, body: req.body });
+      try {
+        const { school } = req.body;
+        if (!school?.trim()) return res.status(400).json({ error: 'School name required' });
+
+        const kingdom = await db.get('SELECT * FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
+        if (!kingdom) return res.status(404).json({ error: 'Kingdom not found' });
+
+        const result = engine.selectSchool(kingdom, school.trim().toLowerCase());
+        if (result.error) return res.status(400).json({ error: result.error });
+
+        await db.run('BEGIN TRANSACTION');
+        await db.run(
+          'UPDATE kingdoms SET school_of_magic = ?, school_spellbook = ? WHERE id = ?',
+          [result.updates.school_of_magic, result.updates.school_spellbook, kingdom.id]
+        );
+
+        if (result.events && result.events.length > 0) {
+          await db.run(
+            'INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?, ?, ?, ?)',
+            [kingdom.id, result.events[0].type || 'system', result.events[0].message, kingdom.turn]
+          );
+        }
+        await db.run('COMMIT');
+
+        res.json({ ok: true, school: result.updates.school_of_magic, events: result.events });
+      } catch (e) {
+        await db.run('ROLLBACK').catch(() => {});
+        res.status(500).json({ error: e.message });
+      }
+    });
+
+    // Catch-all for API 404s to prevent HTML responses for API calls
+    app.all('/api/*', (req, res) => {
+      res.status(404).json({ error: `API route ${req.method} ${req.url} not found` });
+    });
+
+    const serveIndex = async (req, res, next) => {
+      console.log(`[serveIndex] HIT: ${req.method} ${req.url}`);
+      if (req.url === '/admin.html') return next();
+      if (req.url.includes('.') && !req.url.endsWith('.html')) return next();
+      try {
+        const indexPath = path.join(__dirname, 'client', 'index.html');
+        let html = fs.readFileSync(indexPath, 'utf-8');
+      
+  if (process.env.NODE_ENV !== 'production' && vite) {
+          html = await vite.transformIndexHtml(req.url || '/', html);
+        } else {
+          const distPath = path.join(__dirname, 'public', 'dist');
+          if (fs.existsSync(distPath)) {
+            // If Vite produced an index.html in dist, use that instead of the source one
+            const distIndexHtml = path.join(distPath, 'index.html');
+            if (fs.existsSync(distIndexHtml)) {
+               html = fs.readFileSync(distIndexHtml, 'utf-8');
+            } else {
+              // Fallback: manually inject main.js if index.html isn't in dist
+              const files = fs.readdirSync(distPath);
+              const mainJs = files.find(f => f.startsWith('main') && f.endsWith('.js'));
+              if (mainJs) {
+                html = html.replace('</head>', `<script type="module" src="/dist/${mainJs}"></script></head>`);
+              }
             }
           }
-        }
 }
 
       // Verification log
