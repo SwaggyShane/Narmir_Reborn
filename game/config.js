@@ -1114,6 +1114,23 @@ const config = {
     ],
   },
 
+  SCHOOL_LORE: {
+    abjuration: "The art of warding and protection. Abjurers weave barriers against magical and physical harm, shielding their kingdom from danger with ancient protective wards.",
+    conjuration: "The power to manifest and summon. Conjurers call forth creatures and supplies from thin air, providing abundance and reinforcement when needed most.",
+    divination: "The gift of foresight and knowledge. Diviners peer into hidden truths and future events, granting strategic advantage through arcane insight.",
+    enchantment: "The manipulation of will and desire. Enchanters bend minds and sway hearts, compelling others to serve their kingdom's interests.",
+    evocation: "Raw magical power unleashed. Evokers channel destructive force—fire, lightning, and ruin—to devastate enemies and reshape the battlefield.",
+    illusion: "The mastery of perception and deception. Illusionists craft false images and phantom armies, confusing enemies and protecting truth with misdirection.",
+    necromancy: "The command over death itself. Necromancers raise undead servants and drain life force, building armies that never tire and never question.",
+    transmutation: "The transformation of all matter. Transmuters reshape flesh into stone, lead into gold, and ordinary soldiers into unstoppable forces.",
+  },
+
+  SPELL_GLYPHS: {
+    default: "⬜",
+    locked: "❓",
+    revealed: "✨",
+  },
+
   SPELL_DEFS: {
     spark: {
       minSB: 100,
