@@ -45,7 +45,7 @@ function requireAdmin(req, res, next) {
 }
 
 function requireCsrfToken(req, res, next) {
-  const headerToken = req.headers["x-csrf-token"] || req.body?.csrf_token;
+  const headerToken = req.headers["x-csrf-token"];
   if (!headerToken) {
     return res.status(403).json({ error: "CSRF token required" });
   }

@@ -6219,7 +6219,7 @@
 
       function getCsrfToken() {
         try {
-          var m = document.cookie.match(/csrf_token=([^;]+)/);
+          var m = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
           if (m) return decodeURIComponent(m[1]);
         } catch (e) {}
         return null;
@@ -6233,7 +6233,7 @@
             storedToken = getToken();
           } catch (e) {}
           if (storedToken) headers["x-auth-token"] = storedToken;
-          if (['POST', 'PUT', 'DELETE'].includes(method)) {
+          if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
             var csrfToken = getCsrfToken();
             if (csrfToken) headers["x-csrf-token"] = csrfToken;
           }
