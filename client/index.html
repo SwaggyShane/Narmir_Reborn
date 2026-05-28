@@ -15345,17 +15345,29 @@
 
       async function selectSchool(schoolKey) {
         try {
+          const headers = { 'Content-Type': 'application/json' };
+          const csrfToken = getCsrfToken();
+          if (csrfToken) headers['x-csrf-token'] = csrfToken;
           const res = await fetch('/api/select-school', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: headers,
+            credentials: 'include',
             body: JSON.stringify({ school: schoolKey })
           });
-          const data = await res.json();
+
           if (!res.ok) {
-            toast(data.error || 'Failed to select school', 'error');
+            const text = await res.text();
+            let data = { error: 'Failed to select school' };
+            try {
+              data = JSON.parse(text);
+            } catch (e) {
+              data.error = text || `Server error (${res.status})`;
+            }
+            toast(data.error, 'error');
             return;
           }
 
+          const data = await res.json();
           closeSchoolModal();
 
           // Server-side events already include school selection message
