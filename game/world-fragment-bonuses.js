@@ -139,7 +139,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Living Wood Forges", desc: "Fusing wood-sap with iron makes tools lightweight, flexible, and virtually unbreakable, boosting smithy yields" },
     },
     barracks: {
-      passive: { garrison_defense: 0.30, ranged_training: 0.15 },
+      passive: { training: 0.30, capacity: 0.15 },
       special: { name: "Sylvan Archery Hubs", desc: "Archery ranges set within ancient majestic elven trees improve rangers' natural aiming abilities, granting bonus garrison arrows" },
     },
     walls: {
@@ -692,7 +692,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Quantum Portal Anvils", desc: "Anvils are tethered across multiple spatial dimensions, duplicating weapons but introducing spatial lag" },
     },
     barracks: {
-      passive: { capacity: 1.20, garrison_order: -0.40 },
+      passive: { training: 0.80, capacity: 1.20 },
       special: { name: "Sub-Spatial Barracks", desc: "Trainees are housed in folding localized pocket-dimension bunks, creating infinite barracks storage space, though space lag delays deployment" },
     },
     walls: {
