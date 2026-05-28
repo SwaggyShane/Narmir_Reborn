@@ -72,15 +72,21 @@ export default function SchoolSelectionModal({ onClose, onSuccess }) {
     setError(null);
 
     try {
-      const res = await fetch('/api/select-school', {
+      const res = await fetch('/api/kingdom/select-school', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ school: schoolId }),
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || 'Failed to select school');
+        const text = await res.text();
+        let data = { error: 'Failed to select school' };
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          data.error = text || `Server error (${res.status})`;
+        }
+        setError(data.error);
         setLoading(false);
         setSelectedSchool(null);
         return;
