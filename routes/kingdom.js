@@ -3,6 +3,7 @@ const engine = require("../game/engine");
 const { requireAuth } = require("./middleware");
 const { progressGoal } = require('../game/goals');
 const { safeJsonParse } = require('../utils/helpers');
+const { getKingdomAttunements } = require('../game/fragment-attunements');
 
 const router = express.Router();
 
@@ -4279,6 +4280,130 @@ module.exports = function (db) {
     } catch (err) {
       console.error('[inventory] failed:', err.message);
       res.status(500).json({ error: 'Failed to fetch inventory' });
+    }
+  });
+
+  // ── WORLD FRAGMENT ATTUNEMENTS ────────────────────────────────────────────────
+  const attunementManager = require('../game/attunement-manager');
+
+  // GET /api/kingdom/attunements — Get current attunement status
+  router.get('/attunements', requireAuth, async (req, res) => {
+    try {
+      const kingdom = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
+        req.player.playerId,
+      ]);
+      if (!kingdom) return res.status(404).json({ error: "Kingdom not found" });
+
+      const status = attunementManager.getAttunementStatus(kingdom);
+      res.json({
+        ok: true,
+        attunements: status,
+        total: status.length,
+      });
+    } catch (err) {
+      console.error('[attunement] get status failed:', err.message);
+      res.status(500).json({ error: 'Failed to fetch attunement status' });
+    }
+  });
+
+  // GET /api/kingdom/available-attunements — Get available attunement options
+  router.get('/available-attunements', requireAuth, async (req, res) => {
+    try {
+      const kingdom = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
+        req.player.playerId,
+      ]);
+      if (!kingdom) return res.status(404).json({ error: "Kingdom not found" });
+
+      const available = attunementManager.getAvailableAttunements(kingdom);
+      res.json({
+        ok: true,
+        available,
+        count: available.reduce((sum, f) => sum + f.buildings.length, 0),
+      });
+    } catch (err) {
+      console.error('[attunement] get available failed:', err.message);
+      res.status(500).json({ error: 'Failed to fetch available attunements' });
+    }
+  });
+
+  // POST /api/kingdom/attune-fragment — Apply a fragment attunement to a building
+  router.post('/attune-fragment', requireAuth, async (req, res) => {
+    try {
+      const { fragmentName, buildingType } = req.body;
+
+      // Validate input
+      if (!fragmentName || !buildingType) {
+        return res.status(400).json({ error: 'fragmentName and buildingType required' });
+      }
+
+      const kingdom = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
+        req.player.playerId,
+      ]);
+      if (!kingdom) return res.status(404).json({ error: "Kingdom not found" });
+
+      // Apply attunement logic
+      const result = attunementManager.applyAttunement(kingdom, fragmentName, buildingType);
+      if (result.error) {
+        return res.status(400).json({ error: result.error });
+      }
+
+      await db.run(
+        `UPDATE kingdoms SET fragment_bonuses = ? WHERE id = ?`,
+        [result.fragment_bonuses, kingdom.id]
+      );
+
+      res.json({
+        ok: true,
+        attunement: result.attunement,
+        message: `${fragmentName} attuned to ${buildingType}`,
+      });
+
+      console.log(`[attunement] Kingdom ${kingdom.id}: ${fragmentName} → ${buildingType}`);
+    } catch (err) {
+      console.error('[attunement] apply failed:', err.message);
+      res.status(500).json({ error: 'Failed to apply attunement' });
+    }
+  });
+
+  // POST /api/kingdom/remove-attunement — Remove fragment attunement from building
+  router.post('/remove-attunement', requireAuth, async (req, res) => {
+    try {
+      const { buildingType } = req.body;
+
+      if (!buildingType) {
+        return res.status(400).json({ error: 'buildingType required' });
+      }
+
+      const kingdom = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
+        req.player.playerId,
+      ]);
+      if (!kingdom) return res.status(404).json({ error: "Kingdom not found" });
+
+      // Get current attunements
+      const currentAttunements = getKingdomAttunements(kingdom.fragment_bonuses || '{}');
+
+      // Check if building has attunement
+      if (!Object.prototype.hasOwnProperty.call(currentAttunements, buildingType)) {
+        return res.status(400).json({ error: `${buildingType} has no attunement` });
+      }
+
+      // Remove the attunement
+      delete currentAttunements[buildingType];
+
+      await db.run(
+        `UPDATE kingdoms SET fragment_bonuses = ? WHERE id = ?`,
+        [JSON.stringify(currentAttunements), kingdom.id]
+      );
+
+      res.json({
+        ok: true,
+        message: `Attunement removed from ${buildingType}`,
+      });
+
+      console.log(`[attunement] Kingdom ${kingdom.id}: Removed from ${buildingType}`);
+    } catch (err) {
+      console.error('[attunement] remove failed:', err.message);
+      res.status(500).json({ error: 'Failed to remove attunement' });
     }
   });
 
