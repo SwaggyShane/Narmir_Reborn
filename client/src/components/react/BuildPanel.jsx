@@ -1,25 +1,25 @@
 import React, { useState } from 'react';
 
 const BUILDINGS = [
-  { id: 'farms', name: 'Farm', wood: 100, stone: 0, iron: 0, time: 28, land: 1 },
-  { id: 'granaries', name: 'Granary', wood: 75, stone: 15, iron: 0, time: 24, land: 1 },
-  { id: 'housing', name: 'Housing', wood: 95, stone: 10, iron: 5, time: 28, land: 1 },
-  { id: 'schools', name: 'School', wood: 120, stone: 30, iron: 5, time: 40, land: 1 },
-  { id: 'libraries', name: 'Library', wood: 150, stone: 60, iron: 20, time: 70, land: 1 },
-  { id: 'mage_towers', name: 'Mage Tower', wood: 200, stone: 150, iron: 40, time: 100, land: 1 },
-  { id: 'shrines', name: 'Shrine', wood: 60, stone: 40, iron: 10, time: 30, land: 1 },
-  { id: 'mausoleums', name: 'Mausoleum', wood: 60, stone: 80, iron: 10, time: 40, land: 1 }, // Vampire only
-  { id: 'markets', name: 'Market', wood: 70, stone: 20, iron: 10, time: 30, land: 1 },
-  { id: 'taverns', name: 'Tavern', wood: 80, stone: 10, iron: 5, time: 25, land: 1 },
-  { id: 'smithies', name: 'Smithy', wood: 50, stone: 100, iron: 80, time: 60, land: 1 },
-  { id: 'vaults', name: 'Vault', wood: 40, stone: 120, iron: 50, time: 70, land: 1 },
-  { id: 'armories', name: 'Armory', wood: 150, stone: 80, iron: 40, time: 65, land: 1 },
-  { id: 'barracks', name: 'Barracks', wood: 120, stone: 10, iron: 20, time: 50, land: 1 },
-  { id: 'walls', name: 'Wall', wood: 20, stone: 80, iron: 10, time: 30, land: 0 },
-  { id: 'guard_towers', name: 'Guard Tower', wood: 90, stone: 60, iron: 15, time: 45, land: 1 },
-  { id: 'outposts', name: 'Outpost', wood: 70, stone: 25, iron: 10, time: 35, land: 1 },
-  { id: 'training', name: 'Training Field', wood: 30, stone: 10, iron: 60, time: 20, land: 1 },
-  { id: 'castles', name: 'Castle', wood: 800, stone: 1200, iron: 400, time: 500, land: 5 },
+  { id: 'farms', name: 'Farm', tier: 1, wood: 0, stone: 0, iron: 0, time: 10, land: 0 },
+  { id: 'housing', name: 'Housing', tier: 2, wood: 200, stone: 100, iron: 50, time: 100, land: 50 },
+  { id: 'granaries', name: 'Granary', tier: 2, wood: 200, stone: 100, iron: 50, time: 100, land: 50 },
+  { id: 'taverns', name: 'Tavern', tier: 2, wood: 200, stone: 100, iron: 50, time: 100, land: 50 },
+  { id: 'markets', name: 'Market', tier: 3, wood: 800, stone: 500, iron: 200, time: 500, land: 150 },
+  { id: 'barracks', name: 'Barracks', tier: 3, wood: 800, stone: 500, iron: 200, time: 500, land: 150 },
+  { id: 'libraries', name: 'Library', tier: 3, wood: 800, stone: 500, iron: 200, time: 500, land: 150 },
+  { id: 'schools', name: 'School', tier: 3, wood: 800, stone: 500, iron: 200, time: 500, land: 150 },
+  { id: 'shrines', name: 'Shrine', tier: 3, wood: 800, stone: 500, iron: 200, time: 500, land: 150 },
+  { id: 'mausoleums', name: 'Mausoleum', tier: 3, wood: 800, stone: 500, iron: 200, time: 500, land: 150 },
+  { id: 'guard_towers', name: 'Guard Tower', tier: 4, wood: 2000, stone: 1500, iron: 500, time: 2500, land: 300 },
+  { id: 'walls', name: 'Wall', tier: 5, wood: 5000, stone: 5000, iron: 1500, time: 10000, land: 500 },
+  { id: 'outposts', name: 'Outpost', tier: 5, wood: 5000, stone: 5000, iron: 1500, time: 10000, land: 500 },
+  { id: 'smithies', name: 'Smithy', tier: 5, wood: 5000, stone: 5000, iron: 1500, time: 10000, land: 500 },
+  { id: 'armories', name: 'Armory', tier: 6, wood: 7500, stone: 12500, iron: 3000, time: 25000, land: 750 },
+  { id: 'vaults', name: 'Vault', tier: 6, wood: 7500, stone: 12500, iron: 3000, time: 25000, land: 750 },
+  { id: 'mage_towers', name: 'Mage Tower', tier: 6, wood: 7500, stone: 12500, iron: 3000, time: 25000, land: 750 },
+  { id: 'training', name: 'Training Field', tier: 7, wood: 8500, stone: 17500, iron: 4000, time: 35000, land: 850 },
+  { id: 'castles', name: 'Castle', tier: 8, wood: 10000, stone: 25000, iron: 5000, time: 50000, land: 1000 },
   { id: 'wm', name: 'War Machine', wood: 200, stone: 0, iron: 50, time: 100, land: 0 },
   { id: 'ladders', name: 'Ladder', wood: 20, stone: 0, iron: 2, time: 8, land: 0 },
   { id: 'weapons', name: 'Weapons', wood: 30, stone: 0, iron: 80, time: 20, land: 0 },
@@ -34,7 +34,8 @@ const BuildPanel = () => {
   };
 
   const getTooltip = (b) => {
-    return `${b.name}\nBase: ${b.time} turns | ${b.land ? b.land + " land" : ""}\n🪵 ${b.wood} 🪨 ${b.stone} 🔗 ${b.iron}`;
+    const tier = b.tier ? `\n[Tier ${b.tier}]` : '';
+    return `${b.name}${tier}\nBase: ${b.time} turns | ${b.land ? b.land + " land" : ""}\n🪵 ${b.wood} 🪨 ${b.stone} 🔗 ${b.iron}`;
   };
 
   // Wrapper calls:
