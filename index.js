@@ -1530,51 +1530,6 @@ async function start() {
       } catch (e) { res.status(500).json({ error: e.message }); }
     });
 
-    app.post('/api/select-school', requireAuth, async (req, res) => {
-      console.log('[select-school] Request received', { playerId: req.player?.playerId, school: req.body?.school });
-      try {
-        const { school } = req.body;
-        if (!school?.trim()) return res.status(400).json({ error: 'School name required' });
-
-        await db.run('BEGIN TRANSACTION');
-        try {
-          const kingdom = await db.get('SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE', [req.player.playerId]);
-          if (!kingdom) {
-            await db.run('ROLLBACK');
-            return res.status(404).json({ error: 'Kingdom not found' });
-          }
-
-          const result = engine.selectSchool(kingdom, school.trim().toLowerCase());
-          if (result.error) {
-            await db.run('ROLLBACK');
-            return res.status(400).json({ error: result.error });
-          }
-
-          await db.run(
-            'UPDATE kingdoms SET school_of_magic = ?, school_spellbook = ? WHERE id = ?',
-            [result.updates.school_of_magic, result.updates.school_spellbook, kingdom.id]
-          );
-
-          if (result.events && result.events.length > 0) {
-            await db.run(
-              'INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?, ?, ?, ?)',
-              [kingdom.id, result.events[0].type || 'system', result.events[0].message, kingdom.turn]
-            );
-          }
-          await db.run('COMMIT');
-
-          res.json({ ok: true, school: result.updates.school_of_magic, events: result.events });
-        } catch (txErr) {
-          await db.run('ROLLBACK').catch(() => {});
-          throw txErr;
-        }
-      } catch (e) {
-        if (!res.headersSent) {
-          res.status(500).json({ error: e.message });
-        }
-      }
-    });
-
     // Catch-all for API 404s to prevent HTML responses for API calls
     app.all('/api/*', (req, res) => {
       res.status(404).json({ error: `API route ${req.method} ${req.url} not found` });
