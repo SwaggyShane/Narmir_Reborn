@@ -3481,16 +3481,25 @@ function processBuildQueue(k, events, xpSourcesAccum) {
   let blueprintsUsed = 0;
   let scaffoldingUsed = 0;
 
-  // Get engineer allocation
+  // Get engineer allocation (both regular builds and resource builds)
   const allocationRaw = safeJsonParse(
     k.build_allocation,
     {},
     "processBuildQueue:build_allocation",
   );
+  const resourceAllocationRaw = safeJsonParse(
+    k.resource_build_allocation,
+    {},
+    "processBuildQueue:resource_build_allocation",
+  );
   let allocation = {};
   for (const b of Object.keys(allocationRaw)) {
     const key = BUILDING_ALIASES[b] || b;
     allocation[key] = (allocation[key] || 0) + (Number(allocationRaw[b]) || 0);
+  }
+  for (const b of Object.keys(resourceAllocationRaw)) {
+    const key = BUILDING_ALIASES[b] || b;
+    allocation[key] = (allocation[key] || 0) + (Number(resourceAllocationRaw[b]) || 0);
   }
 
   // Also check legacy build_queue for any manually queued items
@@ -3838,7 +3847,19 @@ function processBuildQueue(k, events, xpSourcesAccum) {
 
   updates.build_queue = JSON.stringify(queue);
   updates.build_progress = JSON.stringify(progress);
-  updates.build_allocation = JSON.stringify(allocation);
+
+  // Split allocation back into regular and resource allocations
+  const finalBuildAlloc = {};
+  const finalResourceAlloc = {};
+  for (const [building, eng] of Object.entries(allocation)) {
+    if (RESOURCE_BUILDING_CONFIG[building]) {
+      finalResourceAlloc[building] = eng;
+    } else {
+      finalBuildAlloc[building] = eng;
+    }
+  }
+  updates.build_allocation = JSON.stringify(finalBuildAlloc);
+  updates.resource_build_allocation = JSON.stringify(finalResourceAlloc);
 
   if (completedItems.length > 0) {
     const totalCompleted = completedItems.reduce(function (s, item) {

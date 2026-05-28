@@ -680,17 +680,23 @@ module.exports = function (db) {
     if (!allocation || typeof allocation !== "object")
       return res.status(400).json({ error: "allocation required" });
     const k = await db.get(
-      "SELECT id, engineers FROM kingdoms WHERE player_id = ?",
+      "SELECT id, engineers, build_allocation FROM kingdoms WHERE player_id = ?",
       [req.player.playerId],
     );
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
+
+    const buildAlloc = safeJsonParse(k.build_allocation, {}, "resource-build-allocation:build_allocation");
+    const buildTotal = Object.values(buildAlloc).reduce(
+      (s, v) => s + (Number(v) || 0),
+      0,
+    );
     const total = Object.values(allocation).reduce(
       (s, v) => s + (Number(v) || 0),
       0,
     );
-    if (total > k.engineers)
+    if (total + buildTotal > k.engineers)
       return res.status(400).json({
-        error: `Allocated ${total.toLocaleString()} but only have ${k.engineers.toLocaleString()} engineers`,
+        error: `Allocated ${total.toLocaleString()} resource engineers and ${buildTotal.toLocaleString()} build engineers, but only have ${k.engineers.toLocaleString()} engineers total`,
       });
     await db.run("UPDATE kingdoms SET resource_build_allocation = ? WHERE id = ?", [
       JSON.stringify(allocation),
