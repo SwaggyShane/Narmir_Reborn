@@ -24,12 +24,21 @@ function validateAttunement(kingdom, fragmentName, buildingType) {
     ? kingdom.world_fragments
     : (typeof kingdom.world_fragments === 'string' ? JSON.parse(kingdom.world_fragments || '[]') : []);
 
-  const ownedFragment = worldFragments.find(f => f.type === fragmentName);
+  const ownedFragment = worldFragments.find(f => {
+    // Handle both string format (legacy) and object format
+    if (typeof f === 'string') {
+      return f === fragmentName;
+    }
+    return f.type === fragmentName;
+  });
+
   if (!ownedFragment) {
     return { error: `Kingdom does not own fragment '${fragmentName}'` };
   }
 
-  if (!ownedFragment.studied) {
+  // Check if studied (object format only, string format is not studied)
+  const isStudied = typeof ownedFragment === 'object' && ownedFragment.studied === true;
+  if (!isStudied) {
     return { error: `Fragment '${fragmentName}' must be studied before attunement` };
   }
 
@@ -114,8 +123,10 @@ function getAvailableAttunements(kingdom) {
     ? kingdom.world_fragments
     : (typeof kingdom.world_fragments === 'string' ? JSON.parse(kingdom.world_fragments || '[]') : []);
 
-  // Only include studied fragments that the kingdom owns
-  const studiedFragments = worldFragments.filter(f => f.studied === true);
+  // Only include studied fragments (object format with studied: true)
+  const studiedFragments = worldFragments.filter(f =>
+    typeof f === 'object' && f.studied === true
+  );
 
   // For each studied fragment, check if it can be attuned
   for (const ownedFragment of studiedFragments) {
