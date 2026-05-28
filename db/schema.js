@@ -89,7 +89,7 @@ const NUMERIC_FIELDS = [
   'xp', 'level', 'prestige_level', 'progress',
   // Units
   'fighters', 'rangers', 'clerics', 'mages', 'thieves', 'ninjas',
-  'researchers', 'engineers', 'scribes', 'thralls',
+  'researchers', 'engineers', 'engineer_level', 'engineer_xp', 'scribes', 'thralls',
   // Military equipment
   'war_machines', 'weapons_stockpile', 'armor_stockpile', 'ladders',
   // Research
@@ -439,6 +439,8 @@ async function initDb() {
       ninjas      INTEGER NOT NULL DEFAULT 0,
       researchers INTEGER NOT NULL DEFAULT 0,
       engineers   INTEGER NOT NULL DEFAULT 0,
+      engineer_level INTEGER NOT NULL DEFAULT 1,
+      engineer_xp    INTEGER NOT NULL DEFAULT 0,
       war_machines     INTEGER NOT NULL DEFAULT 0,
       weapons_stockpile INTEGER NOT NULL DEFAULT 0,
       armor_stockpile   INTEGER NOT NULL DEFAULT 0,

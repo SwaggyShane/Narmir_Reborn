@@ -7549,6 +7549,47 @@ function calculateScore(k) {
   return Math.floor(score);
 }
 
+function calculateBuildTime(kingdom, tier) {
+  const config = require('./config');
+  const baseTime = config.BUILDING_TIER_TIMES[tier] || 0;
+  const engineerLevel = kingdom.engineer_level || 1;
+  const engineerMult = config.ENGINEER_LEVELS[engineerLevel]?.construction_mult || 1.0;
+  const raceMult = config.RACE_BONUSES[kingdom.race]?.construction || 1.0;
+
+  const adjustedTime = baseTime / engineerMult / raceMult;
+  return Math.ceil(adjustedTime);
+}
+
+function calculateBuildCost(kingdom, tier) {
+  const config = require('./config');
+  const baseCost = config.BUILDING_TIER_COSTS[tier] || {};
+  const raceMult = config.RACE_BONUSES[kingdom.race]?.construction || 1.0;
+
+  return {
+    land: Math.ceil((baseCost.land || 0) / raceMult),
+    wood: Math.ceil((baseCost.wood || 0) / raceMult),
+    stone: Math.ceil((baseCost.stone || 0) / raceMult),
+    iron: Math.ceil((baseCost.iron || 0) / raceMult),
+  };
+}
+
+function awardEngineerXp(kingdom, xpAmount) {
+  const config = require('./config');
+  kingdom.engineer_xp = (kingdom.engineer_xp || 0) + xpAmount;
+
+  while (kingdom.engineer_level < 25) {
+    const nextLevelXp = config.ENGINEER_LEVELS[kingdom.engineer_level + 1]?.xp_needed;
+    if (nextLevelXp && kingdom.engineer_xp >= nextLevelXp) {
+      kingdom.engineer_level++;
+      kingdom.engineer_xp = 0;
+    } else {
+      break;
+    }
+  }
+
+  return kingdom;
+}
+
 module.exports = {
   calculateScore,
   totalHiredUnits,
@@ -7677,4 +7718,7 @@ module.exports = {
   BUILDING_STONE_COST,
   BUILDING_IRON_COST,
   raceBonus,
+  calculateBuildTime,
+  calculateBuildCost,
+  awardEngineerXp,
 };
