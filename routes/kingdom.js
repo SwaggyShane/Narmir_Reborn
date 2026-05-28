@@ -751,76 +751,121 @@ module.exports = function (db) {
   // ── Smithy — buy hammers for gold ─────────────────────────────────────────────
   router.post("/smithy/buy-hammers", requireAuth, async (req, res) => {
     const amount = Math.max(1, parseInt(req.body.amount) || 1);
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id=?", [
-      req.player.playerId,
-    ]);
-    if (!k) return res.status(404).json({ error: "Kingdom not found" });
-    if (!(k.bld_smithies > 0))
-      return res.status(400).json({ error: "Need at least 1 smithy" });
-    const cost = amount * 25;
-    if (k.gold < cost)
-      return res
-        .status(400)
-        .json({ error: `Need ${cost.toLocaleString()} gold` });
-    const cap = k.bld_smithies * 25;
-    const newHammers = Math.min(cap, k.hammers_stored + amount);
-    const bought = newHammers - k.hammers_stored;
-    if (bought <= 0)
-      return res.status(400).json({ error: "Hammer storage full" });
-    const actualCost = bought * 25;
-    await db.run(
-      "UPDATE kingdoms SET gold=gold-?, hammers_stored=? WHERE id=?",
-      [actualCost, newHammers, k.id],
-    );
-    res.json({
-      ok: true,
-      bought,
-      cost: actualCost,
-      hammers_stored: newHammers,
-      gold: k.gold - actualCost,
-    });
+
+    try {
+      await db.run("BEGIN TRANSACTION");
+
+      const k = await db.get("SELECT * FROM kingdoms WHERE player_id=? FOR UPDATE", [
+        req.player.playerId,
+      ]);
+      if (!k) {
+        await db.run("ROLLBACK");
+        return res.status(404).json({ error: "Kingdom not found" });
+      }
+      if (!(k.bld_smithies > 0)) {
+        await db.run("ROLLBACK");
+        return res.status(400).json({ error: "Need at least 1 smithy" });
+      }
+
+      const cost = amount * 25;
+      if (k.gold < cost) {
+        await db.run("ROLLBACK");
+        return res.status(400).json({ error: `Need ${cost.toLocaleString()} gold` });
+      }
+
+      const cap = k.bld_smithies * 25;
+      const newHammers = Math.min(cap, k.hammers_stored + amount);
+      const bought = newHammers - k.hammers_stored;
+      if (bought <= 0) {
+        await db.run("ROLLBACK");
+        return res.status(400).json({ error: "Hammer storage full" });
+      }
+
+      const actualCost = bought * 25;
+      await db.run(
+        "UPDATE kingdoms SET gold=gold-?, hammers_stored=? WHERE id=?",
+        [actualCost, newHammers, k.id],
+      );
+      await db.run("COMMIT");
+
+      res.json({
+        ok: true,
+        bought,
+        cost: actualCost,
+        hammers_stored: newHammers,
+        gold: k.gold - actualCost,
+      });
+    } catch (err) {
+      try {
+        await db.run("ROLLBACK");
+      } catch (rollbackErr) {
+        console.error("[smithy/buy-hammers] rollback error:", rollbackErr.message);
+      }
+      console.error("[smithy/buy-hammers] error:", err.message);
+      res.status(500).json({ error: "Purchase failed" });
+    }
   });
 
   // ── Smithy — buy scaffolding for gold ────────────────────────────────────────
   router.post("/smithy/buy-scaffolding", requireAuth, async (req, res) => {
     const amount = Math.max(1, parseInt(req.body.amount) || 1);
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id=?", [
-      req.player.playerId,
-    ]);
-    if (!k) return res.status(404).json({ error: "Kingdom not found" });
 
-    const baseCost = 2500;
-    const hasSmithy = k.bld_smithies > 0;
-    const unitPrice = hasSmithy ? baseCost : Math.floor(baseCost * 1.25);
-    const cost = amount * unitPrice;
+    try {
+      await db.run("BEGIN TRANSACTION");
 
-    if (k.gold < cost)
-      return res
-        .status(400)
-        .json({ error: `Need ${cost.toLocaleString()} gold` });
+      const k = await db.get("SELECT * FROM kingdoms WHERE player_id=? FOR UPDATE", [
+        req.player.playerId,
+      ]);
+      if (!k) {
+        await db.run("ROLLBACK");
+        return res.status(404).json({ error: "Kingdom not found" });
+      }
 
-    // Base cap of 10 even without smithy, otherwise 10 per smithy
-    const cap = Math.max(10, k.bld_smithies * 10);
-    const currentScaff = k.scaffolding_stored;
-    const newScaff = Math.min(cap, currentScaff + amount);
-    const bought = newScaff - currentScaff;
+      const baseCost = 2500;
+      const hasSmithy = k.bld_smithies > 0;
+      const unitPrice = hasSmithy ? baseCost : Math.floor(baseCost * 1.25);
+      const cost = amount * unitPrice;
 
-    if (bought <= 0)
-      return res.status(400).json({ error: "Scaffolding storage full" });
+      if (k.gold < cost) {
+        await db.run("ROLLBACK");
+        return res.status(400).json({ error: `Need ${cost.toLocaleString()} gold` });
+      }
 
-    const actualCost = bought * unitPrice;
-    await db.run(
-      "UPDATE kingdoms SET gold=gold-?, scaffolding_stored=? WHERE id=?",
-      [actualCost, newScaff, k.id],
-    );
-    res.json({
-      ok: true,
-      bought,
-      cost: actualCost,
-      scaffolding_stored: newScaff,
-      gold: k.gold - actualCost,
-      markup: !hasSmithy,
-    });
+      // Base cap of 10 even without smithy, otherwise 10 per smithy
+      const cap = Math.max(10, k.bld_smithies * 10);
+      const currentScaff = k.scaffolding_stored;
+      const newScaff = Math.min(cap, currentScaff + amount);
+      const bought = newScaff - currentScaff;
+
+      if (bought <= 0) {
+        await db.run("ROLLBACK");
+        return res.status(400).json({ error: "Scaffolding storage full" });
+      }
+
+      const actualCost = bought * unitPrice;
+      await db.run(
+        "UPDATE kingdoms SET gold=gold-?, scaffolding_stored=? WHERE id=?",
+        [actualCost, newScaff, k.id],
+      );
+      await db.run("COMMIT");
+
+      res.json({
+        ok: true,
+        bought,
+        cost: actualCost,
+        scaffolding_stored: newScaff,
+        gold: k.gold - actualCost,
+        markup: !hasSmithy,
+      });
+    } catch (err) {
+      try {
+        await db.run("ROLLBACK");
+      } catch (rollbackErr) {
+        console.error("[smithy/buy-scaffolding] rollback error:", rollbackErr.message);
+      }
+      console.error("[smithy/buy-scaffolding] error:", err.message);
+      res.status(500).json({ error: "Purchase failed" });
+    }
   });
 
   // ── Trade Routes ───────────────────────────────────────────────────────────
@@ -2213,43 +2258,62 @@ module.exports = function (db) {
     const { type, rangers, fighters } = req.body;
     if (!EXP_TURNS[type])
       return res.status(400).json({ error: "Invalid expedition type" });
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
-      req.player.playerId,
-    ]);
-    if (!k) return res.status(404).json({ error: "Kingdom not found" });
-    if (k.turns_stored < 1)
-      return res.status(429).json({ error: "No turns available" });
+
     const r = Math.max(0, parseInt(rangers) || 0);
     const f = Math.max(0, parseInt(fighters) || 0);
     if (r < 1) return res.status(400).json({ error: "Send at least 1 ranger" });
     if (type === "dungeon" && f < 1)
       return res.status(400).json({ error: "Dungeon raids require fighters" });
-    if (r > engine.getAvailableUnits(k, "rangers"))
-      return res.status(400).json({
-        error: "Not enough available rangers (some may be in training)",
-      });
-    if (f > engine.getAvailableUnits(k, "fighters"))
-      return res.status(400).json({
-        error: "Not enough available fighters (some may be in training)",
-      });
-    const existing = await db.get(
-      "SELECT id FROM expeditions WHERE kingdom_id = ? AND type = ?",
-      [k.id, type],
-    );
-    if (existing)
-      return res
-        .status(400)
-        .json({ error: `A ${type} expedition is already underway` });
 
     try {
+      await db.run("BEGIN TRANSACTION");
+
+      // Re-fetch with transaction isolation to prevent stale state
+      const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE", [
+        req.player.playerId,
+      ]);
+      if (!k) {
+        await db.run("ROLLBACK");
+        return res.status(404).json({ error: "Kingdom not found" });
+      }
+
+      // Re-validate with consistent state
+      if (k.turns_stored < 1) {
+        await db.run("ROLLBACK");
+        return res.status(429).json({ error: "No turns available" });
+      }
+      if (r > engine.getAvailableUnits(k, "rangers")) {
+        await db.run("ROLLBACK");
+        return res.status(400).json({
+          error: "Not enough available rangers (some may be in training)",
+        });
+      }
+      if (f > engine.getAvailableUnits(k, "fighters")) {
+        await db.run("ROLLBACK");
+        return res.status(400).json({
+          error: "Not enough available fighters (some may be in training)",
+        });
+      }
+
+      const existing = await db.get(
+        "SELECT id FROM expeditions WHERE kingdom_id = ? AND type = ?",
+        [k.id, type],
+      );
+      if (existing) {
+        await db.run("ROLLBACK");
+        return res.status(400).json({ error: `A ${type} expedition is already underway` });
+      }
+
       // Food requirement: 0.5 per ranger/turn, 1.0 per fighter/turn, 25% discount
       const foodMult = engine.FOOD_CONSUMPTION_MULT[k.race] || 1.0;
       const foodPerTurn = (r * 0.5 + f * 1.0) * foodMult;
       const foodNeeded = Math.ceil(EXP_TURNS[type] * foodPerTurn * 0.75);
-      if (k.food < foodNeeded)
+      if (k.food < foodNeeded) {
+        await db.run("ROLLBACK");
         return res.status(400).json({ error: `${type.charAt(0).toUpperCase() + type.slice(1)} expedition requires ${foodNeeded.toLocaleString()} food (you have ${k.food.toLocaleString()}).` });
+      }
 
-      // Atomic update — avoids race conditions with concurrent turn processing
+      // All validation passed — now execute atomically
       await db.run(
         'UPDATE kingdoms SET rangers = MAX(0, rangers - ?), fighters = MAX(0, fighters - ?), food = MAX(0, food - ?) WHERE id = ?',
         [r, f, foodNeeded, k.id]
@@ -2263,8 +2327,10 @@ module.exports = function (db) {
       let updates = { rangers: Math.max(0, k.rangers - r), fighters: Math.max(0, k.fighters - f), food: Math.max(0, k.food - foodNeeded) };
       progressGoal(k, updates, 'expedition_started', 1);
       if (updates.goals) {
-         await db.run('UPDATE kingdoms SET goals = ? WHERE id = ?', [updates.goals, k.id]);
+        await db.run('UPDATE kingdoms SET goals = ? WHERE id = ?', [updates.goals, k.id]);
       }
+
+      await db.run("COMMIT");
 
       const label = { scout: "Scout", deep: "Deep", dungeon: "Dungeon" }[type];
       const troops = `${r.toLocaleString()} rangers${f > 0 ? ", " + f.toLocaleString() + " fighters" : ""}`;
@@ -2278,6 +2344,11 @@ module.exports = function (db) {
         message: `🧭 ${label} expedition launched — ${troops} deployed for ${EXP_TURNS[type]} turns. ${foodNeeded.toLocaleString()} food taken for the journey.`,
       });
     } catch (err) {
+      try {
+        await db.run("ROLLBACK");
+      } catch (rollbackErr) {
+        console.error("[expedition/start] rollback error:", rollbackErr.message);
+      }
       console.error("[expedition/start] failed:", err.message);
       res.status(500).json({ error: "Expedition failed — please try again" });
     }
@@ -2829,68 +2900,87 @@ module.exports = function (db) {
     const qty = Math.max(0, parseInt(amount) || 0);
     if (!qty) return res.status(400).json({ error: "Quantity required" });
 
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
-      req.player.playerId,
-    ]);
-    if (!k) return res.status(404).json({ error: "Kingdom not found" });
+    try {
+      await db.run("BEGIN TRANSACTION");
 
-    const priceRow = await db.get("SELECT * FROM market_prices WHERE id = ?", [
-      resource,
-    ]);
-    if (!priceRow || resource === "hammers")
-      return res.status(400).json({ error: "Invalid resource" });
+      const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE", [
+        req.player.playerId,
+      ]);
+      if (!k) {
+        await db.run("ROLLBACK");
+        return res.status(404).json({ error: "Kingdom not found" });
+      }
 
-    const basePrice = priceRow.base_price;
-    const currentPrice = priceRow.current_price;
-    const liquidity = MARKET_LIQUIDITY[resource] || 100000;
+      const priceRow = await db.get("SELECT * FROM market_prices WHERE id = ? FOR UPDATE", [
+        resource,
+      ]);
+      if (!priceRow || resource === "hammers") {
+        await db.run("ROLLBACK");
+        return res.status(400).json({ error: "Invalid resource" });
+      }
 
-    const minPrice = basePrice * 0.15;
-    const maxPrice = basePrice * 6.0;
+      const basePrice = priceRow.base_price;
+      const currentPrice = priceRow.current_price;
+      const liquidity = MARKET_LIQUIDITY[resource] || 100000;
 
-    const nextPrice = currentPrice * (1 + (qty / liquidity));
-    const clampedNext = Math.max(minPrice, Math.min(maxPrice, nextPrice));
-    const avgPrice = (currentPrice + clampedNext) / 2;
-    const cost = Math.ceil(qty * avgPrice);
+      const minPrice = basePrice * 0.15;
+      const maxPrice = basePrice * 6.0;
 
-    if (k.gold < cost)
-      return res
-        .status(400)
-        .json({ error: `Need ${cost.toLocaleString()} GC (Avg price: ${avgPrice.toFixed(3)} GC)` });
+      const nextPrice = currentPrice * (1 + (qty / liquidity));
+      const clampedNext = Math.max(minPrice, Math.min(maxPrice, nextPrice));
+      const avgPrice = (currentPrice + clampedNext) / 2;
+      const cost = Math.ceil(qty * avgPrice);
 
-    const dbCol =
-      resource === "weapons"
-        ? "weapons_stockpile"
-        : resource === "armor"
-          ? "armor_stockpile"
-          : resource;
-    await db.run(
-      `UPDATE kingdoms SET gold = gold - ?, ${dbCol} = ${dbCol} + ? WHERE id = ?`,
-      [cost, qty, k.id],
-    );
+      if (k.gold < cost) {
+        await db.run("ROLLBACK");
+        return res.status(400).json({ error: `Need ${cost.toLocaleString()} GC (Avg price: ${avgPrice.toFixed(3)} GC)` });
+      }
 
-    // Impact market: update the price to clamped progress
-    await db.run(
-      "UPDATE market_prices SET current_price = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-      [clampedNext, resource],
-    );
+      const dbCol =
+        resource === "weapons"
+          ? "weapons_stockpile"
+          : resource === "armor"
+            ? "armor_stockpile"
+            : resource;
+      await db.run(
+        `UPDATE kingdoms SET gold = gold - ?, ${dbCol} = ${dbCol} + ? WHERE id = ?`,
+        [cost, qty, k.id],
+      );
 
-    await db.run(
-      "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
-      [
-        k.id,
-        "system",
-        `⚖️ Bought ${qty.toLocaleString()} ${resource.replace(/_/g, " ")} from the market for ${cost.toLocaleString()} GC (Avg price: ${avgPrice.toFixed(3)} GC).`,
-        k.turn,
-      ],
-    );
+      // Impact market: update the price to clamped progress
+      await db.run(
+        "UPDATE market_prices SET current_price = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+        [clampedNext, resource],
+      );
 
-    res.json({
-      ok: true,
-      bought: qty,
-      cost,
-      message: `⚖️ Bought ${qty.toLocaleString()} ${resource.replace(/_/g, " ")} from the market for ${cost.toLocaleString()} GC.`,
-      updates: { gold: k.gold - cost, [dbCol]: (k[dbCol] || 0) + qty },
-    });
+      await db.run(
+        "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
+        [
+          k.id,
+          "system",
+          `⚖️ Bought ${qty.toLocaleString()} ${resource.replace(/_/g, " ")} from the market for ${cost.toLocaleString()} GC (Avg price: ${avgPrice.toFixed(3)} GC).`,
+          k.turn,
+        ],
+      );
+
+      await db.run("COMMIT");
+
+      res.json({
+        ok: true,
+        bought: qty,
+        cost,
+        message: `⚖️ Bought ${qty.toLocaleString()} ${resource.replace(/_/g, " ")} from the market for ${cost.toLocaleString()} GC.`,
+        updates: { gold: k.gold - cost, [dbCol]: (k[dbCol] || 0) + qty },
+      });
+    } catch (err) {
+      try {
+        await db.run("ROLLBACK");
+      } catch (rollbackErr) {
+        console.error("[market/buy] rollback error:", rollbackErr.message);
+      }
+      console.error("[market/buy] error:", err.message);
+      res.status(500).json({ error: "Purchase failed" });
+    }
   });
 
   router.post("/market/sell", requireAuth, async (req, res) => {
@@ -2898,70 +2988,92 @@ module.exports = function (db) {
     const qty = Math.max(0, parseInt(amount) || 0);
     if (!qty) return res.status(400).json({ error: "Quantity required" });
 
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
-      req.player.playerId,
-    ]);
-    if (!k) return res.status(404).json({ error: "Kingdom not found" });
-    const dbCol =
-      resource === "weapons"
-        ? "weapons_stockpile"
-        : resource === "armor"
-          ? "armor_stockpile"
-          : resource;
-    if ((k[dbCol] || 0) < qty)
-      return res.status(400).json({ error: "Not enough resource" });
+    try {
+      await db.run("BEGIN TRANSACTION");
 
-    const priceRow = await db.get("SELECT * FROM market_prices WHERE id = ?", [
-      resource,
-    ]);
-    if (!priceRow || resource === "hammers")
-      return res.status(400).json({ error: "Invalid resource" });
+      const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE", [
+        req.player.playerId,
+      ]);
+      if (!k) {
+        await db.run("ROLLBACK");
+        return res.status(404).json({ error: "Kingdom not found" });
+      }
 
-    const basePrice = priceRow.base_price;
-    const currentPrice = priceRow.current_price;
-    const liquidity = MARKET_LIQUIDITY[resource] || 100000;
+      const dbCol =
+        resource === "weapons"
+          ? "weapons_stockpile"
+          : resource === "armor"
+            ? "armor_stockpile"
+            : resource;
+      if ((k[dbCol] || 0) < qty) {
+        await db.run("ROLLBACK");
+        return res.status(400).json({ error: "Not enough resource" });
+      }
 
-    const minPrice = basePrice * 0.15;
-    const maxPrice = basePrice * 6.0;
+      const priceRow = await db.get("SELECT * FROM market_prices WHERE id = ? FOR UPDATE", [
+        resource,
+      ]);
+      if (!priceRow || resource === "hammers") {
+        await db.run("ROLLBACK");
+        return res.status(400).json({ error: "Invalid resource" });
+      }
 
-    const nextPrice = currentPrice * (1 - (qty / liquidity));
-    const clampedNext = Math.max(minPrice, Math.min(maxPrice, nextPrice));
-    const avgPrice = (currentPrice + clampedNext) / 2;
+      const basePrice = priceRow.base_price;
+      const currentPrice = priceRow.current_price;
+      const liquidity = MARKET_LIQUIDITY[resource] || 100000;
 
-    let sellMultiplier = 0.7; // 30% base spread
-    if (k.prestige_level && k.prestige_level > 0) {
-      sellMultiplier += Math.min(0.1, k.prestige_level * 0.02); // Up to +10% sell value (0.8 max modifier)
+      const minPrice = basePrice * 0.15;
+      const maxPrice = basePrice * 6.0;
+
+      const nextPrice = currentPrice * (1 - (qty / liquidity));
+      const clampedNext = Math.max(minPrice, Math.min(maxPrice, nextPrice));
+      const avgPrice = (currentPrice + clampedNext) / 2;
+
+      let sellMultiplier = 0.7; // 30% base spread
+      if (k.prestige_level && k.prestige_level > 0) {
+        sellMultiplier += Math.min(0.1, k.prestige_level * 0.02); // Up to +10% sell value (0.8 max modifier)
+      }
+      const gain = Math.floor(qty * avgPrice * sellMultiplier);
+
+      await db.run(
+        `UPDATE kingdoms SET gold = gold + ?, ${dbCol} = ${dbCol} - ? WHERE id = ?`,
+        [gain, qty, k.id],
+      );
+
+      // Impact market: update the price to clamped progress
+      await db.run(
+        "UPDATE market_prices SET current_price = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+        [clampedNext, resource],
+      );
+
+      await db.run(
+        "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
+        [
+          k.id,
+          "system",
+          `⚖️ Sold ${qty.toLocaleString()} ${resource.replace(/_/g, " ")} to the market for ${gain.toLocaleString()} GC (Avg price: ${avgPrice.toFixed(3)} GC).`,
+          k.turn,
+        ],
+      );
+
+      await db.run("COMMIT");
+
+      res.json({
+        ok: true,
+        sold: qty,
+        gain,
+        message: `⚖️ Sold ${qty.toLocaleString()} ${resource.replace(/_/g, " ")} to the market for ${gain.toLocaleString()} GC.`,
+        updates: { gold: k.gold + gain, [dbCol]: (k[dbCol] || 0) - qty },
+      });
+    } catch (err) {
+      try {
+        await db.run("ROLLBACK");
+      } catch (rollbackErr) {
+        console.error("[market/sell] rollback error:", rollbackErr.message);
+      }
+      console.error("[market/sell] error:", err.message);
+      res.status(500).json({ error: "Sale failed" });
     }
-    const gain = Math.floor(qty * avgPrice * sellMultiplier);
-
-    await db.run(
-      `UPDATE kingdoms SET gold = gold + ?, ${dbCol} = ${dbCol} - ? WHERE id = ?`,
-      [gain, qty, k.id],
-    );
-
-    // Impact market: update the price to clamped progress
-    await db.run(
-      "UPDATE market_prices SET current_price = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-      [clampedNext, resource],
-    );
-
-    await db.run(
-      "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
-      [
-        k.id,
-        "system",
-        `⚖️ Sold ${qty.toLocaleString()} ${resource.replace(/_/g, " ")} to the market for ${gain.toLocaleString()} GC (Avg price: ${avgPrice.toFixed(3)} GC).`,
-        k.turn,
-      ],
-    );
-
-    res.json({
-      ok: true,
-      sold: qty,
-      gain,
-      message: `⚖️ Sold ${qty.toLocaleString()} ${resource.replace(/_/g, " ")} to the market for ${gain.toLocaleString()} GC.`,
-      updates: { gold: k.gold + gain, [dbCol]: (k[dbCol] || 0) - qty },
-    });
   });
 
   // ── Research focus ────────────────────────────────────────────────────────────
