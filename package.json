@@ -7,6 +7,7 @@
     "start": "node index.js",
     "bot": "node discord-bot.js",
     "build": "vite build",
+    "postinstall": "npm run build",
     "lint": "eslint . --ext js --report-unused-disable-directives"
   },
   "dependencies": {
