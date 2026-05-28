@@ -35,7 +35,12 @@ function translateSqlForPg(sql) {
 
   if (/INSERT\s+OR\s+REPLACE\s+INTO\s+regions/i.test(translated)) {
     translated = translated.replace(/INSERT\s+OR\s+REPLACE\s+INTO\s+regions/i, "INSERT INTO regions");
-    if (!/ON\s+CONFLICT/i.test(translated)) translated += " ON CONFLICT (name) DO NOTHING";
+    if (!/ON\s+CONFLICT/i.test(translated)) {
+      translated = translated.replace(
+        /VALUES\s*\((.*?)\)/i,
+        "VALUES ($1) ON CONFLICT (name) DO UPDATE SET owner_alliance_id = EXCLUDED.owner_alliance_id, contest_alliance_id = EXCLUDED.contest_alliance_id, contest_progress = EXCLUDED.contest_progress, bonus_type = EXCLUDED.bonus_type, lore = EXCLUDED.lore, updated_at = EXCLUDED.updated_at"
+      );
+    }
   }
 
   if (/INSERT\s+OR\s+IGNORE\s+INTO\s+market_prices/i.test(translated)) {
@@ -109,8 +114,8 @@ const NUMERIC_FIELDS = [
   // Expeditions / resource nodes / trade routes
   'turns_left', 'population_sent', 'distance', 'richness', 'stability',
   'food_taken', 'arrive_at', 'depart_at', 'harvest_ends_at',
-  // Misc
-  'count', 'wall_hp',
+  // Misc / admin goals
+  'count', 'wall_hp', 'prize_multiplier',
 ];
 
 function convertNumericFields(row) {

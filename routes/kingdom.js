@@ -962,10 +962,19 @@ module.exports = function (db) {
 
       await db.run("BEGIN TRANSACTION");
       try {
-        await db.run("UPDATE kingdoms SET gold = gold - ? WHERE id = ?", [
+        // Atomic balance check: verify sufficient gold within the UPDATE statement to prevent
+        // concurrent requests from both bypassing the check and creating negative balances
+        const goldResult = await db.run("UPDATE kingdoms SET gold = gold - ? WHERE id = ? AND gold >= ?", [
           cost,
           k.id,
+          cost,
         ]);
+        if (goldResult.changes === 0) {
+          await db.run("ROLLBACK");
+          return res.status(400).json({
+            error: `Establishing a permanent trade route costs ${cost.toLocaleString()} gold. You only have ${Math.floor(k.gold).toLocaleString()}.`,
+          });
+        }
         await db.run(
           "INSERT INTO trade_routes (kingdom_id, partner_id, distance, stability) VALUES (?, ?, ?, ?)",
           [k.id, targetId, distance, 100],
@@ -4048,7 +4057,12 @@ module.exports = function (db) {
       let result;
       await db.run("BEGIN TRANSACTION");
       try {
-        await db.run('UPDATE kingdoms SET gold = gold - 500 WHERE id = ?', [k.id]);
+        // Atomic balance check: verify sufficient gold within UPDATE to prevent race conditions
+        const goldResult = await db.run('UPDATE kingdoms SET gold = gold - 500 WHERE id = ? AND gold >= 500', [k.id]);
+        if (goldResult.changes === 0) {
+          await db.run("ROLLBACK");
+          return res.status(400).json({ error: 'Need 500 gold to scout a node.' });
+        }
         result = await db.run(
           'INSERT INTO resource_nodes (kingdom_id, name, type, distance, richness) VALUES (?, ?, ?, ?, ?)',
           [k.id, name, nodeType, distance, richness]
@@ -4121,7 +4135,12 @@ module.exports = function (db) {
       // Depart: remove population and food from kingdom for the duration
       await db.run("BEGIN TRANSACTION");
       try {
-        await db.run('UPDATE kingdoms SET food = MAX(0, food - ?), population = MAX(0, population - ?) WHERE id = ?', [foodNeeded, populationSent, k.id]);
+        // Atomic food check: verify sufficient food within UPDATE to prevent race conditions
+        const foodResult = await db.run('UPDATE kingdoms SET food = MAX(0, food - ?), population = MAX(0, population - ?) WHERE id = ? AND food >= ?', [foodNeeded, populationSent, k.id, foodNeeded]);
+        if (foodResult.changes === 0) {
+          await db.run("ROLLBACK");
+          return res.status(400).json({ error: `Expedition requires ${foodNeeded.toLocaleString()} food for the journey (you have ${k.food.toLocaleString()}).` });
+        }
         await db.run(
           'INSERT INTO resource_expeditions (kingdom_id, node_id, population_sent, depart_at, arrive_at, status, loot, food_taken) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
           [k.id, nodeId, populationSent, now, arrive_at, 'outbound', '{}', foodNeeded]
