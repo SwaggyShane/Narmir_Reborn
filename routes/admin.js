@@ -18,6 +18,21 @@ if (!fs.existsSync(soundsPath)) {
   fs.mkdirSync(soundsPath, { recursive: true });
 }
 
+const ALLOWED_SOUND_EXTENSIONS = new Set([".mp3", ".wav"]);
+
+// Resolve a user-supplied filename to an absolute path inside soundsPath.
+// Returns null if the input is unsafe (traversal, wrong extension, or escapes the dir).
+function safeSoundPath(rawName) {
+  if (typeof rawName !== "string" || !rawName.trim()) return null;
+  const base = rawName.split(/[\/\\]/).pop();
+  if (!base || base === "." || base === "..") return null;
+  const ext = path.extname(base).toLowerCase();
+  if (!ALLOWED_SOUND_EXTENSIONS.has(ext)) return null;
+  const resolved = path.resolve(soundsPath, base);
+  if (path.relative(soundsPath, resolved).startsWith("..")) return null;
+  return resolved;
+}
+
 async function refreshInMemoryGoals(db) {
   try {
     const overrides = await db.all(
@@ -79,10 +94,25 @@ const storage = multer.diskStorage({
     cb(null, soundsPath);
   },
   filename: function (req, file, cb) {
-    cb(null, file.originalname);
+    const base = (file.originalname || "").split(/[\/\\]/).pop();
+    const ext = path.extname(base).toLowerCase();
+    if (!base || !ALLOWED_SOUND_EXTENSIONS.has(ext)) {
+      return cb(new Error("Invalid filename or extension"));
+    }
+    cb(null, base);
   },
 });
-const upload = multer({ storage: storage });
+const upload = multer({
+  storage: storage,
+  fileFilter: function (req, file, cb) {
+    const base = (file.originalname || "").split(/[\/\\]/).pop();
+    const ext = path.extname(base).toLowerCase();
+    if (!ALLOWED_SOUND_EXTENSIONS.has(ext)) {
+      return cb(new Error("Only .mp3 and .wav files are allowed"));
+    }
+    cb(null, true);
+  },
+});
 
 module.exports = function (db, io) {
   // All admin routes require admin JWT
@@ -1017,25 +1047,41 @@ module.exports = function (db, io) {
     });
   });
 
-  router.post("/sounds/upload", upload.single("soundFile"), (req, res) => {
-    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
-    let finalName = req.file.originalname;
-    if (req.body.actionName && req.body.actionName !== "custom") {
-      const ext = path.extname(req.file.originalname);
-      finalName = req.body.actionName + ext;
-      const oldPath = path.join(soundsPath, req.file.originalname);
-      const newPath = path.join(soundsPath, finalName);
-      if (fs.existsSync(oldPath)) {
-        fs.renameSync(oldPath, newPath);
+  router.post("/sounds/upload", (req, res) => {
+    upload.single("soundFile")(req, res, (err) => {
+      if (err) {
+        return res.status(400).json({ error: err.message });
       }
-    }
-    res.json({ ok: true, filename: finalName });
+      if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+      let finalName = req.file.filename;
+      if (typeof req.body.actionName === "string" && req.body.actionName !== "custom") {
+        const ext = path.extname(req.file.filename);
+        const requestedBase = req.body.actionName.split(/[\/\\]/).pop();
+        if (!requestedBase || requestedBase === "." || requestedBase === "..") {
+          return res.status(400).json({ error: "Invalid action name" });
+        }
+        const candidateName = requestedBase + ext;
+        const newPath = safeSoundPath(candidateName);
+        const oldPath = safeSoundPath(req.file.filename);
+        if (!newPath || !oldPath) {
+          return res.status(400).json({ error: "Invalid filename" });
+        }
+        if (fs.existsSync(oldPath)) {
+          fs.renameSync(oldPath, newPath);
+          finalName = path.basename(newPath);
+        }
+      }
+      res.json({ ok: true, filename: finalName });
+    });
   });
 
   router.post("/sounds/delete", (req, res) => {
     if (!req.body.filename)
       return res.status(400).json({ error: "Filename required" });
-    const targetPath = path.join(soundsPath, req.body.filename);
+    const targetPath = safeSoundPath(req.body.filename);
+    if (!targetPath) {
+      return res.status(400).json({ error: "Invalid filename" });
+    }
     if (fs.existsSync(targetPath)) {
       fs.unlinkSync(targetPath);
     }
