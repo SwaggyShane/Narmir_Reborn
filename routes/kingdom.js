@@ -2760,6 +2760,27 @@ module.exports = function (db) {
 
     const fragmentName = hbp[blueprintId].fragment;
 
+    // Validate kingdom owns and has studied this fragment
+    const worldFragments = Array.isArray(k.world_fragments)
+      ? k.world_fragments
+      : (typeof k.world_fragments === 'string' ? safeJsonParse(k.world_fragments, []) : []);
+
+    const ownedFragment = worldFragments.find(f => {
+      if (typeof f === 'string') {
+        return f === fragmentName;
+      }
+      return f.type === fragmentName;
+    });
+
+    if (!ownedFragment) {
+      return res.status(400).json({ error: `Kingdom does not own fragment '${fragmentName}'` });
+    }
+
+    const isStudied = typeof ownedFragment === 'object' && ownedFragment.studied === true;
+    if (!isStudied) {
+      return res.status(400).json({ error: `Fragment '${fragmentName}' must be studied before attunement` });
+    }
+
     // If not confirmed yet, return warning details
     if (!confirmed) {
       const bonusConfig = fragmentBonusManager.getBonusConfig(
