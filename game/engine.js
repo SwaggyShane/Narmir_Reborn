@@ -6314,14 +6314,16 @@ async function resolveExpeditions(db, k, engine) {
       // ── Throne of Nazdreg check ──────────────────────────────────────────────
       if (updates._check_throne) {
         delete updates._check_throne;
-        const throneState = await db.get(
-          "SELECT value FROM server_state WHERE key = 'throne_found'",
+        // Atomic claim: a single conditional insert decides the winner. The row
+        // count tells us whether THIS expedition seized the unique drop. This
+        // closes the read-then-write race where two kingdoms finishing in the
+        // same tick could both observe the throne as unclaimed across the await
+        // boundary and each award it.
+        const claim = await db.run(
+          "INSERT INTO server_state (key, value) VALUES ('throne_found', '1') ON CONFLICT (key) DO NOTHING",
         );
-        if (!throneState || throneState.value !== "1") {
+        if (claim && claim.changes === 1) {
           THRONE_OF_NAZDREG.effect(freshK, updates);
-          await db.run(
-            "INSERT OR REPLACE INTO server_state (key, value) VALUES ('throne_found', '1')",
-          );
           rewards.unshift({ text: THRONE_OF_NAZDREG.text });
           events.push({
             type: "system",
