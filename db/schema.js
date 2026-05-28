@@ -449,6 +449,7 @@ async function initDb() {
       build_queue       TEXT NOT NULL DEFAULT '{}',
       build_progress    TEXT NOT NULL DEFAULT '{}',
       build_allocation  TEXT NOT NULL DEFAULT '{}',
+      resource_build_allocation TEXT NOT NULL DEFAULT '{}',
       tools_hammers     INTEGER NOT NULL DEFAULT 0,
       tools_scaffolding INTEGER NOT NULL DEFAULT 0,
       tools_blueprints  INTEGER NOT NULL DEFAULT 0,
@@ -630,6 +631,7 @@ async function initDb() {
   if (!kingdomsCols.includes('build_progress'))      await addColumn('kingdoms', 'build_progress',      "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('research_progress'))   await addColumn('kingdoms', 'research_progress',   "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('build_allocation'))    await addColumn('kingdoms', 'build_allocation',    "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
+  if (!kingdomsCols.includes('resource_build_allocation')) await addColumn('kingdoms', 'resource_build_allocation', "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('prestige_level'))      await addColumn('kingdoms', 'prestige_level',      'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
   if (!kingdomsCols.includes('trade_routes'))       await addColumn('kingdoms', 'trade_routes',       'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
   if (!kingdomsCols.includes('tools_hammers'))       await addColumn('kingdoms', 'tools_hammers',       'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);

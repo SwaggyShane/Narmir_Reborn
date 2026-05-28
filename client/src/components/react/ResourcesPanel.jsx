@@ -224,16 +224,18 @@ const ResourcesPanel = () => {
 
   const getAvailableEngineers = () => {
     if (!kingdom) return 0;
-    const alloc = getParsedStateProp('build_allocation');
-    const engaged = Object.values(alloc).reduce((sum, n) => sum + (Number(n) || 0), 0);
-    return Math.max(0, (kingdom.engineers || 0) - engaged);
+    const buildAlloc = getParsedStateProp('build_allocation');
+    const resourceAlloc = getParsedStateProp('resource_build_allocation');
+    const buildEngaged = Object.values(buildAlloc).reduce((sum, n) => sum + (Number(n) || 0), 0);
+    const resourceEngaged = Object.values(resourceAlloc).reduce((sum, n) => sum + (Number(n) || 0), 0);
+    return Math.max(0, (kingdom.engineers || 0) - buildEngaged - resourceEngaged);
   };
 
   const getActiveBuild = (type) => {
     if (!kingdom.level) return null;
     const bq = getParsedStateProp('build_queue');
     const bp = getParsedStateProp('build_progress');
-    const alloc = getParsedStateProp('build_allocation');
+    const alloc = getParsedStateProp('resource_build_allocation');
     for (const bld of Object.values(BUILDING_CONFIG)) {
       if (bld.type !== type) continue;
       if ((bq[bld.key] || 0) <= 0) continue;
@@ -280,7 +282,7 @@ const ResourcesPanel = () => {
   };
   const isBuildingActive = (key) => (getParsedStateProp('build_queue')[key] || 0) > 0;
   const getBuildProgress = (key) => getParsedStateProp('build_progress')[key] || 0;
-  const getBuildEngineers = (key) => getParsedStateProp('build_allocation')[key] || 0;
+  const getBuildEngineers = (key) => getParsedStateProp('resource_build_allocation')[key] || 0;
   const getBuildPct = (key) => {
     const cost = BUILDING_COST[key];
     return Math.min(100, Math.round(getBuildProgress(key) / cost * 100));
@@ -379,15 +381,15 @@ const ResourcesPanel = () => {
         s.build_queue = { ...curQ, [bld.key]: (curQ[bld.key] || 0) + 1 };
       }
       
-      const newAlloc = { ...getParsedStateProp('build_allocation'), [bld.key]: engineers };
-      const r2 = await fetch('/api/kingdom/build-allocation', {
+      const newAlloc = { ...getParsedStateProp('resource_build_allocation'), [bld.key]: engineers };
+      const r2 = await fetch('/api/kingdom/resource-build-allocation', {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ allocation: newAlloc })
       });
       const d2 = await r2.json();
       if (!d2.ok && window.toast) window.toast('Build queued but engineer allocation failed: ' + (d2.error || 'Unknown'), 'error');
-      if (d2.ok && s) s.build_allocation = newAlloc;
+      if (d2.ok && s) s.resource_build_allocation = newAlloc;
       if (window.refreshKingdom) window.refreshKingdom();
       setTimeout(syncFromState, 0);
     } catch(e) {

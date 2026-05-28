@@ -13,7 +13,7 @@ const JSON_FIELDS = {
   'research_allocation': {}, 'mage_tower_allocation': {}, 'shrine_allocation': {},
   'library_allocation': {}, 'library_progress': {}, 'tower_progress': {},
   'scrolls': {}, 'active_effects': {}, 'discovered_kingdoms': {},
-  'build_queue': {}, 'build_progress': {}, 'build_allocation': {},
+  'build_queue': {}, 'build_progress': {}, 'build_allocation': {}, 'resource_build_allocation': {},
   'troop_levels': {}, 'training_allocation': {}, 'smithy_allocation': {},
   'racial_bonuses_unlocked': {}, 'active_event': {}, 'location_maps_wip': [],
   'wall_upgrades': {}, 'tower_def_upgrades': {}, 'tower_upgrades': {},
@@ -669,6 +669,36 @@ module.exports = function (db) {
         error: `Allocated ${total.toLocaleString()} but only have ${k.engineers.toLocaleString()} engineers`,
       });
     await db.run("UPDATE kingdoms SET build_allocation = ? WHERE id = ?", [
+      JSON.stringify(allocation),
+      k.id,
+    ]);
+    res.json({ ok: true });
+  });
+
+  router.post("/resource-build-allocation", requireAuth, async (req, res) => {
+    const { allocation } = req.body;
+    if (!allocation || typeof allocation !== "object")
+      return res.status(400).json({ error: "allocation required" });
+    const k = await db.get(
+      "SELECT id, engineers, build_allocation FROM kingdoms WHERE player_id = ?",
+      [req.player.playerId],
+    );
+    if (!k) return res.status(404).json({ error: "Kingdom not found" });
+
+    const buildAlloc = safeJsonParse(k.build_allocation, {}, "resource-build-allocation:build_allocation");
+    const buildTotal = Object.values(buildAlloc).reduce(
+      (s, v) => s + (Number(v) || 0),
+      0,
+    );
+    const total = Object.values(allocation).reduce(
+      (s, v) => s + (Number(v) || 0),
+      0,
+    );
+    if (total + buildTotal > k.engineers)
+      return res.status(400).json({
+        error: `Allocated ${total.toLocaleString()} resource engineers and ${buildTotal.toLocaleString()} build engineers, but only have ${k.engineers.toLocaleString()} engineers total`,
+      });
+    await db.run("UPDATE kingdoms SET resource_build_allocation = ? WHERE id = ?", [
       JSON.stringify(allocation),
       k.id,
     ]);
