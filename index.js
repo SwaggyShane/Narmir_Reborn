@@ -1034,11 +1034,19 @@ async function start() {
 
       await db.run('BEGIN TRANSACTION');
       try {
-        // Lock the alliance row first to establish a consistent locking order and prevent deadlocks with project funding
-        await db.get('SELECT id FROM alliances WHERE id = ? FOR UPDATE', [membership.alliance_id]);
+        // Lock alliance FIRST (before kingdom) to establish consistent locking order and prevent deadlock
+        const alliance = await db.get('SELECT id, vault_log FROM alliances WHERE id = ? FOR UPDATE', [membership.alliance_id]);
+        if (!alliance) {
+          await db.run('ROLLBACK');
+          return res.status(404).json({ error: 'Alliance not found or disbanded' });
+        }
 
         // Check balance inside transaction with row locking
         const k = await db.get('SELECT gold FROM kingdoms WHERE id = ? FOR UPDATE', [kingdom.id]);
+        if (!k) {
+          await db.run('ROLLBACK');
+          return res.status(404).json({ error: 'Kingdom not found' });
+        }
         if (k.gold < goldAmount) {
           await db.run('ROLLBACK');
           return res.status(400).json({ error: 'Not enough gold' });
@@ -1046,8 +1054,7 @@ async function start() {
 
         await db.run('UPDATE kingdoms SET gold = gold - ? WHERE id = ?', [goldAmount, kingdom.id]);
         await db.run('UPDATE alliances SET vault_gold = vault_gold + ? WHERE id = ?', [goldAmount, membership.alliance_id]);
-        const alliance = await db.get('SELECT vault_log FROM alliances WHERE id = ?', [membership.alliance_id]);
-        let logs = safeJsonParse(alliance.vault_log, []);
+        let logs = safeJsonParse(alliance.vault_log || '[]', []);
         logs.unshift({ type: 'deposit', kingdom: kingdom.name, amount: goldAmount, date: new Date().toLocaleString() });
         if(logs.length > 20) logs = logs.slice(0, 20);
         await db.run('UPDATE alliances SET vault_log = ? WHERE id = ?', [JSON.stringify(logs), membership.alliance_id]);
@@ -1154,8 +1161,12 @@ async function start() {
 
       await db.run('BEGIN TRANSACTION');
       try {
-        // Lock the kingdom row to prevent concurrent alliance creation/joining
-        await db.get('SELECT id FROM kingdoms WHERE id = ? FOR UPDATE', [kingdom.id]);
+        // Lock kingdom to serialize alliance operations and prevent race conditions
+        const k = await db.get('SELECT id FROM kingdoms WHERE id = ? FOR UPDATE', [kingdom.id]);
+        if (!k) {
+          await db.run('ROLLBACK');
+          return res.status(404).json({ error: 'Kingdom not found' });
+        }
 
         // Prevent alliance leaders from abandoning their alliance without disbanding it
         const leading = await db.get('SELECT id FROM alliances WHERE leader_id = ?', [kingdom.id]);
