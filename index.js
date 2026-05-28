@@ -1034,6 +1034,9 @@ async function start() {
 
       await db.run('BEGIN TRANSACTION');
       try {
+        // Lock the alliance row first to establish a consistent locking order and prevent deadlocks with project funding
+        await db.get('SELECT id FROM alliances WHERE id = ? FOR UPDATE', [membership.alliance_id]);
+
         // Check balance inside transaction with row locking
         const k = await db.get('SELECT gold FROM kingdoms WHERE id = ? FOR UPDATE', [kingdom.id]);
         if (k.gold < goldAmount) {
@@ -1151,6 +1154,9 @@ async function start() {
 
       await db.run('BEGIN TRANSACTION');
       try {
+        // Lock the kingdom row to prevent concurrent alliance creation/joining
+        await db.get('SELECT id FROM kingdoms WHERE id = ? FOR UPDATE', [kingdom.id]);
+
         // Prevent alliance leaders from abandoning their alliance without disbanding it
         const leading = await db.get('SELECT id FROM alliances WHERE leader_id = ?', [kingdom.id]);
         if (leading) {
