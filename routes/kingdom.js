@@ -1,5 +1,6 @@
 const express = require("express");
 const engine = require("../game/engine");
+const config = require("../game/config");
 const { requireAuth } = require("./middleware");
 const { progressGoal } = require('../game/goals');
 const { safeJsonParse } = require('../utils/helpers');
@@ -3143,10 +3144,10 @@ module.exports = function (db) {
       ];
     }
     let schoolSpells = null;
-    if (k.school_of_magic && CONFIG.MAGIC_SCHOOLS[k.school_of_magic]) {
-      const spellNames = CONFIG.MAGIC_SCHOOLS[k.school_of_magic];
+    if (k.school_of_magic && config.MAGIC_SCHOOLS[k.school_of_magic]) {
+      const spellNames = config.MAGIC_SCHOOLS[k.school_of_magic];
       schoolSpells = spellNames.map(name => {
-        const def = CONFIG.SPELL_DEFS[name] || {};
+        const def = config.SPELL_DEFS[name] || {};
         return {
           id: name,
           name: name.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),

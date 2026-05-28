@@ -11477,7 +11477,7 @@
         html += '</div>';
 
         html += '</div>';
-        html += '<button class="base-btn variant-green w-full" style="width: 100%; background: var(--green);">Save mage allocation</button>';
+        html += '<button class="base-btn variant-green w-full" style="width: 100%; background: var(--green);" onclick="saveMageAllocation()">Save mage allocation</button>';
 
         container.innerHTML = html;
       }
@@ -11592,6 +11592,32 @@
           "Research focus saved — " + result.research_focus.join(" & "),
           "success",
         );
+      }
+
+      async function saveMageAllocation() {
+        var spellbookInput = document.getElementById("mage-alloc-spellbook");
+        var schoolInput = document.getElementById("mage-alloc-school");
+        if (!spellbookInput || !schoolInput) return;
+
+        var spellbookMages = Math.max(0, parseInt(spellbookInput.value, 10) || 0);
+        var schoolMages = Math.max(0, parseInt(schoolInput.value, 10) || 0);
+        var totalMages = state.mages || 0;
+
+        if (spellbookMages + schoolMages > totalMages) {
+          return toast("Total mages allocated cannot exceed " + totalMages, "error");
+        }
+
+        var allocation = Object.assign({}, studiesData.research_allocation || {});
+        allocation.spellbook_mages = spellbookMages;
+        allocation.school_spellbook_mages = schoolMages;
+
+        var result = await apiCall("POST", "/api/kingdom/research-allocation", {
+          allocation: allocation,
+        });
+        if (result.error) return toast(result.error, "error");
+        studiesData.research_allocation = allocation;
+        state.research_allocation = allocation;
+        toast("Mage allocation saved — " + spellbookMages + " to Spellbook, " + schoolMages + " to School Spellbook", "success");
       }
 
       var econData = {};
