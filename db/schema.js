@@ -6,7 +6,11 @@ function translateSqlForPg(sql) {
   // Replace DATETIME with TIMESTAMP
   translated = translated.replace(/\bDATETIME\b/gi, "TIMESTAMP");
 
-  // Handle INSERT OR REPLACE on server_state
+  // INSERT OR REPLACE / INSERT OR IGNORE translations.
+  // Each block is an independent `if` (not else-if) so multiple patterns in the
+  // same statement are all handled and new tables added here won't silently fall
+  // through due to an earlier else-if match.
+
   if (/INSERT\s+OR\s+REPLACE\s+INTO\s+server_state/i.test(translated)) {
     translated = translated.replace(
       /INSERT\s+OR\s+REPLACE\s+INTO\s+server_state\s*\((.*?)\)\s*VALUES\s*\((.*?)\)/i,
@@ -14,38 +18,39 @@ function translateSqlForPg(sql) {
     );
   }
 
-  // Handle INSERT OR REPLACE statements for market_prices
   if (/INSERT\s+OR\s+REPLACE\s+INTO\s+market_prices/i.test(translated)) {
-    translated = translated.replace(
-      /INSERT\s+OR\s+REPLACE\s+INTO\s+market_prices/i,
-      "INSERT INTO market_prices"
-    );
+    translated = translated.replace(/INSERT\s+OR\s+REPLACE\s+INTO\s+market_prices/i, "INSERT INTO market_prices");
     if (!/ON\s+CONFLICT/i.test(translated)) {
       translated = translated.replace(
         /VALUES\s*\((.*?)\)/i,
         "VALUES ($1) ON CONFLICT (id) DO UPDATE SET current_price = EXCLUDED.current_price, base_price = EXCLUDED.base_price, updated_at = EXCLUDED.updated_at"
       );
     }
-  } else if (/INSERT\s+OR\s+IGNORE\s+INTO\s+regions/i.test(translated)) {
+  }
+
+  if (/INSERT\s+OR\s+IGNORE\s+INTO\s+regions/i.test(translated)) {
     translated = translated.replace(/INSERT\s+OR\s+IGNORE\s+INTO\s+regions/i, "INSERT INTO regions");
-    if (!/ON\s+CONFLICT/i.test(translated)) {
-      translated += " ON CONFLICT (name) DO NOTHING";
-    }
-  } else if (/INSERT\s+OR\s+IGNORE\s+INTO\s+market_prices/i.test(translated)) {
+    if (!/ON\s+CONFLICT/i.test(translated)) translated += " ON CONFLICT (name) DO NOTHING";
+  }
+
+  if (/INSERT\s+OR\s+REPLACE\s+INTO\s+regions/i.test(translated)) {
+    translated = translated.replace(/INSERT\s+OR\s+REPLACE\s+INTO\s+regions/i, "INSERT INTO regions");
+    if (!/ON\s+CONFLICT/i.test(translated)) translated += " ON CONFLICT (name) DO NOTHING";
+  }
+
+  if (/INSERT\s+OR\s+IGNORE\s+INTO\s+market_prices/i.test(translated)) {
     translated = translated.replace(/INSERT\s+OR\s+IGNORE\s+INTO\s+market_prices/i, "INSERT INTO market_prices");
-    if (!/ON\s+CONFLICT/i.test(translated)) {
-      translated += " ON CONFLICT (id) DO NOTHING";
-    }
-  } else if (/INSERT\s+OR\s+IGNORE\s+INTO\s+server_state/i.test(translated)) {
+    if (!/ON\s+CONFLICT/i.test(translated)) translated += " ON CONFLICT (id) DO NOTHING";
+  }
+
+  if (/INSERT\s+OR\s+IGNORE\s+INTO\s+server_state/i.test(translated)) {
     translated = translated.replace(/INSERT\s+OR\s+IGNORE\s+INTO\s+server_state/i, "INSERT INTO server_state");
-    if (!/ON\s+CONFLICT/i.test(translated)) {
-      translated += " ON CONFLICT (key) DO NOTHING";
-    }
-  } else if (/INSERT\s+OR\s+IGNORE\s+INTO\s+events/i.test(translated)) {
+    if (!/ON\s+CONFLICT/i.test(translated)) translated += " ON CONFLICT (key) DO NOTHING";
+  }
+
+  if (/INSERT\s+OR\s+IGNORE\s+INTO\s+events/i.test(translated)) {
     translated = translated.replace(/INSERT\s+OR\s+IGNORE\s+INTO\s+events/i, "INSERT INTO events");
-    if (!/ON\s+CONFLICT/i.test(translated)) {
-      translated += " ON CONFLICT (key) DO NOTHING";
-    }
+    if (!/ON\s+CONFLICT/i.test(translated)) translated += " ON CONFLICT (key) DO NOTHING";
   }
 
   // AUTOINCREMENT type translation
@@ -66,12 +71,46 @@ function translateSqlForPg(sql) {
   return translated;
 }
 
-// Cache numeric field names for efficient conversion (PostgreSQL NUMERIC returns strings)
+// Cache numeric field names for efficient conversion (PostgreSQL NUMERIC/INTEGER returns strings)
+// Covers all INTEGER/REAL columns across kingdoms, expeditions, heroes, resource_nodes, trade_routes,
+// news, and other frequently queried tables so callers get JS numbers, not strings.
 const NUMERIC_FIELDS = [
-  'gold', 'mana', 'turn', 'xp',
-  'population', 'morale', 'tax', 'land', 'food',
-  'food_surplus_turns', 'food_shortage_turns', 'turns_stored',
-  'level', 'prestige_level', 'progress'
+  // Core kingdom economy
+  'gold', 'mana', 'food', 'land', 'population', 'morale', 'tax',
+  // Turns / time
+  'turn', 'turns_stored', 'last_turn_at', 'created_at', 'updated_at',
+  'food_surplus_turns', 'food_shortage_turns', 'turn_num',
+  // XP / levels
+  'xp', 'level', 'prestige_level', 'progress',
+  // Units
+  'fighters', 'rangers', 'clerics', 'mages', 'thieves', 'ninjas',
+  'researchers', 'engineers', 'scribes', 'thralls',
+  // Military equipment
+  'war_machines', 'weapons_stockpile', 'armor_stockpile', 'ladders',
+  // Research
+  'res_economy', 'res_weapons', 'res_armor', 'res_military', 'res_spellbook',
+  'res_attack_magic', 'res_defense_magic', 'res_entertainment',
+  'res_construction', 'res_war_machines', 'school_spellbook',
+  // Buildings (base schema)
+  'bld_farms', 'bld_granaries', 'bld_barracks', 'bld_outposts',
+  'bld_guard_towers', 'bld_schools', 'bld_armories', 'bld_vaults',
+  'bld_smithies', 'bld_markets', 'bld_mage_towers', 'bld_shrines',
+  'bld_training', 'bld_castles', 'bld_housing', 'bld_libraries',
+  // Buildings (migrations)
+  'bld_taverns', 'bld_mausoleums', 'bld_woodyard', 'bld_lumber_camp',
+  'bld_blockfield', 'bld_stone_quarry', 'bld_strip_mine',
+  // Tools / crafting stockpiles
+  'tools_hammers', 'tools_scaffolding', 'tools_blueprints',
+  'hammers_stored', 'scaffolding_stored',
+  // Inventory / resources
+  'maps', 'blueprints_stored', 'wood', 'stone', 'iron', 'coal', 'steel',
+  // Heroes
+  'hp', 'max_hp',
+  // Expeditions / resource nodes / trade routes
+  'turns_left', 'population_sent', 'distance', 'richness', 'stability',
+  'food_taken', 'arrive_at', 'depart_at', 'harvest_ends_at',
+  // Misc
+  'count', 'wall_hp',
 ];
 
 function convertNumericFields(row) {
