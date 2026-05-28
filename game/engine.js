@@ -1345,14 +1345,14 @@ function processFoodEconomy(k, events) {
 
         // Apply housing special abilities to reduce population fleeing
         if (activeHousingSpecial?.name === "Holy Sanctuaries") {
-          // Celestial Feather: Partially prevent unrest (25% reduction)
-          fleeCount = Math.floor(fleeCount * 0.75);
+          // Celestial Feather: Completely prevent unrest
+          fleeCount = 0;
         } else if (activeHousingSpecial?.name === "Treehouse Canopy") {
           // Ancient Elven Wood: 80% reduction in fleeing
-          fleeCount = 100;
+          fleeCount = Math.floor(fleeCount * 0.2);
         } else if (activeHousingSpecial?.name === "Lifespring Spores") {
           // Tears of World Tree: 50% reduction in fleeing
-          fleeCount = 250;
+          fleeCount = Math.floor(fleeCount * 0.5);
         }
 
         if (fleeCount > 0) {
@@ -1361,7 +1361,7 @@ function processFoodEconomy(k, events) {
             type: "system",
             message: `👥 Population fleeing starvation: -${fleeCount} people.`,
           });
-        } else {
+        } else if (activeHousingSpecial?.name === "Holy Sanctuaries") {
           events.push({
             type: "system",
             message: `👥 Holy Sanctuaries: Population refuses to abandon their sacred homes despite starvation!`,
@@ -1924,7 +1924,7 @@ function processTurn(k) {
     // Race overcrowding penalty modifiers
     let overcrowdMult = { dire_wolf: 0.5, high_elf: 2.0 }[k.race] || 1.0;
     const activeHousingSpecial = fragmentBonusManager.getSpecialEffect(k, 'housing');
-    if (activeHousingSpecial?.name === "Titan Halls") {
+    if (activeHousingSpecial?.name === "Goliath Dwellings") {
       overcrowdMult *= 0.2; // 80% reduction in overcrowding penalty, since they are spacious
     }
     const overcrowdPenalty = overcrowded
@@ -7307,11 +7307,11 @@ function processActiveEffects(k, events) {
         );
       } else if (effect === "plague") {
         let lost = Math.floor(k.population * 0.02);
-        // Special housing effects (Celestial Realm: Sanctified Homes, Ancient Elven Wood: Elven Halls)
+        // Special housing effects (Celestial Feather: Holy Sanctuaries, Ancient Elven Wood: Treehouse Canopy)
         const activeHousingSpecial = fragmentBonusManager.getSpecialEffect(k, 'housing');
-        if (activeHousingSpecial?.name === "Sanctified Homes") {
+        if (activeHousingSpecial?.name === "Holy Sanctuaries") {
           lost = Math.floor(lost * 0.2); // 80% reduction in plague loss
-        } else if (activeHousingSpecial?.name === "Elven Halls") {
+        } else if (activeHousingSpecial?.name === "Treehouse Canopy") {
           lost = Math.floor(lost * 0.5); // 50% reduction in plague loss
         }
         updates.population = Math.max(0, k.population - lost);

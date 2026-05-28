@@ -16,7 +16,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Geothermal Dehydration", desc: "Constant heat cures crops. Eliminates 100% of moisture-induced mold and spoilage" },
     },
     housing: {
-      passive: { capacity: 0.10, stability: 0.05 },
+      passive: { capacity: 0.10, stability: 0.05, morale: 0.05, happiness: 0.05 },
       special: { name: "Geothermal Hearth", desc: "Underfloor heating pipes tap volcanic veins. Citizens stay warm through brutal winters" },
     },
     libraries: {
@@ -24,11 +24,11 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Heat-Hardened Archive", desc: "Warm dry air circulates continuously, preventing parchment decay and humidity damage" },
     },
     schools: {
-      passive: { output: 0.15, mana_output: 0.10 },
+      passive: { speed: 0.15, output: 0.10 },
       special: { name: "Thermal Computing", desc: "Underground volcanic steam vents drive mechanical sorting gears, accelerating calculation speeds" },
     },
     mage_towers: {
-      passive: { mana: 0.15, spellcasting: 0.10 },
+      passive: { mana: 0.15, manaRegen: 0.10, power: 0.05 },
       special: { name: "Magma Conduit", desc: "Plugging direct volcanic channels into the focus prisms overcharges flame and geothermal attacks with raw kinetic force" },
     },
     shrines: {
@@ -44,7 +44,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Geothermal Foundry-Market", desc: "Warm open-air foundries facilitate metal smelting and ingot trade-guilds directly on site, speeding up gold cycles" },
     },
     taverns: {
-      passive: { morale_output: 0.25, stout_strength: 0.10 },
+      passive: { morale: 0.25, happiness: 0.10 },
       special: { name: "Molten Mug Distilleries", desc: "Underground thermal pipe coils heat copper brewing tanks, distilling volatile, hot stouts that keep the working population incredibly merry and motivated" },
     },
     vaults: {
@@ -56,15 +56,15 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Volcanic Core Mail", desc: "Plates quenched in thermal lava canals gain heat-retentive guards, making them highly resistant to frost weapons or cold fatigue" },
     },
     smithies: {
-      passive: { crafting_speed: 0.15, metal_yields: 0.10 },
+      passive: { speed: 0.15, production: 0.10, quality: 0.05 },
       special: { name: "Geothermal Blast Forge", desc: "Thermal heat fuels high-temperature bellow vents, accelerating tool-crafting and weapon-forging turn cycles" },
     },
     barracks: {
-      passive: { training_speed: 0.30, siege_firepower: 0.15 },
+      passive: { training: 0.30, capacity: 0.15 },
       special: { name: "Pyroclastic Billeting", desc: "Thermal vents located under troop quarters provide constant heating. Troops stay active even in freezing outdoor blizzards, accelerating preparation rounds" },
     },
     walls: {
-      passive: { wall_hp: 0.30, siege_defense: 0.15 },
+      passive: { health: 0.30, defense: 0.15 },
       special: { name: "Magma Parapets", desc: "Thermal insulation warms the bricks. Pouring lava-infused liquids down the battlements melts climbing equipment, damaging enemy engineers" },
     },
     guard_towers: {
