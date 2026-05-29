@@ -390,8 +390,8 @@ const ResourcesPanel = () => {
       const d2 = await r2.json();
       if (!d2.ok && window.toast) window.toast('Build queued but engineer allocation failed: ' + (d2.error || 'Unknown'), 'error');
       if (d2.ok && s) s.resource_build_allocation = newAlloc;
+      syncFromState();
       if (window.refreshKingdom) window.refreshKingdom();
-      setTimeout(syncFromState, 0);
     } catch(e) {
       setBuildingInProgress(p => ({...p, [type]: false}));
       if(window.toast) window.toast('Error: ' + e.message, 'error');
@@ -406,8 +406,8 @@ const ResourcesPanel = () => {
       });
       const data = await r.json();
       if (data.ok) {
+        syncFromState();
         if (window.refreshKingdom) window.refreshKingdom();
-        setTimeout(syncFromState, 500);
       } else { if(window.toast) window.toast('Error: ' + (data.error || 'Unknown'), 'error'); }
     } catch(e) { if(window.toast) window.toast('Error: ' + e.message, 'error'); }
   };
