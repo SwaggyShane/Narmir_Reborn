@@ -159,10 +159,11 @@ client.on('messageCreate', async (message) => {
         return message.reply(`❌ No game account found with username **${gameName}**. Check your spelling.`);
       }
 
-      // Generate a 6-char uppercase alphanumeric token
+      // Generate a 6-char uppercase alphanumeric token (cryptographically secure)
+      const crypto = require('crypto');
       const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
       let token = '';
-      for (let i = 0; i < 6; i++) token += chars[Math.floor(Math.random() * chars.length)];
+      for (let i = 0; i < 6; i++) token += chars[crypto.randomInt(0, chars.length)];
 
       const expiresAt = Math.floor(Date.now() / 1000) + 600; // 10 minutes
 
@@ -184,10 +185,12 @@ client.on('messageCreate', async (message) => {
         );
         await message.reply(`✅ A verification code has been sent to your DMs! Enter it in **Settings → Discord** in-game.`);
       } catch (dmError) {
-        // DMs are disabled — send code in channel as fallback (less ideal but functional)
+        // DMs are disabled — do NOT expose the token publicly (security risk)
         await message.reply(
-          `⚠️ I couldn't DM you (your DMs may be closed). Your code is: **\`${token}\`** — Enter it in **Settings → Discord** in-game. (Expires in 10 minutes)`
+          `❌ I couldn't DM you. Please enable DMs from server members in Discord Settings → Privacy & Safety, then try again. Alternatively, use **Method 2 (Manual Entry)** in Settings → Discord.`
         );
+        // Delete the token since we couldn't deliver it securely
+        await db.run('DELETE FROM discord_link_tokens WHERE discord_user_id = ?', [message.author.id]);
       }
     } catch (error) {
       console.error('❌ Error processing !link command:', error);

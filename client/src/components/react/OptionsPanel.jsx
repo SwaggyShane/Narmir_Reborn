@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 const API = (path, opts = {}) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('narmir_token');
   return fetch(`/api/discord${path}`, {
     ...opts,
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, ...(opts.headers || {}) },

@@ -93,8 +93,8 @@ module.exports = function (db) {
     try {
       const now = Math.floor(Date.now() / 1000);
       const record = await db.get(
-        "SELECT * FROM discord_link_tokens WHERE UPPER(token) = UPPER(?) AND expires_at > ?",
-        [token.trim(), now]
+        "SELECT * FROM discord_link_tokens WHERE token = ? AND expires_at > ?",
+        [token.trim().toUpperCase(), now]
       );
 
       if (!record) {
