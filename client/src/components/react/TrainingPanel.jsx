@@ -116,7 +116,7 @@ const TrainingPanel = () => {
           </div>
         </div>
 
-        <div className="trow" id="training-row-clerics" style={{ display: isVampire ? 'none' : '' }}>
+        <div className="trow" id="training-row-clerics" style={{ display: isVampire ? 'none' : 'block' }}>
           <span className="name">Clerics</span>
           <div className="prog-wrap">
              <div id="tr-bar-clerics" className="prog-bar" style={{ width: '0%', background: 'var(--green)' }}></div>

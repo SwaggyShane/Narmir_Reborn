@@ -70,7 +70,7 @@ function formatLoot(loot) {
   return Object.entries(loot).filter(([k]) => !k.startsWith('_')).map(([r, q]) => `${q} ${r}`).join(', ');
 }
 function statusColor(status) {
-  return { outbound: 'color: var(--text3)', harvesting: 'color: var(--gold)', returning: 'color: var(--green)', completed: 'color: var(--text3)', intercepted: 'color: var(--red)' }[status] || 'color: var(--text3)';
+  return { outbound: { color: 'var(--text3)' }, harvesting: { color: 'var(--gold)' }, returning: { color: 'var(--green)' }, completed: { color: 'var(--text3)' }, intercepted: { color: 'var(--red)' } }[status] || { color: 'var(--text3)' };
 }
 function itemIcon(id) {
   const icons = {
