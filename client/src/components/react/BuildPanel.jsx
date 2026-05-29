@@ -200,7 +200,7 @@ const BuildPanel = () => {
             {renderBuildingRow(BUILDINGS.find(b => b.id === 'wm'), { emoji: '🪖', color: '#5a3a1a' }, 'ba-wm', '')}
             {renderBuildingRow(BUILDINGS.find(b => b.id === 'ladders'), { emoji: '🪜', color: '#3a2a1a' }, 'ba-ladders', '')}
             {renderBuildingRow(BUILDINGS.find(b => b.id === 'weapons'), { emoji: '🗡️', color: '#6a1a1a' }, 'ba-weapons', '')}
-            <div style={{ borderBottom: 'none' }}>
+            <div style={{ borderTop: '1px solid var(--border)', borderRight: '1px solid var(--border)', borderLeft: '1px solid var(--border)', borderBottom: 'none' }}>
               {renderBuildingRow(BUILDINGS.find(b => b.id === 'armor'), { emoji: '🔰', color: '#1a3a6a' }, 'ba-armor', '')}
             </div>
 
