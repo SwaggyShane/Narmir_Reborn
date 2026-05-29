@@ -222,7 +222,7 @@ client.on('messageCreate', async (message) => {
 
       // Create audio player and load the attack sound
       const player = createAudioPlayer();
-      const soundPath = path.join(__dirname, 'public', 'sounds', 'attack.mp3');
+      const soundPath = path.join(__dirname, 'public', 'sound', 'monty_python_i_fart.mp3');
       const resource = createAudioResource(soundPath);
 
       connection.subscribe(player);
