@@ -103,22 +103,26 @@ module.exports = function (db) {
       }
 
       // Calculate starting land: building costs + 1000 buffer
-      const landCosts = {
-        farms: 10, schools: 125, barracks: 100, armories: 300, housing: 25,
-        markets: 100, smithies: 200, mage_towers: 250, shrines: 150, training: 850, mausoleums: 150
-      };
+      // Use engine's BUILDING_LAND_COST to stay in sync with game balance
       let startingLand = 1000; // Base buffer
-      startingLand += buildings.bld_farms * landCosts.farms;
-      startingLand += buildings.bld_schools * landCosts.schools;
-      startingLand += buildings.bld_barracks * landCosts.barracks;
-      startingLand += buildings.bld_armories * landCosts.armories;
-      startingLand += buildings.bld_housing * landCosts.housing;
-      startingLand += buildings.bld_markets * landCosts.markets;
-      startingLand += buildings.bld_smithies * landCosts.smithies;
-      startingLand += buildings.bld_mage_towers * landCosts.mage_towers;
-      startingLand += buildings.bld_shrines * landCosts.shrines;
-      startingLand += buildings.bld_training * landCosts.training;
-      startingLand += buildings.bld_mausoleums * landCosts.mausoleums;
+      const buildingKeys = {
+        bld_farms: 'farms',
+        bld_schools: 'schools',
+        bld_barracks: 'barracks',
+        bld_armories: 'armories',
+        bld_housing: 'housing',
+        bld_markets: 'markets',
+        bld_smithies: 'smithies',
+        bld_mage_towers: 'mage_towers',
+        bld_shrines: 'shrines',
+        bld_training: 'training',
+        bld_mausoleums: 'mausoleums'
+      };
+      for (const [dbCol, configKey] of Object.entries(buildingKeys)) {
+        const count = buildings[dbCol] || 0;
+        const cost = engine.BUILDING_LAND_COST[configKey] || 0;
+        startingLand += count * cost;
+      }
 
       await db.run(
         `INSERT INTO kingdoms (
