@@ -11,7 +11,7 @@
     "lint": "eslint . --ext js --report-unused-disable-directives"
   },
   "engines": {
-    "node": "^20.19.0 || >=22.12.0",
+    "node": "^20.19.0 || ^22.13.0 || >=24",
     "npm": ">=9.0.0"
   },
   "dependencies": {
