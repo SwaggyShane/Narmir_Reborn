@@ -58,7 +58,7 @@ client.once('ready', async () => {
     // Start polling game messages
     pollAndSyncGameMessages();
   } catch (error) {
-    console.error('❌ Failed to initialize database:', error.message);
+    console.error('❌ Failed to initialize database:', error);
     console.error('Discord sync will be unavailable until database connects.');
   }
 });
