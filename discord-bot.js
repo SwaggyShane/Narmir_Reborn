@@ -48,8 +48,8 @@ client.once('ready', async () => {
 
   // Initialize database connection
   try {
-    const dbModule = require('./db/schema');
-    db = await dbModule();
+    const { initDb } = require('./db/schema');
+    db = await initDb();
     console.log('✅ Database connected for Discord sync');
 
     // Load sync configs from database
