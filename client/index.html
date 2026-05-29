@@ -4351,6 +4351,7 @@
               state.chatColor = msg.split(" ")[1];
             }
             appendSystemMessage("global-chat-messages", res.message);
+            syncUI();
           }
         });
         inp.value = "";
@@ -6608,6 +6609,7 @@
 
         // Populate target dropdown
         populateBountyDropdown();
+        syncUI();
       }
 
       function filterBountyTargets(q) {
@@ -6737,6 +6739,7 @@
             state.conversations[state.activeConversationPeerId]?.peer_name,
           );
         }
+        syncUI();
       }
 
       function renderConversations() {
@@ -6803,6 +6806,9 @@
           setTimeout(() => {
             msgEl.scrollTop = msgEl.scrollHeight;
           }, 50);
+        }
+        syncUI();
+      }
         }
       }
 
@@ -7689,6 +7695,7 @@
         });
         if (result.error) return toast(result.error, "error");
         state.description = desc;
+        syncUI();
         toast("Kingdom bio updated!", "success");
       }
 
@@ -9326,6 +9333,7 @@
         if (result.error) return toast(result.error, "error");
         state.research_allocation = {};
         toast("All researchers released", "success");
+        syncUI();
       }
 
       async function releaseAllEngineers() {
@@ -9340,6 +9348,7 @@
         if (result.error) return toast(result.error, "error");
         state.build_allocation = {};
         toast("All engineers released", "success");
+        syncUI();
       }
 
       async function saveBuildAllocation() {
@@ -9387,6 +9396,7 @@
         if (result.error) return toast(result.error, "error");
         state.build_allocation = allocation;
         updateBuildDisplay();
+        syncUI();
         toast(
           "Engineer allocation saved — builds each turn automatically",
           "success",
@@ -9910,6 +9920,7 @@
         if (result.error) return toast(result.error, "error");
         state.research_allocation = allocation;
         updateAllocationDisplay();
+        syncUI();
         toast("Research allocation saved — advances every turn", "success");
       }
 
@@ -11674,6 +11685,7 @@
           html += "</div>";
           studyContainer.innerHTML = html;
         }
+        syncUI();
       }
 
       async function saveResearchFocus() {
@@ -11686,6 +11698,7 @@
         });
         if (result.error) return toast(result.error, "error");
         state.research_focus = result.research_focus;
+        syncUI();
         toast(
           "Research focus saved — " + result.research_focus.join(" & "),
           "success",
@@ -11715,6 +11728,7 @@
         if (result.error) return toast(result.error, "error");
         studiesData.research_allocation = allocation;
         state.research_allocation = allocation;
+        syncUI();
         toast("Mage allocation saved — " + spellbookMages + " to Spellbook, " + schoolMages + " to School Spellbook", "success");
       }
 
@@ -12218,6 +12232,7 @@
         if (t2 && document.activeElement !== t2) t2.value = v;
 
         updateTax(v);
+        syncUI();
         toast("Tax rate locked at " + v + "%", v > 50 ? "warn" : "success");
       }
 
@@ -12230,6 +12245,7 @@
         var result = await apiCall("POST", "/api/kingdom/options", { tax: v });
         if (result.error) return toast(result.error, "error");
         state.tax = v;
+        syncUI();
         updateTax(v);
         toast("Tax rate locked at " + v + "%", v > 50 ? "warn" : "success");
       }
