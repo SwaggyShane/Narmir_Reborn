@@ -110,8 +110,17 @@ async function pollAndSyncGameMessages() {
 // Poll for new game messages every 5 seconds
 setInterval(pollAndSyncGameMessages, 5000);
 
-// Periodically reload sync configs to pick up admin changes
-setInterval(loadSyncConfigs, 30000);
+// Periodically reload sync configs and clean up expired tokens
+setInterval(async () => {
+  await loadSyncConfigs();
+  if (db) {
+    try {
+      await db.run('DELETE FROM discord_link_tokens WHERE expires_at < ?', [Math.floor(Date.now() / 1000)]);
+    } catch (e) {
+      console.error('❌ Failed to clean up expired link tokens:', e);
+    }
+  }
+}, 30000);
 
 client.on('messageCreate', async (message) => {
   // Ignore bot messages
@@ -125,6 +134,69 @@ client.on('messageCreate', async (message) => {
     } catch (error) {
       console.error('❌ Failed to relay Discord message to game:', error);
     }
+  }
+
+  // Handle !link <gamename> command — generates a verification code sent via DM
+  if (message.content.startsWith('!link')) {
+    // Only allow in guild channels, not DMs
+    if (!message.guild) {
+      return message.reply('❌ Please use `!link` in the Narmir Reborn Discord server, not in DMs.');
+    }
+
+    if (!db) {
+      return message.reply('❌ Database not connected. Please try again shortly.');
+    }
+
+    const gameName = message.content.slice(5).trim();
+    if (!gameName) {
+      return message.reply('❌ Usage: `!link YourGameUsername`');
+    }
+
+    try {
+      // Check the game username exists
+      const player = await db.get('SELECT id, username FROM players WHERE LOWER(username) = LOWER(?)', [gameName]);
+      if (!player) {
+        return message.reply(`❌ No game account found with username **${gameName}**. Check your spelling.`);
+      }
+
+      // Generate a 6-char uppercase alphanumeric token (cryptographically secure)
+      const crypto = require('crypto');
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let token = '';
+      for (let i = 0; i < 6; i++) token += chars[crypto.randomInt(0, chars.length)];
+
+      const expiresAt = Math.floor(Date.now() / 1000) + 600; // 10 minutes
+
+      // Delete any existing token for this Discord user and upsert new one
+      await db.run('DELETE FROM discord_link_tokens WHERE discord_user_id = ?', [message.author.id]);
+      await db.run(
+        'INSERT INTO discord_link_tokens (token, discord_user_id, discord_username, game_username, expires_at) VALUES (?, ?, ?, ?, ?)',
+        [token, message.author.id, message.author.username, player.username, expiresAt]
+      );
+
+      // DM the token to the user
+      try {
+        await message.author.send(
+          `🔮 **Narmir Reborn — Discord Link Code**\n\n` +
+          `Your verification code is: **\`${token}\`**\n\n` +
+          `Enter this code in **Settings → Discord** in the game to link your account.\n` +
+          `This code expires in **10 minutes**.\n\n` +
+          `Linking account: **${player.username}**`
+        );
+        await message.reply(`✅ A verification code has been sent to your DMs! Enter it in **Settings → Discord** in-game.`);
+      } catch (dmError) {
+        // DMs are disabled — do NOT expose the token publicly (security risk)
+        await message.reply(
+          `❌ I couldn't DM you. Please enable DMs from server members in Discord Settings → Privacy & Safety, then try again. Alternatively, use **Method 2 (Manual Entry)** in Settings → Discord.`
+        );
+        // Delete the token since we couldn't deliver it securely
+        await db.run('DELETE FROM discord_link_tokens WHERE discord_user_id = ?', [message.author.id]);
+      }
+    } catch (error) {
+      console.error('❌ Error processing !link command:', error);
+      message.reply('❌ An error occurred. Please try again.');
+    }
+    return;
   }
 
   // Listen for !update command
