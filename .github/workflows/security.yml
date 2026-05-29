@@ -21,13 +21,12 @@ jobs:
           node-version: '18'
 
       - name: Install dependencies (lockfile verification)
-        run: npm ci
+        run: npm ci --verbose
         env:
           NODE_ENV: production
 
       - name: Run npm audit
-        run: npm audit --audit-level=high
-        continue-on-error: false
+        run: npm audit --audit-level=high --verbose
 
   sast:
     runs-on: ubuntu-latest
