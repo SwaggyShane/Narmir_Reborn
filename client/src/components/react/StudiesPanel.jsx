@@ -1,8 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const StudiesPanel = () => {
   const [activeTab, setActiveTab] = useState('tower');
   const [activeSchoolSubTab, setActiveSchoolSubTab] = useState('general');
+
+  useEffect(() => {
+    const loadMageAllocation = () => {
+      const s = window.gameState || {};
+      const alloc = (typeof s.school_allocation === 'string')
+        ? (function() { try { return JSON.parse(s.school_allocation); } catch { return {}; } })()
+        : (s.school_allocation || {});
+
+      const spellbookEl = document.getElementById('mage-alloc-spellbook');
+      const schoolEl = document.getElementById('mage-alloc-school');
+      if (spellbookEl) spellbookEl.value = alloc.spellbook || 0;
+      if (schoolEl) schoolEl.value = alloc.school_spellbook || 0;
+
+      if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay();
+    };
+
+    loadMageAllocation();
+  }, []);
 
   const handleTabClick = (tabId) => {
     setActiveTab(tabId);
@@ -249,12 +267,57 @@ const StudiesPanel = () => {
 
             {/* Mage Allocation & Spells */}
             <div className="card">
-              <div className="card-title" style={{ marginBottom: '8px' }}>Mage Research</div>
-              <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '12px' }}>
-                Allocate your Mages between Spellbook continuation and School Spellbook specialization.
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+                <div>
+                  <div className="card-title" style={{ marginBottom: '2px' }}>Mage Research</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text3)' }}>
+                    Total Mages: <span id="mage-total" style={{ color: 'var(--text)' }}>0</span> · Available: <span id="mage-available" style={{ color: 'var(--green)' }}>0</span> · Allocated: <span id="mage-allocated" style={{ color: 'var(--gold)' }}>0</span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button className="base-btn variant-red" onClick={() => { if (window.releaseMageAllocation) window.releaseMageAllocation(); }} style={{ whiteSpace: 'nowrap', background: 'var(--red)' }}>Release all</button>
+                  <button className="base-btn variant-accent" onClick={() => { if (window.studyMagic) window.studyMagic(); }} style={{ whiteSpace: 'nowrap', background: 'var(--accent1)', color: '#fff' }}>Study</button>
+                </div>
               </div>
-              <div id="mage-allocation-ui">
-                <div style={{ fontSize: '13px', color: 'var(--text3)' }}>Loading mage allocation...</div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                {/* Spellbook Allocation */}
+                <div style={{ padding: '12px', background: 'var(--bg2)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '10px', color: 'var(--text)' }}>📖 Spellbook</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '8px' }}>General spellbook continuation</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <input
+                      type="number"
+                      className="input"
+                      id="mage-alloc-spellbook"
+                      min="0"
+                      defaultValue="0"
+                      onChange={() => { if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay(); }}
+                      style={{ textAlign: 'right', flex: 1 }}
+                      placeholder="Qty"
+                    />
+                    <button className="base-btn" onClick={() => { if (window.setMageMax) window.setMageMax('spellbook'); }} style={{ padding: '4px 8px', fontSize: '10px' }}>Max</button>
+                  </div>
+                </div>
+
+                {/* School Spellbook Allocation */}
+                <div style={{ padding: '12px', background: 'var(--bg2)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '10px', color: 'var(--text)' }}>🔮 School Spellbook</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '8px' }}>School-specific specialization</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <input
+                      type="number"
+                      className="input"
+                      id="mage-alloc-school"
+                      min="0"
+                      defaultValue="0"
+                      onChange={() => { if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay(); }}
+                      style={{ textAlign: 'right', flex: 1 }}
+                      placeholder="Qty"
+                    />
+                    <button className="base-btn" onClick={() => { if (window.setMageMax) window.setMageMax('school'); }} style={{ padding: '4px 8px', fontSize: '10px' }}>Max</button>
+                  </div>
+                </div>
               </div>
             </div>
 

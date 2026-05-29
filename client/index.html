@@ -9388,6 +9388,79 @@
         );
       }
 
+      function updateMageAllocationDisplay() {
+        if (!state) return;
+        var total = state.mages || 0;
+        var spellbookEl = document.getElementById('mage-alloc-spellbook');
+        var schoolEl = document.getElementById('mage-alloc-school');
+        var spellbookAlloc = parseInt(spellbookEl?.value) || 0;
+        var schoolAlloc = parseInt(schoolEl?.value) || 0;
+        var allocated = spellbookAlloc + schoolAlloc;
+        var available = Math.max(0, total - allocated);
+
+        var totalEl = document.getElementById('mage-total');
+        var availEl = document.getElementById('mage-available');
+        var allocEl = document.getElementById('mage-allocated');
+        if (totalEl) totalEl.textContent = total;
+        if (availEl) availEl.textContent = available;
+        if (allocEl) allocEl.textContent = allocated;
+      }
+
+      function setMageMax(type) {
+        if (!state) return;
+        var total = state.mages || 0;
+        var spellbookEl = document.getElementById('mage-alloc-spellbook');
+        var schoolEl = document.getElementById('mage-alloc-school');
+        var otherAlloc = type === 'spellbook' ? (parseInt(schoolEl?.value) || 0) : (parseInt(spellbookEl?.value) || 0);
+        var available = Math.max(0, total - otherAlloc);
+
+        if (type === 'spellbook' && spellbookEl) {
+          spellbookEl.value = available;
+        } else if (type === 'school' && schoolEl) {
+          schoolEl.value = available;
+        }
+        updateMageAllocationDisplay();
+      }
+
+      async function releaseMageAllocation() {
+        var spellbookEl = document.getElementById('mage-alloc-spellbook');
+        var schoolEl = document.getElementById('mage-alloc-school');
+        if (spellbookEl) spellbookEl.value = 0;
+        if (schoolEl) schoolEl.value = 0;
+        updateMageAllocationDisplay();
+
+        var result = await apiCall("POST", "/api/kingdom/school-allocation", {
+          spellbook: 0,
+          school_spellbook: 0
+        });
+        if (result.error) return toast(result.error, "error");
+        state.school_allocation = { spellbook: 0, school_spellbook: 0 };
+        toast("All mages released from study", "success");
+      }
+
+      async function studyMagic() {
+        if (!state) return;
+        var spellbookEl = document.getElementById('mage-alloc-spellbook');
+        var schoolEl = document.getElementById('mage-alloc-school');
+        var spellbookAlloc = parseInt(spellbookEl?.value) || 0;
+        var schoolAlloc = parseInt(schoolEl?.value) || 0;
+
+        if (spellbookAlloc + schoolAlloc === 0) {
+          return toast("Allocate at least 1 mage to study", "error");
+        }
+
+        var result = await apiCall("POST", "/api/kingdom/school-allocation", {
+          spellbook: spellbookAlloc,
+          school_spellbook: schoolAlloc
+        });
+        if (result.error) return toast(result.error, "error");
+        state.school_allocation = {
+          spellbook: spellbookAlloc,
+          school_spellbook: schoolAlloc
+        };
+        toast("Mages allocated to study — gaining experience each turn", "success");
+      }
+
       function updateBuildTooltips() {
         if (!state) return;
         // BuildPanel.vue handles tooltips via Vue bindings; skip dynamic tooltip generation
