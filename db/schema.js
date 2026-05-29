@@ -1401,6 +1401,20 @@ async function initDb() {
   `);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_discord_sync_config_channel ON discord_sync_config(channel_id)`);
 
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS discord_link_tokens (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      token TEXT NOT NULL UNIQUE,
+      discord_user_id TEXT NOT NULL,
+      discord_username TEXT NOT NULL,
+      game_username TEXT NOT NULL,
+      expires_at INTEGER NOT NULL,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch())
+    )
+  `);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_discord_link_tokens_token ON discord_link_tokens(token)`);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_discord_link_tokens_expires ON discord_link_tokens(expires_at)`);
+
   return _db;
 }
 

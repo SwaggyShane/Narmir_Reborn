@@ -1,5 +1,186 @@
 import React, { useState, useEffect } from 'react';
 
+const API = (path, opts = {}) => {
+  const token = localStorage.getItem('token');
+  return fetch(`/api/discord${path}`, {
+    ...opts,
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, ...(opts.headers || {}) },
+  }).then(r => r.json());
+};
+
+const DiscordSection = () => {
+  const [linkStatus, setLinkStatus] = useState(null);
+  const [manualUserId, setManualUserId] = useState('');
+  const [manualUsername, setManualUsername] = useState('');
+  const [verifyCode, setVerifyCode] = useState('');
+  const [msg, setMsg] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    API('/link-status').then(data => setLinkStatus(data)).catch(() => {});
+  }, []);
+
+  const flash = (text, type = 'ok') => {
+    setMsg({ text, type });
+    setTimeout(() => setMsg(null), 5000);
+  };
+
+  const handleManualLink = async () => {
+    if (!manualUserId.trim() || !manualUsername.trim()) return flash('Both fields are required.', 'err');
+    setLoading(true);
+    try {
+      const data = await API('/link-discord', {
+        method: 'POST',
+        body: JSON.stringify({ discordUserId: manualUserId.trim(), discordUsername: manualUsername.trim() }),
+      });
+      if (data.ok) {
+        flash(`Linked to @${manualUsername.trim()}!`);
+        setLinkStatus({ linked: true, discordUsername: manualUsername.trim() });
+        setManualUserId('');
+        setManualUsername('');
+      } else {
+        flash(data.error || 'Failed to link.', 'err');
+      }
+    } catch (e) {
+      flash('Network error.', 'err');
+    }
+    setLoading(false);
+  };
+
+  const handleVerifyCode = async () => {
+    if (!verifyCode.trim()) return flash('Enter your verification code.', 'err');
+    setLoading(true);
+    try {
+      const data = await API('/verify-token', {
+        method: 'POST',
+        body: JSON.stringify({ token: verifyCode.trim().toUpperCase() }),
+      });
+      if (data.ok) {
+        flash(`Linked to @${data.discordUsername}!`);
+        setLinkStatus({ linked: true, discordUsername: data.discordUsername });
+        setVerifyCode('');
+      } else {
+        flash(data.error || 'Invalid or expired code.', 'err');
+      }
+    } catch (e) {
+      flash('Network error.', 'err');
+    }
+    setLoading(false);
+  };
+
+  const handleUnlink = async () => {
+    setLoading(true);
+    try {
+      const data = await API('/unlink-discord', { method: 'POST' });
+      if (data.ok) {
+        flash('Discord account unlinked.');
+        setLinkStatus({ linked: false });
+      } else {
+        flash(data.error || 'Failed to unlink.', 'err');
+      }
+    } catch (e) {
+      flash('Network error.', 'err');
+    }
+    setLoading(false);
+  };
+
+  const inputStyle = {
+    width: '100%', background: 'var(--bg3)', border: '1px solid var(--border)',
+    borderRadius: 'var(--radius)', color: 'var(--text)', padding: '8px 10px',
+    fontSize: '13px', outline: 'none', boxSizing: 'border-box',
+  };
+  const labelStyle = { fontSize: '12px', color: 'var(--text3)', display: 'block', marginBottom: '5px' };
+
+  return (
+    <div className="card" style={{ marginTop: '20px' }}>
+      <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span style={{ fontSize: '20px' }}>💬</span> Discord Integration
+      </div>
+
+      {/* Status Banner */}
+      <div style={{
+        padding: '10px 14px', borderRadius: 'var(--radius)', marginBottom: '18px',
+        background: linkStatus?.linked ? 'rgba(88,166,255,0.12)' : 'var(--bg3)',
+        border: `1px solid ${linkStatus?.linked ? '#58a6ff' : 'var(--border)'}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px',
+      }}>
+        <span style={{ fontSize: '13px', color: linkStatus?.linked ? '#58a6ff' : 'var(--text3)' }}>
+          {linkStatus == null
+            ? '⏳ Checking link status...'
+            : linkStatus.linked
+              ? `✅ Connected to Discord as @${linkStatus.discordUsername}`
+              : '⚪ Discord account not linked'}
+        </span>
+        {linkStatus?.linked && (
+          <button className="base-btn variant-red" style={{ fontSize: '12px', padding: '5px 12px', background: 'var(--red)' }}
+            onClick={handleUnlink} disabled={loading}>
+            Unlink
+          </button>
+        )}
+      </div>
+
+      {msg && (
+        <div style={{
+          padding: '8px 12px', borderRadius: 'var(--radius)', marginBottom: '14px', fontSize: '13px',
+          background: msg.type === 'ok' ? 'rgba(63,185,80,0.15)' : 'rgba(248,81,73,0.15)',
+          color: msg.type === 'ok' ? 'var(--green)' : 'var(--red)',
+          border: `1px solid ${msg.type === 'ok' ? 'var(--green)' : 'var(--red)'}`,
+        }}>
+          {msg.text}
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        {/* Method 1 — Verification Code (recommended) */}
+        <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '14px' }}>
+          <div style={{ fontWeight: 700, fontSize: '13px', marginBottom: '10px', color: 'var(--text)' }}>
+            🔮 Method 1 — Verification Code <span style={{ fontWeight: 400, color: 'var(--accent1)', fontSize: '11px' }}>RECOMMENDED</span>
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--text2)', marginBottom: '12px', lineHeight: 1.6 }}>
+            <strong style={{ color: 'var(--text)' }}>Step 1.</strong> In the Narmir Reborn Discord server, type:<br />
+            <code style={{ background: 'var(--bg2)', padding: '2px 6px', borderRadius: '4px', color: 'var(--accent1)' }}>
+              !link {(JSON.parse(localStorage.getItem('player') || '{}').username) || 'YourUsername'}
+            </code><br /><br />
+            <strong style={{ color: 'var(--text)' }}>Step 2.</strong> The bot will DM you a 6-character code. Enter it below.
+          </div>
+          <label style={labelStyle}>Verification Code</label>
+          <input
+            style={{ ...inputStyle, letterSpacing: '3px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '10px' }}
+            placeholder="ABC123"
+            maxLength={6}
+            value={verifyCode}
+            onChange={e => setVerifyCode(e.target.value.toUpperCase())}
+          />
+          <button className="base-btn variant-accent" style={{ width: '100%', background: 'var(--accent1)' }}
+            onClick={handleVerifyCode} disabled={loading || !verifyCode.trim()}>
+            Verify Code
+          </button>
+        </div>
+
+        {/* Method 2 — Manual */}
+        <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '14px' }}>
+          <div style={{ fontWeight: 700, fontSize: '13px', marginBottom: '10px', color: 'var(--text)' }}>
+            🔧 Method 2 — Manual Entry
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--text2)', marginBottom: '12px', lineHeight: 1.6 }}>
+            In Discord: <strong style={{ color: 'var(--text)' }}>Settings → Advanced → Enable Developer Mode</strong>, then right-click your username and select <strong style={{ color: 'var(--text)' }}>Copy User ID</strong>.
+          </div>
+          <label style={labelStyle}>Discord User ID</label>
+          <input style={{ ...inputStyle, marginBottom: '8px' }} placeholder="e.g. 123456789012345678"
+            value={manualUserId} onChange={e => setManualUserId(e.target.value)} />
+          <label style={labelStyle}>Discord Username</label>
+          <input style={{ ...inputStyle, marginBottom: '10px' }} placeholder="e.g. swaggyshane"
+            value={manualUsername} onChange={e => setManualUsername(e.target.value)} />
+          <button className="base-btn" style={{ width: '100%', background: 'var(--bg2)', border: '1px solid var(--border)' }}
+            onClick={handleManualLink} disabled={loading || !manualUserId.trim() || !manualUsername.trim()}>
+            Link Account
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const OptionsPanel = () => {
   const [navLayout, setNavLayout] = useState(
     localStorage.getItem('narmir_nav_layout') || 'responsive'
@@ -164,6 +345,8 @@ const OptionsPanel = () => {
           ASCEND EMPIRE
         </button>
       </div>
+
+      <DiscordSection />
 
       {/* NEWS */}
       <div id="vue-panel-news" style={{ display: 'contents' }}></div>
