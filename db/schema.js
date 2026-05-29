@@ -822,6 +822,33 @@ async function initDb() {
   if (!cmCols.includes('player_id')) await addColumn('chat_messages', 'player_id', 'INTEGER NOT NULL DEFAULT 0');
   if (!cmCols.includes('deleted'))  await addColumn('chat_messages', 'deleted',  'INTEGER NOT NULL DEFAULT 0');
 
+  // Allow NULL kingdom_id for Discord relay messages from unlinked users
+  const cmInfo = await _db.all('PRAGMA table_info(chat_messages)');
+  const kingdomIdCol = cmInfo.find(c => c.name === 'kingdom_id');
+  if (kingdomIdCol && kingdomIdCol.notnull) {
+    try {
+      await _db.run(`
+        CREATE TABLE chat_messages_new (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          kingdom_id  INTEGER REFERENCES kingdoms(id),
+          player_id   INTEGER NOT NULL DEFAULT 0,
+          username    TEXT NOT NULL DEFAULT '',
+          room        TEXT    NOT NULL DEFAULT 'global',
+          message     TEXT    NOT NULL,
+          deleted     INTEGER NOT NULL DEFAULT 0,
+          created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+        );
+        INSERT INTO chat_messages_new SELECT * FROM chat_messages;
+        DROP TABLE chat_messages;
+        ALTER TABLE chat_messages_new RENAME TO chat_messages;
+        CREATE INDEX idx_chat_room ON chat_messages(room, created_at);
+      `);
+      console.log('✅ Migrated chat_messages to allow NULL kingdom_id');
+    } catch (e) {
+      console.log('⚠️  chat_messages migration skipped (likely already migrated):', e.message);
+    }
+  }
+
   if (!kingdomsCols.includes('region')) {
     await addColumn('kingdoms', 'region', "TEXT NOT NULL DEFAULT ''", kingdomsCols);
     // Backfill existing kingdoms
@@ -1325,6 +1352,46 @@ async function initDb() {
     )
   `);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_res_expeditions_kingdom ON resource_expeditions(kingdom_id, status)`);
+
+  // Discord integration tables
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS discord_links (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      player_id INTEGER NOT NULL UNIQUE REFERENCES players(id),
+      discord_user_id TEXT NOT NULL UNIQUE,
+      discord_username TEXT NOT NULL,
+      linked_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+    )
+  `);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_discord_links_player ON discord_links(player_id)`);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_discord_links_discord_user ON discord_links(discord_user_id)`);
+
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS chat_sync_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      game_message_id INTEGER REFERENCES chat_messages(id),
+      discord_message_id TEXT,
+      direction TEXT NOT NULL,
+      synced_at INTEGER NOT NULL DEFAULT (unixepoch())
+    )
+  `);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_chat_sync_log_game_msg ON chat_sync_log(game_message_id)`);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_chat_sync_log_discord_msg ON chat_sync_log(discord_message_id)`);
+
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS discord_sync_config (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      channel_id TEXT NOT NULL UNIQUE,
+      channel_name TEXT NOT NULL,
+      enabled INTEGER NOT NULL DEFAULT 1,
+      sync_both_directions INTEGER NOT NULL DEFAULT 1,
+      game_room TEXT NOT NULL DEFAULT 'global',
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+    )
+  `);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_discord_sync_config_channel ON discord_sync_config(channel_id)`);
 
   return _db;
 }
