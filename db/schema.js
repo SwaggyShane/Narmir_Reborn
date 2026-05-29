@@ -1295,7 +1295,6 @@ async function initDb() {
   // Magic schools - school selection and school-specific spellbook
   if (!cols2.includes('school_of_magic'))   await addColumn('kingdoms', 'school_of_magic',   "TEXT", kingdomsCols);
   if (!cols2.includes('school_spellbook'))  await addColumn('kingdoms', 'school_spellbook',  "INTEGER NOT NULL DEFAULT 0", kingdomsCols);
-  if (!cols2.includes('school_allocation')) await addColumn('kingdoms', 'school_allocation', "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
 
   // Resource nodes table
   await _db.run(`

@@ -6116,6 +6116,11 @@
                  </div>`;
           }
         }
+
+        // Update mage allocation display
+        if (typeof updateMageAllocationDisplay === 'function') {
+          updateMageAllocationDisplay();
+        }
       }
 
       // Regen countdown — syncs to server's 25-min cycle
@@ -9434,7 +9439,9 @@
           school_spellbook: 0
         });
         if (result.error) return toast(result.error, "error");
-        state.school_allocation = { spellbook: 0, school_spellbook: 0 };
+        state.research_allocation = state.research_allocation || {};
+        state.research_allocation.spellbook_mages = 0;
+        state.research_allocation.school_spellbook_mages = 0;
         toast("All mages released from study", "success");
       }
 
@@ -9454,10 +9461,9 @@
           school_spellbook: schoolAlloc
         });
         if (result.error) return toast(result.error, "error");
-        state.school_allocation = {
-          spellbook: spellbookAlloc,
-          school_spellbook: schoolAlloc
-        };
+        state.research_allocation = state.research_allocation || {};
+        state.research_allocation.spellbook_mages = spellbookAlloc;
+        state.research_allocation.school_spellbook_mages = schoolAlloc;
         toast("Mages allocated to study — gaining experience each turn", "success");
       }
 

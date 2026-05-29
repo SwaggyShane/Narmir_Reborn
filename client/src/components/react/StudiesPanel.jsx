@@ -7,20 +7,18 @@ const StudiesPanel = () => {
   useEffect(() => {
     const loadMageAllocation = () => {
       const s = window.gameState || {};
-      const alloc = (typeof s.school_allocation === 'string')
-        ? (function() { try { return JSON.parse(s.school_allocation); } catch { return {}; } })()
-        : (s.school_allocation || {});
+      const alloc = s.research_allocation || {};
 
       const spellbookEl = document.getElementById('mage-alloc-spellbook');
       const schoolEl = document.getElementById('mage-alloc-school');
-      if (spellbookEl) spellbookEl.value = alloc.spellbook || 0;
-      if (schoolEl) schoolEl.value = alloc.school_spellbook || 0;
+      if (spellbookEl) spellbookEl.value = alloc.spellbook_mages || 0;
+      if (schoolEl) schoolEl.value = alloc.school_spellbook_mages || 0;
 
       if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay();
     };
 
     loadMageAllocation();
-  }, []);
+  }, [window.gameState?.school_of_magic, window.gameState?.research_allocation]);
 
   const handleTabClick = (tabId) => {
     setActiveTab(tabId);
