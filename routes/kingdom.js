@@ -715,6 +715,35 @@ module.exports = function (db) {
     res.json({ ok: true });
   });
 
+  router.post("/school-allocation", requireAuth, requireCsrfToken, async (req, res) => {
+    const { spellbook, school_spellbook } = req.body;
+    if (!Number.isInteger(spellbook) || !Number.isInteger(school_spellbook) || spellbook < 0 || school_spellbook < 0)
+      return res.status(400).json({ error: "spellbook and school_spellbook must be non-negative integers" });
+
+    const k = await db.get(
+      "SELECT id, mages, school_of_magic, research_allocation FROM kingdoms WHERE player_id = ?",
+      [req.player.playerId],
+    );
+    if (!k) return res.status(404).json({ error: "Kingdom not found" });
+    if (!k.school_of_magic) return res.status(400).json({ error: "Must choose a school first" });
+
+    const total = spellbook + school_spellbook;
+    if (total > (k.mages || 0))
+      return res.status(400).json({
+        error: `Allocated ${total.toLocaleString()} mages, but only have ${(k.mages || 0).toLocaleString()} mages`,
+      });
+
+    const researchAlloc = safeJsonParse(k.research_allocation, {}, "school-allocation:research_allocation");
+    researchAlloc.spellbook_mages = spellbook;
+    researchAlloc.school_spellbook_mages = school_spellbook;
+
+    await db.run(
+      "UPDATE kingdoms SET research_allocation = ? WHERE id = ?",
+      [JSON.stringify(researchAlloc), k.id],
+    );
+    res.json({ ok: true });
+  });
+
   router.post("/demolish", requireAuth, requireCsrfToken, async (req, res) => {
     const { building, amount } = req.body;
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
