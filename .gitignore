@@ -7,3 +7,42 @@ coverage/
 logs/
 .env*
 !.env.example
+
+# Certificates and keys
+*.pem
+*.key
+*.pub
+*.crt
+*.csr
+*.p8
+*.p12
+*.pfx
+
+# IDE and editor configs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# OS metadata
+Thumbs.db
+.AppleDouble
+.LSOverride
+.TemporaryItems
+
+# Database
+*.sqlite
+*.db
+
+# Temporary files
+tmp/
+temp/
+.tmp
+*.bak
