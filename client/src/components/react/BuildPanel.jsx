@@ -31,6 +31,14 @@ const BUILDINGS_MAP = BUILDINGS.reduce((acc, b) => {
   return acc;
 }, {});
 
+// Display order for buildings (matches the order in the building rows below)
+const BUILDINGS_DISPLAY_ORDER = [
+  'farms', 'granaries', 'housing', 'schools', 'libraries', 'mage_towers',
+  'shrines', 'mausoleums', 'markets', 'taverns', 'smithies', 'vaults',
+  'armories', 'barracks', 'walls', 'guard_towers', 'outposts', 'training',
+  'castles', 'wm', 'ladders', 'weapons', 'armor'
+];
+
 const BuildPanel = () => {
   const [showBuildingRef, setShowBuildingRef] = useState(false);
 
@@ -157,13 +165,16 @@ const BuildPanel = () => {
             </button>
             {showBuildingRef && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '8px', fontSize: '11px' }}>
-                {BUILDINGS.map(b => (
-                  <div key={b.name} style={{ padding: '8px', background: 'var(--bg3)', borderRadius: '4px' }}>
-                    <div style={{ fontWeight: 600, color: 'var(--gold)', marginBottom: '4px' }}>{b.name}</div>
-                    <div>{formatReq(b)}{b.land ? ` | 📍 ${b.land} Land` : ''}</div>
-                    <div style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '4px' }}>🪵 {b.wood} · 🪨 {b.stone} · 🔗 {b.iron}</div>
-                  </div>
-                ))}
+                {BUILDINGS_DISPLAY_ORDER.map(id => {
+                  const b = BUILDINGS_MAP[id];
+                  return b ? (
+                    <div key={b.id} style={{ padding: '8px', background: 'var(--bg3)', borderRadius: '4px' }}>
+                      <div style={{ fontWeight: 600, color: 'var(--gold)', marginBottom: '4px' }}>{b.name}</div>
+                      <div>{formatReq(b)}{b.land ? ` | 📍 ${b.land} Land` : ''}</div>
+                      <div style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '4px' }}>🪵 {b.wood} · 🪨 {b.stone} · 🔗 {b.iron}</div>
+                    </div>
+                  ) : null;
+                })}
               </div>
             )}
           </div>
