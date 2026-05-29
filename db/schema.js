@@ -844,7 +844,8 @@ async function initDb() {
             deleted     INTEGER NOT NULL DEFAULT 0,
             created_at  INTEGER NOT NULL DEFAULT (unixepoch())
           );
-          INSERT INTO chat_messages_new SELECT * FROM chat_messages;
+          INSERT INTO chat_messages_new (id, kingdom_id, player_id, username, room, message, deleted, created_at)
+          SELECT id, kingdom_id, player_id, username, room, message, deleted, created_at FROM chat_messages;
           DROP TABLE chat_messages;
           ALTER TABLE chat_messages_new RENAME TO chat_messages;
           CREATE INDEX idx_chat_room ON chat_messages(room, created_at);
