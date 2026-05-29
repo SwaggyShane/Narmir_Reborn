@@ -1,29 +1,42 @@
 import React, { useState } from 'react';
 
 const BUILDINGS = [
-  { id: 'farms', name: 'Farm', tier: 1, wood: 50, stone: 0, iron: 0, time: 10, land: 10 },
-  { id: 'housing', name: 'Housing', tier: 2, wood: 200, stone: 100, iron: 50, time: 100, land: 50 },
-  { id: 'granaries', name: 'Granary', tier: 2, wood: 200, stone: 100, iron: 50, time: 100, land: 50 },
-  { id: 'taverns', name: 'Tavern', tier: 2, wood: 200, stone: 100, iron: 50, time: 100, land: 50 },
-  { id: 'markets', name: 'Market', tier: 3, wood: 800, stone: 500, iron: 200, time: 500, land: 150 },
-  { id: 'barracks', name: 'Barracks', tier: 3, wood: 800, stone: 500, iron: 200, time: 500, land: 150 },
-  { id: 'libraries', name: 'Library', tier: 3, wood: 800, stone: 500, iron: 200, time: 500, land: 150 },
-  { id: 'schools', name: 'School', tier: 3, wood: 800, stone: 500, iron: 200, time: 500, land: 150 },
+  { id: 'farms', name: 'Farm', tier: 1, wood: 0, stone: 0, iron: 0, time: 10, land: 10 },
+  { id: 'housing', name: 'Housing', tier: 2, wood: 200, stone: 100, iron: 50, time: 100, land: 25 },
+  { id: 'granaries', name: 'Granary', tier: 2, wood: 200, stone: 100, iron: 50, time: 100, land: 15 },
+  { id: 'taverns', name: 'Tavern', tier: 2, wood: 200, stone: 100, iron: 50, time: 100, land: 40 },
+  { id: 'markets', name: 'Market', tier: 3, wood: 800, stone: 500, iron: 200, time: 500, land: 100 },
+  { id: 'barracks', name: 'Barracks', tier: 3, wood: 800, stone: 500, iron: 200, time: 500, land: 100 },
+  { id: 'libraries', name: 'Library', tier: 3, wood: 200, stone: 250, iron: 50, time: 500, land: 25 },
+  { id: 'schools', name: 'School', tier: 3, wood: 800, stone: 500, iron: 200, time: 500, land: 125 },
   { id: 'shrines', name: 'Shrine', tier: 3, wood: 800, stone: 500, iron: 200, time: 500, land: 150 },
   { id: 'mausoleums', name: 'Mausoleum', tier: 3, wood: 800, stone: 500, iron: 200, time: 500, land: 150 },
-  { id: 'guard_towers', name: 'Guard Tower', tier: 4, wood: 2000, stone: 1500, iron: 500, time: 2500, land: 300 },
+  { id: 'guard_towers', name: 'Guard Tower', tier: 4, wood: 2000, stone: 1500, iron: 500, time: 2500, land: 50 },
   { id: 'walls', name: 'Wall', tier: 5, wood: 5000, stone: 5000, iron: 1500, time: 10000, land: 500 },
-  { id: 'outposts', name: 'Outpost', tier: 5, wood: 5000, stone: 5000, iron: 1500, time: 10000, land: 500 },
-  { id: 'smithies', name: 'Smithy', tier: 5, wood: 5000, stone: 5000, iron: 1500, time: 10000, land: 500 },
-  { id: 'armories', name: 'Armory', tier: 6, wood: 7500, stone: 12500, iron: 3000, time: 25000, land: 750 },
-  { id: 'vaults', name: 'Vault', tier: 6, wood: 7500, stone: 12500, iron: 3000, time: 25000, land: 750 },
-  { id: 'mage_towers', name: 'Mage Tower', tier: 6, wood: 7500, stone: 12500, iron: 3000, time: 25000, land: 750 },
+  { id: 'outposts', name: 'Outpost', tier: 5, wood: 5000, stone: 5000, iron: 1500, time: 10000, land: 25 },
+  { id: 'smithies', name: 'Smithy', tier: 5, wood: 5000, stone: 5000, iron: 1500, time: 10000, land: 200 },
+  { id: 'armories', name: 'Armory', tier: 6, wood: 7500, stone: 12500, iron: 3000, time: 25000, land: 300 },
+  { id: 'vaults', name: 'Vault', tier: 6, wood: 7500, stone: 12500, iron: 3000, time: 25000, land: 300 },
+  { id: 'mage_towers', name: 'Mage Tower', tier: 6, wood: 7500, stone: 12500, iron: 3000, time: 25000, land: 250 },
   { id: 'training', name: 'Training Field', tier: 7, wood: 8500, stone: 17500, iron: 4000, time: 35000, land: 850 },
   { id: 'castles', name: 'Castle', tier: 8, wood: 10000, stone: 25000, iron: 5000, time: 50000, land: 1000 },
   { id: 'wm', name: 'War Machine', wood: 200, stone: 0, iron: 50, time: 100, land: 0 },
   { id: 'ladders', name: 'Ladder', wood: 20, stone: 0, iron: 2, time: 8, land: 0 },
   { id: 'weapons', name: 'Weapons', wood: 30, stone: 0, iron: 80, time: 20, land: 0 },
   { id: 'armor', name: 'Armor', wood: 10, stone: 0, iron: 110, time: 25, land: 0 },
+];
+
+const BUILDINGS_MAP = BUILDINGS.reduce((acc, b) => {
+  acc[b.id] = b;
+  return acc;
+}, {});
+
+// Display order for buildings (matches the order in the building rows below)
+const BUILDINGS_DISPLAY_ORDER = [
+  'farms', 'granaries', 'housing', 'schools', 'libraries', 'mage_towers',
+  'shrines', 'mausoleums', 'markets', 'taverns', 'smithies', 'vaults',
+  'armories', 'barracks', 'walls', 'guard_towers', 'outposts', 'training',
+  'castles', 'wm', 'ladders', 'weapons', 'armor'
 ];
 
 const BuildPanel = () => {
@@ -152,13 +165,16 @@ const BuildPanel = () => {
             </button>
             {showBuildingRef && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '8px', fontSize: '11px' }}>
-                {BUILDINGS.map(b => (
-                  <div key={b.name} style={{ padding: '8px', background: 'var(--bg3)', borderRadius: '4px' }}>
-                    <div style={{ fontWeight: 600, color: 'var(--gold)', marginBottom: '4px' }}>{b.name}</div>
-                    <div>{formatReq(b)}{b.land ? ` | 📍 ${b.land} Land` : ''}</div>
-                    <div style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '4px' }}>🪵 {b.wood} · 🪨 {b.stone} · 🔗 {b.iron}</div>
-                  </div>
-                ))}
+                {BUILDINGS_DISPLAY_ORDER.map(id => {
+                  const b = BUILDINGS_MAP[id];
+                  return b ? (
+                    <div key={b.id} style={{ padding: '8px', background: 'var(--bg3)', borderRadius: '4px' }}>
+                      <div style={{ fontWeight: 600, color: 'var(--gold)', marginBottom: '4px' }}>{b.name}</div>
+                      <div>{formatReq(b)}{b.land ? ` | 📍 ${b.land} Land` : ''}</div>
+                      <div style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '4px' }}>🪵 {b.wood} · 🪨 {b.stone} · 🔗 {b.iron}</div>
+                    </div>
+                  ) : null;
+                })}
               </div>
             )}
           </div>
@@ -173,35 +189,35 @@ const BuildPanel = () => {
               <span style={{ textAlign: 'center' }}>Engineers</span>
             </div>
 
-            {renderBuildingRow(BUILDINGS.find(b => b.id === 'farms'), { emoji: '🌾', color: '#4a7c3f' }, 'ba-farm', 'demolish-amount-farms')}
-            {renderBuildingRow(BUILDINGS.find(b => b.id === 'granaries'), { emoji: '🛖', color: '#a08453' }, 'ba-granary', 'demolish-amount-granaries')}
-            {renderBuildingRow(BUILDINGS.find(b => b.id === 'housing'), { emoji: '🏘️', color: '#4a5a3a' }, 'ba-housing', 'demolish-amount-housing')}
-            {renderBuildingRow(BUILDINGS.find(b => b.id === 'schools'), { emoji: '🏫', color: '#3a5a7a' }, 'ba-school', 'demolish-amount-schools')}
-            {renderBuildingRow(BUILDINGS.find(b => b.id === 'libraries'), { emoji: '📖', color: '#2a3a6a' }, 'ba-library', 'demolish-amount-libraries')}
-            {renderBuildingRow(BUILDINGS.find(b => b.id === 'mage_towers'), { emoji: '⛪', color: '#4a2a7a' }, 'ba-mage_tower', 'demolish-amount-mage_towers')}
-            {renderBuildingRow(BUILDINGS.find(b => b.id === 'shrines'), { emoji: '⛩️', color: '#3a6a4a' }, 'ba-shrine', 'demolish-amount-shrines')}
-            {renderBuildingRow(BUILDINGS.find(b => b.id === 'mausoleums'), { emoji: '⚰️', color: '#333' }, 'ba-mausoleum', 'demolish-amount-mausoleums')}
-            {renderBuildingRow(BUILDINGS.find(b => b.id === 'markets'), { emoji: '🏪', color: '#1a5a5a' }, 'ba-market', 'demolish-amount-markets')}
-            {renderBuildingRow(BUILDINGS.find(b => b.id === 'taverns'), { emoji: '🍺', color: '#3a2a1a' }, 'ba-tavern', 'demolish-amount-taverns')}
-            {renderBuildingRow(BUILDINGS.find(b => b.id === 'smithies'), { emoji: '⚒️', color: '#7a4a1a' }, 'ba-smithy', 'demolish-amount-smithies')}
-            {renderBuildingRow(BUILDINGS.find(b => b.id === 'vaults'), { emoji: '💰', color: '#3a6a3a' }, 'ba-vault', 'demolish-amount-vaults')}
-            {renderBuildingRow(BUILDINGS.find(b => b.id === 'armories'), { emoji: '🛡️', color: '#6a3a1e' }, 'ba-armory', 'demolish-amount-armories')}
-            {renderBuildingRow(BUILDINGS.find(b => b.id === 'barracks'), { emoji: '🏠', color: '#7b3030' }, 'ba-barracks', 'demolish-amount-barracks')}
-            {renderBuildingRow(BUILDINGS.find(b => b.id === 'walls'), { emoji: '🧱', color: '#3a3a3a' }, 'ba-walls', 'demolish-amount-walls')}
-            {renderBuildingRow(BUILDINGS.find(b => b.id === 'guard_towers'), { emoji: '🗼', color: '#2a4a6e' }, 'ba-tower', 'demolish-amount-guard_towers')}
-            {renderBuildingRow(BUILDINGS.find(b => b.id === 'outposts'), { emoji: '🏴', color: '#5a4a1e' }, 'ba-outpost', 'demolish-amount-outposts')}
-            {renderBuildingRow(BUILDINGS.find(b => b.id === 'training'), { emoji: '⚔️', color: '#1a4a2a' }, 'ba-training', 'demolish-amount-training')}
-            {renderBuildingRow(BUILDINGS.find(b => b.id === 'castles'), { emoji: '🏰', color: '#5a1a1a' }, 'ba-castle', 'demolish-amount-castles')}
+            {BUILDINGS_MAP['farms'] && renderBuildingRow(BUILDINGS_MAP['farms'], { emoji: '🌾', color: '#4a7c3f' }, 'ba-farm', 'demolish-amount-farms')}
+            {BUILDINGS_MAP['granaries'] && renderBuildingRow(BUILDINGS_MAP['granaries'], { emoji: '🛖', color: '#a08453' }, 'ba-granary', 'demolish-amount-granaries')}
+            {BUILDINGS_MAP['housing'] && renderBuildingRow(BUILDINGS_MAP['housing'], { emoji: '🏘️', color: '#4a5a3a' }, 'ba-housing', 'demolish-amount-housing')}
+            {BUILDINGS_MAP['schools'] && renderBuildingRow(BUILDINGS_MAP['schools'], { emoji: '🏫', color: '#3a5a7a' }, 'ba-school', 'demolish-amount-schools')}
+            {BUILDINGS_MAP['libraries'] && renderBuildingRow(BUILDINGS_MAP['libraries'], { emoji: '📖', color: '#2a3a6a' }, 'ba-library', 'demolish-amount-libraries')}
+            {BUILDINGS_MAP['mage_towers'] && renderBuildingRow(BUILDINGS_MAP['mage_towers'], { emoji: '⛪', color: '#4a2a7a' }, 'ba-mage_tower', 'demolish-amount-mage_towers')}
+            {BUILDINGS_MAP['shrines'] && renderBuildingRow(BUILDINGS_MAP['shrines'], { emoji: '⛩️', color: '#3a6a4a' }, 'ba-shrine', 'demolish-amount-shrines')}
+            {BUILDINGS_MAP['mausoleums'] && renderBuildingRow(BUILDINGS_MAP['mausoleums'], { emoji: '⚰️', color: '#333' }, 'ba-mausoleum', 'demolish-amount-mausoleums')}
+            {BUILDINGS_MAP['markets'] && renderBuildingRow(BUILDINGS_MAP['markets'], { emoji: '🏪', color: '#1a5a5a' }, 'ba-market', 'demolish-amount-markets')}
+            {BUILDINGS_MAP['taverns'] && renderBuildingRow(BUILDINGS_MAP['taverns'], { emoji: '🍺', color: '#3a2a1a' }, 'ba-tavern', 'demolish-amount-taverns')}
+            {BUILDINGS_MAP['smithies'] && renderBuildingRow(BUILDINGS_MAP['smithies'], { emoji: '⚒️', color: '#7a4a1a' }, 'ba-smithy', 'demolish-amount-smithies')}
+            {BUILDINGS_MAP['vaults'] && renderBuildingRow(BUILDINGS_MAP['vaults'], { emoji: '💰', color: '#3a6a3a' }, 'ba-vault', 'demolish-amount-vaults')}
+            {BUILDINGS_MAP['armories'] && renderBuildingRow(BUILDINGS_MAP['armories'], { emoji: '🛡️', color: '#6a3a1e' }, 'ba-armory', 'demolish-amount-armories')}
+            {BUILDINGS_MAP['barracks'] && renderBuildingRow(BUILDINGS_MAP['barracks'], { emoji: '🏠', color: '#7b3030' }, 'ba-barracks', 'demolish-amount-barracks')}
+            {BUILDINGS_MAP['walls'] && renderBuildingRow(BUILDINGS_MAP['walls'], { emoji: '🧱', color: '#3a3a3a' }, 'ba-walls', 'demolish-amount-walls')}
+            {BUILDINGS_MAP['guard_towers'] && renderBuildingRow(BUILDINGS_MAP['guard_towers'], { emoji: '🗼', color: '#2a4a6e' }, 'ba-tower', 'demolish-amount-guard_towers')}
+            {BUILDINGS_MAP['outposts'] && renderBuildingRow(BUILDINGS_MAP['outposts'], { emoji: '🏴', color: '#5a4a1e' }, 'ba-outpost', 'demolish-amount-outposts')}
+            {BUILDINGS_MAP['training'] && renderBuildingRow(BUILDINGS_MAP['training'], { emoji: '⚔️', color: '#1a4a2a' }, 'ba-training', 'demolish-amount-training')}
+            {BUILDINGS_MAP['castles'] && renderBuildingRow(BUILDINGS_MAP['castles'], { emoji: '🏰', color: '#5a1a1a' }, 'ba-castle', 'demolish-amount-castles')}
 
             <div style={{ fontSize: '11px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', padding: '14px 0 6px' }}>
               Equipment & War Machines
             </div>
 
-            {renderBuildingRow(BUILDINGS.find(b => b.id === 'wm'), { emoji: '🪖', color: '#5a3a1a' }, 'ba-wm', '')}
-            {renderBuildingRow(BUILDINGS.find(b => b.id === 'ladders'), { emoji: '🪜', color: '#3a2a1a' }, 'ba-ladders', '')}
-            {renderBuildingRow(BUILDINGS.find(b => b.id === 'weapons'), { emoji: '🗡️', color: '#6a1a1a' }, 'ba-weapons', '')}
+            {BUILDINGS_MAP['wm'] && renderBuildingRow(BUILDINGS_MAP['wm'], { emoji: '🪖', color: '#5a3a1a' }, 'ba-wm', '')}
+            {BUILDINGS_MAP['ladders'] && renderBuildingRow(BUILDINGS_MAP['ladders'], { emoji: '🪜', color: '#3a2a1a' }, 'ba-ladders', '')}
+            {BUILDINGS_MAP['weapons'] && renderBuildingRow(BUILDINGS_MAP['weapons'], { emoji: '🗡️', color: '#6a1a1a' }, 'ba-weapons', '')}
             <div style={{ borderWidth: '1px 1px 0', borderStyle: 'solid', borderColor: 'var(--border)' }}>
-              {renderBuildingRow(BUILDINGS.find(b => b.id === 'armor'), { emoji: '🔰', color: '#1a3a6a' }, 'ba-armor', '')}
+              {BUILDINGS_MAP['armor'] && renderBuildingRow(BUILDINGS_MAP['armor'], { emoji: '🔰', color: '#1a3a6a' }, 'ba-armor', '')}
             </div>
 
           </div>
