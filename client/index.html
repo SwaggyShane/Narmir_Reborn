@@ -9467,6 +9467,12 @@
         toast("Mages allocated to study — gaining experience each turn", "success");
       }
 
+      // Expose mage allocation functions to window
+      window.updateMageAllocationDisplay = updateMageAllocationDisplay;
+      window.setMageMax = setMageMax;
+      window.releaseMageAllocation = releaseMageAllocation;
+      window.studyMagic = studyMagic;
+
       function updateBuildTooltips() {
         if (!state) return;
         // BuildPanel.vue handles tooltips via Vue bindings; skip dynamic tooltip generation
