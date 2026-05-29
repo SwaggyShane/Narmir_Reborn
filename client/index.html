@@ -1485,9 +1485,6 @@
         border-color: var(--gold) !important;
         background: rgba(40, 42, 57, 0.6) !important;
       }
-      .race-tag-block:hover .race-portrait {
-        transform: scale(1.08);
-      }
 
       /* ── Options ── */
       .option-row {
@@ -13429,7 +13426,7 @@
         var portraitHtml = "";
         if (portraitUrl) {
           portraitHtml =
-            '<div style="width: 140px; height: 140px; border-radius: 16px; border: 2px solid var(--gold); box-shadow: 0 6px 16px rgba(0,0,0,0.5); overflow: hidden; background: #15171e; display: flex; align-items: center; justify-content: center; position: relative;">' +
+            '<div style="width: 140px; height: 140px; border-radius: 16px; box-shadow: 0 6px 16px rgba(0,0,0,0.5); overflow: hidden; background: #15171e; display: flex; align-items: center; justify-content: center; position: relative;">' +
             '<img src="' +
             portraitUrl +
             '" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.outerHTML=\'<span style=\\\'font-size: 60px;\\\'>' +
@@ -13438,7 +13435,7 @@
             '</div>';
         } else {
           portraitHtml =
-            '<div style="width: 140px; height: 140px; border-radius: 16px; border: 2px solid var(--border); background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 60px;">' +
+            '<div style="width: 140px; height: 140px; border-radius: 16px; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 60px;">' +
             (lore.icon || "👤") +
             "</div>";
         }
@@ -15704,7 +15701,7 @@
                 .join("");
               return `
         <div class="card" style="margin:0;border:1px solid var(--border2);background:linear-gradient(135deg, var(--bg2), var(--bg3));display:flex;gap:12px;align-items:flex-start;">
-          <img src="${heroPortrait(h.class)}" width="56" height="56" style="border-radius:8px;border:1px solid var(--border);object-fit:cover;flex-shrink:0" onerror="this.style.display='none'" alt="${cls}"/>
+          <img src="${heroPortrait(h.class)}" width="56" height="56" style="border-radius:8px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'" alt="${cls}"/>
           <div style="flex:1;min-width:0;">
             <div style="font-size:16px;font-weight:700;color:var(--gold);margin-bottom:2px;">${h.name}</div>
             <div style="font-size:12px;margin-bottom:8px;"><span style="color:var(--red);font-weight:600;">${cls}</span> <span style="color:var(--text3);">· Level ${h.level}</span></div>
@@ -15741,7 +15738,7 @@
                 <div style="display:flex;gap:10px;align-items:flex-start;background:var(--bg3);padding:12px;border-radius:var(--radius);border:1px solid var(--border);cursor:pointer;flex-direction:column" onclick="selectHeroClass('${id}')" id="hero-opt-${id}" class="hero-class-opt">
                   <div style="display:flex;width:100%;align-items:center;justify-content:space-between">
                     <div style="display:flex;gap:10px;align-items:center;">
-                      <img src="${heroPortrait(id)}" width="40" height="40" style="border-radius:6px;border:1px solid var(--border2);object-fit:cover;display:block;flex-shrink:0" onerror="this.style.display='none'" alt="${c.name}"/>
+                      <img src="${heroPortrait(id)}" width="40" height="40" style="border-radius:6px;object-fit:cover;display:block;flex-shrink:0" onerror="this.style.display='none'" alt="${c.name}"/>
                       <div>
                         <div style="font-size:14px;font-weight:700;color:var(--gold)">${c.name}</div>
                         <div style="font-size:11px;color:var(--text3)">Cost: ${c.recruitCost.toLocaleString()} GC · ${c.recruitMana} Mana</div>
