@@ -822,6 +822,33 @@ async function initDb() {
   if (!cmCols.includes('player_id')) await addColumn('chat_messages', 'player_id', 'INTEGER NOT NULL DEFAULT 0');
   if (!cmCols.includes('deleted'))  await addColumn('chat_messages', 'deleted',  'INTEGER NOT NULL DEFAULT 0');
 
+  // Allow NULL kingdom_id for Discord relay messages from unlinked users
+  const cmInfo = await _db.all('PRAGMA table_info(chat_messages)');
+  const kingdomIdCol = cmInfo.find(c => c.name === 'kingdom_id');
+  if (kingdomIdCol && kingdomIdCol.notnull) {
+    try {
+      await _db.run(`
+        CREATE TABLE chat_messages_new (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          kingdom_id  INTEGER REFERENCES kingdoms(id),
+          player_id   INTEGER NOT NULL DEFAULT 0,
+          username    TEXT NOT NULL DEFAULT '',
+          room        TEXT    NOT NULL DEFAULT 'global',
+          message     TEXT    NOT NULL,
+          deleted     INTEGER NOT NULL DEFAULT 0,
+          created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+        );
+        INSERT INTO chat_messages_new SELECT * FROM chat_messages;
+        DROP TABLE chat_messages;
+        ALTER TABLE chat_messages_new RENAME TO chat_messages;
+        CREATE INDEX idx_chat_room ON chat_messages(room, created_at);
+      `);
+      console.log('✅ Migrated chat_messages to allow NULL kingdom_id');
+    } catch (e) {
+      console.log('⚠️  chat_messages migration skipped (likely already migrated):', e.message);
+    }
+  }
+
   if (!kingdomsCols.includes('region')) {
     await addColumn('kingdoms', 'region', "TEXT NOT NULL DEFAULT ''", kingdomsCols);
     // Backfill existing kingdoms
