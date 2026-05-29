@@ -48,3 +48,8 @@ tmp/
 temp/
 .tmp
 *.bak
+
+# Application-generated files
+public/browser_logs.txt
+public/bg-config.txt
+public/custom-bg*
