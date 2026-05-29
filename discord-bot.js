@@ -48,8 +48,8 @@ client.once('ready', async () => {
 
   // Initialize database connection
   try {
-    const dbModule = require('./db/schema');
-    db = await dbModule();
+    const { initDb } = require('./db/schema');
+    db = await initDb();
     console.log('✅ Database connected for Discord sync');
 
     // Load sync configs from database
@@ -58,7 +58,7 @@ client.once('ready', async () => {
     // Start polling game messages
     pollAndSyncGameMessages();
   } catch (error) {
-    console.error('❌ Failed to initialize database:', error);
+    console.error('❌ Failed to initialize database:', error.message);
     console.error('Discord sync will be unavailable until database connects.');
   }
 });
