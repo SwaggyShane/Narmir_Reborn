@@ -4293,16 +4293,26 @@
       // Ensure loadMarket is hooked into tab switching
       // We'll need to update switchTab to handle special loadings
 
+      var _lastChatMsgId = 0;
+
       async function loadGlobalChatHistory() {
         try {
           var msgs = await apiCall("GET", "/api/chat/global");
           var el = document.getElementById("global-chat-messages");
           if (!el) return;
           if (!Array.isArray(msgs) || msgs.length === 0) {
-            el.innerHTML =
-              '<div data-placeholder style="text-align:center;color:var(--text3);font-size:13px;padding:40px 0">No messages yet — say hello! 👋</div>';
+            if (!_lastChatMsgId) {
+              el.innerHTML =
+                '<div data-placeholder style="text-align:center;color:var(--text3);font-size:13px;padding:40px 0">No messages yet — say hello! 👋</div>';
+            }
             return;
           }
+          var latestId = msgs[msgs.length - 1].id;
+          // Only re-render if there are new messages
+          if (latestId === _lastChatMsgId && _lastChatMsgId !== 0) return;
+          _lastChatMsgId = latestId;
+
+          var wasAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
           el.innerHTML = "";
           msgs.forEach(function (m) {
             var isMeMsg = m.message && m.message.startsWith("/me ");
@@ -4318,6 +4328,7 @@
               ts: (m.created_at || 0) * 1000,
             });
           });
+          if (wasAtBottom) el.scrollTop = el.scrollHeight;
         } catch (e) {
           console.error("Chat history fail:", e);
         }
@@ -7300,6 +7311,8 @@
       }
 
       window.refreshKingdom = loadKingdom;
+      window.loadGlobalChatHistory = loadGlobalChatHistory;
+      window.initSocket = initSocket;
 
       function setMaxValue(inputId, sourceKey) {
         var el = document.getElementById(inputId);

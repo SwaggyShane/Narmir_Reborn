@@ -1,6 +1,23 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 const GlobalchatPanel = () => {
+  useEffect(() => {
+    // Load history on mount and ensure socket is initialized
+    if (window.loadGlobalChatHistory) window.loadGlobalChatHistory();
+    else if (window.initSocket) window.initSocket();
+
+    // Poll for new messages every 5s to catch Discord relay messages
+    // that are inserted directly into DB without a socket broadcast
+    const interval = setInterval(() => {
+      const panel = document.getElementById('globalchat');
+      if (panel && panel.style.display !== 'none') {
+        if (window.loadGlobalChatHistory) window.loadGlobalChatHistory();
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   const handleKeydown = (event) => {
     if (event.key === "Enter") sendGlobalChat();
   };
