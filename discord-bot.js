@@ -1,5 +1,4 @@
-const { Client, GatewayIntentBits, EmbedBuilder, ChannelType } = require('discord.js');
-const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus } = require('@discordjs/voice');
+const { Client, GatewayIntentBits, EmbedBuilder, ChannelType, AttachmentBuilder } = require('discord.js');
 const path = require('path');
 const http = require('http');
 require('dotenv').config();
@@ -201,42 +200,19 @@ client.on('messageCreate', async (message) => {
     return;
   }
 
-  // Handle !attack command — plays sound in #general voice channel
+  // Handle !attack command — sends fart sound effect
   if (message.content === '!attack') {
     try {
-      // Find #general voice channel
-      const generalChannel = message.guild.channels.cache.find(
-        ch => ch.name === 'general' && ch.isVoiceBased()
-      );
-
-      if (!generalChannel) {
-        return message.reply('❌ Could not find #general voice channel');
-      }
-
-      // Join the voice channel
-      const connection = joinVoiceChannel({
-        channelId: generalChannel.id,
-        guildId: message.guildId,
-        adapterCreator: message.guild.voiceAdapterCreator,
-      });
-
-      // Create audio player and load the attack sound
-      const player = createAudioPlayer();
       const soundPath = path.join(__dirname, 'public', 'sound', 'monty_python_i_fart.mp3');
-      const resource = createAudioResource(soundPath);
+      const attachment = new AttachmentBuilder(soundPath, { name: 'attack.mp3' });
 
-      connection.subscribe(player);
-      player.play(resource);
-
-      // Leave when sound finishes
-      player.on(AudioPlayerStatus.Idle, () => {
-        connection.destroy();
+      await message.reply({
+        content: '⚔️ *PFFFFFFFFFFT* ⚔️',
+        files: [attachment]
       });
-
-      await message.react('⚔️');
     } catch (error) {
       console.error('❌ Attack sound error:', error);
-      message.reply('❌ Failed to play attack sound');
+      message.reply('❌ Failed to send attack sound');
     }
     return;
   }
