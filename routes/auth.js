@@ -102,6 +102,28 @@ module.exports = function (db) {
         rangers = 100;
       }
 
+      // Calculate starting land: building costs + 1000 buffer
+      // Use engine's BUILDING_LAND_COST to stay in sync with game balance
+      let startingLand = 1000; // Base buffer
+      const buildingKeys = {
+        bld_farms: 'farms',
+        bld_schools: 'schools',
+        bld_barracks: 'barracks',
+        bld_armories: 'armories',
+        bld_housing: 'housing',
+        bld_markets: 'markets',
+        bld_smithies: 'smithies',
+        bld_mage_towers: 'mage_towers',
+        bld_shrines: 'shrines',
+        bld_training: 'training',
+        bld_mausoleums: 'mausoleums'
+      };
+      for (const [dbCol, configKey] of Object.entries(buildingKeys)) {
+        const count = buildings[dbCol] || 0;
+        const cost = engine.BUILDING_LAND_COST[configKey] || 0;
+        startingLand += count * cost;
+      }
+
       await db.run(
         `INSERT INTO kingdoms (
           player_id, name, race, region, gold, land, population, food,
@@ -109,12 +131,13 @@ module.exports = function (db) {
           res_spellbook, blueprints_stored,
           bld_farms, bld_schools, bld_barracks, bld_armories, bld_housing,
           bld_markets, bld_smithies, bld_mage_towers, bld_shrines, bld_outposts, bld_training, bld_mausoleums, world_fragments
-        ) VALUES (?, ?, ?, ?, 10000, 504, 50000, ?, 100, 100, ?, ?, ?, 400, 0, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '["Volcanic Rock", "Ancient Elven Wood", "Dragon Scale", "Abyssal Crystal", "Celestial Feather", "Dwarven Star-Metal", "Cursed Bloodstone", "Tears of the World Tree", "Void Essence", "Titan Bone"]')`,
+        ) VALUES (?, ?, ?, ?, 10000, ?, 50000, ?, 100, 100, ?, ?, ?, 400, 0, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '["Volcanic Rock", "Ancient Elven Wood", "Dragon Scale", "Abyssal Crystal", "Celestial Feather", "Dwarven Star-Metal", "Cursed Bloodstone", "Tears of the World Tree", "Void Essence", "Titan Bone"]')`,
         [
           playerResult.lastID,
           kingdomName,
           chosenRace,
           region,
+          startingLand,
           food,
           fighters,
           rangers,
