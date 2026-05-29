@@ -1,5 +1,5 @@
 const express = require("express");
-const { requireAuth } = require("./middleware");
+const { requireAuth, requireCsrfToken } = require("./middleware");
 const engine = require("../game/engine");
 
 module.exports = function (db) {
@@ -51,7 +51,7 @@ module.exports = function (db) {
   });
 
   // Recruit a new hero
-  router.post("/recruit", requireAuth, async (req, res) => {
+  router.post("/recruit", requireAuth, requireCsrfToken, async (req, res) => {
     const { name, heroClass } = req.body;
     if (!name || !heroClass)
       return res.status(400).json({ error: "Name and class required" });
