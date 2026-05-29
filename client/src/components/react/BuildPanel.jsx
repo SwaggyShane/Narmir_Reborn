@@ -174,8 +174,8 @@ const BuildPanel = () => {
             </div>
 
             {renderBuildingRow(BUILDINGS.find(b => b.id === 'farms'), { emoji: '🌾', color: '#4a7c3f' }, 'ba-farm', 'demolish-amount-farms')}
-            {renderBuildingRow(BUILDINGS.find(b => b.id === 'housing'), { emoji: '🏘️', color: '#4a5a3a' }, 'ba-housing', 'demolish-amount-housing')}
             {renderBuildingRow(BUILDINGS.find(b => b.id === 'granaries'), { emoji: '🛖', color: '#a08453' }, 'ba-granary', 'demolish-amount-granaries')}
+            {renderBuildingRow(BUILDINGS.find(b => b.id === 'housing'), { emoji: '🏘️', color: '#4a5a3a' }, 'ba-housing', 'demolish-amount-housing')}
             {renderBuildingRow(BUILDINGS.find(b => b.id === 'schools'), { emoji: '🏫', color: '#3a5a7a' }, 'ba-school', 'demolish-amount-schools')}
             {renderBuildingRow(BUILDINGS.find(b => b.id === 'libraries'), { emoji: '📖', color: '#2a3a6a' }, 'ba-library', 'demolish-amount-libraries')}
             {renderBuildingRow(BUILDINGS.find(b => b.id === 'mage_towers'), { emoji: '⛪', color: '#4a2a7a' }, 'ba-mage_tower', 'demolish-amount-mage_towers')}
