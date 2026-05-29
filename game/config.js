@@ -863,27 +863,27 @@ const config = {
   BUILDING_LAND_COST: {
     // Tier 1: 10 land
     farms: 10,
-    // Tier 2: 50 land each
-    granaries: 50,
-    housing: 50,
-    taverns: 50,
-    // Tier 3: 150 land each
-    barracks: 150,
-    markets: 150,
-    libraries: 150,
-    schools: 150,
+    // Tier 2: Variable land
+    granaries: 15,
+    housing: 25,
+    taverns: 40,
+    // Tier 3: Variable land
+    barracks: 100,
+    markets: 100,
+    libraries: 25,
+    schools: 125,
     shrines: 150,
     mausoleums: 150,
-    // Tier 4: 300 land
-    guard_towers: 300,
-    // Tier 5: 500 land each
-    outposts: 500,
-    smithies: 500,
+    // Tier 4: 50 land
+    guard_towers: 50,
+    // Tier 5: Variable land
+    outposts: 25,
+    smithies: 200,
     walls: 500,
-    // Tier 6: 750 land each
-    armories: 750,
-    vaults: 750,
-    mage_towers: 750,
+    // Tier 6: Variable land
+    armories: 300,
+    vaults: 300,
+    mage_towers: 250,
     // Tier 7: 850 land
     training: 850,
     // Tier 8: 1000 land
@@ -906,16 +906,16 @@ const config = {
   },
 
   BUILDING_WOOD_COST: {
-    // Tier 1: 50 wood
-    farms: 50,
+    // Tier 1: 0 wood
+    farms: 0,
     // Tier 2: 200 wood each
     granaries: 200,
     housing: 200,
     taverns: 200,
-    // Tier 3: 800 wood each
+    // Tier 3: Variable wood
     barracks: 800,
     markets: 800,
-    libraries: 800,
+    libraries: 200,
     schools: 800,
     shrines: 800,
     mausoleums: 800,
@@ -957,10 +957,10 @@ const config = {
     granaries: 100,
     housing: 100,
     taverns: 100,
-    // Tier 3: 500 stone each
+    // Tier 3: Variable stone
     barracks: 500,
     markets: 500,
-    libraries: 500,
+    libraries: 250,
     schools: 500,
     shrines: 500,
     mausoleums: 500,
@@ -1002,10 +1002,10 @@ const config = {
     granaries: 50,
     housing: 50,
     taverns: 50,
-    // Tier 3: 200 iron each
+    // Tier 3: Variable iron
     barracks: 200,
     markets: 200,
-    libraries: 200,
+    libraries: 50,
     schools: 200,
     shrines: 200,
     mausoleums: 200,
