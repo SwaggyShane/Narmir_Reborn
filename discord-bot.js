@@ -1,4 +1,5 @@
 const { Client, GatewayIntentBits, EmbedBuilder, ChannelType } = require('discord.js');
+const http = require('http');
 require('dotenv').config();
 
 const client = new Client({
@@ -12,6 +13,9 @@ const client = new Client({
 
 const DISCORD_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const UPDATES_CHANNEL_ID = process.env.DISCORD_UPDATES_CHANNEL_ID;
+const GAME_SERVER_URL = process.env.GAME_SERVER_URL || 'http://localhost:3000';
+
+let db = null;
 
 console.log('🔍 Environment Variables Check:');
 console.log('  DISCORD_BOT_TOKEN:', DISCORD_TOKEN ? `✓ Set (${DISCORD_TOKEN.length} chars)` : '❌ NOT SET');
@@ -37,14 +41,79 @@ if (DISCORD_TOKEN.length < 50) {
   process.exit(1);
 }
 
-client.once('ready', () => {
+client.once('ready', async () => {
   console.log(`✅ Discord Bot logged in as ${client.user.tag}`);
   console.log(`📢 Updates channel ID: ${UPDATES_CHANNEL_ID || 'Not configured'}`);
+  console.log(`🎮 Game server URL: ${GAME_SERVER_URL}`);
+
+  // Initialize database connection
+  try {
+    const dbModule = require('./db/schema');
+    db = await dbModule();
+    console.log('✅ Database connected for Discord sync');
+
+    // Load sync configs from database
+    await loadSyncConfigs();
+  } catch (error) {
+    console.error('❌ Failed to initialize database:', error);
+  }
 });
+
+let syncConfigs = [];
+let lastSyncTime = Math.floor(Date.now() / 1000) - 300; // Start 5 minutes in the past to catch backlog
+
+async function loadSyncConfigs() {
+  if (!db) return;
+  try {
+    syncConfigs = await db.all('SELECT * FROM discord_sync_config WHERE enabled = 1');
+    console.log(`📡 Loaded ${syncConfigs.length} Discord sync channel(s)`);
+  } catch (error) {
+    console.error('❌ Failed to load sync configs:', error);
+    syncConfigs = [];
+  }
+}
+
+async function pollAndSyncGameMessages() {
+  if (!db || !client.isReady() || syncConfigs.length === 0) return;
+
+  try {
+    // Find unsync'd game messages from the last minute
+    const currentTime = Math.floor(Date.now() / 1000);
+    const recentMessages = await db.all(`
+      SELECT cm.id, cm.player_id, cm.username, cm.message, cm.room, cm.created_at
+      FROM chat_messages cm
+      WHERE cm.created_at > ? AND cm.created_at <= ?
+        AND cm.id NOT IN (SELECT game_message_id FROM chat_sync_log WHERE game_message_id IS NOT NULL AND direction = 'game_to_discord')
+      ORDER BY cm.created_at ASC
+      LIMIT 50
+    `, [lastSyncTime, currentTime]);
+
+    for (const msg of recentMessages) {
+      await relayGameMessageToDiscord(msg);
+    }
+
+    lastSyncTime = currentTime;
+  } catch (error) {
+    console.error('❌ Error polling game messages:', error);
+  }
+}
+
+// Poll for new game messages every 5 seconds
+setInterval(pollAndSyncGameMessages, 5000);
 
 client.on('messageCreate', async (message) => {
   // Ignore bot messages
   if (message.author.bot) return;
+
+  // Check if this channel is configured for game chat sync
+  const syncConfig = syncConfigs.find(c => c.channel_id === message.channelId);
+  if (syncConfig && syncConfig.sync_both_directions) {
+    try {
+      await relayDiscordMessageToGame(message, syncConfig);
+    } catch (error) {
+      console.error('❌ Failed to relay Discord message to game:', error);
+    }
+  }
 
   // Listen for !update command
   if (!message.content.startsWith('!update')) return;
@@ -131,6 +200,103 @@ client.on('messageCreate', async (message) => {
     message.reply('❌ An error occurred while posting the update. Check bot logs.');
   }
 });
+
+async function relayDiscordMessageToGame(discordMessage, syncConfig) {
+  if (!db) return;
+
+  const content = discordMessage.content.trim();
+  if (!content) return;
+
+  try {
+    // Find Discord user link
+    const link = await db.get(
+      'SELECT player_id FROM discord_links WHERE discord_user_id = ?',
+      [discordMessage.author.id]
+    );
+
+    if (!link) {
+      // Message from unlinked Discord user - store as system message with Discord username
+      const displayName = `[Discord] ${discordMessage.author.username}`;
+      await db.run(
+        'INSERT INTO chat_messages (room, message, created_at) VALUES (?, ?, ?)',
+        [syncConfig.game_room, `${displayName}: ${content}`, Math.floor(Date.now() / 1000)]
+      );
+
+      // Log the sync
+      await db.run(
+        'INSERT INTO chat_sync_log (discord_message_id, direction, synced_at) VALUES (?, ?, ?)',
+        [discordMessage.id, 'discord_to_game', Math.floor(Date.now() / 1000)]
+      );
+      return;
+    }
+
+    // Get player's kingdom info
+    const kingdom = await db.get(
+      'SELECT id, name FROM kingdoms WHERE player_id = ?',
+      [link.player_id]
+    );
+
+    if (!kingdom) return;
+
+    // Insert chat message into game database
+    const result = await db.run(
+      'INSERT INTO chat_messages (kingdom_id, player_id, username, room, message, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+      [kingdom.id, link.player_id, discordMessage.author.username, syncConfig.game_room, content, Math.floor(Date.now() / 1000)]
+    );
+
+    // Log the sync
+    await db.run(
+      'INSERT INTO chat_sync_log (game_message_id, discord_message_id, direction, synced_at) VALUES (?, ?, ?, ?)',
+      [result.lastID, discordMessage.id, 'discord_to_game', Math.floor(Date.now() / 1000)]
+    );
+
+    console.log(`📩 Synced Discord message from @${discordMessage.author.username} to game chat`);
+  } catch (error) {
+    console.error('❌ Error relaying Discord message to game:', error);
+  }
+}
+
+async function relayGameMessageToDiscord(gameMessage) {
+  if (!db || !client.isReady()) return;
+
+  try {
+    // Find sync configs for this game room
+    const configs = syncConfigs.filter(c => c.game_room === gameMessage.room);
+
+    for (const config of configs) {
+      const channel = await client.channels.fetch(config.channel_id).catch(() => null);
+      if (!channel || !channel.isTextBased()) continue;
+
+      // Find Discord user if linked
+      const link = await db.get(
+        'SELECT discord_user_id FROM discord_links WHERE player_id = ?',
+        [gameMessage.player_id]
+      );
+
+      const discordUserId = link?.discord_user_id ? `<@${link.discord_user_id}>` : `@${gameMessage.username}`;
+      const messageText = `**${gameMessage.username}** (${discordUserId}): ${gameMessage.message}`;
+
+      const discordMsg = await channel.send(messageText).catch(error => {
+        console.error('❌ Failed to send message to Discord:', error);
+        return null;
+      });
+
+      if (discordMsg) {
+        // Log the sync
+        await db.run(
+          'INSERT INTO chat_sync_log (game_message_id, discord_message_id, direction, synced_at) VALUES (?, ?, ?, ?)',
+          [gameMessage.id, discordMsg.id, 'game_to_discord', Math.floor(Date.now() / 1000)]
+        );
+        console.log(`📤 Synced game message from ${gameMessage.username} to Discord`);
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error relaying game message to Discord:', error);
+  }
+}
+
+// Export function for use by the game server
+module.exports.relayGameMessageToDiscord = relayGameMessageToDiscord;
 
 client.login(DISCORD_TOKEN).catch(error => {
   console.error('❌ Failed to login to Discord:');

@@ -1011,6 +1011,7 @@ async function start() {
     app.use('/api/hero',         turnLimiter,  require('./routes/hero')(db));
     const adminRouter = require('./routes/admin')(db, io);
     app.use('/api/admin', adminRouter);
+    app.use('/api/discord', require('./routes/discord')(db));
 
     app.get('/api/alliance/list', requireAuth, async (req, res) => {
       const rows = await db.all(`

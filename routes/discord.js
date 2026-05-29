@@ -1,0 +1,171 @@
+const express = require("express");
+const router = express.Router();
+const { requireAuth, requireAdmin } = require("./middleware");
+
+module.exports = function (db) {
+  // Link Discord account to game player
+  router.post("/link-discord", requireAuth, async (req, res) => {
+    const { discordUserId, discordUsername } = req.body;
+    if (!discordUserId || !discordUsername) {
+      return res.status(400).json({ error: "discordUserId and discordUsername required" });
+    }
+
+    try {
+      // Check if Discord ID is already linked
+      const existing = await db.get(
+        "SELECT player_id FROM discord_links WHERE discord_user_id = ?",
+        [discordUserId]
+      );
+
+      if (existing && existing.player_id !== req.player.playerId) {
+        return res.status(409).json({ error: "This Discord account is already linked to another player" });
+      }
+
+      // Check if player already has a Discord link
+      const playerLink = await db.get(
+        "SELECT id FROM discord_links WHERE player_id = ?",
+        [req.player.playerId]
+      );
+
+      if (playerLink) {
+        // Update existing link
+        await db.run(
+          "UPDATE discord_links SET discord_user_id = ?, discord_username = ?, updated_at = ? WHERE player_id = ?",
+          [discordUserId, discordUsername, Math.floor(Date.now() / 1000), req.player.playerId]
+        );
+      } else {
+        // Create new link
+        await db.run(
+          "INSERT INTO discord_links (player_id, discord_user_id, discord_username) VALUES (?, ?, ?)",
+          [req.player.playerId, discordUserId, discordUsername]
+        );
+      }
+
+      res.json({ ok: true, message: `Linked Discord account @${discordUsername}` });
+    } catch (err) {
+      console.error("[discord] Link error:", err);
+      res.status(500).json({ error: "Failed to link Discord account" });
+    }
+  });
+
+  // Unlink Discord account from game player
+  router.post("/unlink-discord", requireAuth, async (req, res) => {
+    try {
+      await db.run("DELETE FROM discord_links WHERE player_id = ?", [req.player.playerId]);
+      res.json({ ok: true, message: "Discord account unlinked" });
+    } catch (err) {
+      console.error("[discord] Unlink error:", err);
+      res.status(500).json({ error: "Failed to unlink Discord account" });
+    }
+  });
+
+  // Get Discord link status for current player
+  router.get("/link-status", requireAuth, async (req, res) => {
+    try {
+      const link = await db.get(
+        "SELECT discord_user_id, discord_username, linked_at FROM discord_links WHERE player_id = ?",
+        [req.player.playerId]
+      );
+
+      if (!link) {
+        return res.json({ linked: false });
+      }
+
+      res.json({
+        linked: true,
+        discordUserId: link.discord_user_id,
+        discordUsername: link.discord_username,
+        linkedAt: new Date(link.linked_at * 1000).toISOString(),
+      });
+    } catch (err) {
+      console.error("[discord] Link status error:", err);
+      res.status(500).json({ error: "Failed to get link status" });
+    }
+  });
+
+  // Admin: Configure Discord channel sync
+  router.post("/admin/configure-channel", requireAdmin, async (req, res) => {
+    const { channelId, channelName, gameRoom, syncBothDirections } = req.body;
+    if (!channelId || !channelName || !gameRoom) {
+      return res.status(400).json({ error: "channelId, channelName, and gameRoom required" });
+    }
+
+    try {
+      const existing = await db.get(
+        "SELECT id FROM discord_sync_config WHERE channel_id = ?",
+        [channelId]
+      );
+
+      if (existing) {
+        // Update existing config
+        await db.run(
+          "UPDATE discord_sync_config SET channel_name = ?, game_room = ?, sync_both_directions = ?, updated_at = ? WHERE channel_id = ?",
+          [channelName, gameRoom, syncBothDirections ? 1 : 0, Math.floor(Date.now() / 1000), channelId]
+        );
+      } else {
+        // Create new config
+        await db.run(
+          "INSERT INTO discord_sync_config (channel_id, channel_name, game_room, sync_both_directions) VALUES (?, ?, ?, ?)",
+          [channelId, channelName, gameRoom, syncBothDirections ? 1 : 0]
+        );
+      }
+
+      // Reload configs in discord bot
+      console.log(`📡 Discord channel sync config updated: #${channelName} <-> ${gameRoom}`);
+
+      res.json({ ok: true, message: `Configured Discord #${channelName} to sync with ${gameRoom}` });
+    } catch (err) {
+      console.error("[discord] Config error:", err);
+      res.status(500).json({ error: "Failed to configure channel" });
+    }
+  });
+
+  // Admin: Disable/enable channel sync
+  router.post("/admin/toggle-channel", requireAdmin, async (req, res) => {
+    const { channelId, enabled } = req.body;
+    if (!channelId || enabled === undefined) {
+      return res.status(400).json({ error: "channelId and enabled required" });
+    }
+
+    try {
+      await db.run(
+        "UPDATE discord_sync_config SET enabled = ?, updated_at = ? WHERE channel_id = ?",
+        [enabled ? 1 : 0, Math.floor(Date.now() / 1000), channelId]
+      );
+
+      res.json({ ok: true, message: `Channel sync ${enabled ? "enabled" : "disabled"}` });
+    } catch (err) {
+      console.error("[discord] Toggle error:", err);
+      res.status(500).json({ error: "Failed to toggle channel" });
+    }
+  });
+
+  // Admin: Get all sync configs
+  router.get("/admin/configs", requireAdmin, async (req, res) => {
+    try {
+      const configs = await db.all("SELECT * FROM discord_sync_config ORDER BY created_at DESC");
+      res.json({ configs });
+    } catch (err) {
+      console.error("[discord] Get configs error:", err);
+      res.status(500).json({ error: "Failed to get configs" });
+    }
+  });
+
+  // Admin: Get linked Discord users
+  router.get("/admin/linked-users", requireAdmin, async (req, res) => {
+    try {
+      const links = await db.all(`
+        SELECT d.id, d.discord_user_id, d.discord_username, d.linked_at, p.username as game_username
+        FROM discord_links d
+        JOIN players p ON d.player_id = p.id
+        ORDER BY d.linked_at DESC
+      `);
+      res.json({ links });
+    } catch (err) {
+      console.error("[discord] Get links error:", err);
+      res.status(500).json({ error: "Failed to get linked users" });
+    }
+  });
+
+  return router;
+};

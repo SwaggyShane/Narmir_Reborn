@@ -1326,6 +1326,46 @@ async function initDb() {
   `);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_res_expeditions_kingdom ON resource_expeditions(kingdom_id, status)`);
 
+  // Discord integration tables
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS discord_links (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      player_id INTEGER NOT NULL UNIQUE REFERENCES players(id),
+      discord_user_id TEXT NOT NULL UNIQUE,
+      discord_username TEXT NOT NULL,
+      linked_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+    )
+  `);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_discord_links_player ON discord_links(player_id)`);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_discord_links_discord_user ON discord_links(discord_user_id)`);
+
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS chat_sync_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      game_message_id INTEGER REFERENCES chat_messages(id),
+      discord_message_id TEXT,
+      direction TEXT NOT NULL,
+      synced_at INTEGER NOT NULL DEFAULT (unixepoch())
+    )
+  `);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_chat_sync_log_game_msg ON chat_sync_log(game_message_id)`);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_chat_sync_log_discord_msg ON chat_sync_log(discord_message_id)`);
+
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS discord_sync_config (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      channel_id TEXT NOT NULL UNIQUE,
+      channel_name TEXT NOT NULL,
+      enabled INTEGER NOT NULL DEFAULT 1,
+      sync_both_directions INTEGER NOT NULL DEFAULT 1,
+      game_room TEXT NOT NULL DEFAULT 'global',
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+    )
+  `);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_discord_sync_config_channel ON discord_sync_config(channel_id)`);
+
   return _db;
 }
 
