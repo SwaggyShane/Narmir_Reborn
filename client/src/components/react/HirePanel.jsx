@@ -89,7 +89,7 @@ const HirePanel = () => {
           </div>
         </div>
 
-        <div className="hire-row" id="hire-row-clerics" style={{ display: isVampire ? 'none' : 'block' }}>
+        <div className="hire-row" id="hire-row-clerics" style={{ display: isVampire ? 'none' : undefined }}>
           <div>
              <div className="hname">💚 Clerics</div>
              <div className="hdesc">Heal · morale aura · shrine</div>
