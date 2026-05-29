@@ -9443,6 +9443,7 @@
         state.research_allocation.spellbook_mages = 0;
         state.research_allocation.school_spellbook_mages = 0;
         toast("All mages released from study", "success");
+        syncUI();
       }
 
       async function studyMagic() {
@@ -9465,6 +9466,7 @@
         state.research_allocation.spellbook_mages = spellbookAlloc;
         state.research_allocation.school_spellbook_mages = schoolAlloc;
         toast("Mages allocated to study — gaining experience each turn", "success");
+        syncUI();
       }
 
       // Expose mage allocation functions to window
