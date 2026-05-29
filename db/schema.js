@@ -833,7 +833,7 @@ async function initDb() {
       const cmInfo = await _db.all('PRAGMA table_info(chat_messages)').catch(() => []);
       const kingdomIdCol = cmInfo.find(c => c.name === 'kingdom_id');
       if (kingdomIdCol && kingdomIdCol.notnull) {
-        await _db.run(`
+        await _db.exec(`
           CREATE TABLE chat_messages_new (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
             kingdom_id  INTEGER REFERENCES kingdoms(id),
