@@ -320,18 +320,18 @@ async function relayDiscordMessageToGame(discordMessage, syncConfig) {
       return;
     }
 
-    // Get player's kingdom info
-    const kingdom = await db.get(
-      'SELECT id, name FROM kingdoms WHERE player_id = ?',
+    // Get player's kingdom ID and username with a single query
+    const player = await db.get(
+      'SELECT k.id AS kingdom_id, p.username FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.player_id = ?',
       [link.player_id]
     );
 
-    if (!kingdom) return;
+    if (!player) return;
 
-    // Insert chat message into game database
+    // Insert chat message into game database using player's game username
     const result = await db.run(
       'INSERT INTO chat_messages (kingdom_id, player_id, username, room, message, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-      [kingdom.id, link.player_id, discordMessage.author.username, syncConfig.game_room, content, Math.floor(Date.now() / 1000)]
+      [player.kingdom_id, link.player_id, player.username, syncConfig.game_room, content, Math.floor(Date.now() / 1000)]
     );
 
     // Log the sync
@@ -340,7 +340,7 @@ async function relayDiscordMessageToGame(discordMessage, syncConfig) {
       [result.lastID, discordMessage.id, 'discord_to_game', Math.floor(Date.now() / 1000)]
     );
 
-    console.log(`📩 Synced Discord message from @${discordMessage.author.username} to game chat`);
+    console.log(`📩 Synced Discord message from ${player.username} (Discord @${discordMessage.author.username}) to game chat`);
   } catch (error) {
     console.error('❌ Error relaying Discord message to game:', error);
   }
