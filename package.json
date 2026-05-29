@@ -10,6 +10,10 @@
     "postinstall": "npm run build",
     "lint": "eslint . --ext js --report-unused-disable-directives"
   },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "dependencies": {
     "@vitejs/plugin-react": "^6.0.2",
     "@vitejs/plugin-vue": "^6.0.6",

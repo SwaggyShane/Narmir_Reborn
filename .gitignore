@@ -17,6 +17,8 @@ logs/
 *.p8
 *.p12
 *.pfx
+*.jks
+*.keystore
 
 # IDE and editor configs
 .vscode/
