@@ -1388,8 +1388,8 @@ async function start() {
         SELECT cm.id, cm.message, cm.created_at, cm.username,
                p.is_chat_mod, p.is_admin, p.chat_color, p.chat_name, k.race
         FROM chat_messages cm
-        JOIN players p ON cm.player_id = p.id
-        JOIN kingdoms k ON cm.kingdom_id = k.id
+        LEFT JOIN players p ON cm.player_id = p.id
+        LEFT JOIN kingdoms k ON cm.kingdom_id = k.id
         WHERE cm.room = ? AND cm.deleted = 0
         ORDER BY cm.created_at DESC LIMIT 80`, [req.params.room]);
       res.json(msgs.reverse());
