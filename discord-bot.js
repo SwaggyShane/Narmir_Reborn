@@ -54,8 +54,12 @@ client.once('ready', async () => {
 
     // Load sync configs from database
     await loadSyncConfigs();
+
+    // Start polling game messages
+    pollAndSyncGameMessages();
   } catch (error) {
     console.error('❌ Failed to initialize database:', error);
+    console.error('Discord sync will be unavailable until database connects.');
   }
 });
 
@@ -202,7 +206,10 @@ client.on('messageCreate', async (message) => {
 });
 
 async function relayDiscordMessageToGame(discordMessage, syncConfig) {
-  if (!db) return;
+  if (!db) {
+    console.warn('⚠️  Database not connected, skipping Discord→game relay');
+    return;
+  }
 
   const content = discordMessage.content.trim();
   if (!content) return;
@@ -260,24 +267,40 @@ async function relayGameMessageToDiscord(gameMessage) {
   if (!db || !client.isReady()) return;
 
   try {
+    // Validate message has required fields
+    if (!gameMessage.id || !gameMessage.username || !gameMessage.message || !gameMessage.room) {
+      console.warn('⚠️  Incomplete game message, skipping:', gameMessage);
+      return;
+    }
+
     // Find sync configs for this game room
     const configs = syncConfigs.filter(c => c.game_room === gameMessage.room);
+    if (configs.length === 0) return;
 
     for (const config of configs) {
       const channel = await client.channels.fetch(config.channel_id).catch(() => null);
-      if (!channel || !channel.isTextBased()) continue;
+      if (!channel || !channel.isTextBased()) {
+        console.warn(`⚠️  Discord channel ${config.channel_id} not found or not text-based`);
+        continue;
+      }
 
-      // Find Discord user if linked
-      const link = await db.get(
-        'SELECT discord_user_id FROM discord_links WHERE player_id = ?',
-        [gameMessage.player_id]
-      );
+      // Find Discord user if linked (only if player_id exists)
+      let discordUserMention = `@${gameMessage.username}`;
+      if (gameMessage.player_id) {
+        const link = await db.get(
+          'SELECT discord_user_id FROM discord_links WHERE player_id = ?',
+          [gameMessage.player_id]
+        ).catch(() => null);
 
-      const discordUserId = link?.discord_user_id ? `<@${link.discord_user_id}>` : `@${gameMessage.username}`;
-      const messageText = `**${gameMessage.username}** (${discordUserId}): ${gameMessage.message}`;
+        if (link?.discord_user_id) {
+          discordUserMention = `<@${link.discord_user_id}>`;
+        }
+      }
+
+      const messageText = `**${gameMessage.username}** (${discordUserMention}): ${gameMessage.message}`;
 
       const discordMsg = await channel.send(messageText).catch(error => {
-        console.error('❌ Failed to send message to Discord:', error);
+        console.error(`❌ Failed to send message to Discord channel ${config.channel_id}:`, error.message);
         return null;
       });
 
@@ -286,12 +309,14 @@ async function relayGameMessageToDiscord(gameMessage) {
         await db.run(
           'INSERT INTO chat_sync_log (game_message_id, discord_message_id, direction, synced_at) VALUES (?, ?, ?, ?)',
           [gameMessage.id, discordMsg.id, 'game_to_discord', Math.floor(Date.now() / 1000)]
-        );
-        console.log(`📤 Synced game message from ${gameMessage.username} to Discord`);
+        ).catch(error => {
+          console.error('❌ Failed to log chat sync:', error);
+        });
+        console.log(`📤 Synced game message from ${gameMessage.username} to Discord #${config.channel_name}`);
       }
     }
   } catch (error) {
-    console.error('❌ Error relaying game message to Discord:', error);
+    console.error('❌ Unexpected error relaying game message to Discord:', error);
   }
 }
 
