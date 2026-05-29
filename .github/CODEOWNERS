@@ -1,0 +1,22 @@
+# Code ownership for critical paths
+# These owners will be required to review changes to sensitive areas
+
+# All files by default require review from repo owner
+* @swaggyshane
+
+# Database migrations and schema
+/db/ @swaggyshane
+
+# Authentication and security
+/routes/auth.js @swaggyshane
+/routes/middleware.js @swaggyshane
+
+# Configuration and environment
+/game/config.js @swaggyshane
+/.env.example @swaggyshane
+
+# Admin panel
+/routes/admin.js @swaggyshane
+
+# Game engine and core logic
+/game/engine.js @swaggyshane

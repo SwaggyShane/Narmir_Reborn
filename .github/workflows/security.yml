@@ -1,0 +1,25 @@
+name: Security Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-security-files:
+    runs-on: ubuntu-latest
+    name: Validate Security Configuration
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify .gitignore exists
+        run: test -f .gitignore && echo ".gitignore verified" || exit 1
+
+      - name: Verify CODEOWNERS exists
+        run: test -f .github/CODEOWNERS && echo "CODEOWNERS verified" || exit 1
+
+      - name: Validate CODEOWNERS format
+        run: grep -E '^(\*|/)[^ ]*[ \t]+@[a-zA-Z0-9_-]+$' .github/CODEOWNERS
