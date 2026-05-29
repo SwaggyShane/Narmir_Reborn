@@ -102,6 +102,24 @@ module.exports = function (db) {
         rangers = 100;
       }
 
+      // Calculate starting land: building costs + 1000 buffer
+      const landCosts = {
+        farms: 10, schools: 125, barracks: 100, armories: 300, housing: 25,
+        markets: 100, smithies: 200, mage_towers: 250, shrines: 150, training: 850, mausoleums: 150
+      };
+      let startingLand = 1000; // Base buffer
+      startingLand += buildings.bld_farms * landCosts.farms;
+      startingLand += buildings.bld_schools * landCosts.schools;
+      startingLand += buildings.bld_barracks * landCosts.barracks;
+      startingLand += buildings.bld_armories * landCosts.armories;
+      startingLand += buildings.bld_housing * landCosts.housing;
+      startingLand += buildings.bld_markets * landCosts.markets;
+      startingLand += buildings.bld_smithies * landCosts.smithies;
+      startingLand += buildings.bld_mage_towers * landCosts.mage_towers;
+      startingLand += buildings.bld_shrines * landCosts.shrines;
+      startingLand += buildings.bld_training * landCosts.training;
+      startingLand += buildings.bld_mausoleums * landCosts.mausoleums;
+
       await db.run(
         `INSERT INTO kingdoms (
           player_id, name, race, region, gold, land, population, food,
@@ -109,12 +127,13 @@ module.exports = function (db) {
           res_spellbook, blueprints_stored,
           bld_farms, bld_schools, bld_barracks, bld_armories, bld_housing,
           bld_markets, bld_smithies, bld_mage_towers, bld_shrines, bld_outposts, bld_training, bld_mausoleums, world_fragments
-        ) VALUES (?, ?, ?, ?, 10000, 504, 50000, ?, 100, 100, ?, ?, ?, 400, 0, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '["Volcanic Rock", "Ancient Elven Wood", "Dragon Scale", "Abyssal Crystal", "Celestial Feather", "Dwarven Star-Metal", "Cursed Bloodstone", "Tears of the World Tree", "Void Essence", "Titan Bone"]')`,
+        ) VALUES (?, ?, ?, ?, 10000, ?, 50000, ?, 100, 100, ?, ?, ?, 400, 0, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '["Volcanic Rock", "Ancient Elven Wood", "Dragon Scale", "Abyssal Crystal", "Celestial Feather", "Dwarven Star-Metal", "Cursed Bloodstone", "Tears of the World Tree", "Void Essence", "Titan Bone"]')`,
         [
           playerResult.lastID,
           kingdomName,
           chosenRace,
           region,
+          startingLand,
           food,
           fighters,
           rangers,
