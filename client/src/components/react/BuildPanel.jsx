@@ -173,35 +173,35 @@ const BuildPanel = () => {
               <span style={{ textAlign: 'center' }}>Engineers</span>
             </div>
 
-            {renderBuildingRow(BUILDINGS[0], { emoji: '🌾', color: '#4a7c3f' }, 'ba-farm', 'demolish-amount-farms')}
-            {renderBuildingRow(BUILDINGS[1], { emoji: '🛖', color: '#a08453' }, 'ba-housing', 'demolish-amount-housing')}
-            {renderBuildingRow(BUILDINGS[2], { emoji: '🏘️', color: '#4a5a3a' }, 'ba-granary', 'demolish-amount-granaries')}
-            {renderBuildingRow(BUILDINGS[3], { emoji: '🏫', color: '#3a5a7a' }, 'ba-school', 'demolish-amount-schools')}
-            {renderBuildingRow(BUILDINGS[4], { emoji: '📖', color: '#2a3a6a' }, 'ba-library', 'demolish-amount-libraries')}
-            {renderBuildingRow(BUILDINGS[5], { emoji: '⛪', color: '#4a2a7a' }, 'ba-mage_tower', 'demolish-amount-mage_towers')}
-            {renderBuildingRow(BUILDINGS[6], { emoji: '⛩️', color: '#3a6a4a' }, 'ba-shrine', 'demolish-amount-shrines')}
-            {renderBuildingRow(BUILDINGS[7], { emoji: '⚰️', color: '#333' }, 'ba-mausoleum', 'demolish-amount-mausoleums')}
-            {renderBuildingRow(BUILDINGS[8], { emoji: '🏪', color: '#1a5a5a' }, 'ba-market', 'demolish-amount-markets')}
-            {renderBuildingRow(BUILDINGS[9], { emoji: '🍺', color: '#3a2a1a' }, 'ba-tavern', 'demolish-amount-taverns')}
-            {renderBuildingRow(BUILDINGS[10], { emoji: '⚒️', color: '#7a4a1a' }, 'ba-smithy', 'demolish-amount-smithies')}
-            {renderBuildingRow(BUILDINGS[11], { emoji: '💰', color: '#3a6a3a' }, 'ba-vault', 'demolish-amount-vaults')}
-            {renderBuildingRow(BUILDINGS[12], { emoji: '🛡️', color: '#6a3a1e' }, 'ba-armory', 'demolish-amount-armories')}
-            {renderBuildingRow(BUILDINGS[13], { emoji: '🏠', color: '#7b3030' }, 'ba-barracks', 'demolish-amount-barracks')}
-            {renderBuildingRow(BUILDINGS[14], { emoji: '🧱', color: '#3a3a3a' }, 'ba-walls', 'demolish-amount-walls')}
-            {renderBuildingRow(BUILDINGS[15], { emoji: '🗼', color: '#2a4a6e' }, 'ba-tower', 'demolish-amount-guard_towers')}
-            {renderBuildingRow(BUILDINGS[16], { emoji: '🏴', color: '#5a4a1e' }, 'ba-outpost', 'demolish-amount-outposts')}
-            {renderBuildingRow(BUILDINGS[17], { emoji: '⚔️', color: '#1a4a2a' }, 'ba-training', 'demolish-amount-training')}
-            {renderBuildingRow(BUILDINGS[18], { emoji: '🏰', color: '#5a1a1a' }, 'ba-castle', 'demolish-amount-castles')}
+            {renderBuildingRow(BUILDINGS.find(b => b.id === 'farms'), { emoji: '🌾', color: '#4a7c3f' }, 'ba-farm', 'demolish-amount-farms')}
+            {renderBuildingRow(BUILDINGS.find(b => b.id === 'housing'), { emoji: '🏘️', color: '#4a5a3a' }, 'ba-housing', 'demolish-amount-housing')}
+            {renderBuildingRow(BUILDINGS.find(b => b.id === 'granaries'), { emoji: '🛖', color: '#a08453' }, 'ba-granary', 'demolish-amount-granaries')}
+            {renderBuildingRow(BUILDINGS.find(b => b.id === 'schools'), { emoji: '🏫', color: '#3a5a7a' }, 'ba-school', 'demolish-amount-schools')}
+            {renderBuildingRow(BUILDINGS.find(b => b.id === 'libraries'), { emoji: '📖', color: '#2a3a6a' }, 'ba-library', 'demolish-amount-libraries')}
+            {renderBuildingRow(BUILDINGS.find(b => b.id === 'mage_towers'), { emoji: '⛪', color: '#4a2a7a' }, 'ba-mage_tower', 'demolish-amount-mage_towers')}
+            {renderBuildingRow(BUILDINGS.find(b => b.id === 'shrines'), { emoji: '⛩️', color: '#3a6a4a' }, 'ba-shrine', 'demolish-amount-shrines')}
+            {renderBuildingRow(BUILDINGS.find(b => b.id === 'mausoleums'), { emoji: '⚰️', color: '#333' }, 'ba-mausoleum', 'demolish-amount-mausoleums')}
+            {renderBuildingRow(BUILDINGS.find(b => b.id === 'markets'), { emoji: '🏪', color: '#1a5a5a' }, 'ba-market', 'demolish-amount-markets')}
+            {renderBuildingRow(BUILDINGS.find(b => b.id === 'taverns'), { emoji: '🍺', color: '#3a2a1a' }, 'ba-tavern', 'demolish-amount-taverns')}
+            {renderBuildingRow(BUILDINGS.find(b => b.id === 'smithies'), { emoji: '⚒️', color: '#7a4a1a' }, 'ba-smithy', 'demolish-amount-smithies')}
+            {renderBuildingRow(BUILDINGS.find(b => b.id === 'vaults'), { emoji: '💰', color: '#3a6a3a' }, 'ba-vault', 'demolish-amount-vaults')}
+            {renderBuildingRow(BUILDINGS.find(b => b.id === 'armories'), { emoji: '🛡️', color: '#6a3a1e' }, 'ba-armory', 'demolish-amount-armories')}
+            {renderBuildingRow(BUILDINGS.find(b => b.id === 'barracks'), { emoji: '🏠', color: '#7b3030' }, 'ba-barracks', 'demolish-amount-barracks')}
+            {renderBuildingRow(BUILDINGS.find(b => b.id === 'walls'), { emoji: '🧱', color: '#3a3a3a' }, 'ba-walls', 'demolish-amount-walls')}
+            {renderBuildingRow(BUILDINGS.find(b => b.id === 'guard_towers'), { emoji: '🗼', color: '#2a4a6e' }, 'ba-tower', 'demolish-amount-guard_towers')}
+            {renderBuildingRow(BUILDINGS.find(b => b.id === 'outposts'), { emoji: '🏴', color: '#5a4a1e' }, 'ba-outpost', 'demolish-amount-outposts')}
+            {renderBuildingRow(BUILDINGS.find(b => b.id === 'training'), { emoji: '⚔️', color: '#1a4a2a' }, 'ba-training', 'demolish-amount-training')}
+            {renderBuildingRow(BUILDINGS.find(b => b.id === 'castles'), { emoji: '🏰', color: '#5a1a1a' }, 'ba-castle', 'demolish-amount-castles')}
 
             <div style={{ fontSize: '11px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', padding: '14px 0 6px' }}>
               Equipment & War Machines
             </div>
 
-            {renderBuildingRow(BUILDINGS[19], { emoji: '🪖', color: '#5a3a1a' }, 'ba-wm', '')}
-            {renderBuildingRow(BUILDINGS[20], { emoji: '🪜', color: '#3a2a1a' }, 'ba-ladders', '')}
-            {renderBuildingRow(BUILDINGS[21], { emoji: '🗡️', color: '#6a1a1a' }, 'ba-weapons', '')}
+            {renderBuildingRow(BUILDINGS.find(b => b.id === 'wm'), { emoji: '🪖', color: '#5a3a1a' }, 'ba-wm', '')}
+            {renderBuildingRow(BUILDINGS.find(b => b.id === 'ladders'), { emoji: '🪜', color: '#3a2a1a' }, 'ba-ladders', '')}
+            {renderBuildingRow(BUILDINGS.find(b => b.id === 'weapons'), { emoji: '🗡️', color: '#6a1a1a' }, 'ba-weapons', '')}
             <div style={{ borderBottom: 'none' }}>
-              {renderBuildingRow(BUILDINGS[22], { emoji: '🔰', color: '#1a3a6a' }, 'ba-armor', '')}
+              {renderBuildingRow(BUILDINGS.find(b => b.id === 'armor'), { emoji: '🔰', color: '#1a3a6a' }, 'ba-armor', '')}
             </div>
 
           </div>

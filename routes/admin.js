@@ -1401,10 +1401,17 @@ module.exports = function (db, io) {
 
   router.post("/repair-resource-allocations", requireAdmin, async (req, res) => {
     try {
-      const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [req.player.playerId]);
+      const kingdomId = req.body.kingdomId;
+      if (!kingdomId) return res.status(400).json({ error: "kingdomId required" });
+
+      const k = await db.get("SELECT * FROM kingdoms WHERE id = ?", [kingdomId]);
       if (!k) return res.status(404).json({ error: "Kingdom not found" });
 
-      const buildProgress = safeJsonParse(k.build_progress, {});
+      let buildProgress = {};
+      try {
+        buildProgress = JSON.parse(k.build_progress || "{}");
+      } catch (e) {}
+
       const RESOURCE_BUILDINGS = ['woodyard', 'lumber_camp', 'sawmill', 'gravel_pit', 'blockfield', 'stone_quarry', 'open_pit', 'strip_mine', 'deep_mine'];
 
       // Auto-assign 1 engineer to each resource building with active progress

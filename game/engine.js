@@ -3325,9 +3325,9 @@ function queueBuildings(k, orders) {
     const col = BUILDING_COL[key];
     const builtCost = (col && k[col]) ? (k[col] || 0) * cost : 0;
     const queuedCost = (queue[key] || 0) * cost;
-    const totalCost = builtCost + queuedCost;
-    if (totalCost > 0) {
-      landBreakdown[key] = { built: k[col] || 0, queued: queue[key] || 0, cost, total: totalCost };
+    const buildingLandCost = builtCost + queuedCost;
+    if (buildingLandCost > 0) {
+      landBreakdown[key] = { built: k[col] || 0, queued: queue[key] || 0, cost, total: buildingLandCost };
     }
     if (col) usedLand += builtCost;
     usedLand += queuedCost;
