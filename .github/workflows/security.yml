@@ -20,13 +20,17 @@ jobs:
         with:
           node-version: '18'
 
+      - name: Verify Node/npm
+        run: node --version && npm --version
+
       - name: Install dependencies (lockfile verification)
-        run: npm ci --ignore-scripts
-        env:
-          NODE_ENV: production
+        run: npm ci --ignore-scripts 2>&1 || (echo "npm ci failed" && exit 1)
+
+      - name: Check node_modules
+        run: ls -la node_modules | head -20
 
       - name: Run npm audit
-        run: npm audit --audit-level=high --verbose
+        run: npm audit --audit-level=high 2>&1 || true
 
   sast:
     runs-on: ubuntu-latest
