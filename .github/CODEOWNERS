@@ -1,6 +1,9 @@
 # Code ownership for critical paths
 # These owners will be required to review changes to sensitive areas
 
+# All files by default require review from repo owner
+* @swaggyshane
+
 # Database migrations and schema
 /db/ @swaggyshane
 
@@ -18,5 +21,3 @@
 # Game engine and core logic
 /game/engine.js @swaggyshane
 
-# All files by default require review from repo owner
-* @swaggyshane
