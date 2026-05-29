@@ -118,6 +118,14 @@ module.exports = function (db, io) {
   // All admin routes require admin JWT
   router.use(requireAdmin);
 
+  // Apply CSRF protection to all state-changing admin operations
+  router.use((req, res, next) => {
+    if (["POST", "PUT", "DELETE", "PATCH"].includes(req.method)) {
+      return requireCsrfToken(req, res, next);
+    }
+    next();
+  });
+
   // GET /api/admin/kingdoms — all kingdoms with player info
   router.get("/kingdoms", async (_req, res) => {
     const rows = await db.all(`
