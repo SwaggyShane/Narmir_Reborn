@@ -48,6 +48,16 @@ module.exports = function (db) {
     k.score = engine.calculateScore(k);
     k.defense_rating = engine.defenseRating(k);
 
+    // Calculate built_land from all building types
+    let builtLand = 0;
+    for (const [building, cost] of Object.entries(config.BUILDING_LAND_COST)) {
+      const col = config.BUILDING_COL[building];
+      if (col && k[col]) {
+        builtLand += k[col] * cost;
+      }
+    }
+    k.built_land = builtLand;
+
     res.json(k);
   });
 

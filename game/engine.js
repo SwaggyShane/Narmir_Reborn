@@ -3320,12 +3320,26 @@ function queueBuildings(k, orders) {
   }
 
   let usedLand = 0;
+  const landBreakdown = {};
   for (const [key, cost] of Object.entries(BUILDING_LAND_COST)) {
     const col = BUILDING_COL[key];
-    if (col) usedLand += (k[col] || 0) * cost;
-    usedLand += (queue[key] || 0) * cost;
+    const builtCost = (col && k[col]) ? (k[col] || 0) * cost : 0;
+    const queuedCost = (queue[key] || 0) * cost;
+    const buildingLandCost = builtCost + queuedCost;
+    if (buildingLandCost > 0) {
+      landBreakdown[key] = { built: k[col] || 0, queued: queue[key] || 0, cost, total: buildingLandCost };
+    }
+    if (col) usedLand += builtCost;
+    usedLand += queuedCost;
   }
   const freeLand = Math.max(0, k.land - usedLand);
+
+  if (totalLand > 0) {
+    console.log(`[queueBuildings] Land calculation for ${k.name}: total=${k.land}, used=${usedLand}, free=${freeLand}, requesting=${totalLand}`);
+    if (Object.keys(landBreakdown).length > 0) {
+      console.log('[queueBuildings] Breakdown:', JSON.stringify(landBreakdown, null, 2));
+    }
+  }
 
   if (totalCost > k.gold) {
     return {
