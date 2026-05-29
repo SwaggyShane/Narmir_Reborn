@@ -80,7 +80,6 @@ const StatusPanel = () => {
               width: '80px',
               height: '80px',
               borderRadius: '8px',
-              border: '2px solid var(--gold)',
               boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
               overflow: 'hidden',
               background: '#15171e',

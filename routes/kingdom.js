@@ -1,7 +1,7 @@
 const express = require("express");
 const engine = require("../game/engine");
 const config = require("../game/config");
-const { requireAuth } = require("./middleware");
+const { requireAuth, requireCsrfToken } = require("./middleware");
 const { progressGoal } = require('../game/goals');
 const { safeJsonParse } = require('../utils/helpers');
 const { getKingdomAttunements } = require('../game/fragment-attunements');
@@ -62,7 +62,7 @@ module.exports = function (db) {
   });
 
   // ── Save research allocation ───────────────────────────────────────────────
-  router.post("/research-allocation", requireAuth, async (req, res) => {
+  router.post("/research-allocation", requireAuth, requireCsrfToken, async (req, res) => {
     const { allocation } = req.body;
     if (!allocation || typeof allocation !== "object")
       return res.status(400).json({ error: "allocation object required" });
@@ -77,7 +77,7 @@ module.exports = function (db) {
     res.json({ ok: true });
   });
 
-  router.post("/description", requireAuth, async (req, res) => {
+  router.post("/description", requireAuth, requireCsrfToken, async (req, res) => {
     const { description } = req.body;
     if (description && typeof description !== "string")
       return res.status(400).json({ error: "Description must be a string" });
@@ -488,7 +488,7 @@ module.exports = function (db) {
   }
 
   // ── Take turn (advance game state) ───────────────────────────────────────────
-  router.post("/turn", requireAuth, async (req, res) => {
+  router.post("/turn", requireAuth, requireCsrfToken, async (req, res) => {
     try {
       const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
         req.player.playerId,
@@ -514,7 +514,7 @@ module.exports = function (db) {
   });
 
   // ── Hire units ────────────────────────────────────────────────────────────────
-  router.post("/hire", requireAuth, async (req, res) => {
+  router.post("/hire", requireAuth, requireCsrfToken, async (req, res) => {
     const { unit, amount } = req.body;
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
@@ -542,7 +542,7 @@ module.exports = function (db) {
   });
 
   // ── Research ──────────────────────────────────────────────────────────────────
-  router.post("/research", requireAuth, async (req, res) => {
+  router.post("/research", requireAuth, requireCsrfToken, async (req, res) => {
     const { discipline, researchers } = req.body;
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
@@ -596,7 +596,7 @@ module.exports = function (db) {
   });
 
   // ── Queue buildings — charges gold, no turn cost ──────────────────────────────
-  router.post("/build-queue", requireAuth, async (req, res) => {
+  router.post("/build-queue", requireAuth, requireCsrfToken, async (req, res) => {
     const { orders } = req.body;
     if (!orders || typeof orders !== "object")
       return res.status(400).json({ error: "orders required" });
@@ -631,7 +631,7 @@ module.exports = function (db) {
   });
 
   // ── Save training allocation ───────────────────────────────────────────────
-  router.post("/training-allocation", requireAuth, async (req, res) => {
+  router.post("/training-allocation", requireAuth, requireCsrfToken, async (req, res) => {
     const { allocation } = req.body;
     if (!allocation || typeof allocation !== "object")
       return res.status(400).json({ error: "allocation required" });
@@ -661,7 +661,7 @@ module.exports = function (db) {
     ]);
     res.json({ ok: true });
   });
-  router.post("/build-allocation", requireAuth, async (req, res) => {
+  router.post("/build-allocation", requireAuth, requireCsrfToken, async (req, res) => {
     const { allocation } = req.body;
     if (!allocation || typeof allocation !== "object")
       return res.status(400).json({ error: "allocation required" });
@@ -685,7 +685,7 @@ module.exports = function (db) {
     res.json({ ok: true });
   });
 
-  router.post("/resource-build-allocation", requireAuth, async (req, res) => {
+  router.post("/resource-build-allocation", requireAuth, requireCsrfToken, async (req, res) => {
     const { allocation } = req.body;
     if (!allocation || typeof allocation !== "object")
       return res.status(400).json({ error: "allocation required" });
@@ -715,7 +715,7 @@ module.exports = function (db) {
     res.json({ ok: true });
   });
 
-  router.post("/demolish", requireAuth, async (req, res) => {
+  router.post("/demolish", requireAuth, requireCsrfToken, async (req, res) => {
     const { building, amount } = req.body;
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
@@ -736,7 +736,7 @@ module.exports = function (db) {
   });
 
   // ── Build structures — start construction with engineer allocation ──────────
-  router.post("/build", requireAuth, async (req, res) => {
+  router.post("/build", requireAuth, requireCsrfToken, async (req, res) => {
     const { building } = req.body;
     const config = require("../game/config");
 
@@ -791,7 +791,7 @@ module.exports = function (db) {
   });
 
   // ── Cancel building — refund resources ────────────────────────────────────
-  router.post("/cancel-building", requireAuth, async (req, res) => {
+  router.post("/cancel-building", requireAuth, requireCsrfToken, async (req, res) => {
     const { queueId } = req.body;
 
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
@@ -827,7 +827,7 @@ module.exports = function (db) {
   });
 
   // ── Forge tools — costs 1 turn + gold for scaffolding ───────────────────────
-  router.post("/forge-tools", requireAuth, async (req, res) => {
+  router.post("/forge-tools", requireAuth, requireCsrfToken, async (req, res) => {
     const { toolType, quantity } = req.body;
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
@@ -881,7 +881,7 @@ module.exports = function (db) {
   });
 
   // ── Smithy — buy hammers for gold ─────────────────────────────────────────────
-  router.post("/smithy/buy-hammers", requireAuth, async (req, res) => {
+  router.post("/smithy/buy-hammers", requireAuth, requireCsrfToken, async (req, res) => {
     const amount = Math.max(1, parseInt(req.body.amount) || 1);
 
     try {
@@ -939,7 +939,7 @@ module.exports = function (db) {
   });
 
   // ── Smithy — buy scaffolding for gold ────────────────────────────────────────
-  router.post("/smithy/buy-scaffolding", requireAuth, async (req, res) => {
+  router.post("/smithy/buy-scaffolding", requireAuth, requireCsrfToken, async (req, res) => {
     const amount = Math.max(1, parseInt(req.body.amount) || 1);
 
     try {
@@ -1018,7 +1018,7 @@ module.exports = function (db) {
     res.json({ routes });
   });
 
-  router.post("/trade-routes/establish", requireAuth, async (req, res) => {
+  router.post("/trade-routes/establish", requireAuth, requireCsrfToken, async (req, res) => {
     try {
       const targetId = parseInt(req.body.targetId);
       if (isNaN(targetId))
@@ -1136,7 +1136,7 @@ module.exports = function (db) {
     }
   });
 
-  router.post("/trade-routes/cancel", requireAuth, async (req, res) => {
+  router.post("/trade-routes/cancel", requireAuth, requireCsrfToken, async (req, res) => {
     const { routeId } = req.body;
     const k = await db.get("SELECT id FROM kingdoms WHERE player_id=?", [
       req.player.playerId,
@@ -1148,10 +1148,10 @@ module.exports = function (db) {
     res.json({ ok: true });
   });
 
-  router.post("/smithy-allocation", requireAuth, async (_req, res) => {
+  router.post("/smithy-allocation", requireAuth, requireCsrfToken, async (_req, res) => {
     res.json({ ok: true });
   });
-  router.post("/search", requireAuth, async (req, res) => {
+  router.post("/search", requireAuth, requireCsrfToken, async (req, res) => {
     const { type, rangers } = req.body;
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
@@ -1324,7 +1324,7 @@ module.exports = function (db) {
   });
 
   // ── Mage tower allocation ────────────────────────────────────────────────────
-  router.post("/tower-craft", requireAuth, async (req, res) => {
+  router.post("/tower-craft", requireAuth, requireCsrfToken, async (req, res) => {
     const { item, qty } = req.body;
     if (!item || qty <= 0)
       return res.status(400).json({ error: "Invalid input" });
@@ -1356,7 +1356,7 @@ module.exports = function (db) {
     res.json({ ok: true, allocation: JSON.stringify(alloc) });
   });
 
-  router.post("/tower-cancel", requireAuth, async (req, res) => {
+  router.post("/tower-cancel", requireAuth, requireCsrfToken, async (req, res) => {
     const { item } = req.body;
     const k = await db.get(
       "SELECT id, mage_tower_allocation FROM kingdoms WHERE player_id = ?",
@@ -1383,7 +1383,7 @@ module.exports = function (db) {
   });
 
   // ── Shrine allocation ─────────────────────────────────────────────────────────
-  router.post("/shrine-allocation", requireAuth, async (req, res) => {
+  router.post("/shrine-allocation", requireAuth, requireCsrfToken, async (req, res) => {
     const { allocation } = req.body;
     if (!allocation || typeof allocation !== "object")
       return res.status(400).json({ error: "allocation required" });
@@ -1408,7 +1408,7 @@ module.exports = function (db) {
   });
 
   // ── Mausoleum allocation ──────────────────────────────────────────────────────
-  router.post("/mausoleum-allocation", requireAuth, async (req, res) => {
+  router.post("/mausoleum-allocation", requireAuth, requireCsrfToken, async (req, res) => {
     const { allocation } = req.body;
     if (!allocation || typeof allocation !== "object")
       return res.status(400).json({ error: "allocation required" });
@@ -1431,7 +1431,7 @@ module.exports = function (db) {
     res.json({ ok: true, allocation });
   });
 
-  router.post("/buy-mausoleum-upgrade", requireAuth, async (req, res) => {
+  router.post("/buy-mausoleum-upgrade", requireAuth, requireCsrfToken, async (req, res) => {
     const { upgradeKey } = req.body;
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
@@ -1469,7 +1469,7 @@ module.exports = function (db) {
   });
 
   // ── Military attack ───────────────────────────────────────────────────────────
-  router.post("/attack", requireAuth, async (req, res) => {
+  router.post("/attack", requireAuth, requireCsrfToken, async (req, res) => {
     const {
       targetId,
       fighters,
@@ -1806,7 +1806,7 @@ module.exports = function (db) {
   });
 
   // ── Cast spell ───────────────────────────────────────────────────────────────
-  router.post("/spell", requireAuth, async (req, res) => {
+  router.post("/spell", requireAuth, requireCsrfToken, async (req, res) => {
     const { spellId, targetId, obscure } = req.body;
     if (!spellId) return res.status(400).json({ error: "spellId required" });
 
@@ -1964,7 +1964,7 @@ module.exports = function (db) {
   });
 
   // ── Covert operations ────────────────────────────────────────────────────────
-  router.post("/covert", requireAuth, async (req, res) => {
+  router.post("/covert", requireAuth, requireCsrfToken, async (req, res) => {
     const { op, targetId, units, lootType, unitType, bldType } = req.body;
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
@@ -2293,7 +2293,7 @@ module.exports = function (db) {
   });
 
   // ── Library allocation ────────────────────────────────────────────────────────
-  router.post("/library-allocation", requireAuth, async (req, res) => {
+  router.post("/library-allocation", requireAuth, requireCsrfToken, async (req, res) => {
     const { allocation } = req.body;
     if (!allocation || typeof allocation !== "object")
       return res.status(400).json({ error: "allocation required" });
@@ -2339,7 +2339,7 @@ module.exports = function (db) {
     res.json({ ok: true });
   });
 
-  router.post("/trade/clear-logs", requireAuth, async (req, res) => {
+  router.post("/trade/clear-logs", requireAuth, requireCsrfToken, async (req, res) => {
     const k = await db.get("SELECT id FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
     ]);
@@ -2358,7 +2358,7 @@ module.exports = function (db) {
   // library-cancel has been replaced by library-allocation.
 
   // ── Fire units ────────────────────────────────────────────────────────────────
-  router.post("/fire", requireAuth, async (req, res) => {
+  router.post("/fire", requireAuth, requireCsrfToken, async (req, res) => {
     const { unit, amount } = req.body;
     const validUnits = [
       "fighters",
@@ -2401,7 +2401,7 @@ module.exports = function (db) {
   });
   const EXP_TURNS = { scout: 10, deep: 25, dungeon: 50 };
 
-  router.post("/expedition/start", requireAuth, async (req, res) => {
+  router.post("/expedition/start", requireAuth, requireCsrfToken, async (req, res) => {
     const { type, rangers, fighters } = req.body;
     if (!EXP_TURNS[type])
       return res.status(400).json({ error: "Invalid expedition type" });
@@ -2523,7 +2523,7 @@ module.exports = function (db) {
     res.json({ active, completed });
   });
 
-  router.post("/expedition/acknowledge", requireAuth, async (req, res) => {
+  router.post("/expedition/acknowledge", requireAuth, requireCsrfToken, async (req, res) => {
     const { id } = req.body;
     const k = await db.get("SELECT id FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
@@ -2548,7 +2548,7 @@ module.exports = function (db) {
     res.json(goals);
   });
   
-  router.post("/goals/claim", requireAuth, async (req, res) => {
+  router.post("/goals/claim", requireAuth, requireCsrfToken, async (req, res) => {
     const { groupId, goalId } = req.body;
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [req.player.playerId]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -2571,7 +2571,7 @@ module.exports = function (db) {
     res.json({ ok: true, message: result.message, updates });
   });
 
-  router.post("/expedition/cancel", requireAuth, async (req, res) => {
+  router.post("/expedition/cancel", requireAuth, requireCsrfToken, async (req, res) => {
     const { id } = req.body;
     const k = await db.get("SELECT id FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
@@ -2616,7 +2616,7 @@ module.exports = function (db) {
   });
 
   // ── Options ───────────────────────────────────────────────────────────────────
-  router.post("/options", requireAuth, async (req, res) => {
+  router.post("/options", requireAuth, requireCsrfToken, async (req, res) => {
     const { tax, name } = req.body;
     const k = await db.get("SELECT id FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
@@ -2732,7 +2732,7 @@ module.exports = function (db) {
   const fragmentBonusManager = require("../game/fragment-bonus-manager");
 
   // Get available buildings for a hybrid blueprint (for selection modal)
-  router.post("/hybrid-blueprint/get-buildings", requireAuth, async (req, res) => {
+  router.post("/hybrid-blueprint/get-buildings", requireAuth, requireCsrfToken, async (req, res) => {
     const { blueprintId } = req.body;
     if (!blueprintId) return res.status(400).json({ error: "Missing blueprintId" });
 
@@ -2772,7 +2772,7 @@ module.exports = function (db) {
   });
 
   // Confirm building selection with double warning
-  router.post("/hybrid-blueprint/confirm-assignment", requireAuth, async (req, res) => {
+  router.post("/hybrid-blueprint/confirm-assignment", requireAuth, requireCsrfToken, async (req, res) => {
     const { blueprintId, buildingType, confirmed } = req.body;
     if (!blueprintId || !buildingType)
       return res.status(400).json({ error: "Missing required fields" });
@@ -2885,7 +2885,7 @@ module.exports = function (db) {
   });
 
   // Legacy endpoint for backward compatibility
-  router.post("/assign-hybrid-blueprint", requireAuth, async (req, res) => {
+  router.post("/assign-hybrid-blueprint", requireAuth, requireCsrfToken, async (req, res) => {
     const { id } = req.body;
     if (!id) return res.status(400).json({ error: "Missing blueprint id" });
 
@@ -2935,7 +2935,7 @@ module.exports = function (db) {
     });
   });
 
-  router.post("/locations/steal-map", requireAuth, async (req, res) => {
+  router.post("/locations/steal-map", requireAuth, requireCsrfToken, async (req, res) => {
     const { targetId } = req.body;
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id=?", [
       req.player.playerId,
@@ -3063,7 +3063,7 @@ module.exports = function (db) {
     land: 10
   };
 
-  router.post("/market/buy", requireAuth, async (req, res) => {
+  router.post("/market/buy", requireAuth, requireCsrfToken, async (req, res) => {
     const { resource, amount } = req.body;
     const qty = Math.max(0, parseInt(amount) || 0);
     if (!qty) return res.status(400).json({ error: "Quantity required" });
@@ -3151,7 +3151,7 @@ module.exports = function (db) {
     }
   });
 
-  router.post("/market/sell", requireAuth, async (req, res) => {
+  router.post("/market/sell", requireAuth, requireCsrfToken, async (req, res) => {
     const { resource, amount } = req.body;
     const qty = Math.max(0, parseInt(amount) || 0);
     if (!qty) return res.status(400).json({ error: "Quantity required" });
@@ -3245,7 +3245,7 @@ module.exports = function (db) {
   });
 
   // ── Research focus ────────────────────────────────────────────────────────────
-  router.post("/research-focus", requireAuth, async (req, res) => {
+  router.post("/research-focus", requireAuth, requireCsrfToken, async (req, res) => {
     const { focus } = req.body; // array of 1-2 discipline keys
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
@@ -3359,7 +3359,7 @@ module.exports = function (db) {
       school_spells: schoolSpells,
     });
   });
-  router.post("/economy/bank-deposit", requireAuth, async (req, res) => {
+  router.post("/economy/bank-deposit", requireAuth, requireCsrfToken, async (req, res) => {
     const { amount, termIndex } = req.body;
     if (!amount || amount <= 0)
       return res.status(400).json({ error: "Invalid amount." });
@@ -3439,7 +3439,7 @@ module.exports = function (db) {
     res.json({ message: "Deposit successful.", updates });
   });
 
-  router.post("/economy/bank-withdraw", requireAuth, async (req, res) => {
+  router.post("/economy/bank-withdraw", requireAuth, requireCsrfToken, async (req, res) => {
     const { depositId } = req.body;
 
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
@@ -3493,7 +3493,7 @@ module.exports = function (db) {
     res.json({ message: "Withdrawal successful.", updates });
   });
 
-  router.post("/economy/upgrade", requireAuth, async (req, res) => {
+  router.post("/economy/upgrade", requireAuth, requireCsrfToken, async (req, res) => {
     const { category, upgradeKey } = req.body;
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
@@ -3524,7 +3524,7 @@ module.exports = function (db) {
   });
 
   // ── Hire mercenaries ──────────────────────────────────────────────────────────
-  router.post("/economy/hire-mercs", requireAuth, async (req, res) => {
+  router.post("/economy/hire-mercs", requireAuth, requireCsrfToken, async (req, res) => {
     const { unitType, tier, count } = req.body;
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
@@ -3551,7 +3551,7 @@ module.exports = function (db) {
   });
 
   // ── Dismiss mercenaries ───────────────────────────────────────────────────────
-  router.post("/economy/dismiss-mercs", requireAuth, async (req, res) => {
+  router.post("/economy/dismiss-mercs", requireAuth, requireCsrfToken, async (req, res) => {
     const { mercIndex } = req.body;
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
@@ -3575,7 +3575,7 @@ module.exports = function (db) {
   });
 
   // ── Send trade offer ──────────────────────────────────────────────────────────
-  router.post("/economy/trade/send", requireAuth, async (req, res) => {
+  router.post("/economy/trade/send", requireAuth, requireCsrfToken, async (req, res) => {
     const { targetId, offer, request } = req.body;
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
@@ -3664,7 +3664,7 @@ module.exports = function (db) {
   });
 
   // ── Accept trade offer ────────────────────────────────────────────────────────
-  router.post("/economy/trade/accept", requireAuth, async (req, res) => {
+  router.post("/economy/trade/accept", requireAuth, requireCsrfToken, async (req, res) => {
     const { offerId } = req.body;
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
@@ -3751,7 +3751,7 @@ module.exports = function (db) {
   });
 
   // ── Decline trade offer ───────────────────────────────────────────────────────
-  router.post("/economy/trade/decline", requireAuth, async (req, res) => {
+  router.post("/economy/trade/decline", requireAuth, requireCsrfToken, async (req, res) => {
     const { offerId } = req.body;
     const k = await db.get("SELECT id FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
@@ -3968,7 +3968,7 @@ module.exports = function (db) {
     }
   });
 
-  router.post("/rebirth", requireAuth, async (req, res) => {
+  router.post("/rebirth", requireAuth, requireCsrfToken, async (req, res) => {
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
     ]);
@@ -4069,7 +4069,7 @@ module.exports = function (db) {
     }
   });
 
-  router.post("/spy-reports/:id/share", requireAuth, async (req, res) => {
+  router.post("/spy-reports/:id/share", requireAuth, requireCsrfToken, async (req, res) => {
     try {
       const k = await db.get("SELECT id FROM kingdoms WHERE player_id = ?", [
         req.player.playerId,
@@ -4176,7 +4176,7 @@ module.exports = function (db) {
   });
 
   // POST /scout-node — pay 500 gold, generate a random resource node
-  router.post('/scout-node', requireAuth, async (req, res) => {
+  router.post('/scout-node', requireAuth, requireCsrfToken, async (req, res) => {
     try {
       const k = await db.get('SELECT * FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
       if (!k) return res.status(404).json({ error: 'Kingdom not found' });
@@ -4236,7 +4236,7 @@ module.exports = function (db) {
   });
 
   // POST /expedition/launch — start a resource expedition to a discovered node
-  router.post('/expedition/launch', requireAuth, async (req, res) => {
+  router.post('/expedition/launch', requireAuth, requireCsrfToken, async (req, res) => {
     try {
       const { nodeId, populationSent } = req.body;
       if (!nodeId || !populationSent) return res.status(400).json({ error: 'nodeId and populationSent required' });
@@ -4311,7 +4311,7 @@ module.exports = function (db) {
   });
 
   // POST /expedition/intercept — orc-only interception
-  router.post('/expedition/intercept', requireAuth, async (req, res) => {
+  router.post('/expedition/intercept', requireAuth, requireCsrfToken, async (req, res) => {
     try {
       const { expeditionId, fighters } = req.body;
       const k = await db.get('SELECT * FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
@@ -4399,7 +4399,7 @@ module.exports = function (db) {
   });
 
   // POST /resource-upgrade — purchase stage 2 or 3 upgrade for a resource type
-  router.post('/resource-upgrade', requireAuth, async (req, res) => {
+  router.post('/resource-upgrade', requireAuth, requireCsrfToken, async (req, res) => {
     try {
       const { type, toStage } = req.body;
       if (!['wood','stone','iron'].includes(type)) return res.status(400).json({ error: 'Invalid resource type.' });
@@ -4649,7 +4649,7 @@ module.exports = function (db) {
   });
 
   // POST /api/kingdom/attune-fragment — Apply a fragment attunement to a building
-  router.post('/attune-fragment', requireAuth, async (req, res) => {
+  router.post('/attune-fragment', requireAuth, requireCsrfToken, async (req, res) => {
     try {
       const { fragmentName, buildingType } = req.body;
 
@@ -4688,7 +4688,7 @@ module.exports = function (db) {
   });
 
   // POST /api/kingdom/remove-attunement — Remove fragment attunement from building
-  router.post('/remove-attunement', requireAuth, async (req, res) => {
+  router.post('/remove-attunement', requireAuth, requireCsrfToken, async (req, res) => {
     try {
       const { buildingType } = req.body;
 
@@ -4729,7 +4729,7 @@ module.exports = function (db) {
     }
   });
 
-  router.post("/select-school", requireAuth, async (req, res) => {
+  router.post("/select-school", requireAuth, requireCsrfToken, async (req, res) => {
     console.log('[select-school] Request received', { playerId: req.player?.playerId, school: req.body?.school });
     try {
       const { school } = req.body;

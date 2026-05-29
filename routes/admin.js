@@ -1,5 +1,5 @@
 const express = require("express");
-const { requireAdmin } = require("./middleware");
+const { requireAdmin, requireCsrfToken } = require("./middleware");
 const router = express.Router();
 const multer = require("multer");
 const path = require("path");
@@ -1399,7 +1399,7 @@ module.exports = function (db, io) {
     }
   });
 
-  router.post("/repair-resource-allocations", requireAdmin, async (req, res) => {
+  router.post("/repair-resource-allocations", requireAdmin, requireCsrfToken, async (req, res) => {
     try {
       const kingdomId = req.body.kingdomId;
       if (!kingdomId) return res.status(400).json({ error: "kingdomId required" });
