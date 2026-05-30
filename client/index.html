@@ -2232,6 +2232,29 @@
 
       var rankingsCache = [];
       var allianceRankingsCache = null;
+
+      // ── Expedition dedup cache ──────────────────────────────────────────────────
+      // Prevents duplicate API calls when player clicks button rapidly
+      // Maps expeditionId -> Promise (in-flight request)
+      var expeditionInFlight = new Map();
+
+      async function submitExpeditionAcknowledge(expeditionId) {
+        // If this expedition is already being acknowledged, return existing promise
+        if (expeditionInFlight.has(expeditionId)) {
+          return expeditionInFlight.get(expeditionId);
+        }
+
+        // Create promise for this acknowledgment
+        const promise = apiCall("POST", "/api/kingdom/expedition/acknowledge", {
+          id: expeditionId,
+        }).finally(() => {
+          expeditionInFlight.delete(expeditionId);
+        });
+
+        expeditionInFlight.set(expeditionId, promise);
+        return promise;
+      }
+
       var UI_STRINGS = {
         PRESTIGE_SYSTEM_TITLE: "✨ Prestige System",
         PRESTIGE_COMING_SOON: "Coming Soon",
@@ -3169,10 +3192,8 @@
               "</div>";
           }
 
-          // Acknowledge so it doesn't show again on next poll
-          apiCall("POST", "/api/kingdom/expedition/acknowledge", {
-            id: exp.id,
-          });
+          // Acknowledge so it doesn't show again on next poll (uses dedup to prevent double-clicks)
+          submitExpeditionAcknowledge(exp.id);
         });
 
         // If any expeditions completed, refresh kingdom state to get returned troops and rewards
