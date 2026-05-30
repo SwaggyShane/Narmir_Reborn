@@ -62,4 +62,20 @@ function requireCsrfToken(req, res, next) {
   next();
 }
 
-module.exports = { requireAuth, requireAdmin, requireCsrfToken, generateCsrfToken };
+function ensureCsrfToken(req, res, next) {
+  // Set a fresh CSRF token on every authenticated response
+  // This ensures the client always has a valid token to use
+  if (req.player) {
+    const csrfToken = generateCsrfToken();
+    const csrfCookieOpts = {
+      httpOnly: false,
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      sameSite: "none",
+      secure: true,
+    };
+    res.cookie("csrf_token", csrfToken, csrfCookieOpts);
+  }
+  next();
+}
+
+module.exports = { requireAuth, requireAdmin, requireCsrfToken, ensureCsrfToken, generateCsrfToken };
