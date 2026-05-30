@@ -2,21 +2,21 @@
 // Configuration constants for game balancing and logic.
 
 // ── NAMING CONVENTIONS ────────────────────────────────────────────────────────
-// This file uses several naming patterns. See TERMINOLOGY.md for full reference.
+// See TERMINOLOGY.md for complete reference.
 //
-// Building keys: 'bld_<name>' e.g., 'bld_farms', 'bld_granaries'
-//   → Maps directly to database columns: kingdoms.bld_farms
+// Building keys: Plain names e.g., 'farms', 'granaries' (except BUILDING_TIERS uses 'bld_farms')
+//   → Maps to database columns: kingdoms.bld_farms via BUILDING_COL
 //
-// Research keys: 'res_<discipline>' e.g., 'res_economy', 'res_weapons'
-//   → Maps to database columns: kingdoms.res_economy
+// Research keys: Plain names e.g., 'economy', 'weapons'
+//   → Maps to database columns: kingdoms.res_economy via RESEARCH_MAP
 //
 // Units: Plural form in database (fighters, rangers, mages, etc.)
-//   → Config may use singular for keys, but always map to plural DB columns
+//   → Config uses both plural (TROOP_RACE_BONUS.fighters) and singular (SUPPORT_CAP_RACE.researcher)
 //
 // INCONSISTENCIES (documented for future migration):
 //   - Some storage named 'stockpile' (weapons_stockpile), others '_stored' (hammers_stored)
 //   - Some upgrades use building names (vault_upgrades), others use generic (market_upgrades)
-//   See TERMINOLOGY.md Phase 2+ for migration path.
+//   See TERMINOLOGY.md for migration path.
 
 const config = {
   RACE_BONUSES: {
