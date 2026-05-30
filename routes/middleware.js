@@ -82,7 +82,7 @@ function ensureCsrfToken(req, res, next) {
         const csrfCookieOpts = {
           httpOnly: false,
           maxAge: 24 * 60 * 60 * 1000, // 24 hours
-          sameSite: isProd ? "none" : "lax", // "lax" for dev, "none" for prod (requires secure)
+          sameSite: "lax", // Defense-in-depth CSRF protection (frontend & API are same-origin)
           secure: isProd, // Only secure in production
         };
         res.cookie("csrf_token", csrfToken, csrfCookieOpts);
