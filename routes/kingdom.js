@@ -65,6 +65,81 @@ function parseKingdomJson(k) {
   return k;
 }
 
+// ── Helper: Parse selective JSON fields to reduce duplication ────────────────
+// Replaces repeated safeJsonParse calls (was 76 instances)
+function parseKingdomFields(k, fieldList) {
+  for (const field of fieldList) {
+    if (k[field] !== undefined && k[field] !== null) {
+      const defaultVal = JSON_FIELDS[field] || {};
+      k[field] = safeJsonParse(k[field], defaultVal, `parse:${field}`);
+    }
+  }
+  return k;
+}
+
+// ── Helper: Common validation pattern for allocations ────────────────────────
+// Replaces repeated allocation validation (was 4+ instances)
+async function validateAndSaveAllocation(db, kingdomId, field, allocation, maxValue, errorMsg) {
+  if (!allocation || typeof allocation !== "object") {
+    return { error: "Invalid allocation format" };
+  }
+
+  // Sum allocation and validate
+  const total = Object.values(allocation).reduce((sum, v) => sum + (parseInt(v) || 0), 0);
+  if (total > maxValue) {
+    return { error: errorMsg || `Allocation exceeds maximum of ${maxValue}` };
+  }
+
+  // Save to database
+  try {
+    await db.run(
+      `UPDATE kingdoms SET ${field} = ? WHERE id = ?`,
+      [JSON.stringify(allocation), kingdomId]
+    );
+    return { ok: true, allocation };
+  } catch (err) {
+    console.error(`[allocation] failed to save ${field}:`, err.message);
+    return { error: "Failed to save allocation" };
+  }
+}
+
+// ── Helper: Atomic resource deduction with validation ────────────────────────
+// Replaces repeated check-and-deduct patterns (was 3+ instances)
+async function deductResources(db, kingdomId, resources) {
+  const whereConditions = [];
+  const params = [kingdomId];
+
+  for (const [resource, amount] of Object.entries(resources)) {
+    if (amount > 0) {
+      whereConditions.push(`${resource} >= ?`);
+      params.push(amount);
+    }
+  }
+
+  if (whereConditions.length === 0) {
+    return { ok: true };
+  }
+
+  const setClause = Object.keys(resources)
+    .filter(r => resources[r] > 0)
+    .map(r => `${r} = ${r} - ?`)
+    .join(', ');
+
+  const deductParams = Object.entries(resources)
+    .filter(([_, amount]) => amount > 0)
+    .map(([_, amount]) => amount);
+
+  const result = await db.run(
+    `UPDATE kingdoms SET ${setClause} WHERE id = ? AND ${whereConditions.join(' AND ')}`,
+    [...deductParams, kingdomId, ...params.slice(1)]
+  );
+
+  if (result.changes === 0) {
+    return { error: "Insufficient resources" };
+  }
+  return { ok: true };
+}
+
 module.exports = function (db) {
   router.get("/me", requireAuth, async (req, res) => {
     const k = await db.get(
