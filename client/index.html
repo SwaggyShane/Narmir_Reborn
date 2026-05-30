@@ -6767,10 +6767,10 @@
             })
             .join("");
 
-          // Scroll to bottom
-          setTimeout(() => {
+          // Scroll to bottom after paint so content height is calculated correctly
+          requestAnimationFrame(() => {
             msgEl.scrollTop = msgEl.scrollHeight;
-          }, 50);
+          });
         }
         syncUI();
       }
