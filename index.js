@@ -1016,9 +1016,10 @@ async function start() {
     });
 
     // ── Routes ────────────────────────────────────────────────────────────────────
+    const { ensureCsrfToken } = require('./routes/middleware');
     app.use('/api/auth',         authLimiter,  require('./routes/auth')(db));
-    app.use('/api/kingdom',      turnLimiter,  require('./routes/kingdom')(db));
-    app.use('/api/hero',         turnLimiter,  require('./routes/hero')(db));
+    app.use('/api/kingdom',      ensureCsrfToken, turnLimiter,  require('./routes/kingdom')(db));
+    app.use('/api/hero',         ensureCsrfToken, turnLimiter,  require('./routes/hero')(db));
     const adminRouter = require('./routes/admin')(db, io);
     app.use('/api/admin', adminRouter);
     app.use('/api/discord', require('./routes/discord')(db));
