@@ -341,7 +341,7 @@ async function initDb() {
     max: 20,
     connectionTimeoutMillis: 5000,
     idleTimeoutMillis: 30000,
-    statement_timeout: 15000,
+    statement_timeout: 60000,
   });
 
   let currentAttempt = 1;
