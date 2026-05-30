@@ -5578,21 +5578,29 @@ function covertLoot(thief, target, requestedLootType, thievesSent) {
     };
   }
 
-  // Randomly select loot category if not specified
+  const RESEARCH_TYPES = ["res_economy", "res_weapons", "res_armor", "res_military", "res_spellbook", "res_attack_magic", "res_defense_magic", "res_entertainment", "res_construction", "res_war_machines"];
+  const RESOURCE_TYPES = ["wood", "stone", "iron"];
+
+  // Normalize: if a specific sub-type was passed directly, map it to its parent category
   let lootType = requestedLootType;
-  if (!lootType || lootType === "random") {
+  let actualLootType = lootType;
+  if (RESEARCH_TYPES.includes(lootType)) {
+    actualLootType = lootType;
+    lootType = "research";
+  } else if (RESOURCE_TYPES.includes(lootType)) {
+    actualLootType = lootType;
+    lootType = "resources";
+  } else if (!lootType || lootType === "random") {
     const lootCategories = ["gold", "food", "war_machines", "maps", "blueprints", "hammers", "research", "resources", "trade_routes"];
     lootType = lootCategories[Math.floor(Math.random() * lootCategories.length)];
+    actualLootType = lootType;
   }
 
-  // For grouped types, randomly select the specific type
-  let actualLootType = lootType;
-  if (lootType === "research") {
-    const researchTypes = ["res_economy", "res_weapons", "res_armor", "res_military", "res_spellbook", "res_attack_magic", "res_defense_magic", "res_entertainment", "res_construction", "res_war_machines"];
-    actualLootType = researchTypes[Math.floor(Math.random() * researchTypes.length)];
-  } else if (lootType === "resources") {
-    const resourceTypes = ["wood", "stone", "iron", "coal", "steel"];
-    actualLootType = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
+  // For grouped categories, randomly select the specific sub-type
+  if (lootType === "research" && actualLootType === "research") {
+    actualLootType = RESEARCH_TYPES[Math.floor(Math.random() * RESEARCH_TYPES.length)];
+  } else if (lootType === "resources" && actualLootType === "resources") {
+    actualLootType = RESOURCE_TYPES[Math.floor(Math.random() * RESOURCE_TYPES.length)];
   }
 
   const targetUpdates = {};
@@ -5682,8 +5690,9 @@ function covertLoot(thief, target, requestedLootType, thievesSent) {
     desc = `${stolen} hammer(s)`;
   } else if (lootType === "research") {
     stolen = Math.floor(thievesSent * 0.2 * thiefLvMult);
+    stolen = Math.min(stolen, target[actualLootType] || 0);
     const resName = actualLootType.replace("res_", "").replace(/_/g, " ");
-    targetUpdates[actualLootType] = Math.max(0, target[actualLootType] - stolen);
+    targetUpdates[actualLootType] = (target[actualLootType] || 0) - stolen;
     desc = `${stolen} ${resName} research points`;
   } else if (lootType === "resources") {
     stolen = Math.floor(thievesSent * (30 + Math.random() * 30) * thiefLvMult);
