@@ -369,14 +369,13 @@ const WarfarePanel = () => {
               <select id="wcov-assass-type" className="input" style={{ width: '100%', marginBottom: '6px', fontSize: '11px' }}>
                 <option value="fighters">Fighters</option>
                 <option value="rangers">Rangers</option>
-                <option value="clerics">Clerics</option>
+                {wcovTargetRace === 'vampire' ? <option value="thralls">Thralls</option> : <option value="clerics">Clerics</option>}
                 <option value="mages">Mages</option>
                 <option value="thieves">Thieves</option>
                 <option value="ninjas">Ninjas</option>
                 <option value="researchers">Researchers</option>
                 <option value="engineers">Engineers</option>
                 <option value="scribes">Scribes</option>
-                {wcovTargetRace === 'vampire' && <option value="thralls">Thralls</option>}
               </select>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px' }}>
                 <span style={{ fontSize: '11px', color: 'var(--text3)', whiteSpace: 'nowrap' }}>Ninjas</span>
