@@ -303,8 +303,18 @@ async function processAiTurns(db) {
   const aiPlayers = await db.all('SELECT id FROM players WHERE is_ai = 1');
   if (aiPlayers.length === 0) return;
 
-  // Run all AI kingdoms sequentially to avoid concurrent resource contention
-  for (const p of aiPlayers) {
+  // Stagger AI kingdoms evenly across the regen window so they don't all
+  // hit the DB in one burst. With 25-minute cycles, spreading 10 kingdoms
+  // 2 minutes apart means one AI processes every ~2 min instead of all at once.
+  const staggerMs = aiPlayers.length > 1
+    ? Math.floor((REGEN_MS * 0.8) / aiPlayers.length)
+    : 0;
+
+  for (let i = 0; i < aiPlayers.length; i++) {
+    const p = aiPlayers[i];
+    if (i > 0 && staggerMs > 0) {
+      await new Promise(resolve => setTimeout(resolve, staggerMs));
+    }
     try {
       if (db.transactionStorage && typeof db.transactionStorage.run === 'function') {
         await db.transactionStorage.run(null, async () => {
@@ -317,7 +327,7 @@ async function processAiTurns(db) {
       console.error(`[ai] error for player ${p.id}:`, e.message);
     }
   }
-  console.log(`[ai] Processed ${aiPlayers.length} AI kingdoms`);
+  console.log(`[ai] Processed ${aiPlayers.length} AI kingdoms (stagger: ${staggerMs}ms each)`);
 }
 
 async function runAiKingdom(db, engine, playerId) {
