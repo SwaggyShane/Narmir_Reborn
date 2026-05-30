@@ -9410,11 +9410,15 @@
         var spellbookXpPerTurn = estimateResearchXpPerTurn(spellbookAlloc, spellbookLevel);
         var spellbookTurnsEl = document.getElementById('school-spellbook-turns');
         if (spellbookTurnsEl && spellbookAlloc > 0 && spellbookXpPerTurn > 0) {
-          var spellbookCurrentXp = XP_LEVELS_CLIENT[spellbookLevel] || 0;
-          var spellbookNextXp = XP_LEVELS_CLIENT[Math.min(spellbookLevel + 1, 500)] || 0;
-          var spellbookXpNeeded = Math.max(0, spellbookNextXp - spellbookCurrentXp);
-          var spellbookTurns = spellbookXpNeeded > 0 ? Math.ceil(spellbookXpNeeded / spellbookXpPerTurn) : 0;
-          spellbookTurnsEl.textContent = 'Turns to next level: ' + (spellbookTurns > 0 ? spellbookTurns : '1+');
+          if (spellbookLevel >= 500) {
+            spellbookTurnsEl.textContent = 'Turns to next level: Max';
+          } else {
+            var spellbookCurrentXp = XP_LEVELS_CLIENT[spellbookLevel] || 0;
+            var spellbookNextXp = XP_LEVELS_CLIENT[spellbookLevel + 1] || 0;
+            var spellbookXpNeeded = Math.max(0, spellbookNextXp - spellbookCurrentXp);
+            var spellbookTurns = Math.ceil(spellbookXpNeeded / spellbookXpPerTurn);
+            spellbookTurnsEl.textContent = 'Turns to next level: ' + spellbookTurns;
+          }
         } else if (spellbookTurnsEl) {
           spellbookTurnsEl.textContent = 'Turns to next level: —';
         }
@@ -9424,11 +9428,15 @@
         var schoolXpPerTurn = estimateResearchXpPerTurn(schoolAlloc, schoolLevel);
         var schoolTurnsEl = document.getElementById('school-specific-turns');
         if (schoolTurnsEl && schoolAlloc > 0 && schoolXpPerTurn > 0) {
-          var schoolCurrentXp = XP_LEVELS_CLIENT[schoolLevel] || 0;
-          var schoolNextXp = XP_LEVELS_CLIENT[Math.min(schoolLevel + 1, 500)] || 0;
-          var schoolXpNeeded = Math.max(0, schoolNextXp - schoolCurrentXp);
-          var schoolTurns = schoolXpNeeded > 0 ? Math.ceil(schoolXpNeeded / schoolXpPerTurn) : 0;
-          schoolTurnsEl.textContent = 'Turns to next level: ' + (schoolTurns > 0 ? schoolTurns : '1+');
+          if (schoolLevel >= 500) {
+            schoolTurnsEl.textContent = 'Turns to next level: Max';
+          } else {
+            var schoolCurrentXp = XP_LEVELS_CLIENT[schoolLevel] || 0;
+            var schoolNextXp = XP_LEVELS_CLIENT[schoolLevel + 1] || 0;
+            var schoolXpNeeded = Math.max(0, schoolNextXp - schoolCurrentXp);
+            var schoolTurns = Math.ceil(schoolXpNeeded / schoolXpPerTurn);
+            schoolTurnsEl.textContent = 'Turns to next level: ' + schoolTurns;
+          }
         } else if (schoolTurnsEl) {
           schoolTurnsEl.textContent = 'Turns to next level: —';
         }
@@ -10847,7 +10855,7 @@
       function selectWcovTarget(id, containerId) {
         if (!id) {
           wSelectedCovertTarget = null;
-          if (window.setWcovTargetRace) window.setWcovTargetRace(null);
+          window.dispatchEvent(new CustomEvent('wcovTargetRaceChange', { detail: null }));
           var nm = document.getElementById("wcov-target-name");
           var inf = document.getElementById("wcov-target-info");
           if (nm) nm.textContent = "— none selected —";
@@ -10878,7 +10886,7 @@
         }
         if (!t) return;
         wSelectedCovertTarget = t;
-        if (window.setWcovTargetRace) window.setWcovTargetRace(t.race || null);
+        window.dispatchEvent(new CustomEvent('wcovTargetRaceChange', { detail: t.race || null }));
         var nm = document.getElementById("wcov-target-name");
         var inf = document.getElementById("wcov-target-info");
         if (nm) nm.textContent = t.name || "Unknown";

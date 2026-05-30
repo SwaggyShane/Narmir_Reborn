@@ -5710,7 +5710,8 @@ function covertLoot(thief, target, requestedLootType, thievesSent) {
   return {
     success: true,
     stolen,
-    lootType: lootType === "research" || lootType === "resources" ? `${lootType} (${actualLootType})` : actualLootType,
+    lootType,
+    actualLootType,
     thiefUpdates: { troop_levels: tXp.troop_levels },
     targetUpdates,
     thiefEvent: `Looted ${desc} from ${target.name}.`,
