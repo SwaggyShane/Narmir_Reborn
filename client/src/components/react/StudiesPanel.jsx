@@ -126,7 +126,7 @@ const StudiesPanel = () => {
 
         {/* GENERAL STUDIES SUB-TAB */}
         <div style={{ display: activeSchoolSubTab === 'general' ? 'block' : 'none' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+          <div className="r-grid-2" style={{ marginBottom: '12px' }}>
             <div className="card" style={{ margin: 0 }}>
               <div className="card-title" style={{ marginBottom: '10px' }}>General Spellbook</div>
               <div className="trow">
@@ -213,7 +213,7 @@ const StudiesPanel = () => {
             </div>
 
             {/* Mage Research Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+            <div className="r-grid-2" style={{ marginBottom: '16px' }}>
               {/* Card 1: Spellbook Continuation */}
               <div className="card" style={{ margin: 0, padding: '16px' }}>
                 <div style={{ fontSize: '24px', marginBottom: '8px' }}>📖</div>
@@ -278,7 +278,7 @@ const StudiesPanel = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="r-grid-2">
                 {/* Spellbook Allocation */}
                 <div style={{ padding: '12px', background: 'var(--bg2)', borderRadius: '8px', border: '1px solid var(--border)' }}>
                   <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '10px', color: 'var(--text)' }}>📖 Spellbook</div>

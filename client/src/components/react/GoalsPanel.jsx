@@ -1,34 +1,43 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { apiCall } from '../../utils/api';
+
+const REFRESH_INTERVAL_MS = 2 * 60 * 1000;
 
 const GoalsPanel = () => {
   const [loading, setLoading] = useState(true);
   const [goalsData, setGoalsData] = useState({});
   const [now, setNow] = useState(Date.now());
 
-  useEffect(() => {
-    fetchGoals();
-    const timer = setInterval(() => { setNow(Date.now()); }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const fetchGoals = async () => {
+  const fetchGoals = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await window.apiCall("GET", "/api/kingdom/goals");
+      const res = await apiCall('/api/kingdom/goals');
       if (res && res.error) {
-        if (window.toast) window.toast(res.error, "error");
+        if (window.toast) window.toast(res.error, 'error');
       } else if (res) {
         setGoalsData(res);
       }
     } catch(e) {
-      if (window.toast) window.toast("Failed to fetch goals", "error");
+      if (window.toast) window.toast('Failed to fetch goals', 'error');
     }
     setLoading(false);
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchGoals();
+    const clockTimer = setInterval(() => setNow(Date.now()), 1000);
+    const refreshTimer = setInterval(fetchGoals, REFRESH_INTERVAL_MS);
+    window.refreshGoalsPanel = fetchGoals;
+    return () => {
+      clearInterval(clockTimer);
+      clearInterval(refreshTimer);
+      delete window.refreshGoalsPanel;
+    };
+  }, [fetchGoals]);
 
   const claimGoal = async (groupId, goalId) => {
     try {
-      const res = await window.apiCall("POST", "/api/kingdom/goals/claim", { groupId, goalId });
+      const res = await apiCall('/api/kingdom/goals/claim', { method: 'POST', body: { groupId, goalId } });
       if (res && res.ok) {
         if (window.toast) window.toast(res.message, "success");
         // Find and mark claimed locally
@@ -62,7 +71,10 @@ const GoalsPanel = () => {
 
   return (
     <div id="goals" className="panel">
-      <h2>📝 Goals</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+        <h2 style={{ margin: 0 }}>📝 Goals</h2>
+        <button className="base-btn" onClick={fetchGoals} style={{ fontSize: '11px', padding: '4px 10px' }}>↻ Refresh</button>
+      </div>
       <p>Complete daily and weekly goals to earn powerful rewards!</p>
 
       {loading ? (

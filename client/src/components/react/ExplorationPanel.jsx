@@ -1,23 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { apiCall } from '../../utils/api';
+
+const REFRESH_INTERVAL_MS = 2 * 60 * 1000;
 
 const ExplorationPanel = () => {
   const [inventory, setInventory] = useState({});
   const [inventoryOpen, setInventoryOpen] = useState(false);
 
-  useEffect(() => {
-    const loadInventory = async () => {
-      try {
-        const res = await fetch('/api/kingdom/inventory');
-        if (res.ok) {
-          const data = await res.json();
-          setInventory(data);
-        }
-      } catch (err) {
-        console.error('Failed to load inventory:', err);
+  const fetchInventory = useCallback(async () => {
+    try {
+      const data = await apiCall('/api/kingdom/inventory');
+      if (data) {
+        setInventory(data);
       }
-    };
-    loadInventory();
+    } catch (err) {
+      console.error('Failed to load inventory:', err);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchInventory();
+    const refreshTimer = setInterval(fetchInventory, REFRESH_INTERVAL_MS);
+    window.refreshExplorationPanel = fetchInventory;
+    return () => {
+      clearInterval(refreshTimer);
+      delete window.refreshExplorationPanel;
+    };
+  }, [fetchInventory]);
 
   const setMaxValue = (inputId, type) => {
     if (window.setMaxValue) window.setMaxValue(inputId, type);
@@ -43,13 +52,16 @@ const ExplorationPanel = () => {
 
       {/* Inventory Section */}
       <div className="card" style={{ marginBottom: '12px' }}>
-        <div
-          className="card-title"
-          onClick={() => setInventoryOpen(!inventoryOpen)}
-          style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-        >
-          <span>🎒 Expedition Finds {inventoryCount > 0 ? `(${inventoryCount} items)` : '(empty)'}</span>
-          <span style={{ fontSize: '12px' }}>{inventoryOpen ? '▼' : '▶'}</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+          <div
+            className="card-title"
+            onClick={() => setInventoryOpen(!inventoryOpen)}
+            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}
+          >
+            <span>🎒 Expedition Finds {inventoryCount > 0 ? `(${inventoryCount} items)` : '(empty)'}</span>
+            <span style={{ fontSize: '12px' }}>{inventoryOpen ? '▼' : '▶'}</span>
+          </div>
+          <button className="base-btn" onClick={fetchInventory} style={{ fontSize: '11px', padding: '4px 10px' }}>↻ Refresh</button>
         </div>
         {inventoryOpen && (
           <>

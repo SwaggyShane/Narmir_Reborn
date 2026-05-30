@@ -1002,7 +1002,7 @@
       .build-sticky-header {
         position: -webkit-sticky;
         position: sticky;
-        top: var(--build-sticky-top, 105px);
+        top: 56px; /* match mobile topbar height */
         z-index: var(--z-sticky);
         background: var(--bg);
       }
@@ -6570,46 +6570,11 @@
 
       /* ── Bounties ── */
       async function loadBounties() {
-        const el = document.getElementById("active-bounties-list");
-        if (el)
-          el.innerHTML =
-            '<div style="color:var(--text3);font-size:13px;padding:8px 0">Loading bounties...</div>';
-
-        const bounties = await apiCall("GET", "/api/world/bounties");
-        if (bounties.error) {
-          if (el)
-            el.innerHTML =
-              '<div style="color:var(--red);font-size:13px;padding:8px 0">' +
-              bounties.error +
-              "</div>";
+        // Delegate to React panel if available
+        if (window.refreshBountiesPanel) {
+          window.refreshBountiesPanel();
           return;
         }
-
-        state.bounties = bounties;
-        if (el) {
-          if (bounties.length === 0) {
-            el.innerHTML =
-              '<div style="color:var(--text3);font-size:13px;padding:16px;text-align:center">No active bounties.</div>';
-          } else {
-            el.innerHTML = bounties
-              .map(
-                (b) => `
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span style="font-size:15px;font-weight:700;color:var(--text)">${b.target_name}</span>
-            <span style="font-size:16px;font-weight:800;color:var(--gold)">${fmt(b.amount)} GC</span>
-          </div>
-          <div style="font-size:11px;color:var(--text3)">Placed by <span style="color:var(--accent1)">${b.placer_name}</span> · ${new Date(b.created_at).toLocaleDateString()}</div>
-        </div>
-      `,
-              )
-              .join("");
-          }
-        }
-
-        // Populate target dropdown
-        populateBountyDropdown();
-        syncUI();
       }
 
       function filterBountyTargets(q) {
@@ -6666,6 +6631,7 @@
       let selectedBountyTargetId = null;
       function selectBountyTarget(id, name) {
         selectedBountyTargetId = id;
+        if (window.setBountyTarget) window.setBountyTarget(id);
       }
 
       function populateBountyDropdown() {
@@ -6802,10 +6768,10 @@
             })
             .join("");
 
-          // Scroll to bottom
-          setTimeout(() => {
+          // Scroll to bottom after paint so content height is calculated correctly
+          requestAnimationFrame(() => {
             msgEl.scrollTop = msgEl.scrollHeight;
-          }, 50);
+          });
         }
         syncUI();
       }
