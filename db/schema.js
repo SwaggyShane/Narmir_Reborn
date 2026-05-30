@@ -351,12 +351,17 @@ async function initDb() {
   });
 
   // Log pool stats every 60 seconds if strained
-  setInterval(() => {
+  // Store interval ID for cleanup on shutdown to prevent process hang
+  const poolStatsInterval = setInterval(() => {
     const available = pool.totalCount - pool.waitingCount;
     if (pool.waitingCount > 0 || available < pool.max / 2) {
       console.log(`[db] Pool stats — Total: ${pool.totalCount}, Available: ${available}, Waiting: ${pool.waitingCount}`);
     }
   }, 60000);
+
+  // Ensure interval is cleared on shutdown to prevent dangling timers
+  process.on('SIGTERM', () => clearInterval(poolStatsInterval));
+  process.on('SIGINT', () => clearInterval(poolStatsInterval));
 
   let currentAttempt = 1;
   const maxAttempts = 5; // Robust retries to withstand transient server startups
