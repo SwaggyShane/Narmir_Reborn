@@ -1,5 +1,12 @@
 // src/game/config.js
 // Configuration constants for game balancing and logic.
+//
+// NAMING CONVENTIONS:
+// Building keys: Short names e.g., 'farms', 'granaries' (except BUILDING_TIERS which uses 'bld_farms')
+//   → Maps to database columns: kingdoms.bld_farms via BUILDING_COL
+//
+// Research keys: Short names e.g., 'economy', 'weapons'
+//   → Maps to database columns: kingdoms.res_economy via RESEARCH_MAP
 
 const config = {
   RACE_BONUSES: {
