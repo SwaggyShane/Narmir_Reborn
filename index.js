@@ -303,7 +303,9 @@ async function processAiTurns(db) {
   const aiPlayers = await db.all('SELECT id FROM players WHERE is_ai = 1');
   if (aiPlayers.length === 0) return;
 
-  // Run all AI kingdoms sequentially to avoid concurrent resource contention
+  // Run all AI kingdoms sequentially to avoid concurrent resource contention.
+  // Yield to the event loop between each kingdom so incoming requests (e.g. login)
+  // can be handled rather than queuing behind the entire regen burst.
   for (const p of aiPlayers) {
     try {
       if (db.transactionStorage && typeof db.transactionStorage.run === 'function') {
@@ -316,6 +318,7 @@ async function processAiTurns(db) {
     } catch (e) {
       console.error(`[ai] error for player ${p.id}:`, e.message);
     }
+    await new Promise(resolve => setImmediate(resolve));
   }
   console.log(`[ai] Processed ${aiPlayers.length} AI kingdoms`);
 }
@@ -760,6 +763,7 @@ async function runRegen(db) {
       }
       newsInserts.push([k.id, 'system', result.message, k.turn]);
     }
+    await new Promise(resolve => setImmediate(resolve));
   }
 
   // Batch insert all news in single query
