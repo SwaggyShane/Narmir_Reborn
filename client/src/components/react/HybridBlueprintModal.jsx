@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiCall } from '../../utils/api';
 import './HybridBlueprintModal.css';
 
 /**
@@ -21,19 +22,16 @@ export default function HybridBlueprintModal({ blueprintId, fragmentName, onClos
   useEffect(() => {
     const fetchBuildings = async () => {
       try {
-        const res = await fetch('/api/kingdom/hybrid-blueprint/get-buildings', {
+        const data = await apiCall('/api/kingdom/hybrid-blueprint/get-buildings', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ blueprintId }),
+          body: { blueprintId },
         });
 
-        if (!res.ok) {
-          const data = await res.json();
+        if (data.error) {
           setError(data.error || 'Failed to load buildings');
           return;
         }
 
-        const data = await res.json();
         setBuildings(data.availableBuildings);
       } catch (err) {
         setError('Network error: ' + err.message);
@@ -60,24 +58,21 @@ export default function HybridBlueprintModal({ blueprintId, fragmentName, onClos
     setConfirming(true);
 
     try {
-      const res = await fetch('/api/kingdom/hybrid-blueprint/confirm-assignment', {
+      const data = await apiCall('/api/kingdom/hybrid-blueprint/confirm-assignment', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: {
           blueprintId,
           buildingType: selected.buildingType,
           confirmed: true,
-        }),
+        },
       });
 
-      if (!res.ok) {
-        const data = await res.json();
+      if (data.error) {
         setError(data.error || 'Failed to apply bonus');
         setConfirming(false);
         return;
       }
 
-      const data = await res.json();
       if (data.ok && onSuccess) {
         onSuccess(data);
       }
