@@ -65,6 +65,31 @@ function parseKingdomJson(k) {
   return k;
 }
 
+// ── Performance: Efficient random selection (no ORDER BY RANDOM()) ──────────────
+// ORDER BY RANDOM() is expensive: sorts all rows. Instead: random offset + fetch
+async function getRandomKingdom(db, excludeId) {
+  const countResult = await db.get('SELECT COUNT(*) as c FROM kingdoms WHERE id != ?', [excludeId]);
+  if (!countResult || countResult.c === 0) return null;
+  const offset = Math.floor(Math.random() * countResult.c);
+  return db.get('SELECT id, name FROM kingdoms WHERE id != ? LIMIT 1 OFFSET ?', [excludeId, offset]);
+}
+
+// ── Performance: Random selection of multiple rows via Fisher-Yates shuffle ────
+async function getRandomKingdoms(db, excludeIds, count) {
+  const placeholders = excludeIds.map(() => '?').join(',');
+  // Fetch 2x needed, shuffle in JS, return count (faster than ORDER BY RANDOM() LIMIT)
+  const results = await db.all(
+    `SELECT id, name FROM kingdoms WHERE id NOT IN (${placeholders}) LIMIT ?`,
+    [...excludeIds, Math.max(count * 2, 100)]
+  );
+  // Fisher-Yates shuffle
+  for (let i = results.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [results[i], results[j]] = [results[j], results[i]];
+  }
+  return results.slice(0, count);
+}
+
 module.exports = function (db) {
   router.get("/me", requireAuth, async (req, res) => {
     const k = await db.get(
