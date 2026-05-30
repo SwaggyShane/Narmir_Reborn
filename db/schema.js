@@ -337,7 +337,11 @@ async function initDb() {
     connectionString: process.env.DATABASE_URL,
     ssl: (!process.env.DATABASE_URL.includes('localhost') && !process.env.DATABASE_URL.includes('127.0.0.1') && !process.env.DATABASE_URL.includes('0.0.0.0'))
       ? { rejectUnauthorized: false }
-      : false
+      : false,
+    max: 20,
+    connectionTimeoutMillis: 5000,
+    idleTimeoutMillis: 30000,
+    statement_timeout: 15000,
   });
 
   let currentAttempt = 1;
