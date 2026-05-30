@@ -38,6 +38,31 @@ async function withTurnLock(playerId, fn) {
   }
 }
 
+// ── Column Selection Constants for Query Optimization ──────────────────────────
+// Avoid SELECT * for better performance: network, parsing, memory
+// Column sets: choose what's actually needed to reduce network/parsing overhead
+const KINGDOM_FULL = '*'; // Only use when truly necessary (GET /me)
+const KINGDOM_CORE = 'id, player_id, name, race, turn, turns_stored, gold, food, population, land, morale, score';
+const KINGDOM_BUILD = `${KINGDOM_CORE}, food_surplus, food_consumption, food_production,
+  wood, stone, iron, coal, steel, food_storage, food_shortage_turns,
+  bld_farms, bld_mills, bld_granaries, bld_roads, bld_walls, bld_watchtower, bld_guard_tower, bld_stable,
+  bld_blacksmith, bld_library, bld_tower, bld_shrine, bld_vault, bld_bank, bld_buildings_built`;
+const KINGDOM_UNITS = `${KINGDOM_CORE}, fighters, rangers, clerics, mages, thieves, ninjas, researchers, engineers, scribes`;
+const KINGDOM_RESEARCH = `${KINGDOM_CORE}, res_spellbook, res_economy, res_weapons, res_armor, res_military, school_of_magic, school_spellbook`;
+const KINGDOM_TURN = `${KINGDOM_CORE}, food_surplus, food_consumption, food_production, food, gold, land, morale,
+  research_allocation, mage_tower_allocation, build_allocation, training_allocation,
+  fighters, rangers, clerics, mages, thieves, ninjas, researchers, engineers, scribes,
+  bld_farms, bld_mills, bld_granaries, active_effects, discovered_kingdoms, build_queue`;
+const KINGDOM_HIRE = 'id, player_id, gold, population, race, fighters, rangers, clerics, mages, thieves, ninjas, researchers, engineers, scribes';
+const KINGDOM_RESOURCE = `${KINGDOM_CORE}, gold, wood, stone, iron, coal, steel, land, race, build_queue`;
+const KINGDOM_SMITHY = 'id, player_id, gold, bld_smithies, hammers_stored, scaffolding_stored';
+const KINGDOM_ATTACK = `${KINGDOM_CORE}, fighters, rangers, mages, thieves, ninjas, clerics, engineers, war_machines, morale, land, population, gold,
+  bld_walls, bld_guard_tower, bld_tower, discovered_kingdoms,
+  res_military, res_weapons, res_armor, troop_levels`;
+const KINGDOM_COVERT = `${KINGDOM_CORE}, thieves, ninjas, morale, land, population, gold, troop_levels, discovered_kingdoms,
+  bld_guard_tower, bld_walls, bld_tower, bld_libraries, bld_warehouses, bld_banks`;
+const KINGDOM_ECONOMY = `${KINGDOM_CORE}, gold, market_upgrades, bank_upgrades, farm_upgrades, discovered_kingdoms`;
+
 // Parse all JSON fields on a kingdom object (used by /me endpoint)
 const JSON_FIELDS = {
   'research_allocation': {}, 'mage_tower_allocation': {}, 'shrine_allocation': {},
@@ -561,7 +586,7 @@ module.exports = function (db) {
   // ── Hire units ────────────────────────────────────────────────────────────────
   router.post("/hire", requireAuth, requireCsrfToken, async (req, res) => {
     const { unit, amount } = req.body;
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
+    const k = await db.get(`SELECT ${KINGDOM_HIRE} FROM kingdoms WHERE player_id = ?`, [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -645,7 +670,7 @@ module.exports = function (db) {
     const { orders } = req.body;
     if (!orders || typeof orders !== "object")
       return res.status(400).json({ error: "orders required" });
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
+    const k = await db.get(`SELECT ${KINGDOM_RESOURCE} FROM kingdoms WHERE player_id = ?`, [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -814,7 +839,7 @@ module.exports = function (db) {
     const { building } = req.body;
     const config = require("../game/config");
 
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
+    const k = await db.get(`SELECT ${KINGDOM_RESOURCE} FROM kingdoms WHERE player_id = ?`, [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -1568,7 +1593,7 @@ module.exports = function (db) {
       ladders: Math.max(0, parseInt(ladders) || 0),
     };
 
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
+    const k = await db.get(`SELECT ${KINGDOM_ATTACK} FROM kingdoms WHERE player_id = ?`, [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -1582,7 +1607,7 @@ module.exports = function (db) {
       return res.status(400).json({ error: "Send at least some troops" });
 
     const target = await db.get(
-      "SELECT k.*, p.is_ai FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.id = ?",
+      `SELECT ${KINGDOM_ATTACK}, p.is_ai FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.id = ?`,
       [targetId],
     );
     if (!target)
@@ -2058,7 +2083,7 @@ module.exports = function (db) {
         // Lock both kingdoms in ascending ID order (prevents deadlock)
         const kingdomIds = [k.id, targetId].sort((a, b) => a - b);
         const lockedKingdoms = await db.all(
-          `SELECT * FROM kingdoms WHERE id IN (${kingdomIds.map(() => '?').join(',')}) ORDER BY id FOR UPDATE`,
+          `SELECT ${KINGDOM_COVERT} FROM kingdoms WHERE id IN (${kingdomIds.map(() => '?').join(',')}) ORDER BY id FOR UPDATE`,
           kingdomIds,
         );
 
