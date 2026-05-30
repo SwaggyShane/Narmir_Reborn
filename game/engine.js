@@ -5555,7 +5555,7 @@ function covertSpy(spy, target, unitsSent) {
   };
 }
 
-function covertLoot(thief, target, lootType, thievesSent) {
+function covertLoot(thief, target, requestedLootType, thievesSent) {
   if (thievesSent > thief.thieves) return { error: "Not enough thieves" };
   let thiefLvMult = unitLevelMult(thief, "thieves");
   if (thief.race === "vampire" && isNight()) thiefLvMult *= 1.5;
@@ -5578,6 +5578,23 @@ function covertLoot(thief, target, lootType, thievesSent) {
     };
   }
 
+  // Randomly select loot category if not specified
+  let lootType = requestedLootType;
+  if (!lootType || lootType === "random") {
+    const lootCategories = ["gold", "food", "war_machines", "maps", "blueprints", "hammers", "research", "resources", "trade_routes"];
+    lootType = lootCategories[Math.floor(Math.random() * lootCategories.length)];
+  }
+
+  // For grouped types, randomly select the specific type
+  let actualLootType = lootType;
+  if (lootType === "research") {
+    const researchTypes = ["res_economy", "res_weapons", "res_armor", "res_military", "res_spellbook", "res_attack_magic", "res_defense_magic", "res_entertainment", "res_construction", "res_war_machines"];
+    actualLootType = researchTypes[Math.floor(Math.random() * researchTypes.length)];
+  } else if (lootType === "resources") {
+    const resourceTypes = ["wood", "stone", "iron", "coal", "steel"];
+    actualLootType = resourceTypes[Math.floor(Math.random() * resourceTypes.length)];
+  }
+
   const targetUpdates = {};
   let stolen = 0,
     desc = "";
@@ -5593,7 +5610,7 @@ function covertLoot(thief, target, lootType, thievesSent) {
   }
 
   // Level scales loot amount
-  if (lootType === "gold") {
+  if (actualLootType === "gold") {
     stolen = Math.floor(thievesSent * (50 + Math.random() * 50) * thiefLvMult);
     stolen = Math.min(stolen, Math.floor(target.gold * 0.05));
 
@@ -5612,20 +5629,12 @@ function covertLoot(thief, target, lootType, thievesSent) {
       targetUpdates.gold = target.gold - stolen;
       desc = `${stolen.toLocaleString()} gold`;
     }
-  } else if (lootType === "research") {
-    stolen = Math.floor(thievesSent * 0.2 * thiefLvMult);
-    targetUpdates.res_economy = Math.max(0, target.res_economy - stolen);
-    desc = `${stolen} economy research points`;
-  } else if (lootType === "weapons") {
-    stolen = Math.floor(thievesSent * 0.3 * thiefLvMult);
-    targetUpdates.res_weapons = Math.max(0, target.res_weapons - stolen);
-    desc = `${stolen} weapon research points`;
-  } else if (lootType === "war_machines") {
+  } else if (actualLootType === "war_machines") {
     stolen = Math.floor(thievesSent * 0.01 * thiefLvMult);
     stolen = Math.min(stolen, target.war_machines || 0);
     targetUpdates.war_machines = Math.max(0, target.war_machines - stolen);
     desc = `${stolen} war machine(s)`;
-  } else if (lootType === "food") {
+  } else if (actualLootType === "food") {
     stolen = Math.floor(
       thievesSent * (100 + Math.random() * 100) * thiefLvMult,
     );
@@ -5640,7 +5649,7 @@ function covertLoot(thief, target, lootType, thievesSent) {
       targetUpdates.food = Math.max(0, target.food - stolen);
       desc = `${stolen.toLocaleString()} food`;
     }
-  } else if (lootType === "maps") {
+  } else if (actualLootType === "maps") {
     const targetFragment = fragmentBonusManager.getFragmentForBuilding(target, 'libraries');
     const hasProtection = targetFragment && (targetFragment.fragment === 'Dwarven Star-Metal' || targetFragment.fragment === 'Dragon Scale');
 
@@ -5653,19 +5662,7 @@ function covertLoot(thief, target, lootType, thievesSent) {
       targetUpdates.maps = (target.maps || 0) - stolen;
       desc = `${stolen} map(s)`;
     }
-  } else if (lootType === "scrolls") {
-    const targetScrolls = safeJsonParse(
-      target.scrolls,
-      {},
-      "covertLoot:scrolls",
-    );
-    const available = targetScrolls.blank_scroll || 0;
-    stolen = Math.floor(thievesSent * 2 * thiefLvMult);
-    stolen = Math.min(stolen, available);
-    targetScrolls.blank_scroll = available - stolen;
-    targetUpdates.scrolls = JSON.stringify(targetScrolls);
-    desc = `${stolen} blank scrolls`;
-  } else if (lootType === "blueprints") {
+  } else if (actualLootType === "blueprints") {
     stolen = Math.floor(thievesSent * 0.01 * thiefLvMult);
     stolen = Math.min(stolen, target.blueprints_stored || 0);
 
@@ -5678,24 +5675,33 @@ function covertLoot(thief, target, lootType, thievesSent) {
       targetUpdates.blueprints_stored = (target.blueprints_stored || 0) - stolen;
       desc = `${stolen} blueprint(s)`;
     }
-  } else if (lootType === "scaffolding") {
-    stolen = Math.floor(thievesSent * 0.05 * thiefLvMult);
-    stolen = Math.min(stolen, target.scaffolding_stored || 0);
-    targetUpdates.scaffolding_stored =
-      (target.scaffolding_stored || 0) - stolen;
-    desc = `${stolen} scaffolding`;
-  } else if (lootType === "hammers") {
+  } else if (actualLootType === "hammers") {
     stolen = Math.floor(thievesSent * 0.05 * thiefLvMult);
     stolen = Math.min(stolen, target.hammers_stored || 0);
     targetUpdates.hammers_stored = (target.hammers_stored || 0) - stolen;
     desc = `${stolen} hammer(s)`;
+  } else if (lootType === "research") {
+    stolen = Math.floor(thievesSent * 0.2 * thiefLvMult);
+    const resName = actualLootType.replace("res_", "").replace(/_/g, " ");
+    targetUpdates[actualLootType] = Math.max(0, target[actualLootType] - stolen);
+    desc = `${stolen} ${resName} research points`;
+  } else if (lootType === "resources") {
+    stolen = Math.floor(thievesSent * (30 + Math.random() * 30) * thiefLvMult);
+    stolen = Math.min(stolen, Math.floor((target[actualLootType] || 0) * 0.1));
+    targetUpdates[actualLootType] = Math.max(0, (target[actualLootType] || 0) - stolen);
+    desc = `${stolen.toLocaleString()} ${actualLootType}`;
+  } else if (actualLootType === "trade_routes") {
+    stolen = Math.floor(thievesSent * 0.02 * thiefLvMult);
+    stolen = Math.min(stolen, target.trade_routes || 0);
+    targetUpdates.trade_routes = Math.max(0, (target.trade_routes || 0) - stolen);
+    desc = `${stolen} trade route(s)`;
   }
 
   const tXp = awardTroopXp(thief, "thieves", 20);
   return {
     success: true,
     stolen,
-    lootType,
+    lootType: lootType === "research" || lootType === "resources" ? `${lootType} (${actualLootType})` : actualLootType,
     thiefUpdates: { troop_levels: tXp.troop_levels },
     targetUpdates,
     thiefEvent: `Looted ${desc} from ${target.name}.`,
