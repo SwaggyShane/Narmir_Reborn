@@ -5,8 +5,9 @@ const WarfarePanel = () => {
   const [wcovTargetRace, setWcovTargetRace] = useState(null);
 
   useEffect(() => {
-    window.setWcovTargetRace = setWcovTargetRace;
-    return () => { delete window.setWcovTargetRace; };
+    const handleRaceChange = (e) => setWcovTargetRace(e.detail);
+    window.addEventListener('wcovTargetRaceChange', handleRaceChange);
+    return () => window.removeEventListener('wcovTargetRaceChange', handleRaceChange);
   }, []);
 
   const handleTabClick = (tabId) => {

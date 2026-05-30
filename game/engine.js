@@ -5692,7 +5692,7 @@ function covertLoot(thief, target, requestedLootType, thievesSent) {
     stolen = Math.floor(thievesSent * 0.2 * thiefLvMult);
     stolen = Math.min(stolen, target[actualLootType] || 0);
     const resName = actualLootType.replace("res_", "").replace(/_/g, " ");
-    targetUpdates[actualLootType] = (target[actualLootType] || 0) - stolen;
+    targetUpdates[actualLootType] = Math.max(0, (target[actualLootType] || 0) - stolen);
     desc = `${stolen} ${resName} research points`;
   } else if (lootType === "resources") {
     stolen = Math.floor(thievesSent * (30 + Math.random() * 30) * thiefLvMult);
@@ -5710,7 +5710,8 @@ function covertLoot(thief, target, requestedLootType, thievesSent) {
   return {
     success: true,
     stolen,
-    lootType: lootType === "research" || lootType === "resources" ? `${lootType} (${actualLootType})` : actualLootType,
+    lootType,
+    actualLootType,
     thiefUpdates: { troop_levels: tXp.troop_levels },
     targetUpdates,
     thiefEvent: `Looted ${desc} from ${target.name}.`,

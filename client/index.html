@@ -9367,6 +9367,27 @@
         );
       }
 
+      function estimateResearchXpPerTurn(mages, level, schoolBonus) {
+        if (mages <= 0) return 0;
+        // Base formula from researchIncrement: effective researchers * schoolBonus
+        // Simplified estimate: 1 school = 1.04x bonus, so (schools / 5) * 0.02 + 1
+        var schoolMult = schoolBonus || (1 + Math.floor((state.bld_schools || 0) / 5) * 0.02);
+        var effective = Math.floor(mages * schoolMult);
+
+        // Level scaling (exponential difficulty above level 100)
+        var factor = 1.0;
+        if (level > 100) {
+          factor = Math.pow(1.05, level - 100);
+        }
+
+        // Determine XP per turn based on effective researchers
+        if (effective >= Math.floor(2000 * factor)) return 5;
+        if (effective >= Math.floor(1200 * factor)) return 3;
+        if (effective >= Math.floor(600 * factor)) return 2;
+        if (effective >= Math.floor(200 * factor)) return 1;
+        return 0;
+      }
+
       function updateMageAllocationDisplay() {
         if (!state) return;
         var total = state.mages || 0;
@@ -9383,6 +9404,42 @@
         if (totalEl) totalEl.textContent = total;
         if (availEl) availEl.textContent = available;
         if (allocEl) allocEl.textContent = allocated;
+
+        // Update turns to next level for spellbook
+        var spellbookLevel = state.res_spellbook || 0;
+        var spellbookXpPerTurn = estimateResearchXpPerTurn(spellbookAlloc, spellbookLevel);
+        var spellbookTurnsEl = document.getElementById('school-spellbook-turns');
+        if (spellbookTurnsEl && spellbookAlloc > 0 && spellbookXpPerTurn > 0) {
+          if (spellbookLevel >= 500) {
+            spellbookTurnsEl.textContent = 'Turns to next level: Max';
+          } else {
+            var spellbookCurrentXp = XP_LEVELS_CLIENT[spellbookLevel] || 0;
+            var spellbookNextXp = XP_LEVELS_CLIENT[spellbookLevel + 1] || 0;
+            var spellbookXpNeeded = Math.max(0, spellbookNextXp - spellbookCurrentXp);
+            var spellbookTurns = Math.ceil(spellbookXpNeeded / spellbookXpPerTurn);
+            spellbookTurnsEl.textContent = 'Turns to next level: ' + spellbookTurns;
+          }
+        } else if (spellbookTurnsEl) {
+          spellbookTurnsEl.textContent = 'Turns to next level: —';
+        }
+
+        // Update turns to next level for school spellbook
+        var schoolLevel = state.school_spellbook || 0;
+        var schoolXpPerTurn = estimateResearchXpPerTurn(schoolAlloc, schoolLevel);
+        var schoolTurnsEl = document.getElementById('school-specific-turns');
+        if (schoolTurnsEl && schoolAlloc > 0 && schoolXpPerTurn > 0) {
+          if (schoolLevel >= 500) {
+            schoolTurnsEl.textContent = 'Turns to next level: Max';
+          } else {
+            var schoolCurrentXp = XP_LEVELS_CLIENT[schoolLevel] || 0;
+            var schoolNextXp = XP_LEVELS_CLIENT[schoolLevel + 1] || 0;
+            var schoolXpNeeded = Math.max(0, schoolNextXp - schoolCurrentXp);
+            var schoolTurns = Math.ceil(schoolXpNeeded / schoolXpPerTurn);
+            schoolTurnsEl.textContent = 'Turns to next level: ' + schoolTurns;
+          }
+        } else if (schoolTurnsEl) {
+          schoolTurnsEl.textContent = 'Turns to next level: —';
+        }
       }
 
       function setMageMax(type) {
@@ -10798,7 +10855,7 @@
       function selectWcovTarget(id, containerId) {
         if (!id) {
           wSelectedCovertTarget = null;
-          if (window.setWcovTargetRace) window.setWcovTargetRace(null);
+          window.dispatchEvent(new CustomEvent('wcovTargetRaceChange', { detail: null }));
           var nm = document.getElementById("wcov-target-name");
           var inf = document.getElementById("wcov-target-info");
           if (nm) nm.textContent = "— none selected —";
@@ -10829,7 +10886,7 @@
         }
         if (!t) return;
         wSelectedCovertTarget = t;
-        if (window.setWcovTargetRace) window.setWcovTargetRace(t.race || null);
+        window.dispatchEvent(new CustomEvent('wcovTargetRaceChange', { detail: t.race || null }));
         var nm = document.getElementById("wcov-target-name");
         var inf = document.getElementById("wcov-target-info");
         if (nm) nm.textContent = t.name || "Unknown";
@@ -11523,6 +11580,9 @@
 
           // Populate mage allocation UI
           populateMageAllocationUI(data);
+
+          // Update mage allocation display (includes turns to next level calculation)
+          updateMageAllocationDisplay();
 
           // Populate spell tiers
           populateSpellTiers(data.school_spells || [], data.school_spellbook);
