@@ -78,11 +78,12 @@ function ensureCsrfToken(req, res, next) {
         jwt.verify(token, JWT_SECRET);
         // Token is valid, set CSRF token for future requests
         const csrfToken = generateCsrfToken();
+        const isProd = process.env.NODE_ENV === "production";
         const csrfCookieOpts = {
           httpOnly: false,
           maxAge: 24 * 60 * 60 * 1000, // 24 hours
-          sameSite: "none",
-          secure: process.env.NODE_ENV === 'production', // Only secure in production
+          sameSite: "lax", // Defense-in-depth CSRF protection (frontend & API are same-origin)
+          secure: isProd, // Only secure in production
         };
         res.cookie("csrf_token", csrfToken, csrfCookieOpts);
       } catch (e) {
