@@ -29,8 +29,11 @@ async function apiCall(url, options = {}) {
   const requestHeaders = { 'Content-Type': 'application/json', ...headers };
   if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method.toUpperCase())) {
     const csrfToken = getCsrfToken();
+    console.log('[apiCall] Method:', method, 'URL:', url, 'CSRF Token:', csrfToken ? '✓ present' : '✗ missing');
     if (csrfToken) {
       requestHeaders['x-csrf-token'] = csrfToken;
+    } else {
+      console.warn('[apiCall] No CSRF token found. Cookie contents:', document.cookie);
     }
   }
 
