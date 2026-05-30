@@ -10,13 +10,14 @@ All unit counts in database use plural forms:
 - `fighters`, `rangers`, `clerics`, `mages`, `thieves`, `ninjas`
 - `researchers`, `engineers`, `scribes`, `thralls`
 
-**Config References:** Use singular forms for config keys
-- Config: `UNIT_TYPES.fighter`, `config.BUILDING_COST.fighter`
+**Config References:** Use a mix of singular and plural forms depending on the config object
+- Plural keys: `config.TROOP_RACE_BONUS.fighters`
+- Singular keys: `config.SUPPORT_CAP_RACE.high_elf.researcher`
 - Database: `kingdoms.fighters`
 
 **In Code:** 
 - Use lowercase plural when referencing DB columns: `k.fighters`
-- Use lowercase singular when referencing config: `config.UNIT_TYPES.fighter`
+- Check config structure for singular/plural usage
 
 ## Research Disciplines
 
@@ -25,7 +26,7 @@ All unit counts in database use plural forms:
 Current fields:
 | Field | Meaning | Range |
 |-------|---------|-------|
-| `res_spellbook` | General spellbook (Researchers only) | 0-100 |
+| `res_spellbook` | General spellbook (Researchers only) | 0-100+ |
 | `res_economy` | Economic research | 0-100+ |
 | `res_weapons` | Weapon research | 0-100+ |
 | `res_armor` | Armor research | 0-100+ |
@@ -53,11 +54,11 @@ Examples:
 
 **Config References:**
 ```javascript
-// Good: Matches database column naming
-config.BUILDING_LAND_COST.bld_farms
-config.BUILDING_COST.bld_granaries
+// Good: Config keys use plain names (no bld_ prefix, except in BUILDING_TIERS)
+config.BUILDING_LAND_COST.farms
+config.BUILDING_COST.granaries
 
-// Config shortcuts (map to bld_* columns internally)
+// Exception: BUILDING_TIERS uses bld_ prefix (maps to bld_* columns)
 config.BUILDING_TIERS.bld_farms // → queries kingdoms.bld_farms
 ```
 
@@ -114,13 +115,12 @@ config.BUILDING_TIERS.bld_farms // → queries kingdoms.bld_farms
 - `ledger` - Abstract accounting system
 
 **Clarification:** These are building types with distinct purposes:
-- Vault = secure storage, vault upgrades
-- Bank = trading, market access, bank upgrades
+- Vault = secure storage (uses `bank_upgrades` column)
+- Bank = trading, market access (uses `bank_upgrades` column)
 
 ### Upgrade Systems
-- `vault_upgrades` - Vault security/capacity upgrades
-- `bank_upgrades` - Bank trading/commerce upgrades
-- Market-related: `market_upgrades`
+- `bank_upgrades` - Upgrades for both vault (security/capacity) and bank (trading/commerce)
+- `market_upgrades` - Market-related upgrades
 
 ## Allocation Naming
 
@@ -192,7 +192,7 @@ Status values use lowercase with underscores:
 | `idx_` | Database index | `idx_kingdoms_player` |
 | `is_` | Boolean field | `is_ai`, `is_read` |
 | `_allocation` | Resource allocation | `research_allocation` |
-| `_upgrades` | Upgrade data (JSON) | `vault_upgrades` |
+| `_upgrades` | Upgrade data (JSON) | `bank_upgrades` |
 
 ## Migration Path for Inconsistencies
 
