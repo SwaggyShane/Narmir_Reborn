@@ -366,6 +366,11 @@ const WarfarePanel = () => {
                 <option value="clerics">Clerics</option>
                 <option value="mages">Mages</option>
                 <option value="thieves">Thieves</option>
+                <option value="ninjas">Ninjas</option>
+                <option value="researchers">Researchers</option>
+                <option value="engineers">Engineers</option>
+                <option value="scribes">Scribes</option>
+                <option value="thralls">Thralls</option>
               </select>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px' }}>
                 <span style={{ fontSize: '11px', color: 'var(--text3)', whiteSpace: 'nowrap' }}>Ninjas</span>

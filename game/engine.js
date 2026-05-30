@@ -5709,8 +5709,14 @@ function covertLoot(thief, target, requestedLootType, thievesSent) {
   };
 }
 
+const ASSASSINATE_TARGETS = new Set([
+  "fighters", "rangers", "clerics", "mages", "thieves", "ninjas",
+  "researchers", "engineers", "scribes", "thralls",
+]);
+
 function covertAssassinate(assassin, target, ninjasSent, unitType) {
   if (ninjasSent > assassin.ninjas) return { error: "Not enough ninjas" };
+  if (!ASSASSINATE_TARGETS.has(unitType)) return { error: "Invalid unit type" };
   let ninjaLvMult = unitLevelMult(assassin, "ninjas");
   if (assassin.race === "vampire") ninjaLvMult *= 1.1;
   const assMb = safeJsonParse(assassin.milestone_bonuses, {}, "covertAssassinate:mb");
