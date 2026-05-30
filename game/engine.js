@@ -5812,7 +5812,7 @@ function covertSabotage(assassin, target, ninjasSent, bldType) {
 
   const success =
     assassin.ninjas * stealthMulti * 1.2 >
-    (target.fighters || 0) * 0.01 + (target.bld_guard_towers || 0) * 2;
+    (target.thieves || 0) * 0.015 + (target.bld_guard_towers || 0) * (2 + (target.thieves || 0) * 0.001);
 
   if (!success) {
     const ninjasLost = Math.floor(ninjasSent * 0.2);
