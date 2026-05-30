@@ -770,7 +770,6 @@ async function runRegen(db) {
       }
       newsInserts.push([k.id, 'system', result.message, k.turn]);
     }
-    await new Promise(resolve => setImmediate(resolve));
   }
 
   // Batch insert all news in single query
