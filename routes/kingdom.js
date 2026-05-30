@@ -2433,8 +2433,6 @@ module.exports = function (db) {
       await db.run("ROLLBACK");
       return res.status(400).json({ error: "Unknown covert operation" });
     }
-    // If we got here, commit the transaction
-    await db.run("COMMIT");
       } catch (err) {
         try {
           await db.run("ROLLBACK");
