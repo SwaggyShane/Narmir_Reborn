@@ -6355,13 +6355,13 @@ function expeditionRewards(type, rangers, fighters, k) {
 }
 
 async function resolveExpeditions(db, k, engine) {
-  // Pick up active ones AND stuck ones (turns_left=0 but no rewards yet)
+  // Pick up active ones AND unclaimed ones (turns_left=0 but rewards_claimed=0)
   const exps = await db.all(
-    "SELECT * FROM expeditions WHERE kingdom_id = ? AND (turns_left > 0 OR (turns_left = 0 AND rewards IS NULL))",
+    "SELECT * FROM expeditions WHERE kingdom_id = ? AND (turns_left > 0 OR (turns_left = 0 AND rewards_claimed = 0))",
     [k.id],
   );
   console.log(
-    `[expedition] kingdom=${k.id} active/stuck: ${exps.map((e) => `${e.type}(${e.turns_left}t)`).join(", ") || "none"}`,
+    `[expedition] kingdom=${k.id} active/unclaimed: ${exps.map((e) => `${e.type}(${e.turns_left}t, claimed=${e.rewards_claimed})`).join(", ") || "none"}`,
   );
 
   // Fetch fresh kingdom state once instead of once per expedition
@@ -6391,14 +6391,30 @@ async function resolveExpeditions(db, k, engine) {
         `[expedition] COMPLETING kingdom=${k.id} id=${exp.id} type=${exp.type}`,
       );
 
-      // Mark expedition complete FIRST so it can never get stuck at turns_left=1
-      await db.run("UPDATE expeditions SET turns_left = 0 WHERE id = ?", [
-        exp.id,
-      ]);
+      // Mark expedition complete and claim rewards atomically (prevents double-claiming)
+      const markResult = await db.run(
+        "UPDATE expeditions SET turns_left = 0, rewards_claimed = 1 WHERE id = ? AND rewards_claimed = 0",
+        [exp.id],
+      );
+      if (markResult.changes === 0) {
+        console.log(`[expedition] Already claimed rewards for id=${exp.id}, skipping`);
+        continue;
+      }
     } else {
+      // turns_left is already 0, try to claim rewards if not already claimed
       console.log(
         `[expedition] RETRYING completion for kingdom=${k.id} id=${exp.id} type=${exp.type}`,
       );
+
+      // Only process rewards if they haven't been claimed yet
+      const claimResult = await db.run(
+        "UPDATE expeditions SET rewards_claimed = 1 WHERE id = ? AND rewards_claimed = 0",
+        [exp.id],
+      );
+      if (claimResult.changes === 0) {
+        console.log(`[expedition] Already claimed rewards for id=${exp.id}, skipping`);
+        continue;
+      }
     }
 
     try {

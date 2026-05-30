@@ -338,11 +338,30 @@ async function initDb() {
     ssl: (!process.env.DATABASE_URL.includes('localhost') && !process.env.DATABASE_URL.includes('127.0.0.1') && !process.env.DATABASE_URL.includes('0.0.0.0'))
       ? { rejectUnauthorized: false }
       : false,
-    max: 20,
-    connectionTimeoutMillis: 5000,
-    idleTimeoutMillis: 30000,
-    statement_timeout: 60000,
+    max: 100,
+    connectionTimeoutMillis: 10000,
+    idleTimeoutMillis: 60000,
+    statement_timeout: 120000,
+    application_name: 'narmir-game',
   });
+
+  // Monitor pool health
+  pool.on('error', (err) => {
+    console.error('[db] Unexpected pool error:', err.message);
+  });
+
+  // Log pool stats every 60 seconds if strained
+  // Store interval ID for cleanup on shutdown to prevent process hang
+  const poolStatsInterval = setInterval(() => {
+    const available = pool.totalCount - pool.waitingCount;
+    if (pool.waitingCount > 0 || available < pool.max / 2) {
+      console.log(`[db] Pool stats — Total: ${pool.totalCount}, Available: ${available}, Waiting: ${pool.waitingCount}`);
+    }
+  }, 60000);
+
+  // Ensure interval is cleared on shutdown to prevent dangling timers
+  process.on('SIGTERM', () => clearInterval(poolStatsInterval));
+  process.on('SIGINT', () => clearInterval(poolStatsInterval));
 
   let currentAttempt = 1;
   const maxAttempts = 5; // Robust retries to withstand transient server startups
@@ -886,6 +905,12 @@ async function initDb() {
   }
   if (!expCols.includes('food_taken')) {
     await addColumn('expeditions', 'food_taken', 'INTEGER NOT NULL DEFAULT 0');
+  }
+
+  // Expeditions — rewards_claimed column (prevent double-claiming on concurrent processing)
+  const expCols2 = await getTableColumns('expeditions');
+  if (expCols2.length > 0 && !expCols2.includes('rewards_claimed')) {
+    await addColumn('expeditions', 'rewards_claimed', 'INTEGER NOT NULL DEFAULT 0');
   }
 
   // Resource expeditions — food_taken column
