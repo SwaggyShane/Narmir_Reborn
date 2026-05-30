@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiCall } from '../../utils/api';
 
+const REFRESH_INTERVAL_MS = 2 * 60 * 1000;
+
 const tabs = [
   { id: 'stockpiles', label: '📦 Stockpiles' },
   { id: 'buildings', label: '🏭 Buildings' },
@@ -159,14 +161,14 @@ const ResourcesPanel = () => {
 
   useEffect(() => {
     syncFromState();
-    window.refreshResourcesPanel = () => { syncFromState(); loadExpeditions(); };
     loadNodes();
     loadExpeditions();
     const cdt = setInterval(() => setNow(Math.floor(Date.now()/1000)), 1000);
-    const st = setInterval(syncFromState, 5000);
+    const refreshTimer = setInterval(syncFromState, REFRESH_INTERVAL_MS);
+    window.refreshResourcesPanel = () => { syncFromState(); loadExpeditions(); };
     return () => {
       clearInterval(cdt);
-      clearInterval(st);
+      clearInterval(refreshTimer);
       delete window.refreshResourcesPanel;
     };
   }, [syncFromState]);
@@ -433,19 +435,28 @@ const ResourcesPanel = () => {
   };
   const { pop, hired, freePop } = getPopData();
 
+  const handleRefresh = useCallback(() => {
+    syncFromState();
+    loadNodes();
+    loadExpeditions();
+  }, [syncFromState]);
+
   return (
     <div id="resources" className="panel" style={{ display: 'none' }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '16px', borderBottom: '2px solid var(--border2)', paddingBottom: 0 }}>
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            className={`admin-tab base-btn ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
-            style={{ borderRadius: 0, paddingBottom: activeTab === tab.id ? '10px' : '8px' }}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', borderBottom: '2px solid var(--border2)', paddingBottom: 0 }}>
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              className={`admin-tab base-btn ${activeTab === tab.id ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab.id)}
+              style={{ borderRadius: 0, paddingBottom: activeTab === tab.id ? '10px' : '8px' }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <button className="base-btn" onClick={handleRefresh} style={{ fontSize: '11px', padding: '4px 10px' }}>↻ Refresh</button>
       </div>
 
       {activeTab === 'stockpiles' && (
