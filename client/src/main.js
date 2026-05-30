@@ -107,6 +107,95 @@ export const mountReactApps = () => {
 
 window.mountReactApps = mountReactApps;
 
+// Mage allocation and study functions
+window.updateMageAllocationDisplay = () => {
+  const totalMages = gameState.mages || 0;
+  const spellbookAlloc = parseInt(document.getElementById("mage-alloc-spellbook")?.value || 0);
+  const schoolAlloc = parseInt(document.getElementById("mage-alloc-school")?.value || 0);
+  const totalAllocated = spellbookAlloc + schoolAlloc;
+  const available = totalMages - totalAllocated;
+
+  const totalEl = document.getElementById("mage-total");
+  const availEl = document.getElementById("mage-available");
+  const allocEl = document.getElementById("mage-allocated");
+
+  if (totalEl) totalEl.textContent = totalMages.toLocaleString();
+  if (availEl) availEl.textContent = Math.max(0, available).toLocaleString();
+  if (allocEl) allocEl.textContent = totalAllocated.toLocaleString();
+};
+
+window.setMageMax = (type) => {
+  const totalMages = gameState.mages || 0;
+  const otherType = type === 'spellbook' ? 'mage-alloc-school' : 'mage-alloc-spellbook';
+  const otherValue = parseInt(document.getElementById(otherType)?.value || 0);
+  const maxAllowed = Math.max(0, totalMages - otherValue);
+
+  const targetId = type === 'spellbook' ? 'mage-alloc-spellbook' : 'mage-alloc-school';
+  const targetEl = document.getElementById(targetId);
+  if (targetEl) targetEl.value = maxAllowed;
+
+  if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay();
+};
+
+window.releaseMageAllocation = () => {
+  const spellbookEl = document.getElementById("mage-alloc-spellbook");
+  const schoolEl = document.getElementById("mage-alloc-school");
+  if (spellbookEl) spellbookEl.value = 0;
+  if (schoolEl) schoolEl.value = 0;
+
+  if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay();
+  if (window.studyMagic) window.studyMagic();
+};
+
+window.studyMagic = async () => {
+  try {
+    const spellbook = parseInt(document.getElementById("mage-alloc-spellbook")?.value || 0);
+    const school_spellbook = parseInt(document.getElementById("mage-alloc-school")?.value || 0);
+
+    if (spellbook < 0 || school_spellbook < 0) {
+      alert("Allocations must be non-negative");
+      return;
+    }
+
+    const totalMages = gameState.mages || 0;
+    if (spellbook + school_spellbook > totalMages) {
+      alert(`Allocated ${spellbook + school_spellbook} mages, but only have ${totalMages}`);
+      return;
+    }
+
+    // Get CSRF token from cookies
+    const getCsrfToken = () => {
+      try {
+        const m = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
+        if (m) return decodeURIComponent(m[1]);
+      } catch (e) {}
+      return null;
+    };
+
+    const headers = { "Content-Type": "application/json" };
+    const csrfToken = getCsrfToken();
+    if (csrfToken) headers["x-csrf-token"] = csrfToken;
+
+    const response = await fetch("/api/kingdom/school-allocation", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ spellbook, school_spellbook }),
+    });
+
+    const data = await response.json();
+    if (data.error) {
+      alert(data.error);
+    } else if (data.ok) {
+      console.log("[studies] Mage allocation saved successfully");
+      if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay();
+      if (window.triggerReactUpdates) window.triggerReactUpdates();
+    }
+  } catch (error) {
+    console.error("[studies] Error saving mage allocation:", error);
+    alert("Failed to save allocation: " + error.message);
+  }
+};
+
 // Wait for DOM to be ready
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", mountReactApps);

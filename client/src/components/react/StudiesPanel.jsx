@@ -212,59 +212,8 @@ const StudiesPanel = () => {
               </div>
             </div>
 
-            {/* Mage Research Cards */}
-            <div className="r-grid-2" style={{ marginBottom: '16px' }}>
-              {/* Card 1: Spellbook Continuation */}
-              <div className="card" style={{ margin: 0, padding: '16px' }}>
-                <div style={{ fontSize: '24px', marginBottom: '8px' }}>📖</div>
-                <div className="card-title" style={{ marginBottom: '2px', fontSize: '14px' }}>Spellbook</div>
-                <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '12px' }}>Mages continuing study</div>
-
-                <div className="trow">
-                  <span className="name">Level</span>
-                  <span className="count" id="school-spellbook-level">100%</span>
-                </div>
-                <div className="trow">
-                  <span className="name">Progress</span>
-                  <span className="count" id="school-spellbook-progress">—</span>
-                </div>
-                <div className="trow">
-                  <span className="name">Mages assigned</span>
-                  <span className="count" id="school-spellbook-mages">0</span>
-                </div>
-
-                <div style={{ marginTop: '12px', fontSize: '11px', color: 'var(--text3)' }} id="school-spellbook-turns">
-                  Turns to next level: —
-                </div>
-              </div>
-
-              {/* Card 2: School Spellbook */}
-              <div className="card" style={{ margin: 0, padding: '16px' }}>
-                <div style={{ fontSize: '24px', marginBottom: '8px' }}>🔮</div>
-                <div className="card-title" style={{ marginBottom: '2px', fontSize: '14px' }} id="school-spellbook-title">School Spellbook</div>
-                <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '12px' }}>Mages specializing</div>
-
-                <div className="trow">
-                  <span className="name">Level</span>
-                  <span className="count" id="school-specific-level">0%</span>
-                </div>
-                <div className="trow">
-                  <span className="name">Progress</span>
-                  <span className="count" id="school-specific-progress">—</span>
-                </div>
-                <div className="trow">
-                  <span className="name">Mages assigned</span>
-                  <span className="count" id="school-specific-mages">0</span>
-                </div>
-
-                <div style={{ marginTop: '12px', fontSize: '11px', color: 'var(--text3)' }} id="school-specific-turns">
-                  Turns to next level: —
-                </div>
-              </div>
-            </div>
-
-            {/* Mage Allocation & Spells */}
-            <div className="card">
+            {/* Mage Allocation Section */}
+            <div className="card" style={{ marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
                 <div>
                   <div className="card-title" style={{ marginBottom: '2px' }}>Mage Research</div>
@@ -315,6 +264,57 @@ const StudiesPanel = () => {
                     />
                     <button className="base-btn" onClick={() => { if (window.setMageMax) window.setMageMax('school'); }} style={{ padding: '4px 8px', fontSize: '10px' }}>Max</button>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Mage Research Cards */}
+            <div className="r-grid-2">
+              {/* Card 1: Spellbook Continuation */}
+              <div className="card" style={{ margin: 0, padding: '16px' }}>
+                <div style={{ fontSize: '24px', marginBottom: '8px' }}>📖</div>
+                <div className="card-title" style={{ marginBottom: '2px', fontSize: '14px' }}>Spellbook</div>
+                <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '12px' }}>Mages continuing study</div>
+
+                <div className="trow">
+                  <span className="name">Level</span>
+                  <span className="count" id="school-spellbook-level">100%</span>
+                </div>
+                <div className="trow">
+                  <span className="name">Progress</span>
+                  <span className="count" id="school-spellbook-progress">—</span>
+                </div>
+                <div className="trow">
+                  <span className="name">Mages assigned</span>
+                  <span className="count" id="school-spellbook-mages">0</span>
+                </div>
+
+                <div style={{ marginTop: '12px', fontSize: '11px', color: 'var(--text3)' }} id="school-spellbook-turns">
+                  Turns to next level: —
+                </div>
+              </div>
+
+              {/* Card 2: School Spellbook */}
+              <div className="card" style={{ margin: 0, padding: '16px' }}>
+                <div style={{ fontSize: '24px', marginBottom: '8px' }}>🔮</div>
+                <div className="card-title" style={{ marginBottom: '2px', fontSize: '14px' }} id="school-spellbook-title">School Spellbook</div>
+                <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '12px' }}>Mages specializing</div>
+
+                <div className="trow">
+                  <span className="name">Level</span>
+                  <span className="count" id="school-specific-level">0%</span>
+                </div>
+                <div className="trow">
+                  <span className="name">Progress</span>
+                  <span className="count" id="school-specific-progress">—</span>
+                </div>
+                <div className="trow">
+                  <span className="name">Mages assigned</span>
+                  <span className="count" id="school-specific-mages">0</span>
+                </div>
+
+                <div style={{ marginTop: '12px', fontSize: '11px', color: 'var(--text3)' }} id="school-specific-turns">
+                  Turns to next level: —
                 </div>
               </div>
             </div>
