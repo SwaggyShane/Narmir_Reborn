@@ -75,19 +75,31 @@ async function getRandomKingdom(db, excludeId) {
 }
 
 // ── Performance: Random selection of multiple rows via Fisher-Yates shuffle ────
+// Fetch all candidate IDs, shuffle, fetch details (avoids LIMIT bias with RANDOM())
 async function getRandomKingdoms(db, excludeIds, count) {
-  const placeholders = excludeIds.map(() => '?').join(',');
-  // Fetch 2x needed, shuffle in JS, return count (faster than ORDER BY RANDOM() LIMIT)
-  const results = await db.all(
-    `SELECT id, name FROM kingdoms WHERE id NOT IN (${placeholders}) LIMIT ?`,
-    [...excludeIds, Math.max(count * 2, 100)]
-  );
-  // Fisher-Yates shuffle
-  for (let i = results.length - 1; i > 0; i--) {
+  // Handle empty excludeIds case
+  const hasExclusions = excludeIds && excludeIds.length > 0;
+  const query = hasExclusions
+    ? `SELECT id FROM kingdoms WHERE id NOT IN (${excludeIds.map(() => '?').join(',')})`
+    : 'SELECT id FROM kingdoms';
+  const params = hasExclusions ? excludeIds : [];
+
+  const rows = await db.all(query, params);
+  if (!rows || rows.length === 0) return [];
+
+  // Fisher-Yates shuffle of IDs
+  for (let i = rows.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [results[i], results[j]] = [results[j], results[i]];
+    [rows[i], rows[j]] = [rows[j], rows[i]];
   }
-  return results.slice(0, count);
+
+  // Get top count IDs after shuffle
+  const selectedIds = rows.slice(0, count).map(r => r.id);
+  if (selectedIds.length === 0) return [];
+
+  // Fetch details for selected IDs
+  const idPlaceholders = selectedIds.map(() => '?').join(',');
+  return db.all(`SELECT id, name FROM kingdoms WHERE id IN (${idPlaceholders})`, selectedIds);
 }
 
 module.exports = function (db) {

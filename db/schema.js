@@ -594,7 +594,6 @@ async function initDb() {
     CREATE INDEX IF NOT EXISTS idx_war_log_attacker ON war_log(attacker_id);
     CREATE INDEX IF NOT EXISTS idx_war_log_both    ON war_log(attacker_id, defender_id);
     CREATE INDEX IF NOT EXISTS idx_news_turn        ON news(kingdom_id, turn_num DESC);
-    CREATE INDEX IF NOT EXISTS idx_expeditions_status ON expeditions(kingdom_id, status);
     CREATE TABLE IF NOT EXISTS spy_reports (
       id                  INTEGER PRIMARY KEY AUTOINCREMENT,
       kingdom_id          INTEGER NOT NULL REFERENCES kingdoms(id),
