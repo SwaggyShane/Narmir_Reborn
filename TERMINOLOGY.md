@@ -50,7 +50,7 @@ Current fields:
 Examples:
 - `bld_farms`, `bld_granaries`, `bld_barracks`
 - `bld_guard_towers`, `bld_mage_towers`, `bld_shrines`
-- `bld_vaults`, `bld_banks`, `bld_markets`
+- `bld_vaults`, `bld_markets`, `bld_libraries`
 
 **Config References:**
 ```javascript
@@ -111,7 +111,7 @@ config.BUILDING_TIERS.bld_farms // → queries kingdoms.bld_farms
 
 ### Financial Institutions
 - `bld_vaults` - Secure storage (buildings)
-- `bld_banks` - Trading/commerce (buildings)
+- `bld_markets` - Trading/commerce (buildings)
 - `ledger` - Abstract accounting system
 
 **Clarification:** These are building types with distinct purposes:

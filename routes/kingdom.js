@@ -92,7 +92,6 @@ function parseKingdomJson(k) {
   return k;
 }
 
-<<<<<<< HEAD
 // ── Helper: Parse selective JSON fields to reduce duplication ────────────────
 // Replaces repeated safeJsonParse calls (was 76 instances)
 function parseKingdomFields(k, fieldList) {
@@ -2606,19 +2605,13 @@ module.exports = function (db) {
       await db.run("ROLLBACK");
       return res.status(400).json({ error: "Unknown covert operation" });
     }
-    // If we got here, commit the transaction
-    await db.run("COMMIT");
-      } catch (err) {
-        try {
-          await db.run("ROLLBACK");
-        } catch (rollbackErr) {
-          console.error("[covert] rollback error:", rollbackErr.message);
-        }
-        console.error("[covert] operation failed:", err.message);
-        return res.status(500).json({ error: "Covert operation failed — please try again" });
-      }
     } catch (err) {
-      console.error("[covert] outer error:", err.message);
+      try {
+        await db.run("ROLLBACK");
+      } catch (rollbackErr) {
+        console.error("[covert] rollback error:", rollbackErr.message);
+      }
+      console.error("[covert] operation failed:", err.message);
       return res.status(500).json({ error: "Covert operation failed — please try again" });
     }
   });
