@@ -79,13 +79,32 @@ function parseKingdomFields(k, fieldList) {
 
 // ── Helper: Common validation pattern for allocations ────────────────────────
 // Replaces repeated allocation validation (was 4+ instances)
+// Security: Whitelist valid fields and validate non-negative values
 async function validateAndSaveAllocation(db, kingdomId, field, allocation, maxValue, errorMsg) {
+  const validFields = new Set([
+    'research_allocation', 'mage_tower_allocation', 'shrine_allocation',
+    'library_allocation', 'build_allocation', 'resource_build_allocation',
+    'training_allocation', 'smithy_allocation', 'mausoleum_allocation'
+  ]);
+
+  if (!validFields.has(field)) {
+    return { error: `Invalid allocation field: ${field}` };
+  }
+
   if (!allocation || typeof allocation !== "object") {
     return { error: "Invalid allocation format" };
   }
 
-  // Sum allocation and validate
-  const total = Object.values(allocation).reduce((sum, v) => sum + (parseInt(v) || 0), 0);
+  // Sum allocation and validate (block negative values)
+  let total = 0;
+  for (const [key, value] of Object.entries(allocation)) {
+    const val = parseInt(value) || 0;
+    if (val < 0) {
+      return { error: "Allocation values cannot be negative" };
+    }
+    total += val;
+  }
+
   if (total > maxValue) {
     return { error: errorMsg || `Allocation exceeds maximum of ${maxValue}` };
   }
@@ -105,39 +124,55 @@ async function validateAndSaveAllocation(db, kingdomId, field, allocation, maxVa
 
 // ── Helper: Atomic resource deduction with validation ────────────────────────
 // Replaces repeated check-and-deduct patterns (was 3+ instances)
+// Security: Whitelist valid resources and validate non-negative amounts
 async function deductResources(db, kingdomId, resources) {
+  if (!resources || typeof resources !== "object") {
+    return { error: "Invalid resources format" };
+  }
+
+  const validResources = new Set([
+    'gold', 'mana', 'food', 'wood', 'stone', 'iron', 'coal', 'steel', 'population', 'land'
+  ]);
+
+  const setClauses = [];
   const whereConditions = [];
-  const params = [kingdomId];
+  const setParams = [];
+  const whereParams = [];
 
   for (const [resource, amount] of Object.entries(resources)) {
-    if (amount > 0) {
+    if (!validResources.has(resource)) {
+      return { error: `Invalid resource type: ${resource}` };
+    }
+    const amt = parseInt(amount) || 0;
+    if (amt < 0) {
+      return { error: "Resource deduction amount cannot be negative" };
+    }
+    if (amt > 0) {
+      setClauses.push(`${resource} = ${resource} - ?`);
+      setParams.push(amt);
       whereConditions.push(`${resource} >= ?`);
-      params.push(amount);
+      whereParams.push(amt);
     }
   }
 
-  if (whereConditions.length === 0) {
+  if (setClauses.length === 0) {
     return { ok: true };
   }
 
-  const setClause = Object.keys(resources)
-    .filter(r => resources[r] > 0)
-    .map(r => `${r} = ${r} - ?`)
-    .join(', ');
+  try {
+    const result = await db.run(
+      `UPDATE kingdoms SET ${setClauses.join(', ')} WHERE id = ? AND ${whereConditions.join(' AND ')}`,
+      [...setParams, kingdomId, ...whereParams]
+    );
 
-  const deductParams = Object.entries(resources)
-    .filter(([_, amount]) => amount > 0)
-    .map(([_, amount]) => amount);
-
-  const result = await db.run(
-    `UPDATE kingdoms SET ${setClause} WHERE id = ? AND ${whereConditions.join(' AND ')}`,
-    [...deductParams, kingdomId, ...params.slice(1)]
-  );
-
-  if (result.changes === 0) {
-    return { error: "Insufficient resources" };
+    if (result.changes === 0) {
+      return { error: "Insufficient resources" };
+    }
+    return { ok: true };
+  } catch (err) {
+    console.error("[resources] failed to deduct resources:", err.message);
+    return { error: "Failed to deduct resources" };
   }
-  return { ok: true };
 }
 
 module.exports = function (db) {
