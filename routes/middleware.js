@@ -63,28 +63,31 @@ function requireCsrfToken(req, res, next) {
 }
 
 function ensureCsrfToken(req, res, next) {
-  // Set a fresh CSRF token on every authenticated response
-  // Check if user is authenticated by verifying the token ourselves
-  const token =
-    req.cookies?.token ||
-    req.headers.authorization?.replace("Bearer ", "") ||
-    req.headers["x-auth-token"];
+  // Only set CSRF token if one doesn't already exist (avoid regenerating on every request)
+  // This prevents performance issues from redundant JWT verification and token generation
+  if (!req.cookies?.csrf_token) {
+    // Check if user is authenticated by verifying the token
+    const token =
+      req.cookies?.token ||
+      req.headers.authorization?.replace("Bearer ", "") ||
+      req.headers["x-auth-token"];
 
-  if (token) {
-    try {
-      // Verify token is valid - if it is, user is authenticated
-      jwt.verify(token, JWT_SECRET);
-      // Token is valid, set a fresh CSRF token
-      const csrfToken = generateCsrfToken();
-      const csrfCookieOpts = {
-        httpOnly: false,
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        sameSite: "none",
-        secure: true,
-      };
-      res.cookie("csrf_token", csrfToken, csrfCookieOpts);
-    } catch (e) {
-      // Token is invalid, don't set CSRF token
+    if (token) {
+      try {
+        // Verify token is valid - if it is, user is authenticated
+        jwt.verify(token, JWT_SECRET);
+        // Token is valid, set CSRF token for future requests
+        const csrfToken = generateCsrfToken();
+        const csrfCookieOpts = {
+          httpOnly: false,
+          maxAge: 24 * 60 * 60 * 1000, // 24 hours
+          sameSite: "none",
+          secure: process.env.NODE_ENV === 'production', // Only secure in production
+        };
+        res.cookie("csrf_token", csrfToken, csrfCookieOpts);
+      } catch (e) {
+        // Token is invalid, don't set CSRF token
+      }
     }
   }
   next();
