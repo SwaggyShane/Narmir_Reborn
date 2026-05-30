@@ -2435,13 +2435,17 @@ module.exports = function (db) {
     }
     // If we got here, commit the transaction
     await db.run("COMMIT");
-    } catch (err) {
-      try {
-        await db.run("ROLLBACK");
-      } catch (rollbackErr) {
-        console.error("[covert] rollback error:", rollbackErr.message);
+      } catch (err) {
+        try {
+          await db.run("ROLLBACK");
+        } catch (rollbackErr) {
+          console.error("[covert] rollback error:", rollbackErr.message);
+        }
+        console.error("[covert] operation failed:", err.message);
+        return res.status(500).json({ error: "Covert operation failed — please try again" });
       }
-      console.error("[covert] operation failed:", err.message);
+    } catch (err) {
+      console.error("[covert] outer error:", err.message);
       return res.status(500).json({ error: "Covert operation failed — please try again" });
     }
   });
