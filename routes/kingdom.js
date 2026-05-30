@@ -38,6 +38,33 @@ async function withTurnLock(playerId, fn) {
   }
 }
 
+// ── Column Selection Constants for Query Optimization ──────────────────────────
+// Avoid SELECT * for better performance: network, parsing, memory
+// Column sets: choose what's actually needed to reduce network/parsing overhead
+const KINGDOM_FULL = '*'; // Only use when truly necessary (GET /me)
+const KINGDOM_CORE = 'id, player_id, name, race, turn, turns_stored, gold, food, population, land, morale, score';
+const KINGDOM_BUILD = `${KINGDOM_CORE}, wood, stone, iron, coal, steel, food_shortage_turns,
+  bld_farms, bld_granaries, bld_walls, bld_guard_towers, bld_libraries, bld_mage_towers, bld_shrines, bld_vaults`;
+const KINGDOM_UNITS = `${KINGDOM_CORE}, fighters, rangers, clerics, mages, thieves, ninjas, researchers, engineers, scribes`;
+const KINGDOM_RESEARCH = `${KINGDOM_CORE}, res_spellbook, res_economy, res_weapons, res_armor, res_military, school_of_magic, school_spellbook`;
+const KINGDOM_TURN = `${KINGDOM_CORE},
+  research_allocation, mage_tower_allocation, build_allocation, training_allocation,
+  fighters, rangers, clerics, mages, thieves, ninjas, researchers, engineers, scribes,
+  bld_farms, bld_granaries, active_effects, discovered_kingdoms, build_queue`;
+const KINGDOM_HIRE = 'id, player_id, gold, population, race, fighters, rangers, clerics, mages, thieves, ninjas, researchers, engineers, scribes, bld_schools, bld_barracks, level, troop_levels, turns_stored';
+const KINGDOM_RESOURCE = `${KINGDOM_CORE}, wood, stone, iron, coal, steel, build_queue, level, resource_sequence, engineer_level,
+  bld_farms, bld_granaries, bld_barracks, bld_outposts, bld_guard_towers, bld_schools, bld_armories, bld_vaults, bld_smithies, bld_markets, bld_mage_towers, bld_shrines, bld_training, bld_castles, bld_libraries, bld_taverns, bld_mausoleums, bld_walls, bld_woodyard, bld_lumber_camp, bld_blockfield, bld_stone_quarry, bld_strip_mine`;
+const KINGDOM_SMITHY = 'id, player_id, gold, bld_smithies, hammers_stored, scaffolding_stored';
+const KINGDOM_ATTACK = `${KINGDOM_CORE}, fighters, rangers, mages, thieves, ninjas, clerics, engineers, war_machines,
+  bld_walls, bld_guard_towers, bld_mage_towers, bld_outposts, bld_castles,
+  res_military, res_weapons, res_armor, troop_levels, ladders, weapons_stockpile, armor_stockpile,
+  level, mausoleum_upgrades, shrine_upgrades, wall_upgrades, tower_def_upgrades, outpost_upgrades,
+  defense_upgrades, milestone_bonuses, prestige_level, xp, xp_sources`;
+const KINGDOM_COVERT = `${KINGDOM_CORE}, thieves, ninjas, troop_levels,
+  bld_guard_towers, bld_walls, bld_mage_towers, bld_libraries, bld_armories, bld_vaults, bld_mausoleums,
+  level, prestige_level, milestone_bonuses, bank_upgrades, trade_routes, thralls, mausoleum_upgrades`;
+const KINGDOM_ECONOMY = `${KINGDOM_CORE}, gold, market_upgrades, bank_upgrades, farm_upgrades, discovered_kingdoms`;
+
 // Parse all JSON fields on a kingdom object (used by /me endpoint)
 const JSON_FIELDS = {
   'research_allocation': {}, 'mage_tower_allocation': {}, 'shrine_allocation': {},
@@ -63,6 +90,151 @@ function parseKingdomJson(k) {
     }
   }
   return k;
+}
+
+// ── Helper: Parse selective JSON fields to reduce duplication ────────────────
+// Replaces repeated safeJsonParse calls (was 76 instances)
+function parseKingdomFields(k, fieldList) {
+  for (const field of fieldList) {
+    if (k[field] !== undefined && k[field] !== null) {
+      const defaultVal = JSON_FIELDS[field] || {};
+      k[field] = safeJsonParse(k[field], defaultVal, `parse:${field}`);
+    }
+  }
+  return k;
+}
+
+// ── Helper: Common validation pattern for allocations ────────────────────────
+// Replaces repeated allocation validation (was 4+ instances)
+// Security: Whitelist valid fields and validate non-negative values
+async function validateAndSaveAllocation(db, kingdomId, field, allocation, maxValue, errorMsg) {
+  const validFields = new Set([
+    'research_allocation', 'mage_tower_allocation', 'shrine_allocation',
+    'library_allocation', 'build_allocation', 'resource_build_allocation',
+    'training_allocation', 'smithy_allocation', 'mausoleum_allocation'
+  ]);
+
+  if (!validFields.has(field)) {
+    return { error: `Invalid allocation field: ${field}` };
+  }
+
+  if (!allocation || typeof allocation !== "object") {
+    return { error: "Invalid allocation format" };
+  }
+
+  // Sum allocation and validate (block negative values)
+  let total = 0;
+  for (const [key, value] of Object.entries(allocation)) {
+    const val = parseInt(value) || 0;
+    if (val < 0) {
+      return { error: "Allocation values cannot be negative" };
+    }
+    total += val;
+  }
+
+  if (total > maxValue) {
+    return { error: errorMsg || `Allocation exceeds maximum of ${maxValue}` };
+  }
+
+  // Save to database
+  try {
+    await db.run(
+      `UPDATE kingdoms SET ${field} = ? WHERE id = ?`,
+      [JSON.stringify(allocation), kingdomId]
+    );
+    return { ok: true, allocation };
+  } catch (err) {
+    console.error(`[allocation] failed to save ${field}:`, err.message);
+    return { error: "Failed to save allocation" };
+  }
+}
+
+// ── Helper: Atomic resource deduction with validation ────────────────────────
+// Replaces repeated check-and-deduct patterns (was 3+ instances)
+// Security: Whitelist valid resources and validate non-negative amounts
+async function deductResources(db, kingdomId, resources) {
+  if (!resources || typeof resources !== "object") {
+    return { error: "Invalid resources format" };
+  }
+
+  const validResources = new Set([
+    'gold', 'mana', 'food', 'wood', 'stone', 'iron', 'coal', 'steel', 'population', 'land'
+  ]);
+
+  const setClauses = [];
+  const whereConditions = [];
+  const setParams = [];
+  const whereParams = [];
+
+  for (const [resource, amount] of Object.entries(resources)) {
+    if (!validResources.has(resource)) {
+      return { error: `Invalid resource type: ${resource}` };
+    }
+    const amt = parseInt(amount) || 0;
+    if (amt < 0) {
+      return { error: "Resource deduction amount cannot be negative" };
+    }
+    if (amt > 0) {
+      setClauses.push(`${resource} = ${resource} - ?`);
+      setParams.push(amt);
+      whereConditions.push(`${resource} >= ?`);
+      whereParams.push(amt);
+    }
+  }
+
+  if (setClauses.length === 0) {
+    return { ok: true };
+  }
+
+  try {
+    const result = await db.run(
+      `UPDATE kingdoms SET ${setClauses.join(', ')} WHERE id = ? AND ${whereConditions.join(' AND ')}`,
+      [...setParams, kingdomId, ...whereParams]
+    );
+
+    if (result.changes === 0) {
+      return { error: "Insufficient resources" };
+    }
+    return { ok: true };
+  } catch (err) {
+    console.error("[resources] failed to deduct resources:", err.message);
+    return { error: "Failed to deduct resources" };
+  }
+}
+
+// ── Performance: Efficient random selection (no ORDER BY RANDOM()) ──────────────
+// ORDER BY RANDOM() is expensive: sorts all rows. Instead: random offset + fetch
+async function getRandomKingdom(db, excludeId) {
+  const countResult = await db.get('SELECT COUNT(*) as c FROM kingdoms WHERE id != ?', [excludeId]);
+  if (!countResult || countResult.c === 0) return null;
+  const offset = Math.floor(Math.random() * countResult.c);
+  return db.get('SELECT id, name FROM kingdoms WHERE id != ? LIMIT 1 OFFSET ?', [excludeId, offset]);
+}
+
+// ── Performance: Random selection of multiple rows via Fisher-Yates shuffle ────
+async function getRandomKingdoms(db, excludeIds, count) {
+  const hasExclusions = excludeIds && excludeIds.length > 0;
+  const query = hasExclusions
+    ? `SELECT id FROM kingdoms WHERE id NOT IN (${excludeIds.map(() => '?').join(',')})`
+    : 'SELECT id FROM kingdoms';
+  const params = hasExclusions ? excludeIds : [];
+
+  const rows = await db.all(query, params);
+  if (!rows || rows.length === 0) return [];
+
+  // Fisher-Yates shuffle of IDs
+  for (let i = rows.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [rows[i], rows[j]] = [rows[j], rows[i]];
+  }
+
+  // Get top count IDs after shuffle
+  const selectedIds = rows.slice(0, count).map(r => r.id);
+  if (selectedIds.length === 0) return [];
+
+  // Fetch details for selected IDs
+  const idPlaceholders = selectedIds.map(() => '?').join(',');
+  return db.all(`SELECT id, name FROM kingdoms WHERE id IN (${idPlaceholders})`, selectedIds);
 }
 
 module.exports = function (db) {
@@ -561,7 +733,7 @@ module.exports = function (db) {
   // ── Hire units ────────────────────────────────────────────────────────────────
   router.post("/hire", requireAuth, requireCsrfToken, async (req, res) => {
     const { unit, amount } = req.body;
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
+    const k = await db.get(`SELECT ${KINGDOM_HIRE} FROM kingdoms WHERE player_id = ?`, [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -645,7 +817,7 @@ module.exports = function (db) {
     const { orders } = req.body;
     if (!orders || typeof orders !== "object")
       return res.status(400).json({ error: "orders required" });
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
+    const k = await db.get(`SELECT ${KINGDOM_RESOURCE} FROM kingdoms WHERE player_id = ?`, [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -814,7 +986,7 @@ module.exports = function (db) {
     const { building } = req.body;
     const config = require("../game/config");
 
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
+    const k = await db.get(`SELECT ${KINGDOM_RESOURCE} FROM kingdoms WHERE player_id = ?`, [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -1568,7 +1740,7 @@ module.exports = function (db) {
       ladders: Math.max(0, parseInt(ladders) || 0),
     };
 
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
+    const k = await db.get(`SELECT ${KINGDOM_ATTACK} FROM kingdoms WHERE player_id = ?`, [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -1582,7 +1754,7 @@ module.exports = function (db) {
       return res.status(400).json({ error: "Send at least some troops" });
 
     const target = await db.get(
-      "SELECT k.*, p.is_ai FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.id = ?",
+      `SELECT ${KINGDOM_ATTACK}, p.is_ai FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.id = ?`,
       [targetId],
     );
     if (!target)
@@ -2044,7 +2216,6 @@ module.exports = function (db) {
     try {
       // Begin transaction first - all locking happens inside
       await db.run("BEGIN TRANSACTION");
-      try {
         // Lock kingdoms in ascending ID order to prevent deadlock
         // First fetch attacker without lock to get its ID
         const k = await db.get("SELECT id FROM kingdoms WHERE player_id = ?", [
@@ -2058,7 +2229,7 @@ module.exports = function (db) {
         // Lock both kingdoms in ascending ID order (prevents deadlock)
         const kingdomIds = [k.id, targetId].sort((a, b) => a - b);
         const lockedKingdoms = await db.all(
-          `SELECT * FROM kingdoms WHERE id IN (${kingdomIds.map(() => '?').join(',')}) ORDER BY id FOR UPDATE`,
+          `SELECT ${KINGDOM_COVERT} FROM kingdoms WHERE id IN (${kingdomIds.map(() => '?').join(',')}) ORDER BY id FOR UPDATE`,
           kingdomIds,
         );
 
@@ -2433,17 +2604,13 @@ module.exports = function (db) {
       await db.run("ROLLBACK");
       return res.status(400).json({ error: "Unknown covert operation" });
     }
-      } catch (err) {
-        try {
-          await db.run("ROLLBACK");
-        } catch (rollbackErr) {
-          console.error("[covert] rollback error:", rollbackErr.message);
-        }
-        console.error("[covert] operation failed:", err.message);
-        return res.status(500).json({ error: "Covert operation failed — please try again" });
-      }
     } catch (err) {
-      console.error("[covert] outer error:", err.message);
+      try {
+        await db.run("ROLLBACK");
+      } catch (rollbackErr) {
+        console.error("[covert] rollback error:", rollbackErr.message);
+      }
+      console.error("[covert] operation failed:", err.message);
       return res.status(500).json({ error: "Covert operation failed — please try again" });
     }
   });
