@@ -2216,7 +2216,6 @@ module.exports = function (db) {
     try {
       // Begin transaction first - all locking happens inside
       await db.run("BEGIN TRANSACTION");
-      try {
         // Lock kingdoms in ascending ID order to prevent deadlock
         // First fetch attacker without lock to get its ID
         const k = await db.get("SELECT id FROM kingdoms WHERE player_id = ?", [
