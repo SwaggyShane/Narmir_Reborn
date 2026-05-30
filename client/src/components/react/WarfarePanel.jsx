@@ -1,7 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const WarfarePanel = () => {
   const [activeTab, setActiveTab] = useState('attack');
+  const [wcovTargetRace, setWcovTargetRace] = useState(null);
+
+  useEffect(() => {
+    window.setWcovTargetRace = setWcovTargetRace;
+    return () => { delete window.setWcovTargetRace; };
+  }, []);
 
   const handleTabClick = (tabId) => {
     setActiveTab(tabId);
@@ -370,7 +376,7 @@ const WarfarePanel = () => {
                 <option value="researchers">Researchers</option>
                 <option value="engineers">Engineers</option>
                 <option value="scribes">Scribes</option>
-                <option value="thralls">Thralls</option>
+                {wcovTargetRace === 'vampire' && <option value="thralls">Thralls</option>}
               </select>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px' }}>
                 <span style={{ fontSize: '11px', color: 'var(--text3)', whiteSpace: 'nowrap' }}>Ninjas</span>

@@ -10798,6 +10798,7 @@
       function selectWcovTarget(id, containerId) {
         if (!id) {
           wSelectedCovertTarget = null;
+          if (window.setWcovTargetRace) window.setWcovTargetRace(null);
           var nm = document.getElementById("wcov-target-name");
           var inf = document.getElementById("wcov-target-info");
           if (nm) nm.textContent = "— none selected —";
@@ -10828,6 +10829,7 @@
         }
         if (!t) return;
         wSelectedCovertTarget = t;
+        if (window.setWcovTargetRace) window.setWcovTargetRace(t.race || null);
         var nm = document.getElementById("wcov-target-name");
         var inf = document.getElementById("wcov-target-info");
         if (nm) nm.textContent = t.name || "Unknown";
