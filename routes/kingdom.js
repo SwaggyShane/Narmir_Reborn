@@ -47,20 +47,20 @@ const KINGDOM_BUILD = `${KINGDOM_CORE}, wood, stone, iron, coal, steel, food_sho
   bld_farms, bld_granaries, bld_walls, bld_guard_towers, bld_libraries, bld_mage_towers, bld_shrines, bld_vaults`;
 const KINGDOM_UNITS = `${KINGDOM_CORE}, fighters, rangers, clerics, mages, thieves, ninjas, researchers, engineers, scribes`;
 const KINGDOM_RESEARCH = `${KINGDOM_CORE}, res_spellbook, res_economy, res_weapons, res_armor, res_military, school_of_magic, school_spellbook`;
-const KINGDOM_TURN = `${KINGDOM_CORE}, food, gold, land, morale,
+const KINGDOM_TURN = `${KINGDOM_CORE},
   research_allocation, mage_tower_allocation, build_allocation, training_allocation,
   fighters, rangers, clerics, mages, thieves, ninjas, researchers, engineers, scribes,
   bld_farms, bld_granaries, active_effects, discovered_kingdoms, build_queue`;
 const KINGDOM_HIRE = 'id, player_id, gold, population, race, fighters, rangers, clerics, mages, thieves, ninjas, researchers, engineers, scribes, bld_schools, bld_barracks, level, troop_levels, turns_stored';
-const KINGDOM_RESOURCE = `${KINGDOM_CORE}, gold, wood, stone, iron, coal, steel, land, race, build_queue, level, resource_sequence, engineer_level,
+const KINGDOM_RESOURCE = `${KINGDOM_CORE}, wood, stone, iron, coal, steel, build_queue, level, resource_sequence, engineer_level,
   bld_farms, bld_granaries, bld_barracks, bld_outposts, bld_guard_towers, bld_schools, bld_armories, bld_vaults, bld_smithies, bld_markets, bld_mage_towers, bld_shrines, bld_training, bld_castles, bld_libraries, bld_taverns, bld_mausoleums, bld_walls, bld_woodyard, bld_lumber_camp, bld_blockfield, bld_stone_quarry, bld_strip_mine`;
 const KINGDOM_SMITHY = 'id, player_id, gold, bld_smithies, hammers_stored, scaffolding_stored';
-const KINGDOM_ATTACK = `${KINGDOM_CORE}, fighters, rangers, mages, thieves, ninjas, clerics, engineers, war_machines, morale, land, population, gold,
-  bld_walls, bld_guard_towers, bld_mage_towers, bld_outposts, bld_castles, discovered_kingdoms,
+const KINGDOM_ATTACK = `${KINGDOM_CORE}, fighters, rangers, mages, thieves, ninjas, clerics, engineers, war_machines,
+  bld_walls, bld_guard_towers, bld_mage_towers, bld_outposts, bld_castles,
   res_military, res_weapons, res_armor, troop_levels, ladders, weapons_stockpile, armor_stockpile,
   level, mausoleum_upgrades, shrine_upgrades, wall_upgrades, tower_def_upgrades, outpost_upgrades,
   defense_upgrades, milestone_bonuses, prestige_level, xp, xp_sources`;
-const KINGDOM_COVERT = `${KINGDOM_CORE}, thieves, ninjas, morale, land, population, gold, troop_levels, discovered_kingdoms,
+const KINGDOM_COVERT = `${KINGDOM_CORE}, thieves, ninjas, troop_levels,
   bld_guard_towers, bld_walls, bld_mage_towers, bld_libraries, bld_armories, bld_vaults, bld_mausoleums,
   level, prestige_level, milestone_bonuses, bank_upgrades, trade_routes, thralls, mausoleum_upgrades`;
 const KINGDOM_ECONOMY = `${KINGDOM_CORE}, gold, market_upgrades, bank_upgrades, farm_upgrades, discovered_kingdoms`;
