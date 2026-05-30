@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { apiCall } from '../../utils/api';
 
 const tabs = [
   { id: 'stockpiles', label: '📦 Stockpiles' },
@@ -301,8 +302,7 @@ const ResourcesPanel = () => {
   const scoutNode = async () => {
     setScouting(true); setScoutMsg('');
     try {
-      const r = await fetch('/api/kingdom/scout-node', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: '{}' });
-      const data = await r.json();
+      const data = await apiCall('/api/kingdom/scout-node', { method: 'POST' });
       if (data.ok) {
         setScoutMsg(`Discovered: ${data.node.name} (${data.node.type}, richness ${data.node.richness})`);
         await loadNodes();
@@ -318,12 +318,10 @@ const ResourcesPanel = () => {
     if (pop < 10) return;
     setLaunching(p => ({...p, [node.id]: true}));
     try {
-      const r = await fetch('/api/kingdom/expedition/launch', {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nodeId: node.id, populationSent: pop })
+      const data = await apiCall('/api/kingdom/expedition/launch', {
+        method: 'POST',
+        body: { nodeId: node.id, populationSent: pop }
       });
-      const data = await r.json();
       if (data.ok) {
         await loadExpeditions();
         if (window.logExpeditionEntry) {
@@ -343,12 +341,10 @@ const ResourcesPanel = () => {
     if (fighters < 1) return window.toast && window.toast('Enter number of fighters.', 'error');
     setIntercepting(p => ({...p, [expId]: true}));
     try {
-      const r = await fetch('/api/kingdom/expedition/intercept', {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ expeditionId: expId, fighters })
+      const data = await apiCall('/api/kingdom/expedition/intercept', {
+        method: 'POST',
+        body: { expeditionId: expId, fighters }
       });
-      const data = await r.json();
       if (data.ok) {
         if(window.toast) window.toast(data.success ? `Interception successful! Loot: ${JSON.stringify(data.loot)}` : 'Interception failed. Took casualties.', data.success ? 'success' : 'error');
         await loadVisibleExps();
@@ -367,27 +363,23 @@ const ResourcesPanel = () => {
     if (engineers > avail) return window.toast && window.toast(`Only ${avail.toLocaleString()} engineers available.`, 'error');
     setBuildingInProgress(p => ({...p, [type]: true}));
     try {
-      const r1 = await fetch('/api/kingdom/build-queue', {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orders: { [bld.key]: 1 } })
+      const d1 = await apiCall('/api/kingdom/build-queue', {
+        method: 'POST',
+        body: { orders: { [bld.key]: 1 } }
       });
-      const d1 = await r1.json();
       if (d1.error) { setBuildingInProgress(p => ({...p, [type]: false})); return window.toast && window.toast(d1.error, 'error'); }
-      
+
       const s = getState();
       if (s) {
         const curQ = getParsedStateProp('build_queue');
         s.build_queue = { ...curQ, [bld.key]: (curQ[bld.key] || 0) + 1 };
       }
-      
+
       const newAlloc = { ...getParsedStateProp('resource_build_allocation'), [bld.key]: engineers };
-      const r2 = await fetch('/api/kingdom/resource-build-allocation', {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ allocation: newAlloc })
+      const d2 = await apiCall('/api/kingdom/resource-build-allocation', {
+        method: 'POST',
+        body: { allocation: newAlloc }
       });
-      const d2 = await r2.json();
       if (!d2.ok && window.toast) window.toast('Build queued but engineer allocation failed: ' + (d2.error || 'Unknown'), 'error');
       if (d2.ok && s) s.resource_build_allocation = newAlloc;
       syncFromState();
@@ -402,12 +394,10 @@ const ResourcesPanel = () => {
   };
   const purchaseUpgrade = async (type, stage) => {
     try {
-      const r = await fetch('/api/kingdom/resource-upgrade', {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, toStage: stage })
+      const data = await apiCall('/api/kingdom/resource-upgrade', {
+        method: 'POST',
+        body: { type, toStage: stage }
       });
-      const data = await r.json();
       if (data.ok) {
         if (window.refreshKingdom) {
           await window.refreshKingdom();

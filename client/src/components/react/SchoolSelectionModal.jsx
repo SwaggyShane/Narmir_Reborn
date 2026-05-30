@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiCall } from '../../utils/api';
 import './SchoolSelectionModal.css';
 
 const SCHOOLS = [
@@ -72,27 +73,18 @@ export default function SchoolSelectionModal({ onClose, onSuccess }) {
     setError(null);
 
     try {
-      const res = await fetch('/api/kingdom/select-school', {
+      const data = await apiCall('/api/kingdom/select-school', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ school: schoolId }),
+        body: { school: schoolId },
       });
 
-      if (!res.ok) {
-        const text = await res.text();
-        let data = { error: 'Failed to select school' };
-        try {
-          data = JSON.parse(text);
-        } catch (e) {
-          data.error = text || `Server error (${res.status})`;
-        }
+      if (data.error) {
         setError(data.error);
         setLoading(false);
         setSelectedSchool(null);
         return;
       }
 
-      const data = await res.json();
       if (data.ok && onSuccess) {
         onSuccess(data);
       }
