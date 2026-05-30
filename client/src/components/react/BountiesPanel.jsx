@@ -40,13 +40,15 @@ const BountiesPanel = () => {
     fetchBounties();
     loadTargets();
 
-    // Expose refresh to legacy index.html calls (e.g. after placing bounty elsewhere)
     window.refreshBountiesPanel = fetchBounties;
+    // Exposed so legacy openBountyAction/selectBountyTarget can drive React state
+    window.setBountyTarget = (id) => setSelectedTarget(id ? String(id) : '');
 
     const interval = setInterval(fetchBounties, REFRESH_INTERVAL_MS);
     return () => {
       clearInterval(interval);
       delete window.refreshBountiesPanel;
+      delete window.setBountyTarget;
     };
   }, [fetchBounties, loadTargets]);
 
@@ -127,7 +129,7 @@ const BountiesPanel = () => {
               <div style={{ marginBottom: '12px' }}>
                 <label style={{ display: 'block', fontSize: '11px', color: 'var(--text3)', marginBottom: '4px' }}>TARGET KINGDOM</label>
                 <select
-                  id="bounty-target-select"
+                  id="react-bounty-select"
                   className="input"
                   style={{ width: '100%' }}
                   value={selectedTarget}

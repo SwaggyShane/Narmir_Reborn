@@ -6631,6 +6631,7 @@
       let selectedBountyTargetId = null;
       function selectBountyTarget(id, name) {
         selectedBountyTargetId = id;
+        if (window.setBountyTarget) window.setBountyTarget(id);
       }
 
       function populateBountyDropdown() {
