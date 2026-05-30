@@ -110,8 +110,8 @@ window.mountReactApps = mountReactApps;
 // Mage allocation and study functions
 window.updateMageAllocationDisplay = () => {
   const totalMages = gameState.mages || 0;
-  const spellbookAlloc = parseInt(document.getElementById("mage-alloc-spellbook")?.value || 0);
-  const schoolAlloc = parseInt(document.getElementById("mage-alloc-school")?.value || 0);
+  const spellbookAlloc = parseInt(document.getElementById("mage-alloc-spellbook")?.value, 10) || 0;
+  const schoolAlloc = parseInt(document.getElementById("mage-alloc-school")?.value, 10) || 0;
   const totalAllocated = spellbookAlloc + schoolAlloc;
   const available = totalMages - totalAllocated;
 
@@ -127,7 +127,7 @@ window.updateMageAllocationDisplay = () => {
 window.setMageMax = (type) => {
   const totalMages = gameState.mages || 0;
   const otherType = type === 'spellbook' ? 'mage-alloc-school' : 'mage-alloc-spellbook';
-  const otherValue = parseInt(document.getElementById(otherType)?.value || 0);
+  const otherValue = parseInt(document.getElementById(otherType)?.value, 10) || 0;
   const maxAllowed = Math.max(0, totalMages - otherValue);
 
   const targetId = type === 'spellbook' ? 'mage-alloc-spellbook' : 'mage-alloc-school';
@@ -149,8 +149,8 @@ window.releaseMageAllocation = () => {
 
 window.studyMagic = async () => {
   try {
-    const spellbook = parseInt(document.getElementById("mage-alloc-spellbook")?.value || 0);
-    const school_spellbook = parseInt(document.getElementById("mage-alloc-school")?.value || 0);
+    const spellbook = parseInt(document.getElementById("mage-alloc-spellbook")?.value, 10) || 0;
+    const school_spellbook = parseInt(document.getElementById("mage-alloc-school")?.value, 10) || 0;
 
     if (spellbook < 0 || school_spellbook < 0) {
       alert("Allocations must be non-negative");
