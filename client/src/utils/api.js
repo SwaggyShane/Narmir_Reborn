@@ -43,7 +43,20 @@ async function apiCall(url, options = {}) {
       ...rest,
     });
 
-    const data = await response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch (parseError) {
+      // Response is not valid JSON
+      const text = await response.text();
+      data = { error: text || `Server error ${response.status}` };
+    }
+
+    // If response was not OK but data doesn't have error property, synthesize one
+    if (!response.ok && !data.error) {
+      data.error = data.error || `Server error ${response.status}`;
+    }
+
     return data;
   } catch (error) {
     return { error: error.message };
