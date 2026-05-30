@@ -92,6 +92,7 @@ function parseKingdomJson(k) {
   return k;
 }
 
+<<<<<<< HEAD
 // ── Helper: Parse selective JSON fields to reduce duplication ────────────────
 // Replaces repeated safeJsonParse calls (was 76 instances)
 function parseKingdomFields(k, fieldList) {
@@ -200,6 +201,41 @@ async function deductResources(db, kingdomId, resources) {
     console.error("[resources] failed to deduct resources:", err.message);
     return { error: "Failed to deduct resources" };
   }
+}
+
+// ── Performance: Efficient random selection (no ORDER BY RANDOM()) ──────────────
+// ORDER BY RANDOM() is expensive: sorts all rows. Instead: random offset + fetch
+async function getRandomKingdom(db, excludeId) {
+  const countResult = await db.get('SELECT COUNT(*) as c FROM kingdoms WHERE id != ?', [excludeId]);
+  if (!countResult || countResult.c === 0) return null;
+  const offset = Math.floor(Math.random() * countResult.c);
+  return db.get('SELECT id, name FROM kingdoms WHERE id != ? LIMIT 1 OFFSET ?', [excludeId, offset]);
+}
+
+// ── Performance: Random selection of multiple rows via Fisher-Yates shuffle ────
+async function getRandomKingdoms(db, excludeIds, count) {
+  const hasExclusions = excludeIds && excludeIds.length > 0;
+  const query = hasExclusions
+    ? `SELECT id FROM kingdoms WHERE id NOT IN (${excludeIds.map(() => '?').join(',')})`
+    : 'SELECT id FROM kingdoms';
+  const params = hasExclusions ? excludeIds : [];
+
+  const rows = await db.all(query, params);
+  if (!rows || rows.length === 0) return [];
+
+  // Fisher-Yates shuffle of IDs
+  for (let i = rows.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [rows[i], rows[j]] = [rows[j], rows[i]];
+  }
+
+  // Get top count IDs after shuffle
+  const selectedIds = rows.slice(0, count).map(r => r.id);
+  if (selectedIds.length === 0) return [];
+
+  // Fetch details for selected IDs
+  const idPlaceholders = selectedIds.map(() => '?').join(',');
+  return db.all(`SELECT id, name FROM kingdoms WHERE id IN (${idPlaceholders})`, selectedIds);
 }
 
 module.exports = function (db) {
