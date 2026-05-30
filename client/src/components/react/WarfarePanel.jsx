@@ -339,10 +339,14 @@ const WarfarePanel = () => {
               <div style={{ fontSize: '10px', color: 'var(--text3)', marginBottom: '8px', lineHeight: 1.2 }}>Steal gold, research, or resources.</div>
               <select id="wcov-loot-type" className="input" style={{ width: '100%', marginBottom: '6px', fontSize: '11px' }}>
                 <option value="gold">Gold</option>
-                <option value="research">Research</option>
-                <option value="blueprints">📜 Blueprints</option>
-                <option value="weapons">Weapons</option>
                 <option value="food">Food</option>
+                <option value="war_machines">War Machines</option>
+                <option value="maps">Maps</option>
+                <option value="blueprints">Blueprints</option>
+                <option value="hammers">Hammers</option>
+                <option value="research">Research (random type)</option>
+                <option value="resources">Resources (random type)</option>
+                <option value="trade_routes">Trade Routes</option>
               </select>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px' }}>
                 <span style={{ fontSize: '11px', color: 'var(--text3)', whiteSpace: 'nowrap' }}>Thieves</span>
@@ -375,12 +379,26 @@ const WarfarePanel = () => {
             <div style={{ border: '1px solid var(--border)', borderRadius: '8px', padding: '12px', background: 'rgba(0, 0, 0, 0.1)', borderLeft: '3px solid var(--amber)' }}>
               <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', marginBottom: '4px' }}>💣 Sabotage</div>
               <select id="wcov-sab-type" className="input" style={{ width: '100%', marginBottom: '6px', fontSize: '11px' }}>
-                <option value="housing">Housing</option>
-                <option value="markets">Markets</option>
-                <option value="smithies">Smithies</option>
-                <option value="barracks">Barracks</option>
-                <option value="walls">Walls</option>
                 <option value="war_machines">War Machines</option>
+                <option value="farms">Farms</option>
+                <option value="granaries">Granaries</option>
+                <option value="barracks">Barracks</option>
+                <option value="guard_towers">Guard Towers</option>
+                <option value="schools">Schools</option>
+                <option value="armories">Armories</option>
+                <option value="vaults">Vaults</option>
+                <option value="smithies">Smithies</option>
+                <option value="markets">Markets</option>
+                <option value="mage_towers">Mage Towers</option>
+                <option value="shrines">Shrines</option>
+                <option value="training">Training Grounds</option>
+                <option value="castles">Castles</option>
+                <option value="housing">Housing</option>
+                <option value="libraries">Libraries</option>
+                <option value="taverns">Taverns</option>
+                <option value="mausoleums">Mausoleums</option>
+                <option value="walls">Walls</option>
+                <option value="outposts">Outposts</option>
               </select>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px' }}>
                 <span style={{ fontSize: '11px', color: 'var(--text3)', whiteSpace: 'nowrap' }}>Thieves</span>

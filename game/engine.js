@@ -5783,6 +5783,7 @@ function covertSabotage(assassin, target, ninjasSent, bldType) {
 
   const BLD_MAP = {
     farms: "bld_farms",
+    granaries: "bld_granaries",
     smithies: "bld_smithies",
     mage_towers: "bld_mage_towers",
     barracks: "bld_barracks",
