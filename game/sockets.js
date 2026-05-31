@@ -22,9 +22,67 @@ module.exports = function (io, db) {
     try {
       const { playerId, username } = socket.player;
 
-      const player = await db.get(
-        "SELECT id, username, is_admin, is_chat_mod, chat_banned, chat_color, chat_name FROM players WHERE id = ?",
-        [playerId],
+    const player = await db.get(
+      "SELECT id, username, is_admin, is_chat_mod, chat_banned, chat_color, chat_name FROM players WHERE id = ?",
+      [playerId],
+    );
+    const kingdom = await db.get(
+      "SELECT id, name, race FROM kingdoms WHERE player_id = ?",
+      [playerId],
+    );
+    if (!kingdom || !player) return socket.disconnect();
+
+    if (player.chat_banned)
+      socket.emit("chat:banned", { reason: "You are banned from chat." });
+
+    const isMod = !!(player.is_chat_mod || player.is_admin);
+
+    // Prevent stale connection state: disconnect previous socket if player reconnects
+    const existingEntry = onlinePlayers.get(playerId);
+    if (existingEntry && existingEntry.socketId !== socket.id) {
+      const oldSocket = io.sockets.sockets.get(existingEntry.socketId);
+      if (oldSocket) {
+        oldSocket.disconnect(true);
+        console.log(`[socket] Disconnected stale socket for ${username} (${existingEntry.socketId})`);
+      }
+    }
+
+    onlinePlayers.set(playerId, {
+      socketId: socket.id,
+      username: player.username,
+      chatName: player.chat_name || player.username,
+      race: kingdom.race,
+      isMod,
+      isAdmin: !!player.is_admin,
+      kingdomName: kingdom.name,
+      chatColor: player.chat_color,
+    });
+
+    // Register disconnect listener immediately to prevent memory leak if later operations fail
+    socket.on("disconnect", () => {
+      // Only delete if this is still the current socket for this player (prevent delete after reconnect)
+      if (onlinePlayers.get(playerId)?.socketId === socket.id) {
+        onlinePlayers.delete(playerId);
+        broadcastOnlineList(io);
+      }
+      console.log(`[socket] ${username} disconnected`);
+    });
+
+    socket.join(`player:${playerId}`);
+    socket.join(`kingdom:${kingdom.id}`);
+    socket.join("global");
+    broadcastOnlineList(io);
+
+    const membership = await db.get(
+      "SELECT alliance_id FROM alliance_members WHERE kingdom_id = ?",
+      [kingdom.id],
+    );
+    if (membership) socket.join(`alliance:${membership.alliance_id}`);
+
+    const notifyUnread = async (kid) => {
+      const unreadRow = await db.get(
+        "SELECT COUNT(*) as c FROM news WHERE kingdom_id = ? AND is_read = 0",
+        [kid],
       );
       const kingdom = await db.get(
         "SELECT id, name, race FROM kingdoms WHERE player_id = ?",
