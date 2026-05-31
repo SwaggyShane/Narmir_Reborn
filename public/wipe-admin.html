@@ -190,12 +190,18 @@
           body: JSON.stringify({ secret })
         });
 
-        const data = await response.json();
+        let data = {};
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          data = await response.json();
+        } else {
+          data = { error: await response.text() || 'Unexpected non-JSON response' };
+        }
 
         if (!response.ok) {
           showStatus(data.error || 'Wipe failed', 'error');
         } else {
-          showStatus('✅ ' + data.message + ' Ready to register!', 'success');
+          showStatus('✅ ' + (data.message || 'Wipe completed.') + ' Ready to register!', 'success');
           secretInput.value = '';
         }
       } catch (err) {
