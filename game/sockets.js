@@ -19,65 +19,59 @@ module.exports = function (io, db) {
   });
 
   io.on("connection", async (socket) => {
-    const { playerId, username } = socket.player;
+    try {
+      const { playerId, username } = socket.player;
 
-    const player = await db.get(
-      "SELECT id, username, is_admin, is_chat_mod, chat_banned, chat_color, chat_name FROM players WHERE id = ?",
-      [playerId],
-    );
-    const kingdom = await db.get(
-      "SELECT id, name, race FROM kingdoms WHERE player_id = ?",
-      [playerId],
-    );
-    if (!kingdom || !player) return socket.disconnect();
-
-    if (player.chat_banned)
-      socket.emit("chat:banned", { reason: "You are banned from chat." });
-
-    const isMod = !!(player.is_chat_mod || player.is_admin);
-    onlinePlayers.set(playerId, {
-      socketId: socket.id,
-      username: player.username,
-      chatName: player.chat_name || player.username,
-      race: kingdom.race,
-      isMod,
-      isAdmin: !!player.is_admin,
-      kingdomName: kingdom.name,
-      chatColor: player.chat_color,
-    });
-
-    // Register disconnect listener immediately to prevent memory leak if later operations fail
-    socket.on("disconnect", () => {
-      onlinePlayers.delete(playerId);
-      broadcastOnlineList(io);
-      console.log(`[socket] ${username} disconnected`);
-    });
-
-    socket.join(`player:${playerId}`);
-    socket.join(`kingdom:${kingdom.id}`);
-    socket.join("global");
-    broadcastOnlineList(io);
-
-    const membership = await db.get(
-      "SELECT alliance_id FROM alliance_members WHERE kingdom_id = ?",
-      [kingdom.id],
-    );
-    if (membership) socket.join(`alliance:${membership.alliance_id}`);
-
-    const notifyUnread = async (kid) => {
-      const unreadRow = await db.get(
-        "SELECT COUNT(*) as c FROM news WHERE kingdom_id = ? AND is_read = 0",
-        [kid],
+      const player = await db.get(
+        "SELECT id, username, is_admin, is_chat_mod, chat_banned, chat_color, chat_name FROM players WHERE id = ?",
+        [playerId],
       );
-      io.to(`kingdom:${kid}`).emit("unread_news", { count: unreadRow.c });
-    };
+      const kingdom = await db.get(
+        "SELECT id, name, race FROM kingdoms WHERE player_id = ?",
+        [playerId],
+      );
+      if (!kingdom || !player) return socket.disconnect();
 
-    const unread = await db.get(
-      "SELECT COUNT(*) as c FROM news WHERE kingdom_id = ? AND is_read = 0",
-      [kingdom.id],
-    );
-    socket.emit("unread_news", { count: unread.c });
-    console.log(`[socket] ${username} (${kingdom.name}) connected`);
+      if (player.chat_banned)
+        socket.emit("chat:banned", { reason: "You are banned from chat." });
+
+      const isMod = !!(player.is_chat_mod || player.is_admin);
+      onlinePlayers.set(playerId, {
+        socketId: socket.id,
+        username: player.username,
+        chatName: player.chat_name || player.username,
+        race: kingdom.race,
+        isMod,
+        isAdmin: !!player.is_admin,
+        kingdomName: kingdom.name,
+        chatColor: player.chat_color,
+      });
+
+      socket.join(`player:${playerId}`);
+      socket.join(`kingdom:${kingdom.id}`);
+      socket.join("global");
+      broadcastOnlineList(io);
+
+      const membership = await db.get(
+        "SELECT alliance_id FROM alliance_members WHERE kingdom_id = ?",
+        [kingdom.id],
+      );
+      if (membership) socket.join(`alliance:${membership.alliance_id}`);
+
+      const notifyUnread = async (kid) => {
+        const unreadRow = await db.get(
+          "SELECT COUNT(*) as c FROM news WHERE kingdom_id = ? AND is_read = 0",
+          [kid],
+        );
+        io.to(`kingdom:${kid}`).emit("unread_news", { count: unreadRow.c });
+      };
+
+      const unread = await db.get(
+        "SELECT COUNT(*) as c FROM news WHERE kingdom_id = ? AND is_read = 0",
+        [kingdom.id],
+      );
+      socket.emit("unread_news", { count: unread.c });
+      console.log(`[socket] ${username} (${kingdom.name}) connected`);
 
     // ── ATTACK ───────────────────────────────────────────────────────────────
     socket.on("action:attack", async (data, ack) => {
@@ -567,6 +561,17 @@ module.exports = function (io, db) {
       });
       ack?.({ ok: true });
     });
+
+      socket.on("disconnect", () => {
+        onlinePlayers.delete(playerId);
+        broadcastOnlineList(io);
+        console.log(`[socket] ${username} disconnected`);
+      });
+    } catch (err) {
+      console.error(`[socket] Connection handler error for ${socket.id}:`, err.message);
+      socket.emit("error", { message: "Server error during connection setup" });
+      socket.disconnect();
+    }
   });
 
   // REST endpoint helper
