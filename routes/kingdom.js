@@ -834,6 +834,7 @@ module.exports = function (db) {
       queue: JSON.parse(result.updates.build_queue),
       gold: result.updates.gold,
       totalCost: result.totalCost,
+      engineers: k.engineers,
     });
   });
 
