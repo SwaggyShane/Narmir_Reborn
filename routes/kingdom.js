@@ -104,6 +104,23 @@ function parseKingdomFields(k, fieldList) {
   return k;
 }
 
+// ── Helper: Safe numeric conversion with NaN detection ────────────────────────
+function safeParseInt(value, defaultVal = 0) {
+  const parsed = parseInt(value);
+  if (isNaN(parsed)) {
+    return defaultVal;
+  }
+  return parsed;
+}
+
+function safeParseFloat(value, defaultVal = 0) {
+  const parsed = parseFloat(value);
+  if (isNaN(parsed) || !isFinite(parsed)) {
+    return defaultVal;
+  }
+  return parsed;
+}
+
 // ── Helper: Common validation pattern for allocations ────────────────────────
 // Replaces repeated allocation validation (was 4+ instances)
 // Security: Whitelist valid fields and validate non-negative values
@@ -5128,6 +5145,23 @@ module.exports = function (db) {
 const { applyKingdomUpdates } = require("../db/schema");
 
 async function applyUpdates(db, kingdomId, updates) {
+  // Validate numeric fields don't contain NaN (corrupted data protection)
+  const numericFields = new Set([
+    'gold', 'mana', 'food', 'wood', 'stone', 'iron', 'coal', 'steel',
+    'population', 'land', 'fighters', 'rangers', 'mages', 'clerics', 'engineers',
+    'hammers_stored', 'scaffolding_stored', 'turns_stored', 'turn',
+    'res_spellbook', 'school_spellbook', 'morale',
+  ]);
+
+  for (const [key, value] of Object.entries(updates)) {
+    if (numericFields.has(key)) {
+      if (typeof value === 'number' && (isNaN(value) || !isFinite(value))) {
+        console.error(`[applyUpdates] NaN/Infinity detected in numeric field: ${key} = ${value}`);
+        throw new Error(`Corrupted numeric data: ${key} contains NaN or Infinity`);
+      }
+    }
+  }
+
   // Stringify JSON fields that are kept as objects during processTurn
   const updatesForDb = { ...updates };
   if (updatesForDb.troop_levels && typeof updatesForDb.troop_levels === 'object') {
