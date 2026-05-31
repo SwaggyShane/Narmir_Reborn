@@ -268,10 +268,36 @@ module.exports = function (db) {
     const { allocation } = req.body;
     if (!allocation || typeof allocation !== "object")
       return res.status(400).json({ error: "allocation object required" });
+
+    // Validate allocation keys (whitelist valid research types)
+    const validKeys = new Set(['spellbook', 'school_spellbook']);
+    let totalAllocated = 0;
+
+    for (const [key, value] of Object.entries(allocation)) {
+      // Whitelist validation: reject unknown keys
+      if (!validKeys.has(key)) {
+        return res.status(400).json({ error: `Invalid allocation key: ${key}` });
+      }
+
+      // Type and range validation: ensure non-negative integers
+      const numVal = Number(value);
+      if (!Number.isInteger(numVal) || numVal < 0) {
+        return res.status(400).json({ error: `Allocation values must be non-negative integers (got ${value})` });
+      }
+
+      totalAllocated += numVal;
+    }
+
+    // Sanity check: prevent unreasonable allocations (max 10k researchers)
+    if (totalAllocated > 10000) {
+      return res.status(400).json({ error: "Allocation exceeds maximum of 10000" });
+    }
+
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
+
     await db.run("UPDATE kingdoms SET research_allocation = ? WHERE id = ?", [
       JSON.stringify(allocation),
       k.id,
@@ -881,6 +907,10 @@ module.exports = function (db) {
     const { allocation } = req.body;
     if (!allocation || typeof allocation !== "object")
       return res.status(400).json({ error: "allocation required" });
+
+    // Whitelist valid unit types to prevent injection of arbitrary keys
+    const validUnits = new Set(['fighters', 'rangers', 'mages', 'clerics', 'thieves', 'ninjas']);
+
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
     ]);
@@ -890,7 +920,18 @@ module.exports = function (db) {
     const capacity = k.bld_training * 100;
     const clean_alloc = {};
     for (const [unit, amount] of Object.entries(allocation)) {
-      const amt = Math.max(0, parseInt(amount) || 0);
+      // Whitelist validation: reject unknown unit types
+      if (!validUnits.has(unit)) {
+        return res.status(400).json({ error: `Invalid unit type: ${unit}` });
+      }
+
+      // Type validation: ensure non-negative integers
+      const numVal = Number(amount);
+      if (!Number.isInteger(numVal) || numVal < 0) {
+        return res.status(400).json({ error: `Unit allocations must be non-negative integers (${unit}: ${amount})` });
+      }
+
+      const amt = numVal;
       if (amt > (k[unit] || 0))
         return res.status(400).json({ error: `Not enough ${unit}` });
       total += amt;
