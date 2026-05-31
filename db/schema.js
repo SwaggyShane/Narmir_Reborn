@@ -295,6 +295,20 @@ class PgDbAdapter {
     }
   }
 
+  cleanupTransaction() {
+    const store = transactionStorage.getStore();
+    if (store && !store.released) {
+      try {
+        console.warn('[db] Cleaning up orphaned transaction — releasing connection');
+        store.released = true;
+        store.client.release();
+        transactionStorage.enterWith(null);
+      } catch (err) {
+        console.error('[db] Error releasing orphaned transaction:', err.message);
+      }
+    }
+  }
+
   async exec(sql) {
     const statements = sql
       .split(';')

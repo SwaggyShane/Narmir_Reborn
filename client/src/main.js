@@ -191,6 +191,52 @@ window.studyMagic = async () => {
   }
 };
 
+window.takeTurn = async () => {
+  try {
+    const getCsrfToken = () => {
+      try {
+        const m = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
+        if (m) return decodeURIComponent(m[1]);
+      } catch (e) {}
+      return null;
+    };
+
+    const headers = { "Content-Type": "application/json" };
+    const csrfToken = getCsrfToken();
+    if (csrfToken) headers["x-csrf-token"] = csrfToken;
+
+    const response = await fetch("/api/kingdom/turn", {
+      method: "POST",
+      headers,
+    });
+
+    const data = await response.json();
+    if (data.error) {
+      if (data.error.includes("No turns available")) {
+        window.showToast?.("No turns available — next +7 turns in 25 minutes", "warning");
+      } else {
+        window.showToast?.("Turn processing failed — please try again", "error");
+      }
+      console.error("[turn] error:", data.error);
+    } else if (data.ok) {
+      console.log("[turn] processed successfully");
+      if (data.updates) {
+        Object.assign(window.gameState, data.updates);
+        if (window.syncFromState) window.syncFromState();
+        if (window.triggerReactUpdates) window.triggerReactUpdates();
+      }
+      if (data.events) {
+        const gameEvent = data.events.find(e => e.type !== "system");
+        if (gameEvent) window.showToast?.(gameEvent.message, "info");
+      }
+      window.showToast?.(`Turn ${data.updates?.turn || '?'} processed`, "success");
+    }
+  } catch (error) {
+    console.error("[turn] Error taking turn:", error);
+    window.showToast?.("Failed to take turn: " + error.message, "error");
+  }
+};
+
 // Wait for DOM to be ready
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", mountReactApps);
