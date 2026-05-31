@@ -648,7 +648,13 @@ module.exports = function (db) {
       }
     } catch (err) {
       console.error("[runTurn] expedition resolve error:", err.message);
-      throw err; // Rethrow to trigger transaction rollback - don't silently fail expeditions
+      // Only throw if in an active transaction (safe to rollback)
+      // Endpoints like /search call runTurn without transaction context
+      const store = db.transactionStorage?.getStore?.();
+      if (store && !store.released) {
+        throw err; // Rethrow to trigger transaction rollback
+      }
+      // If no transaction: log but don't throw (prevent lost turns)
     }
 
     const allEvents = [...events, ...expeditionEvents];
@@ -667,7 +673,13 @@ module.exports = function (db) {
       }
     } catch (err) {
       console.error('[runTurn] resource expedition resolve error:', err.message);
-      throw err; // Rethrow to trigger transaction rollback - don't silently fail expeditions
+      // Only throw if in an active transaction (safe to rollback)
+      // Endpoints like /search call runTurn without transaction context
+      const store = db.transactionStorage?.getStore?.();
+      if (store && !store.released) {
+        throw err; // Rethrow to trigger transaction rollback
+      }
+      // If no transaction: log but don't throw (prevent lost turns)
     }
 
     // Refresh fields that resolveExpeditions may have updated via SQL
