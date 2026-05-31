@@ -2538,11 +2538,18 @@ function processTurn(k) {
 
   // ── 9. Training fields — passive troop XP each turn ──────────────────────────
   if (k.bld_training > 0) {
-    const troopLevels = safeJsonParse(
+    let troopLevels = safeJsonParse(
       updates.troop_levels || k.troop_levels,
       {},
       "processTurn:troop_levels",
     );
+    // Defensive: handle arbitrary levels of nested stringification
+    while (typeof troopLevels === "string") {
+      troopLevels = safeJsonParse(troopLevels, {}, "processTurn:troop_levels_nested_parse");
+    }
+    if (!troopLevels || typeof troopLevels !== "object") {
+      troopLevels = {};
+    }
     const allocation = safeJsonParse(
       k.training_allocation,
       {},
