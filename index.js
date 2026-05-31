@@ -1690,7 +1690,8 @@ async function start() {
 
   process.on('uncaughtException', (error) => {
     console.error('[CRITICAL] Uncaught Exception:', error);
-    // Allow process to potentially recover, but log the error
+    // Cannot safely recover - application is in undefined state. Exit for process manager to restart.
+    process.exit(1);
   });
 
   server.listen(PORT, HOST, () => {
