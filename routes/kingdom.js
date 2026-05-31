@@ -5128,8 +5128,13 @@ module.exports = function (db) {
 const { applyKingdomUpdates } = require("../db/schema");
 
 async function applyUpdates(db, kingdomId, updates) {
+  // Stringify JSON fields that are kept as objects during processTurn
+  const updatesForDb = { ...updates };
+  if (updatesForDb.troop_levels && typeof updatesForDb.troop_levels === 'object') {
+    updatesForDb.troop_levels = JSON.stringify(updatesForDb.troop_levels);
+  }
   // We pass db parameter as usual, but applyKingdomUpdates just works directly against the global db object via schema
-  await applyKingdomUpdates(kingdomId, updates);
+  await applyKingdomUpdates(kingdomId, updatesForDb);
 }
 
 // Insert multiple news rows in a single query — much faster than N sequential inserts

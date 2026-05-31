@@ -2610,7 +2610,8 @@ function processTurn(k) {
       }
     });
 
-    updates.troop_levels = JSON.stringify(troopLevels);
+    // Keep as object, not stringified — stringify only at save time
+    updates.troop_levels = troopLevels;
     if (advancedTroops.length > 0) {
       events.push({
         type: "system",
