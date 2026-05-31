@@ -4830,13 +4830,17 @@ module.exports = function (db) {
     const kUpdates = {};
 
     for (const exp of exps) {
-      if (exp.status === 'outbound' && now >= exp.arrive_at) {
+      const arriveAt = Number(exp.arrive_at) || 0;
+      const harvestEndsAt = Number(exp.harvest_ends_at) || 0;
+      const returnAt = Number(exp.return_at) || 0;
+
+      if (exp.status === 'outbound' && now >= arriveAt) {
         const harvestDuration = HARVEST_DURATION_BY_RICHNESS[exp.richness] || 3600;
         await db.run(
           "UPDATE resource_expeditions SET status = 'harvesting', harvest_ends_at = ? WHERE id = ?",
           [now + harvestDuration, exp.id]
         );
-      } else if (exp.status === 'harvesting' && exp.harvest_ends_at && now >= exp.harvest_ends_at) {
+      } else if (exp.status === 'harvesting' && harvestEndsAt && now >= harvestEndsAt) {
         // Compute loot
         const baseLoot = exp.richness * 50 * (exp.population_sent / 100);
         const loot = { [exp.node_type]: Math.floor(baseLoot) };
@@ -4880,7 +4884,7 @@ module.exports = function (db) {
           "UPDATE resource_expeditions SET status = 'returning', loot = ?, return_at = ? WHERE id = ?",
           [JSON.stringify(loot), return_at, exp.id]
         );
-      } else if (exp.status === 'returning' && exp.return_at && now >= exp.return_at) {
+      } else if (exp.status === 'returning' && returnAt && now >= returnAt) {
         const loot = safeJsonParse(exp.loot, {}, 'expedition:loot');
         // Apply loot to kingdom
         for (const [res, qty] of Object.entries(loot)) {
