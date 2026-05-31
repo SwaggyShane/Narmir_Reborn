@@ -1696,12 +1696,24 @@ function displayMorale(k) {
 
 function processTurn(k) {
   clearParseCache();
+
+  // Defensive: heal k.troop_levels from any nested stringification at the start of the turn
+  // This ensures ALL subsequent code (combat, training, racial bonuses, etc.) receives clean data
+  let cleanTroopLevels = safeJsonParse(k.troop_levels, {}, "processTurn:init_troop_levels");
+  while (typeof cleanTroopLevels === "string") {
+    cleanTroopLevels = safeJsonParse(cleanTroopLevels, {}, "processTurn:init_troop_levels_nested");
+  }
+  // Validate that cleanTroopLevels is a non-null, non-array object before stringifying
+  if (cleanTroopLevels && typeof cleanTroopLevels === "object" && !Array.isArray(cleanTroopLevels)) {
+    k.troop_levels = JSON.stringify(cleanTroopLevels);
+  }
+
   const events = [];
   const updates = {
     turn: k.turn + 1,
     updated_at: Math.floor(Date.now() / 1000),
   };
-  
+
   progressGoal(k, updates, 'turn_taken', 1);
 
   // Initialize XP source tracking at the very beginning
