@@ -537,11 +537,21 @@ module.exports = function (db) {
     // Apply kingdom updates in a transaction
     // Dedup news — only insert if we haven't already sent this EXACT message recently
     const filteredEvents = [];
-    for (const ev of events) {
-      const existing = await db.get(
-        "SELECT id FROM news WHERE kingdom_id = ? AND message = ? AND created_at > (unixepoch() - 60) LIMIT 1",
-        [k.id, ev.message],
+    // Batch check for duplicate news instead of N+1 queries
+    const existingMessages = {};
+    if (events.length > 0) {
+      const placeholders = events.map(() => '?').join(',');
+      const existingNews = await db.all(
+        `SELECT DISTINCT message FROM news WHERE kingdom_id = ? AND message IN (${placeholders}) AND created_at > (unixepoch() - 60)`,
+        [k.id, ...events.map(e => e.message)]
       );
+      existingNews.forEach(row => {
+        existingMessages[row.message] = true;
+      });
+    }
+
+    for (const ev of events) {
+      const existing = existingMessages[ev.message];
       if (
         existing &&
         !ev.message.includes("Troop upkeep") &&
