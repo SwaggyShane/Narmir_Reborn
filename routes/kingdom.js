@@ -104,6 +104,32 @@ function parseKingdomFields(k, fieldList) {
   return k;
 }
 
+// ── Helper: Safe numeric conversion with NaN detection ────────────────────────
+function safeParseInt(value, defaultVal = 0) {
+  // If already a number, validate and truncate directly (avoids string conversion overhead and scientific notation bugs)
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? Math.trunc(value) : defaultVal;
+  }
+  // Parse strings using radix 10 to avoid parsing ambiguity
+  const parsed = parseInt(value, 10);
+  if (isNaN(parsed)) {
+    return defaultVal;
+  }
+  return parsed;
+}
+
+function safeParseFloat(value, defaultVal = 0) {
+  // If already a number, validate directly (avoids string conversion overhead)
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : defaultVal;
+  }
+  const parsed = parseFloat(value);
+  if (isNaN(parsed) || !isFinite(parsed)) {
+    return defaultVal;
+  }
+  return parsed;
+}
+
 // ── Helper: Common validation pattern for allocations ────────────────────────
 // Replaces repeated allocation validation (was 4+ instances)
 // Security: Whitelist valid fields and validate non-negative values
@@ -5218,6 +5244,16 @@ module.exports = function (db) {
 const { applyKingdomUpdates } = require("../db/schema");
 
 async function applyUpdates(db, kingdomId, updates) {
+  // Validate no numeric values are NaN/Infinity (corrupted data protection)
+  // Dynamically check all values instead of maintaining a hardcoded field list
+  // This ensures future fields (new troop types, resources, etc.) are automatically protected
+  for (const [key, value] of Object.entries(updates)) {
+    if (typeof value === 'number' && (isNaN(value) || !isFinite(value))) {
+      console.error(`[applyUpdates] NaN/Infinity detected in field: ${key} = ${value}`);
+      throw new Error(`Corrupted numeric data: ${key} contains NaN or Infinity`);
+    }
+  }
+
   // Stringify JSON fields that are kept as objects during processTurn
   const updatesForDb = { ...updates };
   if (updatesForDb.troop_levels && typeof updatesForDb.troop_levels === 'object') {
