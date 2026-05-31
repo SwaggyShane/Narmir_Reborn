@@ -761,55 +761,75 @@ module.exports = function (db) {
   // ── Research ──────────────────────────────────────────────────────────────────
   router.post("/research", requireAuth, requireCsrfToken, async (req, res) => {
     const { discipline, researchers } = req.body;
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
-      req.player.playerId,
-    ]);
-    if (!k) return res.status(404).json({ error: "Kingdom not found" });
-    if (k.turns_stored < 1)
-      return res.status(429).json({ error: "No turns available" });
+    try {
+      // Wrap in transaction with row-level lock to prevent concurrent conflicts
+      await db.run("BEGIN TRANSACTION");
+      const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE", [
+        req.player.playerId,
+      ]);
+      if (!k) {
+        await db.run("ROLLBACK");
+        return res.status(404).json({ error: "Kingdom not found" });
+      }
+      if (k.turns_stored < 1) {
+        await db.run("ROLLBACK");
+        return res.status(429).json({ error: "No turns available" });
+      }
 
-    // Run full turn first
-    await loadTradeRoutes(k);
-    const { updates: turnUpdates, events } = engine.processTurn(k);
-    turnUpdates.turns_stored = k.turns_stored - 1;
+      // Run full turn first
+      await loadTradeRoutes(k);
+      const { updates: turnUpdates, events } = engine.processTurn(k);
+      turnUpdates.turns_stored = k.turns_stored - 1;
 
-    // Apply research on top of turn state
-    const kAfterTurn = { ...k, ...turnUpdates };
-    const resResult = engine.studyDiscipline(
-      kAfterTurn,
-      discipline,
-      Number(researchers),
-    );
-    if (resResult.error)
-      return res.status(400).json({ error: resResult.error });
+      // Apply research on top of turn state
+      const kAfterTurn = { ...k, ...turnUpdates };
+      const resResult = engine.studyDiscipline(
+        kAfterTurn,
+        discipline,
+        Number(researchers),
+      );
+      if (resResult.error) {
+        await db.run("ROLLBACK");
+        return res.status(400).json({ error: resResult.error });
+      }
 
-    const finalUpdates = { ...turnUpdates, ...resResult.updates };
-    await applyUpdates(db, k.id, finalUpdates);
+      const finalUpdates = { ...turnUpdates, ...resResult.updates };
+      await applyUpdates(db, k.id, finalUpdates);
+      await db.run("COMMIT");
 
-    const resCol = Object.keys(resResult.updates).find((k) =>
-      k.startsWith("res_"),
-    );
-    const newVal = resCol ? finalUpdates[resCol] : "?";
-    events.push({
-      type: "system",
-      message: `📚 Studied ${discipline} with ${Number(researchers).toLocaleString()} researchers · +${resResult.increment} → now ${newVal}${discipline !== "spellbook" ? "%" : ""}.`,
-    });
-    await bulkInsertNews(
-      db,
-      events.map((ev) => ({
-        kingdom_id: k.id,
-        type: ev.type || "system",
-        message: ev.message,
-        turn_num: turnUpdates.turn || k.turn,
-      })),
-    );
-    res.json({
-      ok: true,
-      increment: resResult.increment,
-      updates: finalUpdates,
-      events,
-      turns_stored: finalUpdates.turns_stored,
-    });
+      const resCol = Object.keys(resResult.updates).find((k) =>
+        k.startsWith("res_"),
+      );
+      const newVal = resCol ? finalUpdates[resCol] : "?";
+      events.push({
+        type: "system",
+        message: `📚 Studied ${discipline} with ${Number(researchers).toLocaleString()} researchers · +${resResult.increment} → now ${newVal}${discipline !== "spellbook" ? "%" : ""}.`,
+      });
+      await bulkInsertNews(
+        db,
+        events.map((ev) => ({
+          kingdom_id: k.id,
+          type: ev.type || "system",
+          message: ev.message,
+          turn_num: turnUpdates.turn || k.turn,
+        })),
+      );
+      res.json({
+        ok: true,
+        increment: resResult.increment,
+        updates: finalUpdates,
+        events,
+        turns_stored: finalUpdates.turns_stored,
+      });
+    } catch (err) {
+      console.error("[research] error:", err.message);
+      try {
+        await db.run("ROLLBACK");
+      } catch (rollbackErr) {
+        console.error("[research] rollback error:", rollbackErr.message);
+      }
+      res.status(500).json({ error: "Research processing failed — please try again" });
+    }
   });
 
   // ── Queue buildings — charges gold, no turn cost ──────────────────────────────
