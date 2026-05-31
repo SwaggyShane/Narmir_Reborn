@@ -46,6 +46,13 @@ module.exports = function (io, db) {
       chatColor: player.chat_color,
     });
 
+    // Register disconnect listener immediately to prevent memory leak if later operations fail
+    socket.on("disconnect", () => {
+      onlinePlayers.delete(playerId);
+      broadcastOnlineList(io);
+      console.log(`[socket] ${username} disconnected`);
+    });
+
     socket.join(`player:${playerId}`);
     socket.join(`kingdom:${kingdom.id}`);
     socket.join("global");
@@ -559,12 +566,6 @@ module.exports = function (io, db) {
         ts: Date.now(),
       });
       ack?.({ ok: true });
-    });
-
-    socket.on("disconnect", () => {
-      onlinePlayers.delete(playerId);
-      broadcastOnlineList(io);
-      console.log(`[socket] ${username} disconnected`);
     });
   });
 
