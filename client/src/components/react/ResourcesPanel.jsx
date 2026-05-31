@@ -375,6 +375,7 @@ const ResourcesPanel = () => {
       if (s) {
         const curQ = getParsedStateProp('build_queue');
         s.build_queue = { ...curQ, [bld.key]: (curQ[bld.key] || 0) + 1 };
+        if (d1.engineers !== undefined) s.engineers = d1.engineers;
       }
 
       const newAlloc = { ...getParsedStateProp('resource_build_allocation'), [bld.key]: engineers };
