@@ -35,6 +35,17 @@ module.exports = function (io, db) {
       socket.emit("chat:banned", { reason: "You are banned from chat." });
 
     const isMod = !!(player.is_chat_mod || player.is_admin);
+
+    // Prevent stale connection state: disconnect previous socket if player reconnects
+    const existingEntry = onlinePlayers.get(playerId);
+    if (existingEntry && existingEntry.socketId !== socket.id) {
+      const oldSocket = io.sockets.sockets.get(existingEntry.socketId);
+      if (oldSocket) {
+        oldSocket.disconnect(true);
+        console.log(`[socket] Disconnected stale socket for ${username} (${existingEntry.socketId})`);
+      }
+    }
+
     onlinePlayers.set(playerId, {
       socketId: socket.id,
       username: player.username,
@@ -48,7 +59,10 @@ module.exports = function (io, db) {
 
     // Register disconnect listener immediately to prevent memory leak if later operations fail
     socket.on("disconnect", () => {
-      onlinePlayers.delete(playerId);
+      // Only delete if this is still the current socket for this player (prevent delete after reconnect)
+      if (onlinePlayers.get(playerId)?.socketId === socket.id) {
+        onlinePlayers.delete(playerId);
+      }
       broadcastOnlineList(io);
       console.log(`[socket] ${username} disconnected`);
     });
