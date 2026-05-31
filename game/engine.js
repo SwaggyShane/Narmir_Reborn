@@ -1198,7 +1198,7 @@ function processFoodEconomy(k, events) {
     // Prompt says "Their consumption is still as it was previously, just with a portion of the population."
     const troops = totalHiredUnits(k) - (updates.thralls ?? k.thralls ?? 0);
     const pop = Math.floor(k.population / 100);
-    const vampireConsumption = FOOD_CONSUMPTION_MULT['vampire'] || 0.35;
+    const vampireConsumption = 0.285; // Sustainable ~2.85% population consumption per turn
     const hunger = Math.floor((troops + pop) * vampireConsumption);
 
     let totalConsumed = 0;
