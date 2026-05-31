@@ -7499,7 +7499,7 @@ function processActiveEffects(k, events) {
 }
 
 async function resolveRegions(db, io) {
-  const regions = await db.all("SELECT * FROM regions");
+  const regions = await db.all("SELECT name, owner_alliance_id, contest_alliance_id, contest_progress FROM regions");
   for (const region of regions) {
     // Calculate current influence in this region
     // Influence = Sum of Land for each alliance
