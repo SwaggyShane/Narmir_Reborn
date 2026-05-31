@@ -795,7 +795,6 @@ module.exports = function (db) {
 
       const finalUpdates = { ...turnUpdates, ...resResult.updates };
       await applyUpdates(db, k.id, finalUpdates);
-      await db.run("COMMIT");
 
       const resCol = Object.keys(resResult.updates).find((k) =>
         k.startsWith("res_"),
@@ -814,6 +813,8 @@ module.exports = function (db) {
           turn_num: turnUpdates.turn || k.turn,
         })),
       );
+      await db.run("COMMIT");
+
       res.json({
         ok: true,
         increment: resResult.increment,
