@@ -1837,7 +1837,15 @@ function processTurn(k) {
   }
 
   // ── 5b. Building completion ───────────────────────────────────────────────────
-  const buildQueue = safeJsonParse(k.build_queue || "{}", {}, "processTurn:build_queue");
+  let buildQueue = safeJsonParse(k.build_queue || "{}", {}, "processTurn:build_queue");
+  // Defensive: handle arbitrary levels of nested stringification
+  while (typeof buildQueue === "string") {
+    buildQueue = safeJsonParse(buildQueue, {}, "processTurn:build_queue_nested_parse");
+  }
+  // Fallback: ensure buildQueue is always a non-null object
+  if (!buildQueue || typeof buildQueue !== "object") {
+    buildQueue = {};
+  }
   let buildQueueChanged = false;
   const completedBuildings = [];
 
