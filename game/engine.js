@@ -1703,7 +1703,10 @@ function processTurn(k) {
   while (typeof cleanTroopLevels === "string") {
     cleanTroopLevels = safeJsonParse(cleanTroopLevels, {}, "processTurn:init_troop_levels_nested");
   }
-  k.troop_levels = typeof cleanTroopLevels === "object" ? JSON.stringify(cleanTroopLevels) : k.troop_levels;
+  // Validate that cleanTroopLevels is a non-null, non-array object before stringifying
+  if (cleanTroopLevels && typeof cleanTroopLevels === "object" && !Array.isArray(cleanTroopLevels)) {
+    k.troop_levels = JSON.stringify(cleanTroopLevels);
+  }
 
   const events = [];
   const updates = {
