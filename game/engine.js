@@ -6417,7 +6417,17 @@ async function resolveExpeditions(db, k, engine) {
         `[expedition] COMPLETING kingdom=${k.id} id=${exp.id} type=${exp.type}`,
       );
 
-      // Mark expedition complete and claim rewards atomically (prevents double-claiming)
+      // Lock and check expedition atomically to prevent double-claiming on concurrent servers
+      const lockExp = await db.get(
+        "SELECT rewards_claimed FROM expeditions WHERE id = ? LIMIT 1",
+        [exp.id],
+      );
+      if (lockExp && lockExp.rewards_claimed) {
+        console.log(`[expedition] Already claimed rewards for id=${exp.id}, skipping`);
+        continue;
+      }
+
+      // Mark expedition complete and claim rewards atomically
       const markResult = await db.run(
         "UPDATE expeditions SET turns_left = 0, rewards_claimed = 1 WHERE id = ? AND rewards_claimed = 0",
         [exp.id],
@@ -6431,6 +6441,16 @@ async function resolveExpeditions(db, k, engine) {
       console.log(
         `[expedition] RETRYING completion for kingdom=${k.id} id=${exp.id} type=${exp.type}`,
       );
+
+      // Lock and verify not already claimed
+      const lockExp = await db.get(
+        "SELECT rewards_claimed FROM expeditions WHERE id = ? LIMIT 1",
+        [exp.id],
+      );
+      if (lockExp && lockExp.rewards_claimed) {
+        console.log(`[expedition] Already claimed rewards for id=${exp.id}, skipping`);
+        continue;
+      }
 
       // Only process rewards if they haven't been claimed yet
       const claimResult = await db.run(
