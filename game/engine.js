@@ -2435,7 +2435,7 @@ function processTurn(k) {
         "researchers",
         totalRXp,
       );
-      updates.troop_levels = rXp.troop_levels;
+      updates.troop_levels = typeof rXp.troop_levels === "string" ? JSON.parse(rXp.troop_levels) : rXp.troop_levels;
       if (rXp.levelUps.length)
         events.push({
           type: "system",
@@ -2554,7 +2554,9 @@ function processTurn(k) {
   // ── 9. Training fields — passive troop XP each turn ──────────────────────────
   if (k.bld_training > 0) {
     // troop_levels is now kept as object throughout processTurn, not stringified until save
-    let troopLevels = updates.troop_levels || safeJsonParse(k.troop_levels, {}, "processTurn:troop_levels");
+    let troopLevels = typeof updates.troop_levels === "string"
+      ? safeJsonParse(updates.troop_levels, {}, "processTurn:troop_levels")
+      : (updates.troop_levels || safeJsonParse(k.troop_levels, {}, "processTurn:troop_levels"));
     if (!troopLevels || typeof troopLevels !== "object") {
       troopLevels = {};
     }
@@ -3919,7 +3921,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
       "engineers",
       totalCompleted * 10,
     );
-    updates.troop_levels = engXpRes.troop_levels;
+    updates.troop_levels = typeof engXpRes.troop_levels === "string" ? JSON.parse(engXpRes.troop_levels) : engXpRes.troop_levels;
 
     let finalMsg = "";
     if (completedItems.length > 0) {
