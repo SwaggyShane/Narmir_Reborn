@@ -62,8 +62,8 @@ module.exports = function (io, db) {
       // Only delete if this is still the current socket for this player (prevent delete after reconnect)
       if (onlinePlayers.get(playerId)?.socketId === socket.id) {
         onlinePlayers.delete(playerId);
+        broadcastOnlineList(io);
       }
-      broadcastOnlineList(io);
       console.log(`[socket] ${username} disconnected`);
     });
 
