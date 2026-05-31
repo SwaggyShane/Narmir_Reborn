@@ -648,6 +648,7 @@ module.exports = function (db) {
       }
     } catch (err) {
       console.error("[runTurn] expedition resolve error:", err.message);
+      throw err; // Rethrow to trigger transaction rollback - don't silently fail expeditions
     }
 
     const allEvents = [...events, ...expeditionEvents];
@@ -666,6 +667,7 @@ module.exports = function (db) {
       }
     } catch (err) {
       console.error('[runTurn] resource expedition resolve error:', err.message);
+      throw err; // Rethrow to trigger transaction rollback - don't silently fail expeditions
     }
 
     // Refresh fields that resolveExpeditions may have updated via SQL
