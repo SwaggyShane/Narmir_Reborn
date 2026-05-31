@@ -881,7 +881,7 @@ module.exports = function (db) {
       return res.status(400).json({ error: "allocation required" });
 
     // Whitelist valid unit types to prevent injection of arbitrary keys
-    const validUnits = new Set(['fighters', 'rangers', 'mages', 'clerics', 'engineers']);
+    const validUnits = new Set(['fighters', 'rangers', 'mages', 'clerics', 'thieves', 'ninjas']);
 
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
