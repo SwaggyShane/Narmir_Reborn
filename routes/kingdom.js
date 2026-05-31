@@ -106,7 +106,12 @@ function parseKingdomFields(k, fieldList) {
 
 // ── Helper: Safe numeric conversion with NaN detection ────────────────────────
 function safeParseInt(value, defaultVal = 0) {
-  const parsed = parseInt(value);
+  // If already a number, validate and truncate directly (avoids string conversion overhead and scientific notation bugs)
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? Math.trunc(value) : defaultVal;
+  }
+  // Parse strings using radix 10 to avoid parsing ambiguity
+  const parsed = parseInt(value, 10);
   if (isNaN(parsed)) {
     return defaultVal;
   }
@@ -114,6 +119,10 @@ function safeParseInt(value, defaultVal = 0) {
 }
 
 function safeParseFloat(value, defaultVal = 0) {
+  // If already a number, validate directly (avoids string conversion overhead)
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : defaultVal;
+  }
   const parsed = parseFloat(value);
   if (isNaN(parsed) || !isFinite(parsed)) {
     return defaultVal;
@@ -5145,20 +5154,13 @@ module.exports = function (db) {
 const { applyKingdomUpdates } = require("../db/schema");
 
 async function applyUpdates(db, kingdomId, updates) {
-  // Validate numeric fields don't contain NaN (corrupted data protection)
-  const numericFields = new Set([
-    'gold', 'mana', 'food', 'wood', 'stone', 'iron', 'coal', 'steel',
-    'population', 'land', 'fighters', 'rangers', 'mages', 'clerics', 'engineers',
-    'hammers_stored', 'scaffolding_stored', 'turns_stored', 'turn',
-    'res_spellbook', 'school_spellbook', 'morale',
-  ]);
-
+  // Validate no numeric values are NaN/Infinity (corrupted data protection)
+  // Dynamically check all values instead of maintaining a hardcoded field list
+  // This ensures future fields (new troop types, resources, etc.) are automatically protected
   for (const [key, value] of Object.entries(updates)) {
-    if (numericFields.has(key)) {
-      if (typeof value === 'number' && (isNaN(value) || !isFinite(value))) {
-        console.error(`[applyUpdates] NaN/Infinity detected in numeric field: ${key} = ${value}`);
-        throw new Error(`Corrupted numeric data: ${key} contains NaN or Infinity`);
-      }
+    if (typeof value === 'number' && (isNaN(value) || !isFinite(value))) {
+      console.error(`[applyUpdates] NaN/Infinity detected in field: ${key} = ${value}`);
+      throw new Error(`Corrupted numeric data: ${key} contains NaN or Infinity`);
     }
   }
 
