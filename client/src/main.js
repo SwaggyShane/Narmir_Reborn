@@ -225,13 +225,17 @@ window.takeTurn = async () => {
         if (window.syncFromState) window.syncFromState();
         if (window.triggerReactUpdates) window.triggerReactUpdates();
 
-        // Refresh display elements
-        if (window.updateTurnsDisplay) window.updateTurnsDisplay();
-        if (window.updateBuildDisplay) window.updateBuildDisplay();
-        if (window.updateTrainingDisplay) window.updateTrainingDisplay();
-        if (window.updateXpDisplay) window.updateXpDisplay();
-        if (window.updateTroopLevelDisplay) window.updateTroopLevelDisplay();
-        if (window.refreshResourcesPanel) window.refreshResourcesPanel();
+        // Refresh display elements safely
+        try {
+          if (window.updateTurnsDisplay) window.updateTurnsDisplay();
+          if (window.updateBuildDisplay) window.updateBuildDisplay();
+          if (window.updateTrainingDisplay) window.updateTrainingDisplay();
+          if (window.updateXpDisplay) window.updateXpDisplay();
+          if (window.updateTroopLevelDisplay) window.updateTroopLevelDisplay();
+          if (window.refreshResourcesPanel) window.refreshResourcesPanel();
+        } catch (e) {
+          console.error("[turn] Error refreshing display elements:", e);
+        }
       }
       if (data.events) {
         const gameEvent = data.events.find(e => e.type !== "system");
