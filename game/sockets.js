@@ -619,12 +619,6 @@ module.exports = function (io, db) {
       });
       ack?.({ ok: true });
     });
-
-      socket.on("disconnect", () => {
-        onlinePlayers.delete(playerId);
-        broadcastOnlineList(io);
-        console.log(`[socket] ${username} disconnected`);
-      });
     } catch (err) {
       console.error(`[socket] Connection handler error for ${socket.id}:`, err.message);
       socket.emit("error", { message: "Server error during connection setup" });
