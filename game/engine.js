@@ -6417,7 +6417,7 @@ async function resolveExpeditions(db, k, engine) {
         `[expedition] COMPLETING kingdom=${k.id} id=${exp.id} type=${exp.type}`,
       );
 
-      // Mark expedition complete and claim rewards atomically (prevents double-claiming)
+      // Mark expedition complete and claim rewards atomically (WHERE clause prevents double-claiming)
       const markResult = await db.run(
         "UPDATE expeditions SET turns_left = 0, rewards_claimed = 1 WHERE id = ? AND rewards_claimed = 0",
         [exp.id],
@@ -6432,7 +6432,7 @@ async function resolveExpeditions(db, k, engine) {
         `[expedition] RETRYING completion for kingdom=${k.id} id=${exp.id} type=${exp.type}`,
       );
 
-      // Only process rewards if they haven't been claimed yet
+      // Claim rewards atomically if not already claimed (WHERE clause prevents double-claiming)
       const claimResult = await db.run(
         "UPDATE expeditions SET rewards_claimed = 1 WHERE id = ? AND rewards_claimed = 0",
         [exp.id],
