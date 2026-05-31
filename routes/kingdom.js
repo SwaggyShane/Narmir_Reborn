@@ -268,36 +268,10 @@ module.exports = function (db) {
     const { allocation } = req.body;
     if (!allocation || typeof allocation !== "object")
       return res.status(400).json({ error: "allocation object required" });
-
-    // Validate allocation keys (whitelist valid research types)
-    const validKeys = new Set(['spellbook', 'school_spellbook']);
-    let totalAllocated = 0;
-
-    for (const [key, value] of Object.entries(allocation)) {
-      // Whitelist validation: reject unknown keys
-      if (!validKeys.has(key)) {
-        return res.status(400).json({ error: `Invalid allocation key: ${key}` });
-      }
-
-      // Type and range validation: ensure non-negative integers
-      const numVal = Number(value);
-      if (!Number.isInteger(numVal) || numVal < 0) {
-        return res.status(400).json({ error: `Allocation values must be non-negative integers (got ${value})` });
-      }
-
-      totalAllocated += numVal;
-    }
-
-    // Sanity check: prevent unreasonable allocations (max 10k researchers)
-    if (totalAllocated > 10000) {
-      return res.status(400).json({ error: "Allocation exceeds maximum of 10000" });
-    }
-
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
-
     await db.run("UPDATE kingdoms SET research_allocation = ? WHERE id = ?", [
       JSON.stringify(allocation),
       k.id,
@@ -563,31 +537,16 @@ module.exports = function (db) {
     // Apply kingdom updates in a transaction
     // Dedup news — only insert if we haven't already sent this EXACT message recently
     const filteredEvents = [];
-    // Batch check for duplicate news instead of N+1 queries
-    const existingMessages = {};
-    if (events.length > 0) {
-      // Deduplicate and filter for valid string messages to prevent TypeError and reduce DB load
-      const uniqueMessages = [...new Set(events.map(e => e && e.message).filter(msg => typeof msg === 'string'))];
-      if (uniqueMessages.length > 0) {
-        const placeholders = uniqueMessages.map(() => '?').join(',');
-        const existingNews = await db.all(
-          `SELECT DISTINCT message FROM news WHERE kingdom_id = ? AND message IN (${placeholders}) AND created_at > (unixepoch() - 60)`,
-          [k.id, ...uniqueMessages]
-        );
-        existingNews.forEach(row => {
-          existingMessages[row.message] = true;
-        });
-      }
-    }
-
     for (const ev of events) {
-      const existing = existingMessages[ev.message];
+      const existing = await db.get(
+        "SELECT id FROM news WHERE kingdom_id = ? AND message = ? AND created_at > (unixepoch() - 60) LIMIT 1",
+        [k.id, ev.message],
+      );
       if (
         existing &&
         !ev.message.includes("Troop upkeep") &&
         !ev.message.includes("🏗️") &&
-        !ev.message.includes("📚") &&
-        !ev.message.includes("✅")
+        !ev.message.includes("📚")
       )
         continue; // already sent — skip
       filteredEvents.push(ev);
@@ -689,13 +648,6 @@ module.exports = function (db) {
       }
     } catch (err) {
       console.error("[runTurn] expedition resolve error:", err.message);
-      // Only throw if in an active transaction (safe to rollback)
-      // Endpoints like /search call runTurn without transaction context
-      const store = db.transactionStorage?.getStore?.();
-      if (store && !store.released) {
-        throw err; // Rethrow to trigger transaction rollback
-      }
-      // If no transaction: log but don't throw (prevent lost turns)
     }
 
     const allEvents = [...events, ...expeditionEvents];
@@ -714,13 +666,6 @@ module.exports = function (db) {
       }
     } catch (err) {
       console.error('[runTurn] resource expedition resolve error:', err.message);
-      // Only throw if in an active transaction (safe to rollback)
-      // Endpoints like /search call runTurn without transaction context
-      const store = db.transactionStorage?.getStore?.();
-      if (store && !store.released) {
-        throw err; // Rethrow to trigger transaction rollback
-      }
-      // If no transaction: log but don't throw (prevent lost turns)
     }
 
     // Refresh fields that resolveExpeditions may have updated via SQL
@@ -816,6 +761,16 @@ module.exports = function (db) {
   // ── Research ──────────────────────────────────────────────────────────────────
   router.post("/research", requireAuth, requireCsrfToken, async (req, res) => {
     const { discipline, researchers } = req.body;
+
+    // Validate inputs upfront before transaction to avoid unnecessary row-level locks
+    if (!discipline || typeof discipline !== "string") {
+      return res.status(400).json({ error: "discipline required" });
+    }
+    const numResearchers = Number(researchers);
+    if (!Number.isInteger(numResearchers) || numResearchers < 0) {
+      return res.status(400).json({ error: "researchers must be non-negative integer" });
+    }
+
     try {
       // Wrap in transaction with row-level lock to prevent concurrent conflicts
       await db.run("BEGIN TRANSACTION");
@@ -841,7 +796,7 @@ module.exports = function (db) {
       const resResult = engine.studyDiscipline(
         kAfterTurn,
         discipline,
-        Number(researchers),
+        numResearchers,
       );
       if (resResult.error) {
         await db.run("ROLLBACK");
@@ -851,13 +806,16 @@ module.exports = function (db) {
       const finalUpdates = { ...turnUpdates, ...resResult.updates };
       await applyUpdates(db, k.id, finalUpdates);
 
+      // Handle both res_* and school_spellbook column names
       const resCol = Object.keys(resResult.updates).find((k) =>
-        k.startsWith("res_"),
+        k.startsWith("res_") || k === "school_spellbook",
       );
       const newVal = resCol ? finalUpdates[resCol] : "?";
+      // Add % suffix for spellbook types (both general and school-specific)
+      const percentSuffix = ["spellbook", "school_spellbook"].includes(discipline) ? "%" : "";
       events.push({
         type: "system",
-        message: `📚 Studied ${discipline} with ${Number(researchers).toLocaleString()} researchers · +${resResult.increment} → now ${newVal}${discipline !== "spellbook" ? "%" : ""}.`,
+        message: `📚 Studied ${discipline} with ${numResearchers.toLocaleString()} researchers · +${resResult.increment} → now ${newVal}${percentSuffix}.`,
       });
       await bulkInsertNews(
         db,
@@ -929,10 +887,6 @@ module.exports = function (db) {
     const { allocation } = req.body;
     if (!allocation || typeof allocation !== "object")
       return res.status(400).json({ error: "allocation required" });
-
-    // Whitelist valid unit types to prevent injection of arbitrary keys
-    const validUnits = new Set(['fighters', 'rangers', 'mages', 'clerics', 'thieves', 'ninjas']);
-
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
     ]);
@@ -942,18 +896,7 @@ module.exports = function (db) {
     const capacity = k.bld_training * 100;
     const clean_alloc = {};
     for (const [unit, amount] of Object.entries(allocation)) {
-      // Whitelist validation: reject unknown unit types
-      if (!validUnits.has(unit)) {
-        return res.status(400).json({ error: `Invalid unit type: ${unit}` });
-      }
-
-      // Type validation: ensure non-negative integers
-      const numVal = Number(amount);
-      if (!Number.isInteger(numVal) || numVal < 0) {
-        return res.status(400).json({ error: `Unit allocations must be non-negative integers (${unit}: ${amount})` });
-      }
-
-      const amt = numVal;
+      const amt = Math.max(0, parseInt(amount) || 0);
       if (amt > (k[unit] || 0))
         return res.status(400).json({ error: `Not enough ${unit}` });
       total += amt;
@@ -5000,7 +4943,7 @@ module.exports = function (db) {
   // ── Inventory ────────────────────────────────────────────────────────────
   router.get('/inventory', requireAuth, async (req, res) => {
     try {
-      const k = await db.get('SELECT id, items FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
+      const k = await db.get('SELECT items FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
       if (!k) return res.status(404).json({ error: 'Kingdom not found' });
 
       let INVENTORY_ITEMS;
@@ -5219,16 +5162,6 @@ module.exports = function (db) {
 const { applyKingdomUpdates } = require("../db/schema");
 
 async function applyUpdates(db, kingdomId, updates) {
-  // Validate no numeric values are NaN/Infinity (corrupted data protection)
-  // Dynamically check all values instead of maintaining a hardcoded field list
-  // This ensures future fields (new troop types, resources, etc.) are automatically protected
-  for (const [key, value] of Object.entries(updates)) {
-    if (typeof value === 'number' && (isNaN(value) || !isFinite(value))) {
-      console.error(`[applyUpdates] NaN/Infinity detected in field: ${key} = ${value}`);
-      throw new Error(`Corrupted numeric data: ${key} contains NaN or Infinity`);
-    }
-  }
-
   // Stringify JSON fields that are kept as objects during processTurn
   const updatesForDb = { ...updates };
   if (updatesForDb.troop_levels && typeof updatesForDb.troop_levels === 'object') {
