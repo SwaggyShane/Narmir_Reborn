@@ -1428,7 +1428,7 @@ async function start() {
     });
 
     app.get('/wipe-admin.html', (_req, res) => {
-      res.sendFile(path.join(__dirname, 'public/dist/wipe-admin.html'));
+      res.sendFile(path.join(__dirname, 'public', 'dist', 'wipe-admin.html'));
     });
 
     app.get(['/admin', '/admin.html'], (_req, res) => {
