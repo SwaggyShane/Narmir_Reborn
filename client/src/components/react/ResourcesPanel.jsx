@@ -371,10 +371,6 @@ const ResourcesPanel = () => {
       });
       if (d1.error) { setBuildingInProgress(p => ({...p, [type]: false})); return window.toast && window.toast(d1.error, 'error'); }
 
-      if (d1.engineers !== undefined && window.gameState) {
-        window.gameState.engineers = d1.engineers;
-      }
-
       const s = getState();
       if (s) {
         const curQ = getParsedStateProp('build_queue');
