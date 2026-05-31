@@ -505,10 +505,12 @@ function diluteTroopXp(k, unit, hired) {
 }
 
 // ── Award activity XP to a unit type ─────────────────────────────────────────
-// Wraps awardTroopXp, applies race bonus, returns updated troop_levels string
+// Wraps awardTroopXp, applies race bonus, returns updated troop_levels object (not stringified)
 function awardUnitXp(k, unit, xpAmount) {
   if (!xpAmount || xpAmount <= 0 || !(k[unit] > 0)) return null;
-  return awardTroopXp(k, unit, xpAmount).troop_levels;
+  const result = awardTroopXp(k, unit, xpAmount);
+  // Return parsed object, not JSON string, so it stays as object throughout processTurn
+  return typeof result.troop_levels === "string" ? JSON.parse(result.troop_levels) : result.troop_levels;
 }
 
 // ── Unit Availability ──────────────────────────────────────────────────────────
@@ -2538,15 +2540,8 @@ function processTurn(k) {
 
   // ── 9. Training fields — passive troop XP each turn ──────────────────────────
   if (k.bld_training > 0) {
-    let troopLevels = safeJsonParse(
-      updates.troop_levels || k.troop_levels,
-      {},
-      "processTurn:troop_levels",
-    );
-    // Defensive: handle arbitrary levels of nested stringification
-    while (typeof troopLevels === "string") {
-      troopLevels = safeJsonParse(troopLevels, {}, "processTurn:troop_levels_nested_parse");
-    }
+    // troop_levels is now kept as object throughout processTurn, not stringified until save
+    let troopLevels = updates.troop_levels || safeJsonParse(k.troop_levels, {}, "processTurn:troop_levels");
     if (!troopLevels || typeof troopLevels !== "object") {
       troopLevels = {};
     }
