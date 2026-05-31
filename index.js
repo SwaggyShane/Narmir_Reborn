@@ -1683,6 +1683,17 @@ async function start() {
   await initializeConstants(db);
   console.log('[boot] Game constants loaded from database');
 
+  // Global error handlers to prevent silent crashes
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('[CRITICAL] Unhandled Rejection at:', promise, 'reason:', reason);
+  });
+
+  process.on('uncaughtException', (error) => {
+    console.error('[CRITICAL] Uncaught Exception:', error);
+    // Cannot safely recover - application is in undefined state. Exit for process manager to restart.
+    process.exit(1);
+  });
+
   server.listen(PORT, HOST, () => {
     console.log(`[boot] Server listening on http://localhost:${PORT}`);
   });
