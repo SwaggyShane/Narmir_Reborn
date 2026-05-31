@@ -1837,7 +1837,11 @@ function processTurn(k) {
   }
 
   // ── 5b. Building completion ───────────────────────────────────────────────────
-  const buildQueue = safeJsonParse(k.build_queue || "{}", {}, "processTurn:build_queue");
+  let buildQueue = safeJsonParse(k.build_queue || "{}", {}, "processTurn:build_queue");
+  // Defensive: handle double-stringification edge case
+  if (typeof buildQueue === "string") {
+    buildQueue = safeJsonParse(buildQueue, {}, "processTurn:build_queue_double_parse");
+  }
   let buildQueueChanged = false;
   const completedBuildings = [];
 
