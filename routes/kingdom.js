@@ -540,14 +540,18 @@ module.exports = function (db) {
     // Batch check for duplicate news instead of N+1 queries
     const existingMessages = {};
     if (events.length > 0) {
-      const placeholders = events.map(() => '?').join(',');
-      const existingNews = await db.all(
-        `SELECT DISTINCT message FROM news WHERE kingdom_id = ? AND message IN (${placeholders}) AND created_at > (unixepoch() - 60)`,
-        [k.id, ...events.map(e => e.message)]
-      );
-      existingNews.forEach(row => {
-        existingMessages[row.message] = true;
-      });
+      // Deduplicate and filter for valid string messages to prevent TypeError and reduce DB load
+      const uniqueMessages = [...new Set(events.map(e => e && e.message).filter(msg => typeof msg === 'string'))];
+      if (uniqueMessages.length > 0) {
+        const placeholders = uniqueMessages.map(() => '?').join(',');
+        const existingNews = await db.all(
+          `SELECT DISTINCT message FROM news WHERE kingdom_id = ? AND message IN (${placeholders}) AND created_at > (unixepoch() - 60)`,
+          [k.id, ...uniqueMessages]
+        );
+        existingNews.forEach(row => {
+          existingMessages[row.message] = true;
+        });
+      }
     }
 
     for (const ev of events) {
