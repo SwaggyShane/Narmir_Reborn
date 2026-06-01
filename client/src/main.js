@@ -244,13 +244,17 @@ window.takeTurn = async () => {
           if (window.updateTroopLevelDisplay) window.updateTroopLevelDisplay();
           if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay();
           if (window.refreshResourcesPanel) window.refreshResourcesPanel();
+          if (window.loadActiveExpeditions) window.loadActiveExpeditions();
         } catch (e) {
           console.error("[turn] Error refreshing display elements:", e);
         }
       }
       if (data.events) {
-        const gameEvent = data.events.find(e => e.type !== "system");
-        if (gameEvent) window.toast?.(gameEvent.message, "info");
+        for (const ev of data.events) {
+          if (ev.message) {
+            window.toast?.(ev.message, "info");
+          }
+        }
       }
       window.toast?.(`Turn ${data.updates?.turn || '?'} processed`, "success");
     }

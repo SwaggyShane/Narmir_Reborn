@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cmd=$(jq -r '.tool_input.command // \"\"' 2>/dev/null); if echo \"$cmd\" | grep -qE '(git commit|git push)'; then echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'; echo '⚠️  WORKFLOW REMINDER (from CLAUDE.md):'; echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'; echo ''; echo '✓ DO:'; echo '  1. Make changes on a FEATURE BRANCH'; echo '  2. Push to feature branch: git push origin <branch>'; echo '  3. Create DRAFT PR for code review'; echo '  4. Address review feedback'; echo '  5. Merge to main AFTER approval'; echo ''; echo '✗ DO NOT:'; echo '  - Push directly to main'; echo '  - Commit without a feature branch'; echo ''; echo 'Current: Check that you are on a feature branch, not main.'; echo ''; fi",
+            "statusMessage": "Checking git workflow..."
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -386,6 +386,7 @@ const ResourcesPanel = () => {
       if (!d2.ok && window.toast) window.toast('Build queued but engineer allocation failed: ' + (d2.error || 'Unknown'), 'error');
       if (d2.ok && s) s.resource_build_allocation = newAlloc;
       syncFromState();
+      window.updateBuildDisplay?.();
       if (window.refreshKingdom) {
         await window.refreshKingdom();
         syncFromState();

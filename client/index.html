@@ -6276,7 +6276,7 @@
           var controller = new AbortController();
           var timeout = setTimeout(function () {
             controller.abort();
-          }, 10000);
+          }, 30000);
           var res = await fetch(path, {
             method: method,
             headers: headers,
@@ -6300,8 +6300,9 @@
             return { error: "Server error " + res.status };
           }
         } catch (err) {
-          debugLog("fetch error " + path + ": " + err.message);
-          return { error: err.message };
+          debugLog("fetch error " + path + ": " + (err?.message || "Unknown error"));
+          var errorMsg = err?.name === "AbortError" ? "Request took too long — server may be slow" : (err?.message || "Network error");
+          return { error: errorMsg };
         }
       }
       window.apiCall = apiCall;
