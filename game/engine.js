@@ -1928,21 +1928,26 @@ function processTurn(k) {
   const mageCap = k.bld_mage_towers * 20;
 
   // Housed units are free; overflow units pay tax-based maintenance
-  const researcherHoused = Math.min(k.researchers, researcherCap);
-  const engineerHoused = Math.min(k.engineers, engineerCap);
-  const scribeHoused = Math.min(k.scribes, scribeCap);
-  const mageHoused = Math.min(k.mages, mageCap);
+  const researchers = k.researchers || 0;
+  const engineers = k.engineers || 0;
+  const scribes = k.scribes || 0;
+  const mages = k.mages || 0;
 
-  const researcherOverflow = Math.max(0, k.researchers - researcherCap);
-  const engineerOverflow = Math.max(0, k.engineers - engineerCap);
-  const scribeOverflow = Math.max(0, k.scribes - scribeCap);
-  const mageOverflow = Math.max(0, k.mages - mageCap);
+  const researcherHoused = Math.min(researchers, researcherCap);
+  const engineerHoused = Math.min(engineers, engineerCap);
+  const scribeHoused = Math.min(scribes, scribeCap);
+  const mageHoused = Math.min(mages, mageCap);
+
+  const researcherOverflow = Math.max(0, researchers - researcherCap);
+  const engineerOverflow = Math.max(0, engineers - engineerCap);
+  const scribeOverflow = Math.max(0, scribes - scribeCap);
+  const mageOverflow = Math.max(0, mages - mageCap);
 
   const totalHoused = researcherHoused + engineerHoused + scribeHoused + mageHoused;
 
   // Combat troops always pay upkeep
   const combatTroops =
-    k.fighters + k.rangers + k.clerics + k.thieves + k.ninjas;
+    (k.fighters || 0) + (k.rangers || 0) + (k.clerics || 0) + (k.thieves || 0) + (k.ninjas || 0);
 
   const upkeepMult =
     {
@@ -1971,26 +1976,20 @@ function processTurn(k) {
     mage: 5,
   };
 
+  const overflowCounts = {
+    researcher: researcherOverflow,
+    engineer: engineerOverflow,
+    scribe: scribeOverflow,
+    mage: mageOverflow,
+  };
+
   let overflowMaintenanceTotal = 0;
-  if (researcherOverflow > 0) {
-    overflowMaintenanceTotal += Math.floor(
-      researcherOverflow * supportMaintenanceCosts.researcher * (taxRate / 100) * econMult
-    );
-  }
-  if (engineerOverflow > 0) {
-    overflowMaintenanceTotal += Math.floor(
-      engineerOverflow * supportMaintenanceCosts.engineer * (taxRate / 100) * econMult
-    );
-  }
-  if (scribeOverflow > 0) {
-    overflowMaintenanceTotal += Math.floor(
-      scribeOverflow * supportMaintenanceCosts.scribe * (taxRate / 100) * econMult
-    );
-  }
-  if (mageOverflow > 0) {
-    overflowMaintenanceTotal += Math.floor(
-      mageOverflow * supportMaintenanceCosts.mage * (taxRate / 100) * econMult
-    );
+  for (const [type, count] of Object.entries(overflowCounts)) {
+    if (count > 0) {
+      overflowMaintenanceTotal += Math.floor(
+        count * supportMaintenanceCosts[type] * (taxRate / 100) * econMult
+      );
+    }
   }
 
   const totalUpkeep = combatUpkeep + overflowMaintenanceTotal;
