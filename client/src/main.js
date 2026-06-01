@@ -233,8 +233,8 @@ window.takeTurn = async () => {
           console.error("[turn] Error refreshing display elements:", e);
         }
       }
-      // Build combined toast: parse events for building completions
-      let completedBuildingsMsg = "";
+      // Build combined toast: accumulate all building completions from events
+      const completedParts = [];
       if (data.events) {
         for (const ev of data.events) {
           const msg = ev.message || "";
@@ -242,7 +242,7 @@ window.takeTurn = async () => {
             const idx = msg.indexOf("Completed: ");
             const endPart = msg.substring(idx + "Completed: ".length);
             const periodIdx = endPart.indexOf(".");
-            completedBuildingsMsg = periodIdx !== -1 ? endPart.substring(0, periodIdx) : endPart;
+            completedParts.push(periodIdx !== -1 ? endPart.substring(0, periodIdx) : endPart);
           }
         }
       }
@@ -251,18 +251,18 @@ window.takeTurn = async () => {
       const turnsLeft = data.updates?.turns_stored ?? data.turns_stored ?? 0;
       const turnStatus = `Turn ${turnNum} · ${turnsLeft} turns left`;
 
-      let toastMsg = completedBuildingsMsg
-        ? `🏗️ Completed: ${completedBuildingsMsg}!\n${turnStatus}`
+      let toastMsg = completedParts.length > 0
+        ? `🏗️ Completed: ${completedParts.join(", ")}!\n${turnStatus}`
         : turnStatus;
       let toastType = "success";
 
       const gold = window.gameState?.gold || 0;
       const food = window.gameState?.food || 0;
-      if (food < 1000) {
-        toastMsg = `⚠️ Food critically low!\n${toastMsg}`;
-        toastType = "warn";
-      } else if (gold < 1000) {
-        toastMsg = `⚠️ Gold reserves nearly empty!\n${toastMsg}`;
+      const warnings = [];
+      if (food < 1000) warnings.push("⚠️ Food critically low!");
+      if (gold < 1000) warnings.push("⚠️ Gold reserves nearly empty!");
+      if (warnings.length > 0) {
+        toastMsg = `${warnings.join("\n")}\n${toastMsg}`;
         toastType = "warn";
       }
 
