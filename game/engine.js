@@ -1927,9 +1927,9 @@ function processTurn(k) {
   const scribeCap = Math.floor(k.bld_libraries * 20 * capRace.scribe);
 
   // Overflow = units beyond capacity → pay upkeep; housed units are free
-  const researcherOverflow = Math.max(0, k.researchers - researcherCap);
-  const engineerOverflow = Math.max(0, k.engineers - engineerCap);
-  const scribeOverflow = Math.max(0, k.scribes - scribeCap);
+  const researcherOverflow = Math.max(0, (k.researchers || 0) - researcherCap);
+  const engineerOverflow = Math.max(0, (k.engineers || 0) - engineerCap);
+  const scribeOverflow = Math.max(0, (k.scribes || 0) - scribeCap);
 
   // Combat/support troops always pay upkeep
   const upkeepMult =
@@ -1943,12 +1943,12 @@ function processTurn(k) {
     }[k.race] || 1.0;
 
   const combatTroops =
-    k.fighters +
-    k.rangers +
-    k.clerics +
-    k.mages +
-    k.thieves +
-    k.ninjas;
+    (k.fighters || 0) +
+    (k.rangers || 0) +
+    (k.clerics || 0) +
+    (k.mages || 0) +
+    (k.thieves || 0) +
+    (k.ninjas || 0);
   const supportOverflow =
     researcherOverflow + engineerOverflow + scribeOverflow;
   const totalTroops = combatTroops + supportOverflow;
@@ -1961,9 +1961,9 @@ function processTurn(k) {
   const upkeep = Math.floor(totalTroops * upkeepMult * (1 - barrackDiscount));
 
   // Build housing status message for support units
-  const housedResearchers = Math.min(k.researchers, researcherCap);
-  const housedEngineers = Math.min(k.engineers, engineerCap);
-  const housedScribes = Math.min(k.scribes, scribeCap);
+  const housedResearchers = Math.min(k.researchers || 0, researcherCap);
+  const housedEngineers = Math.min(k.engineers || 0, engineerCap);
+  const housedScribes = Math.min(k.scribes || 0, scribeCap);
   const totalHoused = housedResearchers + housedEngineers + housedScribes;
 
   if (upkeep > 0) {
