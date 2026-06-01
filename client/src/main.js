@@ -228,18 +228,45 @@ window.takeTurn = async () => {
           if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay();
           if (window.refreshResourcesPanel) window.refreshResourcesPanel();
           if (window.loadActiveExpeditions) window.loadActiveExpeditions();
+          if (window.refreshExplorationPanel) window.refreshExplorationPanel();
         } catch (e) {
           console.error("[turn] Error refreshing display elements:", e);
         }
       }
+      // Build combined toast: accumulate all building completions from events
+      const completedParts = [];
       if (data.events) {
         for (const ev of data.events) {
-          if (ev.message) {
-            window.toast?.(ev.message, "info");
+          const msg = ev.message || "";
+          if (msg.includes("Completed: ")) {
+            const idx = msg.indexOf("Completed: ");
+            const endPart = msg.substring(idx + "Completed: ".length);
+            const periodIdx = endPart.indexOf(".");
+            completedParts.push(periodIdx !== -1 ? endPart.substring(0, periodIdx) : endPart);
           }
         }
       }
-      window.toast?.(`Turn ${data.updates?.turn || '?'} processed`, "success");
+
+      const turnNum = data.updates?.turn || '?';
+      const turnsLeft = data.updates?.turns_stored ?? data.turns_stored ?? 0;
+      const turnStatus = `Turn ${turnNum} · ${turnsLeft} turns left`;
+
+      let toastMsg = completedParts.length > 0
+        ? `🏗️ Completed: ${completedParts.join(", ")}!\n${turnStatus}`
+        : turnStatus;
+      let toastType = "success";
+
+      const gold = window.gameState?.gold || 0;
+      const food = window.gameState?.food || 0;
+      const warnings = [];
+      if (food < 1000) warnings.push("⚠️ Food critically low!");
+      if (gold < 1000) warnings.push("⚠️ Gold reserves nearly empty!");
+      if (warnings.length > 0) {
+        toastMsg = `${warnings.join("\n")}\n${toastMsg}`;
+        toastType = "warn";
+      }
+
+      window.toast?.(toastMsg, toastType);
     }
   } catch (error) {
     console.error("[turn] Error taking turn:", error);
