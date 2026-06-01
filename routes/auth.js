@@ -177,6 +177,7 @@ module.exports = function (db) {
         sameSite: isProd ? "none" : "lax",
         secure: isProd,
       };
+      console.log('[auth] Registration successful for:', username, 'isProd:', isProd, 'cookieOpts:', { ...cookieOpts, secure: cookieOpts.secure });
       res.cookie("token", token, cookieOpts);
       res.cookie("csrf_token", csrfToken, csrfCookieOpts);
       res.json({ ok: true, username, kingdomName, token });
@@ -239,6 +240,7 @@ module.exports = function (db) {
       sameSite: isProd ? "none" : "lax",
       secure: isProd,
     };
+    console.log('[auth] Login successful for:', username, 'isProd:', isProd, 'cookieOpts:', { ...cookieOpts, secure: cookieOpts.secure });
     res.cookie("token", token, cookieOpts);
     res.cookie("csrf_token", csrfToken, csrfCookieOpts);
     res.json({ ok: true, username, isAdmin: player.is_admin === 1, token });
