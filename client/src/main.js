@@ -191,6 +191,16 @@ window.studyMagic = async () => {
   }
 };
 
+window.updateTurnsDisplay = () => {
+  const turnsStored = window.gameState?.turns_stored;
+  if (turnsStored !== undefined) {
+    const el = document.getElementById("turns-stored-disp");
+    if (el) {
+      el.textContent = String(turnsStored);
+    }
+  }
+};
+
 window.takeTurn = async () => {
   try {
     const getCsrfToken = () => {
