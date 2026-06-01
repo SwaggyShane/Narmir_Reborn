@@ -225,6 +225,7 @@ module.exports = function (db) {
     );
     const cookieOpts = {
       httpOnly: true,
+      path: "/",
       maxAge: COOKIE_MAX_AGE_MS,
       sameSite: "none",
       secure: true,
@@ -232,6 +233,7 @@ module.exports = function (db) {
     const csrfToken = generateCsrfToken();
     const csrfCookieOpts = {
       httpOnly: false,
+      path: "/",
       maxAge: COOKIE_MAX_AGE_MS,
       sameSite: "none",
       secure: true,
