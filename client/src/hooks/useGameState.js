@@ -13,6 +13,10 @@ function subscribe(listener) {
   return () => listeners.delete(listener);
 }
 
+function getSnapshot() {
+  return snapshot;
+}
+
 export function useGameState() {
-  return useSyncExternalStore(subscribe, () => snapshot);
+  return useSyncExternalStore(subscribe, getSnapshot);
 }

@@ -218,7 +218,6 @@ window.takeTurn = async () => {
       console.log("[turn] processed successfully");
       if (data.updates) {
         Object.assign(window.gameState, data.updates);
-        notifyGameStateChange();
         if (window.syncFromState) window.syncFromState();
         if (window.triggerReactUpdates) window.triggerReactUpdates();
 

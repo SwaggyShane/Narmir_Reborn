@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { apiCall } from '../../utils/api';
 import { useGameState } from '../../hooks/useGameState.js';
 
@@ -8,6 +8,7 @@ const ExplorationPanel = () => {
   const gs = useGameState();
   const [inventory, setInventory] = useState({});
   const [inventoryOpen, setInventoryOpen] = useState(false);
+  const initialMountRef = useRef(true);
 
   const fetchInventory = useCallback(async () => {
     try {
@@ -32,6 +33,10 @@ const ExplorationPanel = () => {
 
   // Re-fetch inventory when game state changes (items may have been added by expedition)
   useEffect(() => {
+    if (initialMountRef.current) {
+      initialMountRef.current = false;
+      return;
+    }
     fetchInventory();
   }, [gs.items, fetchInventory]);
 
