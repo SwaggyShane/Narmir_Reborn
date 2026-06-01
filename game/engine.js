@@ -3667,9 +3667,8 @@ function processBuildQueue(k, events, xpSourcesAccum) {
     if (engAssigned > 0 && workDone <= 0) workDone = 1; // Prevent complete stalling for low bonuses
     if (workDone <= 0) continue;
 
-    // Resource buildings require a queue entry to build, but can continue generating resources
-    // after completion (queue entry persists at 0). Only skip if they have no queue entry at all.
-    if (RESOURCE_BUILDING_CONFIG[building] && queue[building] === undefined) continue;
+    // Resource buildings require a queue entry — engineers alone cannot build them
+    if (RESOURCE_BUILDING_CONFIG[building] && !(queue[building] > 0)) continue;
 
     totalEngineersWorked += engAssigned;
 
@@ -3685,7 +3684,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
     // For resource buildings, ensure completed value stays in sync with queue
     // If queue entry is deleted (0), we still need to update the building count
     const completed = RESOURCE_BUILDING_CONFIG[building]
-      ? Math.min(rawCompleted, queue[building] || 0)
+      ? Math.min(rawCompleted, queue[building])
       : rawCompleted;
 
     if (completed > 0) {
@@ -3849,21 +3848,13 @@ function processBuildQueue(k, events, xpSourcesAccum) {
       if (queue[building] > 0) {
         queue[building] = Math.max(0, queue[building] - completed);
         if (queue[building] <= 0) {
-          // For resource buildings: keep queue entry at 0 so they continue to be processed
-          // and their building count stays in sync. Don't delete it.
-          if (!RESOURCE_BUILDING_CONFIG[building]) {
-            delete queue[building];
-          } else {
-            queue[building] = 0;
-          }
+          delete queue[building];
           // Production buildings auto-release engineers on completion
           if (RESOURCE_BUILDING_CONFIG[building]) {
             delete allocation[building];
           }
-          // Reset progress to 0 for non-resource buildings — nothing queued to build toward
-          if (!RESOURCE_BUILDING_CONFIG[building]) {
-            delete progress[building];
-          }
+          // Reset progress to 0 — nothing queued to build toward
+          delete progress[building];
         }
       }
     } else {
