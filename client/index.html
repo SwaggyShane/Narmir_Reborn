@@ -6095,16 +6095,15 @@
           console.log("[logout] Server response:", result);
           if (result.error) {
             console.error("[logout] Server error:", result.error);
-            alert("Logout failed: " + result.error);
-            return;
+            alert("Logout error: " + result.error);
           }
-          console.log("[logout] Clearing token...");
-          clearToken();
-          console.log("[logout] Reloading page...");
-          location.reload();
         } catch (err) {
           console.error("[logout] Exception:", err);
           alert("Logout error: " + err.message);
+        } finally {
+          console.log("[logout] Clearing token and reloading...");
+          clearToken();
+          location.reload();
         }
       }
       window.doLogout = doLogout;
