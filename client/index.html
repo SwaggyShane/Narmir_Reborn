@@ -6300,8 +6300,8 @@
             return { error: "Server error " + res.status };
           }
         } catch (err) {
-          debugLog("fetch error " + path + ": " + err.message);
-          var errorMsg = err.name === "AbortError" ? "Request took too long — server may be slow" : err.message;
+          debugLog("fetch error " + path + ": " + (err?.message || "Unknown error"));
+          var errorMsg = err?.name === "AbortError" ? "Request took too long — server may be slow" : (err?.message || "Network error");
           return { error: errorMsg };
         }
       }
