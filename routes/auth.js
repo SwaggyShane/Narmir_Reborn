@@ -14,6 +14,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const BCRYPT_SALT_ROUNDS = 10;
 const JWT_EXPIRY = "30d";
 const COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+const isProd = process.env.NODE_ENV === 'production';
 
 module.exports = function (db) {
   router.post("/register", async (req, res) => {
@@ -165,16 +166,16 @@ module.exports = function (db) {
         httpOnly: true,
         path: "/",
         maxAge: COOKIE_MAX_AGE_MS,
-        sameSite: "none",
-        secure: true,
+        sameSite: isProd ? "none" : "lax",
+        secure: isProd,
       };
       const csrfToken = generateCsrfToken();
       const csrfCookieOpts = {
         httpOnly: false,
         path: "/",
         maxAge: COOKIE_MAX_AGE_MS,
-        sameSite: "none",
-        secure: true,
+        sameSite: isProd ? "none" : "lax",
+        secure: isProd,
       };
       res.cookie("token", token, cookieOpts);
       res.cookie("csrf_token", csrfToken, csrfCookieOpts);
@@ -227,16 +228,16 @@ module.exports = function (db) {
       httpOnly: true,
       path: "/",
       maxAge: COOKIE_MAX_AGE_MS,
-      sameSite: "none",
-      secure: true,
+      sameSite: isProd ? "none" : "lax",
+      secure: isProd,
     };
     const csrfToken = generateCsrfToken();
     const csrfCookieOpts = {
       httpOnly: false,
       path: "/",
       maxAge: COOKIE_MAX_AGE_MS,
-      sameSite: "none",
-      secure: true,
+      sameSite: isProd ? "none" : "lax",
+      secure: isProd,
     };
     res.cookie("token", token, cookieOpts);
     res.cookie("csrf_token", csrfToken, csrfCookieOpts);
@@ -246,13 +247,13 @@ module.exports = function (db) {
   router.post("/logout", (_req, res) => {
     res.clearCookie("token", {
       httpOnly: true,
-      sameSite: "none",
-      secure: true,
+      sameSite: isProd ? "none" : "lax",
+      secure: isProd,
       path: "/",
     });
     res.clearCookie("csrf_token", {
-      sameSite: "none",
-      secure: true,
+      sameSite: isProd ? "none" : "lax",
+      secure: isProd,
       path: "/",
     });
     res.json({ ok: true });

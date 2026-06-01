@@ -5,6 +5,7 @@ if (!process.env.JWT_SECRET) {
   throw new Error("CRITICAL: JWT_SECRET environment variable is required. Set it before starting the server.");
 }
 const JWT_SECRET = process.env.JWT_SECRET;
+const isProd = process.env.NODE_ENV === 'production';
 
 function generateCsrfToken() {
   return crypto.randomBytes(32).toString("hex");
@@ -82,8 +83,8 @@ function ensureCsrfToken(req, res, next) {
           httpOnly: false,
           path: "/",
           maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days, matching auth routes
-          sameSite: "none",
-          secure: true,
+          sameSite: isProd ? "none" : "lax",
+          secure: isProd,
         };
         res.cookie("csrf_token", csrfToken, csrfCookieOpts);
       } catch (e) {
