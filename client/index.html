@@ -6088,9 +6088,23 @@
 
       // Expose doLogout early so React components can access it
       async function doLogout() {
-        await apiCall("POST", "/api/auth/logout");
-        clearToken();
-        location.reload();
+        try {
+          console.log("[logout] Starting logout...");
+          const result = await apiCall("POST", "/api/auth/logout");
+          console.log("[logout] Server response:", result);
+          if (result.error) {
+            console.error("[logout] Server error:", result.error);
+            alert("Logout failed: " + result.error);
+            return;
+          }
+          console.log("[logout] Clearing token...");
+          clearToken();
+          console.log("[logout] Reloading page...");
+          location.reload();
+        } catch (err) {
+          console.error("[logout] Exception:", err);
+          alert("Logout error: " + err.message);
+        }
       }
       window.doLogout = doLogout;
 
