@@ -1928,20 +1928,15 @@ function processTurn(k) {
   const mageCap = k.bld_mage_towers * 20;
 
   // Housed units are free; overflow units pay tax-based maintenance
-  const researchers = k.researchers || 0;
-  const engineers = k.engineers || 0;
-  const scribes = k.scribes || 0;
-  const mages = k.mages || 0;
+  const researcherHoused = Math.min(k.researchers || 0, researcherCap);
+  const engineerHoused = Math.min(k.engineers || 0, engineerCap);
+  const scribeHoused = Math.min(k.scribes || 0, scribeCap);
+  const mageHoused = Math.min(k.mages || 0, mageCap);
 
-  const researcherHoused = Math.min(researchers, researcherCap);
-  const engineerHoused = Math.min(engineers, engineerCap);
-  const scribeHoused = Math.min(scribes, scribeCap);
-  const mageHoused = Math.min(mages, mageCap);
-
-  const researcherOverflow = Math.max(0, researchers - researcherCap);
-  const engineerOverflow = Math.max(0, engineers - engineerCap);
-  const scribeOverflow = Math.max(0, scribes - scribeCap);
-  const mageOverflow = Math.max(0, mages - mageCap);
+  const researcherOverflow = Math.max(0, (k.researchers || 0) - researcherCap);
+  const engineerOverflow = Math.max(0, (k.engineers || 0) - engineerCap);
+  const scribeOverflow = Math.max(0, (k.scribes || 0) - scribeCap);
+  const mageOverflow = Math.max(0, (k.mages || 0) - mageCap);
 
   const totalHoused = researcherHoused + engineerHoused + scribeHoused + mageHoused;
 
@@ -1969,22 +1964,16 @@ function processTurn(k) {
   // Tax-based maintenance for overflow support units
   const taxRate = k.tax || 42;
   const econMult = (k.res_economy || 100) / 100;
-  const supportMaintenanceCosts = {
-    researcher: 5,
-    engineer: 2,
-    scribe: 3,
-    mage: 5,
-  };
-
-  const overflowCounts = {
-    researcher: researcherOverflow,
-    engineer: engineerOverflow,
-    scribe: scribeOverflow,
-    mage: mageOverflow,
-  };
+  const supportMaintenanceCosts = { researcher: 5, engineer: 2, scribe: 3, mage: 5 };
 
   let overflowMaintenanceTotal = 0;
-  for (const [type, count] of Object.entries(overflowCounts)) {
+  const overflowTypes = [
+    { count: researcherOverflow, type: 'researcher' },
+    { count: engineerOverflow, type: 'engineer' },
+    { count: scribeOverflow, type: 'scribe' },
+    { count: mageOverflow, type: 'mage' },
+  ];
+  for (const { count, type } of overflowTypes) {
     if (count > 0) {
       overflowMaintenanceTotal += Math.floor(
         count * supportMaintenanceCosts[type] * (taxRate / 100) * econMult
