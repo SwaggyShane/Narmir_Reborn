@@ -1949,16 +1949,15 @@ function processTurn(k) {
     (k.mages || 0) +
     (k.thieves || 0) +
     (k.ninjas || 0);
-  const supportOverflow =
-    researcherOverflow + engineerOverflow + scribeOverflow;
-  const totalTroops = combatTroops + supportOverflow;
 
   const barracksTrainingMult = fragmentBonusManager.getBonusMultiplier(k, 'barracks', 'training');
   const barrackDiscount = Math.min(
     0.5,
     Math.floor(k.bld_barracks / 2) * 0.01 * barracksTrainingMult,
   );
-  const upkeep = Math.floor(totalTroops * upkeepMult * (1 - barrackDiscount));
+
+  // Combat troops pay standard upkeep (with barracks discount)
+  const combatUpkeep = Math.floor(combatTroops * upkeepMult * (1 - barrackDiscount));
 
   // Tax-based maintenance for overflow support units
   // Overflow units that exceed housing capacity pay dynamic maintenance based on tax rate and economy
@@ -1998,7 +1997,7 @@ function processTurn(k) {
   // Ensure overflow maintenance is never negative or NaN
   overflowMaintenance = Math.max(0, Math.floor(overflowMaintenance));
 
-  const totalUpkeep = upkeep + overflowMaintenance;
+  const totalUpkeep = combatUpkeep + overflowMaintenance;
 
   // Build housing status message for support units
   const housedResearchers = Math.min(k.researchers || 0, researcherCap);
@@ -2010,9 +2009,9 @@ function processTurn(k) {
     updates.gold = (updates.gold || k.gold) - totalUpkeep;
     if (updates.gold < 0) updates.gold = 0;
     let msg = `⚔️ Troop upkeep: -${totalUpkeep.toLocaleString()} gold`;
-    if (upkeep > 0) msg += ` (${totalTroops.toLocaleString()} combat/housed: -${upkeep.toLocaleString()}`;
+    if (combatUpkeep > 0) msg += ` (${combatTroops.toLocaleString()} combat: -${combatUpkeep.toLocaleString()}`;
     if (overflowMaintenance > 0) {
-      if (upkeep > 0) msg += `; `;
+      if (combatUpkeep > 0) msg += `; `;
       else msg += ` (`;
       const overflowCount = researcherOverflow + engineerOverflow + scribeOverflow;
       msg += `${overflowCount.toLocaleString()} overflow: -${overflowMaintenance.toLocaleString()}`;
