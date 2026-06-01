@@ -1960,19 +1960,64 @@ function processTurn(k) {
   );
   const upkeep = Math.floor(totalTroops * upkeepMult * (1 - barrackDiscount));
 
+  // Tax-based maintenance for overflow support units
+  // Overflow units that exceed housing capacity pay dynamic maintenance based on tax rate and economy
+  let overflowMaintenance = 0;
+  const taxRate = Math.max(0, Math.min(100, k.tax ?? 42)); // Clamp to 0-100, default 42
+  const econLevel = Math.max(1, Math.min(100, k.res_economy ?? 100)); // Clamp to 1-100, default 100
+  const econMultiplier = econLevel / 100;
+
+  // Base maintenance costs per unit type (tuned for game balance)
+  const maintenanceCosts = {
+    researcher: 5,
+    engineer: 2,
+    scribe: 3,
+  };
+
+  // Calculate overflow maintenance: cost = units * baseCost * (tax/100) * (economy/100)
+  // This creates dynamic scaling: high taxes + low economy = expensive maintenance
+  if (researcherOverflow > 0) {
+    const cost = Math.floor(
+      researcherOverflow * maintenanceCosts.researcher * (taxRate / 100) * econMultiplier
+    );
+    overflowMaintenance += Math.max(0, cost); // Ensure non-negative
+  }
+  if (engineerOverflow > 0) {
+    const cost = Math.floor(
+      engineerOverflow * maintenanceCosts.engineer * (taxRate / 100) * econMultiplier
+    );
+    overflowMaintenance += Math.max(0, cost);
+  }
+  if (scribeOverflow > 0) {
+    const cost = Math.floor(
+      scribeOverflow * maintenanceCosts.scribe * (taxRate / 100) * econMultiplier
+    );
+    overflowMaintenance += Math.max(0, cost);
+  }
+
+  // Ensure overflow maintenance is never negative or NaN
+  overflowMaintenance = Math.max(0, Math.floor(overflowMaintenance));
+
+  const totalUpkeep = upkeep + overflowMaintenance;
+
   // Build housing status message for support units
   const housedResearchers = Math.min(k.researchers || 0, researcherCap);
   const housedEngineers = Math.min(k.engineers || 0, engineerCap);
   const housedScribes = Math.min(k.scribes || 0, scribeCap);
   const totalHoused = housedResearchers + housedEngineers + housedScribes;
 
-  if (upkeep > 0) {
-    updates.gold = (updates.gold || k.gold) - upkeep;
+  if (totalUpkeep > 0) {
+    updates.gold = (updates.gold || k.gold) - totalUpkeep;
     if (updates.gold < 0) updates.gold = 0;
-    let msg = `⚔️ Troop upkeep: -${upkeep.toLocaleString()} gold (${totalTroops.toLocaleString()} billable`;
-    if (totalHoused > 0)
-      msg += `, ${totalHoused.toLocaleString()} support units housed free`;
-    if (barrackDiscount > 0) msg += `, barracks discount applied`;
+    let msg = `⚔️ Troop upkeep: -${totalUpkeep.toLocaleString()} gold`;
+    if (upkeep > 0) msg += ` (${totalTroops.toLocaleString()} combat/housed: -${upkeep.toLocaleString()}`;
+    if (overflowMaintenance > 0) {
+      if (upkeep > 0) msg += `; `;
+      else msg += ` (`;
+      const overflowCount = researcherOverflow + engineerOverflow + scribeOverflow;
+      msg += `${overflowCount.toLocaleString()} overflow: -${overflowMaintenance.toLocaleString()}`;
+    }
+    if (totalHoused > 0) msg += `; ${totalHoused.toLocaleString()} housed free`;
     msg += `).`;
     events.push({ type: "system", message: msg });
   } else if (totalHoused > 0) {
