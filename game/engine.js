@@ -6367,12 +6367,7 @@ function expeditionRewards(type, rangers, fighters, k) {
     let inventory = safeJsonParse(updates.items || k.items, [], "expeditionRewards:ultra_rare_items");
     if (!Array.isArray(inventory)) inventory = [];
     const itemDef = INVENTORY_ITEMS[prize.id];
-    const existingItem = inventory.find((i) => i.id === prize.id);
-    if (existingItem) {
-      existingItem.qty = (existingItem.qty || 0) + 1;
-    } else {
-      inventory.push({ id: prize.id, name: itemDef?.name || prize.id, qty: 1 });
-    }
+    addItemToInventory(inventory, prize.id, itemDef?.name || prize.id, 1);
     updates.items = JSON.stringify(inventory);
   }
 

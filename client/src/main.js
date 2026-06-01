@@ -252,8 +252,7 @@ window.takeTurn = async () => {
       if (data.events) {
         for (const ev of data.events) {
           if (ev.message) {
-            const toastType = ev.type === "system" ? "info" : "info";
-            window.toast?.(ev.message, toastType);
+            window.toast?.(ev.message, "info");
           }
         }
       }
