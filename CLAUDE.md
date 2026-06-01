@@ -47,6 +47,11 @@ Always push high-priority fixes as draft PRs for feedback before merging to main
 
 ## Database & Deployment Notes
 
+### Production Domain
+- **Production URL**: https://narmirreborn.com
+- Deployed via Railway
+- Node.js environment with PostgreSQL database
+
 ### Railway Limitations
 - **Railway does NOT have a Shell feature** for this deployment
 - For database operations, use **pgAdmin4** (available locally)
