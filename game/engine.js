@@ -1950,21 +1950,22 @@ function processTurn(k) {
     (k.thieves || 0) +
     (k.ninjas || 0);
 
-  const barracksTrainingMult = fragmentBonusManager.getBonusMultiplier(k, 'barracks', 'training');
+  const barracksTrainingMult = fragmentBonusManager.getBonusMultiplier(k, 'barracks', 'training') || 1.0;
   const barrackDiscount = Math.min(
     0.5,
     Math.floor(k.bld_barracks / 2) * 0.01 * barracksTrainingMult,
   );
 
   // Combat troops pay standard upkeep (with barracks discount)
-  const combatUpkeep = Math.floor(combatTroops * upkeepMult * (1 - barrackDiscount));
+  const combatUpkeep = Math.max(0, Math.floor(combatTroops * upkeepMult * (1 - barrackDiscount))) || 0;
 
   // Tax-based maintenance for overflow support units
   // Overflow units that exceed housing capacity pay dynamic maintenance based on tax rate and economy
   let overflowMaintenance = 0;
   const taxRate = Math.max(0, Math.min(100, k.tax ?? 42)); // Clamp to 0-100, default 42
   const econLevel = Math.max(1, Math.min(100, k.res_economy ?? 100)); // Clamp to 1-100, default 100
-  const econMultiplier = econLevel / 100;
+  // Economy multiplier inverted: high economy (100) = 0.01x cost, low economy (1) = 1.0x cost
+  const econMultiplier = (101 - econLevel) / 100;
 
   // Base maintenance costs per unit type (tuned for game balance)
   const maintenanceCosts = {
