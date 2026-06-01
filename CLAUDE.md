@@ -45,6 +45,16 @@ When fixing high-priority issues:
 
 Always push high-priority fixes as draft PRs for feedback before merging to main.
 
+## Code Quality Standards
+
+### No Bandaids — Fix It Right
+- Do not use temporary workarounds, partial fixes, or quick hacks
+- Identify and fix the root cause, not symptoms
+- If a proper fix requires investigation, do the investigation first
+- When code review identifies a flawed approach, revert it and fix it correctly
+- Prefer reverting + re-fixing over stacking workarounds on top of broken solutions
+- Example: If queue persistence causes database bloat, don't bandaid with fallbacks—delete the entry and redesign the logic
+
 ## Database & Deployment Notes
 
 ### Railway Limitations
