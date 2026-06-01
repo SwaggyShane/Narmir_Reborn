@@ -113,7 +113,7 @@ const NUMERIC_FIELDS = [
   'hp', 'max_hp',
   // Expeditions / resource nodes / trade routes
   'turns_left', 'population_sent', 'distance', 'richness', 'stability',
-  'food_taken', 'arrive_at', 'depart_at', 'harvest_ends_at',
+  'food_taken', 'arrive_at', 'depart_at', 'harvest_ends_at', 'return_at',
   // Misc / admin goals
   'count', 'wall_hp', 'prize_multiplier',
 ];
@@ -292,6 +292,20 @@ class PgDbAdapter {
     } catch (err) {
       console.error("[db] PostgreSQL run failed for statement:", translatedSql, "with params:", params);
       throw err;
+    }
+  }
+
+  cleanupTransaction() {
+    const store = transactionStorage.getStore();
+    if (store && !store.released) {
+      try {
+        console.warn('[db] Cleaning up orphaned transaction — releasing connection');
+        store.released = true;
+        store.client.release();
+        transactionStorage.enterWith(null);
+      } catch (err) {
+        console.error('[db] Error releasing orphaned transaction:', err.message);
+      }
     }
   }
 

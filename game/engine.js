@@ -1198,7 +1198,8 @@ function processFoodEconomy(k, events) {
     // Prompt says "Their consumption is still as it was previously, just with a portion of the population."
     const troops = totalHiredUnits(k) - (updates.thralls ?? k.thralls ?? 0);
     const pop = Math.floor(k.population / 100);
-    const hunger = Math.floor((troops + pop) * 0.425);
+    const vampireConsumption = 0.285; // Sustainable ~2.85% population consumption per turn
+    const hunger = Math.floor((troops + pop) * vampireConsumption);
 
     let totalConsumed = 0;
     const currentThralls = updates.thralls ?? k.thralls ?? 0;
@@ -2434,7 +2435,7 @@ function processTurn(k) {
         "researchers",
         totalRXp,
       );
-      updates.troop_levels = rXp.troop_levels;
+      updates.troop_levels = typeof rXp.troop_levels === "string" ? JSON.parse(rXp.troop_levels) : rXp.troop_levels;
       if (rXp.levelUps.length)
         events.push({
           type: "system",
@@ -2553,7 +2554,9 @@ function processTurn(k) {
   // ── 9. Training fields — passive troop XP each turn ──────────────────────────
   if (k.bld_training > 0) {
     // troop_levels is now kept as object throughout processTurn, not stringified until save
-    let troopLevels = updates.troop_levels || safeJsonParse(k.troop_levels, {}, "processTurn:troop_levels");
+    let troopLevels = typeof updates.troop_levels === "string"
+      ? safeJsonParse(updates.troop_levels, {}, "processTurn:troop_levels")
+      : (updates.troop_levels || safeJsonParse(k.troop_levels, {}, "processTurn:troop_levels"));
     if (!troopLevels || typeof troopLevels !== "object") {
       troopLevels = {};
     }
@@ -2609,7 +2612,8 @@ function processTurn(k) {
       }
     });
 
-    updates.troop_levels = JSON.stringify(troopLevels);
+    // Keep as object, not stringified — stringify only at save time
+    updates.troop_levels = troopLevels;
     if (advancedTroops.length > 0) {
       events.push({
         type: "system",
@@ -3917,7 +3921,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
       "engineers",
       totalCompleted * 10,
     );
-    updates.troop_levels = engXpRes.troop_levels;
+    updates.troop_levels = typeof engXpRes.troop_levels === "string" ? JSON.parse(engXpRes.troop_levels) : engXpRes.troop_levels;
 
     let finalMsg = "";
     if (completedItems.length > 0) {
@@ -6413,7 +6417,7 @@ async function resolveExpeditions(db, k, engine) {
         `[expedition] COMPLETING kingdom=${k.id} id=${exp.id} type=${exp.type}`,
       );
 
-      // Mark expedition complete and claim rewards atomically (prevents double-claiming)
+      // Mark expedition complete and claim rewards atomically (WHERE clause prevents double-claiming)
       const markResult = await db.run(
         "UPDATE expeditions SET turns_left = 0, rewards_claimed = 1 WHERE id = ? AND rewards_claimed = 0",
         [exp.id],
@@ -6428,7 +6432,7 @@ async function resolveExpeditions(db, k, engine) {
         `[expedition] RETRYING completion for kingdom=${k.id} id=${exp.id} type=${exp.type}`,
       );
 
-      // Only process rewards if they haven't been claimed yet
+      // Claim rewards atomically if not already claimed (WHERE clause prevents double-claiming)
       const claimResult = await db.run(
         "UPDATE expeditions SET rewards_claimed = 1 WHERE id = ? AND rewards_claimed = 0",
         [exp.id],
@@ -7495,7 +7499,7 @@ function processActiveEffects(k, events) {
 }
 
 async function resolveRegions(db, io) {
-  const regions = await db.all("SELECT * FROM regions");
+  const regions = await db.all("SELECT name, owner_alliance_id, contest_alliance_id, contest_progress FROM regions");
   for (const region of regions) {
     // Calculate current influence in this region
     // Influence = Sum of Land for each alliance

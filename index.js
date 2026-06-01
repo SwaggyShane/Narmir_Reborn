@@ -1016,9 +1016,9 @@ async function start() {
     });
 
     // ── Routes ────────────────────────────────────────────────────────────────────
-    const { ensureCsrfToken } = require('./routes/middleware');
+    const { ensureCsrfToken, cleanupOrphanedTransactions } = require('./routes/middleware');
     app.use('/api/auth',         authLimiter,  require('./routes/auth')(db));
-    app.use('/api/kingdom',      turnLimiter, ensureCsrfToken,  require('./routes/kingdom')(db));
+    app.use('/api/kingdom',      turnLimiter, ensureCsrfToken, cleanupOrphanedTransactions(db), require('./routes/kingdom')(db));
     app.use('/api/hero',         turnLimiter, ensureCsrfToken,  require('./routes/hero')(db));
     const adminRouter = require('./routes/admin')(db, io);
     app.use('/api/admin', adminRouter);
@@ -1428,14 +1428,14 @@ async function start() {
     });
 
     app.get('/wipe-admin.html', (_req, res) => {
-      res.sendFile(path.join(__dirname, 'public/wipe-admin.html'));
+      res.sendFile(path.join(__dirname, 'public', 'dist', 'wipe-admin.html'));
     });
 
     app.get(['/admin', '/admin.html'], (_req, res) => {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
-      res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+      res.sendFile(path.join(__dirname, 'public/dist', 'admin.html'));
     });
   
     // Vite as middleware should be checked BEFORE static serving but AFTER API routes
@@ -1682,6 +1682,17 @@ async function start() {
   const { initializeConstants } = require('./game/constants-loader');
   await initializeConstants(db);
   console.log('[boot] Game constants loaded from database');
+
+  // Global error handlers to prevent silent crashes
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('[CRITICAL] Unhandled Rejection at:', promise, 'reason:', reason);
+  });
+
+  process.on('uncaughtException', (error) => {
+    console.error('[CRITICAL] Uncaught Exception:', error);
+    // Cannot safely recover - application is in undefined state. Exit for process manager to restart.
+    process.exit(1);
+  });
 
   server.listen(PORT, HOST, () => {
     console.log(`[boot] Server listening on http://localhost:${PORT}`);

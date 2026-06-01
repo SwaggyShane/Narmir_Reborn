@@ -94,4 +94,21 @@ function ensureCsrfToken(req, res, next) {
   next();
 }
 
-module.exports = { requireAuth, requireAdmin, requireCsrfToken, ensureCsrfToken, generateCsrfToken };
+function cleanupOrphanedTransactions(db) {
+  return (req, res, next) => {
+    // Cleanup after response is sent
+    res.on('finish', () => {
+      try {
+        // Check if transaction is still active and release it
+        if (db && db.cleanupTransaction) {
+          db.cleanupTransaction();
+        }
+      } catch (err) {
+        console.error('[db] Cleanup error:', err.message);
+      }
+    });
+    next();
+  };
+}
+
+module.exports = { requireAuth, requireAdmin, requireCsrfToken, ensureCsrfToken, generateCsrfToken, cleanupOrphanedTransactions };
