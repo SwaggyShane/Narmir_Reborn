@@ -249,8 +249,12 @@ window.takeTurn = async () => {
         }
       }
       if (data.events) {
-        const gameEvent = data.events.find(e => e.type !== "system");
-        if (gameEvent) window.toast?.(gameEvent.message, "info");
+        for (const ev of data.events) {
+          if (ev.message) {
+            const toastType = ev.type === "system" ? "info" : "info";
+            window.toast?.(ev.message, toastType);
+          }
+        }
       }
       window.toast?.(`Turn ${data.updates?.turn || '?'} processed`, "success");
     }

@@ -6362,7 +6362,18 @@ function expeditionRewards(type, rangers, fighters, k) {
       ULTRA_RARE_PRIZES[Math.floor(Math.random() * ULTRA_RARE_PRIZES.length)];
     prize.effect(k, updates);
     rewards.push({ text: `✨✨✨ ULTRA RARE: ${prize.text}` });
-    updates._ultra_rare = prize.id;
+
+    // Add ultra-rare item to inventory
+    let inventory = safeJsonParse(updates.items || k.items, [], "expeditionRewards:ultra_rare_items");
+    if (!Array.isArray(inventory)) inventory = [];
+    const itemDef = INVENTORY_ITEMS[prize.id];
+    const existingItem = inventory.find((i) => i.id === prize.id);
+    if (existingItem) {
+      existingItem.qty = (existingItem.qty || 0) + 1;
+    } else {
+      inventory.push({ id: prize.id, name: itemDef?.name || prize.id, qty: 1 });
+    }
+    updates.items = JSON.stringify(inventory);
   }
 
   // ── Throne of Nazdreg (0.1% on deep/dungeon, unique forever) ────────────────

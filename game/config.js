@@ -2009,6 +2009,12 @@ const config = {
     rusty_key: { name: "Rusty Key", desc: "To an unknown lock. The lock is probably lost anyway.", rarity: "junk" },
     proclamation: { name: "Royal Proclamation", desc: "Declaring your kingdom 'pretty good, probably'. High praise indeed.", rarity: "junk" },
     old_coupon: { name: "Inn Coupon", desc: "10% off at an inn that burned down decades ago. Can't be redeemed.", rarity: "junk" },
+    ancient_dragon_egg: { name: "Ancient Dragon Egg", desc: "Still warm with primordial magic. A legendary discovery.", rarity: "ultra_rare" },
+    tome_of_forgotten_kings: { name: "Tome of Forgotten Kings", desc: "Ancient military wisdom inscribed forever in your kingdom's history.", rarity: "ultra_rare" },
+    crystalline_mana_heart: { name: "Crystalline Mana Heart", desc: "Hums with a frequency older than the world itself.", rarity: "ultra_rare" },
+    vault_of_the_ancients: { name: "Vault of the Ancients", desc: "A sealed vault containing untold riches beyond imagining.", rarity: "ultra_rare" },
+    lost_legion_banner: { name: "Banner of the Lost Legion", desc: "Ten thousand warriors emerge from the mist and pledge eternal service.", rarity: "ultra_rare" },
+    seed_of_the_world_tree: { name: "Seed of the World Tree", desc: "Your lands bloom with ancient fertility.", rarity: "ultra_rare" },
   },
 
   JUNK_PRIZES: [
