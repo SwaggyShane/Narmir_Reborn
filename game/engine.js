@@ -1910,8 +1910,8 @@ function processTurn(k) {
   }
 
   // ── 6. Troop upkeep ───────────────────────────────────────────────────────────
-  // Housed support units (researchers, engineers, scribes, mages) are free.
-  // Overflow units move to housing, displace population, and cost: base * (tax% / 100) * (economy / 100)
+  // Researchers, engineers, scribes are exempt if housed in their buildings.
+  // Overflow (unhomed) units pay normal upkeep.
 
   const capRace = SUPPORT_CAP_RACE[k.race] || {
     researcher: 1.0,
@@ -1925,25 +1925,13 @@ function processTurn(k) {
   );
   const engineerCap = Math.floor(k.bld_smithies * 50 * capRace.engineer);
   const scribeCap = Math.floor(k.bld_libraries * 20 * capRace.scribe);
-  const mageCap = k.bld_mage_towers * 20;
 
-  // Housed units are free; overflow units pay tax-based maintenance
-  const researcherHoused = Math.min(k.researchers || 0, researcherCap);
-  const engineerHoused = Math.min(k.engineers || 0, engineerCap);
-  const scribeHoused = Math.min(k.scribes || 0, scribeCap);
-  const mageHoused = Math.min(k.mages || 0, mageCap);
+  // Overflow = units beyond capacity → pay upkeep; housed units are free
+  const researcherOverflow = Math.max(0, k.researchers - researcherCap);
+  const engineerOverflow = Math.max(0, k.engineers - engineerCap);
+  const scribeOverflow = Math.max(0, k.scribes - scribeCap);
 
-  const researcherOverflow = Math.max(0, (k.researchers || 0) - researcherCap);
-  const engineerOverflow = Math.max(0, (k.engineers || 0) - engineerCap);
-  const scribeOverflow = Math.max(0, (k.scribes || 0) - scribeCap);
-  const mageOverflow = Math.max(0, (k.mages || 0) - mageCap);
-
-  const totalHoused = researcherHoused + engineerHoused + scribeHoused + mageHoused;
-
-  // Combat troops always pay upkeep
-  const combatTroops =
-    (k.fighters || 0) + (k.rangers || 0) + (k.clerics || 0) + (k.thieves || 0) + (k.ninjas || 0);
-
+  // Combat/support troops always pay upkeep
   const upkeepMult =
     {
       high_elf: 1.0,
@@ -1954,46 +1942,37 @@ function processTurn(k) {
       orc: 1.15,
     }[k.race] || 1.0;
 
+  const combatTroops =
+    k.fighters +
+    k.rangers +
+    k.clerics +
+    k.mages +
+    k.thieves +
+    k.ninjas;
+  const supportOverflow =
+    researcherOverflow + engineerOverflow + scribeOverflow;
+  const totalTroops = combatTroops + supportOverflow;
+
   const barracksTrainingMult = fragmentBonusManager.getBonusMultiplier(k, 'barracks', 'training');
   const barrackDiscount = Math.min(
     0.5,
     Math.floor(k.bld_barracks / 2) * 0.01 * barracksTrainingMult,
   );
-  const combatUpkeep = Math.floor(combatTroops * upkeepMult * (1 - barrackDiscount));
+  const upkeep = Math.floor(totalTroops * upkeepMult * (1 - barrackDiscount));
 
-  // Tax-based maintenance for overflow support units
-  const taxRate = k.tax || 42;
-  const econMult = (k.res_economy || 100) / 100;
-  const supportMaintenanceCosts = { researcher: 5, engineer: 2, scribe: 3, mage: 5 };
+  // Build housing status message for support units
+  const housedResearchers = Math.min(k.researchers, researcherCap);
+  const housedEngineers = Math.min(k.engineers, engineerCap);
+  const housedScribes = Math.min(k.scribes, scribeCap);
+  const totalHoused = housedResearchers + housedEngineers + housedScribes;
 
-  let overflowMaintenanceTotal = 0;
-  const overflowTypes = [
-    { count: researcherOverflow, type: 'researcher' },
-    { count: engineerOverflow, type: 'engineer' },
-    { count: scribeOverflow, type: 'scribe' },
-    { count: mageOverflow, type: 'mage' },
-  ];
-  for (const { count, type } of overflowTypes) {
-    if (count > 0) {
-      overflowMaintenanceTotal += Math.floor(
-        count * supportMaintenanceCosts[type] * (taxRate / 100) * econMult
-      );
-    }
-  }
-
-  const totalUpkeep = combatUpkeep + overflowMaintenanceTotal;
-
-  if (totalUpkeep > 0) {
-    updates.gold = (updates.gold || k.gold) - totalUpkeep;
+  if (upkeep > 0) {
+    updates.gold = (updates.gold || k.gold) - upkeep;
     if (updates.gold < 0) updates.gold = 0;
-    let msg = `⚔️ Troop upkeep: -${totalUpkeep.toLocaleString()} gold`;
-    if (combatUpkeep > 0) msg += ` (${combatTroops.toLocaleString()} combat troops: -${combatUpkeep.toLocaleString()}`;
-    if (overflowMaintenanceTotal > 0) {
-      if (combatUpkeep > 0) msg += `; `;
-      else msg += ` (`;
-      msg += `${researcherOverflow + engineerOverflow + scribeOverflow + mageOverflow} overflow support units: -${overflowMaintenanceTotal.toLocaleString()}`;
-    }
-    if (totalHoused > 0) msg += `; ${totalHoused.toLocaleString()} support units housed free`;
+    let msg = `⚔️ Troop upkeep: -${upkeep.toLocaleString()} gold (${totalTroops.toLocaleString()} billable`;
+    if (totalHoused > 0)
+      msg += `, ${totalHoused.toLocaleString()} support units housed free`;
+    if (barrackDiscount > 0) msg += `, barracks discount applied`;
     msg += `).`;
     events.push({ type: "system", message: msg });
   } else if (totalHoused > 0) {
@@ -2010,10 +1989,7 @@ function processTurn(k) {
     // Apply world fragment bonuses for housing capacity
     const housingMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'capacity');
     housingCap *= housingMult;
-
-    // Effective population includes overflow support units that moved to housing
-    const effectivePopulation = k.population + researcherOverflow + engineerOverflow + scribeOverflow + mageOverflow;
-    const overcrowded = housingCap > 0 && effectivePopulation > housingCap;
+    const overcrowded = housingCap > 0 && k.population > housingCap;
 
     // Race overcrowding penalty modifiers
     let overcrowdMult = { dire_wolf: 0.5, high_elf: 2.0 }[k.race] || 1.0;
@@ -2025,7 +2001,7 @@ function processTurn(k) {
       ? Math.max(
           0,
           Math.floor(
-            ((effectivePopulation - housingCap) / 1000) * overcrowdMult,
+            ((k.population - housingCap) / 1000) * overcrowdMult,
           ),
         )
       : 0;
