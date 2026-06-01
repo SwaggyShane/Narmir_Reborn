@@ -3312,6 +3312,8 @@
         });
       }
 
+      window.loadActiveExpeditions = loadActiveExpeditions;
+
       async function cancelExpedition(id) {
         var result = await apiCall("POST", "/api/kingdom/expedition/cancel", {
           id: id,
