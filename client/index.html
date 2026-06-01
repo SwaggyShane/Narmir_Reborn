@@ -6006,12 +6006,15 @@
         try {
           console.log("[clearToken] Clearing narmir_token cookie");
           document.cookie = "narmir_token=;path=/;max-age=0";
+          document.cookie = "token=;path=/;max-age=0";
         } catch (e) {}
         try {
-          console.log("[clearToken] narmir_token in localStorage:", localStorage.getItem("narmir_token"));
-          localStorage.removeItem("narmir_token");
-          localStorage.removeItem("gameState");
-          console.log("[clearToken] Cleared narmir_token and gameState from localStorage");
+          const tokenBefore = localStorage.getItem("narmir_token");
+          console.log("[clearToken] narmir_token in localStorage:", tokenBefore);
+          localStorage.clear();
+          console.log("[clearToken] Cleared all localStorage");
+          const tokenAfter = localStorage.getItem("narmir_token");
+          console.log("[clearToken] narmir_token after clear:", tokenAfter);
         } catch (e) {
           console.error("[clearToken] Error clearing localStorage:", e);
         }
