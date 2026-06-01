@@ -6596,6 +6596,7 @@ async function resolveExpeditions(db, k, engine) {
         "collected_events",
         "last_event_id",
         "achievements",
+        "items",
       ]);
 
       // Award XP
