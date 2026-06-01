@@ -203,24 +203,7 @@ window.updateTurnsDisplay = () => {
 
 window.takeTurn = async () => {
   try {
-    const getCsrfToken = () => {
-      try {
-        const m = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
-        if (m) return decodeURIComponent(m[1]);
-      } catch (e) {}
-      return null;
-    };
-
-    const headers = { "Content-Type": "application/json" };
-    const csrfToken = getCsrfToken();
-    if (csrfToken) headers["x-csrf-token"] = csrfToken;
-
-    const response = await fetch("/api/kingdom/turn", {
-      method: "POST",
-      headers,
-    });
-
-    const data = await response.json();
+    const data = await apiCall("POST", "/api/kingdom/turn");
     if (data.error) {
       if (data.error.includes("No turns available")) {
         window.toast?.("No turns available — next +7 turns in 25 minutes", "warning");
