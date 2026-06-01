@@ -3817,12 +3817,9 @@ function processBuildQueue(k, events, xpSourcesAccum) {
                 if (s1Col) {
                   const s1Current = updates[s1Col] !== undefined ? updates[s1Col] : (k[s1Col] || 0);
                   const toConsume = Math.min(s1Current, 3);
-                  // Only consume if we have enough stage-1 buildings
-                  if (toConsume >= 3) {
-                    updates[s1Col] = s1Current - toConsume;
-                    updates.land = (updates.land !== undefined ? updates.land : k.land) + toConsume;
-                    constructionNotes.push(`🔄 3 ${s1Col.replace('bld_', '')} converted into ${building.replace(/_/g, ' ')}.`);
-                  }
+                  updates[s1Col] = s1Current - toConsume;
+                  updates.land = (updates.land !== undefined ? updates.land : k.land) + toConsume;
+                  constructionNotes.push(`🔄 3 ${s1Col.replace('bld_', '')} converted into ${building.replace(/_/g, ' ')}.`);
                 }
               }
             } else if (rbCfg.stage === 3) {
