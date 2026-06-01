@@ -1718,7 +1718,15 @@ function processTurn(k) {
   progressGoal(k, updates, 'turn_taken', 1);
 
   // Initialize XP source tracking at the very beginning
-  let xpSourcesAccum = safeJsonParse(k.xp_sources, { turn: 0, gold_earned: 0, combat_win: 0, combat_loss: 0, research: 0, construction: 0, exploration: 0, spell_cast: 0, covert_op: 0 }, "processTurn:xp_sources");
+  // Defensive: heal from any nested stringification (same pattern as troop_levels above)
+  const XP_SOURCES_DEFAULT = { turn: 0, gold_earned: 0, combat_win: 0, combat_loss: 0, research: 0, construction: 0, exploration: 0, spell_cast: 0, covert_op: 0 };
+  let xpSourcesAccum = safeJsonParse(k.xp_sources, XP_SOURCES_DEFAULT, "processTurn:xp_sources");
+  while (typeof xpSourcesAccum === "string") {
+    xpSourcesAccum = safeJsonParse(xpSourcesAccum, XP_SOURCES_DEFAULT, "processTurn:xp_sources_nested");
+  }
+  if (!xpSourcesAccum || typeof xpSourcesAccum !== "object" || Array.isArray(xpSourcesAccum)) {
+    xpSourcesAccum = { ...XP_SOURCES_DEFAULT };
+  }
 
   const startEffMorale = displayMorale(k);
   const startingCap = naturalMoraleCap(k);
