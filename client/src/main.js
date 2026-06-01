@@ -1,5 +1,6 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { notifyGameStateChange } from "./hooks/useGameState.js";
 import TopbarReact from "./components/react/Topbar.jsx";
 import GoalsPanelReact from "./components/react/GoalsPanel.jsx";
 import SidebarReact from "./components/react/Sidebar.jsx";
@@ -40,6 +41,8 @@ window.registerPanelReactHook = (panelId, callback) => {
   };
 };
 window.triggerReactUpdates = () => {
+  notifyGameStateChange();
+  // Keep backward compat for any remaining registerPanelReactHook callers
   reactHooks.forEach(cb => {
     try { cb(); } catch (e) { console.error("[react] Hook update error:", e); }
   });

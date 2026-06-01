@@ -1,24 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import { useGameState } from '../../hooks/useGameState.js';
 
 const StudiesPanel = () => {
+  const gs = useGameState();
   const [activeTab, setActiveTab] = useState('tower');
   const [activeSchoolSubTab, setActiveSchoolSubTab] = useState('general');
 
   useEffect(() => {
-    const loadMageAllocation = () => {
-      const s = window.gameState || {};
-      const alloc = s.research_allocation || {};
-
-      const spellbookEl = document.getElementById('mage-alloc-spellbook');
-      const schoolEl = document.getElementById('mage-alloc-school');
-      if (spellbookEl) spellbookEl.value = alloc.spellbook_mages || 0;
-      if (schoolEl) schoolEl.value = alloc.school_spellbook_mages || 0;
-
-      if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay();
-    };
-
-    loadMageAllocation();
-  }, [window.gameState?.school_of_magic, window.gameState?.research_allocation]);
+    const alloc = gs.research_allocation || {};
+    const spellbookEl = document.getElementById('mage-alloc-spellbook');
+    const schoolEl = document.getElementById('mage-alloc-school');
+    if (spellbookEl) spellbookEl.value = alloc.spellbook_mages || 0;
+    if (schoolEl) schoolEl.value = alloc.school_spellbook_mages || 0;
+    if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay();
+  }, [gs.school_of_magic, gs.research_allocation]);
 
   const handleTabClick = (tabId) => {
     setActiveTab(tabId);
@@ -40,7 +35,7 @@ const StudiesPanel = () => {
     if (window.saveResearchFocus) window.saveResearchFocus();
   };
 
-  const race = window.gameState?.race || 'human';
+  const race = gs.race || 'human';
 
   return (
     <div id="studies" className="panel" style={{ display: 'none' }}>
@@ -113,13 +108,13 @@ const StudiesPanel = () => {
           >
             📚 General Studies
           </button>
-          {window.gameState?.school_of_magic && (
+          {gs.school_of_magic && (
             <button
               className={`base-btn admin-tab ${activeSchoolSubTab === 'school' ? 'active' : ''}`}
               onClick={() => setActiveSchoolSubTab('school')}
               style={{ borderRadius: 0 }}
             >
-              🔮 {window.gameState?.school_of_magic?.charAt(0).toUpperCase() + window.gameState?.school_of_magic?.slice(1)}
+              🔮 {gs.school_of_magic?.charAt(0).toUpperCase() + gs.school_of_magic?.slice(1)}
             </button>
           )}
         </div>
@@ -163,7 +158,7 @@ const StudiesPanel = () => {
                 <option value="entertainment">Entertainment</option>
                 <option value="construction">Construction</option>
                 <option value="war_machines">War machines</option>
-                {!window.gameState?.school_of_magic && <option value="spellbook">Spellbook</option>}
+                {!gs.school_of_magic && <option value="spellbook">Spellbook</option>}
               </select>
               <div style={{ fontSize: '11px', color: 'var(--text3)' }} id="focus-current-1"></div>
             </div>
@@ -181,13 +176,13 @@ const StudiesPanel = () => {
                 <option value="entertainment">Entertainment</option>
                 <option value="construction">Construction</option>
                 <option value="war_machines">War machines</option>
-                {!window.gameState?.school_of_magic && <option value="spellbook">Spellbook</option>}
+                {!gs.school_of_magic && <option value="spellbook">Spellbook</option>}
               </select>
             </div>
             <button className="base-btn variant-green w-full" onClick={saveResearchFocus} style={{ width: '100%', background: 'var(--green)' }}>Save focus</button>
             <div id="study-progress-list"></div>
 
-            {window.gameState?.res_spellbook >= 100 && !window.gameState?.school_of_magic && (
+            {gs.res_spellbook >= 100 && !gs.school_of_magic && (
               <div style={{ marginTop: '16px', padding: '12px', background: 'var(--bg3)', borderRadius: 'var(--radius)', border: '1px solid var(--gold)', color: 'var(--gold)', fontSize: '13px', textAlign: 'center' }}>
                 ✨ <strong>School selection available!</strong> You can now choose a school of magic. Visit the school selection panel.
               </div>
@@ -196,13 +191,13 @@ const StudiesPanel = () => {
         </div>
 
         {/* SCHOOL OF MAGIC SUB-TAB */}
-        {window.gameState?.school_of_magic && (
+        {gs.school_of_magic && (
           <div style={{ display: activeSchoolSubTab === 'school' ? 'block' : 'none' }}>
             {/* School Header */}
             <div className="card" style={{ marginBottom: '12px', textAlign: 'center' }}>
               <div style={{ fontSize: '32px', marginBottom: '8px' }}>🔮</div>
               <div className="card-title" style={{ marginBottom: '4px', textTransform: 'capitalize' }}>
-                {window.gameState?.school_of_magic?.replace('_', ' ')}
+                {gs.school_of_magic?.replace('_', ' ')}
               </div>
               <div style={{ fontSize: '13px', color: 'var(--text3)', marginBottom: '8px' }}>
                 School of Magic
@@ -323,7 +318,7 @@ const StudiesPanel = () => {
             <div className="card">
               <div className="card-title" style={{ marginBottom: '12px' }}>Spell Tiers</div>
               <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '16px' }}>
-                As your mages study the {window.gameState?.school_of_magic?.replace('_', ' ')} school, spells become available.
+                As your mages study the {gs.school_of_magic?.replace('_', ' ')} school, spells become available.
               </div>
               <div id="school-spell-tiers" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ fontSize: '13px', color: 'var(--text3)' }}>Loading spell structure...</div>

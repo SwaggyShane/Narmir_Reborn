@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiCall } from '../../utils/api';
+import { useGameState } from '../../hooks/useGameState.js';
 
 const REFRESH_INTERVAL_MS = 2 * 60 * 1000;
 
@@ -86,6 +87,7 @@ function itemIcon(id) {
 }
 
 const ResourcesPanel = () => {
+  const gs = useGameState();
   const [activeTab, setActiveTab] = useState('stockpiles');
   const [activeBldTab, setActiveBldTab] = useState('wood');
   const [showGuide, setShowGuide] = useState(true);
@@ -158,6 +160,11 @@ const ResourcesPanel = () => {
       if (r.ok) setVisibleExps(await r.json());
     } catch (e) { console.error(e); }
   };
+
+  // Re-sync whenever the global game state changes (turn taken, server push, etc.)
+  useEffect(() => {
+    syncFromState();
+  }, [gs, syncFromState]);
 
   useEffect(() => {
     syncFromState();

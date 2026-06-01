@@ -1,7 +1,9 @@
 import React from 'react';
+import { useGameState } from '../../hooks/useGameState.js';
 
 const TrainingPanel = () => {
-  const isVampire = window.gameState?.race === 'vampire';
+  const gs = useGameState();
+  const isVampire = gs.race === 'vampire';
   const distributeTrainingEvenly = () => {
     if (window.distributeTrainingEvenly) window.distributeTrainingEvenly();
   };

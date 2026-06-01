@@ -1,23 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { gameState } from '../../main.js';
+import React from 'react';
+import { useGameState } from '../../hooks/useGameState.js';
 
 const Sidebar = () => {
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  useEffect(() => {
-    // If gameState is reactive (from Vue), we might need a way to listen,
-    // but in this pure React transition we can just check if window.gameState has it
-    // or set a simple interval if we want to be hacky, but really it's set once on load.
-    setIsAdmin(!!window.gameState?.isAdmin);
-    
-    // In Vue, reactive() properties were updating. In React we can poll or use event listeners.
-    const interval = setInterval(() => {
-      if (window.gameState?.isAdmin !== isAdmin) {
-        setIsAdmin(!!window.gameState?.isAdmin);
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [isAdmin]);
+  const gs = useGameState();
+  const isAdmin = !!gs.isAdmin;
 
   const handleSwitchTab = (id, e) => {
     if (window.switchTab) window.switchTab(id, e.currentTarget);
