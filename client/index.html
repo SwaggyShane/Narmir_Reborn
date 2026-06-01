@@ -6086,6 +6086,14 @@
       }
       window.apiCall = apiCall;
 
+      // Expose doLogout early so React components can access it
+      async function doLogout() {
+        await apiCall("POST", "/api/auth/logout");
+        clearToken();
+        location.reload();
+      }
+      window.doLogout = doLogout;
+
       function showLoginModal() {
         const app = document.getElementById("app");
         if (app) app.style.display = "none";
@@ -15742,12 +15750,6 @@
       }
 
       // Boot — check auth then show modal or load kingdom
-      async function doLogout() {
-        await apiCall("POST", "/api/auth/logout");
-        clearToken();
-        location.reload();
-      }
-      window.doLogout = doLogout;
 
       function renderRaces() {
         var racePanel = document.getElementById("races-list");
