@@ -27,6 +27,7 @@ import HirePanelReact from "./components/react/HirePanel.jsx";
 import ResourcesPanelReact from "./components/react/ResourcesPanel.jsx";
 import GlobalchatPanelReact from "./components/react/GlobalchatPanel.jsx";
 import SchoolSelectionPanelReact from "./components/react/SchoolSelectionPanel.jsx";
+import MetricsStripReact from "./components/react/MetricsStrip.jsx";
 
 console.log("[react] main.js execution started at", new Date().toISOString());
 
@@ -97,6 +98,7 @@ export const mountReactApps = () => {
   tryMount("vue-panel-resources", ResourcesPanelReact);
   tryMount("vue-panel-globalchat", GlobalchatPanelReact);
   tryMount("vue-panel-school-selection", SchoolSelectionPanelReact);
+  tryMount("vue-metrics-strip", MetricsStripReact);
 
   console.log("[react] All apps mounted");
   if (window.switchTab) {
