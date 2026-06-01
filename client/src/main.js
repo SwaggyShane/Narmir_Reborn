@@ -228,18 +228,45 @@ window.takeTurn = async () => {
           if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay();
           if (window.refreshResourcesPanel) window.refreshResourcesPanel();
           if (window.loadActiveExpeditions) window.loadActiveExpeditions();
+          if (window.refreshExplorationPanel) window.refreshExplorationPanel();
         } catch (e) {
           console.error("[turn] Error refreshing display elements:", e);
         }
       }
+      // Build combined toast: parse events for building completions
+      let completedBuildingsMsg = "";
       if (data.events) {
         for (const ev of data.events) {
-          if (ev.message) {
-            window.toast?.(ev.message, "info");
+          const msg = ev.message || "";
+          if (msg.includes("Completed: ")) {
+            const idx = msg.indexOf("Completed: ");
+            const endPart = msg.substring(idx + "Completed: ".length);
+            const periodIdx = endPart.indexOf(".");
+            completedBuildingsMsg = periodIdx !== -1 ? endPart.substring(0, periodIdx) : endPart;
           }
         }
       }
-      window.toast?.(`Turn ${data.updates?.turn || '?'} processed`, "success");
+
+      const turnNum = data.updates?.turn || '?';
+      const turnsLeft = data.updates?.turns_stored ?? data.turns_stored ?? 0;
+      const turnStatus = `Turn ${turnNum} · ${turnsLeft} turns left`;
+
+      let toastMsg = completedBuildingsMsg
+        ? `🏗️ Completed: ${completedBuildingsMsg}!\n${turnStatus}`
+        : turnStatus;
+      let toastType = "success";
+
+      const gold = window.gameState?.gold || 0;
+      const food = window.gameState?.food || 0;
+      if (food < 1000) {
+        toastMsg = `⚠️ Food critically low!\n${toastMsg}`;
+        toastType = "warn";
+      } else if (gold < 1000) {
+        toastMsg = `⚠️ Gold reserves nearly empty!\n${toastMsg}`;
+        toastType = "warn";
+      }
+
+      window.toast?.(toastMsg, toastType);
     }
   } catch (error) {
     console.error("[turn] Error taking turn:", error);
