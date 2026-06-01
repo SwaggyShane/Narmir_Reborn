@@ -1,64 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import SchoolSelectionModal from './SchoolSelectionModal';
+import { useGameState } from '../../hooks/useGameState.js';
 
-/**
- * SchoolSelectionPanel
- * Shows school selection modal when:
- * - res_spellbook >= 100
- * - school_of_magic is NULL (not yet chosen)
- */
 export default function SchoolSelectionPanel() {
-  const [showModal, setShowModal] = useState(false);
-
-  useEffect(() => {
-    const updateModalVisibility = () => {
-      const gameState = window.gameState || {};
-      const shouldShowModal =
-        (gameState.res_spellbook || 0) >= 100 &&
-        !gameState.school_of_magic;
-
-      setShowModal(shouldShowModal);
-    };
-
-    // Initial check
-    updateModalVisibility();
-
-    // Register hook for state updates
-    const unreg = window.registerPanelReactHook &&
-      window.registerPanelReactHook('school-selection', updateModalVisibility);
-
-    return () => {
-      if (unreg) unreg();
-    };
-  }, []);
+  const gs = useGameState();
+  const showModal = (gs.res_spellbook || 0) >= 100 && !gs.school_of_magic;
 
   const handleModalClose = () => {
-    setShowModal(false);
+    // Modal hides automatically once school_of_magic is set in gameState
   };
 
   const handleSuccess = (data) => {
-    // Close modal and update game state
-    setShowModal(false);
-
-    // Update game state with new school
-    const gameState = window.gameState || {};
-    gameState.school_of_magic = data.school;
-
-    // Notify other panels of state change
-    if (window.triggerReactUpdates) {
-      window.triggerReactUpdates();
-    }
-
-    // Show success message
+    window.gameState.school_of_magic = data.school;
+    if (window.triggerReactUpdates) window.triggerReactUpdates();
     if (window.toast) {
-      window.toast(`🔮 You have chosen the school of ${data.school.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}!`, 'success');
+      const name = data.school.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      window.toast(`🔮 You have chosen the school of ${name}!`, 'success');
     }
   };
 
-  // Don't show anything if modal shouldn't be visible
-  if (!showModal) {
-    return null;
-  }
+  if (!showModal) return null;
 
   return (
     <SchoolSelectionModal

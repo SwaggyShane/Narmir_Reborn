@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useGameState } from '../../hooks/useGameState.js';
 
 const icons = {
   food: "🌾",
@@ -16,36 +17,16 @@ const icons = {
 };
 
 const MarketPanel = () => {
+  const gs = useGameState();
   const [loading, setLoading] = useState(true);
   const [prices, setPrices] = useState([]);
   const [quantities, setQuantities] = useState({});
-  const [sellMultiplier, setSellMultiplier] = useState(0.7);
-  const [state, setState] = useState({});
+  const state = gs;
+  const sellMultiplier = 0.7 + (gs.prestige_level > 0 ? Math.min(0.1, gs.prestige_level * 0.02) : 0);
 
   useEffect(() => {
-    // Initial state copy
-    if (window.gameState) setState({ ...window.gameState });
-
-    const updateState = () => {
-      if (window.gameState) {
-        setState({ ...window.gameState });
-        let mult = 0.7;
-        if (window.gameState.prestige_level && window.gameState.prestige_level > 0) {
-          mult += Math.min(0.1, window.gameState.prestige_level * 0.02);
-        }
-        setSellMultiplier(mult);
-      }
-    };
-
-    updateState();
-
-    const unreg = window.registerPanelReactHook && window.registerPanelReactHook('market', updateState);
-
-    // Replace the global loadMarket
     window.loadMarket = refreshMarket;
     refreshMarket();
-
-    return () => { if (unreg) unreg(); };
   }, []);
 
   const fmt = (n) => {

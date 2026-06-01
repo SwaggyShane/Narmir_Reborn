@@ -1,18 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { gameState } from '../../main.js';
+import React from 'react';
+import { useGameState } from '../../hooks/useGameState.js';
 
 const BottomNav = () => {
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  useEffect(() => {
-    setIsAdmin(!!window.gameState?.isAdmin);
-    const interval = setInterval(() => {
-      if (window.gameState?.isAdmin !== isAdmin) {
-        setIsAdmin(!!window.gameState?.isAdmin);
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [isAdmin]);
+  const gs = useGameState();
+  const isAdmin = !!gs.isAdmin;
 
   const handleSwitchTabMobile = (id, e) => {
     if (window.switchTabMobile) window.switchTabMobile(id, e.currentTarget);

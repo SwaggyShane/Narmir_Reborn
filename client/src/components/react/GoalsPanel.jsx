@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiCall } from '../../utils/api';
+import { useGameState } from '../../hooks/useGameState.js';
 
 const REFRESH_INTERVAL_MS = 2 * 60 * 1000;
 
 const GoalsPanel = () => {
+  const gs = useGameState();
   const [loading, setLoading] = useState(true);
   const [goalsData, setGoalsData] = useState({});
   const [now, setNow] = useState(Date.now());
@@ -34,6 +36,11 @@ const GoalsPanel = () => {
       delete window.refreshGoalsPanel;
     };
   }, [fetchGoals]);
+
+  // Re-fetch goals whenever game state changes (turn taken, goal completed, etc.)
+  useEffect(() => {
+    fetchGoals();
+  }, [gs.turn, gs.xp, gs.level, fetchGoals]);
 
   const claimGoal = async (groupId, goalId) => {
     try {

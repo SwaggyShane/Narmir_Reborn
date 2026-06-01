@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiCall } from '../../utils/api';
+import { useGameState } from '../../hooks/useGameState.js';
 
 const REFRESH_INTERVAL_MS = 2 * 60 * 1000;
 
 const ExplorationPanel = () => {
+  const gs = useGameState();
   const [inventory, setInventory] = useState({});
   const [inventoryOpen, setInventoryOpen] = useState(false);
 
@@ -27,6 +29,11 @@ const ExplorationPanel = () => {
       delete window.refreshExplorationPanel;
     };
   }, [fetchInventory]);
+
+  // Re-fetch inventory when game state changes (items may have been added by expedition)
+  useEffect(() => {
+    fetchInventory();
+  }, [gs.items, fetchInventory]);
 
   const setMaxValue = (inputId, type) => {
     if (window.setMaxValue) window.setMaxValue(inputId, type);

@@ -1,7 +1,9 @@
 import React from 'react';
+import { useGameState } from '../../hooks/useGameState.js';
 
 const HirePanel = () => {
-  const isVampire = window.gameState?.race === 'vampire';
+  const gs = useGameState();
+  const isVampire = gs.race === 'vampire';
   const setMaxValue = (inputId, type) => {
     if (window.setMaxValue) window.setMaxValue(inputId, type);
   };
