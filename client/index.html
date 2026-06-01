@@ -6002,13 +6002,19 @@
       }
       function clearToken() {
         _memToken = null;
+        console.log("[clearToken] Clearing auth state...");
         try {
+          console.log("[clearToken] Clearing narmir_token cookie");
           document.cookie = "narmir_token=;path=/;max-age=0";
         } catch (e) {}
         try {
+          console.log("[clearToken] narmir_token in localStorage:", localStorage.getItem("narmir_token"));
           localStorage.removeItem("narmir_token");
           localStorage.removeItem("gameState");
-        } catch (e) {}
+          console.log("[clearToken] Cleared narmir_token and gameState from localStorage");
+        } catch (e) {
+          console.error("[clearToken] Error clearing localStorage:", e);
+        }
       }
 
       function debugLog(msg) {
