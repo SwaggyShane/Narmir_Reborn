@@ -2,7 +2,7 @@
 
 ## PR Workflow
 
-### Always Create PRs as Drafts
+### ALWAYS SEE IF PREVIOUS PR IS MERGED. Always Create PRs as Drafts
 When pushing changes to a feature branch, **always create the PR as a draft** (`draft: true`). This allows for:
 
 1. **Code review feedback before merge** - Reviewers can comment on the draft PR
