@@ -244,6 +244,7 @@ window.takeTurn = async () => {
           if (window.updateTroopLevelDisplay) window.updateTroopLevelDisplay();
           if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay();
           if (window.refreshResourcesPanel) window.refreshResourcesPanel();
+          if (window.loadActiveExpeditions) window.loadActiveExpeditions();
         } catch (e) {
           console.error("[turn] Error refreshing display elements:", e);
         }
