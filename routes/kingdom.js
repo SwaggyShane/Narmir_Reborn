@@ -586,7 +586,8 @@ module.exports = function (db) {
         existing &&
         !ev.message.includes("Troop upkeep") &&
         !ev.message.includes("🏗️") &&
-        !ev.message.includes("📚")
+        !ev.message.includes("📚") &&
+        !ev.message.includes("✅")
       )
         continue; // already sent — skip
       filteredEvents.push(ev);
