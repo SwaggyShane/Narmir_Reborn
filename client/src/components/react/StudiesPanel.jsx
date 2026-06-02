@@ -277,7 +277,7 @@ const StudiesPanel = () => {
                 School of Magic
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text2)', lineHeight: 1.5, marginTop: '8px' }}>
-                {studiesData?.school_of_magic ? `Master the art of ${studiesData.school_of_magic.replace(/_/g, ' ')} magic.` : 'Loading school information...'}
+                {studiesData?.school_lore || 'Loading school information...'}
               </div>
             </div>
 

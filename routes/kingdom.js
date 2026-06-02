@@ -3784,6 +3784,7 @@ module.exports = function (db) {
       res_spellbook: k.res_spellbook || 0,
       school_spellbook: k.school_spellbook || 0,
       school_of_magic: k.school_of_magic || null,
+      school_lore: k.school_of_magic ? config.SCHOOL_LORE[k.school_of_magic] : null,
       school_spells: schoolSpells,
     });
   });
