@@ -20,12 +20,12 @@ const BUILDING_CONFIG = {
   woodyard:     { key: 'woodyard',     type: 'wood',  stage: 1, label: 'Woodyard',     workersPerBuilding: 10,  yield: 1, yieldEvery: 5 },
   lumber_camp:  { key: 'lumber_camp',  type: 'wood',  stage: 2, label: 'Lumber Camp',  workersPerBuilding: 25,  yield: 3, yieldEvery: 5 },
   sawmill:      { key: 'sawmill',      type: 'wood',  stage: 3, label: 'Sawmill',       workersPerBuilding: 75,  yield: 1, yieldEvery: 1 },
-  gravel_pit:   { key: 'gravel_pit',   type: 'stone', stage: 1, label: 'Gravel Pit',   workersPerBuilding: 30,  yield: 1, yieldEvery: 5 },
-  blockfield:   { key: 'blockfield',   type: 'stone', stage: 2, label: 'Blockfield',   workersPerBuilding: 75,  yield: 3, yieldEvery: 5 },
-  stone_quarry: { key: 'stone_quarry', type: 'stone', stage: 3, label: 'Stone Quarry', workersPerBuilding: 225, yield: 1, yieldEvery: 1 },
-  open_pit:     { key: 'open_pit',     type: 'iron',  stage: 1, label: 'Open Pit',     workersPerBuilding: 20,  yield: 1, yieldEvery: 5 },
-  strip_mine:   { key: 'strip_mine',   type: 'iron',  stage: 2, label: 'Strip Mine',   workersPerBuilding: 50,  yield: 3, yieldEvery: 5 },
-  deep_mine:    { key: 'deep_mine',    type: 'iron',  stage: 3, label: 'Deep Mine',    workersPerBuilding: 150, yield: 1, yieldEvery: 1 },
+  gravel_pit:   { key: 'gravel_pit',   type: 'stone', stage: 1, label: 'Gravel Pit',   workersPerBuilding: 10,  yield: 1, yieldEvery: 5 },
+  blockfield:   { key: 'blockfield',   type: 'stone', stage: 2, label: 'Blockfield',   workersPerBuilding: 25,  yield: 3, yieldEvery: 5 },
+  stone_quarry: { key: 'stone_quarry', type: 'stone', stage: 3, label: 'Stone Quarry', workersPerBuilding: 75,  yield: 1, yieldEvery: 1 },
+  open_pit:     { key: 'open_pit',     type: 'iron',  stage: 1, label: 'Open Pit',     workersPerBuilding: 10,  yield: 1, yieldEvery: 5 },
+  strip_mine:   { key: 'strip_mine',   type: 'iron',  stage: 2, label: 'Strip Mine',   workersPerBuilding: 25,  yield: 3, yieldEvery: 5 },
+  deep_mine:    { key: 'deep_mine',    type: 'iron',  stage: 3, label: 'Deep Mine',    workersPerBuilding: 75,  yield: 1, yieldEvery: 1 },
 };
 
 const RACE_YIELD_BONUS = {
