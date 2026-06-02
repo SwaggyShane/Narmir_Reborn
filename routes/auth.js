@@ -259,7 +259,7 @@ module.exports = function (db) {
     res.json({ ok: true });
   });
 
-  router.get("/force-logout", (_req, res) => {
+  router.post("/force-logout", (_req, res) => {
     const clearOptions = [
       { path: "/", httpOnly: true, sameSite: "none", secure: true },
       { path: "/", httpOnly: true, sameSite: "lax", secure: false },
