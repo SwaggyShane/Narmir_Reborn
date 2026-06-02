@@ -1,6 +1,10 @@
 /**
  * Combat Resolver v2 - Comprehensive combat execution
  * Handles individual troop HP, walls, ladders, ninjas, thieves, clerics, war machines
+ *
+ * TODO: Replace engine.js combat with executeCombat() from this file.
+ * See combat-new.js header for full integration checklist.
+ * Status: Complete but unintegrated — never wired into the active game loop.
  */
 
 const combatCalc = require('./combat-new');
