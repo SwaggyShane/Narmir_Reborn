@@ -482,7 +482,6 @@ const StudiesPanel = () => {
               </div>
               )}
           </div>
-        )}
       </div>
 
       {/* SHRINE TAB */}
