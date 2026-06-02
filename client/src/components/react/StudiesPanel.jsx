@@ -447,7 +447,7 @@ const StudiesPanel = () => {
 
                 {/* School Spells */}
                 <div className="card" style={{ margin: 0 }}>
-                  <div className="card-title" style={{ marginBottom: '12px' }}>
+                  <div className="card-title" style={{ marginBottom: '12px', textTransform: 'capitalize' }}>
                     {(studiesData?.school_of_magic || window.gameState?.school_of_magic)?.replace(/_/g, ' ')} Spells
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -458,7 +458,7 @@ const StudiesPanel = () => {
                         .map(tier => (
                           <div key={`tier-${tier}`}>
                             <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px' }}>
-                              Tier {tier}
+                              Tier {tier}{tier > 1 && ` (requires ${(tier - 1) * 20}% school_spellbook)`}
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginLeft: '12px' }}>
                               {spellsByTier[tier].map(spell => {
