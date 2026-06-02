@@ -3067,9 +3067,14 @@ module.exports = function (db) {
 
   // ── Defense overview ──────────────────────────────────────────────────────────
   router.get("/defense/overview", requireAuth, async (req, res) => {
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
-      req.player.playerId,
-    ]);
+    const k = await db.get(
+      `SELECT id, race, bld_walls, bld_guard_towers, bld_outposts, bld_castles,
+              war_machines, thieves, rangers, wall_upgrades, tower_def_upgrades,
+              outpost_upgrades, defense_upgrades, alliance_buffs, res_war_machines,
+              troop_levels, fragment_bonuses
+       FROM kingdoms WHERE player_id = ?`,
+      [req.player.playerId]
+    );
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
     res.json({
       bld_walls: k.bld_walls,
@@ -3707,9 +3712,20 @@ module.exports = function (db) {
 
   // ── Studies overview ──────────────────────────────────────────────────────────
   router.get("/studies/overview", requireAuth, async (req, res) => {
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
-      req.player.playerId,
-    ]);
+    const k = await db.get(
+      `SELECT id, race, mages, scribes, researchers, bld_libraries, bld_shrines,
+              bld_mausoleums, bld_mage_towers, bld_schools, bld_taverns,
+              research_focus, research_allocation, training_allocation,
+              mage_tower_allocation, shrine_allocation, library_allocation,
+              mausoleum_allocation, tower_upgrades, school_upgrades, shrine_upgrades,
+              library_upgrades, mausoleum_upgrades, scrolls, library_progress,
+              tower_progress, res_economy, res_weapons, res_armor, res_military,
+              res_attack_magic, res_defense_magic, res_entertainment, res_construction,
+              res_war_machines, res_spellbook, school_of_magic, school_spellbook,
+              divine_sanctuary_used, fragment_bonuses
+       FROM kingdoms WHERE player_id = ?`,
+      [req.player.playerId]
+    );
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
     let focus = [];
     try {
@@ -3962,9 +3978,16 @@ module.exports = function (db) {
 
   router.post("/economy/upgrade", requireAuth, requireCsrfToken, async (req, res) => {
     const { category, upgradeKey } = req.body;
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
-      req.player.playerId,
-    ]);
+    const k = await db.get(
+      `SELECT id, race, gold, wood, stone, iron, bld_vaults, bld_farms, bld_markets,
+              bld_taverns, bld_mage_towers, bld_schools, bld_shrines, bld_mausoleums,
+              bld_libraries, bld_walls, bld_guard_towers, bld_outposts, farm_upgrades,
+              granary_upgrades, market_upgrades, tavern_upgrades, tower_upgrades,
+              school_upgrades, shrine_upgrades, mausoleum_upgrades, library_upgrades,
+              wall_upgrades, tower_def_upgrades, outpost_upgrades, bank_upgrades
+       FROM kingdoms WHERE player_id = ?`,
+      [req.player.playerId]
+    );
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
     const result = engine.purchaseUpgrade(k, category, upgradeKey);
     if (result.error) return res.status(400).json({ error: result.error });
@@ -3993,9 +4016,13 @@ module.exports = function (db) {
   // ── Hire mercenaries ──────────────────────────────────────────────────────────
   router.post("/economy/hire-mercs", requireAuth, requireCsrfToken, async (req, res) => {
     const { unitType, tier, count } = req.body;
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
-      req.player.playerId,
-    ]);
+    const k = await db.get(
+      `SELECT id, turn, gold, bld_taverns, tavern_upgrades, mercenaries,
+              fighters, rangers, mages, clerics, thieves, ninjas,
+              engineers, scribes, war_machines
+       FROM kingdoms WHERE player_id = ?`,
+      [req.player.playerId]
+    );
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
     const result = engine.hireMercenaries(
       k,
@@ -4242,9 +4269,16 @@ module.exports = function (db) {
 
   // ── Economy overview ──────────────────────────────────────────────────────────
   router.get("/economy/overview", requireAuth, async (req, res) => {
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
-      req.player.playerId,
-    ]);
+    const k = await db.get(
+      `SELECT id, race, bld_farms, farm_upgrades, population, thralls, active_event,
+              bld_markets, market_upgrades, prestige_level, maps, bld_taverns,
+              bld_granaries, granary_upgrades, food, food_shortage_turns,
+              food_surplus_turns, fragment_bonuses, tavern_upgrades, mercenaries,
+              fighters, rangers, mages, clerics, thieves, ninjas,
+              researchers, engineers, scribes
+       FROM kingdoms WHERE player_id = ?`,
+      [req.player.playerId]
+    );
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
     res.json({
       farmProduction: engine.farmProduction(k),
@@ -4876,7 +4910,13 @@ module.exports = function (db) {
       if (![2,3].includes(Number(toStage))) return res.status(400).json({ error: 'toStage must be 2 or 3.' });
       const stage = Number(toStage);
 
-      const k = await db.get('SELECT * FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
+      const k = await db.get(
+        `SELECT id, level, resource_sequence, gold, wood, stone, iron,
+                bld_woodyard, bld_gravel_pit, bld_open_pit,
+                bld_lumber_camp, bld_blockfield, bld_strip_mine
+         FROM kingdoms WHERE player_id = ?`,
+        [req.player.playerId]
+      );
       if (!k) return res.status(404).json({ error: 'Kingdom not found' });
 
       const level = k.level || 1;
