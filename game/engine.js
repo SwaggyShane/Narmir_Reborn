@@ -3752,7 +3752,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
               // First stage-2 built: consume 3 stage-1 and return 3 land
               const prevCount = (k[col] !== undefined ? k[col] : 0);
               if (prevCount === 0 && canAdd >= 1) {
-                const s1Col = RESOURCE_STAGE1_COL[rbCfg.type];
+                const s1Col = config.RESOURCE_STAGE1_COL[rbCfg.type];
                 if (s1Col) {
                   const s1Current = updates[s1Col] !== undefined ? updates[s1Col] : (k[s1Col] || 0);
                   const toConsume = Math.min(s1Current, 3);
@@ -3766,7 +3766,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
               const newS3Count = current + canAdd;
               // "first one in this bracket" means the new total is now > 0 and bracket wasn't locked
               if (newS3Count > 0 && typeSeq.last_s3_bracket !== currentBracket) {
-                const s2Col = RESOURCE_STAGE2_COL[rbCfg.type];
+                const s2Col = config.RESOURCE_STAGE2_COL[rbCfg.type];
                 if (s2Col) {
                   const s2Current = updates[s2Col] !== undefined ? updates[s2Col] : (k[s2Col] || 0);
                   const toConsume = Math.min(s2Current, 5);
