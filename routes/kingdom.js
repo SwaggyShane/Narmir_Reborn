@@ -2978,7 +2978,7 @@ module.exports = function (db) {
   
   router.post("/goals/claim", requireAuth, requireCsrfToken, async (req, res) => {
     const { groupId, goalId } = req.body;
-    const k = await db.get("SELECT id, turn, goals, world_fragments, gold, mana, wood, stone, iron, coal, steel, food, fighters, rangers, clerics, mages, thieves, ninjas, researchers, engineers, scribes, war_machines FROM kingdoms WHERE player_id = ?", [req.player.playerId]);
+    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [req.player.playerId]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
 
     let updates = {};
