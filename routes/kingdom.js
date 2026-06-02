@@ -3738,6 +3738,26 @@ module.exports = function (db) {
         ).key,
       ];
     }
+    // Regular spellbook spells
+    const regularSpells = [
+      'spark', 'fog_of_war', 'mend', 'blight', 'rain', 'dispel',
+      'lightning', 'bless', 'silence', 'amnesia', 'drain',
+      'plague', 'earthquake', 'tempest', 'shield', 'armageddon'
+    ];
+    const spellbookSpells = regularSpells.map(name => {
+      const def = config.SPELL_DEFS[name] || {};
+      return {
+        id: name,
+        name: name.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+        tier: def.tier || 1,
+        min_spellbook: def.minSB || 0,
+        desc: def.desc || 'Unknown spell',
+      };
+    }).sort((a, b) => {
+      if (a.tier !== b.tier) return a.tier - b.tier;
+      return a.min_spellbook - b.min_spellbook;
+    });
+
     let schoolSpells = null;
     if (k.school_of_magic && config.MAGIC_SCHOOLS[k.school_of_magic]) {
       const spellNames = config.MAGIC_SCHOOLS[k.school_of_magic];
@@ -3785,6 +3805,7 @@ module.exports = function (db) {
       school_spellbook: k.school_spellbook || 0,
       school_of_magic: k.school_of_magic || null,
       school_lore: k.school_of_magic ? config.SCHOOL_LORE[k.school_of_magic] : null,
+      spellbook_spells: spellbookSpells,
       school_spells: schoolSpells,
     });
   });

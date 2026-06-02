@@ -109,6 +109,19 @@ const StudiesPanel = () => {
     return grouped;
   }, [studiesData?.school_spells]);
 
+  // Memoize regular spellbook spell grouping by tier
+  const spellbookSpellsByTier = useMemo(() => {
+    if (!studiesData?.spellbook_spells || studiesData.spellbook_spells.length === 0) {
+      return {};
+    }
+    const grouped = {};
+    studiesData.spellbook_spells.forEach(spell => {
+      if (!grouped[spell.tier]) grouped[spell.tier] = [];
+      grouped[spell.tier].push(spell);
+    });
+    return grouped;
+  }, [studiesData?.spellbook_spells]);
+
   return (
     <div id="studies" className="panel" style={{ display: 'none' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
@@ -394,7 +407,52 @@ const StudiesPanel = () => {
               </div>
             </div>
 
+            {/* Spellbook Spells Section */}
+            <div className="card">
+              <div className="card-title" style={{ marginBottom: '12px' }}>Spellbook Spells</div>
+              <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '16px' }}>
+                Unlock spells as your kingdom advances in magical research.
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
+                {Object.keys(spellbookSpellsByTier).length > 0 ? (
+                  Object.keys(spellbookSpellsByTier)
+                    .map(Number)
+                    .sort((a, b) => a - b)
+                    .map(tier => (
+                      <div key={`sb-tier-${tier}`}>
+                        <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px' }}>
+                          Tier {tier}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginLeft: '12px' }}>
+                          {spellbookSpellsByTier[tier].map(spell => {
+                            const isRevealed = (studiesData?.res_spellbook || 0) >= (spell.min_spellbook || 0);
+                            return (
+                              <div key={spell.id} style={{ fontSize: '12px', color: isRevealed ? 'var(--text2)' : 'var(--text3)' }}>
+                                {isRevealed ? (
+                                  <>
+                                    <span style={{ marginRight: '8px' }}>✨</span>
+                                    <strong>{spell.name}</strong> — {spell.desc}
+                                  </>
+                                ) : (
+                                  <>
+                                    <span style={{ marginRight: '8px' }}>⬜</span>
+                                    <span style={{ color: 'var(--text3)' }}>??? (requires {spell.min_spellbook}% spellbook)</span>
+                                  </>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))
+                ) : (
+                  <div style={{ fontSize: '13px', color: 'var(--text3)' }}>Loading spell structure...</div>
+                )}
+              </div>
+            </div>
+
             {/* Spell Tiers Reveal */}
+            {(studiesData?.school_of_magic || window.gameState?.school_of_magic) && (
             <div className="card">
               <div className="card-title" style={{ marginBottom: '12px' }}>Spell Tiers</div>
               <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '16px' }}>
@@ -437,6 +495,7 @@ const StudiesPanel = () => {
                 )}
               </div>
             </div>
+            )}
           </div>
         )}
       </div>
