@@ -2482,6 +2482,139 @@ function processTurn(k) {
     });
   }
 
+  // ── 7b. Mage research — mages study spellbook (100+) and school_spellbook ──────
+  const mages = k.mages || 0;
+  if (mages > 0) {
+    let mageAlloc = safeJsonParse(k.research_allocation, {}, "processTurn:mage_allocation");
+    const spellbookMages = mageAlloc.spellbook_mages || 0;
+    const schoolSpellbookMages = mageAlloc.school_spellbook_mages || 0;
+
+    if (spellbookMages > 0 || schoolSpellbookMages > 0) {
+      let mageRProgress = safeJsonParse(k.mage_research_progress, {}, "processTurn:mage_research_progress");
+      const mageAdvances = [];
+      const mageSchoolBonus = schoolBonus; // Same multiplier as researchers
+      const mageMult = raceMagic; // Magic bonus for mage research
+      const mageLibraryMult = fragmentBonusManager.getBonusMultiplier(k, 'libraries', 'research_speed');
+
+      // Process spellbook research for mages (continuation from 100+)
+      if (spellbookMages > 0) {
+        const spellCol = "res_spellbook";
+        const currentSpell = updates[spellCol] !== undefined ? updates[spellCol] : k[spellCol] || 0;
+        const spellCap = getCap(spellCol, k.level || 1);
+
+        if (currentSpell < spellCap) {
+          const spellEffective = Math.floor(
+            spellbookMages * mageSchoolBonus * mageMult * curriculumMult * mageLibraryMult
+          );
+          mageRProgress[spellCol] = (mageRProgress[spellCol] || 0) + spellEffective;
+
+          let spellFactor = 1.0;
+          if (currentSpell > 100) {
+            spellFactor = Math.pow(1.05, currentSpell - 100);
+          }
+          const spellCost = Math.floor(200 * spellFactor);
+
+          let spellInc = 0;
+          if (mageRProgress[spellCol] >= spellCost) {
+            spellInc = Math.floor(mageRProgress[spellCol] / spellCost);
+            mageRProgress[spellCol] -= spellInc * spellCost;
+          }
+
+          if (spellInc > 0) {
+            const newSpellVal = Math.min(spellCap, currentSpell + spellInc);
+            if (newSpellVal !== currentSpell) {
+              updates[spellCol] = newSpellVal;
+              mageAdvances.push(`Spellbook → ${newSpellVal}%`);
+            }
+          }
+        }
+      }
+
+      // Process school_spellbook research for mages (0+)
+      if (schoolSpellbookMages > 0 && k.school_of_magic) {
+        const schoolCol = "school_spellbook";
+        const currentSchool = updates[schoolCol] !== undefined ? updates[schoolCol] : k[schoolCol] || 0;
+        const schoolCap = getCap(schoolCol, k.level || 1);
+
+        if (currentSchool < schoolCap) {
+          const schoolEffective = Math.floor(
+            schoolSpellbookMages * mageSchoolBonus * mageMult * curriculumMult * mageLibraryMult
+          );
+          mageRProgress[schoolCol] = (mageRProgress[schoolCol] || 0) + schoolEffective;
+
+          let schoolFactor = 1.0;
+          if (currentSchool > 100) {
+            schoolFactor = Math.pow(1.05, currentSchool - 100);
+          }
+          const schoolCost = Math.floor(200 * schoolFactor);
+
+          let schoolInc = 0;
+          if (mageRProgress[schoolCol] >= schoolCost) {
+            schoolInc = Math.floor(mageRProgress[schoolCol] / schoolCost);
+            mageRProgress[schoolCol] -= schoolInc * schoolCost;
+          }
+
+          if (schoolInc > 0) {
+            const newSchoolVal = Math.min(schoolCap, currentSchool + schoolInc);
+            if (newSchoolVal !== currentSchool) {
+              updates[schoolCol] = newSchoolVal;
+              mageAdvances.push(`School Spellbook → ${newSchoolVal}%`);
+            }
+          }
+        }
+      }
+
+      updates.mage_research_progress = JSON.stringify(mageRProgress);
+
+      // Award Mage XP
+      if (spellbookMages > 0 || schoolSpellbookMages > 0) {
+        const mXpMult = schoolUpgrades.grand_academy ? 1.5 : 1.0;
+        const totalMXp = Math.floor((5 + mageAdvances.length * 5) * mXpMult);
+        const mXp = awardTroopXp(
+          { ...k, troop_levels: updates.troop_levels || k.troop_levels },
+          "mages",
+          totalMXp
+        );
+        updates.troop_levels = typeof mXp.troop_levels === "string" ? JSON.parse(mXp.troop_levels) : mXp.troop_levels;
+        if (mXp.levelUps.length) {
+          events.push({
+            type: "system",
+            message: `✨ Mages grew more skilled!`,
+          });
+        }
+      }
+
+      if (mageAdvances.length > 0) {
+        events.push({
+          type: "system",
+          message: `✨ Mage research advanced: ${mageAdvances.join(", ")}.`,
+        });
+        const mResXp = awardXp(
+          {
+            ...k,
+            xp: updates.xp || k.xp,
+            level: updates.level || k.level || 1,
+            xp_sources: xpSourcesAccum,
+          },
+          "magic",
+          mageAdvances.length
+        );
+        updates.xp = mResXp.xp;
+        updates.level = mResXp.level;
+        if (mResXp.levelled) events.push(...mResXp.events);
+        Object.assign(xpSourcesAccum, mResXp.xp_sources);
+      } else if (spellbookMages > 0 || schoolSpellbookMages > 0) {
+        const mageEstimates = [];
+        if (spellbookMages > 0) mageEstimates.push("Spellbook");
+        if (schoolSpellbookMages > 0) mageEstimates.push("School Spellbook");
+        events.push({
+          type: "system",
+          message: `✨ ${(spellbookMages + schoolSpellbookMages).toLocaleString()} mages studying ${mageEstimates.join(" & ")}.`,
+        });
+      }
+    }
+  }
+
   // ── 8. Build queue — engineers work on queued buildings each turn ─────────────
   const buildUpdates = processBuildQueue({ ...k, ...updates }, events, xpSourcesAccum);
   Object.assign(updates, buildUpdates);
