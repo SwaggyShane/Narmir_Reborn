@@ -757,7 +757,7 @@ async function runRegen(db) {
   }
 
   // Fire daily events for all kingdoms
-  const kingdoms = await db.all('SELECT * FROM kingdoms WHERE turn > 0');
+  const kingdoms = await db.all('SELECT id, name, race, morale, gold, food, population, last_event_at, turn, active_event FROM kingdoms WHERE turn > 0');
   const newsInserts = [];
 
   for (const k of kingdoms) {

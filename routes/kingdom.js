@@ -296,7 +296,7 @@ module.exports = function (db) {
       return res.status(400).json({ error: "Allocation exceeds maximum of 10000" });
     }
 
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
+    const k = await db.get("SELECT id FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -936,7 +936,7 @@ module.exports = function (db) {
     // Whitelist valid unit types to prevent injection of arbitrary keys
     const validUnits = new Set(['fighters', 'rangers', 'mages', 'clerics', 'thieves', 'ninjas']);
 
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
+    const k = await db.get(`SELECT id, bld_training, fighters, rangers, mages, clerics, thieves, ninjas FROM kingdoms WHERE player_id = ?`, [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -1058,7 +1058,7 @@ module.exports = function (db) {
 
   router.post("/demolish", requireAuth, requireCsrfToken, async (req, res) => {
     const { building, amount } = req.body;
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
+    const k = await db.get(`SELECT ${KINGDOM_RESOURCE} FROM kingdoms WHERE player_id = ?`, [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -1134,7 +1134,7 @@ module.exports = function (db) {
   router.post("/cancel-building", requireAuth, requireCsrfToken, async (req, res) => {
     const { queueId } = req.body;
 
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
+    const k = await db.get(`SELECT id, build_queue, land, wood, stone, iron, turn FROM kingdoms WHERE player_id = ?`, [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -1227,7 +1227,7 @@ module.exports = function (db) {
     try {
       await db.run("BEGIN TRANSACTION");
 
-      const k = await db.get("SELECT * FROM kingdoms WHERE player_id=? FOR UPDATE", [
+      const k = await db.get(`SELECT ${KINGDOM_SMITHY} FROM kingdoms WHERE player_id=? FOR UPDATE`, [
         req.player.playerId,
       ]);
       if (!k) {
@@ -1285,7 +1285,7 @@ module.exports = function (db) {
     try {
       await db.run("BEGIN TRANSACTION");
 
-      const k = await db.get("SELECT * FROM kingdoms WHERE player_id=? FOR UPDATE", [
+      const k = await db.get(`SELECT ${KINGDOM_SMITHY} FROM kingdoms WHERE player_id=? FOR UPDATE`, [
         req.player.playerId,
       ]);
       if (!k) {
@@ -1364,7 +1364,7 @@ module.exports = function (db) {
       if (isNaN(targetId))
         return res.status(400).json({ error: "Invalid target kingdom" });
 
-      const k = await db.get("SELECT * FROM kingdoms WHERE player_id=?", [
+      const k = await db.get("SELECT id, gold, market_upgrades FROM kingdoms WHERE player_id=?", [
         req.player.playerId,
       ]);
       if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -1387,7 +1387,7 @@ module.exports = function (db) {
       if (k.id == targetId)
         return res.status(400).json({ error: "Cannot trade with yourself" });
 
-      const target = await db.get("SELECT * FROM kingdoms WHERE id=?", [
+      const target = await db.get("SELECT id, turn FROM kingdoms WHERE id=?", [
         targetId,
       ]);
       if (!target) return res.status(404).json({ error: "Target not found" });
