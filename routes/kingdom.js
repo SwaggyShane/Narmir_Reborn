@@ -1364,7 +1364,7 @@ module.exports = function (db) {
       if (isNaN(targetId))
         return res.status(400).json({ error: "Invalid target kingdom" });
 
-      const k = await db.get("SELECT id, gold, market_upgrades FROM kingdoms WHERE player_id=?", [
+      const k = await db.get("SELECT id, name, gold, market_upgrades FROM kingdoms WHERE player_id=?", [
         req.player.playerId,
       ]);
       if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -2978,7 +2978,7 @@ module.exports = function (db) {
   
   router.post("/goals/claim", requireAuth, requireCsrfToken, async (req, res) => {
     const { groupId, goalId } = req.body;
-    const k = await db.get("SELECT id, turn, goals, world_fragments FROM kingdoms WHERE player_id = ?", [req.player.playerId]);
+    const k = await db.get("SELECT id, turn, goals, world_fragments, gold, mana, rangers, researchers, war_machines FROM kingdoms WHERE player_id = ?", [req.player.playerId]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
 
     let updates = {};
@@ -3068,7 +3068,7 @@ module.exports = function (db) {
   // ── Defense overview ──────────────────────────────────────────────────────────
   router.get("/defense/overview", requireAuth, async (req, res) => {
     const k = await db.get(
-      `SELECT id, race, bld_walls, bld_guard_towers, bld_outposts, bld_castles,
+      `SELECT id, race, region, prestige_level, bld_walls, bld_guard_towers, bld_outposts, bld_castles,
               war_machines, thieves, rangers, wall_upgrades, tower_def_upgrades,
               outpost_upgrades, defense_upgrades, alliance_buffs, res_war_machines,
               troop_levels, fragment_bonuses
@@ -3501,7 +3501,7 @@ module.exports = function (db) {
     try {
       await db.run("BEGIN TRANSACTION");
 
-      const k = await db.get("SELECT id, turn, gold, wood, stone, iron, food, mana, maps, weapons_stockpile, armor_stockpile FROM kingdoms WHERE player_id = ? FOR UPDATE", [
+      const k = await db.get("SELECT id, turn, gold, wood, stone, iron, food, mana, maps, weapons_stockpile, armor_stockpile, coal, steel, war_machines, land FROM kingdoms WHERE player_id = ? FOR UPDATE", [
         req.player.playerId,
       ]);
       if (!k) {
@@ -3589,7 +3589,7 @@ module.exports = function (db) {
     try {
       await db.run("BEGIN TRANSACTION");
 
-      const k = await db.get("SELECT id, turn, gold, wood, stone, iron, food, mana, maps, weapons_stockpile, armor_stockpile FROM kingdoms WHERE player_id = ? FOR UPDATE", [
+      const k = await db.get("SELECT id, turn, gold, wood, stone, iron, food, mana, maps, weapons_stockpile, armor_stockpile, coal, steel, war_machines, land FROM kingdoms WHERE player_id = ? FOR UPDATE", [
         req.player.playerId,
       ]);
       if (!k) {
@@ -3713,7 +3713,7 @@ module.exports = function (db) {
   // ── Studies overview ──────────────────────────────────────────────────────────
   router.get("/studies/overview", requireAuth, async (req, res) => {
     const k = await db.get(
-      `SELECT id, race, mages, scribes, researchers, bld_libraries, bld_shrines,
+      `SELECT id, race, region, prestige_level, alliance_buffs, mages, scribes, researchers, bld_libraries, bld_shrines,
               bld_mausoleums, bld_mage_towers, bld_schools, bld_taverns,
               research_focus, research_allocation, training_allocation,
               mage_tower_allocation, shrine_allocation, library_allocation,
@@ -4818,7 +4818,7 @@ module.exports = function (db) {
   router.post('/expedition/intercept', requireAuth, requireCsrfToken, async (req, res) => {
     try {
       const { expeditionId, fighters } = req.body;
-      const k = await db.get('SELECT id, turn, race, fighters, wood, stone, iron, gold FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
+      const k = await db.get('SELECT id, name, turn, race, fighters, wood, stone, iron, gold FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
       if (!k) return res.status(404).json({ error: 'Kingdom not found' });
       if (k.race !== 'orc') return res.status(403).json({ error: 'Only Orcs can intercept expeditions.' });
       if (!fighters || fighters < 1) return res.status(400).json({ error: 'Must send at least 1 fighter.' });
@@ -5138,9 +5138,13 @@ module.exports = function (db) {
   // GET /api/kingdom/available-attunements — Get available attunement options
   router.get('/available-attunements', requireAuth, async (req, res) => {
     try {
-      const kingdom = await db.get("SELECT id, fragment_bonuses, world_fragments FROM kingdoms WHERE player_id = ?", [
-        req.player.playerId,
-      ]);
+      const kingdom = await db.get(
+        `SELECT id, fragment_bonuses, world_fragments, bld_farms, bld_barracks, bld_markets,
+                bld_schools, bld_mage_towers, bld_shrines, bld_guard_towers, bld_castles,
+                bld_smithies, bld_libraries
+         FROM kingdoms WHERE player_id = ?`,
+        [req.player.playerId]
+      );
       if (!kingdom) return res.status(404).json({ error: "Kingdom not found" });
 
       const available = attunementManager.getAvailableAttunements(kingdom);
@@ -5165,9 +5169,13 @@ module.exports = function (db) {
         return res.status(400).json({ error: 'fragmentName and buildingType required' });
       }
 
-      const kingdom = await db.get("SELECT id, turn, fragment_bonuses, world_fragments FROM kingdoms WHERE player_id = ?", [
-        req.player.playerId,
-      ]);
+      const kingdom = await db.get(
+        `SELECT id, turn, fragment_bonuses, world_fragments, bld_farms, bld_barracks, bld_markets,
+                bld_schools, bld_mage_towers, bld_shrines, bld_guard_towers, bld_castles,
+                bld_smithies, bld_libraries
+         FROM kingdoms WHERE player_id = ?`,
+        [req.player.playerId]
+      );
       if (!kingdom) return res.status(404).json({ error: "Kingdom not found" });
 
       // Apply attunement logic
