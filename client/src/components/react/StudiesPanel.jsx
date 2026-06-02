@@ -1,46 +1,49 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 const StudiesPanel = () => {
   const [activeTab, setActiveTab] = useState('tower');
   const [activeSchoolSubTab, setActiveSchoolSubTab] = useState('general');
+  const [studiesData, setStudiesData] = useState(null);
+
+  const fetchStudiesData = useCallback(async () => {
+    try {
+      const response = await fetch('/api/kingdom/studies/overview');
+      if (response.ok) {
+        const data = await response.json();
+        setStudiesData(data);
+      }
+    } catch (err) {
+      console.error('Failed to load studies data:', err);
+    }
+  }, []);
 
   useEffect(() => {
-    const loadMageAllocation = () => {
-      const s = window.gameState || {};
-      const alloc = s.research_allocation || {};
+    fetchStudiesData();
+  }, [fetchStudiesData]);
 
-      const spellbookEl = document.getElementById('mage-alloc-spellbook');
-      const schoolEl = document.getElementById('mage-alloc-school');
-      if (spellbookEl) spellbookEl.value = alloc.spellbook_mages || 0;
-      if (schoolEl) schoolEl.value = alloc.school_spellbook_mages || 0;
-
-      if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay();
-    };
-
-    loadMageAllocation();
-  }, [window.gameState?.school_of_magic, window.gameState?.research_allocation]);
-
-  const handleTabClick = (tabId) => {
+  const handleTabClick = useCallback((tabId) => {
     setActiveTab(tabId);
     if (tabId === "tower" && window.renderMageTowerPanel) window.renderMageTowerPanel();
     if (tabId === "school" && window.updateFocusPreview) window.updateFocusPreview();
     if (tabId === "shrine" && window.renderShrinePanel) window.renderShrinePanel();
     if (tabId === "slibrary" && window.renderLibraryPanel) window.renderLibraryPanel();
-  };
+  }, []);
 
-  const loadStudies = () => {
+  const loadStudies = useCallback(async () => {
+    await fetchStudiesData();
     if (window.loadStudies) window.loadStudies();
-  };
+  }, [fetchStudiesData]);
 
-  const updateFocusPreview = () => {
+  const updateFocusPreview = useCallback(() => {
     if (window.updateFocusPreview) window.updateFocusPreview();
-  };
+  }, []);
 
-  const saveResearchFocus = () => {
+  const saveResearchFocus = useCallback(() => {
     if (window.saveResearchFocus) window.saveResearchFocus();
-  };
+  }, []);
 
   const race = window.gameState?.race || 'human';
+  const researchAlloc = studiesData?.research_allocation || {};
 
   return (
     <div id="studies" className="panel" style={{ display: 'none' }}>
@@ -238,7 +241,7 @@ const StudiesPanel = () => {
                       className="input"
                       id="mage-alloc-spellbook"
                       min="0"
-                      defaultValue="0"
+                      value={researchAlloc.spellbook_mages || 0}
                       onChange={() => { if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay(); }}
                       style={{ textAlign: 'right', flex: 1 }}
                       placeholder="Qty"
@@ -257,7 +260,7 @@ const StudiesPanel = () => {
                       className="input"
                       id="mage-alloc-school"
                       min="0"
-                      defaultValue="0"
+                      value={researchAlloc.school_spellbook_mages || 0}
                       onChange={() => { if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay(); }}
                       style={{ textAlign: 'right', flex: 1 }}
                       placeholder="Qty"
@@ -278,18 +281,18 @@ const StudiesPanel = () => {
 
                 <div className="trow">
                   <span className="name">Level</span>
-                  <span className="count" id="school-spellbook-level">100%</span>
+                  <span className="count">{studiesData?.res_spellbook || 0}%</span>
                 </div>
                 <div className="trow">
                   <span className="name">Progress</span>
-                  <span className="count" id="school-spellbook-progress">—</span>
+                  <span className="count">—</span>
                 </div>
                 <div className="trow">
                   <span className="name">Mages assigned</span>
-                  <span className="count" id="school-spellbook-mages">0</span>
+                  <span className="count">{researchAlloc.spellbook_mages || 0}</span>
                 </div>
 
-                <div style={{ marginTop: '12px', fontSize: '11px', color: 'var(--text3)' }} id="school-spellbook-turns">
+                <div style={{ marginTop: '12px', fontSize: '11px', color: 'var(--text3)' }}>
                   Turns to next level: —
                 </div>
               </div>
@@ -302,18 +305,18 @@ const StudiesPanel = () => {
 
                 <div className="trow">
                   <span className="name">Level</span>
-                  <span className="count" id="school-specific-level">0%</span>
+                  <span className="count">{studiesData?.school_spellbook || 0}%</span>
                 </div>
                 <div className="trow">
                   <span className="name">Progress</span>
-                  <span className="count" id="school-specific-progress">—</span>
+                  <span className="count">—</span>
                 </div>
                 <div className="trow">
                   <span className="name">Mages assigned</span>
-                  <span className="count" id="school-specific-mages">0</span>
+                  <span className="count">{researchAlloc.school_spellbook_mages || 0}</span>
                 </div>
 
-                <div style={{ marginTop: '12px', fontSize: '11px', color: 'var(--text3)' }} id="school-specific-turns">
+                <div style={{ marginTop: '12px', fontSize: '11px', color: 'var(--text3)' }}>
                   Turns to next level: —
                 </div>
               </div>
