@@ -21,13 +21,18 @@ const StudiesPanel = () => {
     fetchStudiesData();
   }, [fetchStudiesData]);
 
-  // Sync uncontrolled inputs with server data
+  // Sync uncontrolled inputs with server data (skip if input is actively being edited)
   useEffect(() => {
     if (studiesData?.research_allocation) {
       const spellbookEl = document.getElementById('mage-alloc-spellbook');
       const schoolEl = document.getElementById('mage-alloc-school');
-      if (spellbookEl) spellbookEl.value = studiesData.research_allocation.spellbook_mages || 0;
-      if (schoolEl) schoolEl.value = studiesData.research_allocation.school_spellbook_mages || 0;
+      // Only update if not currently focused by user
+      if (spellbookEl && document.activeElement !== spellbookEl) {
+        spellbookEl.value = studiesData.research_allocation.spellbook_mages || 0;
+      }
+      if (schoolEl && document.activeElement !== schoolEl) {
+        schoolEl.value = studiesData.research_allocation.school_spellbook_mages || 0;
+      }
     }
   }, [studiesData?.research_allocation]);
 
@@ -60,13 +65,13 @@ const StudiesPanel = () => {
     const spellbookEl = document.getElementById('mage-alloc-spellbook');
     const schoolEl = document.getElementById('mage-alloc-school');
     if (spellbookEl && schoolEl) {
-      // Trigger a state update with current input values
+      // Trigger a state update with current input values (clamped to non-negative)
       setStudiesData(prev => ({
         ...prev,
         research_allocation: {
           ...prev?.research_allocation,
-          spellbook_mages: parseInt(spellbookEl.value, 10) || 0,
-          school_spellbook_mages: parseInt(schoolEl.value, 10) || 0,
+          spellbook_mages: Math.max(0, parseInt(spellbookEl.value, 10) || 0),
+          school_spellbook_mages: Math.max(0, parseInt(schoolEl.value, 10) || 0),
         }
       }));
     }
