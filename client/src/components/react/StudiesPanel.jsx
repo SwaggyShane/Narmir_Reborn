@@ -23,8 +23,17 @@ const StudiesPanel = () => {
     }
   }, []);
 
+  // Fetch data on mount
   useEffect(() => {
     fetchStudiesData();
+  }, [fetchStudiesData]);
+
+  // Register hook to refresh when panel becomes active or game state updates
+  useEffect(() => {
+    const unregister = window.registerPanelReactHook?.('studies', () => {
+      fetchStudiesData();
+    });
+    return () => unregister?.();
   }, [fetchStudiesData]);
 
   // Sync uncontrolled inputs with server data (skip if input is actively being edited)
@@ -104,8 +113,8 @@ const StudiesPanel = () => {
     <div id="studies" className="panel" style={{ display: 'none' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
         <div className="card-title">🏛️ Studies</div>
-        <button className="base-btn" onClick={loadStudies} disabled={isRefreshing} style={{ opacity: isRefreshing ? 0.6 : 1 }}>
-          {isRefreshing ? '⟳ Refreshing...' : '↻ Refresh'}
+        <button className="base-btn" onClick={loadStudies} disabled={isRefreshing} style={{ fontSize: '11px', opacity: isRefreshing ? 0.6 : 0.7, padding: '4px 8px' }}>
+          {isRefreshing ? '⟳ Syncing...' : '↻ Sync'}
         </button>
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '16px', borderBottom: '2px solid var(--border2)', paddingBottom: 0 }}>
