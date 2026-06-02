@@ -1826,7 +1826,7 @@ function processTurn(k) {
   // ── 5. Lore Events ────────────────────────────────────────────────────────────
   // 0.1% chance ~ 24000 turns needed for 24 drops
   if (Math.random() < 0.001) {
-    const LORE = require("./config").LORE_EVENTS;
+    const LORE = config.LORE_EVENTS;
     const cats = ["narmir", "general", k.race];
     const cat = cats[Math.floor(Math.random() * cats.length)];
     const raceLore = LORE[cat] || [];
@@ -7850,7 +7850,6 @@ function engineerConstructionMult(level) {
 }
 
 function calculateBuildTime(kingdom, tier) {
-  const config = require('./config');
   const baseTime = config.BUILDING_TIER_TIMES[tier] || 0;
   const engineerLevel = kingdom.engineer_level || 1;
   const engineerMult = engineerConstructionMult(engineerLevel);
@@ -7861,7 +7860,6 @@ function calculateBuildTime(kingdom, tier) {
 }
 
 function calculateBuildCost(kingdom, tier) {
-  const config = require('./config');
   const baseCost = config.BUILDING_TIER_COSTS[tier] || {};
   const raceMult = config.RACE_BONUSES[kingdom.race]?.construction || 1.0;
 

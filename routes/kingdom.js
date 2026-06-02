@@ -2,9 +2,12 @@ const express = require("express");
 const engine = require("../game/engine");
 const config = require("../game/config");
 const { requireAuth, requireCsrfToken } = require("./middleware");
-const { progressGoal } = require('../game/goals');
+const { progressGoal, generateGoals, claimGoal } = require('../game/goals');
 const { safeJsonParse } = require('../utils/helpers');
 const { getKingdomAttunements } = require('../game/fragment-attunements');
+const fragmentBonusManager = require("../game/fragment-bonus-manager");
+const attunementManager = require('../game/attunement-manager');
+const { applyKingdomUpdates } = require('../db/schema');
 
 const router = express.Router();
 
@@ -1076,7 +1079,6 @@ module.exports = function (db) {
   // ── Build structures — start construction with engineer allocation ──────────
   router.post("/build", requireAuth, requireCsrfToken, async (req, res) => {
     const { building } = req.body;
-    const config = require("../game/config");
 
     const k = await db.get(`SELECT ${KINGDOM_RESOURCE} FROM kingdoms WHERE player_id = ?`, [
       req.player.playerId,
@@ -2964,8 +2966,6 @@ module.exports = function (db) {
     }
   });
 
-  const { generateGoals, claimGoal } = require('../game/goals');
-
   router.get("/goals", requireAuth, async (req, res) => {
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [req.player.playerId]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -2989,7 +2989,6 @@ module.exports = function (db) {
       return res.status(400).json({ error: result.message });
     }
     
-    const { applyKingdomUpdates } = require('../db/schema');
     await applyKingdomUpdates(k.id, updates);
     for (const ev of events) {
       await db.run("INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)", 
@@ -3156,8 +3155,6 @@ module.exports = function (db) {
     } catch {}
     res.json({ discovered: disc, wip });
   });
-
-  const fragmentBonusManager = require("../game/fragment-bonus-manager");
 
   // Get available buildings for a hybrid blueprint (for selection modal)
   router.post("/hybrid-blueprint/get-buildings", requireAuth, requireCsrfToken, async (req, res) => {
@@ -4494,7 +4491,7 @@ module.exports = function (db) {
         achievements = [];
       }
 
-      const LORE = require("../game/config").LORE_EVENTS;
+      const LORE = config.LORE_EVENTS;
 
       const filterLore = (categoryList) => {
         return (categoryList || [])
@@ -4606,11 +4603,7 @@ module.exports = function (db) {
     addItemToInventory,
   } = engine;
 
-  const {
-    RARE_RESOURCE_ITEMS,
-    RESOURCE_NODE_NAMES,
-    HARVEST_DURATION_BY_RICHNESS,
-  } = require('../game/config');
+  const { RARE_RESOURCE_ITEMS, RESOURCE_NODE_NAMES, HARVEST_DURATION_BY_RICHNESS } = config;
 
   // GET /resource-nodes — list all discovered nodes for this kingdom
   router.get('/resource-nodes', requireAuth, async (req, res) => {
@@ -5045,13 +5038,7 @@ module.exports = function (db) {
       const k = await db.get('SELECT items FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
       if (!k) return res.status(404).json({ error: 'Kingdom not found' });
 
-      let INVENTORY_ITEMS;
-      try {
-        ({ INVENTORY_ITEMS } = require('../game/config'));
-      } catch (configErr) {
-        console.error('[inventory] Failed to load config:', configErr.message);
-        return res.status(500).json({ error: 'Server configuration error' });
-      }
+      const { INVENTORY_ITEMS } = config;
       let items = safeJsonParse(k.items, [], 'inventory:items');
       if (!Array.isArray(items)) items = [];
 
@@ -5087,7 +5074,6 @@ module.exports = function (db) {
   });
 
   // ── WORLD FRAGMENT ATTUNEMENTS ────────────────────────────────────────────────
-  const attunementManager = require('../game/attunement-manager');
 
   // GET /api/kingdom/attunements — Get current attunement status
   router.get('/attunements', requireAuth, async (req, res) => {
@@ -5257,8 +5243,6 @@ module.exports = function (db) {
 
   return router;
 };
-
-const { applyKingdomUpdates } = require("../db/schema");
 
 async function applyUpdates(db, kingdomId, updates) {
   // Validate no numeric values are NaN/Infinity (corrupted data protection)
