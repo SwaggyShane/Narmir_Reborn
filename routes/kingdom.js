@@ -1058,7 +1058,7 @@ module.exports = function (db) {
 
   router.post("/demolish", requireAuth, requireCsrfToken, async (req, res) => {
     const { building, amount } = req.body;
-    const k = await db.get(`SELECT ${KINGDOM_RESOURCE} FROM kingdoms WHERE player_id = ?`, [
+    const k = await db.get(`SELECT ${KINGDOM_RESOURCE}, bld_housing FROM kingdoms WHERE player_id = ?`, [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -2978,7 +2978,7 @@ module.exports = function (db) {
   
   router.post("/goals/claim", requireAuth, requireCsrfToken, async (req, res) => {
     const { groupId, goalId } = req.body;
-    const k = await db.get("SELECT id, turn, goals, world_fragments, gold, mana, rangers, researchers, war_machines FROM kingdoms WHERE player_id = ?", [req.player.playerId]);
+    const k = await db.get("SELECT id, turn, goals, world_fragments, gold, mana, wood, stone, iron, coal, steel, food, fighters, rangers, clerics, mages, thieves, ninjas, researchers, engineers, scribes, war_machines FROM kingdoms WHERE player_id = ?", [req.player.playerId]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
 
     let updates = {};
@@ -3979,7 +3979,7 @@ module.exports = function (db) {
   router.post("/economy/upgrade", requireAuth, requireCsrfToken, async (req, res) => {
     const { category, upgradeKey } = req.body;
     const k = await db.get(
-      `SELECT id, race, gold, wood, stone, iron, bld_vaults, bld_farms, bld_markets,
+      `SELECT id, turn, race, gold, wood, stone, iron, bld_vaults, bld_farms, bld_markets,
               bld_taverns, bld_mage_towers, bld_schools, bld_shrines, bld_mausoleums,
               bld_libraries, bld_walls, bld_guard_towers, bld_outposts, farm_upgrades,
               granary_upgrades, market_upgrades, tavern_upgrades, tower_upgrades,
@@ -4160,7 +4160,7 @@ module.exports = function (db) {
   // ── Accept trade offer ────────────────────────────────────────────────────────
   router.post("/economy/trade/accept", requireAuth, requireCsrfToken, async (req, res) => {
     const { offerId } = req.body;
-    const k = await db.get("SELECT id, gold, food, mana, maps, blueprints_stored, weapons_stockpile, armor_stockpile FROM kingdoms WHERE player_id = ?", [
+    const k = await db.get("SELECT id, name, gold, food, mana, maps, blueprints_stored, weapons_stockpile, armor_stockpile FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -4172,7 +4172,7 @@ module.exports = function (db) {
       return res
         .status(404)
         .json({ error: "Offer not found or already resolved" });
-    const sender = await db.get("SELECT id, gold, food, mana, maps, blueprints_stored, weapons_stockpile, armor_stockpile FROM kingdoms WHERE id = ?", [
+    const sender = await db.get("SELECT id, turn, gold, food, mana, maps, blueprints_stored, weapons_stockpile, armor_stockpile FROM kingdoms WHERE id = ?", [
       offer.sender_id,
     ]);
     if (!sender) return res.status(404).json({ error: "Sender not found" });
@@ -5141,7 +5141,8 @@ module.exports = function (db) {
       const kingdom = await db.get(
         `SELECT id, fragment_bonuses, world_fragments, bld_farms, bld_barracks, bld_markets,
                 bld_schools, bld_mage_towers, bld_shrines, bld_guard_towers, bld_castles,
-                bld_smithies, bld_libraries
+                bld_smithies, bld_libraries, bld_taverns, bld_mausoleums, bld_walls,
+                bld_outposts, bld_granaries, bld_housing, bld_training
          FROM kingdoms WHERE player_id = ?`,
         [req.player.playerId]
       );
@@ -5172,7 +5173,8 @@ module.exports = function (db) {
       const kingdom = await db.get(
         `SELECT id, turn, fragment_bonuses, world_fragments, bld_farms, bld_barracks, bld_markets,
                 bld_schools, bld_mage_towers, bld_shrines, bld_guard_towers, bld_castles,
-                bld_smithies, bld_libraries
+                bld_smithies, bld_libraries, bld_taverns, bld_mausoleums, bld_walls,
+                bld_outposts, bld_granaries, bld_housing, bld_training
          FROM kingdoms WHERE player_id = ?`,
         [req.player.playerId]
       );
