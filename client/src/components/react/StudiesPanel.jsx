@@ -4,13 +4,19 @@ const StudiesPanel = () => {
   const [activeTab, setActiveTab] = useState('tower');
   const [activeSchoolSubTab, setActiveSchoolSubTab] = useState('general');
   const [studiesData, setStudiesData] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fetchStudiesData = useCallback(async () => {
     try {
-      const response = await fetch('/api/kingdom/studies/overview');
+      const response = await fetch('/api/kingdom/studies/overview', {
+        cache: 'no-store', // Force fresh data from server
+        headers: { 'pragma': 'no-cache' }
+      });
       if (response.ok) {
         const data = await response.json();
         setStudiesData(data);
+      } else {
+        console.error('Studies data fetch failed:', response.status);
       }
     } catch (err) {
       console.error('Failed to load studies data:', err);
@@ -45,8 +51,12 @@ const StudiesPanel = () => {
   }, []);
 
   const loadStudies = useCallback(async () => {
-    await fetchStudiesData();
-    if (window.loadStudies) window.loadStudies();
+    setIsRefreshing(true);
+    try {
+      await fetchStudiesData();
+    } finally {
+      setIsRefreshing(false);
+    }
   }, [fetchStudiesData]);
 
   const updateFocusPreview = useCallback(() => {
@@ -94,7 +104,9 @@ const StudiesPanel = () => {
     <div id="studies" className="panel" style={{ display: 'none' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
         <div className="card-title">🏛️ Studies</div>
-        <button className="base-btn" onClick={loadStudies}>↻ Refresh</button>
+        <button className="base-btn" onClick={loadStudies} disabled={isRefreshing} style={{ opacity: isRefreshing ? 0.6 : 1 }}>
+          {isRefreshing ? '⟳ Refreshing...' : '↻ Refresh'}
+        </button>
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '16px', borderBottom: '2px solid var(--border2)', paddingBottom: 0 }}>
         <button className={`base-btn admin-tab ${activeTab === 'tower' ? 'active' : ''}`} onClick={() => handleTabClick('tower')} style={{ borderRadius: 0 }}>🗼 Tower</button>
@@ -161,13 +173,13 @@ const StudiesPanel = () => {
           >
             📚 General Studies
           </button>
-          {window.gameState?.school_of_magic && (
+          {(studiesData?.school_of_magic || window.gameState?.school_of_magic) && (
             <button
               className={`base-btn admin-tab ${activeSchoolSubTab === 'school' ? 'active' : ''}`}
               onClick={() => setActiveSchoolSubTab('school')}
               style={{ borderRadius: 0 }}
             >
-              🔮 {window.gameState?.school_of_magic?.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+              🔮 {(studiesData?.school_of_magic || window.gameState?.school_of_magic)?.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
             </button>
           )}
         </div>
@@ -244,13 +256,13 @@ const StudiesPanel = () => {
         </div>
 
         {/* SCHOOL OF MAGIC SUB-TAB */}
-        {window.gameState?.school_of_magic && (
+        {(studiesData?.school_of_magic || window.gameState?.school_of_magic) && (
           <div style={{ display: activeSchoolSubTab === 'school' ? 'block' : 'none' }}>
             {/* School Header */}
             <div className="card" style={{ marginBottom: '12px', textAlign: 'center' }}>
               <div style={{ fontSize: '32px', marginBottom: '8px' }}>🔮</div>
               <div className="card-title" style={{ marginBottom: '4px', textTransform: 'capitalize' }}>
-                {window.gameState?.school_of_magic?.replace('_', ' ')}
+                {(studiesData?.school_of_magic || window.gameState?.school_of_magic)?.replace(/_/g, ' ')}
               </div>
               <div style={{ fontSize: '13px', color: 'var(--text3)', marginBottom: '8px' }}>
                 School of Magic
@@ -377,7 +389,7 @@ const StudiesPanel = () => {
             <div className="card">
               <div className="card-title" style={{ marginBottom: '12px' }}>Spell Tiers</div>
               <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '16px' }}>
-                As your mages study the {window.gameState?.school_of_magic?.replace(/_/g, ' ')} school, spells become available.
+                As your mages study the {(studiesData?.school_of_magic || window.gameState?.school_of_magic)?.replace(/_/g, ' ')} school, spells become available.
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {Object.keys(spellsByTier).length > 0 ? (
