@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 
 const StudiesPanel = () => {
   const [activeTab, setActiveTab] = useState('tower');
@@ -20,6 +20,21 @@ const StudiesPanel = () => {
   useEffect(() => {
     fetchStudiesData();
   }, [fetchStudiesData]);
+
+  // Sync uncontrolled inputs with server data (skip if input is actively being edited)
+  useEffect(() => {
+    if (studiesData?.research_allocation) {
+      const spellbookEl = document.getElementById('mage-alloc-spellbook');
+      const schoolEl = document.getElementById('mage-alloc-school');
+      // Only update if not currently focused by user
+      if (spellbookEl && document.activeElement !== spellbookEl) {
+        spellbookEl.value = studiesData.research_allocation.spellbook_mages || 0;
+      }
+      if (schoolEl && document.activeElement !== schoolEl) {
+        schoolEl.value = studiesData.research_allocation.school_spellbook_mages || 0;
+      }
+    }
+  }, [studiesData?.research_allocation]);
 
   const handleTabClick = useCallback((tabId) => {
     setActiveTab(tabId);
@@ -50,17 +65,30 @@ const StudiesPanel = () => {
     const spellbookEl = document.getElementById('mage-alloc-spellbook');
     const schoolEl = document.getElementById('mage-alloc-school');
     if (spellbookEl && schoolEl) {
-      // Trigger a state update with current input values
+      // Trigger a state update with current input values (clamped to non-negative)
       setStudiesData(prev => ({
         ...prev,
         research_allocation: {
           ...prev?.research_allocation,
-          spellbook_mages: parseInt(spellbookEl.value) || 0,
-          school_spellbook_mages: parseInt(schoolEl.value) || 0,
+          spellbook_mages: Math.max(0, parseInt(spellbookEl.value, 10) || 0),
+          school_spellbook_mages: Math.max(0, parseInt(schoolEl.value, 10) || 0),
         }
       }));
     }
   }, []);
+
+  // Memoize spell grouping by tier to avoid recalculation on every render
+  const spellsByTier = useMemo(() => {
+    if (!studiesData?.school_spells || studiesData.school_spells.length === 0) {
+      return {};
+    }
+    const grouped = {};
+    studiesData.school_spells.forEach(spell => {
+      if (!grouped[spell.tier]) grouped[spell.tier] = [];
+      grouped[spell.tier].push(spell);
+    });
+    return grouped;
+  }, [studiesData?.school_spells]);
 
   return (
     <div id="studies" className="panel" style={{ display: 'none' }}>
@@ -139,7 +167,7 @@ const StudiesPanel = () => {
               onClick={() => setActiveSchoolSubTab('school')}
               style={{ borderRadius: 0 }}
             >
-              🔮 {window.gameState?.school_of_magic?.charAt(0).toUpperCase() + window.gameState?.school_of_magic?.slice(1)}
+              🔮 {window.gameState?.school_of_magic?.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
             </button>
           )}
         </div>
@@ -228,7 +256,7 @@ const StudiesPanel = () => {
                 School of Magic
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text2)', lineHeight: 1.5, marginTop: '8px' }}>
-                {studiesData?.school_of_magic ? `Master the art of ${studiesData.school_of_magic.replace('_', ' ')} magic.` : 'Loading school information...'}
+                {studiesData?.school_of_magic ? `Master the art of ${studiesData.school_of_magic.replace(/_/g, ' ')} magic.` : 'Loading school information...'}
               </div>
             </div>
 
@@ -349,48 +377,40 @@ const StudiesPanel = () => {
             <div className="card">
               <div className="card-title" style={{ marginBottom: '12px' }}>Spell Tiers</div>
               <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '16px' }}>
-                As your mages study the {window.gameState?.school_of_magic?.replace('_', ' ')} school, spells become available.
+                As your mages study the {window.gameState?.school_of_magic?.replace(/_/g, ' ')} school, spells become available.
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {studiesData?.school_spells && studiesData.school_spells.length > 0 ? (
-                  (() => {
-                    const spellsByTier = {};
-                    studiesData.school_spells.forEach(spell => {
-                      if (!spellsByTier[spell.tier]) spellsByTier[spell.tier] = [];
-                      spellsByTier[spell.tier].push(spell);
-                    });
-
-                    return Object.keys(spellsByTier)
-                      .map(Number)
-                      .sort((a, b) => a - b)
-                      .map(tier => (
-                        <div key={`tier-${tier}`}>
-                          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px' }}>
-                            Tier {tier} Spells {tier > 1 && `(requires ${(tier - 1) * 20}% school_spellbook)`}
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginLeft: '12px' }}>
-                            {spellsByTier[tier].map(spell => {
-                              const isRevealed = (studiesData.school_spellbook || 0) >= (spell.min_school_spellbook || 0);
-                              return (
-                                <div key={spell.id} style={{ fontSize: '12px', color: isRevealed ? 'var(--text2)' : 'var(--text3)' }}>
-                                  {isRevealed ? (
-                                    <>
-                                      <span style={{ marginRight: '8px' }}>✨</span>
-                                      <strong>{spell.name}</strong> — {spell.desc}
-                                    </>
-                                  ) : (
-                                    <>
-                                      <span style={{ marginRight: '8px' }}>⬜</span>
-                                      <span style={{ color: 'var(--text3)' }}>??? (requires {spell.min_school_spellbook}% school_spellbook)</span>
-                                    </>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
+                {Object.keys(spellsByTier).length > 0 ? (
+                  Object.keys(spellsByTier)
+                    .map(Number)
+                    .sort((a, b) => a - b)
+                    .map(tier => (
+                      <div key={`tier-${tier}`}>
+                        <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px' }}>
+                          Tier {tier} Spells {tier > 1 && `(requires ${(tier - 1) * 20}% school_spellbook)`}
                         </div>
-                      ));
-                  })()
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginLeft: '12px' }}>
+                          {spellsByTier[tier].map(spell => {
+                            const isRevealed = (studiesData.school_spellbook || 0) >= (spell.min_school_spellbook || 0);
+                            return (
+                              <div key={spell.id} style={{ fontSize: '12px', color: isRevealed ? 'var(--text2)' : 'var(--text3)' }}>
+                                {isRevealed ? (
+                                  <>
+                                    <span style={{ marginRight: '8px' }}>✨</span>
+                                    <strong>{spell.name}</strong> — {spell.desc}
+                                  </>
+                                ) : (
+                                  <>
+                                    <span style={{ marginRight: '8px' }}>⬜</span>
+                                    <span style={{ color: 'var(--text3)' }}>??? (requires {spell.min_school_spellbook}% school_spellbook)</span>
+                                  </>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))
                 ) : (
                   <div style={{ fontSize: '13px', color: 'var(--text3)' }}>Loading spell structure...</div>
                 )}
