@@ -45,6 +45,23 @@ const StudiesPanel = () => {
   const race = window.gameState?.race || 'human';
   const researchAlloc = studiesData?.research_allocation || {};
 
+  const updateAllocationDisplay = useCallback(() => {
+    // Force re-render by reading current input values
+    const spellbookEl = document.getElementById('mage-alloc-spellbook');
+    const schoolEl = document.getElementById('mage-alloc-school');
+    if (spellbookEl && schoolEl) {
+      // Trigger a state update with current input values
+      setStudiesData(prev => ({
+        ...prev,
+        research_allocation: {
+          ...prev?.research_allocation,
+          spellbook_mages: parseInt(spellbookEl.value) || 0,
+          school_spellbook_mages: parseInt(schoolEl.value) || 0,
+        }
+      }));
+    }
+  }, []);
+
   return (
     <div id="studies" className="panel" style={{ display: 'none' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
@@ -241,8 +258,11 @@ const StudiesPanel = () => {
                       className="input"
                       id="mage-alloc-spellbook"
                       min="0"
-                      value={researchAlloc.spellbook_mages || 0}
-                      onChange={() => { if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay(); }}
+                      defaultValue={researchAlloc.spellbook_mages || 0}
+                      onChange={() => {
+                        updateAllocationDisplay();
+                        if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay();
+                      }}
                       style={{ textAlign: 'right', flex: 1 }}
                       placeholder="Qty"
                     />
@@ -260,8 +280,11 @@ const StudiesPanel = () => {
                       className="input"
                       id="mage-alloc-school"
                       min="0"
-                      value={researchAlloc.school_spellbook_mages || 0}
-                      onChange={() => { if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay(); }}
+                      defaultValue={researchAlloc.school_spellbook_mages || 0}
+                      onChange={() => {
+                        updateAllocationDisplay();
+                        if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay();
+                      }}
                       style={{ textAlign: 'right', flex: 1 }}
                       placeholder="Qty"
                     />
