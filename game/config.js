@@ -2170,15 +2170,15 @@ const config = {
   // ── Resource gathering system ─────────────────────────────────────────────────
 
   RESOURCE_BUILDING_CONFIG: {
-    woodyard:     { type: 'wood',  stage: 1, workersPerBuilding: 10,  yield: 1, yieldEvery: 5 },
-    lumber_camp:  { type: 'wood',  stage: 2, workersPerBuilding: 25,  yield: 3, yieldEvery: 5 },
-    sawmill:      { type: 'wood',  stage: 3, workersPerBuilding: 75,  yield: 1, yieldEvery: 1 },
-    gravel_pit:   { type: 'stone', stage: 1, workersPerBuilding: 10,  yield: 1, yieldEvery: 5 },
-    blockfield:   { type: 'stone', stage: 2, workersPerBuilding: 25,  yield: 3, yieldEvery: 5 },
-    stone_quarry: { type: 'stone', stage: 3, workersPerBuilding: 75,  yield: 1, yieldEvery: 1 },
-    open_pit:     { type: 'iron',  stage: 1, workersPerBuilding: 10,  yield: 1, yieldEvery: 5 },
-    strip_mine:   { type: 'iron',  stage: 2, workersPerBuilding: 25,  yield: 3, yieldEvery: 5 },
-    deep_mine:    { type: 'iron',  stage: 3, workersPerBuilding: 75,  yield: 1, yieldEvery: 1 },
+    woodyard:     { type: 'wood',  stage: 1, workersPerBuilding: 10,  yield: 5, yieldEvery: 1 },
+    lumber_camp:  { type: 'wood',  stage: 2, workersPerBuilding: 25,  yield: 15, yieldEvery: 1 },
+    sawmill:      { type: 'wood',  stage: 3, workersPerBuilding: 75,  yield: 60, yieldEvery: 1 },
+    gravel_pit:   { type: 'stone', stage: 1, workersPerBuilding: 20,  yield: 5, yieldEvery: 1 },
+    blockfield:   { type: 'stone', stage: 2, workersPerBuilding: 50,  yield: 15, yieldEvery: 1 },
+    stone_quarry: { type: 'stone', stage: 3, workersPerBuilding: 150, yield: 60, yieldEvery: 1 },
+    open_pit:     { type: 'iron',  stage: 1, workersPerBuilding: 30,  yield: 5, yieldEvery: 1 },
+    strip_mine:   { type: 'iron',  stage: 2, workersPerBuilding: 75,  yield: 15, yieldEvery: 1 },
+    deep_mine:    { type: 'iron',  stage: 3, workersPerBuilding: 225, yield: 60, yieldEvery: 1 },
   },
 
   // Stage 2 building: consumes 3x stage-1 on first completion
