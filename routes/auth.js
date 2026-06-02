@@ -259,6 +259,20 @@ module.exports = function (db) {
     res.json({ ok: true });
   });
 
+  router.post("/force-logout", (_req, res) => {
+    const clearOptions = [
+      { path: "/", httpOnly: true, sameSite: "none", secure: true },
+      { path: "/", httpOnly: true, sameSite: "lax", secure: false },
+      { path: "/", httpOnly: true },
+      { path: "/" },
+      {},
+    ];
+    clearOptions.forEach(opts => {
+      res.clearCookie("token", opts);
+      res.clearCookie("csrf_token", opts);
+    });
+    res.json({ ok: true, forced: true });
+  });
 
   router.get("/me", async (req, res) => {
     const token =
