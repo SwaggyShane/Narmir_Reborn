@@ -356,131 +356,132 @@ const StudiesPanel = () => {
               </div>
             </div>
 
-            {/* Mage Research Cards + Spells Grid */}
+            {/* Mage Research Cards */}
             <div className="r-grid-2">
-              {/* Column 1: Spellbook Card + Spells */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {/* Spellbook Card */}
-                <div className="card" style={{ margin: 0, padding: '16px' }}>
-                  <div style={{ fontSize: '24px', marginBottom: '8px' }}>📖</div>
-                  <div className="card-title" style={{ marginBottom: '2px', fontSize: '14px' }}>Spellbook</div>
-                  <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '12px' }}>Mages continuing study</div>
+              {/* Card 1: Spellbook Continuation */}
+              <div className="card" style={{ margin: 0, padding: '16px' }}>
+                <div style={{ fontSize: '24px', marginBottom: '8px' }}>📖</div>
+                <div className="card-title" style={{ marginBottom: '2px', fontSize: '14px' }}>Spellbook</div>
+                <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '12px' }}>Mages continuing study</div>
 
-                  <div className="trow">
-                    <span className="name">Level</span>
-                    <span className="count">{studiesData?.res_spellbook || 0}%</span>
-                  </div>
-                  <div className="trow">
-                    <span className="name">Progress</span>
-                    <span className="count">—</span>
-                  </div>
-                  <div className="trow">
-                    <span className="name">Mages assigned</span>
-                    <span className="count">{researchAlloc.spellbook_mages || 0}</span>
-                  </div>
-
-                  <div style={{ marginTop: '12px', fontSize: '11px', color: 'var(--text3)' }}>
-                    Turns to next level: —
-                  </div>
+                <div className="trow">
+                  <span className="name">Level</span>
+                  <span className="count">{studiesData?.res_spellbook || 0}%</span>
+                </div>
+                <div className="trow">
+                  <span className="name">Progress</span>
+                  <span className="count">—</span>
+                </div>
+                <div className="trow">
+                  <span className="name">Mages assigned</span>
+                  <span className="count">{researchAlloc.spellbook_mages || 0}</span>
                 </div>
 
-                {/* Spellbook Spells */}
-                <div className="card" style={{ margin: 0 }}>
-                  <div className="card-title" style={{ marginBottom: '12px' }}>Spellbook Spells</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    {Object.keys(spellbookSpellsByTier).length > 0 ? (
-                      Object.keys(spellbookSpellsByTier)
-                        .map(Number)
-                        .sort((a, b) => a - b)
-                        .map(tier => (
-                          <div key={`sb-tier-${tier}`}>
-                            <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px' }}>
-                              Tier {tier}
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginLeft: '12px' }}>
-                              {spellbookSpellsByTier[tier].map(spell => {
-                                const isFullyRevealed = spell.reveals.revealedCount === spell.reveals.totalLetters;
-                                return (
-                                  <div key={spell.id} style={{ fontSize: '12px', color: isFullyRevealed ? 'var(--text2)' : 'var(--text3)', fontFamily: 'Noto Sans Runic, sans-serif' }}>
-                                    <span style={{ marginRight: '8px' }}>{isFullyRevealed ? '✨' : '⬜'}</span>
-                                    <strong>{spell.runeDisplay}</strong>
-                                    {isFullyRevealed && <> — {spell.desc}</>}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        ))
-                    ) : (
-                      <div style={{ fontSize: '13px', color: 'var(--text3)' }}>Loading spell structure...</div>
-                    )}
-                  </div>
+                <div style={{ marginTop: '12px', fontSize: '11px', color: 'var(--text3)' }}>
+                  Turns to next level: —
                 </div>
               </div>
 
-              {/* Column 2: School Spellbook Card + Spells */}
-              {(studiesData?.school_of_magic || window.gameState?.school_of_magic) && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {/* School Spellbook Card */}
-                <div className="card" style={{ margin: 0, padding: '16px' }}>
-                  <div style={{ fontSize: '24px', marginBottom: '8px' }}>🔮</div>
-                  <div className="card-title" style={{ marginBottom: '2px', fontSize: '14px' }} id="school-spellbook-title">School Spellbook</div>
-                  <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '12px' }}>Mages specializing</div>
+              {/* Card 2: School Spellbook */}
+              <div className="card" style={{ margin: 0, padding: '16px' }}>
+                <div style={{ fontSize: '24px', marginBottom: '8px' }}>🔮</div>
+                <div className="card-title" style={{ marginBottom: '2px', fontSize: '14px' }} id="school-spellbook-title">School Spellbook</div>
+                <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '12px' }}>Mages specializing</div>
 
-                  <div className="trow">
-                    <span className="name">Level</span>
-                    <span className="count">{studiesData?.school_spellbook || 0}%</span>
-                  </div>
-                  <div className="trow">
-                    <span className="name">Progress</span>
-                    <span className="count">—</span>
-                  </div>
-                  <div className="trow">
-                    <span className="name">Mages assigned</span>
-                    <span className="count">{researchAlloc.school_spellbook_mages || 0}</span>
-                  </div>
-
-                  <div style={{ marginTop: '12px', fontSize: '11px', color: 'var(--text3)' }}>
-                    Turns to next level: —
-                  </div>
+                <div className="trow">
+                  <span className="name">Level</span>
+                  <span className="count">{studiesData?.school_spellbook || 0}%</span>
+                </div>
+                <div className="trow">
+                  <span className="name">Progress</span>
+                  <span className="count">—</span>
+                </div>
+                <div className="trow">
+                  <span className="name">Mages assigned</span>
+                  <span className="count">{researchAlloc.school_spellbook_mages || 0}</span>
                 </div>
 
-                {/* School Spells */}
-                <div className="card" style={{ margin: 0 }}>
-                  <div className="card-title" style={{ marginBottom: '12px' }}>
-                    {(studiesData?.school_of_magic || window.gameState?.school_of_magic)?.replace(/_/g, ' ')} Spells
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    {Object.keys(spellsByTier).length > 0 ? (
-                      Object.keys(spellsByTier)
-                        .map(Number)
-                        .sort((a, b) => a - b)
-                        .map(tier => (
-                          <div key={`tier-${tier}`}>
-                            <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px' }}>
-                              Tier {tier}
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginLeft: '12px' }}>
-                              {spellsByTier[tier].map(spell => {
-                                const isFullyRevealed = spell.reveals.revealedCount === spell.reveals.totalLetters;
-                                return (
-                                  <div key={spell.id} style={{ fontSize: '12px', color: isFullyRevealed ? 'var(--text2)' : 'var(--text3)', fontFamily: 'Noto Sans Runic, sans-serif' }}>
-                                    <span style={{ marginRight: '8px' }}>{isFullyRevealed ? '✨' : '⬜'}</span>
-                                    <strong>{spell.runeDisplay}</strong>
-                                    {isFullyRevealed && <> — {spell.desc}</>}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        ))
-                    ) : (
-                      <div style={{ fontSize: '13px', color: 'var(--text3)' }}>Loading spell structure...</div>
-                    )}
-                  </div>
+                <div style={{ marginTop: '12px', fontSize: '11px', color: 'var(--text3)' }}>
+                  Turns to next level: —
                 </div>
               </div>
-              )}
+            </div>
+
+            {/* Spellbook Spells Section */}
+            <div className="card">
+              <div className="card-title" style={{ marginBottom: '12px' }}>Spellbook Spells</div>
+              <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '16px' }}>
+                Unlock spells as your kingdom advances in magical research.
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
+                {Object.keys(spellbookSpellsByTier).length > 0 ? (
+                  Object.keys(spellbookSpellsByTier)
+                    .map(Number)
+                    .sort((a, b) => a - b)
+                    .map(tier => (
+                      <div key={`sb-tier-${tier}`}>
+                        <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px' }}>
+                          Tier {tier}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginLeft: '12px' }}>
+                          {spellbookSpellsByTier[tier].map(spell => {
+                            const isFullyRevealed = spell.reveals.revealedCount === spell.reveals.totalLetters;
+                            return (
+                              <div key={spell.id} style={{ fontSize: '12px', color: isFullyRevealed ? 'var(--text2)' : 'var(--text3)', fontFamily: 'Noto Sans Runic, sans-serif' }}>
+                                <span style={{ marginRight: '8px' }}>{isFullyRevealed ? '✨' : '⬜'}</span>
+                                <strong>{spell.runeDisplay}</strong>
+                                {isFullyRevealed && <> — {spell.desc}</>}
+                                {!isFullyRevealed && <span style={{ color: 'var(--text3)' }}> ({spell.reveals.revealedCount}/{spell.reveals.totalLetters} revealed)</span>}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))
+                ) : (
+                  <div style={{ fontSize: '13px', color: 'var(--text3)' }}>Loading spell structure...</div>
+                )}
+              </div>
+            </div>
+
+            {/* Spell Tiers Reveal */}
+            {(studiesData?.school_of_magic || window.gameState?.school_of_magic) && (
+            <div className="card">
+              <div className="card-title" style={{ marginBottom: '12px' }}>Spell Tiers</div>
+              <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '16px' }}>
+                As your mages study the {(studiesData?.school_of_magic || window.gameState?.school_of_magic)?.replace(/_/g, ' ')} school, spells become available.
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {Object.keys(spellsByTier).length > 0 ? (
+                  Object.keys(spellsByTier)
+                    .map(Number)
+                    .sort((a, b) => a - b)
+                    .map(tier => (
+                      <div key={`tier-${tier}`}>
+                        <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px' }}>
+                          Tier {tier} Spells {tier > 1 && `(requires ${(tier - 1) * 20}% school_spellbook)`}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginLeft: '12px' }}>
+                          {spellsByTier[tier].map(spell => {
+                            const isFullyRevealed = spell.reveals.revealedCount === spell.reveals.totalLetters;
+                            return (
+                              <div key={spell.id} style={{ fontSize: '12px', color: isFullyRevealed ? 'var(--text2)' : 'var(--text3)', fontFamily: 'Noto Sans Runic, sans-serif' }}>
+                                <span style={{ marginRight: '8px' }}>{isFullyRevealed ? '✨' : '⬜'}</span>
+                                <strong>{spell.runeDisplay}</strong>
+                                {isFullyRevealed && <> — {spell.desc}</>}
+                                {!isFullyRevealed && <span style={{ color: 'var(--text3)' }}> ({spell.reveals.revealedCount}/{spell.reveals.totalLetters} revealed)</span>}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))
+                ) : (
+                  <div style={{ fontSize: '13px', color: 'var(--text3)' }}>Loading spell structure...</div>
+                )}
+              </div>
+            </div>
+            )}
           </div>
         )}
       </div>
