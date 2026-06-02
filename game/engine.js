@@ -3400,12 +3400,12 @@ function queueBuildings(k, orders) {
     }
 
     const seq = resSeqRaw[rbCfg.type] || { s2_paid_at_bracket: -1, s3_paid_at_bracket: -1, last_s3_bracket: -1 };
-    const s3Col = RESOURCE_STAGE3_COL[rbCfg.type];
+    const s3Col = config.RESOURCE_STAGE3_COL[rbCfg.type];
     const s3Cap = Math.floor((level - 1) / 10) + 1;
     const s3Current = k[s3Col] || 0;
 
-    const s1Col = RESOURCE_STAGE1_COL[rbCfg.type];
-    const s2Col = RESOURCE_STAGE2_COL[rbCfg.type];
+    const s1Col = config.RESOURCE_STAGE1_COL[rbCfg.type];
+    const s2Col = config.RESOURCE_STAGE2_COL[rbCfg.type];
 
     if (rbCfg.stage === 1) {
       if (s3Current >= s3Cap) {
@@ -3416,7 +3416,7 @@ function queueBuildings(k, orders) {
       if (s1Current + n > 3) {
         return { error: `${key.replace(/_/g, ' ')} cap reached (max 3).` };
       }
-      const s2Current = (k[s2Col] || 0) + (queue[RESOURCE_STAGE2_BUILDINGS[rbCfg.type]] || 0);
+      const s2Current = (k[s2Col] || 0) + (queue[config.RESOURCE_STAGE2_BUILDINGS[rbCfg.type]] || 0);
       if (s2Current > 0) {
         return { error: `${key.replace(/_/g, ' ')} is locked — you already have Stage 2 ${rbCfg.type} buildings in progress or built.` };
       }
@@ -3428,7 +3428,7 @@ function queueBuildings(k, orders) {
         return { error: `You must purchase the Stage 2 ${rbCfg.type} upgrade before building ${key.replace(/_/g, ' ')}.` };
       }
       const s2Built = k[s2Col] || 0;
-      const s2Queued = queue[RESOURCE_STAGE2_BUILDINGS[rbCfg.type]] || 0;
+      const s2Queued = queue[config.RESOURCE_STAGE2_BUILDINGS[rbCfg.type]] || 0;
       const s1Current = k[s1Col] || 0;
       // If none built or queued, need 3 stage 1s to start
       if (s2Built + s2Queued === 0 && s1Current < 3) {
@@ -3443,7 +3443,7 @@ function queueBuildings(k, orders) {
         return { error: `You must purchase the Stage 3 ${rbCfg.type} upgrade before building ${key.replace(/_/g, ' ')}.` };
       }
       const s3Built = k[s3Col] || 0;
-      const s3Queued = queue[RESOURCE_STAGE3_BUILDINGS[rbCfg.type]] || 0;
+      const s3Queued = queue[config.RESOURCE_STAGE3_BUILDINGS[rbCfg.type]] || 0;
       const s2Current = k[s2Col] || 0;
       // If none built or queued, need 5 stage 2s to start
       if (s3Built + s3Queued === 0 && s2Current < 5) {
