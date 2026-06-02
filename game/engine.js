@@ -2282,6 +2282,14 @@ function processTurn(k) {
   const raceMagic = raceBonus(k, "magic");
   const researchers = k.researchers;
 
+  const schoolUpgrades = safeJsonParse(
+    k.school_upgrades,
+    {},
+    "processTurn:school_upgrades",
+  );
+  const curriculumMult = schoolUpgrades.advanced_curriculum ? 1.2 : 1.0;
+  const maxSlots = schoolUpgrades.repository ? 2 : 1;
+
   if (researchers > 0) {
     const ALL_DISCIPLINES = [
       {
@@ -2340,14 +2348,6 @@ function processTurn(k) {
         multi: raceMagic,
       },
     ];
-
-    const schoolUpgrades = safeJsonParse(
-      k.school_upgrades,
-      {},
-      "processTurn:school_upgrades",
-    );
-    const curriculumMult = schoolUpgrades.advanced_curriculum ? 1.2 : 1.0;
-    const maxSlots = schoolUpgrades.repository ? 2 : 1;
 
     // Research focus — single or dual discipline
     let focus = safeJsonParse(
