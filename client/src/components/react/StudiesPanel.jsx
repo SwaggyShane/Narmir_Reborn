@@ -227,8 +227,8 @@ const StudiesPanel = () => {
               <div style={{ fontSize: '13px', color: 'var(--text3)', marginBottom: '8px' }}>
                 School of Magic
               </div>
-              <div style={{ fontSize: '12px', color: 'var(--text2)', lineHeight: 1.5, marginTop: '8px' }} id="school-lore">
-                Loading school information...
+              <div style={{ fontSize: '12px', color: 'var(--text2)', lineHeight: 1.5, marginTop: '8px' }}>
+                {studiesData?.school_of_magic ? `Master the art of ${studiesData.school_of_magic.replace('_', ' ')} magic.` : 'Loading school information...'}
               </div>
             </div>
 
@@ -351,8 +351,49 @@ const StudiesPanel = () => {
               <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '16px' }}>
                 As your mages study the {window.gameState?.school_of_magic?.replace('_', ' ')} school, spells become available.
               </div>
-              <div id="school-spell-tiers" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{ fontSize: '13px', color: 'var(--text3)' }}>Loading spell structure...</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {studiesData?.school_spells && studiesData.school_spells.length > 0 ? (
+                  (() => {
+                    const spellsByTier = {};
+                    studiesData.school_spells.forEach(spell => {
+                      if (!spellsByTier[spell.tier]) spellsByTier[spell.tier] = [];
+                      spellsByTier[spell.tier].push(spell);
+                    });
+
+                    return Object.keys(spellsByTier)
+                      .map(Number)
+                      .sort((a, b) => a - b)
+                      .map(tier => (
+                        <div key={`tier-${tier}`}>
+                          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px' }}>
+                            Tier {tier} Spells {tier > 1 && `(requires ${(tier - 1) * 20}% school_spellbook)`}
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginLeft: '12px' }}>
+                            {spellsByTier[tier].map(spell => {
+                              const isRevealed = (studiesData.school_spellbook || 0) >= (spell.min_school_spellbook || 0);
+                              return (
+                                <div key={spell.id} style={{ fontSize: '12px', color: isRevealed ? 'var(--text2)' : 'var(--text3)' }}>
+                                  {isRevealed ? (
+                                    <>
+                                      <span style={{ marginRight: '8px' }}>✨</span>
+                                      <strong>{spell.name}</strong> — {spell.desc}
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span style={{ marginRight: '8px' }}>⬜</span>
+                                      <span style={{ color: 'var(--text3)' }}>??? (requires {spell.min_school_spellbook}% school_spellbook)</span>
+                                    </>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ));
+                  })()
+                ) : (
+                  <div style={{ fontSize: '13px', color: 'var(--text3)' }}>Loading spell structure...</div>
+                )}
               </div>
             </div>
           </div>
