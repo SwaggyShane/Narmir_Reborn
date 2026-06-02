@@ -3166,9 +3166,15 @@ module.exports = function (db) {
     const { blueprintId } = req.body;
     if (!blueprintId) return res.status(400).json({ error: "Missing blueprintId" });
 
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
-      req.player.playerId,
-    ]);
+    const k = await db.get(
+      `SELECT id, hybrid_blueprints, fragment_bonuses,
+              bld_farms, bld_granaries, bld_housing, bld_libraries, bld_schools,
+              bld_mage_towers, bld_shrines, bld_mausoleums, bld_markets, bld_taverns,
+              bld_vaults, bld_armories, bld_smithies, bld_barracks, bld_walls,
+              bld_guard_towers, bld_outposts, bld_training, bld_castles
+       FROM kingdoms WHERE player_id = ?`,
+      [req.player.playerId]
+    );
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
 
     let hbp = {};
@@ -4470,7 +4476,7 @@ module.exports = function (db) {
   });
 
   router.post("/rebirth", requireAuth, requireCsrfToken, async (req, res) => {
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
+    const k = await db.get("SELECT id, level, prestige_level, land, turn FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
