@@ -482,7 +482,9 @@ const StudiesPanel = () => {
               </div>
               )}
           </div>
-      </div>
+        </div>
+      )}
+    </div>
 
       {/* SHRINE TAB */}
       <div style={{ display: activeTab === 'shrine' ? 'block' : 'none' }}>
