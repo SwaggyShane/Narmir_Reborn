@@ -3,6 +3,45 @@ import React, { useState, useEffect } from 'react';
 const StudiesPanel = () => {
   const [activeTab, setActiveTab] = useState('tower');
   const [activeSchoolSubTab, setActiveSchoolSubTab] = useState('general');
+  const [studiesData, setStudiesData] = useState(null);
+
+  const fetchStudiesData = async () => {
+    try {
+      const response = await fetch('/api/kingdom/studies/overview');
+      if (response.ok) {
+        const data = await response.json();
+        setStudiesData(data);
+        updateStudiesDisplay(data);
+      }
+    } catch (err) {
+      console.error('Failed to load studies data:', err);
+    }
+  };
+
+  const updateStudiesDisplay = (data) => {
+    if (!data) return;
+
+    // Update Spellbook research level
+    const spellbookLevelEl = document.getElementById('school-spellbook-level');
+    if (spellbookLevelEl) {
+      spellbookLevelEl.textContent = `${data.res_spellbook || 0}%`;
+    }
+
+    // Update School Spellbook research level
+    const schoolLevelEl = document.getElementById('school-specific-level');
+    if (schoolLevelEl) {
+      schoolLevelEl.textContent = `${data.school_spellbook || 0}%`;
+    }
+
+    // Update mage allocation display
+    const alloc = data.research_allocation || {};
+    const spellbookEl = document.getElementById('mage-alloc-spellbook');
+    const schoolEl = document.getElementById('mage-alloc-school');
+    if (spellbookEl) spellbookEl.value = alloc.spellbook_mages || 0;
+    if (schoolEl) schoolEl.value = alloc.school_spellbook_mages || 0;
+
+    if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay();
+  };
 
   useEffect(() => {
     const loadMageAllocation = () => {
@@ -18,6 +57,7 @@ const StudiesPanel = () => {
     };
 
     loadMageAllocation();
+    fetchStudiesData();
   }, [window.gameState?.school_of_magic, window.gameState?.research_allocation]);
 
   const handleTabClick = (tabId) => {
@@ -28,7 +68,8 @@ const StudiesPanel = () => {
     if (tabId === "slibrary" && window.renderLibraryPanel) window.renderLibraryPanel();
   };
 
-  const loadStudies = () => {
+  const loadStudies = async () => {
+    await fetchStudiesData();
     if (window.loadStudies) window.loadStudies();
   };
 
