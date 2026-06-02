@@ -3738,7 +3738,7 @@ module.exports = function (db) {
         ).key,
       ];
     }
-    // Regular spellbook spells
+    // Regular spellbook spells with rune encoding
     const regularSpells = [
       'spark', 'fog_of_war', 'mend', 'blight', 'rain', 'dispel',
       'lightning', 'bless', 'silence', 'amnesia', 'drain',
@@ -3746,12 +3746,23 @@ module.exports = function (db) {
     ];
     const spellbookSpells = regularSpells.map(name => {
       const def = config.SPELL_DEFS[name] || {};
+      const displayName = name.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      const minLevel = def.minSB || 0;
+      const maxLevel = (regularSpells.indexOf(name) < regularSpells.length - 1)
+        ? (config.SPELL_DEFS[regularSpells[regularSpells.indexOf(name) + 1]]?.minSB || minLevel + 100)
+        : minLevel + 100;
+
+      const reveals = config.calculateRuneReveals(displayName, k.res_spellbook || 0, minLevel, maxLevel);
+      const runeDisplay = config.getPartialRuneSpell(displayName, reveals);
+
       return {
         id: name,
-        name: name.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+        name: displayName,
         tier: def.tier || 1,
-        min_spellbook: def.minSB || 0,
+        min_spellbook: minLevel,
         desc: def.desc || 'Unknown spell',
+        runeDisplay: runeDisplay,
+        reveals: reveals,
       };
     }).sort((a, b) => {
       if (a.tier !== b.tier) return a.tier - b.tier;
@@ -3763,12 +3774,21 @@ module.exports = function (db) {
       const spellNames = config.MAGIC_SCHOOLS[k.school_of_magic];
       schoolSpells = spellNames.map(name => {
         const def = config.SPELL_DEFS[name] || {};
+        const displayName = name.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        const minLevel = def.minSB || 0;
+        const maxLevel = minLevel + 100;
+
+        const reveals = config.calculateRuneReveals(displayName, k.school_spellbook || 0, minLevel, maxLevel);
+        const runeDisplay = config.getPartialRuneSpell(displayName, reveals);
+
         return {
           id: name,
-          name: name.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+          name: displayName,
           tier: def.tier || 1,
-          min_school_spellbook: def.minSB || 0,
+          min_school_spellbook: minLevel,
           desc: def.desc || 'Unknown spell',
+          runeDisplay: runeDisplay,
+          reveals: reveals,
         };
       }).sort((a, b) => {
         if (a.tier !== b.tier) return a.tier - b.tier;

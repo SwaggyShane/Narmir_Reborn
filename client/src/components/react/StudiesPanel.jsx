@@ -425,20 +425,13 @@ const StudiesPanel = () => {
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginLeft: '12px' }}>
                           {spellbookSpellsByTier[tier].map(spell => {
-                            const isRevealed = (studiesData?.res_spellbook || 0) >= (spell.min_spellbook || 0);
+                            const isFullyRevealed = spell.reveals.revealedCount === spell.reveals.totalLetters;
                             return (
-                              <div key={spell.id} style={{ fontSize: '12px', color: isRevealed ? 'var(--text2)' : 'var(--text3)' }}>
-                                {isRevealed ? (
-                                  <>
-                                    <span style={{ marginRight: '8px' }}>✨</span>
-                                    <strong>{spell.name}</strong> — {spell.desc}
-                                  </>
-                                ) : (
-                                  <>
-                                    <span style={{ marginRight: '8px' }}>⬜</span>
-                                    <span style={{ color: 'var(--text3)' }}>??? (requires {spell.min_spellbook}% spellbook)</span>
-                                  </>
-                                )}
+                              <div key={spell.id} style={{ fontSize: '12px', color: isFullyRevealed ? 'var(--text2)' : 'var(--text3)', fontFamily: 'Noto Sans Runic, sans-serif' }}>
+                                <span style={{ marginRight: '8px' }}>{isFullyRevealed ? '✨' : '⬜'}</span>
+                                <strong>{spell.runeDisplay}</strong>
+                                {isFullyRevealed && <> — {spell.desc}</>}
+                                {!isFullyRevealed && <span style={{ color: 'var(--text3)' }}> ({spell.reveals.revealedCount}/{spell.reveals.totalLetters} revealed)</span>}
                               </div>
                             );
                           })}
@@ -470,20 +463,13 @@ const StudiesPanel = () => {
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginLeft: '12px' }}>
                           {spellsByTier[tier].map(spell => {
-                            const isRevealed = (studiesData.school_spellbook || 0) >= (spell.min_school_spellbook || 0);
+                            const isFullyRevealed = spell.reveals.revealedCount === spell.reveals.totalLetters;
                             return (
-                              <div key={spell.id} style={{ fontSize: '12px', color: isRevealed ? 'var(--text2)' : 'var(--text3)' }}>
-                                {isRevealed ? (
-                                  <>
-                                    <span style={{ marginRight: '8px' }}>✨</span>
-                                    <strong>{spell.name}</strong> — {spell.desc}
-                                  </>
-                                ) : (
-                                  <>
-                                    <span style={{ marginRight: '8px' }}>⬜</span>
-                                    <span style={{ color: 'var(--text3)' }}>??? (requires {spell.min_school_spellbook}% school_spellbook)</span>
-                                  </>
-                                )}
+                              <div key={spell.id} style={{ fontSize: '12px', color: isFullyRevealed ? 'var(--text2)' : 'var(--text3)', fontFamily: 'Noto Sans Runic, sans-serif' }}>
+                                <span style={{ marginRight: '8px' }}>{isFullyRevealed ? '✨' : '⬜'}</span>
+                                <strong>{spell.runeDisplay}</strong>
+                                {isFullyRevealed && <> — {spell.desc}</>}
+                                {!isFullyRevealed && <span style={{ color: 'var(--text3)' }}> ({spell.reveals.revealedCount}/{spell.reveals.totalLetters} revealed)</span>}
                               </div>
                             );
                           })}

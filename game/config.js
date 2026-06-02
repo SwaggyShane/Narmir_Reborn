@@ -1194,6 +1194,20 @@ const config = {
     revealed: "✨",
   },
 
+  RUNE_ALPHABET: {
+    A: 'ᚨ', B: 'ᛒ', C: 'ᚲ', D: 'ᛞ', E: 'ᛖ', F: 'ᚠ', G: 'ᚷ', H: 'ᚺ',
+    I: 'ᛁ', J: 'ᛃ', K: 'ᚲ', L: 'ᛚ', M: 'ᛘ', N: 'ᚾ', O: 'ᛟ', P: 'ᛈ',
+    Q: 'ᛩ', R: 'ᚱ', S: 'ᛊ', T: 'ᛏ', U: 'ᚢ', V: 'ᚡ', W: 'ᚹ', X: 'ᛪ',
+    Y: 'ᛦ', Z: 'ᛉ',
+    ' ': ' ', // Space remains space
+  },
+
+  SPELL_GLYPHS: {
+    default: "⬜",
+    locked: "❓",
+    revealed: "✨",
+  },
+
   SPELL_DEFS: {
     spark: {
       minSB: 100,
@@ -2954,6 +2968,58 @@ const config = {
 const fs = require("fs");
 const path = require("path");
 try {
+  // Add rune helper functions
+  config.transcribeToRunes = function(englishText) {
+    return englishText
+      .toUpperCase()
+      .split('')
+      .map(char => config.RUNE_ALPHABET[char] || char)
+      .join('');
+  };
+
+  config.calculateRuneReveals = function(spellName, currentLevel, minLevel, maxLevel) {
+    if (currentLevel < minLevel) return { totalLetters: spellName.length, revealedCount: 0, revealedIndices: [] };
+
+    const totalResearchNeeded = maxLevel - minLevel;
+    const progressMade = Math.min(currentLevel - minLevel, totalResearchNeeded);
+    const progressRatio = totalResearchNeeded > 0 ? progressMade / totalResearchNeeded : 1;
+
+    const spellLength = spellName.length;
+    const lettersToReveal = Math.floor(progressRatio * spellLength);
+
+    // Deterministic random selection: seed = hash(spellName + currentLevel bracket)
+    // Use simple hash to pick consistent letter indices
+    const seed = spellName.charCodeAt(0) * 31 + Math.floor(progressRatio * 100);
+    const indices = Array.from({ length: spellLength }, (_, i) => i);
+
+    // Fisher-Yates shuffle with seeded random
+    for (let i = indices.length - 1; i > 0; i--) {
+      const j = Math.floor(((seed + i * 37) % 100) / 100 * (i + 1));
+      [indices[i], indices[j]] = [indices[j], indices[i]];
+    }
+
+    const revealedIndices = indices.slice(0, lettersToReveal).sort((a, b) => a - b);
+
+    return {
+      totalLetters: spellLength,
+      revealedCount: lettersToReveal,
+      revealedIndices: revealedIndices,
+    };
+  };
+
+  config.getPartialRuneSpell = function(spellName, reveals) {
+    return spellName
+      .toUpperCase()
+      .split('')
+      .map((char, idx) => {
+        if (reveals.revealedIndices.includes(idx)) {
+          return char;
+        }
+        return config.RUNE_ALPHABET[char] || char;
+      })
+      .join('');
+  };
+
   const overridesPath = path.join(__dirname, "config_overrides.json");
   if (fs.existsSync(overridesPath)) {
     const overrides = JSON.parse(fs.readFileSync(overridesPath, "utf8"));
