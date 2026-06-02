@@ -903,7 +903,7 @@ const config = {
     // Tier 5: Variable land
     outposts: 25,
     smithies: 200,
-    walls: 500,
+    walls: 50,
     // Tier 6: Variable land
     armories: 300,
     vaults: 300,
