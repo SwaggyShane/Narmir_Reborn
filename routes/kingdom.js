@@ -3175,6 +3175,11 @@ module.exports = function (db) {
        FROM kingdoms WHERE player_id = ?`,
       [req.player.playerId]
     );
+    if (!k) return res.status(404).json({ error: "Kingdom not found" });
+
+    let hbp = {};
+    try {
+      hbp = safeJsonParse(k.hybrid_blueprints, {}, "auto:hybrid_blueprints");
     } catch {}
 
     if (!hbp[blueprintId]) {
