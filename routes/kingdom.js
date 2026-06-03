@@ -1838,7 +1838,7 @@ module.exports = function (db) {
 
     // Consolidate 3 queries into 2: attacker + target with AI status
     const k = await db.get(
-      `SELECT ${KINGDOM_ATTACK}, p.is_ai FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.player_id = ?`,
+      `SELECT k.*, p.is_ai FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.player_id = ?`,
       [req.player.playerId],
     );
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -1852,7 +1852,7 @@ module.exports = function (db) {
       return res.status(400).json({ error: "Send at least some troops" });
 
     const target = await db.get(
-      `SELECT ${KINGDOM_ATTACK}, p.is_ai FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.id = ?`,
+      `SELECT k.*, p.is_ai FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.id = ?`,
       [targetId],
     );
     if (!target)

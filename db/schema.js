@@ -347,13 +347,20 @@ async function initDb() {
   }
 
   const { Pool } = require('pg');
+  const maxPool = process.env.DATABASE_MAX_POOL ? parseInt(process.env.DATABASE_MAX_POOL, 10) : 10;
+  const minPool = process.env.DATABASE_MIN_POOL ? parseInt(process.env.DATABASE_MIN_POOL, 10) : 2;
+
+  if (isNaN(maxPool) || isNaN(minPool) || maxPool < 1 || minPool < 1 || maxPool < minPool) {
+    throw new Error(`[db] Invalid pool configuration: max=${maxPool}, min=${minPool}. Both must be positive integers with max >= min`);
+  }
+
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: (!process.env.DATABASE_URL.includes('localhost') && !process.env.DATABASE_URL.includes('127.0.0.1') && !process.env.DATABASE_URL.includes('0.0.0.0'))
       ? { rejectUnauthorized: false }
       : false,
-    max: process.env.DATABASE_MAX_POOL ? parseInt(process.env.DATABASE_MAX_POOL, 10) : 10,
-    min: process.env.DATABASE_MIN_POOL ? parseInt(process.env.DATABASE_MIN_POOL, 10) : 2,
+    max: maxPool,
+    min: minPool,
     connectionTimeoutMillis: 10000,
     idleTimeoutMillis: 30000,
     statement_timeout: 120000,
