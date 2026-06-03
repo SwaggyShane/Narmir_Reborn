@@ -1034,7 +1034,7 @@ module.exports = function (db, io) {
     res.json({ ok: true });
   });
 
-  router.get("/sounds", (req, res) => {
+  router.get("/sounds", requireAdmin, (req, res) => {
     fs.readdir(soundsPath, (err, files) => {
       if (err)
         return res
@@ -1047,7 +1047,7 @@ module.exports = function (db, io) {
     });
   });
 
-  router.post("/sounds/upload", (req, res) => {
+  router.post("/sounds/upload", requireAdmin, requireCsrfToken, (req, res) => {
     upload.single("soundFile")(req, res, (err) => {
       if (err) {
         return res.status(400).json({ error: err.message });
@@ -1075,7 +1075,7 @@ module.exports = function (db, io) {
     });
   });
 
-  router.post("/sounds/delete", (req, res) => {
+  router.post("/sounds/delete", requireAdmin, requireCsrfToken, (req, res) => {
     if (!req.body.filename)
       return res.status(400).json({ error: "Filename required" });
     const targetPath = safeSoundPath(req.body.filename);
