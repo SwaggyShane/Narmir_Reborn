@@ -107,6 +107,20 @@ export const mountReactApps = () => {
 
 window.mountReactApps = mountReactApps;
 
+// Audio system
+window.playAchievementSound = () => {
+  try {
+    const audio = new Audio('/sound/achievement.mp3');
+    audio.volume = 0.7;
+    audio.play().catch(() => {
+      // Silently fail if audio can't play (browser restrictions, file not found, etc.)
+      console.debug('[audio] Achievement sound failed to play');
+    });
+  } catch (err) {
+    console.debug('[audio] Error playing sound:', err.message);
+  }
+};
+
 // Mage allocation and study functions
 window.updateMageAllocationDisplay = () => {
   const totalMages = (window.gameState && window.gameState.mages) || 0;
@@ -325,6 +339,10 @@ window.takeTurn = async () => {
         for (const ev of data.events) {
           if (ev.message) {
             window.toast?.(ev.message, "info");
+            // Play sound for achievements
+            if (ev.message.includes("ACHIEVEMENT UNLOCKED")) {
+              window.playAchievementSound?.();
+            }
           }
         }
       }
