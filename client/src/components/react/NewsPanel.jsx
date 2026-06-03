@@ -1,17 +1,46 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 const NewsPanel = () => {
-  const loadNews = () => {
+  const [newsLoaded, setNewsLoaded] = useState(false);
+
+  // Expose global functions for dynamic refresh from HTML/socket events
+  useEffect(() => {
+    const loadNews = () => {
+      if (window.loadNews) window.loadNews();
+      setNewsLoaded(true);
+    };
+
+    const clearNews = () => {
+      if (window.clearNews) window.clearNews();
+    };
+
+    const setNewsFilter = (filter, e) => {
+      if (window.setNewsFilter) window.setNewsFilter(filter, e.currentTarget);
+    };
+
+    window.newsRefresh = loadNews;
+    window.newsClear = clearNews;
+    window.newsFilterSet = setNewsFilter;
+
+    return () => {
+      delete window.newsRefresh;
+      delete window.newsClear;
+      delete window.newsFilterSet;
+    };
+  }, []);
+
+  const loadNews = useCallback(() => {
     if (window.loadNews) window.loadNews();
-  };
+    setNewsLoaded(true);
+  }, []);
 
-  const clearNews = () => {
+  const clearNews = useCallback(() => {
     if (window.clearNews) window.clearNews();
-  };
+  }, []);
 
-  const setNewsFilter = (filter, e) => {
+  const setNewsFilter = useCallback((filter, e) => {
     if (window.setNewsFilter) window.setNewsFilter(filter, e.currentTarget);
-  };
+  }, []);
 
   return (
     <div id="news" className="panel" style={{ display: 'none' }}>

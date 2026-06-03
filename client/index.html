@@ -3997,10 +3997,14 @@
         });
         socket.on("unread_news", function (data) {
           if (data.count > 0) showNewsBadge(data.count);
-          // Refresh news if panel is open
+          // Refresh news if panel is open - check for active news panel
           var newsPanel = document.getElementById("news");
-          if (newsPanel && newsPanel.classList.contains("active")) {
-            loadNews();
+          if (newsPanel && newsPanel.classList && newsPanel.classList.contains("active")) {
+            if (window.loadNews) {
+              window.loadNews();
+            } else if (window.renderNewsList) {
+              window.renderNewsList(newsCache);
+            }
           }
         });
       }
@@ -8076,6 +8080,11 @@
 
         // Badge
         incrementNewsBadge(events.length);
+
+        // Refresh full news list to ensure filter is applied correctly
+        if (window.renderNewsList) {
+          window.renderNewsList(newsCache);
+        }
       }
 
       async function saveDescription() {
