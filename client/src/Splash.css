@@ -13,6 +13,20 @@
   background: #000;
 }
 
+/* During modern phase, let html/body scroll natively so the iOS address bar
+   can collapse and 100svh behaves correctly. Fixed-position video/embers
+   remain anchored to the viewport regardless. */
+html:has(.phase-modern),
+body:has(.phase-modern) {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.splash-root.phase-modern {
+  position: relative;
+  overflow: visible;
+}
+
 /* ══════════════════════════════════════════════════════════════════
    PHASE 1 — RETRO SITE
    ══════════════════════════════════════════════════════════════════ */
@@ -347,10 +361,8 @@
    ══════════════════════════════════════════════════════════════════ */
 
 .modern-splash {
-  position: fixed;
-  inset: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
+  position: relative;
+  min-height: 100vh;
   animation: modernIn 0.9s ease-out both;
   --gold:    #f06202;
   --accent1: #b43c00;
@@ -417,11 +429,13 @@
   position: relative;
   z-index: 2;
   min-height: 100vh;
+  min-height: 100svh; /* shrinks with mobile address bar */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 2rem;
+  padding-top: max(2rem, env(safe-area-inset-top));
   text-align: center;
 }
 
@@ -833,13 +847,45 @@
 
 /* ── Responsive ─────────────────────────────────────────────────── */
 @media (max-width: 600px) {
-  .retro-nav { width: 120px; min-width: 120px; }
-  .retro-nav-link { font-size: 11px; padding: 4px 6px; }
-  .retro-logo-name { font-size: 24px; letter-spacing: 3px; }
+  /* Retro site: stack nav above content on small screens */
+  .retro-body { flex-direction: column; }
+  .retro-nav {
+    width: 100%;
+    min-width: 0;
+    flex-direction: row;
+    flex-wrap: wrap;
+    border-right: none;
+    border-bottom: 2px solid #3333ff;
+    padding: 0;
+  }
+  .retro-nav-link {
+    font-size: 11px;
+    padding: 4px 8px;
+    border-bottom: 1px solid #2222cc;
+    border-right: 1px solid #2222cc;
+    flex: 0 0 auto;
+  }
+  .retro-nav-link.first::after { display: none; }
+  .retro-logo-name { font-size: 22px; letter-spacing: 3px; }
+  .retro-statusbar { font-size: 10px; gap: 4px; }
+  .retro-statusbar span:last-child { display: none; }
 
-  .race-row { gap: 1rem; }
-  .race-card { width: 130px; padding: 1rem 0.75rem; }
+  /* Modern splash */
+  .auth-block { max-width: 100%; }
+  .auth-form-wrap { border-radius: 6px; padding: 1.1rem; }
+  .continue-btn { padding: 0.85rem 2rem; font-size: 0.95rem; }
+
+  .race-row { gap: 0.9rem; }
+  .race-card { width: 140px; padding: 1rem 0.75rem; }
   .race-portrait { width: 64px; height: 64px; }
 
   .feature-grid { grid-template-columns: 1fr; }
+
+  .race-section,
+  .features-section { padding-left: 1rem; padding-right: 1rem; }
+}
+
+@media (max-width: 380px) {
+  .race-card { width: 120px; }
+  .hero-title { letter-spacing: 0.1em; }
 }
