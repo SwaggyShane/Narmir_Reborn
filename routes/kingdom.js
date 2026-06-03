@@ -4553,9 +4553,48 @@ module.exports = function (db) {
       const completedAchIds = achievements.filter(ach => typeof ach === 'string' && ach.length > 0);
       const completedSet = new Set(completedAchIds);
 
+      // Calculate progress for achievements
+      const getAchievementProgress = (achId) => {
+        switch(achId) {
+          case 'ach_founder':
+            // Progress: any building built = 100%
+            const totalBuildings = Object.keys(config.BUILDING_COL)
+              .filter(col => col.startsWith('bld_'))
+              .reduce((sum, col) => sum + (k[col] || 0), 0);
+            return { current: Math.min(totalBuildings, 1), target: 1, label: `${totalBuildings} building${totalBuildings !== 1 ? 's' : ''}` };
+          case 'ach_warlord':
+            return { current: k.population || 0, target: 50000, label: `${(k.population || 0).toLocaleString()} / 50,000` };
+          case 'ach_constructor':
+            const totalBlds = Object.keys(config.BUILDING_COL)
+              .filter(col => col.startsWith('bld_'))
+              .reduce((sum, col) => sum + (k[col] || 0), 0);
+            return { current: totalBlds, target: 1500, label: `${totalBlds} / 1,500` };
+          case 'ach_colossus':
+            return { current: k.population || 0, target: 10000000, label: `${(k.population || 0).toLocaleString()} / 10,000,000` };
+          case 'ach_wealthy':
+            return { current: k.gold || 0, target: 10000000, label: `${(k.gold || 0).toLocaleString()} / 10,000,000` };
+          case 'ach_arcane':
+            return { current: k.mana || 0, target: 1000000, label: `${(k.mana || 0).toLocaleString()} / 1,000,000` };
+          case 'ach_grandmaster':
+            const towers = k.bld_mage_towers || 0;
+            const libs = k.bld_libraries || 0;
+            const schools = k.bld_schools || 0;
+            const min = Math.min(towers, libs, schools);
+            return {
+              current: min,
+              target: 25,
+              label: `${towers}/${libs}/${schools}`,
+              sublabel: 'Towers/Libraries/Schools'
+            };
+          default:
+            return { current: 0, target: 1, label: 'Unknown' };
+        }
+      };
+
       // Create objects for all achievements (completed and uncompleted)
       const achievementObjects = Object.entries(ACHIEVEMENT_DEFS).map(([achId, def]) => {
         const isCompleted = completedSet.has(achId);
+        const progress = !isCompleted ? getAchievementProgress(achId) : null;
         return {
           id: achId,
           title: def.title || achId.replace(/^ach_/, '').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
@@ -4563,6 +4602,16 @@ module.exports = function (db) {
           ...(isCompleted && {
             description: def.description || '',
             reward: def.reward || '',
+          }),
+          ...(!isCompleted && progress && {
+            description: def.description || '',
+            progress: {
+              current: progress.current,
+              target: progress.target,
+              percent: Math.min(100, Math.floor((progress.current / progress.target) * 100)),
+              label: progress.label,
+              sublabel: progress.sublabel || null,
+            },
           }),
         };
       });
