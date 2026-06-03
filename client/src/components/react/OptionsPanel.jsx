@@ -185,6 +185,9 @@ const OptionsPanel = () => {
   const [navLayout, setNavLayout] = useState(
     localStorage.getItem('narmir_nav_layout') || 'responsive'
   );
+  const [skipIntro, setSkipIntro] = useState(
+    localStorage.getItem('narmir_skip_intro') === '1'
+  );
 
   const updateNavLayout = (e) => {
     const val = e.target.value;
@@ -192,6 +195,17 @@ const OptionsPanel = () => {
     localStorage.setItem('narmir_nav_layout', val);
     if (window.applyNavLayout) {
       window.applyNavLayout();
+    }
+  };
+
+  const updateSkipIntro = (e) => {
+    const val = e.target.checked;
+    setSkipIntro(val);
+    if (val) {
+      localStorage.setItem('narmir_skip_intro', '1');
+    } else {
+      localStorage.removeItem('narmir_skip_intro');
+      sessionStorage.removeItem('narmir_intro_seen');
     }
   };
 
@@ -291,6 +305,17 @@ const OptionsPanel = () => {
               <option value="bottom">Bottom Navigation Bar Only</option>
             </select>
           </div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', userSelect: 'none' }}>
+            <input
+              type="checkbox"
+              checked={skipIntro}
+              onChange={updateSkipIntro}
+              style={{ width: '16px', height: '16px', accentColor: 'var(--accent1)', cursor: 'pointer', flexShrink: 0 }}
+            />
+            <span style={{ fontSize: '13px', color: 'var(--text2)', lineHeight: 1.4 }}>
+              Skip intro animation when visiting the home page
+            </span>
+          </label>
         </div>
       </div>
 
