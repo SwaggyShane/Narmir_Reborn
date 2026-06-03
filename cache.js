@@ -75,21 +75,26 @@ async function getServerState(db, key, ttlMs = 60 * 60 * 1000) {
 }
 
 function setUnreadCount(kingdomId, count) {
-  serverStateCache.set(`unread:${kingdomId}`, count, 60 * 60 * 1000);
+  unreadNewsCache.set(`${kingdomId}`, count, 60 * 60 * 1000);
 }
 
 function getUnreadCount(kingdomId) {
-  return serverStateCache.get(`unread:${kingdomId}`) || 0;
+  const count = unreadNewsCache.get(`${kingdomId}`);
+  return count !== undefined ? count : 0;
 }
 
 function incrementUnread(kingdomId) {
-  const current = getUnreadCount(kingdomId);
-  setUnreadCount(kingdomId, current + 1);
+  const current = unreadNewsCache.get(`${kingdomId}`);
+  if (current !== undefined) {
+    unreadNewsCache.set(`${kingdomId}`, current + 1, 60 * 60 * 1000);
+  }
 }
 
 function decrementUnread(kingdomId) {
-  const current = getUnreadCount(kingdomId);
-  setUnreadCount(kingdomId, Math.max(0, current - 1));
+  const current = unreadNewsCache.get(`${kingdomId}`);
+  if (current !== undefined) {
+    unreadNewsCache.set(`${kingdomId}`, Math.max(0, current - 1), 60 * 60 * 1000);
+  }
 }
 
 module.exports = {

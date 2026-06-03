@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const engine = require("./engine");
-const { setUnreadCount, getUnreadCount, incrementUnread, decrementUnread } = require("../cache.js");
+const { setUnreadCount, getUnreadCount, incrementUnread, decrementUnread, unreadNewsCache } = require("../cache.js");
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_fallback_12345";
 const onlinePlayers = new Map(); // playerId → { socketId, username, race, isMod, isAdmin, kingdomName }
@@ -80,9 +80,16 @@ module.exports = function (io, db) {
       );
       if (membership) socket.join(`alliance:${membership.alliance_id}`);
 
-      const notifyUnread = (kid) => {
-        // Use cached count instead of querying
-        const count = getUnreadCount(kid);
+      const notifyUnread = async (kid) => {
+        let count = unreadNewsCache.get(`${kid}`);
+        if (count === undefined) {
+          const row = await db.get(
+            "SELECT COUNT(*) as c FROM news WHERE kingdom_id = ? AND is_read = 0",
+            [kid]
+          );
+          count = row?.c || 0;
+          setUnreadCount(kid, count);
+        }
         io.to(`kingdom:${kid}`).emit("unread_news", { count });
       };
 

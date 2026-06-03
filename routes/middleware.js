@@ -32,9 +32,9 @@ function requireAuth(req, res, next) {
 
 function cacheKingdomId(db) {
   return async (req, res, next) => {
-    if (!req.player || !req.player.id) return next();
+    if (!req.player || !req.player.playerId) return next();
 
-    const playerId = req.player.id;
+    const playerId = req.player.playerId;
     const cacheKey = `kingdom:${playerId}`;
 
     // Check cache first (30 minute TTL)

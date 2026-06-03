@@ -1,14 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import './Portal.css';
 
-const RACE_EMOJI = {
-  human: '🌾', orc: '⚔️', dwarf: '⛏️', dark_elf: '🕵️',
-  vampire: '🧛', dire_wolf: '🐺', high_elf: '🌿', undead: '💀',
-};
-
 const RACE_DATA = [
   {
-    id: 'human', title: 'Humans of The Heartlands', icon: '🌾', color: '#8fb84a',
+    id: 'human', title: 'Humans of The Heartlands', color: '#8fb84a',
     lore: 'Humans are not the strongest, the fastest, or the most magical. What they are is relentless. They breed quickly, adapt faster than any other race, and build institutions that outlast individual heroes.',
     strengths: ['Versatile and adaptable in all military areas', 'Exceptional population growth speed', 'Access to powerful morale-boosting clerics', 'Strong exploration initiatives'],
     weaknesses: ['Lacks specialization in any single discipline', 'Requires careful strategic balance'],
@@ -17,7 +12,7 @@ const RACE_DATA = [
     playstyle: 'Flexible all-rounder. Strong in long games where adaptation outweighs specialisation.',
   },
   {
-    id: 'orc', title: 'Orcs of The Bloodplains', icon: '⚔️', color: '#e05c5c',
+    id: 'orc', title: 'Orcs of The Bloodplains', color: '#e05c5c',
     lore: "The Orcs have never needed a reason to go to war. The Bloodplains have been theirs since before the other races learned to write, and they intend to keep them — by force, by sheer weight of bodies.",
     strengths: ['Formidable front-line fighters', 'Significant military power bonuses', 'Passive troop generation from masters', 'Robust economic structure'],
     weaknesses: ['Poor investment in research', 'Virtually no magical aptitude', 'Slower construction progress'],
@@ -26,7 +21,7 @@ const RACE_DATA = [
     playstyle: 'Blitzkrieg. Rush military, attack early, snowball fighter count with passive generation.',
   },
   {
-    id: 'dwarf', title: 'Dwarves of The Iron Holds', icon: '⛏️', color: '#c8962a',
+    id: 'dwarf', title: 'Dwarves of The Iron Holds', color: '#c8962a',
     lore: 'Deep beneath the mountain roots, Dwarven civilisation predates all others in recorded history. Their citadels are cities of impossible scale, carved across generations by engineers who see rock as other races see clay.',
     strengths: ['Master builders — extremely fast construction speed', 'Powerful economy and gold generation', 'Superior war machines and siege engines', 'Elite engineer training programs'],
     weaknesses: ['Very weak magical capabilities', 'Below-average resource research', 'Limited surface exploration range'],
@@ -35,7 +30,7 @@ const RACE_DATA = [
     playstyle: 'Economy and fortress play. Turtle behind walls, stockpile gold, outlast everyone.',
   },
   {
-    id: 'dark_elf', title: 'Dark Elves of The Underspire', icon: '🕵️', color: '#f06202',
+    id: 'dark_elf', title: 'Dark Elves of The Underspire', color: '#f06202',
     lore: 'No one knows how many Dark Elves there are. That is precisely how they like it. Operating from a vast underground network of city-warrens and shadow markets, they wage war through proxy, poison, and precision.',
     strengths: ['Unrivaled covert operations and stealth', 'Lethal units specialized in assassination', 'Trained rangers for high-risk scouting', 'Excellent global exploration'],
     weaknesses: ['Fragile military units in open battle', 'Modest economic output', 'Limited housing availability'],
@@ -44,7 +39,7 @@ const RACE_DATA = [
     playstyle: 'Shadow warfare. Drain enemy gold and research with thieves, assassinate key units.',
   },
   {
-    id: 'vampire', title: 'Vampires of The Sanguine Spires', icon: '🧛', color: '#b43c00',
+    id: 'vampire', title: 'Vampires of The Sanguine Spires', color: '#b43c00',
     lore: 'Ancient and immortal, the Vampires view the other races as little more than cattle for their blood-feasts. From their dark spires, they command armies of thralls and necromantic soldiers.',
     strengths: ['Devastating efficiency during night hours', 'Recruits fallen enemies into their army', 'Rapid combat experience gain', 'Effective daytime stealth and evasion'],
     weaknesses: ['Significant combat penalties in daylight', 'Limited natural economic systems', 'Perpetual need for population consumption'],
@@ -53,7 +48,7 @@ const RACE_DATA = [
     playstyle: 'Necromantic conquest. Dominate the night, harvest souls, convert the fallen into your eternal army.',
   },
   {
-    id: 'dire_wolf', title: 'Dire Wolves of The Ashfang Wilds', icon: '🐺', color: '#4a8fb8',
+    id: 'dire_wolf', title: 'Dire Wolves of The Ashfang Wilds', color: '#4a8fb8',
     lore: "The Dire Wolves do not build kingdoms — they claim territory. Their settlements are mobile, their supply chains are their rangers, and their economy is whatever they can take from the land before moving on.",
     strengths: ['Most powerful combatants in the realm', 'Elite rangers with rapid expedition cycle', 'Overwhelming natural military strength', 'Massive housing capacity from tribal lands'],
     weaknesses: ['Significant economic struggles', 'Extremely limited magical knowledge', 'High logistical upkeep for armies'],
@@ -62,7 +57,7 @@ const RACE_DATA = [
     playstyle: 'Raid and conquest. Hit fast, take land, use rangers for gold when not at war.',
   },
   {
-    id: 'high_elf', title: 'High Elves of The Silverwood', icon: '🌿', color: '#4caf82',
+    id: 'high_elf', title: 'High Elves of The Silverwood', color: '#4caf82',
     lore: 'Ageless and arch, the High Elves have spent millennia convinced they are the chosen custodians of arcane knowledge. A High Elf mage at level 100 is worth ten of any other race.',
     strengths: ['Vast magical reserves and research potential', 'Can produce extra scrolls during crafting', 'Highly efficient mage and cleric training', 'Substantial mana generation per cycle'],
     weaknesses: ['Significant military fragility', 'Very limited housing capacity', 'Minimal population growth rate'],
@@ -97,7 +92,7 @@ function RaceSelectOverlay({ selected, onSelect, onBack, onConfirm }) {
               onMouseEnter={() => setHovered(race.id)}
               onMouseLeave={() => setHovered(null)}
             >
-              <div className="race-pick-icon">{race.icon}</div>
+              <div className="race-pick-portrait" style={{ backgroundColor: race.color }}></div>
               <div className="race-pick-name">{race.title.split(' of ')[0]}</div>
               <div className="race-pick-playstyle">{race.playstyle.split('.')[0]}</div>
             </button>
@@ -107,14 +102,25 @@ function RaceSelectOverlay({ selected, onSelect, onBack, onConfirm }) {
         <div className="race-detail-panel">
           {activeRace ? (
             <div className="race-detail-inner" style={{ '--race-color': activeRace.color }}>
-              <div className="race-detail-header">
-                <span className="race-detail-icon">{activeRace.icon}</span>
-                <div>
+              <div className="race-detail-portrait-section">
+                <div className="race-detail-portrait" style={{ backgroundColor: activeRace.color }}></div>
+                <div className="race-detail-title-group">
                   <div className="race-detail-title">{activeRace.title}</div>
-                  <div className="race-detail-heroes">Heroes: {activeRace.heroes.join(' · ')}</div>
+                  <div className="race-detail-subtitle">{activeRace.playstyle.split('.')[0]}</div>
                 </div>
               </div>
               <p className="race-detail-lore">{activeRace.lore}</p>
+              <div className="race-detail-section">
+                <div className="race-detail-label">Heroes</div>
+                <div className="race-heroes-grid">
+                  {activeRace.heroes.map((hero, i) => (
+                    <div key={i} className="race-hero-card">
+                      <div className="hero-portrait" style={{ backgroundColor: activeRace.color }}></div>
+                      <div className="hero-name">{hero}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
               <div className="race-detail-section">
                 <div className="race-detail-label">Strengths</div>
                 <ul className="race-detail-list strengths">
@@ -127,12 +133,18 @@ function RaceSelectOverlay({ selected, onSelect, onBack, onConfirm }) {
                   {activeRace.weaknesses.map((w, i) => <li key={i}>{w}</li>)}
                 </ul>
               </div>
+              {activeRace.id === 'vampire' && (
+                <div className="race-warning vampire-warning">
+                  <div className="warning-label">Warning</div>
+                  <div className="warning-text">Vampires are bound to the night. Daylight brings significant combat penalties. Choose wisely.</div>
+                </div>
+              )}
               <div className="race-detail-special">
-                <span className="race-detail-special-label">✦ Special</span>
+                <span className="race-detail-special-label">Special Ability</span>
                 {activeRace.special}
               </div>
               <div className="race-detail-playstyle">
-                <span className="race-detail-special-label">⚔ Playstyle</span>
+                <span className="race-detail-special-label">Playstyle</span>
                 {activeRace.playstyle}
               </div>
             </div>
@@ -145,12 +157,19 @@ function RaceSelectOverlay({ selected, onSelect, onBack, onConfirm }) {
       </div>
 
       <div className="race-overlay-footer">
-        <button className="portal-ghost-btn" onClick={onBack}>← Back</button>
-        <button className="portal-enter-btn race-confirm-btn" disabled={!selected} onClick={onConfirm}>
-          {selected
-            ? `Begin as ${RACE_DATA.find(r => r.id === selected)?.title.split(' of ')[0]} →`
-            : 'Select a Race'}
-        </button>
+        {selected && (
+          <div className="race-permanence-warning">
+            Your race choice is permanent and cannot be changed.
+          </div>
+        )}
+        <div className="race-overlay-buttons">
+          <button className="portal-ghost-btn" onClick={onBack}>Back</button>
+          <button className="portal-enter-btn race-confirm-btn" disabled={!selected} onClick={onConfirm}>
+            {selected
+              ? `Begin as ${RACE_DATA.find(r => r.id === selected)?.title.split(' of ')[0]}`
+              : 'Select a Race'}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -280,7 +299,7 @@ function AuthCard() {
 
         {raceInfo && (
           <div className="reg-race-badge" style={{ '--race-color': raceInfo.color }}>
-            <span className="reg-race-icon">{raceInfo.icon}</span>
+            <div className="reg-race-portrait" style={{ backgroundColor: raceInfo.color }}></div>
             <div>
               <div className="reg-race-name">{raceInfo.title.split(' of ')[0]}</div>
               <button className="reg-race-change" onClick={() => setView('race-select')}>Change race</button>
@@ -300,7 +319,7 @@ function AuthCard() {
           <p className="auth-password-hint">8+ chars · uppercase · lowercase · number · special (@$!%*?&)</p>
           {error && <p className="portal-error">{error}</p>}
           <div className="auth-btn-row">
-            <button type="button" className="portal-ghost-btn" onClick={() => setView('race-select')}>← Back</button>
+            <button type="button" className="portal-ghost-btn" onClick={() => setView('race-select')}>Back</button>
             <button type="submit" className="portal-enter-btn auth-register-btn" disabled={submitting}>
               {submitting ? '…' : 'BEGIN YOUR REIGN'}
             </button>
@@ -377,7 +396,7 @@ function RankingsTable() {
 
   return (
     <div className="portal-card">
-      <h2 className="portal-section-title">⚔️ Top Kingdoms</h2>
+      <h2 className="portal-section-title">Top Kingdoms</h2>
       {loading && <div className="portal-loading">Loading rankings…</div>}
       {error && <div className="portal-loading">Could not load rankings.</div>}
       {!loading && !error && (
@@ -398,7 +417,7 @@ function RankingsTable() {
                   </div>
                 </td>
                 <td className="race-cell">
-                  {RACE_EMOJI[r.race] || '🏰'} {r.race ? r.race.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'Unknown'}
+                  {r.race ? r.race.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'Unknown'}
                 </td>
                 <td>{r.land?.toLocaleString()}</td>
                 <td>{r.level}</td>
@@ -416,12 +435,12 @@ function RankingsTable() {
 function ForumsCard() {
   return (
     <div className="portal-card">
-      <h2 className="portal-section-title">📜 Forums</h2>
+      <h2 className="portal-section-title">Forums</h2>
       <p className="portal-coming-soon">
         Forums are coming soon. In the meantime, join the community on Discord for news, strategy, and war reports.
       </p>
       <a href="https://discord.gg/narmir" className="portal-discord-btn" target="_blank" rel="noopener noreferrer">
-        💬 Join Discord
+        Join Discord
       </a>
     </div>
   );
@@ -433,7 +452,7 @@ export default function Portal() {
   return (
     <div className="portal-root">
       <header className="portal-header">
-        <a href="/" className="portal-back-link">← Home</a>
+        <a href="/" className="portal-back-link">Back</a>
         <h1 className="portal-title">NARMIR REBORN</h1>
         <p className="portal-tagline">Rise From the Ashes. Forge Your Legacy.</p>
       </header>
@@ -450,7 +469,7 @@ export default function Portal() {
 
       <footer className="portal-footer">
         <span>© 2025 Narmir Reborn</span>
-        <a href="/" className="portal-footer-link">← Back to Home</a>
+        <a href="/" className="portal-footer-link">Back to Home</a>
       </footer>
     </div>
   );
