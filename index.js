@@ -1596,28 +1596,49 @@ async function start() {
 
   const serveSplash = async (req, res, next) => {
     console.log(`[serveSplash] HIT: ${req.method} ${req.url}`);
+    const NO_CACHE = {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    };
     try {
+      // Dev: transform via Vite middleware
       if (process.env.NODE_ENV !== 'production' && vite) {
         const splashPath = path.join(__dirname, 'client', 'splash.html');
         let html = fs.readFileSync(splashPath, 'utf-8');
         html = await vite.transformIndexHtml('/splash.html', html);
-        return res.set({
-          'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }).send(html);
+        return res.set(NO_CACHE).send(html);
       }
-      const distSplash = path.join(__dirname, 'public', 'dist', 'splash.html');
+
+      const distPath = path.join(__dirname, 'public', 'dist');
+
+      // Primary: serve pre-built splash.html from dist
+      const distSplash = path.join(distPath, 'splash.html');
       if (fs.existsSync(distSplash)) {
-        return res.set({
-          'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }).sendFile(distSplash);
+        console.log('[serveSplash] Serving from dist/splash.html');
+        return res.set(NO_CACHE).send(fs.readFileSync(distSplash, 'utf-8'));
       }
-      console.warn('[serveSplash] splash.html not found in dist, falling back to serveIndex');
+
+      // Fallback: inject splash bundle into source HTML (mirrors serveIndex pattern)
+      console.warn('[serveSplash] dist/splash.html not found, attempting bundle injection');
+      const assetPath = path.join(distPath, 'assets');
+      if (fs.existsSync(assetPath)) {
+        const assets = fs.readdirSync(assetPath);
+        const splashJs  = assets.find(f => f.startsWith('splash') && f.endsWith('.js'));
+        const splashCss = assets.find(f => f.startsWith('splash-') && f.endsWith('.css'));
+        if (splashJs) {
+          let html = fs.readFileSync(path.join(__dirname, 'client', 'splash.html'), 'utf-8');
+          html = html.replace(/<script type="module" src="\/src\/splash-main\.jsx"><\/script>/, '');
+          let inject = `<script type="module" crossorigin src="/dist/assets/${splashJs}"></script>`;
+          if (splashCss) inject += `\n    <link rel="stylesheet" crossorigin href="/dist/assets/${splashCss}">`;
+          html = html.replace('</head>', `    ${inject}\n  </head>`);
+          console.log(`[serveSplash] Injection fallback: ${splashJs}`);
+          return res.set(NO_CACHE).send(html);
+        }
+      }
+
+      console.error('[serveSplash] No splash assets found in dist — falling back to serveIndex');
       return serveIndex(req, res, next);
     } catch (e) {
       console.error('[serveSplash] Error:', e);
