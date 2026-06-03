@@ -350,8 +350,8 @@ async function initDb() {
   const maxPool = process.env.DATABASE_MAX_POOL ? parseInt(process.env.DATABASE_MAX_POOL, 10) : 10;
   const minPool = process.env.DATABASE_MIN_POOL ? parseInt(process.env.DATABASE_MIN_POOL, 10) : 2;
 
-  if (isNaN(maxPool) || isNaN(minPool)) {
-    throw new Error("[db] Invalid pool configuration: DATABASE_MAX_POOL and DATABASE_MIN_POOL must be valid integers");
+  if (isNaN(maxPool) || isNaN(minPool) || maxPool < 1 || minPool < 1 || maxPool < minPool) {
+    throw new Error(`[db] Invalid pool configuration: max=${maxPool}, min=${minPool}. Both must be positive integers with max >= min`);
   }
 
   const pool = new Pool({

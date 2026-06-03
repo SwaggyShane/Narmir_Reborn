@@ -81,16 +81,20 @@ module.exports = function (io, db) {
       if (membership) socket.join(`alliance:${membership.alliance_id}`);
 
       const notifyUnread = async (kid) => {
-        let count = unreadNewsCache.get(`${kid}`);
-        if (count === undefined) {
-          const row = await db.get(
-            "SELECT COUNT(*) as c FROM news WHERE kingdom_id = ? AND is_read = 0",
-            [kid]
-          );
-          count = row?.c || 0;
-          setUnreadCount(kid, count);
+        try {
+          let count = unreadNewsCache.get(`${kid}`);
+          if (count === undefined) {
+            const row = await db.get(
+              "SELECT COUNT(*) as c FROM news WHERE kingdom_id = ? AND is_read = 0",
+              [kid]
+            );
+            count = row?.c || 0;
+            setUnreadCount(kid, count);
+          }
+          io.to(`kingdom:${kid}`).emit("unread_news", { count });
+        } catch (err) {
+          console.error(`[socket] notifyUnread error for kingdom ${kid}:`, err.message);
         }
-        io.to(`kingdom:${kid}`).emit("unread_news", { count });
       };
 
       // Initialize unread count from DB and cache it (only on first socket connection)

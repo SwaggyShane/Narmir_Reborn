@@ -480,9 +480,11 @@ body {
 .race-pick-portrait {
   width: 48px;
   height: 48px;
+  min-height: 48px;
   border-radius: 4px;
   opacity: 0.7;
   transition: opacity 0.15s;
+  flex-shrink: 0;
 }
 .race-pick-card:hover .race-pick-portrait { opacity: 0.9; }
 
@@ -535,9 +537,11 @@ body {
 .race-detail-portrait {
   width: 64px;
   height: 64px;
+  min-height: 64px;
   border-radius: 6px;
   flex-shrink: 0;
   opacity: 0.8;
+  display: block;
 }
 
 .race-detail-title-group { flex: 1; }
@@ -626,8 +630,11 @@ body {
 .hero-portrait {
   width: 48px;
   height: 48px;
+  min-height: 48px;
   border-radius: 4px;
   opacity: 0.75;
+  display: block;
+  flex-shrink: 0;
 }
 
 .hero-name {
