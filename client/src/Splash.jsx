@@ -317,7 +317,9 @@ function ModernSplash({ authStatus, authTab, setAuthTab, username, setUsername, 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function Splash() {
-  const [phase, setPhase] = useState('retro'); // 'retro' | 'glitch' | 'modern'
+  const [phase, setPhase] = useState(() =>
+    sessionStorage.getItem('narmir_intro_seen') ? 'modern' : 'retro'
+  ); // 'retro' | 'glitch' | 'modern'
   const [tearing, setTearing] = useState(false);
   const [showFlash, setShowFlash] = useState(false);
   const [glitch, setGlitch] = useState({});
@@ -369,6 +371,7 @@ export default function Splash() {
     // Switch to modern at 2.5s, fade flash out shortly after
     timers.current.push(setTimeout(() => {
       clearInterval(interval);
+      sessionStorage.setItem('narmir_intro_seen', '1');
       setPhase('modern');
       setTearing(false);
       setGlitch({});
