@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+const { kingdomIdCache } = require("../cache.js");
 
 if (!process.env.JWT_SECRET) {
   throw new Error("CRITICAL: JWT_SECRET environment variable is required. Set it before starting the server.");
@@ -27,6 +28,34 @@ function requireAuth(req, res, next) {
     console.log('[requireAuth] Token verification failed:', err?.message || err);
     res.status(401).json({ error: "Invalid or expired token" });
   }
+}
+
+function cacheKingdomId(db) {
+  return async (req, res, next) => {
+    if (!req.player || !req.player.id) return next();
+
+    const playerId = req.player.id;
+    const cacheKey = `kingdom:${playerId}`;
+
+    // Check cache first (30 minute TTL)
+    if (kingdomIdCache.has(cacheKey)) {
+      req.kingdomId = kingdomIdCache.get(cacheKey);
+      return next();
+    }
+
+    // Fetch from DB and cache
+    try {
+      const row = await db.get("SELECT id FROM kingdoms WHERE player_id = ?", [playerId]);
+      if (row) {
+        req.kingdomId = row.id;
+        kingdomIdCache.set(cacheKey, row.id, 30 * 60 * 1000); // 30 min TTL
+      }
+      next();
+    } catch (err) {
+      console.error('[cacheKingdomId] Error:', err.message);
+      next();
+    }
+  };
 }
 
 function requireAdmin(req, res, next) {
@@ -112,4 +141,4 @@ function cleanupOrphanedTransactions(db) {
   };
 }
 
-module.exports = { requireAuth, requireAdmin, requireCsrfToken, ensureCsrfToken, generateCsrfToken, cleanupOrphanedTransactions };
+module.exports = { requireAuth, cacheKingdomId, requireAdmin, requireCsrfToken, ensureCsrfToken, generateCsrfToken, cleanupOrphanedTransactions };

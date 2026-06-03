@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const engine = require("./engine");
+const { setUnreadCount, getUnreadCount, incrementUnread, decrementUnread } = require("../cache.js");
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_fallback_12345";
 const onlinePlayers = new Map(); // playerId → { socketId, username, race, isMod, isAdmin, kingdomName }
@@ -79,19 +80,20 @@ module.exports = function (io, db) {
       );
       if (membership) socket.join(`alliance:${membership.alliance_id}`);
 
-      const notifyUnread = async (kid) => {
-        const unreadRow = await db.get(
-          "SELECT COUNT(*) as c FROM news WHERE kingdom_id = ? AND is_read = 0",
-          [kid],
-        );
-        io.to(`kingdom:${kid}`).emit("unread_news", { count: unreadRow.c });
+      const notifyUnread = (kid) => {
+        // Use cached count instead of querying
+        const count = getUnreadCount(kid);
+        io.to(`kingdom:${kid}`).emit("unread_news", { count });
       };
 
-      const unread = await db.get(
+      // Initialize unread count from DB and cache it (only on first socket connection)
+      const unreadRow = await db.get(
         "SELECT COUNT(*) as c FROM news WHERE kingdom_id = ? AND is_read = 0",
         [kingdom.id],
       );
-      socket.emit("unread_news", { count: unread.c });
+      const unreadCount = unreadRow?.c || 0;
+      setUnreadCount(kingdom.id, unreadCount);
+      socket.emit("unread_news", { count: unreadCount });
       console.log(`[socket] ${username} (${kingdom.name}) connected`);
     } catch (err) {
       console.error(`[socket] Connection handler error for ${socket.id}:`, err.message);
@@ -620,4 +622,5 @@ async function insertNews(db, kingdomId, type, message, turnNum) {
     "INSERT INTO news (kingdom_id,type,message,turn_num) VALUES (?,?,?,?)",
     [kingdomId, type, message, turnNum || 0],
   );
+  incrementUnread(kingdomId);
 }

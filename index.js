@@ -6,6 +6,7 @@ const cookieParser = require('cookie-parser');
 const bcrypt       = require('bcrypt');
 const path         = require('path');
 const fs           = require('fs');
+const { marketPriceCache, rankingsCache, bountiesCache, getServerState, setUnreadCount, getUnreadCount, incrementUnread, decrementUnread } = require('./cache.js');
 
 // Server logging to secure logs directory (not public)
 const logsDir = path.join(__dirname, 'logs');
@@ -61,7 +62,7 @@ let bootError = null;
 const { initDb, applyKingdomUpdates } = require('./db/schema');
 const setupSockets    = require('./game/sockets');
 const engine          = require('./game/engine');
-const { requireAuth, requireAdmin } = require('./routes/middleware');
+const { requireAuth, requireAdmin, cacheKingdomId } = require('./routes/middleware');
 const config = require('./game/config');
 const { safeJsonParse } = require('./utils/helpers');
 
@@ -291,8 +292,8 @@ async function seedAiKingdoms(db) {
 
 async function processAiTurns(db) {
   try {
-    const hiatusRow = await db.get("SELECT value FROM server_state WHERE key = 'ai_hiatus'");
-    if (hiatusRow && hiatusRow.value === 'true') {
+    const hiatus = await getServerState(db, 'ai_hiatus');
+    if (hiatus === 'true') {
       console.log('[ai] AI is currently on hiatus. Skipping turn processing.');
       return;
     }
@@ -357,7 +358,12 @@ async function runAiKingdom(db, engine, playerId) {
     ai._region_bonus_type = regionStatus?.bonus_type;
 
     // Pre-fetch market prices once (doesn't change per turn, only during specific market updates)
-    const priceRows = await db.all(`SELECT id, current_price FROM market_prices`);
+    // Check cache first, fallback to database
+    let priceRows = marketPriceCache.get("ai_prices");
+    if (!priceRows) {
+      priceRows = await db.all(`SELECT id, current_price FROM market_prices`);
+      marketPriceCache.set("ai_prices", priceRows, 5 * 60 * 1000); // 5 min TTL
+    }
     const priceMap = {};
     priceRows.forEach(p => { priceMap[p.id] = p.current_price; });
 
@@ -742,10 +748,10 @@ async function fireDailyEvent(db, k, season) {
 
 async function runRegen(db) {
   // Update season first
-  const sRow = await db.get("SELECT value FROM server_state WHERE key='current_season'");
-  const tRow = await db.get("SELECT value FROM server_state WHERE key='season_started_at'");
-  let season = sRow?.value || 'spring';
-  const startedAt = parseInt(tRow?.value) || Math.floor(Date.now()/1000);
+  const season_row = await db.get("SELECT value FROM server_state WHERE key='current_season'");
+  const started_row = await db.get("SELECT value FROM server_state WHERE key='season_started_at'");
+  let season = season_row?.value || 'spring';
+  const startedAt = parseInt(started_row?.value) || Math.floor(Date.now()/1000);
   const daysSince = (Math.floor(Date.now()/1000) - startedAt) / 86400;
   const SEASON_DUR = { spring:3, summer:5, fall:2, winter:3 };
   if (daysSince >= (SEASON_DUR[season]||3)) {
@@ -856,6 +862,8 @@ async function updateMarketPrices(db) {
        updated_at = CURRENT_TIMESTAMP WHERE id IN (${placeholders})`,
       [...priceIds, ...newPrices]
     );
+    marketPriceCache.delete("all_prices");
+    marketPriceCache.delete("ai_prices");
     console.log('[market] Prices fluctuated');
   } catch (e) {
     console.error('[market] Fluctuation failed:', e.message);
@@ -1018,8 +1026,8 @@ async function start() {
     // ── Routes ────────────────────────────────────────────────────────────────────
     const { ensureCsrfToken, cleanupOrphanedTransactions } = require('./routes/middleware');
     app.use('/api/auth',         authLimiter,  require('./routes/auth')(db));
-    app.use('/api/kingdom',      turnLimiter, ensureCsrfToken, cleanupOrphanedTransactions(db), require('./routes/kingdom')(db));
-    app.use('/api/hero',         turnLimiter, ensureCsrfToken,  require('./routes/hero')(db));
+    app.use('/api/kingdom',      turnLimiter, cacheKingdomId(db), ensureCsrfToken, cleanupOrphanedTransactions(db), require('./routes/kingdom')(db));
+    app.use('/api/hero',         turnLimiter, cacheKingdomId(db), ensureCsrfToken,  require('./routes/hero')(db));
     const adminRouter = require('./routes/admin')(db, io);
     app.use('/api/admin', adminRouter);
     app.use('/api/discord', require('./routes/discord')(db));
@@ -1275,6 +1283,11 @@ async function start() {
 
     app.get('/api/world/bounties', requireAuth, async (req, res) => {
       try {
+        const cacheKey = "bounties:active";
+        if (bountiesCache.has(cacheKey)) {
+          return res.json(bountiesCache.get(cacheKey));
+        }
+
         const rows = await db.all(`
           SELECT b.*, k.name as target_name, p.username as placer_name
           FROM bounties b
@@ -1283,6 +1296,7 @@ async function start() {
           WHERE b.status = 'active'
           ORDER BY b.amount DESC
         `);
+        bountiesCache.set(cacheKey, rows, 30 * 1000); // 30 sec TTL
         res.json(rows);
       } catch (e) {
         console.error('[bounties-list] Database error:', e);
@@ -1325,6 +1339,7 @@ async function start() {
           );
 
           await db.run('COMMIT');
+          bountiesCache.delete("bounties:active"); // Invalidate cache
           res.json({ ok: true, message: 'Bounty placed!' });
         } catch (txErr) {
           await db.run('ROLLBACK').catch(() => {});
@@ -1424,6 +1439,11 @@ async function start() {
     // Public rankings — no auth required, used by the portal page
     app.get('/api/public/rankings', async (req, res) => {
       try {
+        const cacheKey = "rankings:top20";
+        if (rankingsCache.has(cacheKey)) {
+          return res.json({ rankings: rankingsCache.get(cacheKey) });
+        }
+
         const rows = await db.all(`
           SELECT k.id, k.name, k.race, k.land, k.level, k.population, p.username, p.is_ai
           FROM kingdoms k
@@ -1431,6 +1451,7 @@ async function start() {
           ORDER BY k.land DESC, k.level DESC, k.population DESC, k.id ASC
           LIMIT 20
         `);
+        rankingsCache.set(cacheKey, rows, 30 * 1000); // 30 sec TTL
         res.json({ rankings: rows });
       } catch (e) {
         console.error('[rankings] Database error:', e);

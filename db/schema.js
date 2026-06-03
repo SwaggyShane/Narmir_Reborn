@@ -352,9 +352,10 @@ async function initDb() {
     ssl: (!process.env.DATABASE_URL.includes('localhost') && !process.env.DATABASE_URL.includes('127.0.0.1') && !process.env.DATABASE_URL.includes('0.0.0.0'))
       ? { rejectUnauthorized: false }
       : false,
-    max: 100,
+    max: process.env.DATABASE_MAX_POOL ? parseInt(process.env.DATABASE_MAX_POOL, 10) : 10,
+    min: process.env.DATABASE_MIN_POOL ? parseInt(process.env.DATABASE_MIN_POOL, 10) : 2,
     connectionTimeoutMillis: 10000,
-    idleTimeoutMillis: 60000,
+    idleTimeoutMillis: 30000,
     statement_timeout: 120000,
     application_name: 'narmir-game',
   });

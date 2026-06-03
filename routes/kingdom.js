@@ -8,6 +8,7 @@ const { getKingdomAttunements } = require('../game/fragment-attunements');
 const fragmentBonusManager = require("../game/fragment-bonus-manager");
 const attunementManager = require('../game/attunement-manager');
 const { applyKingdomUpdates } = require('../db/schema');
+const { marketPriceCache, setUnreadCount, incrementUnread } = require("../cache.js");
 
 const router = express.Router();
 
@@ -501,6 +502,7 @@ module.exports = function (db) {
         [k.id],
       ),
     ]);
+    setUnreadCount(k.id, 0); // Mark all read, so unread count is 0
     res.json(items);
   });
 
@@ -1834,9 +1836,11 @@ module.exports = function (db) {
       ladders: Math.max(0, parseInt(ladders) || 0),
     };
 
-    const k = await db.get(`SELECT ${KINGDOM_ATTACK} FROM kingdoms WHERE player_id = ?`, [
-      req.player.playerId,
-    ]);
+    // Consolidate 3 queries into 2: attacker + target with AI status
+    const k = await db.get(
+      `SELECT ${KINGDOM_ATTACK}, p.is_ai FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.player_id = ?`,
+      [req.player.playerId],
+    );
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
     if (k.turns_stored < 1)
       return res.status(429).json({ error: "No turns available" });
@@ -1856,9 +1860,8 @@ module.exports = function (db) {
     if (target.id === k.id)
       return res.status(400).json({ error: "Cannot attack yourself" });
 
-    // AI vs AI only - no cross-faction warfare
-    const attacker_is_ai = await db.get("SELECT is_ai FROM players WHERE id = ?", [req.player.playerId]);
-    if ((attacker_is_ai?.is_ai || false) !== (target.is_ai || false)) {
+    // AI vs AI only - no cross-faction warfare (now using data from consolidated query)
+    if ((k.is_ai || false) !== (target.is_ai || false)) {
       return res.status(400).json({ error: "AI and human kingdoms cannot war against each other" });
     }
 
@@ -3479,9 +3482,15 @@ module.exports = function (db) {
 
   // ── Market — Buying resources ─────────────────────────────────────────────────
   router.get("/market/prices", requireAuth, async (_req, res) => {
+    const cacheKey = "all_prices";
+    if (marketPriceCache.has(cacheKey)) {
+      return res.json(marketPriceCache.get(cacheKey));
+    }
+
     const prices = await db.all(
       "SELECT * FROM market_prices WHERE id != 'hammers'",
     );
+    marketPriceCache.set(cacheKey, prices, 5 * 60 * 1000); // 5 min TTL
     res.json(prices);
   });
 
