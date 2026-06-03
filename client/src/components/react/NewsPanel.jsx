@@ -1,37 +1,39 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 const NewsPanel = () => {
   const [newsLoaded, setNewsLoaded] = useState(false);
+  const pollingIntervalRef = useRef(null);
+  const panelRef = useRef(null);
 
-  // Expose global functions for dynamic refresh from HTML/socket events
-  useEffect(() => {
-    const loadNews = () => {
-      if (window.loadNews) window.loadNews();
+  // Self-sufficient news loading - fetch directly without relying on socket events
+  const loadNews = useCallback(async () => {
+    try {
+      if (!window.apiCall) return;
+
+      const items = await window.apiCall("GET", "/api/kingdom/news/list");
+      const titleTurn = document.getElementById("news-turn-num");
+      if (titleTurn) titleTurn.textContent = window.state?.turn || 0;
+      if (!Array.isArray(items)) return;
+
+      // Update global cache for filter functions
+      if (window.newsCache) window.newsCache = items;
+
+      // Render using the existing function
+      if (window.renderNewsList) window.renderNewsList(items);
+
+      // Clear badges
+      ["news-badge", "bnav-news-badge"].forEach(function (id) {
+        var b = document.getElementById(id);
+        if (b) {
+          b.style.display = "none";
+          b.textContent = "";
+        }
+      });
+
       setNewsLoaded(true);
-    };
-
-    const clearNews = () => {
-      if (window.clearNews) window.clearNews();
-    };
-
-    const setNewsFilter = (filter, e) => {
-      if (window.setNewsFilter) window.setNewsFilter(filter, e.currentTarget);
-    };
-
-    window.newsRefresh = loadNews;
-    window.newsClear = clearNews;
-    window.newsFilterSet = setNewsFilter;
-
-    return () => {
-      delete window.newsRefresh;
-      delete window.newsClear;
-      delete window.newsFilterSet;
-    };
-  }, []);
-
-  const loadNews = useCallback(() => {
-    if (window.loadNews) window.loadNews();
-    setNewsLoaded(true);
+    } catch (err) {
+      console.error("[NewsPanel] Error loading news:", err);
+    }
   }, []);
 
   const clearNews = useCallback(() => {
@@ -42,8 +44,64 @@ const NewsPanel = () => {
     if (window.setNewsFilter) window.setNewsFilter(filter, e.currentTarget);
   }, []);
 
+  // Monitor panel visibility and set up auto-refresh
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (!panel) return;
+
+    let isActive = panel.classList.contains("active");
+
+    // If panel is already active on mount, load news immediately
+    if (isActive) {
+      loadNews();
+      pollingIntervalRef.current = setInterval(() => {
+        loadNews();
+      }, 30000);
+    }
+
+    // Monitor for active class changes
+    const observer = new MutationObserver(() => {
+      const wasActive = isActive;
+      isActive = panel.classList.contains("active");
+
+      // Panel just became active - load news immediately
+      if (isActive && !wasActive) {
+        loadNews();
+
+        // Start polling while panel is active
+        if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = setInterval(() => {
+          loadNews();
+        }, 30000); // Refresh every 30 seconds
+      }
+
+      // Panel became inactive - stop polling
+      if (!isActive && wasActive) {
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
+      }
+    });
+
+    observer.observe(panel, { attributes: true, attributeFilter: ["class"] });
+
+    // Expose functions for external callers
+    window.newsRefresh = loadNews;
+    window.newsClear = clearNews;
+    window.newsFilterSet = setNewsFilter;
+
+    return () => {
+      observer.disconnect();
+      if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+      delete window.newsRefresh;
+      delete window.newsClear;
+      delete window.newsFilterSet;
+    };
+  }, [loadNews, clearNews, setNewsFilter]);
+
   return (
-    <div id="news" className="panel">
+    <div id="news" className="panel" ref={panelRef}>
       <div className="card" style={{ marginTop: 0 }}>
         <div
           style={{
