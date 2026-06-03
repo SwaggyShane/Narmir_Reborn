@@ -1415,6 +1415,22 @@ async function start() {
     });
 
     app.get('/api/health', (_req, res) => res.json({ ok: true, uptime: Math.floor(process.uptime()) }));
+
+    // Public rankings — no auth required, used by the portal page
+    app.get('/api/public/rankings', async (req, res) => {
+      try {
+        const rows = await db.all(`
+          SELECT k.id, k.name, k.race, k.land, k.level, k.population, p.username, p.is_ai
+          FROM kingdoms k
+          JOIN players p ON k.player_id = p.id
+          ORDER BY k.land DESC, k.level DESC, k.population DESC
+          LIMIT 20
+        `);
+        res.json({ rankings: rows });
+      } catch (e) {
+        res.status(500).json({ error: e.message });
+      }
+    });
   
     app.post('/api/log-error', (req, res) => {
       const logMsg = `[browser-error] ${new Date().toISOString()} MESSAGE: ${req.body.message || "none"}\nSOURCE: ${req.body.source || "none"}\nLINE: ${req.body.line || "none"}\nCOL: ${req.body.col || "none"}\nSTACK: ${req.body.stack || "none"}\n\n`;
@@ -1546,7 +1562,6 @@ async function start() {
     app.all('/api/*', (req, res) => {
       res.status(404).json({ error: `API route ${req.method} ${req.url} not found` });
     });
-
     const serveIndex = async (req, res, next) => {
       console.log(`[serveIndex] HIT: ${req.method} ${req.url}`);
       if (req.url === '/admin.html') return next();
@@ -1646,6 +1661,49 @@ async function start() {
     }
   };
 
+  const servePortal = async (req, res, next) => {
+    console.log(`[servePortal] HIT: ${req.method} ${req.url}`);
+    const NO_CACHE = {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    };
+    try {
+      if (process.env.NODE_ENV !== 'production' && vite) {
+        const portalPath = path.join(__dirname, 'client', 'portal.html');
+        let html = fs.readFileSync(portalPath, 'utf-8');
+        html = await vite.transformIndexHtml('/portal.html', html);
+        return res.set(NO_CACHE).send(html);
+      }
+      const distPath = path.join(__dirname, 'public', 'dist');
+      const distPortal = path.join(distPath, 'portal.html');
+      if (fs.existsSync(distPortal)) {
+        return res.set(NO_CACHE).send(fs.readFileSync(distPortal, 'utf-8'));
+      }
+      // Injection fallback
+      const assetPath = path.join(distPath, 'assets');
+      if (fs.existsSync(assetPath)) {
+        const assets = fs.readdirSync(assetPath);
+        const portalJs  = assets.find(f => f.startsWith('portal') && f.endsWith('.js'));
+        const portalCss = assets.find(f => f.startsWith('portal-') && f.endsWith('.css'));
+        if (portalJs) {
+          let html = fs.readFileSync(path.join(__dirname, 'client', 'portal.html'), 'utf-8');
+          html = html.replace(/<script type="module" src="\/src\/portal-main\.jsx"><\/script>/, '');
+          let inject = `<script type="module" crossorigin src="/dist/assets/${portalJs}"></script>`;
+          if (portalCss) inject += `\n    <link rel="stylesheet" crossorigin href="/dist/assets/${portalCss}">`;
+          html = html.replace('</head>', `    ${inject}\n  </head>`);
+          return res.set(NO_CACHE).send(html);
+        }
+      }
+      console.error('[servePortal] No portal assets found in dist — falling back to serveIndex');
+      return serveIndex(req, res, next);
+    } catch (e) {
+      console.error('[servePortal] Error:', e);
+      next(e);
+    }
+  };
+
   const multer = require('multer');
 
   // Secure multer configuration with validation
@@ -1706,6 +1764,7 @@ async function start() {
 
   app.get(['/', '/index.html'], serveSplash);
   app.get(['/game', '/game.html'], serveIndex);
+  app.get(['/portal', '/portal.html'], servePortal);
   app.use(express.static(path.join(__dirname, 'public'), { index: false }));
   app.use(express.static(path.join(__dirname, 'client'), { index: false }));
   app.use('/dist', express.static(path.join(__dirname, 'public', 'dist')));
