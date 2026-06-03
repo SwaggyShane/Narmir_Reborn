@@ -3997,11 +3997,14 @@
         });
         socket.on("unread_news", function (data) {
           if (data.count > 0) showNewsBadge(data.count);
-          // Always try to refresh news if the panel has a refresh function
-          if (window.newsRefresh) {
-            window.newsRefresh();
-          } else if (window.renderNewsList) {
-            window.renderNewsList(newsCache);
+          // Only refresh if news panel is currently open
+          var newsPanel = document.getElementById("news");
+          if (newsPanel && newsPanel.classList.contains("active")) {
+            if (window.newsRefresh) {
+              window.newsRefresh();
+            } else if (window.renderNewsList) {
+              window.renderNewsList(newsCache);
+            }
           }
         });
       }
