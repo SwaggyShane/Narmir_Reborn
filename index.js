@@ -1268,7 +1268,8 @@ async function start() {
         `);
         res.json(rows);
       } catch (e) {
-        res.status(500).json({ error: e.message });
+        console.error('[regions] Database error:', e);
+        res.status(500).json({ error: 'Failed to load regions' });
       }
     });
 
@@ -1284,7 +1285,8 @@ async function start() {
         `);
         res.json(rows);
       } catch (e) {
-        res.status(500).json({ error: e.message });
+        console.error('[bounties-list] Database error:', e);
+        res.status(500).json({ error: 'Failed to load bounties' });
       }
     });
 
@@ -1329,7 +1331,8 @@ async function start() {
           throw txErr;
         }
       } catch (e) {
-        res.status(500).json({ error: e.message });
+        console.error('[bounties-place] Database error:', e);
+        res.status(500).json({ error: 'Failed to place bounty' });
       }
     });
 
@@ -1352,7 +1355,8 @@ async function start() {
       
         res.json(rows);
       } catch (e) {
-        res.status(500).json({ error: e.message });
+        console.error('[messages-list] Database error:', e);
+        res.status(500).json({ error: 'Failed to load messages' });
       }
     });
 
@@ -1380,7 +1384,8 @@ async function start() {
 
         res.json({ ok: true });
       } catch (e) {
-        res.status(500).json({ error: e.message });
+        console.error('[messages-send] Database error:', e);
+        res.status(500).json({ error: 'Failed to send message' });
       }
     });
 
@@ -1473,7 +1478,7 @@ async function start() {
       try {
         const seeded = await seedAiKingdoms(db);
         res.json({ ok: true, seeded, message: seeded > 0 ? `Seeded ${seeded} AI kingdoms` : 'All AI kingdoms already exist' });
-      } catch(e) { res.status(500).json({ error: e.message }); }
+      } catch(e) { console.error('[seed-ai] Error:', e); res.status(500).json({ error: 'Failed to seed AI kingdoms' }); }
     });
 
     app.post('/api/admin/reset-ai', async (req, res) => {
@@ -1498,7 +1503,7 @@ async function start() {
             WHERE id = ?`, [k.id]);
         }
         res.json({ ok: true, reset: aiPlayers.length });
-      } catch(e) { res.status(500).json({ error: e.message }); }
+      } catch(e) { console.error('[reset-ai] Error:', e); res.status(500).json({ error: 'Failed to reset AI kingdoms' }); }
     });
 
     app.post('/api/setup-admin', async (req, res) => {
@@ -1556,7 +1561,7 @@ async function start() {
         const k = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
         await db.run('INSERT INTO suggestions (player_id, kingdom_id, message) VALUES (?, ?, ?)', [req.player.playerId, k ? k.id : null, message]);
         res.json({ ok: true, message: 'Thank you!' });
-      } catch (e) { res.status(500).json({ error: e.message }); }
+      } catch (e) { console.error('[suggestions] Database error:', e); res.status(500).json({ error: 'Failed to save suggestion' }); }
     });
 
     // Catch-all for API 404s to prevent HTML responses for API calls
