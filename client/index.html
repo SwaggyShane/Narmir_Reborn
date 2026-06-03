@@ -1793,37 +1793,7 @@
     <!-- Global Background Video for boot and login -->
     <div id="global-bg-container" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; background: linear-gradient(rgba(10, 10, 11, 0.75), rgba(10, 10, 11, 0.75)), url('https://eu-images.contentstack.com/v3/assets/blt5004e64d3579c43f/bltfca83883a45c3bdf/65301826048cc2666da812f8/fantasy_article.webp') center/cover no-repeat;">
     </div>
-    
-    <!-- Intro Video Loading Screen -->
-    <div
-      id="boot-loader"
-      style="
-        position: fixed;
-        inset: 0;
-        background: #000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10001;
-        overflow: hidden;
-      "
-    >
-      <video
-        id="intro-video"
-        style="
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          display: block;
-        "
-        autoplay
-        muted
-        playsinline
-      >
-        <source src="/intro.mp4" type="video/mp4" />
-        Your browser does not support HTML5 video.
-      </video>
-    </div>
+
     <div class="app" id="app" style="display: none; position: relative; z-index: 10;">
       <!-- Vue Topbar Mount Point -->
       <div id="vue-topbar-mount" style="display: contents"></div>
@@ -16030,69 +16000,6 @@
       }
 
       document.addEventListener("DOMContentLoaded", function () {
-        const bl = document.getElementById("boot-loader");
-        const video = document.getElementById("intro-video");
-
-        function hideBootLoader() {
-          if (!bl) return;
-          bl.style.transition = "opacity 0.5s ease";
-          bl.style.opacity = "0";
-          setTimeout(() => {
-            if (bl.parentNode) bl.parentNode.removeChild(bl);
-          }, 500);
-        }
-
-        if (bl && video) {
-          // Safety timeout: if video hasn't ended after 10 seconds, skip to game anyway
-          // Handles autoplay blocking, network failures, or other video issues
-          const timeoutId = setTimeout(() => {
-            console.warn("[boot] Video timeout: proceeding without video completion");
-            hideBootLoader();
-          }, 10000);
-
-          // Hide boot loader when video ends successfully
-          video.addEventListener("ended", function() {
-            clearTimeout(timeoutId);
-            hideBootLoader();
-          }, { once: true });
-
-          // Handle video loading errors gracefully
-          video.addEventListener("error", function(err) {
-            console.error("[boot] Video load error:", err);
-            clearTimeout(timeoutId);
-            hideBootLoader();
-          }, { once: true });
-
-          // Add skip button for accessibility and user control
-          const skipBtn = document.createElement("button");
-          skipBtn.textContent = "⏭ Skip";
-          skipBtn.style.cssText = `
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            padding: 8px 16px;
-            background: rgba(240, 98, 2, 0.7);
-            color: white;
-            border: 1px solid rgba(240, 98, 2, 0.9);
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            z-index: 10002;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-          `;
-          bl.appendChild(skipBtn);
-
-          // Show skip button after 1 second
-          setTimeout(() => {
-            skipBtn.style.opacity = "1";
-          }, 1000);
-
-          skipBtn.addEventListener("click", function() {
-            clearTimeout(timeoutId);
-            hideBootLoader();
-          });
-        }
         window.onerror = function (msg, url, line) {
           console.error("Global JS Error:", msg, "at", url, ":", line);
           toast("Frontend error: " + msg, "error");
