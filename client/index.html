@@ -7831,6 +7831,12 @@
         renderNewsList(newsCache);
       }
 
+      // Expose news functions to React components
+      window.loadNews = loadNews;
+      window.renderNewsList = renderNewsList;
+      window.setNewsFilter = setNewsFilter;
+      window.clearNews = clearNews;
+
       var NEWS_META = {
         attack: { icon: "⚔️", color: "var(--red)", label: "Combat" },
         spell: { icon: "✨", color: "var(--accent1)", label: "Spell" },
