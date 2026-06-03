@@ -1550,7 +1550,7 @@ async function start() {
         res.json({ ok: true, message: 'All players, kingdoms, and related data wiped. Ready for re-registration.' });
       } catch (err) {
         console.error('Wipe error:', err);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'Failed to wipe database' });
       }
     });
 
