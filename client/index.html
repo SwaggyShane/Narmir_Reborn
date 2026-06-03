@@ -6347,19 +6347,23 @@
       function showRegistrationModal() {
         const modal = document.getElementById("registration-modal");
         const content = document.getElementById("registration-content");
+        const rankings = document.getElementById("vue-panel-rankings");
         if (!modal || !content) return;
 
+        // Hide rankings panel during registration
+        if (rankings) rankings.style.display = "none";
+
         const raceSelect = `
-          <div style="text-align: center; margin-bottom: 32px;">
-            <div style="font-size: 28px; font-weight: 700; color: #e8b84b; margin-bottom: 8px;">
-              Create Your Kingdom
+          <div style="text-align: center; margin-bottom: 24px;">
+            <div style="font-size: 24px; font-weight: 700; color: #e8b84b; margin-bottom: 6px;">
+              Choose Your Race
             </div>
-            <div style="font-size: 13px; color: #9a9bb5;">
-              Choose your race — this decision shapes your entire empire
+            <div style="font-size: 12px; color: #9a9bb5;">
+              Select a race to view details and create your kingdom
             </div>
           </div>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px;" id="race-selection-grid">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px;" id="race-selection-grid">
           </div>
 
           <div id="race-details-section" style="display: none;">
@@ -6384,32 +6388,29 @@
 
           const isSelected = raceKey === _selectedRace;
           const borderColor = isSelected ? (race.color || "#e8b84b") : "#363a52";
-          const bgColor = isSelected ? `${race.color}15` : "transparent";
-          const strengths = (race.strengths && race.strengths.length) ? race.strengths.slice(0, 2).join(" · ") : "Balanced";
+          const portraitUrl = RACE_PORTRAITS[raceKey] || "";
+
+          const portraitHtml = portraitUrl
+            ? `<img src="${portraitUrl}" style="width: 100%; height: 100%; aspect-ratio: 3/4; object-fit: cover; display: block;" alt="${race.title}" onerror="this.parentElement.style.display='none'" />`
+            : `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 48px; background: var(--bg3);">${race.icon || "👤"}</div>`;
 
           html += `
             <div
               onclick="selectRaceForRegistration('${raceKey}')"
               style="
                 cursor: pointer;
-                background: ${bgColor};
-                border: 2px solid ${borderColor};
+                aspect-ratio: 3/4;
+                border: 3px solid ${borderColor};
                 border-radius: 12px;
-                padding: 16px;
-                text-align: center;
+                overflow: hidden;
                 transition: all 0.3s;
-                transform: ${isSelected ? 'scale(1.05)' : 'scale(1)'};
+                transform: ${isSelected ? 'scale(1.08)' : 'scale(1)'};
+                box-shadow: ${isSelected ? '0 0 16px ' + borderColor + '40' : 'none'};
               "
-              onmouseover="if (this.style.borderColor !== '${borderColor}') this.style.opacity='0.8'"
+              onmouseover="this.style.opacity='0.85'; this.style.cursor='pointer'"
               onmouseout="this.style.opacity='1'"
             >
-              <div style="font-size: 40px; margin-bottom: 8px;">${race.icon || "👤"}</div>
-              <div style="font-size: 14px; font-weight: 600; color: ${race.color || "#e8b84b"}; margin-bottom: 4px;">
-                ${race.title || raceKey}
-              </div>
-              <div style="font-size: 11px; color: #9a9bb5; line-height: 1.4;">
-                ${strengths}
-              </div>
+              ${portraitHtml}
             </div>
           `;
         }
@@ -6448,22 +6449,29 @@
 
         const portraitUrl = RACE_PORTRAITS[_selectedRace] || "";
         const portraitHtml = portraitUrl
-          ? `<img src="${portraitUrl}" style="width: 100%; max-height: 300px; aspect-ratio: 3/4; object-fit: cover; margin-bottom: 16px; border-radius: 12px; display: block;" alt="${race.title}" onerror="this.style.display='none'" />`
-          : `<div style="width: 100%; height: 300px; border-radius: 12px; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 80px; margin-bottom: 16px;">${race.icon || "👤"}</div>`;
+          ? `<img src="${portraitUrl}" style="width: 100%; max-height: 350px; aspect-ratio: 3/4; object-fit: cover; margin-bottom: 20px; border-radius: 12px; display: block; box-shadow: 0 6px 16px rgba(0,0,0,0.5);" alt="${race.title}" onerror="this.style.display='none'" />`
+          : `<div style="width: 100%; height: 320px; border-radius: 12px; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 80px; margin-bottom: 20px; box-shadow: 0 6px 16px rgba(0,0,0,0.5);">${race.icon || "👤"}</div>`;
 
         let html = `
-          <div style="margin-bottom: 24px;">
-            <div style="display: flex; gap: 24px; align-items: flex-start;">
-              <div style="flex: 0 0 280px;">
-                ${portraitHtml}
+          <div style="margin-bottom: 24px; display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap;">
+            <div style="flex: 0 0 auto; width: 100%; max-width: 280px;">
+              ${portraitHtml}
+            </div>
+            <div style="flex: 1; min-width: 250px;">
+              <div style="font-size: 24px; font-weight: 700; color: ${race.color || "#e8b84b"}; margin-bottom: 8px;">
+                ${race.title}
               </div>
-              <div style="flex: 1;">
-                <div style="font-size: 24px; font-weight: 700; color: ${race.color || "#e8b84b"}; margin-bottom: 8px;">
-                  ${race.title}
+              <div style="background: rgba(224, 92, 92, 0.1); border: 1px solid rgba(224, 92, 92, 0.3); border-radius: 6px; padding: 10px; margin-bottom: 14px; font-size: 12px; color: #e8b84b; line-height: 1.5; font-weight: 600;">
+                ⚠️ <strong>PERMANENT CHOICE:</strong> Your race cannot be changed after creation. Choose carefully.
+              </div>
+              ${_selectedRace === 'vampire' ? `
+                <div style="background: rgba(200, 50, 50, 0.12); border: 1px solid rgba(200, 50, 50, 0.3); border-radius: 6px; padding: 10px; margin-bottom: 14px; font-size: 12px; color: #e87070; line-height: 1.5;">
+                  ⚠️ <strong>Experienced players only.</strong> Vampires are nearly powerless during daylight hours and rely on Thralls for daytime defense. Covert and night-assault mechanics must be well understood before playing this race effectively.
                 </div>
-                <p style="font-size: 13px; color: #cbd5e1; line-height: 1.7; margin-bottom: 16px; font-style: italic;">
-                  ${race.lore}
-                </p>
+              ` : ''}
+              <p style="font-size: 13px; color: #cbd5e1; line-height: 1.7; margin-bottom: 16px; font-style: italic;">
+                ${race.lore}
+              </p>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
                   <div style="background: rgba(76, 175, 130, 0.08); border: 1px solid rgba(76, 175, 130, 0.2); border-radius: 8px; padding: 12px;">
@@ -6505,17 +6513,17 @@
               → Play as ${race.title}
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 12px;">
               <div>
-                <label style="font-size: 11px; color: #9a9bb5; text-transform: uppercase; display: block; margin-bottom: 6px; font-weight: 600;">Username</label>
+                <label style="font-size: 10px; color: #9a9bb5; text-transform: uppercase; display: block; margin-bottom: 6px; font-weight: 600;">Username</label>
                 <input
                   id="reg-username"
                   type="text"
                   placeholder="3-20 characters"
                   style="
                     width: 100%;
-                    padding: 10px 12px;
-                    font-size: 14px;
+                    padding: 12px 12px;
+                    font-size: 16px;
                     background: #1a1c27;
                     border: 1px solid #363a52;
                     border-radius: 8px;
@@ -6525,15 +6533,15 @@
                 />
               </div>
               <div>
-                <label style="font-size: 11px; color: #9a9bb5; text-transform: uppercase; display: block; margin-bottom: 6px; font-weight: 600;">Kingdom Name</label>
+                <label style="font-size: 10px; color: #9a9bb5; text-transform: uppercase; display: block; margin-bottom: 6px; font-weight: 600;">Kingdom Name</label>
                 <input
                   id="reg-kingdom"
                   type="text"
                   placeholder="Your realm's name"
                   style="
                     width: 100%;
-                    padding: 10px 12px;
-                    font-size: 14px;
+                    padding: 12px 12px;
+                    font-size: 16px;
                     background: #1a1c27;
                     border: 1px solid #363a52;
                     border-radius: 8px;
@@ -6544,17 +6552,17 @@
               </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 12px;">
               <div>
-                <label style="font-size: 11px; color: #9a9bb5; text-transform: uppercase; display: block; margin-bottom: 6px; font-weight: 600;">Password</label>
+                <label style="font-size: 10px; color: #9a9bb5; text-transform: uppercase; display: block; margin-bottom: 6px; font-weight: 600;">Password</label>
                 <input
                   id="reg-password"
                   type="password"
                   placeholder="Min 8 chars, mixed case, number, symbol"
                   style="
                     width: 100%;
-                    padding: 10px 12px;
-                    font-size: 14px;
+                    padding: 12px 12px;
+                    font-size: 16px;
                     background: #1a1c27;
                     border: 1px solid #363a52;
                     border-radius: 8px;
@@ -6565,15 +6573,15 @@
                 />
               </div>
               <div>
-                <label style="font-size: 11px; color: #9a9bb5; text-transform: uppercase; display: block; margin-bottom: 6px; font-weight: 600;">Email Address</label>
+                <label style="font-size: 10px; color: #9a9bb5; text-transform: uppercase; display: block; margin-bottom: 6px; font-weight: 600;">Email Address</label>
                 <input
                   id="reg-email"
                   type="email"
                   placeholder="your@email.com"
                   style="
                     width: 100%;
-                    padding: 10px 12px;
-                    font-size: 14px;
+                    padding: 12px 12px;
+                    font-size: 16px;
                     background: #1a1c27;
                     border: 1px solid #363a52;
                     border-radius: 8px;
@@ -6584,8 +6592,8 @@
               </div>
             </div>
 
-            <div id="reg-password-reqs" style="display: none; font-size: 12px; background: rgba(224, 92, 92, 0.1); border: 1px solid rgba(224, 92, 92, 0.3); border-radius: 6px; padding: 10px; margin-bottom: 12px; color: #e8b84b; line-height: 1.6;">
-              <div style="font-weight: 600; margin-bottom: 6px;">Password Requirements:</div>
+            <div id="reg-password-reqs" style="display: none; font-size: 11px; background: rgba(224, 92, 92, 0.1); border: 1px solid rgba(224, 92, 92, 0.3); border-radius: 6px; padding: 10px; margin-bottom: 12px; color: #e8b84b; line-height: 1.5;">
+              <div style="font-weight: 600; margin-bottom: 4px;">Password Requirements:</div>
               <div id="reg-req-length" style="color: #e05c5c;">✗ 8+ characters</div>
               <div id="reg-req-upper" style="color: #e05c5c;">✗ Uppercase letter</div>
               <div id="reg-req-lower" style="color: #e05c5c;">✗ Lowercase letter</div>
@@ -6594,18 +6602,18 @@
             </div>
 
             <div id="reg-error" style="
-              font-size: 13px;
+              font-size: 12px;
               color: #e05c5c;
               margin-bottom: 12px;
-              min-height: 18px;
+              min-height: 16px;
             "></div>
 
             <button
               onclick="submitRegistrationFromModal()"
               style="
                 width: 100%;
-                padding: 12px;
-                font-size: 14px;
+                padding: 14px 16px;
+                font-size: 15px;
                 font-weight: 600;
                 background: #4caf7d;
                 border: none;
@@ -6624,15 +6632,15 @@
               onclick="backToRaceSelection()"
               style="
                 width: 100%;
-                padding: 10px;
-                font-size: 13px;
+                padding: 12px 16px;
+                font-size: 14px;
                 font-weight: 600;
                 background: transparent;
                 border: 1px solid #363a52;
                 border-radius: 8px;
                 color: #9a9bb5;
                 cursor: pointer;
-                margin-top: 8px;
+                margin-top: 10px;
                 transition: all 0.2s;
               "
               onmouseover="this.style.borderColor='#e8b84b'; this.style.color='#e8b84b'"
@@ -6775,6 +6783,9 @@
       function closeRegistrationModal() {
         const modal = document.getElementById("registration-modal");
         if (modal) modal.style.display = "none";
+        // Restore rankings panel visibility
+        const rankings = document.getElementById("vue-panel-rankings");
+        if (rankings) rankings.style.display = "";
         // Reset registration state when closing modal
         _registerMode = false;
         _selectedRace = "human";
@@ -16834,11 +16845,13 @@
         inset: 0;
         z-index: 10002;
         background: rgba(13, 14, 20, 0.9);
+        flex-direction: column;
         align-items: center;
-        justify-content: center;
-        padding: 20px;
+        justify-content: flex-start;
+        padding: max(12px, 3vw);
         box-sizing: border-box;
         overflow-y: auto;
+        padding-top: max(20px, 5vh);
       "
       onclick="if (event.target === this) { closeRegistrationModal(); }"
     >
@@ -16846,9 +16859,9 @@
         background: rgba(19, 20, 29, 0.95);
         backdrop-filter: blur(8px);
         border: 1px solid #363a52;
-        border-radius: 16px;
+        border-radius: 12px;
         padding: 0;
-        width: 90%;
+        width: 100%;
         max-width: 900px;
         z-index: 1;
         position: relative;
@@ -16860,19 +16873,24 @@
         <!-- Close button -->
         <button onclick="closeRegistrationModal()" style="
           position: absolute;
-          top: 16px;
-          right: 16px;
+          top: 12px;
+          right: 12px;
           background: none;
           border: none;
           color: #9a9bb5;
-          font-size: 24px;
+          font-size: 28px;
           cursor: pointer;
-          padding: 4px 8px;
+          padding: 8px;
           z-index: 10;
           transition: color 0.2s;
+          width: 44px;
+          height: 44px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         " onmouseover="this.style.color='#e8e9f0'" onmouseout="this.style.color='#9a9bb5'">×</button>
 
-        <div id="registration-content" style="padding: 32px; flex: 1;">
+        <div id="registration-content" style="padding: max(16px, 3vw); flex: 1;">
           <!-- This will be populated dynamically -->
         </div>
       </div>
