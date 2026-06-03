@@ -6344,6 +6344,11 @@
         if (authHint)
           authHint.textContent =
             "New to Narmir? Click Register to create your kingdom.";
+
+        // Reset registration mode
+        _registerMode = false;
+        _selectedRace = "human";
+        closeRegistrationModal();
       }
 
       function hideLoginModal() {
@@ -6353,28 +6358,396 @@
         if (app) app.style.display = "";
         const bn = document.getElementById("bottom-nav");
         if (bn) bn.style.display = "";
+        closeRegistrationModal();
       }
 
       var _registerMode = false;
+      var _selectedRace = "human";
 
       function doRegister() {
         if (!_registerMode) {
           _registerMode = true;
-          const regFields = document.getElementById("register-fields");
-          if (regFields) regFields.style.display = "block";
-          const btnReg = document.getElementById("btn-register");
-          if (btnReg) {
-            btnReg.textContent = "Create Kingdom";
-            btnReg.style.background = "#4caf7d";
-            btnReg.style.color = "#fff";
-          }
-          const authHint = document.getElementById("auth-mode-hint");
-          if (authHint)
-            authHint.textContent =
-              "Choose your race carefully — it cannot be changed later.";
+          _selectedRace = "human";
+          showRegistrationModal();
         } else {
           doAttempt("/api/auth/register");
         }
+      }
+
+      function showRegistrationModal() {
+        const modal = document.getElementById("registration-modal");
+        const content = document.getElementById("registration-content");
+        if (!modal || !content) return;
+
+        const raceSelect = `
+          <div style="text-align: center; margin-bottom: 32px;">
+            <div style="font-size: 28px; font-weight: 700; color: #e8b84b; margin-bottom: 8px;">
+              Create Your Kingdom
+            </div>
+            <div style="font-size: 13px; color: #9a9bb5;">
+              Choose your race — this decision shapes your entire empire
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px;" id="race-selection-grid">
+          </div>
+
+          <div id="race-details-section" style="display: none;">
+          </div>
+        `;
+
+        content.innerHTML = raceSelect;
+        modal.style.display = "flex";
+
+        populateRaceSelection();
+      }
+
+      function populateRaceSelection() {
+        const grid = document.getElementById("race-selection-grid");
+        if (!grid) return;
+
+        let html = "";
+        for (let raceKey in RACE_LORE) {
+          if (!RACE_LORE.hasOwnProperty(raceKey)) continue;
+          const race = RACE_LORE[raceKey];
+          if (!race.lore) continue;
+
+          const isSelected = raceKey === _selectedRace;
+          const borderColor = isSelected ? race.color || "#e8b84b" : "#363a52";
+          const bgColor = isSelected ? `${race.color}15` : "transparent";
+
+          html += `
+            <div
+              onclick="selectRaceForRegistration('${raceKey}')"
+              style="
+                cursor: pointer;
+                background: ${bgColor};
+                border: 2px solid ${borderColor};
+                border-radius: 12px;
+                padding: 16px;
+                text-align: center;
+                transition: all 0.3s;
+                transform: ${isSelected ? 'scale(1.05)' : 'scale(1)'};
+              "
+              onmouseover="if (this.style.borderColor !== '${borderColor}') this.style.opacity='0.8'"
+              onmouseout="this.style.opacity='1'"
+            >
+              <div style="font-size: 40px; margin-bottom: 8px;">${race.icon || "👤"}</div>
+              <div style="font-size: 14px; font-weight: 600; color: ${race.color || "#e8b84b"}; margin-bottom: 4px;">
+                ${race.title || raceKey}
+              </div>
+              <div style="font-size: 11px; color: #9a9bb5; line-height: 1.4;">
+                ${race.strengths ? race.strengths.slice(0, 2).join(" · ") : ""}
+              </div>
+            </div>
+          `;
+        }
+        grid.innerHTML = html;
+      }
+
+      function selectRaceForRegistration(raceKey) {
+        _selectedRace = raceKey;
+        populateRaceSelection();
+        showRaceDetailsForRegistration();
+      }
+
+      function showRaceDetailsForRegistration() {
+        const detailsSection = document.getElementById("race-details-section");
+        if (!detailsSection) return;
+
+        const race = RACE_LORE[_selectedRace];
+        if (!race) return;
+
+        const portraitUrl = RACE_PORTRAITS[_selectedRace] || "";
+        const portraitHtml = portraitUrl
+          ? `<img src="${portraitUrl}" style="width: 100%; max-height: 300px; aspect-ratio: 3/4; object-fit: cover; margin-bottom: 16px; border-radius: 12px; display: block;" alt="${race.title}" onerror="this.style.display='none'" />`
+          : `<div style="width: 100%; height: 300px; border-radius: 12px; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 80px; margin-bottom: 16px;">${race.icon || "👤"}</div>`;
+
+        let html = `
+          <div style="margin-bottom: 24px;">
+            <div style="display: flex; gap: 24px; align-items: flex-start;">
+              <div style="flex: 0 0 280px;">
+                ${portraitHtml}
+              </div>
+              <div style="flex: 1;">
+                <div style="font-size: 24px; font-weight: 700; color: ${race.color || "#e8b84b"}; margin-bottom: 8px;">
+                  ${race.title}
+                </div>
+                <p style="font-size: 13px; color: #cbd5e1; line-height: 1.7; margin-bottom: 16px; font-style: italic;">
+                  ${race.lore}
+                </p>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                  <div style="background: rgba(76, 175, 130, 0.08); border: 1px solid rgba(76, 175, 130, 0.2); border-radius: 8px; padding: 12px;">
+                    <div style="font-size: 10px; font-weight: 700; color: #10b981; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Strengths</div>
+                    ${race.strengths.map(s => `<div style="font-size: 12px; color: #cbd5e1; padding: 2px 0;">✓ ${s}</div>`).join("")}
+                  </div>
+                  <div style="background: rgba(224, 92, 92, 0.08); border: 1px solid rgba(224, 92, 92, 0.2); border-radius: 8px; padding: 12px;">
+                    <div style="font-size: 10px; font-weight: 700; color: #e05c5c; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Weaknesses</div>
+                    ${race.weaknesses.map(w => `<div style="font-size: 12px; color: #cbd5e1; padding: 2px 0;">✗ ${w}</div>`).join("")}
+                  </div>
+                </div>
+
+                ${race.special ? `
+                  <div style="background: rgba(232, 184, 75, 0.08); border: 1px solid rgba(232, 184, 75, 0.25); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                    <div style="font-size: 10px; font-weight: 700; color: #f0b90b; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">✨ Racial Mastery (Unlocks at Unit Level 25)</div>
+                    <div style="font-size: 12px; color: #e8e9f0;">${race.special}</div>
+                  </div>
+                ` : ""}
+              </div>
+            </div>
+          </div>
+
+          ${race.heroes ? `
+            <div style="background: rgba(143, 184, 74, 0.08); border: 1px solid rgba(143, 184, 74, 0.25); border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+              <div style="font-size: 10px; font-weight: 700; color: #10b981; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">🛡️ Notable Race Heroes</div>
+              <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                ${race.heroes.map(h => `<span style="font-size: 11px; background: var(--bg4); padding: 4px 10px; border-radius: 12px; color: #cbd5e1; border: 1px solid var(--border);">${h}</span>`).join("")}
+              </div>
+            </div>
+          ` : ""}
+
+          <div style="background: var(--bg3); border-radius: 8px; padding: 12px; margin-bottom: 24px;">
+            <div style="font-size: 10px; font-weight: 700; color: #9a9bb5; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Recommended Playstyle</div>
+            <div style="font-size: 13px; color: #cbd5e1;">${race.playstyle}</div>
+          </div>
+
+          <div style="border-top: 1px solid #363a52; padding-top: 24px;">
+            <div style="font-size: 14px; font-weight: 600; color: #e8b84b; margin-bottom: 16px;">
+              → Play as ${race.title}
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+              <div>
+                <label style="font-size: 11px; color: #9a9bb5; text-transform: uppercase; display: block; margin-bottom: 6px; font-weight: 600;">Username</label>
+                <input
+                  id="reg-username"
+                  type="text"
+                  placeholder="3-20 characters"
+                  style="
+                    width: 100%;
+                    padding: 10px 12px;
+                    font-size: 14px;
+                    background: #1a1c27;
+                    border: 1px solid #363a52;
+                    border-radius: 8px;
+                    color: #e8e9f0;
+                    box-sizing: border-box;
+                  "
+                />
+              </div>
+              <div>
+                <label style="font-size: 11px; color: #9a9bb5; text-transform: uppercase; display: block; margin-bottom: 6px; font-weight: 600;">Kingdom Name</label>
+                <input
+                  id="reg-kingdom"
+                  type="text"
+                  placeholder="Your realm's name"
+                  style="
+                    width: 100%;
+                    padding: 10px 12px;
+                    font-size: 14px;
+                    background: #1a1c27;
+                    border: 1px solid #363a52;
+                    border-radius: 8px;
+                    color: #e8e9f0;
+                    box-sizing: border-box;
+                  "
+                />
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+              <div>
+                <label style="font-size: 11px; color: #9a9bb5; text-transform: uppercase; display: block; margin-bottom: 6px; font-weight: 600;">Password</label>
+                <input
+                  id="reg-password"
+                  type="password"
+                  placeholder="Min 8 chars, mixed case, number, symbol"
+                  style="
+                    width: 100%;
+                    padding: 10px 12px;
+                    font-size: 14px;
+                    background: #1a1c27;
+                    border: 1px solid #363a52;
+                    border-radius: 8px;
+                    color: #e8e9f0;
+                    box-sizing: border-box;
+                  "
+                  oninput="updateRegistrationPasswordRequirements()"
+                />
+              </div>
+              <div>
+                <label style="font-size: 11px; color: #9a9bb5; text-transform: uppercase; display: block; margin-bottom: 6px; font-weight: 600;">Email Address</label>
+                <input
+                  id="reg-email"
+                  type="email"
+                  placeholder="your@email.com"
+                  style="
+                    width: 100%;
+                    padding: 10px 12px;
+                    font-size: 14px;
+                    background: #1a1c27;
+                    border: 1px solid #363a52;
+                    border-radius: 8px;
+                    color: #e8e9f0;
+                    box-sizing: border-box;
+                  "
+                />
+              </div>
+            </div>
+
+            <div id="reg-password-reqs" style="display: none; font-size: 12px; background: rgba(224, 92, 92, 0.1); border: 1px solid rgba(224, 92, 92, 0.3); border-radius: 6px; padding: 10px; margin-bottom: 12px; color: #e8b84b; line-height: 1.6;">
+              <div style="font-weight: 600; margin-bottom: 6px;">Password Requirements:</div>
+              <div id="reg-req-length" style="color: #e05c5c;">✗ 8+ characters</div>
+              <div id="reg-req-upper" style="color: #e05c5c;">✗ Uppercase letter</div>
+              <div id="reg-req-lower" style="color: #e05c5c;">✗ Lowercase letter</div>
+              <div id="reg-req-number" style="color: #e05c5c;">✗ Number (0-9)</div>
+              <div id="reg-req-special" style="color: #e05c5c;">✗ Special char (@$!%*?&)</div>
+            </div>
+
+            <div id="reg-error" style="
+              font-size: 13px;
+              color: #e05c5c;
+              margin-bottom: 12px;
+              min-height: 18px;
+            "></div>
+
+            <button
+              onclick="submitRegistrationFromModal()"
+              style="
+                width: 100%;
+                padding: 12px;
+                font-size: 14px;
+                font-weight: 600;
+                background: #4caf7d;
+                border: none;
+                border-radius: 8px;
+                color: #fff;
+                cursor: pointer;
+                transition: background 0.2s;
+              "
+              onmouseover="this.style.background='#45a678'"
+              onmouseout="this.style.background='#4caf7d'"
+            >
+              Create Kingdom with ${race.title}
+            </button>
+
+            <button
+              onclick="backToRaceSelection()"
+              style="
+                width: 100%;
+                padding: 10px;
+                font-size: 13px;
+                font-weight: 600;
+                background: transparent;
+                border: 1px solid #363a52;
+                border-radius: 8px;
+                color: #9a9bb5;
+                cursor: pointer;
+                margin-top: 8px;
+                transition: all 0.2s;
+              "
+              onmouseover="this.style.borderColor='#e8b84b'; this.style.color='#e8b84b'"
+              onmouseout="this.style.borderColor='#363a52'; this.style.color='#9a9bb5'"
+            >
+              ← Choose Another Race
+            </button>
+          </div>
+        `;
+
+        detailsSection.innerHTML = html;
+        detailsSection.style.display = "block";
+
+        // Copy form values
+        document.getElementById("reg-username").value = document.getElementById("auth-user").value;
+        document.getElementById("reg-kingdom").value = document.getElementById("auth-kingdom").value;
+        document.getElementById("reg-password").value = document.getElementById("auth-pass").value;
+        document.getElementById("reg-email").value = document.getElementById("auth-email").value;
+      }
+
+      function backToRaceSelection() {
+        const detailsSection = document.getElementById("race-details-section");
+        if (detailsSection) {
+          detailsSection.style.display = "none";
+        }
+      }
+
+      function updateRegistrationPasswordRequirements() {
+        const pass = document.getElementById("reg-password").value;
+        const reqs = document.getElementById("reg-password-reqs");
+        const reqLength = document.getElementById("reg-req-length");
+        const reqUpper = document.getElementById("reg-req-upper");
+        const reqLower = document.getElementById("reg-req-lower");
+        const reqNumber = document.getElementById("reg-req-number");
+        const reqSpecial = document.getElementById("reg-req-special");
+
+        if (!pass) {
+          reqs.style.display = "none";
+          return;
+        }
+
+        reqs.style.display = "block";
+
+        const hasLength = pass.length >= 8;
+        const hasUpper = /[A-Z]/.test(pass);
+        const hasLower = /[a-z]/.test(pass);
+        const hasNumber = /[0-9]/.test(pass);
+        const hasSpecial = /[@$!%*?&]/.test(pass);
+
+        reqLength.textContent = hasLength ? "✓ 8+ characters" : "✗ 8+ characters";
+        reqLength.style.color = hasLength ? "#10b981" : "#e05c5c";
+
+        reqUpper.textContent = hasUpper ? "✓ Uppercase letter" : "✗ Uppercase letter";
+        reqUpper.style.color = hasUpper ? "#10b981" : "#e05c5c";
+
+        reqLower.textContent = hasLower ? "✓ Lowercase letter" : "✗ Lowercase letter";
+        reqLower.style.color = hasLower ? "#10b981" : "#e05c5c";
+
+        reqNumber.textContent = hasNumber ? "✓ Number (0-9)" : "✗ Number (0-9)";
+        reqNumber.style.color = hasNumber ? "#10b981" : "#e05c5c";
+
+        reqSpecial.textContent = hasSpecial ? "✓ Special char (@$!%*?&)" : "✗ Special char (@$!%*?&)";
+        reqSpecial.style.color = hasSpecial ? "#10b981" : "#e05c5c";
+      }
+
+      function submitRegistrationFromModal() {
+        const username = document.getElementById("reg-username").value.trim();
+        const kingdom = document.getElementById("reg-kingdom").value.trim();
+        const password = document.getElementById("reg-password").value;
+        const email = document.getElementById("reg-email").value.trim();
+        const errEl = document.getElementById("reg-error");
+
+        if (!username) {
+          errEl.textContent = "Username required";
+          return;
+        }
+        if (!kingdom) {
+          errEl.textContent = "Kingdom name required";
+          return;
+        }
+        if (!password) {
+          errEl.textContent = "Password required";
+          return;
+        }
+        if (!email) {
+          errEl.textContent = "Email address required";
+          return;
+        }
+
+        // Update main form fields and submit
+        document.getElementById("auth-user").value = username;
+        document.getElementById("auth-kingdom").value = kingdom;
+        document.getElementById("auth-pass").value = password;
+        document.getElementById("auth-email").value = email;
+        document.getElementById("auth-race").value = _selectedRace;
+
+        closeRegistrationModal();
+        doAttempt("/api/auth/register");
+      }
+
+      function closeRegistrationModal() {
+        const modal = document.getElementById("registration-modal");
+        if (modal) modal.style.display = "none";
       }
 
       function updatePasswordRequirements() {
@@ -16516,6 +16889,59 @@
         ">
           Close
         </button>
+      </div>
+    </div>
+
+    <!-- Registration Modal with Race Selection -->
+    <div
+      id="registration-modal"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 10002;
+        background: rgba(13, 14, 20, 0.9);
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        box-sizing: border-box;
+        overflow-y: auto;
+      "
+      onclick="if (event.target === this) { closeRegistrationModal(); }"
+    >
+      <div style="
+        background: rgba(19, 20, 29, 0.95);
+        backdrop-filter: blur(8px);
+        border: 1px solid #363a52;
+        border-radius: 16px;
+        padding: 0;
+        width: 90%;
+        max-width: 900px;
+        z-index: 1;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        max-height: 90vh;
+        overflow-y: auto;
+      ">
+        <!-- Close button -->
+        <button onclick="closeRegistrationModal()" style="
+          position: absolute;
+          top: 16px;
+          right: 16px;
+          background: none;
+          border: none;
+          color: #9a9bb5;
+          font-size: 24px;
+          cursor: pointer;
+          padding: 4px 8px;
+          z-index: 10;
+          transition: color 0.2s;
+        " onmouseover="this.style.color='#e8e9f0'" onmouseout="this.style.color='#9a9bb5'">×</button>
+
+        <div id="registration-content" style="padding: 32px; flex: 1;">
+          <!-- This will be populated dynamically -->
+        </div>
       </div>
     </div>
 
