@@ -845,6 +845,20 @@ body:has(.phase-modern) {
   color: var(--gold);
 }
 
+/* ── Fade to black on enter ────────────────────────────────────── */
+@keyframes fadeToBlack {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.splash-root.fading {
+  animation: fadeToBlack 0.5s ease-out forwards;
+}
+
 /* ── Responsive ─────────────────────────────────────────────────── */
 @media (max-width: 600px) {
   /* Retro site: stack nav above content on small screens */

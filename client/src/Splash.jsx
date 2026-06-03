@@ -84,7 +84,15 @@ function EmberParticles() {
   );
 }
 
-function AuthBlock({ status }) {
+function AuthBlock({ status, onEnter }) {
+  const handleEnter = (e, href) => {
+    e.preventDefault();
+    if (onEnter) onEnter();
+    setTimeout(() => {
+      window.location.href = href;
+    }, 500);
+  };
+
   if (status === 'loading') {
     return (
       <div className="auth-loading">
@@ -98,7 +106,7 @@ function AuthBlock({ status }) {
   if (status === 'in') {
     return (
       <div className="auth-continue">
-        <a href="/game" className="continue-btn">ENTER</a>
+        <a href="/game" onClick={(e) => handleEnter(e, '/game')} className="continue-btn">ENTER</a>
         <p className="auth-sub">Your kingdom awaits</p>
       </div>
     );
@@ -106,7 +114,7 @@ function AuthBlock({ status }) {
 
   return (
     <div className="auth-continue">
-      <a href="/portal" className="continue-btn">ENTER</a>
+      <a href="/portal" onClick={(e) => handleEnter(e, '/portal')} className="continue-btn">ENTER</a>
       <p className="auth-sub">Rankings · Login · Forums</p>
     </div>
   );
@@ -193,7 +201,7 @@ function RacePortrait({ race }) {
   );
 }
 
-function ModernSplash({ authStatus }) {
+function ModernSplash({ authStatus, onEnter }) {
   const sectionRef = useRef(null);
 
   useEffect(() => {
@@ -224,7 +232,7 @@ function ModernSplash({ authStatus }) {
         <h1 className="hero-title">NARMIR REBORN</h1>
         <p className="hero-tagline">Rise From the Ashes. Forge Your Legacy.</p>
         <div className="auth-block">
-          <AuthBlock status={authStatus} />
+          <AuthBlock status={authStatus} onEnter={onEnter} />
         </div>
         <div className="scroll-hint" aria-hidden="true">
           <span className="scroll-arrow">↓</span>
@@ -291,6 +299,7 @@ export default function Splash() {
   const [showFlash, setShowFlash] = useState(false);
   const [glitch, setGlitch] = useState({});
   const [authStatus, setAuthStatus] = useState('loading');
+  const [fading, setFading] = useState(false);
   const timers = useRef([]);
 
   // Check auth on mount
@@ -353,7 +362,7 @@ export default function Splash() {
   }, [phase]);
 
   return (
-    <div className={`splash-root phase-${phase}`}>
+    <div className={`splash-root phase-${phase}${fading ? ' fading' : ''}`}>
       {/* Phase 1 + 2: Retro site */}
       {(phase === 'retro' || phase === 'glitch') && (
         <div
@@ -382,7 +391,7 @@ export default function Splash() {
       ))}
 
       {/* Phase 3: Modern splash */}
-      {phase === 'modern' && <ModernSplash authStatus={authStatus} />}
+      {phase === 'modern' && <ModernSplash authStatus={authStatus} onEnter={() => setFading(true)} />}
 
       {/* Flash overlay lives outside phases so it persists through transition */}
       <div className={`flash-overlay${showFlash ? ' active' : ''}`} aria-hidden="true" />
