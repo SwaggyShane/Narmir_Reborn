@@ -15914,7 +15914,7 @@
       async function doLogout() {
         await apiCall("POST", "/api/auth/logout");
         clearToken();
-        location.reload();
+        location.href = "/portal";
       }
 
       function renderRaces() {
