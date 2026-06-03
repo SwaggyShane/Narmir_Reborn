@@ -114,7 +114,7 @@ function RaceSelectOverlay({ selected, onSelect, onBack, onConfirm }) {
                 <div className="race-detail-label">Heroes</div>
                 <div className="race-heroes-grid">
                   {activeRace?.heroes?.map((hero, i) => {
-                    const heroFileName = hero.toLowerCase().replace(/\s+/g, '_');
+                    const heroFileName = hero.toLowerCase().replace(/[\s-]+/g, '_');
                     return (
                       <div key={i} className="race-hero-card">
                         <img src={`/heroes/${heroFileName}.png`} alt={hero} className="hero-portrait" />
