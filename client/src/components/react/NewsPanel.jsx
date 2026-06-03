@@ -41,11 +41,13 @@ const NewsPanel = () => {
 
   // Expose functions globally
   useEffect(() => {
+    window.loadNews = loadNews;
     window.newsRefresh = loadNews;
     window.newsClear = clearNews;
     window.newsFilterSet = setNewsFilter;
 
     return () => {
+      delete window.loadNews;
       delete window.newsRefresh;
       delete window.newsClear;
       delete window.newsFilterSet;
