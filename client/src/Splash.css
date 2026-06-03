@@ -13,13 +13,18 @@
   background: #000;
 }
 
-/* During modern phase, splash-root becomes the scroll container so
-   position:fixed children (video, embers) stay anchored to the viewport
-   while content scrolls — this is the pattern that actually works on iOS */
-.splash-root.phase-modern {
+/* During modern phase, let html/body scroll natively so the iOS address bar
+   can collapse and 100svh behaves correctly. Fixed-position video/embers
+   remain anchored to the viewport regardless. */
+html:has(.phase-modern),
+body:has(.phase-modern) {
   overflow-y: auto;
   overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
+}
+
+.splash-root.phase-modern {
+  position: relative;
+  overflow: visible;
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -856,7 +861,7 @@
   .retro-nav-link {
     font-size: 11px;
     padding: 4px 8px;
-    border-bottom: none;
+    border-bottom: 1px solid #2222cc;
     border-right: 1px solid #2222cc;
     flex: 0 0 auto;
   }
