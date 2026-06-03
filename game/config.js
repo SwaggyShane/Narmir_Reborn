@@ -2415,7 +2415,7 @@ const config = {
     bld_guard_towers: { base: 5, max: 100, capLevel: 500 },
     bld_schools: { base: 5, max: 100, capLevel: 500 },
     bld_armories: { base: 5, max: 150, capLevel: 500 },
-    bld_vaults: { base: 5, max: 100, capLevel: 500 },
+    bld_vaults: { base: 5, max: 200, capLevel: 500 },
     bld_smithies: { base: 3, max: 50, capLevel: 400 },
     bld_markets: { base: 3, max: 50, capLevel: 500 },
     bld_mage_towers: { base: 2, max: 25, capLevel: 400 },
