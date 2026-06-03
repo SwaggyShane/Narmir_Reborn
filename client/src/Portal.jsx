@@ -177,10 +177,15 @@ function RaceSelectOverlay({ selected, onSelect, onBack, onConfirm }) {
 
 // ─── Auth Card ────────────────────────────────────────────────────────────────
 
-function AuthCard() {
+function AuthCard({ onViewChange }) {
   const [authStatus, setAuthStatus] = useState('loading');
   const [view, setView] = useState('login'); // 'login' | 'race-select' | 'register'
   const [selectedRace, setSelectedRace] = useState(null);
+
+  const updateView = (newView) => {
+    setView(newView);
+    onViewChange?.(newView);
+  };
   const [forgotMsg, setForgotMsg] = useState(false);
 
   const [username, setUsername] = useState('');
@@ -284,8 +289,8 @@ function AuthCard() {
       <RaceSelectOverlay
         selected={selectedRace}
         onSelect={setSelectedRace}
-        onBack={() => setView('login')}
-        onConfirm={() => setView('register')}
+        onBack={() => updateView('login')}
+        onConfirm={() => updateView('register')}
       />
     );
   }
@@ -358,7 +363,7 @@ function AuthCard() {
             {submitting ? '…' : 'Login'}
           </button>
           <button type="button" className="portal-enter-btn auth-register-btn"
-            onClick={() => { setError(''); setView('race-select'); }}>
+            onClick={() => { setError(''); updateView('race-select'); }}>
             Register
           </button>
         </div>
@@ -446,9 +451,22 @@ function ForumsCard() {
   );
 }
 
+function RankingsButton({ onClick }) {
+  return (
+    <button className="portal-rankings-btn" onClick={onClick}>
+      View Top Kingdoms
+    </button>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Portal() {
+  const [showRankings, setShowRankings] = useState(false);
+  const [authView, setAuthView] = useState('login'); // 'login' | 'race-select' | 'register'
+
+  const isRegistrationActive = authView === 'race-select' || authView === 'register';
+
   return (
     <div className="portal-root">
       <header className="portal-header">
@@ -457,13 +475,20 @@ export default function Portal() {
         <p className="portal-tagline">Rise From the Ashes. Forge Your Legacy.</p>
       </header>
 
-      <main className="portal-main">
-        <div className="portal-col-left">
-          <RankingsTable />
-        </div>
-        <div className="portal-col-right">
-          <AuthCard />
-          <ForumsCard />
+      <main className="portal-main" style={{ gridTemplateColumns: isRegistrationActive ? '1fr' : '1fr 360px' }}>
+        {!isRegistrationActive && (
+          <div className="portal-col-left">
+            {showRankings && <RankingsTable />}
+          </div>
+        )}
+        <div className={isRegistrationActive ? 'portal-col-center' : 'portal-col-right'}>
+          <AuthCard onViewChange={setAuthView} />
+          {!isRegistrationActive && (
+            <>
+              <ForumsCard />
+              <RankingsButton onClick={() => setShowRankings(!showRankings)} />
+            </>
+          )}
         </div>
       </main>
 
