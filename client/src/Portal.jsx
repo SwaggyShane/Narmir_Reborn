@@ -113,7 +113,7 @@ function RaceSelectOverlay({ selected, onSelect, onBack, onConfirm }) {
               <div className="race-detail-section">
                 <div className="race-detail-label">Heroes</div>
                 <div className="race-heroes-grid">
-                  {activeRace.heroes.map((hero, i) => (
+                  {activeRace?.heroes?.map((hero, i) => (
                     <div key={i} className="race-hero-card">
                       <div className="hero-portrait" style={{ backgroundColor: activeRace.color }}></div>
                       <div className="hero-name">{hero}</div>
@@ -124,13 +124,13 @@ function RaceSelectOverlay({ selected, onSelect, onBack, onConfirm }) {
               <div className="race-detail-section">
                 <div className="race-detail-label">Strengths</div>
                 <ul className="race-detail-list strengths">
-                  {activeRace.strengths.map((s, i) => <li key={i}>{s}</li>)}
+                  {activeRace.strengths?.map((s, i) => <li key={i}>{s}</li>)}
                 </ul>
               </div>
               <div className="race-detail-section">
                 <div className="race-detail-label">Weaknesses</div>
                 <ul className="race-detail-list weaknesses">
-                  {activeRace.weaknesses.map((w, i) => <li key={i}>{w}</li>)}
+                  {activeRace.weaknesses?.map((w, i) => <li key={i}>{w}</li>)}
                 </ul>
               </div>
               {activeRace.id === 'vampire' && (
