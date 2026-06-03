@@ -4514,7 +4514,7 @@ module.exports = function (db) {
   router.get("/lore-and-achievements", requireAuth, async (req, res) => {
     try {
       const k = await db.get(
-        "SELECT race, collected_lore, achievements FROM kingdoms WHERE player_id = ?",
+        "SELECT race, collected_lore, achievements, population, gold, mana, bld_farms, bld_granaries, bld_barracks, bld_outposts, bld_guard_towers, bld_schools, bld_armories, bld_vaults, bld_smithies, bld_markets, bld_mage_towers, bld_shrines, bld_mausoleums, bld_taverns, bld_libraries, bld_housing, bld_walls, bld_training, bld_castles, bld_woodyard, bld_lumber_camp, bld_sawmill, bld_gravel_pit, bld_blockfield, bld_stone_quarry, bld_open_pit, bld_strip_mine, bld_deep_mine FROM kingdoms WHERE player_id = ?",
         [req.player.playerId],
       );
       if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -4558,27 +4558,31 @@ module.exports = function (db) {
         switch(achId) {
           case 'ach_founder':
             // Progress: any building built = 100%
-            const totalBuildings = Object.keys(config.BUILDING_COL)
+            const totalBuildings = Object.values(config.BUILDING_COL)
               .filter(col => col.startsWith('bld_'))
-              .reduce((sum, col) => sum + (k[col] || 0), 0);
+              .reduce((sum, col) => sum + (parseInt(k[col], 10) || 0), 0);
             return { current: Math.min(totalBuildings, 1), target: 1, label: `${totalBuildings} building${totalBuildings !== 1 ? 's' : ''}` };
           case 'ach_warlord':
-            return { current: k.population || 0, target: 50000, label: `${(k.population || 0).toLocaleString()} / 50,000` };
+            const warlordPop = parseInt(k.population, 10) || 0;
+            return { current: warlordPop, target: 50000, label: `${warlordPop.toLocaleString()} / 50,000` };
           case 'ach_constructor':
-            const totalBlds = Object.keys(config.BUILDING_COL)
+            const totalBlds = Object.values(config.BUILDING_COL)
               .filter(col => col.startsWith('bld_'))
-              .reduce((sum, col) => sum + (k[col] || 0), 0);
+              .reduce((sum, col) => sum + (parseInt(k[col], 10) || 0), 0);
             return { current: totalBlds, target: 1500, label: `${totalBlds} / 1,500` };
           case 'ach_colossus':
-            return { current: k.population || 0, target: 10000000, label: `${(k.population || 0).toLocaleString()} / 10,000,000` };
+            const colossusPopulation = parseInt(k.population, 10) || 0;
+            return { current: colossusPopulation, target: 10000000, label: `${colossusPopulation.toLocaleString()} / 10,000,000` };
           case 'ach_wealthy':
-            return { current: k.gold || 0, target: 10000000, label: `${(k.gold || 0).toLocaleString()} / 10,000,000` };
+            const wealthyGold = parseInt(k.gold, 10) || 0;
+            return { current: wealthyGold, target: 10000000, label: `${wealthyGold.toLocaleString()} / 10,000,000` };
           case 'ach_arcane':
-            return { current: k.mana || 0, target: 1000000, label: `${(k.mana || 0).toLocaleString()} / 1,000,000` };
+            const arcaneMana = parseInt(k.mana, 10) || 0;
+            return { current: arcaneMana, target: 1000000, label: `${arcaneMana.toLocaleString()} / 1,000,000` };
           case 'ach_grandmaster':
-            const towers = k.bld_mage_towers || 0;
-            const libs = k.bld_libraries || 0;
-            const schools = k.bld_schools || 0;
+            const towers = parseInt(k.bld_mage_towers, 10) || 0;
+            const libs = parseInt(k.bld_libraries, 10) || 0;
+            const schools = parseInt(k.bld_schools, 10) || 0;
             const min = Math.min(towers, libs, schools);
             return {
               current: min,
