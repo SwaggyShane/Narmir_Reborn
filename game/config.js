@@ -2414,8 +2414,8 @@ const config = {
     },
     ach_constructor: {
       title: "Constructor",
-      description: "Build 500 structures.",
-      reward: "Smithies (up to 100 total)",
+      description: "Build 1500 structures.",
+      reward: "100 Smithies (bypasses cap)",
     },
     ach_colossus: {
       title: "Colossus",

@@ -4568,7 +4568,7 @@ module.exports = function (db) {
             const totalBlds = Object.keys(config.BUILDING_COL)
               .filter(col => col.startsWith('bld_'))
               .reduce((sum, col) => sum + (k[col] || 0), 0);
-            return { current: totalBlds, target: 500, label: `${totalBlds} / 500` };
+            return { current: totalBlds, target: 1500, label: `${totalBlds} / 1,500` };
           case 'ach_colossus':
             return { current: k.population || 0, target: 10000000, label: `${(k.population || 0).toLocaleString()} / 10,000,000` };
           case 'ach_wealthy':
