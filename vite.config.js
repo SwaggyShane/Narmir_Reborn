@@ -26,6 +26,10 @@ export default defineConfig(({ command, mode }) => {
       outDir: '../public/dist',
       emptyOutDir: true,
       rollupOptions: {
+        input: {
+          index: path.resolve(__dirname, 'client/index.html'),
+          splash: path.resolve(__dirname, 'client/splash.html'),
+        },
         output: {
           entryFileNames: 'assets/[name].js',
           chunkFileNames: 'assets/[name]-[hash].js',

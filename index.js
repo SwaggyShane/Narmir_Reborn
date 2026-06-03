@@ -219,7 +219,7 @@ async function setupVite() {
     vite = await createServer({
       configFile: path.join(__dirname, 'vite.config.js'),
       server: { middlewareMode: true, hmr: false },
-      appType: 'spa',
+      appType: 'mpa',
       base: '/',
       root: path.join(__dirname, 'client'),
       mode: 'development'
@@ -1594,6 +1594,37 @@ async function start() {
     }
   };
 
+  const serveSplash = async (req, res, next) => {
+    console.log(`[serveSplash] HIT: ${req.method} ${req.url}`);
+    try {
+      if (process.env.NODE_ENV !== 'production' && vite) {
+        const splashPath = path.join(__dirname, 'client', 'splash.html');
+        let html = fs.readFileSync(splashPath, 'utf-8');
+        html = await vite.transformIndexHtml('/splash.html', html);
+        return res.set({
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }).send(html);
+      }
+      const distSplash = path.join(__dirname, 'public', 'dist', 'splash.html');
+      if (fs.existsSync(distSplash)) {
+        return res.set({
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }).sendFile(distSplash);
+      }
+      console.warn('[serveSplash] splash.html not found in dist, falling back to serveIndex');
+      return serveIndex(req, res, next);
+    } catch (e) {
+      console.error('[serveSplash] Error:', e);
+      next(e);
+    }
+  };
+
   const multer = require('multer');
 
   // Secure multer configuration with validation
@@ -1652,7 +1683,8 @@ async function start() {
     }
   });
 
-  app.use(['/', '/index.html'], serveIndex);
+  app.use(['/', '/index.html'], serveSplash);
+  app.use(['/game', '/game.html'], serveIndex);
   app.use(express.static(path.join(__dirname, 'public'), { index: false }));
   app.use(express.static(path.join(__dirname, 'client'), { index: false }));
   app.use('/dist', express.static(path.join(__dirname, 'public', 'dist')));
@@ -1667,7 +1699,7 @@ async function start() {
         console.log(`[static] Could not find file: ${req.url}`);
         return next();
     }
-    serveIndex(req, res, next);
+    serveSplash(req, res, next);
   });
 
   setupSockets(io, db);
