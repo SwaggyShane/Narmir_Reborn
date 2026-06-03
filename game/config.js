@@ -608,7 +608,7 @@ const config = {
       costIron: 20,
       desc: "Grants ability to withdraw funds early from any term deposit (forfeits interest).",
       requires: null,
-      reqVaults: 100,
+      reqVaults: 15,
     },
     trade_guild: {
       name: "Trade Guild Charter",
@@ -618,7 +618,7 @@ const config = {
       costIron: 60,
       desc: "Increases interest earned on all term deposits by an absolute +3%.",
       requires: "ledger_ancients",
-      reqVaults: 50,
+      reqVaults: 25,
     },
     iron_treasury: {
       name: "The Iron Treasury",
@@ -2415,7 +2415,7 @@ const config = {
     bld_guard_towers: { base: 5, max: 100, capLevel: 500 },
     bld_schools: { base: 5, max: 100, capLevel: 500 },
     bld_armories: { base: 5, max: 150, capLevel: 500 },
-    bld_vaults: { base: 5, max: 100, capLevel: 500 },
+    bld_vaults: { base: 1, max: 100, capLevel: 500 },
     bld_smithies: { base: 3, max: 50, capLevel: 400 },
     bld_markets: { base: 3, max: 50, capLevel: 500 },
     bld_mage_towers: { base: 2, max: 25, capLevel: 400 },
