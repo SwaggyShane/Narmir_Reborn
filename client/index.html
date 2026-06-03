@@ -5282,6 +5282,10 @@
         
         await loadActiveExpeditions();
         checkSchoolSelection();
+
+        // Refresh news panel if it's open - user is watching what happened
+        if (window.loadNews) window.loadNews();
+
         takingTurn = false;
       }
 
