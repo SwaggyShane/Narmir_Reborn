@@ -53,7 +53,7 @@ const NewsPanel = () => {
   }, [loadNews, clearNews, setNewsFilter]);
 
   return (
-    <div id="news" className="panel" ref={panelRef}>
+    <div id="news" className="panel">
       <div className="card" style={{ marginTop: 0 }}>
         <div
           style={{
