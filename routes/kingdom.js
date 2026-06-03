@@ -4514,7 +4514,7 @@ module.exports = function (db) {
   router.get("/lore-and-achievements", requireAuth, async (req, res) => {
     try {
       const k = await db.get(
-        "SELECT race, collected_lore, achievements FROM kingdoms WHERE player_id = ?",
+        "SELECT race, collected_lore, achievements, population, gold, mana, bld_farms, bld_granaries, bld_barracks, bld_outposts, bld_guard_towers, bld_schools, bld_armories, bld_vaults, bld_smithies, bld_markets, bld_mage_towers, bld_shrines, bld_mausoleums, bld_taverns, bld_libraries, bld_housing, bld_walls, bld_training, bld_castles, bld_woodyard, bld_lumber_camp, bld_sawmill, bld_gravel_pit, bld_blockfield, bld_stone_quarry, bld_open_pit, bld_strip_mine, bld_deep_mine FROM kingdoms WHERE player_id = ?",
         [req.player.playerId],
       );
       if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -4558,14 +4558,14 @@ module.exports = function (db) {
         switch(achId) {
           case 'ach_founder':
             // Progress: any building built = 100%
-            const totalBuildings = Object.keys(config.BUILDING_COL)
+            const totalBuildings = Object.values(config.BUILDING_COL)
               .filter(col => col.startsWith('bld_'))
               .reduce((sum, col) => sum + (k[col] || 0), 0);
             return { current: Math.min(totalBuildings, 1), target: 1, label: `${totalBuildings} building${totalBuildings !== 1 ? 's' : ''}` };
           case 'ach_warlord':
             return { current: k.population || 0, target: 50000, label: `${(k.population || 0).toLocaleString()} / 50,000` };
           case 'ach_constructor':
-            const totalBlds = Object.keys(config.BUILDING_COL)
+            const totalBlds = Object.values(config.BUILDING_COL)
               .filter(col => col.startsWith('bld_'))
               .reduce((sum, col) => sum + (k[col] || 0), 0);
             return { current: totalBlds, target: 1500, label: `${totalBlds} / 1,500` };
