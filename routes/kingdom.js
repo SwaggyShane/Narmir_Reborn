@@ -4549,11 +4549,13 @@ module.exports = function (db) {
           .map((l) => ({ id: l.id, title: l.title, msg: l.msg }));
       };
 
-      const achievementObjects = achievements.map(achId => ({
-        id: achId,
-        title: ACHIEVEMENT_DEFS[achId]?.title || achId.replace(/^ach_/, '').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        description: ACHIEVEMENT_DEFS[achId]?.description || '',
-      }));
+      const achievementObjects = achievements
+        .filter(ach => typeof ach === 'string' && ach.length > 0)
+        .map(achId => ({
+          id: achId,
+          title: ACHIEVEMENT_DEFS[achId]?.title || achId.replace(/^ach_/, '').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+          description: ACHIEVEMENT_DEFS[achId]?.description || '',
+        }));
 
       res.json({
         raceLore: filterLore(LORE[k.race]),
