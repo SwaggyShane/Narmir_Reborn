@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiCall } from '../../utils/api';
 
-const REFRESH_INTERVAL_MS = 2 * 60 * 1000;
+const REFRESH_INTERVAL_MS = 10 * 1000;
 
 const tabs = [
   { id: 'stockpiles', label: '📦 Stockpiles' },
@@ -166,10 +166,12 @@ const ResourcesPanel = () => {
     const cdt = setInterval(() => setNow(Math.floor(Date.now()/1000)), 1000);
     const refreshTimer = setInterval(syncFromState, REFRESH_INTERVAL_MS);
     window.refreshResourcesPanel = () => { syncFromState(); loadExpeditions(); };
+    window.syncFromState = syncFromState;
     return () => {
       clearInterval(cdt);
       clearInterval(refreshTimer);
       delete window.refreshResourcesPanel;
+      delete window.syncFromState;
     };
   }, [syncFromState]);
 
