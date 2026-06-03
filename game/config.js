@@ -2405,10 +2405,12 @@ const config = {
     ach_founder: {
       title: "Founder",
       description: "Build your first structure.",
+      reward: "5000 Gold",
     },
     ach_warlord: {
       title: "Warlord",
       description: "Reach a population of 50,000.",
+      reward: "10000 Land",
     },
   },
 

@@ -244,9 +244,17 @@ window.renderLibraryPanel = async () => {
           const description = ach.description || '';
           if (description) {
             const descDiv = document.createElement('div');
-            descDiv.style.cssText = 'color: var(--text2); font-size: 12px;';
+            descDiv.style.cssText = 'color: var(--text2); font-size: 12px; margin-bottom: 4px;';
             descDiv.textContent = description;
             achDiv.appendChild(descDiv);
+          }
+
+          const reward = ach.reward || '';
+          if (reward) {
+            const rewardDiv = document.createElement('div');
+            rewardDiv.style.cssText = 'color: var(--green); font-size: 12px; font-weight: 500;';
+            rewardDiv.textContent = 'Reward: ' + reward;
+            achDiv.appendChild(rewardDiv);
           }
 
           achievementsContainer.appendChild(achDiv);

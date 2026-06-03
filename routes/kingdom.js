@@ -4555,6 +4555,7 @@ module.exports = function (db) {
           id: achId,
           title: ACHIEVEMENT_DEFS[achId]?.title || achId.replace(/^ach_/, '').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
           description: ACHIEVEMENT_DEFS[achId]?.description || '',
+          reward: ACHIEVEMENT_DEFS[achId]?.reward || '',
         }));
 
       res.json({
