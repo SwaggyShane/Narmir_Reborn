@@ -279,10 +279,14 @@ function ModernSplash({ authStatus }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function Splash() {
-  const [phase, setPhase] = useState(() =>
-    (sessionStorage.getItem('narmir_intro_seen') || localStorage.getItem('narmir_skip_intro'))
-      ? 'modern' : 'retro'
-  ); // 'retro' | 'glitch' | 'modern'
+  const [phase, setPhase] = useState(() => {
+    try {
+      return (sessionStorage.getItem('narmir_intro_seen') || localStorage.getItem('narmir_skip_intro'))
+        ? 'modern' : 'retro';
+    } catch (e) {
+      return 'retro';
+    }
+  }); // 'retro' | 'glitch' | 'modern'
   const [tearing, setTearing] = useState(false);
   const [showFlash, setShowFlash] = useState(false);
   const [glitch, setGlitch] = useState({});

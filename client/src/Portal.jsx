@@ -12,10 +12,21 @@ function RankingsTable() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch('/api/public/rankings')
-      .then(r => r.json())
-      .then(d => { setRows(d.rankings || []); setLoading(false); })
-      .catch(() => { setError(true); setLoading(false); });
+    const ctrl = new AbortController();
+    fetch('/api/public/rankings', { signal: ctrl.signal })
+      .then(r => {
+        if (!r.ok) throw new Error('Network response was not ok');
+        return r.json();
+      })
+      .then(d => {
+        if (d.error) throw new Error(d.error);
+        setRows(d.rankings || []);
+        setLoading(false);
+      })
+      .catch(e => {
+        if (e.name !== 'AbortError') { setError(true); setLoading(false); }
+      });
+    return () => ctrl.abort();
   }, []);
 
   return (
@@ -45,7 +56,7 @@ function RankingsTable() {
                   </div>
                 </td>
                 <td className="race-cell">
-                  {RACE_EMOJI[r.race] || '🏰'} {r.race?.replace('_', ' ')}
+                  {RACE_EMOJI[r.race] || '🏰'} {r.race ? r.race.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'Unknown'}
                 </td>
                 <td>{r.land?.toLocaleString()}</td>
                 <td>{r.level}</td>

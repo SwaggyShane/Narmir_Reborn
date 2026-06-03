@@ -185,9 +185,9 @@ const OptionsPanel = () => {
   const [navLayout, setNavLayout] = useState(
     localStorage.getItem('narmir_nav_layout') || 'responsive'
   );
-  const [skipIntro, setSkipIntro] = useState(
-    localStorage.getItem('narmir_skip_intro') === '1'
-  );
+  const [skipIntro, setSkipIntro] = useState(() => {
+    try { return localStorage.getItem('narmir_skip_intro') === '1'; } catch { return false; }
+  });
 
   const updateNavLayout = (e) => {
     const val = e.target.value;
@@ -201,11 +201,15 @@ const OptionsPanel = () => {
   const updateSkipIntro = (e) => {
     const val = e.target.checked;
     setSkipIntro(val);
-    if (val) {
-      localStorage.setItem('narmir_skip_intro', '1');
-    } else {
-      localStorage.removeItem('narmir_skip_intro');
-      sessionStorage.removeItem('narmir_intro_seen');
+    try {
+      if (val) {
+        localStorage.setItem('narmir_skip_intro', '1');
+      } else {
+        localStorage.removeItem('narmir_skip_intro');
+        sessionStorage.removeItem('narmir_intro_seen');
+      }
+    } catch (err) {
+      console.warn('Storage access blocked:', err);
     }
   };
 

@@ -1423,7 +1423,7 @@ async function start() {
           SELECT k.id, k.name, k.race, k.land, k.level, k.population, p.username, p.is_ai
           FROM kingdoms k
           JOIN players p ON k.player_id = p.id
-          ORDER BY k.land DESC, k.level DESC, k.population DESC
+          ORDER BY k.land DESC, k.level DESC, k.population DESC, k.id ASC
           LIMIT 20
         `);
         res.json({ rankings: rows });
@@ -1669,33 +1669,34 @@ async function start() {
       'Pragma': 'no-cache',
       'Expires': '0'
     };
+    const fsp = fs.promises;
     try {
       if (process.env.NODE_ENV !== 'production' && vite) {
         const portalPath = path.join(__dirname, 'client', 'portal.html');
-        let html = fs.readFileSync(portalPath, 'utf-8');
+        let html = await fsp.readFile(portalPath, 'utf-8');
         html = await vite.transformIndexHtml('/portal.html', html);
         return res.set(NO_CACHE).send(html);
       }
       const distPath = path.join(__dirname, 'public', 'dist');
-      const distPortal = path.join(distPath, 'portal.html');
-      if (fs.existsSync(distPortal)) {
-        return res.set(NO_CACHE).send(fs.readFileSync(distPortal, 'utf-8'));
-      }
+      // Primary: serve pre-built portal.html from dist
+      try {
+        const html = await fsp.readFile(path.join(distPath, 'portal.html'), 'utf-8');
+        return res.set(NO_CACHE).send(html);
+      } catch { /* not found, try injection fallback */ }
       // Injection fallback
-      const assetPath = path.join(distPath, 'assets');
-      if (fs.existsSync(assetPath)) {
-        const assets = fs.readdirSync(assetPath);
+      try {
+        const assets = await fsp.readdir(path.join(distPath, 'assets'));
         const portalJs  = assets.find(f => f.startsWith('portal') && f.endsWith('.js'));
         const portalCss = assets.find(f => f.startsWith('portal-') && f.endsWith('.css'));
         if (portalJs) {
-          let html = fs.readFileSync(path.join(__dirname, 'client', 'portal.html'), 'utf-8');
+          let html = await fsp.readFile(path.join(__dirname, 'client', 'portal.html'), 'utf-8');
           html = html.replace(/<script type="module" src="\/src\/portal-main\.jsx"><\/script>/, '');
           let inject = `<script type="module" crossorigin src="/dist/assets/${portalJs}"></script>`;
           if (portalCss) inject += `\n    <link rel="stylesheet" crossorigin href="/dist/assets/${portalCss}">`;
           html = html.replace('</head>', `    ${inject}\n  </head>`);
           return res.set(NO_CACHE).send(html);
         }
-      }
+      } catch { /* assets dir missing, fall through */ }
       console.error('[servePortal] No portal assets found in dist — falling back to serveIndex');
       return serveIndex(req, res, next);
     } catch (e) {
