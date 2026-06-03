@@ -84,7 +84,7 @@ function EmberParticles() {
   );
 }
 
-function AuthBlock({ status, tab, setTab, username, setUsername, password, setPassword, error, loading, onLogin, onRegister }) {
+function AuthBlock({ status }) {
   if (status === 'loading') {
     return (
       <div className="auth-loading">
@@ -98,42 +98,16 @@ function AuthBlock({ status, tab, setTab, username, setUsername, password, setPa
   if (status === 'in') {
     return (
       <div className="auth-continue">
-        <a href="/game" className="continue-btn">Continue Playing →</a>
+        <a href="/game" className="continue-btn">ENTER</a>
         <p className="auth-sub">Your kingdom awaits</p>
       </div>
     );
   }
 
   return (
-    <div className="auth-form-wrap">
-      <div className="auth-tabs">
-        <button className={`auth-tab${tab === 'login' ? ' active' : ''}`} onClick={() => setTab('login')}>Login</button>
-        <button className={`auth-tab${tab === 'register' ? ' active' : ''}`} onClick={() => setTab('register')}>Join Free</button>
-      </div>
-      <form className="auth-form" onSubmit={tab === 'login' ? onLogin : onRegister}>
-        <input
-          className="auth-input"
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={e => setUsername(e.target.value)}
-          required
-          autoComplete="username"
-        />
-        <input
-          className="auth-input"
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          required
-          autoComplete={tab === 'login' ? 'current-password' : 'new-password'}
-        />
-        {error && <p className="auth-error">{error}</p>}
-        <button type="submit" className="auth-submit" disabled={loading}>
-          {loading ? '...' : tab === 'login' ? 'Enter the Realm' : 'Begin Your Journey'}
-        </button>
-      </form>
+    <div className="auth-continue">
+      <a href="/portal" className="continue-btn">ENTER</a>
+      <p className="auth-sub">Rankings · Login · Forums</p>
     </div>
   );
 }
@@ -219,7 +193,7 @@ function RacePortrait({ race }) {
   );
 }
 
-function ModernSplash({ authStatus, authTab, setAuthTab, username, setUsername, password, setPassword, authError, authLoading, onLogin, onRegister }) {
+function ModernSplash({ authStatus }) {
   const sectionRef = useRef(null);
 
   useEffect(() => {
@@ -250,19 +224,7 @@ function ModernSplash({ authStatus, authTab, setAuthTab, username, setUsername, 
         <h1 className="hero-title">NARMIR REBORN</h1>
         <p className="hero-tagline">Rise From the Ashes. Forge Your Legacy.</p>
         <div className="auth-block">
-          <AuthBlock
-            status={authStatus}
-            tab={authTab}
-            setTab={setAuthTab}
-            username={username}
-            setUsername={setUsername}
-            password={password}
-            setPassword={setPassword}
-            error={authError}
-            loading={authLoading}
-            onLogin={onLogin}
-            onRegister={onRegister}
-          />
+          <AuthBlock status={authStatus} />
         </div>
         <div className="scroll-hint" aria-hidden="true">
           <span className="scroll-arrow">↓</span>
@@ -308,7 +270,7 @@ function ModernSplash({ authStatus, authTab, setAuthTab, username, setUsername, 
       <footer className="splash-footer">
         <span>© 2025 Narmir Reborn</span>
         <span className="footer-sep">·</span>
-        <a href="/game" className="footer-link">Play Now</a>
+        <a href="/portal" className="footer-link">Enter</a>
       </footer>
     </div>
   );
@@ -317,16 +279,18 @@ function ModernSplash({ authStatus, authTab, setAuthTab, username, setUsername, 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function Splash() {
-  const [phase, setPhase] = useState('retro'); // 'retro' | 'glitch' | 'modern'
+  const [phase, setPhase] = useState(() => {
+    try {
+      return (sessionStorage.getItem('narmir_intro_seen') || localStorage.getItem('narmir_skip_intro'))
+        ? 'modern' : 'retro';
+    } catch (e) {
+      return 'retro';
+    }
+  }); // 'retro' | 'glitch' | 'modern'
   const [tearing, setTearing] = useState(false);
   const [showFlash, setShowFlash] = useState(false);
   const [glitch, setGlitch] = useState({});
   const [authStatus, setAuthStatus] = useState('loading');
-  const [authTab, setAuthTab] = useState('login');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [authError, setAuthError] = useState('');
-  const [authLoading, setAuthLoading] = useState(false);
   const timers = useRef([]);
 
   // Check auth on mount
@@ -369,6 +333,7 @@ export default function Splash() {
     // Switch to modern at 2.5s, fade flash out shortly after
     timers.current.push(setTimeout(() => {
       clearInterval(interval);
+      sessionStorage.setItem('narmir_intro_seen', '1');
       setPhase('modern');
       setTearing(false);
       setGlitch({});
@@ -376,48 +341,6 @@ export default function Splash() {
 
     timers.current.push(setTimeout(() => setShowFlash(false), 2700));
   }, [phase]);
-
-  const handleLogin = async e => {
-    e.preventDefault();
-    setAuthLoading(true);
-    setAuthError('');
-    try {
-      const r = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ username, password }),
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || 'Login failed');
-      if (data.token) localStorage.setItem('narmir_token', data.token);
-      window.location.href = '/game';
-    } catch (err) {
-      setAuthError(err.message);
-      setAuthLoading(false);
-    }
-  };
-
-  const handleRegister = async e => {
-    e.preventDefault();
-    setAuthLoading(true);
-    setAuthError('');
-    try {
-      const r = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ username, password }),
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || 'Registration failed');
-      if (data.token) localStorage.setItem('narmir_token', data.token);
-      window.location.href = '/game';
-    } catch (err) {
-      setAuthError(err.message);
-      setAuthLoading(false);
-    }
-  };
 
   return (
     <div className={`splash-root phase-${phase}`}>
@@ -449,21 +372,7 @@ export default function Splash() {
       ))}
 
       {/* Phase 3: Modern splash */}
-      {phase === 'modern' && (
-        <ModernSplash
-          authStatus={authStatus}
-          authTab={authTab}
-          setAuthTab={setAuthTab}
-          username={username}
-          setUsername={setUsername}
-          password={password}
-          setPassword={setPassword}
-          authError={authError}
-          authLoading={authLoading}
-          onLogin={handleLogin}
-          onRegister={handleRegister}
-        />
-      )}
+      {phase === 'modern' && <ModernSplash authStatus={authStatus} />}
 
       {/* Flash overlay lives outside phases so it persists through transition */}
       <div className={`flash-overlay${showFlash ? ' active' : ''}`} aria-hidden="true" />
