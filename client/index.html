@@ -5679,6 +5679,10 @@
         });
         var wmEl = document.getElementById("s-war_machines");
         if (wmEl) wmEl.textContent = fmt(state.war_machines || 0);
+        var wpnEl = document.getElementById("s-weapons");
+        if (wpnEl) wpnEl.textContent = fmt(state.weapons_stockpile || 0);
+        var armEl = document.getElementById("s-armor");
+        if (armEl) armEl.textContent = fmt(state.armor_stockpile || 0);
         var laddersEl = document.getElementById("s-ladders");
         if (laddersEl) laddersEl.textContent = fmt(state.ladders || 0);
 

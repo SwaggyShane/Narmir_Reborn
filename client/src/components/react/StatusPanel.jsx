@@ -235,11 +235,23 @@ const StatusPanel = () => {
             <span></span>
             <span className="badge badge-gold" style={{ textAlign: 'center', fontSize: '9px' }}>Siege</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr 52px 52px', gap: '4px', alignItems: 'center', padding: '5px 0' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr 52px 52px', gap: '4px', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid var(--border)' }}>
             <span style={{ fontSize: '13px', color: 'var(--text)' }} id="s-label-ladders">Ladders</span>
             <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-ladders">0</span>
             <span></span>
             <span className="badge badge-gold" style={{ textAlign: 'center', fontSize: '9px' }}>Siege</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr 52px 52px', gap: '4px', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid var(--border)' }}>
+            <span style={{ fontSize: '13px', color: 'var(--text)' }}>Weapons</span>
+            <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-weapons">0</span>
+            <span></span>
+            <span className="badge badge-gold" style={{ textAlign: 'center', fontSize: '9px' }}>Stock</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr 52px 52px', gap: '4px', alignItems: 'center', padding: '5px 0' }}>
+            <span style={{ fontSize: '13px', color: 'var(--text)' }}>Armor</span>
+            <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-armor">0</span>
+            <span></span>
+            <span className="badge badge-gold" style={{ textAlign: 'center', fontSize: '9px' }}>Stock</span>
           </div>
         </div>
 
