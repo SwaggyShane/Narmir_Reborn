@@ -3997,6 +3997,11 @@
         });
         socket.on("unread_news", function (data) {
           if (data.count > 0) showNewsBadge(data.count);
+          // Refresh news if panel is open
+          var newsPanel = document.getElementById("news");
+          if (newsPanel && newsPanel.classList.contains("active")) {
+            loadNews();
+          }
         });
       }
 
@@ -8002,10 +8007,7 @@
           playGameSound(snd);
         });
 
-        var list = document.getElementById("news-list");
-        if (!list) return;
-
-        // Push to cache
+        // Always push to cache, even if DOM element doesn't exist yet
         var now = Math.floor(Date.now() / 1000);
         events.forEach(function (ev) {
           newsCache.unshift({
@@ -8015,6 +8017,13 @@
             created_at: now,
           });
         });
+
+        var list = document.getElementById("news-list");
+        if (!list) {
+          // DOM element doesn't exist, but cache is updated
+          // It will be rendered when user opens news tab
+          return;
+        }
 
         // Remove placeholder text node
         Array.from(list.children).forEach(function (child) {
