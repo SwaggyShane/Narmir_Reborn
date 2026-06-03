@@ -309,6 +309,14 @@ export default function Splash() {
 
   const triggerGlitch = useCallback(() => {
     if (phase !== 'retro') return;
+
+    const skipGlitch = localStorage.getItem('narmir_skip_glitch') === '1';
+    if (skipGlitch) {
+      sessionStorage.setItem('narmir_intro_seen', '1');
+      setPhase('modern');
+      return;
+    }
+
     setPhase('glitch');
 
     const interval = setInterval(() => {

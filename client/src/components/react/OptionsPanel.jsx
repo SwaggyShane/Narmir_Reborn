@@ -188,6 +188,9 @@ const OptionsPanel = () => {
   const [skipIntro, setSkipIntro] = useState(() => {
     try { return localStorage.getItem('narmir_skip_intro') === '1'; } catch { return false; }
   });
+  const [skipGlitch, setSkipGlitch] = useState(() => {
+    try { return localStorage.getItem('narmir_skip_glitch') === '1'; } catch { return false; }
+  });
 
   const updateNavLayout = (e) => {
     const val = e.target.value;
@@ -207,6 +210,20 @@ const OptionsPanel = () => {
       } else {
         localStorage.removeItem('narmir_skip_intro');
         sessionStorage.removeItem('narmir_intro_seen');
+      }
+    } catch (err) {
+      console.warn('Storage access blocked:', err);
+    }
+  };
+
+  const updateSkipGlitch = (e) => {
+    const val = e.target.checked;
+    setSkipGlitch(val);
+    try {
+      if (val) {
+        localStorage.setItem('narmir_skip_glitch', '1');
+      } else {
+        localStorage.removeItem('narmir_skip_glitch');
       }
     } catch (err) {
       console.warn('Storage access blocked:', err);
@@ -309,7 +326,7 @@ const OptionsPanel = () => {
               <option value="bottom">Bottom Navigation Bar Only</option>
             </select>
           </div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', userSelect: 'none' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', userSelect: 'none', marginBottom: '10px' }}>
             <input
               type="checkbox"
               checked={skipIntro}
@@ -318,6 +335,17 @@ const OptionsPanel = () => {
             />
             <span style={{ fontSize: '13px', color: 'var(--text2)', lineHeight: 1.4 }}>
               Skip intro animation when visiting the home page
+            </span>
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', userSelect: 'none' }}>
+            <input
+              type="checkbox"
+              checked={skipGlitch}
+              onChange={updateSkipGlitch}
+              style={{ width: '16px', height: '16px', accentColor: 'var(--accent1)', cursor: 'pointer', flexShrink: 0 }}
+            />
+            <span style={{ fontSize: '13px', color: 'var(--text2)', lineHeight: 1.4 }}>
+              Skip glitch effect (jump to modern splash on click)
             </span>
           </label>
         </div>
