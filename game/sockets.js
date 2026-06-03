@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const engine = require("./engine");
-const { setUnreadCount, getUnreadCount, incrementUnread, decrementUnread } = require("../cache.js");
+const { unreadNewsCache, setUnreadCount, getUnreadCount, incrementUnread, decrementUnread } = require("../cache.js");
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_fallback_12345";
 const onlinePlayers = new Map(); // playerId → { socketId, username, race, isMod, isAdmin, kingdomName }
@@ -80,19 +80,31 @@ module.exports = function (io, db) {
       );
       if (membership) socket.join(`alliance:${membership.alliance_id}`);
 
-      const notifyUnread = (kid) => {
-        // Use cached count instead of querying
-        const count = getUnreadCount(kid);
+      const notifyUnread = async (kid) => {
+        let count = getUnreadCount(kid);
+        if (count === undefined) {
+          const unreadRow = await db.get(
+            "SELECT COUNT(*) as c FROM news WHERE kingdom_id = ? AND is_read = 0",
+            [kid],
+          );
+          count = unreadRow?.c || 0;
+          setUnreadCount(kid, count);
+        }
         io.to(`kingdom:${kid}`).emit("unread_news", { count });
       };
 
       // Initialize unread count from DB and cache it (only on first socket connection)
-      const unreadRow = await db.get(
-        "SELECT COUNT(*) as c FROM news WHERE kingdom_id = ? AND is_read = 0",
-        [kingdom.id],
-      );
-      const unreadCount = unreadRow?.c || 0;
-      setUnreadCount(kingdom.id, unreadCount);
+      let unreadCount;
+      if (unreadNewsCache.has(kingdom.id)) {
+        unreadCount = getUnreadCount(kingdom.id);
+      } else {
+        const unreadRow = await db.get(
+          "SELECT COUNT(*) as c FROM news WHERE kingdom_id = ? AND is_read = 0",
+          [kingdom.id],
+        );
+        unreadCount = unreadRow?.c || 0;
+        setUnreadCount(kingdom.id, unreadCount);
+      }
       socket.emit("unread_news", { count: unreadCount });
       console.log(`[socket] ${username} (${kingdom.name}) connected`);
     } catch (err) {

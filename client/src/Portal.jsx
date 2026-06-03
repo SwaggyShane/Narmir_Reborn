@@ -157,7 +157,7 @@ function RaceSelectOverlay({ selected, onSelect, onBack, onConfirm }) {
         <button className="portal-ghost-btn" onClick={onBack}>← Back</button>
         <button className="portal-enter-btn race-confirm-btn" disabled={!selected} onClick={onConfirm}>
           {selected
-            ? `Begin as ${RACE_DATA.find(r => r.id === selected)?.title.split(' of ')[0]} →`
+            ? `Begin as ${RACE_DATA.find(r => r.id === selected)?.title?.split(' of ')[0]} →`
             : 'Select a Race'}
         </button>
       </div>
