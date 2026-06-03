@@ -6404,17 +6404,18 @@
 
       function populateRaceSelection() {
         const grid = document.getElementById("race-selection-grid");
-        if (!grid) return;
+        if (!grid || !RACE_LORE) return;
 
         let html = "";
         for (let raceKey in RACE_LORE) {
           if (!RACE_LORE.hasOwnProperty(raceKey)) continue;
           const race = RACE_LORE[raceKey];
-          if (!race.lore) continue;
+          if (!race || !race.lore) continue;
 
           const isSelected = raceKey === _selectedRace;
-          const borderColor = isSelected ? race.color || "#e8b84b" : "#363a52";
+          const borderColor = isSelected ? (race.color || "#e8b84b") : "#363a52";
           const bgColor = isSelected ? `${race.color}15` : "transparent";
+          const strengths = (race.strengths && race.strengths.length) ? race.strengths.slice(0, 2).join(" · ") : "Balanced";
 
           html += `
             <div
@@ -6437,7 +6438,7 @@
                 ${race.title || raceKey}
               </div>
               <div style="font-size: 11px; color: #9a9bb5; line-height: 1.4;">
-                ${race.strengths ? race.strengths.slice(0, 2).join(" · ") : ""}
+                ${strengths}
               </div>
             </div>
           `;
@@ -6448,15 +6449,32 @@
       function selectRaceForRegistration(raceKey) {
         _selectedRace = raceKey;
         populateRaceSelection();
+        // Preserve form data when switching races
+        const username = document.getElementById("reg-username")?.value || "";
+        const kingdom = document.getElementById("reg-kingdom")?.value || "";
+        const password = document.getElementById("reg-password")?.value || "";
+        const email = document.getElementById("reg-email")?.value || "";
+
         showRaceDetailsForRegistration();
+
+        // Restore form data after race details are populated
+        if (document.getElementById("reg-username")) document.getElementById("reg-username").value = username;
+        if (document.getElementById("reg-kingdom")) document.getElementById("reg-kingdom").value = kingdom;
+        if (document.getElementById("reg-password")) document.getElementById("reg-password").value = password;
+        if (document.getElementById("reg-email")) document.getElementById("reg-email").value = email;
+
+        // Trigger password requirements update if password exists
+        if (password && document.getElementById("reg-password")) {
+          updateRegistrationPasswordRequirements();
+        }
       }
 
       function showRaceDetailsForRegistration() {
         const detailsSection = document.getElementById("race-details-section");
-        if (!detailsSection) return;
+        if (!detailsSection || !RACE_LORE) return;
 
         const race = RACE_LORE[_selectedRace];
-        if (!race) return;
+        if (!race || !race.lore) return;
 
         const portraitUrl = RACE_PORTRAITS[_selectedRace] || "";
         const portraitHtml = portraitUrl
@@ -6480,11 +6498,11 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
                   <div style="background: rgba(76, 175, 130, 0.08); border: 1px solid rgba(76, 175, 130, 0.2); border-radius: 8px; padding: 12px;">
                     <div style="font-size: 10px; font-weight: 700; color: #10b981; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Strengths</div>
-                    ${race.strengths.map(s => `<div style="font-size: 12px; color: #cbd5e1; padding: 2px 0;">✓ ${s}</div>`).join("")}
+                    ${(race.strengths && race.strengths.length) ? race.strengths.map(s => `<div style="font-size: 12px; color: #cbd5e1; padding: 2px 0;">✓ ${s}</div>`).join("") : '<div style="font-size: 12px; color: #9a9bb5;">No specific strengths</div>'}
                   </div>
                   <div style="background: rgba(224, 92, 92, 0.08); border: 1px solid rgba(224, 92, 92, 0.2); border-radius: 8px; padding: 12px;">
                     <div style="font-size: 10px; font-weight: 700; color: #e05c5c; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Weaknesses</div>
-                    ${race.weaknesses.map(w => `<div style="font-size: 12px; color: #cbd5e1; padding: 2px 0;">✗ ${w}</div>`).join("")}
+                    ${(race.weaknesses && race.weaknesses.length) ? race.weaknesses.map(w => `<div style="font-size: 12px; color: #cbd5e1; padding: 2px 0;">✗ ${w}</div>`).join("") : '<div style="font-size: 12px; color: #9a9bb5;">No specific weaknesses</div>'}
                   </div>
                 </div>
 
@@ -6711,30 +6729,69 @@
       }
 
       function submitRegistrationFromModal() {
-        const username = document.getElementById("reg-username").value.trim();
-        const kingdom = document.getElementById("reg-kingdom").value.trim();
-        const password = document.getElementById("reg-password").value;
-        const email = document.getElementById("reg-email").value.trim();
+        const userEl = document.getElementById("reg-username");
+        const kingdomEl = document.getElementById("reg-kingdom");
+        const passwordEl = document.getElementById("reg-password");
+        const emailEl = document.getElementById("reg-email");
         const errEl = document.getElementById("reg-error");
 
+        if (!userEl || !kingdomEl || !passwordEl || !emailEl || !errEl) return;
+
+        const username = userEl.value.trim();
+        const kingdom = kingdomEl.value.trim();
+        const password = passwordEl.value;
+        const email = emailEl.value.trim();
+
+        // Client-side validation with clear error messages
         if (!username) {
-          errEl.textContent = "Username required";
+          errEl.textContent = "Username required (3-20 characters)";
+          userEl.focus();
           return;
         }
-        if (!kingdom) {
-          errEl.textContent = "Kingdom name required";
+        if (username.length < 3 || username.length > 20) {
+          errEl.textContent = "Username must be 3-20 characters";
+          userEl.focus();
           return;
         }
-        if (!password) {
-          errEl.textContent = "Password required";
-          return;
-        }
-        if (!email) {
-          errEl.textContent = "Email address required";
+        if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+          errEl.textContent = "Username can only contain letters, numbers, and underscores";
+          userEl.focus();
           return;
         }
 
-        // Update main form fields and submit
+        if (!kingdom) {
+          errEl.textContent = "Kingdom name required";
+          kingdomEl.focus();
+          return;
+        }
+
+        if (!password) {
+          errEl.textContent = "Password required";
+          passwordEl.focus();
+          return;
+        }
+
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        if (!passwordRegex.test(password)) {
+          errEl.textContent = "Password must be 8+ chars with uppercase, lowercase, number, and special character";
+          passwordEl.focus();
+          return;
+        }
+
+        if (!email) {
+          errEl.textContent = "Email address required";
+          emailEl.focus();
+          return;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          errEl.textContent = "Please enter a valid email address";
+          emailEl.focus();
+          return;
+        }
+
+        // All validation passed - update main form fields and submit
         document.getElementById("auth-user").value = username;
         document.getElementById("auth-kingdom").value = kingdom;
         document.getElementById("auth-pass").value = password;
@@ -6748,6 +6805,12 @@
       function closeRegistrationModal() {
         const modal = document.getElementById("registration-modal");
         if (modal) modal.style.display = "none";
+        // Reset registration state when closing modal
+        _registerMode = false;
+        _selectedRace = "human";
+        // Clear error messages
+        const errEl = document.getElementById("reg-error");
+        if (errEl) errEl.textContent = "";
       }
 
       function updatePasswordRequirements() {
