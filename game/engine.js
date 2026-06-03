@@ -3002,7 +3002,7 @@ function checkAchievements(k, updates, events) {
   if (!ach.includes("ach_constructor") && totalBuildings >= 1500) {
     ach.push("ach_constructor");
     const currentSmithies = updates.bld_smithies !== undefined ? updates.bld_smithies : k.bld_smithies || 0;
-    const smithiesToAdd = 100;
+    const smithiesToAdd = Math.max(0, 100 - currentSmithies);
     updates.bld_smithies = currentSmithies + smithiesToAdd;
     events.push({
       type: "system",
