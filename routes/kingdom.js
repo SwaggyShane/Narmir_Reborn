@@ -3867,10 +3867,10 @@ module.exports = function (db) {
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
 
-    if (k.bld_vaults < 25) {
+    if (k.bld_vaults < 5) {
       return res
         .status(400)
-        .json({ error: "Bank access requires at least 25 Vaults." });
+        .json({ error: "Bank access requires at least 5 Vaults." });
     }
     if (k.gold < amount) {
       return res.status(400).json({ error: "Not enough gold." });
