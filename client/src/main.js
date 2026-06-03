@@ -191,6 +191,62 @@ window.studyMagic = async () => {
   }
 };
 
+window.renderLibraryPanel = async () => {
+  try {
+    const response = await fetch("/api/kingdom/lore-and-achievements", {
+      cache: 'no-store',
+      headers: { 'pragma': 'no-cache' }
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const data = await response.json();
+    const { raceLore = [], narmirLore = [], generalLore = [], achievements = [] } = data;
+
+    const loreContainer = document.getElementById("library-lore-list");
+    if (loreContainer) {
+      loreContainer.innerHTML = '';
+      const allLore = [...raceLore, ...narmirLore, ...generalLore];
+
+      if (allLore.length === 0) {
+        loreContainer.innerHTML = '<div style="color: var(--text3);">No lore collected yet.</div>';
+      } else {
+        allLore.forEach(lore => {
+          const loreDiv = document.createElement('div');
+          loreDiv.style.cssText = 'padding: 8px; border-left: 3px solid var(--accent); background: var(--bg2);';
+          loreDiv.innerHTML = `
+            <div style="font-weight: 500; color: var(--text1); margin-bottom: 4px;">${lore.title || 'Unknown'}</div>
+            <div style="color: var(--text2); font-size: 12px; line-height: 1.4;">${lore.msg || ''}</div>
+          `;
+          loreContainer.appendChild(loreDiv);
+        });
+      }
+    }
+
+    const achievementsContainer = document.getElementById("library-achievements");
+    if (achievementsContainer) {
+      achievementsContainer.innerHTML = '';
+
+      if (achievements.length === 0) {
+        achievementsContainer.innerHTML = '<div style="color: var(--text3); font-size: 12px;">No achievements yet.</div>';
+      } else {
+        achievements.forEach(ach => {
+          const achDiv = document.createElement('div');
+          achDiv.style.cssText = 'padding: 8px; border-left: 3px solid var(--success); background: var(--bg2);';
+          const title = typeof ach === 'string' ? ach : ach.title || ach.name || 'Achievement';
+          achDiv.innerHTML = `<div style="color: var(--text1);">⭐ ${title}</div>`;
+          achievementsContainer.appendChild(achDiv);
+        });
+      }
+    }
+  } catch (error) {
+    console.error("[library] Failed to load lore and achievements:", error);
+    const loreContainer = document.getElementById("library-lore-list");
+    if (loreContainer) {
+      loreContainer.innerHTML = '<div style="color: var(--error);">Failed to load lore: ' + error.message + '</div>';
+    }
+  }
+};
+
 window.updateTurnsDisplay = () => {
   const turnsStored = window.gameState?.turns_stored;
   if (turnsStored !== undefined) {
