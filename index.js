@@ -1428,7 +1428,8 @@ async function start() {
         `);
         res.json({ rankings: rows });
       } catch (e) {
-        res.status(500).json({ error: e.message });
+        console.error('[rankings] Database error:', e);
+        res.status(500).json({ error: 'Failed to load rankings' });
       }
     });
   
