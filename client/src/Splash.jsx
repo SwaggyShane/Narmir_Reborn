@@ -318,7 +318,8 @@ function ModernSplash({ authStatus, authTab, setAuthTab, username, setUsername, 
 
 export default function Splash() {
   const [phase, setPhase] = useState(() =>
-    sessionStorage.getItem('narmir_intro_seen') ? 'modern' : 'retro'
+    (sessionStorage.getItem('narmir_intro_seen') || localStorage.getItem('narmir_skip_intro'))
+      ? 'modern' : 'retro'
   ); // 'retro' | 'glitch' | 'modern'
   const [tearing, setTearing] = useState(false);
   const [showFlash, setShowFlash] = useState(false);
