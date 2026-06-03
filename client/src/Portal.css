@@ -385,8 +385,10 @@ body {
   width: 40px;
   height: 40px;
   border-radius: 4px;
-  opacity: 0.75;
+  opacity: 0.85;
   flex-shrink: 0;
+  object-fit: cover;
+  display: block;
 }
 
 .reg-race-name {
@@ -482,11 +484,13 @@ body {
   height: 48px;
   min-height: 48px;
   border-radius: 4px;
-  opacity: 0.7;
+  opacity: 0.8;
   transition: opacity 0.15s;
   flex-shrink: 0;
+  object-fit: cover;
+  display: block;
 }
-.race-pick-card:hover .race-pick-portrait { opacity: 0.9; }
+.race-pick-card:hover .race-pick-portrait { opacity: 1; }
 
 .race-pick-name {
   font-size: 0.7rem;
@@ -540,8 +544,9 @@ body {
   min-height: 64px;
   border-radius: 6px;
   flex-shrink: 0;
-  opacity: 0.8;
+  opacity: 0.9;
   display: block;
+  object-fit: cover;
 }
 
 .race-detail-title-group { flex: 1; }
@@ -632,9 +637,10 @@ body {
   height: 48px;
   min-height: 48px;
   border-radius: 4px;
-  opacity: 0.75;
+  opacity: 0.85;
   display: block;
   flex-shrink: 0;
+  object-fit: cover;
 }
 
 .hero-name {

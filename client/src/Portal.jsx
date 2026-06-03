@@ -92,7 +92,7 @@ function RaceSelectOverlay({ selected, onSelect, onBack, onConfirm }) {
               onMouseEnter={() => setHovered(race.id)}
               onMouseLeave={() => setHovered(null)}
             >
-              <div className="race-pick-portrait" style={{ backgroundColor: race.color }}></div>
+              <img src={`/race/${race.id}.png`} alt={race.title} className="race-pick-portrait" />
               <div className="race-pick-name">{race.title?.split(' of ')?.[0]}</div>
               <div className="race-pick-playstyle">{race.playstyle?.split('.')?.[0]}</div>
             </button>
@@ -103,7 +103,7 @@ function RaceSelectOverlay({ selected, onSelect, onBack, onConfirm }) {
           {activeRace ? (
             <div className="race-detail-inner" style={{ '--race-color': activeRace.color }}>
               <div className="race-detail-portrait-section">
-                <div className="race-detail-portrait" style={{ backgroundColor: activeRace.color }}></div>
+                <img src={`/race/${activeRace.id}.png`} alt={activeRace.title} className="race-detail-portrait" />
                 <div className="race-detail-title-group">
                   <div className="race-detail-title">{activeRace?.title}</div>
                   <div className="race-detail-subtitle">{activeRace?.playstyle?.split('.')?.[0]}</div>
@@ -113,12 +113,15 @@ function RaceSelectOverlay({ selected, onSelect, onBack, onConfirm }) {
               <div className="race-detail-section">
                 <div className="race-detail-label">Heroes</div>
                 <div className="race-heroes-grid">
-                  {activeRace?.heroes?.map((hero, i) => (
-                    <div key={i} className="race-hero-card">
-                      <div className="hero-portrait" style={{ backgroundColor: activeRace.color }}></div>
-                      <div className="hero-name">{hero}</div>
-                    </div>
-                  ))}
+                  {activeRace?.heroes?.map((hero, i) => {
+                    const heroFileName = hero.toLowerCase().replace(/[\s-]+/g, '_');
+                    return (
+                      <div key={i} className="race-hero-card">
+                        <img src={`/heroes/${heroFileName}.png`} alt={hero} className="hero-portrait" />
+                        <div className="hero-name">{hero}</div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
               <div className="race-detail-section">
@@ -304,7 +307,7 @@ function AuthCard({ onViewChange }) {
 
         {raceInfo && (
           <div className="reg-race-badge" style={{ '--race-color': raceInfo.color }}>
-            <div className="reg-race-portrait" style={{ backgroundColor: raceInfo.color }}></div>
+            <img src={`/race/${raceInfo.id}.png`} alt={raceInfo.title} className="reg-race-portrait" />
             <div>
               <div className="reg-race-name">{raceInfo.title.split(' of ')[0]}</div>
               <button className="reg-race-change" onClick={() => setView('race-select')}>Change race</button>
