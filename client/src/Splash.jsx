@@ -84,9 +84,10 @@ function EmberParticles() {
   );
 }
 
-function AuthBlock({ status, onEnter }) {
+function AuthBlock({ status, onEnter, fading }) {
   const handleEnter = (e, href) => {
     e.preventDefault();
+    if (fading) return;
     if (onEnter) onEnter();
     setTimeout(() => {
       window.location.href = href;
@@ -201,7 +202,7 @@ function RacePortrait({ race }) {
   );
 }
 
-function ModernSplash({ authStatus, onEnter }) {
+function ModernSplash({ authStatus, onEnter, fading }) {
   const sectionRef = useRef(null);
 
   useEffect(() => {
@@ -232,7 +233,7 @@ function ModernSplash({ authStatus, onEnter }) {
         <h1 className="hero-title">NARMIR REBORN</h1>
         <p className="hero-tagline">Rise From the Ashes. Forge Your Legacy.</p>
         <div className="auth-block">
-          <AuthBlock status={authStatus} onEnter={onEnter} />
+          <AuthBlock status={authStatus} onEnter={onEnter} fading={fading} />
         </div>
         <div className="scroll-hint" aria-hidden="true">
           <span className="scroll-arrow">↓</span>
@@ -391,7 +392,7 @@ export default function Splash() {
       ))}
 
       {/* Phase 3: Modern splash */}
-      {phase === 'modern' && <ModernSplash authStatus={authStatus} onEnter={() => setFading(true)} />}
+      {phase === 'modern' && <ModernSplash authStatus={authStatus} onEnter={() => setFading(true)} fading={fading} />}
 
       {/* Flash overlay lives outside phases so it persists through transition */}
       <div className={`flash-overlay${showFlash ? ' active' : ''}`} aria-hidden="true" />
