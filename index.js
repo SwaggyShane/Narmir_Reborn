@@ -219,7 +219,7 @@ async function setupVite() {
     vite = await createServer({
       configFile: path.join(__dirname, 'vite.config.js'),
       server: { middlewareMode: true, hmr: false },
-      appType: 'mpa',
+      appType: 'custom',
       base: '/',
       root: path.join(__dirname, 'client'),
       mode: 'development'
