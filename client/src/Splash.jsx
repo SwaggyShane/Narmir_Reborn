@@ -310,12 +310,14 @@ export default function Splash() {
   const triggerGlitch = useCallback(() => {
     if (phase !== 'retro') return;
 
-    const skipGlitch = localStorage.getItem('narmir_skip_glitch') === '1';
-    if (skipGlitch) {
-      sessionStorage.setItem('narmir_intro_seen', '1');
-      setPhase('modern');
-      return;
-    }
+    try {
+      const skipGlitch = localStorage.getItem('narmir_skip_glitch') === '1';
+      if (skipGlitch) {
+        try { sessionStorage.setItem('narmir_intro_seen', '1'); } catch (e) {}
+        setPhase('modern');
+        return;
+      }
+    } catch (e) {}
 
     setPhase('glitch');
 
@@ -341,7 +343,7 @@ export default function Splash() {
     // Switch to modern at 2.5s, fade flash out shortly after
     timers.current.push(setTimeout(() => {
       clearInterval(interval);
-      sessionStorage.setItem('narmir_intro_seen', '1');
+      try { sessionStorage.setItem('narmir_intro_seen', '1'); } catch (e) {}
       setPhase('modern');
       setTearing(false);
       setGlitch({});
