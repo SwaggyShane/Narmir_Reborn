@@ -52,7 +52,7 @@ function corruptString(str) {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function EmberParticles() {
-  const particles = useRef(
+  const [particles] = useState(() =>
     Array.from({ length: 30 }, (_, i) => ({
       id: i,
       left: `${5 + Math.random() * 90}%`,
@@ -61,7 +61,7 @@ function EmberParticles() {
       duration: `${5 + Math.random() * 7}s`,
       color: Math.random() < 0.7 ? '#f06202' : '#ff4400',
     }))
-  ).current;
+  );
 
   return (
     <div className="ember-container" aria-hidden="true">
@@ -206,6 +206,19 @@ function RetroSite({ glitch }) {
   );
 }
 
+function RacePortrait({ race }) {
+  const [hasError, setHasError] = useState(false);
+  return (
+    <div className="race-portrait">
+      {!hasError ? (
+        <img src={`/race/${race.id}.png`} alt={race.name} onError={() => setHasError(true)} />
+      ) : (
+        <span className="race-fallback-emoji">{race.emoji}</span>
+      )}
+    </div>
+  );
+}
+
 function ModernSplash({ authStatus, authTab, setAuthTab, username, setUsername, password, setPassword, authError, authLoading, onLogin, onRegister }) {
   const sectionRef = useRef(null);
 
@@ -214,8 +227,9 @@ function ModernSplash({ authStatus, authTab, setAuthTab, username, setUsername, 
       entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
       { threshold: 0.12 }
     );
-    const els = document.querySelectorAll('.reveal');
-    els.forEach(el => obs.observe(el));
+    if (sectionRef.current) {
+      sectionRef.current.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+    }
     return () => obs.disconnect();
   }, []);
 
@@ -265,19 +279,7 @@ function ModernSplash({ authStatus, authTab, setAuthTab, username, setUsername, 
               className="race-card reveal"
               style={{ transitionDelay: `${i * 0.08}s` }}
             >
-              <div className="race-portrait">
-                <img
-                  src={`/race/${race.id}.png`}
-                  alt={race.name}
-                  onError={e => {
-                    e.currentTarget.style.display = 'none';
-                    e.currentTarget.nextSibling.style.display = 'flex';
-                  }}
-                />
-                <span className="race-fallback-emoji" style={{ display: 'none' }}>
-                  {race.emoji}
-                </span>
-              </div>
+              <RacePortrait race={race} />
               <div className="race-name">{race.name}</div>
               <div className="race-lore">{race.lore}</div>
             </div>
@@ -329,9 +331,11 @@ export default function Splash() {
 
   // Check auth on mount
   useEffect(() => {
-    fetch('/api/auth/me', { credentials: 'include' })
+    const controller = new AbortController();
+    fetch('/api/auth/me', { credentials: 'include', signal: controller.signal })
       .then(r => r.ok ? setAuthStatus('in') : setAuthStatus('out'))
-      .catch(() => setAuthStatus('out'));
+      .catch(err => { if (err.name !== 'AbortError') setAuthStatus('out'); });
+    return () => controller.abort();
   }, []);
 
   // Cleanup all timers on unmount
