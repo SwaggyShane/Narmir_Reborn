@@ -229,32 +229,38 @@ window.renderLibraryPanel = async () => {
         const noAchDiv = document.createElement('div');
         noAchDiv.style.color = 'var(--text3)';
         noAchDiv.style.fontSize = '12px';
-        noAchDiv.textContent = 'No achievements yet.';
+        noAchDiv.textContent = 'No achievements available.';
         achievementsContainer.appendChild(noAchDiv);
       } else {
         achievements.forEach(ach => {
           const achDiv = document.createElement('div');
-          achDiv.style.cssText = 'padding: 8px; border-left: 3px solid var(--green); background: var(--bg2);';
+          const borderColor = ach.completed ? 'var(--green)' : 'var(--text3)';
+          const bgColor = ach.completed ? 'var(--bg2)' : 'transparent';
+          achDiv.style.cssText = 'padding: 8px; border-left: 3px solid ' + borderColor + '; background: ' + bgColor + ';';
 
           const titleDiv = document.createElement('div');
-          titleDiv.style.cssText = 'font-weight: 500; color: var(--text); margin-bottom: 4px;';
-          titleDiv.textContent = '⭐ ' + (ach.title || 'Achievement');
+          const titleColor = ach.completed ? 'var(--text)' : 'var(--text2)';
+          const titlePrefix = ach.completed ? '⭐ ' : '';
+          titleDiv.style.cssText = 'font-weight: ' + (ach.completed ? '500' : '400') + '; color: ' + titleColor + ';';
+          titleDiv.textContent = titlePrefix + (ach.title || 'Achievement');
           achDiv.appendChild(titleDiv);
 
-          const description = ach.description || '';
-          if (description) {
-            const descDiv = document.createElement('div');
-            descDiv.style.cssText = 'color: var(--text2); font-size: 12px; margin-bottom: 4px;';
-            descDiv.textContent = description;
-            achDiv.appendChild(descDiv);
-          }
+          if (ach.completed) {
+            const description = ach.description || '';
+            if (description) {
+              const descDiv = document.createElement('div');
+              descDiv.style.cssText = 'color: var(--text2); font-size: 12px; margin-top: 4px; margin-bottom: 4px;';
+              descDiv.textContent = description;
+              achDiv.appendChild(descDiv);
+            }
 
-          const reward = ach.reward || '';
-          if (reward) {
-            const rewardDiv = document.createElement('div');
-            rewardDiv.style.cssText = 'color: var(--green); font-size: 12px; font-weight: 500;';
-            rewardDiv.textContent = 'Reward: ' + reward;
-            achDiv.appendChild(rewardDiv);
+            const reward = ach.reward || '';
+            if (reward) {
+              const rewardDiv = document.createElement('div');
+              rewardDiv.style.cssText = 'color: var(--green); font-size: 12px; font-weight: 500;';
+              rewardDiv.textContent = 'Reward: ' + reward;
+              achDiv.appendChild(rewardDiv);
+            }
           }
 
           achievementsContainer.appendChild(achDiv);

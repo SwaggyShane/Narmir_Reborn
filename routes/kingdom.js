@@ -4549,14 +4549,23 @@ module.exports = function (db) {
           .map((l) => ({ id: l.id, title: l.title, msg: l.msg }));
       };
 
-      const achievementObjects = achievements
-        .filter(ach => typeof ach === 'string' && ach.length > 0)
-        .map(achId => ({
+      // Filter completed achievements to valid strings
+      const completedAchIds = achievements.filter(ach => typeof ach === 'string' && ach.length > 0);
+      const completedSet = new Set(completedAchIds);
+
+      // Create objects for all achievements (completed and uncompleted)
+      const achievementObjects = Object.entries(ACHIEVEMENT_DEFS).map(([achId, def]) => {
+        const isCompleted = completedSet.has(achId);
+        return {
           id: achId,
-          title: ACHIEVEMENT_DEFS[achId]?.title || achId.replace(/^ach_/, '').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-          description: ACHIEVEMENT_DEFS[achId]?.description || '',
-          reward: ACHIEVEMENT_DEFS[achId]?.reward || '',
-        }));
+          title: def.title || achId.replace(/^ach_/, '').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+          completed: isCompleted,
+          ...(isCompleted && {
+            description: def.description || '',
+            reward: def.reward || '',
+          }),
+        };
+      });
 
       res.json({
         raceLore: filterLore(LORE[k.race]),
