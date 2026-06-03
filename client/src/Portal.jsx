@@ -195,7 +195,13 @@ function AuthCard() {
       });
       const d = await r.json();
       if (d.error) { setError(d.error); setSubmitting(false); return; }
-      if (d.token) localStorage.setItem('narmir_token', d.token);
+      if (d.token) {
+        try {
+          localStorage.setItem('narmir_token', d.token);
+        } catch (e) {
+          console.warn('[auth] localStorage unavailable:', e.message);
+        }
+      }
       window.location.href = '/game';
     } catch {
       setError('Network error. Try again.');
@@ -222,7 +228,13 @@ function AuthCard() {
       });
       const d = await r.json();
       if (d.error) { setError(d.error); setSubmitting(false); return; }
-      if (d.token) localStorage.setItem('narmir_token', d.token);
+      if (d.token) {
+        try {
+          localStorage.setItem('narmir_token', d.token);
+        } catch (e) {
+          console.warn('[auth] localStorage unavailable:', e.message);
+        }
+      }
       window.location.href = '/game';
     } catch {
       setError('Network error. Try again.');
