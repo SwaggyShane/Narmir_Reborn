@@ -1,11 +1,9 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 const NewsPanel = () => {
   const [newsLoaded, setNewsLoaded] = useState(false);
-  const pollingIntervalRef = useRef(null);
-  const panelRef = useRef(null);
 
-  // Self-sufficient news loading - fetch directly without relying on socket events
+  // Direct API call for loading news
   const loadNews = useCallback(async () => {
     try {
       if (!window.apiCall) return;
@@ -15,10 +13,7 @@ const NewsPanel = () => {
       if (titleTurn) titleTurn.textContent = window.state?.turn || 0;
       if (!Array.isArray(items)) return;
 
-      // Update global cache for filter functions
       if (window.newsCache) window.newsCache = items;
-
-      // Render using the existing function
       if (window.renderNewsList) window.renderNewsList(items);
 
       // Clear badges
@@ -44,56 +39,13 @@ const NewsPanel = () => {
     if (window.setNewsFilter) window.setNewsFilter(filter, e.currentTarget);
   }, []);
 
-  // Monitor panel visibility and set up auto-refresh
+  // Expose functions globally
   useEffect(() => {
-    const panel = panelRef.current;
-    if (!panel) return;
-
-    let isActive = panel.classList.contains("active");
-
-    // If panel is already active on mount, load news immediately
-    if (isActive) {
-      loadNews();
-      pollingIntervalRef.current = setInterval(() => {
-        loadNews();
-      }, 30000);
-    }
-
-    // Monitor for active class changes
-    const observer = new MutationObserver(() => {
-      const wasActive = isActive;
-      isActive = panel.classList.contains("active");
-
-      // Panel just became active - load news immediately
-      if (isActive && !wasActive) {
-        loadNews();
-
-        // Start polling while panel is active
-        if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
-        pollingIntervalRef.current = setInterval(() => {
-          loadNews();
-        }, 30000); // Refresh every 30 seconds
-      }
-
-      // Panel became inactive - stop polling
-      if (!isActive && wasActive) {
-        if (pollingIntervalRef.current) {
-          clearInterval(pollingIntervalRef.current);
-          pollingIntervalRef.current = null;
-        }
-      }
-    });
-
-    observer.observe(panel, { attributes: true, attributeFilter: ["class"] });
-
-    // Expose functions for external callers
     window.newsRefresh = loadNews;
     window.newsClear = clearNews;
     window.newsFilterSet = setNewsFilter;
 
     return () => {
-      observer.disconnect();
-      if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
       delete window.newsRefresh;
       delete window.newsClear;
       delete window.newsFilterSet;
