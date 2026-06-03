@@ -8,6 +8,7 @@ const { getKingdomAttunements } = require('../game/fragment-attunements');
 const fragmentBonusManager = require("../game/fragment-bonus-manager");
 const attunementManager = require('../game/attunement-manager');
 const { applyKingdomUpdates } = require('../db/schema');
+const { marketPriceCache } = require("../cache.js");
 
 const router = express.Router();
 
@@ -3479,9 +3480,15 @@ module.exports = function (db) {
 
   // ── Market — Buying resources ─────────────────────────────────────────────────
   router.get("/market/prices", requireAuth, async (_req, res) => {
+    const cacheKey = "all_prices";
+    if (marketPriceCache.has(cacheKey)) {
+      return res.json(marketPriceCache.get(cacheKey));
+    }
+
     const prices = await db.all(
       "SELECT * FROM market_prices WHERE id != 'hammers'",
     );
+    marketPriceCache.set(cacheKey, prices, 5 * 60 * 1000); // 5 min TTL
     res.json(prices);
   });
 
