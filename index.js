@@ -1704,8 +1704,8 @@ async function start() {
     }
   });
 
-  app.use(['/', '/index.html'], serveSplash);
-  app.use(['/game', '/game.html'], serveIndex);
+  app.get(['/', '/index.html'], serveSplash);
+  app.get(['/game', '/game.html'], serveIndex);
   app.use(express.static(path.join(__dirname, 'public'), { index: false }));
   app.use(express.static(path.join(__dirname, 'client'), { index: false }));
   app.use('/dist', express.static(path.join(__dirname, 'public', 'dist')));
