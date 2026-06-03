@@ -43,7 +43,7 @@ const NewsPanel = () => {
   }, []);
 
   return (
-    <div id="news" className="panel" style={{ display: 'none' }}>
+    <div id="news" className="panel">
       <div className="card" style={{ marginTop: 0 }}>
         <div
           style={{
