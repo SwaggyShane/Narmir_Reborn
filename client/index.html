@@ -6567,33 +6567,6 @@
         // Background video has been deactivated for instant/smooth static layout loading
       }
 
-      async function uploadCustomBg(inputEl) {
-        if (!inputEl.files || inputEl.files.length === 0) return;
-        const file = inputEl.files[0];
-        const formData = new FormData();
-        formData.append("video", file);
-
-        const videoEl = document.getElementById("bg-video-el");
-        if (videoEl) videoEl.style.opacity = "0.1"; // indicate loading
-
-        try {
-          const res = await fetch("/api/upload-bg", {
-            method: "POST",
-            body: formData
-          });
-          const data = await res.json();
-          if (data && data.url) {
-             if (videoEl) {
-               videoEl.src = data.url;
-               videoEl.load();
-               videoEl.style.opacity = "0.4";
-             }
-          }
-        } catch(err) {
-          console.error("Upload failed", err);
-          if (videoEl) videoEl.style.opacity = "0.4"; // reset on fail
-        }
-      }
 
       /* ── Bounties ── */
       async function loadBounties() {
@@ -16189,16 +16162,6 @@
         z-index: 10001;
       "
     >
-      <div 
-        style="position: absolute; bottom: 10px; right: 10px; z-index: 2; opacity: 0.5; padding: 10px; border-radius: 50%; cursor: pointer;"
-        onclick="document.getElementById('bg-file-input').click()"
-        title="Upload Custom Background Video"
-      >
-        <svg fill="currentColor" viewBox="0 0 24 24" style="width: 24px; height: 24px; color: white;">
-          <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
-        </svg>
-      </div>
-      <input type="file" id="bg-file-input" accept="video/*" style="display: none;" onchange="uploadCustomBg(this)" />
       <div
         style="
           background: rgba(19, 20, 29, 0.85);
