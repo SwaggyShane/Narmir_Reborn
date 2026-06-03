@@ -6,7 +6,7 @@ const cookieParser = require('cookie-parser');
 const bcrypt       = require('bcrypt');
 const path         = require('path');
 const fs           = require('fs');
-const { marketPriceCache, rankingsCache, bountiesCache } = require('./cache.js');
+const { marketPriceCache, rankingsCache, bountiesCache, getServerState, setUnreadCount, getUnreadCount, incrementUnread, decrementUnread } = require('./cache.js');
 
 // Server logging to secure logs directory (not public)
 const logsDir = path.join(__dirname, 'logs');
@@ -292,8 +292,8 @@ async function seedAiKingdoms(db) {
 
 async function processAiTurns(db) {
   try {
-    const hiatusRow = await db.get("SELECT value FROM server_state WHERE key = 'ai_hiatus'");
-    if (hiatusRow && hiatusRow.value === 'true') {
+    const hiatus = await getServerState(db, 'ai_hiatus');
+    if (hiatus === 'true') {
       console.log('[ai] AI is currently on hiatus. Skipping turn processing.');
       return;
     }
@@ -748,10 +748,10 @@ async function fireDailyEvent(db, k, season) {
 
 async function runRegen(db) {
   // Update season first
-  const sRow = await db.get("SELECT value FROM server_state WHERE key='current_season'");
-  const tRow = await db.get("SELECT value FROM server_state WHERE key='season_started_at'");
-  let season = sRow?.value || 'spring';
-  const startedAt = parseInt(tRow?.value) || Math.floor(Date.now()/1000);
+  const season_row = await db.get("SELECT value FROM server_state WHERE key='current_season'");
+  const started_row = await db.get("SELECT value FROM server_state WHERE key='season_started_at'");
+  let season = season_row?.value || 'spring';
+  const startedAt = parseInt(started_row?.value) || Math.floor(Date.now()/1000);
   const daysSince = (Math.floor(Date.now()/1000) - startedAt) / 86400;
   const SEASON_DUR = { spring:3, summer:5, fall:2, winter:3 };
   if (daysSince >= (SEASON_DUR[season]||3)) {
