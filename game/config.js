@@ -2412,6 +2412,31 @@ const config = {
       description: "Reach a population of 50,000.",
       reward: "10000 Land",
     },
+    ach_constructor: {
+      title: "Constructor",
+      description: "Build 500 structures.",
+      reward: "100 Smithies",
+    },
+    ach_colossus: {
+      title: "Colossus",
+      description: "Reach a population of 10,000,000.",
+      reward: "50000 Land, 100000 Mana, 1000000 Gold",
+    },
+    ach_wealthy: {
+      title: "Merchant King",
+      description: "Accumulate 10,000,000 gold.",
+      reward: "+10% Trade Route Income",
+    },
+    ach_arcane: {
+      title: "Arcane Overlord",
+      description: "Reach 1,000,000 mana.",
+      reward: "10000 Spellbook, 10000 Blank Scrolls",
+    },
+    ach_grandmaster: {
+      title: "Grandmaster",
+      description: "Build 25+ Mage Towers, 25+ Libraries, and 25+ Schools.",
+      reward: "10000 Land, 5000 Maps",
+    },
   },
 
   CAPS: {
