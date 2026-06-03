@@ -6382,14 +6382,14 @@
         const raceSelect = `
           <div style="text-align: center; margin-bottom: 32px;">
             <div style="font-size: 28px; font-weight: 700; color: #e8b84b; margin-bottom: 8px;">
-              Create Your Kingdom
+              Choose Your Race
             </div>
             <div style="font-size: 13px; color: #9a9bb5;">
-              Choose your race — this decision shapes your entire empire
+              Select a race to view details and create your kingdom
             </div>
           </div>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px;" id="race-selection-grid">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 32px;" id="race-selection-grid">
           </div>
 
           <div id="race-details-section" style="display: none;">
@@ -6414,32 +6414,29 @@
 
           const isSelected = raceKey === _selectedRace;
           const borderColor = isSelected ? (race.color || "#e8b84b") : "#363a52";
-          const bgColor = isSelected ? `${race.color}15` : "transparent";
-          const strengths = (race.strengths && race.strengths.length) ? race.strengths.slice(0, 2).join(" · ") : "Balanced";
+          const portraitUrl = RACE_PORTRAITS[raceKey] || "";
+
+          const portraitHtml = portraitUrl
+            ? `<img src="${portraitUrl}" style="width: 100%; height: 100%; aspect-ratio: 3/4; object-fit: cover; display: block;" alt="${race.title}" onerror="this.parentElement.style.display='none'" />`
+            : `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 48px; background: var(--bg3);">${race.icon || "👤"}</div>`;
 
           html += `
             <div
               onclick="selectRaceForRegistration('${raceKey}')"
               style="
                 cursor: pointer;
-                background: ${bgColor};
-                border: 2px solid ${borderColor};
+                aspect-ratio: 3/4;
+                border: 3px solid ${borderColor};
                 border-radius: 12px;
-                padding: 16px;
-                text-align: center;
+                overflow: hidden;
                 transition: all 0.3s;
-                transform: ${isSelected ? 'scale(1.05)' : 'scale(1)'};
+                transform: ${isSelected ? 'scale(1.08)' : 'scale(1)'};
+                box-shadow: ${isSelected ? '0 0 16px ' + borderColor + '40' : 'none'};
               "
-              onmouseover="if (this.style.borderColor !== '${borderColor}') this.style.opacity='0.8'"
+              onmouseover="this.style.opacity='0.85'; this.style.cursor='pointer'"
               onmouseout="this.style.opacity='1'"
             >
-              <div style="font-size: 40px; margin-bottom: 8px;">${race.icon || "👤"}</div>
-              <div style="font-size: 14px; font-weight: 600; color: ${race.color || "#e8b84b"}; margin-bottom: 4px;">
-                ${race.title || raceKey}
-              </div>
-              <div style="font-size: 11px; color: #9a9bb5; line-height: 1.4;">
-                ${strengths}
-              </div>
+              ${portraitHtml}
             </div>
           `;
         }
@@ -6478,8 +6475,8 @@
 
         const portraitUrl = RACE_PORTRAITS[_selectedRace] || "";
         const portraitHtml = portraitUrl
-          ? `<img src="${portraitUrl}" style="width: 100%; max-height: 300px; aspect-ratio: 3/4; object-fit: cover; margin-bottom: 16px; border-radius: 12px; display: block;" alt="${race.title}" onerror="this.style.display='none'" />`
-          : `<div style="width: 100%; height: 300px; border-radius: 12px; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 80px; margin-bottom: 16px;">${race.icon || "👤"}</div>`;
+          ? `<img src="${portraitUrl}" style="width: 100%; max-height: 350px; aspect-ratio: 3/4; object-fit: cover; margin-bottom: 20px; border-radius: 12px; display: block; box-shadow: 0 6px 16px rgba(0,0,0,0.5);" alt="${race.title}" onerror="this.style.display='none'" />`
+          : `<div style="width: 100%; height: 320px; border-radius: 12px; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 80px; margin-bottom: 20px; box-shadow: 0 6px 16px rgba(0,0,0,0.5);">${race.icon || "👤"}</div>`;
 
         let html = `
           <div style="margin-bottom: 24px;">
