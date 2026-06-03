@@ -275,6 +275,44 @@ window.renderLibraryPanel = async () => {
               rewardDiv.textContent = 'Reward: ' + reward;
               achDiv.appendChild(rewardDiv);
             }
+          } else {
+            const description = ach.description || '';
+            if (description) {
+              const descDiv = document.createElement('div');
+              descDiv.style.cssText = 'color: var(--text2); font-size: 12px; margin-top: 4px; margin-bottom: 8px;';
+              descDiv.textContent = description;
+              achDiv.appendChild(descDiv);
+            }
+
+            if (ach.progress) {
+              const progressContainer = document.createElement('div');
+              progressContainer.style.cssText = 'margin-top: 8px;';
+
+              const progressBar = document.createElement('div');
+              progressBar.style.cssText = 'background: var(--bg3); border-radius: 2px; height: 8px; overflow: hidden; margin-bottom: 4px;';
+
+              const progressFill = document.createElement('div');
+              progressFill.style.cssText = 'background: var(--accent1); height: 100%; width: ' + ach.progress.percent + '%; transition: width 0.3s ease;';
+              progressBar.appendChild(progressFill);
+              progressContainer.appendChild(progressBar);
+
+              const progressLabel = document.createElement('div');
+              progressLabel.style.cssText = 'color: var(--text3); font-size: 11px; display: flex; justify-content: space-between;';
+              const labelLeft = document.createElement('span');
+              labelLeft.textContent = ach.progress.sublabel || '';
+              const labelRight = document.createElement('span');
+              labelRight.textContent = ach.progress.percent + '%';
+              progressLabel.appendChild(labelLeft);
+              progressLabel.appendChild(labelRight);
+              progressContainer.appendChild(progressLabel);
+
+              const progressText = document.createElement('div');
+              progressText.style.cssText = 'color: var(--text3); font-size: 11px; margin-top: 2px;';
+              progressText.textContent = ach.progress.label;
+              progressContainer.appendChild(progressText);
+
+              achDiv.appendChild(progressContainer);
+            }
           }
 
           achievementsContainer.appendChild(achDiv);
