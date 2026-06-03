@@ -46,13 +46,20 @@ const NewsPanel = () => {
 
   // Monitor panel visibility and set up auto-refresh
   useEffect(() => {
-    const panel = document.getElementById("news");
+    const panel = panelRef.current;
     if (!panel) return;
 
-    panelRef.current = panel;
-    let isActive = false;
+    let isActive = panel.classList.contains("active");
 
-    // Check visibility using MutationObserver
+    // If panel is already active on mount, load news immediately
+    if (isActive) {
+      loadNews();
+      pollingIntervalRef.current = setInterval(() => {
+        loadNews();
+      }, 30000);
+    }
+
+    // Monitor for active class changes
     const observer = new MutationObserver(() => {
       const wasActive = isActive;
       isActive = panel.classList.contains("active");
@@ -94,7 +101,7 @@ const NewsPanel = () => {
   }, [loadNews, clearNews, setNewsFilter]);
 
   return (
-    <div id="news" className="panel">
+    <div id="news" className="panel" ref={panelRef}>
       <div className="card" style={{ marginTop: 0 }}>
         <div
           style={{
