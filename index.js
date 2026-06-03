@@ -1268,7 +1268,8 @@ async function start() {
         `);
         res.json(rows);
       } catch (e) {
-        res.status(500).json({ error: e.message });
+        console.error('[regions] Database error:', e);
+        res.status(500).json({ error: 'Failed to load regions' });
       }
     });
 
@@ -1284,7 +1285,8 @@ async function start() {
         `);
         res.json(rows);
       } catch (e) {
-        res.status(500).json({ error: e.message });
+        console.error('[bounties-list] Database error:', e);
+        res.status(500).json({ error: 'Failed to load bounties' });
       }
     });
 
@@ -1329,7 +1331,8 @@ async function start() {
           throw txErr;
         }
       } catch (e) {
-        res.status(500).json({ error: e.message });
+        console.error('[bounties-place] Database error:', e);
+        res.status(500).json({ error: 'Failed to place bounty' });
       }
     });
 
@@ -1352,7 +1355,8 @@ async function start() {
       
         res.json(rows);
       } catch (e) {
-        res.status(500).json({ error: e.message });
+        console.error('[messages-list] Database error:', e);
+        res.status(500).json({ error: 'Failed to load messages' });
       }
     });
 
@@ -1380,7 +1384,8 @@ async function start() {
 
         res.json({ ok: true });
       } catch (e) {
-        res.status(500).json({ error: e.message });
+        console.error('[messages-send] Database error:', e);
+        res.status(500).json({ error: 'Failed to send message' });
       }
     });
 
@@ -1428,7 +1433,8 @@ async function start() {
         `);
         res.json({ rankings: rows });
       } catch (e) {
-        res.status(500).json({ error: e.message });
+        console.error('[rankings] Database error:', e);
+        res.status(500).json({ error: 'Failed to load rankings' });
       }
     });
   
@@ -1472,7 +1478,7 @@ async function start() {
       try {
         const seeded = await seedAiKingdoms(db);
         res.json({ ok: true, seeded, message: seeded > 0 ? `Seeded ${seeded} AI kingdoms` : 'All AI kingdoms already exist' });
-      } catch(e) { res.status(500).json({ error: e.message }); }
+      } catch(e) { console.error('[seed-ai] Error:', e); res.status(500).json({ error: 'Failed to seed AI kingdoms' }); }
     });
 
     app.post('/api/admin/reset-ai', async (req, res) => {
@@ -1497,7 +1503,7 @@ async function start() {
             WHERE id = ?`, [k.id]);
         }
         res.json({ ok: true, reset: aiPlayers.length });
-      } catch(e) { res.status(500).json({ error: e.message }); }
+      } catch(e) { console.error('[reset-ai] Error:', e); res.status(500).json({ error: 'Failed to reset AI kingdoms' }); }
     });
 
     app.post('/api/setup-admin', async (req, res) => {
@@ -1544,7 +1550,7 @@ async function start() {
         res.json({ ok: true, message: 'All players, kingdoms, and related data wiped. Ready for re-registration.' });
       } catch (err) {
         console.error('Wipe error:', err);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'Failed to wipe database' });
       }
     });
 
@@ -1555,7 +1561,7 @@ async function start() {
         const k = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
         await db.run('INSERT INTO suggestions (player_id, kingdom_id, message) VALUES (?, ?, ?)', [req.player.playerId, k ? k.id : null, message]);
         res.json({ ok: true, message: 'Thank you!' });
-      } catch (e) { res.status(500).json({ error: e.message }); }
+      } catch (e) { console.error('[suggestions] Database error:', e); res.status(500).json({ error: 'Failed to save suggestion' }); }
     });
 
     // Catch-all for API 404s to prevent HTML responses for API calls
@@ -1705,63 +1711,6 @@ async function start() {
     }
   };
 
-  const multer = require('multer');
-
-  // Secure multer configuration with validation
-  const upload = multer({
-    dest: path.join(__dirname, 'public'),
-    limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit
-    fileFilter: (req, file, cb) => {
-      // Only allow video MIME types
-      if (!file.mimetype.startsWith('video/')) {
-        return cb(new Error('Only video files are allowed'));
-      }
-      // Whitelist allowed extensions
-      const ext = path.extname(file.originalname).toLowerCase();
-      const allowedExts = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv'];
-      if (!allowedExts.includes(ext)) {
-        return cb(new Error('File type not allowed'));
-      }
-      cb(null, true);
-    }
-  });
-
-  app.post('/api/upload-bg', requireAdmin, authLimiter, upload.single('video'), (req, res) => {
-    if (!req.file) return res.status(400).json({ error: 'No video provided' });
-
-    const ext = path.extname(req.file.originalname).toLowerCase();
-    const newPath = path.join(__dirname, 'public', 'custom-bg' + ext);
-    try {
-      fs.renameSync(req.file.path, newPath);
-      fs.writeFileSync(path.join(__dirname, 'public', 'bg-config.txt'), '/custom-bg' + ext);
-      res.json({ url: '/custom-bg' + ext + '?t=' + Date.now() });
-    } catch (e) {
-      console.error('[upload] File handling error:', e.message);
-      res.status(500).json({ error: 'Upload failed' });
-    }
-  });
-
-  app.use((err, req, res, next) => {
-    if (err.code === 'LIMIT_PART_COUNT' || err.code === 'LIMIT_FILE_SIZE' || err.code === 'LIMIT_FILE_COUNT') {
-      return res.status(400).json({ error: 'File size or field limit exceeded' });
-    }
-    if (err.message && err.message.includes('Only video')) {
-      return res.status(400).json({ error: err.message });
-    }
-    if (err.message && err.message.includes('Not allowed')) {
-      return res.status(400).json({ error: 'File type not allowed' });
-    }
-    next(err);
-  });
-
-  app.get('/api/bg-video', (req, res) => {
-    try {
-      const bg = fs.readFileSync(path.join(__dirname, 'public', 'bg-config.txt'), 'utf8');
-      res.json({ url: bg });
-    } catch {
-      res.json({ url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4' });
-    }
-  });
 
   app.get(['/', '/index.html'], serveSplash);
   app.get(['/game', '/game.html'], serveIndex);
