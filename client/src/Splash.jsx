@@ -211,7 +211,7 @@ function ModernSplash({ authStatus }) {
     <div className="modern-splash" ref={sectionRef}>
       {/* Video background */}
       <div className="video-bg">
-        <video autoPlay muted playsInline>
+        <video autoPlay muted playsInline preload="auto">
           <source src="/intro.mp4" type="video/mp4" />
         </video>
         <div className="video-overlay" />
