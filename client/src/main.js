@@ -231,8 +231,14 @@ window.renderLibraryPanel = async () => {
         achievements.forEach(ach => {
           const achDiv = document.createElement('div');
           achDiv.style.cssText = 'padding: 8px; border-left: 3px solid var(--green); background: var(--bg2);';
-          const title = typeof ach === 'string' ? ach : ach.title || ach.name || 'Achievement';
-          achDiv.innerHTML = '<div style="color: var(--text);">⭐ ' + title + '</div>';
+          const title = ach.title || 'Achievement';
+          const description = ach.description || '';
+          achDiv.innerHTML =
+            '<div style="font-weight: 500; color: var(--text); margin-bottom: 4px;">⭐ ' + title + '</div>';
+          if (description) {
+            achDiv.innerHTML +=
+              '<div style="color: var(--text2); font-size: 12px;">' + description + '</div>';
+          }
           achievementsContainer.appendChild(achDiv);
         });
       }

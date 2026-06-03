@@ -2401,6 +2401,17 @@ const config = {
     return events;
   })(),
 
+  ACHIEVEMENTS: {
+    ach_founder: {
+      title: "Founder",
+      description: "Build your first structure.",
+    },
+    ach_warlord: {
+      title: "Warlord",
+      description: "Reach a population of 50,000.",
+    },
+  },
+
   CAPS: {
     fighters: { base: 500, max: 5000000 },
     rangers: { base: 250, max: 2000000 },

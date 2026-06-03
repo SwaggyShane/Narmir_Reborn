@@ -4541,6 +4541,7 @@ module.exports = function (db) {
       }
 
       const LORE = config.LORE_EVENTS;
+      const ACHIEVEMENT_DEFS = config.ACHIEVEMENTS || {};
 
       const filterLore = (categoryList) => {
         return (categoryList || [])
@@ -4548,11 +4549,17 @@ module.exports = function (db) {
           .map((l) => ({ id: l.id, title: l.title, msg: l.msg }));
       };
 
+      const achievementObjects = achievements.map(achId => ({
+        id: achId,
+        title: ACHIEVEMENT_DEFS[achId]?.title || achId.replace(/^ach_/, '').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        description: ACHIEVEMENT_DEFS[achId]?.description || '',
+      }));
+
       res.json({
         raceLore: filterLore(LORE[k.race]),
         narmirLore: filterLore(LORE["narmir"]),
         generalLore: filterLore(LORE["general"]),
-        achievements,
+        achievements: achievementObjects,
       });
     } catch (err) {
       console.error("Error in /lore-and-achievements:", err);
