@@ -420,7 +420,7 @@ export default function Splash() {
   };
 
   return (
-    <div className="splash-root">
+    <div className={`splash-root phase-${phase}`}>
       {/* Phase 1 + 2: Retro site */}
       {(phase === 'retro' || phase === 'glitch') && (
         <div
