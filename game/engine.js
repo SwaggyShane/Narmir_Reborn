@@ -210,8 +210,16 @@ function goldPerTurn(k) {
   const mktIncome = marketIncomeFull(k);
   const mb = safeJsonParse(k.milestone_bonuses, {}, "goldPerTurn:mb");
   const milestoneMult = 1 + (mb.gold_income_pct || 0) / 100;
+
+  // Apply happiness multiplier (0.5 to 1.0+ based on happiness 0-100)
+  const happiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
+  const happinessMult = Math.max(0, 0.5 + (happiness / 100));
+
+  // Apply tavern bonus for gold generation (+5% per tavern)
+  const tavernBonus = 1 + (((k.bld_taverns || 0) * 0.05));
+
   // milestoneMult applies only to core land/castle income; mktIncome stays flat
-  return Math.floor((baseRate + castleBonus) * econBonus * 2.25 * milestoneMult) + mktIncome;
+  return Math.floor((baseRate + castleBonus) * econBonus * 2.25 * milestoneMult * happinessMult * tavernBonus) + mktIncome;
 }
 
 function manaPerTurn(k) {
@@ -251,6 +259,11 @@ function manaPerTurn(k) {
   const housingMagicMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'magic_output');
   manaGen = Math.floor(manaGen * housingMagicMult);
 
+  // Apply happiness multiplier
+  const happiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
+  const happinessMult = Math.max(0, 0.5 + (happiness / 100));
+  manaGen = Math.floor(manaGen * happinessMult);
+
   return manaGen;
 }
 
@@ -270,6 +283,89 @@ function naturalMoraleCap(k) {
   cap = Math.floor(cap * housingStabilityMult);
 
   return cap;
+}
+
+function getHappinessRecoveryRate(k) {
+  const baseRecovery = (k.res_entertainment || 100) / 1000 + ((k.bld_taverns || 0) * 0.25);
+  return Math.max(0.5, Math.min(5, baseRecovery));
+}
+
+function calculateHappiness(k) {
+  const raceModifiers = {
+    dire_wolf: 10,
+    human: 5,
+    orc: 5,
+    dwarf: 0,
+    high_elf: -5,
+    dark_elf: -10,
+    vampire: -10
+  };
+
+  // 1. Food Happiness (0-30)
+  const foodTarget = (k.population || 1) * 0.5;
+  const foodRatio = foodTarget > 0 ? (k.food || 0) / foodTarget : 1;
+  const foodHappiness = Math.min(30, Math.floor(foodRatio * 30));
+
+  // 2. Entertainment Happiness (0-20)
+  const entertainmentHappiness = Math.min(20, Math.floor((k.bld_taverns || 0) * 1.5));
+
+  // 3. Safety Happiness (-30 to +20)
+  let safetyHappiness = 0;
+  if (!k.last_attack_turn) {
+    safetyHappiness = 20; // Never attacked
+  } else {
+    const turnsSinceLast = Math.max(0, (k.turn || 0) - k.last_attack_turn);
+    // Linear recovery: -10 at turn 0, +20 at turn 10, capped at 20
+    safetyHappiness = -10 + Math.min(10, turnsSinceLast) * 3;
+  }
+  safetyHappiness = Math.max(-30, Math.min(20, safetyHappiness));
+
+  // 4. Prosperity Happiness (0-20)
+  const goldTarget = (k.population || 1) * 2;
+  const goldRatio = goldTarget > 0 ? (k.gold || 0) / goldTarget : 1;
+  const prosperityHappiness = Math.min(20, Math.floor(goldRatio * 20));
+
+  // 5. Race Modifier
+  const raceModifier = raceModifiers[k.race] || 0;
+
+  // Base + components
+  let happiness = 50 + foodHappiness + entertainmentHappiness + safetyHappiness + prosperityHappiness + raceModifier;
+
+  // Apply active effect bonuses (Bless, Divine Favor, etc.)
+  const effects = safeJsonParse(k.active_effects, {}, "calculateHappiness:active_effects");
+  if (effects.bless && typeof effects.bless === "object" && typeof effects.bless.happiness_bonus === "number") {
+    happiness += effects.bless.happiness_bonus;
+  }
+  if (effects.divine_favor && typeof effects.divine_favor === "object" && typeof effects.divine_favor.happiness_bonus === "number") {
+    happiness += effects.divine_favor.happiness_bonus;
+  }
+
+  // Apply tax penalty/bonus
+  const taxRate = k.tax || 42;
+  if (taxRate > 42) {
+    const taxPenalty = Math.floor(((taxRate - 42) / 58) * 30);
+    happiness -= taxPenalty;
+  } else if (taxRate < 42) {
+    const taxBonus = Math.floor(45 * ((42 - taxRate) / 42));
+    happiness += taxBonus;
+  }
+
+  // Apply happiness recovery based on research + taverns and clamp to -50 to 120
+  const recoveryRate = getHappinessRecoveryRate(k);
+  happiness = Math.floor(Math.max(-50, Math.min(120, happiness + recoveryRate)));
+
+  return {
+    happiness,
+    components: {
+      base: 50,
+      food: foodHappiness,
+      entertainment: entertainmentHappiness,
+      safety: safetyHappiness,
+      prosperity: prosperityHappiness,
+      race: raceModifier
+    },
+    recovery: recoveryRate
+  };
 }
 
 function effectiveMorale(k) {
@@ -300,8 +396,26 @@ function effectiveMorale(k) {
 }
 
 function popGrowth(k) {
-  const eMorale = effectiveMorale(k);
-  if (eMorale < 30) return -Math.floor(k.population * 0.02);
+  const happiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
+
+  // Apply happiness-based growth multiplier
+  let happinessMult = 1.0;
+  if (happiness >= 80) {
+    happinessMult = 1.3; // Thriving
+  } else if (happiness >= 50) {
+    happinessMult = 1.0; // Normal
+  } else if (happiness >= 30) {
+    happinessMult = 0.7; // Concerned
+  } else if (happiness >= 0) {
+    happinessMult = 0.3; // Unhappy
+  } else {
+    happinessMult = -0.05; // Fleeing (population loss)
+  }
+
+  // Handle fleeing population
+  if (happiness < 0) {
+    return Math.floor(k.population * happinessMult);
+  }
 
   const capPerBuilding = housingCapPerBuilding(k);
   let housingCap = k.bld_housing * capPerBuilding;
@@ -312,7 +426,7 @@ function popGrowth(k) {
 
   const pop = k.population;
 
-  let growthMult = 1.0;
+  let growthMult = happinessMult;
 
   // Apply Bless growth boost if active
   const effects = safeJsonParse(
@@ -356,8 +470,13 @@ function researchIncrement(k, discipline, researchersAssigned, currentLevel) {
       : raceBonus(k, "research");
   const resLevelMult = unitLevelMult(k, "researchers");
   const libraryResearchMult = fragmentBonusManager.getBonusMultiplier(k, 'libraries', 'research_speed');
+
+  // Apply happiness multiplier
+  const happiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
+  const happinessMult = Math.max(0, 0.5 + (happiness / 100));
+
   const effective = Math.floor(
-    researchersAssigned * schoolBonus * raceMulti * resLevelMult * libraryResearchMult,
+    researchersAssigned * schoolBonus * raceMulti * resLevelMult * libraryResearchMult * happinessMult,
   );
 
   let factor = 1.0;
@@ -1047,6 +1166,11 @@ function farmProduction(k) {
   const productionMult = fragmentBonusManager.getBonusMultiplier(k, 'farms', 'production');
   baseYield *= productionMult;
 
+  // Apply happiness multiplier
+  const happiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
+  const happinessMult = Math.max(0, 0.5 + (happiness / 100));
+  baseYield *= happinessMult;
+
   return Math.floor(baseYield);
 }
 
@@ -1695,6 +1819,132 @@ function displayMorale(k) {
   return Math.floor((base / ent) * 100 * bonus);
 }
 
+function rebellionCheck(k, happiness, updates, events) {
+  if (happiness >= 50) return; // No rebellion risk if happiness >= 50
+
+  const cooldown = k.rebellion_cooldown || 0;
+  if (cooldown > k.turn) return; // Still in cooldown
+
+  let rebellionChance = 0;
+  if (happiness <= 0) {
+    rebellionChance = 0.05; // 5% chance
+  } else if (happiness < 20) {
+    rebellionChance = 0.02; // 2% chance
+  } else if (happiness < 50) {
+    rebellionChance = 0.005; // 0.5% chance
+  }
+
+  if (Math.random() < rebellionChance) {
+    rebellionEvent(k, updates, events);
+  }
+}
+
+function rebellionEvent(k, updates, events) {
+  const eventType = Math.floor(Math.random() * 5) + 1; // 1-5
+
+  updates.rebellion_cooldown = k.turn + 20;
+
+  let newsMessage = "";
+
+  switch (eventType) {
+    case 1: // Unrest - population loss
+      {
+        const lossPercent = 0.05 + Math.random() * 0.05; // 5-10%
+        const populationLoss = Math.floor(k.population * lossPercent);
+        updates.population = Math.max(100, (updates.population || k.population) - populationLoss);
+        newsMessage = `⚠️ UNREST: Population fleeing due to unhappiness! Lost ${populationLoss.toLocaleString()} people.`;
+      }
+      break;
+
+    case 2: // Tax Revolt
+      {
+        const newTaxCap = Math.max(10, (updates.tax || k.tax) - 10);
+        updates.tax = newTaxCap;
+        newsMessage = `⚠️ TAX REVOLT: Population refuses higher taxes. Tax reduced to ${newTaxCap}%!`;
+      }
+      break;
+
+    case 3: // Building Sabotage
+      {
+        const buildingTypes = ['bld_taverns', 'bld_markets', 'bld_shrines', 'bld_schools', 'bld_mage_towers'];
+        const buildingNames = {
+          bld_taverns: 'taverns',
+          bld_markets: 'markets',
+          bld_shrines: 'shrines',
+          bld_schools: 'schools',
+          bld_mage_towers: 'mage towers'
+        };
+        const availableBuildings = buildingTypes.filter(b => (k[b] || 0) > 0);
+
+        if (availableBuildings.length > 0) {
+          const randomBuilding = availableBuildings[Math.floor(Math.random() * availableBuildings.length)];
+          const buildingCount = k[randomBuilding];
+          const damageCount = Math.min(buildingCount, Math.floor(Math.random() * 3) + 1); // 1-3 buildings
+          updates[randomBuilding] = Math.max(0, (updates[randomBuilding] || buildingCount) - damageCount);
+          newsMessage = `⚠️ SABOTAGE: Rioters destroyed ${damageCount} ${buildingNames[randomBuilding]}!`;
+        } else {
+          const lossPercent = 0.02 + Math.random() * 0.03; // 2-5%
+          const populationLoss = Math.floor(k.population * lossPercent);
+          updates.population = Math.max(100, (updates.population || k.population) - populationLoss);
+          newsMessage = `⚠️ UNREST: Rioters clashed with guards! Lost ${populationLoss.toLocaleString()} people.`;
+        }
+      }
+      break;
+
+    case 4: // Food Riot
+      {
+        let foodRiotTriggered = false;
+        if (k.food < k.population * 0.1) {
+          const buildingTypes = ['bld_granaries', 'bld_farms'];
+          const buildingNames = { bld_granaries: 'granaries', bld_farms: 'farms' };
+          const availableBuildings = buildingTypes.filter(b => (k[b] || 0) > 0);
+
+          if (availableBuildings.length > 0) {
+            const randomBuilding = availableBuildings[Math.floor(Math.random() * availableBuildings.length)];
+            const buildingCount = k[randomBuilding];
+            const damageCount = Math.min(buildingCount, Math.floor(Math.random() * 3) + 1);
+            updates[randomBuilding] = Math.max(0, (updates[randomBuilding] || buildingCount) - damageCount);
+            newsMessage = `⚠️ FOOD RIOT: Desperate population destroyed food facilities! Lost ${damageCount} ${buildingNames[randomBuilding]}.`;
+            foodRiotTriggered = true;
+          }
+        }
+
+        if (!foodRiotTriggered) {
+          const lossPercent = 0.05 + Math.random() * 0.05;
+          const populationLoss = Math.floor(k.population * lossPercent);
+          updates.population = Math.max(100, (updates.population || k.population) - populationLoss);
+          newsMessage = `⚠️ UNREST: Population fleeing due to unhappiness! Lost ${populationLoss.toLocaleString()} people.`;
+        }
+      }
+      break;
+
+    case 5: // Military Mutiny
+      {
+        // Lose 5-10% of troops due to desertion
+        const troopsToLose = ['fighters', 'rangers', 'clerics', 'mages', 'thieves', 'ninjas', 'engineers'];
+        let totalLost = 0;
+        for (const unit of troopsToLose) {
+          const count = k[unit] || 0;
+          const loss = Math.floor(count * (0.05 + Math.random() * 0.05));
+          if (loss > 0) {
+            updates[unit] = Math.max(0, (updates[unit] || count) - loss);
+            totalLost += loss;
+          }
+        }
+        newsMessage = `⚠️ MILITARY MUTINY: Troops are refusing orders due to low happiness! ${totalLost} units deserted.`;
+      }
+      break;
+  }
+
+  if (newsMessage) {
+    events.push({
+      type: 'rebellion',
+      message: newsMessage,
+      turn: k.turn
+    });
+  }
+}
+
 function processTurn(k) {
   clearParseCache();
 
@@ -1735,6 +1985,13 @@ function processTurn(k) {
   events.recordMoraleChange = (amount, reason) => {
     if (amount !== 0) moraleLog.push({ amount, reason });
   };
+
+  // Calculate happiness at the start of the turn
+  const happinessResult = calculateHappiness(k);
+  updates.happiness = happinessResult.happiness;
+
+  // Check for rebellion events
+  rebellionCheck(k, happinessResult.happiness, updates, events);
 
   // ── 1. Gold income ───────────────────────────────────────────────────────────
   const income = goldPerTurn(k);
@@ -4137,6 +4394,11 @@ function moraleMult(morale) {
   return Math.min(1.2, 1.0 + ((morale - 100) / 100) * 0.1); // 1.00–1.20 (capped at 1.20)
 }
 
+function happinessCombatMult(happiness) {
+  const mult = 0.5 + (happiness / 120);
+  return Math.max(0.5, Math.min(1.5, mult));
+}
+
 function resolveMilitaryAttack(
   attacker,
   defender,
@@ -4149,7 +4411,9 @@ function resolveMilitaryAttack(
   const fmt = (n) => (n || 0).toLocaleString();
   const steps = [];
   const attackerUpdates = {};
-  const defenderUpdates = {};
+  const defenderUpdates = {
+    last_attack_turn: defender.turn || 0 // Record when this kingdom was attacked
+  };
   // sentUnits: { fighters, rangers, mages, warMachines, ninjas, thieves, clerics, engineers, ladders }
   const sent = {
     fighters: Math.min(sentUnits.fighters || 0, attacker.fighters || 0),
@@ -4196,8 +4460,8 @@ function resolveMilitaryAttack(
   }
 
   // ── Morale multipliers ────────────────────────────────────────────────────
-  const atkMoraleMult = moraleMult(effectiveMorale(attacker));
-  const defMoraleMult = moraleMult(effectiveMorale(defender));
+  const atkMoraleMult = happinessCombatMult(attacker.happiness !== undefined && attacker.happiness !== null ? attacker.happiness : 50);
+  const defMoraleMult = happinessCombatMult(defender.happiness !== undefined && defender.happiness !== null ? defender.happiness : 50);
 
   // ── Research, race and level helpers ──────────────────────────────────────
   const atkFighterLvl = effectiveTroopLevel(attacker, "fighters") / 50;
@@ -7975,6 +8239,11 @@ module.exports = {
   WM_CREW_REQUIRED,
   wmCrewRequired,
   moraleMult,
+  happinessCombatMult,
+  calculateHappiness,
+  getHappinessRecoveryRate,
+  rebellionCheck,
+  rebellionEvent,
   TROOP_RACE_BONUS,
   RACE_BONUSES,
   REGION_DATA,
