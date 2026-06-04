@@ -213,7 +213,7 @@ function goldPerTurn(k) {
 
   // Apply happiness multiplier (0.5 to 1.0+ based on happiness 0-100)
   const happiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
-  const happinessMult = 0.5 + (happiness / 100);
+  const happinessMult = Math.max(0, 0.5 + (happiness / 100));
 
   // Apply tavern bonus for gold generation (+5% per tavern)
   const tavernBonus = 1 + (((k.bld_taverns || 0) * 0.05));
@@ -261,7 +261,7 @@ function manaPerTurn(k) {
 
   // Apply happiness multiplier
   const happiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
-  const happinessMult = 0.5 + (happiness / 100);
+  const happinessMult = Math.max(0, 0.5 + (happiness / 100));
   manaGen = Math.floor(manaGen * happinessMult);
 
   return manaGen;
@@ -314,16 +314,9 @@ function calculateHappiness(k) {
   if (!k.last_attack_turn) {
     safetyHappiness = 20; // Never attacked
   } else {
-    const turnsSinceLast = (k.turn || 0) - k.last_attack_turn;
-    if (turnsSinceLast >= 10) {
-      safetyHappiness = 20; // No recent threats
-    } else if (turnsSinceLast >= 5) {
-      safetyHappiness = 10 + ((turnsSinceLast - 5) * 2);
-    } else if (turnsSinceLast > 0) {
-      safetyHappiness = Math.max(-10, (turnsSinceLast - 5) * 2);
-    } else {
-      safetyHappiness = -10; // Recent attack
-    }
+    const turnsSinceLast = Math.max(0, (k.turn || 0) - k.last_attack_turn);
+    // Linear recovery: -10 at turn 0, +20 at turn 10, capped at 20
+    safetyHappiness = -10 + Math.min(10, turnsSinceLast) * 3;
   }
   safetyHappiness = Math.max(-30, Math.min(20, safetyHappiness));
 
@@ -340,10 +333,10 @@ function calculateHappiness(k) {
 
   // Apply active effect bonuses (Bless, Divine Favor, etc.)
   const effects = safeJsonParse(k.active_effects, {}, "calculateHappiness:active_effects");
-  if (effects.bless && typeof effects.bless === "object" && effects.bless.happiness_bonus) {
+  if (effects.bless && typeof effects.bless === "object" && typeof effects.bless.happiness_bonus === "number") {
     happiness += effects.bless.happiness_bonus;
   }
-  if (effects.divine_favor && typeof effects.divine_favor === "object" && effects.divine_favor.happiness_bonus) {
+  if (effects.divine_favor && typeof effects.divine_favor === "object" && typeof effects.divine_favor.happiness_bonus === "number") {
     happiness += effects.divine_favor.happiness_bonus;
   }
 
@@ -480,7 +473,7 @@ function researchIncrement(k, discipline, researchersAssigned, currentLevel) {
 
   // Apply happiness multiplier
   const happiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
-  const happinessMult = 0.5 + (happiness / 100);
+  const happinessMult = Math.max(0, 0.5 + (happiness / 100));
 
   const effective = Math.floor(
     researchersAssigned * schoolBonus * raceMulti * resLevelMult * libraryResearchMult * happinessMult,
@@ -1175,7 +1168,7 @@ function farmProduction(k) {
 
   // Apply happiness multiplier
   const happiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
-  const happinessMult = 0.5 + (happiness / 100);
+  const happinessMult = Math.max(0, 0.5 + (happiness / 100));
   baseYield *= happinessMult;
 
   return Math.floor(baseYield);
@@ -1874,15 +1867,26 @@ function rebellionEvent(k, updates, events) {
     case 3: // Building Sabotage
       {
         const buildingTypes = ['bld_taverns', 'bld_markets', 'bld_shrines', 'bld_schools', 'bld_mage_towers'];
-        const randomBuilding = buildingTypes[Math.floor(Math.random() * buildingTypes.length)];
-        const buildingCount = k[randomBuilding] || 0;
+        const buildingNames = {
+          bld_taverns: 'taverns',
+          bld_markets: 'markets',
+          bld_shrines: 'shrines',
+          bld_schools: 'schools',
+          bld_mage_towers: 'mage towers'
+        };
+        const availableBuildings = buildingTypes.filter(b => (k[b] || 0) > 0);
 
-        if (buildingCount > 0) {
+        if (availableBuildings.length > 0) {
+          const randomBuilding = availableBuildings[Math.floor(Math.random() * availableBuildings.length)];
+          const buildingCount = k[randomBuilding];
           const damageCount = Math.min(buildingCount, Math.floor(Math.random() * 3) + 1); // 1-3 buildings
           updates[randomBuilding] = Math.max(0, (updates[randomBuilding] || buildingCount) - damageCount);
-          newsMessage = `⚠️ SABOTAGE: Rioters destroyed ${damageCount} buildings!`;
+          newsMessage = `⚠️ SABOTAGE: Rioters destroyed ${damageCount} ${buildingNames[randomBuilding]}!`;
         } else {
-          newsMessage = `⚠️ MILITARY MUTINY: Troops are refusing orders due to low morale!`;
+          const lossPercent = 0.02 + Math.random() * 0.03; // 2-5%
+          const populationLoss = Math.floor(k.population * lossPercent);
+          updates.population = Math.max(100, (updates.population || k.population) - populationLoss);
+          newsMessage = `⚠️ UNREST: Rioters clashed with guards! Lost ${populationLoss.toLocaleString()} people.`;
         }
       }
       break;
@@ -1892,13 +1896,15 @@ function rebellionEvent(k, updates, events) {
         let foodRiotTriggered = false;
         if (k.food < k.population * 0.1) {
           const buildingTypes = ['bld_granaries', 'bld_farms'];
-          const randomBuilding = buildingTypes[Math.floor(Math.random() * buildingTypes.length)];
-          const buildingCount = k[randomBuilding] || 0;
+          const buildingNames = { bld_granaries: 'granaries', bld_farms: 'farms' };
+          const availableBuildings = buildingTypes.filter(b => (k[b] || 0) > 0);
 
-          if (buildingCount > 0) {
+          if (availableBuildings.length > 0) {
+            const randomBuilding = availableBuildings[Math.floor(Math.random() * availableBuildings.length)];
+            const buildingCount = k[randomBuilding];
             const damageCount = Math.min(buildingCount, Math.floor(Math.random() * 3) + 1);
             updates[randomBuilding] = Math.max(0, (updates[randomBuilding] || buildingCount) - damageCount);
-            newsMessage = `⚠️ FOOD RIOT: Desperate population destroyed food facilities! Lost ${damageCount} buildings.`;
+            newsMessage = `⚠️ FOOD RIOT: Desperate population destroyed food facilities! Lost ${damageCount} ${buildingNames[randomBuilding]}.`;
             foodRiotTriggered = true;
           }
         }
