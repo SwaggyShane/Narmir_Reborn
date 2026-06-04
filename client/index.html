@@ -16891,13 +16891,13 @@
         border-radius: 12px;
         padding: 0;
         width: 100%;
-        max-width: 90vw;
+        max-width: min(1000px, 90vw);
         max-height: 90vh;
         z-index: 1;
         position: relative;
         display: flex;
         flex-direction: column;
-        overflow-y: auto;
+        overflow: hidden;
       ">
         <!-- Header with Back button and Close button -->
         <div style="
@@ -16908,7 +16908,7 @@
           border-bottom: 1px solid #363a52;
           flex-shrink: 0;
         ">
-          <button onclick="closeRegistrationModal()" style="
+          <button onclick="const details = document.getElementById('race-details-section'); if (details && details.style.display !== 'none') { backToRaceSelection(); } else { closeRegistrationModal(); }" style="
             background: none;
             border: none;
             color: #9a9bb5;
@@ -16937,7 +16937,7 @@
           " onmouseover="this.style.color='#e8e9f0'" onmouseout="this.style.color='#9a9bb5'">×</button>
         </div>
 
-        <div id="registration-content" style="padding: max(16px, 3vw); flex: 1;">
+        <div id="registration-content" style="padding: max(16px, 3vw); flex: 1; overflow-y: auto;">
           <!-- This will be populated dynamically -->
         </div>
       </div>
