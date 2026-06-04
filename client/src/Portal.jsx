@@ -92,7 +92,7 @@ function RaceSelectOverlay({ selected, onSelect, onBack, onConfirm }) {
               onMouseEnter={() => setHovered(race.id)}
               onMouseLeave={() => setHovered(null)}
             >
-              <img src={`/race/${race.id}.png`} alt={race.title} className="race-pick-portrait" />
+              <img src={`/race/${race.id}_male.png`} alt={race.title} className="race-pick-portrait" />
               <div className="race-pick-name">{race.title?.split(' of ')?.[0]}</div>
               <div className="race-pick-playstyle">{race.playstyle?.split('.')?.[0]}</div>
             </button>
@@ -103,7 +103,7 @@ function RaceSelectOverlay({ selected, onSelect, onBack, onConfirm }) {
           {activeRace ? (
             <div className="race-detail-inner" style={{ '--race-color': activeRace.color }}>
               <div className="race-detail-portrait-section">
-                <img src={`/race/${activeRace.id}.png`} alt={activeRace.title} className="race-detail-portrait" />
+                <img src={`/race/${activeRace.id}_male.png`} alt={activeRace.title} className="race-detail-portrait" />
                 <div className="race-detail-title-group">
                   <div className="race-detail-title">{activeRace?.title}</div>
                   <div className="race-detail-subtitle">{activeRace?.playstyle?.split('.')?.[0]}</div>
