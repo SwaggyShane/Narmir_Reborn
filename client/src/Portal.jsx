@@ -531,7 +531,7 @@ export default function Portal() {
         <p className="portal-tagline">Rise From the Ashes. Forge Your Legacy.</p>
       </header>
 
-      <main className={`portal-main ${isRegistrationActive ? 'reg-active' : ''}`} style={{ gridTemplateColumns: isRegistrationActive ? '1fr' : '1fr 360px' }}>
+      <main className={`portal-main ${isRegistrationActive ? 'reg-active' : ''}`} style={{ gridTemplateColumns: isRegistrationActive ? '1fr' : '2fr 360px' }}>
         {!isRegistrationActive && (
           <div className="portal-col-left">
             {showRankings && <RankingsTable />}
