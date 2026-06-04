@@ -510,6 +510,11 @@ body {
   padding: 1rem;
   overflow-y: auto;
   max-height: 380px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.race-detail-panel::-webkit-scrollbar {
+  display: none;
 }
 
 .race-detail-empty {
