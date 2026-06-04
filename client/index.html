@@ -1997,10 +1997,13 @@
               <div class="val" id="m-thralls">0</div>
               <div class="sub">cap: <span id="m-thralls-cap">0</span></div>
             </div>
-            <div class="metric" id="metric-morale">
-              <div class="lbl">Morale</div>
-              <div class="val" id="m-morale">100</div>
-              <div class="sub">Tax: <span id="m-tax">42%</span></div>
+            <div class="metric" id="metric-happiness">
+              <div class="lbl">Happiness</div>
+              <div style="position: relative; width: 100%; height: 24px; margin: 6px 0; background: var(--bg2); border-radius: 4px; overflow: hidden;" title="Population happiness">
+                <div id="m-happiness-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #ef4444, #fbbf24); transition: width 0.3s ease; border-radius: 4px;"></div>
+                <div id="m-happiness-text" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 600; font-size: 12px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5); white-space: nowrap;">50/120</div>
+              </div>
+              <div class="sub" id="m-happiness-breakdown" style="font-size: 11px; color: var(--text2);">Food: +0 · Entertainment: +0</div>
             </div>
             <div class="metric" id="metric-food">
               <div class="lbl">Food</div>
@@ -5417,19 +5420,29 @@
           orc: 1.05,
           vampire: 0.95,
         };
-        var moraleEl = document.getElementById("m-morale");
-        if (moraleEl) {
-          var baseMorale =
-            state.morale !== undefined && state.morale !== null
-              ? state.morale
-              : 100;
-          var entLevel = state.res_entertainment || 100;
-          var eMorale = Math.floor(
-            (baseMorale / entLevel) *
-              100 *
-              (RACE_MORALE_BONUSES[state.race] || 1.0),
-          );
-          moraleEl.textContent = eMorale;
+        // Update happiness bar
+        var happinessBar = document.getElementById("m-happiness-bar");
+        var happinessText = document.getElementById("m-happiness-text");
+        var happinessBreakdown = document.getElementById("m-happiness-breakdown");
+        if (happinessBar && happinessText) {
+          var happiness = state.happiness !== undefined && state.happiness !== null ? state.happiness : 50;
+          var happinessPercent = (happiness / 120) * 100;
+          happinessBar.style.width = Math.min(100, happinessPercent) + "%";
+          happinessText.textContent = happiness + "/120";
+
+          // Color coding: 0-50 red→yellow, 50-80 green, 80-120 bright green
+          if (happiness <= 50) {
+            happinessBar.style.background = `linear-gradient(90deg, #ef4444 0%, #fbbf24 ${Math.min(100, (happiness/50)*100)}%)`;
+          } else if (happiness <= 80) {
+            happinessBar.style.background = `linear-gradient(90deg, #fbbf24 0%, #4ade80 ${Math.min(100, ((happiness-50)/30)*100)}%)`;
+          } else {
+            happinessBar.style.background = "linear-gradient(90deg, #4ade80, #22c55e)";
+          }
+
+          // Update breakdown (simplified for now - full breakdown would require sending component data from server)
+          if (happinessBreakdown) {
+            happinessBreakdown.textContent = happiness > 80 ? "🎉 Thriving" : happiness > 50 ? "😊 Happy" : happiness > 30 ? "😐 Content" : "😞 Unhappy";
+          }
         }
         // Removed tax slider sync to allow free slider dragging without snapping back.
         var hsg = document.getElementById("hire-strip-gold");
@@ -7539,17 +7552,28 @@
           orc: 1.05,
           vampire: 0.95,
         };
-        var moraleEl = document.getElementById("m-morale");
-        if (moraleEl) {
-          var bM =
-            kingdom.morale !== undefined && kingdom.morale !== null
-              ? kingdom.morale
-              : 100;
-          var entL = kingdom.res_entertainment || 100;
-          var eM = Math.floor(
-            (bM / entL) * 100 * (RACE_MORALE_BONUSES[kingdom.race] || 1.0),
-          );
-          moraleEl.textContent = eM;
+        // Update happiness bar (from kingdom data)
+        var hBar = document.getElementById("m-happiness-bar");
+        var hText = document.getElementById("m-happiness-text");
+        var hBreakdown = document.getElementById("m-happiness-breakdown");
+        if (hBar && hText) {
+          var h = kingdom.happiness !== undefined && kingdom.happiness !== null ? kingdom.happiness : 50;
+          var hPercent = (h / 120) * 100;
+          hBar.style.width = Math.min(100, hPercent) + "%";
+          hText.textContent = h + "/120";
+
+          // Color coding
+          if (h <= 50) {
+            hBar.style.background = `linear-gradient(90deg, #ef4444 0%, #fbbf24 ${Math.min(100, (h/50)*100)}%)`;
+          } else if (h <= 80) {
+            hBar.style.background = `linear-gradient(90deg, #fbbf24 0%, #4ade80 ${Math.min(100, ((h-50)/30)*100)}%)`;
+          } else {
+            hBar.style.background = "linear-gradient(90deg, #4ade80, #22c55e)";
+          }
+
+          if (hBreakdown) {
+            hBreakdown.textContent = h > 80 ? "🎉 Thriving" : h > 50 ? "😊 Happy" : h > 30 ? "😐 Content" : "😞 Unhappy";
+          }
         }
 
         // Race data
