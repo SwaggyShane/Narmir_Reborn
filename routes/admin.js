@@ -7,18 +7,10 @@ const fs = require("fs");
 const _config = require("../game/config");
 const { _GOAL_COUNTS, DAILY_GOALS, WEEKLY_GOALS, MONTHLY_GOALS } = require("../game/goals");
 
-const ALLOWED_PRIZE_TYPES = ['gold', 'mana', 'rangers', 'researchers', 'war_machines', 'world_fragment'];
-
-const DAILY_GOALS_DEFAULTS = DAILY_GOALS.map(g => ({ ...g }));
-const WEEKLY_GOALS_DEFAULTS = WEEKLY_GOALS.map(g => ({ ...g }));
-const MONTHLY_GOALS_DEFAULTS = MONTHLY_GOALS.map(g => ({ ...g }));
-
 const soundsPath = path.join(__dirname, "..", "public", "sounds");
 if (!fs.existsSync(soundsPath)) {
   fs.mkdirSync(soundsPath, { recursive: true });
 }
-
-const ALLOWED_SOUND_EXTENSIONS = new Set([".mp3", ".wav"]);
 
 // Resolve a user-supplied filename to an absolute path inside soundsPath.
 // Returns null if the input is unsafe (traversal, wrong extension, or escapes the dir).
@@ -27,7 +19,7 @@ function safeSoundPath(rawName) {
   const base = rawName.split(/[\/\\]/).pop();
   if (!base || base === "." || base === "..") return null;
   const ext = path.extname(base).toLowerCase();
-  if (!ALLOWED_SOUND_EXTENSIONS.has(ext)) return null;
+  if (![".mp3", ".wav"].includes(ext)) return null;
   const resolved = path.resolve(soundsPath, base);
   if (path.relative(soundsPath, resolved).startsWith("..")) return null;
   return resolved;
@@ -40,14 +32,18 @@ async function refreshInMemoryGoals(db) {
        FROM admin_goal_definitions ORDER BY tier, goal_id`
     );
 
+    const dailyDefaults = DAILY_GOALS.map(g => ({ ...g }));
+    const weeklyDefaults = WEEKLY_GOALS.map(g => ({ ...g }));
+    const monthlyDefaults = MONTHLY_GOALS.map(g => ({ ...g }));
+
     DAILY_GOALS.length = 0;
-    DAILY_GOALS.push(...DAILY_GOALS_DEFAULTS.map(g => ({ ...g })));
+    DAILY_GOALS.push(...dailyDefaults);
 
     WEEKLY_GOALS.length = 0;
-    WEEKLY_GOALS.push(...WEEKLY_GOALS_DEFAULTS.map(g => ({ ...g })));
+    WEEKLY_GOALS.push(...weeklyDefaults);
 
     MONTHLY_GOALS.length = 0;
-    MONTHLY_GOALS.push(...MONTHLY_GOALS_DEFAULTS.map(g => ({ ...g })));
+    MONTHLY_GOALS.push(...monthlyDefaults);
 
     for (const override of overrides) {
       const tier = override.tier;
@@ -89,25 +85,21 @@ async function refreshInMemoryGoals(db) {
   }
 }
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, soundsPath);
-  },
-  filename: function (req, file, cb) {
-    const base = (file.originalname || "").split(/[\/\\]/).pop();
-    const ext = path.extname(base).toLowerCase();
-    if (!base || !ALLOWED_SOUND_EXTENSIONS.has(ext)) {
-      return cb(new Error("Invalid filename or extension"));
-    }
-    cb(null, base);
-  },
-});
 const upload = multer({
-  storage: storage,
-  fileFilter: function (req, file, cb) {
-    const base = (file.originalname || "").split(/[\/\\]/).pop();
-    const ext = path.extname(base).toLowerCase();
-    if (!ALLOWED_SOUND_EXTENSIONS.has(ext)) {
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, soundsPath),
+    filename: (req, file, cb) => {
+      const base = (file.originalname || "").split(/[\/\\]/).pop();
+      const ext = path.extname(base).toLowerCase();
+      if (!base || ![".mp3", ".wav"].includes(ext)) {
+        return cb(new Error("Invalid filename or extension"));
+      }
+      cb(null, base);
+    },
+  }),
+  fileFilter: (req, file, cb) => {
+    const ext = path.extname((file.originalname || "")).toLowerCase();
+    if (![".mp3", ".wav"].includes(ext)) {
       return cb(new Error("Only .mp3 and .wav files are allowed"));
     }
     cb(null, true);
@@ -1111,8 +1103,8 @@ module.exports = function (db, io) {
     if (prizeMultiplier !== undefined && (prizeMultiplier < 0.5 || prizeMultiplier > 100)) {
       return res.status(400).json({ error: "prizeMultiplier must be between 0.5 and 100" });
     }
-    if (prizeType !== undefined && !ALLOWED_PRIZE_TYPES.includes(prizeType)) {
-      return res.status(400).json({ error: `Invalid prizeType. Allowed: ${ALLOWED_PRIZE_TYPES.join(', ')}` });
+    if (prizeType !== undefined && !['gold', 'mana', 'rangers', 'researchers', 'war_machines', 'world_fragment'].includes(prizeType)) {
+      return res.status(400).json({ error: `Invalid prizeType. Allowed: ${['gold', 'mana', 'rangers', 'researchers', 'war_machines', 'world_fragment'].join(', ')}` });
     }
 
     try {
@@ -1205,8 +1197,8 @@ module.exports = function (db, io) {
     if (prizeMultiplier < 0.5 || prizeMultiplier > 10000) {
       return res.status(400).json({ error: "prizeMultiplier must be between 0.5 and 10000" });
     }
-    if (!ALLOWED_PRIZE_TYPES.includes(prizeType)) {
-      return res.status(400).json({ error: `Invalid prizeType. Allowed: ${ALLOWED_PRIZE_TYPES.join(', ')}` });
+    if (!['gold', 'mana', 'rangers', 'researchers', 'war_machines', 'world_fragment'].includes(prizeType)) {
+      return res.status(400).json({ error: `Invalid prizeType. Allowed: ${['gold', 'mana', 'rangers', 'researchers', 'war_machines', 'world_fragment'].join(', ')}` });
     }
 
     try {
