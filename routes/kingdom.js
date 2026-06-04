@@ -1850,7 +1850,9 @@ module.exports = function (db) {
       return res.status(400).json({ error: "Send at least some troops" });
 
     const target = await db.get(
-      `SELECT k.* FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.id = ?`,
+      `SELECT k.* FROM kingdoms k
+       JOIN players p ON k.player_id = p.id
+       WHERE k.id = ?`,
       [targetId],
     );
     if (!target)
@@ -2186,7 +2188,12 @@ module.exports = function (db) {
           error: "You need a location map for this target.",
         });
       }
-      target = await db.get("SELECT k.* FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.id = ?", [targetId]);
+      target = await db.get(
+        `SELECT k.* FROM kingdoms k
+         JOIN players p ON k.player_id = p.id
+         WHERE k.id = ?`,
+        [targetId]
+      );
       if (!target)
         return res.status(404).json({ error: "Target kingdom not found" });
       if (target.player_id === k.player_id)

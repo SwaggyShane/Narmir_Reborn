@@ -7,6 +7,10 @@ const fs = require("fs");
 const _config = require("../game/config");
 const { _GOAL_COUNTS, DAILY_GOALS, WEEKLY_GOALS, MONTHLY_GOALS } = require("../game/goals");
 
+let ORIGINAL_DAILY_GOALS = [];
+let ORIGINAL_WEEKLY_GOALS = [];
+let ORIGINAL_MONTHLY_GOALS = [];
+
 const soundsPath = path.join(__dirname, "..", "public", "sounds");
 if (!fs.existsSync(soundsPath)) {
   fs.mkdirSync(soundsPath, { recursive: true });
@@ -27,23 +31,25 @@ function safeSoundPath(rawName) {
 
 async function refreshInMemoryGoals(db) {
   try {
+    if (ORIGINAL_DAILY_GOALS.length === 0) {
+      ORIGINAL_DAILY_GOALS = DAILY_GOALS.map(g => ({ ...g }));
+      ORIGINAL_WEEKLY_GOALS = WEEKLY_GOALS.map(g => ({ ...g }));
+      ORIGINAL_MONTHLY_GOALS = MONTHLY_GOALS.map(g => ({ ...g }));
+    }
+
     const overrides = await db.all(
       `SELECT tier, goal_id, label, min_target, max_target, prize_type, prize_multiplier, active
        FROM admin_goal_definitions ORDER BY tier, goal_id`
     );
 
-    const dailyDefaults = DAILY_GOALS.map(g => ({ ...g }));
-    const weeklyDefaults = WEEKLY_GOALS.map(g => ({ ...g }));
-    const monthlyDefaults = MONTHLY_GOALS.map(g => ({ ...g }));
-
     DAILY_GOALS.length = 0;
-    DAILY_GOALS.push(...dailyDefaults);
+    DAILY_GOALS.push(...ORIGINAL_DAILY_GOALS.map(g => ({ ...g })));
 
     WEEKLY_GOALS.length = 0;
-    WEEKLY_GOALS.push(...weeklyDefaults);
+    WEEKLY_GOALS.push(...ORIGINAL_WEEKLY_GOALS.map(g => ({ ...g })));
 
     MONTHLY_GOALS.length = 0;
-    MONTHLY_GOALS.push(...monthlyDefaults);
+    MONTHLY_GOALS.push(...ORIGINAL_MONTHLY_GOALS.map(g => ({ ...g })));
 
     for (const override of overrides) {
       const tier = override.tier;
@@ -585,68 +591,32 @@ module.exports = function (db, io) {
     }
   });
 
-  // GET /api/admin/kingdom/:id — delete a kingdom and all related records
+  // DELETE /api/admin/kingdom/:id — delete a kingdom and all related records
   router.delete("/kingdom/:id", async (req, res) => {
-
-      // Parse JSON fields safely
-      let buildAlloc = {};
-      let resAlloc = {};
-      try {
-        buildAlloc = JSON.parse(k.build_allocation || "{}");
-      } catch {}
-      try {
-        resAlloc = JSON.parse(k.research_allocation || "{}");
-      } catch {}
-
-      const topBuild =
-        Object.entries(buildAlloc)
-          .filter(([, v]) => v > 0)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 3)
-          .map(([k, v]) => `${k}:${v}`)
-          .join(", ") || "none";
-
-      const topResearch =
-        Object.entries(resAlloc)
-          .filter(([, v]) => v > 0)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 3)
-          .map(([k, v]) => `${k}:${v}`)
-          .join(", ") || "none";
-
-      rows.push({
-        id: k.id,
-        name: k.name,
-        race: k.race,
-        level: k.level || 1,
-        land: k.land,
-        gold: k.gold,
-        population: k.population,
-        turns_stored: k.turns_stored,
-        morale: k.morale,
-        food: k.food,
-        fighters: k.fighters,
-        rangers: k.rangers,
-        mages: k.mages,
-        thieves: k.thieves,
-        ninjas: k.ninjas,
-        bld_farms: k.bld_farms,
-        bld_barracks: k.bld_barracks,
-        bld_housing: k.bld_housing,
-        bld_schools: k.bld_schools,
-        res_military: k.res_military,
-        res_economy: k.res_economy,
-        res_spellbook: k.res_spellbook,
-        top_build: topBuild,
-        top_research: topResearch,
-        attacks: attacks?.c || 0,
-        covert_ops: coverts?.c || 0,
-        wins: wins?.c || 0,
-        losses: losses?.c || 0,
-        times_hit: timesHit?.c || 0,
-      });
+    const kid = req.params.id;
+    try {
+      // Clear out relations so foreign keys don't block
+      await db.run("DELETE FROM alliance_members WHERE kingdom_id = ?", [kid]);
+      await db.run("DELETE FROM alliances WHERE leader_id = ?", [kid]);
+      await db.run("DELETE FROM news WHERE kingdom_id = ?", [kid]);
+      await db.run("DELETE FROM war_log WHERE attacker_id = ? OR defender_id = ?", [kid, kid]);
+      await db.run("DELETE FROM expeditions WHERE kingdom_id = ?", [kid]);
+      await db.run("DELETE FROM combat_log WHERE attacker_id = ? OR defender_id = ?", [kid, kid]);
+      await db.run("DELETE FROM chat_messages WHERE kingdom_id = ?", [kid]);
+      await db.run("DELETE FROM heroes WHERE kingdom_id = ?", [kid]);
+      await db.run("DELETE FROM spy_reports WHERE kingdom_id = ? OR target_id = ?", [kid, kid]);
+      await db.run("DELETE FROM trade_routes WHERE kingdom_id = ? OR partner_id = ?", [kid, kid]);
+      await db.run("DELETE FROM bounties WHERE target_id = ? OR claimed_by_id = ?", [kid, kid]);
+      await db.run("DELETE FROM trade_offers WHERE sender_id = ? OR receiver_id = ?", [kid, kid]);
+      await db.run("DELETE FROM mercenaries WHERE kingdom_id = ?", [kid]);
+      await db.run("DELETE FROM event_log WHERE kingdom_id = ?", [kid]);
+      // Finally delete the kingdom
+      await db.run("DELETE FROM kingdoms WHERE id = ?", [kid]);
+      res.json({ ok: true });
+    } catch (err) {
+      console.error("[admin] delete kingdom error:", err.message);
+      res.status(500).json({ error: err.message });
     }
-    res.json(rows);
   });
 
   // DELETE /api/admin/kingdom/:id — delete a kingdom and all related records
