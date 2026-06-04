@@ -156,6 +156,15 @@ const WarfarePanel = () => {
                 <button className="base-btn" style={{ fontSize: '10px', padding: '6px 8px' }} onClick={() => setMaxValue('atk-mages-w')}>MAX</button>
               </div>
             </div>
+            <div className="trow">
+              <span className="name" style={{ fontSize: '13px', fontWeight: 700 }}>
+                ⛪ Clerics <span id="atk-clerics-avail-w" style={{ color: 'var(--text3)', fontWeight: 400 }}></span>
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <input type="number" className="input" id="atk-clerics-w" min="0" defaultValue="0" style={{ textAlign: 'right', width: '90px', padding: '6px' }} onChange={updateAtkEstimateW} placeholder="Qty" />
+                <button className="base-btn" style={{ fontSize: '10px', padding: '6px 8px' }} onClick={() => setMaxValue('atk-clerics-w')}>MAX</button>
+              </div>
+            </div>
             {/* Siege units */}
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: '8px', marginTop: '4px' }}>
               <div className="trow">
@@ -200,15 +209,6 @@ const WarfarePanel = () => {
             </div>
             {/* Support units */}
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: '8px', marginTop: '4px' }}>
-              <div className="trow">
-                <span className="name" style={{ fontSize: '13px', fontWeight: 700 }}>
-                  🕊️ Support <span id="atk-clerics-avail-w" style={{ color: 'var(--text3)', fontWeight: 400 }}></span>
-                </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <input type="number" className="input" id="atk-clerics-w" min="0" defaultValue="0" style={{ textAlign: 'right', width: '90px', padding: '6px' }} onChange={updateAtkEstimateW} placeholder="Qty" />
-                  <button className="base-btn" style={{ fontSize: '10px', padding: '6px 8px' }} onClick={() => setMaxValue('atk-clerics-w')}>MAX</button>
-                </div>
-              </div>
               <div className="trow">
                 <span className="name" style={{ fontSize: '13px', fontWeight: 700 }}>
                   🛠️ Engineers <span id="atk-engineers-avail-w" style={{ color: 'var(--text3)', fontWeight: 400 }}></span>

@@ -18,7 +18,7 @@ const isProd = process.env.NODE_ENV === 'production';
 
 module.exports = function (db) {
   router.post("/register", async (req, res) => {
-    const { username, password, kingdomName, race, email } = req.body;
+    const { username, password, kingdomName, race, email, gender } = req.body;
     if (!username || !password || !kingdomName || !email)
       return res
         .status(400)
@@ -58,6 +58,9 @@ module.exports = function (db) {
       "vampire",
     ];
     const chosenRace = validRaces.includes(race) ? race : "human";
+    const validGenders = ["male", "female"];
+    const normalizedGender = typeof gender === 'string' ? gender.toLowerCase() : 'male';
+    const chosenGender = validGenders.includes(normalizedGender) ? normalizedGender : "male";
 
     try {
       const hash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
@@ -127,16 +130,17 @@ module.exports = function (db) {
 
       await db.run(
         `INSERT INTO kingdoms (
-          player_id, name, race, region, gold, land, population, food,
+          player_id, name, race, gender, region, gold, land, population, food,
           researchers, engineers, fighters, rangers, thralls, turns_stored,
           res_spellbook, blueprints_stored,
           bld_farms, bld_schools, bld_barracks, bld_armories, bld_housing,
           bld_markets, bld_smithies, bld_mage_towers, bld_shrines, bld_outposts, bld_training, bld_mausoleums, world_fragments
-        ) VALUES (?, ?, ?, ?, 10000, ?, 50000, ?, 100, 100, ?, ?, ?, 400, 0, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '["Volcanic Rock", "Ancient Elven Wood", "Dragon Scale", "Abyssal Crystal", "Celestial Feather", "Dwarven Star-Metal", "Cursed Bloodstone", "Tears of the World Tree", "Void Essence", "Titan Bone"]')`,
+        ) VALUES (?, ?, ?, ?, ?, 10000, ?, 50000, ?, 100, 100, ?, ?, ?, 400, 0, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '["Volcanic Rock", "Ancient Elven Wood", "Dragon Scale", "Abyssal Crystal", "Celestial Feather", "Dwarven Star-Metal", "Cursed Bloodstone", "Tears of the World Tree", "Void Essence", "Titan Bone"]')`,
         [
           playerResult.lastID,
           kingdomName,
           chosenRace,
+          chosenGender,
           region,
           startingLand,
           food,
