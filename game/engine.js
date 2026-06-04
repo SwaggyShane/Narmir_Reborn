@@ -1560,7 +1560,7 @@ function processGranaryAttunements(k, events) {
           type: 'system',
           message: `🪶 Manna Manifestation: ${happinessFoodCost.toLocaleString()} food distributed to raise happiness (+10).`
         });
-        updates.happiness = Math.min(120, (k.happiness || 50) + happinessBoost);
+        updates.happiness = Math.min(120, happiness + happinessBoost);
       }
       break;
 

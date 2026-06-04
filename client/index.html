@@ -16495,7 +16495,7 @@
               '<div style="flex: 1;"><strong style="color: var(--green); margin-bottom: 4px; display: block;">Strengths</strong><ul style="margin: 0; padding-left: 16px; color: var(--text3);">',
             );
             r.strengths.forEach(function (s) {
-              var escS = s.replace(/'/g, "\\'");
+              var escS = s.replace(/'/g, "\\'").replace(/"/g, "&quot;");
               html.push(
                 '<li style="cursor: pointer; padding: 2px 0; transition: color .2s;" onclick="navigator.clipboard.writeText(\'' + escS + '\'); this.style.color=\'var(--green)\'; setTimeout(() => this.style.color=\'var(--text3)\', 500);" title="Click to copy">' + s + '</li>'
               );
@@ -16507,7 +16507,7 @@
               '<div style="flex: 1;"><strong style="color: var(--red); margin-bottom: 4px; display: block;">Weaknesses</strong><ul style="margin: 0; padding-left: 16px; color: var(--text3);">',
             );
             r.weaknesses.forEach(function (w) {
-              var escW = w.replace(/'/g, "\\'");
+              var escW = w.replace(/'/g, "\\'").replace(/"/g, "&quot;");
               html.push(
                 '<li style="cursor: pointer; padding: 2px 0; transition: color .2s;" onclick="navigator.clipboard.writeText(\'' + escW + '\'); this.style.color=\'var(--red)\'; setTimeout(() => this.style.color=\'var(--text3)\', 500);" title="Click to copy">' + w + '</li>'
               );
