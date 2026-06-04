@@ -59,7 +59,8 @@ module.exports = function (db) {
     ];
     const chosenRace = validRaces.includes(race) ? race : "human";
     const validGenders = ["male", "female"];
-    const chosenGender = validGenders.includes(gender) ? gender : "male";
+    const normalizedGender = typeof gender === 'string' ? gender.toLowerCase() : 'male';
+    const chosenGender = validGenders.includes(normalizedGender) ? normalizedGender : "male";
 
     try {
       const hash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
