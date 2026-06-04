@@ -6386,19 +6386,21 @@
         if (rankings) rankings.style.display = "none";
 
         const raceSelect = `
-          <div style="margin-bottom: 24px;">
-            <div style="font-size: 24px; font-weight: 700; color: #e8b84b; margin-bottom: 6px;">
-              Choose Your Race
+          <div style="display: flex; flex-direction: column; gap: 0; width: 100%; height: 100%;">
+            <div style="margin-bottom: 24px;">
+              <div style="font-size: 24px; font-weight: 700; color: #e8b84b; margin-bottom: 6px;">
+                Choose Your Race
+              </div>
+              <div style="font-size: 12px; color: #9a9bb5;">
+                Select a race to view details and create your kingdom
+              </div>
             </div>
-            <div style="font-size: 12px; color: #9a9bb5;">
-              Select a race to view details and create your kingdom
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px; width: 100%;" id="race-selection-grid">
             </div>
-          </div>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px; width: 100%;" id="race-selection-grid">
-          </div>
-
-          <div id="race-details-section" style="display: none;">
+            <div id="race-details-section" style="display: none; width: 100%;">
+            </div>
           </div>
         `;
 
@@ -6501,14 +6503,15 @@
           : `<div style="width: 100%; height: 320px; border-radius: 12px; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 80px; margin-bottom: 20px; box-shadow: 0 6px 16px rgba(0,0,0,0.5);">${race.icon || "👤"}</div>`;
 
         let html = `
-          <div style="margin-bottom: 24px; display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap;">
-            <div style="flex: 0 0 auto; width: 100%; max-width: 280px;">
-              ${portraitHtml}
-            </div>
-            <div style="flex: 1; min-width: 250px;">
-              <div style="font-size: 24px; font-weight: 700; color: ${race.color || "#e8b84b"}; margin-bottom: 8px;">
-                ${race.title}
+          <div style="display: flex; flex-direction: column; width: 100%; gap: 24px;">
+            <div style="display: flex; gap: 24px; align-items: flex-start;">
+              <div style="flex: 0 0 280px;">
+                ${portraitHtml}
               </div>
+              <div style="flex: 1; min-width: 250px;">
+                <div style="font-size: 24px; font-weight: 700; color: ${race.color || "#e8b84b"}; margin-bottom: 8px;">
+                  ${race.title}
+                </div>
               <div style="background: rgba(224, 92, 92, 0.1); border: 1px solid rgba(224, 92, 92, 0.3); border-radius: 6px; padding: 10px; margin-bottom: 14px; font-size: 12px; color: #e8b84b; line-height: 1.5; font-weight: 600;">
                 ⚠️ <strong>PERMANENT CHOICE:</strong> Your race cannot be changed after creation. Choose carefully.
               </div>
@@ -6540,7 +6543,6 @@
                 ` : ""}
               </div>
             </div>
-          </div>
 
           ${race.heroes ? `
             <div style="background: rgba(143, 184, 74, 0.08); border: 1px solid rgba(143, 184, 74, 0.25); border-radius: 8px; padding: 12px; margin-bottom: 16px;">
@@ -6729,6 +6731,7 @@
             >
               ← Choose Another Race
             </button>
+            </div>
           </div>
         `;
 
@@ -17013,6 +17016,8 @@
         background: var(--bg1);
         flex-direction: column;
         overflow: hidden;
+        align-items: stretch;
+        justify-content: flex-start;
       "
     >
       <!-- Header bar with back button -->
@@ -17048,6 +17053,9 @@
         overflow-y: auto;
         display: flex;
         flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+        max-width: none;
       ">
         <!-- This will be populated dynamically -->
       </div>
