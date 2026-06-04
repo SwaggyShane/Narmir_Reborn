@@ -2003,7 +2003,10 @@
                 <div id="m-happiness-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #ef4444, #fbbf24); transition: width 0.3s ease; border-radius: 4px;"></div>
                 <div id="m-happiness-text" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 600; font-size: 12px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5); white-space: nowrap;">50/120</div>
               </div>
-              <div class="sub" id="m-happiness-breakdown" style="font-size: 11px; color: var(--text2);">Food: +0 · Entertainment: +0</div>
+              <div class="sub" style="font-size: 11px; color: var(--text2); display: flex; justify-content: space-between; width: 100%;">
+                <span id="m-happiness-breakdown">😐 Content</span>
+                <span>Tax: <span id="m-tax">42%</span></span>
+              </div>
             </div>
             <div class="metric" id="metric-food">
               <div class="lbl">Food</div>
@@ -5431,13 +5434,9 @@
           happinessText.textContent = happiness + "/120";
 
           // Color coding: 0-50 red→yellow, 50-80 green, 80-120 bright green
-          if (happiness <= 50) {
-            happinessBar.style.background = `linear-gradient(90deg, #ef4444 0%, #fbbf24 ${Math.min(100, (happiness/50)*100)}%)`;
-          } else if (happiness <= 80) {
-            happinessBar.style.background = `linear-gradient(90deg, #fbbf24 0%, #4ade80 ${Math.min(100, ((happiness-50)/30)*100)}%)`;
-          } else {
-            happinessBar.style.background = "linear-gradient(90deg, #4ade80, #22c55e)";
-          }
+          happinessBar.style.background = "linear-gradient(90deg, #ef4444 0%, #fbbf24 41.67%, #4ade80 66.67%, #22c55e 100%)";
+          happinessBar.style.backgroundRepeat = "no-repeat";
+          happinessBar.style.backgroundSize = (120 / Math.max(1, happiness)) * 100 + "% 100%";
 
           // Update breakdown (simplified for now - full breakdown would require sending component data from server)
           if (happinessBreakdown) {
@@ -7562,14 +7561,10 @@
           hBar.style.width = Math.min(100, hPercent) + "%";
           hText.textContent = h + "/120";
 
-          // Color coding
-          if (h <= 50) {
-            hBar.style.background = `linear-gradient(90deg, #ef4444 0%, #fbbf24 ${Math.min(100, (h/50)*100)}%)`;
-          } else if (h <= 80) {
-            hBar.style.background = `linear-gradient(90deg, #fbbf24 0%, #4ade80 ${Math.min(100, ((h-50)/30)*100)}%)`;
-          } else {
-            hBar.style.background = "linear-gradient(90deg, #4ade80, #22c55e)";
-          }
+          // Color coding: use fixed gradient with background-size scaling
+          hBar.style.background = "linear-gradient(90deg, #ef4444 0%, #fbbf24 41.67%, #4ade80 66.67%, #22c55e 100%)";
+          hBar.style.backgroundRepeat = "no-repeat";
+          hBar.style.backgroundSize = (120 / Math.max(1, h)) * 100 + "% 100%";
 
           if (hBreakdown) {
             hBreakdown.textContent = h > 80 ? "🎉 Thriving" : h > 50 ? "😊 Happy" : h > 30 ? "😐 Content" : "😞 Unhappy";
