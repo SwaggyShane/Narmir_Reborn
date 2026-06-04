@@ -350,7 +350,7 @@ module.exports = function (db, io) {
   // GET /api/admin/chat-mods
   router.get("/chat-mods", async (_req, res) => {
     const mods = await db.all(
-      "SELECT username FROM players WHERE is_chat_mod = 1 AND is_ai = 0 ORDER BY username",
+      "SELECT username FROM players WHERE is_chat_mod = 1 ORDER BY username",
     );
     res.json(mods);
   });
@@ -358,7 +358,7 @@ module.exports = function (db, io) {
   // GET /api/admin/chat-bans
   router.get("/chat-bans", async (_req, res) => {
     const banned = await db.all(
-      "SELECT username, chat_ban_reason FROM players WHERE chat_banned = 1 AND is_ai = 0 ORDER BY username",
+      "SELECT username, chat_ban_reason FROM players WHERE chat_banned = 1 ORDER BY username",
     );
     res.json(banned);
   });
@@ -593,45 +593,8 @@ module.exports = function (db, io) {
     }
   });
 
-  // GET /api/admin/ai-synopsis — snapshot of all AI kingdom states
-  router.get("/ai-synopsis", async (_req, res) => {
-    const aiPlayers = await db.all(
-      "SELECT id, username FROM players WHERE is_ai = 1",
-    );
-    if (aiPlayers.length === 0) return res.json([]);
-
-    const rows = [];
-    for (const p of aiPlayers) {
-      const k = await db.get(
-        `
-        SELECT k.*, p.username
-        FROM kingdoms k JOIN players p ON k.player_id = p.id
-        WHERE k.player_id = ?`,
-        [p.id],
-      );
-      if (!k) continue;
-
-      // Count war log actions by this AI as attacker
-      const attacks = await db.get(
-        "SELECT COUNT(*) as c FROM war_log WHERE attacker_id = ? AND action_type = ?",
-        [k.id, "attack"],
-      );
-      const coverts = await db.get(
-        "SELECT COUNT(*) as c FROM war_log WHERE attacker_id = ? AND action_type IN (?,?,?,?,?)",
-        [k.id, "spy", "loot", "assassinate", "sabotage", "covert"],
-      );
-      const wins = await db.get(
-        "SELECT COUNT(*) as c FROM war_log WHERE attacker_id = ? AND outcome = ?",
-        [k.id, "victory"],
-      );
-      const losses = await db.get(
-        "SELECT COUNT(*) as c FROM war_log WHERE attacker_id = ? AND action_type = ? AND outcome = ?",
-        [k.id, "attack", "repelled"],
-      );
-      const timesHit = await db.get(
-        "SELECT COUNT(*) as c FROM war_log WHERE defender_id = ?",
-        [k.id],
-      );
+  // GET /api/admin/kingdom/:id — delete a kingdom and all related records
+  router.delete("/kingdom/:id", async (req, res) => {
 
       // Parse JSON fields safely
       let buildAlloc = {};

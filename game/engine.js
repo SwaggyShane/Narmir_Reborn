@@ -4443,7 +4443,6 @@ function resolveMilitaryAttack(
   const fighterRatio =
     (attacker.fighters || 1) / Math.max(1, defender.fighters || 1);
   let bullyRatio = Math.max(landRatio, fighterRatio * 0.5);
-  if (defender.is_ai) bullyRatio = 1.0;
   let bullyPenalty = 1.0;
   let bullyMsg = null;
   let shameEvent = null;
