@@ -17002,7 +17002,7 @@
       </div>
     </div>
 
-    <!-- Registration Modal with Race Selection -->
+    <!-- Registration Page (Full-width desktop layout) -->
     <div
       id="registration-modal"
       style="
@@ -17010,74 +17010,46 @@
         position: fixed;
         inset: 0;
         z-index: 10002;
-        background: rgba(13, 14, 20, 0.9);
+        background: var(--bg1);
         flex-direction: column;
-        align-items: center;
-        justify-content: flex-start;
-        padding: max(12px, 3vw);
-        box-sizing: border-box;
         overflow-y: auto;
-        padding-top: max(20px, 5vh);
       "
-      onclick="if (event.target === this) { closeRegistrationModal(); }"
     >
+      <!-- Header bar with back button -->
       <div style="
-        background: rgba(19, 20, 29, 0.95);
-        backdrop-filter: blur(8px);
-        border: 1px solid #363a52;
-        border-radius: 12px;
-        padding: 0;
-        width: 100%;
-        max-width: min(1200px, 95vw);
-        max-height: 90vh;
-        z-index: 1;
-        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+        background: var(--bg2);
+      ">
+        <button onclick="const details = document.getElementById('race-details-section'); if (details && details.style.display !== 'none') { backToRaceSelection(); } else { closeRegistrationModal(); }" style="
+          background: none;
+          border: none;
+          color: var(--text3);
+          font-size: 14px;
+          cursor: pointer;
+          padding: 8px 12px;
+          transition: color 0.2s;
+          text-decoration: none;
+          font-weight: 500;
+        " onmouseover="this.style.color='var(--text1)'" onmouseout="this.style.color='var(--text3)'">
+          ← Back
+        </button>
+        <h1 style="margin: 0; font-size: 20px; color: var(--gold); flex: 1;">Create Your Kingdom</h1>
+      </div>
+
+      <!-- Main content area - full width -->
+      <div id="registration-content" style="
+        flex: 1;
+        padding: 32px;
+        overflow-y: auto;
         display: flex;
         flex-direction: column;
-        overflow: hidden;
-        margin: 0 auto;
       ">
-        <!-- Header with Back button and Close button -->
-        <div style="
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 12px 16px;
-          border-bottom: 1px solid #363a52;
-          flex-shrink: 0;
-        ">
-          <button onclick="const details = document.getElementById('race-details-section'); if (details && details.style.display !== 'none') { backToRaceSelection(); } else { closeRegistrationModal(); }" style="
-            background: none;
-            border: none;
-            color: #9a9bb5;
-            font-size: 14px;
-            cursor: pointer;
-            padding: 8px 12px;
-            transition: color 0.2s;
-            text-decoration: none;
-            font-weight: 500;
-          " onmouseover="this.style.color='#e8e9f0'" onmouseout="this.style.color='#9a9bb5'">
-            ← Back
-          </button>
-          <button onclick="closeRegistrationModal()" style="
-            background: none;
-            border: none;
-            color: #9a9bb5;
-            font-size: 28px;
-            cursor: pointer;
-            padding: 8px;
-            transition: color 0.2s;
-            width: 44px;
-            height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          " onmouseover="this.style.color='#e8e9f0'" onmouseout="this.style.color='#9a9bb5'">×</button>
-        </div>
-
-        <div id="registration-content" style="padding: max(16px, 3vw); flex: 1; overflow-y: auto;">
-          <!-- This will be populated dynamically -->
-        </div>
+        <!-- This will be populated dynamically -->
       </div>
     </div>
 
