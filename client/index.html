@@ -1997,10 +1997,16 @@
               <div class="val" id="m-thralls">0</div>
               <div class="sub">cap: <span id="m-thralls-cap">0</span></div>
             </div>
-            <div class="metric" id="metric-morale">
-              <div class="lbl">Morale</div>
-              <div class="val" id="m-morale">100</div>
-              <div class="sub">Tax: <span id="m-tax">42%</span></div>
+            <div class="metric" id="metric-happiness">
+              <div class="lbl">Happiness</div>
+              <div style="position: relative; width: 100%; height: 24px; margin: 6px 0; background: var(--bg2); border-radius: 4px; overflow: hidden;" title="Population happiness">
+                <div id="m-happiness-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #ef4444, #fbbf24); transition: width 0.3s ease; border-radius: 4px;"></div>
+                <div id="m-happiness-text" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 600; font-size: 12px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5); white-space: nowrap;">50/120</div>
+              </div>
+              <div class="sub" style="font-size: 11px; color: var(--text2); display: flex; justify-content: space-between; width: 100%;">
+                <span id="m-happiness-breakdown">😐 Content</span>
+                <span>Tax: <span id="m-tax">42%</span></span>
+              </div>
             </div>
             <div class="metric" id="metric-food">
               <div class="lbl">Food</div>
@@ -5417,19 +5423,25 @@
           orc: 1.05,
           vampire: 0.95,
         };
-        var moraleEl = document.getElementById("m-morale");
-        if (moraleEl) {
-          var baseMorale =
-            state.morale !== undefined && state.morale !== null
-              ? state.morale
-              : 100;
-          var entLevel = state.res_entertainment || 100;
-          var eMorale = Math.floor(
-            (baseMorale / entLevel) *
-              100 *
-              (RACE_MORALE_BONUSES[state.race] || 1.0),
-          );
-          moraleEl.textContent = eMorale;
+        // Update happiness bar
+        var happinessBar = document.getElementById("m-happiness-bar");
+        var happinessText = document.getElementById("m-happiness-text");
+        var happinessBreakdown = document.getElementById("m-happiness-breakdown");
+        if (happinessBar && happinessText) {
+          var happiness = state.happiness !== undefined && state.happiness !== null ? state.happiness : 50;
+          var happinessPercent = Math.max(0, (happiness / 120) * 100);
+          happinessBar.style.width = Math.min(100, happinessPercent) + "%";
+          happinessText.textContent = happiness + "/120";
+
+          // Color coding: 0-50 red→yellow, 50-80 green, 80-120 bright green
+          happinessBar.style.background = "linear-gradient(90deg, #ef4444 0%, #fbbf24 41.67%, #4ade80 66.67%, #22c55e 100%)";
+          happinessBar.style.backgroundRepeat = "no-repeat";
+          happinessBar.style.backgroundSize = (120 / Math.min(120, Math.max(1, happiness))) * 100 + "% 100%";
+
+          // Update breakdown (simplified for now - full breakdown would require sending component data from server)
+          if (happinessBreakdown) {
+            happinessBreakdown.textContent = happiness > 80 ? "🎉 Thriving" : happiness > 50 ? "😊 Happy" : happiness > 30 ? "😐 Content" : "😞 Unhappy";
+          }
         }
         // Removed tax slider sync to allow free slider dragging without snapping back.
         var hsg = document.getElementById("hire-strip-gold");
@@ -7530,27 +7542,6 @@
         syncUI();
         updateTurnsDisplay();
         document.getElementById("turn-num").textContent = kingdom.turn;
-        var RACE_MORALE_BONUSES = {
-          human: 1.05,
-          high_elf: 0.95,
-          dwarf: 1.0,
-          dire_wolf: 1.1,
-          dark_elf: 0.9,
-          orc: 1.05,
-          vampire: 0.95,
-        };
-        var moraleEl = document.getElementById("m-morale");
-        if (moraleEl) {
-          var bM =
-            kingdom.morale !== undefined && kingdom.morale !== null
-              ? kingdom.morale
-              : 100;
-          var entL = kingdom.res_entertainment || 100;
-          var eM = Math.floor(
-            (bM / entL) * 100 * (RACE_MORALE_BONUSES[kingdom.race] || 1.0),
-          );
-          moraleEl.textContent = eM;
-        }
 
         // Race data
         window.raceData = {
