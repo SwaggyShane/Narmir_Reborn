@@ -27,6 +27,9 @@ const BottomNav = () => {
       <button className="bnav-item active" data-tab="status" onClick={(e) => handleSwitchTabMobile('status', e)}>
         <span className="bicon" style={{ color: '#4a90e2' }}>🏰</span>Status
       </button>
+      <button className="bnav-item" data-tab="testing" onClick={(e) => handleSwitchTabMobile('testing', e)}>
+        <span className="bicon" style={{ color: '#8b5cf6' }}>🧪</span>Testing
+      </button>
       <button className="bnav-item" data-tab="goals" onClick={(e) => handleSwitchTabMobile('goals', e)}>
         <span className="bicon" style={{ color: '#f59e0b' }}>📝</span>Goals
       </button>
