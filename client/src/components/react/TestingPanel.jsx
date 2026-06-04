@@ -1,128 +1,123 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
+
+const TEST_GROUPS = [
+  {
+    id: 'economy',
+    name: '💰 Core Economy System',
+    tests: ['Basic Income Flow', 'Market Trading', 'Trade Routes', 'Banking System', 'Resource Management']
+  },
+  {
+    id: 'combat',
+    name: '⚔️ Combat & Military System',
+    tests: ['Troop Management', 'Combat Resolution', 'War Machines', 'Mercenaries', 'Troop Leveling', 'Defense System']
+  },
+  {
+    id: 'research',
+    name: '📚 Research & Development System',
+    tests: ['Research Progression', 'Multiple Disciplines', 'Building Upgrades', 'Engineer Leveling']
+  },
+  {
+    id: 'magic',
+    name: '✨ Magic & Spell System',
+    tests: ['Spellbook Research', 'Scroll Crafting', 'Spell Casting', 'Mana Management', 'Spell Effects']
+  },
+  {
+    id: 'happiness',
+    name: '😊 Population & Happiness System',
+    tests: ['Population Growth', 'Happiness Calculation', 'Happiness Effects', 'Rebellion System', 'Food System', 'Housing & Capacity']
+  },
+  {
+    id: 'building',
+    name: '🏗️ Building & Construction System',
+    tests: ['Basic Building', 'Build Queue', 'Construction Tools', 'Blueprints', 'Building Types & Caps', 'Building Upgrades']
+  },
+  {
+    id: 'advanced',
+    name: '🗺️ Advanced Mechanics',
+    tests: ['Covert Operations', 'Expeditions', 'World Fragments & Attunement', 'Item Collection & Lore']
+  },
+  {
+    id: 'progression',
+    name: '⭐ Progression & Leveling System',
+    tests: ['Kingdom XP & Levels', 'Troop XP & Levels', 'Hero System', 'Achievements & Milestones']
+  },
+  {
+    id: 'social',
+    name: '👥 Social Systems',
+    tests: ['Alliances', 'Alliance Vault', 'Regional Control', 'Player-to-Player Trading', 'Messaging']
+  },
+  {
+    id: 'events',
+    name: '🎲 Events & Randomness System',
+    tests: ['Seasonal System', 'Global Events', 'Custom Goals', 'Sentiment Events']
+  },
+  {
+    id: 'special',
+    name: '🧛 Specialized & Misc Systems',
+    tests: ['Vampire-Specific Mechanics', 'Location Mapping', 'News Feed', 'War Log', 'Kingdom Info Panel']
+  },
+  {
+    id: 'integration',
+    name: '🔗 System Integration Tests',
+    tests: ['Happiness Integration', 'Combat Integration', 'Production Integration', 'Population Integration', 'Research Integration', 'Magic Integration']
+  },
+  {
+    id: 'edge',
+    name: '⚠️ Edge Cases & Error Handling',
+    tests: ['Zero/Low Resource States', 'Overflow Conditions', 'Invalid Actions']
+  },
+  {
+    id: 'performance',
+    name: '⚙️ Performance & Data Integrity',
+    tests: ['Database Consistency', 'Turn Processing', 'Data Validation']
+  }
+];
+
+const getTestKey = (groupId, testName) => `${groupId}_${testName.replace(/\s+/g, '_')}`;
 
 const TestingPanel = () => {
-  const [testStatus, setTestStatus] = useState({});
+  const [testStatus, setTestStatus] = useState(() => {
+    const saved = localStorage.getItem('narmir_test_status');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to load test status:', e);
+        return {};
+      }
+    }
+    return {};
+  });
   const [expandedGroup, setExpandedGroup] = useState(null);
   const [failureComment, setFailureComment] = useState('');
   const [commentingTest, setCommentingTest] = useState(null);
 
-  // Load test status from localStorage on mount
-  useEffect(() => {
-    const saved = localStorage.getItem('narmir_test_status');
-    if (saved) {
-      try {
-        setTestStatus(JSON.parse(saved));
-      } catch (e) {
-        console.error('Failed to load test status:', e);
-      }
-    }
-  }, []);
-
-  // Save test status to localStorage
   const saveStatus = useCallback((newStatus) => {
     setTestStatus(newStatus);
     localStorage.setItem('narmir_test_status', JSON.stringify(newStatus));
   }, []);
 
-  const testGroups = [
-    {
-      id: 'economy',
-      name: '💰 Core Economy System',
-      tests: ['Basic Income Flow', 'Market Trading', 'Trade Routes', 'Banking System', 'Resource Management']
-    },
-    {
-      id: 'combat',
-      name: '⚔️ Combat & Military System',
-      tests: ['Troop Management', 'Combat Resolution', 'War Machines', 'Mercenaries', 'Troop Leveling', 'Defense System']
-    },
-    {
-      id: 'research',
-      name: '📚 Research & Development System',
-      tests: ['Research Progression', 'Multiple Disciplines', 'Building Upgrades', 'Engineer Leveling']
-    },
-    {
-      id: 'magic',
-      name: '✨ Magic & Spell System',
-      tests: ['Spellbook Research', 'Scroll Crafting', 'Spell Casting', 'Mana Management', 'Spell Effects']
-    },
-    {
-      id: 'happiness',
-      name: '😊 Population & Happiness System',
-      tests: ['Population Growth', 'Happiness Calculation', 'Happiness Effects', 'Rebellion System', 'Food System', 'Housing & Capacity']
-    },
-    {
-      id: 'building',
-      name: '🏗️ Building & Construction System',
-      tests: ['Basic Building', 'Build Queue', 'Construction Tools', 'Blueprints', 'Building Types & Caps', 'Building Upgrades']
-    },
-    {
-      id: 'advanced',
-      name: '🗺️ Advanced Mechanics',
-      tests: ['Covert Operations', 'Expeditions', 'World Fragments & Attunement', 'Item Collection & Lore']
-    },
-    {
-      id: 'progression',
-      name: '⭐ Progression & Leveling System',
-      tests: ['Kingdom XP & Levels', 'Troop XP & Levels', 'Hero System', 'Achievements & Milestones']
-    },
-    {
-      id: 'social',
-      name: '👥 Social Systems',
-      tests: ['Alliances', 'Alliance Vault', 'Regional Control', 'Player-to-Player Trading', 'Messaging']
-    },
-    {
-      id: 'events',
-      name: '🎲 Events & Randomness System',
-      tests: ['Seasonal System', 'Global Events', 'Custom Goals', 'Sentiment Events']
-    },
-    {
-      id: 'special',
-      name: '🧛 Specialized & Misc Systems',
-      tests: ['Vampire-Specific Mechanics', 'Location Mapping', 'News Feed', 'War Log', 'Kingdom Info Panel']
-    },
-    {
-      id: 'integration',
-      name: '🔗 System Integration Tests',
-      tests: ['Happiness Integration', 'Combat Integration', 'Production Integration', 'Population Integration', 'Research Integration', 'Magic Integration']
-    },
-    {
-      id: 'edge',
-      name: '⚠️ Edge Cases & Error Handling',
-      tests: ['Zero/Low Resource States', 'Overflow Conditions', 'Invalid Actions']
-    },
-    {
-      id: 'performance',
-      name: '⚙️ Performance & Data Integrity',
-      tests: ['Database Consistency', 'Turn Processing', 'Data Validation']
-    }
-  ];
-
-  const getTestKey = (groupId, testName) => `${groupId}_${testName.replace(/\s+/g, '_')}`;
-
   const toggleTestFinished = (groupId, testName) => {
     const key = getTestKey(groupId, testName);
     const newStatus = { ...testStatus };
-    newStatus[key] = newStatus[key] || {};
-    newStatus[key].finished = !newStatus[key].finished;
+    const testData = newStatus[key] || {};
+    newStatus[key] = { ...testData, finished: !testData.finished };
     saveStatus(newStatus);
   };
 
   const setTestPassed = (groupId, testName, passed) => {
     const key = getTestKey(groupId, testName);
     const newStatus = { ...testStatus };
-    newStatus[key] = newStatus[key] || {};
-    newStatus[key].passed = passed;
-    if (passed) {
-      newStatus[key].comment = '';
-    }
+    const testData = newStatus[key] || {};
+    newStatus[key] = { ...testData, passed, comment: passed ? '' : testData.comment };
     saveStatus(newStatus);
   };
 
   const handleCommentSubmit = (groupId, testName) => {
     const key = getTestKey(groupId, testName);
     const newStatus = { ...testStatus };
-    newStatus[key] = newStatus[key] || {};
-    newStatus[key].comment = failureComment;
+    const testData = newStatus[key] || {};
+    newStatus[key] = { ...testData, comment: failureComment };
     saveStatus(newStatus);
     setCommentingTest(null);
     setFailureComment('');
@@ -137,7 +132,7 @@ const TestingPanel = () => {
   };
 
   return (
-    <div id="testing" className="panel" style={{ display: 'none' }}>
+    <div id="testing" className="panel">
       <div className="card" style={{ marginTop: 0 }}>
         <div style={{ marginBottom: '16px' }}>
           <h2 style={{ margin: 0, marginBottom: '8px' }}>🧪 Testing Dashboard</h2>
@@ -146,7 +141,7 @@ const TestingPanel = () => {
           </p>
         </div>
 
-        {testGroups.map((group) => {
+        {TEST_GROUPS.map((group) => {
           const stats = getGroupStats(group);
           const isExpanded = expandedGroup === group.id;
           const progressPercent = stats.total > 0 ? Math.round((stats.finished / stats.total) * 100) : 0;
@@ -254,6 +249,7 @@ const TestingPanel = () => {
                           <button
                             onClick={() => {
                               setTestPassed(group.id, testName, false);
+                              setFailureComment(test.comment || '');
                               setCommentingTest(key);
                             }}
                             style={{
