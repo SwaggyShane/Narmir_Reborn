@@ -6391,6 +6391,7 @@
 
       var _registerMode = false;
       var _selectedRace = "human";
+      var _selectedGender = "male";
 
       function doRegister() {
         if (!_registerMode) {
@@ -6449,7 +6450,7 @@
           const isComingSoon = COMING_SOON_RACES.includes(raceKey);
           const isSelected = raceKey === _selectedRace && !isComingSoon;
           const borderColor = isSelected ? (race.color || "#e8b84b") : "#363a52";
-          const portraitUrl = RACE_PORTRAITS[raceKey] || "";
+          const portraitUrl = getRacePortrait(raceKey, "male");
 
           const portraitHtml = portraitUrl
             ? `<img src="${portraitUrl}" style="width: 100%; height: 100%; aspect-ratio: 3/4; object-fit: cover; display: block;" alt="${race.title}" onerror="this.parentElement.style.display='none'" />`
@@ -6521,7 +6522,7 @@
         const race = RACE_LORE[_selectedRace];
         if (!race || !race.lore) return;
 
-        const portraitUrl = RACE_PORTRAITS[_selectedRace] || "";
+        const portraitUrl = getRacePortrait(_selectedRace, _selectedGender);
         const portraitHtml = portraitUrl
           ? `<img src="${portraitUrl}" style="width: 100%; max-height: 350px; aspect-ratio: 3/4; object-fit: cover; margin-bottom: 20px; border-radius: 12px; display: block; box-shadow: 0 6px 16px rgba(0,0,0,0.5);" alt="${race.title}" onerror="this.style.display='none'" />`
           : `<div style="width: 100%; height: 320px; border-radius: 12px; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 80px; margin-bottom: 20px; box-shadow: 0 6px 16px rgba(0,0,0,0.5);">${race.icon || "👤"}</div>`;
@@ -6585,6 +6586,39 @@
           <div style="border-top: 1px solid #363a52; padding-top: 24px;">
             <div style="font-size: 14px; font-weight: 600; color: #e8b84b; margin-bottom: 16px;">
               → Play as ${race.title}
+            </div>
+
+            <div style="margin-bottom: 20px;">
+              <label style="font-size: 10px; color: #9a9bb5; text-transform: uppercase; display: block; margin-bottom: 10px; font-weight: 600;">Character Gender</label>
+              <div style="display: flex; gap: 16px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; color: #cbd5e1;">
+                  <input
+                    type="radio"
+                    name="reg-gender"
+                    value="male"
+                    checked
+                    onchange="
+                      _selectedGender = 'male';
+                      showRaceDetailsForRegistration();
+                    "
+                    style="cursor: pointer; width: 18px; height: 18px;"
+                  />
+                  <span>Male</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; color: #cbd5e1;">
+                  <input
+                    type="radio"
+                    name="reg-gender"
+                    value="female"
+                    onchange="
+                      _selectedGender = 'female';
+                      showRaceDetailsForRegistration();
+                    "
+                    style="cursor: pointer; width: 18px; height: 18px;"
+                  />
+                  <span>Female</span>
+                </label>
+              </div>
             </div>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 12px;">
@@ -6849,6 +6883,7 @@
         document.getElementById("auth-pass").value = password;
         document.getElementById("auth-email").value = email;
         document.getElementById("auth-race").value = _selectedRace;
+        document.getElementById("auth-gender").value = _selectedGender;
 
         closeRegistrationModal();
         doAttempt("/api/auth/register");
@@ -6863,6 +6898,7 @@
         // Reset registration state when closing modal
         _registerMode = false;
         _selectedRace = "human";
+        _selectedGender = "male";
         // Clear error messages
         const errEl = document.getElementById("reg-error");
         if (errEl) errEl.textContent = "";
@@ -8535,14 +8571,31 @@
         vampire: "🦇",
       };
 
+      function getRacePortrait(race, gender = 'male') {
+        const portraits = {
+          high_elf: { male: "/race/high_elf_male.png", female: "/race/high_elf_female.png" },
+          dwarf: { male: "/race/dwarf_male.png", female: "/race/dwarf_female.png" },
+          human: { male: "/race/human_male.png", female: "/race/human_female.png" },
+          orc: { male: "/race/orc_male.png", female: "/race/orc_female.png" },
+          dark_elf: { male: "/race/dark_elf_male.png", female: "/race/dark_elf_female.png" },
+          dire_wolf: { male: "/race/dire_wolf_male.png", female: "/race/dire_wolf_female.png" },
+          vampire: { male: "/race/vampire_male.png", female: "/race/vampire_female.png" },
+          ogre: { male: "/race/ogre_male.png", female: "/race/ogre_female.png" },
+          wood_elf: { male: "/race/wood_elf_male.png", female: "/race/wood_elf_female.png" }
+        };
+        const genderVariant = portraits[race]?.[gender] || portraits[race]?.male || "";
+        return genderVariant;
+      }
+
+      // Deprecated - use getRacePortrait() instead
       var RACE_PORTRAITS = {
-        high_elf: "/race/high_elf.png",
-        dwarf: "/race/dwarf.png",
-        human: "/race/human.png",
-        orc: "/race/orc.png",
-        dark_elf: "/race/dark_elf.png",
-        dire_wolf: "/race/dire_wolf.png",
-        vampire: "/race/vampire.png",
+        high_elf: "/race/high_elf_male.png",
+        dwarf: "/race/dwarf_male.png",
+        human: "/race/human_male.png",
+        orc: "/race/orc_male.png",
+        dark_elf: "/race/dark_elf_male.png",
+        dire_wolf: "/race/dire_wolf_male.png",
+        vampire: "/race/vampire_male.png",
       };
 
       var currentRankType = "kingdoms";
@@ -14078,7 +14131,7 @@
         if (!lore) return;
         var el = document.getElementById("race-lore-content");
         var region = REGION_META[rKey] || {};
-        var portraitUrl = RACE_PORTRAITS[rKey] || "";
+        var portraitUrl = getRacePortrait(rKey, "male");
 
         var portraitHtml = "";
         if (portraitUrl) {
@@ -14281,7 +14334,7 @@
         }
 
         var raceIcon = RACE_ICONS[data.race] || "👤";
-        var racePortrait = RACE_PORTRAITS[data.race] || "";
+        var racePortrait = getRacePortrait(data.race, data.gender || "male");
         var regionMeta = REGION_META[data.race] || {};
         var isMe = data.id === state.kingdomId;
 
@@ -16491,7 +16544,7 @@
               ";"
             : "background: var(--bg3);";
 
-          var portraitUrl = RACE_PORTRAITS[key];
+          var portraitUrl = getRacePortrait(key, "male");
           var portraitHtml = portraitUrl
             ? '<img src="' + portraitUrl + '" style="width: 100%; max-height: 180px; aspect-ratio: 3 / 4; object-fit: contain; margin-bottom: 12px; display: block;" alt="' + escHtml(r.title || r.label || key) + '" onerror="this.style.display=\'none\'" />'
             : '';
@@ -16846,6 +16899,25 @@
               min-height: 20px;
             "
           ></div>
+          <div style="margin-top: 10px;">
+            <label style="font-size: 11px; color: #9a9bb5; text-transform: uppercase; display: block; margin-bottom: 6px; font-weight: 600;">Character Gender</label>
+            <select
+              id="auth-gender"
+              style="
+                width: 100%;
+                padding: 10px 12px;
+                font-size: 15px;
+                background: #1a1c27;
+                border: 1px solid #363a52;
+                border-radius: 8px;
+                color: #e8e9f0;
+                box-sizing: border-box;
+              "
+            >
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          </div>
         </div>
         <div style="display: flex; gap: 10px; margin-top: 16px">
           <button

@@ -439,6 +439,7 @@ async function initDb() {
       player_id   INTEGER NOT NULL UNIQUE REFERENCES players(id),
       name        TEXT    NOT NULL,
       race        TEXT    NOT NULL DEFAULT 'human',
+      gender      TEXT    NOT NULL DEFAULT 'male',
       gold        INTEGER NOT NULL DEFAULT 10000,
       land        INTEGER NOT NULL DEFAULT 500,
       population  INTEGER NOT NULL DEFAULT 50000,

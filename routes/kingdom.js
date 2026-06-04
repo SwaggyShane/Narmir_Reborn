@@ -4377,7 +4377,7 @@ module.exports = function (db) {
     try {
       const k = await db.get(
         `
-        SELECT k.id, k.name, k.race, k.region, k.level, k.xp, k.land, k.population,
+        SELECT k.id, k.name, k.race, k.gender, k.region, k.level, k.xp, k.land, k.population,
                k.fighters, k.mages, k.rangers, k.morale, k.turn, k.description,
                k.res_military, k.res_economy, k.res_construction, k.res_spellbook,
                k.res_attack_magic, k.res_entertainment,
