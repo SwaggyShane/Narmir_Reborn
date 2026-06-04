@@ -251,7 +251,7 @@ function AuthCard({ onViewChange }) {
           password: regPassword,
           kingdomName: regKingdom,
           email: regEmail,
-          race: selectedRace || 'human',
+          race: (selectedRace || 'human'),
           gender: regGender,
         }),
       });
@@ -301,7 +301,7 @@ function AuthCard({ onViewChange }) {
   }
 
   if (view === 'register') {
-    const raceInfo = RACE_DATA.find(r => r.id === selectedRace);
+    const raceInfo = RACE_DATA.find(r => r.id === (selectedRace || 'human'));
     return (
       <div className="reg-fullwidth-container">
         <div className="reg-header">
