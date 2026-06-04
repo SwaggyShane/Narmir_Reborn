@@ -1550,17 +1550,17 @@ function processGranaryAttunements(k, events) {
       break;
 
     case 'Celestial Feather':
-      // Portion of reserves distributed to boost morale on unstable turns
-      const morale = displayMorale(k);
-      if (morale < 30 && (k.food || 0) > 0) {
-        const moraleFoodCost = Math.max(1, Math.floor((k.food || 0) * 0.05));
-        const moraleBoost = Math.floor(naturalMoraleCap(k) * 0.05);
-        foodChange = -moraleFoodCost;
+      // Portion of reserves distributed to boost happiness on unstable turns
+      const happiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
+      if (happiness < 30 && (k.food || 0) > 0) {
+        const happinessFoodCost = Math.max(1, Math.floor((k.food || 0) * 0.05));
+        const happinessBoost = 10; // +10 happiness
+        foodChange = -happinessFoodCost;
         events.push({
           type: 'system',
-          message: `🪶 Manna Manifestation: ${moraleFoodCost.toLocaleString()} food distributed for morale (+5%).`
+          message: `🪶 Manna Manifestation: ${happinessFoodCost.toLocaleString()} food distributed to raise happiness (+10).`
         });
-        updates.morale = Math.min(naturalMoraleCap(k), (k.morale || 0) + moraleBoost);
+        updates.happiness = Math.min(120, happiness + happinessBoost);
       }
       break;
 
@@ -2029,7 +2029,7 @@ function processTurn(k) {
   } else if (growth < 0) {
     events.push({
       type: "system",
-      message: `👥 Population declined by ${Math.abs(growth).toLocaleString()} to ${updates.population.toLocaleString()} due to low morale.`,
+      message: `👥 Population declined by ${Math.abs(growth).toLocaleString()} to ${updates.population.toLocaleString()} due to low happiness.`,
     });
   }
 
