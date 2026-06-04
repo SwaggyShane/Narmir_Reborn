@@ -197,6 +197,7 @@ function AuthCard({ onViewChange }) {
   const [regKingdom, setRegKingdom] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
+  const [regGender, setRegGender] = useState('male');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -251,6 +252,7 @@ function AuthCard({ onViewChange }) {
           kingdomName: regKingdom,
           email: regEmail,
           race: selectedRace || 'human',
+          gender: regGender,
         }),
       });
       const d = await r.json();
@@ -301,38 +303,89 @@ function AuthCard({ onViewChange }) {
   if (view === 'register') {
     const raceInfo = RACE_DATA.find(r => r.id === selectedRace);
     return (
-      <div className="portal-card auth-modal-card">
-        <div className="auth-modal-title">Create Your Kingdom</div>
-        <p className="auth-modal-sub">Your path begins now.</p>
+      <div className="reg-fullwidth-container">
+        <div className="reg-header">
+          <button className="reg-back-btn" onClick={() => setView('race-select')}>← Back to Race Selection</button>
+          <h2 className="reg-title">Create Your Kingdom</h2>
+        </div>
 
-        {raceInfo && (
-          <div className="reg-race-badge" style={{ '--race-color': raceInfo.color }}>
-            <img src={`/race/${raceInfo.id}.png`} alt={raceInfo.title} className="reg-race-portrait" />
-            <div>
-              <div className="reg-race-name">{raceInfo.title.split(' of ')[0]}</div>
-              <button className="reg-race-change" onClick={() => setView('race-select')}>Change race</button>
+        <div className="reg-content">
+          {raceInfo && (
+            <div className="reg-left-panel">
+              <div className="reg-portrait-section" style={{ '--race-color': raceInfo.color }}>
+                <img src={`/race/${raceInfo.id}_male.png`} alt={raceInfo.title} className="reg-portrait" />
+                <div className="reg-race-info">
+                  <div className="reg-race-title">{raceInfo.title.split(' of ')[0]}</div>
+                  <button type="button" className="reg-race-change" onClick={() => setView('race-select')}>Change Race</button>
+                </div>
+              </div>
+              <div className="reg-race-stats">
+                <div className="stat-group">
+                  <div className="stat-label">Strengths</div>
+                  <ul className="stat-list">
+                    {raceInfo.strengths?.slice(0, 2).map((s, i) => <li key={i}>✓ {s}</li>)}
+                  </ul>
+                </div>
+                <div className="stat-group">
+                  <div className="stat-label">Playstyle</div>
+                  <p className="stat-text">{raceInfo.playstyle?.split('.')[0]}</p>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <form onSubmit={doRegister}>
-          <input className="portal-input" type="text" placeholder="Username" value={regUsername}
-            onChange={e => setRegUsername(e.target.value)} required autoComplete="username" />
-          <input className="portal-input" type="text" placeholder="Kingdom Name" value={regKingdom}
-            onChange={e => setRegKingdom(e.target.value)} required />
-          <input className="portal-input" type="email" placeholder="Email" value={regEmail}
-            onChange={e => setRegEmail(e.target.value)} required autoComplete="email" />
-          <input className="portal-input" type="password" placeholder="Password" value={regPassword}
-            onChange={e => setRegPassword(e.target.value)} required autoComplete="new-password" />
-          <p className="auth-password-hint">8+ chars · uppercase · lowercase · number · special (@$!%*?&)</p>
-          {error && <p className="portal-error">{error}</p>}
-          <div className="auth-btn-row">
-            <button type="button" className="portal-ghost-btn" onClick={() => setView('race-select')}>Back</button>
-            <button type="submit" className="portal-enter-btn auth-register-btn" disabled={submitting}>
-              {submitting ? '…' : 'BEGIN YOUR REIGN'}
-            </button>
+          <div className="reg-right-panel">
+            <form onSubmit={doRegister} className="reg-form">
+              <div className="form-section">
+                <label className="form-label">Character Gender</label>
+                <div className="gender-options">
+                  <label className="gender-option">
+                    <input type="radio" name="gender" value="male" checked={regGender === 'male'}
+                      onChange={e => setRegGender(e.target.value)} />
+                    <span>Male</span>
+                  </label>
+                  <label className="gender-option">
+                    <input type="radio" name="gender" value="female" checked={regGender === 'female'}
+                      onChange={e => setRegGender(e.target.value)} />
+                    <span>Female</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="form-grid">
+                <div className="form-group">
+                  <label className="form-label">Username</label>
+                  <input className="form-input" type="text" placeholder="3-20 characters" value={regUsername}
+                    onChange={e => setRegUsername(e.target.value)} required autoComplete="username" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Kingdom Name</label>
+                  <input className="form-input" type="text" placeholder="Your realm" value={regKingdom}
+                    onChange={e => setRegKingdom(e.target.value)} required />
+                </div>
+              </div>
+
+              <div className="form-grid">
+                <div className="form-group">
+                  <label className="form-label">Email</label>
+                  <input className="form-input" type="email" placeholder="your@email.com" value={regEmail}
+                    onChange={e => setRegEmail(e.target.value)} required autoComplete="email" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Password</label>
+                  <input className="form-input" type="password" placeholder="Min 8 chars" value={regPassword}
+                    onChange={e => setRegPassword(e.target.value)} required autoComplete="new-password" />
+                </div>
+              </div>
+
+              <p className="auth-password-hint">8+ chars · uppercase · lowercase · number · special (@$!%*?&)</p>
+              {error && <p className="portal-error">{error}</p>}
+              <button type="submit" className="reg-submit-btn" disabled={submitting}>
+                {submitting ? '…' : `BEGIN AS ${raceInfo?.title.split(' of ')[0].toUpperCase()}`}
+              </button>
+            </form>
           </div>
-        </form>
+        </div>
       </div>
     );
   }
@@ -478,13 +531,13 @@ export default function Portal() {
         <p className="portal-tagline">Rise From the Ashes. Forge Your Legacy.</p>
       </header>
 
-      <main className="portal-main" style={{ gridTemplateColumns: isRegistrationActive ? '1fr' : '1fr 360px' }}>
+      <main className={`portal-main ${isRegistrationActive ? 'reg-active' : ''}`} style={{ gridTemplateColumns: isRegistrationActive ? '1fr' : '1fr 360px' }}>
         {!isRegistrationActive && (
           <div className="portal-col-left">
             {showRankings && <RankingsTable />}
           </div>
         )}
-        <div className={isRegistrationActive ? 'portal-col-center' : 'portal-col-right'}>
+        <div className={isRegistrationActive ? 'portal-col-register' : 'portal-col-right'}>
           <AuthCard onViewChange={setAuthView} />
           {!isRegistrationActive && (
             <>
