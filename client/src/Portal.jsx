@@ -313,7 +313,7 @@ function AuthCard({ onViewChange }) {
           {raceInfo && (
             <div className="reg-left-panel">
               <div className="reg-portrait-section" style={{ '--race-color': raceInfo.color }}>
-                <img src={`/race/${raceInfo.id}_male.png`} alt={raceInfo.title} className="reg-portrait" />
+                <img src={`/race/${raceInfo.id}_${regGender}.png`} alt={raceInfo.title} className="reg-portrait" />
                 <div className="reg-race-info">
                   <div className="reg-race-title">{raceInfo.title.split(' of ')[0]}</div>
                   <button type="button" className="reg-race-change" onClick={() => setView('race-select')}>Change Race</button>
@@ -381,7 +381,7 @@ function AuthCard({ onViewChange }) {
               <p className="auth-password-hint">8+ chars · uppercase · lowercase · number · special (@$!%*?&)</p>
               {error && <p className="portal-error">{error}</p>}
               <button type="submit" className="reg-submit-btn" disabled={submitting}>
-                {submitting ? '…' : `BEGIN AS ${raceInfo?.title.split(' of ')[0].toUpperCase()}`}
+                {submitting ? '…' : `BEGIN AS ${raceInfo?.title?.split(' of ')?.[0]?.toUpperCase() || 'COMMANDER'}`}
               </button>
             </form>
           </div>
