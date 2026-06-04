@@ -39,8 +39,7 @@ async function wipePlayerAccounts() {
     // Get count of accounts to delete
     const playersToDelete = await client.query(`
       SELECT id, username FROM players
-      WHERE is_admin = 0 AND is_ai = 0
-    `);
+      WHERE is_admin = 0    `);
 
     console.log(`Found ${playersToDelete.rows.length} human player account(s):`);
     playersToDelete.rows.forEach(row => {
@@ -71,8 +70,7 @@ async function wipePlayerAccounts() {
           DELETE FROM ${table.name}
           WHERE ${table.col} IN (
             SELECT id FROM players
-            WHERE is_admin = 0 AND is_ai = 0
-          )
+            WHERE is_admin = 0          )
         `);
         if (result.rowCount > 0) {
           console.log(`✅ Deleted ${result.rowCount} record(s) from ${table.name}`);
@@ -89,8 +87,7 @@ async function wipePlayerAccounts() {
     // Delete the player accounts
     const playersDeleted = await client.query(`
       DELETE FROM players
-      WHERE is_admin = 0 AND is_ai = 0
-    `);
+      WHERE is_admin = 0    `);
     console.log(`✅ Deleted ${playersDeleted.rowCount} player account(s)`);
     totalDeleted += playersDeleted.rowCount;
 
@@ -99,11 +96,11 @@ async function wipePlayerAccounts() {
 
     // Show remaining accounts
     const remaining = await client.query(`
-      SELECT username, is_admin, is_ai FROM players ORDER BY username
+      SELECT username, is_admin FROM players ORDER BY username
     `);
     console.log(`\n📋 Remaining accounts (${remaining.rows.length}):`);
     remaining.rows.forEach(row => {
-      const type = row.is_admin ? 'ADMIN' : row.is_ai ? 'AI' : 'ERROR';
+      const type = row.is_admin ? 'ADMIN' : 'PLAYER';
       console.log(`  [${type}] ${row.username}`);
     });
 

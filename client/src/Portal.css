@@ -28,42 +28,41 @@ body {
 
 /* ── Header ── */
 .portal-header {
-  text-align: center;
-  padding: 3rem 1rem 2rem;
-  background: linear-gradient(180deg, rgba(240, 98, 2, 0.1) 0%, transparent 100%);
+  text-align: left;
+  padding: 1rem 1.5rem;
   border-bottom: 1px solid var(--border);
   position: relative;
 }
 
 .portal-back-link {
-  position: absolute;
-  left: 1.5rem;
-  top: 50%;
-  transform: translateY(-50%);
+  position: static;
+  display: inline-block;
   color: var(--text3);
   text-decoration: none;
   font-size: 0.8rem;
   letter-spacing: 0.05em;
   transition: color 0.15s;
+  margin-bottom: 0.5rem;
 }
 .portal-back-link:hover { color: var(--text2); }
 
 .portal-title {
   font-family: 'Cinzel', serif;
-  font-size: clamp(1.8rem, 5vw, 3.5rem);
+  font-size: 1.5rem;
   font-weight: 900;
   background: linear-gradient(135deg, #f06202, #f0b202, #f06202);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   letter-spacing: 0.1em;
-  margin-bottom: 0.4rem;
+  margin: 0 0 0.2rem 0;
 }
 
 .portal-tagline {
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   color: var(--text2);
   letter-spacing: 0.05em;
+  margin: 0;
 }
 
 /* ── Main layout ── */
@@ -510,6 +509,11 @@ body {
   padding: 1rem;
   overflow-y: auto;
   max-height: 380px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.race-detail-panel::-webkit-scrollbar {
+  display: none;
 }
 
 .race-detail-empty {

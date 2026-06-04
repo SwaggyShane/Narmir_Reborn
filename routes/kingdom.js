@@ -341,7 +341,6 @@ module.exports = function (db) {
         k.*,
         p.id as player_id,
         p.username,
-        p.is_ai,
         (
           SELECT MAX(created_at) FROM war_log
           WHERE attacker_id = k.id OR defender_id = k.id
@@ -377,7 +376,7 @@ module.exports = function (db) {
         if (missingIds.length > 0) {
           const placeholders = missingIds.map((_, i) => `$${i + 1}`).join(',');
           const missingRows = await db.all(`
-            SELECT k.*, p.id as player_id, p.username, p.is_ai FROM kingdoms k
+            SELECT k.*, p.id as player_id, p.username FROM kingdoms k
             JOIN players p ON k.player_id = p.id
             WHERE k.id IN (${placeholders})
           `, missingIds);
@@ -406,8 +405,7 @@ module.exports = function (db) {
         level: r.level,
         player_id: r.player_id,
         username: r.username,
-        is_ai: r.is_ai,
-        score: r.score,
+          score: r.score,
         rank: i + 1,
         last_combat_at: r.last_combat_at,
       }));
@@ -1838,7 +1836,7 @@ module.exports = function (db) {
 
     // Consolidate 3 queries into 2: attacker + target with AI status
     const k = await db.get(
-      `SELECT k.*, p.is_ai FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.player_id = ?`,
+      `SELECT k.* FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.player_id = ?`,
       [req.player.playerId],
     );
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -1852,18 +1850,15 @@ module.exports = function (db) {
       return res.status(400).json({ error: "Send at least some troops" });
 
     const target = await db.get(
-      `SELECT k.*, p.is_ai FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.id = ?`,
+      `SELECT k.* FROM kingdoms k
+       JOIN players p ON k.player_id = p.id
+       WHERE k.id = ?`,
       [targetId],
     );
     if (!target)
       return res.status(404).json({ error: "Target kingdom not found" });
     if (target.id === k.id)
       return res.status(400).json({ error: "Cannot attack yourself" });
-
-    // AI vs AI only - no cross-faction warfare (now using data from consolidated query)
-    if ((k.is_ai || false) !== (target.is_ai || false)) {
-      return res.status(400).json({ error: "AI and human kingdoms cannot war against each other" });
-    }
 
     if (sentUnits.fighters > engine.getAvailableUnits(k, "fighters"))
       return res.status(400).json({
@@ -2193,19 +2188,18 @@ module.exports = function (db) {
           error: "You need a location map for this target.",
         });
       }
-      target = await db.get("SELECT k.*, p.is_ai FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.id = ?", [targetId]);
+      target = await db.get(
+        `SELECT k.* FROM kingdoms k
+         JOIN players p ON k.player_id = p.id
+         WHERE k.id = ?`,
+        [targetId]
+      );
       if (!target)
         return res.status(404).json({ error: "Target kingdom not found" });
       if (target.player_id === k.player_id)
         return res
           .status(400)
           .json({ error: "Cannot cast offensive spells on yourself" });
-
-      // AI vs AI only - no cross-faction spell warfare
-      const caster_is_ai = await db.get("SELECT is_ai FROM players WHERE id = ?", [req.player.playerId]);
-      if ((caster_is_ai?.is_ai || false) !== (target.is_ai || false)) {
-        return res.status(400).json({ error: "AI and human kingdoms cannot war against each other" });
-      }
 
       if ((target.turn || 0) < 400)
         return res.status(400).json({
@@ -2354,12 +2348,6 @@ module.exports = function (db) {
         }
 
         // AI vs AI only - no cross-faction covert ops
-        const attacker_is_ai = await db.get("SELECT is_ai FROM players WHERE id = ?", [req.player.playerId]);
-        if ((attacker_is_ai?.is_ai || false) !== (target.is_ai || false)) {
-          await db.run("ROLLBACK");
-          return res.status(400).json({ error: "AI and human kingdoms cannot war against each other" });
-        }
-
         // Check map requirement
         let atkDisc = {};
         try {
@@ -4381,8 +4369,7 @@ module.exports = function (db) {
                k.fighters, k.mages, k.rangers, k.morale, k.turn, k.description,
                k.res_military, k.res_economy, k.res_construction, k.res_spellbook,
                k.res_attack_magic, k.res_entertainment,
-               p.id as player_id, p.username, p.is_ai
-        FROM kingdoms k JOIN players p ON k.player_id = p.id
+               p.id as player_id, p.username        FROM kingdoms k JOIN players p ON k.player_id = p.id
         WHERE LOWER(k.name) = LOWER(?)`,
         [req.params.name],
       );
@@ -4431,8 +4418,7 @@ module.exports = function (db) {
       } catch {}
 
       const kingdoms = await db.all(`
-        SELECT k.id, k.name, k.race, k.region, k.land, k.level, k.turn, p.is_ai
-        FROM kingdoms k JOIN players p ON k.player_id = p.id
+        SELECT k.id, k.name, k.race, k.region, k.land, k.level, k.turn        FROM kingdoms k JOIN players p ON k.player_id = p.id
         ORDER BY k.land DESC`);
 
       const filtered = kingdoms.filter(
@@ -4459,8 +4445,7 @@ module.exports = function (db) {
           } catch {}
 
         const kingdoms = await db.all(`
-          SELECT k.id, k.name, k.race, '' as region, k.land, k.level, k.turn, p.is_ai
-          FROM kingdoms k JOIN players p ON k.player_id = p.id
+          SELECT k.id, k.name, k.race, '' as region, k.land, k.level, k.turn          FROM kingdoms k JOIN players p ON k.player_id = p.id
           ORDER BY k.land DESC`);
 
         const filtered = kingdoms.filter(

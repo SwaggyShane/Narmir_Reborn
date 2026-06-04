@@ -7,18 +7,14 @@ const fs = require("fs");
 const _config = require("../game/config");
 const { _GOAL_COUNTS, DAILY_GOALS, WEEKLY_GOALS, MONTHLY_GOALS } = require("../game/goals");
 
-const ALLOWED_PRIZE_TYPES = ['gold', 'mana', 'rangers', 'researchers', 'war_machines', 'world_fragment'];
-
-const DAILY_GOALS_DEFAULTS = DAILY_GOALS.map(g => ({ ...g }));
-const WEEKLY_GOALS_DEFAULTS = WEEKLY_GOALS.map(g => ({ ...g }));
-const MONTHLY_GOALS_DEFAULTS = MONTHLY_GOALS.map(g => ({ ...g }));
+let ORIGINAL_DAILY_GOALS = [];
+let ORIGINAL_WEEKLY_GOALS = [];
+let ORIGINAL_MONTHLY_GOALS = [];
 
 const soundsPath = path.join(__dirname, "..", "public", "sounds");
 if (!fs.existsSync(soundsPath)) {
   fs.mkdirSync(soundsPath, { recursive: true });
 }
-
-const ALLOWED_SOUND_EXTENSIONS = new Set([".mp3", ".wav"]);
 
 // Resolve a user-supplied filename to an absolute path inside soundsPath.
 // Returns null if the input is unsafe (traversal, wrong extension, or escapes the dir).
@@ -27,7 +23,7 @@ function safeSoundPath(rawName) {
   const base = rawName.split(/[\/\\]/).pop();
   if (!base || base === "." || base === "..") return null;
   const ext = path.extname(base).toLowerCase();
-  if (!ALLOWED_SOUND_EXTENSIONS.has(ext)) return null;
+  if (![".mp3", ".wav"].includes(ext)) return null;
   const resolved = path.resolve(soundsPath, base);
   if (path.relative(soundsPath, resolved).startsWith("..")) return null;
   return resolved;
@@ -35,19 +31,25 @@ function safeSoundPath(rawName) {
 
 async function refreshInMemoryGoals(db) {
   try {
+    if (ORIGINAL_DAILY_GOALS.length === 0) {
+      ORIGINAL_DAILY_GOALS = DAILY_GOALS.map(g => ({ ...g }));
+      ORIGINAL_WEEKLY_GOALS = WEEKLY_GOALS.map(g => ({ ...g }));
+      ORIGINAL_MONTHLY_GOALS = MONTHLY_GOALS.map(g => ({ ...g }));
+    }
+
     const overrides = await db.all(
       `SELECT tier, goal_id, label, min_target, max_target, prize_type, prize_multiplier, active
        FROM admin_goal_definitions ORDER BY tier, goal_id`
     );
 
     DAILY_GOALS.length = 0;
-    DAILY_GOALS.push(...DAILY_GOALS_DEFAULTS.map(g => ({ ...g })));
+    DAILY_GOALS.push(...ORIGINAL_DAILY_GOALS.map(g => ({ ...g })));
 
     WEEKLY_GOALS.length = 0;
-    WEEKLY_GOALS.push(...WEEKLY_GOALS_DEFAULTS.map(g => ({ ...g })));
+    WEEKLY_GOALS.push(...ORIGINAL_WEEKLY_GOALS.map(g => ({ ...g })));
 
     MONTHLY_GOALS.length = 0;
-    MONTHLY_GOALS.push(...MONTHLY_GOALS_DEFAULTS.map(g => ({ ...g })));
+    MONTHLY_GOALS.push(...ORIGINAL_MONTHLY_GOALS.map(g => ({ ...g })));
 
     for (const override of overrides) {
       const tier = override.tier;
@@ -89,25 +91,21 @@ async function refreshInMemoryGoals(db) {
   }
 }
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, soundsPath);
-  },
-  filename: function (req, file, cb) {
-    const base = (file.originalname || "").split(/[\/\\]/).pop();
-    const ext = path.extname(base).toLowerCase();
-    if (!base || !ALLOWED_SOUND_EXTENSIONS.has(ext)) {
-      return cb(new Error("Invalid filename or extension"));
-    }
-    cb(null, base);
-  },
-});
 const upload = multer({
-  storage: storage,
-  fileFilter: function (req, file, cb) {
-    const base = (file.originalname || "").split(/[\/\\]/).pop();
-    const ext = path.extname(base).toLowerCase();
-    if (!ALLOWED_SOUND_EXTENSIONS.has(ext)) {
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, soundsPath),
+    filename: (req, file, cb) => {
+      const base = (file.originalname || "").split(/[\/\\]/).pop();
+      const ext = path.extname(base).toLowerCase();
+      if (!base || ![".mp3", ".wav"].includes(ext)) {
+        return cb(new Error("Invalid filename or extension"));
+      }
+      cb(null, base);
+    },
+  }),
+  fileFilter: (req, file, cb) => {
+    const ext = path.extname((file.originalname || "")).toLowerCase();
+    if (![".mp3", ".wav"].includes(ext)) {
       return cb(new Error("Only .mp3 and .wav files are allowed"));
     }
     cb(null, true);
@@ -350,7 +348,7 @@ module.exports = function (db, io) {
   // GET /api/admin/chat-mods
   router.get("/chat-mods", async (_req, res) => {
     const mods = await db.all(
-      "SELECT username FROM players WHERE is_chat_mod = 1 AND is_ai = 0 ORDER BY username",
+      "SELECT username FROM players WHERE is_chat_mod = 1 ORDER BY username",
     );
     res.json(mods);
   });
@@ -358,7 +356,7 @@ module.exports = function (db, io) {
   // GET /api/admin/chat-bans
   router.get("/chat-bans", async (_req, res) => {
     const banned = await db.all(
-      "SELECT username, chat_ban_reason FROM players WHERE chat_banned = 1 AND is_ai = 0 ORDER BY username",
+      "SELECT username, chat_ban_reason FROM players WHERE chat_banned = 1 ORDER BY username",
     );
     res.json(banned);
   });
@@ -593,105 +591,32 @@ module.exports = function (db, io) {
     }
   });
 
-  // GET /api/admin/ai-synopsis — snapshot of all AI kingdom states
-  router.get("/ai-synopsis", async (_req, res) => {
-    const aiPlayers = await db.all(
-      "SELECT id, username FROM players WHERE is_ai = 1",
-    );
-    if (aiPlayers.length === 0) return res.json([]);
-
-    const rows = [];
-    for (const p of aiPlayers) {
-      const k = await db.get(
-        `
-        SELECT k.*, p.username
-        FROM kingdoms k JOIN players p ON k.player_id = p.id
-        WHERE k.player_id = ?`,
-        [p.id],
-      );
-      if (!k) continue;
-
-      // Count war log actions by this AI as attacker
-      const attacks = await db.get(
-        "SELECT COUNT(*) as c FROM war_log WHERE attacker_id = ? AND action_type = ?",
-        [k.id, "attack"],
-      );
-      const coverts = await db.get(
-        "SELECT COUNT(*) as c FROM war_log WHERE attacker_id = ? AND action_type IN (?,?,?,?,?)",
-        [k.id, "spy", "loot", "assassinate", "sabotage", "covert"],
-      );
-      const wins = await db.get(
-        "SELECT COUNT(*) as c FROM war_log WHERE attacker_id = ? AND outcome = ?",
-        [k.id, "victory"],
-      );
-      const losses = await db.get(
-        "SELECT COUNT(*) as c FROM war_log WHERE attacker_id = ? AND action_type = ? AND outcome = ?",
-        [k.id, "attack", "repelled"],
-      );
-      const timesHit = await db.get(
-        "SELECT COUNT(*) as c FROM war_log WHERE defender_id = ?",
-        [k.id],
-      );
-
-      // Parse JSON fields safely
-      let buildAlloc = {};
-      let resAlloc = {};
-      try {
-        buildAlloc = JSON.parse(k.build_allocation || "{}");
-      } catch {}
-      try {
-        resAlloc = JSON.parse(k.research_allocation || "{}");
-      } catch {}
-
-      const topBuild =
-        Object.entries(buildAlloc)
-          .filter(([, v]) => v > 0)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 3)
-          .map(([k, v]) => `${k}:${v}`)
-          .join(", ") || "none";
-
-      const topResearch =
-        Object.entries(resAlloc)
-          .filter(([, v]) => v > 0)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 3)
-          .map(([k, v]) => `${k}:${v}`)
-          .join(", ") || "none";
-
-      rows.push({
-        id: k.id,
-        name: k.name,
-        race: k.race,
-        level: k.level || 1,
-        land: k.land,
-        gold: k.gold,
-        population: k.population,
-        turns_stored: k.turns_stored,
-        morale: k.morale,
-        food: k.food,
-        fighters: k.fighters,
-        rangers: k.rangers,
-        mages: k.mages,
-        thieves: k.thieves,
-        ninjas: k.ninjas,
-        bld_farms: k.bld_farms,
-        bld_barracks: k.bld_barracks,
-        bld_housing: k.bld_housing,
-        bld_schools: k.bld_schools,
-        res_military: k.res_military,
-        res_economy: k.res_economy,
-        res_spellbook: k.res_spellbook,
-        top_build: topBuild,
-        top_research: topResearch,
-        attacks: attacks?.c || 0,
-        covert_ops: coverts?.c || 0,
-        wins: wins?.c || 0,
-        losses: losses?.c || 0,
-        times_hit: timesHit?.c || 0,
-      });
+  // DELETE /api/admin/kingdom/:id — delete a kingdom and all related records
+  router.delete("/kingdom/:id", async (req, res) => {
+    const kid = req.params.id;
+    try {
+      // Clear out relations so foreign keys don't block
+      await db.run("DELETE FROM alliance_members WHERE kingdom_id = ?", [kid]);
+      await db.run("DELETE FROM alliances WHERE leader_id = ?", [kid]);
+      await db.run("DELETE FROM news WHERE kingdom_id = ?", [kid]);
+      await db.run("DELETE FROM war_log WHERE attacker_id = ? OR defender_id = ?", [kid, kid]);
+      await db.run("DELETE FROM expeditions WHERE kingdom_id = ?", [kid]);
+      await db.run("DELETE FROM combat_log WHERE attacker_id = ? OR defender_id = ?", [kid, kid]);
+      await db.run("DELETE FROM chat_messages WHERE kingdom_id = ?", [kid]);
+      await db.run("DELETE FROM heroes WHERE kingdom_id = ?", [kid]);
+      await db.run("DELETE FROM spy_reports WHERE kingdom_id = ? OR target_id = ?", [kid, kid]);
+      await db.run("DELETE FROM trade_routes WHERE kingdom_id = ? OR partner_id = ?", [kid, kid]);
+      await db.run("DELETE FROM bounties WHERE target_id = ? OR claimed_by_id = ?", [kid, kid]);
+      await db.run("DELETE FROM trade_offers WHERE sender_id = ? OR receiver_id = ?", [kid, kid]);
+      await db.run("DELETE FROM mercenaries WHERE kingdom_id = ?", [kid]);
+      await db.run("DELETE FROM event_log WHERE kingdom_id = ?", [kid]);
+      // Finally delete the kingdom
+      await db.run("DELETE FROM kingdoms WHERE id = ?", [kid]);
+      res.json({ ok: true });
+    } catch (err) {
+      console.error("[admin] delete kingdom error:", err.message);
+      res.status(500).json({ error: err.message });
     }
-    res.json(rows);
   });
 
   // DELETE /api/admin/kingdom/:id — delete a kingdom and all related records
@@ -1148,8 +1073,8 @@ module.exports = function (db, io) {
     if (prizeMultiplier !== undefined && (prizeMultiplier < 0.5 || prizeMultiplier > 100)) {
       return res.status(400).json({ error: "prizeMultiplier must be between 0.5 and 100" });
     }
-    if (prizeType !== undefined && !ALLOWED_PRIZE_TYPES.includes(prizeType)) {
-      return res.status(400).json({ error: `Invalid prizeType. Allowed: ${ALLOWED_PRIZE_TYPES.join(', ')}` });
+    if (prizeType !== undefined && !['gold', 'mana', 'rangers', 'researchers', 'war_machines', 'world_fragment'].includes(prizeType)) {
+      return res.status(400).json({ error: `Invalid prizeType. Allowed: ${['gold', 'mana', 'rangers', 'researchers', 'war_machines', 'world_fragment'].join(', ')}` });
     }
 
     try {
@@ -1242,8 +1167,8 @@ module.exports = function (db, io) {
     if (prizeMultiplier < 0.5 || prizeMultiplier > 10000) {
       return res.status(400).json({ error: "prizeMultiplier must be between 0.5 and 10000" });
     }
-    if (!ALLOWED_PRIZE_TYPES.includes(prizeType)) {
-      return res.status(400).json({ error: `Invalid prizeType. Allowed: ${ALLOWED_PRIZE_TYPES.join(', ')}` });
+    if (!['gold', 'mana', 'rangers', 'researchers', 'war_machines', 'world_fragment'].includes(prizeType)) {
+      return res.status(400).json({ error: `Invalid prizeType. Allowed: ${['gold', 'mana', 'rangers', 'researchers', 'war_machines', 'world_fragment'].join(', ')}` });
     }
 
     try {
