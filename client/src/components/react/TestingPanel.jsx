@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 
 const TEST_DESCRIPTIONS = {
   // Economy
@@ -187,10 +187,50 @@ const TestingPanel = () => {
   const [expandedGroup, setExpandedGroup] = useState(null);
   const [failureComment, setFailureComment] = useState('');
   const [commentingTest, setCommentingTest] = useState(null);
+  const [activeTab, setActiveTab] = useState('individual');
+  const [collaborativeResults, setCollaborativeResults] = useState([]);
+  const [testSummary, setTestSummary] = useState([]);
+
+  useEffect(() => {
+    // Fetch collaborative results on mount
+    const fetchResults = async () => {
+      try {
+        const [resultsRes, summaryRes] = await Promise.all([
+          fetch('/api/test-results'),
+          fetch('/api/test-results/summary')
+        ]);
+        if (resultsRes.ok) setCollaborativeResults(await resultsRes.json());
+        if (summaryRes.ok) setTestSummary(await summaryRes.json());
+      } catch (e) {
+        console.error('Failed to fetch test results:', e);
+      }
+    };
+    fetchResults();
+
+    // Listen for real-time updates via WebSocket
+    if (window.socket) {
+      window.socket.on('test-result-update', (data) => {
+        setCollaborativeResults(prev => [data, ...prev]);
+      });
+    }
+  }, []);
 
   const saveStatus = useCallback((newStatus) => {
     setTestStatus(newStatus);
     localStorage.setItem('narmir_test_status', JSON.stringify(newStatus));
+  }, []);
+
+  const submitTestResult = useCallback(async (groupId, testName, passed, comment) => {
+    try {
+      const testKey = getTestKey(groupId, testName);
+      await fetch('/api/test-result', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ testKey, testGroup: groupId, testName, passed, comment })
+      });
+    } catch (e) {
+      console.error('Failed to submit test result:', e);
+    }
   }, []);
 
   const toggleTestFinished = (groupId, testName) => {
@@ -207,6 +247,8 @@ const TestingPanel = () => {
     const testData = newStatus[key] || {};
     newStatus[key] = { ...testData, passed, comment: passed ? '' : testData.comment };
     saveStatus(newStatus);
+    // Auto-submit to collaborative results
+    submitTestResult(groupId, testName, passed, testData.comment);
   };
 
   const handleCommentSubmit = (groupId, testName) => {
@@ -215,6 +257,8 @@ const TestingPanel = () => {
     const testData = newStatus[key] || {};
     newStatus[key] = { ...testData, comment: failureComment };
     saveStatus(newStatus);
+    // Auto-submit comment to collaborative results
+    submitTestResult(groupId, testName, testData.passed, failureComment);
     setCommentingTest(null);
     setFailureComment('');
   };
@@ -227,6 +271,22 @@ const TestingPanel = () => {
     return { finished, passed, failed, total: tests.length };
   };
 
+  const getTestStats = () => {
+    const passed = testSummary.filter(s => s.passed_count > 0).reduce((sum, s) => sum + s.passed_count, 0);
+    const failed = testSummary.filter(s => s.failed_count > 0).reduce((sum, s) => sum + s.failed_count, 0);
+    const pending = testSummary.filter(s => s.pending_count > 0).reduce((sum, s) => sum + s.pending_count, 0);
+    const totalTesters = new Set(collaborativeResults.map(r => r.player_id)).size;
+    return { passed, failed, pending, totalTesters };
+  };
+
+  const getFailureComments = (testKey) => {
+    return collaborativeResults
+      .filter(r => r.test_key === testKey && r.comment)
+      .map(r => ({ player: r.player_name, comment: r.comment }));
+  };
+
+  const stats = getTestStats();
+
   return (
     <div id="testing" className="panel">
       <div className="card" style={{ marginTop: 0 }}>
@@ -237,7 +297,173 @@ const TestingPanel = () => {
           </p>
         </div>
 
-        {TEST_GROUPS.map((group) => {
+        {/* Tab Navigation */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
+          <button
+            onClick={() => setActiveTab('individual')}
+            style={{
+              padding: '8px 16px',
+              fontSize: '12px',
+              fontWeight: activeTab === 'individual' ? 'bold' : 'normal',
+              backgroundColor: activeTab === 'individual' ? 'var(--accent)' : 'transparent',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              color: activeTab === 'individual' ? '#000' : 'inherit',
+            }}
+          >
+            Individual Tests
+          </button>
+          <button
+            onClick={() => setActiveTab('collaborative')}
+            style={{
+              padding: '8px 16px',
+              fontSize: '12px',
+              fontWeight: activeTab === 'collaborative' ? 'bold' : 'normal',
+              backgroundColor: activeTab === 'collaborative' ? 'var(--accent)' : 'transparent',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              color: activeTab === 'collaborative' ? '#000' : 'inherit',
+            }}
+          >
+            Collaborative Results {testSummary.length > 0 && `(${testSummary.length})`}
+          </button>
+        </div>
+
+        {/* Collaborative Tab */}
+        {activeTab === 'collaborative' && (
+          <div>
+            {/* Summary Stats */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
+              <div style={{ padding: '12px', backgroundColor: 'var(--bg2)', borderRadius: '6px', textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#4ade80' }}>{stats.passed}</div>
+                <div style={{ fontSize: '11px', color: 'var(--text2)', marginTop: '4px' }}>Tests Passed</div>
+              </div>
+              <div style={{ padding: '12px', backgroundColor: 'var(--bg2)', borderRadius: '6px', textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ef4444' }}>{stats.failed}</div>
+                <div style={{ fontSize: '11px', color: 'var(--text2)', marginTop: '4px' }}>Tests Failed</div>
+              </div>
+              <div style={{ padding: '12px', backgroundColor: 'var(--bg2)', borderRadius: '6px', textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#fbbf24' }}>{stats.pending}</div>
+                <div style={{ fontSize: '11px', color: 'var(--text2)', marginTop: '4px' }}>Pending</div>
+              </div>
+              <div style={{ padding: '12px', backgroundColor: 'var(--bg2)', borderRadius: '6px', textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#60a5fa' }}>{stats.totalTesters}</div>
+                <div style={{ fontSize: '11px', color: 'var(--text2)', marginTop: '4px' }}>Testers</div>
+              </div>
+            </div>
+
+            {/* Test Results by Group */}
+            {TEST_GROUPS.map((group) => {
+              const groupTests = group.tests.map(testName => {
+                const testKey = getTestKey(group.id, testName);
+                return testSummary.find(s => s.test_key === testKey) || { test_key: testKey, test_name: testName, passed_count: 0, failed_count: 0, pending_count: 0, unique_testers: 0 };
+              });
+
+              return (
+                <div
+                  key={group.id}
+                  style={{
+                    marginBottom: '12px',
+                    border: '1px solid var(--border)',
+                    borderRadius: '6px',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div
+                    style={{
+                      padding: '12px',
+                      backgroundColor: 'var(--bg2)',
+                      fontWeight: 'bold',
+                      fontSize: '13px',
+                    }}
+                  >
+                    {group.name}
+                  </div>
+                  <div style={{ padding: '12px', backgroundColor: 'var(--bg1)' }}>
+                    {groupTests.map((testStat) => {
+                      const total = (testStat.passed_count || 0) + (testStat.failed_count || 0) + (testStat.pending_count || 0);
+                      const failureComments = getFailureComments(testStat.test_key);
+
+                      return (
+                        <div key={testStat.test_key} style={{ marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid var(--border)' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <span style={{ fontWeight: 500, flex: 1 }}>{testStat.test_name}</span>
+                            <div style={{ fontSize: '11px', color: 'var(--text2)', marginRight: '8px' }}>
+                              {total > 0 ? `${testStat.unique_testers} tester${testStat.unique_testers !== 1 ? 's' : ''}` : 'No results'}
+                            </div>
+                          </div>
+
+                          {/* Result Breakdown */}
+                          {total > 0 ? (
+                            <div style={{ display: 'flex', gap: '4px', marginBottom: '6px', height: '20px' }}>
+                              {testStat.passed_count > 0 && (
+                                <div
+                                  style={{
+                                    flex: testStat.passed_count,
+                                    backgroundColor: '#4ade80',
+                                    borderRadius: '3px',
+                                    minWidth: '20px',
+                                    title: `${testStat.passed_count} passed`
+                                  }}
+                                  title={`${testStat.passed_count} passed`}
+                                />
+                              )}
+                              {testStat.failed_count > 0 && (
+                                <div
+                                  style={{
+                                    flex: testStat.failed_count,
+                                    backgroundColor: '#ef4444',
+                                    borderRadius: '3px',
+                                    minWidth: '20px'
+                                  }}
+                                  title={`${testStat.failed_count} failed`}
+                                />
+                              )}
+                              {testStat.pending_count > 0 && (
+                                <div
+                                  style={{
+                                    flex: testStat.pending_count,
+                                    backgroundColor: '#fbbf24',
+                                    borderRadius: '3px',
+                                    minWidth: '20px'
+                                  }}
+                                  title={`${testStat.pending_count} pending`}
+                                />
+                              )}
+                            </div>
+                          ) : null}
+
+                          {/* Result Stats */}
+                          <div style={{ fontSize: '11px', color: 'var(--text2)', marginBottom: failureComments.length > 0 ? '8px' : '0' }}>
+                            ✅ {testStat.passed_count || 0} · ❌ {testStat.failed_count || 0} · ⏳ {testStat.pending_count || 0}
+                          </div>
+
+                          {/* Failure Comments */}
+                          {failureComments.length > 0 && (
+                            <div style={{ marginLeft: '8px', fontSize: '10px', color: '#ef4444' }}>
+                              {failureComments.map((fc, i) => (
+                                <div key={i} style={{ marginBottom: '4px', padding: '4px 6px', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: '3px' }}>
+                                  <strong>{fc.player}:</strong> {fc.comment}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Individual Tab */}
+        {activeTab === 'individual' && (
+          <div>
+            {TEST_GROUPS.map((group) => {
           const stats = getGroupStats(group);
           const isExpanded = expandedGroup === group.id;
           const progressPercent = stats.total > 0 ? Math.round((stats.finished / stats.total) * 100) : 0;
@@ -478,7 +704,9 @@ const TestingPanel = () => {
               )}
             </div>
           );
-        })}
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
