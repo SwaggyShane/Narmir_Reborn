@@ -6386,7 +6386,7 @@
         if (rankings) rankings.style.display = "none";
 
         const raceSelect = `
-          <div style="text-align: center; margin-bottom: 24px;">
+          <div style="margin-bottom: 24px;">
             <div style="font-size: 24px; font-weight: 700; color: #e8b84b; margin-bottom: 6px;">
               Choose Your Race
             </div>
@@ -6395,7 +6395,7 @@
             </div>
           </div>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px;" id="race-selection-grid">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px; width: 100%;" id="race-selection-grid">
           </div>
 
           <div id="race-details-section" style="display: none;">
@@ -17012,7 +17012,7 @@
         z-index: 10002;
         background: var(--bg1);
         flex-direction: column;
-        overflow-y: auto;
+        overflow: hidden;
       "
     >
       <!-- Header bar with back button -->
