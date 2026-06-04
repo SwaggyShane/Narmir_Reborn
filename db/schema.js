@@ -1474,6 +1474,23 @@ async function initDb() {
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_discord_link_tokens_token ON discord_link_tokens(token)`);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_discord_link_tokens_expires ON discord_link_tokens(expires_at)`);
 
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS test_results (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      player_id INTEGER NOT NULL REFERENCES players(id),
+      player_name TEXT NOT NULL,
+      test_key TEXT NOT NULL,
+      test_group TEXT NOT NULL,
+      test_name TEXT NOT NULL,
+      passed INTEGER,
+      comment TEXT,
+      submitted_at INTEGER NOT NULL DEFAULT (unixepoch())
+    )
+  `);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_test_results_key ON test_results(test_key)`);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_test_results_player ON test_results(player_id)`);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_test_results_submitted ON test_results(submitted_at DESC)`);
+
   return _db;
 }
 
