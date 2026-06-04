@@ -302,8 +302,8 @@ function calculateHappiness(k) {
   };
 
   // 1. Food Happiness (0-30)
-  const foodTarget = k.population * 0.5;
-  const foodRatio = k.food / foodTarget;
+  const foodTarget = (k.population || 1) * 0.5;
+  const foodRatio = foodTarget > 0 ? (k.food || 0) / foodTarget : 1;
   const foodHappiness = Math.min(30, Math.floor(foodRatio * 30));
 
   // 2. Entertainment Happiness (0-20)
@@ -311,21 +311,25 @@ function calculateHappiness(k) {
 
   // 3. Safety Happiness (-30 to +20)
   let safetyHappiness = 0;
-  const turnsSinceLast = k.turn - (k.last_attack_turn || 0);
-  if (turnsSinceLast >= 10) {
-    safetyHappiness = 20; // No recent threats
-  } else if (turnsSinceLast >= 5) {
-    safetyHappiness = 10 + ((turnsSinceLast - 5) * 2);
-  } else if (turnsSinceLast > 0) {
-    safetyHappiness = Math.max(-10, (turnsSinceLast - 5) * 2);
+  if (!k.last_attack_turn) {
+    safetyHappiness = 20; // Never attacked
   } else {
-    safetyHappiness = -10; // Recent attack
+    const turnsSinceLast = (k.turn || 0) - k.last_attack_turn;
+    if (turnsSinceLast >= 10) {
+      safetyHappiness = 20; // No recent threats
+    } else if (turnsSinceLast >= 5) {
+      safetyHappiness = 10 + ((turnsSinceLast - 5) * 2);
+    } else if (turnsSinceLast > 0) {
+      safetyHappiness = Math.max(-10, (turnsSinceLast - 5) * 2);
+    } else {
+      safetyHappiness = -10; // Recent attack
+    }
   }
   safetyHappiness = Math.max(-30, Math.min(20, safetyHappiness));
 
   // 4. Prosperity Happiness (0-20)
-  const goldTarget = k.population * 2;
-  const goldRatio = k.gold / goldTarget;
+  const goldTarget = (k.population || 1) * 2;
+  const goldRatio = goldTarget > 0 ? (k.gold || 0) / goldTarget : 1;
   const prosperityHappiness = Math.min(20, Math.floor(goldRatio * 20));
 
   // 5. Race Modifier
@@ -345,9 +349,9 @@ function calculateHappiness(k) {
 
   // Apply tax penalty/bonus
   const taxRate = k.tax || 42;
-  if (taxRate >= 50) {
-    const taxPenalty = Math.floor(45 * ((taxRate - 42) / 58));
-    happiness -= Math.min(45, taxPenalty);
+  if (taxRate > 42) {
+    const taxPenalty = Math.floor(((taxRate - 42) / 58) * 30);
+    happiness -= taxPenalty;
   } else if (taxRate < 42) {
     const taxBonus = Math.floor(45 * ((42 - taxRate) / 42));
     happiness += taxBonus;
@@ -355,10 +359,10 @@ function calculateHappiness(k) {
 
   // Apply happiness recovery based on research + taverns
   const recoveryRate = getHappinessRecoveryRate(k);
-  happiness = Math.max(0, Math.min(120, happiness + recoveryRate));
+  happiness = Math.max(-50, Math.min(120, happiness + recoveryRate));
 
-  // Clamp to 0-120 (soft cap, can exceed slightly)
-  happiness = Math.floor(Math.max(0, Math.min(120, happiness)));
+  // Clamp to -50 to 120 (soft cap, can exceed slightly)
+  happiness = Math.floor(Math.max(-50, Math.min(120, happiness)));
 
   return {
     happiness,
@@ -412,14 +416,14 @@ function popGrowth(k) {
     happinessMult = 1.0; // Normal
   } else if (happiness >= 30) {
     happinessMult = 0.7; // Concerned
-  } else if (happiness > 0) {
+  } else if (happiness >= 0) {
     happinessMult = 0.3; // Unhappy
   } else {
     happinessMult = -0.05; // Fleeing (population loss)
   }
 
   // Handle fleeing population
-  if (happiness <= 0) {
+  if (happiness < 0) {
     return Math.floor(k.population * happinessMult);
   }
 
@@ -1826,7 +1830,7 @@ function displayMorale(k) {
 }
 
 function rebellionCheck(k, happiness, updates, events) {
-  if (happiness > 0) return; // No rebellion risk if happiness > 0
+  if (happiness >= 50) return; // No rebellion risk if happiness >= 50
 
   const cooldown = k.rebellion_cooldown || 0;
   if (cooldown > k.turn) return; // Still in cooldown
@@ -1880,6 +1884,8 @@ function rebellionEvent(k, updates, events) {
           const damageCount = Math.min(buildingCount, Math.floor(Math.random() * 3) + 1); // 1-3 buildings
           updates[randomBuilding] = Math.max(0, (updates[randomBuilding] || buildingCount) - damageCount);
           newsMessage = `⚠️ SABOTAGE: Rioters destroyed ${damageCount} buildings!`;
+        } else {
+          newsMessage = `⚠️ MILITARY MUTINY: Troops are refusing orders due to low morale!`;
         }
       }
       break;
@@ -1895,7 +1901,17 @@ function rebellionEvent(k, updates, events) {
             const damageCount = Math.min(buildingCount, Math.floor(Math.random() * 3) + 1);
             updates[randomBuilding] = Math.max(0, (updates[randomBuilding] || buildingCount) - damageCount);
             newsMessage = `⚠️ FOOD RIOT: Desperate population destroyed food facilities! Lost ${damageCount} buildings.`;
+          } else {
+            const lossPercent = 0.05 + Math.random() * 0.05;
+            const populationLoss = Math.floor(k.population * lossPercent);
+            updates.population = Math.max(100, (updates.population || k.population) - populationLoss);
+            newsMessage = `⚠️ UNREST: Population fleeing due to unhappiness! Lost ${populationLoss.toLocaleString()} people.`;
           }
+        } else {
+          const lossPercent = 0.05 + Math.random() * 0.05;
+          const populationLoss = Math.floor(k.population * lossPercent);
+          updates.population = Math.max(100, (updates.population || k.population) - populationLoss);
+          newsMessage = `⚠️ UNREST: Population fleeing due to unhappiness! Lost ${populationLoss.toLocaleString()} people.`;
         }
       }
       break;
