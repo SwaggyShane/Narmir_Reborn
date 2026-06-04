@@ -2104,7 +2104,6 @@
 
         <!-- Vue Mount races -->
         <div id="vue-panel-races" style="display: contents"></div>
-        <div id="vue-bottom-nav-mount" style="display: contents"></div>
 
         <!-- LIBRARY -->
         <!-- Toast -->
@@ -2190,6 +2189,9 @@
           </div>
         </footer>
       </main>
+
+      <!-- Bottom Nav Mount - outside of main so position:fixed works on mobile -->
+      <div id="vue-bottom-nav-mount" style="display: contents"></div>
     </div>
 
     <script>
@@ -16893,35 +16895,53 @@
         border-radius: 12px;
         padding: 0;
         width: 100%;
-        max-width: 900px;
+        max-width: min(1000px, 90vw);
+        max-height: 90vh;
         z-index: 1;
         position: relative;
         display: flex;
         flex-direction: column;
-        max-height: 90vh;
-        overflow-y: auto;
+        overflow: hidden;
       ">
-        <!-- Close button -->
-        <button onclick="closeRegistrationModal()" style="
-          position: absolute;
-          top: 12px;
-          right: 12px;
-          background: none;
-          border: none;
-          color: #9a9bb5;
-          font-size: 28px;
-          cursor: pointer;
-          padding: 8px;
-          z-index: 10;
-          transition: color 0.2s;
-          width: 44px;
-          height: 44px;
+        <!-- Header with Back button and Close button -->
+        <div style="
           display: flex;
+          justify-content: space-between;
           align-items: center;
-          justify-content: center;
-        " onmouseover="this.style.color='#e8e9f0'" onmouseout="this.style.color='#9a9bb5'">×</button>
+          padding: 12px 16px;
+          border-bottom: 1px solid #363a52;
+          flex-shrink: 0;
+        ">
+          <button onclick="const details = document.getElementById('race-details-section'); if (details && details.style.display !== 'none') { backToRaceSelection(); } else { closeRegistrationModal(); }" style="
+            background: none;
+            border: none;
+            color: #9a9bb5;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 8px 12px;
+            transition: color 0.2s;
+            text-decoration: none;
+            font-weight: 500;
+          " onmouseover="this.style.color='#e8e9f0'" onmouseout="this.style.color='#9a9bb5'">
+            ← Back
+          </button>
+          <button onclick="closeRegistrationModal()" style="
+            background: none;
+            border: none;
+            color: #9a9bb5;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 8px;
+            transition: color 0.2s;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          " onmouseover="this.style.color='#e8e9f0'" onmouseout="this.style.color='#9a9bb5'">×</button>
+        </div>
 
-        <div id="registration-content" style="padding: max(16px, 3vw); flex: 1;">
+        <div id="registration-content" style="padding: max(16px, 3vw); flex: 1; overflow-y: auto;">
           <!-- This will be populated dynamically -->
         </div>
       </div>
