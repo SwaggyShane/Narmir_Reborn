@@ -1,5 +1,101 @@
 import React, { useState, useCallback } from 'react';
 
+const TEST_DESCRIPTIONS = {
+  // Economy
+  'economy_Basic_Income_Flow': 'Verify gold generation per turn. Check: Starting gold, gold/turn displayed correctly, gold increases after turn processing.',
+  'economy_Market_Trading': 'Test player-to-player trading. Check: Initiate trade, accept/reject offers, resource exchange completes, trade log updates.',
+  'economy_Trade_Routes': 'Verify trade route income. Check: Routes active, gold generated per route, route UI shows correct amounts.',
+  'economy_Banking_System': 'Test kingdom bank/vault. Check: Deposit/withdraw functions, balance updates, transaction history.',
+  'economy_Resource_Management': 'Verify resource tracking. Check: All resource types (gold, food, mana, wood, stone, iron) display and update correctly.',
+
+  // Combat
+  'combat_Troop_Management': 'Test troop recruitment and organization. Check: Can recruit troops, organize into armies, casualties update after combat.',
+  'combat_Combat_Resolution': 'Verify combat outcomes. Check: Battle report shows correctly, winner determined, casualties applied.',
+  'combat_War_Machines': 'Test war machine mechanics. Check: Build/upgrade machines, they provide bonuses in combat, display in battles.',
+  'combat_Mercenaries': 'Verify mercenary hiring. Check: Can hire, they contribute to attacks/defense, mercenary payment system works.',
+  'combat_Troop_Leveling': 'Test troop experience and leveling. Check: Troops gain XP from battles, level up, stats improve.',
+  'combat_Defense_System': 'Verify defensive mechanics. Check: Can build defense structures, troops defend, incoming attacks are resolved.',
+
+  // Research
+  'research_Research_Progression': 'Test research advancement. Check: Can start research, progress increments per turn, research completes.',
+  'research_Multiple_Disciplines': 'Verify multiple research paths. Check: Can research different disciplines simultaneously, each progresses independently.',
+  'research_Building_Upgrades': 'Test building improvements via research. Check: Research unlocks building upgrades, upgrades apply benefits.',
+  'research_Engineer_Leveling': 'Verify engineer progression. Check: Engineers gain experience, level up, increase research speed.',
+
+  // Magic
+  'magic_Spellbook_Research': 'Test spell discovery. Check: Research new spells, spellbook updates, spell becomes castable.',
+  'magic_Scroll_Crafting': 'Verify scroll creation. Check: Craft scrolls from mana/resources, scrolls stored/consumed correctly.',
+  'magic_Spell_Casting': 'Test spell execution. Check: Select spell, target, spell executes, effects applied to kingdom.',
+  'magic_Mana_Management': 'Verify mana system. Check: Mana regenerates per turn, spells consume mana, mana pool updates.',
+  'magic_Spell_Effects': 'Test spell impacts. Check: Each spell produces intended effects (damage, buff, resource gain, etc).',
+
+  // Happiness
+  'happiness_Population_Growth': 'Test population changes. Check: Population grows when happy, shrinks when unhappy, housing affects cap.',
+  'happiness_Happiness_Calculation': 'Verify happiness math. Check: Happiness bar shows 0-120, components (food/entertainment/safety/prosperity) display.',
+  'happiness_Happiness_Effects': 'Test happiness impacts. Check: Happy populations produce more resources, sad populations produce less.',
+  'happiness_Rebellion_System': 'Verify rebellion mechanics. Check: Low happiness triggers rebellion events, consequences apply (population loss, building damage).',
+  'happiness_Food_System': 'Test food production/consumption. Check: Food produces per turn, population consumes food, shortages trigger alerts.',
+  'happiness_Housing_\&_Capacity': 'Verify housing limits. Check: Population capped by housing, upgrading housing increases cap.',
+
+  // Building
+  'building_Basic_Building': 'Test building construction. Check: Place building, construction starts, completes per build queue.',
+  'building_Build_Queue': 'Verify construction order. Check: Queue multiple buildings, each builds in order, can prioritize/rearrange.',
+  'building_Construction_Tools': 'Test special construction items. Check: Construction tools work, reduce build time, display in UI.',
+  'building_Blueprints': 'Verify blueprint system. Check: Save building layouts, load blueprints, buildings place correctly.',
+  'building_Building_Types_\&_Caps': 'Test building limits. Check: Each building type has maximum count, cannot exceed limits.',
+  'building_Building_Upgrades': 'Verify upgrades. Check: Upgrade buildings, new levels unlock, stats improve, cost scales.',
+
+  // Advanced
+  'advanced_Covert_Operations': 'Test espionage/covert actions. Check: Send spies, gather intel, sabotage enemy kingdom.',
+  'advanced_Expeditions': 'Verify exploration missions. Check: Send expeditions, discover locations, return with loot.',
+  'advanced_World_Fragments_\&_Attunement': 'Test fragment collection. Check: Find fragments, attune to kingdoms, bonuses apply.',
+  'advanced_Item_Collection_\&_Lore': 'Verify story items. Check: Collect items, lore entries unlock, achievements trigger.',
+
+  // Progression
+  'progression_Kingdom_XP_\&_Levels': 'Test kingdom level advancement. Check: Kingdom earns XP, displays level, unlocks features at thresholds.',
+  'progression_Troop_XP_\&_Levels': 'Verify troop progression. Check: Troops earn XP from battles, level up individually, perks unlock.',
+  'progression_Hero_System': 'Test heroes. Check: Recruit heroes, assign to armies, heroes provide combat bonuses.',
+  'progression_Achievements_\&_Milestones': 'Verify achievements. Check: Achievements unlock when conditions met, rewards granted, badge displays.',
+
+  // Social
+  'social_Alliances': 'Test alliance mechanics. Check: Create/join alliance, members list shows, can disband/leave.',
+  'social_Alliance_Vault': 'Verify shared vault. Check: Deposit resources, allies withdraw, log tracks transactions.',
+  'social_Regional_Control': 'Test territory control. Check: Alliances control regions, bonuses apply, can be conquered.',
+  'social_Player-to-Player_Trading': 'Test trading system. Check: Post trade offers, accept offers, resources transfer correctly.',
+  'social_Messaging': 'Verify messaging. Check: Send messages to players, receive replies, message history displays.',
+
+  // Events
+  'events_Seasonal_System': 'Test seasonal changes. Check: Seasons change, environmental effects apply, special events trigger.',
+  'events_Global_Events': 'Verify world events. Check: Random events occur, kingdoms affected, event log updates.',
+  'events_Custom_Goals': 'Test goal system. Check: Create goals, track progress, rewards granted when complete.',
+  'events_Sentiment_Events': 'Verify population sentiment. Check: Sentiment affects events, rebellion risk shown, outcomes vary.',
+
+  // Special
+  'special_Vampire-Specific_Mechanics': 'Test vampire features. Check: Vampire-only mechanics work (thralls, night bonuses, weakness to sun).',
+  'special_Location_Mapping': 'Verify location system. Check: Locations map correctly, can travel, location effects apply.',
+  'special_News_Feed': 'Test news system. Check: News generates from actions, displays chronologically, can filter.',
+  'special_War_Log': 'Verify battle history. Check: All battles logged, can review reports, stats tracked.',
+  'special_Kingdom_Info_Panel': 'Test info display. Check: Kingdom stats display correctly, updates real-time.',
+
+  // Integration
+  'integration_Happiness_Integration': 'Test happiness across systems. Check: Happiness affects production, growth, and combat.',
+  'integration_Combat_Integration': 'Verify combat + other systems. Check: Combat affects troops, happiness, resources, etc.',
+  'integration_Production_Integration': 'Test resource production chain. Check: All resources produce, consume, and affect economy.',
+  'integration_Population_Integration': 'Test population interactions. Check: Population growth, consumption, casualties all work together.',
+  'integration_Research_Integration': 'Verify research affects gameplay. Check: Research unlocks features, improves production, enables new buildings.',
+  'integration_Magic_Integration': 'Test magic interactions. Check: Spells affect other systems (combat, resources, happiness).',
+
+  // Edge Cases
+  'edge_Zero/Low_Resource_States': 'Test low resource handling. Check: Game stable at 0 resources, starvation works, bankruptcy mechanics.',
+  'edge_Overflow_Conditions': 'Verify overflow handling. Check: Resources don\'t exceed capacity (if capped), large numbers display correctly.',
+  'edge_Invalid_Actions': 'Test validation. Check: Can\'t spend resources you don\'t have, can\'t move units that don\'t exist.',
+
+  // Performance
+  'performance_Database_Consistency': 'Test data integrity. Check: Reload page, all state persists correctly, no lost data.',
+  'performance_Turn_Processing': 'Verify turn speed. Check: Turn processes quickly, large kingdoms don\'t lag, all calculations complete.',
+  'performance_Data_Validation': 'Test data accuracy. Check: Calculations correct, no phantom resources, stats match sources.'
+};
+
 const TEST_GROUPS = [
   {
     id: 'economy',
@@ -215,7 +311,7 @@ const TestingPanel = () => {
                           paddingLeft: isFailing ? '6px' : '8px',
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: isFailing && test.comment ? '8px' : '0' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: (TEST_DESCRIPTIONS[key] || isFailing) ? '6px' : '0' }}>
                           {/* Finished Checkbox */}
                           <input
                             type="checkbox"
@@ -225,7 +321,7 @@ const TestingPanel = () => {
                           />
 
                           {/* Test Name */}
-                          <span style={{ flex: 1, textDecoration: test.finished ? 'line-through' : 'none', color: test.finished ? 'var(--text2)' : 'inherit' }}>
+                          <span style={{ flex: 1, textDecoration: test.finished ? 'line-through' : 'none', color: test.finished ? 'var(--text2)' : 'inherit', fontWeight: 500 }}>
                             {testName}
                           </span>
 
@@ -266,6 +362,22 @@ const TestingPanel = () => {
                             👎
                           </button>
                         </div>
+
+                        {/* Test Description */}
+                        {TEST_DESCRIPTIONS[key] && (
+                          <div style={{
+                            fontSize: '11px',
+                            color: 'var(--text2)',
+                            marginBottom: '8px',
+                            padding: '6px 8px',
+                            backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                            borderRadius: '3px',
+                            lineHeight: '1.4',
+                            fontStyle: 'italic'
+                          }}>
+                            📋 {TEST_DESCRIPTIONS[key]}
+                          </div>
+                        )}
 
                         {/* Failure Comment Section */}
                         {isFailing && (

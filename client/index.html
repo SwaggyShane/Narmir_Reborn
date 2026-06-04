@@ -6398,13 +6398,16 @@
         const grid = document.getElementById("race-selection-grid");
         if (!grid || !RACE_LORE) return;
 
+        const COMING_SOON_RACES = ['ogre', 'wood_elf'];
+
         let html = "";
         for (let raceKey in RACE_LORE) {
           if (!RACE_LORE.hasOwnProperty(raceKey)) continue;
           const race = RACE_LORE[raceKey];
           if (!race || !race.lore) continue;
 
-          const isSelected = raceKey === _selectedRace;
+          const isComingSoon = COMING_SOON_RACES.includes(raceKey);
+          const isSelected = raceKey === _selectedRace && !isComingSoon;
           const borderColor = isSelected ? (race.color || "#e8b84b") : "#363a52";
           const portraitUrl = RACE_PORTRAITS[raceKey] || "";
 
@@ -6412,11 +6415,20 @@
             ? `<img src="${portraitUrl}" style="width: 100%; height: 100%; aspect-ratio: 3/4; object-fit: cover; display: block;" alt="${race.title}" onerror="this.parentElement.style.display='none'" />`
             : `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 48px; background: var(--bg3);">${race.icon || "👤"}</div>`;
 
+          const comingSoonOverlay = isComingSoon ? `
+            <div style="position: absolute; inset: 0; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; border-radius: 9px;">
+              <div style="text-align: center; color: #fff;">
+                <div style="font-size: 28px; margin-bottom: 4px;">🔜</div>
+                <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.5px;">COMING SOON</div>
+              </div>
+            </div>
+          ` : '';
+
           html += `
             <div
-              onclick="selectRaceForRegistration('${raceKey}')"
+              ${!isComingSoon ? `onclick="selectRaceForRegistration('${raceKey}')"` : ''}
               style="
-                cursor: pointer;
+                cursor: ${isComingSoon ? 'not-allowed' : 'pointer'};
                 aspect-ratio: 3/4;
                 border: 3px solid ${borderColor};
                 border-radius: 12px;
@@ -6424,11 +6436,15 @@
                 transition: all 0.3s;
                 transform: ${isSelected ? 'scale(1.08)' : 'scale(1)'};
                 box-shadow: ${isSelected ? '0 0 16px ' + borderColor + '40' : 'none'};
+                position: relative;
+                opacity: ${isComingSoon ? '0.6' : '1'};
               "
-              onmouseover="this.style.opacity='0.85'; this.style.cursor='pointer'"
-              onmouseout="this.style.opacity='1'"
+              onmouseover="if (!this.querySelector('[data-coming-soon]')) { this.style.opacity='0.85'; this.style.cursor='pointer'; }"
+              onmouseout="if (!this.querySelector('[data-coming-soon]')) { this.style.opacity='1'; }"
             >
               ${portraitHtml}
+              ${comingSoonOverlay}
+              ${isComingSoon ? '<div data-coming-soon></div>' : ''}
             </div>
           `;
         }
@@ -13991,6 +14007,49 @@
           playstyle:
             "Necromantic conquest. Dominate the night, harvest souls, and convert the fallen into your eternal army.",
           color: "#b43c00",
+        },
+        ogre: {
+          title: "Ogres — Unmatched Warriors",
+          icon: "🗡️",
+          lore: "Massive, powerful beings of raw strength and primal fury. Ogres excel in combat like no other race. However, their lack of intellectual curiosity makes them poor scholars—research and magic are foreign to their nature. An Ogre kingdom thrives on military dominance and conquest, not academic pursuit.",
+          strengths: [
+            "Ogre Warriors deal +25% attack damage",
+            "Superior melee combat capabilities",
+            "Intimidating military presence",
+          ],
+          weaknesses: [
+            "Research progresses 30% slower",
+            "Magic production 25% reduced",
+            "Limited by their warrior culture",
+          ],
+          heroes: ["Warlord", "War Shaman", "Brute Lord"],
+          special:
+            "🔜 Coming Soon — Special Ogre Warrior unit with enhanced combat damage",
+          playstyle:
+            "Aggressive military dominance. Build armies quickly, overwhelm enemies through superior firepower.",
+          color: "#8b572a",
+        },
+        wood_elf: {
+          title: "Wood Elves — Master Explorers",
+          icon: "🌲",
+          lore: "Nomadic forest dwellers with an unmatched ability to read terrain and discover hidden lands. Their tracking skills and intimate knowledge of nature allow them to find more land with fewer resources and less time. However, their preference for subterfuge and scouting makes them weak in direct combat.",
+          strengths: [
+            "+75% land discovered per expedition",
+            "-40% expedition resource cost",
+            "-40% expedition completion time",
+            "Fastest way to expand territory",
+          ],
+          weaknesses: [
+            "Combat troops deal 25% less damage",
+            "Rely on tactics and territory, not strength",
+            "Vulnerable to direct military assault",
+          ],
+          heroes: ["Scout Master", "Ranger Lord", "Wildshaper"],
+          special:
+            "🔜 Coming Soon — Unparalleled expedition bonuses for rapid territorial expansion",
+          playstyle:
+            "Territorial expansion through superior exploration. Discover land others cannot reach.",
+          color: "#22c55e",
         },
       };
 
