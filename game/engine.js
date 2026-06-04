@@ -346,10 +346,10 @@ function calculateHappiness(k) {
   // Apply tax penalty/bonus
   const taxRate = k.tax || 42;
   if (taxRate >= 50) {
-    const taxPenalty = Math.floor(((taxRate - 42) / 0.58) * 15 / 100);
-    happiness -= Math.min(30, taxPenalty);
+    const taxPenalty = Math.floor(45 * ((taxRate - 42) / 58));
+    happiness -= Math.min(45, taxPenalty);
   } else if (taxRate < 42) {
-    const taxBonus = Math.floor((((42 - taxRate) / 41) * 15));
+    const taxBonus = Math.floor(45 * ((42 - taxRate) / 42));
     happiness += taxBonus;
   }
 
