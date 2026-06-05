@@ -1356,6 +1356,9 @@ async function initDb() {
   if (!cols2.includes('school_of_magic'))   await addColumn('kingdoms', 'school_of_magic',   "TEXT", kingdomsCols);
   if (!cols2.includes('school_spellbook'))  await addColumn('kingdoms', 'school_spellbook',  "INTEGER NOT NULL DEFAULT 0", kingdomsCols);
 
+  // Custom player portrait
+  if (!cols2.includes('custom_portrait'))   await addColumn('kingdoms', 'custom_portrait',   "TEXT", kingdomsCols);
+
   // Resource nodes table
   await _db.run(`
     CREATE TABLE IF NOT EXISTS resource_nodes (

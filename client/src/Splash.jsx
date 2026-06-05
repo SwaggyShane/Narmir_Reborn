@@ -194,7 +194,7 @@ function RacePortrait({ race }) {
   return (
     <div className="race-portrait">
       {!hasError ? (
-        <img src={`/race/${race.id}.png`} alt={race.name} onError={() => setHasError(true)} />
+        <img src={`/race/${race.id}_male.webp`} alt={race.name} onError={() => setHasError(true)} />
       ) : (
         <span className="race-fallback-emoji">{race.emoji}</span>
       )}

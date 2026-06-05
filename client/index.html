@@ -8551,15 +8551,15 @@
       };
 
       const GENDER_RACE_PORTRAITS = {
-        high_elf: { male: "/race/high_elf_male.png", female: "/race/high_elf_female.png" },
-        dwarf: { male: "/race/dwarf_male.png", female: "/race/dwarf_female.png" },
-        human: { male: "/race/human_male.png", female: "/race/human_female.png" },
-        orc: { male: "/race/orc_male.png", female: "/race/orc_female.png" },
-        dark_elf: { male: "/race/dark_elf_male.png", female: "/race/dark_elf_female.png" },
-        dire_wolf: { male: "/race/dire_wolf_male.png", female: "/race/dire_wolf_female.png" },
-        vampire: { male: "/race/vampire_male.png", female: "/race/vampire_female.png" },
-        ogre: { male: "/race/ogre_male.png", female: "/race/ogre_female.png" },
-        wood_elf: { male: "/race/wood_elf_male.png", female: "/race/wood_elf_female.png" }
+        high_elf: { male: "/race/high_elf_male.webp", female: "/race/high_elf_female.webp" },
+        dwarf: { male: "/race/dwarf_male.webp", female: "/race/dwarf_female.webp" },
+        human: { male: "/race/human_male.webp", female: "/race/human_female.webp" },
+        orc: { male: "/race/orc_male.webp", female: "/race/orc_female.webp" },
+        dark_elf: { male: "/race/dark_elf_male.webp", female: "/race/dark_elf_female.webp" },
+        dire_wolf: { male: "/race/dire_wolf_male.webp", female: "/race/dire_wolf_female.webp" },
+        vampire: { male: "/race/vampire_male.webp", female: "/race/vampire_female.webp" },
+        ogre: { male: "/race/ogre_male.webp", female: "/race/ogre_female.webp" },
+        wood_elf: { male: "/race/wood_elf_male.webp", female: "/race/wood_elf_female.webp" }
       };
 
       function getRacePortrait(race, gender = 'male') {
@@ -8569,13 +8569,13 @@
 
       // Deprecated - use getRacePortrait() instead
       var RACE_PORTRAITS = {
-        high_elf: "/race/high_elf_male.png",
-        dwarf: "/race/dwarf_male.png",
-        human: "/race/human_male.png",
-        orc: "/race/orc_male.png",
-        dark_elf: "/race/dark_elf_male.png",
-        dire_wolf: "/race/dire_wolf_male.png",
-        vampire: "/race/vampire_male.png",
+        high_elf: "/race/high_elf_male.webp",
+        dwarf: "/race/dwarf_male.webp",
+        human: "/race/human_male.webp",
+        orc: "/race/orc_male.webp",
+        dark_elf: "/race/dark_elf_male.webp",
+        dire_wolf: "/race/dire_wolf_male.webp",
+        vampire: "/race/vampire_male.webp",
       };
 
       var currentRankType = "kingdoms";
@@ -16288,34 +16288,34 @@
       var _heroClasses = {};
       var HERO_PORTRAITS = {
         // Dwarf
-        siegebreaker: "/heroes/siegebreaker.png",
-        forge_lord: "/heroes/forge_master.png",
-        stonelord: "/heroes/stonelord.png",
+        siegebreaker: "/hero/siegebreaker.webp",
+        forge_lord: "/hero/forge_master.webp",
+        stonelord: "/hero/stonelord.webp",
         // High Elf
-        archmage: "/heroes/archmage.png",
-        lunar_sentinel: "/heroes/lunar_sentinel.png",
-        mage_king: "/heroes/mage_king.png",
+        archmage: "/hero/archmage.webp",
+        lunar_sentinel: "/hero/lunar_sentinel.webp",
+        mage_king: "/hero/mage_king.webp",
         // Orc
-        warlord: "/heroes/warlord.png",
-        high_chieftain: "/heroes/high_chieftain.png",
-        warshaman: "/heroes/warshaman.png",
+        warlord: "/hero/warlord.webp",
+        high_chieftain: "/hero/high_chieftain.webp",
+        warshaman: "/hero/warshaman.webp",
         // Dark Elf
-        assassin: "/heroes/assassin.png",
-        void_weaver: "/heroes/void_weaver.png",
-        shadowmaster: "/heroes/shadowmaster.png",
+        assassin: "/hero/assassin.webp",
+        void_weaver: "/hero/void_weaver.webp",
+        shadowmaster: "/hero/shadowmaster.webp",
         // Human
-        paladin: "/heroes/paladin.png",
-        grand_chancellor: "/heroes/grand_chancellor.png",
-        high_consul: "/heroes/grand_chancellor.png",
+        paladin: "/hero/paladin.webp",
+        grand_chancellor: "/hero/grand_chancellor.webp",
+        high_consul: "/hero/grand_chancellor.webp",
         // Dire Wolf
-        alpha: "/heroes/warlord.png",
-        storm_howler: "/heroes/warshaman.png",
-        blood_shaman: "/heroes/warshaman.png",
+        alpha: "/hero/warlord.webp",
+        storm_howler: "/hero/warshaman.webp",
+        blood_shaman: "/hero/warshaman.webp",
         // Vampire
-        night_lord: "/heroes/void_weaver.png",
-        sanguine_oracle: "/heroes/shadowmaster.png",
-        blood_matriarch: "/heroes/assassin.png",
-        _default: "/heroes/siegebreaker.png",
+        night_lord: "/hero/void_weaver.webp",
+        sanguine_oracle: "/hero/shadowmaster.webp",
+        blood_matriarch: "/hero/assassin.webp",
+        _default: "/hero/siegebreaker.webp",
       };
       function heroPortrait(cls) {
         return HERO_PORTRAITS[cls] || HERO_PORTRAITS._default || "";
