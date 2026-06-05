@@ -326,16 +326,59 @@ async function runRegen(db) {
   // Fire daily events for all kingdoms
   const kingdoms = await db.all('SELECT id, name, race, morale, gold, food, population, last_event_at, turn, active_event FROM kingdoms WHERE turn > 0');
   const newsInserts = [];
+  const kingdomIds = [];
+  const kingdomUpdates = [];
 
   for (const k of kingdoms) {
     const result = await fireDailyEvent(db, k, season);
     if (result) {
-      for (const [col, val] of Object.entries(result.updates)) {
-        if (['last_event_at','active_event','gold','food','morale','population'].includes(col)) {
-          await db.run(`UPDATE kingdoms SET ${col}=? WHERE id=?`, [val, k.id]);
+      kingdomIds.push(k.id);
+      kingdomUpdates.push(result.updates);
+      newsInserts.push([k.id, 'system', result.message, k.turn]);
+    }
+  }
+
+  // Batch update all kingdoms in single query using CASE statements per column
+  if (kingdomIds.length > 0) {
+    const updatesByColumn = {};
+    const allKingdomIds = new Set();
+    const columns = ['last_event_at','active_event','gold','food','morale','population'];
+
+    for (let i = 0; i < kingdomIds.length; i++) {
+      const k = kingdomIds[i];
+      const updates = kingdomUpdates[i];
+      allKingdomIds.add(k);
+
+      for (const col of columns) {
+        if (updates[col] !== undefined) {
+          if (!updatesByColumn[col]) updatesByColumn[col] = { ids: [], values: [] };
+          updatesByColumn[col].ids.push(k);
+          updatesByColumn[col].values.push(updates[col]);
         }
       }
-      newsInserts.push([k.id, 'system', result.message, k.turn]);
+    }
+
+    if (Object.keys(updatesByColumn).length > 0) {
+      const setClauses = [];
+      const allValues = [];
+      let paramIndex = 1;
+
+      for (const col of columns) {
+        if (!updatesByColumn[col]) continue;
+        const { ids, values } = updatesByColumn[col];
+        const caseWhens = ids.map((_, i) => `WHEN $${paramIndex + i} THEN $${paramIndex + ids.length + i}`).join(' ');
+        setClauses.push(`${col} = CASE id ${caseWhens} END`);
+        allValues.push(...ids, ...values);
+        paramIndex += ids.length * 2;
+      }
+
+      const kingdomIdList = Array.from(allKingdomIds);
+      const idPlaceholders = kingdomIdList.map((_, i) => `$${paramIndex + i}`).join(',');
+
+      await db.run(
+        `UPDATE kingdoms SET ${setClauses.join(', ')} WHERE id IN (${idPlaceholders})`,
+        [...allValues, ...kingdomIdList]
+      );
     }
   }
 
