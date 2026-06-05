@@ -33,7 +33,7 @@ const LORE = {
     {
       id: "narmir_7",
       title: "The Dead Roads",
-      msg: "Beneath every major city lie the Dead Roads — ancient trade tunnels carved by the first civilisations. They still connect distant cities, but their original builders have been gone so long that no one agrees which race made them. All six races claim credit.",
+      msg: "Beneath every major city lie the Dead Roads — ancient trade tunnels carved by the first civilizations. They still connect distant cities, but their original builders have been gone so long that no one agrees which race made them. All six races claim credit.",
     },
     {
       id: "narmir_8",
@@ -277,7 +277,7 @@ const LORE = {
     {
       id: "dwarf_5",
       title: "The Hundred-Year Build",
-      msg: "The greatest honour in dwarf culture is not conquest or wealth. It is completing a Hundred-Year Build — a construction project begun knowing it will not be finished in one lifetime. Dwarf engineers who begin one are celebrated at death as having given the best gift: something for their children to finish.",
+      msg: "The greatest honor in dwarf culture is not conquest or wealth. It is completing a Hundred-Year Build — a construction project begun knowing it will not be finished in one lifetime. Dwarf engineers who begin one are celebrated at death as having given the best gift: something for their children to finish.",
     },
     {
       id: "dwarf_6",
@@ -307,7 +307,7 @@ const LORE = {
     {
       id: "dwarf_11",
       title: "The Iron Oath",
-      msg: "The most binding promise in dwarf culture is the Iron Oath — spoken once, never repeated, never written down, and honoured until death or the explicit release of the person you made it to. A dwarf who breaks an Iron Oath loses the right to be buried with their hammer. This has happened four times in recorded history. All four are still spoken of with horror.",
+      msg: "The most binding promise in dwarf culture is the Iron Oath — spoken once, never repeated, never written down, and honored until death or the explicit release of the person you made it to. A dwarf who breaks an Iron Oath loses the right to be buried with their hammer. This has happened four times in recorded history. All four are still spoken of with horror.",
     },
     {
       id: "dwarf_12",
@@ -357,7 +357,7 @@ const LORE = {
     {
       id: "dwarf_21",
       title: "The Naming Stones",
-      msg: "A dwarf is given three names: a birth name (private, known only to family), a work name (used in all professional contexts), and an eventual stone name (carved at death, summarising a life in seven words or fewer). The challenge of the stone name — saying everything in seven words — is considered the final creative act of a dwarf life.",
+      msg: "A dwarf is given three names: a birth name (private, known only to family), a work name (used in all professional contexts), and an eventual stone name (carved at death, summarizing a life in seven words or fewer). The challenge of the stone name — saying everything in seven words — is considered the final creative act of a dwarf life.",
     },
     {
       id: "dwarf_22",
@@ -419,7 +419,7 @@ const LORE = {
     {
       id: "high_elf_8",
       title: "Mage Tower Philosophy",
-      msg: "A High Elf mage tower is not a military installation. It is a research instrument. Every architectural decision — window placement, chamber dimensions, spiral angle of the stairs — is designed to maximise Weave interaction. The most powerful towers took two hundred years to build and look nothing like towers to non-elven eyes.",
+      msg: "A High Elf mage tower is not a military installation. It is a research instrument. Every architectural decision — window placement, chamber dimensions, spiral angle of the stairs — is designed to maximize Weave interaction. The most powerful towers took two hundred years to build and look nothing like towers to non-elven eyes.",
     },
     {
       id: "high_elf_9",

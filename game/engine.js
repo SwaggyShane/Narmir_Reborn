@@ -7337,7 +7337,7 @@ function processMausoleum(k, events) {
     updates.thralls = Math.min(capacity, currentThralls + regained);
     events.push({
       type: "system",
-      message: `🪦 Mausoleum: ${regained.toLocaleString()} new Thralls were attracted to the crypts. (${updates.thralls}/${capacity})`,
+      message: `🪦 Mausoleum: ${regained.toLocaleString()} new Thrall${regained === 1 ? '' : 's'} ${regained === 1 ? 'was' : 'were'} attracted to the crypts. (${updates.thralls}/${capacity})`,
     });
   }
 
