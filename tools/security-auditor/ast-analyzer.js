@@ -19,7 +19,8 @@ class ASTAnalyzer {
       const ast = acorn.parse(code, {
         ecmaVersion: 2024,
         sourceType: 'module',
-        allowImportExportEverywhere: true
+        allowImportExportEverywhere: true,
+        locations: true
       });
       return ast;
     } catch (err) {
@@ -29,6 +30,7 @@ class ASTAnalyzer {
   }
 
   walkAST(node, callback) {
+    if (!node || typeof node !== 'object' || !node.type) return;
     callback(node);
     for (const key in node) {
       if (node[key] && typeof node[key] === 'object') {
@@ -52,18 +54,14 @@ class ASTAnalyzer {
 
         const arg = node.arguments[0];
         if (arg) {
-          if (arg.name === middlewareName) {
+          if (arg.name === middlewareName || (arg.name && this.isVariableAssignedTo(ast, arg.name, middlewareName))) {
             found = true;
             lineNumber = node.loc?.start.line;
-          }
-          if (arg.type === 'CallExpression' &&
-              arg.callee.name === middlewareName) {
-            found = true;
-            lineNumber = node.loc?.start.line;
-          }
-          if (arg.name && this.isVariableAssignedTo(ast, arg.name, middlewareName)) {
-            found = true;
-            lineNumber = node.loc?.start.line;
+          } else if (arg.type === 'CallExpression' && arg.callee.name) {
+            if (arg.callee.name === middlewareName || this.isVariableAssignedTo(ast, arg.callee.name, middlewareName)) {
+              found = true;
+              lineNumber = node.loc?.start.line;
+            }
           }
         }
       }
@@ -78,9 +76,19 @@ class ASTAnalyzer {
     this.walkAST(ast, (node) => {
       if (node.type === 'VariableDeclaration') {
         node.declarations.forEach(decl => {
-          if (decl.id.name === varName &&
-              decl.init?.callee?.name === assignedValue) {
-            result = true;
+          if (decl.id.name === varName) {
+            if (decl.init) {
+              if (decl.init.type === 'CallExpression') {
+                // Direct call: const x = helmet()
+                if (decl.init.callee.name === assignedValue) {
+                  result = true;
+                }
+                // CommonJS require: const myHelmet = require('helmet')
+                if (decl.init.callee.name === 'require' && decl.init.arguments[0]?.value === assignedValue) {
+                  result = true;
+                }
+              }
+            }
           }
         });
       }
@@ -94,7 +102,7 @@ class ASTAnalyzer {
 
     this.walkAST(ast, (node) => {
       if (node.type === 'TemplateLiteral') {
-        const code = node.raw || '';
+        const code = node.quasis ? node.quasis.map(q => q.value?.raw || '').join('') : '';
         if (/SELECT|INSERT|UPDATE|DELETE|DROP|CREATE/i.test(code) &&
             node.expressions && node.expressions.length > 0) {
 
@@ -221,24 +229,28 @@ class ASTAnalyzer {
     const issues = [];
 
     this.walkAST(ast, (node) => {
-      if (node.type === 'FunctionExpression' &&
-          node.params.length === 4 &&
-          node.params[0].name === 'err') {
+      const isFunction = node.type === 'FunctionExpression' ||
+                         node.type === 'ArrowFunctionExpression' ||
+                         node.type === 'FunctionDeclaration';
 
-        this.walkAST(node, (innerNode) => {
-          if (innerNode.type === 'CallExpression' &&
-              innerNode.callee.type === 'MemberExpression' &&
-              innerNode.callee.property.name === 'json' &&
-              innerNode.arguments[0]?.name === 'err') {
+      if (isFunction && node.params.length === 4) {
+        const errParamName = node.params[0].name;
+        if (errParamName && (errParamName === 'err' || errParamName === 'error')) {
+          this.walkAST(node, (innerNode) => {
+            if (innerNode.type === 'CallExpression' &&
+                innerNode.callee.type === 'MemberExpression' &&
+                innerNode.callee.property.name === 'json' &&
+                innerNode.arguments[0]?.name === errParamName) {
 
-            issues.push({
-              type: 'ERROR_INFO_DISCLOSURE',
-              line: node.loc?.start.line,
-              message: 'Error object sent directly to client (may leak stack traces)',
-              severity: 'MEDIUM'
-            });
-          }
-        });
+              issues.push({
+                type: 'ERROR_INFO_DISCLOSURE',
+                line: node.loc?.start.line,
+                message: 'Error object sent directly to client (may leak stack traces)',
+                severity: 'MEDIUM'
+              });
+            }
+          });
+        }
       }
     });
 
