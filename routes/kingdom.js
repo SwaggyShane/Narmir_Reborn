@@ -5190,7 +5190,7 @@ module.exports = function (db) {
   // ── Inventory ────────────────────────────────────────────────────────────
   router.get('/inventory', requireAuth, async (req, res) => {
     try {
-      const k = await db.get('SELECT items FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
+      const k = await db.get('SELECT id, items FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
       if (!k) return res.status(404).json({ error: 'Kingdom not found' });
 
       const { INVENTORY_ITEMS } = config;
