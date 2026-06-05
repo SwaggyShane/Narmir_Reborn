@@ -10,6 +10,8 @@ const RACES = [
   { id: 'dark_elf',  name: 'Dark Elf',  emoji: '🌙', lore: 'Shadows and sorcery, unseen and deadly' },
   { id: 'vampire',   name: 'Vampire',   emoji: '🦇', lore: 'Undying lords of blood and night' },
   { id: 'dire_wolf', name: 'Dire Wolf', emoji: '🐺', lore: 'Pack hunters, swift and relentless' },
+  { id: 'wood_elf',  name: 'Wood Elf',  emoji: '🌲', lore: 'Master explorers of uncharted wilderness' },
+  { id: 'ogre',      name: 'Ogre',      emoji: '🗡️', lore: 'Unmatched warriors of brute strength' },
 ];
 
 const FEATURES = [
