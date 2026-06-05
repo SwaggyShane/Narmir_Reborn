@@ -28,9 +28,6 @@ const upload = multer({
     destination: (req, file, cb) => cb(null, portraitsPath),
     filename: (req, file, cb) => {
       const ext = path.extname(file.originalname).toLowerCase();
-      if (!ALLOWED_PORTRAIT_TYPES.has(ext)) {
-        return cb(new Error("Invalid image format"));
-      }
       const hash = crypto.randomBytes(4).toString('hex');
       cb(null, `portrait_${Date.now()}_${hash}${ext}`);
     },
@@ -44,6 +41,15 @@ const upload = multer({
   },
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
 });
+
+const uploadWithErrorHandling = (req, res, next) => {
+  upload.single('portrait')(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({ error: err.message || 'File upload failed' });
+    }
+    next();
+  });
+};
 
 // ── Per-player turn processing lock ──────────────────────────────────────────
 // Prevents client-side race conditions from multiple simultaneous turn requests
@@ -5397,9 +5403,9 @@ module.exports = function (db) {
   });
 
   // POST /api/kingdom/portrait - Upload custom portrait
-  router.post('/portrait', requireAuth, upload.single('portrait'), async (req, res) => {
+  router.post('/portrait', requireAuth, uploadWithErrorHandling, async (req, res) => {
     try {
-      const playerId = req.user.id;
+      const playerId = req.player.playerId;
       const k = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [playerId]);
       if (!k) return res.status(404).json({ error: 'Kingdom not found' });
 
@@ -5431,7 +5437,7 @@ module.exports = function (db) {
   // DELETE /api/kingdom/portrait - Remove custom portrait
   router.delete('/portrait', requireAuth, async (req, res) => {
     try {
-      const playerId = req.user.id;
+      const playerId = req.player.playerId;
       const k = await db.get('SELECT id, custom_portrait FROM kingdoms WHERE player_id = ?', [playerId]);
       if (!k) return res.status(404).json({ error: 'Kingdom not found' });
 
