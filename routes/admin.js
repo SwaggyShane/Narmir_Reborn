@@ -7,6 +7,9 @@ const fs = require("fs");
 const _config = require("../game/config");
 const { _GOAL_COUNTS, DAILY_GOALS, WEEKLY_GOALS, MONTHLY_GOALS } = require("../game/goals");
 
+const ALLOWED_PRIZE_TYPES = ['gold', 'mana', 'rangers', 'researchers', 'war_machines', 'world_fragment'];
+const ALLOWED_SOUND_EXTENSIONS = new Set([".mp3", ".wav"]);
+
 let ORIGINAL_DAILY_GOALS = [];
 let ORIGINAL_WEEKLY_GOALS = [];
 let ORIGINAL_MONTHLY_GOALS = [];
@@ -23,7 +26,7 @@ function safeSoundPath(rawName) {
   const base = rawName.split(/[\/\\]/).pop();
   if (!base || base === "." || base === "..") return null;
   const ext = path.extname(base).toLowerCase();
-  if (![".mp3", ".wav"].includes(ext)) return null;
+  if (!ALLOWED_SOUND_EXTENSIONS.has(ext)) return null;
   const resolved = path.resolve(soundsPath, base);
   if (path.relative(soundsPath, resolved).startsWith("..")) return null;
   return resolved;
@@ -97,7 +100,7 @@ const upload = multer({
     filename: (req, file, cb) => {
       const base = (file.originalname || "").split(/[\/\\]/).pop();
       const ext = path.extname(base).toLowerCase();
-      if (!base || ![".mp3", ".wav"].includes(ext)) {
+      if (!base || !ALLOWED_SOUND_EXTENSIONS.has(ext)) {
         return cb(new Error("Invalid filename or extension"));
       }
       cb(null, base);
@@ -105,7 +108,7 @@ const upload = multer({
   }),
   fileFilter: (req, file, cb) => {
     const ext = path.extname((file.originalname || "")).toLowerCase();
-    if (![".mp3", ".wav"].includes(ext)) {
+    if (!ALLOWED_SOUND_EXTENSIONS.has(ext)) {
       return cb(new Error("Only .mp3 and .wav files are allowed"));
     }
     cb(null, true);
@@ -1073,8 +1076,8 @@ module.exports = function (db, io) {
     if (prizeMultiplier !== undefined && (prizeMultiplier < 0.5 || prizeMultiplier > 100)) {
       return res.status(400).json({ error: "prizeMultiplier must be between 0.5 and 100" });
     }
-    if (prizeType !== undefined && !['gold', 'mana', 'rangers', 'researchers', 'war_machines', 'world_fragment'].includes(prizeType)) {
-      return res.status(400).json({ error: `Invalid prizeType. Allowed: ${['gold', 'mana', 'rangers', 'researchers', 'war_machines', 'world_fragment'].join(', ')}` });
+    if (prizeType !== undefined && !ALLOWED_PRIZE_TYPES.includes(prizeType)) {
+      return res.status(400).json({ error: `Invalid prizeType. Allowed: ${ALLOWED_PRIZE_TYPES.join(', ')}` });
     }
 
     try {
@@ -1232,93 +1235,6 @@ module.exports = function (db, io) {
 
       await refreshInMemoryGoals(db);
       res.json({ ok: true, message: "Goal removed successfully" });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-
-  // ── GAME CONSTANTS ────────────────────────────────────────────────────────
-  const { validateConstant, _getSectionConstants } = require('../game/constants-schema');
-  const { getConstantsForSection, refreshConstants } = require('../game/constants-loader');
-
-  router.get("/constants", async (_req, res) => {
-    try {
-      // Fetch all overrides from database
-      const overrides = await db.all(`
-        SELECT section, constant_key, override_value, data_type
-        FROM admin_game_constants
-        ORDER BY section, constant_key
-      `);
-
-      // Build response with all sections and override status
-      const sections = ['gameplay', 'goals', 'expeditions', 'combat'];
-      const response = {};
-
-      for (const section of sections) {
-        response[section] = getConstantsForSection(section, overrides);
-      }
-
-      res.json(response);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-
-  // POST /api/admin/constants/update — update a game constant
-  router.post("/constants/update", async (req, res) => {
-    const { section, constantKey, value } = req.body;
-
-    if (!section || !constantKey || value === undefined) {
-      return res.status(400).json({ error: "section, constantKey, and value required" });
-    }
-
-    // Validate against schema
-    const validation = validateConstant(section, constantKey, value);
-    if (!validation.valid) {
-      return res.status(400).json({ error: validation.error });
-    }
-
-    try {
-      const numValue = parseFloat(value);
-
-      // Insert or update override in database
-      await db.run(
-        `INSERT INTO admin_game_constants (section, constant_key, override_value, data_type, created_at, updated_at)
-         VALUES (?, ?, ?, 'number', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-         ON CONFLICT (section, constant_key) DO UPDATE SET
-           override_value = EXCLUDED.override_value,
-           updated_at = CURRENT_TIMESTAMP`,
-        [section, constantKey, String(numValue)]
-      );
-
-      // Refresh merged constants in memory
-      await refreshConstants(db);
-
-      res.json({ ok: true, message: "Constant updated successfully", newValue: numValue });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-
-  // POST /api/admin/constants/revert — revert a constant to default
-  router.post("/constants/revert", async (req, res) => {
-    const { section, constantKey } = req.body;
-
-    if (!section || !constantKey) {
-      return res.status(400).json({ error: "section and constantKey required" });
-    }
-
-    try {
-      // Delete override from database
-      await db.run(
-        `DELETE FROM admin_game_constants WHERE section = ? AND constant_key = ?`,
-        [section, constantKey]
-      );
-
-      // Refresh merged constants in memory
-      await refreshConstants(db);
-
-      res.json({ ok: true, message: "Constant reverted to default" });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
