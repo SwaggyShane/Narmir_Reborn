@@ -1,0 +1,159 @@
+NARMIR REBORN — BUST PORTRAIT PROMPTS
+Race portraits for /public/busts/ · Target: 360×480px · Ratio: 3:4
+Style consistent across all: dark fantasy, painterly, dramatic lighting, neutral/dark background
+==============================================================================================
+
+SHARED STYLE SUFFIX (append to every prompt):
+"dark fantasy portrait, painterly oil style, dramatic rim lighting, dark atmospheric background,
+highly detailed face and armor, 3:4 portrait orientation, bust shot cropped at chest, no text,
+no watermark, photorealistic fantasy art"
+
+==============================================================================================
+
+HUMAN
+-----
+human_male_bust.webp
+"A noble human male warrior in his late 30s, strong jaw, weathered face with a short beard,
+silver plate armor engraved with heraldic motifs, determined amber eyes, short dark hair,
+battle-worn but dignified. [STYLE SUFFIX]"
+
+human_female_bust.webp
+"A noble human female commander in her early 30s, sharp intelligent eyes, auburn hair pinned
+back, silver plate pauldrons over chainmail, a confident composed expression, small scar on
+chin from old battle. [STYLE SUFFIX]"
+
+==============================================================================================
+
+ORC
+---
+orc_male_bust.webp
+"A fearsome male orc warlord, massive tusks, deep olive-green skin, heavily scarred face,
+small fierce red eyes, crude iron spaulders with bone trophies, tribal war paint in red and
+black across cheeks, wild dark hair with bone beads. [STYLE SUFFIX]"
+
+orc_female_bust.webp
+"A powerful female orc warrior chief, olive-green skin, two prominent lower tusks, intense
+golden eyes, black war paint across her forehead, braided dark hair with metal rings, spiked
+iron pauldrons, commanding and fierce expression. [STYLE SUFFIX]"
+
+==============================================================================================
+
+DWARF
+-----
+dwarf_male_bust.webp
+"A stocky male dwarf forge lord, deeply lined face, long braided auburn beard threaded with
+gold rings, deep-set brown eyes under heavy brows, ornate rune-etched bronze and gold plate
+armor, soot marks on cheeks, proud unwavering expression. [STYLE SUFFIX]"
+
+dwarf_female_bust.webp
+"A stout female dwarf engineer, auburn hair in thick braids pinned up, small determined eyes,
+lightly freckled tanned skin, intricately crafted bronze pauldrons with gear motifs, grease
+smudge on forehead, sharp intelligent expression. [STYLE SUFFIX]"
+
+==============================================================================================
+
+DARK ELF
+---------
+dark_elf_male_bust.webp
+"A lithe male dark elf assassin, obsidian dark skin, long white hair falling loose, glowing
+violet eyes with slit pupils, black and silver spiked pauldrons, expression cold and
+calculating, subtle smirk, thin elegant features. [STYLE SUFFIX]"
+
+dark_elf_female_bust.webp
+"A striking female dark elf shadow operative, dark charcoal skin, white hair swept to one
+side, piercing purple eyes, black silk and shadow-steel armor, expression unreadable and
+dangerous, high sharp cheekbones, elegant and lethal. [STYLE SUFFIX]"
+
+==============================================================================================
+
+VAMPIRE
+-------
+vampire_male_bust.webp
+"An ancient male vampire lord, alabaster pale skin, sharp aristocratic features, slicked back
+black hair, deep crimson eyes with vertical pupils, ornate black and crimson velvet collar
+with gold accents, cold imperious expression, hint of fang visible. [STYLE SUFFIX]"
+
+vampire_female_bust.webp
+"An ancient female vampire matriarch, porcelain white skin, high cheekbones, long dark red
+hair, glowing crimson eyes, black Gothic pauldrons with silver filigree, expression regal and
+predatory, a single drop of blood at the corner of pale lips. [STYLE SUFFIX]"
+
+==============================================================================================
+
+DIRE WOLF
+----------
+dire_wolf_male_bust.webp
+"A towering male dire wolf alpha, half-human half-wolf form, muzzle elongated with bared fangs,
+amber bestial eyes, dark grey fur with black markings, heavy bone and leather tribal pauldrons,
+wild untamed expression, massive neck and jaw. [STYLE SUFFIX]"
+
+dire_wolf_female_bust.webp
+"A fierce female dire wolf shaman, half-wolf form, tawny fur, bright piercing gold eyes,
+ceremonial bone and feather headdress, tribal leather armor stitched with animal hide, face
+bearing ritual slash markings, intense primal expression. [STYLE SUFFIX]"
+
+==============================================================================================
+
+HIGH ELF
+---------
+high_elf_male_bust.webp
+"A regal male high elf archmage, ageless sharp features, platinum silver hair swept back,
+luminous pale blue eyes, silver and white arcane-etched pauldrons with glowing runes, serene
+all-knowing expression, faint magical light emanating from skin. [STYLE SUFFIX]"
+
+high_elf_female_bust.webp
+"An elegant female high elf mage-queen, timeless beauty, long moonlight white hair, large
+luminous teal eyes, delicate silver circlet, white and gold arcane robes visible at shoulders,
+expression serene and slightly aloof, ethereal glow to skin. [STYLE SUFFIX]"
+
+==============================================================================================
+
+WOOD ELF
+---------
+wood_elf_male_bust.webp
+"A lean male wood elf pathfinder, sun-bronzed skin, sharp hazel eyes, medium length earthy
+brown hair with small braids, lightweight leather and bark armor with leaf motifs, a thin scar
+across one brow, alert and watchful expression. [STYLE SUFFIX]"
+
+wood_elf_female_bust.webp
+"A swift female wood elf ranger, warm tan skin, bright green eyes, auburn hair in a practical
+braid, lightweight green and brown leather pauldrons, small leaves and vines woven into hair,
+calm focused expression, a hint of forest mist behind her. [STYLE SUFFIX]"
+
+==============================================================================================
+
+OGRE
+-----
+ogre_male_bust.webp
+"A colossal male ogre warlord, grey-brown rough skin, massive protruding lower jaw with two
+blunt tusks, small deep-set black eyes, crude iron and bone plate armor with spikes, multiple
+facial scars, matted dark hair, expression brutish and menacing. [STYLE SUFFIX]"
+
+ogre_female_bust.webp
+"A massive female ogre chieftain, thick grey skin, heavy brow, small fierce dark eyes, lower
+tusks, crude but decorated iron pauldrons hung with trophy skulls, coarse dark hair in a rough
+knot, battle scars across one cheek, expression stern and imposing. [STYLE SUFFIX]"
+
+==============================================================================================
+
+FILENAMES CHECKLIST:
+[ ] human_male_bust.webp
+[ ] human_female_bust.webp
+[ ] orc_male_bust.webp
+[ ] orc_female_bust.webp
+[ ] dwarf_male_bust.webp
+[ ] dwarf_female_bust.webp
+[ ] dark_elf_male_bust.webp
+[ ] dark_elf_female_bust.webp
+[ ] vampire_male_bust.webp
+[ ] vampire_female_bust.webp
+[ ] dire_wolf_male_bust.webp
+[ ] dire_wolf_female_bust.webp
+[ ] high_elf_male_bust.webp
+[ ] high_elf_female_bust.webp
+[ ] wood_elf_male_bust.webp
+[ ] wood_elf_female_bust.webp
+[ ] ogre_male_bust.webp
+[ ] ogre_female_bust.webp
+
+Upload all 18 files to: /public/busts/

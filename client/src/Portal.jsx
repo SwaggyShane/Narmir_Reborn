@@ -119,7 +119,7 @@ function RaceSelectOverlay({ selected, onSelect, onBack, onConfirm }) {
           {activeRace ? (
             <div className="race-detail-inner" style={{ '--race-color': activeRace.color }}>
               <div className="race-detail-portrait-section">
-                <img src={`/race/${activeRace.id}_male.webp`} alt={activeRace.title} className="race-detail-portrait" />
+                <img src={`/busts/${activeRace.id}_male_bust.webp`} alt={activeRace.title} className="race-detail-portrait" />
                 <div className="race-detail-title-group">
                   <div className="race-detail-title">{activeRace?.title}</div>
                   <div className="race-detail-subtitle">{activeRace?.playstyle?.split('.')?.[0]}</div>
@@ -329,7 +329,7 @@ function AuthCard({ onViewChange }) {
           {raceInfo && (
             <div className="reg-left-panel">
               <div className="reg-portrait-section" style={{ '--race-color': raceInfo.color }}>
-                <img src={`/race/${raceInfo.id}_${regGender}.webp`} alt={raceInfo.title} className="reg-portrait" />
+                <img src={`/busts/${raceInfo.id}_${regGender}_bust.webp`} alt={raceInfo.title} className="reg-portrait" />
                 <div className="reg-race-info">
                   <div className="reg-race-title">{raceInfo.title.split(' of ')[0]}</div>
                   <button type="button" className="reg-race-change" onClick={() => setView('race-select')}>Change Race</button>
