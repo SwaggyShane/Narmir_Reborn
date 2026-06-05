@@ -240,19 +240,30 @@ class PgDbAdapter {
         // uncaught exception and the process-level handler exits — crash-looping the
         // server (exactly what was observed in production).
         //
-        // We attach the handler ONCE per physical connection (guarded by a symbol) so
-        // it is not re-added every time the connection is reused for a new transaction,
-        // which would leak listeners. It reads the CURRENT activeTxns entry rather than
-        // closing over one specific store, so it always cleans up the right transaction.
-        if (!client[TXN_ERR_HANDLER]) {
-          client[TXN_ERR_HANDLER] = true;
-          client.on('error', (err) => {
-            console.error(`[db] Transaction client error (connection terminated): ${err.code || ''} ${err.message}`);
-            const info = this.activeTxns.get(client);
-            if (info && info.store) info.store.released = true;
-            this.activeTxns.delete(client);
-          });
+        // We store the handler FUNCTION on the client (not a boolean flag) and replace
+        // it on every checkout: remove any previous handler, then attach a fresh one
+        // bound to THIS adapter. This guarantees exactly one listener (no leak) and, if
+        // the adapter is ever re-instantiated (tests / hot-reload), the handler always
+        // references the current adapter's activeTxns rather than a stale one.
+        if (client[TXN_ERR_HANDLER]) {
+          client.removeListener('error', client[TXN_ERR_HANDLER]);
         }
+        const txnErrorHandler = (err) => {
+          console.error(`[db] Transaction client error (connection terminated): ${err.code || ''} ${err.message}`);
+          const info = this.activeTxns.get(client);
+          if (info) {
+            if (info.store) info.store.released = true;
+            this.activeTxns.delete(client);
+            // Return the dead connection to the pool WITH the error so pg discards it,
+            // freeing the pool slot — otherwise the pool keeps counting this terminated
+            // connection as checked-out and slowly exhausts. Only release while the
+            // client is still mid-transaction (info present); an idle pooled client that
+            // errors is handled by pool.on('error') and must not be double-released.
+            try { client.release(err); } catch { /* already gone */ }
+          }
+        };
+        client[TXN_ERR_HANDLER] = txnErrorHandler;
+        client.on('error', txnErrorHandler);
 
         try {
           await client.query('BEGIN');

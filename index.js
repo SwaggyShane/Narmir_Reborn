@@ -1308,8 +1308,11 @@ async function start() {
     '08003', // connection_does_not_exist
     '08000', // connection_exception
   ]);
+  // Transient OS-level socket errors that also surface during DB restarts / redeploys /
+  // network blips — recoverable for the same reason (the pool reconnects on next query).
+  const RECOVERABLE_SYSTEM_CODES = new Set(['ECONNRESET', 'ECONNREFUSED', 'EPIPE', 'ETIMEDOUT']);
   const isRecoverablePgError = (error) =>
-    !!error && (RECOVERABLE_PG_CODES.has(error.code) || error.code === 'ECONNRESET');
+    !!error && (RECOVERABLE_PG_CODES.has(error.code) || RECOVERABLE_SYSTEM_CODES.has(error.code));
 
   process.on('uncaughtException', (error) => {
     if (isRecoverablePgError(error)) {
