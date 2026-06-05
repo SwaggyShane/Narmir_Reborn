@@ -16,6 +16,10 @@ const { marketPriceCache, setUnreadCount, incrementUnread } = require("../cache.
 
 const router = express.Router();
 
+// Kingdoms we've already logged deprecated-inventory items for, so the warning fires
+// once per process instead of on every (frequently polled) inventory fetch.
+const _loggedDeprecatedInventory = new Set();
+
 const portraitsPath = path.join(__dirname, "..", "public", "portraits");
 if (!fs.existsSync(portraitsPath)) {
   fs.mkdirSync(portraitsPath, { recursive: true });
@@ -5216,8 +5220,10 @@ module.exports = function (db) {
         }
       }
 
-      // Log deprecated items for debugging
-      if (deprecated.length > 0) {
+      // Log deprecated items once per kingdom per process (the inventory endpoint is
+      // polled frequently, so logging on every request just spams the error stream).
+      if (deprecated.length > 0 && !_loggedDeprecatedInventory.has(k.id)) {
+        _loggedDeprecatedInventory.add(k.id);
         console.warn(`[inventory] Kingdom ${k.id} has deprecated items: ${deprecated.join(', ')}`);
       }
 
