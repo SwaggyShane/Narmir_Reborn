@@ -85,6 +85,8 @@ async function loadSyncConfigs() {
   } catch (error) {
     console.error('❌ Failed to load sync configs:', error);
     syncConfigs = [];
+    // Reset lastLoggedSyncCount so recovery is logged when the DB reconnects
+    lastLoggedSyncCount = -1;
   }
 }
 
