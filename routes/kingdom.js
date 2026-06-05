@@ -5470,12 +5470,11 @@ module.exports = function (db) {
   router.get('/happiness-status', requireAuth, async (req, res) => {
     try {
       const playerId = req.player.playerId;
-      const k = await db.get('SELECT id, happiness FROM kingdoms WHERE player_id = ?', [playerId]);
+      const k = await db.get('SELECT * FROM kingdoms WHERE player_id = ?', [playerId]);
       if (!k) return res.status(404).json({ error: 'Kingdom not found' });
 
       // Get current happiness components
-      const fullK = await db.get('SELECT * FROM kingdoms WHERE id = ?', [k.id]);
-      const happinessResult = engine.calculateHappiness(fullK);
+      const happinessResult = engine.calculateHappiness(k);
 
       // Get last 50 turns of happiness history
       const history = await db.all(
