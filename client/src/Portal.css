@@ -443,7 +443,7 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0;
-  min-height: 340px;
+  min-height: auto;
 }
 
 .race-grid {
@@ -451,7 +451,6 @@ body {
   grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
   padding: 1rem;
-  border-right: 1px solid var(--border);
   align-content: start;
 }
 
@@ -508,7 +507,6 @@ body {
 .race-detail-panel {
   padding: 1rem;
   overflow-y: auto;
-  max-height: 380px;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -1015,8 +1013,6 @@ body {
   .portal-back-link { position: static; transform: none; display: block; margin-bottom: 0.5rem; }
   .portal-header { padding: 1.5rem 1rem; }
   .race-overlay-body { grid-template-columns: 1fr; }
-  .race-grid { border-right: none; border-bottom: 1px solid var(--border); }
-  .race-detail-panel { max-height: none; }
   .race-heroes-grid { grid-template-columns: repeat(2, 1fr); }
 
   .reg-header {
