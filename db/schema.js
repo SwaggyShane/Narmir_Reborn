@@ -347,12 +347,29 @@ async function initDb() {
   }
 
   const { Pool } = require('pg');
-  const maxPool = process.env.DATABASE_MAX_POOL ? parseInt(process.env.DATABASE_MAX_POOL, 10) : 100;
+  // Railway Postgres allows ~100 total connections (minus a few reserved for the
+  // superuser). Two things make a high per-instance cap dangerous:
+  //   1. Zero-downtime deploys keep the OLD instance alive while the NEW one boots,
+  //      so two app instances are briefly live at once — doubling the connection draw.
+  //   2. pgAdmin4 / Railway monitoring hold additional background connections.
+  // A default of 100 let a SINGLE instance saturate the entire database (and 2×100
+  // during a deploy guaranteed "sorry, too many clients already"). 20 leaves headroom
+  // for deploy overlap, pgAdmin4, and migrations. Override via DATABASE_MAX_POOL on
+  // the *application* service (NOT the Postgres service — that container never reads it).
+  const maxPool = process.env.DATABASE_MAX_POOL ? parseInt(process.env.DATABASE_MAX_POOL, 10) : 20;
   const minPool = process.env.DATABASE_MIN_POOL ? parseInt(process.env.DATABASE_MIN_POOL, 10) : 2;
 
   if (isNaN(maxPool) || isNaN(minPool) || maxPool < 1 || minPool < 1 || maxPool < minPool) {
     throw new Error(`[db] Invalid pool configuration: max=${maxPool}, min=${minPool}. Both must be positive integers with max >= min`);
   }
+
+  // Guard against a value high enough to exhaust Railway Postgres during a deploy
+  // (old + new instance both live). This is a warning, not a hard cap — bigger plans
+  // with a higher max_connections may legitimately want more.
+  if (maxPool > 50) {
+    console.warn(`[db] ⚠️ DATABASE_MAX_POOL=${maxPool} is high. During a Railway deploy two instances run at once (~${maxPool * 2} connections), which can exceed Postgres max_connections (~100) and cause "too many clients already".`);
+  }
+  console.log(`[db] Connection pool configured — max=${maxPool}, min=${minPool}`);
 
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
