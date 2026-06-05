@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import './Portal.css';
 
+const RACE_EMOJIS = {
+  human: '⚔️',
+  orc: '🪓',
+  dwarf: '⛏️',
+  dark_elf: '🌙',
+  vampire: '🦇',
+  dire_wolf: '🐺',
+  high_elf: '✨',
+  wood_elf: '🌲',
+  ogre: '🗡️',
+};
+
 const RACE_DATA = [
   {
     id: 'human', title: 'Humans of The Heartlands', color: '#8fb84a',
@@ -85,7 +97,29 @@ const RACE_DATA = [
   },
 ];
 
-// ─── Race Selection Overlay ───────────────────────────────────────────────────
+// ─── Race Portrait Component ───────────────────────────────────────────────────
+
+function RacePortrait({ raceId, className }) {
+  const [hasError, setHasError] = useState(false);
+  const emoji = RACE_EMOJIS[raceId] || '⚔️';
+
+  if (hasError) {
+    return (
+      <div className={className} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>
+        {emoji}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={`/race/${raceId}_male.webp`}
+      alt={raceId}
+      className={className}
+      onError={() => setHasError(true)}
+    />
+  );
+}
 
 function RaceSelectOverlay({ selected, onSelect, onBack, onConfirm }) {
   const [hovered, setHovered] = useState(null);
@@ -110,7 +144,7 @@ function RaceSelectOverlay({ selected, onSelect, onBack, onConfirm }) {
               onMouseEnter={() => setHovered(race.id)}
               onMouseLeave={() => setHovered(null)}
             >
-              <img src={`/race/${race.id}_male.webp`} alt={race.title} className="race-pick-portrait" />
+              <RacePortrait raceId={race.id} className="race-pick-portrait" />
               <div className="race-pick-name">{race.title?.split(' of ')?.[0]}</div>
               <div className="race-pick-playstyle">{race.playstyle?.split('.')?.[0]}</div>
             </button>
@@ -121,7 +155,7 @@ function RaceSelectOverlay({ selected, onSelect, onBack, onConfirm }) {
           {activeRace ? (
             <div className="race-detail-inner" style={{ '--race-color': activeRace.color }}>
               <div className="race-detail-portrait-section">
-                <img src={`/race/${activeRace.id}_male.webp`} alt={activeRace.title} className="race-detail-portrait" />
+                <RacePortrait raceId={activeRace.id} className="race-detail-portrait" />
                 <div className="race-detail-title-group">
                   <div className="race-detail-title">{activeRace?.title}</div>
                   <div className="race-detail-subtitle">{activeRace?.playstyle?.split('.')?.[0]}</div>
