@@ -300,11 +300,8 @@ async function fireDailyEvent(db, k, season) {
       updates.active_event = JSON.stringify(active);
       message += val > 0 ? ` (+${Math.round(val * 100)}% for ${dur} turns)` : ` (${Math.round(val * 100)}% for ${dur} turns)`; break; }
   }
-  await db.run(
-    `INSERT INTO event_log (kingdom_id,kingdom_name,event_key,event_name,season,fired_at) VALUES (?,?,?,?,?,?)`,
-    [k.id, k.name, ev.key, ev.name, season, now]
-  );
-  return { updates, message };
+  // Return event_log data for batch insertion in runRegen instead of writing individually
+  return { updates, message, eventLogData: [k.id, k.name, ev.key, ev.name, season, now] };
 }
 
 async function runRegen(db) {
@@ -328,6 +325,7 @@ async function runRegen(db) {
   const newsInserts = [];
   const kingdomIds = [];
   const kingdomUpdates = [];
+  const eventLogInserts = [];
 
   for (const k of kingdoms) {
     const result = await fireDailyEvent(db, k, season);
@@ -335,6 +333,9 @@ async function runRegen(db) {
       kingdomIds.push(k.id);
       kingdomUpdates.push(result.updates);
       newsInserts.push([k.id, 'system', result.message, k.turn]);
+      if (result.eventLogData) {
+        eventLogInserts.push(result.eventLogData);
+      }
     }
   }
 
@@ -391,6 +392,16 @@ async function runRegen(db) {
     const values = newsInserts.flat();
     await db.run(
       `INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ${placeholders}`,
+      values
+    );
+  }
+
+  // Batch insert all event logs in single query (instead of individual inserts in fireDailyEvent)
+  if (eventLogInserts.length > 0) {
+    const placeholders = eventLogInserts.map((_, i) => `($${i*6+1},$${i*6+2},$${i*6+3},$${i*6+4},$${i*6+5},$${i*6+6})`).join(',');
+    const values = eventLogInserts.flat();
+    await db.run(
+      `INSERT INTO event_log (kingdom_id, kingdom_name, event_key, event_name, season, fired_at) VALUES ${placeholders}`,
       values
     );
   }
