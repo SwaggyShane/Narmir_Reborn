@@ -273,13 +273,17 @@ async function fireDailyEvent(db, k, season) {
   const ev = eligible[Math.floor(Math.random() * eligible.length)];
   const updates = { last_event_at: now };
   let message = `${config.SEASON_ICONS[season] || ''} ${ev.name}: ${ev.description}`;
-  const val = ev.effect_value, dur = ev.effect_duration;
+  // Coerce to numbers defensively — effect_value/effect_duration come from the DB and
+  // string values would silently turn arithmetic (e.g. `1 + val`) into concatenation.
+  const val = Number(ev.effect_value), dur = Number(ev.effect_duration);
   switch (ev.effect_type) {
     case 'morale':
       updates.morale = Math.max(0, Math.min(200, (k.morale || 100) + val));
       message += val > 0 ? ` (+${val} morale)` : ` (${val} morale)`; break;
     case 'gold': {
-      const d = Math.floor((k.gold || 0) * Math.abs(val)) * (val > 0 ? 1 : -1);
+      // |val| < 1 → percentage of current gold; otherwise a flat amount (mirrors the
+      // food/population cases so a flat gold event can't multiply the treasury).
+      const d = Math.abs(val) < 1 ? Math.floor((k.gold || 0) * Math.abs(val)) * (val > 0 ? 1 : -1) : Math.floor(val);
       updates.gold = Math.max(0, (k.gold || 0) + d);
       message += d > 0 ? ` (+${d.toLocaleString()} gold)` : ` (${d.toLocaleString()} gold)`; break; }
     case 'food': {
