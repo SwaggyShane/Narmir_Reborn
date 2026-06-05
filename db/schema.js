@@ -734,6 +734,9 @@ async function initDb() {
       created_at  INTEGER NOT NULL DEFAULT (unixepoch())
     );
     CREATE INDEX IF NOT EXISTS idx_heroes_kingdom ON heroes(kingdom_id);
+    -- kingdom_id is the 2nd column of alliance_members' composite PK, so it can't be
+    -- used for kingdom_id-only lookups (every turn + every socket connect). Index it.
+    CREATE INDEX IF NOT EXISTS idx_alliance_members_kingdom ON alliance_members(kingdom_id);
     CREATE INDEX IF NOT EXISTS idx_news_kingdom    ON news(kingdom_id, is_read);
     CREATE INDEX IF NOT EXISTS idx_combat_attacker ON combat_log(attacker_id);
     CREATE INDEX IF NOT EXISTS idx_combat_defender ON combat_log(defender_id);
