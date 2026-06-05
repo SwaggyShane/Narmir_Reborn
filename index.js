@@ -367,7 +367,10 @@ async function runRegen(db) {
         if (!updatesByColumn[col]) continue;
         const { ids, values } = updatesByColumn[col];
         const caseWhens = ids.map((_, i) => `WHEN $${paramIndex + i} THEN $${paramIndex + ids.length + i}`).join(' ');
-        setClauses.push(`${col} = CASE id ${caseWhens} END`);
+        // ELSE keeps the current value: fireDailyEvent sets a variable column set per
+        // kingdom, so a kingdom can be in the WHERE id IN (...) union but absent from
+        // this column's WHEN list. Without ELSE the CASE returns NULL and nulls the column.
+        setClauses.push(`${col} = CASE id ${caseWhens} ELSE ${col} END`);
         allValues.push(...ids, ...values);
         paramIndex += ids.length * 2;
       }
