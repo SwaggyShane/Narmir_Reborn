@@ -26,25 +26,15 @@ const HappinessWidget = ({ onOpenTab }) => {
 
   useEffect(() => {
     fetchHappinessData();
-  }, []);
 
-  // Watch for turn increments to refresh data
-  useEffect(() => {
-    const originalFetch = window.fetchGameData;
-    if (originalFetch) {
-      window.fetchGameData = function(...args) {
-        const result = originalFetch.apply(this, args);
-        if (result instanceof Promise) {
-          result.then(() => fetchHappinessData());
-        }
-        return result;
-      };
-    }
+    // Listen for game data updates via custom event
+    const handleGameDataUpdate = () => {
+      fetchHappinessData();
+    };
 
+    window.addEventListener('game-data-updated', handleGameDataUpdate);
     return () => {
-      if (originalFetch) {
-        window.fetchGameData = originalFetch;
-      }
+      window.removeEventListener('game-data-updated', handleGameDataUpdate);
     };
   }, []);
 

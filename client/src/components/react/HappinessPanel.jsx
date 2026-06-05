@@ -9,7 +9,6 @@ const HappinessPanel = () => {
     prosperity: 0,
     race: 0
   });
-  const [history, setHistory] = useState([]);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState(null); // null = all, or component name
@@ -21,10 +20,9 @@ const HappinessPanel = () => {
       const response = await fetch('/api/kingdom/happiness-status');
       if (!response.ok) throw new Error('Failed to fetch');
 
-      const data = response.json();
+      const data = await response.json();
       setHappiness(data.happiness || 50);
       setComponents(data.components || {});
-      setHistory(data.last50Turns || []);
       setEvents(data.recent || []);
       setRecoveryRate(data.recoveryRate || 0);
     } catch (err) {
@@ -65,8 +63,6 @@ const HappinessPanel = () => {
   const filteredEvents = filter
     ? events.filter(e => e.component === filter)
     : events;
-
-  const total = Object.values(components).reduce((a, b) => a + b, 0) + 50;
 
   return (
     <div id="happiness-panel" className="panel">
