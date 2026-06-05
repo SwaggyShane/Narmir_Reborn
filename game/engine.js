@@ -1417,9 +1417,6 @@ function processFoodEconomy(k, events) {
         message: `🌾 Food surplus: +${balance.toLocaleString()} units. Troops are well fed.`,
       });
       
-      if (mDelta > 0 && events.recordMoraleChange) {
-        events.recordMoraleChange(mDelta, "Food Surplus");
-      }
     } else {
       events.push({
         type: "system",
@@ -1462,9 +1459,6 @@ function processFoodEconomy(k, events) {
           message: `🚨 Food shortage! Turn ${shortTurns} — build more farms or reduce troops.`,
         });
 
-        if (mDelta !== 0 && events.recordMoraleChange) {
-          events.recordMoraleChange(mDelta, "Starvation");
-        }
       }
       if (shortTurns >= 5) {
         let fleeCount = 500;
@@ -1978,13 +1972,7 @@ function processTurn(k) {
     xpSourcesAccum = { ...XP_SOURCES_DEFAULT };
   }
 
-  const startEffMorale = displayMorale(k);
-  const startingCap = naturalMoraleCap(k);
 
-  const moraleLog = [];
-  events.recordMoraleChange = (amount, reason) => {
-    if (amount !== 0) moraleLog.push({ amount, reason });
-  };
 
   // Calculate happiness at the start of the turn
   const happinessResult = calculateHappiness(k);
@@ -2299,9 +2287,6 @@ function processTurn(k) {
           const mDelta = updates.morale - oldMorale;
           if (mDelta > 0) {
             bonusStr = `+${mDelta} Morale`;
-            if (events.recordMoraleChange) {
-              events.recordMoraleChange(mDelta, "Low Tax Event");
-            }
           } else {
             bonusStr = `Morale at cap`;
           }
@@ -2323,14 +2308,12 @@ function processTurn(k) {
       const oldM = cur;
       updates.morale = Math.max(0, cur - taxPenalty);
       if (updates.morale !== oldM) {
-        events.recordMoraleChange(updates.morale - oldM, `Taxation (${currentTax}%)`);
       }
 
       if (overcrowdPenalty > 0) {
         const cur2 = updates.morale;
         const newMorale = Math.max(0, cur2 - overcrowdPenalty);
         if (newMorale !== cur2) {
-          events.recordMoraleChange(newMorale - cur2, "Overcrowding");
         }
         updates.morale = newMorale;
       }
@@ -2351,16 +2334,13 @@ function processTurn(k) {
       if (cur > natCap) {
         newMorale = Math.max(natCap, cur - 2); // Natural decay towards cap
         if (newMorale !== cur) {
-          events.recordMoraleChange(newMorale - cur, "Natural decay towards cap");
         }
       } else if (newMorale > cur) {
-        events.recordMoraleChange(newMorale - cur, recoveryReason);
       }
 
       if (overcrowdPenalty > 0) {
         const afterCrowdMorale = Math.max(0, newMorale - overcrowdPenalty);
         if (afterCrowdMorale !== newMorale) {
-          events.recordMoraleChange(afterCrowdMorale - newMorale, "Overcrowding");
         }
         newMorale = afterCrowdMorale;
       }
@@ -2438,9 +2418,6 @@ function processTurn(k) {
 
     const oldM = updates.morale !== undefined ? updates.morale : k.morale;
     updates.morale = 5; // Reset morale
-    if (events.recordMoraleChange && oldM !== 5) {
-      events.recordMoraleChange(5 - oldM, "Riots");
-    }
     events.push({
       type: "system",
       message: `🔥 RIOTS! Citizens revolt! ${popLost.toLocaleString()} citizens fled/died, ${goldLost.toLocaleString()} gold looted${destBldStr}. Morale has been reset to 5.`,
@@ -3077,9 +3054,6 @@ function processTurn(k) {
     const oldMorale = cur;
     updates.morale = Math.min(natCap, cur + 1);
     const mDelta = updates.morale - oldMorale;
-    if (mDelta > 0 && events.recordMoraleChange) {
-      events.recordMoraleChange(mDelta, "Human Clerics Heal");
-    }
   }
 
   // ── XP awards this turn ───────────────────────────────────────────────────────
@@ -3180,31 +3154,7 @@ function processTurn(k) {
   checkAchievements(k, updates, events);
 
   // ── Morale Audit Report ──────────────────────────────────────────────────────
-  const finalEffMorale = displayMorale({ ...k, ...updates });
-  const finalCap = naturalMoraleCap({ ...k, ...updates });
 
-  if (moraleLog.length > 0 || finalEffMorale !== startEffMorale || finalCap !== startingCap) {
-    const totalDeltaEff = finalEffMorale - startEffMorale;
-    const deltaStr = totalDeltaEff > 0 ? `+${totalDeltaEff}` : `${totalDeltaEff}`;
-
-    let summary = `🎭 MORALE REPORT: Started at ${startEffMorale}. Final: ${finalEffMorale} (${deltaStr}).`;
-
-    if (finalCap !== startingCap) {
-      summary += ` Natural cap increased from ${startingCap} to ${finalCap} (Entertainment research).`;
-    }
-
-    if (moraleLog.length > 0) {
-      const details = moraleLog
-        .map((log) => `${log.reason}: ${log.amount > 0 ? "+" + log.amount : log.amount}`)
-        .join(", ");
-      summary += ` Factors (raw points): ${details}.`;
-    }
-
-    events.push({
-      type: "system",
-      message: summary,
-    });
-  }
 
   // Clean up temporary fields
   delete updates.xp_sources_updated;
@@ -7727,9 +7677,6 @@ function applyHeroTurnBonuses(hero, k, updates, events) {
     const oldMorale = currentMorale;
     updates.morale = Math.min(100, currentMorale + 1);
     const mDelta = updates.morale - oldMorale;
-    if (mDelta > 0 && events.recordMoraleChange) {
-      events.recordMoraleChange(mDelta, `Paladin Aura (${hero.name})`);
-    }
   } else if (hero.class === "warlord") {
     // Warlord: Morale boost
     const currentMorale =
@@ -7741,9 +7688,6 @@ function applyHeroTurnBonuses(hero, k, updates, events) {
     const oldMorale = currentMorale;
     updates.morale = Math.min(100, currentMorale + 2);
     const mDelta = updates.morale - oldMorale;
-    if (mDelta > 0 && events.recordMoraleChange) {
-      events.recordMoraleChange(mDelta, `Warlord Presence (${hero.name})`);
-    }
   } else if (hero.class === "forge_lord") {
     // Forge Lord: Gold income
     const bonus = Math.floor(hero.level * 300);
@@ -7773,9 +7717,6 @@ function applyHeroTurnBonuses(hero, k, updates, events) {
         type: "system",
         message: `🐺 Alpha Hunting: +${foodBonus.toLocaleString()} food.`,
       });
-      if (mDelta > 0 && events.recordMoraleChange) {
-        events.recordMoraleChange(mDelta, `Alpha Presence (${hero.name})`);
-      }
     }
   } else if (hero.class === "blood_shaman") {
     // Blood Shaman: Converts population to mana
