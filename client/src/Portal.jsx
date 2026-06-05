@@ -79,12 +79,11 @@ const RACE_DATA = [
     lore: 'Ogres are massive, powerful beings of raw strength and primal fury. Known for their towering stature and incredible physique, they excel in combat like no other race. However, their lack of intellectual curiosity makes them poor scholars — research and magic are foreign to their nature. An Ogre kingdom thrives on military dominance and conquest.',
     strengths: ['Ogre Warriors deal +25% attack damage', 'Superior melee combat capabilities', 'Intimidating military presence', 'High raw strength potential'],
     weaknesses: ['Research progresses 30% slower', 'Magic capabilities −25%', 'Limited magical training'],
-    heroes: ['Brute Lord', 'Blood Lord', 'Arcane Master'],
+    heroes: ['Brute Lord', 'Blood Lord', 'Stone Lord'],
     special: 'Level 25+ fighters gain a ferocity bonus dealing +10% extra damage',
     playstyle: 'Brute force conquest. Train massive fighter armies, overwhelm with raw power.',
   },
 ];
-
 
 function RaceSelectOverlay({ selected, onSelect, onBack, onConfirm }) {
   const [hovered, setHovered] = useState(null);
