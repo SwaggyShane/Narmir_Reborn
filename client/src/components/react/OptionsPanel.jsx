@@ -187,16 +187,11 @@ function PortraitUploadCard() {
   const [msg, setMsg] = useState('');
   const hasCustom = !!window.gameState?.customPortrait;
 
-  const handleFile = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setPreview(URL.createObjectURL(file));
-  };
-
   const handleUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    setPreview(URL.createObjectURL(file));
+    const objectUrl = URL.createObjectURL(file);
+    setPreview(objectUrl);
     setUploading(true);
     setMsg('');
     const form = new FormData();
@@ -212,9 +207,13 @@ function PortraitUploadCard() {
         if (window.gameState) window.gameState.customPortrait = data.portraitUrl;
         setMsg('Portrait updated.');
       } else {
+        URL.revokeObjectURL(objectUrl);
+        setPreview(null);
         setMsg(data.error || 'Upload failed.');
       }
     } catch {
+      URL.revokeObjectURL(objectUrl);
+      setPreview(null);
       setMsg('Upload failed.');
     }
     setUploading(false);
@@ -336,7 +335,7 @@ const OptionsPanel = () => {
     if (window.saveDescription) window.saveDescription();
   };
 
-  return (  return (
+  return (
 
     <div id="options" className="panel" style={{ display: 'none' }}>
       <div className="two-col">

@@ -548,7 +548,6 @@ body {
   object-fit: cover;
   opacity: 0.9;
   display: block;
-  object-fit: cover;
 }
 
 .race-detail-title-group { flex: 1; }
