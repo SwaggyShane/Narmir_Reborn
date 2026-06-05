@@ -421,7 +421,7 @@ class PgDbAdapter {
 
 let _db = null;
 
-async function initDb() {
+async function initDb(options = {}) {
   if (_db) return _db;
 
   if (!process.env.DATABASE_URL) {
@@ -438,8 +438,13 @@ async function initDb() {
   // during a deploy guaranteed "sorry, too many clients already"). 20 leaves headroom
   // for deploy overlap, pgAdmin4, and migrations. Override via DATABASE_MAX_POOL on
   // the *application* service (NOT the Postgres service — that container never reads it).
-  const maxPool = process.env.DATABASE_MAX_POOL ? parseInt(process.env.DATABASE_MAX_POOL, 10) : 20;
-  const minPool = process.env.DATABASE_MIN_POOL ? parseInt(process.env.DATABASE_MIN_POOL, 10) : 2;
+  // Callers can pass smaller defaults for low-traffic processes (e.g. the Discord bot,
+  // which only polls chat and needs a handful of connections, not the web server's 20).
+  // An explicit DATABASE_MAX_POOL/MIN env var still wins so ops can override per service.
+  const defaultMax = Number.isInteger(options.maxPool) ? options.maxPool : 20;
+  const defaultMin = Number.isInteger(options.minPool) ? options.minPool : 2;
+  const maxPool = process.env.DATABASE_MAX_POOL ? parseInt(process.env.DATABASE_MAX_POOL, 10) : defaultMax;
+  const minPool = process.env.DATABASE_MIN_POOL ? parseInt(process.env.DATABASE_MIN_POOL, 10) : defaultMin;
 
   if (isNaN(maxPool) || isNaN(minPool) || maxPool < 1 || minPool < 1 || maxPool < minPool) {
     throw new Error(`[db] Invalid pool configuration: max=${maxPool}, min=${minPool}. Both must be positive integers with max >= min`);
