@@ -34,7 +34,6 @@ const HappinessPanel = () => {
 
   useEffect(() => {
     fetchHappinessData();
-    const interval = setInterval(fetchHappinessData, 30000); // Refresh every 30s
 
     // Listen for game data updates via custom event
     const handleGameDataUpdate = () => {
@@ -43,7 +42,6 @@ const HappinessPanel = () => {
 
     window.addEventListener('game-data-updated', handleGameDataUpdate);
     return () => {
-      clearInterval(interval);
       window.removeEventListener('game-data-updated', handleGameDataUpdate);
     };
   }, []);
