@@ -1,4 +1,11 @@
 require('dotenv').config();
+// Railway binds NODE_ENV to the environment's display name ("Production"), but Express,
+// Vite, and our own checks all compare against the lowercase Node convention 'production'.
+// Canonicalize here — before the Express app is created or anything reads NODE_ENV — so a
+// capitalized value can't silently leave the server running in dev mode (Vite dev server,
+// CORS '*', no view caching). Trim whitespace to guard against cloud platform UI quirks.
+// Mutating process.env is safe: libraries read it lazily.
+if ((process.env.NODE_ENV || '').trim().toLowerCase() === 'production') process.env.NODE_ENV = 'production';
 const express      = require('express');
 const http         = require('http');
 const { Server }   = require('socket.io');
