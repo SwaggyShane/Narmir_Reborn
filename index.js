@@ -1099,7 +1099,7 @@ async function start() {
             SUM(CASE WHEN passed IS NULL THEN 1 ELSE 0 END) as pending_count,
             COUNT(DISTINCT player_id) as unique_testers
           FROM test_results
-          GROUP BY test_key
+          GROUP BY test_key, test_group, test_name
           ORDER BY test_group, test_name
         `);
         res.json(summary);
