@@ -251,7 +251,8 @@ function PortraitUploadCard() {
           />
         )}
         <div style={{ fontSize: '13px', color: 'var(--text2)', lineHeight: 1.6 }}>
-          Upload a custom portrait that appears next to your kingdom name. Max 5MB — JPG, PNG, GIF or WebP.
+          Upload a custom portrait that appears next to your kingdom name. Max 5MB — JPG, PNG, GIF or WebP.<br />
+          <span style={{ color: 'var(--text3)', fontSize: '12px' }}>Recommended: 360×480px · 3:4 ratio (portrait orientation)</span>
         </div>
       </div>
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
