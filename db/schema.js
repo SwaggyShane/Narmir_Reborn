@@ -138,6 +138,11 @@ class PgDbAdapter {
     this.transactionDepth = 0;
     this.isPgMem = isPgMem;
     this.transactionStorage = transactionStorage;
+    // Tracks every client checked out for a transaction: client -> { acquiredAt, store }.
+    // A periodic reaper (see initDb) force-returns any client held longer than a safe
+    // threshold, so a code path that forgets to COMMIT/ROLLBACK can never permanently
+    // leak a pooled connection and exhaust Postgres.
+    this.activeTxns = new Map();
   }
 
   async get(sql, params) {
@@ -226,9 +231,12 @@ class PgDbAdapter {
         try {
           await client.query('BEGIN');
           // Start async context for all nested queries to reuse this client
-          transactionStorage.enterWith({ client, depth: 1, released: false });
+          const txnStore = { client, depth: 1, released: false };
+          this.activeTxns.set(client, { acquiredAt: Date.now(), store: txnStore });
+          transactionStorage.enterWith(txnStore);
           return { lastID: null, changes: 0 };
         } catch (err) {
+          this.activeTxns.delete(client);
           client.release();
           throw err;
         }
@@ -243,6 +251,7 @@ class PgDbAdapter {
             store.released = true;
             await store.client.query('COMMIT');
           } finally {
+            this.activeTxns.delete(store.client);
             store.client.release();
             transactionStorage.enterWith(null);
           }
@@ -262,6 +271,7 @@ class PgDbAdapter {
             store.released = true;
             await store.client.query('ROLLBACK');
           } finally {
+            this.activeTxns.delete(store.client);
             store.client.release();
             transactionStorage.enterWith(null);
           }
@@ -301,12 +311,42 @@ class PgDbAdapter {
       try {
         console.warn('[db] Cleaning up orphaned transaction — releasing connection');
         store.released = true;
+        this.activeTxns.delete(store.client);
         store.client.release();
         transactionStorage.enterWith(null);
       } catch (err) {
         console.error('[db] Error releasing orphaned transaction:', err.message);
       }
     }
+  }
+
+  // Safety net: force-return any transaction client held longer than maxAgeMs.
+  // The res.on('finish') cleanup cannot see transactions started via enterWith
+  // (it runs in a different async context), so this reaper — which tracks clients
+  // directly rather than via AsyncLocalStorage — is the reliable backstop that keeps
+  // a forgotten COMMIT/ROLLBACK from permanently leaking a connection.
+  reapStaleTransactions(maxAgeMs = 90000) {
+    const now = Date.now();
+    let reaped = 0;
+    for (const [client, info] of this.activeTxns) {
+      if (now - info.acquiredAt > maxAgeMs) {
+        this.activeTxns.delete(client);
+        if (info.store) info.store.released = true;
+        try {
+          // Release WITH an error so pg destroys the physical connection instead of
+          // returning a possibly mid-transaction client to the pool. Postgres rolls
+          // back on disconnect and the server-side slot is freed immediately.
+          client.release(new Error('transaction reaped — held too long'));
+        } catch (e) {
+          // already released / destroyed — nothing to do
+        }
+        reaped++;
+      }
+    }
+    if (reaped > 0) {
+      console.error(`[db] ⚠️ Reaped ${reaped} stale transaction connection(s) held >${maxAgeMs}ms — a route began a transaction without committing or rolling back. Connection(s) reclaimed.`);
+    }
+    return reaped;
   }
 
   async exec(sql) {
@@ -380,7 +420,13 @@ async function initDb() {
     min: minPool,
     connectionTimeoutMillis: 10000,
     idleTimeoutMillis: 30000,
-    statement_timeout: 120000,
+    // Abort any single query that runs longer than 30s — no game query should take
+    // that long, and a stuck one would otherwise pin a connection (was 120s).
+    statement_timeout: 30000,
+    // Postgres-side backstop: kill any transaction left idle (BEGIN with no follow-up
+    // COMMIT/ROLLBACK) after 60s. This frees the server slot even if the app process
+    // were to hang, complementing the app-side reaper below.
+    idle_in_transaction_session_timeout: 60000,
     application_name: 'narmir-game',
   });
 
@@ -433,6 +479,21 @@ async function initDb() {
   if (!connected) {
     throw new Error("[db] ❌ Critical: Failed to connect to PostgreSQL database after multiple attempts. Boot sequence aborted to preserve database persistence and prevent silent data loss.");
   }
+
+  // Reaper: every 15s, force-return any transaction connection held too long. This is
+  // the reliable backstop the res.on('finish') cleanup could not provide (that runs in
+  // a different async context and never sees enterWith-scoped transactions). Guarantees
+  // a forgotten COMMIT/ROLLBACK can never permanently exhaust the pool.
+  const txnReaperInterval = setInterval(() => {
+    try {
+      _db.reapStaleTransactions(90000);
+    } catch (err) {
+      console.error('[db] Transaction reaper error:', err.message);
+    }
+  }, 15000);
+  if (txnReaperInterval.unref) txnReaperInterval.unref();
+  process.on('SIGTERM', () => clearInterval(txnReaperInterval));
+  process.on('SIGINT', () => clearInterval(txnReaperInterval));
 
   await _db.exec(`
     CREATE TABLE IF NOT EXISTS migrations (
