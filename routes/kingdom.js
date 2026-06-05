@@ -1,4 +1,8 @@
 const express = require("express");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+const crypto = require("crypto");
 const engine = require("../game/engine");
 const config = require("../game/config");
 const { requireAuth, requireCsrfToken } = require("./middleware");
@@ -11,6 +15,35 @@ const { applyKingdomUpdates } = require('../db/schema');
 const { marketPriceCache, setUnreadCount, incrementUnread } = require("../cache.js");
 
 const router = express.Router();
+
+const portraitsPath = path.join(__dirname, "..", "public", "portraits");
+if (!fs.existsSync(portraitsPath)) {
+  fs.mkdirSync(portraitsPath, { recursive: true });
+}
+
+const ALLOWED_PORTRAIT_TYPES = new Set([".jpg", ".jpeg", ".png", ".gif", ".webp"]);
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, portraitsPath),
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      if (!ALLOWED_PORTRAIT_TYPES.has(ext)) {
+        return cb(new Error("Invalid image format"));
+      }
+      const hash = crypto.randomBytes(4).toString('hex');
+      cb(null, `portrait_${Date.now()}_${hash}${ext}`);
+    },
+  }),
+  fileFilter: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (!ALLOWED_PORTRAIT_TYPES.has(ext)) {
+      return cb(new Error("Only image files (jpg, png, gif, webp) are allowed"));
+    }
+    cb(null, true);
+  },
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+});
 
 // ── Per-player turn processing lock ──────────────────────────────────────────
 // Prevents client-side race conditions from multiple simultaneous turn requests
@@ -5374,12 +5407,7 @@ module.exports = function (db) {
         return res.status(400).json({ error: 'No file uploaded' });
       }
 
-      const portraitPath = `/portraits/${k.id}_${Date.now()}_${req.file.filename}`;
-      const fullPath = path.join(__dirname, '..', 'public', portraitPath);
-
-      // Move uploaded file to portraits directory
-      const uploadPath = req.file.path;
-      fs.renameSync(uploadPath, fullPath);
+      const portraitPath = `/portraits/${req.file.filename}`;
 
       // Remove old portrait if exists
       const old = await db.get('SELECT custom_portrait FROM kingdoms WHERE id = ?', [k.id]);
