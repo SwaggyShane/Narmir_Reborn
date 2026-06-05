@@ -300,7 +300,7 @@ const config = {
       costWood: 0,
       costStone: 0,
       costIron: 15,
-      desc: "+25% wall strength, −10% land lost per attack",
+      desc: "+25% wall strength, -10% land lost per attack",
       requires: null,
     },
     battlements: {
