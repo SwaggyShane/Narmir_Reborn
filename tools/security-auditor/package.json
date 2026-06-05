@@ -1,0 +1,19 @@
+{
+  "name": "narmir-security-auditor",
+  "version": "1.0.0",
+  "description": "AST-based security auditor for Narmir Reborn",
+  "main": "cli.js",
+  "scripts": {
+    "audit": "node cli.js ../..",
+    "test": "echo 'Run audit: npm run audit'"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "acorn": "^8.11.3"
+  },
+  "keywords": ["security", "audit", "ast", "narmir"],
+  "author": "SwaggyShane",
+  "license": "MIT"
+}
