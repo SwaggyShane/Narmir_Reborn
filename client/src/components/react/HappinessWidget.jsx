@@ -3,12 +3,8 @@ import React, { useState, useEffect } from 'react';
 const HappinessWidget = ({ onOpenTab }) => {
   const [happiness, setHappiness] = useState(50);
   const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
 
   const fetchHappinessData = async () => {
-    setLoading(true);
-    setError(null);
     try {
       const response = await fetch('/api/kingdom/happiness-status');
       if (!response.ok) throw new Error('Failed to fetch happiness data');
@@ -18,9 +14,6 @@ const HappinessWidget = ({ onOpenTab }) => {
       setHistory(data.last50Turns || []);
     } catch (err) {
       console.error('Happiness widget error:', err);
-      setError('Failed to load happiness');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -47,8 +40,8 @@ const HappinessWidget = ({ onOpenTab }) => {
 
   const getTrend = () => {
     if (history.length < 2) return '→';
-    const current = history[history.length - 1]?.happiness_value || happiness;
-    const previous = history[Math.max(0, history.length - 6)]?.happiness_value || current;
+    const current = history[history.length - 1]?.happiness || happiness;
+    const previous = history[Math.max(0, history.length - 6)]?.happiness || current;
     if (current > previous) return '📈';
     if (current < previous) return '📉';
     return '→';

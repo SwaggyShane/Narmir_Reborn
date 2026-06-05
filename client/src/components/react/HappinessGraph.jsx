@@ -23,11 +23,13 @@ const HappinessGraph = ({ history = [] }) => {
   const maxHappiness = 120;
   const minHappiness = 0;
 
-  const points = history.map((point, idx) => {
-    const x = padding + (idx / Math.max(history.length - 1, 1)) * graphWidth;
-    const y = height - padding - ((point.happiness - minHappiness) / (maxHappiness - minHappiness)) * graphHeight;
-    return { x, y, happiness: point.happiness };
-  });
+  const points = history
+    .filter(point => point && typeof point.happiness === 'number')
+    .map((point, idx, arr) => {
+      const x = padding + (idx / Math.max(arr.length - 1, 1)) * graphWidth;
+      const y = height - padding - ((point.happiness - minHappiness) / (maxHappiness - minHappiness)) * graphHeight;
+      return { x, y, happiness: point.happiness };
+    });
 
   const pathData = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
 

@@ -13,26 +13,22 @@ const HappinessPanel = () => {
   });
   const [events, setEvents] = useState([]);
   const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState(null); // null = all, or component name
   const [recoveryRate, setRecoveryRate] = useState(0);
 
   const fetchHappinessData = async () => {
-    setLoading(true);
     try {
       const response = await fetch('/api/kingdom/happiness-status');
       if (!response.ok) throw new Error('Failed to fetch');
 
       const data = await response.json();
       setHappiness(data.happiness || 50);
-      setComponents(data.components || {});
+      setComponents(prev => ({ ...prev, ...(data.components || {}) }));
       setEvents(data.recent || []);
       setHistory(data.last50Turns || []);
       setRecoveryRate(data.recoveryRate || 0);
     } catch (err) {
       console.error('Happiness panel error:', err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -101,32 +97,21 @@ const HappinessPanel = () => {
 
         {/* Component Breakdown */}
         <div style={{ marginBottom: '24px' }}>
-          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px' }}>
-            Component Breakdown
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div className="happiness-graph-label">Component Breakdown</div>
+          <div className="happiness-components">
             {Object.entries(components).map(([key, value]) => (
-              <div key={key} style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '8px',
-                background: 'var(--bg3)',
-                borderRadius: '8px',
-                border: '1px solid var(--border)',
-                cursor: filter === key ? 'pointer' : 'default',
-                opacity: !filter || filter === key ? 1 : 0.5,
-                transition: 'all 0.2s'
-              }} onClick={() => setFilter(filter === key ? null : key)}>
-                <span style={{ fontSize: '13px', color: 'var(--text)', fontWeight: 600 }}>
+              <div
+                key={key}
+                className={`happiness-component-row ${filter === key ? 'active' : ''}`}
+                style={{
+                  opacity: !filter || filter === key ? 1 : 0.5,
+                }}
+                onClick={() => setFilter(filter === key ? null : key)}
+              >
+                <span className="happiness-component-name">
                   {getComponentEmoji(key)} {getComponentLabel(key)}
                 </span>
-                <span style={{
-                  fontSize: '14px',
-                  fontWeight: 700,
-                  color: value > 0 ? 'var(--green)' : value < 0 ? 'var(--red)' : 'var(--text3)',
-                  fontFamily: 'monospace'
-                }}>
+                <span className={`happiness-component-value ${value > 0 ? 'positive' : value < 0 ? 'negative' : 'neutral'}`}>
                   {value > 0 ? '+' : ''}{value}
                 </span>
               </div>
@@ -150,40 +135,24 @@ const HappinessPanel = () => {
 
         {/* Recent Changes Log */}
         <div style={{ marginBottom: '16px' }}>
-          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px' }}>
+          <div className="happiness-graph-label">
             Recent Changes {filter && `(${getComponentLabel(filter)})`}
           </div>
-          <div style={{
-            maxHeight: '240px',
-            overflowY: 'auto',
-            background: 'var(--bg3)',
-            borderRadius: '8px',
-            border: '1px solid var(--border)'
-          }}>
+          <div className="happiness-events-log">
             {filteredEvents.length === 0 ? (
               <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text3)', fontSize: '12px' }}>
                 No changes recorded
               </div>
             ) : (
               filteredEvents.map((event, idx) => (
-                <div key={idx} style={{
-                  padding: '8px 12px',
-                  borderBottom: idx < filteredEvents.length - 1 ? '1px solid var(--border)' : 'none',
-                  fontSize: '12px',
-                  color: 'var(--text2)',
-                  lineHeight: '1.4'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                <div key={idx} className="happiness-event-item">
+                  <div className="happiness-event-turn">
                     <span>Turn {event.turn}: {event.description}</span>
-                    <span style={{
-                      color: event.delta > 0 ? 'var(--green)' : event.delta < 0 ? 'var(--red)' : 'var(--text3)',
-                      fontWeight: 600,
-                      fontFamily: 'monospace'
-                    }}>
+                    <span className={`happiness-event-delta ${event.delta > 0 ? 'positive' : event.delta < 0 ? 'negative' : 'neutral'}`}>
                       {event.delta > 0 ? '+' : ''}{event.delta}
                     </span>
                   </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text3)' }}>
+                  <div className="happiness-event-transition">
                     {event.old_happiness} → {event.new_happiness}
                   </div>
                 </div>
