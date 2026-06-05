@@ -131,6 +131,10 @@ function convertNumericFields(row) {
 const { AsyncLocalStorage } = require('async_hooks');
 const transactionStorage = new AsyncLocalStorage();
 
+// Marks a pg client that already has our transaction 'error' listener attached, so we
+// add it exactly once per physical connection (not once per transaction reuse).
+const TXN_ERR_HANDLER = Symbol('narmirTxnErrorHandler');
+
 // PostgreSQL adapter mimicking the sqlite / sqlite3 interface
 class PgDbAdapter {
   constructor(pool, isPgMem = false) {
@@ -228,6 +232,28 @@ class PgDbAdapter {
       } else {
         // Acquire dedicated client from the pool for the duration of the transaction
         const client = await this.pool.connect();
+
+        // CRITICAL: a client checked out for a transaction is NOT covered by
+        // pool.on('error'). If a transaction is left idle (a forgotten COMMIT/ROLLBACK)
+        // Postgres fires idle_in_transaction_session_timeout and sends a FATAL (code
+        // 25P03) to this client. With no 'error' listener that event bubbles up as an
+        // uncaught exception and the process-level handler exits — crash-looping the
+        // server (exactly what was observed in production).
+        //
+        // We attach the handler ONCE per physical connection (guarded by a symbol) so
+        // it is not re-added every time the connection is reused for a new transaction,
+        // which would leak listeners. It reads the CURRENT activeTxns entry rather than
+        // closing over one specific store, so it always cleans up the right transaction.
+        if (!client[TXN_ERR_HANDLER]) {
+          client[TXN_ERR_HANDLER] = true;
+          client.on('error', (err) => {
+            console.error(`[db] Transaction client error (connection terminated): ${err.code || ''} ${err.message}`);
+            const info = this.activeTxns.get(client);
+            if (info && info.store) info.store.released = true;
+            this.activeTxns.delete(client);
+          });
+        }
+
         try {
           await client.query('BEGIN');
           // Start async context for all nested queries to reuse this client
@@ -237,7 +263,9 @@ class PgDbAdapter {
           return { lastID: null, changes: 0 };
         } catch (err) {
           this.activeTxns.delete(client);
-          client.release();
+          // Release with the error so pg destroys this connection rather than returning
+          // a possibly half-begun transaction to the pool.
+          try { client.release(err); } catch { /* already gone */ }
           throw err;
         }
       }
@@ -483,17 +511,23 @@ async function initDb() {
     throw new Error("[db] ❌ Critical: Failed to connect to PostgreSQL database after multiple attempts. Boot sequence aborted to preserve database persistence and prevent silent data loss.");
   }
 
-  // Reaper: every 15s, force-return any transaction connection held too long. This is
+  // Reaper: every 10s, force-return any transaction connection held too long. This is
   // the reliable backstop the res.on('finish') cleanup could not provide (that runs in
   // a different async context and never sees enterWith-scoped transactions). Guarantees
   // a forgotten COMMIT/ROLLBACK can never permanently exhaust the pool.
+  //
+  // The 40s threshold is deliberately BELOW the 60s idle_in_transaction_session_timeout
+  // so the app reclaims a leaked connection cleanly before Postgres terminates it with a
+  // FATAL. No legitimate game transaction runs for anywhere near 40s, so this never
+  // interrupts real work. Postgres's 60s timeout remains only as a last-resort backstop
+  // for the case where the Node event loop itself is wedged.
   const txnReaperInterval = setInterval(() => {
     try {
-      _db.reapStaleTransactions(90000);
+      _db.reapStaleTransactions(40000);
     } catch (err) {
       console.error('[db] Transaction reaper error:', err.message);
     }
-  }, 15000);
+  }, 10000);
   if (txnReaperInterval.unref) txnReaperInterval.unref();
   process.on('SIGTERM', () => clearInterval(txnReaperInterval));
   process.on('SIGINT', () => clearInterval(txnReaperInterval));

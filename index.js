@@ -1292,7 +1292,30 @@ async function start() {
     console.error('[CRITICAL] Unhandled Rejection at:', promise, 'reason:', reason);
   });
 
+  // Postgres connection-termination errors (e.g. idle-in-transaction timeout, admin
+  // shutdown, connection reset during a deploy) can surface asynchronously on a pg
+  // client/stream with no awaiting promise to catch them. These are recoverable: the
+  // pool simply opens a fresh connection on the next query. Exiting the whole process
+  // on one of them would crash-loop the server during normal operation. We log and
+  // continue for this known class, and only hard-exit on genuinely unexpected errors
+  // that may have left the app in an undefined state.
+  const RECOVERABLE_PG_CODES = new Set([
+    '25P03', // idle_in_transaction_session_timeout
+    '57P01', // admin_shutdown / terminating connection due to administrator command
+    '57P02', // crash_shutdown
+    '57P03', // cannot_connect_now
+    '08006', // connection_failure
+    '08003', // connection_does_not_exist
+    '08000', // connection_exception
+  ]);
+  const isRecoverablePgError = (error) =>
+    !!error && (RECOVERABLE_PG_CODES.has(error.code) || error.code === 'ECONNRESET');
+
   process.on('uncaughtException', (error) => {
+    if (isRecoverablePgError(error)) {
+      console.error(`[db] Recovered from PG connection error (${error.code}): ${error.message} — pool will reconnect, not exiting.`);
+      return;
+    }
     console.error('[CRITICAL] Uncaught Exception:', error);
     // Cannot safely recover - application is in undefined state. Exit for process manager to restart.
     process.exit(1);
