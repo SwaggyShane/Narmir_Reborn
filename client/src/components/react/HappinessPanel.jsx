@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import HappinessGraph from './HappinessGraph';
+import '../css/happiness.css';
 
 const HappinessPanel = () => {
   const [happiness, setHappiness] = useState(50);
@@ -10,6 +12,7 @@ const HappinessPanel = () => {
     race: 0
   });
   const [events, setEvents] = useState([]);
+  const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState(null); // null = all, or component name
   const [recoveryRate, setRecoveryRate] = useState(0);
@@ -24,6 +27,7 @@ const HappinessPanel = () => {
       setHappiness(data.happiness || 50);
       setComponents(data.components || {});
       setEvents(data.recent || []);
+      setHistory(data.last50Turns || []);
       setRecoveryRate(data.recoveryRate || 0);
     } catch (err) {
       console.error('Happiness panel error:', err);
@@ -91,6 +95,9 @@ const HappinessPanel = () => {
             }} />
           </div>
         </div>
+
+        {/* Happiness Graph */}
+        <HappinessGraph history={history} />
 
         {/* Component Breakdown */}
         <div style={{ marginBottom: '24px' }}>

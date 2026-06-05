@@ -1,0 +1,317 @@
+/* Happiness System Styling */
+
+.happiness-widget {
+  background: linear-gradient(135deg, rgba(240, 98, 2, 0.05) 0%, rgba(180, 60, 0, 0.02) 100%);
+  border: 1px solid rgba(240, 98, 2, 0.2);
+  transition: all 0.2s ease;
+}
+
+.happiness-widget:hover {
+  border-color: rgba(240, 98, 2, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+#happiness-panel {
+  max-width: 100%;
+  overflow-y: auto;
+}
+
+#happiness-panel .happiness-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--border2);
+}
+
+#happiness-panel .happiness-value {
+  font-family: "Cinzel", serif;
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--gold);
+  text-shadow: 0 0 8px rgba(240, 98, 2, 0.5);
+}
+
+/* Happiness Bar */
+.happiness-bar {
+  height: 24px;
+  background: var(--bg3);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+  margin-bottom: 12px;
+}
+
+.happiness-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold), var(--amber));
+  transition: width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border-radius: 11px;
+}
+
+.happiness-bar-fill.critical {
+  background: linear-gradient(90deg, var(--red), var(--amber));
+}
+
+.happiness-bar-fill.warning {
+  background: linear-gradient(90deg, var(--amber), var(--gold));
+}
+
+.happiness-bar-fill.good {
+  background: linear-gradient(90deg, var(--gold), var(--green));
+}
+
+.happiness-bar-fill.excellent {
+  background: linear-gradient(90deg, var(--green), #1dd1a1);
+}
+
+/* Component Breakdown */
+.happiness-components {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.happiness-component-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--bg3);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.happiness-component-row:hover {
+  background: var(--bg2);
+  border-color: var(--border2);
+  transform: translateX(2px);
+}
+
+.happiness-component-row.active {
+  border-color: var(--gold);
+  background: rgba(240, 98, 2, 0.1);
+}
+
+.happiness-component-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.happiness-component-value {
+  font-family: monospace;
+  font-size: 14px;
+  font-weight: 700;
+  min-width: 40px;
+  text-align: right;
+}
+
+.happiness-component-value.positive {
+  color: var(--green);
+}
+
+.happiness-component-value.negative {
+  color: var(--red);
+}
+
+.happiness-component-value.neutral {
+  color: var(--text3);
+}
+
+/* Graph Container */
+.happiness-graph-container {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.happiness-graph-container svg {
+  width: 100%;
+  height: 100%;
+}
+
+.happiness-graph-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+/* Events Log */
+.happiness-events-log {
+  max-height: 300px;
+  overflow-y: auto;
+  background: var(--bg3);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.happiness-events-log::-webkit-scrollbar {
+  width: 6px;
+}
+
+.happiness-events-log::-webkit-scrollbar-track {
+  background: var(--bg2);
+  border-radius: 3px;
+}
+
+.happiness-events-log::-webkit-scrollbar-thumb {
+  background: var(--border2);
+  border-radius: 3px;
+}
+
+.happiness-events-log::-webkit-scrollbar-thumb:hover {
+  background: var(--border);
+}
+
+.happiness-event-item {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.5;
+  transition: background 0.2s;
+}
+
+.happiness-event-item:last-child {
+  border-bottom: none;
+}
+
+.happiness-event-item:hover {
+  background: var(--bg2);
+}
+
+.happiness-event-turn {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.happiness-event-delta {
+  font-family: monospace;
+  font-weight: 700;
+  min-width: 45px;
+  text-align: right;
+}
+
+.happiness-event-delta.positive {
+  color: var(--green);
+}
+
+.happiness-event-delta.negative {
+  color: var(--red);
+}
+
+.happiness-event-description {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+
+.happiness-event-transition {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 4px;
+}
+
+/* Empty State */
+.happiness-empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--text3);
+  font-size: 12px;
+}
+
+.happiness-empty svg {
+  width: 48px;
+  height: 48px;
+  opacity: 0.3;
+  margin-bottom: 8px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .happiness-widget {
+    padding: 12px;
+  }
+
+  .happiness-component-row {
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+
+  .happiness-graph-container {
+    min-height: 250px;
+    padding: 12px;
+  }
+
+  .happiness-events-log {
+    max-height: 250px;
+  }
+
+  .happiness-event-item {
+    font-size: 11px;
+    padding: 8px 10px;
+  }
+}
+
+/* Animation */
+@keyframes happiness-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.happiness-updating {
+  animation: happiness-pulse 0.6s ease-in-out;
+}
+
+/* Dark mode support (already in dark theme by default) */
+@media (prefers-color-scheme: dark) {
+  .happiness-widget {
+    background: linear-gradient(135deg, rgba(240, 98, 2, 0.08) 0%, rgba(180, 60, 0, 0.03) 100%);
+  }
+
+  .happiness-bar {
+    background: var(--bg3);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+  }
+
+  .happiness-component-row {
+    background: var(--bg3);
+  }
+
+  .happiness-component-row:hover {
+    background: var(--bg2);
+  }
+
+  .happiness-graph-container {
+    background: var(--bg2);
+  }
+
+  .happiness-events-log {
+    background: var(--bg3);
+  }
+}
