@@ -1,6 +1,13 @@
 /**
+ * 🔴 CRITICAL: DO NOT DELETE OR MOVE THIS FILE 🔴
+ *
  * Combat Resolver v2 - Comprehensive combat execution
  * Handles individual troop HP, walls, ladders, ninjas, thieves, clerics, war machines
+ *
+ * STATUS: Complete but intentionally NOT integrated. Marked for future integration.
+ * IMPORTANCE: This is a major system overhaul that must be done correctly.
+ * All other work must be completed before integration begins.
+ * See plan: /root/.claude/plans/combat-redesign-integration.md
  *
  * TODO: Replace engine.js combat with executeCombat() from this file.
  * See combat-new.js header for full integration checklist.

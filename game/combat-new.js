@@ -1,6 +1,13 @@
 /**
+ * 🔴 CRITICAL: DO NOT DELETE OR MOVE THIS FILE 🔴
+ *
  * Combat System v2 - Individual Trooper HP & Injury States
  * Rework with individual troop tracking, injuries, walls, ladders
+ *
+ * STATUS: Complete but intentionally NOT integrated. Marked for future integration.
+ * IMPORTANCE: This is a major system overhaul that must be done correctly.
+ * All other work must be completed before integration begins.
+ * See plan: /root/.claude/plans/combat-redesign-integration.md
  *
  * TODO: Wire this into engine.js to replace the current percentage-based combat.
  * Integration points needed:
