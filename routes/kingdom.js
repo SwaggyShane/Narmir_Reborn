@@ -5363,6 +5363,65 @@ module.exports = function (db) {
     }
   });
 
+  // POST /api/kingdom/portrait - Upload custom portrait
+  router.post('/portrait', requireAuth, upload.single('portrait'), async (req, res) => {
+    try {
+      const playerId = req.user.id;
+      const k = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [playerId]);
+      if (!k) return res.status(404).json({ error: 'Kingdom not found' });
+
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+      }
+
+      const portraitPath = `/portraits/${k.id}_${Date.now()}_${req.file.filename}`;
+      const fullPath = path.join(__dirname, '..', 'public', portraitPath);
+
+      // Move uploaded file to portraits directory
+      const uploadPath = req.file.path;
+      fs.renameSync(uploadPath, fullPath);
+
+      // Remove old portrait if exists
+      const old = await db.get('SELECT custom_portrait FROM kingdoms WHERE id = ?', [k.id]);
+      if (old?.custom_portrait) {
+        try {
+          fs.unlinkSync(path.join(__dirname, '..', 'public', old.custom_portrait));
+        } catch (e) {
+          console.warn('Failed to delete old portrait:', e.message);
+        }
+      }
+
+      // Update database
+      await db.run('UPDATE kingdoms SET custom_portrait = ? WHERE id = ?', [portraitPath, k.id]);
+
+      res.json({ ok: true, portraitUrl: portraitPath });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // DELETE /api/kingdom/portrait - Remove custom portrait
+  router.delete('/portrait', requireAuth, async (req, res) => {
+    try {
+      const playerId = req.user.id;
+      const k = await db.get('SELECT id, custom_portrait FROM kingdoms WHERE player_id = ?', [playerId]);
+      if (!k) return res.status(404).json({ error: 'Kingdom not found' });
+
+      if (k.custom_portrait) {
+        try {
+          fs.unlinkSync(path.join(__dirname, '..', 'public', k.custom_portrait));
+        } catch (e) {
+          console.warn('Failed to delete portrait file:', e.message);
+        }
+      }
+
+      await db.run('UPDATE kingdoms SET custom_portrait = NULL WHERE id = ?', [k.id]);
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   return router;
 };
 

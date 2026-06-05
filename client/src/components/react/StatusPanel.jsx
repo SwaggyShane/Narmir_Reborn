@@ -48,7 +48,15 @@ const StatusPanel = () => {
     .toLowerCase()
     .trim()
     .replace(/\s+/g, '_');
-  const portraitUrl = RACE_PORTRAITS[currentRaceKey] || '';
+
+  // Check for custom portrait first, fall back to gender-specific default
+  const customPortrait = window.gameState?.customPortrait;
+  const gender = window.gameState?.gender || 'male';
+  const raceForPortrait = window.gameState?.race || currentRaceKey;
+  const defaultPortraitUrl = RACE_PORTRAITS[currentRaceKey]
+    ? `/race/${currentRaceKey}_${gender}.webp`
+    : '';
+  const portraitUrl = customPortrait || defaultPortraitUrl;
   const isVampire = currentRaceKey === 'vampire' || (window.gameState && window.gameState.race === 'vampire');
 
   return (
