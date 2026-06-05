@@ -181,6 +181,95 @@ const DiscordSection = () => {
   );
 };
 
+function PortraitUploadCard() {
+  const [preview, setPreview] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [msg, setMsg] = useState('');
+  const hasCustom = !!window.gameState?.customPortrait;
+
+  const handleFile = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setPreview(URL.createObjectURL(file));
+  };
+
+  const handleUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setPreview(URL.createObjectURL(file));
+    setUploading(true);
+    setMsg('');
+    const form = new FormData();
+    form.append('portrait', file);
+    try {
+      const res = await fetch('/api/kingdom/portrait', {
+        method: 'POST',
+        credentials: 'include',
+        body: form,
+      });
+      const data = await res.json();
+      if (data.ok) {
+        if (window.gameState) window.gameState.customPortrait = data.portraitUrl;
+        setMsg('Portrait updated.');
+      } else {
+        setMsg(data.error || 'Upload failed.');
+      }
+    } catch {
+      setMsg('Upload failed.');
+    }
+    setUploading(false);
+  };
+
+  const handleRemove = async () => {
+    setUploading(true);
+    setMsg('');
+    try {
+      const res = await fetch('/api/kingdom/portrait', { method: 'DELETE', credentials: 'include' });
+      const data = await res.json();
+      if (data.ok) {
+        if (window.gameState) window.gameState.customPortrait = null;
+        setPreview(null);
+        setMsg('Portrait removed.');
+      } else {
+        setMsg(data.error || 'Failed to remove.');
+      }
+    } catch {
+      setMsg('Failed to remove.');
+    }
+    setUploading(false);
+  };
+
+  return (
+    <div className="card">
+      <div className="card-title">Custom portrait</div>
+      <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: '10px' }}>
+        {(preview || hasCustom) && (
+          <img
+            src={preview || window.gameState?.customPortrait}
+            alt="Custom portrait"
+            style={{ width: '64px', height: '64px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)' }}
+          />
+        )}
+        <div style={{ fontSize: '13px', color: 'var(--text2)', lineHeight: 1.6 }}>
+          Upload a custom portrait that appears next to your kingdom name. Max 5MB — JPG, PNG, GIF or WebP.
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <label className="base-btn variant-accent" style={{ fontSize: '12px', padding: '6px 16px', background: 'var(--accent1)', cursor: 'pointer' }}>
+          {uploading ? 'Uploading…' : 'Upload portrait'}
+          <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleUpload} disabled={uploading} />
+        </label>
+        {hasCustom && (
+          <button className="base-btn variant-red" style={{ fontSize: '12px', padding: '6px 16px' }} onClick={handleRemove} disabled={uploading}>
+            Remove
+          </button>
+        )}
+      </div>
+      {msg && <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text2)' }}>{msg}</div>}
+    </div>
+  );
+}
+
 const OptionsPanel = () => {
   const [navLayout, setNavLayout] = useState(
     localStorage.getItem('narmir_nav_layout') || 'responsive'
@@ -246,7 +335,8 @@ const OptionsPanel = () => {
     if (window.saveDescription) window.saveDescription();
   };
 
-  return (
+  return (  return (
+
     <div id="options" className="panel" style={{ display: 'none' }}>
       <div className="two-col">
         <div className="card">
@@ -275,6 +365,8 @@ const OptionsPanel = () => {
             </button>
           </div>
         </div>
+
+        <PortraitUploadCard />
         <div className="card">
           <div className="card-title">Vacation mode</div>
           <div
