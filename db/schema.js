@@ -917,6 +917,7 @@ async function initDb() {
     const RACE_REGIONS = {
       dwarf:'The Iron Holds', high_elf:'The Silverwood', orc:'The Bloodplains',
       dark_elf:'The Underspire', human:'The Heartlands', dire_wolf:'The Ashfang Wilds',
+      vampire:'The Crimson Vales', wood_elf:'The Wildwood', ogre:'The Shattered Peaks',
     };
     const existing = await _db.all('SELECT id, race FROM kingdoms');
     for (const k of existing) {
