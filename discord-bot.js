@@ -50,7 +50,10 @@ client.once('ready', async () => {
   // Initialize database connection
   try {
     const { initDb } = require('./db/schema');
-    db = await initDb();
+    // The bot only polls chat and reloads sync configs — it doesn't need the web
+    // server's pool of 20. A small cap keeps the bot from doubling the connection
+    // draw against Railway Postgres (esp. during deploys when old+new run at once).
+    db = await initDb({ maxPool: 4, minPool: 1 });
     console.log('✅ Database connected for Discord sync');
 
     // Load sync configs from database
@@ -67,12 +70,18 @@ client.once('ready', async () => {
 let syncConfigs = [];
 let lastSyncTime = Math.floor(Date.now() / 1000) - 300; // Start 5 minutes in the past
 let isPolling = false; // Lock to prevent concurrent polling
+let lastLoggedSyncCount = -1; // Only log the channel count when it actually changes
 
 async function loadSyncConfigs() {
   if (!db) return;
   try {
     syncConfigs = await db.all('SELECT * FROM discord_sync_config WHERE enabled = 1');
-    console.log(`📡 Loaded ${syncConfigs.length} Discord sync channel(s)`);
+    // loadSyncConfigs runs every 30s; logging unconditionally floods the logs with an
+    // identical line. Only log when the count changes (startup, or a channel added/removed).
+    if (syncConfigs.length !== lastLoggedSyncCount) {
+      console.log(`📡 Loaded ${syncConfigs.length} Discord sync channel(s)`);
+      lastLoggedSyncCount = syncConfigs.length;
+    }
   } catch (error) {
     console.error('❌ Failed to load sync configs:', error);
     syncConfigs = [];
