@@ -37,6 +37,10 @@ const upload = multer({
     if (!ALLOWED_PORTRAIT_TYPES.has(ext)) {
       return cb(new Error("Only image files (jpg, png, gif, webp) are allowed"));
     }
+    const allowedMimeTypes = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+    if (!allowedMimeTypes.has(file.mimetype)) {
+      return cb(new Error("Invalid file type — only image files are allowed"));
+    }
     cb(null, true);
   },
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
@@ -5418,11 +5422,11 @@ module.exports = function (db) {
       // Remove old portrait if exists
       const old = await db.get('SELECT custom_portrait FROM kingdoms WHERE id = ?', [k.id]);
       if (old?.custom_portrait) {
-        try {
-          fs.unlinkSync(path.join(__dirname, '..', 'public', old.custom_portrait));
-        } catch (e) {
-          console.warn('Failed to delete old portrait:', e.message);
-        }
+        const safeBasename = path.basename(old.custom_portrait);
+        const oldPath = path.join(portraitsPath, safeBasename);
+        fs.unlink(oldPath, (e) => {
+          if (e) console.warn('Failed to delete old portrait:', e.message);
+        });
       }
 
       // Update database
@@ -5442,11 +5446,11 @@ module.exports = function (db) {
       if (!k) return res.status(404).json({ error: 'Kingdom not found' });
 
       if (k.custom_portrait) {
-        try {
-          fs.unlinkSync(path.join(__dirname, '..', 'public', k.custom_portrait));
-        } catch (e) {
-          console.warn('Failed to delete portrait file:', e.message);
-        }
+        const safeBasename = path.basename(k.custom_portrait);
+        const filePath = path.join(portraitsPath, safeBasename);
+        fs.unlink(filePath, (e) => {
+          if (e) console.warn('Failed to delete portrait file:', e.message);
+        });
       }
 
       await db.run('UPDATE kingdoms SET custom_portrait = NULL WHERE id = ?', [k.id]);
