@@ -70,7 +70,7 @@ const RACE_DATA = [
     lore: 'Wood Elves are nomadic forest dwellers with an unmatched ability to read terrain, navigate wilderness, and discover hidden lands. Their tracking skills and intimate knowledge of nature allow them to find more land with fewer resources and less time. However, their preference for subterfuge and scouting makes them weak in direct combat.',
     strengths: ['+75% land discovered per expedition', '−40% expedition resource cost', '−40% expedition completion time', 'Fastest way to expand territory'],
     weaknesses: ['Poor direct combat capabilities', '−25% military damage output', 'Fragile in open warfare'],
-    heroes: ['Pathfinder', 'Stag Sentinel', 'Forest Warden'],
+    heroes: ['Wildshaper', 'Scout Master', 'Ranger Lord'],
     special: 'Level 25+ rangers discover significantly more land per expedition',
     playstyle: 'Exploration dominance. Rush land claims, use cheap expeditions to snowball territory.',
   },
@@ -79,13 +79,11 @@ const RACE_DATA = [
     lore: 'Ogres are massive, powerful beings of raw strength and primal fury. Known for their towering stature and incredible physique, they excel in combat like no other race. However, their lack of intellectual curiosity makes them poor scholars — research and magic are foreign to their nature. An Ogre kingdom thrives on military dominance and conquest.',
     strengths: ['Ogre Warriors deal +25% attack damage', 'Superior melee combat capabilities', 'Intimidating military presence', 'High raw strength potential'],
     weaknesses: ['Research progresses 30% slower', 'Magic capabilities −25%', 'Limited magical training'],
-    heroes: ['Warbeast', 'Stone Crusher', 'Bonegrinder'],
+    heroes: ['Brute Lord', 'Blood Lord', 'Stone Lord'],
     special: 'Level 25+ fighters gain a ferocity bonus dealing +10% extra damage',
     playstyle: 'Brute force conquest. Train massive fighter armies, overwhelm with raw power.',
   },
 ];
-
-// ─── Race Selection Overlay ───────────────────────────────────────────────────
 
 function RaceSelectOverlay({ selected, onSelect, onBack, onConfirm }) {
   const [hovered, setHovered] = useState(null);
