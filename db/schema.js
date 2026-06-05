@@ -1630,6 +1630,42 @@ async function initDb(options = {}) {
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_test_results_player ON test_results(player_id)`);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_test_results_submitted ON test_results(submitted_at DESC)`);
 
+  // Happiness tracking tables
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS happiness_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      kingdom_id INTEGER NOT NULL REFERENCES kingdoms(id),
+      turn INTEGER NOT NULL,
+      happiness_value INTEGER NOT NULL,
+      food_component INTEGER DEFAULT 0,
+      entertainment_component INTEGER DEFAULT 0,
+      safety_component INTEGER DEFAULT 0,
+      prosperity_component INTEGER DEFAULT 0,
+      race_modifier INTEGER DEFAULT 0,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      UNIQUE(kingdom_id, turn)
+    )
+  `);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_happiness_history_kingdom_turn ON happiness_history(kingdom_id, turn DESC)`);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_happiness_history_kingdom_created ON happiness_history(kingdom_id, created_at DESC)`);
+
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS happiness_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      kingdom_id INTEGER NOT NULL REFERENCES kingdoms(id),
+      turn INTEGER NOT NULL,
+      event_type TEXT NOT NULL,
+      old_happiness INTEGER,
+      new_happiness INTEGER,
+      component TEXT,
+      delta INTEGER,
+      description TEXT NOT NULL,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch())
+    )
+  `);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_happiness_events_kingdom_turn ON happiness_events(kingdom_id, turn DESC)`);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_happiness_events_kingdom_created ON happiness_events(kingdom_id, created_at DESC)`);
+
   return _db;
 }
 

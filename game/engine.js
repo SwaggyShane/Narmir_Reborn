@@ -368,6 +368,57 @@ function calculateHappiness(k) {
   };
 }
 
+async function recordHappinessHistory(db, kingdomId, turn, happinessData) {
+  try {
+    await db.run(
+      `INSERT INTO happiness_history
+       (kingdom_id, turn, happiness_value, food_component, entertainment_component, safety_component, prosperity_component, race_modifier)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(kingdom_id, turn) DO UPDATE SET
+       happiness_value = EXCLUDED.happiness_value,
+       food_component = EXCLUDED.food_component,
+       entertainment_component = EXCLUDED.entertainment_component,
+       safety_component = EXCLUDED.safety_component,
+       prosperity_component = EXCLUDED.prosperity_component,
+       race_modifier = EXCLUDED.race_modifier`,
+      [
+        kingdomId,
+        turn,
+        happinessData.happiness,
+        happinessData.components.food,
+        happinessData.components.entertainment,
+        happinessData.components.safety,
+        happinessData.components.prosperity,
+        happinessData.components.race
+      ]
+    );
+  } catch (err) {
+    console.error(`[happiness] recordHappinessHistory error: ${err.message}`);
+  }
+}
+
+async function logHappinessEvent(db, kingdomId, turn, eventData) {
+  try {
+    await db.run(
+      `INSERT INTO happiness_events
+       (kingdom_id, turn, event_type, old_happiness, new_happiness, component, delta, description)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        kingdomId,
+        turn,
+        eventData.event_type,
+        eventData.old_happiness,
+        eventData.new_happiness,
+        eventData.component,
+        eventData.delta,
+        eventData.description
+      ]
+    );
+  } catch (err) {
+    console.error(`[happiness] logHappinessEvent error: ${err.message}`);
+  }
+}
+
 function effectiveMorale(k) {
   let base =
     k.morale !== undefined && k.morale !== null ? k.morale : 100;
@@ -1939,7 +1990,7 @@ function rebellionEvent(k, updates, events) {
   }
 }
 
-function processTurn(k) {
+function processTurn(k, db = null) {
   clearParseCache();
 
   // Defensive: heal k.troop_levels from any nested stringification at the start of the turn
@@ -1977,6 +2028,13 @@ function processTurn(k) {
   // Calculate happiness at the start of the turn
   const happinessResult = calculateHappiness(k);
   updates.happiness = happinessResult.happiness;
+
+  // Record happiness history for tracking and graphing
+  if (db && k.id) {
+    recordHappinessHistory(db, k.id, updates.turn, happinessResult).catch(err =>
+      console.error(`[engine] Failed to record happiness history: ${err.message}`)
+    );
+  }
 
   // Check for rebellion events
   rebellionCheck(k, happinessResult.happiness, updates, events);
@@ -8182,6 +8240,8 @@ module.exports = {
   happinessCombatMult,
   calculateHappiness,
   getHappinessRecoveryRate,
+  recordHappinessHistory,
+  logHappinessEvent,
   rebellionCheck,
   rebellionEvent,
   TROOP_RACE_BONUS,
