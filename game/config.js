@@ -144,6 +144,22 @@ const config = {
       rare_find: 1.3,
       food_storage: 1.2, // Forest caches, natural preservation
     },
+    ogre: {
+      military: 1.25,
+      economy: 0.85,
+      research: 0.7,
+      magic: 0.75,
+      construction: 0.95,
+      morale: 1.1,
+      scribe: 0.5,
+      wood_yield: 1.0,
+      stone_yield: 1.3,
+      iron_yield: 1.4,
+      resource_build: 1.0,
+      expedition_speed: 0.9,
+      rare_find: 0.7,
+      food_storage: 1.3, // Brutal appetite
+    },
   },
 
   REGION_DATA: {
@@ -188,6 +204,18 @@ const config = {
       bonus: "covert",
       mult: 0.05,
       lore: "Perpetually shrouded in mist, the sun rarely pierces the canopy here.",
+    },
+    wood_elf: {
+      name: "The Wildwood",
+      bonus: "exploration",
+      mult: 0.05,
+      lore: "Ancient forests teeming with hidden paths and secret groves, where nature itself guides the wanderer.",
+    },
+    ogre: {
+      name: "The Shattered Peaks",
+      bonus: "military",
+      mult: 0.05,
+      lore: "Jagged mountains scarred by ancient cataclysms, home to a race that thrives on conquest and dominance.",
     },
   },
 

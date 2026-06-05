@@ -54,7 +54,7 @@ const StatusPanel = () => {
   const gender = window.gameState?.gender || 'male';
   const raceForPortrait = window.gameState?.race || currentRaceKey;
   const defaultPortraitUrl = RACE_PORTRAITS[currentRaceKey]
-    ? `/race/${currentRaceKey}_${gender}.webp`
+    ? `/race/${raceForPortrait}_${gender}.webp`
     : '';
   const portraitUrl = customPortrait || defaultPortraitUrl;
   const isVampire = currentRaceKey === 'vampire' || (window.gameState && window.gameState.race === 'vampire');
