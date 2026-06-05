@@ -451,7 +451,6 @@ body {
   grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
   padding: 1rem;
-  border-right: 1px solid var(--border);
   align-content: start;
 }
 
@@ -508,7 +507,6 @@ body {
 .race-detail-panel {
   padding: 1rem;
   overflow-y: auto;
-  max-height: 380px;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
