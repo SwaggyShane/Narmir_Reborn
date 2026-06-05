@@ -1785,6 +1785,28 @@
         background: var(--bg) !important;
         padding: var(--reset-padding) !important;
       }
+
+      /* ── Login Page Responsive Design ── */
+      @media (max-width: 1023px) {
+        #login-overlay {
+          flex-direction: column !important;
+          justify-content: center !important;
+          align-items: center !important;
+        }
+        #login-overlay > div:first-child {
+          width: 100% !important;
+          padding: 30px 20px !important;
+          text-align: center;
+          flex: none;
+        }
+        #login-overlay > div:last-child {
+          width: 100% !important;
+          padding: 30px 20px !important;
+          border-left: none !important;
+          border-top: 1px solid #363a52;
+          min-height: auto;
+        }
+      }
     </style>
     <script type="module" src="/src/main.js"></script>
     <script src="/socket.io/socket.io.js"></script>
@@ -6323,7 +6345,6 @@
           ov.style.opacity = "0";
           ov.style.transition = "opacity 1s ease";
           ov.style.display = "flex";
-          ov.style.flexDirection = "column";
           setTimeout(() => { ov.style.opacity = "1"; }, 50);
         }
         var authError = document.getElementById("auth-error");
