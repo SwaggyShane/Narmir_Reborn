@@ -469,7 +469,7 @@ function RankingsTable() {
           </thead>
           <tbody>
             {rows.map((r, i) => (
-              <tr key={r.id ?? i} className={r.is_ai ? 'ai-row' : ''}>
+              <tr key={r.id ?? i}>
                 <td className={`rank-num${i < 3 ? ' rank-top3' : ''}`}>{i + 1}</td>
                 <td>
                   <div className="kingdom-cell">
