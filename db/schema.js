@@ -309,10 +309,13 @@ class PgDbAdapter {
     const store = transactionStorage.getStore();
     if (store && !store.released) {
       try {
-        console.warn('[db] Cleaning up orphaned transaction — releasing connection');
+        console.warn('[db] Cleaning up orphaned transaction — destroying connection');
         store.released = true;
         this.activeTxns.delete(store.client);
-        store.client.release();
+        // Release WITH an error so pg destroys the physical connection instead of
+        // returning a client with an open, uncommitted transaction to the pool (which
+        // the next query would silently reuse). Matches reapStaleTransactions.
+        store.client.release(new Error('orphaned transaction — connection destroyed'));
         transactionStorage.enterWith(null);
       } catch (err) {
         console.error('[db] Error releasing orphaned transaction:', err.message);
