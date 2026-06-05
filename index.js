@@ -256,6 +256,53 @@ const BCRYPT_SALT_ROUNDS = 10;
 
 
 
+// Fires at most one seasonal event per kingdom per day, drawn from the `events` table.
+// Applies the event's effect (morale/gold/food/population, or a timed multiplier stored
+// in active_event) and records it in event_log. Returns { updates, message } or null when
+// no event fires (cooldown not elapsed, or no eligible event for this season/race).
+async function fireDailyEvent(db, k, season) {
+  const now = Math.floor(Date.now() / 1000);
+  if ((now - (k.last_event_at || 0)) < 86400) return null;
+  const allEvents = await db.all(
+    `SELECT * FROM events WHERE is_active=1 AND (season=? OR season='all') ORDER BY RANDOM() LIMIT 10`,
+    [season]
+  );
+  if (!allEvents.length) return null;
+  const eligible = allEvents.filter(e => !e.race_only || e.race_only === k.race);
+  if (!eligible.length) return null;
+  const ev = eligible[Math.floor(Math.random() * eligible.length)];
+  const updates = { last_event_at: now };
+  let message = `${config.SEASON_ICONS[season] || ''} ${ev.name}: ${ev.description}`;
+  const val = ev.effect_value, dur = ev.effect_duration;
+  switch (ev.effect_type) {
+    case 'morale':
+      updates.morale = Math.max(0, Math.min(200, (k.morale || 100) + val));
+      message += val > 0 ? ` (+${val} morale)` : ` (${val} morale)`; break;
+    case 'gold': {
+      const d = Math.floor((k.gold || 0) * Math.abs(val)) * (val > 0 ? 1 : -1);
+      updates.gold = Math.max(0, (k.gold || 0) + d);
+      message += d > 0 ? ` (+${d.toLocaleString()} gold)` : ` (${d.toLocaleString()} gold)`; break; }
+    case 'food': {
+      const fd = Math.abs(val) < 1 ? Math.floor((k.food || 0) * Math.abs(val)) * (val > 0 ? 1 : -1) : Math.floor(val);
+      updates.food = Math.max(0, (k.food || 0) + fd);
+      message += fd > 0 ? ` (+${fd.toLocaleString()} food)` : ` (${fd.toLocaleString()} food)`; break; }
+    case 'population': {
+      const pd = Math.abs(val) < 1 ? Math.floor((k.population || 0) * Math.abs(val)) * (val > 0 ? 1 : -1) : Math.floor(val);
+      updates.population = Math.max(1000, (k.population || 0) + pd);
+      message += pd > 0 ? ` (+${pd.toLocaleString()} pop)` : ` (${pd.toLocaleString()} pop)`; break; }
+    case 'farm_yield': case 'military': case 'mana': case 'market': {
+      const active = safeJsonParse(k.active_event, {});
+      active[ev.effect_type] = { mult: 1 + val, turns_remaining: dur };
+      updates.active_event = JSON.stringify(active);
+      message += val > 0 ? ` (+${Math.round(val * 100)}% for ${dur} turns)` : ` (${Math.round(val * 100)}% for ${dur} turns)`; break; }
+  }
+  await db.run(
+    `INSERT INTO event_log (kingdom_id,kingdom_name,event_key,event_name,season,fired_at) VALUES (?,?,?,?,?,?)`,
+    [k.id, k.name, ev.key, ev.name, season, now]
+  );
+  return { updates, message };
+}
+
 async function runRegen(db) {
   // Update season first
   const season_row = await db.get("SELECT value FROM server_state WHERE key='current_season'");
