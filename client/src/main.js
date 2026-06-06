@@ -54,7 +54,10 @@ export function initGameStateManager() {
 
 // REPLACE vanilla JS applyServerUpdates with gameStateManager-first approach
 // This becomes the SINGLE source of truth for metrics
-window.applyServerUpdates = function(updates) {
+// Guard against HMR re-wrapping to prevent infinite recursion
+if (!window._applyServerUpdatesWrapped) {
+  const originalApplyServerUpdates = window.applyServerUpdates;
+  window.applyServerUpdates = function(updates) {
   if (!updates) return;
 
   // Update gameStateManager first (source of truth)
@@ -87,7 +90,9 @@ window.applyServerUpdates = function(updates) {
     if (updates.turns_stored !== undefined) window.state.turns_stored = updates.turns_stored;
     // ... rest of state updates handled by vanilla JS
   }
-};
+  };
+  window._applyServerUpdatesWrapped = true;
+}
 
 const reactHooks = new Map();
 window.registerPanelReactHook = (panelId, callback) => {
@@ -156,14 +161,17 @@ export const mountReactApps = () => {
 
   console.log("[react] All apps mounted");
 
-  // Hook into switchTab to track active panel
-  const originalSwitchTab = window.switchTab;
-  window.switchTab = function(tabName) {
-    setActivePanelGlobal(tabName);
-    if (originalSwitchTab) {
-      originalSwitchTab(tabName);
-    }
-  };
+  // Hook into switchTab to track active panel (guard against HMR re-wrapping)
+  if (!window._switchTabWrapped) {
+    const originalSwitchTab = window.switchTab;
+    window.switchTab = function(tabName) {
+      setActivePanelGlobal(tabName);
+      if (originalSwitchTab) {
+        originalSwitchTab(tabName);
+      }
+    };
+    window._switchTabWrapped = true;
+  }
 
   if (window.switchTab) {
     if (window.location.hash) {

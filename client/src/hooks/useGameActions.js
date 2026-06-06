@@ -3,7 +3,19 @@ import { useActivePanel } from './useActivePanel';
 import { gameStateManager } from '../GameStateManager';
 
 async function apiCall(method, endpoint, body = null) {
-  const options = { method };
+  const getCsrfToken = () => {
+    try {
+      const m = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
+      if (m) return decodeURIComponent(m[1]);
+    } catch (e) {}
+    return null;
+  };
+
+  const headers = { 'Content-Type': 'application/json' };
+  const csrfToken = getCsrfToken();
+  if (csrfToken) headers['x-csrf-token'] = csrfToken;
+
+  const options = { method, headers };
   if (body) options.body = JSON.stringify(body);
   const response = await fetch(endpoint, options);
   return response.json();

@@ -49,7 +49,7 @@ class GameStateManager {
   }
 
   getMetrics() {
-    return { ...this.metrics };
+    return this.metrics;
   }
 }
 

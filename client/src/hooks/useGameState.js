@@ -1,16 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useSyncExternalStore } from 'react';
 import { gameStateManager } from '../GameStateManager';
 
 export function useGameMetrics() {
-  const [metrics, setMetrics] = useState(() => gameStateManager.getMetrics());
-
-  useEffect(() => {
-    const unsubscribe = gameStateManager.subscribe((updatedMetrics) => {
-      setMetrics(updatedMetrics);
-    });
-
-    return unsubscribe;
-  }, []);
+  const metrics = useSyncExternalStore(
+    (listener) => gameStateManager.subscribe(listener),
+    () => gameStateManager.getMetrics()
+  );
 
   const updateMetrics = (updates) => {
     gameStateManager.updateMetrics(updates);
