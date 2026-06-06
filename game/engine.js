@@ -600,7 +600,7 @@ function racialUnitBonus(k, unit) {
     return { silentAssassination: true };
   // Dire Wolf: expeditions return 1 turn early
   if (race === "dire_wolf" && unit === "rangers") return { earlyReturn: true };
-  // Human: clerics restore 1 morale across all unit types per turn
+  // Human: clerics restore 1 happiness across all unit types per turn
   if (race === "human" && unit === "clerics") return { auraHeal: true };
   // Vampire: Infiltrators (thieves) steal significantly more gold and have higher sabotage success at night
   if (race === "vampire" && unit === "thieves")
@@ -2631,7 +2631,7 @@ function processTurn(k, db = null) {
   const towerUpdates = processMageTower({ ...k, ...updates }, events);
   Object.assign(updates, towerUpdates);
 
-  // ── 8d. Shrines — clerics boost morale and prepare to heal ───────────────────
+  // ── 8d. Shrines — clerics boost happiness and prepare to heal ────────────────
   if (k.race === "vampire") {
     const mausoleumUpdates = processMausoleum({ ...k, ...updates }, events);
     Object.assign(updates, mausoleumUpdates);
@@ -6775,6 +6775,7 @@ async function resolveExpeditions(db, k, engine) {
         "land",
         "population",
         "morale",
+        "happiness",
         "food",
         "fighters",
         "rangers",
@@ -7107,7 +7108,7 @@ function processMageTower(k, events) {
   return updates;
 }
 
-// ── Shrine — clerics boost morale and prepare healing ────────────────────────
+// ── Shrine — clerics boost happiness and prepare healing ─────────────────────
 function processShrine(k, _events) {
   const updates = {};
   const shrines = k.bld_shrines;

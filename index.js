@@ -100,7 +100,7 @@ function normalizeKingdom(kingdom) {
     gold: kingdom.gold ?? 10000,
     land: kingdom.land ?? 500,
     population: kingdom.population ?? 50000,
-    morale: kingdom.morale ?? 100,
+    happiness: kingdom.happiness ?? 50,
     tax: kingdom.tax ?? 42,
     mana: kingdom.mana ?? 5000,
     food: kingdom.food ?? 0,
@@ -264,7 +264,7 @@ const BCRYPT_SALT_ROUNDS = 10;
 
 
 // Fires at most one seasonal event per kingdom per day, drawn from the `events` table.
-// Applies the event's effect (morale/gold/food/population, or a timed multiplier stored
+// Applies the event's effect (happiness/gold/food/population, or a timed multiplier stored
 // in active_event) and records it in event_log. Returns { updates, message } or null when
 // no event fires (cooldown not elapsed, or no eligible event for this season/race).
 async function fireDailyEvent(db, k, season) {
@@ -328,7 +328,7 @@ async function runRegen(db) {
   }
 
   // Fire daily events for all kingdoms
-  const kingdoms = await db.all('SELECT id, name, race, morale, gold, food, population, last_event_at, turn, active_event FROM kingdoms WHERE turn > 0');
+  const kingdoms = await db.all('SELECT id, name, race, happiness, gold, food, population, last_event_at, turn, active_event FROM kingdoms WHERE turn > 0');
   const newsInserts = [];
   const kingdomIds = [];
   const kingdomUpdates = [];
@@ -350,7 +350,7 @@ async function runRegen(db) {
   if (kingdomIds.length > 0) {
     const updatesByColumn = {};
     const allKingdomIds = new Set();
-    const columns = ['last_event_at','active_event','gold','food','morale','population'];
+    const columns = ['last_event_at','active_event','gold','food','happiness','population'];
 
     for (let i = 0; i < kingdomIds.length; i++) {
       const k = kingdomIds[i];
