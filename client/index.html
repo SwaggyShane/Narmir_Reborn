@@ -7943,6 +7943,7 @@
       }
 
       function getNewsPriority(item) {
+        if (!item) return 13;
         var msg = (item.message || "").toLowerCase();
         var type = item.type || "system";
 
