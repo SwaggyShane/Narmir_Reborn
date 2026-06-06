@@ -1288,7 +1288,7 @@ async function initDb(options = {}) {
     ['warm_winds',        'Warm Winds',            'A pleasant breeze lifts spirits.',              'spring', 'morale',    5,   1, null, 1],
     // Summer
     ['abundant_harvest',  'Abundant Harvest',      'Exceptional sun yields record crops.',          'summer', 'food',      0.15, 1, null, 1],
-    ['heat_wave',         'Heat Wave',             'Scorching heat wilts crops and morale.',        'summer', 'farm_yield',-0.10,3, null, 0],
+    ['heat_wave',         'Heat Wave',             'Scorching heat wilts crops and happiness.',     'summer', 'farm_yield',-0.10,3, null, 0],
     ['travelling_merch',  'Travelling Merchants',  'Exotic goods boost market income.',             'summer', 'gold',      0.02, 3, null, 1],
     ['border_skirmish',   'Border Skirmish',       'Bandits raid your outlying farms.',             'summer', 'food',     -0.05,1, null, 0],
     // Fall
@@ -1297,7 +1297,7 @@ async function initDb(options = {}) {
     ['trade_boom',        'Trade Boom',            'Merchants flock to your markets.',              'fall',   'gold',      0.05, 3, null, 1],
     ['rat_infestation',   'Rat Infestation',       'Vermin consume stored food.',                   'fall',   'food',     -0.10,1, null, 0],
     // Winter
-    ['blizzard',          'Blizzard',              'A fierce storm cripples farms and morale.',     'winter', 'farm_yield',-0.20,2, null, 0],
+    ['blizzard',          'Blizzard',              'A fierce storm cripples farms and happiness.',  'winter', 'farm_yield',-0.20,2, null, 0],
     ['refugees',          'Refugees Arrive',       'Displaced families seek shelter.',              'winter', 'population', 1000,1, null, 1],
     ['winter_plague',     'Winter Plague',         'Disease spreads through the cold months.',      'winter', 'population',-0.02,1, null, 0],
     ['wolf_raids',        'Wolf Raids',            'Dire wolves raid border farms.',                'winter', 'food',     -0.08,1, null, 0],
@@ -1363,7 +1363,7 @@ async function initDb(options = {}) {
       'The militia actually showed up to training with a smile today.',
       'A rare flower bloomed in the plaza, which the locals view as a blessing on your reign.',
       'Citizens volunteered to clean the slums, improving public health.',
-      'A traveling scholar decided to settle here, impressed by the high morale.',
+      'A traveling scholar decided to settle here, impressed by the high happiness.',
       'Toasted effigies of rival lords were burned in a joyful festival.',
       'Someone anonymously paid off the debts of several poor families.',
       'A mysterious benefactor repaired the old bell tower.',

@@ -92,7 +92,7 @@ const HirePanel = () => {
         <div className="hire-row" id="hire-row-clerics" style={{ display: isVampire ? 'none' : undefined }}>
           <div>
              <div className="hname">💚 Clerics</div>
-             <div className="hdesc">Heal · morale aura · shrine</div>
+             <div className="hdesc">Heal · happiness aura · shrine</div>
           </div>
           <div className="hcount" id="h-clerics">0</div>
           <div className="hprice" id="hp-clerics">250 GC</div>
@@ -196,7 +196,7 @@ const HirePanel = () => {
       </div>
       <div style={{ fontSize: '12px', color: 'var(--text3)', padding: '0 4px' }}>
         Hired units are subtracted from the population pool. Population returns
-        over time based on morale and entertainment.
+        over time based on happiness and entertainment.
       </div>
     </div>
   );

@@ -5,10 +5,10 @@ const RACE_DATA = [
   {
     id: 'human', title: 'Humans of The Heartlands', color: '#8fb84a',
     lore: 'Humans are not the strongest, the fastest, or the most magical. What they are is relentless. They breed quickly, adapt faster than any other race, and build institutions that outlast individual heroes.',
-    strengths: ['Versatile and adaptable in all military areas', 'Exceptional population growth speed', 'Access to powerful morale-boosting clerics', 'Strong exploration initiatives'],
+    strengths: ['Versatile and adaptable in all military areas', 'Exceptional population growth speed', 'Access to powerful happiness-boosting clerics', 'Strong exploration initiatives'],
     weaknesses: ['Lacks specialization in any single discipline', 'Requires careful strategic balance'],
     heroes: ['Paladin', 'Grand Chancellor', 'High Consul'],
-    special: 'Level 25+ clerics radiate a healing aura that restores kingdom morale',
+    special: 'Level 25+ clerics radiate a healing aura that restores kingdom happiness',
     playstyle: 'Flexible all-rounder. Strong in long games where adaptation outweighs specialisation.',
   },
   {
