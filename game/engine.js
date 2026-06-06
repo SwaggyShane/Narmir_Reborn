@@ -526,9 +526,17 @@ function researchIncrement(k, discipline, researchersAssigned, currentLevel) {
   const happiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
   const happinessMult = Math.max(0, 0.5 + (happiness / 100));
 
-  const effective = Math.floor(
+  let effective = Math.floor(
     researchersAssigned * schoolBonus * raceMulti * resLevelMult * libraryResearchMult * happinessMult,
   );
+
+  // Void Transcription (Abyssal Crystal): obsidian runes give +15% effectiveness on spellbook research
+  if (discipline === 'spellbook' || discipline === 'school_spellbook') {
+    const schoolSpecial = fragmentBonusManager.getSpecialEffect(k, 'schools');
+    if (schoolSpecial?.name === 'Void Transcription') {
+      effective = Math.floor(effective * 1.15);
+    }
+  }
 
   let factor = 1.0;
   if (currentLevel > 100) {
@@ -1621,6 +1629,44 @@ function processGranaryAttunements(k, events) {
   return updates;
 }
 
+/**
+ * Process school attunement special abilities
+ * Executes per-turn effects for school fragment specials
+ */
+function processSchoolAttunements(k, events) {
+  const updates = {};
+  const schoolAttune = fragmentBonusManager.getFragmentForBuilding(k, 'schools');
+  if (!schoolAttune || !k.bld_schools) return updates;
+
+  const fragmentName = schoolAttune.fragment;
+  const currentHappiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
+
+  switch (fragmentName) {
+    case 'Ancient Elven Wood': {
+      // Sylvan Whispers: communing with ancient soil keeps academic morale perfectly stabilized
+      if ((k.researchers || 0) > 0) {
+        updates.happiness = Math.min(120, currentHappiness + 2);
+        events.push({ type: 'system', message: `🌿 Sylvan Whispers: Ancient soil communion steadies academic morale (+2 happiness).` });
+      }
+      break;
+    }
+    case 'Tears of the World Tree': {
+      // Botanical Courtyards: World Tree dew fonts grant mana regeneration to active researchers
+      const activeResearchers = Math.min(k.researchers || 0, k.bld_schools * 20);
+      const manaBonus = Math.floor(activeResearchers / 10);
+      if (manaBonus > 0) {
+        const currentMana = updates.mana !== undefined ? updates.mana : (k.mana || 0);
+        updates.mana = currentMana + manaBonus;
+        events.push({ type: 'system', message: `💧 Botanical Courtyards: World Tree dew fonts grant +${manaBonus} mana from researcher meditation.` });
+      }
+      break;
+    }
+    default: break;
+  }
+
+  return updates;
+}
+
 function processMercenaries(k, events) {
   const updates = {};
   const mercs = safeJsonParse(
@@ -1911,7 +1957,9 @@ function rebellionEvent(k, updates, events) {
 
     case 3: // Building Sabotage
       {
-        const buildingTypes = ['bld_taverns', 'bld_markets', 'bld_shrines', 'bld_schools', 'bld_mage_towers'];
+        const schoolSpecial = fragmentBonusManager.getSpecialEffect(k, 'schools');
+        const schoolSabotageImmune = schoolSpecial?.name === 'Draconic Isolation' || schoolSpecial?.name === 'Angelic Tutelage';
+        const buildingTypes = ['bld_taverns', 'bld_markets', 'bld_shrines', ...(schoolSabotageImmune ? [] : ['bld_schools']), 'bld_mage_towers'];
         const buildingNames = {
           bld_taverns: 'taverns',
           bld_markets: 'markets',
@@ -2086,6 +2134,10 @@ function processTurn(k, db = null) {
   // ── 4a. Granary attunement special abilities ──────────────────────────────────
   const granaryAbilityUpdates = processGranaryAttunements({ ...k, ...updates }, events);
   Object.assign(updates, granaryAbilityUpdates);
+
+  // ── 4a-ii. School attunement special abilities ────────────────────────────────
+  const schoolAbilityUpdates = processSchoolAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, schoolAbilityUpdates);
 
   // ── 4b. Resource production (wood / stone / iron) ────────────────────────────
   const resourceUpdates = processResourceYield({ ...k, ...updates }, events);
@@ -2577,6 +2629,17 @@ function processTurn(k, db = null) {
   const autoSchoolSpeedMult = fragmentBonusManager.getBonusMultiplier(k, 'schools', 'speed');
   const autoSchoolOutputMult = fragmentBonusManager.getBonusMultiplier(k, 'schools', 'output');
   schoolBonus *= (autoSchoolSpeedMult * autoSchoolOutputMult);
+
+  // School fragment chaos disruption effects
+  const autoSchoolSpecial = fragmentBonusManager.getSpecialEffect({ ...k, ...updates }, 'schools');
+  if (autoSchoolSpecial?.name === 'Taboo Alchemical Arts' && Math.random() < 0.15) {
+    schoolBonus *= 0.5;
+    events.push({ type: 'system', message: `🩸 Taboo Alchemical Arts: A volatile experiment disrupted the labs — research output halved this turn!` });
+  } else if (autoSchoolSpecial?.name === 'Quantum Paradoxes' && Math.random() < 0.10) {
+    schoolBonus *= 0.5;
+    events.push({ type: 'system', message: `🌌 Quantum Paradoxes: Half the researchers are absent in multi-dimensional classrooms this turn!` });
+  }
+
   const researchMb = safeJsonParse(k.milestone_bonuses, {}, "research:mb");
   const raceResearch = raceBonus(k, "research") * (1 + (researchMb.research_speed_pct || 0) / 100);
   const raceMagic = raceBonus(k, "magic");
@@ -2687,8 +2750,10 @@ function processTurn(k, db = null) {
       const cap = getCap(d.col, k.level || 1);
       if (current >= cap) return; // At cap, no progress
 
+      // Void Transcription: +15% effectiveness for spellbook discipline
+      const voidTranscriptionBonus = (fKey === 'spellbook' && autoSchoolSpecial?.name === 'Void Transcription') ? 1.15 : 1.0;
       const effective = Math.floor(
-        perSlot * schoolBonus * d.multi * curriculumMult * libraryResearchMult,
+        perSlot * schoolBonus * d.multi * curriculumMult * libraryResearchMult * voidTranscriptionBonus,
       );
       rProgress[d.col] = (rProgress[d.col] || 0) + effective;
 
@@ -3744,7 +3809,12 @@ function queueBuildings(k, orders) {
       };
     }
 
-    const goldPerUnit = BUILDING_GOLD_COST[key] ?? 100;
+    let goldPerUnit = BUILDING_GOLD_COST[key] ?? 100;
+    // Anatomical Blueprinting (Titan Bone): fossilized skeleton models reduce construction costs by 15%
+    const schoolBuildSpecial = fragmentBonusManager.getSpecialEffect(k, 'schools');
+    if (schoolBuildSpecial?.name === 'Anatomical Blueprinting') {
+      goldPerUnit = Math.floor(goldPerUnit * 0.85);
+    }
     const landPerUnit = BUILDING_LAND_COST[key] || 0;
     totalCost += goldPerUnit * n;
     totalLand += landPerUnit * n;
@@ -6277,6 +6347,21 @@ function covertSabotage(assassin, target, ninjasSent, bldType) {
     };
   }
 
+  // School fragment immunity: Draconic Isolation / Angelic Tutelage block ninja sabotage
+  if (col === 'bld_schools') {
+    const schoolSpecial = fragmentBonusManager.getSpecialEffect(target, 'schools');
+    if (schoolSpecial?.name === 'Draconic Isolation' || schoolSpecial?.name === 'Angelic Tutelage') {
+      return {
+        success: false,
+        ninjasLost: 0,
+        assassinUpdates: {},
+        targetUpdates: {},
+        assassinEvent: `⚔️ Sabotage of schools in ${target.name} failed — scale-plated fortifications repelled all operatives.`,
+        targetEvent: `🛡️ ${schoolSpecial.name}: Enemy saboteurs were repelled by your schools' supernatural fortifications!`,
+      };
+    }
+  }
+
   const destroyed = Math.floor(
     ninjasSent * (3 + Math.random() * 4) * ninjaLvMult,
   );
@@ -8318,6 +8403,7 @@ module.exports = {
   commodityPrice,
   processFoodEconomy,
   processGranaryAttunements,
+  processSchoolAttunements,
   processMercenaries,
   hireMercenaries,
   purchaseUpgrade,
@@ -8361,6 +8447,7 @@ module.exports = {
   hireUnits,
   studyDiscipline,
   selectSchool: _selectSchool,
+  researchIncrement,
   queueBuildings,
   processBuildQueue,
   processLibrary,
