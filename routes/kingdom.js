@@ -2854,7 +2854,7 @@ module.exports = function (db) {
     await applyUpdates(db, k.id, updates);
     res.json({ ok: true, updates });
   });
-  const EXP_TURNS = { scout: 10, deep: 25, dungeon: 50 };
+  const EXP_TURNS = config.EXPEDITION_TURNS;
 
   router.post("/expedition/start", requireAuth, requireCsrfToken, async (req, res) => {
     const { type, rangers, fighters } = req.body;
