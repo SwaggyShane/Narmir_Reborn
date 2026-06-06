@@ -808,7 +808,7 @@ async function initDb(options = {}) {
 
   // Batch column checks by table for performance (single schema fetch per table)
   const kingdomsCols = await getTableColumns('kingdoms');
-  if (!kingdomsCols.includes('turns_stored'))        await addColumn('kingdoms', 'turns_stored',        'INTEGER NOT NULL DEFAULT 400)', kingdomsCols);
+  if (!kingdomsCols.includes('turns_stored'))        await addColumn('kingdoms', 'turns_stored',        'INTEGER NOT NULL DEFAULT 400', kingdomsCols);
   if (!kingdomsCols.includes('alliance_buffs'))      await addColumn('kingdoms', 'alliance_buffs',      "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('goals'))               await addColumn('kingdoms', 'goals',               "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('research_allocation')) await addColumn('kingdoms', 'research_allocation', "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
@@ -818,33 +818,33 @@ async function initDb(options = {}) {
   if (!kingdomsCols.includes('mage_research_progress')) await addColumn('kingdoms', 'mage_research_progress', "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('build_allocation'))    await addColumn('kingdoms', 'build_allocation',    "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('resource_build_allocation')) await addColumn('kingdoms', 'resource_build_allocation', "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
-  if (!kingdomsCols.includes('prestige_level'))      await addColumn('kingdoms', 'prestige_level',      'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
-  if (!kingdomsCols.includes('trade_routes'))       await addColumn('kingdoms', 'trade_routes',       'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
-  if (!kingdomsCols.includes('tools_hammers'))       await addColumn('kingdoms', 'tools_hammers',       'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
-  if (!kingdomsCols.includes('tools_scaffolding'))   await addColumn('kingdoms', 'tools_scaffolding',   'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
-  if (!kingdomsCols.includes('tools_blueprints'))    await addColumn('kingdoms', 'tools_blueprints',    'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
-  if (!kingdomsCols.includes('scaffolding_stored'))  await addColumn('kingdoms', 'scaffolding_stored',  'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
-  if (!kingdomsCols.includes('hammers_stored'))      await addColumn('kingdoms', 'hammers_stored',      'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
-  if (!kingdomsCols.includes('xp'))                  await addColumn('kingdoms', 'xp',                  'REAL NOT NULL DEFAULT 0)', kingdomsCols);
-  if (!kingdomsCols.includes('xp_sources'))          await addColumn('kingdoms', 'xp_sources',          'TEXT NOT NULL DEFAULT \'{"turn":0,"gold":0,"combat_win":0,"combat_loss":0,"research":0,"construction":0,"exploration":0,"spell_cast":0,"covert_op":0}\')', kingdomsCols);
-  if (!kingdomsCols.includes('level'))               await addColumn('kingdoms', 'level',               'INTEGER NOT NULL DEFAULT 1)', kingdomsCols);
+  if (!kingdomsCols.includes('prestige_level'))      await addColumn('kingdoms', 'prestige_level',      'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
+  if (!kingdomsCols.includes('trade_routes'))       await addColumn('kingdoms', 'trade_routes',       'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
+  if (!kingdomsCols.includes('tools_hammers'))       await addColumn('kingdoms', 'tools_hammers',       'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
+  if (!kingdomsCols.includes('tools_scaffolding'))   await addColumn('kingdoms', 'tools_scaffolding',   'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
+  if (!kingdomsCols.includes('tools_blueprints'))    await addColumn('kingdoms', 'tools_blueprints',    'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
+  if (!kingdomsCols.includes('scaffolding_stored'))  await addColumn('kingdoms', 'scaffolding_stored',  'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
+  if (!kingdomsCols.includes('hammers_stored'))      await addColumn('kingdoms', 'hammers_stored',      'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
+  if (!kingdomsCols.includes('xp'))                  await addColumn('kingdoms', 'xp',                  'REAL NOT NULL DEFAULT 0', kingdomsCols);
+  if (!kingdomsCols.includes('xp_sources'))          await addColumn('kingdoms', 'xp_sources',          'TEXT NOT NULL DEFAULT \'{"turn":0,"gold":0,"combat_win":0,"combat_loss":0,"research":0,"construction":0,"exploration":0,"spell_cast":0,"covert_op":0}\'', kingdomsCols);
+  if (!kingdomsCols.includes('level'))               await addColumn('kingdoms', 'level',               'INTEGER NOT NULL DEFAULT 1', kingdomsCols);
   if (!kingdomsCols.includes('troop_levels'))        await addColumn('kingdoms', 'troop_levels',        "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('training_allocation')) await addColumn('kingdoms', 'training_allocation', "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
-  if (!kingdomsCols.includes('weapons_stockpile'))   await addColumn('kingdoms', 'weapons_stockpile',   'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
-  if (!kingdomsCols.includes('armor_stockpile'))     await addColumn('kingdoms', 'armor_stockpile',     'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
-  if (!kingdomsCols.includes('ladders'))             await addColumn('kingdoms', 'ladders',             'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
-  if (!kingdomsCols.includes('description'))         await addColumn('kingdoms', 'description',         'TEXT)', kingdomsCols);
+  if (!kingdomsCols.includes('weapons_stockpile'))   await addColumn('kingdoms', 'weapons_stockpile',   'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
+  if (!kingdomsCols.includes('armor_stockpile'))     await addColumn('kingdoms', 'armor_stockpile',     'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
+  if (!kingdomsCols.includes('ladders'))             await addColumn('kingdoms', 'ladders',             'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
+  if (!kingdomsCols.includes('description'))         await addColumn('kingdoms', 'description',         'TEXT', kingdomsCols);
   if (!kingdomsCols.includes('collected_lore'))      await addColumn('kingdoms', 'collected_lore',      "TEXT NOT NULL DEFAULT '[]'", kingdomsCols);
-  if (!kingdomsCols.includes('last_lore_id'))        await addColumn('kingdoms', 'last_lore_id',        'TEXT)', kingdomsCols);
+  if (!kingdomsCols.includes('last_lore_id'))        await addColumn('kingdoms', 'last_lore_id',        'TEXT', kingdomsCols);
   if (!kingdomsCols.includes('collected_events'))    await addColumn('kingdoms', 'collected_events',    "TEXT NOT NULL DEFAULT '[]'", kingdomsCols);
-  if (!kingdomsCols.includes('last_event_id'))       await addColumn('kingdoms', 'last_event_id',       'TEXT)', kingdomsCols);
+  if (!kingdomsCols.includes('last_event_id'))       await addColumn('kingdoms', 'last_event_id',       'TEXT', kingdomsCols);
   if (!kingdomsCols.includes('achievements'))        await addColumn('kingdoms', 'achievements',        "TEXT NOT NULL DEFAULT '[]'", kingdomsCols);
   if (!kingdomsCols.includes('active_trade_routes'))   await addColumn('kingdoms', 'active_trade_routes', "TEXT NOT NULL DEFAULT '[]'", kingdomsCols);
   if (!kingdomsCols.includes('milestones_claimed'))  await addColumn('kingdoms', 'milestones_claimed',  "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('milestone_bonuses'))   await addColumn('kingdoms', 'milestone_bonuses',   "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('milestone_title'))     await addColumn('kingdoms', 'milestone_title',     "TEXT NOT NULL DEFAULT ''", kingdomsCols);
   if (!kingdomsCols.includes('injured_troops'))       await addColumn('kingdoms', 'injured_troops',       "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
-  if (!kingdomsCols.includes('wall_hp'))              await addColumn('kingdoms', 'wall_hp',              'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
+  if (!kingdomsCols.includes('wall_hp'))              await addColumn('kingdoms', 'wall_hp',              'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
   if (!kingdomsCols.includes('wall_defense_type'))    await addColumn('kingdoms', 'wall_defense_type',    "TEXT NOT NULL DEFAULT ''", kingdomsCols);
 
   const playerCols = await getTableColumns('players');
@@ -1059,7 +1059,7 @@ async function initDb(options = {}) {
     }
   }
   if (!kingdomsCols.includes('smithy_allocation'))          await addColumn('kingdoms', 'smithy_allocation',          "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
-  if (!kingdomsCols.includes('hammer_turns_used'))          await addColumn('kingdoms', 'hammer_turns_used',          'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
+  if (!kingdomsCols.includes('hammer_turns_used'))          await addColumn('kingdoms', 'hammer_turns_used',          'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
   if (!kingdomsCols.includes('racial_bonuses_unlocked'))    await addColumn('kingdoms', 'racial_bonuses_unlocked',    "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
 
   // Expeditions — seen flag so completed rows persist until frontend acknowledges
@@ -1084,31 +1084,31 @@ async function initDb(options = {}) {
   if (resExpCols.length > 0 && !resExpCols.includes('food_taken')) {
     await addColumn('resource_expeditions', 'food_taken', 'INTEGER NOT NULL DEFAULT 0');
   }
-  if (!kingdomsCols.includes('bld_housing'))             await addColumn('kingdoms', 'bld_housing',             'INTEGER NOT NULL DEFAULT 100)', kingdomsCols);
+  if (!kingdomsCols.includes('bld_housing'))             await addColumn('kingdoms', 'bld_housing',             'INTEGER NOT NULL DEFAULT 100', kingdomsCols);
   if (!kingdomsCols.includes('mage_tower_allocation'))   await addColumn('kingdoms', 'mage_tower_allocation',   "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('shrine_allocation'))       await addColumn('kingdoms', 'shrine_allocation',       "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
-  if (!kingdomsCols.includes('scribes'))             await addColumn('kingdoms', 'scribes',             'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
-  if (!kingdomsCols.includes('bld_libraries'))       await addColumn('kingdoms', 'bld_libraries',       'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
+  if (!kingdomsCols.includes('scribes'))             await addColumn('kingdoms', 'scribes',             'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
+  if (!kingdomsCols.includes('bld_libraries'))       await addColumn('kingdoms', 'bld_libraries',       'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
   if (!kingdomsCols.includes('wounded_troops'))      await addColumn('kingdoms', 'wounded_troops',      "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
-  if (!kingdomsCols.includes('bld_taverns'))         await addColumn('kingdoms', 'bld_taverns',         'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
-  if (!kingdomsCols.includes('bld_granaries'))       await addColumn('kingdoms', 'bld_granaries',       'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
+  if (!kingdomsCols.includes('bld_taverns'))         await addColumn('kingdoms', 'bld_taverns',         'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
+  if (!kingdomsCols.includes('bld_granaries'))       await addColumn('kingdoms', 'bld_granaries',       'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
   if (!kingdomsCols.includes('granary_upgrades'))    await addColumn('kingdoms', 'granary_upgrades',    "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
-  if (!kingdomsCols.includes('bld_mage_towers'))     await addColumn('kingdoms', 'bld_mage_towers',     'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
+  if (!kingdomsCols.includes('bld_mage_towers'))     await addColumn('kingdoms', 'bld_mage_towers',     'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
   if (!kingdomsCols.includes('world_fragments'))      await addColumn('kingdoms', 'world_fragments',     "TEXT NOT NULL DEFAULT '[]'", kingdomsCols);
   if (!kingdomsCols.includes('hybrid_blueprints'))    await addColumn('kingdoms', 'hybrid_blueprints',   "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('fragment_bonuses'))     await addColumn('kingdoms', 'fragment_bonuses',    "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
-  if (!kingdomsCols.includes('fortified_blueprints')) await addColumn('kingdoms', 'fortified_blueprints','INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
+  if (!kingdomsCols.includes('fortified_blueprints')) await addColumn('kingdoms', 'fortified_blueprints','INTEGER NOT NULL DEFAULT 0', kingdomsCols);
   if (!kingdomsCols.includes('fortified_buildings'))  await addColumn('kingdoms', 'fortified_buildings', "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('library_allocation'))  await addColumn('kingdoms', 'library_allocation',  "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('library_progress'))    await addColumn('kingdoms', 'library_progress',    "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('tower_progress'))      await addColumn('kingdoms', 'tower_progress',      "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('scrolls'))             await addColumn('kingdoms', 'scrolls',             "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
-  if (!kingdomsCols.includes('maps'))                await addColumn('kingdoms', 'maps',                'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
-  if (!kingdomsCols.includes('blueprints_stored'))   await addColumn('kingdoms', 'blueprints_stored',   'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
-  if (!kingdomsCols.includes('certified_blueprints_stored')) await addColumn('kingdoms', 'certified_blueprints_stored', 'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
+  if (!kingdomsCols.includes('maps'))                await addColumn('kingdoms', 'maps',                'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
+  if (!kingdomsCols.includes('blueprints_stored'))   await addColumn('kingdoms', 'blueprints_stored',   'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
+  if (!kingdomsCols.includes('certified_blueprints_stored')) await addColumn('kingdoms', 'certified_blueprints_stored', 'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
   if (!kingdomsCols.includes('active_effects'))      await addColumn('kingdoms', 'active_effects',      "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
 
-  if (!kingdomsCols.includes('bld_walls'))          await addColumn('kingdoms', 'bld_walls',          'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
+  if (!kingdomsCols.includes('bld_walls'))          await addColumn('kingdoms', 'bld_walls',          'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
   if (!kingdomsCols.includes('wall_upgrades'))      await addColumn('kingdoms', 'wall_upgrades',      "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('tower_def_upgrades')) await addColumn('kingdoms', 'tower_def_upgrades', "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('outpost_upgrades'))   await addColumn('kingdoms', 'outpost_upgrades',   "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
@@ -1129,15 +1129,15 @@ async function initDb(options = {}) {
   if (!kingdomsCols.includes('shrine_upgrades'))   await addColumn('kingdoms', 'shrine_upgrades',   "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('library_upgrades'))  await addColumn('kingdoms', 'library_upgrades',  "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('research_focus'))    await addColumn('kingdoms', 'research_focus',     "TEXT NOT NULL DEFAULT '[]'", kingdomsCols);
-  if (!kingdomsCols.includes('divine_sanctuary_used')) await addColumn('kingdoms', 'divine_sanctuary_used', 'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
+  if (!kingdomsCols.includes('divine_sanctuary_used')) await addColumn('kingdoms', 'divine_sanctuary_used', 'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
   if (!kingdomsCols.includes('farm_upgrades'))       await addColumn('kingdoms', 'farm_upgrades',       "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('market_upgrades'))     await addColumn('kingdoms', 'market_upgrades',     "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('tavern_upgrades'))     await addColumn('kingdoms', 'tavern_upgrades',     "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('bank_upgrades'))       await addColumn('kingdoms', 'bank_upgrades',       "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('bank_deposits'))       await addColumn('kingdoms', 'bank_deposits',       "TEXT NOT NULL DEFAULT '[]'", kingdomsCols);
   if (!kingdomsCols.includes('ledger'))              await addColumn('kingdoms', 'ledger',              "TEXT NOT NULL DEFAULT '[]'", kingdomsCols);
-  if (!kingdomsCols.includes('bld_mausoleums'))      await addColumn('kingdoms', 'bld_mausoleums',      'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
-  if (!kingdomsCols.includes('thralls'))             await addColumn('kingdoms', 'thralls',             'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
+  if (!kingdomsCols.includes('bld_mausoleums'))      await addColumn('kingdoms', 'bld_mausoleums',      'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
+  if (!kingdomsCols.includes('thralls'))             await addColumn('kingdoms', 'thralls',             'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
   if (!kingdomsCols.includes('mausoleum_upgrades'))   await addColumn('kingdoms', 'mausoleum_upgrades',   "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('mausoleum_allocation')) await addColumn('kingdoms', 'mausoleum_allocation', "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
 
@@ -1155,8 +1155,8 @@ async function initDb(options = {}) {
     console.log('[db] Migration applied:', toolsMigrationName);
   }
 
-  if (!kingdomsCols.includes('food_shortage_turns')) await addColumn('kingdoms', 'food_shortage_turns', 'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
-  if (!kingdomsCols.includes('food_surplus_turns'))  await addColumn('kingdoms', 'food_surplus_turns',  'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
+  if (!kingdomsCols.includes('food_shortage_turns')) await addColumn('kingdoms', 'food_shortage_turns', 'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
+  if (!kingdomsCols.includes('food_surplus_turns'))  await addColumn('kingdoms', 'food_surplus_turns',  'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
   if (!kingdomsCols.includes('mercenaries'))         await addColumn('kingdoms', 'mercenaries',         "TEXT NOT NULL DEFAULT '[]'", kingdomsCols);
 
   // Trade offers table
@@ -1211,7 +1211,7 @@ async function initDb(options = {}) {
   `);
 
   // ── Season & events migrations ────────────────────────────────────────────────
-  if (!kingdomsCols.includes('last_event_at'))         await addColumn('kingdoms', 'last_event_at',         'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
+  if (!kingdomsCols.includes('last_event_at'))         await addColumn('kingdoms', 'last_event_at',         'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
   if (!kingdomsCols.includes('active_event'))          await addColumn('kingdoms', 'active_event',          "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('discovered_kingdoms'))   await addColumn('kingdoms', 'discovered_kingdoms',   "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('location_maps_wip'))     await addColumn('kingdoms', 'location_maps_wip',     "TEXT NOT NULL DEFAULT '[]'", kingdomsCols);
@@ -1460,26 +1460,26 @@ async function initDb(options = {}) {
   const cols2 = (await _db.all('PRAGMA table_info(kingdoms)')).map(c => c.name);
 
   // Resource stockpile columns
-  if (!cols2.includes('wood'))               await addColumn('kingdoms', 'wood',               'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
-  if (!cols2.includes('stone'))              await addColumn('kingdoms', 'stone',              'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
-  if (!cols2.includes('iron'))               await addColumn('kingdoms', 'iron',               'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
-  if (!cols2.includes('coal'))               await addColumn('kingdoms', 'coal',               'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
-  if (!cols2.includes('steel'))              await addColumn('kingdoms', 'steel',              'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
+  if (!cols2.includes('wood'))               await addColumn('kingdoms', 'wood',               'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
+  if (!cols2.includes('stone'))              await addColumn('kingdoms', 'stone',              'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
+  if (!cols2.includes('iron'))               await addColumn('kingdoms', 'iron',               'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
+  if (!cols2.includes('coal'))               await addColumn('kingdoms', 'coal',               'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
+  if (!cols2.includes('steel'))              await addColumn('kingdoms', 'steel',              'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
 
   // Wood buildings
-  if (!cols2.includes('bld_woodyard'))       await addColumn('kingdoms', 'bld_woodyard',       'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
-  if (!cols2.includes('bld_lumber_camp'))    await addColumn('kingdoms', 'bld_lumber_camp',    'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
-  if (!cols2.includes('bld_sawmill'))        await addColumn('kingdoms', 'bld_sawmill',        'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
+  if (!cols2.includes('bld_woodyard'))       await addColumn('kingdoms', 'bld_woodyard',       'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
+  if (!cols2.includes('bld_lumber_camp'))    await addColumn('kingdoms', 'bld_lumber_camp',    'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
+  if (!cols2.includes('bld_sawmill'))        await addColumn('kingdoms', 'bld_sawmill',        'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
 
   // Stone buildings
-  if (!cols2.includes('bld_gravel_pit'))     await addColumn('kingdoms', 'bld_gravel_pit',     'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
-  if (!cols2.includes('bld_blockfield'))     await addColumn('kingdoms', 'bld_blockfield',     'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
-  if (!cols2.includes('bld_stone_quarry'))   await addColumn('kingdoms', 'bld_stone_quarry',   'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
+  if (!cols2.includes('bld_gravel_pit'))     await addColumn('kingdoms', 'bld_gravel_pit',     'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
+  if (!cols2.includes('bld_blockfield'))     await addColumn('kingdoms', 'bld_blockfield',     'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
+  if (!cols2.includes('bld_stone_quarry'))   await addColumn('kingdoms', 'bld_stone_quarry',   'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
 
   // Iron buildings
-  if (!cols2.includes('bld_open_pit'))       await addColumn('kingdoms', 'bld_open_pit',       'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
-  if (!cols2.includes('bld_strip_mine'))     await addColumn('kingdoms', 'bld_strip_mine',     'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
-  if (!cols2.includes('bld_deep_mine'))      await addColumn('kingdoms', 'bld_deep_mine',      'INTEGER NOT NULL DEFAULT 0)', kingdomsCols);
+  if (!cols2.includes('bld_open_pit'))       await addColumn('kingdoms', 'bld_open_pit',       'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
+  if (!cols2.includes('bld_strip_mine'))     await addColumn('kingdoms', 'bld_strip_mine',     'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
+  if (!cols2.includes('bld_deep_mine'))      await addColumn('kingdoms', 'bld_deep_mine',      'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
 
   // Items inventory (JSON array)
   if (!cols2.includes('items'))              await addColumn('kingdoms', 'items',              "TEXT NOT NULL DEFAULT '[]'", kingdomsCols);
