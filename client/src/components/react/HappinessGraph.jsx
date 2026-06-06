@@ -50,11 +50,11 @@ const HappinessGraph = ({ history = [] }) => {
     return 'var(--red)';
   };
 
-  const currentColor = points.length > 0 ? getColor(points[points.length - 1].happiness) : 'var(--gold)';
-  const currentHappiness = points.length > 0 ? points[points.length - 1].happiness : 0;
+  const currentColor = getColor(points[points.length - 1].happiness);
+  const currentHappiness = points[points.length - 1].happiness;
   const minPoint = Math.min(...points.map(p => p.happiness));
   const maxPoint = Math.max(...points.map(p => p.happiness));
-  const avgPoint = Math.round(points.reduce((sum, p) => sum + p.happiness, 0) / points.length);
+  const avgPoint = points.length > 0 ? Math.round(points.reduce((sum, p) => sum + p.happiness, 0) / points.length) : 0;
 
   return (
     <div style={{ marginBottom: '24px' }}>
