@@ -2207,7 +2207,7 @@ const config = {
     },
   },
 
-  EXPEDITION_TURNS: { scout: 10, deep: 25, dungeon: 50 },
+  EXPEDITION_TURNS: { scout: 10, deep: 25, dungeon: 50, mountain: 100 },
 
   // ── Resource gathering system ─────────────────────────────────────────────────
 
