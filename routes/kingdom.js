@@ -2866,6 +2866,8 @@ module.exports = function (db) {
     if (r < 1) return res.status(400).json({ error: "Send at least 1 ranger" });
     if (type === "dungeon" && f < 1)
       return res.status(400).json({ error: "Dungeon raids require fighters" });
+    if (type === "mountain" && f > 0)
+      return res.status(400).json({ error: "Mountain expeditions are for rangers only. Leave fighters behind." });
 
     try {
       await db.run("BEGIN TRANSACTION");
@@ -2915,6 +2917,19 @@ module.exports = function (db) {
         return res.status(400).json({ error: `${type.charAt(0).toUpperCase() + type.slice(1)} expedition requires ${foodNeeded.toLocaleString()} food (you have ${k.food.toLocaleString()}).` });
       }
 
+      // Mountain expedition warning: strongly recommend high-level rangers
+      if (type === "mountain") {
+        const { unitLevelMult } = engine;
+        const rangerEffectiveness = unitLevelMult(k, "rangers");
+        const estimatedLevel = Math.floor((rangerEffectiveness - 1) / 0.005) + 1;
+        if (estimatedLevel < 50) {
+          await db.run("ROLLBACK");
+          return res.status(400).json({
+            error: `⚠️ WARNING: Mountain expeditions are EXTREMELY dangerous and require veteran rangers. Your rangers average level ~${estimatedLevel}. Recommended minimum: Level 50+. This is a near-impossible challenge without high-level rangers. Continue only if you're prepared to lose rangers.`
+          });
+        }
+      }
+
       // All validation passed — now execute atomically
       await db.run(
         'UPDATE kingdoms SET rangers = MAX(0, rangers - ?), fighters = MAX(0, fighters - ?), food = MAX(0, food - ?) WHERE id = ?',
@@ -2934,8 +2949,13 @@ module.exports = function (db) {
 
       await db.run("COMMIT");
 
-      const label = { scout: "Scout", deep: "Deep", dungeon: "Dungeon" }[type];
+      const label = { scout: "Scout", deep: "Deep", dungeon: "Dungeon", mountain: "Mountain" }[type];
       const troops = `${r.toLocaleString()} rangers${f > 0 ? ", " + f.toLocaleString() + " fighters" : ""}`;
+
+      let message = `🧭 ${label} expedition launched — ${troops} deployed for ${EXP_TURNS[type]} turns. ${foodNeeded.toLocaleString()} food taken for the journey.`;
+      if (type === "mountain") {
+        message = `⛰️ MOUNTAIN EXPEDITION LAUNCHED! Your veteran rangers begin the most dangerous journey of their lives. 100 turns into the peaks. Avalanches, extreme attrition, and death await. May fortune favor the bold.`;
+      }
 
       res.json({
         ok: true,
@@ -2943,7 +2963,7 @@ module.exports = function (db) {
         turns_stored: k.turns_stored,
         updates: updates,
         events: [],
-        message: `🧭 ${label} expedition launched — ${troops} deployed for ${EXP_TURNS[type]} turns. ${foodNeeded.toLocaleString()} food taken for the journey.`,
+        message: message,
       });
     } catch (err) {
       try {
