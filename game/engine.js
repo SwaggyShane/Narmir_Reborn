@@ -1621,6 +1621,132 @@ function processGranaryAttunements(k, events) {
   return updates;
 }
 
+/**
+ * Process farm attunement special abilities
+ * Handles chaos variance, morale penalties, food multiplication, and stability bonuses
+ */
+function processFarmAttunements(k, events) {
+  const updates = {};
+  const farmAttune = fragmentBonusManager.getFragmentForBuilding(k, 'farms');
+  if (!farmAttune) return updates;
+
+  const fragmentName = farmAttune.fragment;
+  let foodChange = 0;
+
+  // Stability passive → small happiness gain each turn (food security = happier citizens)
+  const stabilityBonus = fragmentBonusManager.getBonusMultiplier(k, 'farms', 'stability') - 1.0;
+  if (stabilityBonus > 0) {
+    const happinessGain = Math.max(1, Math.round(stabilityBonus * 5));
+    const currentHappiness = k.happiness !== undefined ? k.happiness : 50;
+    updates.happiness = Math.min(120, currentHappiness + happinessGain);
+  }
+
+  switch (fragmentName) {
+    case 'Dragon Scale': {
+      // Dragon's Shadow: workers fear the cursed land — morale penalty each turn
+      const currentMorale = updates.morale !== undefined ? updates.morale : (k.morale || 50);
+      updates.morale = Math.max(0, currentMorale - 3);
+      events.push({
+        type: 'system',
+        message: `🐉 Dragon's Shadow: Workers fear the cursed farmland — morale −3.`,
+      });
+      break;
+    }
+
+    case 'Abyssal Crystal': {
+      // Abyssal Growth: crystalline chaos creates ±15% yield variance each turn
+      const prod = farmProduction(k);
+      if (prod > 0) {
+        const chaos = fragmentBonusManager.getBonusMultiplier(k, 'farms', 'chaos') - 1.0;
+        const swing = (Math.random() * 2 - 1) * chaos;
+        foodChange = Math.floor(prod * swing);
+        if (foodChange !== 0) {
+          const dir = foodChange > 0 ? '+' : '';
+          events.push({
+            type: 'system',
+            message: `🔮 Abyssal Growth: Crystalline chaos shifted yields — ${dir}${foodChange.toLocaleString()} food this turn.`,
+          });
+        }
+      }
+      break;
+    }
+
+    case 'Cursed Bloodstone': {
+      // Bloodsoaked Fields: dark power creates ±35% yield variance each turn
+      const prod = farmProduction(k);
+      if (prod > 0) {
+        const chaos = fragmentBonusManager.getBonusMultiplier(k, 'farms', 'chaos') - 1.0;
+        const swing = (Math.random() * 2 - 1) * chaos;
+        foodChange = Math.floor(prod * swing);
+        if (foodChange !== 0) {
+          const dir = foodChange > 0 ? '+' : '';
+          events.push({
+            type: 'system',
+            message: `🩸 Bloodsoaked Fields: Dark energy surged through the harvest — ${dir}${foodChange.toLocaleString()} food this turn.`,
+          });
+        }
+      }
+      break;
+    }
+
+    case 'Tears of the World Tree': {
+      // Eternal Harvest: food self-replicates +2% per turn when stores exceed 75% of max capacity
+      const granaryUpgrades = safeJsonParse(k.granary_upgrades, {}, 'farmAttune:granary_upgrades');
+      const granaryPer = granaryUpgrades.silos ? 150000 : 100000;
+      const storageRaceMult = raceBonus(k, 'food_storage');
+      const granaryCapMult = fragmentBonusManager.getBonusMultiplier(k, 'granaries', 'capacity');
+      const maxStore = Math.floor(
+        (Math.floor(10000 * storageRaceMult) + (k.bld_granaries || 0) * granaryPer) * granaryCapMult
+      );
+      const currentFood = updates.food !== undefined ? updates.food : (k.food || 0);
+      if (maxStore > 0 && currentFood > maxStore * 0.75) {
+        const bonus = Math.floor(currentFood * 0.02);
+        if (bonus > 0) {
+          foodChange = bonus;
+          events.push({
+            type: 'system',
+            message: `🌿 Eternal Harvest: Overabundant stores multiply — +${bonus.toLocaleString()} food self-replicated by the World Tree.`,
+          });
+        }
+      }
+      break;
+    }
+
+    case 'Void Essence': {
+      // Void Crops: farmProduction already returns 2× base; 50% triple (add 1× base = 0.5× prod), 50% fail (remove 2× base = 1× prod)
+      const prod = farmProduction(k);
+      if (prod > 0) {
+        if (Math.random() < 0.5) {
+          foodChange = Math.floor(prod * 0.5);
+          events.push({
+            type: 'system',
+            message: `🌌 Void Crops: The void surges with power — harvest tripled! +${foodChange.toLocaleString()} bonus food.`,
+          });
+        } else {
+          foodChange = -prod;
+          events.push({
+            type: 'system',
+            message: `🌌 Void Crops: The void consumed the harvest — farms produced nothing this turn!`,
+          });
+        }
+      }
+      break;
+    }
+
+    // Ancient Elven Wood (Primordial Fertility) and Celestial Feather (Blessed Fields):
+    // blight immunity and spell farm protection handled in processActiveEffects and castSpell
+    default:
+      break;
+  }
+
+  if (foodChange !== 0) {
+    const currentFood = updates.food !== undefined ? updates.food : (k.food || 0);
+    updates.food = Math.max(0, currentFood + foodChange);
+  }
+
+  return updates;
+}
+
 function processMercenaries(k, events) {
   const updates = {};
   const mercs = safeJsonParse(
@@ -2087,7 +2213,11 @@ function processTurn(k, db = null) {
   const granaryAbilityUpdates = processGranaryAttunements({ ...k, ...updates }, events);
   Object.assign(updates, granaryAbilityUpdates);
 
-  // ── 4b. Resource production (wood / stone / iron) ────────────────────────────
+  // ── 4b. Farm attunement special abilities ─────────────────────────────────────
+  const farmAbilityUpdates = processFarmAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, farmAbilityUpdates);
+
+  // ── 4c. Resource production (wood / stone / iron) ────────────────────────────
   const resourceUpdates = processResourceYield({ ...k, ...updates }, events);
   Object.assign(updates, resourceUpdates);
 
@@ -5693,28 +5823,46 @@ function castSpell(caster, target, spellId, obscure) {
   // ── Offensive / debuff spells ─────────────────────────────────────────────
 
   if (spellId === "spark") {
-    // Burns a small number of farms
-    const farmsLost = Math.max(1, getBldDmg("farms", 5));
-    targetUpdates.bld_farms = Math.max(0, (target.bld_farms || 0) - farmsLost);
-    damageDesc = `${farmsLost} farm${farmsLost > 1 ? "s" : ""} burned`;
+    const targetFarmAttune = fragmentBonusManager.getFragmentForBuilding(target, 'farms');
+    const farmFireImmune = targetFarmAttune &&
+      (targetFarmAttune.fragment === 'Ancient Elven Wood' || targetFarmAttune.fragment === 'Celestial Feather');
+    if (farmFireImmune) {
+      damageDesc = `spell failed — target's blessed farmland (${targetFarmAttune.fragment}) is immune to fire`;
+    } else {
+      const farmsLost = Math.max(1, getBldDmg("farms", 5));
+      targetUpdates.bld_farms = Math.max(0, (target.bld_farms || 0) - farmsLost);
+      damageDesc = `${farmsLost} farm${farmsLost > 1 ? "s" : ""} burned`;
+    }
   } else if (spellId === "rain") {
-    // Floods more farms than Spark
-    const farmsLost = Math.max(1, getBldDmg("farms", 20));
-    targetUpdates.bld_farms = Math.max(0, (target.bld_farms || 0) - farmsLost);
-    damageDesc = `${farmsLost} farm${farmsLost > 1 ? "s" : ""} flooded`;
+    const targetFarmAttune = fragmentBonusManager.getFragmentForBuilding(target, 'farms');
+    const farmFloodImmune = targetFarmAttune &&
+      (targetFarmAttune.fragment === 'Ancient Elven Wood' || targetFarmAttune.fragment === 'Celestial Feather');
+    if (farmFloodImmune) {
+      damageDesc = `spell failed — target's blessed farmland (${targetFarmAttune.fragment}) is immune to floods`;
+    } else {
+      const farmsLost = Math.max(1, getBldDmg("farms", 20));
+      targetUpdates.bld_farms = Math.max(0, (target.bld_farms || 0) - farmsLost);
+      damageDesc = `${farmsLost} farm${farmsLost > 1 ? "s" : ""} flooded`;
+    }
   } else if (spellId === "fog_of_war") {
     // Debuff: blinds rangers for duration turns
     activeEffect = { turns_left: def.duration || 3, type: "fog_of_war" };
     damageDesc = `rangers blinded for ${def.duration || 3} turns`;
   } else if (spellId === "blight") {
-    // Debuff: poison food supply for duration turns
-    const foodDamage = Math.floor(500 * magicRatio * shielded);
-    activeEffect = {
-      turns_left: def.duration || 5,
-      type: "blight",
-      damage: foodDamage,
-    };
-    damageDesc = `food supply poisoned for ${def.duration || 5} turns (-${foodDamage.toLocaleString()} food/turn)`;
+    const targetFarmAttune = fragmentBonusManager.getFragmentForBuilding(target, 'farms');
+    const blightCastImmune = targetFarmAttune &&
+      (targetFarmAttune.fragment === 'Ancient Elven Wood' || targetFarmAttune.fragment === 'Celestial Feather');
+    if (blightCastImmune) {
+      damageDesc = `spell failed — target's blessed farmland (${targetFarmAttune.fragment}) is immune to blight`;
+    } else {
+      const foodDamage = Math.floor(500 * magicRatio * shielded);
+      activeEffect = {
+        turns_left: def.duration || 5,
+        type: "blight",
+        damage: foodDamage,
+      };
+      damageDesc = `food supply poisoned for ${def.duration || 5} turns (-${foodDamage.toLocaleString()} food/turn)`;
+    }
   } else if (spellId === "lightning") {
     // Kills enemy fighters
     const fightersLost = Math.max(
@@ -5770,13 +5918,18 @@ function castSpell(caster, target, spellId, obscure) {
     activeEffect = { turns_left: def.duration || 5, type: "plague" };
     damageDesc = `plague spreading — population will die each turn for ${def.duration || 5} turns`;
   } else if (spellId === "earthquake") {
-    // Destroys buildings across all types
-    const fDmg = Math.max(1, getBldDmg("farms", 12)); // 8 * 1.5
+    // Destroys buildings across all types; blessed farms are immune
+    const eqFarmAttune = fragmentBonusManager.getFragmentForBuilding(target, 'farms');
+    const eqFarmImmune = eqFarmAttune &&
+      (eqFarmAttune.fragment === 'Ancient Elven Wood' || eqFarmAttune.fragment === 'Celestial Feather');
+    const fDmg = Math.max(1, getBldDmg("farms", 12));
     const bDmg = Math.max(1, getBldDmg("barracks", 8));
     const gDmg = Math.max(1, getBldDmg("guard_towers", 8));
     const mDmg = Math.max(1, Math.floor(getBldDmg("markets", 8) * 0.5));
     const cDmg = Math.max(1, Math.floor(getBldDmg("castles", 8) * 0.1));
-    targetUpdates.bld_farms = Math.max(0, (target.bld_farms || 0) - fDmg);
+    if (!eqFarmImmune) {
+      targetUpdates.bld_farms = Math.max(0, (target.bld_farms || 0) - fDmg);
+    }
     targetUpdates.bld_barracks = Math.max(0, (target.bld_barracks || 0) - bDmg);
     targetUpdates.bld_guard_towers = Math.max(
       0,
@@ -5784,7 +5937,10 @@ function castSpell(caster, target, spellId, obscure) {
     );
     targetUpdates.bld_markets = Math.max(0, (target.bld_markets || 0) - mDmg);
     targetUpdates.bld_castles = Math.max(0, (target.bld_castles || 0) - cDmg);
-    damageDesc = `buildings destroyed across the kingdom (farms, barracks, towers)`;
+    const eqFarmDesc = eqFarmImmune
+      ? `farms protected (${eqFarmAttune.fragment})`
+      : `${fDmg} farms razed`;
+    damageDesc = `buildings destroyed across the kingdom (${eqFarmDesc}, barracks, towers)`;
   } else if (spellId === "tempest") {
     // Kills all troop types
     const troopKill = Math.max(
@@ -5804,25 +5960,32 @@ function castSpell(caster, target, spellId, obscure) {
     targetUpdates.clerics = Math.max(0, (target.clerics || 0) - clericKill);
     damageDesc = `${troopKill.toLocaleString()} fighters, ${rangerKill.toLocaleString()} rangers, ${clericKill.toLocaleString()} clerics killed`;
   } else if (spellId === "armageddon") {
-    // Catastrophic — land, buildings, population
+    // Catastrophic — land, buildings, population; blessed farms are immune
+    const armFarmAttune = fragmentBonusManager.getFragmentForBuilding(target, 'farms');
+    const armFarmImmune = armFarmAttune &&
+      (armFarmAttune.fragment === 'Ancient Elven Wood' || armFarmAttune.fragment === 'Celestial Feather');
     const landLost = Math.floor(
       (target.land || 0) * 0.2 * magicRatio * shielded,
     );
     const popLost = Math.floor(
       (target.population || 0) * 0.25 * magicRatio * shielded,
     );
-    const farmLost =
-      Math.floor((target.bld_farms || 0) * 0.3) > 0
-        ? getBldDmg("farms", (target.bld_farms || 0) * 0.3)
-        : 0;
+    const farmLost = !armFarmImmune && Math.floor((target.bld_farms || 0) * 0.3) > 0
+      ? getBldDmg("farms", (target.bld_farms || 0) * 0.3)
+      : 0;
     const fightLost = Math.floor(
       (target.fighters || 0) * 0.2 * magicRatio * shielded,
     );
     targetUpdates.land = Math.max(0, (target.land || 0) - landLost);
     targetUpdates.population = Math.max(0, (target.population || 0) - popLost);
-    targetUpdates.bld_farms = Math.max(0, (target.bld_farms || 0) - farmLost);
+    if (!armFarmImmune && farmLost > 0) {
+      targetUpdates.bld_farms = Math.max(0, (target.bld_farms || 0) - farmLost);
+    }
     targetUpdates.fighters = Math.max(0, (target.fighters || 0) - fightLost);
-    damageDesc = `ARMAGEDDON — ${landLost.toLocaleString()} acres scorched, ${popLost.toLocaleString()} killed, ${farmLost.toLocaleString()} farms razed, ${fightLost.toLocaleString()} fighters slain`;
+    const armFarmDesc = armFarmImmune
+      ? `farms protected by ${armFarmAttune.fragment}`
+      : `${farmLost.toLocaleString()} farms razed`;
+    damageDesc = `ARMAGEDDON — ${landLost.toLocaleString()} acres scorched, ${popLost.toLocaleString()} killed, ${armFarmDesc}, ${fightLost.toLocaleString()} fighters slain`;
   }
 
   // Apply active effect to target if this is a debuff spell
@@ -8021,18 +8184,29 @@ function processActiveEffects(k, events) {
     } else {
       // Apply ongoing effect
       if (effect === "blight") {
-        const upgrades = safeJsonParse(
-          k.granary_upgrades,
-          {},
-          "processTurn:granary_upgrades",
-        );
-        const damage = (updates._blightDamaged = Math.floor(
-          (data.damage || 500) * (upgrades.segregation ? 0.5 : 1.0),
-        ));
-        updates.food = Math.max(
-          0,
-          (updates.food !== undefined ? updates.food : k.food) - damage,
-        );
+        const farmAttune = fragmentBonusManager.getFragmentForBuilding(k, 'farms');
+        const blightImmune = farmAttune &&
+          (farmAttune.fragment === 'Ancient Elven Wood' || farmAttune.fragment === 'Celestial Feather');
+        if (blightImmune) {
+          const specialName = farmAttune.fragment === 'Ancient Elven Wood' ? 'Primordial Fertility' : 'Blessed Fields';
+          events.push({
+            type: 'system',
+            message: `✨ ${specialName}: Blessed farmland repels the blight — food supply unaffected!`,
+          });
+        } else {
+          const upgrades = safeJsonParse(
+            k.granary_upgrades,
+            {},
+            "processTurn:granary_upgrades",
+          );
+          const damage = (updates._blightDamaged = Math.floor(
+            (data.damage || 500) * (upgrades.segregation ? 0.5 : 1.0),
+          ));
+          updates.food = Math.max(
+            0,
+            (updates.food !== undefined ? updates.food : k.food) - damage,
+          );
+        }
       } else if (effect === "plague") {
         let lost = Math.floor(k.population * 0.02);
         // Special housing effects (Celestial Feather: Holy Sanctuaries, Ancient Elven Wood: Treehouse Canopy)
@@ -8318,6 +8492,7 @@ module.exports = {
   commodityPrice,
   processFoodEconomy,
   processGranaryAttunements,
+  processFarmAttunements,
   processMercenaries,
   hireMercenaries,
   purchaseUpgrade,
