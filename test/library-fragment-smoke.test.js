@@ -8,6 +8,7 @@
 const assert = require('assert');
 const engine = require('../game/engine');
 const fragmentBonusManager = require('../game/fragment-bonus-manager');
+const { clearParseCache } = require('../utils/helpers');
 
 let passed = 0;
 let failed = 0;
@@ -228,13 +229,16 @@ test('Dwarven Star-Metal: getSpecialEffect returns correct name', () => {
 });
 
 test('Dwarven Star-Metal: amnesia spell is blocked', () => {
-  const caster = baseKingdom({ mana: 50000, res_spellbook: 300, bld_mage_towers: 5 });
-  const target = withLibFrag(baseKingdom({ res_economy: 80 }), 'Dwarven Star-Metal');
+  clearParseCache();
+  // amnesia requires minSB:800 and a crafted scroll; pass scrolls as object to avoid cache mutation
+  const caster = baseKingdom({ mana: 50000, res_spellbook: 800, scrolls: { amnesia: 1 } });
+  const target = withLibFrag(baseKingdom({ res_economy: 50 }), 'Dwarven Star-Metal');
   const result = engine.castSpell(caster, target, 'amnesia', false);
   assert.ok(result, 'castSpell should return a result');
-  // targetUpdates should NOT reduce res_economy
-  const econReduced = (result.targetUpdates?.res_economy ?? target.res_economy) < target.res_economy;
-  assert.strictEqual(econReduced, false, 'Lockboxes should block amnesia — res_economy should not decrease');
+  assert.ok(!result.error, `castSpell returned early with error: ${result.error}`);
+  // targetUpdates should NOT reduce res_economy — lockboxes grant full immunity
+  const econAfter = result.targetUpdates?.res_economy ?? target.res_economy;
+  assert.strictEqual(econAfter, target.res_economy, 'Lockboxes should block amnesia — res_economy must not change');
 });
 
 // ── Special: Fireproof Scriptorium (Dragon Scale) ──────────────────────────
@@ -242,22 +246,27 @@ test('Dwarven Star-Metal: amnesia spell is blocked', () => {
 console.log('\nSpecial: Fireproof Scriptorium (Dragon Scale)');
 
 test('Dragon Scale: amnesia damage reduced by 40% vs plain target', () => {
-  const caster = baseKingdom({ mana: 50000, res_spellbook: 300, bld_mage_towers: 5 });
-  const plain  = baseKingdom({ res_economy: 80, mana: 50000 });
-  const shielded = withLibFrag(baseKingdom({ res_economy: 80, mana: 50000 }), 'Dragon Scale');
+  clearParseCache();
+  // amnesia requires minSB:800 and a crafted scroll; pass scrolls as objects to avoid cache mutation
+  const casterPlain   = baseKingdom({ mana: 50000, res_spellbook: 800, scrolls: { amnesia: 1 } });
+  const casterShield  = baseKingdom({ mana: 50000, res_spellbook: 800, scrolls: { amnesia: 1 } });
+  const plain   = baseKingdom({ res_economy: 50 });
+  const shielded = withLibFrag(baseKingdom({ res_economy: 50 }), 'Dragon Scale');
 
-  const rPlain  = engine.castSpell(caster, plain,   'amnesia', false);
-  const rShield = engine.castSpell(caster, shielded, 'amnesia', false);
+  const rPlain  = engine.castSpell(casterPlain,  plain,    'amnesia', false);
+  const rShield = engine.castSpell(casterShield, shielded, 'amnesia', false);
 
-  if (!rPlain?.targetUpdates || !rShield?.targetUpdates) return; // spell may not trigger if conditions unmet
-  const lossPlain  = plain.res_economy  - (rPlain.targetUpdates.res_economy  ?? plain.res_economy);
-  const lossShield = shielded.res_economy - (rShield.targetUpdates.res_economy ?? shielded.res_economy);
+  assert.ok(!rPlain?.error,  `Plain cast returned early: ${rPlain?.error}`);
+  assert.ok(!rShield?.error, `Shielded cast returned early: ${rShield?.error}`);
 
-  // Shielded loss should be ~60% of plain loss
-  if (lossPlain > 0 && lossShield > 0) {
-    const ratio = lossShield / lossPlain;
-    assert.ok(ratio < 0.85, `Expected shielded to take <85% damage of plain, got ${(ratio * 100).toFixed(1)}%`);
-  }
+  const lossPlain  = plain.res_economy  - (rPlain.targetUpdates?.res_economy  ?? plain.res_economy);
+  const lossShield = shielded.res_economy - (rShield.targetUpdates?.res_economy ?? shielded.res_economy);
+
+  assert.ok(lossPlain > 0, `Plain target should lose some res_economy, got loss=${lossPlain}`);
+  assert.ok(lossShield > 0, `Shielded target should lose some res_economy (just less), got loss=${lossShield}`);
+
+  const ratio = lossShield / lossPlain;
+  assert.ok(ratio < 0.85, `Expected shielded to take <85% of plain damage, got ${(ratio * 100).toFixed(1)}%`);
 });
 
 // ── Special: Void Codex (Void Essence) ─────────────────────────────────────
