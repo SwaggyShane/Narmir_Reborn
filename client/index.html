@@ -7952,17 +7952,26 @@
         // PVP Interactions (priority 2) - attacks, spells, covert ops
         if (type === "attack" || type === "spell" || type === "covert") return 2;
 
-        // Resource Production (priority 3)
-        if (msg.includes("production:") || msg.includes("wood") || msg.includes("stone") || msg.includes("iron") || msg.includes("food production")) return 3;
+        // End of Turn Summary (priority 12) - check before Gold Earned to avoid "treasury" overlap
+        if (msg.includes("end of turn") || msg.includes("net gold") || msg.includes("final treasury")) return 12;
 
-        // Construction (priority 4)
-        if (msg.includes("completed:") || msg.includes("completed ") || msg.includes("building") && msg.includes("ready")) return 4;
-
-        // Research (priority 5)
+        // Research (priority 5) - check before Construction to avoid "completed" overlap
         if (msg.includes("research") || msg.includes("studying") || msg.includes("spellbook")) return 5;
 
-        // Mana (priority 6)
+        // Expeditions Returned (priority 9) - check before Resource Production
+        if (msg.includes("expedition") || msg.includes("🔭") || msg.includes("scouts")) return 9;
+
+        // Construction (priority 4) - check before Resource Production to avoid "wood" overlap
+        if (msg.includes("completed:") || msg.includes("completed ") || (msg.includes("building") && msg.includes("ready"))) return 4;
+
+        // Mana (priority 6) - check before Resource Production to avoid "production:" overlap
         if (msg.includes("mana")) return 6;
+
+        // Gold Earned (priority 10) - check before Resource Production
+        if (msg.includes("gold earned") || msg.includes("trade route")) return 10;
+
+        // Troop Upkeep (priority 11)
+        if (msg.includes("upkeep") || msg.includes("billable")) return 11;
 
         // Population Change (priority 7)
         if (msg.includes("population") && !msg.includes("happiness")) return 7;
@@ -7970,17 +7979,8 @@
         // Happiness Report (priority 8)
         if (msg.includes("happiness")) return 8;
 
-        // Expeditions Returned (priority 9)
-        if (msg.includes("expedition") || msg.includes("🔭") || msg.includes("scouts")) return 9;
-
-        // Gold Earned (priority 10)
-        if (msg.includes("gold earned") || msg.includes("trade route") || msg.includes("treasury")) return 10;
-
-        // Troop Upkeep (priority 11)
-        if (msg.includes("upkeep") || msg.includes("billable")) return 11;
-
-        // End of Turn Summary (priority 12)
-        if (msg.includes("end of turn") || msg.includes("net gold") || msg.includes("final treasury")) return 12;
+        // Resource Production (priority 3) - check last to avoid overlaps with "wood", "stone", "iron", "production:"
+        if (msg.includes("production:") || msg.includes("wood") || msg.includes("stone") || msg.includes("iron") || msg.includes("food production")) return 3;
 
         // Default: System items
         return 13;
