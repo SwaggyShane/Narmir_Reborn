@@ -4420,7 +4420,7 @@ module.exports = function (db) {
       const k = await db.get(
         `
         SELECT k.id, k.name, k.race, k.gender, k.region, k.level, k.xp, k.land, k.population,
-               k.fighters, k.mages, k.rangers, k.morale, k.turn, k.description,
+               k.fighters, k.mages, k.rangers, k.happiness, k.turn, k.description,
                k.res_military, k.res_economy, k.res_construction, k.res_spellbook,
                k.res_attack_magic, k.res_entertainment,
                p.id as player_id, p.username        FROM kingdoms k JOIN players p ON k.player_id = p.id

@@ -1920,7 +1920,7 @@ const config = {
     orc: { unit: "fighters", bonus: "free_trainee_generation" },
     dark_elf: { unit: "ninjas", bonus: "silent_assassination" },
     dire_wolf: { unit: "rangers", bonus: "fast_expeditions" },
-    human: { unit: "clerics", bonus: "morale_aura" },
+    human: { unit: "clerics", bonus: "happiness_aura" },
     vampire: { unit: "thieves", bonus: "theft_boost" },
   },
 
@@ -2198,11 +2198,7 @@ const config = {
       updates.gold = (k.gold || 0) + 1000000;
       updates.land = (k.land || 0) + 1000;
       updates.population = (k.population || 0) + 100000;
-      const natCap = (k.res_entertainment || 0) + 100; // approximation of new cap
-      updates.morale = Math.min(
-        natCap * 2,
-        (k.morale || 100) + Math.floor(natCap * 0.5),
-      );
+      updates.happiness = Math.min(120, (k.happiness || 50) + 20);
       updates.fighters = (k.fighters || 0) + 50000;
     },
   },
