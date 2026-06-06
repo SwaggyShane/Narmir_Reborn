@@ -286,7 +286,7 @@ async function fireDailyEvent(db, k, season) {
   switch (ev.effect_type) {
     case 'morale':
       updates.morale = Math.max(0, Math.min(200, (k.morale || 100) + val));
-      message += val > 0 ? ` (+${val} morale)` : ` (${val} morale)`; break;
+      message += val > 0 ? ` (+${val} happiness)` : ` (${val} happiness)`; break;
     case 'gold': {
       // |val| < 1 → percentage of current gold; otherwise a flat amount (mirrors the
       // food/population cases so a flat gold event can't multiply the treasury).

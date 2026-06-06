@@ -105,7 +105,7 @@ const EconomyPanel = () => {
           </button>
         </div>
         <div style={{ fontSize: '12px', color: 'var(--text3)', lineHeight: 1.6 }}>
-          Taxing your citizens directly affects their morale. Tax them high and
+          Taxing your citizens directly affects their happiness. Tax them high and
           they will probably leave. Tax them low and they will rejoice. Net income
           is calculated per turn spent.
         </div>
@@ -315,7 +315,7 @@ const EconomyPanel = () => {
           <div className="card-title" style={{ marginBottom: '8px' }}>Food rules</div>
           <div style={{ fontSize: '12px', color: 'var(--text3)', lineHeight: 1.9 }}>
             Each farm needs <strong id="econ-workers-per-farm" style={{ color: 'var(--text)' }}>10</strong> free population to work it. Unworked farms produce nothing.<br />
-            Shortage grace: <strong style={{ color: 'var(--amber)' }}>2 turns</strong> → morale penalty → population flight → desertion.
+            Shortage grace: <strong style={{ color: 'var(--amber)' }}>2 turns</strong> → happiness penalty → population flight → desertion.
           </div>
         </div>
       </div>

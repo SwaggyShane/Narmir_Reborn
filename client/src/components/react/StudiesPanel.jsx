@@ -501,7 +501,7 @@ const StudiesPanel = () => {
                 <span className="count"><span id="st-clerics-shrine">0</span> / <span id="st-shrine-cap">0</span></span>
               </div>
               <div className="trow" id="st-shrine-row-morale" style={{ display: 'none' }}>
-                <span className="name">Morale gain/turn</span>
+                <span className="name">Happiness gain/turn</span>
                 <span className="count" id="st-morale-gain" style={{ color: 'var(--green)' }}>0</span>
               </div>
               <div className="trow" id="st-shrine-row-sanctuary" style={{ display: 'none' }}>

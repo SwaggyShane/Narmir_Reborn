@@ -164,7 +164,7 @@ const StatusPanel = () => {
           </button>
         </div>
         <div style={{ fontSize: '12px', color: 'var(--text3)', lineHeight: 1.7 }}>
-          Taxing your citizens directly affects their morale. Tax them high and
+          Taxing your citizens directly affects their happiness. Tax them high and
           they will probably leave. Tax them low and they will rejoice.{' '}
           <strong style={{ color: 'var(--gold)' }}>Enter a rate then press Lock to save.</strong>
         </div>
