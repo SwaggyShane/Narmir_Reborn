@@ -138,9 +138,12 @@ client.on('messageCreate', async (message) => {
   // Ignore bot messages
   if (message.author.bot) return;
 
+  // Skip relay for bot commands (!, /, etc.)
+  const isCommand = message.content.startsWith('!') || message.content.startsWith('/');
+
   // Check if this channel is configured for game chat sync
   const syncConfig = syncConfigs.find(c => c.channel_id === message.channelId);
-  if (syncConfig && syncConfig.sync_both_directions) {
+  if (syncConfig && syncConfig.sync_both_directions && !isCommand) {
     try {
       await relayDiscordMessageToGame(message, syncConfig);
     } catch (error) {
