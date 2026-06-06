@@ -78,6 +78,15 @@ if (!window._applyServerUpdatesWrapped) {
     if (originalApplyServerUpdates) {
       originalApplyServerUpdates(updates);
     }
+
+    // Force UI refresh for vanilla JS metrics display
+    try {
+      if (typeof window.syncUI === "function") {
+        window.syncUI();
+      }
+    } catch (error) {
+      console.error("[UI] Error during syncUI execution:", error);
+    }
   };
   window._applyServerUpdatesWrapped = true;
 }
