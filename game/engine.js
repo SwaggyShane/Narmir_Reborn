@@ -6763,23 +6763,23 @@ function expeditionRewards(type, rangers, fighters, k) {
       }
     }
   } else if (type === "mountain") {
-    // Mountain Expedition: Rangers only, extreme attrition, high-value rewards
+    // Mountain Expedition: Rangers only, balanced high-risk/high-reward attrition
     const mountainMult = { dire_wolf: 0.8, human: 1.0, dwarf: 1.1 }[k.race] || 1.0;
     const rangerLevel = effectiveTroopLevel(k, "rangers");
 
-    // Avalanche attrition per turn: random between 0 and level-based max
+    // Avalanche attrition per turn: random between 0 and level-based max (targeting ~75% total attrition)
     const expTurns = EXPEDITION_TURNS["mountain"] || 100;
     let totalArriving = rangers;
     const attritionLog = [];
 
     for (let turn = 1; turn <= expTurns; turn++) {
-      // Determine max loss % based on ranger level
-      let maxLoss = 50;
-      if (rangerLevel >= 21 && rangerLevel <= 30) maxLoss = 30;
-      else if (rangerLevel >= 31 && rangerLevel <= 40) maxLoss = 15;
-      else if (rangerLevel >= 41) maxLoss = 10;
+      // Determine max loss % based on ranger level (BALANCED: 0-8/6/5/4% per turn)
+      let maxLoss = 8;
+      if (rangerLevel >= 21 && rangerLevel <= 30) maxLoss = 6;
+      else if (rangerLevel >= 31 && rangerLevel <= 40) maxLoss = 5;
+      else if (rangerLevel >= 41) maxLoss = 4;
 
-      // Roll between 0 and maxLoss
+      // Roll between 0 and maxLoss (always allows zero-loss outcome)
       const lossPercent = rand(0, maxLoss);
       const lostThisTurn = Math.floor((totalArriving * lossPercent) / 100);
       totalArriving -= lostThisTurn;
@@ -6791,10 +6791,11 @@ function expeditionRewards(type, rangers, fighters, k) {
 
     const survived = totalArriving;
     const totalLost = rangers - survived;
+    const casualtyRate = (totalLost / rangers * 100).toFixed(1);
 
     if (totalLost > 0) {
       rewards.push({
-        text: `Avalanches claimed ${totalLost.toLocaleString()} rangers — only ${survived.toLocaleString()} returned`,
+        text: `Avalanches claimed ${totalLost.toLocaleString()} rangers (${casualtyRate}%) — ${survived.toLocaleString()} returned`,
       });
     } else {
       rewards.push({
@@ -6804,27 +6805,28 @@ function expeditionRewards(type, rangers, fighters, k) {
 
     updates._rangers_returned = survived;
 
-    // Mountain rewards: Gold from hazard navigation & treasure found
+    // Mountain rewards: Gold scaled to troop count and level (200-500 per ranger)
+    const goldPerRanger = rand(200, 500);
     const mountainGold = Math.floor(
-      rangers * rand(4, 8) * tacBonus * exploreBonus * mountainMult * (1 + rand(5, 30) / 100)
+      rangers * goldPerRanger * tacBonus * exploreBonus * mountainMult * (1 + rand(5, 30) / 100)
     );
     rewards.push({
       text: `+${mountainGold.toLocaleString()} gold from mountain artifacts`,
     });
     updates.gold = k.gold + mountainGold;
 
-    // Mana from ley lines
+    // Mana from ley lines (scaled)
     const mountainMana = Math.floor(
-      rand(rangers * 2, rangers * 6) * mountainMult * exploreBonus
+      rand(rangers * 10, rangers * 50) * mountainMult * exploreBonus
     );
     rewards.push({
       text: `+${mountainMana} mana from ancient ley lines`,
     });
     updates.mana = k.mana + mountainMana;
 
-    // Research boost from ancient knowledge
+    // Research boost from ancient knowledge (scaled)
     const res = ["res_weapons", "res_armor", "res_construction"][rand(0, 2)];
-    const resBoost = Math.floor(rand(5, 15) * mountainMult);
+    const resBoost = Math.floor(rand(50, 150) * mountainMult);
     rewards.push({
       text: `Ancient runes revealed — ${res.replace("res_", "").replace("_", " ")} +${resBoost}`,
     });
@@ -6845,9 +6847,36 @@ function expeditionRewards(type, rangers, fighters, k) {
     // (explicitly 0 land)
   }
 
-  // ── Ultra-rare prizes (deep: 0.5%, dungeon success: 1%, mountain: 2.5%) ──────────────────────
+  // ── Ultra-rare prizes ──────────────────────────────────────────────────
+  // deep: 0.5%, dungeon success: 1%, mountain: 2.5% per turn (MAX 1 per expedition for mountain)
   const ultraChance = type === "dungeon" ? 0.01 : type === "deep" ? 0.005 : type === "mountain" ? 0.025 : 0;
-  if (ultraChance > 0 && roll(ultraChance)) {
+
+  // For mountain expeditions, track if we already got an ultra-rare during the 100 turns
+  if (type === "mountain") {
+    let ultraRareObtained = false;
+    for (let turn = 1; turn <= (EXPEDITION_TURNS["mountain"] || 100); turn++) {
+      if (!ultraRareObtained && roll(ultraChance)) {
+        const mountainUltraRares = ULTRA_RARE_PRIZES.filter(p =>
+          ["iceflow_crown", "snowpeak_chalice", "frostbind_amulet", "avalanche_heart", "stormcaller_gem"].includes(p.id)
+        );
+        if (mountainUltraRares.length > 0) {
+          const prize = mountainUltraRares[Math.floor(Math.random() * mountainUltraRares.length)];
+          prize.effect(k, updates);
+          rewards.push({ text: `✨✨✨ ULTRA RARE: ${prize.text}` });
+
+          // Add ultra-rare item to inventory
+          let inventory = safeJsonParse(updates.items || k.items, [], "expeditionRewards:ultra_rare_items");
+          if (!Array.isArray(inventory)) inventory = [];
+          const itemDef = INVENTORY_ITEMS?.[prize.id];
+          addItemToInventory(inventory, prize.id, itemDef?.name || prize.id, 1);
+          updates.items = JSON.stringify(inventory);
+
+          ultraRareObtained = true; // Prevent more ultra-rares this expedition
+        }
+      }
+    }
+  } else if (ultraChance > 0 && roll(ultraChance)) {
+    // Non-mountain expeditions: regular ultra-rare drop (can be multiple)
     const prize =
       ULTRA_RARE_PRIZES[Math.floor(Math.random() * ULTRA_RARE_PRIZES.length)];
     prize.effect(k, updates);
