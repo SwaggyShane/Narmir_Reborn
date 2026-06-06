@@ -7078,6 +7078,7 @@ async function resolveExpeditions(db, k, engine) {
         scout: "🔭 Scout",
         deep: "🌲 Deep",
         dungeon: "⚔️ Dungeon",
+        mountain: "🏔️ Mountain",
       }[exp.type];
 
       // Apply kingdom updates
@@ -7138,7 +7139,7 @@ async function resolveExpeditions(db, k, engine) {
       ]);
 
       // Award XP
-      const expXpAmount = { scout: 8, deep: 20, dungeon: 40 }[exp.type] || 8;
+      const expXpAmount = { scout: 8, deep: 20, dungeon: 40, mountain: 100 }[exp.type] || 8;
       const rXp = awardTroopXp(freshK, "rangers", expXpAmount * exp.rangers);
       updates.troop_levels = rXp.troop_levels;
       if (exp.type === "dungeon" && exp.fighters > 0) {
@@ -7151,7 +7152,7 @@ async function resolveExpeditions(db, k, engine) {
       }
 
       // Award kingdom-level exploration XP (divide by XP_BASE.exploration=5 to get final amounts matching stated values)
-      const kingdomXpBase = { scout: 1, deep: 4, dungeon: 8 }[exp.type] || 1;
+      const kingdomXpBase = { scout: 1, deep: 4, dungeon: 8, mountain: 20 }[exp.type] || 1;
       const kingdomXp = awardXp(freshK, "exploration", kingdomXpBase * (exp.rangers + (exp.fighters || 0)));
       updates.xp = kingdomXp.xp;
       updates.level = kingdomXp.level;
