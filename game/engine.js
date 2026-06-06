@@ -6975,12 +6975,15 @@ async function resolveExpeditions(db, k, engine) {
 
   // ── Execute batched updates ──────────────────────────────────────────────────────
 
-  // Batch update: all tick-downs in one statement
+  // Batch update: ALL tick-downs in ONE statement using CASE/WHEN
   if (tickDowns.length > 0) {
-    for (const { id, newTurns } of tickDowns) {
-      await db.run("UPDATE expeditions SET turns_left = ? WHERE id = ?", [newTurns, id]);
-    }
-    console.log(`[expedition] Batched ${tickDowns.length} turn decrements`);
+    const ids = tickDowns.map(t => t.id);
+    const caseWhen = tickDowns
+      .map(({ id, newTurns }) => `WHEN ${id} THEN ${newTurns}`)
+      .join(" ");
+    const updateSql = `UPDATE expeditions SET turns_left = CASE id ${caseWhen} END WHERE id = ANY($1)`;
+    const result = await db.run(updateSql, [ids]);
+    console.log(`[expedition] Batched ${result.changes} turn decrements in single UPDATE`);
   }
 
   // Batch update: all completions in one statement
