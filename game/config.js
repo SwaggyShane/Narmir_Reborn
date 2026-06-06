@@ -2057,6 +2057,11 @@ const config = {
     vault_of_the_ancients: { name: "Vault of the Ancients", desc: "A sealed vault containing untold riches beyond imagining.", rarity: "ultra_rare" },
     lost_legion_banner: { name: "Banner of the Lost Legion", desc: "Ten thousand warriors emerge from the mist and pledge eternal service.", rarity: "ultra_rare" },
     seed_of_the_world_tree: { name: "Seed of the World Tree", desc: "Your lands bloom with ancient fertility.", rarity: "ultra_rare" },
+    iceflow_crown: { name: "Iceflow Crown", desc: "A regal crown forged from eternal winter, its crystalline structure humming with ancient cold magic.", rarity: "ultra_rare" },
+    snowpeak_chalice: { name: "Snowpeak Chalice", desc: "A sacred vessel carved from a single perfect glacier crystal, said to have contained the first snow of creation.", rarity: "ultra_rare" },
+    frostbind_amulet: { name: "Frostbind Amulet", desc: "An ornate medallion radiating perpetual numbing cold, worn by the mountain's guardian spirits.", rarity: "ultra_rare" },
+    avalanche_heart: { name: "Avalanche Heart", desc: "The crystallized essence of a thousand avalanches, pulsing with the raw power of cascading mountains.", rarity: "ultra_rare" },
+    stormcaller_gem: { name: "Stormcaller's Gem", desc: "A radiant gemstone that crackles with captured lightning, said to call down thunder upon command.", rarity: "ultra_rare" },
   },
 
   JUNK_PRIZES: [
