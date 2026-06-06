@@ -1,0 +1,104 @@
+import { useGameMetrics } from './useGameState';
+import { useActivePanel } from './useActivePanel';
+import { gameStateManager } from '../GameStateManager';
+
+async function apiCall(method, endpoint, body = null) {
+  const options = { method };
+  if (body) options.body = JSON.stringify(body);
+  const response = await fetch(endpoint, options);
+  return response.json();
+}
+
+export function useGameActions() {
+  const { updateMetrics } = useGameMetrics();
+  const { activePanel } = useActivePanel();
+
+  const takeTurn = async () => {
+    try {
+      const result = await apiCall('POST', '/api/kingdom/turn');
+
+      if (result.error) return { error: result.error };
+
+      // Update metrics globally (always)
+      if (result.updates) {
+        updateMetrics(result.updates);
+      }
+
+      return {
+        success: true,
+        activePanel,
+        panelData: result,
+      };
+    } catch (err) {
+      return { error: err.message };
+    }
+  };
+
+  const quickSearch = async (type) => {
+    try {
+      const result = await apiCall('POST', `/api/kingdom/quick-search/${type}`);
+
+      if (result.error) return { error: result.error };
+
+      if (result.updates) {
+        updateMetrics(result.updates);
+      }
+
+      return {
+        success: true,
+        activePanel,
+        panelData: result,
+      };
+    } catch (err) {
+      return { error: err.message };
+    }
+  };
+
+  const castSpell = async (spellId, targetId) => {
+    try {
+      const result = await apiCall('POST', '/api/kingdom/spell', {
+        spell: spellId,
+        target: targetId,
+      });
+
+      if (result.error) return { error: result.error };
+
+      if (result.updates) {
+        updateMetrics(result.updates);
+      }
+
+      return {
+        success: true,
+        activePanel,
+        panelData: result,
+      };
+    } catch (err) {
+      return { error: err.message };
+    }
+  };
+
+  const attack = async (targetId, units) => {
+    try {
+      const result = await apiCall('POST', '/api/kingdom/attack', {
+        targetId,
+        ...units,
+      });
+
+      if (result.error) return { error: result.error };
+
+      if (result.updates) {
+        updateMetrics(result.updates);
+      }
+
+      return {
+        success: true,
+        activePanel,
+        panelData: result,
+      };
+    } catch (err) {
+      return { error: err.message };
+    }
+  };
+
+  return { takeTurn, quickSearch, castSpell, attack };
+}
