@@ -284,8 +284,8 @@ async function fireDailyEvent(db, k, season) {
   // string values would silently turn arithmetic (e.g. `1 + val`) into concatenation.
   const val = Number(ev.effect_value), dur = Number(ev.effect_duration);
   switch (ev.effect_type) {
-    case 'morale':
-      updates.morale = Math.max(0, Math.min(200, (k.morale || 100) + val));
+    case 'happiness':
+      updates.happiness = Math.max(0, Math.min(120, (k.happiness || 50) + val));
       message += val > 0 ? ` (+${val} happiness)` : ` (${val} happiness)`; break;
     case 'gold': {
       // |val| < 1 → percentage of current gold; otherwise a flat amount (mirrors the

@@ -271,19 +271,6 @@ function foodBalance(k) {
   return farmProduction(k) - foodConsumption(k);
 }
 
-function naturalMoraleCap(k) {
-  let cap = k.res_entertainment || 100;
-  // Apply dynamic housing passive bonuses on morale / happiness (e.g., Celestial Realm, Ancient Elven Wood)
-  const housingMoraleMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'morale');
-  const housingHappinessMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'happiness');
-  cap = Math.floor(cap * housingMoraleMult * housingHappinessMult);
-
-  // Apply housing stability modifier cap (e.g., Void Essence, Cursed Bloodstone reduce max morale)
-  const housingStabilityMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'stability');
-  cap = Math.floor(cap * housingStabilityMult);
-
-  return cap;
-}
 
 function getHappinessRecoveryRate(k) {
   const baseRecovery = (k.res_entertainment || 100) / 1000 + ((k.bld_taverns || 0) * 0.25);
@@ -419,32 +406,6 @@ async function logHappinessEvent(db, kingdomId, turn, eventData) {
   }
 }
 
-function effectiveMorale(k) {
-  let base =
-    k.morale !== undefined && k.morale !== null ? k.morale : 100;
-  
-  // Apply Bless bonus if active
-  const effects = safeJsonParse(
-    k.active_effects,
-    {},
-    "effectiveMorale:active_effects",
-  );
-  if (effects.bless && typeof effects.bless === "object") {
-    base += (effects.bless.morale_bonus || 0);
-  }
-
-  const entertainment = naturalMoraleCap(k);
-  let bonus = raceBonus(k, "morale");
-  
-  const shrineUpgrades = safeJsonParse(k.shrine_upgrades, {}, "effectiveMorale:shrine_upgrades");
-  if (shrineUpgrades.divine_favor) {
-    bonus += 0.20;
-  }
-
-  // Normalize: entertainment cap maps to 100
-  const normalized = (base / entertainment) * 100;
-  return Math.floor(normalized * bonus);
-}
 
 function popGrowth(k) {
   const happiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
@@ -1305,10 +1266,9 @@ function tavernEntertainmentBonus(k) {
   const baseBonusPerTavern = 10;
   let bonus = k.bld_taverns * baseBonusPerTavern;
 
-  // Apply fragment bonuses for taverns (morale, happiness)
-  const tavernMoraleMult = fragmentBonusManager.getBonusMultiplier(k, 'taverns', 'morale');
+  // Apply fragment bonuses for taverns (happiness)
   const tavernHappinessMult = fragmentBonusManager.getBonusMultiplier(k, 'taverns', 'happiness');
-  bonus = Math.floor(bonus * tavernMoraleMult * tavernHappinessMult);
+  bonus = Math.floor(bonus * tavernHappinessMult);
 
   return bonus;
 }
@@ -1476,17 +1436,6 @@ function processFoodEconomy(k, events) {
     updates.food_surplus_turns = surpTurns;
     updates.food_shortage_turns = 0;
     if (surpTurns >= 5) {
-      const natCap = naturalMoraleCap(k);
-      const cur =
-        updates.morale !== undefined
-          ? updates.morale
-          : k.morale !== undefined && k.morale !== null
-            ? k.morale
-            : 100;
-      const oldMorale = cur;
-      updates.morale = Math.min(natCap, cur + 2);
-      const mDelta = (updates.morale || 0) - oldMorale;
-      
       events.push({
         type: "system",
         message: `🌾 Food surplus: +${balance.toLocaleString()} units. Troops are well fed.`,
@@ -1518,17 +1467,6 @@ function processFoodEconomy(k, events) {
         message: `🚨 Food shortage! Turn ${shortTurns} — build more farms or reduce troops.`,
       });
       if (shortTurns >= 3) {
-        const hit = shortTurns >= 8 ? 20 : shortTurns >= 5 ? 10 : 5;
-        const cur =
-          updates.morale !== undefined
-            ? updates.morale
-            : k.morale !== undefined && k.morale !== null
-              ? k.morale
-              : 100;
-        const oldMorale = cur;
-        updates.morale = Math.max(0, cur - hit);
-        const mDelta = updates.morale - oldMorale;
-
         events.push({
           type: "system",
           message: `🚨 Food shortage! Turn ${shortTurns} — build more farms or reduce troops.`,
@@ -1872,21 +1810,6 @@ function efficiencyMult(route) {
   return route.efficiency || 1.0;
 }
 
-function displayMorale(k) {
-  const base = k.morale !== undefined && k.morale !== null ? k.morale : 100;
-  const ent = k.res_entertainment || 100;
-  const raceMap = {
-    human: 1.05,
-    high_elf: 0.95,
-    dwarf: 1.0,
-    dire_wolf: 1.1,
-    dark_elf: 0.9,
-    orc: 1.05,
-    vampire: 0.95,
-  };
-  const bonus = raceMap[k.race] || 1.0;
-  return Math.floor((base / ent) * 100 * bonus);
-}
 
 function rebellionCheck(k, happiness, updates, events) {
   if (happiness >= 50) return; // No rebellion risk if happiness >= 50
@@ -2307,293 +2230,6 @@ function processTurn(k, db = null) {
       type: "system",
       message: `✅ All support units housed — no upkeep cost this turn.`,
     });
-  }
-
-  // ── 6. Morale ─────────────────────────────────────────────────────────────────
-  {
-    const capPerBuilding = housingCapPerBuilding(k);
-    let housingCap = k.bld_housing * capPerBuilding;
-    // Apply world fragment bonuses for housing capacity
-    const housingMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'capacity');
-    housingCap *= housingMult;
-    const overcrowded = housingCap > 0 && k.population > housingCap;
-
-    // Race overcrowding penalty modifiers
-    let overcrowdMult = { dire_wolf: 0.5, high_elf: 2.0 }[k.race] || 1.0;
-    const activeHousingSpecial = fragmentBonusManager.getSpecialEffect(k, 'housing');
-    if (activeHousingSpecial?.name === "Goliath Dwellings") {
-      overcrowdMult *= 0.2; // 80% reduction in overcrowding penalty, since they are spacious
-    }
-    const overcrowdPenalty = overcrowded
-      ? Math.max(
-          0,
-          Math.floor(
-            ((k.population - housingCap) / 1000) * overcrowdMult,
-          ),
-        )
-      : 0;
-
-    let taxPenalty = 0;
-    let taxBoost = 0;
-    const currentTax = k.tax || 42;
-
-    if (currentTax >= 50) {
-      taxPenalty = 10 + Math.floor(((currentTax - 50) / 50) * 65);
-    } else if (currentTax < 42) {
-      taxBoost = Math.floor(((42 - currentTax) / 41) * 25);
-    }
-
-    if (currentTax < 20 && Math.random() < 0.05) {
-      const taxEvents = config.TAX_EVENTS || [];
-      if (taxEvents.length > 0) {
-        const msg = taxEvents[Math.floor(Math.random() * taxEvents.length)];
-        const bonusType = Math.random();
-        let bonusStr = "";
-        if (bonusType < 0.33) {
-          const goldBonus = Math.floor(100 + Math.random() * 900);
-          updates.gold = (updates.gold || k.gold) + goldBonus;
-          bonusStr = `+${goldBonus} Gold`;
-        } else if (bonusType < 0.66) {
-          const foodBonus = Math.floor(100 + Math.random() * 400);
-          updates.food = (updates.food || k.food) + foodBonus;
-          bonusStr = `+${foodBonus} Food`;
-        } else {
-          const cur =
-            updates.morale !== undefined
-              ? updates.morale
-              : k.morale !== undefined && k.morale !== null
-                ? k.morale
-                : 100;
-          const oldMorale = cur;
-          updates.morale = Math.min(100, cur + 2);
-          const mDelta = updates.morale - oldMorale;
-          if (mDelta > 0) {
-            bonusStr = `+${mDelta} Morale`;
-          } else {
-            bonusStr = `Morale at cap`;
-          }
-        }
-        events.push({
-          type: "system",
-          message: `🌟 Low Tax Event: ${msg} (${bonusStr})`,
-        });
-      }
-    }
-
-    if (currentTax >= 50) {
-      const cur =
-        updates.morale !== undefined
-          ? updates.morale
-          : k.morale !== undefined && k.morale !== null
-            ? k.morale
-            : 100;
-      const oldM = cur;
-      updates.morale = Math.max(0, cur - taxPenalty);
-      if (updates.morale !== oldM) {
-      }
-
-      if (overcrowdPenalty > 0) {
-        const cur2 = updates.morale;
-        const newMorale = Math.max(0, cur2 - overcrowdPenalty);
-        if (newMorale !== cur2) {
-        }
-        updates.morale = newMorale;
-      }
-    } else {
-      const recovery =
-        1 + taxBoost + Math.floor(k.res_entertainment / 200);
-      const natCap = naturalMoraleCap(k);
-      const cur =
-        updates.morale !== undefined
-          ? updates.morale
-          : k.morale !== undefined && k.morale !== null
-            ? k.morale
-            : 100;
-      let newMorale = Math.min(natCap, cur + recovery);
-      let recoveryReason = `Low taxes / Entertainment`;
-
-      // If currently above natural cap (due to spells/events), natural decay?
-      if (cur > natCap) {
-        newMorale = Math.max(natCap, cur - 2); // Natural decay towards cap
-        if (newMorale !== cur) {
-        }
-      } else if (newMorale > cur) {
-      }
-
-      if (overcrowdPenalty > 0) {
-        const afterCrowdMorale = Math.max(0, newMorale - overcrowdPenalty);
-        if (afterCrowdMorale !== newMorale) {
-        }
-        newMorale = afterCrowdMorale;
-      }
-
-      if (newMorale !== cur) {
-        updates.morale = newMorale;
-      }
-    }
-  }
-
-  // ── 6b. Morale Threshold Events ───────────────────────────────────────────────
-  const currentMoraleThreshold =
-    updates.morale !== undefined
-      ? updates.morale
-      : k.morale !== undefined && k.morale !== null
-        ? k.morale
-        : 100;
-
-  if (currentMoraleThreshold <= 0) {
-    // RIOTS
-    const currentPop =
-      updates.population !== undefined ? updates.population : k.population;
-    const popLossPct = 0.02 + Math.random() * 0.03; // 2% to 5%
-    const popLost = Math.floor(currentPop * popLossPct);
-
-    const currentGold = updates.gold !== undefined ? updates.gold : k.gold;
-    const goldLost = Math.floor(500 + Math.random() * 1500); // 500 to 2000
-
-    updates.population = Math.max(10, currentPop - popLost);
-    updates.gold = Math.max(0, currentGold - goldLost);
-
-    // Destroy 1 random building (farm, market, barracks, shrine, or tavern)
-    const bldTypes = [];
-    if (
-      (updates.bld_farms !== undefined ? updates.bld_farms : k.bld_farms) >
-      0
-    )
-      bldTypes.push("bld_farms");
-    if (
-      (updates.bld_markets !== undefined
-        ? updates.bld_markets
-        : k.bld_markets) > 0
-    )
-      bldTypes.push("bld_markets");
-    if (
-      (updates.bld_barracks !== undefined
-        ? updates.bld_barracks
-        : k.bld_barracks) > 0
-    )
-      bldTypes.push("bld_barracks");
-    if (
-      (updates.bld_shrines !== undefined
-        ? updates.bld_shrines
-        : k.bld_shrines) > 0
-    )
-      bldTypes.push("bld_shrines");
-    if (
-      (updates.bld_taverns !== undefined
-        ? updates.bld_taverns
-        : k.bld_taverns) > 0
-    )
-      bldTypes.push("bld_taverns");
-
-    let destBldStr = "";
-    if (bldTypes.length > 0) {
-      const typeToDest = bldTypes[Math.floor(Math.random() * bldTypes.length)];
-      const curType =
-        updates[typeToDest] !== undefined
-          ? updates[typeToDest]
-          : k[typeToDest] || 0;
-      updates[typeToDest] = Math.max(0, curType - 1);
-      const typeLabel = typeToDest.replace("bld_", "");
-      destBldStr = `, and 1 ${typeLabel} was destroyed`;
-    }
-
-    const oldM = updates.morale !== undefined ? updates.morale : k.morale;
-    updates.morale = 5; // Reset morale
-    events.push({
-      type: "system",
-      message: `🔥 RIOTS! Citizens revolt! ${popLost.toLocaleString()} citizens fled/died, ${goldLost.toLocaleString()} gold looted${destBldStr}. Morale has been reset to 5.`,
-    });
-  } else if (currentMoraleThreshold > 0 && currentMoraleThreshold < 25) {
-    // Critical Unrest (40% chance)
-    if (Math.random() < 0.4) {
-      const roll = Math.random();
-      if (roll < 0.33) {
-        // Crime wave
-        const currentGold =
-          updates.gold !== undefined ? updates.gold : k.gold;
-        const goldLost = Math.floor(currentGold * 0.05);
-        updates.gold = Math.max(0, currentGold - goldLost);
-        events.push({
-          type: "system",
-          message: `🔪 Critical Unrest: Crime wave spreads! ${goldLost.toLocaleString()} gold lost.`,
-        });
-      } else if (roll < 0.66) {
-        // Desertion
-        const curFighters =
-          updates.fighters !== undefined ? updates.fighters : k.fighters;
-        const curRangers =
-          updates.rangers !== undefined ? updates.rangers : k.rangers;
-        const fLost = Math.floor(curFighters * 0.03);
-        const rLost = Math.floor(curRangers * 0.03);
-        updates.fighters = Math.max(0, curFighters - fLost);
-        updates.rangers = Math.max(0, curRangers - rLost);
-        events.push({
-          type: "system",
-          message: `🏃 Critical Unrest: Desertion! ${fLost.toLocaleString()} fighters and ${rLost.toLocaleString()} rangers fled the ranks.`,
-        });
-      } else {
-        // Arson
-        const blds = [
-          "bld_farms",
-          "bld_markets",
-          "bld_barracks",
-          "bld_shrines",
-          "bld_taverns",
-          "bld_housing",
-          "bld_smithies",
-        ];
-        const availBlds = blds.filter(
-          (b) => (updates[b] !== undefined ? updates[b] : k[b] || 0) > 0,
-        );
-        if (availBlds.length > 0) {
-          const bToDest =
-            availBlds[Math.floor(Math.random() * availBlds.length)];
-          updates[bToDest] = Math.max(
-            0,
-            (updates[bToDest] !== undefined
-              ? updates[bToDest]
-              : k[bToDest] || 0) - 1,
-          );
-          events.push({
-            type: "system",
-            message: `🔥 Critical Unrest: Arson! 1 ${bToDest.replace("bld_", "")} was burned down.`,
-          });
-        } else {
-          events.push({
-            type: "system",
-            message: `🔥 Critical Unrest: Rioting citizens caused chaos in the streets.`,
-          });
-        }
-      }
-    }
-  } else if (currentMoraleThreshold >= 25 && currentMoraleThreshold < 50) {
-    // Troubled (20% chance)
-    if (Math.random() < 0.2) {
-      if (Math.random() < 0.5) {
-        // Tax evasion
-        const currentGold =
-          updates.gold !== undefined ? updates.gold : k.gold;
-        const goldLost = Math.floor(currentGold * 0.03);
-        updates.gold = Math.max(0, currentGold - goldLost);
-        events.push({
-          type: "system",
-          message: `💰 Troubled times: Widespread tax evasion. ${goldLost.toLocaleString()} gold lost.`,
-        });
-      } else {
-        // Flavor only
-        const flavors = [
-          "Citizens are complaining openly in the town square.",
-          "Merchants are grumbling about the state of the kingdom.",
-          "Graffiti mocking your leadership has appeared on the castle walls.",
-          "A minor brawl erupted in the tavern over political disagreements.",
-        ];
-        events.push({
-          type: "system",
-          message: `😒 Unrest: ${flavors[Math.floor(Math.random() * flavors.length)]}`,
-        });
-      }
-    }
   }
 
   // ── 7. Auto-research — use per-discipline allocation ──────────────────────────
@@ -3120,22 +2756,20 @@ function processTurn(k, db = null) {
       });
     }
   }
-  // Human: level 5+ clerics restore 1 morale per turn
+  // Human: level 5+ clerics restore 1 happiness per turn
   const humanBonus = racialUnitBonus(
     { ...k, troop_levels: updates.troop_levels || k.troop_levels },
     "clerics",
   );
   if (humanBonus.auraHeal && getAvailableUnits(k, "clerics") > 0) {
-    const natCap = naturalMoraleCap(k);
     const cur =
-      updates.morale !== undefined
-        ? updates.morale
-        : k.morale !== undefined && k.morale !== null
-          ? k.morale
-          : 100;
-    const oldMorale = cur;
-    updates.morale = Math.min(natCap, cur + 1);
-    const mDelta = updates.morale - oldMorale;
+      updates.happiness !== undefined
+        ? updates.happiness
+        : k.happiness !== undefined && k.happiness !== null
+          ? k.happiness
+          : 50;
+    const oldHappiness = cur;
+    updates.happiness = Math.min(120, cur + 1);
   }
 
   // ── XP awards this turn ───────────────────────────────────────────────────────
@@ -3216,7 +2850,7 @@ function processTurn(k, db = null) {
           dire_wolf:
             "🐺 Your rangers have reached mastery — Dire Wolf expeditions now return 1 turn early.",
           human:
-            "💚 Your clerics have reached mastery — Human healing aura now restores +1 morale per turn.",
+            "💚 Your clerics have reached mastery — Human healing aura now restores +1 happiness per turn.",
         };
         if (RACIAL_MSGS[k.race])
           events.push({ type: "system", message: RACIAL_MSGS[k.race] });
@@ -4420,11 +4054,6 @@ function wmCrewRequired(race, engineerLevel) {
   return base;
 }
 
-function moraleMult(morale) {
-  if (morale < 50) return 0.8 + (morale / 50) * 0.1; // 0.80–0.90
-  if (morale < 100) return 0.9 + ((morale - 50) / 50) * 0.1; // 0.90–1.00
-  return Math.min(1.2, 1.0 + ((morale - 100) / 100) * 0.1); // 1.00–1.20 (capped at 1.20)
-}
 
 function happinessCombatMult(happiness) {
   const mult = 0.5 + (happiness / 120);
@@ -4484,13 +4113,13 @@ function resolveMilitaryAttack(
     shameEvent = `👑 ${attacker.name} has attacked the much weaker ${defender.name}. The world watches in disgust.`;
   } else if (bullyRatio >= 4) {
     bullyPenalty = 0.6;
-    bullyMsg = "⚠️ Morale suffers — this is slaughter, not war.";
+    bullyMsg = "⚠️ Happiness suffers — this is slaughter, not war.";
   } else if (bullyRatio >= 2) {
     bullyPenalty = 0.8;
     bullyMsg = "⚠️ Your troops lack motivation fighting a weaker foe.";
   }
 
-  // ── Morale multipliers ────────────────────────────────────────────────────
+  // ── Happiness multipliers ───────────────────────────────────────────────────
   const atkMoraleMult = happinessCombatMult(attacker.happiness !== undefined && attacker.happiness !== null ? attacker.happiness : 50);
   const defMoraleMult = happinessCombatMult(defender.happiness !== undefined && defender.happiness !== null ? defender.happiness : 50);
 
@@ -5153,43 +4782,43 @@ function resolveMilitaryAttack(
     }
   }
 
-  // ── Step 8: Morale changes & Discovery ───────────────────────────────────
+  // ── Step 8: Happiness changes & Discovery ─────────────────────────────────
   const victoryMargin = Math.min(2.0, Math.max(0.1, powerRatio));
-  let atkMoraleChange, defMoraleChange;
+  let atkHappinessChange, defHappinessChange;
   if (win) {
-    atkMoraleChange = Math.floor(5 + Math.min(10, victoryMargin * 5));
-    defMoraleChange = -Math.max(
+    atkHappinessChange = Math.floor(5 + Math.min(10, victoryMargin * 5));
+    defHappinessChange = -Math.max(
       5,
       Math.floor(Math.min(20, victoryMargin * 10)),
     );
-    // Bully shame — attacker loses morale too at high ratios
-    if (bullyRatio >= 8) atkMoraleChange -= 15;
-    if (bullyRatio >= 4) atkMoraleChange -= 5;
+    // Bully shame — attacker loses happiness too at high ratios
+    if (bullyRatio >= 8) atkHappinessChange -= 15;
+    if (bullyRatio >= 4) atkHappinessChange -= 5;
   } else {
-    atkMoraleChange = -Math.floor(
+    atkHappinessChange = -Math.floor(
       5 + Math.min(15, (1 / Math.max(0.1, powerRatio)) * 8),
     );
-    defMoraleChange = Math.floor(
+    defHappinessChange = Math.floor(
       5 + Math.min(10, (1 / Math.max(0.1, powerRatio)) * 5),
     );
   }
-  const MORALE_FLOOR = 0;
-  const newAtkMorale = Math.max(
-    MORALE_FLOOR,
+  const HAPPINESS_FLOOR = 0;
+  const newAtkHappiness = Math.max(
+    HAPPINESS_FLOOR,
     Math.min(
-      200,
-      (attacker.morale !== undefined && attacker.morale !== null
-        ? attacker.morale
-        : 100) + atkMoraleChange,
+      120,
+      (attacker.happiness !== undefined && attacker.happiness !== null
+        ? attacker.happiness
+        : 50) + atkHappinessChange,
     ),
   );
-  const newDefMorale = Math.max(
-    MORALE_FLOOR,
+  const newDefHappiness = Math.max(
+    HAPPINESS_FLOOR,
     Math.min(
-      200,
-      (defender.morale !== undefined && defender.morale !== null
-        ? defender.morale
-        : 100) + defMoraleChange,
+      120,
+      (defender.happiness !== undefined && defender.happiness !== null
+        ? defender.happiness
+        : 50) + defHappinessChange,
     ),
   );
 
@@ -5273,7 +4902,7 @@ function resolveMilitaryAttack(
     engineers: Math.max(0, (attacker.engineers || 0) - atkEngineersLost),
     war_machines: Math.max(0, (attacker.war_machines || 0) - atkWmLost),
     land: attacker.land + landTransferred,
-    morale: newAtkMorale,
+    happiness: newAtkHappiness,
     weapons_stockpile: Math.max(
       0,
       (attacker.weapons_stockpile || 0) -
@@ -5290,7 +4919,7 @@ function resolveMilitaryAttack(
     engineers: Math.max(0, (defender.engineers || 0) - defEngineersLost),
     war_machines: Math.max(0, (defender.war_machines || 0) - defWmLost),
     land: Math.max(0, defender.land - landTransferred),
-    morale: newDefMorale,
+    happiness: newDefHappiness,
   });
 
   // XP
@@ -5339,8 +4968,8 @@ function resolveMilitaryAttack(
     rangerKills,
     flankKills,
     thiefSabotage,
-    atkMoraleChange,
-    defMoraleChange,
+    atkHappinessChange,
+    defHappinessChange,
     bullyMsg,
     shameEvent,
     steps,
@@ -5666,13 +5295,12 @@ function castSpell(caster, target, spellId, obscure) {
           ? `${cleared} active curse${cleared > 1 ? "s" : ""} dispelled`
           : "no active curses to dispel";
     } else if (spellId === "bless") {
-      const natCap = naturalMoraleCap(target);
-      const moraleGain = Math.floor(natCap * 0.1 * magicRatio);
-      targetUpdates.morale = Math.min(
-        natCap * 2,
-        (target.morale !== undefined && target.morale !== null
-          ? target.morale
-          : 100) + moraleGain,
+      const happinessGain = Math.floor(20 * magicRatio);
+      targetUpdates.happiness = Math.min(
+        120,
+        (target.happiness !== undefined && target.happiness !== null
+          ? target.happiness
+          : 50) + happinessGain,
       );
       // Apply bless buff for 5 turns
       let tEffects = {};
@@ -5681,10 +5309,10 @@ function castSpell(caster, target, spellId, obscure) {
       } catch {}
       tEffects.bless = {
         turns_left: def.duration || 5,
-        morale_bonus: moraleGain,
+        happiness_bonus: happinessGain,
       };
       targetUpdates.active_effects = JSON.stringify(tEffects);
-      damageDesc = `+${moraleGain} morale and pop growth boosted for ${def.duration || 5} turns`;
+      damageDesc = `+${happinessGain} happiness and pop growth boosted for ${def.duration || 5} turns`;
     } else if (spellId === "shield") {
       let tEffects = {};
       try {
@@ -7905,27 +7533,23 @@ function applyHeroTurnBonuses(hero, k, updates, events) {
         message: `🧙 Archmage Mana Infusion: +${bonus.toLocaleString()} mana.`,
       });
   } else if (hero.class === "paladin") {
-    // Protective Aura: Health regeneration or morale boost
-    const currentMorale =
-      updates.morale !== undefined
-        ? updates.morale
-        : k.morale !== undefined && k.morale !== null
-          ? k.morale
-          : 100;
-    const oldMorale = currentMorale;
-    updates.morale = Math.min(100, currentMorale + 1);
-    const mDelta = updates.morale - oldMorale;
+    // Protective Aura: Health regeneration or happiness boost
+    const currentHappiness =
+      updates.happiness !== undefined
+        ? updates.happiness
+        : k.happiness !== undefined && k.happiness !== null
+          ? k.happiness
+          : 50;
+    updates.happiness = Math.min(120, currentHappiness + 1);
   } else if (hero.class === "warlord") {
-    // Warlord: Morale boost
-    const currentMorale =
-      updates.morale !== undefined
-        ? updates.morale
-        : k.morale !== undefined && k.morale !== null
-          ? k.morale
-          : 100;
-    const oldMorale = currentMorale;
-    updates.morale = Math.min(100, currentMorale + 2);
-    const mDelta = updates.morale - oldMorale;
+    // Warlord: Happiness boost
+    const currentHappiness =
+      updates.happiness !== undefined
+        ? updates.happiness
+        : k.happiness !== undefined && k.happiness !== null
+          ? k.happiness
+          : 50;
+    updates.happiness = Math.min(120, currentHappiness + 2);
   } else if (hero.class === "forge_lord") {
     // Forge Lord: Gold income
     const bonus = Math.floor(hero.level * 300);
@@ -7937,19 +7561,17 @@ function applyHeroTurnBonuses(hero, k, updates, events) {
         message: `🛠️ Forge Lord Industrialism: +${bonus.toLocaleString()} gold.`,
       });
   } else if (hero.class === "alpha") {
-    // Alpha: Food and morale
+    // Alpha: Food and happiness
     const foodBonus = Math.floor(hero.level * 500);
     updates.food =
       (updates.food !== undefined ? updates.food : k.food) + foodBonus;
-    const currentMorale =
-      updates.morale !== undefined
-        ? updates.morale
-        : k.morale !== undefined && k.morale !== null
-          ? k.morale
-          : 100;
-    const oldMorale = currentMorale;
-    updates.morale = Math.min(100, currentMorale + 1);
-    const mDelta = updates.morale - oldMorale;
+    const currentHappiness =
+      updates.happiness !== undefined
+        ? updates.happiness
+        : k.happiness !== undefined && k.happiness !== null
+          ? k.happiness
+          : 50;
+    updates.happiness = Math.min(120, currentHappiness + 1);
     if (events) {
       events.push({
         type: "system",
@@ -8416,7 +8038,6 @@ module.exports = {
   effectiveTroopLevel,
   WM_CREW_REQUIRED,
   wmCrewRequired,
-  moraleMult,
   happinessCombatMult,
   calculateHappiness,
   getHappinessRecoveryRate,
