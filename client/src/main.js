@@ -36,33 +36,57 @@ console.log("[react] main.js execution started at", new Date().toISOString());
 export const gameState = {};
 window.gameState = gameState;
 
-// Bridge vanilla JS state updates to React game state manager
-export function syncStateToGameStateManager() {
-  if (window.state && gameStateManager) {
-    const metricsToSync = {
-      gold: window.state.gold,
-      mana: window.state.mana,
-      population: window.state.population,
-      happiness: window.state.happiness,
-      food: window.state.food,
-      land: window.state.land,
-      turn: window.state.turn,
-    };
-    gameStateManager.updateMetrics(metricsToSync);
+// Initialize game state manager with current state
+export function initGameStateManager() {
+  if (window.state) {
+    gameStateManager.updateMetrics({
+      gold: window.state.gold || 0,
+      mana: window.state.mana || 0,
+      population: window.state.population || 0,
+      happiness: window.state.happiness || 50,
+      food: window.state.food || 0,
+      land: window.state.land || 0,
+      turn: window.state.turn || 0,
+      tax: window.state.tax || 42,
+    });
   }
 }
 
-// Hook into existing applyServerUpdates to sync metrics
-const originalApplyServerUpdates = window.applyServerUpdates;
+// REPLACE vanilla JS applyServerUpdates with gameStateManager-first approach
+// This becomes the SINGLE source of truth for metrics
 window.applyServerUpdates = function(updates) {
-  // Call original function
-  if (originalApplyServerUpdates) {
-    originalApplyServerUpdates(updates);
+  if (!updates) return;
+
+  // Update gameStateManager first (source of truth)
+  const metricsUpdate = {};
+  if (updates.gold !== undefined) metricsUpdate.gold = updates.gold;
+  if (updates.mana !== undefined) metricsUpdate.mana = updates.mana;
+  if (updates.population !== undefined) metricsUpdate.population = updates.population;
+  if (updates.happiness !== undefined) metricsUpdate.happiness = updates.happiness;
+  if (updates.food !== undefined) metricsUpdate.food = updates.food;
+  if (updates.land !== undefined) metricsUpdate.land = updates.land;
+  if (updates.turn !== undefined) metricsUpdate.turn = updates.turn;
+  if (updates.tax !== undefined) metricsUpdate.tax = updates.tax;
+
+  if (Object.keys(metricsUpdate).length > 0) {
+    gameStateManager.updateMetrics(metricsUpdate);
   }
-  // Sync to game state manager
-  setTimeout(() => {
-    syncStateToGameStateManager();
-  }, 0);
+
+  // Also update window.state for backwards compatibility with vanilla JS code
+  if (window.state) {
+    if (updates.score !== undefined) window.state.score = updates.score;
+    if (updates.population !== undefined) window.state.pop = updates.population;
+    if (updates.gold !== undefined) window.state.gold = updates.gold;
+    if (updates.mana !== undefined) window.state.mana = updates.mana;
+    if (updates.land !== undefined) window.state.land = updates.land;
+    if (updates.happiness !== undefined) window.state.happiness = updates.happiness;
+    if (updates.food !== undefined) window.state.food = updates.food;
+    if (updates.tax !== undefined) window.state.tax = updates.tax;
+    if (updates.name !== undefined) window.state.name = updates.name;
+    if (updates.turn !== undefined) window.state.turn = updates.turn;
+    if (updates.turns_stored !== undefined) window.state.turns_stored = updates.turns_stored;
+    // ... rest of state updates handled by vanilla JS
+  }
 };
 
 const reactHooks = new Map();
@@ -440,7 +464,11 @@ window.takeTurn = async () => {
 
 // Wait for DOM to be ready
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", mountReactApps);
+  document.addEventListener("DOMContentLoaded", () => {
+    initGameStateManager();
+    mountReactApps();
+  });
 } else {
+  initGameStateManager();
   mountReactApps();
 }
