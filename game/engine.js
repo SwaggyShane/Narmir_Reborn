@@ -272,17 +272,7 @@ function foodBalance(k) {
 }
 
 function naturalMoraleCap(k) {
-  let cap = k.res_entertainment || 100;
-  // Apply dynamic housing passive bonuses on morale / happiness (e.g., Celestial Realm, Ancient Elven Wood)
-  const housingMoraleMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'morale');
-  const housingHappinessMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'happiness');
-  cap = Math.floor(cap * housingMoraleMult * housingHappinessMult);
-
-  // Apply housing stability modifier cap (e.g., Void Essence, Cursed Bloodstone reduce max morale)
-  const housingStabilityMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'stability');
-  cap = Math.floor(cap * housingStabilityMult);
-
-  return cap;
+  return k.res_entertainment || 100;
 }
 
 function getHappinessRecoveryRate(k) {
