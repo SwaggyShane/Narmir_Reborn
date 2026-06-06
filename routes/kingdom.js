@@ -2866,6 +2866,8 @@ module.exports = function (db) {
     if (r < 1) return res.status(400).json({ error: "Send at least 1 ranger" });
     if (type === "dungeon" && f < 1)
       return res.status(400).json({ error: "Dungeon raids require fighters" });
+    if (type === "mountain" && f > 0)
+      return res.status(400).json({ error: "Mountain expeditions are rangers only — leave your fighters behind." });
 
     try {
       await db.run("BEGIN TRANSACTION");
@@ -2934,8 +2936,13 @@ module.exports = function (db) {
 
       await db.run("COMMIT");
 
-      const label = { scout: "Scout", deep: "Deep", dungeon: "Dungeon" }[type];
+      const label = { scout: "Scout", deep: "Deep", dungeon: "Dungeon", mountain: "Mountain" }[type];
       const troops = `${r.toLocaleString()} rangers${f > 0 ? ", " + f.toLocaleString() + " fighters" : ""}`;
+
+      let message = `🧭 ${label} expedition launched — ${troops} deployed for ${EXP_TURNS[type]} turns. ${foodNeeded.toLocaleString()} food taken for the journey.`;
+      if (type === "mountain") {
+        message = `⛰️ MOUNTAIN EXPEDITION LAUNCHED! ${r.toLocaleString()} rangers venture into the peaks for 100 turns. Avalanches, extreme attrition, and danger await. Go big or go home.`;
+      }
 
       res.json({
         ok: true,
@@ -2943,7 +2950,7 @@ module.exports = function (db) {
         turns_stored: k.turns_stored,
         updates: updates,
         events: [],
-        message: `🧭 ${label} expedition launched — ${troops} deployed for ${EXP_TURNS[type]} turns. ${foodNeeded.toLocaleString()} food taken for the journey.`,
+        message: message,
       });
     } catch (err) {
       try {

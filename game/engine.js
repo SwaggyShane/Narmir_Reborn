@@ -1058,7 +1058,7 @@ function processResourceYield(k, events) {
   let woodGained = 0;
   let stoneGained = 0;
   let ironGained = 0;
-  let foresterJunkGenerated = false;
+  let junkGenerated = {};
 
   for (const [bKey, cfg] of Object.entries(RESOURCE_BUILDING_CONFIG)) {
     const col = `bld_${bKey}`;
@@ -1077,38 +1077,60 @@ function processResourceYield(k, events) {
     const fragmentMult = fragmentBonusManager.getBonusMultiplier(k, bKey, 'production');
     baseYield *= fragmentMult;
 
-    // Random events on wood production only
-    if (cfg.type === 'wood') {
-      const rareFindMult = raceBonus(k, 'rare_find');
-      const roll = Math.random();
+    // Random events on all resource production
+    const rareFindMult = raceBonus(k, 'rare_find');
+    const roll = Math.random();
 
-      if (roll < 0.0025 * rareFindMult) {
-        // 0.25% rare wood item
-        const rareItems = RARE_RESOURCE_ITEMS.wood;
+    if (roll < 0.0025 * rareFindMult) {
+      // 0.25% rare resource item
+      const rareItems = RARE_RESOURCE_ITEMS[cfg.type];
+      if (rareItems && rareItems.length > 0) {
         const chosen = rareItems[Math.floor(Math.random() * rareItems.length)];
         const existing = items.find((i) => i.id === chosen.id);
         if (!existing || (existing.qty || 0) < 3) {
           addItemToInventory(items, chosen.id, chosen.name, 1);
           itemsChanged = true;
-          events.push({ type: 'system', message: `🌲 Your foresters discovered a rare item: ${chosen.name}!` });
+          const typeIcon = cfg.type === 'wood' ? '🌲' : cfg.type === 'stone' ? '🪨' : '🔗';
+          events.push({ type: 'system', message: `${typeIcon} Your workers discovered a rare item: ${chosen.name}!` });
         }
-      } else if (roll < 0.01 * rareFindMult) {
-        // 1% earth fragment
-        const earthFrag = items.find((i) => i.id === 'earth_fragment');
-        if (!earthFrag || (earthFrag.qty || 0) === 0) {
-          addItemToInventory(items, 'earth_fragment', 'Earth Fragment', 1);
+      }
+    } else if (roll < 0.01 * rareFindMult) {
+      // 1% elemental fragment (earth for wood, water for stone, fire for iron)
+      let fragmentId, fragmentName, discoveryMsg;
+      if (cfg.type === 'wood') {
+        fragmentId = 'earth_fragment';
+        fragmentName = 'Earth Fragment';
+        discoveryMsg = '🌍 Your foresters unearthed an Earth Fragment while logging!';
+      } else if (cfg.type === 'stone') {
+        fragmentId = 'water_fragment';
+        fragmentName = 'Water Fragment';
+        discoveryMsg = '💧 Your miners discovered a Water Fragment in the stone!';
+      } else if (cfg.type === 'iron') {
+        fragmentId = 'fire_fragment';
+        fragmentName = 'Fire Fragment';
+        discoveryMsg = '🔥 Your smiths found a Fire Fragment hidden in the ore!';
+      }
+      if (fragmentId) {
+        const frag = items.find((i) => i.id === fragmentId);
+        if (!frag || (frag.qty || 0) === 0) {
+          addItemToInventory(items, fragmentId, fragmentName, 1);
           itemsChanged = true;
-          events.push({ type: 'system', message: `🌍 Your foresters unearthed an Earth Fragment while logging!` });
+          events.push({ type: 'system', message: discoveryMsg });
         }
-      } else if (roll < 0.06) {
-        // 5% double yield (but only if not already hitting a rarer event)
-        baseYield *= 2;
-        events.push({ type: 'system', message: `🌲 An unusually productive logging session doubled your wood yield!` });
-      } else if (roll < 0.26 && !foresterJunkGenerated) {
-        // 20% worthless find (humorous) - only one per turn
+      }
+    } else if (roll < 0.06) {
+      // 5% double yield (but only if not already hitting a rarer event)
+      baseYield *= 2;
+      const typeMsg = cfg.type === 'wood' ? 'logging' : cfg.type === 'stone' ? 'mining' : 'smelting';
+      const typeIcon = cfg.type === 'wood' ? '🌲' : cfg.type === 'stone' ? '🪨' : '🔗';
+      events.push({ type: 'system', message: `${typeIcon} An unusually productive ${typeMsg} session doubled your yield!` });
+    } else if (roll < 0.26) {
+      // 20% worthless find (humorous) - one per resource type per turn
+      if (!junkGenerated[cfg.type]) {
         const msg = RESOURCE_JUNK_MESSAGES[Math.floor(Math.random() * RESOURCE_JUNK_MESSAGES.length)];
-        events.push({ type: 'system', message: `🌲 Foresters report: ${msg}` });
-        foresterJunkGenerated = true;
+        const typeIcon = cfg.type === 'wood' ? '🌲' : cfg.type === 'stone' ? '🪨' : '🔗';
+        events.push({ type: 'system', message: `${typeIcon} Workers report: ${msg}` });
+        junkGenerated[cfg.type] = true;
       }
     }
 
@@ -6764,10 +6786,166 @@ function expeditionRewards(type, rangers, fighters, k) {
         updates._find_world_fragment = true;
       }
     }
+  } else if (type === "mountain") {
+    rewards.push({
+      text: `+${goldBase.toLocaleString()} gold from mountain caches`,
+    });
+    updates.gold = k.gold + goldBase;
+
+    // Tiered base attrition: 1-10 (10%), 11-20 (9%), ... 91-100 (1%)
+    const getTierAttrition = (level) => {
+      const tier = Math.ceil(level / 10);
+      return Math.max(1, 11 - tier);
+    };
+
+    // Tiered avalanche save chance: tier * 10% (tier 1=10%, tier 10=100%)
+    const getAvalancheSaveChance = (level) => {
+      const tier = Math.ceil(level / 10);
+      return tier * 0.1;
+    };
+
+    // Tiered avalanche loss if save fails: starts at 25% (tier 1), down to 1% (tier 10)
+    const getAvalancheLoss = (level) => {
+      const tier = Math.ceil(level / 10);
+      return Math.max(1, 26 - tier * 2.5);
+    };
+
+    // Apply base attrition to rangers
+    const baseAttritionPct = getTierAttrition(Math.max(1, Math.floor(unitLevelMult(k, "rangers") * 100)));
+    const baseAttritionLoss = Math.floor((rangers * baseAttritionPct) / 100);
+    const baseReturned = rangers - baseAttritionLoss;
+
+    if (baseAttritionLoss > 0) {
+      rewards.push({
+        text: `${baseAttritionLoss} ranger${baseAttritionLoss > 1 ? "s" : ""} lost to mountain hazards`,
+      });
+    }
+
+    updates._rangers_returned = baseReturned;
+
+    // Mountain-specific resource yields (high because of 100 turns + no land)
+    const rollMountain = Math.random() * 100;
+    let mtWood = 0, mtStone = 0, mtIron = 0;
+    if (rollMountain < 0.5) {
+      mtWood = 50;
+      mtStone = 50;
+      mtIron = 30;
+    } else if (rollMountain < 5.5) {
+      mtWood = 15;
+      mtStone = 15;
+      mtIron = 10;
+    } else if (rollMountain < 30.5) {
+      mtWood = 5;
+      mtStone = 5;
+      mtIron = 3;
+    } else if (rollMountain < 80.5) {
+      mtWood = 2;
+      mtStone = 2;
+      mtIron = 1;
+    }
+
+    if (mtWood > 0) {
+      updates.wood = (updates.wood || k.wood || 0) + mtWood;
+      rewards.push({ text: `🌲 +${mtWood} wood harvested from mountain slopes` });
+    }
+    if (mtStone > 0) {
+      updates.stone = (updates.stone || k.stone || 0) + mtStone;
+      rewards.push({ text: `🪨 +${mtStone} stone quarried from peaks` });
+    }
+    if (mtIron > 0) {
+      updates.iron = (updates.iron || k.iron || 0) + mtIron;
+      rewards.push({ text: `🔗 +${mtIron} iron mined from mountain veins` });
+    }
+
+    // High mana from elemental peaks
+    if (roll(0.6)) {
+      const mtMana = rand(
+        Math.floor(rangers * 0.3 * exploreBonus),
+        Math.floor(rangers * 1.5 * exploreBonus),
+      );
+      rewards.push({ text: `+${mtMana} mana from elemental peaks` });
+      updates.mana = (updates.mana !== undefined ? updates.mana : (k.mana || 0)) + mtMana;
+    }
+
+    // Avalanche events: 2% per turn over 100 turns (expect ~2 avalanches)
+    const avgLevel = Math.max(1, Math.floor(unitLevelMult(k, "rangers") * 100));
+    const saveChance = getAvalancheSaveChance(avgLevel);
+    const avalancheLossRate = getAvalancheLoss(avgLevel) / 100;
+
+    let currentRangers = baseReturned;
+    let totalAvalancheLoss = 0;
+    let survivedAvalanches = 0;
+
+    for (let turn = 1; turn <= 100; turn++) {
+      if (roll(0.02)) {
+        if (!roll(saveChance)) {
+          const loss = Math.floor(currentRangers * avalancheLossRate);
+          if (loss > 0) {
+            currentRangers = Math.max(0, currentRangers - loss);
+            totalAvalancheLoss += loss;
+          }
+        } else {
+          survivedAvalanches++;
+        }
+      }
+    }
+
+    if (totalAvalancheLoss > 0 || survivedAvalanches > 0) {
+      updates._rangers_returned = currentRangers;
+
+      if (totalAvalancheLoss > 0) {
+        rewards.push({
+          text: `❄️ AVALANCHE! ${totalAvalancheLoss} ranger${totalAvalancheLoss > 1 ? "s" : ""} buried under snow`,
+        });
+        events.push({
+          type: "system",
+          message: `⛰️ Your mountain expedition was caught in devastating avalanches. ${totalAvalancheLoss.toLocaleString()} rangers perished.`,
+        });
+      }
+
+      if (survivedAvalanches > 0) {
+        rewards.push({
+          text: `❄️ ${survivedAvalanches} avalanche${survivedAvalanches > 1 ? "s" : ""} swept the peaks, but your rangers took shelter and survived`,
+        });
+
+        // Air Fragment discovery during wind storm (25% chance per survived avalanche series)
+        if (roll(0.25)) {
+          let inventory = safeJsonParse(updates.items || k.items, [], "mountainExpedition:airFragment");
+          if (!Array.isArray(inventory)) inventory = [];
+          const airFrag = inventory.find((i) => i.id === 'air_fragment');
+          if (!airFrag || (airFrag.qty || 0) === 0) {
+            addItemToInventory(inventory, 'air_fragment', 'Air Fragment', 1);
+            updates.items = JSON.stringify(inventory);
+            rewards.push({
+              text: `🌬️ During the storm, your rangers found an Air Fragment dancing on the wind`,
+            });
+          }
+        }
+      }
+    }
+
+    // Rare mountain discoveries
+    if (roll(0.08)) {
+      const bonus = rand(
+        Math.floor(rangers * 0.05 * exploreBonus),
+        Math.floor(rangers * 0.2 * exploreBonus),
+      );
+      rewards.push({
+        text: `Legends of a lost civilization found — ${bonus} additional research boost`,
+      });
+      updates.res_spellbook = (updates.res_spellbook !== undefined ? updates.res_spellbook : (k.res_spellbook || 0)) + bonus;
+    }
+
+    if (roll(0.04)) {
+      const herboots = junkPrize(k, updates);
+      rewards.push({
+        text: `Your rangers discovered ${herboots} in a hidden mountain cave`,
+      });
+    }
   }
 
-  // ── Ultra-rare prizes (deep: 0.5%, dungeon success: 1%) ──────────────────────
-  const ultraChance = type === "dungeon" ? 0.01 : type === "deep" ? 0.005 : 0;
+  // ── Ultra-rare prizes (deep: 0.5%, dungeon success: 1%, mountain: 1%) ──────
+  const ultraChance = type === "dungeon" ? 0.01 : type === "deep" ? 0.005 : type === "mountain" ? 0.01 : 0;
   if (ultraChance > 0 && roll(ultraChance)) {
     const prize =
       ULTRA_RARE_PRIZES[Math.floor(Math.random() * ULTRA_RARE_PRIZES.length)];
