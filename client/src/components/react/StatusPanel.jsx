@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
+import HappinessWidget from './HappinessWidget';
+import '../../css/happiness.css';
 
 const StatusPanel = () => {
+  const openHappinessTab = () => {
+    const fn = window.switchTabMobile || window.switchTab;
+    if (fn) fn('happiness');
+  };
+
   const lockTax = (elementId) => {
     if (window.lockTax) window.lockTax(elementId);
   };
@@ -134,6 +141,7 @@ const StatusPanel = () => {
           </div>
         </div>
       </div>
+      <HappinessWidget onOpenTab={openHappinessTab} />
       <div className="card" id="status-tax-card" style={{ marginTop: 0, marginBottom: '16px', display: 'none' }}>
         <div className="card-title">Tax rate</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '10px' }}>
