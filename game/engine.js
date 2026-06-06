@@ -1633,6 +1633,15 @@ function processFarmAttunements(k, events) {
   const fragmentName = farmAttune.fragment;
   let foodChange = 0;
 
+  // Calculate max food storage once for cap enforcement on positive food changes
+  const _granaryUpgrades = safeJsonParse(k.granary_upgrades, {}, 'farmAttune:granary_upgrades');
+  const _granaryPer = _granaryUpgrades.silos ? 150000 : 100000;
+  const _storageRaceMult = raceBonus(k, 'food_storage');
+  const _granaryCapMult = fragmentBonusManager.getBonusMultiplier(k, 'granaries', 'capacity');
+  const maxStore = Math.floor(
+    (Math.floor(10000 * _storageRaceMult) + (k.bld_granaries || 0) * _granaryPer) * _granaryCapMult
+  );
+
   // Stability passive → small happiness gain each turn (food security = happier citizens)
   const stabilityBonus = fragmentBonusManager.getBonusMultiplier(k, 'farms', 'stability') - 1.0;
   if (stabilityBonus > 0) {
@@ -1691,13 +1700,6 @@ function processFarmAttunements(k, events) {
 
     case 'Tears of the World Tree': {
       // Eternal Harvest: food self-replicates +2% per turn when stores exceed 75% of max capacity
-      const granaryUpgrades = safeJsonParse(k.granary_upgrades, {}, 'farmAttune:granary_upgrades');
-      const granaryPer = granaryUpgrades.silos ? 150000 : 100000;
-      const storageRaceMult = raceBonus(k, 'food_storage');
-      const granaryCapMult = fragmentBonusManager.getBonusMultiplier(k, 'granaries', 'capacity');
-      const maxStore = Math.floor(
-        (Math.floor(10000 * storageRaceMult) + (k.bld_granaries || 0) * granaryPer) * granaryCapMult
-      );
       const currentFood = updates.food !== undefined ? updates.food : (k.food || 0);
       if (maxStore > 0 && currentFood > maxStore * 0.75) {
         const bonus = Math.floor(currentFood * 0.02);
@@ -1741,7 +1743,11 @@ function processFarmAttunements(k, events) {
 
   if (foodChange !== 0) {
     const currentFood = updates.food !== undefined ? updates.food : (k.food || 0);
-    updates.food = Math.max(0, currentFood + foodChange);
+    let newFood = currentFood + foodChange;
+    if (foodChange > 0 && maxStore > 0) {
+      newFood = Math.min(maxStore, newFood);
+    }
+    updates.food = Math.max(0, newFood);
   }
 
   return updates;
