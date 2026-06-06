@@ -6,6 +6,33 @@ const REFRESH_INTERVAL_MS = 2 * 60 * 1000;
 const ExplorationPanel = () => {
   const [inventory, setInventory] = useState({});
   const [inventoryOpen, setInventoryOpen] = useState(false);
+  const [mountainRangers, setMountainRangers] = useState(0);
+
+  const handleMountainRangersChange = useCallback(() => {
+    const input = document.getElementById('exp-mountain-rangers');
+    if (!input) return;
+    setMountainRangers(Math.max(0, parseInt(input.value) || 0));
+  }, []);
+
+  useEffect(() => {
+    const input = document.getElementById('exp-mountain-rangers');
+    if (!input) return;
+
+    const handleChange = () => handleMountainRangersChange();
+    input.onchange = handleChange;
+    input.oninput = handleChange;
+
+    // Calculate initial value
+    handleMountainRangersChange();
+
+    return () => {
+      input.onchange = null;
+      input.oninput = null;
+    };
+  }, [handleMountainRangersChange]);
+
+  // Derive food cost from mountainRangers (no separate state needed)
+  const mountainFoodCost = Math.ceil(mountainRangers * 0.5 * 100 * 0.75);
 
   const fetchInventory = useCallback(async () => {
     try {
@@ -319,6 +346,19 @@ const ExplorationPanel = () => {
               <button className="base-btn" style={{ fontSize: '10px', padding: '3px 6px' }} onClick={() => setMaxValue('exp-mountain-rangers')}>Max</button>
             </div>
           </div>
+          {mountainFoodCost > 0 && (
+            <div style={{
+              padding: '8px',
+              marginBottom: '10px',
+              background: 'rgba(139, 92, 246, 0.1)',
+              borderLeft: '3px solid #8b5cf6',
+              borderRadius: '2px',
+              fontSize: '11px',
+              color: 'var(--text2)'
+            }}>
+              🍖 <strong>Food required:</strong> {mountainFoodCost.toLocaleString()} (100 turns at {Math.round(mountainRangers * 0.5)}/turn)
+            </div>
+          )}
           <button className="base-btn variant-blue w-full" id="btn-exp-mountain" style={{ background: '#6b9bd1', width: '100%' }} onClick={() => launchExpedition('mountain')}>
             Accept the risk
           </button>
