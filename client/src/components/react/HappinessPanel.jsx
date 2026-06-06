@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import HappinessGraph from './HappinessGraph';
-import '../css/happiness.css';
+import '../../css/happiness.css';
 
 const HappinessPanel = () => {
   const [happiness, setHappiness] = useState(50);
