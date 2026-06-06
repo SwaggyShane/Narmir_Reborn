@@ -2057,6 +2057,11 @@ const config = {
     vault_of_the_ancients: { name: "Vault of the Ancients", desc: "A sealed vault containing untold riches beyond imagining.", rarity: "ultra_rare" },
     lost_legion_banner: { name: "Banner of the Lost Legion", desc: "Ten thousand warriors emerge from the mist and pledge eternal service.", rarity: "ultra_rare" },
     seed_of_the_world_tree: { name: "Seed of the World Tree", desc: "Your lands bloom with ancient fertility.", rarity: "ultra_rare" },
+    iceflow_crown: { name: "Iceflow Crown", desc: "A regal crown forged from eternal winter, its crystalline structure humming with ancient cold magic.", rarity: "ultra_rare" },
+    snowpeak_chalice: { name: "Snowpeak Chalice", desc: "A sacred vessel carved from a single perfect glacier crystal, said to have contained the first snow of creation.", rarity: "ultra_rare" },
+    frostbind_amulet: { name: "Frostbind Amulet", desc: "An ornate medallion radiating perpetual numbing cold, worn by the mountain's guardian spirits.", rarity: "ultra_rare" },
+    avalanche_heart: { name: "Avalanche Heart", desc: "The crystallized essence of a thousand avalanches, pulsing with the raw power of cascading mountains.", rarity: "ultra_rare" },
+    stormcaller_gem: { name: "Stormcaller's Gem", desc: "A radiant gemstone that crackles with captured lightning, said to call down thunder upon command.", rarity: "ultra_rare" },
   },
 
   JUNK_PRIZES: [
@@ -2165,40 +2170,44 @@ const config = {
         updates.population = (k.population || 0) + 50000;
       },
     },
-    // Mountain Expedition Ultra-Rares
     {
       id: "iceflow_crown",
-      text: "👑 The Iceflow Crown — a regal crown forged from eternal winter, its crystalline structure humming with ancient cold magic",
+      text: "👑 A regal crown forged from eternal winter, its crystalline structure humming with ancient cold magic. Legends claim it grants mastery over frozen realms.",
       effect: (k, updates) => {
-        // No immediate effect; collectible artifact
+        updates.res_defense_magic = (k.res_defense_magic || 0) + 50;
+        updates.mana = (k.mana || 0) + 8000;
       },
     },
     {
       id: "snowpeak_chalice",
-      text: "🏆 The Snowpeak Chalice — a sacred vessel carved from a single perfect glacier crystal, its surface reflecting light in impossible patterns",
+      text: "🏆 A sacred vessel carved from a single perfect glacier crystal, said to have contained the first snow of creation. Its surface reflects light in impossible patterns.",
       effect: (k, updates) => {
-        // No immediate effect; collectible artifact
+        updates.res_spellbook = (k.res_spellbook || 0) + 75;
+        updates.mana = (k.mana || 0) + 10000;
       },
     },
     {
       id: "frostbind_amulet",
-      text: "✨ The Frostbind Amulet — an ornate medallion radiating perpetual numbing cold, worn by the mountain's guardian spirits",
+      text: "✨ An ornate medallion radiating perpetual numbing cold. Worn by the mountain's guardian spirits to ward off those unworthy of passage.",
       effect: (k, updates) => {
-        // No immediate effect; collectible artifact
+        updates.res_defense_magic = (k.res_defense_magic || 0) + 60;
+        updates.gold = (k.gold || 0) + 100000;
       },
     },
     {
       id: "avalanche_heart",
-      text: "❄️ The Avalanche Heart — the crystallized essence of a thousand avalanches, pulsing with the raw power of cascading mountains",
+      text: "❄️ The crystallized essence of a thousand avalanches, pulsing with the raw power of cascading mountains. Those who possess it claim to hear the thunder of falling snow.",
       effect: (k, updates) => {
-        // No immediate effect; collectible artifact
+        updates.res_spellbook = (k.res_spellbook || 0) + 100;
+        updates.mana = (k.mana || 0) + 15000;
       },
     },
     {
       id: "stormcaller_gem",
-      text: "⚡ The Stormcaller's Gem — a radiant gemstone that crackles with captured lightning, said to call down thunder upon command",
+      text: "⚡ A radiant gemstone that crackles with captured lightning, said to call down thunder upon command.",
       effect: (k, updates) => {
-        // No immediate effect; collectible artifact
+        updates.res_attack_magic = (k.res_attack_magic || 0) + 75;
+        updates.mana = (k.mana || 0) + 12000;
       },
     },
   ],
