@@ -5078,7 +5078,7 @@
 
       var BUILDING_BLURBS = {
         farms: [
-          "The green hills are now covered in crops of wheat and rye, ready for harvest, promising full bellies and high morale.",
+          "The green hills are now covered in crops of wheat and rye, ready for harvest, promising full bellies and high happiness.",
           "Golden fields of grain stretch across the valleys, secured with sturdy irrigation ditches.",
           "Acres of fertile soil have been tilled and planted, adding stable nourishment for your citizens."
         ],
@@ -5136,7 +5136,7 @@
         ],
         shrines: [
           "Spiritual altars are lit with holy incense, bringing a sense of divine favor and peace to all who visit.",
-          "A serene sanctuary is finished, offering a quiet place of prayer and morale boost for your people."
+          "A serene sanctuary is finished, offering a quiet place of prayer and happiness boost for your people."
         ],
         mausoleums: [
           "Chilled stone crypts stand silent under dark gothic arches, drawing necromantic focus for your dark magic.",
@@ -5152,7 +5152,7 @@
         ],
         taverns: [
           "Warm lanterns glow and frothy mugs are raised as the local tavern opens its doors to happy patrons.",
-          "A lively public house are ready, offering entertainment and standard warmth to raise the morale of the realm."
+          "A lively public house are ready, offering entertainment and standard warmth to raise the happiness of the realm."
         ],
         war_machines: [
           "A high-capacity assembly yard is complete, prepared to assemble ballistas and mighty siege weapon chassis.",
@@ -8974,7 +8974,7 @@
             label: "Blessed",
             color: "var(--gold)",
             icon: "✨",
-            desc: "Morale & pop boosted",
+            desc: "Happiness & pop boosted",
           },
         };
 
@@ -11836,7 +11836,7 @@
           costWood: 0,
           costStone: 12,
           costIron: 0,
-          desc: "Clerics provide +20% bonus to kingdom morale.",
+          desc: "Clerics provide +20% bonus to kingdom happiness.",
           requires: null,
         },
         healing_aura: {
@@ -14436,7 +14436,7 @@
               "var(--text2)",
             ) +
             mkStatBox(
-              "Morale",
+              "Happiness",
               effM + "%",
               effM >= 100 ? "var(--green)" : "var(--amber)",
             ) +
@@ -15107,7 +15107,7 @@
           label: "Bless",
           manaCost: 2000,
           scrollRequired: true,
-          desc: "Boosts morale and population growth for 5 turns",
+          desc: "Boosts happiness and population growth for 5 turns",
         },
         {
           id: "silence",

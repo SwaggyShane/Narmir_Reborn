@@ -124,7 +124,7 @@ const ChangelogPanel = () => {
             <li>
               🌦️
               <strong style={{ color: 'var(--text)' }}> Seasons & Daily Events:</strong>
-              Unpredicted world conditions impacting crop yields and morale.
+              Unpredicted world conditions impacting crop yields and happiness.
             </li>
             <li>
               📈
@@ -342,7 +342,7 @@ const ChangelogPanel = () => {
             <li>
               💚
               <strong style={{ color: 'var(--text)' }}> Human Clerics:</strong>
-              Radiate a morale aura.
+              Radiate a happiness aura.
             </li>
           </ul>
         </div>
