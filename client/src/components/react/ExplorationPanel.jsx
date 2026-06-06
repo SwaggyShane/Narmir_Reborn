@@ -6,34 +6,33 @@ const REFRESH_INTERVAL_MS = 2 * 60 * 1000;
 const ExplorationPanel = () => {
   const [inventory, setInventory] = useState({});
   const [inventoryOpen, setInventoryOpen] = useState(false);
-  const [mountainFoodCost, setMountainFoodCost] = useState(0);
+  const [mountainRangers, setMountainRangers] = useState(0);
 
-  const calculateMountainFoodCost = useCallback(() => {
+  const handleMountainRangersChange = useCallback(() => {
     const input = document.getElementById('exp-mountain-rangers');
     if (!input) return;
-    const rangers = parseInt(input.value) || 0;
-    // Food calculation: 0.5 per ranger per turn, 100 turns, 25% discount (0.75 multiplier)
-    const foodPerTurn = rangers * 0.5;
-    const totalFood = Math.ceil(foodPerTurn * 100 * 0.75);
-    setMountainFoodCost(totalFood);
+    setMountainRangers(Math.max(0, parseInt(input.value) || 0));
   }, []);
 
   useEffect(() => {
     const input = document.getElementById('exp-mountain-rangers');
     if (!input) return;
 
-    const handleChange = () => calculateMountainFoodCost();
+    const handleChange = () => handleMountainRangersChange();
     input.addEventListener('change', handleChange);
     input.addEventListener('input', handleChange);
 
     // Calculate initial value
-    calculateMountainFoodCost();
+    handleMountainRangersChange();
 
     return () => {
       input.removeEventListener('change', handleChange);
       input.removeEventListener('input', handleChange);
     };
-  }, [calculateMountainFoodCost]);
+  }, [handleMountainRangersChange]);
+
+  // Derive food cost from mountainRangers (no separate state needed)
+  const mountainFoodCost = Math.ceil(mountainRangers * 0.5 * 100 * 0.75);
 
   const fetchInventory = useCallback(async () => {
     try {
@@ -357,7 +356,7 @@ const ExplorationPanel = () => {
               fontSize: '11px',
               color: 'var(--text2)'
             }}>
-              🍖 <strong>Food required:</strong> {mountainFoodCost.toLocaleString()} (100 turns at {Math.round((parseInt(document.getElementById('exp-mountain-rangers')?.value || 0) || 1) * 0.5)}/turn)
+              🍖 <strong>Food required:</strong> {mountainFoodCost.toLocaleString()} (100 turns at {Math.round(mountainRangers * 0.5)}/turn)
             </div>
           )}
           <button className="base-btn variant-blue w-full" id="btn-exp-mountain" style={{ background: '#6b9bd1', width: '100%' }} onClick={() => launchExpedition('mountain')}>
