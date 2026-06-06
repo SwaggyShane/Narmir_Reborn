@@ -2165,40 +2165,44 @@ const config = {
         updates.population = (k.population || 0) + 50000;
       },
     },
-    // Mountain Expedition Ultra-Rares
     {
       id: "iceflow_crown",
-      text: "👑 The Iceflow Crown — a regal crown forged from eternal winter, its crystalline structure humming with ancient cold magic",
+      text: "👑 A regal crown forged from eternal winter, its crystalline structure humming with ancient cold magic. Legends claim it grants mastery over frozen realms.",
       effect: (k, updates) => {
-        // No immediate effect; collectible artifact
+        updates.res_defense_magic = (k.res_defense_magic || 0) + 50;
+        updates.mana = (k.mana || 0) + 8000;
       },
     },
     {
       id: "snowpeak_chalice",
-      text: "🏆 The Snowpeak Chalice — a sacred vessel carved from a single perfect glacier crystal, its surface reflecting light in impossible patterns",
+      text: "🏆 A sacred vessel carved from a single perfect glacier crystal, said to have contained the first snow of creation. Its surface reflects light in impossible patterns.",
       effect: (k, updates) => {
-        // No immediate effect; collectible artifact
+        updates.res_spellbook = (k.res_spellbook || 0) + 75;
+        updates.mana = (k.mana || 0) + 10000;
       },
     },
     {
       id: "frostbind_amulet",
-      text: "✨ The Frostbind Amulet — an ornate medallion radiating perpetual numbing cold, worn by the mountain's guardian spirits",
+      text: "✨ An ornate medallion radiating perpetual numbing cold. Worn by the mountain's guardian spirits to ward off those unworthy of passage.",
       effect: (k, updates) => {
-        // No immediate effect; collectible artifact
+        updates.res_defense_magic = (k.res_defense_magic || 0) + 60;
+        updates.gold = (k.gold || 0) + 100000;
       },
     },
     {
       id: "avalanche_heart",
-      text: "❄️ The Avalanche Heart — the crystallized essence of a thousand avalanches, pulsing with the raw power of cascading mountains",
+      text: "❄️ The crystallized essence of a thousand avalanches, pulsing with the raw power of cascading mountains. Those who possess it claim to hear the thunder of falling snow.",
       effect: (k, updates) => {
-        // No immediate effect; collectible artifact
+        updates.res_spellbook = (k.res_spellbook || 0) + 100;
+        updates.mana = (k.mana || 0) + 15000;
       },
     },
     {
       id: "stormcaller_gem",
-      text: "⚡ The Stormcaller's Gem — a radiant gemstone that crackles with captured lightning, said to call down thunder upon command",
+      text: "⚡ A radiant gemstone that crackles with captured lightning, said to call down thunder upon command.",
       effect: (k, updates) => {
-        // No immediate effect; collectible artifact
+        updates.res_attack_magic = (k.res_attack_magic || 0) + 75;
+        updates.mana = (k.mana || 0) + 12000;
       },
     },
   ],
