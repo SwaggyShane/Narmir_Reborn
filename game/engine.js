@@ -1626,7 +1626,7 @@ function processGranaryAttunements(k, events) {
           message: `🪶 Manna Manifestation: ${foodCost.toLocaleString()} food distributed to stabilise morale (+${moraleBoost}).`,
         });
         const currentMorale = updates.morale !== undefined ? updates.morale : morale;
-        updates.morale = Math.min(100, currentMorale + moraleBoost);
+        updates.morale = Math.min(naturalMoraleCap(k), currentMorale + moraleBoost);
       }
       break;
     }
@@ -1639,7 +1639,7 @@ function processGranaryAttunements(k, events) {
         // Dark elixir boosts fighter morale/readiness each turn
         const moraleBoost = Math.max(1, Math.round(combatAttune * 10)); // 0.20 → +2 morale
         const currentMorale = updates.morale !== undefined ? updates.morale : (k.morale || 50);
-        updates.morale = Math.min(100, currentMorale + moraleBoost);
+        updates.morale = Math.min(naturalMoraleCap(k), currentMorale + moraleBoost);
         events.push({
           type: 'system',
           message: `🩸 Vampiric Silos: Dark elixir brewed from spoiling grain — fighters emboldened (+${moraleBoost} morale).`,
