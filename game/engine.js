@@ -2768,7 +2768,6 @@ function processTurn(k, db = null) {
         : k.happiness !== undefined && k.happiness !== null
           ? k.happiness
           : 50;
-    const oldHappiness = cur;
     updates.happiness = Math.min(120, cur + 1);
   }
 
