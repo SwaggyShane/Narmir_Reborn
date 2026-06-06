@@ -1652,12 +1652,12 @@ function processFarmAttunements(k, events) {
 
   switch (fragmentName) {
     case 'Dragon Scale': {
-      // Dragon's Shadow: workers fear the cursed land — morale penalty each turn
-      const currentMorale = updates.morale !== undefined ? updates.morale : (k.morale || 50);
-      updates.morale = Math.max(0, currentMorale - 3);
+      // Dragon's Shadow: workers fear the cursed land — happiness penalty each turn
+      const currentHappiness = updates.happiness !== undefined ? updates.happiness : (k.happiness || 50);
+      updates.happiness = Math.max(0, currentHappiness - 3);
       events.push({
         type: 'system',
-        message: `🐉 Dragon's Shadow: Workers fear the cursed farmland — morale −3.`,
+        message: `🐉 Dragon's Shadow: Workers fear the cursed farmland — happiness −3.`,
       });
       break;
     }
