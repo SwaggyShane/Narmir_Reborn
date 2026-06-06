@@ -1,5 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { gameStateManager } from "./GameStateManager.js";
+import { setActivePanelGlobal } from "./hooks/useActivePanel.js";
 import TopbarReact from "./components/react/Topbar.jsx";
 import GoalsPanelReact from "./components/react/GoalsPanel.jsx";
 import SidebarReact from "./components/react/Sidebar.jsx";
@@ -33,6 +35,35 @@ console.log("[react] main.js execution started at", new Date().toISOString());
 
 export const gameState = {};
 window.gameState = gameState;
+
+// Bridge vanilla JS state updates to React game state manager
+export function syncStateToGameStateManager() {
+  if (window.state && gameStateManager) {
+    const metricsToSync = {
+      gold: window.state.gold,
+      mana: window.state.mana,
+      population: window.state.population,
+      happiness: window.state.happiness,
+      food: window.state.food,
+      land: window.state.land,
+      turn: window.state.turn,
+    };
+    gameStateManager.updateMetrics(metricsToSync);
+  }
+}
+
+// Hook into existing applyServerUpdates to sync metrics
+const originalApplyServerUpdates = window.applyServerUpdates;
+window.applyServerUpdates = function(updates) {
+  // Call original function
+  if (originalApplyServerUpdates) {
+    originalApplyServerUpdates(updates);
+  }
+  // Sync to game state manager
+  setTimeout(() => {
+    syncStateToGameStateManager();
+  }, 0);
+};
 
 const reactHooks = new Map();
 window.registerPanelReactHook = (panelId, callback) => {
@@ -100,6 +131,16 @@ export const mountReactApps = () => {
   tryMount("vue-panel-school-selection", SchoolSelectionPanelReact);
 
   console.log("[react] All apps mounted");
+
+  // Hook into switchTab to track active panel
+  const originalSwitchTab = window.switchTab;
+  window.switchTab = function(tabName) {
+    setActivePanelGlobal(tabName);
+    if (originalSwitchTab) {
+      originalSwitchTab(tabName);
+    }
+  };
+
   if (window.switchTab) {
     if (window.location.hash) {
       window.switchTab(window.location.hash.substring(1));
