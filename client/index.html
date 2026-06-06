@@ -2990,6 +2990,7 @@
           scout: "10-turn Scout",
           deep: "25-turn Deep",
           dungeon: "50-turn Dungeon",
+          mountain: "100-turn Mountain",
         };
         var btn = document.getElementById("btn-exp-" + type);
         if (btn) {
@@ -3004,8 +3005,13 @@
         });
         if (btn) {
           btn.disabled = false;
-          btn.textContent =
-            type === "dungeon" ? "Launch raid" : "Launch expedition";
+          if (type === "dungeon") {
+            btn.textContent = "Launch raid";
+          } else if (type === "mountain") {
+            btn.textContent = "Accept the risk";
+          } else {
+            btn.textContent = "Launch expedition";
+          }
         }
 
         if (result.error) return toast(result.error, "error");
@@ -3059,11 +3065,12 @@
         var completed = Array.isArray(result) ? [] : result.completed || [];
 
         var log = document.getElementById("exploration-log");
-        var icons = { scout: "🔭", deep: "🌲", dungeon: "⚔️" };
+        var icons = { scout: "🔭", deep: "🌲", dungeon: "⚔️", mountain: "🏔️" };
         var labels = {
           scout: "🔭 Scout expedition",
           deep: "🌲 Deep expedition",
           dungeon: "⚔️ Dungeon raid",
+          mountain: "🏔️ Mountain expedition",
         };
 
         // ── Update active expedition statuses (live countdown) ──

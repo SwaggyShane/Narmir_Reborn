@@ -275,6 +275,54 @@ const ExplorationPanel = () => {
             Launch raid
           </button>
         </div>
+
+        {/* Mountain Expedition */}
+        <div className="card" style={{ borderLeft: '3px solid #6b9bd1' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+            <div className="card-title" style={{ margin: 0 }}>🏔️ Mountain's Heart</div>
+            <span
+              style={{
+                fontSize: '11px',
+                background: 'rgba(107, 155, 209, 0.15)',
+                color: '#6b9bd1',
+                padding: '3px 8px',
+                borderRadius: '20px',
+                fontWeight: 600,
+              }}
+            >
+              100 turns
+            </span>
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '8px', lineHeight: 1.6 }}>
+            Rangers navigate treacherous mountain peaks facing avalanches and extreme attrition.
+            Exclusive source of collectible artifacts and elemental fragments.
+          </div>
+          <div style={{
+            padding: '8px',
+            marginBottom: '10px',
+            background: 'rgba(255, 184, 82, 0.1)',
+            borderLeft: '3px solid #ffb852',
+            borderRadius: '2px',
+            fontSize: '11px',
+            color: 'var(--text2)'
+          }}>
+            ⚠️ <strong>EXTREME RISK:</strong> Rangers face 1-50% attrition per turn depending on level.
+            Level 20+ rangers recommended. Food costs very high for 100-turn expedition.
+          </div>
+          <div className="trow" style={{ marginBottom: '10px' }}>
+            <span className="name" style={{ fontSize: '12px' }}>Rangers</span>
+            <span style={{ fontSize: '11px', color: 'var(--text3)', marginRight: '6px' }}>
+              avail: <span id="mountain-rangers-avail">0</span>
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <input type="number" className="input" id="exp-mountain-rangers" min="1" defaultValue="0" style={{ textAlign: 'right', width: '80px' }} placeholder="Qty" />
+              <button className="base-btn" style={{ fontSize: '10px', padding: '3px 6px' }} onClick={() => setMaxValue('exp-mountain-rangers')}>Max</button>
+            </div>
+          </div>
+          <button className="base-btn variant-blue w-full" id="btn-exp-mountain" style={{ background: '#6b9bd1', width: '100%' }} onClick={() => launchExpedition('mountain')}>
+            Accept the risk
+          </button>
+        </div>
       </div>
 
       {/* Right col: expedition log */}

@@ -2165,6 +2165,42 @@ const config = {
         updates.population = (k.population || 0) + 50000;
       },
     },
+    // Mountain Expedition Ultra-Rares
+    {
+      id: "iceflow_crown",
+      text: "👑 The Iceflow Crown — a regal crown forged from eternal winter, its crystalline structure humming with ancient cold magic",
+      effect: (k, updates) => {
+        // No immediate effect; collectible artifact
+      },
+    },
+    {
+      id: "snowpeak_chalice",
+      text: "🏆 The Snowpeak Chalice — a sacred vessel carved from a single perfect glacier crystal, its surface reflecting light in impossible patterns",
+      effect: (k, updates) => {
+        // No immediate effect; collectible artifact
+      },
+    },
+    {
+      id: "frostbind_amulet",
+      text: "✨ The Frostbind Amulet — an ornate medallion radiating perpetual numbing cold, worn by the mountain's guardian spirits",
+      effect: (k, updates) => {
+        // No immediate effect; collectible artifact
+      },
+    },
+    {
+      id: "avalanche_heart",
+      text: "❄️ The Avalanche Heart — the crystallized essence of a thousand avalanches, pulsing with the raw power of cascading mountains",
+      effect: (k, updates) => {
+        // No immediate effect; collectible artifact
+      },
+    },
+    {
+      id: "stormcaller_gem",
+      text: "⚡ The Stormcaller's Gem — a radiant gemstone that crackles with captured lightning, said to call down thunder upon command",
+      effect: (k, updates) => {
+        // No immediate effect; collectible artifact
+      },
+    },
   ],
 
   THRONE_OF_NAZDREG: {
