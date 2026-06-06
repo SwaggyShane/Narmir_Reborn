@@ -2227,7 +2227,8 @@ function processTurn(k, db = null) {
     k.bld_schools * 100 * capRace.researcher,
   );
   const engineerCap = Math.floor(k.bld_smithies * 50 * capRace.engineer);
-  const scribeCap = Math.floor(k.bld_libraries * 20 * capRace.scribe);
+  const libraryRecordCapMult = fragmentBonusManager.getBonusMultiplier(k, 'libraries', 'record_capacity');
+  const scribeCap = Math.floor(k.bld_libraries * 20 * capRace.scribe * libraryRecordCapMult);
 
   // Overflow = units beyond capacity → pay upkeep; housed units are free
   const researcherOverflow = Math.max(0, k.researchers - researcherCap);
@@ -2668,7 +2669,19 @@ function processTurn(k, db = null) {
     const perSlot = Math.floor(researchers / focus.length);
 
     // Get library research speed multiplier
-    const libraryResearchMult = fragmentBonusManager.getBonusMultiplier(k, 'libraries', 'research_speed');
+    let libraryResearchMult = fragmentBonusManager.getBonusMultiplier(k, 'libraries', 'research_speed');
+
+    // Void Codex (Void Essence library special): chaotic research — 15% chance to surge (2×) or regress (0×)
+    const libSpecialForChaos = fragmentBonusManager.getSpecialEffect({ ...k, ...updates }, 'libraries');
+    if (libSpecialForChaos?.name === 'Void Codex' && Math.random() < 0.15) {
+      if (Math.random() < 0.5) {
+        libraryResearchMult *= 2;
+        events.push({ type: 'system', message: `📖 Void Codex: Chaotic energies surged through the archives — research output doubled this turn!` });
+      } else {
+        libraryResearchMult = 0;
+        events.push({ type: 'system', message: `📖 Void Codex: Void interference collapsed all research focus — no progress this turn!` });
+      }
+    }
 
     let rProgress = safeJsonParse(
       k.research_progress,
@@ -2923,6 +2936,10 @@ function processTurn(k, db = null) {
   // ── 8b. Library — mages produce mana, scribes craft maps/blueprints, mages craft scrolls ──
   const libUpdates = processLibrary({ ...k, ...updates }, events);
   Object.assign(updates, libUpdates);
+
+  // ── 8b-ii. Library attunement special abilities ───────────────────────────────
+  const libAbilityUpdates = processLibraryAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, libAbilityUpdates);
 
   // ── 8d. Trade & Prestige ─────────────────────────────────────────────────────
   const prestigeLevel = k.prestige_level;
@@ -5728,32 +5745,19 @@ function castSpell(caster, target, spellId, obscure) {
     activeEffect = { turns_left: def.duration || 3, type: "silence" };
     damageDesc = `research suppressed for ${def.duration || 3} turns`;
   } else if (spellId === "amnesia") {
-    let hasLockbox = false;
-    let targetHBP = {};
-    try {
-      targetHBP = safeJsonParse(target.hybrid_blueprints, {}, "auto:target.hybrid_blueprints");
-    } catch {}
-    for (const key in targetHBP) {
-      if (
-        targetHBP[key].assigned &&
-        targetHBP[key].building === "libraries" &&
-        targetHBP[key].fragment === "Dwarven Star-Metal"
-      ) {
-        hasLockbox = true;
-        break;
-      }
-    }
-    
-    if (hasLockbox) {
-      damageDesc = `spell failed — target's Impenetrable Lockbox grants immunity to amnesia`;
+    const targetLibSpecial = fragmentBonusManager.getSpecialEffect(target, 'libraries');
+    if (targetLibSpecial?.name === 'Impenetrable Star-Metal Lockboxes') {
+      damageDesc = `spell failed — target's Impenetrable Lockboxes grant full immunity to amnesia`;
     } else {
-      // Permanently wipes economy research
-      const resLost = Math.max(1, Math.floor(15 * magicRatio * shielded));
-      targetUpdates.res_economy = Math.max(
-        0,
-        (target.res_economy || 0) - resLost,
-      );
-      damageDesc = `economy research reduced by ${resLost}%`;
+      let resLost = Math.max(1, Math.floor(15 * magicRatio * shielded));
+      // Fireproof Scriptorium (Dragon Scale): document armor reduces amnesia effect by 40%
+      if (targetLibSpecial?.name === 'Fireproof Scriptorium') {
+        resLost = Math.max(1, Math.floor(resLost * 0.6));
+        damageDesc = `economy research reduced by ${resLost}% (Fireproof Scriptorium absorbed 40% of damage)`;
+      } else {
+        damageDesc = `economy research reduced by ${resLost}%`;
+      }
+      targetUpdates.res_economy = Math.max(0, (target.res_economy || 0) - resLost);
     }
   } else if (spellId === "drain") {
     // Siphons mana from target to caster
@@ -7507,6 +7511,33 @@ function processMausoleum(k, events) {
   return updates;
 }
 
+/**
+ * Process library attunement special abilities (per-turn passive events)
+ */
+function processLibraryAttunements(k, events) {
+  const updates = {};
+  const libAttune = fragmentBonusManager.getFragmentForBuilding(k, 'libraries');
+  if (!libAttune || !k.bld_libraries) return updates;
+  const fragmentName = libAttune.fragment;
+  const currentHappiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
+  switch (fragmentName) {
+    case 'Volcanic Rock': {
+      // Heat-Hardened Archive: warm dry air keeps scribes comfortable
+      updates.happiness = Math.min(120, currentHappiness + 1);
+      events.push({ type: 'system', message: `🌋 Heat-Hardened Archive: Thermal air keeps the archives warm and scribes content (+1 happiness).` });
+      break;
+    }
+    case 'Cursed Bloodstone': {
+      // Sanguine Cartography: blood-ink maps cause psychological stress
+      updates.happiness = Math.max(-50, currentHappiness - 2);
+      events.push({ type: 'system', message: `🩸 Sanguine Cartography: Blood-inked maps unsettle scribes with visceral geography (−2 happiness).` });
+      break;
+    }
+    default: break;
+  }
+  return updates;
+}
+
 // ── Library processing — runs each turn ──────────────────────────────────────
 function processLibrary(k, events) {
   const updates = {};
@@ -7541,8 +7572,9 @@ function processLibrary(k, events) {
   const capacityPerLib = 20;
   const scribeSpeedMult = raceBonus(k, "scribe"); // Or similar? I will look up how other racial modifiers are done. Let's look at raceBonus.
   const libraryWorkSpeedMult = fragmentBonusManager.getBonusMultiplier(k, 'libraries', 'decoding_speed');
+  const libRecordCapMult = fragmentBonusManager.getBonusMultiplier(k, 'libraries', 'record_capacity');
 
-  const capacity = libs * capacityPerLib;
+  const capacity = Math.floor(libs * capacityPerLib * libRecordCapMult);
   const effectiveScribes = Math.min(k.scribes, capacity);
 
   // Level multipliers
@@ -7625,8 +7657,10 @@ function processLibrary(k, events) {
         }
       }
 
+      const libScribeSpecial = fragmentBonusManager.getSpecialEffect(k, 'libraries');
+      const sylvanBonus = libScribeSpecial?.name === 'Sylvan Whispers' ? 1.25 : 1.0;
       const workDone =
-        (effective / req.scribes) * scribeLvlMult * scribeSpeedMult * libraryWorkSpeedMult;
+        (effective / req.scribes) * scribeLvlMult * scribeSpeedMult * libraryWorkSpeedMult * sylvanBonus;
       let newProg = (progress[progressKey] || 0) + workDone;
 
       let itemsCompleted = 0;
@@ -8364,6 +8398,7 @@ module.exports = {
   queueBuildings,
   processBuildQueue,
   processLibrary,
+  processLibraryAttunements,
   processMageTower,
   processShrine,
   processMausoleum,
