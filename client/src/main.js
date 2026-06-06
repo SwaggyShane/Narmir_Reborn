@@ -61,15 +61,15 @@ if (!window._applyServerUpdatesWrapped) {
   if (!updates) return;
 
   // Update gameStateManager first (source of truth)
+  // Dynamically sync all metrics fields
+  const knownMetrics = ['gold', 'mana', 'population', 'happiness', 'food', 'land', 'turn', 'tax', 'mana_regen', 'gold_income', 'food_balance'];
   const metricsUpdate = {};
-  if (updates.gold !== undefined) metricsUpdate.gold = updates.gold;
-  if (updates.mana !== undefined) metricsUpdate.mana = updates.mana;
-  if (updates.population !== undefined) metricsUpdate.population = updates.population;
-  if (updates.happiness !== undefined) metricsUpdate.happiness = updates.happiness;
-  if (updates.food !== undefined) metricsUpdate.food = updates.food;
-  if (updates.land !== undefined) metricsUpdate.land = updates.land;
-  if (updates.turn !== undefined) metricsUpdate.turn = updates.turn;
-  if (updates.tax !== undefined) metricsUpdate.tax = updates.tax;
+
+  for (const metric of knownMetrics) {
+    if (updates[metric] !== undefined) {
+      metricsUpdate[metric] = updates[metric];
+    }
+  }
 
   if (Object.keys(metricsUpdate).length > 0) {
     gameStateManager.updateMetrics(metricsUpdate);
