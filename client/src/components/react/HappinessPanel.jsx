@@ -73,7 +73,7 @@ const HappinessPanel = () => {
     : events;
 
   return (
-    <div id="happiness-panel" className="panel">
+    <div id="happiness" className="panel">
       <div style={{ padding: '16px' }}>
         {/* Current Happiness Display */}
         <div style={{ marginBottom: '24px' }}>
