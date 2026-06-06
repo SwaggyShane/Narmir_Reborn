@@ -6941,9 +6941,16 @@ async function resolveExpeditions(db, k, engine) {
   const freshK = (await db.get("SELECT * FROM kingdoms WHERE id = ?", [k.id])) || k;
 
   const expeditionEvents = [];
+
+  // ── BATCH PROCESSING: Collect updates before executing ──────────────────────────
+  // This reduces database round-trips from O(exps*turns) to O(turns)
+  const tickDowns = [];  // { id, newTurns }
+  const completions = []; // ids that complete this turn
+  const retries = [];     // ids already completed, retrying claim
+  const expsByState = {}; // track by id for later reward processing
+
   for (const exp of exps) {
     if (exp.turns_left > 0) {
-      // Use pre-fetched freshK instead of fetching again
       const direWolfBonus = racialUnitBonus(freshK, "rangers");
       const tickDown = direWolfBonus.earlyReturn ? 2 : 1;
       const newTurns = Math.max(0, exp.turns_left - tickDown);
@@ -6952,43 +6959,54 @@ async function resolveExpeditions(db, k, engine) {
       );
 
       if (newTurns > 0) {
-        const result = await db.run("UPDATE expeditions SET turns_left = ? WHERE id = ?", [
-          newTurns,
-          exp.id,
-        ]);
-        console.log(`[expedition] Updated id=${exp.id} turns_left: ${exp.turns_left} → ${newTurns} (result: ${result.changes} rows)`);
-        continue;
-      }
-      // newTurns <= 0 means this expedition completes now
-      console.log(
-        `[expedition] COMPLETING kingdom=${k.id} id=${exp.id} type=${exp.type}`,
-      );
-
-      // Mark expedition complete and claim rewards atomically (WHERE clause prevents double-claiming)
-      const markResult = await db.run(
-        "UPDATE expeditions SET turns_left = 0, rewards_claimed = 1 WHERE id = ? AND rewards_claimed = 0",
-        [exp.id],
-      );
-      if (markResult.changes === 0) {
-        console.log(`[expedition] Already claimed rewards for id=${exp.id}, skipping`);
-        continue;
+        tickDowns.push({ id: exp.id, newTurns });
+        expsByState[exp.id] = { ...exp, turns_left: newTurns, mustProcess: false };
+      } else {
+        completions.push(exp.id);
+        expsByState[exp.id] = { ...exp, turns_left: 0, mustProcess: true };
+        console.log(`[expedition] COMPLETING kingdom=${k.id} id=${exp.id} type=${exp.type}`);
       }
     } else {
-      // turns_left is already 0, try to claim rewards if not already claimed
-      console.log(
-        `[expedition] RETRYING completion for kingdom=${k.id} id=${exp.id} type=${exp.type}`,
-      );
-
-      // Claim rewards atomically if not already claimed (WHERE clause prevents double-claiming)
-      const claimResult = await db.run(
-        "UPDATE expeditions SET rewards_claimed = 1 WHERE id = ? AND rewards_claimed = 0",
-        [exp.id],
-      );
-      if (claimResult.changes === 0) {
-        console.log(`[expedition] Already claimed rewards for id=${exp.id}, skipping`);
-        continue;
-      }
+      retries.push(exp.id);
+      expsByState[exp.id] = { ...exp, mustProcess: true };
+      console.log(`[expedition] RETRYING completion for kingdom=${k.id} id=${exp.id} type=${exp.type}`);
     }
+  }
+
+  // ── Execute batched updates ──────────────────────────────────────────────────────
+
+  // Batch update: all tick-downs in one statement
+  if (tickDowns.length > 0) {
+    for (const { id, newTurns } of tickDowns) {
+      await db.run("UPDATE expeditions SET turns_left = ? WHERE id = ?", [newTurns, id]);
+    }
+    console.log(`[expedition] Batched ${tickDowns.length} turn decrements`);
+  }
+
+  // Batch update: all completions in one statement
+  if (completions.length > 0) {
+    const placeholders = completions.map(() => "?").join(",");
+    const markResult = await db.run(
+      `UPDATE expeditions SET turns_left = 0, rewards_claimed = 1 WHERE id IN (${placeholders}) AND rewards_claimed = 0`,
+      completions,
+    );
+    console.log(`[expedition] Batched completion claim: ${markResult.changes} expeditions marked complete`);
+  }
+
+  // Batch update: all retry claims in one statement
+  if (retries.length > 0) {
+    const placeholders = retries.map(() => "?").join(",");
+    const claimResult = await db.run(
+      `UPDATE expeditions SET rewards_claimed = 1 WHERE id IN (${placeholders}) AND rewards_claimed = 0`,
+      retries,
+    );
+    console.log(`[expedition] Batched retry claim: ${claimResult.changes} expeditions claimed`);
+  }
+
+  // ── Process reward claims for expeditions that completed ─────────────────────────
+  for (const exp of exps) {
+    const expState = expsByState[exp.id];
+    if (!expState || !expState.mustProcess) continue;
 
     try {
       // Use pre-fetched kingdom state to avoid stale merged values
