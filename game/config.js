@@ -32,7 +32,7 @@ const config = {
       magic: 1.2,
       economy: 1.05,
       military: 0.9,
-      morale: 0.95,
+      happiness: 0.95,
       scribe: 1.2,
       wood_yield: 1.1,
       stone_yield: 0.85,
@@ -48,7 +48,7 @@ const config = {
       economy: 1.202,
       magic: 0.75,
       research: 0.9,
-      morale: 1.0,
+      happiness: 1.0,
       scribe: 0.85,
       wood_yield: 0.85,
       stone_yield: 1.35,
@@ -64,7 +64,7 @@ const config = {
       research: 0.6,
       magic: 0.25,
       economy: 0.8,
-      morale: 1.1,
+      happiness: 1.1,
       scribe: 0.8,
       wood_yield: 1.0,
       stone_yield: 0.8,
@@ -80,7 +80,7 @@ const config = {
       magic: 1.1,
       military: 0.85,
       economy: 0.9,
-      morale: 0.9,
+      happiness: 0.9,
       scribe: 1.1,
       wood_yield: 0.9,
       stone_yield: 1.1,
@@ -92,7 +92,7 @@ const config = {
     },
     human: {
       economy: 1.5,
-      morale: 1.05,
+      happiness: 1.05,
       scribe: 1.05,
       wood_yield: 1.15,
       stone_yield: 1.0,
@@ -108,7 +108,7 @@ const config = {
       research: 0.8,
       magic: 0.65,
       construction: 0.9,
-      morale: 1.05,
+      happiness: 1.05,
       scribe: 0.6,
       wood_yield: 1.0,
       stone_yield: 1.1,
@@ -123,7 +123,7 @@ const config = {
       covert: 1.25,
       stealth: 1.2,
       economy: 0.9,
-      morale: 0.95,
+      happiness: 0.95,
       magic: 1.1,
       construction: 0.9,
       scribe: 1.1,
@@ -150,7 +150,7 @@ const config = {
       research: 0.7,
       magic: 0.75,
       construction: 0.95,
-      morale: 1.1,
+      happiness: 1.1,
       scribe: 0.5,
       wood_yield: 1.0,
       stone_yield: 1.3,
@@ -544,7 +544,7 @@ const config = {
       costWood: 0,
       costStone: 12,
       costIron: 0,
-      desc: "Clerics provide +20% bonus to kingdom morale.",
+      desc: "Clerics provide +20% bonus to kingdom happiness.",
       requires: null,
     },
     healing_aura: {
@@ -1293,7 +1293,7 @@ const config = {
       tier: 2,
       effect: "friendly",
       damageType: "none",
-      desc: "Boosts morale and population growth for 5 turns",
+      desc: "Boosts happiness and population growth for 5 turns",
       duration: 5,
     },
     silence: {
@@ -1439,7 +1439,7 @@ const config = {
 
     // ===== ENCHANTMENT SPELLS =====
     minor_charm: { minSB: 100, tier: 1, effect: "troops", damageType: "mental", desc: "50 enemy fighters defect to your army" },
-    fascinate_crowd: { minSB: 110, tier: 1, effect: "debuff", damageType: "mental", desc: "-20% enemy morale for 3 turns", duration: 3 },
+    fascinate_crowd: { minSB: 110, tier: 1, effect: "debuff", damageType: "mental", desc: "-20% enemy happiness for 3 turns", duration: 3 },
     command_word: { minSB: 120, tier: 1, effect: "debuff", damageType: "mental", desc: "Enemy cannot act next turn", duration: 1 },
     enthrall_scout: { minSB: 130, tier: 1, effect: "research", damageType: "mental", desc: "Captures 1 spy for interrogation" },
     whisper: { minSB: 150, tier: 1, effect: "research", damageType: "mental", desc: "Enemy loses 10% spellbook progress" },
@@ -1452,9 +1452,9 @@ const config = {
     mass_enthrallment: { minSB: 520, tier: 3, effect: "population", damageType: "mental", desc: "500 enemy population switches sides" },
     command_legion: { minSB: 530, tier: 3, effect: "troops", damageType: "mental", desc: "Enemy troops fight each other for 2 turns", duration: 2 },
     overwhelming_charm: { minSB: 540, tier: 3, effect: "debuff", damageType: "mental", desc: "Enemy spells 50% effective for 4 turns", duration: 4 },
-    psychic_dominion: { minSB: 550, tier: 3, effect: "debuff", damageType: "mental", desc: "Enemy morale crashes; paralyzed for 3 turns", duration: 3 },
+    psychic_dominion: { minSB: 550, tier: 3, effect: "debuff", damageType: "mental", desc: "Enemy happiness crashes; paralyzed for 3 turns", duration: 3 },
     total_domination: { minSB: 700, tier: 4, effect: "troops", damageType: "mental", desc: "All enemy fighters serve you for 3 turns", duration: 3 },
-    break_will: { minSB: 730, tier: 4, effect: "debuff", damageType: "mental", desc: "Enemy morale -50% permanently" },
+    break_will: { minSB: 730, tier: 4, effect: "debuff", damageType: "mental", desc: "Enemy happiness -50% permanently" },
     mass_enslavement: { minSB: 760, tier: 4, effect: "population", damageType: "mental", desc: "2000 enemy population becomes your thralls" },
     control_kingdom: { minSB: 790, tier: 4, effect: "research", damageType: "mental", desc: "You control enemy for 2 turns", duration: 2 },
     unbreakable_bond: { minSB: 800, tier: 4, effect: "research", damageType: "mental", desc: "Mind link formed; know all enemy actions for 5 turns", duration: 5 },
@@ -1505,7 +1505,7 @@ const config = {
     great_masquerade: { minSB: 500, tier: 3, effect: "debuff", damageType: "illusion", desc: "Kingdom appears different; enemy confused" },
     reality_warping: { minSB: 520, tier: 3, effect: "debuff", damageType: "illusion", desc: "Enemy makes poor choices; loses 10% resources" },
     phantom_army: { minSB: 530, tier: 3, effect: "troops", damageType: "illusion", desc: "1000 illusory fighters appear" },
-    false_victory: { minSB: 540, tier: 3, effect: "debuff", damageType: "illusion", desc: "Enemy morale surges then crashes; -40% morale" },
+    false_victory: { minSB: 540, tier: 3, effect: "debuff", damageType: "illusion", desc: "Enemy happiness surges then crashes; -40% happiness" },
     perception_shatter: { minSB: 550, tier: 3, effect: "debuff", damageType: "illusion", desc: "Senses fooled for 3 turns; acts randomly", duration: 3 },
     ultimate_deception: { minSB: 700, tier: 4, effect: "debuff", damageType: "illusion", desc: "80% of kingdom hidden for 4 turns", duration: 4 },
     temporal_mirage: { minSB: 730, tier: 4, effect: "debuff", damageType: "illusion", desc: "Shows past versions; enemy confused" },
@@ -1523,7 +1523,7 @@ const config = {
     deaths_mark: { minSB: 110, tier: 1, effect: "debuff", damageType: "disease", desc: "Target takes +20% damage from next 3 spells" },
     corpse_animation: { minSB: 120, tier: 1, effect: "troops", damageType: "disease", desc: "Raises 30 undead fighters" },
     siphon_life: { minSB: 130, tier: 1, effect: "population", damageType: "disease", desc: "Steals 200 population from enemy" },
-    death_knell: { minSB: 150, tier: 1, effect: "debuff", damageType: "disease", desc: "-10% morale and -10% production for 3 turns", duration: 3 },
+    death_knell: { minSB: 150, tier: 1, effect: "debuff", damageType: "disease", desc: "-10% happiness and -10% production for 3 turns", duration: 3 },
     undead_army: { minSB: 300, tier: 2, effect: "troops", damageType: "disease", desc: "Raises 200 undead for 4 turns", duration: 4 },
     soul_trap: { minSB: 320, tier: 2, effect: "troops", damageType: "disease", desc: "Traps 150 souls; gain their stats for 3 turns", duration: 3 },
     plague_of_death: { minSB: 330, tier: 2, effect: "population", damageType: "disease", desc: "300 enemy population become zombies" },
@@ -1920,7 +1920,7 @@ const config = {
     orc: { unit: "fighters", bonus: "free_trainee_generation" },
     dark_elf: { unit: "ninjas", bonus: "silent_assassination" },
     dire_wolf: { unit: "rangers", bonus: "fast_expeditions" },
-    human: { unit: "clerics", bonus: "morale_aura" },
+    human: { unit: "clerics", bonus: "happiness_aura" },
     vampire: { unit: "thieves", bonus: "theft_boost" },
   },
 
@@ -1984,7 +1984,7 @@ const config = {
     },
     clerics: {
       name: "Divine Mastery",
-      desc: "+20% healing, +10% morale stability",
+      desc: "+20% healing, +10% happiness stability",
     },
     rangers: {
       name: "Wolf Mastery",
@@ -2198,11 +2198,7 @@ const config = {
       updates.gold = (k.gold || 0) + 1000000;
       updates.land = (k.land || 0) + 1000;
       updates.population = (k.population || 0) + 100000;
-      const natCap = (k.res_entertainment || 0) + 100; // approximation of new cap
-      updates.morale = Math.min(
-        natCap * 2,
-        (k.morale || 100) + Math.floor(natCap * 0.5),
-      );
+      updates.happiness = Math.min(120, (k.happiness || 50) + 20);
       updates.fighters = (k.fighters || 0) + 50000;
     },
   },
@@ -2602,11 +2598,11 @@ const config = {
       abilities: [
         { name: "Protective Aura", description: "+10% Military Power" },
         { name: "Holy Heal", description: "Heals up to 10% of casualties" },
-        { name: "Unyielding Faith", description: "+15% Morale retention" },
+        { name: "Unyielding Faith", description: "+15% Happiness retention" },
       ],
       recruitCost: 50000,
       recruitMana: 10000,
-      statBonus: { military: 1.1, morale: 1.15 },
+      statBonus: { military: 1.1, happiness: 1.15 },
       races: ["human"],
     },
     grand_chancellor: {
@@ -2621,12 +2617,12 @@ const config = {
         },
         {
           name: "Inspiring Presence",
-          description: "+20% Morale and +20% Economy",
+          description: "+20% Happiness and +20% Economy",
         },
       ],
       recruitCost: 100000,
       recruitMana: 10000,
-      statBonus: { economy: 1.2, morale: 1.2, population: 1.1 },
+      statBonus: { economy: 1.2, happiness: 1.2, population: 1.1 },
       races: ["human"],
     },
     high_consul: {
@@ -2677,11 +2673,11 @@ const config = {
           name: "Tactical Mastery",
           description: "Reduces troop losses in battle",
         },
-        { name: "Bloodlust", description: "+10% Morale per successful attack" },
+        { name: "Bloodlust", description: "+10% Happiness per successful attack" },
       ],
       recruitCost: 75000,
       recruitMana: 5000,
-      statBonus: { military: 1.25, morale: 1.1 },
+      statBonus: { military: 1.25, happiness: 1.1 },
       races: ["orc"],
     },
     assassin: {
@@ -2739,12 +2735,12 @@ const config = {
         },
         {
           name: "Dwarven Resilience",
-          description: "Troops consume less food and retain higher morale",
+          description: "Troops consume less food and retain higher happiness",
         },
       ],
       recruitCost: 80000,
       recruitMana: 8000,
-      statBonus: { economy: 1.25, morale: 1.15 },
+      statBonus: { economy: 1.25, happiness: 1.15 },
       races: ["dwarf"],
     },
     stonelord: {
@@ -2782,7 +2778,7 @@ const config = {
         },
         {
           name: "Terrifying Presence",
-          description: "Greatly lowers enemy morale on attacks",
+          description: "Greatly lowers enemy happiness on attacks",
         },
       ],
       recruitCost: 40000,
@@ -2916,7 +2912,7 @@ const config = {
       abilities: [
         {
           name: "Sanguine Bond",
-          description: "+20% Morale and Housing efficiency",
+          description: "+20% Happiness and Housing efficiency",
         },
         {
           name: "Eternal Legion",
@@ -2929,7 +2925,7 @@ const config = {
       ],
       recruitCost: 90000,
       recruitMana: 15000,
-      statBonus: { morale: 1.3, population: 1.2, military: 1.1 },
+      statBonus: { happiness: 1.3, population: 1.2, military: 1.1 },
       races: ["vampire"],
     },
     shadowmaster: {

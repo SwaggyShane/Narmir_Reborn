@@ -93,7 +93,7 @@ async function withTurnLock(playerId, fn) {
 // Avoid SELECT * for better performance: network, parsing, memory
 // Column sets: choose what's actually needed to reduce network/parsing overhead
 const KINGDOM_FULL = '*'; // Only use when truly necessary (GET /me)
-const KINGDOM_CORE = 'id, player_id, name, race, turn, turns_stored, gold, food, population, land, morale';
+const KINGDOM_CORE = 'id, player_id, name, race, turn, turns_stored, gold, food, population, land, morale, happiness';
 const KINGDOM_BUILD = `${KINGDOM_CORE}, wood, stone, iron, coal, steel, food_shortage_turns,
   bld_farms, bld_granaries, bld_walls, bld_guard_towers, bld_libraries, bld_mage_towers, bld_shrines, bld_vaults`;
 const KINGDOM_UNITS = `${KINGDOM_CORE}, fighters, rangers, clerics, mages, thieves, ninjas, researchers, engineers, scribes`;
@@ -4420,7 +4420,7 @@ module.exports = function (db) {
       const k = await db.get(
         `
         SELECT k.id, k.name, k.race, k.gender, k.region, k.level, k.xp, k.land, k.population,
-               k.fighters, k.mages, k.rangers, k.morale, k.turn, k.description,
+               k.fighters, k.mages, k.rangers, k.happiness, k.turn, k.description,
                k.res_military, k.res_economy, k.res_construction, k.res_spellbook,
                k.res_attack_magic, k.res_entertainment,
                p.id as player_id, p.username        FROM kingdoms k JOIN players p ON k.player_id = p.id
