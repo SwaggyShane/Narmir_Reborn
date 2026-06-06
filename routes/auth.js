@@ -56,6 +56,8 @@ module.exports = function (db) {
       "dark_elf",
       "orc",
       "vampire",
+      "wood_elf",
+      "ogre",
     ];
     const chosenRace = validRaces.includes(race) ? race : "human";
     const validGenders = ["male", "female"];
@@ -104,6 +106,16 @@ module.exports = function (db) {
         buildings.bld_barracks = 2; // Extra barracks for wolf
         fighters = 100;
         rangers = 100;
+      }
+      if (chosenRace === "wood_elf") {
+        buildings.bld_outposts = 1; // Base for expeditions
+        fighters = 0;
+        rangers = 100; // Emphasis on exploration
+      }
+      if (chosenRace === "ogre") {
+        buildings.bld_training = 1; // Training facility
+        fighters = 100; // Emphasis on military
+        rangers = 0;
       }
 
       // Calculate starting land: building costs + 1000 buffer
