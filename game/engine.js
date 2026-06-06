@@ -350,6 +350,18 @@ function calculateHappiness(k) {
     happiness += taxBonus;
   }
 
+  // Housing fragment: happiness passive (quality-of-life boost)
+  const housingHappinessMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'happiness');
+  if (housingHappinessMult > 1.0 && happiness > 0) {
+    happiness = Math.floor(happiness * housingHappinessMult);
+  }
+
+  // Housing fragment: stability passive (+/- flat per turn; positive = stable, negative = volatile)
+  const housingStabilityDelta = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'stability') - 1.0;
+  if (Math.abs(housingStabilityDelta) > 0.001) {
+    happiness += Math.round(housingStabilityDelta * 10);
+  }
+
   // Apply happiness recovery based on research + taverns and clamp to -50 to 120
   const recoveryRate = getHappinessRecoveryRate(k);
   happiness = Math.floor(Math.max(-50, Math.min(120, happiness + recoveryRate)));
@@ -745,7 +757,9 @@ function wallDefensePower(k) {
     500 *
     ((k.res_war_machines || 100) / 100) *
     (wallUpgrades.fortress_walls ? 1.75 : wallUpgrades.battlements ? 1.2 : 1.0);
-  return Math.floor(walls * 100 * mult * reinMult * vaultWallMult * effectiveWallMult + wmBonus);
+  // Housing fragment: defenses passive (fortified housing reinforces walls)
+  const housingDefMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'defenses');
+  return Math.floor((walls * 100 * mult * reinMult * vaultWallMult * effectiveWallMult + wmBonus) * housingDefMult);
 }
 
 // Guard tower contribution — thief detection
@@ -1621,6 +1635,40 @@ function processGranaryAttunements(k, events) {
   return updates;
 }
 
+/**
+ * Process housing attunement special abilities
+ * Executes per-turn special effects for housing fragment attunements
+ */
+function processHousingAttunements(k, events) {
+  const updates = {};
+  const housingAttune = fragmentBonusManager.getFragmentForBuilding(k, 'housing');
+  if (!housingAttune) return updates;
+
+  const fragmentName = housingAttune.fragment;
+  const currentHappiness = k.happiness !== undefined ? k.happiness : 50;
+
+  switch (fragmentName) {
+    case 'Volcanic Rock': {
+      // Geothermal Hearth: underground thermal pipes keep citizens perpetually warm (+3 happiness)
+      const newH = Math.min(120, currentHappiness + 3);
+      updates.happiness = newH;
+      events.push({ type: 'system', message: `🌋 Geothermal Hearth: Underground thermal pipes warm every home (+3 happiness).` });
+      break;
+    }
+    case 'Void Essence': {
+      // Void Pocket Lofts: 10% chance of spatial disorientation episode each turn
+      if (Math.random() < 0.1) {
+        updates.happiness = Math.max(-50, currentHappiness - 5);
+        events.push({ type: 'system', message: `🌌 Void Pocket Lofts: Citizens report spatial disorientation in folded-dimensional rooms (−5 happiness).` });
+      }
+      break;
+    }
+    default: break;
+  }
+
+  return updates;
+}
+
 function processMercenaries(k, events) {
   const updates = {};
   const mercs = safeJsonParse(
@@ -2086,6 +2134,10 @@ function processTurn(k, db = null) {
   // ── 4a. Granary attunement special abilities ──────────────────────────────────
   const granaryAbilityUpdates = processGranaryAttunements({ ...k, ...updates }, events);
   Object.assign(updates, granaryAbilityUpdates);
+
+  // ── 4a-ii. Housing attunement special abilities ───────────────────────────────
+  const housingAbilityUpdates = processHousingAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, housingAbilityUpdates);
 
   // ── 4b. Resource production (wood / stone / iron) ────────────────────────────
   const resourceUpdates = processResourceYield({ ...k, ...updates }, events);
@@ -5808,9 +5860,14 @@ function castSpell(caster, target, spellId, obscure) {
     const landLost = Math.floor(
       (target.land || 0) * 0.2 * magicRatio * shielded,
     );
-    const popLost = Math.floor(
+    let popLost = Math.floor(
       (target.population || 0) * 0.25 * magicRatio * shielded,
     );
+    // Fortified Keeps: draconic scale-lined, flame-retardant housing cuts civilian casualties
+    const targetHousingSpecial = fragmentBonusManager.getSpecialEffect(target, 'housing');
+    if (targetHousingSpecial?.name === 'Fortified Keeps') {
+      popLost = Math.floor(popLost * 0.5);
+    }
     const farmLost =
       Math.floor((target.bld_farms || 0) * 0.3) > 0
         ? getBldDmg("farms", (target.bld_farms || 0) * 0.3)
@@ -8318,6 +8375,7 @@ module.exports = {
   commodityPrice,
   processFoodEconomy,
   processGranaryAttunements,
+  processHousingAttunements,
   processMercenaries,
   hireMercenaries,
   purchaseUpgrade,
