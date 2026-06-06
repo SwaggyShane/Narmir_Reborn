@@ -1058,6 +1058,7 @@ function processResourceYield(k, events) {
   let woodGained = 0;
   let stoneGained = 0;
   let ironGained = 0;
+  let foresterJunkGenerated = false;
 
   for (const [bKey, cfg] of Object.entries(RESOURCE_BUILDING_CONFIG)) {
     const col = `bld_${bKey}`;
@@ -1103,10 +1104,11 @@ function processResourceYield(k, events) {
         // 5% double yield (but only if not already hitting a rarer event)
         baseYield *= 2;
         events.push({ type: 'system', message: `🌲 An unusually productive logging session doubled your wood yield!` });
-      } else if (roll < 0.26) {
-        // 20% worthless find (humorous)
+      } else if (roll < 0.26 && !foresterJunkGenerated) {
+        // 20% worthless find (humorous) - only one per turn
         const msg = RESOURCE_JUNK_MESSAGES[Math.floor(Math.random() * RESOURCE_JUNK_MESSAGES.length)];
         events.push({ type: 'system', message: `🌲 Foresters report: ${msg}` });
+        foresterJunkGenerated = true;
       }
     }
 
