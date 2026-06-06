@@ -271,6 +271,19 @@ function foodBalance(k) {
   return farmProduction(k) - foodConsumption(k);
 }
 
+function naturalMoraleCap(k) {
+  let cap = k.res_entertainment || 100;
+  // Apply dynamic housing passive bonuses on morale / happiness (e.g., Celestial Realm, Ancient Elven Wood)
+  const housingMoraleMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'morale');
+  const housingHappinessMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'happiness');
+  cap = Math.floor(cap * housingMoraleMult * housingHappinessMult);
+
+  // Apply housing stability modifier cap (e.g., Void Essence, Cursed Bloodstone reduce max morale)
+  const housingStabilityMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'stability');
+  cap = Math.floor(cap * housingStabilityMult);
+
+  return cap;
+}
 
 function getHappinessRecoveryRate(k) {
   const baseRecovery = (k.res_entertainment || 100) / 1000 + ((k.bld_taverns || 0) * 0.25);
@@ -285,9 +298,7 @@ function calculateHappiness(k) {
     dwarf: 0,
     high_elf: -5,
     dark_elf: -10,
-    vampire: -10,
-    wood_elf: 5,
-    ogre: 0
+    vampire: -10
   };
 
   // 1. Food Happiness (0-30)
@@ -408,6 +419,32 @@ async function logHappinessEvent(db, kingdomId, turn, eventData) {
   }
 }
 
+function effectiveMorale(k) {
+  let base =
+    k.morale !== undefined && k.morale !== null ? k.morale : 100;
+  
+  // Apply Bless bonus if active
+  const effects = safeJsonParse(
+    k.active_effects,
+    {},
+    "effectiveMorale:active_effects",
+  );
+  if (effects.bless && typeof effects.bless === "object") {
+    base += (effects.bless.morale_bonus || 0);
+  }
+
+  const entertainment = naturalMoraleCap(k);
+  let bonus = raceBonus(k, "morale");
+  
+  const shrineUpgrades = safeJsonParse(k.shrine_upgrades, {}, "effectiveMorale:shrine_upgrades");
+  if (shrineUpgrades.divine_favor) {
+    bonus += 0.20;
+  }
+
+  // Normalize: entertainment cap maps to 100
+  const normalized = (base / entertainment) * 100;
+  return Math.floor(normalized * bonus);
+}
 
 function popGrowth(k) {
   const happiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
@@ -602,15 +639,11 @@ function racialUnitBonus(k, unit) {
     return { silentAssassination: true };
   // Dire Wolf: expeditions return 1 turn early
   if (race === "dire_wolf" && unit === "rangers") return { earlyReturn: true };
-  // Human: clerics restore 1 happiness across all unit types per turn
+  // Human: clerics restore 1 morale across all unit types per turn
   if (race === "human" && unit === "clerics") return { auraHeal: true };
   // Vampire: Infiltrators (thieves) steal significantly more gold and have higher sabotage success at night
   if (race === "vampire" && unit === "thieves")
     return { infiltratorMastery: true };
-  // Wood Elf: rangers discover significantly more land per expedition
-  if (race === "wood_elf" && unit === "rangers") return { discoveryMastery: true };
-  // Ogre: fighters gain ferocity bonus dealing extra damage
-  if (race === "ogre" && unit === "fighters") return { ferocityBonus: true };
   return {};
 }
 
@@ -1025,7 +1058,6 @@ function processResourceYield(k, events) {
   let woodGained = 0;
   let stoneGained = 0;
   let ironGained = 0;
-  let junkGenerated = {};
 
   for (const [bKey, cfg] of Object.entries(RESOURCE_BUILDING_CONFIG)) {
     const col = `bld_${bKey}`;
@@ -1044,60 +1076,37 @@ function processResourceYield(k, events) {
     const fragmentMult = fragmentBonusManager.getBonusMultiplier(k, bKey, 'production');
     baseYield *= fragmentMult;
 
-    // Random events on all resource production
-    const rareFindMult = raceBonus(k, 'rare_find');
-    const roll = Math.random();
+    // Random events on wood production only
+    if (cfg.type === 'wood') {
+      const rareFindMult = raceBonus(k, 'rare_find');
+      const roll = Math.random();
 
-    if (roll < 0.0025 * rareFindMult) {
-      // 0.25% rare resource item
-      const rareItems = RARE_RESOURCE_ITEMS[cfg.type];
-      if (rareItems && rareItems.length > 0) {
+      if (roll < 0.0025 * rareFindMult) {
+        // 0.25% rare wood item
+        const rareItems = RARE_RESOURCE_ITEMS.wood;
         const chosen = rareItems[Math.floor(Math.random() * rareItems.length)];
         const existing = items.find((i) => i.id === chosen.id);
         if (!existing || (existing.qty || 0) < 3) {
           addItemToInventory(items, chosen.id, chosen.name, 1);
           itemsChanged = true;
-          const typeIcon = cfg.type === 'wood' ? '🌲' : cfg.type === 'stone' ? '🪨' : '🔗';
-          events.push({ type: 'system', message: `${typeIcon} Your workers discovered a rare item: ${chosen.name}!` });
+          events.push({ type: 'system', message: `🌲 Your foresters discovered a rare item: ${chosen.name}!` });
         }
-      }
-    } else if (roll < 0.01 * rareFindMult) {
-      // 1% elemental fragment (earth for wood, water for stone, fire for iron)
-      let fragmentId, fragmentName, discoveryMsg;
-      if (cfg.type === 'wood') {
-        fragmentId = 'earth_fragment';
-        fragmentName = 'Earth Fragment';
-        discoveryMsg = '🌍 Your foresters unearthed an Earth Fragment while logging!';
-      } else if (cfg.type === 'stone') {
-        fragmentId = 'water_fragment';
-        fragmentName = 'Water Fragment';
-        discoveryMsg = '💧 Your miners discovered a Water Fragment in the stone!';
-      } else if (cfg.type === 'iron') {
-        fragmentId = 'fire_fragment';
-        fragmentName = 'Fire Fragment';
-        discoveryMsg = '🔥 Your smiths found a Fire Fragment hidden in the ore!';
-      }
-      if (fragmentId) {
-        const frag = items.find((i) => i.id === fragmentId);
-        if (!frag || (frag.qty || 0) === 0) {
-          addItemToInventory(items, fragmentId, fragmentName, 1);
+      } else if (roll < 0.01 * rareFindMult) {
+        // 1% earth fragment
+        const earthFrag = items.find((i) => i.id === 'earth_fragment');
+        if (!earthFrag || (earthFrag.qty || 0) === 0) {
+          addItemToInventory(items, 'earth_fragment', 'Earth Fragment', 1);
           itemsChanged = true;
-          events.push({ type: 'system', message: discoveryMsg });
+          events.push({ type: 'system', message: `🌍 Your foresters unearthed an Earth Fragment while logging!` });
         }
-      }
-    } else if (roll < 0.06) {
-      // 5% double yield (but only if not already hitting a rarer event)
-      baseYield *= 2;
-      const typeMsg = cfg.type === 'wood' ? 'logging' : cfg.type === 'stone' ? 'mining' : 'smelting';
-      const typeIcon = cfg.type === 'wood' ? '🌲' : cfg.type === 'stone' ? '🪨' : '🔗';
-      events.push({ type: 'system', message: `${typeIcon} An unusually productive ${typeMsg} session doubled your yield!` });
-    } else if (roll < 0.26) {
-      // 20% worthless find (humorous) - one per resource type per turn
-      if (!junkGenerated[cfg.type]) {
+      } else if (roll < 0.06) {
+        // 5% double yield (but only if not already hitting a rarer event)
+        baseYield *= 2;
+        events.push({ type: 'system', message: `🌲 An unusually productive logging session doubled your wood yield!` });
+      } else if (roll < 0.26) {
+        // 20% worthless find (humorous)
         const msg = RESOURCE_JUNK_MESSAGES[Math.floor(Math.random() * RESOURCE_JUNK_MESSAGES.length)];
-        const typeIcon = cfg.type === 'wood' ? '🌲' : cfg.type === 'stone' ? '🪨' : '🔗';
-        events.push({ type: 'system', message: `${typeIcon} Workers report: ${msg}` });
-        junkGenerated[cfg.type] = true;
+        events.push({ type: 'system', message: `🌲 Foresters report: ${msg}` });
       }
     }
 
@@ -1272,9 +1281,10 @@ function tavernEntertainmentBonus(k) {
   const baseBonusPerTavern = 10;
   let bonus = k.bld_taverns * baseBonusPerTavern;
 
-  // Apply fragment bonuses for taverns (happiness)
+  // Apply fragment bonuses for taverns (morale, happiness)
+  const tavernMoraleMult = fragmentBonusManager.getBonusMultiplier(k, 'taverns', 'morale');
   const tavernHappinessMult = fragmentBonusManager.getBonusMultiplier(k, 'taverns', 'happiness');
-  bonus = Math.floor(bonus * tavernHappinessMult);
+  bonus = Math.floor(bonus * tavernMoraleMult * tavernHappinessMult);
 
   return bonus;
 }
@@ -1442,6 +1452,17 @@ function processFoodEconomy(k, events) {
     updates.food_surplus_turns = surpTurns;
     updates.food_shortage_turns = 0;
     if (surpTurns >= 5) {
+      const natCap = naturalMoraleCap(k);
+      const cur =
+        updates.morale !== undefined
+          ? updates.morale
+          : k.morale !== undefined && k.morale !== null
+            ? k.morale
+            : 100;
+      const oldMorale = cur;
+      updates.morale = Math.min(natCap, cur + 2);
+      const mDelta = (updates.morale || 0) - oldMorale;
+      
       events.push({
         type: "system",
         message: `🌾 Food surplus: +${balance.toLocaleString()} units. Troops are well fed.`,
@@ -1473,6 +1494,17 @@ function processFoodEconomy(k, events) {
         message: `🚨 Food shortage! Turn ${shortTurns} — build more farms or reduce troops.`,
       });
       if (shortTurns >= 3) {
+        const hit = shortTurns >= 8 ? 20 : shortTurns >= 5 ? 10 : 5;
+        const cur =
+          updates.morale !== undefined
+            ? updates.morale
+            : k.morale !== undefined && k.morale !== null
+              ? k.morale
+              : 100;
+        const oldMorale = cur;
+        updates.morale = Math.max(0, cur - hit);
+        const mDelta = updates.morale - oldMorale;
+
         events.push({
           type: "system",
           message: `🚨 Food shortage! Turn ${shortTurns} — build more farms or reduce troops.`,
@@ -1816,6 +1848,21 @@ function efficiencyMult(route) {
   return route.efficiency || 1.0;
 }
 
+function displayMorale(k) {
+  const base = k.morale !== undefined && k.morale !== null ? k.morale : 100;
+  const ent = k.res_entertainment || 100;
+  const raceMap = {
+    human: 1.05,
+    high_elf: 0.95,
+    dwarf: 1.0,
+    dire_wolf: 1.1,
+    dark_elf: 0.9,
+    orc: 1.05,
+    vampire: 0.95,
+  };
+  const bonus = raceMap[k.race] || 1.0;
+  return Math.floor((base / ent) * 100 * bonus);
+}
 
 function rebellionCheck(k, happiness, updates, events) {
   if (happiness >= 50) return; // No rebellion risk if happiness >= 50
@@ -2238,6 +2285,293 @@ function processTurn(k, db = null) {
     });
   }
 
+  // ── 6. Morale ─────────────────────────────────────────────────────────────────
+  {
+    const capPerBuilding = housingCapPerBuilding(k);
+    let housingCap = k.bld_housing * capPerBuilding;
+    // Apply world fragment bonuses for housing capacity
+    const housingMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'capacity');
+    housingCap *= housingMult;
+    const overcrowded = housingCap > 0 && k.population > housingCap;
+
+    // Race overcrowding penalty modifiers
+    let overcrowdMult = { dire_wolf: 0.5, high_elf: 2.0 }[k.race] || 1.0;
+    const activeHousingSpecial = fragmentBonusManager.getSpecialEffect(k, 'housing');
+    if (activeHousingSpecial?.name === "Goliath Dwellings") {
+      overcrowdMult *= 0.2; // 80% reduction in overcrowding penalty, since they are spacious
+    }
+    const overcrowdPenalty = overcrowded
+      ? Math.max(
+          0,
+          Math.floor(
+            ((k.population - housingCap) / 1000) * overcrowdMult,
+          ),
+        )
+      : 0;
+
+    let taxPenalty = 0;
+    let taxBoost = 0;
+    const currentTax = k.tax || 42;
+
+    if (currentTax >= 50) {
+      taxPenalty = 10 + Math.floor(((currentTax - 50) / 50) * 65);
+    } else if (currentTax < 42) {
+      taxBoost = Math.floor(((42 - currentTax) / 41) * 25);
+    }
+
+    if (currentTax < 20 && Math.random() < 0.05) {
+      const taxEvents = config.TAX_EVENTS || [];
+      if (taxEvents.length > 0) {
+        const msg = taxEvents[Math.floor(Math.random() * taxEvents.length)];
+        const bonusType = Math.random();
+        let bonusStr = "";
+        if (bonusType < 0.33) {
+          const goldBonus = Math.floor(100 + Math.random() * 900);
+          updates.gold = (updates.gold || k.gold) + goldBonus;
+          bonusStr = `+${goldBonus} Gold`;
+        } else if (bonusType < 0.66) {
+          const foodBonus = Math.floor(100 + Math.random() * 400);
+          updates.food = (updates.food || k.food) + foodBonus;
+          bonusStr = `+${foodBonus} Food`;
+        } else {
+          const cur =
+            updates.morale !== undefined
+              ? updates.morale
+              : k.morale !== undefined && k.morale !== null
+                ? k.morale
+                : 100;
+          const oldMorale = cur;
+          updates.morale = Math.min(100, cur + 2);
+          const mDelta = updates.morale - oldMorale;
+          if (mDelta > 0) {
+            bonusStr = `+${mDelta} Morale`;
+          } else {
+            bonusStr = `Morale at cap`;
+          }
+        }
+        events.push({
+          type: "system",
+          message: `🌟 Low Tax Event: ${msg} (${bonusStr})`,
+        });
+      }
+    }
+
+    if (currentTax >= 50) {
+      const cur =
+        updates.morale !== undefined
+          ? updates.morale
+          : k.morale !== undefined && k.morale !== null
+            ? k.morale
+            : 100;
+      const oldM = cur;
+      updates.morale = Math.max(0, cur - taxPenalty);
+      if (updates.morale !== oldM) {
+      }
+
+      if (overcrowdPenalty > 0) {
+        const cur2 = updates.morale;
+        const newMorale = Math.max(0, cur2 - overcrowdPenalty);
+        if (newMorale !== cur2) {
+        }
+        updates.morale = newMorale;
+      }
+    } else {
+      const recovery =
+        1 + taxBoost + Math.floor(k.res_entertainment / 200);
+      const natCap = naturalMoraleCap(k);
+      const cur =
+        updates.morale !== undefined
+          ? updates.morale
+          : k.morale !== undefined && k.morale !== null
+            ? k.morale
+            : 100;
+      let newMorale = Math.min(natCap, cur + recovery);
+      let recoveryReason = `Low taxes / Entertainment`;
+
+      // If currently above natural cap (due to spells/events), natural decay?
+      if (cur > natCap) {
+        newMorale = Math.max(natCap, cur - 2); // Natural decay towards cap
+        if (newMorale !== cur) {
+        }
+      } else if (newMorale > cur) {
+      }
+
+      if (overcrowdPenalty > 0) {
+        const afterCrowdMorale = Math.max(0, newMorale - overcrowdPenalty);
+        if (afterCrowdMorale !== newMorale) {
+        }
+        newMorale = afterCrowdMorale;
+      }
+
+      if (newMorale !== cur) {
+        updates.morale = newMorale;
+      }
+    }
+  }
+
+  // ── 6b. Morale Threshold Events ───────────────────────────────────────────────
+  const currentMoraleThreshold =
+    updates.morale !== undefined
+      ? updates.morale
+      : k.morale !== undefined && k.morale !== null
+        ? k.morale
+        : 100;
+
+  if (currentMoraleThreshold <= 0) {
+    // RIOTS
+    const currentPop =
+      updates.population !== undefined ? updates.population : k.population;
+    const popLossPct = 0.02 + Math.random() * 0.03; // 2% to 5%
+    const popLost = Math.floor(currentPop * popLossPct);
+
+    const currentGold = updates.gold !== undefined ? updates.gold : k.gold;
+    const goldLost = Math.floor(500 + Math.random() * 1500); // 500 to 2000
+
+    updates.population = Math.max(10, currentPop - popLost);
+    updates.gold = Math.max(0, currentGold - goldLost);
+
+    // Destroy 1 random building (farm, market, barracks, shrine, or tavern)
+    const bldTypes = [];
+    if (
+      (updates.bld_farms !== undefined ? updates.bld_farms : k.bld_farms) >
+      0
+    )
+      bldTypes.push("bld_farms");
+    if (
+      (updates.bld_markets !== undefined
+        ? updates.bld_markets
+        : k.bld_markets) > 0
+    )
+      bldTypes.push("bld_markets");
+    if (
+      (updates.bld_barracks !== undefined
+        ? updates.bld_barracks
+        : k.bld_barracks) > 0
+    )
+      bldTypes.push("bld_barracks");
+    if (
+      (updates.bld_shrines !== undefined
+        ? updates.bld_shrines
+        : k.bld_shrines) > 0
+    )
+      bldTypes.push("bld_shrines");
+    if (
+      (updates.bld_taverns !== undefined
+        ? updates.bld_taverns
+        : k.bld_taverns) > 0
+    )
+      bldTypes.push("bld_taverns");
+
+    let destBldStr = "";
+    if (bldTypes.length > 0) {
+      const typeToDest = bldTypes[Math.floor(Math.random() * bldTypes.length)];
+      const curType =
+        updates[typeToDest] !== undefined
+          ? updates[typeToDest]
+          : k[typeToDest] || 0;
+      updates[typeToDest] = Math.max(0, curType - 1);
+      const typeLabel = typeToDest.replace("bld_", "");
+      destBldStr = `, and 1 ${typeLabel} was destroyed`;
+    }
+
+    const oldM = updates.morale !== undefined ? updates.morale : k.morale;
+    updates.morale = 5; // Reset morale
+    events.push({
+      type: "system",
+      message: `🔥 RIOTS! Citizens revolt! ${popLost.toLocaleString()} citizens fled/died, ${goldLost.toLocaleString()} gold looted${destBldStr}. Morale has been reset to 5.`,
+    });
+  } else if (currentMoraleThreshold > 0 && currentMoraleThreshold < 25) {
+    // Critical Unrest (40% chance)
+    if (Math.random() < 0.4) {
+      const roll = Math.random();
+      if (roll < 0.33) {
+        // Crime wave
+        const currentGold =
+          updates.gold !== undefined ? updates.gold : k.gold;
+        const goldLost = Math.floor(currentGold * 0.05);
+        updates.gold = Math.max(0, currentGold - goldLost);
+        events.push({
+          type: "system",
+          message: `🔪 Critical Unrest: Crime wave spreads! ${goldLost.toLocaleString()} gold lost.`,
+        });
+      } else if (roll < 0.66) {
+        // Desertion
+        const curFighters =
+          updates.fighters !== undefined ? updates.fighters : k.fighters;
+        const curRangers =
+          updates.rangers !== undefined ? updates.rangers : k.rangers;
+        const fLost = Math.floor(curFighters * 0.03);
+        const rLost = Math.floor(curRangers * 0.03);
+        updates.fighters = Math.max(0, curFighters - fLost);
+        updates.rangers = Math.max(0, curRangers - rLost);
+        events.push({
+          type: "system",
+          message: `🏃 Critical Unrest: Desertion! ${fLost.toLocaleString()} fighters and ${rLost.toLocaleString()} rangers fled the ranks.`,
+        });
+      } else {
+        // Arson
+        const blds = [
+          "bld_farms",
+          "bld_markets",
+          "bld_barracks",
+          "bld_shrines",
+          "bld_taverns",
+          "bld_housing",
+          "bld_smithies",
+        ];
+        const availBlds = blds.filter(
+          (b) => (updates[b] !== undefined ? updates[b] : k[b] || 0) > 0,
+        );
+        if (availBlds.length > 0) {
+          const bToDest =
+            availBlds[Math.floor(Math.random() * availBlds.length)];
+          updates[bToDest] = Math.max(
+            0,
+            (updates[bToDest] !== undefined
+              ? updates[bToDest]
+              : k[bToDest] || 0) - 1,
+          );
+          events.push({
+            type: "system",
+            message: `🔥 Critical Unrest: Arson! 1 ${bToDest.replace("bld_", "")} was burned down.`,
+          });
+        } else {
+          events.push({
+            type: "system",
+            message: `🔥 Critical Unrest: Rioting citizens caused chaos in the streets.`,
+          });
+        }
+      }
+    }
+  } else if (currentMoraleThreshold >= 25 && currentMoraleThreshold < 50) {
+    // Troubled (20% chance)
+    if (Math.random() < 0.2) {
+      if (Math.random() < 0.5) {
+        // Tax evasion
+        const currentGold =
+          updates.gold !== undefined ? updates.gold : k.gold;
+        const goldLost = Math.floor(currentGold * 0.03);
+        updates.gold = Math.max(0, currentGold - goldLost);
+        events.push({
+          type: "system",
+          message: `💰 Troubled times: Widespread tax evasion. ${goldLost.toLocaleString()} gold lost.`,
+        });
+      } else {
+        // Flavor only
+        const flavors = [
+          "Citizens are complaining openly in the town square.",
+          "Merchants are grumbling about the state of the kingdom.",
+          "Graffiti mocking your leadership has appeared on the castle walls.",
+          "A minor brawl erupted in the tavern over political disagreements.",
+        ];
+        events.push({
+          type: "system",
+          message: `😒 Unrest: ${flavors[Math.floor(Math.random() * flavors.length)]}`,
+        });
+      }
+    }
+  }
+
   // ── 7. Auto-research — use per-discipline allocation ──────────────────────────
   let schoolBonus = 1 + Math.floor(k.bld_schools / 5) * 0.02;
   const autoSchoolSpeedMult = fragmentBonusManager.getBonusMultiplier(k, 'schools', 'speed');
@@ -2637,7 +2971,7 @@ function processTurn(k, db = null) {
   const towerUpdates = processMageTower({ ...k, ...updates }, events);
   Object.assign(updates, towerUpdates);
 
-  // ── 8d. Shrines — clerics boost happiness and prepare to heal ────────────────
+  // ── 8d. Shrines — clerics boost morale and prepare to heal ───────────────────
   if (k.race === "vampire") {
     const mausoleumUpdates = processMausoleum({ ...k, ...updates }, events);
     Object.assign(updates, mausoleumUpdates);
@@ -2762,19 +3096,22 @@ function processTurn(k, db = null) {
       });
     }
   }
-  // Human: level 5+ clerics restore 1 happiness per turn
+  // Human: level 5+ clerics restore 1 morale per turn
   const humanBonus = racialUnitBonus(
     { ...k, troop_levels: updates.troop_levels || k.troop_levels },
     "clerics",
   );
   if (humanBonus.auraHeal && getAvailableUnits(k, "clerics") > 0) {
+    const natCap = naturalMoraleCap(k);
     const cur =
-      updates.happiness !== undefined
-        ? updates.happiness
-        : k.happiness !== undefined && k.happiness !== null
-          ? k.happiness
-          : 50;
-    updates.happiness = Math.min(120, cur + 1);
+      updates.morale !== undefined
+        ? updates.morale
+        : k.morale !== undefined && k.morale !== null
+          ? k.morale
+          : 100;
+    const oldMorale = cur;
+    updates.morale = Math.min(natCap, cur + 1);
+    const mDelta = updates.morale - oldMorale;
   }
 
   // ── XP awards this turn ───────────────────────────────────────────────────────
@@ -2855,7 +3192,7 @@ function processTurn(k, db = null) {
           dire_wolf:
             "🐺 Your rangers have reached mastery — Dire Wolf expeditions now return 1 turn early.",
           human:
-            "💚 Your clerics have reached mastery — Human healing aura now restores +1 happiness per turn.",
+            "💚 Your clerics have reached mastery — Human healing aura now restores +1 morale per turn.",
         };
         if (RACIAL_MSGS[k.race])
           events.push({ type: "system", message: RACIAL_MSGS[k.race] });
@@ -4059,6 +4396,11 @@ function wmCrewRequired(race, engineerLevel) {
   return base;
 }
 
+function moraleMult(morale) {
+  if (morale < 50) return 0.8 + (morale / 50) * 0.1; // 0.80–0.90
+  if (morale < 100) return 0.9 + ((morale - 50) / 50) * 0.1; // 0.90–1.00
+  return Math.min(1.2, 1.0 + ((morale - 100) / 100) * 0.1); // 1.00–1.20 (capped at 1.20)
+}
 
 function happinessCombatMult(happiness) {
   const mult = 0.5 + (happiness / 120);
@@ -4118,13 +4460,13 @@ function resolveMilitaryAttack(
     shameEvent = `👑 ${attacker.name} has attacked the much weaker ${defender.name}. The world watches in disgust.`;
   } else if (bullyRatio >= 4) {
     bullyPenalty = 0.6;
-    bullyMsg = "⚠️ Happiness suffers — this is slaughter, not war.";
+    bullyMsg = "⚠️ Morale suffers — this is slaughter, not war.";
   } else if (bullyRatio >= 2) {
     bullyPenalty = 0.8;
     bullyMsg = "⚠️ Your troops lack motivation fighting a weaker foe.";
   }
 
-  // ── Happiness multipliers ───────────────────────────────────────────────────
+  // ── Morale multipliers ────────────────────────────────────────────────────
   const atkMoraleMult = happinessCombatMult(attacker.happiness !== undefined && attacker.happiness !== null ? attacker.happiness : 50);
   const defMoraleMult = happinessCombatMult(defender.happiness !== undefined && defender.happiness !== null ? defender.happiness : 50);
 
@@ -4787,43 +5129,43 @@ function resolveMilitaryAttack(
     }
   }
 
-  // ── Step 8: Happiness changes & Discovery ─────────────────────────────────
+  // ── Step 8: Morale changes & Discovery ───────────────────────────────────
   const victoryMargin = Math.min(2.0, Math.max(0.1, powerRatio));
-  let atkHappinessChange, defHappinessChange;
+  let atkMoraleChange, defMoraleChange;
   if (win) {
-    atkHappinessChange = Math.floor(5 + Math.min(10, victoryMargin * 5));
-    defHappinessChange = -Math.max(
+    atkMoraleChange = Math.floor(5 + Math.min(10, victoryMargin * 5));
+    defMoraleChange = -Math.max(
       5,
       Math.floor(Math.min(20, victoryMargin * 10)),
     );
-    // Bully shame — attacker loses happiness too at high ratios
-    if (bullyRatio >= 8) atkHappinessChange -= 15;
-    if (bullyRatio >= 4) atkHappinessChange -= 5;
+    // Bully shame — attacker loses morale too at high ratios
+    if (bullyRatio >= 8) atkMoraleChange -= 15;
+    if (bullyRatio >= 4) atkMoraleChange -= 5;
   } else {
-    atkHappinessChange = -Math.floor(
+    atkMoraleChange = -Math.floor(
       5 + Math.min(15, (1 / Math.max(0.1, powerRatio)) * 8),
     );
-    defHappinessChange = Math.floor(
+    defMoraleChange = Math.floor(
       5 + Math.min(10, (1 / Math.max(0.1, powerRatio)) * 5),
     );
   }
-  const HAPPINESS_FLOOR = 0;
-  const newAtkHappiness = Math.max(
-    HAPPINESS_FLOOR,
+  const MORALE_FLOOR = 0;
+  const newAtkMorale = Math.max(
+    MORALE_FLOOR,
     Math.min(
-      120,
-      (attacker.happiness !== undefined && attacker.happiness !== null
-        ? attacker.happiness
-        : 50) + atkHappinessChange,
+      200,
+      (attacker.morale !== undefined && attacker.morale !== null
+        ? attacker.morale
+        : 100) + atkMoraleChange,
     ),
   );
-  const newDefHappiness = Math.max(
-    HAPPINESS_FLOOR,
+  const newDefMorale = Math.max(
+    MORALE_FLOOR,
     Math.min(
-      120,
-      (defender.happiness !== undefined && defender.happiness !== null
-        ? defender.happiness
-        : 50) + defHappinessChange,
+      200,
+      (defender.morale !== undefined && defender.morale !== null
+        ? defender.morale
+        : 100) + defMoraleChange,
     ),
   );
 
@@ -4907,7 +5249,7 @@ function resolveMilitaryAttack(
     engineers: Math.max(0, (attacker.engineers || 0) - atkEngineersLost),
     war_machines: Math.max(0, (attacker.war_machines || 0) - atkWmLost),
     land: attacker.land + landTransferred,
-    happiness: newAtkHappiness,
+    morale: newAtkMorale,
     weapons_stockpile: Math.max(
       0,
       (attacker.weapons_stockpile || 0) -
@@ -4924,7 +5266,7 @@ function resolveMilitaryAttack(
     engineers: Math.max(0, (defender.engineers || 0) - defEngineersLost),
     war_machines: Math.max(0, (defender.war_machines || 0) - defWmLost),
     land: Math.max(0, defender.land - landTransferred),
-    happiness: newDefHappiness,
+    morale: newDefMorale,
   });
 
   // XP
@@ -4973,8 +5315,8 @@ function resolveMilitaryAttack(
     rangerKills,
     flankKills,
     thiefSabotage,
-    atkHappinessChange,
-    defHappinessChange,
+    atkMoraleChange,
+    defMoraleChange,
     bullyMsg,
     shameEvent,
     steps,
@@ -5300,12 +5642,13 @@ function castSpell(caster, target, spellId, obscure) {
           ? `${cleared} active curse${cleared > 1 ? "s" : ""} dispelled`
           : "no active curses to dispel";
     } else if (spellId === "bless") {
-      const happinessGain = Math.floor(20 * magicRatio);
-      targetUpdates.happiness = Math.min(
-        120,
-        (target.happiness !== undefined && target.happiness !== null
-          ? target.happiness
-          : 50) + happinessGain,
+      const natCap = naturalMoraleCap(target);
+      const moraleGain = Math.floor(natCap * 0.1 * magicRatio);
+      targetUpdates.morale = Math.min(
+        natCap * 2,
+        (target.morale !== undefined && target.morale !== null
+          ? target.morale
+          : 100) + moraleGain,
       );
       // Apply bless buff for 5 turns
       let tEffects = {};
@@ -5314,10 +5657,10 @@ function castSpell(caster, target, spellId, obscure) {
       } catch {}
       tEffects.bless = {
         turns_left: def.duration || 5,
-        happiness_bonus: happinessGain,
+        morale_bonus: moraleGain,
       };
       targetUpdates.active_effects = JSON.stringify(tEffects);
-      damageDesc = `+${happinessGain} happiness and pop growth boosted for ${def.duration || 5} turns`;
+      damageDesc = `+${moraleGain} morale and pop growth boosted for ${def.duration || 5} turns`;
     } else if (spellId === "shield") {
       let tEffects = {};
       try {
@@ -6041,7 +6384,6 @@ function expeditionRewards(type, rangers, fighters, k) {
   const exploreBonus =
     {
       dire_wolf: 1.4,
-      wood_elf: 1.75,
       dark_elf: 1.25,
       human: 1.1,
       orc: 1.05,
@@ -6421,166 +6763,129 @@ function expeditionRewards(type, rangers, fighters, k) {
       }
     }
   } else if (type === "mountain") {
-    rewards.push({
-      text: `+${goldBase.toLocaleString()} gold from mountain caches`,
-    });
-    updates.gold = k.gold + goldBase;
+    // Mountain Expedition: Rangers only, balanced high-risk/high-reward attrition
+    const mountainMult = { dire_wolf: 0.8, human: 1.0, dwarf: 1.1 }[k.race] || 1.0;
+    const rangerLevel = effectiveTroopLevel(k, "rangers");
 
-    // Tiered base attrition: 1-10 (10%), 11-20 (9%), ... 91-100 (1%)
-    const getTierAttrition = (level) => {
-      const tier = Math.ceil(level / 10);
-      return Math.max(1, 11 - tier);
-    };
+    // Avalanche attrition per turn: random between 0 and level-based max (targeting ~75% total attrition)
+    const expTurns = EXPEDITION_TURNS["mountain"] || 100;
+    let totalArriving = rangers;
+    const attritionLog = [];
 
-    // Tiered avalanche save chance: tier * 10% (tier 1=10%, tier 10=100%)
-    const getAvalancheSaveChance = (level) => {
-      const tier = Math.ceil(level / 10);
-      return tier * 0.1;
-    };
+    for (let turn = 1; turn <= expTurns; turn++) {
+      // Determine max loss % based on ranger level (BALANCED: 0-8/6/5/4% per turn)
+      let maxLoss = 8;
+      if (rangerLevel >= 21 && rangerLevel <= 30) maxLoss = 6;
+      else if (rangerLevel >= 31 && rangerLevel <= 40) maxLoss = 5;
+      else if (rangerLevel >= 41) maxLoss = 4;
 
-    // Tiered avalanche loss if save fails: starts at 25% (tier 1), down to 1% (tier 10)
-    const getAvalancheLoss = (level) => {
-      const tier = Math.ceil(level / 10);
-      return Math.max(1, 26 - tier * 2.5);
-    };
+      // Roll between 0 and maxLoss (always allows zero-loss outcome)
+      const lossPercent = rand(0, maxLoss);
+      const lostThisTurn = Math.ceil((totalArriving * lossPercent) / 100);
+      totalArriving -= lostThisTurn;
 
-    // Apply base attrition to rangers
-    const baseAttritionPct = getTierAttrition(Math.max(1, Math.floor(unitLevelMult(k, "rangers") * 100)));
-    const baseAttritionLoss = Math.floor((rangers * baseAttritionPct) / 100);
-    const baseReturned = rangers - baseAttritionLoss;
+      if (lostThisTurn > 0) {
+        attritionLog.push(lostThisTurn);
+      }
+    }
 
-    if (baseAttritionLoss > 0) {
+    const survived = totalArriving;
+    const totalLost = rangers - survived;
+    const casualtyRate = (totalLost / rangers * 100).toFixed(1);
+
+    if (totalLost > 0) {
       rewards.push({
-        text: `${baseAttritionLoss} ranger${baseAttritionLoss > 1 ? "s" : ""} lost to mountain hazards`,
+        text: `Avalanches claimed ${totalLost.toLocaleString()} rangers (${casualtyRate}%) — ${survived.toLocaleString()} returned`,
+      });
+    } else {
+      rewards.push({
+        text: `Against the odds, all ${rangers.toLocaleString()} rangers navigated the mountain unscathed`,
       });
     }
 
-    updates._rangers_returned = baseReturned;
+    updates._rangers_returned = survived;
 
-    // Mountain-specific resource yields (high because of 100 turns + no land)
-    const rollMountain = Math.random() * 100;
-    let mtWood = 0, mtStone = 0, mtIron = 0;
-    if (rollMountain < 0.5) {
-      mtWood = 50;
-      mtStone = 50;
-      mtIron = 30;
-    } else if (rollMountain < 5.5) {
-      mtWood = 15;
-      mtStone = 15;
-      mtIron = 10;
-    } else if (rollMountain < 30.5) {
-      mtWood = 5;
-      mtStone = 5;
-      mtIron = 3;
-    } else if (rollMountain < 80.5) {
-      mtWood = 2;
-      mtStone = 2;
-      mtIron = 1;
-    }
+    // Apply casualty losses to kingdom ranger count
+    updates.rangers = Math.max(0, (k.rangers || 0) - totalLost);
 
-    if (mtWood > 0) {
-      updates.wood = (updates.wood || k.wood || 0) + mtWood;
-      rewards.push({ text: `🌲 +${mtWood} wood harvested from mountain slopes` });
-    }
-    if (mtStone > 0) {
-      updates.stone = (updates.stone || k.stone || 0) + mtStone;
-      rewards.push({ text: `🪨 +${mtStone} stone quarried from peaks` });
-    }
-    if (mtIron > 0) {
-      updates.iron = (updates.iron || k.iron || 0) + mtIron;
-      rewards.push({ text: `🔗 +${mtIron} iron mined from mountain veins` });
-    }
-
-    // High mana from elemental peaks
-    if (roll(0.6)) {
-      const mtMana = rand(
-        Math.floor(rangers * 0.3 * exploreBonus),
-        Math.floor(rangers * 1.5 * exploreBonus),
-      );
-      rewards.push({ text: `+${mtMana} mana from elemental peaks` });
-      updates.mana = (updates.mana !== undefined ? updates.mana : (k.mana || 0)) + mtMana;
-    }
-
-    // Avalanche events: 2% per turn over 100 turns (expect ~2 avalanches)
-    const avgLevel = Math.max(1, Math.floor(unitLevelMult(k, "rangers") * 100));
-    const saveChance = getAvalancheSaveChance(avgLevel);
-    const avalancheLossRate = getAvalancheLoss(avgLevel) / 100;
-
-    let currentRangers = baseReturned;
-    let totalAvalancheLoss = 0;
-    let survivedAvalanches = 0;
-
-    for (let turn = 1; turn <= 100; turn++) {
-      if (roll(0.02)) {
-        if (!roll(saveChance)) {
-          const loss = Math.floor(currentRangers * avalancheLossRate);
-          if (loss > 0) {
-            currentRangers = Math.max(0, currentRangers - loss);
-            totalAvalancheLoss += loss;
-          }
-        } else {
-          survivedAvalanches++;
-        }
-      }
-    }
-
-    if (totalAvalancheLoss > 0 || survivedAvalanches > 0) {
-      updates._rangers_returned = currentRangers;
-
-      if (totalAvalancheLoss > 0) {
-        rewards.push({
-          text: `❄️ AVALANCHE! ${totalAvalancheLoss} ranger${totalAvalancheLoss > 1 ? "s" : ""} buried under snow`,
-        });
-        events.push({
-          type: "system",
-          message: `⛰️ Your mountain expedition was caught in devastating avalanches. ${totalAvalancheLoss.toLocaleString()} rangers perished.`,
-        });
-      }
-
-      if (survivedAvalanches > 0) {
-        rewards.push({
-          text: `❄️ ${survivedAvalanches} avalanche${survivedAvalanches > 1 ? "s" : ""} swept the peaks, but your rangers took shelter and survived`,
-        });
-
-        // Air Fragment discovery during wind storm (25% chance per survived avalanche series)
-        if (roll(0.25)) {
-          let inventory = safeJsonParse(updates.items || k.items, [], "mountainExpedition:airFragment");
-          if (!Array.isArray(inventory)) inventory = [];
-          const airFrag = inventory.find((i) => i.id === 'air_fragment');
-          if (!airFrag || (airFrag.qty || 0) === 0) {
-            addItemToInventory(inventory, 'air_fragment', 'Air Fragment', 1);
-            updates.items = JSON.stringify(inventory);
-            rewards.push({
-              text: `🌬️ During the storm, your rangers found an Air Fragment dancing on the wind`,
-            });
-          }
-        }
-      }
-    }
-
-    // Rare mountain discoveries
-    if (roll(0.08)) {
-      const bonus = rand(
-        Math.floor(rangers * 0.05 * exploreBonus),
-        Math.floor(rangers * 0.2 * exploreBonus),
+    // Mountain rewards only granted if rangers survived the expedition
+    if (survived > 0) {
+      // Gold scaled to troop count and level (200-500 per ranger)
+      const goldPerRanger = rand(200, 500);
+      const mountainGold = Math.floor(
+        rangers * goldPerRanger * tacBonus * exploreBonus * mountainMult * (1 + rand(5, 30) / 100)
       );
       rewards.push({
-        text: `Legends of a lost civilization found — ${bonus} additional research boost`,
+        text: `+${mountainGold.toLocaleString()} gold from mountain artifacts`,
       });
-      updates.res_spellbook = (updates.res_spellbook !== undefined ? updates.res_spellbook : (k.res_spellbook || 0)) + bonus;
+      updates.gold = k.gold + mountainGold;
+
+      // Mana from ley lines (scaled)
+      const mountainMana = Math.floor(
+        rand(rangers * 10, rangers * 50) * mountainMult * exploreBonus
+      );
+      rewards.push({
+        text: `+${mountainMana} mana from ancient ley lines`,
+      });
+      updates.mana = k.mana + mountainMana;
+
+      // Research boost from ancient knowledge (scaled)
+      const res = ["res_weapons", "res_armor", "res_construction"][rand(0, 2)];
+      const resBoost = Math.floor(rand(50, 150) * mountainMult);
+      rewards.push({
+        text: `Ancient runes revealed — ${res.replace("res_", "").replace("_", " ")} +${resBoost}`,
+      });
+      updates[res] = (k[res] || 0) + resBoost;
+
+      // Junk prizes more frequent on mountain (60% chance per turn) — consolidated summary
+      let junkCount = 0;
+      for (let t = 0; t < expTurns; t++) {
+        if (roll(0.6)) {
+          junkPrize(k, updates);
+          junkCount++;
+        }
+      }
+      if (junkCount > 0) {
+        rewards.push({
+          text: `Rangers discovered ${junkCount} artifacts in the mountain passes`,
+        });
+      }
     }
 
-    if (roll(0.04)) {
-      const herboots = junkPrize(k, updates);
-      rewards.push({
-        text: `Your rangers discovered ${herboots} in a hidden mountain cave`,
-      });
-    }
+    // No land rewards from mountain — focus purely on artifacts/magic
+    // (explicitly 0 land)
   }
 
-  // ── Ultra-rare prizes (deep: 0.5%, dungeon success: 1%, mountain: 1%) ──────
-  const ultraChance = type === "dungeon" ? 0.01 : type === "deep" ? 0.005 : type === "mountain" ? 0.01 : 0;
-  if (ultraChance > 0 && roll(ultraChance)) {
+  // ── Ultra-rare prizes ──────────────────────────────────────────────────
+  // deep: 0.5%, dungeon success: 1%, mountain: 2.5% per turn (MAX 1 per expedition for mountain)
+  const ultraChance = type === "dungeon" ? 0.01 : type === "deep" ? 0.005 : type === "mountain" ? 0.025 : 0;
+
+  // For mountain expeditions, track if we already got an ultra-rare during the 100 turns
+  if (type === "mountain" && updates._rangers_returned > 0) {
+    let ultraRareObtained = false;
+    const mountainUltraRares = ULTRA_RARE_PRIZES.filter(p =>
+      ["iceflow_crown", "snowpeak_chalice", "frostbind_amulet", "avalanche_heart", "stormcaller_gem"].includes(p.id)
+    );
+    for (let turn = 1; turn <= (EXPEDITION_TURNS["mountain"] || 100); turn++) {
+      if (!ultraRareObtained && roll(ultraChance)) {
+        if (mountainUltraRares.length > 0) {
+          const prize = mountainUltraRares[Math.floor(Math.random() * mountainUltraRares.length)];
+          prize.effect(k, updates);
+          rewards.push({ text: `✨✨✨ ULTRA RARE: ${prize.text}` });
+
+          // Add ultra-rare item to inventory
+          let inventory = safeJsonParse(updates.items || k.items, [], "expeditionRewards:ultra_rare_items");
+          if (!Array.isArray(inventory)) inventory = [];
+          const itemDef = INVENTORY_ITEMS?.[prize.id];
+          addItemToInventory(inventory, prize.id, itemDef?.name || prize.id, 1);
+          updates.items = JSON.stringify(inventory);
+
+          ultraRareObtained = true; // Prevent more ultra-rares this expedition
+        }
+      }
+    }
+  } else if (ultraChance > 0 && roll(ultraChance)) {
+    // Non-mountain expeditions: regular ultra-rare drop (can be multiple)
     const prize =
       ULTRA_RARE_PRIZES[Math.floor(Math.random() * ULTRA_RARE_PRIZES.length)];
     prize.effect(k, updates);
@@ -6598,6 +6903,19 @@ function expeditionRewards(type, rangers, fighters, k) {
   const throneChance = type === "deep" || type === "dungeon" ? 0.001 : 0;
   if (throneChance > 0 && roll(throneChance)) {
     updates._check_throne = true; // resolveExpeditions will check server_state and apply if unclaimed
+  }
+
+  // ── Air Fragment (rare mountain drop, ~1-2% chance, only if rangers survive) ────────────────
+  if (type === "mountain" && updates._rangers_returned > 0 && roll(0.015)) {
+    // Add air fragment to inventory
+    let inventory = safeJsonParse(updates.items || k.items, [], "expeditionRewards:air_fragment");
+    if (!Array.isArray(inventory)) inventory = [];
+    const itemDef = INVENTORY_ITEMS?.["air_fragment"];
+    addItemToInventory(inventory, "air_fragment", itemDef?.name || "Air Fragment", 1);
+    updates.items = JSON.stringify(inventory);
+    rewards.push({
+      text: `🌬️ An Air Fragment pulses with the fury of ancient storms — a collectible of immense power`,
+    });
   }
 
   const preAchLength = events.length;
@@ -6763,6 +7081,7 @@ async function resolveExpeditions(db, k, engine) {
         scout: "🔭 Scout",
         deep: "🌲 Deep",
         dungeon: "⚔️ Dungeon",
+        mountain: "🏔️ Mountain",
       }[exp.type];
 
       // Apply kingdom updates
@@ -6781,7 +7100,6 @@ async function resolveExpeditions(db, k, engine) {
         "land",
         "population",
         "morale",
-        "happiness",
         "food",
         "fighters",
         "rangers",
@@ -6824,7 +7142,7 @@ async function resolveExpeditions(db, k, engine) {
       ]);
 
       // Award XP
-      const expXpAmount = { scout: 8, deep: 20, dungeon: 40 }[exp.type] || 8;
+      const expXpAmount = { scout: 8, deep: 20, dungeon: 40, mountain: 100 }[exp.type] || 8;
       const rXp = awardTroopXp(freshK, "rangers", expXpAmount * exp.rangers);
       updates.troop_levels = rXp.troop_levels;
       if (exp.type === "dungeon" && exp.fighters > 0) {
@@ -6837,7 +7155,7 @@ async function resolveExpeditions(db, k, engine) {
       }
 
       // Award kingdom-level exploration XP (divide by XP_BASE.exploration=5 to get final amounts matching stated values)
-      const kingdomXpBase = { scout: 1, deep: 4, dungeon: 8 }[exp.type] || 1;
+      const kingdomXpBase = { scout: 1, deep: 4, dungeon: 8, mountain: 20 }[exp.type] || 1;
       const kingdomXp = awardXp(freshK, "exploration", kingdomXpBase * (exp.rangers + (exp.fighters || 0)));
       updates.xp = kingdomXp.xp;
       updates.level = kingdomXp.level;
@@ -7114,7 +7432,7 @@ function processMageTower(k, events) {
   return updates;
 }
 
-// ── Shrine — clerics boost happiness and prepare healing ─────────────────────
+// ── Shrine — clerics boost morale and prepare healing ────────────────────────
 function processShrine(k, _events) {
   const updates = {};
   const shrines = k.bld_shrines;
@@ -7540,23 +7858,27 @@ function applyHeroTurnBonuses(hero, k, updates, events) {
         message: `🧙 Archmage Mana Infusion: +${bonus.toLocaleString()} mana.`,
       });
   } else if (hero.class === "paladin") {
-    // Protective Aura: Health regeneration or happiness boost
-    const currentHappiness =
-      updates.happiness !== undefined
-        ? updates.happiness
-        : k.happiness !== undefined && k.happiness !== null
-          ? k.happiness
-          : 50;
-    updates.happiness = Math.min(120, currentHappiness + 1);
+    // Protective Aura: Health regeneration or morale boost
+    const currentMorale =
+      updates.morale !== undefined
+        ? updates.morale
+        : k.morale !== undefined && k.morale !== null
+          ? k.morale
+          : 100;
+    const oldMorale = currentMorale;
+    updates.morale = Math.min(100, currentMorale + 1);
+    const mDelta = updates.morale - oldMorale;
   } else if (hero.class === "warlord") {
-    // Warlord: Happiness boost
-    const currentHappiness =
-      updates.happiness !== undefined
-        ? updates.happiness
-        : k.happiness !== undefined && k.happiness !== null
-          ? k.happiness
-          : 50;
-    updates.happiness = Math.min(120, currentHappiness + 2);
+    // Warlord: Morale boost
+    const currentMorale =
+      updates.morale !== undefined
+        ? updates.morale
+        : k.morale !== undefined && k.morale !== null
+          ? k.morale
+          : 100;
+    const oldMorale = currentMorale;
+    updates.morale = Math.min(100, currentMorale + 2);
+    const mDelta = updates.morale - oldMorale;
   } else if (hero.class === "forge_lord") {
     // Forge Lord: Gold income
     const bonus = Math.floor(hero.level * 300);
@@ -7568,17 +7890,19 @@ function applyHeroTurnBonuses(hero, k, updates, events) {
         message: `🛠️ Forge Lord Industrialism: +${bonus.toLocaleString()} gold.`,
       });
   } else if (hero.class === "alpha") {
-    // Alpha: Food and happiness
+    // Alpha: Food and morale
     const foodBonus = Math.floor(hero.level * 500);
     updates.food =
       (updates.food !== undefined ? updates.food : k.food) + foodBonus;
-    const currentHappiness =
-      updates.happiness !== undefined
-        ? updates.happiness
-        : k.happiness !== undefined && k.happiness !== null
-          ? k.happiness
-          : 50;
-    updates.happiness = Math.min(120, currentHappiness + 1);
+    const currentMorale =
+      updates.morale !== undefined
+        ? updates.morale
+        : k.morale !== undefined && k.morale !== null
+          ? k.morale
+          : 100;
+    const oldMorale = currentMorale;
+    updates.morale = Math.min(100, currentMorale + 1);
+    const mDelta = updates.morale - oldMorale;
     if (events) {
       events.push({
         type: "system",
@@ -8045,6 +8369,7 @@ module.exports = {
   effectiveTroopLevel,
   WM_CREW_REQUIRED,
   wmCrewRequired,
+  moraleMult,
   happinessCombatMult,
   calculateHappiness,
   getHappinessRecoveryRate,

@@ -2864,6 +2864,8 @@ module.exports = function (db) {
     const r = Math.max(0, parseInt(rangers) || 0);
     const f = Math.max(0, parseInt(fighters) || 0);
     if (r < 1) return res.status(400).json({ error: "Send at least 1 ranger" });
+    if (type === "mountain" && r < 10000)
+      return res.status(400).json({ error: "Mountain expedition requires at least 10,000 rangers" });
     if (type === "dungeon" && f < 1)
       return res.status(400).json({ error: "Dungeon raids require fighters" });
     if (type === "mountain" && f > 0)
