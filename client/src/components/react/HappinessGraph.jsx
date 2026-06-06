@@ -35,6 +35,9 @@ const HappinessGraph = ({ history = [] }) => {
     return (
       <div className="happiness-graph-container">
         <div className="happiness-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M12 2v20m8-6l-8-6-8 6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
           <p>No historical data yet</p>
         </div>
       </div>
