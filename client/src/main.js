@@ -52,43 +52,32 @@ export function initGameStateManager() {
   }
 }
 
-// REPLACE vanilla JS applyServerUpdates with gameStateManager-first approach
-// This becomes the SINGLE source of truth for metrics
+// WRAP vanilla JS applyServerUpdates to sync metrics to gameStateManager
 // Guard against HMR re-wrapping to prevent infinite recursion
 if (!window._applyServerUpdatesWrapped) {
+  const originalApplyServerUpdates = window.applyServerUpdates;
   window.applyServerUpdates = function(updates) {
-  if (!updates) return;
+    if (!updates) return;
 
-  // Update gameStateManager first (source of truth)
-  // Dynamically sync all metrics fields
-  const knownMetrics = ['gold', 'mana', 'population', 'happiness', 'food', 'land', 'turn', 'tax', 'mana_regen', 'gold_income', 'food_balance'];
-  const metricsUpdate = {};
+    // Update gameStateManager first (source of truth)
+    // Dynamically sync all metrics fields
+    const knownMetrics = ['gold', 'mana', 'population', 'happiness', 'food', 'land', 'turn', 'tax', 'mana_regen', 'gold_income', 'food_balance'];
+    const metricsUpdate = {};
 
-  for (const metric of knownMetrics) {
-    if (updates[metric] !== undefined) {
-      metricsUpdate[metric] = updates[metric];
+    for (const metric of knownMetrics) {
+      if (updates[metric] !== undefined) {
+        metricsUpdate[metric] = updates[metric];
+      }
     }
-  }
 
-  if (Object.keys(metricsUpdate).length > 0) {
-    gameStateManager.updateMetrics(metricsUpdate);
-  }
+    if (Object.keys(metricsUpdate).length > 0) {
+      gameStateManager.updateMetrics(metricsUpdate);
+    }
 
-  // Also update window.state for backwards compatibility with vanilla JS code
-  if (window.state) {
-    if (updates.score !== undefined) window.state.score = updates.score;
-    if (updates.population !== undefined) window.state.pop = updates.population;
-    if (updates.gold !== undefined) window.state.gold = updates.gold;
-    if (updates.mana !== undefined) window.state.mana = updates.mana;
-    if (updates.land !== undefined) window.state.land = updates.land;
-    if (updates.happiness !== undefined) window.state.happiness = updates.happiness;
-    if (updates.food !== undefined) window.state.food = updates.food;
-    if (updates.tax !== undefined) window.state.tax = updates.tax;
-    if (updates.name !== undefined) window.state.name = updates.name;
-    if (updates.turn !== undefined) window.state.turn = updates.turn;
-    if (updates.turns_stored !== undefined) window.state.turns_stored = updates.turns_stored;
-    // ... rest of state updates handled by vanilla JS
-  }
+    // Call the original vanilla JS function to update window.state and DOM
+    if (originalApplyServerUpdates) {
+      originalApplyServerUpdates(updates);
+    }
   };
   window._applyServerUpdatesWrapped = true;
 }
