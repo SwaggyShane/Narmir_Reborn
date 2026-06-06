@@ -1058,7 +1058,7 @@ function processResourceYield(k, events) {
   let woodGained = 0;
   let stoneGained = 0;
   let ironGained = 0;
-  let foresterJunkGenerated = false;
+  let junkGenerated = {};
 
   for (const [bKey, cfg] of Object.entries(RESOURCE_BUILDING_CONFIG)) {
     const col = `bld_${bKey}`;
@@ -1077,38 +1077,60 @@ function processResourceYield(k, events) {
     const fragmentMult = fragmentBonusManager.getBonusMultiplier(k, bKey, 'production');
     baseYield *= fragmentMult;
 
-    // Random events on wood production only
-    if (cfg.type === 'wood') {
-      const rareFindMult = raceBonus(k, 'rare_find');
-      const roll = Math.random();
+    // Random events on all resource production
+    const rareFindMult = raceBonus(k, 'rare_find');
+    const roll = Math.random();
 
-      if (roll < 0.0025 * rareFindMult) {
-        // 0.25% rare wood item
-        const rareItems = RARE_RESOURCE_ITEMS.wood;
+    if (roll < 0.0025 * rareFindMult) {
+      // 0.25% rare resource item
+      const rareItems = RARE_RESOURCE_ITEMS[cfg.type];
+      if (rareItems) {
         const chosen = rareItems[Math.floor(Math.random() * rareItems.length)];
         const existing = items.find((i) => i.id === chosen.id);
         if (!existing || (existing.qty || 0) < 3) {
           addItemToInventory(items, chosen.id, chosen.name, 1);
           itemsChanged = true;
-          events.push({ type: 'system', message: `🌲 Your foresters discovered a rare item: ${chosen.name}!` });
+          const typeIcon = cfg.type === 'wood' ? '🌲' : cfg.type === 'stone' ? '🪨' : '🔗';
+          events.push({ type: 'system', message: `${typeIcon} Your workers discovered a rare item: ${chosen.name}!` });
         }
-      } else if (roll < 0.01 * rareFindMult) {
-        // 1% earth fragment
-        const earthFrag = items.find((i) => i.id === 'earth_fragment');
-        if (!earthFrag || (earthFrag.qty || 0) === 0) {
-          addItemToInventory(items, 'earth_fragment', 'Earth Fragment', 1);
+      }
+    } else if (roll < 0.01 * rareFindMult) {
+      // 1% elemental fragment (earth for wood, water for stone, fire for iron)
+      let fragmentId, fragmentName, discoveryMsg;
+      if (cfg.type === 'wood') {
+        fragmentId = 'earth_fragment';
+        fragmentName = 'Earth Fragment';
+        discoveryMsg = '🌍 Your foresters unearthed an Earth Fragment while logging!';
+      } else if (cfg.type === 'stone') {
+        fragmentId = 'water_fragment';
+        fragmentName = 'Water Fragment';
+        discoveryMsg = '💧 Your miners discovered a Water Fragment in the stone!';
+      } else if (cfg.type === 'iron') {
+        fragmentId = 'fire_fragment';
+        fragmentName = 'Fire Fragment';
+        discoveryMsg = '🔥 Your smiths found a Fire Fragment hidden in the ore!';
+      }
+      if (fragmentId) {
+        const frag = items.find((i) => i.id === fragmentId);
+        if (!frag || (frag.qty || 0) === 0) {
+          addItemToInventory(items, fragmentId, fragmentName, 1);
           itemsChanged = true;
-          events.push({ type: 'system', message: `🌍 Your foresters unearthed an Earth Fragment while logging!` });
+          events.push({ type: 'system', message: discoveryMsg });
         }
-      } else if (roll < 0.06) {
-        // 5% double yield (but only if not already hitting a rarer event)
-        baseYield *= 2;
-        events.push({ type: 'system', message: `🌲 An unusually productive logging session doubled your wood yield!` });
-      } else if (roll < 0.26 && !foresterJunkGenerated) {
-        // 20% worthless find (humorous) - only one per turn
+      }
+    } else if (roll < 0.06) {
+      // 5% double yield (but only if not already hitting a rarer event)
+      baseYield *= 2;
+      const typeMsg = cfg.type === 'wood' ? 'logging' : cfg.type === 'stone' ? 'mining' : 'smelting';
+      const typeIcon = cfg.type === 'wood' ? '🌲' : cfg.type === 'stone' ? '🪨' : '🔗';
+      events.push({ type: 'system', message: `${typeIcon} An unusually productive ${typeMsg} session doubled your yield!` });
+    } else if (roll < 0.26) {
+      // 20% worthless find (humorous) - one per resource type per turn
+      if (!junkGenerated[cfg.type]) {
         const msg = RESOURCE_JUNK_MESSAGES[Math.floor(Math.random() * RESOURCE_JUNK_MESSAGES.length)];
-        events.push({ type: 'system', message: `🌲 Foresters report: ${msg}` });
-        foresterJunkGenerated = true;
+        const typeIcon = cfg.type === 'wood' ? '🌲' : cfg.type === 'stone' ? '🪨' : '🔗';
+        events.push({ type: 'system', message: `${typeIcon} Workers report: ${msg}` });
+        junkGenerated[cfg.type] = true;
       }
     }
 
