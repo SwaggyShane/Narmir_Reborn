@@ -56,6 +56,8 @@ module.exports = function (db) {
       "dark_elf",
       "orc",
       "vampire",
+      "wood_elf",
+      "ogre",
     ];
     const chosenRace = validRaces.includes(race) ? race : "human";
     const validGenders = ["male", "female"];

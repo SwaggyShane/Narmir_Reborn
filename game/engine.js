@@ -285,7 +285,9 @@ function calculateHappiness(k) {
     dwarf: 0,
     high_elf: -5,
     dark_elf: -10,
-    vampire: -10
+    vampire: -10,
+    wood_elf: 5,
+    ogre: 0
   };
 
   // 1. Food Happiness (0-30)
