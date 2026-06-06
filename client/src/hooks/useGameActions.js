@@ -1,13 +1,14 @@
 import { useGameMetrics } from './useGameState';
 import { useActivePanel } from './useActivePanel';
-import { gameStateManager } from '../GameStateManager';
 
 async function apiCall(method, endpoint, body = null) {
   const getCsrfToken = () => {
     try {
       const m = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
       if (m) return decodeURIComponent(m[1]);
-    } catch (e) {}
+    } catch {
+      // Cookie parsing failed, return null
+    }
     return null;
   };
 

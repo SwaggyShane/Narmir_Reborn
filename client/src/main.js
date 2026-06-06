@@ -56,7 +56,6 @@ export function initGameStateManager() {
 // This becomes the SINGLE source of truth for metrics
 // Guard against HMR re-wrapping to prevent infinite recursion
 if (!window._applyServerUpdatesWrapped) {
-  const originalApplyServerUpdates = window.applyServerUpdates;
   window.applyServerUpdates = function(updates) {
   if (!updates) return;
 

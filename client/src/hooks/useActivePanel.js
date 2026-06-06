@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { gameStateManager } from '../GameStateManager';
 
 let activePanel = 'news';
 const activePanelListeners = new Set();
