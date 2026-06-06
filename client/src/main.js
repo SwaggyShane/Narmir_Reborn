@@ -53,52 +53,32 @@ export function initGameStateManager() {
 }
 
 // WRAP vanilla JS applyServerUpdates to sync metrics to gameStateManager
-// Use Object.defineProperty to intercept all assignments and HMR reloads
-// This handles race conditions where applyServerUpdates may not be defined yet
+// Guard against HMR re-wrapping to prevent infinite recursion
 if (!window._applyServerUpdatesWrapped) {
-  let activeApplyServerUpdates = window.applyServerUpdates;
+  const originalApplyServerUpdates = window.applyServerUpdates;
+  window.applyServerUpdates = function(updates) {
+    if (!updates) return;
 
-  Object.defineProperty(window, 'applyServerUpdates', {
-    get() {
-      return activeApplyServerUpdates;
-    },
-    set(newFunc) {
-      if (typeof newFunc === 'function' && !newFunc._wrapped) {
-        const wrapped = function(updates) {
-          if (!updates) return;
+    // Update gameStateManager first (source of truth)
+    // Dynamically sync all metrics fields
+    const knownMetrics = ['gold', 'mana', 'population', 'happiness', 'food', 'land', 'turn', 'tax', 'mana_regen', 'gold_income', 'food_balance'];
+    const metricsUpdate = {};
 
-          // Update gameStateManager first (source of truth)
-          // Dynamically sync all metrics fields
-          const knownMetrics = ['gold', 'mana', 'population', 'happiness', 'food', 'land', 'turn', 'tax', 'mana_regen', 'gold_income', 'food_balance'];
-          const metricsUpdate = {};
-
-          for (const metric of knownMetrics) {
-            if (updates[metric] !== undefined) {
-              metricsUpdate[metric] = updates[metric];
-            }
-          }
-
-          if (Object.keys(metricsUpdate).length > 0) {
-            gameStateManager.updateMetrics(metricsUpdate);
-          }
-
-          // Call the original vanilla JS function to update window.state and DOM
-          newFunc(updates);
-        };
-        wrapped._wrapped = true;
-        activeApplyServerUpdates = wrapped;
-      } else {
-        activeApplyServerUpdates = newFunc;
+    for (const metric of knownMetrics) {
+      if (updates[metric] !== undefined) {
+        metricsUpdate[metric] = updates[metric];
       }
-    },
-    configurable: true,
-  });
+    }
 
-  // Wrap initial definition if it exists
-  if (activeApplyServerUpdates) {
-    window.applyServerUpdates = activeApplyServerUpdates;
-  }
+    if (Object.keys(metricsUpdate).length > 0) {
+      gameStateManager.updateMetrics(metricsUpdate);
+    }
 
+    // Call the original vanilla JS function to update window.state and DOM
+    if (originalApplyServerUpdates) {
+      originalApplyServerUpdates(updates);
+    }
+  };
   window._applyServerUpdatesWrapped = true;
 }
 
