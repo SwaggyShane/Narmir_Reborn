@@ -1496,12 +1496,7 @@ function processFoodEconomy(k, events) {
         message: `🚨 Food shortage! Turn ${shortTurns} — build more farms or reduce troops.`,
       });
       if (shortTurns >= 3) {
-        let hit = shortTurns >= 8 ? 20 : shortTurns >= 5 ? 10 : 5;
-        // Celestial Feather morale_stability: reduces food shortage morale penalties
-        const moraleStability = fragmentBonusManager.getBonusMultiplier(k, 'granaries', 'morale_stability') - 1.0;
-        if (moraleStability > 0) {
-          hit = Math.max(1, Math.floor(hit * (1 - moraleStability)));
-        }
+        const hit = shortTurns >= 8 ? 20 : shortTurns >= 5 ? 10 : 5;
         const cur =
           updates.morale !== undefined
             ? updates.morale
@@ -1564,7 +1559,7 @@ function processFoodEconomy(k, events) {
 
 /**
  * Process granary attunement special abilities
- * Executes automated effects like food replication, vanishing, morale distribution, and elixir chaos
+ * Executes automated effects like food replication, vanishing, happiness distribution, and elixir chaos
  */
 function processGranaryAttunements(k, events) {
   const updates = {};
@@ -1615,34 +1610,42 @@ function processGranaryAttunements(k, events) {
     }
 
     case 'Celestial Feather': {
-      // Manna Manifestation: blessed reserves auto-distributed to stabilise morale on unstable turns
-      const morale = k.morale !== undefined && k.morale !== null ? k.morale : 50;
-      if (morale < 60 && (k.food || 0) > 0) {
+      // Manna Manifestation: blessed reserves auto-distributed to boost happiness on unstable turns
+      const happiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
+      // morale_stability passive → small per-turn happiness stability bonus
+      const moraleStability = fragmentBonusManager.getBonusMultiplier(k, 'granaries', 'morale_stability') - 1.0;
+      if (moraleStability > 0) {
+        const stabilityBonus = Math.max(1, Math.round(moraleStability * 10));
+        const currentHappiness = updates.happiness !== undefined ? updates.happiness : happiness;
+        updates.happiness = Math.min(120, currentHappiness + stabilityBonus);
+      }
+      // Food distribution when happiness is unstable
+      if (happiness < 60 && (k.food || 0) > 0) {
         const foodCost = Math.max(1, Math.floor((k.food || 0) * 0.05));
-        const moraleBoost = 8;
+        const happinessBoost = 8;
         foodChange = -foodCost;
         events.push({
           type: 'system',
-          message: `🪶 Manna Manifestation: ${foodCost.toLocaleString()} food distributed to stabilise morale (+${moraleBoost}).`,
+          message: `🪶 Manna Manifestation: ${foodCost.toLocaleString()} food distributed to boost happiness (+${happinessBoost}).`,
         });
-        const currentMorale = updates.morale !== undefined ? updates.morale : morale;
-        updates.morale = Math.min(naturalMoraleCap(k), currentMorale + moraleBoost);
+        const currentHappiness = updates.happiness !== undefined ? updates.happiness : happiness;
+        updates.happiness = Math.min(120, currentHappiness + happinessBoost);
       }
       break;
     }
 
     case 'Cursed Bloodstone': {
-      // Vampiric Silos: spoiling food distilled into dark elixir — fighter morale boost + chaos spike
+      // Vampiric Silos: spoiling food distilled into dark elixir — fighter happiness boost + chaos spike
       const currentFood = k.food || 0;
       if (currentFood > 0) {
         const combatAttune = fragmentBonusManager.getBonusMultiplier(k, 'granaries', 'combat_attunement') - 1.0;
-        // Dark elixir boosts fighter morale/readiness each turn
-        const moraleBoost = Math.max(1, Math.round(combatAttune * 10)); // 0.20 → +2 morale
-        const currentMorale = updates.morale !== undefined ? updates.morale : (k.morale || 50);
-        updates.morale = Math.min(naturalMoraleCap(k), currentMorale + moraleBoost);
+        // Dark elixir boosts fighter readiness each turn
+        const happinessBoost = Math.max(1, Math.round(combatAttune * 10)); // 0.20 → +2 happiness
+        const currentHappiness = updates.happiness !== undefined ? updates.happiness : (k.happiness || 50);
+        updates.happiness = Math.min(120, currentHappiness + happinessBoost);
         events.push({
           type: 'system',
-          message: `🩸 Vampiric Silos: Dark elixir brewed from spoiling grain — fighters emboldened (+${moraleBoost} morale).`,
+          message: `🩸 Vampiric Silos: Dark elixir brewed from spoiling grain — fighters emboldened (+${happinessBoost} happiness).`,
         });
         // Chaos spike: 25% chance the volatile brew destabilises the silos and food is lost
         if (Math.random() < 0.25) {
