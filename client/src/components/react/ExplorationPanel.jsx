@@ -19,15 +19,15 @@ const ExplorationPanel = () => {
     if (!input) return;
 
     const handleChange = () => handleMountainRangersChange();
-    input.addEventListener('change', handleChange);
-    input.addEventListener('input', handleChange);
+    input.onchange = handleChange;
+    input.oninput = handleChange;
 
     // Calculate initial value
     handleMountainRangersChange();
 
     return () => {
-      input.removeEventListener('change', handleChange);
-      input.removeEventListener('input', handleChange);
+      input.onchange = null;
+      input.oninput = null;
     };
   }, [handleMountainRangersChange]);
 
