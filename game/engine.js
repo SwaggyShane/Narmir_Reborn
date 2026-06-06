@@ -1084,7 +1084,7 @@ function processResourceYield(k, events) {
     if (roll < 0.0025 * rareFindMult) {
       // 0.25% rare resource item
       const rareItems = RARE_RESOURCE_ITEMS[cfg.type];
-      if (rareItems) {
+      if (rareItems && rareItems.length > 0) {
         const chosen = rareItems[Math.floor(Math.random() * rareItems.length)];
         const existing = items.find((i) => i.id === chosen.id);
         if (!existing || (existing.qty || 0) < 3) {
@@ -6864,36 +6864,51 @@ function expeditionRewards(type, rangers, fighters, k) {
         Math.floor(rangers * 1.5 * exploreBonus),
       );
       rewards.push({ text: `+${mtMana} mana from elemental peaks` });
-      updates.mana = (updates.mana || k.mana) + mtMana;
+      updates.mana = (updates.mana !== undefined ? updates.mana : (k.mana || 0)) + mtMana;
     }
 
-    // Avalanche events: 2% per turn (expected ~2 in 100 turns)
-    const avalancheLikelihood = 0.02;
-    // For simplicity, treat as happening if the random roll succeeds
-    if (roll(avalancheLikelihood)) {
-      const avgLevel = Math.max(1, Math.floor(unitLevelMult(k, "rangers") * 100));
-      const saveFail = !roll(getAvalancheSaveChance(avgLevel));
+    // Avalanche events: 2% per turn over 100 turns (expect ~2 avalanches)
+    const avgLevel = Math.max(1, Math.floor(unitLevelMult(k, "rangers") * 100));
+    const saveChance = getAvalancheSaveChance(avgLevel);
+    const avalancheLossRate = getAvalancheLoss(avgLevel) / 100;
 
-      if (saveFail) {
-        const avalancheLossRate = getAvalancheLoss(avgLevel) / 100;
-        const avalancheLoss = Math.floor(baseReturned * avalancheLossRate);
-        if (avalancheLoss > 0) {
-          const finalReturned = Math.max(0, baseReturned - avalancheLoss);
-          updates._rangers_returned = finalReturned;
-          rewards.push({
-            text: `❄️ AVALANCHE! ${avalancheLoss} ranger${avalancheLoss > 1 ? "s" : ""} buried under snow`,
-          });
-          events.push({
-            type: "system",
-            message: `⛰️ Your mountain expedition was caught in a devastating avalanche. ${avalancheLoss.toLocaleString()} rangers perished.`,
-          });
+    let currentRangers = baseReturned;
+    let totalAvalancheLoss = 0;
+    let survivedAvalanches = 0;
+
+    for (let turn = 1; turn <= 100; turn++) {
+      if (roll(0.02)) {
+        if (!roll(saveChance)) {
+          const loss = Math.floor(currentRangers * avalancheLossRate);
+          if (loss > 0) {
+            currentRangers = Math.max(0, currentRangers - loss);
+            totalAvalancheLoss += loss;
+          }
+        } else {
+          survivedAvalanches++;
         }
-      } else {
+      }
+    }
+
+    if (totalAvalancheLoss > 0 || survivedAvalanches > 0) {
+      updates._rangers_returned = currentRangers;
+
+      if (totalAvalancheLoss > 0) {
         rewards.push({
-          text: `❄️ An avalanche swept the peaks, but your rangers took shelter and survived`,
+          text: `❄️ AVALANCHE! ${totalAvalancheLoss} ranger${totalAvalancheLoss > 1 ? "s" : ""} buried under snow`,
+        });
+        events.push({
+          type: "system",
+          message: `⛰️ Your mountain expedition was caught in devastating avalanches. ${totalAvalancheLoss.toLocaleString()} rangers perished.`,
+        });
+      }
+
+      if (survivedAvalanches > 0) {
+        rewards.push({
+          text: `❄️ ${survivedAvalanches} avalanche${survivedAvalanches > 1 ? "s" : ""} swept the peaks, but your rangers took shelter and survived`,
         });
 
-        // Air Fragment discovery during wind storm
+        // Air Fragment discovery during wind storm (25% chance per survived avalanche series)
         if (roll(0.25)) {
           let inventory = safeJsonParse(updates.items || k.items, [], "mountainExpedition:airFragment");
           if (!Array.isArray(inventory)) inventory = [];
@@ -6918,7 +6933,7 @@ function expeditionRewards(type, rangers, fighters, k) {
       rewards.push({
         text: `Legends of a lost civilization found — ${bonus} additional research boost`,
       });
-      updates.res_spellbook = (updates.res_spellbook || k.res_spellbook) + bonus;
+      updates.res_spellbook = (updates.res_spellbook !== undefined ? updates.res_spellbook : (k.res_spellbook || 0)) + bonus;
     }
 
     if (roll(0.04)) {

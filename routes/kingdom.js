@@ -2866,6 +2866,8 @@ module.exports = function (db) {
     if (r < 1) return res.status(400).json({ error: "Send at least 1 ranger" });
     if (type === "dungeon" && f < 1)
       return res.status(400).json({ error: "Dungeon raids require fighters" });
+    if (type === "mountain" && f > 0)
+      return res.status(400).json({ error: "Mountain expeditions are rangers only — leave your fighters behind." });
 
     try {
       await db.run("BEGIN TRANSACTION");
