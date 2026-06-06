@@ -306,7 +306,7 @@ const ExplorationPanel = () => {
             fontSize: '11px',
             color: 'var(--text2)'
           }}>
-            ⚠️ <strong>EXTREME RISK:</strong> Rangers face 1-50% attrition per turn depending on level.
+            ⚠️ <strong>EXTREME RISK:</strong> Rangers face up to 4-8% attrition per turn depending on level.
             Level 20+ rangers recommended. Food costs very high for 100-turn expedition.
           </div>
           <div className="trow" style={{ marginBottom: '10px' }}>

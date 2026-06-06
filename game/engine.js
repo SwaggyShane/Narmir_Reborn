@@ -6781,7 +6781,7 @@ function expeditionRewards(type, rangers, fighters, k) {
 
       // Roll between 0 and maxLoss (always allows zero-loss outcome)
       const lossPercent = rand(0, maxLoss);
-      const lostThisTurn = Math.floor((totalArriving * lossPercent) / 100);
+      const lostThisTurn = Math.ceil((totalArriving * lossPercent) / 100);
       totalArriving -= lostThisTurn;
 
       if (lostThisTurn > 0) {
@@ -6804,6 +6804,9 @@ function expeditionRewards(type, rangers, fighters, k) {
     }
 
     updates._rangers_returned = survived;
+
+    // Apply casualty losses to kingdom ranger count
+    updates.rangers = Math.max(0, (k.rangers || 0) - totalLost);
 
     // Mountain rewards only granted if rangers survived the expedition
     if (survived > 0) {
@@ -6860,11 +6863,11 @@ function expeditionRewards(type, rangers, fighters, k) {
   // For mountain expeditions, track if we already got an ultra-rare during the 100 turns
   if (type === "mountain" && updates._rangers_returned > 0) {
     let ultraRareObtained = false;
+    const mountainUltraRares = ULTRA_RARE_PRIZES.filter(p =>
+      ["iceflow_crown", "snowpeak_chalice", "frostbind_amulet", "avalanche_heart", "stormcaller_gem"].includes(p.id)
+    );
     for (let turn = 1; turn <= (EXPEDITION_TURNS["mountain"] || 100); turn++) {
       if (!ultraRareObtained && roll(ultraChance)) {
-        const mountainUltraRares = ULTRA_RARE_PRIZES.filter(p =>
-          ["iceflow_crown", "snowpeak_chalice", "frostbind_amulet", "avalanche_heart", "stormcaller_gem"].includes(p.id)
-        );
         if (mountainUltraRares.length > 0) {
           const prize = mountainUltraRares[Math.floor(Math.random() * mountainUltraRares.length)];
           prize.effect(k, updates);

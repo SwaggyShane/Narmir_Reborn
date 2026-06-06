@@ -988,19 +988,6 @@ module.exports = function (db) {
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
 
-    // Check if rangers are being trained while on mountain expedition
-    if (allocation.rangers > 0) {
-      const mountainExp = await db.get(
-        "SELECT turns_left FROM expeditions WHERE kingdom_id = ? AND type = 'mountain' AND turns_left > 0",
-        [k.id]
-      );
-      if (mountainExp) {
-        return res.status(400).json({
-          error: `Rangers are committed to the Mountain's Heart expedition (${mountainExp.turns_left} turns remaining) — they cannot be trained`,
-        });
-      }
-    }
-
     let total = 0;
     const capacity = k.bld_training * 100;
     const clean_alloc = {};
@@ -1909,19 +1896,6 @@ module.exports = function (db) {
     )
       return res.status(400).json({ error: "Send at least some troops" });
 
-    // Check if rangers are locked in mountain expedition
-    if (sentUnits.rangers > 0) {
-      const mountainExp = await db.get(
-        "SELECT turns_left FROM expeditions WHERE kingdom_id = ? AND type = 'mountain' AND turns_left > 0",
-        [k.id]
-      );
-      if (mountainExp) {
-        return res.status(400).json({
-          error: `Rangers are committed to the Mountain's Heart expedition (${mountainExp.turns_left} turns remaining) — they cannot participate in attacks`,
-        });
-      }
-    }
-
     const target = await db.get(
       `SELECT k.* FROM kingdoms k
        JOIN players p ON k.player_id = p.id
@@ -2013,15 +1987,6 @@ module.exports = function (db) {
         JSON.stringify(defDisc),
         target.id,
       ]);
-    }
-
-    // Reduce defender's rangers if they have an active mountain expedition
-    const defenderMountainExp = await db.get(
-      "SELECT rangers FROM expeditions WHERE kingdom_id = ? AND type = 'mountain' AND turns_left > 0",
-      [target.id]
-    );
-    if (defenderMountainExp) {
-      target.rangers = Math.max(0, (target.rangers || 0) - defenderMountainExp.rangers);
     }
 
     const result = engine.resolveMilitaryAttack(
