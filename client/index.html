@@ -5450,13 +5450,11 @@
         };
         // Update happiness bar
         var happinessBar = document.getElementById("m-happiness-bar");
-        var happinessText = document.getElementById("m-happiness-text");
         var happinessBreakdown = document.getElementById("m-happiness-breakdown");
         if (happinessBar) {
           var happiness = state.happiness !== undefined && state.happiness !== null ? state.happiness : 50;
           var happinessPercent = Math.max(0, (happiness / 120) * 100);
           happinessBar.style.width = Math.min(100, happinessPercent) + "%";
-          if (happinessText) happinessText.textContent = happiness + "/120";
 
           // Color coding: 0-50 red→yellow, 50-80 green, 80-120 bright green
           happinessBar.style.background = "linear-gradient(90deg, #ef4444 0%, #fbbf24 41.67%, #4ade80 66.67%, #22c55e 100%)";
