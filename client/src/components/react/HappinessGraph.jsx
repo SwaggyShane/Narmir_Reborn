@@ -31,6 +31,19 @@ const HappinessGraph = ({ history = [] }) => {
       return { x, y, happiness: point.happiness };
     });
 
+  if (points.length === 0) {
+    return (
+      <div className="happiness-graph-container">
+        <div className="happiness-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M12 2v20m8-6l-8-6-8 6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <p>No historical data yet</p>
+        </div>
+      </div>
+    );
+  }
+
   const pathData = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
 
   const getColor = (happiness) => {
@@ -40,11 +53,11 @@ const HappinessGraph = ({ history = [] }) => {
     return 'var(--red)';
   };
 
-  const currentColor = points.length > 0 ? getColor(points[points.length - 1].happiness) : 'var(--gold)';
-  const currentHappiness = points.length > 0 ? points[points.length - 1].happiness : 0;
+  const currentColor = getColor(points[points.length - 1].happiness);
+  const currentHappiness = points[points.length - 1].happiness;
   const minPoint = Math.min(...points.map(p => p.happiness));
   const maxPoint = Math.max(...points.map(p => p.happiness));
-  const avgPoint = Math.round(points.reduce((sum, p) => sum + p.happiness, 0) / points.length);
+  const avgPoint = points.length > 0 ? Math.round(points.reduce((sum, p) => sum + p.happiness, 0) / points.length) : 0;
 
   return (
     <div style={{ marginBottom: '24px' }}>
@@ -76,11 +89,13 @@ const HappinessGraph = ({ history = [] }) => {
           />
 
           {/* Fill under curve */}
-          <path
-            d={`${pathData} L ${points[points.length - 1]?.x || padding} ${height - padding} L ${padding} ${height - padding} Z`}
-            fill="var(--gold)"
-            opacity="0.1"
-          />
+          {points.length > 1 && (
+            <path
+              d={`${pathData} L ${points[points.length - 1].x} ${height - padding} L ${padding} ${height - padding} Z`}
+              fill="var(--gold)"
+              opacity="0.1"
+            />
+          )}
 
           {/* Data points */}
           {points.map((p, idx) => (

@@ -5501,7 +5501,7 @@ module.exports = function (db) {
         happiness: happinessResult.happiness,
         components: happinessResult.components,
         recoveryRate: happinessResult.recovery,
-        last50Turns: history.reverse(), // Reverse to oldest first
+        last50Turns: history.reverse().map(h => ({ turn: h.turn, happiness: h.happiness_value })),
         recent: recentEvents
       });
     } catch (err) {
