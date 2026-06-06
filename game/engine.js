@@ -1645,7 +1645,7 @@ function processHousingAttunements(k, events) {
   if (!housingAttune) return updates;
 
   const fragmentName = housingAttune.fragment;
-  const currentHappiness = k.happiness !== undefined ? k.happiness : 50;
+  const currentHappiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
 
   switch (fragmentName) {
     case 'Volcanic Rock': {
