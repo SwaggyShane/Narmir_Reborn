@@ -1324,11 +1324,13 @@ function processFoodEconomy(k, events) {
   const granaryAttune = fragmentBonusManager.getFragmentForBuilding(k, 'granaries');
 
   // Check for fragments with complete decay elimination
-  if (granaryAttune && (granaryAttune.fragment === 'Volcanic Rock' || granaryAttune.fragment === 'Abyssal Crystal')) {
-    // Geothermal Dehydration & Glacial Cryostasis: eliminate 100% spoilage
+  if (granaryAttune && (
+    granaryAttune.fragment === 'Volcanic Rock' ||   // Geothermal Dehydration
+    granaryAttune.fragment === 'Abyssal Crystal' ||  // Glacial Cryostasis
+    granaryAttune.fragment === 'Ancient Elven Wood'  // Organic Preservation: "reduced to zero"
+  )) {
     rotRate = 0;
   } else {
-    // Other fragments: apply decay_reduction multiplier (including Ancient Elven Wood)
     const decayReduction = fragmentBonusManager.getBonusMultiplier(k, 'granaries', 'decay_reduction');
     if (decayReduction > 1.0) {
       rotRate = Math.max(0, rotRate * (2.0 - decayReduction));
@@ -1494,7 +1496,12 @@ function processFoodEconomy(k, events) {
         message: `🚨 Food shortage! Turn ${shortTurns} — build more farms or reduce troops.`,
       });
       if (shortTurns >= 3) {
-        const hit = shortTurns >= 8 ? 20 : shortTurns >= 5 ? 10 : 5;
+        let hit = shortTurns >= 8 ? 20 : shortTurns >= 5 ? 10 : 5;
+        // Celestial Feather morale_stability: reduces food shortage morale penalties
+        const moraleStability = fragmentBonusManager.getBonusMultiplier(k, 'granaries', 'morale_stability') - 1.0;
+        if (moraleStability > 0) {
+          hit = Math.max(1, Math.floor(hit * (1 - moraleStability)));
+        }
         const cur =
           updates.morale !== undefined
             ? updates.morale
@@ -1557,7 +1564,7 @@ function processFoodEconomy(k, events) {
 
 /**
  * Process granary attunement special abilities
- * Executes automated effects like food replication, vanishing, spoilage prevention
+ * Executes automated effects like food replication, vanishing, morale distribution, and elixir chaos
  */
 function processGranaryAttunements(k, events) {
   const updates = {};
@@ -1570,52 +1577,103 @@ function processGranaryAttunements(k, events) {
   const fragmentName = granaryAttune.fragment;
   let foodChange = 0;
 
+  // Calculate max food storage for cap enforcement on positive food changes
+  const _gUpgrades = safeJsonParse(k.granary_upgrades, {}, 'granaryAttune:granary_upgrades');
+  const _gPer = _gUpgrades.silos ? 150000 : 100000;
+  const _gStorageMult = raceBonus(k, 'food_storage');
+  const _gCapMult = fragmentBonusManager.getBonusMultiplier(k, 'granaries', 'capacity');
+  const maxStore = Math.floor(
+    (Math.floor(10000 * _gStorageMult) + (k.bld_granaries || 0) * _gPer) * _gCapMult
+  );
+
   switch (fragmentName) {
-    case 'Tears of the World Tree':
-      // +2% food self-replication per turn based on current food stored
-      foodChange = Math.floor((k.food || 0) * 0.02);
+    case 'Tears of the World Tree': {
+      // Cellular Biosphere: stored grains self-replicate; rate scaled by growth_rate passive
+      const growthMult = fragmentBonusManager.getBonusMultiplier(k, 'granaries', 'growth_rate');
+      const replicationRate = 0.02 * growthMult; // base 2%, scaled by passive (0.50 → 3%)
+      foodChange = Math.floor((k.food || 0) * replicationRate);
       if (foodChange > 0) {
         events.push({
           type: 'system',
-          message: `💧 Tears of the World Tree: +${foodChange.toLocaleString()} food replicated from stored reserves.`
+          message: `🌿 Cellular Biosphere: World Tree spores replicated +${foodChange.toLocaleString()} food from stored reserves.`,
         });
       }
       break;
+    }
 
-    case 'Void Essence':
-      // 5% chance per turn food vanishes based on current food stored
+    case 'Void Essence': {
+      // Void Pantry: 5% chance per turn food vanishes into pocket dimension
       if (Math.random() < 0.05 && (k.food || 0) > 0) {
         const voidLoss = Math.floor((k.food || 0) * (0.1 + Math.random() * 0.3));
         foodChange = -voidLoss;
         events.push({
           type: 'system',
-          message: `🌌 Void Essence: ${voidLoss.toLocaleString()} food consumed by the void!`
+          message: `🌌 Void Pantry: ${voidLoss.toLocaleString()} food consumed by the pocket dimension!`,
         });
       }
       break;
+    }
 
-    case 'Celestial Feather':
-      // Portion of reserves distributed to boost happiness on unstable turns
-      const happiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
-      if (happiness < 30 && (k.food || 0) > 0) {
-        const happinessFoodCost = Math.max(1, Math.floor((k.food || 0) * 0.05));
-        const happinessBoost = 10; // +10 happiness
-        foodChange = -happinessFoodCost;
+    case 'Celestial Feather': {
+      // Manna Manifestation: blessed reserves auto-distributed to stabilise morale on unstable turns
+      const morale = k.morale !== undefined && k.morale !== null ? k.morale : 50;
+      if (morale < 60 && (k.food || 0) > 0) {
+        const foodCost = Math.max(1, Math.floor((k.food || 0) * 0.05));
+        const moraleBoost = 8;
+        foodChange = -foodCost;
         events.push({
           type: 'system',
-          message: `🪶 Manna Manifestation: ${happinessFoodCost.toLocaleString()} food distributed to raise happiness (+10).`
+          message: `🪶 Manna Manifestation: ${foodCost.toLocaleString()} food distributed to stabilise morale (+${moraleBoost}).`,
         });
-        updates.happiness = Math.min(120, happiness + happinessBoost);
+        const currentMorale = updates.morale !== undefined ? updates.morale : morale;
+        updates.morale = Math.min(100, currentMorale + moraleBoost);
       }
       break;
+    }
 
-    // Other fragments with passive-only abilities don't trigger special events
-    // (Geothermal, Ancient Elven Wood, Dragon Scale, Abyssal Crystal, etc.)
+    case 'Cursed Bloodstone': {
+      // Vampiric Silos: spoiling food distilled into dark elixir — fighter morale boost + chaos spike
+      const currentFood = k.food || 0;
+      if (currentFood > 0) {
+        const combatAttune = fragmentBonusManager.getBonusMultiplier(k, 'granaries', 'combat_attunement') - 1.0;
+        // Dark elixir boosts fighter morale/readiness each turn
+        const moraleBoost = Math.max(1, Math.round(combatAttune * 10)); // 0.20 → +2 morale
+        const currentMorale = updates.morale !== undefined ? updates.morale : (k.morale || 50);
+        updates.morale = Math.min(100, currentMorale + moraleBoost);
+        events.push({
+          type: 'system',
+          message: `🩸 Vampiric Silos: Dark elixir brewed from spoiling grain — fighters emboldened (+${moraleBoost} morale).`,
+        });
+        // Chaos spike: 25% chance the volatile brew destabilises the silos and food is lost
+        if (Math.random() < 0.25) {
+          const chaosLoss = Math.floor(currentFood * (0.03 + Math.random() * 0.07));
+          if (chaosLoss > 0) {
+            foodChange = -chaosLoss;
+            events.push({
+              type: 'system',
+              message: `⚠️ Vampiric Silos: Chaos spike — volatile elixir eruption destroyed ${chaosLoss.toLocaleString()} food!`,
+            });
+          }
+        }
+      }
+      break;
+    }
+
+    // Volcanic Rock (Geothermal Dehydration), Ancient Elven Wood (Organic Preservation),
+    // Abyssal Crystal (Glacial Cryostasis): decay elimination handled in processFoodEconomy
+    // Dragon Scale (Draconic Ward): food theft block handled in covertSabotage
+    // Dwarven Star-Metal (Piston Silos), Titan Bone (Megastructures): capacity passive only
+    default:
+      break;
   }
 
   if (foodChange !== 0) {
-    const newFood = Math.max(0, (k.food || 0) + foodChange);
-    updates.food = newFood;
+    const currentFood = updates.food !== undefined ? updates.food : (k.food || 0);
+    let newFood = currentFood + foodChange;
+    if (foodChange > 0 && maxStore > 0) {
+      newFood = Math.min(maxStore, newFood);
+    }
+    updates.food = Math.max(0, newFood);
   }
 
   return updates;
