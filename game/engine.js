@@ -6765,6 +6765,7 @@ function expeditionRewards(type, rangers, fighters, k) {
   } else if (type === "mountain") {
     // Mountain Expedition: Rangers only, extreme attrition, high-value rewards
     const mountainMult = { dire_wolf: 0.8, human: 1.0, dwarf: 1.1 }[k.race] || 1.0;
+    const rangerLevel = effectiveTroopLevel(k, "rangers");
 
     // Avalanche attrition per turn: random between 0 and level-based max
     const expTurns = EXPEDITION_TURNS["mountain"] || 100;
@@ -6774,9 +6775,9 @@ function expeditionRewards(type, rangers, fighters, k) {
     for (let turn = 1; turn <= expTurns; turn++) {
       // Determine max loss % based on ranger level
       let maxLoss = 50;
-      if (k.ranger_level >= 21 && k.ranger_level <= 30) maxLoss = 30;
-      else if (k.ranger_level >= 31 && k.ranger_level <= 40) maxLoss = 15;
-      else if (k.ranger_level >= 41) maxLoss = 10;
+      if (rangerLevel >= 21 && rangerLevel <= 30) maxLoss = 30;
+      else if (rangerLevel >= 31 && rangerLevel <= 40) maxLoss = 15;
+      else if (rangerLevel >= 41) maxLoss = 10;
 
       // Roll between 0 and maxLoss
       const lossPercent = rand(0, maxLoss);
