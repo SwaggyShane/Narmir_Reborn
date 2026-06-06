@@ -1655,8 +1655,7 @@ function processSchoolAttunements(k, events) {
       const activeResearchers = Math.min(k.researchers || 0, k.bld_schools * 20);
       const manaBonus = Math.floor(activeResearchers / 10);
       if (manaBonus > 0) {
-        const currentMana = updates.mana !== undefined ? updates.mana : (k.mana || 0);
-        updates.mana = currentMana + manaBonus;
+        updates.mana = (k.mana || 0) + manaBonus;
         events.push({ type: 'system', message: `💧 Botanical Courtyards: World Tree dew fonts grant +${manaBonus} mana from researcher meditation.` });
       }
       break;
@@ -2868,8 +2867,9 @@ function processTurn(k, db = null) {
         const spellCap = getCap(spellCol, k.level || 1);
 
         if (currentSpell < spellCap) {
+          const voidTransSpell = autoSchoolSpecial?.name === 'Void Transcription' ? 1.15 : 1.0;
           const spellEffective = Math.floor(
-            spellbookMages * mageSchoolBonus * mageMult * curriculumMult * mageLibraryMult
+            spellbookMages * mageSchoolBonus * mageMult * curriculumMult * mageLibraryMult * voidTransSpell
           );
           mageRProgress[spellCol] = (mageRProgress[spellCol] || 0) + spellEffective;
 
@@ -2902,8 +2902,9 @@ function processTurn(k, db = null) {
         const schoolCap = getCap(schoolCol, k.level || 1);
 
         if (currentSchool < schoolCap) {
+          const voidTransSchool = autoSchoolSpecial?.name === 'Void Transcription' ? 1.15 : 1.0;
           const schoolEffective = Math.floor(
-            schoolSpellbookMages * mageSchoolBonus * mageMult * curriculumMult * mageLibraryMult
+            schoolSpellbookMages * mageSchoolBonus * mageMult * curriculumMult * mageLibraryMult * voidTransSchool
           );
           mageRProgress[schoolCol] = (mageRProgress[schoolCol] || 0) + schoolEffective;
 
@@ -4119,7 +4120,9 @@ function processBuildQueue(k, events, xpSourcesAccum) {
         // Regular buildings: units from the queue were already paid in queueBuildings;
         // only deduct gold/land/resources for units built beyond the queue via engineer allocation.
         if (!RESOURCE_BUILDING_CONFIG[building] && canAdd > 0) {
-          const goldPerUnit = BUILDING_GOLD_COST[building] ?? 100;
+          const schoolBpSpecial = fragmentBonusManager.getSpecialEffect(k, 'schools');
+          const bpDiscount = schoolBpSpecial?.name === 'Anatomical Blueprinting' ? 0.85 : 1.0;
+          const goldPerUnit = Math.floor((BUILDING_GOLD_COST[building] ?? 100) * bpDiscount);
           const landPerUnit = BUILDING_LAND_COST[building] || 0;
           const woodPerUnit = BUILDING_WOOD_COST[building] || 0;
           const stonePerUnit = BUILDING_STONE_COST[building] || 0;
@@ -6327,6 +6330,22 @@ function covertSabotage(assassin, target, ninjasSent, bldType) {
   const col = BLD_MAP[bldType];
   if (!col) return { error: "Invalid building type" };
 
+  // School fragment immunity must be checked before the success roll — immunity is absolute
+  if (col === 'bld_schools') {
+    const schoolSpecial = fragmentBonusManager.getSpecialEffect(target, 'schools');
+    if (schoolSpecial?.name === 'Draconic Isolation' || schoolSpecial?.name === 'Angelic Tutelage') {
+      const barrier = schoolSpecial.name === 'Draconic Isolation' ? 'scale-plated fortifications' : 'holy barriers';
+      return {
+        success: false,
+        ninjasLost: 0,
+        assassinUpdates: {},
+        targetUpdates: {},
+        assassinEvent: `⚔️ Sabotage of schools in ${target.name} failed — ${barrier} repelled all operatives.`,
+        targetEvent: `🛡️ ${schoolSpecial.name}: Enemy saboteurs were repelled by your schools' supernatural fortifications!`,
+      };
+    }
+  }
+
   let ninjaLvMult = unitLevelMult(assassin, "ninjas");
   if (assassin.race === "vampire") ninjaLvMult *= 1.1;
   const stealthMulti = raceBonus(assassin, "stealth") * ninjaLvMult;
@@ -6345,21 +6364,6 @@ function covertSabotage(assassin, target, ninjasSent, bldType) {
       assassinEvent: `Sabotage of ${bldType} in ${target.name} failed. Ninjas compromised.`,
       targetEvent: `Enemy ninjas were caught attempting to sabotage your buildings!`,
     };
-  }
-
-  // School fragment immunity: Draconic Isolation / Angelic Tutelage block ninja sabotage
-  if (col === 'bld_schools') {
-    const schoolSpecial = fragmentBonusManager.getSpecialEffect(target, 'schools');
-    if (schoolSpecial?.name === 'Draconic Isolation' || schoolSpecial?.name === 'Angelic Tutelage') {
-      return {
-        success: false,
-        ninjasLost: 0,
-        assassinUpdates: {},
-        targetUpdates: {},
-        assassinEvent: `⚔️ Sabotage of schools in ${target.name} failed — scale-plated fortifications repelled all operatives.`,
-        targetEvent: `🛡️ ${schoolSpecial.name}: Enemy saboteurs were repelled by your schools' supernatural fortifications!`,
-      };
-    }
   }
 
   const destroyed = Math.floor(
