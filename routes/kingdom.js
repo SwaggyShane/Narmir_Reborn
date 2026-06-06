@@ -2015,6 +2015,15 @@ module.exports = function (db) {
       ]);
     }
 
+    // Reduce defender's rangers if they have an active mountain expedition
+    const defenderMountainExp = await db.get(
+      "SELECT rangers FROM expeditions WHERE kingdom_id = ? AND type = 'mountain' AND turns_left > 0",
+      [target.id]
+    );
+    if (defenderMountainExp) {
+      target.rangers = Math.max(0, (target.rangers || 0) - defenderMountainExp.rangers);
+    }
+
     const result = engine.resolveMilitaryAttack(
       k,
       target,
