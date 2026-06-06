@@ -7944,7 +7944,7 @@
 
       function getNewsPriority(item) {
         if (!item) return 13;
-        var msg = (item.message || "").toLowerCase();
+        var msg = String(item.message || "").toLowerCase();
         var type = item.type || "system";
 
         // World/Season Interactions (priority 1)
