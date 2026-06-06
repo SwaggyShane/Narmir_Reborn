@@ -359,7 +359,7 @@ const ExplorationPanel = () => {
               🍖 <strong>Food required:</strong> {mountainFoodCost.toLocaleString()} (100 turns at {Math.round(mountainRangers * 0.5)}/turn)
             </div>
           )}
-          <button className="base-btn variant-blue w-full" id="btn-exp-mountain" style={{ background: '#6b9bd1', width: '100%' }} onClick={() => launchExpedition('mountain')}>
+          <button className="base-btn variant-blue w-full" id="btn-exp-mountain" style={{ background: '#6b9bd1' }} onClick={() => launchExpedition('mountain')}>
             Accept the risk
           </button>
         </div>
