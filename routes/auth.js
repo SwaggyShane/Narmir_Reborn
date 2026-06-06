@@ -107,6 +107,16 @@ module.exports = function (db) {
         fighters = 100;
         rangers = 100;
       }
+      if (chosenRace === "wood_elf") {
+        buildings.bld_outposts = 1; // Base for expeditions
+        fighters = 0;
+        rangers = 100; // Emphasis on exploration
+      }
+      if (chosenRace === "ogre") {
+        buildings.bld_training = 1; // Training facility
+        fighters = 100; // Emphasis on military
+        rangers = 0;
+      }
 
       // Calculate starting land: building costs + 1000 buffer
       // Use engine's BUILDING_LAND_COST to stay in sync with game balance

@@ -607,6 +607,10 @@ function racialUnitBonus(k, unit) {
   // Vampire: Infiltrators (thieves) steal significantly more gold and have higher sabotage success at night
   if (race === "vampire" && unit === "thieves")
     return { infiltratorMastery: true };
+  // Wood Elf: rangers discover significantly more land per expedition
+  if (race === "wood_elf" && unit === "rangers") return { discoveryMastery: true };
+  // Ogre: fighters gain ferocity bonus dealing extra damage
+  if (race === "ogre" && unit === "fighters") return { ferocityBonus: true };
   return {};
 }
 
@@ -6037,6 +6041,7 @@ function expeditionRewards(type, rangers, fighters, k) {
   const exploreBonus =
     {
       dire_wolf: 1.4,
+      wood_elf: 1.75,
       dark_elf: 1.25,
       human: 1.1,
       orc: 1.05,
