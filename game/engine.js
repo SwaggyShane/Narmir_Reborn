@@ -6805,41 +6805,47 @@ function expeditionRewards(type, rangers, fighters, k) {
 
     updates._rangers_returned = survived;
 
-    // Mountain rewards: Gold scaled to troop count and level (200-500 per ranger)
-    const goldPerRanger = rand(200, 500);
-    const mountainGold = Math.floor(
-      rangers * goldPerRanger * tacBonus * exploreBonus * mountainMult * (1 + rand(5, 30) / 100)
-    );
-    rewards.push({
-      text: `+${mountainGold.toLocaleString()} gold from mountain artifacts`,
-    });
-    updates.gold = k.gold + mountainGold;
+    // Mountain rewards only granted if rangers survived the expedition
+    if (survived > 0) {
+      // Gold scaled to troop count and level (200-500 per ranger)
+      const goldPerRanger = rand(200, 500);
+      const mountainGold = Math.floor(
+        rangers * goldPerRanger * tacBonus * exploreBonus * mountainMult * (1 + rand(5, 30) / 100)
+      );
+      rewards.push({
+        text: `+${mountainGold.toLocaleString()} gold from mountain artifacts`,
+      });
+      updates.gold = k.gold + mountainGold;
 
-    // Mana from ley lines (scaled)
-    const mountainMana = Math.floor(
-      rand(rangers * 10, rangers * 50) * mountainMult * exploreBonus
-    );
-    rewards.push({
-      text: `+${mountainMana} mana from ancient ley lines`,
-    });
-    updates.mana = k.mana + mountainMana;
+      // Mana from ley lines (scaled)
+      const mountainMana = Math.floor(
+        rand(rangers * 10, rangers * 50) * mountainMult * exploreBonus
+      );
+      rewards.push({
+        text: `+${mountainMana} mana from ancient ley lines`,
+      });
+      updates.mana = k.mana + mountainMana;
 
-    // Research boost from ancient knowledge (scaled)
-    const res = ["res_weapons", "res_armor", "res_construction"][rand(0, 2)];
-    const resBoost = Math.floor(rand(50, 150) * mountainMult);
-    rewards.push({
-      text: `Ancient runes revealed — ${res.replace("res_", "").replace("_", " ")} +${resBoost}`,
-    });
-    updates[res] = (k[res] || 0) + resBoost;
+      // Research boost from ancient knowledge (scaled)
+      const res = ["res_weapons", "res_armor", "res_construction"][rand(0, 2)];
+      const resBoost = Math.floor(rand(50, 150) * mountainMult);
+      rewards.push({
+        text: `Ancient runes revealed — ${res.replace("res_", "").replace("_", " ")} +${resBoost}`,
+      });
+      updates[res] = (k[res] || 0) + resBoost;
 
-    // Junk prizes more frequent on mountain (60% chance per turn)
-    let junkCount = 0;
-    for (let t = 0; t < expTurns; t++) {
-      if (roll(0.6)) {
+      // Junk prizes more frequent on mountain (60% chance per turn) — consolidated summary
+      let junkCount = 0;
+      for (let t = 0; t < expTurns; t++) {
+        if (roll(0.6)) {
+          junkPrize(k, updates);
+          junkCount++;
+        }
+      }
+      if (junkCount > 0) {
         rewards.push({
-          text: `Rangers discovered ${junkPrize(k, updates)} in the mountain passes`,
+          text: `Rangers discovered ${junkCount} artifacts in the mountain passes`,
         });
-        junkCount++;
       }
     }
 
@@ -6852,7 +6858,7 @@ function expeditionRewards(type, rangers, fighters, k) {
   const ultraChance = type === "dungeon" ? 0.01 : type === "deep" ? 0.005 : type === "mountain" ? 0.025 : 0;
 
   // For mountain expeditions, track if we already got an ultra-rare during the 100 turns
-  if (type === "mountain") {
+  if (type === "mountain" && updates._rangers_returned > 0) {
     let ultraRareObtained = false;
     for (let turn = 1; turn <= (EXPEDITION_TURNS["mountain"] || 100); turn++) {
       if (!ultraRareObtained && roll(ultraChance)) {
@@ -6896,8 +6902,8 @@ function expeditionRewards(type, rangers, fighters, k) {
     updates._check_throne = true; // resolveExpeditions will check server_state and apply if unclaimed
   }
 
-  // ── Air Fragment (rare mountain drop, ~1-2% chance) ────────────────
-  if (type === "mountain" && roll(0.015)) {
+  // ── Air Fragment (rare mountain drop, ~1-2% chance, only if rangers survive) ────────────────
+  if (type === "mountain" && updates._rangers_returned > 0 && roll(0.015)) {
     // Add air fragment to inventory
     let inventory = safeJsonParse(updates.items || k.items, [], "expeditionRewards:air_fragment");
     if (!Array.isArray(inventory)) inventory = [];

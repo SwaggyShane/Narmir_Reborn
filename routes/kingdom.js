@@ -988,6 +988,19 @@ module.exports = function (db) {
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
 
+    // Check if rangers are being trained while on mountain expedition
+    if (allocation.rangers > 0) {
+      const mountainExp = await db.get(
+        "SELECT turns_left FROM expeditions WHERE kingdom_id = ? AND type = 'mountain' AND turns_left > 0",
+        [k.id]
+      );
+      if (mountainExp) {
+        return res.status(400).json({
+          error: `Rangers are committed to the Mountain's Heart expedition (${mountainExp.turns_left} turns remaining) — they cannot be trained`,
+        });
+      }
+    }
+
     let total = 0;
     const capacity = k.bld_training * 100;
     const clean_alloc = {};
@@ -1895,6 +1908,19 @@ module.exports = function (db) {
       sentUnits.mages <= 0
     )
       return res.status(400).json({ error: "Send at least some troops" });
+
+    // Check if rangers are locked in mountain expedition
+    if (sentUnits.rangers > 0) {
+      const mountainExp = await db.get(
+        "SELECT turns_left FROM expeditions WHERE kingdom_id = ? AND type = 'mountain' AND turns_left > 0",
+        [k.id]
+      );
+      if (mountainExp) {
+        return res.status(400).json({
+          error: `Rangers are committed to the Mountain's Heart expedition (${mountainExp.turns_left} turns remaining) — they cannot participate in attacks`,
+        });
+      }
+    }
 
     const target = await db.get(
       `SELECT k.* FROM kingdoms k
@@ -2864,6 +2890,8 @@ module.exports = function (db) {
     const r = Math.max(0, parseInt(rangers) || 0);
     const f = Math.max(0, parseInt(fighters) || 0);
     if (r < 1) return res.status(400).json({ error: "Send at least 1 ranger" });
+    if (type === "mountain" && r < 10000)
+      return res.status(400).json({ error: "Mountain expedition requires at least 10,000 rangers" });
     if (type === "dungeon" && f < 1)
       return res.status(400).json({ error: "Dungeon raids require fighters" });
     if (type === "mountain" && f > 0)
