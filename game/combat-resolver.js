@@ -123,7 +123,7 @@ async function executeCombat(db, attacker, defender, combatType, targetFocus, _e
  * Restricts units based on combatType (military, covert, magic)
  */
 function calculateCombatPower(kingdom, opponent, combatType) {
-  const moraleMult = calculateMorale(kingdom.morale);
+  const moraleMult = calculateHappinessMult(kingdom.happiness !== undefined && kingdom.happiness !== null ? kingdom.happiness : 50);
   const raceMil = getRaceBonus(kingdom.race, 'military');
   const raceMag = getRaceBonus(kingdom.race, 'magic');
 
@@ -183,7 +183,7 @@ function calculateCombatPower(kingdom, opponent, combatType) {
   const defenseResearch = opponent.res_defense_magic || 100;
   const opponentWeaponResearch = opponent.res_weapons || 100;
   const _opponentArmorResearch = opponent.res_armor || 100;
-  const defenderMorale = calculateMorale(opponent.morale);
+  const defenderMorale = calculateHappinessMult(opponent.happiness !== undefined && opponent.happiness !== null ? opponent.happiness : 50);
 
   if (combatType === 'military') {
     // Defender uses military troops
@@ -415,14 +415,11 @@ function getRaceBonus(race, category) {
 }
 
 /**
- * Helper: Calculate morale multiplier
+ * Helper: Calculate combat multiplier from happiness
  */
-function calculateMorale(morale) {
-  if (morale >= 80) return 1.3;
-  if (morale >= 60) return 1.2;
-  if (morale >= 40) return 1.1;
-  if (morale >= 20) return 0.9;
-  return 0.7;
+function calculateHappinessMult(happiness) {
+  const mult = 0.5 + (happiness / 120);
+  return Math.max(0.5, Math.min(1.5, mult));
 }
 
 module.exports = {

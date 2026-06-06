@@ -2274,7 +2274,6 @@
         gold: 10000,
         pop: 50000,
         land: 500,
-        morale: 100,
         tax: 42,
         turn: 0,
         mana: 5000,
@@ -2718,24 +2717,8 @@
         var atkRn = rn * 0.7 * ((state.res_military || 100) / 100);
         var atkM = m * 2.5 * ((state.res_attack_magic || 100) / 100);
         var atkWm = wmCrewable * 500 * ((state.res_war_machines || 100) / 100);
-        var RACE_MORALE_BONUSES = {
-          human: 1.05,
-          high_elf: 0.95,
-          dwarf: 1.0,
-          dire_wolf: 1.1,
-          dark_elf: 0.9,
-          orc: 1.05,
-          vampire: 0.95,
-        };
-        var bM =
-          state.morale !== undefined && state.morale !== null
-            ? state.morale
-            : 100;
-        var eL = state.res_entertainment || 100;
-        var effMorale = Math.floor(
-          (bM / eL) * 100 * (RACE_MORALE_BONUSES[state.race] || 1.0),
-        );
-        var moraleMult = Math.min(1.2, Math.max(0.8, effMorale / 100));
+        var happiness = state.happiness !== undefined && state.happiness !== null ? state.happiness : 50;
+        var moraleMult = Math.max(0.5, Math.min(1.5, 0.5 + happiness / 120));
         var atkPower = Math.round((atkF + atkRn + atkM + atkWm) * moraleMult);
 
         // Bully penalty check
@@ -2757,7 +2740,7 @@
         } else if (bullyRatio >= 4) {
           bullyPenalty = 0.6;
           bullyMsg =
-            "⚠️ ×4–8 size difference — morale suffers. Attack power −40%.";
+            "⚠️ ×4–8 size difference — happiness suffers. Attack power −40%.";
         } else if (bullyRatio >= 2) {
           bullyPenalty = 0.8;
           bullyMsg =
@@ -3222,7 +3205,6 @@
             if (kingdom.land !== undefined) state.land = kingdom.land;
             if (kingdom.food !== undefined) state.food = kingdom.food;
             if (kingdom.population !== undefined) state.pop = kingdom.population;
-            if (kingdom.morale !== undefined) state.morale = kingdom.morale;
             // Update reward items
             if (kingdom.maps !== undefined) state.maps = kingdom.maps;
             if (kingdom.scrolls !== undefined) {
@@ -5439,15 +5421,6 @@
         var freeLand = Math.max(0, (state.land || 0) - usedLand);
         var freeLandEl = document.getElementById("m-land-free");
         if (freeLandEl) freeLandEl.textContent = trunc(freeLand);
-        var RACE_MORALE_BONUSES = {
-          human: 1.05,
-          high_elf: 0.95,
-          dwarf: 1.0,
-          dire_wolf: 1.1,
-          dark_elf: 0.9,
-          orc: 1.05,
-          vampire: 0.95,
-        };
         // Update happiness bar
         var happinessBar = document.getElementById("m-happiness-bar");
         var happinessBreakdown = document.getElementById("m-happiness-breakdown");
@@ -9287,7 +9260,6 @@
         if (u.gold !== undefined) state.gold = u.gold;
         if (u.mana !== undefined) state.mana = u.mana;
         if (u.land !== undefined) state.land = u.land;
-        if (u.morale !== undefined) state.morale = u.morale;
         if (u.happiness !== undefined) state.happiness = u.happiness;
         if (u.food !== undefined) state.food = u.food;
         if (u.tax !== undefined) state.tax = u.tax;
@@ -10984,24 +10956,8 @@
         var atkRn = rn * 0.7 * ((state.res_military || 100) / 100);
         var atkM = m * 2.5 * ((state.res_attack_magic || 100) / 100);
         var atkWm = wmCrewable * 500 * ((state.res_war_machines || 100) / 100);
-        var RACE_MORALE_BONUSES = {
-          human: 1.05,
-          high_elf: 0.95,
-          dwarf: 1.0,
-          dire_wolf: 1.1,
-          dark_elf: 0.9,
-          orc: 1.05,
-          vampire: 0.95,
-        };
-        var bM =
-          state.morale !== undefined && state.morale !== null
-            ? state.morale
-            : 100;
-        var entL = state.res_entertainment || 100;
-        var effMorale = Math.floor(
-          (bM / entL) * 100 * (RACE_MORALE_BONUSES[state.race] || 1.0),
-        );
-        var mMult = Math.min(1.2, Math.max(0.8, effMorale / 100));
+        var happiness = state.happiness !== undefined && state.happiness !== null ? state.happiness : 50;
+        var mMult = Math.max(0.5, Math.min(1.5, 0.5 + happiness / 120));
         var bullyRatio = selectedTargetW
           ? Math.max(
               (state.land || 1) / Math.max(1, selectedTargetW.land || 1),
@@ -11023,7 +10979,7 @@
           bullyRatio >= 8
             ? "🚨 ×8+ — will be shamed. −60% power."
             : bullyRatio >= 4
-              ? "⚠️ ×4–8 — morale suffers. −40%."
+              ? "⚠️ ×4–8 — happiness suffers. −40%."
               : bullyRatio >= 2
                 ? "⚠️ ×2–4 — −20% power."
                 : "";
@@ -14071,7 +14027,7 @@
           strengths: [
             "Versatile and adaptable in all military areas",
             "Exceptional population growth speed",
-            "Access to powerful morale-boosting clerics",
+            "Access to powerful happiness-boosting clerics",
             "Strong exploration initiatives",
           ],
           weaknesses: [
@@ -14080,7 +14036,7 @@
           ],
           heroes: ["Paladin", "Grand Chancellor", "High Consul"],
           special:
-            "Level 25+ clerics radiate a healing aura that restores kingdom morale",
+            "Level 25+ clerics radiate a healing aura that restores kingdom happiness",
           playstyle:
             "Flexible all-rounder. Strong in long games where adaptation outweighs specialisation.",
           color: "#8fb84a",
@@ -14407,21 +14363,7 @@
           })
           .slice(0, 3);
 
-        var RACE_MORALE_BONUSES = {
-          human: 1.05,
-          high_elf: 0.95,
-          dwarf: 1.0,
-          dire_wolf: 1.1,
-          dark_elf: 0.9,
-          orc: 1.05,
-          vampire: 0.95,
-        };
-        var bM =
-          data.morale !== undefined && data.morale !== null ? data.morale : 100;
-        var eL = data.res_entertainment || 100;
-        var effM = Math.floor(
-          (bM / eL) * 100 * (RACE_MORALE_BONUSES[data.race] || 1.0),
-        );
+        var effM = data.happiness !== undefined && data.happiness !== null ? data.happiness : 50;
         var disc = state.discovered_kingdoms || {};
         if (typeof disc === "string")
           try {
@@ -15022,7 +14964,7 @@
           "🕵️ Underspire Mastery — Level 25+ assassinations leave no trace",
         dire_wolf:
           "🐺 Pack Mastery — Level 25+ rangers execute expeditions at a much faster pace",
-        human: "🌾 Heartland Mastery — Level 25+ healing morale aura",
+        human: "🌾 Heartland Mastery — Level 25+ healing happiness aura",
         vampire: "🧛 Night Stalker Mastery — Level 25+ Thief Power",
       };
 
