@@ -1,5 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { gameStateManager } from "./GameStateManager.js";
+import { setActivePanelGlobal } from "./hooks/useActivePanel.js";
 import TopbarReact from "./components/react/Topbar.jsx";
 import GoalsPanelReact from "./components/react/GoalsPanel.jsx";
 import SidebarReact from "./components/react/Sidebar.jsx";
@@ -33,6 +35,63 @@ console.log("[react] main.js execution started at", new Date().toISOString());
 
 export const gameState = {};
 window.gameState = gameState;
+
+// Initialize game state manager with current state
+export function initGameStateManager() {
+  if (window.state) {
+    gameStateManager.updateMetrics({
+      gold: window.state.gold || 0,
+      mana: window.state.mana || 0,
+      population: window.state.population || 0,
+      happiness: window.state.happiness || 50,
+      food: window.state.food || 0,
+      land: window.state.land || 0,
+      turn: window.state.turn || 0,
+      tax: window.state.tax || 42,
+    });
+  }
+}
+
+// REPLACE vanilla JS applyServerUpdates with gameStateManager-first approach
+// This becomes the SINGLE source of truth for metrics
+// Guard against HMR re-wrapping to prevent infinite recursion
+if (!window._applyServerUpdatesWrapped) {
+  window.applyServerUpdates = function(updates) {
+  if (!updates) return;
+
+  // Update gameStateManager first (source of truth)
+  // Dynamically sync all metrics fields
+  const knownMetrics = ['gold', 'mana', 'population', 'happiness', 'food', 'land', 'turn', 'tax', 'mana_regen', 'gold_income', 'food_balance'];
+  const metricsUpdate = {};
+
+  for (const metric of knownMetrics) {
+    if (updates[metric] !== undefined) {
+      metricsUpdate[metric] = updates[metric];
+    }
+  }
+
+  if (Object.keys(metricsUpdate).length > 0) {
+    gameStateManager.updateMetrics(metricsUpdate);
+  }
+
+  // Also update window.state for backwards compatibility with vanilla JS code
+  if (window.state) {
+    if (updates.score !== undefined) window.state.score = updates.score;
+    if (updates.population !== undefined) window.state.pop = updates.population;
+    if (updates.gold !== undefined) window.state.gold = updates.gold;
+    if (updates.mana !== undefined) window.state.mana = updates.mana;
+    if (updates.land !== undefined) window.state.land = updates.land;
+    if (updates.happiness !== undefined) window.state.happiness = updates.happiness;
+    if (updates.food !== undefined) window.state.food = updates.food;
+    if (updates.tax !== undefined) window.state.tax = updates.tax;
+    if (updates.name !== undefined) window.state.name = updates.name;
+    if (updates.turn !== undefined) window.state.turn = updates.turn;
+    if (updates.turns_stored !== undefined) window.state.turns_stored = updates.turns_stored;
+    // ... rest of state updates handled by vanilla JS
+  }
+  };
+  window._applyServerUpdatesWrapped = true;
+}
 
 const reactHooks = new Map();
 window.registerPanelReactHook = (panelId, callback) => {
@@ -100,6 +159,19 @@ export const mountReactApps = () => {
   tryMount("vue-panel-school-selection", SchoolSelectionPanelReact);
 
   console.log("[react] All apps mounted");
+
+  // Hook into switchTab to track active panel (guard against HMR re-wrapping)
+  if (!window._switchTabWrapped) {
+    const originalSwitchTab = window.switchTab;
+    window.switchTab = function(tabName) {
+      setActivePanelGlobal(tabName);
+      if (originalSwitchTab) {
+        originalSwitchTab(tabName);
+      }
+    };
+    window._switchTabWrapped = true;
+  }
+
   if (window.switchTab) {
     if (window.location.hash) {
       window.switchTab(window.location.hash.substring(1));
@@ -399,7 +471,11 @@ window.takeTurn = async () => {
 
 // Wait for DOM to be ready
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", mountReactApps);
+  document.addEventListener("DOMContentLoaded", () => {
+    initGameStateManager();
+    mountReactApps();
+  });
 } else {
+  initGameStateManager();
   mountReactApps();
 }
