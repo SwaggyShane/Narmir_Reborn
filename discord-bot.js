@@ -140,7 +140,11 @@ client.on('messageCreate', async (message) => {
 
   // Check if this channel is configured for game chat sync
   const syncConfig = syncConfigs.find(c => c.channel_id === message.channelId);
-  if (syncConfig && syncConfig.sync_both_directions) {
+  // Only check for commands in sync-enabled channels to reduce overhead
+  const isCommand = syncConfig && syncConfig.sync_both_directions
+    ? (message.content.startsWith('!') || message.content.startsWith('/'))
+    : false;
+  if (syncConfig && syncConfig.sync_both_directions && !isCommand) {
     try {
       await relayDiscordMessageToGame(message, syncConfig);
     } catch (error) {
