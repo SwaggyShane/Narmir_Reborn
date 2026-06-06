@@ -5342,8 +5342,10 @@
           goldEl.textContent = trunc(state.gold || 0);
           goldEl.style.color = (state.gold || 0) < 1000 ? "var(--red)" : "";
         }
-        document.getElementById("m-mana").textContent = trunc(state.mana || 0);
-        document.getElementById("m-pop").textContent = trunc(
+        var manaEl = document.getElementById("m-mana");
+        if (manaEl) manaEl.textContent = trunc(state.mana || 0);
+        var popEl = document.getElementById("m-pop");
+        if (popEl) popEl.textContent = trunc(
           state.population || state.pop || 0,
         );
         var HOUSING_CAP_BY_RACE = {
@@ -5392,7 +5394,8 @@
           if (thrallRow) thrallRow.style.display = "none";
           if (shrineRow) shrineRow.style.display = "grid";
         }
-        document.getElementById("m-land").textContent = trunc(state.land || 0);
+        var landEl = document.getElementById("m-land");
+        if (landEl) landEl.textContent = trunc(state.land || 0);
         // Calculate used land from buildings
         var LAND_COST = {
           bld_farms: 1,
