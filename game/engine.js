@@ -368,6 +368,57 @@ function calculateHappiness(k) {
   };
 }
 
+async function recordHappinessHistory(db, kingdomId, turn, happinessData) {
+  try {
+    await db.run(
+      `INSERT INTO happiness_history
+       (kingdom_id, turn, happiness_value, food_component, entertainment_component, safety_component, prosperity_component, race_modifier)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(kingdom_id, turn) DO UPDATE SET
+       happiness_value = EXCLUDED.happiness_value,
+       food_component = EXCLUDED.food_component,
+       entertainment_component = EXCLUDED.entertainment_component,
+       safety_component = EXCLUDED.safety_component,
+       prosperity_component = EXCLUDED.prosperity_component,
+       race_modifier = EXCLUDED.race_modifier`,
+      [
+        kingdomId,
+        turn,
+        happinessData.happiness,
+        happinessData.components.food,
+        happinessData.components.entertainment,
+        happinessData.components.safety,
+        happinessData.components.prosperity,
+        happinessData.components.race
+      ]
+    );
+  } catch (err) {
+    console.error(`[happiness] recordHappinessHistory error: ${err.message}`);
+  }
+}
+
+async function logHappinessEvent(db, kingdomId, turn, eventData) {
+  try {
+    await db.run(
+      `INSERT INTO happiness_events
+       (kingdom_id, turn, event_type, old_happiness, new_happiness, component, delta, description)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        kingdomId,
+        turn,
+        eventData.event_type,
+        eventData.old_happiness,
+        eventData.new_happiness,
+        eventData.component,
+        eventData.delta,
+        eventData.description
+      ]
+    );
+  } catch (err) {
+    console.error(`[happiness] logHappinessEvent error: ${err.message}`);
+  }
+}
+
 function effectiveMorale(k) {
   let base =
     k.morale !== undefined && k.morale !== null ? k.morale : 100;
@@ -1417,9 +1468,6 @@ function processFoodEconomy(k, events) {
         message: `🌾 Food surplus: +${balance.toLocaleString()} units. Troops are well fed.`,
       });
       
-      if (mDelta > 0 && events.recordMoraleChange) {
-        events.recordMoraleChange(mDelta, "Food Surplus");
-      }
     } else {
       events.push({
         type: "system",
@@ -1462,9 +1510,6 @@ function processFoodEconomy(k, events) {
           message: `🚨 Food shortage! Turn ${shortTurns} — build more farms or reduce troops.`,
         });
 
-        if (mDelta !== 0 && events.recordMoraleChange) {
-          events.recordMoraleChange(mDelta, "Starvation");
-        }
       }
       if (shortTurns >= 5) {
         let fleeCount = 500;
@@ -1945,7 +1990,7 @@ function rebellionEvent(k, updates, events) {
   }
 }
 
-function processTurn(k) {
+function processTurn(k, db = null) {
   clearParseCache();
 
   // Defensive: heal k.troop_levels from any nested stringification at the start of the turn
@@ -1978,17 +2023,18 @@ function processTurn(k) {
     xpSourcesAccum = { ...XP_SOURCES_DEFAULT };
   }
 
-  const startEffMorale = displayMorale(k);
-  const startingCap = naturalMoraleCap(k);
 
-  const moraleLog = [];
-  events.recordMoraleChange = (amount, reason) => {
-    if (amount !== 0) moraleLog.push({ amount, reason });
-  };
 
   // Calculate happiness at the start of the turn
   const happinessResult = calculateHappiness(k);
   updates.happiness = happinessResult.happiness;
+
+  // Record happiness history for tracking and graphing
+  if (db && k.id) {
+    recordHappinessHistory(db, k.id, updates.turn, happinessResult).catch(err =>
+      console.error(`[engine] Failed to record happiness history: ${err.message}`)
+    );
+  }
 
   // Check for rebellion events
   rebellionCheck(k, happinessResult.happiness, updates, events);
@@ -2299,9 +2345,6 @@ function processTurn(k) {
           const mDelta = updates.morale - oldMorale;
           if (mDelta > 0) {
             bonusStr = `+${mDelta} Morale`;
-            if (events.recordMoraleChange) {
-              events.recordMoraleChange(mDelta, "Low Tax Event");
-            }
           } else {
             bonusStr = `Morale at cap`;
           }
@@ -2323,14 +2366,12 @@ function processTurn(k) {
       const oldM = cur;
       updates.morale = Math.max(0, cur - taxPenalty);
       if (updates.morale !== oldM) {
-        events.recordMoraleChange(updates.morale - oldM, `Taxation (${currentTax}%)`);
       }
 
       if (overcrowdPenalty > 0) {
         const cur2 = updates.morale;
         const newMorale = Math.max(0, cur2 - overcrowdPenalty);
         if (newMorale !== cur2) {
-          events.recordMoraleChange(newMorale - cur2, "Overcrowding");
         }
         updates.morale = newMorale;
       }
@@ -2351,16 +2392,13 @@ function processTurn(k) {
       if (cur > natCap) {
         newMorale = Math.max(natCap, cur - 2); // Natural decay towards cap
         if (newMorale !== cur) {
-          events.recordMoraleChange(newMorale - cur, "Natural decay towards cap");
         }
       } else if (newMorale > cur) {
-        events.recordMoraleChange(newMorale - cur, recoveryReason);
       }
 
       if (overcrowdPenalty > 0) {
         const afterCrowdMorale = Math.max(0, newMorale - overcrowdPenalty);
         if (afterCrowdMorale !== newMorale) {
-          events.recordMoraleChange(afterCrowdMorale - newMorale, "Overcrowding");
         }
         newMorale = afterCrowdMorale;
       }
@@ -2438,9 +2476,6 @@ function processTurn(k) {
 
     const oldM = updates.morale !== undefined ? updates.morale : k.morale;
     updates.morale = 5; // Reset morale
-    if (events.recordMoraleChange && oldM !== 5) {
-      events.recordMoraleChange(5 - oldM, "Riots");
-    }
     events.push({
       type: "system",
       message: `🔥 RIOTS! Citizens revolt! ${popLost.toLocaleString()} citizens fled/died, ${goldLost.toLocaleString()} gold looted${destBldStr}. Morale has been reset to 5.`,
@@ -3077,9 +3112,6 @@ function processTurn(k) {
     const oldMorale = cur;
     updates.morale = Math.min(natCap, cur + 1);
     const mDelta = updates.morale - oldMorale;
-    if (mDelta > 0 && events.recordMoraleChange) {
-      events.recordMoraleChange(mDelta, "Human Clerics Heal");
-    }
   }
 
   // ── XP awards this turn ───────────────────────────────────────────────────────
@@ -3180,31 +3212,7 @@ function processTurn(k) {
   checkAchievements(k, updates, events);
 
   // ── Morale Audit Report ──────────────────────────────────────────────────────
-  const finalEffMorale = displayMorale({ ...k, ...updates });
-  const finalCap = naturalMoraleCap({ ...k, ...updates });
 
-  if (moraleLog.length > 0 || finalEffMorale !== startEffMorale || finalCap !== startingCap) {
-    const totalDeltaEff = finalEffMorale - startEffMorale;
-    const deltaStr = totalDeltaEff > 0 ? `+${totalDeltaEff}` : `${totalDeltaEff}`;
-
-    let summary = `🎭 MORALE REPORT: Started at ${startEffMorale}. Final: ${finalEffMorale} (${deltaStr}).`;
-
-    if (finalCap !== startingCap) {
-      summary += ` Natural cap increased from ${startingCap} to ${finalCap} (Entertainment research).`;
-    }
-
-    if (moraleLog.length > 0) {
-      const details = moraleLog
-        .map((log) => `${log.reason}: ${log.amount > 0 ? "+" + log.amount : log.amount}`)
-        .join(", ");
-      summary += ` Factors (raw points): ${details}.`;
-    }
-
-    events.push({
-      type: "system",
-      message: summary,
-    });
-  }
 
   // Clean up temporary fields
   delete updates.xp_sources_updated;
@@ -7727,9 +7735,6 @@ function applyHeroTurnBonuses(hero, k, updates, events) {
     const oldMorale = currentMorale;
     updates.morale = Math.min(100, currentMorale + 1);
     const mDelta = updates.morale - oldMorale;
-    if (mDelta > 0 && events.recordMoraleChange) {
-      events.recordMoraleChange(mDelta, `Paladin Aura (${hero.name})`);
-    }
   } else if (hero.class === "warlord") {
     // Warlord: Morale boost
     const currentMorale =
@@ -7741,9 +7746,6 @@ function applyHeroTurnBonuses(hero, k, updates, events) {
     const oldMorale = currentMorale;
     updates.morale = Math.min(100, currentMorale + 2);
     const mDelta = updates.morale - oldMorale;
-    if (mDelta > 0 && events.recordMoraleChange) {
-      events.recordMoraleChange(mDelta, `Warlord Presence (${hero.name})`);
-    }
   } else if (hero.class === "forge_lord") {
     // Forge Lord: Gold income
     const bonus = Math.floor(hero.level * 300);
@@ -7773,9 +7775,6 @@ function applyHeroTurnBonuses(hero, k, updates, events) {
         type: "system",
         message: `🐺 Alpha Hunting: +${foodBonus.toLocaleString()} food.`,
       });
-      if (mDelta > 0 && events.recordMoraleChange) {
-        events.recordMoraleChange(mDelta, `Alpha Presence (${hero.name})`);
-      }
     }
   } else if (hero.class === "blood_shaman") {
     // Blood Shaman: Converts population to mana
@@ -8241,6 +8240,8 @@ module.exports = {
   happinessCombatMult,
   calculateHappiness,
   getHappinessRecoveryRate,
+  recordHappinessHistory,
+  logHappinessEvent,
   rebellionCheck,
   rebellionEvent,
   TROOP_RACE_BONUS,

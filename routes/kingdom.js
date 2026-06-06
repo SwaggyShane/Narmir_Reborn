@@ -599,7 +599,7 @@ module.exports = function (db) {
     k.heroes = heroes;
     await loadTradeRoutes(k);
 
-    const { updates, events } = engine.processTurn(k);
+    const { updates, events } = engine.processTurn(k, db);
 
     const heroBatch = [];
     for (const hero of heroes) {
@@ -5462,6 +5462,65 @@ module.exports = function (db) {
       await db.run('UPDATE kingdoms SET custom_portrait = NULL WHERE id = ?', [k.id]);
       res.json({ ok: true });
     } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // GET /api/kingdom/happiness-status - Happiness data + 50-turn history
+  router.get('/happiness-status', requireAuth, async (req, res) => {
+    try {
+      const playerId = req.player.playerId;
+      const k = await db.get('SELECT * FROM kingdoms WHERE player_id = ?', [playerId]);
+      if (!k) return res.status(404).json({ error: 'Kingdom not found' });
+
+      // Get current happiness components
+      const happinessResult = engine.calculateHappiness(k);
+
+      // Get last 50 turns of happiness history
+      const history = await db.all(
+        `SELECT turn, happiness_value FROM happiness_history
+         WHERE kingdom_id = ? ORDER BY turn DESC LIMIT 50`,
+        [k.id]
+      );
+
+      // Get recent happiness events
+      const recentEvents = await db.all(
+        `SELECT * FROM happiness_events
+         WHERE kingdom_id = ? ORDER BY turn DESC LIMIT 10`,
+        [k.id]
+      );
+
+      res.json({
+        happiness: happinessResult.happiness,
+        components: happinessResult.components,
+        recoveryRate: happinessResult.recovery,
+        last50Turns: history.reverse(), // Reverse to oldest first
+        recent: recentEvents
+      });
+    } catch (err) {
+      console.error('[kingdom] happiness-status error:', err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // GET /api/kingdom/happiness-events - Recent happiness events
+  router.get('/happiness-events', requireAuth, async (req, res) => {
+    try {
+      const playerId = req.player.playerId;
+      const limit = Math.min(Math.max(parseInt(req.query.limit) || 50, 1), 500);
+
+      const k = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [playerId]);
+      if (!k) return res.status(404).json({ error: 'Kingdom not found' });
+
+      const events = await db.all(
+        `SELECT * FROM happiness_events
+         WHERE kingdom_id = ? ORDER BY turn DESC LIMIT ?`,
+        [k.id, limit]
+      );
+
+      res.json({ events: events.reverse() }); // Reverse to oldest first
+    } catch (err) {
+      console.error('[kingdom] happiness-events error:', err);
       res.status(500).json({ error: err.message });
     }
   });

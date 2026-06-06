@@ -1278,6 +1278,45 @@ module.exports = function (db, io) {
     }
   });
 
+  router.post("/security-audit", requireAdmin, requireCsrfToken, async (req, res) => {
+    try {
+      const AuditReportGenerator = require("../tools/security-auditor/report-generator");
+      const generator = new AuditReportGenerator(path.join(__dirname, ".."));
+
+      const analysis = generator.analyzer.analyzeProject(['index.js', 'database.js', 'config.js']);
+      const findings = generator.compileFinding(analysis);
+
+      const allFindings = [
+        ...findings.critical,
+        ...findings.high,
+        ...findings.medium,
+        ...findings.low,
+        ...findings.info
+      ];
+
+      const summary = {
+        critical: findings.critical.length,
+        high: findings.high.length,
+        medium: findings.medium.length,
+        low: findings.low.length,
+        info: findings.info.length
+      };
+
+      res.json({
+        success: true,
+        timestamp: new Date().toISOString(),
+        summary,
+        findings: allFindings
+      });
+    } catch (err) {
+      console.error("[admin] Security audit error:", err);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+
   return router;
 };
 
