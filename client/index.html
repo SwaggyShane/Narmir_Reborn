@@ -7943,7 +7943,8 @@
       }
 
       function getNewsPriority(item) {
-        var msg = (item.message || "").toLowerCase();
+        if (!item) return 13;
+        var msg = String(item.message || "").toLowerCase();
         var type = item.type || "system";
 
         // World/Season Interactions (priority 1)
@@ -7979,8 +7980,8 @@
         // Happiness Report (priority 8)
         if (msg.includes("happiness")) return 8;
 
-        // Resource Production (priority 3) - check last to avoid overlaps with "wood", "stone", "iron", "production:"
-        if (msg.includes("production:") || msg.includes("wood") || msg.includes("stone") || msg.includes("iron") || msg.includes("food production")) return 3;
+        // Resource Production (priority 3) - check last to avoid overlaps with "wood", "stone", "iron", "production:", "food"
+        if (msg.includes("production:") || msg.includes("wood") || msg.includes("stone") || msg.includes("iron") || msg.includes("food") || msg.includes("forester")) return 3;
 
         // Default: System items
         return 13;
