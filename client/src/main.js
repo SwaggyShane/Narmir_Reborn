@@ -20,6 +20,7 @@ import MarketPanelReact from "./components/react/MarketPanel.jsx";
 import WarfarePanelReact from "./components/react/WarfarePanel.jsx";
 import TrainingPanelReact from "./components/react/TrainingPanel.jsx";
 import StatusPanelReact from "./components/react/StatusPanel.jsx";
+import HappinessPanelReact from "./components/react/HappinessPanel.jsx";
 import TestingPanelReact from "./components/react/TestingPanel.jsx";
 import StudiesPanelReact from "./components/react/StudiesPanel.jsx";
 import HeroesPanelReact from "./components/react/HeroesPanel.jsx";
@@ -89,6 +90,7 @@ export const mountReactApps = () => {
   tryMount("vue-panel-warfare", WarfarePanelReact);
   tryMount("vue-panel-training", TrainingPanelReact);
   tryMount("vue-panel-status", StatusPanelReact);
+  tryMount("vue-panel-happiness", HappinessPanelReact);
   tryMount("vue-panel-testing", TestingPanelReact);
   tryMount("vue-panel-studies", StudiesPanelReact);
   tryMount("vue-panel-heroes", HeroesPanelReact);
