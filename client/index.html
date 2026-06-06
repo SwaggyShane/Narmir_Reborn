@@ -7942,6 +7942,50 @@
         });
       }
 
+      function getNewsPriority(item) {
+        var msg = (item.message || "").toLowerCase();
+        var type = item.type || "system";
+
+        // World/Season Interactions (priority 1)
+        if (msg.includes("season:") || msg.includes("seasonal")) return 1;
+
+        // PVP Interactions (priority 2) - attacks, spells, covert ops
+        if (type === "attack" || type === "spell" || type === "covert") return 2;
+
+        // Resource Production (priority 3)
+        if (msg.includes("production:") || msg.includes("wood") || msg.includes("stone") || msg.includes("iron") || msg.includes("food production")) return 3;
+
+        // Construction (priority 4)
+        if (msg.includes("completed:") || msg.includes("completed ") || msg.includes("building") && msg.includes("ready")) return 4;
+
+        // Research (priority 5)
+        if (msg.includes("research") || msg.includes("studying") || msg.includes("spellbook")) return 5;
+
+        // Mana (priority 6)
+        if (msg.includes("mana")) return 6;
+
+        // Population Change (priority 7)
+        if (msg.includes("population") && !msg.includes("happiness")) return 7;
+
+        // Happiness Report (priority 8)
+        if (msg.includes("happiness")) return 8;
+
+        // Expeditions Returned (priority 9)
+        if (msg.includes("expedition") || msg.includes("🔭") || msg.includes("scouts")) return 9;
+
+        // Gold Earned (priority 10)
+        if (msg.includes("gold earned") || msg.includes("trade route") || msg.includes("treasury")) return 10;
+
+        // Troop Upkeep (priority 11)
+        if (msg.includes("upkeep") || msg.includes("billable")) return 11;
+
+        // End of Turn Summary (priority 12)
+        if (msg.includes("end of turn") || msg.includes("net gold") || msg.includes("final treasury")) return 12;
+
+        // Default: System items
+        return 13;
+      }
+
       function renderNewsList(items) {
         var list = document.getElementById("news-list");
         if (!list) return;
@@ -7984,6 +8028,10 @@
         list.innerHTML = turnOrder
           .map(function (t) {
             var groupItems = turnMap[t];
+            // Sort items within the turn by priority
+            groupItems.sort(function (a, b) {
+              return getNewsPriority(a) - getNewsPriority(b);
+            });
             var turnLabel = t > 0 ? "Turn " + t : "Before game start";
             var timeLabel = timeAgo(groupItems[0].created_at);
             var rows = groupItems
