@@ -80,8 +80,12 @@ if (!window._applyServerUpdatesWrapped) {
     }
 
     // Force UI refresh for vanilla JS metrics display
-    if (window.syncUI) {
-      window.syncUI();
+    try {
+      if (typeof window.syncUI === "function") {
+        window.syncUI();
+      }
+    } catch (error) {
+      console.error("[UI] Error during syncUI execution:", error);
     }
   };
   window._applyServerUpdatesWrapped = true;
