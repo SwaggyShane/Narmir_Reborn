@@ -41,6 +41,62 @@ const BUILDINGS_DISPLAY_ORDER = [
 
 const BuildPanel = () => {
   const [showBuildingRef, setShowBuildingRef] = useState(false);
+  const [showAttunements, setShowAttunements] = useState(false);
+  const [availableAttunements, setAvailableAttunements] = useState([]);
+  const [currentAttunements, setCurrentAttunements] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  // Load attunements when panel opens
+  React.useEffect(() => {
+    if (showAttunements) {
+      loadAttunements();
+    }
+  }, [showAttunements]);
+
+  const loadAttunements = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/kingdom/available-attunements', {
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to load attunements');
+      const data = await response.json();
+      setAvailableAttunements(data.available || []);
+
+      const statusResponse = await fetch('/api/kingdom/attunement-status', {
+        credentials: 'include',
+      });
+      if (statusResponse.ok) {
+        const statusData = await statusResponse.json();
+        setCurrentAttunements(statusData.attunements || {});
+      }
+    } catch (err) {
+      console.error('[attunements] load failed:', err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const applyAttunement = async (fragmentName, buildingType) => {
+    try {
+      const response = await fetch('/api/kingdom/attune-fragment', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fragmentName, buildingType }),
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        alert(`Error: ${err.error}`);
+        return;
+      }
+      // Reload attunements
+      await loadAttunements();
+    } catch (err) {
+      console.error('[attunements] apply failed:', err.message);
+      alert('Failed to apply attunement');
+    }
+  };
 
   const formatReq = (bld) => {
     return `${bld.time} turns`;
@@ -154,8 +210,8 @@ const BuildPanel = () => {
 
         <div className="card" style={{ marginTop: '14px' }}>
           <div style={{ padding: '12px 0', borderBottom: '1px solid var(--border)', marginBottom: '12px' }}>
-            <button 
-              onClick={() => setShowBuildingRef(!showBuildingRef)} 
+            <button
+              onClick={() => setShowBuildingRef(!showBuildingRef)}
               style={{ background: 'none', border: '2px solid var(--orange)', borderRadius: '4px', cursor: 'pointer', padding: '8px 12px', width: '100%', textAlign: 'left', boxSizing: 'border-box', marginBottom: showBuildingRef ? '8px' : '0' }}
             >
               <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -175,6 +231,81 @@ const BuildPanel = () => {
                     </div>
                   ) : null;
                 })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="card" style={{ marginTop: '14px' }}>
+          <div style={{ padding: '12px 0', borderBottom: '1px solid var(--border)', marginBottom: '12px' }}>
+            <button
+              onClick={() => setShowAttunements(!showAttunements)}
+              style={{ background: 'none', border: '2px solid var(--purple)', borderRadius: '4px', cursor: 'pointer', padding: '8px 12px', width: '100%', textAlign: 'left', boxSizing: 'border-box', marginBottom: showAttunements ? '8px' : '0' }}
+            >
+              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '10px' }}>{showAttunements ? '▼' : '▶'}</span>
+                🌌 Building Attunements
+              </div>
+            </button>
+            {showAttunements && (
+              <div>
+                {loading ? (
+                  <div style={{ padding: '12px', color: 'var(--text3)', textAlign: 'center' }}>Loading attunements...</div>
+                ) : (
+                  <>
+                    {Object.keys(currentAttunements).length > 0 && (
+                      <div style={{ marginBottom: '16px', padding: '12px', background: 'var(--bg3)', borderRadius: '4px' }}>
+                        <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--gold)', marginBottom: '8px' }}>Current Attunements</div>
+                        {Object.entries(currentAttunements).map(([building, att]) => {
+                          if (!att || !att.fragmentName) return null;
+                          return (
+                            <div key={building} style={{ fontSize: '11px', color: 'var(--text)', marginBottom: '6px', padding: '6px', background: 'var(--bg2)', borderRadius: '3px' }}>
+                              <span style={{ color: 'var(--gold)', fontWeight: 600 }}>{building}</span>: {att.fragmentName}
+                              {att.special && <div style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '2px' }}>{att.special.name}</div>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {availableAttunements.length > 0 ? (
+                      <div>
+                        <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px' }}>Available Fragments</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '8px' }}>
+                          {availableAttunements.map((frag) => (
+                            <div key={frag.fragmentName} style={{ padding: '10px', background: 'var(--bg3)', borderRadius: '4px', border: '1px solid var(--border)' }}>
+                              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px' }}>{frag.fragmentName}</div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                {frag.buildings.map((bld) => (
+                                  <button
+                                    key={bld.buildingType}
+                                    onClick={() => applyAttunement(frag.fragmentName, bld.buildingType)}
+                                    style={{
+                                      padding: '6px 8px',
+                                      fontSize: '11px',
+                                      background: 'var(--accent1)',
+                                      color: 'var(--text)',
+                                      border: '1px solid var(--border)',
+                                      borderRadius: '3px',
+                                      cursor: 'pointer',
+                                      textAlign: 'left',
+                                    }}
+                                  >
+                                    ✨ {bld.buildingType} ({bld.count})
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ padding: '12px', color: 'var(--text3)', textAlign: 'center', fontSize: '12px' }}>
+                        No available fragments to attune. Find and study world fragments first!
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             )}
           </div>
