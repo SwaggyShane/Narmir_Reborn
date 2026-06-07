@@ -6059,11 +6059,18 @@ function covertLoot(thief, target, requestedLootType, thievesSent) {
   const targetVaultFrag = fragmentBonusManager.getFragmentForBuilding(target, 'vaults');
   const tVaultPassive = targetVaultFrag?.passive || {};
   const vaultEspionageShield = 1.0 + (tVaultPassive.espionage_shield || 0);
+  // Parse target armory fragment once — used for espionage_guard, infiltration_defense
+  const targetArmoryFrag = fragmentBonusManager.getFragmentForBuilding(target, 'armories');
+  const tArmoryPassive = targetArmoryFrag?.passive || {};
+  const armoryEspionageGuard = 1.0 + (tArmoryPassive.espionage_guard || 0);
+  const armoryInfiltrationDefense = 1.0 + (tArmoryPassive.infiltration_defense || 0);
+  // Combine espionage_guard and infiltration_defense into single multiplier for armory defense
+  const armoryDefenseMult = Math.max(armoryEspionageGuard, armoryInfiltrationDefense);
   const success =
     thief.thieves * stealthMulti >
     target.fighters * 0.015 +
       target.bld_guard_towers * 3 +
-      target.bld_armories * 10 +
+      target.bld_armories * 10 * armoryDefenseMult +
       target.bld_vaults * 10 * vaultEspionageShield;
   if (!success) {
     return {
