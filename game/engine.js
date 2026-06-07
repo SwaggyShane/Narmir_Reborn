@@ -6,6 +6,7 @@ const config = require("./config");
 const { progressGoal } = require('./goals');
 const fragmentBonusManager = require("./fragment-bonus-manager");
 const attunementManager = require("./attunement-manager");
+const effectsProcessor = require("./synergy-effects-processor");
 const { safeJsonParse, roll, rand, clearParseCache } = require('../utils/helpers');
 
 const {
@@ -255,7 +256,12 @@ function goldPerTurn(k) {
   const synergyGoldMult = getSynergyPassiveBonusMultiplier(k, 'gold_income');
 
   // milestoneMult applies only to core land/castle income; mktIncome stays flat
-  return Math.floor((baseRate + castleBonus) * econBonus * 2.25 * milestoneMult * happinessMult * tavernBonus * vaultEconomyMult * synergyGoldMult) + mktIncome;
+  let totalGold = Math.floor((baseRate + castleBonus) * econBonus * 2.25 * milestoneMult * happinessMult * tavernBonus * vaultEconomyMult * synergyGoldMult) + mktIncome;
+
+  // Apply active ability effects (synergy_benefit.resources bonus or synergy_penalty)
+  totalGold = effectsProcessor.applyMultiplicativeEffects(k, totalGold, 'resources');
+
+  return totalGold;
 }
 
 function manaPerTurn(k) {
@@ -303,6 +309,11 @@ function manaPerTurn(k) {
   // Synergy passive bonus for mana regeneration
   const synergyManaMult = getSynergyPassiveBonusMultiplier(k, 'mana_regen');
   manaGen = Math.floor(manaGen * synergyManaMult);
+
+  // Apply active ability effects (synergy_penalty.all_stats reduces mana)
+  // Use 'mana' stat type to allow for future mana-specific penalties
+  const penaltyMult = effectsProcessor.getPenaltyMultiplier(k, 'mana');
+  manaGen = Math.floor(manaGen * penaltyMult);
 
   return manaGen;
 }
@@ -805,7 +816,12 @@ function wallDefensePower(k) {
     500 *
     ((k.res_war_machines || 100) / 100) *
     (wallUpgrades.fortress_walls ? 1.75 : wallUpgrades.battlements ? 1.2 : 1.0);
-  return Math.floor(walls * 100 * mult * reinMult * vaultWallMult * effectiveWallMult * synergyDefenseMult + wmBonus);
+  let wallPower = Math.floor(walls * 100 * mult * reinMult * vaultWallMult * effectiveWallMult * synergyDefenseMult + wmBonus);
+
+  // Apply active ability effects (synergy_penalty.defense and all_stats)
+  wallPower = effectsProcessor.applyMultiplicativeEffects(k, wallPower, 'defense');
+
+  return wallPower;
 }
 
 // Guard tower contribution — thief detection
@@ -1286,7 +1302,10 @@ function farmProduction(k) {
   const synergyFoodMult = getSynergyPassiveBonusMultiplier(k, 'food_production');
   baseYield *= synergyFoodMult;
 
-  return Math.floor(baseYield);
+  // Apply active ability effects (synergy_penalty.food_production and all_stats)
+  baseYield = effectsProcessor.applyMultiplicativeEffects(k, Math.floor(baseYield), 'food_production');
+
+  return baseYield;
 }
 
 function foodConsumption(k) {
@@ -4022,6 +4041,13 @@ function processTurn(k, db = null) {
 
   // Clean up temporary fields
   delete updates.xp_sources_updated;
+
+  // Remove expired synergy effects at end of turn
+  const kingdomForEffectCleanup = { ...k, ...updates };
+  const cleanedKingdom = effectsProcessor.removeExpiredEffects(kingdomForEffectCleanup);
+  if (cleanedKingdom && cleanedKingdom.active_effects && cleanedKingdom.active_effects !== kingdomForEffectCleanup.active_effects) {
+    updates.active_effects = cleanedKingdom.active_effects;
+  }
 
   return { updates, events };
 }
