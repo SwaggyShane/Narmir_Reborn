@@ -1851,6 +1851,54 @@ function processBarracksAttunements(k, events = []) {
   return updates;
 }
 
+function processCastleAttunements(k, events = []) {
+  const updates = {};
+  if (!k.bld_castles) return updates;
+
+  const castleAttune = fragmentBonusManager.getFragmentForBuilding(k, 'castles');
+  if (!castleAttune) return updates;
+
+  const fragmentName = castleAttune.fragment;
+  switch (fragmentName) {
+    case 'Tears of the World Tree': {
+      // Elder Sap Tapestries: living sap tapestries boost tax yields (+3 gold per castle)
+      const gain = (k.bld_castles || 0) * 3;
+      updates.gold = (k.gold || 0) + gain;
+      events.push({
+        type: 'system',
+        message: `🌿 Elder Sap Tapestries: living sap tapestries boost tax yields (+${gain} gold).`
+      });
+      break;
+    }
+
+    case 'Cursed Bloodstone': {
+      // Blood-Sacrifice Vaults: dark blood rites scare away foreign envoys, 10% chance -1 happiness
+      if (roll(0.10)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🩸 Blood-Sacrifice Vaults: dark blood rites frighten foreign envoys (-1 happiness).`
+        });
+      }
+      break;
+    }
+
+    case 'Void Essence': {
+      // Astral Phasing Throne: void instability unsettles castle residents, 15% chance -1 happiness
+      if (roll(0.15)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🌌 Astral Phasing Throne: void instability unsettles castle residents (-1 happiness).`
+        });
+      }
+      break;
+    }
+  }
+
+  return updates;
+}
+
 function processMercenaries(k, events) {
   const updates = {};
   const mercs = safeJsonParse(
@@ -2349,6 +2397,10 @@ function processTurn(k, db = null) {
   // ── 4a-vii. Training field attunement special abilities ───────────────────────
   const trainingAbilityUpdates = processTrainingAttunements({ ...k, ...updates }, events);
   Object.assign(updates, trainingAbilityUpdates);
+
+  // ── 4a-viii. Castle attunement special abilities ──────────────────────────────
+  const castleAbilityUpdates = processCastleAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, castleAbilityUpdates);
 
   // ── 4b. Resource production (wood / stone / iron) ────────────────────────────
   const resourceUpdates = processResourceYield({ ...k, ...updates }, events);
@@ -8617,6 +8669,7 @@ module.exports = {
   processGuardTowerAttunements,
   processOutpostAttunements,
   processTrainingAttunements,
+  processCastleAttunements,
   processMercenaries,
   hireMercenaries,
   purchaseUpgrade,
