@@ -2153,10 +2153,9 @@ function processSynergyEffects(k, events = []) {
       // Auto-heal population: 1 citizen per turn
       const special = activeSynergy.specialEffects;
       const healAmount = special.healPerTurn || 1;
-      updates.population = Math.min(
-        k.population_cap || 100,
-        (k.population || 0) + healAmount
-      );
+      const popCap = (k.bld_housing || 0) * housingCapPerBuilding(k) * fragmentBonusManager.getBonusMultiplier(k, 'housing', 'capacity');
+      const newPop = (k.population || 0) + healAmount;
+      updates.population = popCap > 0 ? Math.min(popCap, newPop) : newPop;
       if (healAmount > 0) {
         events.push({
           type: 'system',
@@ -2211,13 +2210,19 @@ function processSynergyEffects(k, events = []) {
     case 'stellar-harmony': {
       // Cross-healing: buildings heal each other, overflow = population heal
       const totalProduction = (k.bld_farms || 0) * 10;
-      const overflow = Math.max(0, totalProduction - ((k.food_cap || 1000) - (k.food || 0)));
+      const granaryUpgrades = safeJsonParse(k.granary_upgrades, {}, "stellar-harmony:granary_upgrades");
+      const BASE_FOOD_STORAGE = 10000;
+      const granaryPer = granaryUpgrades.silos ? 150000 : 100000;
+      const storageRaceMult = raceBonus(k, 'food_storage');
+      const granaryCapacityMult = fragmentBonusManager.getBonusMultiplier(k, 'granaries', 'capacity');
+      const foodCap = Math.floor((Math.floor(BASE_FOOD_STORAGE * storageRaceMult) + (k.bld_granaries || 0) * granaryPer) * granaryCapacityMult);
+
+      const overflow = Math.max(0, totalProduction - (foodCap - (k.food || 0)));
       if (overflow > 0) {
         const healFromOverflow = Math.floor(overflow / 10);
-        updates.population = Math.min(
-          k.population_cap || 100,
-          (k.population || 0) + healFromOverflow
-        );
+        const popCap = (k.bld_housing || 0) * housingCapPerBuilding(k) * fragmentBonusManager.getBonusMultiplier(k, 'housing', 'capacity');
+        const newPop = (k.population || 0) + healFromOverflow;
+        updates.population = popCap > 0 ? Math.min(popCap, newPop) : newPop;
         events.push({
           type: 'system',
           message: `⭐ Stellar Harmony: production overflow heals +${healFromOverflow} population.`

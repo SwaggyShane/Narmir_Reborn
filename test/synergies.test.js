@@ -197,4 +197,14 @@ synergies.forEach(synergy => {
 });
 console.log('✓ All synergies have required fields\n');
 
-console.log('✅ All 13 tests passed!');
+// Test 14: Global bonuses (null key) are retrieved correctly
+console.log('Test 14: Global bonus retrieval');
+const bloodmoonSynergy = synergiesModule.getSynergy('bloodmoon-ritual');
+const globalBonus = synergiesModule.getSynergyBonusMultiplier(bloodmoonSynergy, 'any_building_type');
+assert.ok(globalBonus.power !== undefined, 'Global power bonus retrieved for Bloodmoon Ritual');
+assert.equal(globalBonus.power, 3.0, 'Global power bonus is +300%');
+const specificBonus = synergiesModule.getSynergyBonusMultiplier(bloodmoonSynergy, 'smithies');
+assert.deepEqual(specificBonus, globalBonus, 'Non-existent building type falls back to global bonus');
+console.log('✓ Global bonuses retrieved correctly\n');
+
+console.log('✅ All 14 tests passed!');

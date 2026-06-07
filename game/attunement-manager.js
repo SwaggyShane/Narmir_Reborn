@@ -244,8 +244,11 @@ function getFarmProductionMultiplier(kingdom) {
  */
 function getSynergyEligibility(kingdom) {
   const active = synergiesModule.getActiveSynergy(kingdom);
+  const attunements = getKingdomAttunements(kingdom.fragment_bonuses || '{}');
+  const attuned = Object.values(attunements).map(a => a?.fragment).filter(x => x);
+
   const nearActivation = synergiesModule.getAllSynergies().filter(
-    synergy => synergiesModule.isNearSynergyActivation(kingdom, synergy)
+    synergy => (!active || active.id !== synergy.id) && synergiesModule.isNearSynergyActivation(kingdom, synergy)
   );
 
   return {
@@ -260,11 +263,7 @@ function getSynergyEligibility(kingdom) {
       name: synergy.name,
       emoji: synergy.emoji,
       requiredFragments: synergy.requiredFragments,
-      hint: `Missing ${synergy.requiredFragments.filter(f => {
-        const attunements = getKingdomAttunements(kingdom.fragment_bonuses || '{}');
-        const attuned = Object.values(attunements).map(a => a?.fragment).filter(x => x);
-        return !attuned.includes(f);
-      }).length} fragment(s)`,
+      hint: `Missing ${synergy.requiredFragments.filter(f => !attuned.includes(f)).length} fragment(s)`,
     })),
   };
 }

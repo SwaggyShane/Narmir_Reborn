@@ -303,10 +303,11 @@ function getActiveSynergy(kingdom) {
 /**
  * Get synergy bonuses for a specific building
  * Returns multiplier object if synergy active and building has bonuses, else empty object
+ * Falls back to null key for global bonuses that apply to all buildings
  */
 function getSynergyBonusMultiplier(synergy, buildingType) {
   if (!synergy || !synergy.passiveBonuses) return {};
-  return synergy.passiveBonuses[buildingType] || {};
+  return synergy.passiveBonuses[buildingType] || synergy.passiveBonuses[null] || synergy.passiveBonuses['null'] || {};
 }
 
 /**
