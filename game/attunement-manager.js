@@ -242,6 +242,7 @@ function getFarmProductionMultiplier(kingdom) {
  * Get the currently active synergy for a kingdom
  */
 function getActiveSynergy(kingdom) {
+  if (!kingdom) return null;
   const attunements = getKingdomAttunements(kingdom.fragment_bonuses || '{}');
   const fragmentPlacements = {};
 
@@ -259,6 +260,7 @@ function getActiveSynergy(kingdom) {
  * Used for UI hints
  */
 function getNearActivationSynergies(kingdom) {
+  if (!kingdom) return [];
   const attunements = getKingdomAttunements(kingdom.fragment_bonuses || '{}');
   const fragmentPlacements = {};
 
@@ -283,6 +285,9 @@ function getContributingSynergies(buildingType, fragmentName) {
  * Get synergy status for UI display
  */
 function getSynergyStatus(kingdom) {
+  if (!kingdom) {
+    return { activeSynergy: null, nearActivation: [] };
+  }
   const activeSynergy = getActiveSynergy(kingdom);
   const nearActivation = getNearActivationSynergies(kingdom);
 

@@ -171,18 +171,22 @@ assert.ok(status.activeSynergy.passive, 'Status includes passive effects');
 assert.ok(status.activeSynergy.active, 'Status includes active effects');
 console.log('✓ Synergy status report works\n');
 
-// Test 13: All synergies have correct structure
-console.log('Test 13: All synergies have correct structure');
+// Test 13: All synergies have correct structure and valid fragment names
+console.log('Test 13: All synergies have correct structure and valid fragment names');
+const { isValidFragment } = require('../game/fragment-attunements');
 allSynergies.forEach(synergy => {
   assert.ok(synergy.id, `${synergy.name}: has id`);
   assert.ok(synergy.name, `${synergy.name}: has name`);
   assert.ok(synergy.emoji, `${synergy.name}: has emoji`);
   assert.ok(synergy.description, `${synergy.name}: has description`);
   assert.equal(Object.keys(synergy.requiredFragments).length, 10, `${synergy.name}: has 10 fragments`);
+  Object.keys(synergy.requiredFragments).forEach(fragmentName => {
+    assert.ok(isValidFragment(fragmentName), `${synergy.name}: fragment '${fragmentName}' is a valid fragment name`);
+  });
   assert.ok(synergy.passive.effects, `${synergy.name}: passive has effects object`);
   assert.ok(synergy.active.cooldown_days, `${synergy.name}: active has cooldown_days`);
 });
-console.log('✓ All synergies have correct structure\n');
+console.log('✓ All synergies have correct structure and valid fragment names\n');
 
 // Test 14: All cooldowns are in days (real-world time)
 console.log('Test 14: All cooldowns are real-world time (days)');

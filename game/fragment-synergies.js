@@ -146,7 +146,7 @@ const SYNERGIES = {
       'Celestial Feather': 'markets',
       'Ancient Elven Wood': 'training',
       'Titan Bone': 'walls',
-      'Tears of World Tree': 'schools',
+      'Tears of the World Tree': 'schools',
     },
     passive: {
       name: 'Chaotic Power',
