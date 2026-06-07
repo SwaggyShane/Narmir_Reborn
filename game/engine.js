@@ -2694,18 +2694,21 @@ function processTurn(k, db = null) {
 
 
 
-  // Decay fragment happiness penalty by 1 toward 0 each turn
+  // Calculate happiness using last turn's active_effects so the penalty is applied before decay
+  const happinessResult = calculateHappiness(k);
+  updates.happiness = happinessResult.happiness;
+
+  // Decay fragment happiness penalty by 1 toward 0 each turn; remove the key when it reaches 0
   {
     const decayEffects = safeJsonParse(k.active_effects, {}, 'turn:fragment_penalty_decay');
     if ((decayEffects.fragment_happiness_penalty || 0) < 0) {
       decayEffects.fragment_happiness_penalty = Math.min(0, decayEffects.fragment_happiness_penalty + 1);
+      if (decayEffects.fragment_happiness_penalty === 0) {
+        delete decayEffects.fragment_happiness_penalty;
+      }
       updates.active_effects = JSON.stringify(decayEffects);
     }
   }
-
-  // Calculate happiness at the start of the turn (uses decayed active_effects if updated)
-  const happinessResult = calculateHappiness({ ...k, ...updates });
-  updates.happiness = happinessResult.happiness;
 
   // Record happiness history for tracking and graphing
   if (db && k.id) {
