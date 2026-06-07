@@ -62,11 +62,11 @@ console.log('Testing Phase 6: Synergy Active Abilities\n');
   console.log('Test 4: Infernal Crucible active ability');
 
   const synergy = SYNERGIES['infernal-crucible'];
-  assert.equal(synergy.active.name, 'Forge of Gods', 'Correct name');
-  assert.equal(synergy.active.cooldown_days, 1, 'Cooldown 1 day');
+  assert.strictEqual(synergy.active.name, 'Forge of Gods', 'Correct name');
+  assert.strictEqual(synergy.active.cooldown_days, 1, 'Cooldown 1 day');
   assert.ok(synergy.active.cost, 'Has cost');
-  assert.equal(synergy.active.cost.population_percent, 0.50, 'Costs 50% population');
-  assert.equal(synergy.active.cost.stability, -50, 'Reduces stability by 50');
+  assert.strictEqual(synergy.active.cost.population_percent, 0.50, 'Costs 50% population');
+  assert.strictEqual(synergy.active.cost.stability, -50, 'Reduces stability by 50');
 
   console.log('✓ Infernal Crucible ability configured correctly\n');
 }
@@ -76,12 +76,14 @@ console.log('Testing Phase 6: Synergy Active Abilities\n');
   console.log('Test 5: Eternal Harvest active ability');
 
   const synergy = SYNERGIES['eternal-harvest'];
-  assert.equal(synergy.active.name, 'Bountiful Year', 'Correct name');
-  assert.equal(synergy.active.cooldown_days, 7, 'Cooldown 7 days');
+  assert.strictEqual(synergy.active.name, 'Bountiful Year', 'Correct name');
+  assert.strictEqual(synergy.active.cooldown_days, 7, 'Cooldown 7 days');
   assert.ok(synergy.active.benefit, 'Has benefit');
-  assert.equal(synergy.active.benefit.population_gain, 50, 'Gains 50 population');
+  assert.strictEqual(synergy.active.benefit.food_storage_fill, true, 'Fills food storage');
+  assert.strictEqual(synergy.active.benefit.population_gain, 50, 'Gains 50 population');
   assert.ok(synergy.active.penalty, 'Has penalty');
-  assert.equal(synergy.active.penalty_duration_days, 14, 'Penalty lasts 14 days');
+  assert.strictEqual(synergy.active.penalty.food_production, -0.80, 'Food production penalty -80%');
+  assert.strictEqual(synergy.active.penalty_duration_days, 14, 'Penalty lasts 14 days');
 
   console.log('✓ Eternal Harvest ability configured correctly\n');
 }
@@ -91,10 +93,10 @@ console.log('Testing Phase 6: Synergy Active Abilities\n');
   console.log('Test 6: Arcane Singularity active ability');
 
   const synergy = SYNERGIES['arcane-singularity'];
-  assert.equal(synergy.active.name, 'Spell Cascade', 'Correct name');
-  assert.equal(synergy.active.cooldown_days, 3, 'Cooldown 3 days');
+  assert.strictEqual(synergy.active.name, 'Spell Cascade', 'Correct name');
+  assert.strictEqual(synergy.active.cooldown_days, 3, 'Cooldown 3 days');
   assert.ok(synergy.active.cost, 'Has cost');
-  assert.equal(synergy.active.cost.mana_all, true, 'Costs all mana');
+  assert.strictEqual(synergy.active.cost.mana_all, true, 'Costs all mana');
 
   console.log('✓ Arcane Singularity ability configured correctly\n');
 }
@@ -104,11 +106,11 @@ console.log('Testing Phase 6: Synergy Active Abilities\n');
   console.log('Test 7: Blessed Citadel active ability');
 
   const synergy = SYNERGIES['blessed-citadel'];
-  assert.equal(synergy.active.name, 'Divine Wrath', 'Correct name');
-  assert.equal(synergy.active.cooldown_days, 7, 'Cooldown 7 days');
-  assert.equal(synergy.active.shield_duration_days, 2, 'Shield lasts 2 days');
+  assert.strictEqual(synergy.active.name, 'Divine Wrath', 'Correct name');
+  assert.strictEqual(synergy.active.cooldown_days, 7, 'Cooldown 7 days');
+  assert.strictEqual(synergy.active.shield_duration_days, 2, 'Shield lasts 2 days');
   assert.ok(synergy.active.penalty, 'Has penalty after shield');
-  assert.equal(synergy.active.penalty.defense, -0.60, 'Defense penalty -60%');
+  assert.strictEqual(synergy.active.penalty.defense, -0.60, 'Defense penalty -60%');
 
   console.log('✓ Blessed Citadel ability configured correctly\n');
 }
@@ -118,10 +120,11 @@ console.log('Testing Phase 6: Synergy Active Abilities\n');
   console.log('Test 8: Void Convergence active ability');
 
   const synergy = SYNERGIES['void-convergence'];
-  assert.equal(synergy.active.name, 'Reality Tear', 'Correct name');
-  assert.equal(synergy.active.cooldown_days, 5, 'Cooldown 5 days');
+  assert.strictEqual(synergy.active.name, 'Reality Tear', 'Correct name');
+  assert.strictEqual(synergy.active.cooldown_days, 5, 'Cooldown 5 days');
   assert.ok(synergy.active.cost, 'Has cost');
-  assert.equal(synergy.active.cost.troops_percent, 0.50, 'Costs 50% troops');
+  assert.strictEqual(synergy.active.cost.troops_percent, 0.50, 'Costs 50% troops');
+  assert.strictEqual(synergy.active.cost.stability, -40, 'Reduces stability by 40');
 
   console.log('✓ Void Convergence ability configured correctly\n');
 }
@@ -131,11 +134,11 @@ console.log('Testing Phase 6: Synergy Active Abilities\n');
   console.log('Test 9: Primordial Awakening active ability');
 
   const synergy = SYNERGIES['primordial-awakening'];
-  assert.equal(synergy.active.name, 'Colossal Form', 'Correct name');
-  assert.equal(synergy.active.cooldown_days, 4, 'Cooldown 4 days');
+  assert.strictEqual(synergy.active.name, 'Colossal Form', 'Correct name');
+  assert.strictEqual(synergy.active.cooldown_days, 4, 'Cooldown 4 days');
   assert.ok(synergy.active.benefit, 'Has benefit');
-  assert.equal(synergy.active.benefit.troop_damage, 1.0, 'Troop damage +100%');
-  assert.equal(synergy.active.benefit_duration_days, 4, 'Benefit lasts 4 days');
+  assert.strictEqual(synergy.active.benefit.troop_damage, 1.0, 'Troop damage +100%');
+  assert.strictEqual(synergy.active.benefit_duration_days, 4, 'Benefit lasts 4 days');
 
   console.log('✓ Primordial Awakening ability configured correctly\n');
 }
@@ -145,12 +148,15 @@ console.log('Testing Phase 6: Synergy Active Abilities\n');
   console.log('Test 10: Bloodmoon Ascension active ability');
 
   const synergy = SYNERGIES['bloodmoon-ascension'];
-  assert.equal(synergy.active.name, 'Life Drain', 'Correct name');
-  assert.equal(synergy.active.cooldown_days, 7, 'Cooldown 7 days');
+  assert.strictEqual(synergy.active.name, 'Life Drain', 'Correct name');
+  assert.strictEqual(synergy.active.cooldown_days, 7, 'Cooldown 7 days');
   assert.ok(synergy.active.steal, 'Has steal property');
-  assert.equal(synergy.active.steal.gold, 100, 'Steals 100 gold');
+  assert.strictEqual(synergy.active.steal.gold, 100, 'Steals 100 gold');
+  assert.strictEqual(synergy.active.steal.food, 50, 'Steals 50 food');
+  assert.strictEqual(synergy.active.steal.mana, 20, 'Steals 20 mana');
   assert.ok(synergy.active.cost, 'Has cost');
-  assert.equal(synergy.active.cost.population, 60, 'Costs 60 population');
+  assert.strictEqual(synergy.active.cost.population, 60, 'Costs 60 population');
+  assert.strictEqual(synergy.active.cost.stability, -35, 'Reduces stability by 35');
 
   console.log('✓ Bloodmoon Ascension ability configured correctly\n');
 }
@@ -160,12 +166,12 @@ console.log('Testing Phase 6: Synergy Active Abilities\n');
   console.log('Test 11: Recursive Knowledge active ability');
 
   const synergy = SYNERGIES['recursive-knowledge'];
-  assert.equal(synergy.active.name, 'Temporal Echo', 'Correct name');
-  assert.equal(synergy.active.cooldown_days, 14, 'Cooldown 14 days');
+  assert.strictEqual(synergy.active.name, 'Temporal Echo', 'Correct name');
+  assert.strictEqual(synergy.active.cooldown_days, 14, 'Cooldown 14 days');
   assert.ok(synergy.active.benefit, 'Has benefit');
-  assert.equal(synergy.active.benefit.complete_all_research, true, 'Completes all research');
+  assert.strictEqual(synergy.active.benefit.complete_all_research, true, 'Completes all research');
   assert.ok(synergy.active.penalty, 'Has penalty');
-  assert.equal(synergy.active.penalty_duration_days, 21, 'Penalty lasts 21 days');
+  assert.strictEqual(synergy.active.penalty_duration_days, 21, 'Penalty lasts 21 days');
 
   console.log('✓ Recursive Knowledge ability configured correctly\n');
 }
@@ -175,12 +181,16 @@ console.log('Testing Phase 6: Synergy Active Abilities\n');
   console.log('Test 12: Celestial Harmony active ability');
 
   const synergy = SYNERGIES['celestial-harmony'];
-  assert.equal(synergy.active.name, 'Cosmic Alignment', 'Correct name');
-  assert.equal(synergy.active.cooldown_days, 10, 'Cooldown 10 days');
+  assert.strictEqual(synergy.active.name, 'Cosmic Alignment', 'Correct name');
+  assert.strictEqual(synergy.active.cooldown_days, 10, 'Cooldown 10 days');
   assert.ok(synergy.active.benefit, 'Has benefit');
-  assert.equal(synergy.active.benefit_duration_days, 3, 'Benefit lasts 3 days');
+  assert.strictEqual(synergy.active.benefit.resources, 0.30, 'Benefit resources +30%');
+  assert.strictEqual(synergy.active.benefit.production, 0.30, 'Benefit production +30%');
+  assert.strictEqual(synergy.active.benefit.happiness, 40, 'Benefit happiness +40');
+  assert.strictEqual(synergy.active.benefit_duration_days, 3, 'Benefit lasts 3 days');
   assert.ok(synergy.active.penalty, 'Has penalty');
-  assert.equal(synergy.active.penalty_duration_days, 7, 'Penalty lasts 7 days');
+  assert.strictEqual(synergy.active.penalty.all_stats, -0.50, 'Penalty all stats -50%');
+  assert.strictEqual(synergy.active.penalty_duration_days, 7, 'Penalty lasts 7 days');
 
   console.log('✓ Celestial Harmony ability configured correctly\n');
 }
@@ -190,12 +200,12 @@ console.log('Testing Phase 6: Synergy Active Abilities\n');
   console.log('Test 13: Entropy Unbound active ability');
 
   const synergy = SYNERGIES['entropy-unbound'];
-  assert.equal(synergy.active.name, 'Cataclysm', 'Correct name');
-  assert.equal(synergy.active.cooldown_days, 14, 'Cooldown 14 days');
+  assert.strictEqual(synergy.active.name, 'Cataclysm', 'Correct name');
+  assert.strictEqual(synergy.active.cooldown_days, 14, 'Cooldown 14 days');
   assert.ok(synergy.active.devastation_radius, 'Has devastation radius');
-  assert.equal(synergy.active.devastation_radius, 2, 'Radius is 2 territories');
+  assert.strictEqual(synergy.active.devastation_radius, 2, 'Radius is 2 territories');
   assert.ok(synergy.active.cost, 'Has cost');
-  assert.equal(synergy.active.cost.stability, -80, 'Stability cost -80');
+  assert.strictEqual(synergy.active.cost.stability, -80, 'Stability cost -80');
 
   console.log('✓ Entropy Unbound ability configured correctly\n');
 }
@@ -205,7 +215,7 @@ console.log('Testing Phase 6: Synergy Active Abilities\n');
   console.log('Test 14: All active abilities accessible');
 
   const allSynergies = attunementManager.getAllSynergies();
-  assert.equal(allSynergies.length, 10, 'Should have 10 synergies');
+  assert.strictEqual(allSynergies.length, 10, 'Should have 10 synergies');
 
   for (const synergy of allSynergies) {
     assert.ok(synergy.active, `${synergy.name} should have active ability`);
