@@ -262,6 +262,7 @@ const BuildPanel = () => {
                             <div key={building} style={{ fontSize: '11px', color: 'var(--text)', marginBottom: '6px', padding: '6px', background: 'var(--bg2)', borderRadius: '3px' }}>
                               <span style={{ color: 'var(--gold)', fontWeight: 600 }}>{building}</span>: {att.fragmentName}
                               {att.special && <div style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '2px' }}>{att.special.name}</div>}
+                              <div style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '4px', fontStyle: 'italic' }}>This building attunement can lead to greater things</div>
                             </div>
                           );
                         })}
