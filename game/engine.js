@@ -1270,25 +1270,23 @@ function marketIncomeFull(k) {
 
   const freePop = Math.max(0, k.population - totalHiredUnits(k));
   const workedMarkets = Math.min(markets, Math.floor(freePop / 5));
+  // Parse fragment once — avoids redundant JSON parsing across 7 multiplier reads
+  const marketFragment = fragmentBonusManager.getFragmentForBuilding(k, 'markets');
+  const passive = marketFragment?.passive || {};
   // Titan Bone: capacity_expansion multiplies how many trade route slots markets support
-  const capacityExpansionMult = fragmentBonusManager.getBonusMultiplier(k, 'markets', 'capacity_expansion');
+  const capacityExpansionMult = 1.0 + (passive.capacity_expansion || 0);
   const tradeRoutes = Math.min(k.maps, Math.floor(markets * capacityExpansionMult));
   let income = (workedMarkets * 50 + tradeRoutes * 30) * mult;
   if (upgrades.bazaar) income *= 1.5;
   if (upgrades.black_market) income *= 1.2;
 
-  // Apply world fragment bonuses for markets
-  const incomeMult = fragmentBonusManager.getBonusMultiplier(k, 'markets', 'income');
-  // Volcanic Rock: metal_trading boosts gold cycles
-  const metalTradingMult = fragmentBonusManager.getBonusMultiplier(k, 'markets', 'metal_trading');
-  // Ancient Elven Wood: forest_trade boosts barter ratios
-  const forestTradeMult = fragmentBonusManager.getBonusMultiplier(k, 'markets', 'forest_trade');
-  // Abyssal Crystal: dark_trade_gains boosts shadow market income
-  const darkTradeMult = fragmentBonusManager.getBonusMultiplier(k, 'markets', 'dark_trade_gains');
-  // Tears of World Tree: trade_stability adds steady trade bonus
-  const tradeStabilityMult = fragmentBonusManager.getBonusMultiplier(k, 'markets', 'trade_stability');
-  // Void Essence: mind_stability penalises market worker effectiveness (value is -0.40 → mult = 0.60)
-  const mindStabilityMult = fragmentBonusManager.getBonusMultiplier(k, 'markets', 'mind_stability');
+  // Apply all market fragment passive multipliers in a single pass
+  const incomeMult        = 1.0 + (passive.income          || 0);
+  const metalTradingMult  = 1.0 + (passive.metal_trading   || 0);
+  const forestTradeMult   = 1.0 + (passive.forest_trade    || 0);
+  const darkTradeMult     = 1.0 + (passive.dark_trade_gains || 0);
+  const tradeStabilityMult = 1.0 + (passive.trade_stability || 0);
+  const mindStabilityMult = 1.0 + (passive.mind_stability  || 0);
   income *= incomeMult * metalTradingMult * forestTradeMult * darkTradeMult * tradeStabilityMult * mindStabilityMult;
 
   return Math.floor(income);
@@ -6140,7 +6138,7 @@ function covertLoot(thief, target, requestedLootType, thievesSent) {
 
     // Dwarven Star-Metal vaults prevent the treasury from being looted
     const vaultFragment = fragmentBonusManager.getFragmentForBuilding(target, 'vaults');
-    // Dwarven Star-Metal markets: core_protection — financial ledgers fully protected
+    // Parse market fragment once for both core_protection and anti_theft_security
     const marketFragment = fragmentBonusManager.getFragmentForBuilding(target, 'markets');
     const coreProtection = marketFragment?.passive?.core_protection >= 1.0;
     if ((vaultFragment && vaultFragment.fragment === 'Dwarven Star-Metal') || coreProtection) {
@@ -6148,7 +6146,7 @@ function covertLoot(thief, target, requestedLootType, thievesSent) {
       desc = `0 gold — protected by ${coreProtection ? 'Star-Metal Lockbox Ledgers' : 'Star-Metal gear locks'}`;
     } else {
       // Dragon Scale markets: anti_theft_security reduces gold stolen
-      const antiTheftBonus = fragmentBonusManager.getBonusMultiplier(target, 'markets', 'anti_theft_security') - 1.0;
+      const antiTheftBonus = marketFragment?.passive?.anti_theft_security || 0.0;
       if (antiTheftBonus > 0.001) {
         stolen = Math.floor(stolen * Math.max(0, 1.0 - antiTheftBonus));
       }
