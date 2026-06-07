@@ -12,6 +12,7 @@ const { getKingdomAttunements } = require('../game/fragment-attunements');
 const fragmentBonusManager = require("../game/fragment-bonus-manager");
 const attunementManager = require('../game/attunement-manager');
 const synergiesModule = require('../game/fragment-synergies');
+const abilityManager = require('../game/active-ability-manager');
 const { applyKingdomUpdates } = require('../db/schema');
 const { marketPriceCache, setUnreadCount, incrementUnread } = require("../cache.js");
 
@@ -5511,27 +5512,48 @@ module.exports = function (db) {
           return res.status(400).json({ error: 'Invalid synergy ID' });
         }
 
-        // Apply ability effects - for now, just set cooldown
-        // Future: apply cost and penalty effects to kingdom state
-        const cooldownDays = synergy.active?.cooldown_days || 1;
-        const cooldownSeconds = cooldownDays * 86400;
-        const newCooldownUntil = now + cooldownSeconds;
+        // Use ability manager to trigger the ability (applies costs/benefits/penalties)
+        const abilityResult = abilityManager.triggerAbility(kingdom, synergy_id);
+        if (!abilityResult.ok) {
+          await db.run('ROLLBACK');
+          return res.status(400).json({ error: abilityResult.error });
+        }
+
+        // Get the updated kingdom with effects applied
+        const updatedKingdom = abilityResult.kingdom;
+        const cooldownUntil = new Date(abilityResult.cooldownExpires).getTime() / 1000;
+
+        // Apply all kingdom updates to database
+        const updates = {
+          ...abilityResult.kingdom,
+        };
+        delete updates.id; // Don't update the ID field
+
+        // Build dynamic UPDATE statement
+        const updateKeys = Object.keys(updates);
+        const placeholders = updateKeys.map(() => '?').join(', ');
+        const setClause = updateKeys.map(key => `${key} = ?`).join(', ');
+
+        await db.run(
+          `UPDATE kingdoms SET ${setClause} WHERE id = ?`,
+          [...updateKeys.map(key => updates[key]), kingdom.id]
+        );
 
         // Upsert cooldown record within transaction
         await db.run(
           "INSERT INTO synergy_cooldowns (kingdom_id, synergy_id, cooldown_until) VALUES (?, ?, ?) ON CONFLICT(kingdom_id, synergy_id) DO UPDATE SET cooldown_until = ?",
-          [kingdom.id, synergy_id, newCooldownUntil, newCooldownUntil]
+          [kingdom.id, synergy_id, Math.floor(cooldownUntil), Math.floor(cooldownUntil)]
         );
 
         await db.run('COMMIT');
 
         // Log the ability activation
-        console.log(`[synergy] Kingdom ${kingdom.id}: ${synergy_id} ability activated`);
+        console.log(`[synergy] Kingdom ${kingdom.id}: ${synergy_id} ability activated by ${synergy.active?.name}`);
 
         res.json({
           ok: true,
           message: `${synergy.active?.name} activated!`,
-          cooldown_until: newCooldownUntil,
+          cooldown_until: Math.floor(cooldownUntil),
           synergy: {
             id: synergy.id,
             name: synergy.name,
