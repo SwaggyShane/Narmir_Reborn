@@ -1,9 +1,11 @@
 /**
  * Fragment Bonus Manager
  * Handles application and retrieval of world fragment bonuses on buildings
+ * Integrates synergy detection and bonus application
  */
 
 const FRAGMENT_BONUSES = require('./world-fragment-bonuses');
+const synergiesModule = require('./fragment-synergies');
 
 /**
  * Parse fragment bonuses JSON from kingdom data
@@ -127,17 +129,54 @@ function getAvailableBuildingsWithBonuses(kingdom, fragmentName) {
 }
 
 /**
- * Calculate bonus multiplier for a specific building stat
+ * Get the currently active synergy for a kingdom
+ */
+function getActiveSynergy(kingdom) {
+  return synergiesModule.getActiveSynergy(kingdom);
+}
+
+/**
+ * Check if synergy meets UI hint criteria (close to activation)
+ */
+function isNearSynergyActivation(kingdom, synergy) {
+  return synergiesModule.isNearSynergyActivation(kingdom, synergy);
+}
+
+/**
+ * Get all synergies
+ */
+function getAllSynergies() {
+  return synergiesModule.getAllSynergies();
+}
+
+/**
+ * Calculate bonus multiplier for a specific building stat, including synergies
  */
 function getBonusMultiplier(kingdom, buildingType, statType) {
   const fragmentBonus = getFragmentForBuilding(kingdom, buildingType);
-  if (!fragmentBonus) return 1.0;
+  let multiplier = 0.0;
 
-  const passive = fragmentBonus.passive || {};
-  const multiplier = passive[statType];
+  // Start with fragment bonus
+  if (fragmentBonus) {
+    const passive = fragmentBonus.passive || {};
+    const fragmentMultiplier = passive[statType];
+    if (fragmentMultiplier !== undefined) {
+      multiplier += fragmentMultiplier;
+    }
+  }
 
-  if (multiplier === undefined) return 1.0;
-  return 1.0 + multiplier; // passive values are deltas (e.g., 0.15 = +15%)
+  // Layer in synergy bonus if active
+  const activeSynergy = getActiveSynergy(kingdom);
+  if (activeSynergy) {
+    const synergyBonus = synergiesModule.getSynergyBonusMultiplier(activeSynergy, buildingType);
+    const synergyMultiplier = synergyBonus[statType];
+    if (synergyMultiplier !== undefined) {
+      multiplier += synergyMultiplier;
+    }
+  }
+
+  if (multiplier === 0) return 1.0;
+  return 1.0 + multiplier;
 }
 
 /**
@@ -175,25 +214,78 @@ function formatBuildingName(buildingType) {
 }
 
 /**
- * Get all bonuses for a building with their details
+ * Get all bonuses for a building with their details, including synergy effects
  */
 function getBuildingBonusDetails(kingdom, buildingType) {
   const fragmentBonus = getFragmentForBuilding(kingdom, buildingType);
-  if (!fragmentBonus) {
+  const activeSynergy = getActiveSynergy(kingdom);
+
+  if (!fragmentBonus && !activeSynergy) {
     return {
       hasBonus: false,
       fragment: null,
       bonuses: {},
+      synergy: null,
+    };
+  }
+
+  const result = {
+    hasBonus: !!fragmentBonus,
+    fragment: fragmentBonus?.fragment || null,
+    special: fragmentBonus?.special || null,
+    passive: fragmentBonus?.passive || {},
+    appliedTurn: fragmentBonus?.applied_turn || null,
+    synergy: null,
+  };
+
+  // Add synergy details if active and affects this building
+  if (activeSynergy) {
+    const synergyBonus = synergiesModule.getSynergyBonusMultiplier(activeSynergy, buildingType);
+    if (Object.keys(synergyBonus).length > 0) {
+      result.synergy = {
+        id: activeSynergy.id,
+        name: activeSynergy.name,
+        emoji: activeSynergy.emoji,
+        bonuses: synergyBonus,
+        special: activeSynergy.specialEffects,
+      };
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Get synergy status for a kingdom
+ */
+function getSynergyStatus(kingdom) {
+  const activeSynergy = getActiveSynergy(kingdom);
+  if (!activeSynergy) {
+    return {
+      active: false,
+      synergy: null,
+      hint: null,
     };
   }
 
   return {
-    hasBonus: true,
-    fragment: fragmentBonus.fragment,
-    special: fragmentBonus.special,
-    passive: fragmentBonus.passive,
-    appliedTurn: fragmentBonus.applied_turn,
+    active: true,
+    synergy: {
+      id: activeSynergy.id,
+      name: activeSynergy.name,
+      emoji: activeSynergy.emoji,
+      description: activeSynergy.description,
+      special: activeSynergy.specialEffects,
+    },
   };
+}
+
+/**
+ * Get synergies near activation (for UI hints)
+ */
+function getNearActivationSynergies(kingdom) {
+  const allSynergies = getAllSynergies();
+  return allSynergies.filter(synergy => isNearSynergyActivation(kingdom, synergy));
 }
 
 module.exports = {
@@ -208,4 +300,9 @@ module.exports = {
   getSpecialEffect,
   formatBuildingName,
   getBuildingBonusDetails,
+  getActiveSynergy,
+  isNearSynergyActivation,
+  getAllSynergies,
+  getSynergyStatus,
+  getNearActivationSynergies,
 };

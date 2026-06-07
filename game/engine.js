@@ -5,6 +5,7 @@
 const config = require("./config");
 const { progressGoal } = require('./goals');
 const fragmentBonusManager = require("./fragment-bonus-manager");
+const synergiesModule = require("./fragment-synergies");
 const { safeJsonParse, roll, rand, clearParseCache } = require('../utils/helpers');
 
 const {
@@ -2142,6 +2143,105 @@ function processSmithyAttunements(k, events = []) {
   return updates;
 }
 
+function processSynergyEffects(k, events = []) {
+  const updates = {};
+  const activeSynergy = fragmentBonusManager.getActiveSynergy(k);
+  if (!activeSynergy) return updates;
+
+  switch (activeSynergy.id) {
+    case 'natures-bounty': {
+      // Auto-heal population: 1 citizen per turn
+      const special = activeSynergy.specialEffects;
+      const healAmount = special.healPerTurn || 1;
+      updates.population = Math.min(
+        k.population_cap || 100,
+        (k.population || 0) + healAmount
+      );
+      if (healAmount > 0) {
+        events.push({
+          type: 'system',
+          message: `🌿 Nature's Bounty: eternal harvest heals +${healAmount} population.`
+        });
+      }
+      break;
+    }
+
+    case 'arcane-nexus': {
+      // Mana overflow boost: if mana is at max, grant INT boost (passive effect handled by multiplier)
+      // This is handled more as a passive bonus in combat calculation
+      break;
+    }
+
+    case 'cosmic-chaos': {
+      // Destiny reroll: once per 10 turns, can reroll one event
+      // This would be triggered by UI button in actual gameplay
+      // For now, just track the synergy is active
+      break;
+    }
+
+    case 'primordial-might': {
+      // Titanic size and AOE conquest effects handled in combat calculation
+      break;
+    }
+
+    case 'bloodmoon-ritual': {
+      // Darkness events summon shadow units
+      // This is triggered during combat/conquest, not here
+      if (roll(0.05)) {
+        events.push({
+          type: 'system',
+          message: `🩸 Bloodmoon Ritual: darkness event triggered (shadow units summoned in next battle).`
+        });
+      }
+      break;
+    }
+
+    case 'eternal-recursion': {
+      // Knowledge seeds and batch repeat: passive (handled by multiplier)
+      // Could generate craftable recipes periodically
+      if (roll(0.10)) {
+        events.push({
+          type: 'system',
+          message: `♻️ Eternal Recursion: knowledge seed discovered (new recipe available).`
+        });
+      }
+      break;
+    }
+
+    case 'stellar-harmony': {
+      // Cross-healing: buildings heal each other, overflow = population heal
+      const totalProduction = (k.bld_farms || 0) * 10;
+      const overflow = Math.max(0, totalProduction - ((k.food_cap || 1000) - (k.food || 0)));
+      if (overflow > 0) {
+        const healFromOverflow = Math.floor(overflow / 10);
+        updates.population = Math.min(
+          k.population_cap || 100,
+          (k.population || 0) + healFromOverflow
+        );
+        events.push({
+          type: 'system',
+          message: `⭐ Stellar Harmony: production overflow heals +${healFromOverflow} population.`
+        });
+      }
+      break;
+    }
+
+    case 'void-touched-ascendancy': {
+      // Curse-to-blessing conversion and mana gain from happiness penalties
+      // Handled more in combat and happiness calculation
+      break;
+    }
+
+    case 'infernal-forge':
+    case 'divine-ascension': {
+      // These are primarily passive bonuses, handled by multiplier system
+      break;
+    }
+  }
+
+  return updates;
+}
+
 function processMarketAttunements(k, events = []) {
   const updates = {};
   if (!k.bld_markets) return updates;
@@ -2831,6 +2931,10 @@ function processTurn(k, db = null) {
   // ── 4a-xiii. Farm attunement special abilities ────────────────────────────────
   const farmAbilityUpdates = processFarmAttunements({ ...k, ...updates }, events);
   Object.assign(updates, farmAbilityUpdates);
+
+  // ── 4a-xiv. Synergy special effects ────────────────────────────────────────────
+  const synergyEffectUpdates = processSynergyEffects({ ...k, ...updates }, events);
+  Object.assign(updates, synergyEffectUpdates);
 
   // ── 4a-xv. Housing attunement special abilities ───────────────────────────────
   const housingAbilityUpdates = processHousingAttunements({ ...k, ...updates }, events);
@@ -9108,6 +9212,7 @@ module.exports = {
   processLibraryAttunements,
   processMageTowerAttunements,
   processSmithyAttunements,
+  processSynergyEffects,
   processMarketAttunements,
   processShrineAttunements,
   processTavernAttunements,

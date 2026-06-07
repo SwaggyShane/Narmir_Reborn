@@ -9,6 +9,7 @@ const {
 } = require('./fragment-attunements');
 
 const fragmentBonusManager = require('./fragment-bonus-manager');
+const synergiesModule = require('./fragment-synergies');
 
 /**
  * Validate that a fragment can be attuned to a building
@@ -237,10 +238,42 @@ function getFarmProductionMultiplier(kingdom) {
   return 1.0 + productionModifier;
 }
 
+/**
+ * Get synergy eligibility information for UI hints
+ * Shows synergies that are near activation or currently active
+ */
+function getSynergyEligibility(kingdom) {
+  const active = synergiesModule.getActiveSynergy(kingdom);
+  const nearActivation = synergiesModule.getAllSynergies().filter(
+    synergy => synergiesModule.isNearSynergyActivation(kingdom, synergy)
+  );
+
+  return {
+    activeSynergy: active ? {
+      id: active.id,
+      name: active.name,
+      emoji: active.emoji,
+      description: active.description,
+    } : null,
+    nearActivation: nearActivation.map(synergy => ({
+      id: synergy.id,
+      name: synergy.name,
+      emoji: synergy.emoji,
+      requiredFragments: synergy.requiredFragments,
+      hint: `Missing ${synergy.requiredFragments.filter(f => {
+        const attunements = getKingdomAttunements(kingdom.fragment_bonuses || '{}');
+        const attuned = Object.values(attunements).map(a => a?.fragment).filter(x => x);
+        return !attuned.includes(f);
+      }).length} fragment(s)`,
+    })),
+  };
+}
+
 module.exports = {
   validateAttunement,
   applyAttunement,
   getAvailableAttunements,
   getAttunementStatus,
   getFarmProductionMultiplier,
+  getSynergyEligibility,
 };
