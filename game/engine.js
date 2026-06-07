@@ -1675,6 +1675,43 @@ function processVaultAttunements(k, events = []) {
   return updates;
 }
 
+function processWallsAttunements(k, events = []) {
+  const updates = {};
+  if (!k.bld_walls) return updates;
+
+  const wallsAttune = fragmentBonusManager.getFragmentForBuilding(k, 'walls');
+  if (!wallsAttune) return updates;
+
+  const fragmentName = wallsAttune.fragment;
+  const currentHappiness = k.happiness ?? 50;
+
+  switch (fragmentName) {
+    case 'Dwarven Star-Metal': {
+      // Geared Self-Construction: clockwork auto-repairs 1 wall per turn
+      updates.bld_walls = (k.bld_walls || 0) + 1;
+      events.push({
+        type: 'system',
+        message: `⚙️ Geared Self-Construction: clockwork cog-wheels auto-repaired 1 wall section.`
+      });
+      break;
+    }
+
+    case 'Cursed Bloodstone': {
+      // Sanguine Blood-Thorns: dark magic thorns, 10% chance civic unrest (-1 happiness)
+      if (roll(0.10)) {
+        updates.happiness = Math.max(-50, currentHappiness - 1);
+        events.push({
+          type: 'system',
+          message: `🩸 Sanguine Blood-Thorns: bloodstone thorns creep beyond the walls, unsettling citizens (-1 happiness).`
+        });
+      }
+      break;
+    }
+  }
+
+  return updates;
+}
+
 function processBarracksAttunements(k, events = []) {
   const updates = {};
   if (!k.bld_barracks) return updates;
@@ -2175,6 +2212,10 @@ function processTurn(k, db = null) {
   // ── 4a-iii. Barracks attunement special abilities ─────────────────────────────
   const barracksAbilityUpdates = processBarracksAttunements({ ...k, ...updates }, events);
   Object.assign(updates, barracksAbilityUpdates);
+
+  // ── 4a-iv. Walls attunement special abilities ─────────────────────────────────
+  const wallsAbilityUpdates = processWallsAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, wallsAbilityUpdates);
 
   // ── 4b. Resource production (wood / stone / iron) ────────────────────────────
   const resourceUpdates = processResourceYield({ ...k, ...updates }, events);
@@ -8439,6 +8480,7 @@ module.exports = {
   processGranaryAttunements,
   processVaultAttunements,
   processBarracksAttunements,
+  processWallsAttunements,
   processMercenaries,
   hireMercenaries,
   purchaseUpgrade,
