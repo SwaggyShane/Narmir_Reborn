@@ -182,7 +182,7 @@ function test_attunements_cursedBloodstone_noTrigger() {
     const k = baseKingdom({ happiness: 80, fragment_bonuses: withWallsFragment('Cursed Bloodstone') });
     const events = [];
     const updates = processWallsAttunements(k, events);
-    assert.strictEqual(updates.happiness, undefined, 'no happiness change without trigger');
+    assert.strictEqual(updates.active_effects, undefined, 'no penalty without trigger');
     assert.strictEqual(events.length, 0, 'no event without trigger');
   } finally {
     Math.random = origRandom;
@@ -197,22 +197,27 @@ function test_attunements_cursedBloodstone_trigger() {
     const k = baseKingdom({ happiness: 80, fragment_bonuses: withWallsFragment('Cursed Bloodstone') });
     const events = [];
     const updates = processWallsAttunements(k, events);
-    assert.strictEqual(updates.happiness, 79, '-1 happiness from blood-thorns');
+    const ae = JSON.parse(updates.active_effects || '{}');
+    assert.strictEqual(ae.fragment_happiness_penalty, -1, 'penalty stored in active_effects');
     assert.ok(events.some(e => e.message.includes('Sanguine Blood-Thorns')), 'event fired');
   } finally {
     Math.random = origRandom;
   }
 }
 
-function test_attunements_cursedBloodstone_clampedAtMinus50() {
+function test_attunements_cursedBloodstone_stacks() {
   clearParseCache();
   const origRandom = Math.random;
   Math.random = () => 0.05;
   try {
-    const k = baseKingdom({ happiness: -50, fragment_bonuses: withWallsFragment('Cursed Bloodstone') });
+    const k = baseKingdom({
+      fragment_bonuses: withWallsFragment('Cursed Bloodstone'),
+      active_effects: '{"fragment_happiness_penalty": -2}',
+    });
     const events = [];
     const updates = processWallsAttunements(k, events);
-    assert.strictEqual(updates.happiness, -50, 'happiness clamped at -50');
+    const ae = JSON.parse(updates.active_effects || '{}');
+    assert.strictEqual(ae.fragment_happiness_penalty, -3, 'penalty stacks: -2 + -1 = -3');
   } finally {
     Math.random = origRandom;
   }
@@ -233,7 +238,7 @@ const tests = [
   test_attunements_dwarvenStarMetal_respectsCap,
   test_attunements_cursedBloodstone_noTrigger,
   test_attunements_cursedBloodstone_trigger,
-  test_attunements_cursedBloodstone_clampedAtMinus50,
+  test_attunements_cursedBloodstone_stacks,
 ];
 
 let passed = 0;

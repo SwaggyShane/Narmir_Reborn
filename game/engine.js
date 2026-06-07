@@ -358,6 +358,12 @@ function calculateHappiness(k) {
   const recoveryRate = getHappinessRecoveryRate(k);
   happiness = Math.floor(Math.max(-50, Math.min(120, happiness + recoveryRate)));
 
+  // Apply persistent fragment happiness penalty (accumulated via attunement effects)
+  const fragmentPenalty = effects.fragment_happiness_penalty || 0;
+  if (fragmentPenalty < 0) {
+    happiness = Math.max(-50, happiness + fragmentPenalty);
+  }
+
   return {
     happiness,
     components: {
@@ -1563,6 +1569,16 @@ function processFoodEconomy(k, events) {
  * Process granary attunement special abilities
  * Executes automated effects like food replication, vanishing, spoilage prevention
  */
+
+// Accumulates -1 to active_effects.fragment_happiness_penalty (persistent across turns).
+// calculateHappiness reads and applies the penalty; it decays +1/turn in the turn loop.
+function applyFragmentHappinessPenalty(k, updates) {
+  const existingEffectsStr = updates.active_effects !== undefined ? updates.active_effects : k.active_effects;
+  const effects = safeJsonParse(existingEffectsStr, {}, 'fragment_penalty:active_effects');
+  effects.fragment_happiness_penalty = (effects.fragment_happiness_penalty || 0) - 1;
+  updates.active_effects = JSON.stringify(effects);
+}
+
 function processGranaryAttunements(k, events) {
   const updates = {};
   const granaryAttune = fragmentBonusManager.getFragmentForBuilding(k, 'granaries');
@@ -1633,8 +1649,6 @@ function processVaultAttunements(k, events = []) {
   if (!vaultAttune) return updates;
 
   const fragmentName = vaultAttune.fragment;
-  const currentHappiness = k.happiness ?? 50;
-
   switch (fragmentName) {
     case 'Tears of the World Tree': {
       // Yggdrasil Resin Casings: amber resin compounds financial growth (+5 gold/vault/turn)
@@ -1650,7 +1664,7 @@ function processVaultAttunements(k, events = []) {
     case 'Cursed Bloodstone': {
       // Sanguine Vault Tax: dark alchemical currency, 10% chance civic instability (-1 happiness)
       if (roll(0.10)) {
-        updates.happiness = Math.max(-50, currentHappiness - 1);
+        applyFragmentHappinessPenalty(k, updates);
         events.push({
           type: 'system',
           message: `🩸 Sanguine Vault Tax: dark alchemical currency spikes instability (-1 happiness).`
@@ -1662,7 +1676,7 @@ function processVaultAttunements(k, events = []) {
     case 'Void Essence': {
       // Dimensional Pocket Vaults: 15% chance spatial lag from dimensional banking unsettles citizens
       if (roll(0.15)) {
-        updates.happiness = Math.max(-50, currentHappiness - 1);
+        applyFragmentHappinessPenalty(k, updates);
         events.push({
           type: 'system',
           message: `🌌 Dimensional Pocket Vaults: spatial lag from sub-dimensional banking unsettles citizens (-1 happiness).`
@@ -1683,8 +1697,6 @@ function processWallsAttunements(k, events = []) {
   if (!wallsAttune) return updates;
 
   const fragmentName = wallsAttune.fragment;
-  const currentHappiness = k.happiness ?? 50;
-
   switch (fragmentName) {
     case 'Dwarven Star-Metal': {
       // Geared Self-Construction: clockwork auto-repairs 1 wall per turn (capped at level cap)
@@ -1702,7 +1714,7 @@ function processWallsAttunements(k, events = []) {
     case 'Cursed Bloodstone': {
       // Sanguine Blood-Thorns: dark magic thorns, 10% chance civic unrest (-1 happiness)
       if (roll(0.10)) {
-        updates.happiness = Math.max(-50, currentHappiness - 1);
+        applyFragmentHappinessPenalty(k, updates);
         events.push({
           type: 'system',
           message: `🩸 Sanguine Blood-Thorns: bloodstone thorns creep beyond the walls, unsettling citizens (-1 happiness).`
@@ -1723,13 +1735,11 @@ function processGuardTowerAttunements(k, events = []) {
   if (!towerAttune) return updates;
 
   const fragmentName = towerAttune.fragment;
-  const currentHappiness = k.happiness ?? 50;
-
   switch (fragmentName) {
     case 'Cursed Bloodstone': {
       // Brimstone Signal Fire: crimson haze induces horror in the populace, 10% chance -1 happiness
       if (roll(0.10)) {
-        updates.happiness = Math.max(-50, currentHappiness - 1);
+        applyFragmentHappinessPenalty(k, updates);
         events.push({
           type: 'system',
           message: `🩸 Brimstone Signal Fire: crimson haze from watch-towers induces horror (-1 happiness).`
@@ -1741,7 +1751,7 @@ function processGuardTowerAttunements(k, events = []) {
     case 'Void Essence': {
       // Astral Sight Rifts: spatial vertigo from shifted sentry platforms, 15% chance -1 happiness
       if (roll(0.15)) {
-        updates.happiness = Math.max(-50, currentHappiness - 1);
+        applyFragmentHappinessPenalty(k, updates);
         events.push({
           type: 'system',
           message: `🌌 Astral Sight Rifts: spatial vertigo from sub-dimensional sentry platforms unsettles the populace (-1 happiness).`
@@ -1762,13 +1772,11 @@ function processOutpostAttunements(k, events = []) {
   if (!outpostAttune) return updates;
 
   const fragmentName = outpostAttune.fragment;
-  const currentHappiness = k.happiness ?? 50;
-
   switch (fragmentName) {
     case 'Cursed Bloodstone': {
       // Sanguine Warning Totems: impaled sacrifices deteriorate scout sanity, 10% chance -1 happiness
       if (roll(0.10)) {
-        updates.happiness = Math.max(-50, currentHappiness - 1);
+        applyFragmentHappinessPenalty(k, updates);
         events.push({
           type: 'system',
           message: `🩸 Sanguine Warning Totems: necrotic runes deteriorate scout sanity (-1 happiness).`
@@ -1789,13 +1797,11 @@ function processTrainingAttunements(k, events = []) {
   if (!trainingAttune) return updates;
 
   const fragmentName = trainingAttune.fragment;
-  const currentHappiness = k.happiness ?? 50;
-
   switch (fragmentName) {
     case 'Cursed Bloodstone': {
       // Crucible Agony Training: chaotic blood rites reduce tactical compliance, 10% chance -1 happiness
       if (roll(0.10)) {
-        updates.happiness = Math.max(-50, currentHappiness - 1);
+        applyFragmentHappinessPenalty(k, updates);
         events.push({
           type: 'system',
           message: `🩸 Crucible Agony Training: chaotic blood rites reduce tactical compliance (-1 happiness).`
@@ -1807,7 +1813,7 @@ function processTrainingAttunements(k, events = []) {
     case 'Void Essence': {
       // Dimensional Slip Sparring: sensory displacement from phase-slip drills, 15% chance -1 happiness
       if (roll(0.15)) {
-        updates.happiness = Math.max(-50, currentHappiness - 1);
+        applyFragmentHappinessPenalty(k, updates);
         events.push({
           type: 'system',
           message: `🌌 Dimensional Slip Sparring: sensory displacement from phase-slip drills unsettles troops (-1 happiness).`
@@ -1828,13 +1834,11 @@ function processBarracksAttunements(k, events = []) {
   if (!barracksAttune) return updates;
 
   const fragmentName = barracksAttune.fragment;
-  const currentHappiness = k.happiness ?? 50;
-
   switch (fragmentName) {
     case 'Cursed Bloodstone': {
       // Sanguine Ritual Circles: blood rituals multiply recruit rates but civil unrest risks -1 happiness (10%)
       if (roll(0.10)) {
-        updates.happiness = Math.max(-50, currentHappiness - 1);
+        applyFragmentHappinessPenalty(k, updates);
         events.push({
           type: 'system',
           message: `🩸 Sanguine Ritual Circles: dark blood rites spark civil unrest (-1 happiness).`
@@ -2251,8 +2255,17 @@ function processTurn(k, db = null) {
 
 
 
-  // Calculate happiness at the start of the turn
-  const happinessResult = calculateHappiness(k);
+  // Decay fragment happiness penalty by 1 toward 0 each turn
+  {
+    const decayEffects = safeJsonParse(k.active_effects, {}, 'turn:fragment_penalty_decay');
+    if ((decayEffects.fragment_happiness_penalty || 0) < 0) {
+      decayEffects.fragment_happiness_penalty = Math.min(0, decayEffects.fragment_happiness_penalty + 1);
+      updates.active_effects = JSON.stringify(decayEffects);
+    }
+  }
+
+  // Calculate happiness at the start of the turn (uses decayed active_effects if updated)
+  const happinessResult = calculateHappiness({ ...k, ...updates });
   updates.happiness = happinessResult.happiness;
 
   // Record happiness history for tracking and graphing
