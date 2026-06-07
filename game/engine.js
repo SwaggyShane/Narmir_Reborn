@@ -350,6 +350,13 @@ function calculateHappiness(k) {
     happiness += taxBonus;
   }
 
+  // Shrine fragment: morale and faith_morale passives add happiness (per shrine building)
+  if (k.bld_shrines) {
+    const shrineMoraleDelta = fragmentBonusManager.getBonusMultiplier(k, 'shrines', 'morale') - 1.0;
+    const shrineFaithDelta  = fragmentBonusManager.getBonusMultiplier(k, 'shrines', 'faith_morale') - 1.0;
+    happiness += Math.floor(k.bld_shrines * (shrineMoraleDelta * 4 + shrineFaithDelta * 6));
+  }
+
   // Apply happiness recovery based on research + taverns and clamp to -50 to 120
   const recoveryRate = getHappinessRecoveryRate(k);
   happiness = Math.floor(Math.max(-50, Math.min(120, happiness + recoveryRate)));
@@ -745,7 +752,9 @@ function wallDefensePower(k) {
     500 *
     ((k.res_war_machines || 100) / 100) *
     (wallUpgrades.fortress_walls ? 1.75 : wallUpgrades.battlements ? 1.2 : 1.0);
-  return Math.floor(walls * 100 * mult * reinMult * vaultWallMult * effectiveWallMult + wmBonus);
+  // Shrine fragment: defense_armor (Dwarven Star-Metal) fortifies defenders against siege
+  const shrineArmorMult = fragmentBonusManager.getBonusMultiplier(k, 'shrines', 'defense_armor');
+  return Math.floor((walls * 100 * mult * reinMult * vaultWallMult * effectiveWallMult + wmBonus) * shrineArmorMult);
 }
 
 // Guard tower contribution — thief detection
@@ -2978,6 +2987,9 @@ function processTurn(k, db = null) {
   } else {
     const shrineUpdates = processShrine({ ...k, ...updates }, events);
     Object.assign(updates, shrineUpdates);
+    // ── 8d-ii. Shrine attunements — fragment special effects ─────────────────
+    const shrineAttunementUpdates = processShrineAttunements({ ...k, ...updates }, events);
+    Object.assign(updates, shrineAttunementUpdates);
   }
 
   // ── 8e. Active effects — tick down debuffs/buffs ─────────────────────────────
@@ -5590,7 +5602,9 @@ function castSpell(caster, target, spellId, obscure) {
     ((caster.res_attack_magic || 100) / 100) * raceBonus(caster, "magic");
   const defMagic =
     ((target.res_defense_magic || 100) / 100) * raceBonus(target, "magic");
-  const magicRatio = Math.max(0.2, atkMagic / Math.max(0.5, defMagic));
+  // Shrine fragment: spell_resistance (Abyssal Crystal) bolsters target's magical defense
+  const shrineSpellResistMult = fragmentBonusManager.getBonusMultiplier(target, 'shrines', 'spell_resistance');
+  const magicRatio = Math.max(0.2, atkMagic / Math.max(0.5, defMagic * shrineSpellResistMult));
 
   // Check shield active effect on target
   let targetEffects = {};
@@ -6042,6 +6056,9 @@ function covertLoot(thief, target, requestedLootType, thievesSent) {
   let stolen = 0,
     desc = "";
 
+  // Shrine fragment: Draconic Sanctuary (Dragon Scale) — raid_protection reduces all loot by passive amount
+  const shrineRaidProtection = fragmentBonusManager.getBonusMultiplier(target, 'shrines', 'raid_protection') - 1.0;
+
   const bankUpgrades = safeJsonParse(
     target.bank_upgrades,
     {},
@@ -6139,6 +6156,25 @@ function covertLoot(thief, target, requestedLootType, thievesSent) {
     stolen = Math.min(stolen, target.trade_routes || 0);
     targetUpdates.trade_routes = Math.max(0, (target.trade_routes || 0) - stolen);
     desc = `${stolen} trade route(s)`;
+  }
+
+  // Shrine fragment: Draconic Sanctuary (Dragon Scale) raid_protection — reduce all stolen amounts
+  if (shrineRaidProtection > 0.001 && stolen > 0) {
+    const keepFraction = Math.max(0, 1.0 - shrineRaidProtection);
+    const reducedStolen = Math.floor(stolen * keepFraction);
+    // Walk targetUpdates and restore the difference to target's resource
+    for (const key of Object.keys(targetUpdates)) {
+      const originalVal = target[key] !== undefined ? target[key] : 0;
+      const originalLoss = originalVal - (targetUpdates[key] || 0);
+      if (originalLoss > 0) {
+        const reducedLoss = Math.floor(originalLoss * keepFraction);
+        targetUpdates[key] = Math.min(originalVal, originalVal - reducedLoss);
+      }
+    }
+    stolen = reducedStolen;
+    if (shrineRaidProtection > 0 && desc) {
+      desc += ` (reduced by Draconic Sanctuary)`;
+    }
   }
 
   const tXp = awardTroopXp(thief, "thieves", 20);
@@ -7461,16 +7497,77 @@ function processShrine(k, _events) {
 
   const shrinePowerMult = fragmentBonusManager.getBonusMultiplier(k, 'shrines', 'power');
   const shrineHealingMult = fragmentBonusManager.getBonusMultiplier(k, 'shrines', 'healing');
-  const capacity = Math.floor(shrines * 15 * shrinePowerMult * shrineHealingMult);
+  const shrineCapacityMult = fragmentBonusManager.getBonusMultiplier(k, 'shrines', 'capacity');
+  const capacity = Math.floor(shrines * 15 * shrinePowerMult * shrineHealingMult * shrineCapacityMult);
   const effectiveClerics = Math.min(getAvailableUnits(k, "clerics"), capacity);
 
   // Cleric XP for praying
   if (effectiveClerics > 0) {
-    const clericXp = Math.max(1, Math.floor(effectiveClerics / 5));
+    const clericEfficacyMult = fragmentBonusManager.getBonusMultiplier(k, 'shrines', 'cleric_efficacy');
+    const mindStabilityMod = fragmentBonusManager.getBonusMultiplier(k, 'shrines', 'mind_stability');
+    const clericXp = Math.max(1, Math.floor(effectiveClerics / 5 * clericEfficacyMult * mindStabilityMod));
     const resClerics = awardUnitXp({ ...k, ...updates }, "clerics", clericXp);
     if (resClerics) {
       updates.troop_levels = resClerics;
     }
+  }
+
+  return updates;
+}
+
+// ── Shrine attunements — per-turn fragment special effects ───────────────────
+function processShrineAttunements(k, events) {
+  const updates = {};
+  if (!(k.bld_shrines > 0)) return updates;
+
+  const shrineAttune = fragmentBonusManager.getFragmentForBuilding(k, 'shrines');
+  if (!shrineAttune) return updates;
+
+  const fragmentName = shrineAttune.fragment;
+  const happiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
+  const shrines = k.bld_shrines;
+
+  switch (fragmentName) {
+    case 'Volcanic Rock':
+      // Geothermal Hearth: thermal springs warm the shrine each turn
+      updates.happiness = Math.min(120, happiness + 1);
+      events.push({ type: 'system', message: `🌋 Geothermal Hearth: thermal springs warm the shrine (+1 happiness).` });
+      break;
+
+    case 'Celestial Feather':
+      // Blessed Resurrections: heavenly light restores morale fatigue
+      updates.happiness = Math.min(120, happiness + 2);
+      events.push({ type: 'system', message: `🪶 Blessed Resurrections: heavenly light restores morale (+2 happiness).` });
+      break;
+
+    case 'Cursed Bloodstone': {
+      // Sanguine Transfusion: auto-heal fighters via life-force binding at -1 happiness cost
+      const healed = Math.floor(shrines * 5);
+      if (healed > 0) {
+        updates.fighters = (k.fighters || 0) + healed;
+        updates.happiness = Math.max(-50, happiness - 1);
+        events.push({ type: 'system', message: `💉 Sanguine Transfusion: ${healed.toLocaleString()} fighters healed through life-force binding (-1 happiness).` });
+      }
+      break;
+    }
+
+    case 'Tears of World Tree': {
+      // Nectar of Life: sacred dew restores clerics for free each turn
+      const restored = Math.floor(shrines * 2);
+      if (restored > 0) {
+        updates.clerics = (k.clerics || 0) + restored;
+        events.push({ type: 'system', message: `💧 Nectar of Life: ${restored.toLocaleString()} clerics refreshed by sacred dew.` });
+      }
+      break;
+    }
+
+    case 'Void Essence':
+      // Telescopic Epiphany: 15% chance of cosmic vision driving eccentricity
+      if (Math.random() < 0.15) {
+        updates.happiness = Math.max(-50, happiness - 3);
+        events.push({ type: 'system', message: `🌌 Telescopic Epiphany: cosmic rift glimpsed through shrine ceiling (-3 happiness).` });
+      }
+      break;
   }
 
   return updates;
@@ -8366,6 +8463,7 @@ module.exports = {
   processLibrary,
   processMageTower,
   processShrine,
+  processShrineAttunements,
   processMausoleum,
   processActiveEffects,
   forgeTools,
