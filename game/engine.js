@@ -3473,6 +3473,9 @@ function processTurn(k, db = null) {
     // Get library research speed multiplier
     const libraryResearchMult = fragmentBonusManager.getBonusMultiplier(k, 'libraries', 'research_speed');
 
+    // Get synergy research speed multiplier
+    const synergyResearchMult = getSynergyPassiveBonusMultiplier(k, 'research_speed');
+
     let rProgress = safeJsonParse(
       k.research_progress,
       {},
@@ -3491,7 +3494,7 @@ function processTurn(k, db = null) {
       if (current >= cap) return; // At cap, no progress
 
       const effective = Math.floor(
-        perSlot * schoolBonus * d.multi * curriculumMult * libraryResearchMult,
+        perSlot * schoolBonus * d.multi * curriculumMult * libraryResearchMult * synergyResearchMult,
       );
       rProgress[d.col] = (rProgress[d.col] || 0) + effective;
 
