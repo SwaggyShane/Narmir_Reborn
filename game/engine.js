@@ -1754,6 +1754,33 @@ function processGuardTowerAttunements(k, events = []) {
   return updates;
 }
 
+function processOutpostAttunements(k, events = []) {
+  const updates = {};
+  if (!k.bld_outposts) return updates;
+
+  const outpostAttune = fragmentBonusManager.getFragmentForBuilding(k, 'outposts');
+  if (!outpostAttune) return updates;
+
+  const fragmentName = outpostAttune.fragment;
+  const currentHappiness = k.happiness ?? 50;
+
+  switch (fragmentName) {
+    case 'Cursed Bloodstone': {
+      // Sanguine Warning Totems: impaled sacrifices deteriorate scout sanity, 10% chance -1 happiness
+      if (roll(0.10)) {
+        updates.happiness = Math.max(-50, currentHappiness - 1);
+        events.push({
+          type: 'system',
+          message: `🩸 Sanguine Warning Totems: necrotic runes deteriorate scout sanity (-1 happiness).`
+        });
+      }
+      break;
+    }
+  }
+
+  return updates;
+}
+
 function processBarracksAttunements(k, events = []) {
   const updates = {};
   if (!k.bld_barracks) return updates;
@@ -2262,6 +2289,10 @@ function processTurn(k, db = null) {
   // ── 4a-v. Guard tower attunement special abilities ────────────────────────────
   const guardTowerAbilityUpdates = processGuardTowerAttunements({ ...k, ...updates }, events);
   Object.assign(updates, guardTowerAbilityUpdates);
+
+  // ── 4a-vi. Outpost attunement special abilities ───────────────────────────────
+  const outpostAbilityUpdates = processOutpostAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, outpostAbilityUpdates);
 
   // ── 4b. Resource production (wood / stone / iron) ────────────────────────────
   const resourceUpdates = processResourceYield({ ...k, ...updates }, events);
@@ -8528,6 +8559,7 @@ module.exports = {
   processBarracksAttunements,
   processWallsAttunements,
   processGuardTowerAttunements,
+  processOutpostAttunements,
   processMercenaries,
   hireMercenaries,
   purchaseUpgrade,
