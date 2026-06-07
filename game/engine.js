@@ -311,7 +311,8 @@ function manaPerTurn(k) {
   manaGen = Math.floor(manaGen * synergyManaMult);
 
   // Apply active ability effects (synergy_penalty.all_stats reduces mana)
-  const penaltyMult = effectsProcessor.getPenaltyMultiplier(k, 'resources');
+  // Use 'mana' stat type to allow for future mana-specific penalties
+  const penaltyMult = effectsProcessor.getPenaltyMultiplier(k, 'mana');
   manaGen = Math.floor(manaGen * penaltyMult);
 
   return manaGen;
