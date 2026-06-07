@@ -354,7 +354,7 @@ function calculateHappiness(k) {
   if (k.bld_shrines) {
     const shrineMoraleDelta = fragmentBonusManager.getBonusMultiplier(k, 'shrines', 'morale') - 1.0;
     const shrineFaithDelta  = fragmentBonusManager.getBonusMultiplier(k, 'shrines', 'faith_morale') - 1.0;
-    happiness += Math.floor(k.bld_shrines * (shrineMoraleDelta * 4 + shrineFaithDelta * 6));
+    happiness += Math.floor(k.bld_shrines * (shrineMoraleDelta * 4 + shrineFaithDelta * 6) + 1e-9);
   }
 
   // Apply happiness recovery based on research + taverns and clamp to -50 to 120
@@ -7544,9 +7544,20 @@ function processShrineAttunements(k, events) {
       // Sanguine Transfusion: auto-heal fighters via life-force binding at -1 happiness cost
       const healed = Math.floor(shrines * 5);
       if (healed > 0) {
-        updates.fighters = (k.fighters || 0) + healed;
-        updates.happiness = Math.max(-50, happiness - 1);
-        events.push({ type: 'system', message: `💉 Sanguine Transfusion: ${healed.toLocaleString()} fighters healed through life-force binding (-1 happiness).` });
+        const BARRACKS_TROOPS = ["fighters", "rangers", "clerics", "thieves", "ninjas"];
+        const barracksCapacityMult = fragmentBonusManager.getBonusMultiplier(k, 'barracks', 'capacity');
+        const barracksCap = Math.floor(k.bld_barracks * 500 * barracksCapacityMult);
+        const currentBarracksTroops = BARRACKS_TROOPS.reduce((s, u) => s + (k[u] || 0), 0);
+        const barracksSpace = Math.max(0, barracksCap - currentBarracksTroops);
+        const levelCapVal = getCap("fighters", k.level || 1);
+        const currentFighters = k.fighters || 0;
+        const levelSpace = Math.max(0, levelCapVal - currentFighters);
+        const added = Math.min(healed, barracksSpace, levelSpace);
+        if (added > 0) {
+          updates.fighters = currentFighters + added;
+          updates.happiness = Math.max(-50, happiness - 1);
+          events.push({ type: 'system', message: `💉 Sanguine Transfusion: ${added.toLocaleString()} fighters healed through life-force binding (-1 happiness).` });
+        }
       }
       break;
     }
@@ -7555,8 +7566,19 @@ function processShrineAttunements(k, events) {
       // Nectar of Life: sacred dew restores clerics for free each turn
       const restored = Math.floor(shrines * 2);
       if (restored > 0) {
-        updates.clerics = (k.clerics || 0) + restored;
-        events.push({ type: 'system', message: `💧 Nectar of Life: ${restored.toLocaleString()} clerics refreshed by sacred dew.` });
+        const BARRACKS_TROOPS = ["fighters", "rangers", "clerics", "thieves", "ninjas"];
+        const barracksCapacityMult = fragmentBonusManager.getBonusMultiplier(k, 'barracks', 'capacity');
+        const barracksCap = Math.floor(k.bld_barracks * 500 * barracksCapacityMult);
+        const currentBarracksTroops = BARRACKS_TROOPS.reduce((s, u) => s + (k[u] || 0), 0);
+        const barracksSpace = Math.max(0, barracksCap - currentBarracksTroops);
+        const levelCapVal = getCap("clerics", k.level || 1);
+        const currentClerics = k.clerics || 0;
+        const levelSpace = Math.max(0, levelCapVal - currentClerics);
+        const added = Math.min(restored, barracksSpace, levelSpace);
+        if (added > 0) {
+          updates.clerics = currentClerics + added;
+          events.push({ type: 'system', message: `💧 Nectar of Life: ${added.toLocaleString()} clerics refreshed by sacred dew.` });
+        }
       }
       break;
     }

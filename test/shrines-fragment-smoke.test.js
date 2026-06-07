@@ -139,9 +139,9 @@ test('Volcanic Rock morale 0.15 adds happiness per shrine', () => {
   });
   const base = calculateHappiness(baseKingdom({ bld_shrines: 10, happiness: 50 })).happiness;
   const withFrag = calculateHappiness(k).happiness;
-  // Due to floating-point: (1.15 - 1.0) = 0.1499...9, so floor(10 * 0.1499... * 4) = floor(5.999...) = 5
+  // 1e-9 epsilon prevents floor(5.999...) = 5; we now correctly get 6
   assert.ok(withFrag > base, `Fragment happiness (${withFrag}) should exceed base (${base})`);
-  assert.strictEqual(withFrag - base, 5, `Expected +5, got +${withFrag - base}`);
+  assert.strictEqual(withFrag - base, 6, `Expected +6, got +${withFrag - base}`);
 });
 
 test('Celestial Feather faith_morale 0.40 adds substantial happiness per shrine', () => {
@@ -152,9 +152,9 @@ test('Celestial Feather faith_morale 0.40 adds substantial happiness per shrine'
   });
   const base = calculateHappiness(baseKingdom({ bld_shrines: 10, happiness: 50 })).happiness;
   const withFrag = calculateHappiness(k).happiness;
-  // Due to floating-point: (1.40 - 1.0) = 0.3999...9, so floor(10 * 0.3999... * 6) = floor(23.999...) = 23
+  // 1e-9 epsilon prevents floor(23.999...) = 23; we now correctly get 24
   assert.ok(withFrag > base, `Fragment happiness (${withFrag}) should exceed base (${base})`);
-  assert.strictEqual(withFrag - base, 23, `Expected +23, got +${withFrag - base}`);
+  assert.strictEqual(withFrag - base, 24, `Expected +24, got +${withFrag - base}`);
 });
 
 test('Void Essence morale 1.20 adds massive happiness per shrine', () => {
@@ -303,6 +303,8 @@ test('Blessed Resurrections: clamps at 120', () => {
 test('Sanguine Transfusion (Cursed Bloodstone): heals fighters, costs 1 happiness', () => {
   const k = baseKingdom({
     bld_shrines: 4,
+    bld_barracks: 1,
+    level: 100,
     fighters: 200,
     happiness: 50,
     fragment_bonuses: makeFragmentBonuses('shrines', 'Cursed Bloodstone', { healing: 0.50, chaos_index: 0.20 }, 'Sanguine Transfusion'),
@@ -318,6 +320,8 @@ test('Sanguine Transfusion (Cursed Bloodstone): heals fighters, costs 1 happines
 test('Sanguine Transfusion: happiness clamps at -50', () => {
   const k = baseKingdom({
     bld_shrines: 4,
+    bld_barracks: 1,
+    level: 100,
     fighters: 100,
     happiness: -50,
     fragment_bonuses: makeFragmentBonuses('shrines', 'Cursed Bloodstone', { healing: 0.50, chaos_index: 0.20 }, 'Sanguine Transfusion'),
@@ -329,6 +333,8 @@ test('Sanguine Transfusion: happiness clamps at -50', () => {
 test('Nectar of Life (Tears of World Tree): restores clerics per turn', () => {
   const k = baseKingdom({
     bld_shrines: 5,
+    bld_barracks: 1,
+    level: 100,
     clerics: 100,
     fragment_bonuses: makeFragmentBonuses('shrines', 'Tears of World Tree', { healing: 0.40, cleric_efficacy: 0.30 }, 'Nectar of Life'),
   });
