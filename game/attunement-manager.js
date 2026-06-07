@@ -9,6 +9,7 @@ const {
 } = require('./fragment-attunements');
 
 const fragmentBonusManager = require('./fragment-bonus-manager');
+const synergiesModule = require('./fragment-synergies');
 
 /**
  * Validate that a fragment can be attuned to a building
@@ -237,10 +238,85 @@ function getFarmProductionMultiplier(kingdom) {
   return 1.0 + productionModifier;
 }
 
+/**
+ * Get the currently active synergy for a kingdom
+ */
+function getActiveSynergy(kingdom) {
+  if (!kingdom) return null;
+  const attunements = getKingdomAttunements(kingdom.fragment_bonuses || '{}');
+  const fragmentPlacements = {};
+
+  for (const [buildingType, attunement] of Object.entries(attunements)) {
+    if (attunement && attunement.fragment) {
+      fragmentPlacements[buildingType] = attunement.fragment;
+    }
+  }
+
+  return synergiesModule.detectActiveSynergy(fragmentPlacements);
+}
+
+/**
+ * Get synergies that are near activation (missing 1-2 fragments)
+ * Used for UI hints
+ */
+function getNearActivationSynergies(kingdom) {
+  if (!kingdom) return [];
+  const attunements = getKingdomAttunements(kingdom.fragment_bonuses || '{}');
+  const fragmentPlacements = {};
+
+  for (const [buildingType, attunement] of Object.entries(attunements)) {
+    if (attunement && attunement.fragment) {
+      fragmentPlacements[buildingType] = attunement.fragment;
+    }
+  }
+
+  return synergiesModule.getNearActivationSynergies(fragmentPlacements);
+}
+
+/**
+ * Get synergies that a specific building+fragment combo contributes to
+ * Used to show hints when attunement is applied
+ */
+function getContributingSynergies(buildingType, fragmentName) {
+  return synergiesModule.getContributingSynergies(buildingType, fragmentName);
+}
+
+/**
+ * Get synergy status for UI display
+ */
+function getSynergyStatus(kingdom) {
+  if (!kingdom) {
+    return { activeSynergy: null, nearActivation: [] };
+  }
+  const activeSynergy = getActiveSynergy(kingdom);
+  const nearActivation = getNearActivationSynergies(kingdom);
+
+  return {
+    activeSynergy: activeSynergy ? {
+      id: activeSynergy.id,
+      name: activeSynergy.name,
+      emoji: activeSynergy.emoji,
+      description: activeSynergy.description,
+      passive: activeSynergy.passive,
+      active: activeSynergy.active,
+    } : null,
+    nearActivation: nearActivation.map(item => ({
+      id: item.synergy.id,
+      name: item.synergy.name,
+      emoji: item.synergy.emoji,
+      missingFragments: item.missingCount,
+    })),
+  };
+}
+
 module.exports = {
   validateAttunement,
   applyAttunement,
   getAvailableAttunements,
   getAttunementStatus,
   getFarmProductionMultiplier,
+  getActiveSynergy,
+  getNearActivationSynergies,
+  getContributingSynergies,
+  getSynergyStatus,
 };
