@@ -2971,6 +2971,10 @@ function processTurn(k, db = null) {
   const towerUpdates = processMageTower({ ...k, ...updates }, events);
   Object.assign(updates, towerUpdates);
 
+  // ── 8c-ii. Mage tower attunement special abilities ────────────────────────────
+  const towerAbilityUpdates = processMageTowerAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, towerAbilityUpdates);
+
   // ── 8d. Shrines — clerics boost morale and prepare to heal ───────────────────
   if (k.race === "vampire") {
     const mausoleumUpdates = processMausoleum({ ...k, ...updates }, events);
@@ -5569,7 +5573,9 @@ function castSpell(caster, target, spellId, obscure) {
   const baseMana = TIER_MANA[def.tier] || 500;
   const spellLibraryBonus = fragmentBonusManager.getFragmentForBuilding(caster, 'libraries');
   const spellEfficiency = spellLibraryBonus?.passive?.spell_efficiency || 0;
-  const adjustedBaseMana = Math.floor(baseMana * (1 - spellEfficiency));
+  // Tears of the World Tree mage_tower passive: mana_efficiency reduces mana costs
+  const towerManaEff = fragmentBonusManager.getBonusMultiplier(caster, 'mage_towers', 'mana_efficiency') - 1.0;
+  const adjustedBaseMana = Math.floor(baseMana * (1 - spellEfficiency) * (1 - towerManaEff));
   const obscureCost = obscure ? Math.floor(adjustedBaseMana * 0.5) : 0;
   const totalMana = adjustedBaseMana + obscureCost;
   if ((caster.mana || 0) < totalMana)
@@ -5590,15 +5596,27 @@ function castSpell(caster, target, spellId, obscure) {
     ((caster.res_attack_magic || 100) / 100) * raceBonus(caster, "magic");
   const defMagic =
     ((target.res_defense_magic || 100) / 100) * raceBonus(target, "magic");
-  const magicRatio = Math.max(0.2, atkMagic / Math.max(0.5, defMagic));
+
+  // Mage tower fragment passives: spell_precision boosts caster atkMagic, spell_resistance boosts target defMagic
+  const casterPrecisionMult = fragmentBonusManager.getBonusMultiplier(caster, 'mage_towers', 'spell_precision');
+  const targetResistanceMult = fragmentBonusManager.getBonusMultiplier(target, 'mage_towers', 'spell_resistance');
+  // Mage tower specials on caster: Goliath Spire (+20% range/power), Sanguine Battery (1.5× offensive power)
+  const casterTowerSpecial = fragmentBonusManager.getSpecialEffect(caster, 'mage_towers');
+  const goliathBonus = casterTowerSpecial?.name === 'Goliath Spire' ? 1.20 : 1.0;
+  const sanguineMult = casterTowerSpecial?.name === 'Sanguine Battery' ? 1.50 : 1.0;
+  const magicRatio = Math.max(0.2,
+    (atkMagic * casterPrecisionMult * goliathBonus) / Math.max(0.5, defMagic * targetResistanceMult)
+  ) * sanguineMult;
 
   // Check shield active effect on target
   let targetEffects = {};
   try {
     targetEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
   } catch {}
-  const shielded =
-    (targetEffects.shield ? 0.5 : 1.0) * getMasonSigilResist(target);
+  // Harmonic Concentrators (Dwarven Star-Metal): spells cannot be deflected — ignore magic shield
+  const casterHarmonicIgnoresShield = casterTowerSpecial?.name === 'Harmonic Concentrators';
+  const baseShielded = (targetEffects.shield ? 0.5 : 1.0) * getMasonSigilResist(target);
+  const shielded = casterHarmonicIgnoresShield ? getMasonSigilResist(target) : baseShielded;
 
   let fortResist = {};
   try {
@@ -5692,11 +5710,35 @@ function castSpell(caster, target, spellId, obscure) {
 
   // ── Offensive / debuff spells ─────────────────────────────────────────────
 
+  // Mage tower specials on target: Nimbus Shields blocks all debuffs; Wyrmfire Focus 50% blocks debuffs
+  if (def.effect === 'debuff') {
+    const targetTowerSpecial = fragmentBonusManager.getSpecialEffect(target, 'mage_towers');
+    if (targetTowerSpecial?.name === 'Nimbus Shields') {
+      return {
+        casterUpdates,
+        targetUpdates: {},
+        report: { spellId, friendly: false, damageDesc: 'curse deflected by Nimbus Shields', manaCost: totalMana, obscure },
+        casterEvent: `✨ You cast ${spellId.replace(/_/g, ' ')} on ${target.name} — Nimbus Shields deflected your curse entirely!`,
+        targetEvent: `🌟 Nimbus Shields: ${caster.name}'s ${spellId.replace(/_/g, ' ')} was turned aside by your angelic ward!`,
+      };
+    }
+    if (targetTowerSpecial?.name === 'Wyrmfire Focus' && Math.random() < 0.5) {
+      return {
+        casterUpdates,
+        targetUpdates: {},
+        report: { spellId, friendly: false, damageDesc: 'spell disrupted by Wyrmfire Focus', manaCost: totalMana, obscure },
+        casterEvent: `✨ You cast ${spellId.replace(/_/g, ' ')} on ${target.name} — Wyrmfire Focus shielding disrupted the spell!`,
+        targetEvent: `🔥 Wyrmfire Focus: ${caster.name}'s ${spellId.replace(/_/g, ' ')} was disrupted by your scale-glass barrier!`,
+      };
+    }
+  }
+
   if (spellId === "spark") {
-    // Burns a small number of farms
-    const farmsLost = Math.max(1, getBldDmg("farms", 5));
+    // Burns a small number of farms — Magma Conduit (Volcanic Rock) amplifies fire attacks
+    const magmaMult = casterTowerSpecial?.name === 'Magma Conduit' ? 1.35 : 1.0;
+    const farmsLost = Math.max(1, Math.floor(getBldDmg("farms", 5) * magmaMult));
     targetUpdates.bld_farms = Math.max(0, (target.bld_farms || 0) - farmsLost);
-    damageDesc = `${farmsLost} farm${farmsLost > 1 ? "s" : ""} burned`;
+    damageDesc = `${farmsLost} farm${farmsLost > 1 ? "s" : ""} burned${magmaMult > 1 ? ' (Magma Conduit overcharge)' : ''}`;
   } else if (spellId === "rain") {
     // Floods more farms than Spark
     const farmsLost = Math.max(1, getBldDmg("farms", 20));
@@ -7303,6 +7345,46 @@ async function resolveExpeditions(db, k, engine) {
   return expeditionEvents;
 }
 
+/**
+ * Process mage tower attunement special abilities (per-turn passive events)
+ */
+function processMageTowerAttunements(k, events) {
+  const updates = {};
+  const towerAttune = fragmentBonusManager.getFragmentForBuilding(k, 'mage_towers');
+  if (!towerAttune || !k.bld_mage_towers) return updates;
+  const fragmentName = towerAttune.fragment;
+  const currentHappiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
+
+  switch (fragmentName) {
+    case 'Tears of the World Tree': {
+      // Mana Geyser: dew fonts auto-regenerate blank scrolls each turn
+      const newScrolls = Math.max(1, Math.floor(k.bld_mage_towers / 5));
+      const scrolls = safeJsonParse(k.scrolls || '{}', {}, 'mageTowerAttune:scrolls');
+      const scrollObj = typeof scrolls === 'object' && scrolls !== null ? { ...scrolls } : {};
+      scrollObj.blank_scroll = (scrollObj.blank_scroll || 0) + newScrolls;
+      updates.scrolls = JSON.stringify(scrollObj);
+      events.push({ type: 'system', message: `💧 Mana Geyser: World Tree dew floods the cooling pool — ${newScrolls} blank scroll${newScrolls > 1 ? 's' : ''} regenerated!` });
+      break;
+    }
+    case 'Cursed Bloodstone': {
+      // Sanguine Battery: lifeforce drain feeds spellpower at happiness cost
+      updates.happiness = Math.max(-50, currentHappiness - 1);
+      events.push({ type: 'system', message: `🩸 Sanguine Battery: Lifeforce siphoned from housing into the sanguine focus (−1 happiness).` });
+      break;
+    }
+    case 'Void Essence': {
+      // Portal Conduits: raw astral funnels occasionally trigger portal leaks
+      if (Math.random() < 0.15) {
+        updates.happiness = Math.max(-50, currentHappiness - 3);
+        events.push({ type: 'system', message: `🌌 Portal Conduits: An astral portal leaked into residential districts — citizens are unsettled (−3 happiness).` });
+      }
+      break;
+    }
+    default: break;
+  }
+  return updates;
+}
+
 // ── Mage Tower — scroll crafting and mana production ──────────────────────────
 function processMageTower(k, events) {
   const updates = {};
@@ -7335,7 +7417,9 @@ function processMageTower(k, events) {
     delete alloc.scroll_target;
   }
 
-  const capacity = towers * 20;
+  // Titan Bone: tower_integrity expands working capacity per tower
+  const integrityMult = fragmentBonusManager.getBonusMultiplier(k, 'mage_towers', 'tower_integrity');
+  const capacity = Math.floor(towers * 20 * integrityMult);
   const effectiveMages = Math.min(getAvailableUnits(k, "mages"), capacity);
   const mageLvlMult = unitLevelMult(k, "mages");
   const raceMagic = raceBonus(k, "magic");
@@ -7345,6 +7429,11 @@ function processMageTower(k, events) {
     towerUpgrades = safeJsonParse(k.tower_upgrades, {}, "auto:tower_upgrades");
   } catch {}
   const towerSpeedMult = towerUpgrades.ley_line_tap ? 1.25 : 1.0;
+
+  // Abyssal Crystal: Singularity Focus speeds scroll crafting; Void Essence: mind_stability reduces it
+  const towerCraftSpecial = fragmentBonusManager.getSpecialEffect(k, 'mage_towers');
+  const singularityMult = towerCraftSpecial?.name === 'Singularity Focus' ? 1.50 : 1.0;
+  const mindStabilityMult = fragmentBonusManager.getBonusMultiplier(k, 'mage_towers', 'mind_stability');
 
   let activeTasks = Object.keys(alloc).filter(
     (t) => alloc[t] > 0 && SCROLL_REQUIREMENTS[t],
@@ -7359,7 +7448,7 @@ function processMageTower(k, events) {
       const effective = magesPerTask;
       const progKey = "scroll_" + task;
       const workDone =
-        (effective / req.mages) * mageLvlMult * towerSpeedMult * raceMagic;
+        (effective / req.mages) * mageLvlMult * towerSpeedMult * raceMagic * singularityMult * mindStabilityMult;
       let newProg = (progress[progKey] || 0) + workDone;
 
       while (newProg >= req.turns && alloc[task] > 0) {
@@ -8365,6 +8454,7 @@ module.exports = {
   processBuildQueue,
   processLibrary,
   processMageTower,
+  processMageTowerAttunements,
   processShrine,
   processMausoleum,
   processActiveEffects,
