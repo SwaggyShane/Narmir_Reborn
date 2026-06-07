@@ -1625,7 +1625,7 @@ function processGranaryAttunements(k, events) {
   return updates;
 }
 
-function processVaultAttunements(k, events) {
+function processVaultAttunements(k, events = []) {
   const updates = {};
   if (!k.bld_vaults) return updates;
 
@@ -1675,7 +1675,7 @@ function processVaultAttunements(k, events) {
   return updates;
 }
 
-function processBarracksAttunements(k, events) {
+function processBarracksAttunements(k, events = []) {
   const updates = {};
   if (!k.bld_barracks) return updates;
 
@@ -6165,7 +6165,7 @@ function covertLoot(thief, target, requestedLootType, thievesSent) {
       desc = `0 gold — protected by Star-Metal gear locks`;
     } else {
       // gold_security passive reduces theft amount (capped at 95% reduction)
-      const goldSecReduction = Math.min(0.95, tVaultPassive.gold_security || 0);
+      const goldSecReduction = Math.max(0, Math.min(0.95, tVaultPassive.gold_security || 0));
       stolen = Math.floor(stolen * (1.0 - goldSecReduction));
 
       // Protect gold floor
