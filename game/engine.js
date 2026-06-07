@@ -5575,7 +5575,7 @@ function castSpell(caster, target, spellId, obscure) {
   const spellEfficiency = spellLibraryBonus?.passive?.spell_efficiency || 0;
   // Tears of the World Tree mage_tower passive: mana_efficiency reduces mana costs
   const towerManaEff = fragmentBonusManager.getBonusMultiplier(caster, 'mage_towers', 'mana_efficiency') - 1.0;
-  const adjustedBaseMana = Math.floor(baseMana * (1 - spellEfficiency) * (1 - towerManaEff));
+  const adjustedBaseMana = Math.max(0, Math.floor(baseMana * Math.max(0, 1 - spellEfficiency) * Math.max(0, 1 - towerManaEff)));
   const obscureCost = obscure ? Math.floor(adjustedBaseMana * 0.5) : 0;
   const totalMana = adjustedBaseMana + obscureCost;
   if ((caster.mana || 0) < totalMana)
@@ -5603,7 +5603,7 @@ function castSpell(caster, target, spellId, obscure) {
   // Mage tower specials on caster: Goliath Spire (+20% range/power), Sanguine Battery (1.5× offensive power)
   const casterTowerSpecial = fragmentBonusManager.getSpecialEffect(caster, 'mage_towers');
   const goliathBonus = casterTowerSpecial?.name === 'Goliath Spire' ? 1.20 : 1.0;
-  const sanguineMult = casterTowerSpecial?.name === 'Sanguine Battery' ? 1.50 : 1.0;
+  const sanguineMult = casterTowerSpecial?.name === 'Sanguine Battery' && def.effect !== 'friendly' ? 1.50 : 1.0;
   const magicRatio = Math.max(0.2,
     (atkMagic * casterPrecisionMult * goliathBonus) / Math.max(0.5, defMagic * targetResistanceMult)
   ) * sanguineMult;
@@ -5615,8 +5615,9 @@ function castSpell(caster, target, spellId, obscure) {
   } catch {}
   // Harmonic Concentrators (Dwarven Star-Metal): spells cannot be deflected — ignore magic shield
   const casterHarmonicIgnoresShield = casterTowerSpecial?.name === 'Harmonic Concentrators';
-  const baseShielded = (targetEffects.shield ? 0.5 : 1.0) * getMasonSigilResist(target);
-  const shielded = casterHarmonicIgnoresShield ? getMasonSigilResist(target) : baseShielded;
+  const masonResist = getMasonSigilResist(target);
+  const baseShielded = (targetEffects.shield ? 0.5 : 1.0) * masonResist;
+  const shielded = casterHarmonicIgnoresShield ? masonResist : baseShielded;
 
   let fortResist = {};
   try {
