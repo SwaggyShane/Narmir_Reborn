@@ -226,6 +226,7 @@ function test_attunements_voidEssence_triggers() {
 
 function test_attunements_cursedBloodstone_hammers_noChoas() {
   clearParseCache();
+  const origRoll = global.Math.random;
   Math.random = () => 0.50; // > 0.10, no chaos
   try {
     // 20 smithies → floor(20/2) = 10 hammers
@@ -241,12 +242,13 @@ function test_attunements_cursedBloodstone_hammers_noChoas() {
     assert.strictEqual(updates.happiness, undefined, 'no happiness penalty without chaos');
     assert.ok(events.some(e => e.message.includes('Sanguine Crucible')), 'forge event fired');
   } finally {
-    Math.random = global.Math.random; // restore (was replaced before try)
+    Math.random = origRoll;
   }
 }
 
 function test_attunements_cursedBloodstone_chaos() {
   clearParseCache();
+  const origRoll = global.Math.random;
   Math.random = () => 0.05; // < 0.10, chaos fires
   try {
     const k = baseKingdom({
@@ -260,7 +262,7 @@ function test_attunements_cursedBloodstone_chaos() {
     assert.strictEqual(updates.happiness, 79, '-1 happiness from chaos');
     assert.ok(events.some(e => e.message.includes('civil tensions')), 'chaos event fired');
   } finally {
-    Math.random = global.Math.random;
+    Math.random = origRoll;
   }
 }
 
