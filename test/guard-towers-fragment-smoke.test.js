@@ -123,12 +123,39 @@ function test_attunements_passiveOnly_dragonScale() {
   assert.strictEqual(events.length, 0, 'no events');
 }
 
+function test_attunements_passiveOnly_abyssalCrystal() {
+  clearParseCache();
+  const k = baseKingdom({ fragment_bonuses: withGuardTowerFragment('Abyssal Crystal') });
+  const events = [];
+  const updates = processGuardTowerAttunements(k, events);
+  assert.deepStrictEqual(updates, {}, 'Abyssal Crystal is passive-only');
+  assert.strictEqual(events.length, 0, 'no events');
+}
+
+function test_attunements_passiveOnly_celestialFeather() {
+  clearParseCache();
+  const k = baseKingdom({ fragment_bonuses: withGuardTowerFragment('Celestial Feather') });
+  const events = [];
+  const updates = processGuardTowerAttunements(k, events);
+  assert.deepStrictEqual(updates, {}, 'Celestial Feather is passive-only');
+  assert.strictEqual(events.length, 0, 'no events');
+}
+
 function test_attunements_passiveOnly_dwarvenStarMetal() {
   clearParseCache();
   const k = baseKingdom({ fragment_bonuses: withGuardTowerFragment('Dwarven Star-Metal') });
   const events = [];
   const updates = processGuardTowerAttunements(k, events);
   assert.deepStrictEqual(updates, {}, 'Dwarven Star-Metal is passive-only');
+  assert.strictEqual(events.length, 0, 'no events');
+}
+
+function test_attunements_passiveOnly_tearsOfWorldTree() {
+  clearParseCache();
+  const k = baseKingdom({ fragment_bonuses: withGuardTowerFragment('Tears of the World Tree') });
+  const events = [];
+  const updates = processGuardTowerAttunements(k, events);
+  assert.deepStrictEqual(updates, {}, 'Tears of the World Tree is passive-only');
   assert.strictEqual(events.length, 0, 'no events');
 }
 
@@ -241,7 +268,10 @@ const tests = [
   test_attunements_passiveOnly_volcanicRock,
   test_attunements_passiveOnly_ancientElvenWood,
   test_attunements_passiveOnly_dragonScale,
+  test_attunements_passiveOnly_abyssalCrystal,
+  test_attunements_passiveOnly_celestialFeather,
   test_attunements_passiveOnly_dwarvenStarMetal,
+  test_attunements_passiveOnly_tearsOfWorldTree,
   test_attunements_passiveOnly_titanBone,
   test_attunements_cursedBloodstone_noTrigger,
   test_attunements_cursedBloodstone_trigger,
