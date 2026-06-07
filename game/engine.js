@@ -350,6 +350,12 @@ function calculateHappiness(k) {
     happiness += taxBonus;
   }
 
+  // Market fragment: merchant_morale (Celestial Feather) adds happiness per market building
+  if (k.bld_markets) {
+    const merchantMoraleDelta = fragmentBonusManager.getBonusMultiplier(k, 'markets', 'merchant_morale') - 1.0;
+    happiness += Math.floor(k.bld_markets * merchantMoraleDelta * 5 + 1e-9);
+  }
+
   // Apply happiness recovery based on research + taverns and clamp to -50 to 120
   const recoveryRate = getHappinessRecoveryRate(k);
   happiness = Math.floor(Math.max(-50, Math.min(120, happiness + recoveryRate)));
@@ -1264,14 +1270,26 @@ function marketIncomeFull(k) {
 
   const freePop = Math.max(0, k.population - totalHiredUnits(k));
   const workedMarkets = Math.min(markets, Math.floor(freePop / 5));
-  const tradeRoutes = Math.min(k.maps, markets);
+  // Titan Bone: capacity_expansion multiplies how many trade route slots markets support
+  const capacityExpansionMult = fragmentBonusManager.getBonusMultiplier(k, 'markets', 'capacity_expansion');
+  const tradeRoutes = Math.min(k.maps, Math.floor(markets * capacityExpansionMult));
   let income = (workedMarkets * 50 + tradeRoutes * 30) * mult;
   if (upgrades.bazaar) income *= 1.5;
   if (upgrades.black_market) income *= 1.2;
 
   // Apply world fragment bonuses for markets
   const incomeMult = fragmentBonusManager.getBonusMultiplier(k, 'markets', 'income');
-  income *= incomeMult;
+  // Volcanic Rock: metal_trading boosts gold cycles
+  const metalTradingMult = fragmentBonusManager.getBonusMultiplier(k, 'markets', 'metal_trading');
+  // Ancient Elven Wood: forest_trade boosts barter ratios
+  const forestTradeMult = fragmentBonusManager.getBonusMultiplier(k, 'markets', 'forest_trade');
+  // Abyssal Crystal: dark_trade_gains boosts shadow market income
+  const darkTradeMult = fragmentBonusManager.getBonusMultiplier(k, 'markets', 'dark_trade_gains');
+  // Tears of World Tree: trade_stability adds steady trade bonus
+  const tradeStabilityMult = fragmentBonusManager.getBonusMultiplier(k, 'markets', 'trade_stability');
+  // Void Essence: mind_stability penalises market worker effectiveness (value is -0.40 → mult = 0.60)
+  const mindStabilityMult = fragmentBonusManager.getBonusMultiplier(k, 'markets', 'mind_stability');
+  income *= incomeMult * metalTradingMult * forestTradeMult * darkTradeMult * tradeStabilityMult * mindStabilityMult;
 
   return Math.floor(income);
 }
@@ -1616,6 +1634,65 @@ function processGranaryAttunements(k, events) {
   if (foodChange !== 0) {
     const newFood = Math.max(0, (k.food || 0) + foodChange);
     updates.food = newFood;
+  }
+
+  return updates;
+}
+
+// ── Market attunements — per-turn fragment special effects ───────────────────
+function processMarketAttunements(k, events) {
+  const updates = {};
+  if (!(k.bld_markets > 0)) return updates;
+
+  const marketAttune = fragmentBonusManager.getFragmentForBuilding(k, 'markets');
+  if (!marketAttune) return updates;
+
+  const fragmentName = marketAttune.fragment;
+  const markets = k.bld_markets;
+  const happiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
+
+  switch (fragmentName) {
+    case 'Volcanic Rock': {
+      // Geothermal Foundry-Market: warm foundries accelerate gold cycles each turn
+      const bonus = markets * 10;
+      updates.gold = (k.gold || 0) + bonus;
+      events.push({ type: 'system', message: `🌋 Geothermal Foundry-Market: metal smelting yields +${bonus.toLocaleString()} gold.` });
+      break;
+    }
+
+    case 'Abyssal Crystal': {
+      // Shadow Exchanges: dark market contracts generate extra income
+      const bonus = markets * 15;
+      updates.gold = (k.gold || 0) + bonus;
+      events.push({ type: 'system', message: `💎 Shadow Exchanges: dark trade contracts yield +${bonus.toLocaleString()} gold.` });
+      break;
+    }
+
+    case 'Celestial Feather':
+      // Heavenly Tithes: merchant angels stabilise trade (+2 happiness)
+      updates.happiness = Math.min(120, happiness + 2);
+      events.push({ type: 'system', message: `🪶 Heavenly Tithes: angelic merchants bless trade exchanges (+2 happiness).` });
+      break;
+
+    case 'Cursed Bloodstone': {
+      // Sanguine Auction Guilds: forbidden contracts generate large profits but risk chaos
+      const bonus = markets * 25;
+      updates.gold = (k.gold || 0) + bonus;
+      events.push({ type: 'system', message: `💉 Sanguine Auction Guilds: life-contract auctions yield +${bonus.toLocaleString()} gold.` });
+      if (Math.random() < 0.10) {
+        updates.happiness = Math.max(-50, happiness - 1);
+        events.push({ type: 'system', message: `💉 Sanguine Auction Guilds: chaotic commerce unsettles citizens (-1 happiness).` });
+      }
+      break;
+    }
+
+    case 'Void Essence':
+      // Quantum Shopping Matrix: 15% chance of temporary citizen absences
+      if (Math.random() < 0.15) {
+        updates.happiness = Math.max(-50, happiness - 3);
+        events.push({ type: 'system', message: `🌌 Quantum Shopping Matrix: citizens briefly absorbed by planar channels (-3 happiness).` });
+      }
+      break;
   }
 
   return updates;
@@ -2086,6 +2163,10 @@ function processTurn(k, db = null) {
   // ── 4a. Granary attunement special abilities ──────────────────────────────────
   const granaryAbilityUpdates = processGranaryAttunements({ ...k, ...updates }, events);
   Object.assign(updates, granaryAbilityUpdates);
+
+  // ── 4a-ii. Market attunement special abilities ────────────────────────────────
+  const marketAttunementUpdates = processMarketAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, marketAttunementUpdates);
 
   // ── 4b. Resource production (wood / stone / iron) ────────────────────────────
   const resourceUpdates = processResourceYield({ ...k, ...updates }, events);
@@ -6059,10 +6140,19 @@ function covertLoot(thief, target, requestedLootType, thievesSent) {
 
     // Dwarven Star-Metal vaults prevent the treasury from being looted
     const vaultFragment = fragmentBonusManager.getFragmentForBuilding(target, 'vaults');
-    if (vaultFragment && vaultFragment.fragment === 'Dwarven Star-Metal') {
+    // Dwarven Star-Metal markets: core_protection — financial ledgers fully protected
+    const marketFragment = fragmentBonusManager.getFragmentForBuilding(target, 'markets');
+    const coreProtection = marketFragment?.passive?.core_protection >= 1.0;
+    if ((vaultFragment && vaultFragment.fragment === 'Dwarven Star-Metal') || coreProtection) {
       stolen = 0;
-      desc = `0 gold — protected by Star-Metal gear locks`;
+      desc = `0 gold — protected by ${coreProtection ? 'Star-Metal Lockbox Ledgers' : 'Star-Metal gear locks'}`;
     } else {
+      // Dragon Scale markets: anti_theft_security reduces gold stolen
+      const antiTheftBonus = fragmentBonusManager.getBonusMultiplier(target, 'markets', 'anti_theft_security') - 1.0;
+      if (antiTheftBonus > 0.001) {
+        stolen = Math.floor(stolen * Math.max(0, 1.0 - antiTheftBonus));
+      }
+
       // Protect gold
       if (target.gold - stolen < goldFloor) {
         stolen = target.gold - goldFloor;
@@ -6070,7 +6160,7 @@ function covertLoot(thief, target, requestedLootType, thievesSent) {
       }
 
       targetUpdates.gold = target.gold - stolen;
-      desc = `${stolen.toLocaleString()} gold`;
+      desc = `${stolen.toLocaleString()} gold${antiTheftBonus > 0.001 && stolen > 0 ? ' (reduced by Draconic Coinage)' : ''}`;
     }
   } else if (actualLootType === "war_machines") {
     stolen = Math.floor(thievesSent * 0.01 * thiefLvMult);
@@ -8318,6 +8408,7 @@ module.exports = {
   commodityPrice,
   processFoodEconomy,
   processGranaryAttunements,
+  processMarketAttunements,
   processMercenaries,
   hireMercenaries,
   purchaseUpgrade,
