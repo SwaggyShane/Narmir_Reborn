@@ -5470,7 +5470,7 @@ module.exports = function (db) {
       await db.run('BEGIN TRANSACTION');
       try {
         const kingdom = await db.get(
-          "SELECT id, fragment_bonuses, turn FROM kingdoms WHERE player_id = ? FOR UPDATE",
+          "SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE",
           [req.player.playerId]
         );
         if (!kingdom) {
@@ -5523,21 +5523,14 @@ module.exports = function (db) {
         const updatedKingdom = abilityResult.kingdom;
         const cooldownUntil = new Date(abilityResult.cooldownExpires).getTime() / 1000;
 
-        // Apply all kingdom updates to database
+        // Apply all kingdom updates to database using the helper function
+        // This ensures validation of column names and prevents SQL injection
         const updates = {
           ...abilityResult.kingdom,
         };
         delete updates.id; // Don't update the ID field
 
-        // Build dynamic UPDATE statement
-        const updateKeys = Object.keys(updates);
-        const placeholders = updateKeys.map(() => '?').join(', ');
-        const setClause = updateKeys.map(key => `${key} = ?`).join(', ');
-
-        await db.run(
-          `UPDATE kingdoms SET ${setClause} WHERE id = ?`,
-          [...updateKeys.map(key => updates[key]), kingdom.id]
-        );
+        await applyKingdomUpdates(kingdom.id, updates);
 
         // Upsert cooldown record within transaction
         await db.run(
