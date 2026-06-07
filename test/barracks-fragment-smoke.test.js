@@ -1,6 +1,6 @@
 'use strict';
 const assert = require('assert');
-const { clearParseCache, roll } = require('../utils/helpers');
+const { clearParseCache } = require('../utils/helpers');
 const {
   processBarracksAttunements,
 } = require('../game/engine');
