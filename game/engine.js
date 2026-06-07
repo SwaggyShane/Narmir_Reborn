@@ -1899,6 +1899,80 @@ function processCastleAttunements(k, events = []) {
   return updates;
 }
 
+function processMausoleumAttunements(k, events = []) {
+  const updates = {};
+  if (!k.bld_mausoleums) return updates;
+
+  const mausAttune = fragmentBonusManager.getFragmentForBuilding(k, 'mausoleums');
+  if (!mausAttune) return updates;
+
+  const fragmentName = mausAttune.fragment;
+  switch (fragmentName) {
+    case 'Cursed Bloodstone': {
+      // Cruor Coils: triples reanimation yields but causes local panic, 10% chance -1 happiness
+      if (roll(0.10)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🩸 Cruor Coils: bloodstone reanimation channels cause local populations to panic (-1 happiness).`
+        });
+      }
+      break;
+    }
+
+    case 'Void Essence': {
+      // Shattered Portal Sarcophagi: void tear-rifts cause mild local disorientation, 15% chance -1 happiness
+      if (roll(0.15)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🌌 Shattered Portal Sarcophagi: void tear-rifts disorient local populations (-1 happiness).`
+        });
+      }
+      break;
+    }
+  }
+
+  return updates;
+}
+
+function processLibraryAttunements(k, events = []) {
+  const updates = {};
+  if (!k.bld_libraries) return updates;
+
+  const libAttune = fragmentBonusManager.getFragmentForBuilding(k, 'libraries');
+  if (!libAttune) return updates;
+
+  const fragmentName = libAttune.fragment;
+  switch (fragmentName) {
+    case 'Cursed Bloodstone': {
+      // Sanguine Cartography: blood-drawn maps cause intense psychological stress, 10% chance -1 happiness
+      if (roll(0.10)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🩸 Sanguine Cartography: blood-drawn maps cause intense psychological stress (-1 happiness).`
+        });
+      }
+      break;
+    }
+
+    case 'Void Essence': {
+      // Void Codex: unpredictable research chaos unsettles scholars, 15% chance -1 happiness
+      if (roll(0.15)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🌌 Void Codex: chaotic research regression unsettles library scholars (-1 happiness).`
+        });
+      }
+      break;
+    }
+  }
+
+  return updates;
+}
+
 function processMercenaries(k, events) {
   const updates = {};
   const mercs = safeJsonParse(
@@ -2401,6 +2475,14 @@ function processTurn(k, db = null) {
   // ── 4a-viii. Castle attunement special abilities ──────────────────────────────
   const castleAbilityUpdates = processCastleAttunements({ ...k, ...updates }, events);
   Object.assign(updates, castleAbilityUpdates);
+
+  // ── 4a-ix. Mausoleum attunement special abilities ─────────────────────────────
+  const mausoleumAbilityUpdates = processMausoleumAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, mausoleumAbilityUpdates);
+
+  // ── 4a-x. Library attunement special abilities ────────────────────────────────
+  const libraryAbilityUpdates = processLibraryAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, libraryAbilityUpdates);
 
   // ── 4b. Resource production (wood / stone / iron) ────────────────────────────
   const resourceUpdates = processResourceYield({ ...k, ...updates }, events);
@@ -8670,6 +8752,8 @@ module.exports = {
   processOutpostAttunements,
   processTrainingAttunements,
   processCastleAttunements,
+  processMausoleumAttunements,
+  processLibraryAttunements,
   processMercenaries,
   hireMercenaries,
   purchaseUpgrade,
