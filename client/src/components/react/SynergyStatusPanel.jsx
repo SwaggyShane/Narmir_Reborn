@@ -124,7 +124,9 @@ export default function SynergyStatusPanel({ kingdom, onUpdate }) {
                           <span className="effect-name">{formatEffectKey(key)}</span>
                           <span className="effect-info">
                             {formatEffectValue(value?.value, key)}
-                            <span className="effect-duration"> ({value?.remainingTurns}t remaining)</span>
+                            {value?.remainingTurns !== undefined && (
+                              <span className="effect-duration"> ({value.remainingTurns}t remaining)</span>
+                            )}
                           </span>
                         </div>
                       ))}
@@ -138,7 +140,9 @@ export default function SynergyStatusPanel({ kingdom, onUpdate }) {
                           <span className="effect-name">{formatEffectKey(key)}</span>
                           <span className="effect-info">
                             {formatEffectValue(value?.value, key)}
-                            <span className="effect-duration"> ({value?.remainingTurns}t remaining)</span>
+                            {value?.remainingTurns !== undefined && (
+                              <span className="effect-duration"> ({value.remainingTurns}t remaining)</span>
+                            )}
                           </span>
                         </div>
                       ))}
