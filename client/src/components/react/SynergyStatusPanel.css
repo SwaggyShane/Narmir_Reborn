@@ -66,7 +66,8 @@
 
 /* Sections */
 .passive-section,
-.active-section {
+.active-section,
+.active-effects-section {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
@@ -74,13 +75,83 @@
 }
 
 .passive-section h3,
-.active-section h3 {
+.active-section h3,
+.active-effects-section h3 {
   margin: 0 0 12px 0;
   font-size: 14px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--text-secondary, #aaa);
+}
+
+/* Active Effects Display */
+.effects-display {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.benefit-effects,
+.penalty-effects {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.effects-label {
+  margin: 0 0 4px 0;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary, #888);
+}
+
+.effect-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  font-size: 13px;
+  border-left: 3px solid transparent;
+}
+
+.effect-row.positive {
+  border-left-color: #4CAF50;
+}
+
+.effect-row.negative {
+  border-left-color: #FF6B6B;
+}
+
+.effect-name {
+  color: var(--text-secondary, #aaa);
+  font-weight: 500;
+}
+
+.effect-info {
+  color: var(--text-primary, #fff);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.effect-row.positive .effect-info {
+  color: #4CAF50;
+}
+
+.effect-row.negative .effect-info {
+  color: #FF6B6B;
+}
+
+.effect-duration {
+  font-size: 11px;
+  color: var(--text-secondary, #888);
+  font-weight: normal;
 }
 
 .ability-details {
