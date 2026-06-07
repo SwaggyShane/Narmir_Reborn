@@ -1633,7 +1633,7 @@ function processVaultAttunements(k, events) {
   if (!vaultAttune) return updates;
 
   const fragmentName = vaultAttune.fragment;
-  const currentHappiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
+  const currentHappiness = k.happiness ?? 50;
 
   switch (fragmentName) {
     case 'Tears of the World Tree': {
