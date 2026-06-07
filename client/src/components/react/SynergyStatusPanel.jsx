@@ -111,6 +111,42 @@ export default function SynergyStatusPanel({ kingdom, onUpdate }) {
                 View & Activate Ability
               </button>
             </div>
+
+            {activeSynergy.activeEffects && (
+              <div className="active-effects-section">
+                <h3>🔥 Active Effects</h3>
+                <div className="effects-display">
+                  {activeSynergy.activeEffects.benefits && Object.keys(activeSynergy.activeEffects.benefits).length > 0 && (
+                    <div className="benefit-effects">
+                      <p className="effects-label">Bonuses:</p>
+                      {Object.entries(activeSynergy.activeEffects.benefits).map(([key, value]) => (
+                        <div key={key} className="effect-row positive">
+                          <span className="effect-name">{formatEffectKey(key)}</span>
+                          <span className="effect-info">
+                            {formatEffectValue(value.value, key)}
+                            <span className="effect-duration"> ({value.remainingTurns}t remaining)</span>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {activeSynergy.activeEffects.penalties && Object.keys(activeSynergy.activeEffects.penalties).length > 0 && (
+                    <div className="penalty-effects">
+                      <p className="effects-label">Penalties:</p>
+                      {Object.entries(activeSynergy.activeEffects.penalties).map(([key, value]) => (
+                        <div key={key} className="effect-row negative">
+                          <span className="effect-name">{formatEffectKey(key)}</span>
+                          <span className="effect-info">
+                            {formatEffectValue(value.value, key)}
+                            <span className="effect-duration"> ({value.remainingTurns}t remaining)</span>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="no-synergy">
