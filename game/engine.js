@@ -185,9 +185,19 @@ function raceBonus(kingdom, stat) {
   return base * regionMult * allianceMult * vaultMult * heroMult;
 }
 
+const activeSynergyCache = new WeakMap();
+
+function getActiveSynergyCached(kingdom) {
+  if (!kingdom) return null;
+  if (!activeSynergyCache.has(kingdom)) {
+    activeSynergyCache.set(kingdom, attunementManager.getActiveSynergy(kingdom) || null);
+  }
+  return activeSynergyCache.get(kingdom);
+}
+
 function getSynergyPassiveBonusMultiplier(kingdom, effectKey) {
   if (!kingdom) return 1.0;
-  const synergy = attunementManager.getActiveSynergy(kingdom);
+  const synergy = getActiveSynergyCached(kingdom);
   if (!synergy || !synergy.passive || !synergy.passive.effects) return 1.0;
   const effectValue = synergy.passive.effects[effectKey];
   if (effectValue === undefined || effectValue === null) return 1.0;
@@ -196,7 +206,7 @@ function getSynergyPassiveBonusMultiplier(kingdom, effectKey) {
 
 function getSynergyPassiveBonusAbsolute(kingdom, effectKey) {
   if (!kingdom) return 0;
-  const synergy = attunementManager.getActiveSynergy(kingdom);
+  const synergy = getActiveSynergyCached(kingdom);
   if (!synergy || !synergy.passive || !synergy.passive.effects) return 0;
   const effectValue = synergy.passive.effects[effectKey];
   if (effectValue === undefined || effectValue === null) return 0;
