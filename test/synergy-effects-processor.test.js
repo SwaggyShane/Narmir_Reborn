@@ -165,8 +165,11 @@ console.log('Testing Synergy Effects Processor\n');
   const foodMult = effectsProcessor.getPenaltyMultiplier(kingdom, 'food_production');
   const allStatsMult = effectsProcessor.getPenaltyMultiplier(kingdom, 'all_stats');
 
-  assert.ok(Math.abs(defenseMult - 0.40) < 0.0001, `Defense multiplier should be ~0.40, got ${defenseMult}`);
-  assert.ok(Math.abs(foodMult - 0.20) < 0.0001, `Food production multiplier should be ~0.20, got ${foodMult}`);
+  // Defense: (1.0 - 0.60) * (1.0 - 0.50) = 0.40 * 0.50 = 0.20 (all_stats now accumulates)
+  assert.ok(Math.abs(defenseMult - 0.20) < 0.0001, `Defense multiplier should be ~0.20 (includes all_stats), got ${defenseMult}`);
+  // Food production: (1.0 - 0.80) * (1.0 - 0.50) = 0.20 * 0.50 = 0.10
+  assert.ok(Math.abs(foodMult - 0.10) < 0.0001, `Food production multiplier should be ~0.10 (includes all_stats), got ${foodMult}`);
+  // All stats: 1.0 - 0.50 = 0.50
   assert.strictEqual(allStatsMult, 0.50, 'All stats multiplier should be 0.50 (-50%)');
 
   console.log('✓ Penalty multipliers applied correctly\n');
@@ -340,4 +343,95 @@ console.log('Testing Synergy Effects Processor\n');
   console.log('✓ Pre-parsed effects handled correctly\n');
 }
 
-console.log('✅ All 15 synergy effects processor tests passed!');
+// Test 16: Defensive checks for undefined kingdom
+{
+  console.log('Test 16: Defensive checks prevent crashes on undefined kingdom');
+
+  const active = effectsProcessor.getActiveEffects(undefined);
+  assert.deepStrictEqual(active, {}, 'Should return empty object for undefined');
+
+  const expired = effectsProcessor.getExpiredEffects(null);
+  assert.deepStrictEqual(expired, [], 'Should return empty array for null');
+
+  const removed = effectsProcessor.removeExpiredEffects(undefined);
+  assert.strictEqual(removed, undefined, 'Should return undefined for undefined');
+
+  const mult = effectsProcessor.getPenaltyMultiplier(null, 'defense');
+  assert.strictEqual(mult, 1.0, 'Should return 1.0 for null kingdom');
+
+  console.log('✓ Defensive checks prevent crashes\n');
+}
+
+// Test 17: all_stats penalty accumulates with specific penalties
+{
+  console.log('Test 17: all_stats penalty accumulates additively with specific penalties');
+
+  const kingdom = {
+    turn: 5,
+    active_effects: JSON.stringify({
+      synergy_penalty: {
+        defense: -0.30, // -30% defense
+        all_stats: -0.25, // -25% all stats
+        until_turn: 10,
+      },
+    }),
+  };
+
+  const defenseMult = effectsProcessor.getPenaltyMultiplier(kingdom, 'defense');
+  // (1.0 - 0.30) * (1.0 - 0.25) = 0.70 * 0.75 = 0.525 (multiplicative accumulation)
+  assert.ok(Math.abs(defenseMult - 0.525) < 0.0001, `Defense with all_stats should be ~0.525, got ${defenseMult}`);
+
+  console.log('✓ all_stats penalty accumulates correctly\n');
+}
+
+// Test 18: all_stats penalty applies to all stat types
+{
+  console.log('Test 18: all_stats penalty applies to resources and production');
+
+  const kingdom = {
+    turn: 5,
+    active_effects: JSON.stringify({
+      synergy_benefit: {
+        resources: 0.50, // +50% resources
+        until_turn: 8,
+      },
+      synergy_penalty: {
+        all_stats: -0.20, // -20% all stats
+        until_turn: 10,
+      },
+    }),
+  };
+
+  const resourcesMult = effectsProcessor.getCombinedMultiplier(kingdom, 'resources');
+  // 1.0 + 0.50 (benefit) * (1.0 - 0.20) (all_stats penalty) = 1.5 * 0.8 = 1.2
+  assert.ok(Math.abs(resourcesMult - 1.2) < 0.0001, `Resources multiplier should be ~1.2, got ${resourcesMult}`);
+
+  console.log('✓ all_stats applies to all stat types\n');
+}
+
+// Test 19: all_stats penalty applies to damage and health troop stats
+{
+  console.log('Test 19: all_stats penalty applies to damage and health');
+
+  const kingdom = {
+    turn: 5,
+    active_effects: JSON.stringify({
+      synergy_troop_boost: {
+        troop_damage: 1.0, // +100% damage
+        until_turn: 10,
+      },
+      synergy_penalty: {
+        all_stats: -0.25, // -25% all stats
+        until_turn: 10,
+      },
+    }),
+  };
+
+  const damageMult = effectsProcessor.getCombinedMultiplier(kingdom, 'damage');
+  // (1.0 + 1.0) * (1.0 - 0.25) = 2.0 * 0.75 = 1.5
+  assert.ok(Math.abs(damageMult - 1.5) < 0.0001, `Damage multiplier should be ~1.5 (includes all_stats), got ${damageMult}`);
+
+  console.log('✓ all_stats applies to troop stats\n');
+}
+
+console.log('✅ All 19 synergy effects processor tests passed!');
