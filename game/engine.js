@@ -350,6 +350,15 @@ function calculateHappiness(k) {
     happiness += taxBonus;
   }
 
+  // Fragment bonus: tavern morale/happiness passives both map to happiness (morale deprecated)
+  if (k.bld_taverns) {
+    const tavernFragment = fragmentBonusManager.getFragmentForBuilding(k, 'taverns');
+    const tPassive = tavernFragment?.passive || {};
+    const moraleDelta = tPassive.morale || 0;
+    const happinessDelta = tPassive.happiness || 0;
+    happiness += Math.floor(k.bld_taverns * (moraleDelta * 4 + happinessDelta * 4) + 1e-9);
+  }
+
   // Apply happiness recovery based on research + taverns and clamp to -50 to 120
   const recoveryRate = getHappinessRecoveryRate(k);
   happiness = Math.floor(Math.max(-50, Math.min(120, happiness + recoveryRate)));
@@ -1281,10 +1290,12 @@ function tavernEntertainmentBonus(k) {
   const baseBonusPerTavern = 10;
   let bonus = k.bld_taverns * baseBonusPerTavern;
 
-  // Apply fragment bonuses for taverns (morale, happiness)
-  const tavernMoraleMult = fragmentBonusManager.getBonusMultiplier(k, 'taverns', 'morale');
-  const tavernHappinessMult = fragmentBonusManager.getBonusMultiplier(k, 'taverns', 'happiness');
-  bonus = Math.floor(bonus * tavernMoraleMult * tavernHappinessMult);
+  // Parse fragment once — both morale and happiness passives treated as happiness multipliers
+  // (morale is deprecated; all tavern passives drive happiness)
+  const tavernFragment = fragmentBonusManager.getFragmentForBuilding(k, 'taverns');
+  const tPassive = tavernFragment?.passive || {};
+  const combinedMult = (1.0 + (tPassive.morale || 0)) * (1.0 + (tPassive.happiness || 0));
+  bonus = Math.floor(bonus * combinedMult);
 
   return bonus;
 }
@@ -1621,6 +1632,86 @@ function processGranaryAttunements(k, events) {
   return updates;
 }
 
+function processTavernAttunements(k, events) {
+  const updates = {};
+  if (!k.bld_taverns) return updates;
+
+  const tavernAttune = fragmentBonusManager.getFragmentForBuilding(k, 'taverns');
+  if (!tavernAttune) return updates;
+
+  const fragmentName = tavernAttune.fragment;
+  const currentHappiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
+
+  switch (fragmentName) {
+    case 'Volcanic Rock':
+      updates.happiness = Math.min(120, currentHappiness + 1);
+      events.push({
+        type: 'system',
+        message: `🌋 Molten Mug Distilleries: hot brews keep spirits high (+1 happiness).`
+      });
+      break;
+
+    case 'Celestial Feather': {
+      // The Heavenly Angel Tavern: happiness never drops below 50
+      if (currentHappiness < 50) {
+        updates.happiness = 50;
+        events.push({
+          type: 'system',
+          message: `🪶 The Heavenly Angel Tavern: angelic melodies lift citizens' spirits (happiness raised to 50).`
+        });
+      }
+      break;
+    }
+
+    case 'Cursed Bloodstone': {
+      // The Cruor Blood Club: +2 happiness, 10% chance -1 chaos penalty
+      let cbHappiness = Math.min(120, currentHappiness + 2);
+      events.push({
+        type: 'system',
+        message: `🩸 The Cruor Blood Club: forbidden nectar maximizes morale (+2 happiness).`
+      });
+      if (Math.random() < 0.10) {
+        cbHappiness = Math.max(-50, cbHappiness - 1);
+        events.push({
+          type: 'system',
+          message: `🩸 Cursed Bloodstone chaos: civil tensions spike (-1 happiness).`
+        });
+      }
+      updates.happiness = cbHappiness;
+      break;
+    }
+
+    case 'Void Essence': {
+      // The Singularity Saloon: +3 happiness, 15% chance -2 spatial absences
+      let veHappiness = Math.min(120, currentHappiness + 3);
+      events.push({
+        type: 'system',
+        message: `🌌 The Singularity Saloon: interdimensional taprooms boost morale (+3 happiness).`
+      });
+      if (Math.random() < 0.15) {
+        veHappiness = Math.max(-50, veHappiness - 2);
+        events.push({
+          type: 'system',
+          message: `🌌 Void Essence: brief spatial absences disturb citizens (-2 happiness).`
+        });
+      }
+      updates.happiness = veHappiness;
+      break;
+    }
+
+    case 'Titan Bone':
+      // Goliath Drink Halls: +1 happiness from grand festivals
+      updates.happiness = Math.min(120, currentHappiness + 1);
+      events.push({
+        type: 'system',
+        message: `🦴 Goliath Drink Halls: grand festivals in titanic halls lift spirits (+1 happiness).`
+      });
+      break;
+  }
+
+  return updates;
+}
+
 function processMercenaries(k, events) {
   const updates = {};
   const mercs = safeJsonParse(
@@ -1690,7 +1781,12 @@ function hireMercenaries(k, unitType, tier, count) {
   const level =
     tierDef.levelMin +
     Math.floor(Math.random() * (tierDef.levelMax - tierDef.levelMin + 1));
-  const cost = tierDef.costPer * count;
+  let cost = tierDef.costPer * count;
+  // World-Tree Elixir Fonts: Tears of the World Tree reduces merc hire cost by 15%
+  const tavernFragment = fragmentBonusManager.getFragmentForBuilding(k, 'taverns');
+  if (tavernFragment && tavernFragment.fragment === 'Tears of the World Tree') {
+    cost = Math.floor(cost * 0.85);
+  }
   const upkeep = Math.ceil((cost * tierDef.upkeepPct) / tierDef.duration);
   if (k.gold < cost)
     return { error: `Need ${cost.toLocaleString()} gold` };
@@ -2086,6 +2182,10 @@ function processTurn(k, db = null) {
   // ── 4a. Granary attunement special abilities ──────────────────────────────────
   const granaryAbilityUpdates = processGranaryAttunements({ ...k, ...updates }, events);
   Object.assign(updates, granaryAbilityUpdates);
+
+  // ── 4a-ii. Tavern attunement special abilities ────────────────────────────────
+  const tavernAbilityUpdates = processTavernAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, tavernAbilityUpdates);
 
   // ── 4b. Resource production (wood / stone / iron) ────────────────────────────
   const resourceUpdates = processResourceYield({ ...k, ...updates }, events);
@@ -6109,9 +6209,13 @@ function covertLoot(thief, target, requestedLootType, thievesSent) {
     stolen = Math.floor(thievesSent * 0.01 * thiefLvMult);
     stolen = Math.min(stolen, target.blueprints_stored || 0);
 
-    // Dwarven Star-Metal mausoleums protect blueprints from theft
+    // Dwarven Star-Metal mausoleums or taverns (Vault of Vintage Lockboxes) protect blueprints
     const mausoleumFragment = fragmentBonusManager.getFragmentForBuilding(target, 'mausoleums');
-    if (mausoleumFragment && mausoleumFragment.fragment === 'Dwarven Star-Metal') {
+    const blueprintTavernFrag = fragmentBonusManager.getFragmentForBuilding(target, 'taverns');
+    const blueprintProtected =
+      (mausoleumFragment && mausoleumFragment.fragment === 'Dwarven Star-Metal') ||
+      (blueprintTavernFrag && blueprintTavernFrag.fragment === 'Dwarven Star-Metal');
+    if (blueprintProtected) {
       stolen = 0;
       desc = `0 blueprint(s) — protected by Star-Metal safeguards`;
     } else {
@@ -8318,6 +8422,7 @@ module.exports = {
   commodityPrice,
   processFoodEconomy,
   processGranaryAttunements,
+  processTavernAttunements,
   processMercenaries,
   hireMercenaries,
   purchaseUpgrade,
