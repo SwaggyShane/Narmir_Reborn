@@ -5376,6 +5376,142 @@ module.exports = function (db) {
     }
   });
 
+  // GET /api/kingdom/synergy-status — Get active synergy and near-activation hints
+  router.get('/synergy-status', requireAuth, async (req, res) => {
+    try {
+      const kingdom = await db.get(
+        "SELECT id, fragment_bonuses FROM kingdoms WHERE player_id = ?",
+        [req.player.playerId]
+      );
+      if (!kingdom) {
+        return res.status(404).json({ error: 'Kingdom not found' });
+      }
+
+      const status = attunementManager.getSynergyStatus(kingdom);
+      res.json(status);
+    } catch (err) {
+      console.error('[synergy] get status failed:', err.message);
+      res.status(500).json({ error: 'Failed to fetch synergy status' });
+    }
+  });
+
+  // GET /api/kingdom/synergy-cooldown — Check cooldown status for a synergy ability
+  router.get('/synergy-cooldown', requireAuth, async (req, res) => {
+    try {
+      const { synergy_id } = req.query;
+      if (!synergy_id) {
+        return res.status(400).json({ error: 'synergy_id required' });
+      }
+
+      const kingdom = await db.get(
+        "SELECT id FROM kingdoms WHERE player_id = ?",
+        [req.player.playerId]
+      );
+      if (!kingdom) {
+        return res.status(404).json({ error: 'Kingdom not found' });
+      }
+
+      // Check if cooldown exists in database
+      const cooldown = await db.get(
+        "SELECT cooldown_until FROM synergy_cooldowns WHERE kingdom_id = ? AND synergy_id = ?",
+        [kingdom.id, synergy_id]
+      );
+
+      if (!cooldown) {
+        return res.json({ on_cooldown: false, cooldown_remaining_seconds: 0 });
+      }
+
+      const now = Math.floor(Date.now() / 1000);
+      const remaining = Math.max(0, cooldown.cooldown_until - now);
+
+      res.json({
+        on_cooldown: remaining > 0,
+        cooldown_remaining_seconds: remaining,
+      });
+    } catch (err) {
+      console.error('[synergy] cooldown check failed:', err.message);
+      res.status(500).json({ error: 'Failed to check cooldown status' });
+    }
+  });
+
+  // POST /api/kingdom/activate-synergy-ability — Activate a synergy's active ability
+  router.post('/activate-synergy-ability', requireAuth, requireCsrfToken, async (req, res) => {
+    try {
+      const { synergy_id } = req.body;
+      if (!synergy_id) {
+        return res.status(400).json({ error: 'synergy_id required' });
+      }
+
+      const kingdom = await db.get(
+        "SELECT id, fragment_bonuses, turn FROM kingdoms WHERE player_id = ?",
+        [req.player.playerId]
+      );
+      if (!kingdom) {
+        return res.status(404).json({ error: 'Kingdom not found' });
+      }
+
+      // Get active synergy to verify it's the current active one
+      const activeSynergy = attunementManager.getActiveSynergy(kingdom);
+      if (!activeSynergy) {
+        return res.status(400).json({ error: 'No synergy currently active' });
+      }
+
+      if (activeSynergy.id !== synergy_id) {
+        return res.status(400).json({ error: 'This synergy is not currently active' });
+      }
+
+      // Check cooldown
+      const cooldown = await db.get(
+        "SELECT cooldown_until FROM synergy_cooldowns WHERE kingdom_id = ? AND synergy_id = ?",
+        [kingdom.id, synergy_id]
+      );
+
+      const now = Math.floor(Date.now() / 1000);
+      if (cooldown && cooldown.cooldown_until > now) {
+        const remaining = cooldown.cooldown_until - now;
+        return res.status(429).json({
+          error: `Ability still on cooldown. ${Math.ceil(remaining / 86400)} day(s) remaining`,
+        });
+      }
+
+      // Get synergy definition to apply effects
+      const synergiesModule = require('../game/fragment-synergies');
+      const synergy = synergiesModule.getSynergy(synergy_id);
+      if (!synergy) {
+        return res.status(400).json({ error: 'Invalid synergy ID' });
+      }
+
+      // Apply ability effects - for now, just set cooldown
+      // Future: apply cost and penalty effects to kingdom state
+      const cooldownDays = synergy.active?.cooldown_days || 1;
+      const cooldownSeconds = cooldownDays * 86400;
+      const newCooldownUntil = now + cooldownSeconds;
+
+      // Upsert cooldown record
+      await db.run(
+        "INSERT INTO synergy_cooldowns (kingdom_id, synergy_id, cooldown_until) VALUES (?, ?, ?) ON CONFLICT(kingdom_id, synergy_id) DO UPDATE SET cooldown_until = ?",
+        [kingdom.id, synergy_id, newCooldownUntil, newCooldownUntil]
+      );
+
+      // Log the ability activation
+      console.log(`[synergy] Kingdom ${kingdom.id}: ${synergy_id} ability activated`);
+
+      res.json({
+        ok: true,
+        message: `${synergy.active?.name} activated!`,
+        cooldown_until: newCooldownUntil,
+        synergy: {
+          id: synergy.id,
+          name: synergy.name,
+          active_name: synergy.active?.name,
+        },
+      });
+    } catch (err) {
+      console.error('[synergy] activate ability failed:', err.message);
+      res.status(500).json({ error: 'Failed to activate synergy ability' });
+    }
+  });
+
   router.post("/select-school", requireAuth, requireCsrfToken, async (req, res) => {
     console.log('[select-school] Request received', { playerId: req.player?.playerId, school: req.body?.school });
     try {
