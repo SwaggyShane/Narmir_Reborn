@@ -5,6 +5,7 @@
 const config = require("./config");
 const { progressGoal } = require('./goals');
 const fragmentBonusManager = require("./fragment-bonus-manager");
+const attunementManager = require("./attunement-manager");
 const { safeJsonParse, roll, rand, clearParseCache } = require('../utils/helpers');
 
 const {
@@ -184,6 +185,34 @@ function raceBonus(kingdom, stat) {
   return base * regionMult * allianceMult * vaultMult * heroMult;
 }
 
+const activeSynergyCache = new WeakMap();
+
+function getActiveSynergyCached(kingdom) {
+  if (!kingdom) return null;
+  if (!activeSynergyCache.has(kingdom)) {
+    activeSynergyCache.set(kingdom, attunementManager.getActiveSynergy(kingdom) || null);
+  }
+  return activeSynergyCache.get(kingdom);
+}
+
+function getSynergyPassiveBonusMultiplier(kingdom, effectKey) {
+  if (!kingdom) return 1.0;
+  const synergy = getActiveSynergyCached(kingdom);
+  if (!synergy || !synergy.passive || !synergy.passive.effects) return 1.0;
+  const effectValue = synergy.passive.effects[effectKey];
+  if (effectValue === undefined || effectValue === null) return 1.0;
+  return 1.0 + effectValue;
+}
+
+function getSynergyPassiveBonusAbsolute(kingdom, effectKey) {
+  if (!kingdom) return 0;
+  const synergy = getActiveSynergyCached(kingdom);
+  if (!synergy || !synergy.passive || !synergy.passive.effects) return 0;
+  const effectValue = synergy.passive.effects[effectKey];
+  if (effectValue === undefined || effectValue === null) return 0;
+  return effectValue;
+}
+
 function housingCapPerBuilding(k) {
   const base = HOUSING_CAP_BY_RACE[k?.race] || 500;
   if (!k?.prestige_level) return base;
@@ -222,8 +251,11 @@ function goldPerTurn(k) {
   const vaultFrag = fragmentBonusManager.getFragmentForBuilding(k, 'vaults');
   const vaultEconomyMult = 1.0 + (vaultFrag?.passive?.economy_output || 0);
 
+  // Synergy passive bonus for gold income
+  const synergyGoldMult = getSynergyPassiveBonusMultiplier(k, 'gold_income');
+
   // milestoneMult applies only to core land/castle income; mktIncome stays flat
-  return Math.floor((baseRate + castleBonus) * econBonus * 2.25 * milestoneMult * happinessMult * tavernBonus * vaultEconomyMult) + mktIncome;
+  return Math.floor((baseRate + castleBonus) * econBonus * 2.25 * milestoneMult * happinessMult * tavernBonus * vaultEconomyMult * synergyGoldMult) + mktIncome;
 }
 
 function manaPerTurn(k) {
@@ -267,6 +299,10 @@ function manaPerTurn(k) {
   const happiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
   const happinessMult = Math.max(0, 0.5 + (happiness / 100));
   manaGen = Math.floor(manaGen * happinessMult);
+
+  // Synergy passive bonus for mana regeneration
+  const synergyManaMult = getSynergyPassiveBonusMultiplier(k, 'mana_regen');
+  manaGen = Math.floor(manaGen * synergyManaMult);
 
   return manaGen;
 }
@@ -343,6 +379,10 @@ function calculateHappiness(k) {
   if (effects.divine_favor && typeof effects.divine_favor === "object" && typeof effects.divine_favor.happiness_bonus === "number") {
     happiness += effects.divine_favor.happiness_bonus;
   }
+
+  // Apply synergy passive happiness bonus (absolute value, can be positive or negative)
+  const synergyHappinessBonus = getSynergyPassiveBonusAbsolute(k, 'happiness');
+  happiness += synergyHappinessBonus;
 
   // Apply tax penalty/bonus
   const taxRate = k.tax || 42;
@@ -502,6 +542,10 @@ function popGrowth(k) {
   // Apply world fragment bonuses for housing growth (e.g., Tears of the World Tree)
   const housingGrowthMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'growth');
   growthMult *= housingGrowthMult;
+
+  // Synergy passive bonus for population growth
+  const synergyPopMult = getSynergyPassiveBonusMultiplier(k, 'population_growth');
+  growthMult *= synergyPopMult;
 
   if (housingCap > 0 && pop >= housingCap * 2) return 0;
   if (housingCap > 0 && pop > housingCap) growthMult = 0.1;
@@ -1231,6 +1275,10 @@ function farmProduction(k) {
   const happiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
   const happinessMult = Math.max(0, 0.5 + (happiness / 100));
   baseYield *= happinessMult;
+
+  // Synergy passive bonus for food production
+  const synergyFoodMult = getSynergyPassiveBonusMultiplier(k, 'food_production');
+  baseYield *= synergyFoodMult;
 
   return Math.floor(baseYield);
 }
