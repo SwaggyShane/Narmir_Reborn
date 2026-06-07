@@ -1715,6 +1715,45 @@ function processWallsAttunements(k, events = []) {
   return updates;
 }
 
+function processGuardTowerAttunements(k, events = []) {
+  const updates = {};
+  if (!k.bld_guard_towers) return updates;
+
+  const towerAttune = fragmentBonusManager.getFragmentForBuilding(k, 'guard_towers');
+  if (!towerAttune) return updates;
+
+  const fragmentName = towerAttune.fragment;
+  const currentHappiness = k.happiness ?? 50;
+
+  switch (fragmentName) {
+    case 'Cursed Bloodstone': {
+      // Brimstone Signal Fire: crimson haze induces horror in the populace, 10% chance -1 happiness
+      if (roll(0.10)) {
+        updates.happiness = Math.max(-50, currentHappiness - 1);
+        events.push({
+          type: 'system',
+          message: `🩸 Brimstone Signal Fire: crimson haze from watch-towers induces horror (-1 happiness).`
+        });
+      }
+      break;
+    }
+
+    case 'Void Essence': {
+      // Astral Sight Rifts: spatial vertigo from shifted sentry platforms, 15% chance -1 happiness
+      if (roll(0.15)) {
+        updates.happiness = Math.max(-50, currentHappiness - 1);
+        events.push({
+          type: 'system',
+          message: `🌌 Astral Sight Rifts: spatial vertigo from sub-dimensional sentry platforms unsettles the populace (-1 happiness).`
+        });
+      }
+      break;
+    }
+  }
+
+  return updates;
+}
+
 function processBarracksAttunements(k, events = []) {
   const updates = {};
   if (!k.bld_barracks) return updates;
@@ -2219,6 +2258,10 @@ function processTurn(k, db = null) {
   // ── 4a-iv. Walls attunement special abilities ─────────────────────────────────
   const wallsAbilityUpdates = processWallsAttunements({ ...k, ...updates }, events);
   Object.assign(updates, wallsAbilityUpdates);
+
+  // ── 4a-v. Guard tower attunement special abilities ────────────────────────────
+  const guardTowerAbilityUpdates = processGuardTowerAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, guardTowerAbilityUpdates);
 
   // ── 4b. Resource production (wood / stone / iron) ────────────────────────────
   const resourceUpdates = processResourceYield({ ...k, ...updates }, events);
@@ -8484,6 +8527,7 @@ module.exports = {
   processVaultAttunements,
   processBarracksAttunements,
   processWallsAttunements,
+  processGuardTowerAttunements,
   processMercenaries,
   hireMercenaries,
   purchaseUpgrade,
