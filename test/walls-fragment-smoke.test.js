@@ -162,6 +162,16 @@ function test_attunements_dwarvenStarMetal_scales() {
   assert.strictEqual(updates.bld_walls, 21, '20 + 1 wall');
 }
 
+function test_attunements_dwarvenStarMetal_respectsCap() {
+  clearParseCache();
+  // level 1 cap for bld_walls is 50 — at cap, no repair fires
+  const k = baseKingdom({ bld_walls: 50, level: 1, prestige_level: 0, fragment_bonuses: withWallsFragment('Dwarven Star-Metal') });
+  const events = [];
+  const updates = processWallsAttunements(k, events);
+  assert.strictEqual(updates.bld_walls, undefined, 'at cap: no repair');
+  assert.strictEqual(events.length, 0, 'no event at cap');
+}
+
 // ── Cursed Bloodstone: Sanguine Blood-Thorns ─────────────────────────────────
 
 function test_attunements_cursedBloodstone_noTrigger() {
@@ -220,6 +230,7 @@ const tests = [
   test_attunements_passiveOnly_voidEssence,
   test_attunements_dwarvenStarMetal_repairsOneWall,
   test_attunements_dwarvenStarMetal_scales,
+  test_attunements_dwarvenStarMetal_respectsCap,
   test_attunements_cursedBloodstone_noTrigger,
   test_attunements_cursedBloodstone_trigger,
   test_attunements_cursedBloodstone_clampedAtMinus50,

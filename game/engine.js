@@ -1687,12 +1687,15 @@ function processWallsAttunements(k, events = []) {
 
   switch (fragmentName) {
     case 'Dwarven Star-Metal': {
-      // Geared Self-Construction: clockwork auto-repairs 1 wall per turn
-      updates.bld_walls = (k.bld_walls || 0) + 1;
-      events.push({
-        type: 'system',
-        message: `⚙️ Geared Self-Construction: clockwork cog-wheels auto-repaired 1 wall section.`
-      });
+      // Geared Self-Construction: clockwork auto-repairs 1 wall per turn (capped at level cap)
+      const wallCap = getCap('bld_walls', k.level || 1, k.prestige_level || 0);
+      if ((k.bld_walls || 0) < wallCap) {
+        updates.bld_walls = (k.bld_walls || 0) + 1;
+        events.push({
+          type: 'system',
+          message: `⚙️ Geared Self-Construction: clockwork cog-wheels auto-repaired 1 wall section.`
+        });
+      }
       break;
     }
 
