@@ -16,9 +16,8 @@ export default function SynergyDetailsModal({ synergy, kingdom, onClose, onAbili
     if (!synergy || !synergy.id) return;
 
     try {
-      const data = await apiCall('/api/kingdom/synergy-cooldown', {
+      const data = await apiCall('/api/kingdom/synergy-cooldown?synergy_id=' + encodeURIComponent(synergy.id), {
         method: 'GET',
-        params: { synergy_id: synergy.id },
       });
 
       if (!data.error) {
@@ -64,7 +63,6 @@ export default function SynergyDetailsModal({ synergy, kingdom, onClose, onAbili
 
   const isOnCooldown = cooldownInfo?.on_cooldown || false;
   const cooldownRemaining = cooldownInfo?.cooldown_remaining_seconds || 0;
-  const isActive = synergy.id && synergy.id.length > 0 && !cooldownRemaining;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -93,7 +91,7 @@ export default function SynergyDetailsModal({ synergy, kingdom, onClose, onAbili
                     <div key={key} className={`effect-item ${value >= 0 ? 'positive' : 'negative'}`}>
                       <span className="effect-label">{formatKey(key)}</span>
                       <span className="effect-value">
-                        {value > 0 ? '+' : ''}{formatValue(value)}
+                        {formatValue(value, key)}
                       </span>
                     </div>
                   ))}
@@ -137,7 +135,7 @@ export default function SynergyDetailsModal({ synergy, kingdom, onClose, onAbili
                     {Object.entries(synergy.active.benefit).map(([key, value]) => (
                       <div key={key} className="effect-item positive">
                         <span className="effect-label">{formatKey(key)}</span>
-                        <span className="effect-value">{formatValue(value)}</span>
+                        <span className="effect-value">{formatValue(value, key)}</span>
                       </div>
                     ))}
                   </div>
@@ -181,12 +179,16 @@ function formatKey(key) {
     .join(' ');
 }
 
-function formatValue(value) {
+function formatValue(value, key) {
   if (typeof value === 'boolean') return value ? 'Yes' : 'No';
   if (typeof value === 'number') {
-    if (value >= 1) return `+${Math.round(value * 100)}%`;
-    if (value > 0) return `+${Math.round(value * 100)}%`;
-    if (value < 0) return `${Math.round(value * 100)}%`;
+    const isAbsolute = key === 'happiness' || key === 'stability';
+    if (isAbsolute) {
+      return value > 0 ? '+' + value : String(value);
+    }
+    if (value >= 1) return '+' + Math.round(value * 100) + '%';
+    if (value > 0) return '+' + Math.round(value * 100) + '%';
+    if (value < 0) return Math.round(value * 100) + '%';
     return '0%';
   }
   return String(value);

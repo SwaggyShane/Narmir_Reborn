@@ -86,7 +86,7 @@ export default function SynergyStatusPanel({ kingdom, onUpdate }) {
                       <div key={key} className={`effect ${value >= 0 ? 'positive' : 'negative'}`}>
                         <span className="effect-key">{formatEffectKey(key)}:</span>
                         <span className="effect-value">
-                          {value > 0 ? '+' : ''}{formatEffectValue(value)}
+                          {formatEffectValue(value, key)}
                         </span>
                       </div>
                     ))}
@@ -168,11 +168,15 @@ function formatEffectKey(key) {
     .join(' ');
 }
 
-function formatEffectValue(value) {
+function formatEffectValue(value, key) {
   if (typeof value === 'number') {
-    if (value >= 1) return `+${Math.round(value * 100)}%`;
-    if (value > 0) return `+${Math.round(value * 100)}%`;
-    return `${Math.round(value * 100)}%`;
+    const isAbsolute = key === 'happiness' || key === 'stability';
+    if (isAbsolute) {
+      return value > 0 ? '+' + value : String(value);
+    }
+    if (value >= 1) return '+' + Math.round(value * 100) + '%';
+    if (value > 0) return '+' + Math.round(value * 100) + '%';
+    return Math.round(value * 100) + '%';
   }
   return String(value);
 }

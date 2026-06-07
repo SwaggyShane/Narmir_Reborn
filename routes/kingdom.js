@@ -11,6 +11,7 @@ const { safeJsonParse } = require('../utils/helpers');
 const { getKingdomAttunements } = require('../game/fragment-attunements');
 const fragmentBonusManager = require("../game/fragment-bonus-manager");
 const attunementManager = require('../game/attunement-manager');
+const synergiesModule = require('../game/fragment-synergies');
 const { applyKingdomUpdates } = require('../db/schema');
 const { marketPriceCache, setUnreadCount, incrementUnread } = require("../cache.js");
 
@@ -5475,7 +5476,6 @@ module.exports = function (db) {
       }
 
       // Get synergy definition to apply effects
-      const synergiesModule = require('../game/fragment-synergies');
       const synergy = synergiesModule.getSynergy(synergy_id);
       if (!synergy) {
         return res.status(400).json({ error: 'Invalid synergy ID' });
