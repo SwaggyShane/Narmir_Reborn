@@ -580,8 +580,11 @@ function researchIncrement(k, discipline, researchersAssigned, currentLevel) {
   const happiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
   const happinessMult = Math.max(0, 0.5 + (happiness / 100));
 
+  // Synergy passive bonus for research speed
+  const synergyResearchMult = getSynergyPassiveBonusMultiplier(k, 'research_speed');
+
   const effective = Math.floor(
-    researchersAssigned * schoolBonus * raceMulti * resLevelMult * libraryResearchMult * happinessMult,
+    researchersAssigned * schoolBonus * raceMulti * resLevelMult * libraryResearchMult * happinessMult * synergyResearchMult,
   );
 
   let factor = 1.0;
@@ -792,6 +795,9 @@ function wallDefensePower(k) {
   const wallDefenseMult = fragmentBonusManager.getBonusMultiplier(k, 'walls', 'defense');
   const effectiveWallMult = wallHealthMult * wallDefenseMult;
 
+  // Synergy passive bonus for defense
+  const synergyDefenseMult = getSynergyPassiveBonusMultiplier(k, 'defense');
+
   // Base: each wall = 100 defense power (scaled by race + upgrades)
   const wmOnWalls = Math.min(k.war_machines, walls);
   const wmBonus =
@@ -799,7 +805,7 @@ function wallDefensePower(k) {
     500 *
     ((k.res_war_machines || 100) / 100) *
     (wallUpgrades.fortress_walls ? 1.75 : wallUpgrades.battlements ? 1.2 : 1.0);
-  return Math.floor(walls * 100 * mult * reinMult * vaultWallMult * effectiveWallMult + wmBonus);
+  return Math.floor(walls * 100 * mult * reinMult * vaultWallMult * effectiveWallMult * synergyDefenseMult + wmBonus);
 }
 
 // Guard tower contribution — thief detection
