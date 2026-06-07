@@ -124,7 +124,7 @@ const SYNERGIES = {
     active: {
       name: 'Divine Wrath',
       desc: 'Block all incoming attacks for 2 days, but defense drops after',
-      cooldown_days: 2,
+      cooldown_days: 7,
       shield_duration_days: 2,
       penalty: { defense: -0.60 },
       penalty_duration_days: 5,

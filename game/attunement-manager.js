@@ -304,6 +304,9 @@ function getSynergyStatus(kingdom) {
       id: item.synergy.id,
       name: item.synergy.name,
       emoji: item.synergy.emoji,
+      description: item.synergy.description,
+      passive: item.synergy.passive,
+      active: item.synergy.active,
       missingFragments: item.missingCount,
     })),
   };

@@ -44,6 +44,7 @@ const BuildPanel = () => {
   const [showAttunements, setShowAttunements] = useState(false);
   const [availableAttunements, setAvailableAttunements] = useState([]);
   const [currentAttunements, setCurrentAttunements] = useState({});
+  const [synergyContributions, setSynergyContributions] = useState({});
   const [loading, setLoading] = useState(false);
 
   // Load attunements when panel opens
@@ -68,7 +69,29 @@ const BuildPanel = () => {
       });
       if (statusResponse.ok) {
         const statusData = await statusResponse.json();
-        setCurrentAttunements(statusData.attunements || {});
+        const attunements = statusData.attunements || {};
+        setCurrentAttunements(attunements);
+
+        // Check synergy contributions for each attunement in parallel
+        const contributions = {};
+        const attunementEntries = Object.entries(attunements).filter(([_, att]) => att && att.fragmentName);
+        await Promise.all(
+          attunementEntries.map(async ([building, att]) => {
+            try {
+              const contribResponse = await fetch(
+                `/api/kingdom/contributing-synergies?building_type=${encodeURIComponent(building)}&fragment_name=${encodeURIComponent(att.fragmentName)}`,
+                { credentials: 'include' }
+              );
+              if (contribResponse.ok) {
+                const contribData = await contribResponse.json();
+                contributions[`${building}:${att.fragmentName}`] = contribData.synergies || [];
+              }
+            } catch (err) {
+              console.error('[synergies] check failed:', err);
+            }
+          })
+        );
+        setSynergyContributions(contributions);
       }
     } catch (err) {
       console.error('[attunements] load failed:', err.message);
@@ -258,10 +281,13 @@ const BuildPanel = () => {
                         <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--gold)', marginBottom: '8px' }}>Current Attunements</div>
                         {Object.entries(currentAttunements).map(([building, att]) => {
                           if (!att || !att.fragmentName) return null;
+                          const contributions = synergyContributions[`${building}:${att.fragmentName}`] || [];
+                          const hasContribution = contributions.length > 0;
                           return (
                             <div key={building} style={{ fontSize: '11px', color: 'var(--text)', marginBottom: '6px', padding: '6px', background: 'var(--bg2)', borderRadius: '3px' }}>
                               <span style={{ color: 'var(--gold)', fontWeight: 600 }}>{building}</span>: {att.fragmentName}
                               {att.special && <div style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '2px' }}>{att.special.name}</div>}
+                              {hasContribution && <div style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '4px', fontStyle: 'italic' }}>This building attunement can lead to greater things</div>}
                             </div>
                           );
                         })}

@@ -1666,6 +1666,21 @@ async function initDb(options = {}) {
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_happiness_events_kingdom_turn ON happiness_events(kingdom_id, turn DESC)`);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_happiness_events_kingdom_created ON happiness_events(kingdom_id, created_at DESC)`);
 
+  // Synergy cooldown tracking
+  await _db.exec(`
+    CREATE TABLE IF NOT EXISTS synergy_cooldowns (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      kingdom_id INTEGER NOT NULL REFERENCES kingdoms(id),
+      synergy_id TEXT NOT NULL,
+      cooldown_until INTEGER NOT NULL,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      UNIQUE(kingdom_id, synergy_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_synergy_cooldowns_kingdom ON synergy_cooldowns(kingdom_id);
+    CREATE INDEX IF NOT EXISTS idx_synergy_cooldowns_until ON synergy_cooldowns(cooldown_until);
+  `);
+
   return _db;
 }
 
