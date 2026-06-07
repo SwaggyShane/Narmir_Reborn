@@ -5377,6 +5377,28 @@ module.exports = function (db) {
     }
   });
 
+  // GET /api/kingdom/contributing-synergies — Check which synergies a building/fragment contributes to
+  router.get('/contributing-synergies', requireAuth, async (req, res) => {
+    try {
+      const { building_type, fragment_name } = req.query;
+      if (!building_type || !fragment_name) {
+        return res.status(400).json({ error: 'building_type and fragment_name required' });
+      }
+
+      const contributing = attunementManager.getContributingSynergies(building_type, fragment_name);
+      res.json({
+        synergies: contributing.map(s => ({
+          id: s.id,
+          name: s.name,
+          emoji: s.emoji,
+        })),
+      });
+    } catch (err) {
+      console.error('[synergy] contributing check failed:', err.message);
+      res.status(500).json({ error: 'Failed to check contributing synergies' });
+    }
+  });
+
   // GET /api/kingdom/synergy-status — Get active synergy and near-activation hints
   router.get('/synergy-status', requireAuth, async (req, res) => {
     try {
