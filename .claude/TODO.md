@@ -1,3 +1,37 @@
+# CRITICAL TODO: Engine.js Linting Cleanup
+
+**STATUS:** ⚠️ PENDING - Do not forget!  
+**PRIORITY:** Medium  
+**CREATED:** 2026-06-07  
+
+## What
+Fix pre-existing linting errors in `game/engine.js` that existed BEFORE Phase 3 synergy work:
+- 1 error: Line 1657 - Unexpected lexical declaration in case block (no-case-declarations)
+- 13 warnings: Unused variables throughout file (RESOURCE_STAGE1_COL, mDelta, etc.)
+
+## Why
+- Keep codebase clean and maintainable
+- Phase 3 synergy code is 100% clean (0 new errors introduced)
+- These pre-existing issues should be fixed separately from feature work
+
+## When
+After Phase 3 PR (#355) is merged to main. Create separate cleanup PR.
+
+## How
+```bash
+# Review lines with errors/warnings
+npx eslint game/engine.js
+
+# Fix line 1657 case block declaration
+# Rename unused variables with underscore prefix: _variableName
+# Or remove if truly unused
+```
+
+## Owner
+Next developer touching engine.js - don't let this slip!
+
+---
+
 # Expedition Processing: Future Architectural Optimizations
 
 ## Current State
