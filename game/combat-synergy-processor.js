@@ -4,6 +4,7 @@
  */
 
 const attunementManager = require('./attunement-manager');
+const { safeJsonParse } = require('../utils/helpers');
 
 function getCombatDamageMultiplier(kingdom) {
   if (!kingdom) return 1.0;
@@ -89,7 +90,7 @@ function getTroopCapacityMultiplier(kingdom) {
 function getActiveCombatBonus(kingdom) {
   if (!kingdom || !kingdom.active_effects) return { damage: 1.0, health: 1.0 };
 
-  const activeEffects = kingdom.active_effects;
+  const activeEffects = safeJsonParse(kingdom.active_effects, {}, 'getActiveCombatBonus:active_effects');
   let damageBonus = 1.0;
   let healthBonus = 1.0;
 
