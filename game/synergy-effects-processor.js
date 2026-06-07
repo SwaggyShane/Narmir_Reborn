@@ -252,8 +252,8 @@ function getCombinedMultiplier(kingdom, stat) {
     mult *= getBenefitMultiplier(kingdom, stat);
   }
 
-  // Penalty multiplier (includes all_stats accumulation)
-  if (stat === 'defense' || stat === 'food_production' || stat === 'resources' || stat === 'production') {
+  // Penalty multiplier (includes all_stats accumulation for all stats)
+  if (stat === 'defense' || stat === 'food_production' || stat === 'resources' || stat === 'production' || stat === 'damage' || stat === 'health') {
     mult *= getPenaltyMultiplier(kingdom, stat);
   }
 

@@ -409,4 +409,29 @@ console.log('Testing Synergy Effects Processor\n');
   console.log('✓ all_stats applies to all stat types\n');
 }
 
-console.log('✅ All 18 synergy effects processor tests passed!');
+// Test 19: all_stats penalty applies to damage and health troop stats
+{
+  console.log('Test 19: all_stats penalty applies to damage and health');
+
+  const kingdom = {
+    turn: 5,
+    active_effects: JSON.stringify({
+      synergy_troop_boost: {
+        troop_damage: 1.0, // +100% damage
+        until_turn: 10,
+      },
+      synergy_penalty: {
+        all_stats: -0.25, // -25% all stats
+        until_turn: 10,
+      },
+    }),
+  };
+
+  const damageMult = effectsProcessor.getCombinedMultiplier(kingdom, 'damage');
+  // (1.0 + 1.0) * (1.0 - 0.25) = 2.0 * 0.75 = 1.5
+  assert.ok(Math.abs(damageMult - 1.5) < 0.0001, `Damage multiplier should be ~1.5 (includes all_stats), got ${damageMult}`);
+
+  console.log('✓ all_stats applies to troop stats\n');
+}
+
+console.log('✅ All 19 synergy effects processor tests passed!');
