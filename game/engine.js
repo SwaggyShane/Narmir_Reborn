@@ -218,8 +218,12 @@ function goldPerTurn(k) {
   // Apply tavern bonus for gold generation (+5% per tavern)
   const tavernBonus = 1 + (((k.bld_taverns || 0) * 0.05));
 
+  // Vault fragment economy_output passive boosts base income
+  const vaultFrag = fragmentBonusManager.getFragmentForBuilding(k, 'vaults');
+  const vaultEconomyMult = 1.0 + (vaultFrag?.passive?.economy_output || 0);
+
   // milestoneMult applies only to core land/castle income; mktIncome stays flat
-  return Math.floor((baseRate + castleBonus) * econBonus * 2.25 * milestoneMult * happinessMult * tavernBonus) + mktIncome;
+  return Math.floor((baseRate + castleBonus) * econBonus * 2.25 * milestoneMult * happinessMult * tavernBonus * vaultEconomyMult) + mktIncome;
 }
 
 function manaPerTurn(k) {
@@ -353,6 +357,12 @@ function calculateHappiness(k) {
   // Apply happiness recovery based on research + taverns and clamp to -50 to 120
   const recoveryRate = getHappinessRecoveryRate(k);
   happiness = Math.floor(Math.max(-50, Math.min(120, happiness + recoveryRate)));
+
+  // Apply persistent fragment happiness penalty (accumulated via attunement effects)
+  const fragmentPenalty = effects.fragment_happiness_penalty || 0;
+  if (fragmentPenalty < 0) {
+    happiness = Math.max(-50, happiness + fragmentPenalty);
+  }
 
   return {
     happiness,
@@ -1559,6 +1569,16 @@ function processFoodEconomy(k, events) {
  * Process granary attunement special abilities
  * Executes automated effects like food replication, vanishing, spoilage prevention
  */
+
+// Accumulates -1 to active_effects.fragment_happiness_penalty (persistent across turns).
+// calculateHappiness reads and applies the penalty; it decays +1/turn in the turn loop.
+function applyFragmentHappinessPenalty(k, updates) {
+  const existingEffectsStr = updates.active_effects !== undefined ? updates.active_effects : k.active_effects;
+  const effects = safeJsonParse(existingEffectsStr, {}, 'fragment_penalty:active_effects');
+  effects.fragment_happiness_penalty = (effects.fragment_happiness_penalty || 0) - 1;
+  updates.active_effects = JSON.stringify(effects);
+}
+
 function processGranaryAttunements(k, events) {
   const updates = {};
   const granaryAttune = fragmentBonusManager.getFragmentForBuilding(k, 'granaries');
@@ -1609,6 +1629,17 @@ function processGranaryAttunements(k, events) {
       }
       break;
 
+    case 'Cursed Bloodstone':
+      // Vampiric Silos: dark elixir distillation spikes chaos, 10% chance -1 happiness
+      if (roll(0.10)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🩸 Vampiric Silos: spoiled-food elixir distillation spikes local chaos (-1 happiness).`
+        });
+      }
+      break;
+
     // Other fragments with passive-only abilities don't trigger special events
     // (Geothermal, Ancient Elven Wood, Dragon Scale, Abyssal Crystal, etc.)
   }
@@ -1616,6 +1647,644 @@ function processGranaryAttunements(k, events) {
   if (foodChange !== 0) {
     const newFood = Math.max(0, (k.food || 0) + foodChange);
     updates.food = newFood;
+  }
+
+  return updates;
+}
+
+function processVaultAttunements(k, events = []) {
+  const updates = {};
+  if (!k.bld_vaults) return updates;
+
+  const vaultAttune = fragmentBonusManager.getFragmentForBuilding(k, 'vaults');
+  if (!vaultAttune) return updates;
+
+  const fragmentName = vaultAttune.fragment;
+  switch (fragmentName) {
+    case 'Tears of the World Tree': {
+      // Yggdrasil Resin Casings: amber resin compounds financial growth (+5 gold/vault/turn)
+      const goldGain = k.bld_vaults * 5;
+      updates.gold = (k.gold || 0) + goldGain;
+      events.push({
+        type: 'system',
+        message: `💧 Yggdrasil Resin Casings: amber-preserved reserves grew by ${goldGain.toLocaleString()} gold.`
+      });
+      break;
+    }
+
+    case 'Cursed Bloodstone': {
+      // Sanguine Vault Tax: dark alchemical currency, 10% chance civic instability (-1 happiness)
+      if (roll(0.10)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🩸 Sanguine Vault Tax: dark alchemical currency spikes instability (-1 happiness).`
+        });
+      }
+      break;
+    }
+
+    case 'Void Essence': {
+      // Dimensional Pocket Vaults: 15% chance spatial lag from dimensional banking unsettles citizens
+      if (roll(0.15)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🌌 Dimensional Pocket Vaults: spatial lag from sub-dimensional banking unsettles citizens (-1 happiness).`
+        });
+      }
+      break;
+    }
+  }
+
+  return updates;
+}
+
+function processWallsAttunements(k, events = []) {
+  const updates = {};
+  if (!k.bld_walls) return updates;
+
+  const wallsAttune = fragmentBonusManager.getFragmentForBuilding(k, 'walls');
+  if (!wallsAttune) return updates;
+
+  const fragmentName = wallsAttune.fragment;
+  switch (fragmentName) {
+    case 'Dwarven Star-Metal': {
+      // Geared Self-Construction: clockwork auto-repairs 1 wall per turn (capped at level cap)
+      const wallCap = getCap('bld_walls', k.level || 1, k.prestige_level || 0);
+      if ((k.bld_walls || 0) < wallCap) {
+        updates.bld_walls = (k.bld_walls || 0) + 1;
+        events.push({
+          type: 'system',
+          message: `⚙️ Geared Self-Construction: clockwork cog-wheels auto-repaired 1 wall section.`
+        });
+      }
+      break;
+    }
+
+    case 'Cursed Bloodstone': {
+      // Sanguine Blood-Thorns: dark magic thorns, 10% chance civic unrest (-1 happiness)
+      if (roll(0.10)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🩸 Sanguine Blood-Thorns: bloodstone thorns creep beyond the walls, unsettling citizens (-1 happiness).`
+        });
+      }
+      break;
+    }
+  }
+
+  return updates;
+}
+
+function processGuardTowerAttunements(k, events = []) {
+  const updates = {};
+  if (!k.bld_guard_towers) return updates;
+
+  const towerAttune = fragmentBonusManager.getFragmentForBuilding(k, 'guard_towers');
+  if (!towerAttune) return updates;
+
+  const fragmentName = towerAttune.fragment;
+  switch (fragmentName) {
+    case 'Cursed Bloodstone': {
+      // Brimstone Signal Fire: crimson haze induces horror in the populace, 10% chance -1 happiness
+      if (roll(0.10)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🩸 Brimstone Signal Fire: crimson haze from watch-towers induces horror (-1 happiness).`
+        });
+      }
+      break;
+    }
+
+    case 'Void Essence': {
+      // Astral Sight Rifts: spatial vertigo from shifted sentry platforms, 15% chance -1 happiness
+      if (roll(0.15)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🌌 Astral Sight Rifts: spatial vertigo from sub-dimensional sentry platforms unsettles the populace (-1 happiness).`
+        });
+      }
+      break;
+    }
+  }
+
+  return updates;
+}
+
+function processOutpostAttunements(k, events = []) {
+  const updates = {};
+  if (!k.bld_outposts) return updates;
+
+  const outpostAttune = fragmentBonusManager.getFragmentForBuilding(k, 'outposts');
+  if (!outpostAttune) return updates;
+
+  const fragmentName = outpostAttune.fragment;
+  switch (fragmentName) {
+    case 'Cursed Bloodstone': {
+      // Sanguine Warning Totems: impaled sacrifices deteriorate scout sanity, 10% chance -1 happiness
+      if (roll(0.10)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🩸 Sanguine Warning Totems: necrotic runes deteriorate scout sanity (-1 happiness).`
+        });
+      }
+      break;
+    }
+  }
+
+  return updates;
+}
+
+function processTrainingAttunements(k, events = []) {
+  const updates = {};
+  if (!k.bld_training) return updates;
+
+  const trainingAttune = fragmentBonusManager.getFragmentForBuilding(k, 'training');
+  if (!trainingAttune) return updates;
+
+  const fragmentName = trainingAttune.fragment;
+  switch (fragmentName) {
+    case 'Cursed Bloodstone': {
+      // Crucible Agony Training: chaotic blood rites reduce tactical compliance, 10% chance -1 happiness
+      if (roll(0.10)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🩸 Crucible Agony Training: chaotic blood rites reduce tactical compliance (-1 happiness).`
+        });
+      }
+      break;
+    }
+
+    case 'Void Essence': {
+      // Dimensional Slip Sparring: sensory displacement from phase-slip drills, 15% chance -1 happiness
+      if (roll(0.15)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🌌 Dimensional Slip Sparring: sensory displacement from phase-slip drills unsettles troops (-1 happiness).`
+        });
+      }
+      break;
+    }
+  }
+
+  return updates;
+}
+
+function processBarracksAttunements(k, events = []) {
+  const updates = {};
+  if (!k.bld_barracks) return updates;
+
+  const barracksAttune = fragmentBonusManager.getFragmentForBuilding(k, 'barracks');
+  if (!barracksAttune) return updates;
+
+  const fragmentName = barracksAttune.fragment;
+  switch (fragmentName) {
+    case 'Cursed Bloodstone': {
+      // Sanguine Ritual Circles: blood rituals multiply recruit rates but civil unrest risks -1 happiness (10%)
+      if (roll(0.10)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🩸 Sanguine Ritual Circles: dark blood rites spark civil unrest (-1 happiness).`
+        });
+      }
+      break;
+    }
+  }
+
+  return updates;
+}
+
+function processCastleAttunements(k, events = []) {
+  const updates = {};
+  if (!k.bld_castles) return updates;
+
+  const castleAttune = fragmentBonusManager.getFragmentForBuilding(k, 'castles');
+  if (!castleAttune) return updates;
+
+  const fragmentName = castleAttune.fragment;
+  switch (fragmentName) {
+    case 'Tears of the World Tree': {
+      // Elder Sap Tapestries: living sap tapestries boost tax yields (+3 gold per castle)
+      const gain = (k.bld_castles || 0) * 3;
+      updates.gold = (k.gold || 0) + gain;
+      events.push({
+        type: 'system',
+        message: `🌿 Elder Sap Tapestries: living sap tapestries boost tax yields (+${gain} gold).`
+      });
+      break;
+    }
+
+    case 'Cursed Bloodstone': {
+      // Blood-Sacrifice Vaults: dark blood rites scare away foreign envoys, 10% chance -1 happiness
+      if (roll(0.10)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🩸 Blood-Sacrifice Vaults: dark blood rites frighten foreign envoys (-1 happiness).`
+        });
+      }
+      break;
+    }
+
+    case 'Void Essence': {
+      // Astral Phasing Throne: void instability unsettles castle residents, 15% chance -1 happiness
+      if (roll(0.15)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🌌 Astral Phasing Throne: void instability unsettles castle residents (-1 happiness).`
+        });
+      }
+      break;
+    }
+  }
+
+  return updates;
+}
+
+function processMausoleumAttunements(k, events = []) {
+  const updates = {};
+  if (!k.bld_mausoleums) return updates;
+
+  const mausAttune = fragmentBonusManager.getFragmentForBuilding(k, 'mausoleums');
+  if (!mausAttune) return updates;
+
+  const fragmentName = mausAttune.fragment;
+  switch (fragmentName) {
+    case 'Cursed Bloodstone': {
+      // Cruor Coils: triples reanimation yields but causes local panic, 10% chance -1 happiness
+      if (roll(0.10)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🩸 Cruor Coils: bloodstone reanimation channels cause local populations to panic (-1 happiness).`
+        });
+      }
+      break;
+    }
+
+    case 'Void Essence': {
+      // Shattered Portal Sarcophagi: void tear-rifts cause mild local disorientation, 15% chance -1 happiness
+      if (roll(0.15)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🌌 Shattered Portal Sarcophagi: void tear-rifts disorient local populations (-1 happiness).`
+        });
+      }
+      break;
+    }
+  }
+
+  return updates;
+}
+
+function processLibraryAttunements(k, events = []) {
+  const updates = {};
+  if (!k.bld_libraries) return updates;
+
+  const libAttune = fragmentBonusManager.getFragmentForBuilding(k, 'libraries');
+  if (!libAttune) return updates;
+
+  const fragmentName = libAttune.fragment;
+  switch (fragmentName) {
+    case 'Cursed Bloodstone': {
+      // Sanguine Cartography: blood-drawn maps cause intense psychological stress, 10% chance -1 happiness
+      if (roll(0.10)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🩸 Sanguine Cartography: blood-drawn maps cause intense psychological stress (-1 happiness).`
+        });
+      }
+      break;
+    }
+
+    case 'Void Essence': {
+      // Void Codex: unpredictable research chaos unsettles scholars, 15% chance -1 happiness
+      if (roll(0.15)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🌌 Void Codex: chaotic research regression unsettles library scholars (-1 happiness).`
+        });
+      }
+      break;
+    }
+  }
+
+  return updates;
+}
+
+function processMageTowerAttunements(k, events = []) {
+  const updates = {};
+  if (!k.bld_mage_towers) return updates;
+
+  const mtAttune = fragmentBonusManager.getFragmentForBuilding(k, 'mage_towers');
+  if (!mtAttune) return updates;
+
+  const fragmentName = mtAttune.fragment;
+  switch (fragmentName) {
+    case 'Cursed Bloodstone': {
+      // Sanguine Battery: feeding citizen lifeforce to spellpools causes unrest, 10% chance -1 happiness
+      if (roll(0.10)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🩸 Sanguine Battery: draining citizen lifeforce into spellpools sparks unrest (-1 happiness).`
+        });
+      }
+      break;
+    }
+
+    case 'Void Essence': {
+      // Portal Conduits: local portal leaks disorient citizens, 15% chance -1 happiness
+      if (roll(0.15)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🌌 Portal Conduits: void portal leaks disorient local citizens (-1 happiness).`
+        });
+      }
+      break;
+    }
+  }
+
+  return updates;
+}
+
+function processSchoolAttunements(k, events = []) {
+  const updates = {};
+  if (!k.bld_schools) return updates;
+
+  const schoolAttune = fragmentBonusManager.getFragmentForBuilding(k, 'schools');
+  if (!schoolAttune) return updates;
+
+  const fragmentName = schoolAttune.fragment;
+  switch (fragmentName) {
+    case 'Cursed Bloodstone': {
+      // Taboo Alchemical Arts: forbidden experiments raise local chaos, 10% chance -1 happiness
+      if (roll(0.10)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🩸 Taboo Alchemical Arts: forbidden humors experiments spark local chaos (-1 happiness).`
+        });
+      }
+      break;
+    }
+
+    case 'Void Essence': {
+      // Quantum Paradoxes: multi-dimensional absences cause unrest, 15% chance -1 happiness
+      if (roll(0.15)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🌌 Quantum Paradoxes: unexplained student absences unsettle the population (-1 happiness).`
+        });
+      }
+      break;
+    }
+  }
+
+  return updates;
+}
+
+function processFarmAttunements(k, events = []) {
+  const updates = {};
+  if (!k.bld_farms) return updates;
+
+  const farmAttune = fragmentBonusManager.getFragmentForBuilding(k, 'farms');
+  if (!farmAttune) return updates;
+
+  const fragmentName = farmAttune.fragment;
+  switch (fragmentName) {
+    case 'Cursed Bloodstone': {
+      // Bloodsoaked Fields: unstable cursed harvests cause periodic unrest, 10% chance -1 happiness
+      if (roll(0.10)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🩸 Bloodsoaked Fields: cursed harvests trigger peasant unrest (-1 happiness).`
+        });
+      }
+      break;
+    }
+
+    case 'Void Essence': {
+      // Void Crops: 20% chance crops either yield a bonus or fail catastrophically
+      if (roll(0.20)) {
+        const bounty = roll(0.50);
+        const change = (k.bld_farms || 0) * 10;
+        if (bounty) {
+          updates.food = (k.food || 0) + change;
+          events.push({
+            type: 'system',
+            message: `🌌 Void Crops: void-touched fields yield a massive surplus (+${change} food).`
+          });
+        } else {
+          updates.food = Math.max(0, (k.food || 0) - change);
+          events.push({
+            type: 'system',
+            message: `🌌 Void Crops: void instability causes crop failure (-${change} food).`
+          });
+        }
+      }
+      break;
+    }
+  }
+
+  return updates;
+}
+
+function processSmithyAttunements(k, events = []) {
+  const updates = {};
+  if (!k.bld_smithies) return updates;
+
+  const smithyAttune = fragmentBonusManager.getFragmentForBuilding(k, 'smithies');
+  if (!smithyAttune) return updates;
+
+  const fragmentName = smithyAttune.fragment;
+  switch (fragmentName) {
+    case 'Cursed Bloodstone': {
+      // Sanguine Crucible: lifeforce sacrificed into crucibles causes local chaos, 10% chance -1 happiness
+      if (roll(0.10)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🩸 Sanguine Crucible: lifeforce sacrifices into crucibles cause local chaos (-1 happiness).`
+        });
+      }
+      break;
+    }
+
+    case 'Void Essence': {
+      // Quantum Portal Anvils: spatial lag from dimensional duplication unsettles workers, 15% chance -1 happiness
+      if (roll(0.15)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🌌 Quantum Portal Anvils: spatial lag from dimensional forging unsettles workers (-1 happiness).`
+        });
+      }
+      break;
+    }
+  }
+
+  return updates;
+}
+
+function processMarketAttunements(k, events = []) {
+  const updates = {};
+  if (!k.bld_markets) return updates;
+
+  const marketAttune = fragmentBonusManager.getFragmentForBuilding(k, 'markets');
+  if (!marketAttune) return updates;
+
+  const fragmentName = marketAttune.fragment;
+  switch (fragmentName) {
+    case 'Cursed Bloodstone': {
+      // Sanguine Auction Guilds: forbidden life contracts spike chaos, 10% chance -1 happiness
+      if (roll(0.10)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🩸 Sanguine Auction Guilds: forbidden life-contract auctions spike civil chaos (-1 happiness).`
+        });
+      }
+      break;
+    }
+
+    case 'Void Essence': {
+      // Quantum Shopping Matrix: multi-planar trade causes temporary citizen absences, 15% chance -1 happiness
+      if (roll(0.15)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🌌 Quantum Shopping Matrix: citizens temporarily lost to inter-planar trade channels (-1 happiness).`
+        });
+      }
+      break;
+    }
+  }
+
+  return updates;
+}
+
+function processShrineAttunements(k, events = []) {
+  const updates = {};
+  if (!k.bld_shrines) return updates;
+
+  const shrineAttune = fragmentBonusManager.getFragmentForBuilding(k, 'shrines');
+  if (!shrineAttune) return updates;
+
+  const fragmentName = shrineAttune.fragment;
+  switch (fragmentName) {
+    case 'Cursed Bloodstone': {
+      // Sanguine Transfusion: dark lifeforce transmutation raises chaotic corruption, 10% chance -1 happiness
+      if (roll(0.10)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🩸 Sanguine Transfusion: dark lifeforce transmutation raises chaotic corruption (-1 happiness).`
+        });
+      }
+      break;
+    }
+
+    case 'Void Essence': {
+      // Telescopic Epiphany: cosmic rift knowledge drives scholars to eccentricity, 15% chance -1 happiness
+      if (roll(0.15)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🌌 Telescopic Epiphany: cosmic rift visions drive shrine scholars to eccentricity (-1 happiness).`
+        });
+      }
+      break;
+    }
+  }
+
+  return updates;
+}
+
+function processTavernAttunements(k, events = []) {
+  const updates = {};
+  if (!k.bld_taverns) return updates;
+
+  const tavernAttune = fragmentBonusManager.getFragmentForBuilding(k, 'taverns');
+  if (!tavernAttune) return updates;
+
+  const fragmentName = tavernAttune.fragment;
+  switch (fragmentName) {
+    case 'Cursed Bloodstone': {
+      // The Cruor Blood Club: forbidden nectar spikes civil chaos index, 10% chance -1 happiness
+      if (roll(0.10)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🩸 The Cruor Blood Club: forbidden nectar brews spike civil chaos (-1 happiness).`
+        });
+      }
+      break;
+    }
+
+    case 'Void Essence': {
+      // The Singularity Saloon: brief spatial absences from interdimensional taprooms, 15% chance -1 happiness
+      if (roll(0.15)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🌌 The Singularity Saloon: brief spatial absences from interdimensional tap-rooms unsettle citizens (-1 happiness).`
+        });
+      }
+      break;
+    }
+  }
+
+  return updates;
+}
+
+function processHousingAttunements(k, events = []) {
+  const updates = {};
+  if (!k.bld_housing) return updates;
+
+  const housingAttune = fragmentBonusManager.getFragmentForBuilding(k, 'housing');
+  if (!housingAttune) return updates;
+
+  const fragmentName = housingAttune.fragment;
+  switch (fragmentName) {
+    case 'Cursed Bloodstone': {
+      // Blood Pact Lodgings: dark covenant instability causes periodic civil unrest, 10% chance -1 happiness
+      if (roll(0.10)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🩸 Blood Pact Lodgings: dark covenant instability sparks civil unrest (-1 happiness).`
+        });
+      }
+      break;
+    }
+
+    case 'Void Essence': {
+      // Void Pocket Lofts: dimensional disorientation unsettles residents, 15% chance -1 happiness
+      if (roll(0.15)) {
+        applyFragmentHappinessPenalty(k, updates);
+        events.push({
+          type: 'system',
+          message: `🌌 Void Pocket Lofts: dimensional disorientation unsettles residents (-1 happiness).`
+        });
+      }
+      break;
+    }
   }
 
   return updates;
@@ -2025,9 +2694,21 @@ function processTurn(k, db = null) {
 
 
 
-  // Calculate happiness at the start of the turn
+  // Calculate happiness using last turn's active_effects so the penalty is applied before decay
   const happinessResult = calculateHappiness(k);
   updates.happiness = happinessResult.happiness;
+
+  // Decay fragment happiness penalty by 1 toward 0 each turn; remove the key when it reaches 0
+  {
+    const decayEffects = safeJsonParse(k.active_effects, {}, 'turn:fragment_penalty_decay');
+    if ((decayEffects.fragment_happiness_penalty || 0) < 0) {
+      decayEffects.fragment_happiness_penalty = Math.min(0, decayEffects.fragment_happiness_penalty + 1);
+      if (decayEffects.fragment_happiness_penalty === 0) {
+        delete decayEffects.fragment_happiness_penalty;
+      }
+      updates.active_effects = JSON.stringify(decayEffects);
+    }
+  }
 
   // Record happiness history for tracking and graphing
   if (db && k.id) {
@@ -2086,6 +2767,74 @@ function processTurn(k, db = null) {
   // ── 4a. Granary attunement special abilities ──────────────────────────────────
   const granaryAbilityUpdates = processGranaryAttunements({ ...k, ...updates }, events);
   Object.assign(updates, granaryAbilityUpdates);
+
+  // ── 4a-ii. Vault attunement special abilities ─────────────────────────────────
+  const vaultAbilityUpdates = processVaultAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, vaultAbilityUpdates);
+
+  // ── 4a-iii. Barracks attunement special abilities ─────────────────────────────
+  const barracksAbilityUpdates = processBarracksAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, barracksAbilityUpdates);
+
+  // ── 4a-iv. Walls attunement special abilities ─────────────────────────────────
+  const wallsAbilityUpdates = processWallsAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, wallsAbilityUpdates);
+
+  // ── 4a-v. Guard tower attunement special abilities ────────────────────────────
+  const guardTowerAbilityUpdates = processGuardTowerAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, guardTowerAbilityUpdates);
+
+  // ── 4a-vi. Outpost attunement special abilities ───────────────────────────────
+  const outpostAbilityUpdates = processOutpostAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, outpostAbilityUpdates);
+
+  // ── 4a-vii. Training field attunement special abilities ───────────────────────
+  const trainingAbilityUpdates = processTrainingAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, trainingAbilityUpdates);
+
+  // ── 4a-viii. Castle attunement special abilities ──────────────────────────────
+  const castleAbilityUpdates = processCastleAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, castleAbilityUpdates);
+
+  // ── 4a-ix. Mausoleum attunement special abilities ─────────────────────────────
+  const mausoleumAbilityUpdates = processMausoleumAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, mausoleumAbilityUpdates);
+
+  // ── 4a-x. Library attunement special abilities ────────────────────────────────
+  const libraryAbilityUpdates = processLibraryAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, libraryAbilityUpdates);
+
+  // ── 4a-xi. Mage tower attunement special abilities ────────────────────────────
+  const mageTowerAbilityUpdates = processMageTowerAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, mageTowerAbilityUpdates);
+
+  // ── 4a-xi-b. Smithy attunement special abilities ──────────────────────────────
+  const smithyAbilityUpdates = processSmithyAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, smithyAbilityUpdates);
+
+  // ── 4a-xi-c. Market attunement special abilities ──────────────────────────────
+  const marketAbilityUpdates = processMarketAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, marketAbilityUpdates);
+
+  // ── 4a-xi-d. Shrine attunement special abilities ──────────────────────────────
+  const shrineAbilityUpdates = processShrineAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, shrineAbilityUpdates);
+
+  // ── 4a-xi-e. Tavern attunement special abilities ──────────────────────────────
+  const tavernAbilityUpdates = processTavernAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, tavernAbilityUpdates);
+
+  // ── 4a-xii. School attunement special abilities ───────────────────────────────
+  const schoolAbilityUpdates = processSchoolAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, schoolAbilityUpdates);
+
+  // ── 4a-xiii. Farm attunement special abilities ────────────────────────────────
+  const farmAbilityUpdates = processFarmAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, farmAbilityUpdates);
+
+  // ── 4a-xv. Housing attunement special abilities ───────────────────────────────
+  const housingAbilityUpdates = processHousingAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, housingAbilityUpdates);
 
   // ── 4b. Resource production (wood / stone / iron) ────────────────────────────
   const resourceUpdates = processResourceYield({ ...k, ...updates }, events);
@@ -5997,12 +6746,23 @@ function covertLoot(thief, target, requestedLootType, thievesSent) {
   const lootMb = safeJsonParse(thief.milestone_bonuses, {}, "covertLoot:mb");
   const lootMilestoneMult = 1 + (lootMb.covert_pct || 0) / 100;
   const stealthMulti = raceBonus(thief, "stealth") * thiefLvMult * lootMilestoneMult;
+  // Parse target vault fragment once — used for espionage_shield, gold_security, hoard_protection
+  const targetVaultFrag = fragmentBonusManager.getFragmentForBuilding(target, 'vaults');
+  const tVaultPassive = targetVaultFrag?.passive || {};
+  const vaultEspionageShield = 1.0 + (tVaultPassive.espionage_shield || 0);
+  // Parse target armory fragment once — used for espionage_guard, infiltration_defense
+  const targetArmoryFrag = fragmentBonusManager.getFragmentForBuilding(target, 'armories');
+  const tArmoryPassive = targetArmoryFrag?.passive || {};
+  const armoryEspionageGuard = 1.0 + (tArmoryPassive.espionage_guard || 0);
+  const armoryInfiltrationDefense = 1.0 + (tArmoryPassive.infiltration_defense || 0);
+  // Combine espionage_guard and infiltration_defense into single multiplier for armory defense
+  const armoryDefenseMult = Math.max(armoryEspionageGuard, armoryInfiltrationDefense);
   const success =
     thief.thieves * stealthMulti >
     target.fighters * 0.015 +
       target.bld_guard_towers * 3 +
-      target.bld_armories * 10 +
-      target.bld_vaults * 10;
+      target.bld_armories * 10 * armoryDefenseMult +
+      target.bld_vaults * 10 * vaultEspionageShield;
   if (!success) {
     return {
       success: false,
@@ -6052,25 +6812,40 @@ function covertLoot(thief, target, requestedLootType, thievesSent) {
     goldFloor = Math.floor(target.gold * 0.25);
   }
 
+  let hoardBurnLoss = 0; // thieves burned by Dragon Scale vault hoard_protection
+
   // Level scales loot amount
   if (actualLootType === "gold") {
     stolen = Math.floor(thievesSent * (50 + Math.random() * 50) * thiefLvMult);
     stolen = Math.min(stolen, Math.floor(target.gold * 0.05));
 
-    // Dwarven Star-Metal vaults prevent the treasury from being looted
-    const vaultFragment = fragmentBonusManager.getFragmentForBuilding(target, 'vaults');
-    if (vaultFragment && vaultFragment.fragment === 'Dwarven Star-Metal') {
+    // Dwarven Star-Metal vaults prevent the treasury from being looted entirely
+    if (targetVaultFrag && targetVaultFrag.fragment === 'Dwarven Star-Metal') {
       stolen = 0;
       desc = `0 gold — protected by Star-Metal gear locks`;
     } else {
-      // Protect gold
+      // gold_security passive reduces theft amount (capped at 95% reduction)
+      const goldSecReduction = Math.max(0, Math.min(0.95, tVaultPassive.gold_security || 0));
+      stolen = Math.floor(stolen * (1.0 - goldSecReduction));
+
+      // Protect gold floor
       if (target.gold - stolen < goldFloor) {
         stolen = target.gold - goldFloor;
         if (stolen < 0) stolen = 0;
       }
 
-      targetUpdates.gold = target.gold - stolen;
+      if (stolen > 0) {
+        targetUpdates.gold = target.gold - stolen;
+      }
       desc = `${stolen.toLocaleString()} gold`;
+
+      // Dragon Scale hoard_protection: draconic curse burns 50% of thievesSent on success
+      if (targetVaultFrag && targetVaultFrag.fragment === 'Dragon Scale' && stolen > 0) {
+        hoardBurnLoss = Math.floor(thievesSent * 0.50);
+        if (hoardBurnLoss > 0) {
+          desc += ` (draconic curse burned ${hoardBurnLoss} thief/thieves)`;
+        }
+      }
     }
   } else if (actualLootType === "war_machines") {
     stolen = Math.floor(thievesSent * 0.01 * thiefLvMult);
@@ -6142,12 +6917,16 @@ function covertLoot(thief, target, requestedLootType, thievesSent) {
   }
 
   const tXp = awardTroopXp(thief, "thieves", 20);
+  const thiefUpdates = { troop_levels: tXp.troop_levels };
+  if (hoardBurnLoss > 0) {
+    thiefUpdates.thieves = Math.max(0, (thief.thieves || 0) - hoardBurnLoss);
+  }
   return {
     success: true,
     stolen,
     lootType,
     actualLootType,
-    thiefUpdates: { troop_levels: tXp.troop_levels },
+    thiefUpdates,
     targetUpdates,
     thiefEvent: `Looted ${desc} from ${target.name}.`,
     targetEvent: `Thieves infiltrated your kingdom and stole ${desc}.`,
@@ -8318,6 +9097,23 @@ module.exports = {
   commodityPrice,
   processFoodEconomy,
   processGranaryAttunements,
+  processVaultAttunements,
+  processBarracksAttunements,
+  processWallsAttunements,
+  processGuardTowerAttunements,
+  processOutpostAttunements,
+  processTrainingAttunements,
+  processCastleAttunements,
+  processMausoleumAttunements,
+  processLibraryAttunements,
+  processMageTowerAttunements,
+  processSmithyAttunements,
+  processMarketAttunements,
+  processShrineAttunements,
+  processTavernAttunements,
+  processSchoolAttunements,
+  processFarmAttunements,
+  processHousingAttunements,
   processMercenaries,
   hireMercenaries,
   purchaseUpgrade,
