@@ -5443,69 +5443,83 @@ module.exports = function (db) {
         return res.status(400).json({ error: 'synergy_id required' });
       }
 
-      const kingdom = await db.get(
-        "SELECT id, fragment_bonuses, turn FROM kingdoms WHERE player_id = ?",
-        [req.player.playerId]
-      );
-      if (!kingdom) {
-        return res.status(404).json({ error: 'Kingdom not found' });
-      }
+      // Use transaction to prevent race conditions where multiple requests could activate simultaneously
+      await db.run('BEGIN TRANSACTION');
+      try {
+        const kingdom = await db.get(
+          "SELECT id, fragment_bonuses, turn FROM kingdoms WHERE player_id = ? FOR UPDATE",
+          [req.player.playerId]
+        );
+        if (!kingdom) {
+          await db.run('ROLLBACK');
+          return res.status(404).json({ error: 'Kingdom not found' });
+        }
 
-      // Get active synergy to verify it's the current active one
-      const activeSynergy = attunementManager.getActiveSynergy(kingdom);
-      if (!activeSynergy) {
-        return res.status(400).json({ error: 'No synergy currently active' });
-      }
+        // Get active synergy to verify it's the current active one
+        const activeSynergy = attunementManager.getActiveSynergy(kingdom);
+        if (!activeSynergy) {
+          await db.run('ROLLBACK');
+          return res.status(400).json({ error: 'No synergy currently active' });
+        }
 
-      if (activeSynergy.id !== synergy_id) {
-        return res.status(400).json({ error: 'This synergy is not currently active' });
-      }
+        if (activeSynergy.id !== synergy_id) {
+          await db.run('ROLLBACK');
+          return res.status(400).json({ error: 'This synergy is not currently active' });
+        }
 
-      // Check cooldown
-      const cooldown = await db.get(
-        "SELECT cooldown_until FROM synergy_cooldowns WHERE kingdom_id = ? AND synergy_id = ?",
-        [kingdom.id, synergy_id]
-      );
+        // Check cooldown with lock to prevent race condition
+        const cooldown = await db.get(
+          "SELECT cooldown_until FROM synergy_cooldowns WHERE kingdom_id = ? AND synergy_id = ? FOR UPDATE",
+          [kingdom.id, synergy_id]
+        );
 
-      const now = Math.floor(Date.now() / 1000);
-      if (cooldown && cooldown.cooldown_until > now) {
-        const remaining = cooldown.cooldown_until - now;
-        return res.status(429).json({
-          error: `Ability still on cooldown. ${Math.ceil(remaining / 86400)} day(s) remaining`,
+        const now = Math.floor(Date.now() / 1000);
+        if (cooldown && cooldown.cooldown_until > now) {
+          await db.run('ROLLBACK');
+          const remaining = cooldown.cooldown_until - now;
+          return res.status(429).json({
+            error: `Ability still on cooldown. ${Math.ceil(remaining / 86400)} day(s) remaining`,
+          });
+        }
+
+        // Get synergy definition to apply effects
+        const synergy = synergiesModule.getSynergy(synergy_id);
+        if (!synergy) {
+          await db.run('ROLLBACK');
+          return res.status(400).json({ error: 'Invalid synergy ID' });
+        }
+
+        // Apply ability effects - for now, just set cooldown
+        // Future: apply cost and penalty effects to kingdom state
+        const cooldownDays = synergy.active?.cooldown_days || 1;
+        const cooldownSeconds = cooldownDays * 86400;
+        const newCooldownUntil = now + cooldownSeconds;
+
+        // Upsert cooldown record within transaction
+        await db.run(
+          "INSERT INTO synergy_cooldowns (kingdom_id, synergy_id, cooldown_until) VALUES (?, ?, ?) ON CONFLICT(kingdom_id, synergy_id) DO UPDATE SET cooldown_until = ?",
+          [kingdom.id, synergy_id, newCooldownUntil, newCooldownUntil]
+        );
+
+        await db.run('COMMIT');
+
+        // Log the ability activation
+        console.log(`[synergy] Kingdom ${kingdom.id}: ${synergy_id} ability activated`);
+
+        res.json({
+          ok: true,
+          message: `${synergy.active?.name} activated!`,
+          cooldown_until: newCooldownUntil,
+          synergy: {
+            id: synergy.id,
+            name: synergy.name,
+            active_name: synergy.active?.name,
+          },
         });
+      } catch (txErr) {
+        await db.run('ROLLBACK');
+        throw txErr;
       }
-
-      // Get synergy definition to apply effects
-      const synergy = synergiesModule.getSynergy(synergy_id);
-      if (!synergy) {
-        return res.status(400).json({ error: 'Invalid synergy ID' });
-      }
-
-      // Apply ability effects - for now, just set cooldown
-      // Future: apply cost and penalty effects to kingdom state
-      const cooldownDays = synergy.active?.cooldown_days || 1;
-      const cooldownSeconds = cooldownDays * 86400;
-      const newCooldownUntil = now + cooldownSeconds;
-
-      // Upsert cooldown record
-      await db.run(
-        "INSERT INTO synergy_cooldowns (kingdom_id, synergy_id, cooldown_until) VALUES (?, ?, ?) ON CONFLICT(kingdom_id, synergy_id) DO UPDATE SET cooldown_until = ?",
-        [kingdom.id, synergy_id, newCooldownUntil, newCooldownUntil]
-      );
-
-      // Log the ability activation
-      console.log(`[synergy] Kingdom ${kingdom.id}: ${synergy_id} ability activated`);
-
-      res.json({
-        ok: true,
-        message: `${synergy.active?.name} activated!`,
-        cooldown_until: newCooldownUntil,
-        synergy: {
-          id: synergy.id,
-          name: synergy.name,
-          active_name: synergy.active?.name,
-        },
-      });
     } catch (err) {
       console.error('[synergy] activate ability failed:', err.message);
       res.status(500).json({ error: 'Failed to activate synergy ability' });
