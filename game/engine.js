@@ -1621,6 +1621,99 @@ function processGranaryAttunements(k, events) {
   return updates;
 }
 
+function processSmithyAttunements(k, events) {
+  const updates = {};
+  if (!k.bld_smithies) return updates;
+
+  const smithyAttune = fragmentBonusManager.getFragmentForBuilding(k, 'smithies');
+  if (!smithyAttune) return updates;
+
+  const fragmentName = smithyAttune.fragment;
+  const smithies = k.bld_smithies;
+
+  switch (fragmentName) {
+    case 'Dwarven Star-Metal': {
+      // Clockwork Star-Metal Forges: automated anvils auto-forge 1 hammer per 10 smithies per turn
+      const autoHammers = Math.floor(smithies / 10);
+      if (autoHammers > 0) {
+        updates.hammers_stored = (k.hammers_stored || 0) + autoHammers;
+        events.push({
+          type: 'system',
+          message: `⚙️ Clockwork Star-Metal Forges: automated anvils forged ${autoHammers} hammer(s).`
+        });
+      }
+      break;
+    }
+
+    case 'Tears of the World Tree': {
+      // Yggdrasil Fuel Glands: sap-reduced fuel costs save 10 gold per smithy per turn
+      const fuelSavings = smithies * 10;
+      updates.gold = (k.gold || 0) + fuelSavings;
+      events.push({
+        type: 'system',
+        message: `💧 Yggdrasil Fuel Glands: sap-soaked furnaces saved ${fuelSavings.toLocaleString()} gold in fuel costs.`
+      });
+      break;
+    }
+
+    case 'Void Essence': {
+      // Quantum Portal Anvils: 15% chance to dimensionally duplicate hammers (+1 per smithy)
+      if (roll(0.15)) {
+        const dupeHammers = smithies;
+        updates.hammers_stored = (k.hammers_stored || 0) + dupeHammers;
+        events.push({
+          type: 'system',
+          message: `🌌 Quantum Portal Anvils: dimensional duplication added ${dupeHammers} hammer(s).`
+        });
+      }
+      break;
+    }
+
+    case 'Cursed Bloodstone': {
+      // Sanguine Crucible: lifeforce sacrifice forges extra hammers (1 per 2 smithies),
+      // 10% chance of civic chaos (-1 happiness)
+      const cbHammers = Math.floor(smithies / 2);
+      if (cbHammers > 0) {
+        updates.hammers_stored = (k.hammers_stored || 0) + cbHammers;
+        events.push({
+          type: 'system',
+          message: `🩸 Sanguine Crucible: lifeforce fuels the forge (+${cbHammers} hammer(s)).`
+        });
+      }
+      if (roll(0.10)) {
+        const currentHappiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
+        updates.happiness = Math.max(-50, currentHappiness - 1);
+        events.push({
+          type: 'system',
+          message: `🩸 Cursed Bloodstone: chaotic forge costs spike civil tensions (-1 happiness).`
+        });
+      }
+      break;
+    }
+
+    case 'Titan Bone': {
+      // Mammoth Anvil Pillars: high-volume metalworking generates 1 blueprint per 20 smithies,
+      // capped at smithy blueprint capacity (25 per smithy)
+      const bpGain = Math.floor(smithies / 20);
+      if (bpGain > 0) {
+        const smithyCap = smithies * 25;
+        const curBP = k.blueprints_stored || 0;
+        if (curBP < smithyCap) {
+          const actualGain = Math.min(bpGain, smithyCap - curBP);
+          updates.blueprints_stored = curBP + actualGain;
+          events.push({
+            type: 'system',
+            message: `🦴 Mammoth Anvil Pillars: high-volume metalworking generated ${actualGain} blueprint(s).`
+          });
+        }
+      }
+      break;
+    }
+  }
+
+  return updates;
+}
+
 function processMercenaries(k, events) {
   const updates = {};
   const mercs = safeJsonParse(
@@ -2086,6 +2179,10 @@ function processTurn(k, db = null) {
   // ── 4a. Granary attunement special abilities ──────────────────────────────────
   const granaryAbilityUpdates = processGranaryAttunements({ ...k, ...updates }, events);
   Object.assign(updates, granaryAbilityUpdates);
+
+  // ── 4a-ii. Smithy attunement special abilities ────────────────────────────────
+  const smithyAbilityUpdates = processSmithyAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, smithyAbilityUpdates);
 
   // ── 4b. Resource production (wood / stone / iron) ────────────────────────────
   const resourceUpdates = processResourceYield({ ...k, ...updates }, events);
@@ -3911,9 +4008,12 @@ function processBuildQueue(k, events, xpSourcesAccum) {
   const raceConstr = raceBonus(k, "construction");
   const engLevelMult = unitLevelMult(k, "engineers");
   const resConstr = (k.res_construction || 100) / 100;
-  const smithySpeedMult = fragmentBonusManager.getBonusMultiplier(k, 'smithies', 'speed');
-  const smithyProdMult = fragmentBonusManager.getBonusMultiplier(k, 'smithies', 'production');
-  const smithyQualityMult = fragmentBonusManager.getBonusMultiplier(k, 'smithies', 'quality');
+  // Single fragment parse for smithy bonuses — avoids 3× JSON parsing overhead
+  const smithyFragment = fragmentBonusManager.getFragmentForBuilding(k, 'smithies');
+  const sPassive = smithyFragment?.passive || {};
+  const smithySpeedMult = 1.0 + (sPassive.speed || 0);
+  const smithyProdMult = 1.0 + (sPassive.production || 0);
+  const smithyQualityMult = 1.0 + (sPassive.quality || 0);
   const effectiveSmithyMult = smithySpeedMult * smithyProdMult * smithyQualityMult;
   const baseToolMult =
     hammerBonus * smithyBonus * raceConstr * engLevelMult * resConstr * effectiveSmithyMult;
@@ -8318,6 +8418,7 @@ module.exports = {
   commodityPrice,
   processFoodEconomy,
   processGranaryAttunements,
+  processSmithyAttunements,
   processMercenaries,
   hireMercenaries,
   purchaseUpgrade,
