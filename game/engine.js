@@ -218,8 +218,12 @@ function goldPerTurn(k) {
   // Apply tavern bonus for gold generation (+5% per tavern)
   const tavernBonus = 1 + (((k.bld_taverns || 0) * 0.05));
 
+  // Vault fragment economy_output passive boosts base income
+  const vaultFrag = fragmentBonusManager.getFragmentForBuilding(k, 'vaults');
+  const vaultEconomyMult = 1.0 + (vaultFrag?.passive?.economy_output || 0);
+
   // milestoneMult applies only to core land/castle income; mktIncome stays flat
-  return Math.floor((baseRate + castleBonus) * econBonus * 2.25 * milestoneMult * happinessMult * tavernBonus) + mktIncome;
+  return Math.floor((baseRate + castleBonus) * econBonus * 2.25 * milestoneMult * happinessMult * tavernBonus * vaultEconomyMult) + mktIncome;
 }
 
 function manaPerTurn(k) {
@@ -1621,6 +1625,56 @@ function processGranaryAttunements(k, events) {
   return updates;
 }
 
+function processVaultAttunements(k, events) {
+  const updates = {};
+  if (!k.bld_vaults) return updates;
+
+  const vaultAttune = fragmentBonusManager.getFragmentForBuilding(k, 'vaults');
+  if (!vaultAttune) return updates;
+
+  const fragmentName = vaultAttune.fragment;
+  const currentHappiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
+
+  switch (fragmentName) {
+    case 'Tears of the World Tree': {
+      // Yggdrasil Resin Casings: amber resin compounds financial growth (+5 gold/vault/turn)
+      const goldGain = k.bld_vaults * 5;
+      updates.gold = (k.gold || 0) + goldGain;
+      events.push({
+        type: 'system',
+        message: `💧 Yggdrasil Resin Casings: amber-preserved reserves grew by ${goldGain.toLocaleString()} gold.`
+      });
+      break;
+    }
+
+    case 'Cursed Bloodstone': {
+      // Sanguine Vault Tax: dark alchemical currency, 10% chance civic instability (-1 happiness)
+      if (roll(0.10)) {
+        updates.happiness = Math.max(-50, currentHappiness - 1);
+        events.push({
+          type: 'system',
+          message: `🩸 Sanguine Vault Tax: dark alchemical currency spikes instability (-1 happiness).`
+        });
+      }
+      break;
+    }
+
+    case 'Void Essence': {
+      // Dimensional Pocket Vaults: 15% chance spatial lag from dimensional banking unsettles citizens
+      if (roll(0.15)) {
+        updates.happiness = Math.max(-50, currentHappiness - 1);
+        events.push({
+          type: 'system',
+          message: `🌌 Dimensional Pocket Vaults: spatial lag from sub-dimensional banking unsettles citizens (-1 happiness).`
+        });
+      }
+      break;
+    }
+  }
+
+  return updates;
+}
+
 function processMercenaries(k, events) {
   const updates = {};
   const mercs = safeJsonParse(
@@ -2086,6 +2140,10 @@ function processTurn(k, db = null) {
   // ── 4a. Granary attunement special abilities ──────────────────────────────────
   const granaryAbilityUpdates = processGranaryAttunements({ ...k, ...updates }, events);
   Object.assign(updates, granaryAbilityUpdates);
+
+  // ── 4a-ii. Vault attunement special abilities ─────────────────────────────────
+  const vaultAbilityUpdates = processVaultAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, vaultAbilityUpdates);
 
   // ── 4b. Resource production (wood / stone / iron) ────────────────────────────
   const resourceUpdates = processResourceYield({ ...k, ...updates }, events);
@@ -5997,12 +6055,16 @@ function covertLoot(thief, target, requestedLootType, thievesSent) {
   const lootMb = safeJsonParse(thief.milestone_bonuses, {}, "covertLoot:mb");
   const lootMilestoneMult = 1 + (lootMb.covert_pct || 0) / 100;
   const stealthMulti = raceBonus(thief, "stealth") * thiefLvMult * lootMilestoneMult;
+  // Parse target vault fragment once — used for espionage_shield, gold_security, hoard_protection
+  const targetVaultFrag = fragmentBonusManager.getFragmentForBuilding(target, 'vaults');
+  const tVaultPassive = targetVaultFrag?.passive || {};
+  const vaultEspionageShield = 1.0 + (tVaultPassive.espionage_shield || 0);
   const success =
     thief.thieves * stealthMulti >
     target.fighters * 0.015 +
       target.bld_guard_towers * 3 +
       target.bld_armories * 10 +
-      target.bld_vaults * 10;
+      target.bld_vaults * 10 * vaultEspionageShield;
   if (!success) {
     return {
       success: false,
@@ -6052,25 +6114,40 @@ function covertLoot(thief, target, requestedLootType, thievesSent) {
     goldFloor = Math.floor(target.gold * 0.25);
   }
 
+  let hoardBurnLoss = 0; // thieves burned by Dragon Scale vault hoard_protection
+
   // Level scales loot amount
   if (actualLootType === "gold") {
     stolen = Math.floor(thievesSent * (50 + Math.random() * 50) * thiefLvMult);
     stolen = Math.min(stolen, Math.floor(target.gold * 0.05));
 
-    // Dwarven Star-Metal vaults prevent the treasury from being looted
-    const vaultFragment = fragmentBonusManager.getFragmentForBuilding(target, 'vaults');
-    if (vaultFragment && vaultFragment.fragment === 'Dwarven Star-Metal') {
+    // Dwarven Star-Metal vaults prevent the treasury from being looted entirely
+    if (targetVaultFrag && targetVaultFrag.fragment === 'Dwarven Star-Metal') {
       stolen = 0;
       desc = `0 gold — protected by Star-Metal gear locks`;
     } else {
-      // Protect gold
+      // gold_security passive reduces theft amount (capped at 95% reduction)
+      const goldSecReduction = Math.min(0.95, tVaultPassive.gold_security || 0);
+      stolen = Math.floor(stolen * (1.0 - goldSecReduction));
+
+      // Protect gold floor
       if (target.gold - stolen < goldFloor) {
         stolen = target.gold - goldFloor;
         if (stolen < 0) stolen = 0;
       }
 
-      targetUpdates.gold = target.gold - stolen;
+      if (stolen > 0) {
+        targetUpdates.gold = target.gold - stolen;
+      }
       desc = `${stolen.toLocaleString()} gold`;
+
+      // Dragon Scale hoard_protection: draconic curse burns 50% of thievesSent on success
+      if (targetVaultFrag && targetVaultFrag.fragment === 'Dragon Scale' && stolen > 0) {
+        hoardBurnLoss = Math.floor(thievesSent * 0.50);
+        if (hoardBurnLoss > 0) {
+          desc += ` (draconic curse burned ${hoardBurnLoss} thief/thieves)`;
+        }
+      }
     }
   } else if (actualLootType === "war_machines") {
     stolen = Math.floor(thievesSent * 0.01 * thiefLvMult);
@@ -6142,12 +6219,16 @@ function covertLoot(thief, target, requestedLootType, thievesSent) {
   }
 
   const tXp = awardTroopXp(thief, "thieves", 20);
+  const thiefUpdates = { troop_levels: tXp.troop_levels };
+  if (hoardBurnLoss > 0) {
+    thiefUpdates.thieves = Math.max(0, (thief.thieves || 0) - hoardBurnLoss);
+  }
   return {
     success: true,
     stolen,
     lootType,
     actualLootType,
-    thiefUpdates: { troop_levels: tXp.troop_levels },
+    thiefUpdates,
     targetUpdates,
     thiefEvent: `Looted ${desc} from ${target.name}.`,
     targetEvent: `Thieves infiltrated your kingdom and stole ${desc}.`,
@@ -8318,6 +8399,7 @@ module.exports = {
   commodityPrice,
   processFoodEconomy,
   processGranaryAttunements,
+  processVaultAttunements,
   processMercenaries,
   hireMercenaries,
   purchaseUpgrade,
