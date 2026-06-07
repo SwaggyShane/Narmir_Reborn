@@ -1675,6 +1675,33 @@ function processVaultAttunements(k, events) {
   return updates;
 }
 
+function processBarracksAttunements(k, events) {
+  const updates = {};
+  if (!k.bld_barracks) return updates;
+
+  const barracksAttune = fragmentBonusManager.getFragmentForBuilding(k, 'barracks');
+  if (!barracksAttune) return updates;
+
+  const fragmentName = barracksAttune.fragment;
+  const currentHappiness = k.happiness ?? 50;
+
+  switch (fragmentName) {
+    case 'Cursed Bloodstone': {
+      // Sanguine Ritual Circles: blood rituals multiply recruit rates but civil unrest risks -1 happiness (10%)
+      if (roll(0.10)) {
+        updates.happiness = Math.max(-50, currentHappiness - 1);
+        events.push({
+          type: 'system',
+          message: `🩸 Sanguine Ritual Circles: dark blood rites spark civil unrest (-1 happiness).`
+        });
+      }
+      break;
+    }
+  }
+
+  return updates;
+}
+
 function processMercenaries(k, events) {
   const updates = {};
   const mercs = safeJsonParse(
@@ -2144,6 +2171,10 @@ function processTurn(k, db = null) {
   // ── 4a-ii. Vault attunement special abilities ─────────────────────────────────
   const vaultAbilityUpdates = processVaultAttunements({ ...k, ...updates }, events);
   Object.assign(updates, vaultAbilityUpdates);
+
+  // ── 4a-iii. Barracks attunement special abilities ─────────────────────────────
+  const barracksAbilityUpdates = processBarracksAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, barracksAbilityUpdates);
 
   // ── 4b. Resource production (wood / stone / iron) ────────────────────────────
   const resourceUpdates = processResourceYield({ ...k, ...updates }, events);
@@ -8407,6 +8438,7 @@ module.exports = {
   processFoodEconomy,
   processGranaryAttunements,
   processVaultAttunements,
+  processBarracksAttunements,
   processMercenaries,
   hireMercenaries,
   purchaseUpgrade,
