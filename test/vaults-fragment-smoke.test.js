@@ -305,7 +305,6 @@ function test_covertLoot_goldSecurity_reducesStolen() {
   const thief = baseThief();
   const targetBase = baseTarget();
   const targetFrag = baseTarget({ fragment_bonuses: withTargetVaultFrag('Volcanic Rock') });
-  // Need deterministic Math.random for fair comparison
   const origRandom = Math.random;
   Math.random = () => 0.5;
   try {
@@ -313,11 +312,11 @@ function test_covertLoot_goldSecurity_reducesStolen() {
     const resBase = covertLoot(thief, targetBase, 'gold', 100);
     clearParseCache();
     const resFrag = covertLoot(thief, targetFrag, 'gold', 100);
-    if (resBase.success && resFrag.success) {
-      // Volcanic Rock gold_security: 0.30 → 30% less stolen
-      assert.ok(resFrag.stolen <= resBase.stolen, 'gold_security reduces amount stolen');
-      assert.ok(Math.abs(resFrag.stolen / resBase.stolen - 0.70) < 0.01, 'stolen ≈ 70% of base');
-    }
+    assert.ok(resBase.success, 'base loot should succeed');
+    assert.ok(resFrag.success, 'frag loot should succeed');
+    // Volcanic Rock gold_security: 0.30 → 30% less stolen
+    assert.ok(resFrag.stolen <= resBase.stolen, 'gold_security reduces amount stolen');
+    assert.ok(Math.abs(resFrag.stolen / resBase.stolen - 0.70) < 0.01, 'stolen ≈ 70% of base');
   } finally {
     Math.random = origRandom;
   }
@@ -342,12 +341,12 @@ function test_covertLoot_dragonScale_burnThieves() {
     const target = baseTarget({ fragment_bonuses: withTargetVaultFrag('Dragon Scale') });
     clearParseCache();
     const result = covertLoot(thief, target, 'gold', 100);
-    if (result.success && result.stolen > 0) {
-      // Dragon Scale hoard_protection: 50% of thievesSent burned
-      assert.ok(result.thiefUpdates.thieves !== undefined, 'thieves update present');
-      assert.strictEqual(result.thiefUpdates.thieves, 200 - 50, '50 of 100 thievesSent burned (50%)');
-      assert.ok(result.thiefEvent.includes('burned'), 'burn message in event');
-    }
+    assert.ok(result.success, 'loot should succeed');
+    assert.ok(result.stolen > 0, 'some gold stolen');
+    // Dragon Scale hoard_protection: 50% of thievesSent burned
+    assert.ok(result.thiefUpdates.thieves !== undefined, 'thieves update present');
+    assert.strictEqual(result.thiefUpdates.thieves, 200 - 50, '50 of 100 thievesSent burned (50%)');
+    assert.ok(result.thiefEvent.includes('burned'), 'burn message in event');
   } finally {
     Math.random = origRandom;
   }
@@ -356,25 +355,21 @@ function test_covertLoot_dragonScale_burnThieves() {
 function test_covertLoot_espionageShield_harderToSucceed() {
   clearParseCache();
   // Ancient Elven Wood espionage_shield: 0.30 → vaults contribute 30% more defense
-  // With a borderline thief count, shield should flip success to failure
-  const thief = { ...baseThief(), thieves: 5 }; // very few thieves
+  // 10 vaults → base defense 100; with shield → 130. Use 110 thieves to straddle the threshold.
+  // success = thieves * stealthMulti > vaultDefense
+  // 110 > 100 → base succeeds; 110 > 130 → shield blocks
+  const thief = { ...baseThief(), thieves: 110 };
   const targetBase = baseTarget({ bld_vaults: 10 });
   const targetShield = baseTarget({
     bld_vaults: 10,
     fragment_bonuses: withTargetVaultFrag('Ancient Elven Wood'),
   });
   clearParseCache();
-  const resBase = covertLoot(thief, targetBase, 'gold', 5);
+  const resBase = covertLoot(thief, targetBase, 'gold', 110);
   clearParseCache();
-  const resShield = covertLoot(thief, targetShield, 'gold', 5);
-  // Shield should make it harder — either both fail (shield defends), or shield one fails when base succeeds
-  if (resBase.success) {
-    // Shield either also succeeds (just harder) or fails — both acceptable, just confirm no crash
-    assert.ok(typeof resShield.success === 'boolean', 'result has success field');
-  } else {
-    // If base already fails, shield doesn't need to be tested further
-    assert.ok(true);
-  }
+  const resShield = covertLoot(thief, targetShield, 'gold', 110);
+  assert.strictEqual(resBase.success, true, 'base succeeds: 110 thieves > 100 vault defense');
+  assert.strictEqual(resShield.success, false, 'shield blocks: 110 thieves ≤ 130 vault defense');
 }
 
 // ── Run all tests ─────────────────────────────────────────────────────────────
