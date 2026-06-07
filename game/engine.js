@@ -1644,11 +1644,13 @@ function processTavernAttunements(k, events) {
 
   switch (fragmentName) {
     case 'Volcanic Rock':
-      updates.happiness = Math.min(120, currentHappiness + 1);
-      events.push({
-        type: 'system',
-        message: `🌋 Molten Mug Distilleries: hot brews keep spirits high (+1 happiness).`
-      });
+      if (currentHappiness < 120) {
+        updates.happiness = currentHappiness + 1;
+        events.push({
+          type: 'system',
+          message: `🌋 Molten Mug Distilleries: hot brews keep spirits high (+1 happiness).`
+        });
+      }
       break;
 
     case 'Celestial Feather': {
@@ -1664,48 +1666,54 @@ function processTavernAttunements(k, events) {
     }
 
     case 'Cursed Bloodstone': {
-      // The Cruor Blood Club: +2 happiness, 10% chance -1 chaos penalty
-      let cbHappiness = Math.min(120, currentHappiness + 2);
-      events.push({
-        type: 'system',
-        message: `🩸 The Cruor Blood Club: forbidden nectar maximizes morale (+2 happiness).`
-      });
-      if (Math.random() < 0.10) {
-        cbHappiness = Math.max(-50, cbHappiness - 1);
+      // The Cruor Blood Club: net delta computed before clamping to avoid penalty reversing a capped gain
+      if (currentHappiness < 120) {
+        const chaosTriggered = roll(0.10);
+        const delta = chaosTriggered ? 1 : 2;
+        updates.happiness = Math.min(120, currentHappiness + delta);
         events.push({
           type: 'system',
-          message: `🩸 Cursed Bloodstone chaos: civil tensions spike (-1 happiness).`
+          message: `🩸 The Cruor Blood Club: forbidden nectar maximizes morale (+2 happiness).`
         });
+        if (chaosTriggered) {
+          events.push({
+            type: 'system',
+            message: `🩸 Cursed Bloodstone chaos: civil tensions spike (-1 happiness).`
+          });
+        }
       }
-      updates.happiness = cbHappiness;
       break;
     }
 
     case 'Void Essence': {
-      // The Singularity Saloon: +3 happiness, 15% chance -2 spatial absences
-      let veHappiness = Math.min(120, currentHappiness + 3);
-      events.push({
-        type: 'system',
-        message: `🌌 The Singularity Saloon: interdimensional taprooms boost morale (+3 happiness).`
-      });
-      if (Math.random() < 0.15) {
-        veHappiness = Math.max(-50, veHappiness - 2);
+      // The Singularity Saloon: net delta computed before clamping to avoid penalty reversing a capped gain
+      if (currentHappiness < 120) {
+        const absenceTriggered = roll(0.15);
+        const delta = absenceTriggered ? 1 : 3;
+        updates.happiness = Math.min(120, currentHappiness + delta);
         events.push({
           type: 'system',
-          message: `🌌 Void Essence: brief spatial absences disturb citizens (-2 happiness).`
+          message: `🌌 The Singularity Saloon: interdimensional taprooms boost morale (+3 happiness).`
         });
+        if (absenceTriggered) {
+          events.push({
+            type: 'system',
+            message: `🌌 Void Essence: brief spatial absences disturb citizens (-2 happiness).`
+          });
+        }
       }
-      updates.happiness = veHappiness;
       break;
     }
 
     case 'Titan Bone':
       // Goliath Drink Halls: +1 happiness from grand festivals
-      updates.happiness = Math.min(120, currentHappiness + 1);
-      events.push({
-        type: 'system',
-        message: `🦴 Goliath Drink Halls: grand festivals in titanic halls lift spirits (+1 happiness).`
-      });
+      if (currentHappiness < 120) {
+        updates.happiness = currentHappiness + 1;
+        events.push({
+          type: 'system',
+          message: `🦴 Goliath Drink Halls: grand festivals in titanic halls lift spirits (+1 happiness).`
+        });
+      }
       break;
   }
 

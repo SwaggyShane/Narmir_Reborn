@@ -336,6 +336,32 @@ function test_attunements_happiness_clampAt120() {
   }
 }
 
+function test_attunements_noUpdateAt120() {
+  clearParseCache();
+  // At cap, Volcanic Rock should produce no update or event (no log spam)
+  const k = baseKingdom({ happiness: 120, fragment_bonuses: withTavernFragment('Volcanic Rock') });
+  const events = [];
+  const updates = processTavernAttunements(k, events);
+  assert.strictEqual(updates.happiness, undefined, 'no update when already at 120');
+  assert.strictEqual(events.length, 0, 'no event when already at 120');
+}
+
+function test_attunements_cursedBloodstone_at120_noNetLoss() {
+  clearParseCache();
+  // When capped at 120, chaos penalty must NOT fire and cause net loss
+  const origRandom = Math.random;
+  Math.random = () => 0.05; // would trigger chaos if logic were wrong
+  try {
+    const k = baseKingdom({ happiness: 120, fragment_bonuses: withTavernFragment('Cursed Bloodstone') });
+    const events = [];
+    const updates = processTavernAttunements(k, events);
+    assert.strictEqual(updates.happiness, undefined, 'no update when already at 120');
+    assert.strictEqual(events.length, 0, 'no events at cap');
+  } finally {
+    Math.random = origRandom;
+  }
+}
+
 // ── hireMercenaries — Tears of the World Tree discount ──────────────────────
 
 function test_hireMerc_noDiscount() {
@@ -475,6 +501,8 @@ const tests = [
   test_attunements_voidEssence_absence,
   test_attunements_titanBone,
   test_attunements_happiness_clampAt120,
+  test_attunements_noUpdateAt120,
+  test_attunements_cursedBloodstone_at120_noNetLoss,
   test_hireMerc_noDiscount,
   test_hireMerc_withTearsOfWorldTree,
   test_hireMerc_otherFragment_noDiscount,
