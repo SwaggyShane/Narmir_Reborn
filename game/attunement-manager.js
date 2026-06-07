@@ -282,6 +282,13 @@ function getContributingSynergies(buildingType, fragmentName) {
 }
 
 /**
+ * Get all synergies
+ */
+function getAllSynergies() {
+  return Object.values(synergiesModule.SYNERGIES);
+}
+
+/**
  * Get synergy status for UI display
  */
 function getSynergyStatus(kingdom) {
@@ -321,5 +328,6 @@ module.exports = {
   getActiveSynergy,
   getNearActivationSynergies,
   getContributingSynergies,
+  getAllSynergies,
   getSynergyStatus,
 };

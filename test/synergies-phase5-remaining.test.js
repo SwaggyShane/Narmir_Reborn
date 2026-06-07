@@ -60,19 +60,29 @@ console.log('Testing Phase 5: Remaining Synergy Passive Bonuses\n');
   console.log('✓ Production speed bonus verified\n');
 }
 
-// Test 5: Stability bonus configuration
+// Test 5: Stability configuration verification
 {
-  console.log('Test 5: Stability effects in synergies');
+  console.log('Test 5: Stability effects are configured in active properties');
+
+  let stabilityEffectsFound = 0;
 
   for (const synergy of Object.values(SYNERGIES)) {
-    if (synergy.passive.effects.stability !== undefined) {
-      assert.ok(typeof synergy.passive.effects.stability === 'number',
-        `${synergy.name} stability should be a number`);
+    // Stability is typically an active cost/penalty, not a passive effect
+    if (synergy.active && synergy.active.cost) {
+      if (typeof synergy.active.cost.stability !== 'undefined') {
+        stabilityEffectsFound++;
+      }
+    }
+    if (synergy.active && synergy.active.penalty) {
+      if (typeof synergy.active.penalty.stability !== 'undefined') {
+        stabilityEffectsFound++;
+      }
     }
   }
 
-  // Note: Stability effects may not be in all synergies - that's OK
-  console.log('✓ Stability effects checked\n');
+  // Verify that stability effects exist in active properties (not passive)
+  assert.ok(stabilityEffectsFound > 0, 'Stability effects should be configured in active abilities');
+  console.log(`✓ Found ${stabilityEffectsFound} stability effects in active abilities\n`);
 }
 
 // Test 6: Research cost reduction bonus
@@ -130,11 +140,11 @@ console.log('Testing Phase 5: Remaining Synergy Passive Bonuses\n');
 {
   console.log('Test 10: Synergy effects can be retrieved via attunement manager');
 
-  const allSynergies = attunementManager.getAllSynergies &&
-    attunementManager.getAllSynergies() ||
-    Object.values(SYNERGIES);
+  const allSynergies = attunementManager.getAllSynergies();
 
-  assert.ok(allSynergies.length === 10, 'Should have 10 synergies');
+  assert.ok(allSynergies, 'getAllSynergies should return a value');
+  assert.ok(Array.isArray(allSynergies), 'getAllSynergies should return an array');
+  assert.equal(allSynergies.length, 10, 'Should have 10 synergies');
 
   for (const synergy of allSynergies) {
     assert.ok(synergy.passive, `${synergy.name} should have passive`);
