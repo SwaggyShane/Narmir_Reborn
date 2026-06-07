@@ -7,6 +7,23 @@ const { SYNERGIES } = require('./fragment-synergies');
 const attunementManager = require('./attunement-manager');
 
 /**
+ * Safely parse a JSON field that might be a string or already an object/array
+ */
+function parseJsonField(field, defaultValue = {}) {
+  if (typeof field === 'object' && field !== null) {
+    return field;
+  }
+  if (typeof field === 'string' && field.trim() !== '') {
+    try {
+      return JSON.parse(field);
+    } catch {
+      return defaultValue;
+    }
+  }
+  return defaultValue;
+}
+
+/**
  * Check if an ability can be triggered (cooldown check)
  */
 function canTriggerAbility(kingdom, synergyId) {
@@ -22,14 +39,7 @@ function canTriggerAbility(kingdom, synergyId) {
   }
 
   // Check cooldown
-  const cooldownsJson = kingdom.synergy_cooldowns || '{}';
-  let cooldowns = {};
-  try {
-    cooldowns = JSON.parse(cooldownsJson);
-  } catch {
-    cooldowns = {};
-  }
-
+  const cooldowns = parseJsonField(kingdom.synergy_cooldowns, {});
   const cooldownData = cooldowns[synergyId];
   if (cooldownData && cooldownData.cooldown_until) {
     const now = Date.now();
@@ -131,11 +141,13 @@ function applyCost(kingdom, synergyId) {
     updates.mana = Math.ceil(kingdom.mana * (1 - cost.mana_percent));
   }
 
-  // Troops cost
+  // Troops cost - update both individual columns and troop_levels JSON
   if (cost.troops_percent) {
     const totalTroops = getTotalTroops(kingdom);
     const toRemove = Math.ceil(totalTroops * cost.troops_percent);
-    updates.troop_levels = JSON.stringify(removeTroops(kingdom, toRemove));
+    const { troop_levels, updates: troopUpdates } = removeTroops(kingdom, toRemove);
+    updates.troop_levels = JSON.stringify(troop_levels);
+    Object.assign(updates, troopUpdates);
   }
 
   // Stability cost (penalty, not removal)
@@ -170,12 +182,12 @@ function applyBenefit(kingdom, synergyId) {
   const benefit = synergy.active.benefit;
   const benefitDuration = synergy.active.benefit_duration_days || 0;
   const updates = {};
-  const activeEffects = JSON.parse(kingdom.active_effects || '{}');
+  const activeEffects = parseJsonField(kingdom.active_effects, {});
   let hasBenefit = false;
 
-  // Food storage fill
+  // Food storage fill - use correct game formula
   if (benefit.food_storage_fill) {
-    updates.food = kingdom.bld_granaries ? kingdom.bld_granaries * 1000 : kingdom.food;
+    updates.food = 10000 + (kingdom.bld_granaries || 0) * 100000;
     hasBenefit = true;
   }
 
@@ -195,19 +207,42 @@ function applyBenefit(kingdom, synergyId) {
     hasBenefit = true;
   }
 
-  // Research/Production completion
+  // Research completion - complete focused research disciplines
   if (benefit.complete_all_research) {
-    const research = JSON.parse(kingdom.research_progress || '{}');
-    const focus = JSON.parse(kingdom.research_focus || '[]');
+    const RESEARCH_MAP = {
+      economy: 'res_economy',
+      weapons: 'res_weapons',
+      armor: 'res_armor',
+      military: 'res_military',
+      attack_magic: 'res_attack_magic',
+      defense_magic: 'res_defense_magic',
+      entertainment: 'res_entertainment',
+      construction: 'res_construction',
+      war_machines: 'res_war_machines',
+      spellbook: 'res_spellbook',
+    };
+    const focus = parseJsonField(kingdom.research_focus, []);
     focus.forEach(tech => {
-      research[tech] = 100;
+      const col = RESEARCH_MAP[tech];
+      if (col) {
+        updates[col] = 100; // Set to max level
+      }
     });
-    updates.research_progress = JSON.stringify(research);
+    updates.research_progress = JSON.stringify({}); // Clear progress
     hasBenefit = true;
   }
 
+  // Production completion - complete all queued buildings
   if (benefit.complete_all_production) {
-    updates.production_completed = true;
+    const buildQueue = parseJsonField(kingdom.build_queue, {});
+    for (const [queueId, buildJob] of Object.entries(buildQueue)) {
+      const col = buildJob.building;
+      if (col) {
+        updates[col] = (updates[col] !== undefined ? updates[col] : (kingdom[col] || 0)) + 1;
+      }
+    }
+    updates.build_queue = JSON.stringify({});
+    updates.build_progress = JSON.stringify({});
     hasBenefit = true;
   }
 
@@ -240,7 +275,7 @@ function applyPenalty(kingdom, synergyId) {
 
   const penalty = synergy.active.penalty;
   const penaltyDuration = synergy.active.penalty_duration_days || 0;
-  const activeEffects = JSON.parse(kingdom.active_effects || '{}');
+  const activeEffects = parseJsonField(kingdom.active_effects, {});
 
   // Store penalty info in active_effects
   activeEffects.synergy_penalty = {
@@ -283,7 +318,7 @@ function triggerAbility(kingdom, synergyId) {
   updated = applyPenalty(updated, synergyId);
 
   // Set cooldown
-  const cooldowns = JSON.parse(updated.synergy_cooldowns || '{}');
+  const cooldowns = parseJsonField(updated.synergy_cooldowns, {});
   const cooldownDays = synergy.active.cooldown_days || 1;
   const cooldownUntil = Date.now() + (cooldownDays * 24 * 60 * 60 * 1000);
 
@@ -307,7 +342,7 @@ function triggerAbility(kingdom, synergyId) {
  * Get ability cooldown status
  */
 function getAbilityCooldown(kingdom, synergyId) {
-  const cooldowns = JSON.parse(kingdom.synergy_cooldowns || '{}');
+  const cooldowns = parseJsonField(kingdom.synergy_cooldowns, {});
   const cooldownData = cooldowns[synergyId];
 
   if (!cooldownData || !cooldownData.cooldown_until) {
@@ -334,28 +369,69 @@ function getAbilityCooldown(kingdom, synergyId) {
 }
 
 /**
- * Get total troops in kingdom
+ * Get total troops in kingdom - check actual columns first, fallback to JSON
  */
 function getTotalTroops(kingdom) {
-  const troops = JSON.parse(kingdom.troop_levels || '{}');
-  return Object.values(troops).reduce((sum, count) => sum + (count || 0), 0);
+  const troopTypes = ['fighters', 'rangers', 'clerics', 'mages', 'thieves', 'ninjas', 'engineers', 'scribes', 'researchers'];
+  const columnSum = troopTypes.reduce((sum, type) => sum + (kingdom[type] || 0), 0);
+  if (columnSum > 0) return columnSum;
+
+  // Fallback for test cases using troop_levels JSON directly
+  const troops = parseJsonField(kingdom.troop_levels, {});
+  return Object.values(troops).reduce((sum, val) => {
+    const count = typeof val === 'object' && val !== null ? (val.count || 0) : (typeof val === 'number' ? val : 0);
+    return sum + count;
+  }, 0);
 }
 
 /**
- * Remove troops from kingdom
+ * Remove troops from kingdom - update both columns and JSON
  */
 function removeTroops(kingdom, count) {
-  const troops = JSON.parse(kingdom.troop_levels || '{}');
+  const troops = parseJsonField(kingdom.troop_levels, {});
   let remaining = count;
+  const updates = {};
+  const troopTypes = ['fighters', 'rangers', 'clerics', 'mages', 'thieves', 'ninjas', 'engineers', 'scribes', 'researchers'];
 
-  for (const type of Object.keys(troops).reverse()) {
+  // First pass: deduct from actual kingdom columns
+  for (const type of [...troopTypes].reverse()) {
     if (remaining <= 0) break;
-    const toRemove = Math.min(remaining, troops[type]);
-    troops[type] -= toRemove;
-    remaining -= toRemove;
+    const currentCount = kingdom[type] || 0;
+    if (currentCount > 0) {
+      const toRemove = Math.min(remaining, currentCount);
+      updates[type] = currentCount - toRemove;
+      remaining -= toRemove;
+
+      // Also update JSON representation if present
+      if (troops[type]) {
+        if (typeof troops[type] === 'object' && troops[type] !== null) {
+          troops[type].count = Math.max(0, (troops[type].count || 0) - toRemove);
+        } else if (typeof troops[type] === 'number') {
+          troops[type] = Math.max(0, troops[type] - toRemove);
+        }
+      }
+    }
   }
 
-  return troops;
+  // Fallback for test cases where columns are not defined
+  if (remaining > 0) {
+    for (const type of Object.keys(troops).reverse()) {
+      if (remaining <= 0) break;
+      const val = troops[type];
+      const currentCount = typeof val === 'object' && val !== null ? (val.count || 0) : (typeof val === 'number' ? val : 0);
+      if (currentCount > 0) {
+        const toRemove = Math.min(remaining, currentCount);
+        remaining -= toRemove;
+        if (typeof val === 'object' && val !== null) {
+          val.count = Math.max(0, (val.count || 0) - toRemove);
+        } else {
+          troops[type] = Math.max(0, troops[type] - toRemove);
+        }
+      }
+    }
+  }
+
+  return { troop_levels: troops, updates };
 }
 
 module.exports = {
@@ -366,4 +442,5 @@ module.exports = {
   applyPenalty,
   triggerAbility,
   getAbilityCooldown,
+  parseJsonField,
 };

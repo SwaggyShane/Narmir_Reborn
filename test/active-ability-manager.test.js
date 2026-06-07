@@ -251,12 +251,13 @@ function createKingdomWithSynergy(synergyId) {
 
   // Test troop cost
   kingdom = createKingdomWithSynergy('void-convergence');
-  kingdom.troop_levels = JSON.stringify({ swordsmen: 1000, archers: 500 });
+  kingdom.fighters = 1000;
+  kingdom.rangers = 500;
+  kingdom.troop_levels = JSON.stringify({ fighters: { count: 1000 }, rangers: { count: 500 } });
   updated = abilityManager.applyCost(kingdom, 'void-convergence');
-  const troops = JSON.parse(updated.troop_levels || '{}');
   const totalBefore = 1500;
-  const totalAfter = Object.values(troops).reduce((sum, count) => sum + count, 0);
-  assert.ok(totalAfter < totalBefore, 'Troops should decrease');
+  const totalAfter = (updated.fighters || 0) + (updated.rangers || 0);
+  assert.ok(totalAfter < totalBefore, `Troops should decrease (before: ${totalBefore}, after: ${totalAfter})`);
 
   console.log('✓ Different cost types applied correctly\n');
 }
