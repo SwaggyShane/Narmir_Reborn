@@ -1781,6 +1781,45 @@ function processOutpostAttunements(k, events = []) {
   return updates;
 }
 
+function processTrainingAttunements(k, events = []) {
+  const updates = {};
+  if (!k.bld_training) return updates;
+
+  const trainingAttune = fragmentBonusManager.getFragmentForBuilding(k, 'training');
+  if (!trainingAttune) return updates;
+
+  const fragmentName = trainingAttune.fragment;
+  const currentHappiness = k.happiness ?? 50;
+
+  switch (fragmentName) {
+    case 'Cursed Bloodstone': {
+      // Crucible Agony Training: chaotic blood rites reduce tactical compliance, 10% chance -1 happiness
+      if (roll(0.10)) {
+        updates.happiness = Math.max(-50, currentHappiness - 1);
+        events.push({
+          type: 'system',
+          message: `🩸 Crucible Agony Training: chaotic blood rites reduce tactical compliance (-1 happiness).`
+        });
+      }
+      break;
+    }
+
+    case 'Void Essence': {
+      // Dimensional Slip Sparring: sensory displacement from phase-slip drills, 15% chance -1 happiness
+      if (roll(0.15)) {
+        updates.happiness = Math.max(-50, currentHappiness - 1);
+        events.push({
+          type: 'system',
+          message: `🌌 Dimensional Slip Sparring: sensory displacement from phase-slip drills unsettles troops (-1 happiness).`
+        });
+      }
+      break;
+    }
+  }
+
+  return updates;
+}
+
 function processBarracksAttunements(k, events = []) {
   const updates = {};
   if (!k.bld_barracks) return updates;
@@ -2293,6 +2332,10 @@ function processTurn(k, db = null) {
   // ── 4a-vi. Outpost attunement special abilities ───────────────────────────────
   const outpostAbilityUpdates = processOutpostAttunements({ ...k, ...updates }, events);
   Object.assign(updates, outpostAbilityUpdates);
+
+  // ── 4a-vii. Training field attunement special abilities ───────────────────────
+  const trainingAbilityUpdates = processTrainingAttunements({ ...k, ...updates }, events);
+  Object.assign(updates, trainingAbilityUpdates);
 
   // ── 4b. Resource production (wood / stone / iron) ────────────────────────────
   const resourceUpdates = processResourceYield({ ...k, ...updates }, events);
@@ -8560,6 +8603,7 @@ module.exports = {
   processWallsAttunements,
   processGuardTowerAttunements,
   processOutpostAttunements,
+  processTrainingAttunements,
   processMercenaries,
   hireMercenaries,
   purchaseUpgrade,
