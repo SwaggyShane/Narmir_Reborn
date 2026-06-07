@@ -72,10 +72,11 @@ const BuildPanel = () => {
         const attunements = statusData.attunements || {};
         setCurrentAttunements(attunements);
 
-        // Check synergy contributions for each attunement
+        // Check synergy contributions for each attunement in parallel
         const contributions = {};
-        for (const [building, att] of Object.entries(attunements)) {
-          if (att && att.fragmentName) {
+        const attunementEntries = Object.entries(attunements).filter(([_, att]) => att && att.fragmentName);
+        await Promise.all(
+          attunementEntries.map(async ([building, att]) => {
             try {
               const contribResponse = await fetch(
                 `/api/kingdom/contributing-synergies?building_type=${encodeURIComponent(building)}&fragment_name=${encodeURIComponent(att.fragmentName)}`,
@@ -88,8 +89,8 @@ const BuildPanel = () => {
             } catch (err) {
               console.error('[synergies] check failed:', err);
             }
-          }
-        }
+          })
+        );
         setSynergyContributions(contributions);
       }
     } catch (err) {
@@ -118,21 +119,6 @@ const BuildPanel = () => {
       console.error('[attunements] apply failed:', err.message);
       alert('Failed to apply attunement');
     }
-  };
-
-  const checkSynergyContribution = async (fragmentName, buildingType) => {
-    try {
-      const response = await fetch(`/api/kingdom/contributing-synergies?building_type=${encodeURIComponent(buildingType)}&fragment_name=${encodeURIComponent(fragmentName)}`, {
-        credentials: 'include',
-      });
-      if (response.ok) {
-        const data = await response.json();
-        return data.synergies || [];
-      }
-    } catch (err) {
-      console.error('[synergies] check contribution failed:', err.message);
-    }
-    return [];
   };
 
   const formatReq = (bld) => {

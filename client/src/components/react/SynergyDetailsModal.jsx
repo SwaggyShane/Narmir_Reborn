@@ -197,7 +197,10 @@ function formatValue(value, key) {
 function formatCost(cost) {
   if (typeof cost === 'object') {
     return Object.entries(cost)
-      .map(([key, val]) => `${formatKey(key)} ${val}`)
+      .map(([key, val]) => {
+        const formattedKey = formatKey(key);
+        return typeof val === 'number' && val > 0 && val < 1 ? `${formattedKey} ${Math.round(val * 100)}%` : `${formattedKey} ${val}`;
+      })
       .join(', ');
   }
   return String(cost);
