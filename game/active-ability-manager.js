@@ -235,7 +235,7 @@ function applyBenefit(kingdom, synergyId) {
   // Production completion - complete all queued buildings
   if (benefit.complete_all_production) {
     const buildQueue = parseJsonField(kingdom.build_queue, {});
-    for (const [queueId, buildJob] of Object.entries(buildQueue)) {
+    for (const [, buildJob] of Object.entries(buildQueue)) {
       const col = buildJob.building;
       if (col) {
         updates[col] = (updates[col] !== undefined ? updates[col] : (kingdom[col] || 0)) + 1;
