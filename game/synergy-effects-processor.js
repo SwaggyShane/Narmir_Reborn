@@ -24,6 +24,10 @@ function parseJsonField(field, defaultValue = {}) {
  * Get active effects that haven't expired
  */
 function getActiveEffects(kingdom) {
+  if (!kingdom || typeof kingdom !== 'object') {
+    return {};
+  }
+
   const activeEffects = parseJsonField(kingdom.active_effects, {});
   const currentTurn = kingdom.turn || 0;
   const active = {};
@@ -50,6 +54,10 @@ function getActiveEffects(kingdom) {
  * Get expired effects that should be removed
  */
 function getExpiredEffects(kingdom) {
+  if (!kingdom || typeof kingdom !== 'object') {
+    return [];
+  }
+
   const activeEffects = parseJsonField(kingdom.active_effects, {});
   const currentTurn = kingdom.turn || 0;
   const expired = [];
@@ -73,6 +81,10 @@ function getExpiredEffects(kingdom) {
  * Clean up expired effects from kingdom state
  */
 function removeExpiredEffects(kingdom) {
+  if (!kingdom || typeof kingdom !== 'object') {
+    return kingdom;
+  }
+
   const expired = getExpiredEffects(kingdom);
   if (expired.length === 0) {
     return kingdom;
@@ -93,6 +105,10 @@ function removeExpiredEffects(kingdom) {
  * Apply synergy troop boost effect (damage and health multiplier)
  */
 function getTroopBoostMultiplier(kingdom, stat) {
+  if (!kingdom || typeof kingdom !== 'object') {
+    return 1.0;
+  }
+
   const active = getActiveEffects(kingdom);
   if (!active.synergy_troop_boost) {
     return 1.0;
@@ -113,6 +129,10 @@ function getTroopBoostMultiplier(kingdom, stat) {
  * Apply synergy benefit effect (resources, production, happiness bonuses)
  */
 function getBenefitMultiplier(kingdom, stat) {
+  if (!kingdom || typeof kingdom !== 'object') {
+    return 1.0;
+  }
+
   const active = getActiveEffects(kingdom);
   if (!active.synergy_benefit) {
     return 1.0;
@@ -133,6 +153,10 @@ function getBenefitMultiplier(kingdom, stat) {
  * Apply synergy benefit happiness bonus (absolute value)
  */
 function getBenefitHappinessBonus(kingdom) {
+  if (!kingdom || typeof kingdom !== 'object') {
+    return 0;
+  }
+
   const active = getActiveEffects(kingdom);
   if (!active.synergy_benefit || !active.synergy_benefit.happiness) {
     return 0;
@@ -143,31 +167,44 @@ function getBenefitHappinessBonus(kingdom) {
 
 /**
  * Apply synergy penalty effect (stat reductions)
+ * all_stats penalty accumulates with specific stat penalties
  */
 function getPenaltyMultiplier(kingdom, stat) {
+  if (!kingdom || typeof kingdom !== 'object') {
+    return 1.0;
+  }
+
   const active = getActiveEffects(kingdom);
   if (!active.synergy_penalty) {
     return 1.0;
   }
 
   const penalty = active.synergy_penalty;
+  let multiplier = 1.0;
+
+  // Apply specific stat penalty
   if (stat === 'defense' && penalty.defense) {
-    return Math.max(0, 1.0 + penalty.defense); // Prevent going negative
-  }
-  if (stat === 'food_production' && penalty.food_production) {
-    return Math.max(0, 1.0 + penalty.food_production);
-  }
-  if (stat === 'all_stats' && penalty.all_stats) {
-    return Math.max(0, 1.0 + penalty.all_stats);
+    multiplier *= 1.0 + penalty.defense;
+  } else if (stat === 'food_production' && penalty.food_production) {
+    multiplier *= 1.0 + penalty.food_production;
   }
 
-  return 1.0;
+  // Always apply all_stats penalty (accumulates with specific penalties)
+  if (penalty.all_stats) {
+    multiplier *= 1.0 + penalty.all_stats;
+  }
+
+  return Math.max(0, multiplier);
 }
 
 /**
  * Check if research is locked by penalty
  */
 function isResearchLocked(kingdom) {
+  if (!kingdom || typeof kingdom !== 'object') {
+    return false;
+  }
+
   const active = getActiveEffects(kingdom);
   if (!active.synergy_penalty) {
     return false;
@@ -181,6 +218,10 @@ function isResearchLocked(kingdom) {
  * Used for multiplicative bonuses (gold, mana, food, etc)
  */
 function applyMultiplicativeEffects(kingdom, value, statType) {
+  if (!kingdom || typeof kingdom !== 'object' || typeof value !== 'number') {
+    return value;
+  }
+
   let result = value;
 
   // Apply benefit multiplier
@@ -197,8 +238,13 @@ function applyMultiplicativeEffects(kingdom, value, statType) {
 /**
  * Get combined effect multiplier for a stat
  * Useful for applying multiple effects at once
+ * all_stats penalty applies to all stat types
  */
 function getCombinedMultiplier(kingdom, stat) {
+  if (!kingdom || typeof kingdom !== 'object') {
+    return 1.0;
+  }
+
   let mult = 1.0;
 
   // Benefit multiplier
@@ -206,8 +252,8 @@ function getCombinedMultiplier(kingdom, stat) {
     mult *= getBenefitMultiplier(kingdom, stat);
   }
 
-  // Penalty multiplier
-  if (stat === 'defense' || stat === 'food_production' || stat === 'all_stats') {
+  // Penalty multiplier (includes all_stats accumulation)
+  if (stat === 'defense' || stat === 'food_production' || stat === 'resources' || stat === 'production') {
     mult *= getPenaltyMultiplier(kingdom, stat);
   }
 
