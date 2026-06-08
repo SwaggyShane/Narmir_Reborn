@@ -335,10 +335,10 @@ async function relayDiscordMessageToGame(discordMessage, syncConfig) {
 
     if (!link) {
       // Message from unlinked Discord user - store with NULL kingdom_id as Discord relay
-      const _displayName = `[Discord] ${discordMessage.author.username}`;
+      const displayName = `[Discord] ${discordMessage.author.username}`;
       const result = await db.run(
         'INSERT INTO chat_messages (kingdom_id, player_id, username, room, message, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-        [null, 0, discordMessage.author.username, syncConfig.game_room, content, Math.floor(Date.now() / 1000)]
+        [null, 0, displayName, syncConfig.game_room, content, Math.floor(Date.now() / 1000)]
       );
 
       // Log the sync

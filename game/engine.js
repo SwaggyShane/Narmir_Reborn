@@ -1579,7 +1579,7 @@ function processFoodEconomy(k, events) {
             : 100;
       const oldMorale = cur;
       updates.morale = Math.min(natCap, cur + 2);
-      const _mDelta = (updates.morale || 0) - oldMorale;
+      const mDelta = (updates.morale || 0) - oldMorale;
       
       events.push({
         type: "system",
@@ -1621,7 +1621,7 @@ function processFoodEconomy(k, events) {
               : 100;
         const oldMorale = cur;
         updates.morale = Math.max(0, cur - hit);
-        const _mDelta = updates.morale - oldMorale;
+        const mDelta = updates.morale - oldMorale;
 
         events.push({
           type: "system",
@@ -3203,7 +3203,7 @@ function processTurn(k, db = null) {
                 : 100;
           const oldMorale = cur;
           updates.morale = Math.min(100, cur + 2);
-          const _mDelta = updates.morale - oldMorale;
+          const mDelta = updates.morale - oldMorale;
           if (mDelta > 0) {
             bonusStr = `+${mDelta} Morale`;
           } else {
