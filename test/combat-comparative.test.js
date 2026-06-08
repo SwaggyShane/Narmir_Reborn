@@ -4,7 +4,6 @@
  */
 
 const engine = require('../game/engine');
-const assert = require('assert');
 
 // ── Test Utilities ────────────────────────────────────────────────────────
 
@@ -60,14 +59,6 @@ function createTestKingdom(name = 'Test Kingdom', fighterCount = 1000) {
   };
 }
 
-function generateRandomSentUnits(attacker) {
-  const maxFighters = Math.floor(attacker.fighters * 0.5);
-  const maxMages = Math.floor(attacker.mages * 0.5);
-  return {
-    fighters: Math.floor(Math.random() * maxFighters),
-    mages: Math.floor(Math.random() * maxMages),
-  };
-}
 
 function validateCombatResult(result, testName = '') {
   const issues = [];
