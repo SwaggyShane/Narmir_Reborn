@@ -1251,7 +1251,7 @@ module.exports = function (db, io) {
       let buildProgress = {};
       try {
         buildProgress = JSON.parse(k.build_progress || "{}");
-      } catch (e) {}
+      } catch (_e) {}
 
       const RESOURCE_BUILDINGS = ['woodyard', 'lumber_camp', 'sawmill', 'gravel_pit', 'blockfield', 'stone_quarry', 'open_pit', 'strip_mine', 'deep_mine'];
 

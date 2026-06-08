@@ -379,7 +379,7 @@ class PgDbAdapter {
           // returning a possibly mid-transaction client to the pool. Postgres rolls
           // back on disconnect and the server-side slot is freed immediately.
           client.release(new Error('transaction reaped — held too long'));
-        } catch (e) {
+        } catch (_e) {
           // already released / destroyed — nothing to do
         }
         reaped++;
@@ -1015,7 +1015,7 @@ async function initDb(options = {}) {
     // Try PostgreSQL syntax first
     await _db.run('ALTER TABLE chat_messages ALTER COLUMN kingdom_id DROP NOT NULL');
     console.log('✅ Made kingdom_id nullable for Discord relay messages');
-  } catch (e) {
+  } catch (_e) {
     try {
       // Fallback to SQLite table recreation if PostgreSQL syntax fails
       const cmInfo = await _db.all('PRAGMA table_info(chat_messages)').catch(() => []);

@@ -1,6 +1,5 @@
 const { Client, GatewayIntentBits, EmbedBuilder, ChannelType, AttachmentBuilder } = require('discord.js');
 const path = require('path');
-const http = require('http');
 require('dotenv').config();
 
 const client = new Client({
