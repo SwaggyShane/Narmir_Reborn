@@ -3533,8 +3533,8 @@ function processTurn(k, db = null) {
     // Get synergy research speed multiplier
     const synergyResearchMult = getSynergyPassiveBonusMultiplier(k, 'research_speed');
 
-    // Get synergy research cost reduction (makes research cheaper)
-    const synergyResearchCostReduction = getSynergyPassiveBonusMultiplier(k, 'research_cost_reduction');
+    // Get synergy research cost reduction (absolute value, e.g., 0.30 = 30% reduction)
+    const synergyResearchCostReduction = getSynergyPassiveBonusAbsolute(k, 'research_cost_reduction');
 
     let rProgress = safeJsonParse(
       k.research_progress,
@@ -3563,8 +3563,10 @@ function processTurn(k, db = null) {
         factor = Math.pow(1.05, current - 100);
       }
       let COST_PER_PCT = Math.floor(200 * factor);
-      // Apply synergy research cost reduction (lower cost = cheaper research)
-      COST_PER_PCT = Math.floor(COST_PER_PCT / (1.0 + synergyResearchCostReduction));
+      // Apply synergy research cost reduction (e.g., 0.30 means cost is 70% of normal)
+      if (synergyResearchCostReduction > 0) {
+        COST_PER_PCT = Math.floor(COST_PER_PCT * (1.0 - synergyResearchCostReduction));
+      }
 
       let inc = 0;
       if (rProgress[d.col] >= COST_PER_PCT) {
