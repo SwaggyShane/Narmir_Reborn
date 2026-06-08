@@ -31,6 +31,28 @@ import ResourcesPanelReact from "./components/react/ResourcesPanel.jsx";
 import GlobalchatPanelReact from "./components/react/GlobalchatPanel.jsx";
 import SchoolSelectionPanelReact from "./components/react/SchoolSelectionPanel.jsx";
 
+// API call helper for making authenticated requests from vanilla JS
+async function apiCall(method, endpoint, body = null) {
+  const getCsrfToken = () => {
+    try {
+      const m = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
+      if (m) return decodeURIComponent(m[1]);
+    } catch {}
+    return null;
+  };
+
+  const headers = { 'Content-Type': 'application/json' };
+  const csrfToken = getCsrfToken();
+  if (csrfToken) headers['x-csrf-token'] = csrfToken;
+
+  const options = { method, headers, credentials: 'include' };
+  if (body) options.body = JSON.stringify(body);
+
+  const response = await fetch(endpoint, options);
+  return response.json();
+}
+window.apiCall = apiCall;
+
 console.log("[react] main.js execution started at", new Date().toISOString());
 
 export const gameState = {};

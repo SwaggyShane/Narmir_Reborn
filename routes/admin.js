@@ -1086,7 +1086,7 @@ module.exports = function (db, io) {
         [tier, goalId]
       );
 
-      const defaultsPool = tier === 'daily' ? DAILY_GOALS_DEFAULTS : tier === 'weekly' ? WEEKLY_GOALS_DEFAULTS : tier === 'monthly' ? MONTHLY_GOALS_DEFAULTS : [];
+      const defaultsPool = tier === 'daily' ? DAILY_GOALS : tier === 'weekly' ? WEEKLY_GOALS : tier === 'monthly' ? MONTHLY_GOALS : [];
       const defaultGoal = defaultsPool.find(g => g.id === goalId);
       if (!existing && !defaultGoal) {
         return res.status(404).json({ error: "Goal not found in defaults or overrides" });
@@ -1220,7 +1220,7 @@ module.exports = function (db, io) {
           [tier, goalId]
         );
       } else {
-        const defaultsPool = tier === 'daily' ? DAILY_GOALS_DEFAULTS : tier === 'weekly' ? WEEKLY_GOALS_DEFAULTS : tier === 'monthly' ? MONTHLY_GOALS_DEFAULTS : [];
+        const defaultsPool = tier === 'daily' ? DAILY_GOALS : tier === 'weekly' ? WEEKLY_GOALS : tier === 'monthly' ? MONTHLY_GOALS : [];
         const defaultGoal = defaultsPool.find(g => g.id === goalId);
         if (!defaultGoal) {
           return res.status(404).json({ error: "Goal not found" });
