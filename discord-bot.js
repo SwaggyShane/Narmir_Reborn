@@ -1,6 +1,5 @@
 const { Client, GatewayIntentBits, EmbedBuilder, ChannelType, AttachmentBuilder } = require('discord.js');
 const path = require('path');
-const http = require('http');
 require('dotenv').config();
 
 const client = new Client({
@@ -68,7 +67,7 @@ client.once('ready', async () => {
 });
 
 let syncConfigs = [];
-let lastSyncTime = Math.floor(Date.now() / 1000) - 300; // Start 5 minutes in the past
+let _lastSyncTime = Math.floor(Date.now() / 1000) - 300; // Start 5 minutes in the past
 let isPolling = false; // Lock to prevent concurrent polling
 let lastLoggedSyncCount = -1; // Only log the channel count when it actually changes
 
@@ -339,7 +338,7 @@ async function relayDiscordMessageToGame(discordMessage, syncConfig) {
       const displayName = `[Discord] ${discordMessage.author.username}`;
       const result = await db.run(
         'INSERT INTO chat_messages (kingdom_id, player_id, username, room, message, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-        [null, 0, discordMessage.author.username, syncConfig.game_room, content, Math.floor(Date.now() / 1000)]
+        [null, 0, displayName, syncConfig.game_room, content, Math.floor(Date.now() / 1000)]
       );
 
       // Log the sync

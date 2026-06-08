@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const engine = require("./engine");
-const { setUnreadCount, getUnreadCount, incrementUnread, decrementUnread, unreadNewsCache } = require("../cache.js");
+const { setUnreadCount, incrementUnread, unreadNewsCache } = require("../cache.js");
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_fallback_12345";
 const onlinePlayers = new Map(); // playerId → { socketId, username, race, isMod, isAdmin, kingdomName }

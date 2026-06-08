@@ -10,10 +10,9 @@ const express      = require('express');
 const http         = require('http');
 const { Server }   = require('socket.io');
 const cookieParser = require('cookie-parser');
-const bcrypt       = require('bcrypt');
 const path         = require('path');
 const fs           = require('fs');
-const { marketPriceCache, rankingsCache, bountiesCache, getServerState, setUnreadCount, getUnreadCount, incrementUnread, decrementUnread } = require('./cache.js');
+const { marketPriceCache, rankingsCache, bountiesCache } = require('./cache.js');
 
 // Server logging to secure logs directory (not public)
 const logsDir = path.join(__dirname, 'logs');
@@ -66,10 +65,10 @@ console.warn = function(...args) {
 let isBooted = false;
 let bootError = null;
 
-const { initDb, applyKingdomUpdates } = require('./db/schema');
+const { initDb } = require('./db/schema');
 const setupSockets    = require('./game/sockets');
 const engine          = require('./game/engine');
-const { requireAuth, requireAdmin, cacheKingdomId } = require('./routes/middleware');
+const { requireAuth, cacheKingdomId } = require('./routes/middleware');
 const config = require('./game/config');
 const { safeJsonParse } = require('./utils/helpers');
 
@@ -259,7 +258,7 @@ const REGEN_MAX    = 400;
 const REGEN_MS     = 25 * 60 * 1000;
 
 // ── Authentication constants ────────────────────────────────────────────────────
-const BCRYPT_SALT_ROUNDS = 10;
+const _BCRYPT_SALT_ROUNDS = 10;
 
 
 

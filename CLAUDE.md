@@ -13,7 +13,10 @@ When pushing changes to a feature branch, **always create the PR as a draft** (`
 ### Workflow Steps
 1. Make code changes on feature branch
 2. Stage changes: `git add <files>`
-3. (Optional) Create draft PR for staged changes feedback before committing
+3. **Run quality checks** (BEFORE commit):
+   - `npm run lint` - Verify no linting errors or warnings
+   - Smoke test - Verify core functionality still works
+   - Sanity check - Verify changes are logically correct and don't break existing features
 4. Commit changes: `git commit -m "..."`
 5. Push commits: `git push origin <branch>`
 6. Create (or update) draft PR with the commits
@@ -22,6 +25,32 @@ When pushing changes to a feature branch, **always create the PR as a draft** (`
 9. Update PR description if needed
 10. Mark PR as ready for review when approved
 11. Merge to main
+
+### Quality Checks (Required Before Every Commit)
+
+**Lint Check**
+```bash
+npm run lint
+# Expected: 0 errors (warnings may be acceptable depending on context)
+```
+
+**Smoke Test**
+- Verify the app starts without crashing
+- Test basic happy-path functionality related to your changes
+- Check browser console for errors
+
+**Sanity Check**
+- Code logic is correct and doesn't introduce bugs
+- Changes don't break existing features
+- No unintended side effects on other parts of the system
+- Variables are properly initialized and scoped
+- No dead code or unreachable paths introduced
+
+**When to fail a commit:**
+- ❌ Any lint ERRORS (not just warnings) - must be fixed first
+- ❌ App crashes or core functionality broken by changes
+- ❌ Obvious logic bugs or runtime errors
+- ❌ Uncommitted changes when hook feedback requires clean working tree
 
 ### Commit Messages
 Include session URL for traceability (replace `<SESSION_ID>` with your actual session ID):
