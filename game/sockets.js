@@ -20,14 +20,17 @@ module.exports = function (io, db) {
   });
 
   io.on("connection", async (socket) => {
+    // Declare variables in outer scope so they're accessible to event handlers
+    let playerId, username, kingdom, notifyUnread;
+
     try {
-      const { playerId, username } = socket.player;
+      ({ playerId, username } = socket.player);
 
       const player = await db.get(
         "SELECT id, username, is_admin, is_chat_mod, chat_banned, chat_color, chat_name FROM players WHERE id = ?",
         [playerId],
       );
-      const kingdom = await db.get(
+      kingdom = await db.get(
         "SELECT id, name, race FROM kingdoms WHERE player_id = ?",
         [playerId],
       );
@@ -80,7 +83,7 @@ module.exports = function (io, db) {
       );
       if (membership) socket.join(`alliance:${membership.alliance_id}`);
 
-      const notifyUnread = async (kid) => {
+      notifyUnread = async (kid) => {
         try {
           let count = unreadNewsCache.get(`${kid}`);
           if (count === undefined) {
