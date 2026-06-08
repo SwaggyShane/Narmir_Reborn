@@ -30,13 +30,13 @@ function createTestKingdom(name = 'Test Kingdom', fighterCount = 1000) {
     turn: 100,
 
     troop_levels: {
-      fighters: 50,
-      rangers: 50,
-      mages: 50,
-      clerics: 50,
-      ninjas: 50,
-      thieves: 50,
-      engineers: 50,
+      fighters: { level: 50, xp: 0, count: 0 },
+      rangers: { level: 50, xp: 0, count: 0 },
+      mages: { level: 50, xp: 0, count: 0 },
+      clerics: { level: 50, xp: 0, count: 0 },
+      ninjas: { level: 50, xp: 0, count: 0 },
+      thieves: { level: 50, xp: 0, count: 0 },
+      engineers: { level: 50, xp: 0, count: 0 },
     },
 
     military_research: { defense: 10, armor: 10, weapons: 10 },
@@ -63,6 +63,12 @@ function createTestKingdom(name = 'Test Kingdom', fighterCount = 1000) {
 function validateCombatResult(result, testName = '') {
   const issues = [];
 
+  // Validate result object exists
+  if (!result || typeof result !== 'object') {
+    issues.push('result is not an object');
+    return { pass: false, issues, testName };
+  }
+
   // Validate structure
   if (typeof result.win !== 'boolean') {
     issues.push('win is not boolean');
@@ -85,6 +91,33 @@ function validateCombatResult(result, testName = '') {
         issues.push(`report.${field} is missing`);
       }
     });
+
+    // Validate value ranges only if fields exist
+    if (result.report.landTransferred !== undefined) {
+      if (Number.isNaN(result.report.landTransferred)) {
+        issues.push('landTransferred is NaN');
+      } else if (result.report.landTransferred < 0) {
+        issues.push('landTransferred is negative');
+      }
+    }
+
+    if (result.report.atkFightersLost !== undefined) {
+      if (Number.isNaN(result.report.atkFightersLost)) {
+        issues.push('atkFightersLost is NaN');
+      }
+    }
+
+    // Validate casualty counts don't exceed sent units (with defensive checks)
+    if (
+      result.report.atkFightersLost !== undefined &&
+      result.report.sent &&
+      result.report.sent.fighters !== undefined &&
+      result.report.atkFightersLost > result.report.sent.fighters
+    ) {
+      issues.push(
+        `atkFightersLost (${result.report.atkFightersLost}) exceeds sent fighters (${result.report.sent.fighters})`
+      );
+    }
   }
 
   if (!result.attackerUpdates || typeof result.attackerUpdates !== 'object') {
@@ -108,28 +141,6 @@ function validateCombatResult(result, testName = '') {
 
   if (typeof result.defEvent !== 'string' || result.defEvent.length === 0) {
     issues.push('defEvent is missing or empty');
-  }
-
-  // Validate value ranges
-  if (Number.isNaN(result.report.landTransferred)) {
-    issues.push('landTransferred is NaN');
-  } else if (result.report.landTransferred < 0) {
-    issues.push('landTransferred is negative');
-  }
-
-  if (Number.isNaN(result.report.atkFightersLost)) {
-    issues.push('atkFightersLost is NaN');
-  }
-
-  // NOTE: defFightersLost can be NaN in legacy system due to complex calculation
-  // This is a pre-existing issue in the original resolveMilitaryAttack function
-  // The wrapper will address this in integration
-
-  // Validate casualty counts don't exceed sent units
-  if (result.report.atkFightersLost > result.report.sent.fighters) {
-    issues.push(
-      `atkFightersLost (${result.report.atkFightersLost}) exceeds sent fighters (${result.report.sent.fighters})`
-    );
   }
 
   return { pass: issues.length === 0, issues, testName };
