@@ -3906,6 +3906,7 @@ module.exports = function (db) {
       console.warn('[economy/upgrade] Purchase failed', { category, upgradeKey, error: result.error, kingdomId: k.id });
       return res.status(400).json({ error: result.error });
     }
+    console.log('[economy/upgrade] Purchase successful', { category, upgradeKey, kingdomId: k.id, updates: result.updates });
     await applyUpdates(db, k.id, result.updates);
     const def =
       engine.FARM_UPGRADES[upgradeKey] ||

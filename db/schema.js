@@ -1700,9 +1700,13 @@ async function applyKingdomUpdates(kingdomId, updates) {
   const safe = Object.fromEntries(
     Object.entries(updates).filter(([col, val]) => validCols.has(col) && val !== undefined && val !== null)
   );
-  if (Object.keys(safe).length === 0) return [];
+  if (Object.keys(safe).length === 0) {
+    console.warn('[applyKingdomUpdates] No valid columns to update', { kingdomId, updates, validCols: Array.from(validCols).slice(0, 10) });
+    return [];
+  }
   const cols = Object.keys(safe).map(k => `${k} = ?`).join(', ');
   const vals = [...Object.values(safe), kingdomId];
+  console.log('[applyKingdomUpdates] Updating', { kingdomId, fields: Object.keys(safe), safe });
   await _db.run(`UPDATE kingdoms SET ${cols} WHERE id = ?`, vals);
   return Object.keys(safe);
 }
