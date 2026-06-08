@@ -116,7 +116,7 @@ function ensureCsrfToken(req, res, next) {
           secure: isProd,
         };
         res.cookie("csrf_token", csrfToken, csrfCookieOpts);
-      } catch (_e) {
+      } catch {
         // Token is invalid, don't set CSRF token
       }
     }

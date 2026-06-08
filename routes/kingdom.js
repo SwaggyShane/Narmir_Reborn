@@ -5402,7 +5402,6 @@ module.exports = function (db) {
         }
 
         // Get the updated kingdom with effects applied
-        const _updatedKingdom = abilityResult.kingdom;
         const cooldownUntil = new Date(abilityResult.cooldownExpires).getTime() / 1000;
 
         // Apply all kingdom updates to database using the helper function

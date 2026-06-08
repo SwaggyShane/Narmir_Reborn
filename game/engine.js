@@ -507,32 +507,6 @@ async function logHappinessEvent(db, kingdomId, turn, eventData) {
   }
 }
 
-function _effectiveMorale(k) {
-  let base =
-    k.morale !== undefined && k.morale !== null ? k.morale : 100;
-  
-  // Apply Bless bonus if active
-  const effects = safeJsonParse(
-    k.active_effects,
-    {},
-    "effectiveMorale:active_effects",
-  );
-  if (effects.bless && typeof effects.bless === "object") {
-    base += (effects.bless.morale_bonus || 0);
-  }
-
-  const entertainment = naturalMoraleCap(k);
-  let bonus = raceBonus(k, "morale");
-  
-  const shrineUpgrades = safeJsonParse(k.shrine_upgrades, {}, "effectiveMorale:shrine_upgrades");
-  if (shrineUpgrades.divine_favor) {
-    bonus += 0.20;
-  }
-
-  // Normalize: entertainment cap maps to 100
-  const normalized = (base / entertainment) * 100;
-  return Math.floor(normalized * bonus);
-}
 
 function popGrowth(k) {
   const happiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
@@ -1577,9 +1551,7 @@ function processFoodEconomy(k, events) {
           : k.morale !== undefined && k.morale !== null
             ? k.morale
             : 100;
-      const oldMorale = cur;
       updates.morale = Math.min(natCap, cur + 2);
-      const _mDelta = (updates.morale || 0) - oldMorale;
       
       events.push({
         type: "system",
@@ -1619,9 +1591,7 @@ function processFoodEconomy(k, events) {
             : k.morale !== undefined && k.morale !== null
               ? k.morale
               : 100;
-        const oldMorale = cur;
         updates.morale = Math.max(0, cur - hit);
-        const _mDelta = updates.morale - oldMorale;
 
         events.push({
           type: "system",
@@ -2626,21 +2596,6 @@ function efficiencyMult(route) {
   return route.efficiency || 1.0;
 }
 
-function _displayMorale(k) {
-  const base = k.morale !== undefined && k.morale !== null ? k.morale : 100;
-  const ent = k.res_entertainment || 100;
-  const raceMap = {
-    human: 1.05,
-    high_elf: 0.95,
-    dwarf: 1.0,
-    dire_wolf: 1.1,
-    dark_elf: 0.9,
-    orc: 1.05,
-    vampire: 0.95,
-  };
-  const bonus = raceMap[k.race] || 1.0;
-  return Math.floor((base / ent) * 100 * bonus);
-}
 
 function rebellionCheck(k, happiness, updates, events) {
   if (happiness >= 50) return; // No rebellion risk if happiness >= 50
@@ -3203,9 +3158,9 @@ function processTurn(k, db = null) {
                 : 100;
           const oldMorale = cur;
           updates.morale = Math.min(100, cur + 2);
-          const _mDelta = updates.morale - oldMorale;
-          if (_mDelta > 0) {
-            bonusStr = `+${_mDelta} Morale`;
+          const mDelta = updates.morale - oldMorale;
+          if (mDelta > 0) {
+            bonusStr = `+${mDelta} Morale`;
           } else {
             bonusStr = `Morale at cap`;
           }
@@ -3980,9 +3935,7 @@ function processTurn(k, db = null) {
         : k.morale !== undefined && k.morale !== null
           ? k.morale
           : 100;
-    const oldMorale = cur;
     updates.morale = Math.min(natCap, cur + 1);
-    const _mDelta = updates.morale - oldMorale;
   }
 
   // ── XP awards this turn ───────────────────────────────────────────────────────
@@ -8799,9 +8752,7 @@ function applyHeroTurnBonuses(hero, k, updates, events) {
         : k.morale !== undefined && k.morale !== null
           ? k.morale
           : 100;
-    const oldMorale = currentMorale;
     updates.morale = Math.min(100, currentMorale + 1);
-    const _mDelta = updates.morale - oldMorale;
   } else if (hero.class === "warlord") {
     // Warlord: Morale boost
     const currentMorale =
@@ -8834,9 +8785,7 @@ function applyHeroTurnBonuses(hero, k, updates, events) {
         : k.morale !== undefined && k.morale !== null
           ? k.morale
           : 100;
-    const oldMorale = currentMorale;
     updates.morale = Math.min(100, currentMorale + 1);
-    const _mDelta = updates.morale - oldMorale;
     if (events) {
       events.push({
         type: "system",

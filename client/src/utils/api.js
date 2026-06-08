@@ -11,7 +11,7 @@ function getCsrfToken() {
   try {
     const match = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
     return match ? decodeURIComponent(match[1]) : null;
-  } catch (_e) {
+  } catch {
     return null;
   }
 }
@@ -49,7 +49,7 @@ async function apiCall(url, options = {}) {
     let data;
     try {
       data = await response.json();
-    } catch (_parseError) {
+    } catch {
       // Response is not valid JSON
       const text = await response.text();
       data = { error: text || `Server error ${response.status}` };
