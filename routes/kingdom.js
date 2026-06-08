@@ -83,7 +83,7 @@ async function withTurnLock(playerId, fn) {
   turnsInProgress.set(playerId, promise);
 
   // Wait for turn to complete
-  return await promise;
+  return promise;
 }
 
 // ── Column Selection Constants for Query Optimization ──────────────────────────
