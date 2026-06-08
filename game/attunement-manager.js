@@ -319,6 +319,54 @@ function getSynergyStatus(kingdom) {
   };
 }
 
+/**
+ * Get synergy hints for a building type
+ * Returns which synergies this building can contribute to
+ */
+function getBuildingSynergyHints(buildingType) {
+  const hints = [];
+
+  Object.values(synergiesModule.SYNERGIES).forEach(synergy => {
+    if (synergy.requiredFragments && synergy.requiredFragments[buildingType]) {
+      hints.push({
+        synergy_id: synergy.id,
+        synergy_name: synergy.name,
+        emoji: synergy.emoji,
+        fragment_name: synergy.requiredFragments[buildingType],
+      });
+    }
+  });
+
+  return hints;
+}
+
+/**
+ * Get synergy contribution status for a specific building
+ * Shows current progress toward synergies this building can contribute to
+ */
+function getBuildingContributionStatus(kingdom, buildingType) {
+  if (!kingdom) return [];
+
+  const hints = getBuildingSynergyHints(buildingType);
+
+  // Get current attunements (returns array of attunements)
+  const attunements = getAttunementStatus(kingdom);
+  // Filter to only this building's attunements
+  const buildingAttunements = attunements.filter(att => att.buildingType === buildingType);
+
+  return hints.map(hint => {
+    const isAttuned = buildingAttunements.some(att =>
+      att.fragmentName === hint.fragment_name
+    );
+
+    return {
+      ...hint,
+      is_attuned: isAttuned,
+      description: `Attune ${hint.fragment_name} to contribute to ${hint.synergy_name}`,
+    };
+  });
+}
+
 module.exports = {
   validateAttunement,
   applyAttunement,
@@ -330,4 +378,6 @@ module.exports = {
   getContributingSynergies,
   getAllSynergies,
   getSynergyStatus,
+  getBuildingSynergyHints,
+  getBuildingContributionStatus,
 };

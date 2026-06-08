@@ -537,6 +537,10 @@ function popGrowth(k) {
   const housingMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'capacity');
   housingCap *= housingMult;
 
+  // Apply synergy troop capacity bonus
+  const synergyCapacityMult = combatSynergyProcessor.getTroopCapacityMultiplier(k);
+  housingCap *= synergyCapacityMult;
+
   const pop = k.population;
 
   let growthMult = happinessMult;
@@ -1152,6 +1156,10 @@ function processResourceYield(k, events) {
     // Apply world fragment bonuses for each resource building type
     const fragmentMult = fragmentBonusManager.getBonusMultiplier(k, bKey, 'production');
     baseYield *= fragmentMult;
+
+    // Apply synergy production speed bonus
+    const synergyProdMult = getSynergyPassiveBonusMultiplier(k, 'production_speed');
+    baseYield *= synergyProdMult;
 
     // Random events on wood production only
     if (cfg.type === 'wood') {
@@ -3115,6 +3123,9 @@ function processTurn(k, db = null) {
     // Apply world fragment bonuses for housing capacity
     const housingMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'capacity');
     housingCap *= housingMult;
+    // Apply synergy troop capacity bonus
+    const synergyCapacityMult = combatSynergyProcessor.getTroopCapacityMultiplier(k);
+    housingCap *= synergyCapacityMult;
     const overcrowded = housingCap > 0 && k.population > housingCap;
 
     // Race overcrowding penalty modifiers
