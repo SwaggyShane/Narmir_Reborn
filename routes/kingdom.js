@@ -3991,8 +3991,11 @@ module.exports = function (db) {
     let mktUpgrades = {};
     try {
       mktUpgrades = safeJsonParse(k.market_upgrades, {}, "auto:market_upgrades");
-    } catch {}
-    if (!mktUpgrades.trading_post)
+    } catch (err) {
+      console.error('[trade] Failed to parse market_upgrades:', err.message);
+      return res.status(400).json({ error: "Market upgrades data corrupted. Contact admin." });
+    }
+    if (!mktUpgrades || !mktUpgrades.trading_post)
       return res
         .status(400)
         .json({ error: "Build a Trading Post to trade with other kingdoms" });
