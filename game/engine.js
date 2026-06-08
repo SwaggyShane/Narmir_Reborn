@@ -188,6 +188,7 @@ function raceBonus(kingdom, stat) {
 }
 
 const activeSynergyCache = new WeakMap();
+const synergyBonusCache = new WeakMap();
 
 function getActiveSynergyCached(kingdom) {
   if (!kingdom) return null;
@@ -199,11 +200,30 @@ function getActiveSynergyCached(kingdom) {
 
 function getSynergyPassiveBonusMultiplier(kingdom, effectKey) {
   if (!kingdom) return 1.0;
+
+  // Check bonus cache first
+  if (!synergyBonusCache.has(kingdom)) {
+    synergyBonusCache.set(kingdom, {});
+  }
+  const bonusCache = synergyBonusCache.get(kingdom);
+
+  if (bonusCache[effectKey] !== undefined) {
+    return bonusCache[effectKey];
+  }
+
   const synergy = getActiveSynergyCached(kingdom);
-  if (!synergy || !synergy.passive || !synergy.passive.effects) return 1.0;
+  if (!synergy || !synergy.passive || !synergy.passive.effects) {
+    bonusCache[effectKey] = 1.0;
+    return 1.0;
+  }
   const effectValue = synergy.passive.effects[effectKey];
-  if (effectValue === undefined || effectValue === null) return 1.0;
-  return 1.0 + effectValue;
+  if (effectValue === undefined || effectValue === null) {
+    bonusCache[effectKey] = 1.0;
+    return 1.0;
+  }
+  const result = 1.0 + effectValue;
+  bonusCache[effectKey] = result;
+  return result;
 }
 
 function getSynergyPassiveBonusAbsolute(kingdom, effectKey) {
@@ -213,6 +233,12 @@ function getSynergyPassiveBonusAbsolute(kingdom, effectKey) {
   const effectValue = synergy.passive.effects[effectKey];
   if (effectValue === undefined || effectValue === null) return 0;
   return effectValue;
+}
+
+function clearSynergyCache(kingdom) {
+  if (!kingdom) return;
+  activeSynergyCache.delete(kingdom);
+  synergyBonusCache.delete(kingdom);
 }
 
 function housingCapPerBuilding(k) {
@@ -3507,6 +3533,9 @@ function processTurn(k, db = null) {
     // Get synergy research speed multiplier
     const synergyResearchMult = getSynergyPassiveBonusMultiplier(k, 'research_speed');
 
+    // Get synergy research cost reduction (makes research cheaper)
+    const synergyResearchCostReduction = getSynergyPassiveBonusMultiplier(k, 'research_cost_reduction');
+
     let rProgress = safeJsonParse(
       k.research_progress,
       {},
@@ -3533,7 +3562,9 @@ function processTurn(k, db = null) {
       if (current > 100) {
         factor = Math.pow(1.05, current - 100);
       }
-      const COST_PER_PCT = Math.floor(200 * factor);
+      let COST_PER_PCT = Math.floor(200 * factor);
+      // Apply synergy research cost reduction (lower cost = cheaper research)
+      COST_PER_PCT = Math.floor(COST_PER_PCT / (1.0 + synergyResearchCostReduction));
 
       let inc = 0;
       if (rProgress[d.col] >= COST_PER_PCT) {
@@ -9339,4 +9370,5 @@ module.exports = {
   awardEngineerXp,
   engineerXpForLevel,
   engineerConstructionMult,
+  clearSynergyCache,
 };
