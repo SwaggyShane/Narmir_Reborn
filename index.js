@@ -86,79 +86,6 @@ const HOST = '0.0.0.0';
 
 // ── Utility functions ────────────────────────────────────────────────────────
 
-// Normalize kingdom objects to ensure all expected numeric properties exist with defaults
-function normalizeKingdom(kingdom) {
-  if (!kingdom) return null;
-  return {
-    // Core properties
-    id: kingdom.id,
-    player_id: kingdom.player_id,
-    name: kingdom.name,
-    race: kingdom.race || 'human',
-    // Resources (all default to 0 or configured value)
-    gold: kingdom.gold ?? 10000,
-    land: kingdom.land ?? 500,
-    population: kingdom.population ?? 50000,
-    happiness: kingdom.happiness ?? 50,
-    tax: kingdom.tax ?? 42,
-    mana: kingdom.mana ?? 5000,
-    food: kingdom.food ?? 0,
-    turn: kingdom.turn ?? 0,
-    turns_stored: kingdom.turns_stored ?? 400,
-    // Research
-    res_economy: kingdom.res_economy ?? 100,
-    res_weapons: kingdom.res_weapons ?? 100,
-    res_armor: kingdom.res_armor ?? 100,
-    res_military: kingdom.res_military ?? 100,
-    res_spellbook: kingdom.res_spellbook ?? 0,
-    res_attack_magic: kingdom.res_attack_magic ?? 100,
-    res_defense_magic: kingdom.res_defense_magic ?? 100,
-    res_entertainment: kingdom.res_entertainment ?? 100,
-    res_construction: kingdom.res_construction ?? 100,
-    res_war_machines: kingdom.res_war_machines ?? 100,
-    // Buildings
-    bld_farms: kingdom.bld_farms ?? 200,
-    bld_granaries: kingdom.bld_granaries ?? 0,
-    bld_barracks: kingdom.bld_barracks ?? 0,
-    bld_outposts: kingdom.bld_outposts ?? 0,
-    bld_guard_towers: kingdom.bld_guard_towers ?? 0,
-    bld_schools: kingdom.bld_schools ?? 0,
-    bld_armories: kingdom.bld_armories ?? 0,
-    bld_vaults: kingdom.bld_vaults ?? 0,
-    bld_smithies: kingdom.bld_smithies ?? 0,
-    bld_markets: kingdom.bld_markets ?? 0,
-    bld_mage_towers: kingdom.bld_mage_towers ?? 0,
-    bld_shrines: kingdom.bld_shrines ?? 0,
-    bld_training: kingdom.bld_training ?? 0,
-    bld_castles: kingdom.bld_castles ?? 0,
-    bld_housing: kingdom.bld_housing ?? 100,
-    bld_walls: kingdom.bld_walls ?? 0,
-    // Units
-    fighters: kingdom.fighters ?? 0,
-    rangers: kingdom.rangers ?? 0,
-    clerics: kingdom.clerics ?? 0,
-    mages: kingdom.mages ?? 0,
-    thieves: kingdom.thieves ?? 0,
-    ninjas: kingdom.ninjas ?? 0,
-    researchers: kingdom.researchers ?? 0,
-    engineers: kingdom.engineers ?? 0,
-    war_machines: kingdom.war_machines ?? 0,
-    weapons_stockpile: kingdom.weapons_stockpile ?? 0,
-    armor_stockpile: kingdom.armor_stockpile ?? 0,
-    // JSON fields and other properties
-    ...Object.fromEntries(
-      Object.entries(kingdom).filter(([key]) =>
-        !['id', 'player_id', 'name', 'race', 'gold', 'land', 'population', 'morale', 'tax', 'mana', 'food', 'turn', 'turns_stored',
-          'res_economy', 'res_weapons', 'res_armor', 'res_military', 'res_spellbook', 'res_attack_magic', 'res_defense_magic', 'res_entertainment', 'res_construction', 'res_war_machines',
-          'bld_farms', 'bld_granaries', 'bld_barracks', 'bld_outposts', 'bld_guard_towers', 'bld_schools', 'bld_armories', 'bld_vaults', 'bld_smithies', 'bld_markets', 'bld_mage_towers', 'bld_shrines', 'bld_training', 'bld_castles', 'bld_housing', 'bld_walls',
-          'fighters', 'rangers', 'clerics', 'mages', 'thieves', 'ninjas', 'researchers', 'engineers', 'war_machines', 'weapons_stockpile', 'armor_stockpile',
-          'mage_tower_allocation', 'shrine_allocation'
-        ].includes(key)
-      )
-    )
-  };
-}
-
 app.use(express.json());
 app.use(cookieParser());
 
@@ -851,7 +778,7 @@ async function start() {
         await db.run('UPDATE kingdoms SET alliance_buffs = ? WHERE id = ?', [alliance.projects || '{}', targetKingdomId]);
         await db.run('COMMIT');
         res.json({ ok: true });
-      } catch (err) {
+      } catch {
         await db.run('ROLLBACK').catch(() => {});
         res.status(409).json({ error: 'Failed to invite kingdom' });
       }

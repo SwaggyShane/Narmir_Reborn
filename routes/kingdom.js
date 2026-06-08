@@ -14,7 +14,7 @@ const attunementManager = require('../game/attunement-manager');
 const synergiesModule = require('../game/fragment-synergies');
 const abilityManager = require('../game/active-ability-manager');
 const { applyKingdomUpdates } = require('../db/schema');
-const { marketPriceCache, setUnreadCount, incrementUnread } = require("../cache.js");
+const { marketPriceCache, setUnreadCount } = require("../cache.js");
 
 const router = express.Router();
 
@@ -140,150 +140,6 @@ function parseKingdomJson(k) {
   return k;
 }
 
-// ── Helper: Parse selective JSON fields to reduce duplication ────────────────
-// Replaces repeated safeJsonParse calls (was 76 instances)
-function parseKingdomFields(k, fieldList) {
-  for (const field of fieldList) {
-    if (k[field] !== undefined && k[field] !== null) {
-      const defaultVal = JSON_FIELDS[field] || {};
-      k[field] = safeJsonParse(k[field], defaultVal, `parse:${field}`);
-    }
-  }
-  return k;
-}
-
-// ── Helper: Common validation pattern for allocations ────────────────────────
-// Replaces repeated allocation validation (was 4+ instances)
-// Security: Whitelist valid fields and validate non-negative values
-async function validateAndSaveAllocation(db, kingdomId, field, allocation, maxValue, errorMsg) {
-  const validFields = new Set([
-    'research_allocation', 'mage_tower_allocation', 'shrine_allocation',
-    'library_allocation', 'build_allocation', 'resource_build_allocation',
-    'training_allocation', 'smithy_allocation', 'mausoleum_allocation'
-  ]);
-
-  if (!validFields.has(field)) {
-    return { error: `Invalid allocation field: ${field}` };
-  }
-
-  if (!allocation || typeof allocation !== "object") {
-    return { error: "Invalid allocation format" };
-  }
-
-  // Sum allocation and validate (block negative values)
-  let total = 0;
-  for (const [key, value] of Object.entries(allocation)) {
-    const val = parseInt(value) || 0;
-    if (val < 0) {
-      return { error: "Allocation values cannot be negative" };
-    }
-    total += val;
-  }
-
-  if (total > maxValue) {
-    return { error: errorMsg || `Allocation exceeds maximum of ${maxValue}` };
-  }
-
-  // Save to database
-  try {
-    await db.run(
-      `UPDATE kingdoms SET ${field} = ? WHERE id = ?`,
-      [JSON.stringify(allocation), kingdomId]
-    );
-    return { ok: true, allocation };
-  } catch (err) {
-    console.error(`[allocation] failed to save ${field}:`, err.message);
-    return { error: "Failed to save allocation" };
-  }
-}
-
-// ── Helper: Atomic resource deduction with validation ────────────────────────
-// Replaces repeated check-and-deduct patterns (was 3+ instances)
-// Security: Whitelist valid resources and validate non-negative amounts
-async function deductResources(db, kingdomId, resources) {
-  if (!resources || typeof resources !== "object") {
-    return { error: "Invalid resources format" };
-  }
-
-  const validResources = new Set([
-    'gold', 'mana', 'food', 'wood', 'stone', 'iron', 'coal', 'steel', 'population', 'land'
-  ]);
-
-  const setClauses = [];
-  const whereConditions = [];
-  const setParams = [];
-  const whereParams = [];
-
-  for (const [resource, amount] of Object.entries(resources)) {
-    if (!validResources.has(resource)) {
-      return { error: `Invalid resource type: ${resource}` };
-    }
-    const amt = parseInt(amount) || 0;
-    if (amt < 0) {
-      return { error: "Resource deduction amount cannot be negative" };
-    }
-    if (amt > 0) {
-      setClauses.push(`${resource} = ${resource} - ?`);
-      setParams.push(amt);
-      whereConditions.push(`${resource} >= ?`);
-      whereParams.push(amt);
-    }
-  }
-
-  if (setClauses.length === 0) {
-    return { ok: true };
-  }
-
-  try {
-    const result = await db.run(
-      `UPDATE kingdoms SET ${setClauses.join(', ')} WHERE id = ? AND ${whereConditions.join(' AND ')}`,
-      [...setParams, kingdomId, ...whereParams]
-    );
-
-    if (result.changes === 0) {
-      return { error: "Insufficient resources" };
-    }
-    return { ok: true };
-  } catch (err) {
-    console.error("[resources] failed to deduct resources:", err.message);
-    return { error: "Failed to deduct resources" };
-  }
-}
-
-// ── Performance: Efficient random selection (no ORDER BY RANDOM()) ──────────────
-// ORDER BY RANDOM() is expensive: sorts all rows. Instead: random offset + fetch
-async function getRandomKingdom(db, excludeId) {
-  const countResult = await db.get('SELECT COUNT(*) as c FROM kingdoms WHERE id != ?', [excludeId]);
-  if (!countResult || countResult.c === 0) return null;
-  const offset = Math.floor(Math.random() * countResult.c);
-  return db.get('SELECT id, name FROM kingdoms WHERE id != ? LIMIT 1 OFFSET ?', [excludeId, offset]);
-}
-
-// ── Performance: Random selection of multiple rows via Fisher-Yates shuffle ────
-async function getRandomKingdoms(db, excludeIds, count) {
-  const hasExclusions = excludeIds && excludeIds.length > 0;
-  const query = hasExclusions
-    ? `SELECT id FROM kingdoms WHERE id NOT IN (${excludeIds.map(() => '?').join(',')})`
-    : 'SELECT id FROM kingdoms';
-  const params = hasExclusions ? excludeIds : [];
-
-  const rows = await db.all(query, params);
-  if (!rows || rows.length === 0) return [];
-
-  // Fisher-Yates shuffle of IDs
-  for (let i = rows.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [rows[i], rows[j]] = [rows[j], rows[i]];
-  }
-
-  // Get top count IDs after shuffle
-  const selectedIds = rows.slice(0, count).map(r => r.id);
-  if (selectedIds.length === 0) return [];
-
-  // Fetch details for selected IDs
-  const idPlaceholders = selectedIds.map(() => '?').join(',');
-  return db.all(`SELECT id, name FROM kingdoms WHERE id IN (${idPlaceholders})`, selectedIds);
-}
 
 module.exports = function (db) {
   router.get("/me", requireAuth, async (req, res) => {
@@ -5546,7 +5402,6 @@ module.exports = function (db) {
         }
 
         // Get the updated kingdom with effects applied
-        const updatedKingdom = abilityResult.kingdom;
         const cooldownUntil = new Date(abilityResult.cooldownExpires).getTime() / 1000;
 
         // Apply all kingdom updates to database using the helper function
