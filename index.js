@@ -778,7 +778,7 @@ async function start() {
         await db.run('UPDATE kingdoms SET alliance_buffs = ? WHERE id = ?', [alliance.projects || '{}', targetKingdomId]);
         await db.run('COMMIT');
         res.json({ ok: true });
-      } catch (err) {
+      } catch (_err) {
         await db.run('ROLLBACK').catch(() => {});
         res.status(409).json({ error: 'Failed to invite kingdom' });
       }

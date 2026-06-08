@@ -14,7 +14,7 @@ const attunementManager = require('../game/attunement-manager');
 const synergiesModule = require('../game/fragment-synergies');
 const abilityManager = require('../game/active-ability-manager');
 const { applyKingdomUpdates } = require('../db/schema');
-const { marketPriceCache, setUnreadCount, incrementUnread } = require("../cache.js");
+const { marketPriceCache, setUnreadCount } = require("../cache.js");
 
 const router = express.Router();
 
@@ -5402,7 +5402,7 @@ module.exports = function (db) {
         }
 
         // Get the updated kingdom with effects applied
-        const updatedKingdom = abilityResult.kingdom;
+        const _updatedKingdom = abilityResult.kingdom;
         const cooldownUntil = new Date(abilityResult.cooldownExpires).getTime() / 1000;
 
         // Apply all kingdom updates to database using the helper function

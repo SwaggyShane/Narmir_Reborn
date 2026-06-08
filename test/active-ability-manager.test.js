@@ -5,7 +5,7 @@
 
 const assert = require('assert');
 const abilityManager = require('../game/active-ability-manager');
-const attunementManager = require('../game/attunement-manager');
+const _attunementManager = require('../game/attunement-manager');
 const { SYNERGIES } = require('../game/fragment-synergies');
 
 console.log('Testing Active Ability Manager\n');
@@ -136,7 +136,7 @@ function createKingdomWithSynergy(synergyId) {
 
   const kingdom = createKingdomWithSynergy('eternal-harvest');
   kingdom.bld_granaries = 5;
-  const initialFood = kingdom.food;
+  const _initialFood = kingdom.food;
   const initialPop = kingdom.population;
   const updated = abilityManager.applyBenefit(kingdom, 'eternal-harvest');
 
@@ -295,8 +295,8 @@ function createKingdomWithSynergy(synergyId) {
   console.log('Test 15: Full trigger flow with costs, benefits, penalties');
 
   const kingdom = createKingdomWithSynergy('celestial-harmony');
-  const initialGold = kingdom.gold;
-  const initialHappiness = kingdom.happiness;
+  const _initialGold = kingdom.gold;
+  const _initialHappiness = kingdom.happiness;
 
   const result = abilityManager.triggerAbility(kingdom, 'celestial-harmony');
   assert.ok(result.ok, 'Trigger should succeed');

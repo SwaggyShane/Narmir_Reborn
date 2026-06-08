@@ -507,7 +507,7 @@ async function logHappinessEvent(db, kingdomId, turn, eventData) {
   }
 }
 
-function effectiveMorale(k) {
+function _effectiveMorale(k) {
   let base =
     k.morale !== undefined && k.morale !== null ? k.morale : 100;
   
@@ -1579,7 +1579,7 @@ function processFoodEconomy(k, events) {
             : 100;
       const oldMorale = cur;
       updates.morale = Math.min(natCap, cur + 2);
-      const mDelta = (updates.morale || 0) - oldMorale;
+      const _mDelta = (updates.morale || 0) - oldMorale;
       
       events.push({
         type: "system",
@@ -1621,7 +1621,7 @@ function processFoodEconomy(k, events) {
               : 100;
         const oldMorale = cur;
         updates.morale = Math.max(0, cur - hit);
-        const mDelta = updates.morale - oldMorale;
+        const _mDelta = updates.morale - oldMorale;
 
         events.push({
           type: "system",
@@ -2626,7 +2626,7 @@ function efficiencyMult(route) {
   return route.efficiency || 1.0;
 }
 
-function displayMorale(k) {
+function _displayMorale(k) {
   const base = k.morale !== undefined && k.morale !== null ? k.morale : 100;
   const ent = k.res_entertainment || 100;
   const raceMap = {
@@ -3203,9 +3203,9 @@ function processTurn(k, db = null) {
                 : 100;
           const oldMorale = cur;
           updates.morale = Math.min(100, cur + 2);
-          const mDelta = updates.morale - oldMorale;
-          if (mDelta > 0) {
-            bonusStr = `+${mDelta} Morale`;
+          const _mDelta = updates.morale - oldMorale;
+          if (_mDelta > 0) {
+            bonusStr = `+${_mDelta} Morale`;
           } else {
             bonusStr = `Morale at cap`;
           }
@@ -3982,7 +3982,7 @@ function processTurn(k, db = null) {
           : 100;
     const oldMorale = cur;
     updates.morale = Math.min(natCap, cur + 1);
-    const mDelta = updates.morale - oldMorale;
+    const _mDelta = updates.morale - oldMorale;
   }
 
   // ── XP awards this turn ───────────────────────────────────────────────────────
@@ -8801,7 +8801,7 @@ function applyHeroTurnBonuses(hero, k, updates, events) {
           : 100;
     const oldMorale = currentMorale;
     updates.morale = Math.min(100, currentMorale + 1);
-    const mDelta = updates.morale - oldMorale;
+    const _mDelta = updates.morale - oldMorale;
   } else if (hero.class === "warlord") {
     // Warlord: Morale boost
     const currentMorale =
@@ -8812,7 +8812,7 @@ function applyHeroTurnBonuses(hero, k, updates, events) {
           : 100;
     const oldMorale = currentMorale;
     updates.morale = Math.min(100, currentMorale + 2);
-    const mDelta = updates.morale - oldMorale;
+    const _mDelta = updates.morale - oldMorale;
   } else if (hero.class === "forge_lord") {
     // Forge Lord: Gold income
     const bonus = Math.floor(hero.level * 300);
@@ -8836,7 +8836,7 @@ function applyHeroTurnBonuses(hero, k, updates, events) {
           : 100;
     const oldMorale = currentMorale;
     updates.morale = Math.min(100, currentMorale + 1);
-    const mDelta = updates.morale - oldMorale;
+    const _mDelta = updates.morale - oldMorale;
     if (events) {
       events.push({
         type: "system",
