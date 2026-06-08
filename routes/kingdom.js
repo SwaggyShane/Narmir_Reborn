@@ -3987,7 +3987,7 @@ module.exports = function (db) {
   // ── Send trade offer ──────────────────────────────────────────────────────────
   router.post("/economy/trade/send", requireAuth, requireCsrfToken, async (req, res) => {
     const { targetId, offer, request } = req.body;
-    const k = await db.get("SELECT id, name, market_upgrades, food, gold, mana, maps, blueprints_stored FROM kingdoms WHERE player_id = ?", [
+    const k = await db.get("SELECT id, name, turn, market_upgrades, food, gold, mana, maps, blueprints_stored FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
