@@ -5442,15 +5442,36 @@ module.exports = function (db) {
       );
 
       if (!cooldown) {
-        return res.json({ on_cooldown: false, cooldown_remaining_seconds: 0 });
+        return res.json({
+          on_cooldown: false,
+          cooldown_remaining_seconds: 0,
+          cooldown_remaining_days: 0,
+          cooldown_remaining_formatted: 'Ready',
+        });
       }
 
       const now = Math.floor(Date.now() / 1000);
       const remaining = Math.max(0, cooldown.cooldown_until - now);
+      const remainingDays = (remaining / 86400).toFixed(1);
+      const hours = Math.floor((remaining % 86400) / 3600);
+      const minutes = Math.floor((remaining % 3600) / 60);
+
+      let formatted = 'Ready';
+      if (remaining > 0) {
+        if (remaining >= 86400) {
+          formatted = `${Math.floor(remaining / 86400)}d ${hours}h remaining`;
+        } else if (remaining >= 3600) {
+          formatted = `${hours}h ${minutes}m remaining`;
+        } else {
+          formatted = `${minutes}m remaining`;
+        }
+      }
 
       res.json({
         on_cooldown: remaining > 0,
         cooldown_remaining_seconds: remaining,
+        cooldown_remaining_days: parseFloat(remainingDays),
+        cooldown_remaining_formatted: formatted,
       });
     } catch (err) {
       console.error('[synergy] cooldown check failed:', err.message);
