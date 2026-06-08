@@ -7,6 +7,7 @@ const { progressGoal } = require('./goals');
 const fragmentBonusManager = require("./fragment-bonus-manager");
 const attunementManager = require("./attunement-manager");
 const effectsProcessor = require("./synergy-effects-processor");
+const combatSynergyProcessor = require("./combat-synergy-processor");
 const { safeJsonParse, roll, rand, clearParseCache } = require('../utils/helpers');
 
 const {
@@ -5501,12 +5502,14 @@ function resolveMilitaryAttack(
     : 1.0;
 
   const atkMb = safeJsonParse(attacker.milestone_bonuses, {}, "combat:atkMb");
-  let atkPower = atkPowerRaw * (1 + (atkMb.attack_pct || 0) / 100) * atkPrestigeMult;
+  const atkSynergyCombatMult = combatSynergyProcessor.getCombatDamageMultiplier(attacker);
+  const atkActiveCombat = combatSynergyProcessor.getActiveCombatBonus(attacker);
+  let atkPower = atkPowerRaw * (1 + (atkMb.attack_pct || 0) / 100) * atkPrestigeMult * atkSynergyCombatMult * atkActiveCombat.damage;
 
   if (attacker.race === "vampire" && !night) {
     const atkMausUpg = safeJsonParse(attacker.mausoleum_upgrades, {}, "auto:mausoleum_upgrades");
     const atkPenaltyMult = atkMausUpg.night_watch ? 0.2 : 0.1;
-    atkPower = Math.floor(atkPowerRaw * atkPenaltyMult);
+    atkPower = Math.floor(atkPowerRaw * atkPenaltyMult * atkSynergyCombatMult * atkActiveCombat.damage);
     if (!daylightPenaltyMsg) daylightPenaltyMsg = "";
     daylightPenaltyMsg +=
       " ☀️ Daylight penalty: Your troops are lethargic and ineffective during the day!";
@@ -5653,12 +5656,15 @@ function resolveMilitaryAttack(
 
   const defMb = safeJsonParse(defender.milestone_bonuses, {}, "combat:defMb");
   const defMilestoneMult = 1 + (defMb.defense_pct || 0) / 100;
-  
+
   const defPrestigeMult = (defender.prestige_level > 0)
     ? (PRESTIGE_MODIFIERS[Math.min(defender.prestige_level, 5)]?.combat || 1.0)
     : 1.0;
 
-  const defPowerFinal = defPower * defMilestoneMult * defPrestigeMult;
+  const defSynergyDefenseMult = combatSynergyProcessor.getDefenseMultiplier(defender);
+  const defActiveCombat = combatSynergyProcessor.getActiveCombatBonus(defender);
+
+  const defPowerFinal = defPower * defMilestoneMult * defPrestigeMult * defSynergyDefenseMult * defActiveCombat.health;
 
   // ── Step 6: Battle resolution ─────────────────────────────────────────────
   const variance = 0.8 + Math.random() * 0.4;
