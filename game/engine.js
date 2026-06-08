@@ -79,9 +79,9 @@ const {
   TRADE_ROUTE_MAX,
   TRADE_ROUTE_ESTABLISH_COST,
   RESOURCE_BUILDING_CONFIG,
-  RESOURCE_STAGE1_COL,
-  RESOURCE_STAGE2_COL,
-  RESOURCE_STAGE3_COL,
+  _RESOURCE_STAGE1_COL,
+  _RESOURCE_STAGE2_COL,
+  _RESOURCE_STAGE3_COL,
   ELEMENTAL_FRAGMENTS,
   RARE_RESOURCE_ITEMS,
   RESOURCE_JUNK_MESSAGES,
@@ -1579,7 +1579,7 @@ function processFoodEconomy(k, events) {
             : 100;
       const oldMorale = cur;
       updates.morale = Math.min(natCap, cur + 2);
-      const mDelta = (updates.morale || 0) - oldMorale;
+      const _mDelta = (updates.morale || 0) - oldMorale;
       
       events.push({
         type: "system",
@@ -1621,7 +1621,7 @@ function processFoodEconomy(k, events) {
               : 100;
         const oldMorale = cur;
         updates.morale = Math.max(0, cur - hit);
-        const mDelta = updates.morale - oldMorale;
+        const _mDelta = updates.morale - oldMorale;
 
         events.push({
           type: "system",
@@ -3203,7 +3203,7 @@ function processTurn(k, db = null) {
                 : 100;
           const oldMorale = cur;
           updates.morale = Math.min(100, cur + 2);
-          const mDelta = updates.morale - oldMorale;
+          const _mDelta = updates.morale - oldMorale;
           if (mDelta > 0) {
             bonusStr = `+${mDelta} Morale`;
           } else {
@@ -3247,7 +3247,7 @@ function processTurn(k, db = null) {
             ? k.morale
             : 100;
       let newMorale = Math.min(natCap, cur + recovery);
-      let recoveryReason = `Low taxes / Entertainment`;
+      let _recoveryReason = `Low taxes / Entertainment`;
 
       // If currently above natural cap (due to spells/events), natural decay?
       if (cur > natCap) {
@@ -3335,7 +3335,7 @@ function processTurn(k, db = null) {
       destBldStr = `, and 1 ${typeLabel} was destroyed`;
     }
 
-    const oldM = updates.morale !== undefined ? updates.morale : k.morale;
+    const _oldM = updates.morale !== undefined ? updates.morale : k.morale;
     updates.morale = 5; // Reset morale
     events.push({
       type: "system",
