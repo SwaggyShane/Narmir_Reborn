@@ -1722,7 +1722,7 @@ function processGranaryAttunements(k, events) {
       }
       break;
 
-    case 'Celestial Feather':
+    case 'Celestial Feather': {
       // Portion of reserves distributed to boost happiness on unstable turns
       const happiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
       if (happiness < 30 && (k.food || 0) > 0) {
@@ -1736,6 +1736,7 @@ function processGranaryAttunements(k, events) {
         updates.happiness = Math.min(120, happiness + happinessBoost);
       }
       break;
+    }
 
     case 'Cursed Bloodstone':
       // Vampiric Silos: dark elixir distillation spikes chaos, 10% chance -1 happiness

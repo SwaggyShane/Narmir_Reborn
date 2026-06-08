@@ -83,12 +83,7 @@ async function withTurnLock(playerId, fn) {
   turnsInProgress.set(playerId, promise);
 
   // Wait for turn to complete
-  try {
-    return await promise;
-  } catch (err) {
-    // Error already handled in finally block cleanup, just re-throw
-    throw err;
-  }
+  return await promise;
 }
 
 // ── Column Selection Constants for Query Optimization ──────────────────────────
@@ -4599,30 +4594,36 @@ module.exports = function (db) {
       // Calculate progress for achievements
       const getAchievementProgress = (achId) => {
         switch(achId) {
-          case 'ach_founder':
+          case 'ach_founder': {
             // Progress: any building built = 100%
             const totalBuildings = Object.values(config.BUILDING_COL)
               .filter(col => col.startsWith('bld_'))
               .reduce((sum, col) => sum + (parseInt(k[col], 10) || 0), 0);
             return { current: Math.min(totalBuildings, 1), target: 1, label: `${totalBuildings} building${totalBuildings !== 1 ? 's' : ''}` };
-          case 'ach_warlord':
+          }
+          case 'ach_warlord': {
             const warlordPop = parseInt(k.population, 10) || 0;
             return { current: warlordPop, target: 50000, label: `${warlordPop.toLocaleString()} / 50,000` };
-          case 'ach_constructor':
+          }
+          case 'ach_constructor': {
             const totalBlds = Object.values(config.BUILDING_COL)
               .filter(col => col.startsWith('bld_'))
               .reduce((sum, col) => sum + (parseInt(k[col], 10) || 0), 0);
             return { current: totalBlds, target: 1500, label: `${totalBlds} / 1,500` };
-          case 'ach_colossus':
+          }
+          case 'ach_colossus': {
             const colossusPopulation = parseInt(k.population, 10) || 0;
             return { current: colossusPopulation, target: 10000000, label: `${colossusPopulation.toLocaleString()} / 10,000,000` };
-          case 'ach_wealthy':
+          }
+          case 'ach_wealthy': {
             const wealthyGold = parseInt(k.gold, 10) || 0;
             return { current: wealthyGold, target: 10000000, label: `${wealthyGold.toLocaleString()} / 10,000,000` };
-          case 'ach_arcane':
+          }
+          case 'ach_arcane': {
             const arcaneMana = parseInt(k.mana, 10) || 0;
             return { current: arcaneMana, target: 1000000, label: `${arcaneMana.toLocaleString()} / 1,000,000` };
-          case 'ach_grandmaster':
+          }
+          case 'ach_grandmaster': {
             const towers = parseInt(k.bld_mage_towers, 10) || 0;
             const libs = parseInt(k.bld_libraries, 10) || 0;
             const schools = parseInt(k.bld_schools, 10) || 0;
@@ -4633,6 +4634,7 @@ module.exports = function (db) {
               label: `${towers}/${libs}/${schools}`,
               sublabel: 'Towers/Libraries/Schools'
             };
+          }
           default:
             return { current: 0, target: 1, label: 'Unknown' };
         }

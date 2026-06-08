@@ -23,7 +23,7 @@ if (!fs.existsSync(soundsPath)) {
 // Returns null if the input is unsafe (traversal, wrong extension, or escapes the dir).
 function safeSoundPath(rawName) {
   if (typeof rawName !== "string" || !rawName.trim()) return null;
-  const base = rawName.split(/[\/\\]/).pop();
+  const base = rawName.split(/[/\\]/).pop();
   if (!base || base === "." || base === "..") return null;
   const ext = path.extname(base).toLowerCase();
   if (!ALLOWED_SOUND_EXTENSIONS.has(ext)) return null;
@@ -98,7 +98,7 @@ const upload = multer({
   storage: multer.diskStorage({
     destination: (req, file, cb) => cb(null, soundsPath),
     filename: (req, file, cb) => {
-      const base = (file.originalname || "").split(/[\/\\]/).pop();
+      const base = (file.originalname || "").split(/[/\\]/).pop();
       const ext = path.extname(base).toLowerCase();
       if (!base || !ALLOWED_SOUND_EXTENSIONS.has(ext)) {
         return cb(new Error("Invalid filename or extension"));
@@ -984,7 +984,7 @@ module.exports = function (db, io) {
       let finalName = req.file.filename;
       if (typeof req.body.actionName === "string" && req.body.actionName !== "custom") {
         const ext = path.extname(req.file.filename);
-        const requestedBase = req.body.actionName.split(/[\/\\]/).pop();
+        const requestedBase = req.body.actionName.split(/[/\\]/).pop();
         if (!requestedBase || requestedBase === "." || requestedBase === "..") {
           return res.status(400).json({ error: "Invalid action name" });
         }

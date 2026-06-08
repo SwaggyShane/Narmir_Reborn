@@ -1230,12 +1230,6 @@ const config = {
     ' ': ' ', // Space remains space
   },
 
-  SPELL_GLYPHS: {
-    default: "⬜",
-    locked: "❓",
-    revealed: "✨",
-  },
-
   SPELL_DEFS: {
     spark: {
       minSB: 100,
