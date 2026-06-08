@@ -251,7 +251,7 @@ window.studyMagic = async () => {
       try {
         const m = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
         if (m) return decodeURIComponent(m[1]);
-      } catch (_e) {}
+      } catch (_error) {}
       return null;
     };
 

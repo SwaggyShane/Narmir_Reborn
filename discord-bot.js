@@ -199,7 +199,7 @@ client.on('messageCreate', async (message) => {
           `Linking account: **${player.username}**`
         );
         await message.reply(`✅ A verification code has been sent to your DMs! Enter it in **Settings → Discord** in-game.`);
-      } catch (dmError) {
+      } catch (_dmError) {
         // DMs are disabled — do NOT expose the token publicly (security risk)
         await message.reply(
           `❌ I couldn't DM you. Please enable DMs from server members in Discord Settings → Privacy & Safety, then try again. Alternatively, use **Method 2 (Manual Entry)** in Settings → Discord.`
