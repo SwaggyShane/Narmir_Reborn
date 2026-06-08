@@ -120,6 +120,7 @@ The current combat is percentage-based with cascading damage calculations:
 
 **Key Exports:**
 ```javascript
+// Constants
 const TROOP_BASE_STATS = {
   fighters: { hp: 250, dmg: 25, hpLevelScale: 2.0, dmgLevelScale: 1.0 },
   rangers: { hp: 100, dmg: 15, hpLevelScale: 0.8, dmgLevelScale: 0.6 },
@@ -132,20 +133,28 @@ const TROOP_BASE_STATS = {
 };
 
 const INJURY_STATES = {
-  HEALTHY: { minHpPercent: 75, maxHpPercent: 100, healingSpeed: 1.0 },
-  LIGHTLY_INJURED: { minHpPercent: 50, maxHpPercent: 74, healingSpeed: 0.8 },
-  MODERATELY_INJURED: { minHpPercent: 25, maxHpPercent: 49, healingSpeed: 0.6 },
-  HEAVILY_INJURED: { minHpPercent: 1, maxHpPercent: 24, healingSpeed: 0.4 },
-  DEAD: { minHpPercent: 0, maxHpPercent: 0, healingSpeed: 0 },
+  HEALTHY: { name: 'healthy', minHpPercent: 75, maxHpPercent: 100, healingSpeed: 1.0 },
+  LIGHTLY_INJURED: { name: 'lightly_injured', minHpPercent: 50, maxHpPercent: 74, healingSpeed: 0.8 },
+  MODERATELY_INJURED: { name: 'moderately_injured', minHpPercent: 25, maxHpPercent: 49, healingSpeed: 0.6 },
+  HEAVILY_INJURED: { name: 'heavily_injured', minHpPercent: 1, maxHpPercent: 24, healingSpeed: 0.4 },
+  DEAD: { name: 'dead', minHpPercent: 0, maxHpPercent: 0, healingSpeed: 0 },
 };
 
-// Functions:
+// Core calculation functions
 - calculateIndividualTroopHp(troopType, armorResearch, troopLevel, racialModifier)
 - calculateIndividualTroopDmg(troopType, weaponResearch, troopLevel, racialModifier)
 - calculateWallHp(wallCount, defenseType)
-- getInjuryState(currentHp, maxHp)
-- parseInjuredTroops(jsonString) -> { [troopType]: [{hp, maxHp, count}, ...], ... }
-- serializeInjuredTroops(injuredState) -> JSON string for storage
+- getInjuryState(currentHp, maxHp) -> INJURY_STATES object matching current HP%
+
+// Injured troop tracking functions
+- parseInjuredTroops(jsonString) -> parsed JSON object with injured troop data
+- serializeInjuredTroops(injuredTroops) -> JSON string for database storage
+- recordInjuredTroop(injuredTroops, troopType, currentHp, maxHp) -> updates injuredTroops
+- getLivingTroopCount(injuredTroops, troopType) -> count of troops still alive
+- getDeadTroopCount(injuredTroops, troopType) -> count of dead troops
+- cleanupDeadTroops(injuredTroops) -> removes DEAD entries from tracking
+- applyShrineHealing(injuredTroops, clerics, clericLevel) -> shrine-based healing
+- preventLethality(injuredTroops, troopType, troopIndex) -> prevents troops from dying
 ```
 
 #### game/combat-resolver.js
@@ -241,11 +250,22 @@ These support resolveMilitaryAttack and may need refactoring:
 #### 3.2.3 Injury Healing Integration
 - **Location:** `processTurn()` function (line 2726)
 - **Add:** Healing logic that processes injured_troops for each unit type per turn
-- **Example logic:**
+- **Implementation Note:** Need to implement custom healing logic or use `applyShrineHealing()` if clerics are available
+- **Example logic (to be implemented):**
   ```javascript
   // In processTurn, after processing building effects:
+  const { parseInjuredTroops, serializeInjuredTroops, applyShrineHealing } = require('./combat-new');
+  
   const injuredTroops = parseInjuredTroops(k.injured_troops);
-  applyPerTurnHealing(injuredTroops, k.troop_levels);
+  
+  // Apply shrine healing if available
+  if (k.clerics > 0) {
+    applyShrineHealing(injuredTroops, k.clerics, k.troop_levels.clerics);
+  }
+  
+  // TODO: Implement natural healing per turn (e.g., 10% HP recovery per turn)
+  // Currently only applyShrineHealing is available in combat-new.js
+  
   k.injured_troops = serializeInjuredTroops(injuredTroops);
   ```
 
