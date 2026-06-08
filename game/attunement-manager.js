@@ -349,13 +349,14 @@ function getBuildingContributionStatus(kingdom, buildingType) {
 
   const hints = getBuildingSynergyHints(buildingType);
 
-  // Get current attunements
+  // Get current attunements (returns array of attunements)
   const attunements = getAttunementStatus(kingdom);
-  const buildingAttunements = attunements[buildingType] || [];
+  // Filter to only this building's attunements
+  const buildingAttunements = attunements.filter(att => att.buildingType === buildingType);
 
   return hints.map(hint => {
     const isAttuned = buildingAttunements.some(att =>
-      att.fragment_name === hint.fragment_name
+      att.fragmentName === hint.fragment_name
     );
 
     return {

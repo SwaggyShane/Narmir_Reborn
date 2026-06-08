@@ -5455,6 +5455,7 @@ module.exports = function (db) {
       const remainingDays = (remaining / 86400).toFixed(1);
       const hours = Math.floor((remaining % 86400) / 3600);
       const minutes = Math.floor((remaining % 3600) / 60);
+      const seconds = remaining % 60;
 
       let formatted = 'Ready';
       if (remaining > 0) {
@@ -5462,8 +5463,10 @@ module.exports = function (db) {
           formatted = `${Math.floor(remaining / 86400)}d ${hours}h remaining`;
         } else if (remaining >= 3600) {
           formatted = `${hours}h ${minutes}m remaining`;
-        } else {
+        } else if (remaining >= 60) {
           formatted = `${minutes}m remaining`;
+        } else {
+          formatted = `${seconds}s remaining`;
         }
       }
 
