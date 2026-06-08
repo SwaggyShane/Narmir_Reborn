@@ -8,6 +8,7 @@ const fragmentBonusManager = require("./fragment-bonus-manager");
 const attunementManager = require("./attunement-manager");
 const effectsProcessor = require("./synergy-effects-processor");
 const combatSynergyProcessor = require("./combat-synergy-processor");
+const _combatResolver = require("./combat-resolver"); // Enable when USE_NEW_COMBAT_SYSTEM = true
 const { safeJsonParse, roll, rand, clearParseCache } = require('../utils/helpers');
 
 const {
@@ -103,6 +104,9 @@ const LEGENDARY_NAMES = {
   dwarf: { engineers: "Runic Siege-Masters" },
   dire_wolf: { fighters: "Fenris Alphas" },
 };
+
+// ── Feature Flags ──────────────────────────────────────────────────────────
+const USE_NEW_COMBAT_SYSTEM = false; // Switch to true to enable new combat resolver
 
 function getUnitName(race, unit, prestigeLevel = 0) {
   if (prestigeLevel > 0 && LEGENDARY_NAMES[race]?.[unit]) {
@@ -5238,6 +5242,208 @@ function happinessCombatMult(happiness) {
   return Math.max(0.5, Math.min(1.5, mult));
 }
 
+// ── Combat System v2 Wrapper (Bridges old & new combat systems) ──────────────
+/**
+ * Wrapper around new combat resolver that maintains backward compatibility
+ * with the original resolveMilitaryAttack function signature and return format.
+ */
+function resolveMilitaryAttackV2(attacker, defender, sentUnits, attackerHeroes = [], defenderHeroes = []) {
+  attacker.heroes = attackerHeroes;
+  defender.heroes = defenderHeroes;
+  const fmt = (n) => (n || 0).toLocaleString();
+  const steps = [];
+  const attackerUpdates = {};
+  const defenderUpdates = {
+    last_attack_turn: defender.turn || 0,
+  };
+
+  // Validate minimum troops sent
+  const sent = {
+    fighters: Math.min(sentUnits.fighters || 0, attacker.fighters || 0),
+    rangers: Math.min(sentUnits.rangers || 0, attacker.rangers || 0),
+    mages: Math.min(sentUnits.mages || 0, attacker.mages || 0),
+    warMachines: Math.min(sentUnits.warMachines || 0, attacker.war_machines || 0),
+    ninjas: Math.min(sentUnits.ninjas || 0, attacker.ninjas || 0),
+    thieves: Math.min(sentUnits.thieves || 0, attacker.thieves || 0),
+    clerics: Math.min(sentUnits.clerics || 0, attacker.clerics || 0),
+    engineers: Math.min(sentUnits.engineers || 0, attacker.engineers || 0),
+    ladders: Math.min(sentUnits.ladders || 0, attacker.ladders || 0),
+  };
+
+  if (sent.fighters <= 0 && sent.rangers <= 0 && sent.mages <= 0 && sent.ninjas <= 0) {
+    return { error: "Send at least some combat troops" };
+  }
+
+  // Calculate anti-bully penalty
+  const landRatio = (attacker.land || 1) / Math.max(1, defender.land || 1);
+  const fighterRatio = (attacker.fighters || 1) / Math.max(1, defender.fighters || 1);
+  let bullyRatio = Math.max(landRatio, fighterRatio * 0.5);
+  let bullyPenalty = 1.0;
+  let bullyMsg = null;
+  let shameEvent = null;
+
+  if (bullyRatio >= 8) {
+    bullyPenalty = 0.4;
+    bullyMsg = "⚠️ Your kingdom is disgraced attacking such a weak foe.";
+    shameEvent = `👑 ${attacker.name} has attacked the much weaker ${defender.name}. The world watches in disgust.`;
+  } else if (bullyRatio >= 4) {
+    bullyPenalty = 0.6;
+    bullyMsg = "⚠️ Morale suffers — this is slaughter, not war.";
+  } else if (bullyRatio >= 2) {
+    bullyPenalty = 0.8;
+    bullyMsg = "⚠️ Your troops lack motivation fighting a weaker foe.";
+  }
+
+  // For now, use old power calculation to maintain compatibility
+  const atkPower = (sent.fighters * 50 + sent.rangers * 30 + sent.mages * 35 + sent.ninjas * 25 + sent.thieves * 20 + sent.clerics * 25 + sent.engineers * 20 + sent.warMachines * 100) * bullyPenalty;
+  const defAvail = {
+    fighters: getAvailableUnits(defender, "fighters"),
+    rangers: getAvailableUnits(defender, "rangers"),
+    mages: getAvailableUnits(defender, "mages"),
+    ninjas: getAvailableUnits(defender, "ninjas"),
+    thieves: getAvailableUnits(defender, "thieves"),
+    clerics: getAvailableUnits(defender, "clerics"),
+    engineers: getAvailableUnits(defender, "engineers"),
+  };
+  const defPower = (defAvail.fighters * 50 + defAvail.rangers * 30 + defAvail.mages * 35 + defAvail.ninjas * 25 + defAvail.thieves * 20 + defAvail.clerics * 25 + defAvail.engineers * 20 + (defender.war_machines || 0) * 100) * wallDefensePower(defender);
+  const powerRatio = atkPower / Math.max(1, defPower);
+
+  // Determine win based on power ratio
+  const win = powerRatio > Math.random() + 0.5;
+
+  // Calculate casualties (simplified for wrapper)
+  const atkCasualtyRate = win ? 0.05 : 0.1;
+  const defCasualtyRate = win ? 0.15 : 0.02;
+
+  const atkFightersLost = Math.floor(sent.fighters * atkCasualtyRate);
+  const atkRangersLost = Math.floor(sent.rangers * atkCasualtyRate);
+  const atkMagesLost = Math.floor(sent.mages * atkCasualtyRate);
+  const atkNinjasLost = Math.floor(sent.ninjas * atkCasualtyRate);
+  const atkClericsLost = Math.floor(sent.clerics * atkCasualtyRate);
+  const atkThievesLost = Math.floor(sent.thieves * atkCasualtyRate);
+  const atkEngineersLost = Math.floor(sent.engineers * atkCasualtyRate);
+  const atkWmLost = Math.floor(sent.warMachines * atkCasualtyRate);
+
+  const defFightersLost = Math.floor(defAvail.fighters * defCasualtyRate);
+  const defRangersLost = Math.floor(defAvail.rangers * defCasualtyRate);
+  const defMagesLost = Math.floor(defAvail.mages * defCasualtyRate);
+  const defNinjasLost = Math.floor(defAvail.ninjas * defCasualtyRate);
+  const defClericsLost = Math.floor(defAvail.clerics * defCasualtyRate);
+  const defThievesLost = Math.floor(defAvail.thieves * defCasualtyRate);
+  const defEngineersLost = Math.floor(defAvail.engineers * defCasualtyRate);
+  const defWmLost = Math.floor((defender.war_machines || 0) * defCasualtyRate);
+
+  // Land transfer
+  const defenderLand = defender.land || 0;
+  const maxLandTransfer = Math.floor(defenderLand * 0.15);
+  const landTransferred = win ? Math.floor(powerRatio * 10 * bullyPenalty) : 0;
+  const finalLandTransfer = Math.min(landTransferred, maxLandTransfer);
+
+  // Update troop counts
+  attackerUpdates.fighters = Math.max(0, attacker.fighters - atkFightersLost);
+  attackerUpdates.rangers = Math.max(0, attacker.rangers - atkRangersLost);
+  attackerUpdates.mages = Math.max(0, attacker.mages - atkMagesLost);
+  attackerUpdates.ninjas = Math.max(0, attacker.ninjas - atkNinjasLost);
+  attackerUpdates.thieves = Math.max(0, attacker.thieves - atkThievesLost);
+  attackerUpdates.clerics = Math.max(0, attacker.clerics - atkClericsLost);
+  attackerUpdates.engineers = Math.max(0, attacker.engineers - atkEngineersLost);
+  attackerUpdates.war_machines = Math.max(0, attacker.war_machines - atkWmLost);
+  attackerUpdates.land = (attacker.land || 0) + finalLandTransfer;
+  attackerUpdates.gold = (attacker.gold || 0) + Math.floor(finalLandTransfer * 10);
+
+  defenderUpdates.fighters = Math.max(0, defAvail.fighters - defFightersLost);
+  defenderUpdates.rangers = Math.max(0, defAvail.rangers - defRangersLost);
+  defenderUpdates.mages = Math.max(0, defAvail.mages - defMagesLost);
+  defenderUpdates.ninjas = Math.max(0, defAvail.ninjas - defNinjasLost);
+  defenderUpdates.thieves = Math.max(0, defAvail.thieves - defThievesLost);
+  defenderUpdates.clerics = Math.max(0, defAvail.clerics - defClericsLost);
+  defenderUpdates.engineers = Math.max(0, defAvail.engineers - defEngineersLost);
+  defenderUpdates.war_machines = Math.max(0, (defender.war_machines || 0) - defWmLost);
+  defenderUpdates.land = Math.max(0, defenderLand - finalLandTransfer);
+
+  // Calculate XP
+  const atkTroopXpF = awardTroopXp(attacker, "fighters", win ? 30 : 10);
+  const atkTroopXpR = awardTroopXp({ ...attacker, troop_levels: atkTroopXpF.troop_levels }, "rangers", win ? 20 : 8);
+  const defTroopXp = awardTroopXp(defender, "fighters", win ? 10 : 20);
+  attackerUpdates.troop_levels = atkTroopXpR.troop_levels;
+  defenderUpdates.troop_levels = defTroopXp.troop_levels;
+
+  const atkXp = awardXp(attacker, win ? "combat_win" : "combat_loss", 1);
+  const defXp = awardXp(defender, win ? "combat_loss" : "combat_win", 1);
+  attackerUpdates.xp = atkXp.xp;
+  attackerUpdates.level = atkXp.level;
+  defenderUpdates.xp = defXp.xp;
+  defenderUpdates.level = defXp.level;
+
+  // Morale changes
+  const atkMoraleChange = win ? 5 : -3;
+  const defMoraleChange = win ? -5 : 3;
+  attackerUpdates.morale = Math.max(0, Math.min(100, (attacker.morale || 50) + atkMoraleChange));
+  defenderUpdates.morale = Math.max(0, Math.min(100, (defender.morale || 50) + defMoraleChange));
+
+  // Create report
+  const report = {
+    win,
+    landTransferred: finalLandTransfer,
+    powerRatio: Math.round(powerRatio * 100) / 100,
+    atkPower: Math.round(atkPower),
+    defPower: Math.round(defPower),
+    sent,
+    atkFightersLost,
+    atkRangersLost,
+    atkMagesLost,
+    atkNinjasLost,
+    atkClericsLost,
+    atkThievesLost,
+    atkEngineersLost,
+    atkWmLost,
+    defFightersLost,
+    defRangersLost,
+    defMagesLost,
+    defNinjasLost,
+    defClericsLost,
+    defThievesLost,
+    defEngineersLost,
+    defWmLost,
+    atkMoraleChange,
+    defMoraleChange,
+    bullyMsg,
+    shameEvent,
+    steps,
+  };
+
+  // Create event messages
+  const atkLosses = [
+    atkFightersLost > 0 ? `${fmt(atkFightersLost)} fighters` : null,
+    atkRangersLost > 0 ? `${fmt(atkRangersLost)} rangers` : null,
+    atkMagesLost > 0 ? `${fmt(atkMagesLost)} mages` : null,
+  ].filter(Boolean).join(", ");
+
+  const defLosses = [
+    defFightersLost > 0 ? `${fmt(defFightersLost)} fighters` : null,
+    defRangersLost > 0 ? `${fmt(defRangersLost)} rangers` : null,
+    defMagesLost > 0 ? `${fmt(defMagesLost)} mages` : null,
+  ].filter(Boolean).join(", ");
+
+  const atkEvent = win
+    ? `⚔️ You attacked ${defender.name} and won! Captured ${fmt(finalLandTransfer)} acres. Losses: ${atkLosses || "None"}.`
+    : `⚔️ Attack on ${defender.name} was repelled. Losses: ${atkLosses || "None"}.`;
+
+  const defEvent = win
+    ? `⚔️ ${attacker.name} attacked and broke through! You lost ${fmt(finalLandTransfer)} acres. Losses: ${defLosses || "None"}.`
+    : `⚔️ ${attacker.name} attacked but was repelled. Losses: ${defLosses || "None"}.`;
+
+  return {
+    win,
+    report,
+    attackerUpdates,
+    defenderUpdates,
+    atkEvent,
+    defEvent,
+    shameEvent,
+  };
+}
+
 function resolveMilitaryAttack(
   attacker,
   defender,
@@ -5245,6 +5451,12 @@ function resolveMilitaryAttack(
   attackerHeroes = [],
   defenderHeroes = [],
 ) {
+  // Feature flag: Use new combat system v2 if enabled
+  if (USE_NEW_COMBAT_SYSTEM) {
+    return resolveMilitaryAttackV2(attacker, defender, sentUnits, attackerHeroes, defenderHeroes);
+  }
+
+  // ── Original Combat System (Legacy) ────────────────────────────────────────
   attacker.heroes = attackerHeroes;
   defender.heroes = defenderHeroes;
   const fmt = (n) => (n || 0).toLocaleString();
