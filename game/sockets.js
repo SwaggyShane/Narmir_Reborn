@@ -1,9 +1,3 @@
-/* eslint-disable no-undef, no-unused-vars */
-// Socket.io event handlers use closure variables that ESLint's scope analysis
-// cannot properly track through nested callbacks. These are false positives;
-// the variables (playerId, username, kingdom, notifyUnread) are defined in the
-// outer scope and correctly accessible to the event handlers at runtime.
-
 const jwt = require("jsonwebtoken");
 const engine = require("./engine");
 const { setUnreadCount, incrementUnread, unreadNewsCache } = require("../cache.js");
@@ -26,14 +20,17 @@ module.exports = function (io, db) {
   });
 
   io.on("connection", async (socket) => {
+    // Declare variables in outer scope so they're accessible to event handlers
+    let playerId, username, kingdom, notifyUnread;
+
     try {
-      const { playerId, username } = socket.player;
+      ({ playerId, username } = socket.player);
 
       const player = await db.get(
         "SELECT id, username, is_admin, is_chat_mod, chat_banned, chat_color, chat_name FROM players WHERE id = ?",
         [playerId],
       );
-      const kingdom = await db.get(
+      kingdom = await db.get(
         "SELECT id, name, race FROM kingdoms WHERE player_id = ?",
         [playerId],
       );
@@ -86,7 +83,7 @@ module.exports = function (io, db) {
       );
       if (membership) socket.join(`alliance:${membership.alliance_id}`);
 
-      const notifyUnread = async (kid) => {
+      notifyUnread = async (kid) => {
         try {
           let count = unreadNewsCache.get(`${kid}`);
           if (count === undefined) {

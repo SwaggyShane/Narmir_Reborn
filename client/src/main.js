@@ -49,7 +49,20 @@ async function apiCall(method, endpoint, body = null) {
   if (body) options.body = JSON.stringify(body);
 
   const response = await fetch(endpoint, options);
-  return response.json();
+
+  // Check if response is OK (status 200-299)
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  // Check content type before parsing JSON
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    return response.json();
+  }
+
+  // For non-JSON responses (e.g., 204 No Content), return success
+  return { ok: true };
 }
 window.apiCall = apiCall;
 
