@@ -3902,7 +3902,10 @@ module.exports = function (db) {
     );
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
     const result = engine.purchaseUpgrade(k, category, upgradeKey);
-    if (result.error) return res.status(400).json({ error: result.error });
+    if (result.error) {
+      console.warn('[economy/upgrade] Purchase failed', { category, upgradeKey, error: result.error, kingdomId: k.id });
+      return res.status(400).json({ error: result.error });
+    }
     await applyUpdates(db, k.id, result.updates);
     const def =
       engine.FARM_UPGRADES[upgradeKey] ||
@@ -3994,13 +3997,23 @@ module.exports = function (db) {
         mktUpgrades = JSON.parse(k.market_upgrades);
       }
     } catch (err) {
-      console.error('[trade] Failed to parse market_upgrades:', err.message);
+      console.error('[trade/send] Failed to parse market_upgrades', {
+        kingdomId: k.id,
+        raw: k.market_upgrades,
+        error: err.message
+      });
       return res.status(400).json({ error: "Market upgrades data corrupted. Contact admin." });
     }
-    if (!mktUpgrades.trading_post)
+    if (!mktUpgrades.trading_post) {
+      console.warn('[trade/send] Trading post not purchased', {
+        kingdomId: k.id,
+        marketUpgrades: mktUpgrades,
+        raw: k.market_upgrades
+      });
       return res
         .status(400)
         .json({ error: "Build a Trading Post to trade with other kingdoms" });
+    }
     if (!targetId || !offer || !request)
       return res.status(400).json({ error: "Missing trade parameters" });
     const target = await db.get("SELECT id, name FROM kingdoms WHERE id = ?", [
