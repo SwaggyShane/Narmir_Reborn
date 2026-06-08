@@ -965,7 +965,7 @@ module.exports = function (db, io) {
     res.json({ ok: true });
   });
 
-  router.get("/sounds", requireAdmin, (req, res) => {
+  router.get("/sounds", (req, res) => {
     fs.readdir(soundsPath, (err, files) => {
       if (err)
         return res

@@ -3990,8 +3990,13 @@ module.exports = function (db) {
     // Check trading post
     let mktUpgrades = {};
     try {
-      mktUpgrades = safeJsonParse(k.market_upgrades, {}, "auto:market_upgrades");
-    } catch {}
+      if (k.market_upgrades) {
+        mktUpgrades = JSON.parse(k.market_upgrades);
+      }
+    } catch (err) {
+      console.error('[trade] Failed to parse market_upgrades:', err.message);
+      return res.status(400).json({ error: "Market upgrades data corrupted. Contact admin." });
+    }
     if (!mktUpgrades.trading_post)
       return res
         .status(400)
