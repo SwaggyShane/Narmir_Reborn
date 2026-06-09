@@ -162,6 +162,20 @@ const config = {
     },
   },
 
+  // Combat race modifiers - applied to military and magic bonuses during combat
+  // Based on extensive testing to achieve ~50% balance across all races
+  RACE_COMBAT_MODIFIERS: {
+    orc: 1.08,
+    ogre: 1.15,
+    dwarf: 0.90,
+    dark_elf: 0.92,
+    human: 1.0,
+    dire_wolf: 1.0,
+    vampire: 1.0,
+    wood_elf: 1.0,
+    high_elf: 1.0,
+  },
+
   REGION_DATA: {
     dwarf: {
       name: "The Iron Holds",
