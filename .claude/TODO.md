@@ -1,3 +1,43 @@
+# Combat Balance Testing: Vampire Day/Night Cycles
+
+**STATUS:** 🧛 TODO - Combat balance integrated, needs gameplay validation  
+**PRIORITY:** High  
+**CREATED:** 2026-06-09  
+**RELATED:** Combat balance commit 568cc21
+
+## What
+Test vampire combat effectiveness during day vs night cycles to verify the race modifier integration works correctly with existing vampire mechanics.
+
+## Why
+- Vampires have special day/night mechanics (can't fight during day, thralls multiply)
+- Combat modifiers were integrated but not tested with vampire-specific rules
+- Need to verify race modifier (1.0x = no change) doesn't break existing behavior
+
+## When
+After further gameplay testing
+
+## How
+```bash
+# Create test kingdom with vampire race
+# Test 1: Vampire attacking at night (should be normal strength)
+# Test 2: Vampire attacking during day (should use thrall penalty mechanics)
+# Test 3: Vampire defending at night (should be normal strength)
+# Test 4: Vampire defending during day (should use thrall multiplier)
+# Verify: Race modifier of 1.0x is correctly applied without breaking special rules
+```
+
+## Test Cases
+- [ ] Vampire attacks another kingdom at night - normal combat power
+- [ ] Vampire attacks another kingdom during day - thrall penalty applied (0.1x or 0.2x with mausoleum upgrade)
+- [ ] Other race attacks vampire at night - vampire defends at full strength
+- [ ] Other race attacks vampire during day - vampire can only use thralls (multiplied by 5x)
+- [ ] Verify casualty calculations are correct with modifier applied
+
+## Owner
+Gameplay testing phase
+
+---
+
 # CRITICAL TODO: Engine.js Linting Cleanup
 
 **STATUS:** ⚠️ PENDING - Do not forget!  
