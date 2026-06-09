@@ -131,6 +131,7 @@ module.exports = function (db) {
         bld_smithies: 'smithies',
         bld_mage_towers: 'mage_towers',
         bld_shrines: 'shrines',
+        bld_outposts: 'outposts',
         bld_training: 'training',
         bld_mausoleums: 'mausoleums'
       };
