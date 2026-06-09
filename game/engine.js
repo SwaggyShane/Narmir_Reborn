@@ -12,6 +12,7 @@ const { safeJsonParse, roll, rand, clearParseCache } = require('../utils/helpers
 
 const {
   RACE_BONUSES,
+  RACE_COMBAT_MODIFIERS,
   REGION_DATA,
   UNIT_COST,
   MAX_RESEARCH,
@@ -134,6 +135,12 @@ function raceBonus(kingdom, stat) {
   const bonuses = RACE_BONUSES[kingdom.race] || {};
   const base = bonuses[stat] || 1.0;
 
+  // Combat race modifiers - apply to military and magic for balanced PvP
+  let combatMod = 1.0;
+  if ((stat === "military" || stat === "magic") && RACE_COMBAT_MODIFIERS[kingdom.race]) {
+    combatMod = RACE_COMBAT_MODIFIERS[kingdom.race];
+  }
+
   // Home Region bonus - +5% to the region's designated stat if it's your race's home
   const homeRegion = REGION_DATA[kingdom.race];
   const isHome = homeRegion && homeRegion.name === kingdom.region;
@@ -184,7 +191,7 @@ function raceBonus(kingdom, stat) {
     }
   }
 
-  return base * regionMult * allianceMult * vaultMult * heroMult;
+  return base * regionMult * allianceMult * vaultMult * heroMult * combatMod;
 }
 
 const activeSynergyCache = new WeakMap();
