@@ -198,7 +198,7 @@ module.exports = function (db) {
       res.cookie("csrf_token", csrfToken, csrfCookieOpts);
       res.json({ ok: true, username, kingdomName, token });
     } catch (err) {
-      if (err.message.includes("UNIQUE"))
+      if (err.message.toLowerCase().includes("unique") || err.code === "23505")
         return res.status(409).json({ error: "Username already taken" });
       console.error(err);
       res.status(500).json({ error: "Server error" });
