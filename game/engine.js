@@ -5509,7 +5509,7 @@ function resolveMilitaryAttack(
   const atkMb = safeJsonParse(attacker.milestone_bonuses, {}, "combat:atkMb");
   const atkSynergyCombatMult = combatSynergyProcessor.getCombatDamageMultiplier(attacker);
   const atkActiveCombat = combatSynergyProcessor.getActiveCombatBonus(attacker);
-  let atkPower = atkPowerRaw * (1 + (atkMb.attack_pct || 0) / 100) * atkPrestigeMult * atkSynergyCombatMult * atkActiveCombat.damage;
+  let atkPower = atkPowerRaw * (1 + (atkMb.attack_pct || 0) / 100) * atkPrestigeMult * atkSynergyCombatMult * atkActiveCombat.damage * 2.0;
 
   if (attacker.race === "vampire" && !night) {
     const atkMausUpg = safeJsonParse(attacker.mausoleum_upgrades, {}, "auto:mausoleum_upgrades");
@@ -5651,7 +5651,7 @@ function resolveMilitaryAttack(
       defMagePower * defMageMult * defStarCallerMult +
       defWmPower * defWmMult +
       defEngBonus +
-      (defWallPower + defOutpostPower + defTowerPower + defStructures) *
+      (defWallPower + defOutpostPower + defTowerPower + defStructures) * 0.1 *
         defSiegebreakerStructureMult +
       defHeroPower) *
     defMoraleMult *
@@ -5739,17 +5739,17 @@ function resolveMilitaryAttack(
 
   const atkFighterLossPct = win
     ? 0.04 + Math.random() * 0.08
-    : 0.2 + Math.random() * 0.25;
+    : 0.12 + Math.random() * 0.18;
   const atkRangerLossPct = win
     ? 0.02 + Math.random() * 0.04
-    : 0.1 + Math.random() * 0.12; // ranged = safer
+    : 0.06 + Math.random() * 0.09; // ranged = safer
   const atkMageLossPct = win
     ? 0.01 + Math.random() * 0.03
-    : 0.05 + Math.random() * 0.08; // back line = safest
+    : 0.03 + Math.random() * 0.06; // back line = safest
 
   const defFighterLossPct = win
     ? 0.15 + Math.random() * 0.2
-    : 0.05 + Math.random() * 0.08;
+    : 0.12 + Math.random() * 0.15;
   const defRangerLossPct = win
     ? 0.08 + Math.random() * 0.12
     : 0.02 + Math.random() * 0.04;
