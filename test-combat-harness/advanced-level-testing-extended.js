@@ -58,9 +58,9 @@ class ExtendedLevelTester {
             const result = await this.simulateCombat({
               attackerRace: atkRace,
               defenderRace: defRace,
-              attackerUnits: { fighters: 75, war_machines: 25 },
+              attackerUnits: { fighters: 75, war_machines: 25, engineers: 25 },
               defenderUnits: { fighters: 75, engineers: 25 },
-              attackerLevels: { fighters: level, war_machines: level },
+              attackerLevels: { fighters: level, war_machines: level, engineers: level },
               defenderLevels: { fighters: level, engineers: level },
               defenderBuildings: { walls: 0, castles: 0, towers: 0 },
             });
@@ -224,6 +224,7 @@ class ExtendedLevelTester {
       levels: params.attackerLevels,
       name: `ATK_${params.attackerRace}`,
       buildings: { walls: 0, castles: 0, towers: 0 },
+      ladders: params.attackerLadders || 0,
     });
 
     const defender = this.buildKingdom({
@@ -299,17 +300,17 @@ class ExtendedLevelTester {
       thieves: params.units.thieves || 0,
       clerics: params.units.clerics || 0,
       engineers: params.units.engineers || 0,
-      ladders: 0,
+      ladders: params.ladders || 0,
 
       training_allocation: undefined,
 
-      // Research
-      res_weapons: 100,
-      res_armor: 100,
-      res_military: 100,
-      res_attack_magic: 100,
-      res_defense_magic: 100,
-      res_war_machines: 100,
+      // Research — match isolated-defense harness so buildings don't dwarf troops
+      res_weapons: 500,
+      res_armor: 500,
+      res_military: 500,
+      res_attack_magic: 500,
+      res_defense_magic: 500,
+      res_war_machines: 500,
 
       // Troop levels
       troop_levels: JSON.stringify(formattedLevels),
@@ -321,9 +322,9 @@ class ExtendedLevelTester {
       bld_outposts: params.buildings.outposts || 0,
       wall_hp: params.buildings.walls > 0 ? 100 : 0,
 
-      // Stockpiles
-      weapons_stockpile: 0,
-      armor_stockpile: 0,
+      // Stockpiles — match fighter count so weapon/armor bonuses are consistent
+      weapons_stockpile: params.units.fighters || 0,
+      armor_stockpile: params.units.fighters || 0,
 
       // Heroes
       heroes: [],
@@ -341,6 +342,7 @@ class ExtendedLevelTester {
       // Required
       prestige_level: 0,
       injured_troops: '{}',
+      active_effects: '{}',
     };
 
     return kingdom;

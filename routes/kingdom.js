@@ -315,21 +315,8 @@ module.exports = function (db) {
 
   router.get("/alliance-rankings", requireAuth, async (req, res) => {
     try {
-      // First, aggregate alliance data without expensive score calculations
-      const allianceStatsRows = await db.all(`
-        SELECT
-          a.id,
-          a.name,
-          COUNT(am.kingdom_id) as member_count,
-          SUM(k.land) as total_land,
-          SUM(k.population) as total_pop
-        FROM alliances a
-        LEFT JOIN alliance_members am ON a.id = am.alliance_id
-        LEFT JOIN kingdoms k ON am.kingdom_id = k.id
-        GROUP BY a.id, a.name
-      `);
-
-      // Now get all members for score calculation
+      // Get alliance names and all members
+      const allianceNames = await db.all(`SELECT id, name FROM alliances`);
       const memberRows = await db.all(`
         SELECT k.*, a.id as alliance_id
         FROM alliances a
@@ -337,22 +324,25 @@ module.exports = function (db) {
         JOIN kingdoms k ON am.kingdom_id = k.id
       `);
 
-      // Build alliance map with scores
+      // Build alliance map with aggregates from members
       const allianceMap = {};
-      for (const stats of allianceStatsRows) {
-        allianceMap[stats.id] = {
-          id: stats.id,
-          name: stats.name,
-          member_count: stats.member_count || 0,
-          total_land: stats.total_land || 0,
-          total_pop: stats.total_pop || 0,
+      for (const alliance of allianceNames) {
+        allianceMap[alliance.id] = {
+          id: alliance.id,
+          name: alliance.name,
+          member_count: 0,
+          total_land: 0,
+          total_pop: 0,
           total_score: 0,
         };
       }
 
-      // Calculate scores for members and aggregate
+      // Aggregate from members
       for (const k of memberRows) {
         if (allianceMap[k.alliance_id]) {
+          allianceMap[k.alliance_id].member_count++;
+          allianceMap[k.alliance_id].total_land += k.land || 0;
+          allianceMap[k.alliance_id].total_pop += k.population || 0;
           allianceMap[k.alliance_id].total_score += engine.calculateScore(k);
         }
       }
