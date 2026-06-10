@@ -2545,6 +2545,10 @@ function purchaseUpgrade(k, category, upgradeKey) {
   };
   if (bldCheck[category] && !((k[bldCheck[category]] || 0) > 0))
     return { error: `Need at least 1 ${category}` };
+  if (def.reqVaults && k.bld_vaults < def.reqVaults)
+    return {
+      error: `Need at least ${def.reqVaults} Vaults for this bank upgrade.`,
+    };
 
   upgrades[upgradeKey] = true;
   return {
