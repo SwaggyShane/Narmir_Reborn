@@ -56,5 +56,6 @@ public/custom-bg*
 AUDIT_REPORT.md
 
 # Local testing (combat test harness)
-test-combat-harness/
+test-combat-harness/*
+!test-combat-harness/isolated-defense-testing.js
 test-results/
