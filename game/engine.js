@@ -43,7 +43,6 @@ const {
   MAUSOLEUM_UPGRADES,
   LIBRARY_UPGRADES,
   BANK_UPGRADES,
-  VAULT_UPGRADES,
   FARM_UPGRADES,
   GRANARY_UPGRADES,
   MARKET_UPGRADES,
@@ -2494,7 +2493,6 @@ function purchaseUpgrade(k, category, upgradeKey) {
     tower_def: TOWER_DEF_UPGRADES,
     outpost: OUTPOST_UPGRADES,
     bank: BANK_UPGRADES,
-    vault: VAULT_UPGRADES,
   }[category];
   if (!defs) return { error: "Invalid category" };
   const def = defs[upgradeKey];
@@ -9225,7 +9223,6 @@ module.exports = {
   MAUSOLEUM_UPGRADES,
   LIBRARY_UPGRADES,
   BANK_UPGRADES,
-  VAULT_UPGRADES,
   FARM_UPGRADES,
   GRANARY_UPGRADES,
   MARKET_UPGRADES,

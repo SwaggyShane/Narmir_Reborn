@@ -674,36 +674,6 @@ const config = {
     },
   },
 
-  VAULT_UPGRADES: {
-    reinforced_stone: {
-      name: "Reinforced Stone Vault",
-      cost: 50000,
-      costWood: 0,
-      costStone: 80,
-      costIron: 40,
-      desc: "Increases resource storage capacity by 25%",
-      requires: null,
-    },
-    steel_vault: {
-      name: "Steel Reinforced Vault",
-      cost: 150000,
-      costWood: 0,
-      costStone: 60,
-      costIron: 120,
-      desc: "Increases resource storage capacity by 50%, protects 10% of stored resources from thieves",
-      requires: "reinforced_stone",
-    },
-    mithril_vault: {
-      name: "Mithril-Enhanced Vault",
-      cost: 500000,
-      costWood: 0,
-      costStone: 100,
-      costIron: 200,
-      desc: "Increases resource storage capacity by 100%, protects 25% of stored resources from thieves",
-      requires: "steel_vault",
-    },
-  },
-
   FARM_UPGRADES: {
     irrigated: {
       name: "Irrigated Farm",

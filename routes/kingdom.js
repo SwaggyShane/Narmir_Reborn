@@ -3895,7 +3895,7 @@ module.exports = function (db) {
               bld_libraries, bld_walls, bld_guard_towers, bld_outposts, farm_upgrades,
               granary_upgrades, market_upgrades, tavern_upgrades, tower_upgrades,
               school_upgrades, shrine_upgrades, mausoleum_upgrades, library_upgrades,
-              wall_upgrades, tower_def_upgrades, outpost_upgrades, bank_upgrades, vault_upgrades
+              wall_upgrades, tower_def_upgrades, outpost_upgrades, bank_upgrades
        FROM kingdoms WHERE player_id = ?`,
       [req.player.playerId]
     );
@@ -3920,8 +3920,7 @@ module.exports = function (db) {
       engine.WALL_UPGRADES[upgradeKey] ||
       engine.TOWER_DEF_UPGRADES[upgradeKey] ||
       engine.OUTPOST_UPGRADES[upgradeKey] ||
-      engine.BANK_UPGRADES[upgradeKey] ||
-      engine.VAULT_UPGRADES[upgradeKey];
+      engine.BANK_UPGRADES[upgradeKey];
     await db.run(
       "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
       [k.id, "system", `✅ ${def?.name || upgradeKey} purchased.`, k.turn],
