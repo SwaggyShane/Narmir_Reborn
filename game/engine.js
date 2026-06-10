@@ -135,9 +135,9 @@ function raceBonus(kingdom, stat) {
   const bonuses = RACE_BONUSES[kingdom.race] || {};
   const base = bonuses[stat] || 1.0;
 
-  // Combat race modifiers - apply to military, magic, and war_machines for balanced PvP
+  // Combat race modifiers - apply to military and magic for balanced PvP
   let combatMod = 1.0;
-  if ((stat === "military" || stat === "magic" || stat === "war_machines") && RACE_COMBAT_MODIFIERS[kingdom.race]) {
+  if ((stat === "military" || stat === "magic") && RACE_COMBAT_MODIFIERS[kingdom.race]) {
     combatMod = RACE_COMBAT_MODIFIERS[kingdom.race];
   }
 
@@ -5651,7 +5651,7 @@ function resolveMilitaryAttack(
       defMagePower * defMageMult * defStarCallerMult +
       defWmPower * defWmMult +
       defEngBonus +
-      (defWallPower + defOutpostPower + defTowerPower + defStructures) * 0.25 *
+      (defWallPower + defOutpostPower + defTowerPower + defStructures) * 0.1 *
         defSiegebreakerStructureMult +
       defHeroPower) *
     defMoraleMult *
