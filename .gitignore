@@ -59,4 +59,6 @@ AUDIT_REPORT.md
 test-combat-harness/*
 !test-combat-harness/isolated-defense-testing.js
 !test-combat-harness/run-all-balance-tests.js
+!test-combat-harness/advanced-level-testing.js
+!test-combat-harness/advanced-level-testing-extended.js
 test-results/
