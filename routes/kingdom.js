@@ -2781,6 +2781,15 @@ module.exports = function (db) {
 
       await db.run("COMMIT");
 
+      // Process expedition immediately (first turn)
+      const updatedK = await db.get("SELECT * FROM kingdoms WHERE id = ?", [k.id]);
+      let expeditionEvents = [];
+      try {
+        expeditionEvents = await engine.resolveExpeditions(db, updatedK, engine);
+      } catch (expErr) {
+        console.error('[expedition/start] immediate resolution error:', expErr.message);
+      }
+
       const label = { scout: "Scout", deep: "Deep", dungeon: "Dungeon", mountain: "Mountain" }[type];
       const troops = `${r.toLocaleString()} rangers${f > 0 ? ", " + f.toLocaleString() + " fighters" : ""}`;
 
@@ -2794,7 +2803,7 @@ module.exports = function (db) {
         turns_left: EXP_TURNS[type],
         turns_stored: k.turns_stored,
         updates: updates,
-        events: [],
+        events: expeditionEvents,
         message: message,
       });
     } catch (err) {
