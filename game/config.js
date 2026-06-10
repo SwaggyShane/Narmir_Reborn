@@ -650,7 +650,6 @@ const config = {
       costIron: 20,
       desc: "Grants ability to withdraw funds early from any term deposit (forfeits interest).",
       requires: null,
-      reqVaults: 15,
     },
     trade_guild: {
       name: "Trade Guild Charter",
@@ -660,7 +659,6 @@ const config = {
       costIron: 60,
       desc: "Increases interest earned on all term deposits by an absolute +3%.",
       requires: "ledger_ancients",
-      reqVaults: 25,
     },
     iron_treasury: {
       name: "The Iron Treasury",
@@ -670,7 +668,6 @@ const config = {
       costIron: 150,
       desc: "Unlocks 300-turn deposit yielding 60%. Protects 25% of liquid gold from thieves.",
       requires: "trade_guild",
-      reqVaults: 75,
     },
   },
 
