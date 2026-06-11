@@ -323,8 +323,8 @@ class ExtendedLevelTester {
       wall_hp: params.buildings.walls > 0 ? 100 : 0,
 
       // Stockpiles — match fighter count so weapon/armor bonuses are consistent
-      weapons_stockpile: params.units.fighters || 0,
-      armor_stockpile: params.units.fighters || 0,
+      weapons_stored: params.units.fighters || 0,
+      armor_stored: params.units.fighters || 0,
 
       // Heroes
       heroes: [],

@@ -204,7 +204,7 @@ module.exports = function (db, io) {
       bld_mage_towers: 0,
       bld_shrines: 0,
       bld_outposts: 0,
-      bld_training: 0,
+      bld_trainings: 0,
     };
     let fighters = 0,
       rangers = 50,
@@ -214,7 +214,7 @@ module.exports = function (db, io) {
     if (race === "dwarf") buildings.bld_smithies = 1;
     if (race === "high_elf") buildings.bld_mage_towers = 1;
     if (race === "dark_elf") buildings.bld_shrines = 1;
-    if (race === "orc") buildings.bld_training = 1;
+    if (race === "orc") buildings.bld_trainings = 1;
     if (race === "dire_wolf") {
       buildings.bld_barracks = 2; // Extra barracks for wolf
       fighters = 100;
@@ -233,7 +233,7 @@ module.exports = function (db, io) {
       buildings.bld_smithies,
       buildings.bld_markets,
       buildings.bld_mage_towers,
-      buildings.bld_training,
+      buildings.bld_trainings,
       buildings.bld_shrines,
       buildings.bld_housing,
     ];
@@ -244,10 +244,10 @@ module.exports = function (db, io) {
       turn = 0, turns_stored = 400,
       fighters = ?, rangers = ?, clerics = 0, mages = 0, thieves = 0, ninjas = 0,
       researchers = 100, engineers = 100, scribes = 0,
-      war_machines = 0, weapons_stockpile = 0, armor_stockpile = 0,
+      war_machines = 0, weapons_stored = 0, armor_stored = 0,
       bld_farms = ?, bld_barracks = ?, bld_outposts = ?, bld_guard_towers = 0,
       bld_schools = ?, bld_armories = ?, bld_vaults = 0, bld_smithies = ?,
-      bld_markets = ?, bld_mage_towers = ?, bld_training = ?,
+      bld_markets = ?, bld_mage_towers = ?, bld_trainings = ?,
       bld_castles = 0, bld_shrines = ?, bld_libraries = 0, bld_taverns = 0, bld_housing = ?,
       bld_walls = 0, bld_granaries = 0, bld_mausoleums = 0,
       res_economy = 100, res_weapons = 100, res_armor = 100, res_military = 100,
@@ -476,8 +476,8 @@ module.exports = function (db, io) {
       "engineers",
       "scribes",
       "war_machines",
-      "weapons_stockpile",
-      "armor_stockpile",
+      "weapons_stored",
+      "armor_stored",
       "maps",
       "blueprints_stored",
       "scaffolding_stored",
@@ -493,7 +493,7 @@ module.exports = function (db, io) {
       "bld_smithies",
       "bld_markets",
       "bld_mage_towers",
-      "bld_training",
+      "bld_trainings",
       "bld_taverns",
       "bld_castles",
       "bld_libraries",

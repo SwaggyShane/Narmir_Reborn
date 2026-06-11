@@ -100,8 +100,8 @@ function getAvailableBuildingsWithBonuses(kingdom, fragmentName) {
     let buildingKey = `bld_${buildingType}`;
     if (kingdom[buildingKey] === undefined) {
       // Special case mapping for items that don't follow bld_ prefix convention
-      if (buildingType === 'weapons') buildingKey = 'weapons_stockpile';
-      else if (buildingType === 'armor') buildingKey = 'armor_stockpile';
+      if (buildingType === 'weapons') buildingKey = 'weapons_stored';
+      else if (buildingType === 'armor') buildingKey = 'armor_stored';
       else if (buildingType === 'war_machines') buildingKey = 'bld_war_machines';
       else if (buildingType === 'ladders') buildingKey = 'bld_ladders';
       else buildingKey = buildingType;

@@ -2709,7 +2709,7 @@
         // Estimate attack power (mirrors engine formula, approximate)
         var weaponBonus =
           1 +
-          Math.min(1, (state.weapons_stockpile || 0) / Math.max(f, 1)) * 0.25;
+          Math.min(1, (state.weapons_stored || 0) / Math.max(f, 1)) * 0.25;
         var atkF =
           f *
           ((state.res_weapons || 100) / 100) *
@@ -4247,8 +4247,8 @@
             const sellPrice = Math.floor(p.current_price * sellMultiplier);
 
             let key = p.id;
-            if (p.id === "weapons") key = "weapons_stockpile";
-            if (p.id === "armor") key = "armor_stockpile";
+            if (p.id === "weapons") key = "weapons_stored";
+            if (p.id === "armor") key = "armor_stored";
             const owned = state[key] || 0;
 
             return `
@@ -4323,8 +4323,8 @@
           input.value = max;
         } else {
           let key = resource;
-          if (resource === "weapons") key = "weapons_stockpile";
-          if (resource === "armor") key = "armor_stockpile";
+          if (resource === "weapons") key = "weapons_stored";
+          if (resource === "armor") key = "armor_stored";
           input.value = state[key] || 0;
         }
       }
@@ -5431,7 +5431,7 @@
           bld_housing: 2,
           bld_mausoleums: 25,
           bld_mage_towers: 75,
-          bld_training: 250,
+          bld_trainingss: 250,
           bld_castles: 1000,
           bld_taverns: 5,
           bld_walls: 3,
@@ -5723,9 +5723,9 @@
         var wmEl = document.getElementById("s-war_machines");
         if (wmEl) wmEl.textContent = fmt(state.war_machines || 0);
         var wpnEl = document.getElementById("s-weapons");
-        if (wpnEl) wpnEl.textContent = fmt(state.weapons_stockpile || 0);
+        if (wpnEl) wpnEl.textContent = fmt(state.weapons_stored || 0);
         var armEl = document.getElementById("s-armor");
-        if (armEl) armEl.textContent = fmt(state.armor_stockpile || 0);
+        if (armEl) armEl.textContent = fmt(state.armor_stored || 0);
         var laddersEl = document.getElementById("s-ladders");
         if (laddersEl) laddersEl.textContent = fmt(state.ladders || 0);
 
@@ -5826,7 +5826,7 @@
           smithies: "bld_smithies",
           markets: "bld_markets",
           guard_towers: "bld_guard_towers",
-          training: "bld_training",
+          training: "bld_trainings",
           castles: "bld_castles",
         };
         Object.keys(kbMap).forEach(function (bld) {
@@ -5866,7 +5866,7 @@
           bld_mausoleums: { base: 3, max: 50, capLevel: 400 },
           bld_taverns: { base: 3, max: 50, capLevel: 400 },
           bld_libraries: { base: 3, max: 75, capLevel: 500 },
-          bld_training: { base: 1, max: 15, capLevel: 400 },
+          bld_trainings: { base: 1, max: 15, capLevel: 400 },
           bld_castles: { base: 1, max: 10, capLevel: 400 },
           war_machines: { base: 1000, max: 10000 },
         };
@@ -5889,15 +5889,15 @@
           smithies: "bld_smithies",
           markets: "bld_markets",
           mage_towers: "bld_mage_towers",
-          training: "bld_training",
+          training: "bld_trainings",
           castles: "bld_castles",
           libraries: "bld_libraries",
           shrines: "bld_shrines",
           housing: "bld_housing",
           walls: "bld_walls",
           taverns: "bld_taverns",
-          weapons_stockpile: "weapons_stockpile",
-          armor_stockpile: "armor_stockpile",
+          weapons_stored: "weapons_stored",
+          armor_stored: "armor_stored",
           war_machines: "war_machines",
           ladders: "ladders",
         };
@@ -7509,14 +7509,14 @@
           bld_vaults: kingdom.bld_vaults,
           bld_smithies: kingdom.bld_smithies,
           bld_markets: kingdom.bld_markets,
-          bld_training: kingdom.bld_training,
+          bld_trainings: kingdom.bld_trainings,
           bld_libraries: kingdom.bld_libraries || 0,
           bld_taverns: kingdom.bld_taverns || 0,
           bld_mage_towers: kingdom.bld_mage_towers || 0,
           bld_castles: kingdom.bld_castles,
           description: kingdom.description || "",
-          weapons_stockpile: kingdom.weapons_stockpile || 0,
-          armor_stockpile: kingdom.armor_stockpile || 0,
+          weapons_stored: kingdom.weapons_stored || 0,
+          armor_stored: kingdom.armor_stored || 0,
           war_machines: kingdom.war_machines || 0,
           research_allocation: kingdom.research_allocation || {},
           xp: kingdom.xp || 0,
@@ -9470,10 +9470,10 @@
           } catch {}
         }
         if (u.war_machines !== undefined) state.war_machines = u.war_machines;
-        if (u.weapons_stockpile !== undefined)
-          state.weapons_stockpile = u.weapons_stockpile;
-        if (u.armor_stockpile !== undefined)
-          state.armor_stockpile = u.armor_stockpile;
+        if (u.weapons_stored !== undefined)
+          state.weapons_stored = u.weapons_stored;
+        if (u.armor_stored !== undefined)
+          state.armor_stored = u.armor_stored;
         if (u.bld_housing !== undefined) state.bld_housing = u.bld_housing;
         if (u.bld_taverns !== undefined) state.bld_taverns = u.bld_taverns;
         [
@@ -9504,7 +9504,7 @@
           "bld_smithies",
           "bld_markets",
           "bld_mage_towers",
-          "bld_training",
+          "bld_trainings",
           "bld_castles",
         ].forEach(function (k) {
           if (u[k] !== undefined) state[k] = u[k];
@@ -10969,7 +10969,7 @@
 
         var weaponBonus =
           1 +
-          Math.min(1, (state.weapons_stockpile || 0) / Math.max(f, 1)) * 0.25;
+          Math.min(1, (state.weapons_stored || 0) / Math.max(f, 1)) * 0.25;
         var atkF =
           f *
           ((state.res_weapons || 100) / 100) *
@@ -14647,7 +14647,7 @@
           total += val;
         });
 
-        var fields = state.bld_training || 0;
+        var fields = state.bld_trainings || 0;
         var capacity = fields * 100;
         var el = document.getElementById("tr-capacity-used");
         if (el) {
@@ -14657,15 +14657,15 @@
 
         var trFields = document.getElementById("tr-fields");
         var trCap = document.getElementById("tr-capacity");
-        if (trFields) trFields.textContent = fmt(state.bld_training || 0);
+        if (trFields) trFields.textContent = fmt(state.bld_trainings || 0);
         if (trCap) {
           trCap.textContent = fmt(capacity);
           trCap.style.color = total > capacity ? "var(--red)" : "var(--gold)";
         }
         var trW = document.getElementById("tr-weapons");
         var trA = document.getElementById("tr-armor");
-        if (trW) trW.textContent = fmt(state.weapons_stockpile || 0);
-        if (trA) trA.textContent = fmt(state.armor_stockpile || 0);
+        if (trW) trW.textContent = fmt(state.weapons_stored || 0);
+        if (trA) trA.textContent = fmt(state.armor_stored || 0);
 
         var rb = document.getElementById("tr-race-bonus");
         if (rb && state.race) {
@@ -14729,7 +14729,7 @@
       }
 
       function setTrainingMax(unit) {
-        var capacity = (state.bld_training || 0) * 100;
+        var capacity = (state.bld_trainings || 0) * 100;
         var allocated = getAllocatedTraining();
         var current =
           parseInt(document.getElementById("ta-" + unit)?.value) || 0;
@@ -14740,7 +14740,7 @@
       }
 
       function distributeTrainingEvenly() {
-        var capacity = (state.bld_training || 0) * 100;
+        var capacity = (state.bld_trainings || 0) * 100;
         var count = TROOP_TYPES.length;
         var each = Math.floor(capacity / count);
         TROOP_TYPES.forEach(function (u) {

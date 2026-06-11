@@ -320,8 +320,8 @@ class AdvancedLevelTester {
       wall_hp: 0,
 
       // Stockpiles
-      weapons_stockpile: 0,
-      armor_stockpile: 0,
+      weapons_stored: 0,
+      armor_stored: 0,
 
       // Hero data (empty)
       heroes: [],

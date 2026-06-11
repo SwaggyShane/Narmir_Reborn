@@ -40,7 +40,7 @@ function createTestKingdom(name = 'Test Kingdom', fighterCount = 1000) {
     },
 
     military_research: { defense: 10, armor: 10, weapons: 10 },
-    weapons_stockpile: fighterCount * 2,
+    weapons_stored: fighterCount * 2,
     military_training: 50,
     mausoleum_upgrades: '{}',
     hero_skills: {},

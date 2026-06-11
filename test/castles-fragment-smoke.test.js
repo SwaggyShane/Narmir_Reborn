@@ -34,7 +34,7 @@ function baseKingdom(overrides = {}) {
     bld_walls: 0,
     bld_guard_towers: 0,
     bld_outposts: 0,
-    bld_training: 0,
+    bld_trainings: 0,
     bld_housing: 0,
     fighters: 0,
     rangers: 0,
