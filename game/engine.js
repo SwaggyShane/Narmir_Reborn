@@ -7981,6 +7981,338 @@ function castSpell(caster, target, spellId, obscure) {
     damageDesc = `${converted.toLocaleString()} population transformed into permanent servants`;
   }
 
+  // ── TIER 5 SPELLS ──────────────────────────────────────────────────────────
+
+  else if (spellId === "absolute_protection") {
+    // Reduce all damage by 75% for 7 turns; impenetrable (legendary defense)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.absolute_protection = { turns_left: 7, damage_reduction: 0.75, impenetrable: true };
+    casterUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `absolute protection activated — -75% all damage for 7 turns, impenetrable`;
+  } else if (spellId === "temporal_rewind") {
+    // Undo last enemy spell; remove all its effects retroactively (game-changing)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    const spellCount = Object.keys(tEffects).length;
+    tEffects = {};
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `temporal rewind — ${spellCount} enemy spell effects retroactively removed`;
+  } else if (spellId === "fortress_eternal") {
+    // All buildings indestructible for next attack cycle (legendary defense)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.fortress_eternal = { turns_left: 10, indestructible: true };
+    casterUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `fortress eternal — all buildings become indestructible`;
+  } else if (spellId === "divine_aegis") {
+    // Create protection zone; prevent enemy spells for 3 turns (anti-magic)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.divine_aegis = { turns_left: 3, spell_immunity: true };
+    casterUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `divine aegis formed — enemy spells prevented for 3 turns`;
+  } else if (spellId === "unmaking_ward") {
+    // Permanently seal a location against enemy expeditions (strategic lock)
+    damageDesc = `unmaking ward placed — enemy expeditions permanently sealed out`;
+  } else if (spellId === "summon_echo") {
+    // Summon kingdom echo; double all bonuses for 7 turns (legendary buff)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.summon_echo = { turns_left: 7, bonus_multiplier: 2.0 };
+    casterUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `kingdom echo summoned — all bonuses doubled for 7 turns`;
+  } else if (spellId === "conjure_realm") {
+    // +50% storage for all buildings for 6 turns (resource mega-buff)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.conjure_realm = { turns_left: 6, storage_bonus: 0.5 };
+    casterUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `realm conjured — +50% storage for all buildings for 6 turns`;
+  } else if (spellId === "ultimate_resurrection") {
+    // Bring back 50% of all troops ever lost (massive troop restoration)
+    const resurrected = Math.floor(((target.fighters || 0) * 0.5) * magicRatio);
+    casterUpdates.fighters = (caster.fighters || 0) + resurrected;
+    damageDesc = `ultimate resurrection — ${resurrected.toLocaleString()} troops restored from the grave`;
+  } else if (spellId === "summon_ascendant") {
+    // Summon ascendant; +100% spell effectiveness for 5 turns (ultimate buff)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.summon_ascendant = { turns_left: 5, spell_effectiveness: 2.0 };
+    casterUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `ascendant summoned — +100% spell effectiveness for 5 turns`;
+  } else if (spellId === "conjure_paradise") {
+    // Create ideal state; maximize all production for 4 turns (perfect economy)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.conjure_paradise = { turns_left: 4, production_maximized: true };
+    casterUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `paradise conjured — all production maximized for 4 turns`;
+  } else if (spellId === "omniscience") {
+    // All information about target revealed for 5 turns (legendary divination)
+    damageDesc = `omniscience achieved — absolute knowledge of target for 5 turns`;
+  } else if (spellId === "see_all_timelines") {
+    // Reveal all possible outcomes of next 5 turns (strategic advantage)
+    damageDesc = `all timelines visible — reveal all possible enemy actions for 5 turns`;
+  } else if (spellId === "divine_blueprint") {
+    // Reveal exact blueprint of enemy's next building (divination advantage)
+    damageDesc = `divine blueprint revealed — next enemy building revealed in detail`;
+  } else if (spellId === "fates_thread") {
+    // Reveal target weakness; +40% combat advantage (strategic insight)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.fates_thread = { turns_left: 5, combat_advantage: 0.4 };
+    casterUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `fate's thread woven — target weakness revealed, +40% combat advantage`;
+  } else if (spellId === "perfect_foresight") {
+    // Immune to surprises; see all enemy actions for 4 turns (omniscience)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.perfect_foresight = { turns_left: 4, omniscience: true };
+    casterUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `perfect foresight — see all enemy actions for 4 turns, immune to surprises`;
+  } else if (spellId === "absolute_domination") {
+    // Total control of enemy for 4 turns (legendary control)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.absolute_domination = { turns_left: 4, total_control: true };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `absolute domination achieved — total control for 4 turns`;
+  } else if (spellId === "eternal_thralldom") {
+    // Enemy population permanently enslaved (total conquest)
+    const popEnslaved = (target.population || 0);
+    targetUpdates.population = 0;
+    casterUpdates.population = (caster.population || 0) + Math.floor(popEnslaved * 0.8);
+    damageDesc = `eternal thralldom — all ${popEnslaved.toLocaleString()} population enslaved forever`;
+  } else if (spellId === "shatter_consciousness") {
+    // Enemy stats reduced 75% for 6 turns (devastating debuff)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.shatter_consciousness = { turns_left: 6, stat_reduction: 0.75 };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `consciousness shattered — all enemy stats reduced 75% for 6 turns`;
+  } else if (spellId === "puppet_master") {
+    // Control enemy leader; force their spells (ultimate control)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.puppet_master = { turns_left: 5, leader_controlled: true };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `puppet master — enemy leader controlled, forced to cast YOUR spells`;
+  } else if (spellId === "ascendant_will") {
+    // Enemy cannot act if you forbid for 5 turns (total paralysis)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.ascendant_will = { turns_left: 5, forbidden: true };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `ascendant will imposed — enemy paralyzed for 5 turns`;
+  } else if (spellId === "extinction_event") {
+    // Destroy 50% of buildings; kill 3000 fighters + 1000 population (catastrophic)
+    let totalBldDmg = 0;
+    const bldTypes = ["farms", "barracks", "guard_towers", "markets", "granaries", "shrines", "mage_towers", "libraries"];
+    for (const bldType of bldTypes) {
+      const dmg = Math.floor((target[`bld_${bldType}`] || 0) * 0.5);
+      targetUpdates[`bld_${bldType}`] = Math.max(0, (target[`bld_${bldType}`] || 0) - dmg);
+      totalBldDmg += dmg;
+    }
+    const fighters = Math.max(1, Math.floor(3000 * magicRatio * shielded));
+    const pop = Math.max(1, Math.floor(1000 * magicRatio * shielded));
+    targetUpdates.fighters = Math.max(0, (target.fighters || 0) - fighters);
+    targetUpdates.population = Math.max(0, (target.population || 0) - pop);
+    damageDesc = `extinction event — ${totalBldDmg} buildings, ${fighters.toLocaleString()} fighters, ${pop.toLocaleString()} population annihilated`;
+  } else if (spellId === "dimensional_collapse") {
+    // 100 buildings destroyed; 2000 fighters + 1500 population killed (dimensional catastrophe)
+    const bldDmg = Math.max(1, getBldDmg("farms", 100));
+    const fighters = Math.max(1, Math.floor(2000 * magicRatio * shielded));
+    const pop = Math.max(1, Math.floor(1500 * magicRatio * shielded));
+    targetUpdates.bld_farms = Math.max(0, (target.bld_farms || 0) - bldDmg);
+    targetUpdates.fighters = Math.max(0, (target.fighters || 0) - fighters);
+    targetUpdates.population = Math.max(0, (target.population || 0) - pop);
+    damageDesc = `dimensional collapse — ${bldDmg} buildings, ${fighters.toLocaleString()} fighters, ${pop.toLocaleString()} population lost`;
+  } else if (spellId === "infinite_inferno") {
+    // Perpetual fire consumes ALL farms, granaries, markets (total resource destruction)
+    const farms = target.bld_farms || 0;
+    const granaries = target.bld_granaries || 0;
+    const markets = target.bld_markets || 0;
+    targetUpdates.bld_farms = 0;
+    targetUpdates.bld_granaries = 0;
+    targetUpdates.bld_markets = 0;
+    damageDesc = `infinite inferno — ${farms} farms, ${granaries} granaries, ${markets} markets consumed eternally`;
+  } else if (spellId === "entropy_unleashed") {
+    // Universe ages kingdom; 60% infrastructure damage (aging decay)
+    let totalBldDmg = 0;
+    const bldTypes = ["farms", "barracks", "guard_towers", "markets", "granaries", "shrines", "mage_towers", "libraries", "castles", "walls"];
+    for (const bldType of bldTypes) {
+      const dmg = Math.floor((target[`bld_${bldType}`] || 0) * 0.6);
+      targetUpdates[`bld_${bldType}`] = Math.max(0, (target[`bld_${bldType}`] || 0) - dmg);
+      totalBldDmg += dmg;
+    }
+    damageDesc = `entropy unleashed — universe ages kingdom, ${totalBldDmg} buildings crumble`;
+  } else if (spellId === "cosmic_annihilation") {
+    // Ultimate destruction; 75% buildings gone, 3000 fighters + 2000 population lost (apocalypse)
+    let totalBldDmg = 0;
+    const bldTypes = ["farms", "barracks", "guard_towers", "markets", "granaries", "shrines", "mage_towers", "libraries", "castles"];
+    for (const bldType of bldTypes) {
+      const dmg = Math.floor((target[`bld_${bldType}`] || 0) * 0.75);
+      targetUpdates[`bld_${bldType}`] = Math.max(0, (target[`bld_${bldType}`] || 0) - dmg);
+      totalBldDmg += dmg;
+    }
+    const fighters = Math.max(1, Math.floor(3000 * magicRatio * shielded));
+    const pop = Math.max(1, Math.floor(2000 * magicRatio * shielded));
+    targetUpdates.fighters = Math.max(0, (target.fighters || 0) - fighters);
+    targetUpdates.population = Math.max(0, (target.population || 0) - pop);
+    damageDesc = `cosmic annihilation — 75% infrastructure destroyed, ${fighters.toLocaleString()} fighters, ${pop.toLocaleString()} population obliterated`;
+  } else if (spellId === "perfect_illusion") {
+    // So perfect enemy is blind for 5 turns (ultimate blindness)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.perfect_illusion = { turns_left: 5, complete_blindness: true };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `perfect illusion — enemy completely blind for 5 turns`;
+  } else if (spellId === "infinite_reflection") {
+    // Infinite copies; enemy loses 1000 fighters (illusory army)
+    const fighters = Math.max(1, Math.floor(1000 * magicRatio * shielded));
+    targetUpdates.fighters = Math.max(0, (target.fighters || 0) - fighters);
+    damageDesc = `infinite reflection — ${fighters.toLocaleString()} fighters panicked by infinite copies`;
+  } else if (spellId === "paradox_engine") {
+    // Reality becomes illusion; can't act for 4 turns (ultimate confusion)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.paradox_engine = { turns_left: 4, reality_broken: true };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `paradox engine ignited — reality broken, enemy paralyzed for 4 turns`;
+  } else if (spellId === "false_reality") {
+    // 4 enemy spells don't fire (spell negation)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.false_reality = { turns_left: 3, spells_negated: 4 };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `false reality created — 4 enemy spells will fail to fire`;
+  } else if (spellId === "unreality") {
+    // Kingdom hidden while real hidden; 6 turns (ultimate stealth)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.unreality = { turns_left: 6, kingdom_hidden: true };
+    casterUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `unreality achieved — kingdom hidden from reality for 6 turns`;
+  } else if (spellId === "death_dominion") {
+    // All enemy deaths reanimate under control for 7 turns (eternal slavery)
+    const popLoss = Math.floor(((target.fighters || 0) * 0.4) * magicRatio);
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.death_dominion = { turns_left: 7, death_reanimation: true };
+    casterUpdates.fighters = (caster.fighters || 0) + popLoss;
+    casterUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `death dominion — all future enemy deaths reanimate under your control for 7 turns`;
+  } else if (spellId === "eternal_undeath") {
+    // 3000 permanent undead forever (eternal legion)
+    const undead = Math.floor(3000 * magicRatio);
+    casterUpdates.fighters = (caster.fighters || 0) + undead;
+    damageDesc = `eternal undeath — ${undead.toLocaleString()} permanent undead summoned`;
+  } else if (spellId === "apocalyptic_undeath") {
+    // All dead from last 10 battles reanimate (resurrection apocalypse)
+    const reanimated = Math.floor(((target.fighters || 0) * 2.0) * magicRatio);
+    casterUpdates.fighters = (caster.fighters || 0) + reanimated;
+    damageDesc = `apocalyptic undeath — ${reanimated.toLocaleString()} undead from past battles reanimated`;
+  } else if (spellId === "deaths_embrace") {
+    // Kill 2000; all become undead thralls (conversion apocalypse)
+    const killed = Math.max(1, Math.floor(2000 * magicRatio * shielded));
+    const enslaved = Math.floor(killed * 0.8);
+    targetUpdates.fighters = Math.max(0, (target.fighters || 0) - killed);
+    casterUpdates.fighters = (caster.fighters || 0) + enslaved;
+    damageDesc = `death's embrace — ${killed.toLocaleString()} killed, ${enslaved} enslaved`;
+  } else if (spellId === "lich_king") {
+    // Ascend to lichdom; immortal, +100% spells, 5000 undead for 6 turns (ultimate transformation)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+    } catch {}
+    const undeadCount = Math.floor(5000 * magicRatio);
+    tEffects.lich_king = { turns_left: 6, immortal: true, spell_bonus: 1.0, undead_count: undeadCount };
+    casterUpdates.fighters = (caster.fighters || 0) + undeadCount;
+    casterUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `ascended to lich-king — immortal, +100% spells, +${undeadCount.toLocaleString()} undead for 6 turns`;
+  } else if (spellId === "ascendant_transformation") {
+    // Become immortal and invincible for 7 turns (godhood)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.ascendant_transformation = { turns_left: 7, immortal: true, invincible: true };
+    casterUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `transcendence achieved — immortal and invincible for 7 turns`;
+  } else if (spellId === "reality_reconstruction") {
+    // Enemy buildings change purpose; -80% effectiveness (total disruption)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.reality_reconstruction = { turns_left: 5, building_dysfunction: 0.8 };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `reality reconstructed — enemy buildings 80% ineffective`;
+  } else if (spellId === "ultimate_metamorphosis") {
+    // 5000 population permanently converted (population apocalypse)
+    const converted = Math.max(1, Math.floor(5000 * magicRatio * shielded));
+    targetUpdates.population = Math.max(0, (target.population || 0) - converted);
+    casterUpdates.population = (caster.population || 0) + converted;
+    damageDesc = `ultimate metamorphosis — ${converted.toLocaleString()} population permanently transformed`;
+  } else if (spellId === "civilization_upheaval") {
+    // Enemy bonuses become your bonuses for 5 turns (bonus theft)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.civilization_upheaval = { turns_left: 5, bonus_theft: true };
+    casterUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `civilization upheaval — enemy bonuses stolen for 5 turns`;
+  } else if (spellId === "eternal_transmutation") {
+    // Master of change; all enemy transformations fail for 6 turns (transformation immunity)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.eternal_transmutation = { turns_left: 6, transformation_immunity: true };
+    casterUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `eternal transmutation mastered — immune to enemy transformations for 6 turns`;
+  }
+
   // Apply active effect to target if this is a debuff spell
   if (activeEffect) {
     targetEffects[spellId] = activeEffect;
