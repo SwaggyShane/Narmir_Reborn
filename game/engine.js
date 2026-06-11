@@ -6666,6 +6666,331 @@ function castSpell(caster, target, spellId, obscure) {
     targetUpdates.bld_farms = Math.max(0, (target.bld_farms || 0) - farmLost);
     targetUpdates.fighters = Math.max(0, (target.fighters || 0) - fightLost);
     damageDesc = `ARMAGEDDON — ${landLost.toLocaleString()} acres scorched, ${popLost.toLocaleString()} killed, ${farmLost.toLocaleString()} farms razed, ${fightLost.toLocaleString()} fighters slain`;
+  } else if (spellId === "arcane_ward") {
+    // Create magical barrier; reduces damage by 20% for 4 turns
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.arcane_ward = { turns_left: 4, damage_reduction: 0.2 };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `magical barrier activated — incoming damage reduced by 20% for 4 turns`;
+  } else if (spellId === "fortify_stones") {
+    // Strengthen buildings; +15% durability temporarily
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.fortify_stones = { turns_left: 3, building_durability: 1.15 };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `buildings fortified — +15% durability for 3 turns`;
+  } else if (spellId === "warding_circle") {
+    // Protects population; reduces defense casualties by 10%
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.warding_circle = { turns_left: 3, casualty_reduction: 0.1 };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `protective circle formed — population defense casualties reduced by 10% for 3 turns`;
+  } else if (spellId === "banish_hex") {
+    // Remove single curse from kingdom (friendly spell)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    const debuffs = ["blight", "plague", "silence", "fog_of_war", "fascinate_crowd", "command_word", "mutate_crops", "death_knell"];
+    let cleared = false;
+    for (const debuff of debuffs) {
+      if (tEffects[debuff]) {
+        delete tEffects[debuff];
+        cleared = true;
+        damageDesc = `${debuff.replace(/_/g, " ")} curse removed`;
+        break;
+      }
+    }
+    if (!cleared) {
+      damageDesc = `no active curses found`;
+    }
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+  } else if (spellId === "mystic_lock") {
+    // Makes 2 enemy spy attempts fail next turn
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.mystic_lock = { turns_left: 1, spy_failures: 2 };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `mystical lock activated — 2 spy attempts will fail next turn`;
+  } else if (spellId === "create_food") {
+    // Generate 500 food for granaries (friendly)
+    const foodCreated = Math.floor(500 * magicRatio);
+    targetUpdates.food = (target.food || 0) + foodCreated;
+    damageDesc = `${foodCreated.toLocaleString()} food conjured`;
+  } else if (spellId === "summon_servants") {
+    // Summons 20 workers; +50% gathering for 2 turns (friendly)
+    const servantsCreated = Math.floor(20 * magicRatio);
+    targetUpdates.population = (target.population || 0) + servantsCreated;
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.summon_servants = { turns_left: 2, gathering_bonus: 0.5 };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `${servantsCreated} servants summoned; gathering +50% for 2 turns`;
+  } else if (spellId === "materialize_gold") {
+    // Creates 1000 gold from magical energy (friendly)
+    const goldCreated = Math.floor(1000 * magicRatio);
+    targetUpdates.gold = (target.gold || 0) + goldCreated;
+    damageDesc = `${goldCreated.toLocaleString()} gold materialized`;
+  } else if (spellId === "conjure_supplies") {
+    // Create building materials; +100 wood/stone (friendly)
+    const woodCreated = Math.floor(100 * magicRatio);
+    const stoneCreated = Math.floor(100 * magicRatio);
+    targetUpdates.wood = (target.wood || 0) + woodCreated;
+    targetUpdates.stone = (target.stone || 0) + stoneCreated;
+    damageDesc = `${woodCreated.toLocaleString()} wood and ${stoneCreated.toLocaleString()} stone conjured`;
+  } else if (spellId === "summon_light") {
+    // Reveal hidden spy network location (research spell - friendly)
+    damageDesc = `spy network location revealed (affects discovery)`;
+  } else if (spellId === "detect_presence") {
+    // Reveals nearest enemy kingdom location for 1 turn (research, target is caster looking at target)
+    damageDesc = `${target.name}'s location revealed for 1 turn`;
+  } else if (spellId === "scry_library") {
+    // Reveals enemy research in one discipline (research)
+    const disciplines = ["attack_magic", "defense_magic", "economy", "military", "construction"];
+    const discipline = disciplines[Math.floor(Math.random() * disciplines.length)];
+    const targetRes = target[`res_${discipline}`] || 0;
+    damageDesc = `enemy ${discipline.replace(/_/g, " ")} research revealed: ${targetRes}%`;
+  } else if (spellId === "read_aura") {
+    // Discover random fact about target kingdom (research)
+    const facts = [
+      `Kingdom has ${(target.population || 0).toLocaleString()} population`,
+      `Current morale: ${Math.floor((target.morale || 100))}%`,
+      `Mana reserves: ${(target.mana || 0).toLocaleString()}`,
+      `${(target.fighters || 0).toLocaleString()} fighters stationed`,
+      `Land holdings: ${(target.land || 0).toLocaleString()} acres`
+    ];
+    const fact = facts[Math.floor(Math.random() * facts.length)];
+    damageDesc = `aura revealed: ${fact}`;
+  } else if (spellId === "glimpse_future") {
+    // Predict next turn's attack or event (research)
+    damageDesc = `future glimpsed — caster gains insight into target's plans`;
+  } else if (spellId === "minds_eye") {
+    // Reveal exact enemy troop composition (research)
+    const troops = `Fighters: ${(target.fighters || 0).toLocaleString()}, Rangers: ${(target.rangers || 0).toLocaleString()}, Clerics: ${(target.clerics || 0).toLocaleString()}`;
+    damageDesc = `enemy troop composition revealed: ${troops}`;
+  } else if (spellId === "minor_charm") {
+    // 50 enemy fighters defect to your army (troop conversion)
+    const defectors = Math.max(1, Math.floor(50 * magicRatio * shielded));
+    targetUpdates.fighters = Math.max(0, (target.fighters || 0) - defectors);
+    casterUpdates.fighters = (caster.fighters || 0) + defectors;
+    damageDesc = `${defectors.toLocaleString()} enemy fighters charmed and defected`;
+  } else if (spellId === "fascinate_crowd") {
+    // -20% enemy happiness for 3 turns (debuff)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    const happinessDrop = Math.floor((target.morale || 100) * 0.2);
+    tEffects.fascinate_crowd = { turns_left: 3, happiness_loss: happinessDrop };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    targetUpdates.morale = Math.max(0, (target.morale || 100) - happinessDrop);
+    damageDesc = `crowd fascinated — morale dropped ${happinessDrop}% for 3 turns`;
+  } else if (spellId === "command_word") {
+    // Enemy cannot act next turn (debuff)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.command_word = { turns_left: 1, paralyzed: true };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `magical command issued — target paralyzed for 1 turn`;
+  } else if (spellId === "enthrall_scout") {
+    // Capture 1 spy for interrogation (research)
+    const spiesCaptured = Math.floor(1 * magicRatio);
+    targetUpdates.thieves = Math.max(0, (target.thieves || 0) - spiesCaptured);
+    casterUpdates.thieves = (caster.thieves || 0) + spiesCaptured;
+    damageDesc = `${spiesCaptured} enemy spy captured and enthralled`;
+  } else if (spellId === "whisper") {
+    // Enemy loses 10% spellbook progress (research)
+    const sbLoss = Math.floor((target.res_spellbook || 0) * 0.1);
+    targetUpdates.res_spellbook = Math.max(0, (target.res_spellbook || 0) - sbLoss);
+    damageDesc = `whispers of doubt sown — spellbook progress lost by ${sbLoss}%`;
+  } else if (spellId === "inferno_burst") {
+    // Fires destroy 50 enemy farms (building damage)
+    const farmsDestroyed = Math.max(1, getBldDmg("farms", 50));
+    targetUpdates.bld_farms = Math.max(0, (target.bld_farms || 0) - farmsDestroyed);
+    damageDesc = `${farmsDestroyed} farm${farmsDestroyed > 1 ? "s" : ""} incinerated`;
+  } else if (spellId === "frost_sting") {
+    // Cold damages 100 fighters; slows for 2 turns (troop damage with debuff)
+    const fightersKilled = Math.max(1, Math.floor(100 * magicRatio * shielded));
+    targetUpdates.fighters = Math.max(0, (target.fighters || 0) - fightersKilled);
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.frost_sting = { turns_left: 2, slow: true };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `${fightersKilled.toLocaleString()} fighters frozen; movement slowed for 2 turns`;
+  } else if (spellId === "stone_missile") {
+    // Barrage damages 5 buildings (multi-building damage)
+    const bldTypes = ["farms", "barracks", "guard_towers", "markets", "shrines"];
+    let totalDmg = 0;
+    for (let i = 0; i < 5 && i < bldTypes.length; i++) {
+      const bldKey = `bld_${bldTypes[i]}`;
+      const dmg = Math.max(1, getBldDmg(bldTypes[i], 3));
+      targetUpdates[bldKey] = Math.max(0, (target[bldKey] || 0) - dmg);
+      totalDmg += dmg;
+    }
+    damageDesc = `${totalDmg.toLocaleString()} building damage across 5 structures`;
+  } else if (spellId === "chain_bolt") {
+    // Lightning chains; damages 3 buildings (chain damage)
+    const bldTypes = ["guard_towers", "mage_towers", "barracks"];
+    let totalDmg = 0;
+    for (const bldType of bldTypes) {
+      const dmg = Math.max(1, getBldDmg(bldType, 4));
+      targetUpdates[`bld_${bldType}`] = Math.max(0, (target[`bld_${bldType}`] || 0) - dmg);
+      totalDmg += dmg;
+    }
+    damageDesc = `lightning chains through 3 buildings — ${totalDmg.toLocaleString()} total damage`;
+  } else if (spellId === "wind_shear") {
+    // Cuts down 75 enemy rangers (specific troop type damage)
+    const rangersKilled = Math.max(1, Math.floor(75 * magicRatio * shielded));
+    targetUpdates.rangers = Math.max(0, (target.rangers || 0) - rangersKilled);
+    damageDesc = `${rangersKilled.toLocaleString()} enemy rangers cut down by wind`;
+  } else if (spellId === "mirage_city") {
+    // False buildings; -40% enemy accuracy for 2 turns (debuff)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.mirage_city = { turns_left: 2, accuracy_penalty: 0.4 };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `false buildings appear — enemy accuracy reduced by 40% for 2 turns`;
+  } else if (spellId === "disguise_force") {
+    // Troops appear as civilians; -25% enemy damage (friendly buff)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.disguise_force = { turns_left: 3, damage_reduction: 0.25 };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `troops disguised as civilians — incoming damage reduced by 25% for 3 turns`;
+  } else if (spellId === "false_wealth") {
+    // Illusion makes you look richer; enemy overestimates (debuff)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.false_wealth = { turns_left: 3, overestimate: true };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `illusion of great wealth created — target overestimates your resources for 3 turns`;
+  } else if (spellId === "shadow_clones") {
+    // Duplicate troops that don't exist; confuses enemy (troop confusion)
+    const cloneCount = Math.floor(((target.fighters || 0) * 0.1) * magicRatio);
+    damageDesc = `${cloneCount.toLocaleString()} illusory troop clones created — target confused`;
+  } else if (spellId === "phantom_wall") {
+    // -30% enemy accuracy for 2 turns (debuff)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.phantom_wall = { turns_left: 2, accuracy_penalty: 0.3 };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `phantom walls confuse enemy — accuracy reduced by 30% for 2 turns`;
+  } else if (spellId === "touch_of_death") {
+    // Kills 50 fighters; they rise as undead for 2 turns (troop conversion)
+    const fightersKilled = Math.max(1, Math.floor(50 * magicRatio * shielded));
+    targetUpdates.fighters = Math.max(0, (target.fighters || 0) - fightersKilled);
+    casterUpdates.fighters = (caster.fighters || 0) + Math.floor(fightersKilled * 0.6);
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.touch_of_death = { turns_left: 2, undead_count: Math.floor(fightersKilled * 0.6) };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `${fightersKilled.toLocaleString()} fighters killed; ~${Math.floor(fightersKilled * 0.6)} rise as undead`;
+  } else if (spellId === "deaths_mark") {
+    // Target takes +20% damage from next 3 spells (debuff mark)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.deaths_mark = { turns_left: 3, damage_multiplier: 1.2, spells_left: 3 };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `mark of death placed — target takes +20% spell damage for next 3 spells`;
+  } else if (spellId === "corpse_animation") {
+    // Raise 30 undead fighters (friendly troop summoning)
+    const undeadRaised = Math.floor(30 * magicRatio);
+    casterUpdates.fighters = (caster.fighters || 0) + undeadRaised;
+    damageDesc = `${undeadRaised} undead fighters raised`;
+  } else if (spellId === "siphon_life") {
+    // Steal 200 population from enemy (population theft)
+    const popStolen = Math.max(1, Math.floor(200 * magicRatio * shielded));
+    targetUpdates.population = Math.max(0, (target.population || 0) - popStolen);
+    casterUpdates.population = (caster.population || 0) + popStolen;
+    damageDesc = `${popStolen.toLocaleString()} enemy population siphoned and enslaved`;
+  } else if (spellId === "death_knell") {
+    // -10% happiness and -10% production for 3 turns (multi-debuff)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    const happinessDrop = Math.floor((target.morale || 100) * 0.1);
+    tEffects.death_knell = { turns_left: 3, happiness_loss: happinessDrop, production_penalty: 0.1 };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    targetUpdates.morale = Math.max(0, (target.morale || 100) - happinessDrop);
+    damageDesc = `death knell rings — happiness and production reduced for 3 turns`;
+  } else if (spellId === "transform_lead_to_gold") {
+    // Convert 100 stone into 500 gold (friendly resource conversion)
+    const stoneUsed = Math.min(100, target.stone || 0);
+    if (stoneUsed > 0) {
+      const goldGained = Math.floor(stoneUsed * 5 * magicRatio);
+      targetUpdates.stone = (target.stone || 0) - stoneUsed;
+      targetUpdates.gold = (target.gold || 0) + goldGained;
+      damageDesc = `${stoneUsed.toLocaleString()} stone transmuted into ${goldGained.toLocaleString()} gold`;
+    } else {
+      damageDesc = `insufficient stone to transmute`;
+    }
+  } else if (spellId === "reshape_matter") {
+    // 100 wood becomes 100 stone (friendly resource conversion)
+    const woodUsed = Math.min(100, target.wood || 0);
+    if (woodUsed > 0) {
+      targetUpdates.wood = (target.wood || 0) - woodUsed;
+      targetUpdates.stone = (target.stone || 0) + woodUsed;
+      damageDesc = `${woodUsed.toLocaleString()} wood reshaped into stone`;
+    } else {
+      damageDesc = `insufficient wood to reshape`;
+    }
+  } else if (spellId === "flesh_to_stone") {
+    // 50 fighters turn to stone; immobile (troop immobilization)
+    const fightersPetrified = Math.max(1, Math.floor(50 * magicRatio * shielded));
+    targetUpdates.fighters = Math.max(0, (target.fighters || 0) - fightersPetrified);
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.flesh_to_stone = { turns_left: 5, immobile: true };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `${fightersPetrified.toLocaleString()} fighters petrified and immobilized for 5 turns`;
+  } else if (spellId === "mutate_crops") {
+    // -30% enemy food for 3 turns (resource debuff)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    const foodLoss = Math.floor((target.food || 0) * 0.3);
+    tEffects.mutate_crops = { turns_left: 3, food_penalty: 0.3 };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    targetUpdates.food = Math.max(0, (target.food || 0) - foodLoss);
+    damageDesc = `crops mutated — food production reduced by 30% for 3 turns`;
+  } else if (spellId === "transmute_population") {
+    // 30 population become mindless servants (population conversion)
+    const popConverted = Math.max(1, Math.floor(30 * magicRatio * shielded));
+    targetUpdates.population = Math.max(0, (target.population || 0) - popConverted);
+    casterUpdates.population = (caster.population || 0) + popConverted;
+    damageDesc = `${popConverted.toLocaleString()} population transmuted into mindless servants`;
   }
 
   // Apply active effect to target if this is a debuff spell
