@@ -7718,8 +7718,8 @@ function castSpell(caster, target, spellId, obscure) {
     const manaCost = Math.floor((caster.mana || 0) * 0.1);
     if ((caster.mana || 0) >= manaCost) {
       const goldGained = Math.floor(5000 * magicRatio);
-      casterUpdates.mana = (caster.mana || 0) - manaCost;
-      casterUpdates.gold = (caster.gold || 0) + goldGained;
+      casterUpdates.mana = (casterUpdates.mana !== undefined ? casterUpdates.mana : (caster.mana || 0)) - manaCost;
+      targetUpdates.gold = (target.gold || 0) + goldGained;
       damageDesc = `${goldGained.toLocaleString()} gold materialized (cost: ${manaCost} mana)`;
     } else {
       damageDesc = `insufficient mana to materialize wealth`;
@@ -8137,7 +8137,7 @@ function castSpell(caster, target, spellId, obscure) {
     let totalBldDmg = 0;
     const bldTypes = ["farms", "barracks", "guard_towers", "markets", "granaries", "shrines", "mage_towers", "libraries"];
     for (const bldType of bldTypes) {
-      const bldDmg = Math.floor((target[`bld_${bldType}`] || 0) * 0.3);
+      const bldDmg = Math.floor((target[`bld_${bldType}`] || 0) * 0.3 * magicRatio * shielded);
       targetUpdates[`bld_${bldType}`] = Math.max(0, (target[`bld_${bldType}`] || 0) - bldDmg);
       totalBldDmg += bldDmg;
     }
@@ -8180,7 +8180,7 @@ function castSpell(caster, target, spellId, obscure) {
     let otherBldDmg = 0;
     const bldTypes = ["barracks", "guard_towers", "markets", "granaries", "shrines", "mage_towers", "libraries", "castles"];
     for (const bldType of bldTypes) {
-      const dmg = Math.floor((target[`bld_${bldType}`] || 0) * 0.3);
+      const dmg = Math.floor((target[`bld_${bldType}`] || 0) * 0.3 * magicRatio * shielded);
       targetUpdates[`bld_${bldType}`] = Math.max(0, (target[`bld_${bldType}`] || 0) - dmg);
       otherBldDmg += dmg;
     }
@@ -8495,7 +8495,7 @@ function castSpell(caster, target, spellId, obscure) {
     let totalBldDmg = 0;
     const bldTypes = ["farms", "barracks", "guard_towers", "markets", "granaries", "shrines", "mage_towers", "libraries", "castles", "walls"];
     for (const bldType of bldTypes) {
-      const dmg = Math.floor((target[`bld_${bldType}`] || 0) * 0.6);
+      const dmg = Math.floor((target[`bld_${bldType}`] || 0) * 0.6 * magicRatio * shielded);
       targetUpdates[`bld_${bldType}`] = Math.max(0, (target[`bld_${bldType}`] || 0) - dmg);
       totalBldDmg += dmg;
     }
@@ -8505,7 +8505,7 @@ function castSpell(caster, target, spellId, obscure) {
     let totalBldDmg = 0;
     const bldTypes = ["farms", "barracks", "guard_towers", "markets", "granaries", "shrines", "mage_towers", "libraries", "castles"];
     for (const bldType of bldTypes) {
-      const dmg = Math.floor((target[`bld_${bldType}`] || 0) * 0.75);
+      const dmg = Math.floor((target[`bld_${bldType}`] || 0) * 0.75 * magicRatio * shielded);
       targetUpdates[`bld_${bldType}`] = Math.max(0, (target[`bld_${bldType}`] || 0) - dmg);
       totalBldDmg += dmg;
     }
@@ -8513,7 +8513,7 @@ function castSpell(caster, target, spellId, obscure) {
     const pop = Math.max(1, Math.floor(2000 * magicRatio * shielded));
     targetUpdates.fighters = Math.max(0, (target.fighters || 0) - fighters);
     targetUpdates.population = Math.max(0, (target.population || 0) - pop);
-    damageDesc = `cosmic annihilation — 75% infrastructure destroyed, ${fighters.toLocaleString()} fighters, ${pop.toLocaleString()} population obliterated`;
+    damageDesc = `cosmic annihilation — ${totalBldDmg} buildings, ${fighters.toLocaleString()} fighters, ${pop.toLocaleString()} population destroyed`;
   } else if (spellId === "perfect_illusion") {
     // So perfect enemy is blind for 5 turns (ultimate blindness)
     let tEffects = {};
