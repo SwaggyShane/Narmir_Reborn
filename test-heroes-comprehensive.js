@@ -162,7 +162,7 @@ for (const heroClassId of heroClassIds) {
         throw new Error('Parsed abilities not an array or empty');
       }
     } catch (e) {
-      throw new Error(`Abilities not valid JSON: ${e.message}`);
+      throw new Error(`Abilities not valid JSON: ${e.message}`, { cause: e });
     }
 
     // Check recruitment cost

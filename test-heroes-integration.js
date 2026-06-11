@@ -145,9 +145,6 @@ try {
 
     engine.applyHeroTurnBonuses(hero, kingdom, updates, events);
 
-    // Check if expected updates were applied or if hero has stat bonuses (some heroes don't have special per-turn bonuses)
-    let hasUpdate = Object.keys(updates).length > 0;
-
     // For all heroes, check they have stat bonuses in config
     const heroClass = config.HERO_CLASSES[testCase.heroClass];
     if (heroClass && heroClass.statBonus) {
@@ -268,8 +265,6 @@ try {
   let racesChecked = 0;
 
   for (const test of raceTests) {
-    const heroClass = config.HERO_CLASSES[test.heroClass];
-
     // Test valid races
     for (const validRace of test.validRaces) {
       const kingdom = { race: validRace, gold: 1000000, mana: 500000, bld_castles: 5 };
