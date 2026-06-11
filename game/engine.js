@@ -6512,6 +6512,331 @@ function castSpell(caster, target, spellId, obscure) {
       tEffects.shield = { turns_left: def.duration || 5 };
       targetUpdates.active_effects = JSON.stringify(tEffects);
       damageDesc = `magic shield active for ${def.duration || 5} turns — incoming spell damage halved`;
+    } else if (spellId === "arcane_ward") {
+      // Create magical barrier; reduces damage by 20% for 4 turns
+      let tEffects = {};
+      try {
+        tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+      } catch {}
+      tEffects.arcane_ward = { turns_left: 4, damage_reduction: 0.2 };
+      targetUpdates.active_effects = JSON.stringify(tEffects);
+      damageDesc = `magical barrier activated — incoming damage reduced by 20% for 4 turns`;
+    } else if (spellId === "create_food") {
+      // Generate 500 food for granaries (friendly)
+      const foodCreated = Math.floor(500 * magicRatio);
+      targetUpdates.food = (target.food || 0) + foodCreated;
+      damageDesc = `${foodCreated.toLocaleString()} food conjured`;
+    } else if (spellId === "materialize_gold") {
+      // Creates 1000 gold from magical energy (friendly)
+      const goldCreated = Math.floor(1000 * magicRatio);
+      targetUpdates.gold = (target.gold || 0) + goldCreated;
+      damageDesc = `${goldCreated.toLocaleString()} gold materialized`;
+    } else if (spellId === "conjure_supplies") {
+      // Create building materials; +100 wood/stone (friendly)
+      const woodCreated = Math.floor(100 * magicRatio);
+      const stoneCreated = Math.floor(100 * magicRatio);
+      targetUpdates.wood = (target.wood || 0) + woodCreated;
+      targetUpdates.stone = (target.stone || 0) + stoneCreated;
+      damageDesc = `${woodCreated.toLocaleString()} wood and ${stoneCreated.toLocaleString()} stone conjured`;
+    } else if (spellId === "summon_servants") {
+      // Summons 20 workers; +50% gathering for 2 turns (friendly)
+      const servantsCreated = Math.floor(20 * magicRatio);
+      targetUpdates.population = (target.population || 0) + servantsCreated;
+      let tEffects = {};
+      try {
+        tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+      } catch {}
+      tEffects.summon_servants = { turns_left: 2, gathering_bonus: 0.5 };
+      targetUpdates.active_effects = JSON.stringify(tEffects);
+      damageDesc = `${servantsCreated} servants summoned; gathering +50% for 2 turns`;
+    } else if (spellId === "protective_blessing") {
+      // +10% defense against next 2 attacks (friendly)
+      let tEffects = {};
+      try {
+        tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+      } catch {}
+      tEffects.protective_blessing = { turns_left: 3, defense_bonus: 0.1, attacks_left: 2 };
+      casterUpdates.active_effects = JSON.stringify(tEffects);
+      damageDesc = `protective blessing granted — +10% defense for next 2 attacks`;
+    } else if (spellId === "seal_the_breach") {
+      // Restores 30% wall integrity instantly
+      const wallGain = Math.floor(100 * 0.3 * magicRatio);
+      targetUpdates.walls = Math.min(100, (target.walls || 0) + wallGain);
+      damageDesc = `walls restored by ${wallGain}% integrity`;
+    } else if (spellId === "dimensional_shroud") {
+      // Kingdom harder to locate; -40% spy accuracy for 3 turns (friendly)
+      let tEffects = {};
+      try {
+        tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+      } catch {}
+      tEffects.dimensional_shroud = { turns_left: 3, spy_accuracy_penalty: 0.4 };
+      casterUpdates.active_effects = JSON.stringify(tEffects);
+      damageDesc = `kingdom cloaked in dimensional shroud — spy accuracy reduced by 40% for 3 turns`;
+    } else if (spellId === "create_shelter") {
+      // +100 population capacity for 5 turns (friendly)
+      let tEffects = {};
+      try {
+        tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+      } catch {}
+      tEffects.create_shelter = { turns_left: 5, population_capacity_bonus: 100 };
+      casterUpdates.active_effects = JSON.stringify(tEffects);
+      damageDesc = `shelter created — +100 population capacity for 5 turns`;
+    } else if (spellId === "greater_healing") {
+      // Restore 20% of troop casualties from previous battles (friendly)
+      const healed = Math.floor((target.fighters || 0) * 0.2 * magicRatio);
+      targetUpdates.fighters = (target.fighters || 0) + healed;
+      damageDesc = `${healed.toLocaleString()} fighters restored from previous battles`;
+    } else if (spellId === "conjure_arsenal") {
+      // Create 50 weapons and 50 armor instantly (friendly resource)
+      const weaponsCreated = Math.floor(50 * magicRatio);
+      const armorCreated = Math.floor(50 * magicRatio);
+      damageDesc = `${weaponsCreated} weapons and ${armorCreated} armor conjured`;
+    } else if (spellId === "summon_beasts") {
+      // Summons 200 wild beasts for defense; lasts 3 turns (friendly troops)
+      const beastsCreated = Math.floor(200 * magicRatio);
+      let tEffects = {};
+      try {
+        tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+      } catch {}
+      tEffects.summon_beasts = { turns_left: 3, beast_count: beastsCreated };
+      targetUpdates.fighters = (target.fighters || 0) + beastsCreated;
+      targetUpdates.active_effects = JSON.stringify(tEffects);
+      damageDesc = `${beastsCreated} wild beasts summoned for 3 turns`;
+    } else if (spellId === "greater_barrier") {
+      // Reduce all spell damage by 40% for 5 turns (friendly)
+      let tEffects = {};
+      try {
+        tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+      } catch {}
+      tEffects.greater_barrier = { turns_left: 5, spell_damage_reduction: 0.4 };
+      casterUpdates.active_effects = JSON.stringify(tEffects);
+      damageDesc = `greater barrier raised — all spell damage reduced by 40% for 5 turns`;
+    } else if (spellId === "materialize_wealth") {
+      // Create 5000 gold (costs 10% kingdom mana) (friendly)
+      const manaCost = Math.floor((caster.mana || 0) * 0.1);
+      if ((caster.mana || 0) >= manaCost) {
+        const goldGained = Math.floor(5000 * magicRatio);
+        casterUpdates.mana = (casterUpdates.mana !== undefined ? casterUpdates.mana : (caster.mana || 0)) - manaCost;
+        targetUpdates.gold = (target.gold || 0) + goldGained;
+        damageDesc = `${goldGained.toLocaleString()} gold materialized (cost: ${manaCost} mana)`;
+      } else {
+        damageDesc = `insufficient mana to materialize wealth`;
+      }
+    } else if (spellId === "metallic_skin") {
+      // +40% armor and health for 4 turns (friendly buff)
+      let tEffects = {};
+      try {
+        tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+      } catch {}
+      tEffects.metallic_skin = { turns_left: 4, armor_bonus: 0.4, health_bonus: 0.4 };
+      casterUpdates.active_effects = JSON.stringify(tEffects);
+      damageDesc = `metallic skin forms — +40% armor and health for 4 turns`;
+    } else if (spellId === "iron_skin_enchantment") {
+      // Troops gain +25% armor; lasts 4 turns (friendly)
+      let tEffects = {};
+      try {
+        tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+      } catch {}
+      tEffects.iron_skin_enchantment = { turns_left: 4, armor_bonus: 0.25 };
+      casterUpdates.active_effects = JSON.stringify(tEffects);
+      damageDesc = `iron skin enchantment applied — troops gain +25% armor for 4 turns`;
+    } else if (spellId === "conjure_guardian") {
+      // Create guardian; +500 fighters for 5 turns (friendly)
+      let tEffects = {};
+      try {
+        tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+      } catch {}
+      const guardianCount = Math.floor(500 * magicRatio);
+      tEffects.conjure_guardian = { turns_left: 5, guardian_fighters: guardianCount };
+      targetUpdates.fighters = (target.fighters || 0) + guardianCount;
+      targetUpdates.active_effects = JSON.stringify(tEffects);
+      damageDesc = `guardian conjured — +${guardianCount.toLocaleString()} fighters for 5 turns`;
+    } else if (spellId === "mass_resurrection") {
+      // Resurrect 30% of fallen troops from last battle (friendly)
+      const resurrected = Math.floor(((target.fighters || 0) * 0.3) * magicRatio);
+      targetUpdates.fighters = (target.fighters || 0) + resurrected;
+      damageDesc = `${resurrected.toLocaleString()} fallen troops resurrected`;
+    } else if (spellId === "conjure_abundance") {
+      // Create unlimited food for 3 turns; no starvation (friendly)
+      let tEffects = {};
+      try {
+        tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+      } catch {}
+      tEffects.conjure_abundance = { turns_left: 3, unlimited_food: true };
+      casterUpdates.active_effects = JSON.stringify(tEffects);
+      damageDesc = `abundance conjured — unlimited food for 3 turns`;
+    } else if (spellId === "summon_plague_doctor") {
+      // Summon healer; cure all population debuffs instantly (friendly)
+      let tEffects = {};
+      try {
+        tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+      } catch {}
+      const debuffKeys = Object.keys(tEffects).filter(k => k.includes("plague") || k.includes("disease") || k.includes("life_drain"));
+      debuffKeys.forEach(k => delete tEffects[k]);
+      casterUpdates.active_effects = JSON.stringify(tEffects);
+      damageDesc = `plague doctor summoned — all population debuffs cured`;
+    } else if (spellId === "materialize_army") {
+      // Create 1000 fighters from magical essence (friendly)
+      const armySize = Math.floor(1000 * magicRatio);
+      targetUpdates.fighters = (target.fighters || 0) + armySize;
+      damageDesc = `army materialized — +${armySize.toLocaleString()} fighters from essence`;
+    } else if (spellId === "conjure_fortress") {
+      // +5000 wall strength for 5 turns (friendly)
+      let tEffects = {};
+      try {
+        tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+      } catch {}
+      tEffects.conjure_fortress = { turns_left: 5, wall_bonus: 5000 };
+      casterUpdates.active_effects = JSON.stringify(tEffects);
+      damageDesc = `fortress conjured — +5000 wall strength for 5 turns`;
+    } else if (spellId === "Divine_intervention") {
+      // Resurrect 15% of fallen fighters from last battle (friendly)
+      const resurrected = Math.floor(((target.fighters || 0) * 0.15) * magicRatio);
+      targetUpdates.fighters = (target.fighters || 0) + resurrected;
+      damageDesc = `divine intervention — ${resurrected.toLocaleString()} fighters resurrected`;
+    } else if (spellId === "summon_echo") {
+      // Summon kingdom echo; double all bonuses for 7 turns (legendary buff)
+      let tEffects = {};
+      try {
+        tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+      } catch {}
+      tEffects.summon_echo = { turns_left: 7, bonus_multiplier: 2.0 };
+      casterUpdates.active_effects = JSON.stringify(tEffects);
+      damageDesc = `kingdom echo summoned — all bonuses doubled for 7 turns`;
+    } else if (spellId === "conjure_realm") {
+      // +50% storage for all buildings for 6 turns (resource mega-buff)
+      let tEffects = {};
+      try {
+        tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+      } catch {}
+      tEffects.conjure_realm = { turns_left: 6, storage_bonus: 0.5 };
+      casterUpdates.active_effects = JSON.stringify(tEffects);
+      damageDesc = `realm conjured — +50% storage for all buildings for 6 turns`;
+    } else if (spellId === "ultimate_resurrection") {
+      // Bring back 50% of all troops ever lost (massive troop restoration)
+      const resurrected = Math.floor(((target.fighters || 0) * 0.5) * magicRatio);
+      targetUpdates.fighters = (target.fighters || 0) + resurrected;
+      damageDesc = `ultimate resurrection — ${resurrected.toLocaleString()} troops restored from the grave`;
+    } else if (spellId === "summon_ascendant") {
+      // Summon ascendant; +100% spell effectiveness for 5 turns (ultimate buff)
+      let tEffects = {};
+      try {
+        tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+      } catch {}
+      tEffects.summon_ascendant = { turns_left: 5, spell_effectiveness: 2.0 };
+      casterUpdates.active_effects = JSON.stringify(tEffects);
+      damageDesc = `ascendant summoned — +100% spell effectiveness for 5 turns`;
+    } else if (spellId === "conjure_paradise") {
+      // Create ideal state; maximize all production for 4 turns (perfect economy)
+      let tEffects = {};
+      try {
+        tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+      } catch {}
+      tEffects.conjure_paradise = { turns_left: 4, production_maximized: true };
+      casterUpdates.active_effects = JSON.stringify(tEffects);
+      damageDesc = `paradise conjured — all production maximized for 4 turns`;
+    } else if (spellId === "prophetic_dream") {
+      // +200% to next divination spell for 3 turns (friendly buff)
+      let tEffects = {};
+      try {
+        tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+      } catch {}
+      tEffects.prophetic_dream = { turns_left: 3, divination_bonus: 2.0 };
+      casterUpdates.active_effects = JSON.stringify(tEffects);
+      damageDesc = `prophetic dream granted — +200% divination effectiveness for 3 turns`;
+    } else if (spellId === "absolute_protection") {
+      // Reduce all damage by 75% for 7 turns; impenetrable (legendary defense)
+      let tEffects = {};
+      try {
+        tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+      } catch {}
+      tEffects.absolute_protection = { turns_left: 7, damage_reduction: 0.75, impenetrable: true };
+      casterUpdates.active_effects = JSON.stringify(tEffects);
+      damageDesc = `absolute protection activated — -75% all damage for 7 turns, impenetrable`;
+    } else if (spellId === "eternal_vigilance") {
+      // Kingdom immune to assassination for 4 turns (friendly)
+      let tEffects = {};
+      try {
+        tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+      } catch {}
+      tEffects.eternal_vigilance = { turns_left: 4, assassination_immunity: true };
+      casterUpdates.active_effects = JSON.stringify(tEffects);
+      damageDesc = `eternal vigilance activated — immune to assassination for 4 turns`;
+    } else if (spellId === "prismatic_shield") {
+      // Reduce damage by 50%; reflect 25% back for 6 turns (friendly)
+      let tEffects = {};
+      try {
+        tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+      } catch {}
+      tEffects.prismatic_shield = { turns_left: 6, damage_reduction: 0.5, reflect_percentage: 0.25 };
+      casterUpdates.active_effects = JSON.stringify(tEffects);
+      damageDesc = `prismatic shield formed — -50% damage, 25% reflected for 6 turns`;
+    } else if (spellId === "fortress_eternal") {
+      // All buildings indestructible for next attack cycle (legendary defense)
+      let tEffects = {};
+      try {
+        tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+      } catch {}
+      tEffects.fortress_eternal = { turns_left: 10, indestructible: true };
+      casterUpdates.active_effects = JSON.stringify(tEffects);
+      damageDesc = `fortress eternal — all buildings become indestructible`;
+    } else if (spellId === "divine_aegis") {
+      // Create protection zone; prevent enemy spells for 3 turns (anti-magic)
+      let tEffects = {};
+      try {
+        tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+      } catch {}
+      tEffects.divine_aegis = { turns_left: 3, spell_immunity: true };
+      casterUpdates.active_effects = JSON.stringify(tEffects);
+      damageDesc = `divine aegis formed — enemy spells prevented for 3 turns`;
+    } else if (spellId === "transcendence") {
+      // Pure magical energy; +100% spells for 6 turns (friendly mega-buff)
+      let tEffects = {};
+      try {
+        tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+      } catch {}
+      tEffects.transcendence = { turns_left: 6, spell_effectiveness_bonus: 1.0 };
+      casterUpdates.active_effects = JSON.stringify(tEffects);
+      damageDesc = `transcendence achieved — +100% spell effectiveness for 6 turns`;
+    } else if (spellId === "divine_form") {
+      // +50% all stats for 5 turns (friendly mega-buff)
+      let tEffects = {};
+      try {
+        tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+      } catch {}
+      tEffects.divine_form = { turns_left: 5, all_stats_bonus: 0.5 };
+      casterUpdates.active_effects = JSON.stringify(tEffects);
+      damageDesc = `divine form assumed — all stats increased by 50% for 5 turns`;
+    } else if (spellId === "ascendant_transformation") {
+      // Become immortal and invincible for 7 turns (godhood)
+      let tEffects = {};
+      try {
+        tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+      } catch {}
+      tEffects.ascendant_transformation = { turns_left: 7, immortal: true, invincible: true };
+      casterUpdates.active_effects = JSON.stringify(tEffects);
+      damageDesc = `transcendence achieved — immortal and invincible for 7 turns`;
+    } else if (spellId === "unreality") {
+      // Kingdom hidden while real hidden; 6 turns (ultimate stealth)
+      let tEffects = {};
+      try {
+        tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+      } catch {}
+      tEffects.unreality = { turns_left: 6, kingdom_hidden: true };
+      casterUpdates.active_effects = JSON.stringify(tEffects);
+      damageDesc = `unreality achieved — kingdom hidden from reality for 6 turns`;
+    } else if (spellId === "eternal_transmutation") {
+      // Master of change; all enemy transformations fail for 6 turns (transformation immunity)
+      let tEffects = {};
+      try {
+        tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+      } catch {}
+      tEffects.eternal_transmutation = { turns_left: 6, transformation_immunity: true };
+      casterUpdates.active_effects = JSON.stringify(tEffects);
+      damageDesc = `eternal transmutation mastered — immune to enemy transformations for 6 turns`;
+    } else {
+      // No specific implementation found for this friendly spell
+      damageDesc = "spell effect applied";
     }
 
     const reportTarget = caster.id === target.id ? "your kingdom" : target.name;
@@ -7296,14 +7621,14 @@ function castSpell(caster, target, spellId, obscure) {
     targetUpdates.fighters = Math.max(0, (target.fighters || 0) - neutralized);
     damageDesc = `${neutralized.toLocaleString()} fighters transformed into harmless creatures`;
   } else if (spellId === "alchemical_conversion") {
-    // 200 iron becomes 200 gold (resource conversion - assuming iron doesn't exist, use stone)
-    const stoneUsed = Math.min(200, target.stone || 0);
-    if (stoneUsed > 0) {
-      targetUpdates.stone = (target.stone || 0) - stoneUsed;
-      targetUpdates.gold = (target.gold || 0) + stoneUsed;
-      damageDesc = `alchemical conversion — stone transmuted to gold`;
+    // 200 iron becomes 200 gold (resource conversion)
+    const ironUsed = Math.min(200, target.iron || 0);
+    if (ironUsed > 0) {
+      targetUpdates.iron = (target.iron || 0) - ironUsed;
+      targetUpdates.gold = (target.gold || 0) + ironUsed;
+      damageDesc = `alchemical conversion — iron transmuted to gold`;
     } else {
-      damageDesc = `insufficient stone to transmute`;
+      damageDesc = `insufficient iron to transmute`;
     }
   } else if (spellId === "bestial_transformation") {
     // 150 population become wild beasts (population conversion)
@@ -7417,8 +7742,8 @@ function castSpell(caster, target, spellId, obscure) {
     damageDesc = `chronological vision shows enemy plans for next 3 turns`;
   } else if (spellId === "soul_reading") {
     // Discover enemy racial bonuses (research)
-    const raceBonus = raceBonus(target, "all");
-    damageDesc = `soul reading reveals ${target.race || "unknown"} racial traits`;
+    const targetRaceBonus = raceBonus(target, "all");
+    damageDesc = `soul reading reveals ${target.race || "unknown"} racial traits (multiplier: ${targetRaceBonus})`;
   } else if (spellId === "cosmic_sight") {
     // Show all allied kingdoms of target (research)
     damageDesc = `cosmic sight reveals target's allies and allegiances`;
