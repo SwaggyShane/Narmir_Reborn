@@ -4233,6 +4233,7 @@
                 weapons: "⚔️",
                 armor: "🛡️",
                 war_machines: "🏹",
+                ballistae: "🏹",
                 land: "🗺️",
               }[p.id] || "📦";
             const label = p.id
@@ -5157,6 +5158,10 @@
           "A high-capacity assembly yard is complete, prepared to assemble ballistas and mighty siege weapon chassis.",
           "A fabrication hangar is set up to roll out heavy weapons and war wagons."
         ],
+        ballistae: [
+          "A fixed ballista emplacement is complete, ready to anchor the walls with heavy bolts.",
+          "Wall-mounted ballista frames are locked into position and sighted for defensive fire."
+        ],
         weapons: [
           "A dedicated weapons workshop is finished, churning out sharp swords, bows, and spear tips.",
           "A fine weapons foundry stands ready to forge higher quality military arms."
@@ -5212,7 +5217,7 @@
         var key = bldName;
         if (key.endsWith("ies")) {
           key = "smithies";
-        } else if (key.endsWith("s") && !key.endsWith("ss") && key !== "outposts" && key !== "guard_towers" && key !== "schools" && key !== "armories" && key !== "vaults" && key !== "markets" && key !== "mage_towers" && key !== "shrines" && key !== "mausoleums" && key !== "castles" && key !== "libraries" && key !== "taverns" && key !== "war_machines" && key !== "weapons" && key !== "ladders") {
+        } else if (key.endsWith("s") && !key.endsWith("ss") && key !== "outposts" && key !== "guard_towers" && key !== "schools" && key !== "armories" && key !== "vaults" && key !== "markets" && key !== "mage_towers" && key !== "shrines" && key !== "mausoleums" && key !== "castles" && key !== "libraries" && key !== "taverns" && key !== "war_machines" && key !== "ballistae" && key !== "weapons" && key !== "ladders") {
           key = key.slice(0, -1);
         }
 
@@ -5234,6 +5239,7 @@
         if (key === "library") key = "libraries";
         if (key === "tavern") key = "taverns";
         if (key === "war_machine") key = "war_machines";
+        if (key === "ballista") key = "ballistae";
         if (key === "weapon") key = "weapons";
         if (key === "ladder") key = "ladders";
 
@@ -5722,6 +5728,8 @@
         });
         var wmEl = document.getElementById("s-war_machines");
         if (wmEl) wmEl.textContent = fmt(state.war_machines || 0);
+        var ballistaeEl = document.getElementById("s-ballistae");
+        if (ballistaeEl) ballistaeEl.textContent = fmt(state.ballistae || 0);
         var wpnEl = document.getElementById("s-weapons");
         if (wpnEl) wpnEl.textContent = fmt(state.weapons_stockpile || 0);
         var armEl = document.getElementById("s-armor");
@@ -5869,6 +5877,7 @@
           bld_training: { base: 1, max: 15, capLevel: 400 },
           bld_castles: { base: 1, max: 10, capLevel: 400 },
           war_machines: { base: 1000, max: 10000 },
+          ballistae: { base: 1000, max: 10000 },
         };
         function getCap(field, level) {
           var c = CAPS[field];
@@ -5899,6 +5908,7 @@
           weapons_stockpile: "weapons_stockpile",
           armor_stockpile: "armor_stockpile",
           war_machines: "war_machines",
+          ballistae: "ballistae",
           ladders: "ladders",
         };
         Object.keys(bldMap).forEach(function (bld) {
@@ -7518,6 +7528,7 @@
           weapons_stockpile: kingdom.weapons_stockpile || 0,
           armor_stockpile: kingdom.armor_stockpile || 0,
           war_machines: kingdom.war_machines || 0,
+          ballistae: kingdom.ballistae || 0,
           research_allocation: kingdom.research_allocation || {},
           xp: kingdom.xp || 0,
           level: kingdom.level || 1,
@@ -7982,6 +7993,14 @@
         return 13;
       }
 
+      function summarizeAttackNewsForAll(item) {
+        var message = String((item && item.message) || "");
+        if (message.indexOf("Defense report:") === 0) return "You were attacked.";
+        if (message.indexOf("Attack report:") === 0) return "You launched an attack.";
+        if (message.toLowerCase().includes("attacked your kingdom")) return "You were attacked.";
+        return "Combat report available.";
+      }
+
       function renderNewsList(items) {
         var list = document.getElementById("news-list");
         if (!list) return;
@@ -8037,7 +8056,11 @@
                 if (item.message && /^[🔭🌲⚔🧭•]/u.test(item.message))
                   type = "expedition";
                 var meta = NEWS_META[type] || NEWS_META.system;
-                var msgHtml = escHtml(item.message || "")
+                var displayMessage =
+                  newsFilter === "all" && type === "attack"
+                    ? summarizeAttackNewsForAll(item)
+                    : item.message || "";
+                var msgHtml = escHtml(displayMessage)
                   .replace(/\n/g, "<br>")
                   .replace(/&lt;i&gt;/g, "<i>")
                   .replace(/&lt;\/i&gt;/g, "</i>");
@@ -8172,7 +8195,10 @@
           .map(function (ev) {
             var type = ev.type || "system";
             var meta = NEWS_META[type] || NEWS_META.system;
-            var msg = ev.message || ev;
+            var msg =
+              newsFilter === "all" && type === "attack"
+                ? summarizeAttackNewsForAll(ev)
+                : ev.message || ev;
             var isBorderType =
               type === "attack" || type === "spell" || type === "covert";
             var borderStyle = isBorderType
@@ -8188,7 +8214,7 @@
               '<span class="news-body" style="color:' +
               (isBorderType ? "var(--text)" : "var(--text2)") +
               '">' +
-              escHtml(String(msg)) +
+              escHtml(String(msg)).replace(/\n/g, "<br>") +
               "</span>" +
               "</div>"
             );
@@ -9470,6 +9496,7 @@
           } catch {}
         }
         if (u.war_machines !== undefined) state.war_machines = u.war_machines;
+        if (u.ballistae !== undefined) state.ballistae = u.ballistae;
         if (u.weapons_stockpile !== undefined)
           state.weapons_stockpile = u.weapons_stockpile;
         if (u.armor_stockpile !== undefined)
@@ -9641,6 +9668,7 @@
         { id: "b-library", key: "libraries", pieces: 100, alloc: "ba-library" },
         { id: "b-tavern", key: "taverns", pieces: 10, alloc: "ba-tavern" },
         { id: "b-wm", key: "war_machines", pieces: 20, alloc: "ba-wm" },
+        { id: "b-ballistae", key: "ballistae", pieces: 20, alloc: "ba-ballistae" },
         { id: "b-weapons", key: "weapons", pieces: 1, alloc: "ba-weapons" },
         { id: "b-armor", key: "armor", pieces: 1, alloc: "ba-armor" },
         { id: "b-ladders", key: "ladders", pieces: 1, alloc: "ba-ladders" },
@@ -9666,6 +9694,7 @@
         libraries: 10000,
         taverns: 3000,
         war_machines: 1000,
+        ballistae: 1000,
         weapons: 10,
         armor: 10,
         ladders: 100,
@@ -9857,6 +9886,8 @@
           library: "libraries",
           housing: "housing",
           war_machine: "war_machines",
+          ballista: "ballistae",
+          ballistae: "ballistae",
           weapons: "weapons",
           armor: "armor",
         };
@@ -9917,6 +9948,8 @@
           library: "libraries",
           housing: "housing",
           war_machine: "war_machines",
+          ballista: "ballistae",
+          ballistae: "ballistae",
           weapons: "weapons",
           armor: "armor",
         };
@@ -10112,6 +10145,7 @@
           walls: { w: 500, g: 300, l: 1 },
           taverns: { w: 3000, g: 1000, l: 1 },
           war_machines: { w: 1000, g: 100, l: 0 },
+          ballistae: { w: 1000, g: 100, l: 0 },
           weapons: { w: 10, g: 100, l: 0 },
           armor: { w: 10, g: 150, l: 0 },
         };
@@ -10274,6 +10308,7 @@
           housing: "Housing",
           castles: "Castles",
           war_machines: "War Machines",
+          ballistae: "Ballistae",
           weapons: "Weapons",
           armor: "Armor",
           ladders: "Ladders",
@@ -10294,6 +10329,7 @@
           housing: "🏘️",
           castles: "🏰",
           war_machines: "🪖",
+          ballistae: "🏹",
           weapons: "🗡️",
           armor: "🔰",
           ladders: "🪜",
@@ -10317,6 +10353,8 @@
           library: "libraries",
           housing: "housing",
           war_machine: "war_machines",
+          ballista: "ballistae",
+          ballistae: "ballistae",
           weapons: "weapons",
           armor: "armor",
         };
@@ -12337,6 +12375,7 @@
         scrolls: 200,
         blueprints: 150,
         war_machines: 500,
+        ballistae: 500,
         land: 2000,
       };
       var COMMODITY_RACE_DISCOUNT = {
@@ -13075,6 +13114,7 @@
           "maps",
           "blueprints",
           "war_machines",
+          "ballistae",
           "land",
         ];
         el.innerHTML =

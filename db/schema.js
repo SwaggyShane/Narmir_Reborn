@@ -91,7 +91,7 @@ const NUMERIC_FIELDS = [
   'fighters', 'rangers', 'clerics', 'mages', 'thieves', 'ninjas',
   'researchers', 'engineers', 'engineer_level', 'engineer_xp', 'scribes', 'thralls',
   // Military equipment
-  'war_machines', 'weapons_stockpile', 'armor_stockpile', 'ladders',
+  'war_machines', 'ballistae', 'weapons_stockpile', 'armor_stockpile', 'ladders',
   // Research
   'res_economy', 'res_weapons', 'res_armor', 'res_military', 'res_spellbook',
   'res_attack_magic', 'res_defense_magic', 'res_entertainment',
@@ -622,6 +622,7 @@ async function initDb(options = {}) {
       engineer_level INTEGER NOT NULL DEFAULT 1,
       engineer_xp    INTEGER NOT NULL DEFAULT 0,
       war_machines     INTEGER NOT NULL DEFAULT 0,
+      ballistae        INTEGER NOT NULL DEFAULT 0,
       weapons_stockpile INTEGER NOT NULL DEFAULT 0,
       armor_stockpile   INTEGER NOT NULL DEFAULT 0,
       ladders          INTEGER NOT NULL DEFAULT 0,
@@ -639,6 +640,7 @@ async function initDb(options = {}) {
       xp_sources        TEXT NOT NULL DEFAULT '{"turn":0,"gold":0,"combat_win":0,"combat_loss":0,"research":0,"construction":0,"exploration":0,"spell_cast":0,"covert_op":0}',
       level             INTEGER NOT NULL DEFAULT 1,
       troop_levels      TEXT NOT NULL DEFAULT '{}',
+      equipment_levels  TEXT NOT NULL DEFAULT '{}',
       training_allocation TEXT NOT NULL DEFAULT '{}',
       scribes     INTEGER NOT NULL DEFAULT 0,
       bld_libraries     INTEGER NOT NULL DEFAULT 0,
@@ -831,7 +833,9 @@ async function initDb(options = {}) {
   if (!kingdomsCols.includes('xp_sources'))          await addColumn('kingdoms', 'xp_sources',          'TEXT NOT NULL DEFAULT \'{"turn":0,"gold":0,"combat_win":0,"combat_loss":0,"research":0,"construction":0,"exploration":0,"spell_cast":0,"covert_op":0}\'', kingdomsCols);
   if (!kingdomsCols.includes('level'))               await addColumn('kingdoms', 'level',               'INTEGER NOT NULL DEFAULT 1', kingdomsCols);
   if (!kingdomsCols.includes('troop_levels'))        await addColumn('kingdoms', 'troop_levels',        "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
+  if (!kingdomsCols.includes('equipment_levels'))    await addColumn('kingdoms', 'equipment_levels',    "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('training_allocation')) await addColumn('kingdoms', 'training_allocation', "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
+  if (!kingdomsCols.includes('ballistae'))           await addColumn('kingdoms', 'ballistae',           'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
   if (!kingdomsCols.includes('weapons_stockpile'))   await addColumn('kingdoms', 'weapons_stockpile',   'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
   if (!kingdomsCols.includes('armor_stockpile'))     await addColumn('kingdoms', 'armor_stockpile',     'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
   if (!kingdomsCols.includes('ladders'))             await addColumn('kingdoms', 'ladders',             'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
@@ -1238,6 +1242,7 @@ async function initDb(options = {}) {
     ['weapons', 25.0, 25.0],
     ['armor',   25.0, 25.0],
     ['war_machines', 1000.0, 1000.0],
+    ['ballistae', 1000.0, 1000.0],
     ['land',    5000.0, 5000.0]
   ];
   for (const [id, current, base] of freshDefaultPrices) {

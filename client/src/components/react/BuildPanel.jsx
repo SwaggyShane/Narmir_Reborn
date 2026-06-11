@@ -21,6 +21,7 @@ const BUILDINGS = [
   { id: 'training', name: 'Training Field', tier: 7, wood: 8500, stone: 17500, iron: 4000, time: 35000, land: 850 },
   { id: 'castles', name: 'Castle', tier: 8, wood: 10000, stone: 25000, iron: 5000, time: 50000, land: 1000 },
   { id: 'wm', name: 'War Machine', wood: 200, stone: 0, iron: 50, time: 100, land: 0 },
+  { id: 'ballistae', name: 'Ballistae', wood: 200, stone: 0, iron: 50, time: 100, land: 0 },
   { id: 'ladders', name: 'Ladder', wood: 20, stone: 0, iron: 2, time: 8, land: 0 },
   { id: 'weapons', name: 'Weapons', wood: 30, stone: 0, iron: 80, time: 20, land: 0 },
   { id: 'armor', name: 'Armor', wood: 10, stone: 0, iron: 110, time: 25, land: 0 },
@@ -36,7 +37,7 @@ const BUILDINGS_DISPLAY_ORDER = [
   'farms', 'granaries', 'housing', 'schools', 'libraries', 'mage_towers',
   'shrines', 'mausoleums', 'markets', 'taverns', 'smithies', 'vaults',
   'armories', 'barracks', 'walls', 'guard_towers', 'outposts', 'training',
-  'castles', 'wm', 'ladders', 'weapons', 'armor'
+  'castles', 'wm', 'ballistae', 'ladders', 'weapons', 'armor'
 ];
 
 const BuildPanel = () => {
@@ -142,7 +143,7 @@ const BuildPanel = () => {
   const setSmithyMax = (type) => { if (window.setSmithyMax) window.setSmithyMax(type); };
 
   const renderBuildingRow = (b, icon, baId, demoAmountId) => {
-    const isEng = !['wm', 'weapons', 'armor'].includes(b.id);
+    const isEng = !['wm', 'ballistae', 'weapons', 'armor'].includes(b.id);
 
     return (
       <div className="trow" title={getTooltip(b)} key={b.id}>
@@ -151,7 +152,7 @@ const BuildPanel = () => {
           <span className="name">{b.name}</span>
         </div>
         <span className="count" id={`bld-${b.id}`}>0</span>
-        {b.id !== 'wm' && b.id !== 'ladders' && b.id !== 'weapons' && b.id !== 'armor' ? (
+        {b.id !== 'wm' && b.id !== 'ballistae' && b.id !== 'ladders' && b.id !== 'weapons' && b.id !== 'armor' ? (
           <div className="bld-demolish">
             <input type="number" className="input" id={demoAmountId} defaultValue="1" min="1" style={{ textAlign: 'center' }} />
             <button className="base-btn variant-red" style={{ padding: '4px 6px', fontSize: '10px' }} onClick={() => demolishB(b.id)}>🗑️</button>
@@ -371,6 +372,7 @@ const BuildPanel = () => {
             </div>
 
             {BUILDINGS_MAP['wm'] && renderBuildingRow(BUILDINGS_MAP['wm'], { emoji: '🪖', color: '#5a3a1a' }, 'ba-wm', '')}
+            {BUILDINGS_MAP['ballistae'] && renderBuildingRow(BUILDINGS_MAP['ballistae'], { emoji: '🏹', color: '#5a3a1a' }, 'ba-ballistae', '')}
             {BUILDINGS_MAP['ladders'] && renderBuildingRow(BUILDINGS_MAP['ladders'], { emoji: '🪜', color: '#3a2a1a' }, 'ba-ladders', '')}
             {BUILDINGS_MAP['weapons'] && renderBuildingRow(BUILDINGS_MAP['weapons'], { emoji: '🗡️', color: '#6a1a1a' }, 'ba-weapons', '')}
             <div style={{ borderWidth: '1px 1px 0', borderStyle: 'solid', borderColor: 'var(--border)' }}>

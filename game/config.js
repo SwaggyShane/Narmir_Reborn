@@ -479,6 +479,7 @@ const config = {
     scrolls: 200,
     blueprints: 150,
     war_machines: 500,
+    ballistae: 500,
     land: 2000,
   },
   COMMODITY_RACE_DISCOUNT: {
@@ -875,6 +876,7 @@ const config = {
     castles: 40000,
     // Non-tiered (legacy)
     war_machines: 1000,
+    ballistae: 1000,
     weapons: 10,
     armor: 10,
     ladders: 100,
@@ -911,6 +913,7 @@ const config = {
     taverns: 1000,
     mausoleums: 2000,
     war_machines: 100,
+    ballistae: 100,
     weapons: 100,
     armor: 150,
     ladders: 20,
@@ -956,6 +959,7 @@ const config = {
     castles: 1000,
     // Non-tiered
     war_machines: 0,
+    ballistae: 0,
     weapons: 0,
     armor: 0,
     ladders: 0,
@@ -1001,6 +1005,7 @@ const config = {
     castles: 10000,
     // Non-tiered
     war_machines: 1,
+    ballistae: 2,
     ladders: 1,
     weapons: 0,
     armor: 0,
@@ -1046,6 +1051,7 @@ const config = {
     castles: 25000,
     // Non-tiered
     war_machines: 0,
+    ballistae: 0,
     ladders: 0,
     weapons: 0,
     armor: 0,
@@ -1091,6 +1097,7 @@ const config = {
     castles: 5000,
     // Non-tiered
     war_machines: 1,
+    ballistae: 1,
     ladders: 0,
     weapons: 1,
     armor: 1,
@@ -1128,6 +1135,7 @@ const config = {
     training: 0,
     castles: 0,
     war_machines: 0,
+    ballistae: 0,
     ladders: 0,
     weapons: 0,
     armor: 0,
@@ -1154,6 +1162,7 @@ const config = {
     training: 0,
     castles: 0,
     war_machines: 0,
+    ballistae: 0,
     ladders: 0,
     weapons: 0,
     armor: 0,
@@ -2422,6 +2431,7 @@ const config = {
     bld_training: { base: 1, max: 15, capLevel: 400 },
     bld_castles: { base: 1, max: 10, capLevel: 400 },
     war_machines: { base: 1000, max: 10000 },
+    ballistae: { base: 1000, max: 10000 },
     res_economy: { base: 100, max: 10000 },
     res_weapons: { base: 100, max: 10000 },
     res_armor: { base: 100, max: 10000 },
@@ -2483,6 +2493,7 @@ const config = {
     taverns: "bld_taverns",
     mausoleums: "bld_mausoleums",
     war_machines: "war_machines",
+    ballistae: "ballistae",
     weapons: "weapons_stockpile",
     armor: "armor_stockpile",
     ladders: "ladders",

@@ -8,7 +8,14 @@
     "bot": "node discord-bot.js",
     "build": "vite build",
     "postinstall": "npm run build",
-    "lint": "eslint . --ext js --report-unused-disable-directives"
+    "lint": "eslint . --ext js --report-unused-disable-directives",
+    "smoke:combat-v2": "node test-combat-harness/v2-adapter-smoke.js",
+    "scenario:combat-v2": "node test-combat-harness/v2-scenario-runner.js",
+    "route-smoke:combat-v2": "node test-combat-harness/v2-route-persistence-smoke.js",
+    "sweep:combat-v2-dwarf": "node test-combat-harness/v2-dwarf-war-machine-sweep.js",
+    "sweep:combat-v2-broad": "node test-combat-harness/v2-broad-balance-sweep.js",
+    "series:combat-v2-broad": "node test-combat-harness/v2-broad-series-runner.js",
+    "overnight:combat-v2": "node test-combat-harness/v2-overnight-balance-log.js"
   },
   "engines": {
     "node": "^20.19.0 || ^22.13.0 || >=24",

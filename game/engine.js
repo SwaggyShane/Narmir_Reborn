@@ -7,6 +7,7 @@ const { progressGoal } = require('./goals');
 const fragmentBonusManager = require("./fragment-bonus-manager");
 const attunementManager = require("./attunement-manager");
 const effectsProcessor = require("./synergy-effects-processor");
+const combatResolverV2 = require("./combat-resolver");
 const { safeJsonParse, roll, rand, clearParseCache } = require('../utils/helpers');
 
 const {
@@ -103,6 +104,8 @@ const LEGENDARY_NAMES = {
   dwarf: { engineers: "Runic Siege-Masters" },
   dire_wolf: { fighters: "Fenris Alphas" },
 };
+
+const USE_COMBAT_V2 = process.env.USE_COMBAT_V2 === "1";
 
 function getUnitName(race, unit, prestigeLevel = 0) {
   if (prestigeLevel > 0 && LEGENDARY_NAMES[race]?.[unit]) {
@@ -831,7 +834,7 @@ function wallDefensePower(k) {
   const synergyDefenseMult = getSynergyPassiveBonusMultiplier(k, 'defense');
 
   // Base: each wall = 100 defense power (scaled by race + upgrades)
-  const wmOnWalls = Math.min(k.war_machines, walls);
+  const wmOnWalls = Math.min(k.ballistae || 0, walls);
   const wmBonus =
     wmOnWalls *
     500 *
@@ -4535,7 +4538,7 @@ function awardXp(k, activity, amount) {
 
   const mult = xpRaceBonus(k, activity);
   const earned = (XP_BASE[activity] || 10) * amount * mult;
-  const newXp = (k.xp || 0) + earned;
+  const newXp = Math.max(0, (k.xp || 0) + earned);
   const prestige = k.prestige_level || 0;
   const newLevel = Math.min(levelFromXp(newXp, prestige), 500);
   const levelled = newLevel > currentLevel;
@@ -5248,8 +5251,8 @@ function forgeTools(k, toolType, quantity) {
 
 function wmCrewRequired(race, engineerLevel) {
   let base = WM_CREW_REQUIRED[race] || 3;
-  // Dwarf racial unique — solo crew at engineer level 5+
-  if (race === "dwarf" && engineerLevel >= 5) base = 1;
+  // Dwarf racial unique — solo crew at engineer level 25+
+  if (race === "dwarf" && engineerLevel >= 25) base = 1;
   return base;
 }
 
@@ -5264,6 +5267,360 @@ function happinessCombatMult(happiness) {
   return Math.max(0.5, Math.min(1.5, mult));
 }
 
+function sumRecordValues(record = {}) {
+  return Object.values(record).reduce((sum, value) => sum + (Number(value) || 0), 0);
+}
+
+const COMBAT_NEWS_UNIT_LABELS = {
+  thralls: "Thralls",
+  fighters: "Fighters",
+  rangers: "Rangers",
+  mages: "Mages",
+  clerics: "Clerics",
+  ninjas: "Ninjas",
+  thieves: "Thieves",
+  engineers: "Engineers",
+  war_machines: "War Machines",
+};
+
+const COMBAT_NEWS_UNIT_ORDER = [
+  "thralls",
+  "fighters",
+  "rangers",
+  "mages",
+  "clerics",
+  "ninjas",
+  "thieves",
+  "engineers",
+  "war_machines",
+];
+
+function normalizeCombatUnits(units = {}) {
+  return {
+    thralls: units.thralls || 0,
+    fighters: units.fighters || 0,
+    rangers: units.rangers || 0,
+    mages: units.mages || 0,
+    clerics: units.clerics || 0,
+    ninjas: units.ninjas || 0,
+    thieves: units.thieves || 0,
+    engineers: units.engineers || 0,
+    war_machines: units.war_machines || units.warMachines || 0,
+  };
+}
+
+function formatCombatUnitCounts(units = {}, labels = COMBAT_NEWS_UNIT_LABELS) {
+  const normalized = normalizeCombatUnits(units);
+  const parts = COMBAT_NEWS_UNIT_ORDER
+    .filter((unit) => normalized[unit] > 0)
+    .map((unit) => `${(normalized[unit] || 0).toLocaleString()} ${labels[unit] || COMBAT_NEWS_UNIT_LABELS[unit]}`);
+  return parts.length ? parts.join(", ") : "None";
+}
+
+function formatCombatBuildingsLost(report = {}) {
+  const parts = [];
+  if (report.wallsDestroyed > 0) parts.push(`${report.wallsDestroyed.toLocaleString()} Walls`);
+  if (report.defBldLost > 0) parts.push(`${report.defBldLost.toLocaleString()} Buildings`);
+  if (report.buildingDamaged) parts.push(String(report.buildingDamaged).replace(/_/g, " "));
+  return parts.length ? parts.join(", ") : "None";
+}
+
+function formatCombatV2NewsBlurb(attacker, defender, report, perspective = "attacker") {
+  const fmt = (value) => (Number(value) || 0).toLocaleString();
+  const attackerName = attacker?.name || "The attacking host";
+  const defenderName = defender?.name || "the defending kingdom";
+  const land = report.landTransferred || 0;
+  const attackerLost = report.injuredTroops?.attacker?.deadByType || {
+    thralls: report.atkThrallsLost,
+    fighters: report.atkFightersLost,
+    rangers: report.atkRangersLost,
+    mages: report.atkMagesLost,
+    clerics: report.atkClericsLost,
+    ninjas: report.atkNinjasLost,
+    thieves: report.atkThievesLost,
+    engineers: report.atkEngineersLost,
+    war_machines: report.atkWmLost,
+  };
+  const defenderLost = report.injuredTroops?.defender?.deadByType || {
+    thralls: report.defThrallsLost,
+    fighters: report.defFightersLost,
+    rangers: report.defRangersLost,
+    mages: report.defMagesLost,
+    clerics: report.defClericsLost,
+    ninjas: report.defNinjasLost,
+    thieves: report.defThievesLost,
+    engineers: report.defEngineersLost,
+    war_machines: report.defWmLost,
+  };
+  const attackerInjured = report.atkInjuredByType || report.injuredTroops?.attacker?.injuredByType || {};
+  const defenderInjured = report.defInjuredByType || report.injuredTroops?.defender?.injuredByType || {};
+  const attackerDeaths = report.attackerKilled || sumRecordValues(attackerLost);
+  const defenderDeaths = report.defenderKilled || sumRecordValues(defenderLost);
+  const criticalKills = report.criticalKills ||
+    (report.injuredTroops?.attacker?.criticalKills || 0) +
+    (report.injuredTroops?.defender?.criticalKills || 0);
+  const criticalHits = report.criticalHits ||
+    (report.injuredTroops?.attacker?.criticalHits || 0) +
+    (report.injuredTroops?.defender?.criticalHits || 0);
+  const sabotage = report.thiefSabotage || report.disabledWarMachines || 0;
+  const wallDamage = report.wallDamage || 0;
+  const defenderUnitLabels = {
+    ...COMBAT_NEWS_UNIT_LABELS,
+    war_machines: "Ballistae",
+  };
+
+  const title = perspective === "defender" ? "Defense report" : "Attack report";
+  const outcome = report.win ? "Attacker victory" : "Defender held";
+  const landLine = perspective === "defender"
+    ? `Land loss: ${report.win ? `${fmt(land)} acres lost` : "None"}`
+    : `Land gained: ${report.win ? `${fmt(land)} acres captured` : "None"}`;
+  const detailParts = [];
+  if (sabotage > 0) detailParts.push(`${fmt(sabotage)} ballistae disabled`);
+  if (wallDamage > 0) detailParts.push(`${fmt(wallDamage)} wall HP damaged`);
+  const siegeLine = detailParts.length ? `Siege notes: ${detailParts.join("; ")}` : "Siege notes: None";
+
+  return [
+    `${title}: ${attackerName} vs ${defenderName}`,
+    `Outcome: ${outcome}`,
+    landLine,
+    `Troops engaged - Attacker: ${formatCombatUnitCounts(report.sent)}`,
+    `Troops engaged - Defender: ${formatCombatUnitCounts(report.defenderEngaged, defenderUnitLabels)}`,
+    `Troops lost - Attacker: ${formatCombatUnitCounts(attackerLost)} (${fmt(attackerDeaths)} total)`,
+    `Troops lost - Defender: ${formatCombatUnitCounts(defenderLost, defenderUnitLabels)} (${fmt(defenderDeaths)} total)`,
+    `Troops injured - Attacker: ${formatCombatUnitCounts(attackerInjured)}`,
+    `Troops injured - Defender: ${formatCombatUnitCounts(defenderInjured, defenderUnitLabels)}`,
+    `Critical hits: ${fmt(criticalHits)} hits, ${fmt(criticalKills)} killing blows`,
+    `Buildings lost: ${formatCombatBuildingsLost(report)}`,
+    siegeLine,
+  ].join("\n");
+}
+
+function resolveMilitaryAttackV2Adapter(
+  attacker,
+  defender,
+  sentUnits,
+  attackerHeroes = [],
+  defenderHeroes = [],
+) {
+  attacker.heroes = attackerHeroes;
+  defender.heroes = defenderHeroes;
+  const combatIsNight =
+    typeof attacker.__combatIsNight === "boolean"
+      ? attacker.__combatIsNight
+      : typeof defender.__combatIsNight === "boolean"
+        ? defender.__combatIsNight
+        : isNight();
+  const attackerIsVampire = attacker.race === "vampire";
+  const defenderIsVampire = defender.race === "vampire";
+  const defenderUsesDayThralls = defenderIsVampire && !combatIsNight;
+  const attackingThralls = attackerIsVampire ? Math.max(0, attacker.thralls || 0) : 0;
+  const defendingThralls = defenderIsVampire ? Math.max(0, defender.thralls || 0) : 0;
+
+  const sent = {
+    thralls: attackingThralls,
+    fighters: Math.min(sentUnits.fighters || 0, attacker.fighters || 0),
+    rangers: Math.min(sentUnits.rangers || 0, attacker.rangers || 0),
+    mages: Math.min(sentUnits.mages || 0, attacker.mages || 0),
+    warMachines: Math.min(sentUnits.warMachines || 0, attacker.war_machines || 0),
+    ninjas: Math.min(sentUnits.ninjas || 0, attacker.ninjas || 0),
+    thieves: Math.min(sentUnits.thieves || 0, attacker.thieves || 0),
+    clerics: Math.min(sentUnits.clerics || 0, attacker.clerics || 0),
+    engineers: Math.min(sentUnits.engineers || 0, attacker.engineers || 0),
+    ladders: Math.min(sentUnits.ladders || 0, attacker.ladders || 0),
+  };
+
+  if (
+    sent.fighters <= 0 &&
+    sent.rangers <= 0 &&
+    sent.mages <= 0 &&
+    sent.ninjas <= 0
+  ) {
+    return { error: "Send at least some combat troops" };
+  }
+
+  const v2Attacker = {
+    ...attacker,
+    thralls: sent.thralls,
+    fighters: sent.fighters,
+    rangers: sent.rangers,
+    mages: sent.mages,
+    war_machines: sent.warMachines,
+    ninjas: sent.ninjas,
+    thieves: sent.thieves,
+    clerics: sent.clerics,
+    engineers: sent.engineers,
+    ladders: sent.ladders,
+  };
+  const v2Defender = {
+    ...defender,
+    __vampireDayDefense: defenderUsesDayThralls,
+    thralls: defendingThralls,
+    fighters: defenderUsesDayThralls ? 0 : getAvailableUnits(defender, "fighters"),
+    rangers: defenderUsesDayThralls ? 0 : getAvailableUnits(defender, "rangers"),
+    mages: defenderUsesDayThralls ? 0 : getAvailableUnits(defender, "mages"),
+    ninjas: defenderUsesDayThralls ? 0 : getAvailableUnits(defender, "ninjas"),
+    thieves: defenderUsesDayThralls ? 0 : getAvailableUnits(defender, "thieves"),
+    clerics: defenderUsesDayThralls ? 0 : getAvailableUnits(defender, "clerics"),
+    engineers: defenderUsesDayThralls ? 0 : getAvailableUnits(defender, "engineers"),
+    war_machines: defenderUsesDayThralls ? 0 : (defender.war_machines || 0),
+  };
+  const defenderAvailable = {
+    thralls: v2Defender.thralls,
+    fighters: v2Defender.fighters,
+    rangers: v2Defender.rangers,
+    mages: v2Defender.mages,
+    ninjas: v2Defender.ninjas,
+    thieves: v2Defender.thieves,
+    clerics: v2Defender.clerics,
+    engineers: v2Defender.engineers,
+    war_machines: v2Defender.war_machines || 0,
+  };
+
+  const v2Result = combatResolverV2.executeCombat(
+    null,
+    v2Attacker,
+    v2Defender,
+    "military",
+    "fighters",
+  );
+
+  const attackerUpdates = {
+    ...v2Result.attackerUpdates,
+    thralls: Math.max(0, (attacker.thralls || 0) - (sent.thralls - v2Attacker.thralls)),
+    fighters: Math.max(0, (attacker.fighters || 0) - (sent.fighters - v2Attacker.fighters)),
+    rangers: Math.max(0, (attacker.rangers || 0) - (sent.rangers - v2Attacker.rangers)),
+    mages: Math.max(0, (attacker.mages || 0) - (sent.mages - v2Attacker.mages)),
+    ninjas: Math.max(0, (attacker.ninjas || 0) - (sent.ninjas - v2Attacker.ninjas)),
+    thieves: Math.max(0, (attacker.thieves || 0) - (sent.thieves - v2Attacker.thieves)),
+    clerics: Math.max(0, (attacker.clerics || 0) - (sent.clerics - v2Attacker.clerics)),
+    engineers: Math.max(0, (attacker.engineers || 0) - (sent.engineers - v2Attacker.engineers)),
+    war_machines: Math.max(0, (attacker.war_machines || 0) - (sent.warMachines - v2Attacker.war_machines)),
+  };
+
+  const defenderUpdates = {
+    ...v2Result.defenderUpdates,
+    last_attack_turn: defender.turn || 0,
+    thralls: Math.max(0, (defender.thralls || 0) - (defenderAvailable.thralls - v2Defender.thralls)),
+    fighters: Math.max(0, (defender.fighters || 0) - (defenderAvailable.fighters - v2Defender.fighters)),
+    rangers: Math.max(0, (defender.rangers || 0) - (defenderAvailable.rangers - v2Defender.rangers)),
+    mages: Math.max(0, (defender.mages || 0) - (defenderAvailable.mages - v2Defender.mages)),
+    ninjas: Math.max(0, (defender.ninjas || 0) - (defenderAvailable.ninjas - v2Defender.ninjas)),
+    thieves: Math.max(0, (defender.thieves || 0) - (defenderAvailable.thieves - v2Defender.thieves)),
+    clerics: Math.max(0, (defender.clerics || 0) - (defenderAvailable.clerics - v2Defender.clerics)),
+    engineers: Math.max(0, (defender.engineers || 0) - (defenderAvailable.engineers - v2Defender.engineers)),
+    war_machines: Math.max(0, v2Defender.war_machines || 0),
+  };
+
+  const landTransferred = v2Result.win ? Math.floor((defender.land || 0) * 0.1) : 0;
+  if (landTransferred > 0) {
+    attackerUpdates.land = (attacker.land || 0) + landTransferred;
+    defenderUpdates.land = Math.max(0, (defender.land || 0) - landTransferred);
+  }
+
+  const atkXp = awardXp(attacker, v2Result.win ? "combat_win" : "combat_loss", 1);
+  const defXp = awardXp(defender, v2Result.win ? "combat_loss" : "combat_win", 1);
+  attackerUpdates.xp = atkXp.xp;
+  attackerUpdates.level = atkXp.level;
+  defenderUpdates.xp = defXp.xp;
+  defenderUpdates.level = defXp.level;
+
+  const attackerDead = v2Result.report.injuredTroops?.attacker?.deadByType || {};
+  const defenderDead = v2Result.report.injuredTroops?.defender?.deadByType || {};
+  const attackerInjured = v2Result.report.injuredTroops?.attacker?.injuredByType || {};
+  const defenderInjured = v2Result.report.injuredTroops?.defender?.injuredByType || {};
+  const defenderEngaged = {
+    ...defenderAvailable,
+    war_machines: v2Result.report.diagnostics?.defender?.structureDefense?.ballistae || 0,
+  };
+  const wallHpBefore = defender.wall_hp || 0;
+  const wallHpAfter = defenderUpdates.wall_hp ?? wallHpBefore;
+
+  const report = {
+    ...v2Result.report,
+    win: v2Result.win,
+    sent,
+    defenderEngaged,
+    landTransferred,
+    combatSystem: "v2",
+    atkPower: Math.round(v2Result.report.diagnostics?.attacker?.totalDmg || 0),
+    defPower: Math.round(v2Result.report.diagnostics?.defender?.totalDmg || 0),
+    powerRatio: Math.round(
+      ((v2Result.report.diagnostics?.attacker?.totalDmg || 0) /
+        Math.max(1, v2Result.report.diagnostics?.defender?.totalDmg || 0)) *
+        100,
+    ) / 100,
+    atkFightersLost: attackerDead.fighters || 0,
+    atkThrallsLost: attackerDead.thralls || 0,
+    atkRangersLost: attackerDead.rangers || 0,
+    atkMagesLost: attackerDead.mages || 0,
+    atkNinjasLost: attackerDead.ninjas || 0,
+    atkClericsLost: attackerDead.clerics || 0,
+    atkThievesLost: attackerDead.thieves || 0,
+    atkEngineersLost: attackerDead.engineers || 0,
+    atkWmLost: attackerDead.war_machines || 0,
+    defFightersLost: defenderDead.fighters || 0,
+    defThrallsLost: defenderDead.thralls || 0,
+    defRangersLost: defenderDead.rangers || 0,
+    defMagesLost: defenderDead.mages || 0,
+    defNinjasLost: defenderDead.ninjas || 0,
+    defClericsLost: defenderDead.clerics || 0,
+    defThievesLost: defenderDead.thieves || 0,
+    defEngineersLost: defenderDead.engineers || 0,
+    defWmLost: defenderDead.war_machines || 0,
+    atkInjuredByType: attackerInjured,
+    defInjuredByType: defenderInjured,
+    ninjaKills: v2Result.report.ninjaAssassinations?.filter((a) => a.success).length || 0,
+    rangerKills: 0,
+    flankKills: 0,
+    thiefSabotage: v2Result.report.disabledWarMachines || 0,
+    criticalHits:
+      (v2Result.report.injuredTroops?.attacker?.criticalHits || 0) +
+      (v2Result.report.injuredTroops?.defender?.criticalHits || 0),
+    criticalKills:
+      (v2Result.report.injuredTroops?.attacker?.criticalKills || 0) +
+      (v2Result.report.injuredTroops?.defender?.criticalKills || 0),
+    wallsDestroyed: 0,
+    wallHpBefore,
+    wallHpAfter,
+    wallDamage: v2Result.report.wallDamage || 0,
+    steps: [
+      {
+        phase: "Diagnostics",
+        title: "Combat V2",
+        msg: "Experimental HP/DMG combat resolved behind USE_COMBAT_V2.",
+        icon: "V2",
+      },
+      {
+        phase: "Power",
+        title: "HP/DMG Budget",
+        msg: `Attacker DMG ${Math.round(v2Result.report.diagnostics?.attacker?.totalDmg || 0)} vs Defender DMG ${Math.round(v2Result.report.diagnostics?.defender?.totalDmg || 0)}.`,
+        icon: "V2",
+      },
+      {
+        phase: "Summary",
+        title: "Casualty Report",
+        msg: `Attacker deaths: ${v2Result.report.attackerKilled || 0}. Defender deaths: ${v2Result.report.defenderKilled || 0}. Critical kills: ${
+          (v2Result.report.injuredTroops?.attacker?.criticalKills || 0) +
+          (v2Result.report.injuredTroops?.defender?.criticalKills || 0)
+        }.`,
+        icon: "V2",
+      },
+    ],
+  };
+
+  const atkEvent = formatCombatV2NewsBlurb(attacker, defender, report, "attacker");
+  const defEvent = formatCombatV2NewsBlurb(attacker, defender, report, "defender");
+
+  return {
+    win: v2Result.win,
+    report,
+    attackerUpdates,
+    defenderUpdates,
+    atkEvent,
+    defEvent,
+  };
+}
+
 function resolveMilitaryAttack(
   attacker,
   defender,
@@ -5273,6 +5630,15 @@ function resolveMilitaryAttack(
 ) {
   attacker.heroes = attackerHeroes;
   defender.heroes = defenderHeroes;
+  if (USE_COMBAT_V2) {
+    return resolveMilitaryAttackV2Adapter(
+      attacker,
+      defender,
+      sentUnits,
+      attackerHeroes,
+      defenderHeroes,
+    );
+  }
   const fmt = (n) => (n || 0).toLocaleString();
   const steps = [];
   const attackerUpdates = {};
@@ -11125,6 +11491,7 @@ function calculateScore(k) {
 
   // Units
   score += k.war_machines * 1.25 * getLvlMultiplier("war_machines");
+  score += (k.ballistae || 0) * 1.25 * getLvlMultiplier("war_machines");
   score += k.fighters * 0.75 * getLvlMultiplier("fighters");
   score += k.rangers * 1.75 * getLvlMultiplier("rangers");
   score += k.clerics * 0.75 * getLvlMultiplier("clerics");
@@ -11297,6 +11664,7 @@ module.exports = {
   processActiveEffects,
   forgeTools,
   resolveMilitaryAttack,
+  formatCombatV2NewsBlurb,
   castSpell,
   covertSpy,
   covertLoot,

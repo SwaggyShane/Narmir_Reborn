@@ -61,4 +61,11 @@ test-combat-harness/*
 !test-combat-harness/run-all-balance-tests.js
 !test-combat-harness/advanced-level-testing.js
 !test-combat-harness/advanced-level-testing-extended.js
+!test-combat-harness/v2-adapter-smoke.js
+!test-combat-harness/v2-broad-balance-sweep.js
+!test-combat-harness/v2-broad-series-runner.js
+!test-combat-harness/v2-dwarf-war-machine-sweep.js
+!test-combat-harness/v2-overnight-balance-log.js
+!test-combat-harness/v2-route-persistence-smoke.js
+!test-combat-harness/v2-scenario-runner.js
 test-results/

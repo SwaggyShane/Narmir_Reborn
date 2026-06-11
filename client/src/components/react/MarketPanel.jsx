@@ -12,6 +12,7 @@ const icons = {
   weapons: "⚔️",
   armor: "🛡️",
   war_machines: "🏹",
+  ballistae: "🏹",
   land: "🗺️",
 };
 

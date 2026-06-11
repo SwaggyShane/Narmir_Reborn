@@ -100,14 +100,15 @@ const _KINGDOM_TURN = `${KINGDOM_CORE},
   fighters, rangers, clerics, mages, thieves, ninjas, researchers, engineers, scribes,
   bld_farms, bld_granaries, active_effects, discovered_kingdoms, build_queue`;
 const KINGDOM_HIRE = 'id, player_id, gold, population, race, fighters, rangers, clerics, mages, thieves, ninjas, researchers, engineers, scribes, bld_schools, bld_barracks, level, troop_levels, turns_stored, fragment_bonuses';
-const KINGDOM_RESOURCE = `${KINGDOM_CORE}, wood, stone, iron, coal, steel, build_queue, level, resource_sequence, engineer_level,
+const KINGDOM_RESOURCE = `${KINGDOM_CORE}, wood, stone, iron, coal, steel, build_queue, level, resource_sequence, engineer_level, ballistae,
   bld_farms, bld_granaries, bld_barracks, bld_outposts, bld_guard_towers, bld_schools, bld_armories, bld_vaults, bld_smithies, bld_markets, bld_mage_towers, bld_shrines, bld_training, bld_castles, bld_libraries, bld_taverns, bld_mausoleums, bld_walls, bld_housing, bld_woodyard, bld_lumber_camp, bld_sawmill, bld_gravel_pit, bld_blockfield, bld_stone_quarry, bld_open_pit, bld_strip_mine, bld_deep_mine`;
 const KINGDOM_SMITHY = 'id, player_id, gold, bld_smithies, hammers_stored, scaffolding_stored';
-const _KINGDOM_ATTACK = `${KINGDOM_CORE}, fighters, rangers, mages, thieves, ninjas, clerics, engineers, war_machines,
+const _KINGDOM_ATTACK = `${KINGDOM_CORE}, fighters, rangers, mages, thieves, ninjas, clerics, thralls, engineers, war_machines, ballistae,
   bld_walls, bld_guard_towers, bld_mage_towers, bld_outposts, bld_castles,
-  res_military, res_weapons, res_armor, troop_levels, ladders, weapons_stockpile, armor_stockpile,
+  res_military, res_weapons, res_armor, res_war_machines, res_attack_magic, res_defense_magic,
+  troop_levels, equipment_levels, injured_troops, wall_hp, wall_defense_type, ladders, weapons_stockpile, armor_stockpile,
   level, mausoleum_upgrades, shrine_upgrades, wall_upgrades, tower_def_upgrades, outpost_upgrades,
-  defense_upgrades, milestone_bonuses, prestige_level, xp, xp_sources`;
+  defense_upgrades, milestone_bonuses, prestige_level, xp, xp_sources, discovered_kingdoms`;
 const KINGDOM_COVERT = `${KINGDOM_CORE}, thieves, ninjas, troop_levels,
   bld_guard_towers, bld_walls, bld_mage_towers, bld_libraries, bld_armories, bld_vaults, bld_mausoleums,
   level, prestige_level, milestone_bonuses, bank_upgrades, trade_routes, thralls, mausoleum_upgrades`;
@@ -2973,7 +2974,7 @@ module.exports = function (db) {
   router.get("/defense/overview", requireAuth, async (req, res) => {
     const k = await db.get(
       `SELECT id, race, region, prestige_level, bld_walls, bld_guard_towers, bld_outposts, bld_castles,
-              war_machines, thieves, rangers, wall_upgrades, tower_def_upgrades,
+              war_machines, ballistae, thieves, rangers, wall_upgrades, tower_def_upgrades,
               outpost_upgrades, defense_upgrades, alliance_buffs, res_war_machines,
               troop_levels, fragment_bonuses
        FROM kingdoms WHERE player_id = ?`,
@@ -2986,6 +2987,7 @@ module.exports = function (db) {
       bld_outposts: k.bld_outposts,
       bld_castles: k.bld_castles,
       war_machines: k.war_machines,
+      ballistae: k.ballistae,
       wall_upgrades: safeJsonParse(k.wall_upgrades, {}, "auto:wall_upgrades"),
       tower_def_upgrades: safeJsonParse(k.tower_def_upgrades, {}, "auto:tower_def_upgrades"),
       outpost_upgrades: safeJsonParse(k.outpost_upgrades, {}, "auto:outpost_upgrades"),
@@ -3000,7 +3002,7 @@ module.exports = function (db) {
         k.bld_guard_towers * 10,
       ),
       rangers_on_patrol: Math.min(k.rangers, k.bld_outposts * 20),
-      wm_on_walls: Math.min(k.war_machines, k.bld_walls),
+      wm_on_walls: Math.min(k.ballistae || 0, k.bld_walls),
     });
   });
   // ── Season info ───────────────────────────────────────────────────────────────
@@ -3406,6 +3408,7 @@ module.exports = function (db) {
     weapons: 500,
     armor: 250,
     war_machines: 50,
+    ballistae: 50,
     land: 10
   };
 
@@ -3417,7 +3420,7 @@ module.exports = function (db) {
     try {
       await db.run("BEGIN TRANSACTION");
 
-      const k = await db.get("SELECT id, turn, gold, wood, stone, iron, food, mana, maps, weapons_stockpile, armor_stockpile, coal, steel, war_machines, land FROM kingdoms WHERE player_id = ? FOR UPDATE", [
+      const k = await db.get("SELECT id, turn, gold, wood, stone, iron, food, mana, maps, weapons_stockpile, armor_stockpile, coal, steel, war_machines, ballistae, land FROM kingdoms WHERE player_id = ? FOR UPDATE", [
         req.player.playerId,
       ]);
       if (!k) {
@@ -3505,7 +3508,7 @@ module.exports = function (db) {
     try {
       await db.run("BEGIN TRANSACTION");
 
-      const k = await db.get("SELECT id, turn, gold, wood, stone, iron, food, mana, maps, weapons_stockpile, armor_stockpile, coal, steel, war_machines, land FROM kingdoms WHERE player_id = ? FOR UPDATE", [
+      const k = await db.get("SELECT id, turn, gold, wood, stone, iron, food, mana, maps, weapons_stockpile, armor_stockpile, coal, steel, war_machines, ballistae, land FROM kingdoms WHERE player_id = ? FOR UPDATE", [
         req.player.playerId,
       ]);
       if (!k) {
