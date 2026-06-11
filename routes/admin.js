@@ -192,7 +192,7 @@ module.exports = function (db, io) {
     res.json({ ok: true });
   });
 
-  const resetKingdomLogic = async (db, kingdomId, race) => {
+  const buildResetValues = (race) => {
     const buildings = {
       bld_farms: 10,
       bld_schools: 1,
@@ -221,8 +221,25 @@ module.exports = function (db, io) {
       rangers = 100;
     }
 
-    await db.run(
-      `UPDATE kingdoms SET
+    return [
+      food,
+      fighters,
+      rangers,
+      buildings.bld_farms,
+      buildings.bld_barracks,
+      buildings.bld_outposts,
+      buildings.bld_schools,
+      buildings.bld_armories,
+      buildings.bld_smithies,
+      buildings.bld_markets,
+      buildings.bld_mage_towers,
+      buildings.bld_training,
+      buildings.bld_shrines,
+      buildings.bld_housing,
+    ];
+  };
+
+  const RESET_KINGDOM_SET = `UPDATE kingdoms SET
       gold = 10000, mana = 0, land = 504, population = 50000, food = ?, morale = 100,
       turn = 0, turns_stored = 400,
       fighters = ?, rangers = ?, clerics = 0, mages = 0, thieves = 0, ninjas = 0,
@@ -257,26 +274,13 @@ module.exports = function (db, io) {
       bld_gravel_pit = 0, bld_blockfield = 0, bld_stone_quarry = 0,
       bld_open_pit = 0, bld_strip_mine = 0, bld_deep_mine = 0,
       resource_sequence = '{}', ladders = 0, trade_routes = 0, active_trade_routes = '[]',
-      milestones_claimed = '[]', milestone_bonuses = '{}', milestone_title = ''
-      WHERE id = ?`,
-      [
-        food,
-        fighters,
-        rangers,
-        buildings.bld_farms,
-        buildings.bld_barracks,
-        buildings.bld_outposts,
-        buildings.bld_schools,
-        buildings.bld_armories,
-        buildings.bld_smithies,
-        buildings.bld_markets,
-        buildings.bld_mage_towers,
-        buildings.bld_training,
-        buildings.bld_shrines,
-        buildings.bld_housing,
-        kingdomId,
-      ],
-    );
+      milestones_claimed = '[]', milestone_bonuses = '{}', milestone_title = ''`;
+
+  const resetKingdomLogic = async (db, kingdomId, race) => {
+    await db.run(`${RESET_KINGDOM_SET} WHERE id = ?`, [
+      ...buildResetValues(race),
+      kingdomId,
+    ]);
 
     // Clear all related tables and data
     await db.run("DELETE FROM expeditions WHERE kingdom_id = ?", [kingdomId]);
@@ -307,15 +311,24 @@ module.exports = function (db, io) {
 
   // POST /api/admin/reset-all-kingdoms — wipe all kingdoms back to starting stats
   router.post("/reset-all-kingdoms", async (_req, res) => {
-    const kingdoms = await db.all("SELECT id, race FROM kingdoms");
-    for (const k of kingdoms) {
-      await resetKingdomLogic(db, k.id, k.race);
+    // Reset values are race-dependent, so batch with one UPDATE per race
+    // instead of nine queries per kingdom.
+    const races = await db.all("SELECT DISTINCT race FROM kingdoms");
+    for (const { race } of races) {
+      await db.run(`${RESET_KINGDOM_SET} WHERE race = ?`, [
+        ...buildResetValues(race),
+        race,
+      ]);
     }
 
     await db.run("DELETE FROM expeditions");
     await db.run("DELETE FROM news");
     await db.run("DELETE FROM war_log");
     await db.run("DELETE FROM trade_offers");
+    await db.run("DELETE FROM heroes");
+    await db.run("DELETE FROM trade_routes");
+    await db.run("DELETE FROM bounties");
+    await db.run("DELETE FROM spy_reports");
     res.json({ ok: true });
   });
 
@@ -1254,7 +1267,7 @@ module.exports = function (db, io) {
       let buildProgress = {};
       try {
         buildProgress = JSON.parse(k.build_progress || "{}");
-      } catch (_e) {}
+      } catch {}
 
       const RESOURCE_BUILDINGS = ['woodyard', 'lumber_camp', 'sawmill', 'gravel_pit', 'blockfield', 'stone_quarry', 'open_pit', 'strip_mine', 'deep_mine'];
 

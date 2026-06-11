@@ -423,7 +423,7 @@ async function updateMarketPrices(db) {
 async function refreshLore(db) {
   const loreRows = await db.all("SELECT id, key_id, title, content, category FROM lore_entries");
   const loadedLore = {};
-  const defaultRaces = ['high_elf', 'dwarf', 'dire_wolf', 'human', 'dark_elf', 'orc', 'narmir', 'general'];
+  const defaultRaces = ['high_elf', 'dwarf', 'dire_wolf', 'human', 'dark_elf', 'orc', 'vampire', 'narmir', 'general'];
   defaultRaces.forEach(r => loadedLore[r] = []);
   loreRows.forEach(r => {
     const cat = r.category || 'general';

@@ -12,7 +12,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const sqlite3 = require('sqlite3').verbose();
+
 
 const RACES = ['human', 'orc', 'dwarf', 'dark_elf', 'vampire', 'dire_wolf', 'wood_elf', 'ogre'];
 
@@ -189,7 +189,7 @@ function generateScenarios(options) {
 }
 
 // Simulate combat (placeholder - will call actual game logic)
-async function simulateCombat(scenario, db) {
+async function simulateCombat(scenario, _db) {
   return new Promise((resolve) => {
     // For now, return a mock result structure
     // In production, this would call the actual game engine
@@ -290,7 +290,7 @@ async function runTests() {
 
 // Validation function
 function validateCombatResult(result) {
-  const { attacker, defender, combat, validation } = result;
+  const { attacker, defender } = result;
 
   // Basic sanity checks
   if (attacker.finalTroops < 0 || defender.finalTroops < 0) {

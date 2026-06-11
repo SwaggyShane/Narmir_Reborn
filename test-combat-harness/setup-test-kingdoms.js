@@ -82,7 +82,7 @@ async function setupTestKingdoms() {
         db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE);
         console.log(`✓ Connected to database: ${dbPath}`);
         break;
-      } catch (err) {
+      } catch {
         // Try next path
       }
     }

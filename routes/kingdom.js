@@ -14,7 +14,7 @@ const attunementManager = require('../game/attunement-manager');
 const synergiesModule = require('../game/fragment-synergies');
 const abilityManager = require('../game/active-ability-manager');
 const { applyKingdomUpdates } = require('../db/schema');
-const { marketPriceCache, setUnreadCount } = require("../cache.js");
+const { marketPriceCache, rankingsCache, setUnreadCount } = require("../cache.js");
 
 const router = express.Router();
 
@@ -235,22 +235,33 @@ module.exports = function (db) {
     );
     if (!pk) return res.status(404).json({ error: "Kingdom not found" });
 
-    // Optimized: Use subqueries instead of LEFT JOIN OR (better index utilization)
-    let rows = await db.all(`
-      SELECT
-        k.*,
-        p.id as player_id,
-        p.username,
-        (
-          SELECT MAX(created_at) FROM war_log
-          WHERE attacker_id = k.id OR defender_id = k.id
-          LIMIT 1
-        ) as last_combat_at
-      FROM kingdoms k
-      JOIN players p ON k.player_id = p.id
-      ORDER BY k.land DESC, k.population DESC
-      LIMIT 1000
-    `);
+    // The top-1000 query + scoring is user-independent and expensive
+    // (calculateScore parses troop_levels JSON per row), so cache it briefly.
+    // Per-user work (discovered kingdoms) happens below on a copy.
+    let baseScored = rankingsCache.get("base_scored_top1000");
+    if (!baseScored) {
+      // Optimized: Use subqueries instead of LEFT JOIN OR (better index utilization)
+      const rows = await db.all(`
+        SELECT
+          k.*,
+          p.id as player_id,
+          p.username,
+          (
+            SELECT MAX(created_at) FROM war_log
+            WHERE attacker_id = k.id OR defender_id = k.id
+            LIMIT 1
+          ) as last_combat_at
+        FROM kingdoms k
+        JOIN players p ON k.player_id = p.id
+        ORDER BY k.land DESC, k.population DESC
+        LIMIT 1000
+      `);
+      for (const r of rows) {
+        r.score = engine.calculateScore(r);
+      }
+      baseScored = rows;
+      rankingsCache.set("base_scored_top1000", baseScored, 30 * 1000);
+    }
 
     // Get discovered kingdoms for user
     let disc = {};
@@ -258,14 +269,8 @@ module.exports = function (db) {
       disc = safeJsonParse(pk.discovered_kingdoms, {}, "auto:discovered_kingdoms");
     } catch {}
 
-    // Calculate scores only for top 1000 candidates + discovered
-    const scoredRows = [];
+    const scoredRows = [...baseScored];
     const discoveredIds = new Set(Object.keys(disc).map(id => parseInt(id)));
-
-    for (let r of rows) {
-      r.score = engine.calculateScore(r);
-      scoredRows.push(r);
-    }
 
     // Add any discovered kingdoms not in top 1000 (but skip expensive calculation if not needed)
     if (discoveredIds.size > 0) {

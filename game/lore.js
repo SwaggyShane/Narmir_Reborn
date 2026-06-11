@@ -1015,6 +1015,134 @@ const LORE = {
       msg: '"The pack survives. The individual remains part of the pack." This is the only law of the Dire Wolves. It is the reason they have survived while every other civilization has risen and fallen. They do not fight for themselves; they fight for the bond.',
     },
   ],
+
+  vampire: [
+    {
+      id: "vampire_1",
+      title: "The Crimson Vales",
+      msg: "Perpetually shrouded in mist, the Crimson Vales know the sun only as a rumor. The vampires did not choose this land for its beauty. They chose it because here, the night never truly ends.",
+    },
+    {
+      id: "vampire_2",
+      title: "The First Thirst",
+      msg: "No vampire remembers being made. The oldest texts speak of the First Thirst — a curse, a gift, or a bargain struck during the Sundering, when the Weave itself bled. Whatever its origin, it has never been broken.",
+    },
+    {
+      id: "vampire_3",
+      title: "The Night-Kings",
+      msg: "Before the Crimson Court, the Night-Kings ruled the Vales from crypts deep beneath the earth. Their sigils still seal doors no living vampire dares open. What sleeps behind them is not spoken of above a whisper.",
+    },
+    {
+      id: "vampire_4",
+      title: "On Thralls",
+      msg: "A thrall is not a slave, the Court insists — a thrall is a debtor. The fallen who rise in service repay the gift of continued motion. Few thralls have been asked their opinion on the accounting.",
+    },
+    {
+      id: "vampire_5",
+      title: "The Long Patience",
+      msg: "Mortal kingdoms plan in seasons. Vampires plan in centuries. A slight delivered at a coronation may be answered three dynasties later, when the offender's bloodline has forgotten — but the Court has not.",
+    },
+    {
+      id: "vampire_6",
+      title: "The Crimson Court",
+      msg: "The Court convenes only under a full moon. Its sessions are equal parts parliament, opera, and duel. Matters of war are settled in minutes; matters of etiquette can take decades.",
+    },
+    {
+      id: "vampire_7",
+      title: "Blood Magic",
+      msg: "Where elves coax the Weave and humans bargain with it, vampires pay for it — in blood, the oldest currency. A Sanguine Oracle can read tomorrow in a single drop, if the vintage is fine enough.",
+    },
+    {
+      id: "vampire_8",
+      title: "The Mist Shepherds",
+      msg: "The mists of the Vales are not weather. They are tended, herded, and thickened by hooded figures who answer to no house. Travelers who follow a Mist Shepherd's lantern arrive somewhere. Rarely where they intended.",
+    },
+    {
+      id: "vampire_9",
+      title: "On Sunlight",
+      msg: "Sunlight does not destroy an elder vampire — it merely humiliates them, stripping glamour and strength alike. For beings who have curated their appearance for six centuries, many consider destruction the kinder fate.",
+    },
+    {
+      id: "vampire_10",
+      title: "The Velvet War",
+      msg: "The houses of the Court have been at war for four hundred years. No army has marched. The casualties are reputations, betrothals, and the occasional ambassador. The Velvet War has rules, and breaking them is the only true crime.",
+    },
+    {
+      id: "vampire_11",
+      title: "The Blood Tithe",
+      msg: "Villages within the Vales pay the tithe willingly. In exchange: no plague touches them, no raider crosses the mist, and no villager dies of winter. The Vales keep meticulous ledgers. Both sides honor them.",
+    },
+    {
+      id: "vampire_12",
+      title: "On Humans",
+      msg: "The Court regards humans as a fine cellar regards new wine — promising, abundant, and improved immeasurably by patience. Human ambition amuses them. They have outlived forty-one human empires and keep the crowns to prove it.",
+    },
+    {
+      id: "vampire_13",
+      title: "On High Elves",
+      msg: "The elves remember the Court's founding, which the Court finds unforgivable. Immortals make poor neighbors for immortals; neither side can wait the other out, so they compete instead in courtesy so sharp it draws blood.",
+    },
+    {
+      id: "vampire_14",
+      title: "On Dwarves",
+      msg: "Vampires respect the Iron Holds for one reason: dwarven vaults are the only doors in Narmir the Court has never opened. Three attempts were made. The Court does not discuss the third.",
+    },
+    {
+      id: "vampire_15",
+      title: "On Orcs",
+      msg: 'The Bloodplains were tested exactly once. The orcs did not fear the night, did not flee the mist, and bit back. The Court recorded the campaign in a single line: "Unprofitable."',
+    },
+    {
+      id: "vampire_16",
+      title: "The Pale Garden",
+      msg: "At the heart of the Vales grows a garden of flowers that bloom only in moonlight, fed on soil enriched by centuries of the tithe. Each bloom is said to hold a memory. The Blood Matriarch walks there when she wishes to remember being mortal.",
+    },
+    {
+      id: "vampire_17",
+      title: "The Thrall's Hymn",
+      msg: "The thralls sing as they work — a low, wordless drone that unsettles every visitor to the Vales. Scholars believe it is residue of the souls they were. The Court insists it is merely good for morale.",
+    },
+    {
+      id: "vampire_18",
+      title: "Night's Majesty",
+      msg: "At true midnight, when both moons stand high, a vampire's power crests. Court duels, weddings, and executions are all scheduled for this hour — frequently as parts of the same ceremony.",
+    },
+    {
+      id: "vampire_19",
+      title: "The Unsleeping Library",
+      msg: "The Vales' great library never closes, for its librarians never sleep. Its oldest wing holds books written before the Sundering, copied by hands that personally remember the originals.",
+    },
+    {
+      id: "vampire_20",
+      title: "On Dark Elves",
+      msg: "The Court and the dark elves understand each other perfectly, which is why they trust each other not at all. Their espionage duels are conducted with such mutual professionalism that both sides exchange formal compliments afterward.",
+    },
+    {
+      id: "vampire_21",
+      title: "The Red Accord",
+      msg: "The Accord forbids any vampire from draining a kingdom dry — not from mercy, but from husbandry. The Night-Kings died of greed, the Accord's preamble notes. The Court does not repeat its ancestors' table manners.",
+    },
+    {
+      id: "vampire_22",
+      title: "On Dire Wolves",
+      msg: "The pack can smell a vampire across a valley and has never once been glamoured. The Court finds this vexing beyond words. The wolves find it hilarious.",
+    },
+    {
+      id: "vampire_23",
+      title: "The Hollow Crown",
+      msg: "The throne of the Vales sits empty. The last Night-King's crown rests upon it, and by Court law, any vampire may take it — if they first survive the opinions of every other vampire who might have wanted it. It has stayed empty for nine hundred years.",
+    },
+    {
+      id: "vampire_24",
+      title: "The Gift's Price",
+      msg: "Every vampire eventually forgets something mortal — the taste of bread, a mother's voice, the reason they once wept at music. The Court calls this the Quieting. The young fear it. The old cannot remember why.",
+    },
+    {
+      id: "vampire_25",
+      title: "The Last Toast",
+      msg: '"To the night, which keeps our secrets. To the blood, which keeps our ledgers. To eternity — may it stay interesting." Every Court session ends with these words, older than the Court itself.',
+    },
+  ],
 };
 
 module.exports = LORE;

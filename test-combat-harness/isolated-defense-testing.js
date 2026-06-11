@@ -12,8 +12,6 @@
  */
 
 const engine = require('../game/engine');
-const fs = require('fs');
-const path = require('path');
 
 const races = ['human', 'orc', 'dwarf', 'dark_elf', 'dire_wolf', 'ogre'];
 const BATTLES_PER_MATCHUP = 20;

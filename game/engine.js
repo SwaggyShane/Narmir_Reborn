@@ -193,43 +193,40 @@ function raceBonus(kingdom, stat) {
   return base * regionMult * allianceMult * vaultMult * heroMult * combatMod;
 }
 
-const activeSynergyCache = new WeakMap();
-const synergyBonusCache = new WeakMap();
+// The active synergy is a pure function of the kingdom's fragment placements,
+// so cache on the fragment_bonuses JSON string itself. Turn processing copies
+// the kingdom object dozens of times per turn ({ ...k, ...updates }), which
+// made the previous object-identity (WeakMap) keying miss on nearly every call.
+const activeSynergyCache = new Map();
+const MAX_SYNERGY_CACHE = 2000;
 
 function getActiveSynergyCached(kingdom) {
   if (!kingdom) return null;
-  if (!activeSynergyCache.has(kingdom)) {
-    activeSynergyCache.set(kingdom, attunementManager.getActiveSynergy(kingdom) || null);
+  const key =
+    typeof kingdom.fragment_bonuses === "string"
+      ? kingdom.fragment_bonuses
+      : JSON.stringify(kingdom.fragment_bonuses || {});
+  if (!activeSynergyCache.has(key)) {
+    if (activeSynergyCache.size >= MAX_SYNERGY_CACHE) {
+      activeSynergyCache.delete(activeSynergyCache.keys().next().value);
+    }
+    activeSynergyCache.set(key, attunementManager.getActiveSynergy(kingdom) || null);
   }
-  return activeSynergyCache.get(kingdom);
+  return activeSynergyCache.get(key);
 }
 
 function getSynergyPassiveBonusMultiplier(kingdom, effectKey) {
   if (!kingdom) return 1.0;
 
-  // Check bonus cache first
-  if (!synergyBonusCache.has(kingdom)) {
-    synergyBonusCache.set(kingdom, {});
-  }
-  const bonusCache = synergyBonusCache.get(kingdom);
-
-  if (bonusCache[effectKey] !== undefined) {
-    return bonusCache[effectKey];
-  }
-
   const synergy = getActiveSynergyCached(kingdom);
   if (!synergy || !synergy.passive || !synergy.passive.effects) {
-    bonusCache[effectKey] = 1.0;
     return 1.0;
   }
   const effectValue = synergy.passive.effects[effectKey];
   if (effectValue === undefined || effectValue === null) {
-    bonusCache[effectKey] = 1.0;
     return 1.0;
   }
-  const result = 1.0 + effectValue;
-  bonusCache[effectKey] = result;
-  return result;
+  return 1.0 + effectValue;
 }
 
 function getSynergyPassiveBonusAbsolute(kingdom, effectKey) {
@@ -242,9 +239,15 @@ function getSynergyPassiveBonusAbsolute(kingdom, effectKey) {
 }
 
 function clearSynergyCache(kingdom) {
+  // Content-keyed cache: a changed attunement produces a new fragment_bonuses
+  // string and therefore a new key, so stale entries can't be served. Clearing
+  // on demand just keeps the map small after attunement changes.
   if (!kingdom) return;
-  activeSynergyCache.delete(kingdom);
-  synergyBonusCache.delete(kingdom);
+  if (typeof kingdom.fragment_bonuses === "string") {
+    activeSynergyCache.delete(kingdom.fragment_bonuses);
+  } else {
+    activeSynergyCache.clear();
+  }
 }
 
 function housingCapPerBuilding(k) {
@@ -428,6 +431,10 @@ function calculateHappiness(k) {
   const synergyHappinessBonus = getSynergyPassiveBonusAbsolute(k, 'happiness');
   happiness += synergyHappinessBonus;
 
+  // Race + hero happiness multipliers (RACE_BONUSES.happiness, Paladin's
+  // Unyielding Faith, Blood Matriarch's Sanguine Bond) scaled to ±20 points
+  happiness += Math.round((raceBonus(k, "happiness") - 1) * 20);
+
   // Apply tax penalty/bonus
   const taxRate = k.tax || 42;
   if (taxRate > 42) {
@@ -567,6 +574,10 @@ function popGrowth(k) {
   // Synergy passive bonus for population growth
   const synergyPopMult = getSynergyPassiveBonusMultiplier(k, 'population_growth');
   growthMult *= synergyPopMult;
+
+  // Hero population bonuses (Grand Chancellor's Royal Decree, Alpha's
+  // Predatory Growth, Blood Matriarch's Sanguine Bond)
+  growthMult *= raceBonus(k, "population");
 
   if (housingCap > 0 && pop >= housingCap * 2) return 0;
   if (housingCap > 0 && pop > housingCap) growthMult = 0.1;
@@ -1362,7 +1373,9 @@ function marketIncomeFull(k) {
   const freePop = Math.max(0, k.population - totalHiredUnits(k));
   const workedMarkets = Math.min(markets, Math.floor(freePop / 5));
   const tradeRoutes = Math.min(k.maps, markets);
-  let income = (workedMarkets * 50 + tradeRoutes * 30) * mult;
+  // High Consul's Silver Tongue: diplomacy bonus boosts trade route income
+  let income =
+    (workedMarkets * 50 + tradeRoutes * 30 * raceBonus(k, "diplomacy")) * mult;
   if (upgrades.bazaar) income *= 1.5;
   if (upgrades.black_market) income *= 1.2;
 
@@ -2947,6 +2960,8 @@ function processTurn(k, db = null) {
   // ── 5. Lore Events ────────────────────────────────────────────────────────────
   // 0.1% chance ~ 24000 turns needed for 24 drops
   if (Math.random() < 0.001) {
+    // config.LORE_EVENTS is refreshed from the lore_entries table at boot
+    // (seeded from game/lore.js); falls back to the static book before then.
     const LORE = config.LORE_EVENTS;
     const cats = ["narmir", "general", k.race];
     const cat = cats[Math.floor(Math.random() * cats.length)];
@@ -2967,7 +2982,16 @@ function processTurn(k, db = null) {
           loreCollected.push(ev.id);
           updates.collected_lore = JSON.stringify(loreCollected);
 
-          if (loreCollected.length >= Object.values(LORE).flat().length) {
+          // Historian unlocks when the kingdom's reachable pool is complete
+          // (narmir + general + own race — other races' lore can't drop here)
+          const reachableTotal = cats.reduce(
+            (sum, c) => sum + (LORE[c] || []).length,
+            0,
+          );
+          const collectedReachable = loreCollected.filter((id) =>
+            cats.some((c) => (LORE[c] || []).some((l) => l.id === id)),
+          ).length;
+          if (collectedReachable >= reachableTotal) {
             updates._historian_unlocked = true;
           }
         }
@@ -5622,7 +5646,7 @@ function resolveMilitaryAttack(
   let defWarlordMult = 1.0;
   let defBloodShamanMult = 1.0;
   let defPackLeaderMult = 1.0;
-  let defStarCallerMult = 1.0;
+  let defLunarSentinelMult = 1.0;
   let defSiegebreakerStructureMult = 1.0;
 
   defenderHeroes.forEach((h) => {
@@ -5635,13 +5659,13 @@ function resolveMilitaryAttack(
     if (h.class === "warlord") defWarlordMult *= 1.25;
     if (h.class === "blood_shaman") defBloodShamanMult *= 1.1; // +10% total military
     if (h.class === "alpha") defPackLeaderMult *= 1.5; // rangers
-    if (h.class === "star_caller") defStarCallerMult *= 1.5; // Aegis of Light - magic def
+    if (h.class === "lunar_sentinel") defLunarSentinelMult *= 1.5; // Moonbeam Shield - magic def
   });
 
   const defPower =
     (defFighterPower +
       defRangerPower * defPackLeaderMult +
-      defMagePower * defMageMult * defStarCallerMult +
+      defMagePower * defMageMult * defLunarSentinelMult +
       defWmPower * defWmMult +
       defEngBonus +
       (defWallPower + defOutpostPower + defTowerPower + defStructures) *
@@ -5650,7 +5674,8 @@ function resolveMilitaryAttack(
     defMoraleMult *
     defTierMult *
     defWarlordMult *
-    defBloodShamanMult;
+    defBloodShamanMult *
+    raceBonus(defender, "defense");
 
   const defMb = safeJsonParse(defender.milestone_bonuses, {}, "combat:defMb");
   const defMilestoneMult = 1 + (defMb.defense_pct || 0) / 100;
@@ -8692,7 +8717,8 @@ function castSpell(caster, target, spellId, obscure) {
 function covertSpy(spy, target, unitsSent) {
   let thiefLvMult = unitLevelMult(spy, "thieves");
   if (spy.race === "vampire" && isNight()) thiefLvMult *= 1.5;
-  const stealthMulti = raceBonus(spy, "stealth") * thiefLvMult;
+  const stealthMulti =
+    raceBonus(spy, "stealth") * raceBonus(spy, "covert") * thiefLvMult;
 
   let targetThiefLvMult = unitLevelMult(target, "thieves");
   if (target.race === "vampire" && isNight()) targetThiefLvMult *= 1.5;
@@ -8819,7 +8845,8 @@ function covertLoot(thief, target, requestedLootType, thievesSent) {
   if (thief.race === "vampire" && isNight()) thiefLvMult *= 1.5;
   const lootMb = safeJsonParse(thief.milestone_bonuses, {}, "covertLoot:mb");
   const lootMilestoneMult = 1 + (lootMb.covert_pct || 0) / 100;
-  const stealthMulti = raceBonus(thief, "stealth") * thiefLvMult * lootMilestoneMult;
+  const stealthMulti =
+    raceBonus(thief, "stealth") * raceBonus(thief, "covert") * thiefLvMult * lootMilestoneMult;
   // Parse target vault fragment once — used for espionage_shield, gold_security, hoard_protection
   const targetVaultFrag = fragmentBonusManager.getFragmentForBuilding(target, 'vaults');
   const tVaultPassive = targetVaultFrag?.passive || {};
@@ -9019,7 +9046,8 @@ function covertAssassinate(assassin, target, ninjasSent, unitType) {
   if (assassin.race === "vampire") ninjaLvMult *= 1.1;
   const assMb = safeJsonParse(assassin.milestone_bonuses, {}, "covertAssassinate:mb");
   const assMilestoneMult = 1 + (assMb.covert_pct || 0) / 100;
-  const stealthMulti = raceBonus(assassin, "stealth") * ninjaLvMult * assMilestoneMult;
+  const stealthMulti =
+    raceBonus(assassin, "stealth") * raceBonus(assassin, "covert") * ninjaLvMult * assMilestoneMult;
   const success =
     assassin.ninjas * stealthMulti * 1.2 >
     target[unitType] * 0.01 + target.bld_guard_towers * 2;
@@ -9112,7 +9140,8 @@ function covertSabotage(assassin, target, ninjasSent, bldType) {
 
   let ninjaLvMult = unitLevelMult(assassin, "ninjas");
   if (assassin.race === "vampire") ninjaLvMult *= 1.1;
-  const stealthMulti = raceBonus(assassin, "stealth") * ninjaLvMult;
+  const stealthMulti =
+    raceBonus(assassin, "stealth") * raceBonus(assassin, "covert") * ninjaLvMult;
 
   const success =
     assassin.ninjas * stealthMulti * 1.2 >
@@ -10699,7 +10728,7 @@ function getHeroPower(hero) {
   if (hero.class === "siegebreaker") basePower *= 1.3;
   if (hero.class === "paladin") basePower *= 1.2;
   if (hero.class === "alpha") basePower *= 1.4;
-  if (hero.class === "sovereign") basePower *= 0.5; // less combat focused
+  if (hero.class === "grand_chancellor") basePower *= 0.5; // less combat focused
   if (hero.class === "forge_lord") basePower *= 0.7;
   return basePower;
 }
@@ -10711,15 +10740,15 @@ function applyHeroTurnBonuses(hero, k, updates, events) {
   const cls = HERO_CLASSES[hero.class];
   if (!cls || !cls.statBonus) return;
 
-  if (hero.class === "sovereign") {
-    // Prosperity: Extra tax income
+  if (hero.class === "grand_chancellor") {
+    // Golden Touch: Collect +250 gold per turn per level
     const bonus = Math.floor(hero.level * 250);
     updates.gold =
       (updates.gold !== undefined ? updates.gold : k.gold) + bonus;
     if (events)
       events.push({
         type: "system",
-        message: `👑 Sovereign Prosperity: +${bonus.toLocaleString()} gold.`,
+        message: `👑 Grand Chancellor's Golden Touch: +${bonus.toLocaleString()} gold.`,
       });
   } else if (hero.class === "archmage") {
     // Mana infusion: Extra mana
@@ -10795,25 +10824,20 @@ function applyHeroTurnBonuses(hero, k, updates, events) {
           message: `🩸 Blood Shaman Sacrifice: ${sacrificed.toLocaleString()} population consumed for +${manaBonus.toLocaleString()} mana.`,
         });
     }
-  } else if (hero.class === "necromancer") {
+  } else if (hero.class === "mage_king") {
+    // Leyline Control: Massive boost to Mana generation
     const bonus = Math.floor(hero.level * 150);
     updates.mana =
       (updates.mana !== undefined ? updates.mana : k.mana) + bonus;
     if (events)
       events.push({
         type: "system",
-        message: `💀 Necromancer Siphoning: +${bonus.toLocaleString()} mana.`,
-      });
-  } else if (hero.class === "star_caller") {
-    const bonus = Math.floor(hero.level * 120);
-    updates.mana =
-      (updates.mana !== undefined ? updates.mana : k.mana) + bonus;
-    if (events)
-      events.push({
-        type: "system",
-        message: `🌌 Star Caller Ritual: +${bonus.toLocaleString()} mana.`,
+        message: `🔮 Mage-King's Leyline Control: +${bonus.toLocaleString()} mana.`,
       });
   }
+  // All other classes' abilities are multiplier-based and flow through
+  // their statBonus via raceBonus() (military, economy, magic, research,
+  // stealth, covert, defense, happiness, population, diplomacy, etc.)
 }
 
 function recruitHero(k, heroName, heroClass) {

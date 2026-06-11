@@ -85,7 +85,7 @@ class CombatAnalyzer {
     const raceVsRaceStats = {};
 
     successfulResults.forEach(r => {
-      const { attacker, defender, combat } = r.result;
+      const { combat } = r.result;
       const attRace = r.scenario.attacker;
       const defRace = r.scenario.defender;
 
@@ -194,7 +194,7 @@ class CombatAnalyzer {
     console.log('─'.repeat(60));
 
     const edgeCases = this.results.filter(r => {
-      const { scenario, result } = r;
+      const { scenario } = r;
       return scenario.name.includes('Edge') || scenario.name.includes('Extreme');
     });
 

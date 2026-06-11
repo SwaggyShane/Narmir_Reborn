@@ -379,7 +379,7 @@ class PgDbAdapter {
           // returning a possibly mid-transaction client to the pool. Postgres rolls
           // back on disconnect and the server-side slot is freed immediately.
           client.release(new Error('transaction reaped — held too long'));
-        } catch (_e) {
+        } catch {
           // already released / destroyed — nothing to do
         }
         reaped++;
@@ -748,6 +748,8 @@ async function initDb(options = {}) {
     CREATE INDEX IF NOT EXISTS idx_chat_room       ON chat_messages(room, created_at);
     CREATE INDEX IF NOT EXISTS idx_kingdoms_player ON kingdoms(player_id);
     CREATE INDEX IF NOT EXISTS idx_kingdoms_land   ON kingdoms(land DESC);
+    CREATE INDEX IF NOT EXISTS idx_kingdoms_turn   ON kingdoms(turn);
+    CREATE INDEX IF NOT EXISTS idx_news_kingdom_created ON news(kingdom_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_kingdoms_player_turn ON kingdoms(player_id, turn DESC);
     CREATE INDEX IF NOT EXISTS idx_expeditions_kingdom ON expeditions(kingdom_id, turns_left);
     CREATE INDEX IF NOT EXISTS idx_war_log_defender ON war_log(defender_id);
@@ -1015,7 +1017,7 @@ async function initDb(options = {}) {
     // Try PostgreSQL syntax first
     await _db.run('ALTER TABLE chat_messages ALTER COLUMN kingdom_id DROP NOT NULL');
     console.log('✅ Made kingdom_id nullable for Discord relay messages');
-  } catch (_e) {
+  } catch {
     try {
       // Fallback to SQLite table recreation if PostgreSQL syntax fails
       const cmInfo = await _db.all('PRAGMA table_info(chat_messages)').catch(() => []);
@@ -1387,15 +1389,21 @@ async function initDb(options = {}) {
   if (!loreCols.includes('category')) await addColumn('lore_entries', 'category', "TEXT NOT NULL DEFAULT 'general'");
   if (!loreCols.includes('key_id')) await addColumn('lore_entries', 'key_id', "TEXT NOT NULL DEFAULT ''");
 
-  const oldLore = await _db.get("SELECT 1 FROM lore_entries WHERE category IS NULL OR category = 'general' LIMIT 1");
+  // Legacy lore rows predate the key_id column (seeded rows always have one).
+  // NOTE: do not detect legacy rows via category = 'general' — the seed itself
+  // contains that category, and matching on it wiped admin lore edits on every boot.
+  const oldLore = await _db.get("SELECT 1 FROM lore_entries WHERE key_id IS NULL OR key_id = '' LIMIT 1");
   if (oldLore) {
     await _db.run("DELETE FROM lore_entries"); // We will wipe and seed from the full game/lore.js
   }
 
-  const hasLore = await _db.get("SELECT 1 FROM lore_entries LIMIT 1");
-  if (!hasLore) {
+  // Seed any lore category that has no rows yet — covers both a fresh database
+  // and categories added to game/lore.js after the initial seed (e.g. vampire).
+  {
     const LORE_SEED = require('../game/lore');
     for (const cat of Object.keys(LORE_SEED)) {
+      const hasCat = await _db.get("SELECT 1 FROM lore_entries WHERE category = ? LIMIT 1", [cat]);
+      if (hasCat) continue;
       for (const item of LORE_SEED[cat]) {
         await _db.run("INSERT INTO lore_entries (key_id, category, title, content) VALUES (?, ?, ?, ?)", [item.id, cat, item.title, item.msg]);
       }

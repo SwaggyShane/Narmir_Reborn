@@ -77,14 +77,6 @@ const target = {
   active_effects: '{}',
 };
 
-const EXPECTED_MANA_BY_TIER = {
-  1: 500,
-  2: 2000,
-  3: 8000,
-  4: 50000,
-  5: 200000,
-};
-
 let passed = 0;
 let failed = 0;
 const failures = [];
