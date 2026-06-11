@@ -34,13 +34,13 @@ function getCombatDamageMultiplier(kingdom) {
 function getActiveCombatBonus(kingdom) {
   try {
     const synergy = attunementManager.getActiveSynergy(kingdom);
-    if (!synergy) return 0;
+    if (!synergy) return { damage: 1.0, health: 1.0 };
 
     // Synergy-specific active combat bonuses would be applied here
-    // For now, return 0 (no bonus)
-    return 0;
+    // For now, return base multipliers (no bonus)
+    return { damage: 1.0, health: 1.0 };
   } catch (err) {
-    return 0;
+    return { damage: 1.0, health: 1.0 };
   }
 }
 
