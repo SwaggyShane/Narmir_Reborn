@@ -7638,6 +7638,349 @@ function castSpell(caster, target, spellId, obscure) {
     damageDesc = `${popConverted.toLocaleString()} population zombified and enslaved`;
   }
 
+  // ── TIER 4 SPELLS ──────────────────────────────────────────────────────────
+
+  else if (spellId === "complete_negation") {
+    // Completely cancel all active enemy debuffs permanently
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    const debuffList = Object.keys(tEffects).filter(k => k !== "shield" && k !== "bless");
+    let cleared = 0;
+    debuffList.forEach(d => {
+      delete tEffects[d];
+      cleared++;
+    });
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `complete negation — ${cleared} debuffs permanently cancelled`;
+  } else if (spellId === "prismatic_shield") {
+    // Reduce damage by 50%; reflect 25% back for 6 turns (friendly)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.prismatic_shield = { turns_left: 6, damage_reduction: 0.5, reflect_percentage: 0.25 };
+    casterUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `prismatic shield formed — -50% damage, 25% reflected for 6 turns`;
+  } else if (spellId === "planar_anchor") {
+    // Prevent enemy summons entering territory for 5 turns
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.planar_anchor = { turns_left: 5, summon_prevention: true };
+    casterUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `planar anchor deployed — enemy summons blocked for 5 turns`;
+  } else if (spellId === "divine_intervention") {
+    // Resurrect 15% of fallen fighters from last battle (friendly)
+    const resurrected = Math.floor(((target.fighters || 0) * 0.15) * magicRatio);
+    targetUpdates.fighters = (target.fighters || 0) + resurrected;
+    damageDesc = `divine intervention — ${resurrected.toLocaleString()} fighters resurrected`;
+  } else if (spellId === "eternal_vigilance") {
+    // Kingdom immune to assassination for 4 turns (friendly)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.eternal_vigilance = { turns_left: 4, assassination_immunity: true };
+    casterUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `eternal vigilance activated — immune to assassination for 4 turns`;
+  } else if (spellId === "summon_avatar") {
+    // Summon avatar; 2000 fighters + 5000 mana protection for 4 turns (friendly)
+    const avatar = Math.floor(2000 * magicRatio);
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.summon_avatar = { turns_left: 4, avatar_fighters: avatar, mana_shield: 5000 };
+    casterUpdates.fighters = (caster.fighters || 0) + avatar;
+    casterUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `avatar summoned — +${avatar.toLocaleString()} fighters, +5000 mana protection for 4 turns`;
+  } else if (spellId === "conjure_abundance") {
+    // Create unlimited food for 3 turns; no starvation (friendly)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.conjure_abundance = { turns_left: 3, unlimited_food: true };
+    casterUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `abundance conjured — unlimited food for 3 turns`;
+  } else if (spellId === "summon_plague_doctor") {
+    // Summon healer; cure all population debuffs instantly (friendly)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+    } catch {}
+    const debuffKeys = Object.keys(tEffects).filter(k => k.includes("plague") || k.includes("disease") || k.includes("life_drain"));
+    debuffKeys.forEach(k => delete tEffects[k]);
+    casterUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `plague doctor summoned — all population debuffs cured`;
+  } else if (spellId === "materialize_army") {
+    // Create 1000 fighters from magical essence (friendly)
+    const armySize = Math.floor(1000 * magicRatio);
+    casterUpdates.fighters = (caster.fighters || 0) + armySize;
+    damageDesc = `army materialized — +${armySize.toLocaleString()} fighters from essence`;
+  } else if (spellId === "conjure_fortress") {
+    // +5000 wall strength for 5 turns (friendly)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.conjure_fortress = { turns_left: 5, wall_bonus: 5000 };
+    casterUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `fortress conjured — +5000 wall strength for 5 turns`;
+  } else if (spellId === "all_knowing_eye") {
+    // Reveal EVERYTHING about target kingdom (research)
+    const allData = `Pop: ${(target.population || 0).toLocaleString()}, Gold: ${(target.gold || 0).toLocaleString()}, Fighters: ${(target.fighters || 0).toLocaleString()}, Mage: ${(target.res_spellbook || 0)}%`;
+    damageDesc = `all-knowing eye reveals all: ${allData}`;
+  } else if (spellId === "foresee_disaster") {
+    // Predict and prevent 1 enemy attack (research/friendly)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.foresee_disaster = { turns_left: 2, attack_prevention: 1 };
+    casterUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `disaster foreseen — 1 enemy attack will be prevented`;
+  } else if (spellId === "temporal_sight") {
+    // Reveal kingdom appearance 5 turns ago and future (research)
+    damageDesc = `temporal sight pierces time — reveals past and future appearances`;
+  } else if (spellId === "scry_sanctum") {
+    // Reveal mage tower locations and mana reserves (research)
+    const mages = (target.mages || 0);
+    const mana = (target.mana || 0);
+    damageDesc = `sanctum scryed — ${mages} mages, ${mana.toLocaleString()} mana reserves revealed`;
+  } else if (spellId === "prophetic_dream") {
+    // +200% to next divination spell for 3 turns (friendly buff)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.prophetic_dream = { turns_left: 3, divination_bonus: 2.0 };
+    casterUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `prophetic dream granted — +200% divination effectiveness for 3 turns`;
+  } else if (spellId === "total_domination") {
+    // All enemy fighters serve you for 3 turns (huge troop conversion)
+    const allFighters = Math.max(1, Math.floor((target.fighters || 0) * 0.8 * magicRatio * shielded));
+    targetUpdates.fighters = Math.max(0, (target.fighters || 0) - allFighters);
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.total_domination = { turns_left: 3, dominated_count: allFighters };
+    casterUpdates.fighters = (caster.fighters || 0) + allFighters;
+    casterUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `total domination — ${allFighters.toLocaleString()} enemy fighters enslaved for 3 turns`;
+  } else if (spellId === "break_will") {
+    // Enemy happiness -50% permanently (debuff)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    const moraleLoss = Math.floor((target.morale || 100) * 0.5);
+    tEffects.break_will = { turns_left: 9999, morale_penalty: 0.5 };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    targetUpdates.morale = Math.max(0, (target.morale || 100) - moraleLoss);
+    damageDesc = `will broken — morale permanently reduced by 50%`;
+  } else if (spellId === "mass_enslavement") {
+    // 2000 enemy population become thralls (population conversion)
+    const popEnslaved = Math.max(1, Math.floor(2000 * magicRatio * shielded));
+    targetUpdates.population = Math.max(0, (target.population || 0) - popEnslaved);
+    casterUpdates.population = (caster.population || 0) + popEnslaved;
+    damageDesc = `${popEnslaved.toLocaleString()} population mass enslaved`;
+  } else if (spellId === "control_kingdom") {
+    // You control enemy for 2 turns (devastating debuff)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.control_kingdom = { turns_left: 2, full_control: true };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `kingdom controlled — target under your control for 2 turns`;
+  } else if (spellId === "unbreakable_bond") {
+    // Mind link formed; know all enemy actions for 5 turns (research)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.unbreakable_bond = { turns_left: 5, omniscience: true };
+    casterUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `mind link formed — know all enemy actions for 5 turns`;
+  } else if (spellId === "reality_rip") {
+    // Destroy 30% of all buildings; kill 1000 fighters (massive damage)
+    let totalBldDmg = 0;
+    const bldTypes = ["farms", "barracks", "guard_towers", "markets", "granaries", "shrines", "mage_towers", "libraries"];
+    for (const bldType of bldTypes) {
+      const bldDmg = Math.floor((target[`bld_${bldType}`] || 0) * 0.3);
+      targetUpdates[`bld_${bldType}`] = Math.max(0, (target[`bld_${bldType}`] || 0) - bldDmg);
+      totalBldDmg += bldDmg;
+    }
+    const fightersKilled = Math.max(1, Math.floor(1000 * magicRatio * shielded));
+    targetUpdates.fighters = Math.max(0, (target.fighters || 0) - fightersKilled);
+    damageDesc = `reality rips — ${totalBldDmg} buildings destroyed, ${fightersKilled.toLocaleString()} fighters killed`;
+  } else if (spellId === "solar_flare") {
+    // Incinerate wooden buildings; kill 800 (fire damage)
+    const farmsDestroyed = Math.max(1, getBldDmg("farms", 100));
+    const granariesDestroyed = Math.max(1, getBldDmg("granaries", 30));
+    const fightersKilled = Math.max(1, Math.floor(800 * magicRatio * shielded));
+    targetUpdates.bld_farms = Math.max(0, (target.bld_farms || 0) - farmsDestroyed);
+    targetUpdates.bld_granaries = Math.max(0, (target.bld_granaries || 0) - granariesDestroyed);
+    targetUpdates.fighters = Math.max(0, (target.fighters || 0) - fightersKilled);
+    damageDesc = `solar flare incinerates ${farmsDestroyed + granariesDestroyed} wooden structures, kills ${fightersKilled.toLocaleString()} fighters`;
+  } else if (spellId === "void_storm") {
+    // Chaotic void destroys everything randomly (indiscriminate damage)
+    const randomDmg = Math.floor(Math.random() * ((target.population || 0) * 0.2 + (target.fighters || 0) * 0.15) * magicRatio * shielded);
+    const popLoss = Math.floor(randomDmg * 0.4);
+    const troopLoss = Math.floor(randomDmg * 0.6);
+    targetUpdates.population = Math.max(0, (target.population || 0) - popLoss);
+    targetUpdates.fighters = Math.max(0, (target.fighters || 0) - troopLoss);
+    damageDesc = `void storm rages — ${popLoss.toLocaleString()} population and ${troopLoss.toLocaleString()} fighters annihilated`;
+  } else if (spellId === "apocalyptic_wave") {
+    // Kill 2000 fighters and destroy 40 buildings (force wave)
+    const fighters = Math.max(1, Math.floor(2000 * magicRatio * shielded));
+    const bldTypes = ["guard_towers", "barracks", "mage_towers", "markets", "granaries"];
+    let totalBldDmg = 0;
+    for (const bldType of bldTypes.slice(0, 8)) {
+      const dmg = Math.max(1, getBldDmg(bldType, 8));
+      targetUpdates[`bld_${bldType}`] = Math.max(0, (target[`bld_${bldType}`] || 0) - dmg);
+      totalBldDmg += dmg;
+    }
+    targetUpdates.fighters = Math.max(0, (target.fighters || 0) - fighters);
+    damageDesc = `apocalyptic wave — ${fighters.toLocaleString()} fighters killed, ${totalBldDmg} buildings destroyed`;
+  } else if (spellId === "supernova") {
+    // Destroy ALL farms and 30% of buildings (fire catastrophe)
+    const farmsDestroyed = target.bld_farms || 0;
+    targetUpdates.bld_farms = 0;
+    let otherBldDmg = 0;
+    const bldTypes = ["barracks", "guard_towers", "markets", "granaries", "shrines", "mage_towers", "libraries", "castles"];
+    for (const bldType of bldTypes) {
+      const dmg = Math.floor((target[`bld_${bldType}`] || 0) * 0.3);
+      targetUpdates[`bld_${bldType}`] = Math.max(0, (target[`bld_${bldType}`] || 0) - dmg);
+      otherBldDmg += dmg;
+    }
+    damageDesc = `supernova — all ${farmsDestroyed} farms incinerated, ${otherBldDmg} other buildings destroyed`;
+  } else if (spellId === "ultimate_deception") {
+    // 80% of kingdom hidden for 4 turns (illusion)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.ultimate_deception = { turns_left: 4, visibility_penalty: 0.8 };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `ultimate deception — 80% of kingdom hidden for 4 turns`;
+  } else if (spellId === "temporal_mirage") {
+    // Show past versions; enemy confused (illusion debuff)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.temporal_mirage = { turns_left: 3, confusion: true };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `temporal mirage shows ghosts of kingdom — enemy confused for 3 turns`;
+  } else if (spellId === "false_apocalypse") {
+    // Fake attack; enemy flees, loses 500 fighters (illusory panic)
+    const fighters = Math.max(1, Math.floor(500 * magicRatio * shielded));
+    targetUpdates.fighters = Math.max(0, (target.fighters || 0) - fighters);
+    damageDesc = `false apocalypse — enemy panics, ${fighters.toLocaleString()} fighters flee`;
+  } else if (spellId === "multiversal_echo") {
+    // Multiple copies confuse enemy (illusion debuff)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.multiversal_echo = { turns_left: 3, confusion_level: "severe" };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `multiversal echo creates copies — enemy severely confused for 3 turns`;
+  } else if (spellId === "existence_masked") {
+    // -100% enemy accuracy for 3 turns (complete blindness)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.existence_masked = { turns_left: 3, accuracy_penalty: 1.0 };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `existence masked — enemy completely blind for 3 turns`;
+  } else if (spellId === "undead_plague") {
+    // 1000 undead attack; 1500 fighters killed (necromancy)
+    const undeadCount = Math.floor(1000 * magicRatio);
+    const enemyKilled = Math.max(1, Math.floor(1500 * magicRatio * shielded));
+    targetUpdates.fighters = Math.max(0, (target.fighters || 0) - enemyKilled);
+    casterUpdates.fighters = (caster.fighters || 0) + undeadCount;
+    damageDesc = `undead plague — ${undeadCount} undead attack, ${enemyKilled.toLocaleString()} fighters killed`;
+  } else if (spellId === "death_immortal") {
+    // Immortal undead with 2000 power serves forever (permanent)
+    const immortalCount = Math.floor(2000 * magicRatio);
+    casterUpdates.fighters = (caster.fighters || 0) + immortalCount;
+    damageDesc = `immortal undead summoned — +${immortalCount.toLocaleString()} eternal undead fighters`;
+  } else if (spellId === "soulflare") {
+    // Kill 800 and reanimate as undead (conversion)
+    const killed = Math.max(1, Math.floor(800 * magicRatio * shielded));
+    const reanimated = Math.floor(killed * 0.7);
+    targetUpdates.fighters = Math.max(0, (target.fighters || 0) - killed);
+    casterUpdates.fighters = (caster.fighters || 0) + reanimated;
+    damageDesc = `soulflare kills ${killed.toLocaleString()}, reanimates ${reanimated} as undead`;
+  } else if (spellId === "cursed_existence") {
+    // Cannot be healed for 5 turns; all healing fails (devastating debuff)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.cursed_existence = { turns_left: 5, healing_disabled: true };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `cursed existence — all healing fails for 5 turns`;
+  } else if (spellId === "necromantic_ascension") {
+    // Become undead; +50% necromancy for 6 turns (friendly buff)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.necromantic_ascension = { turns_left: 6, necromancy_bonus: 0.5 };
+    casterUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `ascended to undeath — +50% necromancy effectiveness for 6 turns`;
+  } else if (spellId === "complete_transformation") {
+    // 1000 fighters permanently converted (transmutation)
+    const converted = Math.max(1, Math.floor(1000 * magicRatio * shielded));
+    targetUpdates.fighters = Math.max(0, (target.fighters || 0) - converted);
+    casterUpdates.fighters = (caster.fighters || 0) + converted;
+    damageDesc = `${converted.toLocaleString()} fighters permanently transformed`;
+  } else if (spellId === "dragon_form") {
+    // Transform into dragon; 5000 power for 5 turns (friendly)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+    } catch {}
+    const dragonPower = Math.floor(5000 * magicRatio);
+    tEffects.dragon_form = { turns_left: 5, dragon_power: dragonPower };
+    casterUpdates.fighters = (caster.fighters || 0) + dragonPower;
+    casterUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `dragon form assumed — +${dragonPower.toLocaleString()} power for 5 turns`;
+  } else if (spellId === "kingdom_alteration") {
+    // Transform enemy terrain; -60% production (debuff)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.kingdom_alteration = { turns_left: 5, production_penalty: 0.6 };
+    targetUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `enemy kingdom terrain transformed — production reduced by 60%`;
+  } else if (spellId === "transcendence") {
+    // Pure magical energy; +100% spells for 6 turns (friendly mega-buff)
+    let tEffects = {};
+    try {
+      tEffects = safeJsonParse(caster.active_effects, {}, "auto:active_effects");
+    } catch {}
+    tEffects.transcendence = { turns_left: 6, spell_effectiveness_bonus: 1.0 };
+    casterUpdates.active_effects = JSON.stringify(tEffects);
+    damageDesc = `transcendence achieved — +100% spell effectiveness for 6 turns`;
+  } else if (spellId === "mass_metamorphosis") {
+    // 2000 population become permanent servants (population conversion)
+    const converted = Math.max(1, Math.floor(2000 * magicRatio * shielded));
+    targetUpdates.population = Math.max(0, (target.population || 0) - converted);
+    casterUpdates.population = (caster.population || 0) + converted;
+    damageDesc = `${converted.toLocaleString()} population transformed into permanent servants`;
+  }
+
   // Apply active effect to target if this is a debuff spell
   if (activeEffect) {
     targetEffects[spellId] = activeEffect;
