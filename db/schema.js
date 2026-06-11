@@ -91,7 +91,7 @@ const NUMERIC_FIELDS = [
   'fighters', 'rangers', 'clerics', 'mages', 'thieves', 'ninjas',
   'researchers', 'engineers', 'engineer_level', 'engineer_xp', 'scribes', 'thralls',
   // Military equipment
-  'war_machines', 'weapons_stored', 'armor_stored', 'ladders',
+  'war_machines', 'weapons_stockpile', 'armor_stockpile', 'ladders',
   // Research
   'res_economy', 'res_weapons', 'res_armor', 'res_military', 'res_spellbook',
   'res_attack_magic', 'res_defense_magic', 'res_entertainment',
@@ -100,7 +100,7 @@ const NUMERIC_FIELDS = [
   'bld_farms', 'bld_granaries', 'bld_barracks', 'bld_outposts',
   'bld_guard_towers', 'bld_schools', 'bld_armories', 'bld_vaults',
   'bld_smithies', 'bld_markets', 'bld_mage_towers', 'bld_shrines',
-  'bld_trainings', 'bld_castles', 'bld_housing', 'bld_libraries',
+  'bld_training', 'bld_castles', 'bld_housing', 'bld_libraries',
   // Buildings (migrations)
   'bld_taverns', 'bld_mausoleums', 'bld_woodyard', 'bld_lumber_camp',
   'bld_blockfield', 'bld_stone_quarry', 'bld_strip_mine',
@@ -608,7 +608,7 @@ async function initDb(options = {}) {
       bld_shrines       INTEGER NOT NULL DEFAULT 0,
       mage_tower_allocation TEXT NOT NULL DEFAULT '{}',
       shrine_allocation TEXT NOT NULL DEFAULT '{}',
-      bld_trainings     INTEGER NOT NULL DEFAULT 0,
+      bld_training      INTEGER NOT NULL DEFAULT 0,
       bld_castles       INTEGER NOT NULL DEFAULT 0,
       bld_housing       INTEGER NOT NULL DEFAULT 100,
       fighters    INTEGER NOT NULL DEFAULT 0,
@@ -622,8 +622,8 @@ async function initDb(options = {}) {
       engineer_level INTEGER NOT NULL DEFAULT 1,
       engineer_xp    INTEGER NOT NULL DEFAULT 0,
       war_machines     INTEGER NOT NULL DEFAULT 0,
-      weapons_stored    INTEGER NOT NULL DEFAULT 0,
-      armor_stored      INTEGER NOT NULL DEFAULT 0,
+      weapons_stockpile INTEGER NOT NULL DEFAULT 0,
+      armor_stockpile   INTEGER NOT NULL DEFAULT 0,
       ladders          INTEGER NOT NULL DEFAULT 0,
       research_allocation TEXT NOT NULL DEFAULT '{}',
       build_queue       TEXT NOT NULL DEFAULT '{}',
@@ -832,8 +832,8 @@ async function initDb(options = {}) {
   if (!kingdomsCols.includes('level'))               await addColumn('kingdoms', 'level',               'INTEGER NOT NULL DEFAULT 1', kingdomsCols);
   if (!kingdomsCols.includes('troop_levels'))        await addColumn('kingdoms', 'troop_levels',        "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('training_allocation')) await addColumn('kingdoms', 'training_allocation', "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
-  if (!kingdomsCols.includes('weapons_stored'))   await addColumn('kingdoms', 'weapons_stored',   'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
-  if (!kingdomsCols.includes('armor_stored'))     await addColumn('kingdoms', 'armor_stored',     'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
+  if (!kingdomsCols.includes('weapons_stockpile'))   await addColumn('kingdoms', 'weapons_stockpile',   'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
+  if (!kingdomsCols.includes('armor_stockpile'))     await addColumn('kingdoms', 'armor_stockpile',     'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
   if (!kingdomsCols.includes('ladders'))             await addColumn('kingdoms', 'ladders',             'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
   if (!kingdomsCols.includes('description'))         await addColumn('kingdoms', 'description',         'TEXT', kingdomsCols);
   if (!kingdomsCols.includes('collected_lore'))      await addColumn('kingdoms', 'collected_lore',      "TEXT NOT NULL DEFAULT '[]'", kingdomsCols);

@@ -72,8 +72,8 @@ const MarketPanel = () => {
 
   const ownedAmount = (id) => {
     let key = id;
-    if (id === "weapons") key = "weapons_stored";
-    if (id === "armor") key = "armor_stored";
+    if (id === "weapons") key = "weapons_stockpile";
+    if (id === "armor") key = "armor_stockpile";
     
     // Check top level first
     if (state[key] !== undefined) return state[key];

@@ -17,7 +17,7 @@ function baseKingdom(overrides = {}) {
     happiness: 70,
     mana: 0,
     prestige_level: 0,
-    bld_trainings: 5,
+    bld_training: 5,
     bld_farms: 0,
     bld_granaries: 0,
     bld_markets: 0,
@@ -89,7 +89,7 @@ function test_attunements_noFragment() {
 
 function test_attunements_noTrainingFields() {
   clearParseCache();
-  const k = baseKingdom({ bld_trainings: 0, fragment_bonuses: withTrainingFragment('Cursed Bloodstone') });
+  const k = baseKingdom({ bld_training: 0, fragment_bonuses: withTrainingFragment('Cursed Bloodstone') });
   const events = [];
   const updates = processTrainingAttunements(k, events);
   assert.deepStrictEqual(updates, {}, 'no training fields → empty updates');

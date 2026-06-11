@@ -1899,7 +1899,7 @@ function processOutpostAttunements(k, events = []) {
 
 function processTrainingAttunements(k, events = []) {
   const updates = {};
-  if (!k.bld_trainings) return updates;
+  if (!k.bld_training) return updates;
 
   const trainingAttune = fragmentBonusManager.getFragmentForBuilding(k, 'training');
   if (!trainingAttune) return updates;
@@ -3837,7 +3837,7 @@ function processTurn(k, db = null) {
   Object.assign(updates, effectUpdates);
 
   // ── 9. Training fields — passive troop XP each turn ──────────────────────────
-  if (k.bld_trainings > 0) {
+  if (k.bld_training > 0) {
     // troop_levels is now kept as object throughout processTurn, not stringified until save
     let troopLevels = typeof updates.troop_levels === "string"
       ? safeJsonParse(updates.troop_levels, {}, "processTurn:troop_levels")
@@ -3859,7 +3859,7 @@ function processTurn(k, db = null) {
       "thieves",
       "ninjas",
     ];
-    const trainingFields = k.bld_trainings;
+    const trainingFields = k.bld_training;
     const trainingCapacity = trainingFields * 100;
     let advancedTroops = [];
 
@@ -3868,8 +3868,8 @@ function processTurn(k, db = null) {
       if (assigned <= 0) return;
       const currentData = troopLevels[unit] || { level: 1, xp: 0, count: 0 };
       if (currentData.level >= 100) return;
-      const weaponsEquipped = Math.min(assigned, k.weapons_stored);
-      const armorEquipped = Math.min(assigned, k.armor_stored);
+      const weaponsEquipped = Math.min(assigned, k.weapons_stockpile);
+      const armorEquipped = Math.min(assigned, k.armor_stockpile);
       const equipBonus =
         1 +
         (weaponsEquipped / Math.max(assigned, 1)) * 0.5 +
@@ -5451,7 +5451,7 @@ function resolveMilitaryAttack(
   // ── Step 4: Attack power ──────────────────────────────────────────────────
   const weaponsEquipped = Math.min(
     sent.fighters,
-    attacker.weapons_stored || 0,
+    attacker.weapons_stockpile || 0,
   );
   const weaponBonus = 1 + (weaponsEquipped / Math.max(sent.fighters, 1)) * 0.25;
   const weaponsResearchMult = fragmentBonusManager.getBonusMultiplier(attacker, 'weapons', 'damage');
@@ -5540,7 +5540,7 @@ function resolveMilitaryAttack(
   // ── Step 5: Defense power ─────────────────────────────────────────────────
   const armorEquipped = Math.min(
     defFightersAfterVolley,
-    defender.armor_stored || 0,
+    defender.armor_stockpile || 0,
   );
   const armorBonus =
     1 + (armorEquipped / Math.max(defFightersAfterVolley, 1)) * 0.25;
@@ -6108,9 +6108,9 @@ function resolveMilitaryAttack(
     war_machines: Math.max(0, (attacker.war_machines || 0) - atkWmLost),
     land: attacker.land + landTransferred,
     morale: newAtkMorale,
-    weapons_stored: Math.max(
+    weapons_stockpile: Math.max(
       0,
-      (attacker.weapons_stored || 0) -
+      (attacker.weapons_stockpile || 0) -
         Math.floor(weaponsEquipped * atkFighterLossPct),
     ),
   });
@@ -9126,7 +9126,7 @@ function covertSabotage(assassin, target, ninjasSent, bldType) {
     markets: "bld_markets",
     shrines: "bld_shrines",
     outposts: "bld_outposts",
-    training: "bld_trainings",
+    training: "bld_training",
     guard_towers: "bld_guard_towers",
     vaults: "bld_vaults",
     castles: "bld_castles",
@@ -10013,8 +10013,8 @@ async function resolveExpeditions(db, k, engine) {
         "researchers",
         "engineers",
         "war_machines",
-        "weapons_stored",
-        "armor_stored",
+        "weapons_stockpile",
+        "armor_stockpile",
         "res_economy",
         "res_weapons",
         "res_armor",
@@ -11099,8 +11099,8 @@ function calculateScore(k) {
   score += k.hammers_stored * 0.1;
   score += k.scaffolding_stored * 0.1;
   score += k.blueprints_stored * 5;
-  score += k.weapons_stored * 0.005;
-  score += k.armor_stored * 0.01;
+  score += k.weapons_stockpile * 0.005;
+  score += k.armor_stockpile * 0.01;
 
   // Troop levels (multiplier)
   let troopLevels = {};
@@ -11148,7 +11148,7 @@ function calculateScore(k) {
     "bld_markets",
     "bld_mage_towers",
     "bld_shrines",
-    "bld_trainings",
+    "bld_training",
     "bld_castles",
     "bld_housing",
     "bld_libraries",

@@ -54,8 +54,8 @@ function buildKingdom(race, units, lvl, buildings, ladderCount = 0) {
     res_war_machines:  500,
 
     // Stockpiles
-    weapons_stored: units.fighters || 0,
-    armor_stored:   units.fighters || 0,
+    weapons_stockpile: units.fighters || 0,
+    armor_stockpile:   units.fighters || 0,
 
     // Buildings
     bld_walls:        buildings.walls        || 0,

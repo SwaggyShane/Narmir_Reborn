@@ -101,11 +101,11 @@ const _KINGDOM_TURN = `${KINGDOM_CORE},
   bld_farms, bld_granaries, active_effects, discovered_kingdoms, build_queue`;
 const KINGDOM_HIRE = 'id, player_id, gold, population, race, fighters, rangers, clerics, mages, thieves, ninjas, researchers, engineers, scribes, bld_schools, bld_barracks, level, troop_levels, turns_stored, fragment_bonuses';
 const KINGDOM_RESOURCE = `${KINGDOM_CORE}, wood, stone, iron, coal, steel, build_queue, level, resource_sequence, engineer_level,
-  bld_farms, bld_granaries, bld_barracks, bld_outposts, bld_guard_towers, bld_schools, bld_armories, bld_vaults, bld_smithies, bld_markets, bld_mage_towers, bld_shrines, bld_trainings, bld_castles, bld_libraries, bld_taverns, bld_mausoleums, bld_walls, bld_housing, bld_woodyard, bld_lumber_camp, bld_sawmill, bld_gravel_pit, bld_blockfield, bld_stone_quarry, bld_open_pit, bld_strip_mine, bld_deep_mine`;
+  bld_farms, bld_granaries, bld_barracks, bld_outposts, bld_guard_towers, bld_schools, bld_armories, bld_vaults, bld_smithies, bld_markets, bld_mage_towers, bld_shrines, bld_training, bld_castles, bld_libraries, bld_taverns, bld_mausoleums, bld_walls, bld_housing, bld_woodyard, bld_lumber_camp, bld_sawmill, bld_gravel_pit, bld_blockfield, bld_stone_quarry, bld_open_pit, bld_strip_mine, bld_deep_mine`;
 const KINGDOM_SMITHY = 'id, player_id, gold, bld_smithies, hammers_stored, scaffolding_stored';
 const _KINGDOM_ATTACK = `${KINGDOM_CORE}, fighters, rangers, mages, thieves, ninjas, clerics, engineers, war_machines,
   bld_walls, bld_guard_towers, bld_mage_towers, bld_outposts, bld_castles,
-  res_military, res_weapons, res_armor, troop_levels, ladders, weapons_stored, armor_stored,
+  res_military, res_weapons, res_armor, troop_levels, ladders, weapons_stockpile, armor_stockpile,
   level, mausoleum_upgrades, shrine_upgrades, wall_upgrades, tower_def_upgrades, outpost_upgrades,
   defense_upgrades, milestone_bonuses, prestige_level, xp, xp_sources`;
 const KINGDOM_COVERT = `${KINGDOM_CORE}, thieves, ninjas, troop_levels,
@@ -831,13 +831,13 @@ module.exports = function (db) {
     // Whitelist valid unit types to prevent injection of arbitrary keys
     const validUnits = new Set(['fighters', 'rangers', 'mages', 'clerics', 'thieves', 'ninjas']);
 
-    const k = await db.get(`SELECT id, bld_trainings, fighters, rangers, mages, clerics, thieves, ninjas FROM kingdoms WHERE player_id = ?`, [
+    const k = await db.get(`SELECT id, bld_training, fighters, rangers, mages, clerics, thieves, ninjas FROM kingdoms WHERE player_id = ?`, [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
 
     let total = 0;
-    const capacity = k.bld_trainings * 100;
+    const capacity = k.bld_training * 100;
     const clean_alloc = {};
     for (const [unit, amount] of Object.entries(allocation)) {
       // Whitelist validation: reject unknown unit types
@@ -3075,7 +3075,7 @@ module.exports = function (db) {
               bld_farms, bld_granaries, bld_housing, bld_libraries, bld_schools,
               bld_mage_towers, bld_shrines, bld_mausoleums, bld_markets, bld_taverns,
               bld_vaults, bld_armories, bld_smithies, bld_barracks, bld_walls,
-              bld_guard_towers, bld_outposts, bld_trainings, bld_castles
+              bld_guard_towers, bld_outposts, bld_training, bld_castles
        FROM kingdoms WHERE player_id = ?`,
       [req.player.playerId]
     );
@@ -3452,9 +3452,9 @@ module.exports = function (db) {
 
       const dbCol =
         resource === "weapons"
-          ? "weapons_stored"
+          ? "weapons_stockpile"
           : resource === "armor"
-            ? "armor_stored"
+            ? "armor_stockpile"
             : resource;
       await db.run(
         `UPDATE kingdoms SET gold = gold - ?, ${dbCol} = ${dbCol} + ? WHERE id = ?`,
@@ -3505,7 +3505,7 @@ module.exports = function (db) {
     try {
       await db.run("BEGIN TRANSACTION");
 
-      const k = await db.get("SELECT id, turn, gold, wood, stone, iron, food, mana, maps, weapons_stored, armor_stored, coal, steel, war_machines, land FROM kingdoms WHERE player_id = ? FOR UPDATE", [
+      const k = await db.get("SELECT id, turn, gold, wood, stone, iron, food, mana, maps, weapons_stockpile, armor_stockpile, coal, steel, war_machines, land FROM kingdoms WHERE player_id = ? FOR UPDATE", [
         req.player.playerId,
       ]);
       if (!k) {
@@ -3515,9 +3515,9 @@ module.exports = function (db) {
 
       const dbCol =
         resource === "weapons"
-          ? "weapons_stored"
+          ? "weapons_stockpile"
           : resource === "armor"
-            ? "armor_stored"
+            ? "armor_stockpile"
             : resource;
       if ((k[dbCol] || 0) < qty) {
         await db.run("ROLLBACK");
@@ -4095,7 +4095,7 @@ module.exports = function (db) {
   // ── Accept trade offer ────────────────────────────────────────────────────────
   router.post("/economy/trade/accept", requireAuth, requireCsrfToken, async (req, res) => {
     const { offerId } = req.body;
-    const k = await db.get("SELECT id, name, gold, food, mana, maps, blueprints_stored, weapons_stored, armor_stored FROM kingdoms WHERE player_id = ?", [
+    const k = await db.get("SELECT id, name, gold, food, mana, maps, blueprints_stored, weapons_stockpile, armor_stockpile FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -4107,7 +4107,7 @@ module.exports = function (db) {
       return res
         .status(404)
         .json({ error: "Offer not found or already resolved" });
-    const sender = await db.get("SELECT id, turn, gold, food, mana, maps, blueprints_stored, weapons_stored, armor_stored FROM kingdoms WHERE id = ?", [
+    const sender = await db.get("SELECT id, turn, gold, food, mana, maps, blueprints_stored, weapons_stockpile, armor_stockpile FROM kingdoms WHERE id = ?", [
       offer.sender_id,
     ]);
     if (!sender) return res.status(404).json({ error: "Sender not found" });
@@ -4121,8 +4121,8 @@ module.exports = function (db) {
       mana: "mana",
       maps: "maps",
       blueprints: "blueprints_stored",
-      weapons: "weapons_stored",
-      armor: "armor_stored",
+      weapons: "weapons_stockpile",
+      armor: "armor_stockpile",
     };
 
     // Validate both sides still have the goods
@@ -4431,7 +4431,7 @@ module.exports = function (db) {
   router.get("/lore-and-achievements", requireAuth, async (req, res) => {
     try {
       const k = await db.get(
-        "SELECT race, collected_lore, achievements, population, gold, mana, bld_farms, bld_granaries, bld_barracks, bld_outposts, bld_guard_towers, bld_schools, bld_armories, bld_vaults, bld_smithies, bld_markets, bld_mage_towers, bld_shrines, bld_mausoleums, bld_taverns, bld_libraries, bld_housing, bld_walls, bld_trainings, bld_castles, bld_woodyard, bld_lumber_camp, bld_sawmill, bld_gravel_pit, bld_blockfield, bld_stone_quarry, bld_open_pit, bld_strip_mine, bld_deep_mine FROM kingdoms WHERE player_id = ?",
+        "SELECT race, collected_lore, achievements, population, gold, mana, bld_farms, bld_granaries, bld_barracks, bld_outposts, bld_guard_towers, bld_schools, bld_armories, bld_vaults, bld_smithies, bld_markets, bld_mage_towers, bld_shrines, bld_mausoleums, bld_taverns, bld_libraries, bld_housing, bld_walls, bld_training, bld_castles, bld_woodyard, bld_lumber_camp, bld_sawmill, bld_gravel_pit, bld_blockfield, bld_stone_quarry, bld_open_pit, bld_strip_mine, bld_deep_mine FROM kingdoms WHERE player_id = ?",
         [req.player.playerId],
       );
       if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -5155,7 +5155,7 @@ module.exports = function (db) {
         `SELECT id, fragment_bonuses, world_fragments, bld_farms, bld_barracks, bld_markets,
                 bld_schools, bld_mage_towers, bld_shrines, bld_guard_towers, bld_castles,
                 bld_smithies, bld_libraries, bld_taverns, bld_mausoleums, bld_walls,
-                bld_outposts, bld_granaries, bld_housing, bld_trainings, bld_vaults, bld_armories
+                bld_outposts, bld_granaries, bld_housing, bld_training, bld_vaults, bld_armories
          FROM kingdoms WHERE player_id = ?`,
         [req.player.playerId]
       );
@@ -5187,7 +5187,7 @@ module.exports = function (db) {
         `SELECT id, turn, fragment_bonuses, world_fragments, bld_farms, bld_barracks, bld_markets,
                 bld_schools, bld_mage_towers, bld_shrines, bld_guard_towers, bld_castles,
                 bld_smithies, bld_libraries, bld_taverns, bld_mausoleums, bld_walls,
-                bld_outposts, bld_granaries, bld_housing, bld_trainings, bld_vaults, bld_armories
+                bld_outposts, bld_granaries, bld_housing, bld_training, bld_vaults, bld_armories
          FROM kingdoms WHERE player_id = ?`,
         [req.player.playerId]
       );

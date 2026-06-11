@@ -21,6 +21,7 @@
 //   → Config uses both plural (TROOP_RACE_BONUS.fighters) and singular (SUPPORT_CAP_RACE.researcher)
 //
 // INCONSISTENCIES (documented for future migration):
+//   - Some storage named 'stockpile' (weapons_stockpile), others '_stored' (hammers_stored)
 //   - Some upgrades use building names (vault_upgrades), others use generic (market_upgrades)
 //   See TERMINOLOGY.md for migration path.
 
@@ -1917,7 +1918,7 @@ const config = {
     bld_armories: 6,
     bld_vaults: 6,
     bld_mage_towers: 6,
-    bld_trainings: 7,
+    bld_training: 7,
     bld_castles: 8,
   },
 
@@ -2418,7 +2419,7 @@ const config = {
     bld_mausoleums: { base: 3, max: 50, capLevel: 400 },
     bld_taverns: { base: 3, max: 50, capLevel: 400 },
     bld_libraries: { base: 3, max: 75, capLevel: 500 },
-    bld_trainings: { base: 1, max: 15, capLevel: 400 },
+    bld_training: { base: 1, max: 15, capLevel: 400 },
     bld_castles: { base: 1, max: 10, capLevel: 400 },
     war_machines: { base: 1000, max: 10000 },
     res_economy: { base: 100, max: 10000 },
@@ -2474,7 +2475,7 @@ const config = {
     markets: "bld_markets",
     mage_towers: "bld_mage_towers",
     shrines: "bld_shrines",
-    training: "bld_trainings",
+    training: "bld_training",
     castles: "bld_castles",
     libraries: "bld_libraries",
     housing: "bld_housing",
@@ -2482,8 +2483,8 @@ const config = {
     taverns: "bld_taverns",
     mausoleums: "bld_mausoleums",
     war_machines: "war_machines",
-    weapons: "weapons_stored",
-    armor: "armor_stored",
+    weapons: "weapons_stockpile",
+    armor: "armor_stockpile",
     ladders: "ladders",
     // Resource buildings
     woodyard: "bld_woodyard",

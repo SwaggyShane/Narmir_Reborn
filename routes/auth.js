@@ -85,7 +85,7 @@ module.exports = function (db) {
         bld_mage_towers: 0,
         bld_shrines: 0,
         bld_outposts: 0,
-        bld_trainings: 0,
+        bld_training: 0,
         bld_mausoleums: 0,
       };
       let fighters = 0,
@@ -96,7 +96,7 @@ module.exports = function (db) {
       if (chosenRace === "dwarf") buildings.bld_smithies = 1;
       if (chosenRace === "high_elf") buildings.bld_mage_towers = 1;
       if (chosenRace === "dark_elf") buildings.bld_shrines = 1;
-      if (chosenRace === "orc") buildings.bld_trainings = 1;
+      if (chosenRace === "orc") buildings.bld_training = 1;
       if (chosenRace === "vampire") {
         buildings.bld_mausoleums = 1;
         buildings.bld_farms = 10;
@@ -113,7 +113,7 @@ module.exports = function (db) {
         rangers = 100; // Emphasis on exploration
       }
       if (chosenRace === "ogre") {
-        buildings.bld_trainings = 1; // Training facility
+        buildings.bld_training = 1; // Training facility
         fighters = 100; // Emphasis on military
         rangers = 0;
       }
@@ -132,7 +132,7 @@ module.exports = function (db) {
         bld_mage_towers: 'mage_towers',
         bld_shrines: 'shrines',
         bld_outposts: 'outposts',
-        bld_trainings: 'training',
+        bld_training: 'training',
         bld_mausoleums: 'mausoleums'
       };
       for (const [dbCol, configKey] of Object.entries(buildingKeys)) {
@@ -147,7 +147,7 @@ module.exports = function (db) {
           researchers, engineers, fighters, rangers, thralls, turns_stored,
           res_spellbook, blueprints_stored,
           bld_farms, bld_schools, bld_barracks, bld_armories, bld_housing,
-          bld_markets, bld_smithies, bld_mage_towers, bld_shrines, bld_outposts, bld_trainings, bld_mausoleums, world_fragments
+          bld_markets, bld_smithies, bld_mage_towers, bld_shrines, bld_outposts, bld_training, bld_mausoleums, world_fragments
         ) VALUES (?, ?, ?, ?, ?, 10000, ?, 50000, ?, 100, 100, ?, ?, ?, 400, 0, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '["Volcanic Rock", "Ancient Elven Wood", "Dragon Scale", "Abyssal Crystal", "Celestial Feather", "Dwarven Star-Metal", "Cursed Bloodstone", "Tears of the World Tree", "Void Essence", "Titan Bone"]')`,
         [
           playerResult.lastID,
@@ -170,7 +170,7 @@ module.exports = function (db) {
           buildings.bld_mage_towers,
           buildings.bld_shrines,
           buildings.bld_outposts,
-          buildings.bld_trainings,
+          buildings.bld_training,
           buildings.bld_mausoleums || 0,
         ],
       );

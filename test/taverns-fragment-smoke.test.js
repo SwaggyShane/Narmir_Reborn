@@ -11,7 +11,7 @@ function baseKingdom(overrides = {}) {
     bld_shrines: 0, bld_smithies: 0, bld_schools: 0, bld_mage_towers: 0,
     bld_mausoleums: 0, bld_libraries: 0, bld_armories: 0, bld_vaults: 0,
     bld_barracks: 0, bld_walls: 0, bld_guard_towers: 0, bld_outposts: 0,
-    bld_trainings: 0, bld_castles: 0, bld_housing: 0,
+    bld_training: 0, bld_castles: 0, bld_housing: 0,
     fighters: 0, rangers: 0, clerics: 0, mages: 0, thieves: 0, ninjas: 0,
     researchers: 0, engineers: 0, scribes: 0, thralls: 0,
     res_economy: 100, res_construction: 100, troop_levels: '{}',
