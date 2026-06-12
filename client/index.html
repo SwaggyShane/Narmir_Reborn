@@ -3636,10 +3636,9 @@
         var result = await apiCall("POST", "/api/kingdom/covert", body);
         if (result.error) return toast(result.error, "error");
 
-        var kingdomSnapshot = await apiCall("GET", "/api/kingdom/me");
-        if (kingdomSnapshot && !kingdomSnapshot.error) {
-          window.applyGameMutation(kingdomSnapshot, { reason: "covert-" + op });
-        }
+        // /covert returns its own `updates` payload (matches /spell shape) so
+        // we no longer need a second GET /me round-trip to refresh state.
+        window.applyGameMutation(result, { reason: "covert-" + op });
 
         if (op === "spy") {
           if (result.success && result.report) {
