@@ -1,7 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { gameStateManager } from "./GameStateManager.js";
-import { setActivePanelGlobal } from "./hooks/useActivePanel.js";
+import { setActivePanelGlobal, getActivePanelGlobal } from "./hooks/useActivePanel.js";
 import TopbarReact from "./components/react/Topbar.jsx";
 import GoalsPanelReact from "./components/react/GoalsPanel.jsx";
 import SidebarReact from "./components/react/Sidebar.jsx";
@@ -142,23 +142,46 @@ if (!window._applyServerUpdatesWrapped) {
   window._applyServerUpdatesWrapped = true;
 }
 
-// Legacy reactHooks registry — panels that haven't migrated to useGameState()
-// register a callback that fires on every mutation. The mutation subscription
-// keeps the legacy callback path alive while panels migrate one at a time.
-const reactHooks = new Map();
-window.registerPanelReactHook = (panelId, callback) => {
-  reactHooks.set(panelId, callback);
-  return () => {
-    reactHooks.delete(panelId);
-  };
+// ─── PANEL REFRESH REGISTRY ───────────────────────────────────────────────
+//
+// Panels that need to FETCH data from the server (not just re-render from
+// the store) register a handler with the reasons they care about. On every
+// mutation, the ACTIVE panel's handler is called only if its reason set
+// includes the mutation reason.
+//
+//   window.registerPanelHandler('market', {
+//     reasons: ['turn', 'market'],
+//     handler: async (reason, payload) => { await refreshMarket(); },
+//   });
+//
+// Use '*' to listen to every reason (back-compat default).
+//
+// Panels that only need local store data should use useGameState() instead —
+// they rerender automatically and never need to fetch.
+const panelHandlers = new Map();
+window.registerPanelHandler = (panelId, { reasons, handler } = {}) => {
+  if (typeof handler !== 'function') return () => {};
+  const reasonSet = new Set(reasons && reasons.length ? reasons : ['*']);
+  panelHandlers.set(panelId, { reasons: reasonSet, handler });
+  return () => panelHandlers.delete(panelId);
 };
-if (!window._reactHooksWired) {
-  gameStateManager.subscribeMutation(() => {
-    reactHooks.forEach(cb => {
-      try { cb(); } catch (e) { console.error("[react] Hook update error:", e); }
-    });
+
+// Deprecated back-compat shim — registers a handler that fires on every reason.
+// New panels should call registerPanelHandler with an explicit reasons list.
+window.registerPanelReactHook = (panelId, callback) => {
+  return window.registerPanelHandler(panelId, { reasons: ['*'], handler: callback });
+};
+
+if (!window._panelHandlersWired) {
+  gameStateManager.subscribeMutation((reason, payload) => {
+    const active = getActivePanelGlobal();
+    const entry = panelHandlers.get(active);
+    if (!entry) return;
+    if (!entry.reasons.has('*') && !entry.reasons.has(reason)) return;
+    try { entry.handler(reason, payload); }
+    catch (e) { console.error(`[panel:${active}] handler error on ${reason}:`, e); }
   });
-  window._reactHooksWired = true;
+  window._panelHandlersWired = true;
 }
 // Snapshot-push escape hatch: vanilla code that mutated window.gameState
 // directly (no server response) calls this to broadcast the snapshot.
@@ -497,7 +520,7 @@ window.takeTurn = async () => {
       console.log("[turn] processed successfully");
 
       // Single mutation entry point — handles updates, events, syncUI, window.gameState mirror
-      window.applyGameMutation(data, { reason: 'turn_taken' });
+      window.applyGameMutation(data, { reason: 'turn' });
 
       // Vanilla panel refreshers that still own their own DOM
       try {

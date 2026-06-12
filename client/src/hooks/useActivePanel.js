@@ -14,6 +14,10 @@ export function setActivePanelGlobal(panelName) {
   });
 }
 
+export function getActivePanelGlobal() {
+  return activePanel;
+}
+
 export function useActivePanel() {
   const [currentPanel, setCurrentPanel] = useState(activePanel);
 

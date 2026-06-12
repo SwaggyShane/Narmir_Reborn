@@ -39,7 +39,10 @@ const MarketPanel = () => {
 
     updateState();
 
-    const unreg = window.registerPanelReactHook && window.registerPanelReactHook('market', updateState);
+    const unreg = window.registerPanelHandler?.('market', {
+      reasons: ['turn', 'market'],
+      handler: updateState,
+    });
 
     // Replace the global loadMarket
     window.loadMarket = refreshMarket;

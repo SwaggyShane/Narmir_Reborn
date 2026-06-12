@@ -30,8 +30,9 @@ const StudiesPanel = () => {
 
   // Register hook to refresh when panel becomes active or game state updates
   useEffect(() => {
-    const unregister = window.registerPanelReactHook?.('studies', () => {
-      fetchStudiesData();
+    const unregister = window.registerPanelHandler?.('studies', {
+      reasons: ['turn', 'research', 'spellbook', 'school'],
+      handler: () => { fetchStudiesData(); },
     });
     return () => unregister?.();
   }, [fetchStudiesData]);

@@ -1,68 +1,49 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import SchoolSelectionModal from './SchoolSelectionModal';
+import { useGameState } from '../../hooks/useGameState';
 
 /**
  * SchoolSelectionPanel
- * Shows school selection modal when:
- * - res_spellbook >= 100
- * - school_of_magic is NULL (not yet chosen)
+ * Shows the school selection modal when:
+ *   - res_spellbook >= 100
+ *   - school_of_magic is unset
+ *
+ * Pure store consumer — re-renders automatically when state changes.
+ * No registry, no fetch.
  */
 export default function SchoolSelectionPanel() {
-  const [showModal, setShowModal] = useState(false);
+  const { state, applyUpdates } = useGameState();
+  const [dismissed, setDismissed] = useState(false);
 
-  useEffect(() => {
-    const updateModalVisibility = () => {
-      const gameState = window.gameState || {};
-      const shouldShowModal =
-        (gameState.res_spellbook || 0) >= 100 &&
-        !gameState.school_of_magic;
+  const shouldShow =
+    !dismissed &&
+    (state.res_spellbook || 0) >= 100 &&
+    !state.school_of_magic;
 
-      setShowModal(shouldShowModal);
-    };
-
-    // Initial check
-    updateModalVisibility();
-
-    // Register hook for state updates
-    const unreg = window.registerPanelReactHook &&
-      window.registerPanelReactHook('school-selection', updateModalVisibility);
-
-    return () => {
-      if (unreg) unreg();
-    };
-  }, []);
-
-  const handleModalClose = () => {
-    setShowModal(false);
-  };
+  if (!shouldShow) return null;
 
   const handleSuccess = (data) => {
-    // Close modal and update game state
-    setShowModal(false);
+    setDismissed(true);
+    // Funnel through the single mutation entry point with reason 'school'
+    // so any panel listening for that reason refreshes.
+    window.applyGameMutation(
+      { updates: { school_of_magic: data.school } },
+      { reason: 'school' },
+    );
+    // Keep window.gameState in sync for legacy reads (applyGameMutation
+    // already mirrors, but be explicit for this branch).
+    applyUpdates({ school_of_magic: data.school }, 'school');
 
-    // Update game state with new school
-    const gameState = window.gameState || {};
-    gameState.school_of_magic = data.school;
-
-    // Notify other panels of state change
-    if (window.triggerReactUpdates) {
-      window.triggerReactUpdates();
-    }
-
-    // Show success message
-    if (window.toast) {
-      window.toast(`🔮 You have chosen the school of ${data.school.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}!`, 'success');
-    }
+    const label = data.school
+      .split('_')
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+    window.toast?.(`🔮 You have chosen the school of ${label}!`, 'success');
   };
-
-  // Don't show anything if modal shouldn't be visible
-  if (!showModal) {
-    return null;
-  }
 
   return (
     <SchoolSelectionModal
-      onClose={handleModalClose}
+      onClose={() => setDismissed(true)}
       onSuccess={handleSuccess}
     />
   );

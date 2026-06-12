@@ -38,10 +38,10 @@ async function runAction(endpoint, body, reason) {
 export function useGameActions() {
   const { activePanel } = useActivePanel();
 
-  const takeTurn   = async ()                  => ({ ...(await runAction('/api/kingdom/turn', null, 'turn_taken')),                   activePanel });
+  const takeTurn    = async ()                 => ({ ...(await runAction('/api/kingdom/turn', null, 'turn')),                          activePanel });
   const quickSearch = async (type)             => ({ ...(await runAction(`/api/kingdom/quick-search/${type}`, null, 'quick_search')), activePanel });
-  const castSpell   = async (spellId, target)  => ({ ...(await runAction('/api/kingdom/spell',  { spell: spellId, target }, 'spell_cast')), activePanel });
-  const attack      = async (targetId, units)  => ({ ...(await runAction('/api/kingdom/attack', { targetId, ...units },     'attack')),     activePanel });
+  const castSpell   = async (spellId, target)  => ({ ...(await runAction('/api/kingdom/spell',  { spell: spellId, target }, 'spell')),  activePanel });
+  const attack      = async (targetId, units)  => ({ ...(await runAction('/api/kingdom/attack', { targetId, ...units },     'combat')), activePanel });
 
   return { takeTurn, quickSearch, castSpell, attack };
 }

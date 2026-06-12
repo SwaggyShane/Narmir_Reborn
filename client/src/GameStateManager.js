@@ -47,13 +47,27 @@ class GameStateManager {
   }
 
   // Side-effect subscription — fires after subscribe() listeners, with
-  // (reason, payload). Reasons currently emitted:
-  //   'replace'         — setState was called
-  //   'server_update'   — applyServerUpdates received a server response
-  //   'turn_taken'      — window.takeTurn succeeded
-  //   'init'            — initGameStateManager seeded from window.gameState
-  //   'react_sync'      — triggerReactUpdates pushed window.gameState
-  //   'update'          — generic / default reason
+  // (reason, payload). Canonical reasons:
+  //   Action reasons (panel-relevant):
+  //     'turn'             — a turn was processed
+  //     'combat'           — attack / war action completed
+  //     'spell'            — spell cast
+  //     'covert'           — covert op (steal, sabotage, spy)
+  //     'market'           — buy / sell / trade
+  //     'research'         — research allocation or completion
+  //     'spellbook'        — spellbook progress
+  //     'school'           — school of magic selection
+  //     'build'            — construction / upgrade
+  //     'hire'             — units hired / fired
+  //     'training'         — troop training
+  //     'resource-expedition' — resource node expedition
+  //     'quick_search'     — ranger quick search
+  //   Plumbing reasons:
+  //     'init'           — initGameStateManager seeded from window.gameState
+  //     'replace'        — setState was called
+  //     'react_sync'     — triggerReactUpdates pushed window.gameState
+  //     'server_update'  — generic legacy applyServerUpdates(updates) call
+  //     'update'         — generic / default
   // Returns an unsubscribe function.
   subscribeMutation(listener) {
     this.mutationListeners.add(listener);
