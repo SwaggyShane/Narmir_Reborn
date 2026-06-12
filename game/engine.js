@@ -172,6 +172,21 @@ const {
   researchIncrement,
 } = populationMod;
 
+// Prestige domain — eligibility check and prestige reset. Defined in
+// game/prestige.js; re-exported below.
+const prestigeMod = require('./prestige');
+const { canPrestige, processPrestige } = prestigeMod;
+
+// Active effects domain — per-turn tick-down for blight, plague, silence, etc.
+// Defined in game/active-effects.js; re-exported below.
+const activeEffectsMod = require('./active-effects');
+const { processActiveEffects } = activeEffectsMod;
+
+// Kingdom utilities — scoring, building demolition, alliance defense resolution.
+// Defined in game/kingdom-utils.js; re-exported below.
+const kingdomUtilsMod = require('./kingdom-utils');
+const { resolveAllianceDefense, demolishBuilding, calculateScore } = kingdomUtilsMod;
+
 const {
   RACE_BONUSES,
   REGION_DATA,
@@ -4406,63 +4421,6 @@ function raidTradeRoute(attacker, defender, unitCount) {
   }
 }
 
-// ── Prestige System ──────────────────────────────────────────────────────
-function canPrestige(k) {
-  return k.level >= 50; // Prestige at Level 50
-}
-
-function processPrestige(k) {
-  if (!canPrestige(k))
-    return { error: "Kingdom level 50 required for Prestige" };
-
-  const currentLevel = k.prestige_level || 0;
-  const nextLevel = currentLevel + 1;
-
-  // New Kingdom defaults
-  return {
-    updates: {
-      prestige_level: nextLevel,
-      level: 1,
-      xp: 0,
-      gold: 50000 * nextLevel, // Bonus starting gold
-      land: k.land, // Keeping land as requested
-      population: 5000,
-      food: 25000,
-      mana: 1000,
-      fighters: 0,
-      rangers: 0,
-      clerics: 0,
-      mages: 0,
-      thieves: 0,
-      war_machines: 0,
-      bld_farms: 5,
-      bld_barracks: 2,
-      bld_schools: 1,
-      bld_housing: 100,
-      build_queue: "{}",
-      build_progress: "{}",
-      research_progress: "{}",
-      training_allocation: "{}",
-      smithy_allocation: "{}",
-      mage_tower_allocation: "{}",
-      shrine_allocation: "{}",
-      turn: k.turn,
-    }
-  };
-}
-
-
-// ── Alliance pledge defense ───────────────────────────────────────────────────
-
-function resolveAllianceDefense(attackResult, allies) {
-  // When a kingdom is attacked, allied kingdoms send pledge % of their fighters
-  if (!attackResult.win) return [];
-  return allies.map((ally) => {
-    const sent = Math.floor(ally.fighters * (ally.pledge / 100));
-    return { allyId: ally.id, sent };
-  });
-}
-
 // ── Expedition rewards ──────────────────────────────────────────────────────
 
 function junkPrize(k, updates) {
@@ -5449,106 +5407,6 @@ async function resolveExpeditions(db, k, engine) {
   return expeditionEvents;
 }
 
-// ── Mage Tower — scroll crafting and mana production ──────────────────────────
-
-function processActiveEffects(k, events) {
-  let effects = {};
-  try {
-    effects = safeJsonParse(k.active_effects, {}, "auto:active_effects");
-  } catch {
-    effects = {};
-  }
-  if (Object.keys(effects).length === 0) return {};
-
-  const updates = {};
-  const expired = [];
-
-  for (const [effect, data] of Object.entries(effects)) {
-    const remaining = (data.turns_left || 1) - 1;
-    if (remaining <= 0) {
-      expired.push(effect);
-      events.push({
-        type: "system",
-        message: `The ${effect.replace("_", " ")} effect on your kingdom has expired.`,
-      });
-    } else {
-      // Apply ongoing effect
-      if (effect === "blight") {
-        const upgrades = safeJsonParse(
-          k.granary_upgrades,
-          {},
-          "processTurn:granary_upgrades",
-        );
-        const damage = (updates._blightDamaged = Math.floor(
-          (data.damage || 500) * (upgrades.segregation ? 0.5 : 1.0),
-        ));
-        updates.food = Math.max(
-          0,
-          (updates.food !== undefined ? updates.food : k.food) - damage,
-        );
-      } else if (effect === "plague") {
-        let lost = Math.floor(k.population * 0.02);
-        // Special housing effects (Celestial Feather: Holy Sanctuaries, Ancient Elven Wood: Treehouse Canopy)
-        const activeHousingSpecial = fragmentBonusManager.getSpecialEffect(k, 'housing');
-        if (activeHousingSpecial?.name === "Holy Sanctuaries") {
-          lost = Math.floor(lost * 0.2); // 80% reduction in plague loss
-        } else if (activeHousingSpecial?.name === "Treehouse Canopy") {
-          lost = Math.floor(lost * 0.5); // 50% reduction in plague loss
-        }
-        updates.population = Math.max(0, k.population - lost);
-        events.push({
-          type: "attack",
-          message: `☠️ Plague ravages your kingdom — ${lost.toLocaleString()} citizens have perished.`,
-        });
-      } else if (effect === "silence") {
-        // Research suppressed — handled in processTurn by checking for silence
-      } else if (effect === "summon_rats") {
-        const foodDmg = data.food_damage_per_turn || 0;
-        if (foodDmg > 0) {
-          updates.food = Math.max(0, (updates.food !== undefined ? updates.food : k.food) - foodDmg);
-          events.push({ type: "attack", message: `🐀 Summoned rats devour ${foodDmg.toLocaleString()} food from your stores.` });
-        }
-      } else if (effect === "life_drain_aura") {
-        const drainPct = data.population_drain || 0.1;
-        const lost = Math.floor(k.population * drainPct);
-        if (lost > 0) {
-          updates.population = Math.max(0, (updates.population !== undefined ? updates.population : k.population) - lost);
-          events.push({ type: "attack", message: `💀 Life drain aura saps ${lost.toLocaleString()} population from your kingdom.` });
-        }
-      } else if (effect === "mutate_crops") {
-        const penalty = data.food_penalty || 0.3;
-        const foodLost = Math.floor(k.food * penalty);
-        if (foodLost > 0) {
-          updates.food = Math.max(0, (updates.food !== undefined ? updates.food : k.food) - foodLost);
-          events.push({ type: "attack", message: `🌿 Mutated crops rot — ${foodLost.toLocaleString()} food spoiled.` });
-        }
-      } else if (effect === "command_legion") {
-        const friendlyFire = data.damage_per_turn || 0;
-        if (friendlyFire > 0) {
-          updates.fighters = Math.max(0, (updates.fighters !== undefined ? updates.fighters : k.fighters) - friendlyFire);
-          events.push({ type: "attack", message: `⚔️ Command legion confusion — ${friendlyFire.toLocaleString()} fighters lost to friendly fire.` });
-        }
-      } else if (effect === "conjure_abundance") {
-        // Unlimited food: generate food equal to 20% of population each turn
-        const foodGenerated = Math.floor(k.population * 0.2);
-        updates.food = (updates.food !== undefined ? updates.food : k.food) + foodGenerated;
-        events.push({ type: "system", message: `🌾 Conjured abundance generates ${foodGenerated.toLocaleString()} food.` });
-      } else if (effect === "death_dominion") {
-        // Enemy deaths reanimate under control — bonus fighters each turn based on flag
-        const bonusFighters = Math.floor(k.fighters * 0.01);
-        if (bonusFighters > 0) {
-          updates.fighters = (updates.fighters !== undefined ? updates.fighters : k.fighters) + bonusFighters;
-        }
-      }
-      effects[effect] = { ...data, turns_left: remaining };
-    }
-  }
-
-  expired.forEach((e) => delete effects[e]);
-  updates.active_effects = JSON.stringify(effects);
-  return updates;
-}
-
 async function resolveRegions(db, io) {
   const regions = await db.all("SELECT name, owner_alliance_id, contest_alliance_id, contest_progress FROM regions");
   for (const region of regions) {
@@ -5640,107 +5498,6 @@ async function resolveRegions(db, io) {
       }
     }
   }
-}
-
-function demolishBuilding(k, buildingKey, amount) {
-  const col = BUILDING_COL[buildingKey];
-  if (!col) return { error: "Unknown building" };
-  const current = k[col] || 0;
-  const toDemolish = Math.min(amount, current);
-  if (toDemolish <= 0) return { error: "Nothing to demolish" };
-
-  const goldRefund = Math.floor(
-    (BUILDING_GOLD_COST[buildingKey] || 0) * 0.25 * toDemolish,
-  );
-  const landRefund = (BUILDING_LAND_COST[buildingKey] || 0) * toDemolish;
-
-  return {
-    updates: {
-      [col]: current - toDemolish,
-      gold: k.gold + goldRefund,
-      land: k.land + landRefund,
-    },
-    refund: { gold: goldRefund, land: landRefund, count: toDemolish },
-  };
-}
-
-function calculateScore(k) {
-  let score = 0;
-
-  // Base stats
-  score += k.land * 1;
-  score += k.population * 0.5;
-  score += (k.level || 1) * 100;
-
-  // Resources
-  score += k.gold * 0.001;
-  score += k.food * 0.0005;
-  score += k.mana * 0.002;
-  score += k.hammers_stored * 0.1;
-  score += k.scaffolding_stored * 0.1;
-  score += k.blueprints_stored * 5;
-  score += k.weapons_stockpile * 0.005;
-  score += k.armor_stockpile * 0.01;
-
-  // Troop levels (multiplier)
-  let troopLevels = {};
-  if (k.troop_levels) {
-    try {
-      troopLevels =
-        typeof k.troop_levels === "string"
-          ? safeJsonParse(k.troop_levels, {}, "auto:troop_levels")
-          : k.troop_levels;
-    } catch {}
-  }
-
-  function getLvlMultiplier(unitType) {
-    const unitInfo = troopLevels[unitType];
-    const lvl =
-      (unitInfo && typeof unitInfo === "object"
-        ? Number(unitInfo.level)
-        : Number(unitInfo)) || 1;
-    // user said: "start at an addition .15 at level 1 increases incrementally"
-    return 1 + lvl * 0.15;
-  }
-
-  // Units
-  score += k.war_machines * 1.25 * getLvlMultiplier("war_machines");
-  score += (k.ballistae || 0) * 1.25 * getLvlMultiplier("war_machines");
-  score += k.fighters * 0.75 * getLvlMultiplier("fighters");
-  score += k.rangers * 1.75 * getLvlMultiplier("rangers");
-  score += k.clerics * 0.75 * getLvlMultiplier("clerics");
-  score += k.mages * 1.5 * getLvlMultiplier("mages");
-  score += k.thieves * 0.95 * getLvlMultiplier("thieves");
-  score += k.ninjas * 1.15 * getLvlMultiplier("ninjas");
-  score += k.scribes * 0.25 * getLvlMultiplier("scribes");
-  score += k.engineers * 1.25 * getLvlMultiplier("engineers");
-  score += k.researchers * 0.5 * getLvlMultiplier("researchers"); // Assumed baseline
-
-  // Buildings (everything else -> balanced scoring)
-  const bldAttrs = [
-    "bld_farms",
-    "bld_barracks",
-    "bld_outposts",
-    "bld_guard_towers",
-    "bld_schools",
-    "bld_armories",
-    "bld_vaults",
-    "bld_smithies",
-    "bld_markets",
-    "bld_mage_towers",
-    "bld_shrines",
-    "bld_training",
-    "bld_castles",
-    "bld_housing",
-    "bld_libraries",
-    "bld_taverns",
-    "bld_walls",
-  ];
-  for (const b of bldAttrs) {
-    score += (k[b] || 0) * 2; // Flat 2 points per building to reward infrastructure
-  }
-
-  return Math.floor(score);
 }
 
 module.exports = {
