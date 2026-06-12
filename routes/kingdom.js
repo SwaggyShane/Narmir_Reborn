@@ -154,6 +154,11 @@ module.exports = function (db) {
     k.score = engine.calculateScore(k);
     k.defense_rating = engine.defenseRating(k);
 
+    // Derived per-turn rates — single source of truth for the metrics strip
+    k.gold_income = engine.goldPerTurn(k);
+    k.mana_regen = engine.manaPerTurn(k);
+    k.food_balance = engine.foodBalance(k);
+
     // Calculate built_land from all building types
     let builtLand = 0;
     for (const [building, cost] of Object.entries(config.BUILDING_LAND_COST)) {
@@ -663,6 +668,13 @@ module.exports = function (db) {
           }
 
           const { updates, events } = await runTurn(db, k);
+
+          // Attach derived per-turn rates so the React metrics strip stays accurate
+          const postTurn = { ...k, ...updates };
+          updates.gold_income = engine.goldPerTurn(postTurn);
+          updates.mana_regen = engine.manaPerTurn(postTurn);
+          updates.food_balance = engine.foodBalance(postTurn);
+
           await db.run("COMMIT");
           return { ok: true, updates, events, turns_stored: updates.turns_stored };
         } catch (err) {
