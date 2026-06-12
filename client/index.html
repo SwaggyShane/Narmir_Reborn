@@ -720,6 +720,13 @@
         animation: chatFlashAnim 0.7s infinite alternate;
       }
 
+      @keyframes rs-delta-fade {
+        0%   { opacity: 0; transform: translateY(4px); }
+        15%  { opacity: 1; transform: translateY(0); }
+        70%  { opacity: 1; }
+        100% { opacity: 0; transform: translateY(-6px); }
+      }
+
       /* ── Panel ── */
       .panel {
         display: none;

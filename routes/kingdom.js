@@ -5263,6 +5263,9 @@ module.exports = function (db) {
   });
 
   // GET /api/kingdom/contributing-synergies — Check which synergies a building/fragment contributes to
+  // Returns an opaque "resonance" tier instead of the synergy recipes so the
+  // client can't reveal the formula via devtools — players discover combos
+  // by experimentation, not by reading network responses.
   router.get('/contributing-synergies', requireAuth, async (req, res) => {
     try {
       const { building_type, fragment_name } = req.query;
@@ -5271,12 +5274,39 @@ module.exports = function (db) {
       }
 
       const contributing = attunementManager.getContributingSynergies(building_type, fragment_name);
+
+      let resonanceTier = null;
+      if (contributing.length > 0) {
+        const kingdom = await db.get(
+          "SELECT fragment_bonuses FROM kingdoms WHERE player_id = ?",
+          [req.player.playerId]
+        );
+        const placements = {};
+        if (kingdom) {
+          const atts = getKingdomAttunements(kingdom.fragment_bonuses || '{}');
+          for (const [bld, att] of Object.entries(atts)) {
+            if (att && att.fragmentName) placements[bld] = att.fragmentName;
+          }
+        }
+        let best = 0;
+        for (const syn of contributing) {
+          const reqs = syn.requiredFragments || {};
+          let satisfied = 0;
+          for (const [fragName, reqBld] of Object.entries(reqs)) {
+            if (placements[reqBld] === fragName) satisfied++;
+          }
+          if (satisfied > best) best = satisfied;
+        }
+        if (best >= 7) resonanceTier = 'convergence';
+        else if (best >= 4) resonanceTier = 'alignment';
+        else resonanceTier = 'faint';
+      }
+
       res.json({
-        synergies: contributing.map(s => ({
-          id: s.id,
-          name: s.name,
-          emoji: s.emoji,
-        })),
+        // Keep names/emojis out — they would let players reverse-engineer
+        // which combos contribute. Only signal whether ANY contribution exists.
+        contributes: contributing.length > 0,
+        resonanceTier,
       });
     } catch (err) {
       console.error('[synergy] contributing check failed:', err.message);

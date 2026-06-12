@@ -1,5 +1,64 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useGameState } from '../../hooks/useGameState.js';
+
+// Tracks the previous numeric value for a key and returns a short-lived delta
+// string (e.g. "+150", "-50") that fades after a few seconds. Used to flash
+// "changed this turn" indicators next to resource metrics so the player can
+// see what just moved without reading the news log.
+function useDeltaFlash(value, { duration = 2400, minStep = 1 } = {}) {
+  const [delta, setDelta] = useState(null);
+  const prev = useRef(value);
+  const timer = useRef(null);
+  useEffect(() => {
+    const next = Number(value) || 0;
+    const before = Number(prev.current) || 0;
+    const diff = next - before;
+    prev.current = next;
+    if (Math.abs(diff) < minStep) return undefined;
+    setDelta(diff);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setDelta(null), duration);
+    return () => {
+      if (timer.current) clearTimeout(timer.current);
+    };
+  }, [value, duration, minStep]);
+  return delta;
+}
+
+function formatDelta(delta) {
+  if (delta == null) return null;
+  const sign = delta >= 0 ? '+' : '−';
+  const abs = Math.abs(delta);
+  if (abs >= 1000000) return `${sign}${(abs / 1000000).toFixed(1)}m`;
+  if (abs >= 1000) return `${sign}${(abs / 1000).toFixed(1)}k`;
+  return `${sign}${Math.round(abs).toLocaleString()}`;
+}
+
+function DeltaBadge({ value, color }) {
+  if (value == null) return null;
+  const label = formatDelta(value);
+  const tone = color || (value >= 0 ? 'var(--green)' : 'var(--red)');
+  return (
+    <span
+      style={{
+        position: 'absolute',
+        top: '-4px',
+        right: '-2px',
+        fontSize: '10px',
+        fontWeight: 700,
+        color: tone,
+        background: 'var(--bg2)',
+        padding: '1px 5px',
+        borderRadius: '8px',
+        boxShadow: '0 0 4px rgba(0,0,0,0.4)',
+        pointerEvents: 'none',
+        animation: 'rs-delta-fade 2.4s ease-out forwards',
+      }}
+    >
+      {label}
+    </span>
+  );
+}
 
 const HOUSING_CAP_BY_RACE = {
   dwarf: 975,
@@ -174,9 +233,17 @@ const ResourceStrip = () => {
   const defenseRating = state.defense_rating || 'Undefended';
   const defenseColor = String(defenseRating).toLowerCase().includes('undefended') ? 'var(--red)' : 'var(--gold)';
 
+  const goldDelta = useDeltaFlash(state.gold);
+  const manaDelta = useDeltaFlash(state.mana);
+  const landDelta = useDeltaFlash(state.land);
+  const popDelta = useDeltaFlash(pop);
+  const thrallDelta = useDeltaFlash(thralls);
+  const foodStoredDelta = useDeltaFlash(state.food, { minStep: 10 });
+
   return (
     <>
-      <div className="metric" id="metric-gold">
+      <div className="metric" id="metric-gold" style={{ position: 'relative' }}>
+        <DeltaBadge value={goldDelta} />
         <div className="lbl">Gold</div>
         <div className="val" id="m-gold" style={{ color: numberValue(state.gold) < 1000 ? 'var(--red)' : undefined }}>
           {trunc(state.gold)}
@@ -185,19 +252,22 @@ const ResourceStrip = () => {
           {numberValue(state.gold_income) >= 0 ? '+' : ''}{trunc(state.gold_income || 0)}/turn
         </div>
       </div>
-      <div className="metric" id="metric-mana">
+      <div className="metric" id="metric-mana" style={{ position: 'relative' }}>
+        <DeltaBadge value={manaDelta} />
         <div className="lbl">Mana</div>
         <div className="val" id="m-mana">{trunc(state.mana)}</div>
         <div className="sub" id="m-mana-sub">
           {numberValue(state.mana_regen) >= 0 ? '+' : ''}{trunc(state.mana_regen || 0)}/turn
         </div>
       </div>
-      <div className="metric" id="metric-land">
+      <div className="metric" id="metric-land" style={{ position: 'relative' }}>
+        <DeltaBadge value={landDelta} />
         <div className="lbl">Land</div>
         <div className="val" id="m-land">{trunc(state.land)}</div>
         <div className="sub"><span id="m-land-free">{trunc(freeLand(state))}</span> free</div>
       </div>
-      <div className="metric" id="metric-pop">
+      <div className="metric" id="metric-pop" style={{ position: 'relative' }}>
+        <DeltaBadge value={popDelta} />
         <div className="lbl">Population</div>
         <div className="val" id="m-pop">{trunc(pop)}</div>
         <div className="sub">
@@ -205,7 +275,8 @@ const ResourceStrip = () => {
         </div>
       </div>
       {isVampire && (
-        <div className="metric" id="metric-thralls">
+        <div className="metric" id="metric-thralls" style={{ position: 'relative' }}>
+          <DeltaBadge value={thrallDelta} />
           <div className="lbl">Thralls</div>
           <div className="val" id="m-thralls">{trunc(thralls)}</div>
           <div className="sub">
@@ -231,7 +302,8 @@ const ResourceStrip = () => {
           <span id="m-happiness-breakdown">{happinessLabel(happiness)}</span>
         </div>
       </div>
-      <div className="metric" id="metric-food">
+      <div className="metric" id="metric-food" style={{ position: 'relative' }}>
+        <DeltaBadge value={foodStoredDelta} />
         <div className="lbl">Food</div>
         <div className="val" id="m-food" style={{ color: numberValue(state.food) < 1000 ? 'var(--red)' : undefined }}>
           {trunc(state.food)}
