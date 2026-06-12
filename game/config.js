@@ -2970,6 +2970,17 @@ const config = {
     PRESTIGE_DEVELOPMENT_TEXT: "The prestige system is currently under development. Return when it's ready to explore new heights of power!",
     PRESTIGE_BUTTON_TITLE: "You've reached max level! Click to explore prestige.",
   },
+
+  // Multipliers applied when a kingdom has prestiged. Used by economy
+  // (market income, trade income), construction (building caps), and
+  // happiness (population bonus). Levels 1-5 only; higher levels clamp to 5.
+  PRESTIGE_MODIFIERS: {
+    1: { bldCap: 1.25, econ: 1.05, combat: 1.00, pop: 1.00 },
+    2: { bldCap: 1.50, econ: 1.10, combat: 1.00, pop: 1.00 },
+    3: { bldCap: 1.75, econ: 1.15, combat: 1.05, pop: 1.00 },
+    4: { bldCap: 2.00, econ: 1.20, combat: 1.05, pop: 1.00 },
+    5: { bldCap: 2.50, econ: 1.30, combat: 1.10, pop: 1.25 },
+  },
 };
 
 const fs = require("fs");

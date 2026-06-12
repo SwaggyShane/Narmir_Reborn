@@ -38,10 +38,31 @@ const {
   getSynergyPassiveBonusAbsolute,
   clearSynergyCache,
 } = require('./lib/synergy-cache');
+const { addItemToInventory, initItemsArray } = require('./lib/items');
+const { naturalMoraleCap } = require('./lib/morale-cap');
+
+// Economy domain — gold/food/trade per-turn calculations, food economy
+// settlement, resource yield, market and commodity pricing. Defined in
+// game/economy.js; re-exported below.
+const economy = require('./economy');
+const {
+  totalHiredUnits,
+  goldPerTurn,
+  foodBalance,
+  farmProduction,
+  foodConsumption,
+  marketIncomeFull,
+  tavernEntertainmentBonus,
+  commodityPrice,
+  processResourceYield,
+  processFoodEconomy,
+  calculateTradeIncome,
+} = economy;
 
 const {
   RACE_BONUSES,
   REGION_DATA,
+  PRESTIGE_MODIFIERS,
   UNIT_COST,
   MAX_RESEARCH,
   RESEARCH_DISCIPLINE_CAPS,
@@ -60,12 +81,10 @@ const {
   SEASON_ICONS,
   LOCATE_RACE_MULT,
   FARM_YIELD_MULT,
-  FARM_WORKERS_PER,
   FOOD_CONSUMPTION_MULT,
   MARKET_INCOME_MULT,
   TRADE_RATE_MULT,
   COMMODITY_VALUES,
-  COMMODITY_RACE_DISCOUNT,
   TOWER_UPGRADES,
   SCHOOL_UPGRADES,
   SHRINE_UPGRADES,
@@ -111,9 +130,6 @@ const {
   _RESOURCE_STAGE1_COL,
   _RESOURCE_STAGE2_COL,
   _RESOURCE_STAGE3_COL,
-  ELEMENTAL_FRAGMENTS,
-  RARE_RESOURCE_ITEMS,
-  RESOURCE_JUNK_MESSAGES,
   BUILDING_WOOD_COST,
   BUILDING_STONE_COST,
   BUILDING_IRON_COST,
@@ -143,45 +159,6 @@ function housingCapPerBuilding(k) {
 
 function assignRegion(race) {
   return race; // simple mapping for now: race name = region id
-}
-
-function goldPerTurn(k) {
-  const taxRate = k.tax || 42;
-  let baseRate = Math.floor(
-    k.land * (taxRate / 100) * ((k.res_economy || 100) / 100),
-  );
-  if (taxRate === 42) {
-    baseRate = Math.floor(baseRate * 1.05); // 5% bonus to income
-  }
-  const castleIncomeMult = fragmentBonusManager.getBonusMultiplier(k, 'castles', 'income');
-  const castlePrestigeMult = fragmentBonusManager.getBonusMultiplier(k, 'castles', 'prestige');
-  const castleBonus = Math.floor((k.bld_castles || 0) * 100 * castleIncomeMult * castlePrestigeMult);  // 100 gold per castle
-  const econBonus = raceBonus(k, "economy");
-  const mktIncome = marketIncomeFull(k);
-  const mb = safeJsonParse(k.milestone_bonuses, {}, "goldPerTurn:mb");
-  const milestoneMult = 1 + (mb.gold_income_pct || 0) / 100;
-
-  // Apply happiness multiplier (0.5 to 1.0+ based on happiness 0-100)
-  const happiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
-  const happinessMult = Math.max(0, 0.5 + (happiness / 100));
-
-  // Apply tavern bonus for gold generation (+5% per tavern)
-  const tavernBonus = 1 + (((k.bld_taverns || 0) * 0.05));
-
-  // Vault fragment economy_output passive boosts base income
-  const vaultFrag = fragmentBonusManager.getFragmentForBuilding(k, 'vaults');
-  const vaultEconomyMult = 1.0 + (vaultFrag?.passive?.economy_output || 0);
-
-  // Synergy passive bonus for gold income
-  const synergyGoldMult = getSynergyPassiveBonusMultiplier(k, 'gold_income');
-
-  // milestoneMult applies only to core land/castle income; mktIncome stays flat
-  let totalGold = Math.floor((baseRate + castleBonus) * econBonus * 2.25 * milestoneMult * happinessMult * tavernBonus * vaultEconomyMult * synergyGoldMult) + mktIncome;
-
-  // Apply active ability effects (synergy_benefit.resources bonus or synergy_penalty)
-  totalGold = effectsProcessor.applyMultiplicativeEffects(k, totalGold, 'resources');
-
-  return totalGold;
 }
 
 function manaPerTurn(k) {
@@ -236,24 +213,6 @@ function manaPerTurn(k) {
   manaGen = Math.floor(manaGen * penaltyMult);
 
   return manaGen;
-}
-
-function foodBalance(k) {
-  return farmProduction(k) - foodConsumption(k);
-}
-
-function naturalMoraleCap(k) {
-  let cap = k.res_entertainment || 100;
-  // Apply dynamic housing passive bonuses on morale / happiness (e.g., Celestial Realm, Ancient Elven Wood)
-  const housingMoraleMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'morale');
-  const housingHappinessMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'happiness');
-  cap = Math.floor(cap * housingMoraleMult * housingHappinessMult);
-
-  // Apply housing stability modifier cap (e.g., Void Essence, Cursed Bloodstone reduce max morale)
-  const housingStabilityMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'stability');
-  cap = Math.floor(cap * housingStabilityMult);
-
-  return cap;
 }
 
 function getHappinessRecoveryRate(k) {
@@ -839,135 +798,9 @@ function processLocationMapsWip(k, events) {
   return updates;
 }
 
-// ── Resource gathering system ─────────────────────────────────────────────────
-
-/**
- * Add or update an item in a kingdom's items array.
- * items is an array of { id, name, qty } objects.
- */
-function addItemToInventory(itemsArray, id, name, qty = 1) {
-  const existing = itemsArray.find((i) => i.id === id);
-  if (existing) {
-    existing.qty = (existing.qty || 0) + qty;
-  } else {
-    itemsArray.push({ id, name, qty });
-  }
-}
-
-/**
- * Initialize items array with four elemental fragments at qty 0.
- */
-function initItemsArray(existing) {
-  const arr = Array.isArray(existing) ? [...existing] : [];
-  for (const frag of ELEMENTAL_FRAGMENTS) {
-    if (!arr.find((i) => i.id === frag.id)) {
-      arr.push({ id: frag.id, name: frag.name, qty: 0 });
-    }
-  }
-  return arr;
-}
-
-/**
- * Process resource yield each turn for all resource buildings.
- * Returns updates object with wood/stone/iron changes and news events.
- */
-function processResourceYield(k, events) {
-  const updates = {};
-  const turn = k.turn;
-
-  // Parse items
-  let items = safeJsonParse(k.items, [], 'processResourceYield:items');
-  items = initItemsArray(items);
-  let itemsChanged = false;
-
-  // Calculate free population (population minus all hired units)
-  const hiredUnits = totalHiredUnits(k);
-  const freePopulation = Math.max(0, k.population - hiredUnits);
-
-  let woodGained = 0;
-  let stoneGained = 0;
-  let ironGained = 0;
-
-  for (const [bKey, cfg] of Object.entries(RESOURCE_BUILDING_CONFIG)) {
-    const col = `bld_${bKey}`;
-    const count = k[col] || 0;
-    if (count <= 0) continue;
-    if (turn % cfg.yieldEvery !== 0) continue;
-
-    const workersNeeded = count * cfg.workersPerBuilding;
-    const isOperating = freePopulation >= workersNeeded;
-    if (!isOperating) continue;
-
-    const yieldMult = raceBonus(k, `${cfg.type}_yield`);
-    let baseYield = count * cfg.yield * yieldMult;
-
-    // Apply world fragment bonuses for each resource building type
-    const fragmentMult = fragmentBonusManager.getBonusMultiplier(k, bKey, 'production');
-    baseYield *= fragmentMult;
-
-    // Apply synergy production speed bonus
-    const synergyProdMult = getSynergyPassiveBonusMultiplier(k, 'production_speed');
-    baseYield *= synergyProdMult;
-
-    // Random events on wood production only
-    if (cfg.type === 'wood') {
-      const rareFindMult = raceBonus(k, 'rare_find');
-      const roll = Math.random();
-
-      if (roll < 0.0025 * rareFindMult) {
-        // 0.25% rare wood item
-        const rareItems = RARE_RESOURCE_ITEMS.wood;
-        const chosen = rareItems[Math.floor(Math.random() * rareItems.length)];
-        const existing = items.find((i) => i.id === chosen.id);
-        if (!existing || (existing.qty || 0) < 3) {
-          addItemToInventory(items, chosen.id, chosen.name, 1);
-          itemsChanged = true;
-          events.push({ type: 'system', message: `🌲 Your foresters discovered a rare item: ${chosen.name}!` });
-        }
-      } else if (roll < 0.01 * rareFindMult) {
-        // 1% earth fragment
-        const earthFrag = items.find((i) => i.id === 'earth_fragment');
-        if (!earthFrag || (earthFrag.qty || 0) === 0) {
-          addItemToInventory(items, 'earth_fragment', 'Earth Fragment', 1);
-          itemsChanged = true;
-          events.push({ type: 'system', message: `🌍 Your foresters unearthed an Earth Fragment while logging!` });
-        }
-      } else if (roll < 0.06) {
-        // 5% double yield (but only if not already hitting a rarer event)
-        baseYield *= 2;
-        events.push({ type: 'system', message: `🌲 An unusually productive logging session doubled your wood yield!` });
-      } else if (roll < 0.26) {
-        // 20% worthless find (humorous)
-        const msg = RESOURCE_JUNK_MESSAGES[Math.floor(Math.random() * RESOURCE_JUNK_MESSAGES.length)];
-        events.push({ type: 'system', message: `🌲 Foresters report: ${msg}` });
-      }
-    }
-
-    const gained = Math.floor(baseYield);
-    if (cfg.type === 'wood') woodGained += gained;
-    else if (cfg.type === 'stone') stoneGained += gained;
-    else if (cfg.type === 'iron') ironGained += gained;
-  }
-
-  if (woodGained > 0) {
-    updates.wood = k.wood + woodGained;
-    events.push({ type: 'system', message: `🪵 Resource production: +${woodGained.toLocaleString()} wood.` });
-  }
-  if (stoneGained > 0) {
-    updates.stone = k.stone + stoneGained;
-    events.push({ type: 'system', message: `🪨 Resource production: +${stoneGained.toLocaleString()} stone.` });
-  }
-  if (ironGained > 0) {
-    updates.iron = k.iron + ironGained;
-    events.push({ type: 'system', message: `🔗 Resource production: +${ironGained.toLocaleString()} iron.` });
-  }
-
-  if (itemsChanged) {
-    updates.items = JSON.stringify(items);
-  }
-
-  return updates;
-}
+// addItemToInventory + initItemsArray live in game/lib/items.js.
+// processResourceYield lives in game/economy.js. All three are re-exported
+// from engine.js via module.exports for backward compat.
 
 /**
  * Process resource expeditions — called from processTurn.
@@ -991,407 +824,10 @@ function computeExpeditionTransitions(expeditions, now) {
   return transitions;
 }
 
-function totalHiredUnits(k) {
-  return (
-    k.fighters +
-    k.rangers +
-    k.clerics +
-    k.mages +
-    k.thieves +
-    k.ninjas +
-    k.researchers +
-    k.engineers +
-    k.scribes +
-    k.thralls
-  );
-}
+// totalHiredUnits + the food/market/trade economy functions live in
+// game/economy.js. They're re-exported from engine.js via module.exports
+// for backward compat with routes/sockets that still call engine.foo(...).
 
-function farmProduction(k) {
-  const farms = k.bld_farms;
-  if (!farms) return 0;
-  const race = k.race || "human";
-  const upgrades = safeJsonParse(
-    k.farm_upgrades,
-    {},
-    "farmProduction:farm_upgrades",
-  );
-  let workersNeeded = FARM_WORKERS_PER[race] || 10;
-
-  if (upgrades.iron_plows) {
-    workersNeeded = Math.max(1, workersNeeded - 2);
-  }
-
-  let workedFarms = 0;
-  if (race === "vampire") {
-    workedFarms = Math.min(farms, Math.floor(k.thralls / workersNeeded));
-  } else {
-    const freePop = Math.max(0, k.population - totalHiredUnits(k));
-    workedFarms = Math.min(farms, Math.floor(freePop / workersNeeded));
-  }
-
-  let baseYield = workedFarms * 150 * (FARM_YIELD_MULT[race] || 1.0);
-
-  // Apply farm upgrades to all races
-  if (upgrades.irrigated) baseYield *= (FARM_UPGRADES.irrigated.yieldBonus + 1);
-  if (upgrades.plantation) baseYield *= (FARM_UPGRADES.plantation.yieldBonus + 1);
-
-  // Apply season and active event farm multiplier
-  const activeEv = safeJsonParse(
-    k.active_event,
-    {},
-    "farmProduction:active_event",
-  );
-  const seasonMult = k._season_farm_mult || 1.0;
-  const evFarmMult = activeEv.farm_yield ? activeEv.farm_yield.mult : 1.0;
-
-  baseYield *= seasonMult * evFarmMult;
-
-  // Apply world fragment bonuses
-  const productionMult = fragmentBonusManager.getBonusMultiplier(k, 'farms', 'production');
-  baseYield *= productionMult;
-
-  // Apply happiness multiplier
-  const happiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
-  const happinessMult = Math.max(0, 0.5 + (happiness / 100));
-  baseYield *= happinessMult;
-
-  // Synergy passive bonus for food production
-  const synergyFoodMult = getSynergyPassiveBonusMultiplier(k, 'food_production');
-  baseYield *= synergyFoodMult;
-
-  // Apply active ability effects (synergy_penalty.food_production and all_stats)
-  baseYield = effectsProcessor.applyMultiplicativeEffects(k, Math.floor(baseYield), 'food_production');
-
-  return baseYield;
-}
-
-function foodConsumption(k) {
-  const race = k.race || "human";
-  const mult = FOOD_CONSUMPTION_MULT[race] || 1.0;
-  const troops = totalHiredUnits(k);
-  const pop = Math.floor(k.population / 100);
-
-  let consumption;
-  if (race === "vampire") {
-    // Only Thralls eat grain. Vampires eat Thralls/Pop (handled in processFoodEconomy)
-    consumption = Math.floor(k.thralls * mult);
-  } else {
-    consumption = Math.floor((troops + pop) * mult);
-  }
-
-  // Apply world fragment bonuses (consumption multiplier increases food requirements)
-  const consumptionMult = fragmentBonusManager.getBonusMultiplier(k, 'farms', 'consumption');
-  consumption *= consumptionMult;
-
-  return consumption;
-}
-
-function marketIncomeFull(k) {
-  const markets = k.bld_markets;
-  if (!markets) return 0;
-  const upgrades = safeJsonParse(
-    k.market_upgrades,
-    {},
-    "marketIncomeFull:market_upgrades",
-  );
-  const race = k.race || "human";
-  let mult = MARKET_INCOME_MULT[race] || 1.0;
-
-  if (k.prestige_level > 0) {
-    const tierMod = PRESTIGE_MODIFIERS[Math.min(k.prestige_level, 5)]?.econ || 1.0;
-    mult *= tierMod;
-  }
-
-  const freePop = Math.max(0, k.population - totalHiredUnits(k));
-  const workedMarkets = Math.min(markets, Math.floor(freePop / 5));
-  const tradeRoutes = Math.min(k.maps, markets);
-  // High Consul's Silver Tongue: diplomacy bonus boosts trade route income
-  let income =
-    (workedMarkets * 50 + tradeRoutes * 30 * raceBonus(k, "diplomacy")) * mult;
-  if (upgrades.bazaar) income *= 1.5;
-  if (upgrades.black_market) income *= 1.2;
-
-  // Apply world fragment bonuses for markets
-  const incomeMult = fragmentBonusManager.getBonusMultiplier(k, 'markets', 'income');
-  income *= incomeMult;
-
-  return Math.floor(income);
-}
-
-function tavernEntertainmentBonus(k) {
-  if (!k.bld_taverns) return 0;
-  const baseBonusPerTavern = 10;
-  let bonus = k.bld_taverns * baseBonusPerTavern;
-
-  // Apply fragment bonuses for taverns (morale, happiness)
-  const tavernMoraleMult = fragmentBonusManager.getBonusMultiplier(k, 'taverns', 'morale');
-  const tavernHappinessMult = fragmentBonusManager.getBonusMultiplier(k, 'taverns', 'happiness');
-  bonus = Math.floor(bonus * tavernMoraleMult * tavernHappinessMult);
-
-  return bonus;
-}
-
-function commodityPrice(item, race, supplyIndex) {
-  const base = COMMODITY_VALUES[item] || 1;
-  const raceDisc = COMMODITY_RACE_DISCOUNT[race] || {};
-  const discount = raceDisc[item] || raceDisc._all || 1.0;
-  const supply = (supplyIndex && supplyIndex[item]) || 1.0;
-  return Math.max(1, Math.round(base * discount * supply));
-}
-
-function processFoodEconomy(k, events) {
-  const updates = {};
-  const race = k.race || "human";
-  const prod = farmProduction(k);
-  const cons = foodConsumption(k);
-  const balance = prod - cons;
-  let food = k.food;
-
-  const upgrades = safeJsonParse(
-    k.granary_upgrades,
-    {},
-    "processFoodEconomy:granary_upgrades",
-  );
-  const BASE_FOOD_STORAGE = 10000;
-  const granaryPer = upgrades.silos ? 150000 : 100000;
-  const storageRaceMult = raceBonus(k, 'food_storage');
-  const granaryCapacityMult = fragmentBonusManager.getBonusMultiplier(k, 'granaries', 'capacity');
-
-  const maxStore = Math.floor((Math.floor(BASE_FOOD_STORAGE * storageRaceMult) + k.bld_granaries * granaryPer) * granaryCapacityMult);
-
-  // Apply degradation before checking balance
-  let rotRate = upgrades.preservation ? 0.05 * 0.7 : 0.05; // 5% base degradation, lowered by 30% with salt curing
-
-  // Apply fragment attunement decay reduction
-  const granaryAttune = fragmentBonusManager.getFragmentForBuilding(k, 'granaries');
-
-  // Check for fragments with complete decay elimination
-  if (granaryAttune && (granaryAttune.fragment === 'Volcanic Rock' || granaryAttune.fragment === 'Abyssal Crystal')) {
-    // Geothermal Dehydration & Glacial Cryostasis: eliminate 100% spoilage
-    rotRate = 0;
-  } else {
-    // Other fragments: apply decay_reduction multiplier (including Ancient Elven Wood)
-    const decayReduction = fragmentBonusManager.getBonusMultiplier(k, 'granaries', 'decay_reduction');
-    if (decayReduction > 1.0) {
-      rotRate = Math.max(0, rotRate * (2.0 - decayReduction));
-    }
-  }
-
-  const spoilage = Math.floor(food * rotRate);
-  if (spoilage > 0) {
-    food -= spoilage;
-    updates._spoilage = spoilage; // we can track it here
-  }
-
-  if (race === "vampire") {
-    // ── Vampire Special: Thralls eat grain, Vampires eat Thralls/Pop ──────
-    // 1. Thrall grain consumption handled by balance (thralls eat grain)
-    if (balance >= 0) {
-      food = Math.min(food + balance, Math.max(1000, maxStore));
-    } else {
-      const shortage = Math.abs(balance);
-      if (food >= shortage) {
-        food -= shortage;
-      } else {
-        const unfed = shortage - food;
-        food = 0;
-        const thrallsLost = Math.min(
-          k.thralls,
-          Math.ceil(unfed / (FOOD_CONSUMPTION_MULT[race] || 1.0)),
-        );
-        if (thrallsLost > 0) {
-          updates.thralls = k.thralls - thrallsLost;
-          events.push({
-            type: "system",
-            message: `🚨 Thrall starvation! ${thrallsLost.toLocaleString()} thralls died due to lack of grain.`,
-          });
-        }
-      }
-    }
-    updates.food = food;
-
-    // 2. Vampire hunger (Original food consumption amount, satisfied by eating population)
-    // Mult is same as previous (but maybe we should use human mult as base for "hunger"?)
-    // Prompt says "Their consumption is still as it was previously, just with a portion of the population."
-    const troops = totalHiredUnits(k) - (updates.thralls ?? k.thralls ?? 0);
-    const pop = Math.floor(k.population / 100);
-    const vampireConsumption = 0.285; // Sustainable ~2.85% population consumption per turn
-    const hunger = Math.floor((troops + pop) * vampireConsumption);
-
-    let totalConsumed = 0;
-    const currentThralls = updates.thralls ?? k.thralls ?? 0;
-
-    // Priority: Consume Population FIRST, then Thralls
-    let populationEaten = Math.min(k.population, hunger);
-    let remainingHunger = hunger - populationEaten;
-
-    let mausoleumUpgrades = {};
-    try {
-      mausoleumUpgrades = safeJsonParse(k.mausoleum_upgrades, {}, "auto:mausoleum_upgrades");
-    } catch {}
-
-    // Blood Sacrifice upgrade: Thralls are 20% more efficient (eat fewer for same hunger)
-    const thrallEfficiency =
-      mausoleumUpgrades.blood_sacrifice && race === "vampire" ? 1.2 : 1.0;
-    let thrallsEaten = Math.min(
-      currentThralls,
-      Math.ceil(remainingHunger / thrallEfficiency),
-    );
-
-    if (populationEaten > 0) {
-      updates.population = k.population - populationEaten;
-      totalConsumed += populationEaten;
-    }
-    if (thrallsEaten > 0) {
-      updates.thralls = currentThralls - thrallsEaten;
-      totalConsumed += thrallsEaten;
-    }
-
-    // Reduced trigger chance to 2% and conversion amount to 1.5% of consumed population
-    if (totalConsumed > 0 && Math.random() < 0.02) {
-      events.push({
-        type: "system",
-        message: `🍷 Vampire hunger: ${totalConsumed.toLocaleString()} population consumed.`,
-      });
-
-      const toAdd = Math.floor(populationEaten * 0.015);
-      if (toAdd > 0) {
-        const unitTypes = [
-          "fighters",
-          "rangers",
-          "clerics",
-          "mages",
-          "thieves",
-          "ninjas",
-        ];
-        const targetUnit =
-          unitTypes[Math.floor(Math.random() * unitTypes.length)];
-        updates[targetUnit] = (k[targetUnit] || 0) + toAdd;
-
-        // Award 10 XP to that unit type
-        const xpUpdate = awardUnitXp({ ...k, ...updates }, targetUnit, 10);
-        if (xpUpdate) updates.troop_levels = xpUpdate;
-
-        events.push({
-          type: "system",
-          message: `🩸 Blood Sacrifice: ${toAdd.toLocaleString()} new ${targetUnit} risen from the consumed population.`,
-        });
-      }
-    } else if (totalConsumed > 0) {
-      events.push({
-        type: "system",
-        message: `🍷 Vampire hunger: ${totalConsumed.toLocaleString()} population consumed.`,
-      });
-    }
-    return updates;
-  }
-
-  // ── Standard Food Logic ──────────────────────────────────────────────────
-  if (balance >= 0) {
-    food = Math.min(food + balance, maxStore);
-    const surpTurns = k.food_surplus_turns + 1;
-    updates.food = food;
-    updates.food_surplus_turns = surpTurns;
-    updates.food_shortage_turns = 0;
-    if (surpTurns >= 5) {
-      const natCap = naturalMoraleCap(k);
-      const cur =
-        updates.morale !== undefined
-          ? updates.morale
-          : k.morale !== undefined && k.morale !== null
-            ? k.morale
-            : 100;
-      updates.morale = Math.min(natCap, cur + 2);
-      
-      events.push({
-        type: "system",
-        message: `🌾 Food surplus: +${balance.toLocaleString()} units. Troops are well fed.`,
-      });
-      
-    } else {
-      events.push({
-        type: "system",
-        message: `🌾 Food: +${balance.toLocaleString()} surplus. Stores: ${food.toLocaleString()}.`,
-      });
-    }
-  } else {
-    const shortage = Math.abs(balance);
-    const shortTurns = k.food_shortage_turns + 1;
-    updates.food_shortage_turns = shortTurns;
-    updates.food_surplus_turns = 0;
-
-    if (food >= shortage) {
-      food -= shortage;
-      updates.food = food;
-      events.push({
-        type: "system",
-        message: `⚠️ Food deficit: drawing ${shortage.toLocaleString()} from stores. ${food.toLocaleString()} remaining.`,
-      });
-    } else {
-      updates.food = 0;
-      events.push({
-        type: "system",
-        message: `🚨 Food shortage! Turn ${shortTurns} — build more farms or reduce troops.`,
-      });
-      if (shortTurns >= 3) {
-        const hit = shortTurns >= 8 ? 20 : shortTurns >= 5 ? 10 : 5;
-        const cur =
-          updates.morale !== undefined
-            ? updates.morale
-            : k.morale !== undefined && k.morale !== null
-              ? k.morale
-              : 100;
-        updates.morale = Math.max(0, cur - hit);
-
-        events.push({
-          type: "system",
-          message: `🚨 Food shortage! Turn ${shortTurns} — build more farms or reduce troops.`,
-        });
-
-      }
-      if (shortTurns >= 5) {
-        let fleeCount = 500;
-        const activeHousingSpecial = fragmentBonusManager.getSpecialEffect(k, 'housing');
-
-        // Apply housing special abilities to reduce population fleeing
-        if (activeHousingSpecial?.name === "Holy Sanctuaries") {
-          // Celestial Feather: Completely prevent unrest
-          fleeCount = 0;
-        } else if (activeHousingSpecial?.name === "Treehouse Canopy") {
-          // Ancient Elven Wood: 80% reduction in fleeing
-          fleeCount = Math.floor(fleeCount * 0.2);
-        } else if (activeHousingSpecial?.name === "Lifespring Spores") {
-          // Tears of World Tree: 50% reduction in fleeing
-          fleeCount = Math.floor(fleeCount * 0.5);
-        }
-
-        if (fleeCount > 0) {
-          updates.population = Math.max(1000, k.population - fleeCount);
-          events.push({
-            type: "system",
-            message: `👥 Population fleeing starvation: -${fleeCount} people.`,
-          });
-        } else if (activeHousingSpecial?.name === "Holy Sanctuaries") {
-          events.push({
-            type: "system",
-            message: `👥 Holy Sanctuaries: Population refuses to abandon their sacred homes despite starvation!`,
-          });
-        }
-      }
-      if (shortTurns >= 8) {
-        const desert = Math.floor(k.fighters * 0.02);
-        if (desert > 0) {
-          updates.fighters = Math.max(0, k.fighters - desert);
-          events.push({
-            type: "system",
-            message: `⚔️ ${desert.toLocaleString()} fighters deserted — starvation.`,
-          });
-        }
-      }
-    }
-  }
-  return updates;
-}
 
 /**
  * Process granary attunement special abilities
@@ -2306,46 +1742,6 @@ function purchaseUpgrade(k, category, upgradeKey) {
     },
   };
 }
-
-function calculateTradeIncome(k) {
-  const routes = k._trade_routes;
-  if (!routes || routes.length === 0) return 0;
-
-  const base = config.TRADE_ROUTE_BASE_GOLD || 1500;
-  let raceMult = config.TRADE_RATE_MULT[k.race] || 1.0;
-
-  if (k.prestige_level > 0) {
-    const tierMod = PRESTIGE_MODIFIERS[Math.min(k.prestige_level, 5)]?.econ || 1.0;
-    raceMult *= tierMod;
-  }
-
-  const econRes = (k.res_economy || 100) / 100;
-  const marketBonus = 1 + k.bld_markets * 0.002;
-
-  // Merchant King achievement: +10% trade route income
-  let achievements = safeJsonParse(k.achievements, [], "calculateTradeIncome:achievements");
-  const merchantKingBonus = achievements.includes("ach_wealthy") ? 1.1 : 1.0;
-
-  let total = 0;
-  for (const r of routes) {
-    // Income depends on partner's economy and current stability
-    const stabilityMult = (r.stability || 100) / 100;
-    const distancePenalty =
-      (r.distance || 0) * (config.TRADE_ROUTE_DISTANCE_PENALTY || 10);
-    const routeIncome = Math.max(
-      0,
-      base * efficiencyMult(r) * stabilityMult - distancePenalty,
-    );
-    total += routeIncome;
-  }
-
-  return Math.floor(total * raceMult * econRes * marketBonus * merchantKingBonus);
-}
-
-function efficiencyMult(route) {
-  return route.efficiency || 1.0;
-}
-
 
 function rebellionCheck(k, happiness, updates, events) {
   if (happiness >= 50) return; // No rebellion risk if happiness >= 50
@@ -3981,14 +3377,6 @@ function checkAchievements(k, updates, events) {
 // ── Level-based caps ──────────────────────────────────────────────────────────
 // Caps scale linearly from base (level 1) to max (capLevel, default 1000).
 // Levels above capLevel return max (the cap is fully unlocked and stays there).
-
-const PRESTIGE_MODIFIERS = {
-  1: { bldCap: 1.25, econ: 1.05, combat: 1.00, pop: 1.00 },
-  2: { bldCap: 1.50, econ: 1.10, combat: 1.00, pop: 1.00 },
-  3: { bldCap: 1.75, econ: 1.15, combat: 1.05, pop: 1.00 },
-  4: { bldCap: 2.00, econ: 1.20, combat: 1.05, pop: 1.00 },
-  5: { bldCap: 2.50, econ: 1.30, combat: 1.10, pop: 1.25 },
-};
 
 function levelCap(base, max, level, capLevel = 1000) {
   const lv = Math.max(1, Math.min(capLevel, level || 1));
