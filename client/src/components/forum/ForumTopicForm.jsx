@@ -25,11 +25,11 @@ export default function ForumTopicForm({ board, user, onCreated, onCancel }) {
 
       const res = await fetchApi('/api/forum/topics', {
         method: 'POST',
-        body: JSON.stringify({
+        body: {
           boardId: board.id,
           title: title.trim(),
           content: content.trim()
-        })
+        }
       });
 
       if (res && res.error) {

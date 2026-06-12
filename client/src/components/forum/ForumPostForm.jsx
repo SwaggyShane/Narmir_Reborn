@@ -26,11 +26,11 @@ export default function ForumPostForm({ topic, user, post, onCreated, onCancel }
       const res = isEditing
         ? await fetchApi(`/api/forum/posts/${post.id}`, {
             method: 'PATCH',
-            body: JSON.stringify({ content: content.trim() })
+            body: { content: content.trim() }
           })
         : await fetchApi(`/api/forum/topics/${topic.id}/posts`, {
             method: 'POST',
-            body: JSON.stringify({ content: content.trim() })
+            body: { content: content.trim() }
           });
 
       if (res && res.error) {
