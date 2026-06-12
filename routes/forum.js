@@ -3,7 +3,54 @@ const router = express.Router();
 const { requireAuth, requireAdmin } = require("./middleware");
 
 module.exports = function (db) {
-  // ──────────── PUBLIC ENDPOINTS (No auth required) ────────────
+  // ──────────── HELPER FUNCTIONS ────────────────────────────────────────
+
+  // Check if user is banned from posting
+  const isUserBanned = async (playerId, boardId = null) => {
+    const now = Math.floor(Date.now() / 1000);
+    const ban = await db.get(
+      `SELECT id FROM forum_bans
+       WHERE player_id = ? AND (board_id = ? OR board_id IS NULL)
+       AND (expires_at IS NULL OR expires_at > ?)`,
+      [playerId, boardId, now]
+    );
+    return !!ban;
+  };
+
+  // Middleware to check ban before posting
+  const checkBanBeforePost = async (req, res, next) => {
+    if (!req.player?.playerId) {
+      return next();
+    }
+
+    try {
+      // Determine board context
+      let boardId = null;
+
+      if (req.body?.boardId) {
+        // Creating a topic - boardId is in body
+        boardId = req.body.boardId;
+      } else if (req.params?.topicId) {
+        // Replying to topic - get boardId from topic
+        const topic = await db.get(
+          `SELECT board_id FROM forum_topics WHERE id = ?`,
+          [req.params.topicId]
+        );
+        boardId = topic?.board_id || null;
+      }
+
+      const banned = await isUserBanned(req.player.playerId, boardId);
+      if (banned) {
+        return res.status(403).json({ error: "You are banned from this forum or board" });
+      }
+      next();
+    } catch (err) {
+      console.error("[forum] Ban check error:", err.message);
+      next(); // Continue on error rather than blocking
+    }
+  };
+
+  // ──────────── PUBLIC ENDPOINTS (No auth required) ────────────────────────
 
   // GET /api/forum/boards - Get all active forum boards
   router.get("/boards", async (req, res) => {
@@ -146,7 +193,7 @@ module.exports = function (db) {
   // ──────────── PROTECTED ENDPOINTS (Auth required) ────────────
 
   // POST /api/forum/topics - Create a new topic
-  router.post("/topics", requireAuth, async (req, res) => {
+  router.post("/topics", requireAuth, checkBanBeforePost, async (req, res) => {
     try {
       const { boardId, title, content } = req.body;
       const playerId = req.player.playerId;
@@ -177,27 +224,36 @@ module.exports = function (db) {
       }
 
 
-      // Create topic with first post
-      const result = await db.run(
-        `INSERT INTO forum_topics (board_id, player_id, title, content, post_count, last_post_at, created_at, updated_at)
-         VALUES (?, ?, ?, ?, 1, ?, ?, ?)`,
-        [boardId, playerId, title.trim(), content.trim(), Math.floor(Date.now() / 1000), Math.floor(Date.now() / 1000), Math.floor(Date.now() / 1000)]
-      );
+      // Create topic with first post in transaction
+      await db.run('BEGIN TRANSACTION');
+      try {
+        const now = Math.floor(Date.now() / 1000);
+        const result = await db.run(
+          `INSERT INTO forum_topics (board_id, player_id, title, content, post_count, last_post_at, created_at, updated_at)
+           VALUES (?, ?, ?, ?, 1, ?, ?, ?)`,
+          [boardId, playerId, title.trim(), content.trim(), now, now, now]
+        );
 
-      const topicId = result.lastID;
+        const topicId = result.lastID;
 
-      // Create the first post
-      await db.run(
-        `INSERT INTO forum_posts (topic_id, player_id, content, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?)`,
-        [topicId, playerId, content.trim(), Math.floor(Date.now() / 1000), Math.floor(Date.now() / 1000)]
-      );
+        // Create the first post
+        await db.run(
+          `INSERT INTO forum_posts (topic_id, player_id, content, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?)`,
+          [topicId, playerId, content.trim(), now, now]
+        );
 
-      res.status(201).json({
-        success: true,
-        topicId,
-        message: "Topic created successfully",
-      });
+        await db.run('COMMIT');
+
+        res.status(201).json({
+          success: true,
+          topicId,
+          message: "Topic created successfully",
+        });
+      } catch (txErr) {
+        await db.run('ROLLBACK').catch(() => {});
+        throw txErr;
+      }
     } catch (err) {
       console.error("[forum] POST /topics error:", err.message);
       res.status(500).json({ error: "Failed to create topic" });
@@ -205,7 +261,7 @@ module.exports = function (db) {
   });
 
   // POST /api/forum/topics/:topicId/posts - Create a reply to a topic
-  router.post("/topics/:topicId/posts", requireAuth, async (req, res) => {
+  router.post("/topics/:topicId/posts", requireAuth, checkBanBeforePost, async (req, res) => {
     try {
       const { topicId } = req.params;
       const { content } = req.body;
@@ -235,28 +291,36 @@ module.exports = function (db) {
 
       const now = Math.floor(Date.now() / 1000);
 
-      // Create post
-      const result = await db.run(
-        `INSERT INTO forum_posts (topic_id, player_id, content, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?)`,
-        [topicId, playerId, content.trim(), now, now]
-      );
+      // Create post and update topic in transaction
+      await db.run('BEGIN TRANSACTION');
+      try {
+        const result = await db.run(
+          `INSERT INTO forum_posts (topic_id, player_id, content, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?)`,
+          [topicId, playerId, content.trim(), now, now]
+        );
 
-      const postId = result.lastID;
+        const postId = result.lastID;
 
-      // Update topic post_count and last_post_at
-      await db.run(
-        `UPDATE forum_topics
-         SET post_count = post_count + 1, last_post_at = ?, updated_at = ?
-         WHERE id = ?`,
-        [now, now, topicId]
-      );
+        // Update topic post_count and last_post_at
+        await db.run(
+          `UPDATE forum_topics
+           SET post_count = post_count + 1, last_post_at = ?, updated_at = ?
+           WHERE id = ?`,
+          [now, now, topicId]
+        );
 
-      res.status(201).json({
-        success: true,
-        postId,
-        message: "Reply posted successfully",
-      });
+        await db.run('COMMIT');
+
+        res.status(201).json({
+          success: true,
+          postId,
+          message: "Reply posted successfully",
+        });
+      } catch (txErr) {
+        await db.run('ROLLBACK').catch(() => {});
+        throw txErr;
+      }
     } catch (err) {
       console.error("[forum] POST /topics/:topicId/posts error:", err.message);
       res.status(500).json({ error: "Failed to create post" });
@@ -600,7 +664,7 @@ module.exports = function (db) {
       const { banId } = req.params;
       const modId = req.player.playerId;
 
-      const ban = await db.get(`SELECT board_id FROM forum_bans WHERE id = ?`, [banId]);
+      const ban = await db.get(`SELECT player_id, board_id FROM forum_bans WHERE id = ?`, [banId]);
       if (!ban) {
         return res.status(404).json({ error: "Ban not found" });
       }
@@ -799,33 +863,6 @@ module.exports = function (db) {
       console.error("[forum] PATCH /moderation/reports/:reportId error:", err.message);
       res.status(500).json({ error: "Failed to review report" });
     }
-  });
-
-  // Helper: Check if user is banned
-  const isUserBanned = async (playerId, boardId = null) => {
-    const now = Math.floor(Date.now() / 1000);
-    const ban = await db.get(
-      `SELECT id FROM forum_bans
-       WHERE player_id = ? AND (board_id = ? OR board_id IS NULL)
-       AND (expires_at IS NULL OR expires_at > ?)`,
-      [playerId, boardId, now]
-    );
-    return !!ban;
-  };
-
-  // Add ban check before allowing posts
-  router.use(async (req, res, next) => {
-    if (req.player && req.player.playerId && (req.method === "POST" || req.method === "PATCH")) {
-      // Only check for actual posting endpoints
-      if (req.path.includes("/posts") || req.path.includes("/topics")) {
-        const boardId = req.body?.boardId || null;
-        const isBanned = await isUserBanned(req.player.playerId, boardId);
-        if (isBanned) {
-          return res.status(403).json({ error: "You are banned from this forum" });
-        }
-      }
-    }
-    next();
   });
 
   return router;

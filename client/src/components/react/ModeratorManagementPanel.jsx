@@ -67,10 +67,10 @@ export default function ModeratorManagementPanel() {
       setSubmitLoading(true);
       const res = await apiCall('/api/forum/admin/moderators', {
         method: 'POST',
-        body: JSON.stringify({
+        body: {
           playerId: parseInt(newModPlayerId),
           boardId: parseInt(newModBoardId)
-        })
+        }
       });
 
       if (res && res.error) {

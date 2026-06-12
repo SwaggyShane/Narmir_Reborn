@@ -67,7 +67,7 @@ export default function ForumThread({ topic, user, onPostCreated }) {
     try {
       const res = await fetchApi(`/api/forum/reports`, {
         method: 'POST',
-        body: JSON.stringify({ postId })
+        body: { postId }
       });
       if (res && res.error) {
         alert(res.error);
@@ -121,7 +121,7 @@ export default function ForumThread({ topic, user, onPostCreated }) {
                   </div>
                 </div>
                 <div className="forum-post-actions">
-                  {user && user.id === post.player_id && !post.is_deleted && (
+                  {user && user.playerId === post.player_id && !post.is_deleted && (
                     <>
                       <button className="forum-post-btn" onClick={() => setEditingPostId(post.id)}>
                         Edit
