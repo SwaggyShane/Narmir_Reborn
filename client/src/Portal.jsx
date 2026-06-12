@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './Portal.css';
+import './css/forum.css';
+import ForumSection from './components/forum/ForumSection';
 
 const RACE_DATA = [
   {
@@ -507,21 +509,6 @@ function RankingsTable() {
   );
 }
 
-// ─── Forums Card ──────────────────────────────────────────────────────────────
-
-function ForumsCard() {
-  return (
-    <div className="portal-card">
-      <h2 className="portal-section-title">Forums</h2>
-      <p className="portal-coming-soon">
-        Forums are coming soon. In the meantime, join the community on Discord for news, strategy, and war reports.
-      </p>
-      <a href="https://discord.gg/narmir" className="portal-discord-btn" target="_blank" rel="noopener noreferrer">
-        Join Discord
-      </a>
-    </div>
-  );
-}
 
 function RankingsButton({ onClick }) {
   return (
@@ -557,7 +544,7 @@ export default function Portal() {
           <AuthCard onViewChange={setAuthView} />
           {!isRegistrationActive && (
             <>
-              <ForumsCard />
+              <ForumSection user={null} />
               <RankingsButton onClick={() => setShowRankings(!showRankings)} />
             </>
           )}

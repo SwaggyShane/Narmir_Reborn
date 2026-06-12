@@ -67,3 +67,6 @@ async function apiCall(url, options = {}) {
 }
 
 export { apiCall, getCsrfToken };
+
+// Alias for convenience
+export const fetchApi = apiCall;
