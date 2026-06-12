@@ -62,7 +62,7 @@ function wallDefensePower(k) {
   const wmBonus =
     wmOnWalls *
     500 *
-    ((k.res_war_machines || 100) / 100) *
+    ((k.res_war_machines ?? 100) / 100) *
     (wallUpgrades.fortress_walls ? 1.75 : wallUpgrades.battlements ? 1.2 : 1.0);
   let wallPower = Math.floor(walls * 100 * mult * reinMult * vaultWallMult * effectiveWallMult * synergyDefenseMult + wmBonus);
 
@@ -91,7 +91,7 @@ function towerDetectionPower(k) {
   ).battlements
     ? 1.2
     : 1.0;
-  const thievesOnWatch = Math.min(k.thieves, towers * 10);
+  const thievesOnWatch = Math.min(k.thieves || 0, towers * 10);
   const thiefLvlMult = unitLevelMult(k, 'thieves');
   const stealthMult = raceBonus(k, 'stealth');
 
@@ -122,7 +122,7 @@ function outpostRangerPower(k) {
     'outpostRangerPower:outpost_upgrades',
   );
   const stationMult = opUpgrades.ranger_station ? 1.25 : 1.0;
-  const rangersOnPatrol = Math.min(k.rangers, outposts * 20);
+  const rangersOnPatrol = Math.min(k.rangers || 0, outposts * 20);
   const rangerLvlMult = unitLevelMult(k, 'rangers');
   const militaryMult = raceBonus(k, 'military');
 
