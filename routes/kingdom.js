@@ -111,7 +111,8 @@ const _KINGDOM_ATTACK = `${KINGDOM_CORE}, fighters, rangers, mages, thieves, nin
   defense_upgrades, milestone_bonuses, prestige_level, xp, xp_sources, discovered_kingdoms`;
 const KINGDOM_COVERT = `${KINGDOM_CORE}, thieves, ninjas, troop_levels,
   bld_guard_towers, bld_walls, bld_mage_towers, bld_libraries, bld_armories, bld_vaults, bld_mausoleums,
-  level, prestige_level, milestone_bonuses, bank_upgrades, trade_routes, thralls, mausoleum_upgrades`;
+  level, prestige_level, milestone_bonuses, bank_upgrades, trade_routes, thralls, mausoleum_upgrades,
+  discovered_kingdoms`;
 const _KINGDOM_ECONOMY = `${KINGDOM_CORE}, gold, market_upgrades, bank_upgrades, farm_upgrades, discovered_kingdoms`;
 
 // Parse all JSON fields on a kingdom object (used by /me endpoint)
@@ -2283,6 +2284,8 @@ module.exports = function (db) {
         await db.run("ROLLBACK");
         return res.status(400).json({ error: result.error });
       }
+      const spyAttackerUpdates = { ...(result.spyUpdates || {}) };
+      spyAttackerUpdates.turns_stored = (attackerK.turns_stored || 0) - 1;
       await applyKingdomUpdates(attackerK.id, result.spyUpdates || {});
       await db.run(
         "UPDATE kingdoms SET turns_stored = turns_stored - 1 WHERE id = ?",
@@ -2330,6 +2333,7 @@ module.exports = function (db) {
         report: result.report || null,
         reportId: reportRow.lastID,
         event: result.spyEvent,
+        updates: spyAttackerUpdates,
       });
     } else if (op === "loot") {
       const thievesSent = Math.max(1, parseInt(units) || 0);
@@ -2343,6 +2347,8 @@ module.exports = function (db) {
         await db.run("ROLLBACK");
         return res.status(400).json({ error: result.error });
       }
+      const lootAttackerUpdates = { ...(result.thiefUpdates || {}) };
+      lootAttackerUpdates.turns_stored = (attackerK.turns_stored || 0) - 1;
       await applyKingdomUpdates(attackerK.id, result.thiefUpdates || {});
       await applyKingdomUpdates(target.id, result.targetUpdates || {});
       await db.run(
@@ -2395,6 +2401,7 @@ module.exports = function (db) {
         stolen: result.stolen,
         lootType: result.lootType,
         event: result.thiefEvent,
+        updates: lootAttackerUpdates,
       });
     } else if (op === "assassinate") {
       const ninjasSent = Math.max(1, parseInt(units) || 0);
@@ -2422,6 +2429,8 @@ module.exports = function (db) {
         await db.run("ROLLBACK");
         return res.status(400).json({ error: result.error });
       }
+      const assassinAttackerUpdates = { ...(result.assassinUpdates || {}) };
+      assassinAttackerUpdates.turns_stored = (attackerK.turns_stored || 0) - 1;
       await applyKingdomUpdates(attackerK.id, result.assassinUpdates || {});
       await applyKingdomUpdates(target.id, result.targetUpdates || {});
       await db.run(
@@ -2473,6 +2482,7 @@ module.exports = function (db) {
         success: result.success,
         killed: result.killed,
         event: result.assassinEvent,
+        updates: assassinAttackerUpdates,
       });
     } else if (op === "sabotage") {
       const ninjasSent = Math.max(1, parseInt(units) || 0);
@@ -2487,6 +2497,8 @@ module.exports = function (db) {
         return res.status(400).json({ error: result.error });
       }
 
+      const sabotageAttackerUpdates = { ...(result.assassinUpdates || {}) };
+      sabotageAttackerUpdates.turns_stored = (attackerK.turns_stored || 0) - 1;
       await applyKingdomUpdates(attackerK.id, result.assassinUpdates || {});
       await applyKingdomUpdates(target.id, result.targetUpdates || {});
 
@@ -2531,6 +2543,7 @@ module.exports = function (db) {
         destroyed: result.destroyed,
         ninjasLost: result.ninjasLost,
         event: result.assassinEvent,
+        updates: sabotageAttackerUpdates,
       });
     } else if (op === "raid_trade_route") {
       const thievesSent = Math.max(1, parseInt(units) || 0);
@@ -2543,6 +2556,8 @@ module.exports = function (db) {
         await db.run("ROLLBACK");
         return res.status(400).json({ error: result.error });
       }
+      const raidAttackerUpdates = { ...(result.attackerUpdates || {}) };
+      raidAttackerUpdates.turns_stored = (attackerK.turns_stored || 0) - 1;
       await applyKingdomUpdates(k.id, result.attackerUpdates || {});
       await applyKingdomUpdates(target.id, result.defenderUpdates || {});
       await db.run(
@@ -2580,6 +2595,7 @@ module.exports = function (db) {
         success: result.success,
         looted: result.looted,
         event: result.atkEvent,
+        updates: raidAttackerUpdates,
       });
     } else {
       await db.run("ROLLBACK");
@@ -5263,6 +5279,9 @@ module.exports = function (db) {
   });
 
   // GET /api/kingdom/contributing-synergies — Check which synergies a building/fragment contributes to
+  // Returns an opaque "resonance" tier instead of the synergy recipes so the
+  // client can't reveal the formula via devtools — players discover combos
+  // by experimentation, not by reading network responses.
   router.get('/contributing-synergies', requireAuth, async (req, res) => {
     try {
       const { building_type, fragment_name } = req.query;
@@ -5271,12 +5290,39 @@ module.exports = function (db) {
       }
 
       const contributing = attunementManager.getContributingSynergies(building_type, fragment_name);
+
+      let resonanceTier = null;
+      if (contributing.length > 0) {
+        const kingdom = await db.get(
+          "SELECT fragment_bonuses FROM kingdoms WHERE player_id = ?",
+          [req.player.playerId]
+        );
+        const placements = {};
+        if (kingdom) {
+          const atts = getKingdomAttunements(kingdom.fragment_bonuses || '{}');
+          for (const [bld, att] of Object.entries(atts)) {
+            if (att && att.fragmentName) placements[bld] = att.fragmentName;
+          }
+        }
+        let best = 0;
+        for (const syn of contributing) {
+          const reqs = syn.requiredFragments || {};
+          let satisfied = 0;
+          for (const [fragName, reqBld] of Object.entries(reqs)) {
+            if (placements[reqBld] === fragName) satisfied++;
+          }
+          if (satisfied > best) best = satisfied;
+        }
+        if (best >= 7) resonanceTier = 'convergence';
+        else if (best >= 4) resonanceTier = 'alignment';
+        else resonanceTier = 'faint';
+      }
+
       res.json({
-        synergies: contributing.map(s => ({
-          id: s.id,
-          name: s.name,
-          emoji: s.emoji,
-        })),
+        // Keep names/emojis out — they would let players reverse-engineer
+        // which combos contribute. Only signal whether ANY contribution exists.
+        contributes: contributing.length > 0,
+        resonanceTier,
       });
     } catch (err) {
       console.error('[synergy] contributing check failed:', err.message);

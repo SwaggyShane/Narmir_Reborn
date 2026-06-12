@@ -1,5 +1,44 @@
 import React, { useState } from 'react';
 
+// Atmospheric synergy hint text. Tiers map to how close a contributing
+// synergy is to completion (without revealing counts or formulas).
+// Players discover combinations by experimentation; the only signal we
+// give is "the fragments are noticing each other more than before."
+const RESONANCE_HINTS = {
+  faint: [
+    'A faint resonance hums within these walls.',
+    'Something stirs, distant and patient.',
+    'The fragment whispers of kin still unseen.',
+    'A subtle pull, as if toward something further away.',
+  ],
+  alignment: [
+    'The fragments are listening to one another.',
+    'An ancient pattern begins to take shape.',
+    'The air thrums with hidden alignment.',
+    'A geometry only the old gods remember.',
+  ],
+  convergence: [
+    'The veil thins. Something old draws near.',
+    'Powers long-sundered remember each other.',
+    'The world holds its breath here.',
+    'Sympathy of stone and star and bone.',
+  ],
+};
+
+const RESONANCE_GLYPH = { faint: '·', alignment: '✦', convergence: '✶' };
+const RESONANCE_COLOR = {
+  faint: 'var(--text3)',
+  alignment: 'var(--amber, #fbbf24)',
+  convergence: 'var(--gold)',
+};
+
+function pickResonanceHint(key, tier) {
+  const pool = RESONANCE_HINTS[tier] || RESONANCE_HINTS.faint;
+  let h = 0;
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) | 0;
+  return pool[Math.abs(h) % pool.length];
+}
+
 const BUILDINGS = [
   { id: 'farms', name: 'Farm', tier: 1, wood: 0, stone: 0, iron: 0, time: 10, land: 10 },
   { id: 'housing', name: 'Housing', tier: 2, wood: 200, stone: 100, iron: 50, time: 100, land: 25 },
@@ -73,7 +112,9 @@ const BuildPanel = () => {
         const attunements = statusData.attunements || {};
         setCurrentAttunements(attunements);
 
-        // Check synergy contributions for each attunement in parallel
+        // Check synergy contributions for each attunement in parallel.
+        // Server returns an opaque resonance tier (faint/alignment/convergence)
+        // so the synergy formula is never exposed to the client.
         const contributions = {};
         const attunementEntries = Object.entries(attunements).filter(([_, att]) => att && att.fragmentName);
         await Promise.all(
@@ -85,7 +126,9 @@ const BuildPanel = () => {
               );
               if (contribResponse.ok) {
                 const contribData = await contribResponse.json();
-                contributions[`${building}:${att.fragmentName}`] = contribData.synergies || [];
+                if (contribData.contributes) {
+                  contributions[`${building}:${att.fragmentName}`] = contribData.resonanceTier || 'faint';
+                }
               }
             } catch (err) {
               console.error('[synergies] check failed:', err);
@@ -282,13 +325,18 @@ const BuildPanel = () => {
                         <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--gold)', marginBottom: '8px' }}>Current Attunements</div>
                         {Object.entries(currentAttunements).map(([building, att]) => {
                           if (!att || !att.fragmentName) return null;
-                          const contributions = synergyContributions[`${building}:${att.fragmentName}`] || [];
-                          const hasContribution = contributions.length > 0;
+                          const key = `${building}:${att.fragmentName}`;
+                          const tier = synergyContributions[key] || null;
+                          const hint = tier ? pickResonanceHint(key, tier) : null;
                           return (
                             <div key={building} style={{ fontSize: '11px', color: 'var(--text)', marginBottom: '6px', padding: '6px', background: 'var(--bg2)', borderRadius: '3px' }}>
                               <span style={{ color: 'var(--gold)', fontWeight: 600 }}>{building}</span>: {att.fragmentName}
                               {att.special && <div style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '2px' }}>{att.special.name}</div>}
-                              {hasContribution && <div style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '4px', fontStyle: 'italic' }}>This building attunement can lead to greater things</div>}
+                              {hint && (
+                                <div style={{ fontSize: '10px', color: RESONANCE_COLOR[tier] || 'var(--text3)', marginTop: '4px', fontStyle: 'italic', letterSpacing: '0.2px' }}>
+                                  <span style={{ marginRight: '4px' }}>{RESONANCE_GLYPH[tier] || '·'}</span>{hint}
+                                </div>
+                              )}
                             </div>
                           );
                         })}
