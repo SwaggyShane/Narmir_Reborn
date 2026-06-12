@@ -96,11 +96,13 @@ function awardXp(k, activity, amount) {
 
   // Stop XP gain at level 500
   if (currentLevel >= 500) {
-    return { xp: k.xp || 0, level: 500, levelled: false, events: [], xp_sources: k.xp_sources || {} };
+    const xpSources = safeJsonParse(k.xp_sources, {}, 'awardXp:xp_sources') || {};
+    return { xp: k.xp || 0, level: 500, levelled: false, events: [], xp_sources: xpSources };
   }
 
   const mult = xpRaceBonus(k, activity);
-  const earned = (XP_BASE[activity] || 10) * amount * mult;
+  const cleanAmount = Number(amount) || 0;
+  const earned = (XP_BASE[activity] || 10) * cleanAmount * mult;
   const newXp = Math.max(0, (k.xp || 0) + earned);
   const prestige = k.prestige_level || 0;
   const newLevel = Math.min(levelFromXp(newXp, prestige), 500);

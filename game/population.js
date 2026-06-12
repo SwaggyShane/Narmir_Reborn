@@ -17,6 +17,7 @@ function housingCapPerBuilding(k) {
 
 function popGrowth(k) {
   const happiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
+  const pop = k.population || 0;
 
   // Apply happiness-based growth multiplier
   let happinessMult = 1.0;
@@ -34,11 +35,11 @@ function popGrowth(k) {
 
   // Handle fleeing population
   if (happiness < 0) {
-    return Math.floor(k.population * happinessMult);
+    return Math.floor(pop * happinessMult);
   }
 
   const capPerBuilding = housingCapPerBuilding(k);
-  let housingCap = k.bld_housing * capPerBuilding;
+  let housingCap = (k.bld_housing || 0) * capPerBuilding;
 
   // Apply world fragment bonuses for housing
   const housingMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'capacity');
@@ -46,8 +47,6 @@ function popGrowth(k) {
 
   // Apply synergy troop capacity bonus
   housingCap *= 1.0;
-
-  const pop = k.population;
 
   let growthMult = happinessMult;
 
@@ -77,7 +76,7 @@ function popGrowth(k) {
   if (housingCap > 0 && pop > housingCap) growthMult = 0.1;
 
   const base = Math.floor(pop * 0.003);
-  const entertainment = Math.floor(k.res_entertainment / 100) * 10;
+  const entertainment = Math.floor((k.res_entertainment || 0) / 100) * 10;
   const raceGrowthMult =
     {
       high_elf: 0.8,
@@ -91,7 +90,7 @@ function popGrowth(k) {
 }
 
 function researchIncrement(k, discipline, researchersAssigned, currentLevel) {
-  let schoolBonus = 1 + Math.floor(k.bld_schools / 5) * 0.02;
+  let schoolBonus = 1 + Math.floor((k.bld_schools || 0) / 5) * 0.02;
   const schoolSpeedMult = fragmentBonusManager.getBonusMultiplier(k, 'schools', 'speed');
   const schoolOutputMult = fragmentBonusManager.getBonusMultiplier(k, 'schools', 'output');
   schoolBonus *= (schoolSpeedMult * schoolOutputMult);
