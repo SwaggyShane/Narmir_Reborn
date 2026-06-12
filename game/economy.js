@@ -499,12 +499,6 @@ function processFoodEconomy(k, events) {
               ? k.morale
               : 100;
         updates.morale = Math.max(0, cur - hit);
-
-        events.push({
-          type: "system",
-          message: `🚨 Food shortage! Turn ${shortTurns} — build more farms or reduce troops.`,
-        });
-
       }
       if (shortTurns >= 5) {
         let fleeCount = 500;

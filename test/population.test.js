@@ -69,6 +69,14 @@ console.log('Testing population.js\n');
   console.log('Test 5: popGrowth capped at 2x housing ✓');
 }
 
+// Test 5b: popGrowth returns 0 when there is no housing (bld_housing = 0)
+{
+  const k = makeKingdom({ happiness: 80, bld_housing: 0, population: 1000 });
+  const growth = population.popGrowth(k);
+  assert.equal(growth, 0, 'zero housing must not allow growth');
+  console.log('Test 5b: popGrowth zero housing returns 0 ✓');
+}
+
 // Test 6: popGrowth higher happiness gives higher growth
 {
   const sad = makeKingdom({ happiness: 30, bld_housing: 10, population: 1000 });

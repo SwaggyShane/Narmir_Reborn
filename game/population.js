@@ -73,8 +73,9 @@ function popGrowth(k) {
   // Predatory Growth, Blood Matriarch's Sanguine Bond)
   growthMult *= raceBonus(k, 'population');
 
-  if (housingCap > 0 && pop >= housingCap * 2) return 0;
-  if (housingCap > 0 && pop > housingCap) growthMult = 0.1;
+  if (housingCap === 0) return 0;
+  if (pop >= housingCap * 2) return 0;
+  if (pop > housingCap) growthMult = 0.1;
 
   const base = Math.floor(pop * 0.003);
   const entertainment = Math.floor(k.res_entertainment / 100) * 10;
