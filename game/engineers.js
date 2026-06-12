@@ -40,6 +40,7 @@ function calculateBuildCost(kingdom, tier) {
 
 function awardEngineerXp(kingdom, xpAmount) {
   kingdom.engineer_xp = (kingdom.engineer_xp || 0) + xpAmount;
+  kingdom.engineer_level = kingdom.engineer_level || 1;
 
   while (kingdom.engineer_level < 100) {
     const nextLevelXp = engineerXpForLevel(kingdom.engineer_level + 1);
