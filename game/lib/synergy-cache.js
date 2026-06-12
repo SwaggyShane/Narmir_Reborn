@@ -58,13 +58,14 @@ function getSynergyPassiveBonusAbsolute(kingdom, effectKey) {
 function clearSynergyCache(kingdom) {
   // Content-keyed: a changed attunement produces a new fragment_bonuses
   // string and therefore a new key, so stale entries can't be served.
-  // Clearing on demand just keeps the map small after attunement changes.
+  // Stringify-then-delete mirrors the key derivation in getActiveSynergyCached
+  // so an object input clears only its own entry (not the whole 2K-entry cache).
   if (!kingdom) return;
-  if (typeof kingdom.fragment_bonuses === "string") {
-    activeSynergyCache.delete(kingdom.fragment_bonuses);
-  } else {
-    activeSynergyCache.clear();
-  }
+  const key =
+    typeof kingdom.fragment_bonuses === "string"
+      ? kingdom.fragment_bonuses
+      : JSON.stringify(kingdom.fragment_bonuses || {});
+  activeSynergyCache.delete(key);
 }
 
 module.exports = {
