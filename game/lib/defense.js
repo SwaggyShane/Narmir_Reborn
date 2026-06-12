@@ -11,9 +11,10 @@ const { safeJsonParse } = require("../../utils/helpers");
 //   - Sigil only:          0.75
 //   - Sigil + blueprints:  0.50
 function getMasonSigilResist(k) {
-  const upg = safeJsonParse(k.library_upgrades, {}, "auto:library_upgrades");
+  if (!k) return 1.0;
+  const upg = safeJsonParse(k.library_upgrades, {}, "auto:library_upgrades") || {};
   if (!upg.mason_sigil) return 1.0;
-  return k.certified_blueprints_stored > 0 ? 0.5 : 0.75;
+  return (k.certified_blueprints_stored || 0) > 0 ? 0.5 : 0.75;
 }
 
 // On a successful attack, war machines either damage walls (if any stand)
@@ -21,14 +22,14 @@ function getMasonSigilResist(k) {
 // changed columns; caller merges into the defender row.
 function applyWarmachineDamage(attacker, defender, win) {
   const updates = {};
-  if (!win) return updates;
+  if (!win || !defender) return updates;
   const walls = defender.bld_walls || 0;
   if (walls > 0) {
     const wallUpgrades = safeJsonParse(
       defender.wall_upgrades,
       {},
       "applyWarmachineDamage:wall_upgrades",
-    );
+    ) || {};
     const warmachineResist = wallUpgrades.fortress_walls
       ? 0.03
       : wallUpgrades.reinforced
