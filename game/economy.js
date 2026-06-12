@@ -47,7 +47,7 @@ function totalHiredUnits(k) {
 }
 
 function goldPerTurn(k) {
-  const taxRate = k.tax || 42;
+  const taxRate = k.tax !== undefined && k.tax !== null ? k.tax : 42;
   let baseRate = Math.floor(
     k.land * (taxRate / 100) * ((k.res_economy || 100) / 100),
   );
@@ -178,7 +178,7 @@ function marketIncomeFull(k) {
     mult *= tierMod;
   }
 
-  const freePop = Math.max(0, k.population - totalHiredUnits(k));
+  const freePop = Math.max(0, (k.population || 0) - totalHiredUnits(k));
   const workedMarkets = Math.min(markets, Math.floor(freePop / 5));
   const tradeRoutes = Math.min(k.maps, markets);
   // High Consul's Silver Tongue: diplomacy bonus boosts trade route income

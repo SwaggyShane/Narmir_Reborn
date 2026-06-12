@@ -46,9 +46,10 @@ function applyWarmachineDamage(attacker, defender, win) {
       "bld_mage_towers",
       "bld_shrines",
     ];
-    const target = DAMAGEABLE[Math.floor(Math.random() * DAMAGEABLE.length)];
-    const current = defender[target] || 0;
-    if (current > 0) {
+    const availableTargets = DAMAGEABLE.filter(type => (defender[type] || 0) > 0);
+    if (availableTargets.length > 0) {
+      const target = availableTargets[Math.floor(Math.random() * availableTargets.length)];
+      const current = defender[target];
       const dmg = Math.max(
         1,
         Math.floor(current * 0.05 * getMasonSigilResist(defender)),
