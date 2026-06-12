@@ -609,6 +609,7 @@ async function start() {
     // ── Routes ────────────────────────────────────────────────────────────────────
     const { ensureCsrfToken, cleanupOrphanedTransactions } = require('./routes/middleware');
     app.use('/api/auth',         authLimiter,  require('./routes/auth')(db));
+    app.use('/api/forum',        ensureCsrfToken, require('./routes/forum')(db));
     app.use('/api/kingdom',      turnLimiter, cacheKingdomId(db), ensureCsrfToken, cleanupOrphanedTransactions(db), require('./routes/kingdom')(db));
     app.use('/api/hero',         turnLimiter, cacheKingdomId(db), ensureCsrfToken,  require('./routes/hero')(db));
     const adminRouter = require('./routes/admin')(db, io);

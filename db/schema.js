@@ -85,6 +85,8 @@ const NUMERIC_FIELDS = [
   // Turns / time
   'turn', 'turns_stored', 'last_turn_at', 'created_at', 'updated_at',
   'food_surplus_turns', 'food_shortage_turns', 'turn_num',
+  // Forum
+  'post_count', 'last_post_at', 'deleted_at',
   // XP / levels
   'xp', 'level', 'prestige_level', 'progress',
   // Units
@@ -896,6 +898,53 @@ async function initDb(options = {}) {
 
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender_id)`);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_messages_recipient ON messages(recipient_id)`);
+
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS forum_boards (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      name        TEXT NOT NULL UNIQUE,
+      description TEXT,
+      order_index INTEGER NOT NULL DEFAULT 0,
+      is_active   INTEGER NOT NULL DEFAULT 1,
+      created_at  INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at  INTEGER NOT NULL DEFAULT (unixepoch())
+    )
+  `);
+
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS forum_topics (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      board_id      INTEGER NOT NULL REFERENCES forum_boards(id),
+      player_id     INTEGER NOT NULL REFERENCES players(id),
+      title         TEXT NOT NULL,
+      content       TEXT NOT NULL,
+      post_count    INTEGER NOT NULL DEFAULT 1,
+      last_post_at  INTEGER NOT NULL DEFAULT (unixepoch()),
+      is_pinned     INTEGER NOT NULL DEFAULT 0,
+      is_locked     INTEGER NOT NULL DEFAULT 0,
+      created_at    INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at    INTEGER NOT NULL DEFAULT (unixepoch())
+    )
+  `);
+
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS forum_posts (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      topic_id      INTEGER NOT NULL REFERENCES forum_topics(id),
+      player_id     INTEGER NOT NULL REFERENCES players(id),
+      content       TEXT NOT NULL,
+      is_deleted    INTEGER NOT NULL DEFAULT 0,
+      deleted_at    INTEGER,
+      created_at    INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at    INTEGER NOT NULL DEFAULT (unixepoch())
+    )
+  `);
+
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_forum_boards_active ON forum_boards(is_active, order_index)`);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_forum_topics_board ON forum_topics(board_id)`);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_forum_topics_player ON forum_topics(player_id)`);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_forum_posts_topic ON forum_posts(topic_id)`);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_forum_posts_player ON forum_posts(player_id)`);
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS bounties (
@@ -1711,6 +1760,29 @@ async function initDb(options = {}) {
     CREATE INDEX IF NOT EXISTS idx_synergy_cooldowns_kingdom ON synergy_cooldowns(kingdom_id);
     CREATE INDEX IF NOT EXISTS idx_synergy_cooldowns_until ON synergy_cooldowns(cooldown_until);
   `);
+
+  // Seed initial forum boards
+  const boardsCols = await getTableColumns('forum_boards');
+  const initialBoards = [
+    { name: 'General', description: 'General discussion about the game', order_index: 0 },
+    { name: 'Strategy', description: 'Tips, tactics, and strategic advice', order_index: 1 },
+    { name: 'Alliance News', description: 'Alliance announcements and updates', order_index: 2 },
+  ];
+  for (const board of initialBoards) {
+    try {
+      const existing = await _db.get(`SELECT id FROM forum_boards WHERE name = ?`, [board.name]);
+      if (!existing) {
+        await _db.run(
+          `INSERT INTO forum_boards (name, description, order_index, is_active, created_at, updated_at)
+           VALUES (?, ?, ?, 1, ?, ?)`,
+          [board.name, board.description, board.order_index, Math.floor(Date.now() / 1000), Math.floor(Date.now() / 1000)]
+        );
+        console.log(`[db] Seeded forum board: ${board.name}`);
+      }
+    } catch (err) {
+      console.error(`[db] Error seeding forum board ${board.name}:`, err.message);
+    }
+  }
 
   return _db;
 }
