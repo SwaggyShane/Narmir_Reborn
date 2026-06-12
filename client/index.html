@@ -2854,8 +2854,7 @@
         if (result.error) return toast(result.error, "error");
 
         var r = result.report;
-        applyServerUpdates(result.updates);
-        state.turns_stored = Math.max(0, (state.turns_stored || 0) - 1);
+        window.applyGameMutation(result, { reason: "attack" });
         syncUI();
         updateTurnsDisplay();
 
@@ -2937,18 +2936,9 @@
         apiCall("POST", "/api/kingdom/search", { type: type, rangers: r }).then(
           async function (result) {
             if (result.error) return toast(result.error, "error");
-            if (result.turns_stored !== undefined) {
-              state.turns_stored = result.turns_stored;
-              updateTurnsDisplay();
-            }
-            applyServerUpdates(result.updates || {});
-            if (result.type === "land" && result.result)
-              state.land = (state.land || 0) + result.result.found;
-            if (result.type === "gold" && result.result)
-              state.gold = (state.gold || 0) + result.result.found;
-            if (result.type === "food" && result.result)
-              state.food = (state.food || 0) + result.result.found;
+            window.applyGameMutation(result, { reason: "search" });
             syncUI();
+            updateTurnsDisplay();
             // Removed appendNewsItems(result.events) so results only appear in expedition log
             toast(result.message, "success");
             // Log instant search result (not in database)
@@ -3029,9 +3019,7 @@
         playGameSound("expedition_depart");
 
         // Apply full turn updates returned from server (processTurn was run + turn consumed)
-        if (result.updates) applyServerUpdates(result.updates);
-        if (result.turns_stored !== undefined)
-          state.turns_stored = result.turns_stored;
+        window.applyGameMutation(result, { reason: "expedition-start" });
         // Expedition launch news goes to exploration log only — append turn events to news feed
         if (result.events && result.events.length)
           appendNewsItems(result.events);
@@ -11166,8 +11154,7 @@
           (r.defEngineersLost || 0);
         var xpGained = (result.updates?.xp || state.xp) - state.xp;
 
-        applyServerUpdates(result.updates);
-        state.turns_stored = Math.max(0, (state.turns_stored || 0) - 1);
+        window.applyGameMutation(result, { reason: "attack" });
         syncUI();
         updateTurnsDisplay();
 
