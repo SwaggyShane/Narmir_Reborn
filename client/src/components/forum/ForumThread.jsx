@@ -10,6 +10,8 @@ export default function ForumThread({ topic, user, onPostCreated }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingPostId, setEditingPostId] = useState(null);
+  const [reportingPostId, setReportingPostId] = useState(null);
+  const [reportSuccess, setReportSuccess] = useState(null);
 
   useEffect(() => {
     loadPosts(1);
@@ -61,6 +63,25 @@ export default function ForumThread({ topic, user, onPostCreated }) {
     }
   };
 
+  const handleReportPost = async (postId) => {
+    try {
+      const res = await fetchApi(`/api/forum/reports`, {
+        method: 'POST',
+        body: JSON.stringify({ postId })
+      });
+      if (res && res.error) {
+        alert(res.error);
+        return;
+      }
+      setReportSuccess('Post reported');
+      setReportingPostId(null);
+      setTimeout(() => setReportSuccess(null), 3000);
+    } catch (err) {
+      console.error('Error reporting post:', err);
+      alert('Failed to report post');
+    }
+  };
+
   const formatTime = (timestamp) => {
     const date = new Date(timestamp * 1000);
     return date.toLocaleString();
@@ -83,28 +104,39 @@ export default function ForumThread({ topic, user, onPostCreated }) {
         </div>
       </div>
 
+      {reportSuccess && (
+        <div className="forum-report-success">{reportSuccess}</div>
+      )}
+
       <div className="forum-posts-list">
         {posts && posts.length > 0 ? (
           posts.map((post, idx) => (
             <div key={post.id} className={`forum-post-item ${post.is_deleted ? 'forum-post-deleted' : ''}`}>
               <div className="forum-post-header">
                 <div>
-                  <div className="forum-post-author">{post.username}</div>
+                  <div className="forum-post-author">{post.username || 'deleted user'}</div>
                   <div className="forum-post-time">
                     {formatTime(post.created_at)}
                     {post.updated_at !== post.created_at && <span className="forum-post-edited"> (edited)</span>}
                   </div>
                 </div>
-                {user && user.id === post.player_id && !post.is_deleted && (
-                  <div className="forum-post-actions">
-                    <button className="forum-post-btn" onClick={() => setEditingPostId(post.id)}>
-                      Edit
+                <div className="forum-post-actions">
+                  {user && user.id === post.player_id && !post.is_deleted && (
+                    <>
+                      <button className="forum-post-btn" onClick={() => setEditingPostId(post.id)}>
+                        Edit
+                      </button>
+                      <button className="forum-post-btn forum-post-delete-btn" onClick={() => handleDeletePost(post.id)}>
+                        Delete
+                      </button>
+                    </>
+                  )}
+                  {user && !post.is_deleted && (
+                    <button className="forum-post-btn" onClick={() => setReportingPostId(post.id)}>
+                      Report
                     </button>
-                    <button className="forum-post-btn forum-post-delete-btn" onClick={() => handleDeletePost(post.id)}>
-                      Delete
-                    </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
               <div className={`forum-post-content ${post.is_deleted ? 'forum-deleted-post' : ''}`}>
                 {post.is_deleted ? '[deleted by author]' : post.content}
@@ -117,6 +149,19 @@ export default function ForumThread({ topic, user, onPostCreated }) {
                   onCreated={handlePostCreated}
                   onCancel={() => setEditingPostId(null)}
                 />
+              )}
+              {reportingPostId === post.id && (
+                <div className="forum-post-report">
+                  <p>Report this post for moderation review?</p>
+                  <div className="forum-post-report-actions">
+                    <button className="portal-enter-btn" onClick={() => handleReportPost(post.id)}>
+                      Confirm Report
+                    </button>
+                    <button className="forum-form-cancel-btn" onClick={() => setReportingPostId(null)}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           ))
