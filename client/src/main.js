@@ -487,53 +487,105 @@ window.updateTurnsDisplay = () => {
   }
 };
 
+let canonicalTurnInProgress = false;
 window.takeTurn = async () => {
+  if (canonicalTurnInProgress) return;
+  if ((window.gameState?.turns_stored || 0) < 1) {
+    const countdown = document.getElementById("regen-countdown")?.textContent || "25:00";
+    window.toast?.(`No turns available. Refills in ${countdown}`, "warning");
+    return;
+  }
+
+  canonicalTurnInProgress = true;
+  const btn = document.querySelector(".turn-btn");
+  if (btn) btn.style.opacity = "0.6";
+  window.playGameSound?.("take_turn");
+
   try {
     const data = await apiCall("POST", "/api/kingdom/turn");
     if (data.error) {
-      if (data.error.includes("No turns available")) {
-        window.toast?.("No turns available — next +7 turns in 25 minutes", "warning");
-      } else {
-        window.toast?.("Turn processing failed — please try again", "error");
-      }
+      window.toast?.(data.error, data.error.includes("No turns available") ? "warning" : "error");
       console.error("[turn] error:", data.error);
-    } else if (data.ok) {
-      console.log("[turn] processed successfully");
-      if (data.updates) {
-        window.applyGameMutation(data, { reason: 'turn' });
-        if (window.syncFromState) window.syncFromState();
-
-        // Refresh display elements safely
-        try {
-          if (window.updateTurnsDisplay) window.updateTurnsDisplay();
-          if (window.updateBuildDisplay) window.updateBuildDisplay();
-          if (window.updateTrainingDisplay) window.updateTrainingDisplay();
-          if (window.updateXpDisplay) window.updateXpDisplay();
-          if (window.updateTroopLevelDisplay) window.updateTroopLevelDisplay();
-          if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay();
-          if (window.refreshResourcesPanel) window.refreshResourcesPanel();
-          if (window.loadActiveExpeditions) window.loadActiveExpeditions();
-          if (window.loadNews) window.loadNews();
-        } catch (e) {
-          console.error("[turn] Error refreshing display elements:", e);
-        }
-      }
-      if (data.events) {
-        for (const ev of data.events) {
-          if (ev.message) {
-            window.toast?.(ev.message, "info");
-            // Play sound for achievements
-            if (ev.message.includes("ACHIEVEMENT UNLOCKED")) {
-              window.playAchievementSound?.();
-            }
-          }
-        }
-      }
-      window.toast?.(`Turn ${data.updates?.turn || '?'} processed`, "success");
+      return;
     }
+    if (!data.ok) return;
+
+    const turnUpdates = { ...(data.updates || {}) };
+    if (data.turns_stored !== undefined && turnUpdates.turns_stored === undefined) {
+      turnUpdates.turns_stored = data.turns_stored;
+    }
+    if (Object.keys(turnUpdates).length) {
+      data.updates = turnUpdates;
+      window.applyGameMutation(data, { reason: "turn" });
+      window.syncFromState?.();
+
+      try {
+        window.updateTurnsDisplay?.();
+        window.updateBuildDisplay?.();
+        window.updateTrainingDisplay?.();
+        window.updateXpDisplay?.();
+        window.updateTroopLevelDisplay?.();
+        window.updateMageAllocationDisplay?.();
+        window.refreshResourcesPanel?.();
+        window.loadNews?.();
+      } catch (e) {
+        console.error("[turn] Error refreshing display elements:", e);
+      }
+    }
+
+    const currentTurn = window.gameState?.turn || data.updates?.turn;
+    const turnEl = document.getElementById("turn-num");
+    if (turnEl && currentTurn !== undefined) turnEl.textContent = currentTurn;
+    const newsTurn = document.getElementById("news-turn-num");
+    if (newsTurn && currentTurn !== undefined) newsTurn.textContent = currentTurn;
+
+    let completedBuildingsMsg = "";
+    const blurbs = [];
+    if (data.events) {
+      window.appendNewsItems?.(data.events);
+      for (const ev of data.events) {
+        const msg = ev.message || "";
+        if (msg.includes("Completed: ")) {
+          const index = msg.indexOf("Completed: ");
+          const endPart = msg.substring(index + "Completed: ".length);
+          const periodIndex = endPart.indexOf(".");
+          completedBuildingsMsg = periodIndex !== -1 ? endPart.substring(0, periodIndex) : endPart;
+        }
+        if (ev.message?.includes("ACHIEVEMENT UNLOCKED")) {
+          window.playAchievementSound?.();
+        }
+      }
+      if (completedBuildingsMsg && window.getCompletionBlurb) {
+        completedBuildingsMsg.split(",").forEach(item => {
+          const blurb = window.getCompletionBlurb(item.trim());
+          if (blurb) blurbs.push(blurb);
+        });
+      }
+    }
+
+    const turnsLeft = window.gameState?.turns_stored ?? data.updates?.turns_stored ?? 0;
+    if (btn) btn.style.opacity = turnsLeft > 0 ? "1" : "0.4";
+    const turnStatus = `Turn ${currentTurn || "?"} - ${turnsLeft} turns left`;
+    const buildStatus = completedBuildingsMsg
+      ? `Completed: ${completedBuildingsMsg}!\n${blurbs.join("\n") || ""}`
+      : "";
+
+    if ((window.gameState?.food || 0) < 1000) {
+      window.toast?.(`Warning: Food levels are dangerously low!\n${buildStatus ? `${buildStatus}\n` : ""}${turnStatus}`, "warning");
+    } else if ((window.gameState?.gold || 0) < 1000) {
+      window.toast?.(`Warning: Gold reserves are almost empty!\n${buildStatus ? `${buildStatus}\n` : ""}${turnStatus}`, "warning");
+    } else {
+      window.toast?.(buildStatus ? `${buildStatus}\n${turnStatus}` : turnStatus, "success");
+    }
+
+    await window.loadActiveExpeditions?.();
+    window.checkSchoolSelection?.();
   } catch (error) {
     console.error("[turn] Error taking turn:", error);
     window.toast?.("Failed to take turn: " + error.message, "error");
+  } finally {
+    canonicalTurnInProgress = false;
+    if (btn && (window.gameState?.turns_stored || 0) > 0) btn.style.opacity = "1";
   }
 };
 

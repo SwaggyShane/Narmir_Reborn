@@ -7609,6 +7609,12 @@
             }
           })(),
         });
+        if (window.gameStateManager) {
+          window.gameStateManager.setState(
+            Object.assign({}, state, { population: state.population || state.pop || 0 }),
+            { reason: "load-kingdom" },
+          );
+        }
         syncUI();
         updateTurnsDisplay();
         document.getElementById("turn-num").textContent = kingdom.turn;
