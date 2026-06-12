@@ -1,4 +1,3 @@
-import { gameStateManager } from '../GameStateManager';
 import { useActivePanel } from './useActivePanel';
 
 async function apiCall(method, endpoint, body = null) {
@@ -22,15 +21,14 @@ async function apiCall(method, endpoint, body = null) {
   return response.json();
 }
 
-// Every action funnels its server response through gameStateManager.applyUpdates
-// with a reason. Mutation listeners (active panel refresh etc.) can filter on reason.
+// Every action funnels its server response through window.applyGameMutation,
+// the single mutation entry point. It handles updates, events, window.gameState
+// mirror, syncUI, and side effects in one place.
 async function runAction(endpoint, body, reason) {
   try {
     const result = await apiCall('POST', endpoint, body);
     if (result.error) return { error: result.error };
-    if (result.updates) {
-      gameStateManager.applyUpdates(result.updates, reason);
-    }
+    window.applyGameMutation(result, { reason });
     return { success: true, panelData: result };
   } catch (err) {
     return { error: err.message };

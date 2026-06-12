@@ -72,6 +72,54 @@ console.log("[react] main.js execution started at", new Date().toISOString());
 export const gameState = {};
 window.gameState = gameState;
 
+// ─── SINGLE MUTATION ENTRY POINT ──────────────────────────────────────────
+//
+// Every server-action result in the app goes through this function.
+// It accepts the raw response shape ({ ok, updates, events, ... }) and
+// handles every cross-cutting concern in one place:
+//
+//   1. Mirror updates to window.gameState (legacy vanilla code)
+//   2. Push updates through gameStateManager.applyUpdates(updates, reason)
+//      — React re-renders, mutation listeners fire
+//   3. Fan out result.events to toast() and playAchievementSound()
+//   4. Run vanilla syncUI() for panels still tied to window.state
+//
+// Usage:
+//   window.applyGameMutation(result, { reason: 'turn' });
+//   window.applyGameMutation({ updates: { gold: 500 } }, { reason: 'admin' });
+//
+// Anything new — a new action, a websocket push, an admin override —
+// just calls this. No more "did I remember to toast?" or "did I update
+// window.gameState too?". One function. Audited. Tested.
+window.applyGameMutation = function(result, opts = {}) {
+  if (!result || typeof result !== 'object') return result;
+  const reason = opts.reason || 'update';
+
+  // 1 + 2: state
+  if (result.updates && typeof result.updates === 'object') {
+    Object.assign(window.gameState, result.updates);
+    gameStateManager.applyUpdates(result.updates, reason);
+  }
+
+  // 3: events → side effects
+  if (Array.isArray(result.events)) {
+    for (const ev of result.events) {
+      if (!ev || !ev.message) continue;
+      try { window.toast?.(ev.message, ev.type || 'info'); } catch {}
+      if (ev.message.includes('ACHIEVEMENT UNLOCKED')) {
+        try { window.playAchievementSound?.(); } catch {}
+      }
+    }
+  }
+
+  // 4: legacy syncUI for non-React panels
+  if (result.updates) {
+    try { window.syncUI?.(); } catch (e) { console.error('[applyGameMutation] syncUI error:', e); }
+  }
+
+  return result;
+};
+
 // Initialize game state manager with current state.
 // window.gameState is seeded from the vanilla state object via setGameStateObj.
 export function initGameStateManager() {
@@ -80,30 +128,16 @@ export function initGameStateManager() {
   }
 }
 
-// WRAP vanilla JS applyServerUpdates so EVERY server action result funnels
-// through gameStateManager.applyUpdates. Guard against HMR re-wrapping.
+// Legacy vanilla applyServerUpdates(updates) now adapts to applyGameMutation.
+// Guard against HMR re-wrapping.
 if (!window._applyServerUpdatesWrapped) {
   const originalApplyServerUpdates = window.applyServerUpdates;
   window.applyServerUpdates = function(updates) {
     if (!updates) return;
-
-    // Single mutation entry point — React store re-renders and mutation
-    // listeners (active panel refresh) fire automatically.
-    gameStateManager.applyUpdates(updates, 'server_update');
-
-    // Call the original vanilla JS function to update window.state and any
-    // remaining non-React DOM elements (build/economy/training panels etc.).
-    if (originalApplyServerUpdates) {
-      originalApplyServerUpdates(updates);
-    }
-
-    try {
-      if (typeof window.syncUI === "function") {
-        window.syncUI();
-      }
-    } catch (error) {
-      console.error("[UI] Error during syncUI execution:", error);
-    }
+    // Run the original vanilla function first (it updates window.state and
+    // non-React DOM elements), then funnel through applyGameMutation.
+    if (originalApplyServerUpdates) originalApplyServerUpdates(updates);
+    window.applyGameMutation({ updates }, { reason: 'server_update' });
   };
   window._applyServerUpdatesWrapped = true;
 }
@@ -126,13 +160,12 @@ if (!window._reactHooksWired) {
   });
   window._reactHooksWired = true;
 }
+// Snapshot-push escape hatch: vanilla code that mutated window.gameState
+// directly (no server response) calls this to broadcast the snapshot.
 window.triggerReactUpdates = () => {
-  // Vanilla code path that mutated window.gameState directly — push the
-  // full snapshot through the single mutation entry point.
   if (window.gameState && Object.keys(window.gameState).length > 0) {
-    gameStateManager.applyUpdates({ ...window.gameState }, 'react_sync');
+    window.applyGameMutation({ updates: { ...window.gameState } }, { reason: 'react_sync' });
   } else {
-    // No state to push but legacy callbacks still need to fire
     gameStateManager.emitMutation('react_sync', {});
   }
 };
@@ -462,40 +495,25 @@ window.takeTurn = async () => {
       console.error("[turn] error:", data.error);
     } else if (data.ok) {
       console.log("[turn] processed successfully");
-      if (data.updates) {
-        Object.assign(window.gameState, data.updates);
-        // Single mutation entry point: tag with reason so mutation listeners
-        // can distinguish a turn-tick from other server updates.
-        gameStateManager.applyUpdates(data.updates, 'turn_taken');
-        if (window.syncFromState) window.syncFromState();
-        if (window.triggerReactUpdates) window.triggerReactUpdates();
 
-        // Refresh display elements safely
-        try {
-          if (window.updateTurnsDisplay) window.updateTurnsDisplay();
-          if (window.updateBuildDisplay) window.updateBuildDisplay();
-          if (window.updateTrainingDisplay) window.updateTrainingDisplay();
-          if (window.updateXpDisplay) window.updateXpDisplay();
-          if (window.updateTroopLevelDisplay) window.updateTroopLevelDisplay();
-          if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay();
-          if (window.refreshResourcesPanel) window.refreshResourcesPanel();
-          if (window.loadActiveExpeditions) window.loadActiveExpeditions();
-          if (window.loadNews) window.loadNews();
-        } catch (e) {
-          console.error("[turn] Error refreshing display elements:", e);
-        }
+      // Single mutation entry point — handles updates, events, syncUI, window.gameState mirror
+      window.applyGameMutation(data, { reason: 'turn_taken' });
+
+      // Vanilla panel refreshers that still own their own DOM
+      try {
+        window.syncFromState?.();
+        window.updateBuildDisplay?.();
+        window.updateTrainingDisplay?.();
+        window.updateXpDisplay?.();
+        window.updateTroopLevelDisplay?.();
+        window.updateMageAllocationDisplay?.();
+        window.refreshResourcesPanel?.();
+        window.loadActiveExpeditions?.();
+        window.loadNews?.();
+      } catch (e) {
+        console.error("[turn] Error refreshing legacy panels:", e);
       }
-      if (data.events) {
-        for (const ev of data.events) {
-          if (ev.message) {
-            window.toast?.(ev.message, "info");
-            // Play sound for achievements
-            if (ev.message.includes("ACHIEVEMENT UNLOCKED")) {
-              window.playAchievementSound?.();
-            }
-          }
-        }
-      }
+
       window.toast?.(`Turn ${data.updates?.turn || '?'} processed`, "success");
     }
   } catch (error) {
