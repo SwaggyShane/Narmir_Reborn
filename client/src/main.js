@@ -496,15 +496,10 @@ window.renderLibraryPanel = async () => {
   }
 };
 
-window.updateTurnsDisplay = () => {
-  const turnsStored = window.gameState?.turns_stored;
-  if (turnsStored !== undefined) {
-    const el = document.getElementById("turns-stored-disp");
-    if (el) {
-      el.textContent = String(turnsStored);
-    }
-  }
-};
+// Topbar.jsx owns the turns display and the dim-when-empty turn-btn state.
+// Legacy callers that used to invoke window.updateTurnsDisplay() get a no-op
+// for back-compat while the call sites are removed.
+window.updateTurnsDisplay = () => {};
 
 window.takeTurn = async () => {
   try {

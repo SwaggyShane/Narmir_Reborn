@@ -9,6 +9,8 @@ const Topbar = () => {
     if (window.takeTurn) window.takeTurn();
   };
 
+  const outOfTurns = turnsStored <= 0;
+
   return (
     <header className="topbar">
       <div className="logo-container">
@@ -37,7 +39,12 @@ const Topbar = () => {
               +7 in <span id="regen-countdown">25:00</span>
             </div>
           </div>
-          <button className="turn-btn" style={{ padding: '6px 14px', fontSize: '12px' }} onClick={takeTurn}>
+          <button
+            className="turn-btn"
+            style={{ padding: '6px 14px', fontSize: '12px', opacity: outOfTurns ? 0.4 : 1 }}
+            disabled={outOfTurns}
+            onClick={takeTurn}
+          >
             Take Turn
           </button>
         </div>

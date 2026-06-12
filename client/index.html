@@ -5349,8 +5349,6 @@
         if (hsg) hsg.textContent = fmt(state.gold || 0);
         var hsp = document.getElementById("hire-strip-pop");
         if (hsp) hsp.textContent = fmt(state.population || state.pop || 0);
-        var farmsEl = document.getElementById("m-farms");
-        if (farmsEl) farmsEl.textContent = fmt(state.bld_farms || 0);
         // Food-balance is React-owned (server sends k.food_balance via applyUpdates).
         var hpEl = document.getElementById("hire-pop");
         if (hpEl) hpEl.textContent = fmt(state.population || state.pop || 0);
@@ -5975,12 +5973,8 @@
         if (el) el.textContent = m + ":" + (s < 10 ? "0" : "") + s;
       }, 1000);
 
-      function updateTurnsDisplay() {
-        var el = document.getElementById("turns-stored-disp");
-        if (el) el.textContent = state.turns_stored || 0;
-        var btn = document.querySelector(".turn-btn");
-        if (btn) btn.style.opacity = state.turns_stored > 0 ? "1" : "0.4";
-      }
+      // Topbar.jsx owns turns display + turn-btn opacity. Legacy shim:
+      function updateTurnsDisplay() { /* no-op — React owns this */ }
     </script>
 
     <script>
