@@ -4,6 +4,15 @@
 
 const config = require("./config");
 const { progressGoal } = require('./goals');
+
+// Dev-only log: kept out of production stdout to stop per-turn noise from
+// drowning real errors. Use console.error/warn directly for problems you
+// always want to see; use this for traces useful only during debugging.
+const _IS_PROD = process.env.NODE_ENV === 'production';
+function devLog(...args) {
+  if (!_IS_PROD) console.log(...args);
+}
+
 const fragmentBonusManager = require("./fragment-bonus-manager");
 const attunementManager = require("./attunement-manager");
 const effectsProcessor = require("./synergy-effects-processor");
@@ -4627,9 +4636,9 @@ function queueBuildings(k, orders) {
   const freeLand = Math.max(0, k.land - usedLand);
 
   if (totalLand > 0) {
-    console.log(`[queueBuildings] Land calculation for ${k.name}: total=${k.land}, used=${usedLand}, free=${freeLand}, requesting=${totalLand}`);
+    devLog(`[queueBuildings] Land calculation for ${k.name}: total=${k.land}, used=${usedLand}, free=${freeLand}, requesting=${totalLand}`);
     if (Object.keys(landBreakdown).length > 0) {
-      console.log('[queueBuildings] Breakdown:', JSON.stringify(landBreakdown, null, 2));
+      devLog('[queueBuildings] Breakdown:', JSON.stringify(landBreakdown, null, 2));
     }
   }
 
@@ -10181,7 +10190,7 @@ async function resolveExpeditions(db, k, engine) {
     "SELECT * FROM expeditions WHERE kingdom_id = ? AND (turns_left > 0 OR (turns_left = 0 AND rewards_claimed = 0))",
     [k.id],
   );
-  console.log(
+  devLog(
     `[expedition] kingdom=${k.id} active/unclaimed: ${exps.map((e) => `${e.type}(${e.turns_left}t, claimed=${e.rewards_claimed})`).join(", ") || "none"}`,
   );
 
@@ -10202,7 +10211,7 @@ async function resolveExpeditions(db, k, engine) {
       const direWolfBonus = racialUnitBonus(freshK, "rangers");
       const tickDown = direWolfBonus.earlyReturn ? 2 : 1;
       const newTurns = Math.max(0, exp.turns_left - tickDown);
-      console.log(
+      devLog(
         `[expedition] kingdom=${k.id} id=${exp.id} type=${exp.type} turns_left=${exp.turns_left} → ${newTurns}`,
       );
 
@@ -10212,12 +10221,12 @@ async function resolveExpeditions(db, k, engine) {
       } else {
         completions.push(exp.id);
         expsByState[exp.id] = { ...exp, turns_left: 0, mustProcess: true };
-        console.log(`[expedition] COMPLETING kingdom=${k.id} id=${exp.id} type=${exp.type}`);
+        devLog(`[expedition] COMPLETING kingdom=${k.id} id=${exp.id} type=${exp.type}`);
       }
     } else {
       retries.push(exp.id);
       expsByState[exp.id] = { ...exp, mustProcess: true };
-      console.log(`[expedition] RETRYING completion for kingdom=${k.id} id=${exp.id} type=${exp.type}`);
+      devLog(`[expedition] RETRYING completion for kingdom=${k.id} id=${exp.id} type=${exp.type}`);
     }
   }
 
@@ -10231,7 +10240,7 @@ async function resolveExpeditions(db, k, engine) {
       .join(" ");
     const updateSql = `UPDATE expeditions SET turns_left = CASE id ${caseWhen} END WHERE id = ANY($1)`;
     const result = await db.run(updateSql, [ids]);
-    console.log(`[expedition] Batched ${result.changes} turn decrements in single UPDATE`);
+    devLog(`[expedition] Batched ${result.changes} turn decrements in single UPDATE`);
   }
 
   // Batch update: all completions in one statement
@@ -10241,7 +10250,7 @@ async function resolveExpeditions(db, k, engine) {
       `UPDATE expeditions SET turns_left = 0, rewards_claimed = 1 WHERE id IN (${placeholders}) AND rewards_claimed = 0`,
       completions,
     );
-    console.log(`[expedition] Batched completion claim: ${markResult.changes} expeditions marked complete`);
+    devLog(`[expedition] Batched completion claim: ${markResult.changes} expeditions marked complete`);
   }
 
   // Batch update: all retry claims in one statement
@@ -10251,7 +10260,7 @@ async function resolveExpeditions(db, k, engine) {
       `UPDATE expeditions SET rewards_claimed = 1 WHERE id IN (${placeholders}) AND rewards_claimed = 0`,
       retries,
     );
-    console.log(`[expedition] Batched retry claim: ${claimResult.changes} expeditions claimed`);
+    devLog(`[expedition] Batched retry claim: ${claimResult.changes} expeditions claimed`);
   }
 
   // ── Process reward claims for expeditions that completed ─────────────────────────
