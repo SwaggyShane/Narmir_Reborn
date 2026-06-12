@@ -3,11 +3,12 @@ import ForumBoards from './ForumBoards';
 import ForumTopicsList from './ForumTopicsList';
 import ForumThread from './ForumThread';
 import ForumTopicForm from './ForumTopicForm';
+import ModeratorManagementPanel from '../react/ModeratorManagementPanel';
 import { fetchApi } from '../../utils/api';
 
 export default function ForumSection({ user: propUser }) {
   const [user, setUser] = useState(propUser || null);
-  const [view, setView] = useState('boards'); // 'boards' | 'topics' | 'thread'
+  const [view, setView] = useState('boards'); // 'boards' | 'topics' | 'thread' | 'moderation'
   const [boards, setBoards] = useState([]);
   const [selectedBoard, setSelectedBoard] = useState(null);
   const [selectedTopic, setSelectedTopic] = useState(null);
@@ -64,6 +65,8 @@ export default function ForumSection({ user: propUser }) {
     } else if (view === 'thread') {
       setView('topics');
       setSelectedTopic(null);
+    } else if (view === 'moderation') {
+      setView('boards');
     }
   };
 
@@ -107,11 +110,18 @@ export default function ForumSection({ user: propUser }) {
     <div className="portal-card forum-section">
       <div className="forum-header">
         <h2 className="portal-section-title">Forums</h2>
-        {view !== 'boards' && (
-          <button className="forum-back-btn" onClick={handleBack}>
-            ← Back
-          </button>
-        )}
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          {user?.isAdmin && view !== 'moderation' && (
+            <button className="forum-back-btn" onClick={() => setView('moderation')}>
+              ⚙️ Moderation
+            </button>
+          )}
+          {view !== 'boards' && (
+            <button className="forum-back-btn" onClick={handleBack}>
+              ← Back
+            </button>
+          )}
+        </div>
       </div>
 
       {view === 'boards' && <ForumBoards boards={boards} onSelectBoard={handleSelectBoard} />}
@@ -136,6 +146,10 @@ export default function ForumSection({ user: propUser }) {
           user={user}
           onPostCreated={handlePostCreated}
         />
+      )}
+
+      {view === 'moderation' && user?.isAdmin && (
+        <ModeratorManagementPanel />
       )}
     </div>
   );
