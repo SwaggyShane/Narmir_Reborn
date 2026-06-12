@@ -1993,58 +1993,8 @@
             </div>
           </div>
 
-          <!-- Metrics strip -->
-          <div class="metrics">
-            <div class="metric" id="metric-gold">
-              <div class="lbl">Gold</div>
-              <div class="val" id="m-gold">10k</div>
-              <div class="sub" id="m-gold-sub">+0/turn</div>
-            </div>
-            <div class="metric" id="metric-mana">
-              <div class="lbl">Mana</div>
-              <div class="val" id="m-mana">5k</div>
-              <div class="sub" id="m-mana-sub">+40/turn</div>
-            </div>
-            <div class="metric" id="metric-land">
-              <div class="lbl">Land</div>
-              <div class="val" id="m-land">0</div>
-              <div class="sub"><span id="m-land-free">0</span> free</div>
-            </div>
-            <div class="metric" id="metric-pop">
-              <div class="lbl">Population</div>
-              <div class="val" id="m-pop">50k</div>
-              <div class="sub">cap: <span id="m-pop-cap">50k</span></div>
-            </div>
-            <div class="metric" id="metric-thralls" style="display: none">
-              <div class="lbl">Thralls</div>
-              <div class="val" id="m-thralls">0</div>
-              <div class="sub">cap: <span id="m-thralls-cap">0</span></div>
-            </div>
-            <div class="metric" id="metric-happiness">
-              <div class="lbl">Happiness</div>
-              <div style="position: relative; width: 100%; height: 18px; margin: 6px 0; background: var(--bg2); border-radius: 4px; overflow: hidden;" title="Population happiness">
-                <div id="m-happiness-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #ef4444, #fbbf24); transition: width 0.3s ease; border-radius: 4px;"></div>
-              </div>
-              <div class="sub" style="font-size: 11px; color: var(--text2); display: flex; justify-content: space-between; width: 100%;">
-                <span id="m-happiness-breakdown">😐 Content</span>
-              </div>
-            </div>
-            <div class="metric" id="metric-food">
-              <div class="lbl">Food</div>
-              <div class="val" id="m-food">0</div>
-              <div class="sub">
-                <span id="m-food-balance" style="font-weight: 600">+0</span
-                >/turn
-              </div>
-            </div>
-            <div class="metric" id="metric-defense">
-              <div class="lbl">Defense</div>
-              <div class="val" id="m-defense-rating" style="font-size: 11px">
-                —
-              </div>
-              <div class="sub"><span id="m-walls">0</span> walls</div>
-            </div>
-          </div>
+          <!-- Metrics strip (React-owned) -->
+          <div id="vue-metrics-strip-mount"></div>
         </div>
         <!-- end kd-top -->
 

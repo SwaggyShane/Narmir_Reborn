@@ -30,6 +30,7 @@ import HirePanelReact from "./components/react/HirePanel.jsx";
 import ResourcesPanelReact from "./components/react/ResourcesPanel.jsx";
 import GlobalchatPanelReact from "./components/react/GlobalchatPanel.jsx";
 import SchoolSelectionPanelReact from "./components/react/SchoolSelectionPanel.jsx";
+import MetricsStripReact from "./components/react/MetricsStrip.jsx";
 
 // API call helper for making authenticated requests from vanilla JS
 async function apiCall(method, endpoint, body = null) {
@@ -73,48 +74,29 @@ window.gameState = gameState;
 
 // Initialize game state manager with current state
 export function initGameStateManager() {
-  if (window.state) {
-    gameStateManager.updateMetrics({
-      gold: window.state.gold || 0,
-      mana: window.state.mana || 0,
-      population: window.state.population || 0,
-      happiness: window.state.happiness || 50,
-      food: window.state.food || 0,
-      land: window.state.land || 0,
-      turn: window.state.turn || 0,
-      tax: window.state.tax || 42,
-    });
+  // window.gameState is seeded from the vanilla state object via setGameStateObj
+  if (window.gameState && Object.keys(window.gameState).length > 0) {
+    gameStateManager.updateMetrics({ ...window.gameState });
   }
 }
 
-// WRAP vanilla JS applyServerUpdates to sync metrics to gameStateManager
+// WRAP vanilla JS applyServerUpdates to sync ALL state to gameStateManager
 // Guard against HMR re-wrapping to prevent infinite recursion
 if (!window._applyServerUpdatesWrapped) {
   const originalApplyServerUpdates = window.applyServerUpdates;
   window.applyServerUpdates = function(updates) {
     if (!updates) return;
 
-    // Update gameStateManager first (source of truth)
-    // Dynamically sync all metrics fields
-    const knownMetrics = ['gold', 'mana', 'population', 'happiness', 'food', 'land', 'turn', 'tax', 'mana_regen', 'gold_income', 'food_balance'];
-    const metricsUpdate = {};
+    // Sync ALL update fields to gameStateManager — it's the single source of truth
+    // GameStateManager.updateMetrics does a shallow merge so non-metric fields are ignored gracefully
+    gameStateManager.updateMetrics(updates);
 
-    for (const metric of knownMetrics) {
-      if (updates[metric] !== undefined) {
-        metricsUpdate[metric] = updates[metric];
-      }
-    }
-
-    if (Object.keys(metricsUpdate).length > 0) {
-      gameStateManager.updateMetrics(metricsUpdate);
-    }
-
-    // Call the original vanilla JS function to update window.state and DOM
+    // Call the original vanilla JS function to update window.state and DOM (non-React elements)
     if (originalApplyServerUpdates) {
       originalApplyServerUpdates(updates);
     }
 
-    // Force UI refresh for vanilla JS metrics display
+    // Force UI refresh for vanilla JS non-React elements
     try {
       if (typeof window.syncUI === "function") {
         window.syncUI();
@@ -134,6 +116,10 @@ window.registerPanelReactHook = (panelId, callback) => {
   };
 };
 window.triggerReactUpdates = () => {
+  // Push full current state to GameStateManager so React components auto-refresh
+  if (window.gameState && Object.keys(window.gameState).length > 0) {
+    gameStateManager.updateMetrics({ ...window.gameState });
+  }
   reactHooks.forEach(cb => {
     try { cb(); } catch (e) { console.error("[react] Hook update error:", e); }
   });
@@ -190,6 +176,7 @@ export const mountReactApps = () => {
   tryMount("vue-panel-resources", ResourcesPanelReact);
   tryMount("vue-panel-globalchat", GlobalchatPanelReact);
   tryMount("vue-panel-school-selection", SchoolSelectionPanelReact);
+  tryMount("vue-metrics-strip-mount", MetricsStripReact);
 
   console.log("[react] All apps mounted");
 
@@ -465,6 +452,8 @@ window.takeTurn = async () => {
       console.log("[turn] processed successfully");
       if (data.updates) {
         Object.assign(window.gameState, data.updates);
+        // Push all updates to GameStateManager so React components auto-refresh
+        gameStateManager.updateMetrics(data.updates);
         if (window.syncFromState) window.syncFromState();
         if (window.triggerReactUpdates) window.triggerReactUpdates();
 

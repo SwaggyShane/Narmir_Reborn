@@ -1,6 +1,10 @@
 import React from 'react';
+import { useGameMetrics } from '../../hooks/useGameState';
 
 const Topbar = () => {
+  const { metrics } = useGameMetrics();
+  const turnsStored = metrics.turns_stored ?? 400;
+
   const takeTurn = () => {
     if (window.takeTurn) window.takeTurn();
   };
@@ -22,8 +26,8 @@ const Topbar = () => {
               <span style={{ fontSize: '11px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }} className="hide-xs">
                 Turns:
               </span>
-              <span id="turns-stored-disp" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--gold)' }}>
-                400
+              <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--gold)' }}>
+                {turnsStored}
               </span>
               <span style={{ fontSize: '11px', color: 'var(--text3)' }} className="hide-xs">
                 / 400
