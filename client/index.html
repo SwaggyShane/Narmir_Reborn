@@ -4300,7 +4300,7 @@
         );
         loadMarket();
         if (res.updates) {
-          applyServerUpdates(res.updates);
+          window.applyGameMutation(res, { reason: "market-" + op });
           syncUI();
         }
       }
@@ -5034,7 +5034,7 @@
         });
         if (result.error) return toast(result.error, "error");
         playGameSound("hire_units");
-        applyServerUpdates(result.updates);
+        window.applyGameMutation(result, { reason: "hire" });
         syncUI();
         document.getElementById("hire-" + unit).value = 0;
         var hEl = document.getElementById("h-" + unit);
@@ -5053,7 +5053,7 @@
           amount: n,
         });
         if (result.error) return toast(result.error, "error");
-        applyServerUpdates(result.updates);
+        window.applyGameMutation(result, { reason: "fire" });
         syncUI();
         document.getElementById("hire-" + unit).value = 0;
         var hEl = document.getElementById("h-" + unit);
@@ -10680,9 +10680,7 @@
           quantity: 1,
         });
         if (result.error) return toast(result.error, "error");
-        if (result.updates) applyServerUpdates(result.updates);
-        if (result.turns_stored !== undefined)
-          state.turns_stored = result.turns_stored;
+        window.applyGameMutation(result, { reason: "forge-tools" });
         if (result.events && result.events.length)
           appendNewsItems(result.events);
         syncUI();
@@ -11425,7 +11423,7 @@
         });
         if (result.error) return toast(result.error, "error");
         playGameSound("spell_cast");
-        applyServerUpdates(result.updates || {});
+        window.applyGameMutation(result, { reason: "warfare-spell" });
         syncUI();
         toast(
           (wSelectedSpell.label || wSelectedSpell.name || wSelectedSpell.id) +
@@ -11526,7 +11524,8 @@
             { targetId: wSelectedCovertTarget.id },
           );
           if (result.error) return toast(result.error, "error");
-          if (result.updates) applyServerUpdates(result.updates);
+          if (result.updates)
+            window.applyGameMutation(result, { reason: "steal-map" });
           toast(
             result.message || "Operation complete",
             result.success ? "success" : "error",
@@ -11560,7 +11559,7 @@
 
         result = await apiCall("POST", "/api/kingdom/covert", payload);
         if (result.error) return toast(result.error, "error");
-        applyServerUpdates(result.updates || {});
+        window.applyGameMutation(result, { reason: "covert-" + type });
         syncUI();
 
         if (type === "spy") {
@@ -13077,7 +13076,8 @@
         });
         if (result.error) return toast(result.error, "error");
         playGameSound("upgrade_purchased");
-        if (result.updates) applyServerUpdates(result.updates);
+        if (result.updates)
+          window.applyGameMutation(result, { reason: "economy-upgrade" });
         syncUI();
         toast(
           "Upgrade purchased! Refresh the panel to see the next upgrade.",
@@ -13203,7 +13203,7 @@
           count,
         });
         if (result.error) return toast(result.error, "error");
-        applyServerUpdates(result.updates);
+        window.applyGameMutation(result, { reason: "hire-mercs" });
         syncUI();
         toast(
           "Hired " +
@@ -13379,7 +13379,7 @@
           { offerId },
         );
         if (result.error) return toast(result.error, "error");
-        applyServerUpdates(result.kUpdates);
+        window.applyGameMutation(result, { reason: "accept-trade" });
         syncUI();
         toast("Trade accepted!", "success");
         loadTradeOffers();
