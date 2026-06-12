@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { requireAuth } = require("./middleware");
+const { requireAuth, requireAdmin } = require("./middleware");
 
 module.exports = function (db) {
   // ──────────── PUBLIC ENDPOINTS (No auth required) ────────────
@@ -408,6 +408,368 @@ module.exports = function (db) {
       console.error("[forum] DELETE /topics/:topicId error:", err.message);
       res.status(500).json({ error: "Failed to delete topic" });
     }
+  });
+
+  // ──────────── MODERATION ENDPOINTS ────────────────────────────────────────
+
+  // Helper: Check if user is moderator for board
+  const isBoardModerator = async (playerId, boardId) => {
+    const result = await db.get(
+      `SELECT id FROM forum_moderators WHERE player_id = ? AND board_id = ?`,
+      [playerId, boardId]
+    );
+    return !!result;
+  };
+
+  // POST /api/forum/admin/moderators - Assign moderator (admin only)
+  router.post("/admin/moderators", requireAdmin, async (req, res) => {
+    try {
+      const { playerId, boardId } = req.body;
+      const adminId = req.player.playerId;
+
+      if (!playerId || !boardId) {
+        return res.status(400).json({ error: "playerId and boardId are required" });
+      }
+
+      // Verify board exists
+      const board = await db.get(`SELECT id FROM forum_boards WHERE id = ?`, [boardId]);
+      if (!board) {
+        return res.status(404).json({ error: "Board not found" });
+      }
+
+      // Verify player exists
+      const player = await db.get(`SELECT id FROM players WHERE id = ?`, [playerId]);
+      if (!player) {
+        return res.status(404).json({ error: "Player not found" });
+      }
+
+      // Assign moderator
+      await db.run(
+        `INSERT INTO forum_moderators (player_id, board_id, assigned_by, created_at)
+         VALUES (?, ?, ?, ?)`,
+        [playerId, boardId, adminId, Math.floor(Date.now() / 1000)]
+      );
+
+      // Log action
+      await db.run(
+        `INSERT INTO forum_moderation_log (moderator_id, action, target_type, target_id, created_at)
+         VALUES (?, 'assign_moderator', 'player', ?, ?)`,
+        [adminId, playerId, Math.floor(Date.now() / 1000)]
+      );
+
+      res.status(201).json({ success: true, message: "Moderator assigned" });
+    } catch (err) {
+      if (err.message && err.message.includes("duplicate")) {
+        return res.status(400).json({ error: "User is already a moderator for this board" });
+      }
+      console.error("[forum] POST /admin/moderators error:", err.message);
+      res.status(500).json({ error: "Failed to assign moderator" });
+    }
+  });
+
+  // DELETE /api/forum/admin/moderators/:modId - Remove moderator (admin only)
+  router.delete("/admin/moderators/:modId", requireAdmin, async (req, res) => {
+    try {
+      const { modId } = req.params;
+      const adminId = req.player.playerId;
+
+      const mod = await db.get(`SELECT player_id FROM forum_moderators WHERE id = ?`, [modId]);
+      if (!mod) {
+        return res.status(404).json({ error: "Moderator assignment not found" });
+      }
+
+      await db.run(`DELETE FROM forum_moderators WHERE id = ?`, [modId]);
+
+      // Log action
+      await db.run(
+        `INSERT INTO forum_moderation_log (moderator_id, action, target_type, target_id, created_at)
+         VALUES (?, 'remove_moderator', 'player', ?, ?)`,
+        [adminId, mod.player_id, Math.floor(Date.now() / 1000)]
+      );
+
+      res.json({ success: true, message: "Moderator removed" });
+    } catch (err) {
+      console.error("[forum] DELETE /admin/moderators/:modId error:", err.message);
+      res.status(500).json({ error: "Failed to remove moderator" });
+    }
+  });
+
+  // POST /api/forum/moderation/ban-user - Ban user from forum (mod only)
+  router.post("/moderation/ban-user", requireAuth, async (req, res) => {
+    try {
+      const { playerId, boardId, expiresIn, reason } = req.body;
+      const modId = req.player.playerId;
+
+      if (!playerId) {
+        return res.status(400).json({ error: "playerId is required" });
+      }
+
+      // Verify moderator status
+      if (boardId) {
+        const isMod = await isBoardModerator(modId, boardId);
+        if (!isMod && !req.player.isAdmin) {
+          return res.status(403).json({ error: "Not a moderator for this board" });
+        }
+      } else if (!req.player.isAdmin) {
+        return res.status(403).json({ error: "Only admins can ban from entire forum" });
+      }
+
+      const now = Math.floor(Date.now() / 1000);
+      const expiresAt = expiresIn ? now + expiresIn : null;
+      const banType = boardId ? "board_silence" : "forum_ban";
+
+      await db.run(
+        `INSERT INTO forum_bans (player_id, board_id, ban_type, reason, expires_at, banned_by, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [playerId, boardId || null, banType, reason || null, expiresAt, modId, now]
+      );
+
+      // Log action
+      await db.run(
+        `INSERT INTO forum_moderation_log (moderator_id, action, target_type, target_id, reason, created_at)
+         VALUES (?, ?, 'player', ?, ?, ?)`,
+        [modId, banType === "forum_ban" ? "ban_user" : "silence_user", playerId, reason || null, now]
+      );
+
+      res.status(201).json({ success: true, message: "User banned" });
+    } catch (err) {
+      console.error("[forum] POST /moderation/ban-user error:", err.message);
+      res.status(500).json({ error: "Failed to ban user" });
+    }
+  });
+
+  // DELETE /api/forum/moderation/bans/:banId - Unban user (mod only)
+  router.delete("/moderation/bans/:banId", requireAuth, async (req, res) => {
+    try {
+      const { banId } = req.params;
+      const modId = req.player.playerId;
+
+      const ban = await db.get(`SELECT board_id FROM forum_bans WHERE id = ?`, [banId]);
+      if (!ban) {
+        return res.status(404).json({ error: "Ban not found" });
+      }
+
+      // Verify moderator or admin
+      if (ban.board_id && !req.player.isAdmin) {
+        const isMod = await isBoardModerator(modId, ban.board_id);
+        if (!isMod) {
+          return res.status(403).json({ error: "Not a moderator for this board" });
+        }
+      } else if (!ban.board_id && !req.player.isAdmin) {
+        return res.status(403).json({ error: "Only admins can unban from forum" });
+      }
+
+      await db.run(`DELETE FROM forum_bans WHERE id = ?`, [banId]);
+
+      // Log action
+      await db.run(
+        `INSERT INTO forum_moderation_log (moderator_id, action, target_type, target_id, created_at)
+         VALUES (?, 'unban_user', 'player', ?, ?)`,
+        [modId, ban.player_id, Math.floor(Date.now() / 1000)]
+      );
+
+      res.json({ success: true, message: "Ban removed" });
+    } catch (err) {
+      console.error("[forum] DELETE /moderation/bans/:banId error:", err.message);
+      res.status(500).json({ error: "Failed to remove ban" });
+    }
+  });
+
+  // POST /api/forum/moderation/hide-post - Hide post from view (mod only)
+  router.post("/moderation/hide-post", requireAuth, async (req, res) => {
+    try {
+      const { postId, reason } = req.body;
+      const modId = req.player.playerId;
+
+      if (!postId) {
+        return res.status(400).json({ error: "postId is required" });
+      }
+
+      const post = await db.get(
+        `SELECT fp.id, ft.board_id FROM forum_posts fp
+         INNER JOIN forum_topics ft ON fp.topic_id = ft.id
+         WHERE fp.id = ?`,
+        [postId]
+      );
+      if (!post) {
+        return res.status(404).json({ error: "Post not found" });
+      }
+
+      // Verify moderator for board
+      const isMod = await isBoardModerator(modId, post.board_id);
+      if (!isMod && !req.player.isAdmin) {
+        return res.status(403).json({ error: "Not a moderator for this board" });
+      }
+
+      const now = Math.floor(Date.now() / 1000);
+
+      // Soft delete (similar to user delete)
+      await db.run(
+        `UPDATE forum_posts SET is_deleted = 1, deleted_at = ? WHERE id = ?`,
+        [now, postId]
+      );
+
+      // Log action
+      await db.run(
+        `INSERT INTO forum_moderation_log (moderator_id, action, target_type, target_id, reason, created_at)
+         VALUES (?, 'hide_post', 'post', ?, ?, ?)`,
+        [modId, postId, reason || null, now]
+      );
+
+      res.json({ success: true, message: "Post hidden" });
+    } catch (err) {
+      console.error("[forum] POST /moderation/hide-post error:", err.message);
+      res.status(500).json({ error: "Failed to hide post" });
+    }
+  });
+
+  // POST /api/forum/reports - Report a post (authenticated users)
+  router.post("/reports", requireAuth, async (req, res) => {
+    try {
+      const { postId } = req.body;
+      const reporterId = req.player.playerId;
+
+      if (!postId) {
+        return res.status(400).json({ error: "postId is required" });
+      }
+
+      const post = await db.get(`SELECT id FROM forum_posts WHERE id = ?`, [postId]);
+      if (!post) {
+        return res.status(404).json({ error: "Post not found" });
+      }
+
+      const now = Math.floor(Date.now() / 1000);
+
+      await db.run(
+        `INSERT INTO forum_reports (post_id, reporter_id, status, created_at)
+         VALUES (?, ?, 'open', ?)`,
+        [postId, reporterId, now]
+      );
+
+      res.status(201).json({ success: true, message: "Post reported" });
+    } catch (err) {
+      console.error("[forum] POST /reports error:", err.message);
+      res.status(500).json({ error: "Failed to report post" });
+    }
+  });
+
+  // GET /api/forum/moderation/queue - Get moderation queue (mod only)
+  router.get("/moderation/queue", requireAuth, async (req, res) => {
+    try {
+      const modId = req.player.playerId;
+
+      // Get moderator boards (or all if admin)
+      let boardIds = [];
+      if (req.player.isAdmin) {
+        const boards = await db.all(`SELECT id FROM forum_boards WHERE is_active = 1`);
+        boardIds = boards.map(b => b.id);
+      } else {
+        const modBoards = await db.all(
+          `SELECT board_id FROM forum_moderators WHERE player_id = ?`,
+          [modId]
+        );
+        boardIds = modBoards.map(b => b.board_id);
+      }
+
+      if (boardIds.length === 0) {
+        return res.json({ reports: [], stats: { open: 0, total: 0 } });
+      }
+
+      const placeholders = boardIds.map(() => "?").join(",");
+      const reports = await db.all(
+        `SELECT fr.id, fr.post_id, fr.status, fr.created_at,
+                fp.content, fp.id as post_author_id,
+                ft.board_id, ft.title as topic_title
+         FROM forum_reports fr
+         INNER JOIN forum_posts fp ON fr.post_id = fp.id
+         INNER JOIN forum_topics ft ON fp.topic_id = ft.id
+         WHERE ft.board_id IN (${placeholders}) AND fr.status = 'open'
+         ORDER BY fr.created_at DESC`,
+        boardIds
+      );
+
+      const stats = await db.get(
+        `SELECT COUNT(*) as total FROM forum_reports fr
+         INNER JOIN forum_posts fp ON fr.post_id = fp.id
+         INNER JOIN forum_topics ft ON fp.topic_id = ft.id
+         WHERE ft.board_id IN (${placeholders})`,
+        boardIds
+      );
+
+      res.json({ reports, stats: { open: reports.length, total: stats.total } });
+    } catch (err) {
+      console.error("[forum] GET /moderation/queue error:", err.message);
+      res.status(500).json({ error: "Failed to fetch moderation queue" });
+    }
+  });
+
+  // PATCH /api/forum/moderation/reports/:reportId - Review report (mod only)
+  router.patch("/moderation/reports/:reportId", requireAuth, async (req, res) => {
+    try {
+      const { reportId } = req.params;
+      const { status, actionTaken } = req.body;
+      const modId = req.player.playerId;
+
+      if (!status || !["approved", "dismissed"].includes(status)) {
+        return res.status(400).json({ error: "status must be 'approved' or 'dismissed'" });
+      }
+
+      const report = await db.get(
+        `SELECT fr.id, ft.board_id FROM forum_reports fr
+         INNER JOIN forum_posts fp ON fr.post_id = fp.id
+         INNER JOIN forum_topics ft ON fp.topic_id = ft.id
+         WHERE fr.id = ?`,
+        [reportId]
+      );
+      if (!report) {
+        return res.status(404).json({ error: "Report not found" });
+      }
+
+      // Verify moderator
+      const isMod = await isBoardModerator(modId, report.board_id);
+      if (!isMod && !req.player.isAdmin) {
+        return res.status(403).json({ error: "Not a moderator for this board" });
+      }
+
+      const now = Math.floor(Date.now() / 1000);
+
+      await db.run(
+        `UPDATE forum_reports SET status = ?, action_taken = ?, reviewed_by = ?, reviewed_at = ? WHERE id = ?`,
+        [status, actionTaken || null, modId, now, reportId]
+      );
+
+      res.json({ success: true, message: "Report reviewed" });
+    } catch (err) {
+      console.error("[forum] PATCH /moderation/reports/:reportId error:", err.message);
+      res.status(500).json({ error: "Failed to review report" });
+    }
+  });
+
+  // Helper: Check if user is banned
+  const isUserBanned = async (playerId, boardId = null) => {
+    const now = Math.floor(Date.now() / 1000);
+    const ban = await db.get(
+      `SELECT id FROM forum_bans
+       WHERE player_id = ? AND (board_id = ? OR board_id IS NULL)
+       AND (expires_at IS NULL OR expires_at > ?)`,
+      [playerId, boardId, now]
+    );
+    return !!ban;
+  };
+
+  // Add ban check before allowing posts
+  router.use(async (req, res, next) => {
+    if (req.player && req.player.playerId && (req.method === "POST" || req.method === "PATCH")) {
+      // Only check for actual posting endpoints
+      if (req.path.includes("/posts") || req.path.includes("/topics")) {
+        const boardId = req.body?.boardId || null;
+        const isBanned = await isUserBanned(req.player.playerId, boardId);
+        if (isBanned) {
+          return res.status(403).json({ error: "You are banned from this forum" });
+        }
+      }
+    }
+    next();
   });
 
   return router;

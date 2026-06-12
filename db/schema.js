@@ -87,6 +87,8 @@ const NUMERIC_FIELDS = [
   'food_surplus_turns', 'food_shortage_turns', 'turn_num',
   // Forum
   'post_count', 'last_post_at', 'deleted_at',
+  // Forum Moderation
+  'expires_at', 'reviewed_at',
   // XP / levels
   'xp', 'level', 'prestige_level', 'progress',
   // Units
@@ -945,6 +947,64 @@ async function initDb(options = {}) {
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_forum_topics_player ON forum_topics(player_id)`);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_forum_posts_topic ON forum_posts(topic_id)`);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_forum_posts_player ON forum_posts(player_id)`);
+
+  // Forum Moderation Tables
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS forum_moderators (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      player_id     INTEGER NOT NULL REFERENCES players(id),
+      board_id      INTEGER NOT NULL REFERENCES forum_boards(id),
+      assigned_by   INTEGER NOT NULL REFERENCES players(id),
+      created_at    INTEGER NOT NULL DEFAULT (unixepoch()),
+      UNIQUE(player_id, board_id)
+    )
+  `);
+
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS forum_bans (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      player_id     INTEGER NOT NULL REFERENCES players(id),
+      board_id      INTEGER REFERENCES forum_boards(id),
+      ban_type      TEXT NOT NULL,
+      reason        TEXT,
+      expires_at    INTEGER,
+      banned_by     INTEGER NOT NULL REFERENCES players(id),
+      created_at    INTEGER NOT NULL DEFAULT (unixepoch())
+    )
+  `);
+
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS forum_reports (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      post_id       INTEGER NOT NULL REFERENCES forum_posts(id),
+      reporter_id   INTEGER NOT NULL REFERENCES players(id),
+      status        TEXT NOT NULL DEFAULT 'open',
+      reviewed_by   INTEGER REFERENCES players(id),
+      action_taken  TEXT,
+      created_at    INTEGER NOT NULL DEFAULT (unixepoch()),
+      reviewed_at   INTEGER
+    )
+  `);
+
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS forum_moderation_log (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      moderator_id  INTEGER NOT NULL REFERENCES players(id),
+      action        TEXT NOT NULL,
+      target_type   TEXT NOT NULL,
+      target_id     INTEGER NOT NULL,
+      reason        TEXT,
+      created_at    INTEGER NOT NULL DEFAULT (unixepoch())
+    )
+  `);
+
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_forum_moderators_player ON forum_moderators(player_id)`);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_forum_moderators_board ON forum_moderators(board_id)`);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_forum_bans_player ON forum_bans(player_id)`);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_forum_bans_expires ON forum_bans(expires_at)`);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_forum_reports_status ON forum_reports(status)`);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_forum_reports_post ON forum_reports(post_id)`);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_forum_moderation_log_mod ON forum_moderation_log(moderator_id)`);
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS bounties (
