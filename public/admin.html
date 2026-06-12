@@ -909,6 +909,35 @@
             style="margin-top: 8px; font-size: 13px"
           ></div>
         </div>
+
+        <div class="card">
+          <h2 style="margin-top: 0">Race test kingdoms</h2>
+          <div style="font-size: 13px; color: var(--text3); margin-bottom: 12px">
+            Provision one dedicated test kingdom for each race. Re-running can refresh existing test kingdoms instead of creating duplicates.
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:10px">
+            <div>
+              <label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px">Username prefix</label>
+              <input id="test-prefix" type="text" value="test" />
+            </div>
+            <div>
+              <label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px">Kingdom prefix</label>
+              <input id="test-kingdom-prefix" type="text" value="Test" />
+            </div>
+            <div>
+              <label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px">Shared password</label>
+              <input id="test-password" type="text" value="TestKingdom1!" />
+            </div>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);margin-bottom:12px">
+            <input id="test-reset-existing" type="checkbox" checked />
+            Reset matching existing test kingdoms back to race defaults
+          </label>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-gold" onclick="setupRaceTestKingdoms()">Provision race set</button>
+            <div id="test-kingdom-result" style="font-size:13px;color:var(--text2)"></div>
+          </div>
+        </div>
       </div>
       <!-- end atab-manage -->
 
@@ -4122,6 +4151,59 @@
           result.textContent = "✓ " + username + " is now an admin.";
           result.style.color = "var(--green)";
         }
+      }
+
+      async function setupRaceTestKingdoms() {
+        const usernamePrefix = document
+          .getElementById("test-prefix")
+          .value.trim()
+          .toLowerCase();
+        const kingdomPrefix = document
+          .getElementById("test-kingdom-prefix")
+          .value.trim();
+        const password = document.getElementById("test-password").value;
+        const resetExisting = document.getElementById("test-reset-existing").checked;
+        const result = document.getElementById("test-kingdom-result");
+
+        if (!usernamePrefix) {
+          result.textContent = "Enter a username prefix.";
+          result.style.color = "var(--red)";
+          return;
+        }
+        if (!kingdomPrefix) {
+          result.textContent = "Enter a kingdom prefix.";
+          result.style.color = "var(--red)";
+          return;
+        }
+        if (!password || password.length < 8) {
+          result.textContent = "Password must be at least 8 characters.";
+          result.style.color = "var(--red)";
+          return;
+        }
+
+        result.textContent = "Provisioning race test kingdoms...";
+        result.style.color = "var(--text2)";
+
+        const res = await api("POST", "/api/admin/test-kingdoms/setup", {
+          usernamePrefix,
+          kingdomPrefix,
+          password,
+          resetExisting,
+        });
+        if (res.error) {
+          result.textContent = res.error;
+          result.style.color = "var(--red)";
+          return;
+        }
+
+        result.textContent =
+          "Prepared " +
+          res.count +
+          " race kingdoms with usernames like " +
+          usernamePrefix +
+          "_human";
+        result.style.color = "var(--green)";
+        loadData();
       }
 
       async function sendAnnouncement() {
