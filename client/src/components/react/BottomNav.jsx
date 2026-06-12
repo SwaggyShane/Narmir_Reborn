@@ -82,6 +82,9 @@ const BottomNav = () => {
       <button className="bnav-item" data-tab="messages" onClick={(e) => handleSwitchTabMobile('messages', e)}>
         <span className="bicon" style={{ color: 'var(--accent1)' }}>✉️</span>Msgs<span id="bnav-msg-badge" className="bnav-badge" style={{ display: 'none' }}></span>
       </button>
+      <button className="bnav-item" data-tab="forum" onClick={(e) => handleSwitchTabMobile('forum', e)}>
+        <span className="bicon" style={{ color: '#8b5cf6' }}>📚</span>Forum
+      </button>
       <button className="bnav-item" data-tab="rankings" onClick={(e) => handleSwitchTabMobile('rankings', e)}>
         <span className="bicon" style={{ color: '#f8e71c' }}>🏆</span>Ranks
       </button>
