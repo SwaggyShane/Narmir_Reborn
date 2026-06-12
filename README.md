@@ -177,11 +177,11 @@ Before pushing to a public repository, ensure you have completed these steps:
 
 ### Database Deployment
 
-Narmir uses **PostgreSQL** as the production database. The codebase uses a translation layer in `db/schema.js` that adapts SQLite syntax for PostgreSQL compatibility:
-- `DATETIME` → `TIMESTAMP`
-- `INSERT OR REPLACE` → `ON CONFLICT ... DO UPDATE`
-- `INSERT OR IGNORE` → `ON CONFLICT ... DO NOTHING`
-- `unixepoch()` → PostgreSQL epoch functions
+Narmir uses **PostgreSQL** as its database. The database helper in `db/schema.js` normalizes a few legacy SQL shorthand forms into PostgreSQL syntax:
+- `DATETIME` becomes `TIMESTAMP`
+- conflict upserts become `ON CONFLICT ... DO UPDATE`
+- conflict ignores become `ON CONFLICT ... DO NOTHING`
+- epoch helpers become PostgreSQL epoch functions
 
 Connection is configured via `DATABASE_URL` environment variable. Migrations apply automatically on boot.
 

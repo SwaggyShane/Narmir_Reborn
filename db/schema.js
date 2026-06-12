@@ -1,4 +1,4 @@
-// Translate SQLite-specific SQL syntax to PostgreSQL syntax
+// Normalize legacy SQL shorthand into PostgreSQL syntax.
 function translateSqlForPg(sql) {
   if (typeof sql !== 'string') return sql;
   let translated = sql;
@@ -135,7 +135,7 @@ const transactionStorage = new AsyncLocalStorage();
 // add it exactly once per physical connection (not once per transaction reuse).
 const TXN_ERR_HANDLER = Symbol('narmirTxnErrorHandler');
 
-// PostgreSQL adapter mimicking the sqlite / sqlite3 interface
+// PostgreSQL adapter preserving the small local database helper interface.
 class PgDbAdapter {
   constructor(pool, isPgMem = false) {
     this.pool = pool;
@@ -750,6 +750,9 @@ async function initDb(options = {}) {
     CREATE INDEX IF NOT EXISTS idx_chat_room       ON chat_messages(room, created_at);
     CREATE INDEX IF NOT EXISTS idx_kingdoms_player ON kingdoms(player_id);
     CREATE INDEX IF NOT EXISTS idx_kingdoms_land   ON kingdoms(land DESC);
+    CREATE INDEX IF NOT EXISTS idx_kingdoms_rank_sort ON kingdoms(land DESC, level DESC, population DESC, id ASC);
+    CREATE INDEX IF NOT EXISTS idx_kingdoms_name_lower ON kingdoms(LOWER(name));
+    CREATE INDEX IF NOT EXISTS idx_chat_room_visible_created ON chat_messages(room, deleted, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_kingdoms_turn   ON kingdoms(turn);
     CREATE INDEX IF NOT EXISTS idx_news_kingdom_created ON news(kingdom_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_kingdoms_player_turn ON kingdoms(player_id, turn DESC);
@@ -806,6 +809,8 @@ async function initDb(options = {}) {
   await _db.exec(`
     CREATE INDEX IF NOT EXISTS idx_kingdoms_player ON kingdoms(player_id);
     CREATE INDEX IF NOT EXISTS idx_kingdoms_land   ON kingdoms(land DESC);
+    CREATE INDEX IF NOT EXISTS idx_kingdoms_rank_sort ON kingdoms(land DESC, level DESC, population DESC, id ASC);
+    CREATE INDEX IF NOT EXISTS idx_kingdoms_name_lower ON kingdoms(LOWER(name));
     CREATE INDEX IF NOT EXISTS idx_news_created    ON news(created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_exp_turns       ON expeditions(turns_left);
   `);
@@ -1023,7 +1028,7 @@ async function initDb(options = {}) {
     console.log('✅ Made kingdom_id nullable for Discord relay messages');
   } catch {
     try {
-      // Fallback to SQLite table recreation if PostgreSQL syntax fails
+      // Fallback table recreation path for older local schemas.
       const cmInfo = await _db.all('PRAGMA table_info(chat_messages)').catch(() => []);
       const kingdomIdCol = cmInfo.find(c => c.name === 'kingdom_id');
       if (kingdomIdCol && kingdomIdCol.notnull) {
@@ -1181,6 +1186,8 @@ async function initDb(options = {}) {
     );
     CREATE INDEX IF NOT EXISTS idx_trade_offers_receiver ON trade_offers(receiver_id, status);
     CREATE INDEX IF NOT EXISTS idx_trade_offers_sender   ON trade_offers(sender_id, status);
+    CREATE INDEX IF NOT EXISTS idx_trade_offers_sender_recent ON trade_offers(sender_id, status, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_trade_offers_receiver_recent ON trade_offers(receiver_id, status, created_at DESC);
   `);
 
   // Mercenaries table
@@ -1571,6 +1578,7 @@ async function initDb(options = {}) {
     )
   `);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_res_expeditions_kingdom ON resource_expeditions(kingdom_id, status)`);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_res_expeditions_kingdom_recent ON resource_expeditions(kingdom_id, status, depart_at DESC)`);
 
   // Discord integration tables
   await _db.run(`

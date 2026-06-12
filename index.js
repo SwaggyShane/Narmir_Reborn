@@ -80,11 +80,24 @@ const io     = new Server(server, {
     credentials: true
   }
 });
+app.set('trust proxy', 1);
 
 const PORT = 3000;
 const HOST = '0.0.0.0';
 
 // ── Utility functions ────────────────────────────────────────────────────────
+
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'same-origin');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  if (process.env.NODE_ENV === 'production' && req.secure) {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+  next();
+});
 
 app.use(express.json());
 app.use(cookieParser());
