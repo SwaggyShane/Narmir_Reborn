@@ -39,8 +39,9 @@ function applyFragmentHappinessPenalty(k, updates) {
   updates.active_effects = JSON.stringify(effects);
 }
 
-function processGranaryAttunements(k, events) {
+function processGranaryAttunements(k, events = []) {
   const updates = {};
+  if (!k.bld_granaries) return updates;
   const granaryAttune = fragmentBonusManager.getFragmentForBuilding(k, 'granaries');
 
   if (!granaryAttune) {
