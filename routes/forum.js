@@ -453,7 +453,6 @@ module.exports = function (db) {
       // Use transaction to delete all posts first (to satisfy foreign key constraints), then delete topic
       await db.run('BEGIN TRANSACTION');
       try {
-        const now = Math.floor(Date.now() / 1000);
         // Hard delete all posts in the topic first to satisfy foreign key constraints
         await db.run(`DELETE FROM forum_posts WHERE topic_id = ?`, [topicId]);
         // Delete the topic
