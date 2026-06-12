@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { fetchApi } from '../../utils/api';
 
-export default function ForumPostForm({ topic, user, post, onCreated, onCancel }) {
+const ForumPostForm = React.memo(function ForumPostForm({ topic, user, post, onCreated, onCancel }) {
   const [content, setContent] = useState(post?.content || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -87,4 +87,7 @@ export default function ForumPostForm({ topic, user, post, onCreated, onCancel }
       </div>
     </form>
   );
-}
+});
+
+ForumPostForm.displayName = 'ForumPostForm';
+export default ForumPostForm;

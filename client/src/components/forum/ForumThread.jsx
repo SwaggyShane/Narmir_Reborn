@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import ForumPostForm from './ForumPostForm';
 import { fetchApi } from '../../utils/api';
 
-export default function ForumThread({ topic, user, onPostCreated }) {
+const ForumThread = React.memo(function ForumThread({ topic, user, onPostCreated }) {
   const [threadData, setThreadData] = useState(null);
   const [posts, setPosts] = useState([]);
   const [page, setPage] = useState(1);
@@ -38,21 +38,21 @@ export default function ForumThread({ topic, user, onPostCreated }) {
     }
   };
 
-  const handlePageChange = (newPage) => {
+  const handlePageChange = useCallback((newPage) => {
     loadPosts(newPage);
-  };
+  }, [loadPosts]);
 
-  const handlePostCreated = () => {
+  const handlePostCreated = useCallback(() => {
     setEditingPostId(null);
-    loadPosts(1); // Reload from first page
+    loadPosts(1);
     onPostCreated?.();
-  };
+  }, [loadPosts, onPostCreated]);
 
-  const handleDeletePost = async (postId) => {
+  const handleDeletePost = useCallback(async (postId) => {
     if (!confirm('Delete this post?')) return;
     try {
       const res = await fetchApi(`/api/forum/posts/${postId}`, { method: 'DELETE' });
-      if (res && res.error) {
+      if (res?.error) {
         alert(res.error);
         return;
       }
@@ -61,15 +61,15 @@ export default function ForumThread({ topic, user, onPostCreated }) {
       console.error('Error deleting post:', err);
       alert('Failed to delete post');
     }
-  };
+  }, [page, loadPosts]);
 
-  const handleReportPost = async (postId) => {
+  const handleReportPost = useCallback(async (postId) => {
     try {
-      const res = await fetchApi(`/api/forum/reports`, {
+      const res = await fetchApi('/api/forum/reports', {
         method: 'POST',
         body: { postId }
       });
-      if (res && res.error) {
+      if (res?.error) {
         alert(res.error);
         return;
       }
@@ -80,12 +80,9 @@ export default function ForumThread({ topic, user, onPostCreated }) {
       console.error('Error reporting post:', err);
       alert('Failed to report post');
     }
-  };
+  }, []);
 
-  const formatTime = (timestamp) => {
-    const date = new Date(timestamp * 1000);
-    return date.toLocaleString();
-  };
+  const formatTime = useCallback((timestamp) => new Date(timestamp * 1000).toLocaleString(), []);
 
   if (loading) {
     return <div className="forum-loading">Loading thread...</div>;
@@ -195,4 +192,7 @@ export default function ForumThread({ topic, user, onPostCreated }) {
       )}
     </div>
   );
-}
+});
+
+ForumThread.displayName = 'ForumThread';
+export default ForumThread;

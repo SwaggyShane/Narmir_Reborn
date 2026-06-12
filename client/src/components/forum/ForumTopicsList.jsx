@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { fetchApi } from '../../utils/api';
 
-export default function ForumTopicsList({ board, user, onSelectTopic, onCreateClick }) {
+const ForumTopicsList = React.memo(function ForumTopicsList({ board, user, onSelectTopic, onCreateClick }) {
   const [topics, setTopics] = useState([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -9,16 +9,12 @@ export default function ForumTopicsList({ board, user, onSelectTopic, onCreateCl
   const [error, setError] = useState(null);
   const [sort, setSort] = useState('newest');
 
-  useEffect(() => {
-    loadTopics(1);
-  }, [board.id, sort]);
-
-  const loadTopics = async (pageNum) => {
+  const loadTopics = useCallback(async (pageNum) => {
     try {
       setLoading(true);
       setError(null);
       const data = await fetchApi(`/api/forum/boards/${board.id}/topics?page=${pageNum}&sort=${sort}`);
-      if (data && data.error) {
+      if (data?.error) {
         setError(data.error);
         return;
       }
@@ -31,13 +27,21 @@ export default function ForumTopicsList({ board, user, onSelectTopic, onCreateCl
     } finally {
       setLoading(false);
     }
-  };
+  }, [board.id, sort]);
 
-  const handlePageChange = (newPage) => {
+  useEffect(() => {
+    loadTopics(1);
+  }, [loadTopics]);
+
+  const handlePageChange = useCallback((newPage) => {
     loadTopics(newPage);
-  };
+  }, [loadTopics]);
 
-  const formatTime = (timestamp) => {
+  const handleSortChange = useCallback((e) => {
+    setSort(e.target.value);
+  }, []);
+
+  const formatTime = useCallback((timestamp) => {
     const date = new Date(timestamp * 1000);
     const now = new Date();
     const diffMs = now - date;
@@ -50,7 +54,7 @@ export default function ForumTopicsList({ board, user, onSelectTopic, onCreateCl
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
     return date.toLocaleDateString();
-  };
+  }, []);
 
   if (loading) {
     return <div className="forum-loading">Loading topics...</div>;
@@ -92,7 +96,7 @@ export default function ForumTopicsList({ board, user, onSelectTopic, onCreateCl
       <div className="forum-sort-bar">
         <label>
           Sort by:
-          <select value={sort} onChange={(e) => setSort(e.target.value)} className="forum-sort-select">
+          <select value={sort} onChange={handleSortChange} className="forum-sort-select">
             <option value="newest">Newest First</option>
             <option value="mostActive">Most Active</option>
             <option value="oldest">Oldest First</option>
@@ -138,4 +142,7 @@ export default function ForumTopicsList({ board, user, onSelectTopic, onCreateCl
       )}
     </div>
   );
-}
+});
+
+ForumTopicsList.displayName = 'ForumTopicsList';
+export default ForumTopicsList;

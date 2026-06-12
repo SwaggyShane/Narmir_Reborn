@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import ForumBoards from './ForumBoards';
 import ForumTopicsList from './ForumTopicsList';
 import ForumThread from './ForumThread';
@@ -6,9 +6,9 @@ import ForumTopicForm from './ForumTopicForm';
 import ModeratorManagementPanel from '../react/ModeratorManagementPanel';
 import { fetchApi } from '../../utils/api';
 
-export default function ForumSection({ user: propUser }) {
+const ForumSection = React.memo(function ForumSection({ user: propUser }) {
   const [user, setUser] = useState(propUser || null);
-  const [view, setView] = useState('boards'); // 'boards' | 'topics' | 'thread' | 'moderation'
+  const [view, setView] = useState('boards');
   const [boards, setBoards] = useState([]);
   const [selectedBoard, setSelectedBoard] = useState(null);
   const [selectedTopic, setSelectedTopic] = useState(null);
@@ -16,21 +16,7 @@ export default function ForumSection({ user: propUser }) {
   const [error, setError] = useState(null);
   const [showTopicForm, setShowTopicForm] = useState(false);
 
-  // Load boards on mount and fetch user if not provided
-  useEffect(() => {
-    loadBoards();
-    if (!propUser) {
-      fetchApi('/api/auth/me')
-        .then((data) => {
-          if (data && data.username) {
-            setUser(data);
-          }
-        })
-        .catch((err) => console.error('Error loading user:', err));
-    }
-  }, [propUser]);
-
-  const loadBoards = async () => {
+  const loadBoards = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -46,49 +32,62 @@ export default function ForumSection({ user: propUser }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const handleSelectBoard = (board) => {
+  useEffect(() => {
+    loadBoards();
+    if (!propUser) {
+      fetchApi('/api/auth/me')
+        .then((data) => {
+          if (data?.username) setUser(data);
+        })
+        .catch((err) => console.error('Error loading user:', err));
+    }
+  }, [propUser, loadBoards]);
+
+  const handleSelectBoard = useCallback((board) => {
     setSelectedBoard(board);
     setView('topics');
-  };
+  }, []);
 
-  const handleSelectTopic = (topic) => {
+  const handleSelectTopic = useCallback((topic) => {
     setSelectedTopic(topic);
     setView('thread');
-  };
+  }, []);
 
-  const handleBack = () => {
-    if (view === 'topics') {
-      setView('boards');
-      setSelectedBoard(null);
-    } else if (view === 'thread') {
-      setView('topics');
-      setSelectedTopic(null);
-    } else if (view === 'moderation') {
-      setView('boards');
-    }
-  };
+  const handleBack = useCallback(() => {
+    setView((prevView) => {
+      if (prevView === 'topics') {
+        setSelectedBoard(null);
+        return 'boards';
+      } else if (prevView === 'thread') {
+        setSelectedTopic(null);
+        return 'topics';
+      } else if (prevView === 'moderation') {
+        return 'boards';
+      }
+      return prevView;
+    });
+  }, []);
 
-  const handleTopicCreated = () => {
+  const handleTopicCreated = useCallback(() => {
     setShowTopicForm(false);
-    // Reload the topics list
-    if (selectedBoard) {
-      handleSelectBoard(selectedBoard);
-    }
-  };
+    loadBoards();
+  }, [loadBoards]);
 
-  const handlePostCreated = () => {
-    // Reload the thread
+  const handlePostCreated = useCallback(() => {
     if (selectedTopic) {
       handleSelectTopic(selectedTopic);
     }
-  };
+  }, [selectedTopic, handleSelectTopic]);
+
+  const handleModClick = useCallback(() => setView('moderation'), []);
+  const handleFormCancel = useCallback(() => setShowTopicForm(false), []);
 
   if (loading) {
     return (
-      <div className="portal-card">
-        <h2 className="portal-section-title">Forums</h2>
+      <div className="forum-section">
+        <h2 className="forum-thread-title">Forums</h2>
         <div className="forum-loading">Loading forums...</div>
       </div>
     );
@@ -96,8 +95,8 @@ export default function ForumSection({ user: propUser }) {
 
   if (error) {
     return (
-      <div className="portal-card">
-        <h2 className="portal-section-title">Forums</h2>
+      <div className="forum-section">
+        <h2 className="forum-thread-title">Forums</h2>
         <div className="forum-error">{error}</div>
         <button className="portal-enter-btn" onClick={loadBoards} style={{ marginTop: '1rem' }}>
           Retry
@@ -106,17 +105,20 @@ export default function ForumSection({ user: propUser }) {
     );
   }
 
+  const showModButton = user?.isAdmin && view !== 'moderation';
+  const showBackButton = view !== 'boards';
+
   return (
-    <div className="portal-card forum-section">
+    <div className="forum-section">
       <div className="forum-header">
-        <h2 className="portal-section-title">Forums</h2>
+        <h2 className="forum-thread-title">Forums</h2>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          {user?.isAdmin && view !== 'moderation' && (
-            <button className="forum-back-btn" onClick={() => setView('moderation')}>
+          {showModButton && (
+            <button className="forum-back-btn" onClick={handleModClick}>
               ⚙️ Moderation
             </button>
           )}
-          {view !== 'boards' && (
+          {showBackButton && (
             <button className="forum-back-btn" onClick={handleBack}>
               ← Back
             </button>
@@ -128,13 +130,18 @@ export default function ForumSection({ user: propUser }) {
 
       {view === 'topics' && selectedBoard && (
         <>
-          <ForumTopicsList board={selectedBoard} user={user} onSelectTopic={handleSelectTopic} onCreateClick={() => setShowTopicForm(true)} />
+          <ForumTopicsList
+            board={selectedBoard}
+            user={user}
+            onSelectTopic={handleSelectTopic}
+            onCreateClick={() => setShowTopicForm(true)}
+          />
           {showTopicForm && (
             <ForumTopicForm
               board={selectedBoard}
               user={user}
               onCreated={handleTopicCreated}
-              onCancel={() => setShowTopicForm(false)}
+              onCancel={handleFormCancel}
             />
           )}
         </>
@@ -153,4 +160,7 @@ export default function ForumSection({ user: propUser }) {
       )}
     </div>
   );
-}
+});
+
+ForumSection.displayName = 'ForumSection';
+export default ForumSection;
