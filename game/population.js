@@ -92,7 +92,7 @@ function popGrowth(k) {
 }
 
 function researchIncrement(k, discipline, researchersAssigned, currentLevel) {
-  let schoolBonus = 1 + Math.floor(k.bld_schools / 5) * 0.02;
+  let schoolBonus = 1 + Math.floor((k.bld_schools || 0) / 5) * 0.02;
   const schoolSpeedMult = fragmentBonusManager.getBonusMultiplier(k, 'schools', 'speed');
   const schoolOutputMult = fragmentBonusManager.getBonusMultiplier(k, 'schools', 'output');
   schoolBonus *= (schoolSpeedMult * schoolOutputMult);

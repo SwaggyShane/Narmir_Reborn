@@ -147,6 +147,7 @@ function covertSpy(spy, target, unitsSent) {
 }
 
 function covertLoot(thief, target, requestedLootType, thievesSent) {
+  if (thievesSent <= 0) return { error: 'Invalid number of thieves' };
   if (thievesSent > (thief.thieves || 0)) return { error: 'Not enough thieves' };
   let thiefLvMult = unitLevelMult(thief, 'thieves');
   if (thief.race === 'vampire' && isNight()) thiefLvMult *= 1.5;
@@ -166,7 +167,7 @@ function covertLoot(thief, target, requestedLootType, thievesSent) {
   // Combine espionage_guard and infiltration_defense into single multiplier for armory defense
   const armoryDefenseMult = Math.max(armoryEspionageGuard, armoryInfiltrationDefense);
   const success =
-    (thief.thieves || 0) * stealthMulti >
+    thievesSent * stealthMulti >
     (target.fighters || 0) * 0.015 +
       (target.bld_guard_towers || 0) * 3 +
       (target.bld_armories || 0) * 10 * armoryDefenseMult +
@@ -342,6 +343,7 @@ function covertLoot(thief, target, requestedLootType, thievesSent) {
 }
 
 function covertAssassinate(assassin, target, ninjasSent, unitType) {
+  if (ninjasSent <= 0) return { error: 'Invalid number of ninjas' };
   if (ninjasSent > (assassin.ninjas || 0)) return { error: 'Not enough ninjas' };
   if (!ASSASSINATE_TARGETS.has(unitType)) return { error: 'Invalid unit type' };
   let ninjaLvMult = unitLevelMult(assassin, 'ninjas');
@@ -413,6 +415,7 @@ function covertAssassinate(assassin, target, ninjasSent, unitType) {
 }
 
 function covertSabotage(assassin, target, ninjasSent, bldType) {
+  if (ninjasSent <= 0) return { error: 'Invalid number of ninjas' };
   if (ninjasSent > (assassin.ninjas || 0)) return { error: 'Not enough ninjas' };
 
   const BLD_MAP = {

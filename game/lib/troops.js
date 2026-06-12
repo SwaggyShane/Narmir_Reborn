@@ -45,6 +45,7 @@ function troopXpForLevel(level) {
 }
 
 function effectiveTroopLevel(k, unit) {
+  if (!k) return 1;
   const troopLevels = safeJsonParse(
     k.troop_levels,
     {},
