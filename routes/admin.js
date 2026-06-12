@@ -1,4 +1,5 @@
 const express = require("express");
+const bcrypt = require("bcrypt");
 const { requireAdmin, requireCsrfToken } = require("./middleware");
 const router = express.Router();
 const multer = require("multer");
@@ -6,9 +7,22 @@ const path = require("path");
 const fs = require("fs");
 const _config = require("../game/config");
 const { _GOAL_COUNTS, DAILY_GOALS, WEEKLY_GOALS, MONTHLY_GOALS } = require("../game/goals");
+const engine = require("../game/engine");
 
 const ALLOWED_PRIZE_TYPES = ['gold', 'mana', 'rangers', 'researchers', 'war_machines', 'world_fragment'];
 const ALLOWED_SOUND_EXTENSIONS = new Set([".mp3", ".wav"]);
+const BCRYPT_SALT_ROUNDS = 10;
+const TEST_RACES = [
+  "human",
+  "high_elf",
+  "dwarf",
+  "dire_wolf",
+  "dark_elf",
+  "orc",
+  "vampire",
+  "wood_elf",
+  "ogre",
+];
 
 let ORIGINAL_DAILY_GOALS = [];
 let ORIGINAL_WEEKLY_GOALS = [];
@@ -115,6 +129,77 @@ const upload = multer({
 });
 
 module.exports = function (db, io) {
+  function buildStartingProfile(race) {
+    const buildings = {
+      bld_farms: 10,
+      bld_schools: 1,
+      bld_barracks: 1,
+      bld_armories: 1,
+      bld_housing: 100,
+      bld_markets: 0,
+      bld_smithies: 0,
+      bld_mage_towers: 0,
+      bld_shrines: 0,
+      bld_outposts: 0,
+      bld_training: 0,
+      bld_mausoleums: 0,
+    };
+
+    let fighters = 0;
+    let rangers = 50;
+    let food = 5000;
+    let thralls = 0;
+
+    if (race === "human") buildings.bld_markets = 1;
+    if (race === "dwarf") buildings.bld_smithies = 1;
+    if (race === "high_elf") buildings.bld_mage_towers = 1;
+    if (race === "dark_elf") buildings.bld_shrines = 1;
+    if (race === "orc") buildings.bld_training = 1;
+    if (race === "vampire") {
+      buildings.bld_mausoleums = 1;
+      buildings.bld_housing = 50;
+      thralls = 50;
+    }
+    if (race === "dire_wolf") {
+      buildings.bld_barracks = 2;
+      fighters = 100;
+      rangers = 100;
+    }
+    if (race === "wood_elf") {
+      buildings.bld_outposts = 1;
+      rangers = 100;
+    }
+    if (race === "ogre") {
+      buildings.bld_training = 1;
+      fighters = 100;
+      rangers = 0;
+    }
+
+    const buildingKeys = {
+      bld_farms: "farms",
+      bld_schools: "schools",
+      bld_barracks: "barracks",
+      bld_armories: "armories",
+      bld_housing: "housing",
+      bld_markets: "markets",
+      bld_smithies: "smithies",
+      bld_mage_towers: "mage_towers",
+      bld_shrines: "shrines",
+      bld_outposts: "outposts",
+      bld_training: "training",
+      bld_mausoleums: "mausoleums",
+    };
+
+    let land = 1000;
+    for (const [dbCol, configKey] of Object.entries(buildingKeys)) {
+      const count = buildings[dbCol] || 0;
+      const cost = engine.BUILDING_LAND_COST[configKey] || 0;
+      land += count * cost;
+    }
+
+    return { buildings, fighters, rangers, food, thralls, land };
+  }
+
   // All admin routes require admin JWT
   router.use(requireAdmin);
 
@@ -329,6 +414,111 @@ module.exports = function (db, io) {
     await db.run("DELETE FROM bounties");
     await db.run("DELETE FROM spy_reports");
     res.json({ ok: true });
+  });
+
+  router.post("/test-kingdoms/setup", async (req, res) => {
+    const usernamePrefixRaw = String(req.body?.usernamePrefix || "test").trim().toLowerCase();
+    const kingdomPrefixRaw = String(req.body?.kingdomPrefix || "Test").trim();
+    const password = String(req.body?.password || "").trim();
+    const resetExisting = req.body?.resetExisting !== false;
+
+    if (!usernamePrefixRaw || !/^[a-z0-9_]+$/.test(usernamePrefixRaw)) {
+      return res.status(400).json({ error: "usernamePrefix must contain only lowercase letters, numbers, and underscores" });
+    }
+    if (!kingdomPrefixRaw) {
+      return res.status(400).json({ error: "kingdomPrefix is required" });
+    }
+    if (password.length < 8) {
+      return res.status(400).json({ error: "password must be at least 8 characters" });
+    }
+
+    const passwordHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
+    const results = [];
+
+    for (const race of TEST_RACES) {
+      const username = `${usernamePrefixRaw}_${race}`;
+      const prettyRace = race.replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
+      const kingdomName = `${kingdomPrefixRaw} ${prettyRace}`;
+      const email = `${username}@narmir.test`;
+
+      let player = await db.get("SELECT id FROM players WHERE username = ?", [username]);
+      let createdPlayer = false;
+      if (!player) {
+        const playerResult = await db.run(
+          "INSERT INTO players (username, password, email, is_admin) VALUES (?, ?, ?, 0)",
+          [username, passwordHash, email],
+        );
+        player = { id: playerResult.lastID };
+        createdPlayer = true;
+      }
+
+      let kingdom = await db.get("SELECT id, race FROM kingdoms WHERE player_id = ?", [player.id]);
+      let action = createdPlayer ? "created" : "updated";
+
+      if (!kingdom) {
+        const profile = buildStartingProfile(race);
+        const region = engine.assignRegion(race);
+        const gender = "male";
+        const insertResult = await db.run(
+          `INSERT INTO kingdoms (
+            player_id, name, race, gender, region, gold, land, population, food,
+            researchers, engineers, fighters, rangers, thralls, turns_stored,
+            res_spellbook, blueprints_stored,
+            bld_farms, bld_schools, bld_barracks, bld_armories, bld_housing,
+            bld_markets, bld_smithies, bld_mage_towers, bld_shrines, bld_outposts, bld_training, bld_mausoleums, world_fragments
+          ) VALUES (?, ?, ?, ?, ?, 10000, ?, 50000, ?, 100, 100, ?, ?, ?, 400, 0, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '["Volcanic Rock", "Ancient Elven Wood", "Dragon Scale", "Abyssal Crystal", "Celestial Feather", "Dwarven Star-Metal", "Cursed Bloodstone", "Tears of the World Tree", "Void Essence", "Titan Bone"]')`,
+          [
+            player.id,
+            kingdomName,
+            race,
+            gender,
+            region,
+            profile.land,
+            profile.food,
+            profile.fighters,
+            profile.rangers,
+            profile.thralls,
+            profile.buildings.bld_farms,
+            profile.buildings.bld_schools,
+            profile.buildings.bld_barracks,
+            profile.buildings.bld_armories,
+            profile.buildings.bld_housing,
+            profile.buildings.bld_markets,
+            profile.buildings.bld_smithies,
+            profile.buildings.bld_mage_towers,
+            profile.buildings.bld_shrines,
+            profile.buildings.bld_outposts,
+            profile.buildings.bld_training,
+            profile.buildings.bld_mausoleums,
+          ],
+        );
+        kingdom = { id: insertResult.lastID, race };
+      } else {
+        await db.run(
+          "UPDATE kingdoms SET name = ?, race = ?, gender = ?, region = ? WHERE id = ?",
+          [kingdomName, race, "male", engine.assignRegion(race), kingdom.id],
+        );
+        if (resetExisting) {
+          await resetKingdomLogic(db, kingdom.id, race);
+        }
+      }
+
+      results.push({
+        race,
+        username,
+        kingdomName,
+        kingdomId: kingdom.id,
+        action,
+        reset: !!kingdom && !createdPlayer && resetExisting,
+      });
+    }
+
+    res.json({
+      ok: true,
+      count: results.length,
+      resetExisting,
+      results,
+    });
   });
 
   // POST /api/admin/set-gold — set a kingdom's gold
