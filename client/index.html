@@ -1993,8 +1993,8 @@
             </div>
           </div>
 
-          <!-- Metrics strip (React-owned) -->
-          <div id="vue-metrics-strip-mount"></div>
+          <!-- Resource strip (React-owned) -->
+          <div id="vue-resource-strip-mount"></div>
         </div>
         <!-- end kd-top -->
 
@@ -2889,16 +2889,23 @@
             if (result.error) return toast(result.error, "error");
             if (result.turns_stored !== undefined) {
               state.turns_stored = result.turns_stored;
-              updateTurnsDisplay();
             }
-            applyServerUpdates(result.updates || {});
+            // Funnel through the single mutation pipeline with the panel-aware
+            // reason. Events are intentionally omitted here so search results
+            // don't double-show — they appear in the expedition log instead.
+            window.applyGameMutation(
+              { updates: result.updates || {} },
+              { reason: 'quick_search' },
+            );
+            // NOTE: server already adds `found` to updates.land/gold/food.
+            // These manual adds are a pre-existing double-apply bug, preserved
+            // for behavior parity until investigated and fixed separately.
             if (result.type === "land" && result.result)
               state.land = (state.land || 0) + result.result.found;
             if (result.type === "gold" && result.result)
               state.gold = (state.gold || 0) + result.result.found;
             if (result.type === "food" && result.result)
               state.food = (state.food || 0) + result.result.found;
-            syncUI();
             // Removed appendNewsItems(result.events) so results only appear in expedition log
             toast(result.message, "success");
             // Log instant search result (not in database)

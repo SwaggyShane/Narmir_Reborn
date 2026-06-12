@@ -30,7 +30,7 @@ import HirePanelReact from "./components/react/HirePanel.jsx";
 import ResourcesPanelReact from "./components/react/ResourcesPanel.jsx";
 import GlobalchatPanelReact from "./components/react/GlobalchatPanel.jsx";
 import SchoolSelectionPanelReact from "./components/react/SchoolSelectionPanel.jsx";
-import MetricsStripReact from "./components/react/MetricsStrip.jsx";
+import ResourceStripReact from "./components/react/ResourceStrip.jsx";
 
 // API call helper for making authenticated requests from vanilla JS
 async function apiCall(method, endpoint, body = null) {
@@ -244,7 +244,7 @@ export const mountReactApps = () => {
   tryMount("vue-panel-resources", ResourcesPanelReact);
   tryMount("vue-panel-globalchat", GlobalchatPanelReact);
   tryMount("vue-panel-school-selection", SchoolSelectionPanelReact);
-  tryMount("vue-metrics-strip-mount", MetricsStripReact);
+  tryMount("vue-resource-strip-mount", ResourceStripReact);
 
   console.log("[react] All apps mounted");
 
