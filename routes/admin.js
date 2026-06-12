@@ -94,22 +94,20 @@ async function refreshInMemoryGoals(db) {
   }
 }
 
+const ALLOWED_SOUND_MIME = new Set(['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/wave', 'audio/x-wav']);
+const { validateAudioSignature } = require('../utils/file-signatures');
+
+// Memory storage so we can magic-byte check before persisting. A `.mp3`
+// filename with arbitrary contents must not reach public/sounds/.
 const upload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => cb(null, soundsPath),
-    filename: (req, file, cb) => {
-      const base = (file.originalname || "").split(/[/\\]/).pop();
-      const ext = path.extname(base).toLowerCase();
-      if (!base || !ALLOWED_SOUND_EXTENSIONS.has(ext)) {
-        return cb(new Error("Invalid filename or extension"));
-      }
-      cb(null, base);
-    },
-  }),
+  storage: multer.memoryStorage(),
   fileFilter: (req, file, cb) => {
     const ext = path.extname((file.originalname || "")).toLowerCase();
     if (!ALLOWED_SOUND_EXTENSIONS.has(ext)) {
       return cb(new Error("Only .mp3 and .wav files are allowed"));
+    }
+    if (file.mimetype && !ALLOWED_SOUND_MIME.has(file.mimetype)) {
+      return cb(new Error("Invalid file type — only audio files are allowed"));
     }
     cb(null, true);
   },
@@ -998,26 +996,38 @@ module.exports = function (db, io) {
       if (err) {
         return res.status(400).json({ error: err.message });
       }
-      if (!req.file) return res.status(400).json({ error: "No file uploaded" });
-      let finalName = req.file.filename;
+      if (!req.file || !req.file.buffer) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      const originalBase = (req.file.originalname || "").split(/[/\\]/).pop();
+      const ext = path.extname(originalBase || "").toLowerCase();
+      if (!originalBase || !ALLOWED_SOUND_EXTENSIONS.has(ext)) {
+        return res.status(400).json({ error: "Invalid filename or extension" });
+      }
+      if (!validateAudioSignature(req.file.buffer, ext)) {
+        return res.status(400).json({ error: "File contents do not match the declared audio type" });
+      }
+
+      // Choose disk name: action override or original
+      let targetBase = originalBase;
       if (typeof req.body.actionName === "string" && req.body.actionName !== "custom") {
-        const ext = path.extname(req.file.filename);
         const requestedBase = req.body.actionName.split(/[/\\]/).pop();
         if (!requestedBase || requestedBase === "." || requestedBase === "..") {
           return res.status(400).json({ error: "Invalid action name" });
         }
-        const candidateName = requestedBase + ext;
-        const newPath = safeSoundPath(candidateName);
-        const oldPath = safeSoundPath(req.file.filename);
-        if (!newPath || !oldPath) {
-          return res.status(400).json({ error: "Invalid filename" });
-        }
-        if (fs.existsSync(oldPath)) {
-          fs.renameSync(oldPath, newPath);
-          finalName = path.basename(newPath);
-        }
+        targetBase = requestedBase + ext;
       }
-      res.json({ ok: true, filename: finalName });
+      const targetPath = safeSoundPath(targetBase);
+      if (!targetPath) {
+        return res.status(400).json({ error: "Invalid filename" });
+      }
+      try {
+        fs.writeFileSync(targetPath, req.file.buffer);
+      } catch {
+        return res.status(500).json({ error: "Failed to save sound file" });
+      }
+      res.json({ ok: true, filename: path.basename(targetPath) });
     });
   });
 

@@ -5,6 +5,11 @@ const { setUnreadCount, incrementUnread, unreadNewsCache } = require("../cache.j
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_fallback_12345";
 const onlinePlayers = new Map(); // playerId → { socketId, username, race, isMod, isAdmin, kingdomName }
 
+const _IS_PROD = process.env.NODE_ENV === "production";
+function devLog(...args) {
+  if (!_IS_PROD) console.log(...args);
+}
+
 module.exports = function (io, db) {
   io.use((socket, next) => {
     const token =
@@ -47,7 +52,7 @@ module.exports = function (io, db) {
         const oldSocket = io.sockets.sockets.get(existingEntry.socketId);
         if (oldSocket) {
           oldSocket.disconnect(true);
-          console.log(`[socket] Disconnected stale socket for ${username} (${existingEntry.socketId})`);
+          devLog(`[socket] Disconnected stale socket for ${username} (${existingEntry.socketId})`);
         }
       }
 
@@ -69,7 +74,7 @@ module.exports = function (io, db) {
           onlinePlayers.delete(playerId);
           broadcastOnlineList(io);
         }
-        console.log(`[socket] ${username} disconnected`);
+        devLog(`[socket] ${username} disconnected`);
       });
 
       socket.join(`player:${playerId}`);
@@ -108,7 +113,7 @@ module.exports = function (io, db) {
       const unreadCount = unreadRow?.c || 0;
       setUnreadCount(kingdom.id, unreadCount);
       socket.emit("unread_news", { count: unreadCount });
-      console.log(`[socket] ${username} (${kingdom.name}) connected`);
+      devLog(`[socket] ${username} (${kingdom.name}) connected`);
     } catch (err) {
       console.error(`[socket] Connection handler error for ${socket.id}:`, err.message);
       socket.emit("error", { message: "Server error during connection setup" });

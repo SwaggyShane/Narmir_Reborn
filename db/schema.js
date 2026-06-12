@@ -1188,6 +1188,11 @@ async function initDb(options = {}) {
     CREATE INDEX IF NOT EXISTS idx_trade_offers_sender   ON trade_offers(sender_id, status);
     CREATE INDEX IF NOT EXISTS idx_trade_offers_sender_recent ON trade_offers(sender_id, status, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_trade_offers_receiver_recent ON trade_offers(receiver_id, status, created_at DESC);
+    -- Sort-covering index for the sender-side query that lists ALL offers
+    -- (no status filter): WHERE sender_id = ? ORDER BY created_at DESC LIMIT 20
+    -- The (sender_id, status, created_at) index above isn't sort-covering
+    -- without a status equality predicate.
+    CREATE INDEX IF NOT EXISTS idx_trade_offers_sender_created ON trade_offers(sender_id, created_at DESC);
   `);
 
   // Mercenaries table
@@ -1579,6 +1584,11 @@ async function initDb(options = {}) {
   `);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_res_expeditions_kingdom ON resource_expeditions(kingdom_id, status)`);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_res_expeditions_kingdom_recent ON resource_expeditions(kingdom_id, status, depart_at DESC)`);
+  // Covers the `WHERE kingdom_id = ? AND status != 'completed' ORDER BY depart_at DESC`
+  // query in the GET /resource-expeditions hot path. The (kingdom_id, status, ...)
+  // index above can't satisfy the inequality status filter as a sort-covering
+  // index — this one can, since the sort key is the leading non-keyed column.
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_res_expeditions_kingdom_depart ON resource_expeditions(kingdom_id, depart_at DESC)`);
 
   // Discord integration tables
   await _db.run(`
@@ -1727,7 +1737,9 @@ async function applyKingdomUpdates(kingdomId, updates) {
   }
   const cols = Object.keys(safe).map(k => `${k} = ?`).join(', ');
   const vals = [...Object.values(safe), kingdomId];
-  console.log('[applyKingdomUpdates] Updating', { kingdomId, fields: Object.keys(safe), safe });
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[applyKingdomUpdates] Updating', { kingdomId, fields: Object.keys(safe), safe });
+  }
   await _db.run(`UPDATE kingdoms SET ${cols} WHERE id = ?`, vals);
   return Object.keys(safe);
 }

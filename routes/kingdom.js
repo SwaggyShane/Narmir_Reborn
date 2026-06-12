@@ -18,6 +18,14 @@ const { marketPriceCache, rankingsCache, setUnreadCount } = require("../cache.js
 
 const router = express.Router();
 
+// Per-request traces useful in dev (purchase details, attunement names,
+// school selections) are silenced in production so real errors aren't
+// drowned in stdout. Switch on by unsetting NODE_ENV=production.
+const _IS_PROD = process.env.NODE_ENV === 'production';
+function devLog(...args) {
+  if (!_IS_PROD) console.log(...args);
+}
+
 // Kingdoms we've already logged deprecated-inventory items for, so the warning fires
 // once per process instead of on every (frequently polled) inventory fetch.
 const _loggedDeprecatedInventory = new Set();
@@ -28,23 +36,21 @@ if (!fs.existsSync(portraitsPath)) {
 }
 
 const ALLOWED_PORTRAIT_TYPES = new Set([".jpg", ".jpeg", ".png", ".gif", ".webp"]);
+const ALLOWED_PORTRAIT_MIME = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+const { validateImageSignature } = require('../utils/file-signatures');
 
+// Memory storage: we validate the file's magic bytes before persisting to
+// disk so that a forged `.png` filename containing arbitrary bytes (e.g.
+// HTML, scripts, or executables) never lands in the public/portraits/
+// directory.
 const upload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => cb(null, portraitsPath),
-    filename: (req, file, cb) => {
-      const ext = path.extname(file.originalname).toLowerCase();
-      const hash = crypto.randomBytes(4).toString('hex');
-      cb(null, `portrait_${Date.now()}_${hash}${ext}`);
-    },
-  }),
+  storage: multer.memoryStorage(),
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     if (!ALLOWED_PORTRAIT_TYPES.has(ext)) {
       return cb(new Error("Only image files (jpg, png, gif, webp) are allowed"));
     }
-    const allowedMimeTypes = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
-    if (!allowedMimeTypes.has(file.mimetype)) {
+    if (!ALLOWED_PORTRAIT_MIME.has(file.mimetype)) {
       return cb(new Error("Invalid file type — only image files are allowed"));
     }
     cb(null, true);
@@ -3929,7 +3935,7 @@ module.exports = function (db) {
       console.warn('[economy/upgrade] Purchase failed', { category, upgradeKey, error: result.error, kingdomId: k.id });
       return res.status(400).json({ error: result.error });
     }
-    console.log('[economy/upgrade] Purchase successful', { category, upgradeKey, kingdomId: k.id, updates: result.updates });
+    devLog('[economy/upgrade] Purchase successful', { category, upgradeKey, kingdomId: k.id, updates: result.updates });
     await applyUpdates(db, k.id, result.updates);
     const def =
       engine.FARM_UPGRADES[upgradeKey] ||
@@ -5229,7 +5235,7 @@ module.exports = function (db) {
         message: `${fragmentName} attuned to ${buildingType}`,
       });
 
-      console.log(`[attunement] Kingdom ${kingdom.id}: ${fragmentName} → ${buildingType}`);
+      devLog(`[attunement] Kingdom ${kingdom.id}: ${fragmentName} → ${buildingType}`);
     } catch (err) {
       console.error('[attunement] apply failed:', err.message);
       res.status(500).json({ error: 'Failed to apply attunement' });
@@ -5271,7 +5277,7 @@ module.exports = function (db) {
         message: `Attunement removed from ${buildingType}`,
       });
 
-      console.log(`[attunement] Kingdom ${kingdom.id}: Removed from ${buildingType}`);
+      devLog(`[attunement] Kingdom ${kingdom.id}: Removed from ${buildingType}`);
     } catch (err) {
       console.error('[attunement] remove failed:', err.message);
       res.status(500).json({ error: 'Failed to remove attunement' });
@@ -5494,7 +5500,7 @@ module.exports = function (db) {
         await db.run('COMMIT');
 
         // Log the ability activation
-        console.log(`[synergy] Kingdom ${kingdom.id}: ${synergy_id} ability activated by ${synergy.active?.name}`);
+        devLog(`[synergy] Kingdom ${kingdom.id}: ${synergy_id} ability activated by ${synergy.active?.name}`);
 
         res.json({
           ok: true,
@@ -5517,7 +5523,7 @@ module.exports = function (db) {
   });
 
   router.post("/select-school", requireAuth, requireCsrfToken, async (req, res) => {
-    console.log('[select-school] Request received', { playerId: req.player?.playerId, school: req.body?.school });
+    devLog('[select-school] Request received', { playerId: req.player?.playerId, school: req.body?.school });
     try {
       const { school } = req.body;
       if (!school?.trim()) return res.status(400).json({ error: 'School name required' });
@@ -5568,11 +5574,20 @@ module.exports = function (db) {
       const k = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [playerId]);
       if (!k) return res.status(404).json({ error: 'Kingdom not found' });
 
-      if (!req.file) {
+      if (!req.file || !req.file.buffer) {
         return res.status(400).json({ error: 'No file uploaded' });
       }
 
-      const portraitPath = `/portraits/${req.file.filename}`;
+      const ext = path.extname(req.file.originalname).toLowerCase();
+      if (!validateImageSignature(req.file.buffer, ext)) {
+        return res.status(400).json({ error: 'File contents do not match the declared image type' });
+      }
+
+      const hash = crypto.randomBytes(4).toString('hex');
+      const filename = `portrait_${Date.now()}_${hash}${ext}`;
+      const diskPath = path.join(portraitsPath, filename);
+      await fs.promises.writeFile(diskPath, req.file.buffer);
+      const portraitPath = `/portraits/${filename}`;
 
       // Remove old portrait if exists
       const old = await db.get('SELECT custom_portrait FROM kingdoms WHERE id = ?', [k.id]);

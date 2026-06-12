@@ -102,10 +102,37 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(cookieParser());
 
-// Very permissive CSP for development
+// Content-Security-Policy.
+//   - In production we ship a strict-ish CSP: only same-origin scripts, plus
+//     'unsafe-inline' because the legacy client/index.html still relies on
+//     inline event handlers and inline <script> blocks. Crucially we drop
+//     'unsafe-eval' and forbid third-party script origins — neither of which
+//     the app needs. Fonts/styles are whitelisted to Google Fonts.
+//   - In development we keep the permissive policy so hot-reload, Vite's
+//     dev-server hooks, and local tooling don't trip the policy.
 app.use((req, res, next) => {
-  if (process.env.NODE_ENV !== 'production') {
-     res.setHeader("Content-Security-Policy", "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval' data: blob:; connect-src * 'unsafe-inline' 'unsafe-eval' ws: wss:;");
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader(
+      "Content-Security-Policy",
+      [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline'",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "font-src 'self' https://fonts.gstatic.com data:",
+        "img-src 'self' data: blob:",
+        "media-src 'self'",
+        "connect-src 'self' ws: wss:",
+        "frame-ancestors 'none'",
+        "form-action 'self'",
+        "base-uri 'self'",
+        "object-src 'none'",
+      ].join("; "),
+    );
+  } else {
+    res.setHeader(
+      "Content-Security-Policy",
+      "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval' data: blob:; connect-src * 'unsafe-inline' 'unsafe-eval' ws: wss:;",
+    );
   }
   next();
 });
