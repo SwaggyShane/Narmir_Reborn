@@ -14,14 +14,33 @@ function devLog(...args) {
 }
 
 const fragmentBonusManager = require("./fragment-bonus-manager");
-const attunementManager = require("./attunement-manager");
 const effectsProcessor = require("./synergy-effects-processor");
 const combatResolverV2 = require("./combat-resolver");
 const { safeJsonParse, roll, rand, clearParseCache } = require('../utils/helpers');
 
+// Shared domain helpers extracted to game/lib. These are the canonical
+// implementations; engine.js still re-exports them via module.exports so
+// external callers (routes, sockets, tests) keep working.
+const { raceBonus } = require('./lib/race-bonus');
+const {
+  getUnitName,
+  troopXpForLevel,
+  effectiveTroopLevel,
+  awardTroopXp,
+  unitLevelMult,
+  racialUnitBonus,
+  diluteTroopXp,
+  awardUnitXp,
+  getAvailableUnits,
+} = require('./lib/troops');
+const {
+  getSynergyPassiveBonusMultiplier,
+  getSynergyPassiveBonusAbsolute,
+  clearSynergyCache,
+} = require('./lib/synergy-cache');
+
 const {
   RACE_BONUSES,
-  RACE_COMBAT_MODIFIERS,
   REGION_DATA,
   UNIT_COST,
   MAX_RESEARCH,
@@ -105,34 +124,7 @@ const BLUEPRINT_REQUIRED = new Set(BP_REQ);
 const SCAFFOLDING_REQUIRED = new Set(SCAFF_REQ);
 const SCAFFOLDING_BONUS_BUILDINGS = new Set(SCAFF_BONUS);
 
-const LEGENDARY_NAMES = {
-  human: { fighters: "Lionheart Champions" },
-  orc: { fighters: "Blood-God Berserkers" },
-  high_elf: { rangers: "Starfall Guardians" },
-  dark_elf: { ninjas: "Void Assassins" },
-  dwarf: { engineers: "Runic Siege-Masters" },
-  dire_wolf: { fighters: "Fenris Alphas" },
-};
-
 const USE_COMBAT_V2 = process.env.USE_COMBAT_V2 === "1";
-
-function getUnitName(race, unit, prestigeLevel = 0) {
-  if (prestigeLevel > 0 && LEGENDARY_NAMES[race]?.[unit]) {
-    return `🌟 ${LEGENDARY_NAMES[race][unit]}`;
-  }
-  const labels = {
-    fighters: "Fighters",
-    rangers: "Rangers",
-    mages: "Mages",
-    clerics: race === "vampire" ? "Thralls" : "Clerics",
-    thieves: race === "vampire" ? "Infiltrators" : "Thieves",
-    ninjas: "Ninjas",
-    scribes: "Scribes",
-    researchers: "Researchers",
-    engineers: "Engineers",
-  };
-  return labels[unit] || unit;
-}
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -141,126 +133,6 @@ function isNight() {
   return h >= 1 && h < 13; // 8PM EST to 8AM EST (EST is UTC-5)
 }
 
-
-function raceBonus(kingdom, stat) {
-  const bonuses = RACE_BONUSES[kingdom.race] || {};
-  const base = bonuses[stat] || 1.0;
-
-  // Combat race modifiers - apply to military and magic for balanced PvP
-  let combatMod = 1.0;
-  if ((stat === "military" || stat === "magic") && RACE_COMBAT_MODIFIERS[kingdom.race]) {
-    combatMod = RACE_COMBAT_MODIFIERS[kingdom.race];
-  }
-
-  // Home Region bonus - +5% to the region's designated stat if it's your race's home
-  const homeRegion = REGION_DATA[kingdom.race];
-  const isHome = homeRegion && homeRegion.name === kingdom.region;
-  const regionMult =
-    isHome && homeRegion.bonus === stat ? 1 + homeRegion.mult : 1.0;
-
-  // Global Alliance Control bonus - +10% if your alliance owns this region
-  let allianceMult = 1.0;
-  if (
-    kingdom._region_owned_by_my_alliance &&
-    kingdom._region_bonus_type === stat
-  ) {
-    allianceMult = 1.1;
-  }
-
-  // Alliance Vault Project Buffs
-  let vaultMult = 1.0;
-  const aBuffs = safeJsonParse(
-    kingdom.alliance_buffs,
-    {},
-    "raceBonus:alliance_buffs",
-  );
-  if (stat === "economy" && aBuffs.merchant_guild)
-    vaultMult += aBuffs.merchant_guild * 0.05;
-  if (stat === "stealth" && aBuffs.shadow_network)
-    vaultMult += aBuffs.shadow_network * 0.02;
-  if (stat === "military" && aBuffs.mercenary_subsidy)
-    vaultMult += aBuffs.mercenary_subsidy * 0.02;
-
-  // Hero Passive Buffs
-  let heroMult = 1.0;
-  if (kingdom.heroes && Array.isArray(kingdom.heroes)) {
-    for (const h of kingdom.heroes) {
-      if (h.status !== "idle") continue;
-      const cls = HERO_CLASSES[h.class];
-      if (cls && cls.statBonus && cls.statBonus[stat]) {
-        const bonusValue = cls.statBonus[stat] - 1.0;
-        // Abilities unlock mechanically at levels 1, 5, 10.
-        // We'll scale the statBonus up mechanically.
-        if (h.level >= 10) {
-          heroMult += bonusValue;
-        } else if (h.level >= 5) {
-          heroMult += bonusValue * 0.66;
-        } else {
-          heroMult += bonusValue * 0.33;
-        }
-      }
-    }
-  }
-
-  return base * regionMult * allianceMult * vaultMult * heroMult * combatMod;
-}
-
-// The active synergy is a pure function of the kingdom's fragment placements,
-// so cache on the fragment_bonuses JSON string itself. Turn processing copies
-// the kingdom object dozens of times per turn ({ ...k, ...updates }), which
-// made the previous object-identity (WeakMap) keying miss on nearly every call.
-const activeSynergyCache = new Map();
-const MAX_SYNERGY_CACHE = 2000;
-
-function getActiveSynergyCached(kingdom) {
-  if (!kingdom) return null;
-  const key =
-    typeof kingdom.fragment_bonuses === "string"
-      ? kingdom.fragment_bonuses
-      : JSON.stringify(kingdom.fragment_bonuses || {});
-  if (!activeSynergyCache.has(key)) {
-    if (activeSynergyCache.size >= MAX_SYNERGY_CACHE) {
-      activeSynergyCache.delete(activeSynergyCache.keys().next().value);
-    }
-    activeSynergyCache.set(key, attunementManager.getActiveSynergy(kingdom) || null);
-  }
-  return activeSynergyCache.get(key);
-}
-
-function getSynergyPassiveBonusMultiplier(kingdom, effectKey) {
-  if (!kingdom) return 1.0;
-
-  const synergy = getActiveSynergyCached(kingdom);
-  if (!synergy || !synergy.passive || !synergy.passive.effects) {
-    return 1.0;
-  }
-  const effectValue = synergy.passive.effects[effectKey];
-  if (effectValue === undefined || effectValue === null) {
-    return 1.0;
-  }
-  return 1.0 + effectValue;
-}
-
-function getSynergyPassiveBonusAbsolute(kingdom, effectKey) {
-  if (!kingdom) return 0;
-  const synergy = getActiveSynergyCached(kingdom);
-  if (!synergy || !synergy.passive || !synergy.passive.effects) return 0;
-  const effectValue = synergy.passive.effects[effectKey];
-  if (effectValue === undefined || effectValue === null) return 0;
-  return effectValue;
-}
-
-function clearSynergyCache(kingdom) {
-  // Content-keyed cache: a changed attunement produces a new fragment_bonuses
-  // string and therefore a new key, so stale entries can't be served. Clearing
-  // on demand just keeps the map small after attunement changes.
-  if (!kingdom) return;
-  if (typeof kingdom.fragment_bonuses === "string") {
-    activeSynergyCache.delete(kingdom.fragment_bonuses);
-  } else {
-    activeSynergyCache.clear();
-  }
-}
 
 function housingCapPerBuilding(k) {
   const base = HOUSING_CAP_BY_RACE[k?.race] || 500;
@@ -643,158 +515,6 @@ function researchIncrement(k, discipline, researchersAssigned, currentLevel) {
   if (effective >= Math.floor(600 * factor)) return 2;
   if (effective >= Math.floor(200 * factor)) return 1;
   return 0;
-}
-
-// ── Troop levelling ───────────────────────────────────────────────────────────
-
-// XP needed to reach each troop level (1-100)
-// Early levels fast, late levels very slow
-function troopXpForLevel(level) {
-  if (level <= 1) return 0;
-  if (level <= 10) return level * 100;
-  if (level <= 25) return level * 300;
-  if (level <= 50) return level * 800;
-  if (level <= 75) return level * 2000;
-  return level * 5000;
-}
-
-function effectiveTroopLevel(k, unit) {
-  const troopLevels = safeJsonParse(
-    k.troop_levels,
-    {},
-    "effectiveTroopLevel:troop_levels",
-  );
-  const data = troopLevels[unit] || { level: 1 };
-  const raceBonus = TROOP_RACE_BONUS[k.race]?.[unit] || 1.0;
-  // Race bonus multiplies above level 100 — a Dark Elf ninja at level 100 acts as level 180
-  return Math.max(
-    1,
-    Math.floor(
-      data.level *
-        (data.level >= 100
-          ? raceBonus
-          : 1 + ((raceBonus - 1) * data.level) / 100),
-    ),
-  );
-}
-
-// Award XP to a specific troop type — returns updated troop_levels JSON and any level-ups
-function awardTroopXp(k, unit, xpAmount) {
-  const troopLevels = safeJsonParse(
-    k.troop_levels,
-    {},
-    "awardTroopXp:troop_levels",
-  );
-  const current = troopLevels[unit] || { level: 1, xp: 0, count: 0 };
-  const cap = 100;
-  if (current.level >= cap)
-    return { troop_levels: JSON.stringify(troopLevels), levelUps: [] };
-
-  const raceBonus = TROOP_RACE_BONUS[k.race]?.[unit] || 1.0;
-  let earned = Math.floor(xpAmount * raceBonus);
-  const newXp = current.xp + earned;
-  const xpNeeded = troopXpForLevel(current.level + 1);
-  const levelUps = [];
-
-  if (newXp >= xpNeeded && current.level < cap) {
-    troopLevels[unit] = {
-      level: current.level + 1,
-      xp: newXp - xpNeeded,
-      count: current.count,
-    };
-    levelUps.push(`${unit} reached Level ${current.level + 1}`);
-  } else {
-    // Store XP within current level only (mod the threshold to prevent overflow)
-    troopLevels[unit] = { ...current, xp: Math.min(newXp, xpNeeded - 1) };
-  }
-  return { troop_levels: JSON.stringify(troopLevels), levelUps };
-}
-
-// ── Unit level scaling ────────────────────────────────────────────────────────
-// Returns effectiveness multiplier: +0.5% per level above 1, caps at +50% at level 100
-function unitLevelMult(k, unit) {
-  const level = effectiveTroopLevel(k, unit);
-  const prestigeBonus = k.prestige_level * 0.05;
-  const isLegendary =
-    k.prestige_level > 0 && LEGENDARY_NAMES[k.race]?.[unit] ? 1.15 : 1.0;
-  return (
-    (1 + Math.min(0.5, (level - 1) * 0.005)) * (1 + prestigeBonus) * isLegendary
-  );
-}
-
-// ── Racial unique bonuses (unlocked at unit level 5+) ─────────────────────────
-function racialUnitBonus(k, unit) {
-  const level = effectiveTroopLevel(k, unit);
-  if (level < 25) return {};
-  const race = k.race;
-  // Dwarf: 1 engineer can solo-crew a war machine
-  if (race === "dwarf" && unit === "engineers")
-    return { warMachineSoloCrew: true };
-  // High Elf: scroll crafting produces 2 scrolls instead of 1
-  if (race === "high_elf" && unit === "mages") return { doubleScrolls: true };
-  // Orc: every 10 fighters trains 1 free fighter per turn
-  if (race === "orc" && unit === "fighters")
-    return { freeTrainees: Math.floor(k.fighters / 10) };
-  // Dark Elf: assassinations leave no trace — target gets no news
-  if (race === "dark_elf" && unit === "ninjas")
-    return { silentAssassination: true };
-  // Dire Wolf: expeditions return 1 turn early
-  if (race === "dire_wolf" && unit === "rangers") return { earlyReturn: true };
-  // Human: clerics restore 1 morale across all unit types per turn
-  if (race === "human" && unit === "clerics") return { auraHeal: true };
-  // Vampire: Infiltrators (thieves) steal significantly more gold and have higher sabotage success at night
-  if (race === "vampire" && unit === "thieves")
-    return { infiltratorMastery: true };
-  return {};
-}
-
-// ── Dilute troop XP when new units are hired ──────────────────────────────────
-// new_avg_xp = (old_xp × old_count) / (old_count + hired)
-function diluteTroopXp(k, unit, hired) {
-  if (!hired || hired <= 0) return null;
-  const troopLevels = safeJsonParse(
-    k.troop_levels,
-    {},
-    "diluteTroopXp:troop_levels",
-  );
-  const current = troopLevels[unit] || { level: 1, xp: 0, count: k[unit] || 0 };
-  const oldCount = Math.max(1, current.count || k[unit] || 1);
-  const totalXp = current.xp + troopXpForLevel(current.level); // total absolute XP
-  const newCount = oldCount + hired;
-  const newAvgXp = Math.floor((totalXp * oldCount) / newCount);
-  // Recompute level from new average XP
-  let newLevel = 1;
-  while (newLevel < 100 && newAvgXp >= troopXpForLevel(newLevel + 1))
-    newLevel++;
-  const xpIntoLevel = newAvgXp - troopXpForLevel(newLevel);
-  troopLevels[unit] = {
-    level: newLevel,
-    xp: Math.max(0, xpIntoLevel),
-    count: newCount,
-  };
-  return JSON.stringify(troopLevels);
-}
-
-// ── Award activity XP to a unit type ─────────────────────────────────────────
-// Wraps awardTroopXp, applies race bonus, returns updated troop_levels object (not stringified)
-function awardUnitXp(k, unit, xpAmount) {
-  if (!xpAmount || xpAmount <= 0 || !(k[unit] > 0)) return null;
-  const result = awardTroopXp(k, unit, xpAmount);
-  // Return parsed object, not JSON string, so it stays as object throughout processTurn
-  return typeof result.troop_levels === "string" ? JSON.parse(result.troop_levels) : result.troop_levels;
-}
-
-// ── Unit Availability ──────────────────────────────────────────────────────────
-function getAvailableUnits(k, unit) {
-  const total = k[unit] || 0;
-  if (!k.training_allocation) return total;
-  const trainingAlloc = safeJsonParse(
-    k.training_allocation,
-    {},
-    "getAvailableUnits:training_allocation",
-  );
-  const training = Math.max(0, parseInt(trainingAlloc[unit]) || 0);
-  return Math.max(0, total - training);
 }
 
 // ── Defense system ────────────────────────────────────────────────────────────

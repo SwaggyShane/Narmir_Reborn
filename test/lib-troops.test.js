@@ -1,0 +1,193 @@
+'use strict';
+// Characterization tests for game/lib/troops.js.
+// Locks XP tables, level math, race-bonus multipliers, and the JSON-encoded
+// troop_levels round-tripping that downstream callers rely on.
+//
+// Run: node test/lib-troops.test.js
+
+const assert = require('assert');
+const {
+  troopXpForLevel,
+  effectiveTroopLevel,
+  awardTroopXp,
+  unitLevelMult,
+  racialUnitBonus,
+  diluteTroopXp,
+  awardUnitXp,
+  getAvailableUnits,
+  getUnitName,
+  LEGENDARY_NAMES,
+} = require('../game/lib/troops');
+
+console.log('Testing troops.js\n');
+
+// Test 1: troopXpForLevel has the documented step ladder
+assert.equal(troopXpForLevel(1), 0);
+assert.equal(troopXpForLevel(2), 200);     // ×100 band
+assert.equal(troopXpForLevel(10), 1000);   // ×100 band
+assert.equal(troopXpForLevel(11), 3300);   // ×300 band
+assert.equal(troopXpForLevel(25), 7500);
+assert.equal(troopXpForLevel(26), 20800);  // ×800 band
+assert.equal(troopXpForLevel(50), 40000);
+assert.equal(troopXpForLevel(51), 102000); // ×2000 band
+assert.equal(troopXpForLevel(75), 150000);
+assert.equal(troopXpForLevel(76), 380000); // ×5000 band
+console.log('Test 1: XP table boundaries ✓');
+
+// Test 2: effectiveTroopLevel without troop_levels JSON returns 1
+{
+  const k = { race: 'human', troop_levels: null };
+  assert.equal(effectiveTroopLevel(k, 'fighters'), 1);
+  console.log('Test 2: missing troop_levels → level 1 ✓');
+}
+
+// Test 3: effectiveTroopLevel respects stored level + race bonus
+{
+  const k = {
+    race: 'human',
+    troop_levels: JSON.stringify({ fighters: { level: 10, xp: 0, count: 100 } }),
+  };
+  const lvl = effectiveTroopLevel(k, 'fighters');
+  assert.ok(lvl >= 1 && lvl <= 100);
+  console.log(`Test 3: level 10 human fighter → effective ${lvl} ✓`);
+}
+
+// Test 4: awardTroopXp returns valid JSON string + levelUps array
+{
+  const k = {
+    race: 'human',
+    troop_levels: JSON.stringify({ fighters: { level: 1, xp: 0, count: 50 } }),
+  };
+  const result = awardTroopXp(k, 'fighters', 250);
+  assert.ok(typeof result.troop_levels === 'string');
+  assert.ok(Array.isArray(result.levelUps));
+  // 250 XP > troopXpForLevel(2) = 200, so should level up
+  assert.equal(result.levelUps.length, 1);
+  const parsed = JSON.parse(result.troop_levels);
+  assert.equal(parsed.fighters.level, 2);
+  console.log('Test 4: awardTroopXp levels up at threshold ✓');
+}
+
+// Test 5: awardTroopXp respects level cap of 100
+{
+  const k = {
+    race: 'human',
+    troop_levels: JSON.stringify({ fighters: { level: 100, xp: 0, count: 50 } }),
+  };
+  const result = awardTroopXp(k, 'fighters', 1000000);
+  assert.equal(result.levelUps.length, 0);
+  console.log('Test 5: level 100 cap respected ✓');
+}
+
+// Test 6: unitLevelMult baseline at level 1 = 1.0, scales with prestige.
+// rangers is non-legendary for humans → isolates the prestige effect.
+{
+  const k = { race: 'human', prestige_level: 0, troop_levels: null };
+  assert.equal(unitLevelMult(k, 'rangers'), 1.0);
+  const kPrestige = { ...k, prestige_level: 1 };
+  assert.equal(unitLevelMult(kPrestige, 'rangers'), 1.0 * 1.05);
+  console.log('Test 6: unitLevelMult baseline + prestige scaling ✓');
+}
+
+// Test 7: Legendary multiplier applies at prestige > 0 for race-specific units
+{
+  const k = {
+    race: 'human',
+    prestige_level: 1,
+    troop_levels: JSON.stringify({ fighters: { level: 1, xp: 0, count: 50 } }),
+  };
+  // Human + fighters is legendary at prestige > 0
+  const m = unitLevelMult(k, 'fighters');
+  // Base 1.0 × (1 + 0.05) × 1.15 = 1.2075
+  assert.ok(Math.abs(m - 1.2075) < 1e-6, `expected ~1.2075, got ${m}`);
+  console.log('Test 7: legendary multiplier (+15%) ✓');
+}
+
+// Test 8: racialUnitBonus gates on level 25
+{
+  const lowLevel = {
+    race: 'orc',
+    troop_levels: JSON.stringify({ fighters: { level: 5, xp: 0, count: 100 } }),
+    fighters: 100,
+  };
+  assert.deepEqual(racialUnitBonus(lowLevel, 'fighters'), {});
+
+  const highLevel = {
+    race: 'orc',
+    troop_levels: JSON.stringify({ fighters: { level: 25, xp: 0, count: 100 } }),
+    fighters: 100,
+  };
+  const bonus = racialUnitBonus(highLevel, 'fighters');
+  assert.equal(bonus.freeTrainees, 10);
+  console.log('Test 8: racial bonus unlocks at level 25 ✓');
+}
+
+// Test 9: diluteTroopXp lowers average when hiring more
+{
+  const k = {
+    race: 'human',
+    troop_levels: JSON.stringify({ fighters: { level: 5, xp: 100, count: 100 } }),
+    fighters: 100,
+  };
+  const result = diluteTroopXp(k, 'fighters', 100);
+  const parsed = JSON.parse(result);
+  // count should be 200 after hiring 100
+  assert.equal(parsed.fighters.count, 200);
+  // level should be ≤ 5 after dilution
+  assert.ok(parsed.fighters.level <= 5);
+  console.log('Test 9: diluteTroopXp lowers level/XP ✓');
+}
+
+// Test 10: getAvailableUnits subtracts training allocation
+{
+  const k = {
+    fighters: 100,
+    training_allocation: JSON.stringify({ fighters: 30 }),
+  };
+  assert.equal(getAvailableUnits(k, 'fighters'), 70);
+
+  const noAlloc = { fighters: 100 };
+  assert.equal(getAvailableUnits(noAlloc, 'fighters'), 100);
+
+  const overTrain = {
+    fighters: 50,
+    training_allocation: JSON.stringify({ fighters: 200 }),
+  };
+  // never goes negative
+  assert.equal(getAvailableUnits(overTrain, 'fighters'), 0);
+  console.log('Test 10: getAvailableUnits respects training allocation ✓');
+}
+
+// Test 11: getUnitName + LEGENDARY_NAMES registry contract
+{
+  assert.equal(getUnitName('human', 'fighters'), 'Fighters');
+  assert.ok(getUnitName('human', 'fighters', 1).includes('Lionheart'));
+  assert.equal(getUnitName('vampire', 'clerics'), 'Thralls');
+  assert.equal(getUnitName('vampire', 'thieves'), 'Infiltrators');
+  assert.ok(LEGENDARY_NAMES.dwarf.engineers);
+  console.log('Test 11: getUnitName + legendary registry ✓');
+}
+
+// Test 12: awardUnitXp returns parsed object, not JSON string
+{
+  const k = {
+    race: 'human',
+    fighters: 50,
+    troop_levels: JSON.stringify({ fighters: { level: 1, xp: 0, count: 50 } }),
+  };
+  const result = awardUnitXp(k, 'fighters', 250);
+  assert.ok(result && typeof result === 'object');
+  assert.ok(typeof result !== 'string');
+  // result is the parsed troop_levels object, fighters key present
+  assert.ok(result.fighters);
+  console.log('Test 12: awardUnitXp returns parsed object ✓');
+}
+
+// Test 13: awardUnitXp returns null when no units present
+{
+  const k = { race: 'human', fighters: 0 };
+  assert.equal(awardUnitXp(k, 'fighters', 100), null);
+  console.log('Test 13: awardUnitXp null when no units ✓');
+}
+
+console.log('\nAll troops tests passed.');
