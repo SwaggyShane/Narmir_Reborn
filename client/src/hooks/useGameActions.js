@@ -1,4 +1,3 @@
-import { useGameMetrics } from './useGameState';
 import { useActivePanel } from './useActivePanel';
 
 async function apiCall(method, endpoint, body = null) {
@@ -23,7 +22,6 @@ async function apiCall(method, endpoint, body = null) {
 }
 
 export function useGameActions() {
-  const { updateMetrics } = useGameMetrics();
   const { activePanel } = useActivePanel();
 
   const takeTurn = async () => {
@@ -32,9 +30,8 @@ export function useGameActions() {
 
       if (result.error) return { error: result.error };
 
-      // Update metrics globally (always)
       if (result.updates) {
-        updateMetrics(result.updates);
+        window.applyGameMutation?.(result, { reason: 'turn', panelId: activePanel });
       }
 
       return {
@@ -54,7 +51,7 @@ export function useGameActions() {
       if (result.error) return { error: result.error };
 
       if (result.updates) {
-        updateMetrics(result.updates);
+        window.applyGameMutation?.(result, { reason: `quick-search:${type}`, panelId: activePanel });
       }
 
       return {
@@ -77,7 +74,7 @@ export function useGameActions() {
       if (result.error) return { error: result.error };
 
       if (result.updates) {
-        updateMetrics(result.updates);
+        window.applyGameMutation?.(result, { reason: 'spell', panelId: activePanel });
       }
 
       return {
@@ -100,7 +97,7 @@ export function useGameActions() {
       if (result.error) return { error: result.error };
 
       if (result.updates) {
-        updateMetrics(result.updates);
+        window.applyGameMutation?.(result, { reason: 'attack', panelId: activePanel });
       }
 
       return {

@@ -165,11 +165,14 @@ const ResourcesPanel = () => {
     loadExpeditions();
     const cdt = setInterval(() => setNow(Math.floor(Date.now()/1000)), 1000);
     const refreshTimer = setInterval(syncFromState, REFRESH_INTERVAL_MS);
-    window.refreshResourcesPanel = () => { syncFromState(); loadExpeditions(); };
+    const refreshResources = () => { syncFromState(); loadExpeditions(); };
+    window.refreshResourcesPanel = refreshResources;
+    const unregisterRefresh = window.registerPanelRefresh?.('resources', refreshResources);
     window.syncFromState = syncFromState;
     return () => {
       clearInterval(cdt);
       clearInterval(refreshTimer);
+      unregisterRefresh?.();
       delete window.refreshResourcesPanel;
       delete window.syncFromState;
     };

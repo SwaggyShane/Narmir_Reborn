@@ -4,7 +4,7 @@
 class GameStateManager {
   constructor() {
     this.listeners = new Set();
-    this.metrics = {
+    this.state = {
       gold: 0,
       mana: 0,
       population: 0,
@@ -17,7 +17,10 @@ class GameStateManager {
       food_balance: 0,
       tax: 42,
     };
+    this.snapshot = { ...this.state };
+    this.metrics = this.snapshot;
     this.panelState = new Map();
+    this.mutationListeners = new Set();
   }
 
   subscribe(listener) {
@@ -26,18 +29,53 @@ class GameStateManager {
   }
 
   notify() {
+    this.snapshot = { ...this.state };
+    this.metrics = this.snapshot;
     this.listeners.forEach(listener => {
       try {
-        listener(this.metrics);
+        listener(this.snapshot);
       } catch (e) {
         console.error('[GameStateManager] Listener error:', e);
       }
     });
   }
 
-  updateMetrics(updates) {
-    this.metrics = { ...this.metrics, ...updates };
+  subscribeToMutations(listener) {
+    this.mutationListeners.add(listener);
+    return () => this.mutationListeners.delete(listener);
+  }
+
+  emitMutation(reason = 'unknown', payload = {}) {
+    const event = {
+      reason,
+      payload,
+      state: this.snapshot,
+      at: Date.now(),
+    };
+    this.mutationListeners.forEach(listener => {
+      try {
+        listener(event);
+      } catch (e) {
+        console.error('[GameStateManager] Mutation listener error:', e);
+      }
+    });
+  }
+
+  setState(nextState = {}, context = {}) {
+    for (const [key, value] of Object.entries(nextState || {})) {
+      if (value !== undefined) this.state[key] = value;
+    }
     this.notify();
+    if (context.reason) this.emitMutation(context.reason, context.payload || nextState);
+    return this.snapshot;
+  }
+
+  applyUpdates(updates = {}, context = {}) {
+    return this.setState(updates, context);
+  }
+
+  updateMetrics(updates) {
+    return this.applyUpdates(updates, { reason: 'metrics', payload: updates });
   }
 
   setPanelState(panelName, state) {
@@ -49,7 +87,15 @@ class GameStateManager {
   }
 
   getMetrics() {
-    return this.metrics;
+    return this.snapshot;
+  }
+
+  getState() {
+    return this.snapshot;
+  }
+
+  getMutableState() {
+    return this.state;
   }
 }
 

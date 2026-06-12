@@ -30,6 +30,7 @@ import HirePanelReact from "./components/react/HirePanel.jsx";
 import ResourcesPanelReact from "./components/react/ResourcesPanel.jsx";
 import GlobalchatPanelReact from "./components/react/GlobalchatPanel.jsx";
 import SchoolSelectionPanelReact from "./components/react/SchoolSelectionPanel.jsx";
+import ResourceStripReact from "./components/react/ResourceStrip.jsx";
 
 // API call helper for making authenticated requests from vanilla JS
 async function apiCall(method, endpoint, body = null) {
@@ -68,22 +69,17 @@ window.apiCall = apiCall;
 
 console.log("[react] main.js execution started at", new Date().toISOString());
 
-export const gameState = {};
+export const gameState = gameStateManager.getMutableState();
 window.gameState = gameState;
 
 // Initialize game state manager with current state
 export function initGameStateManager() {
-  if (window.state) {
-    gameStateManager.updateMetrics({
-      gold: window.state.gold || 0,
-      mana: window.state.mana || 0,
-      population: window.state.population || 0,
-      happiness: window.state.happiness || 50,
-      food: window.state.food || 0,
-      land: window.state.land || 0,
-      turn: window.state.turn || 0,
-      tax: window.state.tax || 42,
-    });
+  const sourceState = window.state || window.gameState;
+  if (sourceState) {
+    gameStateManager.setState({
+      ...sourceState,
+      population: sourceState.population ?? sourceState.pop ?? 0,
+    }, { reason: 'init' });
   }
 }
 
@@ -91,30 +87,24 @@ export function initGameStateManager() {
 // Guard against HMR re-wrapping to prevent infinite recursion
 if (!window._applyServerUpdatesWrapped) {
   const originalApplyServerUpdates = window.applyServerUpdates;
-  window.applyServerUpdates = function(updates) {
+  window.applyServerUpdates = function(updates, context = {}) {
     if (!updates) return;
 
-    // Update gameStateManager first (source of truth)
-    // Dynamically sync all metrics fields
-    const knownMetrics = ['gold', 'mana', 'population', 'happiness', 'food', 'land', 'turn', 'tax', 'mana_regen', 'gold_income', 'food_balance'];
-    const metricsUpdate = {};
-
-    for (const metric of knownMetrics) {
-      if (updates[metric] !== undefined) {
-        metricsUpdate[metric] = updates[metric];
-      }
-    }
-
-    if (Object.keys(metricsUpdate).length > 0) {
-      gameStateManager.updateMetrics(metricsUpdate);
-    }
-
-    // Call the original vanilla JS function to update window.state and DOM
+    // Let the legacy normalizer update window.state first, then snapshot the full state.
     if (originalApplyServerUpdates) {
       originalApplyServerUpdates(updates);
     }
 
-    // Force UI refresh for vanilla JS metrics display
+    const sourceState = window.state || window.gameState;
+    const normalizedState = sourceState
+      ? { ...sourceState, population: sourceState.population ?? sourceState.pop }
+      : updates;
+    gameStateManager.applyUpdates(normalizedState, {
+      reason: context.reason || 'server-updates',
+      payload: updates,
+    });
+
+    // Keep non-React legacy surfaces refreshed during the migration.
     try {
       if (typeof window.syncUI === "function") {
         window.syncUI();
@@ -137,6 +127,51 @@ window.triggerReactUpdates = () => {
   reactHooks.forEach(cb => {
     try { cb(); } catch (e) { console.error("[react] Hook update error:", e); }
   });
+};
+
+const panelRefreshers = new Map();
+window.registerPanelRefresh = (panelId, callback) => {
+  panelRefreshers.set(panelId, callback);
+  return () => {
+    if (panelRefreshers.get(panelId) === callback) panelRefreshers.delete(panelId);
+  };
+};
+window.refreshPanel = (panelId, context = {}) => {
+  const callback = panelRefreshers.get(panelId);
+  if (!callback) return false;
+  try {
+    callback(context);
+    return true;
+  } catch (e) {
+    console.error(`[react] Panel refresh failed for ${panelId}:`, e);
+    return false;
+  }
+};
+window.refreshActivePanel = (context = {}) => {
+  const activeEl = document.querySelector('.panel.active[id], .panel[style*="display: block"][id]');
+  const panelId = context.panelId || activeEl?.id || window.location.hash?.replace('#', '');
+  return panelId ? window.refreshPanel(panelId, context) : false;
+};
+window.applyGameMutation = (resultOrUpdates, context = {}) => {
+  if (!resultOrUpdates) return resultOrUpdates;
+  const directUpdateKeys = [
+    'gold', 'mana', 'population', 'pop', 'land', 'turn', 'turns_stored',
+    'food', 'happiness', 'fighters', 'rangers', 'mages', 'clerics',
+    'engineers', 'wood', 'stone', 'iron', 'coal', 'steel', 'thralls',
+  ];
+  const updates = resultOrUpdates.updates
+    || resultOrUpdates.kUpdates
+    || (directUpdateKeys.some(key => resultOrUpdates[key] !== undefined) ? resultOrUpdates : null);
+  if (updates && typeof window.applyServerUpdates === 'function') {
+    window.applyServerUpdates(updates, context);
+  } else if (updates) {
+    gameStateManager.applyUpdates(updates, {
+      reason: context.reason || 'mutation',
+      payload: updates,
+    });
+  }
+  window.refreshActivePanel({ ...context, result: resultOrUpdates });
+  return resultOrUpdates;
 };
 
 if (window.setGameStateObj) {
@@ -163,6 +198,7 @@ export const mountReactApps = () => {
   };
 
   tryMount("vue-topbar-mount", TopbarReact);
+  tryMount("react-resource-strip", ResourceStripReact);
   tryMount("vue-panel-goals", GoalsPanelReact);
   tryMount("vue-sidebar-mount", SidebarReact);
   tryMount("vue-bottom-nav-mount", BottomNavReact);
@@ -464,9 +500,8 @@ window.takeTurn = async () => {
     } else if (data.ok) {
       console.log("[turn] processed successfully");
       if (data.updates) {
-        Object.assign(window.gameState, data.updates);
+        window.applyGameMutation(data, { reason: 'turn' });
         if (window.syncFromState) window.syncFromState();
-        if (window.triggerReactUpdates) window.triggerReactUpdates();
 
         // Refresh display elements safely
         try {
