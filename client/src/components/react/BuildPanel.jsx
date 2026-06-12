@@ -333,8 +333,8 @@ const BuildPanel = () => {
                               <span style={{ color: 'var(--gold)', fontWeight: 600 }}>{building}</span>: {att.fragmentName}
                               {att.special && <div style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '2px' }}>{att.special.name}</div>}
                               {hint && (
-                                <div style={{ fontSize: '10px', color: RESONANCE_COLOR[tier], marginTop: '4px', fontStyle: 'italic', letterSpacing: '0.2px' }}>
-                                  <span style={{ marginRight: '4px' }}>{RESONANCE_GLYPH[tier]}</span>{hint}
+                                <div style={{ fontSize: '10px', color: RESONANCE_COLOR[tier] || 'var(--text3)', marginTop: '4px', fontStyle: 'italic', letterSpacing: '0.2px' }}>
+                                  <span style={{ marginRight: '4px' }}>{RESONANCE_GLYPH[tier] || '·'}</span>{hint}
                                 </div>
                               )}
                             </div>

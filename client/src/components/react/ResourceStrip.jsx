@@ -2,27 +2,48 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useGameState } from '../../hooks/useGameState.js';
 
 // Tracks the previous numeric value for a key and returns a short-lived delta
-// string (e.g. "+150", "-50") that fades after a few seconds. Used to flash
+// (e.g. "+150", "-50") that fades after a few seconds. Used to flash
 // "changed this turn" indicators next to resource metrics so the player can
 // see what just moved without reading the news log.
+//
+// Returns { delta, flashId } — flashId is a monotonic counter bumped on every
+// new flash so callers can pass it as a React key to force the badge to
+// re-mount and replay its CSS animation even when two consecutive deltas
+// happen to be equal.
 function useDeltaFlash(value, { duration = 2400, minStep = 1 } = {}) {
-  const [delta, setDelta] = useState(null);
+  const [flash, setFlash] = useState({ delta: null, flashId: 0 });
   const prev = useRef(value);
+  const ready = useRef(false);
   const timer = useRef(null);
+  const flashId = useRef(0);
   useEffect(() => {
+    // Skip the first real-state transition: the store initializes with zeros
+    // and the server's initial /me response can push every metric up by
+    // thousands. Flashing "+5000 gold" the moment the player logs in is
+    // noise, not feedback.
+    if (!ready.current) {
+      prev.current = value;
+      ready.current = true;
+      return undefined;
+    }
+    if (value == null || prev.current == null) {
+      prev.current = value;
+      return undefined;
+    }
     const next = Number(value) || 0;
     const before = Number(prev.current) || 0;
     const diff = next - before;
     prev.current = next;
     if (Math.abs(diff) < minStep) return undefined;
-    setDelta(diff);
+    flashId.current += 1;
+    setFlash({ delta: diff, flashId: flashId.current });
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => setDelta(null), duration);
+    timer.current = setTimeout(() => setFlash({ delta: null, flashId: flashId.current }), duration);
     return () => {
       if (timer.current) clearTimeout(timer.current);
     };
   }, [value, duration, minStep]);
-  return delta;
+  return flash;
 }
 
 function formatDelta(delta) {
@@ -34,12 +55,17 @@ function formatDelta(delta) {
   return `${sign}${Math.round(abs).toLocaleString()}`;
 }
 
-function DeltaBadge({ value, color }) {
+function DeltaBadge({ flash, color }) {
+  const value = flash?.delta;
   if (value == null) return null;
   const label = formatDelta(value);
   const tone = color || (value >= 0 ? 'var(--green)' : 'var(--red)');
+  // key={flash.flashId} forces React to remount on every new flash so the
+  // `forwards`-pinned CSS animation replays even when two consecutive deltas
+  // are equal.
   return (
     <span
+      key={flash.flashId}
       style={{
         position: 'absolute',
         top: '-4px',
@@ -233,17 +259,17 @@ const ResourceStrip = () => {
   const defenseRating = state.defense_rating || 'Undefended';
   const defenseColor = String(defenseRating).toLowerCase().includes('undefended') ? 'var(--red)' : 'var(--gold)';
 
-  const goldDelta = useDeltaFlash(state.gold);
-  const manaDelta = useDeltaFlash(state.mana);
-  const landDelta = useDeltaFlash(state.land);
-  const popDelta = useDeltaFlash(pop);
-  const thrallDelta = useDeltaFlash(thralls);
-  const foodStoredDelta = useDeltaFlash(state.food, { minStep: 10 });
+  const goldFlash = useDeltaFlash(state.gold);
+  const manaFlash = useDeltaFlash(state.mana);
+  const landFlash = useDeltaFlash(state.land);
+  const popFlash = useDeltaFlash(pop);
+  const thrallFlash = useDeltaFlash(thralls);
+  const foodFlash = useDeltaFlash(state.food, { minStep: 10 });
 
   return (
     <>
       <div className="metric" id="metric-gold" style={{ position: 'relative' }}>
-        <DeltaBadge value={goldDelta} />
+        <DeltaBadge flash={goldFlash} />
         <div className="lbl">Gold</div>
         <div className="val" id="m-gold" style={{ color: numberValue(state.gold) < 1000 ? 'var(--red)' : undefined }}>
           {trunc(state.gold)}
@@ -253,7 +279,7 @@ const ResourceStrip = () => {
         </div>
       </div>
       <div className="metric" id="metric-mana" style={{ position: 'relative' }}>
-        <DeltaBadge value={manaDelta} />
+        <DeltaBadge flash={manaFlash} />
         <div className="lbl">Mana</div>
         <div className="val" id="m-mana">{trunc(state.mana)}</div>
         <div className="sub" id="m-mana-sub">
@@ -261,13 +287,13 @@ const ResourceStrip = () => {
         </div>
       </div>
       <div className="metric" id="metric-land" style={{ position: 'relative' }}>
-        <DeltaBadge value={landDelta} />
+        <DeltaBadge flash={landFlash} />
         <div className="lbl">Land</div>
         <div className="val" id="m-land">{trunc(state.land)}</div>
         <div className="sub"><span id="m-land-free">{trunc(freeLand(state))}</span> free</div>
       </div>
       <div className="metric" id="metric-pop" style={{ position: 'relative' }}>
-        <DeltaBadge value={popDelta} />
+        <DeltaBadge flash={popFlash} />
         <div className="lbl">Population</div>
         <div className="val" id="m-pop">{trunc(pop)}</div>
         <div className="sub">
@@ -276,7 +302,7 @@ const ResourceStrip = () => {
       </div>
       {isVampire && (
         <div className="metric" id="metric-thralls" style={{ position: 'relative' }}>
-          <DeltaBadge value={thrallDelta} />
+          <DeltaBadge flash={thrallFlash} />
           <div className="lbl">Thralls</div>
           <div className="val" id="m-thralls">{trunc(thralls)}</div>
           <div className="sub">
@@ -303,7 +329,7 @@ const ResourceStrip = () => {
         </div>
       </div>
       <div className="metric" id="metric-food" style={{ position: 'relative' }}>
-        <DeltaBadge value={foodStoredDelta} />
+        <DeltaBadge flash={foodFlash} />
         <div className="lbl">Food</div>
         <div className="val" id="m-food" style={{ color: numberValue(state.food) < 1000 ? 'var(--red)' : undefined }}>
           {trunc(state.food)}
