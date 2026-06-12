@@ -127,8 +127,8 @@ function applyHeroTurnBonuses(hero, k, updates, events) {
         type: 'system',
         message: `✨ Mage King Leyline Control: +${bonus.toLocaleString()} mana.`,
       });
-  } else if (hero.class === 'silent_shadow') {
-    // Silent Shadow: Stealth income
+  } else if (hero.class === 'shadowmaster') {
+    // Shadowmaster: Stealth income
     const bonus = Math.floor(hero.level * 200);
     updates.res_stealth =
       (updates.res_stealth !== undefined ? updates.res_stealth : k.res_stealth || 0) + bonus;
@@ -137,8 +137,8 @@ function applyHeroTurnBonuses(hero, k, updates, events) {
         type: 'system',
         message: `🌑 Silent Shadow Espionage: +${bonus.toLocaleString()} stealth.`,
       });
-  } else if (hero.class === 'diplomat') {
-    // Diplomat: Diplomacy boost
+  } else if (hero.class === 'high_consul') {
+    // High Consul: Diplomacy boost
     const bonus = Math.floor(hero.level * 100);
     updates.prestige =
       (updates.prestige !== undefined ? updates.prestige : k.prestige || 0) + bonus;
