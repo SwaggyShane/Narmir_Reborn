@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const { requireAuth } = require("./middleware");
 
 module.exports = function (db) {
   // ──────────── PUBLIC ENDPOINTS (No auth required) ────────────
@@ -8,34 +9,27 @@ module.exports = function (db) {
   router.get("/boards", async (req, res) => {
     try {
       const boards = await db.all(
-        `SELECT id, name, description, order_index
-         FROM forum_boards
-         WHERE is_active = 1
-         ORDER BY order_index ASC, created_at ASC`
+        `SELECT fb.id, fb.name, fb.description, fb.order_index,
+                COALESCE(t.topic_count, 0) as topicCount,
+                COALESCE(p.post_count, 0) as postCount
+         FROM forum_boards fb
+         LEFT JOIN (
+           SELECT board_id, COUNT(*) as topic_count
+           FROM forum_topics
+           GROUP BY board_id
+         ) t ON fb.id = t.board_id
+         LEFT JOIN (
+           SELECT ft.board_id, COUNT(*) as post_count
+           FROM forum_posts fp
+           INNER JOIN forum_topics ft ON fp.topic_id = ft.id
+           WHERE fp.is_deleted = 0
+           GROUP BY ft.board_id
+         ) p ON fb.id = p.board_id
+         WHERE fb.is_active = 1
+         ORDER BY fb.order_index ASC, fb.created_at ASC`
       );
 
-      if (!boards) {
-        return res.json([]);
-      }
-
-      // Get post counts for each board
-      for (const board of boards) {
-        const result = await db.get(
-          `SELECT COUNT(*) as total FROM forum_posts fp
-           INNER JOIN forum_topics ft ON fp.topic_id = ft.id
-           WHERE ft.board_id = ? AND fp.is_deleted = 0`,
-          [board.id]
-        );
-        board.postCount = result?.total || 0;
-
-        const topicsResult = await db.get(
-          `SELECT COUNT(*) as total FROM forum_topics WHERE board_id = ?`,
-          [board.id]
-        );
-        board.topicCount = topicsResult?.total || 0;
-      }
-
-      res.json(boards);
+      res.json(boards || []);
     } catch (err) {
       console.error("[forum] GET /boards error:", err.message);
       res.status(500).json({ error: "Failed to fetch boards" });
@@ -152,10 +146,10 @@ module.exports = function (db) {
   // ──────────── PROTECTED ENDPOINTS (Auth required) ────────────
 
   // POST /api/forum/topics - Create a new topic
-  router.post("/topics", async (req, res) => {
+  router.post("/topics", requireAuth, async (req, res) => {
     try {
       const { boardId, title, content } = req.body;
-      const playerId = req.user?.id;
+      const playerId = req.player.playerId;
 
       if (!playerId) {
         return res.status(401).json({ error: "Authentication required" });
@@ -182,11 +176,6 @@ module.exports = function (db) {
         return res.status(404).json({ error: "Board not found" });
       }
 
-      // Validate player exists
-      const player = await db.get(`SELECT id FROM players WHERE id = ?`, [playerId]);
-      if (!player) {
-        return res.status(401).json({ error: "Player not found" });
-      }
 
       // Create topic with first post
       const result = await db.run(
@@ -216,15 +205,11 @@ module.exports = function (db) {
   });
 
   // POST /api/forum/topics/:topicId/posts - Create a reply to a topic
-  router.post("/topics/:topicId/posts", async (req, res) => {
+  router.post("/topics/:topicId/posts", requireAuth, async (req, res) => {
     try {
       const { topicId } = req.params;
       const { content } = req.body;
-      const playerId = req.user?.id;
-
-      if (!playerId) {
-        return res.status(401).json({ error: "Authentication required" });
-      }
+      const playerId = req.player.playerId;
 
       if (!content || content.trim().length === 0) {
         return res.status(400).json({ error: "Content is required" });
@@ -247,11 +232,6 @@ module.exports = function (db) {
         return res.status(403).json({ error: "Topic is locked" });
       }
 
-      // Validate player exists
-      const player = await db.get(`SELECT id FROM players WHERE id = ?`, [playerId]);
-      if (!player) {
-        return res.status(401).json({ error: "Player not found" });
-      }
 
       const now = Math.floor(Date.now() / 1000);
 
@@ -284,15 +264,11 @@ module.exports = function (db) {
   });
 
   // PATCH /api/forum/posts/:postId - Edit own post
-  router.patch("/posts/:postId", async (req, res) => {
+  router.patch("/posts/:postId", requireAuth, async (req, res) => {
     try {
       const { postId } = req.params;
       const { content } = req.body;
-      const playerId = req.user?.id;
-
-      if (!playerId) {
-        return res.status(401).json({ error: "Authentication required" });
-      }
+      const playerId = req.player.playerId;
 
       if (!content || content.trim().length === 0) {
         return res.status(400).json({ error: "Content is required" });
@@ -338,14 +314,10 @@ module.exports = function (db) {
   });
 
   // DELETE /api/forum/posts/:postId - Delete own post (soft delete)
-  router.delete("/posts/:postId", async (req, res) => {
+  router.delete("/posts/:postId", requireAuth, async (req, res) => {
     try {
       const { postId } = req.params;
-      const playerId = req.user?.id;
-
-      if (!playerId) {
-        return res.status(401).json({ error: "Authentication required" });
-      }
+      const playerId = req.player.playerId;
 
       // Get post
       const post = await db.get(
@@ -396,14 +368,10 @@ module.exports = function (db) {
   });
 
   // DELETE /api/forum/topics/:topicId - Delete own topic
-  router.delete("/topics/:topicId", async (req, res) => {
+  router.delete("/topics/:topicId", requireAuth, async (req, res) => {
     try {
       const { topicId } = req.params;
-      const playerId = req.user?.id;
-
-      if (!playerId) {
-        return res.status(401).json({ error: "Authentication required" });
-      }
+      const playerId = req.player.playerId;
 
       // Get topic
       const topic = await db.get(
@@ -418,15 +386,19 @@ module.exports = function (db) {
         return res.status(403).json({ error: "You can only delete your own topics" });
       }
 
-      // Delete all posts in topic (soft delete)
-      const now = Math.floor(Date.now() / 1000);
-      await db.run(
-        `UPDATE forum_posts SET is_deleted = 1, deleted_at = ? WHERE topic_id = ?`,
-        [now, topicId]
-      );
-
-      // Delete topic
-      await db.run(`DELETE FROM forum_topics WHERE id = ?`, [topicId]);
+      // Use transaction to delete all posts first (to satisfy foreign key constraints), then delete topic
+      await db.run('BEGIN TRANSACTION');
+      try {
+        const now = Math.floor(Date.now() / 1000);
+        // Hard delete all posts in the topic first to satisfy foreign key constraints
+        await db.run(`DELETE FROM forum_posts WHERE topic_id = ?`, [topicId]);
+        // Delete the topic
+        await db.run(`DELETE FROM forum_topics WHERE id = ?`, [topicId]);
+        await db.run('COMMIT');
+      } catch (err) {
+        await db.run('ROLLBACK').catch(() => {});
+        throw err;
+      }
 
       res.json({
         success: true,

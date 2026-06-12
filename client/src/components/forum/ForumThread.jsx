@@ -20,6 +20,10 @@ export default function ForumThread({ topic, user, onPostCreated }) {
       setLoading(true);
       setError(null);
       const data = await fetchApi(`/api/forum/topics/${topic.id}/posts?page=${pageNum}`);
+      if (data && data.error) {
+        setError(data.error);
+        return;
+      }
       setThreadData(data.topic);
       setPosts(data.posts || []);
       setPage(data.page);
@@ -45,7 +49,11 @@ export default function ForumThread({ topic, user, onPostCreated }) {
   const handleDeletePost = async (postId) => {
     if (!confirm('Delete this post?')) return;
     try {
-      await fetchApi(`/api/forum/posts/${postId}`, { method: 'DELETE' });
+      const res = await fetchApi(`/api/forum/posts/${postId}`, { method: 'DELETE' });
+      if (res && res.error) {
+        alert(res.error);
+        return;
+      }
       loadPosts(page);
     } catch (err) {
       console.error('Error deleting post:', err);

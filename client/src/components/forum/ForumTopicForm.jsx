@@ -23,7 +23,7 @@ export default function ForumTopicForm({ board, user, onCreated, onCancel }) {
       setLoading(true);
       setError(null);
 
-      await fetchApi('/api/forum/topics', {
+      const res = await fetchApi('/api/forum/topics', {
         method: 'POST',
         body: JSON.stringify({
           boardId: board.id,
@@ -31,6 +31,11 @@ export default function ForumTopicForm({ board, user, onCreated, onCancel }) {
           content: content.trim()
         })
       });
+
+      if (res && res.error) {
+        setError(res.error);
+        return;
+      }
 
       setTitle('');
       setContent('');

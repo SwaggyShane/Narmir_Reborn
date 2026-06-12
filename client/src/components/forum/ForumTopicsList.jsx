@@ -18,6 +18,10 @@ export default function ForumTopicsList({ board, user, onSelectTopic, onCreateCl
       setLoading(true);
       setError(null);
       const data = await fetchApi(`/api/forum/boards/${board.id}/topics?page=${pageNum}&sort=${sort}`);
+      if (data && data.error) {
+        setError(data.error);
+        return;
+      }
       setTopics(data.topics || []);
       setPage(data.page);
       setTotalPages(data.totalPages);

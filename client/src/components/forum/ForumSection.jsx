@@ -5,7 +5,8 @@ import ForumThread from './ForumThread';
 import ForumTopicForm from './ForumTopicForm';
 import { fetchApi } from '../../utils/api';
 
-export default function ForumSection({ user }) {
+export default function ForumSection({ user: propUser }) {
+  const [user, setUser] = useState(propUser || null);
   const [view, setView] = useState('boards'); // 'boards' | 'topics' | 'thread'
   const [boards, setBoards] = useState([]);
   const [selectedBoard, setSelectedBoard] = useState(null);
@@ -14,16 +15,29 @@ export default function ForumSection({ user }) {
   const [error, setError] = useState(null);
   const [showTopicForm, setShowTopicForm] = useState(false);
 
-  // Load boards on mount
+  // Load boards on mount and fetch user if not provided
   useEffect(() => {
     loadBoards();
-  }, []);
+    if (!propUser) {
+      fetchApi('/api/auth/me')
+        .then((data) => {
+          if (data && data.username) {
+            setUser(data);
+          }
+        })
+        .catch((err) => console.error('Error loading user:', err));
+    }
+  }, [propUser]);
 
   const loadBoards = async () => {
     try {
       setLoading(true);
       setError(null);
       const data = await fetchApi('/api/forum/boards');
+      if (data && data.error) {
+        setError(data.error);
+        return;
+      }
       setBoards(data || []);
     } catch (err) {
       console.error('Error loading boards:', err);

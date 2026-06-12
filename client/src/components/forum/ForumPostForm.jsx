@@ -23,16 +23,19 @@ export default function ForumPostForm({ topic, user, post, onCreated, onCancel }
       setLoading(true);
       setError(null);
 
-      if (isEditing) {
-        await fetchApi(`/api/forum/posts/${post.id}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ content: content.trim() })
-        });
-      } else {
-        await fetchApi(`/api/forum/topics/${topic.id}/posts`, {
-          method: 'POST',
-          body: JSON.stringify({ content: content.trim() })
-        });
+      const res = isEditing
+        ? await fetchApi(`/api/forum/posts/${post.id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ content: content.trim() })
+          })
+        : await fetchApi(`/api/forum/topics/${topic.id}/posts`, {
+            method: 'POST',
+            body: JSON.stringify({ content: content.trim() })
+          });
+
+      if (res && res.error) {
+        setError(res.error);
+        return;
       }
 
       setContent('');
