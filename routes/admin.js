@@ -1022,12 +1022,12 @@ module.exports = function (db, io) {
       if (!targetPath) {
         return res.status(400).json({ error: "Invalid filename" });
       }
-      try {
-        fs.writeFileSync(targetPath, req.file.buffer);
-      } catch {
-        return res.status(500).json({ error: "Failed to save sound file" });
-      }
-      res.json({ ok: true, filename: path.basename(targetPath) });
+      fs.writeFile(targetPath, req.file.buffer, (writeErr) => {
+        if (writeErr) {
+          return res.status(500).json({ error: "Failed to save sound file" });
+        }
+        res.json({ ok: true, filename: path.basename(targetPath) });
+      });
     });
   });
 
