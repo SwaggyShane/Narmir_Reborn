@@ -3199,33 +3199,7 @@
         if (completed.length > 0) {
           var kingdom = await apiCall("GET", "/api/kingdom/me");
           if (kingdom && !kingdom.error) {
-            // Update all affected troop counts
-            if (kingdom.rangers !== undefined) state.rangers = kingdom.rangers;
-            if (kingdom.fighters !== undefined) state.fighters = kingdom.fighters;
-            if (kingdom.clerics !== undefined) state.clerics = kingdom.clerics;
-            if (kingdom.mages !== undefined) state.mages = kingdom.mages;
-            if (kingdom.thieves !== undefined) state.thieves = kingdom.thieves;
-            if (kingdom.ninjas !== undefined) state.ninjas = kingdom.ninjas;
-            // Update resource counts
-            if (kingdom.gold !== undefined) state.gold = kingdom.gold;
-            if (kingdom.mana !== undefined) state.mana = kingdom.mana;
-            if (kingdom.land !== undefined) state.land = kingdom.land;
-            if (kingdom.food !== undefined) state.food = kingdom.food;
-            if (kingdom.population !== undefined) state.pop = kingdom.population;
-            // Update reward items
-            if (kingdom.maps !== undefined) state.maps = kingdom.maps;
-            if (kingdom.scrolls !== undefined) {
-              try {
-                state.scrolls = typeof kingdom.scrolls === "string" ? JSON.parse(kingdom.scrolls) : kingdom.scrolls;
-              } catch (e) {}
-            }
-            if (kingdom.blueprints_stored !== undefined) state.blueprints_stored = kingdom.blueprints_stored;
-            // Update troop levels (XP)
-            if (kingdom.troop_levels !== undefined) {
-              try {
-                state.troop_levels = typeof kingdom.troop_levels === "string" ? JSON.parse(kingdom.troop_levels) : kingdom.troop_levels;
-              } catch (e) {}
-            }
+            window.applyGameMutation(kingdom, { reason: "expedition-complete" });
             updateExpeditionAvailability();
             syncUI();
           }
@@ -3317,6 +3291,10 @@
           id: id,
         });
         if (result.error) return toast(result.error, "error");
+        var kingdom = await apiCall("GET", "/api/kingdom/me");
+        if (kingdom && !kingdom.error) {
+          window.applyGameMutation(kingdom, { reason: "expedition-cancel" });
+        }
         toast("Expedition cancelled — troops returned", "success");
         await loadActiveExpeditions();
         syncUI();
@@ -3564,13 +3542,8 @@
         if (result.error) return toast(result.error, "error");
         playGameSound("spell_cast");
 
-        // Apply updates
-        applyServerUpdates(result.updates || {});
-        state.turns_stored = Math.max(0, (state.turns_stored || 0) - 1);
-        if (result.updates && result.updates.scrolls)
-          state.scrolls = result.updates.scrolls;
-        if (result.updates && result.updates.maps !== undefined)
-          state.maps = result.updates.maps;
+        // Apply updates from the authoritative spell response.
+        window.applyGameMutation(result, { reason: "spell" });
         syncUI();
         updateTurnsDisplay();
         renderSpells(); // refresh scroll counts
@@ -3656,6 +3629,11 @@
         var result = await apiCall("POST", "/api/kingdom/covert", body);
         if (result.error) return toast(result.error, "error");
 
+        var kingdomSnapshot = await apiCall("GET", "/api/kingdom/me");
+        if (kingdomSnapshot && !kingdomSnapshot.error) {
+          window.applyGameMutation(kingdomSnapshot, { reason: "covert-" + op });
+        }
+
         if (op === "spy") {
           if (result.success && result.report) {
             showSpyReport(result.report, t.name); // showSpyReport plays spy_success
@@ -3675,7 +3653,6 @@
           if (result.success) {
             playGameSound("assassinate_success");
             toast(result.event || "Assassination successful!", "success");
-            if (result.killed) state.ninjas = Math.max(0, state.ninjas); // ninjas returned
           } else {
             // caught sound maps to generic spy_caught or error
             toast(result.event || "Assassination failed", "error");
@@ -3687,9 +3664,6 @@
           } else {
             toast(result.event || "Sabotage failed", "error");
           }
-          if (result.ninjasLost) {
-            state.ninjas = Math.max(0, (state.ninjas || 0) - result.ninjasLost);
-          }
         } else if (op === "raid_trade_route") {
           if (result.success) {
             playGameSound("loot_success");
@@ -3699,12 +3673,8 @@
           }
         }
 
-        // Deduct a turn
-        if ((state.turns_stored || 0) > 0) {
-          state.turns_stored--;
-          updateTurnsDisplay();
-        }
         syncUI();
+        updateTurnsDisplay();
       }
 
       /* ── Battle report modal ── */
