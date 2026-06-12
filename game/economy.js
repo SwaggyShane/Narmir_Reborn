@@ -29,17 +29,20 @@ const {
 } = config;
 
 function totalHiredUnits(k) {
+  // Each field is NOT NULL in the DB schema, but `|| 0` guards against
+  // partial kingdom shapes (test fixtures, sockets that build kingdom
+  // snapshots from spread merges, etc.) producing NaN downstream.
   return (
-    k.fighters +
-    k.rangers +
-    k.clerics +
-    k.mages +
-    k.thieves +
-    k.ninjas +
-    k.researchers +
-    k.engineers +
-    k.scribes +
-    k.thralls
+    (k.fighters || 0) +
+    (k.rangers || 0) +
+    (k.clerics || 0) +
+    (k.mages || 0) +
+    (k.thieves || 0) +
+    (k.ninjas || 0) +
+    (k.researchers || 0) +
+    (k.engineers || 0) +
+    (k.scribes || 0) +
+    (k.thralls || 0)
   );
 }
 
@@ -103,9 +106,9 @@ function farmProduction(k) {
 
   let workedFarms = 0;
   if (race === "vampire") {
-    workedFarms = Math.min(farms, Math.floor(k.thralls / workersNeeded));
+    workedFarms = Math.min(farms, Math.floor((k.thralls || 0) / workersNeeded));
   } else {
-    const freePop = Math.max(0, k.population - totalHiredUnits(k));
+    const freePop = Math.max(0, (k.population || 0) - totalHiredUnits(k));
     workedFarms = Math.min(farms, Math.floor(freePop / workersNeeded));
   }
 
@@ -143,12 +146,12 @@ function foodConsumption(k) {
   const race = k.race || "human";
   const mult = FOOD_CONSUMPTION_MULT[race] || 1.0;
   const troops = totalHiredUnits(k);
-  const pop = Math.floor(k.population / 100);
+  const pop = Math.floor((k.population || 0) / 100);
 
   let consumption;
   if (race === "vampire") {
     // Only Thralls eat grain. Vampires eat Thralls/Pop (handled in processFoodEconomy)
-    consumption = Math.floor(k.thralls * mult);
+    consumption = Math.floor((k.thralls || 0) * mult);
   } else {
     consumption = Math.floor((troops + pop) * mult);
   }
@@ -326,7 +329,7 @@ function processFoodEconomy(k, events) {
   const storageRaceMult = raceBonus(k, 'food_storage');
   const granaryCapacityMult = fragmentBonusManager.getBonusMultiplier(k, 'granaries', 'capacity');
 
-  const maxStore = Math.floor((Math.floor(BASE_FOOD_STORAGE * storageRaceMult) + k.bld_granaries * granaryPer) * granaryCapacityMult);
+  const maxStore = Math.floor((Math.floor(BASE_FOOD_STORAGE * storageRaceMult) + (k.bld_granaries || 0) * granaryPer) * granaryCapacityMult);
 
   let rotRate = upgrades.preservation ? 0.05 * 0.7 : 0.05; // 5% base degradation, lowered by 30% with salt curing
 
@@ -384,10 +387,8 @@ function processFoodEconomy(k, events) {
     let populationEaten = Math.min(k.population, hunger);
     let remainingHunger = hunger - populationEaten;
 
-    let mausoleumUpgrades = {};
-    try {
-      mausoleumUpgrades = safeJsonParse(k.mausoleum_upgrades, {}, "auto:mausoleum_upgrades");
-    } catch {}
+    // safeJsonParse never throws — it returns the fallback on parse error.
+    const mausoleumUpgrades = safeJsonParse(k.mausoleum_upgrades, {}, "auto:mausoleum_upgrades");
 
     const thrallEfficiency =
       mausoleumUpgrades.blood_sacrifice && race === "vampire" ? 1.2 : 1.0;
@@ -558,7 +559,7 @@ function calculateTradeIncome(k) {
   }
 
   const econRes = (k.res_economy || 100) / 100;
-  const marketBonus = 1 + k.bld_markets * 0.002;
+  const marketBonus = 1 + (k.bld_markets || 0) * 0.002;
 
   // Merchant King achievement: +10% trade route income
   let achievements = safeJsonParse(k.achievements, [], "calculateTradeIncome:achievements");
