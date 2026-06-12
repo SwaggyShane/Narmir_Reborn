@@ -421,6 +421,62 @@ module.exports = function (db) {
     return !!result;
   };
 
+  // GET /api/forum/admin/moderators - List all moderators (admin only)
+  router.get("/admin/moderators", requireAdmin, async (req, res) => {
+    try {
+      const moderators = await db.all(
+        `SELECT fm.id, fm.player_id, fm.board_id, fm.assigned_by, fm.created_at,
+                fb.name as board_name
+         FROM forum_moderators fm
+         LEFT JOIN forum_boards fb ON fm.board_id = fb.id
+         ORDER BY fm.created_at DESC`
+      );
+      res.json(moderators || []);
+    } catch (err) {
+      console.error("[forum] GET /admin/moderators error:", err.message);
+      res.status(500).json({ error: "Failed to fetch moderators" });
+    }
+  });
+
+  // GET /api/forum/admin/bans - List all active bans (admin only)
+  router.get("/admin/bans", requireAdmin, async (req, res) => {
+    try {
+      const now = Math.floor(Date.now() / 1000);
+      const bans = await db.all(
+        `SELECT fb.id, fb.player_id, fb.board_id, fb.ban_type, fb.reason,
+                fb.expires_at, fb.banned_by, fb.created_at,
+                fbo.name as board_name
+         FROM forum_bans fb
+         LEFT JOIN forum_boards fbo ON fb.board_id = fbo.id
+         WHERE fb.expires_at IS NULL OR fb.expires_at > ?
+         ORDER BY fb.created_at DESC`,
+        [now]
+      );
+      res.json(bans || []);
+    } catch (err) {
+      console.error("[forum] GET /admin/bans error:", err.message);
+      res.status(500).json({ error: "Failed to fetch bans" });
+    }
+  });
+
+  // GET /api/forum/admin/logs - Get moderation audit log (admin only)
+  router.get("/admin/logs", requireAdmin, async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit || "100", 10);
+      const logs = await db.all(
+        `SELECT id, moderator_id, action, target_type, target_id, reason, created_at
+         FROM forum_moderation_log
+         ORDER BY created_at DESC
+         LIMIT ?`,
+        [limit]
+      );
+      res.json(logs || []);
+    } catch (err) {
+      console.error("[forum] GET /admin/logs error:", err.message);
+      res.status(500).json({ error: "Failed to fetch logs" });
+    }
+  });
+
   // POST /api/forum/admin/moderators - Assign moderator (admin only)
   router.post("/admin/moderators", requireAdmin, async (req, res) => {
     try {
