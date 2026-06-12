@@ -1,4 +1,4 @@
-import { useGameMetrics } from './useGameState';
+import { gameStateManager } from '../GameStateManager';
 import { useActivePanel } from './useActivePanel';
 
 async function apiCall(method, endpoint, body = null) {
@@ -22,96 +22,28 @@ async function apiCall(method, endpoint, body = null) {
   return response.json();
 }
 
+// Every action funnels its server response through gameStateManager.applyUpdates
+// with a reason. Mutation listeners (active panel refresh etc.) can filter on reason.
+async function runAction(endpoint, body, reason) {
+  try {
+    const result = await apiCall('POST', endpoint, body);
+    if (result.error) return { error: result.error };
+    if (result.updates) {
+      gameStateManager.applyUpdates(result.updates, reason);
+    }
+    return { success: true, panelData: result };
+  } catch (err) {
+    return { error: err.message };
+  }
+}
+
 export function useGameActions() {
-  const { updateMetrics } = useGameMetrics();
   const { activePanel } = useActivePanel();
 
-  const takeTurn = async () => {
-    try {
-      const result = await apiCall('POST', '/api/kingdom/turn');
-
-      if (result.error) return { error: result.error };
-
-      // Update metrics globally (always)
-      if (result.updates) {
-        updateMetrics(result.updates);
-      }
-
-      return {
-        success: true,
-        activePanel,
-        panelData: result,
-      };
-    } catch (err) {
-      return { error: err.message };
-    }
-  };
-
-  const quickSearch = async (type) => {
-    try {
-      const result = await apiCall('POST', `/api/kingdom/quick-search/${type}`);
-
-      if (result.error) return { error: result.error };
-
-      if (result.updates) {
-        updateMetrics(result.updates);
-      }
-
-      return {
-        success: true,
-        activePanel,
-        panelData: result,
-      };
-    } catch (err) {
-      return { error: err.message };
-    }
-  };
-
-  const castSpell = async (spellId, targetId) => {
-    try {
-      const result = await apiCall('POST', '/api/kingdom/spell', {
-        spell: spellId,
-        target: targetId,
-      });
-
-      if (result.error) return { error: result.error };
-
-      if (result.updates) {
-        updateMetrics(result.updates);
-      }
-
-      return {
-        success: true,
-        activePanel,
-        panelData: result,
-      };
-    } catch (err) {
-      return { error: err.message };
-    }
-  };
-
-  const attack = async (targetId, units) => {
-    try {
-      const result = await apiCall('POST', '/api/kingdom/attack', {
-        targetId,
-        ...units,
-      });
-
-      if (result.error) return { error: result.error };
-
-      if (result.updates) {
-        updateMetrics(result.updates);
-      }
-
-      return {
-        success: true,
-        activePanel,
-        panelData: result,
-      };
-    } catch (err) {
-      return { error: err.message };
-    }
-  };
+  const takeTurn   = async ()                  => ({ ...(await runAction('/api/kingdom/turn', null, 'turn_taken')),                   activePanel });
+  const quickSearch = async (type)             => ({ ...(await runAction(`/api/kingdom/quick-search/${type}`, null, 'quick_search')), activePanel });
+  const castSpell   = async (spellId, target)  => ({ ...(await runAction('/api/kingdom/spell',  { spell: spellId, target }, 'spell_cast')), activePanel });
+  const attack      = async (targetId, units)  => ({ ...(await runAction('/api/kingdom/attack', { targetId, ...units },     'attack')),     activePanel });
 
   return { takeTurn, quickSearch, castSpell, attack };
 }

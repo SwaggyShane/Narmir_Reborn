@@ -72,31 +72,31 @@ console.log("[react] main.js execution started at", new Date().toISOString());
 export const gameState = {};
 window.gameState = gameState;
 
-// Initialize game state manager with current state
+// Initialize game state manager with current state.
+// window.gameState is seeded from the vanilla state object via setGameStateObj.
 export function initGameStateManager() {
-  // window.gameState is seeded from the vanilla state object via setGameStateObj
   if (window.gameState && Object.keys(window.gameState).length > 0) {
-    gameStateManager.updateMetrics({ ...window.gameState });
+    gameStateManager.applyUpdates({ ...window.gameState }, 'init');
   }
 }
 
-// WRAP vanilla JS applyServerUpdates to sync ALL state to gameStateManager
-// Guard against HMR re-wrapping to prevent infinite recursion
+// WRAP vanilla JS applyServerUpdates so EVERY server action result funnels
+// through gameStateManager.applyUpdates. Guard against HMR re-wrapping.
 if (!window._applyServerUpdatesWrapped) {
   const originalApplyServerUpdates = window.applyServerUpdates;
   window.applyServerUpdates = function(updates) {
     if (!updates) return;
 
-    // Sync ALL update fields to gameStateManager — it's the single source of truth
-    // GameStateManager.updateMetrics does a shallow merge so non-metric fields are ignored gracefully
-    gameStateManager.updateMetrics(updates);
+    // Single mutation entry point — React store re-renders and mutation
+    // listeners (active panel refresh) fire automatically.
+    gameStateManager.applyUpdates(updates, 'server_update');
 
-    // Call the original vanilla JS function to update window.state and DOM (non-React elements)
+    // Call the original vanilla JS function to update window.state and any
+    // remaining non-React DOM elements (build/economy/training panels etc.).
     if (originalApplyServerUpdates) {
       originalApplyServerUpdates(updates);
     }
 
-    // Force UI refresh for vanilla JS non-React elements
     try {
       if (typeof window.syncUI === "function") {
         window.syncUI();
@@ -108,6 +108,9 @@ if (!window._applyServerUpdatesWrapped) {
   window._applyServerUpdatesWrapped = true;
 }
 
+// Legacy reactHooks registry — panels that haven't migrated to useGameState()
+// register a callback that fires on every mutation. The mutation subscription
+// keeps the legacy callback path alive while panels migrate one at a time.
 const reactHooks = new Map();
 window.registerPanelReactHook = (panelId, callback) => {
   reactHooks.set(panelId, callback);
@@ -115,14 +118,23 @@ window.registerPanelReactHook = (panelId, callback) => {
     reactHooks.delete(panelId);
   };
 };
-window.triggerReactUpdates = () => {
-  // Push full current state to GameStateManager so React components auto-refresh
-  if (window.gameState && Object.keys(window.gameState).length > 0) {
-    gameStateManager.updateMetrics({ ...window.gameState });
-  }
-  reactHooks.forEach(cb => {
-    try { cb(); } catch (e) { console.error("[react] Hook update error:", e); }
+if (!window._reactHooksWired) {
+  gameStateManager.subscribeMutation(() => {
+    reactHooks.forEach(cb => {
+      try { cb(); } catch (e) { console.error("[react] Hook update error:", e); }
+    });
   });
+  window._reactHooksWired = true;
+}
+window.triggerReactUpdates = () => {
+  // Vanilla code path that mutated window.gameState directly — push the
+  // full snapshot through the single mutation entry point.
+  if (window.gameState && Object.keys(window.gameState).length > 0) {
+    gameStateManager.applyUpdates({ ...window.gameState }, 'react_sync');
+  } else {
+    // No state to push but legacy callbacks still need to fire
+    gameStateManager.emitMutation('react_sync', {});
+  }
 };
 
 if (window.setGameStateObj) {
@@ -452,8 +464,9 @@ window.takeTurn = async () => {
       console.log("[turn] processed successfully");
       if (data.updates) {
         Object.assign(window.gameState, data.updates);
-        // Push all updates to GameStateManager so React components auto-refresh
-        gameStateManager.updateMetrics(data.updates);
+        // Single mutation entry point: tag with reason so mutation listeners
+        // can distinguish a turn-tick from other server updates.
+        gameStateManager.applyUpdates(data.updates, 'turn_taken');
         if (window.syncFromState) window.syncFromState();
         if (window.triggerReactUpdates) window.triggerReactUpdates();
 

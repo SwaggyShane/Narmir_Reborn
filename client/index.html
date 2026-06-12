@@ -5305,66 +5305,19 @@
             scorePerTurnEl.textContent = "(0/turn)";
           }
         }
-        var goldEl = document.getElementById("m-gold");
-        if (goldEl) {
-          goldEl.textContent = trunc(state.gold || 0);
-          goldEl.style.color = (state.gold || 0) < 1000 ? "var(--red)" : "";
-        }
-        var manaEl = document.getElementById("m-mana");
-        if (manaEl) manaEl.textContent = trunc(state.mana || 0);
-        var popEl = document.getElementById("m-pop");
-        if (popEl) popEl.textContent = trunc(
-          state.population || state.pop || 0,
-        );
-        var HOUSING_CAP_BY_RACE = {
-          dwarf: 975,
-          orc: 900,
-          human: 750,
-          dark_elf: 675,
-          high_elf: 525,
-          dire_wolf: 1050,
-          vampire: 600,
-        };
-        var capPerBuilding = HOUSING_CAP_BY_RACE[state.race] || 500;
-        var housingCap = (state.bld_housing || 0) * capPerBuilding;
-        var popCapEl = document.getElementById("m-pop-cap");
-        if (popCapEl) {
-          popCapEl.textContent = trunc(housingCap);
-          if (
-            (state.population || state.pop || 0) > housingCap &&
-            housingCap > 0
-          ) {
-            popCapEl.style.color = "var(--red)";
-          } else {
-            popCapEl.style.color = "";
-          }
-        }
-
-        // Thralls
-        var thrallMetric = document.getElementById("metric-thralls");
+        // Resource strip is React-owned (MetricsStrip.jsx, fed by gameStateManager).
+        // The strip DOM is no longer touched here — server result → applyUpdates →
+        // React re-renders. We still toggle build-panel rows tied to race.
         var thrallRow = document.getElementById("row-mausoleums");
         var shrineRow = document.getElementById("row-shrines");
         if (state.race === "vampire") {
-          if (thrallMetric) thrallMetric.style.display = "block";
           if (thrallRow) thrallRow.style.display = "grid";
           if (shrineRow) shrineRow.style.display = "none";
-          var mThralls = document.getElementById("m-thralls");
-          var mThrallsCap = document.getElementById("m-thralls-cap");
-          var thrallHousing = (state.bld_mausoleums || 0) * 100;
-          if (mThralls) mThralls.textContent = trunc(state.thralls || 0);
-          if (mThrallsCap) {
-            mThrallsCap.textContent = trunc(thrallHousing);
-            mThrallsCap.style.color =
-              (state.thralls || 0) > thrallHousing ? "var(--red)" : "";
-          }
         } else {
-          if (thrallMetric) thrallMetric.style.display = "none";
           if (thrallRow) thrallRow.style.display = "none";
           if (shrineRow) shrineRow.style.display = "grid";
         }
-        var landEl = document.getElementById("m-land");
-        if (landEl) landEl.textContent = trunc(state.land || 0);
-        // Calculate used land from buildings
+        // state.land_used is consumed by other panels — compute and store it.
         var LAND_COST = {
           bld_farms: 1,
           bld_granaries: 2,
@@ -5390,120 +5343,15 @@
           return sum + (state[k] || 0) * LAND_COST[k];
         }, 0);
         state.land_used = usedLand; // Make available to Vue components
-        var freeLand = Math.max(0, (state.land || 0) - usedLand);
-        var freeLandEl = document.getElementById("m-land-free");
-        if (freeLandEl) freeLandEl.textContent = trunc(freeLand);
-        // Update happiness bar
-        var happinessBar = document.getElementById("m-happiness-bar");
-        var happinessBreakdown = document.getElementById("m-happiness-breakdown");
-        if (happinessBar) {
-          var happiness = state.happiness !== undefined && state.happiness !== null ? state.happiness : 50;
-          var happinessPercent = Math.max(0, (happiness / 120) * 100);
-          happinessBar.style.width = Math.min(100, happinessPercent) + "%";
 
-          // Color coding: 0-50 red→yellow, 50-80 green, 80-120 bright green
-          happinessBar.style.background = "linear-gradient(90deg, #ef4444 0%, #fbbf24 41.67%, #4ade80 66.67%, #22c55e 100%)";
-          happinessBar.style.backgroundRepeat = "no-repeat";
-          happinessBar.style.backgroundSize = (120 / Math.min(120, Math.max(1, happiness))) * 100 + "% 100%";
-
-          // Update breakdown (simplified for now - full breakdown would require sending component data from server)
-          if (happinessBreakdown) {
-            happinessBreakdown.textContent = happiness > 80 ? "🎉 Thriving" : happiness > 50 ? "😊 Happy" : happiness > 30 ? "😐 Content" : "😞 Unhappy";
-          }
-        }
-        // Removed tax slider sync to allow free slider dragging without snapping back.
+        // Hire strip is still vanilla — keep its sync.
         var hsg = document.getElementById("hire-strip-gold");
         if (hsg) hsg.textContent = fmt(state.gold || 0);
         var hsp = document.getElementById("hire-strip-pop");
         if (hsp) hsp.textContent = fmt(state.population || state.pop || 0);
-        var foodEl = document.getElementById("m-food");
-        if (foodEl) {
-          foodEl.textContent = trunc(state.food || 0);
-          foodEl.style.color = (state.food || 0) < 1000 ? "var(--red)" : "";
-        }
         var farmsEl = document.getElementById("m-farms");
         if (farmsEl) farmsEl.textContent = fmt(state.bld_farms || 0);
-        var fbEl = document.getElementById("m-food-balance");
-        if (fbEl) {
-          var FARM_WORKERS_PER = {
-            human: 10,
-            dwarf: 8,
-            high_elf: 12,
-            orc: 15,
-            dark_elf: 10,
-            dire_wolf: 12,
-            vampire: 2,
-          };
-          var FARM_YIELD_MULT = {
-            human: 1.0,
-            dwarf: 0.9,
-            high_elf: 1.15,
-            orc: 0.85,
-            dark_elf: 0.95,
-            dire_wolf: 0.8,
-            vampire: 0.9,
-          };
-          var FOOD_CONS_MULT = {
-            human: 1.0,
-            dwarf: 0.85,
-            high_elf: 0.8,
-            orc: 1.35,
-            dark_elf: 0.95,
-            dire_wolf: 1.4,
-            vampire: 0.7,
-          };
-          var race = state.race || "human";
-          var freePop =
-            race === "vampire"
-              ? state.thralls || 0
-              : Math.max(
-                  0,
-                  (state.population || 0) -
-                    ((state.fighters || 0) +
-                      (state.rangers || 0) +
-                      (state.clerics || 0) +
-                      (state.mages || 0) +
-                      (state.thieves || 0) +
-                      (state.ninjas || 0) +
-                      (state.researchers || 0) +
-                      (state.engineers || 0) +
-                      (state.scribes || 0)),
-                );
-
-          var worked = Math.min(
-            state.bld_farms || 0,
-            Math.floor(freePop / (FARM_WORKERS_PER[race] || 10)),
-          );
-          var upgrades =
-            typeof state.farm_upgrades === "string"
-              ? JSON.parse(state.farm_upgrades)
-              : state.farm_upgrades || {};
-          var upgradeMult = 1.0;
-          if (upgrades.irrigation) upgradeMult *= 1.15;
-          if (upgrades.crop_rotation) upgradeMult *= 1.25;
-          if (upgrades.plantation) upgradeMult *= 1.6;
-          var prod = Math.floor(
-            worked * 100 * (FARM_YIELD_MULT[race] || 1.0) * upgradeMult,
-          );
-          var cons = Math.floor(
-            ((state.fighters || 0) +
-              (state.rangers || 0) +
-              (state.clerics || 0) +
-              (state.mages || 0) +
-              (state.thieves || 0) +
-              (state.ninjas || 0) +
-              (state.researchers || 0) +
-              (state.engineers || 0) +
-              (state.scribes || 0) +
-              Math.floor((state.population || 0) / 100)) *
-              (FOOD_CONS_MULT[race] || 1.0),
-          );
-          var bal = prod - cons;
-          if (fbEl) {
-            fbEl.textContent = (bal >= 0 ? "+" : "") + trunc(bal);
-            fbEl.style.color = bal >= 0 ? "var(--green)" : "var(--red)";
-          }
-        }
+        // Food-balance is React-owned (server sends k.food_balance via applyUpdates).
         var hpEl = document.getElementById("hire-pop");
         if (hpEl) hpEl.textContent = fmt(state.population || state.pop || 0);
         // Barracks and school capacity
@@ -5995,16 +5843,7 @@
               ? JSON.parse(state.defense_upgrades || "{}")
               : state.defense_upgrades || {};
         } catch {}
-        var drEl = document.getElementById("m-defense-rating");
-        var wlEl = document.getElementById("m-walls");
-        if (wlEl) wlEl.textContent = fmt(defWalls);
-        if (drEl) {
-          // Use server-computed defense_rating for consistency with defense panel
-          var rating = state.defense_rating || "🔴 Undefended";
-          var color = rating === "🔴 Undefended" ? "var(--red)" : "var(--gold)";
-          drEl.textContent = rating;
-          drEl.style.color = color;
-        }
+        // Defense rating + walls are React-owned (MetricsStrip reads from state).
         renderActiveEffects();
         renderRacialBadge();
         updateSmithyDisplay();
@@ -12566,13 +12405,7 @@
           en.textContent = fmt(netIncome);
           en.style.color = netIncome >= 0 ? "var(--green)" : "var(--red)";
         }
-        var msGold = document.getElementById("m-gold-sub");
-        if (msGold) {
-          msGold.textContent =
-            (netIncome >= 0 ? "+" : "") + fmt(netIncome) + "/turn";
-          msGold.style.color = netIncome >= 0 ? "var(--green)" : "var(--red)";
-        }
-
+        // Gold-income sub-line is React-owned (MetricsStrip reads state.gold_income).
         var elTax = document.getElementById("ledger-tax");
         if (elTax) elTax.textContent = "+" + fmt(income);
         var elMkt = document.getElementById("ledger-markets");
