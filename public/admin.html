@@ -2136,6 +2136,56 @@
         if (s) { s.disabled = !checked; if (!checked) s.checked = false; }
       }
 
+      function escAttr(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      }
+
+      var TROOP_TYPES = [
+        {id:'fighters',label:'Fighters'},{id:'rangers',label:'Rangers'},{id:'clerics',label:'Clerics'},
+        {id:'mages',label:'Mages'},{id:'thieves',label:'Thieves'},{id:'ninjas',label:'Ninjas'},
+        {id:'engineers',label:'Engineers'},{id:'researchers',label:'Researchers'},{id:'scribes',label:'Scribes'},
+        {id:'war_machines',label:'War Machines'},{id:'thralls',label:'Thralls'},
+      ];
+
+      var ALL_BUILDING_TYPES = [
+        'farms','granaries','barracks','outposts','guard_towers','schools','armories','vaults',
+        'smithies','markets','mage_towers','training','taverns','castles','libraries','shrines',
+        'housing','walls','mausoleums',
+      ];
+
+      function adminKvAdd(key) {
+        var name = prompt('Field name:');
+        if (!name || !name.trim()) return;
+        var container = document.getElementById('ef-' + key + '-widget');
+        var addBtn = document.getElementById('ef-' + key + '-add');
+        var row = document.createElement('div');
+        row.className = 'kv-row';
+        row.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:4px';
+        row.innerHTML =
+          '<span style="font-size:11px;min-width:130px;color:var(--text)">' + escHtml(name.trim()) + '</span>' +
+          '<input type="number" data-field="' + escAttr(name.trim()) + '" value="0" style="width:80px">' +
+          '<button type="button" onclick="this.parentElement.remove()" style="font-size:10px;padding:2px 5px;background:var(--red,#c0392b);border:none;color:#fff;border-radius:3px;cursor:pointer">✕</button>';
+        container.insertBefore(row, addBtn);
+      }
+
+      function adminEffectAdd(key) {
+        var name = prompt('Effect name (e.g. shield, bless, arcane_ward):');
+        if (!name || !name.trim()) return;
+        var turns = parseInt(prompt('Turns left:', '5'), 10);
+        if (isNaN(turns)) return;
+        var container = document.getElementById('ef-' + key + '-widget');
+        var addBtn = document.getElementById('ef-' + key + '-add');
+        var row = document.createElement('div');
+        row.className = 'kv-row';
+        row.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:4px';
+        row.innerHTML =
+          '<span style="font-size:11px;min-width:140px;color:var(--text)">' + escHtml(name.trim()) + '</span>' +
+          '<input type="number" data-field="' + escAttr(name.trim()) + '" value="' + turns + '" style="width:70px">' +
+          '<span style="font-size:10px;color:var(--text3)">turns</span>' +
+          '<button type="button" onclick="this.parentElement.remove()" style="font-size:10px;padding:2px 5px;background:var(--red,#c0392b);border:none;color:#fff;border-radius:3px;cursor:pointer">✕</button>';
+        container.insertBefore(row, addBtn);
+      }
+
       var EDIT_SECTIONS = [
         {
           label: "Attributes",
@@ -2247,26 +2297,41 @@
           label: "Fragments & Attunements",
           fields: [
             { key: "world_fragments", label: "World Fragments", type: "fragments" },
-            { key: "fragment_bonuses", label: "Fragment Bonuses (Attunements)", type: "json" },
-            { key: "hybrid_blueprints", label: "Hybrid Blueprints", type: "json" },
-            { key: "fortified_buildings", label: "Fortified Buildings", type: "json" },
+            { key: "fragment_bonuses", label: "Attunements (building → fragment)", type: "attunements-view" },
+            { key: "hybrid_blueprints", label: "Hybrid Blueprints", type: "kv-numbers" },
+            { key: "fortified_buildings", label: "Fortified Buildings", type: "fortified-blds" },
             { key: "fortified_blueprints", label: "Fortified Blueprints" },
           ],
         },
         {
-          label: "Advanced (JSON)",
+          label: "Troops",
           fields: [
-            { key: "active_effects", label: "Active Effects", type: "json" },
-            { key: "troop_levels", label: "Troop Levels", type: "json" },
-            { key: "injured_troops", label: "Injured Troops", type: "json" },
-            { key: "research_allocation", label: "Res Alloc", type: "json" },
-            { key: "build_queue", label: "Build Queue", type: "json" },
-            { key: "build_progress", label: "Build Progress", type: "json" },
-            { key: "build_allocation", label: "Build Alloc", type: "json" },
-            { key: "scrolls", label: "Scrolls", type: "json" },
-            { key: "alliance_buffs", label: "Alliance Buffs", type: "json" },
-            { key: "items", label: "Items", type: "json" },
-            { key: "mercenaries", label: "Mercenaries", type: "json" },
+            { key: "troop_levels", label: "Troop Levels", type: "troop-levels" },
+            { key: "injured_troops", label: "Injured Troops", type: "injured-counts" },
+            { key: "mercenaries", label: "Mercenaries", type: "merc-table" },
+          ],
+        },
+        {
+          label: "Magic & Effects",
+          fields: [
+            { key: "active_effects", label: "Active Effects", type: "effects-list" },
+            { key: "scrolls", label: "Scrolls", type: "kv-numbers" },
+            { key: "items", label: "Items", type: "items-list" },
+          ],
+        },
+        {
+          label: "Construction & Allocation",
+          fields: [
+            { key: "research_allocation", label: "Research Allocation", type: "kv-numbers" },
+            { key: "build_queue", label: "Build Queue", type: "kv-numbers" },
+            { key: "build_progress", label: "Build Progress", type: "kv-numbers" },
+            { key: "build_allocation", label: "Build Allocation", type: "kv-numbers" },
+          ],
+        },
+        {
+          label: "Misc",
+          fields: [
+            { key: "alliance_buffs", label: "Alliance Buffs", type: "kv-numbers" },
             { key: "wall_hp", label: "Wall HP" },
             { key: "wall_defense_type", label: "Wall Defense Type", type: "text" },
             { key: "racial_bonuses_unlocked", label: "Racial Bonuses Unlocked" },
@@ -2559,18 +2624,141 @@
               });
               fieldHtml += '</div>';
 
-            } else if (inputType === "json") {
-              try {
-                var parsed = typeof val === "string" ? JSON.parse(val) : val;
-                displayVal = JSON.stringify(parsed, null, 2);
-              } catch (e) {
-                displayVal = val || "";
+            } else if (inputType === "kv-numbers") {
+              var kvParsed = {};
+              try { kvParsed = JSON.parse(typeof val === 'string' ? (val || '{}') : JSON.stringify(val || {})); } catch(e) {}
+              if (Array.isArray(kvParsed)) kvParsed = {};
+              var kvRows = '';
+              Object.keys(kvParsed).forEach(function(k) {
+                var v = parseFloat(kvParsed[k]) || 0;
+                kvRows += '<div class="kv-row" style="display:flex;align-items:center;gap:6px;margin-bottom:4px">' +
+                  '<span style="font-size:11px;min-width:130px;color:var(--text)">' + escHtml(k) + '</span>' +
+                  '<input type="number" data-field="' + escAttr(k) + '" value="' + v + '" style="width:80px">' +
+                  '<button type="button" onclick="this.parentElement.remove()" style="font-size:10px;padding:2px 5px;background:var(--red,#c0392b);border:none;color:#fff;border-radius:3px;cursor:pointer">✕</button>' +
+                  '</div>';
+              });
+              fieldHtml = '<div id="ef-' + f.key + '-widget" style="display:flex;flex-direction:column">' + kvRows +
+                '<div id="ef-' + f.key + '-add" style="margin-top:4px"><button type="button" onclick="adminKvAdd(\'' + f.key + '\')" style="font-size:11px;padding:4px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:3px;cursor:pointer">+ Add</button></div></div>';
+
+            } else if (inputType === "troop-levels") {
+              var tlParsed = {};
+              try { tlParsed = JSON.parse(typeof val === 'string' ? (val || '{}') : '{}'); } catch(e) {}
+              var tlHeader = '<div style="display:grid;grid-template-columns:120px 70px 70px;gap:4px;font-size:10px;color:var(--text3);margin-bottom:4px"><span>Unit</span><span>Level</span><span>XP</span></div>';
+              var tlRows = '';
+              TROOP_TYPES.forEach(function(t) {
+                var d = tlParsed[t.id] || {};
+                tlRows += '<div style="display:grid;grid-template-columns:120px 70px 70px;gap:4px;margin-bottom:3px">' +
+                  '<span style="font-size:11px;color:var(--text);align-self:center">' + t.label + '</span>' +
+                  '<input type="number" id="tl-level-' + t.id + '" value="' + (parseInt(d.level)||0) + '" style="width:100%">' +
+                  '<input type="number" id="tl-xp-' + t.id + '" value="' + (parseInt(d.xp)||0) + '" style="width:100%">' +
+                  '</div>';
+              });
+              fieldHtml = '<div id="ef-' + f.key + '-widget">' + tlHeader + tlRows + '</div>';
+
+            } else if (inputType === "injured-counts") {
+              var injParsed = {};
+              try { injParsed = JSON.parse(typeof val === 'string' ? (val || '{}') : '{}'); } catch(e) {}
+              var injRows = '';
+              TROOP_TYPES.forEach(function(t) {
+                var count = Array.isArray(injParsed[t.id]) ? injParsed[t.id].length : 0;
+                injRows += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">' +
+                  '<span style="font-size:11px;min-width:110px;color:var(--text)">' + t.label + '</span>' +
+                  '<input type="number" id="inj-' + t.id + '" value="' + count + '" min="0" style="width:70px">' +
+                  '<span style="font-size:10px;color:var(--text3)">injured</span>' +
+                  '</div>';
+              });
+              fieldHtml = '<div id="ef-' + f.key + '-widget">' + injRows + '</div>';
+
+            } else if (inputType === "effects-list") {
+              var effParsed = {};
+              try { effParsed = JSON.parse(typeof val === 'string' ? (val || '{}') : '{}'); } catch(e) {}
+              if (Array.isArray(effParsed)) effParsed = {};
+              var effRows = '';
+              Object.keys(effParsed).forEach(function(k) {
+                var v = effParsed[k];
+                var turns = (v && typeof v === 'object') ? (v.turns_left || 0) : (parseFloat(v) || 0);
+                effRows += '<div class="kv-row" style="display:flex;align-items:center;gap:6px;margin-bottom:4px">' +
+                  '<span style="font-size:11px;min-width:140px;color:var(--text)">' + escHtml(k) + '</span>' +
+                  '<input type="number" data-field="' + escAttr(k) + '" value="' + turns + '" style="width:70px">' +
+                  '<span style="font-size:10px;color:var(--text3)">turns</span>' +
+                  '<button type="button" onclick="this.parentElement.remove()" style="font-size:10px;padding:2px 5px;background:var(--red,#c0392b);border:none;color:#fff;border-radius:3px;cursor:pointer">✕</button>' +
+                  '</div>';
+              });
+              fieldHtml = '<div id="ef-' + f.key + '-widget" style="display:flex;flex-direction:column">' + effRows +
+                '<div id="ef-' + f.key + '-add" style="margin-top:4px"><button type="button" onclick="adminEffectAdd(\'' + f.key + '\')" style="font-size:11px;padding:4px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:3px;cursor:pointer">+ Add Effect</button></div></div>';
+
+            } else if (inputType === "items-list") {
+              var itmArr = [];
+              try { var itmP = JSON.parse(typeof val === 'string' ? (val || '[]') : '[]'); itmArr = Array.isArray(itmP) ? itmP : []; } catch(e) {}
+              var itmRows = itmArr.length === 0 ? '<div style="font-size:11px;color:var(--text3)">No items</div>' : '';
+              itmArr.forEach(function(item) {
+                itmRows += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">' +
+                  '<span style="font-size:11px;min-width:160px;color:var(--text)">' + escHtml(item.name || item.id) + '</span>' +
+                  '<input type="number" data-id="' + escAttr(item.id) + '" data-name="' + escAttr(item.name || item.id) + '" value="' + (parseInt(item.qty)||0) + '" min="0" style="width:70px">' +
+                  '</div>';
+              });
+              fieldHtml = '<div id="ef-' + f.key + '-widget">' + itmRows + '</div>';
+
+            } else if (inputType === "merc-table") {
+              var mercArr = [];
+              try { var mercP = JSON.parse(typeof val === 'string' ? (val || '[]') : '[]'); mercArr = Array.isArray(mercP) ? mercP : []; } catch(e) {}
+              if (mercArr.length === 0) {
+                fieldHtml = '<div id="ef-' + f.key + '-widget" style="font-size:11px;color:var(--text3)">No mercenaries</div>';
+              } else {
+                var mercHeader = '<div style="display:grid;grid-template-columns:80px 55px 45px 65px 55px 65px 70px 28px;gap:3px;font-size:10px;color:var(--text3);margin-bottom:3px">' +
+                  '<span>Unit</span><span>Tier</span><span>Lvl</span><span>Count</span><span>Hired</span><span>Duration</span><span>Upkeep</span><span></span></div>';
+                var mercRows = '';
+                mercArr.forEach(function(m) {
+                  mercRows += '<div class="merc-row" style="display:grid;grid-template-columns:80px 55px 45px 65px 55px 65px 70px 28px;gap:3px;margin-bottom:3px">' +
+                    '<input data-f="unit_type" value="' + escAttr(m.unit_type||'') + '" style="font-size:10px">' +
+                    '<input data-f="tier" value="' + escAttr(m.tier||'') + '" style="font-size:10px">' +
+                    '<input data-f="level" type="number" value="' + (m.level||0) + '" style="font-size:10px">' +
+                    '<input data-f="count" type="number" value="' + (m.count||0) + '" style="font-size:10px">' +
+                    '<input data-f="hired_at_turn" type="number" value="' + (m.hired_at_turn||0) + '" style="font-size:10px">' +
+                    '<input data-f="duration_turns" type="number" value="' + (m.duration_turns||0) + '" style="font-size:10px">' +
+                    '<input data-f="upkeep_per_turn" type="number" value="' + (m.upkeep_per_turn||0) + '" style="font-size:10px">' +
+                    '<button type="button" onclick="this.parentElement.remove()" style="font-size:10px;padding:2px 4px;background:var(--red,#c0392b);border:none;color:#fff;border-radius:3px;cursor:pointer">✕</button>' +
+                    '</div>';
+                });
+                fieldHtml = '<div id="ef-' + f.key + '-widget">' + mercHeader + mercRows + '</div>';
               }
-              fieldHtml =
-                '<textarea id="ef-' + f.key + '" rows="5" ' +
-                'style="width:100%;font-size:10px;font-family:monospace;resize:vertical;box-sizing:border-box">' +
-                escHtml(displayVal) +
-                "</textarea>";
+
+            } else if (inputType === "fortified-blds") {
+              var frtParsed = {};
+              try { frtParsed = JSON.parse(typeof val === 'string' ? (val || '{}') : '{}'); } catch(e) {}
+              if (Array.isArray(frtParsed)) frtParsed = {};
+              var frtRows = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px">';
+              ALL_BUILDING_TYPES.forEach(function(bld) {
+                var checked = !!frtParsed[bld];
+                frtRows += '<label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer">' +
+                  '<input type="checkbox" data-bld="' + bld + '" ' + (checked ? 'checked' : '') + '>' +
+                  bld.replace(/_/g,' ') + '</label>';
+              });
+              frtRows += '</div>';
+              fieldHtml = '<div id="ef-' + f.key + '-widget">' + frtRows + '</div>';
+
+            } else if (inputType === "attunements-view") {
+              var attParsed = {};
+              try { attParsed = JSON.parse(typeof val === 'string' ? (val || '{}') : '{}'); } catch(e) {}
+              if (Array.isArray(attParsed)) attParsed = {};
+              var attKeys = Object.keys(attParsed);
+              if (attKeys.length === 0) {
+                fieldHtml = '<div id="ef-' + f.key + '-widget" style="font-size:11px;color:var(--text3)">No attunements set</div>';
+              } else {
+                var attRows = '';
+                attKeys.forEach(function(bld) {
+                  var att = attParsed[bld];
+                  attRows += '<div class="att-row" data-bld="' + escAttr(bld) + '" data-frag-data="' + escAttr(JSON.stringify(att)) + '" ' +
+                    'style="display:flex;align-items:center;gap:8px;margin-bottom:4px;padding:5px 8px;background:var(--bg3);border-radius:3px">' +
+                    '<span style="font-size:11px;min-width:100px;color:var(--gold)">' + escHtml(bld) + '</span>' +
+                    '<span style="font-size:11px;color:var(--text)">' + escHtml((att && att.fragment) || '') + '</span>' +
+                    '<span style="font-size:10px;color:var(--text3);flex:1">turn ' + ((att && att.applied_turn) || '?') + '</span>' +
+                    '<button type="button" onclick="this.parentElement.remove()" style="font-size:10px;padding:2px 5px;background:var(--red,#c0392b);border:none;color:#fff;border-radius:3px;cursor:pointer">✕</button>' +
+                    '</div>';
+                });
+                fieldHtml = '<div id="ef-' + f.key + '-widget">' + attRows + '</div>';
+              }
+
             } else {
               if (inputType === "number") {
                 displayVal = parseFloat(val);
@@ -2584,7 +2772,8 @@
                 '\' style="width:100%">';
             }
 
-            var spanFull = inputType === "fragments" ? "grid-column:1/-1;" : "";
+            var WIDE_TYPES = {"fragments":1,"troop-levels":1,"merc-table":1,"items-list":1,"fortified-blds":1,"attunements-view":1,"effects-list":1,"injured-counts":1,"kv-numbers":1};
+            var spanFull = WIDE_TYPES[inputType] ? "grid-column:1/-1;" : "";
             html +=
               '<div style="display:flex;flex-direction:column;gap:3px;' + spanFull + '">' +
               '<label style="font-size:11px;color:var(--text3)">' +
@@ -2606,7 +2795,9 @@
         var fields = {};
         EDIT_SECTIONS.forEach(function (sec) {
           sec.fields.forEach(function (f) {
-            if (f.type === "fragments") {
+            var t = f.type;
+
+            if (t === "fragments") {
               var frags = [];
               ALL_FRAGMENTS.forEach(function(fr) {
                 var sid = fragSafeId(fr.name);
@@ -2617,6 +2808,83 @@
                 }
               });
               fields[f.key] = JSON.stringify(frags);
+
+            } else if (t === "kv-numbers") {
+              var kvResult = {};
+              var kvW = document.getElementById("ef-" + f.key + "-widget");
+              if (kvW) kvW.querySelectorAll(".kv-row input[data-field]").forEach(function(inp) {
+                if (inp.dataset.field) kvResult[inp.dataset.field] = parseFloat(inp.value) || 0;
+              });
+              fields[f.key] = JSON.stringify(kvResult);
+
+            } else if (t === "troop-levels") {
+              var tlResult = {};
+              TROOP_TYPES.forEach(function(tu) {
+                var lvEl = document.getElementById("tl-level-" + tu.id);
+                var xpEl = document.getElementById("tl-xp-" + tu.id);
+                tlResult[tu.id] = { level: parseInt(lvEl && lvEl.value)||0, xp: parseInt(xpEl && xpEl.value)||0, count: 0 };
+              });
+              fields[f.key] = JSON.stringify(tlResult);
+
+            } else if (t === "injured-counts") {
+              var injResult = {};
+              TROOP_TYPES.forEach(function(tu) {
+                var el = document.getElementById("inj-" + tu.id);
+                var count = parseInt(el && el.value) || 0;
+                if (count > 0) {
+                  injResult[tu.id] = [];
+                  for (var i = 0; i < count; i++) injResult[tu.id].push({ hp: 50, max_hp: 100 });
+                }
+              });
+              fields[f.key] = JSON.stringify(injResult);
+
+            } else if (t === "effects-list") {
+              var effResult = {};
+              var effW = document.getElementById("ef-" + f.key + "-widget");
+              if (effW) effW.querySelectorAll(".kv-row input[data-field]").forEach(function(inp) {
+                if (inp.dataset.field) effResult[inp.dataset.field] = { turns_left: parseInt(inp.value) || 0 };
+              });
+              fields[f.key] = JSON.stringify(effResult);
+
+            } else if (t === "items-list") {
+              var itmResult = [];
+              var itmW = document.getElementById("ef-" + f.key + "-widget");
+              if (itmW) itmW.querySelectorAll("input[data-id]").forEach(function(inp) {
+                itmResult.push({ id: inp.dataset.id, name: inp.dataset.name || inp.dataset.id, qty: parseInt(inp.value) || 0 });
+              });
+              fields[f.key] = JSON.stringify(itmResult);
+
+            } else if (t === "merc-table") {
+              var mercResult = [];
+              var mercW = document.getElementById("ef-" + f.key + "-widget");
+              if (mercW) mercW.querySelectorAll(".merc-row").forEach(function(row) {
+                var g = function(df) { var el = row.querySelector('[data-f="'+df+'"]'); return el ? el.value : ''; };
+                mercResult.push({
+                  unit_type: g("unit_type"), tier: g("tier"),
+                  level: parseInt(g("level"))||0, count: parseInt(g("count"))||0,
+                  hired_at_turn: parseInt(g("hired_at_turn"))||0,
+                  duration_turns: parseInt(g("duration_turns"))||0,
+                  upkeep_per_turn: parseInt(g("upkeep_per_turn"))||0,
+                });
+              });
+              fields[f.key] = JSON.stringify(mercResult);
+
+            } else if (t === "fortified-blds") {
+              var frtResult = {};
+              var frtW = document.getElementById("ef-" + f.key + "-widget");
+              if (frtW) frtW.querySelectorAll("input[data-bld]:checked").forEach(function(cb) {
+                frtResult[cb.dataset.bld] = true;
+              });
+              fields[f.key] = JSON.stringify(frtResult);
+
+            } else if (t === "attunements-view") {
+              var attResult = {};
+              var attW = document.getElementById("ef-" + f.key + "-widget");
+              if (attW) attW.querySelectorAll(".att-row[data-bld]").forEach(function(row) {
+                try { attResult[row.dataset.bld] = JSON.parse(row.dataset.fragData); } catch(e) {}
+              });
+              fields[f.key] = JSON.stringify(attResult);
+
             } else {
               var el = document.getElementById("ef-" + f.key);
               if (el && el.value !== "") fields[f.key] = el.value;
