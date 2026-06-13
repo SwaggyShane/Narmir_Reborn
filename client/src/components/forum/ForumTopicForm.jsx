@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { fetchApi } from '../../utils/api';
 
-export default function ForumTopicForm({ board, user, onCreated, onCancel }) {
+const ForumTopicForm = React.memo(function ForumTopicForm({ board, user, onCreated, onCancel }) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
@@ -98,4 +98,7 @@ export default function ForumTopicForm({ board, user, onCreated, onCancel }) {
       </form>
     </div>
   );
-}
+});
+
+ForumTopicForm.displayName = 'ForumTopicForm';
+export default ForumTopicForm;

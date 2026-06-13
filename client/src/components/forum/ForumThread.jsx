@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import ForumPostForm from './ForumPostForm';
 import { fetchApi } from '../../utils/api';
 
-export default function ForumThread({ topic, user, onPostCreated }) {
+const ForumThread = React.memo(function ForumThread({ topic, user, onPostCreated }) {
   const [threadData, setThreadData] = useState(null);
   const [posts, setPosts] = useState([]);
   const [page, setPage] = useState(1);
@@ -11,18 +11,15 @@ export default function ForumThread({ topic, user, onPostCreated }) {
   const [error, setError] = useState(null);
   const [editingPostId, setEditingPostId] = useState(null);
   const [reportingPostId, setReportingPostId] = useState(null);
+  const [deletingPostId, setDeletingPostId] = useState(null);
   const [reportSuccess, setReportSuccess] = useState(null);
 
-  useEffect(() => {
-    loadPosts(1);
-  }, [topic.id]);
-
-  const loadPosts = async (pageNum) => {
+  const loadPosts = useCallback(async (pageNum) => {
     try {
       setLoading(true);
       setError(null);
       const data = await fetchApi(`/api/forum/topics/${topic.id}/posts?page=${pageNum}`);
-      if (data && data.error) {
+      if (data?.error) {
         setError(data.error);
         return;
       }
@@ -36,40 +33,48 @@ export default function ForumThread({ topic, user, onPostCreated }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [topic.id]);
 
-  const handlePageChange = (newPage) => {
+  useEffect(() => {
+    loadPosts(1);
+  }, [topic.id, loadPosts]);
+
+  const handlePageChange = useCallback((newPage) => {
     loadPosts(newPage);
-  };
+  }, [loadPosts]);
 
-  const handlePostCreated = () => {
+  const handlePostCreated = useCallback(() => {
     setEditingPostId(null);
-    loadPosts(1); // Reload from first page
+    loadPosts(1);
     onPostCreated?.();
-  };
+  }, [loadPosts, onPostCreated]);
 
-  const handleDeletePost = async (postId) => {
-    if (!confirm('Delete this post?')) return;
+  const handleDeletePost = useCallback((postId) => {
+    setDeletingPostId(postId);
+  }, []);
+
+  const handleConfirmDelete = useCallback(async (postId) => {
     try {
       const res = await fetchApi(`/api/forum/posts/${postId}`, { method: 'DELETE' });
-      if (res && res.error) {
+      if (res?.error) {
         alert(res.error);
         return;
       }
+      setDeletingPostId(null);
       loadPosts(page);
     } catch (err) {
       console.error('Error deleting post:', err);
       alert('Failed to delete post');
     }
-  };
+  }, [page, loadPosts]);
 
-  const handleReportPost = async (postId) => {
+  const handleReportPost = useCallback(async (postId) => {
     try {
-      const res = await fetchApi(`/api/forum/reports`, {
+      const res = await fetchApi('/api/forum/reports', {
         method: 'POST',
         body: { postId }
       });
-      if (res && res.error) {
+      if (res?.error) {
         alert(res.error);
         return;
       }
@@ -80,12 +85,9 @@ export default function ForumThread({ topic, user, onPostCreated }) {
       console.error('Error reporting post:', err);
       alert('Failed to report post');
     }
-  };
+  }, []);
 
-  const formatTime = (timestamp) => {
-    const date = new Date(timestamp * 1000);
-    return date.toLocaleString();
-  };
+  const formatTime = useCallback((timestamp) => new Date(timestamp * 1000).toLocaleString(), []);
 
   if (loading) {
     return <div className="forum-loading">Loading thread...</div>;
@@ -110,7 +112,7 @@ export default function ForumThread({ topic, user, onPostCreated }) {
 
       <div className="forum-posts-list">
         {posts && posts.length > 0 ? (
-          posts.map((post, idx) => (
+          posts.map((post) => (
             <div key={post.id} className={`forum-post-item ${post.is_deleted ? 'forum-post-deleted' : ''}`}>
               <div className="forum-post-header">
                 <div>
@@ -149,6 +151,19 @@ export default function ForumThread({ topic, user, onPostCreated }) {
                   onCreated={handlePostCreated}
                   onCancel={() => setEditingPostId(null)}
                 />
+              )}
+              {deletingPostId === post.id && (
+                <div className="forum-post-report">
+                  <p>Permanently delete this post?</p>
+                  <div className="forum-post-report-actions">
+                    <button className="forum-post-delete-btn forum-post-btn" onClick={() => handleConfirmDelete(post.id)}>
+                      Confirm Delete
+                    </button>
+                    <button className="forum-form-cancel-btn" onClick={() => setDeletingPostId(null)}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
               )}
               {reportingPostId === post.id && (
                 <div className="forum-post-report">
@@ -195,4 +210,7 @@ export default function ForumThread({ topic, user, onPostCreated }) {
       )}
     </div>
   );
-}
+});
+
+ForumThread.displayName = 'ForumThread';
+export default ForumThread;

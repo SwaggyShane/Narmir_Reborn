@@ -95,6 +95,9 @@ const Sidebar = () => {
         <span className="icon" style={{ color: 'var(--accent1)' }}>✉️</span>Messages
         <span id="msg-badge" className="nav-badge" style={{ display: 'none' }}></span>
       </button>
+      <button className="nav-item" data-tab="forum" onClick={(e) => handleSwitchTab('forum', e)}>
+        <span className="icon" style={{ color: '#8b5cf6' }}>📚</span>Forum
+      </button>
       <button className="nav-item" data-tab="alliances" onClick={(e) => handleSwitchTab('alliances', e)}>
         <span className="icon" style={{ color: '#bd10e0' }}>🤝</span>Alliance
       </button>

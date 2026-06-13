@@ -1822,7 +1822,6 @@ async function initDb(options = {}) {
   `);
 
   // Seed initial forum boards
-  const boardsCols = await getTableColumns('forum_boards');
   const initialBoards = [
     { name: 'General', description: 'General discussion about the game', order_index: 0 },
     { name: 'Strategy', description: 'Tips, tactics, and strategic advice', order_index: 1 },

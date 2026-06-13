@@ -30,6 +30,7 @@ import HirePanelReact from "./components/react/HirePanel.jsx";
 import ResourcesPanelReact from "./components/react/ResourcesPanel.jsx";
 import GlobalchatPanelReact from "./components/react/GlobalchatPanel.jsx";
 import SchoolSelectionPanelReact from "./components/react/SchoolSelectionPanel.jsx";
+import ForumSectionReact from "./components/forum/ForumSection.jsx";
 import ResourceStripReact from "./components/react/ResourceStrip.jsx";
 
 // API call helper for making authenticated requests from vanilla JS
@@ -226,6 +227,7 @@ export const mountReactApps = () => {
   tryMount("vue-panel-resources", ResourcesPanelReact);
   tryMount("vue-panel-globalchat", GlobalchatPanelReact);
   tryMount("vue-panel-school-selection", SchoolSelectionPanelReact);
+  tryMount("vue-panel-forum", ForumSectionReact);
 
   console.log("[react] All apps mounted");
 
