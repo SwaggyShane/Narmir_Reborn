@@ -359,20 +359,20 @@ const BuildPanel = () => {
                       <div style={{ marginBottom: '20px' }}>
                         <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--gold)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Current Attunements</div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px' }}>
-                          {Object.entries(currentAttunements).map(([building, att]) => {
+                          {Object.entries(currentAttunements).map(([buildingType, att]) => {
                             if (!att || !att.fragmentName) return null;
-                            const key = `${building}:${att.fragmentName}`;
+                            const key = `${buildingType}:${att.fragmentName}`;
                             const tier = synergyContributions[key] || null;
                             const hint = tier ? pickResonanceHint(key, tier) : null;
                             return (
-                              <div key={building} style={{ fontSize: '11px', color: 'var(--text)', padding: '8px 10px', background: 'var(--bg3)', borderRadius: '4px', border: '1px solid var(--border)' }}>
+                              <div key={buildingType} style={{ fontSize: '11px', color: 'var(--text)', padding: '8px 10px', background: 'var(--bg3)', borderRadius: '4px', border: '1px solid var(--border)' }}>
                                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '6px', marginBottom: '4px' }}>
                                   <div>
-                                    <div style={{ color: 'var(--gold)', fontWeight: 600 }}>{BUILDINGS_MAP[building]?.name || building}</div>
+                                    <div style={{ color: 'var(--gold)', fontWeight: 600 }}>{BUILDINGS_MAP[buildingType]?.name || buildingType}</div>
                                     <div style={{ color: 'var(--text)', marginTop: '1px' }}>{att.fragmentName}</div>
                                   </div>
                                   <button
-                                    onClick={() => removeAttunement(building)}
+                                    onClick={() => removeAttunement(buildingType)}
                                     title="Remove attunement — fragment can then be applied elsewhere"
                                     style={{ flexShrink: 0, padding: '2px 6px', fontSize: '9px', background: 'transparent', border: '1px solid var(--red,#c0392b)', borderRadius: '3px', color: 'var(--red,#c0392b)', cursor: 'pointer', lineHeight: '1.4' }}
                                   >Remove</button>
