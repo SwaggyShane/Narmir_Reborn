@@ -19,6 +19,8 @@
 
 3. Check for an existing open PR on this branch before creating a new one.
    If the previous PR was merged, open a new draft PR immediately after the next push.
+   git fetch origin main
+   git log --oneline origin/main..HEAD  # confirms commits to push
 
 ### Always Create PRs as Drafts
 
