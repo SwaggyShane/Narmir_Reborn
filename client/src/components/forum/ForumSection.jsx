@@ -104,7 +104,7 @@ const ForumSection = React.memo(function ForumSection({ user: propUser, standalo
       <div {...panelProps}>
         <h2 className="forum-thread-title">Forums</h2>
         <div className="forum-error">{error}</div>
-        <button className="portal-enter-btn" onClick={loadBoards} style={{ marginTop: '1rem' }}>
+        <button className="forum-form-submit-btn" onClick={loadBoards} style={{ marginTop: '1rem' }}>
           Retry
         </button>
       </div>

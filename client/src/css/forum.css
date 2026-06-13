@@ -474,7 +474,6 @@
   margin-top: 0.5rem;
 }
 
-.portal-enter-btn,
 .forum-form-submit-btn {
   background: linear-gradient(135deg, var(--accent2) 0%, var(--gold) 100%);
   border: 2px solid var(--accent2);
@@ -488,13 +487,11 @@
   white-space: nowrap;
 }
 
-.portal-enter-btn:hover:not(:disabled),
 .forum-form-submit-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(240, 98, 2, 0.3);
 }
 
-.portal-enter-btn:disabled,
 .forum-form-submit-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;

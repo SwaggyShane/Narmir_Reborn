@@ -69,7 +69,7 @@ const ForumTopicsList = React.memo(function ForumTopicsList({ board, user, onSel
       <div className="forum-empty-state">
         <p>No discussions yet in this board.</p>
         {user ? (
-          <button className="portal-enter-btn" onClick={onCreateClick}>
+          <button className="forum-form-submit-btn" onClick={onCreateClick}>
             Start First Topic
           </button>
         ) : (
@@ -87,7 +87,7 @@ const ForumTopicsList = React.memo(function ForumTopicsList({ board, user, onSel
           {board.description && <p className="forum-board-desc">{board.description}</p>}
         </div>
         {user && (
-          <button className="portal-enter-btn" onClick={onCreateClick}>
+          <button className="forum-form-submit-btn" onClick={onCreateClick}>
             New Topic
           </button>
         )}

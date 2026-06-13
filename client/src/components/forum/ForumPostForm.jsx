@@ -69,7 +69,7 @@ const ForumPostForm = React.memo(function ForumPostForm({ topic, user, post, onC
       <div className="forum-form-actions">
         <button
           type="submit"
-          className="portal-enter-btn"
+          className="forum-form-submit-btn"
           disabled={loading}
         >
           {loading ? 'Submitting...' : (isEditing ? 'Update' : 'Post')}
