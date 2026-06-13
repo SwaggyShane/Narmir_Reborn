@@ -722,9 +722,12 @@ async function initDb(options = {}) {
     );
     CREATE TABLE IF NOT EXISTS chat_messages (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
-      kingdom_id  INTEGER NOT NULL REFERENCES kingdoms(id),
+      kingdom_id  INTEGER REFERENCES kingdoms(id),
+      player_id   INTEGER NOT NULL DEFAULT 0,
+      username    TEXT    NOT NULL DEFAULT '',
       room        TEXT    NOT NULL DEFAULT 'global',
       message     TEXT    NOT NULL,
+      deleted     INTEGER NOT NULL DEFAULT 0,
       created_at  INTEGER NOT NULL DEFAULT (unixepoch())
     );
     CREATE TABLE IF NOT EXISTS server_state (
