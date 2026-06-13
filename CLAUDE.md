@@ -35,9 +35,30 @@ npm run lint
 ```
 
 **Smoke Test**
-- Verify the app starts without crashing
-- Test basic happy-path functionality related to your changes
-- Check browser console for errors
+
+PostgreSQL is installed locally. Always start it and use the `narmir_smoke` database:
+
+```bash
+# 1. Ensure PostgreSQL is running
+service postgresql start
+
+# 2. Ensure smoke DB exists (only needed once per session)
+sudo -u postgres psql -c "CREATE DATABASE narmir_smoke;" 2>/dev/null || true
+
+# 3. Start the server against the local DB
+DATABASE_URL="postgresql://postgres:smoke@localhost/narmir_smoke" JWT_SECRET=test-smoke-secret node index.js &
+sleep 4
+
+# 4. Hit the golden-path endpoints
+curl -s http://localhost:3000/api/forum/boards          # expect JSON array of boards
+curl -s http://localhost:3000/api/auth/me               # expect {"error":"Not authenticated"}
+curl -s http://localhost:3000/portal | grep -c "NARMIR" # expect 1+
+
+# 5. Kill server after testing
+kill $(lsof -t -i:3000) 2>/dev/null
+```
+
+**There is no excuse to skip this.** "DATABASE_URL not set" is not a valid reason — set it yourself.
 
 **Sanity Check**
 - Code logic is correct and doesn't introduce bugs
