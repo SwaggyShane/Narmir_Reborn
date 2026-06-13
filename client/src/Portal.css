@@ -7,7 +7,12 @@
   --text2: #94a3b8;
   --text3: #64748b;
   --accent1: #f06202;
+  --accent2: #f06202;
   --gold: #f0b202;
+  --red: #ef4444;
+  --green: #10b981;
+  --bg4: #1e1e2e;
+  --border2: rgba(255, 255, 255, 0.15);
   --radius: 8px;
 }
 
