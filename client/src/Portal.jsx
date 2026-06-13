@@ -573,6 +573,12 @@ export default function Portal() {
               >
                 Forums
               </button>
+              <button
+                className="portal-nav-btn"
+                onClick={() => { setAuthView('race-select'); setAuthCollapsed(false); }}
+              >
+                Races
+              </button>
             </nav>
           )}
         </div>
