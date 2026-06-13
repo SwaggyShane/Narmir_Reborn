@@ -2,7 +2,6 @@ import React, { useCallback } from 'react';
 
 const BoardCard = React.memo(({ board, onSelect }) => (
   <button
-    key={board.id}
     className="forum-board-card"
     onClick={() => onSelect(board)}
   >

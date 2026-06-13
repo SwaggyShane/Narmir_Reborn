@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import ForumPostForm from './ForumPostForm';
 import { fetchApi } from '../../utils/api';
 
@@ -11,18 +11,15 @@ const ForumThread = React.memo(function ForumThread({ topic, user, onPostCreated
   const [error, setError] = useState(null);
   const [editingPostId, setEditingPostId] = useState(null);
   const [reportingPostId, setReportingPostId] = useState(null);
+  const [deletingPostId, setDeletingPostId] = useState(null);
   const [reportSuccess, setReportSuccess] = useState(null);
 
-  useEffect(() => {
-    loadPosts(1);
-  }, [topic.id]);
-
-  const loadPosts = async (pageNum) => {
+  const loadPosts = useCallback(async (pageNum) => {
     try {
       setLoading(true);
       setError(null);
       const data = await fetchApi(`/api/forum/topics/${topic.id}/posts?page=${pageNum}`);
-      if (data && data.error) {
+      if (data?.error) {
         setError(data.error);
         return;
       }
@@ -36,7 +33,11 @@ const ForumThread = React.memo(function ForumThread({ topic, user, onPostCreated
     } finally {
       setLoading(false);
     }
-  };
+  }, [topic.id]);
+
+  useEffect(() => {
+    loadPosts(1);
+  }, [topic.id, loadPosts]);
 
   const handlePageChange = useCallback((newPage) => {
     loadPosts(newPage);
@@ -48,14 +49,18 @@ const ForumThread = React.memo(function ForumThread({ topic, user, onPostCreated
     onPostCreated?.();
   }, [loadPosts, onPostCreated]);
 
-  const handleDeletePost = useCallback(async (postId) => {
-    if (!confirm('Delete this post?')) return;
+  const handleDeletePost = useCallback((postId) => {
+    setDeletingPostId(postId);
+  }, []);
+
+  const handleConfirmDelete = useCallback(async (postId) => {
     try {
       const res = await fetchApi(`/api/forum/posts/${postId}`, { method: 'DELETE' });
       if (res?.error) {
         alert(res.error);
         return;
       }
+      setDeletingPostId(null);
       loadPosts(page);
     } catch (err) {
       console.error('Error deleting post:', err);
@@ -107,7 +112,7 @@ const ForumThread = React.memo(function ForumThread({ topic, user, onPostCreated
 
       <div className="forum-posts-list">
         {posts && posts.length > 0 ? (
-          posts.map((post, idx) => (
+          posts.map((post) => (
             <div key={post.id} className={`forum-post-item ${post.is_deleted ? 'forum-post-deleted' : ''}`}>
               <div className="forum-post-header">
                 <div>
@@ -146,6 +151,19 @@ const ForumThread = React.memo(function ForumThread({ topic, user, onPostCreated
                   onCreated={handlePostCreated}
                   onCancel={() => setEditingPostId(null)}
                 />
+              )}
+              {deletingPostId === post.id && (
+                <div className="forum-post-report">
+                  <p>Permanently delete this post?</p>
+                  <div className="forum-post-report-actions">
+                    <button className="forum-post-delete-btn forum-post-btn" onClick={() => handleConfirmDelete(post.id)}>
+                      Confirm Delete
+                    </button>
+                    <button className="forum-form-cancel-btn" onClick={() => setDeletingPostId(null)}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
               )}
               {reportingPostId === post.id && (
                 <div className="forum-post-report">

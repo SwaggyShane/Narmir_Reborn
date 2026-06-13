@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import ForumBoards from './ForumBoards';
 import ForumTopicsList from './ForumTopicsList';
 import ForumThread from './ForumThread';
@@ -35,14 +35,16 @@ const ForumSection = React.memo(function ForumSection({ user: propUser }) {
   }, []);
 
   useEffect(() => {
-    loadBoards();
-    if (!propUser) {
+    if (propUser) {
+      setUser(propUser);
+    } else {
       fetchApi('/api/auth/me')
         .then((data) => {
           if (data?.username) setUser(data);
         })
         .catch((err) => console.error('Error loading user:', err));
     }
+    loadBoards();
   }, [propUser, loadBoards]);
 
   const handleSelectBoard = useCallback((board) => {
@@ -86,7 +88,7 @@ const ForumSection = React.memo(function ForumSection({ user: propUser }) {
 
   if (loading) {
     return (
-      <div id="forum" className="panel forum-section" style={{ display: 'none' }}>
+      <div id="forum" className="panel forum-section">
         <h2 className="forum-thread-title">Forums</h2>
         <div className="forum-loading">Loading forums...</div>
       </div>
@@ -95,7 +97,7 @@ const ForumSection = React.memo(function ForumSection({ user: propUser }) {
 
   if (error) {
     return (
-      <div id="forum" className="panel forum-section" style={{ display: 'none' }}>
+      <div id="forum" className="panel forum-section">
         <h2 className="forum-thread-title">Forums</h2>
         <div className="forum-error">{error}</div>
         <button className="portal-enter-btn" onClick={loadBoards} style={{ marginTop: '1rem' }}>
@@ -109,7 +111,7 @@ const ForumSection = React.memo(function ForumSection({ user: propUser }) {
   const showBackButton = view !== 'boards';
 
   return (
-    <div id="forum" className="panel forum-section" style={{ display: 'none' }}>
+    <div id="forum" className="panel forum-section">
       <div className="forum-header">
         <h2 className="forum-thread-title">Forums</h2>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
