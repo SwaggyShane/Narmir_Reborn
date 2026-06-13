@@ -5284,9 +5284,22 @@ module.exports = function (db) {
 
       console.log(`[DEBUG] remove-attunement: UPDATE completed successfully`);
 
+      // Verify DB state after UPDATE — confirm no building columns were modified
+      const verifyKingdom = await db.get(
+        `SELECT fragment_bonuses, bld_barracks, bld_armories, bld_farms, bld_markets,
+                bld_smithies, bld_vaults, bld_mage_towers, bld_guard_towers,
+                bld_taverns, bld_mausoleums, bld_walls, bld_outposts, bld_training,
+                bld_castles, bld_schools, bld_libraries, bld_shrines, bld_granaries,
+                bld_housing
+         FROM kingdoms WHERE id = ?`,
+        [kingdom.id]
+      );
+      console.log(`[DEBUG] remove-attunement: VERIFY bld_${buildingType}=${verifyKingdom?.[`bld_${buildingType}`]}, fragment_bonuses=${String(verifyKingdom?.fragment_bonuses).substring(0, 80)}`);
+
       res.json({
         ok: true,
         message: `Attunement removed from ${buildingType}`,
+        debug_bld_count: verifyKingdom?.[`bld_${buildingType}`],
       });
 
       devLog(`[attunement] Kingdom ${kingdom.id}: Removed from ${buildingType}`);

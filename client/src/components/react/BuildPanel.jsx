@@ -177,7 +177,10 @@ const BuildPanel = () => {
         alert(`Error: ${data.error}`);
         return;
       }
+      console.log(`[attunements] remove OK, server reports bld_${buildingType}=${data.debug_bld_count}`);
       await loadAttunements();
+      // Ensure building count display reflects current server state
+      window.updateBuildDisplay?.();
     } catch (err) {
       console.error('[attunements] remove failed:', err.message);
       alert('Failed to remove attunement');
