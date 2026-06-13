@@ -372,9 +372,9 @@ const BuildPanel = () => {
                                     <div style={{ color: 'var(--text)', marginTop: '1px' }}>{att.fragmentName}</div>
                                   </div>
                                   <button
-                                    onClick={() => removeAttunement(buildingType)}
-                                    title="Remove attunement — fragment can then be applied elsewhere"
-                                    style={{ flexShrink: 0, padding: '2px 6px', fontSize: '9px', background: 'transparent', border: '1px solid var(--red,#c0392b)', borderRadius: '3px', color: 'var(--red,#c0392b)', cursor: 'pointer', lineHeight: '1.4' }}
+                                    disabled
+                                    title="TEMPORARY: disabled for debugging"
+                                    style={{ flexShrink: 0, padding: '2px 6px', fontSize: '9px', background: 'transparent', border: '1px solid var(--red,#c0392b)', borderRadius: '3px', color: 'var(--red,#c0392b)', cursor: 'not-allowed', lineHeight: '1.4', opacity: 0.5 }}
                                   >Remove</button>
                                 </div>
                                 {att.passive && Object.keys(att.passive).length > 0 && (
