@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiCall } from '../../utils/api.js';
 
 // Atmospheric synergy hint text. Tiers map to how close a contributing
 // synergy is to completion (without revealing counts or formulas).
@@ -151,15 +152,12 @@ const BuildPanel = () => {
 
   const applyAttunement = async (fragmentName, buildingType) => {
     try {
-      const response = await fetch('/api/kingdom/attune-fragment', {
+      const data = await apiCall('/api/kingdom/attune-fragment', {
         method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fragmentName, buildingType }),
+        body: { fragmentName, buildingType },
       });
-      if (!response.ok) {
-        const err = await response.json();
-        alert(`Error: ${err.error}`);
+      if (data.error) {
+        alert(`Error: ${data.error}`);
         return;
       }
       // Reload attunements
@@ -198,6 +196,10 @@ const BuildPanel = () => {
         <div className="bld-main">
           <span className="bld-icon" style={{ background: icon.color }}>{icon.emoji}</span>
           <span className="name">{b.name}</span>
+          <button
+            onClick={() => setShowAttunements(true)}
+            style={{ marginLeft: '6px', padding: '2px 8px', fontSize: '9px', fontWeight: 600, color: '#60a5fa', background: 'transparent', border: '1px solid #60a5fa', borderRadius: '999px', cursor: 'pointer', lineHeight: '1.4', whiteSpace: 'nowrap', flexShrink: 0 }}
+          >Attunement</button>
         </div>
         <span className="count" id={`bld-${b.id}`}>0</span>
         {b.id !== 'wm' && b.id !== 'ballistae' && b.id !== 'ladders' && b.id !== 'weapons' && b.id !== 'armor' ? (
@@ -305,20 +307,6 @@ const BuildPanel = () => {
                 })}
               </div>
             )}
-          </div>
-        </div>
-
-        <div className="card" style={{ marginTop: '14px' }}>
-          <div style={{ padding: '12px 0', borderBottom: '1px solid var(--border)', marginBottom: '12px' }}>
-            <button
-              onClick={() => setShowAttunements(true)}
-              style={{ background: 'none', border: '2px solid var(--purple)', borderRadius: '4px', cursor: 'pointer', padding: '8px 12px', width: '100%', textAlign: 'left', boxSizing: 'border-box' }}
-            >
-              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '10px' }}>▶</span>
-                🌌 Building Attunements
-              </div>
-            </button>
           </div>
         </div>
 
