@@ -169,7 +169,7 @@ const ForumThread = React.memo(function ForumThread({ topic, user, onPostCreated
                 <div className="forum-post-report">
                   <p>Report this post for moderation review?</p>
                   <div className="forum-post-report-actions">
-                    <button className="portal-enter-btn" onClick={() => handleReportPost(post.id)}>
+                    <button className="forum-form-submit-btn" onClick={() => handleReportPost(post.id)}>
                       Confirm Report
                     </button>
                     <button className="forum-form-cancel-btn" onClick={() => setReportingPostId(null)}>

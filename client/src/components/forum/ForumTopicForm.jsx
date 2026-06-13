@@ -83,7 +83,7 @@ const ForumTopicForm = React.memo(function ForumTopicForm({ board, user, onCreat
         {error && <div className="forum-form-error">{error}</div>}
 
         <div className="forum-form-actions">
-          <button type="submit" className="portal-enter-btn" disabled={loading}>
+          <button type="submit" className="forum-form-submit-btn" disabled={loading}>
             {loading ? 'Creating...' : 'Create Topic'}
           </button>
           <button

@@ -510,43 +510,48 @@ function RankingsTable() {
 }
 
 
-function RankingsButton({ onClick }) {
-  return (
-    <button className="portal-rankings-btn" onClick={onClick}>
-      View Top Kingdoms
-    </button>
-  );
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Portal() {
-  const [showRankings, setShowRankings] = useState(false);
-  const [authView, setAuthView] = useState('login'); // 'login' | 'race-select' | 'register'
+  const [panel, setPanel] = useState('rankings'); // 'rankings' | 'forum'
+  const [authView, setAuthView] = useState('login');
 
   const isRegistrationActive = authView === 'race-select' || authView === 'register';
 
   return (
     <div className="portal-root">
       <header className="portal-header">
-        <a href="/" className="portal-back-link">Back</a>
         <h1 className="portal-title">NARMIR REBORN</h1>
         <p className="portal-tagline">Rise From the Ashes. Forge Your Legacy.</p>
       </header>
 
-      <main className={`portal-main ${isRegistrationActive ? 'reg-active' : ''}`} style={{ gridTemplateColumns: isRegistrationActive ? '1fr' : '2fr 360px' }}>
+      <main
+        className={'portal-main' + (isRegistrationActive ? ' reg-active' : '')}
+        style={isRegistrationActive ? { gridTemplateColumns: '1fr' } : undefined}
+      >
         {!isRegistrationActive && (
-          <div className="portal-col-left">
-            {showRankings && <RankingsTable />}
+          <div key="main-col" className="portal-col-main">
+            {panel === 'rankings' && <RankingsTable />}
+            {panel === 'forum' && <ForumSection user={null} standalone />}
           </div>
         )}
-        <div className={isRegistrationActive ? 'portal-col-register' : 'portal-col-right'}>
+        <div key="auth-col" className={isRegistrationActive ? 'portal-col-register' : 'portal-col-right'}>
           <AuthCard onViewChange={setAuthView} />
           {!isRegistrationActive && (
-            <>
-              <ForumSection user={null} />
-              <RankingsButton onClick={() => setShowRankings(!showRankings)} />
-            </>
+            <nav className="portal-nav-panel">
+              <button
+                className={'portal-nav-btn' + (panel === 'rankings' ? ' active' : '')}
+                onClick={() => setPanel('rankings')}
+              >
+                Top Kingdoms
+              </button>
+              <button
+                className={'portal-nav-btn' + (panel === 'forum' ? ' active' : '')}
+                onClick={() => setPanel('forum')}
+              >
+                Forums
+              </button>
+            </nav>
           )}
         </div>
       </main>
