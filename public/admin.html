@@ -2186,6 +2186,24 @@
         container.insertBefore(row, addBtn);
       }
 
+      function adminMercAdd(key) {
+        var container = document.getElementById('ef-' + key + '-widget');
+        var addBtn = document.getElementById('ef-' + key + '-add');
+        var row = document.createElement('div');
+        row.className = 'merc-row';
+        row.style.cssText = 'display:grid;grid-template-columns:80px 55px 45px 65px 55px 65px 70px 28px;gap:3px;margin-bottom:3px';
+        row.innerHTML =
+          '<input data-f="unit_type" value="" style="font-size:10px">' +
+          '<input data-f="tier" value="" style="font-size:10px">' +
+          '<input data-f="level" type="number" value="1" style="font-size:10px">' +
+          '<input data-f="count" type="number" value="1" style="font-size:10px">' +
+          '<input data-f="hired_at_turn" type="number" value="0" style="font-size:10px">' +
+          '<input data-f="duration_turns" type="number" value="10" style="font-size:10px">' +
+          '<input data-f="upkeep_per_turn" type="number" value="0" style="font-size:10px">' +
+          '<button type="button" onclick="this.parentElement.remove()" style="font-size:10px;padding:2px 4px;background:var(--red,#c0392b);border:none;color:#fff;border-radius:3px;cursor:pointer">✕</button>';
+        container.insertBefore(row, addBtn);
+      }
+
       var EDIT_SECTIONS = [
         {
           label: "Attributes",
@@ -2626,7 +2644,7 @@
 
             } else if (inputType === "kv-numbers") {
               var kvParsed = {};
-              try { kvParsed = JSON.parse(typeof val === 'string' ? (val || '{}') : JSON.stringify(val || {})); } catch(e) {}
+              try { kvParsed = typeof val === 'string' ? JSON.parse(val || '{}') : (val || {}); } catch(e) {}
               if (Array.isArray(kvParsed)) kvParsed = {};
               var kvRows = '';
               Object.keys(kvParsed).forEach(function(k) {
@@ -2653,7 +2671,7 @@
                   '<input type="number" id="tl-xp-' + t.id + '" value="' + (parseInt(d.xp)||0) + '" style="width:100%">' +
                   '</div>';
               });
-              fieldHtml = '<div id="ef-' + f.key + '-widget">' + tlHeader + tlRows + '</div>';
+              fieldHtml = '<div id="ef-' + f.key + '-widget" data-original=\'' + escAttr(JSON.stringify(tlParsed)) + '\'>' + tlHeader + tlRows + '</div>';
 
             } else if (inputType === "injured-counts") {
               var injParsed = {};
@@ -2667,7 +2685,7 @@
                   '<span style="font-size:10px;color:var(--text3)">injured</span>' +
                   '</div>';
               });
-              fieldHtml = '<div id="ef-' + f.key + '-widget">' + injRows + '</div>';
+              fieldHtml = '<div id="ef-' + f.key + '-widget" data-original=\'' + escAttr(JSON.stringify(injParsed)) + '\'>' + injRows + '</div>';
 
             } else if (inputType === "effects-list") {
               var effParsed = {};
@@ -2702,26 +2720,23 @@
             } else if (inputType === "merc-table") {
               var mercArr = [];
               try { var mercP = typeof val === 'string' ? JSON.parse(val || '[]') : val; mercArr = Array.isArray(mercP) ? mercP : []; } catch(e) {}
-              if (mercArr.length === 0) {
-                fieldHtml = '<div id="ef-' + f.key + '-widget" style="font-size:11px;color:var(--text3)">No mercenaries</div>';
-              } else {
-                var mercHeader = '<div style="display:grid;grid-template-columns:80px 55px 45px 65px 55px 65px 70px 28px;gap:3px;font-size:10px;color:var(--text3);margin-bottom:3px">' +
-                  '<span>Unit</span><span>Tier</span><span>Lvl</span><span>Count</span><span>Hired</span><span>Duration</span><span>Upkeep</span><span></span></div>';
-                var mercRows = '';
-                mercArr.forEach(function(m) {
-                  mercRows += '<div class="merc-row" style="display:grid;grid-template-columns:80px 55px 45px 65px 55px 65px 70px 28px;gap:3px;margin-bottom:3px">' +
-                    '<input data-f="unit_type" value="' + escAttr(m.unit_type||'') + '" style="font-size:10px">' +
-                    '<input data-f="tier" value="' + escAttr(m.tier||'') + '" style="font-size:10px">' +
-                    '<input data-f="level" type="number" value="' + (m.level||0) + '" style="font-size:10px">' +
-                    '<input data-f="count" type="number" value="' + (m.count||0) + '" style="font-size:10px">' +
-                    '<input data-f="hired_at_turn" type="number" value="' + (m.hired_at_turn||0) + '" style="font-size:10px">' +
-                    '<input data-f="duration_turns" type="number" value="' + (m.duration_turns||0) + '" style="font-size:10px">' +
-                    '<input data-f="upkeep_per_turn" type="number" value="' + (m.upkeep_per_turn||0) + '" style="font-size:10px">' +
-                    '<button type="button" onclick="this.parentElement.remove()" style="font-size:10px;padding:2px 4px;background:var(--red,#c0392b);border:none;color:#fff;border-radius:3px;cursor:pointer">✕</button>' +
-                    '</div>';
-                });
-                fieldHtml = '<div id="ef-' + f.key + '-widget">' + mercHeader + mercRows + '</div>';
-              }
+              var mercHeader = '<div style="display:grid;grid-template-columns:80px 55px 45px 65px 55px 65px 70px 28px;gap:3px;font-size:10px;color:var(--text3);margin-bottom:3px">' +
+                '<span>Unit</span><span>Tier</span><span>Lvl</span><span>Count</span><span>Hired</span><span>Duration</span><span>Upkeep</span><span></span></div>';
+              var mercRows = '';
+              mercArr.forEach(function(m) {
+                mercRows += '<div class="merc-row" style="display:grid;grid-template-columns:80px 55px 45px 65px 55px 65px 70px 28px;gap:3px;margin-bottom:3px">' +
+                  '<input data-f="unit_type" value="' + escAttr(m.unit_type||'') + '" style="font-size:10px">' +
+                  '<input data-f="tier" value="' + escAttr(m.tier||'') + '" style="font-size:10px">' +
+                  '<input data-f="level" type="number" value="' + (m.level||0) + '" style="font-size:10px">' +
+                  '<input data-f="count" type="number" value="' + (m.count||0) + '" style="font-size:10px">' +
+                  '<input data-f="hired_at_turn" type="number" value="' + (m.hired_at_turn||0) + '" style="font-size:10px">' +
+                  '<input data-f="duration_turns" type="number" value="' + (m.duration_turns||0) + '" style="font-size:10px">' +
+                  '<input data-f="upkeep_per_turn" type="number" value="' + (m.upkeep_per_turn||0) + '" style="font-size:10px">' +
+                  '<button type="button" onclick="this.parentElement.remove()" style="font-size:10px;padding:2px 4px;background:var(--red,#c0392b);border:none;color:#fff;border-radius:3px;cursor:pointer">✕</button>' +
+                  '</div>';
+              });
+              fieldHtml = '<div id="ef-' + f.key + '-widget">' + mercHeader + mercRows +
+                '<div id="ef-' + f.key + '-add" style="margin-top:4px"><button type="button" onclick="adminMercAdd(\'' + f.key + '\')" style="font-size:11px;padding:4px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:3px;cursor:pointer">+ Add Mercenary</button></div></div>';
 
             } else if (inputType === "fortified-blds") {
               var frtParsed = {};
@@ -2819,21 +2834,29 @@
 
             } else if (t === "troop-levels") {
               var tlResult = {};
+              var tlW = document.getElementById("ef-" + f.key + "-widget");
+              var originalTl = {};
+              try { originalTl = JSON.parse((tlW && tlW.dataset.original) || '{}'); } catch(e) {}
               TROOP_TYPES.forEach(function(tu) {
                 var lvEl = document.getElementById("tl-level-" + tu.id);
                 var xpEl = document.getElementById("tl-xp-" + tu.id);
-                tlResult[tu.id] = { level: parseInt(lvEl && lvEl.value)||0, xp: parseInt(xpEl && xpEl.value)||0, count: 0 };
+                var existing = originalTl[tu.id] || {};
+                tlResult[tu.id] = { level: parseInt(lvEl && lvEl.value)||0, xp: parseInt(xpEl && xpEl.value)||0, count: existing.count !== undefined ? existing.count : 0 };
               });
               fields[f.key] = JSON.stringify(tlResult);
 
             } else if (t === "injured-counts") {
               var injResult = {};
+              var injW = document.getElementById("ef-" + f.key + "-widget");
+              var originalInj = {};
+              try { originalInj = JSON.parse((injW && injW.dataset.original) || '{}'); } catch(e) {}
               TROOP_TYPES.forEach(function(tu) {
                 var el = document.getElementById("inj-" + tu.id);
                 var count = parseInt(el && el.value) || 0;
                 if (count > 0) {
-                  injResult[tu.id] = [];
-                  for (var i = 0; i < count; i++) injResult[tu.id].push({ hp: 50, max_hp: 100 });
+                  var existing = Array.isArray(originalInj[tu.id]) ? originalInj[tu.id] : [];
+                  injResult[tu.id] = existing.slice(0, count);
+                  while (injResult[tu.id].length < count) injResult[tu.id].push({ hp: 50, max_hp: 100 });
                 }
               });
               fields[f.key] = JSON.stringify(injResult);
