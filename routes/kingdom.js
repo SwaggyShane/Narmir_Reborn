@@ -5251,13 +5251,18 @@ module.exports = function (db) {
         return res.status(400).json({ error: 'buildingType required' });
       }
 
+      console.log(`[DEBUG] remove-attunement: buildingType=${buildingType}`);
+
       const kingdom = await db.get("SELECT id, fragment_bonuses FROM kingdoms WHERE player_id = ?", [
         req.player.playerId,
       ]);
       if (!kingdom) return res.status(404).json({ error: "Kingdom not found" });
 
+      console.log(`[DEBUG] remove-attunement: kingdom.id=${kingdom.id}, fragment_bonuses type=${typeof kingdom.fragment_bonuses}`);
+
       // Get current attunements
       const currentAttunements = getKingdomAttunements(kingdom.fragment_bonuses || '{}');
+      console.log(`[DEBUG] remove-attunement: currentAttunements keys=${Object.keys(currentAttunements).join(',')}`);
 
       // Check if building has attunement
       if (!Object.prototype.hasOwnProperty.call(currentAttunements, buildingType)) {
@@ -5265,12 +5270,19 @@ module.exports = function (db) {
       }
 
       // Remove the attunement
+      console.log(`[DEBUG] remove-attunement: deleting ${buildingType}`);
       delete currentAttunements[buildingType];
+      console.log(`[DEBUG] remove-attunement: after delete, keys=${Object.keys(currentAttunements).join(',')}`);
+
+      const jsonToWrite = JSON.stringify(currentAttunements);
+      console.log(`[DEBUG] remove-attunement: writing fragment_bonuses=${jsonToWrite.substring(0, 100)}`);
 
       await db.run(
         `UPDATE kingdoms SET fragment_bonuses = ? WHERE id = ?`,
-        [JSON.stringify(currentAttunements), kingdom.id]
+        [jsonToWrite, kingdom.id]
       );
+
+      console.log(`[DEBUG] remove-attunement: UPDATE completed successfully`);
 
       res.json({
         ok: true,
