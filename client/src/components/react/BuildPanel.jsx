@@ -104,12 +104,17 @@ const BuildPanel = () => {
       const data = await response.json();
       setAvailableAttunements(data.available || []);
 
-      const statusResponse = await fetch('/api/kingdom/attunement-status', {
+      const statusResponse = await fetch('/api/kingdom/attunements', {
         credentials: 'include',
       });
       if (statusResponse.ok) {
         const statusData = await statusResponse.json();
-        const attunements = statusData.attunements || {};
+        // API returns an array; convert to object keyed by buildingType for O(1) lookup
+        const attunementArray = statusData.attunements || [];
+        const attunements = {};
+        for (const att of attunementArray) {
+          if (att.buildingType) attunements[att.buildingType] = att;
+        }
         setCurrentAttunements(attunements);
 
         // Check synergy contributions for each attunement in parallel.
@@ -306,47 +311,68 @@ const BuildPanel = () => {
         <div className="card" style={{ marginTop: '14px' }}>
           <div style={{ padding: '12px 0', borderBottom: '1px solid var(--border)', marginBottom: '12px' }}>
             <button
-              onClick={() => setShowAttunements(!showAttunements)}
-              style={{ background: 'none', border: '2px solid var(--purple)', borderRadius: '4px', cursor: 'pointer', padding: '8px 12px', width: '100%', textAlign: 'left', boxSizing: 'border-box', marginBottom: showAttunements ? '8px' : '0' }}
+              onClick={() => setShowAttunements(true)}
+              style={{ background: 'none', border: '2px solid var(--purple)', borderRadius: '4px', cursor: 'pointer', padding: '8px 12px', width: '100%', textAlign: 'left', boxSizing: 'border-box' }}
             >
               <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '10px' }}>{showAttunements ? '▼' : '▶'}</span>
+                <span style={{ fontSize: '10px' }}>▶</span>
                 🌌 Building Attunements
               </div>
             </button>
-            {showAttunements && (
-              <div>
+          </div>
+        </div>
+
+        {showAttunements && (
+          <div
+            onClick={(e) => { if (e.target === e.currentTarget) setShowAttunements(false); }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.72)', zIndex: 9000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
+          >
+            <div style={{ background: 'var(--bg2)', border: '2px solid var(--purple)', borderRadius: '6px', width: '100%', maxWidth: '680px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }}>
+              {/* Modal header */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--border)' }}>
+                <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)' }}>🌌 Building Attunements</span>
+                <button
+                  onClick={() => setShowAttunements(false)}
+                  style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: '18px', cursor: 'pointer', lineHeight: 1, padding: '0 4px' }}
+                >✕</button>
+              </div>
+
+              {/* Modal body */}
+              <div style={{ overflowY: 'auto', padding: '16px 18px', flex: 1 }}>
                 {loading ? (
-                  <div style={{ padding: '12px', color: 'var(--text3)', textAlign: 'center' }}>Loading attunements...</div>
+                  <div style={{ padding: '24px', color: 'var(--text3)', textAlign: 'center' }}>Loading attunements...</div>
                 ) : (
                   <>
                     {Object.keys(currentAttunements).length > 0 && (
-                      <div style={{ marginBottom: '16px', padding: '12px', background: 'var(--bg3)', borderRadius: '4px' }}>
-                        <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--gold)', marginBottom: '8px' }}>Current Attunements</div>
-                        {Object.entries(currentAttunements).map(([building, att]) => {
-                          if (!att || !att.fragmentName) return null;
-                          const key = `${building}:${att.fragmentName}`;
-                          const tier = synergyContributions[key] || null;
-                          const hint = tier ? pickResonanceHint(key, tier) : null;
-                          return (
-                            <div key={building} style={{ fontSize: '11px', color: 'var(--text)', marginBottom: '6px', padding: '6px', background: 'var(--bg2)', borderRadius: '3px' }}>
-                              <span style={{ color: 'var(--gold)', fontWeight: 600 }}>{building}</span>: {att.fragmentName}
-                              {att.special && <div style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '2px' }}>{att.special.name}</div>}
-                              {hint && (
-                                <div style={{ fontSize: '10px', color: RESONANCE_COLOR[tier] || 'var(--text3)', marginTop: '4px', fontStyle: 'italic', letterSpacing: '0.2px' }}>
-                                  <span style={{ marginRight: '4px' }}>{RESONANCE_GLYPH[tier] || '·'}</span>{hint}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
+                      <div style={{ marginBottom: '20px' }}>
+                        <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--gold)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Current Attunements</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px' }}>
+                          {Object.entries(currentAttunements).map(([building, att]) => {
+                            if (!att || !att.fragmentName) return null;
+                            const key = `${building}:${att.fragmentName}`;
+                            const tier = synergyContributions[key] || null;
+                            const hint = tier ? pickResonanceHint(key, tier) : null;
+                            return (
+                              <div key={building} style={{ fontSize: '11px', color: 'var(--text)', padding: '8px 10px', background: 'var(--bg3)', borderRadius: '4px', border: '1px solid var(--border)' }}>
+                                <div style={{ color: 'var(--gold)', fontWeight: 600, marginBottom: '2px' }}>{building}</div>
+                                <div>{att.fragmentName}</div>
+                                {att.special && <div style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '2px' }}>{att.special.name}</div>}
+                                {hint && (
+                                  <div style={{ fontSize: '10px', color: RESONANCE_COLOR[tier] || 'var(--text3)', marginTop: '6px', fontStyle: 'italic', letterSpacing: '0.2px' }}>
+                                    <span style={{ marginRight: '4px' }}>{RESONANCE_GLYPH[tier] || '·'}</span>{hint}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
 
-                    {availableAttunements.length > 0 ? (
-                      <div>
-                        <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px' }}>Available Fragments</div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '8px' }}>
+                    <div>
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Available Fragments</div>
+                      {availableAttunements.length > 0 ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px' }}>
                           {availableAttunements.map((frag) => (
                             <div key={frag.fragmentName} style={{ padding: '10px', background: 'var(--bg3)', borderRadius: '4px', border: '1px solid var(--border)' }}>
                               <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px' }}>{frag.fragmentName}</div>
@@ -355,16 +381,7 @@ const BuildPanel = () => {
                                   <button
                                     key={bld.buildingType}
                                     onClick={() => applyAttunement(frag.fragmentName, bld.buildingType)}
-                                    style={{
-                                      padding: '6px 8px',
-                                      fontSize: '11px',
-                                      background: 'var(--accent1)',
-                                      color: 'var(--text)',
-                                      border: '1px solid var(--border)',
-                                      borderRadius: '3px',
-                                      cursor: 'pointer',
-                                      textAlign: 'left',
-                                    }}
+                                    style={{ padding: '6px 8px', fontSize: '11px', background: 'var(--accent1)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '3px', cursor: 'pointer', textAlign: 'left' }}
                                   >
                                     ✨ {bld.buildingType} ({bld.count})
                                   </button>
@@ -373,18 +390,18 @@ const BuildPanel = () => {
                             </div>
                           ))}
                         </div>
-                      </div>
-                    ) : (
-                      <div style={{ padding: '12px', color: 'var(--text3)', textAlign: 'center', fontSize: '12px' }}>
-                        No available fragments to attune. Find and study world fragments first!
-                      </div>
-                    )}
+                      ) : (
+                        <div style={{ padding: '24px', color: 'var(--text3)', textAlign: 'center', fontSize: '12px' }}>
+                          No available fragments to attune. Find and study world fragments first!
+                        </div>
+                      )}
+                    </div>
                   </>
                 )}
               </div>
-            )}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="card" style={{ marginTop: '14px' }}>
           <div id="build-rows">
