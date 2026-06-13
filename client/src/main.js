@@ -31,6 +31,7 @@ import ResourcesPanelReact from "./components/react/ResourcesPanel.jsx";
 import GlobalchatPanelReact from "./components/react/GlobalchatPanel.jsx";
 import SchoolSelectionPanelReact from "./components/react/SchoolSelectionPanel.jsx";
 import ForumSectionReact from "./components/forum/ForumSection.jsx";
+import "./css/forum.css";
 import ResourceStripReact from "./components/react/ResourceStrip.jsx";
 
 // API call helper for making authenticated requests from vanilla JS
