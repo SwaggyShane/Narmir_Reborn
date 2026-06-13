@@ -1,5 +1,12 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { fetchApi } from '../../utils/api';
+
+function avatarColor(name) {
+  const colors = ['#4a8fb8', '#c8962a', '#8fb84a', '#b43c00', '#4caf82', '#e05c5c', '#f06202', '#8b572a'];
+  let hash = 0;
+  for (let i = 0; i < (name || '').length; i++) hash = (hash * 31 + name.charCodeAt(i)) & 0xffffffff;
+  return colors[Math.abs(hash) % colors.length];
+}
 
 const ForumTopicsList = React.memo(function ForumTopicsList({ board, user, onSelectTopic, onCreateClick }) {
   const [topics, setTopics] = useState([]);
@@ -111,14 +118,25 @@ const ForumTopicsList = React.memo(function ForumTopicsList({ board, user, onSel
             className="forum-topic-row"
             onClick={() => onSelectTopic(topic)}
           >
+            <div
+              className="forum-topic-avatar"
+              style={{ background: avatarColor(topic.username) }}
+            >
+              {(topic.username || '?')[0].toUpperCase()}
+            </div>
             <div className="forum-topic-left">
               <div className="forum-topic-title">{topic.title}</div>
               <div className="forum-topic-meta">
-                by {topic.username} • {formatTime(topic.created_at)}
+                {topic.username} · {formatTime(topic.created_at)}
               </div>
             </div>
-            <div className="forum-topic-stat">{topic.post_count || 1} posts</div>
-            <div className="forum-topic-stat">{formatTime(topic.last_post_at)}</div>
+            <div className="forum-topic-replies">
+              <div className="forum-topic-reply-count">{Math.max(0, (topic.post_count || 1) - 1)}</div>
+              <div className="forum-topic-reply-label">replies</div>
+            </div>
+            <div className="forum-topic-activity">
+              <div className="forum-topic-last-time">{formatTime(topic.last_post_at)}</div>
+            </div>
           </button>
         ))}
       </div>

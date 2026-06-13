@@ -2,6 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import ForumPostForm from './ForumPostForm';
 import { fetchApi } from '../../utils/api';
 
+function avatarColor(name) {
+  const colors = ['#4a8fb8', '#c8962a', '#8fb84a', '#b43c00', '#4caf82', '#e05c5c', '#f06202', '#8b572a'];
+  let hash = 0;
+  for (let i = 0; i < (name || '').length; i++) hash = (hash * 31 + name.charCodeAt(i)) & 0xffffffff;
+  return colors[Math.abs(hash) % colors.length];
+}
+
 const ForumThread = React.memo(function ForumThread({ topic, user, onPostCreated }) {
   const [threadData, setThreadData] = useState(null);
   const [posts, setPosts] = useState([]);
@@ -114,70 +121,79 @@ const ForumThread = React.memo(function ForumThread({ topic, user, onPostCreated
         {posts && posts.length > 0 ? (
           posts.map((post) => (
             <div key={post.id} className={`forum-post-item ${post.is_deleted ? 'forum-post-deleted' : ''}`}>
-              <div className="forum-post-header">
-                <div>
-                  <div className="forum-post-author">{post.username || 'deleted user'}</div>
+              <div className="forum-post-user-panel">
+                <div
+                  className="forum-post-avatar"
+                  style={{ background: post.is_deleted ? '#555' : avatarColor(post.username) }}
+                >
+                  {(post.username || '?')[0].toUpperCase()}
+                </div>
+                <div className="forum-post-username">{post.username || 'deleted'}</div>
+                <div className="forum-post-role">Member</div>
+              </div>
+              <div className="forum-post-body">
+                <div className="forum-post-header">
                   <div className="forum-post-time">
                     {formatTime(post.created_at)}
                     {post.updated_at !== post.created_at && <span className="forum-post-edited"> (edited)</span>}
                   </div>
-                </div>
-                <div className="forum-post-actions">
-                  {user && user.playerId === post.player_id && !post.is_deleted && (
-                    <>
-                      <button className="forum-post-btn" onClick={() => setEditingPostId(post.id)}>
-                        Edit
+                  <div className="forum-post-actions">
+                    {user && user.playerId === post.player_id && !post.is_deleted && (
+                      <>
+                        <button className="forum-post-btn" onClick={() => setEditingPostId(post.id)}>
+                          Edit
+                        </button>
+                        <button className="forum-post-btn forum-post-delete-btn" onClick={() => handleDeletePost(post.id)}>
+                          Delete
+                        </button>
+                      </>
+                    )}
+                    {user && !post.is_deleted && (
+                      <button className="forum-post-btn" onClick={() => setReportingPostId(post.id)}>
+                        Report
                       </button>
-                      <button className="forum-post-btn forum-post-delete-btn" onClick={() => handleDeletePost(post.id)}>
-                        Delete
-                      </button>
-                    </>
-                  )}
-                  {user && !post.is_deleted && (
-                    <button className="forum-post-btn" onClick={() => setReportingPostId(post.id)}>
-                      Report
-                    </button>
-                  )}
-                </div>
-              </div>
-              <div className={`forum-post-content ${post.is_deleted ? 'forum-deleted-post' : ''}`}>
-                {post.is_deleted ? '[deleted by author]' : post.content}
-              </div>
-              {editingPostId === post.id && (
-                <ForumPostForm
-                  topic={topic}
-                  user={user}
-                  post={post}
-                  onCreated={handlePostCreated}
-                  onCancel={() => setEditingPostId(null)}
-                />
-              )}
-              {deletingPostId === post.id && (
-                <div className="forum-post-report">
-                  <p>Permanently delete this post?</p>
-                  <div className="forum-post-report-actions">
-                    <button className="forum-post-delete-btn forum-post-btn" onClick={() => handleConfirmDelete(post.id)}>
-                      Confirm Delete
-                    </button>
-                    <button className="forum-form-cancel-btn" onClick={() => setDeletingPostId(null)}>
-                      Cancel
-                    </button>
+                    )}
                   </div>
                 </div>
-              )}
-              {reportingPostId === post.id && (
-                <div className="forum-post-report">
-                  <p>Report this post for moderation review?</p>
-                  <div className="forum-post-report-actions">
-                    <button className="forum-form-submit-btn" onClick={() => handleReportPost(post.id)}>
-                      Confirm Report
-                    </button>
-                    <button className="forum-form-cancel-btn" onClick={() => setReportingPostId(null)}>
-                      Cancel
-                    </button>
-                  </div>
+                <div className={`forum-post-content ${post.is_deleted ? 'forum-deleted-post' : ''}`}>
+                  {post.is_deleted ? '[deleted by author]' : post.content}
                 </div>
-              )}
+                {editingPostId === post.id && (
+                  <ForumPostForm
+                    topic={topic}
+                    user={user}
+                    post={post}
+                    onCreated={handlePostCreated}
+                    onCancel={() => setEditingPostId(null)}
+                  />
+                )}
+                {deletingPostId === post.id && (
+                  <div className="forum-post-report">
+                    <p>Permanently delete this post?</p>
+                    <div className="forum-post-report-actions">
+                      <button className="forum-post-delete-btn forum-post-btn" onClick={() => handleConfirmDelete(post.id)}>
+                        Confirm Delete
+                      </button>
+                      <button className="forum-form-cancel-btn" onClick={() => setDeletingPostId(null)}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {reportingPostId === post.id && (
+                  <div className="forum-post-report">
+                    <p>Report this post for moderation review?</p>
+                    <div className="forum-post-report-actions">
+                      <button className="forum-form-submit-btn" onClick={() => handleReportPost(post.id)}>
+                        Confirm Report
+                      </button>
+                      <button className="forum-form-cancel-btn" onClick={() => setReportingPostId(null)}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           ))
         ) : (
