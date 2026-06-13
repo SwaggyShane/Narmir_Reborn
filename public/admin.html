@@ -2532,7 +2532,8 @@
             if (inputType === "fragments") {
               var ownedMap = {}, studiedMap = {};
               try {
-                var frags = typeof val === "string" ? JSON.parse(val || "[]") : (Array.isArray(val) ? val : []);
+                var parsedFrags = typeof val === "string" ? JSON.parse(val || "[]") : val;
+                var frags = Array.isArray(parsedFrags) ? parsedFrags : [];
                 frags.forEach(function(fr) {
                   if (fr && fr.type) { ownedMap[fr.type] = true; studiedMap[fr.type] = !!fr.studied; }
                 });
