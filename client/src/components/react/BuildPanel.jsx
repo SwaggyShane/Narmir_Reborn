@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiCall } from '../../utils/api.js';
 
 // Atmospheric synergy hint text. Tiers map to how close a contributing
 // synergy is to completion (without revealing counts or formulas).
@@ -151,15 +152,12 @@ const BuildPanel = () => {
 
   const applyAttunement = async (fragmentName, buildingType) => {
     try {
-      const response = await fetch('/api/kingdom/attune-fragment', {
+      const data = await apiCall('/api/kingdom/attune-fragment', {
         method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fragmentName, buildingType }),
+        body: { fragmentName, buildingType },
       });
-      if (!response.ok) {
-        const err = await response.json();
-        alert(`Error: ${err.error}`);
+      if (data.error) {
+        alert(`Error: ${data.error}`);
         return;
       }
       // Reload attunements
