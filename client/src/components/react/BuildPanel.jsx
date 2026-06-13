@@ -196,10 +196,6 @@ const BuildPanel = () => {
         <div className="bld-main">
           <span className="bld-icon" style={{ background: icon.color }}>{icon.emoji}</span>
           <span className="name">{b.name}</span>
-          <button
-            onClick={() => setShowAttunements(true)}
-            style={{ marginLeft: '6px', padding: '2px 8px', fontSize: '9px', fontWeight: 600, color: '#60a5fa', background: 'transparent', border: '1px solid #60a5fa', borderRadius: '999px', cursor: 'pointer', lineHeight: '1.4', whiteSpace: 'nowrap', flexShrink: 0 }}
-          >Attunement</button>
         </div>
         <span className="count" id={`bld-${b.id}`}>0</span>
         {b.id !== 'wm' && b.id !== 'ballistae' && b.id !== 'ladders' && b.id !== 'weapons' && b.id !== 'armor' ? (
@@ -394,7 +390,13 @@ const BuildPanel = () => {
         <div className="card" style={{ marginTop: '14px' }}>
           <div id="build-rows">
             <div id="build-header">
-              <span>Building</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                Building
+                <button
+                  onClick={() => setShowAttunements(true)}
+                  style={{ padding: '2px 8px', fontSize: '9px', fontWeight: 600, color: '#60a5fa', background: 'transparent', border: '1px solid #60a5fa', borderRadius: '999px', cursor: 'pointer', lineHeight: '1.4', whiteSpace: 'nowrap' }}
+                >Attunement</button>
+              </span>
               <span style={{ textAlign: 'right' }}>Built</span>
               <span style={{ textAlign: 'center' }}>Demolish</span>
               <span style={{ textAlign: 'center' }}>Engineers</span>
