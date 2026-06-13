@@ -6,7 +6,7 @@ import ForumTopicForm from './ForumTopicForm';
 import ModeratorManagementPanel from '../react/ModeratorManagementPanel';
 import { fetchApi } from '../../utils/api';
 
-const ForumSection = React.memo(function ForumSection({ user: propUser }) {
+const ForumSection = React.memo(function ForumSection({ user: propUser, standalone = false }) {
   const [user, setUser] = useState(propUser || null);
   const [view, setView] = useState('boards');
   const [boards, setBoards] = useState([]);
@@ -86,9 +86,13 @@ const ForumSection = React.memo(function ForumSection({ user: propUser }) {
   const handleModClick = useCallback(() => setView('moderation'), []);
   const handleFormCancel = useCallback(() => setShowTopicForm(false), []);
 
+  const panelProps = standalone
+    ? { className: 'forum-section' }
+    : { id: 'forum', className: 'panel forum-section', style: { display: 'none' } };
+
   if (loading) {
     return (
-      <div id="forum" className="panel forum-section" style={{ display: 'none' }}>
+      <div {...panelProps}>
         <h2 className="forum-thread-title">Forums</h2>
         <div className="forum-loading">Loading forums...</div>
       </div>
@@ -97,7 +101,7 @@ const ForumSection = React.memo(function ForumSection({ user: propUser }) {
 
   if (error) {
     return (
-      <div id="forum" className="panel forum-section" style={{ display: 'none' }}>
+      <div {...panelProps}>
         <h2 className="forum-thread-title">Forums</h2>
         <div className="forum-error">{error}</div>
         <button className="portal-enter-btn" onClick={loadBoards} style={{ marginTop: '1rem' }}>
@@ -111,7 +115,7 @@ const ForumSection = React.memo(function ForumSection({ user: propUser }) {
   const showBackButton = view !== 'boards';
 
   return (
-    <div id="forum" className="panel forum-section" style={{ display: 'none' }}>
+    <div {...panelProps}>
       <div className="forum-header">
         <h2 className="forum-thread-title">Forums</h2>
         <div style={{ display: 'flex', gap: '0.5rem' }}>

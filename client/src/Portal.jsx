@@ -544,7 +544,7 @@ export default function Portal() {
           <AuthCard onViewChange={setAuthView} />
           {!isRegistrationActive && (
             <>
-              <ForumSection user={null} />
+              <ForumSection user={null} standalone />
               <RankingsButton onClick={() => setShowRankings(!showRankings)} />
             </>
           )}
