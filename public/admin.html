@@ -2642,7 +2642,7 @@
 
             } else if (inputType === "troop-levels") {
               var tlParsed = {};
-              try { tlParsed = JSON.parse(typeof val === 'string' ? (val || '{}') : '{}'); } catch(e) {}
+              try { tlParsed = typeof val === 'string' ? JSON.parse(val || '{}') : (val || {}); } catch(e) {}
               var tlHeader = '<div style="display:grid;grid-template-columns:120px 70px 70px;gap:4px;font-size:10px;color:var(--text3);margin-bottom:4px"><span>Unit</span><span>Level</span><span>XP</span></div>';
               var tlRows = '';
               TROOP_TYPES.forEach(function(t) {
@@ -2657,7 +2657,7 @@
 
             } else if (inputType === "injured-counts") {
               var injParsed = {};
-              try { injParsed = JSON.parse(typeof val === 'string' ? (val || '{}') : '{}'); } catch(e) {}
+              try { injParsed = typeof val === 'string' ? JSON.parse(val || '{}') : (val || {}); } catch(e) {}
               var injRows = '';
               TROOP_TYPES.forEach(function(t) {
                 var count = Array.isArray(injParsed[t.id]) ? injParsed[t.id].length : 0;
@@ -2671,7 +2671,7 @@
 
             } else if (inputType === "effects-list") {
               var effParsed = {};
-              try { effParsed = JSON.parse(typeof val === 'string' ? (val || '{}') : '{}'); } catch(e) {}
+              try { effParsed = typeof val === 'string' ? JSON.parse(val || '{}') : (val || {}); } catch(e) {}
               if (Array.isArray(effParsed)) effParsed = {};
               var effRows = '';
               Object.keys(effParsed).forEach(function(k) {
@@ -2679,7 +2679,7 @@
                 var turns = (v && typeof v === 'object') ? (v.turns_left || 0) : (parseFloat(v) || 0);
                 effRows += '<div class="kv-row" style="display:flex;align-items:center;gap:6px;margin-bottom:4px">' +
                   '<span style="font-size:11px;min-width:140px;color:var(--text)">' + escHtml(k) + '</span>' +
-                  '<input type="number" data-field="' + escAttr(k) + '" value="' + turns + '" style="width:70px">' +
+                  '<input type="number" data-field="' + escAttr(k) + '" data-original-effect="' + escAttr(JSON.stringify(v)) + '" value="' + turns + '" style="width:70px">' +
                   '<span style="font-size:10px;color:var(--text3)">turns</span>' +
                   '<button type="button" onclick="this.parentElement.remove()" style="font-size:10px;padding:2px 5px;background:var(--red,#c0392b);border:none;color:#fff;border-radius:3px;cursor:pointer">✕</button>' +
                   '</div>';
@@ -2689,7 +2689,7 @@
 
             } else if (inputType === "items-list") {
               var itmArr = [];
-              try { var itmP = JSON.parse(typeof val === 'string' ? (val || '[]') : '[]'); itmArr = Array.isArray(itmP) ? itmP : []; } catch(e) {}
+              try { var itmP = typeof val === 'string' ? JSON.parse(val || '[]') : val; itmArr = Array.isArray(itmP) ? itmP : []; } catch(e) {}
               var itmRows = itmArr.length === 0 ? '<div style="font-size:11px;color:var(--text3)">No items</div>' : '';
               itmArr.forEach(function(item) {
                 itmRows += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">' +
@@ -2701,7 +2701,7 @@
 
             } else if (inputType === "merc-table") {
               var mercArr = [];
-              try { var mercP = JSON.parse(typeof val === 'string' ? (val || '[]') : '[]'); mercArr = Array.isArray(mercP) ? mercP : []; } catch(e) {}
+              try { var mercP = typeof val === 'string' ? JSON.parse(val || '[]') : val; mercArr = Array.isArray(mercP) ? mercP : []; } catch(e) {}
               if (mercArr.length === 0) {
                 fieldHtml = '<div id="ef-' + f.key + '-widget" style="font-size:11px;color:var(--text3)">No mercenaries</div>';
               } else {
@@ -2725,7 +2725,7 @@
 
             } else if (inputType === "fortified-blds") {
               var frtParsed = {};
-              try { frtParsed = JSON.parse(typeof val === 'string' ? (val || '{}') : '{}'); } catch(e) {}
+              try { frtParsed = typeof val === 'string' ? JSON.parse(val || '{}') : (val || {}); } catch(e) {}
               if (Array.isArray(frtParsed)) frtParsed = {};
               var frtRows = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px">';
               ALL_BUILDING_TYPES.forEach(function(bld) {
@@ -2739,7 +2739,7 @@
 
             } else if (inputType === "attunements-view") {
               var attParsed = {};
-              try { attParsed = JSON.parse(typeof val === 'string' ? (val || '{}') : '{}'); } catch(e) {}
+              try { attParsed = typeof val === 'string' ? JSON.parse(val || '{}') : (val || {}); } catch(e) {}
               if (Array.isArray(attParsed)) attParsed = {};
               var attKeys = Object.keys(attParsed);
               if (attKeys.length === 0) {
@@ -2842,7 +2842,13 @@
               var effResult = {};
               var effW = document.getElementById("ef-" + f.key + "-widget");
               if (effW) effW.querySelectorAll(".kv-row input[data-field]").forEach(function(inp) {
-                if (inp.dataset.field) effResult[inp.dataset.field] = { turns_left: parseInt(inp.value) || 0 };
+                if (inp.dataset.field) {
+                  var orig = {};
+                  try { orig = JSON.parse(inp.dataset.originalEffect || '{}'); } catch(e) {}
+                  if (typeof orig !== 'object' || orig === null) orig = {};
+                  orig.turns_left = parseInt(inp.value) || 0;
+                  effResult[inp.dataset.field] = orig;
+                }
               });
               fields[f.key] = JSON.stringify(effResult);
 
