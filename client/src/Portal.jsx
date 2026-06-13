@@ -525,37 +525,36 @@ export default function Portal() {
         <p className="portal-tagline">Rise From the Ashes. Forge Your Legacy.</p>
       </header>
 
-      {isRegistrationActive ? (
-        <main className="portal-main reg-active">
-          <div className="portal-col-register">
-            <AuthCard onViewChange={setAuthView} />
-          </div>
-        </main>
-      ) : (
-        <main className="portal-main">
-          <div className="portal-col-main">
+      <main
+        className={'portal-main' + (isRegistrationActive ? ' reg-active' : '')}
+        style={isRegistrationActive ? { gridTemplateColumns: '1fr' } : undefined}
+      >
+        {!isRegistrationActive && (
+          <div key="main-col" className="portal-col-main">
             {panel === 'rankings' && <RankingsTable />}
             {panel === 'forum' && <ForumSection user={null} standalone />}
           </div>
-          <div className="portal-col-right">
-            <AuthCard onViewChange={setAuthView} />
+        )}
+        <div key="auth-col" className={isRegistrationActive ? 'portal-col-register' : 'portal-col-right'}>
+          <AuthCard onViewChange={setAuthView} />
+          {!isRegistrationActive && (
             <nav className="portal-nav-panel">
               <button
-                className={`portal-nav-btn ${panel === 'rankings' ? 'active' : ''}`}
+                className={'portal-nav-btn' + (panel === 'rankings' ? ' active' : '')}
                 onClick={() => setPanel('rankings')}
               >
                 Top Kingdoms
               </button>
               <button
-                className={`portal-nav-btn ${panel === 'forum' ? 'active' : ''}`}
+                className={'portal-nav-btn' + (panel === 'forum' ? ' active' : '')}
                 onClick={() => setPanel('forum')}
               >
                 Forums
               </button>
             </nav>
-          </div>
-        </main>
-      )}
+          )}
+        </div>
+      </main>
 
       <footer className="portal-footer">
         <span>© 2025 Narmir Reborn</span>

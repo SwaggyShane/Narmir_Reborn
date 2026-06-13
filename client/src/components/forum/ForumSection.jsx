@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ForumBoards from './ForumBoards';
 import ForumTopicsList from './ForumTopicsList';
 import ForumThread from './ForumThread';
@@ -15,12 +15,19 @@ const ForumSection = React.memo(function ForumSection({ user: propUser, standalo
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showTopicForm, setShowTopicForm] = useState(false);
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => { isMounted.current = false; };
+  }, []);
 
   const loadBoards = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const data = await fetchApi('/api/forum/boards');
+      if (!isMounted.current) return;
       if (data && data.error) {
         setError(data.error);
         return;
@@ -28,9 +35,9 @@ const ForumSection = React.memo(function ForumSection({ user: propUser, standalo
       setBoards(data || []);
     } catch (err) {
       console.error('Error loading boards:', err);
-      setError('Failed to load forum boards');
+      if (isMounted.current) setError('Failed to load forum boards');
     } finally {
-      setLoading(false);
+      if (isMounted.current) setLoading(false);
     }
   }, []);
 
@@ -40,7 +47,7 @@ const ForumSection = React.memo(function ForumSection({ user: propUser, standalo
     } else {
       fetchApi('/api/auth/me')
         .then((data) => {
-          if (data?.username) setUser(data);
+          if (isMounted.current && data?.username) setUser(data);
         })
         .catch((err) => console.error('Error loading user:', err));
     }
