@@ -729,6 +729,28 @@ module.exports = function (db, io) {
       "build_progress",
       "build_allocation",
       "scrolls",
+      "world_fragments",
+      "fragment_bonuses",
+      "hybrid_blueprints",
+      "fortified_blueprints",
+      "fortified_buildings",
+      "wall_defense_type",
+      "racial_bonuses_unlocked",
+      "divine_sanctuary_used",
+      "alliance_buffs",
+      "items",
+      "mercenaries",
+      "gender",
+      "school_of_magic",
+      "milestone_title",
+    ]);
+
+    // Fields that must remain valid JSON strings
+    const JSON_FIELDS = new Set([
+      "world_fragments", "fragment_bonuses", "hybrid_blueprints", "fortified_buildings",
+      "active_effects", "troop_levels", "injured_troops", "research_allocation",
+      "build_queue", "build_progress", "build_allocation", "scrolls",
+      "alliance_buffs", "items", "mercenaries",
     ]);
 
     const safe = Object.fromEntries(
@@ -752,6 +774,15 @@ module.exports = function (db, io) {
 
     if (Object.keys(safe).length === 0)
       return res.status(400).json({ error: "No valid fields to update" });
+
+    // Validate that JSON fields contain parseable JSON before hitting the DB
+    for (const [k, v] of Object.entries(safe)) {
+      if (JSON_FIELDS.has(k) && typeof v === "string") {
+        try { JSON.parse(v); } catch {
+          return res.status(400).json({ error: `Invalid JSON in field "${k}"` });
+        }
+      }
+    }
 
     const cols = Object.keys(safe)
       .map((c) => `${c} = ?`)
