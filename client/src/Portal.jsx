@@ -87,94 +87,79 @@ const RACE_DATA = [
   },
 ];
 
-function RaceSelectOverlay({ selected, onSelect, onBack, onConfirm }) {
-  const [hovered, setHovered] = useState(null);
-  const active = hovered || selected;
-  const activeRace = RACE_DATA.find(r => r.id === active);
+// ─── Race Detail Panel (right col) ───────────────────────────────────────────
 
+function RaceDetailPanel({ race }) {
+  if (!race) {
+    return (
+      <div className="portal-card race-detail-panel">
+        <div className="race-detail-empty">Hover over a race to preview it here.</div>
+      </div>
+    );
+  }
+  return (
+    <div className="portal-card race-detail-panel" style={{ '--race-color': race.color }}>
+      <div className="race-detail-inner">
+        <div className="race-detail-portrait-section">
+          <img src={`/busts/${race.id}_male_bust.webp`} alt={race.title} className="race-detail-portrait" />
+          <div className="race-detail-title-group">
+            <div className="race-detail-title">{race.title}</div>
+            <div className="race-detail-subtitle">{race.playstyle?.split('.')?.[0]}</div>
+          </div>
+        </div>
+        <p className="race-detail-lore">{race.lore}</p>
+        <div className="race-detail-section">
+          <div className="race-detail-label">Strengths</div>
+          <ul className="race-detail-list strengths">
+            {race.strengths?.map((s, i) => <li key={i}>{s}</li>)}
+          </ul>
+        </div>
+        <div className="race-detail-section">
+          <div className="race-detail-label">Weaknesses</div>
+          <ul className="race-detail-list weaknesses">
+            {race.weaknesses?.map((w, i) => <li key={i}>{w}</li>)}
+          </ul>
+        </div>
+        {race.id === 'vampire' && (
+          <div className="race-warning vampire-warning">
+            <div className="warning-label">Warning</div>
+            <div className="warning-text">Vampires are bound to the night. Daylight brings significant combat penalties. Choose wisely.</div>
+          </div>
+        )}
+        <div className="race-detail-special">
+          <span className="race-detail-special-label">Special Ability</span>
+          {race.special}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Race Select Overlay (grid only — detail rendered by portal) ──────────────
+
+function RaceSelectOverlay({ selected, onSelect, onBack, onConfirm, onHover }) {
   return (
     <div className="race-overlay">
       <div className="race-overlay-header">
         <h2 className="race-overlay-title">Choose Your Race</h2>
-        <p className="race-overlay-sub">Your race shapes your kingdom's strengths, heroes, and destiny.</p>
+        <p className="race-overlay-sub">Your race shapes your kingdom&apos;s strengths, heroes, and destiny.</p>
       </div>
 
-      <div className="race-overlay-body">
-        <div className="race-grid">
-          {RACE_DATA.map(race => (
-            <button
-              key={race.id}
-              className={`race-pick-card${selected === race.id ? ' selected' : ''}`}
-              style={{ '--race-color': race.color }}
-              onClick={() => onSelect(race.id)}
-              onMouseEnter={() => setHovered(race.id)}
-              onMouseLeave={() => setHovered(null)}
-            >
-              <img src={`/race/${race.id}_male.webp`} alt={race.title} className="race-pick-portrait" />
-              <div className="race-pick-name">{race.title?.split(' of ')?.[0]}</div>
-              <div className="race-pick-playstyle">{race.playstyle?.split('.')?.[0]}</div>
-            </button>
-          ))}
-        </div>
-
-        <div className="race-detail-panel">
-          {activeRace ? (
-            <div className="race-detail-inner" style={{ '--race-color': activeRace.color }}>
-              <div className="race-detail-portrait-section">
-                <img src={`/busts/${activeRace.id}_male_bust.webp`} alt={activeRace.title} className="race-detail-portrait" />
-                <div className="race-detail-title-group">
-                  <div className="race-detail-title">{activeRace?.title}</div>
-                  <div className="race-detail-subtitle">{activeRace?.playstyle?.split('.')?.[0]}</div>
-                </div>
-              </div>
-              <p className="race-detail-lore">{activeRace.lore}</p>
-              <div className="race-detail-section">
-                <div className="race-detail-label">Heroes</div>
-                <div className="race-heroes-grid">
-                  {activeRace?.heroes?.map((hero, i) => {
-                    const heroFileName = hero.toLowerCase().replace(/[\s-]+/g, '_');
-                    return (
-                      <div key={i} className="race-hero-card">
-                        <img src={`/hero/${heroFileName}.webp`} alt={hero} className="hero-portrait" />
-                        <div className="hero-name">{hero}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              <div className="race-detail-section">
-                <div className="race-detail-label">Strengths</div>
-                <ul className="race-detail-list strengths">
-                  {activeRace.strengths?.map((s, i) => <li key={i}>{s}</li>)}
-                </ul>
-              </div>
-              <div className="race-detail-section">
-                <div className="race-detail-label">Weaknesses</div>
-                <ul className="race-detail-list weaknesses">
-                  {activeRace.weaknesses?.map((w, i) => <li key={i}>{w}</li>)}
-                </ul>
-              </div>
-              {activeRace.id === 'vampire' && (
-                <div className="race-warning vampire-warning">
-                  <div className="warning-label">Warning</div>
-                  <div className="warning-text">Vampires are bound to the night. Daylight brings significant combat penalties. Choose wisely.</div>
-                </div>
-              )}
-              <div className="race-detail-special">
-                <span className="race-detail-special-label">Special Ability</span>
-                {activeRace.special}
-              </div>
-              <div className="race-detail-playstyle">
-                <span className="race-detail-special-label">Playstyle</span>
-                {activeRace.playstyle}
-              </div>
-            </div>
-          ) : (
-            <div className="race-detail-empty">
-              Hover over a race to learn more, or click to select.
-            </div>
-          )}
-        </div>
+      <div className="race-grid">
+        {RACE_DATA.map(race => (
+          <button
+            key={race.id}
+            className={`race-pick-card${selected === race.id ? ' selected' : ''}`}
+            style={{ '--race-color': race.color }}
+            onClick={() => onSelect(race.id)}
+            onMouseEnter={() => onHover?.(race.id)}
+            onMouseLeave={() => onHover?.(null)}
+          >
+            <img src={`/race/${race.id}_male.webp`} alt={race.title} className="race-pick-portrait" />
+            <div className="race-pick-name">{race.title?.split(' of ')?.[0]}</div>
+            <div className="race-pick-playstyle">{race.playstyle?.split('.')?.[0]}</div>
+          </button>
+        ))}
       </div>
 
       <div className="race-overlay-footer">
@@ -196,26 +181,147 @@ function RaceSelectOverlay({ selected, onSelect, onBack, onConfirm }) {
   );
 }
 
-// ─── Auth Card ────────────────────────────────────────────────────────────────
+// ─── Registration Form ────────────────────────────────────────────────────────
 
-function AuthCard({ onViewChange }) {
-  const [authStatus, setAuthStatus] = useState('loading');
-  const [view, setView] = useState('login'); // 'login' | 'race-select' | 'register'
-  const [selectedRace, setSelectedRace] = useState(null);
-
-  const updateView = (newView) => {
-    setView(newView);
-    onViewChange?.(newView);
-  };
-  const [forgotMsg, setForgotMsg] = useState(false);
-
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+function RegistrationForm({ selectedRace, onBack }) {
+  const raceInfo = RACE_DATA.find(r => r.id === (selectedRace || 'human'));
   const [regUsername, setRegUsername] = useState('');
   const [regKingdom, setRegKingdom] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regGender, setRegGender] = useState('male');
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const doRegister = async e => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError('');
+    try {
+      const r = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          username: regUsername,
+          password: regPassword,
+          kingdomName: regKingdom,
+          email: regEmail,
+          race: selectedRace || 'human',
+          gender: regGender,
+        }),
+      });
+      const d = await r.json();
+      if (d.error) { setError(d.error); setSubmitting(false); return; }
+      if (d.token) {
+        try {
+          localStorage.setItem('narmir_token', d.token);
+        } catch (e) {
+          console.warn('[auth] localStorage unavailable:', e.message);
+        }
+      }
+      window.location.href = '/game';
+    } catch {
+      setError('Network error. Try again.');
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="reg-fullwidth-container">
+      <div className="reg-header">
+        <button className="reg-back-btn" onClick={onBack}>← Back to Race Selection</button>
+        <h2 className="reg-title">Create Your Kingdom</h2>
+      </div>
+
+      <div className="reg-content">
+        {raceInfo && (
+          <div className="reg-left-panel">
+            <div className="reg-portrait-section" style={{ '--race-color': raceInfo.color }}>
+              <img src={`/busts/${raceInfo.id}_${regGender}_bust.webp`} alt={raceInfo.title} className="reg-portrait" />
+              <div className="reg-race-info">
+                <div className="reg-race-title">{raceInfo.title.split(' of ')[0]}</div>
+                <button type="button" className="reg-race-change" onClick={onBack}>Change Race</button>
+              </div>
+            </div>
+            <div className="reg-race-stats">
+              <div className="stat-group">
+                <div className="stat-label">Strengths</div>
+                <ul className="stat-list">
+                  {raceInfo.strengths?.slice(0, 2).map((s, i) => <li key={i}>✓ {s}</li>)}
+                </ul>
+              </div>
+              <div className="stat-group">
+                <div className="stat-label">Playstyle</div>
+                <p className="stat-text">{raceInfo.playstyle?.split('.')[0]}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="reg-right-panel">
+          <form onSubmit={doRegister} className="reg-form">
+            <div className="form-section">
+              <label className="form-label">Character Gender</label>
+              <div className="gender-options">
+                <label className="gender-option">
+                  <input type="radio" name="gender" value="male" checked={regGender === 'male'}
+                    onChange={e => setRegGender(e.target.value)} />
+                  <span>Male</span>
+                </label>
+                <label className="gender-option">
+                  <input type="radio" name="gender" value="female" checked={regGender === 'female'}
+                    onChange={e => setRegGender(e.target.value)} />
+                  <span>Female</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="form-grid">
+              <div className="form-group">
+                <label className="form-label">Username</label>
+                <input className="form-input" type="text" placeholder="3-20 characters" value={regUsername}
+                  onChange={e => setRegUsername(e.target.value)} required autoComplete="username" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Kingdom Name</label>
+                <input className="form-input" type="text" placeholder="Your realm" value={regKingdom}
+                  onChange={e => setRegKingdom(e.target.value)} required />
+              </div>
+            </div>
+
+            <div className="form-grid">
+              <div className="form-group">
+                <label className="form-label">Email</label>
+                <input className="form-input" type="email" placeholder="your@email.com" value={regEmail}
+                  onChange={e => setRegEmail(e.target.value)} required autoComplete="email" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Password</label>
+                <input className="form-input" type="password" placeholder="Min 8 chars" value={regPassword}
+                  onChange={e => setRegPassword(e.target.value)} required autoComplete="new-password" />
+              </div>
+            </div>
+
+            <p className="auth-password-hint">8+ chars · uppercase · lowercase · number · special (@$!%*?&)</p>
+            {error && <p className="portal-error">{error}</p>}
+            <button type="submit" className="reg-submit-btn" disabled={submitting}>
+              {submitting ? '…' : `BEGIN AS ${raceInfo?.title?.split(' of ')?.[0]?.toUpperCase() || 'COMMANDER'}`}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Auth Card (login / welcome only) ────────────────────────────────────────
+
+function AuthCard({ onViewChange }) {
+  const [authStatus, setAuthStatus] = useState('loading');
+  const [forgotMsg, setForgotMsg] = useState(false);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -255,40 +361,6 @@ function AuthCard({ onViewChange }) {
     }
   };
 
-  const doRegister = async e => {
-    e.preventDefault();
-    setSubmitting(true);
-    setError('');
-    try {
-      const r = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          username: regUsername,
-          password: regPassword,
-          kingdomName: regKingdom,
-          email: regEmail,
-          race: (selectedRace || 'human'),
-          gender: regGender,
-        }),
-      });
-      const d = await r.json();
-      if (d.error) { setError(d.error); setSubmitting(false); return; }
-      if (d.token) {
-        try {
-          localStorage.setItem('narmir_token', d.token);
-        } catch (e) {
-          console.warn('[auth] localStorage unavailable:', e.message);
-        }
-      }
-      window.location.href = '/game';
-    } catch {
-      setError('Network error. Try again.');
-      setSubmitting(false);
-    }
-  };
-
   if (authStatus === 'loading') {
     return (
       <div className="portal-card">
@@ -303,107 +375,6 @@ function AuthCard({ onViewChange }) {
         <div className="auth-modal-title">Welcome Back</div>
         <p className="auth-modal-sub">Your kingdom awaits, Commander.</p>
         <a href="/game" className="portal-enter-btn auth-login-btn" style={{ marginTop: '1rem', display: 'block', textAlign: 'center' }}>ENTER</a>
-      </div>
-    );
-  }
-
-  if (view === 'race-select') {
-    return (
-      <RaceSelectOverlay
-        selected={selectedRace}
-        onSelect={setSelectedRace}
-        onBack={() => updateView('login')}
-        onConfirm={() => updateView('register')}
-      />
-    );
-  }
-
-  if (view === 'register') {
-    const raceInfo = RACE_DATA.find(r => r.id === (selectedRace || 'human'));
-    return (
-      <div className="reg-fullwidth-container">
-        <div className="reg-header">
-          <button className="reg-back-btn" onClick={() => setView('race-select')}>← Back to Race Selection</button>
-          <h2 className="reg-title">Create Your Kingdom</h2>
-        </div>
-
-        <div className="reg-content">
-          {raceInfo && (
-            <div className="reg-left-panel">
-              <div className="reg-portrait-section" style={{ '--race-color': raceInfo.color }}>
-                <img src={`/busts/${raceInfo.id}_${regGender}_bust.webp`} alt={raceInfo.title} className="reg-portrait" />
-                <div className="reg-race-info">
-                  <div className="reg-race-title">{raceInfo.title.split(' of ')[0]}</div>
-                  <button type="button" className="reg-race-change" onClick={() => setView('race-select')}>Change Race</button>
-                </div>
-              </div>
-              <div className="reg-race-stats">
-                <div className="stat-group">
-                  <div className="stat-label">Strengths</div>
-                  <ul className="stat-list">
-                    {raceInfo.strengths?.slice(0, 2).map((s, i) => <li key={i}>✓ {s}</li>)}
-                  </ul>
-                </div>
-                <div className="stat-group">
-                  <div className="stat-label">Playstyle</div>
-                  <p className="stat-text">{raceInfo.playstyle?.split('.')[0]}</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="reg-right-panel">
-            <form onSubmit={doRegister} className="reg-form">
-              <div className="form-section">
-                <label className="form-label">Character Gender</label>
-                <div className="gender-options">
-                  <label className="gender-option">
-                    <input type="radio" name="gender" value="male" checked={regGender === 'male'}
-                      onChange={e => setRegGender(e.target.value)} />
-                    <span>Male</span>
-                  </label>
-                  <label className="gender-option">
-                    <input type="radio" name="gender" value="female" checked={regGender === 'female'}
-                      onChange={e => setRegGender(e.target.value)} />
-                    <span>Female</span>
-                  </label>
-                </div>
-              </div>
-
-              <div className="form-grid">
-                <div className="form-group">
-                  <label className="form-label">Username</label>
-                  <input className="form-input" type="text" placeholder="3-20 characters" value={regUsername}
-                    onChange={e => setRegUsername(e.target.value)} required autoComplete="username" />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Kingdom Name</label>
-                  <input className="form-input" type="text" placeholder="Your realm" value={regKingdom}
-                    onChange={e => setRegKingdom(e.target.value)} required />
-                </div>
-              </div>
-
-              <div className="form-grid">
-                <div className="form-group">
-                  <label className="form-label">Email</label>
-                  <input className="form-input" type="email" placeholder="your@email.com" value={regEmail}
-                    onChange={e => setRegEmail(e.target.value)} required autoComplete="email" />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Password</label>
-                  <input className="form-input" type="password" placeholder="Min 8 chars" value={regPassword}
-                    onChange={e => setRegPassword(e.target.value)} required autoComplete="new-password" />
-                </div>
-              </div>
-
-              <p className="auth-password-hint">8+ chars · uppercase · lowercase · number · special (@$!%*?&)</p>
-              {error && <p className="portal-error">{error}</p>}
-              <button type="submit" className="reg-submit-btn" disabled={submitting}>
-                {submitting ? '…' : `BEGIN AS ${raceInfo?.title?.split(' of ')?.[0]?.toUpperCase() || 'COMMANDER'}`}
-              </button>
-            </form>
-          </div>
-        </div>
       </div>
     );
   }
@@ -437,7 +408,7 @@ function AuthCard({ onViewChange }) {
             {submitting ? '…' : 'Login'}
           </button>
           <button type="button" className="portal-enter-btn auth-register-btn"
-            onClick={() => { setError(''); updateView('race-select'); }}>
+            onClick={() => { setError(''); onViewChange?.('race-select'); }}>
             Register
           </button>
         </div>
@@ -509,14 +480,24 @@ function RankingsTable() {
   );
 }
 
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Portal() {
-  const [panel, setPanel] = useState('rankings'); // 'rankings' | 'forum'
+  const [panel, setPanel] = useState('rankings');
   const [authView, setAuthView] = useState('login');
+  const [selectedRace, setSelectedRace] = useState(null);
+  const [hoveredRaceId, setHoveredRaceId] = useState(null);
+  const [authCollapsed, setAuthCollapsed] = useState(false);
 
-  const isRegistrationActive = authView === 'race-select' || authView === 'register';
+  const isRaceSelect = authView === 'race-select';
+  const isRegister = authView === 'register';
+  const isRegistrationFlow = isRaceSelect || isRegister;
+
+  const previewRace = hoveredRaceId
+    ? RACE_DATA.find(r => r.id === hoveredRaceId)
+    : selectedRace
+    ? RACE_DATA.find(r => r.id === selectedRace)
+    : null;
 
   return (
     <div className="portal-root">
@@ -525,29 +506,52 @@ export default function Portal() {
         <p className="portal-tagline">Rise From the Ashes. Forge Your Legacy.</p>
       </header>
 
-      <main
-        className={'portal-main' + (isRegistrationActive ? ' reg-active' : '')}
-        style={isRegistrationActive ? { gridTemplateColumns: '1fr' } : undefined}
-      >
-        {!isRegistrationActive && (
-          <div key="main-col" className="portal-col-main">
-            {panel === 'rankings' && <RankingsTable />}
-            {panel === 'forum' && <ForumSection user={null} standalone />}
-          </div>
-        )}
-        <div key="auth-col" className={isRegistrationActive ? 'portal-col-register' : 'portal-col-right'}>
-          <AuthCard onViewChange={setAuthView} />
-          {!isRegistrationActive && (
+      <main className="portal-main">
+        <div key="main-col" className="portal-col-main">
+          {!isRegistrationFlow && panel === 'rankings' && <RankingsTable />}
+          {!isRegistrationFlow && panel === 'forum' && <ForumSection user={null} standalone />}
+          {isRaceSelect && (
+            <RaceSelectOverlay
+              selected={selectedRace}
+              onSelect={setSelectedRace}
+              onHover={setHoveredRaceId}
+              onBack={() => { setAuthView('login'); setSelectedRace(null); setHoveredRaceId(null); }}
+              onConfirm={() => { if (selectedRace) setAuthView('register'); }}
+            />
+          )}
+          {isRegister && (
+            <RegistrationForm
+              selectedRace={selectedRace}
+              onBack={() => setAuthView('race-select')}
+            />
+          )}
+        </div>
+
+        <div key="auth-col" className="portal-col-right">
+          {isRegistrationFlow ? (
+            <RaceDetailPanel race={previewRace} />
+          ) : authCollapsed ? (
+            <button
+              className="portal-card portal-auth-expand-btn"
+              onClick={() => setAuthCollapsed(false)}
+            >
+              Login / Register
+            </button>
+          ) : (
+            <AuthCard onViewChange={(v) => { setAuthView(v); }} />
+          )}
+
+          {!isRegistrationFlow && (
             <nav className="portal-nav-panel">
               <button
                 className={'portal-nav-btn' + (panel === 'rankings' ? ' active' : '')}
-                onClick={() => setPanel('rankings')}
+                onClick={() => { setPanel('rankings'); setAuthCollapsed(true); }}
               >
                 Top Kingdoms
               </button>
               <button
                 className={'portal-nav-btn' + (panel === 'forum' ? ' active' : '')}
-                onClick={() => setPanel('forum')}
+                onClick={() => { setPanel('forum'); setAuthCollapsed(true); }}
               >
                 Forums
               </button>
