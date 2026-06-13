@@ -4940,6 +4940,7 @@
           "worldmap",
           "bounties",
           "messages",
+          "forum",
         ];
         const kdTop = document.getElementById("kd-top");
         if (kdTop) {
@@ -4948,6 +4949,10 @@
           } else {
             kdTop.style.display = "block";
           }
+        }
+        const metricStrip = document.getElementById("react-resource-strip");
+        if (metricStrip) {
+          metricStrip.style.display = id === "forum" ? "none" : "";
         }
 
         // 4. Trigger Data Loading
