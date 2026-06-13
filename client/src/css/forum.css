@@ -7,6 +7,11 @@
   padding: 1rem;
   flex: 1;
   overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.forum-section.panel.active {
+  display: flex !important;
 }
 
 .forum-header {

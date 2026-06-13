@@ -86,7 +86,7 @@ const ForumSection = React.memo(function ForumSection({ user: propUser }) {
 
   if (loading) {
     return (
-      <div className="forum-section">
+      <div id="forum" className="panel forum-section" style={{ display: 'none' }}>
         <h2 className="forum-thread-title">Forums</h2>
         <div className="forum-loading">Loading forums...</div>
       </div>
@@ -95,7 +95,7 @@ const ForumSection = React.memo(function ForumSection({ user: propUser }) {
 
   if (error) {
     return (
-      <div className="forum-section">
+      <div id="forum" className="panel forum-section" style={{ display: 'none' }}>
         <h2 className="forum-thread-title">Forums</h2>
         <div className="forum-error">{error}</div>
         <button className="portal-enter-btn" onClick={loadBoards} style={{ marginTop: '1rem' }}>
@@ -109,7 +109,7 @@ const ForumSection = React.memo(function ForumSection({ user: propUser }) {
   const showBackButton = view !== 'boards';
 
   return (
-    <div className="forum-section">
+    <div id="forum" className="panel forum-section" style={{ display: 'none' }}>
       <div className="forum-header">
         <h2 className="forum-thread-title">Forums</h2>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
