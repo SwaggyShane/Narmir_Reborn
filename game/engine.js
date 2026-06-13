@@ -704,7 +704,7 @@ function rebellionEvent(k, updates, events) {
         const lossPercent = 0.05 + Math.random() * 0.05; // 5-10%
         const populationLoss = Math.floor(k.population * lossPercent);
         updates.population = Math.max(100, (updates.population || k.population) - populationLoss);
-        newsMessage = `ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â UNREST: Population fleeing due to unhappiness! Lost ${populationLoss.toLocaleString()} people.`;
+        newsMessage = `ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â UNREST: Population fleeing due to unhappiness! Lost ${populationLoss.toLocaleString()} people.`;
       }
       break;
 
@@ -712,7 +712,7 @@ function rebellionEvent(k, updates, events) {
       {
         const newTaxCap = Math.max(10, (updates.tax || k.tax) - 10);
         updates.tax = newTaxCap;
-        newsMessage = `ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â TAX REVOLT: Population refuses higher taxes. Tax reduced to ${newTaxCap}%!`;
+        newsMessage = `ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â TAX REVOLT: Population refuses higher taxes. Tax reduced to ${newTaxCap}%!`;
       }
       break;
 
@@ -733,12 +733,12 @@ function rebellionEvent(k, updates, events) {
           const buildingCount = k[randomBuilding];
           const damageCount = Math.min(buildingCount, Math.floor(Math.random() * 3) + 1); // 1-3 buildings
           updates[randomBuilding] = Math.max(0, (updates[randomBuilding] || buildingCount) - damageCount);
-          newsMessage = `ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â SABOTAGE: Rioters destroyed ${damageCount} ${buildingNames[randomBuilding]}!`;
+          newsMessage = `ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â SABOTAGE: Rioters destroyed ${damageCount} ${buildingNames[randomBuilding]}!`;
         } else {
           const lossPercent = 0.02 + Math.random() * 0.03; // 2-5%
           const populationLoss = Math.floor(k.population * lossPercent);
           updates.population = Math.max(100, (updates.population || k.population) - populationLoss);
-          newsMessage = `ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â UNREST: Rioters clashed with guards! Lost ${populationLoss.toLocaleString()} people.`;
+          newsMessage = `ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â UNREST: Rioters clashed with guards! Lost ${populationLoss.toLocaleString()} people.`;
         }
       }
       break;
@@ -756,7 +756,7 @@ function rebellionEvent(k, updates, events) {
             const buildingCount = k[randomBuilding];
             const damageCount = Math.min(buildingCount, Math.floor(Math.random() * 3) + 1);
             updates[randomBuilding] = Math.max(0, (updates[randomBuilding] || buildingCount) - damageCount);
-            newsMessage = `ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â FOOD RIOT: Desperate population destroyed food facilities! Lost ${damageCount} ${buildingNames[randomBuilding]}.`;
+            newsMessage = `ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â FOOD RIOT: Desperate population destroyed food facilities! Lost ${damageCount} ${buildingNames[randomBuilding]}.`;
             foodRiotTriggered = true;
           }
         }
@@ -765,7 +765,7 @@ function rebellionEvent(k, updates, events) {
           const lossPercent = 0.05 + Math.random() * 0.05;
           const populationLoss = Math.floor(k.population * lossPercent);
           updates.population = Math.max(100, (updates.population || k.population) - populationLoss);
-          newsMessage = `ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â UNREST: Population fleeing due to unhappiness! Lost ${populationLoss.toLocaleString()} people.`;
+          newsMessage = `ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â UNREST: Population fleeing due to unhappiness! Lost ${populationLoss.toLocaleString()} people.`;
         }
       }
       break;
@@ -783,7 +783,7 @@ function rebellionEvent(k, updates, events) {
             totalLost += loss;
           }
         }
-        newsMessage = `ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â MILITARY MUTINY: Troops are refusing orders due to low happiness! ${totalLost} units deserted.`;
+        newsMessage = `ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â MILITARY MUTINY: Troops are refusing orders due to low happiness! ${totalLost} units deserted.`;
       }
       break;
   }
@@ -1127,7 +1127,7 @@ function processTurn(k, db = null) {
   const engineerCap = Math.floor(k.bld_smithies * 50 * capRace.engineer);
   const scribeCap = Math.floor(k.bld_libraries * 20 * capRace.scribe);
 
-  // Overflow = units beyond capacity ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ pay upkeep; housed units are free
+  // Overflow = units beyond capacity ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ pay upkeep; housed units are free
   const researcherOverflow = Math.max(0, k.researchers - researcherCap);
   const engineerOverflow = Math.max(0, k.engineers - engineerCap);
   const scribeOverflow = Math.max(0, k.scribes - scribeCap);
@@ -1616,7 +1616,7 @@ function processTurn(k, db = null) {
         const newVal = Math.min(cap, current + inc);
         if (newVal !== current) {
           updates[d.col] = newVal;
-          advances.push(`${d.label} ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ ${newVal}%`);
+          advances.push(`${d.label} ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ ${newVal}%`);
         }
       }
 
@@ -1732,7 +1732,7 @@ function processTurn(k, db = null) {
             const newSpellVal = Math.min(spellCap, currentSpell + spellInc);
             if (newSpellVal !== currentSpell) {
               updates[spellCol] = newSpellVal;
-              mageAdvances.push(`Spellbook ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ ${newSpellVal}%`);
+              mageAdvances.push(`Spellbook ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ ${newSpellVal}%`);
             }
           }
         }
@@ -1766,7 +1766,7 @@ function processTurn(k, db = null) {
             const newSchoolVal = Math.min(schoolCap, currentSchool + schoolInc);
             if (newSchoolVal !== currentSchool) {
               updates[schoolCol] = newSchoolVal;
-              mageAdvances.push(`School Spellbook ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ ${newSchoolVal}%`);
+              mageAdvances.push(`School Spellbook ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ ${newSchoolVal}%`);
             }
           }
         }
@@ -1947,7 +1947,7 @@ function processTurn(k, db = null) {
           xp: newXp - xpNeeded,
           count: assigned,
         };
-        advancedTroops.push(`${unit} ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Level ${currentData.level + 1}`);
+        advancedTroops.push(`${unit} ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Level ${currentData.level + 1}`);
       } else {
         troopLevels[unit] = { ...currentData, xp: newXp, count: assigned };
       }
@@ -2167,7 +2167,7 @@ function checkAchievements(k, updates, events) {
     events.push({
       type: "system",
       message:
-        "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Grandmaster! Rewarded +10000 Land and +5000 Maps.",
+        "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Grandmaster! Rewarded +10000 Land and +5000 Maps.",
     });
     achUpdated = true;
   }
@@ -2185,7 +2185,7 @@ function checkAchievements(k, updates, events) {
     events.push({
       type: "system",
       message:
-        `ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Constructor! Your expertise grants ${smithiesToAdd} Smithies, bringing your total to ${currentSmithies + smithiesToAdd}.`,
+        `ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Constructor! Your expertise grants ${smithiesToAdd} Smithies, bringing your total to ${currentSmithies + smithiesToAdd}.`,
     });
     achUpdated = true;
   }
@@ -2197,7 +2197,7 @@ function checkAchievements(k, updates, events) {
       (updates.gold !== undefined ? updates.gold : k.gold) + 5000;
     events.push({
       type: "system",
-      message: "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Founder! You've built your first structure. Rewarded +5000 Gold.",
+      message: "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Founder! You've built your first structure. Rewarded +5000 Gold.",
     });
     achUpdated = true;
   }
@@ -2210,7 +2210,7 @@ function checkAchievements(k, updates, events) {
       (updates.land !== undefined ? updates.land : k.land) + 10000;
     events.push({
       type: "system",
-      message: "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Warlord! Rewarded +10000 Land.",
+      message: "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Warlord! Rewarded +10000 Land.",
     });
     achUpdated = true;
   }
@@ -2226,7 +2226,7 @@ function checkAchievements(k, updates, events) {
       (updates.gold !== undefined ? updates.gold : k.gold) + 1000000;
     events.push({
       type: "system",
-      message: "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Colossus! Your empire has swollen to 10 million souls. Rewarded +50000 Land, +100000 Mana, and +1000000 Gold.",
+      message: "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Colossus! Your empire has swollen to 10 million souls. Rewarded +50000 Land, +100000 Mana, and +1000000 Gold.",
     });
     achUpdated = true;
   }
@@ -2237,7 +2237,7 @@ function checkAchievements(k, updates, events) {
     events.push({
       type: "system",
       message:
-        "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Merchant King! All trade routes now generate +10% income permanently.",
+        "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Merchant King! All trade routes now generate +10% income permanently.",
     });
     achUpdated = true;
   }
@@ -2257,7 +2257,7 @@ function checkAchievements(k, updates, events) {
     events.push({
       type: "system",
       message:
-        "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Arcane Overlord! Rewarded +10,000 Spellbook and +10,000 Blank Scrolls.",
+        "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Arcane Overlord! Rewarded +10,000 Spellbook and +10,000 Blank Scrolls.",
     });
     achUpdated = true;
   }
@@ -2275,7 +2275,7 @@ function checkAchievements(k, updates, events) {
       events.push({
         type: "system",
         message:
-          "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Field Collector (Found all 50 expedition events). All world locations have been revealed!",
+          "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Field Collector (Found all 50 expedition events). All world locations have been revealed!",
       });
     }
     delete updates._collector_unlocked;
@@ -2291,7 +2291,7 @@ function checkAchievements(k, updates, events) {
       events.push({
         type: "system",
         message:
-          "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Historian (Found all library lore). Rewarded +5000 Maps.",
+          "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Historian (Found all library lore). Rewarded +5000 Maps.",
       });
     }
     delete updates._historian_unlocked;
@@ -2897,7 +2897,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
             else if (woodPerUnit > 0 && curWood < woodPerUnit) reason = 'wood';
             else if (stonePerUnit > 0 && curStone < stonePerUnit) reason = 'stone';
             else if (ironPerUnit > 0 && curIron < ironPerUnit) reason = 'iron';
-            constructionNotes.push(`ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â ${building.replace(/_/g, ' ')} paused ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â not enough ${reason}.`);
+            constructionNotes.push(`ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â ${building.replace(/_/g, ' ')} paused ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â not enough ${reason}.`);
           }
           canAdd = finalCanAdd;
         }
@@ -2905,7 +2905,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
         updates[col] = current + canAdd;
         if (canAdd < completed && canAdd === 0) {
           constructionNotes.push(
-            `ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â ${building.replace(/_/g, " ")} cap reached at level ${k.level || 1} (max ${cap.toLocaleString()}) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â level up to build more.`,
+            `ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â ${building.replace(/_/g, " ")} cap reached at level ${k.level || 1} (max ${cap.toLocaleString()}) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â level up to build more.`,
           );
         }
         if (canAdd > 0) {
@@ -3602,14 +3602,14 @@ function resolveMilitaryAttack(
   let shameEvent = null;
   if (bullyRatio >= 8) {
     bullyPenalty = 0.4;
-    bullyMsg = "ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â Your kingdom is disgraced attacking such a weak foe.";
+    bullyMsg = "ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â Your kingdom is disgraced attacking such a weak foe.";
     shameEvent = `ÃƒÂ°Ã…Â¸Ã¢â‚¬ËœÃ¢â‚¬Ëœ ${attacker.name} has attacked the much weaker ${defender.name}. The world watches in disgust.`;
   } else if (bullyRatio >= 4) {
     bullyPenalty = 0.6;
-    bullyMsg = "ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â Morale suffers ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â this is slaughter, not war.";
+    bullyMsg = "ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â Morale suffers ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â this is slaughter, not war.";
   } else if (bullyRatio >= 2) {
     bullyPenalty = 0.8;
-    bullyMsg = "ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â Your troops lack motivation fighting a weaker foe.";
+    bullyMsg = "ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â Your troops lack motivation fighting a weaker foe.";
   }
 
   // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Morale multipliers ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
@@ -3714,7 +3714,7 @@ function resolveMilitaryAttack(
         phase: "Tactical",
         title: "Flank Maneuver",
         msg: `Your swift units flanked the enemy, causing ${flankKills} casualties behind the main line!`,
-        icon: "ÃƒÂ¢Ã¢â‚¬Â Ã‚ÂªÃƒÂ¯Ã‚Â¸Ã‚Â",
+        icon: "ÃƒÂ¢Ã¢â‚¬Â Ã‚ÂªÃƒÂ¯Ã‚Â¸Ã‚Â",
       });
     }
   }
@@ -4611,7 +4611,7 @@ function raidTradeRoute(attacker, defender, unitCount) {
       defenderUpdates: {
         trade_routes: Math.max(0, (defender.trade_routes || 0) - raided),
       },
-      atkEvent: `ÃƒÂ°Ã…Â¸Ã‚ÂÃ‚Â´ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã‹Å“Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â SUCCESS: You raided ${raided} trade routes of ${defender.name} and looted ${loot.toLocaleString()} gold! (Losses: ${losses} thieves)`,
+      atkEvent: `ÃƒÂ°Ã…Â¸Ã‚ÂÃ‚Â´ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã‹Å“Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â SUCCESS: You raided ${raided} trade routes of ${defender.name} and looted ${loot.toLocaleString()} gold! (Losses: ${losses} thieves)`,
       defEvent: `ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂºÃ‚Â¶ RAIDED: ${attacker.name}'s Orcs raided your trade routes! You lost ${raided} routes and ${loot.toLocaleString()} gold was stolen!`,
     };
   } else {
@@ -5322,7 +5322,7 @@ async function resolveExpeditions(db, k, engine) {
       const tickDown = direWolfBonus.earlyReturn ? 2 : 1;
       const newTurns = Math.max(0, exp.turns_left - tickDown);
       devLog(
-        `[expedition] kingdom=${k.id} id=${exp.id} type=${exp.type} turns_left=${exp.turns_left} ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ ${newTurns}`,
+        `[expedition] kingdom=${k.id} id=${exp.id} type=${exp.type} turns_left=${exp.turns_left} ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ ${newTurns}`,
       );
 
       if (newTurns > 0) {
@@ -5453,11 +5453,11 @@ async function resolveExpeditions(db, k, engine) {
       if (updates._suspicious_rocks_achievement) {
         delete updates._suspicious_rocks_achievement;
         rewards.unshift({
-          text: `ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Found 100 mysterious rocks! +1000 stone awarded.`,
+          text: `ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Found 100 mysterious rocks! +1000 stone awarded.`,
         });
         events.push({
           type: "system",
-          message: `ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT: ${freshK.name} collected 100 mysterious rocks and was rewarded with 1000 stone!`,
+          message: `ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT: ${freshK.name} collected 100 mysterious rocks and was rewarded with 1000 stone!`,
         });
       }
 
@@ -5554,11 +5554,11 @@ async function resolveExpeditions(db, k, engine) {
 
       if (updates._achievement_unlocked) {
         rewards.push({
-          text: "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: " + updates._achievement_unlocked,
+          text: "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: " + updates._achievement_unlocked,
         });
         events.push({
           type: "system",
-          message: "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: " + updates._achievement_unlocked,
+          message: "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: " + updates._achievement_unlocked,
         });
         delete updates._achievement_unlocked;
       }
@@ -5719,7 +5719,7 @@ function processActiveEffects(k, events) {
         updates.population = Math.max(0, k.population - lost);
         events.push({
           type: "attack",
-          message: `ÃƒÂ¢Ã‹Å“Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â Plague ravages your kingdom ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â ${lost.toLocaleString()} citizens have perished.`,
+          message: `ÃƒÂ¢Ã‹Å“Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â Plague ravages your kingdom ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â ${lost.toLocaleString()} citizens have perished.`,
         });
       } else if (effect === "silence") {
         // Research suppressed ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â handled in processTurn by checking for silence
