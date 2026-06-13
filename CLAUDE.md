@@ -17,10 +17,14 @@
    # If 0 commits, nothing to push. Do not push.
    ```
 
-3. Check for an existing open PR on this branch before creating a new one.
-   If the previous PR was merged, open a new draft PR immediately after the next push.
-   git fetch origin main
-   git log --oneline origin/main..HEAD  # confirms commits to push
+3. Check for an existing open PR on this branch before creating a new one:
+   ```bash
+   # Via GitHub MCP tool — run mcp__github__list_pull_requests with:
+   # owner: swaggyshane, repo: narmir_reborn, head: <branch>, state: open
+   ```
+   - If an open PR exists: push to it, no new PR needed.
+   - If no open PR exists (previous one was merged or never created): open a new draft PR **immediately after the push**. Do not wait for the user to notice.
+   - "I forgot to check" is not valid. Run this before every push. No exceptions.
 
 ### Always Create PRs as Drafts
 
@@ -71,7 +75,7 @@ sleep 4
 # Step 4: Run baseline checks — always, regardless of what you changed
 curl -s http://localhost:3000/api/forum/boards | grep -q "General" && echo "✅ Forum boards" || echo "❌ Forum boards"
 curl -s http://localhost:3000/api/auth/me | grep -q "Not authenticated" && echo "✅ Auth/me" || echo "❌ Auth/me"
-curl -s http://localhost:3000/portal | grep -qc "NARMIR" && echo "✅ Portal" || echo "❌ Portal"
+curl -s http://localhost:3000/portal | grep -q "portal-root" && echo "✅ Portal" || echo "❌ Portal"
 
 # Step 5: Test the specific endpoints affected by your change
 

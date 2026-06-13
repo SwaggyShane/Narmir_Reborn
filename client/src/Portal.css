@@ -64,9 +64,7 @@ body {
   grid-template-columns: 1fr 360px;
   gap: 1.5rem;
   width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 1.25rem 1.5rem;
+  padding: 1.25rem 0 1.25rem 1.5rem;
   align-items: start;
   min-height: 0;
 }
@@ -84,6 +82,28 @@ body {
   gap: 1rem;
   position: sticky;
   top: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+/* ── Collapsed auth expand button ── */
+.portal-auth-expand-btn {
+  width: 100%;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  color: var(--text2);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+  letter-spacing: 0.02em;
+}
+.portal-auth-expand-btn:hover {
+  border-color: var(--accent1);
+  color: var(--accent1);
+  background: rgba(240, 98, 2, 0.06);
 }
 
 /* ── Nav panel (inside right col) ── */
@@ -471,16 +491,9 @@ body {
   color: var(--text3);
 }
 
-.race-overlay-body {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0;
-  min-height: auto;
-}
-
 .race-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 0.5rem;
   padding: 1rem;
   align-content: start;
@@ -1040,9 +1053,9 @@ body {
 
 @media (max-width: 720px) {
   .portal-main { grid-template-columns: 1fr; padding: 1rem; }
-  .portal-col-right { position: static; order: -1; }
+  .portal-col-right { position: static; order: -1; padding-right: 0; }
   .portal-header { padding: 1.5rem 1rem; }
-  .race-overlay-body { grid-template-columns: 1fr; }
+  .race-grid { grid-template-columns: repeat(3, 1fr); }
   .race-heroes-grid { grid-template-columns: repeat(2, 1fr); }
   .portal-nav-panel { flex-direction: row; flex-wrap: wrap; }
   .portal-nav-btn { flex: 1; text-align: center; }
