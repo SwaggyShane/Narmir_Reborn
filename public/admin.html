@@ -2121,6 +2121,10 @@
             { key: "name", label: "Name", type: "text" },
             { key: "race", label: "Race", type: "text" },
             { key: "region", label: "Region", type: "text" },
+            { key: "gender", label: "Gender", type: "text" },
+            { key: "description", label: "Description", type: "text" },
+            { key: "school_of_magic", label: "School of Magic", type: "text" },
+            { key: "milestone_title", label: "Milestone Title", type: "text" },
             { key: "prestige_level", label: "Prestige" },
           ],
         },
@@ -2218,15 +2222,33 @@
           ],
         },
         {
+          label: "Fragments & Attunements",
+          fields: [
+            { key: "world_fragments", label: "World Fragments", type: "json" },
+            { key: "fragment_bonuses", label: "Fragment Bonuses (Attunements)", type: "json" },
+            { key: "hybrid_blueprints", label: "Hybrid Blueprints", type: "json" },
+            { key: "fortified_buildings", label: "Fortified Buildings", type: "json" },
+            { key: "fortified_blueprints", label: "Fortified Blueprints" },
+          ],
+        },
+        {
           label: "Advanced (JSON)",
           fields: [
-            { key: "active_effects", label: "Active Effects", type: "text" },
-            { key: "troop_levels", label: "Troop Levels", type: "text" },
-            { key: "research_allocation", label: "Res Alloc", type: "text" },
-            { key: "build_queue", label: "Build Queue", type: "text" },
-            { key: "build_progress", label: "Build Progress", type: "text" },
-            { key: "build_allocation", label: "Build Alloc", type: "text" },
-            { key: "scrolls", label: "Scrolls", type: "text" },
+            { key: "active_effects", label: "Active Effects", type: "json" },
+            { key: "troop_levels", label: "Troop Levels", type: "json" },
+            { key: "injured_troops", label: "Injured Troops", type: "json" },
+            { key: "research_allocation", label: "Res Alloc", type: "json" },
+            { key: "build_queue", label: "Build Queue", type: "json" },
+            { key: "build_progress", label: "Build Progress", type: "json" },
+            { key: "build_allocation", label: "Build Alloc", type: "json" },
+            { key: "scrolls", label: "Scrolls", type: "json" },
+            { key: "alliance_buffs", label: "Alliance Buffs", type: "json" },
+            { key: "items", label: "Items", type: "json" },
+            { key: "mercenaries", label: "Mercenaries", type: "json" },
+            { key: "wall_hp", label: "Wall HP" },
+            { key: "wall_defense_type", label: "Wall Defense Type", type: "text" },
+            { key: "racial_bonuses_unlocked", label: "Racial Bonuses Unlocked" },
+            { key: "divine_sanctuary_used", label: "Divine Sanctuary Used" },
           ],
         },
       ];
@@ -2467,6 +2489,10 @@
           " · Land: " +
           (k.land || 0).toLocaleString();
 
+        function escHtml(s) {
+          return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
         var html = "";
         EDIT_SECTIONS.forEach(function (sec) {
           html +=
@@ -2479,11 +2505,31 @@
 
             var inputType = f.type || "number";
             var displayVal = val;
-            if (inputType === "number") {
-              displayVal = parseFloat(val);
-              if (isNaN(displayVal)) displayVal = 0;
-            } else if (typeof val === "object") {
-              displayVal = JSON.stringify(val);
+            var fieldHtml;
+
+            if (inputType === "json") {
+              try {
+                var parsed = typeof val === "string" ? JSON.parse(val) : val;
+                displayVal = JSON.stringify(parsed, null, 2);
+              } catch (e) {
+                displayVal = val || "";
+              }
+              fieldHtml =
+                '<textarea id="ef-' + f.key + '" rows="5" ' +
+                'style="width:100%;font-size:10px;font-family:monospace;resize:vertical;box-sizing:border-box">' +
+                escHtml(displayVal) +
+                "</textarea>";
+            } else {
+              if (inputType === "number") {
+                displayVal = parseFloat(val);
+                if (isNaN(displayVal)) displayVal = 0;
+              } else if (typeof val === "object") {
+                displayVal = JSON.stringify(val);
+              }
+              fieldHtml =
+                '<input type="' + inputType + '" id="ef-' + f.key +
+                '" value=\'' + (displayVal + "").replace(/'/g, "&#39;") +
+                '\' style="width:100%">';
             }
 
             html +=
@@ -2491,13 +2537,7 @@
               '<label style="font-size:11px;color:var(--text3)">' +
               f.label +
               "</label>" +
-              '<input type="' +
-              inputType +
-              '" id="ef-' +
-              f.key +
-              '" value=\'' +
-              (displayVal + "").replace(/'/g, "&#39;") +
-              '\' style="width:100%">' +
+              fieldHtml +
               "</div>";
           });
         });
