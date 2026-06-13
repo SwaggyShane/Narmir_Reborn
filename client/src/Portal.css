@@ -1053,7 +1053,7 @@ body {
 
 @media (max-width: 720px) {
   .portal-main { grid-template-columns: 1fr; padding: 1rem; }
-  .portal-col-right { position: static; order: -1; }
+  .portal-col-right { position: static; order: -1; padding-right: 0; }
   .portal-header { padding: 1.5rem 1rem; }
   .race-grid { grid-template-columns: repeat(3, 1fr); }
   .race-heroes-grid { grid-template-columns: repeat(2, 1fr); }

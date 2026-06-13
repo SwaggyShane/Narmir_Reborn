@@ -109,6 +109,20 @@ function RaceDetailPanel({ race }) {
         </div>
         <p className="race-detail-lore">{race.lore}</p>
         <div className="race-detail-section">
+          <div className="race-detail-label">Heroes</div>
+          <div className="race-heroes-grid">
+            {race.heroes?.map((hero, i) => {
+              const heroFileName = hero.toLowerCase().replace(/[\s-]+/g, '_');
+              return (
+                <div key={i} className="race-hero-card">
+                  <img src={`/hero/${heroFileName}.webp`} alt={hero} className="hero-portrait" />
+                  <div className="hero-name">{hero}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <div className="race-detail-section">
           <div className="race-detail-label">Strengths</div>
           <ul className="race-detail-list strengths">
             {race.strengths?.map((s, i) => <li key={i}>{s}</li>)}
@@ -129,6 +143,10 @@ function RaceDetailPanel({ race }) {
         <div className="race-detail-special">
           <span className="race-detail-special-label">Special Ability</span>
           {race.special}
+        </div>
+        <div className="race-detail-playstyle">
+          <span className="race-detail-special-label">Playstyle</span>
+          {race.playstyle}
         </div>
       </div>
     </div>
