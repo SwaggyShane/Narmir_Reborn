@@ -160,12 +160,40 @@ const BuildPanel = () => {
         alert(`Error: ${data.error}`);
         return;
       }
-      // Reload attunements
       await loadAttunements();
     } catch (err) {
       console.error('[attunements] apply failed:', err.message);
       alert('Failed to apply attunement');
     }
+  };
+
+  const removeAttunement = async (buildingType) => {
+    try {
+      const data = await apiCall('/api/kingdom/remove-attunement', {
+        method: 'POST',
+        body: { buildingType },
+      });
+      if (data.error) {
+        alert(`Error: ${data.error}`);
+        return;
+      }
+      await loadAttunements();
+    } catch (err) {
+      console.error('[attunements] remove failed:', err.message);
+      alert('Failed to remove attunement');
+    }
+  };
+
+  // Build a human-readable tooltip string from passive bonuses + special
+  const formatBonusTooltip = (bonuses, special) => {
+    const parts = [];
+    if (bonuses && typeof bonuses === 'object') {
+      for (const [k, v] of Object.entries(bonuses)) {
+        if (v) parts.push(`${k.replace(/_/g, ' ')}: +${v}`);
+      }
+    }
+    if (special?.name) parts.push(`✦ ${special.name}${special.desc ? ': ' + special.desc : ''}`);
+    return parts.length ? parts.join('\n') : 'No bonus data';
   };
 
   const formatReq = (bld) => {
@@ -196,10 +224,6 @@ const BuildPanel = () => {
         <div className="bld-main">
           <span className="bld-icon" style={{ background: icon.color }}>{icon.emoji}</span>
           <span className="name">{b.name}</span>
-          <button
-            onClick={() => setShowAttunements(true)}
-            style={{ marginLeft: '6px', padding: '2px 8px', fontSize: '9px', fontWeight: 600, color: '#60a5fa', background: 'transparent', border: '1px solid #60a5fa', borderRadius: '999px', cursor: 'pointer', lineHeight: '1.4', whiteSpace: 'nowrap', flexShrink: 0 }}
-          >Attunement</button>
         </div>
         <span className="count" id={`bld-${b.id}`}>0</span>
         {b.id !== 'wm' && b.id !== 'ballistae' && b.id !== 'ladders' && b.id !== 'weapons' && b.id !== 'armor' ? (
@@ -342,11 +366,31 @@ const BuildPanel = () => {
                             const hint = tier ? pickResonanceHint(key, tier) : null;
                             return (
                               <div key={building} style={{ fontSize: '11px', color: 'var(--text)', padding: '8px 10px', background: 'var(--bg3)', borderRadius: '4px', border: '1px solid var(--border)' }}>
-                                <div style={{ color: 'var(--gold)', fontWeight: 600, marginBottom: '2px' }}>{BUILDINGS_MAP[building]?.name || building}</div>
-                                <div>{att.fragmentName}</div>
-                                {att.special && <div style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '2px' }}>{att.special.name}</div>}
+                                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '6px', marginBottom: '4px' }}>
+                                  <div>
+                                    <div style={{ color: 'var(--gold)', fontWeight: 600 }}>{BUILDINGS_MAP[building]?.name || building}</div>
+                                    <div style={{ color: 'var(--text)', marginTop: '1px' }}>{att.fragmentName}</div>
+                                  </div>
+                                  <button
+                                    onClick={() => removeAttunement(building)}
+                                    title="Remove attunement — fragment can then be applied elsewhere"
+                                    style={{ flexShrink: 0, padding: '2px 6px', fontSize: '9px', background: 'transparent', border: '1px solid var(--red,#c0392b)', borderRadius: '3px', color: 'var(--red,#c0392b)', cursor: 'pointer', lineHeight: '1.4' }}
+                                  >Remove</button>
+                                </div>
+                                {att.passive && Object.keys(att.passive).length > 0 && (
+                                  <div style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '4px' }}>
+                                    {Object.entries(att.passive).map(([k, v]) => v ? (
+                                      <div key={k}>{k.replace(/_/g, ' ')}: <span style={{ color: 'var(--text)' }}>+{v}</span></div>
+                                    ) : null)}
+                                  </div>
+                                )}
+                                {att.special?.name && (
+                                  <div style={{ fontSize: '10px', color: 'var(--purple,#a78bfa)', marginTop: '3px' }}>
+                                    ✦ {att.special.name}{att.special.desc ? ': ' + att.special.desc : ''}
+                                  </div>
+                                )}
                                 {hint && (
-                                  <div style={{ fontSize: '10px', color: RESONANCE_COLOR[tier] || 'var(--text3)', marginTop: '6px', fontStyle: 'italic', letterSpacing: '0.2px' }}>
+                                  <div style={{ fontSize: '10px', color: RESONANCE_COLOR[tier] || 'var(--text3)', marginTop: '6px', fontStyle: 'italic', letterSpacing: '0.2px', opacity: 0.7 }}>
                                     <span style={{ marginRight: '4px' }}>{RESONANCE_GLYPH[tier] || '·'}</span>{hint}
                                   </div>
                                 )}
@@ -369,6 +413,7 @@ const BuildPanel = () => {
                                   <button
                                     key={bld.buildingType}
                                     onClick={() => applyAttunement(frag.fragmentName, bld.buildingType)}
+                                    title={formatBonusTooltip(bld.bonuses, bld.special)}
                                     style={{ padding: '6px 8px', fontSize: '11px', background: 'var(--accent1)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '3px', cursor: 'pointer', textAlign: 'left' }}
                                   >
                                     ✨ {BUILDINGS_MAP[bld.buildingType]?.name || bld.buildingType} ({bld.count})
@@ -394,7 +439,13 @@ const BuildPanel = () => {
         <div className="card" style={{ marginTop: '14px' }}>
           <div id="build-rows">
             <div id="build-header">
-              <span>Building</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                Building
+                <button
+                  onClick={() => setShowAttunements(true)}
+                  style={{ padding: '2px 8px', fontSize: '9px', fontWeight: 600, color: '#60a5fa', background: 'transparent', border: '1px solid #60a5fa', borderRadius: '999px', cursor: 'pointer', lineHeight: '1.4', whiteSpace: 'nowrap' }}
+                >Attunement</button>
+              </span>
               <span style={{ textAlign: 'right' }}>Built</span>
               <span style={{ textAlign: 'center' }}>Demolish</span>
               <span style={{ textAlign: 'center' }}>Engineers</span>
