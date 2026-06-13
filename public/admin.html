@@ -2114,6 +2114,28 @@
       var editTarget = null;
       var goalsCache = null;
 
+      var ALL_FRAGMENTS = [
+        { name: 'Volcanic Rock',           emoji: '🔥' },
+        { name: 'Ancient Elven Wood',      emoji: '🌲' },
+        { name: 'Dragon Scale',            emoji: '🐉' },
+        { name: 'Abyssal Crystal',         emoji: '🔮' },
+        { name: 'Celestial Feather',       emoji: '🪶' },
+        { name: 'Dwarven Star-Metal',      emoji: '⭐' },
+        { name: 'Cursed Bloodstone',       emoji: '🩸' },
+        { name: 'Tears of the World Tree', emoji: '💧' },
+        { name: 'Void Essence',            emoji: '🌌' },
+        { name: 'Titan Bone',              emoji: '🦴' },
+      ];
+
+      function fragSafeId(name) {
+        return name.replace(/[^a-zA-Z0-9]/g, '-');
+      }
+
+      function adminFragToggle(safeId, checked) {
+        var s = document.getElementById('frag-studied-' + safeId);
+        if (s) { s.disabled = !checked; if (!checked) s.checked = false; }
+      }
+
       var EDIT_SECTIONS = [
         {
           label: "Attributes",
@@ -2224,7 +2246,7 @@
         {
           label: "Fragments & Attunements",
           fields: [
-            { key: "world_fragments", label: "World Fragments", type: "json" },
+            { key: "world_fragments", label: "World Fragments", type: "fragments" },
             { key: "fragment_bonuses", label: "Fragment Bonuses (Attunements)", type: "json" },
             { key: "hybrid_blueprints", label: "Hybrid Blueprints", type: "json" },
             { key: "fortified_buildings", label: "Fortified Buildings", type: "json" },
@@ -2507,7 +2529,36 @@
             var displayVal = val;
             var fieldHtml;
 
-            if (inputType === "json") {
+            if (inputType === "fragments") {
+              var ownedMap = {}, studiedMap = {};
+              try {
+                var frags = typeof val === "string" ? JSON.parse(val || "[]") : (Array.isArray(val) ? val : []);
+                frags.forEach(function(fr) {
+                  if (fr && fr.type) { ownedMap[fr.type] = true; studiedMap[fr.type] = !!fr.studied; }
+                });
+              } catch(e) {}
+
+              fieldHtml = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">';
+              ALL_FRAGMENTS.forEach(function(fr) {
+                var sid = fragSafeId(fr.name);
+                var isOwned = !!ownedMap[fr.name];
+                var isStudied = !!studiedMap[fr.name];
+                fieldHtml +=
+                  '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:var(--bg3);border-radius:3px;border:1px solid var(--border)">' +
+                  '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex:1">' +
+                  '<input type="checkbox" id="frag-owned-' + sid + '" ' + (isOwned ? 'checked' : '') +
+                  ' onchange="adminFragToggle(\'' + sid + '\', this.checked)">' +
+                  '<span style="font-size:12px">' + fr.emoji + ' ' + fr.name + '</span>' +
+                  '</label>' +
+                  '<label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text3);cursor:pointer;white-space:nowrap;margin-left:8px">' +
+                  '<input type="checkbox" id="frag-studied-' + sid + '" ' + (isStudied ? 'checked' : '') + (isOwned ? '' : ' disabled') + '>' +
+                  'studied' +
+                  '</label>' +
+                  '</div>';
+              });
+              fieldHtml += '</div>';
+
+            } else if (inputType === "json") {
               try {
                 var parsed = typeof val === "string" ? JSON.parse(val) : val;
                 displayVal = JSON.stringify(parsed, null, 2);
@@ -2532,8 +2583,9 @@
                 '\' style="width:100%">';
             }
 
+            var spanFull = inputType === "fragments" ? "grid-column:1/-1;" : "";
             html +=
-              '<div style="display:flex;flex-direction:column;gap:3px">' +
+              '<div style="display:flex;flex-direction:column;gap:3px;' + spanFull + '">' +
               '<label style="font-size:11px;color:var(--text3)">' +
               f.label +
               "</label>" +
@@ -2553,8 +2605,21 @@
         var fields = {};
         EDIT_SECTIONS.forEach(function (sec) {
           sec.fields.forEach(function (f) {
-            var el = document.getElementById("ef-" + f.key);
-            if (el && el.value !== "") fields[f.key] = el.value;
+            if (f.type === "fragments") {
+              var frags = [];
+              ALL_FRAGMENTS.forEach(function(fr) {
+                var sid = fragSafeId(fr.name);
+                var ownedEl = document.getElementById("frag-owned-" + sid);
+                if (ownedEl && ownedEl.checked) {
+                  var studiedEl = document.getElementById("frag-studied-" + sid);
+                  frags.push({ type: fr.name, studied: !!(studiedEl && studiedEl.checked) });
+                }
+              });
+              fields[f.key] = JSON.stringify(frags);
+            } else {
+              var el = document.getElementById("ef-" + f.key);
+              if (el && el.value !== "") fields[f.key] = el.value;
+            }
           });
         });
         var r = await api("POST", "/api/admin/set-kingdom", {
