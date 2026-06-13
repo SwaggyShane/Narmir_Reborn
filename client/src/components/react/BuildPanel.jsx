@@ -354,7 +354,7 @@ const BuildPanel = () => {
                             const hint = tier ? pickResonanceHint(key, tier) : null;
                             return (
                               <div key={building} style={{ fontSize: '11px', color: 'var(--text)', padding: '8px 10px', background: 'var(--bg3)', borderRadius: '4px', border: '1px solid var(--border)' }}>
-                                <div style={{ color: 'var(--gold)', fontWeight: 600, marginBottom: '2px' }}>{building}</div>
+                                <div style={{ color: 'var(--gold)', fontWeight: 600, marginBottom: '2px' }}>{BUILDINGS_MAP[building]?.name || building}</div>
                                 <div>{att.fragmentName}</div>
                                 {att.special && <div style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '2px' }}>{att.special.name}</div>}
                                 {hint && (
@@ -383,7 +383,7 @@ const BuildPanel = () => {
                                     onClick={() => applyAttunement(frag.fragmentName, bld.buildingType)}
                                     style={{ padding: '6px 8px', fontSize: '11px', background: 'var(--accent1)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '3px', cursor: 'pointer', textAlign: 'left' }}
                                   >
-                                    ✨ {bld.buildingType} ({bld.count})
+                                    ✨ {BUILDINGS_MAP[bld.buildingType]?.name || bld.buildingType} ({bld.count})
                                   </button>
                                 ))}
                               </div>
