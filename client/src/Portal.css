@@ -64,9 +64,7 @@ body {
   grid-template-columns: 1fr 360px;
   gap: 1.5rem;
   width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 1.25rem 1.5rem;
+  padding: 1.25rem 0 1.25rem 1.5rem;
   align-items: start;
   min-height: 0;
 }
@@ -84,6 +82,7 @@ body {
   gap: 1rem;
   position: sticky;
   top: 1.5rem;
+  padding-right: 1.5rem;
 }
 
 /* ── Nav panel (inside right col) ── */
