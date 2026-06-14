@@ -40,6 +40,13 @@ function pickResonanceHint(key, tier) {
   return pool[Math.abs(h) % pool.length];
 }
 
+function resonanceOpacity(count) {
+  if (count >= 4) return 1.0;
+  if (count === 3) return 0.85;
+  if (count === 2) return 0.65;
+  return 0.45;
+}
+
 const BUILDINGS = [
   { id: 'farms', name: 'Farm', tier: 1, wood: 0, stone: 0, iron: 0, time: 10, land: 10 },
   { id: 'housing', name: 'Housing', tier: 2, wood: 200, stone: 100, iron: 50, time: 100, land: 25 },
@@ -143,7 +150,10 @@ const BuildPanel = () => {
               if (contribResponse.ok) {
                 const contribData = await contribResponse.json();
                 if (contribData.contributes) {
-                  contributions[`${building}:${att.fragmentName}`] = contribData.resonanceTier || 'faint';
+                  contributions[`${building}:${att.fragmentName}`] = {
+                    tier: contribData.resonanceTier || 'faint',
+                    count: contribData.contributingCount || 1,
+                  };
                 }
               }
             } catch (err) {
@@ -422,7 +432,8 @@ const BuildPanel = () => {
                           {Object.entries(currentAttunements).map(([buildingType, att]) => {
                             if (!att || !att.fragmentName) return null;
                             const key = `${buildingType}:${att.fragmentName}`;
-                            const tier = synergyContributions[key] || null;
+                            const contrib = synergyContributions[key] || null;
+                            const tier = contrib?.tier || null;
                             const hint = tier ? pickResonanceHint(key, tier) : null;
                             return (
                               <div key={buildingType} style={{ fontSize: '11px', color: 'var(--text)', padding: '8px 10px', background: 'var(--bg3)', borderRadius: '4px', border: '1px solid var(--border)' }}>
@@ -450,7 +461,7 @@ const BuildPanel = () => {
                                   </div>
                                 )}
                                 {hint && (
-                                  <div style={{ fontSize: '10px', color: RESONANCE_COLOR[tier] || 'var(--text3)', marginTop: '6px', fontStyle: 'italic', letterSpacing: '0.2px', opacity: 0.7 }}>
+                                  <div style={{ fontSize: '10px', color: RESONANCE_COLOR[tier] || 'var(--text3)', marginTop: '6px', fontStyle: 'italic', letterSpacing: '0.2px', opacity: resonanceOpacity(contrib?.count || 1) }}>
                                     <span style={{ marginRight: '4px' }}>{RESONANCE_GLYPH[tier] || '·'}</span>{hint}
                                   </div>
                                 )}

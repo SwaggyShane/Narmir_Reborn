@@ -5350,6 +5350,7 @@ module.exports = function (db) {
         // Keep names/emojis out — they would let players reverse-engineer
         // which combos contribute. Only signal whether ANY contribution exists.
         contributes: contributing.length > 0,
+        contributingCount: contributing.length,
         resonanceTier,
       });
     } catch (err) {
