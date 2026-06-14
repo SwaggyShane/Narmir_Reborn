@@ -30,6 +30,15 @@ const BottomNav = () => {
       <button className="bnav-item" data-tab="happiness" onClick={(e) => handleSwitchTabMobile('happiness', e)}>
         <span className="bicon" style={{ color: '#f59e0b' }}>😊</span>Happiness
       </button>
+      <button className="bnav-item" data-tab="studies" onClick={(e) => handleSwitchTabMobile('studies', e)}>
+        <span className="bicon" style={{ color: '#d0021b' }}>🏛️</span>Studies
+      </button>
+      <button className="bnav-item" data-tab="build" onClick={(e) => handleSwitchTabMobile('build', e)}>
+        <span className="bicon" style={{ color: '#8b572a' }}>🏗️</span>Build
+      </button>
+      <button className="bnav-item" data-tab="exploration" onClick={(e) => handleSwitchTabMobile('exploration', e)}>
+        <span className="bicon" style={{ color: '#417505' }}>🧭</span>Explore
+      </button>
 
       <button className="bnav-item" data-tab="economy" onClick={(e) => handleSwitchTabMobile('economy', e)}>
         <span className="bicon" style={{ color: '#f5a623' }}>💰</span>Economy

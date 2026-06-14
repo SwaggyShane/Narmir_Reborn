@@ -36,6 +36,15 @@ const Sidebar = () => {
       <button className="nav-item" data-tab="happiness" onClick={(e) => handleSwitchTab('happiness', e)}>
         <span className="icon" style={{ color: '#f59e0b' }}>😊</span>Happiness
       </button>
+      <button className="nav-item" data-tab="studies" onClick={(e) => handleSwitchTab('studies', e)}>
+        <span className="icon" style={{ color: '#d0021b' }}>🏛️</span>Studies
+      </button>
+      <button className="nav-item" data-tab="build" onClick={(e) => handleSwitchTab('build', e)}>
+        <span className="icon" style={{ color: '#8b572a' }}>🔨</span>Build
+      </button>
+      <button className="nav-item" data-tab="exploration" onClick={(e) => handleSwitchTab('exploration', e)}>
+        <span className="icon" style={{ color: '#417505' }}>🧭</span>Exploration
+      </button>
 
       <div className="nav-section">Wherewithal</div>
       <button className="nav-item" data-tab="economy" onClick={(e) => handleSwitchTab('economy', e)}>
