@@ -5508,6 +5508,13 @@ module.exports = function (db) {
 
         await db.run('COMMIT');
 
+        // Write a news entry so the player sees the activation in their feed
+        const newsMessage = `${synergy.emoji} ${synergy.name}: ${synergy.active?.name} activated! ${synergy.active?.desc}`;
+        await db.run(
+          "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?, ?, ?, ?)",
+          [kingdom.id, 'synergy', newsMessage, kingdom.turn || 0]
+        );
+
         // Log the ability activation
         devLog(`[synergy] Kingdom ${kingdom.id}: ${synergy_id} ability activated by ${synergy.active?.name}`);
 
