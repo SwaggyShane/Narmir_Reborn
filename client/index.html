@@ -2220,13 +2220,13 @@
               ></span>
               SYSTEM CLOUD SYNCED
             </div>
-            <div style="opacity: 0.6">UPTIME: 14D 02H 45M 12S</div>
+            <div style="opacity: 0.6">UPTIME: <span id="status-uptime">—</span></div>
           </div>
           <div
             style="display: flex; gap: 16px; opacity: 0.6; letter-spacing: 1px"
           >
-            <span>v2.4.1-STABLE</span>
-            <span>NODE ID: US-E1-882</span>
+            <span id="status-version">—</span>
+            <span>NODE ID: <span id="status-nodeid">—</span></span>
           </div>
         </footer>
       </main>
@@ -18051,6 +18051,25 @@
     <!-- School Selection Modal Mount Point -->
     <div id="vue-panel-school-selection" style="display: contents"></div>
 
+    </script>
+    <script>
+      (function () {
+        function refreshStatus() {
+          fetch('/api/status')
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+              var u = document.getElementById('status-uptime');
+              var v = document.getElementById('status-version');
+              var n = document.getElementById('status-nodeid');
+              if (u) u.textContent = d.uptime;
+              if (v) v.textContent = d.version;
+              if (n) n.textContent = d.nodeId;
+            })
+            .catch(function () {});
+        }
+        refreshStatus();
+        setInterval(refreshStatus, 60000);
+      })();
     </script>
   </body>
 </html>
