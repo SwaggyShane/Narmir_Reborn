@@ -5251,33 +5251,42 @@ module.exports = function (db) {
         return res.status(400).json({ error: 'buildingType required' });
       }
 
-      const kingdom = await db.get("SELECT id, fragment_bonuses FROM kingdoms WHERE player_id = ?", [
-        req.player.playerId,
-      ]);
-      if (!kingdom) return res.status(404).json({ error: "Kingdom not found" });
+      await db.run("BEGIN TRANSACTION");
+      try {
+        const kingdom = await db.get("SELECT id, fragment_bonuses FROM kingdoms WHERE player_id = ? FOR UPDATE", [
+          req.player.playerId,
+        ]);
+        if (!kingdom) {
+          await db.run("ROLLBACK");
+          return res.status(404).json({ error: "Kingdom not found" });
+        }
 
-      // Get current attunements
-      const currentAttunements = getKingdomAttunements(kingdom.fragment_bonuses || '{}');
+        const currentAttunements = getKingdomAttunements(kingdom.fragment_bonuses || '{}');
 
-      // Check if building has attunement
-      if (!Object.prototype.hasOwnProperty.call(currentAttunements, buildingType)) {
-        return res.status(400).json({ error: `${buildingType} has no attunement` });
+        if (!Object.prototype.hasOwnProperty.call(currentAttunements, buildingType)) {
+          await db.run("ROLLBACK");
+          return res.status(400).json({ error: `${buildingType} has no attunement` });
+        }
+
+        delete currentAttunements[buildingType];
+
+        await db.run(
+          `UPDATE kingdoms SET fragment_bonuses = ? WHERE id = ?`,
+          [JSON.stringify(currentAttunements), kingdom.id]
+        );
+
+        await db.run("COMMIT");
+
+        res.json({
+          ok: true,
+          message: `Attunement removed from ${buildingType}`,
+        });
+
+        devLog(`[attunement] Kingdom ${kingdom.id}: Removed from ${buildingType}`);
+      } catch (txErr) {
+        await db.run("ROLLBACK").catch(() => {});
+        throw txErr;
       }
-
-      // Remove the attunement
-      delete currentAttunements[buildingType];
-
-      await db.run(
-        `UPDATE kingdoms SET fragment_bonuses = ? WHERE id = ?`,
-        [JSON.stringify(currentAttunements), kingdom.id]
-      );
-
-      res.json({
-        ok: true,
-        message: `Attunement removed from ${buildingType}`,
-      });
-
-      devLog(`[attunement] Kingdom ${kingdom.id}: Removed from ${buildingType}`);
     } catch (err) {
       console.error('[attunement] remove failed:', err.message);
       res.status(500).json({ error: 'Failed to remove attunement' });
