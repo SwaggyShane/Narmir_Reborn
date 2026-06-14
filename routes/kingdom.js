@@ -5329,7 +5329,7 @@ module.exports = function (db) {
         if (kingdom) {
           const atts = getKingdomAttunements(kingdom.fragment_bonuses || '{}');
           for (const [bld, att] of Object.entries(atts)) {
-            if (att && att.fragmentName) placements[bld] = att.fragmentName;
+            if (att) placements[bld] = att;
           }
         }
         let best = 0;
