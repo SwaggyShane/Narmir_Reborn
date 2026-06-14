@@ -142,8 +142,9 @@ function getBonusMultiplier(kingdom, buildingType, statType) {
 
 /**
  * Apply bonus multipliers to a stat
+ * (kept for potential future callers; not exported)
  */
-function applyFragmentMultiplier(kingdom, buildingType, baseValue, statType) {
+function _applyFragmentMultiplier(kingdom, buildingType, baseValue, statType) {
   const multiplier = getBonusMultiplier(kingdom, buildingType, statType);
   return baseValue * multiplier;
 }
@@ -176,8 +177,9 @@ function formatBuildingName(buildingType) {
 
 /**
  * Get all bonuses for a building with their details
+ * (kept for potential future callers; not exported)
  */
-function getBuildingBonusDetails(kingdom, buildingType) {
+function _getBuildingBonusDetails(kingdom, buildingType) {
   const fragmentBonus = getFragmentForBuilding(kingdom, buildingType);
   if (!fragmentBonus) {
     return {
@@ -197,15 +199,10 @@ function getBuildingBonusDetails(kingdom, buildingType) {
 }
 
 module.exports = {
-  parseFragmentBonuses,
-  getKingdomFragmentBonuses,
   getFragmentForBuilding,
   getBonusConfig,
   applyFragmentBonus,
   getAvailableBuildingsWithBonuses,
   getBonusMultiplier,
-  applyFragmentMultiplier,
   getSpecialEffect,
-  formatBuildingName,
-  getBuildingBonusDetails,
 };

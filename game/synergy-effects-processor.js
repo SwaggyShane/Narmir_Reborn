@@ -3,22 +3,7 @@
  * Applies active ability effects and penalties to kingdom calculations
  */
 
-/**
- * Safely parse a JSON field
- */
-function parseJsonField(field, defaultValue = {}) {
-  if (typeof field === 'object' && field !== null) {
-    return field;
-  }
-  if (typeof field === 'string' && field.trim() !== '') {
-    try {
-      return JSON.parse(field);
-    } catch {
-      return defaultValue;
-    }
-  }
-  return defaultValue;
-}
+const { safeJsonParse } = require('../utils/helpers');
 
 /**
  * Get active effects that haven't expired
@@ -28,7 +13,7 @@ function getActiveEffects(kingdom) {
     return {};
   }
 
-  const activeEffects = parseJsonField(kingdom.active_effects, {});
+  const activeEffects = safeJsonParse(kingdom.active_effects, {});
   const currentTurn = kingdom.turn || 0;
   const active = {};
 
@@ -58,7 +43,7 @@ function getExpiredEffects(kingdom) {
     return [];
   }
 
-  const activeEffects = parseJsonField(kingdom.active_effects, {});
+  const activeEffects = safeJsonParse(kingdom.active_effects, {});
   const currentTurn = kingdom.turn || 0;
   const expired = [];
 
@@ -90,7 +75,7 @@ function removeExpiredEffects(kingdom) {
     return kingdom;
   }
 
-  const activeEffects = parseJsonField(kingdom.active_effects, {});
+  const activeEffects = safeJsonParse(kingdom.active_effects, {});
   for (const key of expired) {
     delete activeEffects[key];
   }
@@ -266,7 +251,6 @@ function getCombinedMultiplier(kingdom, stat) {
 }
 
 module.exports = {
-  parseJsonField,
   getActiveEffects,
   getExpiredEffects,
   removeExpiredEffects,

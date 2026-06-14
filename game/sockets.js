@@ -1,14 +1,10 @@
 const jwt = require("jsonwebtoken");
 const engine = require("./engine");
 const { setUnreadCount, incrementUnread, unreadNewsCache } = require("../cache.js");
+const { devLog } = require("../utils/helpers");
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_fallback_12345";
 const onlinePlayers = new Map(); // playerId → { socketId, username, race, isMod, isAdmin, kingdomName }
-
-const _IS_PROD = process.env.NODE_ENV === "production";
-function devLog(...args) {
-  if (!_IS_PROD) console.log(...args);
-}
 
 module.exports = function (io, db) {
   io.use((socket, next) => {
