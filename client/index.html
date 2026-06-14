@@ -10630,12 +10630,12 @@
           );
         if ((state.gold || 0) < 2500)
           return toast("Need 2,500 gold to make scaffolding", "error");
-        var result = await apiCall("POST", "/api/kingdom/forge-tools", {
+        var result = await apiCall("POST", "/api/kingdom/smithy/forge-tools", {
           toolType: "scaffolding",
           quantity: 1,
         });
         if (result.error) return toast(result.error, "error");
-        window.applyGameMutation(result, { reason: "forge-tools" });
+        window.applyGameMutation(result, { reason: "smithy/forge-tools" });
         if (result.events && result.events.length)
           appendNewsItems(result.events);
         syncUI();

@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import SchoolSelectionModal from './SchoolSelectionModal';
 
 /**
- * SchoolSelectionPanel
- * Shows school selection modal when:
+ * SchoolSelectionController
+ * Invisible controller/watcher that decides whether to show the school
+ * selection modal when:
  * - res_spellbook >= 100
  * - school_of_magic is NULL (not yet chosen)
+ *
+ * This is NOT a panel — it renders null or a modal overlay, never its own panel.
  */
-export default function SchoolSelectionPanel() {
+export default function SchoolSelectionController() {
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {

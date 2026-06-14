@@ -29,12 +29,22 @@ import HeroesPanelReact from "./components/react/HeroesPanel.jsx";
 import HirePanelReact from "./components/react/HirePanel.jsx";
 import ResourcesPanelReact from "./components/react/ResourcesPanel.jsx";
 import GlobalchatPanelReact from "./components/react/GlobalchatPanel.jsx";
-import SchoolSelectionPanelReact from "./components/react/SchoolSelectionPanel.jsx";
+import SchoolSelectionControllerReact from "./components/react/SchoolSelectionController.jsx";
 import ForumSectionReact from "./components/forum/ForumSection.jsx";
 import "./css/forum.css";
 import ResourceStripReact from "./components/react/ResourceStrip.jsx";
 
 // API call helper for making authenticated requests from vanilla JS
+//
+// NOTE: This window.apiCall uses the convention (method, url, body) — e.g.
+//   window.apiCall("POST", "/api/kingdom/turn", { foo: 1 })
+//
+// This differs from client/src/utils/api.js which exports apiCall(url, options)
+// where options is a fetch-style object { method, body, headers, ... }.
+//
+// All existing callers of window.apiCall (MarketPanel.jsx, NewsPanel.jsx, and
+// index.html) use the (method, url, body) convention. Do NOT change this
+// signature without updating all callers.
 async function apiCall(method, endpoint, body = null) {
   const getCsrfToken = () => {
     try {
@@ -227,7 +237,7 @@ export const mountReactApps = () => {
   tryMount("vue-panel-hire", HirePanelReact);
   tryMount("vue-panel-resources", ResourcesPanelReact);
   tryMount("vue-panel-globalchat", GlobalchatPanelReact);
-  tryMount("vue-panel-school-selection", SchoolSelectionPanelReact);
+  tryMount("vue-panel-school-selection", SchoolSelectionControllerReact);
   tryMount("vue-panel-forum", ForumSectionReact);
 
   console.log("[react] All apps mounted");
