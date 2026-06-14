@@ -5251,58 +5251,42 @@ module.exports = function (db) {
         return res.status(400).json({ error: 'buildingType required' });
       }
 
-      console.log(`[DEBUG] remove-attunement: buildingType=${buildingType}`);
+      await db.run("BEGIN TRANSACTION");
+      try {
+        const kingdom = await db.get("SELECT id, fragment_bonuses FROM kingdoms WHERE player_id = ? FOR UPDATE", [
+          req.player.playerId,
+        ]);
+        if (!kingdom) {
+          await db.run("ROLLBACK");
+          return res.status(404).json({ error: "Kingdom not found" });
+        }
 
-      const kingdom = await db.get("SELECT id, fragment_bonuses FROM kingdoms WHERE player_id = ?", [
-        req.player.playerId,
-      ]);
-      if (!kingdom) return res.status(404).json({ error: "Kingdom not found" });
+        const currentAttunements = getKingdomAttunements(kingdom.fragment_bonuses || '{}');
 
-      console.log(`[DEBUG] remove-attunement: kingdom.id=${kingdom.id}, fragment_bonuses type=${typeof kingdom.fragment_bonuses}`);
+        if (!Object.prototype.hasOwnProperty.call(currentAttunements, buildingType)) {
+          await db.run("ROLLBACK");
+          return res.status(400).json({ error: `${buildingType} has no attunement` });
+        }
 
-      // Get current attunements
-      const currentAttunements = getKingdomAttunements(kingdom.fragment_bonuses || '{}');
-      console.log(`[DEBUG] remove-attunement: currentAttunements keys=${Object.keys(currentAttunements).join(',')}`);
+        delete currentAttunements[buildingType];
 
-      // Check if building has attunement
-      if (!Object.prototype.hasOwnProperty.call(currentAttunements, buildingType)) {
-        return res.status(400).json({ error: `${buildingType} has no attunement` });
+        await db.run(
+          `UPDATE kingdoms SET fragment_bonuses = ? WHERE id = ?`,
+          [JSON.stringify(currentAttunements), kingdom.id]
+        );
+
+        await db.run("COMMIT");
+
+        res.json({
+          ok: true,
+          message: `Attunement removed from ${buildingType}`,
+        });
+
+        devLog(`[attunement] Kingdom ${kingdom.id}: Removed from ${buildingType}`);
+      } catch (txErr) {
+        await db.run("ROLLBACK").catch(() => {});
+        throw txErr;
       }
-
-      // Remove the attunement
-      console.log(`[DEBUG] remove-attunement: deleting ${buildingType}`);
-      delete currentAttunements[buildingType];
-      console.log(`[DEBUG] remove-attunement: after delete, keys=${Object.keys(currentAttunements).join(',')}`);
-
-      const jsonToWrite = JSON.stringify(currentAttunements);
-      console.log(`[DEBUG] remove-attunement: writing fragment_bonuses=${jsonToWrite.substring(0, 100)}`);
-
-      await db.run(
-        `UPDATE kingdoms SET fragment_bonuses = ? WHERE id = ?`,
-        [jsonToWrite, kingdom.id]
-      );
-
-      console.log(`[DEBUG] remove-attunement: UPDATE completed successfully`);
-
-      // Verify DB state after UPDATE — confirm no building columns were modified
-      const verifyKingdom = await db.get(
-        `SELECT fragment_bonuses, bld_barracks, bld_armories, bld_farms, bld_markets,
-                bld_smithies, bld_vaults, bld_mage_towers, bld_guard_towers,
-                bld_taverns, bld_mausoleums, bld_walls, bld_outposts, bld_training,
-                bld_castles, bld_schools, bld_libraries, bld_shrines, bld_granaries,
-                bld_housing
-         FROM kingdoms WHERE id = ?`,
-        [kingdom.id]
-      );
-      console.log(`[DEBUG] remove-attunement: VERIFY bld_${buildingType}=${verifyKingdom?.[`bld_${buildingType}`]}, fragment_bonuses=${String(verifyKingdom?.fragment_bonuses).substring(0, 80)}`);
-
-      res.json({
-        ok: true,
-        message: `Attunement removed from ${buildingType}`,
-        debug_bld_count: verifyKingdom?.[`bld_${buildingType}`],
-      });
-
-      devLog(`[attunement] Kingdom ${kingdom.id}: Removed from ${buildingType}`);
     } catch (err) {
       console.error('[attunement] remove failed:', err.message);
       res.status(500).json({ error: 'Failed to remove attunement' });

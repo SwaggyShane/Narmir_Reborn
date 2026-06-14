@@ -95,6 +95,13 @@ const BuildPanel = () => {
     }
   }, [showAttunements]);
 
+  // Re-sync vanilla JS building count spans after every render — React resets
+  // the hardcoded <span>0</span> elements and window.updateBuildDisplay() restores
+  // the real values from window.state.
+  React.useEffect(() => {
+    window.updateBuildDisplay?.();
+  });
+
   const loadAttunements = async () => {
     try {
       setLoading(true);
@@ -177,10 +184,7 @@ const BuildPanel = () => {
         alert(`Error: ${data.error}`);
         return;
       }
-      console.log(`[attunements] remove OK, server reports bld_${buildingType}=${data.debug_bld_count}`);
       await loadAttunements();
-      // Ensure building count display reflects current server state
-      window.updateBuildDisplay?.();
     } catch (err) {
       console.error('[attunements] remove failed:', err.message);
       alert('Failed to remove attunement');
