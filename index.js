@@ -1020,13 +1020,11 @@ async function start() {
 
     app.get('/api/health', (_req, res) => res.json({ ok: true, uptime: Math.floor(process.uptime()) }));
 
-    // Public status bar info — version, node ID, uptime since Railway deploy
+    // Public status bar info — version, node ID, uptime since server boot
     const os = require('os');
     const pkg = require('./package.json');
-    const DEPLOY_START = new Date('2026-06-03T01:26:00Z').getTime();
     app.get('/api/status', (_req, res) => {
-      const uptimeMs = Date.now() - DEPLOY_START;
-      const totalSec = Math.floor(uptimeMs / 1000);
+      const totalSec = Math.floor(process.uptime());
       const days = Math.floor(totalSec / 86400);
       const hours = Math.floor((totalSec % 86400) / 3600);
       const mins = Math.floor((totalSec % 3600) / 60);
