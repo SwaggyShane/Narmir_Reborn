@@ -86,6 +86,9 @@ const BuildPanel = () => {
   const [availableAttunements, setAvailableAttunements] = useState([]);
   const [currentAttunements, setCurrentAttunements] = useState({});
   const [synergyContributions, setSynergyContributions] = useState({});
+  const [synergyStatus, setSynergyStatus] = useState(null);
+  const [synergyCooldown, setSynergyCooldown] = useState(null);
+  const [activatingAbility, setActivatingAbility] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Load attunements when panel opens
@@ -150,6 +153,25 @@ const BuildPanel = () => {
         );
         setSynergyContributions(contributions);
       }
+
+      const synergyRes = await fetch('/api/kingdom/synergy-status', { credentials: 'include' });
+      if (synergyRes.ok) {
+        const synergyData = await synergyRes.json();
+        setSynergyStatus(synergyData);
+
+        if (synergyData.activeSynergy) {
+          const cdRes = await fetch(
+            `/api/kingdom/synergy-cooldown?synergy_id=${encodeURIComponent(synergyData.activeSynergy.id)}`,
+            { credentials: 'include' }
+          );
+          if (cdRes.ok) setSynergyCooldown(await cdRes.json());
+        } else {
+          setSynergyCooldown(null);
+        }
+      } else {
+        setSynergyStatus(null);
+        setSynergyCooldown(null);
+      }
     } catch (err) {
       console.error('[attunements] load failed:', err.message);
     } finally {
@@ -188,6 +210,27 @@ const BuildPanel = () => {
     } catch (err) {
       console.error('[attunements] remove failed:', err.message);
       alert('Failed to remove attunement');
+    }
+  };
+
+  const activateSynergyAbility = async () => {
+    if (activatingAbility || !synergyStatus?.activeSynergy) return;
+    setActivatingAbility(true);
+    try {
+      const data = await apiCall('/api/kingdom/activate-synergy-ability', {
+        method: 'POST',
+        body: { synergy_id: synergyStatus.activeSynergy.id },
+      });
+      if (data.error) {
+        alert(`Error: ${data.error}`);
+      } else {
+        await loadAttunements();
+      }
+    } catch (err) {
+      console.error('[synergy] activate failed:', err.message);
+      alert('Failed to activate ability');
+    } finally {
+      setActivatingAbility(false);
     }
   };
 
@@ -362,6 +405,16 @@ const BuildPanel = () => {
                   <div style={{ padding: '24px', color: 'var(--text3)', textAlign: 'center' }}>Loading attunements...</div>
                 ) : (
                   <>
+                    {synergyStatus?.activeSynergy && (
+                      <div style={{ marginBottom: '20px', padding: '12px 14px', background: 'linear-gradient(135deg, rgba(124,58,237,0.15) 0%, rgba(251,191,36,0.08) 100%)', border: '1px solid var(--purple, #a78bfa)', borderRadius: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '18px' }}>{synergyStatus.activeSynergy.emoji}</span>
+                          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--gold)' }}>{synergyStatus.activeSynergy.name}</span>
+                          <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--purple, #a78bfa)', background: 'rgba(124,58,237,0.2)', padding: '1px 6px', borderRadius: '10px', marginLeft: 'auto' }}>ACTIVE</span>
+                        </div>
+                      </div>
+                    )}
+
                     {Object.keys(currentAttunements).length > 0 && (
                       <div style={{ marginBottom: '20px' }}>
                         <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--gold)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Current Attunements</div>
@@ -408,34 +461,78 @@ const BuildPanel = () => {
                       </div>
                     )}
 
-                    <div>
-                      <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Available Fragments</div>
-                      {availableAttunements.length > 0 ? (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px' }}>
-                          {availableAttunements.map((frag) => (
-                            <div key={frag.fragmentName} style={{ padding: '10px', background: 'var(--bg3)', borderRadius: '4px', border: '1px solid var(--border)' }}>
-                              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px' }}>{frag.fragmentName}</div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                {frag.buildings.map((bld) => (
-                                  <button
-                                    key={bld.buildingType}
-                                    onClick={() => applyAttunement(frag.fragmentName, bld.buildingType)}
-                                    title={formatBonusTooltip(bld.bonuses, bld.special)}
-                                    style={{ padding: '6px 8px', fontSize: '11px', background: 'var(--accent1)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '3px', cursor: 'pointer', textAlign: 'left' }}
-                                  >
-                                    ✨ {BUILDINGS_MAP[bld.buildingType]?.name || bld.buildingType} ({bld.count})
-                                  </button>
-                                ))}
-                              </div>
+                    {synergyStatus?.activeSynergy ? (
+                      <div>
+                        <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Synergy Details</div>
+
+                        <div style={{ marginBottom: '12px', padding: '10px 12px', background: 'var(--bg3)', borderRadius: '4px', border: '1px solid var(--border)' }}>
+                          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--gold)', marginBottom: '4px' }}>✦ {synergyStatus.activeSynergy.passive?.name}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '6px' }}>{synergyStatus.activeSynergy.passive?.desc}</div>
+                          {synergyStatus.activeSynergy.passive?.effects && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                              {Object.entries(synergyStatus.activeSynergy.passive.effects).map(([k, v]) => (
+                                <span key={k} style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '10px', background: v >= 0 ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', color: v >= 0 ? 'var(--green,#4ade80)' : 'var(--red,#f87171)' }}>
+                                  {k.replace(/_/g, ' ')}: {v >= 0 ? '+' : ''}{typeof v === 'number' && Math.abs(v) < 2 && k !== 'happiness' ? `${Math.round(v * 100)}%` : v}
+                                </span>
+                              ))}
                             </div>
-                          ))}
+                          )}
                         </div>
-                      ) : (
-                        <div style={{ padding: '24px', color: 'var(--text3)', textAlign: 'center', fontSize: '12px' }}>
-                          No available fragments to attune. Find and study world fragments first!
+
+                        <div style={{ marginBottom: '12px', padding: '10px 12px', background: 'var(--bg3)', borderRadius: '4px', border: '1px solid var(--border)' }}>
+                          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text2)', marginBottom: '4px' }}>⚡ {synergyStatus.activeSynergy.active?.name}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '6px' }}>{synergyStatus.activeSynergy.active?.desc}</div>
+                          {synergyStatus.activeSynergy.active?.cooldown_days && (
+                            <div style={{ fontSize: '10px', color: 'var(--text3)' }}>Cooldown: {synergyStatus.activeSynergy.active.cooldown_days} day{synergyStatus.activeSynergy.active.cooldown_days !== 1 ? 's' : ''}</div>
+                          )}
                         </div>
-                      )}
-                    </div>
+
+                        {synergyCooldown?.on_cooldown ? (
+                          <div style={{ padding: '10px 12px', background: 'var(--bg3)', borderRadius: '4px', border: '1px solid var(--border)', fontSize: '11px', color: 'var(--text3)', textAlign: 'center' }}>
+                            Ability on cooldown — ready in {synergyCooldown.cooldown_remaining_seconds < 3600
+                              ? `${Math.ceil(synergyCooldown.cooldown_remaining_seconds / 60)}m`
+                              : `${Math.ceil(synergyCooldown.cooldown_remaining_seconds / 3600)}h`}
+                          </div>
+                        ) : (
+                          <button
+                            onClick={activateSynergyAbility}
+                            disabled={activatingAbility}
+                            style={{ width: '100%', padding: '10px', fontSize: '12px', fontWeight: 700, background: activatingAbility ? 'var(--bg3)' : 'var(--purple)', color: 'var(--text)', border: 'none', borderRadius: '4px', cursor: activatingAbility ? 'default' : 'pointer' }}
+                          >
+                            {activatingAbility ? 'Activating...' : `⚡ Activate ${synergyStatus.activeSynergy.active?.name}`}
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div>
+                        <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Available Fragments</div>
+                        {availableAttunements.length > 0 ? (
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px' }}>
+                            {availableAttunements.map((frag) => (
+                              <div key={frag.fragmentName} style={{ padding: '10px', background: 'var(--bg3)', borderRadius: '4px', border: '1px solid var(--border)' }}>
+                                <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px' }}>{frag.fragmentName}</div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                  {frag.buildings.map((bld) => (
+                                    <button
+                                      key={bld.buildingType}
+                                      onClick={() => applyAttunement(frag.fragmentName, bld.buildingType)}
+                                      title={formatBonusTooltip(bld.bonuses, bld.special)}
+                                      style={{ padding: '6px 8px', fontSize: '11px', background: 'var(--accent1)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '3px', cursor: 'pointer', textAlign: 'left' }}
+                                    >
+                                      ✨ {BUILDINGS_MAP[bld.buildingType]?.name || bld.buildingType} ({bld.count})
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div style={{ padding: '24px', color: 'var(--text3)', textAlign: 'center', fontSize: '12px' }}>
+                            No available fragments to attune. Find and study world fragments first!
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </>
                 )}
               </div>
