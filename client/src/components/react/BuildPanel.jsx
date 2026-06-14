@@ -86,6 +86,7 @@ const BuildPanel = () => {
   const [availableAttunements, setAvailableAttunements] = useState([]);
   const [currentAttunements, setCurrentAttunements] = useState({});
   const [synergyContributions, setSynergyContributions] = useState({});
+  const [synergyStatus, setSynergyStatus] = useState(null);
   const [loading, setLoading] = useState(false);
 
   // Load attunements when panel opens
@@ -149,6 +150,12 @@ const BuildPanel = () => {
           })
         );
         setSynergyContributions(contributions);
+      }
+
+      const synergyRes = await fetch('/api/kingdom/synergy-status', { credentials: 'include' });
+      if (synergyRes.ok) {
+        const synergyData = await synergyRes.json();
+        setSynergyStatus(synergyData);
       }
     } catch (err) {
       console.error('[attunements] load failed:', err.message);
@@ -362,6 +369,32 @@ const BuildPanel = () => {
                   <div style={{ padding: '24px', color: 'var(--text3)', textAlign: 'center' }}>Loading attunements...</div>
                 ) : (
                   <>
+                    {synergyStatus?.activeSynergy && (
+                      <div style={{ marginBottom: '20px', padding: '14px 16px', background: 'linear-gradient(135deg, rgba(124,58,237,0.18) 0%, rgba(251,191,36,0.10) 100%)', border: '1px solid var(--purple)', borderRadius: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                          <span style={{ fontSize: '20px' }}>{synergyStatus.activeSynergy.emoji}</span>
+                          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--gold)' }}>{synergyStatus.activeSynergy.name}</span>
+                          <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--purple)', background: 'rgba(124,58,237,0.2)', padding: '1px 6px', borderRadius: '10px', marginLeft: 'auto' }}>ACTIVE</span>
+                        </div>
+                        <div style={{ fontSize: '11px', color: 'var(--text3)', fontStyle: 'italic', marginBottom: '8px' }}>{synergyStatus.activeSynergy.description}</div>
+                        {synergyStatus.activeSynergy.passive && (
+                          <div style={{ fontSize: '11px', color: 'var(--text)' }}>
+                            <span style={{ color: 'var(--gold)', fontWeight: 600 }}>⚡ {synergyStatus.activeSynergy.passive.name}:</span>{' '}
+                            {synergyStatus.activeSynergy.passive.desc}
+                          </div>
+                        )}
+                        {synergyStatus.activeSynergy.active && (
+                          <div style={{ fontSize: '11px', color: 'var(--text3)', marginTop: '6px' }}>
+                            <span style={{ color: 'var(--text2)', fontWeight: 600 }}>✦ {synergyStatus.activeSynergy.active.name}:</span>{' '}
+                            {synergyStatus.activeSynergy.active.desc}
+                            {synergyStatus.activeSynergy.active.cooldown_days && (
+                              <span style={{ color: 'var(--text3)', marginLeft: '6px' }}>(CD: {synergyStatus.activeSynergy.active.cooldown_days}d)</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {Object.keys(currentAttunements).length > 0 && (
                       <div style={{ marginBottom: '20px' }}>
                         <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--gold)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Current Attunements</div>
