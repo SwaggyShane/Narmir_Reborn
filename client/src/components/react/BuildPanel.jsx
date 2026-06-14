@@ -168,6 +168,9 @@ const BuildPanel = () => {
         } else {
           setSynergyCooldown(null);
         }
+      } else {
+        setSynergyStatus(null);
+        setSynergyCooldown(null);
       }
     } catch (err) {
       console.error('[attunements] load failed:', err.message);
@@ -403,11 +406,11 @@ const BuildPanel = () => {
                 ) : (
                   <>
                     {synergyStatus?.activeSynergy && (
-                      <div style={{ marginBottom: '20px', padding: '12px 14px', background: 'linear-gradient(135deg, rgba(124,58,237,0.15) 0%, rgba(251,191,36,0.08) 100%)', border: '1px solid var(--purple)', borderRadius: '6px' }}>
+                      <div style={{ marginBottom: '20px', padding: '12px 14px', background: 'linear-gradient(135deg, rgba(124,58,237,0.15) 0%, rgba(251,191,36,0.08) 100%)', border: '1px solid var(--purple, #a78bfa)', borderRadius: '6px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ fontSize: '18px' }}>{synergyStatus.activeSynergy.emoji}</span>
                           <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--gold)' }}>{synergyStatus.activeSynergy.name}</span>
-                          <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--purple)', background: 'rgba(124,58,237,0.2)', padding: '1px 6px', borderRadius: '10px', marginLeft: 'auto' }}>ACTIVE</span>
+                          <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--purple, #a78bfa)', background: 'rgba(124,58,237,0.2)', padding: '1px 6px', borderRadius: '10px', marginLeft: 'auto' }}>ACTIVE</span>
                         </div>
                       </div>
                     )}
