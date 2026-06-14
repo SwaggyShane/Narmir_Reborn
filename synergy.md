@@ -162,7 +162,7 @@ Activate a synergy by placing all 10 required fragments in the specified buildin
 
 | Fragment | Building |
 |---|---|
-| Cursed Bloodstone | Mausoleums |
+| Cursed Bloodstone | Castles |
 | Void Essence | Vaults |
 | Abyssal Crystal | Smithies |
 | Dragon Scale | Barracks |

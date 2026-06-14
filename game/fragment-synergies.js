@@ -200,7 +200,7 @@ const SYNERGIES = {
     emoji: '🩸🌙',
     description: 'Dark pacts for power; gain at terrible human cost',
     requiredFragments: {
-      'Cursed Bloodstone': 'mausoleums',
+      'Cursed Bloodstone': 'castles',
       'Void Essence': 'vaults',
       'Abyssal Crystal': 'smithies',
       'Dragon Scale': 'barracks',
