@@ -1020,6 +1020,23 @@ async function start() {
 
     app.get('/api/health', (_req, res) => res.json({ ok: true, uptime: Math.floor(process.uptime()) }));
 
+    // Public status bar info — version, node ID, uptime since server boot
+    const os = require('os');
+    const pkg = require('./package.json');
+    app.get('/api/status', (_req, res) => {
+      const totalSec = Math.floor(process.uptime());
+      const days = Math.floor(totalSec / 86400);
+      const hours = Math.floor((totalSec % 86400) / 3600);
+      const mins = Math.floor((totalSec % 3600) / 60);
+      const secs = totalSec % 60;
+      const uptime = `${days}D ${String(hours).padStart(2, '0')}H ${String(mins).padStart(2, '0')}M ${String(secs).padStart(2, '0')}S`;
+      res.json({
+        version: `alpha ${pkg.version}`,
+        nodeId: os.hostname().toUpperCase().slice(0, 12),
+        uptime,
+      });
+    });
+
     // Public rankings — no auth required, used by the portal page
     app.get('/api/public/rankings', async (req, res) => {
       try {
