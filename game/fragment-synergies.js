@@ -333,6 +333,7 @@ const INTERCHANGEABLE_BUILDINGS = {
 };
 
 function requirementMet(fragmentPlacements, requiredBuilding, fragmentName) {
+  if (!fragmentPlacements) return false;
   if (fragmentPlacements[requiredBuilding] === fragmentName) return true;
   const alt = INTERCHANGEABLE_BUILDINGS[requiredBuilding];
   return alt !== undefined && fragmentPlacements[alt] === fragmentName;
@@ -407,7 +408,7 @@ function getContributingSynergies(buildingType, fragmentName) {
   const alt = INTERCHANGEABLE_BUILDINGS[buildingType];
   for (const synergy of Object.values(SYNERGIES)) {
     const req = synergy.requiredFragments[fragmentName];
-    if (req === buildingType || (alt !== undefined && req === alt)) {
+    if (req && (req === buildingType || (alt !== undefined && req === alt))) {
       contributing.push(synergy);
     }
   }
