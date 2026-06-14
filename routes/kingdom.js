@@ -5329,7 +5329,7 @@ module.exports = function (db) {
         if (kingdom) {
           const atts = getKingdomAttunements(kingdom.fragment_bonuses || '{}');
           for (const [bld, att] of Object.entries(atts)) {
-            if (att && att.fragmentName) placements[bld] = att.fragmentName;
+            if (att) placements[bld] = att;
           }
         }
         let best = 0;
@@ -5350,6 +5350,7 @@ module.exports = function (db) {
         // Keep names/emojis out — they would let players reverse-engineer
         // which combos contribute. Only signal whether ANY contribution exists.
         contributes: contributing.length > 0,
+        contributingCount: contributing.length,
         resonanceTier,
       });
     } catch (err) {
