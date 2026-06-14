@@ -324,6 +324,20 @@ const SYNERGIES = {
   },
 };
 
+// Shrines and mausoleums serve the same spiritual role in synergy detection.
+// Factions that can only build one type (e.g. vampires build mausoleums, not shrines)
+// can still satisfy requirements written for the other.
+const INTERCHANGEABLE_BUILDINGS = {
+  shrines: 'mausoleums',
+  mausoleums: 'shrines',
+};
+
+function requirementMet(fragmentPlacements, requiredBuilding, fragmentName) {
+  if (fragmentPlacements[requiredBuilding] === fragmentName) return true;
+  const alt = INTERCHANGEABLE_BUILDINGS[requiredBuilding];
+  return alt !== undefined && fragmentPlacements[alt] === fragmentName;
+}
+
 /**
  * Get a synergy by ID
  */
@@ -355,8 +369,7 @@ function detectActiveSynergy(fragmentPlacements) {
  */
 function isSynergyActive(synergy, fragmentPlacements) {
   for (const [fragmentName, requiredBuilding] of Object.entries(synergy.requiredFragments)) {
-    const placed = fragmentPlacements[requiredBuilding];
-    if (!placed || placed !== fragmentName) {
+    if (!requirementMet(fragmentPlacements, requiredBuilding, fragmentName)) {
       return false;
     }
   }
@@ -372,8 +385,7 @@ function getNearActivationSynergies(fragmentPlacements) {
   for (const synergy of Object.values(SYNERGIES)) {
     let missing = 0;
     for (const [fragmentName, requiredBuilding] of Object.entries(synergy.requiredFragments)) {
-      const placed = fragmentPlacements[requiredBuilding];
-      if (!placed || placed !== fragmentName) {
+      if (!requirementMet(fragmentPlacements, requiredBuilding, fragmentName)) {
         missing++;
       }
     }
@@ -392,8 +404,10 @@ function getNearActivationSynergies(fragmentPlacements) {
 function getContributingSynergies(buildingType, fragmentName) {
   const contributing = [];
 
+  const alt = INTERCHANGEABLE_BUILDINGS[buildingType];
   for (const synergy of Object.values(SYNERGIES)) {
-    if (synergy.requiredFragments[fragmentName] === buildingType) {
+    const req = synergy.requiredFragments[fragmentName];
+    if (req === buildingType || (alt !== undefined && req === alt)) {
       contributing.push(synergy);
     }
   }
