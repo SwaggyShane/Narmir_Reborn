@@ -5261,6 +5261,19 @@ module.exports = function (db) {
           return res.status(404).json({ error: "Kingdom not found" });
         }
 
+        // Check if any synergy cooldown is active — if so, block removal to prevent synergy-hopping
+        const now = Math.floor(Date.now() / 1000);
+        const activeCooldown = await db.get(
+          "SELECT synergy_id FROM synergy_cooldowns WHERE kingdom_id = ? AND cooldown_until > ? LIMIT 1",
+          [kingdom.id, now]
+        );
+        if (activeCooldown) {
+          await db.run("ROLLBACK");
+          return res.status(429).json({
+            error: "Cannot remove attunements while a synergy cooldown is active. Wait for the cooldown to expire.",
+          });
+        }
+
         const currentAttunements = getKingdomAttunements(kingdom.fragment_bonuses || '{}');
 
         if (!Object.prototype.hasOwnProperty.call(currentAttunements, buildingType)) {
