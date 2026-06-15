@@ -1070,7 +1070,7 @@ module.exports = function (db) {
   });
 
   // ── Forge tools — costs 1 turn + gold for scaffolding ───────────────────────
-  router.post("/forge-tools", requireAuth, requireCsrfToken, async (req, res) => {
+  router.post("/smithy/forge-tools", requireAuth, requireCsrfToken, async (req, res) => {
     const { toolType, quantity } = req.body;
     const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
       req.player.playerId,
@@ -1118,7 +1118,7 @@ module.exports = function (db) {
         turns_stored: finalUpdates.turns_stored,
       });
     } catch (err) {
-      console.error("[forge-tools] failed:", err.message);
+      console.error("[smithy/forge-tools] failed:", err.message);
       res.status(500).json({ error: "Forging failed — please try again" });
     }
   });
