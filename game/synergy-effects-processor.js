@@ -104,10 +104,11 @@ function removeExpiredEffects(kingdom) {
 /**
  * Apply synergy troop boost effect (damage and health multiplier)
  */
-function getTroopBoostMultiplier(kingdom, stat, active = getActiveEffects(kingdom)) {
+function getTroopBoostMultiplier(kingdom, stat, activeEffects) {
   if (!kingdom || typeof kingdom !== 'object') {
     return 1.0;
   }
+  const active = activeEffects || getActiveEffects(kingdom);
 
   if (!active.synergy_troop_boost) {
     return 1.0;
@@ -127,10 +128,11 @@ function getTroopBoostMultiplier(kingdom, stat, active = getActiveEffects(kingdo
 /**
  * Apply synergy benefit effect (resources, production, happiness bonuses)
  */
-function getBenefitMultiplier(kingdom, stat, active = getActiveEffects(kingdom)) {
+function getBenefitMultiplier(kingdom, stat, activeEffects) {
   if (!kingdom || typeof kingdom !== 'object') {
     return 1.0;
   }
+  const active = activeEffects || getActiveEffects(kingdom);
 
   if (!active.synergy_benefit) {
     return 1.0;
@@ -167,10 +169,11 @@ function getBenefitHappinessBonus(kingdom) {
  * Apply synergy penalty effect (stat reductions)
  * all_stats penalty accumulates with specific stat penalties
  */
-function getPenaltyMultiplier(kingdom, stat, active = getActiveEffects(kingdom)) {
+function getPenaltyMultiplier(kingdom, stat, activeEffects) {
   if (!kingdom || typeof kingdom !== 'object') {
     return 1.0;
   }
+  const active = activeEffects || getActiveEffects(kingdom);
 
   if (!active.synergy_penalty) {
     return 1.0;
