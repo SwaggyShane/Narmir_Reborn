@@ -424,6 +424,7 @@ module.exports = function (db) {
 
   // ── Shared turn runner — used by ALL routes that consume a turn ──────────────
   async function runTurn(db, k) {
+    if (!k) throw new Error('Kingdom not found');
     // Inject region ownership status for bonuses
     // All 3 queries are independent — run them in parallel
     const [regionStatus, myAlliance, heroes] = await Promise.all([
