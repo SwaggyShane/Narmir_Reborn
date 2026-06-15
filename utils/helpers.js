@@ -19,7 +19,7 @@ function shallowCopy(val) {
 
 function safeJsonParse(str, fallback = {}, context = "unknown") {
   if (!str) return fallback;
-  if (typeof str === "object") return str;
+  if (typeof str === "object") return shallowCopy(str);
   // Key on content only — the same JSON parsed from different call sites
   // (different context strings) should share one cache entry. The context
   // is kept solely for error logging.

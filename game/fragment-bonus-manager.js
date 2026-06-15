@@ -141,15 +141,6 @@ function getBonusMultiplier(kingdom, buildingType, statType) {
 }
 
 /**
- * Apply bonus multipliers to a stat
- * (kept for potential future callers; not exported)
- */
-function _applyFragmentMultiplier(kingdom, buildingType, baseValue, statType) {
-  const multiplier = getBonusMultiplier(kingdom, buildingType, statType);
-  return baseValue * multiplier;
-}
-
-/**
  * Get special mechanic effect for a building if applicable
  */
 function getSpecialEffect(kingdom, buildingType) {
@@ -173,29 +164,6 @@ function formatBuildingName(buildingType) {
     .split(' ')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
-}
-
-/**
- * Get all bonuses for a building with their details
- * (kept for potential future callers; not exported)
- */
-function _getBuildingBonusDetails(kingdom, buildingType) {
-  const fragmentBonus = getFragmentForBuilding(kingdom, buildingType);
-  if (!fragmentBonus) {
-    return {
-      hasBonus: false,
-      fragment: null,
-      bonuses: {},
-    };
-  }
-
-  return {
-    hasBonus: true,
-    fragment: fragmentBonus.fragment,
-    special: fragmentBonus.special,
-    passive: fragmentBonus.passive,
-    appliedTurn: fragmentBonus.applied_turn,
-  };
 }
 
 module.exports = {
