@@ -22,7 +22,6 @@
     "npm": ">=9.0.0"
   },
   "dependencies": {
-    "@vitejs/plugin-react": "^6.0.2",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.6",
     "discord.js": "^14.14.0",
@@ -33,12 +32,13 @@
     "pg": "^8.21.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "socket.io": "^4.7.4",
-    "vite": "^8.0.12"
+    "socket.io": "^4.7.4"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",
+    "@vitejs/plugin-react": "^6.0.2",
     "eslint": "^10.2.1",
-    "globals": "^15.0.0"
+    "globals": "^15.0.0",
+    "vite": "^8.0.12"
   }
 }
