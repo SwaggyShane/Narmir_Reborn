@@ -5,23 +5,7 @@
 
 const { SYNERGIES } = require('./fragment-synergies');
 const attunementManager = require('./attunement-manager');
-
-/**
- * Safely parse a JSON field that might be a string or already an object/array
- */
-function parseJsonField(field, defaultValue = {}) {
-  if (typeof field === 'object' && field !== null) {
-    return field;
-  }
-  if (typeof field === 'string' && field.trim() !== '') {
-    try {
-      return JSON.parse(field);
-    } catch {
-      return defaultValue;
-    }
-  }
-  return defaultValue;
-}
+const { safeJsonParse } = require('../utils/helpers');
 
 /**
  * Check if an ability can be triggered (cooldown check)
@@ -39,7 +23,7 @@ function canTriggerAbility(kingdom, synergyId) {
   }
 
   // Check cooldown
-  const cooldowns = parseJsonField(kingdom.synergy_cooldowns, {});
+  const cooldowns = safeJsonParse(kingdom.synergy_cooldowns, {});
   const cooldownData = cooldowns[synergyId];
   if (cooldownData && cooldownData.cooldown_until) {
     const now = Date.now();
@@ -182,7 +166,7 @@ function applyBenefit(kingdom, synergyId) {
   const benefit = synergy.active.benefit;
   const benefitDuration = synergy.active.benefit_duration_days || 0;
   const updates = {};
-  const activeEffects = parseJsonField(kingdom.active_effects, {});
+  const activeEffects = safeJsonParse(kingdom.active_effects, {});
   let hasBenefit = false;
 
   // Food storage fill - use correct game formula
@@ -221,7 +205,7 @@ function applyBenefit(kingdom, synergyId) {
       war_machines: 'res_war_machines',
       spellbook: 'res_spellbook',
     };
-    const focus = parseJsonField(kingdom.research_focus, []);
+    const focus = safeJsonParse(kingdom.research_focus, []);
     focus.forEach(tech => {
       const col = RESEARCH_MAP[tech];
       if (col) {
@@ -234,7 +218,7 @@ function applyBenefit(kingdom, synergyId) {
 
   // Production completion - complete all queued buildings
   if (benefit.complete_all_production) {
-    const buildQueue = parseJsonField(kingdom.build_queue, {});
+    const buildQueue = safeJsonParse(kingdom.build_queue, {});
     for (const [, buildJob] of Object.entries(buildQueue)) {
       const col = buildJob.building;
       if (col) {
@@ -275,7 +259,7 @@ function applyPenalty(kingdom, synergyId) {
 
   const penalty = synergy.active.penalty;
   const penaltyDuration = synergy.active.penalty_duration_days || 0;
-  const activeEffects = parseJsonField(kingdom.active_effects, {});
+  const activeEffects = safeJsonParse(kingdom.active_effects, {});
 
   // Store penalty info in active_effects
   activeEffects.synergy_penalty = {
@@ -318,7 +302,7 @@ function triggerAbility(kingdom, synergyId) {
   updated = applyPenalty(updated, synergyId);
 
   // Set cooldown
-  const cooldowns = parseJsonField(updated.synergy_cooldowns, {});
+  const cooldowns = safeJsonParse(updated.synergy_cooldowns, {});
   const cooldownDays = synergy.active.cooldown_days || 1;
   const cooldownUntil = Date.now() + (cooldownDays * 24 * 60 * 60 * 1000);
 
@@ -342,7 +326,7 @@ function triggerAbility(kingdom, synergyId) {
  * Get ability cooldown status
  */
 function getAbilityCooldown(kingdom, synergyId) {
-  const cooldowns = parseJsonField(kingdom.synergy_cooldowns, {});
+  const cooldowns = safeJsonParse(kingdom.synergy_cooldowns, {});
   const cooldownData = cooldowns[synergyId];
 
   if (!cooldownData || !cooldownData.cooldown_until) {
@@ -377,7 +361,7 @@ function getTotalTroops(kingdom) {
   if (columnSum > 0) return columnSum;
 
   // Fallback for test cases using troop_levels JSON directly
-  const troops = parseJsonField(kingdom.troop_levels, {});
+  const troops = safeJsonParse(kingdom.troop_levels, {});
   return Object.values(troops).reduce((sum, val) => {
     const count = typeof val === 'object' && val !== null ? (val.count || 0) : (typeof val === 'number' ? val : 0);
     return sum + count;
@@ -388,7 +372,7 @@ function getTotalTroops(kingdom) {
  * Remove troops from kingdom - update both columns and JSON
  */
 function removeTroops(kingdom, count) {
-  const troops = parseJsonField(kingdom.troop_levels, {});
+  const troops = safeJsonParse(kingdom.troop_levels, {});
   let remaining = count;
   const updates = {};
   const troopTypes = ['fighters', 'rangers', 'clerics', 'mages', 'thieves', 'ninjas', 'engineers', 'scribes', 'researchers'];
@@ -442,5 +426,4 @@ module.exports = {
   applyPenalty,
   triggerAbility,
   getAbilityCooldown,
-  parseJsonField,
 };

@@ -19,7 +19,7 @@ function shallowCopy(val) {
 
 function safeJsonParse(str, fallback = {}, context = "unknown") {
   if (!str) return fallback;
-  if (typeof str === "object") return str;
+  if (typeof str === "object") return shallowCopy(str);
   // Key on content only — the same JSON parsed from different call sites
   // (different context strings) should share one cache entry. The context
   // is kept solely for error logging.
@@ -55,9 +55,18 @@ function rand(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+// Dev-only log: silenced in production to keep real errors from being
+// drowned in per-turn noise.  Use console.error/warn directly for
+// problems you always want to see.
+const _IS_DEV_LOG_PROD = process.env.NODE_ENV === 'production';
+function devLog(...args) {
+  if (!_IS_DEV_LOG_PROD) console.log(...args);
+}
+
 module.exports = {
   safeJsonParse,
   roll,
   rand,
   clearParseCache,
+  devLog,
 };

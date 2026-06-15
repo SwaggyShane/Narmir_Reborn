@@ -7,7 +7,7 @@ const engine = require("../game/engine");
 const config = require("../game/config");
 const { requireAuth, requireCsrfToken } = require("./middleware");
 const { progressGoal, generateGoals, claimGoal } = require('../game/goals');
-const { safeJsonParse } = require('../utils/helpers');
+const { safeJsonParse, devLog } = require('../utils/helpers');
 const { getKingdomAttunements } = require('../game/fragment-attunements');
 const fragmentBonusManager = require("../game/fragment-bonus-manager");
 const attunementManager = require('../game/attunement-manager');
@@ -17,14 +17,6 @@ const { applyKingdomUpdates } = require('../db/schema');
 const { marketPriceCache, rankingsCache, setUnreadCount } = require("../cache.js");
 
 const router = express.Router();
-
-// Per-request traces useful in dev (purchase details, attunement names,
-// school selections) are silenced in production so real errors aren't
-// drowned in stdout. Switch on by unsetting NODE_ENV=production.
-const _IS_PROD = process.env.NODE_ENV === 'production';
-function devLog(...args) {
-  if (!_IS_PROD) console.log(...args);
-}
 
 // Kingdoms we've already logged deprecated-inventory items for, so the warning fires
 // once per process instead of on every (frequently polled) inventory fetch.
