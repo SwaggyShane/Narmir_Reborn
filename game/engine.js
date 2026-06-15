@@ -5,18 +5,10 @@
 const config = require("./config");
 const { progressGoal } = require('./goals');
 
-// Dev-only log: kept out of production stdout to stop per-turn noise from
-// drowning real errors. Use console.error/warn directly for problems you
-// always want to see; use this for traces useful only during debugging.
-const _IS_PROD = process.env.NODE_ENV === 'production';
-function devLog(...args) {
-  if (!_IS_PROD) console.log(...args);
-}
-
 const fragmentBonusManager = require("./fragment-bonus-manager");
 const effectsProcessor = require("./synergy-effects-processor");
 const combatResolverV2 = require("./combat-resolver");
-const { safeJsonParse, roll, rand, clearParseCache } = require('../utils/helpers');
+const { safeJsonParse, roll, rand, clearParseCache, devLog } = require('../utils/helpers');
 
 // Shared domain helpers extracted to game/lib. These are the canonical
 // implementations; engine.js still re-exports them via module.exports so

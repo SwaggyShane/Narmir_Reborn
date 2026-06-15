@@ -1239,12 +1239,6 @@ const config = {
     transmutation: "The transformation of all matter. Transmuters reshape flesh into stone, lead into gold, and ordinary soldiers into unstoppable forces.",
   },
 
-  SPELL_GLYPHS: {
-    default: "⬜",
-    locked: "❓",
-    revealed: "✨",
-  },
-
   RUNE_ALPHABET: {
     A: 'ᚨ', B: 'ᛒ', C: 'ᚲ', D: 'ᛞ', E: 'ᛖ', F: 'ᚠ', G: 'ᚷ', H: 'ᚺ',
     I: 'ᛁ', J: 'ᛃ', K: 'ᚲ', L: 'ᛚ', M: 'ᛘ', N: 'ᚾ', O: 'ᛟ', P: 'ᛈ',

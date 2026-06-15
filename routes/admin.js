@@ -8,6 +8,7 @@ const fs = require("fs");
 const _config = require("../game/config");
 const { _GOAL_COUNTS, DAILY_GOALS, WEEKLY_GOALS, MONTHLY_GOALS } = require("../game/goals");
 const engine = require("../game/engine");
+const { FRAGMENT_METADATA } = require("../game/fragment-attunements");
 
 const ALLOWED_PRIZE_TYPES = ['gold', 'mana', 'rangers', 'researchers', 'war_machines', 'world_fragment'];
 const ALLOWED_SOUND_EXTENSIONS = new Set([".mp3", ".wav"]);
@@ -1267,23 +1268,11 @@ module.exports = function (db, io) {
 
   router.get("/fragments", (req, res) => {
     const FRAGMENT_BONUSES = require("../game/world-fragment-bonuses");
-    const FRAGMENT_METADATA = {
-      "Volcanic Rock": { emoji: "🌋", description: "Fire, Creation, Forge, Transformation through Heat" },
-      "Ancient Elven Wood": { emoji: "🧝", description: "Nature, Magic, Growth, Timelessness, Grace" },
-      "Dragon Scale": { emoji: "🐉", description: "Power, Combat, Dominance, Draconic Might" },
-      "Abyssal Crystal": { emoji: "🔮", description: "Void, Chaos, Forbidden Power, High Risk/High Reward" },
-      "Celestial Feather": { emoji: "🪶", description: "Light, Hope, Divine Blessing, Integrity" },
-      "Dwarven Star-Metal": { emoji: "⚒️", description: "Craftsmanship, Eternal Quality, Fortress Defense" },
-      "Cursed Bloodstone": { emoji: "🩸", description: "Sacrifice, Dark Magic, Blood Rituals, Relentless War" },
-      "Tears of the World Tree": { emoji: "💧", description: "Life, Healing, Renewal, Infinite Growth" },
-      "Void Essence": { emoji: "🌌", description: "Ultimate Power, Chaos, Reality Warping, Total Volatility" },
-      "Titan Bone": { emoji: "🦴", description: "Spaciousness, Ancient Strength, Monumental Scale" }
-    };
 
     const result = {};
     for (const [name, blds] of Object.entries(FRAGMENT_BONUSES)) {
       const meta = FRAGMENT_METADATA[name] || { emoji: "✨", description: "Ancient world anomaly" };
-      
+
       result[name] = {
         emoji: meta.emoji,
         description: meta.description,

@@ -4,16 +4,13 @@
  */
 
 const FRAGMENT_BONUSES = require('./world-fragment-bonuses');
+const { safeJsonParse } = require('../utils/helpers');
 
 /**
  * Parse fragment bonuses JSON from kingdom data
  */
 function parseFragmentBonuses(bonusesJson) {
-  try {
-    return JSON.parse(bonusesJson || '{}');
-  } catch {
-    return {};
-  }
+  return safeJsonParse(bonusesJson, {});
 }
 
 /**
@@ -141,14 +138,6 @@ function getBonusMultiplier(kingdom, buildingType, statType) {
 }
 
 /**
- * Apply bonus multipliers to a stat
- */
-function applyFragmentMultiplier(kingdom, buildingType, baseValue, statType) {
-  const multiplier = getBonusMultiplier(kingdom, buildingType, statType);
-  return baseValue * multiplier;
-}
-
-/**
  * Get special mechanic effect for a building if applicable
  */
 function getSpecialEffect(kingdom, buildingType) {
@@ -174,38 +163,11 @@ function formatBuildingName(buildingType) {
     .join(' ');
 }
 
-/**
- * Get all bonuses for a building with their details
- */
-function getBuildingBonusDetails(kingdom, buildingType) {
-  const fragmentBonus = getFragmentForBuilding(kingdom, buildingType);
-  if (!fragmentBonus) {
-    return {
-      hasBonus: false,
-      fragment: null,
-      bonuses: {},
-    };
-  }
-
-  return {
-    hasBonus: true,
-    fragment: fragmentBonus.fragment,
-    special: fragmentBonus.special,
-    passive: fragmentBonus.passive,
-    appliedTurn: fragmentBonus.applied_turn,
-  };
-}
-
 module.exports = {
-  parseFragmentBonuses,
-  getKingdomFragmentBonuses,
   getFragmentForBuilding,
   getBonusConfig,
   applyFragmentBonus,
   getAvailableBuildingsWithBonuses,
   getBonusMultiplier,
-  applyFragmentMultiplier,
   getSpecialEffect,
-  formatBuildingName,
-  getBuildingBonusDetails,
 };
