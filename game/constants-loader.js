@@ -9,7 +9,10 @@ let mergedConstants = null;
 
 // Rebuild merged constants from config + database overrides
 async function rebuildMergedConstants(db) {
-  // Start with deep copy of config
+  // Start with deep copy of config (JSON round-trip intentionally used here:
+  // config contains function values in some sections; structuredClone throws
+  // on functions, whereas JSON.parse/stringify silently drops them — which is
+  // the correct behaviour since those sections are never overridden via DB)
   mergedConstants = JSON.parse(JSON.stringify(config));
 
   if (!db) return mergedConstants;
@@ -81,9 +84,7 @@ async function refreshConstants(db) {
 
 // Get all constants for a section with override status
 function getConstantsForSection(section, overrides = []) {
-  const constants = getConstants();
   const sectionDefs = EDITABLE_CONSTANTS[section] || {};
-  const _sectionConstants = constants[section === 'combat' ? 'COMBAT_CONSTANTS' : section.toUpperCase()] || {};
 
   const result = {};
 

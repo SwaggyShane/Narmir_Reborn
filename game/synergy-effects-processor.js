@@ -104,12 +104,12 @@ function removeExpiredEffects(kingdom) {
 /**
  * Apply synergy troop boost effect (damage and health multiplier)
  */
-function getTroopBoostMultiplier(kingdom, stat) {
+function getTroopBoostMultiplier(kingdom, stat, activeEffects) {
   if (!kingdom || typeof kingdom !== 'object') {
     return 1.0;
   }
+  const active = activeEffects || getActiveEffects(kingdom);
 
-  const active = getActiveEffects(kingdom);
   if (!active.synergy_troop_boost) {
     return 1.0;
   }
@@ -128,12 +128,12 @@ function getTroopBoostMultiplier(kingdom, stat) {
 /**
  * Apply synergy benefit effect (resources, production, happiness bonuses)
  */
-function getBenefitMultiplier(kingdom, stat) {
+function getBenefitMultiplier(kingdom, stat, activeEffects) {
   if (!kingdom || typeof kingdom !== 'object') {
     return 1.0;
   }
+  const active = activeEffects || getActiveEffects(kingdom);
 
-  const active = getActiveEffects(kingdom);
   if (!active.synergy_benefit) {
     return 1.0;
   }
@@ -169,12 +169,12 @@ function getBenefitHappinessBonus(kingdom) {
  * Apply synergy penalty effect (stat reductions)
  * all_stats penalty accumulates with specific stat penalties
  */
-function getPenaltyMultiplier(kingdom, stat) {
+function getPenaltyMultiplier(kingdom, stat, activeEffects) {
   if (!kingdom || typeof kingdom !== 'object') {
     return 1.0;
   }
+  const active = activeEffects || getActiveEffects(kingdom);
 
-  const active = getActiveEffects(kingdom);
   if (!active.synergy_penalty) {
     return 1.0;
   }
@@ -245,21 +245,23 @@ function getCombinedMultiplier(kingdom, stat) {
     return 1.0;
   }
 
+  // Parse active_effects once and pass to sub-functions to avoid triple JSON parse
+  const active = getActiveEffects(kingdom);
   let mult = 1.0;
 
   // Benefit multiplier
   if (stat === 'resources' || stat === 'production') {
-    mult *= getBenefitMultiplier(kingdom, stat);
+    mult *= getBenefitMultiplier(kingdom, stat, active);
   }
 
   // Penalty multiplier (includes all_stats accumulation for all stats)
   if (stat === 'defense' || stat === 'food_production' || stat === 'resources' || stat === 'production' || stat === 'damage' || stat === 'health') {
-    mult *= getPenaltyMultiplier(kingdom, stat);
+    mult *= getPenaltyMultiplier(kingdom, stat, active);
   }
 
   // Troop stats
   if (stat === 'damage' || stat === 'health') {
-    mult *= getTroopBoostMultiplier(kingdom, stat);
+    mult *= getTroopBoostMultiplier(kingdom, stat, active);
   }
 
   return Math.max(0, mult);

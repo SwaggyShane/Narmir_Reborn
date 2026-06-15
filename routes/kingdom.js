@@ -433,25 +433,26 @@ module.exports = function (db) {
   // ── Shared turn runner — used by ALL routes that consume a turn ──────────────
   async function runTurn(db, k) {
     // Inject region ownership status for bonuses
-    const regionStatus = await db.get(
-      "SELECT owner_alliance_id, bonus_type FROM regions WHERE name = ?",
-      [k.region],
-    );
-    const myAlliance = await db.get(
-      "SELECT alliance_id FROM alliance_members WHERE kingdom_id = ?",
-      [k.id],
-    );
+    // All 3 queries are independent — run them in parallel
+    const [regionStatus, myAlliance, heroes] = await Promise.all([
+      db.get(
+        "SELECT owner_alliance_id, bonus_type FROM regions WHERE name = ?",
+        [k.region],
+      ),
+      db.get(
+        "SELECT alliance_id FROM alliance_members WHERE kingdom_id = ?",
+        [k.id],
+      ),
+      db.all(
+        "SELECT * FROM heroes WHERE kingdom_id = ? AND status = 'idle'",
+        [k.id],
+      ),
+    ]);
     k._region_owned_by_my_alliance =
       regionStatus &&
       myAlliance &&
       regionStatus.owner_alliance_id === myAlliance.alliance_id;
     k._region_bonus_type = regionStatus?.bonus_type;
-
-    // Heroes processing
-    const heroes = await db.all(
-      "SELECT * FROM heroes WHERE kingdom_id = ? AND status = 'idle'",
-      [k.id],
-    );
     k.heroes = heroes;
     await loadTradeRoutes(k);
 

@@ -4,16 +4,13 @@
  */
 
 const FRAGMENT_BONUSES = require('./world-fragment-bonuses');
+const { safeJsonParse } = require('../utils/helpers');
 
 /**
  * Parse fragment bonuses JSON from kingdom data
  */
 function parseFragmentBonuses(bonusesJson) {
-  try {
-    return JSON.parse(bonusesJson || '{}');
-  } catch {
-    return {};
-  }
+  return safeJsonParse(bonusesJson, {});
 }
 
 /**
