@@ -1922,7 +1922,7 @@ function queueBuildings(k, orders) {
     const col = BUILDING_COL[key];
     const currentBuilt = k[col] || 0;
     const currentQueued = queue[key] || 0;
-    const cap = recruitmentMod.getCap(col, k.level || 1);
+    const cap = recruitmentMod.getCap(col, k.level || 1, k.prestige_level || 0);
 
     if (currentBuilt + currentQueued + n > cap) {
       if (currentBuilt + currentQueued >= cap) {
@@ -2234,7 +2234,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
           : BUILDING_COL[building];
       if (col) {
         const current = updates[col] !== undefined ? updates[col] : k[col] || 0;
-        const cap = recruitmentMod.getCap(col, k.level || 1);
+        const cap = recruitmentMod.getCap(col, k.level || 1, k.prestige_level || 0);
         let canAdd = Math.max(0, Math.min(completed, cap - current));
 
         // Regular buildings: units from the queue were already paid in queueBuildings;

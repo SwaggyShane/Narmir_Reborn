@@ -15,15 +15,19 @@ function raidTradeRoute(attacker, defender, unitCount) {
   if (defenderTradeRoutes < 1)
     return { error: "Target has no trade routes to raid" };
 
+  const actualUnitCount = Math.min(unitCount, currentAttackerThieves);
+  if (actualUnitCount < 500)
+    return { error: "Must send at least 500 thieves to raid trade routes" };
+
   const atkLvl = unitLevelMult(attacker, "thieves");
   const defLvl = unitLevelMult(defender, "thieves");
   const successChance = 0.4 + (atkLvl - defLvl) * 0.2;
   const roll = Math.random();
 
   if (roll < successChance) {
-    const raided = Math.min(defenderTradeRoutes, Math.floor(unitCount / 500));
+    const raided = Math.min(defenderTradeRoutes, Math.floor(actualUnitCount / 500));
     const loot = raided * 5000;
-    const losses = Math.floor(unitCount * 0.05);
+    const losses = Math.floor(actualUnitCount * 0.05);
 
     return {
       success: true,
@@ -40,7 +44,7 @@ function raidTradeRoute(attacker, defender, unitCount) {
       defEvent: `🏹 ⚔️ RAIDED: ${attacker.name}'s Orcs raided your trade routes! You lost ${raided} routes and ${loot.toLocaleString()} gold was stolen!`,
     };
   } else {
-    const losses = Math.floor(unitCount * 0.15);
+    const losses = Math.floor(actualUnitCount * 0.15);
     return {
       success: false,
       attackerUpdates: {

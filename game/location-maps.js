@@ -30,7 +30,7 @@ function processLocationMapsWip(k, events) {
     if (item.turns_remaining <= 0) {
       completed.push(item);
       const disc = safeJsonParse(
-        k.discovered_kingdoms,
+        updates.discovered_kingdoms !== undefined ? updates.discovered_kingdoms : k.discovered_kingdoms,
         {},
         "processLocationMapsWip:discovered_kingdoms",
       );

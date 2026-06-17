@@ -50,7 +50,8 @@ function processActiveEffects(k, events) {
         } else if (activeHousingSpecial?.name === "Treehouse Canopy") {
           lost = Math.floor(lost * 0.5); // 50% reduction in plague loss
         }
-        updates.population = Math.max(0, k.population - lost);
+        const currentPop = updates.population !== undefined ? updates.population : k.population;
+        updates.population = Math.max(0, currentPop - lost);
         events.push({
           type: "attack",
           message: `🧟 🌪️ Plague ravages your kingdom — ${lost.toLocaleString()} citizens have perished.`,
