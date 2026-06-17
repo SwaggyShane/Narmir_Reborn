@@ -4,10 +4,10 @@
 
 const config = require("./config");
 
-const { safeJsonParse } = require('../utils/helpers');
-
-// Shared domain helpers extracted to game/lib. These are the canonical
-// implementations; engine.js still re-exports them via module.exports so
+const fragmentBonusManager = require("./fragment-bonus-manager");
+const effectsProcessor = require("./synergy-effects-processor");
+const combatResolverV2 = require("./combat-resolver");
+const { safeJsonParse, clearParseCache, devLog } = require('../utils/helpers');// Shared domain helpers extracted to game/lib. These are the canonical// implementations; engine.js still re-exports them via module.exports so
 // external callers (routes, sockets, tests) keep working.
 const { raceBonus } = require('./lib/race-bonus');
 const {
@@ -133,6 +133,44 @@ const {
   awardXp,
 } = xpMod;
 
+// Population domain â€” housing capacity, population growth, and research
+// increment. Defined in game/population.js; re-exported below.
+const populationMod = require('./population');
+const {
+  researchIncrement,
+} = populationMod;
+
+// Phase 1 extracted domains (low-risk, self-contained functions)
+// Rebellion, recruitment, research, mercenaries, trade routes, prestige, combat news,
+// location maps, achievements, effects, and scoring. All re-exported below for backward compat.
+const rebellionMod = require('./rebellion');
+const recruitmentMod = require('./recruitment');
+const researchMod = require('./research');
+const mercenariesMod = require('./mercenaries');
+const tradeRoutesMod = require('./trade-routes');
+const prestigeMod = require('./prestige');
+const combatNewsMod = require('./combat-news');
+const locationMapsMod = require('./location-maps');
+const achievementsMod = require('./achievements');
+const effectsMod = require('./effects');
+const scoringMod = require('./scoring');
+
+// Construction domain — queueBuildings, processBuildQueue, demolishBuilding. Defined in
+// game/construction.js; re-exported below.
+const constructionMod = require('./construction');
+// Upgrades domain — purchaseUpgrade. Defined in game/upgrades.js; re-exported below.
+const upgradesMod = require('./upgrades');
+// Happiness domain — assignRegion, calculateHappiness, recordHappinessHistory.
+// Defined in game/happiness.js; re-exported below.
+const happinessMod = require('./happiness');
+// Combat helpers — isNight, wmCrewRequired, moraleMult, happinessCombatMult,
+// resolveAllianceDefense. Defined in game/combat-helpers.js; re-exported below.
+const combatHelpersMod = require('./combat-helpers');
+// Forge domain — forgeTools. Defined in game/forge.js; re-exported below.
+const forgeMod = require('./forge');
+// Expeditions domain — calcDiscoveryChance, junkPrize, expeditionRewards.
+// Defined in game/expeditions.js; re-exported below.
+const expeditionsMod = require('./expeditions');
 const {
   RACE_BONUSES,
   REGION_DATA,
@@ -174,9 +212,10 @@ const {
   SCROLL_REQUIREMENTS,
   SCRIBE_ITEMS,
   WM_CREW_REQUIRED,
-  BUILDING_COL,
-  TOOL_COL,
-  TOOL_GOLD_COST,
+  RESEARCH_MAP,
+  RACIAL_UNITS,  WORLD_FRAGMENTS,
+  THRONE_OF_NAZDREG,
+  CAPS,  BUILDING_COL,  TOOL_COL,  TOOL_GOLD_COST,
   BLUEPRINT_REQUIRED: BP_REQ,
   SCAFFOLDING_REQUIRED: SCAFF_REQ,
   SCAFFOLDING_BONUS_BUILDINGS: SCAFF_BONUS,
@@ -200,9 +239,6 @@ const SCAFFOLDING_BONUS_BUILDINGS = new Set(SCAFF_BONUS);
 // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Helpers ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
 
-function assignRegion(race) {
-  return race; // simple mapping for now: race name = region id
-}
 
 
 // Turn domain -- processTurn and all per-turn helpers (happiness, rebellion,
@@ -225,17 +261,12 @@ const {
   rebellionEvent,
 } = turnMod;
 
-
 // addItemToInventory + initItemsArray live in game/lib/items.js.
 // processResourceYield lives in game/economy.js. All three are re-exported
 // from engine.js via module.exports for backward compat.
 
 // Expeditions domain -- resource expeditions, loot rolls, reward calc.
 // Defined in game/expeditions.js; re-exported below via module.exports.
-
-// Expeditions domain -- resource expeditions, loot rolls, reward calc.
-// Defined in game/expeditions.js; re-exported below via module.exports.
-const expeditionsMod = require('./expeditions');
 const {
   computeExpeditionTransitions,
   junkPrize,
@@ -263,7 +294,6 @@ const {
   raidTradeRoute,
   demolishBuilding,
 } = actionsMod;
-
 // Combat helpers domain - isNight, happinessCombatMult, wmCrewRequired.
 // Defined in game/combat-helpers.js; re-exported below.
 const combatHelpers = require('./combat-helpers');
@@ -279,58 +309,12 @@ const {
   resolveMilitaryAttack,
 } = combatMod;
 
-function canPrestige(k) {
-  return k.level >= 50; // Prestige at Level 50
-}
+// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Orc Trade Route Raiding ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
-function processPrestige(k) {
-  if (!canPrestige(k))
-    return { error: "Kingdom level 50 required for Prestige" };
+// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Prestige System ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
-  const currentLevel = k.prestige_level || 0;
-  const nextLevel = currentLevel + 1;
 
-  // New Kingdom defaults
-  return {
-    updates: {
-      prestige_level: nextLevel,
-      level: 1,
-      xp: 0,
-      gold: 50000 * nextLevel, // Bonus starting gold
-      land: k.land, // Keeping land as requested
-      population: 5000,
-      food: 25000,
-      mana: 1000,
-      fighters: 0,
-      rangers: 0,
-      clerics: 0,
-      mages: 0,
-      thieves: 0,
-      war_machines: 0,
-      bld_farms: 5,
-      bld_barracks: 2,
-      bld_schools: 1,
-      bld_housing: 100,
-      build_queue: "{}",
-      build_progress: "{}",
-      research_progress: "{}",
-      training_allocation: "{}",
-      smithy_allocation: "{}",
-      mage_tower_allocation: "{}",
-      shrine_allocation: "{}",
-      turn: k.turn,
-    }
-  };
-}
-
-function resolveAllianceDefense(attackResult, allies) {
-  // When a kingdom is attacked, allied kingdoms send pledge % of their fighters
-  if (!attackResult.win) return [];
-  return allies.map((ally) => {
-    const sent = Math.floor(ally.fighters * (ally.pledge / 100));
-    return { allyId: ally.id, sent };
-  });
-}
+// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Alliance pledge defense ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
 async function resolveRegions(db, io) {
   const regions = await db.all("SELECT name, owner_alliance_id, contest_alliance_id, contest_progress FROM regions");
@@ -425,87 +409,32 @@ async function resolveRegions(db, io) {
   }
 }
 
-function calculateScore(k) {
-  let score = 0;
-
-  // Base stats
-  score += k.land * 1;
-  score += k.population * 0.5;
-  score += (k.level || 1) * 100;
-
-  // Resources
-  score += k.gold * 0.001;
-  score += k.food * 0.0005;
-  score += k.mana * 0.002;
-  score += k.hammers_stored * 0.1;
-  score += k.scaffolding_stored * 0.1;
-  score += k.blueprints_stored * 5;
-  score += k.weapons_stockpile * 0.005;
-  score += k.armor_stockpile * 0.01;
-
-  // Troop levels (multiplier)
-  let troopLevels = {};
-  if (k.troop_levels) {
-    try {
-      troopLevels =
-        typeof k.troop_levels === "string"
-          ? safeJsonParse(k.troop_levels, {}, "auto:troop_levels")
-          : k.troop_levels;
-    } catch {}
-  }
-
-  function getLvlMultiplier(unitType) {
-    const unitInfo = troopLevels[unitType];
-    const lvl =
-      (unitInfo && typeof unitInfo === "object"
-        ? Number(unitInfo.level)
-        : Number(unitInfo)) || 1;
-    // user said: "start at an addition .15 at level 1 increases incrementally"
-    return 1 + lvl * 0.15;
-  }
-
-  // Units
-  score += k.war_machines * 1.25 * getLvlMultiplier("war_machines");
-  score += (k.ballistae || 0) * 1.25 * getLvlMultiplier("war_machines");
-  score += k.fighters * 0.75 * getLvlMultiplier("fighters");
-  score += k.rangers * 1.75 * getLvlMultiplier("rangers");
-  score += k.clerics * 0.75 * getLvlMultiplier("clerics");
-  score += k.mages * 1.5 * getLvlMultiplier("mages");
-  score += k.thieves * 0.95 * getLvlMultiplier("thieves");
-  score += k.ninjas * 1.15 * getLvlMultiplier("ninjas");
-  score += k.scribes * 0.25 * getLvlMultiplier("scribes");
-  score += k.engineers * 1.25 * getLvlMultiplier("engineers");
-  score += k.researchers * 0.5 * getLvlMultiplier("researchers"); // Assumed baseline
-
-  // Buildings (everything else -> balanced scoring)
-  const bldAttrs = [
-    "bld_farms",
-    "bld_barracks",
-    "bld_outposts",
-    "bld_guard_towers",
-    "bld_schools",
-    "bld_armories",
-    "bld_vaults",
-    "bld_smithies",
-    "bld_markets",
-    "bld_mage_towers",
-    "bld_shrines",
-    "bld_training",
-    "bld_castles",
-    "bld_housing",
-    "bld_libraries",
-    "bld_taverns",
-    "bld_walls",
-  ];
-  for (const b of bldAttrs) {
-    score += (k[b] || 0) * 2; // Flat 2 points per building to reward infrastructure
-  }
-
-  return Math.floor(score);
-}
 
 module.exports = {
-  calculateScore,
+  // Re-exports from Phase 1 extracted modules for backward compatibility
+  rebellionCheck: rebellionMod.rebellionCheck,
+  rebellionEvent: rebellionMod.rebellionEvent,
+  levelCap: recruitmentMod.levelCap,
+  getCap: recruitmentMod.getCap,
+  hireUnits: recruitmentMod.hireUnits,
+  studyDiscipline: researchMod.studyDiscipline,
+  selectSchool: researchMod._selectSchool,
+  processMercenaries: mercenariesMod.processMercenaries,
+  hireMercenaries: mercenariesMod.hireMercenaries,
+  raidTradeRoute: tradeRoutesMod.raidTradeRoute,
+  canPrestige: prestigeMod.canPrestige,
+  processPrestige: prestigeMod.processPrestige,
+  normalizeCombatUnits: combatNewsMod.normalizeCombatUnits,
+  sumRecordValues: combatNewsMod.sumRecordValues,
+  formatCombatUnitCounts: combatNewsMod.formatCombatUnitCounts,
+  formatCombatBuildingsLost: combatNewsMod.formatCombatBuildingsLost,
+  formatCombatV2NewsBlurb: combatNewsMod.formatCombatV2NewsBlurb,
+  processLocationMapsWip: locationMapsMod.processLocationMapsWip,
+  checkAchievements: achievementsMod.checkAchievements,
+  processActiveEffects: effectsMod.processActiveEffects,
+  calculateScore: scoringMod.calculateScore,
+
+  // Other direct exports
   totalHiredUnits,
   getAvailableUnits,
   resolveRegions,
@@ -536,16 +465,15 @@ module.exports = {
   processSchoolAttunements,
   processFarmAttunements,
   processHousingAttunements,
-  processMercenaries,
-  hireMercenaries,
-  purchaseUpgrade,
+  purchaseUpgrade: upgradesMod.purchaseUpgrade,
   SEASON_ORDER,
   SEASON_DURATION,
   SEASON_FARM_MULT,
   SEASON_ICONS,
   LOCATE_RACE_MULT,
-  calcDiscoveryChance,
-  processLocationMapsWip,
+  calcDiscoveryChance: expeditionsMod.calcDiscoveryChance,
+  junkPrize: expeditionsMod.junkPrize,
+  expeditionRewards: expeditionsMod.expeditionRewards,
   WALL_UPGRADES,
   TOWER_DEF_UPGRADES,
   OUTPOST_UPGRADES,
@@ -576,25 +504,21 @@ module.exports = {
   MARKET_INCOME_MULT,
   TRADE_RATE_MULT,
   processTurn,
-  hireUnits,
-  studyDiscipline,
-  selectSchool: _selectSchool,
-  queueBuildings,
-  processBuildQueue,
+  queueBuildings: constructionMod.queueBuildings,
+  processBuildQueue: constructionMod.processBuildQueue,
   processLibrary,
   processMageTower,
   processShrine,
   processMausoleum,
-  processActiveEffects,
-  forgeTools,
+  forgeTools: forgeMod.forgeTools,
   resolveMilitaryAttack,
-  formatCombatV2NewsBlurb,
   castSpell,
   covertSpy,
   covertLoot,
   covertAssassinate,
   covertSabotage,
-  resolveAllianceDefense,
+  resolveAllianceDefense: combatHelpersMod.resolveAllianceDefense,
+  isNight: combatHelpersMod.isNight,
   resolveExpeditions,
   awardXp,
   xpForLevel,
@@ -608,19 +532,17 @@ module.exports = {
   troopXpForLevel,
   effectiveTroopLevel,
   WM_CREW_REQUIRED,
-  wmCrewRequired,
-  moraleMult,
-  happinessCombatMult,
-  calculateHappiness,
-  getHappinessRecoveryRate,
-  recordHappinessHistory,
+  wmCrewRequired: combatHelpersMod.wmCrewRequired,
+  moraleMult: combatHelpersMod.moraleMult,
+  happinessCombatMult: combatHelpersMod.happinessCombatMult,
+  calculateHappiness: happinessMod.calculateHappiness,
+  getHappinessRecoveryRate: happinessMod.getHappinessRecoveryRate,
+  recordHappinessHistory: happinessMod.recordHappinessHistory,
   logHappinessEvent,
-  rebellionCheck,
-  rebellionEvent,
   TROOP_RACE_BONUS,
   RACE_BONUSES,
   REGION_DATA,
-  assignRegion,
+  assignRegion: happinessMod.assignRegion,
   UNIT_COST,
   BUILDING_COST,
   BUILDING_GOLD_COST,
@@ -641,11 +563,8 @@ module.exports = {
   getHeroPower,
   applyHeroTurnBonuses,
   recruitHero,
-  raidTradeRoute,
-  canPrestige,
-  processPrestige,
   getUnitName,
-  demolishBuilding,
+  demolishBuilding: constructionMod.demolishBuilding,
   TRADE_ROUTE_MAX,
   TRADE_ROUTE_ESTABLISH_COST,
   processResourceYield,
