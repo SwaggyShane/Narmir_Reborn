@@ -230,4 +230,28 @@ console.log('Testing heroes.js\n');
   console.log('Test 19: all exports are functions ✓');
 }
 
+// Test 20: applyHeroTurnBonuses shadowmaster adds stealth
+{
+  const k = makeKingdom({ res_stealth: 25 });
+  const hero = makeHero({ class: 'shadowmaster', level: 4 });
+  const updates = {};
+  const events = [];
+  heroes.applyHeroTurnBonuses(hero, k, updates, events);
+  assert.equal(updates.res_stealth, 825, 'shadowmaster adds stealth');
+  assert.ok(events.length > 0, 'shadowmaster generates event');
+  console.log('Test 20: applyHeroTurnBonuses shadowmaster âœ“');
+}
+
+// Test 21: applyHeroTurnBonuses high_consul adds prestige
+{
+  const k = makeKingdom({ prestige: 10 });
+  const hero = makeHero({ class: 'high_consul', level: 3 });
+  const updates = {};
+  const events = [];
+  heroes.applyHeroTurnBonuses(hero, k, updates, events);
+  assert.equal(updates.prestige, 310, 'high_consul adds prestige');
+  assert.ok(events.length > 0, 'high_consul generates event');
+  console.log('Test 21: applyHeroTurnBonuses high_consul âœ“');
+}
+
 console.log('\nAll heroes tests passed.');
