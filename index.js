@@ -1054,14 +1054,14 @@ async function start() {
     });
 
     app.get('/wipe-admin.html', (_req, res) => {
-      res.sendFile(path.join(__dirname, 'public', 'dist', 'wipe-admin.html'));
+      res.sendFile(path.join(__dirname, 'dist', 'wipe-admin.html'));
     });
 
     app.get(['/admin', '/admin.html'], (_req, res) => {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
-      res.sendFile(path.join(__dirname, 'public/dist', 'admin.html'));
+      res.sendFile(path.join(__dirname, 'dist', 'admin.html'));
     });
   
     // Vite as middleware should be checked BEFORE static serving but AFTER API routes
@@ -1202,7 +1202,7 @@ async function start() {
   if (process.env.NODE_ENV !== 'production' && vite) {
           html = await vite.transformIndexHtml(req.url || '/', html);
         } else {
-          const distPath = path.join(__dirname, 'public', 'dist');
+           const distPath = path.join(__dirname, 'dist');
           if (fs.existsSync(distPath)) {
             // If Vite produced an index.html in dist, use that instead of the source one
             const distIndexHtml = path.join(distPath, 'index.html');
@@ -1255,7 +1255,7 @@ async function start() {
         return res.set(NO_CACHE).send(html);
       }
 
-      const distPath = path.join(__dirname, 'public', 'dist');
+      const distPath = path.join(__dirname, 'dist');
 
       // Primary: serve pre-built splash.html from dist
       const distSplash = path.join(distPath, 'splash.html');
@@ -1306,7 +1306,7 @@ async function start() {
         html = await vite.transformIndexHtml('/portal.html', html);
         return res.set(NO_CACHE).send(html);
       }
-      const distPath = path.join(__dirname, 'public', 'dist');
+      const distPath = path.join(__dirname, 'dist');
       // Primary: serve pre-built portal.html from dist
       try {
         const html = await fsp.readFile(path.join(distPath, 'portal.html'), 'utf-8');
@@ -1340,7 +1340,7 @@ async function start() {
   app.get(['/portal', '/portal.html'], servePortal);
   app.use(express.static(path.join(__dirname, 'public'), { index: false }));
   app.use(express.static(path.join(__dirname, 'client'), { index: false }));
-  app.use('/dist', express.static(path.join(__dirname, 'public', 'dist')));
+  app.use('/dist', express.static(path.join(__dirname, 'dist')));
 
   if (process.env.NODE_ENV === 'production') {
     app.use('/client', express.static(path.join(__dirname, 'client')));

@@ -1817,7 +1817,10 @@
       }
     </style>
     <script type="module" src="/src/main.js"></script>
-    <script src="/socket.io/socket.io.js"></script>
+    <script type="module">
+      import { io } from "socket.io-client";
+      window.io = io;
+    </script>
   </head>
   <body style="margin: 0; padding: 0; background: transparent;">
     <!-- Global Background Video for boot and login -->

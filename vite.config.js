@@ -4,10 +4,10 @@ import path from 'path';
 
 export default defineConfig(({ command, mode }) => {
   const isProd = command === 'build' || mode === 'production' || process.env.NODE_ENV === 'production';
-  return {
-    root: path.resolve(__dirname, 'client'),
-    publicDir: path.resolve(__dirname, 'public'),
-    base: isProd ? '/dist/' : '/',
+    return {
+      root: path.resolve(__dirname, 'client'),
+      publicDir: false,
+      base: isProd ? '/dist/' : '/',
     plugins: [react()],
     resolve: {
       alias: {
@@ -23,7 +23,7 @@ export default defineConfig(({ command, mode }) => {
     },
     build: {
       sourcemap: false,
-      outDir: '../public/dist',
+      outDir: '../dist',
       emptyOutDir: true,
       rollupOptions: {
         input: {
