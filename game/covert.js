@@ -17,6 +17,8 @@ const ASSASSINATE_TARGETS = new Set([
 ]);
 
 function covertSpy(spy, target, unitsSent) {
+  if (unitsSent <= 0) return { error: 'Invalid number of thieves' };
+  if (unitsSent > (spy.thieves || 0)) return { error: 'Not enough thieves' };
   let thiefLvMult = unitLevelMult(spy, 'thieves');
   if (spy.race === 'vampire' && isNight()) thiefLvMult *= 1.5;
   const stealthMulti =
@@ -102,22 +104,25 @@ function covertSpy(spy, target, unitsSent) {
   if (tier >= 3) {
     report.war_machines = noise(target.war_machines);
     const bldCols = [
-      'bld_farm',
+      'bld_farms',
+      'bld_granaries',
       'bld_barracks',
       'bld_housing',
-      'bld_tavern',
-      'bld_market',
-      'bld_smithy',
-      'bld_library',
-      'bld_school',
-      'bld_mage_tower',
-      'bld_shrine',
-      'bld_vault',
-      'bld_mausoleum',
+      'bld_taverns',
+      'bld_markets',
+      'bld_smithies',
+      'bld_libraries',
+      'bld_schools',
+      'bld_mage_towers',
+      'bld_shrines',
+      'bld_vaults',
+      'bld_mausoleums',
       'bld_walls',
-      'bld_outpost',
+      'bld_outposts',
       'bld_guard_towers',
-      'bld_castle',
+      'bld_castles',
+      'bld_armories',
+      'bld_training',
     ];
     for (const c of bldCols) {
       report[c] = noise(target[c]);
