@@ -40,7 +40,9 @@ function hireUnits(k, unit, amount) {
     "scribes",
   ];
   if (!validUnits.includes(unit)) return { error: "Invalid unit type" };
-  if (amount <= 0) return { error: "Amount must be positive" };
+  const amt = Math.floor(Number(amount));
+  if (isNaN(amt) || amt <= 0) return { error: "Amount must be positive" };
+  amount = amt;
 
   // School cap — researchers need schools (100 per school)
   if (unit === "researchers") {

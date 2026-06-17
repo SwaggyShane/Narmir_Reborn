@@ -9,8 +9,11 @@ const { RESEARCH_MAP, RESEARCH_DISCIPLINE_CAPS, MAX_RESEARCH, MAGIC_SCHOOLS } = 
 function studyDiscipline(k, discipline, researchersAssigned) {
   const col = RESEARCH_MAP[discipline];
   if (!col) return { error: "Unknown discipline" };
-  if (researchersAssigned > k.researchers)
+  const assigned = Math.floor(Number(researchersAssigned));
+  if (isNaN(assigned) || assigned <= 0) return { error: "Invalid number of researchers" };
+  if (assigned > k.researchers)
     return { error: "Not enough researchers" };
+  researchersAssigned = assigned;
 
   const currentLevel = k[col] || 100;
   const increment = researchIncrement(

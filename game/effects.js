@@ -19,6 +19,10 @@ function processActiveEffects(k, events) {
   const expired = [];
 
   for (const [effect, data] of Object.entries(effects)) {
+    if (!data || typeof data !== "object") {
+      expired.push(effect);
+      continue;
+    }
     const remaining = (data.turns_left || 1) - 1;
     if (remaining <= 0) {
       expired.push(effect);

@@ -44,8 +44,8 @@ function queueBuildings(k, orders) {
       );
       continue;
     }
-    const n = Math.max(0, Number(qty));
-    if (n <= 0) continue;
+    const n = Math.floor(Number(qty));
+    if (isNaN(n) || n <= 0) continue;
 
     // Check Cap
     const col = BUILDING_COL[key];
@@ -697,7 +697,9 @@ function demolishBuilding(k, buildingKey, amount) {
   const col = BUILDING_COL[buildingKey];
   if (!col) return { error: "Unknown building" };
   const current = k[col] || 0;
-  const toDemolish = Math.min(amount, current);
+  const amt = Math.floor(Number(amount));
+  if (isNaN(amt) || amt <= 0) return { error: "Invalid amount" };
+  const toDemolish = Math.min(amt, current);
   if (toDemolish <= 0) return { error: "Nothing to demolish" };
 
   const goldRefund = Math.floor(

@@ -18,13 +18,15 @@ function wmCrewRequired(race, engineerLevel) {
 }
 
 function moraleMult(morale) {
-  if (morale < 50) return 0.8 + (morale / 50) * 0.1; // 0.80ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“0.90
-  if (morale < 100) return 0.9 + ((morale - 50) / 50) * 0.1; // 0.90ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“1.00
-  return Math.min(1.2, 1.0 + ((morale - 100) / 100) * 0.1); // 1.00ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“1.20 (capped at 1.20)
+  const m = typeof morale === "number" && !isNaN(morale) ? morale : 100;
+  if (m < 50) return 0.8 + (m / 50) * 0.1; // 0.80ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å"0.90
+  if (m < 100) return 0.9 + ((m - 50) / 50) * 0.1; // 0.90ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å"1.00
+  return Math.min(1.2, 1.0 + ((m - 100) / 100) * 0.1); // 1.00ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å"1.20 (capped at 1.20)
 }
 
 function happinessCombatMult(happiness) {
-  const mult = 0.5 + (happiness / 120);
+  const h = typeof happiness === "number" && !isNaN(happiness) ? happiness : 100;
+  const mult = 0.5 + (h / 120);
   return Math.max(0.5, Math.min(1.5, mult));
 }
 

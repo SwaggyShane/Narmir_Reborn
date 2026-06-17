@@ -63,6 +63,9 @@ function processMercenaries(k, events) {
 function hireMercenaries(k, unitType, tier, count) {
   const tierDef = MERC_TIERS[tier];
   if (!tierDef) return { error: "Invalid tier" };
+  const cnt = Math.floor(Number(count));
+  if (isNaN(cnt) || cnt <= 0) return { error: "Invalid count" };
+  count = cnt;
   const tavUpgrades = safeJsonParse(
     k.tavern_upgrades,
     {},

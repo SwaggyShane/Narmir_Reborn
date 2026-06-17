@@ -64,7 +64,7 @@ function rebellionEvent(k, updates, events) {
           const randomBuilding = availableBuildings[Math.floor(Math.random() * availableBuildings.length)];
           const buildingCount = k[randomBuilding];
           const damageCount = Math.min(buildingCount, Math.floor(Math.random() * 3) + 1); // 1-3 buildings
-          updates[randomBuilding] = Math.max(0, (updates[randomBuilding] || buildingCount) - damageCount);
+          updates[randomBuilding] = Math.max(0, (updates[randomBuilding] !== undefined ? updates[randomBuilding] : buildingCount) - damageCount);
           newsMessage = `🔶 🌪️ SABOTAGE: Rioters destroyed ${damageCount} ${buildingNames[randomBuilding]}!`;
         } else {
           const lossPercent = 0.02 + Math.random() * 0.03; // 2-5%
@@ -87,7 +87,7 @@ function rebellionEvent(k, updates, events) {
             const randomBuilding = availableBuildings[Math.floor(Math.random() * availableBuildings.length)];
             const buildingCount = k[randomBuilding];
             const damageCount = Math.min(buildingCount, Math.floor(Math.random() * 3) + 1);
-            updates[randomBuilding] = Math.max(0, (updates[randomBuilding] || buildingCount) - damageCount);
+            updates[randomBuilding] = Math.max(0, (updates[randomBuilding] !== undefined ? updates[randomBuilding] : buildingCount) - damageCount);
             newsMessage = `🔶 🌪️ FOOD RIOT: Desperate population destroyed food facilities! Lost ${damageCount} ${buildingNames[randomBuilding]}.`;
             foodRiotTriggered = true;
           }
@@ -111,7 +111,7 @@ function rebellionEvent(k, updates, events) {
           const count = k[unit] || 0;
           const loss = Math.floor(count * (0.05 + Math.random() * 0.05));
           if (loss > 0) {
-            updates[unit] = Math.max(0, (updates[unit] || count) - loss);
+            updates[unit] = Math.max(0, (updates[unit] !== undefined ? updates[unit] : count) - loss);
             totalLost += loss;
           }
         }

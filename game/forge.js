@@ -9,6 +9,9 @@ function forgeTools(k, toolType, quantity) {
   const cost = TOOL_GOLD_COST[toolType];
   const col = TOOL_COL[toolType];
   if (!cost || !col) return { error: "Unknown tool type" };
+  const qty = Math.floor(Number(quantity));
+  if (isNaN(qty) || qty <= 0) return { error: "Invalid quantity" };
+  quantity = qty;
   const totalCost = cost * quantity;
   if (totalCost > k.gold)
     return {
