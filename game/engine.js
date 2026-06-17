@@ -3324,6 +3324,10 @@ function formatCombatV2NewsBlurb(attacker, defender, report, perspective = "atta
   const criticalHits = report.criticalHits ||
     (report.injuredTroops?.attacker?.criticalHits || 0) +
     (report.injuredTroops?.defender?.criticalHits || 0);
+  const clericRescues = Array.isArray(report.clericRescues)
+    ? report.clericRescues.length
+    : (report.clericRescuesBySide?.attacker?.length || 0) + (report.clericRescuesBySide?.defender?.length || 0);
+  const vampireReanimation = report.vampireReanimation?.totalRaised || 0;
   const sabotage = report.thiefSabotage || report.disabledWarMachines || 0;
   const wallDamage = report.wallDamage || 0;
   const defenderUnitLabels = {
@@ -3339,10 +3343,14 @@ function formatCombatV2NewsBlurb(attacker, defender, report, perspective = "atta
   const landLine = perspective === "defender"
     ? `Land loss: ${report.win ? `${fmt(land)} acres lost` : "None"}`
     : `Land gained: ${report.win ? `${fmt(land)} acres captured` : "None"}`;
-  const detailParts = [];
-  if (sabotage > 0) detailParts.push(`${fmt(sabotage)} ballistae disabled`);
-  if (wallDamage > 0) detailParts.push(`${fmt(wallDamage)} wall HP damaged`);
-  const siegeLine = detailParts.length ? `Siege notes: ${detailParts.join("; ")}` : "Siege notes: None";
+  const recoveryParts = [];
+  if (clericRescues > 0) recoveryParts.push(`${fmt(clericRescues)} cleric rescues`);
+  if (vampireReanimation > 0) recoveryParts.push(`${fmt(vampireReanimation)} undead rises`);
+  const siegeParts = [];
+  if (sabotage > 0) siegeParts.push(`${fmt(sabotage)} ballistae disabled`);
+  if (wallDamage > 0) siegeParts.push(`${fmt(wallDamage)} wall HP damaged`);
+  const recoveryLine = recoveryParts.length ? `Recovery notes: ${recoveryParts.join("; ")}` : "Recovery notes: None";
+  const siegeLine = siegeParts.length ? `Siege notes: ${siegeParts.join("; ")}` : "Siege notes: None";
 
   return [
     `${title}: ${attackerName} vs ${defenderName}`,
@@ -3355,6 +3363,7 @@ function formatCombatV2NewsBlurb(attacker, defender, report, perspective = "atta
     `Troops lost - Defender: ${formatCombatUnitCounts(defenderLost, defenderUnitLabels)} (${fmt(defenderDeaths)} total)`,
     `Troops injured - Attacker: ${formatCombatUnitCounts(attackerInjured)}`,
     `Troops injured - Defender: ${formatCombatUnitCounts(defenderInjured, defenderUnitLabels)}`,
+    recoveryLine,
     `Critical hits: ${fmt(criticalHits)} hits, ${fmt(criticalKills)} killing blows`,
     `Buildings lost: ${formatCombatBuildingsLost(report)}`,
     siegeLine,

@@ -244,6 +244,13 @@ const scenarios = [
     }),
     check: (result) => {
       assert(Array.isArray(result.report.clericRescues), 'Cleric rescues should be reported');
+      assert(Array.isArray(result.report.clericRescuesBySide?.attacker), 'Attacker cleric rescues should be reported by side');
+      assert(Array.isArray(result.report.clericRescuesBySide?.defender), 'Defender cleric rescues should be reported by side');
+      assert(
+        result.report.clericRescues.length ===
+          result.report.clericRescuesBySide.attacker.length + result.report.clericRescuesBySide.defender.length,
+        'Combined cleric rescues should include both sides'
+      );
     },
   },
   {

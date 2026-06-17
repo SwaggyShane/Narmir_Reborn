@@ -132,7 +132,7 @@ function executeCombat(_db, attacker, defender, combatType, targetFocus, _engine
     );
     reconcileDamageReport(attackerDamageReport, attackerInjured);
     reconcileDamageReport(defenderDamageReport, defenderInjured);
-    result.report.clericRescues = attackerRescues;
+    result.report.clericRescues = [...attackerRescues, ...defenderRescues];
     result.report.clericRescuesBySide = { attacker: attackerRescues, defender: defenderRescues };
     result.report.attackerKilled = attackerDamageReport.deadTotal;
     result.report.defenderKilled = defenderDamageReport.deadTotal;
@@ -181,7 +181,7 @@ function executeCombat(_db, attacker, defender, combatType, targetFocus, _engine
     );
     reconcileDamageReport(attackerDamageReport, attackerInjured);
     reconcileDamageReport(defenderDamageReport, defenderInjured);
-    result.report.clericRescues = attackerRescues;
+    result.report.clericRescues = [...attackerRescues, ...defenderRescues];
     result.report.clericRescuesBySide = { attacker: attackerRescues, defender: defenderRescues };
 
     result.report.attackerKilled = attackerDamageReport.deadTotal;
