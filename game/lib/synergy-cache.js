@@ -16,6 +16,16 @@ const attunementManager = require("../attunement-manager");
 
 const activeSynergyCache = new Map();
 const MAX_SYNERGY_CACHE = 2000;
+const COMBAT_RELEVANT_SYNERGY_CAPS = {
+  combat_power: 0.5,
+  combat_damage: 0.5,
+  unit_damage: 0.5,
+  troop_damage: 0.5,
+  troop_health: 0.5,
+  defense: 0.5,
+  damage: 0.5,
+  health: 0.5,
+};
 
 function getActiveSynergyCached(kingdom) {
   if (!kingdom) return null;
@@ -43,7 +53,11 @@ function getSynergyPassiveBonusMultiplier(kingdom, effectKey) {
   if (effectValue === undefined || effectValue === null) {
     return 1.0;
   }
-  return 1.0 + effectValue;
+  const cap = COMBAT_RELEVANT_SYNERGY_CAPS[effectKey];
+  const clampedDelta = typeof cap === "number"
+    ? Math.max(-cap, Math.min(cap, effectValue))
+    : effectValue;
+  return 1.0 + clampedDelta;
 }
 
 function getSynergyPassiveBonusAbsolute(kingdom, effectKey) {
