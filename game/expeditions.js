@@ -963,14 +963,9 @@ async function resolveExpeditions(db, k, engine) {
       if (serverAnnounce) {
         const allKingdoms = await db.all("SELECT id FROM kingdoms");
         if (allKingdoms.length > 0) {
-          const placeholders = allKingdoms.map(() => "(?,?,?,?)").join(',');
-          const values = [];
-          for (const ak of allKingdoms) {
-            values.push(ak.id, 'system', serverAnnounce, k.turn);
-          }
           await db.run(
-            `INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ${placeholders}`,
-            values,
+            "INSERT INTO news (kingdom_id, type, message, turn_num) SELECT id, 'system', ?, ? FROM kingdoms",
+            [serverAnnounce, k.turn],
           );
         }
         if (engine.io)

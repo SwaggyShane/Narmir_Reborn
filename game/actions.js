@@ -159,7 +159,7 @@ function purchaseUpgrade(k, category, upgradeKey) {
   };
   if (bldCheck[category] && !((k[bldCheck[category]] || 0) > 0))
     return { error: `Need at least 1 ${category}` };
-  if (def.reqVaults && k.bld_vaults < def.reqVaults)
+  if (def.reqVaults && (k.bld_vaults || 0) < def.reqVaults)
     return {
       error: `Need at least ${def.reqVaults} Vaults for this bank upgrade.`,
     };
@@ -193,8 +193,8 @@ function hireUnits(k, unit, amount) {
 
   // School cap ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â researchers need schools (100 per school)
   if (unit === "researchers") {
-    const schoolCap = k.bld_schools * 100;
-    const currentResearchers = k.researchers;
+    const schoolCap = (k.bld_schools || 0) * 100;
+    const currentResearchers = k.researchers || 0;
     if (schoolCap === 0)
       return { error: "You need at least 1 school to hire researchers" };
     if (currentResearchers >= schoolCap)
@@ -217,7 +217,7 @@ function hireUnits(k, unit, amount) {
   ];
   if (BARRACKS_TROOPS.includes(unit)) {
     const barracksCapacityMult = fragmentBonusManager.getBonusMultiplier(k, 'barracks', 'capacity');
-    const barracksCap = Math.floor(k.bld_barracks * 500 * barracksCapacityMult);
+    const barracksCap = Math.floor((k.bld_barracks || 0) * 500 * barracksCapacityMult);
     const currentTroops = BARRACKS_TROOPS.reduce((s, u) => s + (k[u] || 0), 0);
     if (barracksCap === 0)
       return { error: "You need at least 1 barracks to hire troops" };
@@ -525,7 +525,7 @@ function queueBuildings(k, orders) {
 function forgeTools(k, toolType, quantity) {
   const cost = TOOL_GOLD_COST[toolType];
   const col = TOOL_COL[toolType];
-  if (!cost || !col) return { error: "Unknown tool type" };
+  if (cost === undefined || !col) return { error: "Unknown tool type" };
   const totalCost = cost * quantity;
   if (totalCost > k.gold)
     return {
