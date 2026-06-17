@@ -175,7 +175,7 @@ function calcBullyPenalty(attacker, defender) {
 
 function calcClericHeal(kingdom, clerics, denominator, heroes, shrineKey) {
   let heal = Math.min(0.35, (clerics / Math.max(denominator, 1)) * 0.08 * raceBonus(kingdom, 'magic'));
-  const shrineUpgrades = safeJsonParse(kingdom[shrineKey], {}, 'calcClericHeal:shrine_upgrades');
+  const shrineUpgrades = safeJsonParse(kingdom[shrineKey], {}, 'calcClericHeal:shrine_upgrades') || {};
   if (shrineUpgrades.healing_aura) heal = Math.min(0.7, heal + 0.1);
   if (shrineUpgrades.sanctuary) heal = Math.min(0.7, heal + 0.15);
   heroes.forEach((h) => {
@@ -210,7 +210,7 @@ function applyReanimation(win, attacker, defender, kills, attackerUpdates, defen
         const current = attacker.thralls || 0;
         let mauUpg = {};
         try {
-          mauUpg = safeJsonParse(attacker.mausoleum_upgrades, {}, "auto:mausoleum_upgrades");
+          mauUpg = safeJsonParse(attacker.mausoleum_upgrades, {}, "auto:mausoleum_upgrades") || {};
         } catch {}
         const perMau = 100 + (mauUpg.soul_vault ? 50 : 0);
         const cap = (attacker.bld_mausoleums || 0) * perMau;
@@ -256,7 +256,7 @@ function applyReanimation(win, attacker, defender, kills, attackerUpdates, defen
         const current = defender.thralls || 0;
         let mauUpg = {};
         try {
-          mauUpg = safeJsonParse(defender.mausoleum_upgrades, {}, "auto:mausoleum_upgrades");
+          mauUpg = safeJsonParse(defender.mausoleum_upgrades, {}, "auto:mausoleum_upgrades") || {};
         } catch {}
         const perMau = 100 + (mauUpg.soul_vault ? 50 : 0);
         const cap = (defender.bld_mausoleums || 0) * perMau;
@@ -331,7 +331,7 @@ function calcMoraleChanges(win, powerRatio, bullyRatio, attacker, defender) {
 function resolveMilitaryAttackV2Adapter(
   attacker,
   defender,
-  sentUnits,
+  sentUnits = {},
   attackerHeroes = [],
   defenderHeroes = [],
 ) {
@@ -557,7 +557,7 @@ function resolveMilitaryAttackV2Adapter(
 function resolveMilitaryAttack(
   attacker,
   defender,
-  sentUnits,
+  sentUnits = {},
   attackerHeroes = [],
   defenderHeroes = [],
 ) {
@@ -642,7 +642,7 @@ function resolveMilitaryAttack(
     defAvail.thieves = 0;
     
     let thrallMult = 5.0;
-    const defMausUpg = safeJsonParse(defender.mausoleum_upgrades, {}, "auto:mausoleum_upgrades");
+    const defMausUpg = safeJsonParse(defender.mausoleum_upgrades, {}, "auto:mausoleum_upgrades") || {};
     if (defMausUpg.night_watch) {
       thrallMult += 0.5; // +10% to the 5.0 multiplier
     }
@@ -806,11 +806,11 @@ function resolveMilitaryAttack(
     ? (PRESTIGE_MODIFIERS[Math.min(attacker.prestige_level, 5)]?.combat || 1.0)
     : 1.0;
 
-  const atkMb = safeJsonParse(attacker.milestone_bonuses, {}, "combat:atkMb");
+  const atkMb = safeJsonParse(attacker.milestone_bonuses, {}, "combat:atkMb") || {};
   let atkPower = atkPowerRaw * (1 + (atkMb.attack_pct || 0) / 100) * atkPrestigeMult * 1.0 * 1.0;
 
   if (attacker.race === "vampire" && !night) {
-    const atkMausUpg = safeJsonParse(attacker.mausoleum_upgrades, {}, "auto:mausoleum_upgrades");
+    const atkMausUpg = safeJsonParse(attacker.mausoleum_upgrades, {}, "auto:mausoleum_upgrades") || {};
     const atkPenaltyMult = atkMausUpg.night_watch ? 0.2 : 0.1;
     atkPower = Math.floor(atkPowerRaw * atkPenaltyMult * 1.0 * 1.0);
     if (!daylightPenaltyMsg) daylightPenaltyMsg = "";
@@ -914,7 +914,7 @@ function resolveMilitaryAttack(
     defender.defense_upgrades,
     {},
     "resolveMilitaryAttack:defense_upgrades",
-  );
+  ) || {};
   let defTierMult = 1.0;
   if (defUpgrades.fortified) defTierMult += 0.05;
   if (defUpgrades.keep) defTierMult += 0.1;
@@ -958,7 +958,7 @@ function resolveMilitaryAttack(
     defBloodShamanMult *
     raceBonus(defender, "defense");
 
-  const defMb = safeJsonParse(defender.milestone_bonuses, {}, "combat:defMb");
+  const defMb = safeJsonParse(defender.milestone_bonuses, {}, "combat:defMb") || {};
   const defMilestoneMult = 1 + (defMb.defense_pct || 0) / 100;
 
   const defPrestigeMult = (defender.prestige_level > 0)
@@ -1083,7 +1083,7 @@ function resolveMilitaryAttack(
     defender.wall_upgrades,
     {},
     "resolveMilitaryAttack:wall_upgrades",
-  );
+  ) || {};
   if (wallUpgrades.reinforced) defLandLossMult -= 0.1;
 
   const landTransferred = win
@@ -1147,7 +1147,7 @@ function resolveMilitaryAttack(
     defender.discovered_kingdoms,
     {},
     "resolveMilitaryAttack:defender_discovered_kingdoms",
-  );
+  ) || {};
   defDisc[attacker.id] = { found: true, mapped: true }; // Attackers leave maps
   defenderUpdates.discovered_kingdoms = JSON.stringify(defDisc);
 
@@ -1172,12 +1172,12 @@ function resolveMilitaryAttack(
       winnerUpdates.discovered_kingdoms || winner.discovered_kingdoms,
       {},
       "resolveMilitaryAttack:winner_disc",
-    );
+    ) || {};
     const loserDisc = safeJsonParse(
       loserUpdates.discovered_kingdoms || loser.discovered_kingdoms,
       {},
       "resolveMilitaryAttack:loser_disc",
-    );
+    ) || {};
 
     // Find maps the loser has that the winner does NOT have
     const mappedIds = Object.keys(loserDisc).filter(
@@ -1221,7 +1221,7 @@ function resolveMilitaryAttack(
     clerics: Math.max(0, (attacker.clerics || 0) - atkClericsLost),
     engineers: Math.max(0, (attacker.engineers || 0) - atkEngineersLost),
     war_machines: Math.max(0, (attacker.war_machines || 0) - atkWmLost),
-    land: attacker.land + landTransferred,
+    land: (attacker.land || 0) + landTransferred,
     morale: newAtkMorale,
     weapons_stockpile: Math.max(
       0,
@@ -1238,7 +1238,7 @@ function resolveMilitaryAttack(
     clerics: Math.max(0, (defender.clerics || 0) - defClericsLost),
     engineers: Math.max(0, (defender.engineers || 0) - defEngineersLost),
     war_machines: Math.max(0, (defender.war_machines || 0) - defWmLost),
-    land: Math.max(0, defender.land - landTransferred),
+    land: Math.max(0, (defender.land || 0) - landTransferred),
     morale: newDefMorale,
   });
 
