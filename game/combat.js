@@ -357,7 +357,7 @@ function resolveMilitaryAttackV2Adapter(
     warMachines: Math.min(sentUnits.warMachines || 0, attacker.war_machines || 0),
     ninjas: Math.min(sentUnits.ninjas || 0, attacker.ninjas || 0),
     thieves: Math.min(sentUnits.thieves || 0, attacker.thieves || 0),
-    clerics: Math.min(sentUnits.clerics || 0, attacker.clerics || 0),
+    clerics: attackerIsVampire ? 0 : Math.min(sentUnits.clerics || 0, attacker.clerics || 0),
     engineers: Math.min(sentUnits.engineers || 0, attacker.engineers || 0),
     ladders: Math.min(sentUnits.ladders || 0, attacker.ladders || 0),
   };
@@ -419,34 +419,34 @@ function resolveMilitaryAttackV2Adapter(
 
   const attackerUpdates = {
     ...v2Result.attackerUpdates,
-    ...(attackerIsVampire
-      ? { clerics: Math.max(0, (attacker.clerics || 0) - (sent.thralls - v2Attacker.thralls)) }
-      : { thralls: Math.max(0, (attacker.thralls || 0) - (sent.thralls - v2Attacker.thralls)) }),
     fighters: Math.max(0, (attacker.fighters || 0) - (sent.fighters - v2Attacker.fighters)),
     rangers: Math.max(0, (attacker.rangers || 0) - (sent.rangers - v2Attacker.rangers)),
     mages: Math.max(0, (attacker.mages || 0) - (sent.mages - v2Attacker.mages)),
     ninjas: Math.max(0, (attacker.ninjas || 0) - (sent.ninjas - v2Attacker.ninjas)),
     thieves: Math.max(0, (attacker.thieves || 0) - (sent.thieves - v2Attacker.thieves)),
-    clerics: Math.max(0, (attacker.clerics || 0) - (sent.clerics - v2Attacker.clerics)),
+    clerics: attackerIsVampire
+      ? Math.max(0, (attacker.clerics || 0) - (sent.thralls - v2Attacker.thralls))
+      : Math.max(0, (attacker.clerics || 0) - (sent.clerics - v2Attacker.clerics)),
     engineers: Math.max(0, (attacker.engineers || 0) - (sent.engineers - v2Attacker.engineers)),
     war_machines: Math.max(0, (attacker.war_machines || 0) - (sent.warMachines - v2Attacker.war_machines)),
   };
+  if (attackerIsVampire) delete attackerUpdates.thralls;
 
   const defenderUpdates = {
     ...v2Result.defenderUpdates,
     last_attack_turn: defender.turn || 0,
-    ...(defenderIsVampire
-      ? { clerics: Math.max(0, (defender.clerics || 0) - (defenderAvailable.thralls - v2Defender.thralls)) }
-      : { thralls: Math.max(0, (defender.thralls || 0) - (defenderAvailable.thralls - v2Defender.thralls)) }),
     fighters: Math.max(0, (defender.fighters || 0) - (defenderAvailable.fighters - v2Defender.fighters)),
     rangers: Math.max(0, (defender.rangers || 0) - (defenderAvailable.rangers - v2Defender.rangers)),
     mages: Math.max(0, (defender.mages || 0) - (defenderAvailable.mages - v2Defender.mages)),
     ninjas: Math.max(0, (defender.ninjas || 0) - (defenderAvailable.ninjas - v2Defender.ninjas)),
     thieves: Math.max(0, (defender.thieves || 0) - (defenderAvailable.thieves - v2Defender.thieves)),
-    clerics: Math.max(0, (defender.clerics || 0) - (defenderAvailable.clerics - v2Defender.clerics)),
+    clerics: defenderIsVampire
+      ? Math.max(0, (defender.clerics || 0) - (defenderAvailable.thralls - v2Defender.thralls))
+      : Math.max(0, (defender.clerics || 0) - (defenderAvailable.clerics - v2Defender.clerics)),
     engineers: Math.max(0, (defender.engineers || 0) - (defenderAvailable.engineers - v2Defender.engineers)),
     war_machines: Math.max(0, v2Defender.war_machines || 0),
   };
+  if (defenderIsVampire) delete defenderUpdates.thralls;
 
   const landTransferred = v2Result.win ? Math.floor((defender.land || 0) * 0.1) : 0;
   if (landTransferred > 0) {
