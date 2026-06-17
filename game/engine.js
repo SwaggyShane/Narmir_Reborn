@@ -66,6 +66,7 @@ const {
 const magic = require('./magic');
 const {
   manaPerTurn,
+  validateSpellTarget,
   castSpell,
   processMageTower,
   processShrine,
@@ -6023,6 +6024,7 @@ module.exports = {
   resolveRegions,
   goldPerTurn,
   manaPerTurn,
+  validateSpellTarget,
   foodBalance,
   farmProduction,
   foodConsumption,
@@ -6101,6 +6103,7 @@ module.exports = {
   forgeTools,
   resolveMilitaryAttack,
   formatCombatV2NewsBlurb,
+  validateSpellTarget,
   castSpell,
   covertSpy,
   covertLoot,

@@ -2,6 +2,9 @@ process.env.USE_COMBAT_V2 = '1';
 
 const fs = require('fs');
 const path = require('path');
+const attunementManager = require('../game/attunement-manager');
+const { SYNERGIES } = require('../game/fragment-synergies');
+const FRAGMENT_BONUSES = require('../game/world-fragment-bonuses');
 
 const ARGS = parseArgs(process.argv.slice(2));
 const RUNS_PER_CASE = Number.parseInt(ARGS.runs || process.env.RUNS_PER_CASE || '100', 10);
@@ -163,6 +166,41 @@ function kingdom(overrides = {}) {
     outpost_upgrades: '{}',
     ...overrides,
   };
+}
+
+function fragmentBonusesForSynergy(synergyId) {
+  const synergy = SYNERGIES[synergyId];
+  if (!synergy) {
+    throw new Error(`Missing synergy: ${synergyId}`);
+  }
+
+  const fragmentBonuses = {};
+  for (const [fragmentName, buildingType] of Object.entries(synergy.requiredFragments)) {
+    const fragmentConfig = FRAGMENT_BONUSES[fragmentName]?.[buildingType];
+    fragmentBonuses[buildingType] = {
+      fragment: fragmentName,
+      applied_turn: 1,
+      passive: fragmentConfig?.passive || {},
+      special: {
+        name: fragmentConfig?.special?.name || '',
+        desc: fragmentConfig?.special?.desc || '',
+      },
+    };
+  }
+
+  return fragmentBonuses;
+}
+
+function makeSynergyKingdom(synergyId, overrides = {}) {
+  const kingdomState = kingdom({
+    ...overrides,
+    fragment_bonuses: JSON.stringify(fragmentBonusesForSynergy(synergyId)),
+  });
+  const activeSynergy = attunementManager.getActiveSynergy(kingdomState);
+  if (!activeSynergy || activeSynergy.id !== synergyId) {
+    throw new Error(`Failed to activate synergy ${synergyId}`);
+  }
+  return kingdomState;
 }
 
 function clone(value) {
@@ -379,6 +417,99 @@ function addArchetypeChecks(cases) {
   }
 }
 
+function addSynergyChecks(cases) {
+  cases.push({
+    suite: 'fragment_synergy_checks',
+    name: 'blessed_citadel_defender_vs_human_balanced',
+    attackerRace: 'human',
+    defenderRace: 'human',
+    attackerArchetype: 'balanced',
+    defenderProfile: 'blessed_citadel',
+    wallTier: 'citadel',
+    attacker: makeAttacker('human', 'balanced'),
+    defender: makeSynergyKingdom('blessed-citadel', {
+      id: 301,
+      name: 'Blessed Citadel Defender',
+      race: 'human',
+      ...WALL_TIERS.citadel,
+    }),
+    sent: ARCHETYPES.balanced.sent,
+  });
+
+  cases.push({
+    suite: 'fragment_synergy_checks',
+    name: 'void_convergence_attacker_vs_human_balanced',
+    attackerRace: 'human',
+    defenderRace: 'human',
+    attackerArchetype: 'void_convergence',
+    defenderProfile: 'balanced',
+    wallTier: 'none',
+    attacker: makeSynergyKingdom('void-convergence', {
+      id: 302,
+      name: 'Void Convergence Attacker',
+      race: 'dark_elf',
+      fighters: 1200,
+      rangers: 250,
+      mages: 200,
+      clerics: 100,
+      engineers: 100,
+      war_machines: 20,
+      __combatIsNight: true,
+    }),
+    defender: makeDefender('human', 'none'),
+    sent: { fighters: 1200, rangers: 250, mages: 200, clerics: 100, engineers: 100, warMachines: 20 },
+  });
+
+  cases.push({
+    suite: 'fragment_synergy_checks',
+    name: 'primordial_awakening_attacker_vs_human_balanced',
+    attackerRace: 'human',
+    defenderRace: 'human',
+    attackerArchetype: 'primordial_awakening',
+    defenderProfile: 'balanced',
+    wallTier: 'none',
+    attacker: makeSynergyKingdom('primordial-awakening', {
+      id: 303,
+      name: 'Primordial Awakening Attacker',
+      race: 'orc',
+      fighters: 1400,
+      rangers: 200,
+      mages: 150,
+      clerics: 80,
+      engineers: 80,
+      war_machines: 30,
+      __combatIsNight: true,
+    }),
+    defender: makeDefender('human', 'none'),
+    sent: { fighters: 1400, rangers: 200, mages: 150, clerics: 80, engineers: 80, warMachines: 30 },
+  });
+
+  cases.push({
+    suite: 'fragment_synergy_checks',
+    name: 'infernal_crucible_war_machine_build_vs_human_balanced',
+    attackerRace: 'dwarf',
+    defenderRace: 'human',
+    attackerArchetype: 'infernal_crucible',
+    defenderProfile: 'balanced',
+    wallTier: 'none',
+    attacker: makeSynergyKingdom('infernal-crucible', {
+      id: 304,
+      name: 'Infernal Crucible Dwarf',
+      race: 'dwarf',
+      fighters: 1000,
+      rangers: 250,
+      mages: 100,
+      clerics: 100,
+      engineers: 100,
+      war_machines: 60,
+      troop_levels: levels({ engineers: { level: 25 } }),
+      __combatIsNight: true,
+    }),
+    defender: makeDefender('human', 'none'),
+    sent: { fighters: 1000, rangers: 250, mages: 100, clerics: 100, engineers: 100, warMachines: 60 },
+  });
+}
+
 function summarize(results) {
   const bySuite = {};
   const byAttackerRace = {};
@@ -494,6 +625,7 @@ const cases = [];
 addRaceMatrix(cases);
 addWallTierChecks(cases);
 addArchetypeChecks(cases);
+addSynergyChecks(cases);
 
 const results = cases.map(runCase);
 const report = {

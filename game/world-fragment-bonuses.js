@@ -1,6 +1,6 @@
 /**
  * World Fragment Bonuses System
- * Each of 10 world fragments provides unique bonuses to each of the 19 building types.
+ * Each of 10 world fragments provides unique bonuses to each of the 20 building types.
  * All buildings from the build panel are fully populated with balanced passive bonuses,
  * special abilities, and strategic synergies.
  */
@@ -813,6 +813,7 @@ const BUILD_PANEL_BUILDINGS = [
   "mage_towers",
   "training",
   "castles",
+  "war_machines",
   "libraries",
   "shrines",
   "walls",

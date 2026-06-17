@@ -92,6 +92,20 @@ async function withTurnLock(playerId, fn) {
   return promise;
 }
 
+async function withTransaction(db, fn) {
+  await db.run("BEGIN TRANSACTION");
+  try {
+    const result = await fn();
+    await db.run("COMMIT");
+    return result;
+  } catch (err) {
+    try {
+      await db.run("ROLLBACK");
+    } catch {}
+    throw err;
+  }
+}
+
 // ── Column Selection Constants for Query Optimization ──────────────────────────
 // Avoid SELECT * for better performance: network, parsing, memory
 // Column sets: choose what's actually needed to reduce network/parsing overhead
@@ -1881,12 +1895,13 @@ module.exports = function (db) {
 
     progressGoal(k, result.attackerUpdates, 'attack_made', 1);
 
-    await applyKingdomUpdates(k.id, result.attackerUpdates);
-    await applyKingdomUpdates(target.id, result.defenderUpdates);
-    await db.run(
-      "UPDATE kingdoms SET turns_stored = turns_stored - 1 WHERE id = ?",
-      [k.id],
-    );
+    await withTransaction(db, async () => {
+      await applyKingdomUpdates(k.id, result.attackerUpdates);
+      await applyKingdomUpdates(target.id, result.defenderUpdates);
+      await db.run(
+        "UPDATE kingdoms SET turns_stored = turns_stored - 1 WHERE id = ?",
+        [k.id],
+      );
 
     // Bounty claiming
     if (result.win) {
@@ -2035,6 +2050,8 @@ module.exports = function (db) {
       }
     }
 
+    });
+
     const freshK = await db.get("SELECT maps FROM kingdoms WHERE id = ?", [
       k.id,
     ]);
@@ -2058,82 +2075,48 @@ module.exports = function (db) {
     if (k.turns_stored < 1)
       return res.status(429).json({ error: "No turns available" });
 
-    const def = engine.SPELL_DEFS[spellId];
-    if (!def) return res.status(400).json({ error: "Unknown spell" });
-
-    // Friendly spells target yourself (by default); offensive spells require a target + map
-    const isFriendly = def.effect === "friendly";
-    let target;
-
-    if (isFriendly) {
-      if (targetId && targetId != k.id) {
-        target = await db.get("SELECT * FROM kingdoms WHERE id = ?", [targetId]);
-        if (!target) return res.status(404).json({ error: "Target kingdom not found" });
-      } else {
-        target = k; // cast on self
-      }
-    } else {
-      if (!targetId)
-        return res
-          .status(400)
-          .json({ error: "targetId required for offensive spells" });
-      if (k.turn < 400)
-        return res.status(400).json({
-          error:
-            "You are under newbie protection until Turn 400. You cannot cast offensive spells yet.",
-        });
-      let atkDisc = {};
-      try {
-        atkDisc = safeJsonParse(k.discovered_kingdoms, {}, "auto:discovered_kingdoms");
-      } catch {}
-      if (!atkDisc[targetId] || !atkDisc[targetId].mapped) {
-        return res.status(400).json({
-          error: "You need a location map for this target.",
-        });
-      }
+    const isFriendlySpell = engine.SPELL_DEFS[spellId]?.effect === "friendly";
+    let target = null;
+    if (targetId && targetId != k.id) {
       target = await db.get(
-        `SELECT k.* FROM kingdoms k
-         JOIN players p ON k.player_id = p.id
-         WHERE k.id = ?`,
-        [targetId]
+        "SELECT k.* FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.id = ?",
+        [targetId],
       );
-      if (!target)
-        return res.status(404).json({ error: "Target kingdom not found" });
-      if (target.player_id === k.player_id)
-        return res
-          .status(400)
-          .json({ error: "Cannot cast offensive spells on yourself" });
-
-      if ((target.turn || 0) < 400)
-        return res.status(400).json({
-          error: `${target.name} is under newbie protection until Turn 400 (currently Turn ${target.turn})`,
-        });
+      if (!target) return res.status(404).json({ error: "Target kingdom not found" });
+    } else if (isFriendlySpell) {
+      target = k;
+    } else {
+      return res.status(400).json({ error: "targetId required for offensive spells" });
     }
 
-    const result = engine.castSpell(k, target, spellId, !!obscure);
+    const validation = engine.validateSpellTarget(k, target, spellId);
+    if (validation.error) return res.status(400).json({ error: validation.error });
+
+    const result = engine.castSpell(k, validation.target, spellId, !!obscure);
     if (result.error) return res.status(400).json({ error: result.error });
 
     progressGoal(k, result.casterUpdates, 'spell_cast', 1);
 
-    await applyKingdomUpdates(k.id, result.casterUpdates);
-    await applyKingdomUpdates(target.id, result.targetUpdates);
+    await withTransaction(db, async () => {
+      await applyKingdomUpdates(k.id, result.casterUpdates);
+      await applyKingdomUpdates(validation.target.id, result.targetUpdates);
 
-    await db.run(
-      "UPDATE kingdoms SET turns_stored = turns_stored - 1 WHERE id = ?",
-      [k.id],
-    );
+      await db.run(
+        "UPDATE kingdoms SET turns_stored = turns_stored - 1 WHERE id = ?",
+        [k.id],
+      );
 
     // War log for offensive spells or friendly spells on others
-    if (!isFriendly || k.id !== target.id) {
+      if (!validation.isFriendly || k.id !== validation.target.id) {
       const logRes = await db.run(
         `INSERT INTO war_log (action_type, attacker_id, attacker_name, defender_id, defender_name, outcome, detail, obscured)
         VALUES (?,?,?,?,?,?,?,?)`,
         [
-          isFriendly ? "blessing" : "spell",
+            validation.isFriendly ? "blessing" : "spell",
           k.id,
           k.name,
-          target.id,
-          target.name,
+            validation.target.id,
+            validation.target.name,
           "cast",
           `${spellId.replace(/_/g, " ")} — ${result.report.damageDesc || ""}`,
           obscure ? 1 : 0,
@@ -2147,19 +2130,19 @@ module.exports = function (db) {
           [k.id, "system", result.casterEvent, k.turn, reportId],
         );
       }
-      if (result.targetEvent) {
+        if (result.targetEvent) {
         await db.run(
           "INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES (?,?,?,?,?)",
           [
-            target.id,
-            isFriendly ? "system" : "attack",
+              validation.target.id,
+              validation.isFriendly ? "system" : "attack",
             result.targetEvent,
-            target.turn || 0,
+              validation.target.turn || 0,
             reportId,
           ],
         );
       }
-    } else {
+      } else {
       // Self cast news only
       if (result.casterEvent) {
         await db.run(
@@ -2172,6 +2155,8 @@ module.exports = function (db) {
     // Consume map on cast (map is used up like a compass — one per interaction)
     // Map consumption for spells disabled - rely on location maps
     // if (!isFriendly) {}
+
+    });
 
     const freshK = await db.get(
       "SELECT mana, scrolls, maps, active_effects FROM kingdoms WHERE id = ?",
@@ -2190,16 +2175,16 @@ module.exports = function (db) {
     });
 
     // Notify target via socket if online
-    if (global._narmir_io && k.id !== target.id) {
-      const eventName = isFriendly ? "event:blessing_received" : "event:spell_received";
-      global._narmir_io.to(`kingdom:${target.id}`).emit(eventName, {
+    if (global._narmir_io && k.id !== validation.target.id) {
+      const eventName = validation.isFriendly ? "event:blessing_received" : "event:spell_received";
+      global._narmir_io.to(`kingdom:${validation.target.id}`).emit(eventName, {
         from: obscure ? null : k.name,
         spellId: spellId,
         message: result.targetEvent,
       });
       // Also notify unreads
-      const uCount = await db.get("SELECT COUNT(*) as c FROM news WHERE kingdom_id = ? AND is_read = 0", [target.id]);
-      global._narmir_io.to(`kingdom:${target.id}`).emit("unread_news", { count: uCount ? uCount.c : 0 });
+      const uCount = await db.get("SELECT COUNT(*) as c FROM news WHERE kingdom_id = ? AND is_read = 0", [validation.target.id]);
+      global._narmir_io.to(`kingdom:${validation.target.id}`).emit("unread_news", { count: uCount ? uCount.c : 0 });
     }
   });
 
