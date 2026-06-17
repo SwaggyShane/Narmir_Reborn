@@ -1,27 +1,37 @@
-/**
- * Expedition System
- * Handles expedition rewards, discovery, and loot
- */
+// game/expeditions.js
+// Expedition domain -- resource expeditions orchestration, rewards, loot rolls.
+// Extracted from game/engine.js (Phase 6). engine.js re-exports all symbols
+// via module.exports for backward compatibility.
 
-const config = require('./config');
+const config = require("./config");
+const { safeJsonParse, roll, rand, devLog } = require('../utils/helpers');
+const { unitLevelMult, racialUnitBonus, effectiveTroopLevel, awardTroopXp } = require('./lib/troops');
+const { addItemToInventory } = require('./lib/items');
+const { awardXp } = require('./xp');
+const { calcDiscoveryChance, checkAchievements } = require('./turn');
+
 const {
   EXPEDITION_TURNS,
+  WORLD_FRAGMENTS,
+  JUNK_PRIZES,
   INVENTORY_ITEMS,
   ULTRA_RARE_PRIZES,
-  LOCATE_RACE_MULT,
-  JUNK_PRIZES,
+  THRONE_OF_NAZDREG,
 } = config;
-const { safeJsonParse, rand, roll } = require('../utils/helpers');
-const { unitLevelMult, effectiveTroopLevel } = require('./lib/troops');
-const { addItemToInventory } = require('./lib/items');
-const achievementsMod = require('./achievements');
 
-function calcDiscoveryChance(k) {
-  const baseChance = 0.05; // 5% base
-  const race = k.race || "human";
-  const raceMult = LOCATE_RACE_MULT[race] || 1.0;
-  return baseChance * raceMult;
-}
+function computeExpeditionTransitions(expeditions, now) {
+  const transitions = [];
+  for (const exp of expeditions) {
+    if (exp.status === 'outbound' && now >= exp.arrive_at) {
+      const harvestDuration = exp._harvestDuration || 3600; // fallback
+      transitions.push({ id: exp.id, newStatus: 'harvesting', harvest_ends_at: now + harvestDuration, ...exp });
+    } else if (exp.status === 'harvesting' && exp.harvest_ends_at && now >= exp.harvest_ends_at) {
+      transitions.push({ id: exp.id, newStatus: 'returning', ...exp });
+    } else if (exp.status === 'returning' && exp.return_at && now >= exp.return_at) {
+      transitions.push({ id: exp.id, newStatus: 'completed', ...exp });
+    }
+  }
+  return transitions;}
 
 function junkPrize(k, updates) {
   if (!JUNK_PRIZES || JUNK_PRIZES.length === 0)
@@ -509,9 +519,6 @@ function expeditionRewards(type, rangers, fighters, k) {
 
     updates._rangers_returned = survived;
 
-    // Apply casualty losses to kingdom ranger count
-    updates.rangers = Math.max(0, (k.rangers || 0) - totalLost);
-
     // Mountain rewards only granted if rangers survived the expedition
     if (survived > 0) {
       // Gold scaled to troop count and level (200-500 per ranger)
@@ -623,15 +630,397 @@ function expeditionRewards(type, rangers, fighters, k) {
   }
 
   const preAchLength = events.length;
-  achievementsMod.checkAchievements(k, updates, events);
-  for (let i = preAchLength; i < events.length; i++) {
+  checkAchievements(k, updates, events);  for (let i = preAchLength; i < events.length; i++) {
     rewards.push({ text: events[i].message });
   }
 
   return { rewards, updates, events };
 }
+
+
+async function resolveExpeditions(db, k, engine) {
+  // Pick up active ones AND unclaimed ones (turns_left=0 but rewards_claimed=0)
+  const exps = await db.all(
+    "SELECT * FROM expeditions WHERE kingdom_id = ? AND (turns_left > 0 OR (turns_left = 0 AND rewards_claimed = 0))",
+    [k.id],
+  );
+  devLog(
+    `[expedition] kingdom=${k.id} active/unclaimed: ${exps.map((e) => `${e.type}(${e.turns_left}t, claimed=${e.rewards_claimed})`).join(", ") || "none"}`,
+  );
+
+  // Fetch fresh kingdom state once instead of once per expedition
+  const freshK = (await db.get("SELECT * FROM kingdoms WHERE id = ?", [k.id])) || k;
+
+  const expeditionEvents = [];
+
+  // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ BATCH PROCESSING: Collect updates before executing ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+  // This reduces database round-trips from O(exps*turns) to O(turns)
+  const tickDowns = [];  // { id, newTurns }
+  const completions = []; // ids that complete this turn
+  const retries = [];     // ids already completed, retrying claim
+  const expsByState = {}; // track by id for later reward processing
+
+  for (const exp of exps) {
+    if (exp.turns_left > 0) {
+      const direWolfBonus = racialUnitBonus(freshK, "rangers");
+      const tickDown = direWolfBonus.earlyReturn ? 2 : 1;
+      const newTurns = Math.max(0, exp.turns_left - tickDown);
+      devLog(
+        `[expedition] kingdom=${k.id} id=${exp.id} type=${exp.type} turns_left=${exp.turns_left} ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ ${newTurns}`,
+      );
+
+      if (newTurns > 0) {
+        tickDowns.push({ id: exp.id, newTurns });
+        expsByState[exp.id] = { ...exp, turns_left: newTurns, mustProcess: false };
+      } else {
+        completions.push(exp.id);
+        expsByState[exp.id] = { ...exp, turns_left: 0, mustProcess: true };
+        devLog(`[expedition] COMPLETING kingdom=${k.id} id=${exp.id} type=${exp.type}`);
+      }
+    } else {
+      retries.push(exp.id);
+      expsByState[exp.id] = { ...exp, mustProcess: true };
+      devLog(`[expedition] RETRYING completion for kingdom=${k.id} id=${exp.id} type=${exp.type}`);
+    }
+  }
+
+  // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Execute batched updates ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+
+  // Batch update: ALL tick-downs in ONE statement using CASE/WHEN
+  if (tickDowns.length > 0) {
+    const ids = tickDowns.map(t => t.id);
+    const caseWhen = tickDowns
+      .map(({ id, newTurns }) => `WHEN ${id} THEN ${newTurns}`)
+      .join(" ");
+    const idPlaceholders = ids.map(() => "?").join(",");
+    const updateSql = `UPDATE expeditions SET turns_left = CASE id ${caseWhen} END WHERE id IN (${idPlaceholders})`;
+    const result = await db.run(updateSql, ids);
+    devLog(`[expedition] Batched ${result.changes} turn decrements in single UPDATE`);
+  }
+
+  // Batch update: all completions in one statement
+  if (completions.length > 0) {
+    const placeholders = completions.map(() => "?").join(",");
+    const markResult = await db.run(
+      `UPDATE expeditions SET turns_left = 0, rewards_claimed = 1 WHERE id IN (${placeholders}) AND rewards_claimed = 0`,
+      completions,
+    );
+    devLog(`[expedition] Batched completion claim: ${markResult.changes} expeditions marked complete`);
+  }
+
+  // Batch update: all retry claims in one statement
+  if (retries.length > 0) {
+    const placeholders = retries.map(() => "?").join(",");
+    const claimResult = await db.run(
+      `UPDATE expeditions SET rewards_claimed = 1 WHERE id IN (${placeholders}) AND rewards_claimed = 0`,
+      retries,
+    );
+    devLog(`[expedition] Batched retry claim: ${claimResult.changes} expeditions claimed`);
+  }
+
+  // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Process reward claims for expeditions that completed ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+  for (const exp of exps) {
+    const expState = expsByState[exp.id];
+    if (!expState || !expState.mustProcess) continue;
+
+    try {
+      // Use pre-fetched kingdom state to avoid stale merged values
+      const { rewards, updates, events } = expeditionRewards(
+        exp.type,
+        exp.rangers,
+        exp.fighters,
+        freshK,
+        db,
+      );
+
+      // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Throne of Nazdreg check ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+      if (updates._check_throne) {
+        delete updates._check_throne;
+        // Atomic claim: a single conditional insert decides the winner. The row
+        // count tells us whether THIS expedition seized the unique drop. This
+        // closes the read-then-write race where two kingdoms finishing in the
+        // same tick could both observe the throne as unclaimed across the await
+        // boundary and each award it.
+        const claim = await db.run(
+          "INSERT INTO server_state (key, value) VALUES ('throne_found', '1') ON CONFLICT (key) DO NOTHING",
+        );
+        if (claim && claim.changes === 1) {
+          THRONE_OF_NAZDREG.effect(freshK, updates);
+          rewards.unshift({ text: THRONE_OF_NAZDREG.text });
+          events.push({
+            type: "system",
+            message: `ÃƒÂ°Ã…Â¸Ã¢â‚¬ËœÃ¢â‚¬Ëœ ${freshK.name} has found the Throne of Nazdreg Grishnak. May his memory endure forever.`,
+          });
+          updates._server_announce = `ÃƒÂ°Ã…Â¸Ã¢â‚¬ËœÃ¢â‚¬Ëœ The Throne of Nazdreg Grishnak has been found by ${freshK.name}. His name is remembered.`;
+        }
+      }
+
+      if (updates._find_kingdom) {
+        delete updates._find_kingdom;
+        const other = await db.get(
+          "SELECT id, name FROM kingdoms WHERE id != ? ORDER BY RANDOM() LIMIT 1",
+          [freshK.id],
+        );
+        if (other) {
+          let disc = {};
+          try {
+            disc = safeJsonParse(freshK.discovered_kingdoms, {}, "auto:discovered_kingdoms");
+          } catch {}
+          if (!disc[other.id]) {
+            disc[other.id] = { found: true, name: other.name };
+            updates.discovered_kingdoms = JSON.stringify(disc);
+            rewards.push({
+              text: `ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ‚Â­ Your rangers discovered the kingdom of ${other.name}!`,
+            });
+          }
+        }
+      }
+
+      if (updates._find_world_fragment) {
+        delete updates._find_world_fragment;
+        let frags = [];
+        try {
+          frags = safeJsonParse(freshK.world_fragments, [], "auto:world_fragments");
+        } catch {}
+        const frag =
+          WORLD_FRAGMENTS[Math.floor(Math.random() * WORLD_FRAGMENTS.length)];
+        frags.push(frag);
+        updates.world_fragments = JSON.stringify(frags);
+        rewards.push({
+          text: `ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ‚Â® Your rangers recovered a World Fragment: ${frag}`,
+        });
+        events.push({
+          type: "system",
+          message: `ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ‚Â® A World Fragment (${frag}) was discovered during the expedition.`,
+        });
+      }
+
+      if (updates._suspicious_rocks_achievement) {
+        delete updates._suspicious_rocks_achievement;
+        rewards.unshift({
+          text: `ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Found 100 mysterious rocks! +1000 stone awarded.`,
+        });
+        events.push({
+          type: "system",
+          message: `ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT: ${freshK.name} collected 100 mysterious rocks and was rewarded with 1000 stone!`,
+        });
+      }
+
+      const serverAnnounce = updates._server_announce || null;
+      delete updates._server_announce;
+      delete updates._ultra_rare;
+
+      const label = {
+        scout: "ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ‚Â­ Scout",
+        deep: "ÃƒÂ°Ã…Â¸Ã…â€™Ã‚Â² Deep",
+        dungeon: "ÃƒÂ¢Ã…Â¡Ã¢â‚¬ÂÃƒÂ¯Ã‚Â¸Ã‚Â Dungeon",
+        mountain: "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬ÂÃƒÂ¯Ã‚Â¸Ã‚Â Mountain",
+      }[exp.type];
+
+      // Apply kingdom updates
+      const rangersReturned =
+        updates._rangers_returned !== undefined ? updates._rangers_returned : 0;
+      const fightersReturned =
+        updates._fighters_returned !== undefined
+          ? updates._fighters_returned
+          : 0;
+      delete updates._rangers_returned;
+      delete updates._fighters_returned;
+
+      const VALID_KINGDOM_COLS = new Set([
+        "gold",
+        "mana",
+        "land",
+        "population",
+        "morale",
+        "food",
+        "fighters",
+        "rangers",
+        "clerics",
+        "mages",
+        "thieves",
+        "ninjas",
+        "researchers",
+        "engineers",
+        "war_machines",
+        "weapons_stockpile",
+        "armor_stockpile",
+        "res_economy",
+        "res_weapons",
+        "res_armor",
+        "res_military",
+        "res_attack_magic",
+        "res_defense_magic",
+        "res_entertainment",
+        "res_construction",
+        "res_war_machines",
+        "res_spellbook",
+        "bld_farms",
+        "bld_barracks",
+        "bld_markets",
+        "bld_mage_towers",
+        "blueprints_stored",
+        "certified_blueprints_stored",
+        "maps",
+        "troop_levels",
+        "xp",
+        "level",
+        "xp_sources",
+        "discovered_kingdoms",
+        "world_fragments",
+        "collected_events",
+        "last_event_id",
+        "achievements",
+        "items",
+      ]);
+
+      // Award XP
+      const expXpAmount = { scout: 8, deep: 20, dungeon: 40, mountain: 100 }[exp.type] || 8;
+      const rXp = awardTroopXp(freshK, "rangers", expXpAmount * exp.rangers);
+      updates.troop_levels = rXp.troop_levels;
+      if (exp.type === "dungeon" && exp.fighters > 0) {
+        const fXp = awardTroopXp(
+          { ...freshK, troop_levels: updates.troop_levels },
+          "fighters",
+          40 * exp.fighters,
+        );
+        updates.troop_levels = fXp.troop_levels;
+      }
+
+      // Award kingdom-level exploration XP (divide by XP_BASE.exploration=5 to get final amounts matching stated values)
+      const kingdomXpBase = { scout: 1, deep: 4, dungeon: 8, mountain: 20 }[exp.type] || 1;
+      const kingdomXp = awardXp(freshK, "exploration", kingdomXpBase * (exp.rangers + (exp.fighters || 0)));
+      updates.xp = kingdomXp.xp;
+      updates.level = kingdomXp.level;
+      updates.xp_sources = JSON.stringify(kingdomXp.xp_sources);
+      if (kingdomXp.events.length > 0) {
+        events.push(...kingdomXp.events);
+      }
+
+      if (updates._achievement_unlocked) {
+        rewards.push({
+          text: "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: " + updates._achievement_unlocked,
+        });
+        events.push({
+          type: "system",
+          message: "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: " + updates._achievement_unlocked,
+        });
+        delete updates._achievement_unlocked;
+      }
+
+      // Handle location revelation for Field Collector achievement
+      if (updates._reveal_all_locations) {
+        try {
+          let disc = safeJsonParse(updates.discovered_kingdoms || k.discovered_kingdoms, {}, "reveal_all:discovered_kingdoms");
+          disc._all_revealed = true;
+          updates.discovered_kingdoms = JSON.stringify(disc);
+        } catch (err) {
+          console.error("[resolveExpeditions] Error revealing all locations:", err);
+        }
+        delete updates._reveal_all_locations;
+      }
+
+      const safeUpdates = Object.fromEntries(
+        Object.entries(updates).filter(
+          ([k2, v]) =>
+            VALID_KINGDOM_COLS.has(k2) && v !== undefined && v !== null,
+        ),
+      );
+      if (Object.keys(safeUpdates).length > 0) {
+        const cols = Object.keys(safeUpdates)
+          .map((c) => `${c} = ?`)
+          .join(", ");
+        await db.run(`UPDATE kingdoms SET ${cols} WHERE id = ?`, [
+          ...Object.values(safeUpdates),
+          k.id,
+        ]);
+        // Update in-memory freshK so next expedition sees the changes
+        Object.assign(freshK, safeUpdates);
+      }
+      if (rangersReturned > 0)
+        await db.run(
+          "UPDATE kingdoms SET rangers  = rangers  + ? WHERE id = ?",
+          [rangersReturned, k.id],
+        );
+      if (fightersReturned > 0)
+        await db.run(
+          "UPDATE kingdoms SET fighters = fighters + ? WHERE id = ?",
+          [fightersReturned, k.id],
+        );
+
+      // Update in-memory freshK for returned units
+      if (rangersReturned > 0) freshK.rangers = (freshK.rangers || 0) + rangersReturned;
+      if (fightersReturned > 0) freshK.fighters = (freshK.fighters || 0) + fightersReturned;
+
+      // ONE news line only ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â rewards go to expedition log, not news feed
+      const completionMsg = `${label} expedition returned ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â check the Explore tab for rewards.`;
+      expeditionEvents.push({ type: "system", message: completionMsg });
+
+      // Throne broadcast only
+      if (serverAnnounce) {
+        const allKingdoms = await db.all("SELECT id FROM kingdoms");
+        if (allKingdoms.length > 0) {
+          const placeholders = allKingdoms.map(() => "(?,?,?,?)").join(',');
+          const values = [];
+          for (const ak of allKingdoms) {
+            values.push(ak.id, 'system', serverAnnounce, k.turn);
+          }
+          await db.run(
+            `INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ${placeholders}`,
+            values,
+          );
+        }
+        if (engine.io)
+          engine.io.emit("chat:system", {
+            message: serverAnnounce,
+            ts: Date.now(),
+          });
+      }
+
+      // Save rewards to expedition row for log display
+      const rewardJson = JSON.stringify(rewards.map((r) => r.text));
+      await db.run("UPDATE expeditions SET rewards = ? WHERE id = ?", [
+        rewardJson,
+        exp.id,
+      ]);
+      console.log(
+        `[expedition] completed kingdom=${k.id} type=${exp.type} rewards=${rewards.length}`,
+      );
+    } catch (err) {
+      // Rewards failed ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â expedition is already marked complete (turns_left=0), troops return, no reward
+      console.error(
+        `[expedition] reward error kingdom=${k.id} id=${exp.id} type=${exp.type}:`,
+        err.message,
+        err.stack,
+      );
+      // Still return troops so they're not lost
+      await db.run("UPDATE kingdoms SET rangers = rangers + ? WHERE id = ?", [
+        exp.rangers,
+        k.id,
+      ]);
+      if (exp.fighters > 0)
+        await db.run(
+          "UPDATE kingdoms SET fighters = fighters + ? WHERE id = ?",
+          [exp.fighters, k.id],
+        );
+      const errMsg = `${exp.type} expedition returned ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â an error occurred calculating rewards (troops returned safely).`;
+      await db.run("UPDATE expeditions SET rewards = ? WHERE id = ?", [
+        JSON.stringify([errMsg]),
+        exp.id,
+      ]);
+      await db.run(
+        "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?, ?, ?, ?)",
+        [k.id, "system", errMsg, k.turn],
+      );
+      expeditionEvents.push({ type: "system", message: errMsg });
+    }
+  }
+  return expeditionEvents;
+}
+
+
 module.exports = {
-  calcDiscoveryChance,
+  computeExpeditionTransitions,
   junkPrize,
   expeditionRewards,
-};
+  resolveExpeditions,};
