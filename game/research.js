@@ -11,8 +11,11 @@ function studyDiscipline(k, discipline, researchersAssigned) {
   if (isNaN(researchersAssigned) || researchersAssigned <= 0) return { error: "researchersAssigned must be a positive integer" };
   const col = RESEARCH_MAP[discipline];
   if (!col) return { error: "Unknown discipline" };
-  if (researchersAssigned > k.researchers)
+  const assigned = Math.floor(Number(researchersAssigned));
+  if (isNaN(assigned) || assigned <= 0) return { error: "Invalid number of researchers" };
+  if (assigned > k.researchers)
     return { error: "Not enough researchers" };
+  researchersAssigned = assigned;
 
   const currentLevel = k[col] || 100;
   const increment = researchIncrement(

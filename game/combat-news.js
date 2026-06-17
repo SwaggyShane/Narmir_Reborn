@@ -3,14 +3,35 @@
  * Generates human-readable combat reports for players
  */
 
-const _combatNewsConfig = require("./config");
-const COMBAT_NEWS_UNIT_LABELS = _combatNewsConfig.COMBAT_NEWS_UNIT_LABELS || {
-  fighters: 'fighters', rangers: 'rangers', mages: 'mages', clerics: 'clerics',
-  thieves: 'thieves', ninjas: 'ninjas', scribes: 'scribes', engineers: 'engineers',
-  researchers: 'researchers', war_machines: 'war machines', ballistae: 'ballistae'
+const _config = require("./config");
+const COMBAT_NEWS_UNIT_ORDER = _config.COMBAT_NEWS_UNIT_ORDER || [
+  "thralls",
+  "fighters",
+  "rangers",
+  "mages",
+  "clerics",
+  "ninjas",
+  "thieves",
+  "scribes",
+  "engineers",
+  "researchers",
+  "war_machines",
+  "ballistae",
+];
+const COMBAT_NEWS_UNIT_LABELS = _config.COMBAT_NEWS_UNIT_LABELS || {
+  thralls: "Thralls",
+  fighters: "Fighters",
+  rangers: "Rangers",
+  mages: "Mages",
+  clerics: "Clerics",
+  ninjas: "Ninjas",
+  thieves: "Thieves",
+  scribes: "Scribes",
+  engineers: "Engineers",
+  researchers: "Researchers",
+  war_machines: "War Machines",
+  ballistae: "Ballistae",
 };
-const COMBAT_NEWS_UNIT_ORDER = _combatNewsConfig.COMBAT_NEWS_UNIT_ORDER ||
-  ['fighters','rangers','mages','clerics','thieves','ninjas','scribes','engineers','researchers','war_machines','ballistae'];
 
 function normalizeCombatUnits(units = {}) {
   const normalized = { ...units };

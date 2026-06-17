@@ -44,8 +44,8 @@ function queueBuildings(k, orders) {
       );
       continue;
     }
-    const n = Math.max(0, Number(qty));
-    if (n <= 0) continue;
+    const n = Math.floor(Number(qty));
+    if (isNaN(n) || n <= 0) continue;
 
     // Check Cap
     const col = BUILDING_COL[key];

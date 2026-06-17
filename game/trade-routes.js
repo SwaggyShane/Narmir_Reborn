@@ -17,7 +17,9 @@ function raidTradeRoute(attacker, defender, unitCount) {
   if (defenderTradeRoutes < 1)
     return { error: "Target has no trade routes to raid" };
 
-  const actualUnitCount = Math.min(unitCount, currentAttackerThieves);
+  const count = Math.floor(Number(unitCount));
+  if (isNaN(count) || count <= 0) return { error: "Invalid unit count" };
+  const actualUnitCount = Math.min(count, currentAttackerThieves);
   if (actualUnitCount < 500)
     return { error: "Must send at least 500 thieves to raid trade routes" };
 
