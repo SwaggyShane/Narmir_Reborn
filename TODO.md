@@ -26,17 +26,28 @@
 ---
 
 ## Combat Redesign
-**Status:** CRITICAL - PHASE 1 RECOVERY STARTED  
-**Files:** `game/combat-new.js`, `game/combat-resolver.js`  
-**Description:** Combat V2 is the intended HP/DMG/injury system. Current `engine.js` combat is V1 legacy/power-percent combat and should not be treated as the final balance target. Pause balance tuning until V2 is wired behind a feature flag and diagnostics confirm troops, clerics, war machines, ladders, and walls are engaging correctly.  
+**Status:** Local V2 integration recovered; cleanup remains
+**Files:** `game/combat-new.js`, `game/combat-resolver.js`
+**Description:** Combat V2 is the intended HP/DMG/injury system. Current `engine.js` combat is V1 legacy/power-percent combat by default, but a default-off V2 adapter path exists behind `USE_COMBAT_V2=1`. Keep cleanup focused on docs, diagnostics, and balance review rather than integration recovery.
 **See:** PROTECTED_WORK.md
 
 **Phase 1 Recovery Tasks:**
 - [x] Mark live `engine.js` combat as V1 legacy combat
 - [x] Mark `combat-new.js` and `combat-resolver.js` as V2 intended combat
 - [x] Note that current V1 balance reports are useful only as legacy references
-- [ ] Recover feature-flag integration from `origin/claude/combat-redesign-integration`
-- [ ] Restore or recreate V2 diagnostics before further balance testing
+- [x] Add a default-off `USE_COMBAT_V2` adapter path
+- [x] Add V2 diagnostics to the combat report contract
+
+### Combat Redesign Cleanup
+**Status:** Planned
+**Priority:** High
+**Description:** Finish tightening the V2 combat stack after the initial recovery and balance passes.
+
+**Tasks:**
+- [x] Restore useful combat redesign docs locally
+- [x] Reconcile `TODO.md`, `PROTECTED_WORK.md`, and `COMBAT_V2_RECOVERY_PLAN.md` with the current integration state
+- [ ] Review the remaining outlier cases from the latest broad V2 sweep
+- [ ] Re-run the combat V2 regression suite after any code cleanup changes
 
 ---
 
@@ -46,19 +57,32 @@
 **Description:** Add balance rails for world fragment and synergy bonuses so combat offense/defense modifiers stay exciting without runaway stacking.
 
 **Tasks:**
-- [ ] Classify fragment bonuses into buckets: economy, production, research, combat_offense, combat_defense, utility, special
-- [ ] Add explicit caps or budgets for fragment-driven combat offense and combat defense
-- [ ] Audit multiplier stacking across walls, guard towers, castles, outposts, armories, war machines, and global synergies
-- [ ] Add combat simulations for high-risk synergies like Blessed Citadel, Void Convergence, Primordial Awakening, and war-machine builds
-- [ ] Normalize stat naming where practical (`manaRegen` vs `mana_regen`, `speed` vs `research_speed`, `power` vs `damage`)
-- [ ] Verify dwarf/war-machine balance with fragments applied, especially wall-mounted and solo-crewed war machines
-- [ ] Review live magic/combat risks: tier 5 spell mana fallback, socket spell validation parity, and transactional spell/attack updates
+- [x] Classify fragment bonuses into buckets: economy, production, research, combat_offense, combat_defense, utility, special
+- [x] Add explicit caps or budgets for fragment-driven combat offense and combat defense
+- [x] Audit multiplier stacking across walls, guard towers, castles, outposts, armories, war machines, and global synergies
+- [x] Add combat simulations for high-risk synergies like Blessed Citadel, Void Convergence, Primordial Awakening, and war-machine builds
+- [x] Normalize stat naming where practical (`manaRegen` vs `mana_regen`, `speed` vs `research_speed`, `power` vs `damage`)
+- [x] Verify dwarf/war-machine balance with fragments applied, especially wall-mounted and solo-crewed war machines
+- [x] Review live magic/combat risks: tier 5 spell mana fallback, socket spell validation parity, and transactional spell/attack updates
+
+---
+
+## Battle Outcome Animation
+**Status:** Planned
+**Priority:** Low
+**Description:** Use GSAP to animate combat outcome presentation after battle resolution without changing combat logic.
+
+**Tasks:**
+- [ ] Animate win/loss banners in combat results
+- [ ] Animate casualty and critical hit counters
+- [ ] Animate HP, wall, or power bars when results are shown
+- [ ] Keep combat resolution deterministic and presentation-only
 
 ---
 
 ## Happiness System
 **Status:** ✅ IMPLEMENTED  
-**Description:** Population happiness framework replaces entertainment-gated morale
+**Description:** Population happiness framework replaces entertainment-gated happiness
 
 **Completed Components:**
 - ✅ Happiness calculation engine (food, entertainment, safety, prosperity, race modifiers)
@@ -66,7 +90,7 @@
 - ✅ Production efficiency multiplier (affected by happiness)
 - ✅ Rebellion event system (triggered by low happiness)
 - ✅ Entertainment research mechanic (drives recovery speed)
-- ✅ Combat morale multiplier tied to happiness
+- ✅ Combat happiness multiplier tied to happiness
 - ✅ Spell integrations (Bless, Divine Favor, etc.)
 - ✅ World fragment bonuses for happiness
 - ✅ Database schema (kingdoms.happiness column)

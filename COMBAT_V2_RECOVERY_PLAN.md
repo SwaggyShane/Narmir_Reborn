@@ -1,6 +1,6 @@
 # Combat V2 Recovery Plan
 
-**Status:** Phase 4 structure pass verified locally  
+**Status:** Local V2 integration and structure pass verified locally
 **Scope:** Local recovery only. Do not push or write to GitHub remote.
 
 ## Vocabulary
@@ -10,7 +10,7 @@
 
 ## Current Finding
 
-The active live combat path in `game/engine.js` is still V1: aggregate power and percentage casualties.
+The default live combat path in `game/engine.js` remains V1: aggregate power and percentage casualties, but a default-off V2 adapter path already exists behind `USE_COMBAT_V2=1`.
 
 The intended Combat V2 files exist locally:
 
@@ -39,7 +39,7 @@ Use old commits as reference material only. Do not cherry-pick or merge the inte
 - [x] Confirm schema fields exist locally
 - [x] Inspect old feature-flag wrapper
 - [x] Identify that old wrapper is too shallow to copy directly
-- [ ] Restore useful combat redesign docs locally
+- [x] Restore useful combat redesign docs locally
 - [x] Add a safe feature flag defaulted off
 - [x] Add a real V2 adapter that calls `combat-resolver.executeCombat`
 - [x] Preserve the V1 `resolveMilitaryAttack` output contract
@@ -138,4 +138,4 @@ The V2 report must include diagnostics before balance testing:
 
 ## Do Not Tune Yet
 
-No dwarf, war-machine, mage, wall, structure, or fragment balance tuning should be treated as final until V2 is reachable behind the feature flag and diagnostics prove that troops, clerics, war machines, ladders, and wall HP are actually engaging.
+No dwarf, war-machine, mage, wall, structure, or fragment balance tuning should be treated as final until the current cleanup docs are reconciled and the latest V2 sweeps and outlier cases have been reviewed.

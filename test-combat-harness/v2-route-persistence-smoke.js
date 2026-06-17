@@ -4,7 +4,7 @@ require('dotenv').config();
 const { initDb, applyKingdomUpdates } = require('../db/schema');
 const engine = require('../game/engine');
 
-const KINGDOM_ATTACK_SELECT = `id, player_id, name, race, turn, turns_stored, gold, food, population, land, morale, happiness,
+const KINGDOM_ATTACK_SELECT = `id, player_id, name, race, turn, turns_stored, gold, food, population, land, happiness,
   fighters, rangers, mages, thieves, ninjas, clerics, engineers, war_machines, ballistae,
   bld_walls, bld_guard_towers, bld_mage_towers, bld_outposts, bld_castles,
   res_military, res_weapons, res_armor, res_war_machines, res_attack_magic, res_defense_magic,

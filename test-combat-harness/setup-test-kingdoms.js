@@ -26,7 +26,6 @@ const TEST_KINGDOM_BASE_STATS = {
   mana: 50000000,
   maps: 100,
   happiness: 100,
-  morale: 100,
   xp: 0,
   research_progress: JSON.stringify({
     res_construction: 50000,

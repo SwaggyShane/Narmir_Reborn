@@ -325,7 +325,7 @@ module.exports = function (db, io) {
   };
 
   const RESET_KINGDOM_SET = `UPDATE kingdoms SET
-      gold = 10000, mana = 0, land = 504, population = 50000, food = ?, morale = 100,
+      gold = 10000, mana = 0, land = 504, population = 50000, food = ?, happiness = 100,
       turn = 0, turns_stored = 400,
       fighters = ?, rangers = ?, clerics = 0, mages = 0, thieves = 0, ninjas = 0,
       researchers = 100, engineers = 100, scribes = 0,
@@ -648,7 +648,7 @@ module.exports = function (db, io) {
       "mana",
       "land",
       "population",
-      "morale",
+      "happiness",
       "happiness",
       "food",
       "turn",
@@ -1053,7 +1053,7 @@ module.exports = function (db, io) {
         name,
         description || "",
         season || "all",
-        effect_type || "morale",
+        effect_type || "happiness",
         effect_value || 0,
         effect_duration || 1,
         race_only || null,
@@ -1086,7 +1086,7 @@ module.exports = function (db, io) {
         name,
         description || "",
         season || "all",
-        effect_type || "morale",
+        effect_type || "happiness",
         effect_value || 0,
         effect_duration || 1,
         race_only || null,

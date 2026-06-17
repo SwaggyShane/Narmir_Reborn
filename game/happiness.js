@@ -1,16 +1,9 @@
-/**
- * Happiness System
- * Handles kingdom happiness calculation and history recording
- */
+// Happiness domain: happiness calculation, rebellion events, and combat
+// multipliers derived from happiness.
 
 const { safeJsonParse } = require('../utils/helpers');
 const { raceBonus } = require('./lib/race-bonus');
 const { getSynergyPassiveBonusAbsolute } = require('./lib/synergy-cache');
-
-function assignRegion(race) {
-  return race; // simple mapping for now: race name = region id
-}
-
 
 function getHappinessRecoveryRate(k) {
   const baseRecovery = (k.res_entertainment || 100) / 1000 + ((k.bld_taverns || 0) * 0.25);
@@ -59,11 +52,11 @@ function calculateHappiness(k) {
   let happiness = 50 + foodHappiness + entertainmentHappiness + safetyHappiness + prosperityHappiness + raceModifier;
 
   // Apply active effect bonuses (Bless, Divine Favor, etc.)
-  const effects = safeJsonParse(k.active_effects, {}, "calculateHappiness:active_effects");
-  if (effects.bless && typeof effects.bless === "object" && typeof effects.bless.happiness_bonus === "number") {
+  const effects = safeJsonParse(k.active_effects, {}, 'calculateHappiness:active_effects');
+  if (effects.bless && typeof effects.bless === 'object' && typeof effects.bless.happiness_bonus === 'number') {
     happiness += effects.bless.happiness_bonus;
   }
-  if (effects.divine_favor && typeof effects.divine_favor === "object" && typeof effects.divine_favor.happiness_bonus === "number") {
+  if (effects.divine_favor && typeof effects.divine_favor === 'object' && typeof effects.divine_favor.happiness_bonus === 'number') {
     happiness += effects.divine_favor.happiness_bonus;
   }
 
@@ -72,11 +65,11 @@ function calculateHappiness(k) {
   happiness += synergyHappinessBonus;
 
   // Race + hero happiness multipliers (RACE_BONUSES.happiness, Paladin's
-  // Unyielding Faith, Blood Matriarch's Sanguine Bond) scaled to Ãƒâ€šÃ‚Â±20 points
-  happiness += Math.round((raceBonus(k, "happiness") - 1) * 20);
+  // Unyielding Faith, Blood Matriarch's Sanguine Bond) scaled to ±20 points
+  happiness += Math.round((raceBonus(k, 'happiness') - 1) * 20);
 
-  // Apply tax penalty/bonus
-  const taxRate = k.tax || 42;
+  // Apply tax penalty/bonus — use nullish coalesce to allow 0% tax
+  const taxRate = k.tax !== undefined && k.tax !== null ? k.tax : 42;
   if (taxRate > 42) {
     const taxPenalty = Math.floor(((taxRate - 42) / 58) * 30);
     happiness -= taxPenalty;
@@ -109,37 +102,142 @@ function calculateHappiness(k) {
   };
 }
 
-async function recordHappinessHistory(db, kingdomId, turn, happinessData) {
-  try {
-    await db.run(
-      `INSERT INTO happiness_history
-       (kingdom_id, turn, happiness_value, food_component, entertainment_component, safety_component, prosperity_component, race_modifier)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT(kingdom_id, turn) DO UPDATE SET
-       happiness_value = EXCLUDED.happiness_value,
-       food_component = EXCLUDED.food_component,
-       entertainment_component = EXCLUDED.entertainment_component,
-       safety_component = EXCLUDED.safety_component,
-       prosperity_component = EXCLUDED.prosperity_component,
-       race_modifier = EXCLUDED.race_modifier`,
-      [
-        kingdomId,
-        turn,
-        happinessData.happiness,
-        happinessData.components.food,
-        happinessData.components.entertainment,
-        happinessData.components.safety,
-        happinessData.components.prosperity,
-        happinessData.components.race
-      ]
-    );
-  } catch (err) {
-    console.error(`[happiness] recordHappinessHistory error: ${err.message}`);
+function happinessMult(happiness) {
+  if (happiness < 50) return 0.8 + (happiness / 50) * 0.1; // 0.80–0.90
+  if (happiness < 100) return 0.9 + ((happiness - 50) / 50) * 0.1; // 0.90–1.00
+  return Math.min(1.2, 1.0 + ((happiness - 100) / 100) * 0.1); // 1.00–1.20 (capped at 1.20)
+}
+
+function happinessCombatMult(happiness) {
+  const mult = 0.5 + (happiness / 120);
+  return Math.max(0.5, Math.min(1.5, mult));
+}
+
+function rebellionEvent(k, updates, events) {
+  const eventType = Math.floor(Math.random() * 5) + 1; // 1-5
+
+  updates.rebellion_cooldown = k.turn + 20;
+
+  let newsMessage = '';
+
+  switch (eventType) {
+    case 1: { // Unrest - population loss
+      const lossPercent = 0.05 + Math.random() * 0.05; // 5-10%
+      const populationLoss = Math.floor((k.population || 0) * lossPercent);
+      updates.population = Math.max(100, (updates.population || k.population) - populationLoss);
+      newsMessage = `⚠️ UNREST: Population fleeing due to unhappiness! Lost ${populationLoss.toLocaleString()} people.`;
+      break;
+    }
+
+    case 2: { // Tax Revolt
+      const newTaxCap = Math.max(10, (updates.tax || k.tax) - 10);
+      updates.tax = newTaxCap;
+      newsMessage = `⚠️ TAX REVOLT: Population refuses higher taxes. Tax reduced to ${newTaxCap}%!`;
+      break;
+    }
+
+    case 3: { // Building Sabotage
+      const buildingTypes = ['bld_taverns', 'bld_markets', 'bld_shrines', 'bld_schools', 'bld_mage_towers'];
+      const buildingNames = {
+        bld_taverns: 'taverns',
+        bld_markets: 'markets',
+        bld_shrines: 'shrines',
+        bld_schools: 'schools',
+        bld_mage_towers: 'mage towers'
+      };
+      const availableBuildings = buildingTypes.filter(b => (k[b] || 0) > 0);
+
+      if (availableBuildings.length > 0) {
+        const randomBuilding = availableBuildings[Math.floor(Math.random() * availableBuildings.length)];
+        const buildingCount = k[randomBuilding];
+        const damageCount = Math.min(buildingCount, Math.floor(Math.random() * 3) + 1); // 1-3 buildings
+        updates[randomBuilding] = Math.max(0, (updates[randomBuilding] || buildingCount) - damageCount);
+        newsMessage = `⚠️ SABOTAGE: Rioters destroyed ${damageCount} ${buildingNames[randomBuilding]}!`;
+      } else {
+        const lossPercent = 0.02 + Math.random() * 0.03; // 2-5%
+        const populationLoss = Math.floor((k.population || 0) * lossPercent);
+        updates.population = Math.max(100, (updates.population || k.population) - populationLoss);
+        newsMessage = `⚠️ UNREST: Rioters clashed with guards! Lost ${populationLoss.toLocaleString()} people.`;
+      }
+      break;
+    }
+
+    case 4: { // Food Riot
+      let foodRiotTriggered = false;
+      if ((k.food || 0) < (k.population || 0) * 0.1) {
+        const buildingTypes = ['bld_granaries', 'bld_farms'];
+        const buildingNames = { bld_granaries: 'granaries', bld_farms: 'farms' };
+        const availableBuildings = buildingTypes.filter(b => (k[b] || 0) > 0);
+
+        if (availableBuildings.length > 0) {
+          const randomBuilding = availableBuildings[Math.floor(Math.random() * availableBuildings.length)];
+          const buildingCount = k[randomBuilding];
+          const damageCount = Math.min(buildingCount, Math.floor(Math.random() * 3) + 1);
+          updates[randomBuilding] = Math.max(0, (updates[randomBuilding] || buildingCount) - damageCount);
+          newsMessage = `⚠️ FOOD RIOT: Desperate population destroyed food facilities! Lost ${damageCount} ${buildingNames[randomBuilding]}.`;
+          foodRiotTriggered = true;
+        }
+      }
+
+      if (!foodRiotTriggered) {
+        const lossPercent = 0.05 + Math.random() * 0.05;
+        const populationLoss = Math.floor((k.population || 0) * lossPercent);
+        updates.population = Math.max(100, (updates.population || k.population) - populationLoss);
+        newsMessage = `⚠️ UNREST: Population fleeing due to unhappiness! Lost ${populationLoss.toLocaleString()} people.`;
+      }
+      break;
+    }
+
+    case 5: { // Military Mutiny
+      const troopsToLose = ['fighters', 'rangers', 'clerics', 'mages', 'thieves', 'ninjas', 'engineers'];
+      let totalLost = 0;
+      for (const unit of troopsToLose) {
+        const count = k[unit] || 0;
+        const loss = Math.floor(count * (0.05 + Math.random() * 0.05));
+        if (loss > 0) {
+          updates[unit] = Math.max(0, (updates[unit] || count) - loss);
+          totalLost += loss;
+        }
+      }
+      newsMessage = `⚠️ MILITARY MUTINY: Troops are refusing orders due to low happiness! ${totalLost} units deserted.`;
+      break;
+    }
+  }
+
+  if (newsMessage) {
+    events.push({
+      type: 'rebellion',
+      message: newsMessage,
+      turn: k.turn
+    });
   }
 }
+
+function rebellionCheck(k, happiness, updates, events) {
+  if (happiness >= 50) return; // No rebellion risk if happiness >= 50
+
+  const cooldown = k.rebellion_cooldown || 0;
+  if (cooldown > (k.turn || 0)) return; // Still in cooldown
+
+  let rebellionChance = 0;
+  if (happiness <= 0) {
+    rebellionChance = 0.05; // 5% chance
+  } else if (happiness < 20) {
+    rebellionChance = 0.02; // 2% chance
+  } else if (happiness < 50) {
+    rebellionChance = 0.005; // 0.5% chance
+  }
+
+  if (Math.random() < rebellionChance) {
+    rebellionEvent(k, updates, events);
+  }
+}
+
 module.exports = {
-  assignRegion,
-  getHappinessRecoveryRate,
   calculateHappiness,
-  recordHappinessHistory,
+  getHappinessRecoveryRate,
+  happinessMult,
+  happinessCombatMult,
+  rebellionCheck,
+  rebellionEvent,
 };

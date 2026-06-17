@@ -150,7 +150,7 @@ The analyzer generates insights on:
 - Casualty rate validation (5-15% winner, 2-10% loser)
 - XP calculation correctness
 - Resource transfer calculations
-- Morale impact calculations
+- Happiness impact calculations
 
 ### Edge Cases
 - Army size boundaries (0, 1, 100k+)
@@ -201,7 +201,7 @@ node test-combat-harness/analyze-results.js combat-test-results-*.json
 - Land transfer
 - Gold transfer
 - XP gains
-- Morale changes
+- Happiness changes
 - Anti-bully penalties
 - Defense bonuses
 

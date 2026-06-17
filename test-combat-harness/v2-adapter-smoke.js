@@ -16,7 +16,7 @@ const base = {
   xp_sources: '{}',
   troop_levels: levels,
   happiness: 70,
-  morale: 100,
+  happiness: 100,
   injured_troops: '{}',
   training_allocation: '{}',
   weapons_stockpile: 1000,

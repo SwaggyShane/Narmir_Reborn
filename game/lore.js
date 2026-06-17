@@ -239,8 +239,8 @@ const LORE = {
     },
     {
       id: "general_23",
-      title: "Morale and Its Absence",
-      msg: "An army with low morale is not an army. It is a group of people who have not yet decided to stop fighting. The moment they make that decision, no wall, weapon, or war machine will hold them. Morale is the invisible foundation everything else rests on.",
+      title: "Happiness and Its Absence",
+      msg: "An army with low happiness is not an army. It is a group of people who have not yet decided to stop fighting. The moment they make that decision, no wall, weapon, or war machine will hold them. Happiness is the invisible foundation everything else rests on.",
     },
     {
       id: "general_24",
@@ -566,7 +566,7 @@ const LORE = {
     {
       id: "orc_12",
       title: "The Iron Will",
-      msg: "Orcish morale is tied to their sense of purpose. An orc who knows *why* they are fighting is almost impossible to stop. Their mental resilience allows them to ignore pain and fatigue that would break other soldiers.",
+      msg: "Orcish happiness is tied to their sense of purpose. An orc who knows *why* they are fighting is almost impossible to stop. Their mental resilience allows them to ignore pain and fatigue that would break other soldiers.",
     },
     {
       id: "orc_13",
@@ -1100,7 +1100,7 @@ const LORE = {
     {
       id: "vampire_17",
       title: "The Thrall's Hymn",
-      msg: "The thralls sing as they work — a low, wordless drone that unsettles every visitor to the Vales. Scholars believe it is residue of the souls they were. The Court insists it is merely good for morale.",
+      msg: "The thralls sing as they work — a low, wordless drone that unsettles every visitor to the Vales. Scholars believe it is residue of the souls they were. The Court insists it is merely good for happiness.",
     },
     {
       id: "vampire_18",

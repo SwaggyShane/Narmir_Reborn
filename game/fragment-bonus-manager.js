@@ -4,13 +4,111 @@
  */
 
 const FRAGMENT_BONUSES = require('./world-fragment-bonuses');
-const { safeJsonParse } = require('../utils/helpers');
+
+const COMBAT_RELEVANT_STAT_CAPS = {
+  combat_power: 0.5,
+  combat_damage: 0.5,
+  unit_damage: 0.5,
+  troop_damage: 0.5,
+  health: 0.5,
+  defense: 0.5,
+  defenses: 0.5,
+  garrison_defense: 0.5,
+  power: 0.5,
+  defense_armor: 0.5,
+  troop_health: 0.5,
+  ranged_offense: 0.5,
+  siege_output: 0.3,
+};
+
+const STAT_ALIASES = {
+  manaRegen: ['mana_regen'],
+  mana_regen: ['manaRegen'],
+  research_speed: ['speed'],
+  speed: ['research_speed'],
+  damage: ['power'],
+  power: ['damage'],
+  unit_health: ['troop_health', 'health'],
+  troop_health: ['unit_health', 'health'],
+  defenses: ['defense'],
+};
+
+const FRAGMENT_STAT_BUCKETS = {
+  combat_offense: new Set([
+    'combat_power',
+    'combat_damage',
+    'unit_damage',
+    'troop_damage',
+    'power',
+    'ranged_offense',
+    'siege_output',
+  ]),
+  combat_defense: new Set([
+    'health',
+    'defense',
+    'defenses',
+    'garrison_defense',
+    'defense_armor',
+    'troop_health',
+  ]),
+  research: new Set([
+    'research_speed',
+    'decoding_speed',
+    'spell_efficiency',
+    'mana',
+    'manaRegen',
+    'mana_efficiency',
+    'magic_output',
+    'dark_magic_output',
+  ]),
+  economy: new Set([
+    'income',
+    'economy_output',
+    'production',
+    'consumption',
+    'gold_security',
+    'trade_stability',
+    'metal_trading',
+    'forest_trade',
+    'dark_trade_gains',
+    'shadow_trade',
+    'raid_security',
+    'raid_protection',
+    'anti_theft_security',
+    'espionage_guard',
+    'espionage_shield',
+  ]),
+};
+
+function classifyFragmentStat(statType) {
+  if (!statType) return 'utility';
+  for (const [bucket, stats] of Object.entries(FRAGMENT_STAT_BUCKETS)) {
+    if (stats.has(statType)) return bucket;
+  }
+  return 'utility';
+}
+
+function getFragmentStatValue(passive, statType) {
+  if (!passive || !statType) return undefined;
+  if (passive[statType] !== undefined) return passive[statType];
+
+  const aliases = STAT_ALIASES[statType] || [];
+  for (const alias of aliases) {
+    if (passive[alias] !== undefined) return passive[alias];
+  }
+
+  return undefined;
+}
 
 /**
  * Parse fragment bonuses JSON from kingdom data
  */
 function parseFragmentBonuses(bonusesJson) {
-  return safeJsonParse(bonusesJson, {});
+  try {
+    return JSON.parse(bonusesJson || '{}');
+  } catch {
+    return {};
+  }
 }
 
 /**
@@ -131,10 +229,79 @@ function getBonusMultiplier(kingdom, buildingType, statType) {
   if (!fragmentBonus) return 1.0;
 
   const passive = fragmentBonus.passive || {};
-  const multiplier = passive[statType];
+  const multiplier = getFragmentStatValue(passive, statType);
 
   if (multiplier === undefined) return 1.0;
-  return 1.0 + multiplier; // passive values are deltas (e.g., 0.15 = +15%)
+  const cap = COMBAT_RELEVANT_STAT_CAPS[statType] ?? COMBAT_RELEVANT_STAT_CAPS[STAT_ALIASES[statType]?.[0]];
+  const clampedDelta = typeof cap === 'number'
+    ? Math.max(-cap, Math.min(cap, multiplier))
+    : multiplier;
+  return 1.0 + clampedDelta; // passive values are deltas (e.g., 0.15 = +15%)
+}
+
+/**
+ * Apply bonus multipliers to a stat
+ */
+function applyFragmentMultiplier(kingdom, buildingType, baseValue, statType) {
+  const multiplier = getBonusMultiplier(kingdom, buildingType, statType);
+  return baseValue * multiplier;
+}
+
+/**
+ * Build a combat-balance audit for fragment bonuses.
+ * Useful for reporting and testing how much combat-facing pressure
+ * is being applied by the current fragment layout.
+ */
+function getFragmentCombatAudit(kingdom) {
+  const bonuses = getKingdomFragmentBonuses(kingdom);
+  const buildings = [];
+  const totals = {
+    combat_offense: 0,
+    combat_defense: 0,
+    research: 0,
+    economy: 0,
+    utility: 0,
+  };
+
+  for (const [buildingType, fragmentBonus] of Object.entries(bonuses)) {
+    if (!fragmentBonus || !fragmentBonus.passive) continue;
+
+    const stats = [];
+    for (const [statType, rawValue] of Object.entries(fragmentBonus.passive)) {
+      const bucket = classifyFragmentStat(statType);
+      const cap = COMBAT_RELEVANT_STAT_CAPS[statType];
+      const numericValue = Number(rawValue);
+      const value = Number.isFinite(numericValue) ? numericValue : 0;
+      const clampedDelta = typeof cap === 'number'
+        ? Math.max(-cap, Math.min(cap, value))
+        : value;
+      const multiplier = 1.0 + clampedDelta;
+
+      stats.push({
+        statType,
+        bucket,
+        rawValue: value,
+        clampedDelta,
+        multiplier,
+      });
+
+      if (bucket in totals) {
+        totals[bucket] += clampedDelta;
+      } else {
+        totals.utility += clampedDelta;
+      }
+    }
+
+    if (stats.length > 0) {
+      buildings.push({
+        buildingType,
+        fragment: fragmentBonus.fragment,
+        stats,
+      });
+    }
+  }
+
+  return { totals, buildings };
 }
 
 /**
@@ -163,11 +330,41 @@ function formatBuildingName(buildingType) {
     .join(' ');
 }
 
+/**
+ * Get all bonuses for a building with their details
+ */
+function getBuildingBonusDetails(kingdom, buildingType) {
+  const fragmentBonus = getFragmentForBuilding(kingdom, buildingType);
+  if (!fragmentBonus) {
+    return {
+      hasBonus: false,
+      fragment: null,
+      bonuses: {},
+    };
+  }
+
+  return {
+    hasBonus: true,
+    fragment: fragmentBonus.fragment,
+    special: fragmentBonus.special,
+    passive: fragmentBonus.passive,
+    appliedTurn: fragmentBonus.applied_turn,
+  };
+}
+
 module.exports = {
+  parseFragmentBonuses,
+  getKingdomFragmentBonuses,
   getFragmentForBuilding,
   getBonusConfig,
+  getFragmentStatValue,
   applyFragmentBonus,
   getAvailableBuildingsWithBonuses,
   getBonusMultiplier,
+  applyFragmentMultiplier,
+  classifyFragmentStat,
+  getFragmentCombatAudit,
   getSpecialEffect,
+  formatBuildingName,
+  getBuildingBonusDetails,
 };

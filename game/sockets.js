@@ -140,21 +140,24 @@ module.exports = function (io, db) {
       if (result.error) return ack?.({ error: result.error });
       try {
         result.attackerUpdates.turns_stored = attacker.turns_stored - 1;
-        await applyUpdates(db, attacker.id, result.attackerUpdates);
-        await applyUpdates(db, defender.id, result.defenderUpdates);
-        await db.run(
-          "INSERT INTO combat_log (attacker_id, defender_id, type, attacker_won, land_transferred, detail) VALUES (?,?,?,?,?,?)",
-          [
-            attacker.id,
-            defender.id,
-            "military",
-            result.win ? 1 : 0,
-            result.report.landTransferred,
-            JSON.stringify(result.report),
-          ],
-        );
-        await insertNews(db, attacker.id, "attack", result.atkEvent);
-        await insertNews(db, defender.id, "attack", result.defEvent);
+        await withTransaction(db, async () => {
+          await applyUpdates(db, attacker.id, result.attackerUpdates);
+          await applyUpdates(db, defender.id, result.defenderUpdates);
+          await db.run(
+            "INSERT INTO combat_log (attacker_id, defender_id, type, attacker_won, land_transferred, detail) VALUES (?,?,?,?,?,?)",
+            [
+              attacker.id,
+              defender.id,
+              "military",
+              result.win ? 1 : 0,
+              result.report.landTransferred,
+              JSON.stringify(result.report),
+            ],
+          );
+          await insertNews(db, attacker.id, "attack", result.atkEvent);
+          await insertNews(db, defender.id, "attack", result.defEvent);
+        });
+
         await notifyUnread(attacker.id);
         await notifyUnread(defender.id);
 
@@ -184,35 +187,49 @@ module.exports = function (io, db) {
       );
       if (caster.turns_stored < 1)
         return ack?.({ error: "No turns available" });
-      const target = await db.get("SELECT * FROM kingdoms WHERE id = ?", [
-        data.targetId,
-      ]);
-      if (!target) return ack?.({ error: "Target not found" });
+      const spellDef = engine.SPELL_DEFS[data.spellId];
+      if (!spellDef) return ack?.({ error: "Unknown spell" });
+      const isFriendlySpell = spellDef.effect === "friendly";
+      let target = null;
+      if (data.targetId && data.targetId != caster.id) {
+        target = await db.get("SELECT * FROM kingdoms WHERE id = ?", [
+          data.targetId,
+        ]);
+        if (!target) return ack?.({ error: "Target not found" });
+      } else if (isFriendlySpell) {
+        target = caster;
+      } else {
+        return ack?.({ error: "targetId required for offensive spells" });
+      }
+
+      const validation = engine.validateSpellTarget(caster, target, data.spellId);
+      if (validation.error) return ack?.({ error: validation.error });
+
       const result = engine.castSpell(
         caster,
-        target,
+        validation.target,
         data.spellId,
         Boolean(data.obscure),
       );
       if (result.error) return ack?.({ error: result.error });
       try {
         result.casterUpdates.turns_stored = caster.turns_stored - 1;
-        await applyUpdates(db, caster.id, result.casterUpdates);
-        if (result.targetUpdates && Object.keys(result.targetUpdates).length)
-          await applyUpdates(db, target.id, result.targetUpdates);
-        if (result.casterEvent)
-          await insertNews(db, caster.id, "spell", result.casterEvent);
-        if (result.targetEvent)
-          await insertNews(db, target.id, "spell", result.targetEvent);
+        await withTransaction(db, async () => {
+          await applyUpdates(db, caster.id, result.casterUpdates);
+          if (result.targetUpdates && Object.keys(result.targetUpdates).length)
+            await applyUpdates(db, validation.target.id, result.targetUpdates);
+          if (result.casterEvent)
+            await insertNews(db, caster.id, "spell", result.casterEvent);
+          if (result.targetEvent)
+            await insertNews(db, validation.target.id, "spell", result.targetEvent);
+        });
 
         await notifyUnread(caster.id);
-        await notifyUnread(target.id);
+        await notifyUnread(validation.target.id);
 
-        const isFriendly = engine.SPELL_DEFS[data.spellId]?.effect === "friendly";
-
-        const tgtInfo = onlinePlayers.get(target.player_id);
+        const tgtInfo = onlinePlayers.get(validation.target.player_id);
         if (tgtInfo && result.targetEvent) {
-          const eventName = isFriendly ? "event:blessing_received" : "event:spell_received";
+          const eventName = validation.isFriendly ? "event:blessing_received" : "event:spell_received";
           io.to(tgtInfo.socketId).emit(eventName, {
             from: data.obscure ? null : caster.name,
             spellId: data.spellId,
@@ -627,6 +644,20 @@ function broadcastOnlineList(io) {
 }
 
 const { applyKingdomUpdates } = require("../db/schema");
+
+async function withTransaction(db, fn) {
+  await db.run("BEGIN TRANSACTION");
+  try {
+    const result = await fn();
+    await db.run("COMMIT");
+    return result;
+  } catch (err) {
+    try {
+      await db.run("ROLLBACK");
+    } catch {}
+    throw err;
+  }
+}
 
 async function applyUpdates(db, kingdomId, updates) {
   await applyKingdomUpdates(kingdomId, updates);

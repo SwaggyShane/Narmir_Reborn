@@ -175,7 +175,7 @@ All races unlock special abilities when their primary unit reaches level 25+:
 | **Orc** | Fighters | Passively generate free trainees each turn | Award bonus fighters during turn processing |
 | **Dark Elf** | Ninjas | Silent assassinations (hidden from news) | Set news flag to hidden for covert ops |
 | **Dire Wolf** | Rangers | Execute expeditions at much faster pace | Apply speed multiplier to expeditions |
-| **Human** | Clerics | Radiate healing aura (restore morale) | Award morale bonus each turn |
+| **Human** | Clerics | Radiate healing aura (restore happiness) | Award happiness bonus each turn |
 | **Vampire** | Thieves | Higher theft/sabotage success rates | Apply success multiplier to covert ops |
 
 ### Implementation Approach
@@ -187,7 +187,7 @@ UNIT_LEVEL_25_BONUSES: {
   orc: { unit: "fighters", bonus: "free_trainee_generation" },
   dark_elf: { unit: "ninjas", bonus: "silent_assassination" },
   dire_wolf: { unit: "rangers", bonus: "fast_expeditions" },
-  human: { unit: "clerics", bonus: "morale_aura" },
+  human: { unit: "clerics", bonus: "happiness_aura" },
   vampire: { unit: "thieves", bonus: "theft_boost" },
 }
 ```

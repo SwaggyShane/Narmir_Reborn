@@ -34,7 +34,6 @@ function makeKingdom(overrides = {}) {
     food: 5000,
     food_surplus_turns: 0,
     food_shortage_turns: 0,
-    morale: 100,
     population: 5000,
     fighters: 0, rangers: 0, clerics: 0, mages: 0, thieves: 0, ninjas: 0,
     researchers: 0, engineers: 0, scribes: 0, thralls: 0,
@@ -95,8 +94,14 @@ console.log('Testing magic.js\n');
   const spellId = Object.keys(config.SPELL_DEFS).find((id) => config.SPELL_DEFS[id].tier === 1);
   assert.ok(spellId, 'expected at least one tier-1 spell');
 
-  const caster = makeKingdom({ res_spellbook: 0, school_spellbook: 0, school_of_magic: null });
-  const target = makeKingdom();
+  const caster = makeKingdom({
+    turn: 400,
+    res_spellbook: 0,
+    school_spellbook: 0,
+    school_of_magic: null,
+    discovered_kingdoms: JSON.stringify({ 2: { mapped: true } }),
+  });
+  const target = makeKingdom({ id: 2, turn: 400 });
   const r = magic.castSpell(caster, target, spellId, false);
   assert.ok(/spellbook too low/i.test(r.error || ''), `expected spellbook-too-low, got: ${r.error}`);
   console.log(`Test 4: castSpell rejects when spellbook low (${spellId}) ✓`);
@@ -108,8 +113,13 @@ console.log('Testing magic.js\n');
   const def = config.SPELL_DEFS[spellId];
 
   // Meet the spellbook requirement but provide no scroll
-  const caster = makeKingdom({ res_spellbook: def.minSB, scrolls: null });
-  const target = makeKingdom();
+  const caster = makeKingdom({
+    turn: 400,
+    res_spellbook: def.minSB,
+    scrolls: null,
+    discovered_kingdoms: JSON.stringify({ 2: { mapped: true } }),
+  });
+  const target = makeKingdom({ id: 2, turn: 400 });
   const r = magic.castSpell(caster, target, spellId, false);
   assert.ok(/scroll/i.test(r.error || ''), `expected scroll-required error, got: ${r.error}`);
   console.log(`Test 5: castSpell rejects when no scroll ✓`);
@@ -121,14 +131,52 @@ console.log('Testing magic.js\n');
   const def = config.SPELL_DEFS[spellId];
 
   const caster = makeKingdom({
+    turn: 400,
     res_spellbook: def.minSB,
     scrolls: JSON.stringify({ [spellId]: 1 }),
     mana: 0,
+    discovered_kingdoms: JSON.stringify({ 2: { mapped: true } }),
   });
-  const target = makeKingdom();
+  const target = makeKingdom({ id: 2, turn: 400 });
   const r = magic.castSpell(caster, target, spellId, false);
   assert.ok(/mana/i.test(r.error || ''), `expected mana error, got: ${r.error}`);
   console.log('Test 6: castSpell rejects when out of mana ✓');
+}
+
+// Test 7: tier-5 spells use the tier-5 mana cost, not the fallback
+{
+  const spellId = Object.keys(config.SPELL_DEFS).find(
+    (id) => config.SPELL_DEFS[id].tier === 5 && config.SPELL_DEFS[id].effect === 'friendly',
+  );
+  assert.ok(spellId, 'expected at least one tier-5 friendly spell');
+  const def = config.SPELL_DEFS[spellId];
+
+  const caster = makeKingdom({
+    res_spellbook: def.minSB,
+    scrolls: JSON.stringify({ [spellId]: 1 }),
+    mana: 250000,
+  });
+  const target = makeKingdom();
+  const r = magic.castSpell(caster, target, spellId, false);
+  assert.ok(!r.error, `expected tier-5 spell to cast, got: ${r.error}`);
+  assert.equal(r.casterUpdates.mana, 50000, `expected 200000 mana cost, got ${caster.mana - r.casterUpdates.mana}`);
+  console.log(`Test 7: tier-5 mana cost enforced (${spellId}) ✓`);
+}
+
+// Test 8: spell target validation blocks offensive casts without a map
+{
+  const spellId = Object.keys(config.SPELL_DEFS).find((id) => config.SPELL_DEFS[id].tier === 1 && config.SPELL_DEFS[id].effect !== 'friendly');
+  assert.ok(spellId, 'expected at least one offensive tier-1 spell');
+
+  const caster = makeKingdom({
+    turn: 400,
+    res_spellbook: config.SPELL_DEFS[spellId].minSB,
+    scrolls: JSON.stringify({ [spellId]: 1 }),
+  });
+  const target = makeKingdom({ id: 2, turn: 400 });
+  const r = magic.validateSpellTarget(caster, target, spellId);
+  assert.ok(/location map/i.test(r.error || ''), `expected map-required error, got: ${r.error}`);
+  console.log('Test 8: validateSpellTarget enforces map requirement ✓');
 }
 
 // Test 7: processMageTower returns updates shape (object)

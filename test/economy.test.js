@@ -29,7 +29,6 @@ function makeKingdom(overrides = {}) {
     wood: 0,
     stone: 0,
     iron: 0,
-    morale: 100,
     population: 5000,
     // troops
     fighters: 0,

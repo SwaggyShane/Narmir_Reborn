@@ -54,25 +54,25 @@ function applyHeroTurnBonuses(hero, k, updates, events) {
         message: `🧙 Archmage Mana Infusion: +${bonus.toLocaleString()} mana.`,
       });
   } else if (hero.class === 'paladin') {
-    // Protective Aura: Health regeneration or morale boost
-    const currentMorale =
-      updates.morale !== undefined
-        ? updates.morale
-        : k.morale !== undefined && k.morale !== null
-          ? k.morale
+    // Protective Aura: Health regeneration or happiness boost
+    const currentHappiness =
+      updates.happiness !== undefined
+        ? updates.happiness
+        : k.happiness !== undefined && k.happiness !== null
+          ? k.happiness
           : 100;
-    updates.morale = Math.min(100, currentMorale + 1);
+    updates.happiness = Math.min(100, currentHappiness + 1);
   } else if (hero.class === 'warlord') {
-    // Warlord: Morale boost
-    const currentMorale =
-      updates.morale !== undefined
-        ? updates.morale
-        : k.morale !== undefined && k.morale !== null
-          ? k.morale
+    // Warlord: Happiness boost
+    const currentHappiness =
+      updates.happiness !== undefined
+        ? updates.happiness
+        : k.happiness !== undefined && k.happiness !== null
+          ? k.happiness
           : 100;
-    const oldMorale = currentMorale;
-    updates.morale = Math.min(100, currentMorale + 2);
-    const _mDelta = updates.morale - oldMorale;
+    const oldHappiness = currentHappiness;
+    updates.happiness = Math.min(100, currentHappiness + 2);
+    const _mDelta = updates.happiness - oldHappiness;
   } else if (hero.class === 'forge_lord') {
     // Forge Lord: Gold income
     const bonus = Math.floor(hero.level * 300);
@@ -84,17 +84,17 @@ function applyHeroTurnBonuses(hero, k, updates, events) {
         message: `🛠️ Forge Lord Industrialism: +${bonus.toLocaleString()} gold.`,
       });
   } else if (hero.class === 'alpha') {
-    // Alpha: Food and morale
+    // Alpha: Food and happiness
     const foodBonus = Math.floor(hero.level * 500);
     updates.food =
       (updates.food !== undefined ? updates.food : k.food) + foodBonus;
-    const currentMorale =
-      updates.morale !== undefined
-        ? updates.morale
-        : k.morale !== undefined && k.morale !== null
-          ? k.morale
+    const currentHappiness =
+      updates.happiness !== undefined
+        ? updates.happiness
+        : k.happiness !== undefined && k.happiness !== null
+          ? k.happiness
           : 100;
-    updates.morale = Math.min(100, currentMorale + 1);
+    updates.happiness = Math.min(100, currentHappiness + 1);
     if (events) {
       events.push({
         type: 'system',
@@ -127,8 +127,8 @@ function applyHeroTurnBonuses(hero, k, updates, events) {
         type: 'system',
         message: `✨ Mage King Leyline Control: +${bonus.toLocaleString()} mana.`,
       });
-  } else if (hero.class === 'silent_shadow') {
-    // Silent Shadow: Stealth income
+  } else if (hero.class === 'shadowmaster') {
+    // Shadowmaster: Stealth income
     const bonus = Math.floor(hero.level * 200);
     updates.res_stealth =
       (updates.res_stealth !== undefined ? updates.res_stealth : k.res_stealth || 0) + bonus;
@@ -137,8 +137,8 @@ function applyHeroTurnBonuses(hero, k, updates, events) {
         type: 'system',
         message: `🌑 Silent Shadow Espionage: +${bonus.toLocaleString()} stealth.`,
       });
-  } else if (hero.class === 'diplomat') {
-    // Diplomat: Diplomacy boost
+  } else if (hero.class === 'high_consul') {
+    // High Consul: Diplomacy boost
     const bonus = Math.floor(hero.level * 100);
     updates.prestige =
       (updates.prestige !== undefined ? updates.prestige : k.prestige || 0) + bonus;
