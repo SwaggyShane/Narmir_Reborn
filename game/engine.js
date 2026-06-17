@@ -151,6 +151,21 @@ const {
   researchIncrement,
 } = populationMod;
 
+// Phase 1 extracted domains (low-risk, self-contained functions)
+// Rebellion, recruitment, research, mercenaries, trade routes, prestige, combat news,
+// location maps, achievements, effects, and scoring. All re-exported below for backward compat.
+const rebellionMod = require('./rebellion');
+const recruitmentMod = require('./recruitment');
+const researchMod = require('./research');
+const mercenariesMod = require('./mercenaries');
+const tradeRoutesMod = require('./trade-routes');
+const prestigeMod = require('./prestige');
+const combatNewsMod = require('./combat-news');
+const locationMapsMod = require('./location-maps');
+const achievementsMod = require('./achievements');
+const effectsMod = require('./effects');
+const scoringMod = require('./scoring');
+
 const {
   RACE_BONUSES,
   REGION_DATA,
