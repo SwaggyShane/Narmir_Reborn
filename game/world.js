@@ -146,7 +146,7 @@ async function resolveRegions(db, io) {
               io.emit("chat", {
                 room: "global",
                 username: "System",
-                message: `\u{1F3F0} REGION CAPTURED: The alliance [${alliance.name}] has seized control of ${region.name}!`,
+                message: `\u{1F3F0} REGION CAPTURED: The alliance [${alliance?.name || "Unknown Alliance"}] has seized control of ${region.name}!`,
                 is_system: true,
               });
           } else {
@@ -216,17 +216,17 @@ function calculateScore(k) {
   }
 
   // Units
-  score += k.war_machines * 1.25 * getLvlMultiplier("war_machines");
+  score += (k.war_machines || 0) * 1.25 * getLvlMultiplier("war_machines");
   score += (k.ballistae || 0) * 1.25 * getLvlMultiplier("war_machines");
-  score += k.fighters * 0.75 * getLvlMultiplier("fighters");
-  score += k.rangers * 1.75 * getLvlMultiplier("rangers");
-  score += k.clerics * 0.75 * getLvlMultiplier("clerics");
-  score += k.mages * 1.5 * getLvlMultiplier("mages");
-  score += k.thieves * 0.95 * getLvlMultiplier("thieves");
-  score += k.ninjas * 1.15 * getLvlMultiplier("ninjas");
-  score += k.scribes * 0.25 * getLvlMultiplier("scribes");
-  score += k.engineers * 1.25 * getLvlMultiplier("engineers");
-  score += k.researchers * 0.5 * getLvlMultiplier("researchers"); // Assumed baseline
+  score += (k.fighters || 0) * 0.75 * getLvlMultiplier("fighters");
+  score += (k.rangers || 0) * 1.75 * getLvlMultiplier("rangers");
+  score += (k.clerics || 0) * 0.75 * getLvlMultiplier("clerics");
+  score += (k.mages || 0) * 1.5 * getLvlMultiplier("mages");
+  score += (k.thieves || 0) * 0.95 * getLvlMultiplier("thieves");
+  score += (k.ninjas || 0) * 1.15 * getLvlMultiplier("ninjas");
+  score += (k.scribes || 0) * 0.25 * getLvlMultiplier("scribes");
+  score += (k.engineers || 0) * 1.25 * getLvlMultiplier("engineers");
+  score += (k.researchers || 0) * 0.5 * getLvlMultiplier("researchers");
 
   // Buildings (everything else -> balanced scoring)
   const bldAttrs = [

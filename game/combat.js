@@ -199,7 +199,7 @@ function applyReanimation(win, attacker, defender, kills, attackerUpdates, defen
       atkConversionAdded = Math.floor(atkSoldierKills * convRate);
       if (atkConversionAdded > 0) {
         attackerUpdates.fighters =
-          (attackerUpdates.fighters || attacker.fighters || 0) + atkConversionAdded;
+          (attackerUpdates.fighters ?? attacker.fighters ?? 0) + atkConversionAdded;
       }
 
       // Fallen clerics (enemy and own) -> Thralls
@@ -207,7 +207,7 @@ function applyReanimation(win, attacker, defender, kills, attackerUpdates, defen
         (atkClericKills + atkClericsLost) * convRate,
       );
       if (thrallsFromClerics > 0) {
-        const current = attacker.clerics || 0;
+        const current = attackerUpdates.clerics !== undefined ? attackerUpdates.clerics : (attacker.clerics || 0);
         let mauUpg = {};
         try {
           mauUpg = safeJsonParse(attacker.mausoleum_upgrades, {}, "auto:mausoleum_upgrades") || {};
@@ -231,7 +231,7 @@ function applyReanimation(win, attacker, defender, kills, attackerUpdates, defen
       atkConversionAdded = Math.floor(atkTotalKills * convRate);
       if (atkConversionAdded > 0) {
         attackerUpdates.fighters =
-          (attackerUpdates.fighters || attacker.fighters || 0) +
+          (attackerUpdates.fighters ?? attacker.fighters ?? 0) +
           atkConversionAdded;
         necroMsg = `ÃƒÂ°Ã…Â¸Ã‚ÂÃ‚Â³ÃƒÂ¯Ã‚Â¸Ã‚Â ${atkConversionAdded} enemy troops surrendered and joined your ranks.`;
       }
@@ -245,7 +245,7 @@ function applyReanimation(win, attacker, defender, kills, attackerUpdates, defen
       defConversionAdded = Math.floor(defSoldierKills * convRate);
       if (defConversionAdded > 0) {
         defenderUpdates.fighters =
-          (defenderUpdates.fighters || defender.fighters || 0) + defConversionAdded;
+          (defenderUpdates.fighters ?? defender.fighters ?? 0) + defConversionAdded;
       }
 
       // Fallen clerics (enemy and own) -> Thralls
@@ -253,7 +253,7 @@ function applyReanimation(win, attacker, defender, kills, attackerUpdates, defen
         (defClericKills + defClericsLost) * convRate,
       );
       if (thrallsFromClerics > 0) {
-        const current = defender.clerics || 0;
+        const current = defenderUpdates.clerics !== undefined ? defenderUpdates.clerics : (defender.clerics || 0);
         let mauUpg = {};
         try {
           mauUpg = safeJsonParse(defender.mausoleum_upgrades, {}, "auto:mausoleum_upgrades") || {};
@@ -277,7 +277,7 @@ function applyReanimation(win, attacker, defender, kills, attackerUpdates, defen
       defConversionAdded = Math.floor(defTotalKills * convRate);
       if (defConversionAdded > 0) {
         defenderUpdates.fighters =
-          (defenderUpdates.fighters || defender.fighters || 0) +
+          (defenderUpdates.fighters ?? defender.fighters ?? 0) +
           defConversionAdded;
         necroMsg = `ÃƒÂ°Ã…Â¸Ã‚ÂÃ‚Â³ÃƒÂ¯Ã‚Â¸Ã‚Â ${defConversionAdded} enemy troops surrendered and joined your ranks.`;
       }
@@ -350,16 +350,16 @@ function resolveMilitaryAttackV2Adapter(
   const defendingThralls = defenderIsVampire ? Math.max(0, defender.clerics || 0) : 0;
 
   const sent = {
-    thralls: attackingThralls,
-    fighters: Math.min(sentUnits.fighters || 0, attacker.fighters || 0),
-    rangers: Math.min(sentUnits.rangers || 0, attacker.rangers || 0),
-    mages: Math.min(sentUnits.mages || 0, attacker.mages || 0),
-    warMachines: Math.min(sentUnits.warMachines || 0, attacker.war_machines || 0),
-    ninjas: Math.min(sentUnits.ninjas || 0, attacker.ninjas || 0),
-    thieves: Math.min(sentUnits.thieves || 0, attacker.thieves || 0),
-    clerics: attackerIsVampire ? 0 : Math.min(sentUnits.clerics || 0, attacker.clerics || 0),
-    engineers: Math.min(sentUnits.engineers || 0, attacker.engineers || 0),
-    ladders: Math.min(sentUnits.ladders || 0, attacker.ladders || 0),
+    thralls: Math.max(0, Math.floor(Number(attackingThralls) || 0)),
+    fighters: Math.max(0, Math.min(Math.floor(Number(sentUnits.fighters) || 0), attacker.fighters || 0)),
+    rangers: Math.max(0, Math.min(Math.floor(Number(sentUnits.rangers) || 0), attacker.rangers || 0)),
+    mages: Math.max(0, Math.min(Math.floor(Number(sentUnits.mages) || 0), attacker.mages || 0)),
+    warMachines: Math.max(0, Math.min(Math.floor(Number(sentUnits.warMachines) || 0), attacker.war_machines || 0)),
+    ninjas: Math.max(0, Math.min(Math.floor(Number(sentUnits.ninjas) || 0), attacker.ninjas || 0)),
+    thieves: Math.max(0, Math.min(Math.floor(Number(sentUnits.thieves) || 0), attacker.thieves || 0)),
+    clerics: attackerIsVampire ? 0 : Math.max(0, Math.min(Math.floor(Number(sentUnits.clerics) || 0), attacker.clerics || 0)),
+    engineers: Math.max(0, Math.min(Math.floor(Number(sentUnits.engineers) || 0), attacker.engineers || 0)),
+    ladders: Math.max(0, Math.min(Math.floor(Number(sentUnits.ladders) || 0), attacker.ladders || 0)),
   };
 
   if (
@@ -444,7 +444,7 @@ function resolveMilitaryAttackV2Adapter(
       ? Math.max(0, (defender.clerics || 0) - (defenderAvailable.thralls - v2Defender.thralls))
       : Math.max(0, (defender.clerics || 0) - (defenderAvailable.clerics - v2Defender.clerics)),
     engineers: Math.max(0, (defender.engineers || 0) - (defenderAvailable.engineers - v2Defender.engineers)),
-    war_machines: Math.max(0, v2Defender.war_machines || 0),
+    war_machines: Math.max(0, (defender.war_machines || 0) - Math.max(0, v2Defender.war_machines - (v2Result.defenderUpdates.war_machines ?? v2Defender.war_machines))),
   };
   if (defenderIsVampire) delete defenderUpdates.thralls;
 
@@ -584,18 +584,15 @@ function resolveMilitaryAttack(
   };
   // sentUnits: { fighters, rangers, mages, warMachines, ninjas, thieves, clerics, engineers, ladders }
   const sent = {
-    fighters: Math.min(sentUnits.fighters || 0, attacker.fighters || 0),
-    rangers: Math.min(sentUnits.rangers || 0, attacker.rangers || 0),
-    mages: Math.min(sentUnits.mages || 0, attacker.mages || 0),
-    warMachines: Math.min(
-      sentUnits.warMachines || 0,
-      attacker.war_machines || 0,
-    ),
-    ninjas: Math.min(sentUnits.ninjas || 0, attacker.ninjas || 0),
-    thieves: Math.min(sentUnits.thieves || 0, attacker.thieves || 0),
-    clerics: Math.min(sentUnits.clerics || 0, attacker.clerics || 0),
-    engineers: Math.min(sentUnits.engineers || 0, attacker.engineers || 0),
-    ladders: Math.min(sentUnits.ladders || 0, attacker.ladders || 0),
+    fighters: Math.max(0, Math.min(Math.floor(Number(sentUnits.fighters) || 0), attacker.fighters || 0)),
+    rangers: Math.max(0, Math.min(Math.floor(Number(sentUnits.rangers) || 0), attacker.rangers || 0)),
+    mages: Math.max(0, Math.min(Math.floor(Number(sentUnits.mages) || 0), attacker.mages || 0)),
+    warMachines: Math.max(0, Math.min(Math.floor(Number(sentUnits.warMachines) || 0), attacker.war_machines || 0)),
+    ninjas: Math.max(0, Math.min(Math.floor(Number(sentUnits.ninjas) || 0), attacker.ninjas || 0)),
+    thieves: Math.max(0, Math.min(Math.floor(Number(sentUnits.thieves) || 0), attacker.thieves || 0)),
+    clerics: Math.max(0, Math.min(Math.floor(Number(sentUnits.clerics) || 0), attacker.clerics || 0)),
+    engineers: Math.max(0, Math.min(Math.floor(Number(sentUnits.engineers) || 0), attacker.engineers || 0)),
+    ladders: Math.max(0, Math.min(Math.floor(Number(sentUnits.ladders) || 0), attacker.ladders || 0)),
   };
   const laddersActive = sent.ladders;
   if (
@@ -1234,11 +1231,11 @@ function resolveMilitaryAttack(
     ),
   });
   Object.assign(defenderUpdates, {
-    fighters: Math.max(0, defender.fighters - defFightersLost),
-    rangers: Math.max(0, defender.rangers - defRangersLost),
-    mages: Math.max(0, defender.mages - defMagesLost),
-    ninjas: Math.max(0, defender.ninjas - defNinjasLost),
-    thieves: Math.max(0, defender.thieves - defThievesLost),
+    fighters: Math.max(0, (defender.fighters || 0) - defFightersLost),
+    rangers: Math.max(0, (defender.rangers || 0) - defRangersLost),
+    mages: Math.max(0, (defender.mages || 0) - defMagesLost),
+    ninjas: Math.max(0, (defender.ninjas || 0) - defNinjasLost),
+    thieves: Math.max(0, (defender.thieves || 0) - defThievesLost),
     clerics: Math.max(0, (defender.clerics || 0) - defClericsLost),
     engineers: Math.max(0, (defender.engineers || 0) - defEngineersLost),
     war_machines: Math.max(0, (defender.war_machines || 0) - defWmLost),

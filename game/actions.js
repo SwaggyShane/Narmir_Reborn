@@ -43,6 +43,8 @@ const {
 } = config;
 
 function hireMercenaries(k, unitType, tier, count) {
+  count = Math.floor(Number(count));
+  if (isNaN(count) || count <= 0) return { error: "Count must be a positive integer" };
   const tierDef = MERC_TIERS[tier];
   if (!tierDef) return { error: "Invalid tier" };
   const tavUpgrades = safeJsonParse(
@@ -59,7 +61,8 @@ function hireMercenaries(k, unitType, tier, count) {
     Math.floor(Math.random() * (tierDef.levelMax - tierDef.levelMin + 1));
   const cost = tierDef.costPer * count;
   const upkeep = Math.ceil((cost * tierDef.upkeepPct) / tierDef.duration);
-  if (k.gold < cost)
+  const currentGold = k.gold || 0;
+  if (currentGold < cost)
     return { error: `Need ${cost.toLocaleString()} gold` };
 
   const mercs = safeJsonParse(k.mercenaries, [], "hireMercenaries:mercenaries");
@@ -75,7 +78,7 @@ function hireMercenaries(k, unitType, tier, count) {
 
   return {
     updates: {
-      gold: k.gold - cost,
+      gold: currentGold - cost,
       [unitType]: (k[unitType] || 0) + count,
       mercenaries: JSON.stringify(mercs),
     },
@@ -118,7 +121,8 @@ function purchaseUpgrade(k, category, upgradeKey) {
     return { error: `Requires ${def.requires.replace(/_/g, " ")} first` };
   if (def.raceOnly && k.race !== def.raceOnly)
     return { error: `Only available to ${def.raceOnly.replace(/_/g, " ")}` };
-  if (k.gold < def.cost)
+  const currentGold = k.gold || 0;
+  if (currentGold < def.cost)
     return { error: `Need ${def.cost.toLocaleString()} gold` };
 
   // Check resource costs
@@ -167,7 +171,7 @@ function purchaseUpgrade(k, category, upgradeKey) {
   upgrades[upgradeKey] = true;
   return {
     updates: {
-      gold: k.gold - def.cost,
+      gold: currentGold - def.cost,
       ...(costWood > 0 ? { wood: currentWood - costWood } : {}),
       ...(costStone > 0 ? { stone: currentStone - costStone } : {}),
       ...(costIron > 0 ? { iron: currentIron - costIron } : {}),
@@ -274,7 +278,7 @@ function hireUnits(k, unit, amount) {
 function studyDiscipline(k, discipline, researchersAssigned) {
   const col = RESEARCH_MAP[discipline];
   if (!col) return { error: "Unknown discipline" };
-  if (researchersAssigned > k.researchers)
+  if (researchersAssigned > (k.researchers || 0))
     return { error: "Not enough researchers" };
 
   const currentLevel = k[col] || 100;
@@ -315,7 +319,7 @@ function _selectSchool(k, schoolName) {
     return { error: `You have already chosen the school of ${k.school_of_magic}` };
   }
 
-  if (k.res_spellbook < 100) {
+  if ((k.res_spellbook || 0) < 100) {
     return { error: `You must reach spellbook research level 100 to choose a school` };
   }
 
@@ -344,8 +348,8 @@ function queueBuildings(k, orders) {
       );
       continue;
     }
-    const n = Math.max(0, Number(qty));
-    if (n <= 0) continue;
+    const n = Math.floor(Math.max(0, Number(qty)));
+    if (isNaN(n) || n <= 0) continue;
 
     // Check Cap
     const col = BUILDING_COL[key];
@@ -523,18 +527,21 @@ function queueBuildings(k, orders) {
 
 // Forge construction tools ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â costs gold, no engineer requirement
 function forgeTools(k, toolType, quantity) {
+  quantity = Math.floor(Number(quantity));
+  if (isNaN(quantity) || quantity <= 0) return { error: "Quantity must be a positive integer" };
   const cost = TOOL_GOLD_COST[toolType];
   const col = TOOL_COL[toolType];
   if (cost === undefined || !col) return { error: "Unknown tool type" };
   const totalCost = cost * quantity;
-  if (totalCost > k.gold)
+  const currentGold = k.gold || 0;
+  if (totalCost > currentGold)
     return {
-      error: `Need ${totalCost.toLocaleString()} gold but only have ${k.gold.toLocaleString()} gold`,
+      error: `Need ${totalCost.toLocaleString()} gold but only have ${currentGold.toLocaleString()} gold`,
     };
   return {
     updates: {
       [col]: (k[col] || 0) + quantity,
-      gold: k.gold - totalCost,
+      gold: currentGold - totalCost,
       updated_at: Math.floor(Date.now() / 1000),
     },
     totalCost,
@@ -542,6 +549,8 @@ function forgeTools(k, toolType, quantity) {
 }
 
 function raidTradeRoute(attacker, defender, unitCount) {
+  unitCount = Math.floor(Number(unitCount));
+  if (isNaN(unitCount) || unitCount <= 0) return { error: "Unit count must be a positive integer" };
   if (attacker.race !== "orc")
     return { error: "Only Orcs can raid trade routes" };
   const currentAttackerThieves = attacker.thieves || 0;
@@ -589,6 +598,8 @@ function raidTradeRoute(attacker, defender, unitCount) {
 }
 
 function demolishBuilding(k, buildingKey, amount) {
+  amount = Math.floor(Number(amount));
+  if (isNaN(amount) || amount <= 0) return { error: "Amount must be a positive integer" };
   const col = BUILDING_COL[buildingKey];
   if (!col) return { error: "Unknown building" };
   const current = k[col] || 0;
@@ -603,8 +614,8 @@ function demolishBuilding(k, buildingKey, amount) {
   return {
     updates: {
       [col]: current - toDemolish,
-      gold: k.gold + goldRefund,
-      land: k.land + landRefund,
+      gold: (k.gold || 0) + goldRefund,
+      land: (k.land || 0) + landRefund,
     },
     refund: { gold: goldRefund, land: landRefund, count: toDemolish },
   };

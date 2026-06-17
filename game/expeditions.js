@@ -19,6 +19,19 @@ const {
   THRONE_OF_NAZDREG,
 } = config;
 
+function applyPrizeEffect(prize, k, updates) {
+  const temp = {};
+  prize.effect(k, temp);
+  for (const [key, val] of Object.entries(temp)) {
+    if (typeof val === 'number') {
+      const baseVal = k[key] || 0;
+      updates[key] = (updates[key] !== undefined ? updates[key] : baseVal) + (val - baseVal);
+    } else {
+      updates[key] = val;
+    }
+  }
+}
+
 function computeExpeditionTransitions(expeditions, now) {
   const transitions = [];
   for (const exp of expeditions) {
@@ -136,7 +149,7 @@ function expeditionRewards(type, rangers, fighters, k) {
 
   if (type === "scout") {
     rewards.push({ text: `+${goldBase.toLocaleString()} gold from foraging` });
-    updates.gold = k.gold + goldBase;
+    updates.gold = (k.gold || 0) + goldBase;
 
     // Resource Yield: Wood
     const rollWood = Math.random() * 100;
@@ -163,7 +176,7 @@ function expeditionRewards(type, rangers, fighters, k) {
     rewards.push({
       text: `+${land} acre${land > 1 ? "s" : ""} of unclaimed land`,
     });
-    updates.land = k.land + land;
+    updates.land = (k.land || 0) + land;
 
     if (roll(0.3)) {
       const mana = rand(
@@ -171,7 +184,7 @@ function expeditionRewards(type, rangers, fighters, k) {
         Math.floor(rangers * 0.8 * exploreBonus),
       );
       rewards.push({ text: `+${mana} mana from a hidden shrine` });
-      updates.mana = k.mana + mana;
+      updates.mana = (k.mana || 0) + mana;
     }
     if (roll(0.1)) {
       const troops = rand(
@@ -221,7 +234,7 @@ function expeditionRewards(type, rangers, fighters, k) {
     rewards.push({
       text: `+${goldBase.toLocaleString()} gold from deep wilderness caches`,
     });
-    updates.gold = k.gold + goldBase;
+    updates.gold = (k.gold || 0) + goldBase;
 
     // Resource Yield: Wood and Stone
     const rollDeep = Math.random() * 100;
@@ -252,7 +265,7 @@ function expeditionRewards(type, rangers, fighters, k) {
       Math.floor(rand(rangers * 0.04, rangers * 0.1) * exploreBonus),
     );
     rewards.push({ text: `+${land} acres of fertile territory` });
-    updates.land = k.land + land;
+    updates.land = (k.land || 0) + land;
 
     if (roll(0.55)) {
       const mana = rand(
@@ -262,7 +275,7 @@ function expeditionRewards(type, rangers, fighters, k) {
       rewards.push({
         text: `+${mana} mana from ley lines discovered deep in the wilderness`,
       });
-      updates.mana = k.mana + mana;
+      updates.mana = (k.mana || 0) + mana;
     }
     if (roll(0.25)) {
       const disc = [
@@ -583,7 +596,7 @@ function expeditionRewards(type, rangers, fighters, k) {
       if (!ultraRareObtained && roll(ultraChance)) {
         if (mountainUltraRares.length > 0) {
           const prize = mountainUltraRares[Math.floor(Math.random() * mountainUltraRares.length)];
-          prize.effect(k, updates);
+          applyPrizeEffect(prize, k, updates);
           rewards.push({ text: `ÃƒÂ¢Ã…â€œÃ‚Â¨ÃƒÂ¢Ã…â€œÃ‚Â¨ÃƒÂ¢Ã…â€œÃ‚Â¨ ULTRA RARE: ${prize.text}` });
 
           // Add ultra-rare item to inventory
@@ -601,7 +614,7 @@ function expeditionRewards(type, rangers, fighters, k) {
     // Non-mountain expeditions: regular ultra-rare drop (can be multiple)
     const prize =
       ULTRA_RARE_PRIZES[Math.floor(Math.random() * ULTRA_RARE_PRIZES.length)];
-    prize.effect(k, updates);
+    applyPrizeEffect(prize, k, updates);
     rewards.push({ text: `ÃƒÂ¢Ã…â€œÃ‚Â¨ÃƒÂ¢Ã…â€œÃ‚Â¨ÃƒÂ¢Ã…â€œÃ‚Â¨ ULTRA RARE: ${prize.text}` });
 
     // Add ultra-rare item to inventory
@@ -748,7 +761,7 @@ async function resolveExpeditions(db, k, engine) {
           "INSERT INTO server_state (key, value) VALUES ('throne_found', '1') ON CONFLICT (key) DO NOTHING",
         );
         if (claim && claim.changes === 1) {
-          THRONE_OF_NAZDREG.effect(freshK, updates);
+          applyPrizeEffect(THRONE_OF_NAZDREG, freshK, updates);
           rewards.unshift({ text: THRONE_OF_NAZDREG.text });
           events.push({
             type: "system",
@@ -968,7 +981,7 @@ async function resolveExpeditions(db, k, engine) {
             [serverAnnounce, k.turn],
           );
         }
-        if (engine.io)
+        if (engine && engine.io)
           engine.io.emit("chat:system", {
             message: serverAnnounce,
             ts: Date.now(),
