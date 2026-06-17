@@ -1,5 +1,5 @@
-// Happiness and morale domain: happiness calculation, rebellion events,
-// and combat multipliers derived from morale/happiness.
+// Happiness domain: happiness calculation, rebellion events, and combat
+// multipliers derived from happiness.
 
 const { safeJsonParse } = require('../utils/helpers');
 const { raceBonus } = require('./lib/race-bonus');
@@ -102,10 +102,10 @@ function calculateHappiness(k) {
   };
 }
 
-function moraleMult(morale) {
-  if (morale < 50) return 0.8 + (morale / 50) * 0.1; // 0.80–0.90
-  if (morale < 100) return 0.9 + ((morale - 50) / 50) * 0.1; // 0.90–1.00
-  return Math.min(1.2, 1.0 + ((morale - 100) / 100) * 0.1); // 1.00–1.20 (capped at 1.20)
+function happinessMult(happiness) {
+  if (happiness < 50) return 0.8 + (happiness / 50) * 0.1; // 0.80–0.90
+  if (happiness < 100) return 0.9 + ((happiness - 50) / 50) * 0.1; // 0.90–1.00
+  return Math.min(1.2, 1.0 + ((happiness - 100) / 100) * 0.1); // 1.00–1.20 (capped at 1.20)
 }
 
 function happinessCombatMult(happiness) {
@@ -236,7 +236,7 @@ function rebellionCheck(k, happiness, updates, events) {
 module.exports = {
   calculateHappiness,
   getHappinessRecoveryRate,
-  moraleMult,
+  happinessMult,
   happinessCombatMult,
   rebellionCheck,
   rebellionEvent,

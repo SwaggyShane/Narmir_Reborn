@@ -1,6 +1,6 @@
 'use strict';
 // Characterization tests for game/happiness.js.
-// Locks happiness calculation, morale multipliers, and rebellion triggers.
+// Locks happiness calculation, happiness multipliers, and rebellion triggers.
 //
 // Run: node test/happiness.test.js
 
@@ -22,7 +22,7 @@ function makeKingdom(overrides = {}) {
     food: 5000,
     food_surplus_turns: 0,
     food_shortage_turns: 0,
-    morale: 100,
+    happiness: 100,
     population: 5000,
     gold: 10000,
     fighters: 0, rangers: 0, clerics: 0, mages: 0, thieves: 0, ninjas: 0,
@@ -119,16 +119,16 @@ console.log('Testing happiness.js\n');
   console.log(`Test 8: getHappinessRecoveryRate scales ✓ (lo=${lo}, hi=${hi})`);
 }
 
-// Test 9: moraleMult ranges correct
+// Test 9: happinessMult ranges correct
 {
-  const lo = happiness.moraleMult(0);
-  const mid = happiness.moraleMult(100);
-  const hi = happiness.moraleMult(200);
-  assert.ok(lo < mid, 'low morale gives lower mult than mid');
-  assert.ok(hi >= mid, 'very high morale gives equal or higher mult');
-  assert.ok(hi <= 1.2, 'morale mult capped at 1.2');
-  assert.ok(lo >= 0.8, 'morale mult floored near 0.8');
-  console.log(`Test 9: moraleMult ranges ✓ (lo=${lo}, mid=${mid}, hi=${hi})`);
+  const lo = happiness.happinessMult(0);
+  const mid = happiness.happinessMult(100);
+  const hi = happiness.happinessMult(200);
+  assert.ok(lo < mid, 'low happiness gives lower mult than mid');
+  assert.ok(hi >= mid, 'very high happiness gives equal or higher mult');
+  assert.ok(hi <= 1.2, 'happiness mult capped at 1.2');
+  assert.ok(lo >= 0.8, 'happiness mult floored near 0.8');
+  console.log(`Test 9: happinessMult ranges ✓ (lo=${lo}, mid=${mid}, hi=${hi})`);
 }
 
 // Test 10: happinessCombatMult clamps to [0.5, 1.5]
