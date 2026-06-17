@@ -14,7 +14,7 @@ function processLocationMapsWip(k, events) {
   );
   if (!wip.length) return updates;
 
-  const scribesAvail = k.scribes;
+  const scribesAvail = k.scribes || 0;
   let scribesUsed = 0;
   const completed = [];
   const remaining = [];
