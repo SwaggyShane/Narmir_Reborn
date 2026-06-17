@@ -12,8 +12,11 @@ const COMBAT_NEWS_UNIT_ORDER = _config.COMBAT_NEWS_UNIT_ORDER || [
   "clerics",
   "ninjas",
   "thieves",
+  "scribes",
   "engineers",
+  "researchers",
   "war_machines",
+  "ballistae",
 ];
 const COMBAT_NEWS_UNIT_LABELS = _config.COMBAT_NEWS_UNIT_LABELS || {
   thralls: "Thralls",
@@ -23,8 +26,11 @@ const COMBAT_NEWS_UNIT_LABELS = _config.COMBAT_NEWS_UNIT_LABELS || {
   clerics: "Clerics",
   ninjas: "Ninjas",
   thieves: "Thieves",
+  scribes: "Scribes",
   engineers: "Engineers",
+  researchers: "Researchers",
   war_machines: "War Machines",
+  ballistae: "Ballistae",
 };
 
 function normalizeCombatUnits(units = {}) {

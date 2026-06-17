@@ -394,7 +394,11 @@ function processBuildQueue(k, events, xpSourcesAccum) {
               for (const [bKey, bCost] of Object.entries(BUILDING_LAND_COST)) {
                 const bCol = BUILDING_COL[bKey];
                 if (bCol) totalUsedLand += (updates[bCol] !== undefined ? updates[bCol] : (k[bCol] || 0)) * bCost;
-                totalUsedLand += (queue[bKey] || 0) * bCost;
+                // Subtract fromQueue for the current building to avoid double-counting: updates[col]
+                // already includes the units being completed this iteration, but queue[building] has
+                // not yet been decremented, so the same units' land cost would otherwise be counted twice.
+                const qQty = bKey === building ? Math.max(0, (queue[bKey] || 0) - fromQueue) : (queue[bKey] || 0);
+                totalUsedLand += qQty * bCost;
               }
               const availLand = (updates.land !== undefined ? updates.land : k.land) - totalUsedLand;
               extraUnits = Math.max(0, Math.min(extraUnits, Math.floor(availLand / landPerUnit)));
@@ -435,8 +439,20 @@ function processBuildQueue(k, events, xpSourcesAccum) {
             const curWood = updates.wood !== undefined ? updates.wood : k.wood;
             const curStone = updates.stone !== undefined ? updates.stone : k.stone;
             const curIron = updates.iron !== undefined ? updates.iron : k.iron;
+            let curFreeLand = Infinity;
+            if (landPerUnit > 0) {
+              let usedLand = 0;
+              for (const [bKey, bCost] of Object.entries(BUILDING_LAND_COST)) {
+                const bCol = BUILDING_COL[bKey];
+                if (bCol) usedLand += (updates[bCol] !== undefined ? updates[bCol] : (k[bCol] || 0)) * bCost;
+                const qQty = bKey === building ? Math.max(0, (queue[bKey] || 0) - fromQueue) : (queue[bKey] || 0);
+                usedLand += qQty * bCost;
+              }
+              curFreeLand = (updates.land !== undefined ? updates.land : k.land) - usedLand;
+            }
             let reason = 'gold';
             if (goldPerUnit > 0 && curGold < goldPerUnit) reason = 'gold';
+            else if (landPerUnit > 0 && curFreeLand < landPerUnit) reason = 'land';
             else if (woodPerUnit > 0 && curWood < woodPerUnit) reason = 'wood';
             else if (stonePerUnit > 0 && curStone < stonePerUnit) reason = 'stone';
             else if (ironPerUnit > 0 && curIron < ironPerUnit) reason = 'iron';
@@ -696,10 +712,9 @@ function processBuildQueue(k, events, xpSourcesAccum) {
 function demolishBuilding(k, buildingKey, amount) {
   const col = BUILDING_COL[buildingKey];
   if (!col) return { error: "Unknown building" };
+  const n = Math.max(0, Math.floor(Number(amount) || 0));
   const current = k[col] || 0;
-  const amt = Math.floor(Number(amount));
-  if (isNaN(amt) || amt <= 0) return { error: "Invalid amount" };
-  const toDemolish = Math.min(amt, current);
+  const toDemolish = Math.min(n, current);
   if (toDemolish <= 0) return { error: "Nothing to demolish" };
 
   const goldRefund = Math.floor(

@@ -6,6 +6,8 @@
 const { unitLevelMult } = require("./lib/troops");
 
 function raidTradeRoute(attacker, defender, unitCount) {
+  unitCount = Math.floor(Number(unitCount));
+  if (isNaN(unitCount) || unitCount <= 0) return { error: "unitCount must be a positive integer" };
   if (attacker.race !== "orc")
     return { error: "Only Orcs can raid trade routes" };
   const currentAttackerThieves = attacker.thieves || 0;

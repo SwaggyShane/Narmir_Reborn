@@ -39,7 +39,7 @@ function processActiveEffects(k, events) {
           "processTurn:granary_upgrades",
         );
         const damage = (updates._blightDamaged = Math.floor(
-          (data.damage || 500) * (upgrades.segregation ? 0.5 : 1.0),
+          (data.damage ?? 500) * (upgrades.segregation ? 0.5 : 1.0),
         ));
         updates.food = Math.max(
           0,
@@ -63,27 +63,27 @@ function processActiveEffects(k, events) {
       } else if (effect === "silence") {
         // Research suppressed — handled in processTurn by checking for silence
       } else if (effect === "summon_rats") {
-        const foodDmg = data.food_damage_per_turn || 0;
+        const foodDmg = data.food_damage_per_turn ?? 0;
         if (foodDmg > 0) {
           updates.food = Math.max(0, (updates.food !== undefined ? updates.food : k.food) - foodDmg);
           events.push({ type: "attack", message: `🏹 ✗ Summoned rats devour ${foodDmg.toLocaleString()} food from your stores.` });
         }
       } else if (effect === "life_drain_aura") {
-        const drainPct = data.population_drain || 0.1;
+        const drainPct = data.population_drain ?? 0.1;
         const lost = Math.floor(k.population * drainPct);
         if (lost > 0) {
           updates.population = Math.max(0, (updates.population !== undefined ? updates.population : k.population) - lost);
           events.push({ type: "attack", message: `🏹 ™ Life drain aura saps ${lost.toLocaleString()} population from your kingdom.` });
         }
       } else if (effect === "mutate_crops") {
-        const penalty = data.food_penalty || 0.3;
+        const penalty = data.food_penalty ?? 0.3;
         const foodLost = Math.floor(k.food * penalty);
         if (foodLost > 0) {
           updates.food = Math.max(0, (updates.food !== undefined ? updates.food : k.food) - foodLost);
           events.push({ type: "attack", message: `🏹 ??? Mutated crops rot — ${foodLost.toLocaleString()} food spoiled.` });
         }
       } else if (effect === "command_legion") {
-        const friendlyFire = data.damage_per_turn || 0;
+        const friendlyFire = data.damage_per_turn ?? 0;
         if (friendlyFire > 0) {
           updates.fighters = Math.max(0, (updates.fighters !== undefined ? updates.fighters : k.fighters) - friendlyFire);
           events.push({ type: "attack", message: `🔶 ⚔️ Command legion confusion — ${friendlyFire.toLocaleString()} fighters lost to friendly fire.` });

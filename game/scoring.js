@@ -9,19 +9,19 @@ function calculateScore(k) {
   let score = 0;
 
   // Base stats
-  score += k.land * 1;
-  score += k.population * 0.5;
+  score += (k.land || 0) * 1;
+  score += (k.population || 0) * 0.5;
   score += (k.level || 1) * 100;
 
   // Resources
-  score += k.gold * 0.001;
-  score += k.food * 0.0005;
-  score += k.mana * 0.002;
-  score += k.hammers_stored * 0.1;
-  score += k.scaffolding_stored * 0.1;
-  score += k.blueprints_stored * 5;
-  score += k.weapons_stockpile * 0.005;
-  score += k.armor_stockpile * 0.01;
+  score += (k.gold || 0) * 0.001;
+  score += (k.food || 0) * 0.0005;
+  score += (k.mana || 0) * 0.002;
+  score += (k.hammers_stored || 0) * 0.1;
+  score += (k.scaffolding_stored || 0) * 0.1;
+  score += (k.blueprints_stored || 0) * 5;
+  score += (k.weapons_stockpile || 0) * 0.005;
+  score += (k.armor_stockpile || 0) * 0.01;
 
   // Troop levels (multiplier)
   let troopLevels = {};
