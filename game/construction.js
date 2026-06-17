@@ -112,18 +112,25 @@ function queueBuildings(k, orders) {
   let totalStoneCost = 0;
   let totalIronCost = 0;
 
+  // Pre-compute resource types already in queue so we can catch same-type duplicates
+  // within a single batch request (neither building would be in queue yet during the loop).
+  const queuedTypes = new Set();
+  for (const [qKey, qCount] of Object.entries(queue)) {
+    if (qCount > 0) {
+      const qRbCfg = RESOURCE_BUILDING_CONFIG[qKey];
+      if (qRbCfg) queuedTypes.add(qRbCfg.type);
+    }
+  }
+
   for (const [key, n] of Object.entries(processedOrders)) {
     const rbCfg = RESOURCE_BUILDING_CONFIG[key];
     if (!rbCfg) continue; // Not a resource building
 
-    // Enforce one-slot-per-resource-type: reject if any building of this type is already queued
-    for (const [qKey, qCount] of Object.entries(queue)) {
-      if (qCount <= 0) continue;
-      const qRbCfg = RESOURCE_BUILDING_CONFIG[qKey];
-      if (qRbCfg && qRbCfg.type === rbCfg.type) {
-        return { error: `A ${rbCfg.type} building (${qKey.replace(/_/g, ' ')}) is already in progress. Only one ${rbCfg.type} build slot is allowed at a time.` };
-      }
+    // Enforce one-slot-per-resource-type (covers existing queue and current batch)
+    if (queuedTypes.has(rbCfg.type)) {
+      return { error: `A ${rbCfg.type} building is already in progress or queued. Only one ${rbCfg.type} build slot is allowed at a time.` };
     }
+    queuedTypes.add(rbCfg.type);
 
     const seq = resSeqRaw[rbCfg.type] || { s2_paid_at_bracket: -1, s3_paid_at_bracket: -1, last_s3_bracket: -1 };
     const s3Col = config.RESOURCE_STAGE3_COL[rbCfg.type];
@@ -226,7 +233,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
   const hl = TOOL_COL.hammers;
   const sl = TOOL_COL.scaffolding;
   const hammerBonus = 1 + (k[hl] || 0) * 0.05;
-  const smithyBonus = 1 + Math.floor(k.bld_smithies / 15) * 0.02;
+  const smithyBonus = 1 + Math.floor((k.bld_smithies || 0) / 15) * 0.02;
   const raceConstr = raceBonus(k, "construction");
   const engLevelMult = unitLevelMult(k, "engineers");
   const resConstr = (k.res_construction || 100) / 100;
@@ -238,7 +245,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
     hammerBonus * smithyBonus * raceConstr * engLevelMult * resConstr * effectiveSmithyMult;
 
   // Consumable tool pools ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â tracked across the building loop this turn
-  let blueprintsLeft = k.blueprints_stored;
+  let blueprintsLeft = k.blueprints_stored || 0;
   let scaffoldingLeft = k[sl] || 0;
   let blueprintsUsed = 0;
   let scaffoldingUsed = 0;
@@ -565,7 +572,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
   const hammerCount = k[hl] || 0;
   if (hammerCount > 0 && activeBuildings.size > 0 && totalEngineersWorked > 0) {
     const hammersUsedThisTurn = Math.min(hammerCount, totalEngineersWorked);
-    const used = k.hammer_turns_used + hammersUsedThisTurn;
+    const used = (k.hammer_turns_used || 0) + hammersUsedThisTurn;
     const breaks = Math.floor(used / 40); // 1 hammer breaks every 40 turns of use
     if (breaks > 0) {
       const newCount = Math.max(0, hammerCount - breaks);
