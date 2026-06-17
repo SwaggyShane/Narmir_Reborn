@@ -660,7 +660,7 @@ function applyVampireReanimation(vampire, updates, enemyDamageReport, ownDamageR
 
   for (const [troopType, dead] of Object.entries(enemyDeadByType)) {
     if (troopType === 'war_machines') continue;
-    const raised = Math.floor((dead || 0) * 0.3);
+    const raised = Math.floor((dead || 0) * 0.35);
     if (raised <= 0) continue;
     const targetType = troopType === 'clerics' ? 'thralls' : troopType;
     raisedByType[targetType] = (raisedByType[targetType] || 0) + raised;
@@ -676,7 +676,7 @@ function applyVampireReanimation(vampire, updates, enemyDamageReport, ownDamageR
     totalRaised: Object.values(raisedByType).reduce((sum, count) => sum + count, 0),
     enemyDead: enemyDamageReport.deadTotal || 0,
     ownDead: ownDamageReport.deadTotal || 0,
-    rate: { enemy: 0.3, own: 0 },
+    rate: { enemy: 0.35, own: 0 },
   };
 }
 
@@ -1141,8 +1141,8 @@ function applyClericHealing(injuredTroops, clericCount, clericLevel = 1) {
   const rescued = [];
   const count = Math.max(0, clericCount || 0);
   const level = Math.max(1, clericLevel || 1);
-  const rescueChance = Math.min(0.6, 0.08 + (count / 1500) + (level / 250));
-  let remaining = Math.max(0, Math.floor(count * 0.1));
+  const rescueChance = Math.min(0.65, 0.12 + (count / 1400) + (level / 220));
+  let remaining = Math.max(0, Math.floor(count * 0.12));
 
   // Find dead or heavily injured troops and attempt battlefield triage.
   for (const troopType of Object.keys(injuredTroops)) {
