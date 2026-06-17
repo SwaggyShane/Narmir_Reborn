@@ -152,6 +152,26 @@ const {
   awardEngineerXp,
 } = engineersMod;
 
+// XP and leveling domain — kingdom XP curve, level-from-XP search, milestone
+// rewards, and per-activity XP awards. Defined in game/xp.js; re-exported below.
+const xpMod = require('./xp');
+const {
+  xpForLevel,
+  xpToNextLevel,
+  checkMilestones,
+  levelFromXp,
+  awardXp,
+} = xpMod;
+
+// Population domain — housing capacity, population growth, and research
+// increment. Defined in game/population.js; re-exported below.
+const populationMod = require('./population');
+const {
+  housingCapPerBuilding,
+  popGrowth,
+  researchIncrement,
+} = populationMod;
+
 const {
   RACE_BONUSES,
   REGION_DATA,
@@ -189,8 +209,6 @@ const {
   MARKET_UPGRADES,
   TAVERN_UPGRADES,
   MERC_TIERS,
-  XP_RACE_BONUS,
-  XP_BASE,
   BUILDING_COST,
   BUILDING_GOLD_COST,
   BUILDING_LAND_COST,
@@ -226,7 +244,6 @@ const {
   BUILDING_WOOD_COST,
   BUILDING_STONE_COST,
   BUILDING_IRON_COST,
-  MILESTONES,
 } = config;
 
 const BLUEPRINT_REQUIRED = new Set(BP_REQ);
@@ -240,14 +257,6 @@ const USE_COMBAT_V2 = process.env.USE_COMBAT_V2 === "1";
 function isNight() {
   const h = new Date().getUTCHours();
   return h >= 1 && h < 13; // 8PM EST to 8AM EST (EST is UTC-5)
-}
-
-
-function housingCapPerBuilding(k) {
-  const base = HOUSING_CAP_BY_RACE[k?.race] || 500;
-  if (!k?.prestige_level) return base;
-  const mod = PRESTIGE_MODIFIERS[Math.min(k.prestige_level, 5)]?.pop || 1.0;
-  return Math.floor(base * mod);
 }
 
 function assignRegion(race) {
@@ -304,119 +313,6 @@ async function logHappinessEvent(db, kingdomId, turn, eventData) {
   } catch (err) {
     console.error(`[happiness] logHappinessEvent error: ${err.message}`);
   }
-}
-
-
-function popGrowth(k) {
-  const happiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
-
-  // Apply happiness-based growth multiplier
-  let happinessMult = 1.0;
-  if (happiness >= 80) {
-    happinessMult = 1.3; // Thriving
-  } else if (happiness >= 50) {
-    happinessMult = 1.0; // Normal
-  } else if (happiness >= 30) {
-    happinessMult = 0.7; // Concerned
-  } else if (happiness >= 0) {
-    happinessMult = 0.3; // Unhappy
-  } else {
-    happinessMult = -0.05; // Fleeing (population loss)
-  }
-
-  // Handle fleeing population
-  if (happiness < 0) {
-    return Math.floor(k.population * happinessMult);
-  }
-
-  const capPerBuilding = housingCapPerBuilding(k);
-  let housingCap = k.bld_housing * capPerBuilding;
-
-  // Apply world fragment bonuses for housing
-  const housingMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'capacity');
-  housingCap *= housingMult;
-
-  // Apply synergy troop capacity bonus
-  housingCap *= 1.0;
-
-  const pop = k.population;
-
-  let growthMult = happinessMult;
-
-  // Apply Bless growth boost if active
-  const effects = safeJsonParse(
-    k.active_effects,
-    {},
-    "popGrowth:active_effects",
-  );
-  if (effects.bless) {
-    growthMult *= 1.5; // 50% growth boost from bless
-  }
-
-  // Apply world fragment bonuses for housing growth (e.g., Tears of the World Tree)
-  const housingGrowthMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'growth');
-  growthMult *= housingGrowthMult;
-
-  // Synergy passive bonus for population growth
-  const synergyPopMult = getSynergyPassiveBonusMultiplier(k, 'population_growth');
-  growthMult *= synergyPopMult;
-
-  // Hero population bonuses (Grand Chancellor's Royal Decree, Alpha's
-  // Predatory Growth, Blood Matriarch's Sanguine Bond)
-  growthMult *= raceBonus(k, "population");
-
-  if (housingCap > 0 && pop >= housingCap * 2) return 0;
-  if (housingCap > 0 && pop > housingCap) growthMult = 0.1;
-
-  const base = Math.floor(pop * 0.003);
-  const entertainment = Math.floor(k.res_entertainment / 100) * 10;
-  const raceGrowthMult =
-    {
-      high_elf: 0.8,
-      dwarf: 0.9,
-      dire_wolf: 1.0,
-      dark_elf: 0.85,
-      human: 1.15,
-      orc: 1.1,
-    }[k.race] || 1.0;
-  return Math.floor((base + entertainment) * raceGrowthMult * growthMult);
-}
-
-function researchIncrement(k, discipline, researchersAssigned, currentLevel) {
-  let schoolBonus = 1 + Math.floor(k.bld_schools / 5) * 0.02;
-  const schoolSpeedMult = fragmentBonusManager.getBonusMultiplier(k, 'schools', 'speed');
-  const schoolOutputMult = fragmentBonusManager.getBonusMultiplier(k, 'schools', 'output');
-  schoolBonus *= (schoolSpeedMult * schoolOutputMult);
-  const raceMulti =
-    discipline === "spellbook" || discipline === "school_spellbook"
-      ? raceBonus(k, "magic")
-      : raceBonus(k, "research");
-  const resLevelMult = unitLevelMult(k, "researchers");
-  const libraryResearchMult = fragmentBonusManager.getBonusMultiplier(k, 'libraries', 'research_speed');
-
-  // Apply happiness multiplier
-  const happiness = k.happiness !== undefined && k.happiness !== null ? k.happiness : 50;
-  const happinessMult = Math.max(0, 0.5 + (happiness / 100));
-
-  // Synergy passive bonus for research speed
-  const synergyResearchMult = getSynergyPassiveBonusMultiplier(k, 'research_speed');
-
-  const effective = Math.floor(
-    researchersAssigned * schoolBonus * raceMulti * resLevelMult * libraryResearchMult * happinessMult * synergyResearchMult,
-  );
-
-  let factor = 1.0;
-  if (currentLevel > 100) {
-    // Exponentially harder: +5% cost compounding per point above 100
-    // Level 150 requires ~11x more researchers, Level 200 requires ~131x more.
-    factor = Math.pow(1.05, currentLevel - 100);
-  }
-
-  if (effective >= Math.floor(2000 * factor)) return 5;
-  if (effective >= Math.floor(1200 * factor)) return 3;
-  if (effective >= Math.floor(600 * factor)) return 2;
-  if (effective >= Math.floor(200 * factor)) return 1;
-  return 0;
 }
 
 // ── Season system ─────────────────────────────────────────────────────────────
@@ -2381,128 +2277,6 @@ function _selectSchool(k, schoolName) {
 // Single smooth quadratic: 10*(level-1)^2
 // Level 500 = 2,490,010 XP — a dedicated player taking all turns (~403/day) hits
 // this in ~124 days at 50 XP/turn base.
-function xpForLevel(level, prestige = 0) {
-  const targetLevel = Math.min(level, 500);
-  if (targetLevel < 1) return 0;
-  const base = config.XP_LEVELS[targetLevel] || 0;
-  // Each prestige level requires 20% more XP per level
-  const mult = 1.0 + (prestige * 0.2);
-  return Math.floor(base * mult);
-}
-
-function xpToNextLevel(level, prestige = 0) {
-  return xpForLevel(level + 1, prestige) - xpForLevel(level, prestige);
-}
-
-// Check all milestone levels passed between oldLevel and newLevel (inclusive).
-// Grants one-time resources and accumulates permanent bonuses.
-function checkMilestones(k, oldLevel, newLevel) {
-  const events = [];
-  let goldGrant = 0, landGrant = 0, fightersGrant = 0;
-  let researchersGrant = 0, thievesGrant = 0, ninjasGrant = 0;
-  let lastTitle = null;
-
-  const claimed = safeJsonParse(k.milestones_claimed, {}, "checkMilestones:claimed");
-  const bonuses = safeJsonParse(k.milestone_bonuses, {}, "checkMilestones:bonuses");
-
-  // Step through each multiple of 25 that was passed this turn
-  const firstMs = Math.ceil((oldLevel + 1) / 25) * 25;
-  for (let lv = firstMs; lv <= newLevel; lv += 25) {
-    if (claimed[lv]) continue;
-    const ms = MILESTONES[lv];
-    if (!ms) continue;
-
-    const reward = ms.rewards[k.race] || ms.rewards.default || {};
-    if (reward.bonus) {
-      for (const [key, val] of Object.entries(reward.bonus)) {
-        bonuses[key] = (bonuses[key] || 0) + val;
-      }
-    }
-
-    goldGrant      += reward.gold       || 0;
-    landGrant      += reward.land       || 0;
-    fightersGrant  += reward.fighters   || 0;
-    researchersGrant += reward.researchers || 0;
-    thievesGrant   += reward.thieves    || 0;
-    ninjasGrant    += reward.ninjas     || 0;
-    claimed[lv] = true;
-    lastTitle = ms.title;
-
-    events.push({
-      type: "milestone",
-      message: `🏆 Level ${lv} milestone — ${ms.title}! Resources granted.`,
-    });
-  }
-
-  if (events.length === 0) return { updates: {}, events: [] };
-
-  return {
-    updates: {
-      goldGrant, landGrant, fightersGrant,
-      researchersGrant, thievesGrant, ninjasGrant,
-      milestone_bonuses: JSON.stringify(bonuses),
-      milestones_claimed: JSON.stringify(claimed),
-      ...(lastTitle && { milestone_title: lastTitle }),
-    },
-    events,
-  };
-}
-
-// Safe: xpForLevel(1000) = 4,990,005 — well within JS safe integer range
-function levelFromXp(totalXp, prestige = 0) {
-  let lo = 1,
-    hi = 500;  // Changed from 1000 to match max level
-  while (lo < hi) {
-    const mid = (lo + hi + 1) >> 1;
-    if (xpForLevel(mid, prestige) <= totalXp) lo = mid;
-    else hi = mid - 1;
-  }
-  return lo;
-}
-
-function xpRaceBonus(k, activity) {
-  const bonuses = XP_RACE_BONUS[k.race] || {};
-  const base = bonuses.all || 1.0;
-  return Math.max(base, bonuses[activity] || base);
-}
-
-// Award XP and check for level up — returns { xp, level, levelled, events, xp_sources }
-function awardXp(k, activity, amount) {
-  const currentLevel = k.level || 1;
-
-  // Stop XP gain at level 500
-  if (currentLevel >= 500) {
-    return { xp: k.xp || 0, level: 500, levelled: false, events: [], xp_sources: k.xp_sources || {} };
-  }
-
-  const mult = xpRaceBonus(k, activity);
-  const earned = (XP_BASE[activity] || 10) * amount * mult;
-  const newXp = Math.max(0, (k.xp || 0) + earned);
-  const prestige = k.prestige_level || 0;
-  const newLevel = Math.min(levelFromXp(newXp, prestige), 500);
-  const levelled = newLevel > currentLevel;
-  const events = [];
-
-  if (levelled && newLevel >= 500) {
-    events.push({
-      type: "system",
-      message: config.STRINGS.LEVEL_500_ACHIEVED,
-    });
-  } else if (levelled) {
-    events.push({
-      type: "system",
-      message: `🌟 Kingdom reached Level ${newLevel}! (${earned.toLocaleString()} XP earned)`,
-    });
-  }
-
-  // Track XP by source
-  let xpSources = {};
-  xpSources = safeJsonParse(k.xp_sources, {}, 'awardXp:xp_sources');
-  if (!xpSources[activity]) xpSources[activity] = 0;
-  xpSources[activity] += earned;
-
-  return { xp: newXp, level: newLevel, earned, levelled, events, xp_sources: xpSources };
-}
 
 // ── Construction ──────────────────────────────────────────────────────────────
 
