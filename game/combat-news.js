@@ -3,7 +3,14 @@
  * Generates human-readable combat reports for players
  */
 
-const { COMBAT_NEWS_UNIT_LABELS, COMBAT_NEWS_UNIT_ORDER } = require("./config");
+const _combatNewsConfig = require("./config");
+const COMBAT_NEWS_UNIT_LABELS = _combatNewsConfig.COMBAT_NEWS_UNIT_LABELS || {
+  fighters: 'fighters', rangers: 'rangers', mages: 'mages', clerics: 'clerics',
+  thieves: 'thieves', ninjas: 'ninjas', scribes: 'scribes', engineers: 'engineers',
+  researchers: 'researchers', war_machines: 'war machines', ballistae: 'ballistae'
+};
+const COMBAT_NEWS_UNIT_ORDER = _combatNewsConfig.COMBAT_NEWS_UNIT_ORDER ||
+  ['fighters','rangers','mages','clerics','thieves','ninjas','scribes','engineers','researchers','war_machines','ballistae'];
 
 function normalizeCombatUnits(units = {}) {
   const normalized = { ...units };

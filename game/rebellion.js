@@ -35,14 +35,14 @@ function rebellionEvent(k, updates, events) {
       {
         const lossPercent = 0.05 + Math.random() * 0.05; // 5-10%
         const populationLoss = Math.floor(k.population * lossPercent);
-        updates.population = Math.max(100, (updates.population || k.population) - populationLoss);
+        updates.population = Math.max(100, (updates.population ?? k.population) - populationLoss);
         newsMessage = `🔶 🌪️ UNREST: Population fleeing due to unhappiness! Lost ${populationLoss.toLocaleString()} people.`;
       }
       break;
 
     case 2: // Tax Revolt
       {
-        const newTaxCap = Math.max(10, (updates.tax || k.tax) - 10);
+        const newTaxCap = Math.max(10, (updates.tax ?? k.tax) - 10);
         updates.tax = newTaxCap;
         newsMessage = `🔶 🌪️ TAX REVOLT: Population refuses higher taxes. Tax reduced to ${newTaxCap}%!`;
       }
@@ -64,12 +64,12 @@ function rebellionEvent(k, updates, events) {
           const randomBuilding = availableBuildings[Math.floor(Math.random() * availableBuildings.length)];
           const buildingCount = k[randomBuilding];
           const damageCount = Math.min(buildingCount, Math.floor(Math.random() * 3) + 1); // 1-3 buildings
-          updates[randomBuilding] = Math.max(0, (updates[randomBuilding] || buildingCount) - damageCount);
+          updates[randomBuilding] = Math.max(0, (updates[randomBuilding] ?? buildingCount) - damageCount);
           newsMessage = `🔶 🌪️ SABOTAGE: Rioters destroyed ${damageCount} ${buildingNames[randomBuilding]}!`;
         } else {
           const lossPercent = 0.02 + Math.random() * 0.03; // 2-5%
           const populationLoss = Math.floor(k.population * lossPercent);
-          updates.population = Math.max(100, (updates.population || k.population) - populationLoss);
+          updates.population = Math.max(100, (updates.population ?? k.population) - populationLoss);
           newsMessage = `🔶 🌪️ UNREST: Rioters clashed with guards! Lost ${populationLoss.toLocaleString()} people.`;
         }
       }
@@ -87,7 +87,7 @@ function rebellionEvent(k, updates, events) {
             const randomBuilding = availableBuildings[Math.floor(Math.random() * availableBuildings.length)];
             const buildingCount = k[randomBuilding];
             const damageCount = Math.min(buildingCount, Math.floor(Math.random() * 3) + 1);
-            updates[randomBuilding] = Math.max(0, (updates[randomBuilding] || buildingCount) - damageCount);
+            updates[randomBuilding] = Math.max(0, (updates[randomBuilding] ?? buildingCount) - damageCount);
             newsMessage = `🔶 🌪️ FOOD RIOT: Desperate population destroyed food facilities! Lost ${damageCount} ${buildingNames[randomBuilding]}.`;
             foodRiotTriggered = true;
           }
@@ -96,7 +96,7 @@ function rebellionEvent(k, updates, events) {
         if (!foodRiotTriggered) {
           const lossPercent = 0.05 + Math.random() * 0.05;
           const populationLoss = Math.floor(k.population * lossPercent);
-          updates.population = Math.max(100, (updates.population || k.population) - populationLoss);
+          updates.population = Math.max(100, (updates.population ?? k.population) - populationLoss);
           newsMessage = `🔶 🌪️ UNREST: Population fleeing due to unhappiness! Lost ${populationLoss.toLocaleString()} people.`;
         }
       }
@@ -111,7 +111,7 @@ function rebellionEvent(k, updates, events) {
           const count = k[unit] || 0;
           const loss = Math.floor(count * (0.05 + Math.random() * 0.05));
           if (loss > 0) {
-            updates[unit] = Math.max(0, (updates[unit] || count) - loss);
+            updates[unit] = Math.max(0, (updates[unit] ?? count) - loss);
             totalLost += loss;
           }
         }

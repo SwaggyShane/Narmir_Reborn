@@ -7,6 +7,8 @@ const { researchIncrement } = require("./population");
 const { RESEARCH_MAP, RESEARCH_DISCIPLINE_CAPS, MAX_RESEARCH, MAGIC_SCHOOLS } = require("./config");
 
 function studyDiscipline(k, discipline, researchersAssigned) {
+  researchersAssigned = Math.floor(Number(researchersAssigned));
+  if (isNaN(researchersAssigned) || researchersAssigned <= 0) return { error: "researchersAssigned must be a positive integer" };
   const col = RESEARCH_MAP[discipline];
   if (!col) return { error: "Unknown discipline" };
   if (researchersAssigned > k.researchers)
