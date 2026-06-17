@@ -199,7 +199,7 @@ function applyReanimation(win, attacker, defender, kills, attackerUpdates, defen
       atkConversionAdded = Math.floor(atkSoldierKills * convRate);
       if (atkConversionAdded > 0) {
         attackerUpdates.fighters =
-          (attacker.fighters || 0) + atkConversionAdded;
+          (attackerUpdates.fighters || attacker.fighters || 0) + atkConversionAdded;
       }
 
       // Fallen clerics (enemy and own) -> Thralls
@@ -245,7 +245,7 @@ function applyReanimation(win, attacker, defender, kills, attackerUpdates, defen
       defConversionAdded = Math.floor(defSoldierKills * convRate);
       if (defConversionAdded > 0) {
         defenderUpdates.fighters =
-          (defender.fighters || 0) + defConversionAdded;
+          (defenderUpdates.fighters || defender.fighters || 0) + defConversionAdded;
       }
 
       // Fallen clerics (enemy and own) -> Thralls
@@ -1137,11 +1137,7 @@ function resolveMilitaryAttack(
   const atkSoldierKills = atkTotalKills - atkClericKills;
   const defSoldierKills = defTotalKills - defClericKills;
 
-  // Reanimation / conversion of casualties
-  const necroMsg = applyReanimation(win, attacker, defender, {
-    atkSoldierKills, atkTotalKills, atkClericKills, atkClericsLost,
-    defSoldierKills, defTotalKills, defClericKills, defClericsLost,
-  }, attackerUpdates, defenderUpdates);
+  let necroMsg = "";
 
   // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Step 8: Morale changes & Discovery ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
   const { atkMoraleChange, defMoraleChange, newAtkMorale, newDefMorale } = calcMoraleChanges(win, powerRatio, bullyRatio, attacker, defender);
@@ -1245,6 +1241,12 @@ function resolveMilitaryAttack(
     land: Math.max(0, defender.land - landTransferred),
     morale: newDefMorale,
   });
+
+  // Reanimation / conversion of casualties (after base troop updates)
+  necroMsg = applyReanimation(win, attacker, defender, {
+    atkSoldierKills, atkTotalKills, atkClericKills, atkClericsLost,
+    defSoldierKills, defTotalKills, defClericKills, defClericsLost,
+  }, attackerUpdates, defenderUpdates);
 
   // XP
   const atkTroopXpF = awardTroopXp(attacker, "fighters", win ? 30 : 10);
