@@ -44,8 +44,7 @@ function computeExpeditionTransitions(expeditions, now) {
       transitions.push({ id: exp.id, newStatus: 'completed', ...exp });
     }
   }
-  return transitions;
-}
+  return transitions;}
 
 function junkPrize(k, updates) {
   if (!JUNK_PRIZES || JUNK_PRIZES.length === 0)
@@ -104,7 +103,6 @@ function junkPrize(k, updates) {
   }
   return "a strange pebble";
 }
-
 
 function expeditionRewards(type, rangers, fighters, k) {
   const tacBonus = 1 + (k.res_military || 0) / 2000;
@@ -645,8 +643,7 @@ function expeditionRewards(type, rangers, fighters, k) {
   }
 
   const preAchLength = events.length;
-  checkAchievements(k, updates, events);
-  for (let i = preAchLength; i < events.length; i++) {
+  checkAchievements(k, updates, events);  for (let i = preAchLength; i < events.length; i++) {
     rewards.push({ text: events[i].message });
   }
 
@@ -1034,5 +1031,4 @@ module.exports = {
   computeExpeditionTransitions,
   junkPrize,
   expeditionRewards,
-  resolveExpeditions,
-};
+  resolveExpeditions,};

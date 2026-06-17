@@ -131,6 +131,44 @@ const {
   awardXp,
 } = xpMod;
 
+// Population domain â€” housing capacity, population growth, and research
+// increment. Defined in game/population.js; re-exported below.
+const populationMod = require('./population');
+const {
+  researchIncrement,
+} = populationMod;
+
+// Phase 1 extracted domains (low-risk, self-contained functions)
+// Rebellion, recruitment, research, mercenaries, trade routes, prestige, combat news,
+// location maps, achievements, effects, and scoring. All re-exported below for backward compat.
+const rebellionMod = require('./rebellion');
+const recruitmentMod = require('./recruitment');
+const researchMod = require('./research');
+const mercenariesMod = require('./mercenaries');
+const tradeRoutesMod = require('./trade-routes');
+const prestigeMod = require('./prestige');
+const combatNewsMod = require('./combat-news');
+const locationMapsMod = require('./location-maps');
+const achievementsMod = require('./achievements');
+const effectsMod = require('./effects');
+const scoringMod = require('./scoring');
+
+// Construction domain — queueBuildings, processBuildQueue, demolishBuilding. Defined in
+// game/construction.js; re-exported below.
+const constructionMod = require('./construction');
+// Upgrades domain — purchaseUpgrade. Defined in game/upgrades.js; re-exported below.
+const upgradesMod = require('./upgrades');
+// Happiness domain — assignRegion, calculateHappiness, recordHappinessHistory.
+// Defined in game/happiness.js; re-exported below.
+const happinessMod = require('./happiness');
+// Combat helpers — isNight, wmCrewRequired, moraleMult, happinessCombatMult,
+// resolveAllianceDefense. Defined in game/combat-helpers.js; re-exported below.
+const combatHelpersMod = require('./combat-helpers');
+// Forge domain — forgeTools. Defined in game/forge.js; re-exported below.
+const forgeMod = require('./forge');
+// Expeditions domain — calcDiscoveryChance, junkPrize, expeditionRewards.
+// Defined in game/expeditions.js; re-exported below.
+const expeditionsMod = require('./expeditions');
 const {
   RACE_BONUSES,
   REGION_DATA,
@@ -172,9 +210,10 @@ const {
   SCROLL_REQUIREMENTS,
   SCRIBE_ITEMS,
   WM_CREW_REQUIRED,
-  BUILDING_COL,
-  TOOL_COL,
-  TOOL_GOLD_COST,
+  RESEARCH_MAP,
+  RACIAL_UNITS,  WORLD_FRAGMENTS,
+  THRONE_OF_NAZDREG,
+  CAPS,  BUILDING_COL,  TOOL_COL,  TOOL_GOLD_COST,
   BLUEPRINT_REQUIRED: BP_REQ,
   SCAFFOLDING_REQUIRED: SCAFF_REQ,
   SCAFFOLDING_BONUS_BUILDINGS: SCAFF_BONUS,
@@ -202,14 +241,7 @@ const SCAFFOLDING_BONUS_BUILDINGS = new Set(SCAFF_BONUS);
 // region control resolution, and score calculation. Defined in game/world.js;
 // re-exported below via module.exports for backward compat.
 const worldMod = require('./world');
-const {
-  assignRegion,
-  canPrestige,
-  processPrestige,
-  resolveAllianceDefense,
-  resolveRegions,
-  calculateScore,
-} = worldMod;
+const { resolveRegions } = worldMod;
 
 
 // Turn domain -- processTurn and all per-turn helpers (happiness, rebellion,
@@ -232,17 +264,12 @@ const {
   rebellionEvent,
 } = turnMod;
 
-
 // addItemToInventory + initItemsArray live in game/lib/items.js.
 // processResourceYield lives in game/economy.js. All three are re-exported
 // from engine.js via module.exports for backward compat.
 
 // Expeditions domain -- resource expeditions, loot rolls, reward calc.
 // Defined in game/expeditions.js; re-exported below via module.exports.
-
-// Expeditions domain -- resource expeditions, loot rolls, reward calc.
-// Defined in game/expeditions.js; re-exported below via module.exports.
-const expeditionsMod = require('./expeditions');
 const {
   computeExpeditionTransitions,
   junkPrize,
@@ -270,7 +297,6 @@ const {
   raidTradeRoute,
   demolishBuilding,
 } = actionsMod;
-
 // Combat helpers domain - isNight, happinessCombatMult, wmCrewRequired.
 // Defined in game/combat-helpers.js; re-exported below.
 const combatHelpers = require('./combat-helpers');
@@ -287,7 +313,30 @@ const {
 } = combatMod;
 
 module.exports = {
-  calculateScore,
+  // Re-exports from Phase 1 extracted modules for backward compatibility
+  rebellionCheck: rebellionMod.rebellionCheck,
+  rebellionEvent: rebellionMod.rebellionEvent,
+  levelCap: recruitmentMod.levelCap,
+  getCap: recruitmentMod.getCap,
+  hireUnits: recruitmentMod.hireUnits,
+  studyDiscipline: researchMod.studyDiscipline,
+  selectSchool: researchMod._selectSchool,
+  processMercenaries: mercenariesMod.processMercenaries,
+  hireMercenaries: mercenariesMod.hireMercenaries,
+  raidTradeRoute: tradeRoutesMod.raidTradeRoute,
+  canPrestige: prestigeMod.canPrestige,
+  processPrestige: prestigeMod.processPrestige,
+  normalizeCombatUnits: combatNewsMod.normalizeCombatUnits,
+  sumRecordValues: combatNewsMod.sumRecordValues,
+  formatCombatUnitCounts: combatNewsMod.formatCombatUnitCounts,
+  formatCombatBuildingsLost: combatNewsMod.formatCombatBuildingsLost,
+  formatCombatV2NewsBlurb: combatNewsMod.formatCombatV2NewsBlurb,
+  processLocationMapsWip: locationMapsMod.processLocationMapsWip,
+  checkAchievements: achievementsMod.checkAchievements,
+  processActiveEffects: effectsMod.processActiveEffects,
+  calculateScore: scoringMod.calculateScore,
+
+  // Other direct exports
   totalHiredUnits,
   getAvailableUnits,
   resolveRegions,
@@ -318,16 +367,15 @@ module.exports = {
   processSchoolAttunements,
   processFarmAttunements,
   processHousingAttunements,
-  processMercenaries,
-  hireMercenaries,
-  purchaseUpgrade,
+  purchaseUpgrade: upgradesMod.purchaseUpgrade,
   SEASON_ORDER,
   SEASON_DURATION,
   SEASON_FARM_MULT,
   SEASON_ICONS,
   LOCATE_RACE_MULT,
-  calcDiscoveryChance,
-  processLocationMapsWip,
+  calcDiscoveryChance: expeditionsMod.calcDiscoveryChance,
+  junkPrize: expeditionsMod.junkPrize,
+  expeditionRewards: expeditionsMod.expeditionRewards,
   WALL_UPGRADES,
   TOWER_DEF_UPGRADES,
   OUTPOST_UPGRADES,
@@ -358,25 +406,21 @@ module.exports = {
   MARKET_INCOME_MULT,
   TRADE_RATE_MULT,
   processTurn,
-  hireUnits,
-  studyDiscipline,
-  selectSchool: _selectSchool,
-  queueBuildings,
-  processBuildQueue,
+  queueBuildings: constructionMod.queueBuildings,
+  processBuildQueue: constructionMod.processBuildQueue,
   processLibrary,
   processMageTower,
   processShrine,
   processMausoleum,
-  processActiveEffects,
-  forgeTools,
+  forgeTools: forgeMod.forgeTools,
   resolveMilitaryAttack,
-  formatCombatV2NewsBlurb,
   castSpell,
   covertSpy,
   covertLoot,
   covertAssassinate,
   covertSabotage,
-  resolveAllianceDefense,
+  resolveAllianceDefense: combatHelpersMod.resolveAllianceDefense,
+  isNight: combatHelpersMod.isNight,
   resolveExpeditions,
   awardXp,
   xpForLevel,
@@ -390,19 +434,17 @@ module.exports = {
   troopXpForLevel,
   effectiveTroopLevel,
   WM_CREW_REQUIRED,
-  wmCrewRequired,
-  moraleMult,
-  happinessCombatMult,
-  calculateHappiness,
-  getHappinessRecoveryRate,
-  recordHappinessHistory,
+  wmCrewRequired: combatHelpersMod.wmCrewRequired,
+  moraleMult: combatHelpersMod.moraleMult,
+  happinessCombatMult: combatHelpersMod.happinessCombatMult,
+  calculateHappiness: happinessMod.calculateHappiness,
+  getHappinessRecoveryRate: happinessMod.getHappinessRecoveryRate,
+  recordHappinessHistory: happinessMod.recordHappinessHistory,
   logHappinessEvent,
-  rebellionCheck,
-  rebellionEvent,
   TROOP_RACE_BONUS,
   RACE_BONUSES,
   REGION_DATA,
-  assignRegion,
+  assignRegion: happinessMod.assignRegion,
   UNIT_COST,
   BUILDING_COST,
   BUILDING_GOLD_COST,
@@ -423,11 +465,8 @@ module.exports = {
   getHeroPower,
   applyHeroTurnBonuses,
   recruitHero,
-  raidTradeRoute,
-  canPrestige,
-  processPrestige,
   getUnitName,
-  demolishBuilding,
+  demolishBuilding: constructionMod.demolishBuilding,
   TRADE_ROUTE_MAX,
   TRADE_ROUTE_ESTABLISH_COST,
   processResourceYield,
