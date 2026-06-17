@@ -12,16 +12,16 @@ function isNight() {
 
 function wmCrewRequired(race, engineerLevel) {
   let base = WM_CREW_REQUIRED[race] || 3;
-  // Dwarf racial unique ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â solo crew at engineer level 25+
+  // Dwarf racial unique — solo crew at engineer level 25+
   if (race === "dwarf" && engineerLevel >= 25) base = 1;
   return base;
 }
 
 function moraleMult(morale) {
   const m = typeof morale === "number" && !isNaN(morale) ? morale : 100;
-  if (m < 50) return 0.8 + (m / 50) * 0.1; // 0.80ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å"0.90
-  if (m < 100) return 0.9 + ((m - 50) / 50) * 0.1; // 0.90ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å"1.00
-  return Math.min(1.2, 1.0 + ((m - 100) / 100) * 0.1); // 1.00ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å"1.20 (capped at 1.20)
+  if (m < 50) return 0.8 + (m / 50) * 0.1; // 0.80–0.90
+  if (m < 100) return 0.9 + ((m - 50) / 50) * 0.1; // 0.90–1.00
+  return Math.min(1.2, 1.0 + ((m - 100) / 100) * 0.1); // 1.00–1.20 (capped at 1.20)
 }
 
 function happinessCombatMult(happiness) {
