@@ -224,7 +224,7 @@ function test_covertLoot_celestialFeather_noEspionageGuard() {
   const targetFrag = baseKingdom({
     fragment_bonuses: withArmoryFragment('Celestial Feather'),
   });
-  // Celestial Feather has NO espionage_guard (0.25, 0.35 are garrison_defense and morale_recovery)
+  // Celestial Feather has NO espionage_guard (0.25, 0.35 are garrison_defense and happiness_recovery)
   clearParseCache();
   const resBase = covertLoot(thief, targetBase, 'gold', 100);
   clearParseCache();

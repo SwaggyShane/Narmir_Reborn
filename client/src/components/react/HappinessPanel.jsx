@@ -2,15 +2,28 @@ import React, { useState, useEffect } from 'react';
 import HappinessGraph from './HappinessGraph';
 import '../../css/happiness.css';
 
+const DEFAULT_COMPONENTS = {
+  base: 50,
+  food: 0,
+  entertainment: 0,
+  safety: 0,
+  prosperity: 0,
+  race: 0,
+  effects: 0,
+  synergy: 0,
+  tax: 0,
+  overcrowding: 0,
+  fragments: 0
+};
+
+const toFiniteNumber = (value, fallback = 0) => {
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : fallback;
+};
+
 const HappinessPanel = () => {
   const [happiness, setHappiness] = useState(50);
-  const [components, setComponents] = useState({
-    food: 0,
-    entertainment: 0,
-    safety: 0,
-    prosperity: 0,
-    race: 0
-  });
+  const [components, setComponents] = useState(DEFAULT_COMPONENTS);
   const [events, setEvents] = useState([]);
   const [history, setHistory] = useState([]);
   const [filter, setFilter] = useState(null); // null = all, or component name
@@ -22,11 +35,19 @@ const HappinessPanel = () => {
       if (!response.ok) throw new Error('Failed to fetch');
 
       const data = await response.json();
-      setHappiness(data.happiness || 50);
-      setComponents(prev => ({ ...prev, ...(data.components || {}) }));
+      setHappiness(toFiniteNumber(data.happiness, 50));
+      setComponents({
+        ...DEFAULT_COMPONENTS,
+        ...Object.fromEntries(
+          Object.entries(data.components || {}).map(([key, value]) => [key, toFiniteNumber(value)])
+        )
+      });
       setEvents(data.recent || []);
-      setHistory(data.last50Turns || []);
-      setRecoveryRate(data.recoveryRate || 0);
+      setHistory((data.last50Turns || []).map(point => ({
+        ...point,
+        happiness: toFiniteNumber(point.happiness, null)
+      })).filter(point => point.happiness !== null));
+      setRecoveryRate(toFiniteNumber(data.recoveryRate));
     } catch (err) {
       console.error('Happiness panel error:', err);
     }
@@ -52,7 +73,13 @@ const HappinessPanel = () => {
       entertainment: '🎭',
       safety: '⚔️',
       prosperity: '💰',
-      race: '👥'
+      race: '👥',
+      base: '=',
+      effects: '*',
+      synergy: '+',
+      tax: '%',
+      overcrowding: '!',
+      fragments: '-'
     };
     return emojis[name] || '•';
   };
@@ -63,7 +90,13 @@ const HappinessPanel = () => {
       entertainment: 'Entertainment',
       safety: 'Safety',
       prosperity: 'Prosperity',
-      race: 'Race'
+      race: 'Race',
+      base: 'Base',
+      effects: 'Effects',
+      synergy: 'Synergy',
+      tax: 'Tax',
+      overcrowding: 'Overcrowding',
+      fragments: 'Fragments'
     };
     return labels[name] || name;
   };
@@ -93,7 +126,7 @@ const HappinessPanel = () => {
           }}>
             <div style={{
               height: '100%',
-              width: `${(happiness / 120) * 100}%`,
+              width: `${Math.min(100, Math.max(0, (happiness / 120) * 100))}%`,
               background: happiness >= 80 ? 'var(--green)' : happiness >= 50 ? 'var(--gold)' : happiness >= 30 ? 'var(--amber)' : 'var(--red)',
               transition: 'width 0.3s ease'
             }} />
@@ -136,7 +169,9 @@ const HappinessPanel = () => {
               fontWeight: 700
             }}>
               <span style={{ fontSize: '13px', color: 'var(--text)' }}>Recovery/turn</span>
-              <span style={{ fontSize: '14px', color: 'var(--gold)', fontFamily: 'monospace' }}>+{recoveryRate.toFixed(2)}</span>
+              <span style={{ fontSize: '14px', color: recoveryRate >= 0 ? 'var(--gold)' : 'var(--red)', fontFamily: 'monospace' }}>
+                {recoveryRate >= 0 ? '+' : ''}{recoveryRate.toFixed(2)}
+              </span>
             </div>
           </div>
         </div>

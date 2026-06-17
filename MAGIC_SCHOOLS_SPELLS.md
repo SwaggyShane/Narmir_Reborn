@@ -134,7 +134,7 @@ Complete reference for all 200 school-specific spells organized by school and ti
 
 ### Tier ① - Foundational
 1. **Minor Charm** | MinSB: 100 (85 with school) | 50 enemy fighters defect to your army
-2. **Fascinate Crowd** | MinSB: 110 (94 with school) | -20% enemy morale for 3 turns
+2. **Fascinate Crowd** | MinSB: 110 (94 with school) | -20% enemy happiness for 3 turns
 3. **Command Word** | MinSB: 120 (102 with school) | Enemy cannot act next turn
 4. **Enthrall Scout** | MinSB: 130 (111 with school) | Captures 1 spy for interrogation
 5. **Whisper** | MinSB: 150 (128 with school) | Enemy loses 10% spellbook progress
@@ -151,11 +151,11 @@ Complete reference for all 200 school-specific spells organized by school and ti
 2. **Mass Enthrallment** | MinSB: 520 (442 with school) | 500 enemy population switches sides
 3. **Command Legion** | MinSB: 530 (451 with school) | Enemy troops fight each other for 2 turns
 4. **Overwhelming Charm** | MinSB: 540 (459 with school) | Enemy spells 50% effective for 4 turns
-5. **Psychic Dominion** | MinSB: 550 (468 with school) | Enemy morale crashes; paralyzed for 3 turns
+5. **Psychic Dominion** | MinSB: 550 (468 with school) | Enemy happiness crashes; paralyzed for 3 turns
 
 ### Tier ④ - Ultimate
 1. **Total Domination** | MinSB: 700 (595 with school) | All enemy fighters serve you for 3 turns
-2. **Break Will** | MinSB: 730 (621 with school) | Enemy morale -50% permanently
+2. **Break Will** | MinSB: 730 (621 with school) | Enemy happiness -50% permanently
 3. **Mass Enslavement** | MinSB: 760 (646 with school) | 2000 enemy population becomes your thralls
 4. **Control Kingdom** | MinSB: 790 (672 with school) | You control enemy for 2 turns
 5. **Unbreakable Bond** | MinSB: 800 (680 with school) | Mind link formed; know all enemy actions for 5 turns
@@ -228,7 +228,7 @@ Complete reference for all 200 school-specific spells organized by school and ti
 1. **Great Masquerade** | MinSB: 500 (425 with school) | Kingdom appears different; enemy confused
 2. **Reality Warping** | MinSB: 520 (442 with school) | Enemy makes poor choices; loses 10% resources
 3. **Phantom Army** | MinSB: 530 (451 with school) | 1000 illusory fighters appear
-4. **False Victory** | MinSB: 540 (459 with school) | Enemy morale surges then crashes; -40% morale
+4. **False Victory** | MinSB: 540 (459 with school) | Enemy happiness surges then crashes; -40% happiness
 5. **Perception Shatter** | MinSB: 550 (468 with school) | Senses fooled for 3 turns; acts randomly
 
 ### Tier ④ - Ultimate
@@ -254,7 +254,7 @@ Complete reference for all 200 school-specific spells organized by school and ti
 2. **Death's Mark** | MinSB: 110 (94 with school) | Target takes +20% damage from next 3 spells
 3. **Corpse Animation** | MinSB: 120 (102 with school) | Raises 30 undead fighters
 4. **Siphon Life** | MinSB: 130 (111 with school) | Steals 200 population from enemy
-5. **Death Knell** | MinSB: 150 (128 with school) | -10% morale and -10% production for 3 turns
+5. **Death Knell** | MinSB: 150 (128 with school) | -10% happiness and -10% production for 3 turns
 
 ### Tier ② - Intermediate
 1. **Undead Army** | MinSB: 300 (255 with school) | Raises 200 undead for 4 turns

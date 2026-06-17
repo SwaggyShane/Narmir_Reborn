@@ -12,7 +12,7 @@ const { raceBonus } = require("./lib/race-bonus");
 const { awardUnitXp } = require("./lib/troops");
 const { getSynergyPassiveBonusMultiplier } = require("./lib/synergy-cache");
 const { addItemToInventory, initItemsArray } = require("./lib/items");
-const { naturalMoraleCap } = require("./lib/morale-cap");
+const { naturalHappinessCap } = require("./lib/happiness-cap");
 
 const {
   FARM_WORKERS_PER,
@@ -198,9 +198,8 @@ function tavernEntertainmentBonus(k) {
   const baseBonusPerTavern = 10;
   let bonus = k.bld_taverns * baseBonusPerTavern;
 
-  const tavernMoraleMult = fragmentBonusManager.getBonusMultiplier(k, 'taverns', 'morale');
   const tavernHappinessMult = fragmentBonusManager.getBonusMultiplier(k, 'taverns', 'happiness');
-  bonus = Math.floor(bonus * tavernMoraleMult * tavernHappinessMult);
+  bonus = Math.floor(bonus * tavernHappinessMult);
 
   return bonus;
 }
@@ -310,7 +309,7 @@ function processResourceYield(k, events) {
 // Per-turn food settlement: production vs consumption, spoilage on stored
 // grain, storage cap from granaries, race-specific vampire hunger branch
 // (vampires eat population + thralls), and the standard surplus/shortage
-// pathways with morale, fleeing population, and desertion at long shortages.
+// pathways with happiness, fleeing population, and desertion at long shortages.
 function processFoodEconomy(k, events) {
   const updates = {};
   const race = k.race || "human";
@@ -451,14 +450,14 @@ function processFoodEconomy(k, events) {
     updates.food_surplus_turns = surpTurns;
     updates.food_shortage_turns = 0;
     if (surpTurns >= 5) {
-      const natCap = naturalMoraleCap(k);
+      const natCap = naturalHappinessCap(k);
       const cur =
-        updates.morale !== undefined
-          ? updates.morale
-          : k.morale !== undefined && k.morale !== null
-            ? k.morale
+        updates.happiness !== undefined
+          ? updates.happiness
+          : k.happiness !== undefined && k.happiness !== null
+            ? k.happiness
             : 100;
-      updates.morale = Math.min(natCap, cur + 2);
+      updates.happiness = Math.min(natCap, cur + 2);
 
       events.push({
         type: "system",
@@ -493,12 +492,12 @@ function processFoodEconomy(k, events) {
       if (shortTurns >= 3) {
         const hit = shortTurns >= 8 ? 20 : shortTurns >= 5 ? 10 : 5;
         const cur =
-          updates.morale !== undefined
-            ? updates.morale
-            : k.morale !== undefined && k.morale !== null
-              ? k.morale
+          updates.happiness !== undefined
+            ? updates.happiness
+            : k.happiness !== undefined && k.happiness !== null
+              ? k.happiness
               : 100;
-        updates.morale = Math.max(0, cur - hit);
+        updates.happiness = Math.max(0, cur - hit);
 
         events.push({
           type: "system",

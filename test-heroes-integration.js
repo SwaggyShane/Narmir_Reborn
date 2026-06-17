@@ -124,9 +124,9 @@ try {
   const testCases = [
     { heroClass: 'grand_chancellor', expectedUpdates: ['gold'] },
     { heroClass: 'archmage', expectedUpdates: ['mana'] },
-    { heroClass: 'alpha', expectedUpdates: ['food', 'morale'] },
+    { heroClass: 'alpha', expectedUpdates: ['food', 'happiness'] },
     { heroClass: 'forge_lord', expectedUpdates: ['gold'] },
-    { heroClass: 'paladin', expectedUpdates: ['morale'] },
+    { heroClass: 'paladin', expectedUpdates: ['happiness'] },
   ];
 
   let turnsApplied = 0;
@@ -137,7 +137,7 @@ try {
       gold: 10000,
       mana: 10000,
       food: 10000,
-      morale: 50,
+      happiness: 50,
       population: 10000,
     };
     const updates = {};

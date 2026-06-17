@@ -14,7 +14,7 @@ function makeKingdom(overrides = {}) {
     mana: 50000,
     food: 10000,
     population: 5000,
-    morale: 100,
+    happiness: 100,
     bld_castles: 1,
     res_stealth: 0,
     prestige: 0,
@@ -124,27 +124,27 @@ console.log('Testing heroes.js\n');
   console.log(`Test 9: applyHeroTurnBonuses archmage ✓ (mana bonus=${updates.mana - 1000})`);
 }
 
-// Test 10: applyHeroTurnBonuses alpha adds food and morale
+// Test 10: applyHeroTurnBonuses alpha adds food and happiness
 {
-  const k = makeKingdom({ food: 1000, morale: 50 });
+  const k = makeKingdom({ food: 1000, happiness: 50 });
   const hero = makeHero({ class: 'alpha', level: 5 });
   const updates = {};
   const events = [];
   heroes.applyHeroTurnBonuses(hero, k, updates, events);
   assert.ok(updates.food > 1000, 'alpha adds food');
-  assert.ok(updates.morale > 50, 'alpha adds morale');
-  console.log(`Test 10: applyHeroTurnBonuses alpha ✓ (food+${updates.food - 1000}, morale+${updates.morale - 50})`);
+  assert.ok(updates.happiness > 50, 'alpha adds happiness');
+  console.log(`Test 10: applyHeroTurnBonuses alpha ✓ (food+${updates.food - 1000}, happiness+${updates.happiness - 50})`);
 }
 
-// Test 11: applyHeroTurnBonuses paladin adds morale
+// Test 11: applyHeroTurnBonuses paladin adds happiness
 {
-  const k = makeKingdom({ morale: 50 });
+  const k = makeKingdom({ happiness: 50 });
   const hero = makeHero({ class: 'paladin', level: 5 });
   const updates = {};
   const events = [];
   heroes.applyHeroTurnBonuses(hero, k, updates, events);
-  assert.ok(updates.morale > 50, 'paladin adds morale');
-  console.log(`Test 11: applyHeroTurnBonuses paladin ✓ (morale+${updates.morale - 50})`);
+  assert.ok(updates.happiness > 50, 'paladin adds happiness');
+  console.log(`Test 11: applyHeroTurnBonuses paladin ✓ (happiness+${updates.happiness - 50})`);
 }
 
 // Test 12: applyHeroTurnBonuses blood_shaman consumes population for mana
@@ -161,12 +161,12 @@ console.log('Testing heroes.js\n');
 
 // Test 13: applyHeroTurnBonuses respects ceilings
 {
-  const k = makeKingdom({ morale: 100 });
+  const k = makeKingdom({ happiness: 100 });
   const hero = makeHero({ class: 'warlord', level: 20 });
   const updates = {};
   const events = [];
   heroes.applyHeroTurnBonuses(hero, k, updates, events);
-  assert.equal(updates.morale, 100, 'morale capped at 100');
+  assert.equal(updates.happiness, 100, 'happiness capped at 100');
   console.log('Test 13: applyHeroTurnBonuses respects ceilings ✓');
 }
 

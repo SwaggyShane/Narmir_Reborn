@@ -1,4 +1,4 @@
-// Natural morale cap — the highest morale value a kingdom can hold without
+// Natural happiness cap — the highest happiness value a kingdom can hold without
 // outside boost. Read from economy (processFoodEconomy applies surplus bonus
 // up to the cap) and from happiness/combat code paths.
 //
@@ -7,20 +7,19 @@
 
 const fragmentBonusManager = require("../fragment-bonus-manager");
 
-function naturalMoraleCap(k) {
+function naturalHappinessCap(k) {
   let cap = k.res_entertainment || 100;
-  // Apply dynamic housing passive bonuses on morale / happiness (e.g.,
+  // Apply dynamic housing passive bonuses on happiness (e.g.,
   // Celestial Realm, Ancient Elven Wood).
-  const housingMoraleMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'morale');
   const housingHappinessMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'happiness');
-  cap = Math.floor(cap * housingMoraleMult * housingHappinessMult);
+  cap = Math.floor(cap * housingHappinessMult);
 
   // Apply housing stability modifier (e.g., Void Essence, Cursed Bloodstone
-  // reduce max morale).
+  // reduce max happiness).
   const housingStabilityMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'stability');
   cap = Math.floor(cap * housingStabilityMult);
 
   return cap;
 }
 
-module.exports = { naturalMoraleCap };
+module.exports = { naturalHappinessCap };

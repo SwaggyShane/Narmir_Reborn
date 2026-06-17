@@ -53,7 +53,7 @@
 - [ ] All 9 unit types recruitable (including Scribes, Thralls for Vampire)
 
 ### Combat Resolution
-- [ ] Attack calculation considers unit comp, morale, research, levels
+- [ ] Attack calculation considers unit comp, happiness, research, levels
 - [ ] Attacker/Defender troop losses calculated
 - [ ] Land transfers to victor
 - [ ] Gold stolen on win
@@ -341,7 +341,7 @@
 ### Fragment Application
 - [ ] Fragments attune to buildings
 - [ ] Attunement affects specific building properties
-- [ ] Bonus types: capacity, speed, output, stability, growth, morale, magic_output, income, prestige
+- [ ] Bonus types: capacity, speed, output, stability, growth, happiness, magic_output, income, prestige
 - [ ] Multipliers range from 1.0 to 1.5+ depending on fragment
 - [ ] Multiple fragments on same building multiply effects
 
@@ -349,8 +349,8 @@
 - [ ] Celestial Realm: +5% capacity, happiness
 - [ ] Ancient Elven Wood: +15% capacity, happiness
 - [ ] Abyssal Crystal: magic_output boost
-- [ ] Void Essence: stability penalty (example: -morale)
-- [ ] Cursed Bloodstone: stability penalty (example: -morale)
+- [ ] Void Essence: stability penalty (example: -happiness)
+- [ ] Cursed Bloodstone: stability penalty (example: -happiness)
 - [ ] Tears of the World Tree: growth bonus
 
 ### Specific Fragment Tests
@@ -449,7 +449,7 @@
 
 ### Global Events
 - [ ] 20+ events with seasonal triggers
-- [ ] Event effects: morale, farm yield, gold, population, food, military modifiers
+- [ ] Event effects: happiness, farm yield, gold, population, food, military modifiers
 - [ ] Event log tracks all triggered events per kingdom
 - [ ] Random event notifications sent
 
@@ -462,7 +462,7 @@
 
 ### Sentiment Events
 - [ ] Tax increases sometimes trigger sentiment changes
-- [ ] Morale penalties/bonuses from events
+- [ ] Happiness penalties/bonuses from events
 - [ ] Random events affect various stats
 
 ---
@@ -521,7 +521,7 @@
 - [ ] Tax changes affect happiness
 
 ### Combat Integration
-- [ ] Combat multiplier uses happiness (not old morale)
+- [ ] Combat multiplier uses happiness (not old happiness)
 - [ ] Combat updates last_attack_turn for attacker & defender
 - [ ] Defender safety happiness affected by attack
 - [ ] Winning army gains happiness bonus (safety)

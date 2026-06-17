@@ -1817,7 +1817,10 @@
       }
     </style>
     <script type="module" src="/src/main.js"></script>
-    <script src="/socket.io/socket.io.js"></script>
+    <script type="module">
+      import { io } from "socket.io-client";
+      window.io = io;
+    </script>
   </head>
   <body style="margin: 0; padding: 0; background: transparent;">
     <!-- Global Background Video for boot and login -->
@@ -2726,8 +2729,8 @@
         var atkM = m * 2.5 * ((state.res_attack_magic || 100) / 100);
         var atkWm = wmCrewable * 500 * ((state.res_war_machines || 100) / 100);
         var happiness = state.happiness !== undefined && state.happiness !== null ? state.happiness : 50;
-        var moraleMult = Math.max(0.5, Math.min(1.5, 0.5 + happiness / 120));
-        var atkPower = Math.round((atkF + atkRn + atkM + atkWm) * moraleMult);
+        var happinessMult = Math.max(0.5, Math.min(1.5, 0.5 + happiness / 120));
+        var atkPower = Math.round((atkF + atkRn + atkM + atkWm) * happinessMult);
 
         // Bully penalty check
         var bullyRatio = selectedTarget
@@ -6076,8 +6079,8 @@
             ? "Mausoleum effects"
             : "Shrine effects";
 
-        var shrineRowMorale = document.getElementById("st-shrine-row-morale");
-        if (shrineRowMorale) shrineRowMorale.style.display = "none";
+        var shrineRowHappiness = document.getElementById("st-shrine-row-happiness");
+        if (shrineRowHappiness) shrineRowHappiness.style.display = "none";
         var shrineRowSanct = document.getElementById("st-shrine-row-sanctuary");
         if (shrineRowSanct) shrineRowSanct.style.display = "none";
         var hireRowClerics = document.getElementById("hire-row-clerics");
@@ -15938,7 +15941,7 @@
         if (el("st-clerics-shrine"))
           el("st-clerics-shrine").textContent = fmt(unitCount);
 
-        // Morale logic removed
+        // Happiness logic removed
       }
 
       async function saveShrineAllocation() {

@@ -275,7 +275,7 @@ for (const heroClassId of levelTestHeroes) {
       mana: 10000,
       food: 10000,
       population: 10000,
-      morale: 50,
+      happiness: 50,
     };
     const updates = {};
     const events = [];

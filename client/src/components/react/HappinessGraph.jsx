@@ -23,8 +23,14 @@ const HappinessGraph = ({ history = [] }) => {
   const maxHappiness = 120;
   const minHappiness = 0;
 
-  const points = history
-    .filter(point => point && typeof point.happiness === 'number')
+  const numericHistory = history
+    .map(point => {
+      const happiness = Number(point?.happiness);
+      return Number.isFinite(happiness) ? { ...point, happiness } : null;
+    })
+    .filter(Boolean);
+
+  const points = numericHistory
     .map((point, idx, arr) => {
       const x = padding + (idx / Math.max(arr.length - 1, 1)) * graphWidth;
       const y = height - padding - ((point.happiness - minHappiness) / (maxHappiness - minHappiness)) * graphHeight;
