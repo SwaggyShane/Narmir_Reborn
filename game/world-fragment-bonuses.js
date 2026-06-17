@@ -16,7 +16,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Geothermal Dehydration", desc: "Constant heat cures crops. Eliminates 100% of moisture-induced mold and spoilage" },
     },
     housing: {
-      passive: { capacity: 0.10, stability: 0.05, morale: 0.05, happiness: 0.05, growth: 0.05 },
+      passive: { capacity: 0.10, stability: 0.05, happiness: 0.1, growth: 0.05 },
       special: { name: "Geothermal Hearth", desc: "Underfloor heating pipes tap volcanic veins. Citizens stay warm through brutal winters" },
     },
     libraries: {
@@ -32,7 +32,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Magma Conduit", desc: "Plugging direct volcanic channels into the focus prisms overcharges flame and geothermal attacks with raw kinetic force" },
     },
     shrines: {
-      passive: { morale: 0.15, healing: 0.10 },
+      passive: { happiness: 0.15, healing: 0.10 },
       special: { name: "Geothermal Hearth", desc: "Thermal hot springs heat consecrated bathing basins, accelerating soldier and civilian recovery rates during cold turns" },
     },
     mausoleums: {
@@ -44,7 +44,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Geothermal Foundry-Market", desc: "Warm open-air foundries facilitate metal smelting and ingot trade-guilds directly on site, speeding up gold cycles" },
     },
     taverns: {
-      passive: { morale: 0.25, happiness: 0.10 },
+      passive: { happiness: 0.35 },
       special: { name: "Molten Mug Distilleries", desc: "Underground thermal pipe coils heat copper brewing tanks, distilling volatile, hot stouts that keep the working population incredibly merry and motivated" },
     },
     vaults: {
@@ -95,7 +95,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Organic Preservation", desc: "Roots cocoon stored crops in suspended animation. Food decay over winters reduced to zero" },
     },
     housing: {
-      passive: { capacity: 0.20, stability: 0.30, morale: 0.10, happiness: 0.25, growth: 0.10 },
+      passive: { capacity: 0.20, stability: 0.30, happiness: 0.35, growth: 0.10 },
       special: { name: "Treehouse Canopy", desc: "Dwellings weave into living canopies. Citizens remain in maximum happiness" },
     },
     libraries: {
@@ -104,7 +104,7 @@ const POPULATED_FRAGMENTS = {
     },
     schools: {
       passive: { speed: 0.20, output: 0.25 },
-      special: { name: "Sylvan Whispers", desc: "Communing with the ancient soil opens forgotten histories. Academic morale remains perfectly stabilized" },
+      special: { name: "Sylvan Whispers", desc: "Communing with the ancient soil opens forgotten histories. Academic happiness remains perfectly stabilized" },
     },
     mage_towers: {
       passive: { mana: 0.20, forest_sight: 0.25 },
@@ -123,7 +123,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Sylvan Whispering Bazaars", desc: "Trade booths constructed inside living wood receive woodland wisdom, maintaining stable prices and boosting barter ratios" },
     },
     taverns: {
-      passive: { morale: 0.30, happiness: 0.25 },
+      passive: { happiness: 0.55 },
       special: { name: "Sylvan Forest Bars", desc: "Constructing bars directly within ancient hollow trunks connects drinkers with woodland spirits, ensuring zero brawls and stable peace" },
     },
     vaults: {
@@ -167,14 +167,14 @@ const POPULATED_FRAGMENTS = {
   "Dragon Scale": {
     farms: {
       passive: { production: 0.05, population: -0.05 },
-      special: { name: "Dragon's Shadow", desc: "Crops grow but workers fear the land; morale penalty but high yield" },
+      special: { name: "Dragon's Shadow", desc: "Crops grow but workers fear the land; happiness penalty but high yield" },
     },
     granaries: {
       passive: { capacity: 0.15, raid_security: 0.50 },
       special: { name: "Draconic Ward", desc: "Granary walls lined with draconic scales. Blocks 100% of rats, pests, and enemy food theft" },
     },
     housing: {
-      passive: { capacity: 0.10, morale: 0.05, happiness: 0.10, defenses: 0.25, growth: 0.05 },
+      passive: { capacity: 0.10, happiness: 0.15, defenses: 0.25, growth: 0.05 },
       special: { name: "Fortified Keeps", desc: "Draconic scales line outer walls. Shelters are highly secure and flame-retardant" },
     },
     libraries: {
@@ -202,7 +202,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Draconic Coinage", desc: "Coinage pressed under scaled scales glows if counterfeit, and vaults become impervious to sabotage or raid theft" },
     },
     taverns: {
-      passive: { morale: 0.15, happiness: 0.10 },
+      passive: { happiness: 0.25 },
       special: { name: "The Fire-Drake Hearth", desc: "Insulating fireboxes and furniture boards with dragon scales makes taverns totally flameproof, neutralizing structural fires" },
     },
     vaults: {
@@ -253,7 +253,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Glacial Cryostasis", desc: "Deep underdark crystals lock granary in lightless frost. Permanently halts organic breakdown" },
     },
     housing: {
-      passive: { capacity: 0.15, morale: 0.05, happiness: 0.08, magic_output: 0.10, growth: 0.05 },
+      passive: { capacity: 0.15, happiness: 0.13, magic_output: 0.10, growth: 0.05 },
       special: { name: "Shadow Attunement", desc: "Crystalline-infused houses produce magical output as citizens meditate and rest" },
     },
     libraries: {
@@ -281,7 +281,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Shadow Exchanges", desc: "Subterranean black-markets use dark crystal lights to evaluate smuggling contracts, significantly boosting dark magical currency income" },
     },
     taverns: {
-      passive: { morale: 0.40, happiness: 0.15 },
+      passive: { happiness: 0.55 },
       special: { name: "Whispering Crystal Parlors", desc: "Subterranean violet crystals capture soundwaves from conversations. Makes it incredibly easy to detect, intercept, or defuse enemy spy networks" },
     },
     vaults: {
@@ -328,15 +328,15 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Blessed Fields", desc: "Crops blessed by heaven; harvests are guaranteed and bountiful" },
     },
     granaries: {
-      passive: { capacity: 0.25, morale_stability: 0.20 },
-      special: { name: "Manna Manifestation", desc: "Stored food is blessed. Portion of reserves auto-distributed to boost morale on unstable turns" },
+      passive: { capacity: 0.25, happiness_stability: 0.20 },
+      special: { name: "Manna Manifestation", desc: "Stored food is blessed. Portion of reserves auto-distributed to boost happiness on unstable turns" },
     },
     housing: {
-      passive: { capacity: 0.25, stability: 0.35, morale: 0.20, happiness: 0.30, growth: 0.20 },
+      passive: { capacity: 0.25, stability: 0.35, happiness: 0.5, growth: 0.20 },
       special: { name: "Holy Sanctuaries", desc: "Angelic grace prevents civil unrest. Rioting and immigration desertion are greatly reduced" },
     },
     libraries: {
-      passive: { research_speed: 0.25, morale_sight: 0.35 },
+      passive: { research_speed: 0.25, happiness_sight: 0.35 },
       special: { name: "Heavenly Revelations", desc: "Angelic scriptures float down from skylights, resolving complex studies automatically" },
     },
     schools: {
@@ -348,19 +348,19 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Nimbus Shields", desc: "Angelic grace focuses natural sky lumens, casting a soft dome of pure defensive light that neutralizes negative curses" },
     },
     shrines: {
-      passive: { healing: 0.35, faith_morale: 0.40 },
-      special: { name: "Blessed Resurrections", desc: "Heavenly light baths the healing chambers; wounded units revive with +10% maximum health and zero morale fatigue" },
+      passive: { healing: 0.35, faith_happiness: 0.40 },
+      special: { name: "Blessed Resurrections", desc: "Heavenly light baths the healing chambers; wounded units revive with +10% maximum health and zero happiness fatigue" },
     },
     mausoleums: {
       passive: { capacity: 0.25, power: 0.35 },
       special: { name: "Penitent Sentinels", desc: "Winds of grace whisper through crypt pillars, keeping the baseline undead completely loyal and free from revolt" },
     },
     markets: {
-      passive: { income: 0.25, merchant_morale: 0.35 },
+      passive: { income: 0.25, merchant_happiness: 0.35 },
       special: { name: "Heavenly Tithes", desc: "Mercantile angels bless standard exchanges, removing commercial greed or unrest and stabilizing transaction safety" },
     },
     taverns: {
-      passive: { morale: 0.40, happiness: 0.35 },
+      passive: { happiness: 0.75 },
       special: { name: "The Heavenly Angel Tavern", desc: "Bards sing angelic melodies from the rafters, removing baseline societal grief or rioting. Citizen happiness never drops below 50%" },
     },
     vaults: {
@@ -368,8 +368,8 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Empyrean Sanctuaries", desc: "Blessed vaults emit divine light, keeping currency stored inside fully immune to curses, corruption, or tax rot" },
     },
     armories: {
-      passive: { garrison_defense: 0.25, morale_recovery: 0.35 },
-      special: { name: "Aureole Plating", desc: "Blessed armors radiate an absolute aura of purity, keeping soldiers inspired and speeding up combat morale recovery" },
+      passive: { garrison_defense: 0.25, happiness_recovery: 0.35 },
+      special: { name: "Aureole Plating", desc: "Blessed armors radiate an absolute aura of purity, keeping soldiers inspired and speeding up combat happiness recovery" },
     },
     smithies: {
       passive: { speed: 0.25, production: 0.15, quality: 0.25 },
@@ -377,7 +377,7 @@ const POPULATED_FRAGMENTS = {
     },
     barracks: {
       passive: { training: 0.25, capacity: 0.35 },
-      special: { name: "Seraphic Parade Grounds", desc: "Recruits study sacred angelic tactical scrolls. Morale failure rates drop to zero, keeping troop units highly disciplined" },
+      special: { name: "Seraphic Parade Grounds", desc: "Recruits study sacred angelic tactical scrolls. Happiness failure rates drop to zero, keeping troop units highly disciplined" },
     },
     walls: {
       passive: { health: 0.25, defense: 0.35 },
@@ -397,7 +397,7 @@ const POPULATED_FRAGMENTS = {
     },
     castles: {
       passive: { prestige: 0.35, income: 0.25 },
-      special: { name: "Radiant Sovereign Spire", desc: "A towering holy anchor at the castle's peak continuously bathes the surrounding courtyard in a bright celestial glow, repelling shadow curses and keeping morale high" },
+      special: { name: "Radiant Sovereign Spire", desc: "A towering holy anchor at the castle's peak continuously bathes the surrounding courtyard in a bright celestial glow, repelling shadow curses and keeping happiness high" },
     },
   },
 
@@ -411,7 +411,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Piston Silos", desc: "Motorized steam pistons continuously compress and aerate grains, maximizing holding density" },
     },
     housing: {
-      passive: { capacity: 0.40, morale: 0.10, happiness: 0.15, defenses: 0.10, growth: 0.10 },
+      passive: { capacity: 0.40, happiness: 0.25, defenses: 0.10, growth: 0.10 },
       special: { name: "Retractable Apartments", desc: "Dwarven clockwork bunks and fold-out structures fit more citizens in less space" },
     },
     libraries: {
@@ -427,7 +427,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Harmonic Concentrators", desc: "Perfect clockwork lenses focus spell arrays down to micro-millimeter precision, making bolts impossible to deflect or dodge" },
     },
     shrines: {
-      passive: { morale: 0.15, defense_armor: 0.50 },
+      passive: { happiness: 0.15, defense_armor: 0.50 },
       special: { name: "Star-Metal Sentinels", desc: "Mechanical incense burners distribute gold dust across armor plates, naturally fortifying defenders against siege attacks" },
     },
     mausoleums: {
@@ -439,7 +439,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Star-Metal Lockbox Ledgers", desc: "Financial records are stored inside clockwork Star-Metal matrices. Accounts cannot be falsified, lost, stolen, or forgotten due to amnesia" },
     },
     taverns: {
-      passive: { morale: 0.20, happiness: 0.15 },
+      passive: { happiness: 0.35 },
       special: { name: "The Vault of Vintage Lockboxes", desc: "Legendary recipes, coordinates, and resources are locked inside code-encrypted Star-Metal drums. Blueprints cannot be lost, stolen, or forgotten by mind curses" },
     },
     vaults: {
@@ -490,7 +490,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Vampiric Silos", desc: "Spoiling food distilled into dark elixir. Increases military attack speed but spikes chaos" },
     },
     housing: {
-      passive: { capacity: 0.50, stability: -0.20, morale: 0.25, happiness: 0.15, growth: -0.10 },
+      passive: { capacity: 0.50, stability: -0.20, happiness: 0.4, growth: -0.10 },
       special: { name: "Blood Pact Lodgings", desc: "Explosive population density powered by dark covenant. Raw workforce expansion at stability cost" },
     },
     libraries: {
@@ -518,8 +518,8 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Sanguine Auction Guilds", desc: "Elite auction houses deal in forbidden alchemical drops and life contracts, yielding extreme tax profits at high chaotic costs" },
     },
     taverns: {
-      passive: { morale: 0.50, happiness: 0.20 },
-      special: { name: "The Cruor Blood Club", desc: "Infusing brewing reservoirs with forbidden nectar maximizes citizen and military morale instantly, but spikes civil chaos indexes" },
+      passive: { happiness: 0.7 },
+      special: { name: "The Cruor Blood Club", desc: "Infusing brewing reservoirs with forbidden nectar maximizes citizen and military happiness instantly, but spikes civil chaos indexes" },
     },
     vaults: {
       passive: { economy_output: 0.50, stability: -0.20 },
@@ -569,7 +569,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Cellular Biosphere", desc: "World Tree spores seed reserves. Stored grains self-replicate at +2% per turn" },
     },
     housing: {
-      passive: { capacity: 0.35, stability: 0.25, morale: 0.15, happiness: 0.20, growth: 0.25 },
+      passive: { capacity: 0.35, stability: 0.25, happiness: 0.35, growth: 0.25 },
       special: { name: "Lifespring Spores", desc: "Curing waters fill district fonts. Zero infant mortality, natural growth boosted +50%" },
     },
     libraries: {
@@ -597,7 +597,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Oasis Bazaars", desc: "Merchant caravans drinking tree dew experience exceptional stamina, establishing continuous trades without delay" },
     },
     taverns: {
-      passive: { morale: 0.35, happiness: 0.30 },
+      passive: { happiness: 0.65 },
       special: { name: "World-Tree Elixir Fonts", desc: "Drinking the dew improves vitality, reducing the hire cost of tavern mercenaries by 15% and doubling their rest recovery" },
     },
     vaults: {
@@ -648,7 +648,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Void Pantry", desc: "Granary folds into pocket dimension for massive volume. 5% chance per turn food vanishes" },
     },
     housing: {
-      passive: { capacity: 1.20, stability: -0.30, morale: 0.60, happiness: 0.50, growth: -0.20 },
+      passive: { capacity: 1.20, stability: -0.30, happiness: 1.1, growth: -0.20 },
       special: { name: "Void Pocket Lofts", desc: "Living rooms fold into pocket dimensions. Massive capacity with mild disorientation penalty" },
     },
     libraries: {
@@ -664,7 +664,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Portal Conduits", desc: "Rips open direct holes in reality, funneling raw astral energies that hypercharge output but trigger local portal leaks" },
     },
     shrines: {
-      passive: { morale: 1.20, mind_stability: -0.40 },
+      passive: { happiness: 1.20, mind_stability: -0.40 },
       special: { name: "Telescopic Epiphany", desc: "Shrine ceilings fold directly into cosmic rifts, granting astronomical knowledge but driving scholars to eccentricity" },
     },
     mausoleums: {
@@ -676,8 +676,8 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Quantum Shopping Matrix", desc: "Connects trade districts to multi-planar channels, generating outrageous gold flows while causing temporary citizen absences" },
     },
     taverns: {
-      passive: { morale: 1.20, happiness: 0.80 },
-      special: { name: "The Singularity Saloon", desc: "Connects fireplaces and hallways directly to interdimensional taprooms, providing absolute morale boosts at the price of brief spatial absences" },
+      passive: { happiness: 2 },
+      special: { name: "The Singularity Saloon", desc: "Connects fireplaces and hallways directly to interdimensional taprooms, providing absolute happiness boosts at the price of brief spatial absences" },
     },
     vaults: {
       passive: { gold_security: 1.20, trade_stability: -0.40 },
@@ -727,7 +727,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Megastructures", desc: "Fossilized skeletal columns support towering silos. Storage capabilities scale exponentially" },
     },
     housing: {
-      passive: { capacity: 0.60, morale: 0.10, happiness: 0.15, defenses: 0.15, growth: 0.15 },
+      passive: { capacity: 0.60, happiness: 0.25, defenses: 0.15, growth: 0.15 },
       special: { name: "Goliath Dwellings", desc: "Colossal foundations built on titanic skeletons. Allows massive multi-story structures" },
     },
     libraries: {
@@ -755,7 +755,7 @@ const POPULATED_FRAGMENTS = {
       special: { name: "Goliath Trade Halls", desc: "Gigantic columns carved from titan skulls support monumental domes with massive stall capacity, maximizing trader retention" },
     },
     taverns: {
-      passive: { morale: 0.30, happiness: 0.15 },
+      passive: { happiness: 0.45 },
       special: { name: "Goliath Drink Halls", desc: "Massive tables and columns carved out of fossilized titanic ribs support massive halls with immense capacity for holding grand festivals" },
     },
     vaults: {

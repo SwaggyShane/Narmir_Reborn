@@ -162,7 +162,7 @@ A tribute to a real player. The throne exists once in the entire game world and 
 > "An orc who sat upon this throne once commanded armies and shaped the world.
 > His name is remembered. His legacy endures."
 
-When found, every kingdom receives a news event and a global chat broadcast. The finder receives all stats +100, 1,000,000 gold, 1,000 land, 100,000 population, +50 morale, and 50,000 fighters.
+When found, every kingdom receives a news event and a global chat broadcast. The finder receives all stats +100, 1,000,000 gold, 1,000 land, 100,000 population, +50 happiness, and 50,000 fighters.
 
 ---
 

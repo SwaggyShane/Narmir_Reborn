@@ -1239,7 +1239,7 @@
                     >Effect type</label
                   >
                   <select id="ev-effect-type" style="width: 100%">
-                    <option value="morale">Morale (flat ±)</option>
+                    <option value="happiness">Happiness (flat ±)</option>
                     <option value="gold">Gold (% of current)</option>
                     <option value="food">Food (% if &lt;1, flat if &ge;1)</option>
                     <option value="population">
@@ -1712,7 +1712,7 @@
                 <div class="cl-item">✅ <b>ALLIANCE LEADERBOARDS</b> — New rankings tab for coalition total land and membership</div>
                 <div class="cl-item">✅ <b>KINGDOM LORE/BIOS</b> — Persisted custom descriptions shown on public profiles</div>
                 <div class="cl-item">✅ <b>NARMIR REBORN</b> — Aesthetic rebrand to "Pure. Damn. Evil."</div>
-                <div class="cl-item">✅ <b>Racial Unit Bonuses (Lv 5+)</b> — Dwarf Engines, HE Scrolls, Orc Free Training, DE Silent Kills, DW Fast Expeditions, Human Morale Aura</div>
+                <div class="cl-item">✅ <b>Racial Unit Bonuses (Lv 5+)</b> — Dwarf Engines, HE Scrolls, Orc Free Training, DE Silent Kills, DW Fast Expeditions, Human Happiness Aura</div>
                 <div class="cl-item">✅ <b>Persistent Personalization</b> — Saved chat nicknames and colors via `/nick` and `/color`</div>
                 <div class="cl-item">✅ <b>Extended Protection</b> — Newbie shield now lasts until Turn 400</div>
                 <div class="cl-item">✅ <b>Race Starting Buildings</b> — Custom starting kits for all 6 races</div>
@@ -2132,7 +2132,7 @@
             { key: "land", label: "Land" },
             { key: "population", label: "Population" },
             { key: "food", label: "Food" },
-            { key: "morale", label: "Morale" },
+            { key: "happiness", label: "Happiness" },
             { key: "tax", label: "Tax rate" },
             { key: "turn", label: "Turn #" },
             { key: "turns_stored", label: "Turns stored" },
@@ -2591,7 +2591,7 @@
           '<th style="padding:6px 8px;text-align:right">Land</th>' +
           '<th style="padding:6px 8px;text-align:right">Pop</th>' +
           '<th style="padding:6px 8px;text-align:right">Gold</th>' +
-          '<th style="padding:6px 8px;text-align:right">Morale</th>' +
+          '<th style="padding:6px 8px;text-align:right">Happiness</th>' +
           '<th style="padding:6px 8px;text-align:right">Food</th>' +
           '<th style="padding:6px 8px;text-align:right">Military</th>' +
           '<th style="padding:6px 8px;text-align:right">⚔️ W/L</th>' +
@@ -2604,10 +2604,10 @@
 
         rows.forEach(function (r) {
           var icon = RACE_ICONS[r.race] || "?";
-          var moraleColor =
-            r.morale < 50
+          var happinessColor =
+            r.happiness < 50
               ? "var(--red)"
-              : r.morale < 80
+              : r.happiness < 80
                 ? "var(--amber)"
                 : "var(--green)";
           var foodColor = r.food < 0 ? "var(--red)" : "var(--text2)";
@@ -2639,9 +2639,9 @@
             fmt(r.gold || 0) +
             "</td>" +
             '<td style="padding:8px;text-align:right;color:' +
-            moraleColor +
+            happinessColor +
             '">' +
-            (r.morale || 0) +
+            (r.happiness || 0) +
             "</td>" +
             '<td style="padding:8px;text-align:right;color:' +
             foodColor +
@@ -3885,7 +3885,7 @@
         document.getElementById("ev-desc").value = e.description || "";
         document.getElementById("ev-season").value = e.season || "all";
         document.getElementById("ev-effect-type").value =
-          e.effect_type || "morale";
+          e.effect_type || "happiness";
         document.getElementById("ev-effect-value").value = e.effect_value ?? 5;
         document.getElementById("ev-effect-duration").value =
           e.effect_duration ?? 1;
@@ -3902,7 +3902,7 @@
           if (el) el.value = "";
         });
         document.getElementById("ev-season").value = "all";
-        document.getElementById("ev-effect-type").value = "morale";
+        document.getElementById("ev-effect-type").value = "happiness";
         document.getElementById("ev-effect-value").value = "5";
         document.getElementById("ev-effect-duration").value = "1";
         document.getElementById("ev-race-only").value = "";

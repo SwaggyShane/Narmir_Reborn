@@ -295,7 +295,7 @@ if (effect && effect.name === 'Impenetrable Box') {
 
 ### 5. **Celestial Feather** - Light, Hope, Divine
 - **Shrines**: +35% healing, no limit on injured troops
-- **Taverns**: +30% morale, morale never drops below 50%
+- **Taverns**: +30% happiness, never drops below 50%
 - **Walls**: +25% defense, first attack reflected
 - **Mage Towers**: +20% mana, healing spells affect adjacent kingdoms
 - **Guards**: +25% power, can detect covert ops

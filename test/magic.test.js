@@ -34,7 +34,6 @@ function makeKingdom(overrides = {}) {
     food: 5000,
     food_surplus_turns: 0,
     food_shortage_turns: 0,
-    morale: 100,
     population: 5000,
     fighters: 0, rangers: 0, clerics: 0, mages: 0, thieves: 0, ninjas: 0,
     researchers: 0, engineers: 0, scribes: 0, thralls: 0,

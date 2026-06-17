@@ -239,18 +239,18 @@ function executeCombat(_db, attacker, defender, combatType, targetFocus, _engine
 
 /**
  * Calculate combat power for a kingdom
- * Includes all troop types, research, morale, etc.
+ * Includes all troop types, research, happiness, etc.
  * Restricts units based on combatType (military, covert, magic)
  */
 function calculateCombatPower(kingdom, opponent, combatType) {
-  const moraleMult = calculateHappinessMult(kingdom.happiness !== undefined && kingdom.happiness !== null ? kingdom.happiness : 50);
-  const defenderMorale = calculateHappinessMult(opponent.happiness !== undefined && opponent.happiness !== null ? opponent.happiness : 50);
+  const happinessMult = calculateHappinessMult(kingdom.happiness !== undefined && kingdom.happiness !== null ? kingdom.happiness : 50);
+  const defenderHappiness = calculateHappinessMult(opponent.happiness !== undefined && opponent.happiness !== null ? opponent.happiness : 50);
   const attackerEquipment = calculateEquipmentCoverage(kingdom);
   const defenderEquipment = calculateEquipmentCoverage(opponent);
 
   const diagnostics = {
-    attacker: buildCombatBudget(kingdom, combatType, 'attacker', moraleMult, attackerEquipment),
-    defender: buildCombatBudget(opponent, combatType, 'defender', defenderMorale, defenderEquipment),
+    attacker: buildCombatBudget(kingdom, combatType, 'attacker', happinessMult, attackerEquipment),
+    defender: buildCombatBudget(opponent, combatType, 'defender', defenderHappiness, defenderEquipment),
   };
 
   let power = 0;
@@ -262,34 +262,34 @@ function calculateCombatPower(kingdom, opponent, combatType) {
       const roleMult = isVampireDayDefense(kingdom) ? 4.5 : 0.55;
       const hpMult = isVampireDayDefense(kingdom) ? 5.0 : 1.0;
       const dmg = combatCalc.calculateIndividualTroopDmg('thralls', 0, 1, 1.0);
-      power += kingdom.thralls * dmg * roleMult * hpMult * moraleMult;
+      power += kingdom.thralls * dmg * roleMult * hpMult * happinessMult;
     }
 
     if (kingdom.fighters > 0) {
       const troopLevel = parseTroopLevel(kingdom.troop_levels, 'fighters');
       const weaponResearch = getEquippedWeaponResearch(kingdom, 'fighters', attackerEquipment);
       const dmg = combatCalc.calculateIndividualTroopDmg('fighters', weaponResearch, troopLevel, getTroopRaceModifier(kingdom, 'fighters', 'military'));
-      power += kingdom.fighters * dmg * moraleMult;
+      power += kingdom.fighters * dmg * happinessMult;
     }
 
     if (kingdom.rangers > 0) {
       const troopLevel = parseTroopLevel(kingdom.troop_levels, 'rangers');
       const weaponResearch = getEquippedWeaponResearch(kingdom, 'rangers', attackerEquipment);
       const dmg = combatCalc.calculateIndividualTroopDmg('rangers', weaponResearch, troopLevel, getTroopRaceModifier(kingdom, 'rangers', 'military'));
-      power += kingdom.rangers * dmg * 0.7 * moraleMult;
+      power += kingdom.rangers * dmg * 0.7 * happinessMult;
     }
 
     if (kingdom.mages > 0) {
       const troopLevel = parseTroopLevel(kingdom.troop_levels, 'mages');
       const dmg = combatCalc.calculateIndividualTroopDmg('mages', kingdom.res_attack_magic || 100, troopLevel, getTroopRaceModifier(kingdom, 'mages', 'magic'));
-      power += kingdom.mages * dmg * 2.5 * moraleMult;
+      power += kingdom.mages * dmg * 2.5 * happinessMult;
     }
 
     if (kingdom.clerics > 0) {
       const troopLevel = parseTroopLevel(kingdom.troop_levels, 'clerics');
       const weaponResearch = getEquippedWeaponResearch(kingdom, 'clerics', attackerEquipment);
       const dmg = combatCalc.calculateIndividualTroopDmg('clerics', weaponResearch, troopLevel, getTroopRaceModifier(kingdom, 'clerics', 'military'));
-      power += kingdom.clerics * dmg * CLERIC_COMBAT_DAMAGE_MULT * moraleMult;
+      power += kingdom.clerics * dmg * CLERIC_COMBAT_DAMAGE_MULT * happinessMult;
     }
 
     if (kingdom.war_machines > 0) {
@@ -305,14 +305,14 @@ function calculateCombatPower(kingdom, opponent, combatType) {
       const troopLevel = parseTroopLevel(kingdom.troop_levels, 'ninjas');
       const weaponResearch = getEquippedWeaponResearch(kingdom, 'ninjas', attackerEquipment);
       const dmg = combatCalc.calculateIndividualTroopDmg('ninjas', weaponResearch, troopLevel, getTroopRaceModifier(kingdom, 'ninjas', 'covert'));
-      power += kingdom.ninjas * dmg * moraleMult;
+      power += kingdom.ninjas * dmg * happinessMult;
     }
 
     if (kingdom.thieves > 0) {
       const troopLevel = parseTroopLevel(kingdom.troop_levels, 'thieves');
       const weaponResearch = getEquippedWeaponResearch(kingdom, 'thieves', attackerEquipment);
       const dmg = combatCalc.calculateIndividualTroopDmg('thieves', weaponResearch, troopLevel, getTroopRaceModifier(kingdom, 'thieves', 'covert'));
-      power += kingdom.thieves * dmg * moraleMult;
+      power += kingdom.thieves * dmg * happinessMult;
     }
   } else if (combatType === 'magic') {
     // Magic: mages only
@@ -320,7 +320,7 @@ function calculateCombatPower(kingdom, opponent, combatType) {
     if (kingdom.mages > 0) {
       const troopLevel = parseTroopLevel(kingdom.troop_levels, 'mages');
       const dmg = combatCalc.calculateIndividualTroopDmg('mages', attackMagicResearch, troopLevel, getTroopRaceModifier(kingdom, 'mages', 'magic'));
-      power += kingdom.mages * dmg * 2.5 * moraleMult;
+      power += kingdom.mages * dmg * 2.5 * happinessMult;
     }
   }
 
@@ -336,34 +336,34 @@ function calculateCombatPower(kingdom, opponent, combatType) {
       const roleMult = isVampireDayDefense(opponent) ? 4.5 : 0.55;
       const hpMult = isVampireDayDefense(opponent) ? 5.0 : 1.0;
       const dmg = combatCalc.calculateIndividualTroopDmg('thralls', 0, 1, 1.0);
-      defenderPower += opponent.thralls * dmg * roleMult * hpMult * defenderMorale;
+      defenderPower += opponent.thralls * dmg * roleMult * hpMult * defenderHappiness;
     }
 
     if (opponent.fighters > 0) {
       const troopLevel = parseTroopLevel(opponent.troop_levels, 'fighters');
       const opponentWeaponResearch = getEquippedWeaponResearch(opponent, 'fighters', defenderEquipment);
       const dmg = combatCalc.calculateIndividualTroopDmg('fighters', opponentWeaponResearch, troopLevel, getTroopRaceModifier(opponent, 'fighters', 'military'));
-      defenderPower += opponent.fighters * dmg * 0.8 * defenderMorale;
+      defenderPower += opponent.fighters * dmg * 0.8 * defenderHappiness;
     }
 
     if (opponent.rangers > 0) {
       const troopLevel = parseTroopLevel(opponent.troop_levels, 'rangers');
       const opponentWeaponResearch = getEquippedWeaponResearch(opponent, 'rangers', defenderEquipment);
       const dmg = combatCalc.calculateIndividualTroopDmg('rangers', opponentWeaponResearch, troopLevel, getTroopRaceModifier(opponent, 'rangers', 'military'));
-      defenderPower += opponent.rangers * dmg * 0.7 * defenderMorale;
+      defenderPower += opponent.rangers * dmg * 0.7 * defenderHappiness;
     }
 
     if (opponent.mages > 0) {
       const troopLevel = parseTroopLevel(opponent.troop_levels, 'mages');
       const dmg = combatCalc.calculateIndividualTroopDmg('mages', opponent.res_defense_magic || 100, troopLevel, getTroopRaceModifier(opponent, 'mages', 'magic'));
-      defenderPower += opponent.mages * dmg * 1.5 * defenderMorale;
+      defenderPower += opponent.mages * dmg * 1.5 * defenderHappiness;
     }
 
     if (opponent.clerics > 0) {
       const troopLevel = parseTroopLevel(opponent.troop_levels, 'clerics');
       const opponentWeaponResearch = getEquippedWeaponResearch(opponent, 'clerics', defenderEquipment);
       const dmg = combatCalc.calculateIndividualTroopDmg('clerics', opponentWeaponResearch, troopLevel, getTroopRaceModifier(opponent, 'clerics', 'military'));
-      defenderPower += opponent.clerics * dmg * CLERIC_COMBAT_DAMAGE_MULT * defenderMorale;
+      defenderPower += opponent.clerics * dmg * CLERIC_COMBAT_DAMAGE_MULT * defenderHappiness;
     }
 
     if (opponent.war_machines > 0) {
@@ -371,7 +371,7 @@ function calculateCombatPower(kingdom, opponent, combatType) {
       const troopLevel = parseTroopLevel(opponent.troop_levels, 'war_machines');
       const crew = calculateWarMachineCrew(opponent);
       const dmg = combatCalc.calculateIndividualTroopDmg('war_machines', warMachineResearch, troopLevel, getRaceBonus(opponent, 'war_machines'));
-      defenderPower += crew.crewed * dmg * defenderMorale;
+      defenderPower += crew.crewed * dmg * defenderHappiness;
     }
   } else if (combatType === 'covert') {
     // Defender uses covert defense (less effective)
@@ -379,14 +379,14 @@ function calculateCombatPower(kingdom, opponent, combatType) {
       const troopLevel = parseTroopLevel(opponent.troop_levels, 'ninjas');
       const opponentWeaponResearch = getEquippedWeaponResearch(opponent, 'ninjas', defenderEquipment);
       const dmg = combatCalc.calculateIndividualTroopDmg('ninjas', opponentWeaponResearch, troopLevel, getTroopRaceModifier(opponent, 'ninjas', 'covert'));
-      defenderPower += opponent.ninjas * dmg * 0.5 * defenderMorale;
+      defenderPower += opponent.ninjas * dmg * 0.5 * defenderHappiness;
     }
   } else if (combatType === 'magic') {
     // Defender uses magic defense
     if (opponent.mages > 0) {
       const troopLevel = parseTroopLevel(opponent.troop_levels, 'mages');
       const dmg = combatCalc.calculateIndividualTroopDmg('mages', defenseResearch, troopLevel, getTroopRaceModifier(opponent, 'mages', 'magic'));
-      defenderPower += opponent.mages * dmg * 1.5 * defenderMorale;
+      defenderPower += opponent.mages * dmg * 1.5 * defenderHappiness;
     }
   }
 
@@ -475,7 +475,7 @@ function getParticipatingAttackCount(count, intensity) {
 }
 
 function buildIndividualAttackers(kingdom, combatType, side, equipment = calculateEquipmentCoverage(kingdom)) {
-  const moraleMult = calculateHappinessMult(kingdom.happiness !== undefined && kingdom.happiness !== null ? kingdom.happiness : 50);
+  const happinessMult = calculateHappinessMult(kingdom.happiness !== undefined && kingdom.happiness !== null ? kingdom.happiness : 50);
   const attackers = [];
   const addAttacker = (troopType, count, roleMultiplier = 1.0, researchOverride = null) => {
     if (count <= 0) return;
@@ -485,7 +485,7 @@ function buildIndividualAttackers(kingdom, combatType, side, equipment = calcula
       ? getRaceBonus(kingdom, 'war_machines')
       : getTroopRaceModifier(kingdom, troopType, category);
     const research = researchOverride ?? getDamageResearchForTroop(kingdom, troopType, combatType, side, equipment);
-    const dmg = combatCalc.calculateIndividualTroopDmg(troopType, research, level, raceModifier) * roleMultiplier * moraleMult;
+    const dmg = combatCalc.calculateIndividualTroopDmg(troopType, research, level, raceModifier) * roleMultiplier * happinessMult;
     attackers.push({
       type: troopType,
       count,
@@ -892,11 +892,11 @@ function calculateStructureDefensePower(kingdom) {
   };
 }
 
-function buildCombatBudget(kingdom, combatType, side, moraleMultiplier, equipment = calculateEquipmentCoverage(kingdom)) {
+function buildCombatBudget(kingdom, combatType, side, happinessMultiplier, equipment = calculateEquipmentCoverage(kingdom)) {
   const budget = {
     side,
     race: kingdom.race,
-    moraleMultiplier,
+    happinessMultiplier,
     hpByType: {},
     dmgByType: {},
     countByType: {},

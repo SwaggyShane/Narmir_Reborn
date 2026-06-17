@@ -81,7 +81,7 @@ function translateSqlForPg(sql) {
 // news, and other frequently queried tables so callers get JS numbers, not strings.
 const NUMERIC_FIELDS = [
   // Core kingdom economy
-  'gold', 'mana', 'food', 'land', 'population', 'morale', 'tax',
+  'gold', 'mana', 'food', 'land', 'population', 'happiness', 'tax',
   // Turns / time
   'turn', 'turns_stored', 'last_turn_at', 'created_at', 'updated_at',
   'food_surplus_turns', 'food_shortage_turns', 'turn_num',
@@ -116,6 +116,11 @@ const NUMERIC_FIELDS = [
   'food_taken', 'arrive_at', 'depart_at', 'harvest_ends_at', 'return_at',
   // Misc / admin goals
   'count', 'wall_hp', 'prize_multiplier',
+  // Happiness tracking
+  'happiness_value', 'food_component', 'entertainment_component',
+  'safety_component', 'prosperity_component', 'race_modifier',
+  'tax_component', 'overcrowding_component', 'recovery_rate',
+  'effects_component', 'synergy_component', 'fragment_component',
 ];
 
 function convertNumericFields(row) {
@@ -574,7 +579,6 @@ async function initDb(options = {}) {
       gold        INTEGER NOT NULL DEFAULT 10000,
       land        INTEGER NOT NULL DEFAULT 500,
       population  INTEGER NOT NULL DEFAULT 50000,
-      morale      INTEGER NOT NULL DEFAULT 100,
       happiness   INTEGER NOT NULL DEFAULT 50,
       last_attack_turn INTEGER NOT NULL DEFAULT 0,
       rebellion_cooldown INTEGER NOT NULL DEFAULT 0,
@@ -1269,7 +1273,7 @@ async function initDb(options = {}) {
       name        TEXT    NOT NULL,
       description TEXT    NOT NULL,
       season      TEXT    NOT NULL DEFAULT 'all',
-      effect_type TEXT    NOT NULL DEFAULT 'morale',
+      effect_type TEXT    NOT NULL DEFAULT 'happiness',
       effect_value REAL   NOT NULL DEFAULT 5,
       effect_duration INTEGER NOT NULL DEFAULT 1,
       race_only   TEXT    DEFAULT NULL,
@@ -1302,16 +1306,16 @@ async function initDb(options = {}) {
   const defaultEvents = [
     // Spring
     ['spring_bloom',      'Spring Bloom',         'Warm rains encourage growth.',                  'spring', 'farm_yield', 0.10, 5, null, 1],
-    ['spring_floods',     'Spring Floods',         'Rising rivers damage farmland.',                'spring', 'morale',   -5,   3, null, 0],
+    ['spring_floods',     'Spring Floods',         'Rising rivers damage farmland.',                'spring', 'happiness',   -5,   3, null, 0],
     ['pollination_boom',  'Pollination Boom',      'A great flowering swells the population.',      'spring', 'population', 500, 1, null, 1],
-    ['warm_winds',        'Warm Winds',            'A pleasant breeze lifts spirits.',              'spring', 'morale',    5,   1, null, 1],
+    ['warm_winds',        'Warm Winds',            'A pleasant breeze lifts spirits.',              'spring', 'happiness',    5,   1, null, 1],
     // Summer
     ['abundant_harvest',  'Abundant Harvest',      'Exceptional sun yields record crops.',          'summer', 'food',      0.15, 1, null, 1],
     ['heat_wave',         'Heat Wave',             'Scorching heat wilts crops and happiness.',     'summer', 'farm_yield',-0.10,3, null, 0],
     ['travelling_merch',  'Travelling Merchants',  'Exotic goods boost market income.',             'summer', 'gold',      0.02, 3, null, 1],
     ['border_skirmish',   'Border Skirmish',       'Bandits raid your outlying farms.',             'summer', 'food',     -0.05,1, null, 0],
     // Fall
-    ['harvest_festival',  'Harvest Festival',      'The kingdom celebrates a bountiful autumn.',    'fall',   'morale',    10,  1, null, 1],
+    ['harvest_festival',  'Harvest Festival',      'The kingdom celebrates a bountiful autumn.',    'fall',   'happiness',    10,  1, null, 1],
     ['early_frost',       'Early Frost',           'An unexpected frost kills late crops.',         'fall',   'farm_yield',-0.15,2, null, 0],
     ['trade_boom',        'Trade Boom',            'Merchants flock to your markets.',              'fall',   'gold',      0.05, 3, null, 1],
     ['rat_infestation',   'Rat Infestation',       'Vermin consume stored food.',                   'fall',   'food',     -0.10,1, null, 0],
@@ -1369,7 +1373,7 @@ async function initDb(options = {}) {
   const hasTaxEvents = await _db.get("SELECT 1 FROM tax_events LIMIT 1");
   if (!hasTaxEvents) {
     const defaultTaxEvents = [
-      'Citizens held a spontaneous parade in your honor. +Morale!',
+      'Citizens held a spontaneous parade in your honor. +Happiness!',
       'A grateful merchant left a small chest of exotic spices at the keep.',
       'Happy farmers brought in an unexpected surplus harvest this turn.',
       'The local bard wrote a popular song praising your generosity.',
@@ -1447,7 +1451,7 @@ async function initDb(options = {}) {
       { category: 'Polish & Management', desc: 'Email/Push notifications — optional alerts for attacks, expedition return' },
       { category: 'Polish & Management', desc: 'Step-by-step interactive new player tutorial' },
       { category: 'Economy', desc: 'Caravans — physical trade routes that can be ambushed' },
-      { category: 'Combat', desc: 'Generals — train commanding officers that boost army morale during battles' },
+      { category: 'Combat', desc: 'Generals — train commanding officers that boost army happiness during battles' },
       { category: 'World', desc: 'Weather Systems — dynamic weather impacting crop yields and battle visibility' },
       { category: 'Gameplay', desc: 'Espionage Network — permanent passive intel gathering on nearby kingdoms' },
       { category: 'Combat', desc: 'Mercenary Guilds — hire specialized factions with unique unit types' },
@@ -1459,7 +1463,7 @@ async function initDb(options = {}) {
       { category: 'Economy', desc: 'Smuggling Rings — illegal market trades that bypass taxes' },
       { category: 'World', desc: 'Wandering Beasts — powerful monsters that attack random kingdoms until defeated' },
       { category: 'Polish & Management', desc: 'Customizable Palace UI — visually upgrade the player dashboard as level increases' },
-      { category: 'Gameplay', desc: 'Prisoners of War — ransom captured enemy troops for gold or execute for morale' },
+      { category: 'Gameplay', desc: 'Prisoners of War — ransom captured enemy troops for gold or execute for happiness' },
       { category: 'Combat', desc: 'Naval Trade Routes — ocean routes for faster gold generation but higher risk' }
     ];
     for (const w of defaultWishlist) {
@@ -1673,12 +1677,26 @@ async function initDb(options = {}) {
       safety_component INTEGER DEFAULT 0,
       prosperity_component INTEGER DEFAULT 0,
       race_modifier INTEGER DEFAULT 0,
+      tax_component INTEGER DEFAULT 0,
+      overcrowding_component INTEGER DEFAULT 0,
+      recovery_rate REAL DEFAULT 0,
+      effects_component INTEGER DEFAULT 0,
+      synergy_component INTEGER DEFAULT 0,
+      fragment_component INTEGER DEFAULT 0,
       created_at INTEGER NOT NULL DEFAULT (unixepoch()),
       UNIQUE(kingdom_id, turn)
     )
   `);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_happiness_history_kingdom_turn ON happiness_history(kingdom_id, turn DESC)`);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_happiness_history_kingdom_created ON happiness_history(kingdom_id, created_at DESC)`);
+
+  const happinessHistoryCols = await getTableColumns('happiness_history');
+  if (!happinessHistoryCols.includes('tax_component')) await addColumn('happiness_history', 'tax_component', 'INTEGER DEFAULT 0', happinessHistoryCols);
+  if (!happinessHistoryCols.includes('overcrowding_component')) await addColumn('happiness_history', 'overcrowding_component', 'INTEGER DEFAULT 0', happinessHistoryCols);
+  if (!happinessHistoryCols.includes('recovery_rate')) await addColumn('happiness_history', 'recovery_rate', 'REAL DEFAULT 0', happinessHistoryCols);
+  if (!happinessHistoryCols.includes('effects_component')) await addColumn('happiness_history', 'effects_component', 'INTEGER DEFAULT 0', happinessHistoryCols);
+  if (!happinessHistoryCols.includes('synergy_component')) await addColumn('happiness_history', 'synergy_component', 'INTEGER DEFAULT 0', happinessHistoryCols);
+  if (!happinessHistoryCols.includes('fragment_component')) await addColumn('happiness_history', 'fragment_component', 'INTEGER DEFAULT 0', happinessHistoryCols);
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS happiness_events (

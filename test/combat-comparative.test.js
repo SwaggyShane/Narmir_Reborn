@@ -25,7 +25,6 @@ function createTestKingdom(name = 'Test Kingdom', fighterCount = 1000) {
 
     land: 1000,
     gold: 50000,
-    morale: 50,
     happiness: 50,
     turn: 100,
 
@@ -123,7 +122,7 @@ function validateCombatResult(result, testName = '') {
   if (!result.attackerUpdates || typeof result.attackerUpdates !== 'object') {
     issues.push('attackerUpdates is missing or not an object');
   } else {
-    const requiredUpdateFields = ['fighters', 'morale', 'xp', 'level'];
+    const requiredUpdateFields = ['fighters', 'happiness', 'xp', 'level'];
     requiredUpdateFields.forEach((field) => {
       if (result.attackerUpdates[field] === undefined) {
         issues.push(`attackerUpdates.${field} is missing`);

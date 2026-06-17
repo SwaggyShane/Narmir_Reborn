@@ -18,7 +18,7 @@ const {
   awardUnitXp,
 } = require("./lib/troops");
 const { getSynergyPassiveBonusMultiplier } = require("./lib/synergy-cache");
-const { naturalMoraleCap } = require("./lib/morale-cap");
+const { naturalHappinessCap } = require("./lib/happiness-cap");
 const { getMasonSigilResist } = require("./lib/defense");
 
 const {
@@ -203,13 +203,13 @@ function castSpell(caster, target, spellId, obscure) {
           ? `${cleared} active curse${cleared > 1 ? "s" : ""} dispelled`
           : "no active curses to dispel";
     } else if (spellId === "bless") {
-      const natCap = naturalMoraleCap(target);
-      const moraleGain = Math.floor(natCap * 0.1 * magicRatio);
-      targetUpdates.morale = Math.min(
+      const natCap = naturalHappinessCap(target);
+      const happinessGain = Math.floor(natCap * 0.1 * magicRatio);
+      targetUpdates.happiness = Math.min(
         natCap * 2,
-        (target.morale !== undefined && target.morale !== null
-          ? target.morale
-          : 100) + moraleGain,
+        (target.happiness !== undefined && target.happiness !== null
+          ? target.happiness
+          : 100) + happinessGain,
       );
       // Apply bless buff for 5 turns
       let tEffects = {};
@@ -218,10 +218,10 @@ function castSpell(caster, target, spellId, obscure) {
       } catch {}
       tEffects.bless = {
         turns_left: def.duration || 5,
-        morale_bonus: moraleGain,
+        happiness_bonus: happinessGain,
       };
       targetUpdates.active_effects = JSON.stringify(tEffects);
-      damageDesc = `+${moraleGain} morale and pop growth boosted for ${def.duration || 5} turns`;
+      damageDesc = `+${happinessGain} happiness and pop growth boosted for ${def.duration || 5} turns`;
     } else if (spellId === "shield") {
       let tEffects = {};
       try {
@@ -821,7 +821,7 @@ function castSpell(caster, target, spellId, obscure) {
     // Discover random fact about target kingdom (research)
     const facts = [
       `Kingdom has ${(target.population || 0).toLocaleString()} population`,
-      `Current morale: ${Math.floor((target.morale || 100))}%`,
+      `Current happiness: ${Math.floor((target.happiness || 100))}%`,
       `Mana reserves: ${(target.mana || 0).toLocaleString()}`,
       `${(target.fighters || 0).toLocaleString()} fighters stationed`,
       `Land holdings: ${(target.land || 0).toLocaleString()} acres`
@@ -847,11 +847,11 @@ function castSpell(caster, target, spellId, obscure) {
     try {
       tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
     } catch {}
-    const happinessDrop = Math.floor((target.morale || 100) * 0.2);
+    const happinessDrop = Math.floor((target.happiness || 100) * 0.2);
     tEffects.fascinate_crowd = { turns_left: 3, happiness_loss: happinessDrop };
     targetUpdates.active_effects = JSON.stringify(tEffects);
-    targetUpdates.morale = Math.max(0, (target.morale || 100) - happinessDrop);
-    damageDesc = `crowd fascinated — morale dropped ${happinessDrop}% for 3 turns`;
+    targetUpdates.happiness = Math.max(0, (target.happiness || 100) - happinessDrop);
+    damageDesc = `crowd fascinated — happiness dropped ${happinessDrop}% for 3 turns`;
   } else if (spellId === "command_word") {
     // Enemy cannot act next turn (debuff)
     let tEffects = {};
@@ -992,10 +992,10 @@ function castSpell(caster, target, spellId, obscure) {
     try {
       tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
     } catch {}
-    const happinessDrop = Math.floor((target.morale || 100) * 0.1);
+    const happinessDrop = Math.floor((target.happiness || 100) * 0.1);
     tEffects.death_knell = { turns_left: 3, happiness_loss: happinessDrop, production_penalty: 0.1 };
     targetUpdates.active_effects = JSON.stringify(tEffects);
-    targetUpdates.morale = Math.max(0, (target.morale || 100) - happinessDrop);
+    targetUpdates.happiness = Math.max(0, (target.happiness || 100) - happinessDrop);
     damageDesc = `death knell rings — happiness and production reduced for 3 turns`;
   } else if (spellId === "transform_lead_to_gold") {
     // Convert 100 stone into 500 gold (friendly resource conversion)
@@ -1524,11 +1524,11 @@ function castSpell(caster, target, spellId, obscure) {
     try {
       tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
     } catch {}
-    const moraleWipe = Math.floor((target.morale || 100) * 0.9);
+    const happinessWipe = Math.floor((target.happiness || 100) * 0.9);
     tEffects.psychic_dominion = { turns_left: 3, paralyzed: true };
     targetUpdates.active_effects = JSON.stringify(tEffects);
-    targetUpdates.morale = Math.max(0, (target.morale || 100) - moraleWipe);
-    damageDesc = `psychic dominion — morale crushed and troops paralyzed for 3 turns`;
+    targetUpdates.happiness = Math.max(0, (target.happiness || 100) - happinessWipe);
+    damageDesc = `psychic dominion — happiness crushed and troops paralyzed for 3 turns`;
   } else if (spellId === "cataclysm") {
     // Destroy 50 buildings and kill 400 fighters (combination damage)
     const bldDmg = Math.max(1, getBldDmg("farms", 50));
@@ -1594,11 +1594,11 @@ function castSpell(caster, target, spellId, obscure) {
     try {
       tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
     } catch {}
-    const happinessDrop = Math.floor((target.morale || 100) * 0.4);
-    tEffects.false_victory = { turns_left: 3, morale_loss: happinessDrop };
+    const happinessDrop = Math.floor((target.happiness || 100) * 0.4);
+    tEffects.false_victory = { turns_left: 3, happiness_loss: happinessDrop };
     targetUpdates.active_effects = JSON.stringify(tEffects);
-    targetUpdates.morale = Math.max(0, (target.morale || 100) - happinessDrop);
-    damageDesc = `false victory — morale crashes by ${happinessDrop}% for 3 turns`;
+    targetUpdates.happiness = Math.max(0, (target.happiness || 100) - happinessDrop);
+    damageDesc = `false victory — happiness crashes by ${happinessDrop}% for 3 turns`;
   } else if (spellId === "perception_shatter") {
     // Senses fooled for 3 turns; acts randomly (debuff)
     let tEffects = {};
@@ -1833,11 +1833,11 @@ function castSpell(caster, target, spellId, obscure) {
     try {
       tEffects = safeJsonParse(target.active_effects, {}, "auto:active_effects");
     } catch {}
-    const moraleLoss = Math.floor((target.morale || 100) * 0.5);
-    tEffects.break_will = { turns_left: 9999, morale_penalty: 0.5 };
+    const happinessLoss = Math.floor((target.happiness || 100) * 0.5);
+    tEffects.break_will = { turns_left: 9999, happiness_penalty: 0.5 };
     targetUpdates.active_effects = JSON.stringify(tEffects);
-    targetUpdates.morale = Math.max(0, (target.morale || 100) - moraleLoss);
-    damageDesc = `will broken — morale permanently reduced by 50%`;
+    targetUpdates.happiness = Math.max(0, (target.happiness || 100) - happinessLoss);
+    damageDesc = `will broken — happiness permanently reduced by 50%`;
   } else if (spellId === "mass_enslavement") {
     // 2000 enemy population become thralls (population conversion)
     const popEnslaved = Math.max(1, Math.floor(2000 * magicRatio * shielded));
@@ -2558,7 +2558,7 @@ function processMageTower(k, events) {
   return updates;
 }
 
-// ── Shrine — clerics boost morale and prepare healing ────────────────────────
+// ── Shrine — clerics boost happiness and prepare healing ────────────────────────
 function processShrine(k, _events) {
   const updates = {};
   const shrines = k.bld_shrines;

@@ -58,7 +58,7 @@
 
 ## Happiness System
 **Status:** ✅ IMPLEMENTED  
-**Description:** Population happiness framework replaces entertainment-gated morale
+**Description:** Population happiness framework replaces entertainment-gated happiness
 
 **Completed Components:**
 - ✅ Happiness calculation engine (food, entertainment, safety, prosperity, race modifiers)
@@ -66,7 +66,7 @@
 - ✅ Production efficiency multiplier (affected by happiness)
 - ✅ Rebellion event system (triggered by low happiness)
 - ✅ Entertainment research mechanic (drives recovery speed)
-- ✅ Combat morale multiplier tied to happiness
+- ✅ Combat happiness multiplier tied to happiness
 - ✅ Spell integrations (Bless, Divine Favor, etc.)
 - ✅ World fragment bonuses for happiness
 - ✅ Database schema (kingdoms.happiness column)

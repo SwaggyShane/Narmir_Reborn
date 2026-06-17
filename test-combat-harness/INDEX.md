@@ -172,7 +172,7 @@ node test-combat-harness/analyze-results.js combat-test-results-*.json
 - Casualty rate validation
 - XP calculation correctness
 - Resource transfer calculations
-- Morale impact calculations
+- Happiness impact calculations
 
 ### Edge Case Analysis 🔍
 - Extreme army sizes handled?

@@ -38,7 +38,7 @@
   - 🪓 **Orc Fighters** — War Culture: 1 free fighter trained per 10 every turn.
   - 🕵️ **Dark Elf Ninjas** — Silent Assassination: Targets no longer receive news of the deed.
   - 🐺 **Dire Wolf Rangers** — Fast Expeditions: Scouts and Dungeons return 1 turn early.
-  - 💚 **Human Clerics** — Morale Aura: Passive +1 morale to the kingdom every turn.
+  - 💚 **Human Clerics** — Happiness Aura: Passive +1 happiness to the kingdom every turn.
 - **Chat Personalization** — New commands `/nick <name>` and `/color <hex>` persist correctly across sessions.
 - **Extended Protection** — Newbie protection now lasts until Turn 400 to allow deeper development before open warfare.
 - **Economic Stability** — Fixed tax slider persistence and synchronized UI updates across all panels.
@@ -86,7 +86,7 @@
 
 **Housing capacity by race (per house):**
 - Dire Wolf 700 (+40%) · Dwarf 650 (+30%) · Orc 600 (+20%) · Human 500 (base) · Dark Elf 450 (−10%) · High Elf 350 (−30%)
-- Dire Wolf overcrowding morale penalty ×0.5 · High Elf ×2.0
+- Dire Wolf overcrowding happiness penalty ×0.5 · High Elf ×2.0
 
 **Support unit housing (free upkeep if housed):**
 - Researchers → Schools: 100/school base (racial multipliers apply)
@@ -133,7 +133,7 @@ Hire panel shows school/smithy/library capacity with overflow highlighted red.
 **The Throne of Nazdreg Grishnak** (0.1% chance, unique — one per server, forever):
 > *Nazdreg Grishnak · August 13, 1975 — August 19, 2012*
 >
-> Awards all stats +100, 1,000,000 gold, 1,000 land, 100,000 population, +50 morale, +50,000 fighters.
+> Awards all stats +100, 1,000,000 gold, 1,000 land, 100,000 population, +50 happiness, +50,000 fighters.
 > Broadcasts to every kingdom's news feed and global chat on discovery. Once found it is gone forever.
 
 Cancel expedition button available on all active expeditions.
@@ -145,7 +145,7 @@ Cancel expedition button available on all active expeditions.
 - Mages craft scrolls in library; scribes craft maps and blueprints
 - Map required to interact with other kingdoms (attack, spell, covert)
 - Mage tower mana production
-- Shrine morale and healing
+- Shrine happiness and healing
 - Spell target selector panel — own kingdom list in spell panel, pre-selects from rankings
 
 ---
@@ -182,7 +182,7 @@ Training fields award passive XP with equipment bonuses.
 - ⚔️ **Orc fighters** — every 10 fighters trains 1 free fighter per turn
 - 🕵️ **Dark Elf ninjas** — silent assassination, target receives no news event
 - 🐺 **Dire Wolf rangers** — expeditions tick down 2 turns per turn (return 1 turn early)
-- 💚 **Human clerics** — +1 morale aura per turn across the kingdom
+- 💚 **Human clerics** — +1 happiness aura per turn across the kingdom
 
 ---
 

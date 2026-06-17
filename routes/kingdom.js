@@ -96,7 +96,7 @@ async function withTurnLock(playerId, fn) {
 // Avoid SELECT * for better performance: network, parsing, memory
 // Column sets: choose what's actually needed to reduce network/parsing overhead
 const _KINGDOM_FULL = '*'; // Only use when truly necessary (GET /me)
-const KINGDOM_CORE = 'id, player_id, name, race, turn, turns_stored, gold, food, population, land, morale, happiness';
+const KINGDOM_CORE = 'id, player_id, name, race, turn, turns_stored, gold, food, population, land, happiness';
 const _KINGDOM_BUILD = `${KINGDOM_CORE}, wood, stone, iron, coal, steel, food_shortage_turns,
   bld_farms, bld_granaries, bld_walls, bld_guard_towers, bld_libraries, bld_mage_towers, bld_shrines, bld_vaults`;
 const _KINGDOM_UNITS = `${KINGDOM_CORE}, fighters, rangers, clerics, mages, thieves, ninjas, researchers, engineers, scribes`;
