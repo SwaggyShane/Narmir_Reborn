@@ -417,49 +417,6 @@ function calcDiscoveryChance(k) {
   return baseChance * raceMult;
 }
 
-function processLocationMapsWip(k, events) {
-  const updates = {};
-  const wip = safeJsonParse(
-    k.location_maps_wip,
-    [],
-    "processLocationMapsWip:location_maps_wip",
-  );
-  if (!wip.length) return updates;
-
-  const scribesAvail = k.scribes;
-  let scribesUsed = 0;
-  const completed = [];
-  const remaining = [];
-
-  for (const item of wip) {
-    const cost = 10; // scribes required
-    if (scribesUsed + cost > scribesAvail) {
-      remaining.push(item);
-      continue;
-    }
-    scribesUsed += cost;
-    item.turns_remaining = (item.turns_remaining || 5) - 1;
-    if (item.turns_remaining <= 0) {
-      completed.push(item);
-      const disc = safeJsonParse(
-        k.discovered_kingdoms,
-        {},
-        "processLocationMapsWip:discovered_kingdoms",
-      );
-      disc[item.target_id] = { found: true, mapped: true };
-      updates.discovered_kingdoms = JSON.stringify(disc);
-      events.push({
-        type: "system",
-        message: `ÃƒÂ°Ã…Â¸Ã¢â‚¬â€Ã‚ÂºÃƒÂ¯Ã‚Â¸Ã‚Â Scribes have completed a location map for ${item.target_name}. You may now interact with them.`,
-      });
-    } else {
-      remaining.push(item);
-    }
-  }
-
-  updates.location_maps_wip = JSON.stringify(remaining);
-  return updates;
-}
 
 // addItemToInventory + initItemsArray live in game/lib/items.js.
 // processResourceYield lives in game/economy.js. All three are re-exported
@@ -490,108 +447,7 @@ function computeExpeditionTransitions(expeditions, now) {
 // totalHiredUnits + the food/market/trade economy functions live in
 // game/economy.js. They're re-exported from engine.js via module.exports
 // for backward compat with routes/sockets that still call engine.foo(...).
-function processMercenaries(k, events) {
-  const updates = {};
-  const mercs = safeJsonParse(
-    k.mercenaries,
-    [],
-    "processMercenaries:mercenaries",
-  );
-  if (!mercs.length) return updates;
 
-  const currentTurn = k.turn;
-  let gold = k.gold;
-  const active = [];
-  let totalUpkeepPaid = 0;
-
-  for (const m of mercs) {
-    const served = currentTurn - (m.hired_at_turn || 0);
-    const upkeep = m.upkeep_per_turn || 0;
-    if (served >= m.duration_turns) {
-      updates[m.unit_type] = Math.max(
-        0,
-        (updates[m.unit_type] ?? (k[m.unit_type] || 0)) - m.count,
-      );
-      events.push({
-        type: "system",
-        message: `ÃƒÂ¢Ã…Â¡Ã¢â‚¬ÂÃƒÂ¯Ã‚Â¸Ã‚Â ${m.count} ${m.tier} ${m.unit_type} completed their contract and departed.`,
-      });
-    } else if (gold >= upkeep) {
-      gold -= upkeep;
-      totalUpkeepPaid += upkeep;
-      active.push(m);
-    } else {
-      updates[m.unit_type] = Math.max(
-        0,
-        (updates[m.unit_type] ?? (k[m.unit_type] || 0)) - m.count,
-      );
-      events.push({
-        type: "system",
-        message: `ÃƒÂ¢Ã…Â¡Ã¢â‚¬ÂÃƒÂ¯Ã‚Â¸Ã‚Â ${m.count} ${m.tier} ${m.unit_type} left ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â upkeep unpaid.`,
-      });
-    }
-  }
-
-  if (totalUpkeepPaid > 0) {
-    events.push({
-      type: "system",
-      message: `ÃƒÂ¢Ã…Â¡Ã¢â‚¬ÂÃƒÂ¯Ã‚Â¸Ã‚Â Mercenary upkeep: -${totalUpkeepPaid.toLocaleString()} gold.`,
-    });
-  }
-
-  updates.mercenaries = JSON.stringify(active);
-  updates.gold = gold;
-  return updates;
-}
-
-function hireMercenaries(k, unitType, tier, count) {
-  const tierDef = MERC_TIERS[tier];
-  if (!tierDef) return { error: "Invalid tier" };
-  const tavUpgrades = safeJsonParse(
-    k.tavern_upgrades,
-    {},
-    "hireMercenaries:tavern_upgrades",
-  );
-  if (tierDef.requires && !tavUpgrades[tierDef.requires])
-    return { error: `Requires ${tierDef.requires.replace("_", " ")} upgrade` };
-  if (!(k.bld_taverns > 0)) return { error: "Need at least 1 tavern" };
-
-  const level =
-    tierDef.levelMin +
-    Math.floor(Math.random() * (tierDef.levelMax - tierDef.levelMin + 1));
-  const cost = tierDef.costPer * count;
-  const upkeep = Math.ceil((cost * tierDef.upkeepPct) / tierDef.duration);
-  if (k.gold < cost)
-    return { error: `Need ${cost.toLocaleString()} gold` };
-
-  const mercs = safeJsonParse(k.mercenaries, [], "hireMercenaries:mercenaries");
-  mercs.push({
-    unit_type: unitType,
-    tier,
-    level,
-    count,
-    hired_at_turn: k.turn,
-    duration_turns: tierDef.duration,
-    upkeep_per_turn: upkeep,
-  });
-
-  return {
-    updates: {
-      gold: k.gold - cost,
-      [unitType]: (k[unitType] || 0) + count,
-      mercenaries: JSON.stringify(mercs),
-    },
-    hired: {
-      tier,
-      level,
-      count,
-      unitType,
-      duration: tierDef.duration,
-      upkeep,
-      cost,
-    },
-  };
-}
 
 function purchaseUpgrade(k, category, upgradeKey) {
   category = (category || "").toLowerCase();
@@ -678,131 +534,7 @@ function purchaseUpgrade(k, category, upgradeKey) {
   };
 }
 
-function rebellionCheck(k, happiness, updates, events) {
-  if (happiness >= 50) return; // No rebellion risk if happiness >= 50
 
-  const cooldown = k.rebellion_cooldown || 0;
-  if (cooldown > k.turn) return; // Still in cooldown
-
-  let rebellionChance = 0;
-  if (happiness <= 0) {
-    rebellionChance = 0.05; // 5% chance
-  } else if (happiness < 20) {
-    rebellionChance = 0.02; // 2% chance
-  } else if (happiness < 50) {
-    rebellionChance = 0.005; // 0.5% chance
-  }
-
-  if (Math.random() < rebellionChance) {
-    rebellionEvent(k, updates, events);
-  }
-}
-
-function rebellionEvent(k, updates, events) {
-  const eventType = Math.floor(Math.random() * 5) + 1; // 1-5
-
-  updates.rebellion_cooldown = k.turn + 20;
-
-  let newsMessage = "";
-
-  switch (eventType) {
-    case 1: // Unrest - population loss
-      {
-        const lossPercent = 0.05 + Math.random() * 0.05; // 5-10%
-        const populationLoss = Math.floor(k.population * lossPercent);
-        updates.population = Math.max(100, (updates.population || k.population) - populationLoss);
-        newsMessage = `ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â UNREST: Population fleeing due to unhappiness! Lost ${populationLoss.toLocaleString()} people.`;
-      }
-      break;
-
-    case 2: // Tax Revolt
-      {
-        const newTaxCap = Math.max(10, (updates.tax || k.tax) - 10);
-        updates.tax = newTaxCap;
-        newsMessage = `ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â TAX REVOLT: Population refuses higher taxes. Tax reduced to ${newTaxCap}%!`;
-      }
-      break;
-
-    case 3: // Building Sabotage
-      {
-        const buildingTypes = ['bld_taverns', 'bld_markets', 'bld_shrines', 'bld_schools', 'bld_mage_towers'];
-        const buildingNames = {
-          bld_taverns: 'taverns',
-          bld_markets: 'markets',
-          bld_shrines: 'shrines',
-          bld_schools: 'schools',
-          bld_mage_towers: 'mage towers'
-        };
-        const availableBuildings = buildingTypes.filter(b => (k[b] || 0) > 0);
-
-        if (availableBuildings.length > 0) {
-          const randomBuilding = availableBuildings[Math.floor(Math.random() * availableBuildings.length)];
-          const buildingCount = k[randomBuilding];
-          const damageCount = Math.min(buildingCount, Math.floor(Math.random() * 3) + 1); // 1-3 buildings
-          updates[randomBuilding] = Math.max(0, (updates[randomBuilding] || buildingCount) - damageCount);
-          newsMessage = `ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â SABOTAGE: Rioters destroyed ${damageCount} ${buildingNames[randomBuilding]}!`;
-        } else {
-          const lossPercent = 0.02 + Math.random() * 0.03; // 2-5%
-          const populationLoss = Math.floor(k.population * lossPercent);
-          updates.population = Math.max(100, (updates.population || k.population) - populationLoss);
-          newsMessage = `ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â UNREST: Rioters clashed with guards! Lost ${populationLoss.toLocaleString()} people.`;
-        }
-      }
-      break;
-
-    case 4: // Food Riot
-      {
-        let foodRiotTriggered = false;
-        if (k.food < k.population * 0.1) {
-          const buildingTypes = ['bld_granaries', 'bld_farms'];
-          const buildingNames = { bld_granaries: 'granaries', bld_farms: 'farms' };
-          const availableBuildings = buildingTypes.filter(b => (k[b] || 0) > 0);
-
-          if (availableBuildings.length > 0) {
-            const randomBuilding = availableBuildings[Math.floor(Math.random() * availableBuildings.length)];
-            const buildingCount = k[randomBuilding];
-            const damageCount = Math.min(buildingCount, Math.floor(Math.random() * 3) + 1);
-            updates[randomBuilding] = Math.max(0, (updates[randomBuilding] || buildingCount) - damageCount);
-            newsMessage = `ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â FOOD RIOT: Desperate population destroyed food facilities! Lost ${damageCount} ${buildingNames[randomBuilding]}.`;
-            foodRiotTriggered = true;
-          }
-        }
-
-        if (!foodRiotTriggered) {
-          const lossPercent = 0.05 + Math.random() * 0.05;
-          const populationLoss = Math.floor(k.population * lossPercent);
-          updates.population = Math.max(100, (updates.population || k.population) - populationLoss);
-          newsMessage = `ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â UNREST: Population fleeing due to unhappiness! Lost ${populationLoss.toLocaleString()} people.`;
-        }
-      }
-      break;
-
-    case 5: // Military Mutiny
-      {
-        // Lose 5-10% of troops due to desertion
-        const troopsToLose = ['fighters', 'rangers', 'clerics', 'mages', 'thieves', 'ninjas', 'engineers'];
-        let totalLost = 0;
-        for (const unit of troopsToLose) {
-          const count = k[unit] || 0;
-          const loss = Math.floor(count * (0.05 + Math.random() * 0.05));
-          if (loss > 0) {
-            updates[unit] = Math.max(0, (updates[unit] || count) - loss);
-            totalLost += loss;
-          }
-        }
-        newsMessage = `ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â MILITARY MUTINY: Troops are refusing orders due to low happiness! ${totalLost} units deserted.`;
-      }
-      break;
-  }
-
-  if (newsMessage) {
-    events.push({
-      type: 'rebellion',
-      message: newsMessage,
-      turn: k.turn
-    });
-  }
-}
 
 function processTurn(k, db = null) {
   clearParseCache();
@@ -863,7 +595,7 @@ function processTurn(k, db = null) {
   }
 
   // Check for rebellion events
-  rebellionCheck(k, happinessResult.happiness, updates, events);
+  rebellionMod.rebellionCheck(k, happinessResult.happiness, updates, events);
 
   // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ 1. Gold income ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
   const income = goldPerTurn(k);
@@ -997,11 +729,11 @@ function processTurn(k, db = null) {
   */
 
   // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ 4c. Mercenary upkeep and expiry ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
-  const mercUpdates = processMercenaries({ ...k, ...updates }, events);
+  const mercUpdates = mercenariesMod.processMercenaries({ ...k, ...updates }, events);
   Object.assign(updates, mercUpdates);
 
   // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ 4d. Location maps in progress ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
-  const locUpdates = processLocationMapsWip({ ...k, ...updates }, events);
+  const locUpdates = locationMapsMod.processLocationMapsWip({ ...k, ...updates }, events);
   Object.assign(updates, locUpdates);
 
   // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ 4e. Active event tick-down ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
@@ -1595,7 +1327,7 @@ function processTurn(k, db = null) {
 
       const current =
         updates[d.col] !== undefined ? updates[d.col] : k[d.col] || 0;
-      const cap = getCap(d.col, k.level || 1);
+      const cap = recruitmentMod.getCap(d.col, k.level || 1);
       if (current >= cap) return; // At cap, no progress
 
       const effective = Math.floor(
@@ -1715,7 +1447,7 @@ function processTurn(k, db = null) {
       if (spellbookMages > 0) {
         const spellCol = "res_spellbook";
         const currentSpell = updates[spellCol] !== undefined ? updates[spellCol] : k[spellCol] || 0;
-        const spellCap = getCap(spellCol, k.level || 1);
+        const spellCap = recruitmentMod.getCap(spellCol, k.level || 1);
 
         if (currentSpell < spellCap) {
           const spellEffective = Math.floor(
@@ -1749,7 +1481,7 @@ function processTurn(k, db = null) {
       if (schoolSpellbookMages > 0 && k.school_of_magic) {
         const schoolCol = "school_spellbook";
         const currentSchool = updates[schoolCol] !== undefined ? updates[schoolCol] : k[schoolCol] || 0;
-        const schoolCap = getCap(schoolCol, k.level || 1);
+        const schoolCap = recruitmentMod.getCap(schoolCol, k.level || 1);
 
         if (currentSchool < schoolCap) {
           const schoolEffective = Math.floor(
@@ -1896,7 +1628,7 @@ function processTurn(k, db = null) {
   }
 
   // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ 8e. Active effects ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â tick down debuffs/buffs ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
-  const effectUpdates = processActiveEffects({ ...k, ...updates }, events);
+  const effectUpdates = effectsMod.processActiveEffects({ ...k, ...updates }, events);
   Object.assign(updates, effectUpdates);
 
   // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ 9. Training fields ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â passive troop XP each turn ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
@@ -1995,7 +1727,7 @@ function processTurn(k, db = null) {
       (s, u) => s + (updates[u] !== undefined ? updates[u] : k[u] || 0),
       0,
     );
-    const levelCapVal = getCap("fighters", k.level || 1);
+    const levelCapVal = recruitmentMod.getCap("fighters", k.level || 1);
     const currentFighters =
       updates.fighters !== undefined ? updates.fighters : k.fighters;
 
@@ -2122,7 +1854,7 @@ function processTurn(k, db = null) {
   });
 
   updates.last_turn_at = Math.floor(Date.now() / 1000);
-  checkAchievements(k, updates, events);
+  achievementsMod.checkAchievements(k, updates, events);
 
   // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Morale Audit Report ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
@@ -2140,353 +1872,22 @@ function processTurn(k, db = null) {
   return { updates, events };
 }
 
-function checkAchievements(k, updates, events) {
-  const ach = safeJsonParse(
-    updates.achievements || k.achievements,
-    [],
-    "checkAchievements",
-  );
-  let achUpdated = false;
-
-  const currentTowers =
-    updates.bld_mage_towers !== undefined
-      ? updates.bld_mage_towers
-      : k.bld_mage_towers;
-  const currentLibraries =
-    updates.bld_libraries !== undefined
-      ? updates.bld_libraries
-      : k.bld_libraries;
-  const currentSchools =
-    updates.bld_schools !== undefined
-      ? updates.bld_schools
-      : k.bld_schools;
-  if (
-    !ach.includes("ach_grandmaster") &&
-    currentTowers >= 25 &&
-    currentLibraries >= 25 &&
-    currentSchools >= 25
-  ) {
-    ach.push("ach_grandmaster");
-    updates.land =
-      (updates.land !== undefined ? updates.land : k.land) + 10000;
-    updates.maps =
-      (updates.maps !== undefined ? updates.maps : k.maps) + 5000;
-    events.push({
-      type: "system",
-      message:
-        "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Grandmaster! Rewarded +10000 Land and +5000 Maps.",
-    });
-    achUpdated = true;
-  }
-
-  // Calculate total buildings from all building types
-  const totalBuildings = Object.values(BUILDING_COL)
-    .filter(col => col.startsWith('bld_'))
-    .reduce((sum, col) => sum + (updates[col] !== undefined ? updates[col] : k[col] || 0), 0);
-
-  if (!ach.includes("ach_constructor") && totalBuildings >= 1500) {
-    ach.push("ach_constructor");
-    const currentSmithies = updates.bld_smithies !== undefined ? updates.bld_smithies : k.bld_smithies || 0;
-    const smithiesToAdd = Math.max(0, 100 - currentSmithies);
-    updates.bld_smithies = currentSmithies + smithiesToAdd;
-    events.push({
-      type: "system",
-      message:
-        `ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Constructor! Your expertise grants ${smithiesToAdd} Smithies, bringing your total to ${currentSmithies + smithiesToAdd}.`,
-    });
-    achUpdated = true;
-  }
-
-  // Founder achievement: Build first building
-  if (!ach.includes("ach_founder") && totalBuildings >= 1) {
-    ach.push("ach_founder");
-    updates.gold =
-      (updates.gold !== undefined ? updates.gold : k.gold) + 5000;
-    events.push({
-      type: "system",
-      message: "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Founder! You've built your first structure. Rewarded +5000 Gold.",
-    });
-    achUpdated = true;
-  }
-
-  const currentPop =
-    updates.population !== undefined ? updates.population : k.population;
-  if (!ach.includes("ach_warlord") && currentPop >= 50000) {
-    ach.push("ach_warlord");
-    updates.land =
-      (updates.land !== undefined ? updates.land : k.land) + 10000;
-    events.push({
-      type: "system",
-      message: "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Warlord! Rewarded +10000 Land.",
-    });
-    achUpdated = true;
-  }
-
-  // Colossus achievement: 10 million+ population
-  if (!ach.includes("ach_colossus") && currentPop >= 10000000) {
-    ach.push("ach_colossus");
-    updates.land =
-      (updates.land !== undefined ? updates.land : k.land) + 50000;
-    updates.mana =
-      (updates.mana !== undefined ? updates.mana : k.mana) + 100000;
-    updates.gold =
-      (updates.gold !== undefined ? updates.gold : k.gold) + 1000000;
-    events.push({
-      type: "system",
-      message: "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Colossus! Your empire has swollen to 10 million souls. Rewarded +50000 Land, +100000 Mana, and +1000000 Gold.",
-    });
-    achUpdated = true;
-  }
-
-  const currentGold = updates.gold !== undefined ? updates.gold : k.gold;
-  if (!ach.includes("ach_wealthy") && currentGold >= 10000000) {
-    ach.push("ach_wealthy");
-    events.push({
-      type: "system",
-      message:
-        "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Merchant King! All trade routes now generate +10% income permanently.",
-    });
-    achUpdated = true;
-  }
-
-  const currentMana = updates.mana !== undefined ? updates.mana : k.mana;
-  if (!ach.includes("ach_arcane") && currentMana >= 1000000) {
-    ach.push("ach_arcane");
-    const scrolls = safeJsonParse(
-      updates.scrolls !== undefined ? updates.scrolls : k.scrolls,
-      {},
-      "ach_arcane:scrolls",
-    );
-    scrolls.blank_scroll = (scrolls.blank_scroll || 0) + 10000;
-    updates.scrolls = JSON.stringify(scrolls);
-    updates.res_spellbook =
-      (updates.res_spellbook !== undefined ? updates.res_spellbook : k.res_spellbook || 0) + 10000;
-    events.push({
-      type: "system",
-      message:
-        "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Arcane Overlord! Rewarded +10,000 Spellbook and +10,000 Blank Scrolls.",
-    });
-    achUpdated = true;
-  }
-
-  const collectorAchieved = updates._collector_unlocked;
-  if (collectorAchieved) {
-    if (!ach.includes("collector")) {
-      ach.push("collector");
-      achUpdated = true;
-      // Reveal all kingdom locations
-      let _disc = safeJsonParse(updates.discovered_kingdoms || k.discovered_kingdoms, {}, "collector:discovered_kingdoms");
-      // This would need database access to get all kingdoms - for now, we'll mark this achievement
-      // and handle the revelation in the achievement processor with db context
-      updates._reveal_all_locations = true;
-      events.push({
-        type: "system",
-        message:
-          "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Field Collector (Found all 50 expedition events). All world locations have been revealed!",
-      });
-    }
-    delete updates._collector_unlocked;
-  }
-
-  const historianAchieved = updates._historian_unlocked;
-  if (historianAchieved) {
-    if (!ach.includes("historian")) {
-      ach.push("historian");
-      achUpdated = true;
-      updates.maps =
-        (updates.maps !== undefined ? updates.maps : k.maps) + 5000;
-      events.push({
-        type: "system",
-        message:
-          "ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Historian (Found all library lore). Rewarded +5000 Maps.",
-      });
-    }
-    delete updates._historian_unlocked;
-  }
-
-  if (achUpdated) {
-    updates.achievements = JSON.stringify(ach);
-  }
-}
 
 // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Level-based caps ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 // Caps scale linearly from base (level 1) to max (capLevel, default 1000).
 // Levels above capLevel return max (the cap is fully unlocked and stays there).
 
-function levelCap(base, max, level, capLevel = 1000) {
-  const lv = Math.max(1, Math.min(capLevel, level || 1));
-  const range = capLevel - 1;
-  if (range <= 0) return max;
-  return Math.floor(base + ((max - base) * (lv - 1)) / range);
-}
 
-function getCap(field, level, prestigeLevel = 0) {
-  const c = CAPS[field];
-  if (!c) return Infinity;
-  let baseCap = levelCap(c.base, c.max, level, c.capLevel || 1000);
-  if (prestigeLevel > 0 && field.startsWith("bld_")) {
-    const tier = PRESTIGE_MODIFIERS[Math.min(prestigeLevel, 5)];
-    if (tier) {
-      baseCap = Math.floor(baseCap * tier.bldCap);
-    }
-  }
-  return baseCap;
-}
 
 // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Hire units ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
-function hireUnits(k, unit, amount) {
-  const validUnits = [
-    "fighters",
-    "rangers",
-    "clerics",
-    "mages",
-    "thieves",
-    "ninjas",
-    "researchers",
-    "engineers",
-    "scribes",
-  ];
-  if (!validUnits.includes(unit)) return { error: "Invalid unit type" };
-  if (amount <= 0) return { error: "Amount must be positive" };
-
-  // School cap ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â researchers need schools (100 per school)
-  if (unit === "researchers") {
-    const schoolCap = k.bld_schools * 100;
-    const currentResearchers = k.researchers;
-    if (schoolCap === 0)
-      return { error: "You need at least 1 school to hire researchers" };
-    if (currentResearchers >= schoolCap)
-      return {
-        error: `School capacity full ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â ${schoolCap.toLocaleString()} researchers max with ${k.bld_schools} school${k.bld_schools > 1 ? "s" : ""} (100 per school)`,
-      };
-    if (currentResearchers + amount > schoolCap)
-      return {
-        error: `Only room for ${(schoolCap - currentResearchers).toLocaleString()} more researchers ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â build more schools (100 per school)`,
-      };
-  }
-
-  // Barracks cap ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â military troops need barracks (500 per barracks)
-  const BARRACKS_TROOPS = [
-    "fighters",
-    "rangers",
-    "clerics",
-    "thieves",
-    "ninjas",
-  ];
-  if (BARRACKS_TROOPS.includes(unit)) {
-    const barracksCapacityMult = fragmentBonusManager.getBonusMultiplier(k, 'barracks', 'capacity');
-    const barracksCap = Math.floor(k.bld_barracks * 500 * barracksCapacityMult);
-    const currentTroops = BARRACKS_TROOPS.reduce((s, u) => s + (k[u] || 0), 0);
-    if (barracksCap === 0)
-      return { error: "You need at least 1 barracks to hire troops" };
-    if (currentTroops >= barracksCap)
-      return {
-        error: `Barracks full ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â ${barracksCap.toLocaleString()} troops max with ${k.bld_barracks} barracks (500 per barracks)`,
-      };
-    if (currentTroops + amount > barracksCap)
-      return {
-        error: `Only room for ${(barracksCap - currentTroops).toLocaleString()} more troops ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â build more barracks (500 per barracks)`,
-      };
-  }
-
-  // Level cap check (researchers, engineers, scribes have no level cap)
-  if (!["researchers", "engineers", "scribes"].includes(unit)) {
-    let cap = getCap(unit, k.level || 1);
-    // Orc: Unit capacity -50% rangers
-    if (k.race === "orc" && unit === "rangers") {
-      cap = Math.floor(cap * 0.5);
-    }
-    const current = k[unit] || 0;
-    if (current >= cap)
-      return {
-        error: `Level ${k.level || 1} cap reached for ${unit} (max ${cap.toLocaleString()}) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â gain levels to increase`,
-      };
-    if (current + amount > cap)
-      return {
-        error: `Level ${k.level || 1} cap: can only hire ${(cap - current).toLocaleString()} more ${unit} (max ${cap.toLocaleString()})`,
-      };
-  }
-
-  const cost = amount * UNIT_COST;
-  if (k.gold < cost)
-    return { error: `Not enough gold ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â need ${cost.toLocaleString()} gold` };
-  if (amount > k.population)
-    return { error: "Not enough population available" };
-
-  // Dilute unit XP pool when new recruits join ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â new troops lower the average
-  const dilutedLevels = diluteTroopXp(k, unit, amount);
-
-  return {
-    updates: {
-      gold: k.gold - cost,
-      population: k.population - amount,
-      [unit]: (k[unit] || 0) + amount,
-      ...(dilutedLevels ? { troop_levels: dilutedLevels } : {}),
-      updated_at: Math.floor(Date.now() / 1000),
-    },
-  };
-}
 
 // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Research ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
-function studyDiscipline(k, discipline, researchersAssigned) {
-  const col = RESEARCH_MAP[discipline];
-  if (!col) return { error: "Unknown discipline" };
-  if (researchersAssigned > k.researchers)
-    return { error: "Not enough researchers" };
-
-  const currentLevel = k[col] || 100;
-  const increment = researchIncrement(
-    k,
-    discipline,
-    researchersAssigned,
-    currentLevel,
-  );
-  if (increment === 0)
-    return { error: "Need more researchers for any progress" };
-
-  let cap = MAX_RESEARCH;
-  if (discipline === "spellbook" || discipline === "school_spellbook") {
-    cap = Infinity;
-  } else {
-    // Apply race-specific hard cap for this discipline (if any)
-    const raceCaps = RESEARCH_DISCIPLINE_CAPS[k.race] || {};
-    cap = raceCaps[discipline] || MAX_RESEARCH;
-  }
-  const newVal = Math.min(cap, k[col] + increment);
-
-  return {
-    updates: { [col]: newVal, updated_at: Math.floor(Date.now() / 1000) },
-    increment,
-  };
-}
 
 // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Magic Schools ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
 // Select a school of magic (one-time choice when res_spellbook >= 100)
-function _selectSchool(k, schoolName) {
-  // Validate school name
-  if (!MAGIC_SCHOOLS[schoolName]) {
-    return { error: `Unknown school: ${schoolName}` };
-  }
-
-  // Can only choose if: school_of_magic is null AND res_spellbook >= 100
-  if (k.school_of_magic) {
-    return { error: `You have already chosen the school of ${k.school_of_magic}` };
-  }
-
-  if (k.res_spellbook < 100) {
-    return { error: `You must reach spellbook research level 100 to choose a school` };
-  }
-
-  // Set school choice
-  const schoolLabel = schoolName.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-  return {
-    updates: { school_of_magic: schoolName, school_spellbook: 0 },
-    events: [{ type: 'system', message: `ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ‚Â® You have chosen the school of ${schoolLabel}. You can now research school-specific spells!` }]
-  };
-}
 
 // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Experience & Levelling ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
@@ -2521,7 +1922,7 @@ function queueBuildings(k, orders) {
     const col = BUILDING_COL[key];
     const currentBuilt = k[col] || 0;
     const currentQueued = queue[key] || 0;
-    const cap = getCap(col, k.level || 1);
+    const cap = recruitmentMod.getCap(col, k.level || 1);
 
     if (currentBuilt + currentQueued + n > cap) {
       if (currentBuilt + currentQueued >= cap) {
@@ -2833,7 +2234,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
           : BUILDING_COL[building];
       if (col) {
         const current = updates[col] !== undefined ? updates[col] : k[col] || 0;
-        const cap = getCap(col, k.level || 1);
+        const cap = recruitmentMod.getCap(col, k.level || 1);
         let canAdd = Math.max(0, Math.min(completed, cap - current));
 
         // Regular buildings: units from the queue were already paid in queueBuildings;
@@ -3197,10 +2598,6 @@ function happinessCombatMult(happiness) {
   return Math.max(0.5, Math.min(1.5, mult));
 }
 
-function sumRecordValues(record = {}) {
-  return Object.values(record).reduce((sum, value) => sum + (Number(value) || 0), 0);
-}
-
 const COMBAT_NEWS_UNIT_LABELS = {
   thralls: "Thralls",
   fighters: "Fighters",
@@ -3224,106 +2621,6 @@ const COMBAT_NEWS_UNIT_ORDER = [
   "engineers",
   "war_machines",
 ];
-
-function normalizeCombatUnits(units = {}) {
-  return {
-    thralls: units.thralls || 0,
-    fighters: units.fighters || 0,
-    rangers: units.rangers || 0,
-    mages: units.mages || 0,
-    clerics: units.clerics || 0,
-    ninjas: units.ninjas || 0,
-    thieves: units.thieves || 0,
-    engineers: units.engineers || 0,
-    war_machines: units.war_machines || units.warMachines || 0,
-  };
-}
-
-function formatCombatUnitCounts(units = {}, labels = COMBAT_NEWS_UNIT_LABELS) {
-  const normalized = normalizeCombatUnits(units);
-  const parts = COMBAT_NEWS_UNIT_ORDER
-    .filter((unit) => normalized[unit] > 0)
-    .map((unit) => `${(normalized[unit] || 0).toLocaleString()} ${labels[unit] || COMBAT_NEWS_UNIT_LABELS[unit]}`);
-  return parts.length ? parts.join(", ") : "None";
-}
-
-function formatCombatBuildingsLost(report = {}) {
-  const parts = [];
-  if (report.wallsDestroyed > 0) parts.push(`${report.wallsDestroyed.toLocaleString()} Walls`);
-  if (report.defBldLost > 0) parts.push(`${report.defBldLost.toLocaleString()} Buildings`);
-  if (report.buildingDamaged) parts.push(String(report.buildingDamaged).replace(/_/g, " "));
-  return parts.length ? parts.join(", ") : "None";
-}
-
-function formatCombatV2NewsBlurb(attacker, defender, report, perspective = "attacker") {
-  const fmt = (value) => (Number(value) || 0).toLocaleString();
-  const attackerName = attacker?.name || "The attacking host";
-  const defenderName = defender?.name || "the defending kingdom";
-  const land = report.landTransferred || 0;
-  const attackerLost = report.injuredTroops?.attacker?.deadByType || {
-    thralls: report.atkThrallsLost,
-    fighters: report.atkFightersLost,
-    rangers: report.atkRangersLost,
-    mages: report.atkMagesLost,
-    clerics: report.atkClericsLost,
-    ninjas: report.atkNinjasLost,
-    thieves: report.atkThievesLost,
-    engineers: report.atkEngineersLost,
-    war_machines: report.atkWmLost,
-  };
-  const defenderLost = report.injuredTroops?.defender?.deadByType || {
-    thralls: report.defThrallsLost,
-    fighters: report.defFightersLost,
-    rangers: report.defRangersLost,
-    mages: report.defMagesLost,
-    clerics: report.defClericsLost,
-    ninjas: report.defNinjasLost,
-    thieves: report.defThievesLost,
-    engineers: report.defEngineersLost,
-    war_machines: report.defWmLost,
-  };
-  const attackerInjured = report.atkInjuredByType || report.injuredTroops?.attacker?.injuredByType || {};
-  const defenderInjured = report.defInjuredByType || report.injuredTroops?.defender?.injuredByType || {};
-  const attackerDeaths = report.attackerKilled || sumRecordValues(attackerLost);
-  const defenderDeaths = report.defenderKilled || sumRecordValues(defenderLost);
-  const criticalKills = report.criticalKills ||
-    (report.injuredTroops?.attacker?.criticalKills || 0) +
-    (report.injuredTroops?.defender?.criticalKills || 0);
-  const criticalHits = report.criticalHits ||
-    (report.injuredTroops?.attacker?.criticalHits || 0) +
-    (report.injuredTroops?.defender?.criticalHits || 0);
-  const sabotage = report.thiefSabotage || report.disabledWarMachines || 0;
-  const wallDamage = report.wallDamage || 0;
-  const defenderUnitLabels = {
-    ...COMBAT_NEWS_UNIT_LABELS,
-    war_machines: "Ballistae",
-  };
-
-  const title = perspective === "defender" ? "Defense report" : "Attack report";
-  const outcome = report.win ? "Attacker victory" : "Defender held";
-  const landLine = perspective === "defender"
-    ? `Land loss: ${report.win ? `${fmt(land)} acres lost` : "None"}`
-    : `Land gained: ${report.win ? `${fmt(land)} acres captured` : "None"}`;
-  const detailParts = [];
-  if (sabotage > 0) detailParts.push(`${fmt(sabotage)} ballistae disabled`);
-  if (wallDamage > 0) detailParts.push(`${fmt(wallDamage)} wall HP damaged`);
-  const siegeLine = detailParts.length ? `Siege notes: ${detailParts.join("; ")}` : "Siege notes: None";
-
-  return [
-    `${title}: ${attackerName} vs ${defenderName}`,
-    `Outcome: ${outcome}`,
-    landLine,
-    `Troops engaged - Attacker: ${formatCombatUnitCounts(report.sent)}`,
-    `Troops engaged - Defender: ${formatCombatUnitCounts(report.defenderEngaged, defenderUnitLabels)}`,
-    `Troops lost - Attacker: ${formatCombatUnitCounts(attackerLost)} (${fmt(attackerDeaths)} total)`,
-    `Troops lost - Defender: ${formatCombatUnitCounts(defenderLost, defenderUnitLabels)} (${fmt(defenderDeaths)} total)`,
-    `Troops injured - Attacker: ${formatCombatUnitCounts(attackerInjured)}`,
-    `Troops injured - Defender: ${formatCombatUnitCounts(defenderInjured, defenderUnitLabels)}`,
-    `Critical hits: ${fmt(criticalHits)} hits, ${fmt(criticalKills)} killing blows`,
-    `Buildings lost: ${formatCombatBuildingsLost(report)}`,
-    siegeLine,
-  ].join("\n");
-}
 
 function resolveMilitaryAttackV2Adapter(
   attacker,
@@ -3538,8 +2835,8 @@ function resolveMilitaryAttackV2Adapter(
     ],
   };
 
-  const atkEvent = formatCombatV2NewsBlurb(attacker, defender, report, "attacker");
-  const defEvent = formatCombatV2NewsBlurb(attacker, defender, report, "defender");
+  const atkEvent = combatNewsMod.formatCombatV2NewsBlurb(attacker, defender, report, "attacker");
+  const defEvent = combatNewsMod.formatCombatV2NewsBlurb(attacker, defender, report, "defender");
 
   return {
     win: v2Result.win,
@@ -4587,97 +3884,9 @@ function resolveMilitaryAttack(
 }
 
 // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Orc Trade Route Raiding ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
-function raidTradeRoute(attacker, defender, unitCount) {
-  if (attacker.race !== "orc")
-    return { error: "Only Orcs can raid trade routes" };
-  const currentAttackerThieves = attacker.thieves || 0;
-  if (currentAttackerThieves < 500)
-    return { error: "Need at least 500 thieves to raid trade routes" };
-  const defenderTradeRoutes = defender.trade_routes || 0;
-  if (defenderTradeRoutes < 1)
-    return { error: "Target has no trade routes to raid" };
-
-  const atkLvl = unitLevelMult(attacker, "thieves");
-  const defLvl = unitLevelMult(defender, "thieves");
-  const successChance = 0.4 + (atkLvl - defLvl) * 0.2;
-  const roll = Math.random();
-
-  if (roll < successChance) {
-    const raided = Math.min(defenderTradeRoutes, Math.floor(unitCount / 500));
-    const loot = raided * 5000;
-    const losses = Math.floor(unitCount * 0.05);
-
-    return {
-      success: true,
-      looted: loot,
-      raidedRoutes: raided,
-      attackerUpdates: {
-        gold: (attacker.gold || 0) + loot,
-        thieves: Math.max(0, (attacker.thieves || 0) - losses),
-      },
-      defenderUpdates: {
-        trade_routes: Math.max(0, (defender.trade_routes || 0) - raided),
-      },
-      atkEvent: `ÃƒÂ°Ã…Â¸Ã‚ÂÃ‚Â´ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã‹Å“Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â SUCCESS: You raided ${raided} trade routes of ${defender.name} and looted ${loot.toLocaleString()} gold! (Losses: ${losses} thieves)`,
-      defEvent: `ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂºÃ‚Â¶ RAIDED: ${attacker.name}'s Orcs raided your trade routes! You lost ${raided} routes and ${loot.toLocaleString()} gold was stolen!`,
-    };
-  } else {
-    const losses = Math.floor(unitCount * 0.15);
-    return {
-      success: false,
-      attackerUpdates: {
-        thieves: Math.max(0, (attacker.thieves || 0) - losses),
-      },
-      atkEvent: `ÃƒÂ°Ã…Â¸Ã¢â‚¬â„¢Ã¢â€šÂ¬ FAILURE: Your raid on ${defender.name}'s trade routes failed. You lost ${losses} thieves in the ambush.`,
-      defEvent: `ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂºÃ‚Â¡ÃƒÂ¯Ã‚Â¸Ã‚Â Your guards repelled an Orc raid from ${attacker.name} on your trade routes!`,
-    };
-  }
-}
 
 // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Prestige System ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
-function canPrestige(k) {
-  return k.level >= 50; // Prestige at Level 50
-}
 
-function processPrestige(k) {
-  if (!canPrestige(k))
-    return { error: "Kingdom level 50 required for Prestige" };
-
-  const currentLevel = k.prestige_level || 0;
-  const nextLevel = currentLevel + 1;
-
-  // New Kingdom defaults
-  return {
-    updates: {
-      prestige_level: nextLevel,
-      level: 1,
-      xp: 0,
-      gold: 50000 * nextLevel, // Bonus starting gold
-      land: k.land, // Keeping land as requested
-      population: 5000,
-      food: 25000,
-      mana: 1000,
-      fighters: 0,
-      rangers: 0,
-      clerics: 0,
-      mages: 0,
-      thieves: 0,
-      war_machines: 0,
-      bld_farms: 5,
-      bld_barracks: 2,
-      bld_schools: 1,
-      bld_housing: 100,
-      build_queue: "{}",
-      build_progress: "{}",
-      research_progress: "{}",
-      training_allocation: "{}",
-      smithy_allocation: "{}",
-      mage_tower_allocation: "{}",
-      shrine_allocation: "{}",
-      turn: k.turn,
-    }
-  };
-}
 
 
 // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Alliance pledge defense ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
@@ -5293,7 +4502,7 @@ function expeditionRewards(type, rangers, fighters, k) {
   }
 
   const preAchLength = events.length;
-  checkAchievements(k, updates, events);
+  achievementsMod.checkAchievements(k, updates, events);
   for (let i = preAchLength; i < events.length; i++) {
     rewards.push({ text: events[i].message });
   }
@@ -5679,104 +4888,6 @@ async function resolveExpeditions(db, k, engine) {
 
 // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Mage Tower ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â scroll crafting and mana production ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
-function processActiveEffects(k, events) {
-  let effects = {};
-  try {
-    effects = safeJsonParse(k.active_effects, {}, "auto:active_effects");
-  } catch {
-    effects = {};
-  }
-  if (Object.keys(effects).length === 0) return {};
-
-  const updates = {};
-  const expired = [];
-
-  for (const [effect, data] of Object.entries(effects)) {
-    const remaining = (data.turns_left || 1) - 1;
-    if (remaining <= 0) {
-      expired.push(effect);
-      events.push({
-        type: "system",
-        message: `The ${effect.replace("_", " ")} effect on your kingdom has expired.`,
-      });
-    } else {
-      // Apply ongoing effect
-      if (effect === "blight") {
-        const upgrades = safeJsonParse(
-          k.granary_upgrades,
-          {},
-          "processTurn:granary_upgrades",
-        );
-        const damage = (updates._blightDamaged = Math.floor(
-          (data.damage || 500) * (upgrades.segregation ? 0.5 : 1.0),
-        ));
-        updates.food = Math.max(
-          0,
-          (updates.food !== undefined ? updates.food : k.food) - damage,
-        );
-      } else if (effect === "plague") {
-        let lost = Math.floor(k.population * 0.02);
-        // Special housing effects (Celestial Feather: Holy Sanctuaries, Ancient Elven Wood: Treehouse Canopy)
-        const activeHousingSpecial = fragmentBonusManager.getSpecialEffect(k, 'housing');
-        if (activeHousingSpecial?.name === "Holy Sanctuaries") {
-          lost = Math.floor(lost * 0.2); // 80% reduction in plague loss
-        } else if (activeHousingSpecial?.name === "Treehouse Canopy") {
-          lost = Math.floor(lost * 0.5); // 50% reduction in plague loss
-        }
-        updates.population = Math.max(0, k.population - lost);
-        events.push({
-          type: "attack",
-          message: `ÃƒÂ¢Ã‹Å“Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â Plague ravages your kingdom ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â ${lost.toLocaleString()} citizens have perished.`,
-        });
-      } else if (effect === "silence") {
-        // Research suppressed ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â handled in processTurn by checking for silence
-      } else if (effect === "summon_rats") {
-        const foodDmg = data.food_damage_per_turn || 0;
-        if (foodDmg > 0) {
-          updates.food = Math.max(0, (updates.food !== undefined ? updates.food : k.food) - foodDmg);
-          events.push({ type: "attack", message: `ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â€šÂ¬ Summoned rats devour ${foodDmg.toLocaleString()} food from your stores.` });
-        }
-      } else if (effect === "life_drain_aura") {
-        const drainPct = data.population_drain || 0.1;
-        const lost = Math.floor(k.population * drainPct);
-        if (lost > 0) {
-          updates.population = Math.max(0, (updates.population !== undefined ? updates.population : k.population) - lost);
-          events.push({ type: "attack", message: `ÃƒÂ°Ã…Â¸Ã¢â‚¬â„¢Ã¢â€šÂ¬ Life drain aura saps ${lost.toLocaleString()} population from your kingdom.` });
-        }
-      } else if (effect === "mutate_crops") {
-        const penalty = data.food_penalty || 0.3;
-        const foodLost = Math.floor(k.food * penalty);
-        if (foodLost > 0) {
-          updates.food = Math.max(0, (updates.food !== undefined ? updates.food : k.food) - foodLost);
-          events.push({ type: "attack", message: `ÃƒÂ°Ã…Â¸Ã…â€™Ã‚Â¿ Mutated crops rot ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â ${foodLost.toLocaleString()} food spoiled.` });
-        }
-      } else if (effect === "command_legion") {
-        const friendlyFire = data.damage_per_turn || 0;
-        if (friendlyFire > 0) {
-          updates.fighters = Math.max(0, (updates.fighters !== undefined ? updates.fighters : k.fighters) - friendlyFire);
-          events.push({ type: "attack", message: `ÃƒÂ¢Ã…Â¡Ã¢â‚¬ÂÃƒÂ¯Ã‚Â¸Ã‚Â Command legion confusion ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â ${friendlyFire.toLocaleString()} fighters lost to friendly fire.` });
-        }
-      } else if (effect === "conjure_abundance") {
-        // Unlimited food: generate food equal to 20% of population each turn
-        const foodGenerated = Math.floor(k.population * 0.2);
-        updates.food = (updates.food !== undefined ? updates.food : k.food) + foodGenerated;
-        events.push({ type: "system", message: `ÃƒÂ°Ã…Â¸Ã…â€™Ã‚Â¾ Conjured abundance generates ${foodGenerated.toLocaleString()} food.` });
-      } else if (effect === "death_dominion") {
-        // Enemy deaths reanimate under control ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â bonus fighters each turn based on flag
-        const bonusFighters = Math.floor(k.fighters * 0.01);
-        if (bonusFighters > 0) {
-          updates.fighters = (updates.fighters !== undefined ? updates.fighters : k.fighters) + bonusFighters;
-        }
-      }
-      effects[effect] = { ...data, turns_left: remaining };
-    }
-  }
-
-  expired.forEach((e) => delete effects[e]);
-  updates.active_effects = JSON.stringify(effects);
-  return updates;
-}
-
 async function resolveRegions(db, io) {
   const regions = await db.all("SELECT name, owner_alliance_id, contest_alliance_id, contest_progress FROM regions");
   for (const region of regions) {
@@ -5892,87 +5003,31 @@ function demolishBuilding(k, buildingKey, amount) {
   };
 }
 
-function calculateScore(k) {
-  let score = 0;
-
-  // Base stats
-  score += k.land * 1;
-  score += k.population * 0.5;
-  score += (k.level || 1) * 100;
-
-  // Resources
-  score += k.gold * 0.001;
-  score += k.food * 0.0005;
-  score += k.mana * 0.002;
-  score += k.hammers_stored * 0.1;
-  score += k.scaffolding_stored * 0.1;
-  score += k.blueprints_stored * 5;
-  score += k.weapons_stockpile * 0.005;
-  score += k.armor_stockpile * 0.01;
-
-  // Troop levels (multiplier)
-  let troopLevels = {};
-  if (k.troop_levels) {
-    try {
-      troopLevels =
-        typeof k.troop_levels === "string"
-          ? safeJsonParse(k.troop_levels, {}, "auto:troop_levels")
-          : k.troop_levels;
-    } catch {}
-  }
-
-  function getLvlMultiplier(unitType) {
-    const unitInfo = troopLevels[unitType];
-    const lvl =
-      (unitInfo && typeof unitInfo === "object"
-        ? Number(unitInfo.level)
-        : Number(unitInfo)) || 1;
-    // user said: "start at an addition .15 at level 1 increases incrementally"
-    return 1 + lvl * 0.15;
-  }
-
-  // Units
-  score += k.war_machines * 1.25 * getLvlMultiplier("war_machines");
-  score += (k.ballistae || 0) * 1.25 * getLvlMultiplier("war_machines");
-  score += k.fighters * 0.75 * getLvlMultiplier("fighters");
-  score += k.rangers * 1.75 * getLvlMultiplier("rangers");
-  score += k.clerics * 0.75 * getLvlMultiplier("clerics");
-  score += k.mages * 1.5 * getLvlMultiplier("mages");
-  score += k.thieves * 0.95 * getLvlMultiplier("thieves");
-  score += k.ninjas * 1.15 * getLvlMultiplier("ninjas");
-  score += k.scribes * 0.25 * getLvlMultiplier("scribes");
-  score += k.engineers * 1.25 * getLvlMultiplier("engineers");
-  score += k.researchers * 0.5 * getLvlMultiplier("researchers"); // Assumed baseline
-
-  // Buildings (everything else -> balanced scoring)
-  const bldAttrs = [
-    "bld_farms",
-    "bld_barracks",
-    "bld_outposts",
-    "bld_guard_towers",
-    "bld_schools",
-    "bld_armories",
-    "bld_vaults",
-    "bld_smithies",
-    "bld_markets",
-    "bld_mage_towers",
-    "bld_shrines",
-    "bld_training",
-    "bld_castles",
-    "bld_housing",
-    "bld_libraries",
-    "bld_taverns",
-    "bld_walls",
-  ];
-  for (const b of bldAttrs) {
-    score += (k[b] || 0) * 2; // Flat 2 points per building to reward infrastructure
-  }
-
-  return Math.floor(score);
-}
-
 module.exports = {
-  calculateScore,
+  // Re-exports from Phase 1 extracted modules for backward compatibility
+  rebellionCheck: rebellionMod.rebellionCheck,
+  rebellionEvent: rebellionMod.rebellionEvent,
+  levelCap: recruitmentMod.levelCap,
+  getCap: recruitmentMod.getCap,
+  hireUnits: recruitmentMod.hireUnits,
+  studyDiscipline: researchMod.studyDiscipline,
+  selectSchool: researchMod._selectSchool,
+  processMercenaries: mercenariesMod.processMercenaries,
+  hireMercenaries: mercenariesMod.hireMercenaries,
+  raidTradeRoute: tradeRoutesMod.raidTradeRoute,
+  canPrestige: prestigeMod.canPrestige,
+  processPrestige: prestigeMod.processPrestige,
+  normalizeCombatUnits: combatNewsMod.normalizeCombatUnits,
+  sumRecordValues: combatNewsMod.sumRecordValues,
+  formatCombatUnitCounts: combatNewsMod.formatCombatUnitCounts,
+  formatCombatBuildingsLost: combatNewsMod.formatCombatBuildingsLost,
+  formatCombatV2NewsBlurb: combatNewsMod.formatCombatV2NewsBlurb,
+  processLocationMapsWip: locationMapsMod.processLocationMapsWip,
+  checkAchievements: achievementsMod.checkAchievements,
+  processActiveEffects: effectsMod.processActiveEffects,
+  calculateScore: scoringMod.calculateScore,
+
+  // Other direct exports
   totalHiredUnits,
   getAvailableUnits,
   resolveRegions,
@@ -6003,8 +5058,6 @@ module.exports = {
   processSchoolAttunements,
   processFarmAttunements,
   processHousingAttunements,
-  processMercenaries,
-  hireMercenaries,
   purchaseUpgrade,
   SEASON_ORDER,
   SEASON_DURATION,
@@ -6012,7 +5065,6 @@ module.exports = {
   SEASON_ICONS,
   LOCATE_RACE_MULT,
   calcDiscoveryChance,
-  processLocationMapsWip,
   WALL_UPGRADES,
   TOWER_DEF_UPGRADES,
   OUTPOST_UPGRADES,
@@ -6043,19 +5095,14 @@ module.exports = {
   MARKET_INCOME_MULT,
   TRADE_RATE_MULT,
   processTurn,
-  hireUnits,
-  studyDiscipline,
-  selectSchool: _selectSchool,
   queueBuildings,
   processBuildQueue,
   processLibrary,
   processMageTower,
   processShrine,
   processMausoleum,
-  processActiveEffects,
   forgeTools,
   resolveMilitaryAttack,
-  formatCombatV2NewsBlurb,
   castSpell,
   covertSpy,
   covertLoot,
@@ -6082,8 +5129,6 @@ module.exports = {
   getHappinessRecoveryRate,
   recordHappinessHistory,
   logHappinessEvent,
-  rebellionCheck,
-  rebellionEvent,
   TROOP_RACE_BONUS,
   RACE_BONUSES,
   REGION_DATA,
@@ -6108,9 +5153,6 @@ module.exports = {
   getHeroPower,
   applyHeroTurnBonuses,
   recruitHero,
-  raidTradeRoute,
-  canPrestige,
-  processPrestige,
   getUnitName,
   demolishBuilding,
   TRADE_ROUTE_MAX,
