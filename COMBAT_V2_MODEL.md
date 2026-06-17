@@ -1,6 +1,6 @@
 # Combat V2 Model
 
-**Status:** Phase 3 local specification  
+**Status:** Living local specification
 **Scope:** Design and integration guardrails only. Do not treat this as final balance tuning.
 
 ## Intent
@@ -215,20 +215,24 @@ Before balance testing resumes, every V2 combat report should include:
 - research values used for HP and DMG
 - win chance inputs, not only final win chance
 
-## Current Scaffold Defects To Fix Before Integration
+## Historical Gaps And Remaining Design Questions
 
-These are problems in the current V2 files, not intended design:
+Most of the old integration defects have already been addressed in the current local codebase. Keep these notes as references rather than active blockers:
 
-- `combat-resolver.js` has an async `executeCombat(db, ...)`, but active `engine.js` combat is currently sync. The adapter must either make V2 pure/sync or introduce an async route-safe call path deliberately.
-- The older feature-flag wrapper commit is too shallow to copy directly because it did not actually route through `executeCombat`.
-- `combat-resolver.js` uses a local hardcoded race table. It should use canonical config.
-- On a repelled attack, `executeCombat` currently applies defender casualties only. That appears inverted or unfinished.
-- Attacker clerics currently rescue defender injuries after attacker victory. Clerics should operate on their own side unless a spell or design rule explicitly says otherwise.
-- Wall ladder hit chance currently uses defender engineers. It should use attacker engineers and attacker engineer level.
-- Thief sabotage is recorded but not applied.
-- War machine crew requirements are missing from V2 power calculation.
-- Dwarf engineer solo-crew perk must be level 25.
-- `res_armor` is not part of power, which is correct for HP/DMG, but reports must expose HP budgets so armor is visible.
+- The V2 adapter now routes through `executeCombat` behind `USE_COMBAT_V2=1`.
+- `combat-resolver.js` now uses canonical config race bonuses.
+- Repelled attacks now apply damage to both sides, with the attacker taking the heavier hit.
+- Cleric rescues are tracked by side and no longer cross over to the opponent by default.
+- Ladder wall damage now uses the attacker's engineers and ladder inventory.
+- Thief sabotage now reduces effective defending war machines before power is calculated.
+- War machine crew requirements and the dwarf level-25 solo-crew perk are already represented in the current resolver and diagnostics.
+- `res_armor` is still not part of direct power, which is correct for the HP/DMG model; reports must continue to expose HP budgets so armor remains visible.
+
+Open design questions that still merit review:
+
+- Should thief sabotage also influence crew efficiency or wall damage, or is war-machine availability reduction sufficient?
+- What exact ninja target policy should be used once the final backline rules are locked in?
+- How should spell-driven battle paths map into the combat report contract once they are wired in?
 
 ## Non-Goals For Phase 3
 
