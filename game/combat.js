@@ -1091,7 +1091,7 @@ function resolveMilitaryAttack(
   if (wallUpgrades.reinforced) defLandLossMult -= 0.1;
 
   const landTransferred = win
-    ? Math.floor(defender.land * 0.1 * Math.max(0.1, defLandLossMult))
+    ? Math.floor((defender.land || 0) * 0.1 * Math.max(0.1, defLandLossMult))
     : 0;
 
   // Warmachine damage ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â walls take damage on win, no walls = building damage

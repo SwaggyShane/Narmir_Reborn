@@ -250,9 +250,11 @@ function hireUnits(k, unit, amount) {
   }
 
   const cost = amount * UNIT_COST;
-  if (k.gold < cost)
+  const currentGold = k.gold || 0;
+  const currentPopulation = k.population || 0;
+  if (currentGold < cost)
     return { error: `Not enough gold ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â need ${cost.toLocaleString()} gold` };
-  if (amount > k.population)
+  if (amount > currentPopulation)
     return { error: "Not enough population available" };
 
   // Dilute unit XP pool when new recruits join ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â new troops lower the average
@@ -260,8 +262,8 @@ function hireUnits(k, unit, amount) {
 
   return {
     updates: {
-      gold: k.gold - cost,
-      population: k.population - amount,
+      gold: currentGold - cost,
+      population: currentPopulation - amount,
       [unit]: (k[unit] || 0) + amount,
       ...(dilutedLevels ? { troop_levels: dilutedLevels } : {}),
       updated_at: Math.floor(Date.now() / 1000),
@@ -293,7 +295,7 @@ function studyDiscipline(k, discipline, researchersAssigned) {
     const raceCaps = RESEARCH_DISCIPLINE_CAPS[k.race] || {};
     cap = raceCaps[discipline] || MAX_RESEARCH;
   }
-  const newVal = Math.min(cap, k[col] + increment);
+  const newVal = Math.min(cap, currentLevel + increment);
 
   return {
     updates: { [col]: newVal, updated_at: Math.floor(Date.now() / 1000) },
@@ -391,9 +393,10 @@ function queueBuildings(k, orders) {
     }
   }
 
-  if (totalCost > k.gold) {
+  const currentGold = k.gold || 0;
+  if (totalCost > currentGold) {
     return {
-      error: `Need ${totalCost.toLocaleString()} gold but only have ${k.gold.toLocaleString()} gold`,
+      error: `Need ${totalCost.toLocaleString()} gold but only have ${currentGold.toLocaleString()} gold`,
     };
   }
 
@@ -486,14 +489,17 @@ function queueBuildings(k, orders) {
   }
 
   // Check resource stockpile sufficiency
-  if (totalWoodCost > 0 && k.wood < totalWoodCost) {
-    return { error: `Need ${totalWoodCost.toLocaleString()} wood but only have ${k.wood.toLocaleString()}.` };
+  const currentWood = k.wood || 0;
+  if (totalWoodCost > 0 && currentWood < totalWoodCost) {
+    return { error: `Need ${totalWoodCost.toLocaleString()} wood but only have ${currentWood.toLocaleString()}.` };
   }
-  if (totalStoneCost > 0 && k.stone < totalStoneCost) {
-    return { error: `Need ${totalStoneCost.toLocaleString()} stone but only have ${k.stone.toLocaleString()}.` };
+  const currentStone = k.stone || 0;
+  if (totalStoneCost > 0 && currentStone < totalStoneCost) {
+    return { error: `Need ${totalStoneCost.toLocaleString()} stone but only have ${currentStone.toLocaleString()}.` };
   }
-  if (totalIronCost > 0 && k.iron < totalIronCost) {
-    return { error: `Need ${totalIronCost.toLocaleString()} iron but only have ${k.iron.toLocaleString()}.` };
+  const currentIron = k.iron || 0;
+  if (totalIronCost > 0 && currentIron < totalIronCost) {
+    return { error: `Need ${totalIronCost.toLocaleString()} iron but only have ${currentIron.toLocaleString()}.` };
   }
 
   for (const [key, n] of Object.entries(processedOrders)) {
@@ -502,11 +508,11 @@ function queueBuildings(k, orders) {
 
   const queueUpdates = {
     build_queue: JSON.stringify(queue),
-    gold: k.gold - totalCost,
+    gold: currentGold - totalCost,
   };
-  if (totalWoodCost > 0)  queueUpdates.wood  = Math.max(0, k.wood - totalWoodCost);
-  if (totalStoneCost > 0) queueUpdates.stone = Math.max(0, k.stone - totalStoneCost);
-  if (totalIronCost > 0)  queueUpdates.iron  = Math.max(0, k.iron - totalIronCost);
+  if (totalWoodCost > 0)  queueUpdates.wood  = Math.max(0, currentWood - totalWoodCost);
+  if (totalStoneCost > 0) queueUpdates.stone = Math.max(0, currentStone - totalStoneCost);
+  if (totalIronCost > 0)  queueUpdates.iron  = Math.max(0, currentIron - totalIronCost);
 
   return {
     updates: queueUpdates,

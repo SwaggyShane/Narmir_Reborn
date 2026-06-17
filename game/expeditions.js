@@ -94,7 +94,7 @@ function junkPrize(k, updates) {
 
 
 function expeditionRewards(type, rangers, fighters, k) {
-  const tacBonus = 1 + k.res_military / 2000;
+  const tacBonus = 1 + (k.res_military || 0) / 2000;
 
   // Race exploration bonus ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â affects all reward quantities
   const exploreBonus =
