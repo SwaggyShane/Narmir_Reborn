@@ -3332,6 +3332,9 @@ function formatCombatV2NewsBlurb(attacker, defender, report, perspective = "atta
   };
 
   const title = perspective === "defender" ? "Defense report" : "Attack report";
+  const winLoss = perspective === "defender"
+    ? (report.win ? "Defeat" : "Victory")
+    : (report.win ? "Victory" : "Defeat");
   const outcome = report.win ? "Attacker victory" : "Defender held";
   const landLine = perspective === "defender"
     ? `Land loss: ${report.win ? `${fmt(land)} acres lost` : "None"}`
@@ -3343,6 +3346,7 @@ function formatCombatV2NewsBlurb(attacker, defender, report, perspective = "atta
 
   return [
     `${title}: ${attackerName} vs ${defenderName}`,
+    `Win/Loss: ${winLoss}`,
     `Outcome: ${outcome}`,
     landLine,
     `Troops engaged - Attacker: ${formatCombatUnitCounts(report.sent)}`,

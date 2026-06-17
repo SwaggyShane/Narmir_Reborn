@@ -3,6 +3,7 @@
  * Tests wrapper function output against expected structure and validates compatibility
  */
 
+const assert = require('assert');
 const engine = require('../game/engine');
 
 // ── Test Utilities ────────────────────────────────────────────────────────
@@ -241,6 +242,57 @@ function testLargeArmies() {
 
 // ── Main Test Suite ────────────────────────────────────────────────────────
 
+function testCombatV2Blurb() {
+  const attacker = createTestKingdom('Reporter Attacker', 1000);
+  const defender = createTestKingdom('Reporter Defender', 1000);
+  const report = {
+    win: true,
+    sent: { fighters: 120, rangers: 40, war_machines: 12 },
+    defenderEngaged: { fighters: 90, rangers: 30, war_machines: 8 },
+    landTransferred: 42,
+    atkFightersLost: 10,
+    defFightersLost: 25,
+    atkRangersLost: 4,
+    defRangersLost: 8,
+    atkWmLost: 1,
+    defWmLost: 2,
+    atkInjuredByType: { fighters: 6 },
+    defInjuredByType: { fighters: 12, war_machines: 1 },
+    criticalHits: 3,
+    criticalKills: 2,
+    wallDamage: 18,
+    defBldLost: 4,
+    injuredTroops: {
+      attacker: { deadByType: { fighters: 10, rangers: 4, war_machines: 1 }, injuredByType: { fighters: 6 } },
+      defender: { deadByType: { fighters: 25, rangers: 8, war_machines: 2 }, injuredByType: { fighters: 12, war_machines: 1 } },
+    },
+  };
+
+  const attackerText = engine.formatCombatV2NewsBlurb(attacker, defender, report, 'attacker');
+  const defenderText = engine.formatCombatV2NewsBlurb(attacker, defender, report, 'defender');
+
+  const requiredPhrases = [
+    'Win/Loss: Victory',
+    'Troops engaged - Attacker:',
+    'Troops engaged - Defender:',
+    'Troops lost - Attacker:',
+    'Troops injured - Defender:',
+    'Critical hits:',
+    'Buildings lost:',
+    'Siege notes:',
+    'Ballistae',
+  ];
+
+  for (const phrase of requiredPhrases) {
+    assert(attackerText.includes(phrase), `Attacker blurb should include "${phrase}"`);
+  }
+
+  assert(defenderText.includes('Win/Loss: Defeat'), 'Defender blurb should flip win/loss');
+  assert(defenderText.includes('Land loss: 42 acres lost'), 'Defender blurb should report land loss');
+
+  return { pass: true, issues: [], testName: 'Combat V2 Blurb' };
+}
+
 const tests = [
   { name: 'Balanced Fight', fn: testBalancedFight },
   { name: 'Bully Scenario', fn: testBullyScenario },
@@ -248,6 +300,7 @@ const tests = [
   { name: 'Minimum Troops Check', fn: testMinimumTroopsCheck },
   { name: 'Small Skirmish', fn: testSmallSkirmish },
   { name: 'Large Armies', fn: testLargeArmies },
+  { name: 'Combat V2 Blurb', fn: testCombatV2Blurb },
 ];
 
 let passCount = 0;
