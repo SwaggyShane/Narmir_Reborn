@@ -207,7 +207,7 @@ function applyReanimation(win, attacker, defender, kills, attackerUpdates, defen
         (atkClericKills + atkClericsLost) * convRate,
       );
       if (thrallsFromClerics > 0) {
-        const current = attacker.thralls || 0;
+        const current = attacker.clerics || 0;
         let mauUpg = {};
         try {
           mauUpg = safeJsonParse(attacker.mausoleum_upgrades, {}, "auto:mausoleum_upgrades") || {};
@@ -217,7 +217,7 @@ function applyReanimation(win, attacker, defender, kills, attackerUpdates, defen
 
         const added = Math.min(thrallsFromClerics, Math.max(0, cap - current));
         if (added > 0) {
-          attackerUpdates.thralls = current + added;
+          attackerUpdates.clerics = current + added;
         }
       }
 
@@ -253,7 +253,7 @@ function applyReanimation(win, attacker, defender, kills, attackerUpdates, defen
         (defClericKills + defClericsLost) * convRate,
       );
       if (thrallsFromClerics > 0) {
-        const current = defender.thralls || 0;
+        const current = defender.clerics || 0;
         let mauUpg = {};
         try {
           mauUpg = safeJsonParse(defender.mausoleum_upgrades, {}, "auto:mausoleum_upgrades") || {};
@@ -263,7 +263,7 @@ function applyReanimation(win, attacker, defender, kills, attackerUpdates, defen
 
         const added = Math.min(thrallsFromClerics, Math.max(0, cap - current));
         if (added > 0) {
-          defenderUpdates.thralls = current + added;
+          defenderUpdates.clerics = current + added;
         }
       }
 
@@ -346,8 +346,8 @@ function resolveMilitaryAttackV2Adapter(
   const attackerIsVampire = attacker.race === "vampire";
   const defenderIsVampire = defender.race === "vampire";
   const defenderUsesDayThralls = defenderIsVampire && !combatIsNight;
-  const attackingThralls = attackerIsVampire ? Math.max(0, attacker.thralls || 0) : 0;
-  const defendingThralls = defenderIsVampire ? Math.max(0, defender.thralls || 0) : 0;
+  const attackingThralls = attackerIsVampire ? Math.max(0, attacker.clerics || 0) : 0;
+  const defendingThralls = defenderIsVampire ? Math.max(0, defender.clerics || 0) : 0;
 
   const sent = {
     thralls: attackingThralls,
@@ -393,7 +393,7 @@ function resolveMilitaryAttackV2Adapter(
     mages: defenderUsesDayThralls ? 0 : getAvailableUnits(defender, "mages"),
     ninjas: defenderUsesDayThralls ? 0 : getAvailableUnits(defender, "ninjas"),
     thieves: defenderUsesDayThralls ? 0 : getAvailableUnits(defender, "thieves"),
-    clerics: defenderUsesDayThralls ? 0 : getAvailableUnits(defender, "clerics"),
+    clerics: defenderUsesDayThralls ? 0 : (defenderIsVampire ? 0 : getAvailableUnits(defender, "clerics")),
     engineers: defenderUsesDayThralls ? 0 : getAvailableUnits(defender, "engineers"),
     war_machines: defenderUsesDayThralls ? 0 : (defender.war_machines || 0),
   };
@@ -419,7 +419,9 @@ function resolveMilitaryAttackV2Adapter(
 
   const attackerUpdates = {
     ...v2Result.attackerUpdates,
-    thralls: Math.max(0, (attacker.thralls || 0) - (sent.thralls - v2Attacker.thralls)),
+    ...(attackerIsVampire
+      ? { clerics: Math.max(0, (attacker.clerics || 0) - (sent.thralls - v2Attacker.thralls)) }
+      : { thralls: Math.max(0, (attacker.thralls || 0) - (sent.thralls - v2Attacker.thralls)) }),
     fighters: Math.max(0, (attacker.fighters || 0) - (sent.fighters - v2Attacker.fighters)),
     rangers: Math.max(0, (attacker.rangers || 0) - (sent.rangers - v2Attacker.rangers)),
     mages: Math.max(0, (attacker.mages || 0) - (sent.mages - v2Attacker.mages)),
@@ -433,7 +435,9 @@ function resolveMilitaryAttackV2Adapter(
   const defenderUpdates = {
     ...v2Result.defenderUpdates,
     last_attack_turn: defender.turn || 0,
-    thralls: Math.max(0, (defender.thralls || 0) - (defenderAvailable.thralls - v2Defender.thralls)),
+    ...(defenderIsVampire
+      ? { clerics: Math.max(0, (defender.clerics || 0) - (defenderAvailable.thralls - v2Defender.thralls)) }
+      : { thralls: Math.max(0, (defender.thralls || 0) - (defenderAvailable.thralls - v2Defender.thralls)) }),
     fighters: Math.max(0, (defender.fighters || 0) - (defenderAvailable.fighters - v2Defender.fighters)),
     rangers: Math.max(0, (defender.rangers || 0) - (defenderAvailable.rangers - v2Defender.rangers)),
     mages: Math.max(0, (defender.mages || 0) - (defenderAvailable.mages - v2Defender.mages)),
@@ -1123,7 +1127,7 @@ function resolveMilitaryAttack(
   }
 
   const atkTotalKills =
-    ninjaKills + rangerKills + defFightersLost + defClericsLost;
+    defFightersLost + defClericsLost;
   const defTotalKills =
     atkFightersLost +
     atkRangersLost +

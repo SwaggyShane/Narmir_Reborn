@@ -521,9 +521,6 @@ function expeditionRewards(type, rangers, fighters, k) {
 
     updates._rangers_returned = survived;
 
-    // Apply casualty losses to kingdom ranger count
-    updates.rangers = Math.max(0, (k.rangers || 0) - totalLost);
-
     // Mountain rewards only granted if rangers survived the expedition
     if (survived > 0) {
       // Gold scaled to troop count and level (200-500 per ranger)
@@ -698,8 +695,9 @@ async function resolveExpeditions(db, k, engine) {
     const caseWhen = tickDowns
       .map(({ id, newTurns }) => `WHEN ${id} THEN ${newTurns}`)
       .join(" ");
-    const updateSql = `UPDATE expeditions SET turns_left = CASE id ${caseWhen} END WHERE id = ANY($1)`;
-    const result = await db.run(updateSql, [ids]);
+    const idPlaceholders = ids.map(() => "?").join(",");
+    const updateSql = `UPDATE expeditions SET turns_left = CASE id ${caseWhen} END WHERE id IN (${idPlaceholders})`;
+    const result = await db.run(updateSql, ids);
     devLog(`[expedition] Batched ${result.changes} turn decrements in single UPDATE`);
   }
 
@@ -965,8 +963,11 @@ async function resolveExpeditions(db, k, engine) {
       if (serverAnnounce) {
         const allKingdoms = await db.all("SELECT id FROM kingdoms");
         if (allKingdoms.length > 0) {
-          const placeholders = allKingdoms.map((_, i) => `($${i + 1},'system',$${allKingdoms.length + 1},$${allKingdoms.length + 2})`).join(',');
-          const values = [...allKingdoms.map(ak => ak.id), serverAnnounce, k.turn];
+          const placeholders = allKingdoms.map(() => "(?,?,?,?)").join(',');
+          const values = [];
+          for (const ak of allKingdoms) {
+            values.push(ak.id, 'system', serverAnnounce, k.turn);
+          }
           await db.run(
             `INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ${placeholders}`,
             values,
