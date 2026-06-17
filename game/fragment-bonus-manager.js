@@ -5,6 +5,21 @@
 
 const FRAGMENT_BONUSES = require('./world-fragment-bonuses');
 
+const COMBAT_RELEVANT_STAT_CAPS = {
+  combat_power: 0.5,
+  combat_damage: 0.5,
+  unit_damage: 0.5,
+  troop_damage: 0.5,
+  health: 0.5,
+  defense: 0.5,
+  defenses: 0.5,
+  garrison_defense: 0.5,
+  power: 0.5,
+  defense_armor: 0.5,
+  troop_health: 0.5,
+  siege_output: 0.3,
+};
+
 /**
  * Parse fragment bonuses JSON from kingdom data
  */
@@ -137,7 +152,11 @@ function getBonusMultiplier(kingdom, buildingType, statType) {
   const multiplier = passive[statType];
 
   if (multiplier === undefined) return 1.0;
-  return 1.0 + multiplier; // passive values are deltas (e.g., 0.15 = +15%)
+  const cap = COMBAT_RELEVANT_STAT_CAPS[statType];
+  const clampedDelta = typeof cap === 'number'
+    ? Math.max(-cap, Math.min(cap, multiplier))
+    : multiplier;
+  return 1.0 + clampedDelta; // passive values are deltas (e.g., 0.15 = +15%)
 }
 
 /**
