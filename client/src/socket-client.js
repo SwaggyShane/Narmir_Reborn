@@ -1,8 +1,28 @@
-import { apiCall } from "./utils/api";
-
 let socket = null;
 let socketPromise = null;
 let ioLoaderPromise = null;
+
+function apiCall(method, url, body = null) {
+  const headers = { "Content-Type": "application/json" };
+  const csrf = typeof document !== "undefined" ? document.cookie.match(/(?:^|; )csrf_token=([^;]+)/) : null;
+  if (csrf?.[1] && ["POST", "PUT", "PATCH", "DELETE"].includes(String(method).toUpperCase())) {
+    headers["x-csrf-token"] = decodeURIComponent(csrf[1]);
+  }
+
+  return fetch(url, {
+    method,
+    headers,
+    credentials: "include",
+    body: body ? JSON.stringify(body) : undefined,
+  }).then(async (res) => {
+    try {
+      const data = await res.json();
+      return data;
+    } catch {
+      return { error: `Server error ${res.status}` };
+    }
+  }).catch((error) => ({ error: error.message }));
+}
 
 function getListElement(listId) {
   return document.getElementById(listId);
@@ -106,6 +126,10 @@ function createMessageRow(data, mode) {
 }
 
 export async function getSocket() {
+  if (typeof window !== "undefined" && window.__narmirSocket && typeof window.__narmirSocket.emit === "function") {
+    socket = window.__narmirSocket;
+    return socket;
+  }
   if (socket) return socket;
   if (!socketPromise) {
     socketPromise = Promise.resolve().then(() => {
@@ -118,6 +142,9 @@ export async function getSocket() {
         auth: { token: localStorage.getItem("narmir_token") || "" },
         transports: ["websocket"],
       });
+      if (typeof window !== "undefined") {
+        window.__narmirSocket = socket;
+      }
       return socket;
     });
   }
@@ -244,4 +271,18 @@ export async function sendGlobalChat(message) {
       resolve(ack || {});
     });
   });
+}
+
+if (typeof window !== "undefined") {
+  window.__narmirGetSocket = getSocket;
+  window.__narmirSocketClient = {
+    getSocket,
+    loadGlobalChatHistory,
+    renderGlobalChatHistory,
+    renderOnlineList,
+    appendChatMessage,
+    appendSystemMessage,
+    appendWhisperMessage,
+    sendGlobalChat,
+  };
 }
