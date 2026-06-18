@@ -3711,7 +3711,7 @@
 
               >
 
-                â€”
+                —
 
               </h1>
 
@@ -5019,7 +5019,7 @@
 
                 (t.race || "").replace("_", " ") +
 
-                " Â· " +
+                " · " +
 
                 fmt(t.land) +
 
@@ -5105,7 +5105,7 @@
 
               (t.level || 1) +
 
-              " Â· " +
+              " · " +
 
               (t.race || "").replace("_", " ") +
 
@@ -5227,19 +5227,19 @@
 
           (selectedTarget.level || 1) +
 
-          " Â· " +
+          " · " +
 
           (selectedTarget.race || "").replace("_", " ") +
 
-          " Â· Rank #" +
+          " · Rank #" +
 
           selectedTarget.rank +
 
-          " Â· " +
+          " · " +
 
           fmt(selectedTarget.land) +
 
-          " acres Â· " +
+          " acres · " +
 
           fmt(selectedTarget.fighters) +
 
@@ -5287,15 +5287,15 @@
 
           selectedCovertTarget.race +
 
-          " Â· Rank #" +
+          " · Rank #" +
 
           selectedCovertTarget.rank +
 
-          " Â· " +
+          " · " +
 
           fmt(selectedCovertTarget.fighters) +
 
-          " fighters Â· " +
+          " fighters · " +
 
           fmt(selectedCovertTarget.land) +
 
@@ -5863,7 +5863,7 @@
 
               result.message,
 
-              "Sent " + fmt(r) + " rangers Â· 1 turn used",
+              "Sent " + fmt(r) + " rangers · 1 turn used",
 
             );
 
@@ -6103,13 +6103,13 @@
 
         var labels = {
 
-          scout: "ðŸ”­ Scout expedition",
+          scout: "🔭 Scout expedition",
 
-          deep: "ðŸŒ² Deep expedition",
+          deep: "🌲 Deep expedition",
 
-          dungeon: "âš”ï¸ Dungeon raid",
+          dungeon: "⚔️ Dungeon raid",
 
-          mountain: "ðŸ”ï¸ Mountain expedition",
+          mountain: "🏔️ Mountain expedition",
 
         };
 
@@ -6129,13 +6129,13 @@
 
               var troopStr = exp.rangers.toLocaleString() + " rangers" + (exp.fighters > 0 ? ", " + exp.fighters.toLocaleString() + " fighters" : "");
 
-              var foodStr = exp.food_taken > 0 ? " Â· ðŸ– " + exp.food_taken.toLocaleString() + " food taken" : "";
+              var foodStr = exp.food_taken > 0 ? " · 🍖 " + exp.food_taken.toLocaleString() + " food taken" : "";
 
               var content =
 
                 '<span style="font-size:18px;flex-shrink:0">' + repairMojibake(icons[exp.type] || "ðŸ§­") + "</span>" +
 
-                '<div><div style="color:var(--text)">' + repairMojibake(labels[exp.type] || exp.type) + " departed â€” " + exp.turns_left + " turn" + (exp.turns_left === 1 ? "" : "s") + " left</div>" +
+                '<div><div style="color:var(--text)">' + repairMojibake(labels[exp.type] || exp.type) + " departed — " + exp.turns_left + " turn" + (exp.turns_left === 1 ? "" : "s") + " left</div>" +
 
                 '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + troopStr + foodStr + "</div></div>";
 
@@ -6159,13 +6159,13 @@
 
               var troopStr = exp.rangers.toLocaleString() + " rangers" + (exp.fighters > 0 ? ", " + exp.fighters.toLocaleString() + " fighters" : "");
 
-              var foodStr = exp.food_taken > 0 ? " Â· ðŸ– " + exp.food_taken.toLocaleString() + " food taken" : "";
+               var foodStr = exp.food_taken > 0 ? " · 🍖 " + exp.food_taken.toLocaleString() + " food taken" : "";
 
               entry.innerHTML =
 
                 '<span style="font-size:18px;flex-shrink:0">' + repairMojibake(icons[exp.type] || "ðŸ§­") + "</span>" +
 
-                '<div><div style="color:var(--text)">' + repairMojibake(labels[exp.type] || exp.type) + " departed â€” " + exp.turns_left + " turn" + (exp.turns_left === 1 ? "" : "s") + " left</div>" +
+                '<div><div style="color:var(--text)">' + repairMojibake(labels[exp.type] || exp.type) + " departed — " + exp.turns_left + " turn" + (exp.turns_left === 1 ? "" : "s") + " left</div>" +
 
                 '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + troopStr + foodStr + "</div></div>";
 
@@ -6283,7 +6283,7 @@
 
                     .map(function (r) {
 
-                      return "â€¢ " + repairMojibake(r);
+                      return "• " + repairMojibake(r);
 
                     })
 
@@ -6305,7 +6305,7 @@
 
               '<span style="font-size:18px;flex-shrink:0">' +
 
-              repairMojibake(icons[exp.type] || "ðŸ§­") +
+              repairMojibake(icons[exp.type] || "🧭") +
 
               "</span>" +
 
@@ -6313,7 +6313,7 @@
 
               repairMojibake(labels[exp.type] || exp.type) +
 
-              " â€” Returned</div>" +
+               " — Returned</div>" +
 
               '<div style="font-size:11px;color:var(--text3);margin-top:2px">' +
 
@@ -6337,7 +6337,7 @@
 
                     .map(function (r) {
 
-                      return "â€¢ " + repairMojibake(r);
+                      return "• " + repairMojibake(r);
 
                     })
 
@@ -6345,7 +6345,7 @@
 
                   "</div>"
 
-                : '<div style="margin-top:4px;font-size:12px;color:var(--text3)">Expedition complete â€” check news for details.</div>') +
+                 : '<div style="margin-top:4px;font-size:12px;color:var(--text3)">Expedition complete — check news for details.</div>') +
 
               "</div>";
 
@@ -6481,7 +6481,7 @@
 
               (exp.food_taken > 0
 
-                ? " Â· ðŸ– " + exp.food_taken.toLocaleString() + " food"
+                ? " · ðŸ– " + exp.food_taken.toLocaleString() + " food"
 
                 : "") +
 
@@ -6767,7 +6767,7 @@
 
               tierLabels[s.tier] +
 
-              " Â· Spellbook " +
+              " · Spellbook " +
 
               s.minSB +
 
@@ -6827,11 +6827,11 @@
 
             s.minSB +
 
-            " Â· " +
+            " · " +
 
             s.mages +
 
-            " mages Â· " +
+            " mages · " +
 
             s.turns +
 
@@ -7807,13 +7807,35 @@
         }
         current = current
           .replace(/Â/g, "")
+          .replace(/·/g, "·")
           .replace(/â€”/g, "—")
           .replace(/â€“/g, "-")
           .replace(/â€¢/g, "•")
           .replace(/â€˜|â€™/g, "'")
-          .replace(/â€œ|â€�/g, '"');
+          .replace(/â€œ|â€�/g, '"')
+          .replace(/ðŸ”­/g, "🔭")
+          .replace(/ðŸŒ²/g, "🌲")
+          .replace(/ðŸ”ï¸/g, "🏔️")
+          .replace(/ðŸ§­/g, "🧭")
+          .replace(/ðŸ†/g, "🏆")
+          .replace(/ðŸ”’/g, "🔒")
+          .replace(/ðŸ”®/g, "🔮")
+          .replace(/ðŸ¤/g, "🤝")
+          .replace(/ðŸ“/g, "📍")
+          .replace(/ðŸ“œ/g, "📰")
+          .replace(/ðŸ›¡ï¸/g, "🛡️")
+          .replace(/ðŸ‘¤/g, "👤")
+          .replace(/ðŸº/g, "🐺")
+          .replace(/ðŸ§›/g, "🧛")
+          .replace(/ðŸŒŸ/g, "🌟")
+          .replace(/ðŸ”œ/g, "🔜")
+          .replace(/ðŸ•µï¸/g, "🕵️")
+          .replace(/ðŸ’€/g, "💀")
+          .replace(/ðŸ’«/g, "💫");
         return current;
       }
+
+      window.repairMojibake = repairMojibake;
 
       function getAuthModalElement(id) {
         return document.getElementById(id);
@@ -9675,7 +9697,7 @@
 
                   '<div style="font-size:12px;color:var(--text3);margin-top:2px">' +
 
-                  parts.join(" Â· ") +
+                  parts.join(" · ") +
 
                   "</div>";
 
@@ -9735,7 +9757,7 @@
 
             defDisplay +
 
-            ' <span style="color:var(--text3);font-size:12px">Â· ' +
+            ' <span style="color:var(--text3);font-size:12px">· ' +
 
             label +
 
@@ -10918,7 +10940,7 @@
 
               meta.desc +
 
-              " Â· " +
+              " · " +
 
               turns +
 
@@ -10940,7 +10962,7 @@
 
               "</span>" +
 
-              '<span style="color:var(--text3)">Â·</span>' +
+              '<span style="color:var(--text3)">·</span>' +
 
               '<span style="color:var(--text2)">' +
 
@@ -11192,7 +11214,7 @@
 
                 ? "Discovered Site"
 
-                : "Lv " + t.level + " Â· " + (t.race || "").replace("_", " ")) +
+                : "Lv " + t.level + " · " + (t.race || "").replace("_", " ")) +
 
               "</div>" +
 
@@ -11300,11 +11322,11 @@
 
             (selectedTarget.level || 1) +
 
-            " Â· Rank #" +
+            " · Rank #" +
 
             selectedTarget.rank +
 
-            " Â· " +
+            " · " +
 
             fmt(selectedTarget.land) +
 
@@ -13756,7 +13778,7 @@
 
               fmt(b.eng) +
 
-              " engineers Â· ~" +
+              " engineers · ~" +
 
               turnsStr +
 
@@ -14424,9 +14446,9 @@
 
         <div style="font-size:12px;color:var(--text2)">
 
-          ${detail.race ? `Race: ${detail.race} Â· ` : ""} 
+          ${detail.race ? `Race: ${detail.race} · ` : ""} 
 
-          ${detail.land ? `Land: ${fmt(detail.land)} Â· ` : ""}
+          ${detail.land ? `Land: ${fmt(detail.land)} · ` : ""}
 
           ${detail.gold ? `Gold: ${fmt(detail.gold)}` : ""}
 
@@ -14530,9 +14552,9 @@
 
         <div style="font-size:12px;color:var(--text2)">
 
-          ${detail.race ? `Race: ${detail.race} Â· ` : ""} 
+          ${detail.race ? `Race: ${detail.race} · ` : ""} 
 
-          ${detail.land ? `Land: ${fmt(detail.land)} Â· ` : ""}
+          ${detail.land ? `Land: ${fmt(detail.land)} · ` : ""}
 
           ${detail.gold ? `Gold: ${fmt(detail.gold)}` : ""}
 
@@ -14680,7 +14702,7 @@
 
             ? '<div style="font-size:10px;color:var(--text3);margin-top:1px">' +
 
-                parts.join(" Â· ") +
+                parts.join(" · ") +
 
                 "</div>"
 
@@ -14790,11 +14812,11 @@
 
               (t.race || "").replace(/_/g, " ") +
 
-              " Â· " +
+              " · " +
 
               fmt(t.land || 0) +
 
-              " ac Â· Rank #" +
+              " ac · Rank #" +
 
               (t.rank || "?");
 
@@ -15488,7 +15510,7 @@
 
                 " mana" +
 
-                (sp.scrollRequired ? " Â· 1 scroll" : "") +
+                (sp.scrollRequired ? " · 1 scroll" : "") +
 
                 "</div>" +
 
@@ -15640,7 +15662,7 @@
 
                   t.race.replace(/_/g, " ") +
 
-                  " Â· "
+                  " · "
 
                 : "") +
 
@@ -15908,11 +15930,11 @@
 
               (t.race || "").replace(/_/g, " ") +
 
-              " Â· " +
+              " · " +
 
               fmt(t.land || 0) +
 
-              " ac Â· Rank #" +
+              " ac · Rank #" +
 
               (t.rank || "?");
 
@@ -18012,7 +18034,7 @@
 
                 <div style="font-weight:700; color:var(--gold)">ðŸ¤ ${escHtml(r.partner_name)}</div>
 
-                <div style="font-size:11px; color:var(--text3)">${r.partner_race.replace(/_/g, " ")} Â· ${fmtShort(r.partner_land)} acres</div>
+                <div style="font-size:11px; color:var(--text3)">${r.partner_race.replace(/_/g, " ")} · ${fmtShort(r.partner_land)} acres</div>
 
               </div>
 
@@ -19008,7 +19030,7 @@
 
               def.desc +
 
-              " Â· " +
+              " · " +
 
               costStr +
 
@@ -19264,7 +19286,7 @@
 
               remaining +
 
-              " turns remaining Â· " +
+              " turns remaining · " +
 
               fmt(m.upkeep_per_turn) +
 
@@ -19300,7 +19322,7 @@
 
         var el = document.getElementById("merc-preview");
 
-        if (el) el.textContent = fmt(cost) + " GC Â· " + def.duration + " turns";
+        if (el) el.textContent = fmt(cost) + " GC · " + def.duration + " turns";
 
       }
 
@@ -19406,7 +19428,7 @@
 
                 escHtml(t.name) +
 
-                " Â· " +
+                " · " +
 
                 fmt(t.land) +
 
@@ -19962,7 +19984,7 @@
 
               bonus +
 
-              " Â· " +
+              " · " +
 
               count +
 
@@ -20826,11 +20848,11 @@
 
           (meta.name || k.region || "â€”") +
 
-          "</span> Â· Level " +
+          "</span> · Level " +
 
           (k.level || 1) +
 
-          " Â· Turn " +
+          " · Turn " +
 
           (k.turn || 0) +
 
@@ -25100,7 +25122,7 @@
 
         var elMsBonus = document.getElementById("xp-modal-ms-bonuses");
 
-        if (elMsBonus) elMsBonus.textContent = bonusParts.length ? bonusParts.join(" Â· ") : "None yet";
+        if (elMsBonus) elMsBonus.textContent = bonusParts.length ? bonusParts.join(" · ") : "None yet";
 
 
 
@@ -25136,43 +25158,43 @@
 
           { level: 25,  label: "Budding Ruler",         note: "25,000 gold" },
 
-          { level: 50,  label: "Established Lord",      note: "50,000 gold Â· 100 troops" },
+          { level: 50,  label: "Established Lord",      note: "50,000 gold · 100 troops" },
 
-          { level: 75,  label: "Regional Power",        note: "75,000 gold Â· 50 land" },
+          { level: 75,  label: "Regional Power",        note: "75,000 gold · 50 land" },
 
-          { level: 100, label: "Grand Duke",            note: "150,000 gold Â· 200 troops Â· +1% income" },
+          { level: 100, label: "Grand Duke",            note: "150,000 gold · 200 troops · +1% income" },
 
-          { level: 125, label: "Proven Warlord",        note: "100,000 gold Â· +1% attack" },
+          { level: 125, label: "Proven Warlord",        note: "100,000 gold · +1% attack" },
 
-          { level: 150, label: "Master Builder",        note: "125,000 gold Â· 100 land Â· +1% construction" },
+          { level: 150, label: "Master Builder",        note: "125,000 gold · 100 land · +1% construction" },
 
-          { level: 175, label: "Sage of the Realm",     note: "125,000 gold Â· +1% research" },
+          { level: 175, label: "Sage of the Realm",     note: "125,000 gold · +1% research" },
 
-          { level: 200, label: "High King",             note: "300,000 gold Â· 500 troops Â· +1% income, +1% defense" },
+          { level: 200, label: "High King",             note: "300,000 gold · 500 troops · +1% income, +1% defense" },
 
-          { level: 225, label: "Strategist",            note: "200,000 gold Â· +1% attack" },
+          { level: 225, label: "Strategist",            note: "200,000 gold · +1% attack" },
 
-          { level: 250, label: "Dominator",             note: "250,000 gold Â· 200 land Â· +1% covert" },
+          { level: 250, label: "Dominator",             note: "250,000 gold · 200 land · +1% covert" },
 
-          { level: 275, label: "Arcane Authority",      note: "200,000 gold Â· +1% research" },
+          { level: 275, label: "Arcane Authority",      note: "200,000 gold · +1% research" },
 
-          { level: 300, label: "Realm Sovereign",       note: "500,000 gold Â· 1,000 troops Â· +1% income, +1% attack" },
+          { level: 300, label: "Realm Sovereign",       note: "500,000 gold · 1,000 troops · +1% income, +1% attack" },
 
-          { level: 325, label: "Grand Marshal",         note: "300,000 gold Â· 250 land Â· +1% defense" },
+          { level: 325, label: "Grand Marshal",         note: "300,000 gold · 250 land · +1% defense" },
 
-          { level: 350, label: "Emperor",               note: "400,000 gold Â· +1% income, +1% covert" },
+          { level: 350, label: "Emperor",               note: "400,000 gold · +1% income, +1% covert" },
 
-          { level: 375, label: "Immortal General",      note: "350,000 gold Â· 1,500 troops Â· +1% attack" },
+          { level: 375, label: "Immortal General",      note: "350,000 gold · 1,500 troops · +1% attack" },
 
-          { level: 400, label: "Legendary Sovereign",   note: "750,000 gold Â· 400 land Â· +2% income, +1% defense" },
+          { level: 400, label: "Legendary Sovereign",   note: "750,000 gold · 400 land · +2% income, +1% defense" },
 
-          { level: 425, label: "Mythic Conqueror",      note: "500,000 gold Â· 2,000 troops Â· +1% attack, +1% covert" },
+          { level: 425, label: "Mythic Conqueror",      note: "500,000 gold · 2,000 troops · +1% attack, +1% covert" },
 
-          { level: 450, label: "Eternal Ruler",         note: "600,000 gold Â· 500 land Â· +2% income" },
+          { level: 450, label: "Eternal Ruler",         note: "600,000 gold · 500 land · +2% income" },
 
-          { level: 475, label: "God-King",              note: "700,000 gold Â· 2,500 troops Â· +1% attack, +1% defense" },
+          { level: 475, label: "God-King",              note: "700,000 gold · 2,500 troops · +1% attack, +1% defense" },
 
-          { level: 500, label: "Ascended",              note: "1,000,000 gold Â· 750 land Â· +2% income, +2% attack" },
+          { level: 500, label: "Ascended",              note: "1,000,000 gold · 750 land · +2% income, +2% attack" },
 
         ];
 
@@ -25844,7 +25866,7 @@
 
             <div style="font-size:16px;font-weight:700;color:var(--gold);margin-bottom:2px;">${h.name}</div>
 
-            <div style="font-size:12px;margin-bottom:8px;"><span style="color:var(--red);font-weight:600;">${cls}</span> <span style="color:var(--text3);">Â· Level ${h.level}</span></div>
+            <div style="font-size:12px;margin-bottom:8px;"><span style="color:var(--red);font-weight:600;">${cls}</span> <span style="color:var(--text3);">· Level ${h.level}</span></div>
 
             <div style="display:flex;flex-direction:column;margin-bottom:8px;">${abilityChips || '<span style="font-size:10px;color:var(--text3)">No abilities yet</span>'}</div>
 
@@ -25918,7 +25940,7 @@
 
                         <div style="font-size:14px;font-weight:700;color:var(--gold)">${c.name}</div>
 
-                        <div style="font-size:11px;color:var(--text3)">Cost: ${c.recruitCost.toLocaleString()} GC Â· ${c.recruitMana} Mana</div>
+                        <div style="font-size:11px;color:var(--text3)">Cost: ${c.recruitCost.toLocaleString()} GC · ${c.recruitMana} Mana</div>
 
                       </div>
 
@@ -26723,7 +26745,7 @@
 
           >
 
-            Choose your race <span style="color: #e05c5c">Â· permanent</span>
+            Choose your race <span style="color: #e05c5c">· permanent</span>
 
           </div>
 
@@ -26767,31 +26789,31 @@
 
             <option value="high_elf">
 
-              High Elf â€” Excellent research Â· Powerful magic Â· Poor military
+              High Elf â€” Excellent research · Powerful magic · Poor military
 
             </option>
 
             <option value="dwarf">
 
-              Dwarf â€” Excellent construction Â· Exceptional war machines Â· Good
+              Dwarf â€” Excellent construction · Exceptional war machines · Good
 
-              economy Â· Poor magic Â· Weak research
+              economy · Poor magic · Weak research
 
             </option>
 
             <option value="dire_wolf">
 
-              Dire Wolf â€” Exceptional military Â· Good covert Â· Terrible research
+              Dire Wolf â€” Exceptional military · Good covert · Terrible research
 
-              Â· Terrible magic Â· Poor economy
+              · Terrible magic · Poor economy
 
             </option>
 
             <option value="dark_elf">
 
-              Dark Elf â€” Exceptional covert Â· Exceptional stealth Â· Good magic Â·
+              Dark Elf â€” Exceptional covert · Exceptional stealth · Good magic ·
 
-              Poor military Â· Weak economy
+              Poor military · Weak economy
 
             </option>
 
@@ -26803,17 +26825,17 @@
 
             <option value="orc">
 
-              Orc â€” Excellent military Â· Good economy Â· Poor research Â· Terrible
+              Orc â€” Excellent military · Good economy · Poor research · Terrible
 
-              magic Â· Weak construction
+              magic · Weak construction
 
             </option>
 
             <option value="vampire">
 
-              Vampire â€” Unmatched night operations Â· Reanimates fallen Â· Thralls
+              Vampire â€” Unmatched night operations · Reanimates fallen · Thralls
 
-              defend by day Â· Weak economy Â· âš ï¸ Not recommended for new players
+              defend by day · Weak economy · âš ï¸ Not recommended for new players
 
             </option>
 
@@ -29106,4 +29128,5 @@
   </body>
 
 </html>
+
 

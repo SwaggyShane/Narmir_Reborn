@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useGameState } from '../../hooks/useGameState';
 
 const RACE_CARD_DATA = {
@@ -42,38 +42,50 @@ const RACE_CARD_DATA = {
 
 const StatusPanel = () => {
   const { state } = useGameState();
+  const cleanText = (value) => {
+    if (value === null || value === undefined) return "";
+    const text = String(value);
+    if (typeof window !== "undefined" && typeof window.repairMojibake === "function") {
+      return window.repairMojibake(text);
+    }
+    return text
+      .replace(/·/g, "·")
+      .replace(/â€”/g, "—")
+      .replace(/â€“/g, "-")
+      .replace(/â€¢/g, "•")
+      .replace(/â€˜|â€™/g, "'")
+      .replace(/â€œ|â€�/g, '"');
+  };
   const lockTax = (elementId) => {
     if (window.lockTax) window.lockTax(elementId);
   };
   const updateTax = (value) => {
     if (window.updateTax) window.updateTax(value);
-  };
-
-  const [raceInfo, setRaceInfo] = useState({ label: '—', bonus: '', key: '' });
+  };  const [raceInfo, setRaceInfo] = useState({ label: '—', bonus: '', key: '' });
 
   React.useEffect(() => {
     const update = () => {
       const raceKey = String(state?.race || window.currentRace?.key || '').trim();
       const mapped = RACE_CARD_DATA[raceKey];
       if (mapped) {
-        setRaceInfo({ label: mapped.label, bonus: mapped.bonus, key: raceKey });
+        setRaceInfo({ label: cleanText(mapped.label), bonus: cleanText(mapped.bonus), key: raceKey });
         return;
       }
 
       if (window.currentRace) {
         setRaceInfo({
-          label: window.currentRace.label || '—',
-          bonus: window.currentRace.bonus || '',
+          label: cleanText(window.currentRace.label || '—'),
+          bonus: cleanText(window.currentRace.bonus || ''),
           key: window.currentRace.key || ''
         });
         return;
       }
 
       if (window.currentRaceHtml) {
-        const text = window.currentRaceHtml.replace(/<[^>]*>/g, '');
-        const parts = text.split(' · ');
+        const text = cleanText(window.currentRaceHtml.replace(/<[^>]*>/g, ''));
+        const parts = text.split(' · '); 
         const label = parts[0] || '—';
-        const bonus = parts.length > 1 ? parts.slice(1).join(' · ') : '';
+        const bonus = parts.length > 1 ? parts.slice(1).join(' · ') : ''; 
         setRaceInfo({
           label,
           bonus: bonus || (text.replace(label, '').replace(/^\s*·\s*/, '').trim()),
@@ -83,7 +95,7 @@ const StatusPanel = () => {
       }
 
       setRaceInfo({
-        label: state?.race ? String(state.race).replace(/_/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase()) : '—',
+        label: state?.race ? cleanText(String(state.race).replace(/_/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase())) : '—',
         bonus: '',
         key: raceKey
       });
@@ -161,7 +173,7 @@ const StatusPanel = () => {
             }}>
               <img 
                 src={portraitUrl} 
-                alt={raceInfo.label}
+                alt={cleanText(raceInfo.label)}
                 referrerPolicy="no-referrer"
                 style={{
                   width: '100%',
@@ -183,7 +195,7 @@ const StatusPanel = () => {
               letterSpacing: '1px',
               textTransform: 'uppercase'
             }}>
-              {raceInfo.label}
+              {cleanText(raceInfo.label)}
             </div>
             <div style={{ 
               fontSize: '12.5px', 
@@ -193,7 +205,7 @@ const StatusPanel = () => {
               letterSpacing: '0.3px',
               fontWeight: 'normal'
             }}>
-              {raceInfo.bonus}
+              {cleanText(raceInfo.bonus)}
             </div>
           </div>
         </div>
@@ -444,3 +456,4 @@ const StatusPanel = () => {
 };
 
 export default StatusPanel;
+

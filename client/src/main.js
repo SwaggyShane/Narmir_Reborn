@@ -79,6 +79,21 @@ async function apiCall(method, endpoint, body = null) {
 }
 window.apiCall = apiCall;
 
+function repairDisplayText(value) {
+  if (value === null || value === undefined) return "";
+  const text = String(value);
+  if (typeof window !== "undefined" && typeof window.repairMojibake === "function") {
+    return window.repairMojibake(text);
+  }
+  return text
+    .replace(/Â·/g, "·")
+    .replace(/â€”/g, "—")
+    .replace(/â€“/g, "-")
+    .replace(/â€¢/g, "•")
+    .replace(/â€˜|â€™/g, "'")
+    .replace(/â€œ|â€�/g, '"');
+}
+
 console.log("[react] main.js execution started at", new Date().toISOString());
 
 export const gameState = gameStateManager.getMutableState();
@@ -132,8 +147,8 @@ function setActivePanels(rawTab, activeTab) {
 
 window.syncUI = () => {
   const sourceState = window.gameState || window.state || {};
-  const kingdomName = sourceState.kingdomName || sourceState.name || "My Kingdom";
-  const kingdomOwner = sourceState.username || sourceState.owner_name || sourceState.owner || kingdomName;
+  const kingdomName = repairDisplayText(sourceState.kingdomName || sourceState.name || "My Kingdom");
+  const kingdomOwner = repairDisplayText(sourceState.username || sourceState.owner_name || sourceState.owner || kingdomName);
   const turn = sourceState.turn ?? 0;
   const score = sourceState.score ?? 0;
   const scorePerTurn = sourceState.score_per_turn ?? sourceState.scorePerTurn ?? sourceState.score_income ?? 0;
@@ -151,7 +166,7 @@ window.syncUI = () => {
   setText("turn-num", turn);
   setText("kingdom-score-disp", fmt(score));
   setText("kingdom-score-per-turn", `(${scorePerTurn >= 0 ? "+" : ""}${fmt(scorePerTurn)}/turn)`);
-  setText("top-rank", rank !== undefined && rank !== null ? `#${rank}` : "—");
+  setText("top-rank", rank !== undefined && rank !== null ? `#${rank}` : "-");
 
   if (typeof window.updateXpDisplay === "function") {
     window.updateXpDisplay();
