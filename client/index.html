@@ -6055,19 +6055,19 @@
 
           '<span style="font-size:18px;flex-shrink:0">' +
 
-          icon +
+          repairMojibake(icon) +
 
           "</span>" +
 
           '<div><div style="color:var(--text)">' +
 
-          title +
+          repairMojibake(title) +
 
           "</div>" +
 
           '<div style="font-size:11px;color:var(--text3);margin-top:2px">' +
 
-          subtitle +
+          repairMojibake(subtitle) +
 
           "</div></div>";
 
@@ -6133,9 +6133,9 @@
 
               var content =
 
-                '<span style="font-size:18px;flex-shrink:0">' + (icons[exp.type] || "🧭") + "</span>" +
+                '<span style="font-size:18px;flex-shrink:0">' + repairMojibake(icons[exp.type] || "🧭") + "</span>" +
 
-                '<div><div style="color:var(--text)">' + (labels[exp.type] || exp.type) + " departed — " + exp.turns_left + " turn" + (exp.turns_left === 1 ? "" : "s") + " left</div>" +
+                '<div><div style="color:var(--text)">' + repairMojibake(labels[exp.type] || exp.type) + " departed — " + exp.turns_left + " turn" + (exp.turns_left === 1 ? "" : "s") + " left</div>" +
 
                 '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + troopStr + foodStr + "</div></div>";
 
@@ -6163,9 +6163,9 @@
 
               entry.innerHTML =
 
-                '<span style="font-size:18px;flex-shrink:0">' + (icons[exp.type] || "🧭") + "</span>" +
+                '<span style="font-size:18px;flex-shrink:0">' + repairMojibake(icons[exp.type] || "🧭") + "</span>" +
 
-                '<div><div style="color:var(--text)">' + (labels[exp.type] || exp.type) + " departed — " + exp.turns_left + " turn" + (exp.turns_left === 1 ? "" : "s") + " left</div>" +
+                '<div><div style="color:var(--text)">' + repairMojibake(labels[exp.type] || exp.type) + " departed — " + exp.turns_left + " turn" + (exp.turns_left === 1 ? "" : "s") + " left</div>" +
 
                 '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + troopStr + foodStr + "</div></div>";
 
@@ -6283,7 +6283,7 @@
 
                     .map(function (r) {
 
-                      return "• " + r;
+                      return "• " + repairMojibake(r);
 
                     })
 
@@ -6305,13 +6305,13 @@
 
               '<span style="font-size:18px;flex-shrink:0">' +
 
-              (icons[exp.type] || "🧭") +
+              repairMojibake(icons[exp.type] || "🧭") +
 
               "</span>" +
 
               '<div style="flex:1"><div style="color:var(--text);font-weight:600">' +
 
-              (labels[exp.type] || exp.type) +
+              repairMojibake(labels[exp.type] || exp.type) +
 
               " — Returned</div>" +
 
@@ -6337,7 +6337,7 @@
 
                     .map(function (r) {
 
-                      return "• " + r;
+                      return "• " + repairMojibake(r);
 
                     })
 
@@ -6445,11 +6445,11 @@
 
               '<div style="font-weight:bold;color:var(--text);font-size:14px"><span style="margin-right:6px">' +
 
-              (icons[exp.type] || "🧭") +
+              repairMojibake(icons[exp.type] || "🧭") +
 
               "</span> " +
 
-              (labels[exp.type] || exp.type) +
+              repairMojibake(labels[exp.type] || exp.type) +
 
               " underway</div>" +
 
@@ -7785,6 +7785,29 @@
         return escapeHtml(text);
       }
 
+      function repairMojibake(value) {
+        var text = value == null ? "" : String(value);
+        if (!text || !/[ÃÂâðŸ�]/.test(text)) return text;
+        var current = text;
+        for (var i = 0; i < 3; i++) {
+          var next = current;
+          try {
+            next = decodeURIComponent(escape(current));
+          } catch (err) {
+            try {
+              next = new TextDecoder("utf-8").decode(
+                Uint8Array.from(current, function (ch) {
+                  return ch.charCodeAt(0) & 255;
+                }),
+              );
+            } catch (innerErr) {}
+          }
+          if (!next || next === current) break;
+          current = next;
+        }
+        return current;
+      }
+
       function getAuthModalElement(id) {
         return document.getElementById(id);
       }
@@ -8462,7 +8485,7 @@
 
         if (!item) return 13;
 
-        var msg = String(item.message || "").toLowerCase();
+        var msg = repairMojibake(String(item.message || "")).toLowerCase();
 
         var type = item.type || "system";
 
@@ -8550,7 +8573,7 @@
 
       function summarizeAttackNewsForAll(item) {
 
-        var message = String((item && item.message) || "");
+        var message = repairMojibake(String((item && item.message) || ""));
 
         if (message.indexOf("Defense report:") === 0) return "You were attacked.";
 
@@ -8668,7 +8691,7 @@
 
                 // Detect expedition items by message prefix
 
-                if (item.message && /^[🔭🌲⚔🧭•]/u.test(item.message))
+                if (repairMojibake(item.message) && /^[🔭🌲⚔🧭•]/u.test(repairMojibake(item.message)))
 
                   type = "expedition";
 
@@ -8680,7 +8703,7 @@
 
                     ? summarizeAttackNewsForAll(item)
 
-                    : item.message || "";
+                    : repairMojibake(item.message || "");
 
                 var msgHtml = escHtml(displayMessage)
 
@@ -8728,7 +8751,7 @@
 
                   '<span class="news-icon">' +
 
-                  meta.icon +
+                  repairMojibake(meta.icon) +
 
                   "</span>" +
 
@@ -8864,7 +8887,7 @@
 
         events.forEach(function (ev) {
 
-          var m = (ev.message || "").toLowerCase();
+          var m = repairMojibake(ev.message || "").toLowerCase();
 
           if (m.includes("season:")) soundsToPlay["seasonal_event"] = true;
 
@@ -8908,7 +8931,7 @@
 
             type: ev.type || "system",
 
-            message: ev.message || ev,
+            message: repairMojibake(ev.message || ev),
 
             turn_num: state.turn || 0,
 
@@ -8958,7 +8981,7 @@
 
                 ? summarizeAttackNewsForAll(ev)
 
-                : ev.message || ev;
+              : repairMojibake(ev.message || ev);
 
             var isBorderType =
 
@@ -8980,7 +9003,7 @@
 
               '<span class="news-icon">' +
 
-              meta.icon +
+              repairMojibake(meta.icon) +
 
               "</span>" +
 
@@ -8990,7 +9013,7 @@
 
               '">' +
 
-              escHtml(String(msg)).replace(/\n/g, "<br>") +
+              escHtml(String(repairMojibake(msg))).replace(/\n/g, "<br>") +
 
               "</span>" +
 
@@ -9176,15 +9199,22 @@
 
             : kind === "success"
 
-              ? "rgba(21,128,61,0.92)"
+            ? "rgba(21,128,61,0.92)"
 
-              : kind === "warning" || kind === "warn"
+            : kind === "warning" || kind === "warn"
 
                 ? "rgba(224,184,75,0.95)"
 
                 : "rgba(34,36,46,0.95)";
 
-        toastEl.style.color = "#fff";
+        if (kind === "success") {
+          toastEl.style.background = "transparent";
+          toastEl.style.border = "1px solid #00ff2b";
+          toastEl.style.color = "#7dff86";
+          toastEl.style.boxShadow = "0 0 12px rgba(0, 255, 43, 0.18), inset 0 0 0 1px rgba(0, 255, 43, 0.08)";
+        } else {
+          toastEl.style.color = "#fff";
+        }
 
         toastEl.style.pointerEvents = "auto";
 
@@ -12388,6 +12418,96 @@
 
         renderBuildQueue();
 
+      }
+
+      function updateStatusDisplay() {
+        var source = state || window.gameState || {};
+        var unitLevels = {};
+        try {
+          unitLevels = typeof source.troop_levels === "string" ? JSON.parse(source.troop_levels || "{}") : (source.troop_levels || source.unit_levels || {});
+        } catch (e) {
+          unitLevels = {};
+        }
+
+        function setText(id, value) {
+          var el = document.getElementById(id);
+          if (el && value !== undefined && value !== null) el.textContent = value;
+        }
+
+        function setPct(id, value) {
+          var el = document.getElementById(id);
+          if (el) el.style.width = Math.max(0, Math.min(100, Number(value || 0))) + "%";
+        }
+
+        function unitLevel(unit) {
+          var meta = unitLevels[unit];
+          var value = meta && typeof meta === "object" ? meta.level : meta;
+          return "Lv " + (value || 1);
+        }
+
+        var counts = {
+          fighters: source.fighters || 0,
+          rangers: source.rangers || 0,
+          clerics: source.clerics || 0,
+          thralls: source.thralls || 0,
+          mages: source.mages || 0,
+          thieves: source.thieves || 0,
+          ninjas: source.ninjas || 0,
+          engineers: source.engineers || 0,
+          scribes: source.scribes || 0,
+          researchers: source.researchers || 0,
+          war_machines: source.war_machines || 0,
+          ladders: source.ladders || 0,
+          weapons: source.weapons_stockpile || 0,
+          armor: source.armor_stockpile || 0,
+        };
+
+        setText("s-fighters", fmt(counts.fighters));
+        setText("s-lv-fighters", unitLevel("fighters"));
+        setText("s-rangers", fmt(counts.rangers));
+        setText("s-lv-rangers", unitLevel("rangers"));
+        setText("s-clerics", fmt(counts.clerics));
+        setText("s-lv-clerics", unitLevel("clerics"));
+        setText("s-thralls", fmt(counts.thralls));
+        setText("s-lv-thralls", unitLevel("thralls"));
+        setText("s-mages", fmt(counts.mages));
+        setText("s-lv-mages", unitLevel("mages"));
+        setText("s-thieves", fmt(counts.thieves));
+        setText("s-lv-thieves", unitLevel("thieves"));
+        setText("s-ninjas", fmt(counts.ninjas));
+        setText("s-lv-ninjas", unitLevel("ninjas"));
+        setText("s-engineers", fmt(counts.engineers));
+        setText("s-scribes", fmt(counts.scribes));
+        setText("s-researchers", fmt(counts.researchers));
+        setText("s-war_machines", fmt(counts.war_machines));
+        setText("s-ladders", fmt(counts.ladders));
+        setText("s-weapons", fmt(counts.weapons));
+        setText("s-armor", fmt(counts.armor));
+
+        setPct("pb-eco-st", source.res_economy || 0);
+        setPct("pb-wep-st", source.res_weapons || 0);
+        setPct("pb-arm-st", source.res_armor || 0);
+        setPct("pb-mil-st", source.res_military || 0);
+        setPct("pb-spell-st", source.res_spellbook || 0);
+        setPct("pb-atk-st", source.res_attack_magic || 0);
+        setPct("pb-def-st", source.res_defense_magic || 0);
+        setPct("pb-mana-s", source.res_mana || 0);
+        setPct("pb-ent-s", source.res_entertainment || 0);
+        setPct("pb-con-st", source.res_construction || 0);
+
+        setText("kb-farms", fmt(source.bld_farms || 0));
+        setText("kb-barracks", fmt(source.bld_barracks || 0));
+        setText("kb-schools", fmt(source.bld_schools || 0));
+        setText("kb-libraries", fmt(source.bld_libraries || 0));
+        setText("kb-mage_towers", fmt(source.bld_mage_towers || 0));
+        setText("kb-smithies", fmt(source.bld_smithies || 0));
+        setText("kb-markets", fmt(source.bld_markets || 0));
+        setText("kb-guard_towers", fmt(source.bld_guard_towers || 0));
+        setText("kb-training", fmt(source.bld_training || 0));
+        setText("kb-castles", fmt(source.bld_castles || 0));
+
+        var citadelBadge = document.getElementById("citadel-badge");
+        if (citadelBadge) citadelBadge.style.display = source.citadel ? "inline" : "none";
       }
 
 
