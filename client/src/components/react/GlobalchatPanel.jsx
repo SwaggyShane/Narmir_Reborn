@@ -1,29 +1,48 @@
 import React, { useEffect } from 'react';
+import { getSocket, renderGlobalChatHistory, sendGlobalChat as emitGlobalChat } from '../../socket-client';
 
 const GlobalchatPanel = () => {
   useEffect(() => {
-    // Load history on mount and ensure socket is initialized
-    if (window.loadGlobalChatHistory) window.loadGlobalChatHistory();
-    else if (window.initSocket) window.initSocket();
+    let cancelled = false;
+
+    const boot = async () => {
+      try {
+        await getSocket();
+        if (!cancelled) await renderGlobalChatHistory();
+      } catch (error) {
+        console.warn('[chat] Failed to boot global chat panel:', error);
+      }
+    };
+
+    boot();
 
     // Poll for new messages every 5s to catch Discord relay messages
     // that are inserted directly into DB without a socket broadcast
     const interval = setInterval(() => {
       const panel = document.getElementById('globalchat');
       if (panel && panel.style.display !== 'none') {
-        if (window.loadGlobalChatHistory) window.loadGlobalChatHistory();
+        renderGlobalChatHistory().catch((error) => {
+          console.warn('[chat] Failed to refresh global chat history:', error);
+        });
       }
     }, 5000);
 
-    return () => clearInterval(interval);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, []);
 
   const handleKeydown = (event) => {
-    if (event.key === "Enter") sendGlobalChat();
+    if (event.key === "Enter") {
+      event.preventDefault();
+      sendGlobalChat();
+    }
   };
 
-  const sendGlobalChat = () => {
-    if (window.sendGlobalChat) window.sendGlobalChat();
+  const sendGlobalChat = async () => {
+    const ack = await emitGlobalChat();
+    if (ack && ack.error && window.toast) window.toast(ack.error, 'error');
   };
 
   return (

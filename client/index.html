@@ -96,11 +96,6 @@
 
     />
 
-    <script type="module">
-      import { io } from "/src/socket-client.js";
-      window.io = io;
-    </script>
-
     <style>
       *,
 
@@ -7746,36 +7741,235 @@
 
       var allianceChatMessages = [];
 
+      var socketClientModulePromise = null;
+
+      var socketClientModule = null;
+
+
+
+      async function getSocketClientModule() {
+
+        if (!socketClientModulePromise) {
+
+          socketClientModulePromise = import("/src/socket-client.js");
+
+        }
+
+        return socketClientModulePromise;
+
+      }
+
+
+
+      function loadKingdom() {
+
+        return apiCall("GET", "/api/kingdom/me").then(function (kingdom) {
+
+          if (kingdom && !kingdom.error) {
+
+            if (window.applyGameMutation) {
+
+              window.applyGameMutation(kingdom, { reason: "kingdom-refresh" });
+
+            }
+
+            if (typeof window.syncUI === "function") {
+
+              window.syncUI();
+
+            }
+
+            if (typeof window.updateTurnsDisplay === "function") {
+
+              window.updateTurnsDisplay();
+
+            }
+
+          }
+
+          return kingdom;
+
+        });
+
+      }
+
+
+
+      function loadMe() {
+
+        return loadKingdom();
+
+      }
+
+
+
+      async function loadGlobalChatHistory() {
+
+        const chat = socketClientModule || (await getSocketClientModule());
+
+        return chat.renderGlobalChatHistory();
+
+      }
+
+
+
+      async function renderOnlineList(users) {
+
+        const chat = socketClientModule || (await getSocketClientModule());
+
+        return chat.renderOnlineList(users || []);
+
+      }
+
+
+
+      async function sendGlobalChat() {
+
+        const input = document.getElementById("global-chat-input");
+
+        const message = (input && input.value ? input.value : "").trim();
+
+        if (!message) return { error: "Message required" };
+
+        const chat = socketClientModule || (await getSocketClientModule());
+
+        const ack = await chat.sendGlobalChat(message);
+
+        if (ack && ack.error && window.toast) {
+
+          window.toast(ack.error, "error");
+
+        }
+
+        return ack;
+
+      }
+
+
+
+      function appendChatMessage(listId, data) {
+
+        if (socketClientModule && socketClientModule.appendChatMessage) {
+
+          return socketClientModule.appendChatMessage(listId, data);
+
+        }
+
+      }
+
+
+
+      function appendSystemMessage(listId, message) {
+
+        if (socketClientModule && socketClientModule.appendSystemMessage) {
+
+          return socketClientModule.appendSystemMessage(listId, message);
+
+        }
+
+      }
+
+
+
+      function appendWhisperMessage(listId, from, message, sent) {
+
+        if (socketClientModule && socketClientModule.appendWhisperMessage) {
+
+          return socketClientModule.appendWhisperMessage(listId, from, message, sent);
+
+        }
+
+      }
+
+
+
+      function updatePasswordRequirements() {
+
+        const input = document.getElementById("auth-pass");
+
+        const panel = document.getElementById("password-requirements");
+
+        if (!input || !panel) return;
+
+        const value = input.value || "";
+
+        const checks = [
+
+          { id: "req-length", ok: value.length >= 8, label: "8+ characters" },
+
+          { id: "req-upper", ok: /[A-Z]/.test(value), label: "Uppercase letter" },
+
+          { id: "req-lower", ok: /[a-z]/.test(value), label: "Lowercase letter" },
+
+          { id: "req-number", ok: /\d/.test(value), label: "Number (0-9)" },
+
+          { id: "req-special", ok: /[@$!%*?&]/.test(value), label: "Special char (@$!%*?&)" },
+
+        ];
+
+        let allOk = true;
+
+        checks.forEach(function (rule) {
+
+          const el = document.getElementById(rule.id);
+
+          if (!el) return;
+
+          el.style.color = rule.ok ? "#2ecc71" : "#e05c5c";
+
+          el.textContent = `${rule.ok ? "✓" : "✗"} ${rule.label}`;
+
+          if (!rule.ok) allOk = false;
+
+        });
+
+        panel.style.display = value ? "block" : "none";
+
+        return allOk;
+
+      }
+
+
+
+      document.addEventListener("DOMContentLoaded", function () {
+
+        const pass = document.getElementById("auth-pass");
+
+        if (pass) {
+
+          pass.addEventListener("input", updatePasswordRequirements);
+
+          updatePasswordRequirements();
+
+        }
+
+        initSocket().catch(function (err) {
+
+          console.warn("[socket] Failed to initialize:", err);
+
+        });
+
+      });
+
 
 
       function initSocket() {
 
-        if (socket) return;
+        if (socket) return Promise.resolve(socket);
 
-        var io = window.io;
-
-        if (!io) {
-
-          console.warn("[socket] socket client not ready");
-
-          return;
-
-        }
-
-        socket = io({
-
-              auth: { token: localStorage.getItem("narmir_token") || "" },
-
-              transports: ["websocket"],
-
-            });
-
-
+        return getSocketClientModule()
+          .then(function (chat) {
+            socketClientModule = chat;
+            return chat.getSocket();
+          })
+          .then(function (sock) {
+            socket = sock;
+            if (socket._narmirChatHandlersBound) return socket;
 
             socket.on("connect", function () {
-
-              loadGlobalChatHistory();
-
+              loadGlobalChatHistory().catch(function (err) {
+                console.warn("[chat] Failed to load history:", err);
+              });
             });
 
             socket.on("connect_error", function (err) {
@@ -7916,7 +8110,9 @@
 
             socket.on("chat:online", function (data) {
 
-              renderOnlineList(data.users || []);
+              renderOnlineList(data.users || []).catch(function (err) {
+                console.warn("[chat] Failed to render online list:", err);
+              });
 
             });
 
@@ -8004,17 +8200,11 @@
 
             });
 
+            socket._narmirChatHandlersBound = true;
+            return socket;
+          });
+
       }
-
-
-
-
-
-      window.refreshKingdom = loadKingdom;
-
-      window.loadGlobalChatHistory = loadGlobalChatHistory;
-
-      window.initSocket = initSocket;
 
 
 
@@ -26101,9 +26291,6 @@
             margin-bottom: 8px;
 
           "
-
-          oninput="updatePasswordRequirements()"
-
         />
 
         <div id="password-requirements" style="display: none; font-size: 12px; background: rgba(224, 92, 92, 0.1); border: 1px solid rgba(224, 92, 92, 0.3); border-radius: 6px; padding: 10px; margin-bottom: 10px; color: #e8b84b; line-height: 1.6">
@@ -28621,7 +28808,3 @@
   </body>
 
 </html>
-
-
-
-

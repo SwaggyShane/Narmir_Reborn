@@ -182,6 +182,45 @@ module.exports = function (db) {
   });
 
   // ── Save research allocation ───────────────────────────────────────────────
+  router.get("/chat/global", requireAuth, async (req, res) => {
+    const limit = Math.max(1, Math.min(200, Number(req.query.limit) || 100));
+    const rows = await db.all(
+      `
+        SELECT
+          cm.id,
+          cm.room,
+          cm.message,
+          cm.created_at,
+          cm.username,
+          COALESCE(p.chat_name, cm.username) AS from_name,
+          COALESCE(p.chat_color, '#e8e9f0') AS chat_color,
+          COALESCE(p.is_chat_mod, 0) AS is_chat_mod,
+          COALESCE(p.is_admin, 0) AS is_admin
+        FROM chat_messages cm
+        LEFT JOIN players p ON p.id = cm.player_id
+        WHERE cm.room = 'global' AND cm.deleted = 0
+        ORDER BY cm.created_at DESC, cm.id DESC
+        LIMIT ?
+      `,
+      [limit],
+    );
+
+    res.json({
+      messages: rows
+        .reverse()
+        .map((row) => ({
+          id: row.id,
+          room: row.room,
+          message: row.message,
+          ts: row.created_at ? row.created_at * 1000 : Date.now(),
+          from: row.from_name || row.username,
+          username: row.username,
+          chatColor: row.chat_color,
+          isMod: !!(row.is_chat_mod || row.is_admin),
+        })),
+    });
+  });
+
   router.post("/research-allocation", requireAuth, requireCsrfToken, async (req, res) => {
     const { allocation } = req.body;
     if (!allocation || typeof allocation !== "object")

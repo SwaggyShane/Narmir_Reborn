@@ -45,7 +45,6 @@ const GoalsPanel = () => {
         const goal = newGoalsData[groupId].goals.find(g => g.id === goalId);
         if (goal) goal.claimed = true;
         setGoalsData(newGoalsData);
-        if (window.refreshKingdomParams) window.refreshKingdomParams();
       } else if (res && res.error) {
         if (window.toast) window.toast(res.error, "error");
       }

@@ -159,6 +159,23 @@ const ResourcesPanel = () => {
     } catch (e) { console.error(e); }
   };
 
+  const refreshKingdom = async () => {
+    try {
+      const refreshed = await apiCall('/api/kingdom/me');
+      if (refreshed && !refreshed.error) {
+        if (window.applyGameMutation) {
+          window.applyGameMutation(refreshed, { reason: 'resources-refresh' });
+        }
+        syncFromState();
+        return refreshed;
+      }
+      return refreshed;
+    } catch (e) {
+      console.error(e);
+      return { error: e.message };
+    }
+  };
+
   useEffect(() => {
     syncFromState();
     loadNodes();
@@ -313,7 +330,7 @@ const ResourcesPanel = () => {
       if (data.ok) {
         setScoutMsg(`Discovered: ${data.node.name} (${data.node.type}, richness ${data.node.richness})`);
         await loadNodes();
-        if (window.refreshKingdom) window.refreshKingdom();
+        await refreshKingdom();
       } else {
         setScoutMsg('Error: ' + (data.error || 'Unknown'));
       }
@@ -337,7 +354,7 @@ const ResourcesPanel = () => {
           const foodStr = data.foodTaken > 0 ? ` · 🍖 ${data.foodTaken.toLocaleString()} food taken` : '';
           window.logExpeditionEntry(icon, `Resource expedition departed to ${node.name}`, `${pop.toLocaleString()} civilians · ${node.type}${foodStr}`);
         }
-        if (window.refreshKingdom) window.refreshKingdom();
+        await refreshKingdom();
       } else { if(window.toast) window.toast('Failed: ' + (data.error || 'Unknown'), 'error'); }
     } catch(e) { if(window.toast) window.toast('Error: ' + e.message, 'error'); }
     setLaunching(p => ({...p, [node.id]: false}));
@@ -355,7 +372,7 @@ const ResourcesPanel = () => {
       if (data.ok) {
         if(window.toast) window.toast(data.success ? `Interception successful! Loot: ${JSON.stringify(data.loot)}` : 'Interception failed. Took casualties.', data.success ? 'success' : 'error');
         await loadVisibleExps();
-        if (window.refreshKingdom) window.refreshKingdom();
+        await refreshKingdom();
       } else { if(window.toast) window.toast('Error: ' + (data.error || 'Unknown'), 'error'); }
     } catch(e) { if(window.toast) window.toast('Error: ' + e.message, 'error'); }
     setIntercepting(p => ({...p, [expId]: false}));
@@ -392,10 +409,7 @@ const ResourcesPanel = () => {
       if (d2.ok && s) s.resource_build_allocation = newAlloc;
       syncFromState();
       window.updateBuildDisplay?.();
-      if (window.refreshKingdom) {
-        await window.refreshKingdom();
-        syncFromState();
-      }
+      await refreshKingdom();
     } catch(e) {
       setBuildingInProgress(p => ({...p, [type]: false}));
       if(window.toast) window.toast('Error: ' + e.message, 'error');
@@ -408,10 +422,7 @@ const ResourcesPanel = () => {
         body: { type, toStage: stage }
       });
       if (data.ok) {
-        if (window.refreshKingdom) {
-          await window.refreshKingdom();
-          syncFromState();
-        }
+        await refreshKingdom();
       } else { if(window.toast) window.toast('Error: ' + (data.error || 'Unknown'), 'error'); }
     } catch(e) { if(window.toast) window.toast('Error: ' + e.message, 'error'); }
   };
