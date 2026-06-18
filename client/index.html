@@ -7811,6 +7811,10 @@
       }
 
       function showLoginModal() {
+        const app = document.getElementById("app");
+        if (app) app.style.display = "none";
+        const bn = document.getElementById("bottom-nav");
+        if (bn) bn.style.display = "none";
         initLoginModal();
         setAuthModalVisibility(true);
         const user = getAuthModalElement("auth-user");
@@ -7826,6 +7830,11 @@
         clearAuthError("");
         const passwordReset = getAuthModalElement("password-reset-modal");
         if (passwordReset) passwordReset.style.display = "none";
+        const app = document.getElementById("app");
+        if (app) app.style.display = "";
+        const bn = document.getElementById("bottom-nav");
+        if (bn) bn.style.display = "";
+        closeRegistrationModal();
       }
 
       function showPasswordReset() {
