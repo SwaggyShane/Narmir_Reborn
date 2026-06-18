@@ -3723,7 +3723,7 @@
 
               >
 
-                <span id="kingdom-owner-line">â€”</span> Â· Turn
+                <span id="kingdom-owner-line">—</span> | Turn
 
                 <span id="turn-num" style="color: var(--text); font-weight: 600"
 
@@ -3731,7 +3731,7 @@
 
                 >
 
-                Â· Score
+                | Score
 
                 <span
 
@@ -3761,7 +3761,7 @@
 
                   style="display: none; padding: 1px 5px"
 
-                  >ðŸ›¡ï¸ Protected</span
+                  >Protected</span
 
                 >
 
@@ -3805,7 +3805,7 @@
 
                   "
 
-                  >ðŸŒ¸ Spring</span
+                  >Spring</span
 
                 >
 
@@ -7787,7 +7787,7 @@
 
       function repairMojibake(value) {
         var text = value == null ? "" : String(value);
-        if (!text || !/[ÃƒÃ‚Ã¢Ã°Å¸ï¿½]/.test(text)) return text;
+        if (!text || !/[ÃƒÃ‚Ã¢Ã°Å¸ðâÂï¿½]/.test(text)) return text;
         var current = text;
         for (var i = 0; i < 20; i++) {
           var next = current;
@@ -7805,6 +7805,13 @@
           if (!next || next === current) break;
           current = next;
         }
+        current = current
+          .replace(/Â/g, "")
+          .replace(/â€”/g, "—")
+          .replace(/â€“/g, "-")
+          .replace(/â€¢/g, "•")
+          .replace(/â€˜|â€™/g, "'")
+          .replace(/â€œ|â€�/g, '"');
         return current;
       }
 

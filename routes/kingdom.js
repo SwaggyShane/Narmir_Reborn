@@ -21,6 +21,7 @@ const router = express.Router();
 function repairMojibake(value) {
   if (value === null || value === undefined) return value;
   let text = String(value);
+  if (!/[ÃƒÃ‚Ã¢Ã°Å¸ðâÂï¿½]/.test(text)) return text;
   for (let i = 0; i < 20; i++) {
     let next;
     try {
@@ -31,6 +32,13 @@ function repairMojibake(value) {
     if (next === text) break;
     text = next;
   }
+  text = text
+    .replace(/Â/g, "")
+    .replace(/â€”/g, "—")
+    .replace(/â€“/g, "-")
+    .replace(/â€¢/g, "•")
+    .replace(/â€˜|â€™/g, "'")
+    .replace(/â€œ|â€�/g, '"');
   return text;
 }
 
@@ -2867,11 +2875,11 @@ module.exports = function (db) {
       const troops = `${r.toLocaleString()} rangers${f > 0 ? ", " + f.toLocaleString() + " fighters" : ""}`;
 
       let message = repairMojibake(
-        `🧭 ${label} expedition launched — ${troops} deployed for ${EXP_TURNS[type]} turns. ${foodNeeded.toLocaleString()} food taken for the journey.`,
+        `${label} expedition launched -- ${troops} deployed for ${EXP_TURNS[type]} turns. ${foodNeeded.toLocaleString()} food taken for the journey.`,
       );
       if (type === "mountain") {
         message = repairMojibake(
-          `⛰️ MOUNTAIN EXPEDITION LAUNCHED! ${r.toLocaleString()} rangers venture into the peaks for 100 turns. Avalanches, extreme attrition, and danger await. Go big or go home.`,
+          `MOUNTAIN EXPEDITION LAUNCHED! ${r.toLocaleString()} rangers venture into the peaks for 100 turns. Avalanches, extreme attrition, and danger await. Go big or go home.`,
         );
       }
 
