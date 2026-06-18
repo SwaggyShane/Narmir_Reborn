@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useGameState } from '../../hooks/useGameState';
 import { apiCall } from '../../utils/api.js';
 
 // Atmospheric synergy hint text. Tiers map to how close a contributing
@@ -88,6 +89,7 @@ const BUILDINGS_DISPLAY_ORDER = [
 ];
 
 const BuildPanel = () => {
+  const { state } = useGameState();
   const [showBuildingRef, setShowBuildingRef] = useState(false);
   const [showAttunements, setShowAttunements] = useState(false);
   const [availableAttunements, setAvailableAttunements] = useState([]);
@@ -110,7 +112,7 @@ const BuildPanel = () => {
   // the real values from window.state.
   React.useEffect(() => {
     window.updateBuildDisplay?.();
-  });
+  }, [state]);
 
   const loadAttunements = async () => {
     try {

@@ -1,7 +1,10 @@
 import React from 'react';
+import { useGameState } from '../../hooks/useGameState';
 
 const TrainingPanel = () => {
-  const isVampire = window.gameState?.race === 'vampire';
+  const { state } = useGameState();
+  const isVampire = state?.race === 'vampire';
+  const fmt = (value) => Number(value || 0).toLocaleString();
   const distributeTrainingEvenly = () => {
     if (window.distributeTrainingEvenly) window.distributeTrainingEvenly();
   };
@@ -18,6 +21,11 @@ const TrainingPanel = () => {
     if (window.updateTrainingDisplay) window.updateTrainingDisplay();
   };
 
+  React.useEffect(() => {
+    window.updateTrainingDisplay?.();
+    window.updateTroopLevelDisplay?.();
+  }, [state]);
+
   return (
     <div id="training" className="panel" style={{ display: 'none' }}>
       <div className="card" style={{ marginTop: 0 }}>
@@ -29,19 +37,19 @@ const TrainingPanel = () => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '10px' }}>
           <div style={{ background: 'var(--bg3)', borderRadius: 'var(--radius)', padding: '10px', textAlign: 'center' }}>
             <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '3px' }}>ENGINEERS</div>
-            <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text)' }} id="sup-count-engineers">0</div>
+            <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text)' }} id="sup-count-engineers">{fmt(state?.engineers)}</div>
             <div id="sup-lv-engineers" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text3)', marginTop: '2px' }}>Lv 1</div>
             <div id="sup-xp-engineers" style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '2px' }}>0 / 200 XP</div>
           </div>
           <div style={{ background: 'var(--bg3)', borderRadius: 'var(--radius)', padding: '10px', textAlign: 'center' }}>
             <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '3px' }}>SCRIBES</div>
-            <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text)' }} id="sup-count-scribes">0</div>
+            <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text)' }} id="sup-count-scribes">{fmt(state?.scribes)}</div>
             <div id="sup-lv-scribes" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text3)', marginTop: '2px' }}>Lv 1</div>
             <div id="sup-xp-scribes" style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '2px' }}>0 / 200 XP</div>
           </div>
           <div style={{ background: 'var(--bg3)', borderRadius: 'var(--radius)', padding: '10px', textAlign: 'center' }}>
             <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '3px' }}>RESEARCHERS</div>
-            <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text)' }} id="sup-count-researchers">0</div>
+            <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text)' }} id="sup-count-researchers">{fmt(state?.researchers)}</div>
             <div id="sup-lv-researchers" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text3)', marginTop: '2px' }}>Lv 1</div>
             <div id="sup-xp-researchers" style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '2px' }}>0 / 200 XP</div>
           </div>

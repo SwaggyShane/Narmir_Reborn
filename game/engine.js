@@ -4934,7 +4934,7 @@ function expeditionRewards(type, rangers, fighters, k) {
     if (deepWood > 0) {
       updates.wood = (updates.wood !== undefined ? updates.wood : k.wood || 0) + deepWood;
       updates.stone = (updates.stone !== undefined ? updates.stone : k.stone || 0) + deepStone;
-      rewards.push({ text: `ÃƒÂ°Ã…Â¸Ã‚ÂªÃ‚Âµ +${deepWood} wood and ÃƒÂ°Ã…Â¸Ã‚ÂªÃ‚Â¨ +${deepStone} stone unearthed` });
+      rewards.push({ text: `?? +${deepWood} wood and ?? +${deepStone} stone unearthed` });
     }
 
     const land = Math.max(
@@ -4965,7 +4965,7 @@ function expeditionRewards(type, rangers, fighters, k) {
       const boost = rand(1, Math.max(2, Math.floor(5 * exploreBonus)));
       const discLabel = disc.replace("res_", "").replace("_", " ");
       rewards.push({
-        text: `A research scroll found ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â ${discLabel} +${boost}%`,
+        text: `A research scroll found ? ${discLabel} +${boost}%`,
       });
       updates[disc] = (k[disc] || 0) + boost;
     }
@@ -4995,7 +4995,7 @@ function expeditionRewards(type, rangers, fighters, k) {
         Math.floor(rangers * 0.15 * exploreBonus),
       );
       rewards.push({
-        text: `Ruins of an abandoned kingdom found ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â you claim ${bonus} acres of its former territory`,
+        text: `Ruins of an abandoned kingdom found ? you claim ${bonus} acres of its former territory`,
       });
       updates.land = (updates.land || k.land) + bonus;
     }
@@ -5443,9 +5443,9 @@ async function resolveExpeditions(db, k, engine) {
           rewards.unshift({ text: THRONE_OF_NAZDREG.text });
           events.push({
             type: "system",
-            message: `ÃƒÂ°Ã…Â¸Ã¢â‚¬ËœÃ¢â‚¬Ëœ ${freshK.name} has found the Throne of Nazdreg Grishnak. May his memory endure forever.`,
+            message: `?? ${freshK.name} has found the Throne of Nazdreg Grishnak. May his memory endure forever.`,
           });
-          updates._server_announce = `ÃƒÂ°Ã…Â¸Ã¢â‚¬ËœÃ¢â‚¬Ëœ The Throne of Nazdreg Grishnak has been found by ${freshK.name}. His name is remembered.`;
+          updates._server_announce = `?? The Throne of Nazdreg Grishnak has been found by ${freshK.name}. His name is remembered.`;
         }
       }
 
@@ -5464,7 +5464,7 @@ async function resolveExpeditions(db, k, engine) {
             disc[other.id] = { found: true, name: other.name };
             updates.discovered_kingdoms = JSON.stringify(disc);
             rewards.push({
-              text: `ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ‚Â­ Your rangers discovered the kingdom of ${other.name}!`,
+              text: `?? Your rangers discovered the kingdom of ${other.name}!`,
             });
           }
         }
@@ -5481,22 +5481,22 @@ async function resolveExpeditions(db, k, engine) {
         frags.push(frag);
         updates.world_fragments = JSON.stringify(frags);
         rewards.push({
-          text: `ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ‚Â® Your rangers recovered a World Fragment: ${frag}`,
+          text: `?? Your rangers recovered a World Fragment: ${frag}`,
         });
         events.push({
           type: "system",
-          message: `ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ‚Â® A World Fragment (${frag}) was discovered during the expedition.`,
+          message: `?? A World Fragment (${frag}) was discovered during the expedition.`,
         });
       }
 
       if (updates._suspicious_rocks_achievement) {
         delete updates._suspicious_rocks_achievement;
         rewards.unshift({
-          text: `ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT UNLOCKED: Found 100 mysterious rocks! +1000 stone awarded.`,
+          text: `?? ACHIEVEMENT UNLOCKED: Found 100 mysterious rocks! +1000 stone awarded.`,
         });
         events.push({
           type: "system",
-          message: `ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â  ACHIEVEMENT: ${freshK.name} collected 100 mysterious rocks and was rewarded with 1000 stone!`,
+          message: `?? ACHIEVEMENT: ${freshK.name} collected 100 mysterious rocks and was rewarded with 1000 stone!`,
         });
       }
 

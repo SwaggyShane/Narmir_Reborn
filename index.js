@@ -1072,14 +1072,16 @@ async function start() {
     });
 
     app.get('/wipe-admin.html', (_req, res) => {
-      res.sendFile(path.join(__dirname, 'dist', 'wipe-admin.html'));
+      const wipeAdminPath = path.join(__dirname, 'public', 'wipe-admin.html');
+      res.sendFile(wipeAdminPath);
     });
 
     app.get(['/admin', '/admin.html'], (_req, res) => {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
-      res.sendFile(path.join(__dirname, 'dist', 'admin.html'));
+      const adminPath = path.join(__dirname, 'public', 'admin.html');
+      res.sendFile(adminPath);
     });
   
     // Vite as middleware should be checked BEFORE static serving but AFTER API routes

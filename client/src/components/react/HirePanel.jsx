@@ -1,7 +1,11 @@
 import React from 'react';
+import { useGameState } from '../../hooks/useGameState';
 
 const HirePanel = () => {
-  const isVampire = window.gameState?.race === 'vampire';
+  const { state } = useGameState();
+  const isVampire = state?.race === 'vampire';
+  const fmt = (value) => Number(value || 0).toLocaleString();
+  const unitCount = (key) => fmt(state?.[key]);
   const setMaxValue = (inputId, type) => {
     if (window.setMaxValue) window.setMaxValue(inputId, type);
   };
@@ -18,8 +22,8 @@ const HirePanel = () => {
         <div className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span>Hire units</span>
           <span style={{ color: 'var(--text2)', textTransform: 'none', display: 'flex', gap: '14px', alignItems: 'center' }}>
-            <span>Gold: <strong id="hire-strip-gold" style={{ color: 'var(--gold)' }}>0</strong></span>
-            <span>Population: <strong id="hire-pop" style={{ color: 'var(--gold)' }}>0</strong></span>
+            <span>Gold: <strong id="hire-strip-gold" style={{ color: 'var(--gold)' }}>{fmt(state?.gold)}</strong></span>
+            <span>Population: <strong id="hire-pop" style={{ color: 'var(--gold)' }}>{fmt(state?.population ?? state?.pop)}</strong></span>
           </span>
         </div>
 
@@ -64,7 +68,7 @@ const HirePanel = () => {
              <div className="hname">⚔️ Fighters</div>
              <div className="hdesc">Combat · defense</div>
           </div>
-          <div className="hcount" id="h-fighters">0</div>
+          <div className="hcount" id="h-fighters">{unitCount('fighters')}</div>
           <div className="hprice" id="hp-fighters">250 GC</div>
           <div className="hbtns" style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
              <input type="number" className="input" id="hire-fighters" min="0" defaultValue="0" style={{ textAlign: 'right', width: '60px' }} placeholder="Qty" />
@@ -79,7 +83,7 @@ const HirePanel = () => {
              <div className="hname">🏹 Rangers</div>
              <div className="hdesc">Scout · ranged · explore</div>
           </div>
-          <div className="hcount" id="h-rangers">0</div>
+          <div className="hcount" id="h-rangers">{unitCount('rangers')}</div>
           <div className="hprice" id="hp-rangers">250 GC</div>
           <div className="hbtns" style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
              <input type="number" className="input" id="hire-rangers" min="0" defaultValue="0" style={{ textAlign: 'right', width: '60px' }} placeholder="Qty" />
@@ -94,7 +98,7 @@ const HirePanel = () => {
              <div className="hname">💚 Clerics</div>
              <div className="hdesc">Heal · happiness aura · shrine</div>
           </div>
-          <div className="hcount" id="h-clerics">0</div>
+          <div className="hcount" id="h-clerics">{unitCount('clerics')}</div>
           <div className="hprice" id="hp-clerics">250 GC</div>
           <div className="hbtns" style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
              <input type="number" className="input" id="hire-clerics" min="0" defaultValue="0" style={{ textAlign: 'right', width: '60px' }} placeholder="Qty" />
@@ -109,7 +113,7 @@ const HirePanel = () => {
              <div className="hname">✨ Mages</div>
              <div className="hdesc">Spells · tower · library</div>
           </div>
-          <div className="hcount" id="h-mages">0</div>
+          <div className="hcount" id="h-mages">{unitCount('mages')}</div>
           <div className="hprice" id="hp-mages">250 GC</div>
           <div className="hbtns" style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
              <input type="number" className="input" id="hire-mages" min="0" defaultValue="0" style={{ textAlign: 'right', width: '60px' }} placeholder="Qty" />
@@ -124,7 +128,7 @@ const HirePanel = () => {
              <div className="hname">🗝️ Thieves</div>
              <div className="hdesc">Covert ops · loot · spy</div>
           </div>
-          <div className="hcount" id="h-thieves">0</div>
+          <div className="hcount" id="h-thieves">{unitCount('thieves')}</div>
           <div className="hprice" id="hp-thieves">250 GC</div>
           <div className="hbtns" style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
              <input type="number" className="input" id="hire-thieves" min="0" defaultValue="0" style={{ textAlign: 'right', width: '60px' }} placeholder="Qty" />
@@ -139,7 +143,7 @@ const HirePanel = () => {
              <div className="hname">🕵️ Ninjas</div>
              <div className="hdesc">Assassinate · sabotage</div>
           </div>
-          <div className="hcount" id="h-ninjas">0</div>
+          <div className="hcount" id="h-ninjas">{unitCount('ninjas')}</div>
           <div className="hprice" id="hp-ninjas">250 GC</div>
           <div className="hbtns" style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
              <input type="number" className="input" id="hire-ninjas" min="0" defaultValue="0" style={{ textAlign: 'right', width: '60px' }} placeholder="Qty" />
@@ -154,7 +158,7 @@ const HirePanel = () => {
              <div className="hname">📚 Researchers</div>
              <div className="hdesc">Advance disciplines · school</div>
           </div>
-          <div className="hcount" id="h-researchers">0</div>
+          <div className="hcount" id="h-researchers">{unitCount('researchers')}</div>
           <div className="hprice" id="hp-researchers">250 GC</div>
           <div className="hbtns" style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
              <input type="number" className="input" id="hire-researchers" min="0" defaultValue="0" style={{ textAlign: 'right', width: '60px' }} placeholder="Qty" />
@@ -169,7 +173,7 @@ const HirePanel = () => {
              <div className="hname">📜 Scribes</div>
              <div className="hdesc">Maps · blueprints · library</div>
           </div>
-          <div className="hcount" id="h-scribes">0</div>
+          <div className="hcount" id="h-scribes">{unitCount('scribes')}</div>
           <div className="hprice" id="hp-scribes">250 GC</div>
           <div className="hbtns" style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
              <input type="number" className="input" id="hire-scribes" min="0" defaultValue="0" style={{ textAlign: 'right', width: '60px' }} placeholder="Qty" />
@@ -184,7 +188,7 @@ const HirePanel = () => {
              <div className="hname">⚙️ Engineers</div>
              <div className="hdesc">Build · war machines · smithy</div>
           </div>
-          <div className="hcount" id="h-engineers">0</div>
+          <div className="hcount" id="h-engineers">{unitCount('engineers')}</div>
           <div className="hprice" id="hp-engineers">250 GC</div>
           <div className="hbtns" style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
              <input type="number" className="input" id="hire-engineers" min="0" defaultValue="0" style={{ textAlign: 'right', width: '60px' }} placeholder="Qty" />

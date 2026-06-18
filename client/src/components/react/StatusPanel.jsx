@@ -1,6 +1,45 @@
 import React, { useState } from 'react';
 import { useGameState } from '../../hooks/useGameState';
 
+const RACE_CARD_DATA = {
+  human: {
+    label: 'Humans of The Heartlands',
+    bonus: 'Flexible all-rounder with fast population growth and balanced progress.',
+  },
+  orc: {
+    label: 'Orcs of The Bloodplains',
+    bonus: 'Blitzkrieg race with heavy military pressure and passive troop growth.',
+  },
+  dwarf: {
+    label: 'Dwarves of The Iron Holds',
+    bonus: 'Economy and fortress play with elite builders and war machines.',
+  },
+  dark_elf: {
+    label: 'Dark Elves of The Underspire',
+    bonus: 'Shadow warfare focused on covert ops, assassination, and precision.',
+  },
+  vampire: {
+    label: 'Vampires of The Sanguine Spires',
+    bonus: 'Night conquest with thralls, reanimation, and brutal temporal swings.',
+  },
+  dire_wolf: {
+    label: 'Dire Wolves of The Ashfang Wilds',
+    bonus: 'Raid-and-run domination through raw combat and fast expeditions.',
+  },
+  high_elf: {
+    label: 'High Elves of The Silverwood',
+    bonus: 'Magic dominance built on research, scrolls, and mana economy.',
+  },
+  wood_elf: {
+    label: 'Wood Elves of The Wildwood',
+    bonus: 'Exploration dominance with unmatched land discovery and speed.',
+  },
+  ogre: {
+    label: 'Ogres of The Shattered Peaks',
+    bonus: 'Brute force conquest with overwhelming fighter pressure.',
+  },
+};
+
 const StatusPanel = () => {
   const { state } = useGameState();
   const lockTax = (elementId) => {
@@ -14,13 +53,23 @@ const StatusPanel = () => {
 
   React.useEffect(() => {
     const update = () => {
+      const raceKey = String(state?.race || window.currentRace?.key || '').trim();
+      const mapped = RACE_CARD_DATA[raceKey];
+      if (mapped) {
+        setRaceInfo({ label: mapped.label, bonus: mapped.bonus, key: raceKey });
+        return;
+      }
+
       if (window.currentRace) {
         setRaceInfo({
           label: window.currentRace.label || '—',
           bonus: window.currentRace.bonus || '',
           key: window.currentRace.key || ''
         });
-      } else if (window.currentRaceHtml) {
+        return;
+      }
+
+      if (window.currentRaceHtml) {
         const text = window.currentRaceHtml.replace(/<[^>]*>/g, '');
         const parts = text.split(' · ');
         const label = parts[0] || '—';
@@ -30,11 +79,22 @@ const StatusPanel = () => {
           bonus: bonus || (text.replace(label, '').replace(/^\s*·\s*/, '').trim()),
           key: ''
         });
+        return;
       }
+
+      setRaceInfo({
+        label: state?.race ? String(state.race).replace(/_/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase()) : '—',
+        bonus: '',
+        key: raceKey
+      });
     };
     update();
     window.updateRaceTagHtml = update;
-  }, []);
+  }, [state?.race]);
+
+  React.useEffect(() => {
+    window.updateStatusDisplay?.();
+  }, [state]);
 
   const RACE_PORTRAITS = {
     high_elf: '/race/high_elf_male.webp',
@@ -48,7 +108,7 @@ const StatusPanel = () => {
     ogre: '/race/ogre_male.webp',
   };
 
-  const currentRaceKey = (raceInfo.key || '') || (raceInfo.label || '')
+  const currentRaceKey = (raceInfo.key || state?.race || '')
     .toLowerCase()
     .trim()
     .replace(/\s+/g, '_');

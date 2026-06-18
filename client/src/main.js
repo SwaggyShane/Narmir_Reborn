@@ -85,7 +85,6 @@ export const gameState = gameStateManager.getMutableState();
 window.gameState = gameState;
 
 const PANEL_ALIASES = {
-  messages: "globalchat",
   attack: "warfare",
   spells: "warfare",
   covert: "warfare",
@@ -105,7 +104,7 @@ function normalizePanelName(tabName) {
 function setActiveNavButtons(rawTab, activeTab) {
   document.querySelectorAll(".nav-item[data-tab], .bnav-item[data-tab]").forEach((button) => {
     const buttonTab = normalizePanelName(button.dataset.tab);
-    const isActive = buttonTab === activeTab || (rawTab === "messages" && button.dataset.tab === "messages");
+    const isActive = buttonTab === activeTab;
     button.classList.toggle("active", isActive);
   });
 }
@@ -159,6 +158,18 @@ window.syncUI = () => {
   }
   if (typeof window.updateTurnsDisplay === "function") {
     window.updateTurnsDisplay();
+  }
+  if (typeof window.updateStatusDisplay === "function") {
+    window.updateStatusDisplay();
+  }
+  if (typeof window.updateBuildDisplay === "function") {
+    window.updateBuildDisplay();
+  }
+  if (typeof window.updateTrainingDisplay === "function") {
+    window.updateTrainingDisplay();
+  }
+  if (typeof window.updateTroopLevelDisplay === "function") {
+    window.updateTroopLevelDisplay();
   }
 };
 
