@@ -929,9 +929,9 @@ function processTurn(k, db = null) {
   const tradeIncome = calculateTradeIncome(k);
   updates.gold = k.gold + income + tradeIncome;
 
-  let incomeMsg = `ÃƒÂ°Ã…Â¸Ã¢â‚¬â„¢Ã‚Â° Turn ${updates.turn}: +${income.toLocaleString()} gold earned.`;
+  let incomeMsg = `🪙 Turn ${updates.turn}: +${income.toLocaleString()} gold earned.`;
   if (tradeIncome > 0) {
-    incomeMsg = `ÃƒÂ°Ã…Â¸Ã¢â‚¬â„¢Ã‚Â° Turn ${updates.turn}: +${income.toLocaleString()} gold earned (+${tradeIncome.toLocaleString()} from trade routes).`;
+    incomeMsg = `🪙 Turn ${updates.turn}: +${income.toLocaleString()} gold earned (+${tradeIncome.toLocaleString()} from trade routes).`;
   }
   events.push({ type: "system", message: incomeMsg });
 
@@ -940,7 +940,7 @@ function processTurn(k, db = null) {
   updates.mana = k.mana + manaGain;
   events.push({
     type: "system",
-    message: `ÃƒÂ¢Ã…â€œÃ‚Â¨ Mana: +${manaGain.toLocaleString()} restored. Total: ${updates.mana.toLocaleString()}.`,
+    message: `🔷 Mana: +${manaGain.toLocaleString()} restored. Total: ${updates.mana.toLocaleString()}.`,
   });
 
   // Mages gain XP when producing mana
@@ -955,12 +955,12 @@ function processTurn(k, db = null) {
   if (growth > 0) {
     events.push({
       type: "system",
-      message: `ÃƒÂ°Ã…Â¸Ã¢â‚¬ËœÃ‚Â¥ Population grew by ${growth.toLocaleString()} to ${updates.population.toLocaleString()}.`,
+      message: `👥 Population grew by ${growth.toLocaleString()} to ${updates.population.toLocaleString()}.`,
     });
   } else if (growth < 0) {
     events.push({
       type: "system",
-      message: `ÃƒÂ°Ã…Â¸Ã¢â‚¬ËœÃ‚Â¥ Population declined by ${Math.abs(growth).toLocaleString()} to ${updates.population.toLocaleString()} due to low happiness.`,
+      message: `👥 Population declined by ${Math.abs(growth).toLocaleString()} to ${updates.population.toLocaleString()} due to low happiness.`,
     });
   }
 
@@ -1236,7 +1236,7 @@ function processTurn(k, db = null) {
   if (upkeep > 0) {
     updates.gold = (updates.gold || k.gold) - upkeep;
     if (updates.gold < 0) updates.gold = 0;
-    let msg = `ÃƒÂ¢Ã…Â¡Ã¢â‚¬ÂÃƒÂ¯Ã‚Â¸Ã‚Â Troop upkeep: -${upkeep.toLocaleString()} gold (${totalTroops.toLocaleString()} billable`;
+    let msg = `⚙️ Troop upkeep: -${upkeep.toLocaleString()} gold (${totalTroops.toLocaleString()} billable`;
     if (totalHoused > 0)
       msg += `, ${totalHoused.toLocaleString()} support units housed free`;
     if (barrackDiscount > 0) msg += `, barracks discount applied`;
@@ -1740,12 +1740,12 @@ function processTurn(k, db = null) {
       if (resEstimates.length > 0) {
         events.push({
           type: "system",
-          message: `ÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã…Â¡ ${researchers.toLocaleString()} researchers studying. Est: ${resEstimates.join(", ")}.`,
+          message: `🔬 ${researchers.toLocaleString()} researchers studying. Est: ${resEstimates.join(", ")}.`,
         });
       } else {
         events.push({
           type: "system",
-          message: `ÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã…Â¡ ${researchers.toLocaleString()} researchers studying ${focus.join(" & ")}.`,
+          message: `🔬 ${researchers.toLocaleString()} researchers studying ${focus.join(" & ")}.`,
         });
       }
     }
@@ -2177,7 +2177,7 @@ function processTurn(k, db = null) {
   const netSign = netGoldChange >= 0 ? "+" : "";
   events.push({
     type: "system",
-    message: `ÃƒÂ°Ã…Â¸Ã‚ÂÃ‚Â¦ End of Turn ${updates.turn} ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Net Gold: ${netSign}${netGoldChange.toLocaleString()}. Final Treasury: ${finalGold.toLocaleString()} gold.`,
+    message: `🏦 End of Turn ${updates.turn} — Net Gold: ${netSign}${netGoldChange.toLocaleString()}. Final Treasury: ${finalGold.toLocaleString()} gold.`,
   });
 
   updates.last_turn_at = Math.floor(Date.now() / 1000);
