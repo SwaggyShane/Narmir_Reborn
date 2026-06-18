@@ -1,14 +1,109 @@
 import React, { useEffect } from 'react';
-import { getSocket, renderGlobalChatHistory, sendGlobalChat as emitGlobalChat } from '../../socket-client';
+import {
+  getSocket,
+  renderGlobalChatHistory,
+  renderOnlineList,
+  appendChatMessage,
+  appendSystemMessage,
+  appendWhisperMessage,
+  sendGlobalChat as emitGlobalChat,
+} from '../../socket-client';
 
 const GlobalchatPanel = () => {
   useEffect(() => {
     let cancelled = false;
+    let socket = null;
+    const handlers = {};
 
     const boot = async () => {
       try {
-        await getSocket();
+        socket = await getSocket();
         if (!cancelled) await renderGlobalChatHistory();
+
+        handlers.connect = () => {
+          renderGlobalChatHistory().catch((error) => {
+            console.warn('[chat] Failed to load history:', error);
+          });
+        };
+
+        handlers.message = (data) => {
+          if (data.room === 'global' || !data.room) {
+            appendChatMessage('global-chat-messages', data);
+
+            const panel = document.getElementById('globalchat');
+            if (!panel || panel.style.display === 'none') {
+              const b = document.getElementById('chat-badge');
+              if (b) b.style.display = 'inline';
+
+              const nc = document.getElementById('nav-chat-item');
+              if (nc && !nc.classList.contains('nav-flash')) nc.classList.add('nav-flash');
+
+              const bnc = document.getElementById('bnav-chat-item');
+              if (bnc && !bnc.classList.contains('nav-flash')) bnc.classList.add('nav-flash');
+            }
+          } else if (data.room === 'alliance') {
+            appendChatMessage('alliance-chat', data);
+          }
+        };
+
+        handlers.system = (data) => {
+          appendSystemMessage('global-chat-messages', data.message);
+        };
+
+        handlers.delete = (data) => {
+          const el = document.getElementById(`cmsg-${data.id}`);
+          if (el) el.remove();
+        };
+
+        handlers.whisper = (data) => {
+          appendWhisperMessage('global-chat-messages', data.from, data.message, false);
+          const b = document.getElementById('chat-badge');
+          if (b) b.style.display = 'inline';
+          const nc = document.getElementById('nav-chat-item');
+          if (nc && !nc.classList.contains('nav-flash')) nc.classList.add('nav-flash');
+          const bnc = document.getElementById('bnav-chat-item');
+          if (bnc && !bnc.classList.contains('nav-flash')) bnc.classList.add('nav-flash');
+          if (window.toast) window.toast(`PM from ${data.from}`, 'success');
+        };
+
+        handlers.whisperSent = (data) => {
+          appendWhisperMessage('global-chat-messages', data.to, data.message, true);
+        };
+
+        handlers.kicked = (data) => {
+          appendSystemMessage('global-chat-messages', `You were kicked. ${data.reason || ''}`);
+          if (window.toast) window.toast(`Kicked: ${data.reason || ''}`, 'error');
+        };
+
+        handlers.banned = (data) => {
+          appendSystemMessage('global-chat-messages', `You are banned from chat. ${data.reason || ''}`);
+          if (window.toast) window.toast(`Chat banned: ${data.reason || ''}`, 'error');
+        };
+
+        handlers.online = (data) => {
+          renderOnlineList(data.users || []);
+        };
+
+        handlers.chatClear = () => {
+          const list = document.getElementById('global-chat-messages');
+          if (list) list.innerHTML = '';
+        };
+
+        handlers.globalMessage = (data) => {
+          appendSystemMessage('global-chat-messages', data.message || 'A global event occurred.');
+        };
+
+        socket.on('connect', handlers.connect);
+        socket.on('chat:message', handlers.message);
+        socket.on('chat:system', handlers.system);
+        socket.on('chat:delete', handlers.delete);
+        socket.on('chat:whisper', handlers.whisper);
+        socket.on('chat:whisper_sent', handlers.whisperSent);
+        socket.on('chat:kicked', handlers.kicked);
+        socket.on('chat:banned', handlers.banned);
+        socket.on('chat:online', handlers.online);
+        socket.on('event:chat_clear', handlers.chatClear);
+        socket.on('event:global_message', handlers.globalMessage);
       } catch (error) {
         console.warn('[chat] Failed to boot global chat panel:', error);
       }
@@ -29,6 +124,19 @@ const GlobalchatPanel = () => {
 
     return () => {
       cancelled = true;
+      if (socket) {
+        if (handlers.connect) socket.off('connect', handlers.connect);
+        if (handlers.message) socket.off('chat:message', handlers.message);
+        if (handlers.system) socket.off('chat:system', handlers.system);
+        if (handlers.delete) socket.off('chat:delete', handlers.delete);
+        if (handlers.whisper) socket.off('chat:whisper', handlers.whisper);
+        if (handlers.whisperSent) socket.off('chat:whisper_sent', handlers.whisperSent);
+        if (handlers.kicked) socket.off('chat:kicked', handlers.kicked);
+        if (handlers.banned) socket.off('chat:banned', handlers.banned);
+        if (handlers.online) socket.off('chat:online', handlers.online);
+        if (handlers.chatClear) socket.off('event:chat_clear', handlers.chatClear);
+        if (handlers.globalMessage) socket.off('event:global_message', handlers.globalMessage);
+      }
       clearInterval(interval);
     };
   }, []);

@@ -7741,26 +7741,6 @@
 
       var allianceChatMessages = [];
 
-      var socketClientModulePromise = null;
-
-      var socketClientModule = null;
-
-
-
-      async function getSocketClientModule() {
-
-        if (!socketClientModulePromise) {
-
-          socketClientModulePromise = import("/src/socket-client.js");
-
-        }
-
-        return socketClientModulePromise;
-
-      }
-
-
-
       function loadKingdom() {
 
         return apiCall("GET", "/api/kingdom/me").then(function (kingdom) {
@@ -7798,86 +7778,6 @@
       function loadMe() {
 
         return loadKingdom();
-
-      }
-
-
-
-      async function loadGlobalChatHistory() {
-
-        const chat = socketClientModule || (await getSocketClientModule());
-
-        return chat.renderGlobalChatHistory();
-
-      }
-
-
-
-      async function renderOnlineList(users) {
-
-        const chat = socketClientModule || (await getSocketClientModule());
-
-        return chat.renderOnlineList(users || []);
-
-      }
-
-
-
-      async function sendGlobalChat() {
-
-        const input = document.getElementById("global-chat-input");
-
-        const message = (input && input.value ? input.value : "").trim();
-
-        if (!message) return { error: "Message required" };
-
-        const chat = socketClientModule || (await getSocketClientModule());
-
-        const ack = await chat.sendGlobalChat(message);
-
-        if (ack && ack.error && window.toast) {
-
-          window.toast(ack.error, "error");
-
-        }
-
-        return ack;
-
-      }
-
-
-
-      function appendChatMessage(listId, data) {
-
-        if (socketClientModule && socketClientModule.appendChatMessage) {
-
-          return socketClientModule.appendChatMessage(listId, data);
-
-        }
-
-      }
-
-
-
-      function appendSystemMessage(listId, message) {
-
-        if (socketClientModule && socketClientModule.appendSystemMessage) {
-
-          return socketClientModule.appendSystemMessage(listId, message);
-
-        }
-
-      }
-
-
-
-      function appendWhisperMessage(listId, from, message, sent) {
-
-        if (socketClientModule && socketClientModule.appendWhisperMessage) {
-
-          return socketClientModule.appendWhisperMessage(listId, from, message, sent);
-
-        }
 
       }
 
@@ -7957,162 +7857,17 @@
 
         if (socket) return Promise.resolve(socket);
 
-        return getSocketClientModule()
+        return import("/src/socket-client.js")
           .then(function (chat) {
-            socketClientModule = chat;
             return chat.getSocket();
           })
           .then(function (sock) {
             socket = sock;
-            if (socket._narmirChatHandlersBound) return socket;
-
-            socket.on("connect", function () {
-              loadGlobalChatHistory().catch(function (err) {
-                console.warn("[chat] Failed to load history:", err);
-              });
-            });
+            if (socket._narmirGeneralHandlersBound) return socket;
 
             socket.on("connect_error", function (err) {
 
               console.warn("[socket]", err.message);
-
-            });
-
-
-
-            socket.on("chat:message", function (data) {
-
-              if (data.room === "global" || !data.room) {
-
-                appendChatMessage("global-chat-messages", data);
-
-                var panel = document.getElementById("globalchat");
-
-                if (!panel || panel.style.display === "none") {
-
-                  var b = document.getElementById("chat-badge");
-
-                  if (b) b.style.display = "inline";
-
-                  var nc = document.getElementById("nav-chat-item");
-
-                  if (nc && !nc.classList.contains("nav-flash"))
-
-                    nc.classList.add("nav-flash");
-
-                  var bnc = document.getElementById("bnav-chat-item");
-
-                  if (bnc && !bnc.classList.contains("nav-flash"))
-
-                    bnc.classList.add("nav-flash");
-
-                }
-
-              } else if (data.room === "alliance") {
-
-                appendChatMessage("alliance-chat", data);
-
-              }
-
-            });
-
-            socket.on("chat:system", function (data) {
-
-              appendSystemMessage("global-chat-messages", data.message);
-
-            });
-
-            socket.on("chat:delete", function (data) {
-
-              var el = document.getElementById("cmsg-" + data.id);
-
-              if (el) el.remove();
-
-            });
-
-            socket.on("chat:whisper", function (data) {
-
-              appendWhisperMessage(
-
-                "global-chat-messages",
-
-                data.from,
-
-                data.message,
-
-                false,
-
-              );
-
-              var b = document.getElementById("chat-badge");
-
-              if (b) b.style.display = "inline";
-
-              var nc = document.getElementById("nav-chat-item");
-
-              if (nc && !nc.classList.contains("nav-flash"))
-
-                nc.classList.add("nav-flash");
-
-              var bnc = document.getElementById("bnav-chat-item");
-
-              if (bnc && !bnc.classList.contains("nav-flash"))
-
-                bnc.classList.add("nav-flash");
-
-              toast("???? PM from " + data.from, "success");
-
-            });
-
-            socket.on("chat:whisper_sent", function (data) {
-
-              appendWhisperMessage(
-
-                "global-chat-messages",
-
-                data.to,
-
-                data.message,
-
-                true,
-
-              );
-
-            });
-
-            socket.on("chat:kicked", function (data) {
-
-              appendSystemMessage(
-
-                "global-chat-messages",
-
-                "???? You were kicked. " + (data.reason || ""),
-
-              );
-
-              toast("Kicked: " + (data.reason || ""), "error");
-
-            });
-
-            socket.on("chat:banned", function (data) {
-
-              appendSystemMessage(
-
-                "global-chat-messages",
-
-                "???? You are banned from chat. " + (data.reason || ""),
-
-              );
-
-              toast("Chat banned: " + (data.reason || ""), "error");
-
-            });
-
-            socket.on("chat:online", function (data) {
-
-              renderOnlineList(data.users || []).catch(function (err) {
-                console.warn("[chat] Failed to render online list:", err);
-              });
 
             });
 
@@ -8190,17 +7945,11 @@
 
             socket.on("event:global_message", function (data) {
 
-              appendSystemMessage(
-
-                "global-chat-messages",
-
-                data.message || "A global event occurred.",
-
-              );
+              console.log("[event:global_message]", data.message || "A global event occurred.");
 
             });
 
-            socket._narmirChatHandlersBound = true;
+            socket._narmirGeneralHandlersBound = true;
             return socket;
           });
 
