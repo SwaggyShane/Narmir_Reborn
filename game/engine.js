@@ -253,7 +253,9 @@ function assignRegion(race) {
 
 function getHappinessRecoveryRate(k) {
   const baseRecovery = (k.res_entertainment || 100) / 1000 + ((k.bld_taverns || 0) * 0.25);
-  return Math.max(0.5, Math.min(5, baseRecovery));
+  const taxRate = Number(k.tax ?? 42);
+  const taxDrag = taxRate > 42 ? Math.min(4, Math.floor((taxRate - 42) / 18)) : 0;
+  return Math.max(0.25, Math.min(5, baseRecovery - taxDrag));
 }
 
 function calculateHappiness(k) {
@@ -320,7 +322,7 @@ function calculateHappiness(k) {
   let taxComponent = 0;
   const taxRate = k.tax ?? 42;
   if (taxRate > 42) {
-    taxComponent = -Math.floor(((taxRate - 42) / 58) * 30);
+    taxComponent = -Math.floor(((taxRate - 42) / 58) * 45 + Math.max(0, (taxRate - 80) / 20) * 10);
     happiness += taxComponent;
   } else if (taxRate < 42) {
     taxComponent = Math.floor(45 * ((42 - taxRate) / 42));
@@ -1278,7 +1280,7 @@ function processTurn(k, db = null) {
     const currentTax = k.tax || 42;
 
     if (currentTax >= 50) {
-      taxPenalty = 10 + Math.floor(((currentTax - 50) / 50) * 65);
+      taxPenalty = 15 + Math.floor(((currentTax - 50) / 50) * 80);
     } else if (currentTax < 42) {
       taxBoost = Math.floor(((42 - currentTax) / 41) * 25);
     }

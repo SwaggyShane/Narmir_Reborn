@@ -7789,7 +7789,7 @@
         var text = value == null ? "" : String(value);
         if (!text || !/[ÃÂâðŸ�]/.test(text)) return text;
         var current = text;
-        for (var i = 0; i < 3; i++) {
+        for (var i = 0; i < 8; i++) {
           var next = current;
           try {
             next = decodeURIComponent(escape(current));
