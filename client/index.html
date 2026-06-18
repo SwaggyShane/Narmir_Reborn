@@ -7854,6 +7854,21 @@
         if (content) content.scrollTop = 0;
       }
 
+      function showNewsBadge(count) {
+        const value = Number(count) || 0;
+        ["news-badge", "bnav-news-badge"].forEach(function (id) {
+          const badge = document.getElementById(id);
+          if (!badge) return;
+          if (value > 0) {
+            badge.textContent = String(value);
+            badge.style.display = "inline-flex";
+          } else {
+            badge.textContent = "";
+            badge.style.display = "none";
+          }
+        });
+      }
+
       function clearToken() {
         try {
           localStorage.removeItem("narmir_token");
@@ -7941,6 +7956,7 @@
       window.showPasswordReset = showPasswordReset;
       window.closeRegistrationModal = closeRegistrationModal;
       window.backToRaceSelection = backToRaceSelection;
+      window.showNewsBadge = showNewsBadge;
       window.clearToken = clearToken;
       window.doLogin = doLogin;
       window.doRegister = doRegister;
