@@ -9092,6 +9092,36 @@
 
       function toast(message, type) {
 
+        function positionToastContainer(node) {
+
+          if (!node) return;
+
+          var isMobile = window.innerWidth <= 768;
+
+          node.style.position = "fixed";
+
+          node.style.zIndex = "99999";
+
+          node.style.display = "flex";
+
+          node.style.flexDirection = "column";
+
+          node.style.gap = "8px";
+
+          node.style.pointerEvents = "none";
+
+          node.style.right = isMobile ? "12px" : "16px";
+
+          node.style.left = isMobile ? "12px" : "auto";
+
+          node.style.top = isMobile ? "auto" : "72px";
+
+          node.style.bottom = isMobile ? "96px" : "auto";
+
+          node.style.alignItems = isMobile ? "stretch" : "flex-end";
+
+        }
+
         var kind = type || "info";
 
         var container = document.getElementById("toast-container");
@@ -9102,23 +9132,19 @@
 
           container.id = "toast-container";
 
-          container.style.position = "fixed";
-
-          container.style.top = "16px";
-
-          container.style.right = "16px";
-
-          container.style.zIndex = "99999";
-
-          container.style.display = "flex";
-
-          container.style.flexDirection = "column";
-
-          container.style.gap = "8px";
-
-          container.style.pointerEvents = "none";
+          positionToastContainer(container);
 
           document.body.appendChild(container);
+
+          if (!window._toastResizeBound) {
+            window.addEventListener("resize", function () {
+              positionToastContainer(document.getElementById("toast-container"));
+            });
+            window._toastResizeBound = true;
+          }
+
+        } else {
+          positionToastContainer(container);
 
         }
 
@@ -9126,7 +9152,7 @@
 
         toastEl.style.minWidth = "240px";
 
-        toastEl.style.maxWidth = "360px";
+        toastEl.style.maxWidth = window.innerWidth <= 768 ? "calc(100vw - 24px)" : "360px";
 
         toastEl.style.padding = "10px 12px";
 

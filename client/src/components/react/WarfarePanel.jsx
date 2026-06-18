@@ -7,7 +7,15 @@ const WarfarePanel = () => {
   useEffect(() => {
     const handleRaceChange = (e) => setWcovTargetRace(e.detail);
     window.addEventListener('wcovTargetRaceChange', handleRaceChange);
-    return () => window.removeEventListener('wcovTargetRaceChange', handleRaceChange);
+    window.setWarfareTab = setActiveTab;
+    if (window.__pendingWarfareTab) {
+      setActiveTab(window.__pendingWarfareTab);
+      window.__pendingWarfareTab = null;
+    }
+    return () => {
+      window.removeEventListener('wcovTargetRaceChange', handleRaceChange);
+      delete window.setWarfareTab;
+    };
   }, []);
 
   const handleTabClick = (tabId) => {

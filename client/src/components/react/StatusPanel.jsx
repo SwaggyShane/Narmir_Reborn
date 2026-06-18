@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useGameState } from '../../hooks/useGameState';
 
 const StatusPanel = () => {
+  const { state } = useGameState();
   const lockTax = (elementId) => {
     if (window.lockTax) window.lockTax(elementId);
   };
@@ -52,14 +54,14 @@ const StatusPanel = () => {
     .replace(/\s+/g, '_');
 
   // Check for custom portrait first, fall back to gender-specific default
-  const customPortrait = window.gameState?.customPortrait;
-  const gender = window.gameState?.gender || 'male';
-  const raceForPortrait = window.gameState?.race || currentRaceKey;
+  const customPortrait = state?.customPortrait;
+  const gender = state?.gender || 'male';
+  const raceForPortrait = state?.race || currentRaceKey;
   const defaultPortraitUrl = RACE_PORTRAITS[currentRaceKey]
     ? `/race/${raceForPortrait}_${gender}.webp`
     : '';
   const portraitUrl = customPortrait || defaultPortraitUrl;
-  const isVampire = currentRaceKey === 'vampire' || (window.gameState && window.gameState.race === 'vampire');
+  const isVampire = currentRaceKey === 'vampire' || state?.race === 'vampire';
 
   return (
     <div id="status" className="panel active">
