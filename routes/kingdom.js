@@ -18,6 +18,30 @@ const { marketPriceCache, rankingsCache, setUnreadCount } = require("../cache.js
 
 const router = express.Router();
 
+function repairMojibake(value) {
+  if (value === null || value === undefined) return value;
+  let text = String(value);
+  for (let i = 0; i < 20; i++) {
+    let next;
+    try {
+      next = Buffer.from(text, "latin1").toString("utf8");
+    } catch {
+      break;
+    }
+    if (next === text) break;
+    text = next;
+  }
+  return text;
+}
+
+function normalizeNewsRow(row) {
+  if (!row || typeof row !== "object") return row;
+  if (typeof row.message === "string") {
+    return { ...row, message: repairMojibake(row.message) };
+  }
+  return row;
+}
+
 // Kingdoms we've already logged deprecated-inventory items for, so the warning fires
 // once per process instead of on every (frequently polled) inventory fetch.
 const _loggedDeprecatedInventory = new Set();
@@ -449,7 +473,7 @@ module.exports = function (db) {
       ),
     ]);
     setUnreadCount(k.id, 0); // Mark all read, so unread count is 0
-    res.json(items);
+    res.json(items.map(normalizeNewsRow));
   });
 
   router.delete("/news/clear", requireAuth, async (req, res) => {
@@ -503,6 +527,7 @@ module.exports = function (db) {
     await loadTradeRoutes(k);
 
     const { updates, events } = engine.processTurn(k, db);
+    const cleanEvents = events.map(normalizeNewsRow);
 
     const heroBatch = [];
     for (const hero of heroes) {
@@ -520,7 +545,7 @@ module.exports = function (db) {
     const existingMessages = {};
     if (events.length > 0) {
       // Deduplicate and filter for valid string messages to prevent TypeError and reduce DB load
-      const uniqueMessages = [...new Set(events.map(e => e && e.message).filter(msg => typeof msg === 'string'))];
+      const uniqueMessages = [...new Set(cleanEvents.map(e => e && e.message).filter(msg => typeof msg === 'string'))];
       if (uniqueMessages.length > 0) {
         const placeholders = uniqueMessages.map(() => '?').join(',');
         const existingNews = await db.all(
@@ -533,7 +558,7 @@ module.exports = function (db) {
       }
     }
 
-    for (const ev of events) {
+    for (const ev of cleanEvents) {
       const existing = existingMessages[ev.message];
       if (
         existing &&
@@ -590,6 +615,7 @@ module.exports = function (db) {
         { ...k, ...updates },
         engine,
       );
+      expeditionEvents = expeditionEvents.map(normalizeNewsRow);
       if (expeditionEvents.length > 0) {
         const turnNum = updates.turn || k.turn;
         await bulkInsertNews(
@@ -629,13 +655,13 @@ module.exports = function (db) {
               [
                 k.id,
                 "system",
-                `🔭 Your Surveyors discovered the kingdom of ${other.name}!`,
+                repairMojibake(`🔭 Your Surveyors discovered the kingdom of ${other.name}!`),
                 turnNum,
               ],
             );
             events.push({
               type: "system",
-              message: `🔭 Your Surveyors discovered the kingdom of ${other.name}!`,
+              message: repairMojibake(`🔭 Your Surveyors discovered the kingdom of ${other.name}!`),
             });
           }
         }
@@ -651,7 +677,7 @@ module.exports = function (db) {
       // If no transaction: log but don't throw (prevent lost turns)
     }
 
-    const allEvents = [...events, ...expeditionEvents];
+    const allEvents = [...cleanEvents, ...expeditionEvents];
 
     // Process real-time resource expeditions and persist their loot
     try {
@@ -662,8 +688,9 @@ module.exports = function (db) {
       }
       if (lootEvents.length > 0) {
         const turnNum = updates.turn || k.turn;
-        await bulkInsertNews(db, lootEvents.map(ev => ({ kingdom_id: k.id, type: ev.type || 'system', message: ev.message, turn_num: turnNum })));
-        allEvents.push(...lootEvents);
+        const cleanLootEvents = lootEvents.map(normalizeNewsRow);
+        await bulkInsertNews(db, cleanLootEvents.map(ev => ({ kingdom_id: k.id, type: ev.type || 'system', message: ev.message, turn_num: turnNum })));
+        allEvents.push(...cleanLootEvents);
       }
     } catch (err) {
       console.error('[runTurn] resource expedition resolve error:', err.message);
@@ -2839,9 +2866,13 @@ module.exports = function (db) {
       const label = { scout: "Scout", deep: "Deep", dungeon: "Dungeon", mountain: "Mountain" }[type];
       const troops = `${r.toLocaleString()} rangers${f > 0 ? ", " + f.toLocaleString() + " fighters" : ""}`;
 
-      let message = `🧭 ${label} expedition launched — ${troops} deployed for ${EXP_TURNS[type]} turns. ${foodNeeded.toLocaleString()} food taken for the journey.`;
+      let message = repairMojibake(
+        `🧭 ${label} expedition launched — ${troops} deployed for ${EXP_TURNS[type]} turns. ${foodNeeded.toLocaleString()} food taken for the journey.`,
+      );
       if (type === "mountain") {
-        message = `⛰️ MOUNTAIN EXPEDITION LAUNCHED! ${r.toLocaleString()} rangers venture into the peaks for 100 turns. Avalanches, extreme attrition, and danger await. Go big or go home.`;
+        message = repairMojibake(
+          `⛰️ MOUNTAIN EXPEDITION LAUNCHED! ${r.toLocaleString()} rangers venture into the peaks for 100 turns. Avalanches, extreme attrition, and danger await. Go big or go home.`,
+        );
       }
 
       res.json({
@@ -2882,7 +2913,20 @@ module.exports = function (db) {
       "SELECT * FROM expeditions WHERE kingdom_id = ? AND (turns_left > 0 OR (turns_left = 0 AND rewards IS NULL)) ORDER BY created_at DESC",
       [k.id],
     );
-    res.json({ active, completed });
+    const cleanRewards = (exp) => {
+      if (!exp || typeof exp !== "object") return exp;
+      let rewards = exp.rewards;
+      if (typeof rewards === "string") {
+        try {
+          const parsed = JSON.parse(rewards);
+          if (Array.isArray(parsed)) rewards = JSON.stringify(parsed.map((msg) => repairMojibake(msg)));
+        } catch {}
+      } else if (Array.isArray(rewards)) {
+        rewards = rewards.map((msg) => repairMojibake(msg));
+      }
+      return { ...exp, rewards };
+    };
+    res.json({ active: active.map(cleanRewards), completed: completed.map(cleanRewards) });
   });
 
   router.post("/expedition/acknowledge", requireAuth, requireCsrfToken, async (req, res) => {
@@ -4911,14 +4955,14 @@ module.exports = function (db) {
           const cols = Object.keys(lootUpdates).map(c => `${c} = ?`).join(', ');
           await db.run(`UPDATE kingdoms SET ${cols} WHERE id = ?`, [...Object.values(lootUpdates), k.id]);
         }
-        newsMessages.push({ kingdom_id: k.id, message: `⚔️ Your warriors intercepted an expedition! You seized: ${JSON.stringify(loot)}.` });
-        newsMessages.push({ kingdom_id: exp.kingdom_id, message: `🚨 Orc raiders from ${k.name} intercepted your expedition and stole your loot! Your ${exp.population_sent.toLocaleString()} people fled home.` });
+      newsMessages.push({ kingdom_id: k.id, message: repairMojibake(`⚔️ Your warriors intercepted an expedition! You seized: ${JSON.stringify(loot)}.`) });
+      newsMessages.push({ kingdom_id: exp.kingdom_id, message: repairMojibake(`🚨 Orc raiders from ${k.name} intercepted your expedition and stole your loot! Your ${exp.population_sent.toLocaleString()} people fled home.`) });
       } else {
         // Attacker takes casualties
         const casualties = Math.floor(fighters * 0.3);
         await db.run('UPDATE kingdoms SET fighters = fighters - ? WHERE id = ?', [casualties, k.id]);
-        newsMessages.push({ kingdom_id: k.id, message: `⚔️ Your warriors failed to intercept the expedition. Lost ${casualties} fighters.` });
-        newsMessages.push({ kingdom_id: exp.kingdom_id, message: `🛡️ Your expedition successfully repelled Orc raiders from ${k.name}!` });
+        newsMessages.push({ kingdom_id: k.id, message: repairMojibake(`⚔️ Your warriors failed to intercept the expedition. Lost ${casualties} fighters.`) });
+        newsMessages.push({ kingdom_id: exp.kingdom_id, message: repairMojibake(`🛡️ Your expedition successfully repelled Orc raiders from ${k.name}!`) });
       }
 
       for (const nm of newsMessages) {
@@ -5767,7 +5811,7 @@ async function bulkInsertNews(db, rows) {
   const values = rows.flatMap((r) => [
     r.kingdom_id,
     r.type || "system",
-    r.message,
+    repairMojibake(r.message),
     r.turn_num || 0,
   ]);
   await db.run(

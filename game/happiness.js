@@ -71,10 +71,10 @@ function calculateHappiness(k) {
   // Apply tax penalty/bonus — use nullish coalesce to allow 0% tax
   const taxRate = k.tax !== undefined && k.tax !== null ? k.tax : 42;
   if (taxRate > 42) {
-    const taxPenalty = Math.floor(((taxRate - 42) / 58) * 30);
+    const taxPenalty = Math.floor(((taxRate - 42) / 58) * 60);
     happiness -= taxPenalty;
   } else if (taxRate < 42) {
-    const taxBonus = Math.floor(45 * ((42 - taxRate) / 42));
+    const taxBonus = Math.floor(12 * ((42 - taxRate) / 42));
     happiness += taxBonus;
   }
 

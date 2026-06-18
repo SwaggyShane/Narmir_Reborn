@@ -286,19 +286,19 @@ const StatusPanel = () => {
           <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr 52px 52px', gap: '4px', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid var(--border)' }}>
             <span style={{ fontSize: '13px', color: 'var(--text)' }} id="s-label-engineers">Engineers</span>
             <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-engineers">0</span>
-            <span style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text3)' }} id="s-lv-engineers">—</span>
+            <span style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text3)' }} id="s-lv-engineers">Lv {Number(state?.troop_levels?.engineers?.level || 1)}</span>
             <span className="badge badge-blue" style={{ textAlign: 'center', fontSize: '9px' }}>Build</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr 52px 52px', gap: '4px', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid var(--border)' }}>
             <span style={{ fontSize: '13px', color: 'var(--text)' }} id="s-label-scribes">Scribes</span>
             <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-scribes">0</span>
-            <span style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text3)' }} id="s-lv-scribes">—</span>
+            <span style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text3)' }} id="s-lv-scribes">Lv {Number(state?.troop_levels?.scribes?.level || 1)}</span>
             <span className="badge badge-blue" style={{ textAlign: 'center', fontSize: '9px' }}>Library</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr 52px 52px', gap: '4px', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid var(--border)' }}>
             <span style={{ fontSize: '13px', color: 'var(--text)' }} id="s-label-researchers">Researchers</span>
             <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-researchers">0</span>
-            <span style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text3)' }} id="s-lv-researchers">—</span>
+            <span style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text3)' }} id="s-lv-researchers">Lv {Number(state?.troop_levels?.researchers?.level || 1)}</span>
             <span className="badge badge-blue" style={{ textAlign: 'center', fontSize: '9px' }}>Study</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr 52px 52px', gap: '4px', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid var(--border)' }}>

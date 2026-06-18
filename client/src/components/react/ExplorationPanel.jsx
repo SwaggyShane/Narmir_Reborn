@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiCall } from '../../utils/api';
+import { useGameState } from '../../hooks/useGameState';
 
 const REFRESH_INTERVAL_MS = 2 * 60 * 1000;
 
 const ExplorationPanel = () => {
+  const { state } = useGameState();
   const [inventory, setInventory] = useState({});
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [mountainRangers, setMountainRangers] = useState(0);
@@ -124,6 +126,14 @@ const ExplorationPanel = () => {
 
       {/* Left col: instant search + three expedition launchers */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div className="card" style={{ padding: '12px 14px' }}>
+          <div className="card-title" style={{ marginBottom: '4px' }}>Available Rangers</div>
+          <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--green)', lineHeight: 1 }}>
+            {(state?.rangers || 0).toLocaleString()}
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '4px' }}>Ready to launch expeditions or scout targets.</div>
+        </div>
+
         {/* Instant search */}
         <div className="card">
           <div className="card-title">
