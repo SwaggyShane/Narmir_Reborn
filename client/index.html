@@ -7854,6 +7854,16 @@
         if (content) content.scrollTop = 0;
       }
 
+      function clearToken() {
+        try {
+          localStorage.removeItem("narmir_token");
+        } catch {}
+        try {
+          document.cookie = "token=; Max-Age=0; path=/";
+          document.cookie = "csrf_token=; Max-Age=0; path=/";
+        } catch {}
+      }
+
       async function submitAuthRequest(endpoint, payload) {
         clearAuthError("");
         const res = await apiCall("POST", endpoint, payload);
@@ -7931,8 +7941,10 @@
       window.showPasswordReset = showPasswordReset;
       window.closeRegistrationModal = closeRegistrationModal;
       window.backToRaceSelection = backToRaceSelection;
+      window.clearToken = clearToken;
       window.doLogin = doLogin;
       window.doRegister = doRegister;
+      window.doLogout = doLogout;
 
 
 
