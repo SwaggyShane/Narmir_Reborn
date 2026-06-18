@@ -9110,15 +9110,17 @@
 
           node.style.pointerEvents = "none";
 
-          node.style.right = isMobile ? "12px" : "16px";
+          node.style.left = "50%";
 
-          node.style.left = isMobile ? "12px" : "auto";
+          node.style.right = "auto";
 
-          node.style.top = isMobile ? "auto" : "72px";
+          node.style.top = "auto";
 
-          node.style.bottom = isMobile ? "96px" : "auto";
+          node.style.bottom = isMobile ? "88px" : "24px";
 
-          node.style.alignItems = isMobile ? "stretch" : "flex-end";
+          node.style.alignItems = "center";
+          node.style.transform = "translateX(-50%)";
+          node.style.width = "min(92vw, 420px)";
 
         }
 
@@ -9152,7 +9154,7 @@
 
         toastEl.style.minWidth = "240px";
 
-        toastEl.style.maxWidth = window.innerWidth <= 768 ? "calc(100vw - 24px)" : "360px";
+        toastEl.style.maxWidth = "100%";
 
         toastEl.style.padding = "10px 12px";
 
@@ -9174,7 +9176,7 @@
 
             : kind === "success"
 
-              ? "rgba(46,204,113,0.95)"
+              ? "rgba(21,128,61,0.92)"
 
               : kind === "warning" || kind === "warn"
 
@@ -9185,6 +9187,8 @@
         toastEl.style.color = "#fff";
 
         toastEl.style.pointerEvents = "auto";
+
+        toastEl.style.textAlign = "center";
 
         toastEl.textContent = String(message || "");
 
@@ -11343,6 +11347,10 @@
         if (u.tax !== undefined) state.tax = u.tax;
 
         if (u.name !== undefined) state.name = u.name;
+        if (u.kingdomName !== undefined) state.kingdomName = u.kingdomName;
+        if (u.kingdom_name !== undefined) state.kingdomName = u.kingdom_name;
+        if (u.username !== undefined) state.username = u.username;
+        if (u.race !== undefined) state.race = u.race;
 
         if (u.turn !== undefined) state.turn = u.turn;
 
