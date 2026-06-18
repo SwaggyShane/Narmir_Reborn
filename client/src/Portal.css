@@ -591,6 +591,7 @@ body {
   border-radius: 6px;
   flex-shrink: 0;
   object-fit: cover;
+  object-position: center 18%;
   opacity: 0.9;
   display: block;
 }
@@ -845,6 +846,7 @@ body {
   width: 100%;
   aspect-ratio: 3/4;
   object-fit: cover;
+  object-position: center 18%;
   border-radius: 6px;
   display: block;
 }
@@ -1075,5 +1077,9 @@ body {
   .race-overlay-buttons { flex-direction: column; }
   .race-confirm-btn { width: 100%; max-width: 100%; }
   .race-detail-portrait-section { flex-direction: column; align-items: center; text-align: center; }
+  .race-detail-portrait,
+  .reg-portrait {
+    object-position: center top;
+  }
   .race-heroes-grid { grid-template-columns: repeat(2, 1fr); }
 }

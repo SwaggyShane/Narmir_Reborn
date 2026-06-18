@@ -101,7 +101,7 @@ function RaceDetailPanel({ race }) {
     <div className="portal-card race-detail-panel" style={{ '--race-color': race.color }}>
       <div className="race-detail-inner">
         <div className="race-detail-portrait-section">
-          <img src={`/busts/${race.id}_male_bust.webp`} alt={race.title} className="race-detail-portrait" />
+          <img src={`/race/${race.id}_male.webp`} alt={race.title} className="race-detail-portrait" />
           <div className="race-detail-title-group">
             <div className="race-detail-title">{race.title}</div>
             <div className="race-detail-subtitle">{race.playstyle?.split('.')?.[0]}</div>
@@ -256,7 +256,7 @@ function RegistrationForm({ selectedRace, onBack }) {
         {raceInfo && (
           <div className="reg-left-panel">
             <div className="reg-portrait-section" style={{ '--race-color': raceInfo.color }}>
-              <img src={`/busts/${raceInfo.id}_${regGender}_bust.webp`} alt={raceInfo.title} className="reg-portrait" />
+              <img src={`/race/${raceInfo.id}_${regGender}.webp`} alt={raceInfo.title} className="reg-portrait" />
               <div className="reg-race-info">
                 <div className="reg-race-title">{raceInfo.title.split(' of ')[0]}</div>
                 <button type="button" className="reg-race-change" onClick={onBack}>Change Race</button>

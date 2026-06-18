@@ -42,6 +42,8 @@ const StatusPanel = () => {
     dark_elf: '/race/dark_elf_male.webp',
     dire_wolf: '/race/dire_wolf_male.webp',
     vampire: '/race/vampire_male.webp',
+    wood_elf: '/race/wood_elf_male.webp',
+    ogre: '/race/ogre_male.webp',
   };
 
   const currentRaceKey = (raceInfo.key || '') || (raceInfo.label || '')
