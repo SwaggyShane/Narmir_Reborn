@@ -28,37 +28,7 @@ function processActiveEffects(k, events) {
       expired.push(effect);
       events.push({
         type: "system",
-        message: `The ${effect.replace("_", " ")} effect on your kingdom has expired.`,
-      });
-    } else {
-      // Apply ongoing effect
-      if (effect === "blight") {
-        const upgrades = safeJsonParse(
-          k.granary_upgrades,
-          {},
-          "processTurn:granary_upgrades",
-        );
-        const damage = (updates._blightDamaged = Math.floor(
-          (data.damage ?? 500) * (upgrades.segregation ? 0.5 : 1.0),
-        ));
-        updates.food = Math.max(
-          0,
-          (updates.food !== undefined ? updates.food : k.food) - damage,
-        );
-      } else if (effect === "plague") {
-        let lost = Math.floor(k.population * 0.02);
-        // Special housing effects (Celestial Feather: Holy Sanctuaries, Ancient Elven Wood: Treehouse Canopy)
-        const activeHousingSpecial = fragmentBonusManager.getSpecialEffect(k, 'housing');
-        if (activeHousingSpecial?.name === "Holy Sanctuaries") {
-          lost = Math.floor(lost * 0.2); // 80% reduction in plague loss
-        } else if (activeHousingSpecial?.name === "Treehouse Canopy") {
-          lost = Math.floor(lost * 0.5); // 50% reduction in plague loss
-        }
-        const currentPop = updates.population !== undefined ? updates.population : k.population;
-        updates.population = Math.max(0, currentPop - lost);
-        events.push({
-          type: "attack",
-          message: `🧟 🌪️ Plague ravages your kingdom — ${lost.toLocaleString()} citizens have perished.`,
+        message: `☣️ Plague ravages your kingdom — ${lost.toLocaleString()} citizens have perished.`,
         });
       } else if (effect === "silence") {
         // Research suppressed — handled in processTurn by checking for silence

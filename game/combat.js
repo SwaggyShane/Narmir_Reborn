@@ -18,9 +18,9 @@ const { isNight, happinessCombatMult, wmCrewRequired } = require('./combat-helpe
 const combatResolverV2 = require('./combat-resolver');
 
 function moraleMult(morale) {
-  if (morale < 50) return 0.8 + (morale / 50) * 0.1; // 0.80ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“0.90
-  if (morale < 100) return 0.9 + ((morale - 50) / 50) * 0.1; // 0.90ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“1.00
-  return Math.min(1.2, 1.0 + ((morale - 100) / 100) * 0.1); // 1.00ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“1.20 (capped at 1.20)
+  if (morale < 50) return 0.8 + (morale / 50) * 0.1; // 0.80–0.90
+  if (morale < 100) return 0.9 + ((morale - 50) / 50) * 0.1; // 0.90–1.00
+  return Math.min(1.2, 1.0 + ((morale - 100) / 100) * 0.1); // 1.00–1.20 (capped at 1.20)
 }
 
 function sumRecordValues(record = {}) {
@@ -162,7 +162,7 @@ function calcBullyPenalty(attacker, defender) {
   if (bullyRatio >= 8) {
     bullyPenalty = 0.4;
     bullyMsg = "ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â Your kingdom is disgraced attacking such a weak foe.";
-    shameEvent = `ÃƒÂ°Ã…Â¸Ã¢â‚¬ËœÃ¢â‚¬Ëœ ${attacker.name} has attacked the much weaker ${defender.name}. The world watches in disgust.`;
+    shameEvent = `👑 ${attacker.name} has attacked the much weaker ${defender.name}. The world watches in disgust.`;
   } else if (bullyRatio >= 4) {
     bullyPenalty = 0.6;
     bullyMsg = "ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â Morale suffers ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â this is slaughter, not war.";
@@ -225,7 +225,7 @@ function applyReanimation(win, attacker, defender, kills, attackerUpdates, defen
         atkConversionAdded > 0 ||
         Math.floor((atkClericKills + atkClericsLost) * convRate) > 0
       ) {
-        necroMsg = `ÃƒÂ°Ã…Â¸Ã‚Â§Ã¢â‚¬Âº Blood Magic raised ${atkConversionAdded} soldiers as new troops and some Thralls from the fallen.`;
+        necroMsg = `🧛 Blood Magic raised ${atkConversionAdded} soldiers as new troops and some Thralls from the fallen.`;
       }
     } else {
       atkConversionAdded = Math.floor(atkTotalKills * convRate);
@@ -271,7 +271,7 @@ function applyReanimation(win, attacker, defender, kills, attackerUpdates, defen
         defConversionAdded > 0 ||
         Math.floor((defClericKills + defClericsLost) * convRate) > 0
       ) {
-        necroMsg = `ÃƒÂ°Ã…Â¸Ã‚Â§Ã¢â‚¬Âº Blood Magic raised ${defConversionAdded} soldiers as new troops and some Thralls from the fallen.`;
+        necroMsg = `🧛 Blood Magic raised ${defConversionAdded} soldiers as new troops and some Thralls from the fallen.`;
       }
     } else {
       defConversionAdded = Math.floor(defTotalKills * convRate);
@@ -668,7 +668,7 @@ function resolveMilitaryAttack(
       phase: "Sabotage",
       title: "Thief Sabotage",
       msg: `Thieves disabled ${disabledWm} defending war machines.`,
-      icon: "ÃƒÂ°Ã…Â¸Ã‚Â¥Ã‚Â·",
+      icon: "🥷",
     });
   }
 
@@ -890,16 +890,16 @@ function resolveMilitaryAttack(
     const bypassPct = Math.round(ladderBypass * 100);
     steps.push({
       phase: "Siege",
-      title: "ÃƒÂ°Ã…Â¸Ã‚ÂªÃ…â€œ Ladder Assault",
-      msg: `${laddersActive} ÃƒÂ°Ã…Â¸Ã‚ÂªÃ…â€œ ladders scaled the walls (crewed by engineers), bypassing ${bypassPct}% of wall defenses!`,
-      icon: "ÃƒÂ°Ã…Â¸Ã‚ÂªÃ…â€œ",
+      title: "🪜 Ladder Assault",
+      msg: `${laddersActive} 🪜 ladders scaled the walls (crewed by engineers), bypassing ${bypassPct}% of wall defenses!`,
+      icon: "🪜",
     });
   } else if (laddersActive > 0) {
     steps.push({
       phase: "Siege",
-      title: "ÃƒÂ°Ã…Â¸Ã‚ÂªÃ…â€œ Ladder Party",
-      msg: `ÃƒÂ°Ã…Â¸Ã‚ÂªÃ…â€œ Ladders were raised but the enemy has no walls to scale.`,
-      icon: "ÃƒÂ°Ã…Â¸Ã‚ÂªÃ…â€œ",
+      title: "🪜 Ladder Party",
+      msg: `🪜 Ladders were raised but the enemy has no walls to scale.`,
+      icon: "🪜",
     });
   }
 
@@ -994,7 +994,7 @@ function resolveMilitaryAttack(
       phase: "Healing",
       title: "Divine Intervention",
       msg: healMsg.trim(),
-      icon: "ÃƒÂ¢Ã…â€œÃ‚Â¨",
+      icon: "✨",
     });
   }
 
@@ -1102,7 +1102,7 @@ function resolveMilitaryAttack(
           phase: "Siege",
           title: "Wall Breach",
           msg: `Your war machines battered the fortifications, destroying ${wallsLost} walls!`,
-          icon: "ÃƒÂ°Ã…Â¸Ã‚Â§Ã‚Â±",
+          icon: "🧱",
         });
       }
     } else {
@@ -1380,7 +1380,7 @@ function resolveMilitaryAttack(
     phase: "Summary",
     title: "Casualty Report",
     msg: summaryMsg,
-    icon: "ÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã…â€œ",
+    icon: "📜",
   });
 
   const atkLossesTitle =

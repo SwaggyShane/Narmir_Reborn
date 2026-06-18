@@ -86,12 +86,12 @@ function repairDisplayText(value) {
     return window.repairMojibake(text);
   }
   return text
-    .replace(/Â·/g, "·")
-    .replace(/â€”/g, "—")
-    .replace(/â€“/g, "-")
-    .replace(/â€¢/g, "•")
-    .replace(/â€˜|â€™/g, "'")
-    .replace(/â€œ|â€�/g, '"');
+    .replace(/·/g, "·")
+    .replace(/—/g, "—")
+    .replace(/–/g, "-")
+    .replace(/•/g, "•")
+    .replace(/‘|’/g, "'")
+    .replace(/“|"/g, '"');
 }
 
 console.log("[react] main.js execution started at", new Date().toISOString());

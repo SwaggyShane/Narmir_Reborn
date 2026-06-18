@@ -50,11 +50,11 @@ const StatusPanel = () => {
     }
     return text
       .replace(/·/g, "·")
-      .replace(/â€”/g, "—")
-      .replace(/â€“/g, "-")
-      .replace(/â€¢/g, "•")
-      .replace(/â€˜|â€™/g, "'")
-      .replace(/â€œ|â€�/g, '"');
+      .replace(/—/g, "—")
+      .replace(/–/g, "-")
+      .replace(/•/g, "•")
+      .replace(/‘|’/g, "'")
+      .replace(/“|"/g, '"');
   };
   const lockTax = (elementId) => {
     if (window.lockTax) window.lockTax(elementId);
