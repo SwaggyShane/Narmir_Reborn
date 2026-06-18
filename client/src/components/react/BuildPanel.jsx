@@ -117,75 +117,65 @@ const BuildPanel = () => {
   const loadAttunements = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/kingdom/available-attunements', {
-        credentials: 'include',
-      });
-      if (!response.ok) throw new Error('Failed to load attunements');
-      const data = await response.json();
+      const data = await apiCall('/api/kingdom/available-attunements');
+      if (data.error) throw new Error(data.error);
       setAvailableAttunements(data.available || []);
 
-      const statusResponse = await fetch('/api/kingdom/attunements', {
-        credentials: 'include',
-      });
-      if (statusResponse.ok) {
-        const statusData = await statusResponse.json();
-        // API returns an array; convert to object keyed by buildingType for O(1) lookup
-        const attunementArray = statusData.attunements || [];
-        const attunements = {};
-        for (const att of attunementArray) {
-          if (att.buildingType) attunements[att.buildingType] = att;
-        }
-        setCurrentAttunements(attunements);
+      const statusData = await apiCall('/api/kingdom/attunements');
+      if (statusData.error) throw new Error(statusData.error);
 
-        // Check synergy contributions for each attunement in parallel.
-        // Server returns an opaque resonance tier (faint/alignment/convergence)
-        // so the synergy formula is never exposed to the client.
-        const contributions = {};
-        const attunementEntries = Object.entries(attunements).filter(([_, att]) => att && att.fragmentName);
-        await Promise.all(
-          attunementEntries.map(async ([building, att]) => {
-            try {
-              const contribResponse = await fetch(
-                `/api/kingdom/contributing-synergies?building_type=${encodeURIComponent(building)}&fragment_name=${encodeURIComponent(att.fragmentName)}`,
-                { credentials: 'include' }
-              );
-              if (contribResponse.ok) {
-                const contribData = await contribResponse.json();
-                if (contribData.contributes) {
-                  contributions[`${building}:${att.fragmentName}`] = {
-                    tier: contribData.resonanceTier || 'faint',
-                    count: contribData.contributingCount || 1,
-                  };
-                }
-              }
-            } catch (err) {
-              console.error('[synergies] check failed:', err);
-            }
-          })
-        );
-        setSynergyContributions(contributions);
+      // API returns an array; convert to object keyed by buildingType for O(1) lookup
+      const attunementArray = statusData.attunements || [];
+      const attunements = {};
+      for (const att of attunementArray) {
+        if (att.buildingType) attunements[att.buildingType] = att;
       }
+      setCurrentAttunements(attunements);
 
-      const synergyRes = await fetch('/api/kingdom/synergy-status', { credentials: 'include' });
-      if (synergyRes.ok) {
-        const synergyData = await synergyRes.json();
+      // Check synergy contributions for each attunement in parallel.
+      // Server returns an opaque resonance tier (faint/alignment/convergence)
+      // so the synergy formula is never exposed to the client.
+      const contributions = {};
+      const attunementEntries = Object.entries(attunements).filter(([_, att]) => att && att.fragmentName);
+      await Promise.all(
+        attunementEntries.map(async ([building, att]) => {
+          try {
+            const contribData = await apiCall(
+              `/api/kingdom/contributing-synergies?building_type=${encodeURIComponent(building)}&fragment_name=${encodeURIComponent(att.fragmentName)}`
+            );
+            if (contribData.error) return;
+            if (contribData.contributes) {
+              contributions[`${building}:${att.fragmentName}`] = {
+                tier: contribData.resonanceTier || 'faint',
+                count: contribData.contributingCount || 1,
+              };
+            }
+          } catch (err) {
+            console.error('[synergies] check failed:', err);
+          }
+        })
+      );
+      setSynergyContributions(contributions);
+
+      const synergyData = await apiCall('/api/kingdom/synergy-status');
+      if (synergyData.error) {
+        setSynergyStatus(null);
+        setSynergyCooldown(null);
+      } else {
         setSynergyStatus(synergyData);
 
         if (synergyData.activeSynergy) {
-          const cdRes = await fetch(
-            `/api/kingdom/synergy-cooldown?synergy_id=${encodeURIComponent(synergyData.activeSynergy.id)}`,
-            { credentials: 'include' }
+          const cdData = await apiCall(
+            `/api/kingdom/synergy-cooldown?synergy_id=${encodeURIComponent(synergyData.activeSynergy.id)}`
           );
-          if (cdRes.ok) setSynergyCooldown(await cdRes.json());
+          if (!cdData.error) setSynergyCooldown(cdData);
         } else {
           setSynergyCooldown(null);
         }
-      } else {
-        setSynergyStatus(null);
-        setSynergyCooldown(null);
       }
     } catch (err) {
       console.error('[attunements] load failed:', err.message);
+      if (window.toast) window.toast(`Failed to load attunements: ${err.message}`, 'error');
     } finally {
       setLoading(false);
     }

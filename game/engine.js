@@ -894,6 +894,33 @@ function processTurn(k, db = null) {
     );
   }
 
+  {
+    const comp = happinessResult.components || {};
+    const happinessParts = [];
+    const orderedComponents = [
+      ['food', comp.food],
+      ['entertainment', comp.entertainment],
+      ['safety', comp.safety],
+      ['prosperity', comp.prosperity],
+      ['race', comp.race],
+      ['effects', comp.effects],
+      ['synergy', comp.synergy],
+      ['tax', comp.tax],
+      ['overcrowding', comp.overcrowding],
+      ['fragments', comp.fragments]
+    ];
+    for (const [label, value] of orderedComponents) {
+      const amount = Number(value || 0);
+      if (!amount) continue;
+      const prefix = amount > 0 ? '+' : '';
+      happinessParts.push(`${label} ${prefix}${amount}`);
+    }
+    events.push({
+      type: 'system',
+      message: `Happiness: ${happinessResult.happiness}/120 (recovery +${happinessResult.recovery}${happinessParts.length ? ', ' + happinessParts.join(', ') : ''})`
+    });
+  }
+
   // Check for rebellion events
   rebellionCheck(k, happinessResult.happiness, updates, events);
 
