@@ -1,8 +1,8 @@
-import { io } from "socket.io-client";
 import { apiCall } from "./utils/api";
 
 let socket = null;
 let socketPromise = null;
+let ioLoaderPromise = null;
 
 function getListElement(listId) {
   return document.getElementById(listId);
@@ -15,6 +15,29 @@ function scrollListToBottom(el) {
   } catch {
     // Ignore scroll failures on detached nodes.
   }
+}
+
+function loadSocketIoClient() {
+  if (typeof window.io === "function") return Promise.resolve(window.io);
+  if (!ioLoaderPromise) {
+    ioLoaderPromise = new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[data-narmir-socketio="true"]');
+      if (existing) {
+        existing.addEventListener("load", () => resolve(window.io));
+        existing.addEventListener("error", () => reject(new Error("Failed to load Socket.IO client")));
+        return;
+      }
+
+      const script = document.createElement("script");
+      script.src = "/socket.io/socket.io.js";
+      script.async = true;
+      script.dataset.narmirSocketio = "true";
+      script.onload = () => resolve(window.io);
+      script.onerror = () => reject(new Error("Failed to load Socket.IO client"));
+      document.head.appendChild(script);
+    });
+  }
+  return ioLoaderPromise;
 }
 
 function createMessageRow(data, mode) {
@@ -86,6 +109,11 @@ export async function getSocket() {
   if (socket) return socket;
   if (!socketPromise) {
     socketPromise = Promise.resolve().then(() => {
+      return loadSocketIoClient();
+    }).then((io) => {
+      if (typeof io !== "function") {
+        throw new Error("Socket.IO client script not loaded");
+      }
       socket = io({
         auth: { token: localStorage.getItem("narmir_token") || "" },
         transports: ["websocket"],
@@ -217,4 +245,3 @@ export async function sendGlobalChat(message) {
     });
   });
 }
-

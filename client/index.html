@@ -8847,6 +8847,138 @@
 
 
 
+      var soundLibrary = {};
+
+      function loadAvailableSounds() {
+
+        soundLibrary = {};
+
+        window.availableSounds = soundLibrary;
+
+        return soundLibrary;
+
+      }
+
+
+
+      function playGameSound(soundKey) {
+
+        var src = soundLibrary[soundKey];
+
+        if (!src) return false;
+
+        try {
+
+          var audio = new Audio(src);
+
+          audio.volume = 0.6;
+
+          audio.play().catch(function () {});
+
+          return true;
+
+        } catch (err) {
+
+          console.debug("[audio] Failed to play sound", soundKey, err && err.message ? err.message : err);
+
+          return false;
+
+        }
+
+      }
+
+
+
+      function toast(message, type) {
+
+        var kind = type || "info";
+
+        var container = document.getElementById("toast-container");
+
+        if (!container) {
+
+          container = document.createElement("div");
+
+          container.id = "toast-container";
+
+          container.style.position = "fixed";
+
+          container.style.top = "16px";
+
+          container.style.right = "16px";
+
+          container.style.zIndex = "99999";
+
+          container.style.display = "flex";
+
+          container.style.flexDirection = "column";
+
+          container.style.gap = "8px";
+
+          container.style.pointerEvents = "none";
+
+          document.body.appendChild(container);
+
+        }
+
+        var toastEl = document.createElement("div");
+
+        toastEl.style.minWidth = "240px";
+
+        toastEl.style.maxWidth = "360px";
+
+        toastEl.style.padding = "10px 12px";
+
+        toastEl.style.borderRadius = "8px";
+
+        toastEl.style.fontSize = "13px";
+
+        toastEl.style.lineHeight = "1.4";
+
+        toastEl.style.boxShadow = "0 8px 24px rgba(0,0,0,0.25)";
+
+        toastEl.style.border = "1px solid rgba(255,255,255,0.1)";
+
+        toastEl.style.background =
+
+          kind === "error"
+
+            ? "rgba(224,92,92,0.95)"
+
+            : kind === "success"
+
+              ? "rgba(46,204,113,0.95)"
+
+              : kind === "warning" || kind === "warn"
+
+                ? "rgba(224,184,75,0.95)"
+
+                : "rgba(34,36,46,0.95)";
+
+        toastEl.style.color = "#fff";
+
+        toastEl.style.pointerEvents = "auto";
+
+        toastEl.textContent = String(message || "");
+
+        container.appendChild(toastEl);
+
+        setTimeout(function () {
+
+          if (toastEl && toastEl.parentNode) toastEl.parentNode.removeChild(toastEl);
+
+        }, 4500);
+
+        return toastEl;
+
+      }
+
+
+
+      window.toast = toast;
+
+
+
       async function saveDescription() {
 
         var desc = document.getElementById("kingdom-description-input").value;
@@ -25707,7 +25839,9 @@
 
           console.error("Global JS Error:", msg, "at", url, ":", line);
 
-          toast("Frontend error: " + msg, "error");
+          if (typeof toast === "function") {
+            toast("Frontend error: " + msg, "error");
+          }
 
         };
 
