@@ -236,7 +236,7 @@ function expeditionRewards(type, rangers, fighters, k) {
     if (roll(0.05)) {
       updates.maps = k.maps + 1;
       rewards.push({
-        text: `🗺️ A map was found — you can now interact with other kingdoms`,
+        text: `??? A map was found — you can now interact with other kingdoms`,
       });
     }
 
@@ -271,7 +271,7 @@ function expeditionRewards(type, rangers, fighters, k) {
     if (deepWood > 0) {
       updates.wood = (updates.wood !== undefined ? updates.wood : k.wood || 0) + deepWood;
       updates.stone = (updates.stone !== undefined ? updates.stone : k.stone || 0) + deepStone;
-      rewards.push({ text: `🌲 +${deepWood} wood and 🪨 +${deepStone} stone unearthed` });
+      rewards.push({ text: `?? +${deepWood} wood and ?? +${deepStone} stone unearthed` });
     }
 
     const land = Math.max(
@@ -350,7 +350,7 @@ function expeditionRewards(type, rangers, fighters, k) {
       );
       const discLabel = disc.replace("res_", "").replace("_", " ");
       rewards.push({
-        text: `✨ An ancient artifact of ${discLabel} — permanent +${boost}%`,
+        text: `? An ancient artifact of ${discLabel} — permanent +${boost}%`,
       });
       updates[disc] = (k[disc] || 0) + boost;
     }
@@ -366,7 +366,7 @@ function expeditionRewards(type, rangers, fighters, k) {
       // Map drop — 15% chance on deep
     if (roll(0.15)) {
       updates.maps = (updates.maps || k.maps) + 1;
-      rewards.push({ text: `🗺️ A map was discovered in the deep wilderness` });
+      rewards.push({ text: `??? A map was discovered in the deep wilderness` });
     }
 
     if (roll(0.05)) {
@@ -425,7 +425,7 @@ function expeditionRewards(type, rangers, fighters, k) {
 
       if (ironGained > 0) {
         updates.iron = (updates.iron !== undefined ? updates.iron : k.iron || 0) + ironGained;
-        rewards.push({ text: `ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â +${ironGained} iron plundered` });
+        rewards.push({ text: `+${ironGained} iron plundered` });
       }
 
       const mana = Math.floor(
@@ -484,9 +484,9 @@ function expeditionRewards(type, rangers, fighters, k) {
       // Map drop ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â 25% chance on dungeon
       if (roll(0.25)) {
         updates.maps = (updates.maps || k.maps) + 1;
-        rewards.push({ text: `ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬ÂÃƒâ€šÃ‚ÂºÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â A map was found among the dungeon spoils` });
+        rewards.push({ text: `Map found among the dungeon spoils` });
       }
-      // Blueprint drop ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â 20% chance on dungeon
+      // Blueprint drop - 20% chance on dungeon
       if (roll(0.2)) {
         const smithyCap = k.bld_smithies * 25;
         const curBP =
@@ -495,9 +495,7 @@ function expeditionRewards(type, rangers, fighters, k) {
             : k.blueprints_stored;
         if (smithyCap === 0 || curBP < smithyCap) {
           updates.blueprints_stored = curBP + 1;
-          rewards.push({
-            text: `ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â A blueprint was recovered from the dungeon depths`,
-          });
+          rewards.push({ text: `Blueprint recovered from the dungeon depths` });
         }
       }
 
@@ -592,7 +590,7 @@ function expeditionRewards(type, rangers, fighters, k) {
       }
     }
 
-    // No land rewards from mountain ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â focus purely on artifacts/magic
+    // No land rewards from mountain expeditions - focus purely on artifacts/magic
     // (explicitly 0 land)
   }
 
@@ -611,7 +609,7 @@ function expeditionRewards(type, rangers, fighters, k) {
         if (mountainUltraRares.length > 0) {
           const prize = mountainUltraRares[Math.floor(Math.random() * mountainUltraRares.length)];
           applyPrizeEffect(prize, k, updates);
-          rewards.push({ text: `ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“Ãƒâ€šÃ‚Â¨ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“Ãƒâ€šÃ‚Â¨ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“Ãƒâ€šÃ‚Â¨ ULTRA RARE: ${prize.text}` });
+          rewards.push({ text: `ULTRA RARE: ${prize.text}` });
 
           // Add ultra-rare item to inventory
           let inventory = safeJsonParse(updates.items || k.items, [], "expeditionRewards:ultra_rare_items");
@@ -629,7 +627,7 @@ function expeditionRewards(type, rangers, fighters, k) {
     const prize =
       ULTRA_RARE_PRIZES[Math.floor(Math.random() * ULTRA_RARE_PRIZES.length)];
     applyPrizeEffect(prize, k, updates);
-    rewards.push({ text: `ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“Ãƒâ€šÃ‚Â¨ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“Ãƒâ€šÃ‚Â¨ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“Ãƒâ€šÃ‚Â¨ ULTRA RARE: ${prize.text}` });
+          rewards.push({ text: `ULTRA RARE: ${prize.text}` });
 
     // Add ultra-rare item to inventory
     let inventory = safeJsonParse(updates.items || k.items, [], "expeditionRewards:ultra_rare_items");
@@ -1047,5 +1045,9 @@ module.exports = {
   junkPrize,
   expeditionRewards,
   resolveExpeditions,};
+
+
+
+
 
 

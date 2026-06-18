@@ -4,6 +4,11 @@ const WarfarePanel = () => {
   const [activeTab, setActiveTab] = useState('attack');
   const [wcovTargetRace, setWcovTargetRace] = useState(null);
 
+  const refreshAttackTargets = async () => {
+    if (window.loadRankings) await window.loadRankings(true);
+    if (window.loadWarfarePanel) window.loadWarfarePanel();
+  };
+
   useEffect(() => {
     const handleRaceChange = (e) => setWcovTargetRace(e.detail);
     window.addEventListener('wcovTargetRaceChange', handleRaceChange);
@@ -12,14 +17,24 @@ const WarfarePanel = () => {
       setActiveTab(window.__pendingWarfareTab);
       window.__pendingWarfareTab = null;
     }
+    refreshAttackTargets();
     return () => {
       window.removeEventListener('wcovTargetRaceChange', handleRaceChange);
       delete window.setWarfareTab;
     };
   }, []);
 
+  useEffect(() => {
+    if (activeTab === 'attack') {
+      refreshAttackTargets();
+    }
+  }, [activeTab]);
+
   const handleTabClick = (tabId) => {
     setActiveTab(tabId);
+    if (tabId === 'attack') {
+      refreshAttackTargets();
+    }
     if (tabId === "wspells" && window.initWspells) window.initWspells();
     if (tabId === "wcovert" && window.initWcovert) window.initWcovert();
     if (tabId === "wreports" && window.loadWarLog) window.loadWarLog();

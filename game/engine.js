@@ -955,9 +955,9 @@ function processTurn(k, db = null) {
   const tradeIncome = calculateTradeIncome(k);
   updates.gold = k.gold + income + tradeIncome;
 
-  let incomeMsg = `ðŸª™ Turn ${updates.turn}: +${income.toLocaleString()} gold earned.`;
+  let incomeMsg = `🪙 Turn ${updates.turn}: +${income.toLocaleString()} gold earned.`;
   if (tradeIncome > 0) {
-    incomeMsg = `ðŸª™ Turn ${updates.turn}: +${income.toLocaleString()} gold earned (+${tradeIncome.toLocaleString()} from trade routes).`;
+    incomeMsg = `🪙 Turn ${updates.turn}: +${income.toLocaleString()} gold earned (+${tradeIncome.toLocaleString()} from trade routes).`;
   }
   events.push({ type: "system", message: incomeMsg });
 
@@ -1766,19 +1766,19 @@ function processTurn(k, db = null) {
       if (resEstimates.length > 0) {
         events.push({
           type: "system",
-          message: `ðŸ”¬ ${researchers.toLocaleString()} researchers studying. Est: ${resEstimates.join(", ")}.`,
+          message: `🔬 ${researchers.toLocaleString()} researchers studying. Est: ${resEstimates.join(", ")}.`,
         });
       } else {
         events.push({
           type: "system",
-          message: `ðŸ”¬ ${researchers.toLocaleString()} researchers studying ${focus.join(" & ")}.`,
+          message: `🔬 ${researchers.toLocaleString()} researchers studying ${focus.join(" & ")}.`,
         });
       }
     }
   } else {
     events.push({
       type: "system",
-      message: `ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€¦Ã‚Â¡ No researchers ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â hire researchers and allocate them to advance your kingdom's knowledge.`,
+      message: `🔬 No researchers assigned — hire researchers and allocate them to advance your kingdom's knowledge.`,
     });
   }
 
@@ -1824,7 +1824,7 @@ function processTurn(k, db = null) {
             const newSpellVal = Math.min(spellCap, currentSpell + spellInc);
             if (newSpellVal !== currentSpell) {
               updates[spellCol] = newSpellVal;
-              mageAdvances.push(`Spellbook ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ ${newSpellVal}%`);
+              mageAdvances.push(`Spellbook -> ${newSpellVal}%`);
             }
           }
         }
@@ -1858,7 +1858,7 @@ function processTurn(k, db = null) {
             const newSchoolVal = Math.min(schoolCap, currentSchool + schoolInc);
             if (newSchoolVal !== currentSchool) {
               updates[schoolCol] = newSchoolVal;
-              mageAdvances.push(`School Spellbook ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ ${newSchoolVal}%`);
+              mageAdvances.push(`School Spellbook -> ${newSchoolVal}%`);
             }
           }
         }
@@ -1879,7 +1879,7 @@ function processTurn(k, db = null) {
         if (mXp.levelUps.length) {
           events.push({
             type: "system",
-            message: `ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“Ãƒâ€šÃ‚Â¨ Mages grew more skilled!`,
+            message: `✨ Mages grew more skilled!`,
           });
         }
       }
@@ -1887,7 +1887,7 @@ function processTurn(k, db = null) {
       if (mageAdvances.length > 0) {
         events.push({
           type: "system",
-          message: `ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“Ãƒâ€šÃ‚Â¨ Mage research advanced: ${mageAdvances.join(", ")}.`,
+          message: `✨ Mage research advanced: ${mageAdvances.join(", ")}.`,
         });
         const mResXp = awardXp(
           {
@@ -1909,7 +1909,7 @@ function processTurn(k, db = null) {
         if (schoolSpellbookMages > 0) mageEstimates.push("School Spellbook");
         events.push({
           type: "system",
-          message: `ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“Ãƒâ€šÃ‚Â¨ ${(spellbookMages + schoolSpellbookMages).toLocaleString()} mages studying ${mageEstimates.join(" & ")}.`,
+          message: `✨ ${(spellbookMages + schoolSpellbookMages).toLocaleString()} mages studying ${mageEstimates.join(" & ")}.`,
         });
       }
     }
@@ -1932,7 +1932,7 @@ function processTurn(k, db = null) {
     updates.gold = (updates.gold || k.gold) + legacyTradeIncome;
     events.push({
       type: "system",
-      message: `ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€¦Ã‚Â¡Ãƒâ€šÃ‚Â¢ Trade Routes generated ${legacyTradeIncome.toLocaleString()} gold.`,
+      message: `Trade Routes generated ${legacyTradeIncome.toLocaleString()} gold.`,
     });
   }
 
@@ -2203,7 +2203,7 @@ function processTurn(k, db = null) {
   const netSign = netGoldChange >= 0 ? "+" : "";
   events.push({
     type: "system",
-    message: `ðŸ¦ End of Turn ${updates.turn} â€” Net Gold: ${netSign}${netGoldChange.toLocaleString()}. Final Treasury: ${finalGold.toLocaleString()} gold.`,
+      message: `🏦 End of Turn ${updates.turn} — Net Gold: ${netSign}${netGoldChange.toLocaleString()}. Final Treasury: ${finalGold.toLocaleString()} gold.`,
   });
 
   updates.last_turn_at = Math.floor(Date.now() / 1000);
@@ -5330,7 +5330,7 @@ function expeditionRewards(type, rangers, fighters, k) {
         if (mountainUltraRares.length > 0) {
           const prize = mountainUltraRares[Math.floor(Math.random() * mountainUltraRares.length)];
           prize.effect(k, updates);
-          rewards.push({ text: `ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“Ãƒâ€šÃ‚Â¨ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“Ãƒâ€šÃ‚Â¨ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“Ãƒâ€šÃ‚Â¨ ULTRA RARE: ${prize.text}` });
+          rewards.push({ text: `ULTRA RARE: ${prize.text}` });
 
           // Add ultra-rare item to inventory
           let inventory = safeJsonParse(updates.items || k.items, [], "expeditionRewards:ultra_rare_items");
@@ -5348,7 +5348,7 @@ function expeditionRewards(type, rangers, fighters, k) {
     const prize =
       ULTRA_RARE_PRIZES[Math.floor(Math.random() * ULTRA_RARE_PRIZES.length)];
     prize.effect(k, updates);
-    rewards.push({ text: `ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“Ãƒâ€šÃ‚Â¨ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“Ãƒâ€šÃ‚Â¨ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“Ãƒâ€šÃ‚Â¨ ULTRA RARE: ${prize.text}` });
+    rewards.push({ text: `ULTRA RARE: ${prize.text}` });
 
     // Add ultra-rare item to inventory
     let inventory = safeJsonParse(updates.items || k.items, [], "expeditionRewards:ultra_rare_items");
@@ -5708,7 +5708,7 @@ async function resolveExpeditions(db, k, engine) {
       if (fightersReturned > 0) freshK.fighters = (freshK.fighters || 0) + fightersReturned;
 
       // ONE news line only ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â rewards go to expedition log, not news feed
-      const completionMsg = `${label} expedition returned ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â check the Explore tab for rewards.`;
+      const completionMsg = `${label} expedition returned -- check the Explore tab for rewards.`;
       expeditionEvents.push({ type: "system", message: completionMsg });
 
       // Throne broadcast only
@@ -5755,7 +5755,7 @@ async function resolveExpeditions(db, k, engine) {
           "UPDATE kingdoms SET fighters = fighters + ? WHERE id = ?",
           [exp.fighters, k.id],
         );
-      const errMsg = `${exp.type} expedition returned ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â an error occurred calculating rewards (troops returned safely).`;
+      const errMsg = `${exp.type} expedition returned -- an error occurred calculating rewards (troops returned safely).`;
       await db.run("UPDATE expeditions SET rewards = ? WHERE id = ?", [
         JSON.stringify([errMsg]),
         exp.id,

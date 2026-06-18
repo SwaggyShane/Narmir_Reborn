@@ -5291,6 +5291,18 @@ module.exports = function (db) {
         [result.fragment_bonuses, kingdom.id]
       );
 
+      await db.run(
+        "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?, ?, ?, ?)",
+        [
+          kingdom.id,
+          "system",
+          repairMojibake(
+            `✨ ${fragmentName} attuned to ${buildingType.replace(/_/g, " ")}! ${result.attunement.special?.name ? `${result.attunement.special.name}.` : "Fragment power resonates through the structure."}`,
+          ),
+          kingdom.turn || 0,
+        ]
+      );
+
       res.json({
         ok: true,
         attunement: result.attunement,
@@ -5348,6 +5360,18 @@ module.exports = function (db) {
         await db.run(
           `UPDATE kingdoms SET fragment_bonuses = ? WHERE id = ?`,
           [JSON.stringify(currentAttunements), kingdom.id]
+        );
+
+        await db.run(
+          "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?, ?, ?, ?)",
+          [
+            kingdom.id,
+            "system",
+            repairMojibake(
+              `✨ Attunement removed from ${buildingType.replace(/_/g, " ")}. The fragment's resonance fades.`,
+            ),
+            kingdom.turn || 0,
+          ]
         );
 
         await db.run("COMMIT");
