@@ -8426,36 +8426,6 @@
 
 
 
-      function setNewsFilter(filter, btn) {
-
-        newsFilter = filter;
-
-        document.querySelectorAll(".news-filter").forEach(function (b) {
-
-          b.classList.remove("active");
-
-        });
-
-        if (btn) btn.classList.add("active");
-
-        renderNewsList(newsCache);
-
-      }
-
-
-
-      // Expose news functions to React components
-
-      window.loadNews = loadNews;
-
-      window.renderNewsList = renderNewsList;
-
-      window.setNewsFilter = setNewsFilter;
-
-      window.clearNews = clearNews;
-
-
-
       var NEWS_META = {
 
         attack: { icon: "⚔️", color: "var(--red)", label: "Combat" },
@@ -8852,28 +8822,6 @@
 
 
 
-      async function clearNews() {
-
-        var result = await apiCall("DELETE", "/api/kingdom/news/clear");
-
-        if (result.error) return toast(result.error, "error");
-
-        var list = document.getElementById("news-list");
-
-        if (list)
-
-          list.innerHTML =
-
-            '<div style="color:var(--text3);font-size:13px;padding:8px 0">News cleared.</div>';
-
-        newsCache = [];
-
-        toast("News cleared", "success");
-
-      }
-
-
-
       function incrementNewsBadge(count) {
 
         if (!count || count <= 0) return;
@@ -9086,11 +9034,7 @@
 
         // Refresh full news list to ensure filter is applied correctly
 
-        if (window.renderNewsList) {
-
-          window.renderNewsList(newsCache);
-
-        }
+        window.renderNewsList?.(newsCache);
 
       }
 
@@ -28998,4 +28942,3 @@
   </body>
 
 </html>
-
