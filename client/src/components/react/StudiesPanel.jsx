@@ -56,9 +56,13 @@ const StudiesPanel = () => {
     refreshMageUi();
   }, [studiesData?.research_allocation, refreshMageUi]);
 
+  useEffect(() => {
+    updateFocusPreview();
+  }, [studiesData, updateFocusPreview]);
+
   const handleTabClick = useCallback((tabId) => {
     setActiveTab(tabId);
-    if (tabId === "school" && window.updateFocusPreview) window.updateFocusPreview();
+    if (tabId === "school") updateFocusPreview();
   }, []);
 
   const loadStudies = useCallback(async () => {
@@ -69,14 +73,6 @@ const StudiesPanel = () => {
       setIsRefreshing(false);
     }
   }, [fetchStudiesData]);
-
-  const updateFocusPreview = useCallback(() => {
-    if (window.updateFocusPreview) window.updateFocusPreview();
-  }, []);
-
-  const saveResearchFocus = useCallback(() => {
-    if (window.saveResearchFocus) window.saveResearchFocus();
-  }, []);
 
   const race = window.gameState?.race || 'human';
   const researchAlloc = studiesData?.research_allocation || {};
@@ -105,6 +101,73 @@ const StudiesPanel = () => {
     }
     refreshMageUi();
   }, [refreshMageUi]);
+
+  const updateFocusPreview = useCallback(() => {
+    const DISC_COLS = {
+      economy: "res_economy",
+      weapons: "res_weapons",
+      armor: "res_armor",
+      military: "res_military",
+      attack_magic: "res_attack_magic",
+      defense_magic: "res_defense_magic",
+      entertainment: "res_entertainment",
+      construction: "res_construction",
+      war_machines: "res_war_machines",
+      spellbook: "res_spellbook",
+    };
+
+    const f1 = document.getElementById("focus-select-1")?.value;
+    const el1 = document.getElementById("focus-current-1");
+    if (el1 && f1) el1.textContent = "Focus 1 Current: " + (window.gameState?.[DISC_COLS[f1]] || 0) + "%";
+
+    const f2 = document.getElementById("focus-select-2")?.value;
+    const el2 = document.getElementById("focus-current-2");
+    if (el2 && f2) el2.textContent = "Focus 2 Current: " + (window.gameState?.[DISC_COLS[f2]] || 0) + "%";
+
+    const studyContainer = document.getElementById("study-progress-list");
+    if (studyContainer) {
+      let html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px;">';
+      Object.keys(DISC_COLS).forEach(function (k) {
+        const val = window.gameState?.[DISC_COLS[k]] || 0;
+        const label = k.charAt(0).toUpperCase() + k.slice(1).replace("_", " ");
+        html +=
+          '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px;display:flex;justify-content:space-between;align-items:center;">' +
+          '<span style="font-size:11px;color:var(--text3)">' +
+          label +
+          "</span>" +
+          '<span style="font-size:13px;font-weight:700;color:var(--gold)">' +
+          val +
+          "%</span>" +
+          "</div>";
+      });
+      html += "</div>";
+      studyContainer.innerHTML = html;
+    }
+  }, []);
+
+  const saveResearchFocus = useCallback(async () => {
+    const f1 = document.getElementById("focus-select-1")?.value;
+    const f2 = document.getElementById("focus-select-2")?.value;
+    const hasRepo = !!(studiesData?.school_upgrades || {}).repository;
+    const focus = hasRepo && f2 ? [f1, f2] : [f1];
+
+    const result = await fetch('/api/kingdom/research-focus', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ focus }),
+    });
+    const data = await result.json();
+    if (data.error) {
+      window.toast?.(data.error, 'error');
+      return;
+    }
+    if (data.research_focus) {
+      window.gameState = window.gameState || {};
+      window.gameState.research_focus = data.research_focus;
+      updateFocusPreview();
+      window.toast?.(`Research focus saved — ${data.research_focus.join(' & ')}`, 'success');
+    }
+  }, [studiesData?.school_upgrades, updateFocusPreview]);
 
   const setMageMax = useCallback((type) => {
     const targetId = type === 'spellbook' ? 'mage-alloc-spellbook' : 'mage-alloc-school';
