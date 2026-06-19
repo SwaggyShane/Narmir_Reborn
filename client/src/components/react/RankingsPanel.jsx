@@ -184,7 +184,7 @@ const RankingsPanel = () => {
   );
 
   return (
-    <div id="rankings" className="panel" style={{ display: 'none' }}>
+    <div id="rankings" className="panel">
       <div className="card" style={{ marginTop: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
