@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useGameState } from '../../hooks/useGameState';
 import { apiCall } from '../../utils/api.js';
 
@@ -88,6 +88,33 @@ const BUILDINGS_DISPLAY_ORDER = [
   'castles', 'wm', 'ballistae', 'ladders', 'weapons', 'armor'
 ];
 
+const BUILD_ALLOCATION_KEYS = {
+  'ba-farm': 'farms',
+  'ba-granary': 'granaries',
+  'ba-housing': 'housing',
+  'ba-school': 'schools',
+  'ba-library': 'libraries',
+  'ba-mage_tower': 'mage_towers',
+  'ba-shrine': 'shrines',
+  'ba-mausoleum': 'mausoleums',
+  'ba-market': 'markets',
+  'ba-tavern': 'taverns',
+  'ba-smithy': 'smithies',
+  'ba-vault': 'vaults',
+  'ba-armory': 'armories',
+  'ba-barracks': 'barracks',
+  'ba-walls': 'walls',
+  'ba-tower': 'guard_towers',
+  'ba-outpost': 'outposts',
+  'ba-training': 'training',
+  'ba-castle': 'castles',
+  'ba-wm': 'war_machines',
+  'ba-ballistae': 'ballistae',
+  'ba-ladders': 'ladders',
+  'ba-weapons': 'weapons',
+  'ba-armor': 'armor',
+};
+
 const BuildPanel = () => {
   const { state } = useGameState();
   const [showBuildingRef, setShowBuildingRef] = useState(false);
@@ -99,6 +126,16 @@ const BuildPanel = () => {
   const [synergyCooldown, setSynergyCooldown] = useState(null);
   const [activatingAbility, setActivatingAbility] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [buildUiTick, setBuildUiTick] = useState(0);
+  const isVampire = state?.race === 'vampire';
+  const totalEngineers = Number(state?.engineers || 0);
+  const engineerLevel = Number(state?.engineer_level || 1);
+  const engineerXp = Number(state?.engineer_xp || 0);
+  const engineerXpNeeded = Number(state?.engineer_xp_needed || 1000);
+  const landAvailable = Math.max(0, Number(state?.land || 0) - Number(state?.built_land || 0));
+  const refreshBuildUi = useCallback(() => {
+    setBuildUiTick((tick) => tick + 1);
+  }, []);
 
   // Load attunements when panel opens
   React.useEffect(() => {
@@ -107,9 +144,20 @@ const BuildPanel = () => {
     }
   }, [showAttunements]);
 
-  // Re-sync vanilla JS building count spans after every render — React resets
-  // the hardcoded <span>0</span> elements and window.updateBuildDisplay() restores
-  // the real values from window.state.
+  useEffect(() => {
+    const alloc = typeof state?.build_allocation === 'string'
+      ? (() => {
+        try { return JSON.parse(state.build_allocation || '{}'); } catch { return {}; }
+      })()
+      : (state?.build_allocation || {});
+
+    Object.entries(BUILD_ALLOCATION_KEYS).forEach(([inputId, key]) => {
+      const el = document.getElementById(inputId);
+      if (el) el.value = alloc[key] || 0;
+    });
+    refreshBuildUi();
+  }, [state?.build_allocation, refreshBuildUi]);
+
   const loadAttunements = async () => {
     try {
       setLoading(true);
@@ -255,12 +303,76 @@ const BuildPanel = () => {
 
   const getBuildCount = (id) => Number(state?.[`bld_${id}`] || 0);
 
-  // Wrapper calls:
-  const distributeBuildEvenly = () => { if (window.distributeBuildEvenly) window.distributeBuildEvenly(); };
-  const releaseAllEngineers = () => { if (window.releaseAllEngineers) window.releaseAllEngineers(); };
-  const saveBuildAllocation = () => { if (window.saveBuildAllocation) window.saveBuildAllocation(); };
-  const setMaxValue = (id, type) => { if (window.setMaxValue) window.setMaxValue(id, type); };
-  const setBuildMax = (id, type) => { if (window.setBuildMax) window.setBuildMax(id, type); };
+  const getBuildInputValue = (inputId) => {
+    const el = document.getElementById(inputId);
+    return parseInt(el?.value || '0', 10) || 0;
+  };
+
+  const getAllocatedEngineers = () => (
+    Object.keys(BUILD_ALLOCATION_KEYS).reduce((sum, inputId) => sum + getBuildInputValue(inputId), 0)
+  );
+
+  const setBuildInputValue = (inputId, value) => {
+    const el = document.getElementById(inputId);
+    if (el) el.value = Math.max(0, value);
+    refreshBuildUi();
+  };
+
+  const setMaxValue = (inputId) => {
+    const current = getBuildInputValue(inputId);
+    const available = totalEngineers - getAllocatedEngineers() + current;
+    setBuildInputValue(inputId, Math.max(0, available));
+  };
+
+  const setBuildMax = (inputId) => setMaxValue(inputId);
+
+  const distributeBuildEvenly = () => {
+    const visibleInputs = Object.keys(BUILD_ALLOCATION_KEYS)
+      .map((inputId) => document.getElementById(inputId))
+      .filter((el) => el && el.closest('.trow') && el.closest('.trow').style.display !== 'none');
+    if (!visibleInputs.length) return;
+    const each = Math.floor(totalEngineers / visibleInputs.length);
+    const rem = totalEngineers - each * visibleInputs.length;
+    visibleInputs.forEach((el, index) => {
+      el.value = each + (index < rem ? 1 : 0);
+    });
+    Object.keys(BUILD_ALLOCATION_KEYS).forEach((inputId) => {
+      const el = document.getElementById(inputId);
+      if (el && !visibleInputs.includes(el)) el.value = 0;
+    });
+    refreshBuildUi();
+  };
+
+  const releaseAllEngineers = async () => {
+    Object.keys(BUILD_ALLOCATION_KEYS).forEach((inputId) => setBuildInputValue(inputId, 0));
+    await saveBuildAllocation();
+  };
+
+  const saveBuildAllocation = async () => {
+    const allocation = {};
+    let total = 0;
+    Object.entries(BUILD_ALLOCATION_KEYS).forEach(([inputId, key]) => {
+      const value = getBuildInputValue(inputId);
+      allocation[key] = value;
+      total += value;
+    });
+
+    if (total > totalEngineers) {
+      return window.toast(`Allocated ${fmt(total)} but only have ${fmt(totalEngineers)} engineers`, 'error');
+    }
+
+    const result = await apiCall('POST', '/api/kingdom/build-allocation', { allocation });
+    if (result.error) return window.toast(result.error, 'error');
+
+    window.applyGameMutation?.({ build_allocation: allocation }, { reason: 'build-allocation' });
+    window.syncUI?.();
+    refreshBuildUi();
+    window.toast('Engineer allocation saved — builds each turn automatically', 'success');
+  };
+
+  const allocatedEngineers = getAllocatedEngineers();
+  const remainingEngineers = Math.max(0, totalEngineers - allocatedEngineers);
+
   const demolishB = (type) => { if (window.demolishB) window.demolishB(type); };
   const buySmithyTool = (type) => { if (window.buySmithyTool) window.buySmithyTool(type); };
   const setSmithyMax = (type) => { if (window.setSmithyMax) window.setSmithyMax(type); };
@@ -281,7 +393,7 @@ const BuildPanel = () => {
             <button className="base-btn variant-red" style={{ padding: '4px 6px', fontSize: '10px' }} onClick={() => demolishB(b.id)}>🗑️</button>
           </div>
         ) : <span></span>}
-        
+
         <div className="bld-eng">
           <input
             type="number"
@@ -289,7 +401,7 @@ const BuildPanel = () => {
             id={baId}
             min="0"
             defaultValue="0"
-            onChange={() => window.updateBuildDisplay?.()}
+            onChange={refreshBuildUi}
             style={{ textAlign: 'right' }}
             placeholder="Qty"
           />
@@ -297,11 +409,11 @@ const BuildPanel = () => {
             className="base-btn"
             style={{ padding: '4px 8px', fontSize: '10px' }}
             onClick={() => {
-              if (isEng) setMaxValue(baId, 'avail_units');
-              else if (b.id === 'wm') setBuildMax(baId, 'war_machine');
-              else if (b.id === 'weapons') setBuildMax(baId, 'weapons');
-              else if (b.id === 'armor') setBuildMax(baId, 'armor');
-              else setMaxValue(baId, 'avail_units');
+              if (isEng) setMaxValue(baId);
+              else if (b.id === 'wm') setBuildMax(baId);
+              else if (b.id === 'weapons') setBuildMax(baId);
+              else if (b.id === 'armor') setBuildMax(baId);
+              else setMaxValue(baId);
             }}
           >
             Max
@@ -312,31 +424,31 @@ const BuildPanel = () => {
   };
 
   return (
-    <div id="build" className="panel" style={{ display: 'none' }}>
+    <div id="build" className="panel" data-ui-tick={buildUiTick}>
       <div className="build-sticky-header">
         <div className="card" style={{ margin: 0, boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
             <div>
               <div className="card-title" style={{ marginBottom: '2px' }}>Construction</div>
               <div style={{ fontSize: '12px', color: 'var(--text3)' }}>
-                🏗️ Engineer Level: <span id="engineer-level" style={{ color: 'var(--gold)', fontWeight: 600 }}>1</span> ·
-                XP: <span id="engineer-xp" style={{ color: 'var(--text)' }}>0</span>/<span id="engineer-xp-needed" style={{ color: 'var(--text3)' }}>1000</span>
+                🏗️ Engineer Level: <span id="engineer-level" style={{ color: 'var(--gold)', fontWeight: 600 }}>{engineerLevel}</span> ·
+                XP: <span id="engineer-xp" style={{ color: 'var(--text)' }}>{fmt(engineerXp)}</span>/<span id="engineer-xp-needed" style={{ color: 'var(--text3)' }}>{fmt(engineerXpNeeded)}</span>
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '2px' }}>
-                Engineers: <span id="b-engineers-available" style={{ color: 'var(--text)' }}>0</span> available ·
-                <span id="b-total-assigned" style={{ color: 'var(--gold)', margin: '0 4px' }}>0</span> assigned ·
-                <span id="b-total-unassigned" style={{ color: 'var(--green)', margin: '0 4px' }}>0</span> unassigned
+                Engineers: <span id="b-engineers-available" style={{ color: 'var(--text)' }}>{fmt(totalEngineers)}</span> available ·
+                <span id="b-total-assigned" style={{ color: 'var(--gold)', margin: '0 4px' }}>{fmt(allocatedEngineers)}</span> assigned ·
+                <span id="b-total-unassigned" style={{ color: remainingEngineers > 0 ? 'var(--green)' : 'var(--red)', margin: '0 4px' }}>{fmt(remainingEngineers)}</span> unassigned
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '2px' }}>
-                Resources: 
-                <span id="b-wood" style={{ color: 'var(--text)', margin: '0 2px' }}>0</span>🪵 · 
-                <span id="b-stone" style={{ color: 'var(--text)', margin: '0 2px' }}>0</span>🪨 · 
-                <span id="b-iron" style={{ color: 'var(--text)', margin: '0 2px' }}>0</span>🔗 · 
-                <span id="b-steel" style={{ color: 'var(--text)', margin: '0 2px' }}>0</span>📏 · 
-                <span id="b-coal" style={{ color: 'var(--text)', margin: '0 2px' }}>0</span>🌑
+                Resources:
+                <span id="b-wood" style={{ color: 'var(--text)', margin: '0 2px' }}>{fmt(state?.wood || 0)}</span>🪵 ·
+                <span id="b-stone" style={{ color: 'var(--text)', margin: '0 2px' }}>{fmt(state?.stone || 0)}</span>🪨 ·
+                <span id="b-iron" style={{ color: 'var(--text)', margin: '0 2px' }}>{fmt(state?.iron || 0)}</span>🔗 ·
+                <span id="b-steel" style={{ color: 'var(--text)', margin: '0 2px' }}>{fmt(state?.steel || 0)}</span>📏 ·
+                <span id="b-coal" style={{ color: 'var(--text)', margin: '0 2px' }}>{fmt(state?.coal || 0)}</span>🌑
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '2px' }}>
-                Land: <span id="b-land-available" style={{ color: 'var(--text)' }}>0</span> available
+                Land: <span id="b-land-available" style={{ color: 'var(--text)' }}>{fmt(landAvailable)} / {fmt(state?.land || 0)}</span> available
               </div>
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>

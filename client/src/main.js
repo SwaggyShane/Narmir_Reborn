@@ -174,12 +174,6 @@ window.syncUI = () => {
   if (typeof window.updateTurnsDisplay === "function") {
     window.updateTurnsDisplay();
   }
-  if (typeof window.updateBuildDisplay === "function") {
-    window.updateBuildDisplay();
-  }
-  if (typeof window.updateTrainingDisplay === "function") {
-    window.updateTrainingDisplay();
-  }
 };
 
 window.switchTab = (tabName) => {
@@ -647,8 +641,6 @@ window.takeTurn = async () => {
 
       try {
         window.updateTurnsDisplay?.();
-        window.updateBuildDisplay?.();
-        window.updateTrainingDisplay?.();
         window.updateXpDisplay?.();
         window.updateMageAllocationDisplay?.();
         window.refreshResourcesPanel?.();
