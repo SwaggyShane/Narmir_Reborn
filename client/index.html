@@ -10116,17 +10116,6 @@
       }
 
 
-
-      function refreshRankings() {
-
-        if (currentRankType === "kingdoms") loadRankings(true);
-
-        else loadAllianceRankings();
-
-      }
-
-
-
       async function loadAllianceRankings() {
 
         var el = document.getElementById("alliance-rankings-list");
@@ -10376,7 +10365,6 @@
       }
 
       window.loadRankings = loadRankings;
-      window.refreshRankings = refreshRankings;
 
 
 

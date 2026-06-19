@@ -95,15 +95,8 @@ const RankingsPanel = () => {
   }, [allianceRows, search]);
 
   const handleRefresh = () => loadRankings();
-
-  const handleSetRankType = (type) => {
-    setActiveTab(type);
-  };
-
-  const handleSearch = (event) => {
-    setSearch(event.target.value);
-  };
-
+  const handleSetRankType = (type) => setActiveTab(type);
+  const handleSearch = (event) => setSearch(event.target.value);
   const handleDirectMessage = (row) => window.openDirectMessage?.(row.player_id, row.name);
   const handleProfile = (row) => window.openKingdomProfile?.(row.name);
   const handleBounty = (row) => window.openBountyAction?.(row.id, row.name);
@@ -116,15 +109,13 @@ const RankingsPanel = () => {
     const isMapped = !!(disc[row.id] && disc[row.id].mapped);
     const raceKey = String(row.race || 'human');
     const raceIcon = RACE_ICONS[raceKey] || '👤';
-    const raceName = repairText(raceKey).replace(/_/g, ' ');
-    const rowBg = isMe ? { background: 'rgba(180, 60, 0,.08)' } : null;
     const rankBadge = row.rank === 1 ? '👑' : row.rank <= 3 ? '🥈' : '';
     const rankColor = row.rank === 1
       ? { color: 'var(--gold)', fontWeight: 700 }
       : row.rank <= 3
         ? { color: 'var(--amber)' }
         : { color: 'var(--text3)' };
-    const nameColor = isMe
+    const nameStyle = isMe
       ? { color: 'var(--accent1)', fontWeight: 700 }
       : { color: 'var(--text)', fontWeight: 600 };
     const meTag = isMe ? <span style={{ fontSize: '10px', color: 'var(--accent1)', fontWeight: 400 }}> (you)</span> : null;
@@ -133,135 +124,55 @@ const RankingsPanel = () => {
       ? <span style={{ fontSize: '10px', color: 'var(--green)' }} title="Newbie protection — cannot be attacked until Turn 400"> 🛡️</span>
       : null;
 
-    let actionBtns = (
-      <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
-        <button className="btn" style={{ fontSize: '11px', padding: '3px 8px' }} title="Kingdom Profile" onClick={() => handleProfile(row)}>👤</button>
-        <button className="btn btn-accent" style={{ fontSize: '11px', padding: '3px 8px' }} title="Send message" onClick={() => handleDirectMessage(row)}>✉️</button>
-      </div>
-    );
-
-    if (isMe) {
-      actionBtns = (
-        <button className="btn btn-accent" style={{ fontSize: '11px', padding: '3px 8px' }} onClick={() => handleDirectMessage(row)}>✉️ Message</button>
-      );
-    } else if ((row.turn || 0) >= 400) {
-      actionBtns = (
-        <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
-          <button className="btn" style={{ fontSize: '11px', padding: '3px 8px' }} title="Kingdom Profile" onClick={() => handleProfile(row)}>👤</button>
-          <button className="btn btn-accent" style={{ fontSize: '11px', padding: '3px 8px' }} title="Send message" onClick={() => handleDirectMessage(row)}>✉️</button>
-          {isMapped ? (
-            <>
-              <button className="btn btn-gold" style={{ fontSize: '11px', padding: '3px 8px' }} title="Place Bounty" onClick={() => handleBounty(row)}>🪙</button>
-              <button className="btn btn-red" style={{ fontSize: '11px', padding: '3px 8px' }} onClick={() => handleTarget(row, 'attack')}>⚔️</button>
-              <button className="btn btn-accent" style={{ fontSize: '11px', padding: '3px 8px' }} onClick={() => handleTarget(row, 'spells')}>✨</button>
-              <button className="btn" style={{ fontSize: '11px', padding: '3px 8px' }} onClick={() => handleTarget(row, 'covert')}>🕵️</button>
-              <button className="btn btn-gold" style={{ fontSize: '11px', padding: '3px 8px' }} title="Establish Trade Route" onClick={() => handleTrade(row)}>🤝</button>
-            </>
-          ) : null}
-        </div>
-      );
-    }
+    const actionBtns = isMe
+      ? <button className="btn btn-accent" style={{ fontSize: '11px', padding: '3px 8px' }} onClick={() => handleDirectMessage(row)}>✉️ Message</button>
+      : (row.turn || 0) < 400
+        ? (
+          <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+            <button className="btn" style={{ fontSize: '11px', padding: '3px 8px' }} title="Kingdom Profile" onClick={() => handleProfile(row)}>👤</button>
+            <button className="btn btn-accent" style={{ fontSize: '11px', padding: '3px 8px' }} title="Send message" onClick={() => handleDirectMessage(row)}>✉️</button>
+            <span style={{ fontSize: '11px', color: 'var(--green)', marginLeft: '4px' }} title="Protected until Turn 400">🛡️</span>
+          </div>
+        )
+        : (
+          <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+            <button className="btn" style={{ fontSize: '11px', padding: '3px 8px' }} title="Kingdom Profile" onClick={() => handleProfile(row)}>👤</button>
+            <button className="btn btn-accent" style={{ fontSize: '11px', padding: '3px 8px' }} title="Send message" onClick={() => handleDirectMessage(row)}>✉️</button>
+            {isMapped ? (
+              <>
+                <button className="btn btn-gold" style={{ fontSize: '11px', padding: '3px 8px' }} title="Place Bounty" onClick={() => handleBounty(row)}>🪙</button>
+                <button className="btn btn-red" style={{ fontSize: '11px', padding: '3px 8px' }} onClick={() => handleTarget(row, 'attack')}>⚔️</button>
+                <button className="btn btn-accent" style={{ fontSize: '11px', padding: '3px 8px' }} onClick={() => handleTarget(row, 'spells')}>✨</button>
+                <button className="btn" style={{ fontSize: '11px', padding: '3px 8px' }} onClick={() => handleTarget(row, 'covert')}>🕵️</button>
+                <button className="btn btn-gold" style={{ fontSize: '11px', padding: '3px 8px' }} title="Establish Trade Route" onClick={() => handleTrade(row)}>🤝</button>
+              </>
+            ) : null}
+          </div>
+        );
 
     return (
-      <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
-        <button className="btn" style={{ fontSize: '11px', padding: '3px 8px' }} title="Kingdom Profile" onClick={() => handleProfile(row)}>👤</button>
-        <button className="btn btn-accent" style={{ fontSize: '11px', padding: '3px 8px' }} title="Send message" onClick={() => handleDirectMessage(row)}>✉️</button>
-        <span style={{ fontSize: '11px', color: 'var(--green)', marginLeft: '4px' }} title="Protected until Turn 400">🛡️</span>
-      </div>
+      <tr key={row.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background .15s', ...(isMe ? { background: 'rgba(180, 60, 0,.08)' } : {}) }}>
+        <td style={{ padding: '10px 6px', ...rankColor }}>{rankBadge || row.rank}</td>
+        <td style={{ padding: '10px 6px', color: 'var(--text2)' }}>{row.username || '—'}</td>
+        <td style={{ padding: '10px 6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '18px', flexShrink: 0 }}>{raceIcon}</span>
+            <div>
+              <div style={nameStyle}>{repairText(row.name || 'Unknown')}{meTag}{aiTag}{protTag}</div>
+              <div style={{ fontSize: '11px', color: 'var(--text3)', textTransform: 'capitalize', marginTop: '1px' }}>{repairText(raceKey).replace(/_/g, ' ')}</div>
+            </div>
+          </div>
+        </td>
+        <td style={{ padding: '10px 6px', textAlign: 'right', color: 'var(--gold)', fontWeight: 600 }}>{fmt(row.score !== undefined ? row.score : row.land)}</td>
+        <td style={{ padding: '10px 6px', textAlign: 'right', color: 'var(--text3)' }}>{row.level || 1}</td>
+        <td style={{ padding: '10px 6px', textAlign: 'right', color: 'var(--text3)' }}>{fmt(row.turn || 0)}</td>
+        <td style={{ padding: '10px 6px', textAlign: 'center', color: 'var(--text3)', fontSize: '11px' }}>{row.last_combat_at ? timeAgo(row.last_combat_at) : '—'}</td>
+        <td style={{ padding: '10px 8px', textAlign: 'center' }}>{actionBtns}</td>
+      </tr>
     );
   };
 
-  const kingdomsTable = loadingKingdoms ? (
-    <tr><td colSpan="8" style={{ color: 'var(--text3)', fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>Loading rankings...</td></tr>
-  ) : error ? (
-    <tr><td colSpan="8" style={{ color: 'var(--red)', fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>{error}</td></tr>
-  ) : filteredKingdoms.length === 0 ? (
-    <tr><td colSpan="8" style={{ color: 'var(--text3)', fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>No kingdoms found.</td></tr>
-  ) : filteredKingdoms.map((row) => (
-    <tr key={row.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background .15s', ...(row.id === state?.kingdomId ? { background: 'rgba(180, 60, 0,.08)' } : {}) }}>
-      <td style={{ padding: '10px 6px', ...(rankColorFor(row.rank)) }}>{row.rank === 1 ? '👑' : row.rank <= 3 ? '🥈' : row.rank}</td>
-      <td style={{ padding: '10px 6px', color: 'var(--text2)' }}>{row.username || '—'}</td>
-      <td style={{ padding: '10px 6px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '18px', flexShrink: 0 }}>{raceIconFor(row.race)}</span>
-          <div>
-            <div style={{ ...(row.id === state?.kingdomId ? { color: 'var(--accent1)', fontWeight: 700 } : { color: 'var(--text)', fontWeight: 600 }) }}>{repairText(row.name || 'Unknown')}{meTagFor(row.id === state?.kingdomId)}{aiTagFor(row.is_ai)}{protTagFor(row.id !== state?.kingdomId && (row.turn || 0) < 400)}</div>
-            <div style={{ fontSize: '11px', color: 'var(--text3)', textTransform: 'capitalize', marginTop: '1px' }}>{repairText(String(row.race || 'human')).replace(/_/g, ' ')}</div>
-          </div>
-        </div>
-      </td>
-      <td style={{ padding: '10px 6px', textAlign: 'right', color: 'var(--gold)', fontWeight: 600 }}>{fmt(row.score !== undefined ? row.score : row.land)}</td>
-      <td style={{ padding: '10px 6px', textAlign: 'right', color: 'var(--text3)' }}>{row.level || 1}</td>
-      <td style={{ padding: '10px 6px', textAlign: 'right', color: 'var(--text3)' }}>{fmt(row.turn || 0)}</td>
-      <td style={{ padding: '10px 6px', textAlign: 'center', color: 'var(--text3)', fontSize: '11px' }}>{row.last_combat_at ? timeAgo(row.last_combat_at) : '—'}</td>
-      <td style={{ padding: '10px 8px', textAlign: 'center' }}>{actionBtnsFor(row)}</td>
-    </tr>
-  ));
-
-  function rankColorFor(rank) {
-    return rank === 1
-      ? { color: 'var(--gold)', fontWeight: 700 }
-      : rank <= 3
-        ? { color: 'var(--amber)' }
-        : { color: 'var(--text3)' };
-  }
-
-  function raceIconFor(race) {
-    return RACE_ICONS[String(race || 'human')] || '👤';
-  }
-
-  function meTagFor(isMe) {
-    return isMe ? <span style={{ fontSize: '10px', color: 'var(--accent1)', fontWeight: 400 }}> (you)</span> : null;
-  }
-
-  function aiTagFor(isAi) {
-    return isAi ? <span style={{ fontSize: '10px', color: 'var(--text3)' }}> 🤖</span> : null;
-  }
-
-  function protTagFor(show) {
-    return show ? <span style={{ fontSize: '10px', color: 'var(--green)' }} title="Newbie protection — cannot be attacked until Turn 400"> 🛡️</span> : null;
-  }
-
-  function actionBtnsFor(row) {
-    const isMe = row.id === state?.kingdomId;
-    const disc = state?.discovered_kingdoms || {};
-    const isMapped = !!(disc[row.id] && disc[row.id].mapped);
-    if (isMe) {
-      return <button className="btn btn-accent" style={{ fontSize: '11px', padding: '3px 8px' }} onClick={() => handleDirectMessage(row)}>✉️ Message</button>;
-    }
-    if ((row.turn || 0) < 400) {
-      return (
-        <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
-          <button className="btn" style={{ fontSize: '11px', padding: '3px 8px' }} title="Kingdom Profile" onClick={() => handleProfile(row)}>👤</button>
-          <button className="btn btn-accent" style={{ fontSize: '11px', padding: '3px 8px' }} title="Send message" onClick={() => handleDirectMessage(row)}>✉️</button>
-          <span style={{ fontSize: '11px', color: 'var(--green)', marginLeft: '4px' }} title="Protected until Turn 400">🛡️</span>
-        </div>
-      );
-    }
-    return (
-      <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
-        <button className="btn" style={{ fontSize: '11px', padding: '3px 8px' }} title="Kingdom Profile" onClick={() => handleProfile(row)}>👤</button>
-        <button className="btn btn-accent" style={{ fontSize: '11px', padding: '3px 8px' }} title="Send message" onClick={() => handleDirectMessage(row)}>✉️</button>
-        {isMapped ? (
-          <>
-            <button className="btn btn-gold" style={{ fontSize: '11px', padding: '3px 8px' }} title="Place Bounty" onClick={() => handleBounty(row)}>🪙</button>
-            <button className="btn btn-red" style={{ fontSize: '11px', padding: '3px 8px' }} onClick={() => handleTarget(row, 'attack')}>⚔️</button>
-            <button className="btn btn-accent" style={{ fontSize: '11px', padding: '3px 8px' }} onClick={() => handleTarget(row, 'spells')}>✨</button>
-            <button className="btn" style={{ fontSize: '11px', padding: '3px 8px' }} onClick={() => handleTarget(row, 'covert')}>🕵️</button>
-            <button className="btn btn-gold" style={{ fontSize: '11px', padding: '3px 8px' }} title="Establish Trade Route" onClick={() => handleTrade(row)}>🤝</button>
-          </>
-        ) : null}
-      </div>
-    );
-  }
-
-  const allianceTable = loadingAlliances ? (
-    <tr><td colSpan="6" style={{ color: 'var(--text3)', fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>Loading...</td></tr>
-  ) : allianceRows.length === 0 ? (
-    <tr><td colSpan="6" style={{ color: 'var(--text3)', fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>No alliances found.</td></tr>
-  ) : filteredAlliances.length === 0 ? (
-    <tr><td colSpan="6" style={{ color: 'var(--text3)', fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>No alliances match your search.</td></tr>
-  ) : filteredAlliances.map((row) => (
+  const renderAllianceRow = (row) => (
     <tr key={row.id} style={{ borderBottom: '1px solid var(--border)' }}>
       <td style={{ padding: '10px 6px', color: 'var(--text3)' }}>{row.rank}</td>
       <td style={{ padding: '10px 6px', color: 'var(--text)' }}>{repairText(row.name || '—')}</td>
@@ -270,16 +181,14 @@ const RankingsPanel = () => {
       <td style={{ padding: '10px 6px', textAlign: 'right', color: 'var(--text3)' }}>{fmt(row.member_count ? row.total_score / row.member_count : 0)}</td>
       <td style={{ padding: '10px 6px', textAlign: 'right', color: 'var(--text3)' }}>{fmt(row.total_pop)}</td>
     </tr>
-  ));
+  );
 
   return (
     <div id="rankings" className="panel" style={{ display: 'none' }}>
       <div className="card" style={{ marginTop: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div id="rankings-title" className="card-title" style={{ margin: 0 }}>
-              Rankings
-            </div>
+            <div id="rankings-title" className="card-title" style={{ margin: 0 }}>Rankings</div>
             <div style={{ display: 'flex', gap: '4px', background: 'var(--bg3)', padding: '4px', borderRadius: '8px' }}>
               <button id="rank-tab-kingdoms" className={`base-btn ${activeTab === 'kingdoms' ? 'active' : ''}`} style={{ padding: '4px 12px', fontSize: '11px', height: 'auto' }} onClick={() => handleSetRankType('kingdoms')}>Kingdoms</button>
               <button id="rank-tab-alliances" className={`base-btn ${activeTab === 'alliances' ? 'active' : ''}`} style={{ padding: '4px 12px', fontSize: '11px', height: 'auto' }} onClick={() => handleSetRankType('alliances')}>Alliance</button>
@@ -306,7 +215,13 @@ const RankingsPanel = () => {
               </tr>
             </thead>
             <tbody id="rankings-list">
-              {kingdomRows.length || loadingKingdoms || error ? kingdomTable : kingdomTable}
+              {loadingKingdoms ? (
+                <tr><td colSpan="8" style={{ color: 'var(--text3)', fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>Loading rankings...</td></tr>
+              ) : error ? (
+                <tr><td colSpan="8" style={{ color: 'var(--red)', fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>{error}</td></tr>
+              ) : filteredKingdoms.length === 0 ? (
+                <tr><td colSpan="8" style={{ color: 'var(--text3)', fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>No kingdoms found.</td></tr>
+              ) : filteredKingdoms.map(renderKingdomRow)}
             </tbody>
           </table>
         </div>
@@ -324,7 +239,13 @@ const RankingsPanel = () => {
               </tr>
             </thead>
             <tbody id="alliance-rankings-list">
-              {allianceTable}
+              {loadingAlliances ? (
+                <tr><td colSpan="6" style={{ color: 'var(--text3)', fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>Loading...</td></tr>
+              ) : allianceRows.length === 0 ? (
+                <tr><td colSpan="6" style={{ color: 'var(--text3)', fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>No alliances found.</td></tr>
+              ) : filteredAlliances.length === 0 ? (
+                <tr><td colSpan="6" style={{ color: 'var(--text3)', fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>No alliances match your search.</td></tr>
+              ) : filteredAlliances.map(renderAllianceRow)}
             </tbody>
           </table>
         </div>
