@@ -128,9 +128,94 @@ const WarfarePanel = () => {
     if (tabId === 'wcovert' && window.initWcovert) window.initWcovert();
   };
 
-  const updateAtkEstimateW = () => {
-    if (window.updateAtkEstimateW) window.updateAtkEstimateW();
-  };
+  const updateAtkEstimateW = useCallback(() => {
+    const fmt = (value) => {
+      const n = Number(value || 0);
+      return Number.isFinite(n) ? Math.round(n).toLocaleString() : '0';
+    };
+
+    const setAvail = (id, val) => {
+      const node = document.getElementById(id);
+      if (node) node.textContent = `(${fmt(val)})`;
+    };
+
+    setAvail('atk-fighters-avail-w', state?.fighters || 0);
+    setAvail('atk-rangers-avail-w', state?.rangers || 0);
+    setAvail('atk-mages-avail-w', state?.mages || 0);
+    setAvail('atk-wm-avail-w', state?.war_machines || 0);
+    setAvail('atk-ninjas-avail-w', state?.ninjas || 0);
+    setAvail('atk-thieves-avail-w', state?.thieves || 0);
+    setAvail('atk-clerics-avail-w', (state?.clerics || 0) + (state?.thralls || 0));
+    setAvail('atk-engineers-avail-w', state?.engineers || 0);
+    setAvail('atk-ladders-avail-w', state?.ladders || 0);
+
+    const f = parseInt(document.getElementById('atk-fighters-w')?.value, 10) || 0;
+    const rn = parseInt(document.getElementById('atk-rangers-w')?.value, 10) || 0;
+    const m = parseInt(document.getElementById('atk-mages-w')?.value, 10) || 0;
+    const wm = parseInt(document.getElementById('atk-wm-w')?.value, 10) || 0;
+    const ld = parseInt(document.getElementById('atk-ladders-w')?.value, 10) || 0;
+    const cle = parseInt(document.getElementById('atk-clerics-w')?.value, 10) || 0;
+    const eng = parseInt(document.getElementById('atk-engineers-w')?.value, 10) || 0;
+    if (f + rn + m + wm + ld + cle + eng === 0) return;
+
+    const target = window.selectedTargetW || null;
+    const engLvlArray = state?.troop_levels?.engineers?.level || 1;
+    const baseCrew = state?.race === 'human' ? 10 : state?.race === 'dwarf' ? 8 : 12;
+    const crewReq = Math.max(1, Math.round(baseCrew * (1 - Math.min(0.5, (engLvlArray - 1) / 100))));
+    const totalEng = (state?.engineers || 0) + eng;
+    const wmCrewable = Math.min(wm, Math.floor(totalEng / crewReq));
+    const weaponBonus = 1 + Math.min(1, (state?.weapons_stockpile || 0) / Math.max(f, 1)) * 0.25;
+    const atkF = f * ((state?.res_weapons || 100) / 100) * weaponBonus * ((state?.res_military || 100) / 100);
+    const atkRn = rn * 0.7 * ((state?.res_military || 100) / 100);
+    const atkM = m * 2.5 * ((state?.res_attack_magic || 100) / 100);
+    const atkWm = wmCrewable * 500 * ((state?.res_war_machines || 100) / 100);
+    const happiness = state?.happiness !== undefined && state?.happiness !== null ? state.happiness : 50;
+    const mMult = Math.max(0.5, Math.min(1.5, 0.5 + happiness / 120));
+    let bullyRatio = target
+      ? Math.max(
+        (state?.land || 1) / Math.max(1, target.land || 1),
+        ((state?.fighters || 1) / Math.max(1, target.fighters || 1)) * 0.5,
+      )
+      : 0;
+    if (target && target.is_ai) bullyRatio = 1.0;
+    const bullyPenalty = bullyRatio >= 8 ? 0.4 : bullyRatio >= 4 ? 0.6 : bullyRatio >= 2 ? 0.8 : 1.0;
+    const bullyMsg = bullyRatio >= 8
+      ? '🚨 ×8+ — will be shamed. −60% power.'
+      : bullyRatio >= 4
+        ? '⚠️ ×4–8 — happiness suffers. −40%.'
+        : bullyRatio >= 2
+          ? '⚠️ ×2–4 — −20% power.'
+          : '';
+    const atkPower = Math.round((atkF + atkRn + atkM + atkWm) * mMult * bullyPenalty);
+    const defPower = target
+      ? Math.round((target.fighters || 0) * 1.0 + (target.mages || 0) * 1.5)
+      : 0;
+    const winPct = defPower > 0
+      ? Math.min(95, Math.max(5, Math.round((atkPower / (atkPower + defPower)) * 100)))
+      : 90;
+    const winColor = winPct >= 60 ? 'var(--green)' : winPct >= 40 ? 'var(--amber)' : 'var(--red)';
+    const land = target ? Math.floor((target.land || 0) * 0.1) : 0;
+    const g = (id) => document.getElementById(id);
+
+    if (g('atk-est-power-w')) {
+      g('atk-est-power-w').textContent = fmt(atkPower);
+      g('atk-est-power-w').style.color = winPct >= 50 ? 'var(--green)' : 'var(--amber)';
+    }
+    if (g('atk-est-def-w')) {
+      g('atk-est-def-w').textContent = defPower > 0 ? `~${fmt(defPower)} (est.)` : '—';
+    }
+    if (g('atk-est-winpct-w')) {
+      g('atk-est-winpct-w').textContent = `${winPct}%`;
+      g('atk-est-winpct-w').style.color = winColor;
+    }
+    if (g('atk-est-land-w')) {
+      g('atk-est-land-w').textContent = land > 0 ? `+${fmt(land)} ac` : '—';
+    }
+    if (g('atk-bully-warn-w')) {
+      g('atk-bully-warn-w').style.display = bullyMsg ? 'block' : 'none';
+      g('atk-bully-warn-w').textContent = bullyMsg;
+    }
+  }, [state]);
 
   const setMaxValue = (inputId) => {
     const el = document.getElementById(inputId);
