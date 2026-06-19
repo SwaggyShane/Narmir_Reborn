@@ -18,7 +18,7 @@ Status | Warfare | Economy | Explore | Community | ···More
 - `Warfare`     → `#warfare`
 - `Economy`     → `#economy`
 - `Explore`     → `#exploration`
-- `Community`   → `#globalchat` (or `#forum` — whichever is more used)
+- `Community`   → `#globalchat` *(decision locked: live chat over async forum for the 6th slot; `#forum` moves to the More drawer)*
 - `···`         → opens an upward slide-in drawer listing all remaining panels
 
 **The More drawer:**
@@ -35,9 +35,11 @@ Panels like `messages` and `news` carry live notification badges (`#bnav-msg-bad
 - Body class `panel-{activeTab}` is already set by `setActivePanels()` — use that in CSS, no JS change needed.
 
 **Files touched:**
-- `client/src/components/react/BottomNav.jsx` — replace flat list with 6 fixed + drawer
+- `client/src/components/react/BottomNav.jsx` — replace flat list with 6 fixed + drawer; active-state CSS scoped to this component only
 - `client/index.html` — CSS for `.bottom-nav`, `.more-drawer`, `.bnav-item.active`
 - `client/src/main.js` — `setActivePanelGlobal()` (from `useActivePanel.js`) is already called inside `switchTab`; active state updates automatically
+
+**Scope constraint:** Phase 1 is strictly nav structure and badge behaviour. Do not bundle active-state CSS changes that require edits outside `BottomNav.jsx` (e.g. shell-level `.main` layout changes). Those belong in Phase 2.
 
 **What this does NOT touch:** `switchTab()`, panel display logic, `syncUI()` — those stay untouched.
 
@@ -173,7 +175,7 @@ This keeps the mobile-first architecture intact and ensures landscape phones sta
 ## What NOT To Do
 
 - No hamburger menu — the game needs instant one-tap panel access
-- Do not try to auto-close the More drawer on `hashchange` — `switchTab()` → `setActiveNavButtons()` handles it
+- Do not try to auto-close the More drawer on `hashchange` — `switchTab()` → `setActivePanelGlobal()` handles it
 - Do not add a swipe library — overkill, adds bundle weight
 - Do not change `setActivePanels()` or `switchTab()` internals — they're clean
 - Do not use localStorage to persist the More drawer state — always open fresh
@@ -182,13 +184,15 @@ This keeps the mobile-first architecture intact and ensures landscape phones sta
 
 ## Delivery Sequence
 
+Layout phases must fully precede interaction polish. Swipe navigation is only safe once the panel set and nav ordering are frozen — do not start Phase 5 until Phase 1 is stable in production and no panel changes are pending.
+
 Wait for local vanilla-removal work to land before touching the nav — BottomNav.jsx will be cleaner to edit once you know which panels are staying.
 
 | PR | Contents | Dependencies |
 |----|----------|--------------|
-| 1 | Phase 2 (dead zone) + Phase 3 (StatusPanel grid) + Phase 4 (tap feedback) | None — can go now |
-| 2 | Phase 1 — Nav overhaul (6-slot + More drawer) | After vanilla cleanup is merged |
-| 3 | Phase 5 — Swipe navigation | After PR 2 is stable in production |
-| — | Phase 6 (landscape) | Roll into whichever PR touches the breakpoints |
+| 1 | Phase 2 (dead zone) + Phase 4 (tap feedback) | None — can go now |
+| 2 | Phase 1 (nav overhaul) + Phase 6 (landscape guard) | After vanilla cleanup is merged |
+| 3 | Phase 3 (StatusPanel unit-grid) | After PR 2 is stable — nav shell must be final |
+| 4 | Phase 5 — Swipe navigation | After PR 3 — panel set and nav order must be frozen |
 
-Three PRs. No routing changes, no game logic changes, no server changes.
+Four PRs. No routing changes, no game logic changes, no server changes.
