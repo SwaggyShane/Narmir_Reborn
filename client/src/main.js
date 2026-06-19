@@ -652,7 +652,6 @@ window.takeTurn = async () => {
         window.updateXpDisplay?.();
         window.updateMageAllocationDisplay?.();
         window.refreshResourcesPanel?.();
-        window.loadNews?.();
       } catch (e) {
         console.error("[turn] Error refreshing display elements:", e);
       }

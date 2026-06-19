@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useGameState, useGameMutationEvents } from '../../hooks/useGameState';
 
 const NEWS_META = {
   attack: { icon: '⚔️', color: 'var(--red)', label: 'Combat' },
@@ -10,6 +11,7 @@ const NEWS_META = {
 };
 
 const NewsPanel = () => {
+  const { state } = useGameState();
   const [newsItems, setNewsItems] = useState([]);
   const [newsFilter, setNewsFilter] = useState('all');
 
@@ -60,8 +62,6 @@ const NewsPanel = () => {
     try {
       if (!window.apiCall) return;
       const items = await window.apiCall('GET', '/api/kingdom/news/list');
-      const titleTurn = document.getElementById('news-turn-num');
-      if (titleTurn) titleTurn.textContent = window.state?.turn || 0;
       if (!Array.isArray(items)) return;
 
       setNewsItems(items);
@@ -124,11 +124,31 @@ const NewsPanel = () => {
   }, [getNewsPriority, newsFilter, newsItems, timeAgo]);
 
   useEffect(() => {
-    window.loadNews = loadNews;
+    loadNews();
+  }, [loadNews]);
 
-    return () => {
-      delete window.loadNews;
-    };
+  useGameMutationEvents((event) => {
+    const reason = String(event?.reason || '');
+    if ([
+      'turn',
+      'attack',
+      'spell',
+      'covert',
+      'expedition-start',
+      'expedition-complete',
+      'expedition-cancel',
+      'kingdom-refresh',
+      'server-updates',
+      'mutation',
+    ].includes(reason)) {
+      loadNews();
+    }
+  });
+
+  useEffect(() => {
+    const onRefresh = () => loadNews();
+    window.addEventListener('narmir:news-refresh', onRefresh);
+    return () => window.removeEventListener('narmir:news-refresh', onRefresh);
   }, [loadNews]);
 
   return (
@@ -136,7 +156,7 @@ const NewsPanel = () => {
       <div className="card" style={{ marginTop: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
           <div className="card-title" style={{ marginBottom: 0 }}>
-            📰 Kingdom news — Turn <span id="news-turn-num">0</span>
+            📰 Kingdom news — Turn <span id="news-turn-num">{state?.turn || 0}</span>
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button className="base-btn" onClick={loadNews}>↻ Refresh</button>

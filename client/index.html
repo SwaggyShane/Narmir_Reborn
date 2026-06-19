@@ -8130,7 +8130,7 @@
 
               );
 
-              loadNews();
+              window.dispatchEvent(new CustomEvent('narmir:news-refresh'));
 
               loadMe();
 
@@ -8138,7 +8138,7 @@
 
             socket.on("event:spell_received", function () {
 
-              loadNews();
+              window.dispatchEvent(new CustomEvent('narmir:news-refresh'));
 
               loadMe();
 
@@ -8146,7 +8146,7 @@
 
             socket.on("event:turn_update", function () {
 
-              loadNews();
+              window.dispatchEvent(new CustomEvent('narmir:news-refresh'));
 
               loadMe();
 
