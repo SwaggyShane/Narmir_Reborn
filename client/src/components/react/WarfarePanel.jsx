@@ -263,11 +263,23 @@ const WarfarePanel = () => {
     if (window.updateWspellCalc) window.updateWspellCalc();
   };
 
-  const filterWarfareTargetsUnified = (val, targetListId) => {
-    if (window.filterWarfareTargetsUnified) {
-      window.filterWarfareTargetsUnified(val, targetListId);
-    }
-  };
+  const filterWarfareTargetsUnified = useCallback((val, targetListId) => {
+    const q = String(val || '').toLowerCase();
+    const targets = Array.isArray(window.targets) ? window.targets : [];
+    const filtered = q
+      ? targets.filter((t) => String(t.name || '').toLowerCase().includes(q))
+      : targets;
+
+    const selectFn = targetListId === 'atk-target-list-w'
+      ? 'selectTargetW'
+      : targetListId === 'wsp-target-list-w'
+        ? 'selectWspellTarget'
+        : targetListId === 'wcov-target-list-w'
+          ? 'selectWcovTarget'
+          : '';
+
+    window.renderKingdomCardList?.(filtered, targetListId, selectFn);
+  }, []);
 
   const handleTargetSearchW = (event) => {
     const val = event?.target ? event.target.value : event;
