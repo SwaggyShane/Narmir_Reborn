@@ -168,6 +168,12 @@ window.syncUI = () => {
   setText("kingdom-score-per-turn", `(${scorePerTurn >= 0 ? "+" : ""}${fmt(scorePerTurn)}/turn)`);
   setText("top-rank", rank !== undefined && rank !== null ? `#${rank}` : "-");
 
+  if (typeof window.updateXpDisplay === "function") {
+    window.updateXpDisplay();
+  }
+  if (typeof window.updateTurnsDisplay === "function") {
+    window.updateTurnsDisplay();
+  }
 };
 
 window.switchTab = (tabName) => {
@@ -540,6 +546,10 @@ window.takeTurn = async () => {
       window.syncFromState?.();
 
       try {
+        window.updateTurnsDisplay?.();
+        window.updateXpDisplay?.();
+        window.updateMageAllocationDisplay?.();
+        window.refreshResourcesPanel?.();
       } catch (e) {
         console.error("[turn] Error refreshing display elements:", e);
       }

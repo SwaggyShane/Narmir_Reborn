@@ -93,7 +93,7 @@ const ResourcesPanel = () => {
   const [items, setItems] = useState([]);
   const [isOrc, setIsOrc] = useState(false);
   const [buildingInProgress, setBuildingInProgress] = useState({});
-  
+
   const [nodes, setNodes] = useState([]);
   const [activeExpeditions, setActiveExpeditions] = useState([]);
   const [visibleExps, setVisibleExps] = useState([]);
@@ -214,12 +214,12 @@ const ResourcesPanel = () => {
     const type = bld.type;
     const s2Col = { wood: 'bld_lumber_camp', stone: 'bld_blockfield', iron: 'bld_strip_mine' }[type];
     const s3Col = { wood: 'bld_sawmill', stone: 'bld_stone_quarry', iron: 'bld_deep_mine' }[type];
-    
+
     const bq = getParsedStateProp('build_queue') || {};
     const s2Current = (kingdom[s2Col] || 0) + (bq[s2Col.replace('bld_', '')] || 0);
     const s3Current = kingdom[s3Col] || 0;
     const s3Cap = Math.floor(((kingdom.level || 1) - 1) / 10) + 1;
-    
+
     if (s3Current >= s3Cap) return true;
     if (bld.stage === 1) {
       const built = (kingdom['bld_' + bld.key] || 0) + (bq[bld.key] || 0);

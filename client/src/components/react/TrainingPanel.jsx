@@ -1,13 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useGameState } from '../../hooks/useGameState';
 import { apiCall } from '../../utils/api.js';
+
+const TROOP_TYPES = ['fighters', 'rangers', 'clerics', 'mages', 'thieves', 'ninjas'];
 
 const TrainingPanel = () => {
   const { state } = useGameState();
   const [trainingUiTick, setTrainingUiTick] = useState(0);
   const isVampire = state?.race === 'vampire';
   const fmt = (value) => Number(value || 0).toLocaleString();
-  const TROOP_TYPES = ['fighters', 'rangers', 'clerics', 'mages', 'thieves', 'ninjas'];
+  const refreshTrainingUi = useCallback(() => {
+    setTrainingUiTick((tick) => tick + 1);
+  }, []);
   const getTroopLevel = (unit) => state?.troop_levels?.[unit] || { level: 1, xp: 0 };
   const getTroopXpView = (unit) => {
     const data = getTroopLevel(unit);
@@ -27,7 +31,11 @@ const TrainingPanel = () => {
   };
   const getAllocatedTraining = () => TROOP_TYPES.reduce((sum, unit) => sum + getTrainingValue(unit), 0);
   const loadTrainingAllocation = () => {
-    const alloc = state?.training_allocation || {};
+    const alloc = typeof state?.training_allocation === 'string'
+      ? (() => {
+        try { return JSON.parse(state.training_allocation || '{}'); } catch { return {}; }
+      })()
+      : (state?.training_allocation || {});
     TROOP_TYPES.forEach((unit) => {
       setTrainingValue(unit, alloc[unit] || 0);
     });
@@ -71,10 +79,9 @@ const TrainingPanel = () => {
         orc: 'Greatly increased XP for Fighters and Clerics',
         vampire: 'Increased XP for Infiltrators and combat units',
       };
-      rb.innerHTML = texts[state.race] || '—';
+      rb.innerHTML = texts[state.race] || '?';
     }
   };
-  const refreshTrainingUi = () => setTrainingUiTick((n) => n + 1);
   const setTrainingMax = (unit) => {
     const capacity = (state?.bld_training || 0) * 100;
     const allocated = getAllocatedTraining();
@@ -111,9 +118,10 @@ const TrainingPanel = () => {
       body: { allocation: alloc },
     });
     if (result.error) return window.toast && window.toast(result.error, 'error');
-    if (state) state.training_allocation = alloc;
+    window.applyGameMutation?.({ training_allocation: alloc }, { reason: 'training-allocation' });
+    window.syncUI?.();
     refreshTrainingUi();
-    if (window.toast) window.toast('Training allocation saved', 'success');
+    window.toast('Training allocation saved', 'success');
   };
   const releaseAllTraining = async () => {
     TROOP_TYPES.forEach((unit) => setTrainingValue(unit, 0));
@@ -122,9 +130,10 @@ const TrainingPanel = () => {
       body: { allocation: {} },
     });
     if (result.error) return window.toast && window.toast(result.error, 'error');
-    if (state) state.training_allocation = {};
+    window.applyGameMutation?.({ training_allocation: {} }, { reason: 'training-allocation' });
+    window.syncUI?.();
     refreshTrainingUi();
-    if (window.toast) window.toast('All training released', 'success');
+    window.toast('All training released', 'success');
   };
   useEffect(() => {
     loadTrainingAllocation();
@@ -146,7 +155,7 @@ const TrainingPanel = () => {
   const ninjaXpView = getTroopXpView('ninjas');
 
   return (
-    <div id="training" className="panel" style={{ display: 'none' }}>
+    <div id="training" className="panel" data-ui-tick={trainingUiTick}>
       <div className="card" style={{ marginTop: 0 }}>
         <div className="card-title">Support levels</div>
         <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '10px' }}>
@@ -183,7 +192,7 @@ const TrainingPanel = () => {
               <span id="racial-gift-badge" className="badge badge-gold" style={{ display: 'none', marginLeft: '8px' }}>✨ Racial Gift</span>
             </div>
             <div style={{ fontSize: '12px', color: 'var(--text3)' }}>
-              Training fields: <span id="tr-fields" style={{ color: 'var(--text)' }}>0</span> · Capacity: <span id="tr-capacity" style={{ color: 'var(--gold)' }}>0</span> troops/turn · Weapons: <span id="tr-weapons" style={{ color: 'var(--text)' }}>0</span> · Armor: <span id="tr-armor" style={{ color: 'var(--text)' }}>0</span>
+              Training fields: <span id="tr-fields" style={{ color: 'var(--text)' }}>{fmt(state?.bld_training || 0)}</span> · Capacity: <span id="tr-capacity" style={{ color: 'var(--gold)' }}>{fmt((state?.bld_training || 0) * 100)}</span> troops/turn · Weapons: <span id="tr-weapons" style={{ color: 'var(--text)' }}>{fmt(state?.weapons_stockpile || 0)}</span> · Armor: <span id="tr-armor" style={{ color: 'var(--text)' }}>{fmt(state?.armor_stockpile || 0)}</span>
             </div>
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -225,11 +234,11 @@ const TrainingPanel = () => {
           <span id="tr-level-fighters" className="count" style={{ minWidth: '70px' }}>Lv {fighterXpView.level}</span>
           <span id="tr-xp-fighters" style={{ fontSize: '11px', color: 'var(--text3)', minWidth: '80px' }}>{fighterXpView.xpText}</span>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-             <input type="number" className="input" id="ta-fighters" min="0" defaultValue="0" style={{ textAlign: 'right', flex: 1 }} placeholder="Qty" />
+             <input type="number" className="input" id="ta-fighters" min="0" defaultValue="0" onChange={refreshTrainingUi} style={{ textAlign: 'right', flex: 1 }} placeholder="Qty" />
              <button className="base-btn" onClick={() => setTrainingMax('fighters')} style={{ padding: '4px 8px', fontSize: '10px', marginLeft: '4px' }}>Max</button>
           </div>
         </div>
-        
+
         <div className="trow">
           <span className="name">Rangers</span>
           <div className="prog-wrap">
@@ -238,7 +247,7 @@ const TrainingPanel = () => {
           <span id="tr-level-rangers" className="count" style={{ minWidth: '70px' }}>Lv {rangerXpView.level}</span>
           <span id="tr-xp-rangers" style={{ fontSize: '11px', color: 'var(--text3)', minWidth: '80px' }}>{rangerXpView.xpText}</span>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-             <input type="number" className="input" id="ta-rangers" min="0" defaultValue="0" style={{ textAlign: 'right', flex: 1 }} placeholder="Qty" />
+             <input type="number" className="input" id="ta-rangers" min="0" defaultValue="0" onChange={refreshTrainingUi} style={{ textAlign: 'right', flex: 1 }} placeholder="Qty" />
              <button className="base-btn" onClick={() => setTrainingMax('rangers')} style={{ padding: '4px 8px', fontSize: '10px', marginLeft: '4px' }}>Max</button>
           </div>
         </div>
@@ -251,7 +260,7 @@ const TrainingPanel = () => {
           <span id="tr-level-clerics" className="count" style={{ minWidth: '70px' }}>Lv {clericXpView.level}</span>
           <span id="tr-xp-clerics" style={{ fontSize: '11px', color: 'var(--text3)', minWidth: '80px' }}>{clericXpView.xpText}</span>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-             <input type="number" className="input" id="ta-clerics" min="0" defaultValue="0" style={{ textAlign: 'right', flex: 1 }} placeholder="Qty" />
+             <input type="number" className="input" id="ta-clerics" min="0" defaultValue="0" onChange={refreshTrainingUi} style={{ textAlign: 'right', flex: 1 }} placeholder="Qty" />
              <button className="base-btn" onClick={() => setTrainingMax('clerics')} style={{ padding: '4px 8px', fontSize: '10px', marginLeft: '4px' }}>Max</button>
           </div>
         </div>
@@ -264,7 +273,7 @@ const TrainingPanel = () => {
           <span id="tr-level-mages" className="count" style={{ minWidth: '70px' }}>Lv {mageXpView.level}</span>
           <span id="tr-xp-mages" style={{ fontSize: '11px', color: 'var(--text3)', minWidth: '80px' }}>{mageXpView.xpText}</span>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-             <input type="number" className="input" id="ta-mages" min="0" defaultValue="0" style={{ textAlign: 'right', flex: 1 }} placeholder="Qty" />
+             <input type="number" className="input" id="ta-mages" min="0" defaultValue="0" onChange={refreshTrainingUi} style={{ textAlign: 'right', flex: 1 }} placeholder="Qty" />
              <button className="base-btn" onClick={() => setTrainingMax('mages')} style={{ padding: '4px 8px', fontSize: '10px', marginLeft: '4px' }}>Max</button>
           </div>
         </div>
@@ -277,7 +286,7 @@ const TrainingPanel = () => {
           <span id="tr-level-thieves" className="count" style={{ minWidth: '70px' }}>Lv {thiefXpView.level}</span>
           <span id="tr-xp-thieves" style={{ fontSize: '11px', color: 'var(--text3)', minWidth: '80px' }}>{thiefXpView.xpText}</span>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-             <input type="number" className="input" id="ta-thieves" min="0" defaultValue="0" style={{ textAlign: 'right', flex: 1 }} placeholder="Qty" />
+             <input type="number" className="input" id="ta-thieves" min="0" defaultValue="0" onChange={refreshTrainingUi} style={{ textAlign: 'right', flex: 1 }} placeholder="Qty" />
              <button className="base-btn" onClick={() => setTrainingMax('thieves')} style={{ padding: '4px 8px', fontSize: '10px', marginLeft: '4px' }}>Max</button>
           </div>
         </div>
@@ -290,7 +299,7 @@ const TrainingPanel = () => {
           <span id="tr-level-ninjas" className="count" style={{ minWidth: '70px' }}>Lv {ninjaXpView.level}</span>
           <span id="tr-xp-ninjas" style={{ fontSize: '11px', color: 'var(--text3)', minWidth: '80px' }}>{ninjaXpView.xpText}</span>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-             <input type="number" className="input" id="ta-ninjas" min="0" defaultValue="0" style={{ textAlign: 'right', flex: 1 }} placeholder="Qty" />
+             <input type="number" className="input" id="ta-ninjas" min="0" defaultValue="0" onChange={refreshTrainingUi} style={{ textAlign: 'right', flex: 1 }} placeholder="Qty" />
              <button className="base-btn" onClick={() => setTrainingMax('ninjas')} style={{ padding: '4px 8px', fontSize: '10px', marginLeft: '4px' }}>Max</button>
           </div>
         </div>
