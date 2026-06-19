@@ -174,9 +174,6 @@ window.syncUI = () => {
   if (typeof window.updateTurnsDisplay === "function") {
     window.updateTurnsDisplay();
   }
-  if (typeof window.updateStatusDisplay === "function") {
-    window.updateStatusDisplay();
-  }
   if (typeof window.updateBuildDisplay === "function") {
     window.updateBuildDisplay();
   }

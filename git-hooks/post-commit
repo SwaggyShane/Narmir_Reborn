@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+
+ROOT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$ROOT_DIR/scripts/restart-dev-server.ps1"
