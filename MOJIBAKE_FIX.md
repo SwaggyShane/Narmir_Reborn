@@ -19,6 +19,8 @@ UTF-8 bytes → each byte read as cp1252 codepoint → re-encoded as UTF-8
 
 ## Step 1 — Run the Automated Fix Script
 
+> **Usage note:** This is a one-time cleanup helper. Save it locally as `fix_mojibake.py`, run it, then delete it — do not commit it to the repo unless the team decides to keep a permanent maintenance tool. Committing it risks it being re-run accidentally on a clean codebase in a future session.
+
 Save the script below as `fix_mojibake.py` in the repo root, then run it.
 
 ```python
@@ -213,7 +215,7 @@ After running the script, grep for any remaining corruption:
 grep -Pn "Ã|â€|Å¸|Ã‚Â" game/expeditions.js game/turn.js game/construction.js game/engine.js
 ```
 
-> **Note:** The specific line numbers from the June 2026 incident are archived below for reference. If the fix is re-run on an edited codebase, treat them as approximate — use the grep above to find actual remaining locations.
+> **Note:** The specific line numbers below are from the June 2026 incident. **Those lines have already been repaired in current main.** If you are reading this after that fix landed, the repo is clean — these tables document what was broken, not what is broken now. If the corruption ever recurs, treat the line numbers as approximate starting points and use the grep above to find actual remaining locations.
 
 <details>
 <summary>Archived incident line numbers (may be stale)</summary>
@@ -261,7 +263,13 @@ git push -u origin <your-branch>
 
 ## Step 4 — Fix Historical Database Rows
 
-Rows already written to the `news` table in Postgres contain the corrupted strings. New rows generated after the fix will be clean. To backfill old rows, run this script locally against the production DATABASE_URL:
+> ⚠️ **Before running this against production:**
+> 1. **This step is optional.** New rows written after the source fix are clean. Only run this if mojibake is still visible in the news feed for older events.
+> 2. **Test on a staging snapshot first.** Dump a sample of the `news` table, run the script against that, and manually verify the output before touching production data.
+> 3. **The regex filter (`[ÃÂÅ]`) is a starting filter, not a completeness guarantee.** It catches the most common mojibake signatures but may miss edge cases. After running, spot-check a sample of rows that were *not* matched to confirm they were genuinely clean.
+> 4. **This is an UPDATE with no undo.** Take a DB backup before running against production.
+
+Rows already written to the `news` table in Postgres during the affected sprint contain corrupted strings. New rows generated after the source fix will be clean. To backfill old rows, run this script locally against the production DATABASE_URL:
 
 ```js
 // fix_db_news.mjs — run with:
