@@ -64,8 +64,22 @@ const EconomyPanel = () => {
   const makeBankDeposit = () => {
     if (window.makeBankDeposit) window.makeBankDeposit();
   };
-  const establishTradeRoute = (targetId) => {
-    if (window.establishTradeRoute) window.establishTradeRoute(targetId);
+  const establishTradeRoute = async (targetId) => {
+    if (!targetId) return;
+    try {
+      const result = await apiCall('/api/kingdom/trade-routes/establish', {
+        method: 'POST',
+        body: { targetId },
+      });
+      if (result.error) {
+        if (window.toast) window.toast(result.error, 'error');
+        return;
+      }
+      if (window.toast) window.toast(result.message || 'Trade route established', 'success');
+    } catch (err) {
+      console.error('[economy] establish trade route failed:', err);
+      if (window.toast) window.toast('Failed to establish trade route', 'error');
+    }
   };
   const handleEstablishTradeRoute = () => {
     const el = document.getElementById("trade-target-list");
