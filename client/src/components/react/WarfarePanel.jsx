@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiCall } from '../../utils/api';
+import WarfareIntelTab from './WarfareIntelTab';
+import WarfareReportsTab from './WarfareReportsTab';
 
 const WarfarePanel = () => {
   const [activeTab, setActiveTab] = useState('attack');
@@ -75,7 +77,6 @@ const WarfarePanel = () => {
       setActiveTab(window.__pendingWarfareTab);
       window.__pendingWarfareTab = null;
     }
-    refreshAttackTargets();
     return () => {
       window.removeEventListener('wcovTargetRaceChange', handleRaceChange);
       delete window.setWarfareTab;
@@ -95,16 +96,8 @@ const WarfarePanel = () => {
 
   const handleTabClick = (tabId) => {
     setActiveTab(tabId);
-    if (tabId === 'attack') {
-      refreshAttackTargets();
-    }
     if (tabId === 'wspells' && window.initWspells) window.initWspells();
     if (tabId === 'wcovert' && window.initWcovert) window.initWcovert();
-    if (tabId === 'wreports') loadWarLog();
-    if (tabId === 'wintel') {
-      loadSpyReports();
-      loadAllianceIntel();
-    }
   };
 
   const updateAtkEstimateW = () => {
@@ -306,40 +299,19 @@ const WarfarePanel = () => {
         <button className={`base-btn admin-tab ${activeTab === 'wreports' ? 'active' : ''}`} onClick={() => handleTabClick('wreports')} style={{ borderRadius: 0 }}>📝 Reports</button>
       </div>
 
-      <div style={{ display: activeTab === 'wreports' ? 'block' : 'none' }}>
-        <div className="card" style={{ marginBottom: '14px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>📝 War & Covert Reports</span>
-            <button className="base-btn" style={{ fontSize: '11px', padding: '4px 10px' }} onClick={loadWarLog}>↻ Refresh</button>
-          </div>
-          <div id="war-log-list-warfare" style={{ maxHeight: '500px', overflowY: 'auto' }}>
-            {warLogContent}
-          </div>
-        </div>
-      </div>
+      <WarfareReportsTab
+        isActive={activeTab === 'wreports'}
+        content={warLogContent}
+        onRefresh={loadWarLog}
+      />
 
-      <div style={{ display: activeTab === 'wintel' ? 'block' : 'none' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-          <div className="card">
-            <div className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>🕵️ Your Spy Reports</span>
-              <button className="base-btn" style={{ fontSize: '10px', padding: '2px 6px' }} onClick={loadSpyReports}>↻</button>
-            </div>
-            <div id="spy-reports-list" style={{ maxHeight: '500px', overflowY: 'auto', fontSize: '13px' }}>
-              {spyReportsContent}
-            </div>
-          </div>
-          <div className="card">
-            <div className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>🤝 Alliance Intelligence</span>
-              <button className="base-btn" style={{ fontSize: '10px', padding: '2px 6px' }} onClick={loadAllianceIntel}>↻</button>
-            </div>
-            <div id="alliance-intel-list" style={{ maxHeight: '500px', overflowY: 'auto', fontSize: '13px' }}>
-              {allianceIntelContent}
-            </div>
-          </div>
-        </div>
-      </div>
+      <WarfareIntelTab
+        isActive={activeTab === 'wintel'}
+        spyContent={spyReportsContent}
+        allianceContent={allianceIntelContent}
+        onRefreshSpyReports={loadSpyReports}
+        onRefreshAllianceIntel={loadAllianceIntel}
+      />
 
       <div style={{ display: activeTab === 'attack' ? 'block' : 'none' }}>
         <div className="card" id="atk-panel-w">
