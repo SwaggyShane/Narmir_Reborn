@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useGameState } from '../../hooks/useGameState';
+import { apiCall } from '../../utils/api.js';
 
 const TrainingPanel = () => {
   const { state } = useGameState();
+  const [trainingUiTick, setTrainingUiTick] = useState(0);
   const isVampire = state?.race === 'vampire';
   const fmt = (value) => Number(value || 0).toLocaleString();
+  const TROOP_TYPES = ['fighters', 'rangers', 'clerics', 'mages', 'thieves', 'ninjas'];
   const getTroopLevel = (unit) => state?.troop_levels?.[unit] || { level: 1, xp: 0 };
   const getTroopXpView = (unit) => {
     const data = getTroopLevel(unit);
@@ -17,18 +20,121 @@ const TrainingPanel = () => {
       barWidth: `${pct}%`,
     };
   };
+  const getTrainingValue = (unit) => parseInt(document.getElementById(`ta-${unit}`)?.value || '0', 10) || 0;
+  const setTrainingValue = (unit, value) => {
+    const el = document.getElementById(`ta-${unit}`);
+    if (el) el.value = Math.max(0, Number(value) || 0);
+  };
+  const getAllocatedTraining = () => TROOP_TYPES.reduce((sum, unit) => sum + getTrainingValue(unit), 0);
+  const loadTrainingAllocation = () => {
+    const alloc = state?.training_allocation || {};
+    TROOP_TYPES.forEach((unit) => {
+      setTrainingValue(unit, alloc[unit] || 0);
+    });
+  };
+  const updateTroopLevelDisplay = () => {
+    TROOP_TYPES.forEach((unit) => {
+      const data = getTroopLevel(unit);
+      const levelEl = document.getElementById(`tr-level-${unit}`);
+      const xpEl = document.getElementById(`tr-xp-${unit}`);
+      const barEl = document.getElementById(`tr-bar-${unit}`);
+      if (levelEl) levelEl.textContent = `Lv ${data.level}`;
+      const xpNeeded = 100;
+      const xpInLevel = Math.max(0, Number(data.xp || 0) - ((Number(data.level || 1) - 1) * 100));
+      if (xpEl) xpEl.textContent = `${fmt(xpInLevel)} / ${fmt(xpNeeded)} XP`;
+      if (barEl) barEl.style.width = `${Math.min(100, Math.floor((xpInLevel / xpNeeded) * 100))}%`;
+    });
+  };
+  const updateTrainingDisplay = () => {
+    const capacity = (state?.bld_training || 0) * 100;
+    const total = getAllocatedTraining();
+    const trFields = document.getElementById('tr-fields');
+    const trCap = document.getElementById('tr-capacity');
+    const trW = document.getElementById('tr-weapons');
+    const trA = document.getElementById('tr-armor');
+    if (trFields) trFields.textContent = fmt(state?.bld_training || 0);
+    if (trCap) {
+      trCap.textContent = fmt(capacity);
+      trCap.style.color = total > capacity ? 'var(--red)' : 'var(--gold)';
+    }
+    if (trW) trW.textContent = fmt(state?.weapons_stockpile || 0);
+    if (trA) trA.textContent = fmt(state?.armor_stockpile || 0);
+
+    const rb = document.getElementById('tr-race-bonus');
+    if (rb && state?.race) {
+      const texts = {
+        high_elf: 'Increased XP for Clerics, Mages, and Researchers',
+        dwarf: 'Increased XP for Fighters and Engineers',
+        dire_wolf: 'Greatly increased XP for Fighters and Rangers',
+        dark_elf: 'Greatly increased XP for Ninjas, Thieves, and Rangers',
+        human: 'Improved XP for all training units',
+        orc: 'Greatly increased XP for Fighters and Clerics',
+        vampire: 'Increased XP for Infiltrators and combat units',
+      };
+      rb.innerHTML = texts[state.race] || '—';
+    }
+  };
+  const refreshTrainingUi = () => setTrainingUiTick((n) => n + 1);
+  const setTrainingMax = (unit) => {
+    const capacity = (state?.bld_training || 0) * 100;
+    const allocated = getAllocatedTraining();
+    const current = getTrainingValue(unit);
+    const available = capacity - allocated + current;
+    const el = document.getElementById(`ta-${unit}`);
+    if (el) el.value = Math.max(0, Math.min(available, state?.[unit] || 0));
+    refreshTrainingUi();
+  };
   const distributeTrainingEvenly = () => {
-    if (window.distributeTrainingEvenly) window.distributeTrainingEvenly();
+    const capacity = (state?.bld_training || 0) * 100;
+    const count = TROOP_TYPES.length;
+    const each = Math.floor(capacity / count);
+    TROOP_TYPES.forEach((unit) => {
+      const el = document.getElementById(`ta-${unit}`);
+      if (el) el.value = Math.min(each, state?.[unit] || 0);
+    });
+    refreshTrainingUi();
   };
-  const releaseAllTraining = () => {
-    if (window.releaseAllTraining) window.releaseAllTraining();
+  const saveTrainingAllocation = async () => {
+    const alloc = {};
+    let total = 0;
+    TROOP_TYPES.forEach((unit) => {
+      const val = getTrainingValue(unit);
+      alloc[unit] = val;
+      total += val;
+    });
+    const capacity = (state?.bld_training || 0) * 100;
+    if (total > capacity) {
+      return window.toast && window.toast(`Allocated ${fmt(total)} but only have ${fmt(capacity)} training capacity`, 'error');
+    }
+    const result = await apiCall('/api/kingdom/training-allocation', {
+      method: 'POST',
+      body: { allocation: alloc },
+    });
+    if (result.error) return window.toast && window.toast(result.error, 'error');
+    if (state) state.training_allocation = alloc;
+    refreshTrainingUi();
+    if (window.toast) window.toast('Training allocation saved', 'success');
   };
-  const saveTrainingAllocation = () => {
-    if (window.saveTrainingAllocation) window.saveTrainingAllocation();
+  const releaseAllTraining = async () => {
+    TROOP_TYPES.forEach((unit) => setTrainingValue(unit, 0));
+    const result = await apiCall('/api/kingdom/training-allocation', {
+      method: 'POST',
+      body: { allocation: {} },
+    });
+    if (result.error) return window.toast && window.toast(result.error, 'error');
+    if (state) state.training_allocation = {};
+    refreshTrainingUi();
+    if (window.toast) window.toast('All training released', 'success');
   };
-  const setTrainingMax = (type) => {
-    if (window.setTrainingMax) window.setTrainingMax(type);
-  };
+  useEffect(() => {
+    loadTrainingAllocation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(state?.training_allocation || {})]);
+  useEffect(() => {
+    updateTroopLevelDisplay();
+    updateTrainingDisplay();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, trainingUiTick]);
   const engineerXpView = getTroopXpView('engineers');
   const scribeXpView = getTroopXpView('scribes');
   const researcherXpView = getTroopXpView('researchers');
