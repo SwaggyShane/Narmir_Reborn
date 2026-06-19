@@ -1,19 +1,19 @@
 # Mojibake Fix — Narmir Reborn
 
-## What Happened
+> **Status:** Source file fix was applied locally in June 2026 and merged to main. The Python script below is kept as a reusable reference in case the encoding corruption recurs. The DB migration script (Step 4) may still be needed for historical `news` rows.
 
-Every non-ASCII character in ~36 game source files is **triple-encoded**.  
+---
+
+## Background *(historical)*
+
+Every non-ASCII character in ~36 game source files was **triple-encoded**.  
 The original bytes (emojis, em-dashes, etc.) were passed through the cycle:
 
 ```
 UTF-8 bytes → each byte read as cp1252 codepoint → re-encoded as UTF-8
 ```
 
-…three times over. This happened in the editor/tooling that touched these files during the sprint.
-
-The rendering pipeline (Node → Postgres → JSON → browser) is clean — it passes bytes through unchanged. The corruption lives entirely in the source `.js` files (and consequently in any DB rows written since the sprint).
-
-`game/lore.js` is the only game file that was NOT affected.
+…three times over. The rendering pipeline (Node → Postgres → JSON → browser) was clean — corruption lived entirely in the source `.js` files and any DB rows written during the affected sprint. `game/lore.js` was the only file not affected.
 
 ---
 
@@ -195,68 +195,63 @@ python3 fix_mojibake.py
 
 ---
 
-## Step 2 — Manually Fix the Lines the Script Can't Auto-Decode
+## Step 2 — Manually Fix Lines the Script Can't Auto-Decode
 
-Some emojis use byte values that fall in cp1252's "undefined" range (0x81, 0x8D, 0x8F, 0x90, 0x9D). The auto-decoder can't reverse those safely. These lines need the correct character looked up from git history.
+Some emojis use byte values in cp1252's undefined range (0x81, 0x8D, 0x8F, 0x90, 0x9D). The auto-decoder can't reverse those safely — look them up from git history.
 
 ### Find the original characters
 
 ```bash
-# Find the last commit before the encoding was corrupted — look for a commit
-# that still had clean emoji in these files
+# Find the last clean commit and inspect a specific line
 git log --oneline -- game/expeditions.js game/turn.js game/construction.js | head -30
-
-# Once you have the commit hash (e.g. abc1234), check a specific line:
-git show abc1234:game/expeditions.js | sed -n '410,414p'
+git show <clean-commit>:game/expeditions.js | sed -n '410,414p'
 ```
 
-### Known lines to check manually after running the script
-
-After the script runs, grep for any remaining mojibake:
+After running the script, grep for any remaining corruption:
 
 ```bash
 grep -Pn "Ã|â€|Å¸|Ã‚Â" game/expeditions.js game/turn.js game/construction.js game/engine.js
 ```
 
-Anything still showing `Ã`, `â€`, `Å¸` etc. after the script ran needs a manual character replacement.
+> **Note:** The specific line numbers from the June 2026 incident are archived below for reference. If the fix is re-run on an edited codebase, treat them as approximate — use the grep above to find actual remaining locations.
 
-#### expeditions.js — lines likely still broken after script
+<details>
+<summary>Archived incident line numbers (may be stale)</summary>
 
-| Line | Context | Look up in git |
-|------|---------|---------------|
-| 412 | `+${ironGained} iron plundered` | emoji before the text |
-| 598, 616 | `ULTRA RARE: ${prize.text}` | 3× emoji prefix |
-| 641 | `Air Fragment pulses with the fury` | emoji prefix |
-| 765, 767 | Throne of Nazdreg found message | emoji prefix |
-| 786, 827 | `Your rangers discovered the kingdom` / Scout type label | emoji |
-| 803, 807 | `World Fragment` found messages | emoji prefix |
-| 814, 818, 915, 919 | `ACHIEVEMENT UNLOCKED` messages | emoji prefix |
-| 828 | `"deep"` expedition type label | emoji prefix |
+#### expeditions.js
 
-#### turn.js — lines likely still broken after script
+| Line | Context |
+|------|---------|
+| 412 | `+${ironGained} iron plundered` — emoji prefix |
+| 598, 616 | `ULTRA RARE: ${prize.text}` — 3× emoji prefix |
+| 641 | `Air Fragment pulses with the fury` — emoji prefix |
+| 765, 767 | Throne of Nazdreg found message |
+| 786, 827 | Scout discovery / type label |
+| 803, 807 | `World Fragment` found messages |
+| 814, 818, 915, 919 | `ACHIEVEMENT UNLOCKED` messages |
+| 828 | `"deep"` expedition type label |
 
-| Line | Context | Look up in git |
-|------|---------|---------------|
-| 377, 385, 406, 411, 429, 438, 456 | Population/unrest news messages | emoji prefix |
-| 547 | Mana restoration message | emoji prefix |
-| 562, 567 | Population growth message | emoji prefix |
-| 774 | Construction complete message | emoji prefix |
-| 922 | Low Tax Event message | emoji prefix |
-| 1049, 1104, 1109 | Various news messages | emoji prefix |
-| 1063 | News message | emoji prefix |
-| 1137 | News message | emoji prefix |
-| 1289, 1405, 1439, 1620, 1840–1964 | Various game event messages | emoji prefix |
-| 2215, 2223 | Messages | emoji prefix |
-| 2265, 2284 | Messages | emoji prefix |
-| 2515, 2523, 2537, 2549 | Messages | emoji prefix |
+#### turn.js
+
+| Line | Context |
+|------|---------|
+| 377, 385, 406, 411, 429, 438, 456 | Population/unrest news messages |
+| 547 | Mana restoration message |
+| 562, 567 | Population growth message |
+| 774 | Construction complete message |
+| 922 | Low Tax Event message |
+| 1049, 1063, 1104, 1109, 1137 | Various news messages |
+| 1289, 1405, 1439, 1620, 1840–1964 | Game event messages |
+| 2215, 2223, 2265, 2284, 2515–2549 | Messages |
+
+</details>
 
 ---
 
-## Step 3 — Rebuild and Deploy
+## Step 3 — Rebuild and Deploy *(already done for the June 2026 incident)*
 
 ```bash
 npm run build
-# commit and push to your branch
 git add game/ routes/
 git commit -m "fix: restore correct Unicode encoding in all game source files"
 git push -u origin <your-branch>
@@ -264,7 +259,7 @@ git push -u origin <your-branch>
 
 ---
 
-## Step 4 — Fix Historical Database Rows (Optional)
+## Step 4 — Fix Historical Database Rows
 
 Rows already written to the `news` table in Postgres contain the corrupted strings. New rows generated after the fix will be clean. To backfill old rows, run this script locally against the production DATABASE_URL:
 
