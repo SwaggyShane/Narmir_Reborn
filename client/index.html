@@ -3807,146 +3807,6 @@
 
               </div>
 
-              <div
-
-                style="
-
-                  margin-top: 4px;
-
-                  display: flex;
-
-                  align-items: center;
-
-                  gap: 6px;
-
-                  flex-wrap: wrap;
-
-                "
-
-              >
-
-                <span
-
-                  style="font-size: 11px; color: var(--text3); cursor: pointer"
-
-                  onclick="showXpModal()"
-
-                  title="Click for XP breakdown"
-
-                  >Level
-
-                  <span
-
-                    id="kingdom-level"
-
-                    style="
-
-                      color: var(--gold);
-
-                      font-weight: 700;
-
-                      font-size: 13px;
-
-                      text-decoration: underline dotted;
-
-                      text-underline-offset: 2px;
-
-                    "
-
-                    >1</span
-
-                  ></span
-
-                >
-
-                <div
-
-                  style="
-
-                    flex: 1;
-
-                    min-width: 80px;
-
-                    max-width: 150px;
-
-                    cursor: pointer;
-
-                  "
-
-                  onclick="showXpModal()"
-
-                  title="Click for XP breakdown"
-
-                >
-
-                  <div
-
-                    style="
-
-                      height: 3px;
-
-                      background: var(--bg4);
-
-                      border-radius: 1.5px;
-
-                      overflow: hidden;
-
-                    "
-
-                  >
-
-                    <div
-
-                      id="xp-bar"
-
-                      style="
-
-                        height: 3px;
-
-                        width: 0%;
-
-                        background: linear-gradient(
-
-                          90deg,
-
-                          var(--accent1),
-
-                          var(--gold)
-
-                        );
-
-                        border-radius: 1.5px;
-
-                        transition: width 0.4s;
-
-                      "
-
-                    ></div>
-
-                  </div>
-
-                </div>
-
-                <span
-
-                  id="xp-label"
-
-                  style="font-size: 9px; color: var(--text3); cursor: pointer"
-
-                  onclick="showXpModal()"
-
-                  >0/100 XP</span
-
-                >
-
-              </div>
-
-            </div>
-
-          </div>
-
-
-
           <!-- Metrics strip -->
 
           <div class="metrics" id="react-resource-strip">
@@ -11967,7 +11827,6 @@
 
         }
 
-        if (u.xp !== undefined || u.level !== undefined) updateXpDisplay();
 
 
         if (window.triggerReactUpdates) window.triggerReactUpdates();
@@ -21671,33 +21530,6 @@
 
 
 
-      function updateXpDisplay() {
-
-        var level = state.level || 1;
-
-        var xp = state.xp || 0;
-
-        var thisLvl = xpForLevel(level);
-
-        var nextLvl = xpForLevel(level + 1);
-
-        var xpInLevel = Math.max(0, Math.min(xp - thisLvl, nextLvl - thisLvl));
-
-        var xpNeeded = nextLvl - thisLvl;
-
-        var pct = xpNeeded > 0 ? Math.min(100, Math.floor((xpInLevel / xpNeeded) * 100)) : 100;
-
-
-
-        var levelEl = document.getElementById("kingdom-level");
-
-        var barEl = document.getElementById("xp-bar");
-
-        var labelEl = document.getElementById("xp-label");
-
-        if (levelEl) levelEl.textContent = level;
-
-        if (barEl) barEl.style.width = pct + "%";
 
         if (labelEl)
 
@@ -21811,42 +21643,6 @@
         TROOP_TYPES.forEach(function (u) {
 
           alloc[u] = parseInt(document.getElementById("ta-" + u)?.value) || 0;
-
-        });
-
-        var result = await apiCall("POST", "/api/kingdom/training-allocation", {
-
-          allocation: alloc,
-
-        });
-
-        if (result.error) return toast(result.error, "error");
-
-        toast("Training allocation saved", "success");
-
-        loadTrainingAllocation();
-
-      }
-
-
-
-      function updateTrainingDisplay() {
-
-        var total = 0;
-
-        TROOP_TYPES.forEach(function (u) {
-
-          var val = parseInt(document.getElementById("ta-" + u)?.value) || 0;
-
-          total += val;
-
-        });
-
-
-
-        var fields = state.bld_training || 0;
-
-        var capacity = fields * 100;
 
         var el = document.getElementById("tr-capacity-used");
 

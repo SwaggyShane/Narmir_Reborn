@@ -29,9 +29,6 @@ const TrainingPanel = () => {
   const setTrainingMax = (type) => {
     if (window.setTrainingMax) window.setTrainingMax(type);
   };
-  const updateTrainingDisplay = () => {
-    if (window.updateTrainingDisplay) window.updateTrainingDisplay();
-  };
   const engineerXpView = getTroopXpView('engineers');
   const scribeXpView = getTroopXpView('scribes');
   const researcherXpView = getTroopXpView('researchers');
@@ -122,7 +119,7 @@ const TrainingPanel = () => {
           <span id="tr-level-fighters" className="count" style={{ minWidth: '70px' }}>Lv {fighterXpView.level}</span>
           <span id="tr-xp-fighters" style={{ fontSize: '11px', color: 'var(--text3)', minWidth: '80px' }}>{fighterXpView.xpText}</span>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-             <input type="number" className="input" id="ta-fighters" min="0" defaultValue="0" onChange={updateTrainingDisplay} style={{ textAlign: 'right', flex: 1 }} placeholder="Qty" />
+             <input type="number" className="input" id="ta-fighters" min="0" defaultValue="0" style={{ textAlign: 'right', flex: 1 }} placeholder="Qty" />
              <button className="base-btn" onClick={() => setTrainingMax('fighters')} style={{ padding: '4px 8px', fontSize: '10px', marginLeft: '4px' }}>Max</button>
           </div>
         </div>
@@ -135,7 +132,7 @@ const TrainingPanel = () => {
           <span id="tr-level-rangers" className="count" style={{ minWidth: '70px' }}>Lv {rangerXpView.level}</span>
           <span id="tr-xp-rangers" style={{ fontSize: '11px', color: 'var(--text3)', minWidth: '80px' }}>{rangerXpView.xpText}</span>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-             <input type="number" className="input" id="ta-rangers" min="0" defaultValue="0" onChange={updateTrainingDisplay} style={{ textAlign: 'right', flex: 1 }} placeholder="Qty" />
+             <input type="number" className="input" id="ta-rangers" min="0" defaultValue="0" style={{ textAlign: 'right', flex: 1 }} placeholder="Qty" />
              <button className="base-btn" onClick={() => setTrainingMax('rangers')} style={{ padding: '4px 8px', fontSize: '10px', marginLeft: '4px' }}>Max</button>
           </div>
         </div>
@@ -148,7 +145,7 @@ const TrainingPanel = () => {
           <span id="tr-level-clerics" className="count" style={{ minWidth: '70px' }}>Lv {clericXpView.level}</span>
           <span id="tr-xp-clerics" style={{ fontSize: '11px', color: 'var(--text3)', minWidth: '80px' }}>{clericXpView.xpText}</span>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-             <input type="number" className="input" id="ta-clerics" min="0" defaultValue="0" onChange={updateTrainingDisplay} style={{ textAlign: 'right', flex: 1 }} placeholder="Qty" />
+             <input type="number" className="input" id="ta-clerics" min="0" defaultValue="0" style={{ textAlign: 'right', flex: 1 }} placeholder="Qty" />
              <button className="base-btn" onClick={() => setTrainingMax('clerics')} style={{ padding: '4px 8px', fontSize: '10px', marginLeft: '4px' }}>Max</button>
           </div>
         </div>
@@ -161,7 +158,7 @@ const TrainingPanel = () => {
           <span id="tr-level-mages" className="count" style={{ minWidth: '70px' }}>Lv {mageXpView.level}</span>
           <span id="tr-xp-mages" style={{ fontSize: '11px', color: 'var(--text3)', minWidth: '80px' }}>{mageXpView.xpText}</span>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-             <input type="number" className="input" id="ta-mages" min="0" defaultValue="0" onChange={updateTrainingDisplay} style={{ textAlign: 'right', flex: 1 }} placeholder="Qty" />
+             <input type="number" className="input" id="ta-mages" min="0" defaultValue="0" style={{ textAlign: 'right', flex: 1 }} placeholder="Qty" />
              <button className="base-btn" onClick={() => setTrainingMax('mages')} style={{ padding: '4px 8px', fontSize: '10px', marginLeft: '4px' }}>Max</button>
           </div>
         </div>
@@ -174,7 +171,7 @@ const TrainingPanel = () => {
           <span id="tr-level-thieves" className="count" style={{ minWidth: '70px' }}>Lv {thiefXpView.level}</span>
           <span id="tr-xp-thieves" style={{ fontSize: '11px', color: 'var(--text3)', minWidth: '80px' }}>{thiefXpView.xpText}</span>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-             <input type="number" className="input" id="ta-thieves" min="0" defaultValue="0" onChange={updateTrainingDisplay} style={{ textAlign: 'right', flex: 1 }} placeholder="Qty" />
+             <input type="number" className="input" id="ta-thieves" min="0" defaultValue="0" style={{ textAlign: 'right', flex: 1 }} placeholder="Qty" />
              <button className="base-btn" onClick={() => setTrainingMax('thieves')} style={{ padding: '4px 8px', fontSize: '10px', marginLeft: '4px' }}>Max</button>
           </div>
         </div>
@@ -187,7 +184,7 @@ const TrainingPanel = () => {
           <span id="tr-level-ninjas" className="count" style={{ minWidth: '70px' }}>Lv {ninjaXpView.level}</span>
           <span id="tr-xp-ninjas" style={{ fontSize: '11px', color: 'var(--text3)', minWidth: '80px' }}>{ninjaXpView.xpText}</span>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-             <input type="number" className="input" id="ta-ninjas" min="0" defaultValue="0" onChange={updateTrainingDisplay} style={{ textAlign: 'right', flex: 1 }} placeholder="Qty" />
+             <input type="number" className="input" id="ta-ninjas" min="0" defaultValue="0" style={{ textAlign: 'right', flex: 1 }} placeholder="Qty" />
              <button className="base-btn" onClick={() => setTrainingMax('ninjas')} style={{ padding: '4px 8px', fontSize: '10px', marginLeft: '4px' }}>Max</button>
           </div>
         </div>
