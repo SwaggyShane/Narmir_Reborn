@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiCall } from '../../utils/api';
+import { useGameState } from '../../hooks/useGameState';
 import WarfareIntelTab from './WarfareIntelTab';
 import WarfareReportsTab from './WarfareReportsTab';
 
 const WarfarePanel = () => {
+  const { state } = useGameState();
   const [activeTab, setActiveTab] = useState('attack');
   const [wcovTargetRace, setWcovTargetRace] = useState(null);
   const [warLogRows, setWarLogRows] = useState([]);
@@ -17,9 +19,35 @@ const WarfarePanel = () => {
   const [allianceError, setAllianceError] = useState('');
 
   const refreshAttackTargets = useCallback(async () => {
-    if (window.loadRankings) await window.loadRankings(true);
-    if (window.loadWarfarePanel) window.loadWarfarePanel();
-  }, []);
+    try {
+      const result = await apiCall('/api/kingdom/rankings');
+      if (result?.error) throw new Error(result.error);
+
+      const kingdoms = Array.isArray(result?.rankings) ? result.rankings : [];
+      const mappedTargets = kingdoms
+        .filter((row) => String(row.id) !== String(state?.kingdomId))
+        .map((row) => ({
+          id: row.id,
+          name: row.name || 'Unknown',
+          race: row.race || 'human',
+          rank: row.rank || '?',
+          land: row.land || 0,
+          population: row.population || 0,
+          fighters: row.fighters || 0,
+          mages: row.mages || 0,
+          level: row.level || 1,
+          is_ai: row.is_ai || 0,
+        }));
+
+      window.rankingsCache = kingdoms;
+      window.targets = mappedTargets;
+      window.filterWarfareTargetsUnified?.('', 'atk-target-list-w');
+      window.filterWarfareTargetsUnified?.('', 'wsp-target-list-w');
+      window.filterWarfareTargetsUnified?.('', 'wcov-target-list-w');
+    } catch (err) {
+      console.error('[WarfarePanel] Failed to refresh attack targets:', err);
+    }
+  }, [state?.kingdomId]);
 
   const loadWarLog = useCallback(async () => {
     setLoadingWarLog(true);
@@ -105,7 +133,33 @@ const WarfarePanel = () => {
   };
 
   const setMaxValue = (inputId) => {
-    if (window.setMaxValue) window.setMaxValue(inputId);
+    const el = document.getElementById(inputId);
+    if (!el) return;
+
+    let val = 0;
+    if (inputId.startsWith('atk-')) {
+      let key = inputId.replace('atk-', '').replace('-w', '');
+      if (key === 'wm') key = 'war_machines';
+      val = Number(state?.[key] || 0);
+    } else if (inputId.startsWith('spy-') || inputId.startsWith('wcov-spy-')) {
+      val = Number(state?.thieves || 0) + Number(state?.ninjas || 0);
+    } else if (inputId.startsWith('loot-') || inputId.startsWith('wcov-loot-')) {
+      val = Number(state?.thieves || 0);
+    } else if (inputId.startsWith('assn-') || inputId.startsWith('wcov-assn-')) {
+      val = Number(state?.ninjas || 0);
+    } else if (inputId.startsWith('sab-') || inputId.startsWith('wcov-sab-')) {
+      val = Number(state?.thieves || 0);
+    } else if (inputId.startsWith('raid-')) {
+      val = Number(state?.thieves || 0);
+    } else if (inputId.startsWith('exp-')) {
+      val = inputId.includes('rangers') ? Number(state?.rangers || 0) : Number(state?.fighters || 0);
+    } else {
+      val = Number(state?.[inputId] || 0);
+    }
+
+    el.value = String(Math.max(0, val));
+    if (el.oninput) el.oninput();
+    if (el.onchange) el.onchange();
   };
 
   const launchAttackW = () => {
@@ -143,10 +197,6 @@ const WarfarePanel = () => {
   const handleTargetSearchWco = (event) => {
     const val = event?.target ? event.target.value : event;
     filterWarfareTargetsUnified(val, 'wcov-target-list-w');
-  };
-
-  const loadWarfarePanel = () => {
-    if (window.loadWarfarePanel) window.loadWarfarePanel();
   };
 
   const fmtDate = (value) => {
