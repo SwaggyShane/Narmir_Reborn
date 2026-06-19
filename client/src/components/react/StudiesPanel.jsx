@@ -5,6 +5,10 @@ const StudiesPanel = () => {
   const [activeSchoolSubTab, setActiveSchoolSubTab] = useState('general');
   const [studiesData, setStudiesData] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [mageUiTick, setMageUiTick] = useState(0);
+  const refreshMageUi = useCallback(() => {
+    setMageUiTick((tick) => tick + 1);
+  }, []);
 
   const fetchStudiesData = useCallback(async () => {
     try {
@@ -49,14 +53,12 @@ const StudiesPanel = () => {
         schoolEl.value = studiesData.research_allocation.school_spellbook_mages || 0;
       }
     }
-  }, [studiesData?.research_allocation]);
+    refreshMageUi();
+  }, [studiesData?.research_allocation, refreshMageUi]);
 
   const handleTabClick = useCallback((tabId) => {
     setActiveTab(tabId);
-    if (tabId === "tower" && window.renderMageTowerPanel) window.renderMageTowerPanel();
     if (tabId === "school" && window.updateFocusPreview) window.updateFocusPreview();
-    if (tabId === "shrine" && window.renderShrinePanel) window.renderShrinePanel();
-    if (tabId === "slibrary" && window.renderLibraryPanel) window.renderLibraryPanel();
   }, []);
 
   const loadStudies = useCallback(async () => {
@@ -78,13 +80,20 @@ const StudiesPanel = () => {
 
   const race = window.gameState?.race || 'human';
   const researchAlloc = studiesData?.research_allocation || {};
+  const totalMages = Number(window.gameState?.mages || 0);
+  const allocatedMages = Number(researchAlloc.spellbook_mages || 0) + Number(researchAlloc.school_spellbook_mages || 0);
+  const availableMages = Math.max(0, totalMages - allocatedMages);
 
+  const getMageInputValue = (id) => parseInt(document.getElementById(id)?.value || '0', 10) || 0;
+  const setMageInputValue = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.value = Math.max(0, value);
+    refreshMageUi();
+  };
   const updateAllocationDisplay = useCallback(() => {
-    // Force re-render by reading current input values
     const spellbookEl = document.getElementById('mage-alloc-spellbook');
     const schoolEl = document.getElementById('mage-alloc-school');
     if (spellbookEl && schoolEl) {
-      // Trigger a state update with current input values (clamped to non-negative)
       setStudiesData(prev => ({
         ...prev,
         research_allocation: {
@@ -94,7 +103,46 @@ const StudiesPanel = () => {
         }
       }));
     }
-  }, []);
+    refreshMageUi();
+  }, [refreshMageUi]);
+
+  const setMageMax = useCallback((type) => {
+    const targetId = type === 'spellbook' ? 'mage-alloc-spellbook' : 'mage-alloc-school';
+    const otherId = type === 'spellbook' ? 'mage-alloc-school' : 'mage-alloc-spellbook';
+    const otherValue = getMageInputValue(otherId);
+    const maxAllowed = Math.max(0, totalMages - otherValue);
+    setMageInputValue(targetId, maxAllowed);
+  }, [totalMages]);
+
+  const saveMageAllocation = useCallback(async () => {
+    const spellbook = Math.max(0, getMageInputValue('mage-alloc-spellbook'));
+    const school_spellbook = Math.max(0, getMageInputValue('mage-alloc-school'));
+    if (spellbook + school_spellbook > totalMages) {
+      window.toast?.(`Allocated ${spellbook + school_spellbook} mages, but only have ${totalMages}`, 'error');
+      return;
+    }
+    const response = await fetch('/api/kingdom/school-allocation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ spellbook, school_spellbook }),
+    });
+    const data = await response.json();
+    if (data.error) {
+      window.toast?.(data.error, 'error');
+      return;
+    }
+    if (data.ok) {
+      await fetchStudiesData();
+      refreshMageUi();
+      window.toast?.('Mage allocation saved successfully', 'success');
+    }
+  }, [fetchStudiesData, refreshMageUi, totalMages]);
+
+  const releaseMageAllocation = useCallback(async () => {
+    setMageInputValue('mage-alloc-spellbook', 0);
+    setMageInputValue('mage-alloc-school', 0);
+    await saveMageAllocation();
+  }, [saveMageAllocation]);
 
   // Memoize spell grouping by tier to avoid recalculation on every render
   const spellsByTier = useMemo(() => {
@@ -304,8 +352,8 @@ const StudiesPanel = () => {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="base-btn variant-red" onClick={() => { if (window.releaseMageAllocation) window.releaseMageAllocation(); }} style={{ whiteSpace: 'nowrap', background: 'var(--red)' }}>Release all</button>
-                  <button className="base-btn variant-accent" onClick={() => { if (window.studyMagic) window.studyMagic(); }} style={{ whiteSpace: 'nowrap', background: 'var(--accent1)', color: '#fff' }}>Study</button>
+                  <button className="base-btn variant-red" onClick={releaseMageAllocation} style={{ whiteSpace: 'nowrap', background: 'var(--red)' }}>Release all</button>
+                  <button className="base-btn variant-accent" onClick={saveMageAllocation} style={{ whiteSpace: 'nowrap', background: 'var(--accent1)', color: '#fff' }}>Study</button>
                 </div>
               </div>
 
@@ -321,14 +369,11 @@ const StudiesPanel = () => {
                       id="mage-alloc-spellbook"
                       min="0"
                       defaultValue={researchAlloc.spellbook_mages || 0}
-                      onChange={() => {
-                        updateAllocationDisplay();
-                        if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay();
-                      }}
+                      onChange={updateAllocationDisplay}
                       style={{ textAlign: 'right', flex: 1 }}
                       placeholder="Qty"
                     />
-                    <button className="base-btn" onClick={() => { if (window.setMageMax) window.setMageMax('spellbook'); }} style={{ padding: '4px 8px', fontSize: '10px' }}>Max</button>
+                    <button className="base-btn" onClick={() => setMageMax('spellbook')} style={{ padding: '4px 8px', fontSize: '10px' }}>Max</button>
                   </div>
                 </div>
 
@@ -343,14 +388,11 @@ const StudiesPanel = () => {
                       id="mage-alloc-school"
                       min="0"
                       defaultValue={researchAlloc.school_spellbook_mages || 0}
-                      onChange={() => {
-                        updateAllocationDisplay();
-                        if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay();
-                      }}
+                      onChange={updateAllocationDisplay}
                       style={{ textAlign: 'right', flex: 1 }}
                       placeholder="Qty"
                     />
-                    <button className="base-btn" onClick={() => { if (window.setMageMax) window.setMageMax('school'); }} style={{ padding: '4px 8px', fontSize: '10px' }}>Max</button>
+                    <button className="base-btn" onClick={() => setMageMax('school')} style={{ padding: '4px 8px', fontSize: '10px' }}>Max</button>
                   </div>
                 </div>
               </div>
