@@ -778,6 +778,8 @@ module.exports = function (db, io) {
     if (Object.keys(safe).length === 0)
       return res.status(400).json({ error: "No valid fields to update" });
 
+    const GOLD_MAX_SAFE = Number.MAX_SAFE_INTEGER;
+
     // Validate that JSON fields contain parseable JSON before hitting the DB
     for (const [k, v] of Object.entries(safe)) {
       if (JSON_FIELDS.has(k) && typeof v === "string") {
@@ -788,7 +790,12 @@ module.exports = function (db, io) {
       if (typeof v === "number" && !Number.isInteger(v)) {
         return res.status(400).json({ error: `Field "${k}" must be a whole number` });
       }
-      if (typeof v === "number" && (v < INT32_MIN || v > INT32_MAX)) {
+      if (k === "gold" && typeof v === "number" && (v < 0 || v > GOLD_MAX_SAFE)) {
+        return res.status(400).json({
+          error: `Field "${k}" is out of range. Please use a value between 0 and ${GOLD_MAX_SAFE.toLocaleString()}.`,
+        });
+      }
+      if (k !== "gold" && typeof v === "number" && (v < INT32_MIN || v > INT32_MAX)) {
         return res.status(400).json({
           error: `Field "${k}" is out of range. Please use a value between ${INT32_MIN.toLocaleString()} and ${INT32_MAX.toLocaleString()}.`,
         });

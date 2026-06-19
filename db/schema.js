@@ -580,7 +580,7 @@ async function initDb(options = {}) {
       name        TEXT    NOT NULL,
       race        TEXT    NOT NULL DEFAULT 'human',
       gender      TEXT    NOT NULL DEFAULT 'male',
-      gold        INTEGER NOT NULL DEFAULT 10000,
+      gold        BIGINT NOT NULL DEFAULT 10000,
       land        INTEGER NOT NULL DEFAULT 500,
       population  INTEGER NOT NULL DEFAULT 50000,
       happiness   INTEGER NOT NULL DEFAULT 50,
@@ -802,6 +802,19 @@ async function initDb(options = {}) {
     }
   }
 
+  async function getColumnType(table, column) {
+    try {
+      const result = await _db.all(
+        `SELECT data_type AS type FROM information_schema.columns WHERE table_name = ? AND column_name = ?`,
+        [table, column],
+      );
+      return result?.[0]?.type || null;
+    } catch (e) {
+      console.error(`[db] Migration: error fetching type for ${table}.${column}:`, e.message);
+      return null;
+    }
+  }
+
   async function addColumn(table, col, def, colArray) {
     try {
       await _db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${def}`);
@@ -828,6 +841,11 @@ async function initDb(options = {}) {
 
   // Batch column checks by table for performance (single schema fetch per table)
   const kingdomsCols = await getTableColumns('kingdoms');
+  const kingdomGoldType = await getColumnType('kingdoms', 'gold');
+  if (kingdomGoldType && kingdomGoldType.toLowerCase() !== 'bigint') {
+    await _db.run('ALTER TABLE kingdoms ALTER COLUMN gold TYPE BIGINT USING gold::bigint');
+    console.log('[db] Migration: converted kingdoms.gold to BIGINT');
+  }
   if (!kingdomsCols.includes('turns_stored'))        await addColumn('kingdoms', 'turns_stored',        'INTEGER NOT NULL DEFAULT 400', kingdomsCols);
   if (!kingdomsCols.includes('alliance_buffs'))      await addColumn('kingdoms', 'alliance_buffs',      "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('goals'))               await addColumn('kingdoms', 'goals',               "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
