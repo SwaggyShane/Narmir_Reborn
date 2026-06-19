@@ -157,7 +157,17 @@ const WarfarePanel = () => {
 
   const renderDetail = (detail) => {
     if (!detail) return null;
-    if (typeof detail === 'string') return detail;
+    if (typeof detail === 'string') {
+      const trimmed = detail.trim();
+      if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+        try {
+          return JSON.stringify(JSON.parse(trimmed), null, 2);
+        } catch {
+          return detail;
+        }
+      }
+      return detail;
+    }
     try {
       return JSON.stringify(detail, null, 2);
     } catch {
