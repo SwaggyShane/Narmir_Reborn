@@ -34,7 +34,7 @@ Status | Warfare | Economy | Explore | Community | ···More
 **Files touched:**
 - `client/src/components/react/BottomNav.jsx` — replace flat list with 6 fixed + drawer
 - `client/index.html` — CSS for `.bottom-nav`, `.more-drawer`, `.bnav-item.active`
-- `client/src/main.js` — `setActiveNavButtons()` already handles active class; should just work
+- `client/src/main.js` — `setActivePanelGlobal()` (from `useActivePanel.js`) is already called inside `switchTab`; active state updates automatically
 
 **What this does NOT touch:** `switchTab()`, panel display logic, `syncUI()` — those stay untouched.
 
@@ -66,13 +66,29 @@ The unit table uses `gridTemplateColumns: '100px 1fr 52px 52px'` — that's 204p
 
 **Fix (Option A — simpler):** On screens < 480px, hide the Role badge column entirely. Role is decorative context, not gameplay-critical.
 
+The unit rows in `StatusPanel.jsx` use inline `style={{ display: 'grid', gridTemplateColumns: '100px 1fr 52px 52px' }}` — CSS media queries cannot override inline styles. The rows need a shared class (`unit-grid`) added in JSX, then the media query works:
+
+```jsx
+// In StatusPanel.jsx — add className="unit-grid" to each unit row div
+<div className="unit-grid" style={{ alignItems: 'center', padding: '5px 0', borderBottom: '1px solid var(--border)' }}>
+```
+
 ```css
+/* In index.html <style> block */
+.unit-grid {
+  display: grid;
+  grid-template-columns: 100px 1fr 52px 52px;
+  gap: 4px;
+}
 @media (max-width: 480px) {
-  .unit-role-col { display: none; }
+  .unit-grid {
+    grid-template-columns: 1fr auto 40px;
+  }
+  .unit-grid > span:last-child { display: none; }
 }
 ```
 
-Columns become `gridTemplateColumns: '1fr auto 40px'`. One media query, zero restructuring.
+Remove `display: 'grid'`, `gridTemplateColumns`, and `gap` from the inline styles on each row once the class is in place.
 
 **Card reorder on mobile:** The three stacked cards are currently Military → Research → Buildings. Consider reordering to Buildings → Military → Research since Buildings is the most actionable. JSX reorder, no logic change.
 

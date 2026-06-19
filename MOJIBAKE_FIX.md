@@ -92,10 +92,15 @@ def fix_file(filepath: str):
                 orig_str = span.decode('utf-8', errors='replace')
                 fixed_str = fixed.decode('utf-8', errors='replace')
                 line_no = content[:start].count(b'\n') + 1
-                unfixed_flag = False
             else:
-                line_no = content[:start].count(b'\n') + 1
-                unfixed.append((line_no, span.decode('utf-8', errors='replace')))
+                # Only report as unfixed if the span contains known mojibake
+                # signature bytes (Ã=0xC3, â=0xC2, Å=0xC5). Valid UTF-8
+                # characters such as emojis or accented letters are left
+                # unchanged by fully_decode and must not be flagged as errors.
+                MOJIBAKE_SIGS = {0xC3, 0xC2, 0xC5}
+                if any(b in MOJIBAKE_SIGS for b in span):
+                    line_no = content[:start].count(b'\n') + 1
+                    unfixed.append((line_no, span.decode('utf-8', errors='replace')))
 
     return bytes(result), unfixed
 
@@ -277,19 +282,6 @@ const { Pool } = pg;
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
 
 // Build cp1252 reverse table
-function buildCp1252Reverse() {
-  const map = new Map();
-  for (let b = 0; b < 256; b++) {
-    try {
-      const ch = Buffer.from([b]).toString('latin1');
-      // We need the actual cp1252 mapping, not latin1.
-      // For bytes 0x80-0x9F cp1252 differs from latin1.
-      map.set(b, ch);
-    } catch (_) {}
-  }
-  return map;
-}
-
 // cp1252 byte → Unicode codepoint table for 0x80-0x9F (the special range)
 const CP1252_SPECIALS = {
   0x80: '€', 0x82: '‚', 0x83: 'ƒ', 0x84: '„',
@@ -347,7 +339,7 @@ function decodeMojibake(s) {
 }
 
 async function fixNewsRows() {
-  const { rows } = await pool.query('SELECT id, message FROM news WHERE message ~ \'[\\xC3\\xC2\\xC5]\' LIMIT 5000');
+  const { rows } = await pool.query('SELECT id, message FROM news WHERE message ~ \'[ÃÂÅ]\' LIMIT 5000');
   console.log(`Found ${rows.length} rows to check`);
   let fixed = 0;
   for (const row of rows) {
