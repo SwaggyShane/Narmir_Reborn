@@ -27,6 +27,9 @@ Status | Warfare | Economy | Explore | Community | ···More
 - Closes on outside tap or on any nav item selection
 - Remembers recently-used panels and floats them to the top
 
+**Notification badge on the `···` tab:**
+Panels like `messages` and `news` carry live notification badges (`#bnav-msg-badge`, `#bnav-news-badge`). Once hidden inside the drawer, those badges disappear from view. Add a single aggregate dot on the `···` More button itself that lights up when any drawer panel has an active badge. After each `setActivePanelGlobal()` call, check if any drawer item has a visible badge and toggle a `.more-has-badge` class on the More button accordingly. Pure JS, no new DOM polling needed.
+
 **Active state indicator:**
 - Currently missing entirely on mobile. Add a 2px top border in the tab's accent color on the active tab.
 - Body class `panel-{activeTab}` is already set by `setActivePanels()` — use that in CSS, no JS change needed.
@@ -132,21 +135,38 @@ Side panels (Forum, Rankings, etc.) accessible only via nav or More drawer.
 - On swipe complete: call `window.switchTab(nextPanel)`
 - Visual cue: brief slide animation via CSS transition on `.panel.active`
 
+**Swipe exclusions — check `e.target` before acting:**
+Not every horizontal touch should navigate. Exclude swipes that originate on:
+- `input[type=range]` (the tax slider `#strip-tax-slider`)
+- Elements with `overflow-x: auto` (scrollable tables, the world map)
+- Any element with `touch-action: pan-x` already set
+
+```js
+mainEl.addEventListener('touchstart', (e) => {
+  const tag = e.target.tagName;
+  const touchAction = getComputedStyle(e.target).touchAction;
+  if (tag === 'INPUT' || touchAction.includes('pan-x')) return;
+  // proceed with swipe tracking
+}, { passive: true });
+```
+
 **Do NOT use a library (Hammer.js etc.)** — vanilla touch events are 15 lines of code and avoid conflicts with existing vertical scroll behavior.
 
 ---
 
 ## Phase 6 — Landscape and Edge Cases
 
-**Landscape mode on phone:** At 667×375px the game tries to show the desktop layout. The mobile breakpoint at `768px` should also trigger on height:
+**Landscape mode on phone:** At 667×375px the game tries to show the desktop layout. The stylesheet in `client/index.html` is already mobile-first — mobile styles are the unwrapped default and desktop overrides live inside `@media (min-width: 768px)`. The fix is to add a `min-height` guard to that existing desktop query so it doesn't fire on short landscape screens:
 
 ```css
-@media (max-width: 768px), (max-height: 500px) {
-  /* mobile layout */
-}
+/* Before */
+@media (min-width: 768px) { /* desktop layout */ }
+
+/* After */
+@media (min-width: 768px) and (min-height: 500px) { /* desktop layout */ }
 ```
 
-This ensures landscape phones still get the mobile nav instead of a half-broken desktop sidebar.
+This keeps the mobile-first architecture intact and ensures landscape phones stay on the mobile nav.
 
 ---
 
