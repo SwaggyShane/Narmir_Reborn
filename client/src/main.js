@@ -171,12 +171,6 @@ window.syncUI = () => {
   if (typeof window.updateXpDisplay === "function") {
     window.updateXpDisplay();
   }
-  if (typeof window.updateBuildDisplay === "function") {
-    window.updateBuildDisplay();
-  }
-  if (typeof window.updateTrainingDisplay === "function") {
-    window.updateTrainingDisplay();
-  }
 };
 
 window.switchTab = (tabName) => {
@@ -549,8 +543,6 @@ window.takeTurn = async () => {
       window.syncFromState?.();
 
       try {
-        window.updateBuildDisplay?.();
-        window.updateTrainingDisplay?.();
         window.updateXpDisplay?.();
       } catch (e) {
         console.error("[turn] Error refreshing display elements:", e);

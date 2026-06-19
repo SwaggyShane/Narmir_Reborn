@@ -4807,7 +4807,6 @@
 
           });
 
-          updateTrainingDisplay();
 
         }
 
@@ -11970,7 +11969,6 @@
 
         if (u.xp !== undefined || u.level !== undefined) updateXpDisplay();
 
-        if (window.refreshResourcesPanel) window.refreshResourcesPanel();
 
         if (window.triggerReactUpdates) window.triggerReactUpdates();
 
@@ -12404,7 +12402,6 @@
 
         if (el) el.value = Math.max(0, available);
 
-        updateBuildDisplay();
 
       }
 
@@ -12454,7 +12451,6 @@
 
         );
 
-        updateBuildDisplay();
 
       }
 
@@ -12518,7 +12514,6 @@
 
         });
 
-        updateBuildDisplay();
 
       }
 
@@ -12564,7 +12559,6 @@
 
         });
 
-        updateBuildDisplay();
 
         var result = await apiCall("POST", "/api/kingdom/build-allocation", {
 
@@ -12676,7 +12670,6 @@
 
         state.build_allocation = allocation;
 
-        updateBuildDisplay();
 
         syncUI();
 
@@ -21802,7 +21795,6 @@
 
         });
 
-        updateTrainingDisplay();
 
         updateTroopLevelDisplay();
 
@@ -22008,7 +22000,6 @@
 
         });
 
-        updateTrainingDisplay();
 
       }
 
@@ -22030,7 +22021,6 @@
 
         if (el) el.value = Math.max(0, Math.min(available, state[unit] || 0));
 
-        updateTrainingDisplay();
 
       }
 
@@ -22052,7 +22042,6 @@
 
         });
 
-        updateTrainingDisplay();
 
       }
 
@@ -22068,7 +22057,6 @@
 
         });
 
-        updateTrainingDisplay();
 
         saveTrainingAllocation();
 
@@ -22612,7 +22600,6 @@
 
         if (result.updates) updateState(result.updates);
 
-        updateBuildDisplay();
 
       }
 
