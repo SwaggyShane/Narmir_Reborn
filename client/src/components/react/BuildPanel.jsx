@@ -412,6 +412,7 @@ const BuildPanel = () => {
 
   useEffect(() => {
     updateBuildDisplay();
+    updateSmithyDisplay();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, buildUiTick]);
   const setMaxValue = (fieldId) => {
@@ -469,9 +470,65 @@ const BuildPanel = () => {
     refreshBuildUi();
     if (window.toast) window.toast('Engineer allocation saved — builds each turn automatically', 'success');
   };
+  const updateSmithyDisplay = () => {
+    const smithies = Number(state?.bld_smithies || 0);
+    const hammerCap = smithies * 25;
+    const scaffCap = Math.max(10, smithies * 10);
+    const hammers = Number(state?.hammers_stored || 0);
+    const scaff = Number(state?.scaffolding_stored || 0);
+    const gold = Number(state?.gold || 0);
+    const scaffPrice = smithies > 0 ? 2500 : 3125;
+
+    const maxH = Math.max(0, Math.min(hammerCap - hammers, Math.floor(gold / 25)));
+    const maxS = Math.max(0, Math.min(scaffCap - scaff, Math.floor(gold / scaffPrice)));
+    const g = (id) => document.getElementById(id);
+
+    if (g('smith-hammers-stored')) g('smith-hammers-stored').textContent = fmt(hammers);
+    if (g('smith-hammers-cap')) g('smith-hammers-cap').textContent = fmt(hammerCap);
+    if (g('smith-hammers-afford')) g('smith-hammers-afford').textContent = fmt(maxH);
+    if (g('smith-scaffolding-stored')) g('smith-scaffolding-stored').textContent = fmt(scaff);
+    if (g('smith-scaffolding-cap')) g('smith-scaffolding-cap').textContent = fmt(scaffCap);
+    if (g('smith-scaffolding-afford')) g('smith-scaffolding-afford').textContent = fmt(maxS);
+
+    const note = g('smithy-alloc-note');
+    if (note) {
+      if (smithies === 0) {
+        note.innerHTML = "You need a smithy to buy hammers.<br><span style='color:var(--gold)'>Scaffolding is available without a smithy (25% markup).</span>";
+      } else {
+        note.textContent = '';
+      }
+    }
+  };
+  const setSmithyMax = (type) => {
+    const smithies = Number(state?.bld_smithies || 0);
+    const gold = Number(state?.gold || 0);
+    if (type === 'hammers') {
+      const max = Math.max(0, Math.min(smithies * 25 - Number(state?.hammers_stored || 0), Math.floor(gold / 25)));
+      const el = document.getElementById('smith-buy-hammers');
+      if (el) el.value = max;
+      return;
+    }
+    const scaffCap = Math.max(10, smithies * 10);
+    const scaffPrice = smithies > 0 ? 2500 : 3125;
+    const max2 = Math.max(0, Math.min(scaffCap - Number(state?.scaffolding_stored || 0), Math.floor(gold / scaffPrice)));
+    const el2 = document.getElementById('smith-buy-scaffolding');
+    if (el2) el2.value = max2;
+  };
+  const buySmithyTool = async (type) => {
+    const id = type === 'hammers' ? 'smith-buy-hammers' : 'smith-buy-scaffolding';
+    const amount = parseInt(document.getElementById(id)?.value, 10) || 0;
+    if (amount <= 0) return window.toast && window.toast('Enter a quantity', 'error');
+    const ep = type === 'hammers' ? '/api/kingdom/smithy/buy-hammers' : '/api/kingdom/smithy/buy-scaffolding';
+    const result = await apiCall(ep, { method: 'POST', body: { amount } });
+    if (result.error) return window.toast && window.toast(result.error, 'error');
+    if (result.hammers_stored !== undefined) state.hammers_stored = result.hammers_stored;
+    if (result.scaffolding_stored !== undefined) state.scaffolding_stored = result.scaffolding_stored;
+    if (result.gold !== undefined) state.gold = result.gold;
+    refreshBuildUi();
+    updateSmithyDisplay();
+    if (window.toast) window.toast(`Purchased ${result.bought} ${type} for ${fmt(result.cost)} GC`, 'success');
+  };
   const demolishB = (type) => { if (window.demolishB) window.demolishB(type); };
-  const buySmithyTool = (type) => { if (window.buySmithyTool) window.buySmithyTool(type); };
-  const setSmithyMax = (type) => { if (window.setSmithyMax) window.setSmithyMax(type); };
 
   const renderBuildingRow = (b, icon, baId, demoAmountId) => {
     const isEng = !['wm', 'ballistae', 'weapons', 'armor'].includes(b.id);
@@ -816,6 +873,7 @@ const BuildPanel = () => {
           <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '14px' }}>
             Hammers and scaffolding can be purchased here. Blueprints are crafted in the Library by scribes.
           </div>
+          <div id="smithy-alloc-note" style={{ fontSize: '11px', color: 'var(--gold)', marginBottom: '10px' }} />
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px', marginBottom: '16px' }}>
             <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '12px', textAlign: 'center' }}>
