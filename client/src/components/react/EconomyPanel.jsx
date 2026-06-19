@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { apiCall } from '../../utils/api';
+import { useGameState } from '../../hooks/useGameState';
 
 const EconomyPanel = () => {
+  const { state } = useGameState();
   const [activeTab, setActiveTab] = useState('farms');
 
   const handleTabClick = (tabId) => {
@@ -41,7 +43,31 @@ const EconomyPanel = () => {
     }
   };
   const setMaxValue = (inputId, type) => {
-    if (window.setMaxValue) window.setMaxValue(inputId, type);
+    const el = document.getElementById(inputId);
+    if (!el) return;
+
+    let val = 0;
+    if (type === 'gold') {
+      if (inputId === 'trade-offer-qty') {
+        const sel = document.getElementById('trade-offer-item');
+        if (sel) val = Number(state?.[sel.value] || 0);
+      } else if (inputId === 'merc-count') {
+        const tier = document.getElementById('merc-tier')?.value || 'rabble';
+        const price = {
+          rabble: 50,
+          sellsword: 125,
+          veteran: 250,
+          elite: 500,
+        }[tier] || 50;
+        val = Math.floor((Number(state?.gold || 0)) / price);
+      }
+    } else if (typeof type === 'number') {
+      val = type;
+    }
+
+    el.value = String(Math.max(0, val));
+    if (el.oninput) el.oninput();
+    if (el.onchange) el.onchange();
   };
   const sendTradeOffer = () => {
     if (window.sendTradeOffer) window.sendTradeOffer();
