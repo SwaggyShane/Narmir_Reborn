@@ -180,9 +180,6 @@ window.syncUI = () => {
   if (typeof window.updateTrainingDisplay === "function") {
     window.updateTrainingDisplay();
   }
-  if (typeof window.updateTroopLevelDisplay === "function") {
-    window.updateTroopLevelDisplay();
-  }
 };
 
 window.switchTab = (tabName) => {
@@ -653,7 +650,6 @@ window.takeTurn = async () => {
         window.updateBuildDisplay?.();
         window.updateTrainingDisplay?.();
         window.updateXpDisplay?.();
-        window.updateTroopLevelDisplay?.();
         window.updateMageAllocationDisplay?.();
         window.refreshResourcesPanel?.();
         window.loadNews?.();

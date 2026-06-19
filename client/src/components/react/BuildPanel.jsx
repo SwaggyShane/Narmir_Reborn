@@ -110,10 +110,6 @@ const BuildPanel = () => {
   // Re-sync vanilla JS building count spans after every render — React resets
   // the hardcoded <span>0</span> elements and window.updateBuildDisplay() restores
   // the real values from window.state.
-  React.useEffect(() => {
-    window.updateBuildDisplay?.();
-  }, [state]);
-
   const loadAttunements = async () => {
     try {
       setLoading(true);
@@ -257,11 +253,12 @@ const BuildPanel = () => {
     return `${b.name}${tier}\nBase: ${b.time} turns | ${b.land ? b.land + " land" : ""}\n🪵 ${b.wood} 🪨 ${b.stone} 🔗 ${b.iron}`;
   };
 
+  const getBuildCount = (id) => Number(state?.[`bld_${id}`] || 0);
+
   // Wrapper calls:
   const distributeBuildEvenly = () => { if (window.distributeBuildEvenly) window.distributeBuildEvenly(); };
   const releaseAllEngineers = () => { if (window.releaseAllEngineers) window.releaseAllEngineers(); };
   const saveBuildAllocation = () => { if (window.saveBuildAllocation) window.saveBuildAllocation(); };
-  const updateBuildDisplay = () => { if (window.updateBuildDisplay) window.updateBuildDisplay(); };
   const setMaxValue = (id, type) => { if (window.setMaxValue) window.setMaxValue(id, type); };
   const setBuildMax = (id, type) => { if (window.setBuildMax) window.setBuildMax(id, type); };
   const demolishB = (type) => { if (window.demolishB) window.demolishB(type); };
@@ -277,7 +274,7 @@ const BuildPanel = () => {
           <span className="bld-icon" style={{ background: icon.color }}>{icon.emoji}</span>
           <span className="name">{b.name}</span>
         </div>
-        <span className="count" id={`bld-${b.id}`}>0</span>
+        <span className="count" id={`bld-${b.id}`}>{fmt(getBuildCount(b.id))}</span>
         {b.id !== 'wm' && b.id !== 'ballistae' && b.id !== 'ladders' && b.id !== 'weapons' && b.id !== 'armor' ? (
           <div className="bld-demolish">
             <input type="number" className="input" id={demoAmountId} defaultValue="1" min="1" style={{ textAlign: 'center' }} />
@@ -292,7 +289,7 @@ const BuildPanel = () => {
             id={baId}
             min="0"
             defaultValue="0"
-            onChange={updateBuildDisplay}
+            onChange={() => window.updateBuildDisplay?.()}
             style={{ textAlign: 'right' }}
             placeholder="Qty"
           />

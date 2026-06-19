@@ -19,6 +19,7 @@
 - [ ] Generate comparison reports between audits
 - [ ] Add trend visualization (findings over time)
 - [ ] Implement notifications (email/Slack on new issues)
+- [ ] Investigate what is corrupting JSON rows in the database and add a repeatable guard or repair path
 
 **Priority:** Medium  
 **Estimated Effort:** 5-9 hours
