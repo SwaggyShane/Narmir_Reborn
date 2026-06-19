@@ -171,9 +171,6 @@ window.syncUI = () => {
   if (typeof window.updateXpDisplay === "function") {
     window.updateXpDisplay();
   }
-  if (typeof window.updateTurnsDisplay === "function") {
-    window.updateTurnsDisplay();
-  }
   if (typeof window.updateBuildDisplay === "function") {
     window.updateBuildDisplay();
   }
@@ -519,16 +516,6 @@ window.renderLibraryPanel = async () => {
   }
 };
 
-window.updateTurnsDisplay = () => {
-  const turnsStored = window.gameState?.turns_stored;
-  if (turnsStored !== undefined) {
-    const el = document.getElementById("turns-stored-disp");
-    if (el) {
-      el.textContent = String(turnsStored);
-    }
-  }
-};
-
 let canonicalTurnInProgress = false;
 window.takeTurn = async () => {
   if (canonicalTurnInProgress) return;
@@ -562,7 +549,6 @@ window.takeTurn = async () => {
       window.syncFromState?.();
 
       try {
-        window.updateTurnsDisplay?.();
         window.updateBuildDisplay?.();
         window.updateTrainingDisplay?.();
         window.updateXpDisplay?.();

@@ -1,9 +1,12 @@
 import React from 'react';
+import { useGameState } from '../../hooks/useGameState';
 
 const Topbar = () => {
+  const { state } = useGameState();
   const takeTurn = () => {
     if (window.takeTurn) window.takeTurn();
   };
+  const turnsStored = state?.turns_stored ?? 400;
 
   return (
     <header className="topbar">
@@ -23,7 +26,7 @@ const Topbar = () => {
                 Turns:
               </span>
               <span id="turns-stored-disp" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--gold)' }}>
-                400
+                {turnsStored}
               </span>
               <span style={{ fontSize: '11px', color: 'var(--text3)' }} className="hide-xs">
                 / 400
