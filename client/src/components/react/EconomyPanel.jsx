@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiCall } from '../../utils/api';
 
 const EconomyPanel = () => {
   const [activeTab, setActiveTab] = useState('farms');
@@ -9,8 +10,35 @@ const EconomyPanel = () => {
     if (tabId === "trade-routes" && window.loadTradeRoutes) window.loadTradeRoutes();
   };
 
-  const lockTax = (sliderId) => {
-    if (window.lockTax) window.lockTax(sliderId);
+  const updateTaxDisplay = (value) => {
+    const disp = document.getElementById('tax-disp');
+    if (disp) disp.textContent = String(value ?? '');
+  };
+
+  const lockTax = async (sliderId) => {
+    const slider = document.getElementById(sliderId || 'tax-slider');
+    if (!slider) return;
+    const tax = Number(slider.value);
+    if (Number.isNaN(tax)) return;
+    try {
+      const result = await apiCall('/api/kingdom/options', {
+        method: 'POST',
+        body: { tax },
+      });
+      if (result.error) {
+        if (window.toast) window.toast(result.error, 'error');
+        return;
+      }
+      if (window.applyGameMutation) {
+        window.applyGameMutation(result, { reason: 'tax-update' });
+      } else if (result.updates) {
+        window.applyServerUpdates?.(result.updates, { reason: 'tax-update' });
+      }
+      if (window.toast) window.toast('Tax rate locked', 'success');
+    } catch (err) {
+      console.error('[tax] lock failed:', err);
+      if (window.toast) window.toast('Failed to save tax rate', 'error');
+    }
   };
   const setMaxValue = (inputId, type) => {
     if (window.setMaxValue) window.setMaxValue(inputId, type);
@@ -22,7 +50,7 @@ const EconomyPanel = () => {
     if (window.clearTradeLogs) window.clearTradeLogs();
   };
   const updateTax = (value) => {
-    if (window.updateTax) window.updateTax(value);
+    updateTaxDisplay(value);
   };
   const updateMercPreview = () => {
     if (window.updateMercPreview) window.updateMercPreview();
