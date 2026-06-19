@@ -88,11 +88,7 @@ def fix_file(filepath: str):
             span = content[start:i]
             fixed = fully_decode(span)
             result.extend(fixed)
-            if fixed != span:
-                orig_str = span.decode('utf-8', errors='replace')
-                fixed_str = fixed.decode('utf-8', errors='replace')
-                line_no = content[:start].count(b'\n') + 1
-            else:
+            if fixed == span:
                 # Only report as unfixed if the span contains known mojibake
                 # signature bytes (Ã=0xC3, â=0xC2, Å=0xC5). Valid UTF-8
                 # characters such as emojis or accented letters are left
@@ -312,14 +308,10 @@ function unEncodeOnce(s) {
     bytes.push(cp1252Reverse.get(ch));
   }
   const buf = Buffer.from(bytes);
-  try {
-    return buf.toString('utf8');  // will throw if not valid UTF-8
-  } catch (_) {
-    // Buffer.toString doesn't throw — check manually
-    const roundtrip = Buffer.from(buf.toString('utf8'), 'utf8');
-    if (!roundtrip.equals(buf)) return null;
-    return buf.toString('utf8');
-  }
+  const decoded = buf.toString('utf8');  // never throws — silently replaces invalid bytes with U+FFFD
+  const roundtrip = Buffer.from(decoded, 'utf8');
+  if (!roundtrip.equals(buf)) return null;  // round-trip mismatch means invalid UTF-8
+  return decoded;
 }
 
 function decodeMojibake(s) {
@@ -339,18 +331,21 @@ function decodeMojibake(s) {
 }
 
 async function fixNewsRows() {
-  const { rows } = await pool.query('SELECT id, message FROM news WHERE message ~ \'[ÃÂÅ]\' LIMIT 5000');
-  console.log(`Found ${rows.length} rows to check`);
-  let fixed = 0;
-  for (const row of rows) {
-    const cleaned = decodeMojibake(row.message);
-    if (cleaned !== row.message) {
-      await pool.query('UPDATE news SET message = $1 WHERE id = $2', [cleaned, row.id]);
-      fixed++;
+  try {
+    const { rows } = await pool.query('SELECT id, message FROM news WHERE message ~ \'[ÃÂÅ]\' LIMIT 5000');
+    console.log(`Found ${rows.length} rows to check`);
+    let fixed = 0;
+    for (const row of rows) {
+      const cleaned = decodeMojibake(row.message);
+      if (cleaned !== row.message) {
+        await pool.query('UPDATE news SET message = $1 WHERE id = $2', [cleaned, row.id]);
+        fixed++;
+      }
     }
+    console.log(`Fixed ${fixed} rows`);
+  } finally {
+    await pool.end();
   }
-  console.log(`Fixed ${fixed} rows`);
-  await pool.end();
 }
 
 fixNewsRows().catch(console.error);
