@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { apiCall } from '../../utils/api';
 import { useGameState } from '../../hooks/useGameState';
 
 const RACE_CARD_DATA = {
@@ -75,12 +76,36 @@ const StatusPanel = () => {
     return text;
   };
 
-  const lockTax = (elementId) => {
-    window.lockTax?.(elementId);
+  const updateTaxDisplay = (value) => {
+    const disp = document.getElementById('strip-tax-disp');
+    if (disp) disp.textContent = String(value ?? '');
   };
 
-  const updateTax = (value) => {
-    window.updateTax?.(value);
+  const lockTax = async (elementId) => {
+    const slider = document.getElementById(elementId);
+    if (!slider) return;
+    const tax = Number(slider.value);
+    if (Number.isNaN(tax)) return;
+
+    try {
+      const result = await apiCall('/api/kingdom/options', {
+        method: 'POST',
+        body: { tax },
+      });
+      if (result.error) {
+        if (window.toast) window.toast(result.error, 'error');
+        return;
+      }
+      if (window.applyGameMutation) {
+        window.applyGameMutation(result, { reason: 'tax-update' });
+      } else if (result.updates) {
+        window.applyServerUpdates?.(result.updates, { reason: 'tax-update' });
+      }
+      if (window.toast) window.toast('Tax rate locked', 'success');
+    } catch (err) {
+      console.error('[tax] lock failed:', err);
+      if (window.toast) window.toast('Failed to save tax rate', 'error');
+    }
   };
 
   const raceKey = useMemo(() => toRaceKey(state?.race), [state?.race]);
@@ -207,7 +232,7 @@ const StatusPanel = () => {
             max="100"
             step="1"
             defaultValue="42"
-            onChange={(e) => updateTax(e.target.value)}
+            onChange={(e) => updateTaxDisplay(e.target.value)}
             style={{ flex: 1 }}
           />
           <span

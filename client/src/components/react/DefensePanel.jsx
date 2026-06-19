@@ -1,17 +1,111 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { apiCall } from '../../utils/api';
+import { useGameState } from '../../hooks/useGameState';
 
 const DefensePanel = () => {
+  const { state } = useGameState();
   const [activeTab, setActiveTab] = useState('walls');
 
   const handleTabClick = (tabId) => {
     setActiveTab(tabId);
   };
 
-  const refreshDefense = () => {
-    if (window.loadDefense) {
-      window.loadDefense();
+  const refreshDefense = useCallback(async () => {
+    const data = await apiCall('/api/kingdom/defense/overview');
+    if (data?.error) {
+      window.toast?.(data.error, 'error');
+      return;
     }
-  };
+
+    const race = state?.race || 'human';
+
+    const el = (id) => document.getElementById(id);
+    const fmt = (value) => {
+      const n = Number(value || 0);
+      return Number.isFinite(n) ? Math.round(n).toLocaleString() : '0';
+    };
+
+    if (el('def-rating')) el('def-rating').textContent = data.defense_rating || '—';
+
+    const du = data.defense_upgrades || {};
+    let statusText = 'Not fortified';
+    let statusColor = 'var(--text3)';
+    let targetWalls = 100;
+    let targetTowers = 10;
+    let targetOutposts = 10;
+    let targetCastles = 0;
+
+    if (du.citadel) {
+      statusText = '👑 CITADEL ACHIEVED';
+      statusColor = 'var(--gold)';
+      targetWalls = 1000;
+      targetTowers = 500;
+      targetOutposts = 500;
+      targetCastles = 1;
+    } else if (du.keep) {
+      statusText = '🏰 KEEP ACHIEVED';
+      statusColor = 'var(--gold)';
+      targetWalls = 1000;
+      targetTowers = 500;
+      targetOutposts = 500;
+      targetCastles = 1;
+    } else if (du.fortified) {
+      statusText = '🛡️ FORTIFIED ACHIEVED';
+      statusColor = 'var(--gold)';
+      targetWalls = 500;
+      targetTowers = 50;
+      targetOutposts = 50;
+      targetCastles = 0;
+    }
+
+    if (el('tier-status')) {
+      el('tier-status').textContent = statusText;
+      el('tier-status').style.color = statusColor;
+    }
+
+    const setBar = (id, val, max) => {
+      const node = el(id);
+      if (!node) return;
+      node.textContent = fmt(val);
+      node.style.color = val >= max
+        ? 'var(--gold)'
+        : val >= Math.floor(max * 0.5)
+          ? 'var(--green)'
+          : 'var(--text2)';
+      const maxEl = el(`${id}-max`);
+      if (maxEl) maxEl.textContent = `/ ${fmt(max)}`;
+    };
+
+    setBar('cit-walls', data.bld_walls || 0, targetWalls);
+    setBar('cit-towers', data.bld_guard_towers || 0, targetTowers);
+    setBar('cit-outposts', data.bld_outposts || 0, targetOutposts);
+    setBar('cit-castle', data.bld_castles || 0, targetCastles);
+
+    if (el('def-walls')) el('def-walls').textContent = fmt(data.bld_walls || 0);
+    if (el('def-wm-walls')) el('def-wm-walls').textContent = fmt(data.wm_on_walls || 0);
+    if (el('def-wall-power')) el('def-wall-power').textContent = fmt(data.wall_power || 0);
+    if (el('def-wall-race')) el('def-wall-race').textContent = `×${(window.WALL_RACE_MULT?.[race] || 1.0).toFixed(2)}`;
+
+    if (el('def-gtowers')) el('def-gtowers').textContent = fmt(data.bld_guard_towers || 0);
+    if (el('def-thieves-watch')) el('def-thieves-watch').textContent = fmt(data.thieves_on_watch || 0);
+    if (el('def-tower-cap')) el('def-tower-cap').textContent = fmt((data.bld_guard_towers || 0) * 10);
+    if (el('def-tower-power')) el('def-tower-power').textContent = fmt(data.tower_power || 0);
+    if (el('def-tower-race')) el('def-tower-race').textContent = `×${(window.TOWER_RACE_MULT?.[race] || 1.0).toFixed(2)}`;
+
+    if (el('def-outposts')) el('def-outposts').textContent = fmt(data.bld_outposts || 0);
+    if (el('def-rangers-patrol')) el('def-rangers-patrol').textContent = fmt(data.rangers_on_patrol || 0);
+    if (el('def-outpost-cap')) el('def-outpost-cap').textContent = fmt((data.bld_outposts || 0) * 20);
+    if (el('def-outpost-power')) el('def-outpost-power').textContent = fmt(data.outpost_power || 0);
+    if (el('def-outpost-race')) el('def-outpost-race').textContent = `×${(window.OUTPOST_RACE_MULT?.[race] || 1.0).toFixed(2)}`;
+
+    window.renderUpgrades?.('wall', window.WALL_UPGRADES_JS || {}, data.wall_upgrades || {}, 'wall-upgrade-list');
+    window.renderUpgrades?.('tower_def', window.TOWER_DEF_UPGRADES_JS || {}, data.tower_def_upgrades || {}, 'tower-def-upgrade-list');
+    window.renderUpgrades?.('outpost', window.OUTPOST_UPGRADES_JS || {}, data.outpost_upgrades || {}, 'outpost-upgrade-list');
+  }, [state?.race]);
+
+  useEffect(() => {
+    refreshDefense();
+  }, [refreshDefense]);
 
   return (
     <div id="defense" className="panel" style={{ display: 'none' }}>

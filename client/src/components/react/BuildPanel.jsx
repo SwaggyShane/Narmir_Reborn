@@ -303,79 +303,288 @@ const BuildPanel = () => {
 
   const getBuildCount = (id) => Number(state?.[`bld_${id}`] || 0);
 
-  const getBuildInputValue = (inputId) => {
-    const el = document.getElementById(inputId);
-    return parseInt(el?.value || '0', 10) || 0;
+  const BUILD_FIELD_MAP = {
+    farm: 'farms',
+    barracks: 'barracks',
+    outpost: 'outposts',
+    tower: 'guard_towers',
+    school: 'schools',
+    armory: 'armories',
+    vault: 'vaults',
+    smithy: 'smithies',
+    market: 'markets',
+    mage_tower: 'mage_towers',
+    training: 'training',
+    shrine: 'shrines',
+    castle: 'castles',
+    library: 'libraries',
+    housing: 'housing',
+    war_machine: 'war_machines',
+    ballista: 'ballistae',
+    ballistae: 'ballistae',
+    weapons: 'weapons',
+    armor: 'armor',
   };
+  const getBuildFieldValue = (fieldId) => parseInt(document.getElementById(fieldId)?.value || '0', 10) || 0;
+  const setBuildFieldValue = (fieldId, value) => {
+    const el = document.getElementById(fieldId);
+    if (el) el.value = Math.max(0, Number(value) || 0);
+  };
+  const getAllocatedEngineers = () =>
+    BUILDINGS_DISPLAY_ORDER.reduce((sum, key) => sum + getBuildFieldValue(`bld-eng-${key}`), 0);
+  const getVisibleBuildFields = () =>
+    BUILDINGS_DISPLAY_ORDER.filter((key) => {
+      const inputEl = document.getElementById(`bld-eng-${key}`);
+      if (!inputEl) return false;
+      const trowEl = inputEl.closest('.trow');
+      return trowEl && trowEl.style.display !== 'none';
+    });
+  const loadBuildAllocationInputs = () => {
+    const alloc = typeof state?.build_allocation === 'string'
+      ? (() => {
+        try { return JSON.parse(state.build_allocation || '{}'); } catch { return {}; }
+      })()
+      : (state?.build_allocation || {});
+    BUILDINGS_DISPLAY_ORDER.forEach((key) => {
+      const sourceKey = BUILD_FIELD_MAP[key] || key;
+      setBuildFieldValue(`bld-eng-${key}`, alloc[sourceKey] || 0);
+    });
+  };
+  const updateBuildDisplay = () => {
+    const total = Number(state?.engineers || 0);
+    const allocated = getAllocatedEngineers();
+    const remaining = Math.max(0, total - allocated);
 
-  const getAllocatedEngineers = () => (
-    Object.keys(BUILD_ALLOCATION_KEYS).reduce((sum, inputId) => sum + getBuildInputValue(inputId), 0)
-  );
+    const tea = document.getElementById('b-engineers-available');
+    if (tea) tea.textContent = fmt(total);
 
-  const setBuildInputValue = (inputId, value) => {
-    const el = document.getElementById(inputId);
-    if (el) el.value = Math.max(0, value);
+    const ta = document.getElementById('b-total-assigned');
+    const tu = document.getElementById('b-total-unassigned');
+    if (ta) ta.textContent = fmt(allocated);
+    if (tu) {
+      tu.textContent = fmt(remaining);
+      tu.style.color = allocated > total ? 'var(--red)' : 'var(--green)';
+    }
+
+    const bWood = document.getElementById('b-wood');
+    if (bWood) bWood.textContent = fmt(state?.wood || 0);
+    const bStone = document.getElementById('b-stone');
+    if (bStone) bStone.textContent = fmt(state?.stone || 0);
+    const bIron = document.getElementById('b-iron');
+    if (bIron) bIron.textContent = fmt(state?.iron || 0);
+    const bSteel = document.getElementById('b-steel');
+    if (bSteel) bSteel.textContent = fmt(state?.steel || 0);
+    const bCoal = document.getElementById('b-coal');
+    if (bCoal) bCoal.textContent = fmt(state?.coal || 0);
+
+    const bLand = document.getElementById('b-land-available');
+    if (bLand) {
+      const availLand = (state?.land || 0) - (state?.built_land || 0);
+      bLand.textContent = `${fmt(availLand)} / ${fmt(state?.land || 0)}`;
+    }
+
+    const shrineRow = document.getElementById('ba-shrine')?.closest('.trow');
+    const mausoleumRow = document.getElementById('ba-mausoleum')?.closest('.trow');
+    if (shrineRow) shrineRow.style.display = isVampire ? 'none' : '';
+    if (mausoleumRow) mausoleumRow.style.display = isVampire ? '' : 'none';
+
+    const BLUEPRINT_REQUIRED = new Set(['vaults', 'smithies', 'markets', 'mage_towers', 'training', 'castles']);
+    const SCAFFOLDING_REQUIRED = new Set(['mage_towers', 'training', 'castles', 'libraries']);
+    const bp = state?.blueprints_stored || 0;
+    const sc = state?.scaffolding_stored || 0;
+
+    BUILDINGS_DISPLAY_ORDER.forEach((key) => {
+      const input = document.getElementById(`bld-eng-${key}`);
+      if (!input) return;
+      const noticeId = `tool-notice-${key}`;
+      const existing = document.getElementById(noticeId);
+      const engVal = parseInt(input.value || '0', 10) || 0;
+      let msg = '';
+      if (engVal > 0) {
+        if (BLUEPRINT_REQUIRED.has(key) && bp === 0) msg += '?? Blueprint needed ';
+        if (SCAFFOLDING_REQUIRED.has(key) && sc === 0) msg += '?? Scaffolding needed';
+      }
+      if (msg && !existing) {
+        const row = input.closest('.trow');
+        if (row) {
+          const notice = document.createElement('span');
+          notice.id = noticeId;
+          notice.style.cssText = 'font-size:10px;color:var(--amber);white-space:nowrap;margin-left:4px';
+          notice.textContent = msg.trim();
+          row.appendChild(notice);
+        }
+      } else if (existing) {
+        if (msg && engVal > 0) {
+          existing.textContent = msg.trim();
+          existing.style.display = 'inline';
+        } else {
+          existing.style.display = 'none';
+        }
+      }
+    });
+
+    BUILDINGS_DISPLAY_ORDER.forEach((key) => {
+      const input = document.getElementById(`bld-eng-${key}`);
+      if (!input) return;
+      const estId = `turns-est-${key}`;
+      const existing = document.getElementById(estId);
+      const engVal = parseInt(input.value || '0', 10) || 0;
+      const cost = BUILDINGS_MAP[key]?.time || 100;
+      if (engVal > 0) {
+        const turns = Math.ceil(cost / engVal);
+        let el = existing;
+        if (!el) {
+          const row = input.closest('.trow');
+          if (row) {
+            el = document.createElement('span');
+            el.id = estId;
+            el.style.cssText = 'font-size:10px;color:var(--text3);white-space:nowrap;margin-left:4px';
+            row.appendChild(el);
+          }
+        }
+        if (el) {
+          el.textContent = `~${turns.toLocaleString()} turn${turns === 1 ? '' : 's'}/unit`;
+          el.style.display = 'inline';
+        }
+      } else if (existing) {
+        existing.style.display = 'none';
+      }
+    });
+
+    return { total, allocated, remaining };
+  };
+  useEffect(() => {
+    loadBuildAllocationInputs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(state?.build_allocation || {})]);
+
+  useEffect(() => {
+    updateBuildDisplay();
+    updateSmithyDisplay();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, buildUiTick]);
+  const setMaxValue = (fieldId) => {
+    const total = Number(state?.engineers || 0);
+    const allocated = getAllocatedEngineers();
+    const current = getBuildFieldValue(fieldId);
+    const available = total - allocated + current;
+    setBuildFieldValue(fieldId, Math.max(0, available));
     refreshBuildUi();
   };
-
-  const setMaxValue = (inputId) => {
-    const current = getBuildInputValue(inputId);
-    const available = totalEngineers - getAllocatedEngineers() + current;
-    setBuildInputValue(inputId, Math.max(0, available));
+  const setBuildMax = (fieldId, key) => {
+    if (key === 'war_machine' || key === 'weapons' || key === 'armor') {
+      setMaxValue(fieldId);
+      return;
+    }
+    setMaxValue(fieldId);
   };
-
-  const setBuildMax = (inputId) => setMaxValue(inputId);
-
   const distributeBuildEvenly = () => {
-    const visibleInputs = Object.keys(BUILD_ALLOCATION_KEYS)
-      .map((inputId) => document.getElementById(inputId))
-      .filter((el) => el && el.closest('.trow') && el.closest('.trow').style.display !== 'none');
-    if (!visibleInputs.length) return;
-    const each = Math.floor(totalEngineers / visibleInputs.length);
-    const rem = totalEngineers - each * visibleInputs.length;
-    visibleInputs.forEach((el, index) => {
-      el.value = each + (index < rem ? 1 : 0);
+    const visibleFields = getVisibleBuildFields();
+    const count = visibleFields.length;
+    if (count === 0) return;
+    const total = Number(state?.engineers || 0);
+    const each = Math.floor(total / count);
+    const rem = total - each * count;
+    visibleFields.forEach((key, i) => {
+      setBuildFieldValue(`bld-eng-${key}`, each + (i < rem ? 1 : 0));
     });
-    Object.keys(BUILD_ALLOCATION_KEYS).forEach((inputId) => {
-      const el = document.getElementById(inputId);
-      if (el && !visibleInputs.includes(el)) el.value = 0;
+    BUILDINGS_DISPLAY_ORDER.filter((key) => !visibleFields.includes(key)).forEach((key) => {
+      setBuildFieldValue(`bld-eng-${key}`, 0);
     });
     refreshBuildUi();
   };
-
   const releaseAllEngineers = async () => {
-    Object.keys(BUILD_ALLOCATION_KEYS).forEach((inputId) => setBuildInputValue(inputId, 0));
-    await saveBuildAllocation();
+    BUILDINGS_DISPLAY_ORDER.forEach((key) => setBuildFieldValue(`bld-eng-${key}`, 0));
+    const result = await apiCall('/api/kingdom/build-allocation', { method: 'POST', body: { allocation: {} } });
+    if (result.error) return window.toast && window.toast(result.error, 'error');
+    window.applyGameMutation?.({ build_allocation: {} }, { reason: 'build-allocation' });
+    window.syncUI?.();
+    refreshBuildUi();
+    if (window.toast) window.toast('All engineers released', 'success');
   };
-
   const saveBuildAllocation = async () => {
     const allocation = {};
     let total = 0;
-    Object.entries(BUILD_ALLOCATION_KEYS).forEach(([inputId, key]) => {
-      const value = getBuildInputValue(inputId);
-      allocation[key] = value;
-      total += value;
+    BUILDINGS_DISPLAY_ORDER.forEach((key) => {
+      const val = getBuildFieldValue(`bld-eng-${key}`);
+      allocation[BUILD_FIELD_MAP[key] || key] = val;
+      total += val;
     });
-
-    if (total > totalEngineers) {
-      return window.toast(`Allocated ${fmt(total)} but only have ${fmt(totalEngineers)} engineers`, 'error');
+    if (total > (state?.engineers || 0)) {
+      return window.toast && window.toast(`Allocated ${fmt(total)} but only have ${fmt(state?.engineers || 0)} engineers`, 'error');
     }
-
-    const result = await apiCall('POST', '/api/kingdom/build-allocation', { allocation });
-    if (result.error) return window.toast(result.error, 'error');
-
+    const result = await apiCall('/api/kingdom/build-allocation', { method: 'POST', body: { allocation } });
+    if (result.error) return window.toast && window.toast(result.error, 'error');
     window.applyGameMutation?.({ build_allocation: allocation }, { reason: 'build-allocation' });
     window.syncUI?.();
     refreshBuildUi();
-    window.toast('Engineer allocation saved — builds each turn automatically', 'success');
+    if (window.toast) window.toast('Engineer allocation saved ? builds each turn automatically', 'success');
   };
+  const updateSmithyDisplay = () => {
+    const smithies = Number(state?.bld_smithies || 0);
+    const hammerCap = smithies * 25;
+    const scaffCap = Math.max(10, smithies * 10);
+    const hammers = Number(state?.hammers_stored || 0);
+    const scaff = Number(state?.scaffolding_stored || 0);
+    const gold = Number(state?.gold || 0);
+    const scaffPrice = smithies > 0 ? 2500 : 3125;
 
-  const allocatedEngineers = getAllocatedEngineers();
-  const remainingEngineers = Math.max(0, totalEngineers - allocatedEngineers);
+    const maxH = Math.max(0, Math.min(hammerCap - hammers, Math.floor(gold / 25)));
+    const maxS = Math.max(0, Math.min(scaffCap - scaff, Math.floor(gold / scaffPrice)));
+    const g = (id) => document.getElementById(id);
 
+    if (g('smith-hammers-stored')) g('smith-hammers-stored').textContent = fmt(hammers);
+    if (g('smith-hammers-cap')) g('smith-hammers-cap').textContent = fmt(hammerCap);
+    if (g('smith-hammers-afford')) g('smith-hammers-afford').textContent = fmt(maxH);
+    if (g('smith-scaffolding-stored')) g('smith-scaffolding-stored').textContent = fmt(scaff);
+    if (g('smith-scaffolding-cap')) g('smith-scaffolding-cap').textContent = fmt(scaffCap);
+    if (g('smith-scaffolding-afford')) g('smith-scaffolding-afford').textContent = fmt(maxS);
+
+    const note = g('smithy-alloc-note');
+    if (note) {
+      if (smithies === 0) {
+        note.innerHTML = "You need a smithy to buy hammers.<br><span style='color:var(--gold)'>Scaffolding is available without a smithy (25% markup).</span>";
+      } else {
+        note.textContent = '';
+      }
+    }
+  };
+  const setSmithyMax = (type) => {
+    const smithies = Number(state?.bld_smithies || 0);
+    const gold = Number(state?.gold || 0);
+    if (type === 'hammers') {
+      const max = Math.max(0, Math.min(smithies * 25 - Number(state?.hammers_stored || 0), Math.floor(gold / 25)));
+      const el = document.getElementById('smith-buy-hammers');
+      if (el) el.value = max;
+      return;
+    }
+    const scaffCap = Math.max(10, smithies * 10);
+    const scaffPrice = smithies > 0 ? 2500 : 3125;
+    const max2 = Math.max(0, Math.min(scaffCap - Number(state?.scaffolding_stored || 0), Math.floor(gold / scaffPrice)));
+    const el2 = document.getElementById('smith-buy-scaffolding');
+    if (el2) el2.value = max2;
+  };
+  const buySmithyTool = async (type) => {
+    const id = type === 'hammers' ? 'smith-buy-hammers' : 'smith-buy-scaffolding';
+    const amount = parseInt(document.getElementById(id)?.value, 10) || 0;
+    if (amount <= 0) return window.toast && window.toast('Enter a quantity', 'error');
+    const ep = type === 'hammers' ? '/api/kingdom/smithy/buy-hammers' : '/api/kingdom/smithy/buy-scaffolding';
+    const result = await apiCall(ep, { method: 'POST', body: { amount } });
+    if (result.error) return window.toast && window.toast(result.error, 'error');
+    if (result.hammers_stored !== undefined) state.hammers_stored = result.hammers_stored;
+    if (result.scaffolding_stored !== undefined) state.scaffolding_stored = result.scaffolding_stored;
+    if (result.gold !== undefined) state.gold = result.gold;
+    window.applyGameMutation?.({
+      hammers_stored: result.hammers_stored,
+      scaffolding_stored: result.scaffolding_stored,
+      gold: result.gold,
+    }, { reason: 'smithy-buy' });
+    window.syncUI?.();
+    refreshBuildUi();
+    updateSmithyDisplay();
+    if (window.toast) window.toast(`Purchased ${result.bought} ${type} for ${fmt(result.cost)} GC`, 'success');
+  };
   const demolishB = (type) => { if (window.demolishB) window.demolishB(type); };
-  const buySmithyTool = (type) => { if (window.buySmithyTool) window.buySmithyTool(type); };
-  const setSmithyMax = (type) => { if (window.setSmithyMax) window.setSmithyMax(type); };
 
   const renderBuildingRow = (b, icon, baId, demoAmountId) => {
     const isEng = !['wm', 'ballistae', 'weapons', 'armor'].includes(b.id);
@@ -720,6 +929,7 @@ const BuildPanel = () => {
           <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '14px' }}>
             Hammers and scaffolding can be purchased here. Blueprints are crafted in the Library by scribes.
           </div>
+          <div id="smithy-alloc-note" style={{ fontSize: '11px', color: 'var(--gold)', marginBottom: '10px' }} />
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px', marginBottom: '16px' }}>
             <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '12px', textAlign: 'center' }}>

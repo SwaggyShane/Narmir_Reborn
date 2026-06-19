@@ -1,157 +1,145 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { apiCall } from '../../utils/api';
+import { useGameMutationEvents, useGameState } from '../../hooks/useGameState';
 
 const icons = {
-  food: "🌾",
-  wood: "🪵",
-  stone: "🪨",
-  iron: "🔗",
-  coal: "🌑",
-  steel: "📏",
-  mana: "✨",
-  hammers: "🔨",
-  weapons: "⚔️",
-  armor: "🛡️",
-  war_machines: "🏹",
-  ballistae: "🏹",
-  land: "🗺️",
+  food: '🌾',
+  wood: '🪵',
+  stone: '🪨',
+  iron: '⛓',
+  coal: '🌑',
+  steel: '📏',
+  mana: '✨',
+  hammers: '🔨',
+  weapons: '⚔️',
+  armor: '🛡️',
+  war_machines: '🏹',
+  ballistae: '🏹',
+  land: '🗺️',
 };
 
 const MarketPanel = () => {
+  const { state } = useGameState();
   const [loading, setLoading] = useState(true);
   const [prices, setPrices] = useState([]);
   const [quantities, setQuantities] = useState({});
-  const [sellMultiplier, setSellMultiplier] = useState(0.7);
-  const [state, setState] = useState({});
-
-  useEffect(() => {
-    // Initial state copy
-    if (window.gameState) setState({ ...window.gameState });
-
-    const updateState = () => {
-      if (window.gameState) {
-        setState({ ...window.gameState });
-        let mult = 0.7;
-        if (window.gameState.prestige_level && window.gameState.prestige_level > 0) {
-          mult += Math.min(0.1, window.gameState.prestige_level * 0.02);
-        }
-        setSellMultiplier(mult);
-      }
-    };
-
-    updateState();
-
-    const unreg = window.registerPanelReactHook && window.registerPanelReactHook('market', updateState);
-
-    // Replace the global loadMarket
-    window.loadMarket = refreshMarket;
-    refreshMarket();
-
-    return () => { if (unreg) unreg(); };
-  }, []);
 
   const fmt = (n) => {
-    if (n === undefined || n === null || isNaN(n)) return "0";
+    if (n === undefined || n === null || Number.isNaN(n)) return '0';
     return Math.round(n).toLocaleString();
   };
 
   const fmtPrice = (n) => {
-    if (n === undefined || n === null || isNaN(n)) return "0";
-    // Show up to 3 decimal places, removing trailing zeros
+    if (n === undefined || n === null || Number.isNaN(n)) return '0';
     if (n >= 0.01) {
       return n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 3 });
     }
-    // For very small prices, show more precision
     return n.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 6 });
   };
 
-  const formatLabel = (id) => {
-    return id
-      .split("_")
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(" ");
-  };
+  const formatLabel = (id) => id.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
-  const ownedAmount = (id) => {
-    let key = id;
-    if (id === "weapons") key = "weapons_stockpile";
-    if (id === "armor") key = "armor_stockpile";
-    
-    // Check top level first
-    if (state[key] !== undefined) return state[key];
-    
-    // Check resources obj
-    if (state.resources && state.resources[key] !== undefined) return state.resources[key];
-
-    return 0; 
-  };
-
-  const refreshMarket = async () => {
-    setLoading(true);
-    if (window.apiCall) {
-      try {
-         const data = await window.apiCall("GET", "/api/kingdom/market/prices");
-         if (Array.isArray(data)) {
-           setPrices(data.filter((p) => p.id !== "hammers"));
-         }
-      } catch (e) {
-         console.error("Failed to load market prices", e);
-      }
+  const sellMultiplier = useMemo(() => {
+    let mult = 0.7;
+    if (state?.prestige_level && state.prestige_level > 0) {
+      mult += Math.min(0.1, state.prestige_level * 0.02);
     }
-    setLoading(false);
-  };
+    return mult;
+  }, [state?.prestige_level]);
+
+  const ownedAmount = useCallback((id) => {
+    let key = id;
+    if (id === 'weapons') key = 'weapons_stockpile';
+    if (id === 'armor') key = 'armor_stockpile';
+
+    if (state?.[key] !== undefined) return state[key];
+    if (state?.resources && state.resources[key] !== undefined) return state.resources[key];
+    return 0;
+  }, [state]);
+
+  const refreshMarket = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await apiCall('/api/kingdom/market/prices');
+      if (Array.isArray(data)) {
+        setPrices(data.filter((p) => p.id !== 'hammers'));
+      }
+    } catch (err) {
+      console.error('[market] Failed to load market prices', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const onMutation = useCallback((event) => {
+    if (!event?.reason) return;
+    const reason = String(event.reason);
+    if (
+      reason === 'turn' ||
+      reason === 'kingdom-refresh' ||
+      reason === 'apply-server-updates' ||
+      reason.startsWith('market/')
+    ) {
+      void refreshMarket();
+    }
+  }, [refreshMarket]);
+
+  useEffect(() => {
+    void refreshMarket();
+  }, [refreshMarket]);
+
+  useGameMutationEvents(onMutation);
 
   const marketTrade = async (resource, op) => {
     const qtyStr = quantities[resource];
-    const qty = parseInt(qtyStr);
+    const qty = parseInt(qtyStr, 10);
     if (!qty || qty <= 0) {
-      if (window.toast) window.toast("Enter a valid quantity", "error");
+      if (window.toast) window.toast('Enter a valid quantity', 'error');
       return;
     }
 
-    if (window.apiCall) {
-      const res = await window.apiCall("POST", "/api/kingdom/market/" + op, {
-        resource: resource,
-        amount: qty,
+    try {
+      const res = await apiCall(`/api/kingdom/market/${op}`, {
+        method: 'POST',
+        body: {
+          resource,
+          amount: qty,
+        },
       });
 
       if (res.error) {
-        if (window.toast) window.toast(res.error, "error");
+        if (window.toast) window.toast(res.error, 'error');
         return;
       }
 
       if (window.applyServerUpdates) window.applyServerUpdates(res.updates);
-      const successMsg = op === "buy" ? `Bought ${qty} ${resource}` : `Sold ${qty} ${resource}`;
-      if (window.toast) window.toast(res.message || successMsg, "success");
-
-      setQuantities(prev => ({ ...prev, [resource]: "" }));
-
-      // Refresh prices
-      refreshMarket();
+      const successMsg = op === 'buy' ? `Bought ${qty} ${resource}` : `Sold ${qty} ${resource}`;
+      if (window.toast) window.toast(res.message || successMsg, 'success');
+      setQuantities((prev) => ({ ...prev, [resource]: '' }));
+      await refreshMarket();
+    } catch (err) {
+      console.error('[market] trade failed:', err);
+      if (window.toast) window.toast('Trade failed', 'error');
     }
   };
 
   const setMktMax = (resource, op, priceObj) => {
     let q = 0;
-    if (op === "buy") {
-      const val = state.resources ? (state.resources.gold || 0) : (state.gold || 0);
+    if (op === 'buy') {
+      const val = state?.resources ? (state.resources.gold || 0) : (state?.gold || 0);
       q = priceObj > 0 ? Math.floor(val / priceObj) : 0;
     } else {
       q = ownedAmount(resource);
     }
-    setQuantities(prev => ({ ...prev, [resource]: (q > 0 ? q : 0).toString() }));
+    setQuantities((prev) => ({ ...prev, [resource]: (q > 0 ? q : 0).toString() }));
   };
-
-  const handleQtyChange = (resource, val) => {
-    setQuantities(prev => ({ ...prev, [resource]: val }));
-  };
-
 
   return (
     <div id="market" className="panel" style={{ display: 'none' }}>
       <div className="card" style={{ marginTop: 0, marginBottom: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
           <div className="card-title">⚖️ Commodity Market</div>
-          <button className="base-btn" onClick={refreshMarket}> ↻ Refresh Prices </button>
+          <button className="base-btn" onClick={refreshMarket}>↻ Refresh Prices</button>
         </div>
         <div style={{ background: 'rgba(244, 166, 35, 0.1)', border: '1px solid rgba(244, 166, 35, 0.2)', padding: '10px', borderRadius: '8px' }}>
           <div style={{ fontSize: '14px', color: 'var(--text)', fontWeight: 700, marginBottom: '8px' }}>
@@ -174,11 +162,11 @@ const MarketPanel = () => {
           </div>
         )}
 
-        {!loading && prices.map(p => (
+        {!loading && prices.map((p) => (
           <div key={p.id} className="card" style={{ margin: 0, border: '1px solid var(--border)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '24px' }}>{icons[p.id] || "📦"}</span>
+                <span style={{ fontSize: '24px' }}>{icons[p.id] || '📦'}</span>
                 <div>
                   <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text)' }}>
                     {formatLabel(p.id)}
@@ -192,24 +180,18 @@ const MarketPanel = () => {
                 <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--gold)' }}>
                   {fmtPrice(p.current_price)} <span style={{ fontSize: '10px' }}>GC</span>
                 </div>
-                <div style={{ fontSize: '11px', color: 'var(--text3)' }}>
-                  Current Price
-                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text3)' }}>Current Price</div>
               </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '15px' }}>
               <div style={{ background: 'rgba(0, 255, 0, 0.05)', padding: '8px', borderRadius: '4px', textAlign: 'center' }}>
                 <div style={{ fontSize: '10px', color: 'var(--green)' }}>BUY</div>
-                <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)' }}>
-                  {fmtPrice(p.current_price)}
-                </div>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)' }}>{fmtPrice(p.current_price)}</div>
               </div>
               <div style={{ background: 'rgba(255, 165, 0, 0.05)', padding: '8px', borderRadius: '4px', textAlign: 'center' }}>
                 <div style={{ fontSize: '10px', color: 'var(--gold)' }}>SELL</div>
-                <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)' }}>
-                  {fmtPrice(p.current_price * sellMultiplier)}
-                </div>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)' }}>{fmtPrice(p.current_price * sellMultiplier)}</div>
               </div>
             </div>
 
@@ -217,8 +199,8 @@ const MarketPanel = () => {
               <input
                 type="number"
                 className="input"
-                value={quantities[p.id] || ""}
-                onChange={(e) => handleQtyChange(p.id, e.target.value)}
+                value={quantities[p.id] || ''}
+                onChange={(e) => setQuantities((prev) => ({ ...prev, [p.id]: e.target.value }))}
                 style={{ width: '70px', fontSize: '12px' }}
                 placeholder="Qty"
                 min="1"

@@ -182,16 +182,14 @@ const ResourcesPanel = () => {
     loadExpeditions();
     const cdt = setInterval(() => setNow(Math.floor(Date.now()/1000)), 1000);
     const refreshTimer = setInterval(syncFromState, REFRESH_INTERVAL_MS);
-    const refreshResources = () => { syncFromState(); loadExpeditions(); };
-    window.refreshResourcesPanel = refreshResources;
-    const unregisterRefresh = window.registerPanelRefresh?.('resources', refreshResources);
-    window.syncFromState = syncFromState;
+    const unregisterRefresh = window.registerPanelRefresh?.('resources', () => {
+      syncFromState();
+      loadExpeditions();
+    });
     return () => {
       clearInterval(cdt);
       clearInterval(refreshTimer);
       unregisterRefresh?.();
-      delete window.refreshResourcesPanel;
-      delete window.syncFromState;
     };
   }, [syncFromState]);
 

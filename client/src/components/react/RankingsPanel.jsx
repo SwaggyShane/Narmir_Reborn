@@ -101,7 +101,23 @@ const RankingsPanel = () => {
   const handleProfile = (row) => window.openKingdomProfile?.(row.name);
   const handleBounty = (row) => window.openBountyAction?.(row.id, row.name);
   const handleTarget = (row, mode) => window.targetFromRankings?.(row.id, mode);
-  const handleTrade = (row) => window.establishTradeRoute?.(row.id);
+  const handleTrade = useCallback(async (row) => {
+    try {
+      const result = await apiCall('/api/kingdom/trade-routes/establish', {
+        method: 'POST',
+        body: { targetId: row.id },
+      });
+      if (result.error) {
+        if (window.toast) window.toast(result.error, 'error');
+        return;
+      }
+      if (window.toast) window.toast(result.message || 'Trade route established', 'success');
+      await loadRankings();
+    } catch (err) {
+      console.error('[RankingsPanel] Failed to establish trade route:', err);
+      if (window.toast) window.toast('Failed to establish trade route', 'error');
+    }
+  }, [loadRankings]);
 
   const renderKingdomRow = (row) => {
     const isMe = row.id === state?.kingdomId;

@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiCall } from '../../utils/api';
+import { useGameState } from '../../hooks/useGameState';
 import WarfareIntelTab from './WarfareIntelTab';
 import WarfareReportsTab from './WarfareReportsTab';
 
 const WarfarePanel = () => {
+  const { state } = useGameState();
   const [activeTab, setActiveTab] = useState('attack');
   const [wcovTargetRace, setWcovTargetRace] = useState(null);
   const [warLogRows, setWarLogRows] = useState([]);
@@ -17,9 +19,35 @@ const WarfarePanel = () => {
   const [allianceError, setAllianceError] = useState('');
 
   const refreshAttackTargets = useCallback(async () => {
-    if (window.loadRankings) await window.loadRankings(true);
-    if (window.loadWarfarePanel) window.loadWarfarePanel();
-  }, []);
+    try {
+      const result = await apiCall('/api/kingdom/rankings');
+      if (result?.error) throw new Error(result.error);
+
+      const kingdoms = Array.isArray(result?.rankings) ? result.rankings : [];
+      const mappedTargets = kingdoms
+        .filter((row) => String(row.id) !== String(state?.kingdomId))
+        .map((row) => ({
+          id: row.id,
+          name: row.name || 'Unknown',
+          race: row.race || 'human',
+          rank: row.rank || '?',
+          land: row.land || 0,
+          population: row.population || 0,
+          fighters: row.fighters || 0,
+          mages: row.mages || 0,
+          level: row.level || 1,
+          is_ai: row.is_ai || 0,
+        }));
+
+      window.rankingsCache = kingdoms;
+      window.targets = mappedTargets;
+      filterWarfareTargetsUnified('', 'atk-target-list-w');
+      filterWarfareTargetsUnified('', 'wsp-target-list-w');
+      filterWarfareTargetsUnified('', 'wcov-target-list-w');
+    } catch (err) {
+      console.error('[WarfarePanel] Failed to refresh attack targets:', err);
+    }
+  }, [state?.kingdomId]);
 
   const loadWarLog = useCallback(async () => {
     setLoadingWarLog(true);
@@ -100,17 +128,224 @@ const WarfarePanel = () => {
     if (tabId === 'wcovert' && window.initWcovert) window.initWcovert();
   };
 
-  const updateAtkEstimateW = () => {
-    if (window.updateAtkEstimateW) window.updateAtkEstimateW();
-  };
+  const updateAtkEstimateW = useCallback(() => {
+    const fmt = (value) => {
+      const n = Number(value || 0);
+      return Number.isFinite(n) ? Math.round(n).toLocaleString() : '0';
+    };
+
+    const setAvail = (id, val) => {
+      const node = document.getElementById(id);
+      if (node) node.textContent = `(${fmt(val)})`;
+    };
+
+    setAvail('atk-fighters-avail-w', state?.fighters || 0);
+    setAvail('atk-rangers-avail-w', state?.rangers || 0);
+    setAvail('atk-mages-avail-w', state?.mages || 0);
+    setAvail('atk-wm-avail-w', state?.war_machines || 0);
+    setAvail('atk-ninjas-avail-w', state?.ninjas || 0);
+    setAvail('atk-thieves-avail-w', state?.thieves || 0);
+    setAvail('atk-clerics-avail-w', (state?.clerics || 0) + (state?.thralls || 0));
+    setAvail('atk-engineers-avail-w', state?.engineers || 0);
+    setAvail('atk-ladders-avail-w', state?.ladders || 0);
+
+    const f = parseInt(document.getElementById('atk-fighters-w')?.value, 10) || 0;
+    const rn = parseInt(document.getElementById('atk-rangers-w')?.value, 10) || 0;
+    const m = parseInt(document.getElementById('atk-mages-w')?.value, 10) || 0;
+    const wm = parseInt(document.getElementById('atk-wm-w')?.value, 10) || 0;
+    const ld = parseInt(document.getElementById('atk-ladders-w')?.value, 10) || 0;
+    const cle = parseInt(document.getElementById('atk-clerics-w')?.value, 10) || 0;
+    const eng = parseInt(document.getElementById('atk-engineers-w')?.value, 10) || 0;
+    if (f + rn + m + wm + ld + cle + eng === 0) return;
+
+    const target = window.selectedTargetW || null;
+    const engLvlArray = state?.troop_levels?.engineers?.level || 1;
+    const baseCrew = state?.race === 'human' ? 10 : state?.race === 'dwarf' ? 8 : 12;
+    const crewReq = Math.max(1, Math.round(baseCrew * (1 - Math.min(0.5, (engLvlArray - 1) / 100))));
+    const totalEng = (state?.engineers || 0) + eng;
+    const wmCrewable = Math.min(wm, Math.floor(totalEng / crewReq));
+    const weaponBonus = 1 + Math.min(1, (state?.weapons_stockpile || 0) / Math.max(f, 1)) * 0.25;
+    const atkF = f * ((state?.res_weapons || 100) / 100) * weaponBonus * ((state?.res_military || 100) / 100);
+    const atkRn = rn * 0.7 * ((state?.res_military || 100) / 100);
+    const atkM = m * 2.5 * ((state?.res_attack_magic || 100) / 100);
+    const atkWm = wmCrewable * 500 * ((state?.res_war_machines || 100) / 100);
+    const happiness = state?.happiness !== undefined && state?.happiness !== null ? state.happiness : 50;
+    const mMult = Math.max(0.5, Math.min(1.5, 0.5 + happiness / 120));
+    let bullyRatio = target
+      ? Math.max(
+        (state?.land || 1) / Math.max(1, target.land || 1),
+        ((state?.fighters || 1) / Math.max(1, target.fighters || 1)) * 0.5,
+      )
+      : 0;
+    if (target && target.is_ai) bullyRatio = 1.0;
+    const bullyPenalty = bullyRatio >= 8 ? 0.4 : bullyRatio >= 4 ? 0.6 : bullyRatio >= 2 ? 0.8 : 1.0;
+    const bullyMsg = bullyRatio >= 8
+      ? '🚨 ×8+ — will be shamed. −60% power.'
+      : bullyRatio >= 4
+        ? '⚠️ ×4–8 — happiness suffers. −40%.'
+        : bullyRatio >= 2
+          ? '⚠️ ×2–4 — −20% power.'
+          : '';
+    const atkPower = Math.round((atkF + atkRn + atkM + atkWm) * mMult * bullyPenalty);
+    const defPower = target
+      ? Math.round((target.fighters || 0) * 1.0 + (target.mages || 0) * 1.5)
+      : 0;
+    const winPct = defPower > 0
+      ? Math.min(95, Math.max(5, Math.round((atkPower / (atkPower + defPower)) * 100)))
+      : 90;
+    const winColor = winPct >= 60 ? 'var(--green)' : winPct >= 40 ? 'var(--amber)' : 'var(--red)';
+    const land = target ? Math.floor((target.land || 0) * 0.1) : 0;
+    const g = (id) => document.getElementById(id);
+
+    if (g('atk-est-power-w')) {
+      g('atk-est-power-w').textContent = fmt(atkPower);
+      g('atk-est-power-w').style.color = winPct >= 50 ? 'var(--green)' : 'var(--amber)';
+    }
+    if (g('atk-est-def-w')) {
+      g('atk-est-def-w').textContent = defPower > 0 ? `~${fmt(defPower)} (est.)` : '—';
+    }
+    if (g('atk-est-winpct-w')) {
+      g('atk-est-winpct-w').textContent = `${winPct}%`;
+      g('atk-est-winpct-w').style.color = winColor;
+    }
+    if (g('atk-est-land-w')) {
+      g('atk-est-land-w').textContent = land > 0 ? `+${fmt(land)} ac` : '—';
+    }
+    if (g('atk-bully-warn-w')) {
+      g('atk-bully-warn-w').style.display = bullyMsg ? 'block' : 'none';
+      g('atk-bully-warn-w').textContent = bullyMsg;
+    }
+  }, [state]);
 
   const setMaxValue = (inputId) => {
-    if (window.setMaxValue) window.setMaxValue(inputId);
+    const el = document.getElementById(inputId);
+    if (!el) return;
+
+    let val = 0;
+    if (inputId.startsWith('atk-')) {
+      let key = inputId.replace('atk-', '').replace('-w', '');
+      if (key === 'wm') key = 'war_machines';
+      val = Number(state?.[key] || 0);
+    } else if (inputId.startsWith('spy-') || inputId.startsWith('wcov-spy-')) {
+      val = Number(state?.thieves || 0) + Number(state?.ninjas || 0);
+    } else if (inputId.startsWith('loot-') || inputId.startsWith('wcov-loot-')) {
+      val = Number(state?.thieves || 0);
+    } else if (inputId.startsWith('assn-') || inputId.startsWith('wcov-assn-')) {
+      val = Number(state?.ninjas || 0);
+    } else if (inputId.startsWith('sab-') || inputId.startsWith('wcov-sab-')) {
+      val = Number(state?.thieves || 0);
+    } else if (inputId.startsWith('raid-')) {
+      val = Number(state?.thieves || 0);
+    } else if (inputId.startsWith('exp-')) {
+      val = inputId.includes('rangers') ? Number(state?.rangers || 0) : Number(state?.fighters || 0);
+    } else {
+      val = Number(state?.[inputId] || 0);
+    }
+
+    el.value = String(Math.max(0, val));
+    if (el.oninput) el.oninput();
+    if (el.onchange) el.onchange();
   };
 
-  const launchAttackW = () => {
-    if (window.launchAttackW) window.launchAttackW();
-  };
+  const launchAttackW = useCallback(async () => {
+    const selectedTarget = window.selectedTargetW || null;
+    if (!selectedTarget) {
+      window.toast?.('Select a target kingdom first', 'error');
+      return;
+    }
+
+    const fmt = (value) => {
+      const n = Number(value || 0);
+      return Number.isFinite(n) ? Math.round(n).toLocaleString() : '0';
+    };
+
+    const f = parseInt(document.getElementById('atk-fighters-w')?.value, 10) || 0;
+    const rn = parseInt(document.getElementById('atk-rangers-w')?.value, 10) || 0;
+    const m = parseInt(document.getElementById('atk-mages-w')?.value, 10) || 0;
+    const wm = parseInt(document.getElementById('atk-wm-w')?.value, 10) || 0;
+    const ld = parseInt(document.getElementById('atk-ladders-w')?.value, 10) || 0;
+    const nj = parseInt(document.getElementById('atk-ninjas-w')?.value, 10) || 0;
+    const th = parseInt(document.getElementById('atk-thieves-w')?.value, 10) || 0;
+    const cle = parseInt(document.getElementById('atk-clerics-w')?.value, 10) || 0;
+    const eng = parseInt(document.getElementById('atk-engineers-w')?.value, 10) || 0;
+
+    if (f + rn + m <= 0) return window.toast?.('Send at least some troops', 'error');
+    if (f > (state?.fighters || 0)) return window.toast?.('Not enough fighters', 'error');
+    if (rn > (state?.rangers || 0)) return window.toast?.('Not enough rangers', 'error');
+    if (m > (state?.mages || 0)) return window.toast?.('Not enough mages', 'error');
+    if (wm > (state?.war_machines || 0)) return window.toast?.('Not enough war machines', 'error');
+    if (ld > (state?.ladders || 0)) return window.toast?.('Not enough 🪜 ladders', 'error');
+    if (nj > (state?.ninjas || 0)) return window.toast?.('Not enough ninjas', 'error');
+    if (th > (state?.thieves || 0)) return window.toast?.('Not enough thieves', 'error');
+    if (cle > (state?.clerics || 0) + (state?.thralls || 0)) return window.toast?.('Not enough clerics/thralls', 'error');
+    if (eng > (state?.engineers || 0)) return window.toast?.('Not enough engineers', 'error');
+
+    const result = await apiCall('/api/kingdom/attack', {
+      method: 'POST',
+      body: {
+        targetId: selectedTarget.id,
+        fighters: f,
+        rangers: rn,
+        mages: m,
+        warMachines: wm,
+        ladders: ld,
+        ninjas: nj,
+        thieves: th,
+        clerics: cle,
+        engineers: eng,
+      },
+    });
+
+    if (result?.error) {
+      window.toast?.(result.error, 'error');
+      return;
+    }
+
+    const r = result.report || {};
+    const rows = [
+      ['Outcome', r.win ? '🏆 Victory' : '❌ Repelled'],
+      ['Land Seized', `+${fmt(r.landTransferred || 0)} acres`],
+      ['Your Power', fmt(r.atkPower)],
+      ['Enemy Power', fmt(r.defPower)],
+    ];
+
+    if (r.ninjaKills > 0) rows.push(['Assassinations (Ninjas)', fmt(r.ninjaKills)]);
+    if (r.flankKills > 0) rows.push(['Flank Action', fmt(r.flankKills)]);
+    if (r.rangerKills > 0) rows.push(['Opening Volley', fmt(r.rangerKills)]);
+    if (r.thiefSabotage > 0) rows.push(['Enemy WM Disabled', fmt(r.thiefSabotage)]);
+
+    rows.push(['---', 'YOUR LOSSES']);
+    if (r.atkFightersLost > 0) rows.push(['Fighters Lost', fmt(r.atkFightersLost)]);
+    if (r.atkRangersLost > 0) rows.push(['Rangers Lost', fmt(r.atkRangersLost)]);
+    if (r.atkMagesLost > 0) rows.push(['Mages Lost', fmt(r.atkMagesLost)]);
+    if (r.atkNinjasLost > 0) rows.push(['Ninjas Lost', fmt(r.atkNinjasLost)]);
+    if (r.atkClericsLost > 0) rows.push(['Clerics Lost', fmt(r.atkClericsLost)]);
+    if (r.atkThievesLost > 0) rows.push(['Thieves Lost', fmt(r.atkThievesLost)]);
+    if (r.atkEngineersLost > 0) rows.push(['Engineers Lost', fmt(r.atkEngineersLost)]);
+    if (r.atkWmLost > 0) rows.push(['War Machines Lost', fmt(r.atkWmLost)]);
+
+    rows.push(['---', 'ENEMY LOSSES']);
+    if (r.defFightersLost > 0) rows.push(['Fighters Slain', fmt(r.defFightersLost)]);
+    if (r.defRangersLost > 0) rows.push(['Rangers Slain', fmt(r.defRangersLost)]);
+    if (r.defMagesLost > 0) rows.push(['Mages Slain', fmt(r.defMagesLost)]);
+    if (r.defNinjasLost > 0) rows.push(['Ninjas Slain', fmt(r.defNinjasLost)]);
+    if (r.defClericsLost > 0) rows.push(['Clerics Slain', fmt(r.defClericsLost)]);
+    if (r.defThievesLost > 0) rows.push(['Thieves Slain', fmt(r.defThievesLost)]);
+    if (r.defEngineersLost > 0) rows.push(['Engineers Slain', fmt(r.defEngineersLost)]);
+    if (r.defWmLost > 0) rows.push(['War Machines Slain', fmt(r.defWmLost)]);
+    if (r.wallsDestroyed > 0) rows.push(['Walls Destroyed', fmt(r.wallsDestroyed)]);
+    if (r.bullyMsg) rows.push(['⚠️ Penalty', r.bullyMsg]);
+
+    window.applyGameMutation?.(result, { reason: 'attack' });
+    window.syncUI?.();
+    window.showBattleReport?.({
+      type: 'Military attack',
+      target: selectedTarget.name,
+      win: r.win,
+      rows,
+    });
+    refreshAttackTargets();
+  }, [refreshAttackTargets, state]);
 
   const castWspell = () => {
     if (window.castWspell) window.castWspell();
@@ -124,11 +359,23 @@ const WarfarePanel = () => {
     if (window.updateWspellCalc) window.updateWspellCalc();
   };
 
-  const filterWarfareTargetsUnified = (val, targetListId) => {
-    if (window.filterWarfareTargetsUnified) {
-      window.filterWarfareTargetsUnified(val, targetListId);
-    }
-  };
+  const filterWarfareTargetsUnified = useCallback((val, targetListId) => {
+    const q = String(val || '').toLowerCase();
+    const targets = Array.isArray(window.targets) ? window.targets : [];
+    const filtered = q
+      ? targets.filter((t) => String(t.name || '').toLowerCase().includes(q))
+      : targets;
+
+    const selectFn = targetListId === 'atk-target-list-w'
+      ? 'selectTargetW'
+      : targetListId === 'wsp-target-list-w'
+        ? 'selectWspellTarget'
+        : targetListId === 'wcov-target-list-w'
+          ? 'selectWcovTarget'
+          : '';
+
+    window.renderKingdomCardList?.(filtered, targetListId, selectFn);
+  }, []);
 
   const handleTargetSearchW = (event) => {
     const val = event?.target ? event.target.value : event;
@@ -143,10 +390,6 @@ const WarfarePanel = () => {
   const handleTargetSearchWco = (event) => {
     const val = event?.target ? event.target.value : event;
     filterWarfareTargetsUnified(val, 'wcov-target-list-w');
-  };
-
-  const loadWarfarePanel = () => {
-    if (window.loadWarfarePanel) window.loadWarfarePanel();
   };
 
   const fmtDate = (value) => {

@@ -386,90 +386,6 @@ window.playAchievementSound = () => {
   }
 };
 
-// Mage allocation and study functions
-window.updateMageAllocationDisplay = () => {
-  const totalMages = (window.gameState && window.gameState.mages) || 0;
-  const spellbookAlloc = Math.max(0, parseInt(document.getElementById("mage-alloc-spellbook")?.value, 10) || 0);
-  const schoolAlloc = Math.max(0, parseInt(document.getElementById("mage-alloc-school")?.value, 10) || 0);
-  const totalAllocated = spellbookAlloc + schoolAlloc;
-  const available = totalMages - totalAllocated;
-
-  const totalEl = document.getElementById("mage-total");
-  const availEl = document.getElementById("mage-available");
-  const allocEl = document.getElementById("mage-allocated");
-
-  if (totalEl) totalEl.textContent = totalMages.toLocaleString();
-  if (availEl) availEl.textContent = Math.max(0, available).toLocaleString();
-  if (allocEl) allocEl.textContent = totalAllocated.toLocaleString();
-};
-
-window.setMageMax = (type) => {
-  const totalMages = (window.gameState && window.gameState.mages) || 0;
-  const otherType = type === 'spellbook' ? 'mage-alloc-school' : 'mage-alloc-spellbook';
-  const otherValue = Math.max(0, parseInt(document.getElementById(otherType)?.value, 10) || 0);
-  const maxAllowed = Math.max(0, totalMages - otherValue);
-
-  const targetId = type === 'spellbook' ? 'mage-alloc-spellbook' : 'mage-alloc-school';
-  const targetEl = document.getElementById(targetId);
-  if (targetEl) targetEl.value = maxAllowed;
-
-  if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay();
-};
-
-window.releaseMageAllocation = () => {
-  const spellbookEl = document.getElementById("mage-alloc-spellbook");
-  const schoolEl = document.getElementById("mage-alloc-school");
-  if (spellbookEl) spellbookEl.value = 0;
-  if (schoolEl) schoolEl.value = 0;
-
-  if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay();
-  if (window.studyMagic) window.studyMagic();
-};
-
-window.studyMagic = async () => {
-  try {
-    const spellbook = Math.max(0, parseInt(document.getElementById("mage-alloc-spellbook")?.value, 10) || 0);
-    const school_spellbook = Math.max(0, parseInt(document.getElementById("mage-alloc-school")?.value, 10) || 0);
-
-    const totalMages = (window.gameState && window.gameState.mages) || 0;
-    if (spellbook + school_spellbook > totalMages) {
-      alert(`Allocated ${spellbook + school_spellbook} mages, but only have ${totalMages}`);
-      return;
-    }
-
-    // Get CSRF token from cookies
-    const getCsrfToken = () => {
-      try {
-        const m = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
-        if (m) return decodeURIComponent(m[1]);
-      } catch {}
-      return null;
-    };
-
-    const headers = { "Content-Type": "application/json" };
-    const csrfToken = getCsrfToken();
-    if (csrfToken) headers["x-csrf-token"] = csrfToken;
-
-    const response = await fetch("/api/kingdom/school-allocation", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ spellbook, school_spellbook }),
-    });
-
-    const data = await response.json();
-    if (data.error) {
-      alert(data.error);
-    } else if (data.ok) {
-      console.log("[studies] Mage allocation saved successfully");
-      if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay();
-      if (window.triggerReactUpdates) window.triggerReactUpdates();
-    }
-  } catch (error) {
-    console.error("[studies] Error saving mage allocation:", error);
-    alert("Failed to save allocation: " + error.message);
-  }
-};
-
 window.renderLibraryPanel = async () => {
   try {
     const response = await fetch("/api/kingdom/lore-and-achievements", {
@@ -593,16 +509,6 @@ window.renderLibraryPanel = async () => {
       errorDiv.style.color = 'var(--red)';
       errorDiv.textContent = 'Failed to load lore: ' + error.message;
       loreContainer.appendChild(errorDiv);
-    }
-  }
-};
-
-window.updateTurnsDisplay = () => {
-  const turnsStored = window.gameState?.turns_stored;
-  if (turnsStored !== undefined) {
-    const el = document.getElementById("turns-stored-disp");
-    if (el) {
-      el.textContent = String(turnsStored);
     }
   }
 };
