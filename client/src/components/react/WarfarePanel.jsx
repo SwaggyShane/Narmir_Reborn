@@ -389,6 +389,7 @@ const WarfarePanel = () => {
         </div>
       </div>
 
+      {/* TODO: keep spells on the existing shell path for this PR; move them in a later phase. */}
       <div style={{ display: activeTab === 'wspells' ? 'block' : 'none' }}>
         <div className="card">
           <div className="card-title">Warfare Spells</div>
@@ -400,6 +401,7 @@ const WarfarePanel = () => {
         </div>
       </div>
 
+      {/* TODO: keep covert on the existing shell path for this PR; move it in a later phase. */}
       <div style={{ display: activeTab === 'wcovert' ? 'block' : 'none' }}>
         <div className="card">
           <div className="card-title">Warfare Covert Ops</div>
