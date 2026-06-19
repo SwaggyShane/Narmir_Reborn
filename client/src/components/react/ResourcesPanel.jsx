@@ -182,16 +182,14 @@ const ResourcesPanel = () => {
     loadExpeditions();
     const cdt = setInterval(() => setNow(Math.floor(Date.now()/1000)), 1000);
     const refreshTimer = setInterval(syncFromState, REFRESH_INTERVAL_MS);
-    const refreshResources = () => { syncFromState(); loadExpeditions(); };
-    window.refreshResourcesPanel = refreshResources;
-    const unregisterRefresh = window.registerPanelRefresh?.('resources', refreshResources);
-    window.syncFromState = syncFromState;
+    const unregisterRefresh = window.registerPanelRefresh?.('resources', () => {
+      syncFromState();
+      loadExpeditions();
+    });
     return () => {
       clearInterval(cdt);
       clearInterval(refreshTimer);
       unregisterRefresh?.();
-      delete window.refreshResourcesPanel;
-      delete window.syncFromState;
     };
   }, [syncFromState]);
 
@@ -408,7 +406,6 @@ const ResourcesPanel = () => {
       if (!d2.ok && window.toast) window.toast('Build queued but engineer allocation failed: ' + (d2.error || 'Unknown'), 'error');
       if (d2.ok && s) s.resource_build_allocation = newAlloc;
       syncFromState();
-      window.updateBuildDisplay?.();
       await refreshKingdom();
     } catch(e) {
       setBuildingInProgress(p => ({...p, [type]: false}));

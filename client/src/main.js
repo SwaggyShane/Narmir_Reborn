@@ -566,7 +566,6 @@ window.takeTurn = async () => {
         window.updateBuildDisplay?.();
         window.updateTrainingDisplay?.();
         window.updateXpDisplay?.();
-        window.refreshResourcesPanel?.();
       } catch (e) {
         console.error("[turn] Error refreshing display elements:", e);
       }
