@@ -58,11 +58,62 @@ const EconomyPanel = () => {
   const handleUpdateMercPreview = () => {
     updateMercPreview();
   };
-  const hireMercs = () => {
-    if (window.hireMercs) window.hireMercs();
+  const hireMercs = async () => {
+    const unitType = document.getElementById('merc-unit')?.value || 'fighters';
+    const tier = document.getElementById('merc-tier')?.value || 'rabble';
+    const count = Number(document.getElementById('merc-count')?.value || 0);
+    if (count <= 0) {
+      if (window.toast) window.toast('Enter a valid mercenary count', 'error');
+      return;
+    }
+
+    try {
+      const result = await apiCall('/api/kingdom/economy/hire-mercs', {
+        method: 'POST',
+        body: { unitType, tier, count },
+      });
+      if (result.error) {
+        if (window.toast) window.toast(result.error, 'error');
+        return;
+      }
+      if (window.applyGameMutation) {
+        window.applyGameMutation(result, { reason: 'hire-mercs' });
+      } else if (result.updates) {
+        window.applyServerUpdates?.(result.updates, { reason: 'hire-mercs' });
+      }
+      if (window.toast) window.toast(`Hired ${result.hired?.count || count} mercenaries`, 'success');
+    } catch (err) {
+      console.error('[economy] hire mercs failed:', err);
+      if (window.toast) window.toast('Failed to hire mercenaries', 'error');
+    }
   };
-  const makeBankDeposit = () => {
-    if (window.makeBankDeposit) window.makeBankDeposit();
+  const makeBankDeposit = async () => {
+    const amount = Number(document.getElementById('bank-deposit-amount')?.value || 0);
+    const termIndex = Number(document.getElementById('bank-deposit-term')?.value || 0);
+    if (amount <= 0) {
+      if (window.toast) window.toast('Enter a valid deposit amount', 'error');
+      return;
+    }
+
+    try {
+      const result = await apiCall('/api/kingdom/economy/bank-deposit', {
+        method: 'POST',
+        body: { amount, termIndex },
+      });
+      if (result.error) {
+        if (window.toast) window.toast(result.error, 'error');
+        return;
+      }
+      if (window.applyGameMutation) {
+        window.applyGameMutation(result, { reason: 'bank-deposit' });
+      } else if (result.updates) {
+        window.applyServerUpdates?.(result.updates, { reason: 'bank-deposit' });
+      }
+      if (window.toast) window.toast(result.message || 'Deposit successful', 'success');
+    } catch (err) {
+      console.error('[economy] bank deposit failed:', err);
+      if (window.toast) window.toast('Failed to create bank deposit', 'error');
+    }
   };
   const establishTradeRoute = async (targetId) => {
     if (!targetId) return;
