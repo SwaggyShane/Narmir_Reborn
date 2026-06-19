@@ -17,12 +17,6 @@ const { wallDefensePower, towerDetectionPower, outpostRangerPower } = require('.
 const { isNight, happinessCombatMult, wmCrewRequired } = require('./combat-helpers');
 const combatResolverV2 = require('./combat-resolver');
 
-function moraleMult(morale) {
-  if (morale < 50) return 0.8 + (morale / 50) * 0.1; // 0.80–0.90
-  if (morale < 100) return 0.9 + ((morale - 50) / 50) * 0.1; // 0.90–1.00
-  return Math.min(1.2, 1.0 + ((morale - 100) / 100) * 0.1); // 1.00–1.20 (capped at 1.20)
-}
-
 function sumRecordValues(record = {}) {
   return Object.values(record).reduce((sum, value) => sum + (Number(value) || 0), 0);
 }
@@ -127,6 +121,11 @@ function formatCombatV2NewsBlurb(attacker, defender, report, perspective = "atta
 
   const title = perspective === "defender" ? "Defense report" : "Attack report";
   const outcome = report.win ? "Attacker victory" : "Defender held";
+  const winLossLine = `Win/Loss: ${
+    perspective === "attacker"
+      ? (report.win ? "Victory" : "Defeat")
+      : (report.win ? "Defeat" : "Victory")
+  }`;
   const landLine = perspective === "defender"
     ? `Land loss: ${report.win ? `${fmt(land)} acres lost` : "None"}`
     : `Land gained: ${report.win ? `${fmt(land)} acres captured` : "None"}`;
@@ -134,9 +133,18 @@ function formatCombatV2NewsBlurb(attacker, defender, report, perspective = "atta
   if (sabotage > 0) detailParts.push(`${fmt(sabotage)} ballistae disabled`);
   if (wallDamage > 0) detailParts.push(`${fmt(wallDamage)} wall HP damaged`);
   const siegeLine = detailParts.length ? `Siege notes: ${detailParts.join("; ")}` : "Siege notes: None";
+  const recoveryParts = [];
+  if (Array.isArray(report.clericRescues) && report.clericRescues.length > 0) {
+    recoveryParts.push(`${fmt(report.clericRescues.length)} cleric rescues`);
+  }
+  if (report.vampireReanimation && Number(report.vampireReanimation.totalRaised || 0) > 0) {
+    recoveryParts.push(`${fmt(report.vampireReanimation.totalRaised)} undead rises`);
+  }
+  const recoveryLine = recoveryParts.length ? `Recovery notes: ${recoveryParts.join("; ")}` : "Recovery notes: None";
 
   return [
     `${title}: ${attackerName} vs ${defenderName}`,
+    winLossLine,
     `Outcome: ${outcome}`,
     landLine,
     `Troops engaged - Attacker: ${formatCombatUnitCounts(report.sent)}`,
@@ -147,6 +155,7 @@ function formatCombatV2NewsBlurb(attacker, defender, report, perspective = "atta
     `Troops injured - Defender: ${formatCombatUnitCounts(defenderInjured, defenderUnitLabels)}`,
     `Critical hits: ${fmt(criticalHits)} hits, ${fmt(criticalKills)} killing blows`,
     `Buildings lost: ${formatCombatBuildingsLost(report)}`,
+    recoveryLine,
     siegeLine,
   ].join("\n");
 }
@@ -165,7 +174,7 @@ function calcBullyPenalty(attacker, defender) {
     shameEvent = `👑 ${attacker.name} has attacked the much weaker ${defender.name}. The world watches in disgust.`;
   } else if (bullyRatio >= 4) {
     bullyPenalty = 0.6;
-    bullyMsg = "ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â Morale suffers ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â this is slaughter, not war.";
+    bullyMsg = "ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â Happiness suffers ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â this is slaughter, not war.";
   } else if (bullyRatio >= 2) {
     bullyPenalty = 0.8;
     bullyMsg = "ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â Your troops lack motivation fighting a weaker foe.";
@@ -286,46 +295,46 @@ function applyReanimation(win, attacker, defender, kills, attackerUpdates, defen
   return necroMsg;
 }
 
-function calcMoraleChanges(win, powerRatio, bullyRatio, attacker, defender) {
+function calcHappinessChanges(win, powerRatio, bullyRatio, attacker, defender) {
   const victoryMargin = Math.min(2.0, Math.max(0.1, powerRatio));
-  let atkMoraleChange, defMoraleChange;
+  let atkHappinessChange, defHappinessChange;
   if (win) {
-    atkMoraleChange = Math.floor(5 + Math.min(10, victoryMargin * 5));
-    defMoraleChange = -Math.max(
+    atkHappinessChange = Math.floor(5 + Math.min(10, victoryMargin * 5));
+    defHappinessChange = -Math.max(
       5,
       Math.floor(Math.min(20, victoryMargin * 10)),
     );
-    // Bully shame ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â attacker loses morale too at high ratios
-    if (bullyRatio >= 8) atkMoraleChange -= 15;
-    if (bullyRatio >= 4) atkMoraleChange -= 5;
+    // Bully shame ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â attacker loses happiness too at high ratios
+    if (bullyRatio >= 8) atkHappinessChange -= 15;
+    if (bullyRatio >= 4) atkHappinessChange -= 5;
   } else {
-    atkMoraleChange = -Math.floor(
+    atkHappinessChange = -Math.floor(
       5 + Math.min(15, (1 / Math.max(0.1, powerRatio)) * 8),
     );
-    defMoraleChange = Math.floor(
+    defHappinessChange = Math.floor(
       5 + Math.min(10, (1 / Math.max(0.1, powerRatio)) * 5),
     );
   }
-  const MORALE_FLOOR = 0;
-  const newAtkMorale = Math.max(
-    MORALE_FLOOR,
+  const HAPPINESS_FLOOR = 0;
+  const newAtkHappiness = Math.max(
+    HAPPINESS_FLOOR,
     Math.min(
       200,
-      (attacker.morale !== undefined && attacker.morale !== null
-        ? attacker.morale
-        : 100) + atkMoraleChange,
+      (attacker.happiness !== undefined && attacker.happiness !== null
+        ? attacker.happiness
+        : 100) + atkHappinessChange,
     ),
   );
-  const newDefMorale = Math.max(
-    MORALE_FLOOR,
+  const newDefHappiness = Math.max(
+    HAPPINESS_FLOOR,
     Math.min(
       200,
-      (defender.morale !== undefined && defender.morale !== null
-        ? defender.morale
-        : 100) + defMoraleChange,
+      (defender.happiness !== undefined && defender.happiness !== null
+        ? defender.happiness
+        : 100) + defHappinessChange,
     ),
   );
-  return { atkMoraleChange, defMoraleChange, newAtkMorale, newDefMorale };
+  return { atkHappinessChange, defHappinessChange, newAtkHappiness, newDefHappiness };
 }
 
 function resolveMilitaryAttackV2Adapter(
@@ -605,9 +614,9 @@ function resolveMilitaryAttack(
 
   const { bullyRatio, bullyPenalty, bullyMsg, shameEvent } = calcBullyPenalty(attacker, defender);
 
-  // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Morale multipliers ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
-  const atkMoraleMult = happinessCombatMult(attacker.happiness !== undefined && attacker.happiness !== null ? attacker.happiness : 50);
-  const defMoraleMult = happinessCombatMult(defender.happiness !== undefined && defender.happiness !== null ? defender.happiness : 50);
+  // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Happiness multipliers ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+  const atkHappinessMult = happinessCombatMult(attacker.happiness !== undefined && attacker.happiness !== null ? attacker.happiness : 50);
+  const defHappinessMult = happinessCombatMult(defender.happiness !== undefined && defender.happiness !== null ? defender.happiness : 50);
 
   // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Research, race and level helpers ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
   const atkFighterLvl = effectiveTroopLevel(attacker, "fighters") / 50;
@@ -799,7 +808,7 @@ function resolveMilitaryAttack(
       atkMagePower * atkMageMult +
       wmPower * atkWmMult +
       atkHeroPower) *
-    atkMoraleMult *
+    atkHappinessMult *
     bullyPenalty *
     atkWarlordMult *
     atkBloodShamanMult;
@@ -953,7 +962,7 @@ function resolveMilitaryAttack(
       (defWallPower + defOutpostPower + defTowerPower + defStructures) *
         defSiegebreakerStructureMult +
       defHeroPower) *
-    defMoraleMult *
+    defHappinessMult *
     defTierMult *
     defWarlordMult *
     defBloodShamanMult *
@@ -1140,8 +1149,8 @@ function resolveMilitaryAttack(
 
   let necroMsg = "";
 
-  // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Step 8: Morale changes & Discovery ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
-  const { atkMoraleChange, defMoraleChange, newAtkMorale, newDefMorale } = calcMoraleChanges(win, powerRatio, bullyRatio, attacker, defender);
+  // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Step 8: Happiness changes & Discovery ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+  const { atkHappinessChange, defHappinessChange, newAtkHappiness, newDefHappiness } = calcHappinessChanges(win, powerRatio, bullyRatio, attacker, defender);
 
   // The attacker is always discovered by the defender (map drop)
   const defDisc = safeJsonParse(
@@ -1223,7 +1232,7 @@ function resolveMilitaryAttack(
     engineers: Math.max(0, (attacker.engineers || 0) - atkEngineersLost),
     war_machines: Math.max(0, (attacker.war_machines || 0) - atkWmLost),
     land: (attacker.land || 0) + landTransferred,
-    morale: newAtkMorale,
+    happiness: newAtkHappiness,
     weapons_stockpile: Math.max(
       0,
       (attacker.weapons_stockpile || 0) -
@@ -1240,7 +1249,7 @@ function resolveMilitaryAttack(
     engineers: Math.max(0, (defender.engineers || 0) - defEngineersLost),
     war_machines: Math.max(0, (defender.war_machines || 0) - defWmLost),
     land: Math.max(0, (defender.land || 0) - landTransferred),
-    morale: newDefMorale,
+    happiness: newDefHappiness,
   });
 
   // Reanimation / conversion of casualties (after base troop updates)
@@ -1295,8 +1304,8 @@ function resolveMilitaryAttack(
     rangerKills,
     flankKills,
     thiefSabotage,
-    atkMoraleChange,
-    defMoraleChange,
+    atkHappinessChange,
+    defHappinessChange,
     bullyMsg,
     shameEvent,
     steps,
@@ -1413,7 +1422,7 @@ function resolveMilitaryAttack(
 }
 
 module.exports = {
-  moraleMult,
+  happinessMult,
   sumRecordValues,
   normalizeCombatUnits,
   formatCombatUnitCounts,

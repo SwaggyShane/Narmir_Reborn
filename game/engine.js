@@ -3333,6 +3333,11 @@ function formatCombatV2NewsBlurb(attacker, defender, report, perspective = "atta
 
   const title = perspective === "defender" ? "Defense report" : "Attack report";
   const outcome = report.win ? "Attacker victory" : "Defender held";
+  const winLossLine = `Win/Loss: ${
+    perspective === "attacker"
+      ? (report.win ? "Victory" : "Defeat")
+      : (report.win ? "Defeat" : "Victory")
+  }`;
   const landLine = perspective === "defender"
     ? `Land loss: ${report.win ? `${fmt(land)} acres lost` : "None"}`
     : `Land gained: ${report.win ? `${fmt(land)} acres captured` : "None"}`;
@@ -3340,9 +3345,18 @@ function formatCombatV2NewsBlurb(attacker, defender, report, perspective = "atta
   if (sabotage > 0) detailParts.push(`${fmt(sabotage)} ballistae disabled`);
   if (wallDamage > 0) detailParts.push(`${fmt(wallDamage)} wall HP damaged`);
   const siegeLine = detailParts.length ? `Siege notes: ${detailParts.join("; ")}` : "Siege notes: None";
+  const recoveryParts = [];
+  if (Array.isArray(report.clericRescues) && report.clericRescues.length > 0) {
+    recoveryParts.push(`${fmt(report.clericRescues.length)} cleric rescues`);
+  }
+  if (report.vampireReanimation && Number(report.vampireReanimation.totalRaised || 0) > 0) {
+    recoveryParts.push(`${fmt(report.vampireReanimation.totalRaised)} undead rises`);
+  }
+  const recoveryLine = recoveryParts.length ? `Recovery notes: ${recoveryParts.join("; ")}` : "Recovery notes: None";
 
   return [
     `${title}: ${attackerName} vs ${defenderName}`,
+    winLossLine,
     `Outcome: ${outcome}`,
     landLine,
     `Troops engaged - Attacker: ${formatCombatUnitCounts(report.sent)}`,
@@ -3353,6 +3367,7 @@ function formatCombatV2NewsBlurb(attacker, defender, report, perspective = "atta
     `Troops injured - Defender: ${formatCombatUnitCounts(defenderInjured, defenderUnitLabels)}`,
     `Critical hits: ${fmt(criticalHits)} hits, ${fmt(criticalKills)} killing blows`,
     `Buildings lost: ${formatCombatBuildingsLost(report)}`,
+    recoveryLine,
     siegeLine,
   ].join("\n");
 }
