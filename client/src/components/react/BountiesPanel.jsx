@@ -66,7 +66,10 @@ const BountiesPanel = () => {
         return;
       }
       window.toast?.(res.message, 'success');
-      if (window.state) window.state.gold -= parsedAmount;
+      window.gameStateManager?.setState(
+        { gold: Math.max(0, (window.gameState?.gold || 0) - parsedAmount) },
+        { reason: 'bounty-place' },
+      );
       window.syncUI?.();
       setAmount('');
       setSelectedTarget('');
