@@ -19383,6 +19383,9 @@
 
 
       async function openKingdomProfile(name) {
+        if (typeof window.__openKingdomProfileImpl === "function") {
+          return window.__openKingdomProfileImpl(name);
+        }
 
         var modal = document.getElementById("kingdom-profile-modal");
 
