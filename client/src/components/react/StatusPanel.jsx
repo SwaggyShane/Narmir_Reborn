@@ -256,7 +256,7 @@ const StatusPanel = () => {
         </div>
       </div>
 
-      <div className="three-col" id="status-grid">
+      <div className="status-grid" id="status-grid">
         <div className="card">
           <div className="card-title">
             Military &amp; support
