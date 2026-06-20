@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from '../../utils/toast.js';
+import { useGameState } from '../../hooks/useGameState';
 
 const API = (path, opts = {}) => {
   const token = localStorage.getItem('narmir_token');
@@ -186,7 +187,8 @@ function PortraitUploadCard() {
   const [preview, setPreview] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState('');
-  const hasCustom = !!window.gameState?.customPortrait;
+  const { state, applyUpdates } = useGameState();
+  const hasCustom = !!state?.customPortrait;
 
   const handleUpload = async (e) => {
     const file = e.target.files[0];
@@ -205,7 +207,7 @@ function PortraitUploadCard() {
       });
       const data = await res.json();
       if (data.ok) {
-        if (window.gameState) window.gameState.customPortrait = data.portraitUrl;
+        applyUpdates({ customPortrait: data.portraitUrl }, { reason: 'portrait-upload' });
         setMsg('Portrait updated.');
       } else {
         URL.revokeObjectURL(objectUrl);
@@ -227,7 +229,7 @@ function PortraitUploadCard() {
       const res = await fetch('/api/kingdom/portrait', { method: 'DELETE', credentials: 'include' });
       const data = await res.json();
       if (data.ok) {
-        if (window.gameState) window.gameState.customPortrait = null;
+        applyUpdates({ customPortrait: null }, { reason: 'portrait-remove' });
         setPreview(null);
         setMsg('Portrait removed.');
       } else {
@@ -245,7 +247,7 @@ function PortraitUploadCard() {
       <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: '10px' }}>
         {(preview || hasCustom) && (
           <img
-            src={preview || window.gameState?.customPortrait}
+            src={preview || state?.customPortrait}
             alt="Custom portrait"
             style={{ width: '64px', height: '64px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)' }}
           />
