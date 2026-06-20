@@ -33,11 +33,15 @@ import SchoolSelectionControllerReact from "./components/react/SchoolSelectionCo
 import ForumSectionReact from "./components/forum/ForumSection.jsx";
 import "./css/forum.css";
 import ResourceStripReact from "./components/react/ResourceStrip.jsx";
+import { openRaceLore as openRaceLoreAction } from "./actions/openRaceLore.js";
+import { replayWarReport as replayWarReportAction } from "./actions/replayWarReport.js";
 import { apiCall, syncUI, switchTab, initGameStateManager, applyGameMutation, gameState } from "./utils/shellBridge.js";
 
 window.apiCall = apiCall;
 window.switchTab = switchTab;
 window.applyGameMutation = applyGameMutation;
+window.__openRaceLoreImpl = openRaceLoreAction;
+window.__replayWarReportImpl = replayWarReportAction;
 
 const reactRoots = new Map();
 
