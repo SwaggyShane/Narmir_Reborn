@@ -36,7 +36,7 @@ import ResourceStripReact from "./components/react/ResourceStrip.jsx";
 
 // API call helper for making authenticated requests from vanilla JS
 //
-// NOTE: This window.apiCall uses the convention (method, url, body) â€” e.g.
+// NOTE: This window.apiCall uses the convention (method, url, body) - e.g.
 //   window.apiCall("POST", "/api/kingdom/turn", { foo: 1 })
 //
 // This differs from client/src/utils/api.js which exports apiCall(url, options)
@@ -86,13 +86,14 @@ function repairDisplayText(value) {
     return window.repairMojibake(text);
   }
   return text
-    .replace(/Â·/g, "Â·")
-    .replace(/â€”/g, "â€”")
-    .replace(/â€“/g, "-")
-    .replace(/â€¢/g, "â€¢")
-    .replace(/â€˜|â€™/g, "'")
-    .replace(/â€œ|"/g, '"');
+    .replace(/Â·/g, "·")
+    .replace(/â€—/g, "—")
+    .replace(/â€–/g, "–")
+    .replace(/â€¢/g, "•")
+    .replace(/â€‘|â€’/g, "’")
+    .replace(/â€“|â€”/g, "“");
 }
+
 
 console.log("[react] main.js execution started at", new Date().toISOString());
 
