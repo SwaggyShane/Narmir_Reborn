@@ -285,9 +285,7 @@ const OptionsPanel = () => {
     const val = e.target.value;
     setNavLayout(val);
     localStorage.setItem('narmir_nav_layout', val);
-    if (window.applyNavLayout) {
-      window.applyNavLayout();
-    }
+    if (typeof window.applyNavLayout === 'function') window.applyNavLayout();
   };
 
   const updateSkipIntro = (e) => {

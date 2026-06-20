@@ -4302,7 +4302,7 @@
 
       /* Ã¢â€â‚¬Ã¢â€â‚¬ Core state (defined first so all functions below can access it) Ã¢â€â‚¬Ã¢â€â‚¬ */
 
-      window.applyNavLayout = function() {
+      function applyNavLayout() {
 
         var layout = localStorage.getItem("narmir_nav_layout") || "responsive";
 
@@ -4320,9 +4320,9 @@
 
         window.dispatchEvent(new Event('resize'));
 
-      };
+      }
 
-      window.applyNavLayout();
+      applyNavLayout();
 
 
 
@@ -7434,8 +7434,6 @@
         return current;
       }
 
-      window.repairMojibake = repairMojibake;
-
       function getAuthModalElement(id) {
         return document.getElementById(id);
       }
@@ -7598,9 +7596,8 @@
           clearAuthError(err.message || "Registration failed.");
         }
       }
-      window.doLogin = doLogin;
-      window.doRegister = doRegister;
-      window.doLogout = doLogout;
+      document.getElementById("btn-login")?.addEventListener("click", doLogin);
+      document.getElementById("btn-register")?.addEventListener("click", doRegister);
 
 
 
@@ -8036,38 +8033,6 @@
 
 
 
-      async function loadNews() {
-
-        var items = await apiCall("GET", "/api/kingdom/news/list");
-
-        var titleTurn = document.getElementById("news-turn-num");
-
-        if (titleTurn) titleTurn.textContent = state.turn || 0;
-
-        if (!Array.isArray(items)) return;
-
-        newsCache = items;
-
-        renderNewsList(items);
-
-        ["news-badge", "bnav-news-badge"].forEach(function (id) {
-
-          var b = document.getElementById(id);
-
-          if (b) {
-
-            b.style.display = "none";
-
-            b.textContent = "";
-
-          }
-
-        });
-
-      }
-
-
-
       function getNewsPriority(item) {
 
         if (!item) return 13;
@@ -8169,228 +8134,6 @@
         if (message.toLowerCase().includes("attacked your kingdom")) return "You were attacked.";
 
         return "Combat report available.";
-
-      }
-
-
-
-      function renderNewsList(items) {
-
-        var list = document.getElementById("news-list");
-
-        if (!list) return;
-
-
-
-        // Apply filter
-
-        var filtered =
-
-          newsFilter === "all"
-
-            ? items
-
-            : items.filter(function (item) {
-
-                if (newsFilter === "system")
-
-                  return !item.type || item.type === "system";
-
-                return item.type === newsFilter;
-
-              });
-
-
-
-        if (!filtered || filtered.length === 0) {
-
-          list.innerHTML =
-
-            '<div style="color:var(--text3);font-size:13px;padding:16px 0;text-align:center">' +
-
-            (newsFilter === "all"
-
-              ? "No news yet Ã¢â‚¬â€ take some turns!"
-
-              : "No " + newsFilter + " events yet.") +
-
-            "</div>";
-
-          return;
-
-        }
-
-
-
-        // Group by turn_num
-
-        var turnMap = {};
-
-        var turnOrder = [];
-
-        filtered.forEach(function (item) {
-
-          var t = item.turn_num || 0;
-
-          if (!turnMap[t]) {
-
-            turnMap[t] = [];
-
-            turnOrder.push(t);
-
-          }
-
-          turnMap[t].push(item);
-
-        });
-
-        turnOrder = [...new Set(turnOrder)].sort(function (a, b) {
-
-          return b - a;
-
-        });
-
-
-
-        list.innerHTML = turnOrder
-
-          .map(function (t) {
-
-            var groupItems = turnMap[t];
-
-            // Sort items within the turn by priority
-
-            groupItems.sort(function (a, b) {
-
-              return getNewsPriority(a) - getNewsPriority(b);
-
-            });
-
-            var turnLabel = t > 0 ? "Turn " + t : "Before game start";
-
-            var timeLabel = timeAgo(groupItems[0].created_at);
-
-            var rows = groupItems
-
-              .map(function (item) {
-
-                var type = item.type || "system";
-
-                // Detect expedition items by message prefix
-
-                if (repairMojibake(item.message) && /^[Ã°Å¸â€Â­Ã°Å¸Å’Â²Ã¢Å¡â€Ã°Å¸Â§Â­Ã¢â‚¬Â¢]/u.test(repairMojibake(item.message)))
-
-                  type = "expedition";
-
-                var meta = NEWS_META[type] || NEWS_META.system;
-
-                var displayMessage =
-
-                  newsFilter === "all" && type === "attack"
-
-                    ? summarizeAttackNewsForAll(item)
-
-                    : repairMojibake(item.message || "");
-
-                var msgHtml = escHtml(displayMessage)
-
-                  .replace(/\n/g, "<br>")
-
-                  .replace(/&lt;i&gt;/g, "<i>")
-
-                  .replace(/&lt;\/i&gt;/g, "</i>");
-
-                var isBorderType =
-
-                  type === "attack" || type === "spell" || type === "covert";
-
-                var borderStyle = isBorderType
-
-                  ? "border-left:3px solid " +
-
-                    meta.color +
-
-                    ";padding-left:10px;"
-
-                  : "";
-
-                var replayBtn = "";
-
-                if (item.combat_log_id) {
-
-                  replayBtn =
-
-                    '<button class="btn" style="padding:2px 8px;font-size:10px;margin-top:4px;margin-left:10px;display:inline-flex;align-items:center;gap:4px" onclick="replayWarReport(' +
-
-                    item.combat_log_id +
-
-                    ')">Ã¢â€“Â¶ Replay</button>';
-
-                }
-
-                return (
-
-                  '<div class="news-item" style="' +
-
-                  borderStyle +
-
-                  '">' +
-
-                  '<span class="news-icon">' +
-
-                  repairMojibake(meta.icon) +
-
-                  "</span>" +
-
-                  '<span class="news-body" style="color:' +
-
-                  (isBorderType ? "var(--text)" : "var(--text2)") +
-
-                  '">' +
-
-                  msgHtml +
-
-                  replayBtn +
-
-                  "</span>" +
-
-                  "</div>"
-
-                );
-
-              })
-
-              .join("");
-
-            return (
-
-              '<div class="news-turn-group">' +
-
-              '<div class="news-turn-header">' +
-
-              '<span class="turn-label">Ã¢â€”â€  ' +
-
-              turnLabel +
-
-              "</span>" +
-
-              '<span class="turn-time">' +
-
-              timeLabel +
-
-              "</span>" +
-
-              "</div>" +
-
-              rows +
-
-              "</div>"
-
-            );
-
-          })
-
-          .join("");
 
       }
 
@@ -8623,10 +8366,6 @@
         incrementNewsBadge(events.length);
 
 
-
-        // Refresh full news list to ensure filter is applied correctly
-
-        window.renderNewsList?.(newsCache);
 
       }
 
@@ -9371,7 +9110,7 @@
 
 
 
-      window.replayWarReport = async function (id) {
+      async function replayWarReport(id) {
 
         console.log("Replaying report:", id);
 
@@ -9583,7 +9322,7 @@
 
         }
 
-      };
+      }
 
 
 
@@ -23254,22 +22993,6 @@
 
       }
 
-
-
-      // Boot Ã¢â‚¬â€ check auth then show modal or load kingdom
-
-      async function doLogout() {
-
-        await apiCall("POST", "/api/auth/logout");
-
-        clearToken();
-
-        location.href = "/portal";
-
-      }
-
-
-
       function renderRaces() {
 
         var racePanel = document.getElementById("races-list");
@@ -23322,7 +23045,7 @@
 
               portraitHtml +
 
-              '<div onclick="window.openRaceLore(\'' + key + '\')" style="cursor: pointer; font-size: 16px; font-weight: bold; color: var(--gold); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;" title="Click for detailed lore & details">' +
+              '<div onclick="openRaceLore(\'' + key + '\')" style="cursor: pointer; font-size: 16px; font-weight: bold; color: var(--gold); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;" title="Click for detailed lore & details">' +
 
               (r.icon || "Ã°Å¸â€˜Â¤") +
 
@@ -24073,8 +23796,6 @@
 
             id="btn-login"
 
-            onclick="doLogin()"
-
             style="
 
               flex: 1;
@@ -24106,8 +23827,6 @@
           <button
 
             id="btn-register"
-
-            onclick="doRegister()"
 
             style="
 

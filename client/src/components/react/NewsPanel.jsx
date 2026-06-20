@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useGameState, useGameMutationEvents } from '../../hooks/useGameState';
+import { replayWarReport } from '../../actions/replayWarReport';
+import { repairMojibake } from '../../utils/repairMojibake';
 
 const NEWS_META = {
   attack: { icon: '⚔️', color: 'var(--red)', label: 'Combat' },
@@ -17,9 +19,7 @@ const NewsPanel = () => {
 
   const repairText = useCallback((value) => {
     const text = value === null || value === undefined ? '' : String(value);
-    return typeof window !== 'undefined' && typeof window.repairMojibake === 'function'
-      ? window.repairMojibake(text)
-      : text;
+    return repairMojibake(text);
   }, []);
 
   const timeAgo = useCallback((unixTs) => {
@@ -214,7 +214,7 @@ const NewsPanel = () => {
                         <button
                           className="btn"
                           style={{ padding: '2px 8px', fontSize: '10px', marginTop: '4px', marginLeft: '10px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                          onClick={() => window.replayWarReport?.(item.combat_log_id)}
+                          onClick={() => replayWarReport(item.combat_log_id)}
                         >
                           ▶ Replay
                         </button>

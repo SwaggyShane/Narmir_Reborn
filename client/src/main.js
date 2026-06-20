@@ -33,6 +33,7 @@ import SchoolSelectionControllerReact from "./components/react/SchoolSelectionCo
 import ForumSectionReact from "./components/forum/ForumSection.jsx";
 import "./css/forum.css";
 import ResourceStripReact from "./components/react/ResourceStrip.jsx";
+import { repairMojibake } from "./utils/repairMojibake.js";
 
 // API call helper for making authenticated requests from vanilla JS
 //
@@ -79,20 +80,7 @@ async function apiCall(method, endpoint, body = null) {
 }
 window.apiCall = apiCall;
 
-function repairDisplayText(value) {
-  if (value === null || value === undefined) return "";
-  const text = String(value);
-  if (typeof window !== "undefined" && typeof window.repairMojibake === "function") {
-    return window.repairMojibake(text);
-  }
-  return text
-    .replace(/·/g, "·")
-    .replace(/—/g, "—")
-    .replace(/–/g, "-")
-    .replace(/•/g, "•")
-    .replace(/‘|’/g, "'")
-    .replace(/“|"/g, '"');
-}
+const repairDisplayText = repairMojibake;
 
 console.log("[react] main.js execution started at", new Date().toISOString());
 

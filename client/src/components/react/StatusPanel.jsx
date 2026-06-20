@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
 import { apiCall } from '../../utils/api';
 import { useGameState } from '../../hooks/useGameState';
+import { openRaceLore } from '../../actions/openRaceLore';
+import { repairMojibake } from '../../utils/repairMojibake';
 
 const RACE_CARD_DATA = {
   human: {
@@ -70,10 +72,7 @@ const StatusPanel = () => {
   const cleanText = (value) => {
     if (value === null || value === undefined) return '';
     const text = String(value);
-    if (typeof window !== 'undefined' && typeof window.repairMojibake === 'function') {
-      return window.repairMojibake(text);
-    }
-    return text;
+    return repairMojibake(text);
   };
 
   const updateTaxDisplay = (value) => {
@@ -145,7 +144,7 @@ const StatusPanel = () => {
         <div
           id="race-tag-display"
           className="race-tag-block"
-          onClick={() => window.openRaceLore?.()}
+          onClick={() => openRaceLore()}
           style={{
             cursor: 'pointer',
             padding: '16px',

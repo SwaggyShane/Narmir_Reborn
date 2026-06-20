@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { logout } from '../../actions/logout';
 
 const Sidebar = () => {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -20,10 +21,6 @@ const Sidebar = () => {
 
   const handleSwitchTab = (id, e) => {
     if (window.switchTab) window.switchTab(id, e.currentTarget);
-  };
-
-  const doLogout = () => {
-    if (window.doLogout) window.doLogout();
   };
 
   return (
@@ -146,7 +143,7 @@ const Sidebar = () => {
       <div style={{ flex: 1 }}></div>
       <button
         className="nav-item"
-        onClick={doLogout}
+        onClick={logout}
         style={{ color: 'var(--red)', marginTop: '8px' }}
       >
         <span className="icon">&#10005;</span>Logout

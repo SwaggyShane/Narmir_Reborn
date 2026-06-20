@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { logout } from '../../actions/logout';
 
 const BottomNav = () => {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -15,10 +16,6 @@ const BottomNav = () => {
 
   const handleSwitchTabMobile = (id) => {
     if (window.switchTab) window.switchTab(id);
-  };
-
-  const doLogout = () => {
-    if (window.doLogout) window.doLogout();
   };
 
   return (
@@ -118,7 +115,7 @@ const BottomNav = () => {
         </a>
       )}
 
-      <button className="bnav-item" onClick={doLogout} style={{ color: 'var(--red)' }}>
+      <button className="bnav-item" onClick={logout} style={{ color: 'var(--red)' }}>
         <span className="bicon">🚪</span>Logout
       </button>
     </nav>

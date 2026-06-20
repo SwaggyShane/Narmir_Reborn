@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiCall } from '../../utils/api';
 import { useGameMutationEvents, useGameState } from '../../hooks/useGameState';
+import { repairMojibake } from '../../utils/repairMojibake';
 
 const REFRESH_INTERVAL_MS = 2 * 60 * 1000;
 const EXPEDITION_TURNS = {
@@ -46,7 +47,7 @@ const TYPE_META = {
 };
 
 const formatNum = (value) => Number(value || 0).toLocaleString();
-const repairText = (value) => (typeof window.repairMojibake === 'function' ? window.repairMojibake(String(value ?? '')) : String(value ?? ''));
+const repairText = (value) => repairMojibake(String(value ?? ''));
 
 const normalizeRewards = (rewards) => {
   if (Array.isArray(rewards)) return rewards.map((msg) => repairText(msg));

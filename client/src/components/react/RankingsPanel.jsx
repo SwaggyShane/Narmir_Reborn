@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiCall } from '../../utils/api';
 import { useGameState } from '../../hooks/useGameState';
+import { repairMojibake } from '../../utils/repairMojibake';
 
 const RACE_ICONS = {
   human: '🧑',
@@ -26,9 +27,7 @@ const RankingsPanel = () => {
 
   const repairText = useCallback((value) => {
     const text = value === null || value === undefined ? '' : String(value);
-    return typeof window !== 'undefined' && typeof window.repairMojibake === 'function'
-      ? window.repairMojibake(text)
-      : text;
+    return repairMojibake(text);
   }, []);
 
   const fmt = useCallback((value) => {
