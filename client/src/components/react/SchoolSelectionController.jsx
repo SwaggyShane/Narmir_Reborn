@@ -31,12 +31,7 @@ export default function SchoolSelectionController() {
     setShowModal(false);
 
     // Update game state with new school
-    if (applyGameMutation) {
-      applyGameMutation({ school_of_magic: data.school }, { reason: 'school-selected' });
-    } else {
-      const gameState = window.gameState || {};
-      gameState.school_of_magic = data.school;
-    }
+    applyGameMutation({ school_of_magic: data.school }, { reason: 'school-selected' });
 
     // Show success message
     toast(`???? You have chosen the school of ${data.school.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}!`, 'success');
