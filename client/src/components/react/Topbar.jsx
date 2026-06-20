@@ -1,6 +1,6 @@
 import React from 'react';
 import { useGameState } from '../../hooks/useGameState';
-import { xpForLevel } from '../../utils/xp.js';
+import { xpForLevelWithPrestige } from '../../utils/xp.js';
 
 const Topbar = () => {
   const { state } = useGameState();
@@ -10,8 +10,9 @@ const Topbar = () => {
   const turnsStored = state?.turns_stored ?? 400;
   const level = state?.level ?? 1;
   const xp = state?.xp ?? 0;
-  const thisLvl = xpForLevel(level);
-  const nextLvl = xpForLevel(level + 1);
+  const prestige = state?.prestige_level || 0;
+  const thisLvl = xpForLevelWithPrestige(level, prestige);
+  const nextLvl = xpForLevelWithPrestige(level + 1, prestige);
   const xpInLevel = Math.max(0, Math.min(xp - thisLvl, nextLvl - thisLvl));
   const xpNeeded = Math.max(0, nextLvl - thisLvl);
   const xpPct = xpNeeded > 0 ? Math.min(100, Math.floor((xpInLevel / xpNeeded) * 100)) : 100;

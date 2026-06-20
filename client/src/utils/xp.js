@@ -4,3 +4,9 @@ export function xpForLevel(level) {
   const targetLevel = Math.min(Math.max(1, Number(level) || 1), 500);
   return XP_LEVELS_CLIENT[targetLevel] || 0;
 }
+
+export function xpForLevelWithPrestige(level, prestige = 0) {
+  const base = xpForLevel(level);
+  const prestigeMult = 1 + (Math.max(0, Number(prestige) || 0) * 0.2);
+  return Math.floor(base * prestigeMult);
+}
