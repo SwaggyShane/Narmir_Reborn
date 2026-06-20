@@ -1,16 +1,11 @@
 import React from 'react';
 import { useGameState } from '../../hooks/useGameState';
+import { xpForLevel } from '../../utils/xp.js';
 
 const Topbar = () => {
   const { state } = useGameState();
   const takeTurn = () => {
     if (window.takeTurn) window.takeTurn();
-  };
-  const xpForLevel = (level) => {
-    if (typeof window !== 'undefined' && typeof window.xpForLevel === 'function') {
-      return window.xpForLevel(level);
-    }
-    return 0;
   };
   const turnsStored = state?.turns_stored ?? 400;
   const level = state?.level ?? 1;
