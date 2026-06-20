@@ -7436,20 +7436,6 @@
         return current;
       }
 
-      function getAuthModalElement(id) {
-        return document.getElementById(id);
-      }
-
-      function clearAuthError(message) {
-        const error = getAuthModalElement("auth-error");
-        if (error) error.textContent = message || "";
-      }
-
-      function setAuthModalVisibility(show) {
-        const overlay = getAuthModalElement("login-overlay");
-        if (overlay) overlay.style.display = show ? "flex" : "none";
-      }
-
       function initLoginModal() {
         if (typeof window.__initLoginModalImpl === "function") {
           return window.__initLoginModalImpl();
@@ -7508,7 +7494,7 @@
 
 
 
-            function updatePasswordRequirements() {
+      function updatePasswordRequirements() {
         if (typeof window.__updatePasswordRequirementsImpl === "function") {
           return window.__updatePasswordRequirementsImpl();
         }
@@ -25813,6 +25799,8 @@
   </body>
 
 </html>
+
+
 
 
 
