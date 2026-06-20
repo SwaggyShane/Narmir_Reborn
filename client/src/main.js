@@ -38,6 +38,7 @@ import { replayWarReport as replayWarReportAction } from "./actions/replayWarRep
 import { showHeroLore as showHeroLoreAction } from "./actions/showHeroLore.js";
 import { openKingdomProfile as openKingdomProfileAction } from "./actions/openKingdomProfile.js";
 import { loadKingdom as loadKingdomAction } from "./actions/loadKingdom.js";
+import { loadEconomy as loadEconomyAction } from "./actions/loadEconomy.js";
 import { loadWorldMap as loadWorldMapAction } from "./actions/loadWorldMap.js";
 import { loadWarfarePanel as loadWarfarePanelAction } from "./actions/loadWarfarePanel.js";
 import { applyServerUpdates as applyServerUpdatesAction } from "./utils/gameMutations.js";
@@ -70,6 +71,7 @@ window.__replayWarReportImpl = replayWarReportAction;
 window.__showHeroLoreImpl = showHeroLoreAction;
 window.__openKingdomProfileImpl = openKingdomProfileAction;
 window.__loadKingdomImpl = loadKingdomAction;
+window.__loadEconomyImpl = loadEconomyAction;
 window.__loadWorldMapImpl = loadWorldMapAction;
 window.__loadWarfarePanelImpl = loadWarfarePanelAction;
 window.__applyServerUpdatesImpl = applyServerUpdatesAction;
