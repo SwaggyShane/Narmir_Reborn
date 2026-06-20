@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 
 <html lang="en">
 
@@ -7342,36 +7342,18 @@
       var allianceChatMessages = [];
 
       function loadKingdom() {
-
         return apiCall("GET", "/api/kingdom/me").then(function (kingdom) {
-
           if (kingdom && !kingdom.error) {
-
             if (window.applyGameMutation) {
-
               window.applyGameMutation(kingdom, { reason: "kingdom-refresh" });
-
             }
-
             if (typeof window.syncUI === "function") {
-
               window.syncUI();
-
             }
-
-
-
-            }
-
           }
-
           return kingdom;
-
         });
-
       }
-
-
 
       function loadMe() {
 

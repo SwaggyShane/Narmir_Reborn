@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useGameState } from '../../hooks/useGameState';
 import { apiCall } from '../../utils/api.js';
 
@@ -133,6 +133,21 @@ const BuildPanel = () => {
   const engineerXp = Number(state?.engineer_xp || 0);
   const engineerXpNeeded = Number(state?.engineer_xp_needed || 1000);
   const landAvailable = Math.max(0, Number(state?.land || 0) - Number(state?.built_land || 0));
+  const buildAllocation = useMemo(() => {
+    if (typeof state?.build_allocation === 'string') {
+      try {
+        return JSON.parse(state.build_allocation || '{}');
+      } catch {
+        return {};
+      }
+    }
+    return state?.build_allocation || {};
+  }, [state?.build_allocation]);
+  const allocatedEngineers = useMemo(
+    () => BUILDINGS_DISPLAY_ORDER.reduce((sum, key) => sum + Number(buildAllocation[BUILD_FIELD_MAP[key] || key] || 0), 0),
+    [buildAllocation]
+  );
+  const remainingEngineers = Math.max(0, totalEngineers - allocatedEngineers);
   const refreshBuildUi = useCallback(() => {
     setBuildUiTick((tick) => tick + 1);
   }, []);
@@ -145,18 +160,12 @@ const BuildPanel = () => {
   }, [showAttunements]);
 
   useEffect(() => {
-    const alloc = typeof state?.build_allocation === 'string'
-      ? (() => {
-        try { return JSON.parse(state.build_allocation || '{}'); } catch { return {}; }
-      })()
-      : (state?.build_allocation || {});
-
     Object.entries(BUILD_ALLOCATION_KEYS).forEach(([inputId, key]) => {
       const el = document.getElementById(inputId);
-      if (el) el.value = alloc[key] || 0;
+      if (el) el.value = buildAllocation[key] || 0;
     });
     refreshBuildUi();
-  }, [state?.build_allocation, refreshBuildUi]);
+  }, [buildAllocation, refreshBuildUi]);
 
   const loadAttunements = async () => {
     try {
