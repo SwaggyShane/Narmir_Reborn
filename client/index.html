@@ -13111,13 +13111,21 @@
         }
         return null;
       }
+
+      function renderWorldMap(kingdoms, routes = []) {
+        if (typeof window.__renderWorldMapImpl === "function") {
+          return window.__renderWorldMapImpl(kingdoms, routes);
+        }
+        return null;
+      }
+
       function showMapKingdomCard(id) {
         if (typeof window.__showMapKingdomCardImpl === "function") {
           return window.__showMapKingdomCardImpl(id);
         }
         return null;
       }
-Race Lore Modal â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€
+      // Race Lore Modal
 
 
 
@@ -20472,6 +20480,8 @@ Race Lore Modal â�€â�€â�€â�€â�€â�€â�€â�€
   </body>
 
 </html>
+
+
 
 
 

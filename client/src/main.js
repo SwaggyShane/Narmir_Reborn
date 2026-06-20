@@ -54,6 +54,7 @@ import {
   declineTrade as declineTradeAction,
 } from "./actions/economyTrades.js";
 import { loadWorldMap as loadWorldMapAction } from "./actions/loadWorldMap.js";
+import { renderWorldMap as renderWorldMapAction } from "./actions/renderWorldMap.js";
 import { renderRegionLegend as renderRegionLegendAction, highlightRegion as highlightRegionAction } from "./actions/worldMapLegend.js";
 import { showMapKingdomCard as showMapKingdomCardAction } from "./actions/showMapKingdomCard.js";
 import { loadWarfarePanel as loadWarfarePanelAction } from "./actions/loadWarfarePanel.js";
@@ -99,6 +100,7 @@ window.__sendTradeOfferImpl = sendTradeOfferAction;
 window.__acceptTradeImpl = acceptTradeAction;
 window.__declineTradeImpl = declineTradeAction;
 window.__loadWorldMapImpl = loadWorldMapAction;
+window.__renderWorldMapImpl = renderWorldMapAction;
 window.__renderRegionLegendImpl = renderRegionLegendAction;
 window.__highlightRegionImpl = highlightRegionAction;
 window.__showMapKingdomCardImpl = showMapKingdomCardAction;
