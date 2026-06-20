@@ -86,7 +86,6 @@ const repairDisplayText = repairMojibake;
 console.log("[react] main.js execution started at", new Date().toISOString());
 
 export const gameState = gameStateManager.getMutableState();
-window.gameState = gameState;
 
 const PANEL_ALIASES = {
   attack: "warfare",
@@ -135,7 +134,7 @@ function setActivePanels(rawTab, activeTab) {
 }
 
 const syncUI = () => {
-  const sourceState = window.gameState || window.state || {};
+  const sourceState = window.state || gameStateManager.getState();
   const kingdomName = repairDisplayText(sourceState.kingdomName || sourceState.name || "My Kingdom");
   const kingdomOwner = repairDisplayText(sourceState.username || sourceState.owner_name || sourceState.owner || kingdomName);
   const turn = sourceState.turn ?? 0;
@@ -184,7 +183,7 @@ window.switchTab = (tabName) => {
 
 // Initialize game state manager with current state
 export function initGameStateManager() {
-  const sourceState = window.state || window.gameState;
+  const sourceState = window.state || gameStateManager.getState();
   if (sourceState) {
     gameStateManager.setState({
       ...sourceState,
@@ -197,7 +196,7 @@ export function initGameStateManager() {
 function applyServerUpdatesToGame(updates, context = {}) {
   if (!updates) return;
 
-  const sourceState = window.state || window.gameState;
+  const sourceState = window.state || gameStateManager.getState();
   const normalizedState = sourceState
     ? { ...sourceState, population: sourceState.population ?? sourceState.pop }
     : updates;
