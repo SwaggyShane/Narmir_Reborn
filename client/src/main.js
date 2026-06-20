@@ -584,8 +584,6 @@ window.takeTurn = async () => {
       window.toast?.(buildStatus ? `${buildStatus}\n${turnStatus}` : turnStatus, "success");
     }
 
-    await window.loadActiveExpeditions?.();
-    window.checkSchoolSelection?.();
   } catch (error) {
     console.error("[turn] Error taking turn:", error);
     window.toast?.("Failed to take turn: " + error.message, "error");
