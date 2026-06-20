@@ -36,7 +36,7 @@ import ResourceStripReact from "./components/react/ResourceStrip.jsx";
 
 // API call helper for making authenticated requests from vanilla JS
 //
-// NOTE: This window.apiCall uses the convention (method, url, body) — e.g.
+// NOTE: This window.apiCall uses the convention (method, url, body) â€” e.g.
 //   window.apiCall("POST", "/api/kingdom/turn", { foo: 1 })
 //
 // This differs from client/src/utils/api.js which exports apiCall(url, options)
@@ -86,12 +86,12 @@ function repairDisplayText(value) {
     return window.repairMojibake(text);
   }
   return text
-    .replace(/·/g, "·")
-    .replace(/—/g, "—")
-    .replace(/–/g, "-")
-    .replace(/•/g, "•")
-    .replace(/‘|’/g, "'")
-    .replace(/“|"/g, '"');
+    .replace(/Â·/g, "Â·")
+    .replace(/â€”/g, "â€”")
+    .replace(/â€“/g, "-")
+    .replace(/â€¢/g, "â€¢")
+    .replace(/â€˜|â€™/g, "'")
+    .replace(/â€œ|"/g, '"');
 }
 
 console.log("[react] main.js execution started at", new Date().toISOString());
@@ -376,133 +376,6 @@ window.playAchievementSound = () => {
     });
   } catch (err) {
     console.debug('[audio] Error playing sound:', err.message);
-  }
-};
-
-window.renderLibraryPanel = async () => {
-  try {
-    const response = await fetch("/api/kingdom/lore-and-achievements", {
-      cache: 'no-store',
-      headers: { 'pragma': 'no-cache' }
-    });
-    if (!response.ok) throw new Error("HTTP " + response.status);
-
-    const data = await response.json();
-    const { raceLore = [], narmirLore = [], generalLore = [], achievements = [] } = data;
-
-    const loreContainer = document.getElementById("library-lore-list");
-    if (loreContainer) {
-      loreContainer.innerHTML = '';
-      const allLore = [...raceLore, ...narmirLore, ...generalLore];
-
-      if (allLore.length === 0) {
-        loreContainer.innerHTML = '<div style="color: var(--text3);">No lore collected yet.</div>';
-      } else {
-        allLore.forEach(lore => {
-          const loreDiv = document.createElement('div');
-          loreDiv.style.cssText = 'padding: 8px; border-left: 3px solid var(--accent1); background: var(--bg2);';
-          loreDiv.innerHTML =
-            '<div style="font-weight: 500; color: var(--text); margin-bottom: 4px;">' + (lore.title || 'Unknown') + '</div>' +
-            '<div style="color: var(--text2); font-size: 12px; line-height: 1.4;">' + (lore.msg || '') + '</div>';
-          loreContainer.appendChild(loreDiv);
-        });
-      }
-    }
-
-    const achievementsContainer = document.getElementById("library-achievements");
-    if (achievementsContainer) {
-      achievementsContainer.innerHTML = '';
-
-      if (achievements.length === 0) {
-        const noAchDiv = document.createElement('div');
-        noAchDiv.style.color = 'var(--text3)';
-        noAchDiv.style.fontSize = '12px';
-        noAchDiv.textContent = 'No achievements available.';
-        achievementsContainer.appendChild(noAchDiv);
-      } else {
-        achievements.forEach(ach => {
-          const achDiv = document.createElement('div');
-          const borderColor = ach.completed ? 'var(--green)' : 'var(--text3)';
-          const bgColor = ach.completed ? 'var(--bg2)' : 'transparent';
-          achDiv.style.cssText = 'padding: 8px; border-left: 3px solid ' + borderColor + '; background: ' + bgColor + ';';
-
-          const titleDiv = document.createElement('div');
-          const titleColor = ach.completed ? 'var(--text)' : 'var(--text2)';
-          const titlePrefix = ach.completed ? '⭐ ' : '';
-          titleDiv.style.cssText = 'font-weight: ' + (ach.completed ? '500' : '400') + '; color: ' + titleColor + ';';
-          titleDiv.textContent = titlePrefix + (ach.title || 'Achievement');
-          achDiv.appendChild(titleDiv);
-
-          if (ach.completed) {
-            const description = ach.description || '';
-            if (description) {
-              const descDiv = document.createElement('div');
-              descDiv.style.cssText = 'color: var(--text2); font-size: 12px; margin-top: 4px;';
-              descDiv.textContent = description;
-              achDiv.appendChild(descDiv);
-            }
-
-            const reward = ach.reward || '';
-            if (reward) {
-              const rewardDiv = document.createElement('div');
-              rewardDiv.style.cssText = 'color: var(--green); font-size: 12px; font-weight: 500; margin-top: 4px;';
-              rewardDiv.textContent = 'Reward: ' + reward;
-              achDiv.appendChild(rewardDiv);
-            }
-          } else {
-            const description = ach.description || '';
-            if (description) {
-              const descDiv = document.createElement('div');
-              descDiv.style.cssText = 'color: var(--text2); font-size: 12px; margin-top: 4px; margin-bottom: 8px;';
-              descDiv.textContent = description;
-              achDiv.appendChild(descDiv);
-            }
-
-            if (ach.progress) {
-              const progressContainer = document.createElement('div');
-              progressContainer.style.cssText = 'margin-top: 8px;';
-
-              const progressBar = document.createElement('div');
-              progressBar.style.cssText = 'background: var(--bg3); border-radius: 2px; height: 8px; overflow: hidden; margin-bottom: 4px;';
-
-              const progressFill = document.createElement('div');
-              progressFill.style.cssText = 'background: var(--accent1); height: 100%; width: ' + ach.progress.percent + '%; transition: width 0.3s ease;';
-              progressBar.appendChild(progressFill);
-              progressContainer.appendChild(progressBar);
-
-              const progressLabel = document.createElement('div');
-              progressLabel.style.cssText = 'color: var(--text3); font-size: 11px; display: flex; justify-content: space-between;';
-              const labelLeft = document.createElement('span');
-              labelLeft.textContent = ach.progress.sublabel || '';
-              const labelRight = document.createElement('span');
-              labelRight.textContent = ach.progress.percent + '%';
-              progressLabel.appendChild(labelLeft);
-              progressLabel.appendChild(labelRight);
-              progressContainer.appendChild(progressLabel);
-
-              const progressText = document.createElement('div');
-              progressText.style.cssText = 'color: var(--text3); font-size: 11px; margin-top: 2px;';
-              progressText.textContent = ach.progress.label;
-              progressContainer.appendChild(progressText);
-
-              achDiv.appendChild(progressContainer);
-            }
-          }
-
-          achievementsContainer.appendChild(achDiv);
-        });
-      }
-    }
-  } catch (error) {
-    console.error("[library] Failed to load lore and achievements:", error);
-    const loreContainer = document.getElementById("library-lore-list");
-    if (loreContainer) {
-      loreContainer.innerHTML = '';
-      const errorDiv = document.createElement('div');
-      errorDiv.style.color = 'var(--red)';
-      errorDiv.textContent = 'Failed to load lore: ' + error.message;
-      loreContainer.appendChild(errorDiv);
-    }
   }
 };
 
