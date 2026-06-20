@@ -39,6 +39,14 @@ import { showHeroLore as showHeroLoreAction } from "./actions/showHeroLore.js";
 import { openKingdomProfile as openKingdomProfileAction } from "./actions/openKingdomProfile.js";
 import { loadKingdom as loadKingdomAction } from "./actions/loadKingdom.js";
 import { loadEconomy as loadEconomyAction } from "./actions/loadEconomy.js";
+import {
+  populateTradeTargets as populateTradeTargetsAction,
+  loadTradeOffers as loadTradeOffersAction,
+  clearTradeLogs as clearTradeLogsAction,
+  sendTradeOffer as sendTradeOfferAction,
+  acceptTrade as acceptTradeAction,
+  declineTrade as declineTradeAction,
+} from "./actions/economyTrades.js";
 import { loadWorldMap as loadWorldMapAction } from "./actions/loadWorldMap.js";
 import { loadWarfarePanel as loadWarfarePanelAction } from "./actions/loadWarfarePanel.js";
 import { applyServerUpdates as applyServerUpdatesAction } from "./utils/gameMutations.js";
@@ -72,6 +80,12 @@ window.__showHeroLoreImpl = showHeroLoreAction;
 window.__openKingdomProfileImpl = openKingdomProfileAction;
 window.__loadKingdomImpl = loadKingdomAction;
 window.__loadEconomyImpl = loadEconomyAction;
+window.__populateTradeTargetsImpl = populateTradeTargetsAction;
+window.__loadTradeOffersImpl = loadTradeOffersAction;
+window.__clearTradeLogsImpl = clearTradeLogsAction;
+window.__sendTradeOfferImpl = sendTradeOfferAction;
+window.__acceptTradeImpl = acceptTradeAction;
+window.__declineTradeImpl = declineTradeAction;
 window.__loadWorldMapImpl = loadWorldMapAction;
 window.__loadWarfarePanelImpl = loadWarfarePanelAction;
 window.__applyServerUpdatesImpl = applyServerUpdatesAction;

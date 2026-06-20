@@ -91,5 +91,5 @@ export async function loadEconomy() {
 
   callIfAvailable('renderCommodityMarket', data.market_upgrades || {});
   callIfAvailable('renderActiveMercs', data.mercenaries || []);
-  callIfAvailable('populateTradeTargets');
+  callIfAvailable('__populateTradeTargetsImpl');
 }
