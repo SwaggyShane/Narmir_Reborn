@@ -1,25 +1,23 @@
 # Mojibake Fix — Narmir Reborn
 
-> **Status:** Source file fix was applied locally in June 2026 and merged to main. The Python script below is kept as a reusable reference in case the encoding corruption recurs. The DB migration script (Step 4) may still be needed for historical `news` rows.
+## What Happened
 
----
-
-## Background *(historical)*
-
-Every non-ASCII character in ~36 game source files was **triple-encoded**.  
+Every non-ASCII character in ~36 game source files is **triple-encoded**.  
 The original bytes (emojis, em-dashes, etc.) were passed through the cycle:
 
 ```
 UTF-8 bytes → each byte read as cp1252 codepoint → re-encoded as UTF-8
 ```
 
-…three times over. The rendering pipeline (Node → Postgres → JSON → browser) was clean — corruption lived entirely in the source `.js` files and any DB rows written during the affected sprint. `game/lore.js` was the only file not affected.
+…three times over. This happened in the editor/tooling that touched these files during the sprint.
+
+The rendering pipeline (Node → Postgres → JSON → browser) is clean — it passes bytes through unchanged. The corruption lives entirely in the source `.js` files (and consequently in any DB rows written since the sprint).
+
+`game/lore.js` is the only game file that was NOT affected.
 
 ---
 
 ## Step 1 — Run the Automated Fix Script
-
-> **Usage note:** This is a one-time cleanup helper. Save it locally as `fix_mojibake.py`, run it, then delete it — do not commit it to the repo unless the team decides to keep a permanent maintenance tool. Committing it risks it being re-run accidentally on a clean codebase in a future session.
 
 Save the script below as `fix_mojibake.py` in the repo root, then run it.
 
@@ -90,7 +88,11 @@ def fix_file(filepath: str):
             span = content[start:i]
             fixed = fully_decode(span)
             result.extend(fixed)
-            if fixed == span:
+            if fixed != span:
+                orig_str = span.decode('utf-8', errors='replace')
+                fixed_str = fixed.decode('utf-8', errors='replace')
+                line_no = content[:start].count(b'\n') + 1
+            else:
                 # Only report as unfixed if the span contains known mojibake
                 # signature bytes (Ã=0xC3, â=0xC2, Å=0xC5). Valid UTF-8
                 # characters such as emojis or accented letters are left
@@ -197,63 +199,68 @@ python3 fix_mojibake.py
 
 ---
 
-## Step 2 — Manually Fix Lines the Script Can't Auto-Decode
+## Step 2 — Manually Fix the Lines the Script Can't Auto-Decode
 
-Some emojis use byte values in cp1252's undefined range (0x81, 0x8D, 0x8F, 0x90, 0x9D). The auto-decoder can't reverse those safely — look them up from git history.
+Some emojis use byte values that fall in cp1252's "undefined" range (0x81, 0x8D, 0x8F, 0x90, 0x9D). The auto-decoder can't reverse those safely. These lines need the correct character looked up from git history.
 
 ### Find the original characters
 
 ```bash
-# Find the last clean commit and inspect a specific line
+# Find the last commit before the encoding was corrupted — look for a commit
+# that still had clean emoji in these files
 git log --oneline -- game/expeditions.js game/turn.js game/construction.js | head -30
-git show <clean-commit>:game/expeditions.js | sed -n '410,414p'
+
+# Once you have the commit hash (e.g. abc1234), check a specific line:
+git show abc1234:game/expeditions.js | sed -n '410,414p'
 ```
 
-After running the script, grep for any remaining corruption:
+### Known lines to check manually after running the script
+
+After the script runs, grep for any remaining mojibake:
 
 ```bash
 grep -Pn "Ã|â€|Å¸|Ã‚Â" game/expeditions.js game/turn.js game/construction.js game/engine.js
 ```
 
-> **Note:** The specific line numbers below are from the June 2026 incident. **Those lines have already been repaired in current main.** If you are reading this after that fix landed, the repo is clean — these tables document what was broken, not what is broken now. If the corruption ever recurs, treat the line numbers as approximate starting points and use the grep above to find actual remaining locations.
+Anything still showing `Ã`, `â€`, `Å¸` etc. after the script ran needs a manual character replacement.
 
-<details>
-<summary>Archived incident line numbers (may be stale)</summary>
+#### expeditions.js — lines likely still broken after script
 
-#### expeditions.js
+| Line | Context | Look up in git |
+|------|---------|---------------|
+| 412 | `+${ironGained} iron plundered` | emoji before the text |
+| 598, 616 | `ULTRA RARE: ${prize.text}` | 3× emoji prefix |
+| 641 | `Air Fragment pulses with the fury` | emoji prefix |
+| 765, 767 | Throne of Nazdreg found message | emoji prefix |
+| 786, 827 | `Your rangers discovered the kingdom` / Scout type label | emoji |
+| 803, 807 | `World Fragment` found messages | emoji prefix |
+| 814, 818, 915, 919 | `ACHIEVEMENT UNLOCKED` messages | emoji prefix |
+| 828 | `"deep"` expedition type label | emoji prefix |
 
-| Line | Context |
-|------|---------|
-| 412 | `+${ironGained} iron plundered` — emoji prefix |
-| 598, 616 | `ULTRA RARE: ${prize.text}` — 3× emoji prefix |
-| 641 | `Air Fragment pulses with the fury` — emoji prefix |
-| 765, 767 | Throne of Nazdreg found message |
-| 786, 827 | Scout discovery / type label |
-| 803, 807 | `World Fragment` found messages |
-| 814, 818, 915, 919 | `ACHIEVEMENT UNLOCKED` messages |
-| 828 | `"deep"` expedition type label |
+#### turn.js — lines likely still broken after script
 
-#### turn.js
-
-| Line | Context |
-|------|---------|
-| 377, 385, 406, 411, 429, 438, 456 | Population/unrest news messages |
-| 547 | Mana restoration message |
-| 562, 567 | Population growth message |
-| 774 | Construction complete message |
-| 922 | Low Tax Event message |
-| 1049, 1063, 1104, 1109, 1137 | Various news messages |
-| 1289, 1405, 1439, 1620, 1840–1964 | Game event messages |
-| 2215, 2223, 2265, 2284, 2515–2549 | Messages |
-
-</details>
+| Line | Context | Look up in git |
+|------|---------|---------------|
+| 377, 385, 406, 411, 429, 438, 456 | Population/unrest news messages | emoji prefix |
+| 547 | Mana restoration message | emoji prefix |
+| 562, 567 | Population growth message | emoji prefix |
+| 774 | Construction complete message | emoji prefix |
+| 922 | Low Tax Event message | emoji prefix |
+| 1049, 1104, 1109 | Various news messages | emoji prefix |
+| 1063 | News message | emoji prefix |
+| 1137 | News message | emoji prefix |
+| 1289, 1405, 1439, 1620, 1840–1964 | Various game event messages | emoji prefix |
+| 2215, 2223 | Messages | emoji prefix |
+| 2265, 2284 | Messages | emoji prefix |
+| 2515, 2523, 2537, 2549 | Messages | emoji prefix |
 
 ---
 
-## Step 3 — Rebuild and Deploy *(already done for the June 2026 incident)*
+## Step 3 — Rebuild and Deploy
 
 ```bash
 npm run build
+# commit and push to your branch
 git add game/ routes/
 git commit -m "fix: restore correct Unicode encoding in all game source files"
 git push -u origin <your-branch>
@@ -261,35 +268,30 @@ git push -u origin <your-branch>
 
 ---
 
-## Step 4 — Fix Historical Database Rows
+## Step 4 — Fix Historical Database Rows (Optional)
 
-> ⚠️ **Before running this against production:**
-> 1. **This step is optional.** New rows written after the source fix are clean. Only run this if mojibake is still visible in the news feed for older events.
-> 2. **Test on a staging snapshot first.** Dump a sample of the `news` table, run the script against that, and manually verify the output before touching production data.
-> 3. **The regex filter (`[ÃÂÅ]`) is a starting filter, not a completeness guarantee.** It catches the most common mojibake signatures but may miss edge cases. After running, spot-check a sample of rows that were *not* matched to confirm they were genuinely clean.
-> 4. **This is an UPDATE with no undo.** Take a DB backup before running against production.
-
-Rows already written to the `news` table in Postgres during the affected sprint contain corrupted strings. New rows generated after the source fix will be clean. To backfill old rows, run this script locally against the production DATABASE_URL:
+Rows already written to the `news` table in Postgres contain the corrupted strings. New rows generated after the fix will be clean. To backfill old rows, run this script locally against the production DATABASE_URL:
 
 ```js
-// fix_db_news.mjs — run with:
+// fix_db_news.mjs � run with:
 // DATABASE_URL="<production-url>" node fix_db_news.mjs
 
 import pg from 'pg';
+import { TextDecoder } from 'node:util';
 const { Pool } = pg;
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
 
 // Build cp1252 reverse table
-// cp1252 byte → Unicode codepoint table for 0x80-0x9F (the special range)
+// cp1252 byte ? Unicode codepoint table for 0x80-0x9F (the special range)
 const CP1252_SPECIALS = {
-  0x80: '€', 0x82: '‚', 0x83: 'ƒ', 0x84: '„',
-  0x85: '…', 0x86: '†', 0x87: '‡', 0x88: 'ˆ',
-  0x89: '‰', 0x8A: 'Š', 0x8B: '‹', 0x8C: 'Œ',
-  0x8E: 'Ž', 0x91: '‘', 0x92: '’', 0x93: '“',
-  0x94: '”', 0x95: '•', 0x96: '–', 0x97: '—',
-  0x98: '˜', 0x99: '™', 0x9A: 'š', 0x9B: '›',
-  0x9C: 'œ', 0x9E: 'ž', 0x9F: 'Ÿ',
+  0x80: '�', 0x82: '�', 0x83: '�', 0x84: '�',
+  0x85: '�', 0x86: '�', 0x87: '�', 0x88: '�',
+  0x89: '�', 0x8A: '�', 0x8B: '�', 0x8C: '�',
+  0x8E: '�', 0x91: '�', 0x92: '�', 0x93: '�',
+  0x94: '�', 0x95: '�', 0x96: '�', 0x97: '�',
+  0x98: '�', 0x99: '�', 0x9A: '�', 0x9B: '�',
+  0x9C: '�', 0x9E: '�', 0x9F: '�',
 };
 
 function cp1252ByteToChar(b) {
@@ -297,7 +299,7 @@ function cp1252ByteToChar(b) {
   return String.fromCodePoint(b);
 }
 
-// Build reverse: Unicode char → cp1252 byte
+// Build reverse: Unicode char ? cp1252 byte
 const cp1252Reverse = new Map();
 for (let b = 0; b < 256; b++) {
   const ch = cp1252ByteToChar(b);
@@ -310,11 +312,11 @@ function unEncodeOnce(s) {
     if (!cp1252Reverse.has(ch)) return null;
     bytes.push(cp1252Reverse.get(ch));
   }
-  const buf = Buffer.from(bytes);
-  const decoded = buf.toString('utf8');  // never throws — silently replaces invalid bytes with U+FFFD
-  const roundtrip = Buffer.from(decoded, 'utf8');
-  if (!roundtrip.equals(buf)) return null;  // round-trip mismatch means invalid UTF-8
-  return decoded;
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(Buffer.from(bytes));
+  } catch {
+    return null;
+  }
 }
 
 function decodeMojibake(s) {
@@ -322,33 +324,24 @@ function decodeMojibake(s) {
   for (let i = 0; i < 5; i++) {
     const decoded = unEncodeOnce(current);
     if (decoded === null || decoded === current) break;
-    // Verify round-trip
-    const check = Buffer.from(decoded, 'utf8');
-    if (Buffer.from(check.toString('utf8'), 'utf8').equals(check)) {
-      current = decoded;
-    } else {
-      break;
-    }
+    current = decoded;
   }
   return current;
 }
 
 async function fixNewsRows() {
-  try {
-    const { rows } = await pool.query('SELECT id, message FROM news WHERE message ~ \'[ÃÂÅ]\' LIMIT 5000');
-    console.log(`Found ${rows.length} rows to check`);
-    let fixed = 0;
-    for (const row of rows) {
-      const cleaned = decodeMojibake(row.message);
-      if (cleaned !== row.message) {
-        await pool.query('UPDATE news SET message = $1 WHERE id = $2', [cleaned, row.id]);
-        fixed++;
-      }
+  const { rows } = await pool.query('SELECT id, message FROM news WHERE message ~ \'[ÃÂÅ]\' LIMIT 5000');
+  console.log(`Found ${rows.length} rows to check`);
+  let fixed = 0;
+  for (const row of rows) {
+    const cleaned = decodeMojibake(row.message);
+    if (cleaned !== row.message) {
+      await pool.query('UPDATE news SET message = $1 WHERE id = $2', [cleaned, row.id]);
+      fixed++;
     }
-    console.log(`Fixed ${fixed} rows`);
-  } finally {
-    await pool.end();
   }
+  console.log(`Fixed ${fixed} rows`);
+  await pool.end();
 }
 
 fixNewsRows().catch(console.error);

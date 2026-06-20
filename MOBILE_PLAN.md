@@ -18,7 +18,7 @@ Status | Warfare | Economy | Explore | Community | ···More
 - `Warfare`     → `#warfare`
 - `Economy`     → `#economy`
 - `Explore`     → `#exploration`
-- `Community`   → `#globalchat` *(decision locked: live chat over async forum for the 6th slot; `#forum` moves to the More drawer)*
+- `Community`   → `#globalchat` (or `#forum` — whichever is more used)
 - `···`         → opens an upward slide-in drawer listing all remaining panels
 
 **The More drawer:**
@@ -27,19 +27,14 @@ Status | Warfare | Economy | Explore | Community | ···More
 - Closes on outside tap or on any nav item selection
 - Remembers recently-used panels and floats them to the top
 
-**Notification badge on the `···` tab:**
-Panels like `messages` and `news` carry live notification badges (`#bnav-msg-badge`, `#bnav-news-badge`). Once hidden inside the drawer, those badges disappear from view. Add a single aggregate dot on the `···` More button itself that lights up when any drawer panel has an active badge. After each `setActivePanelGlobal()` call, check if any drawer item has a visible badge and toggle a `.more-has-badge` class on the More button accordingly. Pure JS, no new DOM polling needed.
-
 **Active state indicator:**
 - Currently missing entirely on mobile. Add a 2px top border in the tab's accent color on the active tab.
 - Body class `panel-{activeTab}` is already set by `setActivePanels()` — use that in CSS, no JS change needed.
 
 **Files touched:**
-- `client/src/components/react/BottomNav.jsx` — replace flat list with 6 fixed + drawer; active-state CSS scoped to this component only
+- `client/src/components/react/BottomNav.jsx` — replace flat list with 6 fixed + drawer
 - `client/index.html` — CSS for `.bottom-nav`, `.more-drawer`, `.bnav-item.active`
 - `client/src/main.js` — `setActivePanelGlobal()` (from `useActivePanel.js`) is already called inside `switchTab`; active state updates automatically
-
-**Scope constraint:** Phase 1 is strictly nav structure and badge behaviour. Do not bundle active-state CSS changes that require edits outside `BottomNav.jsx` (e.g. shell-level `.main` layout changes). Those belong in Phase 2.
 
 **What this does NOT touch:** `switchTab()`, panel display logic, `syncUI()` — those stay untouched.
 
@@ -137,45 +132,28 @@ Side panels (Forum, Rankings, etc.) accessible only via nav or More drawer.
 - On swipe complete: call `window.switchTab(nextPanel)`
 - Visual cue: brief slide animation via CSS transition on `.panel.active`
 
-**Swipe exclusions — check `e.target` before acting:**
-Not every horizontal touch should navigate. Exclude swipes that originate on:
-- `input[type=range]` (the tax slider `#strip-tax-slider`)
-- Elements with `overflow-x: auto` (scrollable tables, the world map)
-- Any element with `touch-action: pan-x` already set
-
-```js
-mainEl.addEventListener('touchstart', (e) => {
-  const tag = e.target.tagName;
-  const touchAction = getComputedStyle(e.target).touchAction;
-  if (tag === 'INPUT' || touchAction.includes('pan-x')) return;
-  // proceed with swipe tracking
-}, { passive: true });
-```
-
 **Do NOT use a library (Hammer.js etc.)** — vanilla touch events are 15 lines of code and avoid conflicts with existing vertical scroll behavior.
 
 ---
 
 ## Phase 6 — Landscape and Edge Cases
 
-**Landscape mode on phone:** At 667×375px the game tries to show the desktop layout. The stylesheet in `client/index.html` is already mobile-first — mobile styles are the unwrapped default and desktop overrides live inside `@media (min-width: 768px)`. The fix is to add a `min-height` guard to that existing desktop query so it doesn't fire on short landscape screens:
+**Landscape mode on phone:** At 667×375px the game tries to show the desktop layout. The mobile breakpoint at `768px` should also trigger on height:
 
 ```css
-/* Before */
-@media (min-width: 768px) { /* desktop layout */ }
-
-/* After */
-@media (min-width: 768px) and (min-height: 500px) { /* desktop layout */ }
+@media (max-width: 768px), (max-height: 500px) {
+  /* mobile layout */
+}
 ```
 
-This keeps the mobile-first architecture intact and ensures landscape phones stay on the mobile nav.
+This ensures landscape phones still get the mobile nav instead of a half-broken desktop sidebar.
 
 ---
 
 ## What NOT To Do
 
 - No hamburger menu — the game needs instant one-tap panel access
-- Do not try to auto-close the More drawer on `hashchange` — `switchTab()` → `setActivePanelGlobal()` handles it
+- Do not try to auto-close the More drawer on `hashchange` — `switchTab()` → `setActiveNavButtons()` handles it
 - Do not add a swipe library — overkill, adds bundle weight
 - Do not change `setActivePanels()` or `switchTab()` internals — they're clean
 - Do not use localStorage to persist the More drawer state — always open fresh
@@ -184,15 +162,13 @@ This keeps the mobile-first architecture intact and ensures landscape phones sta
 
 ## Delivery Sequence
 
-Layout phases must fully precede interaction polish. Swipe navigation is only safe once the panel set and nav ordering are frozen — do not start Phase 5 until Phase 1 is stable in production and no panel changes are pending.
-
 Wait for local vanilla-removal work to land before touching the nav — BottomNav.jsx will be cleaner to edit once you know which panels are staying.
 
 | PR | Contents | Dependencies |
 |----|----------|--------------|
-| 1 | Phase 2 (dead zone) + Phase 4 (tap feedback) | None — can go now |
-| 2 | Phase 1 (nav overhaul) + Phase 6 (landscape guard) | After vanilla cleanup is merged |
-| 3 | Phase 3 (StatusPanel unit-grid) | After PR 2 is stable — nav shell must be final |
-| 4 | Phase 5 — Swipe navigation | After PR 3 — panel set and nav order must be frozen |
+| 1 | Phase 2 (dead zone) + Phase 3 (StatusPanel grid) + Phase 4 (tap feedback) | None — can go now |
+| 2 | Phase 1 — Nav overhaul (6-slot + More drawer) | After vanilla cleanup is merged |
+| 3 | Phase 5 — Swipe navigation | After PR 2 is stable in production |
+| — | Phase 6 (landscape) | Roll into whichever PR touches the breakpoints |
 
-Four PRs. No routing changes, no game logic changes, no server changes.
+Three PRs. No routing changes, no game logic changes, no server changes.
