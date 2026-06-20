@@ -544,6 +544,7 @@ window.takeTurn = async () => {
       data.updates = turnUpdates;
       window.applyGameMutation(data, { reason: "turn" });
       window.syncFromState?.();
+      window.triggerReactUpdates?.();
 
       try {
         window.updateTurnsDisplay?.();
