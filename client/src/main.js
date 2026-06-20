@@ -309,6 +309,17 @@ window.applyGameMutation = (resultOrUpdates, context = {}) => {
 const reactRoots = new Map();
 
 export const mountReactApps = () => {
+  if (window.__reactAppsMounted) {
+    if (window.switchTab) {
+      if (window.location.hash) {
+        window.switchTab(window.location.hash.substring(1));
+      } else {
+        window.switchTab('status');
+      }
+    }
+    return;
+  }
+
   console.log("[react] Starting mount sequence...");
 
   const tryMount = (elementId, ComponentReact) => {
@@ -356,6 +367,7 @@ export const mountReactApps = () => {
   tryMount("vue-panel-school-selection", SchoolSelectionControllerReact);
   tryMount("vue-panel-forum", ForumSectionReact);
 
+  window.__reactAppsMounted = true;
   console.log("[react] All apps mounted");
 
   if (window.switchTab) {

@@ -23500,14 +23500,6 @@
 
                 window.mountReactApps();
 
-                // Second call after a short delay to be sure for slow components
-
-                setTimeout(() => {
-
-                  if (window.mountReactApps) window.mountReactApps();
-
-                }, 500);
-
                 return true;
 
               } else if (retries < 150) {
