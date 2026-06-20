@@ -1,6 +1,5 @@
+import { switchTab as shellSwitchTab } from './shellBridge.js';
+
 export function switchTab(tabName, targetEl) {
-  if (typeof window !== 'undefined' && typeof window.switchTab === 'function') {
-    return window.switchTab(tabName, targetEl);
-  }
-  return null;
+  return shellSwitchTab(tabName, targetEl);
 }
