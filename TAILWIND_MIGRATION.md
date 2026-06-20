@@ -215,10 +215,8 @@ Create `client/src/tailwind.css` (new entry file):
     @apply bg-bg text-text font-sans;
     -webkit-font-smoothing: antialiased;
   }
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { @apply bg-bg3; }
-  ::-webkit-scrollbar-thumb { @apply bg-bg4 rounded; }
 }
+/* Scrollbar styling is NOT global — see Phase 6 .scrollbar-game utility */
 ```
 
 Import in `client/src/main.js`:
@@ -234,7 +232,7 @@ At this point Tailwind is installed and configured. **Zero visual change.** The 
 
 **Goal:** Map all CSS variables to Tailwind equivalents so both systems can coexist during transition. No component changes yet.
 
-Add a CSS bridge block at the top of the existing `<style>` block in `index.html`. This maps CSS variables to Tailwind config values so any component that still references `var(--gold)` continues to work:
+Add a CSS bridge block at the **top of `client/src/tailwind.css`** (not in `index.html`). The `theme()` function is a PostCSS directive — Vite does not process inline `<style>` blocks in `index.html`, so `theme()` calls placed there would be served raw and break. Placing the bridge in `tailwind.css` ensures PostCSS compiles it correctly:
 
 ```css
 /* Tailwind token bridge — remove this block when migration is complete */
@@ -308,10 +306,10 @@ Add to `tailwind.css`:
   .btn-accent {
     @apply btn bg-accent-gradient text-white;
   }
-  .btn-red   { @apply btn border-red text-red bg-transparent; }
-  .btn-green { @apply btn border-green text-green bg-transparent; }
-  .btn-amber { @apply btn border-amber text-amber bg-transparent; }
-  .btn-blue  { @apply btn border-blue text-blue bg-transparent; }
+  .btn-red   { @apply btn border-red text-red bg-transparent active:bg-red/15; }
+  .btn-green { @apply btn border-green text-green bg-transparent active:bg-green/15; }
+  .btn-amber { @apply btn border-amber text-amber bg-transparent active:bg-amber/15; }
+  .btn-blue  { @apply btn border-blue text-blue bg-transparent active:bg-blue/15; }
 
   /* Base button (replaces .base-btn) */
   .base-btn {
@@ -386,9 +384,11 @@ After this phase, start replacing class names in `index.html` one section at a t
 
 ### App Shell
 
+Use pure fixed positioning — topbar and sidebar are `fixed`, so CSS grid on the parent is redundant (fixed elements are removed from document flow). Keep the layout simple:
+
 ```jsx
-// App root
-<div className="flex flex-col lg:grid lg:[grid-template-areas:'top_top''side_main'] lg:grid-cols-[220px_1fr] min-h-screen bg-bg text-text">
+// App root — no grid needed; children use fixed positioning + margin offset
+<div className="min-h-screen bg-bg text-text">
 ```
 
 ### Topbar
@@ -406,9 +406,9 @@ After this phase, start replacing class names in `index.html` one section at a t
 ### Main content area
 
 ```jsx
-<main className="flex-1 p-0 pt-14 pb-18 lg:ml-55 lg:pb-4 px-2.5">
+<main className="pt-14 pb-18 lg:ml-55 lg:pb-4 px-2.5">
 ```
-Note: `pb-18` matches the 72px bottom nav height. Replaces the hardcoded `padding-bottom: 120px` dead zone.
+Note: `pb-18` matches the 72px bottom nav height. `lg:ml-55` offsets the fixed sidebar. Replaces the hardcoded `padding-bottom: 120px` dead zone.
 
 ### Bottom nav (mobile only)
 
@@ -633,6 +633,8 @@ Now Tailwind is fully in charge. This is where the mobile plan gets implemented 
 ### New BottomNav.jsx
 
 ```jsx
+import { useActivePanel } from '../../hooks/useActivePanel';
+
 const FIXED_TABS = [
   { id: 'status',      label: 'Status',    icon: '⚔️' },
   { id: 'warfare',     label: 'Warfare',   icon: '🗡️' },
@@ -641,7 +643,14 @@ const FIXED_TABS = [
   { id: 'globalchat',  label: 'Community', icon: '💬' },
 ];
 
-// Bottom nav bar
+const BottomNav = () => {
+  // useActivePanel must be called at the component level — never inside .map()
+  const activeTab = useActivePanel();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [moreHasBadge, setMoreHasBadge] = useState(false);
+
+  // Bottom nav bar
+  return (
 <nav className="fixed bottom-0 left-0 right-0 z-fixed bg-bg3 border-t border-white/5 flex lg:hidden"
      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
   <div className="flex w-full h-16 items-stretch">
