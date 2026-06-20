@@ -1,11 +1,9 @@
 import React from 'react';
 import { useGameState } from '../../hooks/useGameState';
+import { takeTurn } from '../../actions/takeTurn';
 
 const Topbar = () => {
   const { state } = useGameState();
-  const takeTurn = () => {
-    if (window.takeTurn) window.takeTurn();
-  };
   const xpForLevel = (level) => {
     if (typeof window !== 'undefined' && typeof window.xpForLevel === 'function') {
       return window.xpForLevel(level);

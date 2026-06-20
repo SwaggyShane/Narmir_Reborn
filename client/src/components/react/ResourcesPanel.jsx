@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiCall } from '../../utils/api';
+import { useActivePanel } from '../../hooks/useActivePanel';
+import { useGameState } from '../../hooks/useGameState';
 
 const REFRESH_INTERVAL_MS = 10 * 1000;
 
@@ -104,6 +106,8 @@ const ResourcesPanel = () => {
   const [scouting, setScouting] = useState(false);
   const [scoutMsg, setScoutMsg] = useState('');
   const [now, setNow] = useState(Math.floor(Date.now() / 1000));
+  const { activePanel } = useActivePanel();
+  const { state } = useGameState();
 
   const syncFromState = useCallback(() => {
     const s = getState();
@@ -182,16 +186,18 @@ const ResourcesPanel = () => {
     loadExpeditions();
     const cdt = setInterval(() => setNow(Math.floor(Date.now()/1000)), 1000);
     const refreshTimer = setInterval(syncFromState, REFRESH_INTERVAL_MS);
-    const unregisterRefresh = window.registerPanelRefresh?.('resources', () => {
-      syncFromState();
-      loadExpeditions();
-    });
     return () => {
       clearInterval(cdt);
       clearInterval(refreshTimer);
-      unregisterRefresh?.();
     };
   }, [syncFromState]);
+
+  useEffect(() => {
+    if (activePanel !== 'resources') return;
+    syncFromState();
+    loadNodes();
+    loadExpeditions();
+  }, [activePanel, state, syncFromState]);
 
   useEffect(() => {
     if (activeTab === 'stockpiles' || activeTab === 'buildings') syncFromState();

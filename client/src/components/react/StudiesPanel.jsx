@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useActivePanel } from '../../hooks/useActivePanel';
+import { useGameState } from '../../hooks/useGameState';
 
 const StudiesPanel = () => {
   const [activeTab, setActiveTab] = useState('tower');
@@ -6,6 +8,8 @@ const StudiesPanel = () => {
   const [studiesData, setStudiesData] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [mageUiTick, setMageUiTick] = useState(0);
+  const { activePanel } = useActivePanel();
+  const { state } = useGameState();
   const refreshMageUi = useCallback(() => {
     setMageUiTick((tick) => tick + 1);
   }, []);
@@ -32,13 +36,13 @@ const StudiesPanel = () => {
     fetchStudiesData();
   }, [fetchStudiesData]);
 
-  // Register hook to refresh when panel becomes active or game state updates
   useEffect(() => {
-    const unregister = window.registerPanelReactHook?.('studies', () => {
+    if (activePanel !== 'studies') return;
+    const load = async () => {
       fetchStudiesData();
-    });
-    return () => unregister?.();
-  }, [fetchStudiesData]);
+    };
+    load();
+  }, [activePanel, state, fetchStudiesData]);
 
   // Sync uncontrolled inputs with server data (skip if input is actively being edited)
   useEffect(() => {

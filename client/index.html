@@ -7552,7 +7552,6 @@
         }
 
         await loadKingdom();
-        if (typeof window.mountReactApps === "function") window.mountReactApps();
         initSocket().catch(function (err) {
           console.warn("[socket] Failed to initialize after auth:", err);
         });
@@ -11560,11 +11559,6 @@
           } catch (e) {}
 
         }
-
-
-
-        if (window.triggerReactUpdates) window.triggerReactUpdates();
-
 
 
         // Safeguard: if a turn was processed and exploration panel is visible, re-render expeditions
@@ -23489,50 +23483,6 @@
             state.isAdmin = !!me.isAdmin;
 
 
-
-            // Wait for React to be ready
-
-            async function triggerMount(retries = 0) {
-
-              if (window.mountReactApps) {
-
-                console.log("[react] mountReactApps found, triggering...");
-
-                window.mountReactApps();
-
-                return true;
-
-              } else if (retries < 150) {
-
-                if (retries % 10 === 0)
-
-                  console.log(
-
-                    "[react] waiting for mountReactApps... (" + retries + ")",
-
-                  );
-
-                await new Promise((r) => setTimeout(r, 100));
-
-                return triggerMount(retries + 1);
-
-              } else {
-
-                console.error(
-
-                  "[react] mountReactApps timed out after 15s. React apps will NOT load.",
-
-                );
-
-                return false;
-
-              }
-
-            }
-
-
-
-            await triggerMount();
 
             loadKingdom();
 

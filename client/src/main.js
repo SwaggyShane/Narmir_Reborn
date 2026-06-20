@@ -199,10 +199,7 @@ window.switchTab = (tabName) => {
   }
 
   window.syncUI?.();
-  window.triggerReactUpdates?.();
 };
-
-window.switchTabMobile = window.switchTab;
 
 // Initialize game state manager with current state
 export function initGameStateManager() {
@@ -248,42 +245,6 @@ if (!window._applyServerUpdatesWrapped) {
   window._applyServerUpdatesWrapped = true;
 }
 
-const reactHooks = new Map();
-window.registerPanelReactHook = (panelId, callback) => {
-  reactHooks.set(panelId, callback);
-  return () => {
-    reactHooks.delete(panelId);
-  };
-};
-window.triggerReactUpdates = () => {
-  reactHooks.forEach(cb => {
-    try { cb(); } catch (e) { console.error("[react] Hook update error:", e); }
-  });
-};
-
-const panelRefreshers = new Map();
-window.registerPanelRefresh = (panelId, callback) => {
-  panelRefreshers.set(panelId, callback);
-  return () => {
-    if (panelRefreshers.get(panelId) === callback) panelRefreshers.delete(panelId);
-  };
-};
-window.refreshPanel = (panelId, context = {}) => {
-  const callback = panelRefreshers.get(panelId);
-  if (!callback) return false;
-  try {
-    callback(context);
-    return true;
-  } catch (e) {
-    console.error(`[react] Panel refresh failed for ${panelId}:`, e);
-    return false;
-  }
-};
-window.refreshActivePanel = (context = {}) => {
-  const activeEl = document.querySelector('.panel.active[id], .panel[style*="display: block"][id]');
-  const panelId = context.panelId || activeEl?.id || window.location.hash?.replace('#', '');
-  return panelId ? window.refreshPanel(panelId, context) : false;
-};
 window.applyGameMutation = (resultOrUpdates, context = {}) => {
   if (!resultOrUpdates) return resultOrUpdates;
   const directUpdateKeys = [
@@ -302,7 +263,6 @@ window.applyGameMutation = (resultOrUpdates, context = {}) => {
       payload: updates,
     });
   }
-  window.refreshActivePanel({ ...context, result: resultOrUpdates });
   return resultOrUpdates;
 };
 
@@ -379,23 +339,7 @@ export const mountReactApps = () => {
   }
 };
 
-window.mountReactApps = mountReactApps;
-
-// Audio system
-window.playAchievementSound = () => {
-  try {
-    const audio = new Audio('/sound/achievement.mp3');
-    audio.volume = 0.7;
-    audio.play().catch(() => {
-      // Silently fail if audio can't play (browser restrictions, file not found, etc.)
-      console.debug('[audio] Achievement sound failed to play');
-    });
-  } catch (err) {
-    console.debug('[audio] Error playing sound:', err.message);
-  }
-};
-
-window.renderLibraryPanel = async () => {
+const renderLibraryPanel = async () => {
   try {
     const response = await fetch("/api/kingdom/lore-and-achievements", {
       cache: 'no-store',
@@ -519,93 +463,6 @@ window.renderLibraryPanel = async () => {
       errorDiv.textContent = 'Failed to load lore: ' + error.message;
       loreContainer.appendChild(errorDiv);
     }
-  }
-};
-
-let canonicalTurnInProgress = false;
-window.takeTurn = async () => {
-  if (canonicalTurnInProgress) return;
-  if ((window.gameState?.turns_stored || 0) < 1) {
-    const countdown = document.getElementById("regen-countdown")?.textContent || "25:00";
-    typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(`No turns available. Refills in ${countdown}`, "warning");
-    return;
-  }
-
-  canonicalTurnInProgress = true;
-  const btn = document.querySelector(".turn-btn");
-  if (btn) btn.style.opacity = "0.6";
-  window.playGameSound?.("take_turn");
-
-  try {
-    const data = await apiCall("POST", "/api/kingdom/turn");
-    if (data.error) {
-      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(data.error, data.error.includes("No turns available") ? "warning" : "error");
-      console.error("[turn] error:", data.error);
-      return;
-    }
-    if (!data.ok) return;
-
-    const turnUpdates = { ...(data.updates || {}) };
-    if (data.turns_stored !== undefined && turnUpdates.turns_stored === undefined) {
-      turnUpdates.turns_stored = data.turns_stored;
-    }
-    if (Object.keys(turnUpdates).length) {
-      data.updates = turnUpdates;
-      window.applyGameMutation(data, { reason: "turn" });
-      window.syncFromState?.();
-      window.triggerReactUpdates?.();
-    }
-
-    const currentTurn = window.gameState?.turn || data.updates?.turn;
-    const turnEl = document.getElementById("turn-num");
-    if (turnEl && currentTurn !== undefined) turnEl.textContent = currentTurn;
-    const newsTurn = document.getElementById("news-turn-num");
-    if (newsTurn && currentTurn !== undefined) newsTurn.textContent = currentTurn;
-
-    let completedBuildingsMsg = "";
-    const blurbs = [];
-    if (data.events) {
-      window.appendNewsItems?.(data.events);
-      for (const ev of data.events) {
-        const msg = ev.message || "";
-        if (msg.includes("Completed: ")) {
-          const index = msg.indexOf("Completed: ");
-          const endPart = msg.substring(index + "Completed: ".length);
-          const periodIndex = endPart.indexOf(".");
-          completedBuildingsMsg = periodIndex !== -1 ? endPart.substring(0, periodIndex) : endPart;
-        }
-        if (ev.message?.includes("ACHIEVEMENT UNLOCKED")) {
-          window.playAchievementSound?.();
-        }
-      }
-      if (completedBuildingsMsg && window.getCompletionBlurb) {
-        completedBuildingsMsg.split(",").forEach(item => {
-          const blurb = window.getCompletionBlurb(item.trim());
-          if (blurb) blurbs.push(blurb);
-        });
-      }
-    }
-
-    const turnsLeft = window.gameState?.turns_stored ?? data.updates?.turns_stored ?? 0;
-    if (btn) btn.style.opacity = turnsLeft > 0 ? "1" : "0.4";
-    const turnStatus = `Turn ${currentTurn || "?"} - ${turnsLeft} turns left`;
-    const buildStatus = completedBuildingsMsg
-      ? `Completed: ${completedBuildingsMsg}!\n${blurbs.join("\n") || ""}`
-      : "";
-
-    if ((window.gameState?.food || 0) < 1000) {
-      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(`Warning: Food levels are dangerously low!\n${buildStatus ? `${buildStatus}\n` : ""}${turnStatus}`, "warning");
-    } else if ((window.gameState?.gold || 0) < 1000) {
-      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(`Warning: Gold reserves are almost empty!\n${buildStatus ? `${buildStatus}\n` : ""}${turnStatus}`, "warning");
-    } else {
-      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(buildStatus ? `${buildStatus}\n${turnStatus}` : turnStatus, "success");
-    }
-  } catch (error) {
-    console.error("[turn] Error taking turn:", error);
-    typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast("Failed to take turn: " + error.message, "error");
-  } finally {
-    canonicalTurnInProgress = false;
-    if (btn && (window.gameState?.turns_stored || 0) > 0) btn.style.opacity = "1";
   }
 };
 
