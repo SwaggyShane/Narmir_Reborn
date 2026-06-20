@@ -33,210 +33,21 @@ import SchoolSelectionControllerReact from "./components/react/SchoolSelectionCo
 import ForumSectionReact from "./components/forum/ForumSection.jsx";
 import "./css/forum.css";
 import ResourceStripReact from "./components/react/ResourceStrip.jsx";
-import { repairMojibake } from "./utils/repairMojibake.js";
-import { fmt } from "./utils/fmt.js";
+import { apiCall, syncUI, switchTab, initGameStateManager, applyGameMutation, gameState } from "./utils/shellBridge.js";
 
-// API call helper for making authenticated requests from vanilla JS
-//
-// NOTE: This window.apiCall uses the convention (method, url, body) — e.g.
-//   window.apiCall("POST", "/api/kingdom/turn", { foo: 1 })
-//
-// This differs from client/src/utils/api.js which exports apiCall(url, options)
-// where options is a fetch-style object { method, body, headers, ... }.
-//
-// All existing callers of window.apiCall (MarketPanel.jsx, NewsPanel.jsx, and
-// index.html) use the (method, url, body) convention. Do NOT change this
-// signature without updating all callers.
-async function apiCall(method, endpoint, body = null) {
-  const getCsrfToken = () => {
-    try {
-      const m = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
-      if (m) return decodeURIComponent(m[1]);
-    } catch {}
-    return null;
-  };
-
-  const headers = { 'Content-Type': 'application/json' };
-  const csrfToken = getCsrfToken();
-  if (csrfToken) headers['x-csrf-token'] = csrfToken;
-
-  const options = { method, headers, credentials: 'include' };
-  if (body) options.body = JSON.stringify(body);
-
-  const response = await fetch(endpoint, options);
-
-  // Check if response is OK (status 200-299)
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-
-  // Check content type before parsing JSON
-  const contentType = response.headers.get('content-type');
-  if (contentType && contentType.includes('application/json')) {
-    return response.json();
-  }
-
-  // For non-JSON responses (e.g., 204 No Content), return success
-  return { ok: true };
-}
 window.apiCall = apiCall;
-
-const repairDisplayText = repairMojibake;
-
-console.log("[react] main.js execution started at", new Date().toISOString());
-
-export const gameState = gameStateManager.getMutableState();
-
-const PANEL_ALIASES = {
-  attack: "warfare",
-  spells: "warfare",
-  covert: "warfare",
-};
-
-const WARFARE_SUBTAB_ALIASES = {
-  attack: "attack",
-  spells: "wspells",
-  covert: "wcovert",
-};
-
-function normalizePanelName(tabName) {
-  const raw = String(tabName || "").trim().replace(/^#/, "");
-  return raw ? (PANEL_ALIASES[raw] || raw) : "status";
-}
-
-function setActiveNavButtons(rawTab, activeTab) {
-  document.querySelectorAll(".nav-item[data-tab], .bnav-item[data-tab]").forEach((button) => {
-    const buttonTab = normalizePanelName(button.dataset.tab);
-    const isActive = buttonTab === activeTab;
-    button.classList.toggle("active", isActive);
-  });
-}
-
-function setActivePanels(rawTab, activeTab) {
-  const panels = document.querySelectorAll(".panel[id]");
-  panels.forEach((panel) => {
-    const panelTab = normalizePanelName(panel.id);
-    const isActive = panelTab === activeTab || panel.id === `vue-panel-${activeTab}`;
-    panel.classList.toggle("active", isActive);
-    panel.style.display = isActive ? "" : "none";
-  });
-
-  document.body.classList.forEach((className) => {
-    if (className.startsWith("panel-")) document.body.classList.remove(className);
-  });
-
-  if (activeTab === "globalchat") {
-    document.body.classList.add("panel-globalchat");
-    document.body.classList.add("panel-messages");
-  } else {
-    document.body.classList.add(`panel-${activeTab}`);
-  }
-}
-
-const syncUI = () => {
-  const sourceState = window.state || gameStateManager.getState();
-  const kingdomName = repairDisplayText(sourceState.kingdomName || sourceState.name || "My Kingdom");
-  const kingdomOwner = repairDisplayText(sourceState.username || sourceState.owner_name || sourceState.owner || kingdomName);
-  const turn = sourceState.turn ?? 0;
-  const score = sourceState.score ?? 0;
-  const scorePerTurn = sourceState.score_per_turn ?? sourceState.scorePerTurn ?? sourceState.score_income ?? 0;
-  const rank = sourceState.rank ?? sourceState.kingdom_rank ?? sourceState.position;
-
-  const setText = (id, value) => {
-    const el = document.getElementById(id);
-    if (el && value !== undefined && value !== null) {
-      el.textContent = String(value);
-    }
-  };
-
-  setText("kingdom-name", kingdomName);
-  setText("kingdom-owner-line", kingdomOwner);
-  setText("turn-num", turn);
-  setText("kingdom-score-disp", fmt(score));
-  setText("kingdom-score-per-turn", `(${scorePerTurn >= 0 ? "+" : ""}${fmt(scorePerTurn)}/turn)`);
-  setText("top-rank", rank !== undefined && rank !== null ? `#${rank}` : "-");
-};
-
-window.switchTab = (tabName) => {
-  const rawTab = String(tabName || "").trim().replace(/^#/, "") || "status";
-  const activeTab = normalizePanelName(rawTab);
-  const warfareSubtab = WARFARE_SUBTAB_ALIASES[rawTab] || null;
-
-  setActivePanelGlobal(activeTab);
-  setActiveNavButtons(rawTab, activeTab);
-  setActivePanels(rawTab, activeTab);
-
-  if (warfareSubtab) {
-    window.__pendingWarfareTab = warfareSubtab;
-    if (typeof window.setWarfareTab === "function") {
-      window.setWarfareTab(warfareSubtab);
-      window.__pendingWarfareTab = null;
-    }
-  }
-
-  if (window.location.hash !== `#${rawTab}`) {
-    window.location.hash = rawTab;
-  }
-
-  syncUI();
-};
-
-// Initialize game state manager with current state
-export function initGameStateManager() {
-  const sourceState = window.state || gameStateManager.getState();
-  if (sourceState) {
-    gameStateManager.setState({
-      ...sourceState,
-      population: sourceState.population ?? sourceState.pop ?? 0,
-    }, { reason: 'init' });
-  }
-}
-
-// Apply a server payload into the shared game state and refresh the legacy shell
-function applyServerUpdatesToGame(updates, context = {}) {
-  if (!updates) return;
-
-  const sourceState = window.state || gameStateManager.getState();
-  const normalizedState = sourceState
-    ? { ...sourceState, population: sourceState.population ?? sourceState.pop }
-    : updates;
-  gameStateManager.applyUpdates(normalizedState, {
-    reason: context.reason || 'server-updates',
-    payload: updates,
-  });
-
-  try {
-    syncUI();
-  } catch (error) {
-    console.error("[UI] Error during syncUI execution:", error);
-  }
-}
-
-window.applyGameMutation = (resultOrUpdates, context = {}) => {
-  if (!resultOrUpdates) return resultOrUpdates;
-  const directUpdateKeys = [
-    'gold', 'mana', 'population', 'pop', 'land', 'turn', 'turns_stored',
-    'food', 'happiness', 'fighters', 'rangers', 'mages', 'clerics',
-    'engineers', 'wood', 'stone', 'iron', 'coal', 'steel', 'thralls',
-  ];
-  const updates = resultOrUpdates.updates
-    || resultOrUpdates.kUpdates
-    || (directUpdateKeys.some(key => resultOrUpdates[key] !== undefined) ? resultOrUpdates : null);
-  if (updates) {
-    applyServerUpdatesToGame(updates, context);
-  }
-  return resultOrUpdates;
-};
+window.switchTab = switchTab;
+window.applyGameMutation = applyGameMutation;
 
 const reactRoots = new Map();
 
 export const mountReactApps = () => {
   if (window.__reactAppsMounted) {
-    if (window.switchTab) {
+    if (switchTab) {
       if (window.location.hash) {
-        window.switchTab(window.location.hash.substring(1));
+        switchTab(window.location.hash.substring(1));
       } else {
-        window.switchTab('status');
+        switchTab('status');
       }
     }
     return;
