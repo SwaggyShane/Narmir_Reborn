@@ -10,8 +10,42 @@ New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 $outLog = Join-Path $logDir 'post-commit-server.out.log'
 $errLog = Join-Path $logDir 'post-commit-server.err.log'
 
-if (Test-Path $outLog) { Remove-Item -LiteralPath $outLog -Force }
-if (Test-Path $errLog) { Remove-Item -LiteralPath $errLog -Force }
+function Wait-ForWritableFile {
+  param(
+    [Parameter(Mandatory = $true)][string]$Path,
+    [int]$TimeoutSeconds = 15
+  )
+
+  $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+  while ((Get-Date) -lt $deadline) {
+    try {
+      $stream = [System.IO.File]::Open($Path, 'OpenOrCreate', 'ReadWrite', 'None')
+      $stream.Close()
+      return $true
+    } catch {
+      Start-Sleep -Milliseconds 200
+    }
+  }
+  return $false
+}
+
+function Clear-FileWhenWritable {
+  param(
+    [Parameter(Mandatory = $true)][string]$Path
+  )
+
+  if (-not (Wait-ForWritableFile -Path $Path)) {
+    Write-Host "[hook] Log file still busy, continuing without clearing: $Path"
+    return
+  }
+
+  $stream = [System.IO.File]::Open($Path, 'OpenOrCreate', 'ReadWrite', 'None')
+  try {
+    $stream.SetLength(0)
+  } finally {
+    $stream.Close()
+  }
+}
 
 $nodeProcesses = @()
 foreach ($port in 3000, 24678) {
@@ -34,6 +68,9 @@ foreach ($proc in $nodeProcesses) {
 }
 
 Start-Sleep -Milliseconds 500
+
+Clear-FileWhenWritable -Path $outLog
+Clear-FileWhenWritable -Path $errLog
 
 $startArgs = "/c npm.cmd start > `"$outLog`" 2> `"$errLog`""
 $proc = Start-Process -FilePath 'cmd.exe' -ArgumentList $startArgs -WorkingDirectory $RepoRoot -WindowStyle Hidden -PassThru
