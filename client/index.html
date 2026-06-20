@@ -7373,20 +7373,13 @@
       var allianceChatMessages = [];
 
       function loadKingdom() {
-        return apiCall("GET", "/api/kingdom/me").then(function (kingdom) {
-          if (kingdom && !kingdom.error) {
-            if (applyGameMutation) {
-              applyGameMutation(kingdom, { reason: "kingdom-refresh" });
-            }
-          }
-          return kingdom;
-        });
+        if (typeof window.__loadKingdomImpl === "function") {
+          return window.__loadKingdomImpl();
+        }
       }
 
       function loadMe() {
-
         return loadKingdom();
-
       }
 
       function escHtml(text) {

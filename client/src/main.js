@@ -37,6 +37,7 @@ import { openRaceLore as openRaceLoreAction } from "./actions/openRaceLore.js";
 import { replayWarReport as replayWarReportAction } from "./actions/replayWarReport.js";
 import { showHeroLore as showHeroLoreAction } from "./actions/showHeroLore.js";
 import { openKingdomProfile as openKingdomProfileAction } from "./actions/openKingdomProfile.js";
+import { loadKingdom as loadKingdomAction } from "./actions/loadKingdom.js";
 import {
   initLoginModal as initLoginModalImpl,
   showLoginModal as showLoginModalImpl,
@@ -64,6 +65,7 @@ window.__openRaceLoreImpl = openRaceLoreAction;
 window.__replayWarReportImpl = replayWarReportAction;
 window.__showHeroLoreImpl = showHeroLoreAction;
 window.__openKingdomProfileImpl = openKingdomProfileAction;
+window.__loadKingdomImpl = loadKingdomAction;
 window.__initLoginModalImpl = initLoginModalImpl;
 window.__showLoginModalImpl = showLoginModalImpl;
 window.__hideLoginModalImpl = hideLoginModalImpl;
