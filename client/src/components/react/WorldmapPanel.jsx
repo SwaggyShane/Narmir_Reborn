@@ -1,9 +1,41 @@
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { apiCall } from '../../utils/api';
 
 const WorldmapPanel = () => {
-  const loadWorldMap = () => {
-    if (window.loadWorldMap) window.loadWorldMap();
-  };
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const loadWorldMap = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const container = document.getElementById('world-map-container');
+      if (container) {
+        container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3)">Scanning the horizon...</div>';
+      }
+
+      const data = await apiCall('/api/kingdom/world-map');
+      if (data?.error) throw new Error(data.error);
+
+      const kingdoms = data.kingdoms || (Array.isArray(data) ? data : []);
+      window.worldMapData = kingdoms;
+      window.renderWorldMap?.(kingdoms, data.tradeRoutes || []);
+      window.renderRegionLegend?.();
+    } catch (err) {
+      console.error('World map fail:', err);
+      setError(err.message || 'Failed to load world map');
+      const container = document.getElementById('world-map-container');
+      if (container) {
+        container.innerHTML = '';
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadWorldMap();
+  }, [loadWorldMap]);
 
   return (
     <div id="worldmap" className="panel" style={{ display: 'none' }}>
@@ -22,9 +54,16 @@ const WorldmapPanel = () => {
         {/* Map SVG */}
         <div className="card" style={{ padding: '8px' }}>
           <div id="world-map-container" style={{ width: '100%', overflow: 'hidden' }}>
-            <div style={{ textAlign: 'center', color: 'var(--text3)', padding: '40px 0', fontSize: '13px' }}>
-              Loading map...
-            </div>
+            {loading ? (
+              <div style={{ textAlign: 'center', color: 'var(--text3)', padding: '40px 0', fontSize: '13px' }}>
+                Loading map...
+              </div>
+            ) : error ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--red)' }}>
+                Failed to load world map.
+                <button className="btn" onClick={loadWorldMap} style={{ marginTop: '10px' }}>Retry</button>
+              </div>
+            ) : null}
           </div>
         </div>
         {/* Region legend + info */}

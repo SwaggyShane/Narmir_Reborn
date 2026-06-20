@@ -79,10 +79,122 @@ async function apiCall(method, endpoint, body = null) {
 }
 window.apiCall = apiCall;
 
+function repairDisplayText(value) {
+  if (value === null || value === undefined) return "";
+  const text = String(value);
+  if (typeof window !== "undefined" && typeof window.repairMojibake === "function") {
+    return window.repairMojibake(text);
+  }
+  return text
+    .replace(/·/g, "·")
+    .replace(/—/g, "—")
+    .replace(/–/g, "-")
+    .replace(/•/g, "•")
+    .replace(/‘|’/g, "'")
+    .replace(/“|"/g, '"');
+}
+
 console.log("[react] main.js execution started at", new Date().toISOString());
 
 export const gameState = gameStateManager.getMutableState();
 window.gameState = gameState;
+
+const PANEL_ALIASES = {
+  attack: "warfare",
+  spells: "warfare",
+  covert: "warfare",
+};
+
+const WARFARE_SUBTAB_ALIASES = {
+  attack: "attack",
+  spells: "wspells",
+  covert: "wcovert",
+};
+
+function normalizePanelName(tabName) {
+  const raw = String(tabName || "").trim().replace(/^#/, "");
+  return raw ? (PANEL_ALIASES[raw] || raw) : "status";
+}
+
+function setActiveNavButtons(rawTab, activeTab) {
+  document.querySelectorAll(".nav-item[data-tab], .bnav-item[data-tab]").forEach((button) => {
+    const buttonTab = normalizePanelName(button.dataset.tab);
+    const isActive = buttonTab === activeTab;
+    button.classList.toggle("active", isActive);
+  });
+}
+
+function setActivePanels(rawTab, activeTab) {
+  const panels = document.querySelectorAll(".panel[id]");
+  panels.forEach((panel) => {
+    const panelTab = normalizePanelName(panel.id);
+    const isActive = panelTab === activeTab || panel.id === `vue-panel-${activeTab}`;
+    panel.classList.toggle("active", isActive);
+    panel.style.display = isActive ? "" : "none";
+  });
+
+  document.body.classList.forEach((className) => {
+    if (className.startsWith("panel-")) document.body.classList.remove(className);
+  });
+
+  if (activeTab === "globalchat") {
+    document.body.classList.add("panel-globalchat");
+    document.body.classList.add("panel-messages");
+  } else {
+    document.body.classList.add(`panel-${activeTab}`);
+  }
+}
+
+window.syncUI = () => {
+  const sourceState = window.gameState || window.state || {};
+  const kingdomName = repairDisplayText(sourceState.kingdomName || sourceState.name || "My Kingdom");
+  const kingdomOwner = repairDisplayText(sourceState.username || sourceState.owner_name || sourceState.owner || kingdomName);
+  const turn = sourceState.turn ?? 0;
+  const score = sourceState.score ?? 0;
+  const scorePerTurn = sourceState.score_per_turn ?? sourceState.scorePerTurn ?? sourceState.score_income ?? 0;
+  const rank = sourceState.rank ?? sourceState.kingdom_rank ?? sourceState.position;
+
+  const setText = (id, value) => {
+    const el = document.getElementById(id);
+    if (el && value !== undefined && value !== null) {
+      el.textContent = String(value);
+    }
+  };
+
+  setText("kingdom-name", kingdomName);
+  setText("kingdom-owner-line", kingdomOwner);
+  setText("turn-num", turn);
+  setText("kingdom-score-disp", fmt(score));
+  setText("kingdom-score-per-turn", `(${scorePerTurn >= 0 ? "+" : ""}${fmt(scorePerTurn)}/turn)`);
+  setText("top-rank", rank !== undefined && rank !== null ? `#${rank}` : "-");
+};
+
+window.switchTab = (tabName) => {
+  const rawTab = String(tabName || "").trim().replace(/^#/, "") || "status";
+  const activeTab = normalizePanelName(rawTab);
+  const warfareSubtab = WARFARE_SUBTAB_ALIASES[rawTab] || null;
+
+  setActivePanelGlobal(activeTab);
+  setActiveNavButtons(rawTab, activeTab);
+  setActivePanels(rawTab, activeTab);
+
+  if (warfareSubtab) {
+    window.__pendingWarfareTab = warfareSubtab;
+    if (typeof window.setWarfareTab === "function") {
+      window.setWarfareTab(warfareSubtab);
+      window.__pendingWarfareTab = null;
+    }
+  }
+
+  if (window.location.hash !== `#${rawTab}`) {
+    window.location.hash = rawTab;
+  }
+
+  window.syncUI?.();
+  window.triggerReactUpdates?.();
+};
+
+window.switchTabMobile = window.switchTab;
 
 // Initialize game state manager with current state
 export function initGameStateManager() {
@@ -242,18 +354,6 @@ export const mountReactApps = () => {
 
   console.log("[react] All apps mounted");
 
-  // Hook into switchTab to track active panel (guard against HMR re-wrapping)
-  if (!window._switchTabWrapped) {
-    const originalSwitchTab = window.switchTab;
-    window.switchTab = function(tabName) {
-      setActivePanelGlobal(tabName);
-      if (originalSwitchTab) {
-        originalSwitchTab(tabName);
-      }
-    };
-    window._switchTabWrapped = true;
-  }
-
   if (window.switchTab) {
     if (window.location.hash) {
       window.switchTab(window.location.hash.substring(1));
@@ -276,90 +376,6 @@ window.playAchievementSound = () => {
     });
   } catch (err) {
     console.debug('[audio] Error playing sound:', err.message);
-  }
-};
-
-// Mage allocation and study functions
-window.updateMageAllocationDisplay = () => {
-  const totalMages = (window.gameState && window.gameState.mages) || 0;
-  const spellbookAlloc = Math.max(0, parseInt(document.getElementById("mage-alloc-spellbook")?.value, 10) || 0);
-  const schoolAlloc = Math.max(0, parseInt(document.getElementById("mage-alloc-school")?.value, 10) || 0);
-  const totalAllocated = spellbookAlloc + schoolAlloc;
-  const available = totalMages - totalAllocated;
-
-  const totalEl = document.getElementById("mage-total");
-  const availEl = document.getElementById("mage-available");
-  const allocEl = document.getElementById("mage-allocated");
-
-  if (totalEl) totalEl.textContent = totalMages.toLocaleString();
-  if (availEl) availEl.textContent = Math.max(0, available).toLocaleString();
-  if (allocEl) allocEl.textContent = totalAllocated.toLocaleString();
-};
-
-window.setMageMax = (type) => {
-  const totalMages = (window.gameState && window.gameState.mages) || 0;
-  const otherType = type === 'spellbook' ? 'mage-alloc-school' : 'mage-alloc-spellbook';
-  const otherValue = Math.max(0, parseInt(document.getElementById(otherType)?.value, 10) || 0);
-  const maxAllowed = Math.max(0, totalMages - otherValue);
-
-  const targetId = type === 'spellbook' ? 'mage-alloc-spellbook' : 'mage-alloc-school';
-  const targetEl = document.getElementById(targetId);
-  if (targetEl) targetEl.value = maxAllowed;
-
-  if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay();
-};
-
-window.releaseMageAllocation = () => {
-  const spellbookEl = document.getElementById("mage-alloc-spellbook");
-  const schoolEl = document.getElementById("mage-alloc-school");
-  if (spellbookEl) spellbookEl.value = 0;
-  if (schoolEl) schoolEl.value = 0;
-
-  if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay();
-  if (window.studyMagic) window.studyMagic();
-};
-
-window.studyMagic = async () => {
-  try {
-    const spellbook = Math.max(0, parseInt(document.getElementById("mage-alloc-spellbook")?.value, 10) || 0);
-    const school_spellbook = Math.max(0, parseInt(document.getElementById("mage-alloc-school")?.value, 10) || 0);
-
-    const totalMages = (window.gameState && window.gameState.mages) || 0;
-    if (spellbook + school_spellbook > totalMages) {
-      alert(`Allocated ${spellbook + school_spellbook} mages, but only have ${totalMages}`);
-      return;
-    }
-
-    // Get CSRF token from cookies
-    const getCsrfToken = () => {
-      try {
-        const m = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
-        if (m) return decodeURIComponent(m[1]);
-      } catch {}
-      return null;
-    };
-
-    const headers = { "Content-Type": "application/json" };
-    const csrfToken = getCsrfToken();
-    if (csrfToken) headers["x-csrf-token"] = csrfToken;
-
-    const response = await fetch("/api/kingdom/school-allocation", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ spellbook, school_spellbook }),
-    });
-
-    const data = await response.json();
-    if (data.error) {
-      alert(data.error);
-    } else if (data.ok) {
-      console.log("[studies] Mage allocation saved successfully");
-      if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay();
-      if (window.triggerReactUpdates) window.triggerReactUpdates();
-    }
-  } catch (error) {
-    console.error("[studies] Error saving mage allocation:", error);
-    alert("Failed to save allocation: " + error.message);
   }
 };
 
@@ -490,16 +506,6 @@ window.renderLibraryPanel = async () => {
   }
 };
 
-window.updateTurnsDisplay = () => {
-  const turnsStored = window.gameState?.turns_stored;
-  if (turnsStored !== undefined) {
-    const el = document.getElementById("turns-stored-disp");
-    if (el) {
-      el.textContent = String(turnsStored);
-    }
-  }
-};
-
 let canonicalTurnInProgress = false;
 window.takeTurn = async () => {
   if (canonicalTurnInProgress) return;
@@ -531,19 +537,7 @@ window.takeTurn = async () => {
       data.updates = turnUpdates;
       window.applyGameMutation(data, { reason: "turn" });
       window.syncFromState?.();
-
-      try {
-        window.updateTurnsDisplay?.();
-        window.updateBuildDisplay?.();
-        window.updateTrainingDisplay?.();
-        window.updateXpDisplay?.();
-        window.updateTroopLevelDisplay?.();
-        window.updateMageAllocationDisplay?.();
-        window.refreshResourcesPanel?.();
-        window.loadNews?.();
-      } catch (e) {
-        console.error("[turn] Error refreshing display elements:", e);
-      }
+      window.triggerReactUpdates?.();
     }
 
     const currentTurn = window.gameState?.turn || data.updates?.turn;
@@ -590,9 +584,6 @@ window.takeTurn = async () => {
     } else {
       window.toast?.(buildStatus ? `${buildStatus}\n${turnStatus}` : turnStatus, "success");
     }
-
-    await window.loadActiveExpeditions?.();
-    window.checkSchoolSelection?.();
   } catch (error) {
     console.error("[turn] Error taking turn:", error);
     window.toast?.("Failed to take turn: " + error.message, "error");

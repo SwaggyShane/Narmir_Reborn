@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 
 <html lang="en">
 
@@ -3329,11 +3329,7 @@
 
 
 
-      /* ════════════════════════════════════
-
-     DESKTOP ADAPTATIONS
-
-  ════════════════════════════════════ */
+      /* Desktop adaptations */
 
       @media (min-width: 768px) {
 
@@ -3723,7 +3719,7 @@
 
               >
 
-                <span id="kingdom-owner-line">—</span> · Turn
+                <span id="kingdom-owner-line">—</span> | Turn
 
                 <span id="turn-num" style="color: var(--text); font-weight: 600"
 
@@ -3731,7 +3727,7 @@
 
                 >
 
-                · Score
+                | Score
 
                 <span
 
@@ -3761,7 +3757,7 @@
 
                   style="display: none; padding: 1px 5px"
 
-                  >🛡️ Protected</span
+                  >Protected</span
 
                 >
 
@@ -3805,151 +3801,11 @@
 
                   "
 
-                  >🌸 Spring</span
+                  >Spring</span
 
                 >
 
               </div>
-
-              <div
-
-                style="
-
-                  margin-top: 4px;
-
-                  display: flex;
-
-                  align-items: center;
-
-                  gap: 6px;
-
-                  flex-wrap: wrap;
-
-                "
-
-              >
-
-                <span
-
-                  style="font-size: 11px; color: var(--text3); cursor: pointer"
-
-                  onclick="showXpModal()"
-
-                  title="Click for XP breakdown"
-
-                  >Level
-
-                  <span
-
-                    id="kingdom-level"
-
-                    style="
-
-                      color: var(--gold);
-
-                      font-weight: 700;
-
-                      font-size: 13px;
-
-                      text-decoration: underline dotted;
-
-                      text-underline-offset: 2px;
-
-                    "
-
-                    >1</span
-
-                  ></span
-
-                >
-
-                <div
-
-                  style="
-
-                    flex: 1;
-
-                    min-width: 80px;
-
-                    max-width: 150px;
-
-                    cursor: pointer;
-
-                  "
-
-                  onclick="showXpModal()"
-
-                  title="Click for XP breakdown"
-
-                >
-
-                  <div
-
-                    style="
-
-                      height: 3px;
-
-                      background: var(--bg4);
-
-                      border-radius: 1.5px;
-
-                      overflow: hidden;
-
-                    "
-
-                  >
-
-                    <div
-
-                      id="xp-bar"
-
-                      style="
-
-                        height: 3px;
-
-                        width: 0%;
-
-                        background: linear-gradient(
-
-                          90deg,
-
-                          var(--accent1),
-
-                          var(--gold)
-
-                        );
-
-                        border-radius: 1.5px;
-
-                        transition: width 0.4s;
-
-                      "
-
-                    ></div>
-
-                  </div>
-
-                </div>
-
-                <span
-
-                  id="xp-label"
-
-                  style="font-size: 9px; color: var(--text3); cursor: pointer"
-
-                  onclick="showXpModal()"
-
-                  >0/100 XP</span
-
-                >
-
-              </div>
-
-            </div>
-
-          </div>
-
-
 
           <!-- Metrics strip -->
 
@@ -4105,7 +3961,7 @@
 
         <div id="vue-panel-studies" style="display: contents"></div>
 
-        <!-- ═══════════════════════════════════════════ HEROES PANEL ══ -->
+        <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• HEROES PANEL â•â• -->
 
         <!-- Vue Mount heroes -->
 
@@ -4169,13 +4025,13 @@
 
 
 
-        <!-- ═══════════════════════════════════════════ TRAINING PANEL ══ -->
+        <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• TRAINING PANEL â•â• -->
 
         <!-- Vue Mount training -->
 
         <div id="vue-panel-training" style="display: contents"></div>
 
-        <!-- ═══════════════════════════════════════════ EXPLORATION PANEL ══ -->
+        <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• EXPLORATION PANEL â•â• -->
 
         <!-- Vue Mount exploration -->
 
@@ -4183,7 +4039,7 @@
 
 
 
-        <!-- ═══════════════════════════════════════════ ALLIANCES PANEL ══ -->
+        <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• ALLIANCES PANEL â•â• -->
 
         <!-- GLOBAL CHAT -->
 
@@ -4193,7 +4049,7 @@
 
 
 
-        <!-- ═══════════════════════════════════════════ ALLIANCE ════════ -->
+        <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• ALLIANCE â•â•â•â•â•â•â•â• -->
 
         <!-- Vue Mount alliances -->
 
@@ -4811,7 +4667,6 @@
 
           });
 
-          updateTrainingDisplay();
 
         }
 
@@ -5453,7 +5308,7 @@
 
           bullyMsg =
 
-            "⚠️ ×4–8 size difference — happiness suffers. Attack power −40%.";
+            "âš ï¸ ×4–8 size difference — happiness suffers. Attack power −40%.";
 
         } else if (bullyRatio >= 2) {
 
@@ -5461,7 +5316,7 @@
 
           bullyMsg =
 
-            "⚠️ ×2–4 size difference — troops lack motivation. Attack power −20%.";
+            "âš ï¸ ×2–4 size difference — troops lack motivation. Attack power −20%.";
 
         }
 
@@ -5683,7 +5538,6 @@
 
         syncUI();
 
-        updateTurnsDisplay();
 
 
 
@@ -5805,7 +5659,7 @@
 
 
 
-        if (r.bullyMsg) rows.push(["⚠️ Penalty", r.bullyMsg]);
+        if (r.bullyMsg) rows.push(["âš ï¸ Penalty", r.bullyMsg]);
 
 
 
@@ -5820,214 +5674,6 @@
           rows,
 
         });
-
-      }
-
-
-
-      function searchAction(type) {
-
-        var r = parseInt(document.getElementById("search-rangers").value) || 0;
-
-        if (r <= 0) return toast("Assign some rangers first", "error");
-
-        if (r > state.rangers) return toast("Not enough rangers", "error");
-
-        if (state.turns_stored < 1) return toast("No turns available", "warn");
-
-
-
-        apiCall("POST", "/api/kingdom/search", { type: type, rangers: r }).then(
-
-          async function (result) {
-
-            if (result.error) return toast(result.error, "error");
-
-            window.applyGameMutation(result, { reason: "search" });
-
-            syncUI();
-
-            updateTurnsDisplay();
-
-            // Removed appendNewsItems(result.events) so results only appear in expedition log
-
-            toast(result.message, "success");
-
-            // Log instant search result (not in database)
-
-            var icons = { land: "🗺️", gold: "⛏️", food: "🌾", targets: "🔭" };
-
-            logExpeditionEntry(
-
-              icons[type] || "🧭",
-
-              result.message,
-
-              "Sent " + fmt(r) + " rangers · 1 turn used",
-
-            );
-
-            // Immediately update expedition state: counters + available ranger pools
-
-            updateExpeditionAvailability();
-
-            await loadActiveExpeditions();
-
-          },
-
-        ).catch(function(err) {
-
-          console.error("Search API error:", err);
-
-          toast("Search action failed: " + err.message, "error");
-
-        });
-
-      }
-
-
-
-      async function launchExpedition(type) {
-
-        var rangers =
-
-          parseInt(document.getElementById("exp-" + type + "-rangers").value) ||
-
-          0;
-
-        var fighters =
-
-          type === "dungeon"
-
-            ? parseInt(document.getElementById("exp-dungeon-fighters").value) ||
-
-              0
-
-            : 0;
-
-
-
-        if (rangers < 1) return toast("Send at least 1 ranger", "error");
-
-        if (rangers > state.rangers)
-
-          return toast("Not enough rangers", "error");
-
-        if (type === "dungeon" && fighters < 1)
-
-          return toast("Dungeon raids require fighters", "error");
-
-        if (type === "dungeon" && fighters > state.fighters)
-
-          return toast("Not enough fighters", "error");
-
-
-
-        // Calculate food requirement (matches server-side calculation, without race multiplier for estimate)
-
-        var expeditionTurns = { scout: 10, deep: 25, dungeon: 50, mountain: 100 };
-
-        var turns = expeditionTurns[type] || 0;
-
-        var foodPerTurn = (rangers * 0.5 + fighters * 1.0);
-
-        var foodNeeded = Math.ceil(turns * foodPerTurn * 0.75);
-
-
-
-        if (state.food < foodNeeded) {
-
-          var foodShortfall = foodNeeded - state.food;
-
-          return toast("You need " + foodShortfall.toLocaleString() + " more food to start the expedition", "error");
-
-        }
-
-
-
-        var labels = {
-
-          scout: "10-turn Scout",
-
-          deep: "25-turn Deep",
-
-          dungeon: "50-turn Dungeon",
-
-          mountain: "100-turn Mountain",
-
-        };
-
-        var btn = document.getElementById("btn-exp-" + type);
-
-        if (btn) {
-
-          btn.disabled = true;
-
-          btn.textContent = "Launching...";
-
-        }
-
-
-
-        var result = await apiCall("POST", "/api/kingdom/expedition/start", {
-
-          type,
-
-          rangers,
-
-          fighters,
-
-        });
-
-        if (btn) {
-
-          btn.disabled = false;
-
-          if (type === "dungeon") {
-
-            btn.textContent = "Launch raid";
-
-          } else if (type === "mountain") {
-
-            btn.textContent = "Accept the risk";
-
-          } else {
-
-            btn.textContent = "Launch expedition";
-
-          }
-
-        }
-
-
-
-        if (result.error) return toast(result.error, "error");
-
-        playGameSound("expedition_depart");
-
-
-
-        // Apply full turn updates returned from server (processTurn was run + turn consumed)
-
-        window.applyGameMutation(result, { reason: "expedition-start" });
-
-        // Expedition launch news goes to exploration log only — append turn events to news feed
-
-        if (result.events && result.events.length)
-
-          appendNewsItems(result.events);
-
-        syncUI();
-
-        updateExpeditionAvailability();
-
-
-
-        // loadActiveExpeditions creates the departure log entry with a tracked ID
-
-        await loadActiveExpeditions();
-
-        toast(labels[type] + " expedition launched!", "success");
 
       }
 
@@ -6055,19 +5701,19 @@
 
           '<span style="font-size:18px;flex-shrink:0">' +
 
-          icon +
+          repairMojibake(icon) +
 
           "</span>" +
 
           '<div><div style="color:var(--text)">' +
 
-          title +
+          repairMojibake(title) +
 
           "</div>" +
 
           '<div style="font-size:11px;color:var(--text3);margin-top:2px">' +
 
-          subtitle +
+          repairMojibake(subtitle) +
 
           "</div></div>";
 
@@ -6133,9 +5779,9 @@
 
               var content =
 
-                '<span style="font-size:18px;flex-shrink:0">' + (icons[exp.type] || "🧭") + "</span>" +
+                '<span style="font-size:18px;flex-shrink:0">' + repairMojibake(icons[exp.type] || "🧭") + "</span>" +
 
-                '<div><div style="color:var(--text)">' + (labels[exp.type] || exp.type) + " departed — " + exp.turns_left + " turn" + (exp.turns_left === 1 ? "" : "s") + " left</div>" +
+                '<div><div style="color:var(--text)">' + repairMojibake(labels[exp.type] || exp.type) + " departed — " + exp.turns_left + " turn" + (exp.turns_left === 1 ? "" : "s") + " left</div>" +
 
                 '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + troopStr + foodStr + "</div></div>";
 
@@ -6159,13 +5805,13 @@
 
               var troopStr = exp.rangers.toLocaleString() + " rangers" + (exp.fighters > 0 ? ", " + exp.fighters.toLocaleString() + " fighters" : "");
 
-              var foodStr = exp.food_taken > 0 ? " · 🍖 " + exp.food_taken.toLocaleString() + " food taken" : "";
+               var foodStr = exp.food_taken > 0 ? " · 🍖 " + exp.food_taken.toLocaleString() + " food taken" : "";
 
               entry.innerHTML =
 
-                '<span style="font-size:18px;flex-shrink:0">' + (icons[exp.type] || "🧭") + "</span>" +
+                '<span style="font-size:18px;flex-shrink:0">' + repairMojibake(icons[exp.type] || "🧭") + "</span>" +
 
-                '<div><div style="color:var(--text)">' + (labels[exp.type] || exp.type) + " departed — " + exp.turns_left + " turn" + (exp.turns_left === 1 ? "" : "s") + " left</div>" +
+                '<div><div style="color:var(--text)">' + repairMojibake(labels[exp.type] || exp.type) + " departed — " + exp.turns_left + " turn" + (exp.turns_left === 1 ? "" : "s") + " left</div>" +
 
                 '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + troopStr + foodStr + "</div></div>";
 
@@ -6283,7 +5929,7 @@
 
                     .map(function (r) {
 
-                      return "• " + r;
+                      return "• " + repairMojibake(r);
 
                     })
 
@@ -6305,15 +5951,15 @@
 
               '<span style="font-size:18px;flex-shrink:0">' +
 
-              (icons[exp.type] || "🧭") +
+              repairMojibake(icons[exp.type] || "🧭") +
 
               "</span>" +
 
               '<div style="flex:1"><div style="color:var(--text);font-weight:600">' +
 
-              (labels[exp.type] || exp.type) +
+              repairMojibake(labels[exp.type] || exp.type) +
 
-              " — Returned</div>" +
+               " — Returned</div>" +
 
               '<div style="font-size:11px;color:var(--text3);margin-top:2px">' +
 
@@ -6337,7 +5983,7 @@
 
                     .map(function (r) {
 
-                      return "• " + r;
+                      return "• " + repairMojibake(r);
 
                     })
 
@@ -6345,7 +5991,7 @@
 
                   "</div>"
 
-                : '<div style="margin-top:4px;font-size:12px;color:var(--text3)">Expedition complete — check news for details.</div>') +
+                 : '<div style="margin-top:4px;font-size:12px;color:var(--text3)">Expedition complete — check news for details.</div>') +
 
               "</div>";
 
@@ -6445,11 +6091,11 @@
 
               '<div style="font-weight:bold;color:var(--text);font-size:14px"><span style="margin-right:6px">' +
 
-              (icons[exp.type] || "🧭") +
+              repairMojibake(icons[exp.type] || "🧭") +
 
               "</span> " +
 
-              (labels[exp.type] || exp.type) +
+              repairMojibake(labels[exp.type] || exp.type) +
 
               " underway</div>" +
 
@@ -6539,7 +6185,6 @@
 
 
 
-      window.loadActiveExpeditions = loadActiveExpeditions;
 
 
 
@@ -6566,38 +6211,6 @@
         await loadActiveExpeditions();
 
         syncUI();
-
-      }
-
-
-
-      function clearExpeditionLog() {
-
-        var log = document.getElementById("exploration-log");
-
-        if (!log) return;
-
-        // Remove completed entries from existing DOM
-
-        Array.from(log.querySelectorAll(".exp-log-entry")).forEach(
-
-          function (entry) {
-
-            entry.remove();
-
-          },
-
-        );
-
-        if (log.children.length === 0) {
-
-          log.innerHTML =
-
-            '<div data-placeholder style="text-align:center;color:var(--text3);font-size:13px;padding:40px 0">No recent expeditions</div>';
-
-        }
-
-        toast("Log cleared", "success");
 
       }
 
@@ -7061,7 +6674,6 @@
 
         syncUI();
 
-        updateTurnsDisplay();
 
         renderSpells(); // refresh scroll counts
 
@@ -7317,7 +6929,6 @@
 
         syncUI();
 
-        updateTurnsDisplay();
 
       }
 
@@ -7759,9 +7370,7 @@
 
             }
 
-            if (typeof window.updateTurnsDisplay === "function") {
 
-              window.updateTurnsDisplay();
 
             }
 
@@ -7784,6 +7393,58 @@
       function escHtml(text) {
         return escapeHtml(text);
       }
+
+      function repairMojibake(value) {
+        var text = value == null ? "" : String(value);
+        if (!text || !/[ÃƒÃ‚Ã¢Ã°Å¸ðâÂï¿½]/.test(text)) return text;
+        var current = text;
+        for (var i = 0; i < 20; i++) {
+          var next = current;
+          try {
+            next = decodeURIComponent(escape(current));
+          } catch (err) {
+            try {
+              next = new TextDecoder("utf-8").decode(
+                Uint8Array.from(current, function (ch) {
+                  return ch.charCodeAt(0) & 255;
+                }),
+              );
+            } catch (innerErr) {}
+          }
+          if (!next || next === current) break;
+          current = next;
+        }
+        current = current
+          .replace(/Â/g, "")
+          .replace(/·/g, "·")
+          .replace(/—/g, "—")
+          .replace(/–/g, "-")
+          .replace(/•/g, "•")
+          .replace(/‘|’/g, "'")
+          .replace(/“|"/g, '"')
+          .replace(/🔭/g, "🔭")
+          .replace(/🌲/g, "🌲")
+          .replace(/🏔️/g, "🏔️")
+          .replace(/🧭/g, "🧭")
+          .replace(/🏆/g, "🏆")
+          .replace(/🔒/g, "🔒")
+          .replace(/🔮/g, "🔮")
+          .replace(/🤝/g, "🤝")
+          .replace(/📍/g, "📍")
+          .replace(/📜/g, "📰")
+          .replace(/🛡️/g, "🛡️")
+          .replace(/👤/g, "👤")
+          .replace(/🐺/g, "🐺")
+          .replace(/🧛/g, "🧛")
+          .replace(/🌟/g, "🌟")
+          .replace(/🔜/g, "🔜")
+          .replace(/🕵️/g, "🕵️")
+          .replace(/💀/g, "💀")
+          .replace(/💫/g, "💫");
+        return current;
+      }
+
+      window.repairMojibake = repairMojibake;
 
       function getAuthModalElement(id) {
         return document.getElementById(id);
@@ -7852,6 +7513,31 @@
         if (details) details.style.display = "none";
         const content = getAuthModalElement("registration-content");
         if (content) content.scrollTop = 0;
+      }
+
+      function showNewsBadge(count) {
+        const value = Number(count) || 0;
+        ["news-badge", "bnav-news-badge"].forEach(function (id) {
+          const badge = document.getElementById(id);
+          if (!badge) return;
+          if (value > 0) {
+            badge.textContent = String(value);
+            badge.style.display = "inline-flex";
+          } else {
+            badge.textContent = "";
+            badge.style.display = "none";
+          }
+        });
+      }
+
+      function clearToken() {
+        try {
+          localStorage.removeItem("narmir_token");
+        } catch {}
+        try {
+          document.cookie = "token=; Max-Age=0; path=/";
+          document.cookie = "csrf_token=; Max-Age=0; path=/";
+        } catch {}
       }
 
       async function submitAuthRequest(endpoint, payload) {
@@ -7931,8 +7617,11 @@
       window.showPasswordReset = showPasswordReset;
       window.closeRegistrationModal = closeRegistrationModal;
       window.backToRaceSelection = backToRaceSelection;
+      window.showNewsBadge = showNewsBadge;
+      window.clearToken = clearToken;
       window.doLogin = doLogin;
       window.doRegister = doRegister;
+      window.doLogout = doLogout;
 
 
 
@@ -8054,7 +7743,7 @@
 
               );
 
-              loadNews();
+              window.dispatchEvent(new CustomEvent('narmir:news-refresh'));
 
               loadMe();
 
@@ -8062,7 +7751,7 @@
 
             socket.on("event:spell_received", function () {
 
-              loadNews();
+              window.dispatchEvent(new CustomEvent('narmir:news-refresh'));
 
               loadMe();
 
@@ -8070,7 +7759,7 @@
 
             socket.on("event:turn_update", function () {
 
-              loadNews();
+              window.dispatchEvent(new CustomEvent('narmir:news-refresh'));
 
               loadMe();
 
@@ -8350,36 +8039,6 @@
 
 
 
-      function setNewsFilter(filter, btn) {
-
-        newsFilter = filter;
-
-        document.querySelectorAll(".news-filter").forEach(function (b) {
-
-          b.classList.remove("active");
-
-        });
-
-        if (btn) btn.classList.add("active");
-
-        renderNewsList(newsCache);
-
-      }
-
-
-
-      // Expose news functions to React components
-
-      window.loadNews = loadNews;
-
-      window.renderNewsList = renderNewsList;
-
-      window.setNewsFilter = setNewsFilter;
-
-      window.clearNews = clearNews;
-
-
-
       var NEWS_META = {
 
         attack: { icon: "⚔️", color: "var(--red)", label: "Combat" },
@@ -8434,7 +8093,7 @@
 
         if (!item) return 13;
 
-        var msg = String(item.message || "").toLowerCase();
+        var msg = repairMojibake(String(item.message || "")).toLowerCase();
 
         var type = item.type || "system";
 
@@ -8522,7 +8181,7 @@
 
       function summarizeAttackNewsForAll(item) {
 
-        var message = String((item && item.message) || "");
+        var message = repairMojibake(String((item && item.message) || ""));
 
         if (message.indexOf("Defense report:") === 0) return "You were attacked.";
 
@@ -8640,7 +8299,7 @@
 
                 // Detect expedition items by message prefix
 
-                if (item.message && /^[🔭🌲⚔🧭•]/u.test(item.message))
+                if (repairMojibake(item.message) && /^[🔭🌲⚔🧭•]/u.test(repairMojibake(item.message)))
 
                   type = "expedition";
 
@@ -8652,7 +8311,7 @@
 
                     ? summarizeAttackNewsForAll(item)
 
-                    : item.message || "";
+                    : repairMojibake(item.message || "");
 
                 var msgHtml = escHtml(displayMessage)
 
@@ -8700,7 +8359,7 @@
 
                   '<span class="news-icon">' +
 
-                  meta.icon +
+                  repairMojibake(meta.icon) +
 
                   "</span>" +
 
@@ -8776,28 +8435,6 @@
 
 
 
-      async function clearNews() {
-
-        var result = await apiCall("DELETE", "/api/kingdom/news/clear");
-
-        if (result.error) return toast(result.error, "error");
-
-        var list = document.getElementById("news-list");
-
-        if (list)
-
-          list.innerHTML =
-
-            '<div style="color:var(--text3);font-size:13px;padding:8px 0">News cleared.</div>';
-
-        newsCache = [];
-
-        toast("News cleared", "success");
-
-      }
-
-
-
       function incrementNewsBadge(count) {
 
         if (!count || count <= 0) return;
@@ -8836,7 +8473,7 @@
 
         events.forEach(function (ev) {
 
-          var m = (ev.message || "").toLowerCase();
+          var m = repairMojibake(ev.message || "").toLowerCase();
 
           if (m.includes("season:")) soundsToPlay["seasonal_event"] = true;
 
@@ -8880,7 +8517,7 @@
 
             type: ev.type || "system",
 
-            message: ev.message || ev,
+            message: repairMojibake(ev.message || ev),
 
             turn_num: state.turn || 0,
 
@@ -8930,7 +8567,7 @@
 
                 ? summarizeAttackNewsForAll(ev)
 
-                : ev.message || ev;
+              : repairMojibake(ev.message || ev);
 
             var isBorderType =
 
@@ -8952,7 +8589,7 @@
 
               '<span class="news-icon">' +
 
-              meta.icon +
+              repairMojibake(meta.icon) +
 
               "</span>" +
 
@@ -8962,7 +8599,7 @@
 
               '">' +
 
-              escHtml(String(msg)).replace(/\n/g, "<br>") +
+              escHtml(String(repairMojibake(msg))).replace(/\n/g, "<br>") +
 
               "</span>" +
 
@@ -9010,11 +8647,7 @@
 
         // Refresh full news list to ensure filter is applied correctly
 
-        if (window.renderNewsList) {
-
-          window.renderNewsList(newsCache);
-
-        }
+        window.renderNewsList?.(newsCache);
 
       }
 
@@ -9064,7 +8697,75 @@
 
       function toast(message, type) {
 
+        function positionToastContainer(node) {
+
+          if (!node) return;
+
+          var isMobile = window.innerWidth <= 768;
+
+          node.style.position = "fixed";
+
+          node.style.zIndex = "99999";
+
+          node.style.display = "flex";
+
+          node.style.flexDirection = "column";
+
+          node.style.gap = "8px";
+
+          node.style.pointerEvents = "none";
+
+          node.style.left = "50%";
+
+          node.style.right = "auto";
+
+          node.style.top = "auto";
+
+          node.style.bottom = isMobile ? "88px" : "24px";
+
+          node.style.alignItems = "center";
+          node.style.transform = "translateX(-50%)";
+          node.style.width = "min(92vw, 420px)";
+
+        }
+
         var kind = type || "info";
+        var toastTheme = {
+          success: {
+            border: "#00ff2b",
+            text: "#7dff86",
+            glow: "rgba(0, 255, 43, 0.22)",
+          },
+          error: {
+            border: "#ff5f5f",
+            text: "#ffb4b4",
+            glow: "rgba(255, 95, 95, 0.18)",
+          },
+          warning: {
+            border: "#f4c95d",
+            text: "#ffe7a4",
+            glow: "rgba(244, 201, 93, 0.18)",
+          },
+          warn: {
+            border: "#f4c95d",
+            text: "#ffe7a4",
+            glow: "rgba(244, 201, 93, 0.18)",
+          },
+          info: {
+            border: "#67b7ff",
+            text: "#cbe5ff",
+            glow: "rgba(103, 183, 255, 0.18)",
+          },
+          system: {
+            border: "#8b93a7",
+            text: "#e4e7ef",
+            glow: "rgba(139, 147, 167, 0.12)",
+          },
+        }[kind] || {
+          border: "#8b93a7",
+          text: "#e4e7ef",
+          glow: "rgba(139, 147, 167, 0.12)",
+        };
 
         var container = document.getElementById("toast-container");
 
@@ -9074,31 +8775,31 @@
 
           container.id = "toast-container";
 
-          container.style.position = "fixed";
-
-          container.style.top = "16px";
-
-          container.style.right = "16px";
-
-          container.style.zIndex = "99999";
-
-          container.style.display = "flex";
-
-          container.style.flexDirection = "column";
-
-          container.style.gap = "8px";
-
-          container.style.pointerEvents = "none";
+          positionToastContainer(container);
 
           document.body.appendChild(container);
 
+          if (!window._toastResizeBound) {
+            window.addEventListener("resize", function () {
+              positionToastContainer(document.getElementById("toast-container"));
+            });
+            window._toastResizeBound = true;
+          }
+
+        } else {
+          positionToastContainer(container);
+
+        }
+
+        if (container) {
+          container.replaceChildren();
         }
 
         var toastEl = document.createElement("div");
 
         toastEl.style.minWidth = "240px";
 
-        toastEl.style.maxWidth = "360px";
+        toastEl.style.maxWidth = "100%";
 
         toastEl.style.padding = "10px 12px";
 
@@ -9108,29 +8809,14 @@
 
         toastEl.style.lineHeight = "1.4";
 
-        toastEl.style.boxShadow = "0 8px 24px rgba(0,0,0,0.25)";
-
-        toastEl.style.border = "1px solid rgba(255,255,255,0.1)";
-
-        toastEl.style.background =
-
-          kind === "error"
-
-            ? "rgba(224,92,92,0.95)"
-
-            : kind === "success"
-
-              ? "rgba(46,204,113,0.95)"
-
-              : kind === "warning" || kind === "warn"
-
-                ? "rgba(224,184,75,0.95)"
-
-                : "rgba(34,36,46,0.95)";
-
-        toastEl.style.color = "#fff";
+        toastEl.style.background = "rgba(0,0,0,0.04)";
+        toastEl.style.border = "1px solid " + toastTheme.border;
+        toastEl.style.color = toastTheme.text;
+        toastEl.style.boxShadow = "0 10px 26px rgba(0,0,0,0.22), inset 0 0 0 1px rgba(0,0,0,0.25), inset 0 0 18px rgba(0,0,0,0.25), 0 0 18px " + toastTheme.glow;
 
         toastEl.style.pointerEvents = "auto";
+
+        toastEl.style.textAlign = "center";
 
         toastEl.textContent = String(message || "");
 
@@ -9510,7 +9196,7 @@
 
                 if (d.flankKills > 0)
 
-                  parts.push("↪️ " + fmt(d.flankKills) + " flank");
+                  parts.push("â†ªï¸ " + fmt(d.flankKills) + " flank");
 
 
 
@@ -9932,7 +9618,7 @@
 
         high_elf: "🧝",
 
-        dwarf: "⛏️",
+        dwarf: "â›ï¸",
 
         dire_wolf: "🐺",
 
@@ -10041,17 +9727,6 @@
         }
 
       }
-
-
-
-      function refreshRankings() {
-
-        if (currentRankType === "kingdoms") loadRankings(true);
-
-        else loadAllianceRankings();
-
-      }
-
 
 
       async function loadAllianceRankings() {
@@ -10302,8 +9977,6 @@
 
       }
 
-
-
       function filterRankings(q) {
 
         if (currentRankType === "kingdoms") {
@@ -10466,7 +10139,7 @@
 
                 r.name.replace(/'/g, "\\'") +
 
-                "')\">✉️ Message</button>"
+                "')\">âœ‰ï¸ Message</button>"
 
               : (r.turn || 0) < 400
 
@@ -10486,7 +10159,7 @@
 
                   r.name.replace(/'/g, "\\'") +
 
-                  "')\">✉️</button>" +
+                  "')\">âœ‰ï¸</button>" +
 
                   '<span style="font-size:11px;color:var(--green);margin-left:4px" title="Protected until Turn 400">🛡️</span>' +
 
@@ -10512,7 +10185,7 @@
 
                       r.name.replace(/'/g, "\\'") +
 
-                      "')\">✉️</button>";
+                      "')\">âœ‰ï¸</button>";
 
 
 
@@ -10696,7 +10369,7 @@
 
             color: "var(--green)",
 
-            icon: "☠️",
+            icon: "â˜ ï¸",
 
             desc: "Food poisoned",
 
@@ -11289,6 +10962,10 @@
         if (u.tax !== undefined) state.tax = u.tax;
 
         if (u.name !== undefined) state.name = u.name;
+        if (u.kingdomName !== undefined) state.kingdomName = u.kingdomName;
+        if (u.kingdom_name !== undefined) state.kingdomName = u.kingdom_name;
+        if (u.username !== undefined) state.username = u.username;
+        if (u.race !== undefined) state.race = u.race;
 
         if (u.turn !== undefined) state.turn = u.turn;
 
@@ -11906,9 +11583,7 @@
 
         }
 
-        if (u.xp !== undefined || u.level !== undefined) updateXpDisplay();
 
-        if (window.refreshResourcesPanel) window.refreshResourcesPanel();
 
         if (window.triggerReactUpdates) window.triggerReactUpdates();
 
@@ -12078,560 +11753,6 @@
 
 
 
-      function updateBuildDisplay() {
-
-        var total = state.engineers || 0;
-
-        var allocated = getAllocatedEngineers();
-
-        var remaining = Math.max(0, total - allocated);
-
-
-
-        var tea = document.getElementById("b-engineers-available");
-
-        if (tea) tea.textContent = fmt(total);
-
-
-
-        var ta = document.getElementById("b-total-assigned");
-
-        var tu = document.getElementById("b-total-unassigned");
-
-        if (ta) ta.textContent = fmt(allocated);
-
-        if (tu) {
-
-          tu.textContent = fmt(remaining);
-
-          tu.style.color = allocated > total ? "var(--red)" : "var(--green)";
-
-        }
-
-
-
-        // Live Resource updates on the build panel
-
-        var bWood = document.getElementById("b-wood");
-
-        if (bWood) bWood.textContent = fmt(state.wood || 0);
-
-        var bStone = document.getElementById("b-stone");
-
-        if (bStone) bStone.textContent = fmt(state.stone || 0);
-
-        var bIron = document.getElementById("b-iron");
-
-        if (bIron) bIron.textContent = fmt(state.iron || 0);
-
-        var bSteel = document.getElementById("b-steel");
-
-        if (bSteel) bSteel.textContent = fmt(state.steel || 0);
-
-        var bCoal = document.getElementById("b-coal");
-
-        if (bCoal) bCoal.textContent = fmt(state.coal || 0);
-
-
-
-        // Land
-
-        var bLand = document.getElementById("b-land-available");
-
-        if (bLand) {
-
-          var availLand = (state.land || 0) - (state.built_land || 0);
-
-          bLand.textContent = fmt(availLand) + " / " + fmt(state.land || 0);
-
-        }
-
-
-
-        // Shrines/Mausoleums visibility toggle
-
-        var isVampire = state.race === "vampire";
-
-        var shrineRow = document.getElementById("ba-shrine")?.closest(".trow");
-
-        var mausoleumRow = document.getElementById("ba-mausoleum")?.closest(".trow");
-
-        if (shrineRow) shrineRow.style.display = isVampire ? "none" : "";
-
-        if (mausoleumRow) mausoleumRow.style.display = isVampire ? "" : "none";
-
-
-
-        // Blueprint/scaffolding requirement notices beside buildings
-
-        var BLUEPRINT_REQUIRED = new Set([
-
-          "vaults",
-
-          "smithies",
-
-          "markets",
-
-          "mage_towers",
-
-          "training",
-
-          "castles",
-
-        ]);
-
-        var SCAFFOLDING_REQUIRED = new Set([
-
-          "mage_towers",
-
-          "training",
-
-          "castles",
-
-          "libraries",
-
-        ]);
-
-        var bp = state.blueprints_stored || 0;
-
-        var sc = state.scaffolding_stored || 0;
-
-
-
-        BUILD_FIELDS.forEach(function (f) {
-
-          var noticeId = "tool-notice-" + f.key;
-
-          var existing = document.getElementById(noticeId);
-
-          var needsBP = BLUEPRINT_REQUIRED.has(f.key);
-
-          var needsSC = SCAFFOLDING_REQUIRED.has(f.key);
-
-          var engVal = parseInt(document.getElementById(f.alloc)?.value) || 0;
-
-          var msg = "";
-
-          if (engVal > 0) {
-
-            if (needsBP && bp === 0) msg += "📐 Blueprint needed ";
-
-            if (needsSC && sc === 0) msg += "🪜 Scaffolding needed";
-
-          }
-
-          if (msg && !existing) {
-
-            var row = document.getElementById(f.alloc)?.closest(".trow");
-
-            if (row) {
-
-              var notice = document.createElement("span");
-
-              notice.id = noticeId;
-
-              notice.style.cssText =
-
-                "font-size:10px;color:var(--amber);white-space:nowrap;margin-left:4px";
-
-              notice.textContent = msg.trim();
-
-              row.appendChild(notice);
-
-            }
-
-          } else if (existing) {
-
-            if (msg && engVal > 0) {
-
-              existing.textContent = msg.trim();
-
-              existing.style.display = "inline";
-
-            } else existing.style.display = "none";
-
-          }
-
-        });
-
-
-
-        // Live turns-per-unit estimate next to each allocation input
-
-        BUILD_FIELDS.forEach(function (f) {
-
-          var input = document.getElementById(f.alloc);
-
-          if (!input) return;
-
-          var estId = "turns-est-" + f.key;
-
-          var existing = document.getElementById(estId);
-
-          var engVal = parseInt(input.value) || 0;
-
-          var cost = BUILD_EFFORT[f.key] || 100;
-
-          if (engVal > 0) {
-
-            var turns = Math.ceil(cost / engVal);
-
-            if (!existing) {
-
-              var row = input.closest(".trow");
-
-              if (row) {
-
-                existing = document.createElement("span");
-
-                existing.id = estId;
-
-                existing.style.cssText =
-
-                  "font-size:10px;color:var(--text3);white-space:nowrap;margin-left:4px";
-
-                row.appendChild(existing);
-
-              }
-
-            }
-
-            if (existing) {
-
-              existing.textContent =
-
-                "~" +
-
-                turns.toLocaleString() +
-
-                " turn" +
-
-                (turns === 1 ? "" : "s") +
-
-                "/unit";
-
-              existing.style.display = "inline";
-
-            }
-
-          } else if (existing) {
-
-            existing.style.display = "none";
-
-          }
-
-        });
-
-
-
-        renderBuildQueue();
-
-      }
-
-
-
-      function setBuildMax(fieldId, key) {
-
-        var total = state.engineers || 0;
-
-        var allocated = getAllocatedEngineers();
-
-        var current = parseInt(document.getElementById(fieldId)?.value) || 0;
-
-        var available = total - allocated + current;
-
-        var el = document.getElementById(fieldId);
-
-        if (el) el.value = Math.max(0, available);
-
-        updateBuildDisplay();
-
-      }
-
-
-
-      function distributeBuildEvenly() {
-
-        var total = state.engineers || 0;
-
-        var visibleFields = BUILD_FIELDS.filter(function (f) {
-
-          var inputEl = document.getElementById(f.alloc);
-
-          if (!inputEl) return false;
-
-          var trowEl = inputEl.closest(".trow");
-
-          return trowEl && trowEl.style.display !== "none";
-
-        });
-
-        var count = visibleFields.length;
-
-        if (count === 0) return;
-
-        var each = Math.floor(total / count);
-
-        var rem = total - each * count;
-
-        visibleFields.forEach(function (f, i) {
-
-          var el = document.getElementById(f.alloc);
-
-          if (el) el.value = each + (i < rem ? 1 : 0);
-
-        });
-
-        BUILD_FIELDS.filter((f) => !visibleFields.includes(f)).forEach(
-
-          function (f) {
-
-            var el = document.getElementById(f.alloc);
-
-            if (el) el.value = 0;
-
-          },
-
-        );
-
-        updateBuildDisplay();
-
-      }
-
-
-
-      function loadBuildAllocation() {
-
-        var alloc = state.build_allocation || {};
-
-        var buildingKeyMap = {
-
-          farm: "farms",
-
-          barracks: "barracks",
-
-          outpost: "outposts",
-
-          tower: "guard_towers",
-
-          school: "schools",
-
-          armory: "armories",
-
-          vault: "vaults",
-
-          smithy: "smithies",
-
-          market: "markets",
-
-          mage_tower: "mage_towers",
-
-          training: "training",
-
-          shrine: "shrines",
-
-          castle: "castles",
-
-          library: "libraries",
-
-          housing: "housing",
-
-          war_machine: "war_machines",
-
-          ballista: "ballistae",
-
-          ballistae: "ballistae",
-
-          weapons: "weapons",
-
-          armor: "armor",
-
-        };
-
-        BUILD_FIELDS.forEach(function (f) {
-
-          var key = buildingKeyMap[f.key] || f.key;
-
-          var el = document.getElementById(f.alloc);
-
-          if (el) el.value = alloc[key] || 0;
-
-        });
-
-        updateBuildDisplay();
-
-      }
-
-
-
-      async function releaseAllResearchers() {
-
-        RA_FIELDS.forEach(function (id) {
-
-          var el = document.getElementById(id);
-
-          if (el) el.value = 0;
-
-        });
-
-        updateAllocationDisplay();
-
-        var result = await apiCall("POST", "/api/kingdom/research-allocation", {
-
-          allocation: {},
-
-        });
-
-        if (result.error) return toast(result.error, "error");
-
-        state.research_allocation = {};
-
-        toast("All researchers released", "success");
-
-        syncUI();
-
-      }
-
-
-
-      async function releaseAllEngineers() {
-
-        BUILD_FIELDS.forEach(function (f) {
-
-          var el = document.getElementById(f.alloc);
-
-          if (el) el.value = 0;
-
-        });
-
-        updateBuildDisplay();
-
-        var result = await apiCall("POST", "/api/kingdom/build-allocation", {
-
-          allocation: {},
-
-        });
-
-        if (result.error) return toast(result.error, "error");
-
-        state.build_allocation = {};
-
-        toast("All engineers released", "success");
-
-        syncUI();
-
-      }
-
-
-
-      async function saveBuildAllocation() {
-
-        var allocation = {};
-
-        var buildingKeyMap = {
-
-          farm: "farms",
-
-          barracks: "barracks",
-
-          outpost: "outposts",
-
-          tower: "guard_towers",
-
-          school: "schools",
-
-          armory: "armories",
-
-          vault: "vaults",
-
-          smithy: "smithies",
-
-          market: "markets",
-
-          mage_tower: "mage_towers",
-
-          training: "training",
-
-          shrine: "shrines",
-
-          castle: "castles",
-
-          library: "libraries",
-
-          housing: "housing",
-
-          war_machine: "war_machines",
-
-          ballista: "ballistae",
-
-          ballistae: "ballistae",
-
-          weapons: "weapons",
-
-          armor: "armor",
-
-        };
-
-        var total = 0;
-
-        BUILD_FIELDS.forEach(function (f) {
-
-          var val = parseInt(document.getElementById(f.alloc)?.value) || 0;
-
-          var key = buildingKeyMap[f.key] || f.key;
-
-          allocation[key] = val;
-
-          total += val;
-
-        });
-
-        if (total > (state.engineers || 0)) {
-
-          return toast(
-
-            "Allocated " +
-
-              fmt(total) +
-
-              " but only have " +
-
-              fmt(state.engineers) +
-
-              " engineers",
-
-            "error",
-
-          );
-
-        }
-
-        var result = await apiCall("POST", "/api/kingdom/build-allocation", {
-
-          allocation: allocation,
-
-        });
-
-        if (result.error) return toast(result.error, "error");
-
-        state.build_allocation = allocation;
-
-        updateBuildDisplay();
-
-        syncUI();
-
-        toast(
-
-          "Engineer allocation saved — builds each turn automatically",
-
-          "success",
-
-        );
-
-      }
-
-
-
       function estimateResearchXpPerTurn(mages, level, schoolBonus) {
 
         if (mages <= 0) return 0;
@@ -12674,239 +11795,6 @@
 
 
 
-      function updateMageAllocationDisplay() {
-
-        if (!state) return;
-
-        var total = state.mages || 0;
-
-        var spellbookEl = document.getElementById('mage-alloc-spellbook');
-
-        var schoolEl = document.getElementById('mage-alloc-school');
-
-        var spellbookAlloc = parseInt(spellbookEl?.value) || 0;
-
-        var schoolAlloc = parseInt(schoolEl?.value) || 0;
-
-        var allocated = spellbookAlloc + schoolAlloc;
-
-        var available = Math.max(0, total - allocated);
-
-
-
-        var totalEl = document.getElementById('mage-total');
-
-        var availEl = document.getElementById('mage-available');
-
-        var allocEl = document.getElementById('mage-allocated');
-
-        if (totalEl) totalEl.textContent = total;
-
-        if (availEl) availEl.textContent = available;
-
-        if (allocEl) allocEl.textContent = allocated;
-
-
-
-        // Update turns to next level for spellbook
-
-        var spellbookLevel = state.res_spellbook || 0;
-
-        var spellbookXpPerTurn = estimateResearchXpPerTurn(spellbookAlloc, spellbookLevel);
-
-        var spellbookTurnsEl = document.getElementById('school-spellbook-turns');
-
-        if (spellbookTurnsEl && spellbookAlloc > 0 && spellbookXpPerTurn > 0) {
-
-          if (spellbookLevel >= 500) {
-
-            spellbookTurnsEl.textContent = 'Turns to next level: Max';
-
-          } else {
-
-            var spellbookCurrentXp = XP_LEVELS_CLIENT[spellbookLevel] || 0;
-
-            var spellbookNextXp = XP_LEVELS_CLIENT[spellbookLevel + 1] || 0;
-
-            var spellbookXpNeeded = Math.max(0, spellbookNextXp - spellbookCurrentXp);
-
-            var spellbookTurns = Math.ceil(spellbookXpNeeded / spellbookXpPerTurn);
-
-            spellbookTurnsEl.textContent = 'Turns to next level: ' + spellbookTurns;
-
-          }
-
-        } else if (spellbookTurnsEl) {
-
-          spellbookTurnsEl.textContent = 'Turns to next level: —';
-
-        }
-
-
-
-        // Update turns to next level for school spellbook
-
-        var schoolLevel = state.school_spellbook || 0;
-
-        var schoolXpPerTurn = estimateResearchXpPerTurn(schoolAlloc, schoolLevel);
-
-        var schoolTurnsEl = document.getElementById('school-specific-turns');
-
-        if (schoolTurnsEl && schoolAlloc > 0 && schoolXpPerTurn > 0) {
-
-          if (schoolLevel >= 500) {
-
-            schoolTurnsEl.textContent = 'Turns to next level: Max';
-
-          } else {
-
-            var schoolCurrentXp = XP_LEVELS_CLIENT[schoolLevel] || 0;
-
-            var schoolNextXp = XP_LEVELS_CLIENT[schoolLevel + 1] || 0;
-
-            var schoolXpNeeded = Math.max(0, schoolNextXp - schoolCurrentXp);
-
-            var schoolTurns = Math.ceil(schoolXpNeeded / schoolXpPerTurn);
-
-            schoolTurnsEl.textContent = 'Turns to next level: ' + schoolTurns;
-
-          }
-
-        } else if (schoolTurnsEl) {
-
-          schoolTurnsEl.textContent = 'Turns to next level: —';
-
-        }
-
-      }
-
-
-
-      function setMageMax(type) {
-
-        if (!state) return;
-
-        var total = state.mages || 0;
-
-        var spellbookEl = document.getElementById('mage-alloc-spellbook');
-
-        var schoolEl = document.getElementById('mage-alloc-school');
-
-        var otherAlloc = type === 'spellbook' ? (parseInt(schoolEl?.value) || 0) : (parseInt(spellbookEl?.value) || 0);
-
-        var available = Math.max(0, total - otherAlloc);
-
-
-
-        if (type === 'spellbook' && spellbookEl) {
-
-          spellbookEl.value = available;
-
-        } else if (type === 'school' && schoolEl) {
-
-          schoolEl.value = available;
-
-        }
-
-        updateMageAllocationDisplay();
-
-      }
-
-
-
-      async function releaseMageAllocation() {
-
-        var spellbookEl = document.getElementById('mage-alloc-spellbook');
-
-        var schoolEl = document.getElementById('mage-alloc-school');
-
-        if (spellbookEl) spellbookEl.value = 0;
-
-        if (schoolEl) schoolEl.value = 0;
-
-        updateMageAllocationDisplay();
-
-
-
-        var result = await apiCall("POST", "/api/kingdom/school-allocation", {
-
-          spellbook: 0,
-
-          school_spellbook: 0
-
-        });
-
-        if (result.error) return toast(result.error, "error");
-
-        state.research_allocation = state.research_allocation || {};
-
-        state.research_allocation.spellbook_mages = 0;
-
-        state.research_allocation.school_spellbook_mages = 0;
-
-        toast("All mages released from study", "success");
-
-        syncUI();
-
-      }
-
-
-
-      async function studyMagic() {
-
-        if (!state) return;
-
-        var spellbookEl = document.getElementById('mage-alloc-spellbook');
-
-        var schoolEl = document.getElementById('mage-alloc-school');
-
-        var spellbookAlloc = parseInt(spellbookEl?.value) || 0;
-
-        var schoolAlloc = parseInt(schoolEl?.value) || 0;
-
-
-
-        if (spellbookAlloc + schoolAlloc === 0) {
-
-          return toast("Allocate at least 1 mage to study", "error");
-
-        }
-
-
-
-        var result = await apiCall("POST", "/api/kingdom/school-allocation", {
-
-          spellbook: spellbookAlloc,
-
-          school_spellbook: schoolAlloc
-
-        });
-
-        if (result.error) return toast(result.error, "error");
-
-        state.research_allocation = state.research_allocation || {};
-
-        state.research_allocation.spellbook_mages = spellbookAlloc;
-
-        state.research_allocation.school_spellbook_mages = schoolAlloc;
-
-        toast("Mages allocated to study — gaining experience each turn", "success");
-
-        syncUI();
-
-      }
-
-
-
-      // Expose mage allocation functions to window
-
-      window.updateMageAllocationDisplay = updateMageAllocationDisplay;
-
-      window.setMageMax = setMageMax;
-
-      window.releaseMageAllocation = releaseMageAllocation;
-
-      window.studyMagic = studyMagic;
 
 
 
@@ -13308,7 +12196,7 @@
 
           vaults: "💰",
 
-          smithies: "⚒️",
+          smithies: "âš’ï¸",
 
           markets: "🏪",
 
@@ -13316,7 +12204,7 @@
 
           training: "⚔️",
 
-          shrines: "⛩️",
+          shrines: "â›©ï¸",
 
           housing: "🏘️",
 
@@ -13550,510 +12438,6 @@
 
 
 
-      // ── Research allocation ───────────────────────────────────────────────────────
-
-
-
-      var RA_FIELDS = [
-
-        "ra-economy",
-
-        "ra-weapons",
-
-        "ra-armor",
-
-        "ra-military",
-
-        "ra-spellbook",
-
-        "ra-attack_magic",
-
-        "ra-defense_magic",
-
-        "ra-entertainment",
-
-        "ra-construction",
-
-        "ra-war_machines",
-
-      ];
-
-
-
-      function getAllocated() {
-
-        return RA_FIELDS.reduce(function (sum, id) {
-
-          return sum + (parseInt(document.getElementById(id)?.value) || 0);
-
-        }, 0);
-
-      }
-
-
-
-      function updateAllocationDisplay() {
-
-        var total = state.researchers || 0;
-
-        var assigned = getAllocated();
-
-        var unassigned = Math.max(0, total - assigned);
-
-        var tAvail = document.getElementById("r-total-avail");
-
-        var tAssigned = document.getElementById("r-total-assigned");
-
-        var tUnassigned = document.getElementById("r-total-unassigned");
-
-        if (tAvail) tAvail.textContent = fmt(total);
-
-        if (tAssigned) tAssigned.textContent = fmt(assigned);
-
-        if (tUnassigned) {
-
-          tUnassigned.textContent = fmt(unassigned);
-
-          tUnassigned.style.color =
-
-            unassigned < 0 ? "var(--red)" : "var(--green)";
-
-        }
-
-        var warn = document.getElementById("research-no-researchers");
-
-        if (warn) warn.style.display = total === 0 ? "block" : "none";
-
-      }
-
-
-
-      function setMax(fieldId) {
-
-        var total = state.researchers || 0;
-
-        var assigned = getAllocated();
-
-        var current = parseInt(document.getElementById(fieldId)?.value) || 0;
-
-        var available = total - assigned + current;
-
-        var el = document.getElementById(fieldId);
-
-        if (el) el.value = Math.max(0, available);
-
-        updateAllocationDisplay();
-
-      }
-
-
-
-      function distributeEvenly() {
-
-        var total = state.researchers || 0;
-
-        var count = RA_FIELDS.length;
-
-        var each = Math.floor(total / count);
-
-        var remainder = total - each * count;
-
-        RA_FIELDS.forEach(function (id, i) {
-
-          var el = document.getElementById(id);
-
-          if (el) el.value = each + (i < remainder ? 1 : 0);
-
-        });
-
-        updateAllocationDisplay();
-
-      }
-
-
-
-      function loadAllocationFromState() {
-
-        // Populate inputs from saved state allocation
-
-        var alloc = state.research_allocation || {};
-
-        var disciplines = [
-
-          "economy",
-
-          "weapons",
-
-          "armor",
-
-          "military",
-
-          "spellbook",
-
-          "attack_magic",
-
-          "defense_magic",
-
-          "entertainment",
-
-          "construction",
-
-          "war_machines",
-
-        ];
-
-        disciplines.forEach(function (d) {
-
-          var el = document.getElementById("ra-" + d);
-
-          if (el) el.value = alloc[d] || 0;
-
-        });
-
-        updateAllocationDisplay();
-
-      }
-
-
-
-      async function saveResearchAllocation() {
-
-        var allocation = {};
-
-        var disciplines = [
-
-          "economy",
-
-          "weapons",
-
-          "armor",
-
-          "military",
-
-          "spellbook",
-
-          "attack_magic",
-
-          "defense_magic",
-
-          "entertainment",
-
-          "construction",
-
-          "war_machines",
-
-        ];
-
-        var total = 0;
-
-        disciplines.forEach(function (d) {
-
-          var val = parseInt(document.getElementById("ra-" + d)?.value) || 0;
-
-          allocation[d] = val;
-
-          total += val;
-
-        });
-
-        if (total > (state.researchers || 0)) {
-
-          // Soft warning — engine will clamp but let user save anyway
-
-          toast(
-
-            "Warning: allocated " +
-
-              fmt(total) +
-
-              " but only have " +
-
-              fmt(state.researchers || 0) +
-
-              " researchers — extra will be ignored",
-
-            "warn",
-
-          );
-
-        }
-
-        var result = await apiCall("POST", "/api/kingdom/research-allocation", {
-
-          allocation: allocation,
-
-        });
-
-        if (result.error) return toast(result.error, "error");
-
-        state.research_allocation = allocation;
-
-        updateAllocationDisplay();
-
-        syncUI();
-
-        toast("Research allocation saved — advances every turn", "success");
-
-      }
-
-
-
-      function updateSmithyDisplay() {
-
-        var smithies = state.bld_smithies || 0;
-
-        var hammerCap = smithies * 25;
-
-        var scaffCap = Math.max(10, smithies * 10);
-
-        var hammers = state.hammers_stored || 0;
-
-        var scaff = state.scaffolding_stored || 0;
-
-        var gold = state.gold || 0;
-
-
-
-        var hasSmithy = smithies > 0;
-
-        var scaffPrice = hasSmithy ? 2500 : 3125;
-
-
-
-        var maxH = Math.max(
-
-          0,
-
-          Math.min(hammerCap - hammers, Math.floor(gold / 25)),
-
-        );
-
-        var maxS = Math.max(
-
-          0,
-
-          Math.min(scaffCap - scaff, Math.floor(gold / scaffPrice)),
-
-        );
-
-        var g = function (id) {
-
-          return document.getElementById(id);
-
-        };
-
-        if (g("smith-hammers-stored"))
-
-          g("smith-hammers-stored").textContent = fmt(hammers);
-
-        if (g("smith-hammers-cap"))
-
-          g("smith-hammers-cap").textContent = fmt(hammerCap);
-
-        if (g("smith-hammers-afford"))
-
-          g("smith-hammers-afford").textContent = fmt(maxH);
-
-        if (g("smith-scaffolding-stored"))
-
-          g("smith-scaffolding-stored").textContent = fmt(scaff);
-
-        if (g("smith-scaffolding-cap"))
-
-          g("smith-scaffolding-cap").textContent = fmt(scaffCap);
-
-        if (g("smith-scaffolding-afford"))
-
-          g("smith-scaffolding-afford").textContent = fmt(maxS);
-
-        var note = g("smithy-alloc-note");
-
-        if (note) {
-
-          if (smithies === 0) {
-
-            note.innerHTML =
-
-              "You need a smithy to buy hammers.<br><span style='color:var(--gold)'>Scaffolding is available without a smithy (25% markup).</span>";
-
-          } else {
-
-            note.textContent = "";
-
-          }
-
-        }
-
-      }
-
-
-
-      function setSmithyMax(type) {
-
-        var smithies = state.bld_smithies || 0;
-
-        var gold = state.gold || 0;
-
-        if (type === "hammers") {
-
-          var max = Math.max(
-
-            0,
-
-            Math.min(
-
-              smithies * 25 - (state.hammers_stored || 0),
-
-              Math.floor(gold / 25),
-
-            ),
-
-          );
-
-          var el = document.getElementById("smith-buy-hammers");
-
-          if (el) el.value = max;
-
-        } else {
-
-          var scaffCap = Math.max(10, smithies * 10);
-
-          var hasSmithy = smithies > 0;
-
-          var scaffPrice = hasSmithy ? 2500 : 3125;
-
-          var max2 = Math.max(
-
-            0,
-
-            Math.min(
-
-              scaffCap - (state.scaffolding_stored || 0),
-
-              Math.floor(gold / scaffPrice),
-
-            ),
-
-          );
-
-          var el2 = document.getElementById("smith-buy-scaffolding");
-
-          if (el2) el2.value = max2;
-
-        }
-
-      }
-
-
-
-      async function buySmithyTool(type) {
-
-        var id =
-
-          type === "hammers" ? "smith-buy-hammers" : "smith-buy-scaffolding";
-
-        var amount = parseInt(document.getElementById(id)?.value) || 0;
-
-        if (amount <= 0) return toast("Enter a quantity", "error");
-
-        var ep =
-
-          type === "hammers"
-
-            ? "/api/kingdom/smithy/buy-hammers"
-
-            : "/api/kingdom/smithy/buy-scaffolding";
-
-        var result = await apiCall("POST", ep, { amount });
-
-        if (result.error) return toast(result.error, "error");
-
-        if (result.hammers_stored !== undefined)
-
-          state.hammers_stored = result.hammers_stored;
-
-        if (result.scaffolding_stored !== undefined)
-
-          state.scaffolding_stored = result.scaffolding_stored;
-
-        if (result.gold !== undefined) state.gold = result.gold;
-
-        syncUI();
-
-        updateSmithyDisplay();
-
-        toast(
-
-          "Purchased " +
-
-            result.bought +
-
-            " " +
-
-            type +
-
-            " for " +
-
-            fmt(result.cost) +
-
-            " GC",
-
-          "success",
-
-        );
-
-      }
-
-
-
-      async function forgeScaffolding() {
-
-        var smithies = state.bld_smithies || 0;
-
-        if (smithies === 0) return toast("You need at least 1 smithy", "error");
-
-        var cap = smithies * 10;
-
-        if ((state.scaffolding_stored || 0) >= cap)
-
-          return toast(
-
-            "Scaffolding storage full (" + cap + "/" + cap + ")",
-
-            "error",
-
-          );
-
-        if ((state.gold || 0) < 2500)
-
-          return toast("Need 2,500 gold to make scaffolding", "error");
-
-        var result = await apiCall("POST", "/api/kingdom/smithy/forge-tools", {
-
-          toolType: "scaffolding",
-
-          quantity: 1,
-
-        });
-
-        if (result.error) return toast(result.error, "error");
-
-        window.applyGameMutation(result, { reason: "smithy/forge-tools" });
-
-        if (result.events && result.events.length)
-
-          appendNewsItems(result.events);
-
-        syncUI();
-
-        await loadActiveExpeditions();
-
-        toast("🏗️ 1 scaffolding built", "success");
-
-      }
-
-
-
       // ── Warfare Panel ─────────────────────────────────────────────────────────────
 
 
@@ -14087,16 +12471,6 @@
         if (id === "wspells") initWspells();
 
         if (id === "wcovert") initWcovert();
-
-        if (id === "wreports") loadWarLog();
-
-        if (id === "wintel") {
-
-          loadSpyReports();
-
-          loadAllianceIntel();
-
-        }
 
       }
 
@@ -14740,11 +13114,11 @@
 
             : bullyRatio >= 4
 
-              ? "⚠️ ×4–8 — happiness suffers. −40%."
+              ? "âš ï¸ ×4–8 — happiness suffers. −40%."
 
               : bullyRatio >= 2
 
-                ? "⚠️ ×2–4 — −20% power."
+                ? "âš ï¸ ×2–4 — −20% power."
 
                 : "";
 
@@ -14986,7 +13360,6 @@
 
         syncUI();
 
-        updateTurnsDisplay();
 
 
 
@@ -15094,7 +13467,7 @@
 
 
 
-        if (r.bullyMsg) rows.push(["⚠️ Penalty", r.bullyMsg]);
+        if (r.bullyMsg) rows.push(["âš ï¸ Penalty", r.bullyMsg]);
 
 
 
@@ -16792,8 +15165,6 @@
 
         if (sel2 && focus[1]) sel2.value = focus[1];
 
-        updateFocusPreview();
-
 
 
         // Shrine / Mausoleum
@@ -17036,8 +15407,6 @@
 
           // Update mage allocation display (includes turns to next level calculation)
 
-          updateMageAllocationDisplay();
-
 
 
           // Populate spell tiers
@@ -17193,142 +15562,6 @@
 
 
         container.innerHTML = html;
-
-      }
-
-
-
-      function updateFocusPreview() {
-
-        var DISC_COLS = {
-
-          economy: "res_economy",
-
-          weapons: "res_weapons",
-
-          armor: "res_armor",
-
-          military: "res_military",
-
-          attack_magic: "res_attack_magic",
-
-          defense_magic: "res_defense_magic",
-
-          entertainment: "res_entertainment",
-
-          construction: "res_construction",
-
-          war_machines: "res_war_machines",
-
-          spellbook: "res_spellbook",
-
-        };
-
-
-
-        var f1 = document.getElementById("focus-select-1")?.value;
-
-        var el1 = document.getElementById("focus-current-1");
-
-        if (el1 && f1)
-
-          el1.textContent =
-
-            "Focus 1 Current: " + (state[DISC_COLS[f1]] || 0) + "%";
-
-
-
-        var f2 = document.getElementById("focus-select-2")?.value;
-
-        var el2 = document.getElementById("focus-current-2");
-
-        if (el2 && f2)
-
-          el2.textContent =
-
-            "Focus 2 Current: " + (state[DISC_COLS[f2]] || 0) + "%";
-
-
-
-        // Show Full Study State
-
-        var studyContainer = document.getElementById("study-progress-list");
-
-        if (studyContainer) {
-
-          var html =
-
-            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px;">';
-
-          Object.keys(DISC_COLS).forEach(function (k) {
-
-            var val = state[DISC_COLS[k]] || 0;
-
-            var label =
-
-              k.charAt(0).toUpperCase() + k.slice(1).replace("_", " ");
-
-            html +=
-
-              '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px;display:flex;justify-content:space-between;align-items:center;">' +
-
-              '<span style="font-size:11px;color:var(--text3)">' +
-
-              label +
-
-              "</span>" +
-
-              '<span style="font-size:13px;font-weight:700;color:var(--gold)">' +
-
-              val +
-
-              "%</span>" +
-
-              "</div>";
-
-          });
-
-          html += "</div>";
-
-          studyContainer.innerHTML = html;
-
-        }
-
-        syncUI();
-
-      }
-
-
-
-      async function saveResearchFocus() {
-
-        var f1 = document.getElementById("focus-select-1")?.value;
-
-        var f2 = document.getElementById("focus-select-2")?.value;
-
-        var hasRepo = !!(studiesData.school_upgrades || {}).repository;
-
-        var focus = hasRepo && f2 ? [f1, f2] : [f1];
-
-        var result = await apiCall("POST", "/api/kingdom/research-focus", {
-
-          focus,
-
-        });
-
-        if (result.error) return toast(result.error, "error");
-
-        state.research_focus = result.research_focus;
-
-        syncUI();
-
-        toast(
-
-          "Research focus saved — " + result.research_focus.join(" & "),
-
-          "success",
-
-        );
 
       }
 
@@ -19192,7 +17425,7 @@
 
             toast("Trade logs cleared", "success");
 
-            loadMarkets();
+            loadTradeOffers();
 
           }
 
@@ -19480,7 +17713,7 @@
 
           stroke: "#c8962a",
 
-          icon: "⛏️",
+          icon: "â›ï¸",
 
           x: 150,
 
@@ -19866,7 +18099,7 @@
 
             '" r="400" stroke="rgba(255,255,255,0.015)" stroke-width="1" fill="none"/>';
 
-          for (var i = 0; i < 8; i++) {
+          for (var i = 0; i < 20; i++) {
 
             var a = (i * Math.PI) / 4;
 
@@ -20658,7 +18891,7 @@
 
           title: "Dwarves of The Iron Holds",
 
-          icon: "⛏️",
+          icon: "â›ï¸",
 
           lore: "Deep beneath the mountain roots, Dwarven civilisation predates all others in recorded history. Their citadels are not merely fortresses — they are cities of impossible scale, carved across generations by engineers who see rock as other races see clay. The Dwarves do not conquer land; they improve it, smelt it, and sell it back to you at a profit.",
 
@@ -21596,7 +19829,7 @@
 
             (data.description
 
-              ? "“" + escHtml(data.description).replace(/\n/g, "<br>") + "”"
+              ? "“" + escHtml(data.description).replace(/\n/g, "<br>") + "â€"
 
               : "No official chronicles found for this realm.") +
 
@@ -21704,7 +19937,7 @@
 
             data.name.replace(/'/g, "\\'") +
 
-            "');closeKingdomProfile()\">✉️ Send Message to Ruler</button>" +
+            "');closeKingdomProfile()\">âœ‰ï¸ Send Message to Ruler</button>" +
 
             (isMapped && !isMe
 
@@ -21864,33 +20097,6 @@
 
 
 
-      function updateXpDisplay() {
-
-        var level = state.level || 1;
-
-        var xp = state.xp || 0;
-
-        var thisLvl = xpForLevel(level);
-
-        var nextLvl = xpForLevel(level + 1);
-
-        var xpInLevel = Math.max(0, Math.min(xp - thisLvl, nextLvl - thisLvl));
-
-        var xpNeeded = nextLvl - thisLvl;
-
-        var pct = xpNeeded > 0 ? Math.min(100, Math.floor((xpInLevel / xpNeeded) * 100)) : 100;
-
-
-
-        var levelEl = document.getElementById("kingdom-level");
-
-        var barEl = document.getElementById("xp-bar");
-
-        var labelEl = document.getElementById("xp-label");
-
-        if (levelEl) levelEl.textContent = level;
-
-        if (barEl) barEl.style.width = pct + "%";
 
         if (labelEl)
 
@@ -21967,296 +20173,6 @@
         if (level <= 75) return level * 2000;
 
         return level * 5000;
-
-      }
-
-
-
-      async function loadTrainingAllocation() {
-
-        var result = await apiCall("GET", "/api/kingdom/training-allocation");
-
-        if (result.error) return;
-
-        var alloc = result.allocation || {};
-
-        TROOP_TYPES.forEach(function (u) {
-
-          var el = document.getElementById("ta-" + u);
-
-          if (el) el.value = alloc[u] || 0;
-
-        });
-
-        updateTrainingDisplay();
-
-        updateTroopLevelDisplay();
-
-        renderRacialBadge();
-
-      }
-
-
-
-      async function saveTrainingAllocation() {
-
-        var alloc = {};
-
-        TROOP_TYPES.forEach(function (u) {
-
-          alloc[u] = parseInt(document.getElementById("ta-" + u)?.value) || 0;
-
-        });
-
-        var result = await apiCall("POST", "/api/kingdom/training-allocation", {
-
-          allocation: alloc,
-
-        });
-
-        if (result.error) return toast(result.error, "error");
-
-        toast("Training allocation saved", "success");
-
-        loadTrainingAllocation();
-
-      }
-
-
-
-      function updateTrainingDisplay() {
-
-        var total = 0;
-
-        TROOP_TYPES.forEach(function (u) {
-
-          var val = parseInt(document.getElementById("ta-" + u)?.value) || 0;
-
-          total += val;
-
-        });
-
-
-
-        var fields = state.bld_training || 0;
-
-        var capacity = fields * 100;
-
-        var el = document.getElementById("tr-capacity-used");
-
-        if (el) {
-
-          el.textContent = total;
-
-          el.style.color = total > capacity ? "var(--red)" : "var(--green)";
-
-        }
-
-
-
-        var trFields = document.getElementById("tr-fields");
-
-        var trCap = document.getElementById("tr-capacity");
-
-        if (trFields) trFields.textContent = fmt(state.bld_training || 0);
-
-        if (trCap) {
-
-          trCap.textContent = fmt(capacity);
-
-          trCap.style.color = total > capacity ? "var(--red)" : "var(--gold)";
-
-        }
-
-        var trW = document.getElementById("tr-weapons");
-
-        var trA = document.getElementById("tr-armor");
-
-        if (trW) trW.textContent = fmt(state.weapons_stockpile || 0);
-
-        if (trA) trA.textContent = fmt(state.armor_stockpile || 0);
-
-
-
-        var rb = document.getElementById("tr-race-bonus");
-
-        if (rb && state.race) {
-
-          var texts = {
-
-            high_elf: "Increased XP for Clerics, Mages, and Researchers",
-
-            dwarf: "Increased XP for Fighters and Engineers",
-
-            dire_wolf: "Greatly increased XP for Fighters and Rangers",
-
-            dark_elf: "Greatly increased XP for Ninjas, Thieves, and Rangers",
-
-            human: "Improved XP for all training units",
-
-            orc: "Greatly increased XP for Fighters and Clerics",
-
-            vampire: "Increased XP for Infiltrators and combat units",
-
-          };
-
-          rb.innerHTML = texts[state.race] || "—";
-
-        }
-
-      }
-
-
-
-      // Helper to init training inputs
-
-      function updateTroopLevelDisplay() {
-
-        TROOP_TYPES.forEach(function (unit) {
-
-          var data = getTroopLevel(unit);
-
-          var levelEl = document.getElementById("tr-level-" + unit);
-
-          var xpEl = document.getElementById("tr-xp-" + unit);
-
-          var barEl = document.getElementById("tr-bar-" + unit);
-
-          if (levelEl) levelEl.textContent = "Lv " + data.level;
-
-          var xpNeeded =
-
-            troopXpForLevelJS(data.level + 1) - troopXpForLevelJS(data.level);
-
-          var xpInLevel = data.xp - troopXpForLevelJS(data.level);
-
-          if (xpEl)
-
-            xpEl.textContent =
-
-              fmt(Math.max(0, xpInLevel)) + " / " + fmt(xpNeeded) + " XP";
-
-          if (barEl) {
-
-            var pct = Math.min(100, Math.floor((xpInLevel / xpNeeded) * 100));
-
-            barEl.style.width = pct + "%";
-
-          }
-
-        });
-
-      }
-
-
-
-      function getTroopLevel(unit) {
-
-        var levels = state.troop_levels || {};
-
-        return levels[unit] || { level: 1, xp: 0 };
-
-      }
-
-
-
-      function getAllocatedTraining() {
-
-        return TROOP_TYPES.reduce(function (sum, u) {
-
-          return (
-
-            sum + (parseInt(document.getElementById("ta-" + u)?.value) || 0)
-
-          );
-
-        }, 0);
-
-      }
-
-
-
-      function setTrainingInputsFromState() {
-
-        if (!state.training_allocation) return;
-
-        TROOP_TYPES.forEach(function (u) {
-
-          var el = document.getElementById("ta-" + u);
-
-          if (el) {
-
-            el.value = state.training_allocation[u] || 0;
-
-            el.dataset.initialized = "true";
-
-          }
-
-        });
-
-        updateTrainingDisplay();
-
-      }
-
-
-
-      function setTrainingMax(unit) {
-
-        var capacity = (state.bld_training || 0) * 100;
-
-        var allocated = getAllocatedTraining();
-
-        var current =
-
-          parseInt(document.getElementById("ta-" + unit)?.value) || 0;
-
-        var available = capacity - allocated + current;
-
-        var el = document.getElementById("ta-" + unit);
-
-        if (el) el.value = Math.max(0, Math.min(available, state[unit] || 0));
-
-        updateTrainingDisplay();
-
-      }
-
-
-
-      function distributeTrainingEvenly() {
-
-        var capacity = (state.bld_training || 0) * 100;
-
-        var count = TROOP_TYPES.length;
-
-        var each = Math.floor(capacity / count);
-
-        TROOP_TYPES.forEach(function (u) {
-
-          var el = document.getElementById("ta-" + u);
-
-          if (el) el.value = Math.min(each, state[u] || 0);
-
-        });
-
-        updateTrainingDisplay();
-
-      }
-
-
-
-      function releaseAllTraining() {
-
-        TROOP_TYPES.forEach(function (u) {
-
-          var el = document.getElementById("ta-" + u);
-
-          if (el) el.value = 0;
-
-        });
-
-        updateTrainingDisplay();
-
-        saveTrainingAllocation();
 
       }
 
@@ -22700,7 +20616,7 @@
 
         dwarf:
 
-          "⛏️ Iron Hold Mastery — Level 25+ engineers solo-crew war machines",
+          "â›ï¸ Iron Hold Mastery — Level 25+ engineers solo-crew war machines",
 
         high_elf:
 
@@ -22798,7 +20714,6 @@
 
         if (result.updates) updateState(result.updates);
 
-        updateBuildDisplay();
 
       }
 
@@ -24214,7 +22129,7 @@
 
                 pct = Math.min(100, Math.floor((p / 20) * 100));
 
-                label = "⚙️ Blueprint";
+                label = "âš™ï¸ Blueprint";
 
                 color = "var(--amber)";
 
@@ -25278,86 +23193,6 @@
 
 
 
-      function openHeroXpModal() {
-
-        var tableHtml =
-
-          '<div style="max-height:60vh;overflow-y:auto;padding-right:10px">';
-
-        tableHtml +=
-
-          '<table style="width:100%;border-collapse:collapse;font-size:13px;text-align:left;">';
-
-        tableHtml +=
-
-          '<tr><th style="padding:8px;border-bottom:1px solid var(--border);color:var(--text3);">Level</th><th style="padding:8px;border-bottom:1px solid var(--border);color:var(--text3);">Total XP Req.</th><th style="padding:8px;border-bottom:1px solid var(--border);color:var(--text3);">XP for Level</th></tr>';
-
-
-
-        for (let i = 2; i <= 20; i++) {
-
-          let currentTotalXp = Math.floor(1000 * (Math.pow(1.5, i - 1) - 1));
-
-          let previousTotalXp = Math.floor(1000 * (Math.pow(1.5, i - 2) - 1));
-
-          let xpNeeded = currentTotalXp - previousTotalXp;
-
-          tableHtml += "<tr>";
-
-          tableHtml +=
-
-            '<td style="padding:8px;border-bottom:1px solid var(--border);color:var(--gold);font-weight:700;">' +
-
-            i +
-
-            "</td>";
-
-          tableHtml +=
-
-            '<td style="padding:8px;border-bottom:1px solid var(--border);color:var(--text2);">' +
-
-            fmt(currentTotalXp) +
-
-            ' <span style="color:var(--text3);font-size:10px;">XP</span></td>';
-
-          tableHtml +=
-
-            '<td style="padding:8px;border-bottom:1px solid var(--border);color:var(--text);">' +
-
-            fmt(xpNeeded) +
-
-            ' <span style="color:var(--text3);font-size:10px;">XP</span></td>';
-
-          tableHtml += "</tr>";
-
-        }
-
-        tableHtml += "</table></div>";
-
-
-
-        let contentHtml =
-
-          '<div style="margin-bottom:16px;text-align:center;">' +
-
-          '<div style="font-size:40px;margin-bottom:8px">👑</div>' +
-
-          '<div style="font-size:18px;font-weight:700;color:var(--text)">Hero XP Progression</div>' +
-
-          '<div style="font-size:12px;color:var(--text3)">Max Level is 20</div>' +
-
-          "</div>" +
-
-          tableHtml;
-
-
-
-        openGenericModal(contentHtml);
-
-      }
-
-
-
       function openGenericModal(htmlContent) {
 
         const content = document.getElementById("generic-modal-content");
@@ -25383,8 +23218,6 @@
 
 
       // ── Heroes ───────────────────────────────────────────────────────────────────
-
-      var _heroClasses = {};
 
       var HERO_PORTRAITS = {
 
@@ -25451,366 +23284,6 @@
       function heroPortrait(cls) {
 
         return HERO_PORTRAITS[cls] || HERO_PORTRAITS._default || "";
-
-      }
-
-
-
-      async function loadHeroes() {
-
-        const [heroes, k, classes, allClasses] = await Promise.all([
-
-          apiCall("GET", "/api/hero/list"),
-
-          apiCall("GET", "/api/kingdom/me"),
-
-          apiCall("GET", "/api/hero/classes"),
-
-          apiCall("GET", "/api/hero/all-classes"),
-
-        ]);
-
-
-
-        if (heroes.error || k.error || classes.error || allClasses.error) return;
-
-        _heroClasses = classes;
-
-        // Use all class data for rendering owned heroes, as it contains info for all classes
-
-        const allClassesData = allClasses;
-
-
-
-        let maxHeroes = 0;
-
-        const castles = k.bld_castles || 0;
-
-        if (castles >= 50) maxHeroes = 3;
-
-        else if (castles >= 10) maxHeroes = 2;
-
-        else if (castles >= 1) maxHeroes = 1;
-
-
-
-        var used = heroes.length;
-
-
-
-        var elUsed = document.getElementById("hero-slots-used");
-
-        if (elUsed) elUsed.textContent = used;
-
-        var elTotal = document.getElementById("hero-slots-total");
-
-        if (elTotal) elTotal.textContent = maxHeroes;
-
-        const pct = maxHeroes > 0 ? Math.min(100, (used / maxHeroes) * 100) : 0;
-
-        var elBar = document.getElementById("hero-slots-bar");
-
-        if (elBar) elBar.style.width = pct + "%";
-
-
-
-        // Render hero list
-
-        const list = document.getElementById("hero-list");
-
-        if (heroes.length === 0) {
-
-          list.innerHTML = `<div style="color:var(--text3);font-size:13px;padding:20px;text-align:center;grid-column:1/-1">No heroes recruited yet. Build a Castle to recruit your first hero!</div>`;
-
-        } else {
-
-          list.innerHTML = heroes
-
-            .map((h) => {
-
-              const cls = allClassesData[h.class] ? allClassesData[h.class].name : h.class;
-
-              const abilityList = allClassesData[h.class]
-
-                ? allClassesData[h.class].abilities
-
-                : [];
-
-              const UNLOCK_LEVELS = [1, 5, 10];
-
-              const unlockedAbilities = abilityList.filter(
-
-                (a, idx) =>
-
-                  idx < UNLOCK_LEVELS.length && h.level >= UNLOCK_LEVELS[idx],
-
-              );
-
-              const xpThis = heroXpForLevelJS(h.level);
-
-              const xpNext = heroXpForLevelJS(h.level + 1);
-
-              const xpIntoLevel = Math.max(0, (h.xp || 0) - xpThis);
-
-              const xpNeeded = xpNext - xpThis;
-
-              const xpPct =
-
-                xpNeeded > 0
-
-                  ? Math.min(100, Math.floor((xpIntoLevel / xpNeeded) * 100))
-
-                  : 100;
-
-              const levelReady = xpIntoLevel >= xpNeeded && h.level < 25;
-
-              const isMaxLevel = h.level >= 25;
-
-              const abilityChips = unlockedAbilities
-
-                .map((a, i) => {
-
-                  const label =
-
-                    typeof a === "object" && a !== null ? a.name : a;
-
-                  const desc =
-
-                    typeof a === "object" && a !== null ? a.description : "";
-
-                  const isLatest = i === unlockedAbilities.length - 1;
-
-                  return `<div style="font-size:11px; margin-bottom: 4px; line-height: 1.3;">
-
-                          <strong style="color:${isLatest ? "var(--accent1)" : "var(--gold)"}">✨ ${escHtml(label)}:</strong> 
-
-                          <span style="color:var(--text2)">${escHtml(desc)}</span>
-
-                        </div>`;
-
-                })
-
-                .join("");
-
-              return `
-
-        <div class="card" style="margin:0;border:1px solid var(--border2);background:linear-gradient(135deg, var(--bg2), var(--bg3));display:flex;gap:12px;align-items:flex-start;">
-
-          <img src="${heroPortrait(h.class)}" width="56" height="56" style="border-radius:8px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'" alt="${cls}"/>
-
-          <div style="flex:1;min-width:0;">
-
-            <div style="font-size:16px;font-weight:700;color:var(--gold);margin-bottom:2px;">${h.name}</div>
-
-            <div style="font-size:12px;margin-bottom:8px;"><span style="color:var(--red);font-weight:600;">${cls}</span> <span style="color:var(--text3);">· Level ${h.level}</span></div>
-
-            <div style="display:flex;flex-direction:column;margin-bottom:8px;">${abilityChips || '<span style="font-size:10px;color:var(--text3)">No abilities yet</span>'}</div>
-
-            ${
-
-              isMaxLevel
-
-                ? `<div style="font-size:10px;color:var(--text3);margin-bottom:3px;">Max Level Reached</div>`
-
-                : levelReady
-
-                  ? `<div style="font-size:10px;color:var(--green);margin-bottom:3px;font-weight:600;">⬆ Ready to level up!</div>`
-
-                  : `<div style="font-size:10px;color:var(--text3);margin-bottom:3px;">XP: ${xpIntoLevel.toLocaleString()} / ${xpNeeded.toLocaleString()} to Lv${h.level + 1} (${xpPct}%)</div>`
-
-            }
-
-            <div style="height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;"><div style="height:100%;width:${isMaxLevel ? 100 : xpPct}%;background:${isMaxLevel ? "var(--gold)" : levelReady ? "var(--green)" : "var(--gold)"};border-radius:2px;"></div></div>
-
-          </div>
-
-        </div>
-
-      `;
-
-            })
-
-            .join("");
-
-        }
-
-
-
-        // Render recruitment options
-
-        const optWrap = document.getElementById("hero-class-options");
-
-        if (optWrap) {
-
-          const recruitedClassIds = new Set(heroes.map((h) => h.class));
-
-          const availableClasses = Object.entries(classes).filter(
-
-            ([id, c]) => !recruitedClassIds.has(id),
-
-          );
-
-
-
-          if (availableClasses.length === 0) {
-
-            optWrap.innerHTML = `<div style="color:var(--text3);font-size:13px;padding:20px;text-align:center;">No more heroes available to recruit.</div>`;
-
-          } else {
-
-            optWrap.innerHTML = availableClasses
-
-              .map(([id, c]) => {
-
-                return `
-
-                <div style="display:flex;gap:10px;align-items:flex-start;background:var(--bg3);padding:12px;border-radius:var(--radius);border:1px solid var(--border);cursor:pointer;flex-direction:column" onclick="selectHeroClass('${id}')" id="hero-opt-${id}" class="hero-class-opt">
-
-                  <div style="display:flex;width:100%;align-items:center;justify-content:space-between">
-
-                    <div style="display:flex;gap:10px;align-items:center;">
-
-                      <img src="${heroPortrait(id)}" width="40" height="40" style="border-radius:6px;object-fit:cover;display:block;flex-shrink:0" onerror="this.style.display='none'" alt="${c.name}"/>
-
-                      <div>
-
-                        <div style="font-size:14px;font-weight:700;color:var(--gold)">${c.name}</div>
-
-                        <div style="font-size:11px;color:var(--text3)">Cost: ${c.recruitCost.toLocaleString()} GC · ${c.recruitMana} Mana</div>
-
-                      </div>
-
-                    </div>
-
-                    <input type="radio" name="hero-class" value="${id}" id="radio-hero-${id}" style="margin:0">
-
-                  </div>
-
-                  <div style="font-size:12px;color:var(--text2);margin-top:4px">${c.description}</div>
-
-                  <div style="font-size:11px;color:var(--text);margin-top:8px">
-
-                    <div style="font-weight:700;margin-bottom:2px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-size:10px">Abilities</div>
-
-                    ${c.abilities
-
-                      .map((a, idx) => {
-
-                        let unlockLvl = idx === 0 ? 1 : idx === 1 ? 5 : 10;
-
-                        let xpText =
-
-                          unlockLvl === 1
-
-                            ? ""
-
-                            : ' <span style="color:var(--text3);font-size:9px">(Unlocks at Lvl ' +
-
-                              unlockLvl +
-
-                              ")</span>";
-
-                        return `<div style="margin-bottom:2px">✨ <strong style="color:var(--text)">${a.name}:</strong> <span style="color:var(--text2)">${a.description}</span>${xpText}</div>`;
-
-                      })
-
-                      .join("")}
-
-                  </div>
-
-                </div>
-
-              `;
-
-              })
-
-              .join("");
-
-          }
-
-        }
-
-      }
-
-
-
-      let _selectedHeroClass = null;
-
-      function selectHeroClass(id) {
-
-        _selectedHeroClass = id;
-
-        document.querySelectorAll(".hero-class-opt").forEach((el) => {
-
-          if (el) el.style.borderColor = "var(--border)";
-
-        });
-
-        const opt = document.getElementById("hero-opt-" + id);
-
-        if (opt) opt.style.borderColor = "var(--accent1)";
-
-        const rad = document.getElementById("radio-hero-" + id);
-
-        if (rad) rad.checked = true;
-
-      }
-
-
-
-      async function recruitHeroAction() {
-
-        if (!_selectedHeroClass) return alert("Select a hero class first.");
-
-
-
-        const className =
-
-          _heroClasses && _heroClasses[_selectedHeroClass]
-
-            ? _heroClasses[_selectedHeroClass].name
-
-            : "Hero";
-
-
-
-        const name = prompt(`Enter a name for your new ${className}:`);
-
-        if (!name) return;
-
-
-
-        const btn = document.getElementById("btn-recruit-hero");
-
-        if (btn) btn.disabled = true;
-
-
-
-        const res = await apiCall("POST", "/api/hero/recruit", {
-
-          name,
-
-          heroClass: _selectedHeroClass,
-
-        });
-
-        if (btn) btn.disabled = false;
-
-
-
-        if (res.error) {
-
-          alert(res.error);
-
-        } else {
-
-          _selectedHeroClass = null;
-
-          loadHeroes();
-
-          loadKingdom(); // Update status bar resources
-
-        }
 
       }
 
@@ -26571,7 +24044,7 @@
 
               Vampire — Unmatched night operations · Reanimates fallen · Thralls
 
-              defend by day · Weak economy · ⚠️ Not recommended for new players
+              defend by day · Weak economy · âš ï¸ Not recommended for new players
 
             </option>
 
@@ -26605,7 +24078,7 @@
 
           >
 
-            ⚠️ <strong>Experienced players only.</strong> Vampires are nearly
+            âš ï¸ <strong>Experienced players only.</strong> Vampires are nearly
 
             powerless during daylight hours and rely on Thralls for daytime
 
@@ -26941,7 +24414,7 @@
 
         " onmouseover="this.style.color='var(--text1)'" onmouseout="this.style.color='var(--text3)'">
 
-          ← Back
+          â† Back
 
         </button>
 

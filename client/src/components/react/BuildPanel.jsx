@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useGameState } from '../../hooks/useGameState';
 import { apiCall } from '../../utils/api.js';
 
 // Atmospheric synergy hint text. Tiers map to how close a contributing
@@ -87,7 +88,35 @@ const BUILDINGS_DISPLAY_ORDER = [
   'castles', 'wm', 'ballistae', 'ladders', 'weapons', 'armor'
 ];
 
+const BUILD_ALLOCATION_KEYS = {
+  'ba-farm': 'farms',
+  'ba-granary': 'granaries',
+  'ba-housing': 'housing',
+  'ba-school': 'schools',
+  'ba-library': 'libraries',
+  'ba-mage_tower': 'mage_towers',
+  'ba-shrine': 'shrines',
+  'ba-mausoleum': 'mausoleums',
+  'ba-market': 'markets',
+  'ba-tavern': 'taverns',
+  'ba-smithy': 'smithies',
+  'ba-vault': 'vaults',
+  'ba-armory': 'armories',
+  'ba-barracks': 'barracks',
+  'ba-walls': 'walls',
+  'ba-tower': 'guard_towers',
+  'ba-outpost': 'outposts',
+  'ba-training': 'training',
+  'ba-castle': 'castles',
+  'ba-wm': 'war_machines',
+  'ba-ballistae': 'ballistae',
+  'ba-ladders': 'ladders',
+  'ba-weapons': 'weapons',
+  'ba-armor': 'armor',
+};
+
 const BuildPanel = () => {
+  const { state } = useGameState();
   const [showBuildingRef, setShowBuildingRef] = useState(false);
   const [showAttunements, setShowAttunements] = useState(false);
   const [availableAttunements, setAvailableAttunements] = useState([]);
@@ -97,6 +126,16 @@ const BuildPanel = () => {
   const [synergyCooldown, setSynergyCooldown] = useState(null);
   const [activatingAbility, setActivatingAbility] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [buildUiTick, setBuildUiTick] = useState(0);
+  const isVampire = state?.race === 'vampire';
+  const totalEngineers = Number(state?.engineers || 0);
+  const engineerLevel = Number(state?.engineer_level || 1);
+  const engineerXp = Number(state?.engineer_xp || 0);
+  const engineerXpNeeded = Number(state?.engineer_xp_needed || 1000);
+  const landAvailable = Math.max(0, Number(state?.land || 0) - Number(state?.built_land || 0));
+  const refreshBuildUi = useCallback(() => {
+    setBuildUiTick((tick) => tick + 1);
+  }, []);
 
   // Load attunements when panel opens
   React.useEffect(() => {
@@ -105,85 +144,82 @@ const BuildPanel = () => {
     }
   }, [showAttunements]);
 
-  // Re-sync vanilla JS building count spans after every render — React resets
-  // the hardcoded <span>0</span> elements and window.updateBuildDisplay() restores
-  // the real values from window.state.
-  React.useEffect(() => {
-    window.updateBuildDisplay?.();
-  });
+  useEffect(() => {
+    const alloc = typeof state?.build_allocation === 'string'
+      ? (() => {
+        try { return JSON.parse(state.build_allocation || '{}'); } catch { return {}; }
+      })()
+      : (state?.build_allocation || {});
+
+    Object.entries(BUILD_ALLOCATION_KEYS).forEach(([inputId, key]) => {
+      const el = document.getElementById(inputId);
+      if (el) el.value = alloc[key] || 0;
+    });
+    refreshBuildUi();
+  }, [state?.build_allocation, refreshBuildUi]);
 
   const loadAttunements = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/kingdom/available-attunements', {
-        credentials: 'include',
-      });
-      if (!response.ok) throw new Error('Failed to load attunements');
-      const data = await response.json();
+      const data = await apiCall('/api/kingdom/available-attunements');
+      if (data.error) throw new Error(data.error);
       setAvailableAttunements(data.available || []);
 
-      const statusResponse = await fetch('/api/kingdom/attunements', {
-        credentials: 'include',
-      });
-      if (statusResponse.ok) {
-        const statusData = await statusResponse.json();
-        // API returns an array; convert to object keyed by buildingType for O(1) lookup
-        const attunementArray = statusData.attunements || [];
-        const attunements = {};
-        for (const att of attunementArray) {
-          if (att.buildingType) attunements[att.buildingType] = att;
-        }
-        setCurrentAttunements(attunements);
+      const statusData = await apiCall('/api/kingdom/attunements');
+      if (statusData.error) throw new Error(statusData.error);
 
-        // Check synergy contributions for each attunement in parallel.
-        // Server returns an opaque resonance tier (faint/alignment/convergence)
-        // so the synergy formula is never exposed to the client.
-        const contributions = {};
-        const attunementEntries = Object.entries(attunements).filter(([_, att]) => att && att.fragmentName);
-        await Promise.all(
-          attunementEntries.map(async ([building, att]) => {
-            try {
-              const contribResponse = await fetch(
-                `/api/kingdom/contributing-synergies?building_type=${encodeURIComponent(building)}&fragment_name=${encodeURIComponent(att.fragmentName)}`,
-                { credentials: 'include' }
-              );
-              if (contribResponse.ok) {
-                const contribData = await contribResponse.json();
-                if (contribData.contributes) {
-                  contributions[`${building}:${att.fragmentName}`] = {
-                    tier: contribData.resonanceTier || 'faint',
-                    count: contribData.contributingCount || 1,
-                  };
-                }
-              }
-            } catch (err) {
-              console.error('[synergies] check failed:', err);
-            }
-          })
-        );
-        setSynergyContributions(contributions);
+      // API returns an array; convert to object keyed by buildingType for O(1) lookup
+      const attunementArray = statusData.attunements || [];
+      const attunements = {};
+      for (const att of attunementArray) {
+        if (att.buildingType) attunements[att.buildingType] = att;
       }
+      setCurrentAttunements(attunements);
 
-      const synergyRes = await fetch('/api/kingdom/synergy-status', { credentials: 'include' });
-      if (synergyRes.ok) {
-        const synergyData = await synergyRes.json();
+      // Check synergy contributions for each attunement in parallel.
+      // Server returns an opaque resonance tier (faint/alignment/convergence)
+      // so the synergy formula is never exposed to the client.
+      const contributions = {};
+      const attunementEntries = Object.entries(attunements).filter(([_, att]) => att && att.fragmentName);
+      await Promise.all(
+        attunementEntries.map(async ([building, att]) => {
+          try {
+            const contribData = await apiCall(
+              `/api/kingdom/contributing-synergies?building_type=${encodeURIComponent(building)}&fragment_name=${encodeURIComponent(att.fragmentName)}`
+            );
+            if (contribData.error) return;
+            if (contribData.contributes) {
+              contributions[`${building}:${att.fragmentName}`] = {
+                tier: contribData.resonanceTier || 'faint',
+                count: contribData.contributingCount || 1,
+              };
+            }
+          } catch (err) {
+            console.error('[synergies] check failed:', err);
+          }
+        })
+      );
+      setSynergyContributions(contributions);
+
+      const synergyData = await apiCall('/api/kingdom/synergy-status');
+      if (synergyData.error) {
+        setSynergyStatus(null);
+        setSynergyCooldown(null);
+      } else {
         setSynergyStatus(synergyData);
 
         if (synergyData.activeSynergy) {
-          const cdRes = await fetch(
-            `/api/kingdom/synergy-cooldown?synergy_id=${encodeURIComponent(synergyData.activeSynergy.id)}`,
-            { credentials: 'include' }
+          const cdData = await apiCall(
+            `/api/kingdom/synergy-cooldown?synergy_id=${encodeURIComponent(synergyData.activeSynergy.id)}`
           );
-          if (cdRes.ok) setSynergyCooldown(await cdRes.json());
+          if (!cdData.error) setSynergyCooldown(cdData);
         } else {
           setSynergyCooldown(null);
         }
-      } else {
-        setSynergyStatus(null);
-        setSynergyCooldown(null);
       }
     } catch (err) {
       console.error('[attunements] load failed:', err.message);
+      if (window.toast) window.toast(`Failed to load attunements: ${err.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -265,16 +301,290 @@ const BuildPanel = () => {
     return `${b.name}${tier}\nBase: ${b.time} turns | ${b.land ? b.land + " land" : ""}\n🪵 ${b.wood} 🪨 ${b.stone} 🔗 ${b.iron}`;
   };
 
-  // Wrapper calls:
-  const distributeBuildEvenly = () => { if (window.distributeBuildEvenly) window.distributeBuildEvenly(); };
-  const releaseAllEngineers = () => { if (window.releaseAllEngineers) window.releaseAllEngineers(); };
-  const saveBuildAllocation = () => { if (window.saveBuildAllocation) window.saveBuildAllocation(); };
-  const updateBuildDisplay = () => { if (window.updateBuildDisplay) window.updateBuildDisplay(); };
-  const setMaxValue = (id, type) => { if (window.setMaxValue) window.setMaxValue(id, type); };
-  const setBuildMax = (id, type) => { if (window.setBuildMax) window.setBuildMax(id, type); };
+  const getBuildCount = (id) => Number(state?.[`bld_${id}`] || 0);
+
+  const BUILD_FIELD_MAP = {
+    farm: 'farms',
+    barracks: 'barracks',
+    outpost: 'outposts',
+    tower: 'guard_towers',
+    school: 'schools',
+    armory: 'armories',
+    vault: 'vaults',
+    smithy: 'smithies',
+    market: 'markets',
+    mage_tower: 'mage_towers',
+    training: 'training',
+    shrine: 'shrines',
+    castle: 'castles',
+    library: 'libraries',
+    housing: 'housing',
+    war_machine: 'war_machines',
+    ballista: 'ballistae',
+    ballistae: 'ballistae',
+    weapons: 'weapons',
+    armor: 'armor',
+  };
+  const getBuildFieldValue = (fieldId) => parseInt(document.getElementById(fieldId)?.value || '0', 10) || 0;
+  const setBuildFieldValue = (fieldId, value) => {
+    const el = document.getElementById(fieldId);
+    if (el) el.value = Math.max(0, Number(value) || 0);
+  };
+  const getAllocatedEngineers = () =>
+    BUILDINGS_DISPLAY_ORDER.reduce((sum, key) => sum + getBuildFieldValue(`bld-eng-${key}`), 0);
+  const getVisibleBuildFields = () =>
+    BUILDINGS_DISPLAY_ORDER.filter((key) => {
+      const inputEl = document.getElementById(`bld-eng-${key}`);
+      if (!inputEl) return false;
+      const trowEl = inputEl.closest('.trow');
+      return trowEl && trowEl.style.display !== 'none';
+    });
+  const loadBuildAllocationInputs = () => {
+    const alloc = typeof state?.build_allocation === 'string'
+      ? (() => {
+        try { return JSON.parse(state.build_allocation || '{}'); } catch { return {}; }
+      })()
+      : (state?.build_allocation || {});
+    BUILDINGS_DISPLAY_ORDER.forEach((key) => {
+      const sourceKey = BUILD_FIELD_MAP[key] || key;
+      setBuildFieldValue(`bld-eng-${key}`, alloc[sourceKey] || 0);
+    });
+  };
+  const updateBuildDisplay = () => {
+    const total = Number(state?.engineers || 0);
+    const allocated = getAllocatedEngineers();
+    const remaining = Math.max(0, total - allocated);
+
+    const tea = document.getElementById('b-engineers-available');
+    if (tea) tea.textContent = fmt(total);
+
+    const ta = document.getElementById('b-total-assigned');
+    const tu = document.getElementById('b-total-unassigned');
+    if (ta) ta.textContent = fmt(allocated);
+    if (tu) {
+      tu.textContent = fmt(remaining);
+      tu.style.color = allocated > total ? 'var(--red)' : 'var(--green)';
+    }
+
+    const bWood = document.getElementById('b-wood');
+    if (bWood) bWood.textContent = fmt(state?.wood || 0);
+    const bStone = document.getElementById('b-stone');
+    if (bStone) bStone.textContent = fmt(state?.stone || 0);
+    const bIron = document.getElementById('b-iron');
+    if (bIron) bIron.textContent = fmt(state?.iron || 0);
+    const bSteel = document.getElementById('b-steel');
+    if (bSteel) bSteel.textContent = fmt(state?.steel || 0);
+    const bCoal = document.getElementById('b-coal');
+    if (bCoal) bCoal.textContent = fmt(state?.coal || 0);
+
+    const bLand = document.getElementById('b-land-available');
+    if (bLand) {
+      const availLand = (state?.land || 0) - (state?.built_land || 0);
+      bLand.textContent = `${fmt(availLand)} / ${fmt(state?.land || 0)}`;
+    }
+
+    const shrineRow = document.getElementById('ba-shrine')?.closest('.trow');
+    const mausoleumRow = document.getElementById('ba-mausoleum')?.closest('.trow');
+    if (shrineRow) shrineRow.style.display = isVampire ? 'none' : '';
+    if (mausoleumRow) mausoleumRow.style.display = isVampire ? '' : 'none';
+
+    const BLUEPRINT_REQUIRED = new Set(['vaults', 'smithies', 'markets', 'mage_towers', 'training', 'castles']);
+    const SCAFFOLDING_REQUIRED = new Set(['mage_towers', 'training', 'castles', 'libraries']);
+    const bp = state?.blueprints_stored || 0;
+    const sc = state?.scaffolding_stored || 0;
+
+    BUILDINGS_DISPLAY_ORDER.forEach((key) => {
+      const input = document.getElementById(`bld-eng-${key}`);
+      if (!input) return;
+      const noticeId = `tool-notice-${key}`;
+      const existing = document.getElementById(noticeId);
+      const engVal = parseInt(input.value || '0', 10) || 0;
+      let msg = '';
+      if (engVal > 0) {
+        if (BLUEPRINT_REQUIRED.has(key) && bp === 0) msg += '?? Blueprint needed ';
+        if (SCAFFOLDING_REQUIRED.has(key) && sc === 0) msg += '?? Scaffolding needed';
+      }
+      if (msg && !existing) {
+        const row = input.closest('.trow');
+        if (row) {
+          const notice = document.createElement('span');
+          notice.id = noticeId;
+          notice.style.cssText = 'font-size:10px;color:var(--amber);white-space:nowrap;margin-left:4px';
+          notice.textContent = msg.trim();
+          row.appendChild(notice);
+        }
+      } else if (existing) {
+        if (msg && engVal > 0) {
+          existing.textContent = msg.trim();
+          existing.style.display = 'inline';
+        } else {
+          existing.style.display = 'none';
+        }
+      }
+    });
+
+    BUILDINGS_DISPLAY_ORDER.forEach((key) => {
+      const input = document.getElementById(`bld-eng-${key}`);
+      if (!input) return;
+      const estId = `turns-est-${key}`;
+      const existing = document.getElementById(estId);
+      const engVal = parseInt(input.value || '0', 10) || 0;
+      const cost = BUILDINGS_MAP[key]?.time || 100;
+      if (engVal > 0) {
+        const turns = Math.ceil(cost / engVal);
+        let el = existing;
+        if (!el) {
+          const row = input.closest('.trow');
+          if (row) {
+            el = document.createElement('span');
+            el.id = estId;
+            el.style.cssText = 'font-size:10px;color:var(--text3);white-space:nowrap;margin-left:4px';
+            row.appendChild(el);
+          }
+        }
+        if (el) {
+          el.textContent = `~${turns.toLocaleString()} turn${turns === 1 ? '' : 's'}/unit`;
+          el.style.display = 'inline';
+        }
+      } else if (existing) {
+        existing.style.display = 'none';
+      }
+    });
+
+    return { total, allocated, remaining };
+  };
+  useEffect(() => {
+    loadBuildAllocationInputs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(state?.build_allocation || {})]);
+
+  useEffect(() => {
+    updateBuildDisplay();
+    updateSmithyDisplay();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, buildUiTick]);
+  const setMaxValue = (fieldId) => {
+    const total = Number(state?.engineers || 0);
+    const allocated = getAllocatedEngineers();
+    const current = getBuildFieldValue(fieldId);
+    const available = total - allocated + current;
+    setBuildFieldValue(fieldId, Math.max(0, available));
+    refreshBuildUi();
+  };
+  const setBuildMax = (fieldId, key) => {
+    if (key === 'war_machine' || key === 'weapons' || key === 'armor') {
+      setMaxValue(fieldId);
+      return;
+    }
+    setMaxValue(fieldId);
+  };
+  const distributeBuildEvenly = () => {
+    const visibleFields = getVisibleBuildFields();
+    const count = visibleFields.length;
+    if (count === 0) return;
+    const total = Number(state?.engineers || 0);
+    const each = Math.floor(total / count);
+    const rem = total - each * count;
+    visibleFields.forEach((key, i) => {
+      setBuildFieldValue(`bld-eng-${key}`, each + (i < rem ? 1 : 0));
+    });
+    BUILDINGS_DISPLAY_ORDER.filter((key) => !visibleFields.includes(key)).forEach((key) => {
+      setBuildFieldValue(`bld-eng-${key}`, 0);
+    });
+    refreshBuildUi();
+  };
+  const releaseAllEngineers = async () => {
+    BUILDINGS_DISPLAY_ORDER.forEach((key) => setBuildFieldValue(`bld-eng-${key}`, 0));
+    const result = await apiCall('/api/kingdom/build-allocation', { method: 'POST', body: { allocation: {} } });
+    if (result.error) return window.toast && window.toast(result.error, 'error');
+    window.applyGameMutation?.({ build_allocation: {} }, { reason: 'build-allocation' });
+    window.syncUI?.();
+    refreshBuildUi();
+    if (window.toast) window.toast('All engineers released', 'success');
+  };
+  const saveBuildAllocation = async () => {
+    const allocation = {};
+    let total = 0;
+    BUILDINGS_DISPLAY_ORDER.forEach((key) => {
+      const val = getBuildFieldValue(`bld-eng-${key}`);
+      allocation[BUILD_FIELD_MAP[key] || key] = val;
+      total += val;
+    });
+    if (total > (state?.engineers || 0)) {
+      return window.toast && window.toast(`Allocated ${fmt(total)} but only have ${fmt(state?.engineers || 0)} engineers`, 'error');
+    }
+    const result = await apiCall('/api/kingdom/build-allocation', { method: 'POST', body: { allocation } });
+    if (result.error) return window.toast && window.toast(result.error, 'error');
+    window.applyGameMutation?.({ build_allocation: allocation }, { reason: 'build-allocation' });
+    window.syncUI?.();
+    refreshBuildUi();
+    if (window.toast) window.toast('Engineer allocation saved ? builds each turn automatically', 'success');
+  };
+  const updateSmithyDisplay = () => {
+    const smithies = Number(state?.bld_smithies || 0);
+    const hammerCap = smithies * 25;
+    const scaffCap = Math.max(10, smithies * 10);
+    const hammers = Number(state?.hammers_stored || 0);
+    const scaff = Number(state?.scaffolding_stored || 0);
+    const gold = Number(state?.gold || 0);
+    const scaffPrice = smithies > 0 ? 2500 : 3125;
+
+    const maxH = Math.max(0, Math.min(hammerCap - hammers, Math.floor(gold / 25)));
+    const maxS = Math.max(0, Math.min(scaffCap - scaff, Math.floor(gold / scaffPrice)));
+    const g = (id) => document.getElementById(id);
+
+    if (g('smith-hammers-stored')) g('smith-hammers-stored').textContent = fmt(hammers);
+    if (g('smith-hammers-cap')) g('smith-hammers-cap').textContent = fmt(hammerCap);
+    if (g('smith-hammers-afford')) g('smith-hammers-afford').textContent = fmt(maxH);
+    if (g('smith-scaffolding-stored')) g('smith-scaffolding-stored').textContent = fmt(scaff);
+    if (g('smith-scaffolding-cap')) g('smith-scaffolding-cap').textContent = fmt(scaffCap);
+    if (g('smith-scaffolding-afford')) g('smith-scaffolding-afford').textContent = fmt(maxS);
+
+    const note = g('smithy-alloc-note');
+    if (note) {
+      if (smithies === 0) {
+        note.innerHTML = "You need a smithy to buy hammers.<br><span style='color:var(--gold)'>Scaffolding is available without a smithy (25% markup).</span>";
+      } else {
+        note.textContent = '';
+      }
+    }
+  };
+  const setSmithyMax = (type) => {
+    const smithies = Number(state?.bld_smithies || 0);
+    const gold = Number(state?.gold || 0);
+    if (type === 'hammers') {
+      const max = Math.max(0, Math.min(smithies * 25 - Number(state?.hammers_stored || 0), Math.floor(gold / 25)));
+      const el = document.getElementById('smith-buy-hammers');
+      if (el) el.value = max;
+      return;
+    }
+    const scaffCap = Math.max(10, smithies * 10);
+    const scaffPrice = smithies > 0 ? 2500 : 3125;
+    const max2 = Math.max(0, Math.min(scaffCap - Number(state?.scaffolding_stored || 0), Math.floor(gold / scaffPrice)));
+    const el2 = document.getElementById('smith-buy-scaffolding');
+    if (el2) el2.value = max2;
+  };
+  const buySmithyTool = async (type) => {
+    const id = type === 'hammers' ? 'smith-buy-hammers' : 'smith-buy-scaffolding';
+    const amount = parseInt(document.getElementById(id)?.value, 10) || 0;
+    if (amount <= 0) return window.toast && window.toast('Enter a quantity', 'error');
+    const ep = type === 'hammers' ? '/api/kingdom/smithy/buy-hammers' : '/api/kingdom/smithy/buy-scaffolding';
+    const result = await apiCall(ep, { method: 'POST', body: { amount } });
+    if (result.error) return window.toast && window.toast(result.error, 'error');
+    if (result.hammers_stored !== undefined) state.hammers_stored = result.hammers_stored;
+    if (result.scaffolding_stored !== undefined) state.scaffolding_stored = result.scaffolding_stored;
+    if (result.gold !== undefined) state.gold = result.gold;
+    window.applyGameMutation?.({
+      hammers_stored: result.hammers_stored,
+      scaffolding_stored: result.scaffolding_stored,
+      gold: result.gold,
+    }, { reason: 'smithy-buy' });
+    window.syncUI?.();
+    refreshBuildUi();
+    updateSmithyDisplay();
+    if (window.toast) window.toast(`Purchased ${result.bought} ${type} for ${fmt(result.cost)} GC`, 'success');
+  };
   const demolishB = (type) => { if (window.demolishB) window.demolishB(type); };
-  const buySmithyTool = (type) => { if (window.buySmithyTool) window.buySmithyTool(type); };
-  const setSmithyMax = (type) => { if (window.setSmithyMax) window.setSmithyMax(type); };
 
   const renderBuildingRow = (b, icon, baId, demoAmountId) => {
     const isEng = !['wm', 'ballistae', 'weapons', 'armor'].includes(b.id);
@@ -285,14 +595,14 @@ const BuildPanel = () => {
           <span className="bld-icon" style={{ background: icon.color }}>{icon.emoji}</span>
           <span className="name">{b.name}</span>
         </div>
-        <span className="count" id={`bld-${b.id}`}>0</span>
+        <span className="count" id={`bld-${b.id}`}>{fmt(getBuildCount(b.id))}</span>
         {b.id !== 'wm' && b.id !== 'ballistae' && b.id !== 'ladders' && b.id !== 'weapons' && b.id !== 'armor' ? (
           <div className="bld-demolish">
             <input type="number" className="input" id={demoAmountId} defaultValue="1" min="1" style={{ textAlign: 'center' }} />
             <button className="base-btn variant-red" style={{ padding: '4px 6px', fontSize: '10px' }} onClick={() => demolishB(b.id)}>🗑️</button>
           </div>
         ) : <span></span>}
-        
+
         <div className="bld-eng">
           <input
             type="number"
@@ -300,7 +610,7 @@ const BuildPanel = () => {
             id={baId}
             min="0"
             defaultValue="0"
-            onChange={updateBuildDisplay}
+            onChange={refreshBuildUi}
             style={{ textAlign: 'right' }}
             placeholder="Qty"
           />
@@ -308,11 +618,11 @@ const BuildPanel = () => {
             className="base-btn"
             style={{ padding: '4px 8px', fontSize: '10px' }}
             onClick={() => {
-              if (isEng) setMaxValue(baId, 'avail_units');
-              else if (b.id === 'wm') setBuildMax(baId, 'war_machine');
-              else if (b.id === 'weapons') setBuildMax(baId, 'weapons');
-              else if (b.id === 'armor') setBuildMax(baId, 'armor');
-              else setMaxValue(baId, 'avail_units');
+              if (isEng) setMaxValue(baId);
+              else if (b.id === 'wm') setBuildMax(baId);
+              else if (b.id === 'weapons') setBuildMax(baId);
+              else if (b.id === 'armor') setBuildMax(baId);
+              else setMaxValue(baId);
             }}
           >
             Max
@@ -323,31 +633,31 @@ const BuildPanel = () => {
   };
 
   return (
-    <div id="build" className="panel" style={{ display: 'none' }}>
+    <div id="build" className="panel" data-ui-tick={buildUiTick}>
       <div className="build-sticky-header">
         <div className="card" style={{ margin: 0, boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
             <div>
               <div className="card-title" style={{ marginBottom: '2px' }}>Construction</div>
               <div style={{ fontSize: '12px', color: 'var(--text3)' }}>
-                🏗️ Engineer Level: <span id="engineer-level" style={{ color: 'var(--gold)', fontWeight: 600 }}>1</span> ·
-                XP: <span id="engineer-xp" style={{ color: 'var(--text)' }}>0</span>/<span id="engineer-xp-needed" style={{ color: 'var(--text3)' }}>1000</span>
+                🏗️ Engineer Level: <span id="engineer-level" style={{ color: 'var(--gold)', fontWeight: 600 }}>{engineerLevel}</span> ·
+                XP: <span id="engineer-xp" style={{ color: 'var(--text)' }}>{fmt(engineerXp)}</span>/<span id="engineer-xp-needed" style={{ color: 'var(--text3)' }}>{fmt(engineerXpNeeded)}</span>
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '2px' }}>
-                Engineers: <span id="b-engineers-available" style={{ color: 'var(--text)' }}>0</span> available ·
-                <span id="b-total-assigned" style={{ color: 'var(--gold)', margin: '0 4px' }}>0</span> assigned ·
-                <span id="b-total-unassigned" style={{ color: 'var(--green)', margin: '0 4px' }}>0</span> unassigned
+                Engineers: <span id="b-engineers-available" style={{ color: 'var(--text)' }}>{fmt(totalEngineers)}</span> available ·
+                <span id="b-total-assigned" style={{ color: 'var(--gold)', margin: '0 4px' }}>{fmt(allocatedEngineers)}</span> assigned ·
+                <span id="b-total-unassigned" style={{ color: remainingEngineers > 0 ? 'var(--green)' : 'var(--red)', margin: '0 4px' }}>{fmt(remainingEngineers)}</span> unassigned
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '2px' }}>
-                Resources: 
-                <span id="b-wood" style={{ color: 'var(--text)', margin: '0 2px' }}>0</span>🪵 · 
-                <span id="b-stone" style={{ color: 'var(--text)', margin: '0 2px' }}>0</span>🪨 · 
-                <span id="b-iron" style={{ color: 'var(--text)', margin: '0 2px' }}>0</span>🔗 · 
-                <span id="b-steel" style={{ color: 'var(--text)', margin: '0 2px' }}>0</span>📏 · 
-                <span id="b-coal" style={{ color: 'var(--text)', margin: '0 2px' }}>0</span>🌑
+                Resources:
+                <span id="b-wood" style={{ color: 'var(--text)', margin: '0 2px' }}>{fmt(state?.wood || 0)}</span>🪵 ·
+                <span id="b-stone" style={{ color: 'var(--text)', margin: '0 2px' }}>{fmt(state?.stone || 0)}</span>🪨 ·
+                <span id="b-iron" style={{ color: 'var(--text)', margin: '0 2px' }}>{fmt(state?.iron || 0)}</span>🔗 ·
+                <span id="b-steel" style={{ color: 'var(--text)', margin: '0 2px' }}>{fmt(state?.steel || 0)}</span>📏 ·
+                <span id="b-coal" style={{ color: 'var(--text)', margin: '0 2px' }}>{fmt(state?.coal || 0)}</span>🌑
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '2px' }}>
-                Land: <span id="b-land-available" style={{ color: 'var(--text)' }}>0</span> available
+                Land: <span id="b-land-available" style={{ color: 'var(--text)' }}>{fmt(landAvailable)} / {fmt(state?.land || 0)}</span> available
               </div>
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
@@ -619,6 +929,7 @@ const BuildPanel = () => {
           <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '14px' }}>
             Hammers and scaffolding can be purchased here. Blueprints are crafted in the Library by scribes.
           </div>
+          <div id="smithy-alloc-note" style={{ fontSize: '11px', color: 'var(--gold)', marginBottom: '10px' }} />
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px', marginBottom: '16px' }}>
             <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '12px', textAlign: 'center' }}>
