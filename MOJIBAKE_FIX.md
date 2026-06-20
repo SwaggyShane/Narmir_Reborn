@@ -312,14 +312,12 @@ function unEncodeOnce(s) {
     bytes.push(cp1252Reverse.get(ch));
   }
   const buf = Buffer.from(bytes);
-  try {
-    return buf.toString('utf8');  // will throw if not valid UTF-8
-  } catch (_) {
-    // Buffer.toString doesn't throw — check manually
-    const roundtrip = Buffer.from(buf.toString('utf8'), 'utf8');
-    if (!roundtrip.equals(buf)) return null;
-    return buf.toString('utf8');
-  }
+  // Buffer.toString('utf8') never throws — it silently replaces invalid bytes with U+FFFD.
+  // Use round-trip validation instead: re-encode and compare to the original.
+  const decoded = buf.toString('utf8');
+  const roundtrip = Buffer.from(decoded, 'utf8');
+  if (!roundtrip.equals(buf)) return null;
+  return decoded;
 }
 
 function decodeMojibake(s) {
