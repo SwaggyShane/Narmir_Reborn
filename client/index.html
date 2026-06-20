@@ -11260,49 +11260,11 @@
 
         loadAllianceIntel();
 
-      }
-
-
-
-      async function loadWarfarePanel() {
-
-        // Load war log
-
-        var el = document.getElementById("war-log-list-warfare");
-
-        if (el) {
-
-          el.innerHTML =
-
-            '<div style="color:var(--text3);font-size:13px;text-align:center;padding:24px 0">Loading reports...</div>';
-
-          var result = await apiCall("GET", "/api/kingdom/war-log");
-
-          var rows = Array.isArray(result)
-
-            ? result
-
-            : result && result.rows
-
-              ? result.rows
-
-              : [];
-
-          renderWarLog(rows);
-
+      }      function loadWarfarePanel() {
+        if (typeof window.__loadWarfarePanelImpl === "function") {
+          return window.__loadWarfarePanelImpl();
         }
-
-        // Populate attack target list
-
-        if (typeof targets !== "undefined" && targets.length) {
-
-          renderTargets(targets, "target-list-w", "selectTargetW");
-
-        }
-
       }
-
-
 
       function parseWarDetail(r) {
 
@@ -22486,6 +22448,7 @@
   </body>
 
 </html>
+
 
 
 

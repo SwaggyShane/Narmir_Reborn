@@ -39,6 +39,7 @@ import { showHeroLore as showHeroLoreAction } from "./actions/showHeroLore.js";
 import { openKingdomProfile as openKingdomProfileAction } from "./actions/openKingdomProfile.js";
 import { loadKingdom as loadKingdomAction } from "./actions/loadKingdom.js";
 import { loadWorldMap as loadWorldMapAction } from "./actions/loadWorldMap.js";
+import { loadWarfarePanel as loadWarfarePanelAction } from "./actions/loadWarfarePanel.js";
 import { applyServerUpdates as applyServerUpdatesAction } from "./utils/gameMutations.js";
 import { bindGeneralSocketHandlers as bindGeneralSocketHandlersImpl } from "./utils/socketHandlers.js";
 import {
@@ -70,6 +71,7 @@ window.__showHeroLoreImpl = showHeroLoreAction;
 window.__openKingdomProfileImpl = openKingdomProfileAction;
 window.__loadKingdomImpl = loadKingdomAction;
 window.__loadWorldMapImpl = loadWorldMapAction;
+window.__loadWarfarePanelImpl = loadWarfarePanelAction;
 window.__applyServerUpdatesImpl = applyServerUpdatesAction;
 window.__bindGeneralSocketHandlersImpl = bindGeneralSocketHandlersImpl;
 window.__initLoginModalImpl = initLoginModalImpl;
