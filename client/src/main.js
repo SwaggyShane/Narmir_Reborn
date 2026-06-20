@@ -548,8 +548,6 @@ window.takeTurn = async () => {
       try {
         window.updateTurnsDisplay?.();
         window.updateXpDisplay?.();
-        window.updateMageAllocationDisplay?.();
-        window.refreshResourcesPanel?.();
       } catch (e) {
         console.error("[turn] Error refreshing display elements:", e);
       }
