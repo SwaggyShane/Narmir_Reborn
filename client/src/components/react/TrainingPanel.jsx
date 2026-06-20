@@ -111,13 +111,13 @@ const TrainingPanel = () => {
     });
     const capacity = (state?.bld_training || 0) * 100;
     if (total > capacity) {
-      return window.toast && window.toast(`Allocated ${fmt(total)} but only have ${fmt(capacity)} training capacity`, 'error');
+      return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(`Allocated ${fmt(total)} but only have ${fmt(capacity)} training capacity`, 'error');
     }
     const result = await apiCall('/api/kingdom/training-allocation', {
       method: 'POST',
       body: { allocation: alloc },
     });
-    if (result.error) return window.toast && window.toast(result.error, 'error');
+    if (result.error) return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(result.error, 'error');
     window.applyGameMutation?.({ training_allocation: alloc }, { reason: 'training-allocation' });
     window.syncUI?.();
     refreshTrainingUi();
@@ -129,7 +129,7 @@ const TrainingPanel = () => {
       method: 'POST',
       body: { allocation: {} },
     });
-    if (result.error) return window.toast && window.toast(result.error, 'error');
+    if (result.error) return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(result.error, 'error');
     window.applyGameMutation?.({ training_allocation: {} }, { reason: 'training-allocation' });
     window.syncUI?.();
     refreshTrainingUi();

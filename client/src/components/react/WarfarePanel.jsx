@@ -250,7 +250,7 @@ const WarfarePanel = () => {
   const launchAttackW = useCallback(async () => {
     const selectedTarget = window.selectedTargetW || null;
     if (!selectedTarget) {
-      window.toast?.('Select a target kingdom first', 'error');
+      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast('Select a target kingdom first', 'error');
       return;
     }
 
@@ -269,16 +269,16 @@ const WarfarePanel = () => {
     const cle = parseInt(document.getElementById('atk-clerics-w')?.value, 10) || 0;
     const eng = parseInt(document.getElementById('atk-engineers-w')?.value, 10) || 0;
 
-    if (f + rn + m <= 0) return window.toast?.('Send at least some troops', 'error');
-    if (f > (state?.fighters || 0)) return window.toast?.('Not enough fighters', 'error');
-    if (rn > (state?.rangers || 0)) return window.toast?.('Not enough rangers', 'error');
-    if (m > (state?.mages || 0)) return window.toast?.('Not enough mages', 'error');
-    if (wm > (state?.war_machines || 0)) return window.toast?.('Not enough war machines', 'error');
-    if (ld > (state?.ladders || 0)) return window.toast?.('Not enough 🪜 ladders', 'error');
-    if (nj > (state?.ninjas || 0)) return window.toast?.('Not enough ninjas', 'error');
-    if (th > (state?.thieves || 0)) return window.toast?.('Not enough thieves', 'error');
-    if (cle > (state?.clerics || 0) + (state?.thralls || 0)) return window.toast?.('Not enough clerics/thralls', 'error');
-    if (eng > (state?.engineers || 0)) return window.toast?.('Not enough engineers', 'error');
+    if (f + rn + m <= 0) return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast('Send at least some troops', 'error');
+    if (f > (state?.fighters || 0)) return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast('Not enough fighters', 'error');
+    if (rn > (state?.rangers || 0)) return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast('Not enough rangers', 'error');
+    if (m > (state?.mages || 0)) return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast('Not enough mages', 'error');
+    if (wm > (state?.war_machines || 0)) return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast('Not enough war machines', 'error');
+    if (ld > (state?.ladders || 0)) return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast('Not enough 🪜 ladders', 'error');
+    if (nj > (state?.ninjas || 0)) return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast('Not enough ninjas', 'error');
+    if (th > (state?.thieves || 0)) return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast('Not enough thieves', 'error');
+    if (cle > (state?.clerics || 0) + (state?.thralls || 0)) return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast('Not enough clerics/thralls', 'error');
+    if (eng > (state?.engineers || 0)) return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast('Not enough engineers', 'error');
 
     const result = await apiCall('/api/kingdom/attack', {
       method: 'POST',
@@ -297,7 +297,7 @@ const WarfarePanel = () => {
     });
 
     if (result?.error) {
-      window.toast?.(result.error, 'error');
+      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(result.error, 'error');
       return;
     }
 
@@ -501,10 +501,10 @@ const WarfarePanel = () => {
             onClick={async () => {
               const res = await apiCall(`/api/kingdom/spy-reports/${row.id}/share`, { method: 'POST' });
               if (res?.error) {
-                window.toast?.(res.error, 'error');
+                typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(res.error, 'error');
                 return;
               }
-              window.toast?.(res.shared ? 'Report shared to alliance' : 'Report hidden from alliance', 'success');
+              typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(res.shared ? 'Report shared to alliance' : 'Report hidden from alliance', 'success');
               loadSpyReports();
               loadAllianceIntel();
             }}

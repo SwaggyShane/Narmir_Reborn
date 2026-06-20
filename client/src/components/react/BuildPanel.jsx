@@ -144,7 +144,7 @@ const BuildPanel = () => {
     return state?.build_allocation || {};
   }, [state?.build_allocation]);
   const allocatedEngineers = useMemo(
-    () => BUILDINGS_DISPLAY_ORDER.reduce((sum, key) => sum + Number(buildAllocation[BUILD_FIELD_MAP[key] || key] || 0), 0),
+    () => Object.values(BUILD_ALLOCATION_KEYS).reduce((sum, key) => sum + Number(buildAllocation[key] || 0), 0),
     [buildAllocation]
   );
   const remainingEngineers = Math.max(0, totalEngineers - allocatedEngineers);
@@ -228,7 +228,7 @@ const BuildPanel = () => {
       }
     } catch (err) {
       console.error('[attunements] load failed:', err.message);
-      if (window.toast) window.toast(`Failed to load attunements: ${err.message}`, 'error');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(`Failed to load attunements: ${err.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -505,11 +505,11 @@ const BuildPanel = () => {
   const releaseAllEngineers = async () => {
     BUILDINGS_DISPLAY_ORDER.forEach((key) => setBuildFieldValue(`bld-eng-${key}`, 0));
     const result = await apiCall('/api/kingdom/build-allocation', { method: 'POST', body: { allocation: {} } });
-    if (result.error) return window.toast && window.toast(result.error, 'error');
+    if (result.error) return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(result.error, 'error');
     window.applyGameMutation?.({ build_allocation: {} }, { reason: 'build-allocation' });
     window.syncUI?.();
     refreshBuildUi();
-    if (window.toast) window.toast('All engineers released', 'success');
+    if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('All engineers released', 'success');
   };
   const saveBuildAllocation = async () => {
     const allocation = {};
@@ -520,14 +520,14 @@ const BuildPanel = () => {
       total += val;
     });
     if (total > (state?.engineers || 0)) {
-      return window.toast && window.toast(`Allocated ${fmt(total)} but only have ${fmt(state?.engineers || 0)} engineers`, 'error');
+      return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(`Allocated ${fmt(total)} but only have ${fmt(state?.engineers || 0)} engineers`, 'error');
     }
     const result = await apiCall('/api/kingdom/build-allocation', { method: 'POST', body: { allocation } });
-    if (result.error) return window.toast && window.toast(result.error, 'error');
+    if (result.error) return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(result.error, 'error');
     window.applyGameMutation?.({ build_allocation: allocation }, { reason: 'build-allocation' });
     window.syncUI?.();
     refreshBuildUi();
-    if (window.toast) window.toast('Engineer allocation saved ? builds each turn automatically', 'success');
+    if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Engineer allocation saved ? builds each turn automatically', 'success');
   };
   const updateSmithyDisplay = () => {
     const smithies = Number(state?.bld_smithies || 0);
@@ -576,10 +576,10 @@ const BuildPanel = () => {
   const buySmithyTool = async (type) => {
     const id = type === 'hammers' ? 'smith-buy-hammers' : 'smith-buy-scaffolding';
     const amount = parseInt(document.getElementById(id)?.value, 10) || 0;
-    if (amount <= 0) return window.toast && window.toast('Enter a quantity', 'error');
+    if (amount <= 0) return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast('Enter a quantity', 'error');
     const ep = type === 'hammers' ? '/api/kingdom/smithy/buy-hammers' : '/api/kingdom/smithy/buy-scaffolding';
     const result = await apiCall(ep, { method: 'POST', body: { amount } });
-    if (result.error) return window.toast && window.toast(result.error, 'error');
+    if (result.error) return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(result.error, 'error');
     if (result.hammers_stored !== undefined) state.hammers_stored = result.hammers_stored;
     if (result.scaffolding_stored !== undefined) state.scaffolding_stored = result.scaffolding_stored;
     if (result.gold !== undefined) state.gold = result.gold;
@@ -591,7 +591,7 @@ const BuildPanel = () => {
     window.syncUI?.();
     refreshBuildUi();
     updateSmithyDisplay();
-    if (window.toast) window.toast(`Purchased ${result.bought} ${type} for ${fmt(result.cost)} GC`, 'success');
+    if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(`Purchased ${result.bought} ${type} for ${fmt(result.cost)} GC`, 'success');
   };
   const demolishB = (type) => { if (window.demolishB) window.demolishB(type); };
 

@@ -157,15 +157,15 @@ const ExplorationPanel = () => {
   const handleSearch = useCallback(async (type) => {
     const r = Number(searchRangers || 0);
     if (r <= 0) {
-      if (window.toast) window.toast('Assign some rangers first', 'error');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Assign some rangers first', 'error');
       return;
     }
     if (r > availableRangers) {
-      if (window.toast) window.toast('Not enough rangers', 'error');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Not enough rangers', 'error');
       return;
     }
     if ((state?.turns_stored || 0) < 1) {
-      if (window.toast) window.toast('No turns available', 'warn');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('No turns available', 'warn');
       return;
     }
 
@@ -176,12 +176,12 @@ const ExplorationPanel = () => {
       });
 
       if (result.error) {
-        if (window.toast) window.toast(result.error, 'error');
+        if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(result.error, 'error');
         return;
       }
 
       applyResult(result, 'search');
-      if (window.toast) window.toast(result.message || 'Search complete', 'success');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(result.message || 'Search complete', 'success');
 
       const icons = { land: '🗺️', gold: '💰', food: '🌾', targets: '🔭' };
       logInstantEntry(
@@ -192,7 +192,7 @@ const ExplorationPanel = () => {
       await refreshAll();
     } catch (err) {
       console.error('Search API error:', err);
-      if (window.toast) window.toast(`Search action failed: ${err.message}`, 'error');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(`Search action failed: ${err.message}`, 'error');
     }
   }, [applyResult, availableRangers, logInstantEntry, refreshAll, searchRangers, state?.turns_stored]);
 
@@ -209,26 +209,26 @@ const ExplorationPanel = () => {
     const fighters = type === 'dungeon' ? Number(dungeonFighters || 0) : 0;
 
     if (rangers < 1) {
-      if (window.toast) window.toast('Send at least 1 ranger', 'error');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Send at least 1 ranger', 'error');
       return;
     }
     if (rangers > availableRangers) {
-      if (window.toast) window.toast('Not enough rangers', 'error');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Not enough rangers', 'error');
       return;
     }
     if (type === 'dungeon' && fighters < 1) {
-      if (window.toast) window.toast('Dungeon raids require fighters', 'error');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Dungeon raids require fighters', 'error');
       return;
     }
     if (type === 'dungeon' && fighters > availableFighters) {
-      if (window.toast) window.toast('Not enough fighters', 'error');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Not enough fighters', 'error');
       return;
     }
 
     const turns = expeditionTurns[type] || 0;
     const foodNeeded = Math.ceil(turns * ((rangers * 0.5 + fighters) * 0.75));
     if (availableFood < foodNeeded) {
-      if (window.toast) window.toast(`You need ${formatNum(foodNeeded - availableFood)} more food to start the expedition`, 'error');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(`You need ${formatNum(foodNeeded - availableFood)} more food to start the expedition`, 'error');
       return;
     }
 
@@ -239,12 +239,12 @@ const ExplorationPanel = () => {
       });
 
       if (result.error) {
-        if (window.toast) window.toast(result.error, 'error');
+        if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(result.error, 'error');
         return;
       }
 
       applyResult(result, 'expedition-start');
-      if (window.toast) window.toast(result.message || `${TYPE_META[type].label} launched!`, 'success');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(result.message || `${TYPE_META[type].label} launched!`, 'success');
       logInstantEntry(
         TYPE_META[type].icon,
         repairText(result.message || `${TYPE_META[type].label} launched!`),
@@ -253,7 +253,7 @@ const ExplorationPanel = () => {
       await refreshAll();
     } catch (err) {
       console.error('[expedition/start] failed:', err);
-      if (window.toast) window.toast('Expedition failed — please try again', 'error');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Expedition failed — please try again', 'error');
     }
   }, [
     applyResult,
@@ -274,7 +274,7 @@ const ExplorationPanel = () => {
     try {
       const result = await apiCall('/api/kingdom/expedition/clear-all', { method: 'DELETE' });
       if (result.error) {
-        if (window.toast) window.toast(result.error, 'error');
+        if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(result.error, 'error');
         return;
       }
 
@@ -284,10 +284,10 @@ const ExplorationPanel = () => {
       }
       setInstantEntries([]);
       await refreshAll();
-      if (window.toast) window.toast('Expedition log cleared', 'success');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Expedition log cleared', 'success');
     } catch (err) {
       console.error('[expedition/clear-all] failed:', err);
-      if (window.toast) window.toast('Failed to clear expedition log', 'error');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Failed to clear expedition log', 'error');
     }
   }, [applyResult, refreshAll]);
 

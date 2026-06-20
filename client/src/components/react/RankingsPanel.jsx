@@ -108,14 +108,14 @@ const RankingsPanel = () => {
         body: { targetId: row.id },
       });
       if (result.error) {
-        if (window.toast) window.toast(result.error, 'error');
+        if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(result.error, 'error');
         return;
       }
-      if (window.toast) window.toast(result.message || 'Trade route established', 'success');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(result.message || 'Trade route established', 'success');
       await loadRankings();
     } catch (err) {
       console.error('[RankingsPanel] Failed to establish trade route:', err);
-      if (window.toast) window.toast('Failed to establish trade route', 'error');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Failed to establish trade route', 'error');
     }
   }, [loadRankings]);
 

@@ -158,14 +158,14 @@ const StudiesPanel = () => {
     });
     const data = await result.json();
     if (data.error) {
-      window.toast?.(data.error, 'error');
+      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(data.error, 'error');
       return;
     }
     if (data.research_focus) {
       window.gameState = window.gameState || {};
       window.gameState.research_focus = data.research_focus;
       updateFocusPreview();
-      window.toast?.(`Research focus saved — ${data.research_focus.join(' & ')}`, 'success');
+      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(`Research focus saved — ${data.research_focus.join(' & ')}`, 'success');
     }
   }, [studiesData?.school_upgrades, updateFocusPreview]);
 
@@ -181,7 +181,7 @@ const StudiesPanel = () => {
     const spellbook = Math.max(0, getMageInputValue('mage-alloc-spellbook'));
     const school_spellbook = Math.max(0, getMageInputValue('mage-alloc-school'));
     if (spellbook + school_spellbook > totalMages) {
-      window.toast?.(`Allocated ${spellbook + school_spellbook} mages, but only have ${totalMages}`, 'error');
+      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(`Allocated ${spellbook + school_spellbook} mages, but only have ${totalMages}`, 'error');
       return;
     }
     const response = await fetch('/api/kingdom/school-allocation', {
@@ -191,13 +191,13 @@ const StudiesPanel = () => {
     });
     const data = await response.json();
     if (data.error) {
-      window.toast?.(data.error, 'error');
+      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(data.error, 'error');
       return;
     }
     if (data.ok) {
       await fetchStudiesData();
       refreshMageUi();
-      window.toast?.('Mage allocation saved successfully', 'success');
+      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast('Mage allocation saved successfully', 'success');
     }
   }, [fetchStudiesData, refreshMageUi, totalMages]);
 

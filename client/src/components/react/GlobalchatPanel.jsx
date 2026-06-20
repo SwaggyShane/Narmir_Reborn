@@ -63,7 +63,7 @@ const GlobalchatPanel = () => {
           if (nc && !nc.classList.contains('nav-flash')) nc.classList.add('nav-flash');
           const bnc = document.getElementById('bnav-chat-item');
           if (bnc && !bnc.classList.contains('nav-flash')) bnc.classList.add('nav-flash');
-          if (window.toast) window.toast(`PM from ${data.from}`, 'success');
+          if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(`PM from ${data.from}`, 'success');
         };
 
         handlers.whisperSent = (data) => {
@@ -72,12 +72,12 @@ const GlobalchatPanel = () => {
 
         handlers.kicked = (data) => {
           appendSystemMessage('global-chat-messages', `You were kicked. ${data.reason || ''}`);
-          if (window.toast) window.toast(`Kicked: ${data.reason || ''}`, 'error');
+          if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(`Kicked: ${data.reason || ''}`, 'error');
         };
 
         handlers.banned = (data) => {
           appendSystemMessage('global-chat-messages', `You are banned from chat. ${data.reason || ''}`);
-          if (window.toast) window.toast(`Chat banned: ${data.reason || ''}`, 'error');
+          if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(`Chat banned: ${data.reason || ''}`, 'error');
         };
 
         handlers.online = (data) => {

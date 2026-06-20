@@ -13,7 +13,7 @@ const DefensePanel = () => {
   const refreshDefense = useCallback(async () => {
     const data = await apiCall('/api/kingdom/defense/overview');
     if (data?.error) {
-      window.toast?.(data.error, 'error');
+      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(data.error, 'error');
       return;
     }
 

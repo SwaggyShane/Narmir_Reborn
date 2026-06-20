@@ -360,7 +360,7 @@ const ResourcesPanel = () => {
 
   const interceptExpedition = async (expId) => {
     const fighters = interceptFighters[expId] || 0;
-    if (fighters < 1) return window.toast && window.toast('Enter number of fighters.', 'error');
+    if (fighters < 1) return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast('Enter number of fighters.', 'error');
     setIntercepting(p => ({...p, [expId]: true}));
     try {
       const data = await apiCall('/api/kingdom/expedition/intercept', {
@@ -380,16 +380,16 @@ const ResourcesPanel = () => {
     if (buildingInProgress[type] || getActiveBuild(type)) return;
     const el = document.getElementById('bld-eng-' + bld.key);
     const engineers = parseInt(el?.value || '0') || 0;
-    if (engineers < 1) return window.toast && window.toast('Assign at least 1 engineer to start this build.', 'error');
+    if (engineers < 1) return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast('Assign at least 1 engineer to start this build.', 'error');
     const avail = getAvailableEngineers();
-    if (engineers > avail) return window.toast && window.toast(`Only ${avail.toLocaleString()} engineers available.`, 'error');
+    if (engineers > avail) return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(`Only ${avail.toLocaleString()} engineers available.`, 'error');
     setBuildingInProgress(p => ({...p, [type]: true}));
     try {
       const d1 = await apiCall('/api/kingdom/build-queue', {
         method: 'POST',
         body: { orders: { [bld.key]: 1 } }
       });
-      if (d1.error) { setBuildingInProgress(p => ({...p, [type]: false})); return window.toast && window.toast(d1.error, 'error'); }
+      if (d1.error) { setBuildingInProgress(p => ({...p, [type]: false})); return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(d1.error, 'error'); }
 
       const s = getState();
       if (s) {

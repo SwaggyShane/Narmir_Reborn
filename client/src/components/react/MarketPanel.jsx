@@ -94,7 +94,7 @@ const MarketPanel = () => {
     const qtyStr = quantities[resource];
     const qty = parseInt(qtyStr, 10);
     if (!qty || qty <= 0) {
-      if (window.toast) window.toast('Enter a valid quantity', 'error');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Enter a valid quantity', 'error');
       return;
     }
 
@@ -108,18 +108,18 @@ const MarketPanel = () => {
       });
 
       if (res.error) {
-        if (window.toast) window.toast(res.error, 'error');
+        if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(res.error, 'error');
         return;
       }
 
       if (window.applyServerUpdates) window.applyServerUpdates(res.updates);
       const successMsg = op === 'buy' ? `Bought ${qty} ${resource}` : `Sold ${qty} ${resource}`;
-      if (window.toast) window.toast(res.message || successMsg, 'success');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(res.message || successMsg, 'success');
       setQuantities((prev) => ({ ...prev, [resource]: '' }));
       await refreshMarket();
     } catch (err) {
       console.error('[market] trade failed:', err);
-      if (window.toast) window.toast('Trade failed', 'error');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Trade failed', 'error');
     }
   };
 
