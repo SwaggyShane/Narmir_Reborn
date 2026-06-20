@@ -19234,6 +19234,9 @@
       var allHeroClasses = null;
 
       async function showHeroLore(heroName) {
+        if (typeof window.__showHeroLoreImpl === "function") {
+          return window.__showHeroLoreImpl(heroName);
+        }
 
         if (!allHeroClasses) {
 
