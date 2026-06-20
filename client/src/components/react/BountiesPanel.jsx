@@ -41,14 +41,11 @@ const BountiesPanel = () => {
     loadTargets();
 
     window.refreshBountiesPanel = fetchBounties;
-    // Exposed so legacy openBountyAction/selectBountyTarget can drive React state
-    window.setBountyTarget = (id) => setSelectedTarget(id ? String(id) : '');
 
     const interval = setInterval(fetchBounties, REFRESH_INTERVAL_MS);
     return () => {
       clearInterval(interval);
       delete window.refreshBountiesPanel;
-      delete window.setBountyTarget;
     };
   }, [fetchBounties, loadTargets]);
 
@@ -70,7 +67,7 @@ const BountiesPanel = () => {
       }
       window.toast?.(res.message, 'success');
       if (window.state) window.state.gold -= parsedAmount;
-      if (window.updateTopStats) window.updateTopStats();
+      window.syncUI?.();
       setAmount('');
       setSelectedTarget('');
       await fetchBounties();
