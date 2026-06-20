@@ -84,10 +84,10 @@ export async function loadEconomy() {
   if (el('econ-taverns')) el('econ-taverns').textContent = fmt(state.bld_taverns || 0);
   if (el('econ-entertainment')) el('econ-entertainment').textContent = '+' + fmt(data.tavernBonus || 0) + '/turn';
 
-  callIfAvailable('renderUpgrades', 'farm', window.FARM_UPGRADES, data.farm_upgrades || {}, 'farm-upgrade-list');
-  callIfAvailable('renderUpgrades', 'granary', window.GRANARY_UPGRADES, data.granary_upgrades || {}, 'granary-page-upgrade-list');
-  callIfAvailable('renderUpgrades', 'market', window.MARKET_UPGRADES, data.market_upgrades || {}, 'market-upgrade-list');
-  callIfAvailable('renderUpgrades', 'tavern', window.TAVERN_UPGRADES, data.tavern_upgrades || {}, 'tavern-upgrade-list');
+  callIfAvailable('__renderUpgradesImpl', 'farm', window.FARM_UPGRADES, data.farm_upgrades || {}, 'farm-upgrade-list');
+  callIfAvailable('__renderUpgradesImpl', 'granary', window.GRANARY_UPGRADES, data.granary_upgrades || {}, 'granary-page-upgrade-list');
+  callIfAvailable('__renderUpgradesImpl', 'market', window.MARKET_UPGRADES, data.market_upgrades || {}, 'market-upgrade-list');
+  callIfAvailable('__renderUpgradesImpl', 'tavern', window.TAVERN_UPGRADES, data.tavern_upgrades || {}, 'tavern-upgrade-list');
 
   callIfAvailable('__renderCommodityMarketImpl', data.market_upgrades || {});
   callIfAvailable('__renderActiveMercsImpl', data.mercenaries || []);

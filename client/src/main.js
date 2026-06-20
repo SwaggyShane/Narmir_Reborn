@@ -44,6 +44,7 @@ import {
   renderCommodityMarket as renderCommodityMarketAction,
   renderActiveMercs as renderActiveMercsAction,
 } from "./actions/economyRenderers.js";
+import { renderUpgrades as renderUpgradesAction } from "./actions/economyUpgrades.js";
 import {
   populateTradeTargets as populateTradeTargetsAction,
   loadTradeOffers as loadTradeOffersAction,
@@ -88,6 +89,7 @@ window.__loadEconomyImpl = loadEconomyAction;
 window.__buyUpgradeImpl = buyUpgradeAction;
 window.__renderCommodityMarketImpl = renderCommodityMarketAction;
 window.__renderActiveMercsImpl = renderActiveMercsAction;
+window.__renderUpgradesImpl = renderUpgradesAction;
 window.__populateTradeTargetsImpl = populateTradeTargetsAction;
 window.__loadTradeOffersImpl = loadTradeOffersAction;
 window.__clearTradeLogsImpl = clearTradeLogsAction;
