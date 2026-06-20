@@ -52,7 +52,8 @@ const BUILDING_COST = { woodyard: 1000, lumber_camp: 10000, sawmill: 100000, gra
 function buildingsByType(type) {
   return Object.values(BUILDING_CONFIG).filter(b => b.type === type).sort((a, b) => a.stage - b.stage);
 }
-function getState() { return window.gameState || {}; }
+let currentResourcesState = {};
+function getState() { return currentResourcesState || {}; }
 
 function getParsedStateProp(propName, fallback = {}) {
   const s = getState();
@@ -109,6 +110,7 @@ const ResourcesPanel = () => {
   const [now, setNow] = useState(Math.floor(Date.now() / 1000));
   const { activePanel } = useActivePanel();
   const { state } = useGameState();
+  currentResourcesState = state || {};
 
   const syncFromState = useCallback(() => {
     const s = getState();
