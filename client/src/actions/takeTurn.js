@@ -1,8 +1,11 @@
 import { apiCall } from '../utils/api';
 import { toast } from '../utils/toast.js';
 import { applyGameMutation } from '../utils/gameMutations.js';
+import { gameStateManager } from '../GameStateManager.js';
 
 let canonicalTurnInProgress = false;
+
+const getState = () => gameStateManager.getState();
 
 const playAchievementSound = () => {
   try {
@@ -18,7 +21,7 @@ const playAchievementSound = () => {
 
 export const takeTurn = async () => {
   if (canonicalTurnInProgress) return;
-  if ((window.gameState?.turns_stored || 0) < 1) {
+  if ((getState()?.turns_stored || 0) < 1) {
     const countdown = document.getElementById('regen-countdown')?.textContent || '25:00';
     toast(`No turns available. Refills in ${countdown}`, 'warning');
     return;
@@ -48,7 +51,7 @@ export const takeTurn = async () => {
       window.syncFromState?.();
     }
 
-    const currentTurn = window.gameState?.turn || data.updates?.turn;
+    const currentTurn = getState()?.turn || data.updates?.turn;
     const turnEl = document.getElementById('turn-num');
     if (turnEl && currentTurn !== undefined) turnEl.textContent = currentTurn;
     const newsTurn = document.getElementById('news-turn-num');
@@ -78,16 +81,16 @@ export const takeTurn = async () => {
       }
     }
 
-    const turnsLeft = window.gameState?.turns_stored ?? data.updates?.turns_stored ?? 0;
+    const turnsLeft = getState()?.turns_stored ?? data.updates?.turns_stored ?? 0;
     if (btn) btn.style.opacity = turnsLeft > 0 ? '1' : '0.4';
     const turnStatus = `Turn ${currentTurn || '?'} - ${turnsLeft} turns left`;
     const buildStatus = completedBuildingsMsg
       ? `Completed: ${completedBuildingsMsg}!\n${blurbs.join('\n') || ''}`
       : '';
 
-    if ((window.gameState?.food || 0) < 1000) {
+    if ((getState()?.food || 0) < 1000) {
       toast(`Warning: Food levels are dangerously low!\n${buildStatus ? `${buildStatus}\n` : ''}${turnStatus}`, 'warning');
-    } else if ((window.gameState?.gold || 0) < 1000) {
+    } else if ((getState()?.gold || 0) < 1000) {
       toast(`Warning: Gold reserves are almost empty!\n${buildStatus ? `${buildStatus}\n` : ''}${turnStatus}`, 'warning');
     } else {
       toast(buildStatus ? `${buildStatus}\n${turnStatus}` : turnStatus, 'success');
@@ -97,6 +100,6 @@ export const takeTurn = async () => {
     toast('Failed to take turn: ' + error.message, 'error');
   } finally {
     canonicalTurnInProgress = false;
-    if (btn && (window.gameState?.turns_stored || 0) > 0) btn.style.opacity = '1';
+    if (btn && (getState()?.turns_stored || 0) > 0) btn.style.opacity = '1';
   }
 };
