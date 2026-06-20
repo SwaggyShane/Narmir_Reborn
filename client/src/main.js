@@ -537,6 +537,7 @@ window.takeTurn = async () => {
       data.updates = turnUpdates;
       window.applyGameMutation(data, { reason: "turn" });
       window.syncFromState?.();
+      window.triggerReactUpdates?.();
     }
 
     const currentTurn = window.gameState?.turn || data.updates?.turn;
@@ -583,7 +584,6 @@ window.takeTurn = async () => {
     } else {
       window.toast?.(buildStatus ? `${buildStatus}\n${turnStatus}` : turnStatus, "success");
     }
-    window.checkSchoolSelection?.();
   } catch (error) {
     console.error("[turn] Error taking turn:", error);
     window.toast?.("Failed to take turn: " + error.message, "error");
