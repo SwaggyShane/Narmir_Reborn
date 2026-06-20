@@ -167,13 +167,6 @@ window.syncUI = () => {
   setText("kingdom-score-disp", fmt(score));
   setText("kingdom-score-per-turn", `(${scorePerTurn >= 0 ? "+" : ""}${fmt(scorePerTurn)}/turn)`);
   setText("top-rank", rank !== undefined && rank !== null ? `#${rank}` : "-");
-
-  if (typeof window.updateXpDisplay === "function") {
-    window.updateXpDisplay();
-  }
-  if (typeof window.updateTurnsDisplay === "function") {
-    window.updateTurnsDisplay();
-  }
 };
 
 window.switchTab = (tabName) => {
@@ -544,13 +537,7 @@ window.takeTurn = async () => {
       data.updates = turnUpdates;
       window.applyGameMutation(data, { reason: "turn" });
       window.syncFromState?.();
-
-      try {
-        window.updateTurnsDisplay?.();
-        window.updateXpDisplay?.();
-      } catch (e) {
-        console.error("[turn] Error refreshing display elements:", e);
-      }
+      window.triggerReactUpdates?.();
     }
 
     const currentTurn = window.gameState?.turn || data.updates?.turn;
@@ -597,9 +584,6 @@ window.takeTurn = async () => {
     } else {
       window.toast?.(buildStatus ? `${buildStatus}\n${turnStatus}` : turnStatus, "success");
     }
-
-    await window.loadActiveExpeditions?.();
-    window.checkSchoolSelection?.();
   } catch (error) {
     console.error("[turn] Error taking turn:", error);
     window.toast?.("Failed to take turn: " + error.message, "error");
