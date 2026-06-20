@@ -35,6 +35,8 @@ import "./css/forum.css";
 import ResourceStripReact from "./components/react/ResourceStrip.jsx";
 import { openRaceLore as openRaceLoreAction } from "./actions/openRaceLore.js";
 import { replayWarReport as replayWarReportAction } from "./actions/replayWarReport.js";
+import { fmt as fmtImpl } from "./utils/fmt.js";
+import { toast as toastImpl } from "./utils/toast.js";
 import { apiCall, syncUI, switchTab, initGameStateManager, applyGameMutation, gameState } from "./utils/shellBridge.js";
 
 window.apiCall = apiCall;
@@ -42,6 +44,8 @@ window.switchTab = switchTab;
 window.applyGameMutation = applyGameMutation;
 window.__openRaceLoreImpl = openRaceLoreAction;
 window.__replayWarReportImpl = replayWarReportAction;
+window.__fmtImpl = fmtImpl;
+window.__toastImpl = toastImpl;
 
 const reactRoots = new Map();
 
