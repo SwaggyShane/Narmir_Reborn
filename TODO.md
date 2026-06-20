@@ -100,3 +100,16 @@
 - [ ] Historical happiness tracking in news/events
 - [ ] Advanced rebellion event variations
 - [ ] Happiness trends/graphs in game UI
+
+### Happiness System — Code Quality Cleanup
+**Status:** Planned
+**Priority:** Medium
+**Description:** The happiness logic is solid but has structural debt that needs addressing.
+
+**Tasks:**
+- [ ] Consolidate `calculateHappiness`, `getHappinessRecoveryRate`, `recordHappinessHistory`, `logHappinessEvent` — currently duplicated across `game/happiness.js`, `game/turn.js`, and `game/engine.js`. Single source in `game/happiness.js`, imported elsewhere.
+- [ ] Add `overcrowding` component to `game/happiness.js` — it exists in `engine.js` only, but the DB schema has an `overcrowding_component` column, so stored values are wrong for callers that bypass engine.js
+- [ ] Fix `typeof effects.bless === 'object'` null check — `null` passes this check; change to `effects.bless != null &&`
+- [ ] Pull race modifiers out of the inline table in `calculateHappiness` — `game/config.js` already has `RACE_BONUSES` with happiness data; use it
+- [ ] Extract magic numbers to named constants: recovery rate bounds (0.5/5.0), tax baseline (42), safety curve (-10/+3/10 turns), rebellion cooldown (20 turns), final clamp (-50/120)
+- [ ] Audit `||` vs `??` null coalescing across happiness reads — `||` coerces 0 to default
