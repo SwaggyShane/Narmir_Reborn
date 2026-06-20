@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { apiCall } from '../../utils/api';
 import { useGameState } from '../../hooks/useGameState';
 import { applyGameMutation } from '../../utils/gameMutations.js';
+import { fmtShort } from '../../utils/numberFormat.js';
 
 const EconomyPanel = () => {
   const { state } = useGameState();
@@ -15,16 +16,6 @@ const EconomyPanel = () => {
       '"': '&quot;',
       "'": '&#39;',
     })[ch]);
-  }, []);
-
-  const fmtShort = useCallback((value) => {
-    const n = Number(value || 0);
-    if (!Number.isFinite(n)) return '0';
-    const abs = Math.abs(n);
-    if (abs >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1).replace(/\.0$/, '')}b`;
-    if (abs >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, '')}m`;
-    if (abs >= 1_000) return `${(n / 1_000).toFixed(1).replace(/\.0$/, '')}k`;
-    return `${Math.round(n)}`;
   }, []);
 
   const handleTabClick = (tabId) => {

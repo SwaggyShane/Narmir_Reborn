@@ -4490,6 +4490,9 @@
       }
 
       function fmtShort(n) {
+        if (typeof window.__fmtShortImpl === "function") {
+          return window.__fmtShortImpl(n);
+        }
 
         if (n === undefined || n === null || isNaN(n)) return "0";
 
@@ -4500,6 +4503,9 @@
 
 
       function trunc(n) {
+        if (typeof window.__truncImpl === "function") {
+          return window.__truncImpl(n);
+        }
 
         n = Math.round(n);
 
