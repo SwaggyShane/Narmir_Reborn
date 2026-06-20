@@ -298,10 +298,6 @@ window.applyGameMutation = (resultOrUpdates, context = {}) => {
   return resultOrUpdates;
 };
 
-if (window.setGameStateObj) {
-  window.setGameStateObj(gameState);
-}
-
 const reactRoots = new Map();
 
 export const mountReactApps = () => {

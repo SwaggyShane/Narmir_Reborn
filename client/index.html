@@ -4454,17 +4454,6 @@
       };
 
 
-
-      window.setGameStateObj = function (vueState) {
-
-        Object.assign(vueState, state); // Seed vueState with current state
-
-        state = vueState; // Replace local reference to point to Vue proxy
-
-      };
-
-
-
       function fmt(n) {
 
         if (n === undefined || n === null || isNaN(n)) return "0";
@@ -7609,16 +7598,8 @@
           clearAuthError(err.message || "Registration failed.");
         }
       }
-
-      window.escHtml = escHtml;
-      window.initLoginModal = initLoginModal;
       window.showLoginModal = showLoginModal;
       window.hideLoginModal = hideLoginModal;
-      window.showPasswordReset = showPasswordReset;
-      window.closeRegistrationModal = closeRegistrationModal;
-      window.backToRaceSelection = backToRaceSelection;
-      window.showNewsBadge = showNewsBadge;
-      window.clearToken = clearToken;
       window.doLogin = doLogin;
       window.doRegister = doRegister;
       window.doLogout = doLogout;
@@ -8658,8 +8639,6 @@
       function loadAvailableSounds() {
 
         soundLibrary = {};
-
-        window.availableSounds = soundLibrary;
 
         return soundLibrary;
 
