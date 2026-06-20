@@ -38,6 +38,7 @@ import { replayWarReport as replayWarReportAction } from "./actions/replayWarRep
 import { showHeroLore as showHeroLoreAction } from "./actions/showHeroLore.js";
 import { openKingdomProfile as openKingdomProfileAction } from "./actions/openKingdomProfile.js";
 import { loadKingdom as loadKingdomAction } from "./actions/loadKingdom.js";
+import { applyServerUpdates as applyServerUpdatesAction } from "./utils/gameMutations.js";
 import { bindGeneralSocketHandlers as bindGeneralSocketHandlersImpl } from "./utils/socketHandlers.js";
 import {
   initLoginModal as initLoginModalImpl,
@@ -67,6 +68,7 @@ window.__replayWarReportImpl = replayWarReportAction;
 window.__showHeroLoreImpl = showHeroLoreAction;
 window.__openKingdomProfileImpl = openKingdomProfileAction;
 window.__loadKingdomImpl = loadKingdomAction;
+window.__applyServerUpdatesImpl = applyServerUpdatesAction;
 window.__bindGeneralSocketHandlersImpl = bindGeneralSocketHandlersImpl;
 window.__initLoginModalImpl = initLoginModalImpl;
 window.__showLoginModalImpl = showLoginModalImpl;
