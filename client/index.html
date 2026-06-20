@@ -13078,63 +13078,11 @@
 
 
       async function buyUpgrade(category, key) {
-
-        var endpoint =
-
-          category === "mausoleum"
-
-            ? "/api/kingdom/buy-mausoleum-upgrade"
-
-            : "/api/kingdom/economy/upgrade";
-
-        var result = await apiCall("POST", endpoint, {
-
-          category,
-
-          upgradeKey: key,
-
-        });
-
-        if (result.error) return toast(result.error, "error");
-
-        playGameSound("upgrade_purchased");
-
-        if (result.updates)
-
-          applyGameMutation(result, { reason: "economy-upgrade" });
-
-        syncUI();
-
-        toast(
-
-          "Upgrade purchased! Refresh the panel to see the next upgrade.",
-
-          "success",
-
-        );
-
-        // Mark the button as purchased without reloading the full panel
-
-        var btn = document.querySelector(
-
-          "[onclick=\"buyUpgrade('" + category + "','" + key + "')\"]",
-
-        );
-
-        if (btn) {
-
-          btn.textContent = "âœ… Purchased";
-
-          btn.disabled = true;
-
-          btn.style.opacity = "0.6";
-
+        if (typeof window.__buyUpgradeImpl === "function") {
+          return window.__buyUpgradeImpl(category, key);
         }
-
+        return null;
       }
-
-
-
       function renderCommodityMarket(mktUpgrades) {
 
         var el = document.getElementById("commodity-list");
@@ -21941,6 +21889,7 @@
   </body>
 
 </html>
+
 
 
 
