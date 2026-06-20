@@ -1,4 +1,5 @@
 import React from 'react';
+import { switchTab } from '../../utils/switchTab.js';
 
 const ChangelogPanel = () => {
   const submitSuggestion = () => {
@@ -8,9 +9,7 @@ const ChangelogPanel = () => {
   };
 
   const returnToKingdom = () => {
-    if (window.switchTab) {
-      window.switchTab("status");
-    }
+    switchTab("status");
   };
 
   return (

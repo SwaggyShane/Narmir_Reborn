@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useGameState } from '../../hooks/useGameState';
 import { logout } from '../../actions/logout';
+import { switchTab } from '../../utils/switchTab.js';
 
 const Sidebar = () => {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -11,7 +12,7 @@ const Sidebar = () => {
   }, [state?.isAdmin]);
 
   const handleSwitchTab = (id, e) => {
-    if (window.switchTab) window.switchTab(id, e.currentTarget);
+    switchTab(id, e.currentTarget);
   };
 
   return (

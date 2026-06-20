@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useGameState } from '../../hooks/useGameState';
 import { logout } from '../../actions/logout';
+import { switchTab } from '../../utils/switchTab.js';
 
 const BottomNav = () => {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -11,7 +12,7 @@ const BottomNav = () => {
   }, [state?.isAdmin]);
 
   const handleSwitchTabMobile = (id) => {
-    if (window.switchTab) window.switchTab(id);
+    switchTab(id);
   };
 
   return (
