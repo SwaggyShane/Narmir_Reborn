@@ -103,12 +103,10 @@ export const mountReactApps = () => {
   window.__reactAppsMounted = true;
   console.log("[react] All apps mounted");
 
-  if (window.switchTab) {
-    if (window.location.hash) {
-      window.switchTab(window.location.hash.substring(1));
-    } else {
-      window.switchTab('status');
-    }
+  if (window.location.hash) {
+    switchTab(window.location.hash.substring(1));
+  } else {
+    switchTab('status');
   }
 };
 
