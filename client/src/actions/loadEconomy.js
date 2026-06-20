@@ -89,7 +89,7 @@ export async function loadEconomy() {
   callIfAvailable('renderUpgrades', 'market', window.MARKET_UPGRADES, data.market_upgrades || {}, 'market-upgrade-list');
   callIfAvailable('renderUpgrades', 'tavern', window.TAVERN_UPGRADES, data.tavern_upgrades || {}, 'tavern-upgrade-list');
 
-  callIfAvailable('renderCommodityMarket', data.market_upgrades || {});
-  callIfAvailable('renderActiveMercs', data.mercenaries || []);
+  callIfAvailable('__renderCommodityMarketImpl', data.market_upgrades || {});
+  callIfAvailable('__renderActiveMercsImpl', data.mercenaries || []);
   callIfAvailable('__populateTradeTargetsImpl');
 }

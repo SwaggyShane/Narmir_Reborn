@@ -41,6 +41,10 @@ import { loadKingdom as loadKingdomAction } from "./actions/loadKingdom.js";
 import { loadEconomy as loadEconomyAction } from "./actions/loadEconomy.js";
 import { buyUpgrade as buyUpgradeAction } from "./actions/buyUpgrade.js";
 import {
+  renderCommodityMarket as renderCommodityMarketAction,
+  renderActiveMercs as renderActiveMercsAction,
+} from "./actions/economyRenderers.js";
+import {
   populateTradeTargets as populateTradeTargetsAction,
   loadTradeOffers as loadTradeOffersAction,
   clearTradeLogs as clearTradeLogsAction,
@@ -82,6 +86,8 @@ window.__openKingdomProfileImpl = openKingdomProfileAction;
 window.__loadKingdomImpl = loadKingdomAction;
 window.__loadEconomyImpl = loadEconomyAction;
 window.__buyUpgradeImpl = buyUpgradeAction;
+window.__renderCommodityMarketImpl = renderCommodityMarketAction;
+window.__renderActiveMercsImpl = renderActiveMercsAction;
 window.__populateTradeTargetsImpl = populateTradeTargetsAction;
 window.__loadTradeOffersImpl = loadTradeOffersAction;
 window.__clearTradeLogsImpl = clearTradeLogsAction;
