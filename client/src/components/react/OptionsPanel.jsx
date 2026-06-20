@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from '../../utils/toast.js';
+import { applyNavLayout } from '../../utils/applyNavLayout.js';
 import { useGameState } from '../../hooks/useGameState';
 
 const API = (path, opts = {}) => {
@@ -288,7 +289,7 @@ const OptionsPanel = () => {
     const val = e.target.value;
     setNavLayout(val);
     localStorage.setItem('narmir_nav_layout', val);
-    if (typeof window.applyNavLayout === 'function') window.applyNavLayout();
+    applyNavLayout();
   };
 
   const updateSkipIntro = (e) => {

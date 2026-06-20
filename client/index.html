@@ -4303,6 +4303,9 @@
       /* â�€â�€ Core state (defined first so all functions below can access it) â�€â�€ */
 
       function applyNavLayout() {
+        if (typeof window.__applyNavLayoutImpl === "function") {
+          return window.__applyNavLayoutImpl();
+        }
 
         var layout = localStorage.getItem("narmir_nav_layout") || "responsive";
 
