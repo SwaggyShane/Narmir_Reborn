@@ -1,20 +1,16 @@
 import React from 'react';
 import { useGameState } from '../../hooks/useGameState';
 import { takeTurn } from '../../actions/takeTurn';
+import { xpForLevel } from '../../utils/xp';
 
 const Topbar = () => {
   const { state } = useGameState();
-  const xpForLevel = (level) => {
-    if (typeof window !== 'undefined' && typeof window.xpForLevel === 'function') {
-      return window.xpForLevel(level);
-    }
-    return 0;
-  };
   const turnsStored = state?.turns_stored ?? 400;
   const level = state?.level ?? 1;
   const xp = state?.xp ?? 0;
-  const thisLvl = xpForLevel(level);
-  const nextLvl = xpForLevel(level + 1);
+  const prestige = state?.prestige_level ?? 0;
+  const thisLvl = xpForLevel(level, prestige);
+  const nextLvl = xpForLevel(level + 1, prestige);
   const xpInLevel = Math.max(0, Math.min(xp - thisLvl, nextLvl - thisLvl));
   const xpNeeded = Math.max(0, nextLvl - thisLvl);
   const xpPct = xpNeeded > 0 ? Math.min(100, Math.floor((xpInLevel / xpNeeded) * 100)) : 100;
