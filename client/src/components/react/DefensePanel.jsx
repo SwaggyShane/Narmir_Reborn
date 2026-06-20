@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { apiCall } from '../../utils/api';
 import { useGameState } from '../../hooks/useGameState';
+import { fmt } from "../../utils/fmt";
+import { applyGameMutation } from '../../utils/gameMutations.js';
 
 const DefensePanel = () => {
   const { state } = useGameState();
@@ -13,7 +15,7 @@ const DefensePanel = () => {
   const refreshDefense = useCallback(async () => {
     const data = await apiCall('/api/kingdom/defense/overview');
     if (data?.error) {
-      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(data.error, 'error');
+      toast(data.error, 'error');
       return;
     }
 

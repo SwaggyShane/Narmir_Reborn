@@ -5544,7 +5544,7 @@
 
         var r = result.report;
 
-        window.applyGameMutation(result, { reason: "attack" });
+        applyGameMutation(result, { reason: "attack" });
 
         syncUI();
 
@@ -6023,7 +6023,7 @@
 
           if (kingdom && !kingdom.error) {
 
-            window.applyGameMutation(kingdom, { reason: "expedition-complete" });
+            applyGameMutation(kingdom, { reason: "expedition-complete" });
 
             updateExpeditionAvailability();
 
@@ -6210,7 +6210,7 @@
 
         if (kingdom && !kingdom.error) {
 
-          window.applyGameMutation(kingdom, { reason: "expedition-cancel" });
+          applyGameMutation(kingdom, { reason: "expedition-cancel" });
 
         }
 
@@ -6678,7 +6678,7 @@
 
         // Apply updates from the authoritative spell response.
 
-        window.applyGameMutation(result, { reason: "spell" });
+        applyGameMutation(result, { reason: "spell" });
 
         syncUI();
 
@@ -6853,7 +6853,7 @@
 
         // we no longer need a second GET /me round-trip to refresh state.
 
-        window.applyGameMutation(result, { reason: "covert-" + op });
+        applyGameMutation(result, { reason: "covert-" + op });
 
 
 
@@ -7363,11 +7363,8 @@
       function loadKingdom() {
         return apiCall("GET", "/api/kingdom/me").then(function (kingdom) {
           if (kingdom && !kingdom.error) {
-            if (window.applyGameMutation) {
-              window.applyGameMutation(kingdom, { reason: "kingdom-refresh" });
-            }
-            if (typeof window.syncUI === "function") {
-              window.syncUI();
+            if (applyGameMutation) {
+              applyGameMutation(kingdom, { reason: "kingdom-refresh" });
             }
           }
           return kingdom;
@@ -8550,7 +8547,6 @@
 
 
 
-      window.toast = toast;
 
 
 
@@ -13067,7 +13063,7 @@
 
 
 
-        window.applyGameMutation(result, { reason: "attack" });
+        applyGameMutation(result, { reason: "attack" });
 
         syncUI();
 
@@ -13606,7 +13602,7 @@
 
         playGameSound("spell_cast");
 
-        window.applyGameMutation(result, { reason: "warfare-spell" });
+        applyGameMutation(result, { reason: "warfare-spell" });
 
         syncUI();
 
@@ -13810,7 +13806,7 @@
 
           if (result.updates)
 
-            window.applyGameMutation(result, { reason: "steal-map" });
+            applyGameMutation(result, { reason: "steal-map" });
 
           toast(
 
@@ -13878,7 +13874,7 @@
 
         if (result.error) return toast(result.error, "error");
 
-        window.applyGameMutation(result, { reason: "covert-" + type });
+        applyGameMutation(result, { reason: "covert-" + type });
 
         syncUI();
 
@@ -16774,7 +16770,7 @@
 
         if (result.updates)
 
-          window.applyGameMutation(result, { reason: "economy-upgrade" });
+          applyGameMutation(result, { reason: "economy-upgrade" });
 
         syncUI();
 
@@ -17026,7 +17022,7 @@
 
         if (result.error) return toast(result.error, "error");
 
-        window.applyGameMutation(result, { reason: "hire-mercs" });
+        applyGameMutation(result, { reason: "hire-mercs" });
 
         syncUI();
 
@@ -17378,7 +17374,7 @@
 
         if (result.error) return toast(result.error, "error");
 
-        window.applyGameMutation(result, { reason: "accept-trade" });
+        applyGameMutation(result, { reason: "accept-trade" });
 
         syncUI();
 

@@ -3,6 +3,7 @@ import { apiCall } from '../../utils/api';
 import { useGameState } from '../../hooks/useGameState';
 import { openRaceLore } from '../../actions/openRaceLore';
 import { repairMojibake } from '../../utils/repairMojibake';
+import { applyGameMutation } from '../../utils/gameMutations.js';
 
 const RACE_CARD_DATA = {
   human: {
@@ -92,18 +93,18 @@ const StatusPanel = () => {
         body: { tax },
       });
       if (result.error) {
-        if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(result.error, 'error');
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.error, 'error');
         return;
       }
-      if (window.applyGameMutation) {
-        window.applyGameMutation(result, { reason: 'tax-update' });
+      if (applyGameMutation) {
+        applyGameMutation(result, { reason: 'tax-update' });
       } else if (result.updates) {
-        window.applyServerUpdates?.(result.updates, { reason: 'tax-update' });
+        applyGameMutation(result.updates, { reason: 'tax-update' });
       }
-      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Tax rate locked', 'success');
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Tax rate locked', 'success');
     } catch (err) {
       console.error('[tax] lock failed:', err);
-      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Failed to save tax rate', 'error');
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Failed to save tax rate', 'error');
     }
   };
 

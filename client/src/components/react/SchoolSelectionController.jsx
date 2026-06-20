@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useGameState } from '../../hooks/useGameState';
 import SchoolSelectionModal from './SchoolSelectionModal';
+import { applyGameMutation } from '../../utils/gameMutations.js';
+import { toast } from '../../utils/toast.js';
 
 /**
  * SchoolSelectionController
@@ -29,17 +31,15 @@ export default function SchoolSelectionController() {
     setShowModal(false);
 
     // Update game state with new school
-    if (window.applyGameMutation) {
-      window.applyGameMutation({ school_of_magic: data.school }, { reason: 'school-selected' });
+    if (applyGameMutation) {
+      applyGameMutation({ school_of_magic: data.school }, { reason: 'school-selected' });
     } else {
       const gameState = window.gameState || {};
       gameState.school_of_magic = data.school;
     }
 
     // Show success message
-    if (typeof window !== 'undefined' && typeof window.toast === 'function') {
-      window.toast(`🔮 You have chosen the school of ${data.school.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}!`, 'success');
-    }
+    toast(`???? You have chosen the school of ${data.school.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}!`, 'success');
   };
 
   // Don't show anything if modal shouldn't be visible

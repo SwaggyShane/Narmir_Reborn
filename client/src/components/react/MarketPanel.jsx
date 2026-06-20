@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiCall } from '../../utils/api';
 import { useGameMutationEvents, useGameState } from '../../hooks/useGameState';
+import { fmt } from "../../utils/fmt";
+import { applyGameMutation } from '../../utils/gameMutations.js';
 
 const icons = {
   food: '🌾',
@@ -94,7 +96,7 @@ const MarketPanel = () => {
     const qtyStr = quantities[resource];
     const qty = parseInt(qtyStr, 10);
     if (!qty || qty <= 0) {
-      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Enter a valid quantity', 'error');
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Enter a valid quantity', 'error');
       return;
     }
 
@@ -108,18 +110,18 @@ const MarketPanel = () => {
       });
 
       if (res.error) {
-        if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(res.error, 'error');
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast(res.error, 'error');
         return;
       }
 
-      if (window.applyServerUpdates) window.applyServerUpdates(res.updates);
+      if (applyGameMutation) applyGameMutation(res.updates);
       const successMsg = op === 'buy' ? `Bought ${qty} ${resource}` : `Sold ${qty} ${resource}`;
-      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(res.message || successMsg, 'success');
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast(res.message || successMsg, 'success');
       setQuantities((prev) => ({ ...prev, [resource]: '' }));
       await refreshMarket();
     } catch (err) {
       console.error('[market] trade failed:', err);
-      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Trade failed', 'error');
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Trade failed', 'error');
     }
   };
 

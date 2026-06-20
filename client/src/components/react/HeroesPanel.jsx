@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useGameState } from '../../hooks/useGameState';
 import { apiCall } from '../../utils/api.js';
+import { fmt } from "../../utils/fmt";
 
 const HERO_PORTRAITS = {
   // Dwarf
@@ -56,7 +57,7 @@ const HeroesPanel = () => {
 
   const fmt = useCallback((value) => Number(value || 0).toLocaleString(), []);
   const toast = useCallback((message, type = 'info') => {
-    if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(message, type);
+    if (typeof window !== 'undefined' && typeof toast === 'function') toast(message, type);
     else if (type === 'error') console.error(message);
     else console.log(message);
   }, []);

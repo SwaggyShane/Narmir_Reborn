@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiCall } from '../../utils/api';
 import { useGameState } from '../../hooks/useGameState';
 import { repairMojibake } from '../../utils/repairMojibake';
+import { fmt } from "../../utils/fmt";
 
 const RACE_ICONS = {
   human: '🧑',
@@ -107,14 +108,14 @@ const RankingsPanel = () => {
         body: { targetId: row.id },
       });
       if (result.error) {
-        if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(result.error, 'error');
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.error, 'error');
         return;
       }
-      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(result.message || 'Trade route established', 'success');
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Trade route established', 'success');
       await loadRankings();
     } catch (err) {
       console.error('[RankingsPanel] Failed to establish trade route:', err);
-      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Failed to establish trade route', 'error');
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Failed to establish trade route', 'error');
     }
   }, [loadRankings]);
 

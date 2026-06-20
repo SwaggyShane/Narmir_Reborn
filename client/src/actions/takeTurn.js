@@ -1,4 +1,6 @@
 import { apiCall } from '../utils/api';
+import { toast } from '../utils/toast.js';
+import { applyGameMutation } from '../utils/gameMutations.js';
 
 let canonicalTurnInProgress = false;
 
@@ -18,7 +20,7 @@ export const takeTurn = async () => {
   if (canonicalTurnInProgress) return;
   if ((window.gameState?.turns_stored || 0) < 1) {
     const countdown = document.getElementById('regen-countdown')?.textContent || '25:00';
-    typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(`No turns available. Refills in ${countdown}`, 'warning');
+    toast(`No turns available. Refills in ${countdown}`, 'warning');
     return;
   }
 
@@ -30,7 +32,7 @@ export const takeTurn = async () => {
   try {
     const data = await apiCall('POST', '/api/kingdom/turn');
     if (data.error) {
-      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(data.error, data.error.includes('No turns available') ? 'warning' : 'error');
+      toast(data.error, data.error.includes('No turns available') ? 'warning' : 'error');
       console.error('[turn] error:', data.error);
       return;
     }
@@ -42,7 +44,7 @@ export const takeTurn = async () => {
     }
     if (Object.keys(turnUpdates).length) {
       data.updates = turnUpdates;
-      window.applyGameMutation(data, { reason: 'turn' });
+      applyGameMutation(data, { reason: 'turn' });
       window.syncFromState?.();
     }
 
@@ -84,15 +86,15 @@ export const takeTurn = async () => {
       : '';
 
     if ((window.gameState?.food || 0) < 1000) {
-      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(`Warning: Food levels are dangerously low!\n${buildStatus ? `${buildStatus}\n` : ''}${turnStatus}`, 'warning');
+      toast(`Warning: Food levels are dangerously low!\n${buildStatus ? `${buildStatus}\n` : ''}${turnStatus}`, 'warning');
     } else if ((window.gameState?.gold || 0) < 1000) {
-      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(`Warning: Gold reserves are almost empty!\n${buildStatus ? `${buildStatus}\n` : ''}${turnStatus}`, 'warning');
+      toast(`Warning: Gold reserves are almost empty!\n${buildStatus ? `${buildStatus}\n` : ''}${turnStatus}`, 'warning');
     } else {
-      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(buildStatus ? `${buildStatus}\n${turnStatus}` : turnStatus, 'success');
+      toast(buildStatus ? `${buildStatus}\n${turnStatus}` : turnStatus, 'success');
     }
   } catch (error) {
     console.error('[turn] Error taking turn:', error);
-    typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast('Failed to take turn: ' + error.message, 'error');
+    toast('Failed to take turn: ' + error.message, 'error');
   } finally {
     canonicalTurnInProgress = false;
     if (btn && (window.gameState?.turns_stored || 0) > 0) btn.style.opacity = '1';

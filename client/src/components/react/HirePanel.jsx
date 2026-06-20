@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiCall } from '../../utils/api';
 import { useGameState } from '../../hooks/useGameState';
+import { fmt } from "../../utils/fmt";
+import { applyGameMutation } from '../../utils/gameMutations.js';
 
 const UNIT_ROWS = [
   {
@@ -75,7 +77,7 @@ const initialQuantities = UNIT_ROWS.reduce((acc, row) => {
 }, {});
 
 const HirePanel = () => {
-  const { state, applyUpdates } = useGameState();
+  const { state } = useGameState();
   const [quantities, setQuantities] = useState(initialQuantities);
 
   const isVampire = state?.race === 'vampire';
@@ -109,7 +111,7 @@ const HirePanel = () => {
   const hire = useCallback(async (row) => {
     const amount = Math.max(0, parseInt(quantities[row.key], 10) || 0);
     if (amount <= 0) {
-      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Enter a valid quantity', 'error');
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Enter a valid quantity', 'error');
       return;
     }
 
@@ -123,28 +125,24 @@ const HirePanel = () => {
       });
 
       if (res.error) {
-        if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(res.error, 'error');
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast(res.error, 'error');
         return;
       }
 
-      if (res.updates && window.applyServerUpdates) {
-        window.applyServerUpdates(res.updates);
-      } else if (res.updates) {
-        applyUpdates(res.updates, 'hire');
-      }
+      if (res.updates) applyGameMutation(res.updates);
 
       setQuantities((prev) => ({ ...prev, [row.key]: '' }));
-      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(`Hired ${amount} ${row.label.toLowerCase()}`, 'success');
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast(`Hired ${amount} ${row.label.toLowerCase()}`, 'success');
     } catch (err) {
       console.error('[hire] failed:', err);
-      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Hire failed', 'error');
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Hire failed', 'error');
     }
-  }, [applyUpdates, quantities]);
+  }, [quantities]);
 
   const fire = useCallback(async (row) => {
     const amount = Math.max(0, parseInt(quantities[row.key], 10) || 0);
     if (amount <= 0) {
-      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Enter a valid quantity', 'error');
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Enter a valid quantity', 'error');
       return;
     }
 
@@ -158,23 +156,19 @@ const HirePanel = () => {
       });
 
       if (res.error) {
-        if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(res.error, 'error');
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast(res.error, 'error');
         return;
       }
 
-      if (res.updates && window.applyServerUpdates) {
-        window.applyServerUpdates(res.updates);
-      } else if (res.updates) {
-        applyUpdates(res.updates, 'fire');
-      }
+      if (res.updates) applyGameMutation(res.updates);
 
       setQuantities((prev) => ({ ...prev, [row.key]: '' }));
-      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(`Fired ${amount} ${row.label.toLowerCase()}`, 'success');
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast(`Fired ${amount} ${row.label.toLowerCase()}`, 'success');
     } catch (err) {
       console.error('[fire] failed:', err);
-      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Fire failed', 'error');
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Fire failed', 'error');
     }
-  }, [applyUpdates, quantities]);
+  }, [quantities]);
 
   useEffect(() => {
     setQuantities((prev) => {

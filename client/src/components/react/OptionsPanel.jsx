@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from '../../utils/toast.js';
 
 const API = (path, opts = {}) => {
   const token = localStorage.getItem('narmir_token');
@@ -318,9 +319,7 @@ const OptionsPanel = () => {
   };
 
   const requestVacation = () => {
-    if (typeof window !== 'undefined' && typeof window.toast === 'function') {
-      window.toast("Vacation mode is currently disabled by admin", "warn");
-    }
+    toast("Vacation mode is currently disabled by admin", "warn");
   };
 
   const initiateRebirth = () => {

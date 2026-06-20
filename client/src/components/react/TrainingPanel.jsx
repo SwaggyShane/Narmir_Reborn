@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useGameState } from '../../hooks/useGameState';
 import { apiCall } from '../../utils/api.js';
+import { fmt } from "../../utils/fmt";
+import { applyGameMutation } from '../../utils/gameMutations.js';
 
 const TROOP_TYPES = ['fighters', 'rangers', 'clerics', 'mages', 'thieves', 'ninjas'];
 
@@ -111,17 +113,16 @@ const TrainingPanel = () => {
     });
     const capacity = (state?.bld_training || 0) * 100;
     if (total > capacity) {
-      return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(`Allocated ${fmt(total)} but only have ${fmt(capacity)} training capacity`, 'error');
+      return toast(`Allocated ${fmt(total)} but only have ${fmt(capacity)} training capacity`, 'error');
     }
     const result = await apiCall('/api/kingdom/training-allocation', {
       method: 'POST',
       body: { allocation: alloc },
     });
-    if (result.error) return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(result.error, 'error');
-    window.applyGameMutation?.({ training_allocation: alloc }, { reason: 'training-allocation' });
-    window.syncUI?.();
+    if (result.error) return toast(result.error, 'error');
+    applyGameMutation({ training_allocation: alloc }, { reason: 'training-allocation' });
     refreshTrainingUi();
-    window.toast('Training allocation saved', 'success');
+    toast('Training allocation saved', 'success');
   };
   const releaseAllTraining = async () => {
     TROOP_TYPES.forEach((unit) => setTrainingValue(unit, 0));
@@ -129,11 +130,10 @@ const TrainingPanel = () => {
       method: 'POST',
       body: { allocation: {} },
     });
-    if (result.error) return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(result.error, 'error');
-    window.applyGameMutation?.({ training_allocation: {} }, { reason: 'training-allocation' });
-    window.syncUI?.();
+    if (result.error) return toast(result.error, 'error');
+    applyGameMutation({ training_allocation: {} }, { reason: 'training-allocation' });
     refreshTrainingUi();
-    window.toast('All training released', 'success');
+    toast('All training released', 'success');
   };
   useEffect(() => {
     loadTrainingAllocation();

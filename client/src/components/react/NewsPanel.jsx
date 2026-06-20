@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { apiCall } from '../../utils/api';
 import { useGameState, useGameMutationEvents } from '../../hooks/useGameState';
 import { replayWarReport } from '../../actions/replayWarReport';
 import { repairMojibake } from '../../utils/repairMojibake';
@@ -60,8 +61,7 @@ const NewsPanel = () => {
 
   const loadNews = useCallback(async () => {
     try {
-      if (!window.apiCall) return;
-      const items = await window.apiCall('GET', '/api/kingdom/news/list');
+      const items = await apiCall('GET', '/api/kingdom/news/list');
       if (!Array.isArray(items)) return;
 
       setNewsItems(items);
@@ -80,8 +80,7 @@ const NewsPanel = () => {
   }, []);
 
   const clearNews = useCallback(async () => {
-    if (!window.apiCall) return;
-    const result = await window.apiCall('DELETE', '/api/kingdom/news/clear');
+    const result = await apiCall('DELETE', '/api/kingdom/news/clear');
     if (result?.error) {
       console.error('[NewsPanel] Error clearing news:', result.error);
       return;

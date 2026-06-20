@@ -34,6 +34,7 @@ import ForumSectionReact from "./components/forum/ForumSection.jsx";
 import "./css/forum.css";
 import ResourceStripReact from "./components/react/ResourceStrip.jsx";
 import { repairMojibake } from "./utils/repairMojibake.js";
+import { fmt } from "./utils/fmt.js";
 
 // API call helper for making authenticated requests from vanilla JS
 //
@@ -86,14 +87,6 @@ console.log("[react] main.js execution started at", new Date().toISOString());
 
 export const gameState = gameStateManager.getMutableState();
 window.gameState = gameState;
-window.toast = window.toast || ((message, type = "info") => {
-  const level = type === "error" ? "error" : type === "warn" || type === "warning" ? "warn" : "log";
-  console[level](`[toast:${type}]`, message);
-});
-window.fmt = window.fmt || ((value) => {
-  const num = Number(value || 0);
-  return Number.isFinite(num) ? Math.round(num).toLocaleString() : "0";
-});
 
 const PANEL_ALIASES = {
   attack: "warfare",
@@ -141,7 +134,7 @@ function setActivePanels(rawTab, activeTab) {
   }
 }
 
-window.syncUI = () => {
+const syncUI = () => {
   const sourceState = window.gameState || window.state || {};
   const kingdomName = repairDisplayText(sourceState.kingdomName || sourceState.name || "My Kingdom");
   const kingdomOwner = repairDisplayText(sourceState.username || sourceState.owner_name || sourceState.owner || kingdomName);
@@ -186,7 +179,7 @@ window.switchTab = (tabName) => {
     window.location.hash = rawTab;
   }
 
-  window.syncUI?.();
+  syncUI();
 };
 
 // Initialize game state manager with current state
@@ -200,37 +193,24 @@ export function initGameStateManager() {
   }
 }
 
-// WRAP vanilla JS applyServerUpdates to sync metrics to gameStateManager
-// Guard against HMR re-wrapping to prevent infinite recursion
-if (!window._applyServerUpdatesWrapped) {
-  const originalApplyServerUpdates = window.applyServerUpdates;
-  window.applyServerUpdates = function(updates, context = {}) {
-    if (!updates) return;
+// Apply a server payload into the shared game state and refresh the legacy shell
+function applyServerUpdatesToGame(updates, context = {}) {
+  if (!updates) return;
 
-    // Let the legacy normalizer update window.state first, then snapshot the full state.
-    if (originalApplyServerUpdates) {
-      originalApplyServerUpdates(updates);
-    }
+  const sourceState = window.state || window.gameState;
+  const normalizedState = sourceState
+    ? { ...sourceState, population: sourceState.population ?? sourceState.pop }
+    : updates;
+  gameStateManager.applyUpdates(normalizedState, {
+    reason: context.reason || 'server-updates',
+    payload: updates,
+  });
 
-    const sourceState = window.state || window.gameState;
-    const normalizedState = sourceState
-      ? { ...sourceState, population: sourceState.population ?? sourceState.pop }
-      : updates;
-    gameStateManager.applyUpdates(normalizedState, {
-      reason: context.reason || 'server-updates',
-      payload: updates,
-    });
-
-    // Keep non-React legacy surfaces refreshed during the migration.
-    try {
-      if (typeof window.syncUI === "function") {
-        window.syncUI();
-      }
-    } catch (error) {
-      console.error("[UI] Error during syncUI execution:", error);
-    }
-  };
-  window._applyServerUpdatesWrapped = true;
+  try {
+    syncUI();
+  } catch (error) {
+    console.error("[UI] Error during syncUI execution:", error);
+  }
 }
 
 window.applyGameMutation = (resultOrUpdates, context = {}) => {
@@ -243,13 +223,8 @@ window.applyGameMutation = (resultOrUpdates, context = {}) => {
   const updates = resultOrUpdates.updates
     || resultOrUpdates.kUpdates
     || (directUpdateKeys.some(key => resultOrUpdates[key] !== undefined) ? resultOrUpdates : null);
-  if (updates && typeof window.applyServerUpdates === 'function') {
-    window.applyServerUpdates(updates, context);
-  } else if (updates) {
-    gameStateManager.applyUpdates(updates, {
-      reason: context.reason || 'mutation',
-      payload: updates,
-    });
+  if (updates) {
+    applyServerUpdatesToGame(updates, context);
   }
   return resultOrUpdates;
 };
