@@ -37,6 +37,18 @@ import { openRaceLore as openRaceLoreAction } from "./actions/openRaceLore.js";
 import { replayWarReport as replayWarReportAction } from "./actions/replayWarReport.js";
 import { showHeroLore as showHeroLoreAction } from "./actions/showHeroLore.js";
 import { openKingdomProfile as openKingdomProfileAction } from "./actions/openKingdomProfile.js";
+import {
+  initLoginModal as initLoginModalImpl,
+  showLoginModal as showLoginModalImpl,
+  hideLoginModal as hideLoginModalImpl,
+  showPasswordReset as showPasswordResetImpl,
+  closeRegistrationModal as closeRegistrationModalImpl,
+  backToRaceSelection as backToRaceSelectionImpl,
+  updatePasswordRequirements as updatePasswordRequirementsImpl,
+  clearToken as clearTokenImpl,
+  doLogin as doLoginImpl,
+  doRegister as doRegisterImpl,
+} from "./actions/authModal.js";
 import { openLoreModal as openLoreModalImpl, closeLoreModal as closeLoreModalImpl } from "./utils/loreModal.js";
 import { closeKingdomProfile as closeKingdomProfileImpl } from "./utils/kingdomProfileModal.js";
 import { applyNavLayout as applyNavLayoutImpl } from "./utils/applyNavLayout.js";
@@ -52,6 +64,16 @@ window.__openRaceLoreImpl = openRaceLoreAction;
 window.__replayWarReportImpl = replayWarReportAction;
 window.__showHeroLoreImpl = showHeroLoreAction;
 window.__openKingdomProfileImpl = openKingdomProfileAction;
+window.__initLoginModalImpl = initLoginModalImpl;
+window.__showLoginModalImpl = showLoginModalImpl;
+window.__hideLoginModalImpl = hideLoginModalImpl;
+window.__showPasswordResetImpl = showPasswordResetImpl;
+window.__closeRegistrationModalImpl = closeRegistrationModalImpl;
+window.__backToRaceSelectionImpl = backToRaceSelectionImpl;
+window.__updatePasswordRequirementsImpl = updatePasswordRequirementsImpl;
+window.__clearTokenImpl = clearTokenImpl;
+window.__doLoginImpl = doLoginImpl;
+window.__doRegisterImpl = doRegisterImpl;
 window.__closeKingdomProfileImpl = closeKingdomProfileImpl;
 window.__openLoreModalImpl = openLoreModalImpl;
 window.__closeLoreModalImpl = closeLoreModalImpl;
