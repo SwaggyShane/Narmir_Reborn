@@ -19748,11 +19748,9 @@
 
 
       function closeKingdomProfile() {
-
-        const modal = document.getElementById("kingdom-profile-modal");
-
-        if (modal) modal.style.display = "none";
-
+        if (typeof window.__closeKingdomProfileImpl === "function") {
+          return window.__closeKingdomProfileImpl();
+        }
       }
 
 
@@ -19762,45 +19760,15 @@
 
 
       function openLoreModal(title, msg, isHtml) {
-
-        var modal = document.getElementById("lore-entry-modal");
-
-        var content = document.getElementById("lore-entry-content");
-
-        if (modal) modal.style.display = "flex";
-
-        var body = isHtml ? msg : escHtml(msg).replace(/\n/g, "<br>");
-
-        if (content)
-
-          content.innerHTML =
-
-            '<div style="text-align:center;margin-bottom:20px">' +
-
-            '<h2 style="color:var(--gold);margin:0 0 4px;font-size:20px">' +
-
-            escHtml(title) +
-
-            "</h2>" +
-
-            "</div>" +
-
-            '<div style="font-size:14px;color:var(--text2);line-height:1.6;padding:12px;background:var(--bg3);border-radius:var(--radius);border:1px solid var(--border)">' +
-
-            body +
-
-            "</div>";
-
+        if (typeof window.__openLoreModalImpl === "function") {
+          return window.__openLoreModalImpl(title, msg, isHtml);
+        }
       }
 
-
-
       function closeLoreModal() {
-
-        const modal = document.getElementById("lore-entry-modal");
-
-        if (modal) modal.style.display = "none";
-
+        if (typeof window.__closeLoreModalImpl === "function") {
+          return window.__closeLoreModalImpl();
+        }
       }
 
 

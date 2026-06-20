@@ -2,6 +2,7 @@ import { apiCall } from '../utils/api.js';
 import { fmt } from '../utils/fmt.js';
 import { toast } from '../utils/toast.js';
 import { repairMojibake } from '../utils/repairMojibake.js';
+import { openLoreModal } from '../utils/loreModal.js';
 
 let cachedHeroClasses = null;
 
@@ -37,8 +38,6 @@ export async function showHeroLore(heroName) {
   if (!hero) return toast('Hero details not found.', 'error');
 
   const portraitFn = typeof window !== 'undefined' ? window.heroPortrait : null;
-  const modalFn = typeof window !== 'undefined' ? window.openLoreModal : null;
-  if (typeof modalFn !== 'function') return;
 
   const html =
     '<div style="margin-bottom:20px; text-align:center;">' +
@@ -83,5 +82,5 @@ export async function showHeroLore(heroName) {
     '</div>' +
     '</div>';
 
-  modalFn(hero.name + ' Class Lore', html, true);
+  openLoreModal(hero.name + ' Class Lore', html, true);
 }
