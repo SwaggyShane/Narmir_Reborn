@@ -14137,55 +14137,13 @@
 
         vampire: "Night combat specialization",
 
-      };
+      };      var worldMapData = [];
 
-
-
-      var worldMapData = [];
-
-
-
-      async function loadWorldMap() {
-
-        try {
-
-          var container = document.getElementById("world-map-container");
-
-          if (container)
-
-            container.innerHTML =
-
-              '<div style="padding:40px;text-align:center;color:var(--text3)">Scanning the horizon...</div>';
-
-
-
-          var data = await apiCall("GET", "/api/kingdom/world-map");
-
-          if (data.error) throw new Error(data.error);
-
-          worldMapData = data.kingdoms || (Array.isArray(data) ? data : []);
-
-          renderWorldMap(worldMapData, data.tradeRoutes || []);
-
-          renderRegionLegend();
-
-        } catch (err) {
-
-          console.error("World map fail:", err);
-
-          container = document.getElementById("world-map-container");
-
-          if (container)
-
-            container.innerHTML =
-
-              '<div style="padding:40px;text-align:center;color:var(--red)">Failed to load world map. <button class="btn" onclick="loadWorldMap()" style="margin-top:10px">Retry</button></div>';
-
+      function loadWorldMap() {
+        if (typeof window.__loadWorldMapImpl === "function") {
+          return window.__loadWorldMapImpl();
         }
-
       }
-
-
 
       function renderRegionLegend() {
 
@@ -22528,6 +22486,7 @@
   </body>
 
 </html>
+
 
 
 
