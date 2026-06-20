@@ -70,7 +70,8 @@ const BountiesPanel = () => {
       }
       window.toast?.(res.message, 'success');
       if (window.state) window.state.gold -= parsedAmount;
-      if (window.updateTopStats) window.updateTopStats();
+      if (window.gameState) window.gameState.gold = (window.gameState.gold || 0) - parsedAmount;
+      window.syncUI?.();
       setAmount('');
       setSelectedTarget('');
       await fetchBounties();
