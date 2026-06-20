@@ -9320,144 +9320,6 @@
 
       }
 
-
-
-      async function loadRankings(forceRefresh) {
-
-        try {
-
-          var el = document.getElementById("rankings-list");
-
-          if (el)
-
-            el.innerHTML =
-
-              '<tr><td colspan="8" style="color:var(--text3);text-align:center;padding:24px 0">Loading rankings...</td></tr>';
-
-
-
-          // Check cache
-
-          if (!forceRefresh && rankingsCache && rankingsCache.length > 0) {
-
-            console.log("Using cached rankings");
-
-            renderRankingsPanel(rankingsCache);
-
-            return;
-
-          }
-
-
-
-          var data = await apiCall("GET", "/api/kingdom/rankings");
-
-          var rankings = data.rankings || [];
-
-
-
-          // If auth failed, retry once
-
-          if (
-
-            !Array.isArray(rankings) &&
-
-            data.error &&
-
-            data.error.includes("auth")
-
-          ) {
-
-            await new Promise(function (r) {
-
-              setTimeout(r, 500);
-
-            });
-
-            data = await apiCall("GET", "/api/kingdom/rankings");
-
-            rankings = data.rankings || [];
-
-          }
-
-
-
-          rankingsCache = rankings;
-
-          if (document.getElementById("bounty-target-select"))
-
-            populateBountyDropdown();
-
-          if (!Array.isArray(rankings) || rankings.length === 0) {
-
-            if (el)
-
-              el.innerHTML =
-
-                '<tr><td colspan="8" style="color:var(--text3);text-align:center;padding:24px 0">No rankings data found. Try Refresh.</td></tr>';
-
-          }
-
-          targets = rankings
-
-            .filter(function (r) {
-
-              return r.id !== state.kingdomId;
-
-            })
-
-            .map(function (r) {
-
-              return {
-
-                id: r.id,
-
-                name: r.name || "Unknown",
-
-                race: r.race || "human",
-
-                rank: r.rank || "?",
-
-                land: r.land || 0,
-
-                population: r.population || 0,
-
-                fighters: r.fighters || 0,
-
-                mages: r.mages || 0,
-
-                level: r.level || 1,
-
-                is_ai: r.is_ai || 0,
-
-              };
-
-            });
-
-          filterWarfareTargetsUnified("", "atk-target-list-w");
-
-          filterWarfareTargetsUnified("", "wsp-target-list-w");
-
-          filterWarfareTargetsUnified("", "wcov-target-list-w");
-
-          renderTargets(targets, "target-list", "selectTarget");
-
-          renderTargets(targets, "covert-target-list", "selectCovertTarget");
-
-          renderTargets(targets, "trade-target-list", null);
-
-          renderSpellTargets(targets);
-
-          renderRankingsPanel(rankings);
-
-        } catch (e) {
-
-          console.error("Rankings fail:", e);
-
-        }
-
-      }
-
       function filterRankings(q) {
 
         if (currentRankType === "kingdoms") {
@@ -24920,6 +24782,8 @@
   </body>
 
 </html>
+
+
 
 
 
