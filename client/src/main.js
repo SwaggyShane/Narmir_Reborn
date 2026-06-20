@@ -55,6 +55,7 @@ import {
 } from "./actions/economyTrades.js";
 import { loadWorldMap as loadWorldMapAction } from "./actions/loadWorldMap.js";
 import { renderRegionLegend as renderRegionLegendAction, highlightRegion as highlightRegionAction } from "./actions/worldMapLegend.js";
+import { showMapKingdomCard as showMapKingdomCardAction } from "./actions/showMapKingdomCard.js";
 import { loadWarfarePanel as loadWarfarePanelAction } from "./actions/loadWarfarePanel.js";
 import { applyServerUpdates as applyServerUpdatesAction } from "./utils/gameMutations.js";
 import { bindGeneralSocketHandlers as bindGeneralSocketHandlersImpl } from "./utils/socketHandlers.js";
@@ -100,6 +101,7 @@ window.__declineTradeImpl = declineTradeAction;
 window.__loadWorldMapImpl = loadWorldMapAction;
 window.__renderRegionLegendImpl = renderRegionLegendAction;
 window.__highlightRegionImpl = highlightRegionAction;
+window.__showMapKingdomCardImpl = showMapKingdomCardAction;
 window.__loadWarfarePanelImpl = loadWarfarePanelAction;
 window.__applyServerUpdatesImpl = applyServerUpdatesAction;
 window.__bindGeneralSocketHandlersImpl = bindGeneralSocketHandlersImpl;

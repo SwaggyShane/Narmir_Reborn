@@ -13112,120 +13112,12 @@
         return null;
       }
       function showMapKingdomCard(id) {
-
-        var k = worldMapData.find(function (k) {
-
-          return k.id === id;
-
-        });
-
-        if (!k) return;
-
-        var card = document.getElementById("map-kingdom-card");
-
-        var nameEl = document.getElementById("mkc-name");
-
-        var bodyEl = document.getElementById("mkc-body");
-
-        var actEl = document.getElementById("mkc-actions");
-
-        if (!card) return;
-
-        card.style.display = "block";
-
-        var meta = REGION_META[k.race] || {};
-
-        nameEl.innerHTML =
-
-          (RACE_ICONS[k.race] || "ðŸ‘¤") +
-
-          " " +
-
-          escHtml(k.name) +
-
-          (k.is_ai
-
-            ? ' <span style="font-size:10px;color:var(--text3)">AI</span>'
-
-            : "");
-
-        bodyEl.innerHTML =
-
-          '<div style="font-size:12px;color:var(--text3);margin-bottom:8px">' +
-
-          '<span style="color:' +
-
-          (meta.stroke || "#fff") +
-
-          '">' +
-
-          (meta.name || k.region || "â€�") +
-
-          "</span> Â· Level " +
-
-          (k.level || 1) +
-
-          " Â· Turn " +
-
-          (k.turn || 0) +
-
-          "</div>" +
-
-          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px">' +
-
-          '<div style="background:var(--bg3);border-radius:6px;padding:8px;text-align:center"><div style="color:var(--text3);font-size:10px">LAND</div><div style="color:var(--gold);font-weight:700">' +
-
-          fmtShort(k.land) +
-
-          "</div></div>" +
-
-          "</div>";
-
-        var isMe = k.id === state.kingdomId;
-
-        var hasTradingPost = (state.market_upgrades || {}).trading_post;
-
-        actEl.innerHTML = !isMe
-
-          ? '<button class="btn" style="font-size:11px;padding:4px 10px" onclick="openKingdomProfile(\'' +
-
-            escHtml(k.name) +
-
-            "')\">ðŸ‘¤ Profile</button>" +
-
-            '<button class="btn btn-red" style="font-size:11px;padding:4px 10px" onclick="targetFromRankings(' +
-
-            k.id +
-
-            ",'attack')\">âš�ï¸� Attack</button>" +
-
-            '<button class="btn btn-accent" style="font-size:11px;padding:4px 10px" onclick="targetFromRankings(' +
-
-            k.id +
-
-            ",'spells')\">âœ¨ Spell</button>" +
-
-            '<div style="text-align:center; margin-top:8px">' +
-
-            (hasTradingPost
-
-              ? '<button class="btn btn-gold" style="font-size:11px;padding:4px 10px; width:100%" onclick="establishTradeRoute(' +
-
-                k.id +
-
-                ')">ðŸ¤� Trade Route (10k GC)</button>'
-
-              : '<div style="font-size:10px; color:var(--red); border:1px solid var(--red); padding:4px; border-radius:4px">Trading Post required to establish routes</div>') +
-
-            "</div>"
-
-          : '<span style="font-size:12px;color:var(--accent1)">Your kingdom</span>';
-
+        if (typeof window.__showMapKingdomCardImpl === "function") {
+          return window.__showMapKingdomCardImpl(id);
+        }
+        return null;
       }
-
-
-
-      // â�€â�€ Race Lore Modal â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€
+Race Lore Modal â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€
 
 
 
@@ -20580,6 +20472,7 @@
   </body>
 
 </html>
+
 
 
 
