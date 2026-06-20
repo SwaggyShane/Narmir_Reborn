@@ -56,52 +56,6 @@ const StudiesPanel = () => {
     refreshMageUi();
   }, [studiesData?.research_allocation, refreshMageUi]);
 
-  useEffect(() => {
-    updateFocusPreview();
-  }, [studiesData, updateFocusPreview]);
-
-  const handleTabClick = useCallback((tabId) => {
-    setActiveTab(tabId);
-    if (tabId === "school") updateFocusPreview();
-  }, []);
-
-  const loadStudies = useCallback(async () => {
-    setIsRefreshing(true);
-    try {
-      await fetchStudiesData();
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [fetchStudiesData]);
-
-  const race = window.gameState?.race || 'human';
-  const researchAlloc = studiesData?.research_allocation || {};
-  const totalMages = Number(window.gameState?.mages || 0);
-  const allocatedMages = Number(researchAlloc.spellbook_mages || 0) + Number(researchAlloc.school_spellbook_mages || 0);
-  const availableMages = Math.max(0, totalMages - allocatedMages);
-
-  const getMageInputValue = (id) => parseInt(document.getElementById(id)?.value || '0', 10) || 0;
-  const setMageInputValue = (id, value) => {
-    const el = document.getElementById(id);
-    if (el) el.value = Math.max(0, value);
-    refreshMageUi();
-  };
-  const updateAllocationDisplay = useCallback(() => {
-    const spellbookEl = document.getElementById('mage-alloc-spellbook');
-    const schoolEl = document.getElementById('mage-alloc-school');
-    if (spellbookEl && schoolEl) {
-      setStudiesData(prev => ({
-        ...prev,
-        research_allocation: {
-          ...prev?.research_allocation,
-          spellbook_mages: Math.max(0, parseInt(spellbookEl.value, 10) || 0),
-          school_spellbook_mages: Math.max(0, parseInt(schoolEl.value, 10) || 0),
-        }
-      }));
-    }
-    refreshMageUi();
-  }, [refreshMageUi]);
-
   const updateFocusPreview = useCallback(() => {
     const DISC_COLS = {
       economy: "res_economy",
@@ -145,6 +99,52 @@ const StudiesPanel = () => {
     }
   }, []);
 
+  useEffect(() => {
+    updateFocusPreview();
+  }, [studiesData, updateFocusPreview]);
+
+  const handleTabClick = useCallback((tabId) => {
+    setActiveTab(tabId);
+    if (tabId === "school") updateFocusPreview();
+  }, [updateFocusPreview]);
+
+  const loadStudies = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await fetchStudiesData();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [fetchStudiesData]);
+
+  const race = window.gameState?.race || 'human';
+  const researchAlloc = studiesData?.research_allocation || {};
+  const totalMages = Number(window.gameState?.mages || 0);
+  const allocatedMages = Number(researchAlloc.spellbook_mages || 0) + Number(researchAlloc.school_spellbook_mages || 0);
+  const availableMages = Math.max(0, totalMages - allocatedMages);
+
+  const getMageInputValue = (id) => parseInt(document.getElementById(id)?.value || '0', 10) || 0;
+  const setMageInputValue = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.value = Math.max(0, value);
+    refreshMageUi();
+  };
+  const updateAllocationDisplay = useCallback(() => {
+    const spellbookEl = document.getElementById('mage-alloc-spellbook');
+    const schoolEl = document.getElementById('mage-alloc-school');
+    if (spellbookEl && schoolEl) {
+      setStudiesData(prev => ({
+        ...prev,
+        research_allocation: {
+          ...prev?.research_allocation,
+          spellbook_mages: Math.max(0, parseInt(spellbookEl.value, 10) || 0),
+          school_spellbook_mages: Math.max(0, parseInt(schoolEl.value, 10) || 0),
+        }
+      }));
+    }
+    refreshMageUi();
+  }, [refreshMageUi]);
+
   const saveResearchFocus = useCallback(async () => {
     const f1 = document.getElementById("focus-select-1")?.value;
     const f2 = document.getElementById("focus-select-2")?.value;
@@ -158,14 +158,14 @@ const StudiesPanel = () => {
     });
     const data = await result.json();
     if (data.error) {
-      window.toast?.(data.error, 'error');
+      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(data.error, 'error');
       return;
     }
     if (data.research_focus) {
       window.gameState = window.gameState || {};
       window.gameState.research_focus = data.research_focus;
       updateFocusPreview();
-      window.toast?.(`Research focus saved — ${data.research_focus.join(' & ')}`, 'success');
+      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(`Research focus saved — ${data.research_focus.join(' & ')}`, 'success');
     }
   }, [studiesData?.school_upgrades, updateFocusPreview]);
 
@@ -181,7 +181,7 @@ const StudiesPanel = () => {
     const spellbook = Math.max(0, getMageInputValue('mage-alloc-spellbook'));
     const school_spellbook = Math.max(0, getMageInputValue('mage-alloc-school'));
     if (spellbook + school_spellbook > totalMages) {
-      window.toast?.(`Allocated ${spellbook + school_spellbook} mages, but only have ${totalMages}`, 'error');
+      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(`Allocated ${spellbook + school_spellbook} mages, but only have ${totalMages}`, 'error');
       return;
     }
     const response = await fetch('/api/kingdom/school-allocation', {
@@ -191,13 +191,13 @@ const StudiesPanel = () => {
     });
     const data = await response.json();
     if (data.error) {
-      window.toast?.(data.error, 'error');
+      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(data.error, 'error');
       return;
     }
     if (data.ok) {
       await fetchStudiesData();
       refreshMageUi();
-      window.toast?.('Mage allocation saved successfully', 'success');
+      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast('Mage allocation saved successfully', 'success');
     }
   }, [fetchStudiesData, refreshMageUi, totalMages]);
 

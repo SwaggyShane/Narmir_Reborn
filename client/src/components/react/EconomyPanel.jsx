@@ -46,7 +46,7 @@ const EconomyPanel = () => {
         body: { tax },
       });
       if (result.error) {
-        if (window.toast) window.toast(result.error, 'error');
+        if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(result.error, 'error');
         return;
       }
       if (window.applyGameMutation) {
@@ -54,10 +54,10 @@ const EconomyPanel = () => {
       } else if (result.updates) {
         window.applyServerUpdates?.(result.updates, { reason: 'tax-update' });
       }
-      if (window.toast) window.toast('Tax rate locked', 'success');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Tax rate locked', 'success');
     } catch (err) {
       console.error('[tax] lock failed:', err);
-      if (window.toast) window.toast('Failed to save tax rate', 'error');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Failed to save tax rate', 'error');
     }
   };
   const setMaxValue = (inputId, type) => {
@@ -90,7 +90,7 @@ const EconomyPanel = () => {
   const loadTradeOffers = useCallback(async () => {
     const result = await apiCall('/api/kingdom/economy/trade/list');
     if (result?.error) {
-      window.toast?.(result.error, 'error');
+      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(result.error, 'error');
       return;
     }
 
@@ -146,7 +146,7 @@ const EconomyPanel = () => {
     const listEl = document.getElementById('trade-routes-list');
     if (!listEl) return;
     if (res?.error) {
-      window.toast?.(`Failed to load trade routes: ${res.error}`, 'error');
+      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(`Failed to load trade routes: ${res.error}`, 'error');
       return;
     }
 
@@ -174,14 +174,14 @@ const EconomyPanel = () => {
 
   const sendTradeOffer = useCallback(async () => {
     const targetId = document.getElementById('trade-target-select')?.value;
-    if (!targetId) return window.toast?.('Select a target kingdom', 'error');
+    if (!targetId) return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast('Select a target kingdom', 'error');
 
     const offerItem = document.getElementById('trade-offer-item')?.value;
     const offerQty = parseInt(document.getElementById('trade-offer-qty')?.value, 10) || 0;
     const requestItem = document.getElementById('trade-request-item')?.value;
     const requestQty = parseInt(document.getElementById('trade-request-qty')?.value, 10) || 0;
     if (offerQty <= 0 || requestQty <= 0) {
-      window.toast?.('Enter quantities', 'error');
+      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast('Enter quantities', 'error');
       return;
     }
 
@@ -193,8 +193,8 @@ const EconomyPanel = () => {
         request: { [requestItem]: requestQty },
       },
     });
-    if (result?.error) return window.toast?.(result.error, 'error');
-    window.toast?.('Trade offer sent!', 'success');
+    if (result?.error) return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(result.error, 'error');
+    typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast('Trade offer sent!', 'success');
     await loadTradeOffers();
   }, [loadTradeOffers]);
 
@@ -203,11 +203,11 @@ const EconomyPanel = () => {
     try {
       const res = await apiCall('/api/kingdom/trade/clear-logs', { method: 'POST' });
       if (res.ok) {
-        window.toast?.('Trade logs cleared', 'success');
+        typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast('Trade logs cleared', 'success');
         await loadTradeOffers();
       }
     } catch (err) {
-      window.toast?.('Failed to clear logs', 'error');
+      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast('Failed to clear logs', 'error');
     }
   }, [loadTradeOffers]);
 
@@ -236,7 +236,7 @@ const EconomyPanel = () => {
     const tier = document.getElementById('merc-tier')?.value || 'rabble';
     const count = Number(document.getElementById('merc-count')?.value || 0);
     if (count <= 0) {
-      if (window.toast) window.toast('Enter a valid mercenary count', 'error');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Enter a valid mercenary count', 'error');
       return;
     }
 
@@ -246,7 +246,7 @@ const EconomyPanel = () => {
         body: { unitType, tier, count },
       });
       if (result.error) {
-        if (window.toast) window.toast(result.error, 'error');
+        if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(result.error, 'error');
         return;
       }
       if (window.applyGameMutation) {
@@ -254,17 +254,17 @@ const EconomyPanel = () => {
       } else if (result.updates) {
         window.applyServerUpdates?.(result.updates, { reason: 'hire-mercs' });
       }
-      if (window.toast) window.toast(`Hired ${result.hired?.count || count} mercenaries`, 'success');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(`Hired ${result.hired?.count || count} mercenaries`, 'success');
     } catch (err) {
       console.error('[economy] hire mercs failed:', err);
-      if (window.toast) window.toast('Failed to hire mercenaries', 'error');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Failed to hire mercenaries', 'error');
     }
   };
   const makeBankDeposit = async () => {
     const amount = Number(document.getElementById('bank-deposit-amount')?.value || 0);
     const termIndex = Number(document.getElementById('bank-deposit-term')?.value || 0);
     if (amount <= 0) {
-      if (window.toast) window.toast('Enter a valid deposit amount', 'error');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Enter a valid deposit amount', 'error');
       return;
     }
 
@@ -274,7 +274,7 @@ const EconomyPanel = () => {
         body: { amount, termIndex },
       });
       if (result.error) {
-        if (window.toast) window.toast(result.error, 'error');
+        if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(result.error, 'error');
         return;
       }
       if (window.applyGameMutation) {
@@ -282,10 +282,10 @@ const EconomyPanel = () => {
       } else if (result.updates) {
         window.applyServerUpdates?.(result.updates, { reason: 'bank-deposit' });
       }
-      if (window.toast) window.toast(result.message || 'Deposit successful', 'success');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(result.message || 'Deposit successful', 'success');
     } catch (err) {
       console.error('[economy] bank deposit failed:', err);
-      if (window.toast) window.toast('Failed to create bank deposit', 'error');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Failed to create bank deposit', 'error');
     }
   };
   const establishTradeRoute = async (targetId) => {
@@ -296,13 +296,13 @@ const EconomyPanel = () => {
         body: { targetId },
       });
       if (result.error) {
-        if (window.toast) window.toast(result.error, 'error');
+        if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(result.error, 'error');
         return;
       }
-      if (window.toast) window.toast(result.message || 'Trade route established', 'success');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(result.message || 'Trade route established', 'success');
     } catch (err) {
       console.error('[economy] establish trade route failed:', err);
-      if (window.toast) window.toast('Failed to establish trade route', 'error');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Failed to establish trade route', 'error');
     }
   };
   const handleEstablishTradeRoute = () => {

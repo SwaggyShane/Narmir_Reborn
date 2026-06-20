@@ -93,7 +93,7 @@ const StatusPanel = () => {
         body: { tax },
       });
       if (result.error) {
-        if (window.toast) window.toast(result.error, 'error');
+        if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(result.error, 'error');
         return;
       }
       if (window.applyGameMutation) {
@@ -101,10 +101,10 @@ const StatusPanel = () => {
       } else if (result.updates) {
         window.applyServerUpdates?.(result.updates, { reason: 'tax-update' });
       }
-      if (window.toast) window.toast('Tax rate locked', 'success');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Tax rate locked', 'success');
     } catch (err) {
       console.error('[tax] lock failed:', err);
-      if (window.toast) window.toast('Failed to save tax rate', 'error');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Failed to save tax rate', 'error');
     }
   };
 
@@ -256,7 +256,7 @@ const StatusPanel = () => {
         </div>
       </div>
 
-      <div className="three-col" id="status-grid">
+      <div className="status-grid" id="status-grid">
         <div className="card">
           <div className="card-title">
             Military &amp; support

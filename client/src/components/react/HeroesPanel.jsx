@@ -56,7 +56,7 @@ const HeroesPanel = () => {
 
   const fmt = useCallback((value) => Number(value || 0).toLocaleString(), []);
   const toast = useCallback((message, type = 'info') => {
-    if (window.toast) window.toast(message, type);
+    if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(message, type);
     else if (type === 'error') console.error(message);
     else console.log(message);
   }, []);

@@ -320,7 +320,7 @@ const OptionsPanel = () => {
   };
 
   const requestVacation = () => {
-    if (window.toast) {
+    if (typeof window !== 'undefined' && typeof window.toast === 'function') {
       window.toast("Vacation mode is currently disabled by admin", "warn");
     }
   };

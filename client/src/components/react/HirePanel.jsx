@@ -109,7 +109,7 @@ const HirePanel = () => {
   const hire = useCallback(async (row) => {
     const amount = Math.max(0, parseInt(quantities[row.key], 10) || 0);
     if (amount <= 0) {
-      if (window.toast) window.toast('Enter a valid quantity', 'error');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Enter a valid quantity', 'error');
       return;
     }
 
@@ -123,7 +123,7 @@ const HirePanel = () => {
       });
 
       if (res.error) {
-        if (window.toast) window.toast(res.error, 'error');
+        if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(res.error, 'error');
         return;
       }
 
@@ -134,17 +134,17 @@ const HirePanel = () => {
       }
 
       setQuantities((prev) => ({ ...prev, [row.key]: '' }));
-      if (window.toast) window.toast(`Hired ${amount} ${row.label.toLowerCase()}`, 'success');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(`Hired ${amount} ${row.label.toLowerCase()}`, 'success');
     } catch (err) {
       console.error('[hire] failed:', err);
-      if (window.toast) window.toast('Hire failed', 'error');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Hire failed', 'error');
     }
   }, [applyUpdates, quantities]);
 
   const fire = useCallback(async (row) => {
     const amount = Math.max(0, parseInt(quantities[row.key], 10) || 0);
     if (amount <= 0) {
-      if (window.toast) window.toast('Enter a valid quantity', 'error');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Enter a valid quantity', 'error');
       return;
     }
 
@@ -158,7 +158,7 @@ const HirePanel = () => {
       });
 
       if (res.error) {
-        if (window.toast) window.toast(res.error, 'error');
+        if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(res.error, 'error');
         return;
       }
 
@@ -169,10 +169,10 @@ const HirePanel = () => {
       }
 
       setQuantities((prev) => ({ ...prev, [row.key]: '' }));
-      if (window.toast) window.toast(`Fired ${amount} ${row.label.toLowerCase()}`, 'success');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast(`Fired ${amount} ${row.label.toLowerCase()}`, 'success');
     } catch (err) {
       console.error('[fire] failed:', err);
-      if (window.toast) window.toast('Fire failed', 'error');
+      if (typeof window !== 'undefined' && typeof window.toast === 'function') window.toast('Fire failed', 'error');
     }
   }, [applyUpdates, quantities]);
 

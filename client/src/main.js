@@ -98,6 +98,14 @@ console.log("[react] main.js execution started at", new Date().toISOString());
 
 export const gameState = gameStateManager.getMutableState();
 window.gameState = gameState;
+window.toast = window.toast || ((message, type = "info") => {
+  const level = type === "error" ? "error" : type === "warn" || type === "warning" ? "warn" : "log";
+  console[level](`[toast:${type}]`, message);
+});
+window.fmt = window.fmt || ((value) => {
+  const num = Number(value || 0);
+  return Number.isFinite(num) ? Math.round(num).toLocaleString() : "0";
+});
 
 const PANEL_ALIASES = {
   attack: "warfare",
@@ -297,10 +305,6 @@ window.applyGameMutation = (resultOrUpdates, context = {}) => {
   window.refreshActivePanel({ ...context, result: resultOrUpdates });
   return resultOrUpdates;
 };
-
-if (window.setGameStateObj) {
-  window.setGameStateObj(gameState);
-}
 
 const reactRoots = new Map();
 
@@ -511,7 +515,7 @@ window.takeTurn = async () => {
   if (canonicalTurnInProgress) return;
   if ((window.gameState?.turns_stored || 0) < 1) {
     const countdown = document.getElementById("regen-countdown")?.textContent || "25:00";
-    window.toast?.(`No turns available. Refills in ${countdown}`, "warning");
+    typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(`No turns available. Refills in ${countdown}`, "warning");
     return;
   }
 
@@ -523,7 +527,7 @@ window.takeTurn = async () => {
   try {
     const data = await apiCall("POST", "/api/kingdom/turn");
     if (data.error) {
-      window.toast?.(data.error, data.error.includes("No turns available") ? "warning" : "error");
+      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(data.error, data.error.includes("No turns available") ? "warning" : "error");
       console.error("[turn] error:", data.error);
       return;
     }
@@ -578,15 +582,15 @@ window.takeTurn = async () => {
       : "";
 
     if ((window.gameState?.food || 0) < 1000) {
-      window.toast?.(`Warning: Food levels are dangerously low!\n${buildStatus ? `${buildStatus}\n` : ""}${turnStatus}`, "warning");
+      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(`Warning: Food levels are dangerously low!\n${buildStatus ? `${buildStatus}\n` : ""}${turnStatus}`, "warning");
     } else if ((window.gameState?.gold || 0) < 1000) {
-      window.toast?.(`Warning: Gold reserves are almost empty!\n${buildStatus ? `${buildStatus}\n` : ""}${turnStatus}`, "warning");
+      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(`Warning: Gold reserves are almost empty!\n${buildStatus ? `${buildStatus}\n` : ""}${turnStatus}`, "warning");
     } else {
-      window.toast?.(buildStatus ? `${buildStatus}\n${turnStatus}` : turnStatus, "success");
+      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(buildStatus ? `${buildStatus}\n${turnStatus}` : turnStatus, "success");
     }
   } catch (error) {
     console.error("[turn] Error taking turn:", error);
-    window.toast?.("Failed to take turn: " + error.message, "error");
+    typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast("Failed to take turn: " + error.message, "error");
   } finally {
     canonicalTurnInProgress = false;
     if (btn && (window.gameState?.turns_stored || 0) > 0) btn.style.opacity = "1";

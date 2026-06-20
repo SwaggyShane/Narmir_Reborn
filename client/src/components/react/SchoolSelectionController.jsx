@@ -53,7 +53,7 @@ export default function SchoolSelectionController() {
     }
 
     // Show success message
-    if (window.toast) {
+    if (typeof window !== 'undefined' && typeof window.toast === 'function') {
       window.toast(`🔮 You have chosen the school of ${data.school.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}!`, 'success');
     }
   };

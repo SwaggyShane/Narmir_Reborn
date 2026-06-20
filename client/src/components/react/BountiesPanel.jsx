@@ -54,9 +54,9 @@ const BountiesPanel = () => {
 
   const handlePlaceBounty = async () => {
     const parsedAmount = parseInt(amount);
-    if (!selectedTarget) return window.toast?.('Select a target kingdom first', 'error');
-    if (!parsedAmount || parsedAmount < 1000) return window.toast?.('Minimum bounty is 1,000 GC', 'error');
-    if (parsedAmount > (window.state?.gold || 0)) return window.toast?.('Not enough gold', 'error');
+    if (!selectedTarget) return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast('Select a target kingdom first', 'error');
+    if (!parsedAmount || parsedAmount < 1000) return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast('Minimum bounty is 1,000 GC', 'error');
+    if (parsedAmount > (window.state?.gold || 0)) return typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast('Not enough gold', 'error');
 
     setPlacing(true);
     try {
@@ -65,10 +65,10 @@ const BountiesPanel = () => {
         body: { target_id: parseInt(selectedTarget), amount: parsedAmount },
       });
       if (res.error) {
-        window.toast?.(res.error, 'error');
+        typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(res.error, 'error');
         return;
       }
-      window.toast?.(res.message, 'success');
+      typeof window !== 'undefined' && typeof window.toast === 'function' && window.toast(res.message, 'success');
       if (window.state) window.state.gold -= parsedAmount;
       if (window.updateTopStats) window.updateTopStats();
       setAmount('');
