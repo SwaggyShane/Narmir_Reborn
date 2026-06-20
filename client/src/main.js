@@ -366,7 +366,7 @@ export const mountReactApps = () => {
 window.mountReactApps = mountReactApps;
 
 // Audio system
-window.playAchievementSound = () => {
+function playAchievementSound() {
   try {
     const audio = new Audio('/sound/achievement.mp3');
     audio.volume = 0.7;
@@ -377,7 +377,7 @@ window.playAchievementSound = () => {
   } catch (err) {
     console.debug('[audio] Error playing sound:', err.message);
   }
-};
+}
 
 let canonicalTurnInProgress = false;
 window.takeTurn = async () => {
@@ -431,7 +431,7 @@ window.takeTurn = async () => {
           completedBuildingsMsg = periodIndex !== -1 ? endPart.substring(0, periodIndex) : endPart;
         }
         if (ev.message?.includes("ACHIEVEMENT UNLOCKED")) {
-          window.playAchievementSound?.();
+          playAchievementSound();
         }
       }
       if (completedBuildingsMsg && window.getCompletionBlurb) {
