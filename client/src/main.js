@@ -98,6 +98,14 @@ console.log("[react] main.js execution started at", new Date().toISOString());
 
 export const gameState = gameStateManager.getMutableState();
 window.gameState = gameState;
+window.toast = window.toast || ((message, type = "info") => {
+  const level = type === "error" ? "error" : type === "warn" || type === "warning" ? "warn" : "log";
+  console[level](`[toast:${type}]`, message);
+});
+window.fmt = window.fmt || ((value) => {
+  const num = Number(value || 0);
+  return Number.isFinite(num) ? Math.round(num).toLocaleString() : "0";
+});
 
 const PANEL_ALIASES = {
   attack: "warfare",

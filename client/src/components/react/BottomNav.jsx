@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { gameState } from '../../main.js';
 
 const BottomNav = () => {
   const [isAdmin, setIsAdmin] = useState(false);
