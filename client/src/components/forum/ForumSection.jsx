@@ -54,6 +54,14 @@ const ForumSection = React.memo(function ForumSection({ user: propUser, standalo
     loadBoards();
   }, [propUser, loadBoards]);
 
+  useEffect(() => {
+    const handleRefresh = () => {
+      loadBoards();
+    };
+    window.addEventListener('narmir:forum-refresh', handleRefresh);
+    return () => window.removeEventListener('narmir:forum-refresh', handleRefresh);
+  }, [loadBoards]);
+
   const handleSelectBoard = useCallback((board) => {
     setSelectedBoard(board);
     setView('topics');

@@ -25,8 +25,8 @@ export function initSocketHandlers(socket) {
     loadKingdom().catch(() => {});
   });
 
-  socket.on('event:forum_new', () => window.loadForum?.());
-  socket.on('event:forum_new_post', () => window.loadForum?.());
+  socket.on('event:forum_new', () => window.dispatchEvent(new CustomEvent('narmir:forum-refresh')));
+  socket.on('event:forum_new_post', () => window.dispatchEvent(new CustomEvent('narmir:forum-refresh')));
 
   socket.on('event:alliance_updated', () => {
     window.dispatchEvent(new CustomEvent('narmir:alliance-refresh'));
@@ -34,7 +34,7 @@ export function initSocketHandlers(socket) {
   });
 
   socket.on('event:world_updated', () => loadWorldMap().catch(() => {}));
-  socket.on('event:active_counts', () => window.updateActiveCountDisplay?.());
+  socket.on('event:active_counts', () => window.dispatchEvent(new CustomEvent('narmir:active-counts-refresh')));
 
   socket.on('event:chat_clear', () => {
     const list = document.getElementById('global-chat-messages');
