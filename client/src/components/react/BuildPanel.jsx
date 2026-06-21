@@ -654,7 +654,7 @@ const BuildPanel = () => {
               <div className="text-[12px] text-[var(--text3)]">
                 Engineers: <span id="b-engineers-available" style={{ color: 'var(--text)' }}>{fmt(totalEngineers)}</span> available ·
                 <span id="b-total-assigned" style={{ color: 'var(--gold)', margin: '0 4px' }}>{fmt(allocatedEngineers)}</span> assigned ·
-                <span id="b-total-unassigned" style={{ color: remainingEngineers > 0 ? 'var(--green)' : 'var(--red)', margin: '0 4px' }}>{fmt(remainingEngineers)}</span> unassigned
+                <span id="b-total-unassigned" style={{ color: allocatedEngineers > totalEngineers ? 'var(--red)' : 'var(--green)', margin: '0 4px' }}>{fmt(remainingEngineers)}</span> unassigned
               </div>
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-[var(--text3)]">
                 Resources:
@@ -688,8 +688,7 @@ const BuildPanel = () => {
           <div className="mb-3 border-b border-white/10 pb-3 pt-3">
             <button
               onClick={() => setShowBuildingRef(!showBuildingRef)}
-              className="w-full rounded-lg border-2 border-[var(--orange)] px-3 py-2 text-left transition-colors hover:bg-white/5"
-              style={{ background: 'none', marginBottom: showBuildingRef ? '8px' : '0' }}
+              className={`w-full rounded-lg border-2 border-[var(--orange)] bg-transparent px-3 py-2 text-left transition-colors hover:bg-white/5 ${showBuildingRef ? 'mb-2' : 'mb-0'}`}
             >
               <div className="flex items-center gap-2 text-[13px] font-semibold text-[var(--text)]">
                 <span style={{ fontSize: '10px' }}>{showBuildingRef ? '▼' : '▶'}</span>
@@ -704,7 +703,7 @@ const BuildPanel = () => {
                     <div key={b.id} className="rounded-lg border border-white/10 bg-[var(--bg3)] p-2.5">
                       <div className="mb-1 font-semibold text-[var(--gold)]">{b.name}</div>
                       <div>{formatReq(b)}{b.land ? ` | 📍 ${b.land} Land` : ''}</div>
-                      <div style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '4px' }}>🪵 {b.wood} · 🪨 {b.stone} · 🔗 {b.iron}</div>
+                      <div className="mt-1 text-[10px] text-[var(--text3)]">🪵 {b.wood} · 🪨 {b.stone} · 🔗 {b.iron}</div>
                     </div>
                   ) : null;
                 })}
