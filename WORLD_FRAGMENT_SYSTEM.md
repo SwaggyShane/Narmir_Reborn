@@ -352,16 +352,18 @@ if (effect && effect.name === 'Impenetrable Box') {
 
 - [x] World fragment bonuses configuration (250+ effects)
 - [x] Database schema (fragment_bonuses column)
-- [x] Fragment bonus manager utility
-- [x] Backend API endpoints (get-buildings, confirm-assignment)
-- [x] Frontend components (Modal, Panel)
+- [x] Fragment bonus manager utility (`game/fragment-bonus-manager.js`)
+- [x] Backend API endpoints (get-buildings, confirm-assignment, assign-hybrid-blueprint)
+- [x] Vanilla JS frontend (Library panel + assign flow in `client/index.html`)
 - [x] Styling (neon theme, responsive design)
-- [ ] Integrate into building calculations (farms, walls, etc.)
-- [ ] Add special mechanics (immovable maps, reflection, etc.)
-- [ ] Display bonuses in building info panels
-- [ ] Add fragment bonus info to kingdom status display
-- [ ] Test with all 10 fragments × ~25 buildings
-- [ ] Create admin commands for testing
+- [x] Integrate into building calculations — housing, barracks, schools, libraries, mage towers wired in `game/engine.js`
+- [ ] React frontend components (`HybridBlueprintPanel.jsx`, `HybridBlueprintModal.jsx`) — pending vanilla → React migration
+- [ ] Add special mechanics (immovable maps, void randomness, reflection) — partial; varies by fragment
+- [ ] Integrate fragment bonuses into combat calculations (walls, defense, war machines)
+- [ ] Display applied fragment bonuses in building info panels
+- [ ] Add fragment bonus summary to kingdom status display
+- [ ] Test coverage: all 10 fragments × ~25 buildings
+- [ ] Admin commands for testing fragment application
 
 ## Example Flow
 

@@ -1,5 +1,22 @@
 # Building System Implementation Plan
 
+## Implementation Status
+
+| Component | Status |
+|---|---|
+| Building tier structure (costs/times) | ✅ Implemented (`game/config.js` — `BUILDING_TIERS`, `BUILDING_COST`, etc.) |
+| Engineer level field in DB | ✅ Schema exists (`kingdoms.engineer_level`) |
+| `UNIT_LEVEL_25_BONUSES` in config | ✅ Implemented (`game/config.js:1928`) |
+| `ENGINEER_LEVELS` progression config | ❌ Not implemented — field exists but no leveling table |
+| Engineer XP gain on build complete | ❌ Not implemented |
+| `calculateBuildTime` / `calculateBuildCost` | ❌ Not implemented as standalone functions |
+| Level 25 race milestone bonuses (active) | ⚠️ Config defined, not enforced in turn processing |
+| React BuildPanel | ✅ `client/src/components/react/BuildPanel.jsx` exists |
+
+**Next priority:** `ENGINEER_LEVELS` config + XP gain on completion; level-25 bonus enforcement in turn.js/engine.js.
+
+---
+
 ## Overview
 Implement an 8-tier building system with progressive costs and times. Engineer level affects build speed. Racial and world fragment modifiers apply.
 
