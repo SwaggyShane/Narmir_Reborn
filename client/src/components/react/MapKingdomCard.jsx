@@ -1,5 +1,5 @@
-import { gameStateManager } from '../GameStateManager.js';
-import { fmtShort } from '../utils/numberFormat.js';
+import { gameStateManager } from '../../GameStateManager.js';
+import { fmtShort } from '../../utils/numberFormat.js';
 
 const REGION_META = {
   dwarf: { name: 'The Iron Holds', stroke: '#c8962a' },
