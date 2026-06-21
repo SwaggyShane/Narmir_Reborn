@@ -1,5 +1,7 @@
 import { toast } from '../utils/toast.js';
 import { repairMojibake } from '../utils/repairMojibake.js';
+import { loadKingdom } from '../components/react/AuthModal.jsx';
+import { loadWorldMap } from '../components/react/WorldmapPanel.jsx';
 
 // Binds global socket event handlers once when the socket is ready.
 // Must NOT be called inside a React component — these handlers are app-wide
@@ -10,28 +12,28 @@ export function initSocketHandlers(socket) {
   socket.on('event:attack_received', (data) => {
     toast('⚔️ ' + repairMojibake(data?.from || 'Someone') + ' attacked your kingdom!', 'error');
     window.dispatchEvent(new CustomEvent('narmir:news-refresh'));
-    window.loadKingdom?.();
+    loadKingdom().catch(() => {});
   });
 
   socket.on('event:spell_received', () => {
     window.dispatchEvent(new CustomEvent('narmir:news-refresh'));
-    window.loadKingdom?.();
+    loadKingdom().catch(() => {});
   });
 
   socket.on('event:turn_update', () => {
     window.dispatchEvent(new CustomEvent('narmir:news-refresh'));
-    window.loadKingdom?.();
+    loadKingdom().catch(() => {});
   });
 
   socket.on('event:forum_new', () => window.loadForum?.());
   socket.on('event:forum_new_post', () => window.loadForum?.());
 
   socket.on('event:alliance_updated', () => {
-    window.loadAlliances?.();
-    window.loadKingdom?.();
+    window.dispatchEvent(new CustomEvent('narmir:alliance-refresh'));
+    loadKingdom().catch(() => {});
   });
 
-  socket.on('event:world_updated', () => window.loadWorldMap?.());
+  socket.on('event:world_updated', () => loadWorldMap().catch(() => {}));
   socket.on('event:active_counts', () => window.updateActiveCountDisplay?.());
 
   socket.on('event:chat_clear', () => {
