@@ -363,67 +363,74 @@ const MarketPanel = () => {
   };
 
   return (
-    <div id="market" className="panel" style={{ display: 'none' }}>
-      <div className="card" style={{ marginTop: 0, marginBottom: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-          <div className="card-title">âš–ï¸ Commodity Market</div>
-          <button className="base-btn" onClick={refreshMarket}>â†» Refresh Prices</button>
+    <div id="market" className="panel min-h-0 w-full overflow-y-auto px-4 pb-5" style={{ display: 'none' }}>
+      <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-white/10 bg-zinc-950/80 p-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <div className="card-title mb-1">⚖️ Commodity Market</div>
+          <div className="text-[13px] text-[var(--text3)]">
+            Buy and sell resources at live prices across the kingdom economy.
+          </div>
         </div>
-        <div style={{ background: 'rgba(244, 166, 35, 0.1)', border: '1px solid rgba(244, 166, 35, 0.2)', padding: '10px', borderRadius: '8px' }}>
-          <div style={{ fontSize: '14px', color: 'var(--text)', fontWeight: 700, marginBottom: '8px' }}>
-            âš–ï¸ Marketplace Trading
-          </div>
-          <div style={{ fontSize: '12px', color: 'var(--text2)', lineHeight: 1.5 }}>
-            Buy and sell resources at global prices.
-            <strong style={{ color: 'var(--gold)' }}> Price Volatility:</strong>
-            {' '}Constant trading shift prices in real-time. <br />
-            <strong style={{ color: 'var(--accent1)' }}>Prestige Bonus:</strong>
-            {' '}Elite kingdoms get +10% sell value on all commodities.
-          </div>
+        <button className="base-btn rounded-full px-3 py-1.5 text-[11px] font-semibold" onClick={refreshMarket}>
+          ↻ Refresh Prices
+        </button>
+      </div>
+
+      <div className="mb-4 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4">
+        <div className="mb-2 text-[14px] font-bold text-[var(--text)]">
+          ⚖️ Marketplace Trading
+        </div>
+        <div className="text-[12px] leading-5 text-[var(--text2)]">
+          Buy and sell resources at global prices.
+          <strong className="text-[var(--gold)]"> Price Volatility:</strong>
+          {' '}Constant trading shifts prices in real-time.
+          <br />
+          <strong className="text-[var(--accent1)]">Prestige Bonus:</strong>
+          {' '}Elite kingdoms get +10% sell value on all commodities.
         </div>
       </div>
 
-      <div id="market-list" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+      <div id="market-list" className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]">
         {loading && (
-          <div style={{ color: 'var(--text3)', padding: '40px', textAlign: 'center', gridColumn: '1/-1' }}>
+          <div className="col-span-full rounded-2xl border border-white/10 bg-zinc-950/70 p-10 text-center text-[var(--text3)]">
             Loading market data...
           </div>
         )}
 
         {!loading && prices.map((p) => (
-          <div key={p.id} className="card" style={{ margin: 0, border: '1px solid var(--border)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '24px' }}>{icons[p.id] || 'ðŸ“¦'}</span>
+          <div key={p.id} className="card m-0 border border-white/10">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-[24px]">{icons[p.id] || '📦'}</span>
                 <div>
-                  <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text)' }}>
+                  <div className="text-[16px] font-bold text-[var(--text)]">
                     {formatLabel(p.id)}
                   </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text3)' }}>
+                  <div className="text-[11px] text-[var(--text3)]">
                     Owned: <span style={{ color: 'var(--text)' }}>{fmt(ownedAmount(p.id))}</span>
                   </div>
                 </div>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--gold)' }}>
-                  {fmtPrice(p.current_price)} <span style={{ fontSize: '10px' }}>GC</span>
+              <div className="text-right">
+                <div className="text-[18px] font-bold text-[var(--gold)]">
+                  {fmtPrice(p.current_price)} <span className="text-[10px]">GC</span>
                 </div>
-                <div style={{ fontSize: '11px', color: 'var(--text3)' }}>Current Price</div>
+                <div className="text-[11px] text-[var(--text3)]">Current Price</div>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '15px' }}>
-              <div style={{ background: 'rgba(0, 255, 0, 0.05)', padding: '8px', borderRadius: '4px', textAlign: 'center' }}>
-                <div style={{ fontSize: '10px', color: 'var(--green)' }}>BUY</div>
-                <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)' }}>{fmtPrice(p.current_price)}</div>
+            <div className="mb-4 grid grid-cols-2 gap-2">
+              <div className="rounded-lg bg-green-500/5 p-2 text-center">
+                <div className="text-[10px] text-[var(--green)]">BUY</div>
+                <div className="text-[14px] font-bold text-[var(--text)]">{fmtPrice(p.current_price)}</div>
               </div>
-              <div style={{ background: 'rgba(255, 165, 0, 0.05)', padding: '8px', borderRadius: '4px', textAlign: 'center' }}>
-                <div style={{ fontSize: '10px', color: 'var(--gold)' }}>SELL</div>
-                <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)' }}>{fmtPrice(p.current_price * sellMultiplier)}</div>
+              <div className="rounded-lg bg-amber-500/5 p-2 text-center">
+                <div className="text-[10px] text-[var(--gold)]">SELL</div>
+                <div className="text-[14px] font-bold text-[var(--text)]">{fmtPrice(p.current_price * sellMultiplier)}</div>
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '6px' }}>
+            <div className="flex gap-2">
               <input
                 type="number"
                 className="input"
@@ -434,32 +441,28 @@ const MarketPanel = () => {
                 min="1"
               />
               <button
-                className="base-btn variant-gold"
-                style={{ flex: 1, background: 'var(--gold)', color: '#000' }}
+                className="base-btn variant-gold flex-1 bg-[var(--gold)] text-black"
                 onClick={() => marketTrade(p.id, 'buy')}
               >
                 BUY
               </button>
               <button
-                className="base-btn"
-                style={{ flex: 1 }}
+                className="base-btn flex-1"
                 onClick={() => marketTrade(p.id, 'sell')}
               >
                 SELL
               </button>
             </div>
-            <div style={{ display: 'flex', gap: '6px', marginTop: '5px' }}>
+            <div className="mt-1.5 flex gap-2">
               <button
-                className="base-btn"
+                className="base-btn flex-1 !min-h-0 px-1.5 py-1 text-[9px]"
                 onClick={() => setMktMax(p.id, 'buy', p.current_price)}
-                style={{ flex: 1, fontSize: '9px', padding: '3px', minHeight: 0 }}
               >
                 Max Buy
               </button>
               <button
-                className="base-btn"
+                className="base-btn flex-1 !min-h-0 px-1.5 py-1 text-[9px]"
                 onClick={() => setMktMax(p.id, 'sell', 0)}
-                style={{ flex: 1, fontSize: '9px', padding: '3px', minHeight: 0 }}
               >
                 Max Sell
               </button>
@@ -472,4 +475,3 @@ const MarketPanel = () => {
 };
 
 export default MarketPanel;
-
