@@ -34,11 +34,11 @@ function repairMojibake(value) {
   }
   text = text
     .replace(/Â/g, "")
-    .replace(/â€”/g, "—")
-    .replace(/â€“/g, "-")
-    .replace(/â€¢/g, "•")
-    .replace(/â€˜|â€™/g, "'")
-    .replace(/â€œ|â€�/g, '"');
+    .replace(/—/g, "—")
+    .replace(/–/g, "-")
+    .replace(/•/g, "•")
+    .replace(/‘|’/g, "'")
+    .replace(/“|â€�/g, '"');
   return text;
 }
 

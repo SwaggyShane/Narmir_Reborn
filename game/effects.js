@@ -72,7 +72,6 @@ function processActiveEffects(k, events) {
       }
       effects[effect] = { ...data, turns_left: remaining };
     }
-  }
 
   expired.forEach((e) => delete effects[e]);
   updates.active_effects = JSON.stringify(effects);
