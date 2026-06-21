@@ -164,7 +164,7 @@ const HappinessPanel = () => {
               </span>
             </div>
           </div>
-        </section>
+        </div>
 
         {/* Recent Changes Log */}
         <div style={{ marginBottom: '16px' }}>
@@ -188,11 +188,11 @@ const HappinessPanel = () => {
                   <div className="text-xs text-zinc-500 mt-1">
                     {event.old_happiness} → {event.new_happiness}
                   </div>
-                </article>
+                </div>
               ))
             )}
           </div>
-        </section>
+        </div>
       </div>
     </div>
   );
