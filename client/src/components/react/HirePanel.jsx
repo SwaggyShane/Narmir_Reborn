@@ -187,56 +187,51 @@ const HirePanel = () => {
   }, [isVampire]);
 
   return (
-    <div id="hire" className="panel" style={{ display: 'none' }}>
-      <div className="card" style={{ marginTop: 0 }}>
-        <div className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>Hire units</span>
-          <span style={{ color: 'var(--text2)', textTransform: 'none', display: 'flex', gap: '14px', alignItems: 'center' }}>
-            <span>Gold: <strong id="hire-strip-gold" style={{ color: 'var(--gold)' }}>{fmt(state?.gold)}</strong></span>
-            <span>Population: <strong id="hire-pop" style={{ color: 'var(--gold)' }}>{fmt(state?.population ?? state?.pop)}</strong></span>
-          </span>
+    <div id="hire" className="panel min-h-0 w-full overflow-y-auto px-4 pb-5" style={{ display: 'none' }}>
+      <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-white/10 bg-zinc-950/80 p-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <div className="card-title mb-1">Hire units</div>
+          <div className="text-[13px] text-[var(--text3)]">
+            Recruit and dismiss units while keeping an eye on the population pool.
+          </div>
         </div>
+        <div className="flex flex-wrap gap-3 text-[12px] text-[var(--text2)]">
+          <span>Gold: <strong id="hire-strip-gold" className="text-[var(--gold)]">{fmt(state?.gold)}</strong></span>
+          <span>Population: <strong id="hire-pop" className="text-[var(--gold)]">{fmt(state?.population ?? state?.pop)}</strong></span>
+        </div>
+      </div>
 
-        <div
-          id="hire-caps-container"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-            gap: '8px',
-            marginBottom: '20px',
-            background: 'rgba(0, 0, 0, 0.2)',
-            padding: '10px',
-            borderRadius: '12px',
-            border: '1px solid var(--border)',
-          }}
-        >
-          <div style={{ padding: '4px 8px' }}>
-            <div style={{ fontSize: '9px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '1px' }}>Barracks</div>
-            <div style={{ fontSize: '13px', fontWeight: 700 }}>
+      <div
+        id="hire-caps-container"
+        className="mb-5 grid gap-2 rounded-2xl border border-white/10 bg-black/20 p-3 sm:grid-cols-2 xl:grid-cols-4"
+      >
+        <div className="rounded-xl border border-white/10 bg-zinc-950/60 p-3">
+          <div className="text-[9px] uppercase tracking-[1px] text-[var(--text3)]">Barracks</div>
+          <div className="text-[13px] font-bold">
               <span id="hire-barracks-used">0</span> <span style={{ color: 'var(--text3)', fontWeight: 400 }}>/</span> <span id="hire-barracks-cap" style={{ color: 'var(--gold)' }}>0</span>
             </div>
-          </div>
-          <div style={{ padding: '4px 8px' }}>
-            <div style={{ fontSize: '9px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '1px' }}>Schools</div>
-            <div style={{ fontSize: '13px', fontWeight: 700 }}>
+        </div>
+        <div className="rounded-xl border border-white/10 bg-zinc-950/60 p-3">
+          <div className="text-[9px] uppercase tracking-[1px] text-[var(--text3)]">Schools</div>
+          <div className="text-[13px] font-bold">
               <span id="hire-school-used">0</span> <span style={{ color: 'var(--text3)', fontWeight: 400 }}>/</span> <span id="hire-school-cap" style={{ color: 'var(--gold)' }}>0</span>
             </div>
-          </div>
-          <div style={{ padding: '4px 8px' }}>
-            <div style={{ fontSize: '9px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '1px' }}>Smithies</div>
-            <div style={{ fontSize: '13px', fontWeight: 700 }}>
+        </div>
+        <div className="rounded-xl border border-white/10 bg-zinc-950/60 p-3">
+          <div className="text-[9px] uppercase tracking-[1px] text-[var(--text3)]">Smithies</div>
+          <div className="text-[13px] font-bold">
               <span id="hire-smithy-used">0</span> <span style={{ color: 'var(--text3)', fontWeight: 400 }}>/</span> <span id="hire-smithy-cap" style={{ color: 'var(--gold)' }}>0</span>
             </div>
-          </div>
-          <div style={{ padding: '4px 8px' }}>
-            <div style={{ fontSize: '9px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '1px' }}>Library</div>
-            <div style={{ fontSize: '13px', fontWeight: 700 }}>
+        </div>
+        <div className="rounded-xl border border-white/10 bg-zinc-950/60 p-3">
+          <div className="text-[9px] uppercase tracking-[1px] text-[var(--text3)]">Library</div>
+          <div className="text-[13px] font-bold">
               <span id="hire-library-used">0</span> <span style={{ color: 'var(--text3)', fontWeight: 400 }}>/</span> <span id="hire-library-cap" style={{ color: 'var(--gold)' }}>0</span>
             </div>
-          </div>
         </div>
+      </div>
 
-        <div className="hire-row hire-header" style={{ borderBottom: '2px solid var(--border2)', fontSize: '10px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', paddingBottom: '8px', marginBottom: '8px' }}>
+      <div className="hire-row hire-header border-b-2 border-white/10 pb-2.5 mb-2.5 text-[10px] uppercase tracking-[0.5px] text-[var(--text3)]">
           <span>Unit</span>
           <span>In service</span>
           <span>Price</span>
@@ -271,7 +266,6 @@ const HirePanel = () => {
             </div>
           );
         })}
-      </div>
       <div style={{ fontSize: '12px', color: 'var(--text3)', padding: '0 4px' }}>
         Hired units are subtracted from the population pool. Population returns over time based on happiness and entertainment.
       </div>
