@@ -179,9 +179,12 @@ export async function buyUpgrade(category, key) {
     ? '/api/kingdom/buy-mausoleum-upgrade'
     : '/api/kingdom/economy/upgrade';
 
-  const result = await apiCall('POST', endpoint, {
-    category,
-    upgradeKey: key,
+  const result = await apiCall(endpoint, {
+    method: 'POST',
+    body: {
+      category,
+      upgradeKey: key,
+    },
   });
 
   if (result.error) return toast(result.error, 'error');
