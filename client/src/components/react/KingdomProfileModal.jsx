@@ -8,6 +8,7 @@ import { switchTab } from '../../utils/panelNav.js';
 import { openDirectMessage } from '../../utils/directMessage.js';
 import { targetFromRankings } from '../../utils/rankingsTarget.js';
 import { toast } from '../../utils/toast.js';
+import { RACE_ICONS } from '../../utils/raceIcons.js';
 
 let profileApi = null;
 
@@ -18,8 +19,7 @@ function setShellVisible(id, visible, display = 'flex') {
 }
 
 function normalizeRaceIcon(race) {
-  const icons = typeof window !== 'undefined' ? window.RACE_ICONS || {} : {};
-  return icons[race] || 'Kingdom';
+  return RACE_ICONS[race] || 'Kingdom';
 }
 
 function getPortrait(race, gender) {
