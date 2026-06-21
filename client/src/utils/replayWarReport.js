@@ -1,6 +1,6 @@
-import { apiCall } from '../utils/api.js';
-import { toast } from '../utils/toast.js';
-import { repairMojibake } from '../utils/repairMojibake.js';
+import { apiCall } from './api.js';
+import { toast } from './toast.js';
+import { repairMojibake } from './repairMojibake.js';
 
 const escapeHtml = (value) =>
   String(value ?? '')
@@ -60,9 +60,7 @@ export const replayWarReport = async (id) => {
         btn.style.width = '100%';
         btn.style.marginTop = '16px';
         btn.textContent = 'Finish Replay';
-        btn.onclick = () => {
-          modal.style.display = 'none';
-        };
+        btn.onclick = () => { modal.style.display = 'none'; };
         content.appendChild(btn);
         content.scrollTop = content.scrollHeight;
         return;

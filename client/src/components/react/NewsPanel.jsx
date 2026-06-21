@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiCall } from '../../utils/api';
 import { useGameState, useGameMutationEvents } from '../../hooks/useGameState';
-import { replayWarReport } from '../../actions/replayWarReport';
+import { replayWarReport } from '../../utils/replayWarReport';
 import { repairMojibake } from '../../utils/repairMojibake';
 
 const NEWS_META = {
