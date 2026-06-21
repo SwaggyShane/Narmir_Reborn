@@ -39,9 +39,9 @@ const WorldmapPanel = () => {
         <div className="card flex items-center justify-between gap-3">
           <div>
             <div className="card-title !mb-1">🗺️ World of Narmir</div>
-            <div className="text-[12px] text-[var(--text3)]">
-              Six ancient regions, each shaped by the race that claims it.
-            </div>
+          <div className="text-xs text-[var(--text3)]">
+            Six ancient regions, each shaped by the race that claims it.
+          </div>
           </div>
           <button className="base-btn px-3 py-1 text-[11px]" onClick={refreshWorldMap}>
             ↻ Refresh
@@ -49,7 +49,7 @@ const WorldmapPanel = () => {
         </div>
 
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
-          <div className="card min-h-[620px] p-2">
+          <div className="card xl:min-h-[620px] p-2">
             {loading ? (
               <div className="grid place-items-center py-12 text-[13px] text-[var(--text3)]">
                 Loading map...
