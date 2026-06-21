@@ -3,6 +3,8 @@ import { apiCall } from '../../utils/api';
 import { useGameState } from '../../hooks/useGameState';
 import { repairMojibake } from '../../utils/repairMojibake';
 import { fmt } from "../../utils/fmt";
+import { toast as showToast } from '../../utils/toast.js';
+import { openKingdomProfile } from './KingdomProfileModal.jsx';
 
 const RACE_ICONS = {
   human: '🧑',
@@ -98,7 +100,7 @@ const RankingsPanel = () => {
   const handleSetRankType = (type) => setActiveTab(type);
   const handleSearch = (event) => setSearch(event.target.value);
   const handleDirectMessage = (row) => window.openDirectMessage?.(row.player_id, row.name);
-  const handleProfile = (row) => window.openKingdomProfile?.(row.name);
+  const handleProfile = (row) => openKingdomProfile(row.name);
   const handleBounty = (row) => window.openBountyAction?.(row.id, row.name);
   const handleTarget = (row, mode) => window.targetFromRankings?.(row.id, mode);
   const handleTrade = useCallback(async (row) => {
@@ -108,14 +110,14 @@ const RankingsPanel = () => {
         body: { targetId: row.id },
       });
       if (result.error) {
-        if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.error, 'error');
+        showToast(result.error, 'error');
         return;
       }
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Trade route established', 'success');
+      showToast(result.message || 'Trade route established', 'success');
       await loadRankings();
     } catch (err) {
       console.error('[RankingsPanel] Failed to establish trade route:', err);
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Failed to establish trade route', 'error');
+      showToast('Failed to establish trade route', 'error');
     }
   }, [loadRankings]);
 
