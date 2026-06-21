@@ -3,6 +3,8 @@ import { apiCall } from '../../utils/api';
 import { useGameState } from '../../hooks/useGameState';
 import { repairMojibake } from '../../utils/repairMojibake';
 import { applyGameMutation } from '../../utils/gameMutations.js';
+import { toast as showToast } from '../../utils/toast.js';
+import { openRaceLore } from '../../utils/openRaceLore.js';
 
 const RACE_CARD_DATA = {
   human: {
@@ -94,7 +96,7 @@ const StatusPanel = () => {
         body: { tax },
       });
       if (result.error) {
-        if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.error, 'error');
+        showToast(result.error, 'error');
         return;
       }
       if (applyGameMutation) {
@@ -102,10 +104,10 @@ const StatusPanel = () => {
       } else if (result.updates) {
         applyGameMutation(result.updates, { reason: 'tax-update' });
       }
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Tax rate locked', 'success');
+      showToast('Tax rate locked', 'success');
     } catch (err) {
       console.error('[tax] lock failed:', err);
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Failed to save tax rate', 'error');
+      showToast('Failed to save tax rate', 'error');
     }
   };
 
@@ -146,7 +148,7 @@ const StatusPanel = () => {
         <div
           id="race-tag-display"
           className="race-tag-block"
-          onClick={() => { if (typeof window.openRaceLore === 'function') window.openRaceLore(); }}
+          onClick={() => { openRaceLore(); }}
           style={{
             cursor: 'pointer',
             padding: '16px',
