@@ -12,7 +12,9 @@ for byte_val in range(256):
         char = bytes([byte_val]).decode('cp1252')
         cp1252_reverse[char] = byte_val
     except Exception:
-        pass
+        # Latin-1 passthrough for undefined cp1252 bytes (0x81, 0x8D, 0x8F, 0x90, 0x9D)
+        char = chr(byte_val)
+        cp1252_reverse[char] = byte_val
 
 def un_encode_once(b: bytes):
     """One round: read bytes as UTF-8, reverse-map each codepoint back through cp1252."""

@@ -33,12 +33,12 @@ function repairMojibake(value) {
     text = next;
   }
   text = text
-    .replace(/Â/g, "")
-    .replace(/—/g, "—")
-    .replace(/–/g, "-")
-    .replace(/•/g, "•")
-    .replace(/‘|’/g, "'")
-    .replace(/“|â€�/g, '"');
+    .replace(/\u00c2/g, "")
+    .replace(/\u00e2\u20ac\u201d/g, "\u2014")
+    .replace(/\u00e2\u20ac\u201c/g, "-")
+    .replace(/\u00e2\u20ac\u00a2/g, "\u2022")
+    .replace(/\u00e2\u20ac\u02dc|\u00e2\u20ac\u2122/g, "\u2019")
+    .replace(/\u00e2\u20ac\u0153/g, "\u201c");
   return text;
 }
 
