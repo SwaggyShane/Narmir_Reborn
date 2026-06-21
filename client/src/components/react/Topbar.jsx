@@ -115,7 +115,7 @@ const Topbar = () => {
                 style={{ fontSize: '9px', color: 'var(--text3)', cursor: 'pointer' }}
                 onClick={openXpModal}
               >
-                {`${xpInLevel.toLocaleString()} / ${xpNeeded.toLocaleString()} XP`}
+                {xpNeeded > 0 ? `${xpInLevel.toLocaleString()} / ${xpNeeded.toLocaleString()} XP` : 'Max Level'}
               </span>
             </div>
           </div>

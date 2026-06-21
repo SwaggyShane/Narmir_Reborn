@@ -106,7 +106,7 @@ export function syncUI() {
   const xpBar = document.getElementById('kh-xp-bar');
   if (xpBar) xpBar.style.width = `${xpPct}%`;
   const xpLabel = document.getElementById('kh-xp-label');
-  if (xpLabel) xpLabel.textContent = `${xpInLevel.toLocaleString()} / ${xpNeeded.toLocaleString()} XP`;
+  if (xpLabel) xpLabel.textContent = xpNeeded > 0 ? `${xpInLevel.toLocaleString()} / ${xpNeeded.toLocaleString()} XP` : 'Max Level';
 }
 
 export function switchTab(tabName) {
