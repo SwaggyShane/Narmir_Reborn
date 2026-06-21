@@ -312,88 +312,57 @@ const HeroesPanel = () => {
   }, [fmt, recruitableClasses, selectedHeroClass]);
 
   return (
-    <div id="heroes" className="panel" style={{ display: 'none' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-        <div className="card-title">👑 Heroes</div>
+    <div id="heroes" className="panel panel-immersive min-h-0 w-full overflow-y-auto px-4 pb-5" style={{ display: 'none' }}>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="card-title mb-0">Heroes</div>
         <button className="base-btn" onClick={handleRefresh} disabled={loading}>
-          {loading ? 'Refreshing…' : '↻ Refresh'}
+          {loading ? 'Refreshing...' : '? Refresh'}
         </button>
       </div>
 
-      <div className="r-grid-sidebar">
+      <div className="grid min-h-0 gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
         <div>
-          <div className="card" style={{ marginTop: 0 }}>
-            <div className="card-title" style={{ marginBottom: '12px' }}>Your Heroes</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+          <div className="card mx-auto mt-0 w-full max-w-6xl rounded-2xl border border-[var(--border)] bg-[var(--bg2)] p-5">
+            <div className="card-title mb-3">Your Heroes</div>
+            <div className="grid gap-3 sm:grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
               {heroCards}
             </div>
           </div>
         </div>
 
-        <div style={{ position: 'sticky', top: 0 }}>
-          <div className="card" style={{ marginTop: 0 }}>
-            <div className="card-title" style={{ marginBottom: '12px' }}>Recruit Hero</div>
-            <div style={{ fontSize: '12px', color: 'var(--text3)', lineHeight: 1.6, marginBottom: '14px' }}>
+        <div className="xl:sticky xl:top-0">
+          <div className="card mx-auto mt-0 w-full max-w-3xl rounded-2xl border border-[var(--border)] bg-[var(--bg2)] p-5">
+            <div className="card-title mb-3">Recruit Hero</div>
+            <div className="mb-4 text-[12px] leading-6 text-[var(--text3)]">
               Heroes are powerful unique units that provide passive bonuses to your kingdom and lead your armies in battle. You can recruit your
               <strong>1st</strong> hero with 1 Castle, the <strong>2nd</strong> at 10 Castles, and the <strong>3rd</strong> at 50 Castles.
             </div>
 
-            <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '8px', padding: '12px', marginBottom: '14px' }}>
-              <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', marginBottom: '8px' }}>
-                Hero Advancement
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-                <span style={{ color: 'var(--text2)' }}>Combat Win</span>
-                <span style={{ color: 'var(--gold)' }}>500 XP</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-                <span style={{ color: 'var(--text2)' }}>Combat Loss</span>
-                <span style={{ color: 'var(--gold)' }}>100 XP</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-                <span style={{ color: 'var(--text2)' }}>Leveling</span>
-                <span style={{ color: 'var(--accent1)', cursor: 'pointer', textDecoration: 'underline' }} onClick={openHeroXpModal}>
-                  View XP Table
-                </span>
-              </div>
+            <div className="mb-4 rounded-2xl border border-[var(--border)] bg-[var(--bg3)] p-3">
+              <div className="mb-2 text-[11px] font-bold uppercase text-[var(--text3)]">Hero Advancement</div>
+              <div className="mb-1.5 flex items-center justify-between text-[11px]"><span className="text-[var(--text2)]">Combat Win</span><span className="text-[var(--gold)]">500 XP</span></div>
+              <div className="mb-1.5 flex items-center justify-between text-[11px]"><span className="text-[var(--text2)]">Combat Loss</span><span className="text-[var(--gold)]">100 XP</span></div>
+              <div className="mb-1.5 flex items-center justify-between text-[11px]"><span className="text-[var(--text2)]">Leveling</span><span style={{ color: 'var(--accent1)', cursor: 'pointer', textDecoration: 'underline' }} onClick={openHeroXpModal}>View XP Table</span></div>
             </div>
 
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ fontSize: '11px', color: 'var(--text)', fontWeight: 700, display: 'block', marginBottom: '6px' }}>
-                Select Class
-              </label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {heroClassOptions}
-              </div>
+            <div className="mb-4">
+              <label className="mb-1 block text-[11px] font-bold text-[var(--text)]">Select Class</label>
+              <div className="flex flex-col gap-2">{heroClassOptions}</div>
             </div>
 
-            <button
-              className="base-btn variant-accent w-full"
-              id="btn-recruit-hero"
-              style={{ padding: '10px', fontWeight: 700, width: '100%', background: 'var(--accent1)' }}
-              onClick={recruitHeroAction}
-            >
+            <button className="base-btn variant-accent w-full" id="btn-recruit-hero" style={{ padding: '10px', fontWeight: 700, width: '100%', background: 'var(--accent1)' }} onClick={recruitHeroAction}>
               Recruit Hero
             </button>
           </div>
 
-          <div className="card">
-            <div className="card-title" style={{ fontSize: '14px' }}>Hero Slots</div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px' }}>
-              <span style={{ fontSize: '13px', color: 'var(--text2)' }}>Occupied</span>
-              <span id="hero-slots-used" style={{ fontWeight: 700, color: 'var(--text)' }}>{heroes.length}</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '4px' }}>
-              <span style={{ fontSize: '13px', color: 'var(--text2)' }}>Total available</span>
-              <span id="hero-slots-total" style={{ fontWeight: 700, color: 'var(--gold)' }}>{maxHeroes}</span>
-            </div>
-            <div style={{ height: '6px', background: 'var(--bg3)', borderRadius: '3px', marginTop: '10px', overflow: 'hidden' }}>
-              <div id="hero-slots-bar" style={{ height: '100%', width: `${maxHeroes > 0 ? Math.min(100, (heroes.length / maxHeroes) * 100) : 0}%`, background: 'var(--accent1)', transition: 'width 0.3s' }} />
-            </div>
+          <div className="card rounded-2xl border border-[var(--border)] bg-[var(--bg2)] p-5">
+            <div className="card-title mb-2 text-[14px]">Hero Slots</div>
+            <div className="mt-2 flex items-center justify-between"><span className="text-[13px] text-[var(--text2)]">Occupied</span><span id="hero-slots-used" className="font-bold text-[var(--text)]">{heroes.length}</span></div>
+            <div className="mt-1 flex items-center justify-between"><span className="text-[13px] text-[var(--text2)]">Total available</span><span id="hero-slots-total" className="font-bold text-[var(--gold)]">{maxHeroes}</span></div>
+            <div className="mt-2.5 h-1.5 overflow-hidden rounded-[3px] bg-[var(--bg3)]"><div id="hero-slots-bar" style={{ height: '100%', width: `${maxHeroes > 0 ? Math.min(100, (heroes.length / maxHeroes) * 100) : 0}%`, background: 'var(--accent1)', transition: 'width 0.3s' }} /></div>
           </div>
         </div>
       </div>
-
       <LoreModal
         isOpen={!!heroLoreKey}
         onClose={() => setHeroLoreKey(null)}
