@@ -679,43 +679,43 @@ const StatusPanel = () => {
           <div className="card-title">Key buildings</div>
           <div className="trow">
             <span className="name">Farm</span>
-            <span className="count" id="kb-farms">0</span>
+            <span className="count" id="kb-farms">{state.bld_farms ?? 0}</span>
           </div>
           <div className="trow">
             <span className="name">Barracks</span>
-            <span className="count" id="kb-barracks">0</span>
+            <span className="count" id="kb-barracks">{state.bld_barracks ?? 0}</span>
           </div>
           <div className="trow">
             <span className="name">Schools</span>
-            <span className="count" id="kb-schools">0</span>
+            <span className="count" id="kb-schools">{state.bld_schools ?? 0}</span>
           </div>
           <div className="trow">
             <span className="name">Library</span>
-            <span className="count" id="kb-libraries">0</span>
+            <span className="count" id="kb-libraries">{state.bld_libraries ?? 0}</span>
           </div>
           <div className="trow">
             <span className="name">Mage Towers</span>
-            <span className="count" id="kb-mage_towers">0</span>
+            <span className="count" id="kb-mage_towers">{state.bld_mage_towers ?? 0}</span>
           </div>
           <div className="trow">
             <span className="name">Smithies</span>
-            <span className="count" id="kb-smithies">0</span>
+            <span className="count" id="kb-smithies">{state.bld_smithies ?? 0}</span>
           </div>
           <div className="trow">
             <span className="name">Markets</span>
-            <span className="count" id="kb-markets">0</span>
+            <span className="count" id="kb-markets">{state.bld_markets ?? 0}</span>
           </div>
           <div className="trow">
             <span className="name">Guard Towers</span>
-            <span className="count" id="kb-guard_towers">0</span>
+            <span className="count" id="kb-guard_towers">{state.bld_guard_towers ?? 0}</span>
           </div>
           <div className="trow">
             <span className="name">Training Fields</span>
-            <span className="count" id="kb-training">0</span>
+            <span className="count" id="kb-training">{state.bld_training ?? 0}</span>
           </div>
           <div className="trow" style={{ borderBottom: 'none' }}>
             <span className="name">Castles</span>
-            <span className="count" id="kb-castles">0</span>
+            <span className="count" id="kb-castles">{state.bld_castles ?? 0}</span>
           </div>
         </div>
       </div>
