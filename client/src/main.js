@@ -35,10 +35,10 @@ import { openRaceLore as openRaceLoreAction } from "./actions/openRaceLore.js";
 import { replayWarReport as replayWarReportAction } from "./utils/replayWarReport.js";
 import { showHeroLore as showHeroLoreAction } from "./actions/showHeroLore.js";
 import { openKingdomProfile as openKingdomProfileAction } from "./actions/openKingdomProfile.js";
-import { loadWorldMap as loadWorldMapAction } from "./actions/loadWorldMap.js";
-import { renderWorldMap as renderWorldMapAction } from "./actions/renderWorldMap.js";
-import { renderRegionLegend as renderRegionLegendAction, highlightRegion as highlightRegionAction } from "./actions/worldMapLegend.js";
-import { showMapKingdomCard as showMapKingdomCardAction } from "./actions/showMapKingdomCard.js";
+import { loadWorldMap as loadWorldMapAction } from "./components/react/WorldmapPanel.jsx";
+import { renderWorldMap as renderWorldMapAction } from "./components/react/WorldmapRenderer.jsx";
+import { renderRegionLegend as renderRegionLegendAction, highlightRegion as highlightRegionAction } from "./components/react/WorldmapLegend.jsx";
+import { showMapKingdomCard as showMapKingdomCardAction } from "./components/react/MapKingdomCard.jsx";
 import { applyServerUpdates as applyServerUpdatesAction } from "./utils/gameMutations.js";
 import { bindGeneralSocketHandlers as bindGeneralSocketHandlersImpl } from "./utils/socketHandlers.js";
 import {
