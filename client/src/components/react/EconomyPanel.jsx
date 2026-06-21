@@ -10,7 +10,7 @@ import { toast } from '../../utils/toast.js';
 import { playGameSound } from '../../utils/audio.js';
 
 function getState() {
-  return window.state || gameStateManager.getState();
+  return gameStateManager.getState();
 }
 
 function escapeHtmlValue(value) {

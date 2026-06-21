@@ -14,7 +14,7 @@ const REGION_META = {
 };
 
 function getState() {
-  return window.state || gameStateManager.getState();
+  return gameStateManager.getState();
 }
 
 function escapeHtml(value) {
