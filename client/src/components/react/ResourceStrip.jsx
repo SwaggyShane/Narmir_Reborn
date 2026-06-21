@@ -172,7 +172,7 @@ function trunc(value) {
 }
 
 function metricClass(extra = '') {
-  return `metric${extra ? ` ${extra}` : ''}`;
+  return 'metric relative min-w-0 rounded-xl border border-white/5 bg-zinc-950/90 px-3 py-2 shadow-[0_12px_24px_rgba(0,0,0,0.25)] transition-transform duration-200 md:px-4 md:py-3' + (extra ? ' ' + extra : '');
 }
 
 function population(state) {
@@ -268,7 +268,7 @@ const ResourceStrip = () => {
 
   return (
     <>
-      <div className="metric" id="metric-gold" style={{ position: 'relative' }}>
+      <div className={metricClass()} id="metric-gold">
         <DeltaBadge flash={goldFlash} />
         <div className="lbl">Gold</div>
         <div className="val" id="m-gold" style={{ color: numberValue(state.gold) < 1000 ? 'var(--red)' : undefined }}>
@@ -278,7 +278,7 @@ const ResourceStrip = () => {
           {numberValue(state.gold_income) >= 0 ? '+' : ''}{trunc(state.gold_income || 0)}/turn
         </div>
       </div>
-      <div className="metric" id="metric-mana" style={{ position: 'relative' }}>
+      <div className={metricClass()} id="metric-mana">
         <DeltaBadge flash={manaFlash} />
         <div className="lbl">Mana</div>
         <div className="val" id="m-mana">{trunc(state.mana)}</div>
@@ -286,13 +286,13 @@ const ResourceStrip = () => {
           {numberValue(state.mana_regen) >= 0 ? '+' : ''}{trunc(state.mana_regen || 0)}/turn
         </div>
       </div>
-      <div className="metric" id="metric-land" style={{ position: 'relative' }}>
+      <div className={metricClass()} id="metric-land">
         <DeltaBadge flash={landFlash} />
         <div className="lbl">Land</div>
         <div className="val" id="m-land">{trunc(state.land)}</div>
         <div className="sub"><span id="m-land-free">{trunc(freeLand(state))}</span> free</div>
       </div>
-      <div className="metric" id="metric-pop" style={{ position: 'relative' }}>
+      <div className={metricClass()} id="metric-pop">
         <DeltaBadge flash={popFlash} />
         <div className="lbl">Population</div>
         <div className="val" id="m-pop">{trunc(pop)}</div>
@@ -301,7 +301,7 @@ const ResourceStrip = () => {
         </div>
       </div>
       {isVampire && (
-        <div className="metric" id="metric-thralls" style={{ position: 'relative' }}>
+        <div className={metricClass()} id="metric-thralls">
           <DeltaBadge flash={thrallFlash} />
           <div className="lbl">Thralls</div>
           <div className="val" id="m-thralls">{trunc(thralls)}</div>
@@ -310,7 +310,7 @@ const ResourceStrip = () => {
           </div>
         </div>
       )}
-      <div className={metricClass()} id="metric-happiness">
+      <div className={metricClass('overflow-hidden')} id="metric-happiness">
         <div className="lbl">Happiness</div>
         <div style={{ position: 'relative', width: '100%', height: '18px', margin: '6px 0', background: 'var(--bg2)', borderRadius: '4px', overflow: 'hidden' }} title="Population happiness">
           <div
@@ -328,7 +328,7 @@ const ResourceStrip = () => {
           <span id="m-happiness-breakdown">{happinessLabel(happiness)}</span>
         </div>
       </div>
-      <div className="metric" id="metric-food" style={{ position: 'relative' }}>
+      <div className={metricClass()} id="metric-food">
         <DeltaBadge flash={foodFlash} />
         <div className="lbl">Food</div>
         <div className="val" id="m-food" style={{ color: numberValue(state.food) < 1000 ? 'var(--red)' : undefined }}>
@@ -340,7 +340,7 @@ const ResourceStrip = () => {
           </span>/turn
         </div>
       </div>
-      <div className="metric" id="metric-defense">
+      <div className={metricClass()} id="metric-defense">
         <div className="lbl">Defense</div>
         <div className="val" id="m-defense-rating" style={{ fontSize: '11px', color: defenseColor }}>
           {defenseRating}
