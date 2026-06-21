@@ -5501,48 +5501,6 @@
 
 
 
-      function logExpeditionEntry(icon, title, subtitle) {
-
-        var log = document.getElementById("exploration-log");
-
-        if (!log) return;
-
-        var empty = log.querySelector("[data-empty]");
-
-        if (empty) empty.remove();
-
-        var entry = document.createElement("div");
-
-        entry.className = "exp-log-entry";
-
-        entry.style.cssText =
-
-          "display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px";
-
-        entry.innerHTML =
-
-          '<span style="font-size:18px;flex-shrink:0">' +
-
-          repairMojibake(icon) +
-
-          "</span>" +
-
-          '<div><div style="color:var(--text)">' +
-
-          repairMojibake(title) +
-
-          "</div>" +
-
-          '<div style="font-size:11px;color:var(--text3);margin-top:2px">' +
-
-          repairMojibake(subtitle) +
-
-          "</div></div>";
-
-        log.insertBefore(entry, log.firstChild);
-
-      }
-
 
 
       var _prevActiveTypes = {};
@@ -7175,9 +7133,9 @@
       var allianceChatMessages = [];
 
       function loadKingdom() {
-        return window.apiCall("GET", "/api/kingdom/me").then(function (kingdom) {
-          if (kingdom && !kingdom.error && typeof window.applyGameMutation === "function") {
-            window.applyGameMutation(kingdom, { reason: "kingdom-refresh" });
+        return apiCall("GET", "/api/kingdom/me").then(function (kingdom) {
+          if (kingdom && !kingdom.error && typeof applyGameMutation === "function") {
+            applyGameMutation(kingdom, { reason: "kingdom-refresh" });
           }
           return kingdom;
         });
@@ -7356,8 +7314,8 @@
           tryResolveSocket();
         }).then(function (sock) {
           socket = sock;
-          if (typeof window.__bindGeneralSocketHandlersImpl === "function") {
-            window.__bindGeneralSocketHandlersImpl(socket);
+          if (typeof initSocketHandlers === "function") {
+            initSocketHandlers(socket);
           }
           return socket;
         });
@@ -10085,8 +10043,8 @@
 
       // Central helper Ã¢â‚¬ï¿½ remaps server update keys to frontend state keys
       function applyServerUpdates(u) {
-        if (typeof window.__applyServerUpdatesImpl === "function") {
-          return window.__applyServerUpdatesImpl(u, { reason: "server-updates" });
+        if (typeof applyServerUpdatesAction === "function") {
+          return applyServerUpdatesAction(u, { reason: "server-updates" });
         }
       }
 
@@ -20307,8 +20265,6 @@
   </body>
 
 </html>
-
-
 
 
 

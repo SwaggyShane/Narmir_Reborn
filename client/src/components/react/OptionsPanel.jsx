@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiCall } from '../../utils/api.js';
 import { toast } from '../../utils/toast.js';
 import { applyNavLayout } from '../../utils/applyNavLayout.js';
 import { useGameState } from '../../hooks/useGameState';
@@ -295,7 +296,10 @@ function PortraitUploadCard() {
 }
 
 const OptionsPanel = () => {
-  const [navLayout, setNavLayout] = useState(localStorage.getItem('narmir_nav_layout') || 'responsive');
+  const { applyUpdates } = useGameState();
+  const [navLayout, setNavLayout] = useState(
+    localStorage.getItem('narmir_nav_layout') || 'responsive'
+  );
   const [skipIntro, setSkipIntro] = useState(() => {
     try { return localStorage.getItem('narmir_skip_intro') === '1'; } catch { return false; }
   });
@@ -343,14 +347,25 @@ const OptionsPanel = () => {
     toast('Vacation mode is currently disabled by admin', 'warn');
   };
 
-  const initiateRebirth = () => {
-    if (window.initiateRebirth) {
-      window.initiateRebirth();
+  const initiateRebirth = async () => {
+    const result = await apiCall('/api/kingdom/rebirth', { method: 'POST', body: {} });
+    if (result.error) return toast(result.error, 'error');
+    if (result.prestige_level !== undefined) {
+      applyUpdates({ prestige_level: result.prestige_level }, { reason: 'rebirth' });
     }
+    toast('The kingdom has transcended. Reloading...', 'success');
+    window.location.reload();
   };
 
-  const saveDescription = () => {
-    if (window.saveDescription) window.saveDescription();
+  const saveDescription = async () => {
+    const description = document.getElementById('kingdom-description-input')?.value || '';
+    const result = await apiCall('/api/kingdom/description', {
+      method: 'POST',
+      body: { description },
+    });
+    if (result.error) return toast(result.error, 'error');
+    applyUpdates({ description }, { reason: 'kingdom-description' });
+    toast('Kingdom bio saved', 'success');
   };
 
   return (

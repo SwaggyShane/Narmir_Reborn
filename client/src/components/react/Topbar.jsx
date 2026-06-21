@@ -3,6 +3,7 @@ import { useGameState } from '../../hooks/useGameState';
 import { useGameActions } from '../../hooks/useGameActions';
 import { showLoginModal, logout } from './AuthModal.jsx';
 import { xpForLevel } from '../../utils/xp';
+import { showHeroXpModal } from '../../utils/showHeroXpModal.js';
 
 const Topbar = () => {
   const { state } = useGameState();
@@ -16,7 +17,7 @@ const Topbar = () => {
   const xpInLevel = Math.max(0, Math.min(xp - thisLvl, nextLvl - thisLvl));
   const xpNeeded = Math.max(0, nextLvl - thisLvl);
   const xpPct = xpNeeded > 0 ? Math.min(100, Math.floor((xpInLevel / xpNeeded) * 100)) : 100;
-  const openXpModal = () => window.showXpModal?.();
+  const openXpModal = () => showHeroXpModal();
   const handleAccount = () => {
     if (state?.username) {
       logout();

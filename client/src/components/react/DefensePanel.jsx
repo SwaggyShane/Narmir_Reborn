@@ -3,6 +3,15 @@ import { apiCall } from '../../utils/api';
 import { useGameState } from '../../hooks/useGameState';
 import { fmt } from "../../utils/fmt";
 import { applyGameMutation } from '../../utils/gameMutations.js';
+import { renderUpgrades } from './EconomyPanel.jsx';
+import {
+  WALL_UPGRADES_JS,
+  TOWER_DEF_UPGRADES_JS,
+  OUTPOST_UPGRADES_JS,
+  WALL_RACE_MULT,
+  TOWER_RACE_MULT,
+  OUTPOST_RACE_MULT,
+} from '../../utils/defenseData.js';
 
 const DefensePanel = () => {
   const { state } = useGameState();
@@ -86,23 +95,23 @@ const DefensePanel = () => {
     if (el('def-walls')) el('def-walls').textContent = fmt(data.bld_walls || 0);
     if (el('def-wm-walls')) el('def-wm-walls').textContent = fmt(data.wm_on_walls || 0);
     if (el('def-wall-power')) el('def-wall-power').textContent = fmt(data.wall_power || 0);
-    if (el('def-wall-race')) el('def-wall-race').textContent = `×${(window.WALL_RACE_MULT?.[race] || 1.0).toFixed(2)}`;
+    if (el('def-wall-race')) el('def-wall-race').textContent = `×${(WALL_RACE_MULT[race] || 1.0).toFixed(2)}`;
 
     if (el('def-gtowers')) el('def-gtowers').textContent = fmt(data.bld_guard_towers || 0);
     if (el('def-thieves-watch')) el('def-thieves-watch').textContent = fmt(data.thieves_on_watch || 0);
     if (el('def-tower-cap')) el('def-tower-cap').textContent = fmt((data.bld_guard_towers || 0) * 10);
     if (el('def-tower-power')) el('def-tower-power').textContent = fmt(data.tower_power || 0);
-    if (el('def-tower-race')) el('def-tower-race').textContent = `×${(window.TOWER_RACE_MULT?.[race] || 1.0).toFixed(2)}`;
+    if (el('def-tower-race')) el('def-tower-race').textContent = `×${(TOWER_RACE_MULT[race] || 1.0).toFixed(2)}`;
 
     if (el('def-outposts')) el('def-outposts').textContent = fmt(data.bld_outposts || 0);
     if (el('def-rangers-patrol')) el('def-rangers-patrol').textContent = fmt(data.rangers_on_patrol || 0);
     if (el('def-outpost-cap')) el('def-outpost-cap').textContent = fmt((data.bld_outposts || 0) * 20);
     if (el('def-outpost-power')) el('def-outpost-power').textContent = fmt(data.outpost_power || 0);
-    if (el('def-outpost-race')) el('def-outpost-race').textContent = `×${(window.OUTPOST_RACE_MULT?.[race] || 1.0).toFixed(2)}`;
+    if (el('def-outpost-race')) el('def-outpost-race').textContent = `×${(OUTPOST_RACE_MULT[race] || 1.0).toFixed(2)}`;
 
-    window.renderUpgrades?.('wall', window.WALL_UPGRADES_JS || {}, data.wall_upgrades || {}, 'wall-upgrade-list');
-    window.renderUpgrades?.('tower_def', window.TOWER_DEF_UPGRADES_JS || {}, data.tower_def_upgrades || {}, 'tower-def-upgrade-list');
-    window.renderUpgrades?.('outpost', window.OUTPOST_UPGRADES_JS || {}, data.outpost_upgrades || {}, 'outpost-upgrade-list');
+    renderUpgrades('wall', WALL_UPGRADES_JS, data.wall_upgrades || {}, 'wall-upgrade-list');
+    renderUpgrades('tower_def', TOWER_DEF_UPGRADES_JS, data.tower_def_upgrades || {}, 'tower-def-upgrade-list');
+    renderUpgrades('outpost', OUTPOST_UPGRADES_JS, data.outpost_upgrades || {}, 'outpost-upgrade-list');
   }, [state?.race]);
 
   useEffect(() => {

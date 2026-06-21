@@ -3,6 +3,7 @@ import { setActivePanelGlobal } from '../hooks/useActivePanel.js';
 import { repairMojibake } from './repairMojibake.js';
 import { fmt } from './fmt.js';
 import { xpForLevel } from './xp.js';
+import { setWarfareTab as applyWarfareTab } from './warfareTabs.js';
 
 function getCsrfToken() {
   try {
@@ -83,7 +84,7 @@ function getTimeOfDay() {
 }
 
 export function syncUI() {
-  const sourceState = window.state || gameStateManager.getState();
+  const sourceState = gameStateManager.getState();
   const kingdomName = repairMojibake(sourceState.kingdomName || sourceState.name || 'My Kingdom');
   const kingdomOwner = repairMojibake(sourceState.username || sourceState.owner_name || sourceState.owner || kingdomName);
   const turn = sourceState.turn ?? 0;
@@ -150,11 +151,7 @@ export function switchTab(tabName) {
   setActivePanels(rawTab, activeTab);
 
   if (warfareSubtab) {
-    window.__pendingWarfareTab = warfareSubtab;
-    if (typeof window.setWarfareTab === 'function') {
-      window.setWarfareTab(warfareSubtab);
-      window.__pendingWarfareTab = null;
-    }
+    applyWarfareTab(warfareSubtab);
   }
 
   if (window.location.hash !== `#${rawTab}`) {
@@ -165,7 +162,7 @@ export function switchTab(tabName) {
 }
 
 export function initGameStateManager() {
-  const sourceState = window.state || gameStateManager.getState();
+  const sourceState = gameStateManager.getState();
   if (sourceState) {
     gameStateManager.setState({
       ...sourceState,
@@ -178,7 +175,7 @@ export function initGameStateManager() {
 function applyServerUpdatesToGame(updates, context = {}) {
   if (!updates) return;
 
-  const sourceState = window.state || gameStateManager.getState();
+  const sourceState = gameStateManager.getState();
   const normalizedState = sourceState
     ? { ...sourceState, population: sourceState.population ?? sourceState.pop }
     : updates;

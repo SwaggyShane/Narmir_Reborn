@@ -592,7 +592,22 @@ const BuildPanel = () => {
     updateSmithyDisplay();
     if (typeof window !== 'undefined' && typeof toast === 'function') toast(`Purchased ${result.bought} ${type} for ${fmt(result.cost)} GC`, 'success');
   };
-  const demolishB = (type) => { if (window.demolishB) window.demolishB(type); };
+  const demolishB = async (type) => {
+    const id = type === 'wm' ? 'ballistae' : type;
+    const amountId = `demolish-${id}`;
+    const amount = parseInt(document.getElementById(amountId)?.value, 10) || 0;
+    if (amount <= 0) return toast('Enter a quantity', 'error');
+    const result = await apiCall('/api/kingdom/demolish', { method: 'POST', body: { building: type, amount } });
+    if (result.error) return toast(result.error, 'error');
+    if (result.updates) {
+      applyGameMutation(result.updates, { reason: 'demolish' });
+    }
+    refreshBuildUi();
+    updateSmithyDisplay();
+    if (typeof window !== 'undefined' && typeof toast === 'function') {
+      toast(result.message || `Demolished ${amount} ${type.replace(/_/g, ' ')}`, 'success');
+    }
+  };
 
   const renderBuildingRow = (b, icon, baId, demoAmountId) => {
     const isEng = !['wm', 'ballistae', 'weapons', 'armor'].includes(b.id);
@@ -607,7 +622,7 @@ const BuildPanel = () => {
         {b.id !== 'wm' && b.id !== 'ballistae' && b.id !== 'ladders' && b.id !== 'weapons' && b.id !== 'armor' ? (
           <div className="bld-demolish">
             <input type="number" className="input" id={demoAmountId} defaultValue="1" min="1" style={{ textAlign: 'center' }} />
-            <button className="base-btn variant-red" style={{ padding: '4px 6px', fontSize: '10px' }} onClick={() => demolishB(b.id)}>🗑️</button>
+            <button className="base-btn variant-red" style={{ padding: '4px 6px', fontSize: '10px' }} onClick={() => demolishB(b.id, demoAmountId)}>🗑️</button>
           </div>
         ) : <span></span>}
 

@@ -1,3 +1,6 @@
+import { RACE_ICONS } from '../../utils/raceIcons.js';
+import { getWorldMapData } from '../../utils/worldMapData.js';
+
 const REGION_META = {
   dwarf: {
     name: 'The Iron Holds',
@@ -51,10 +54,10 @@ export function renderRegionLegend() {
   const el = document.getElementById('region-legend-list');
   if (!el) return;
 
-  const worldMapData = Array.isArray(window.worldMapData) ? window.worldMapData : [];
+  const worldMapData = getWorldMapData();
   el.innerHTML = Object.entries(REGION_META)
     .map(([race, meta]) => {
-      const icon = (window.RACE_ICONS && window.RACE_ICONS[race]) || meta.icon || '?';
+      const icon = RACE_ICONS[race] || meta.icon || '?';
       const count = worldMapData.filter((k) => k.race === race).length;
       const bonus = REGION_BONUSES[race] || '';
       return `
