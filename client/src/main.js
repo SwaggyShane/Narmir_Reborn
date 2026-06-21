@@ -32,14 +32,14 @@ import ForumSectionReact from "./components/forum/ForumSection.jsx";
 import "./css/forum.css";
 import ResourceStripReact from "./components/react/ResourceStrip.jsx";
 import { replayWarReport as replayWarReportAction } from "./utils/replayWarReport.js";
-import { openKingdomProfile as openKingdomProfileAction } from "./actions/openKingdomProfile.js";
+import { openKingdomProfile as openKingdomProfileAction } from "./components/react/KingdomProfileModal.jsx";
 import { loadWorldMap as loadWorldMapAction } from "./components/react/WorldmapPanel.jsx";
 import { renderWorldMap as renderWorldMapAction } from "./components/react/WorldmapRenderer.jsx";
 import { renderRegionLegend as renderRegionLegendAction, highlightRegion as highlightRegionAction } from "./components/react/WorldmapLegend.jsx";
 import { showMapKingdomCard as showMapKingdomCardAction } from "./components/react/MapKingdomCard.jsx";
 import { applyServerUpdates as applyServerUpdatesAction } from "./utils/gameMutations.js";
 import { bindGeneralSocketHandlers as bindGeneralSocketHandlersImpl } from "./utils/socketHandlers.js";
-import {
+import AuthModalReact, {
   initLoginModal as initLoginModalImpl,
   showLoginModal as showLoginModalImpl,
   hideLoginModal as hideLoginModalImpl,
@@ -50,8 +50,10 @@ import {
   clearToken as clearTokenImpl,
   doLogin as doLoginImpl,
   doRegister as doRegisterImpl,
-} from "./actions/authModal.js";
-import { closeKingdomProfile as closeKingdomProfileImpl } from "./utils/kingdomProfileModal.js";
+  loadKingdom as loadKingdomImpl,
+  logout as logoutImpl,
+} from "./components/react/AuthModal.jsx";
+import KingdomProfileModalReact, { closeKingdomProfile as closeKingdomProfileImpl } from "./components/react/KingdomProfileModal.jsx";
 import { apiCall, syncUI, switchTab, initGameStateManager, applyGameMutation, gameState } from "./utils/shellBridge.js";
 import EconomyPanelReact, {
   loadEconomy as loadEconomyAction,
@@ -72,8 +74,12 @@ import MarketPanelReact, {
 window.apiCall = apiCall;
 window.switchTab = switchTab;
 window.applyGameMutation = applyGameMutation;
+window.__loadKingdomImpl = loadKingdomImpl;
+window.loadKingdom = loadKingdomImpl;
+window.__logoutImpl = logoutImpl;
 window.__replayWarReportImpl = replayWarReportAction;
 window.__openKingdomProfileImpl = openKingdomProfileAction;
+window.__closeKingdomProfileImpl = closeKingdomProfileImpl;
 window.__loadEconomyImpl = loadEconomyAction;
 window.__buyUpgradeImpl = buyUpgradeAction;
 window.__renderCommodityMarketImpl = renderCommodityMarketAction;
@@ -163,6 +169,8 @@ export const mountReactApps = () => {
   tryMount("vue-panel-globalchat", GlobalchatPanelReact);
   tryMount("vue-panel-school-selection", SchoolSelectionControllerReact);
   tryMount("vue-panel-forum", ForumSectionReact);
+  tryMount("login-overlay", AuthModalReact);
+  tryMount("kingdom-profile-modal", KingdomProfileModalReact);
 
   window.__reactAppsMounted = true;
   console.log("[react] All apps mounted");
