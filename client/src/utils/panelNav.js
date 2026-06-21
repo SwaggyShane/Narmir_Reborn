@@ -56,7 +56,7 @@ function setActivePanels(rawTab, activeTab) {
     panel.style.display = isActive ? '' : 'none';
   });
 
-  document.body.classList.forEach((className) => {
+  [...document.body.classList].forEach((className) => {
     if (className.startsWith('panel-')) document.body.classList.remove(className);
   });
 

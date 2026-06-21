@@ -60,11 +60,11 @@ export function useGameActions() {
 
       let completedBuildingsMsg = '';
       const blurbs = [];
-      if (data.events) {
+      if (Array.isArray(data.events)) {
         window.dispatchEvent(new CustomEvent('narmir:news-items', { detail: data.events }));
         window.appendNewsItems?.(data.events);
         for (const ev of data.events) {
-          const msg = ev.message || '';
+          const msg = ev?.message || '';
           if (msg.includes('Completed: ')) {
             const idx = msg.indexOf('Completed: ');
             const endPart = msg.substring(idx + 'Completed: '.length);
@@ -73,7 +73,7 @@ export function useGameActions() {
           }
           if (msg.includes('ACHIEVEMENT UNLOCKED')) playAchievementSound();
         }
-        if (completedBuildingsMsg && window.getCompletionBlurb) {
+        if (completedBuildingsMsg && typeof window.getCompletionBlurb === 'function') {
           completedBuildingsMsg.split(',').forEach((item) => {
             const blurb = window.getCompletionBlurb(item.trim());
             if (blurb) blurbs.push(blurb);
