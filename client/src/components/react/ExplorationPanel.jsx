@@ -132,7 +132,6 @@ const ExplorationPanel = () => {
   const availableRangers = Number(state?.rangers || 0);
   const availableFighters = Number(state?.fighters || 0);
   const availableFood = Number(state?.food || 0);
-  const searchFoodCost = Math.ceil(searchRangers * 0.5 * 100 * 0.75);
   const expeditionTurns = useMemo(() => EXPEDITION_TURNS, []);
   const mountainFoodCost = Math.ceil(mountainRangers * 0.5 * 100 * 0.75);
 
@@ -186,7 +185,7 @@ const ExplorationPanel = () => {
       applyResult(result, 'search');
       if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Search complete', 'success');
 
-      const icons = { land: '🗺️', gold: '💰', food: '🌾', targets: '🔭' };
+      const icons = { land: '🗺️', gold: '⛏️', food: '🌾', targets: '🔭' };
       logInstantEntry(
         icons[type] || '🧭',
         repairText(result.message || 'Search complete'),
@@ -258,20 +257,7 @@ const ExplorationPanel = () => {
       console.error('[expedition/start] failed:', err);
       if (typeof window !== 'undefined' && typeof toast === 'function') toast('Expedition failed — please try again', 'error');
     }
-  }, [
-    applyResult,
-    availableFighters,
-    availableFood,
-    availableRangers,
-    deepRangers,
-    dungeonFighters,
-    dungeonRangers,
-    expeditionTurns,
-    logInstantEntry,
-    mountainRangers,
-    refreshAll,
-    scoutRangers,
-  ]);
+  }, [applyResult, availableFighters, availableFood, availableRangers, deepRangers, dungeonFighters, dungeonRangers, expeditionTurns, logInstantEntry, mountainRangers, refreshAll, scoutRangers]);
 
   const clearExpeditionLog = useCallback(async () => {
     try {
@@ -309,27 +295,17 @@ const ExplorationPanel = () => {
     return (
       <div
         key={`${entry.id}-${isCompleted ? 'done' : 'active'}`}
-        className="exp-log-entry"
-        style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: '10px',
-          padding: '9px 0',
-          borderBottom: '1px solid var(--border)',
-          fontSize: '13px',
-        }}
+        className="exp-log-entry flex items-start gap-3 border-b border-[var(--border)] py-2 text-[13px]"
       >
-        <span style={{ fontSize: '18px', flexShrink: 0 }}>{repairText(icon)}</span>
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ color: 'var(--text)', fontWeight: 600 }}>
+        <span className="flex-shrink-0 text-[18px]">{repairText(icon)}</span>
+        <div className="min-w-0 flex-1">
+          <div className="font-semibold text-[var(--text)]">
             {repairText(label)}
             {!isCompleted ? ` departed — ${entry.turns_left} turn${entry.turns_left === 1 ? '' : 's'} left` : ' — Returned'}
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--text3)', marginTop: '2px' }}>
-            {repairText(subtitle)}
-          </div>
+          <div className="mt-0.5 text-[11px] text-[var(--text3)]">{repairText(subtitle)}</div>
           {isCompleted && rewards.length > 0 && (
-            <ul style={{ margin: '8px 0 0', paddingLeft: '18px', color: 'var(--text2)', fontSize: '12px', lineHeight: 1.5 }}>
+            <ul className="mt-2 list-disc pl-5 text-[12px] leading-6 text-[var(--text2)]">
               {rewards.map((reward, idx) => <li key={`${entry.id}-reward-${idx}`}>{repairText(reward)}</li>)}
             </ul>
           )}
@@ -343,328 +319,312 @@ const ExplorationPanel = () => {
     : 'No expeditions are currently underway.';
 
   return (
-    <div id="exploration" className="panel" style={{ display: 'none' }}>
-      <div className="card" id="exp-counter-card" style={{ marginBottom: '12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-          <div>
-            <div className="card-title" style={{ marginBottom: '4px' }}>Active expeditions</div>
-            <div style={{ fontSize: '13px', color: 'var(--text3)' }}>{activeSummary}</div>
+    <div id="exploration" className="panel min-h-0 w-full overflow-y-auto px-4 pb-5" style={{ display: 'none' }}>
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-4">
+        <div id="exp-counter-card" className="card">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="card-title !mb-1">Active expeditions</div>
+              <div className="text-[13px] text-[var(--text3)]">{activeSummary}</div>
+            </div>
           </div>
-        </div>
-      </div>
-
-      <div className="card" style={{ marginBottom: '12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <div
-            className="card-title"
-            onClick={() => setInventoryOpen(!inventoryOpen)}
-            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}
-          >
-            <span>🎒 Expedition Finds {inventoryCount > 0 ? `(${inventoryCount} items)` : '(empty)'}</span>
-            <span style={{ fontSize: '12px' }}>{inventoryOpen ? '▼' : '▶'}</span>
-          </div>
-          <button className="base-btn" onClick={refreshInventory} style={{ fontSize: '11px', padding: '4px 10px' }}>↻ Refresh</button>
-        </div>
-        {inventoryOpen && (
-          <>
-            {inventoryCount > 0 ? (
-              <div style={{ marginTop: '10px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
-                {Object.entries(inventory).map(([itemId, item]) => (
-                  <div
-                    key={itemId}
-                    style={{
-                      padding: '10px',
-                      borderRadius: '4px',
-                      background: 'rgba(255,255,255,0.05)',
-                      borderLeft: `3px solid ${item.rarity === 'junk' ? 'var(--text3)' : 'var(--accent1)'}`,
-                    }}
-                  >
-                    <div style={{ fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>
-                      {repairText(item.name)} <span style={{ color: 'var(--gold)', fontWeight: 700 }}>×{item.count}</span>
-                    </div>
-                    <div style={{ fontSize: '11px', color: 'var(--text3)', lineHeight: 1.4 }}>
-                      {repairText(item.desc)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div style={{ fontSize: '12px', color: 'var(--text3)', padding: '16px 0', textAlign: 'center' }}>
-                No items collected yet. Send expeditions to find treasures and curiosities!
-              </div>
-            )}
-          </>
-        )}
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <div className="card" style={{ padding: '12px 14px' }}>
-          <div className="card-title" style={{ marginBottom: '4px' }}>Available Rangers</div>
-          <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--green)', lineHeight: 1 }}>
-            {availableRangers.toLocaleString()}
-          </div>
-          <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '4px' }}>Ready to launch expeditions or scout targets.</div>
         </div>
 
         <div className="card">
-          <div className="card-title">Instant search — <span style={{ color: 'var(--green)', fontWeight: 400, fontSize: '12px' }}>costs 1 turn</span></div>
-          <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '12px' }}>Quick operations that return results immediately.</div>
-          <div className="trow" style={{ marginBottom: '12px' }}>
-            <span className="name">Rangers</span>
-            <span style={{ fontSize: '12px', color: 'var(--text3)', marginRight: '8px' }}>
-              Available: <span>{availableRangers}</span>
-            </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <input
-                type="number"
-                className="input"
-                value={searchRangers}
-                onChange={(e) => setSearchRangers(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                min="0"
-                style={{ textAlign: 'right', width: '90px' }}
-                placeholder="Qty"
-              />
-              <button className="base-btn" style={{ fontSize: '10px', padding: '3px 6px' }} onClick={() => setSearchRangers(availableRangers)}>Max</button>
-            </div>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-            <button className="base-btn" style={{ padding: '10px', fontSize: '12px', textAlign: 'center', height: 'auto' }} onClick={() => handleSearch('land')}>
-              <div style={{ fontSize: '18px', marginBottom: '4px' }}>🗺️</div>
-              Search for land
-              <div style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '2px' }}>Diminishing returns</div>
-            </button>
-            <button className="base-btn" style={{ padding: '10px', fontSize: '12px', textAlign: 'center', height: 'auto' }} onClick={() => handleSearch('gold')}>
-              <div style={{ fontSize: '18px', marginBottom: '4px' }}>⛏️</div>
-              Forage for gold
-            </button>
-            <button className="base-btn" style={{ padding: '10px', fontSize: '12px', textAlign: 'center', height: 'auto' }} onClick={() => handleSearch('food')}>
-              <div style={{ fontSize: '18px', marginBottom: '4px' }}>🌾</div>
-              Search for food
-            </button>
-            <button className="base-btn" style={{ padding: '10px', fontSize: '12px', textAlign: 'center', height: 'auto' }} onClick={() => handleSearch('targets')}>
-              <div style={{ fontSize: '18px', marginBottom: '4px' }}>🔭</div>
-              Scout targets
-            </button>
-          </div>
-        </div>
-
-        <div className="card" style={{ borderLeft: '3px solid var(--green)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-            <div className="card-title" style={{ margin: 0 }}>🔭 Scout Expedition</div>
-            <span style={{ fontSize: '11px', background: 'rgba(76, 175, 130, 0.15)', color: 'var(--green)', padding: '3px 8px', borderRadius: '20px', fontWeight: 600 }}>
-              10 turns
-            </span>
-          </div>
-          <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '12px', lineHeight: 1.6 }}>
-            Rangers explore nearby territory. Rewards range from common to rare —
-            gold, land, mana, wandering troops, and occasionally an ancient map.
-          </div>
-          <div className="trow" style={{ marginBottom: '10px' }}>
-            <span className="name" style={{ fontSize: '12px' }}>Rangers</span>
-            <span style={{ fontSize: '11px', color: 'var(--text3)', marginRight: '6px' }}>
-              avail: <span>{availableRangers}</span>
-            </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <input
-                type="number"
-                className="input"
-                value={scoutRangers}
-                onChange={(e) => setScoutRangers(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                min="1"
-                style={{ textAlign: 'right', width: '80px' }}
-                placeholder="Qty"
-              />
-              <button className="base-btn" style={{ fontSize: '10px', padding: '3px 6px' }} onClick={() => setScoutRangers(availableRangers)}>Max</button>
-            </div>
-          </div>
-          <button className="base-btn variant-green w-full" id="btn-exp-scout" style={{ background: 'var(--green)', color: '#000', width: '100%' }} onClick={() => handleLaunchExpedition('scout')}>
-            {TYPE_META.scout.button}
-          </button>
-        </div>
-
-        <div className="card" style={{ borderLeft: '3px solid var(--accent1)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-            <div className="card-title" style={{ margin: 0 }}>🌲 Deep Expedition</div>
-            <span style={{ fontSize: '11px', background: 'rgba(180, 60, 0, 0.15)', color: 'var(--accent1)', padding: '3px 8px', borderRadius: '20px', fontWeight: 600 }}>
-              25 turns
-            </span>
-          </div>
-          <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '12px', lineHeight: 1.6 }}>
-            Rangers venture deep into uncharted wilderness. Substantially better
-            rewards including research scrolls, mercenary companies, ruins, and
-            rare legendary artifacts.
-          </div>
-          <div className="trow" style={{ marginBottom: '10px' }}>
-            <span className="name" style={{ fontSize: '12px' }}>Rangers</span>
-            <span style={{ fontSize: '11px', color: 'var(--text3)', marginRight: '6px' }}>
-              avail: <span>{availableRangers}</span>
-            </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <input
-                type="number"
-                className="input"
-                value={deepRangers}
-                onChange={(e) => setDeepRangers(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                min="1"
-                style={{ textAlign: 'right', width: '80px' }}
-                placeholder="Qty"
-              />
-              <button className="base-btn" style={{ fontSize: '10px', padding: '3px 6px' }} onClick={() => setDeepRangers(availableRangers)}>Max</button>
-            </div>
-          </div>
-          <button className="base-btn variant-accent w-full" id="btn-exp-deep" style={{ background: 'var(--accent1)', width: '100%' }} onClick={() => handleLaunchExpedition('deep')}>
-            {TYPE_META.deep.button}
-          </button>
-        </div>
-
-        <div className="card" style={{ borderLeft: '3px solid var(--red)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-            <div className="card-title" style={{ margin: 0 }}>⚔️ Dungeon Raid</div>
-            <span style={{ fontSize: '11px', background: 'rgba(224, 92, 92, 0.15)', color: 'var(--red)', padding: '3px 8px', borderRadius: '20px', fontWeight: 600 }}>
-              50 turns
-            </span>
-          </div>
-          <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '12px', lineHeight: 1.6 }}>
-            Fighters and rangers assault an ancient dungeon. High risk — failure
-            costs fighters. Success yields legendary artifacts, war machines,
-            permanent research boosts, and massive gold hoards.
-          </div>
-          <div className="trow" style={{ marginBottom: '8px' }}>
-            <span className="name" style={{ fontSize: '12px' }}>Rangers</span>
-            <span style={{ fontSize: '11px', color: 'var(--text3)', marginRight: '6px' }}>
-              avail: <span>{availableRangers}</span>
-            </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <input
-                type="number"
-                className="input"
-                value={dungeonRangers}
-                onChange={(e) => setDungeonRangers(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                min="1"
-                style={{ textAlign: 'right', width: '80px' }}
-                placeholder="Qty"
-              />
-              <button className="base-btn" style={{ fontSize: '10px', padding: '3px 6px' }} onClick={() => setDungeonRangers(availableRangers)}>Max</button>
-            </div>
-          </div>
-          <div className="trow" style={{ marginBottom: '10px' }}>
-            <span className="name" style={{ fontSize: '12px' }}>Fighters</span>
-            <span style={{ fontSize: '11px', color: 'var(--text3)', marginRight: '6px' }}>
-              avail: <span>{availableFighters}</span>
-            </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <input
-                type="number"
-                className="input"
-                value={dungeonFighters}
-                onChange={(e) => setDungeonFighters(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                min="1"
-                style={{ textAlign: 'right', width: '80px' }}
-                placeholder="Qty"
-              />
-              <button className="base-btn" style={{ fontSize: '10px', padding: '3px 6px' }} onClick={() => setDungeonFighters(availableFighters)}>Max</button>
-            </div>
-          </div>
-          <button className="base-btn variant-red w-full" id="btn-exp-dungeon" style={{ background: 'var(--red)', width: '100%' }} onClick={() => handleLaunchExpedition('dungeon')}>
-            {TYPE_META.dungeon.button}
-          </button>
-        </div>
-
-        <div className="card" style={{ borderLeft: '3px solid #6b9bd1' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-            <div className="card-title" style={{ margin: 0 }}>🏔️ Mountain's Heart</div>
-            <span style={{ fontSize: '11px', background: 'rgba(107, 155, 209, 0.15)', color: '#6b9bd1', padding: '3px 8px', borderRadius: '20px', fontWeight: 600 }}>
-              100 turns
-            </span>
-          </div>
-          <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '8px', lineHeight: 1.6 }}>
-            Rangers navigate treacherous mountain peaks facing avalanches and extreme attrition.
-            Exclusive source of collectible artifacts and elemental fragments.
-          </div>
-          <div style={{
-            padding: '8px',
-            marginBottom: '10px',
-            background: 'rgba(255, 184, 82, 0.1)',
-            borderLeft: '3px solid #ffb852',
-            borderRadius: '2px',
-            fontSize: '11px',
-            color: 'var(--text2)',
-          }}>
-            ⚠️ <strong>EXTREME RISK:</strong> Rangers face up to 4-8% attrition per turn depending on level.
-            Level 20+ rangers recommended. Food costs very high for 100-turn expedition.
-          </div>
-          <div className="trow" style={{ marginBottom: '10px' }}>
-            <span className="name" style={{ fontSize: '12px' }}>Rangers</span>
-            <span style={{ fontSize: '11px', color: 'var(--text3)', marginRight: '6px' }}>
-              avail: <span>{availableRangers}</span>
-            </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <input
-                type="number"
-                className="input"
-                value={mountainRangers}
-                onChange={(e) => setMountainRangers(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                min="1"
-                style={{ textAlign: 'right', width: '80px' }}
-                placeholder="Qty"
-              />
-              <button className="base-btn" style={{ fontSize: '10px', padding: '3px 6px' }} onClick={() => setMountainRangers(availableRangers)}>Max</button>
-            </div>
-          </div>
-          {mountainFoodCost > 0 && (
-            <div style={{
-              padding: '8px',
-              marginBottom: '10px',
-              background: 'rgba(139, 92, 246, 0.1)',
-              borderLeft: '3px solid #8b5cf6',
-              borderRadius: '2px',
-              fontSize: '11px',
-              color: 'var(--text2)',
-            }}>
-              🍖 <strong>Food required:</strong> {formatNum(mountainFoodCost)} (100 turns at {Math.round(mountainRangers * 0.5)}/turn)
-            </div>
-          )}
-          <button className="base-btn variant-blue w-full" id="btn-exp-mountain" style={{ background: '#6b9bd1' }} onClick={() => handleLaunchExpedition('mountain')}>
-            {TYPE_META.mountain.button}
-          </button>
-        </div>
-      </div>
-
-      <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-          <div className="card-title" style={{ marginBottom: 0 }}>Expedition log</div>
-          <button className="base-btn" style={{ fontSize: '11px', padding: '4px 10px' }} onClick={clearExpeditionLog} title="Clear completed entries from the log">
-            🗑️ Clear log
-          </button>
-        </div>
-        <div id="exploration-log" style={{ flex: 1, overflowY: 'auto', maxHeight: '700px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {instantEntries.length === 0 && activeExpeditions.length === 0 && completedExpeditions.length === 0 && (
-            <div data-empty style={{ fontSize: '13px', color: 'var(--text3)', padding: '12px 0' }}>
-              No expeditions sent yet.
-            </div>
-          )}
-          {instantEntries.map((entry) => (
+          <div className="mb-3 flex items-center justify-between gap-3">
             <div
-              key={entry.id}
-              className="exp-log-entry"
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '10px',
-                padding: '9px 0',
-                borderBottom: '1px solid var(--border)',
-                fontSize: '13px',
-              }}
+              className="card-title !mb-0 flex cursor-pointer items-center gap-2"
+              onClick={() => setInventoryOpen(!inventoryOpen)}
             >
-              <span style={{ fontSize: '18px', flexShrink: 0 }}>{entry.icon}</span>
-              <div>
-                <div style={{ color: 'var(--text)' }}>{entry.title}</div>
-                <div style={{ fontSize: '11px', color: 'var(--text3)', marginTop: '2px' }}>{entry.subtitle}</div>
+              <span>🎒 Expedition Finds {inventoryCount > 0 ? `(${inventoryCount} items)` : '(empty)'}</span>
+              <span className="text-[12px]">{inventoryOpen ? '▼' : '▶'}</span>
+            </div>
+            <button className="base-btn px-3 py-1 text-[11px]" onClick={refreshInventory}>
+              ↻ Refresh
+            </button>
+          </div>
+          {inventoryOpen && (
+            <>
+              {inventoryCount > 0 ? (
+                <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  {Object.entries(inventory).map(([itemId, item]) => (
+                    <div
+                      key={itemId}
+                      className="rounded-2xl border border-[var(--border)] bg-[rgba(255,255,255,0.05)] p-3"
+                      style={{ borderLeftColor: item.rarity === 'junk' ? 'var(--text3)' : 'var(--accent1)', borderLeftWidth: '3px' }}
+                    >
+                      <div className="mb-1 text-[12px] font-semibold">
+                        {repairText(item.name)} <span className="font-bold text-[var(--gold)]">×{item.count}</span>
+                      </div>
+                      <div className="text-[11px] leading-5 text-[var(--text3)]">{repairText(item.desc)}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-4 text-center text-[12px] text-[var(--text3)]">
+                  No items collected yet. Send expeditions to find treasures and curiosities!
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+          <div className="flex flex-col gap-4">
+            <div className="card p-4">
+              <div className="card-title !mb-1">Available Rangers</div>
+              <div className="text-[28px] font-extrabold leading-none text-[var(--green)]">
+                {availableRangers.toLocaleString()}
+              </div>
+              <div className="mt-1 text-[12px] text-[var(--text3)]">
+                Ready to launch expeditions or scout targets.
               </div>
             </div>
-          ))}
-          {activeExpeditions.map((exp) => renderRow(exp, false))}
-          {completedExpeditions.map((exp) => renderRow(exp, true))}
+
+            <div className="card">
+              <div className="card-title">
+                Instant search <span className="text-[12px] font-normal text-[var(--green)]">costs 1 turn</span>
+              </div>
+              <div className="mb-3 text-[12px] text-[var(--text3)]">
+                Quick operations that return results immediately.
+              </div>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <span className="name">Rangers</span>
+                <span className="text-[12px] text-[var(--text3)]">
+                  Available: <span>{availableRangers}</span>
+                </span>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    className="input w-[90px] text-right"
+                    value={searchRangers}
+                    onChange={(e) => setSearchRangers(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                    min="0"
+                    placeholder="Qty"
+                  />
+                  <button className="base-btn px-2 py-1 text-[10px]" onClick={() => setSearchRangers(availableRangers)}>
+                    Max
+                  </button>
+                </div>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <button className="base-btn h-auto px-3 py-3 text-center text-[12px]" onClick={() => handleSearch('land')}>
+                  <div className="mb-1 text-[18px]">🗺️</div>
+                  Search for land
+                  <div className="mt-1 text-[10px] text-[var(--text3)]">Diminishing returns</div>
+                </button>
+                <button className="base-btn h-auto px-3 py-3 text-center text-[12px]" onClick={() => handleSearch('gold')}>
+                  <div className="mb-1 text-[18px]">⛏️</div>
+                  Forage for gold
+                </button>
+                <button className="base-btn h-auto px-3 py-3 text-center text-[12px]" onClick={() => handleSearch('food')}>
+                  <div className="mb-1 text-[18px]">🌾</div>
+                  Search for food
+                </button>
+                <button className="base-btn h-auto px-3 py-3 text-center text-[12px]" onClick={() => handleSearch('targets')}>
+                  <div className="mb-1 text-[18px]">🔭</div>
+                  Scout targets
+                </button>
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-1">
+              <div className="card border-l-[3px] border-l-[var(--green)]">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <div className="card-title !mb-0">🔭 Scout Expedition</div>
+                  <span className="rounded-full bg-[rgba(76,175,130,0.15)] px-2 py-1 text-[11px] font-semibold text-[var(--green)]">
+                    10 turns
+                  </span>
+                </div>
+                <div className="mb-3 text-[12px] leading-6 text-[var(--text3)]">
+                  Rangers explore nearby territory. Rewards range from common to rare - gold, land, mana,
+                  wandering troops, and occasionally an ancient map.
+                </div>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <span className="name text-[12px]">Rangers</span>
+                  <span className="text-[11px] text-[var(--text3)]">
+                    avail: <span>{availableRangers}</span>
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      className="input w-[80px] text-right"
+                      value={scoutRangers}
+                      onChange={(e) => setScoutRangers(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                      min="1"
+                      placeholder="Qty"
+                    />
+                    <button className="base-btn px-2 py-1 text-[10px]" onClick={() => setScoutRangers(availableRangers)}>
+                      Max
+                    </button>
+                  </div>
+                </div>
+                <button className="base-btn variant-green w-full bg-[var(--green)] text-black" id="btn-exp-scout" onClick={() => handleLaunchExpedition('scout')}>
+                  {TYPE_META.scout.button}
+                </button>
+              </div>
+
+              <div className="card border-l-[3px] border-l-[var(--accent1)]">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <div className="card-title !mb-0">🌲 Deep Expedition</div>
+                  <span className="rounded-full bg-[rgba(180,60,0,0.15)] px-2 py-1 text-[11px] font-semibold text-[var(--accent1)]">
+                    25 turns
+                  </span>
+                </div>
+                <div className="mb-3 text-[12px] leading-6 text-[var(--text3)]">
+                  Rangers venture deep into uncharted wilderness. Substantially better rewards including
+                  research scrolls, mercenary companies, ruins, and rare legendary artifacts.
+                </div>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <span className="name text-[12px]">Rangers</span>
+                  <span className="text-[11px] text-[var(--text3)]">
+                    avail: <span>{availableRangers}</span>
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      className="input w-[80px] text-right"
+                      value={deepRangers}
+                      onChange={(e) => setDeepRangers(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                      min="1"
+                      placeholder="Qty"
+                    />
+                    <button className="base-btn px-2 py-1 text-[10px]" onClick={() => setDeepRangers(availableRangers)}>
+                      Max
+                    </button>
+                  </div>
+                </div>
+                <button className="base-btn variant-accent w-full bg-[var(--accent1)]" id="btn-exp-deep" onClick={() => handleLaunchExpedition('deep')}>
+                  {TYPE_META.deep.button}
+                </button>
+              </div>
+
+              <div className="card border-l-[3px] border-l-[var(--red)]">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <div className="card-title !mb-0">⚔️ Dungeon Raid</div>
+                  <span className="rounded-full bg-[rgba(224,92,92,0.15)] px-2 py-1 text-[11px] font-semibold text-[var(--red)]">
+                    50 turns
+                  </span>
+                </div>
+                <div className="mb-3 text-[12px] leading-6 text-[var(--text3)]">
+                  Fighters and rangers assault an ancient dungeon. High risk - failure costs fighters.
+                  Success yields legendary artifacts, war machines, permanent research boosts, and massive gold hoards.
+                </div>
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <span className="name text-[12px]">Rangers</span>
+                  <span className="text-[11px] text-[var(--text3)]">
+                    avail: <span>{availableRangers}</span>
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      className="input w-[80px] text-right"
+                      value={dungeonRangers}
+                      onChange={(e) => setDungeonRangers(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                      min="1"
+                      placeholder="Qty"
+                    />
+                    <button className="base-btn px-2 py-1 text-[10px]" onClick={() => setDungeonRangers(availableRangers)}>
+                      Max
+                    </button>
+                  </div>
+                </div>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <span className="name text-[12px]">Fighters</span>
+                  <span className="text-[11px] text-[var(--text3)]">
+                    avail: <span>{availableFighters}</span>
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      className="input w-[80px] text-right"
+                      value={dungeonFighters}
+                      onChange={(e) => setDungeonFighters(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                      min="1"
+                      placeholder="Qty"
+                    />
+                    <button className="base-btn px-2 py-1 text-[10px]" onClick={() => setDungeonFighters(availableFighters)}>
+                      Max
+                    </button>
+                  </div>
+                </div>
+                <button className="base-btn variant-red w-full bg-[var(--red)]" id="btn-exp-dungeon" onClick={() => handleLaunchExpedition('dungeon')}>
+                  {TYPE_META.dungeon.button}
+                </button>
+              </div>
+
+              <div className="card border-l-[3px] border-l-[#6b9bd1]">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <div className="card-title !mb-0">🏔️ Mountain's Heart</div>
+                  <span className="rounded-full bg-[rgba(107,155,209,0.15)] px-2 py-1 text-[11px] font-semibold text-[#6b9bd1]">
+                    100 turns
+                  </span>
+                </div>
+                <div className="mb-2 text-[12px] leading-6 text-[var(--text3)]">
+                  Rangers navigate treacherous mountain peaks facing avalanches and extreme attrition.
+                  Exclusive source of collectible artifacts and elemental fragments.
+                </div>
+                <div className="mb-3 rounded-md border-l-[3px] border-l-[#ffb852] bg-[rgba(255,184,82,0.1)] p-2 text-[11px] text-[var(--text2)]">
+                  ⚠️ <strong>EXTREME RISK:</strong> Rangers face up to 4-8% attrition per turn depending on level.
+                  Level 20+ rangers recommended. Food costs very high for 100-turn expedition.
+                </div>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <span className="name text-[12px]">Rangers</span>
+                  <span className="text-[11px] text-[var(--text3)]">
+                    avail: <span>{availableRangers}</span>
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      className="input w-[80px] text-right"
+                      value={mountainRangers}
+                      onChange={(e) => setMountainRangers(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                      min="1"
+                      placeholder="Qty"
+                    />
+                    <button className="base-btn px-2 py-1 text-[10px]" onClick={() => setMountainRangers(availableRangers)}>
+                      Max
+                    </button>
+                  </div>
+                </div>
+                {mountainFoodCost > 0 && (
+                  <div className="mb-3 rounded-md border-l-[3px] border-l-[#8b5cf6] bg-[rgba(139,92,246,0.1)] p-2 text-[11px] text-[var(--text2)]">
+                    🍖 <strong>Food required:</strong> {formatNum(mountainFoodCost)} (100 turns at {Math.round(mountainRangers * 0.5)}/turn)
+                  </div>
+                )}
+                <button className="base-btn variant-blue w-full bg-[#6b9bd1]" id="btn-exp-mountain" onClick={() => handleLaunchExpedition('mountain')}>
+                  {TYPE_META.mountain.button}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="card flex min-h-[780px] flex-col">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="card-title !mb-0">Expedition log</div>
+              <button className="base-btn px-3 py-1 text-[11px]" onClick={clearExpeditionLog} title="Clear completed entries from the log">
+                🗑️ Clear log
+              </button>
+            </div>
+            <div id="exploration-log" className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
+              {instantEntries.length === 0 && activeExpeditions.length === 0 && completedExpeditions.length === 0 && (
+                <div data-empty className="py-3 text-[13px] text-[var(--text3)]">
+                  No expeditions sent yet.
+                </div>
+              )}
+              {instantEntries.map((entry) => (
+                <div key={entry.id} className="exp-log-entry flex items-start gap-3 border-b border-[var(--border)] py-2 text-[13px]">
+                  <span className="flex-shrink-0 text-[18px]">{entry.icon}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold text-[var(--text)]">{entry.title}</div>
+                    <div className="mt-0.5 text-[11px] text-[var(--text3)]">{entry.subtitle}</div>
+                  </div>
+                </div>
+              ))}
+              {activeExpeditions.map((exp) => renderRow(exp, false))}
+              {completedExpeditions.map((exp) => renderRow(exp, true))}
+            </div>
+          </div>
         </div>
       </div>
     </div>

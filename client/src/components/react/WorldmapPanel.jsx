@@ -34,46 +34,48 @@ const WorldmapPanel = () => {
   }, [refreshWorldMap]);
 
   return (
-    <div id="worldmap" className="panel" style={{ display: 'none' }}>
-      <div className="card" style={{ marginTop: 0 }}>
-        <div>
-          <div className="card-title" style={{ marginBottom: '2px' }}>
-            🗺️ World of Narmir
-          </div>
-          <div style={{ fontSize: '12px', color: 'var(--text3)' }}>
+    <div id="worldmap" className="panel min-h-0 w-full overflow-y-auto px-4 pb-5" style={{ display: 'none' }}>
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-4">
+        <div className="card flex items-center justify-between gap-3">
+          <div>
+            <div className="card-title !mb-1">🗺️ World of Narmir</div>
+          <div className="text-xs text-[var(--text3)]">
             Six ancient regions, each shaped by the race that claims it.
           </div>
-        </div>
-        <button className="base-btn" onClick={refreshWorldMap}>↻ Refresh</button>
-      </div>
-      <div className="r-grid-sidebar">
-        {/* Map SVG */}
-        <div className="card" style={{ padding: '8px' }}>
-          {loading ? (
-            <div style={{ textAlign: 'center', color: 'var(--text3)', padding: '40px 0', fontSize: '13px' }}>
-              Loading map...
-            </div>
-          ) : error ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--red)' }}>
-              Failed to load world map.
-              <button className="btn" onClick={refreshWorldMap} style={{ marginTop: '10px' }}>Retry</button>
-            </div>
-          ) : null}
-          <div id="world-map-container" style={{ width: '100%', overflow: 'hidden' }}>
           </div>
+          <button className="base-btn px-3 py-1 text-[11px]" onClick={refreshWorldMap}>
+            ↻ Refresh
+          </button>
         </div>
-        {/* Region legend + info */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div className="card" id="region-legend">
-            <div className="card-title" style={{ marginBottom: '10px' }}>Regions</div>
-            <div id="region-legend-list"></div>
+
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
+          <div className="card xl:min-h-[620px] p-2">
+            {loading ? (
+              <div className="grid place-items-center py-12 text-[13px] text-[var(--text3)]">
+                Loading map...
+              </div>
+            ) : error ? (
+              <div className="grid place-items-center gap-3 py-12 text-center text-[var(--red)]">
+                <div>Failed to load world map.</div>
+                <button className="btn" onClick={refreshWorldMap}>
+                  Retry
+                </button>
+              </div>
+            ) : null}
+            <div id="world-map-container" className="w-full overflow-hidden" />
           </div>
-          <div className="card" id="map-kingdom-card" style={{ display: 'none' }}>
-            <div className="card-title" style={{ marginBottom: '8px' }} id="mkc-name">
-              —
+
+          <div className="flex flex-col gap-4">
+            <div className="card" id="region-legend">
+              <div className="card-title !mb-3">Regions</div>
+              <div id="region-legend-list" />
             </div>
-            <div id="mkc-body"></div>
-            <div style={{ display: 'flex', gap: '6px', marginTop: '10px', flexWrap: 'wrap' }} id="mkc-actions">
+            <div className="card" id="map-kingdom-card" style={{ display: 'none' }}>
+              <div className="card-title !mb-2" id="mkc-name">
+                —
+              </div>
+              <div id="mkc-body" />
+              <div id="mkc-actions" className="mt-3 flex flex-wrap gap-2" />
             </div>
           </div>
         </div>
