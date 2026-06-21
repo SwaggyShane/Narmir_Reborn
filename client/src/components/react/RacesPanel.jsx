@@ -39,7 +39,7 @@ function HeroLoreContent({ heroKey, hero }) {
   return (
     <div id="races" className="panel panel-immersive min-h-0 w-full overflow-y-auto px-4 pb-5" style={{ display: 'none' }}>
       <div className="card mx-auto mt-0 w-full max-w-6xl rounded-2xl border border-[var(--border)] bg-[var(--bg2)] p-5">
-        <div className="mb-2 text-[20px] font-bold text-[var(--gold)]">Race Information</div>
+        <div className="mb-2 text-[20px] font-bold text-[var(--gold)]">🦄 Race Information</div>
         <div className="mb-4 text-[13px] leading-6 text-[var(--text2)]">
           Learn about the various races of Narmir, their history, and their unique passives and abilities.
         </div>
