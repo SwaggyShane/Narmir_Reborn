@@ -4,6 +4,7 @@ import { apiCall } from '../../utils/api.js';
 import { fmt } from "../../utils/fmt";
 import LoreModal from './LoreModal.jsx';
 import { repairMojibake } from '../../utils/repairMojibake.js';
+import { toast as showToast } from '../../utils/toast.js';
 
 const HERO_PORTRAITS = {
   // Dwarf
@@ -58,13 +59,6 @@ const HeroesPanel = () => {
   const [heroLoreKey, setHeroLoreKey] = useState(null);
   const [refreshTick, setRefreshTick] = useState(0);
 
-  const fmt = useCallback((value) => Number(value || 0).toLocaleString(), []);
-  const toast = useCallback((message, type = 'info') => {
-    if (typeof window !== 'undefined' && typeof toast === 'function') toast(message, type);
-    else if (type === 'error') console.error(message);
-    else console.log(message);
-  }, []);
-
   const loadHeroes = useCallback(async () => {
     setLoading(true);
     try {
@@ -86,11 +80,11 @@ const HeroesPanel = () => {
       applyUpdates(kingdomRes || {}, { reason: 'heroes/load' });
     } catch (err) {
       console.error('[heroes] load failed:', err);
-      toast(`Failed to load heroes: ${err.message}`, 'error');
+      showToast(`Failed to load heroes: ${err.message}`, 'error');
     } finally {
       setLoading(false);
     }
-  }, [applyUpdates, toast]);
+  }, [applyUpdates]);
 
   useEffect(() => {
     void loadHeroes();
@@ -111,7 +105,7 @@ const HeroesPanel = () => {
   const openHeroXpModal = () => setShowXpModal(true);
 
   const recruitHeroAction = async () => {
-    if (!selectedHeroClass) return toast('Select a hero class first.', 'error');
+    if (!selectedHeroClass) return showToast('Select a hero class first.', 'error');
 
     const className = heroClasses?.[selectedHeroClass]?.name || 'Hero';
     const name = window.prompt(`Enter a name for your new ${className}:`);
@@ -124,7 +118,7 @@ const HeroesPanel = () => {
       });
 
       if (res?.error) {
-        toast(res.error, 'error');
+        showToast(res.error, 'error');
         return;
       }
 
@@ -132,10 +126,10 @@ const HeroesPanel = () => {
       if (!kingdomRes?.error) applyUpdates(kingdomRes || {}, { reason: 'heroes/recruit' });
       setSelectedHeroClass(null);
       setRefreshTick((n) => n + 1);
-      toast(`✨ ${name} has joined your cause!`, 'success');
+      showToast(`✨ ${name} has joined your cause!`, 'success');
     } catch (err) {
       console.error('[heroes] recruit failed:', err);
-      toast('Failed to recruit hero', 'error');
+      showToast('Failed to recruit hero', 'error');
     }
   };
 
