@@ -1,121 +1,211 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { useActivePanel } from '../../hooks/useActivePanel';
 import { useGameState } from '../../hooks/useGameState';
 import { logout } from './AuthModal.jsx';
 import { switchTab } from '../../utils/switchTab.js';
 
+const CORE_TABS = [
+  { id: 'status', label: 'Status', icon: '🏰', color: 'text-sky-300' },
+  { id: 'economy', label: 'Economy', icon: '💰', color: 'text-amber-300' },
+  { id: 'warfare', label: 'War', icon: '⚔️', color: 'text-red-300' },
+  { id: 'news', label: 'News', icon: '🗞️', color: 'text-amber-200', badgeId: 'bnav-news-badge' },
+  { id: 'globalchat', label: 'Chat', icon: '💬', color: 'text-fuchsia-300', badgeId: 'chat-badge', domId: 'bnav-chat-item' },
+];
+
+const DRAWER_TABS = [
+  { id: 'messages', label: 'Messages', icon: '✉️', color: 'text-amber-200', badgeId: 'bnav-msg-badge' },
+  { id: 'happiness', label: 'Happiness', icon: '😊', color: 'text-amber-300' },
+  { id: 'studies', label: 'Studies', icon: '🏛️', color: 'text-red-300' },
+  { id: 'build', label: 'Build', icon: '🛠️', color: 'text-orange-300' },
+  { id: 'exploration', label: 'Explore', icon: '🧭', color: 'text-lime-300' },
+  { id: 'market', label: 'Market', icon: '⚖️', color: 'text-yellow-300' },
+  { id: 'resources', label: 'Resources', icon: '🌲', color: 'text-green-300' },
+  { id: 'rankings', label: 'Ranks', icon: '🏆', color: 'text-yellow-300' },
+  { id: 'hire', label: 'Hire', icon: '🤝', color: 'text-emerald-300' },
+  { id: 'defense', label: 'Defense', icon: '🛡️', color: 'text-slate-300' },
+  { id: 'bounties', label: 'Bounties', icon: '🪙', color: 'text-yellow-200' },
+  { id: 'training', label: 'Training', icon: '🎯', color: 'text-amber-300' },
+  { id: 'heroes', label: 'Heroes', icon: '👑', color: 'text-fuchsia-300' },
+  { id: 'worldmap', label: 'Map', icon: '🌎', color: 'text-cyan-300' },
+  { id: 'alliances', label: 'Alliance', icon: '🤝', color: 'text-purple-300' },
+  { id: 'forum', label: 'Forum', icon: '📚', color: 'text-violet-300' },
+  { id: 'goals', label: 'Goals', icon: '📝', color: 'text-amber-300' },
+  { id: 'races', label: 'Races', icon: '🦄', color: 'text-fuchsia-300' },
+  { id: 'changelog', label: 'Changelog', icon: '📋', color: 'text-emerald-300' },
+  { id: 'testing', label: 'Testing', icon: '🧪', color: 'text-violet-300' },
+  { id: 'options', label: 'Settings', icon: '⚙️', color: 'text-slate-300' },
+];
+
+function NavChip({ id, label, icon, color, active, onClick, badgeId, domId }) {
+  return (
+    <button
+      type="button"
+      id={domId}
+      data-tab={id}
+      onClick={onClick}
+      aria-pressed={active}
+      className={[
+        'flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 rounded-2xl border px-1 py-2 text-[11px] font-semibold transition',
+        'active:scale-95',
+        active
+          ? 'border-amber-400/60 bg-amber-500/15 text-amber-100 shadow-[0_0_0_1px_rgba(251,191,36,0.15)]'
+          : 'border-white/5 bg-zinc-950/70 text-slate-300 hover:border-amber-400/30 hover:bg-zinc-900/90',
+      ].join(' ')}
+    >
+      <span className={`text-lg leading-none ${color || 'text-slate-200'}`}>{icon}</span>
+      <span className="flex items-center gap-1 whitespace-nowrap">
+        <span>{label}</span>
+        {badgeId ? <span id={badgeId} className="hidden min-w-4 rounded-full bg-red-500 px-1.5 text-[10px] leading-4 text-white" /> : null}
+      </span>
+    </button>
+  );
+}
+
+function DrawerChip({ id, label, icon, color, active, onClick, badgeId }) {
+  return (
+    <button
+      type="button"
+      data-tab={id}
+      onClick={onClick}
+      aria-pressed={active}
+      className={[
+        'flex min-h-[54px] items-center gap-3 rounded-2xl border px-3 py-3 text-left transition',
+        'active:scale-[0.98]',
+        active
+          ? 'border-amber-400/60 bg-amber-500/15 text-amber-100'
+          : 'border-white/5 bg-zinc-950/80 text-slate-200 hover:border-amber-400/30 hover:bg-zinc-900/95',
+      ].join(' ')}
+    >
+      <span className={`text-xl leading-none ${color || 'text-slate-200'}`}>{icon}</span>
+      <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
+        <span className="truncate text-sm font-semibold">{label}</span>
+        {badgeId ? <span id={badgeId} className="hidden min-w-4 rounded-full bg-red-500 px-1.5 text-[10px] leading-4 text-white" /> : null}
+      </span>
+    </button>
+  );
+}
+
 const BottomNav = () => {
-  const [isAdmin, setIsAdmin] = useState(false);
   const { state } = useGameState();
+  const { activePanel } = useActivePanel();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const isAdmin = !!state?.isAdmin;
 
-  React.useEffect(() => {
-    setIsAdmin(!!state?.isAdmin);
-  }, [state?.isAdmin]);
+  const drawerActive = useMemo(() => (
+    drawerOpen || DRAWER_TABS.some((tab) => tab.id === activePanel)
+  ), [drawerOpen, activePanel]);
 
-  const handleSwitchTabMobile = (id) => {
+  const handleSwitchTab = (id) => {
+    setDrawerOpen(false);
     switchTab(id);
   };
 
   return (
-    <nav className="bottom-nav" id="bottom-nav">
-      <button className="bnav-item active" data-tab="status" onClick={() => handleSwitchTabMobile('status')}>
-        <span className="bicon" style={{ color: '#4a90e2' }}>🏰</span>Status
-      </button>
-      <button className="bnav-item" data-tab="happiness" onClick={() => handleSwitchTabMobile('happiness')}>
-        <span className="bicon" style={{ color: '#f59e0b' }}>😊</span>Happiness
-      </button>
-      <button className="bnav-item" data-tab="studies" onClick={() => handleSwitchTabMobile('studies')}>
-        <span className="bicon" style={{ color: '#d0021b' }}>🏛️</span>Studies
-      </button>
-      <button className="bnav-item" data-tab="build" onClick={() => handleSwitchTabMobile('build')}>
-        <span className="bicon" style={{ color: '#8b572a' }}>🏗️</span>Build
-      </button>
-      <button className="bnav-item" data-tab="exploration" onClick={() => handleSwitchTabMobile('exploration')}>
-        <span className="bicon" style={{ color: '#417505' }}>🧭</span>Explore
-      </button>
+    <>
+      <nav
+        className="bottom-nav fixed inset-x-0 bottom-0 z-[70] grid grid-cols-6 gap-2 border-t border-amber-900/40 bg-zinc-950/95 px-2 py-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_30px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+        id="bottom-nav"
+      >
+        {CORE_TABS.map((tab) => (
+          <NavChip
+            key={tab.id}
+            id={tab.id}
+            domId={tab.domId}
+            label={tab.label}
+            icon={tab.icon}
+            color={tab.color}
+            active={activePanel === tab.id}
+            onClick={() => handleSwitchTab(tab.id)}
+            badgeId={tab.badgeId}
+          />
+        ))}
 
-      <button className="bnav-item" data-tab="economy" onClick={() => handleSwitchTabMobile('economy')}>
-        <span className="bicon" style={{ color: '#f5a623' }}>💰</span>Economy
-      </button>
-      <button className="bnav-item" data-tab="market" onClick={() => handleSwitchTabMobile('market')}>
-        <span className="bicon" style={{ color: '#f8e71c' }}>⚖️</span>Market
-      </button>
-      <button className="bnav-item" data-tab="resources" onClick={() => handleSwitchTabMobile('resources')}>
-        <span className="bicon" style={{ color: '#22c55e' }}>🌲</span>Resources
-      </button>
-
-      <button className="bnav-item" data-tab="rankings" onClick={() => handleSwitchTabMobile('rankings')}>
-        <span className="bicon" style={{ color: '#f8e71c' }}>🏆</span>Ranks
-      </button>
-      <button className="bnav-item" data-tab="hire" onClick={() => handleSwitchTabMobile('hire')}>
-        <span className="bicon" style={{ color: '#7ed321' }}>🤝</span>Hire
-      </button>
-      <button className="bnav-item" data-tab="warfare" onClick={() => handleSwitchTabMobile('warfare')}>
-        <span className="bicon" style={{ color: '#d0021b' }}>⚔️</span>Offense
-      </button>
-      <button className="bnav-item" data-tab="defense" onClick={() => handleSwitchTabMobile('defense')}>
-        <span className="bicon" style={{ color: '#4a4a4a' }}>🛡️</span>Defense
-      </button>
-      <button className="bnav-item" data-tab="bounties" onClick={() => handleSwitchTabMobile('bounties')}>
-        <span className="bicon" style={{ color: 'var(--gold)' }}>🪙</span>Bounties
-      </button>
-      <button className="bnav-item" data-tab="training" onClick={() => handleSwitchTabMobile('training')}>
-        <span className="bicon" style={{ color: '#fbbf24' }}>🎯</span>Train
-      </button>
-      <button className="bnav-item" data-tab="heroes" onClick={() => handleSwitchTabMobile('heroes')}>
-        <span className="bicon" style={{ color: '#d946ef' }}>👑</span>Heroes
-      </button>
-      <button className="bnav-item" data-tab="worldmap" onClick={() => handleSwitchTabMobile('worldmap')}>
-        <span className="bicon" style={{ color: '#22d3ee' }}>🌎</span>Map
-      </button>
-      <button className="bnav-item" data-tab="alliances" onClick={() => handleSwitchTabMobile('alliances')}>
-        <span className="bicon" style={{ color: '#bd10e0' }}>🤝</span>Alliance
-      </button>
-
-      <button className="bnav-item" data-tab="messages" onClick={() => handleSwitchTabMobile('messages')}>
-        <span className="bicon" style={{ color: 'var(--accent1)' }}>✉️</span>Msgs<span id="bnav-msg-badge" className="bnav-badge" style={{ display: 'none' }}></span>
-      </button>
-      <button className="bnav-item" data-tab="forum" onClick={() => handleSwitchTabMobile('forum')}>
-        <span className="bicon" style={{ color: '#8b5cf6' }}>📚</span>Forum
-      </button>
-      <button id="bnav-chat-item" className="bnav-item" data-tab="globalchat" onClick={() => handleSwitchTabMobile('globalchat')}>
-        <span className="bicon" style={{ color: '#f472b6' }}>💬</span>Chat
-      </button>
-      <button className="bnav-item" data-tab="news" onClick={() => handleSwitchTabMobile('news')}>
-        <span className="bicon" style={{ color: '#fbbf24' }}>🗞️</span>News<span id="bnav-news-badge" className="bnav-badge" style={{ display: 'none' }}></span>
-      </button>
-
-      <button className="bnav-item" data-tab="goals" onClick={() => handleSwitchTabMobile('goals')}>
-        <span className="bicon" style={{ color: '#f59e0b' }}>📝</span>Goals
-      </button>
-      <button className="bnav-item" data-tab="races" onClick={() => handleSwitchTabMobile('races')}>
-        <span className="bicon" style={{ color: '#bc13fe' }}>🦄</span>Races
-      </button>
-      <button className="bnav-item" data-tab="changelog" onClick={() => handleSwitchTabMobile('changelog')}>
-        <span className="bicon" style={{ color: 'var(--green)' }}>📋</span>Changelog
-      </button>
-      <button className="bnav-item" data-tab="testing" onClick={() => handleSwitchTabMobile('testing')}>
-        <span className="bicon" style={{ color: '#8b5cf6' }}>🧪</span>Testing
-      </button>
-      <button className="bnav-item" data-tab="options" onClick={() => handleSwitchTabMobile('options')}>
-        <span className="bicon" style={{ color: '#64748b' }}>⚙️</span>Settings
-      </button>
-      <div className="bnav-sep"></div>
-
-      {isAdmin && (
-        <a
-          id="admin-bnav-link"
-          className="bnav-item"
-          href="/admin"
-          style={{ textDecoration: 'none' }}
+        <button
+          type="button"
+          className={[
+            'flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl border px-1 py-2 text-[11px] font-semibold transition',
+            'active:scale-95',
+            drawerActive
+              ? 'border-amber-400/60 bg-amber-500/15 text-amber-100'
+              : 'border-white/5 bg-zinc-950/70 text-slate-300 hover:border-amber-400/30 hover:bg-zinc-900/90',
+          ].join(' ')}
+          onClick={() => setDrawerOpen((open) => !open)}
+          aria-expanded={drawerOpen}
+          aria-controls="bottom-nav-drawer"
         >
-          <span className="bicon" style={{ color: '#ff9800' }}>👑</span>Admin
-        </a>
-      )}
+          <span className="text-lg leading-none text-amber-300">⋯</span>
+          <span>More</span>
+        </button>
+      </nav>
 
-      <button className="bnav-item" onClick={logout} style={{ color: 'var(--red)' }}>
-        <span className="bicon">🚪</span>Logout
-      </button>
-    </nav>
+      <div
+        className={[
+          'fixed inset-0 z-[80] bg-black/50 backdrop-blur-[1px] transition-opacity duration-200',
+          drawerOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
+        ].join(' ')}
+        onClick={() => setDrawerOpen(false)}
+        role="presentation"
+      >
+        <div
+          id="bottom-nav-drawer"
+          className={[
+            'absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+72px)] mx-auto max-h-[65vh] max-w-5xl overflow-y-auto rounded-t-[28px] border border-amber-900/40 bg-zinc-950/98 p-3 shadow-[0_-20px_60px_rgba(0,0,0,0.6)] transition-transform duration-200',
+            drawerOpen ? 'translate-y-0' : 'translate-y-full',
+          ].join(' ')}
+          onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-label="More navigation"
+        >
+          <div className="mb-3 flex items-center justify-between px-1">
+            <div className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-200/80">More</div>
+            <button
+              type="button"
+              className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-slate-200 transition active:scale-95"
+              onClick={() => setDrawerOpen(false)}
+            >
+              Close
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+            {DRAWER_TABS.map((tab) => (
+              <DrawerChip
+                key={tab.id}
+                id={tab.id}
+                label={tab.label}
+                icon={tab.icon}
+                color={tab.color}
+                active={activePanel === tab.id}
+                onClick={() => handleSwitchTab(tab.id)}
+                badgeId={tab.badgeId}
+              />
+            ))}
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2 border-t border-white/5 pt-3">
+            {isAdmin ? (
+              <a
+                id="admin-bnav-link"
+                href="/admin"
+                className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 text-sm font-semibold text-amber-100 transition active:scale-95"
+              >
+                👑 Admin
+              </a>
+            ) : null}
+            <button
+              type="button"
+              className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-red-500/30 bg-red-500/10 px-4 text-sm font-semibold text-red-100 transition active:scale-95"
+              onClick={() => {
+                setDrawerOpen(false);
+                logout();
+              }}
+            >
+              🚪 Logout
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
   );
 };
 

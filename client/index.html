@@ -3430,8 +3430,6 @@
 
         }
 
-      }
-
 
 
       /* Mobile overflow padding fix */
@@ -3664,7 +3662,7 @@
 
 
 
-    <div class="app" id="app" style="display: none; position: relative; z-index: 10;">
+    <div class="app min-h-screen w-full bg-bg text-text md:grid md:grid-cols-[220px_minmax(0,1fr)] md:grid-rows-[56px_minmax(0,1fr)] md:overflow-hidden" id="app" style="display: none; position: relative; z-index: 10;">
 
       <!-- Vue Topbar Mount Point -->
 
@@ -3680,9 +3678,9 @@
 
       <!-- Main content -->
 
-      <main class="main">
+      <main class="main flex min-h-0 w-full flex-1 flex-col overflow-hidden px-2 pb-28 pt-0 md:px-4 md:pb-6">
 
-        <div id="kd-top" class="status-only">
+        <div id="kd-top" class="status-only sticky top-14 z-20 -mx-2 mb-3 border-b border-white/5 bg-bg/95 px-4 py-3 shadow-[0_4px_6px_rgba(0,0,0,0.3)] md:static md:mx-0 md:mb-4 md:rounded-xl md:border md:border-white/5 md:bg-bg md:px-5 md:py-4 md:shadow-none">
 
           <!-- Kingdom header -->
 
@@ -3830,7 +3828,7 @@
 
           <!-- Metrics strip -->
 
-          <div class="metrics" id="react-resource-strip">
+          <div class="metrics grid grid-cols-2 gap-2 md:grid-cols-[repeat(auto-fit,minmax(130px,1fr))] md:gap-3" id="react-resource-strip">
 
             <div class="metric" id="metric-gold">
 
