@@ -204,8 +204,6 @@ const WarfarePanel = () => {
     return filterByQuery(byRace, wcovSearchQ);
   }, [targets, disc, state, wcovTargetRace, wcovSearchQ]);
 
-<<<<<<< HEAD
-=======
   useEffect(() => {
     const unregister = registerTargetFromRankings((id, tab) => {
       const list = buildTargetList(targets, disc, state, { prependSelf: tab === 'spells' });
@@ -226,7 +224,6 @@ const WarfarePanel = () => {
     return () => unregister?.();
   }, [targets, disc, state]);
 
->>>>>>> bd8d4ed (Tighten shell bridge cleanup for direct actions)
   const refreshAttackTargets = useCallback(async () => {
     try {
       const result = await apiCall('/api/kingdom/rankings');
@@ -308,41 +305,14 @@ const WarfarePanel = () => {
   useEffect(() => {
     const handleRaceChange = (e) => setWcovTargetRace(e.detail);
     window.addEventListener('wcovTargetRaceChange', handleRaceChange);
-<<<<<<< HEAD
-    window.setWarfareTab = setActiveTab;
-    if (window.__pendingWarfareTab) {
-      setActiveTab(window.__pendingWarfareTab);
-      window.__pendingWarfareTab = null;
-    }
-    return () => {
-      window.removeEventListener('wcovTargetRaceChange', handleRaceChange);
-      delete window.setWarfareTab;
-=======
     const unregisterWarfareTab = registerWarfareTab(setActiveTab);
     return () => {
       window.removeEventListener('wcovTargetRaceChange', handleRaceChange);
       unregisterWarfareTab?.();
->>>>>>> bd8d4ed (Tighten shell bridge cleanup for direct actions)
     };
   }, []);
 
   useEffect(() => {
-<<<<<<< HEAD
-=======
-    const unregister = registerTargetFromRankings((id, tab) => {
-      const list = buildTargetList(targets, disc, state, { prependSelf: tab === 'spells' });
-      const target = list.find((row) => String(row.id) === String(id));
-      if (!target) { toast('Kingdom not found in target list', 'error'); return; }
-      setSelectedTarget(target);
-      if (tab === 'attack') setActiveTab('attack');
-      else if (tab === 'spells') setActiveTab('wspells');
-      else if (tab === 'covert') setActiveTab('wcovert');
-    });
-    return () => unregister?.();
-  }, [targets, disc, state]);
-
-  useEffect(() => {
->>>>>>> bd8d4ed (Tighten shell bridge cleanup for direct actions)
     if (activeTab === 'attack') {
       refreshAttackTargets();
     } else if (activeTab === 'wreports') {
