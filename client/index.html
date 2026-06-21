@@ -251,7 +251,7 @@
 
 
 
-      /* ── Mobile-first layout ── */
+      /* â�€â�€ Mobile-first layout â�€â�€ */
 
       .app {
 
@@ -383,7 +383,7 @@
 
       }
 
-      /* ── Desktop App Layout (Consistent and Sticky Header) ── */
+      /* â�€â�€ Desktop App Layout (Consistent and Sticky Header) â�€â�€ */
 
       @media (min-width: 768px) {
 
@@ -843,7 +843,7 @@
 
 
 
-      /* ── Bottom nav — sticky to viewport bottom ── */
+      /* â�€â�€ Bottom nav â€� sticky to viewport bottom â�€â�€ */
 
       .bottom-nav {
 
@@ -1059,7 +1059,7 @@
 
 
 
-      /* ── Topbar ── */
+      /* â�€â�€ Topbar â�€â�€ */
 
       .logo {
 
@@ -1277,7 +1277,7 @@
 
 
 
-      /* ── Sidebar nav ── */
+      /* â�€â�€ Sidebar nav â�€â�€ */
 
       .nav-section {
 
@@ -1455,7 +1455,7 @@
 
 
 
-      /* ── Panel ── */
+      /* â�€â�€ Panel â�€â�€ */
 
       .panel {
 
@@ -1501,7 +1501,7 @@
 
 
 
-      /* ── Kingdom header ── */
+      /* â�€â�€ Kingdom header â�€â�€ */
 
       .kingdom-header {
 
@@ -1519,7 +1519,7 @@
 
 
 
-      /* ── Metrics ── */
+      /* â�€â�€ Metrics â�€â�€ */
 
       .metrics {
 
@@ -1651,7 +1651,7 @@
 
 
 
-      /* ── Cards ── */
+      /* â�€â�€ Cards â�€â�€ */
 
       .card {
 
@@ -1745,9 +1745,19 @@
 
       }
 
+      .status-grid {
+
+        display: grid;
+
+        grid-template-columns: 1fr;
+
+        gap: 20px;
+
+      }
 
 
-      /* ── Table rows — stack desc below name on mobile ── */
+
+      /* â�€â�€ Table rows â€� stack desc below name on mobile â�€â�€ */
 
       .trow {
 
@@ -1827,7 +1837,7 @@
 
 
 
-      /* ── Build panel: 2×2 grid layout per building row ── */
+      /* â�€â�€ Build panel: 2Ã—2 grid layout per building row â�€â�€ */
 
       #build-header {
 
@@ -2019,7 +2029,7 @@
 
 
 
-      /* ── Build panel sticky header ── */
+      /* â�€â�€ Build panel sticky header â�€â�€ */
 
       .build-sticky-header {
 
@@ -2077,7 +2087,7 @@
 
 
 
-      /* ── Progress bars ── */
+      /* â�€â�€ Progress bars â�€â�€ */
 
       .prog-wrap {
 
@@ -2147,7 +2157,7 @@
 
 
 
-      /* ── Inputs & buttons ── */
+      /* â�€â�€ Inputs & buttons â�€â�€ */
 
       input[type="number"],
 
@@ -2407,7 +2417,7 @@
 
 
 
-      /* ── Badges ── */
+      /* â�€â�€ Badges â�€â�€ */
 
       .badge {
 
@@ -2473,7 +2483,7 @@
 
 
 
-      /* ── News Log (Console Style) ── */
+      /* â�€â�€ News Log (Console Style) â�€â�€ */
 
       #news-list,
 
@@ -2621,7 +2631,7 @@
 
 
 
-      /* ── Sidebar refinements ── */
+      /* â�€â�€ Sidebar refinements â�€â�€ */
 
       .nav-item.active {
 
@@ -2633,7 +2643,7 @@
 
 
 
-      /* ── Body panel specific classes ── */
+      /* â�€â�€ Body panel specific classes â�€â�€ */
 
       @media (min-width: 769px) {
 
@@ -2827,7 +2837,7 @@
 
 
 
-      /* ── Status Bar ── */
+      /* â�€â�€ Status Bar â�€â�€ */
 
       .status-bar {
 
@@ -2869,7 +2879,7 @@
 
 
 
-      /* ── Toast — bottom-center on mobile ── */
+      /* â�€â�€ Toast â€� bottom-center on mobile â�€â�€ */
 
       #toast {
 
@@ -2947,7 +2957,7 @@
 
 
 
-      /* ── Race tag ── */
+      /* â�€â�€ Race tag â�€â�€ */
 
       .race-tag {
 
@@ -2995,7 +3005,7 @@
 
 
 
-      /* ── Options ── */
+      /* â�€â�€ Options â�€â�€ */
 
       .option-row {
 
@@ -3035,7 +3045,7 @@
 
 
 
-      /* ── Warfare panels — single col on mobile ── */
+      /* â�€â�€ Warfare panels â€� single col on mobile â�€â�€ */
 
       #attack > div,
 
@@ -3103,7 +3113,7 @@
 
 
 
-      /* ── Hire rows responsiveness ── */
+      /* â�€â�€ Hire rows responsiveness â�€â�€ */
 
       .hire-row {
 
@@ -3305,7 +3315,7 @@
 
 
 
-      /* ── Specialized panel visibility ── */
+      /* â�€â�€ Specialized panel visibility â�€â�€ */
 
       .panel-immersive > .chat-container-card {
 
@@ -3329,11 +3339,7 @@
 
 
 
-      /* ════════════════════════════════════
-
-     DESKTOP ADAPTATIONS
-
-  ════════════════════════════════════ */
+      /* Desktop adaptations */
 
       @media (min-width: 768px) {
 
@@ -3395,9 +3401,20 @@
 
         }
 
-        .trow .desc {
+        .status-grid {
 
-          display: block;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+
+          gap: 24px;
+
+        }
+      }
+
+      
+
+      .trow .desc {
+
+        display: block;
 
           opacity: 0.7;
 
@@ -3437,7 +3454,7 @@
 
 
 
-      /* ── Dynamic Navigation Layout Overrides ── */
+      /* â�€â�€ Dynamic Navigation Layout Overrides â�€â�€ */
 
 
 
@@ -3589,7 +3606,7 @@
 
 
 
-      /* ── Login Page Responsive Design ── */
+      /* â�€â�€ Login Page Responsive Design â�€â�€ */
 
       @media (max-width: 1023px) {
 
@@ -3711,7 +3728,7 @@
 
               >
 
-                —
+                â€�
 
               </h1>
 
@@ -3723,7 +3740,7 @@
 
               >
 
-                <span id="kingdom-owner-line">—</span> · Turn
+                <span id="kingdom-owner-line">â€�</span> | Turn
 
                 <span id="turn-num" style="color: var(--text); font-weight: 600"
 
@@ -3731,7 +3748,7 @@
 
                 >
 
-                · Score
+                | Score
 
                 <span
 
@@ -3761,7 +3778,7 @@
 
                   style="display: none; padding: 1px 5px"
 
-                  >🛡️ Protected</span
+                  >Protected</span
 
                 >
 
@@ -3805,151 +3822,11 @@
 
                   "
 
-                  >🌸 Spring</span
+                  >Spring</span
 
                 >
 
               </div>
-
-              <div
-
-                style="
-
-                  margin-top: 4px;
-
-                  display: flex;
-
-                  align-items: center;
-
-                  gap: 6px;
-
-                  flex-wrap: wrap;
-
-                "
-
-              >
-
-                <span
-
-                  style="font-size: 11px; color: var(--text3); cursor: pointer"
-
-                  onclick="showXpModal()"
-
-                  title="Click for XP breakdown"
-
-                  >Level
-
-                  <span
-
-                    id="kingdom-level"
-
-                    style="
-
-                      color: var(--gold);
-
-                      font-weight: 700;
-
-                      font-size: 13px;
-
-                      text-decoration: underline dotted;
-
-                      text-underline-offset: 2px;
-
-                    "
-
-                    >1</span
-
-                  ></span
-
-                >
-
-                <div
-
-                  style="
-
-                    flex: 1;
-
-                    min-width: 80px;
-
-                    max-width: 150px;
-
-                    cursor: pointer;
-
-                  "
-
-                  onclick="showXpModal()"
-
-                  title="Click for XP breakdown"
-
-                >
-
-                  <div
-
-                    style="
-
-                      height: 3px;
-
-                      background: var(--bg4);
-
-                      border-radius: 1.5px;
-
-                      overflow: hidden;
-
-                    "
-
-                  >
-
-                    <div
-
-                      id="xp-bar"
-
-                      style="
-
-                        height: 3px;
-
-                        width: 0%;
-
-                        background: linear-gradient(
-
-                          90deg,
-
-                          var(--accent1),
-
-                          var(--gold)
-
-                        );
-
-                        border-radius: 1.5px;
-
-                        transition: width 0.4s;
-
-                      "
-
-                    ></div>
-
-                  </div>
-
-                </div>
-
-                <span
-
-                  id="xp-label"
-
-                  style="font-size: 9px; color: var(--text3); cursor: pointer"
-
-                  onclick="showXpModal()"
-
-                  >0/100 XP</span
-
-                >
-
-              </div>
-
-            </div>
-
-          </div>
-
-
 
           <!-- Metrics strip -->
 
@@ -4017,7 +3894,7 @@
 
               <div class="sub" style="font-size: 11px; color: var(--text2); display: flex; justify-content: space-between; width: 100%;">
 
-                <span id="m-happiness-breakdown">😐 Content</span>
+                <span id="m-happiness-breakdown">Content</span>
 
               </div>
 
@@ -4045,7 +3922,7 @@
 
               <div class="val" id="m-defense-rating" style="font-size: 11px">
 
-                —
+                â€�
 
               </div>
 
@@ -4105,7 +3982,7 @@
 
         <div id="vue-panel-studies" style="display: contents"></div>
 
-        <!-- ═══════════════════════════════════════════ HEROES PANEL ══ -->
+        <!-- Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢ HEROES PANEL Ã¢â€¢Ã¢â€¢ -->
 
         <!-- Vue Mount heroes -->
 
@@ -4169,13 +4046,13 @@
 
 
 
-        <!-- ═══════════════════════════════════════════ TRAINING PANEL ══ -->
+        <!-- Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢ TRAINING PANEL Ã¢â€¢Ã¢â€¢ -->
 
         <!-- Vue Mount training -->
 
         <div id="vue-panel-training" style="display: contents"></div>
 
-        <!-- ═══════════════════════════════════════════ EXPLORATION PANEL ══ -->
+        <!-- Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢ EXPLORATION PANEL Ã¢â€¢Ã¢â€¢ -->
 
         <!-- Vue Mount exploration -->
 
@@ -4183,7 +4060,7 @@
 
 
 
-        <!-- ═══════════════════════════════════════════ ALLIANCES PANEL ══ -->
+        <!-- Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢ ALLIANCES PANEL Ã¢â€¢Ã¢â€¢ -->
 
         <!-- GLOBAL CHAT -->
 
@@ -4193,7 +4070,7 @@
 
 
 
-        <!-- ═══════════════════════════════════════════ ALLIANCE ════════ -->
+        <!-- Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢ ALLIANCE Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢Ã¢â€¢ -->
 
         <!-- Vue Mount alliances -->
 
@@ -4335,7 +4212,7 @@
 
             >
 
-              ✕
+              âœ•
 
             </div>
 
@@ -4391,7 +4268,7 @@
 
             </div>
 
-            <div style="opacity: 0.6">UPTIME: <span id="status-uptime">—</span></div>
+            <div style="opacity: 0.6">UPTIME: <span id="status-uptime">â€�</span></div>
 
           </div>
 
@@ -4401,9 +4278,9 @@
 
           >
 
-            <span id="status-version">—</span>
+            <span id="status-version">â€�</span>
 
-            <span>NODE ID: <span id="status-nodeid">—</span></span>
+            <span>NODE ID: <span id="status-nodeid">â€�</span></span>
 
           </div>
 
@@ -4423,9 +4300,12 @@
 
     <script>
 
-      /* ── Core state (defined first so all functions below can access it) ── */
+      /* â�€â�€ Core state (defined first so all functions below can access it) â�€â�€ */
 
-      window.applyNavLayout = function() {
+      function applyNavLayout() {
+        if (typeof window.__applyNavLayoutImpl === "function") {
+          return window.__applyNavLayoutImpl();
+        }
 
         var layout = localStorage.getItem("narmir_nav_layout") || "responsive";
 
@@ -4443,9 +4323,9 @@
 
         window.dispatchEvent(new Event('resize'));
 
-      };
+      }
 
-      window.applyNavLayout();
+      applyNavLayout();
 
 
 
@@ -4455,7 +4335,7 @@
 
 
 
-      // ── Expedition dedup cache ──────────────────────────────────────────────────
+      // â�€â�€ Expedition dedup cache â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€
 
       // Prevents duplicate API calls when player clicks button rapidly
 
@@ -4501,7 +4381,7 @@
 
       var UI_STRINGS = {
 
-        PRESTIGE_SYSTEM_TITLE: "✨ Prestige System",
+        PRESTIGE_SYSTEM_TITLE: "âœ¨ Prestige System",
 
         PRESTIGE_COMING_SOON: "Coming Soon",
 
@@ -4598,18 +4478,10 @@
       };
 
 
-
-      window.setGameStateObj = function (vueState) {
-
-        Object.assign(vueState, state); // Seed vueState with current state
-
-        state = vueState; // Replace local reference to point to Vue proxy
-
-      };
-
-
-
       function fmt(n) {
+        if (typeof window.__fmtImpl === "function") {
+          return window.__fmtImpl(n);
+        }
 
         if (n === undefined || n === null || isNaN(n)) return "0";
 
@@ -4618,6 +4490,9 @@
       }
 
       function fmtShort(n) {
+        if (typeof window.__fmtShortImpl === "function") {
+          return window.__fmtShortImpl(n);
+        }
 
         if (n === undefined || n === null || isNaN(n)) return "0";
 
@@ -4628,6 +4503,9 @@
 
 
       function trunc(n) {
+        if (typeof window.__truncImpl === "function") {
+          return window.__truncImpl(n);
+        }
 
         n = Math.round(n);
 
@@ -4645,7 +4523,7 @@
 
       function populateInputs() {
 
-        // Hire — max affordable with current gold and pop, capped by level
+        // Hire â€� max affordable with current gold and pop, capped by level
 
         var HIRE_CAPS_JS = {
 
@@ -4729,13 +4607,13 @@
 
         if (ee) ee.value = maxAfford;
 
-        // Research — single researcher input
+        // Research â€� single researcher input
 
         var ra = document.getElementById("r-amount");
 
         if (ra) ra.value = state.researchers || 0;
 
-        // Attack — all available fighters/mages
+        // Attack â€� all available fighters/mages
 
         var af = document.getElementById("atk-fighters");
 
@@ -4745,25 +4623,25 @@
 
         if (am) am.value = state.mages || 0;
 
-        // Search — all rangers
+        // Search â€� all rangers
 
         var sr = document.getElementById("search-rangers");
 
         if (sr) sr.value = state.rangers || 0;
 
-        // Spy — start at 0
+        // Spy â€� start at 0
 
         var su = document.getElementById("spy-units");
 
         if (su && (su.value === "" || su.value === "200")) su.value = 0;
 
-        // Loot — start at 0
+        // Loot â€� start at 0
 
         var lt = document.getElementById("loot-thieves");
 
         if (lt && (lt.value === "" || lt.value === "300")) lt.value = 0;
 
-        // Assassinate / sabotage — start at 0
+        // Assassinate / sabotage â€� start at 0
 
         var an = document.getElementById("assn-ninjas");
 
@@ -4773,7 +4651,7 @@
 
         if (sn && (sn.value === "" || sn.value === "100")) sn.value = 0;
 
-        // Build quantity — default to 1
+        // Build quantity â€� default to 1
 
         var ba = document.getElementById("b-amount");
 
@@ -4781,7 +4659,7 @@
 
 
 
-        // Training — persist allocation values from state
+        // Training â€� persist allocation values from state
 
         if (state.training_allocation) {
 
@@ -4811,13 +4689,12 @@
 
           });
 
-          updateTrainingDisplay();
 
         }
 
 
 
-        // Spell power slider — max mana
+        // Spell power slider â€� max mana
 
         var sp = document.getElementById("sl-power");
 
@@ -4835,7 +4712,7 @@
 
 
 
-      /* ── Shared data ── */
+      /* â�€â�€ Shared data â�€â�€ */
 
       var targets = [];
 
@@ -4853,7 +4730,7 @@
 
 
 
-      /* ── Target list renderer ── */
+      /* â�€â�€ Target list renderer â�€â�€ */
 
       function renderTargets(list, containerId, selectFn) {
 
@@ -4997,11 +4874,11 @@
 
             if (t.is_location) {
 
-              label = "📍 " + t.name + " (Location)";
+              label = "Location: " + t.name;
 
             } else if (t.id === state.kingdomId) {
 
-              label = "🏠 " + t.name + " (Self)";
+              label = "Self: " + t.name;
 
             } else {
 
@@ -5019,7 +4896,7 @@
 
                 (t.race || "").replace("_", " ") +
 
-                " · " +
+                " - " +
 
                 fmt(t.land) +
 
@@ -5037,7 +4914,7 @@
 
           el.innerHTML =
 
-            '<option value="">— Select Target kingdom or Location —</option>' +
+            '<option value="">Select Target kingdom or Location</option>' +
 
             options.join("");
 
@@ -5051,7 +4928,7 @@
 
           .map(function (t) {
 
-            var raceIcon = RACE_ICONS[t.race] || "👤";
+            var raceIcon = RACE_ICONS[t.race] || "ðŸ‘¤";
 
             var aiTag = t.is_ai
 
@@ -5105,7 +4982,7 @@
 
               (t.level || 1) +
 
-              " · " +
+              " Â· " +
 
               (t.race || "").replace("_", " ") +
 
@@ -5119,7 +4996,7 @@
 
               fmt(t.fighters) +
 
-              " ⚔️</div></span>" +
+              " fighters</div></span>" +
 
               "</div>"
 
@@ -5179,7 +5056,7 @@
 
         toast(
 
-          "Target list refreshed — " +
+          "Target list refreshed â€� " +
 
             (targets ? targets.length : 0) +
 
@@ -5215,7 +5092,7 @@
 
         if (el) el.classList.add("selected");
 
-        var raceIcon = RACE_ICONS[selectedTarget.race] || "👤";
+        var raceIcon = RACE_ICONS[selectedTarget.race] || "ðŸ‘¤";
 
         document.getElementById("atk-target-name").textContent =
 
@@ -5227,19 +5104,19 @@
 
           (selectedTarget.level || 1) +
 
-          " · " +
+          " Â· " +
 
           (selectedTarget.race || "").replace("_", " ") +
 
-          " · Rank #" +
+          " Â· Rank #" +
 
           selectedTarget.rank +
 
-          " · " +
+          " Â· " +
 
           fmt(selectedTarget.land) +
 
-          " acres · " +
+          " acres Â· " +
 
           fmt(selectedTarget.fighters) +
 
@@ -5287,15 +5164,15 @@
 
           selectedCovertTarget.race +
 
-          " · Rank #" +
+          " Â· Rank #" +
 
           selectedCovertTarget.rank +
 
-          " · " +
+          " Â· " +
 
           fmt(selectedCovertTarget.fighters) +
 
-          " fighters · " +
+          " fighters Â· " +
 
           fmt(selectedCovertTarget.land) +
 
@@ -5305,7 +5182,7 @@
 
 
 
-      /* ── Attack ── */
+      /* â�€â�€ Attack â�€â�€ */
 
       function updateAtkEstimate() {
 
@@ -5445,7 +5322,7 @@
 
           bullyMsg =
 
-            "🚨 ×8+ size difference — you will be publicly shamed regardless of outcome. Attack power −60%.";
+            "ðŸš¨ Ã—8+ size difference â€� you will be publicly shamed regardless of outcome. Attack power âˆ’60%.";
 
         } else if (bullyRatio >= 4) {
 
@@ -5453,7 +5330,7 @@
 
           bullyMsg =
 
-            "⚠️ ×4–8 size difference — happiness suffers. Attack power −40%.";
+            "Ã¢Å¡Â Ã¯Â¸ Ã—4â€“8 size difference â€� happiness suffers. Attack power âˆ’40%.";
 
         } else if (bullyRatio >= 2) {
 
@@ -5461,7 +5338,7 @@
 
           bullyMsg =
 
-            "⚠️ ×2–4 size difference — troops lack motivation. Attack power −20%.";
+            "Ã¢Å¡Â Ã¯Â¸ Ã—2â€“4 size difference â€� troops lack motivation. Attack power âˆ’20%.";
 
         }
 
@@ -5469,7 +5346,7 @@
 
 
 
-        // Estimate defense (approximate — exact power only from spy report)
+        // Estimate defense (approximate â€� exact power only from spy report)
 
         var defPower = selectedTarget
 
@@ -5541,7 +5418,7 @@
 
           de.textContent =
 
-            defPower > 0 ? "~" + fmt(defPower) + " (estimated)" : "—";
+            defPower > 0 ? "~" + fmt(defPower) + " (estimated)" : "â€�";
 
         var we = document.getElementById("atk-est-winpct");
 
@@ -5559,7 +5436,7 @@
 
           le.textContent =
 
-            landCapture > 0 ? "+" + fmt(landCapture) + " acres" : "—";
+            landCapture > 0 ? "+" + fmt(landCapture) + " acres" : "â€�";
 
         var bw = document.getElementById("atk-bully-warn");
 
@@ -5623,7 +5500,7 @@
 
         if (ld > (state.ladders || 0))
 
-          return toast("Not enough 🪜 ladders", "error");
+          return toast("Not enough ðŸªœ ladders", "error");
 
         if (nj > state.ninjas) return toast("Not enough ninjas", "error");
 
@@ -5679,11 +5556,10 @@
 
         var r = result.report;
 
-        window.applyGameMutation(result, { reason: "attack" });
+        applyGameMutation(result, { reason: "attack" });
 
         syncUI();
 
-        updateTurnsDisplay();
 
 
 
@@ -5701,9 +5577,7 @@
 
 
 
-        var rows = [
-
-          ["Outcome", r.win ? "🏆 Victory" : "❌ Repelled"],
+        var rows = [          ["Outcome", r.win ? "Victory" : "Repelled"],
 
           ["Land Seized", "+" + fmt(r.landTransferred || 0) + " acres"],
 
@@ -5805,7 +5679,7 @@
 
 
 
-        if (r.bullyMsg) rows.push(["⚠️ Penalty", r.bullyMsg]);
+        if (r.bullyMsg) rows.push(["Ã¢Å¡Â Ã¯Â¸ Penalty", r.bullyMsg]);
 
 
 
@@ -5820,214 +5694,6 @@
           rows,
 
         });
-
-      }
-
-
-
-      function searchAction(type) {
-
-        var r = parseInt(document.getElementById("search-rangers").value) || 0;
-
-        if (r <= 0) return toast("Assign some rangers first", "error");
-
-        if (r > state.rangers) return toast("Not enough rangers", "error");
-
-        if (state.turns_stored < 1) return toast("No turns available", "warn");
-
-
-
-        apiCall("POST", "/api/kingdom/search", { type: type, rangers: r }).then(
-
-          async function (result) {
-
-            if (result.error) return toast(result.error, "error");
-
-            window.applyGameMutation(result, { reason: "search" });
-
-            syncUI();
-
-            updateTurnsDisplay();
-
-            // Removed appendNewsItems(result.events) so results only appear in expedition log
-
-            toast(result.message, "success");
-
-            // Log instant search result (not in database)
-
-            var icons = { land: "🗺️", gold: "⛏️", food: "🌾", targets: "🔭" };
-
-            logExpeditionEntry(
-
-              icons[type] || "🧭",
-
-              result.message,
-
-              "Sent " + fmt(r) + " rangers · 1 turn used",
-
-            );
-
-            // Immediately update expedition state: counters + available ranger pools
-
-            updateExpeditionAvailability();
-
-            await loadActiveExpeditions();
-
-          },
-
-        ).catch(function(err) {
-
-          console.error("Search API error:", err);
-
-          toast("Search action failed: " + err.message, "error");
-
-        });
-
-      }
-
-
-
-      async function launchExpedition(type) {
-
-        var rangers =
-
-          parseInt(document.getElementById("exp-" + type + "-rangers").value) ||
-
-          0;
-
-        var fighters =
-
-          type === "dungeon"
-
-            ? parseInt(document.getElementById("exp-dungeon-fighters").value) ||
-
-              0
-
-            : 0;
-
-
-
-        if (rangers < 1) return toast("Send at least 1 ranger", "error");
-
-        if (rangers > state.rangers)
-
-          return toast("Not enough rangers", "error");
-
-        if (type === "dungeon" && fighters < 1)
-
-          return toast("Dungeon raids require fighters", "error");
-
-        if (type === "dungeon" && fighters > state.fighters)
-
-          return toast("Not enough fighters", "error");
-
-
-
-        // Calculate food requirement (matches server-side calculation, without race multiplier for estimate)
-
-        var expeditionTurns = { scout: 10, deep: 25, dungeon: 50, mountain: 100 };
-
-        var turns = expeditionTurns[type] || 0;
-
-        var foodPerTurn = (rangers * 0.5 + fighters * 1.0);
-
-        var foodNeeded = Math.ceil(turns * foodPerTurn * 0.75);
-
-
-
-        if (state.food < foodNeeded) {
-
-          var foodShortfall = foodNeeded - state.food;
-
-          return toast("You need " + foodShortfall.toLocaleString() + " more food to start the expedition", "error");
-
-        }
-
-
-
-        var labels = {
-
-          scout: "10-turn Scout",
-
-          deep: "25-turn Deep",
-
-          dungeon: "50-turn Dungeon",
-
-          mountain: "100-turn Mountain",
-
-        };
-
-        var btn = document.getElementById("btn-exp-" + type);
-
-        if (btn) {
-
-          btn.disabled = true;
-
-          btn.textContent = "Launching...";
-
-        }
-
-
-
-        var result = await apiCall("POST", "/api/kingdom/expedition/start", {
-
-          type,
-
-          rangers,
-
-          fighters,
-
-        });
-
-        if (btn) {
-
-          btn.disabled = false;
-
-          if (type === "dungeon") {
-
-            btn.textContent = "Launch raid";
-
-          } else if (type === "mountain") {
-
-            btn.textContent = "Accept the risk";
-
-          } else {
-
-            btn.textContent = "Launch expedition";
-
-          }
-
-        }
-
-
-
-        if (result.error) return toast(result.error, "error");
-
-        playGameSound("expedition_depart");
-
-
-
-        // Apply full turn updates returned from server (processTurn was run + turn consumed)
-
-        window.applyGameMutation(result, { reason: "expedition-start" });
-
-        // Expedition launch news goes to exploration log only — append turn events to news feed
-
-        if (result.events && result.events.length)
-
-          appendNewsItems(result.events);
-
-        syncUI();
-
-        updateExpeditionAvailability();
-
-
-
-        // loadActiveExpeditions creates the departure log entry with a tracked ID
-
-        await loadActiveExpeditions();
-
-        toast(labels[type] + " expedition launched!", "success");
 
       }
 
@@ -6055,19 +5721,19 @@
 
           '<span style="font-size:18px;flex-shrink:0">' +
 
-          icon +
+          repairMojibake(icon) +
 
           "</span>" +
 
           '<div><div style="color:var(--text)">' +
 
-          title +
+          repairMojibake(title) +
 
           "</div>" +
 
           '<div style="font-size:11px;color:var(--text3);margin-top:2px">' +
 
-          subtitle +
+          repairMojibake(subtitle) +
 
           "</div></div>";
 
@@ -6099,23 +5765,23 @@
 
         var log = document.getElementById("exploration-log");
 
-        var icons = { scout: "🔭", deep: "🌲", dungeon: "⚔️", mountain: "🏔️" };
+                var icons = { scout: "Scout", deep: "Deep", dungeon: "Dungeon", mountain: "Mountain" };
 
         var labels = {
 
-          scout: "🔭 Scout expedition",
+                    scout: "Scout expedition",
 
-          deep: "🌲 Deep expedition",
+                    deep: "Deep expedition",
 
-          dungeon: "⚔️ Dungeon raid",
+                    dungeon: "Dungeon raid",
 
-          mountain: "🏔️ Mountain expedition",
+                    mountain: "Mountain expedition",
 
         };
 
 
 
-        // ── Update active expedition statuses (live countdown) ──
+                // Update active expedition statuses (live countdown)
 
         if (log) {
 
@@ -6129,13 +5795,13 @@
 
               var troopStr = exp.rangers.toLocaleString() + " rangers" + (exp.fighters > 0 ? ", " + exp.fighters.toLocaleString() + " fighters" : "");
 
-              var foodStr = exp.food_taken > 0 ? " · 🍖 " + exp.food_taken.toLocaleString() + " food taken" : "";
+                            var foodStr = exp.food_taken > 0 ? " - " + exp.food_taken.toLocaleString() + " food taken" : "";
 
               var content =
 
-                '<span style="font-size:18px;flex-shrink:0">' + (icons[exp.type] || "🧭") + "</span>" +
+                '<span style="font-size:18px;flex-shrink:0">' + repairMojibake(icons[exp.type] || "Expedition") + "</span>" +
 
-                '<div><div style="color:var(--text)">' + (labels[exp.type] || exp.type) + " departed — " + exp.turns_left + " turn" + (exp.turns_left === 1 ? "" : "s") + " left</div>" +
+                '<div><div style="color:var(--text)">' + repairMojibake(labels[exp.type] || exp.type) + " - " + exp.turns_left + " turn" + (exp.turns_left === 1 ? "" : "s") + " left</div>" +
 
                 '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + troopStr + foodStr + "</div></div>";
 
@@ -6159,13 +5825,13 @@
 
               var troopStr = exp.rangers.toLocaleString() + " rangers" + (exp.fighters > 0 ? ", " + exp.fighters.toLocaleString() + " fighters" : "");
 
-              var foodStr = exp.food_taken > 0 ? " · 🍖 " + exp.food_taken.toLocaleString() + " food taken" : "";
+                             var foodStr = exp.food_taken > 0 ? " - " + exp.food_taken.toLocaleString() + " food taken" : "";
 
               entry.innerHTML =
 
-                '<span style="font-size:18px;flex-shrink:0">' + (icons[exp.type] || "🧭") + "</span>" +
+                '<span style="font-size:18px;flex-shrink:0">' + repairMojibake(icons[exp.type] || "Expedition") + "</span>" +
 
-                '<div><div style="color:var(--text)">' + (labels[exp.type] || exp.type) + " departed — " + exp.turns_left + " turn" + (exp.turns_left === 1 ? "" : "s") + " left</div>" +
+                '<div><div style="color:var(--text)">' + repairMojibake(labels[exp.type] || exp.type) + " - " + exp.turns_left + " turn" + (exp.turns_left === 1 ? "" : "s") + " left</div>" +
 
                 '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + troopStr + foodStr + "</div></div>";
 
@@ -6179,7 +5845,7 @@
 
 
 
-        // ── Process completed expeditions ──
+        // â�€â�€ Process completed expeditions â�€â�€
 
         completed.forEach(function (exp) {
 
@@ -6249,7 +5915,7 @@
 
               '<div style="width:100%">' +
 
-              '<div style="font-size:20px;font-weight:700;color:var(--gold);margin-bottom:12px;text-align:center;letter-spacing:1px">👑 THE THRONE OF NAZDREG GRISHNAK</div>' +
+              '<div style="font-size:20px;font-weight:700;color:var(--gold);margin-bottom:12px;text-align:center;letter-spacing:1px">ðŸ‘‘ THE THRONE OF NAZDREG GRISHNAK</div>' +
 
               '<img src="/throne.png" alt="The Throne of Nazdreg Grishnak" style="width:100%;max-width:600px;display:block;margin:0 auto 16px;border-radius:8px;border:2px solid #6a4818">' +
 
@@ -6257,7 +5923,7 @@
 
               '<div style="font-family:Georgia,serif;font-size:18px;font-weight:700;color:#c8962a;letter-spacing:2px;margin-bottom:6px">Nazdreg Grishnak</div>' +
 
-              '<div style="font-family:Georgia,serif;font-size:14px;color:#a07828;margin-bottom:10px;font-style:italic">August 13, 1975 — August 19, 2012</div>' +
+              '<div style="font-family:Georgia,serif;font-size:14px;color:#a07828;margin-bottom:10px;font-style:italic">August 13, 1975 â€� August 19, 2012</div>' +
 
               '<div style="height:1px;background:linear-gradient(90deg,transparent,#6a4818,transparent);margin-bottom:10px"></div>' +
 
@@ -6283,7 +5949,7 @@
 
                     .map(function (r) {
 
-                      return "• " + r;
+                      return "â€¢ " + repairMojibake(r);
 
                     })
 
@@ -6305,15 +5971,15 @@
 
               '<span style="font-size:18px;flex-shrink:0">' +
 
-              (icons[exp.type] || "🧭") +
+              repairMojibake(icons[exp.type] || "Expedition") +
 
               "</span>" +
 
               '<div style="flex:1"><div style="color:var(--text);font-weight:600">' +
 
-              (labels[exp.type] || exp.type) +
+              repairMojibake(labels[exp.type] || exp.type) +
 
-              " — Returned</div>" +
+               " â€� Returned</div>" +
 
               '<div style="font-size:11px;color:var(--text3);margin-top:2px">' +
 
@@ -6337,7 +6003,7 @@
 
                     .map(function (r) {
 
-                      return "• " + r;
+                      return "â€¢ " + repairMojibake(r);
 
                     })
 
@@ -6345,7 +6011,7 @@
 
                   "</div>"
 
-                : '<div style="margin-top:4px;font-size:12px;color:var(--text3)">Expedition complete — check news for details.</div>') +
+                 : '<div style="margin-top:4px;font-size:12px;color:var(--text3)">Expedition complete â€� check news for details.</div>') +
 
               "</div>";
 
@@ -6369,7 +6035,7 @@
 
           if (kingdom && !kingdom.error) {
 
-            window.applyGameMutation(kingdom, { reason: "expedition-complete" });
+            applyGameMutation(kingdom, { reason: "expedition-complete" });
 
             updateExpeditionAvailability();
 
@@ -6381,7 +6047,7 @@
 
 
 
-        // ── Track active types ────────────────────────────────────────────────────
+        // â�€â�€ Track active types â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€
 
         var activeTypes = {};
 
@@ -6445,11 +6111,11 @@
 
               '<div style="font-weight:bold;color:var(--text);font-size:14px"><span style="margin-right:6px">' +
 
-              (icons[exp.type] || "🧭") +
+              repairMojibake(icons[exp.type] || "Expedition") +
 
               "</span> " +
 
-              (labels[exp.type] || exp.type) +
+              repairMojibake(labels[exp.type] || exp.type) +
 
               " underway</div>" +
 
@@ -6481,7 +6147,7 @@
 
               (exp.food_taken > 0
 
-                ? " · 🍖 " + exp.food_taken.toLocaleString() + " food"
+                ? " Â· ðŸ�– " + exp.food_taken.toLocaleString() + " food"
 
                 : "") +
 
@@ -6515,7 +6181,7 @@
 
             btn.textContent = exp
 
-              ? "Underway — " +
+              ? "Underway â€� " +
 
                 exp.turns_left +
 
@@ -6539,7 +6205,6 @@
 
 
 
-      window.loadActiveExpeditions = loadActiveExpeditions;
 
 
 
@@ -6557,47 +6222,15 @@
 
         if (kingdom && !kingdom.error) {
 
-          window.applyGameMutation(kingdom, { reason: "expedition-cancel" });
+          applyGameMutation(kingdom, { reason: "expedition-cancel" });
 
         }
 
-        toast("Expedition cancelled — troops returned", "success");
+        toast("Expedition cancelled â€� troops returned", "success");
 
         await loadActiveExpeditions();
 
         syncUI();
-
-      }
-
-
-
-      function clearExpeditionLog() {
-
-        var log = document.getElementById("exploration-log");
-
-        if (!log) return;
-
-        // Remove completed entries from existing DOM
-
-        Array.from(log.querySelectorAll(".exp-log-entry")).forEach(
-
-          function (entry) {
-
-            entry.remove();
-
-          },
-
-        );
-
-        if (log.children.length === 0) {
-
-          log.innerHTML =
-
-            '<div data-placeholder style="text-align:center;color:var(--text3);font-size:13px;padding:40px 0">No recent expeditions</div>';
-
-        }
-
-        toast("Log cleared", "success");
 
       }
 
@@ -6621,7 +6254,7 @@
 
             (result.cleared || 0) +
 
-            " stuck expeditions — troops returned",
+            " stuck expeditions â€� troops returned",
 
           "success",
 
@@ -6667,7 +6300,7 @@
 
 
 
-      /* ── Spells ── */
+      /* â�€â�€ Spells â�€â�€ */
 
       function renderSpells() {
 
@@ -6693,13 +6326,13 @@
 
         var tierLabels = {
 
-          1: "Tier I — Apprentice",
+          1: "Tier I â€� Apprentice",
 
-          2: "Tier II — Adept",
+          2: "Tier II â€� Adept",
 
-          3: "Tier III — Archmage",
+          3: "Tier III â€� Archmage",
 
-          4: "Tier IV — Legendary",
+          4: "Tier IV â€� Legendary",
 
         };
 
@@ -6723,11 +6356,11 @@
 
             '<div style="font-size:13px;color:var(--text3);padding:12px 0">' +
 
-            "🔮 Your mages need direction. STUDY! (Spellbook at " +
+            "ðŸ�® Your mages need direction. STUDY! (Spellbook at " +
 
             sb +
 
-            " — research to 100 to unlock Tier I spells.)</div>";
+            " â€� research to 100 to unlock Tier I spells.)</div>";
 
           return;
 
@@ -6767,7 +6400,7 @@
 
               tierLabels[s.tier] +
 
-              " · Spellbook " +
+              " Â· Spellbook " +
 
               s.minSB +
 
@@ -6783,7 +6416,7 @@
 
             scrollCount > 0
 
-              ? '<span style="background:rgba(180, 60, 0,.2);border:1px solid var(--accent1);border-radius:4px;padding:2px 6px;font-size:11px;color:var(--accent1);margin-left:6px">×' +
+              ? '<span style="background:rgba(180, 60, 0,.2);border:1px solid var(--accent1);border-radius:4px;padding:2px 6px;font-size:11px;color:var(--accent1);margin-left:6px">Ã—' +
 
                 scrollCount +
 
@@ -6827,11 +6460,11 @@
 
             s.minSB +
 
-            " · " +
+            " Â· " +
 
             s.mages +
 
-            " mages · " +
+            " mages Â· " +
 
             s.turns +
 
@@ -6843,7 +6476,7 @@
 
               ? ""
 
-              : '<span style="font-size:10px;color:var(--amber);margin-left:auto">🔒 locked</span>') +
+              : '<span style="font-size:10px;color:var(--amber);margin-left:auto">ðŸ�’ locked</span>') +
 
             "</div>" +
 
@@ -6933,7 +6566,7 @@
 
         var totalEl = document.getElementById("calc-total");
 
-        if (scrollEl) scrollEl.textContent = selectedSpell.label + " scroll ×1";
+        if (scrollEl) scrollEl.textContent = selectedSpell.label + " scroll Ã—1";
 
         if (heldEl) {
 
@@ -6997,7 +6630,7 @@
 
           return toast(
 
-            "No " + def.label + " scroll in your library — craft one first",
+            "No " + def.label + " scroll in your library â€� craft one first",
 
             "error",
 
@@ -7057,11 +6690,10 @@
 
         // Apply updates from the authoritative spell response.
 
-        window.applyGameMutation(result, { reason: "spell" });
+        applyGameMutation(result, { reason: "spell" });
 
         syncUI();
 
-        updateTurnsDisplay();
 
         renderSpells(); // refresh scroll counts
 
@@ -7085,7 +6717,7 @@
 
           win: true,
 
-          type: "✨ " + def.label,
+          type: "âœ¨ " + def.label,
 
           target: targetName,
 
@@ -7107,7 +6739,7 @@
 
               "Magic ratio",
 
-              r.magicRatio !== undefined ? r.magicRatio + "%" : "—",
+              r.magicRatio !== undefined ? r.magicRatio + "%" : "â€�",
 
             ],
 
@@ -7123,7 +6755,7 @@
 
 
 
-      /* ── Covert ── */
+      /* â�€â�€ Covert â�€â�€ */
 
       async function covertOp(op) {
 
@@ -7233,7 +6865,7 @@
 
         // we no longer need a second GET /me round-trip to refresh state.
 
-        window.applyGameMutation(result, { reason: "covert-" + op });
+        applyGameMutation(result, { reason: "covert-" + op });
 
 
 
@@ -7317,13 +6949,12 @@
 
         syncUI();
 
-        updateTurnsDisplay();
 
       }
 
 
 
-      /* ── Battle report modal ── */
+      /* â�€â�€ Battle report modal â�€â�€ */
 
       function showBattleReport(data) {
 
@@ -7331,7 +6962,7 @@
 
         var titleColor = win ? "var(--green)" : "var(--red)";
 
-        var outcomeIcon = win ? "⚔️ Victory" : "🛡️ Repelled";
+        var outcomeIcon = win ? "âš�ï¸� Victory" : "ðŸ›¡ï¸� Repelled";
 
         var outcomeClass = win ? "br-win" : "br-lose";
 
@@ -7341,7 +6972,7 @@
 
 
 
-        // Power bar — skip for spells
+        // Power bar â€� skip for spells
 
         var atkPow = data.atkPower || 0;
 
@@ -7371,7 +7002,7 @@
 
           data.type +
 
-          ' — <strong style="color:var(--text)">' +
+          ' â€� <strong style="color:var(--text)">' +
 
           data.target +
 
@@ -7485,9 +7116,9 @@
 
           (win
 
-            ? "🏆 Victory! Land captured and enemies routed."
+            ? "ðŸ�† Victory! Land captured and enemies routed."
 
-            : "💀 Attack repelled. Regroup and try again.") +
+            : "ðŸ’€ Attack repelled. Regroup and try again.") +
 
           "</div>";
 
@@ -7511,7 +7142,7 @@
 
         var html =
 
-          '<div class="br-title" style="color:var(--blue)">🕵️ Spy report — ' +
+          '<div class="br-title" style="color:var(--blue)">ðŸ•µï¸� Spy report â€� ' +
 
           name +
 
@@ -7521,7 +7152,7 @@
 
         var tier = report.tier || 1;
 
-        var noiseLevel = tier === 1 ? "±30%" : tier === 2 ? "±25%" : "±15%";
+        var noiseLevel = tier === 1 ? "Â±30%" : tier === 2 ? "Â±25%" : "Â±15%";
 
 
 
@@ -7731,9 +7362,9 @@
 
 
 
-      /* ── Alliance ── */
+      /* â�€â�€ Alliance â�€â�€ */
 
-      // ── Socket.io connection ──────────────────────────────────────────────────────
+      // â�€â�€ Socket.io connection â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€
 
       var socket = null;
 
@@ -7742,38 +7373,15 @@
       var allianceChatMessages = [];
 
       function loadKingdom() {
-
         return apiCall("GET", "/api/kingdom/me").then(function (kingdom) {
-
           if (kingdom && !kingdom.error) {
-
-            if (window.applyGameMutation) {
-
-              window.applyGameMutation(kingdom, { reason: "kingdom-refresh" });
-
+            if (applyGameMutation) {
+              applyGameMutation(kingdom, { reason: "kingdom-refresh" });
             }
-
-            if (typeof window.syncUI === "function") {
-
-              window.syncUI();
-
-            }
-
-            if (typeof window.updateTurnsDisplay === "function") {
-
-              window.updateTurnsDisplay();
-
-            }
-
           }
-
           return kingdom;
-
         });
-
       }
-
-
 
       function loadMe() {
 
@@ -7783,6 +7391,56 @@
 
       function escHtml(text) {
         return escapeHtml(text);
+      }
+
+      function repairMojibake(value) {
+        var text = value == null ? "" : String(value);
+        if (!text || !/[ÃƒÆ’Ãƒâ€šÃƒÂ¢ÃƒÂ°Ã…Â¸Ã°Ã¢Ã‚Ã¯Â¿Â½]/.test(text)) return text;
+        var current = text;
+        for (var i = 0; i < 20; i++) {
+          var next = current;
+          try {
+            next = decodeURIComponent(escape(current));
+          } catch (err) {
+            try {
+              next = new TextDecoder("utf-8").decode(
+                Uint8Array.from(current, function (ch) {
+                  return ch.charCodeAt(0) & 255;
+                }),
+              );
+            } catch (innerErr) {}
+          }
+          if (!next || next === current) break;
+          current = next;
+        }
+        current = current
+          .replace(/Ã‚/g, "")
+          .replace(/Â·/g, "Â·")
+          .replace(/â€�/g, "â€�")
+          .replace(/â€“/g, "-")
+          .replace(/â€¢/g, "â€¢")
+          .replace(/â€˜|â€™/g, "'")
+          .replace(/â€œ|"/g, '"')
+          .replace(/ðŸ�­/g, "ðŸ�­")
+          .replace(/ðŸŒ²/g, "ðŸŒ²")
+          .replace(/ðŸ��ï¸�/g, "ðŸ��ï¸�")
+          .replace(/ðŸ§­/g, "ðŸ§­")
+          .replace(/ðŸ�†/g, "ðŸ�†")
+          .replace(/ðŸ�’/g, "ðŸ�’")
+          .replace(/ðŸ�®/g, "ðŸ�®")
+          .replace(/ðŸ¤�/g, "ðŸ¤�")
+          .replace(/ðŸ“�/g, "ðŸ“�")
+          .replace(/ðŸ“œ/g, "ðŸ“°")
+          .replace(/ðŸ›¡ï¸�/g, "ðŸ›¡ï¸�")
+          .replace(/ðŸ‘¤/g, "ðŸ‘¤")
+          .replace(/ðŸ�º/g, "ðŸ�º")
+          .replace(/ðŸ§›/g, "ðŸ§›")
+          .replace(/ðŸŒŸ/g, "ðŸŒŸ")
+          .replace(/ðŸ�œ/g, "ðŸ�œ")
+          .replace(/ðŸ•µï¸�/g, "ðŸ•µï¸�")
+          .replace(/ðŸ’€/g, "ðŸ’€")
+          .replace(/ðŸ’«/g, "ðŸ’«");
+        return current;
       }
 
       function getAuthModalElement(id) {
@@ -7854,6 +7512,31 @@
         if (content) content.scrollTop = 0;
       }
 
+      function showNewsBadge(count) {
+        const value = Number(count) || 0;
+        ["news-badge", "bnav-news-badge"].forEach(function (id) {
+          const badge = document.getElementById(id);
+          if (!badge) return;
+          if (value > 0) {
+            badge.textContent = String(value);
+            badge.style.display = "inline-flex";
+          } else {
+            badge.textContent = "";
+            badge.style.display = "none";
+          }
+        });
+      }
+
+      function clearToken() {
+        try {
+          localStorage.removeItem("narmir_token");
+        } catch {}
+        try {
+          document.cookie = "token=; Max-Age=0; path=/";
+          document.cookie = "csrf_token=; Max-Age=0; path=/";
+        } catch {}
+      }
+
       async function submitAuthRequest(endpoint, payload) {
         clearAuthError("");
         const res = await apiCall("POST", endpoint, payload);
@@ -7876,7 +7559,6 @@
         }
 
         await loadKingdom();
-        if (typeof window.mountReactApps === "function") window.mountReactApps();
         initSocket().catch(function (err) {
           console.warn("[socket] Failed to initialize after auth:", err);
         });
@@ -7923,16 +7605,8 @@
           clearAuthError(err.message || "Registration failed.");
         }
       }
-
-      window.escHtml = escHtml;
-      window.initLoginModal = initLoginModal;
-      window.showLoginModal = showLoginModal;
-      window.hideLoginModal = hideLoginModal;
-      window.showPasswordReset = showPasswordReset;
-      window.closeRegistrationModal = closeRegistrationModal;
-      window.backToRaceSelection = backToRaceSelection;
-      window.doLogin = doLogin;
-      window.doRegister = doRegister;
+      document.getElementById("btn-login")?.addEventListener("click", doLogin);
+      document.getElementById("btn-register")?.addEventListener("click", doRegister);
 
 
 
@@ -7970,7 +7644,7 @@
 
           el.style.color = rule.ok ? "#2ecc71" : "#e05c5c";
 
-          el.textContent = `${rule.ok ? "✓" : "✗"} ${rule.label}`;
+          el.textContent = `${rule.ok ? "âœ“" : "âœ—"} ${rule.label}`;
 
           if (!rule.ok) allOk = false;
 
@@ -8054,7 +7728,7 @@
 
               );
 
-              loadNews();
+              window.dispatchEvent(new CustomEvent('narmir:news-refresh'));
 
               loadMe();
 
@@ -8062,7 +7736,7 @@
 
             socket.on("event:spell_received", function () {
 
-              loadNews();
+              window.dispatchEvent(new CustomEvent('narmir:news-refresh'));
 
               loadMe();
 
@@ -8070,7 +7744,7 @@
 
             socket.on("event:turn_update", function () {
 
-              loadNews();
+              window.dispatchEvent(new CustomEvent('narmir:news-refresh'));
 
               loadMe();
 
@@ -8350,83 +8024,21 @@
 
 
 
-      function setNewsFilter(filter, btn) {
-
-        newsFilter = filter;
-
-        document.querySelectorAll(".news-filter").forEach(function (b) {
-
-          b.classList.remove("active");
-
-        });
-
-        if (btn) btn.classList.add("active");
-
-        renderNewsList(newsCache);
-
-      }
-
-
-
-      // Expose news functions to React components
-
-      window.loadNews = loadNews;
-
-      window.renderNewsList = renderNewsList;
-
-      window.setNewsFilter = setNewsFilter;
-
-      window.clearNews = clearNews;
-
-
-
       var NEWS_META = {
 
-        attack: { icon: "⚔️", color: "var(--red)", label: "Combat" },
+        attack: { icon: "âš�ï¸�", color: "var(--red)", label: "Combat" },
 
-        spell: { icon: "✨", color: "var(--accent1)", label: "Spell" },
+        spell: { icon: "âœ¨", color: "var(--accent1)", label: "Spell" },
 
-        covert: { icon: "🕵️", color: "var(--amber)", label: "Covert" },
+        covert: { icon: "ðŸ•µï¸�", color: "var(--amber)", label: "Covert" },
 
-        system: { icon: "📋", color: "var(--text2)", label: "System" },
+        system: { icon: "ðŸ“‹", color: "var(--text2)", label: "System" },
 
-        alliance: { icon: "🤝", color: "var(--blue)", label: "Alliance" },
+        alliance: { icon: "ðŸ¤�", color: "var(--blue)", label: "Alliance" },
 
-        expedition: { icon: "🧭", color: "var(--gold)", label: "Expedition" },
+        expedition: { icon: "ðŸ§­", color: "var(--gold)", label: "Expedition" },
 
       };
-
-
-
-      async function loadNews() {
-
-        var items = await apiCall("GET", "/api/kingdom/news/list");
-
-        var titleTurn = document.getElementById("news-turn-num");
-
-        if (titleTurn) titleTurn.textContent = state.turn || 0;
-
-        if (!Array.isArray(items)) return;
-
-        newsCache = items;
-
-        renderNewsList(items);
-
-        ["news-badge", "bnav-news-badge"].forEach(function (id) {
-
-          var b = document.getElementById(id);
-
-          if (b) {
-
-            b.style.display = "none";
-
-            b.textContent = "";
-
-          }
-
-        });
-
-      }
 
 
 
@@ -8434,7 +8046,7 @@
 
         if (!item) return 13;
 
-        var msg = String(item.message || "").toLowerCase();
+        var msg = repairMojibake(String(item.message || "")).toLowerCase();
 
         var type = item.type || "system";
 
@@ -8466,7 +8078,7 @@
 
         // Expeditions Returned (priority 9) - check before Resource Production
 
-        if (msg.includes("expedition") || msg.includes("🔭") || msg.includes("scouts")) return 9;
+        if (msg.includes("expedition") || msg.includes("ðŸ�­") || msg.includes("scouts")) return 9;
 
 
 
@@ -8522,7 +8134,7 @@
 
       function summarizeAttackNewsForAll(item) {
 
-        var message = String((item && item.message) || "");
+        var message = repairMojibake(String((item && item.message) || ""));
 
         if (message.indexOf("Defense report:") === 0) return "You were attacked.";
 
@@ -8531,228 +8143,6 @@
         if (message.toLowerCase().includes("attacked your kingdom")) return "You were attacked.";
 
         return "Combat report available.";
-
-      }
-
-
-
-      function renderNewsList(items) {
-
-        var list = document.getElementById("news-list");
-
-        if (!list) return;
-
-
-
-        // Apply filter
-
-        var filtered =
-
-          newsFilter === "all"
-
-            ? items
-
-            : items.filter(function (item) {
-
-                if (newsFilter === "system")
-
-                  return !item.type || item.type === "system";
-
-                return item.type === newsFilter;
-
-              });
-
-
-
-        if (!filtered || filtered.length === 0) {
-
-          list.innerHTML =
-
-            '<div style="color:var(--text3);font-size:13px;padding:16px 0;text-align:center">' +
-
-            (newsFilter === "all"
-
-              ? "No news yet — take some turns!"
-
-              : "No " + newsFilter + " events yet.") +
-
-            "</div>";
-
-          return;
-
-        }
-
-
-
-        // Group by turn_num
-
-        var turnMap = {};
-
-        var turnOrder = [];
-
-        filtered.forEach(function (item) {
-
-          var t = item.turn_num || 0;
-
-          if (!turnMap[t]) {
-
-            turnMap[t] = [];
-
-            turnOrder.push(t);
-
-          }
-
-          turnMap[t].push(item);
-
-        });
-
-        turnOrder = [...new Set(turnOrder)].sort(function (a, b) {
-
-          return b - a;
-
-        });
-
-
-
-        list.innerHTML = turnOrder
-
-          .map(function (t) {
-
-            var groupItems = turnMap[t];
-
-            // Sort items within the turn by priority
-
-            groupItems.sort(function (a, b) {
-
-              return getNewsPriority(a) - getNewsPriority(b);
-
-            });
-
-            var turnLabel = t > 0 ? "Turn " + t : "Before game start";
-
-            var timeLabel = timeAgo(groupItems[0].created_at);
-
-            var rows = groupItems
-
-              .map(function (item) {
-
-                var type = item.type || "system";
-
-                // Detect expedition items by message prefix
-
-                if (item.message && /^[🔭🌲⚔🧭•]/u.test(item.message))
-
-                  type = "expedition";
-
-                var meta = NEWS_META[type] || NEWS_META.system;
-
-                var displayMessage =
-
-                  newsFilter === "all" && type === "attack"
-
-                    ? summarizeAttackNewsForAll(item)
-
-                    : item.message || "";
-
-                var msgHtml = escHtml(displayMessage)
-
-                  .replace(/\n/g, "<br>")
-
-                  .replace(/&lt;i&gt;/g, "<i>")
-
-                  .replace(/&lt;\/i&gt;/g, "</i>");
-
-                var isBorderType =
-
-                  type === "attack" || type === "spell" || type === "covert";
-
-                var borderStyle = isBorderType
-
-                  ? "border-left:3px solid " +
-
-                    meta.color +
-
-                    ";padding-left:10px;"
-
-                  : "";
-
-                var replayBtn = "";
-
-                if (item.combat_log_id) {
-
-                  replayBtn =
-
-                    '<button class="btn" style="padding:2px 8px;font-size:10px;margin-top:4px;margin-left:10px;display:inline-flex;align-items:center;gap:4px" onclick="replayWarReport(' +
-
-                    item.combat_log_id +
-
-                    ')">▶ Replay</button>';
-
-                }
-
-                return (
-
-                  '<div class="news-item" style="' +
-
-                  borderStyle +
-
-                  '">' +
-
-                  '<span class="news-icon">' +
-
-                  meta.icon +
-
-                  "</span>" +
-
-                  '<span class="news-body" style="color:' +
-
-                  (isBorderType ? "var(--text)" : "var(--text2)") +
-
-                  '">' +
-
-                  msgHtml +
-
-                  replayBtn +
-
-                  "</span>" +
-
-                  "</div>"
-
-                );
-
-              })
-
-              .join("");
-
-            return (
-
-              '<div class="news-turn-group">' +
-
-              '<div class="news-turn-header">' +
-
-              '<span class="turn-label">◆ ' +
-
-              turnLabel +
-
-              "</span>" +
-
-              '<span class="turn-time">' +
-
-              timeLabel +
-
-              "</span>" +
-
-              "</div>" +
-
-              rows +
-
-              "</div>"
-
-            );
-
-          })
-
-          .join("");
 
       }
 
@@ -8771,28 +8161,6 @@
         if (secs < 86400) return Math.floor(secs / 3600) + "h ago";
 
         return Math.floor(secs / 86400) + "d ago";
-
-      }
-
-
-
-      async function clearNews() {
-
-        var result = await apiCall("DELETE", "/api/kingdom/news/clear");
-
-        if (result.error) return toast(result.error, "error");
-
-        var list = document.getElementById("news-list");
-
-        if (list)
-
-          list.innerHTML =
-
-            '<div style="color:var(--text3);font-size:13px;padding:8px 0">News cleared.</div>';
-
-        newsCache = [];
-
-        toast("News cleared", "success");
 
       }
 
@@ -8836,7 +8204,7 @@
 
         events.forEach(function (ev) {
 
-          var m = (ev.message || "").toLowerCase();
+          var m = repairMojibake(ev.message || "").toLowerCase();
 
           if (m.includes("season:")) soundsToPlay["seasonal_event"] = true;
 
@@ -8880,7 +8248,7 @@
 
             type: ev.type || "system",
 
-            message: ev.message || ev,
+            message: repairMojibake(ev.message || ev),
 
             turn_num: state.turn || 0,
 
@@ -8930,7 +8298,7 @@
 
                 ? summarizeAttackNewsForAll(ev)
 
-                : ev.message || ev;
+              : repairMojibake(ev.message || ev);
 
             var isBorderType =
 
@@ -8952,7 +8320,7 @@
 
               '<span class="news-icon">' +
 
-              meta.icon +
+              repairMojibake(meta.icon) +
 
               "</span>" +
 
@@ -8962,7 +8330,7 @@
 
               '">' +
 
-              escHtml(String(msg)).replace(/\n/g, "<br>") +
+              escHtml(String(repairMojibake(msg))).replace(/\n/g, "<br>") +
 
               "</span>" +
 
@@ -8982,9 +8350,9 @@
 
           '<div class="news-turn-header">' +
 
-          '<span class="turn-label">◆ Turn ' +
+          '<span class="turn-label">â—† Turn ' +
 
-          (state.turn || "—") +
+          (state.turn || "â€�") +
 
           "</span>" +
 
@@ -9008,14 +8376,6 @@
 
 
 
-        // Refresh full news list to ensure filter is applied correctly
-
-        if (window.renderNewsList) {
-
-          window.renderNewsList(newsCache);
-
-        }
-
       }
 
 
@@ -9025,8 +8385,6 @@
       function loadAvailableSounds() {
 
         soundLibrary = {};
-
-        window.availableSounds = soundLibrary;
 
         return soundLibrary;
 
@@ -9063,8 +8421,79 @@
 
 
       function toast(message, type) {
+        if (typeof window.__toastImpl === "function") {
+          return window.__toastImpl(message, type);
+        }
+
+        function positionToastContainer(node) {
+
+          if (!node) return;
+
+          var isMobile = window.innerWidth <= 768;
+
+          node.style.position = "fixed";
+
+          node.style.zIndex = "99999";
+
+          node.style.display = "flex";
+
+          node.style.flexDirection = "column";
+
+          node.style.gap = "8px";
+
+          node.style.pointerEvents = "none";
+
+          node.style.left = "50%";
+
+          node.style.right = "auto";
+
+          node.style.top = "auto";
+
+          node.style.bottom = isMobile ? "88px" : "24px";
+
+          node.style.alignItems = "center";
+          node.style.transform = "translateX(-50%)";
+          node.style.width = "min(92vw, 420px)";
+
+        }
 
         var kind = type || "info";
+        var toastTheme = {
+          success: {
+            border: "#00ff2b",
+            text: "#7dff86",
+            glow: "rgba(0, 255, 43, 0.22)",
+          },
+          error: {
+            border: "#ff5f5f",
+            text: "#ffb4b4",
+            glow: "rgba(255, 95, 95, 0.18)",
+          },
+          warning: {
+            border: "#f4c95d",
+            text: "#ffe7a4",
+            glow: "rgba(244, 201, 93, 0.18)",
+          },
+          warn: {
+            border: "#f4c95d",
+            text: "#ffe7a4",
+            glow: "rgba(244, 201, 93, 0.18)",
+          },
+          info: {
+            border: "#67b7ff",
+            text: "#cbe5ff",
+            glow: "rgba(103, 183, 255, 0.18)",
+          },
+          system: {
+            border: "#8b93a7",
+            text: "#e4e7ef",
+            glow: "rgba(139, 147, 167, 0.12)",
+          },
+        }[kind] || {
+          border: "#8b93a7",
+          text: "#e4e7ef",
+          glow: "rgba(139, 147, 167, 0.12)",
+        };
 
         var container = document.getElementById("toast-container");
 
@@ -9074,31 +8503,31 @@
 
           container.id = "toast-container";
 
-          container.style.position = "fixed";
-
-          container.style.top = "16px";
-
-          container.style.right = "16px";
-
-          container.style.zIndex = "99999";
-
-          container.style.display = "flex";
-
-          container.style.flexDirection = "column";
-
-          container.style.gap = "8px";
-
-          container.style.pointerEvents = "none";
+          positionToastContainer(container);
 
           document.body.appendChild(container);
 
+          if (!window._toastResizeBound) {
+            window.addEventListener("resize", function () {
+              positionToastContainer(document.getElementById("toast-container"));
+            });
+            window._toastResizeBound = true;
+          }
+
+        } else {
+          positionToastContainer(container);
+
+        }
+
+        if (container) {
+          container.replaceChildren();
         }
 
         var toastEl = document.createElement("div");
 
         toastEl.style.minWidth = "240px";
 
-        toastEl.style.maxWidth = "360px";
+        toastEl.style.maxWidth = "100%";
 
         toastEl.style.padding = "10px 12px";
 
@@ -9108,29 +8537,14 @@
 
         toastEl.style.lineHeight = "1.4";
 
-        toastEl.style.boxShadow = "0 8px 24px rgba(0,0,0,0.25)";
-
-        toastEl.style.border = "1px solid rgba(255,255,255,0.1)";
-
-        toastEl.style.background =
-
-          kind === "error"
-
-            ? "rgba(224,92,92,0.95)"
-
-            : kind === "success"
-
-              ? "rgba(46,204,113,0.95)"
-
-              : kind === "warning" || kind === "warn"
-
-                ? "rgba(224,184,75,0.95)"
-
-                : "rgba(34,36,46,0.95)";
-
-        toastEl.style.color = "#fff";
+        toastEl.style.background = "rgba(0,0,0,0.04)";
+        toastEl.style.border = "1px solid " + toastTheme.border;
+        toastEl.style.color = toastTheme.text;
+        toastEl.style.boxShadow = "0 10px 26px rgba(0,0,0,0.22), inset 0 0 0 1px rgba(0,0,0,0.25), inset 0 0 18px rgba(0,0,0,0.25), 0 0 18px " + toastTheme.glow;
 
         toastEl.style.pointerEvents = "auto";
+
+        toastEl.style.textAlign = "center";
 
         toastEl.textContent = String(message || "");
 
@@ -9148,7 +8562,6 @@
 
 
 
-      window.toast = toast;
 
 
 
@@ -9174,23 +8587,23 @@
 
 
 
-      // ── War Log ───────────────────────────────────────────────────────────────────
+      // â�€â�€ War Log â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€
 
 
 
       var ACTION_ICONS = {
 
-        attack: "⚔️",
+        attack: "âš�ï¸�",
 
-        spy: "🕵️",
+        spy: "ðŸ•µï¸�",
 
-        loot: "💰",
+        loot: "ðŸ’°",
 
-        assassinate: "🗡️",
+        assassinate: "ðŸ—¡ï¸�",
 
-        sabotage: "💣",
+        sabotage: "ðŸ’£",
 
-        spell: "✨",
+        spell: "âœ¨",
 
       };
 
@@ -9290,7 +8703,7 @@
 
             '<div style="text-align:center;padding:32px 16px">' +
 
-            '<div style="font-size:32px;margin-bottom:10px">🕊️</div>' +
+            '<div style="font-size:32px;margin-bottom:10px">ðŸ•Šï¸�</div>' +
 
             '<div style="font-size:15px;font-weight:600;color:var(--text2);margin-bottom:6px">It\'s been a quiet day.</div>' +
 
@@ -9316,7 +8729,7 @@
 
         rows.forEach(function (r) {
 
-          var icon = ACTION_ICONS[r.action_type] || "⚔️";
+          var icon = ACTION_ICONS[r.action_type] || "âš�ï¸�";
 
           var label = ACTION_LABELS[r.action_type] || r.action_type;
 
@@ -9506,23 +8919,23 @@
 
                 if (d.ninjaKills > 0)
 
-                  parts.push("🎯 " + fmt(d.ninjaKills) + " assassins");
+                  parts.push("ðŸŽ¯ " + fmt(d.ninjaKills) + " assassins");
 
                 if (d.flankKills > 0)
 
-                  parts.push("↪️ " + fmt(d.flankKills) + " flank");
+                  parts.push("Ã¢â€ ÂªÃ¯Â¸ " + fmt(d.flankKills) + " flank");
 
 
 
                 if (d.wallsDestroyed > 0)
 
-                  parts.push("🧱 " + fmt(d.wallsDestroyed) + " walls");
+                  parts.push("ðŸ§± " + fmt(d.wallsDestroyed) + " walls");
 
                 if (d.buildingsDamaged && Array.isArray(d.buildingsDamaged)) {
 
                   d.buildingsDamaged.forEach(function (b) {
 
-                    parts.push("🔥 " + fmt(b.lost) + " " + b.type);
+                    parts.push("ðŸ�¥ " + fmt(b.lost) + " " + b.type);
 
                   });
 
@@ -9564,7 +8977,7 @@
 
                   '<div style="font-size:12px;color:var(--text3);margin-top:2px">' +
 
-                  parts.join(" · ") +
+                  parts.join(" Â· ") +
 
                   "</div>";
 
@@ -9620,11 +9033,11 @@
 
             atkDisplay +
 
-            ' <span style="color:var(--text3)">→</span> ' +
+            ' <span style="color:var(--text3)">â†’</span> ' +
 
             defDisplay +
 
-            ' <span style="color:var(--text3);font-size:12px">· ' +
+            ' <span style="color:var(--text3);font-size:12px">Â· ' +
 
             label +
 
@@ -9660,7 +9073,7 @@
 
                 r.id +
 
-                ')">▶ Replay</button>'
+                ')">â–¶ Replay</button>'
 
               : "") +
 
@@ -9705,10 +9118,10 @@
         }
 
       }
-
-
-
-      window.replayWarReport = async function (id) {
+      async function replayWarReport(id) {
+        if (typeof window.__replayWarReportImpl === "function") {
+          return window.__replayWarReportImpl(id);
+        }
 
         console.log("Replaying report:", id);
 
@@ -9790,7 +9203,7 @@
 
           title.innerHTML =
 
-            "⚔️ " +
+            "âš�ï¸� " +
 
             escHtml(row.attacker_name || "Unknown") +
 
@@ -9856,7 +9269,7 @@
 
               "3px solid " +
 
-              (step.icon === "⚔️" ? "var(--red)" : "var(--accent)");
+              (step.icon === "âš�ï¸�" ? "var(--red)" : "var(--accent)");
 
             div.style.opacity = "0";
 
@@ -9870,7 +9283,7 @@
 
               '<div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:4px">' +
 
-              (step.icon || "⚔️") +
+              (step.icon || "âš�ï¸�") +
 
               " " +
 
@@ -9920,29 +9333,29 @@
 
         }
 
-      };
+      }
 
 
 
-      // ── Rankings ──────────────────────────────────────────────────────────────────
+      // â�€â�€ Rankings â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€
 
 
 
       var RACE_ICONS = {
 
-        high_elf: "🧝",
+        high_elf: "ðŸ§�",
 
-        dwarf: "⛏️",
+        dwarf: "Ã¢â€ºÃ¯Â¸",
 
-        dire_wolf: "🐺",
+        dire_wolf: "ðŸ�º",
 
-        dark_elf: "🗡️",
+        dark_elf: "ðŸ—¡ï¸�",
 
-        human: "👑",
+        human: "ðŸ‘‘",
 
-        orc: "💀",
+        orc: "ðŸ’€",
 
-        vampire: "🦇",
+        vampire: "ðŸ¦‡",
 
       };
 
@@ -10041,17 +9454,6 @@
         }
 
       }
-
-
-
-      function refreshRankings() {
-
-        if (currentRankType === "kingdoms") loadRankings(true);
-
-        else loadAllianceRankings();
-
-      }
-
 
 
       async function loadAllianceRankings() {
@@ -10302,8 +9704,6 @@
 
       }
 
-
-
       function filterRankings(q) {
 
         if (currentRankType === "kingdoms") {
@@ -10406,7 +9806,7 @@
 
 
 
-            var raceIcon = RACE_ICONS[r.race] || "👤";
+            var raceIcon = RACE_ICONS[r.race] || "ðŸ‘¤";
 
             var raceName = (r.race || "").replace(/_/g, " ");
 
@@ -10426,7 +9826,7 @@
 
             var aiTag = r.is_ai
 
-              ? ' <span style="font-size:10px;color:var(--text3)">🤖</span>'
+              ? ' <span style="font-size:10px;color:var(--text3)">ðŸ¤–</span>'
 
               : "";
 
@@ -10434,7 +9834,7 @@
 
               !isMe && (r.turn || 0) < 400
 
-                ? ' <span style="font-size:10px;color:var(--green)" title="Newbie protection — cannot be attacked until Turn 400">🛡️</span>'
+                ? ' <span style="font-size:10px;color:var(--green)" title="Newbie protection â€� cannot be attacked until Turn 400">ðŸ›¡ï¸�</span>'
 
                 : "";
 
@@ -10452,7 +9852,7 @@
 
                   : "color:var(--text3)";
 
-            var rankBadge = r.rank === 1 ? "👑" : r.rank <= 3 ? "🥈" : "";
+            var rankBadge = r.rank === 1 ? "ðŸ‘‘" : r.rank <= 3 ? "ðŸ¥ˆ" : "";
 
 
 
@@ -10466,7 +9866,7 @@
 
                 r.name.replace(/'/g, "\\'") +
 
-                "')\">✉️ Message</button>"
+                "')\">Ã¢Å“â€°Ã¯Â¸ Message</button>"
 
               : (r.turn || 0) < 400
 
@@ -10476,7 +9876,7 @@
 
                   r.name.replace(/'/g, "\\'") +
 
-                  "')\">👤</button>" +
+                  "')\">ðŸ‘¤</button>" +
 
                   '<button class="btn btn-accent" style="font-size:11px;padding:3px 8px" title="Send message" onclick="openDirectMessage(\'' +
 
@@ -10486,9 +9886,9 @@
 
                   r.name.replace(/'/g, "\\'") +
 
-                  "')\">✉️</button>" +
+                  "')\">Ã¢Å“â€°Ã¯Â¸</button>" +
 
-                  '<span style="font-size:11px;color:var(--green);margin-left:4px" title="Protected until Turn 400">🛡️</span>' +
+                  '<span style="font-size:11px;color:var(--green);margin-left:4px" title="Protected until Turn 400">ðŸ›¡ï¸�</span>' +
 
                   "</div>"
 
@@ -10502,7 +9902,7 @@
 
                       r.name.replace(/'/g, "\\'") +
 
-                      "')\">👤</button>" +
+                      "')\">ðŸ‘¤</button>" +
 
                       '<button class="btn btn-accent" style="font-size:11px;padding:3px 8px" title="Send message" onclick="openDirectMessage(\'' +
 
@@ -10512,7 +9912,7 @@
 
                       r.name.replace(/'/g, "\\'") +
 
-                      "')\">✉️</button>";
+                      "')\">Ã¢Å“â€°Ã¯Â¸</button>";
 
 
 
@@ -10528,31 +9928,31 @@
 
                         r.name.replace(/'/g, "\\'") +
 
-                        "')\">🪙</button>" +
+                        "')\">ðŸª™</button>" +
 
                         '<button class="btn btn-red" style="font-size:11px;padding:3px 8px" onclick="targetFromRankings(\'' +
 
                         r.id +
 
-                        "','attack')\">⚔️</button>" +
+                        "','attack')\">âš�ï¸�</button>" +
 
                         '<button class="btn btn-accent" style="font-size:11px;padding:3px 8px" onclick="targetFromRankings(\'' +
 
                         r.id +
 
-                        "','spells')\">✨</button>" +
+                        "','spells')\">âœ¨</button>" +
 
                         '<button class="btn" style="font-size:11px;padding:3px 8px" onclick="targetFromRankings(\'' +
 
                         r.id +
 
-                        "','covert')\">🕵️</button>" +
+                        "','covert')\">ðŸ•µï¸�</button>" +
 
                         '<button class="btn btn-gold" style="font-size:11px;padding:3px 8px" title="Establish Trade Route" onclick="establishTradeRoute(\'' +
 
                         r.id +
 
-                        "')\">🤝</button>";
+                        "')\">ðŸ¤�</button>";
 
                     }
 
@@ -10584,7 +9984,7 @@
 
               '<td style="padding:10px 6px;color:var(--text2)">' +
 
-              (r.username || "—") +
+              (r.username || "â€�") +
 
               "</td>" +
 
@@ -10642,7 +10042,7 @@
 
               '<td style="padding:10px 6px;text-align:center;color:var(--text3);font-size:11px">' +
 
-              (r.last_combat_at ? timeAgo(r.last_combat_at) : "—") +
+              (r.last_combat_at ? timeAgo(r.last_combat_at) : "â€�") +
 
               "</td>" +
 
@@ -10684,7 +10084,7 @@
 
             color: "var(--blue)",
 
-            icon: "🌫️",
+            icon: "ðŸŒ«ï¸�",
 
             desc: "Rangers blinded",
 
@@ -10696,7 +10096,7 @@
 
             color: "var(--green)",
 
-            icon: "☠️",
+            icon: "Ã¢ËœÂ Ã¯Â¸",
 
             desc: "Food poisoned",
 
@@ -10708,7 +10108,7 @@
 
             color: "var(--amber)",
 
-            icon: "🔇",
+            icon: "ðŸ�‡",
 
             desc: "Research suppressed",
 
@@ -10720,7 +10120,7 @@
 
             color: "var(--red)",
 
-            icon: "💀",
+            icon: "ðŸ’€",
 
             desc: "Population dying",
 
@@ -10732,7 +10132,7 @@
 
             color: "var(--accent1)",
 
-            icon: "🛡️",
+            icon: "ðŸ›¡ï¸�",
 
             desc: "Spell damage -50%",
 
@@ -10744,7 +10144,7 @@
 
             color: "var(--gold)",
 
-            icon: "✨",
+            icon: "âœ¨",
 
             desc: "Happiness & pop boosted",
 
@@ -10782,7 +10182,7 @@
 
               color: "var(--text3)",
 
-              icon: "⚡",
+              icon: "âš¡",
 
               desc: "",
 
@@ -10804,7 +10204,7 @@
 
               meta.desc +
 
-              " · " +
+              " Â· " +
 
               turns +
 
@@ -10826,7 +10226,7 @@
 
               "</span>" +
 
-              '<span style="color:var(--text3)">·</span>' +
+              '<span style="color:var(--text3)">Â·</span>' +
 
               '<span style="color:var(--text2)">' +
 
@@ -10846,7 +10246,7 @@
 
 
 
-      // ── Unified Warfare Target Selection ───────────────────────────────────────────
+      // â�€â�€ Unified Warfare Target Selection â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€
 
       function filterWarfareTargetsUnified(q, containerId) {
 
@@ -11024,7 +10424,7 @@
 
           .map(function (t) {
 
-            var raceIcon = RACE_ICONS[t.race] || "👤";
+            var raceIcon = RACE_ICONS[t.race] || "ðŸ‘¤";
 
             var isSel =
 
@@ -11058,7 +10458,7 @@
 
               '<span style="font-size:18px;margin-right:10px">' +
 
-              (t.is_location ? "📍" : raceIcon) +
+              (t.is_location ? "ðŸ“�" : raceIcon) +
 
               "</span>" +
 
@@ -11068,7 +10468,7 @@
 
               escHtml(t.name) +
 
-              (t.is_ai ? " 🤖" : "") +
+              (t.is_ai ? " ðŸ¤–" : "") +
 
               "</div>" +
 
@@ -11078,7 +10478,7 @@
 
                 ? "Discovered Site"
 
-                : "Lv " + t.level + " · " + (t.race || "").replace("_", " ")) +
+                : "Lv " + t.level + " Â· " + (t.race || "").replace("_", " ")) +
 
               "</div>" +
 
@@ -11170,7 +10570,7 @@
 
         if (el) el.classList.add("selected");
 
-        var raceIcon = RACE_ICONS[selectedTarget.race] || "👤";
+        var raceIcon = RACE_ICONS[selectedTarget.race] || "ðŸ‘¤";
 
         var ctn = document.getElementById("cast-target-name");
 
@@ -11186,11 +10586,11 @@
 
             (selectedTarget.level || 1) +
 
-            " · Rank #" +
+            " Â· Rank #" +
 
             selectedTarget.rank +
 
-            " · " +
+            " Â· " +
 
             fmt(selectedTarget.land) +
 
@@ -11266,7 +10666,7 @@
 
 
 
-      // Central helper — remaps server update keys to frontend state keys
+      // Central helper â€� remaps server update keys to frontend state keys
 
       function applyServerUpdates(u) {
 
@@ -11289,6 +10689,10 @@
         if (u.tax !== undefined) state.tax = u.tax;
 
         if (u.name !== undefined) state.name = u.name;
+        if (u.kingdomName !== undefined) state.kingdomName = u.kingdomName;
+        if (u.kingdom_name !== undefined) state.kingdomName = u.kingdom_name;
+        if (u.username !== undefined) state.username = u.username;
+        if (u.race !== undefined) state.race = u.race;
 
         if (u.turn !== undefined) state.turn = u.turn;
 
@@ -11906,13 +11310,6 @@
 
         }
 
-        if (u.xp !== undefined || u.level !== undefined) updateXpDisplay();
-
-        if (window.refreshResourcesPanel) window.refreshResourcesPanel();
-
-        if (window.triggerReactUpdates) window.triggerReactUpdates();
-
-
 
         // Safeguard: if a turn was processed and exploration panel is visible, re-render expeditions
 
@@ -11936,7 +11333,7 @@
 
       // Override hire to hit real server
 
-      // ── Build panel allocation ────────────────────────────────────────────────────
+      // â�€â�€ Build panel allocation â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€
 
 
 
@@ -12078,560 +11475,6 @@
 
 
 
-      function updateBuildDisplay() {
-
-        var total = state.engineers || 0;
-
-        var allocated = getAllocatedEngineers();
-
-        var remaining = Math.max(0, total - allocated);
-
-
-
-        var tea = document.getElementById("b-engineers-available");
-
-        if (tea) tea.textContent = fmt(total);
-
-
-
-        var ta = document.getElementById("b-total-assigned");
-
-        var tu = document.getElementById("b-total-unassigned");
-
-        if (ta) ta.textContent = fmt(allocated);
-
-        if (tu) {
-
-          tu.textContent = fmt(remaining);
-
-          tu.style.color = allocated > total ? "var(--red)" : "var(--green)";
-
-        }
-
-
-
-        // Live Resource updates on the build panel
-
-        var bWood = document.getElementById("b-wood");
-
-        if (bWood) bWood.textContent = fmt(state.wood || 0);
-
-        var bStone = document.getElementById("b-stone");
-
-        if (bStone) bStone.textContent = fmt(state.stone || 0);
-
-        var bIron = document.getElementById("b-iron");
-
-        if (bIron) bIron.textContent = fmt(state.iron || 0);
-
-        var bSteel = document.getElementById("b-steel");
-
-        if (bSteel) bSteel.textContent = fmt(state.steel || 0);
-
-        var bCoal = document.getElementById("b-coal");
-
-        if (bCoal) bCoal.textContent = fmt(state.coal || 0);
-
-
-
-        // Land
-
-        var bLand = document.getElementById("b-land-available");
-
-        if (bLand) {
-
-          var availLand = (state.land || 0) - (state.built_land || 0);
-
-          bLand.textContent = fmt(availLand) + " / " + fmt(state.land || 0);
-
-        }
-
-
-
-        // Shrines/Mausoleums visibility toggle
-
-        var isVampire = state.race === "vampire";
-
-        var shrineRow = document.getElementById("ba-shrine")?.closest(".trow");
-
-        var mausoleumRow = document.getElementById("ba-mausoleum")?.closest(".trow");
-
-        if (shrineRow) shrineRow.style.display = isVampire ? "none" : "";
-
-        if (mausoleumRow) mausoleumRow.style.display = isVampire ? "" : "none";
-
-
-
-        // Blueprint/scaffolding requirement notices beside buildings
-
-        var BLUEPRINT_REQUIRED = new Set([
-
-          "vaults",
-
-          "smithies",
-
-          "markets",
-
-          "mage_towers",
-
-          "training",
-
-          "castles",
-
-        ]);
-
-        var SCAFFOLDING_REQUIRED = new Set([
-
-          "mage_towers",
-
-          "training",
-
-          "castles",
-
-          "libraries",
-
-        ]);
-
-        var bp = state.blueprints_stored || 0;
-
-        var sc = state.scaffolding_stored || 0;
-
-
-
-        BUILD_FIELDS.forEach(function (f) {
-
-          var noticeId = "tool-notice-" + f.key;
-
-          var existing = document.getElementById(noticeId);
-
-          var needsBP = BLUEPRINT_REQUIRED.has(f.key);
-
-          var needsSC = SCAFFOLDING_REQUIRED.has(f.key);
-
-          var engVal = parseInt(document.getElementById(f.alloc)?.value) || 0;
-
-          var msg = "";
-
-          if (engVal > 0) {
-
-            if (needsBP && bp === 0) msg += "📐 Blueprint needed ";
-
-            if (needsSC && sc === 0) msg += "🪜 Scaffolding needed";
-
-          }
-
-          if (msg && !existing) {
-
-            var row = document.getElementById(f.alloc)?.closest(".trow");
-
-            if (row) {
-
-              var notice = document.createElement("span");
-
-              notice.id = noticeId;
-
-              notice.style.cssText =
-
-                "font-size:10px;color:var(--amber);white-space:nowrap;margin-left:4px";
-
-              notice.textContent = msg.trim();
-
-              row.appendChild(notice);
-
-            }
-
-          } else if (existing) {
-
-            if (msg && engVal > 0) {
-
-              existing.textContent = msg.trim();
-
-              existing.style.display = "inline";
-
-            } else existing.style.display = "none";
-
-          }
-
-        });
-
-
-
-        // Live turns-per-unit estimate next to each allocation input
-
-        BUILD_FIELDS.forEach(function (f) {
-
-          var input = document.getElementById(f.alloc);
-
-          if (!input) return;
-
-          var estId = "turns-est-" + f.key;
-
-          var existing = document.getElementById(estId);
-
-          var engVal = parseInt(input.value) || 0;
-
-          var cost = BUILD_EFFORT[f.key] || 100;
-
-          if (engVal > 0) {
-
-            var turns = Math.ceil(cost / engVal);
-
-            if (!existing) {
-
-              var row = input.closest(".trow");
-
-              if (row) {
-
-                existing = document.createElement("span");
-
-                existing.id = estId;
-
-                existing.style.cssText =
-
-                  "font-size:10px;color:var(--text3);white-space:nowrap;margin-left:4px";
-
-                row.appendChild(existing);
-
-              }
-
-            }
-
-            if (existing) {
-
-              existing.textContent =
-
-                "~" +
-
-                turns.toLocaleString() +
-
-                " turn" +
-
-                (turns === 1 ? "" : "s") +
-
-                "/unit";
-
-              existing.style.display = "inline";
-
-            }
-
-          } else if (existing) {
-
-            existing.style.display = "none";
-
-          }
-
-        });
-
-
-
-        renderBuildQueue();
-
-      }
-
-
-
-      function setBuildMax(fieldId, key) {
-
-        var total = state.engineers || 0;
-
-        var allocated = getAllocatedEngineers();
-
-        var current = parseInt(document.getElementById(fieldId)?.value) || 0;
-
-        var available = total - allocated + current;
-
-        var el = document.getElementById(fieldId);
-
-        if (el) el.value = Math.max(0, available);
-
-        updateBuildDisplay();
-
-      }
-
-
-
-      function distributeBuildEvenly() {
-
-        var total = state.engineers || 0;
-
-        var visibleFields = BUILD_FIELDS.filter(function (f) {
-
-          var inputEl = document.getElementById(f.alloc);
-
-          if (!inputEl) return false;
-
-          var trowEl = inputEl.closest(".trow");
-
-          return trowEl && trowEl.style.display !== "none";
-
-        });
-
-        var count = visibleFields.length;
-
-        if (count === 0) return;
-
-        var each = Math.floor(total / count);
-
-        var rem = total - each * count;
-
-        visibleFields.forEach(function (f, i) {
-
-          var el = document.getElementById(f.alloc);
-
-          if (el) el.value = each + (i < rem ? 1 : 0);
-
-        });
-
-        BUILD_FIELDS.filter((f) => !visibleFields.includes(f)).forEach(
-
-          function (f) {
-
-            var el = document.getElementById(f.alloc);
-
-            if (el) el.value = 0;
-
-          },
-
-        );
-
-        updateBuildDisplay();
-
-      }
-
-
-
-      function loadBuildAllocation() {
-
-        var alloc = state.build_allocation || {};
-
-        var buildingKeyMap = {
-
-          farm: "farms",
-
-          barracks: "barracks",
-
-          outpost: "outposts",
-
-          tower: "guard_towers",
-
-          school: "schools",
-
-          armory: "armories",
-
-          vault: "vaults",
-
-          smithy: "smithies",
-
-          market: "markets",
-
-          mage_tower: "mage_towers",
-
-          training: "training",
-
-          shrine: "shrines",
-
-          castle: "castles",
-
-          library: "libraries",
-
-          housing: "housing",
-
-          war_machine: "war_machines",
-
-          ballista: "ballistae",
-
-          ballistae: "ballistae",
-
-          weapons: "weapons",
-
-          armor: "armor",
-
-        };
-
-        BUILD_FIELDS.forEach(function (f) {
-
-          var key = buildingKeyMap[f.key] || f.key;
-
-          var el = document.getElementById(f.alloc);
-
-          if (el) el.value = alloc[key] || 0;
-
-        });
-
-        updateBuildDisplay();
-
-      }
-
-
-
-      async function releaseAllResearchers() {
-
-        RA_FIELDS.forEach(function (id) {
-
-          var el = document.getElementById(id);
-
-          if (el) el.value = 0;
-
-        });
-
-        updateAllocationDisplay();
-
-        var result = await apiCall("POST", "/api/kingdom/research-allocation", {
-
-          allocation: {},
-
-        });
-
-        if (result.error) return toast(result.error, "error");
-
-        state.research_allocation = {};
-
-        toast("All researchers released", "success");
-
-        syncUI();
-
-      }
-
-
-
-      async function releaseAllEngineers() {
-
-        BUILD_FIELDS.forEach(function (f) {
-
-          var el = document.getElementById(f.alloc);
-
-          if (el) el.value = 0;
-
-        });
-
-        updateBuildDisplay();
-
-        var result = await apiCall("POST", "/api/kingdom/build-allocation", {
-
-          allocation: {},
-
-        });
-
-        if (result.error) return toast(result.error, "error");
-
-        state.build_allocation = {};
-
-        toast("All engineers released", "success");
-
-        syncUI();
-
-      }
-
-
-
-      async function saveBuildAllocation() {
-
-        var allocation = {};
-
-        var buildingKeyMap = {
-
-          farm: "farms",
-
-          barracks: "barracks",
-
-          outpost: "outposts",
-
-          tower: "guard_towers",
-
-          school: "schools",
-
-          armory: "armories",
-
-          vault: "vaults",
-
-          smithy: "smithies",
-
-          market: "markets",
-
-          mage_tower: "mage_towers",
-
-          training: "training",
-
-          shrine: "shrines",
-
-          castle: "castles",
-
-          library: "libraries",
-
-          housing: "housing",
-
-          war_machine: "war_machines",
-
-          ballista: "ballistae",
-
-          ballistae: "ballistae",
-
-          weapons: "weapons",
-
-          armor: "armor",
-
-        };
-
-        var total = 0;
-
-        BUILD_FIELDS.forEach(function (f) {
-
-          var val = parseInt(document.getElementById(f.alloc)?.value) || 0;
-
-          var key = buildingKeyMap[f.key] || f.key;
-
-          allocation[key] = val;
-
-          total += val;
-
-        });
-
-        if (total > (state.engineers || 0)) {
-
-          return toast(
-
-            "Allocated " +
-
-              fmt(total) +
-
-              " but only have " +
-
-              fmt(state.engineers) +
-
-              " engineers",
-
-            "error",
-
-          );
-
-        }
-
-        var result = await apiCall("POST", "/api/kingdom/build-allocation", {
-
-          allocation: allocation,
-
-        });
-
-        if (result.error) return toast(result.error, "error");
-
-        state.build_allocation = allocation;
-
-        updateBuildDisplay();
-
-        syncUI();
-
-        toast(
-
-          "Engineer allocation saved — builds each turn automatically",
-
-          "success",
-
-        );
-
-      }
-
-
-
       function estimateResearchXpPerTurn(mages, level, schoolBonus) {
 
         if (mages <= 0) return 0;
@@ -12674,239 +11517,6 @@
 
 
 
-      function updateMageAllocationDisplay() {
-
-        if (!state) return;
-
-        var total = state.mages || 0;
-
-        var spellbookEl = document.getElementById('mage-alloc-spellbook');
-
-        var schoolEl = document.getElementById('mage-alloc-school');
-
-        var spellbookAlloc = parseInt(spellbookEl?.value) || 0;
-
-        var schoolAlloc = parseInt(schoolEl?.value) || 0;
-
-        var allocated = spellbookAlloc + schoolAlloc;
-
-        var available = Math.max(0, total - allocated);
-
-
-
-        var totalEl = document.getElementById('mage-total');
-
-        var availEl = document.getElementById('mage-available');
-
-        var allocEl = document.getElementById('mage-allocated');
-
-        if (totalEl) totalEl.textContent = total;
-
-        if (availEl) availEl.textContent = available;
-
-        if (allocEl) allocEl.textContent = allocated;
-
-
-
-        // Update turns to next level for spellbook
-
-        var spellbookLevel = state.res_spellbook || 0;
-
-        var spellbookXpPerTurn = estimateResearchXpPerTurn(spellbookAlloc, spellbookLevel);
-
-        var spellbookTurnsEl = document.getElementById('school-spellbook-turns');
-
-        if (spellbookTurnsEl && spellbookAlloc > 0 && spellbookXpPerTurn > 0) {
-
-          if (spellbookLevel >= 500) {
-
-            spellbookTurnsEl.textContent = 'Turns to next level: Max';
-
-          } else {
-
-            var spellbookCurrentXp = XP_LEVELS_CLIENT[spellbookLevel] || 0;
-
-            var spellbookNextXp = XP_LEVELS_CLIENT[spellbookLevel + 1] || 0;
-
-            var spellbookXpNeeded = Math.max(0, spellbookNextXp - spellbookCurrentXp);
-
-            var spellbookTurns = Math.ceil(spellbookXpNeeded / spellbookXpPerTurn);
-
-            spellbookTurnsEl.textContent = 'Turns to next level: ' + spellbookTurns;
-
-          }
-
-        } else if (spellbookTurnsEl) {
-
-          spellbookTurnsEl.textContent = 'Turns to next level: —';
-
-        }
-
-
-
-        // Update turns to next level for school spellbook
-
-        var schoolLevel = state.school_spellbook || 0;
-
-        var schoolXpPerTurn = estimateResearchXpPerTurn(schoolAlloc, schoolLevel);
-
-        var schoolTurnsEl = document.getElementById('school-specific-turns');
-
-        if (schoolTurnsEl && schoolAlloc > 0 && schoolXpPerTurn > 0) {
-
-          if (schoolLevel >= 500) {
-
-            schoolTurnsEl.textContent = 'Turns to next level: Max';
-
-          } else {
-
-            var schoolCurrentXp = XP_LEVELS_CLIENT[schoolLevel] || 0;
-
-            var schoolNextXp = XP_LEVELS_CLIENT[schoolLevel + 1] || 0;
-
-            var schoolXpNeeded = Math.max(0, schoolNextXp - schoolCurrentXp);
-
-            var schoolTurns = Math.ceil(schoolXpNeeded / schoolXpPerTurn);
-
-            schoolTurnsEl.textContent = 'Turns to next level: ' + schoolTurns;
-
-          }
-
-        } else if (schoolTurnsEl) {
-
-          schoolTurnsEl.textContent = 'Turns to next level: —';
-
-        }
-
-      }
-
-
-
-      function setMageMax(type) {
-
-        if (!state) return;
-
-        var total = state.mages || 0;
-
-        var spellbookEl = document.getElementById('mage-alloc-spellbook');
-
-        var schoolEl = document.getElementById('mage-alloc-school');
-
-        var otherAlloc = type === 'spellbook' ? (parseInt(schoolEl?.value) || 0) : (parseInt(spellbookEl?.value) || 0);
-
-        var available = Math.max(0, total - otherAlloc);
-
-
-
-        if (type === 'spellbook' && spellbookEl) {
-
-          spellbookEl.value = available;
-
-        } else if (type === 'school' && schoolEl) {
-
-          schoolEl.value = available;
-
-        }
-
-        updateMageAllocationDisplay();
-
-      }
-
-
-
-      async function releaseMageAllocation() {
-
-        var spellbookEl = document.getElementById('mage-alloc-spellbook');
-
-        var schoolEl = document.getElementById('mage-alloc-school');
-
-        if (spellbookEl) spellbookEl.value = 0;
-
-        if (schoolEl) schoolEl.value = 0;
-
-        updateMageAllocationDisplay();
-
-
-
-        var result = await apiCall("POST", "/api/kingdom/school-allocation", {
-
-          spellbook: 0,
-
-          school_spellbook: 0
-
-        });
-
-        if (result.error) return toast(result.error, "error");
-
-        state.research_allocation = state.research_allocation || {};
-
-        state.research_allocation.spellbook_mages = 0;
-
-        state.research_allocation.school_spellbook_mages = 0;
-
-        toast("All mages released from study", "success");
-
-        syncUI();
-
-      }
-
-
-
-      async function studyMagic() {
-
-        if (!state) return;
-
-        var spellbookEl = document.getElementById('mage-alloc-spellbook');
-
-        var schoolEl = document.getElementById('mage-alloc-school');
-
-        var spellbookAlloc = parseInt(spellbookEl?.value) || 0;
-
-        var schoolAlloc = parseInt(schoolEl?.value) || 0;
-
-
-
-        if (spellbookAlloc + schoolAlloc === 0) {
-
-          return toast("Allocate at least 1 mage to study", "error");
-
-        }
-
-
-
-        var result = await apiCall("POST", "/api/kingdom/school-allocation", {
-
-          spellbook: spellbookAlloc,
-
-          school_spellbook: schoolAlloc
-
-        });
-
-        if (result.error) return toast(result.error, "error");
-
-        state.research_allocation = state.research_allocation || {};
-
-        state.research_allocation.spellbook_mages = spellbookAlloc;
-
-        state.research_allocation.school_spellbook_mages = schoolAlloc;
-
-        toast("Mages allocated to study — gaining experience each turn", "success");
-
-        syncUI();
-
-      }
-
-
-
-      // Expose mage allocation functions to window
-
-      window.updateMageAllocationDisplay = updateMageAllocationDisplay;
-
-      window.setMageMax = setMageMax;
-
-      window.releaseMageAllocation = releaseMageAllocation;
-
-      window.studyMagic = studyMagic;
 
 
 
@@ -13294,49 +11904,49 @@
 
         var icons = {
 
-          farms: "🌾",
+          farms: "ðŸŒ¾",
 
-          barracks: "🏠",
+          barracks: "ðŸ� ",
 
-          outposts: "🏴",
+          outposts: "ðŸ�´",
 
-          guard_towers: "🗼",
+          guard_towers: "ðŸ—¼",
 
-          schools: "🏫",
+          schools: "ðŸ�«",
 
-          armories: "🛡️",
+          armories: "ðŸ›¡ï¸�",
 
-          vaults: "💰",
+          vaults: "ðŸ’°",
 
-          smithies: "⚒️",
+          smithies: "Ã¢Å¡â€™Ã¯Â¸",
 
-          markets: "🏪",
+          markets: "ðŸ�ª",
 
-          mage_towers: "🗼",
+          mage_towers: "ðŸ—¼",
 
-          training: "⚔️",
+          training: "âš�ï¸�",
 
-          shrines: "⛩️",
+          shrines: "Ã¢â€ºÂ©Ã¯Â¸",
 
-          housing: "🏘️",
+          housing: "ðŸ�˜ï¸�",
 
-          castles: "🏰",
+          castles: "ðŸ�°",
 
-          war_machines: "🪖",
+          war_machines: "ðŸª–",
 
-          ballistae: "🏹",
+          ballistae: "ðŸ�¹",
 
-          weapons: "🗡️",
+          weapons: "ðŸ—¡ï¸�",
 
-          armor: "🔰",
+          armor: "ðŸ�°",
 
-          ladders: "🪜",
+          ladders: "ðŸªœ",
 
         };
 
 
 
-        // Build from allocation — map BUILD_FIELDS keys to server keys
+        // Build from allocation â€� map BUILD_FIELDS keys to server keys
 
         var keyMap = {
 
@@ -13424,7 +12034,7 @@
 
               ? Math.ceil((cost - (prog % cost)) / workPerTurn)
 
-              : "∞";
+              : "âˆž";
 
           var progressPct = Math.min(
 
@@ -13462,7 +12072,7 @@
 
           el.innerHTML =
 
-            '<div style="color:var(--text3);font-size:13px;padding:8px 0">No engineers allocated — assign engineers above and save to start building.</div>';
+            '<div style="color:var(--text3);font-size:13px;padding:8px 0">No engineers allocated â€� assign engineers above and save to start building.</div>';
 
           return;
 
@@ -13476,7 +12086,7 @@
 
             var label = labels[b.key] || labels[b.fkey] || b.key;
 
-            var icon = icons[b.key] || icons[b.fkey] || "🏗️";
+            var icon = icons[b.key] || icons[b.fkey] || "ðŸ�—ï¸�";
 
             var turnsStr =
 
@@ -13488,7 +12098,7 @@
 
                   (b.turns === 1 ? "" : "s")
 
-                : "∞";
+                : "âˆž";
 
             return (
 
@@ -13514,7 +12124,7 @@
 
               fmt(b.eng) +
 
-              " engineers · ~" +
+              " engineers Â· ~" +
 
               turnsStr +
 
@@ -13550,511 +12160,7 @@
 
 
 
-      // ── Research allocation ───────────────────────────────────────────────────────
-
-
-
-      var RA_FIELDS = [
-
-        "ra-economy",
-
-        "ra-weapons",
-
-        "ra-armor",
-
-        "ra-military",
-
-        "ra-spellbook",
-
-        "ra-attack_magic",
-
-        "ra-defense_magic",
-
-        "ra-entertainment",
-
-        "ra-construction",
-
-        "ra-war_machines",
-
-      ];
-
-
-
-      function getAllocated() {
-
-        return RA_FIELDS.reduce(function (sum, id) {
-
-          return sum + (parseInt(document.getElementById(id)?.value) || 0);
-
-        }, 0);
-
-      }
-
-
-
-      function updateAllocationDisplay() {
-
-        var total = state.researchers || 0;
-
-        var assigned = getAllocated();
-
-        var unassigned = Math.max(0, total - assigned);
-
-        var tAvail = document.getElementById("r-total-avail");
-
-        var tAssigned = document.getElementById("r-total-assigned");
-
-        var tUnassigned = document.getElementById("r-total-unassigned");
-
-        if (tAvail) tAvail.textContent = fmt(total);
-
-        if (tAssigned) tAssigned.textContent = fmt(assigned);
-
-        if (tUnassigned) {
-
-          tUnassigned.textContent = fmt(unassigned);
-
-          tUnassigned.style.color =
-
-            unassigned < 0 ? "var(--red)" : "var(--green)";
-
-        }
-
-        var warn = document.getElementById("research-no-researchers");
-
-        if (warn) warn.style.display = total === 0 ? "block" : "none";
-
-      }
-
-
-
-      function setMax(fieldId) {
-
-        var total = state.researchers || 0;
-
-        var assigned = getAllocated();
-
-        var current = parseInt(document.getElementById(fieldId)?.value) || 0;
-
-        var available = total - assigned + current;
-
-        var el = document.getElementById(fieldId);
-
-        if (el) el.value = Math.max(0, available);
-
-        updateAllocationDisplay();
-
-      }
-
-
-
-      function distributeEvenly() {
-
-        var total = state.researchers || 0;
-
-        var count = RA_FIELDS.length;
-
-        var each = Math.floor(total / count);
-
-        var remainder = total - each * count;
-
-        RA_FIELDS.forEach(function (id, i) {
-
-          var el = document.getElementById(id);
-
-          if (el) el.value = each + (i < remainder ? 1 : 0);
-
-        });
-
-        updateAllocationDisplay();
-
-      }
-
-
-
-      function loadAllocationFromState() {
-
-        // Populate inputs from saved state allocation
-
-        var alloc = state.research_allocation || {};
-
-        var disciplines = [
-
-          "economy",
-
-          "weapons",
-
-          "armor",
-
-          "military",
-
-          "spellbook",
-
-          "attack_magic",
-
-          "defense_magic",
-
-          "entertainment",
-
-          "construction",
-
-          "war_machines",
-
-        ];
-
-        disciplines.forEach(function (d) {
-
-          var el = document.getElementById("ra-" + d);
-
-          if (el) el.value = alloc[d] || 0;
-
-        });
-
-        updateAllocationDisplay();
-
-      }
-
-
-
-      async function saveResearchAllocation() {
-
-        var allocation = {};
-
-        var disciplines = [
-
-          "economy",
-
-          "weapons",
-
-          "armor",
-
-          "military",
-
-          "spellbook",
-
-          "attack_magic",
-
-          "defense_magic",
-
-          "entertainment",
-
-          "construction",
-
-          "war_machines",
-
-        ];
-
-        var total = 0;
-
-        disciplines.forEach(function (d) {
-
-          var val = parseInt(document.getElementById("ra-" + d)?.value) || 0;
-
-          allocation[d] = val;
-
-          total += val;
-
-        });
-
-        if (total > (state.researchers || 0)) {
-
-          // Soft warning — engine will clamp but let user save anyway
-
-          toast(
-
-            "Warning: allocated " +
-
-              fmt(total) +
-
-              " but only have " +
-
-              fmt(state.researchers || 0) +
-
-              " researchers — extra will be ignored",
-
-            "warn",
-
-          );
-
-        }
-
-        var result = await apiCall("POST", "/api/kingdom/research-allocation", {
-
-          allocation: allocation,
-
-        });
-
-        if (result.error) return toast(result.error, "error");
-
-        state.research_allocation = allocation;
-
-        updateAllocationDisplay();
-
-        syncUI();
-
-        toast("Research allocation saved — advances every turn", "success");
-
-      }
-
-
-
-      function updateSmithyDisplay() {
-
-        var smithies = state.bld_smithies || 0;
-
-        var hammerCap = smithies * 25;
-
-        var scaffCap = Math.max(10, smithies * 10);
-
-        var hammers = state.hammers_stored || 0;
-
-        var scaff = state.scaffolding_stored || 0;
-
-        var gold = state.gold || 0;
-
-
-
-        var hasSmithy = smithies > 0;
-
-        var scaffPrice = hasSmithy ? 2500 : 3125;
-
-
-
-        var maxH = Math.max(
-
-          0,
-
-          Math.min(hammerCap - hammers, Math.floor(gold / 25)),
-
-        );
-
-        var maxS = Math.max(
-
-          0,
-
-          Math.min(scaffCap - scaff, Math.floor(gold / scaffPrice)),
-
-        );
-
-        var g = function (id) {
-
-          return document.getElementById(id);
-
-        };
-
-        if (g("smith-hammers-stored"))
-
-          g("smith-hammers-stored").textContent = fmt(hammers);
-
-        if (g("smith-hammers-cap"))
-
-          g("smith-hammers-cap").textContent = fmt(hammerCap);
-
-        if (g("smith-hammers-afford"))
-
-          g("smith-hammers-afford").textContent = fmt(maxH);
-
-        if (g("smith-scaffolding-stored"))
-
-          g("smith-scaffolding-stored").textContent = fmt(scaff);
-
-        if (g("smith-scaffolding-cap"))
-
-          g("smith-scaffolding-cap").textContent = fmt(scaffCap);
-
-        if (g("smith-scaffolding-afford"))
-
-          g("smith-scaffolding-afford").textContent = fmt(maxS);
-
-        var note = g("smithy-alloc-note");
-
-        if (note) {
-
-          if (smithies === 0) {
-
-            note.innerHTML =
-
-              "You need a smithy to buy hammers.<br><span style='color:var(--gold)'>Scaffolding is available without a smithy (25% markup).</span>";
-
-          } else {
-
-            note.textContent = "";
-
-          }
-
-        }
-
-      }
-
-
-
-      function setSmithyMax(type) {
-
-        var smithies = state.bld_smithies || 0;
-
-        var gold = state.gold || 0;
-
-        if (type === "hammers") {
-
-          var max = Math.max(
-
-            0,
-
-            Math.min(
-
-              smithies * 25 - (state.hammers_stored || 0),
-
-              Math.floor(gold / 25),
-
-            ),
-
-          );
-
-          var el = document.getElementById("smith-buy-hammers");
-
-          if (el) el.value = max;
-
-        } else {
-
-          var scaffCap = Math.max(10, smithies * 10);
-
-          var hasSmithy = smithies > 0;
-
-          var scaffPrice = hasSmithy ? 2500 : 3125;
-
-          var max2 = Math.max(
-
-            0,
-
-            Math.min(
-
-              scaffCap - (state.scaffolding_stored || 0),
-
-              Math.floor(gold / scaffPrice),
-
-            ),
-
-          );
-
-          var el2 = document.getElementById("smith-buy-scaffolding");
-
-          if (el2) el2.value = max2;
-
-        }
-
-      }
-
-
-
-      async function buySmithyTool(type) {
-
-        var id =
-
-          type === "hammers" ? "smith-buy-hammers" : "smith-buy-scaffolding";
-
-        var amount = parseInt(document.getElementById(id)?.value) || 0;
-
-        if (amount <= 0) return toast("Enter a quantity", "error");
-
-        var ep =
-
-          type === "hammers"
-
-            ? "/api/kingdom/smithy/buy-hammers"
-
-            : "/api/kingdom/smithy/buy-scaffolding";
-
-        var result = await apiCall("POST", ep, { amount });
-
-        if (result.error) return toast(result.error, "error");
-
-        if (result.hammers_stored !== undefined)
-
-          state.hammers_stored = result.hammers_stored;
-
-        if (result.scaffolding_stored !== undefined)
-
-          state.scaffolding_stored = result.scaffolding_stored;
-
-        if (result.gold !== undefined) state.gold = result.gold;
-
-        syncUI();
-
-        updateSmithyDisplay();
-
-        toast(
-
-          "Purchased " +
-
-            result.bought +
-
-            " " +
-
-            type +
-
-            " for " +
-
-            fmt(result.cost) +
-
-            " GC",
-
-          "success",
-
-        );
-
-      }
-
-
-
-      async function forgeScaffolding() {
-
-        var smithies = state.bld_smithies || 0;
-
-        if (smithies === 0) return toast("You need at least 1 smithy", "error");
-
-        var cap = smithies * 10;
-
-        if ((state.scaffolding_stored || 0) >= cap)
-
-          return toast(
-
-            "Scaffolding storage full (" + cap + "/" + cap + ")",
-
-            "error",
-
-          );
-
-        if ((state.gold || 0) < 2500)
-
-          return toast("Need 2,500 gold to make scaffolding", "error");
-
-        var result = await apiCall("POST", "/api/kingdom/smithy/forge-tools", {
-
-          toolType: "scaffolding",
-
-          quantity: 1,
-
-        });
-
-        if (result.error) return toast(result.error, "error");
-
-        window.applyGameMutation(result, { reason: "smithy/forge-tools" });
-
-        if (result.events && result.events.length)
-
-          appendNewsItems(result.events);
-
-        syncUI();
-
-        await loadActiveExpeditions();
-
-        toast("🏗️ 1 scaffolding built", "success");
-
-      }
-
-
-
-      // ── Warfare Panel ─────────────────────────────────────────────────────────────
+      // â�€â�€ Warfare Panel â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€
 
 
 
@@ -14087,16 +12193,6 @@
         if (id === "wspells") initWspells();
 
         if (id === "wcovert") initWcovert();
-
-        if (id === "wreports") loadWarLog();
-
-        if (id === "wintel") {
-
-          loadSpyReports();
-
-          loadAllianceIntel();
-
-        }
 
       }
 
@@ -14182,9 +12278,9 @@
 
         <div style="font-size:12px;color:var(--text2)">
 
-          ${detail.race ? `Race: ${detail.race} · ` : ""} 
+          ${detail.race ? `Race: ${detail.race} Â· ` : ""} 
 
-          ${detail.land ? `Land: ${fmt(detail.land)} · ` : ""}
+          ${detail.land ? `Land: ${fmt(detail.land)} Â· ` : ""}
 
           ${detail.gold ? `Gold: ${fmt(detail.gold)}` : ""}
 
@@ -14194,7 +12290,7 @@
 
           <button class="btn" style="flex:1;font-size:11px;padding:4px" onclick="viewDetailedReport(${r.id}, '${r.target_name}')">View Detailed</button>
 
-          ${!r.shared_to_alliance ? `<button class="btn btn-accent" style="flex:1;font-size:11px;padding:4px" onclick="shareSpyReport(${r.id})">Share to Alliance</button>` : `<span style="font-size:10px;color:var(--green);flex:1;text-align:center;padding:4px">Shared ✓</span>`}
+          ${!r.shared_to_alliance ? `<button class="btn btn-accent" style="flex:1;font-size:11px;padding:4px" onclick="shareSpyReport(${r.id})">Share to Alliance</button>` : `<span style="font-size:10px;color:var(--green);flex:1;text-align:center;padding:4px">Shared âœ“</span>`}
 
         </div>
 
@@ -14288,9 +12384,9 @@
 
         <div style="font-size:12px;color:var(--text2)">
 
-          ${detail.race ? `Race: ${detail.race} · ` : ""} 
+          ${detail.race ? `Race: ${detail.race} Â· ` : ""} 
 
-          ${detail.land ? `Land: ${fmt(detail.land)} · ` : ""}
+          ${detail.land ? `Land: ${fmt(detail.land)} Â· ` : ""}
 
           ${detail.gold ? `Gold: ${fmt(detail.gold)}` : ""}
 
@@ -14438,7 +12534,7 @@
 
             ? '<div style="font-size:10px;color:var(--text3);margin-top:1px">' +
 
-                parts.join(" · ") +
+                parts.join(" Â· ") +
 
                 "</div>"
 
@@ -14468,7 +12564,7 @@
 
           var inf = document.getElementById("atk-target-info-w");
 
-          if (nm) nm.textContent = "— none selected —";
+          if (nm) nm.textContent = "â€� none selected â€�";
 
           if (inf) inf.textContent = "";
 
@@ -14536,7 +12632,7 @@
 
           if (t.is_location) {
 
-            inf.textContent = "📍 Discovered coordinate site";
+            inf.textContent = "ðŸ“� Discovered coordinate site";
 
           } else {
 
@@ -14548,11 +12644,11 @@
 
               (t.race || "").replace(/_/g, " ") +
 
-              " · " +
+              " Â· " +
 
               fmt(t.land || 0) +
 
-              " ac · Rank #" +
+              " ac Â· Rank #" +
 
               (t.rank || "?");
 
@@ -14736,15 +12832,15 @@
 
           bullyRatio >= 8
 
-            ? "🚨 ×8+ — will be shamed. −60% power."
+            ? "ðŸš¨ Ã—8+ â€� will be shamed. âˆ’60% power."
 
             : bullyRatio >= 4
 
-              ? "⚠️ ×4–8 — happiness suffers. −40%."
+              ? "Ã¢Å¡Â Ã¯Â¸ Ã—4â€“8 â€� happiness suffers. âˆ’40%."
 
               : bullyRatio >= 2
 
-                ? "⚠️ ×2–4 — −20% power."
+                ? "Ã¢Å¡Â Ã¯Â¸ Ã—2â€“4 â€� âˆ’20% power."
 
                 : "";
 
@@ -14824,7 +12920,7 @@
 
           g("atk-est-def-w").textContent =
 
-            defPower > 0 ? "~" + fmt(defPower) + " (est.)" : "—";
+            defPower > 0 ? "~" + fmt(defPower) + " (est.)" : "â€�";
 
         if (g("atk-est-winpct-w")) {
 
@@ -14838,7 +12934,7 @@
 
           g("atk-est-land-w").textContent =
 
-            land > 0 ? "+" + fmt(land) + " ac" : "—";
+            land > 0 ? "+" + fmt(land) + " ac" : "â€�";
 
         if (g("atk-bully-warn-w")) {
 
@@ -14898,7 +12994,7 @@
 
         if (ld > (state.ladders || 0))
 
-          return toast("Not enough 🪜 ladders", "error");
+          return toast("Not enough ðŸªœ ladders", "error");
 
         if (nj > (state.ninjas || 0))
 
@@ -14982,17 +13078,14 @@
 
 
 
-        window.applyGameMutation(result, { reason: "attack" });
+        applyGameMutation(result, { reason: "attack" });
 
         syncUI();
 
-        updateTurnsDisplay();
 
 
 
-        var rows = [
-
-          ["Outcome", r.win ? "🏆 Victory" : "❌ Repelled"],
+        var rows = [          ["Outcome", r.win ? "Victory" : "Repelled"],
 
           ["Land Seized", "+" + fmt(r.landTransferred || 0) + " acres"],
 
@@ -15094,7 +13187,7 @@
 
 
 
-        if (r.bullyMsg) rows.push(["⚠️ Penalty", r.bullyMsg]);
+        if (r.bullyMsg) rows.push(["Ã¢Å¡Â Ã¯Â¸ Penalty", r.bullyMsg]);
 
 
 
@@ -15116,7 +13209,7 @@
 
 
 
-      // ── Warfare Spells (mobile) ───────────────────────────────────────────────────
+      // â�€â�€ Warfare Spells (mobile) â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€
 
 
 
@@ -15160,7 +13253,7 @@
 
           el.innerHTML =
 
-            '<div style="color:var(--text3);font-size:13px;padding:12px 0">No scrolls — craft them in the Library.</div>';
+            '<div style="color:var(--text3);font-size:13px;padding:12px 0">No scrolls â€� craft them in the Library.</div>';
 
         } else {
 
@@ -15226,7 +13319,7 @@
 
                 "</div>" +
 
-                '<div style="font-size:11px;font-weight:bold;color:var(--gold)">×' +
+                '<div style="font-size:11px;font-weight:bold;color:var(--gold)">Ã—' +
 
                 count +
 
@@ -15246,7 +13339,7 @@
 
                 " mana" +
 
-                (sp.scrollRequired ? " · 1 scroll" : "") +
+                (sp.scrollRequired ? " Â· 1 scroll" : "") +
 
                 "</div>" +
 
@@ -15296,7 +13389,7 @@
 
           wSelectedSpellTarget = null;
 
-          if (nm) nm.textContent = "— none selected —";
+          if (nm) nm.textContent = "â€� none selected â€�";
 
           if (inf) inf.textContent = "";
 
@@ -15384,7 +13477,7 @@
 
           if (t.is_location) {
 
-            inf.textContent = "📍 Coordinate Site";
+            inf.textContent = "ðŸ“� Coordinate Site";
 
           } else {
 
@@ -15398,7 +13491,7 @@
 
                   t.race.replace(/_/g, " ") +
 
-                  " · "
+                  " Â· "
 
                 : "") +
 
@@ -15524,7 +13617,7 @@
 
         playGameSound("spell_cast");
 
-        window.applyGameMutation(result, { reason: "warfare-spell" });
+        applyGameMutation(result, { reason: "warfare-spell" });
 
         syncUI();
 
@@ -15550,7 +13643,7 @@
 
 
 
-      // ── Warfare Covert (mobile) ───────────────────────────────────────────────────
+      // â�€â�€ Warfare Covert (mobile) â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€
 
 
 
@@ -15586,7 +13679,7 @@
 
           var inf = document.getElementById("wcov-target-info");
 
-          if (nm) nm.textContent = "— none selected —";
+          if (nm) nm.textContent = "â€� none selected â€�";
 
           if (inf) inf.textContent = "";
 
@@ -15654,7 +13747,7 @@
 
           if (t.is_location) {
 
-            inf.textContent = "📍 Discovered coordinate site";
+            inf.textContent = "ðŸ“� Discovered coordinate site";
 
           } else {
 
@@ -15666,11 +13759,11 @@
 
               (t.race || "").replace(/_/g, " ") +
 
-              " · " +
+              " Â· " +
 
               fmt(t.land || 0) +
 
-              " ac · Rank #" +
+              " ac Â· Rank #" +
 
               (t.rank || "?");
 
@@ -15728,7 +13821,7 @@
 
           if (result.updates)
 
-            window.applyGameMutation(result, { reason: "steal-map" });
+            applyGameMutation(result, { reason: "steal-map" });
 
           toast(
 
@@ -15796,7 +13889,7 @@
 
         if (result.error) return toast(result.error, "error");
 
-        window.applyGameMutation(result, { reason: "covert-" + type });
+        applyGameMutation(result, { reason: "covert-" + type });
 
         syncUI();
 
@@ -15844,7 +13937,7 @@
 
           cost: 10000,
 
-          desc: "+25% wall strength, −10% land lost per attack",
+          desc: "+25% wall strength, âˆ’10% land lost per attack",
 
           requires: null,
 
@@ -16082,7 +14175,7 @@
 
         if (el("def-rating"))
 
-          el("def-rating").textContent = data.defense_rating || "—";
+          el("def-rating").textContent = data.defense_rating || "â€�";
 
 
 
@@ -16106,7 +14199,7 @@
 
         if (du.citadel) {
 
-          statusText = "👑 CITADEL ACHIEVED";
+          statusText = "ðŸ‘‘ CITADEL ACHIEVED";
 
           statusColor = "var(--gold)";
 
@@ -16120,7 +14213,7 @@
 
         } else if (du.keep) {
 
-          statusText = "🏰 KEEP ACHIEVED";
+          statusText = "ðŸ�° KEEP ACHIEVED";
 
           statusColor = "var(--gold)";
 
@@ -16134,7 +14227,7 @@
 
         } else if (du.fortified) {
 
-          statusText = "🛡️ FORTIFIED ACHIEVED";
+          statusText = "ðŸ›¡ï¸� FORTIFIED ACHIEVED";
 
           statusColor = "var(--gold)";
 
@@ -16214,7 +14307,7 @@
 
           el("def-wall-race").textContent =
 
-            "×" + (WALL_RACE_MULT[race] || 1.0).toFixed(2);
+            "Ã—" + (WALL_RACE_MULT[race] || 1.0).toFixed(2);
 
 
 
@@ -16244,7 +14337,7 @@
 
           el("def-tower-race").textContent =
 
-            "×" + (TOWER_RACE_MULT[race] || 1.0).toFixed(2);
+            "Ã—" + (TOWER_RACE_MULT[race] || 1.0).toFixed(2);
 
 
 
@@ -16278,7 +14371,7 @@
 
           el("def-outpost-race").textContent =
 
-            "×" + (OUTPOST_RACE_MULT[race] || 1.0).toFixed(2);
+            "Ã—" + (OUTPOST_RACE_MULT[race] || 1.0).toFixed(2);
 
 
 
@@ -16792,8 +14885,6 @@
 
         if (sel2 && focus[1]) sel2.value = focus[1];
 
-        updateFocusPreview();
-
 
 
         // Shrine / Mausoleum
@@ -16976,7 +15067,7 @@
 
 
 
-        // ──── School of Magic Section ────────────────────────────────────────
+        // â�€â�€â�€â�€ School of Magic Section â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€
 
         if (data.school_of_magic) {
 
@@ -17036,8 +15127,6 @@
 
           // Update mage allocation display (includes turns to next level calculation)
 
-          updateMageAllocationDisplay();
-
 
 
           // Populate spell tiers
@@ -17072,7 +15161,7 @@
 
         html += '<div style="background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px;">';
 
-        html += '<div style="font-size: 12px; color: var(--text3); margin-bottom: 6px;">Mages → Spellbook</div>';
+        html += '<div style="font-size: 12px; color: var(--text3); margin-bottom: 6px;">Mages â†’ Spellbook</div>';
 
         html += '<input type="number" min="0" max="' + totalMages + '" value="' + spellbookMages + '" id="mage-alloc-spellbook" style="width: 100%; padding: 6px; border: 1px solid var(--border); border-radius: var(--radius);">';
 
@@ -17084,7 +15173,7 @@
 
         html += '<div style="background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px;">';
 
-        html += '<div style="font-size: 12px; color: var(--text3); margin-bottom: 6px;">Mages → School Spellbook</div>';
+        html += '<div style="font-size: 12px; color: var(--text3); margin-bottom: 6px;">Mages â†’ School Spellbook</div>';
 
         html += '<input type="number" min="0" max="' + totalMages + '" value="' + schoolMages + '" id="mage-alloc-school" style="width: 100%; padding: 6px; border: 1px solid var(--border); border-radius: var(--radius);">';
 
@@ -17158,7 +15247,7 @@
 
               var isRevealed = schoolSpellbookLevel >= spell.min_school_spellbook;
 
-              var glyph = isRevealed ? '✨' : '⬜';
+              var glyph = isRevealed ? 'âœ¨' : 'â¬œ';
 
               var spellName = isRevealed ? spell.name : '???';
 
@@ -17193,142 +15282,6 @@
 
 
         container.innerHTML = html;
-
-      }
-
-
-
-      function updateFocusPreview() {
-
-        var DISC_COLS = {
-
-          economy: "res_economy",
-
-          weapons: "res_weapons",
-
-          armor: "res_armor",
-
-          military: "res_military",
-
-          attack_magic: "res_attack_magic",
-
-          defense_magic: "res_defense_magic",
-
-          entertainment: "res_entertainment",
-
-          construction: "res_construction",
-
-          war_machines: "res_war_machines",
-
-          spellbook: "res_spellbook",
-
-        };
-
-
-
-        var f1 = document.getElementById("focus-select-1")?.value;
-
-        var el1 = document.getElementById("focus-current-1");
-
-        if (el1 && f1)
-
-          el1.textContent =
-
-            "Focus 1 Current: " + (state[DISC_COLS[f1]] || 0) + "%";
-
-
-
-        var f2 = document.getElementById("focus-select-2")?.value;
-
-        var el2 = document.getElementById("focus-current-2");
-
-        if (el2 && f2)
-
-          el2.textContent =
-
-            "Focus 2 Current: " + (state[DISC_COLS[f2]] || 0) + "%";
-
-
-
-        // Show Full Study State
-
-        var studyContainer = document.getElementById("study-progress-list");
-
-        if (studyContainer) {
-
-          var html =
-
-            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px;">';
-
-          Object.keys(DISC_COLS).forEach(function (k) {
-
-            var val = state[DISC_COLS[k]] || 0;
-
-            var label =
-
-              k.charAt(0).toUpperCase() + k.slice(1).replace("_", " ");
-
-            html +=
-
-              '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px;display:flex;justify-content:space-between;align-items:center;">' +
-
-              '<span style="font-size:11px;color:var(--text3)">' +
-
-              label +
-
-              "</span>" +
-
-              '<span style="font-size:13px;font-weight:700;color:var(--gold)">' +
-
-              val +
-
-              "%</span>" +
-
-              "</div>";
-
-          });
-
-          html += "</div>";
-
-          studyContainer.innerHTML = html;
-
-        }
-
-        syncUI();
-
-      }
-
-
-
-      async function saveResearchFocus() {
-
-        var f1 = document.getElementById("focus-select-1")?.value;
-
-        var f2 = document.getElementById("focus-select-2")?.value;
-
-        var hasRepo = !!(studiesData.school_upgrades || {}).repository;
-
-        var focus = hasRepo && f2 ? [f1, f2] : [f1];
-
-        var result = await apiCall("POST", "/api/kingdom/research-focus", {
-
-          focus,
-
-        });
-
-        if (result.error) return toast(result.error, "error");
-
-        state.research_focus = result.research_focus;
-
-        syncUI();
-
-        toast(
-
-          "Research focus saved — " + result.research_focus.join(" & "),
-
-          "success",
-
-        );
 
       }
 
@@ -17382,7 +15335,7 @@
 
         syncUI();
 
-        toast("Mage allocation saved — " + spellbookMages + " to Spellbook, " + schoolMages + " to School Spellbook", "success");
+        toast("Mage allocation saved â€� " + spellbookMages + " to Spellbook, " + schoolMages + " to School Spellbook", "success");
 
       }
 
@@ -17672,13 +15625,13 @@
 
       var MERC_TIERS = {
 
-        rabble: { levelRange: "Lv 5–10", costPer: 50, duration: 10 },
+        rabble: { levelRange: "Lv 5â€“10", costPer: 50, duration: 10 },
 
-        sellsword: { levelRange: "Lv 15–25", costPer: 150, duration: 20 },
+        sellsword: { levelRange: "Lv 15â€“25", costPer: 150, duration: 20 },
 
-        veteran: { levelRange: "Lv 30–45", costPer: 400, duration: 30 },
+        veteran: { levelRange: "Lv 30â€“45", costPer: 400, duration: 30 },
 
-        elite: { levelRange: "Lv 50–65", costPer: 1000, duration: 40 },
+        elite: { levelRange: "Lv 50â€“65", costPer: 1000, duration: 40 },
 
       };
 
@@ -17768,9 +15721,9 @@
 
               <div>
 
-                <div style="font-weight:700; color:var(--gold)">🤝 ${escHtml(r.partner_name)}</div>
+                <div style="font-weight:700; color:var(--gold)">ðŸ¤� ${escHtml(r.partner_name)}</div>
 
-                <div style="font-size:11px; color:var(--text3)">${r.partner_race.replace(/_/g, " ")} · ${fmtShort(r.partner_land)} acres</div>
+                <div style="font-size:11px; color:var(--text3)">${r.partner_race.replace(/_/g, " ")} Â· ${fmtShort(r.partner_land)} acres</div>
 
               </div>
 
@@ -18724,11 +16677,11 @@
 
             var statusBadge = have
 
-              ? '<span style="color:var(--green);font-size:11px">✅ Owned</span>'
+              ? '<span style="color:var(--green);font-size:11px">âœ… Owned</span>'
 
               : !hasReq
 
-                ? '<span style="color:var(--text3);font-size:11px">🔒 Need ' +
+                ? '<span style="color:var(--text3);font-size:11px">ðŸ�’ Need ' +
 
                   (def.requires || "").replace(/_/g, " ") +
 
@@ -18736,7 +16689,7 @@
 
                 : !raceOk
 
-                  ? '<span style="color:var(--text3);font-size:11px">🔒 Race locked</span>'
+                  ? '<span style="color:var(--text3);font-size:11px">ðŸ�’ Race locked</span>'
 
                   : "";
 
@@ -18766,7 +16719,7 @@
 
               def.desc +
 
-              " · " +
+              " Â· " +
 
               costStr +
 
@@ -18832,7 +16785,7 @@
 
         if (result.updates)
 
-          window.applyGameMutation(result, { reason: "economy-upgrade" });
+          applyGameMutation(result, { reason: "economy-upgrade" });
 
         syncUI();
 
@@ -18854,7 +16807,7 @@
 
         if (btn) {
 
-          btn.textContent = "✅ Purchased";
+          btn.textContent = "âœ… Purchased";
 
           btn.disabled = true;
 
@@ -18924,11 +16877,11 @@
 
                 yours < base
 
-                  ? '<span style="color:var(--green)">↓</span>'
+                  ? '<span style="color:var(--green)">â†“</span>'
 
                   : yours > base
 
-                    ? '<span style="color:var(--red)">↑</span>'
+                    ? '<span style="color:var(--red)">â†‘</span>'
 
                     : "";
 
@@ -19022,7 +16975,7 @@
 
               remaining +
 
-              " turns remaining · " +
+              " turns remaining Â· " +
 
               fmt(m.upkeep_per_turn) +
 
@@ -19058,7 +17011,7 @@
 
         var el = document.getElementById("merc-preview");
 
-        if (el) el.textContent = fmt(cost) + " GC · " + def.duration + " turns";
+        if (el) el.textContent = fmt(cost) + " GC Â· " + def.duration + " turns";
 
       }
 
@@ -19084,7 +17037,7 @@
 
         if (result.error) return toast(result.error, "error");
 
-        window.applyGameMutation(result, { reason: "hire-mercs" });
+        applyGameMutation(result, { reason: "hire-mercs" });
 
         syncUI();
 
@@ -19148,7 +17101,7 @@
 
         sel.innerHTML =
 
-          '<option value="">— select kingdom —</option>' +
+          '<option value="">â€� select kingdom â€�</option>' +
 
           targets
 
@@ -19164,7 +17117,7 @@
 
                 escHtml(t.name) +
 
-                " · " +
+                " Â· " +
 
                 fmt(t.land) +
 
@@ -19192,7 +17145,7 @@
 
             toast("Trade logs cleared", "success");
 
-            loadMarkets();
+            loadTradeOffers();
 
           }
 
@@ -19322,13 +17275,13 @@
 
                     o.id +
 
-                    ')">✅ Accept</button>' +
+                    ')">âœ… Accept</button>' +
 
                     '<button class="btn btn-red"   style="font-size:11px;padding:3px 10px" onclick="declineTrade(' +
 
                     o.id +
 
-                    ')">❌ Decline</button>' +
+                    ')">â�Œ Decline</button>' +
 
                     "</div></div>"
 
@@ -19436,7 +17389,7 @@
 
         if (result.error) return toast(result.error, "error");
 
-        window.applyGameMutation(result, { reason: "accept-trade" });
+        applyGameMutation(result, { reason: "accept-trade" });
 
         syncUI();
 
@@ -19480,7 +17433,7 @@
 
           stroke: "#c8962a",
 
-          icon: "⛏️",
+          icon: "Ã¢â€ºÃ¯Â¸",
 
           x: 150,
 
@@ -19500,7 +17453,7 @@
 
           stroke: "#4caf82",
 
-          icon: "🌿",
+          icon: "ðŸŒ¿",
 
           x: 420,
 
@@ -19520,7 +17473,7 @@
 
           stroke: "#e05c5c",
 
-          icon: "⚔️",
+          icon: "âš�ï¸�",
 
           x: 560,
 
@@ -19540,7 +17493,7 @@
 
           stroke: "var(--accent1)",
 
-          icon: "🕵️",
+          icon: "ðŸ•µï¸�",
 
           x: 380,
 
@@ -19560,7 +17513,7 @@
 
           stroke: "#8fb84a",
 
-          icon: "🌾",
+          icon: "ðŸŒ¾",
 
           x: 200,
 
@@ -19580,7 +17533,7 @@
 
           stroke: "#4a8fb8",
 
-          icon: "🐺",
+          icon: "ðŸ�º",
 
           x: 60,
 
@@ -19720,7 +17673,7 @@
 
               bonus +
 
-              " · " +
+              " Â· " +
 
               count +
 
@@ -19786,7 +17739,7 @@
 
 
 
-        // Defs — filters and gradients
+        // Defs â€� filters and gradients
 
         svg +=
 
@@ -19866,7 +17819,7 @@
 
             '" r="400" stroke="rgba(255,255,255,0.015)" stroke-width="1" fill="none"/>';
 
-          for (var i = 0; i < 8; i++) {
+          for (var i = 0; i < 20; i++) {
 
             var a = (i * Math.PI) / 4;
 
@@ -20090,7 +18043,7 @@
 
 
 
-        // Grid lines — subtle
+        // Grid lines â€� subtle
 
         for (gx = 0; gx < W; gx += 80) {
 
@@ -20560,7 +18513,7 @@
 
         nameEl.innerHTML =
 
-          (RACE_ICONS[k.race] || "👤") +
+          (RACE_ICONS[k.race] || "ðŸ‘¤") +
 
           " " +
 
@@ -20582,13 +18535,13 @@
 
           '">' +
 
-          (meta.name || k.region || "—") +
+          (meta.name || k.region || "â€�") +
 
-          "</span> · Level " +
+          "</span> Â· Level " +
 
           (k.level || 1) +
 
-          " · Turn " +
+          " Â· Turn " +
 
           (k.turn || 0) +
 
@@ -20614,19 +18567,19 @@
 
             escHtml(k.name) +
 
-            "')\">👤 Profile</button>" +
+            "')\">ðŸ‘¤ Profile</button>" +
 
             '<button class="btn btn-red" style="font-size:11px;padding:4px 10px" onclick="targetFromRankings(' +
 
             k.id +
 
-            ",'attack')\">⚔️ Attack</button>" +
+            ",'attack')\">âš�ï¸� Attack</button>" +
 
             '<button class="btn btn-accent" style="font-size:11px;padding:4px 10px" onclick="targetFromRankings(' +
 
             k.id +
 
-            ",'spells')\">✨ Spell</button>" +
+            ",'spells')\">âœ¨ Spell</button>" +
 
             '<div style="text-align:center; margin-top:8px">' +
 
@@ -20636,7 +18589,7 @@
 
                 k.id +
 
-                ')">🤝 Trade Route (10k GC)</button>'
+                ')">ðŸ¤� Trade Route (10k GC)</button>'
 
               : '<div style="font-size:10px; color:var(--red); border:1px solid var(--red); padding:4px; border-radius:4px">Trading Post required to establish routes</div>') +
 
@@ -20648,7 +18601,7 @@
 
 
 
-      // ── Race Lore Modal ───────────────────────────────────────────────────────────
+      // â�€â�€ Race Lore Modal â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€
 
 
 
@@ -20658,13 +18611,13 @@
 
           title: "Dwarves of The Iron Holds",
 
-          icon: "⛏️",
+          icon: "Ã¢â€ºÃ¯Â¸",
 
-          lore: "Deep beneath the mountain roots, Dwarven civilisation predates all others in recorded history. Their citadels are not merely fortresses — they are cities of impossible scale, carved across generations by engineers who see rock as other races see clay. The Dwarves do not conquer land; they improve it, smelt it, and sell it back to you at a profit.",
+          lore: "Deep beneath the mountain roots, Dwarven civilisation predates all others in recorded history. Their citadels are not merely fortresses â€� they are cities of impossible scale, carved across generations by engineers who see rock as other races see clay. The Dwarves do not conquer land; they improve it, smelt it, and sell it back to you at a profit.",
 
           strengths: [
 
-            "Master builders — extremely fast construction speed",
+            "Master builders â€� extremely fast construction speed",
 
             "Powerful economy and gold generation",
 
@@ -20700,7 +18653,7 @@
 
           title: "High Elves of The Silverwood",
 
-          icon: "🌿",
+          icon: "ðŸŒ¿",
 
           lore: "Ageless and arch, the High Elves have spent millennia convinced they are the chosen custodians of arcane knowledge. Whether or not this is true is debated; that they produce more magical energy per mage than any other race is not. They grow slowly and build sparsely, but a High Elf mage at level 100 is worth ten of any other race.",
 
@@ -20744,9 +18697,9 @@
 
           title: "Orcs of The Bloodplains",
 
-          icon: "⚔️",
+          icon: "âš�ï¸�",
 
-          lore: "The Orcs have never needed a reason to go to war. The Bloodplains have been theirs since before the other races learned to write, and they intend to keep them — by force, by treaty, and by sheer weight of bodies. An Orc kingdom at full tilt is a roaring machine of meat and momentum that only a High Elf spell battery or a Dwarven fortress can hope to outlast.",
+          lore: "The Orcs have never needed a reason to go to war. The Bloodplains have been theirs since before the other races learned to write, and they intend to keep them â€� by force, by treaty, and by sheer weight of bodies. An Orc kingdom at full tilt is a roaring machine of meat and momentum that only a High Elf spell battery or a Dwarven fortress can hope to outlast.",
 
           strengths: [
 
@@ -20788,7 +18741,7 @@
 
           title: "Dark Elves of The Underspire",
 
-          icon: "🕵️",
+          icon: "ðŸ•µï¸�",
 
           lore: "No one knows how many Dark Elves there are. That is precisely how they like it. Operating from a vast underground network of city-warrens and shadow markets, they wage war through proxy, poison, and precision. By the time you know a Dark Elf kingdom is attacking, half your thieves are already dead.",
 
@@ -20818,7 +18771,7 @@
 
           special:
 
-            "Level 25+ ninjas perform silent assassinations — hidden from news reports",
+            "Level 25+ ninjas perform silent assassinations â€� hidden from news reports",
 
           playstyle:
 
@@ -20832,9 +18785,9 @@
 
           title: "Humans of The Heartlands",
 
-          icon: "🌾",
+          icon: "ðŸŒ¾",
 
-          lore: "Humans are not the strongest, the fastest, the most magical, or the most cunning. What they are is relentless. They breed quickly, adapt faster than any other race, and build institutions that outlast individual heroes. A Human kingdom in the mid-game is deceptively dangerous — by the time it shows its teeth, it has already won.",
+          lore: "Humans are not the strongest, the fastest, the most magical, or the most cunning. What they are is relentless. They breed quickly, adapt faster than any other race, and build institutions that outlast individual heroes. A Human kingdom in the mid-game is deceptively dangerous â€� by the time it shows its teeth, it has already won.",
 
           strengths: [
 
@@ -20874,9 +18827,9 @@
 
           title: "Dire Wolves of The Ashfang Wilds",
 
-          icon: "🐺",
+          icon: "ðŸ�º",
 
-          lore: "The Dire Wolves do not build kingdoms — they claim territory. Their settlements are mobile, their supply chains are their rangers, and their economy is whatever they can take from the land before moving on. They are the dominant military power in Narmir, and they know it. Everyone else knows it too.",
+          lore: "The Dire Wolves do not build kingdoms â€� they claim territory. Their settlements are mobile, their supply chains are their rangers, and their economy is whatever they can take from the land before moving on. They are the dominant military power in Narmir, and they know it. Everyone else knows it too.",
 
           strengths: [
 
@@ -20922,7 +18875,7 @@
 
           title: "Vampires of The Sanguine Spires",
 
-          icon: "🧛",
+          icon: "ðŸ§›",
 
           lore: "Ancient and immortal, the Vampires view the other races as little more than cattle for their blood-feasts. From their dark spires, they command armies of thralls and necromantic soldiers. They are masters of the night, but the sun is their undoing.",
 
@@ -20964,11 +18917,11 @@
 
         ogre: {
 
-          title: "Ogres — Unmatched Warriors",
+          title: "Ogres â€� Unmatched Warriors",
 
-          icon: "🗡️",
+          icon: "ðŸ—¡ï¸�",
 
-          lore: "Massive, powerful beings of raw strength and primal fury. Ogres excel in combat like no other race. However, their lack of intellectual curiosity makes them poor scholars—research and magic are foreign to their nature. An Ogre kingdom thrives on military dominance and conquest, not academic pursuit.",
+          lore: "Massive, powerful beings of raw strength and primal fury. Ogres excel in combat like no other race. However, their lack of intellectual curiosity makes them poor scholarsâ€�research and magic are foreign to their nature. An Ogre kingdom thrives on military dominance and conquest, not academic pursuit.",
 
           strengths: [
 
@@ -20994,7 +18947,7 @@
 
           special:
 
-            "🔜 Coming Soon — Special Ogre Warrior unit with enhanced combat damage",
+            "ðŸ�œ Coming Soon â€� Special Ogre Warrior unit with enhanced combat damage",
 
           playstyle:
 
@@ -21006,9 +18959,9 @@
 
         wood_elf: {
 
-          title: "Wood Elves — Master Explorers",
+          title: "Wood Elves â€� Master Explorers",
 
-          icon: "🌲",
+          icon: "ðŸŒ²",
 
           lore: "Nomadic forest dwellers with an unmatched ability to read terrain and discover hidden lands. Their tracking skills and intimate knowledge of nature allow them to find more land with fewer resources and less time. However, their preference for subterfuge and scouting makes them weak in direct combat.",
 
@@ -21038,7 +18991,7 @@
 
           special:
 
-            "🔜 Coming Soon — Unparalleled expedition bonuses for rapid territorial expansion",
+            "ðŸ�œ Coming Soon â€� Unparalleled expedition bonuses for rapid territorial expansion",
 
           playstyle:
 
@@ -21049,10 +19002,10 @@
         },
 
       };
-
-
-
       function openRaceLore(race) {
+        if (typeof window.__openRaceLoreImpl === "function") {
+          return window.__openRaceLoreImpl(race);
+        }
 
         var rKey = race || state.race;
 
@@ -21082,7 +19035,7 @@
 
             '" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.outerHTML=\'<span style=\\\'font-size: 60px;\\\'>' +
 
-            (lore.icon || "👤") +
+            (lore.icon || "ðŸ‘¤") +
 
             '</span>\'" />' +
 
@@ -21094,7 +19047,7 @@
 
             '<div style="width: 140px; height: 140px; border-radius: 16px; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 60px;">' +
 
-            (lore.icon || "👤") +
+            (lore.icon || "ðŸ‘¤") +
 
             "</div>";
 
@@ -21158,7 +19111,7 @@
 
               return (
 
-                '<div style="font-size:12px;color:var(--text2);padding:2px 0">✓ ' +
+                '<div style="font-size:12px;color:var(--text2);padding:2px 0">âœ“ ' +
 
                 s +
 
@@ -21182,7 +19135,7 @@
 
               return (
 
-                '<div style="font-size:12px;color:var(--text2);padding:2px 0">✗ ' +
+                '<div style="font-size:12px;color:var(--text2);padding:2px 0">âœ— ' +
 
                 s +
 
@@ -21200,7 +19153,7 @@
 
           '<div style="background:rgba(232,184,75,.08);border:1px solid rgba(232,184,75,.25);border-radius:var(--radius);padding:12px;margin-bottom:12px">' +
 
-          '<div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">✨ Racial mastery — unlocks at unit level 25</div>' +
+          '<div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">âœ¨ Racial mastery â€� unlocks at unit level 25</div>' +
 
           '<div style="font-size:13px;color:var(--text)">' +
 
@@ -21214,7 +19167,7 @@
 
             ? '<div style="background:rgba(143,184,74,.08);border:1px solid rgba(143,184,74,.25);border-radius:var(--radius);padding:12px;margin-bottom:12px">' +
 
-              '<div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">🛡️ Notable Race Heroes</div>' +
+              '<div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">ðŸ›¡ï¸� Notable Race Heroes</div>' +
 
               '<div style="display:flex;flex-wrap:wrap;gap:6px">' +
 
@@ -21281,6 +19234,9 @@
       var allHeroClasses = null;
 
       async function showHeroLore(heroName) {
+        if (typeof window.__showHeroLoreImpl === "function") {
+          return window.__showHeroLoreImpl(heroName);
+        }
 
         if (!allHeroClasses) {
 
@@ -21408,7 +19364,7 @@
 
           fmt(hero.recruitMana) +
 
-          " ✨</div>" +
+          " âœ¨</div>" +
 
           "</div>" +
 
@@ -21422,7 +19378,7 @@
 
 
 
-      // ── Kingdom Profile Modal ─────────────────────────────────────────────────────
+      // â�€â�€ Kingdom Profile Modal â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€
 
 
 
@@ -21468,7 +19424,7 @@
 
 
 
-        var raceIcon = RACE_ICONS[data.race] || "👤";
+        var raceIcon = RACE_ICONS[data.race] || "ðŸ‘¤";
 
         var racePortrait = getRacePortrait(data.race, data.gender || "male");
 
@@ -21574,7 +19530,7 @@
 
             escHtml(data.username || "?") +
 
-            (data.is_ai ? " 🤖" : "") +
+            (data.is_ai ? " ðŸ¤–" : "") +
 
             "</div>" +
 
@@ -21590,13 +19546,13 @@
 
             '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:20px; position: relative; overflow: hidden;">' +
 
-            '<div style="font-size:10px; color:var(--text3); text-transform:uppercase; margin-bottom:8px; font-weight:700; letter-spacing:0.5px; display: flex; align-items: center; gap: 6px;"><span style="color: var(--gold)">📜</span> Kingdom Biography</div>' +
+            '<div style="font-size:10px; color:var(--text3); text-transform:uppercase; margin-bottom:8px; font-weight:700; letter-spacing:0.5px; display: flex; align-items: center; gap: 6px;"><span style="color: var(--gold)">ðŸ“œ</span> Kingdom Biography</div>' +
 
             '<div style="font-size:14px; color:var(--text); line-height:1.6; font-style:italic; position: relative; z-index: 1;">' +
 
             (data.description
 
-              ? "“" + escHtml(data.description).replace(/\n/g, "<br>") + "”"
+              ? "â€œ" + escHtml(data.description).replace(/\n/g, "<br>") + "â€�"
 
               : "No official chronicles found for this realm.") +
 
@@ -21658,7 +19614,7 @@
 
             '<div style="background:var(--bg3); border-radius:10px; padding:12px; margin-bottom:20px; border: 1px solid var(--border);">' +
 
-            '<div style="font-size:10px; color:var(--text3); text-transform:uppercase; margin-bottom:10px; font-weight:700; letter-spacing:0.5px; display: flex; align-items: center; gap: 6px;"><span style="color: var(--red)">⚔️</span> Military Intelligence (Recent News)</div>' +
+            '<div style="font-size:10px; color:var(--text3); text-transform:uppercase; margin-bottom:10px; font-weight:700; letter-spacing:0.5px; display: flex; align-items: center; gap: 6px;"><span style="color: var(--red)">âš�ï¸�</span> Military Intelligence (Recent News)</div>' +
 
             '<div style="font-size:12px; color:var(--text3); max-height: 100px; overflow-y: auto; padding-right: 4px;">' +
 
@@ -21704,7 +19660,7 @@
 
             data.name.replace(/'/g, "\\'") +
 
-            "');closeKingdomProfile()\">✉️ Send Message to Ruler</button>" +
+            "');closeKingdomProfile()\">Ã¢Å“â€°Ã¯Â¸ Send Message to Ruler</button>" +
 
             (isMapped && !isMe
 
@@ -21718,31 +19674,31 @@
 
                 data.name.replace(/'/g, "\\'") +
 
-                "');closeKingdomProfile()\">🪙 Place Bounty</button>" +
+                "');closeKingdomProfile()\">ðŸª™ Place Bounty</button>" +
 
                 '<button class="btn btn-gold" style="padding: 10px;" onclick="establishTradeRoute(' +
 
                 data.id +
 
-                ');closeKingdomProfile()">🤝 Trade Route</button>' +
+                ');closeKingdomProfile()">ðŸ¤� Trade Route</button>' +
 
                 '<button class="btn btn-red" style="padding: 10px;" onclick="targetFromRankings(' +
 
                 data.id +
 
-                ",'attack');closeKingdomProfile()\">⚔️ Attack</button>" +
+                ",'attack');closeKingdomProfile()\">âš�ï¸� Attack</button>" +
 
                 '<button class="btn btn-accent" style="padding: 10px;" onclick="targetFromRankings(' +
 
                 data.id +
 
-                ",'spells');closeKingdomProfile()\">✨ Cast Spell</button>" +
+                ",'spells');closeKingdomProfile()\">âœ¨ Cast Spell</button>" +
 
                 '<button class="btn" style="grid-column: span 2; padding: 10px;" onclick="targetFromRankings(' +
 
                 data.id +
 
-                ",'covert');closeKingdomProfile()\">🕵️ Covert Operation</button>" +
+                ",'covert');closeKingdomProfile()\">ðŸ•µï¸� Covert Operation</button>" +
 
                 "</div>"
 
@@ -21750,7 +19706,7 @@
 
                 ? ""
 
-                : '<div style="font-size:11px; color:var(--text3); text-align:center; padding:16px; border:1px dashed var(--border); border-radius:12px; background:var(--bg2); line-height: 1.5;">📍 <strong>Exact coordinates unknown.</strong><br>Establish a map of this realm through exploration or intelligence to enable warfare operations.</div>') +
+                : '<div style="font-size:11px; color:var(--text3); text-align:center; padding:16px; border:1px dashed var(--border); border-radius:12px; background:var(--bg2); line-height: 1.5;">ðŸ“� <strong>Exact coordinates unknown.</strong><br>Establish a map of this realm through exploration or intelligence to enable warfare operations.</div>') +
 
             "</div>";
 
@@ -21798,7 +19754,7 @@
 
 
 
-      // ── Lore Entry Modal ──────────────────────────────────────────────────────────
+      // â�€â�€ Lore Entry Modal â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€
 
 
 
@@ -21846,7 +19802,7 @@
 
 
 
-      // ── XP & Level system ─────────────────────────────────────────────────────────
+      // â�€â�€ XP & Level system â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€
 
 
 
@@ -21862,45 +19818,15 @@
 
       }
 
-
-
-      function updateXpDisplay() {
-
-        var level = state.level || 1;
-
-        var xp = state.xp || 0;
-
-        var thisLvl = xpForLevel(level);
-
-        var nextLvl = xpForLevel(level + 1);
-
-        var xpInLevel = Math.max(0, Math.min(xp - thisLvl, nextLvl - thisLvl));
-
-        var xpNeeded = nextLvl - thisLvl;
-
-        var pct = xpNeeded > 0 ? Math.min(100, Math.floor((xpInLevel / xpNeeded) * 100)) : 100;
-
-
-
-        var levelEl = document.getElementById("kingdom-level");
-
-        var barEl = document.getElementById("xp-bar");
-
-        var labelEl = document.getElementById("xp-label");
-
-        if (levelEl) levelEl.textContent = level;
-
-        if (barEl) barEl.style.width = pct + "%";
-
-        if (labelEl)
-
+      function updateTrainingXpDisplay(xpInLevel, xpNeeded, labelEl) {
+        if (labelEl) {
           labelEl.textContent = fmt(xpInLevel) + " / " + fmt(xpNeeded) + " XP";
-
+        }
       }
 
+      // â�€â�€ Training panel
 
-
-      // ── Training panel ────────────────────────────────────────────────────────────
+      // â�€â�€ Training panel â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€
 
 
 
@@ -21972,296 +19898,6 @@
 
 
 
-      async function loadTrainingAllocation() {
-
-        var result = await apiCall("GET", "/api/kingdom/training-allocation");
-
-        if (result.error) return;
-
-        var alloc = result.allocation || {};
-
-        TROOP_TYPES.forEach(function (u) {
-
-          var el = document.getElementById("ta-" + u);
-
-          if (el) el.value = alloc[u] || 0;
-
-        });
-
-        updateTrainingDisplay();
-
-        updateTroopLevelDisplay();
-
-        renderRacialBadge();
-
-      }
-
-
-
-      async function saveTrainingAllocation() {
-
-        var alloc = {};
-
-        TROOP_TYPES.forEach(function (u) {
-
-          alloc[u] = parseInt(document.getElementById("ta-" + u)?.value) || 0;
-
-        });
-
-        var result = await apiCall("POST", "/api/kingdom/training-allocation", {
-
-          allocation: alloc,
-
-        });
-
-        if (result.error) return toast(result.error, "error");
-
-        toast("Training allocation saved", "success");
-
-        loadTrainingAllocation();
-
-      }
-
-
-
-      function updateTrainingDisplay() {
-
-        var total = 0;
-
-        TROOP_TYPES.forEach(function (u) {
-
-          var val = parseInt(document.getElementById("ta-" + u)?.value) || 0;
-
-          total += val;
-
-        });
-
-
-
-        var fields = state.bld_training || 0;
-
-        var capacity = fields * 100;
-
-        var el = document.getElementById("tr-capacity-used");
-
-        if (el) {
-
-          el.textContent = total;
-
-          el.style.color = total > capacity ? "var(--red)" : "var(--green)";
-
-        }
-
-
-
-        var trFields = document.getElementById("tr-fields");
-
-        var trCap = document.getElementById("tr-capacity");
-
-        if (trFields) trFields.textContent = fmt(state.bld_training || 0);
-
-        if (trCap) {
-
-          trCap.textContent = fmt(capacity);
-
-          trCap.style.color = total > capacity ? "var(--red)" : "var(--gold)";
-
-        }
-
-        var trW = document.getElementById("tr-weapons");
-
-        var trA = document.getElementById("tr-armor");
-
-        if (trW) trW.textContent = fmt(state.weapons_stockpile || 0);
-
-        if (trA) trA.textContent = fmt(state.armor_stockpile || 0);
-
-
-
-        var rb = document.getElementById("tr-race-bonus");
-
-        if (rb && state.race) {
-
-          var texts = {
-
-            high_elf: "Increased XP for Clerics, Mages, and Researchers",
-
-            dwarf: "Increased XP for Fighters and Engineers",
-
-            dire_wolf: "Greatly increased XP for Fighters and Rangers",
-
-            dark_elf: "Greatly increased XP for Ninjas, Thieves, and Rangers",
-
-            human: "Improved XP for all training units",
-
-            orc: "Greatly increased XP for Fighters and Clerics",
-
-            vampire: "Increased XP for Infiltrators and combat units",
-
-          };
-
-          rb.innerHTML = texts[state.race] || "—";
-
-        }
-
-      }
-
-
-
-      // Helper to init training inputs
-
-      function updateTroopLevelDisplay() {
-
-        TROOP_TYPES.forEach(function (unit) {
-
-          var data = getTroopLevel(unit);
-
-          var levelEl = document.getElementById("tr-level-" + unit);
-
-          var xpEl = document.getElementById("tr-xp-" + unit);
-
-          var barEl = document.getElementById("tr-bar-" + unit);
-
-          if (levelEl) levelEl.textContent = "Lv " + data.level;
-
-          var xpNeeded =
-
-            troopXpForLevelJS(data.level + 1) - troopXpForLevelJS(data.level);
-
-          var xpInLevel = data.xp - troopXpForLevelJS(data.level);
-
-          if (xpEl)
-
-            xpEl.textContent =
-
-              fmt(Math.max(0, xpInLevel)) + " / " + fmt(xpNeeded) + " XP";
-
-          if (barEl) {
-
-            var pct = Math.min(100, Math.floor((xpInLevel / xpNeeded) * 100));
-
-            barEl.style.width = pct + "%";
-
-          }
-
-        });
-
-      }
-
-
-
-      function getTroopLevel(unit) {
-
-        var levels = state.troop_levels || {};
-
-        return levels[unit] || { level: 1, xp: 0 };
-
-      }
-
-
-
-      function getAllocatedTraining() {
-
-        return TROOP_TYPES.reduce(function (sum, u) {
-
-          return (
-
-            sum + (parseInt(document.getElementById("ta-" + u)?.value) || 0)
-
-          );
-
-        }, 0);
-
-      }
-
-
-
-      function setTrainingInputsFromState() {
-
-        if (!state.training_allocation) return;
-
-        TROOP_TYPES.forEach(function (u) {
-
-          var el = document.getElementById("ta-" + u);
-
-          if (el) {
-
-            el.value = state.training_allocation[u] || 0;
-
-            el.dataset.initialized = "true";
-
-          }
-
-        });
-
-        updateTrainingDisplay();
-
-      }
-
-
-
-      function setTrainingMax(unit) {
-
-        var capacity = (state.bld_training || 0) * 100;
-
-        var allocated = getAllocatedTraining();
-
-        var current =
-
-          parseInt(document.getElementById("ta-" + unit)?.value) || 0;
-
-        var available = capacity - allocated + current;
-
-        var el = document.getElementById("ta-" + unit);
-
-        if (el) el.value = Math.max(0, Math.min(available, state[unit] || 0));
-
-        updateTrainingDisplay();
-
-      }
-
-
-
-      function distributeTrainingEvenly() {
-
-        var capacity = (state.bld_training || 0) * 100;
-
-        var count = TROOP_TYPES.length;
-
-        var each = Math.floor(capacity / count);
-
-        TROOP_TYPES.forEach(function (u) {
-
-          var el = document.getElementById("ta-" + u);
-
-          if (el) el.value = Math.min(each, state[u] || 0);
-
-        });
-
-        updateTrainingDisplay();
-
-      }
-
-
-
-      function releaseAllTraining() {
-
-        TROOP_TYPES.forEach(function (u) {
-
-          var el = document.getElementById("ta-" + u);
-
-          if (el) el.value = 0;
-
-        });
-
-        updateTrainingDisplay();
-
-        saveTrainingAllocation();
-
-      }
-
-
-
       function renderMageTowerPanel() {
 
         var alloc = state.mage_tower_allocation || {};
@@ -22316,7 +19952,7 @@
 
           ")</span></div>" +
 
-          '<div class="desc">Base material • 5 mages • 5 turns</div>' +
+          '<div class="desc">Base material â€¢ 5 mages â€¢ 5 turns</div>' +
 
           bQText +
 
@@ -22352,7 +19988,7 @@
 
           html +=
 
-            '<div style="font-size:11px;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;gap:6px"><span style="font-size:16px">📜</span> Requires 1 Blank Scroll per spell</div>';
+            '<div style="font-size:11px;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;gap:6px"><span style="font-size:16px">ðŸ“œ</span> Requires 1 Blank Scroll per spell</div>';
 
 
 
@@ -22370,11 +20006,11 @@
 
                 '<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:12px;color:var(--green)">' +
 
-                "<span>✨ " +
+                "<span>âœ¨ " +
 
                 s.label +
 
-                " × " +
+                " Ã— " +
 
                 queued +
 
@@ -22420,7 +20056,7 @@
 
                 s.label +
 
-                " — T" +
+                " â€� T" +
 
                 s.tier +
 
@@ -22444,7 +20080,7 @@
 
             '<select id="tower-spell-select" class="input" style="width:100%;margin-bottom:8px;font-size:12px">' +
 
-            '<option value="">— Choose a spell —</option>' +
+            '<option value="">â€� Choose a spell â€�</option>' +
 
             options +
 
@@ -22512,7 +20148,7 @@
 
                 if (def) label = def.label;
 
-                var icon = s === "blank_scroll" ? "📜 " : "✨ ";
+                var icon = s === "blank_scroll" ? "ðŸ“œ " : "âœ¨ ";
 
                 return (
 
@@ -22526,7 +20162,7 @@
 
                   "</span>" +
 
-                  '<span style="color:var(--gold);font-weight:600">×' +
+                  '<span style="color:var(--gold);font-weight:600">Ã—' +
 
                   scrolls[s] +
 
@@ -22580,7 +20216,7 @@
 
                   : spellId;
 
-              var icon = spellId === "blank_scroll" ? "📜 " : "✨ ";
+              var icon = spellId === "blank_scroll" ? "ðŸ“œ " : "âœ¨ ";
 
               var color =
 
@@ -22700,25 +20336,25 @@
 
         dwarf:
 
-          "⛏️ Iron Hold Mastery — Level 25+ engineers solo-crew war machines",
+          "Ã¢â€ºÃ¯Â¸ Iron Hold Mastery â€� Level 25+ engineers solo-crew war machines",
 
         high_elf:
 
-          "🌿 Silverwood Mastery — Level 25+ mages produce 2 scrolls per craft",
+          "ðŸŒ¿ Silverwood Mastery â€� Level 25+ mages produce 2 scrolls per craft",
 
-        orc: "⚔️ Bloodplain Mastery — Level 25+ passively trains free fighters each turn",
+        orc: "âš�ï¸� Bloodplain Mastery â€� Level 25+ passively trains free fighters each turn",
 
         dark_elf:
 
-          "🕵️ Underspire Mastery — Level 25+ assassinations leave no trace",
+          "ðŸ•µï¸� Underspire Mastery â€� Level 25+ assassinations leave no trace",
 
         dire_wolf:
 
-          "🐺 Pack Mastery — Level 25+ rangers execute expeditions at a much faster pace",
+          "ðŸ�º Pack Mastery â€� Level 25+ rangers execute expeditions at a much faster pace",
 
-        human: "🌾 Heartland Mastery — Level 25+ healing happiness aura",
+        human: "ðŸŒ¾ Heartland Mastery â€� Level 25+ healing happiness aura",
 
-        vampire: "🧛 Night Stalker Mastery — Level 25+ Thief Power",
+        vampire: "ðŸ§› Night Stalker Mastery â€� Level 25+ Thief Power",
 
       };
 
@@ -22798,7 +20434,6 @@
 
         if (result.updates) updateState(result.updates);
 
-        updateBuildDisplay();
 
       }
 
@@ -22912,7 +20547,7 @@
 
           scrollRequired: true,
 
-          desc: "Floods enemy farms — more damage than Spark",
+          desc: "Floods enemy farms â€� more damage than Spark",
 
         },
 
@@ -23282,7 +20917,7 @@
 
                     id: "ach_grandmaster",
 
-                    text: "🏆 Grandmaster (100+ Mage Towers & Castles) [+1000 Land, +1000 Maps]",
+                    text: "ðŸ�† Grandmaster (100+ Mage Towers & Castles) [+1000 Land, +1000 Maps]",
 
                   },
 
@@ -23290,7 +20925,7 @@
 
                     id: "ach_warlord",
 
-                    text: "🏆 Warlord (10,000+ Population) [+5000 Land]",
+                    text: "ðŸ�† Warlord (10,000+ Population) [+5000 Land]",
 
                   },
 
@@ -23298,7 +20933,7 @@
 
                     id: "ach_wealthy",
 
-                    text: "🏆 Merchant King (10,000,000+ Gold) [+5000 Scaffolding]",
+                    text: "ðŸ�† Merchant King (10,000,000+ Gold) [+5000 Scaffolding]",
 
                   },
 
@@ -23306,7 +20941,7 @@
 
                     id: "ach_arcane",
 
-                    text: "🏆 Arcane Overlord (1,000,000+ Mana) [+10,000 Scrolls]",
+                    text: "ðŸ�† Arcane Overlord (1,000,000+ Mana) [+10,000 Scrolls]",
 
                   },
 
@@ -23314,7 +20949,7 @@
 
                     id: "historian",
 
-                    text: "🏆 Historian (Found all library lore) [+5000 Maps]",
+                    text: "ðŸ�† Historian (Found all library lore) [+5000 Maps]",
 
                   },
 
@@ -23322,7 +20957,7 @@
 
                     id: "collector",
 
-                    text: "🏆 Field Collector (Found all expedition random events) [+5000 Maps]",
+                    text: "ðŸ�† Field Collector (Found all expedition random events) [+5000 Maps]",
 
                   },
 
@@ -23350,7 +20985,7 @@
 
                       '<div style="background:var(--bg3);padding:8px 12px;border-radius:4px;border:1px solid var(--border);color:var(--text3);font-size:11px;">' +
 
-                        ach.text.replace("🏆", "🔒") +
+                        ach.text.replace("ðŸ�†", "ðŸ�’") +
 
                         "</div>",
 
@@ -23422,7 +21057,7 @@
 
                             lMsg +
 
-                            '\')" style="background:var(--bg3);padding:8px;border-radius:4px;border:1px solid var(--border);cursor:pointer;color:var(--gold);font-weight:600;font-size:13px;transition: background-color 0.2s;">📜 ' +
+                            '\')" style="background:var(--bg3);padding:8px;border-radius:4px;border:1px solid var(--border);cursor:pointer;color:var(--gold);font-weight:600;font-size:13px;transition: background-color 0.2s;">ðŸ“œ ' +
 
                             (l.title || "Lore Entry") +
 
@@ -23924,7 +21559,7 @@
 
             var assigned = Number(alloc[item] || 0);
 
-            var estimateText = "Estimated turns: —";
+            var estimateText = "Estimated turns: â€�";
 
             if (assigned > 0) {
 
@@ -24092,7 +21727,7 @@
 
             mappedHtml =
 
-              '<div style="font-size:12px; font-weight:700; color:var(--text); margin-bottom:8px">📍 Stored Location Maps</div>' +
+              '<div style="font-size:12px; font-weight:700; color:var(--text); margin-bottom:8px">ðŸ“� Stored Location Maps</div>' +
 
               '<div style="display:flex; flex-wrap:wrap; gap:6px;">' +
 
@@ -24206,7 +21841,7 @@
 
                 pct = Math.min(100, Math.floor((p / 10) * 100));
 
-                label = "🗺️ Map";
+                label = "ðŸ—ºï¸� Map";
 
                 color = "var(--green)";
 
@@ -24214,7 +21849,7 @@
 
                 pct = Math.min(100, Math.floor((p / 20) * 100));
 
-                label = "⚙️ Blueprint";
+                label = "Ã¢Å¡â„¢Ã¯Â¸ Blueprint";
 
                 color = "var(--amber)";
 
@@ -24222,7 +21857,7 @@
 
                 pct = Math.min(100, Math.floor((p / 60) * 100));
 
-                label = "📜 Certified Blueprint";
+                label = "ðŸ“œ Certified Blueprint";
 
                 color = "var(--gold)";
 
@@ -24230,7 +21865,7 @@
 
                 pct = Math.min(100, Math.floor((p / 200) * 100));
 
-                label = "🧪 Studying Fragment";
+                label = "ðŸ§ª Studying Fragment";
 
                 color = "var(--blue)";
 
@@ -24238,7 +21873,7 @@
 
                 pct = Math.min(100, Math.floor((p / 5) * 100));
 
-                label = "📍 Location Map";
+                label = "ðŸ“� Location Map";
 
                 color = "var(--accent1)";
 
@@ -24246,7 +21881,7 @@
 
                 pct = Math.min(100, Math.floor((p / 300) * 100));
 
-                label = "🔮 Hybrid Blueprint";
+                label = "ðŸ�® Hybrid Blueprint";
 
                 color = "var(--blue)";
 
@@ -24636,7 +22271,7 @@
 
 
 
-      var xpForLevelJS = xpForLevel; // alias — same formula, single source of truth
+      var xpForLevelJS = xpForLevel; // alias â€� same formula, single source of truth
 
 
 
@@ -24858,7 +22493,7 @@
 
         var elMsBonus = document.getElementById("xp-modal-ms-bonuses");
 
-        if (elMsBonus) elMsBonus.textContent = bonusParts.length ? bonusParts.join(" · ") : "None yet";
+        if (elMsBonus) elMsBonus.textContent = bonusParts.length ? bonusParts.join(" Â· ") : "None yet";
 
 
 
@@ -24868,17 +22503,17 @@
 
           human:     "Your gold grants +25%",
 
-          high_elf:  "Troops → researchers; research bonuses ×2",
+          high_elf:  "Troops â†’ researchers; research bonuses Ã—2",
 
-          dwarf:     "Gold grants +50%; construction bonuses ×2",
+          dwarf:     "Gold grants +50%; construction bonuses Ã—2",
 
-          dire_wolf: "Troop grants ×2; attack bonuses ×1.5",
+          dire_wolf: "Troop grants Ã—2; attack bonuses Ã—1.5",
 
-          dark_elf:  "Troops → thieves/ninjas; covert bonuses ×2",
+          dark_elf:  "Troops â†’ thieves/ninjas; covert bonuses Ã—2",
 
-          orc:       "Troop grants ×2; attack bonuses ×1.5",
+          orc:       "Troop grants Ã—2; attack bonuses Ã—1.5",
 
-          vampire:   "Troop grants ×1.5; gold +25%; covert bonuses ×1.5",
+          vampire:   "Troop grants Ã—1.5; gold +25%; covert bonuses Ã—1.5",
 
         };
 
@@ -24894,43 +22529,43 @@
 
           { level: 25,  label: "Budding Ruler",         note: "25,000 gold" },
 
-          { level: 50,  label: "Established Lord",      note: "50,000 gold · 100 troops" },
+          { level: 50,  label: "Established Lord",      note: "50,000 gold Â· 100 troops" },
 
-          { level: 75,  label: "Regional Power",        note: "75,000 gold · 50 land" },
+          { level: 75,  label: "Regional Power",        note: "75,000 gold Â· 50 land" },
 
-          { level: 100, label: "Grand Duke",            note: "150,000 gold · 200 troops · +1% income" },
+          { level: 100, label: "Grand Duke",            note: "150,000 gold Â· 200 troops Â· +1% income" },
 
-          { level: 125, label: "Proven Warlord",        note: "100,000 gold · +1% attack" },
+          { level: 125, label: "Proven Warlord",        note: "100,000 gold Â· +1% attack" },
 
-          { level: 150, label: "Master Builder",        note: "125,000 gold · 100 land · +1% construction" },
+          { level: 150, label: "Master Builder",        note: "125,000 gold Â· 100 land Â· +1% construction" },
 
-          { level: 175, label: "Sage of the Realm",     note: "125,000 gold · +1% research" },
+          { level: 175, label: "Sage of the Realm",     note: "125,000 gold Â· +1% research" },
 
-          { level: 200, label: "High King",             note: "300,000 gold · 500 troops · +1% income, +1% defense" },
+          { level: 200, label: "High King",             note: "300,000 gold Â· 500 troops Â· +1% income, +1% defense" },
 
-          { level: 225, label: "Strategist",            note: "200,000 gold · +1% attack" },
+          { level: 225, label: "Strategist",            note: "200,000 gold Â· +1% attack" },
 
-          { level: 250, label: "Dominator",             note: "250,000 gold · 200 land · +1% covert" },
+          { level: 250, label: "Dominator",             note: "250,000 gold Â· 200 land Â· +1% covert" },
 
-          { level: 275, label: "Arcane Authority",      note: "200,000 gold · +1% research" },
+          { level: 275, label: "Arcane Authority",      note: "200,000 gold Â· +1% research" },
 
-          { level: 300, label: "Realm Sovereign",       note: "500,000 gold · 1,000 troops · +1% income, +1% attack" },
+          { level: 300, label: "Realm Sovereign",       note: "500,000 gold Â· 1,000 troops Â· +1% income, +1% attack" },
 
-          { level: 325, label: "Grand Marshal",         note: "300,000 gold · 250 land · +1% defense" },
+          { level: 325, label: "Grand Marshal",         note: "300,000 gold Â· 250 land Â· +1% defense" },
 
-          { level: 350, label: "Emperor",               note: "400,000 gold · +1% income, +1% covert" },
+          { level: 350, label: "Emperor",               note: "400,000 gold Â· +1% income, +1% covert" },
 
-          { level: 375, label: "Immortal General",      note: "350,000 gold · 1,500 troops · +1% attack" },
+          { level: 375, label: "Immortal General",      note: "350,000 gold Â· 1,500 troops Â· +1% attack" },
 
-          { level: 400, label: "Legendary Sovereign",   note: "750,000 gold · 400 land · +2% income, +1% defense" },
+          { level: 400, label: "Legendary Sovereign",   note: "750,000 gold Â· 400 land Â· +2% income, +1% defense" },
 
-          { level: 425, label: "Mythic Conqueror",      note: "500,000 gold · 2,000 troops · +1% attack, +1% covert" },
+          { level: 425, label: "Mythic Conqueror",      note: "500,000 gold Â· 2,000 troops Â· +1% attack, +1% covert" },
 
-          { level: 450, label: "Eternal Ruler",         note: "600,000 gold · 500 land · +2% income" },
+          { level: 450, label: "Eternal Ruler",         note: "600,000 gold Â· 500 land Â· +2% income" },
 
-          { level: 475, label: "God-King",              note: "700,000 gold · 2,500 troops · +1% attack, +1% defense" },
+          { level: 475, label: "God-King",              note: "700,000 gold Â· 2,500 troops Â· +1% attack, +1% defense" },
 
-          { level: 500, label: "Ascended",              note: "1,000,000 gold · 750 land · +2% income, +2% attack" },
+          { level: 500, label: "Ascended",              note: "1,000,000 gold Â· 750 land Â· +2% income, +2% attack" },
 
         ];
 
@@ -24968,7 +22603,7 @@
 
                 '">' +
 
-                (reached ? "✓" : "○") +
+                (reached ? "âœ“" : "â—‹") +
 
                 " Lv " +
 
@@ -25004,7 +22639,7 @@
 
                 '<div style="color:var(--text3);text-align:right">' +
 
-                (m.level === 1 ? "—" : fmt(xpReq) + " XP") +
+                (m.level === 1 ? "â€�" : fmt(xpReq) + " XP") +
 
                 "</div>"
 
@@ -25050,7 +22685,7 @@
 
         enchantment: "The manipulation of will and desire. Enchanters bend minds and sway hearts, compelling others to serve their kingdom's interests.",
 
-        evocation: "Raw magical power unleashed. Evokers channel destructive force—fire, lightning, and ruin—to devastate enemies and reshape the battlefield.",
+        evocation: "Raw magical power unleashed. Evokers channel destructive forceâ€�fire, lightning, and ruinâ€�to devastate enemies and reshape the battlefield.",
 
         illusion: "The mastery of perception and deception. Illusionists craft false images and phantom armies, confusing enemies and protecting truth with misdirection.",
 
@@ -25064,21 +22699,21 @@
 
       const MAGIC_SCHOOLS = {
 
-        abjuration: { name: "Abjuration", icon: "🛡️", desc: "Protection & Defense" },
+        abjuration: { name: "Abjuration", icon: "ðŸ›¡ï¸�", desc: "Protection & Defense" },
 
-        conjuration: { name: "Conjuration", icon: "✨", desc: "Summoning & Creation" },
+        conjuration: { name: "Conjuration", icon: "âœ¨", desc: "Summoning & Creation" },
 
-        divination: { name: "Divination", icon: "🔮", desc: "Information & Foresight" },
+        divination: { name: "Divination", icon: "ðŸ�®", desc: "Information & Foresight" },
 
-        enchantment: { name: "Enchantment", icon: "💫", desc: "Charm & Influence" },
+        enchantment: { name: "Enchantment", icon: "ðŸ’«", desc: "Charm & Influence" },
 
-        evocation: { name: "Evocation", icon: "⚡", desc: "Damage & Force" },
+        evocation: { name: "Evocation", icon: "âš¡", desc: "Damage & Force" },
 
-        illusion: { name: "Illusion", icon: "👁️", desc: "Deception & Trickery" },
+        illusion: { name: "Illusion", icon: "ðŸ‘�ï¸�", desc: "Deception & Trickery" },
 
-        necromancy: { name: "Necromancy", icon: "💀", desc: "Death & Undeath" },
+        necromancy: { name: "Necromancy", icon: "ðŸ’€", desc: "Death & Undeath" },
 
-        transmutation: { name: "Transmutation", icon: "🔄", desc: "Change & Transformation" },
+        transmutation: { name: "Transmutation", icon: "ðŸ�„", desc: "Change & Transformation" },
 
       };
 
@@ -25278,86 +22913,6 @@
 
 
 
-      function openHeroXpModal() {
-
-        var tableHtml =
-
-          '<div style="max-height:60vh;overflow-y:auto;padding-right:10px">';
-
-        tableHtml +=
-
-          '<table style="width:100%;border-collapse:collapse;font-size:13px;text-align:left;">';
-
-        tableHtml +=
-
-          '<tr><th style="padding:8px;border-bottom:1px solid var(--border);color:var(--text3);">Level</th><th style="padding:8px;border-bottom:1px solid var(--border);color:var(--text3);">Total XP Req.</th><th style="padding:8px;border-bottom:1px solid var(--border);color:var(--text3);">XP for Level</th></tr>';
-
-
-
-        for (let i = 2; i <= 20; i++) {
-
-          let currentTotalXp = Math.floor(1000 * (Math.pow(1.5, i - 1) - 1));
-
-          let previousTotalXp = Math.floor(1000 * (Math.pow(1.5, i - 2) - 1));
-
-          let xpNeeded = currentTotalXp - previousTotalXp;
-
-          tableHtml += "<tr>";
-
-          tableHtml +=
-
-            '<td style="padding:8px;border-bottom:1px solid var(--border);color:var(--gold);font-weight:700;">' +
-
-            i +
-
-            "</td>";
-
-          tableHtml +=
-
-            '<td style="padding:8px;border-bottom:1px solid var(--border);color:var(--text2);">' +
-
-            fmt(currentTotalXp) +
-
-            ' <span style="color:var(--text3);font-size:10px;">XP</span></td>';
-
-          tableHtml +=
-
-            '<td style="padding:8px;border-bottom:1px solid var(--border);color:var(--text);">' +
-
-            fmt(xpNeeded) +
-
-            ' <span style="color:var(--text3);font-size:10px;">XP</span></td>';
-
-          tableHtml += "</tr>";
-
-        }
-
-        tableHtml += "</table></div>";
-
-
-
-        let contentHtml =
-
-          '<div style="margin-bottom:16px;text-align:center;">' +
-
-          '<div style="font-size:40px;margin-bottom:8px">👑</div>' +
-
-          '<div style="font-size:18px;font-weight:700;color:var(--text)">Hero XP Progression</div>' +
-
-          '<div style="font-size:12px;color:var(--text3)">Max Level is 20</div>' +
-
-          "</div>" +
-
-          tableHtml;
-
-
-
-        openGenericModal(contentHtml);
-
-      }
-
-
-
       function openGenericModal(htmlContent) {
 
         const content = document.getElementById("generic-modal-content");
@@ -25382,9 +22937,7 @@
 
 
 
-      // ── Heroes ───────────────────────────────────────────────────────────────────
-
-      var _heroClasses = {};
+      // â�€â�€ Heroes â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€
 
       var HERO_PORTRAITS = {
 
@@ -25454,382 +23007,6 @@
 
       }
 
-
-
-      async function loadHeroes() {
-
-        const [heroes, k, classes, allClasses] = await Promise.all([
-
-          apiCall("GET", "/api/hero/list"),
-
-          apiCall("GET", "/api/kingdom/me"),
-
-          apiCall("GET", "/api/hero/classes"),
-
-          apiCall("GET", "/api/hero/all-classes"),
-
-        ]);
-
-
-
-        if (heroes.error || k.error || classes.error || allClasses.error) return;
-
-        _heroClasses = classes;
-
-        // Use all class data for rendering owned heroes, as it contains info for all classes
-
-        const allClassesData = allClasses;
-
-
-
-        let maxHeroes = 0;
-
-        const castles = k.bld_castles || 0;
-
-        if (castles >= 50) maxHeroes = 3;
-
-        else if (castles >= 10) maxHeroes = 2;
-
-        else if (castles >= 1) maxHeroes = 1;
-
-
-
-        var used = heroes.length;
-
-
-
-        var elUsed = document.getElementById("hero-slots-used");
-
-        if (elUsed) elUsed.textContent = used;
-
-        var elTotal = document.getElementById("hero-slots-total");
-
-        if (elTotal) elTotal.textContent = maxHeroes;
-
-        const pct = maxHeroes > 0 ? Math.min(100, (used / maxHeroes) * 100) : 0;
-
-        var elBar = document.getElementById("hero-slots-bar");
-
-        if (elBar) elBar.style.width = pct + "%";
-
-
-
-        // Render hero list
-
-        const list = document.getElementById("hero-list");
-
-        if (heroes.length === 0) {
-
-          list.innerHTML = `<div style="color:var(--text3);font-size:13px;padding:20px;text-align:center;grid-column:1/-1">No heroes recruited yet. Build a Castle to recruit your first hero!</div>`;
-
-        } else {
-
-          list.innerHTML = heroes
-
-            .map((h) => {
-
-              const cls = allClassesData[h.class] ? allClassesData[h.class].name : h.class;
-
-              const abilityList = allClassesData[h.class]
-
-                ? allClassesData[h.class].abilities
-
-                : [];
-
-              const UNLOCK_LEVELS = [1, 5, 10];
-
-              const unlockedAbilities = abilityList.filter(
-
-                (a, idx) =>
-
-                  idx < UNLOCK_LEVELS.length && h.level >= UNLOCK_LEVELS[idx],
-
-              );
-
-              const xpThis = heroXpForLevelJS(h.level);
-
-              const xpNext = heroXpForLevelJS(h.level + 1);
-
-              const xpIntoLevel = Math.max(0, (h.xp || 0) - xpThis);
-
-              const xpNeeded = xpNext - xpThis;
-
-              const xpPct =
-
-                xpNeeded > 0
-
-                  ? Math.min(100, Math.floor((xpIntoLevel / xpNeeded) * 100))
-
-                  : 100;
-
-              const levelReady = xpIntoLevel >= xpNeeded && h.level < 25;
-
-              const isMaxLevel = h.level >= 25;
-
-              const abilityChips = unlockedAbilities
-
-                .map((a, i) => {
-
-                  const label =
-
-                    typeof a === "object" && a !== null ? a.name : a;
-
-                  const desc =
-
-                    typeof a === "object" && a !== null ? a.description : "";
-
-                  const isLatest = i === unlockedAbilities.length - 1;
-
-                  return `<div style="font-size:11px; margin-bottom: 4px; line-height: 1.3;">
-
-                          <strong style="color:${isLatest ? "var(--accent1)" : "var(--gold)"}">✨ ${escHtml(label)}:</strong> 
-
-                          <span style="color:var(--text2)">${escHtml(desc)}</span>
-
-                        </div>`;
-
-                })
-
-                .join("");
-
-              return `
-
-        <div class="card" style="margin:0;border:1px solid var(--border2);background:linear-gradient(135deg, var(--bg2), var(--bg3));display:flex;gap:12px;align-items:flex-start;">
-
-          <img src="${heroPortrait(h.class)}" width="56" height="56" style="border-radius:8px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'" alt="${cls}"/>
-
-          <div style="flex:1;min-width:0;">
-
-            <div style="font-size:16px;font-weight:700;color:var(--gold);margin-bottom:2px;">${h.name}</div>
-
-            <div style="font-size:12px;margin-bottom:8px;"><span style="color:var(--red);font-weight:600;">${cls}</span> <span style="color:var(--text3);">· Level ${h.level}</span></div>
-
-            <div style="display:flex;flex-direction:column;margin-bottom:8px;">${abilityChips || '<span style="font-size:10px;color:var(--text3)">No abilities yet</span>'}</div>
-
-            ${
-
-              isMaxLevel
-
-                ? `<div style="font-size:10px;color:var(--text3);margin-bottom:3px;">Max Level Reached</div>`
-
-                : levelReady
-
-                  ? `<div style="font-size:10px;color:var(--green);margin-bottom:3px;font-weight:600;">⬆ Ready to level up!</div>`
-
-                  : `<div style="font-size:10px;color:var(--text3);margin-bottom:3px;">XP: ${xpIntoLevel.toLocaleString()} / ${xpNeeded.toLocaleString()} to Lv${h.level + 1} (${xpPct}%)</div>`
-
-            }
-
-            <div style="height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;"><div style="height:100%;width:${isMaxLevel ? 100 : xpPct}%;background:${isMaxLevel ? "var(--gold)" : levelReady ? "var(--green)" : "var(--gold)"};border-radius:2px;"></div></div>
-
-          </div>
-
-        </div>
-
-      `;
-
-            })
-
-            .join("");
-
-        }
-
-
-
-        // Render recruitment options
-
-        const optWrap = document.getElementById("hero-class-options");
-
-        if (optWrap) {
-
-          const recruitedClassIds = new Set(heroes.map((h) => h.class));
-
-          const availableClasses = Object.entries(classes).filter(
-
-            ([id, c]) => !recruitedClassIds.has(id),
-
-          );
-
-
-
-          if (availableClasses.length === 0) {
-
-            optWrap.innerHTML = `<div style="color:var(--text3);font-size:13px;padding:20px;text-align:center;">No more heroes available to recruit.</div>`;
-
-          } else {
-
-            optWrap.innerHTML = availableClasses
-
-              .map(([id, c]) => {
-
-                return `
-
-                <div style="display:flex;gap:10px;align-items:flex-start;background:var(--bg3);padding:12px;border-radius:var(--radius);border:1px solid var(--border);cursor:pointer;flex-direction:column" onclick="selectHeroClass('${id}')" id="hero-opt-${id}" class="hero-class-opt">
-
-                  <div style="display:flex;width:100%;align-items:center;justify-content:space-between">
-
-                    <div style="display:flex;gap:10px;align-items:center;">
-
-                      <img src="${heroPortrait(id)}" width="40" height="40" style="border-radius:6px;object-fit:cover;display:block;flex-shrink:0" onerror="this.style.display='none'" alt="${c.name}"/>
-
-                      <div>
-
-                        <div style="font-size:14px;font-weight:700;color:var(--gold)">${c.name}</div>
-
-                        <div style="font-size:11px;color:var(--text3)">Cost: ${c.recruitCost.toLocaleString()} GC · ${c.recruitMana} Mana</div>
-
-                      </div>
-
-                    </div>
-
-                    <input type="radio" name="hero-class" value="${id}" id="radio-hero-${id}" style="margin:0">
-
-                  </div>
-
-                  <div style="font-size:12px;color:var(--text2);margin-top:4px">${c.description}</div>
-
-                  <div style="font-size:11px;color:var(--text);margin-top:8px">
-
-                    <div style="font-weight:700;margin-bottom:2px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-size:10px">Abilities</div>
-
-                    ${c.abilities
-
-                      .map((a, idx) => {
-
-                        let unlockLvl = idx === 0 ? 1 : idx === 1 ? 5 : 10;
-
-                        let xpText =
-
-                          unlockLvl === 1
-
-                            ? ""
-
-                            : ' <span style="color:var(--text3);font-size:9px">(Unlocks at Lvl ' +
-
-                              unlockLvl +
-
-                              ")</span>";
-
-                        return `<div style="margin-bottom:2px">✨ <strong style="color:var(--text)">${a.name}:</strong> <span style="color:var(--text2)">${a.description}</span>${xpText}</div>`;
-
-                      })
-
-                      .join("")}
-
-                  </div>
-
-                </div>
-
-              `;
-
-              })
-
-              .join("");
-
-          }
-
-        }
-
-      }
-
-
-
-      let _selectedHeroClass = null;
-
-      function selectHeroClass(id) {
-
-        _selectedHeroClass = id;
-
-        document.querySelectorAll(".hero-class-opt").forEach((el) => {
-
-          if (el) el.style.borderColor = "var(--border)";
-
-        });
-
-        const opt = document.getElementById("hero-opt-" + id);
-
-        if (opt) opt.style.borderColor = "var(--accent1)";
-
-        const rad = document.getElementById("radio-hero-" + id);
-
-        if (rad) rad.checked = true;
-
-      }
-
-
-
-      async function recruitHeroAction() {
-
-        if (!_selectedHeroClass) return alert("Select a hero class first.");
-
-
-
-        const className =
-
-          _heroClasses && _heroClasses[_selectedHeroClass]
-
-            ? _heroClasses[_selectedHeroClass].name
-
-            : "Hero";
-
-
-
-        const name = prompt(`Enter a name for your new ${className}:`);
-
-        if (!name) return;
-
-
-
-        const btn = document.getElementById("btn-recruit-hero");
-
-        if (btn) btn.disabled = true;
-
-
-
-        const res = await apiCall("POST", "/api/hero/recruit", {
-
-          name,
-
-          heroClass: _selectedHeroClass,
-
-        });
-
-        if (btn) btn.disabled = false;
-
-
-
-        if (res.error) {
-
-          alert(res.error);
-
-        } else {
-
-          _selectedHeroClass = null;
-
-          loadHeroes();
-
-          loadKingdom(); // Update status bar resources
-
-        }
-
-      }
-
-
-
-      // Boot — check auth then show modal or load kingdom
-
-      async function doLogout() {
-
-        await apiCall("POST", "/api/auth/logout");
-
-        clearToken();
-
-        location.href = "/portal";
-
-      }
-
-
-
       function renderRaces() {
 
         var racePanel = document.getElementById("races-list");
@@ -25882,9 +23059,9 @@
 
               portraitHtml +
 
-              '<div onclick="window.openRaceLore(\'' + key + '\')" style="cursor: pointer; font-size: 16px; font-weight: bold; color: var(--gold); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;" title="Click for detailed lore & details">' +
+              '<div onclick="openRaceLore(\'' + key + '\')" style="cursor: pointer; font-size: 16px; font-weight: bold; color: var(--gold); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;" title="Click for detailed lore & details">' +
 
-              (r.icon || "👤") +
+              (r.icon || "ðŸ‘¤") +
 
               " " +
 
@@ -25902,7 +23079,7 @@
 
               (r.special
 
-                ? '<div style="font-size: 12px; color: var(--gold); margin-bottom: 12px;">🌟 <strong>Special:</strong> ' +
+                ? '<div style="font-size: 12px; color: var(--gold); margin-bottom: 12px;">ðŸŒŸ <strong>Special:</strong> ' +
 
                   r.special +
 
@@ -26043,58 +23220,6 @@
             state.isAdmin = !!me.isAdmin;
 
 
-
-            // Wait for React to be ready
-
-            async function triggerMount(retries = 0) {
-
-              if (window.mountReactApps) {
-
-                console.log("[react] mountReactApps found, triggering...");
-
-                window.mountReactApps();
-
-                // Second call after a short delay to be sure for slow components
-
-                setTimeout(() => {
-
-                  if (window.mountReactApps) window.mountReactApps();
-
-                }, 500);
-
-                return true;
-
-              } else if (retries < 150) {
-
-                if (retries % 10 === 0)
-
-                  console.log(
-
-                    "[react] waiting for mountReactApps... (" + retries + ")",
-
-                  );
-
-                await new Promise((r) => setTimeout(r, 100));
-
-                return triggerMount(retries + 1);
-
-              } else {
-
-                console.error(
-
-                  "[react] mountReactApps timed out after 15s. React apps will NOT load.",
-
-                );
-
-                return false;
-
-              }
-
-            }
-
-
-
-            await triggerMount();
 
             loadKingdom();
 
@@ -26353,15 +23478,15 @@
 
           <div style="font-weight: 600; margin-bottom: 6px">Password Requirements:</div>
 
-          <div id="req-length" style="color: #e05c5c">✗ 8+ characters</div>
+          <div id="req-length" style="color: #e05c5c">âœ— 8+ characters</div>
 
-          <div id="req-upper" style="color: #e05c5c">✗ Uppercase letter</div>
+          <div id="req-upper" style="color: #e05c5c">âœ— Uppercase letter</div>
 
-          <div id="req-lower" style="color: #e05c5c">✗ Lowercase letter</div>
+          <div id="req-lower" style="color: #e05c5c">âœ— Lowercase letter</div>
 
-          <div id="req-number" style="color: #e05c5c">✗ Number (0-9)</div>
+          <div id="req-number" style="color: #e05c5c">âœ— Number (0-9)</div>
 
-          <div id="req-special" style="color: #e05c5c">✗ Special char (@$!%*?&)</div>
+          <div id="req-special" style="color: #e05c5c">âœ— Special char (@$!%*?&)</div>
 
         </div>
 
@@ -26481,7 +23606,7 @@
 
           >
 
-            Choose your race <span style="color: #e05c5c">· permanent</span>
+            Choose your race <span style="color: #e05c5c">Â· permanent</span>
 
           </div>
 
@@ -26525,53 +23650,53 @@
 
             <option value="high_elf">
 
-              High Elf — Excellent research · Powerful magic · Poor military
+              High Elf â€� Excellent research Â· Powerful magic Â· Poor military
 
             </option>
 
             <option value="dwarf">
 
-              Dwarf — Excellent construction · Exceptional war machines · Good
+              Dwarf â€� Excellent construction Â· Exceptional war machines Â· Good
 
-              economy · Poor magic · Weak research
+              economy Â· Poor magic Â· Weak research
 
             </option>
 
             <option value="dire_wolf">
 
-              Dire Wolf — Exceptional military · Good covert · Terrible research
+              Dire Wolf â€� Exceptional military Â· Good covert Â· Terrible research
 
-              · Terrible magic · Poor economy
+              Â· Terrible magic Â· Poor economy
 
             </option>
 
             <option value="dark_elf">
 
-              Dark Elf — Exceptional covert · Exceptional stealth · Good magic ·
+              Dark Elf â€� Exceptional covert Â· Exceptional stealth Â· Good magic Â·
 
-              Poor military · Weak economy
+              Poor military Â· Weak economy
 
             </option>
 
             <option value="human">
 
-              Human — No strengths or weaknesses — master of none, threat to all
+              Human â€� No strengths or weaknesses â€� master of none, threat to all
 
             </option>
 
             <option value="orc">
 
-              Orc — Excellent military · Good economy · Poor research · Terrible
+              Orc â€� Excellent military Â· Good economy Â· Poor research Â· Terrible
 
-              magic · Weak construction
+              magic Â· Weak construction
 
             </option>
 
             <option value="vampire">
 
-              Vampire — Unmatched night operations · Reanimates fallen · Thralls
+              Vampire â€� Unmatched night operations Â· Reanimates fallen Â· Thralls
 
-              defend by day · Weak economy · ⚠️ Not recommended for new players
+              defend by day Â· Weak economy Â· Ã¢Å¡Â Ã¯Â¸ Not recommended for new players
 
             </option>
 
@@ -26605,7 +23730,7 @@
 
           >
 
-            ⚠️ <strong>Experienced players only.</strong> Vampires are nearly
+            Ã¢Å¡Â Ã¯Â¸ <strong>Experienced players only.</strong> Vampires are nearly
 
             powerless during daylight hours and rely on Thralls for daytime
 
@@ -26685,8 +23810,6 @@
 
             id="btn-login"
 
-            onclick="doLogin()"
-
             style="
 
               flex: 1;
@@ -26718,8 +23841,6 @@
           <button
 
             id="btn-register"
-
-            onclick="doRegister()"
 
             style="
 
@@ -26817,15 +23938,15 @@
 
           <strong>Your password must contain:</strong><br>
 
-          • 8 or more characters<br>
+          â€¢ 8 or more characters<br>
 
-          • Uppercase letter (A-Z)<br>
+          â€¢ Uppercase letter (A-Z)<br>
 
-          • Lowercase letter (a-z)<br>
+          â€¢ Lowercase letter (a-z)<br>
 
-          • Number (0-9)<br>
+          â€¢ Number (0-9)<br>
 
-          • Special character: @$!%*?&<br>
+          â€¢ Special character: @$!%*?&<br>
 
           <br>
 
@@ -26941,7 +24062,7 @@
 
         " onmouseover="this.style.color='var(--text1)'" onmouseout="this.style.color='var(--text3)'">
 
-          ← Back
+          Ã¢â€  Back
 
         </button>
 
@@ -27159,7 +24280,7 @@
 
         >
 
-          ✕
+          âœ•
 
         </button>
 
@@ -27179,7 +24300,7 @@
 
         >
 
-          🌟 Kingdom Level
+          ðŸŒŸ Kingdom Level
 
         </div>
 
@@ -27575,7 +24696,7 @@
 
             style="color: var(--accent1); font-weight: 600"
 
-            >—</span
+            >â€�</span
 
           >
 
@@ -27725,7 +24846,7 @@
 
         >
 
-          ✕
+          âœ•
 
         </button>
 
@@ -27821,7 +24942,7 @@
 
         >
 
-          ✕
+          âœ•
 
         </button>
 
@@ -27925,7 +25046,7 @@
 
         >
 
-          ✕
+          âœ•
 
         </button>
 
@@ -27997,7 +25118,7 @@
 
       >
 
-        <h2 style="text-align: center; margin-top: 0; margin-bottom: 8px">🔮 Choose Your School of Magic</h2>
+        <h2 style="text-align: center; margin-top: 0; margin-bottom: 8px">ðŸ�® Choose Your School of Magic</h2>
 
         <p style="text-align: center; color: var(--text3); margin: 0 0 24px 0; font-size: 13px">
 
@@ -28101,7 +25222,7 @@
 
 
 
-      // ── Fragment Attunement Modal Functions ──────────────────────────────────
+      // â�€â�€ Fragment Attunement Modal Functions â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€â�€
 
       function openAttunementModal() {
 
@@ -28229,7 +25350,7 @@
 
               <div style="font-weight: 600; color: var(--green); font-size: 13px;">
 
-                ${escapeHtml(att.fragmentName)} → ${escapeHtml(att.buildingType)}
+                ${escapeHtml(att.fragmentName)} â†’ ${escapeHtml(att.buildingType)}
 
               </div>
 
@@ -28361,7 +25482,7 @@
 
               >
 
-                Details ▼
+                Details â–¼
 
               </button>
 
@@ -28469,7 +25590,7 @@
 
             html += `<div style="margin-top: 4px; margin-left: 8px; color: var(--amber); font-size: 11px;">`;
 
-            html += `<strong>✨ ${escapeHtml(building.special.name)}:</strong> ${escapeHtml(building.special.desc)}`;
+            html += `<strong>âœ¨ ${escapeHtml(building.special.name)}:</strong> ${escapeHtml(building.special.desc)}`;
 
             html += `</div>`;
 
@@ -28555,7 +25676,7 @@
 
 
 
-          toast(`✓ ${fragmentName} attuned to ${buildingType}!`, "success");
+          toast(`âœ“ ${fragmentName} attuned to ${buildingType}!`, "success");
 
           await loadAttunementData();
 
@@ -28611,7 +25732,7 @@
 
 
 
-          toast(`✓ Attunement removed from ${buildingType}!`, "success");
+          toast(`âœ“ Attunement removed from ${buildingType}!`, "success");
 
           await loadAttunementData();
 
@@ -28697,7 +25818,7 @@
 
           >
 
-            ✕
+            âœ•
 
           </button>
 
@@ -28767,11 +25888,11 @@
 
       ">
 
-        <div style="position: absolute; top: 16px; right: 20px; cursor: pointer; color: var(--text3); font-size: 20px;" onclick="closeAttunementModal()">✕</div>
+        <div style="position: absolute; top: 16px; right: 20px; cursor: pointer; color: var(--text3); font-size: 20px;" onclick="closeAttunementModal()">âœ•</div>
 
         <div style="font-size: 20px; font-weight: 700; margin-bottom: 20px; color: var(--gold); font-family: Cinzel, serif;">
 
-          🔮 World Fragment Attunements
+          ðŸ�® World Fragment Attunements
 
         </div>
 
@@ -28864,3 +25985,14 @@
   </body>
 
 </html>
+
+
+
+
+
+
+
+
+
+
+

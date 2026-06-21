@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiCall } from '../../utils/api';
+import { useActivePanel } from '../../hooks/useActivePanel';
+import { useGameState } from '../../hooks/useGameState';
+import { applyGameMutation } from '../../utils/gameMutations.js';
 
 const REFRESH_INTERVAL_MS = 10 * 1000;
 
@@ -49,7 +52,8 @@ const BUILDING_COST = { woodyard: 1000, lumber_camp: 10000, sawmill: 100000, gra
 function buildingsByType(type) {
   return Object.values(BUILDING_CONFIG).filter(b => b.type === type).sort((a, b) => a.stage - b.stage);
 }
-function getState() { return window.gameState || {}; }
+let currentResourcesState = {};
+function getState() { return currentResourcesState || {}; }
 
 function getParsedStateProp(propName, fallback = {}) {
   const s = getState();
@@ -93,7 +97,7 @@ const ResourcesPanel = () => {
   const [items, setItems] = useState([]);
   const [isOrc, setIsOrc] = useState(false);
   const [buildingInProgress, setBuildingInProgress] = useState({});
-  
+
   const [nodes, setNodes] = useState([]);
   const [activeExpeditions, setActiveExpeditions] = useState([]);
   const [visibleExps, setVisibleExps] = useState([]);
@@ -104,6 +108,9 @@ const ResourcesPanel = () => {
   const [scouting, setScouting] = useState(false);
   const [scoutMsg, setScoutMsg] = useState('');
   const [now, setNow] = useState(Math.floor(Date.now() / 1000));
+  const { activePanel } = useActivePanel();
+  const { state } = useGameState();
+  currentResourcesState = state || {};
 
   const syncFromState = useCallback(() => {
     const s = getState();
@@ -163,8 +170,8 @@ const ResourcesPanel = () => {
     try {
       const refreshed = await apiCall('/api/kingdom/me');
       if (refreshed && !refreshed.error) {
-        if (window.applyGameMutation) {
-          window.applyGameMutation(refreshed, { reason: 'resources-refresh' });
+        if (applyGameMutation) {
+          applyGameMutation(refreshed, { reason: 'resources-refresh' });
         }
         syncFromState();
         return refreshed;
@@ -182,18 +189,18 @@ const ResourcesPanel = () => {
     loadExpeditions();
     const cdt = setInterval(() => setNow(Math.floor(Date.now()/1000)), 1000);
     const refreshTimer = setInterval(syncFromState, REFRESH_INTERVAL_MS);
-    const refreshResources = () => { syncFromState(); loadExpeditions(); };
-    window.refreshResourcesPanel = refreshResources;
-    const unregisterRefresh = window.registerPanelRefresh?.('resources', refreshResources);
-    window.syncFromState = syncFromState;
     return () => {
       clearInterval(cdt);
       clearInterval(refreshTimer);
-      unregisterRefresh?.();
-      delete window.refreshResourcesPanel;
-      delete window.syncFromState;
     };
   }, [syncFromState]);
+
+  useEffect(() => {
+    if (activePanel !== 'resources') return;
+    syncFromState();
+    loadNodes();
+    loadExpeditions();
+  }, [activePanel, state, syncFromState]);
 
   useEffect(() => {
     if (activeTab === 'stockpiles' || activeTab === 'buildings') syncFromState();
@@ -216,12 +223,12 @@ const ResourcesPanel = () => {
     const type = bld.type;
     const s2Col = { wood: 'bld_lumber_camp', stone: 'bld_blockfield', iron: 'bld_strip_mine' }[type];
     const s3Col = { wood: 'bld_sawmill', stone: 'bld_stone_quarry', iron: 'bld_deep_mine' }[type];
-    
+
     const bq = getParsedStateProp('build_queue') || {};
     const s2Current = (kingdom[s2Col] || 0) + (bq[s2Col.replace('bld_', '')] || 0);
     const s3Current = kingdom[s3Col] || 0;
     const s3Cap = Math.floor(((kingdom.level || 1) - 1) / 10) + 1;
-    
+
     if (s3Current >= s3Cap) return true;
     if (bld.stage === 1) {
       const built = (kingdom['bld_' + bld.key] || 0) + (bq[bld.key] || 0);
@@ -355,14 +362,14 @@ const ResourcesPanel = () => {
           window.logExpeditionEntry(icon, `Resource expedition departed to ${node.name}`, `${pop.toLocaleString()} civilians · ${node.type}${foodStr}`);
         }
         await refreshKingdom();
-      } else { if(window.toast) window.toast('Failed: ' + (data.error || 'Unknown'), 'error'); }
-    } catch(e) { if(window.toast) window.toast('Error: ' + e.message, 'error'); }
+      } else { if(toast) toast('Failed: ' + (data.error || 'Unknown'), 'error'); }
+    } catch(e) { if(toast) toast('Error: ' + e.message, 'error'); }
     setLaunching(p => ({...p, [node.id]: false}));
   };
 
   const interceptExpedition = async (expId) => {
     const fighters = interceptFighters[expId] || 0;
-    if (fighters < 1) return window.toast && window.toast('Enter number of fighters.', 'error');
+    if (fighters < 1) return toast('Enter number of fighters.', 'error');
     setIntercepting(p => ({...p, [expId]: true}));
     try {
       const data = await apiCall('/api/kingdom/expedition/intercept', {
@@ -370,11 +377,11 @@ const ResourcesPanel = () => {
         body: { expeditionId: expId, fighters }
       });
       if (data.ok) {
-        if(window.toast) window.toast(data.success ? `Interception successful! Loot: ${JSON.stringify(data.loot)}` : 'Interception failed. Took casualties.', data.success ? 'success' : 'error');
+        if(toast) toast(data.success ? `Interception successful! Loot: ${JSON.stringify(data.loot)}` : 'Interception failed. Took casualties.', data.success ? 'success' : 'error');
         await loadVisibleExps();
         await refreshKingdom();
-      } else { if(window.toast) window.toast('Error: ' + (data.error || 'Unknown'), 'error'); }
-    } catch(e) { if(window.toast) window.toast('Error: ' + e.message, 'error'); }
+      } else { if(toast) toast('Error: ' + (data.error || 'Unknown'), 'error'); }
+    } catch(e) { if(toast) toast('Error: ' + e.message, 'error'); }
     setIntercepting(p => ({...p, [expId]: false}));
   };
   const startBuild = async (bld) => {
@@ -382,16 +389,16 @@ const ResourcesPanel = () => {
     if (buildingInProgress[type] || getActiveBuild(type)) return;
     const el = document.getElementById('bld-eng-' + bld.key);
     const engineers = parseInt(el?.value || '0') || 0;
-    if (engineers < 1) return window.toast && window.toast('Assign at least 1 engineer to start this build.', 'error');
+    if (engineers < 1) return toast('Assign at least 1 engineer to start this build.', 'error');
     const avail = getAvailableEngineers();
-    if (engineers > avail) return window.toast && window.toast(`Only ${avail.toLocaleString()} engineers available.`, 'error');
+    if (engineers > avail) return toast(`Only ${avail.toLocaleString()} engineers available.`, 'error');
     setBuildingInProgress(p => ({...p, [type]: true}));
     try {
       const d1 = await apiCall('/api/kingdom/build-queue', {
         method: 'POST',
         body: { orders: { [bld.key]: 1 } }
       });
-      if (d1.error) { setBuildingInProgress(p => ({...p, [type]: false})); return window.toast && window.toast(d1.error, 'error'); }
+      if (d1.error) { setBuildingInProgress(p => ({...p, [type]: false})); return toast(d1.error, 'error'); }
 
       const s = getState();
       if (s) {
@@ -405,14 +412,13 @@ const ResourcesPanel = () => {
         method: 'POST',
         body: { allocation: newAlloc }
       });
-      if (!d2.ok && window.toast) window.toast('Build queued but engineer allocation failed: ' + (d2.error || 'Unknown'), 'error');
+      if (!d2.ok && toast) toast('Build queued but engineer allocation failed: ' + (d2.error || 'Unknown'), 'error');
       if (d2.ok && s) s.resource_build_allocation = newAlloc;
       syncFromState();
-      window.updateBuildDisplay?.();
       await refreshKingdom();
     } catch(e) {
       setBuildingInProgress(p => ({...p, [type]: false}));
-      if(window.toast) window.toast('Error: ' + e.message, 'error');
+      if(toast) toast('Error: ' + e.message, 'error');
     }
   };
   const purchaseUpgrade = async (type, stage) => {
@@ -423,8 +429,8 @@ const ResourcesPanel = () => {
       });
       if (data.ok) {
         await refreshKingdom();
-      } else { if(window.toast) window.toast('Error: ' + (data.error || 'Unknown'), 'error'); }
-    } catch(e) { if(window.toast) window.toast('Error: ' + e.message, 'error'); }
+      } else { if(toast) toast('Error: ' + (data.error || 'Unknown'), 'error'); }
+    } catch(e) { if(toast) toast('Error: ' + e.message, 'error'); }
   };
 
   const hasActiveExpedition = (nodeId) => activeExpeditions.some(e => e.node_id === nodeId);

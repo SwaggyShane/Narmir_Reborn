@@ -273,24 +273,25 @@ git push -u origin <your-branch>
 Rows already written to the `news` table in Postgres contain the corrupted strings. New rows generated after the fix will be clean. To backfill old rows, run this script locally against the production DATABASE_URL:
 
 ```js
-// fix_db_news.mjs ‚Äî run with:
+// fix_db_news.mjs ó run with:
 // DATABASE_URL="<production-url>" node fix_db_news.mjs
 
 import pg from 'pg';
+import { TextDecoder } from 'node:util';
 const { Pool } = pg;
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
 
 // Build cp1252 reverse table
-// cp1252 byte ‚Üí Unicode codepoint table for 0x80-0x9F (the special range)
+// cp1252 byte ? Unicode codepoint table for 0x80-0x9F (the special range)
 const CP1252_SPECIALS = {
-  0x80: '‚Ç¨', 0x82: '‚Äö', 0x83: '∆í', 0x84: '‚Äû',
-  0x85: '‚Ä¶', 0x86: '‚Ä†', 0x87: '‚Ä°', 0x88: 'ÀÜ',
-  0x89: '‚Ä∞', 0x8A: '≈†', 0x8B: '‚Äπ', 0x8C: '≈í',
-  0x8E: '≈Ω', 0x91: '‚Äò', 0x92: '‚Äô', 0x93: '‚Äú',
-  0x94: '‚Äù', 0x95: '‚Ä¢', 0x96: '‚Äì', 0x97: '‚Äî',
-  0x98: 'Àú', 0x99: '‚Ñ¢', 0x9A: '≈°', 0x9B: '‚Ä∫',
-  0x9C: '≈ì', 0x9E: '≈æ', 0x9F: '≈∏',
+  0x80: 'Ä', 0x82: 'Ç', 0x83: 'É', 0x84: 'Ñ',
+  0x85: 'Ö', 0x86: 'Ü', 0x87: 'á', 0x88: 'à',
+  0x89: 'â', 0x8A: 'ä', 0x8B: 'ã', 0x8C: 'å',
+  0x8E: 'é', 0x91: 'ë', 0x92: 'í', 0x93: 'ì',
+  0x94: 'î', 0x95: 'ï', 0x96: 'ñ', 0x97: 'ó',
+  0x98: 'ò', 0x99: 'ô', 0x9A: 'ö', 0x9B: 'õ',
+  0x9C: 'ú', 0x9E: 'û', 0x9F: 'ü',
 };
 
 function cp1252ByteToChar(b) {
@@ -298,7 +299,7 @@ function cp1252ByteToChar(b) {
   return String.fromCodePoint(b);
 }
 
-// Build reverse: Unicode char ‚Üí cp1252 byte
+// Build reverse: Unicode char ? cp1252 byte
 const cp1252Reverse = new Map();
 for (let b = 0; b < 256; b++) {
   const ch = cp1252ByteToChar(b);
@@ -311,13 +312,11 @@ function unEncodeOnce(s) {
     if (!cp1252Reverse.has(ch)) return null;
     bytes.push(cp1252Reverse.get(ch));
   }
-  const buf = Buffer.from(bytes);
-  // Buffer.toString('utf8') never throws ‚Äî it silently replaces invalid bytes with U+FFFD.
-  // Use round-trip validation instead: re-encode and compare to the original.
-  const decoded = buf.toString('utf8');
-  const roundtrip = Buffer.from(decoded, 'utf8');
-  if (!roundtrip.equals(buf)) return null;
-  return decoded;
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(Buffer.from(bytes));
+  } catch {
+    return null;
+  }
 }
 
 function decodeMojibake(s) {
@@ -325,13 +324,7 @@ function decodeMojibake(s) {
   for (let i = 0; i < 5; i++) {
     const decoded = unEncodeOnce(current);
     if (decoded === null || decoded === current) break;
-    // Verify round-trip
-    const check = Buffer.from(decoded, 'utf8');
-    if (Buffer.from(check.toString('utf8'), 'utf8').equals(check)) {
-      current = decoded;
-    } else {
-      break;
-    }
+    current = decoded;
   }
   return current;
 }

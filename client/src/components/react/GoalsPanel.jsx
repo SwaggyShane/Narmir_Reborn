@@ -13,12 +13,12 @@ const GoalsPanel = () => {
     try {
       const res = await apiCall('/api/kingdom/goals');
       if (res && res.error) {
-        if (window.toast) window.toast(res.error, 'error');
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast(res.error, 'error');
       } else if (res) {
         setGoalsData(res);
       }
     } catch(e) {
-      if (window.toast) window.toast('Failed to fetch goals', 'error');
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Failed to fetch goals', 'error');
     }
     setLoading(false);
   }, []);
@@ -39,17 +39,17 @@ const GoalsPanel = () => {
     try {
       const res = await apiCall('/api/kingdom/goals/claim', { method: 'POST', body: { groupId, goalId } });
       if (res && res.ok) {
-        if (window.toast) window.toast(res.message, "success");
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast(res.message, "success");
         // Find and mark claimed locally
         const newGoalsData = { ...goalsData };
         const goal = newGoalsData[groupId].goals.find(g => g.id === goalId);
         if (goal) goal.claimed = true;
         setGoalsData(newGoalsData);
       } else if (res && res.error) {
-        if (window.toast) window.toast(res.error, "error");
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast(res.error, "error");
       }
     } catch(e) {
-      if (window.toast) window.toast(e.message || "Failed to claim goal", "error");
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast(e.message || "Failed to claim goal", "error");
     }
   };
 

@@ -1,48 +1,314 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { apiCall } from '../../utils/api';
+import { useGameState } from '../../hooks/useGameState';
+import { applyGameMutation } from '../../utils/gameMutations.js';
+import { fmtShort } from '../../utils/numberFormat.js';
 
 const EconomyPanel = () => {
+  const { state } = useGameState();
   const [activeTab, setActiveTab] = useState('farms');
+
+  const escapeHtml = useCallback((value) => {
+    return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    })[ch]);
+  }, []);
 
   const handleTabClick = (tabId) => {
     setActiveTab(tabId);
-    if (tabId === "markets" && window.loadTradeOffers) window.loadTradeOffers();
-    if (tabId === "trade-routes" && window.loadTradeRoutes) window.loadTradeRoutes();
   };
 
-  const lockTax = (sliderId) => {
-    if (window.lockTax) window.lockTax(sliderId);
+  const updateTaxDisplay = (value) => {
+    const disp = document.getElementById('tax-disp');
+    if (disp) disp.textContent = String(value ?? '');
+  };
+
+  const lockTax = async (sliderId) => {
+    const slider = document.getElementById(sliderId || 'tax-slider');
+    if (!slider) return;
+    const tax = Number(slider.value);
+    if (Number.isNaN(tax)) return;
+    try {
+      const result = await apiCall('/api/kingdom/options', {
+        method: 'POST',
+        body: { tax },
+      });
+      if (result.error) {
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.error, 'error');
+        return;
+      }
+      if (applyGameMutation) {
+        applyGameMutation(result, { reason: 'tax-update' });
+      } else if (result.updates) {
+        applyGameMutation(result.updates, { reason: 'tax-update' });
+      }
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Tax rate locked', 'success');
+    } catch (err) {
+      console.error('[tax] lock failed:', err);
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Failed to save tax rate', 'error');
+    }
   };
   const setMaxValue = (inputId, type) => {
-    if (window.setMaxValue) window.setMaxValue(inputId, type);
+    const el = document.getElementById(inputId);
+    if (!el) return;
+
+    let val = 0;
+    if (type === 'gold') {
+      if (inputId === 'trade-offer-qty') {
+        const sel = document.getElementById('trade-offer-item');
+        if (sel) val = Number(state?.[sel.value] || 0);
+      } else if (inputId === 'merc-count') {
+        const tier = document.getElementById('merc-tier')?.value || 'rabble';
+        const price = {
+          rabble: 50,
+          sellsword: 125,
+          veteran: 250,
+          elite: 500,
+        }[tier] || 50;
+        val = Math.floor((Number(state?.gold || 0)) / price);
+      }
+    } else if (typeof type === 'number') {
+      val = type;
+    }
+
+    el.value = String(Math.max(0, val));
+    if (el.oninput) el.oninput();
+    if (el.onchange) el.onchange();
   };
-  const sendTradeOffer = () => {
-    if (window.sendTradeOffer) window.sendTradeOffer();
-  };
-  const clearTradeLogs = () => {
-    if (window.clearTradeLogs) window.clearTradeLogs();
-  };
+  const loadTradeOffers = useCallback(async () => {
+    const result = await apiCall('/api/kingdom/economy/trade/list');
+    if (result?.error) {
+      toast(result.error, 'error');
+      return;
+    }
+
+    const recEl = document.getElementById('trade-received-list');
+    const sntEl = document.getElementById('trade-sent-list');
+
+    if (recEl) {
+      recEl.innerHTML = result.received?.length
+        ? result.received
+            .map((o) => {
+              const offer = JSON.parse(o.offer || '{}');
+              const request = JSON.parse(o.request || '{}');
+              const offerStr = Object.entries(offer).map(([item, qty]) => `${qty} ${item}`).join(', ');
+              const requestStr = Object.entries(request).map(([item, qty]) => `${qty} ${item}`).join(', ');
+              return `
+                <div style="background:var(--bg3);border-radius:var(--radius);padding:10px;margin-bottom:8px">
+                  <div style="font-size:13px;color:var(--text);margin-bottom:4px"><strong>${escapeHtml(o.sender_name)}</strong> offers <span style="color:var(--green)">${escapeHtml(offerStr)}</span> for <span style="color:var(--amber)">${escapeHtml(requestStr)}</span></div>
+                  <div style="display:flex;gap:6px;margin-top:6px">
+                    <button class="btn btn-green" style="font-size:11px;padding:3px 10px" onclick="acceptTrade(${o.id})">✅ Accept</button>
+                    <button class="btn btn-red" style="font-size:11px;padding:3px 10px" onclick="declineTrade(${o.id})">❌ Decline</button>
+                  </div>
+                </div>`;
+            })
+            .join('')
+        : '<div style="color:var(--text3);font-size:13px">No pending offers.</div>';
+    }
+
+    if (sntEl) {
+      sntEl.innerHTML = result.sent?.length
+        ? result.sent
+            .map((o) => {
+              const offer = JSON.parse(o.offer || '{}');
+              const request = JSON.parse(o.request || '{}');
+              const offerStr = Object.entries(offer).map(([item, qty]) => `${qty} ${item}`).join(', ');
+              const requestStr = Object.entries(request).map(([item, qty]) => `${qty} ${item}`).join(', ');
+              const statusColor = o.status === 'accepted'
+                ? 'var(--green)'
+                : o.status === 'declined'
+                  ? 'var(--red)'
+                  : 'var(--amber)';
+              return `
+                <div style="font-size:12px;color:var(--text3);padding:4px 0;border-bottom:1px solid var(--border)">
+                  To <strong style="color:var(--text)">${escapeHtml(o.receiver_name)}</strong>: ${escapeHtml(offerStr)} for ${escapeHtml(requestStr)} <span style="color:${statusColor}">[${escapeHtml(o.status)}]</span>
+                </div>`;
+            })
+            .join('')
+        : '<div style="color:var(--text3);font-size:13px">No sent offers.</div>';
+    }
+  }, [escapeHtml]);
+
+  const loadTradeRoutes = useCallback(async () => {
+    const res = await apiCall('/api/kingdom/trade-routes/list');
+    const listEl = document.getElementById('trade-routes-list');
+    if (!listEl) return;
+    if (res?.error) {
+      toast(`Failed to load trade routes: ${res.error}`, 'error');
+      return;
+    }
+
+    if (!res.routes || res.routes.length === 0) {
+      listEl.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text3)">No active trade routes. Discover other kingdoms and establish routes to earn gold!</div>';
+      return;
+    }
+
+    listEl.innerHTML = res.routes.map((r) => `
+      <div class="card" style="margin-bottom:8px; border:1px solid var(--border1); padding:10px">
+        <div style="display:flex; justify-content:space-between; align-items:center">
+          <div>
+            <div style="font-weight:700; color:var(--gold)">🤝 ${escapeHtml(r.partner_name)}</div>
+            <div style="font-size:11px; color:var(--text3)">${escapeHtml(String(r.partner_race || 'unknown').replace(/_/g, ' '))} · ${fmtShort(r.partner_land)} acres</div>
+          </div>
+          <div style="text-align:right; margin: 0 16px">
+            <div style="font-size:14px; font-weight:700; color:var(--green)">+${fmtShort(Math.floor((r.stability || 0) * 2.5))} GC / turn</div>
+            <div style="font-size:10px; color:var(--text3)">Stability: ${escapeHtml(r.stability)}%</div>
+          </div>
+          <button class="btn btn-red" style="font-size:11px; padding:4px 8px" onclick="cancelTradeRoute(${r.id})">Cancel</button>
+        </div>
+      </div>
+    `).join('');
+  }, [escapeHtml, fmtShort]);
+
+  const sendTradeOffer = useCallback(async () => {
+    const targetId = document.getElementById('trade-target-select')?.value;
+    if (!targetId) return toast('Select a target kingdom', 'error');
+
+    const offerItem = document.getElementById('trade-offer-item')?.value;
+    const offerQty = parseInt(document.getElementById('trade-offer-qty')?.value, 10) || 0;
+    const requestItem = document.getElementById('trade-request-item')?.value;
+    const requestQty = parseInt(document.getElementById('trade-request-qty')?.value, 10) || 0;
+    if (offerQty <= 0 || requestQty <= 0) {
+      toast('Enter quantities', 'error');
+      return;
+    }
+
+    const result = await apiCall('/api/kingdom/economy/trade/send', {
+      method: 'POST',
+      body: {
+        targetId,
+        offer: { [offerItem]: offerQty },
+        request: { [requestItem]: requestQty },
+      },
+    });
+    if (result?.error) return toast(result.error, 'error');
+    toast('Trade offer sent!', 'success');
+    await loadTradeOffers();
+  }, [loadTradeOffers]);
+
+  const clearTradeLogs = useCallback(async () => {
+    if (!confirm('Clear all completed/expired trade logs?')) return;
+    try {
+      const res = await apiCall('/api/kingdom/trade/clear-logs', { method: 'POST' });
+      if (res.ok) {
+        toast('Trade logs cleared', 'success');
+        await loadTradeOffers();
+      }
+    } catch (err) {
+      toast('Failed to clear logs', 'error');
+    }
+  }, [loadTradeOffers]);
+
   const updateTax = (value) => {
-    if (window.updateTax) window.updateTax(value);
+    updateTaxDisplay(value);
   };
-  const updateMercPreview = () => {
-    if (window.updateMercPreview) window.updateMercPreview();
-  };
+  const updateMercPreview = useCallback(() => {
+    const tier = document.getElementById('merc-tier')?.value || 'rabble';
+    const count = Number(document.getElementById('merc-count')?.value || 0);
+    const unitType = document.getElementById('merc-unit')?.value || 'fighters';
+    const costMap = { rabble: 50, sellsword: 125, veteran: 250, elite: 500 };
+    const durationMap = { rabble: 10, sellsword: 25, veteran: 35, elite: 50 };
+    const price = costMap[tier] || 50;
+    const turns = durationMap[tier] || 10;
+    const total = price * count;
+    const preview = document.getElementById('merc-preview');
+    if (preview) {
+      preview.textContent = `${fmtShort(total)} GC · ${turns} turns · ${count > 0 ? `${count} ${unitType}` : 'select a contract size'}`;
+    }
+  }, [fmtShort]);
   const handleUpdateMercPreview = () => {
     updateMercPreview();
   };
-  const hireMercs = () => {
-    if (window.hireMercs) window.hireMercs();
+  const hireMercs = async () => {
+    const unitType = document.getElementById('merc-unit')?.value || 'fighters';
+    const tier = document.getElementById('merc-tier')?.value || 'rabble';
+    const count = Number(document.getElementById('merc-count')?.value || 0);
+    if (count <= 0) {
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Enter a valid mercenary count', 'error');
+      return;
+    }
+
+    try {
+      const result = await apiCall('/api/kingdom/economy/hire-mercs', {
+        method: 'POST',
+        body: { unitType, tier, count },
+      });
+      if (result.error) {
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.error, 'error');
+        return;
+      }
+      if (applyGameMutation) {
+        applyGameMutation(result, { reason: 'hire-mercs' });
+      } else if (result.updates) {
+        applyGameMutation(result.updates, { reason: 'hire-mercs' });
+      }
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast(`Hired ${result.hired?.count || count} mercenaries`, 'success');
+    } catch (err) {
+      console.error('[economy] hire mercs failed:', err);
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Failed to hire mercenaries', 'error');
+    }
   };
-  const makeBankDeposit = () => {
-    if (window.makeBankDeposit) window.makeBankDeposit();
+  const makeBankDeposit = async () => {
+    const amount = Number(document.getElementById('bank-deposit-amount')?.value || 0);
+    const termIndex = Number(document.getElementById('bank-deposit-term')?.value || 0);
+    if (amount <= 0) {
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Enter a valid deposit amount', 'error');
+      return;
+    }
+
+    try {
+      const result = await apiCall('/api/kingdom/economy/bank-deposit', {
+        method: 'POST',
+        body: { amount, termIndex },
+      });
+      if (result.error) {
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.error, 'error');
+        return;
+      }
+      if (applyGameMutation) {
+        applyGameMutation(result, { reason: 'bank-deposit' });
+      } else if (result.updates) {
+        applyGameMutation(result.updates, { reason: 'bank-deposit' });
+      }
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Deposit successful', 'success');
+    } catch (err) {
+      console.error('[economy] bank deposit failed:', err);
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Failed to create bank deposit', 'error');
+    }
   };
-  const establishTradeRoute = (targetId) => {
-    if (window.establishTradeRoute) window.establishTradeRoute(targetId);
+  const establishTradeRoute = async (targetId) => {
+    if (!targetId) return;
+    try {
+      const result = await apiCall('/api/kingdom/trade-routes/establish', {
+        method: 'POST',
+        body: { targetId },
+      });
+      if (result.error) {
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.error, 'error');
+        return;
+      }
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Trade route established', 'success');
+    } catch (err) {
+      console.error('[economy] establish trade route failed:', err);
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Failed to establish trade route', 'error');
+    }
   };
   const handleEstablishTradeRoute = () => {
     const el = document.getElementById("trade-target-list");
     if (el) establishTradeRoute(el.value);
   };
+
+  useEffect(() => {
+    if (activeTab === 'markets') {
+      loadTradeOffers();
+    } else if (activeTab === 'trade-routes') {
+      loadTradeRoutes();
+    }
+  }, [activeTab, loadTradeOffers, loadTradeRoutes]);
 
   return (
     <div id="economy" className="panel" style={{ display: 'none' }}>

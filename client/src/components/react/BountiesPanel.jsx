@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiCall } from '../../utils/api';
+import { fmt } from "../../utils/fmt";
 
 const REFRESH_INTERVAL_MS = 60 * 1000;
 
@@ -54,9 +55,9 @@ const BountiesPanel = () => {
 
   const handlePlaceBounty = async () => {
     const parsedAmount = parseInt(amount);
-    if (!selectedTarget) return window.toast?.('Select a target kingdom first', 'error');
-    if (!parsedAmount || parsedAmount < 1000) return window.toast?.('Minimum bounty is 1,000 GC', 'error');
-    if (parsedAmount > (window.state?.gold || 0)) return window.toast?.('Not enough gold', 'error');
+    if (!selectedTarget) return toast('Select a target kingdom first', 'error');
+    if (!parsedAmount || parsedAmount < 1000) return toast('Minimum bounty is 1,000 GC', 'error');
+    if (parsedAmount > (window.state?.gold || 0)) return toast('Not enough gold', 'error');
 
     setPlacing(true);
     try {
@@ -65,10 +66,10 @@ const BountiesPanel = () => {
         body: { target_id: parseInt(selectedTarget), amount: parsedAmount },
       });
       if (res.error) {
-        window.toast?.(res.error, 'error');
+        toast(res.error, 'error');
         return;
       }
-      window.toast?.(res.message, 'success');
+      toast(res.message, 'success');
       if (window.state) window.state.gold -= parsedAmount;
       if (window.updateTopStats) window.updateTopStats();
       setAmount('');

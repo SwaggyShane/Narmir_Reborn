@@ -582,7 +582,7 @@ function raidTradeRoute(attacker, defender, unitCount) {
         trade_routes: Math.max(0, (defender.trade_routes || 0) - raided),
       },
       atkEvent: `ÃƒÂ°Ã…Â¸Ã‚ÂÃ‚Â´ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã‹Å"Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â SUCCESS: You raided ${raided} trade routes of ${defender.name} and looted ${loot.toLocaleString()} gold! (Losses: ${losses} thieves)`,
-      defEvent: `ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂºÃ‚Â¶ RAIDED: ${attacker.name}'s Orcs raided your trade routes! You lost ${raided} routes and ${loot.toLocaleString()} gold was stolen!`,
+      defEvent: `🛶 RAIDED: ${attacker.name}'s Orcs raided your trade routes! You lost ${raided} routes and ${loot.toLocaleString()} gold was stolen!`,
     };
   } else {
     const losses = Math.floor(unitCount * 0.15);
@@ -591,7 +591,7 @@ function raidTradeRoute(attacker, defender, unitCount) {
       attackerUpdates: {
         thieves: Math.max(0, (attacker.thieves || 0) - losses),
       },
-      atkEvent: `ÃƒÂ°Ã…Â¸Ã¢â‚¬â„¢Ã¢â€šÂ¬ FAILURE: Your raid on ${defender.name}'s trade routes failed. You lost ${losses} thieves in the ambush.`,
+      atkEvent: `💀 FAILURE: Your raid on ${defender.name}'s trade routes failed. You lost ${losses} thieves in the ambush.`,
       defEvent: `ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂºÃ‚Â¡ÃƒÂ¯Ã‚Â¸Ã‚Â Your guards repelled an Orc raid from ${attacker.name} on your trade routes!`,
     };
   }

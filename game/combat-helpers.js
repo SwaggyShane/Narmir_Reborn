@@ -17,13 +17,6 @@ function wmCrewRequired(race, engineerLevel) {
   return base;
 }
 
-function moraleMult(morale) {
-  const m = typeof morale === "number" && !isNaN(morale) ? morale : 100;
-  if (m < 50) return 0.8 + (m / 50) * 0.1; // 0.80–0.90
-  if (m < 100) return 0.9 + ((m - 50) / 50) * 0.1; // 0.90–1.00
-  return Math.min(1.2, 1.0 + ((m - 100) / 100) * 0.1); // 1.00–1.20 (capped at 1.20)
-}
-
 function happinessCombatMult(happiness) {
   const h = typeof happiness === "number" && !isNaN(happiness) ? happiness : 100;
   const mult = 0.5 + (h / 120);
@@ -41,7 +34,6 @@ function resolveAllianceDefense(attackResult, allies) {
 module.exports = {
   isNight,
   wmCrewRequired,
-  moraleMult,
   happinessCombatMult,
   resolveAllianceDefense,
 };

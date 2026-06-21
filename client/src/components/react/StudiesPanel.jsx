@@ -1,10 +1,19 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useActivePanel } from '../../hooks/useActivePanel';
+import { useGameState } from '../../hooks/useGameState';
+import { toast } from '../../utils/toast.js';
 
 const StudiesPanel = () => {
   const [activeTab, setActiveTab] = useState('tower');
   const [activeSchoolSubTab, setActiveSchoolSubTab] = useState('general');
   const [studiesData, setStudiesData] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [mageUiTick, setMageUiTick] = useState(0);
+  const { activePanel } = useActivePanel();
+  const { state, applyUpdates } = useGameState();
+  const refreshMageUi = useCallback(() => {
+    setMageUiTick((tick) => tick + 1);
+  }, [state]);
 
   const fetchStudiesData = useCallback(async () => {
     try {
@@ -21,20 +30,20 @@ const StudiesPanel = () => {
     } catch (err) {
       console.error('Failed to load studies data:', err);
     }
-  }, []);
+  }, [state]);
 
   // Fetch data on mount
   useEffect(() => {
     fetchStudiesData();
   }, [fetchStudiesData]);
 
-  // Register hook to refresh when panel becomes active or game state updates
   useEffect(() => {
-    const unregister = window.registerPanelReactHook?.('studies', () => {
+    if (activePanel !== 'studies') return;
+    const load = async () => {
       fetchStudiesData();
-    });
-    return () => unregister?.();
-  }, [fetchStudiesData]);
+    };
+    load();
+  }, [activePanel, state, fetchStudiesData]);
 
   // Sync uncontrolled inputs with server data (skip if input is actively being edited)
   useEffect(() => {
@@ -49,15 +58,60 @@ const StudiesPanel = () => {
         schoolEl.value = studiesData.research_allocation.school_spellbook_mages || 0;
       }
     }
-  }, [studiesData?.research_allocation]);
+    refreshMageUi();
+  }, [studiesData?.research_allocation, refreshMageUi]);
+
+  const updateFocusPreview = useCallback(() => {
+    const DISC_COLS = {
+      economy: "res_economy",
+      weapons: "res_weapons",
+      armor: "res_armor",
+      military: "res_military",
+      attack_magic: "res_attack_magic",
+      defense_magic: "res_defense_magic",
+      entertainment: "res_entertainment",
+      construction: "res_construction",
+      war_machines: "res_war_machines",
+      spellbook: "res_spellbook",
+    };
+
+    const f1 = document.getElementById("focus-select-1")?.value;
+    const el1 = document.getElementById("focus-current-1");
+    if (el1 && f1) el1.textContent = "Focus 1 Current: " + (state?.[DISC_COLS[f1]] || 0) + "%";
+
+    const f2 = document.getElementById("focus-select-2")?.value;
+    const el2 = document.getElementById("focus-current-2");
+    if (el2 && f2) el2.textContent = "Focus 2 Current: " + (state?.[DISC_COLS[f2]] || 0) + "%";
+
+    const studyContainer = document.getElementById("study-progress-list");
+    if (studyContainer) {
+      let html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px;">';
+      Object.keys(DISC_COLS).forEach(function (k) {
+        const val = state?.[DISC_COLS[k]] || 0;
+        const label = k.charAt(0).toUpperCase() + k.slice(1).replace("_", " ");
+        html +=
+          '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px;display:flex;justify-content:space-between;align-items:center;">' +
+          '<span style="font-size:11px;color:var(--text3)">' +
+          label +
+          "</span>" +
+          '<span style="font-size:13px;font-weight:700;color:var(--gold)">' +
+          val +
+          "%</span>" +
+          "</div>";
+      });
+      html += "</div>";
+      studyContainer.innerHTML = html;
+    }
+  }, [state]);
+
+  useEffect(() => {
+    updateFocusPreview();
+  }, [studiesData, updateFocusPreview]);
 
   const handleTabClick = useCallback((tabId) => {
     setActiveTab(tabId);
-    if (tabId === "tower" && window.renderMageTowerPanel) window.renderMageTowerPanel();
-    if (tabId === "school" && window.updateFocusPreview) window.updateFocusPreview();
-    if (tabId === "shrine" && window.renderShrinePanel) window.renderShrinePanel();
-    if (tabId === "slibrary" && window.renderLibraryPanel) window.renderLibraryPanel();
-  }, []);
+    if (tabId === "school") updateFocusPreview();
+  }, [updateFocusPreview]);
 
   const loadStudies = useCallback(async () => {
     setIsRefreshing(true);
@@ -68,23 +122,22 @@ const StudiesPanel = () => {
     }
   }, [fetchStudiesData]);
 
-  const updateFocusPreview = useCallback(() => {
-    if (window.updateFocusPreview) window.updateFocusPreview();
-  }, []);
-
-  const saveResearchFocus = useCallback(() => {
-    if (window.saveResearchFocus) window.saveResearchFocus();
-  }, []);
-
-  const race = window.gameState?.race || 'human';
+  const race = state?.race || 'human';
   const researchAlloc = studiesData?.research_allocation || {};
+  const totalMages = Number(state?.mages || 0);
+  const allocatedMages = Number(researchAlloc.spellbook_mages || 0) + Number(researchAlloc.school_spellbook_mages || 0);
+  const availableMages = Math.max(0, totalMages - allocatedMages);
 
+  const getMageInputValue = (id) => parseInt(document.getElementById(id)?.value || '0', 10) || 0;
+  const setMageInputValue = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.value = Math.max(0, value);
+    refreshMageUi();
+  };
   const updateAllocationDisplay = useCallback(() => {
-    // Force re-render by reading current input values
     const spellbookEl = document.getElementById('mage-alloc-spellbook');
     const schoolEl = document.getElementById('mage-alloc-school');
     if (spellbookEl && schoolEl) {
-      // Trigger a state update with current input values (clamped to non-negative)
       setStudiesData(prev => ({
         ...prev,
         research_allocation: {
@@ -94,7 +147,69 @@ const StudiesPanel = () => {
         }
       }));
     }
-  }, []);
+    refreshMageUi();
+  }, [refreshMageUi]);
+
+  const saveResearchFocus = useCallback(async () => {
+    const f1 = document.getElementById("focus-select-1")?.value;
+    const f2 = document.getElementById("focus-select-2")?.value;
+    const hasRepo = !!(studiesData?.school_upgrades || {}).repository;
+    const focus = hasRepo && f2 ? [f1, f2] : [f1];
+
+    const result = await fetch('/api/kingdom/research-focus', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ focus }),
+    });
+    const data = await result.json();
+    if (data.error) {
+      toast(data.error, 'error');
+      return;
+    }
+    if (data.research_focus) {
+      applyUpdates({ research_focus: data.research_focus }, { reason: 'research-focus' });
+      updateFocusPreview();
+      toast(`Research focus saved — ${data.research_focus.join(' & ')}`, 'success');
+    }
+  }, [studiesData?.school_upgrades, updateFocusPreview]);
+
+  const setMageMax = useCallback((type) => {
+    const targetId = type === 'spellbook' ? 'mage-alloc-spellbook' : 'mage-alloc-school';
+    const otherId = type === 'spellbook' ? 'mage-alloc-school' : 'mage-alloc-spellbook';
+    const otherValue = getMageInputValue(otherId);
+    const maxAllowed = Math.max(0, totalMages - otherValue);
+    setMageInputValue(targetId, maxAllowed);
+  }, [totalMages]);
+
+  const saveMageAllocation = useCallback(async () => {
+    const spellbook = Math.max(0, getMageInputValue('mage-alloc-spellbook'));
+    const school_spellbook = Math.max(0, getMageInputValue('mage-alloc-school'));
+    if (spellbook + school_spellbook > totalMages) {
+      toast(`Allocated ${spellbook + school_spellbook} mages, but only have ${totalMages}`, 'error');
+      return;
+    }
+    const response = await fetch('/api/kingdom/school-allocation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ spellbook, school_spellbook }),
+    });
+    const data = await response.json();
+    if (data.error) {
+      toast(data.error, 'error');
+      return;
+    }
+    if (data.ok) {
+      await fetchStudiesData();
+      refreshMageUi();
+      toast('Mage allocation saved successfully', 'success');
+    }
+  }, [fetchStudiesData, refreshMageUi, totalMages]);
+
+  const releaseMageAllocation = useCallback(async () => {
+    setMageInputValue('mage-alloc-spellbook', 0);
+    setMageInputValue('mage-alloc-school', 0);
+    await saveMageAllocation();
+  }, [saveMageAllocation]);
 
   // Memoize spell grouping by tier to avoid recalculation on every render
   const spellsByTier = useMemo(() => {
@@ -195,13 +310,13 @@ const StudiesPanel = () => {
           >
             📚 General Studies
           </button>
-          {(studiesData?.school_of_magic || window.gameState?.school_of_magic) && (
+          {(studiesData?.school_of_magic || state?.school_of_magic) && (
             <button
               className={`base-btn admin-tab ${activeSchoolSubTab === 'school' ? 'active' : ''}`}
               onClick={() => setActiveSchoolSubTab('school')}
               style={{ borderRadius: 0 }}
             >
-              🔮 {(studiesData?.school_of_magic || window.gameState?.school_of_magic)?.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+              🔮 {(studiesData?.school_of_magic || state?.school_of_magic)?.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
             </button>
           )}
         </div>
@@ -245,7 +360,7 @@ const StudiesPanel = () => {
                 <option value="entertainment">Entertainment</option>
                 <option value="construction">Construction</option>
                 <option value="war_machines">War machines</option>
-                {!window.gameState?.school_of_magic && <option value="spellbook">Spellbook</option>}
+                {!state?.school_of_magic && <option value="spellbook">Spellbook</option>}
               </select>
               <div style={{ fontSize: '11px', color: 'var(--text3)' }} id="focus-current-1"></div>
             </div>
@@ -263,13 +378,13 @@ const StudiesPanel = () => {
                 <option value="entertainment">Entertainment</option>
                 <option value="construction">Construction</option>
                 <option value="war_machines">War machines</option>
-                {!window.gameState?.school_of_magic && <option value="spellbook">Spellbook</option>}
+                {!state?.school_of_magic && <option value="spellbook">Spellbook</option>}
               </select>
             </div>
             <button className="base-btn variant-green w-full" onClick={saveResearchFocus} style={{ width: '100%', background: 'var(--green)' }}>Save focus</button>
             <div id="study-progress-list"></div>
 
-            {window.gameState?.res_spellbook >= 100 && !window.gameState?.school_of_magic && (
+            {state?.res_spellbook >= 100 && !state?.school_of_magic && (
               <div style={{ marginTop: '16px', padding: '12px', background: 'var(--bg3)', borderRadius: 'var(--radius)', border: '1px solid var(--gold)', color: 'var(--gold)', fontSize: '13px', textAlign: 'center' }}>
                 ✨ <strong>School selection available!</strong> You can now choose a school of magic. Visit the school selection panel.
               </div>
@@ -278,13 +393,13 @@ const StudiesPanel = () => {
         </div>
 
         {/* SCHOOL OF MAGIC SUB-TAB */}
-        {(studiesData?.school_of_magic || window.gameState?.school_of_magic) && (
+        {(studiesData?.school_of_magic || state?.school_of_magic) && (
           <div style={{ display: activeSchoolSubTab === 'school' ? 'block' : 'none' }}>
             {/* School Header */}
             <div className="card" style={{ marginBottom: '12px', textAlign: 'center' }}>
               <div style={{ fontSize: '32px', marginBottom: '8px' }}>🔮</div>
               <div className="card-title" style={{ marginBottom: '4px', textTransform: 'capitalize' }}>
-                {(studiesData?.school_of_magic || window.gameState?.school_of_magic)?.replace(/_/g, ' ')}
+                {(studiesData?.school_of_magic || state?.school_of_magic)?.replace(/_/g, ' ')}
               </div>
               <div style={{ fontSize: '13px', color: 'var(--text3)', marginBottom: '8px' }}>
                 School of Magic
@@ -304,8 +419,8 @@ const StudiesPanel = () => {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="base-btn variant-red" onClick={() => { if (window.releaseMageAllocation) window.releaseMageAllocation(); }} style={{ whiteSpace: 'nowrap', background: 'var(--red)' }}>Release all</button>
-                  <button className="base-btn variant-accent" onClick={() => { if (window.studyMagic) window.studyMagic(); }} style={{ whiteSpace: 'nowrap', background: 'var(--accent1)', color: '#fff' }}>Study</button>
+                  <button className="base-btn variant-red" onClick={releaseMageAllocation} style={{ whiteSpace: 'nowrap', background: 'var(--red)' }}>Release all</button>
+                  <button className="base-btn variant-accent" onClick={saveMageAllocation} style={{ whiteSpace: 'nowrap', background: 'var(--accent1)', color: '#fff' }}>Study</button>
                 </div>
               </div>
 
@@ -321,14 +436,11 @@ const StudiesPanel = () => {
                       id="mage-alloc-spellbook"
                       min="0"
                       defaultValue={researchAlloc.spellbook_mages || 0}
-                      onChange={() => {
-                        updateAllocationDisplay();
-                        if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay();
-                      }}
+                      onChange={updateAllocationDisplay}
                       style={{ textAlign: 'right', flex: 1 }}
                       placeholder="Qty"
                     />
-                    <button className="base-btn" onClick={() => { if (window.setMageMax) window.setMageMax('spellbook'); }} style={{ padding: '4px 8px', fontSize: '10px' }}>Max</button>
+                    <button className="base-btn" onClick={() => setMageMax('spellbook')} style={{ padding: '4px 8px', fontSize: '10px' }}>Max</button>
                   </div>
                 </div>
 
@@ -343,14 +455,11 @@ const StudiesPanel = () => {
                       id="mage-alloc-school"
                       min="0"
                       defaultValue={researchAlloc.school_spellbook_mages || 0}
-                      onChange={() => {
-                        updateAllocationDisplay();
-                        if (window.updateMageAllocationDisplay) window.updateMageAllocationDisplay();
-                      }}
+                      onChange={updateAllocationDisplay}
                       style={{ textAlign: 'right', flex: 1 }}
                       placeholder="Qty"
                     />
-                    <button className="base-btn" onClick={() => { if (window.setMageMax) window.setMageMax('school'); }} style={{ padding: '4px 8px', fontSize: '10px' }}>Max</button>
+                    <button className="base-btn" onClick={() => setMageMax('school')} style={{ padding: '4px 8px', fontSize: '10px' }}>Max</button>
                   </div>
                 </div>
               </div>
@@ -419,7 +528,7 @@ const StudiesPanel = () => {
               </div>
 
               {/* Column 2: School Spellbook Card + Spells */}
-              {(studiesData?.school_of_magic || window.gameState?.school_of_magic) && (
+              {(studiesData?.school_of_magic || state?.school_of_magic) && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {/* School Spellbook Card */}
                 <div className="card" style={{ margin: 0, padding: '16px' }}>
@@ -448,7 +557,7 @@ const StudiesPanel = () => {
                 {/* School Spells */}
                 <div className="card" style={{ margin: 0 }}>
                   <div className="card-title" style={{ marginBottom: '12px', textTransform: 'capitalize' }}>
-                    {(studiesData?.school_of_magic || window.gameState?.school_of_magic)?.replace(/_/g, ' ')} Spells
+                    {(studiesData?.school_of_magic || state?.school_of_magic)?.replace(/_/g, ' ')} Spells
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     {Object.keys(spellsByTier).length > 0 ? (

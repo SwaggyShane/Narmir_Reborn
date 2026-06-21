@@ -1,30 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { gameState } from '../../main.js';
+import React, { useState } from 'react';
+import { useGameState } from '../../hooks/useGameState';
+import { logout } from '../../actions/logout';
+import { switchTab } from '../../utils/switchTab.js';
 
 const Sidebar = () => {
   const [isAdmin, setIsAdmin] = useState(false);
+  const { state } = useGameState();
 
-  useEffect(() => {
-    // If gameState is reactive (from Vue), we might need a way to listen,
-    // but in this pure React transition we can just check if window.gameState has it
-    // or set a simple interval if we want to be hacky, but really it's set once on load.
-    setIsAdmin(!!window.gameState?.isAdmin);
-    
-    // In Vue, reactive() properties were updating. In React we can poll or use event listeners.
-    const interval = setInterval(() => {
-      if (window.gameState?.isAdmin !== isAdmin) {
-        setIsAdmin(!!window.gameState?.isAdmin);
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [isAdmin]);
+  React.useEffect(() => {
+    setIsAdmin(!!state?.isAdmin);
+  }, [state?.isAdmin]);
 
   const handleSwitchTab = (id, e) => {
-    if (window.switchTab) window.switchTab(id, e.currentTarget);
-  };
-
-  const doLogout = () => {
-    if (window.doLogout) window.doLogout();
+    switchTab(id, e.currentTarget);
   };
 
   return (
@@ -147,7 +135,7 @@ const Sidebar = () => {
       <div style={{ flex: 1 }}></div>
       <button
         className="nav-item"
-        onClick={doLogout}
+        onClick={logout}
         style={{ color: 'var(--red)', marginTop: '8px' }}
       >
         <span className="icon">&#10005;</span>Logout

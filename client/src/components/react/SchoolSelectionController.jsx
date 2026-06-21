@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useGameState } from '../../hooks/useGameState';
 import SchoolSelectionModal from './SchoolSelectionModal';
+import { applyGameMutation } from '../../utils/gameMutations.js';
+import { toast } from '../../utils/toast.js';
 
 /**
  * SchoolSelectionController
@@ -12,28 +15,12 @@ import SchoolSelectionModal from './SchoolSelectionModal';
  */
 export default function SchoolSelectionController() {
   const [showModal, setShowModal] = useState(false);
+  const { state } = useGameState();
 
   useEffect(() => {
-    const updateModalVisibility = () => {
-      const gameState = window.gameState || {};
-      const shouldShowModal =
-        (gameState.res_spellbook || 0) >= 100 &&
-        !gameState.school_of_magic;
-
-      setShowModal(shouldShowModal);
-    };
-
-    // Initial check
-    updateModalVisibility();
-
-    // Register hook for state updates
-    const unreg = window.registerPanelReactHook &&
-      window.registerPanelReactHook('school-selection', updateModalVisibility);
-
-    return () => {
-      if (unreg) unreg();
-    };
-  }, []);
+    const shouldShowModal = (state?.res_spellbook || 0) >= 100 && !state?.school_of_magic;
+    setShowModal(shouldShowModal);
+  }, [state?.res_spellbook, state?.school_of_magic]);
 
   const handleModalClose = () => {
     setShowModal(false);
@@ -44,18 +31,10 @@ export default function SchoolSelectionController() {
     setShowModal(false);
 
     // Update game state with new school
-    const gameState = window.gameState || {};
-    gameState.school_of_magic = data.school;
-
-    // Notify other panels of state change
-    if (window.triggerReactUpdates) {
-      window.triggerReactUpdates();
-    }
+    applyGameMutation({ school_of_magic: data.school }, { reason: 'school-selected' });
 
     // Show success message
-    if (window.toast) {
-      window.toast(`🔮 You have chosen the school of ${data.school.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}!`, 'success');
-    }
+    toast(`???? You have chosen the school of ${data.school.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}!`, 'success');
   };
 
   // Don't show anything if modal shouldn't be visible

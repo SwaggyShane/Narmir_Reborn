@@ -1,4 +1,4 @@
-import { useEffect, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import { gameStateManager } from '../GameStateManager';
 
 export function useGameState() {
@@ -7,13 +7,13 @@ export function useGameState() {
     () => gameStateManager.getState()
   );
 
-  const setState = (nextState, context) => {
+  const setState = useCallback((nextState, context) => {
     gameStateManager.setState(nextState, context);
-  };
+  }, []);
 
-  const applyUpdates = (updates, context) => {
+  const applyUpdates = useCallback((updates, context) => {
     gameStateManager.applyUpdates(updates, context);
-  };
+  }, []);
 
   return { state, setState, applyUpdates };
 }
