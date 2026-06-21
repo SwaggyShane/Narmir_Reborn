@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { repairMojibake } from '../../utils/repairMojibake.js';
 import {
   getSocket,
   renderGlobalChatHistory,
@@ -63,7 +64,7 @@ const GlobalchatPanel = () => {
           if (nc && !nc.classList.contains('nav-flash')) nc.classList.add('nav-flash');
           const bnc = document.getElementById('bnav-chat-item');
           if (bnc && !bnc.classList.contains('nav-flash')) bnc.classList.add('nav-flash');
-          if (typeof window !== 'undefined' && typeof toast === 'function') toast(`PM from ${data.from}`, 'success');
+          if (typeof window !== 'undefined' && typeof toast === 'function') toast(`PM from ${repairMojibake(data.from || '')}`, 'success');
         };
 
         handlers.whisperSent = (data) => {

@@ -1,3 +1,5 @@
+import { repairMojibake } from './utils/repairMojibake.js';
+
 let socket = null;
 let socketPromise = null;
 let ioLoaderPromise = null;
@@ -83,7 +85,7 @@ function createMessageRow(data, mode) {
   header.style.lineHeight = "1.3";
 
   const name = document.createElement("span");
-  name.textContent = data?.from || data?.username || "Unknown";
+  name.textContent = repairMojibake(data?.from || data?.username || "Unknown");
   name.style.color = data?.chatColor || "var(--text)";
   header.appendChild(name);
 

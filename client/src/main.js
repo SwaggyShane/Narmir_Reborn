@@ -1,7 +1,5 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { gameStateManager } from "./GameStateManager.js";
-import { setActivePanelGlobal } from "./hooks/useActivePanel.js";
 import TopbarReact from "./components/react/Topbar.jsx";
 import GoalsPanelReact from "./components/react/GoalsPanel.jsx";
 import SidebarReact from "./components/react/Sidebar.jsx";
@@ -31,45 +29,14 @@ import SchoolSelectionControllerReact from "./components/react/SchoolSelectionCo
 import ForumSectionReact from "./components/forum/ForumSection.jsx";
 import "./css/forum.css";
 import ResourceStripReact from "./components/react/ResourceStrip.jsx";
-import { replayWarReport as replayWarReportAction } from "./utils/replayWarReport.js";
-import { openKingdomProfile as openKingdomProfileAction } from "./components/react/KingdomProfileModal.jsx";
-import { loadWorldMap as loadWorldMapAction } from "./components/react/WorldmapPanel.jsx";
-import { renderWorldMap as renderWorldMapAction } from "./components/react/WorldmapRenderer.jsx";
-import { renderRegionLegend as renderRegionLegendAction, highlightRegion as highlightRegionAction } from "./components/react/WorldmapLegend.jsx";
-import { showMapKingdomCard as showMapKingdomCardAction } from "./components/react/MapKingdomCard.jsx";
+import { apiCall, switchTab, initGameStateManager, applyGameMutation } from "./utils/panelNav.js";
 import { applyServerUpdates as applyServerUpdatesAction } from "./utils/gameMutations.js";
-import { bindGeneralSocketHandlers as bindGeneralSocketHandlersImpl } from "./utils/socketHandlers.js";
+import { initSocketHandlers } from "./hooks/useSocket.js";
 import AuthModalReact, {
-  initLoginModal as initLoginModalImpl,
-  showLoginModal as showLoginModalImpl,
-  hideLoginModal as hideLoginModalImpl,
-  showPasswordReset as showPasswordResetImpl,
-  closeRegistrationModal as closeRegistrationModalImpl,
-  backToRaceSelection as backToRaceSelectionImpl,
-  updatePasswordRequirements as updatePasswordRequirementsImpl,
-  clearToken as clearTokenImpl,
-  doLogin as doLoginImpl,
-  doRegister as doRegisterImpl,
   loadKingdom as loadKingdomImpl,
   logout as logoutImpl,
 } from "./components/react/AuthModal.jsx";
-import KingdomProfileModalReact, { closeKingdomProfile as closeKingdomProfileImpl } from "./components/react/KingdomProfileModal.jsx";
-import { apiCall, syncUI, switchTab, initGameStateManager, applyGameMutation, gameState } from "./utils/shellBridge.js";
-import EconomyPanelReact, {
-  loadEconomy as loadEconomyAction,
-  buyUpgrade as buyUpgradeAction,
-  renderUpgrades as renderUpgradesAction,
-} from "./components/react/EconomyPanel.jsx";
-import MarketPanelReact, {
-  populateTradeTargets as populateTradeTargetsAction,
-  loadTradeOffers as loadTradeOffersAction,
-  clearTradeLogs as clearTradeLogsAction,
-  sendTradeOffer as sendTradeOfferAction,
-  acceptTrade as acceptTradeAction,
-  declineTrade as declineTradeAction,
-  renderCommodityMarket as renderCommodityMarketAction,
-  renderActiveMercs as renderActiveMercsAction,
-} from "./components/react/MarketPanel.jsx";
+import KingdomProfileModalReact from "./components/react/KingdomProfileModal.jsx";
 
 window.apiCall = apiCall;
 window.switchTab = switchTab;
@@ -77,37 +44,8 @@ window.applyGameMutation = applyGameMutation;
 window.__loadKingdomImpl = loadKingdomImpl;
 window.loadKingdom = loadKingdomImpl;
 window.__logoutImpl = logoutImpl;
-window.__replayWarReportImpl = replayWarReportAction;
-window.__openKingdomProfileImpl = openKingdomProfileAction;
-window.__closeKingdomProfileImpl = closeKingdomProfileImpl;
-window.__loadEconomyImpl = loadEconomyAction;
-window.__buyUpgradeImpl = buyUpgradeAction;
-window.__renderCommodityMarketImpl = renderCommodityMarketAction;
-window.__renderActiveMercsImpl = renderActiveMercsAction;
-window.__renderUpgradesImpl = renderUpgradesAction;
-window.__populateTradeTargetsImpl = populateTradeTargetsAction;
-window.__loadTradeOffersImpl = loadTradeOffersAction;
-window.__clearTradeLogsImpl = clearTradeLogsAction;
-window.__sendTradeOfferImpl = sendTradeOfferAction;
-window.__acceptTradeImpl = acceptTradeAction;
-window.__declineTradeImpl = declineTradeAction;
-window.__loadWorldMapImpl = loadWorldMapAction;
-window.__renderWorldMapImpl = renderWorldMapAction;
-window.__renderRegionLegendImpl = renderRegionLegendAction;
-window.__highlightRegionImpl = highlightRegionAction;
-window.__showMapKingdomCardImpl = showMapKingdomCardAction;
 window.__applyServerUpdatesImpl = applyServerUpdatesAction;
-window.__bindGeneralSocketHandlersImpl = bindGeneralSocketHandlersImpl;
-window.__initLoginModalImpl = initLoginModalImpl;
-window.__showLoginModalImpl = showLoginModalImpl;
-window.__hideLoginModalImpl = hideLoginModalImpl;
-window.__showPasswordResetImpl = showPasswordResetImpl;
-window.__closeRegistrationModalImpl = closeRegistrationModalImpl;
-window.__backToRaceSelectionImpl = backToRaceSelectionImpl;
-window.__updatePasswordRequirementsImpl = updatePasswordRequirementsImpl;
-window.__clearTokenImpl = clearTokenImpl;
-window.__doLoginImpl = doLoginImpl;
-window.__doRegisterImpl = doRegisterImpl;
+window.__bindGeneralSocketHandlersImpl = initSocketHandlers;
 
 const reactRoots = new Map();
 
@@ -182,134 +120,6 @@ export const mountReactApps = () => {
   }
 };
 
-const renderLibraryPanel = async () => {
-  try {
-    const response = await fetch("/api/kingdom/lore-and-achievements", {
-      cache: 'no-store',
-      headers: { 'pragma': 'no-cache' }
-    });
-    if (!response.ok) throw new Error("HTTP " + response.status);
-
-    const data = await response.json();
-    const { raceLore = [], narmirLore = [], generalLore = [], achievements = [] } = data;
-
-    const loreContainer = document.getElementById("library-lore-list");
-    if (loreContainer) {
-      loreContainer.innerHTML = '';
-      const allLore = [...raceLore, ...narmirLore, ...generalLore];
-
-      if (allLore.length === 0) {
-        loreContainer.innerHTML = '<div style="color: var(--text3);">No lore collected yet.</div>';
-      } else {
-        allLore.forEach(lore => {
-          const loreDiv = document.createElement('div');
-          loreDiv.style.cssText = 'padding: 8px; border-left: 3px solid var(--accent1); background: var(--bg2);';
-          loreDiv.innerHTML =
-            '<div style="font-weight: 500; color: var(--text); margin-bottom: 4px;">' + (lore.title || 'Unknown') + '</div>' +
-            '<div style="color: var(--text2); font-size: 12px; line-height: 1.4;">' + (lore.msg || '') + '</div>';
-          loreContainer.appendChild(loreDiv);
-        });
-      }
-    }
-
-    const achievementsContainer = document.getElementById("library-achievements");
-    if (achievementsContainer) {
-      achievementsContainer.innerHTML = '';
-
-      if (achievements.length === 0) {
-        const noAchDiv = document.createElement('div');
-        noAchDiv.style.color = 'var(--text3)';
-        noAchDiv.style.fontSize = '12px';
-        noAchDiv.textContent = 'No achievements available.';
-        achievementsContainer.appendChild(noAchDiv);
-      } else {
-        achievements.forEach(ach => {
-          const achDiv = document.createElement('div');
-          const borderColor = ach.completed ? 'var(--green)' : 'var(--text3)';
-          const bgColor = ach.completed ? 'var(--bg2)' : 'transparent';
-          achDiv.style.cssText = 'padding: 8px; border-left: 3px solid ' + borderColor + '; background: ' + bgColor + ';';
-
-          const titleDiv = document.createElement('div');
-          const titleColor = ach.completed ? 'var(--text)' : 'var(--text2)';
-          const titlePrefix = ach.completed ? '⭐ ' : '';
-          titleDiv.style.cssText = 'font-weight: ' + (ach.completed ? '500' : '400') + '; color: ' + titleColor + ';';
-          titleDiv.textContent = titlePrefix + (ach.title || 'Achievement');
-          achDiv.appendChild(titleDiv);
-
-          if (ach.completed) {
-            const description = ach.description || '';
-            if (description) {
-              const descDiv = document.createElement('div');
-              descDiv.style.cssText = 'color: var(--text2); font-size: 12px; margin-top: 4px;';
-              descDiv.textContent = description;
-              achDiv.appendChild(descDiv);
-            }
-
-            const reward = ach.reward || '';
-            if (reward) {
-              const rewardDiv = document.createElement('div');
-              rewardDiv.style.cssText = 'color: var(--green); font-size: 12px; font-weight: 500; margin-top: 4px;';
-              rewardDiv.textContent = 'Reward: ' + reward;
-              achDiv.appendChild(rewardDiv);
-            }
-          } else {
-            const description = ach.description || '';
-            if (description) {
-              const descDiv = document.createElement('div');
-              descDiv.style.cssText = 'color: var(--text2); font-size: 12px; margin-top: 4px; margin-bottom: 8px;';
-              descDiv.textContent = description;
-              achDiv.appendChild(descDiv);
-            }
-
-            if (ach.progress) {
-              const progressContainer = document.createElement('div');
-              progressContainer.style.cssText = 'margin-top: 8px;';
-
-              const progressBar = document.createElement('div');
-              progressBar.style.cssText = 'background: var(--bg3); border-radius: 2px; height: 8px; overflow: hidden; margin-bottom: 4px;';
-
-              const progressFill = document.createElement('div');
-              progressFill.style.cssText = 'background: var(--accent1); height: 100%; width: ' + ach.progress.percent + '%; transition: width 0.3s ease;';
-              progressBar.appendChild(progressFill);
-              progressContainer.appendChild(progressBar);
-
-              const progressLabel = document.createElement('div');
-              progressLabel.style.cssText = 'color: var(--text3); font-size: 11px; display: flex; justify-content: space-between;';
-              const labelLeft = document.createElement('span');
-              labelLeft.textContent = ach.progress.sublabel || '';
-              const labelRight = document.createElement('span');
-              labelRight.textContent = ach.progress.percent + '%';
-              progressLabel.appendChild(labelLeft);
-              progressLabel.appendChild(labelRight);
-              progressContainer.appendChild(progressLabel);
-
-              const progressText = document.createElement('div');
-              progressText.style.cssText = 'color: var(--text3); font-size: 11px; margin-top: 2px;';
-              progressText.textContent = ach.progress.label;
-              progressContainer.appendChild(progressText);
-
-              achDiv.appendChild(progressContainer);
-            }
-          }
-
-          achievementsContainer.appendChild(achDiv);
-        });
-      }
-    }
-  } catch (error) {
-    console.error("[library] Failed to load lore and achievements:", error);
-    const loreContainer = document.getElementById("library-lore-list");
-    if (loreContainer) {
-      loreContainer.innerHTML = '';
-      const errorDiv = document.createElement('div');
-      errorDiv.style.color = 'var(--red)';
-      errorDiv.textContent = 'Failed to load lore: ' + error.message;
-      loreContainer.appendChild(errorDiv);
-    }
-  }
-};
-
-// Wait for DOM to be ready
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", () => {
     initGameStateManager();

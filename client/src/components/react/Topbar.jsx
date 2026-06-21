@@ -1,11 +1,12 @@
 import React from 'react';
 import { useGameState } from '../../hooks/useGameState';
-import { takeTurn } from '../../actions/takeTurn';
+import { useGameActions } from '../../hooks/useGameActions';
 import { showLoginModal, logout } from './AuthModal.jsx';
 import { xpForLevel } from '../../utils/xp';
 
 const Topbar = () => {
   const { state } = useGameState();
+  const { takeTurn, loading } = useGameActions();
   const turnsStored = state?.turns_stored ?? 400;
   const level = state?.level ?? 1;
   const xp = state?.xp ?? 0;
@@ -118,7 +119,12 @@ const Topbar = () => {
               </span>
             </div>
           </div>
-          <button className="turn-btn" style={{ padding: '6px 14px', fontSize: '12px' }} onClick={takeTurn}>
+          <button
+            className="turn-btn"
+            style={{ padding: '6px 14px', fontSize: '12px', opacity: loading.takeTurn ? 0.6 : 1 }}
+            onClick={takeTurn}
+            disabled={loading.takeTurn}
+          >
             Take Turn
           </button>
           <button className="btn" style={{ padding: '6px 10px', fontSize: '12px', marginLeft: '8px', whiteSpace: 'nowrap' }} onClick={handleAccount}>

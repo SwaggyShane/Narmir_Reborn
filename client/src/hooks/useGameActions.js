@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { apiCall } from '../utils/api.js';
 import { toast } from '../utils/toast.js';
 import { gameStateManager } from '../GameStateManager.js';
@@ -9,7 +9,16 @@ function applyResult(data, reason) {
   return data;
 }
 
+const playAchievementSound = () => {
+  try {
+    const audio = new Audio('/sound/achievement.mp3');
+    audio.volume = 0.7;
+    audio.play().catch(() => {});
+  } catch {}
+};
+
 export function useGameActions() {
+  const turnInProgressRef = useRef(false);
   const [loading, setLoading] = useState({
     takeTurn: false,
     search: false,
@@ -29,12 +38,16 @@ export function useGameActions() {
     setErrors((prev) => ({ ...prev, [action]: value })), []);
 
   const takeTurn = useCallback(async () => {
+    if (turnInProgressRef.current) return null;
     if ((gameStateManager.getState()?.turns_stored || 0) < 1) {
-      toast('No turns available.', 'warning');
+      const countdown = document.getElementById('regen-countdown')?.textContent || '25:00';
+      toast(`No turns available. Refills in ${countdown}`, 'warning');
       return null;
     }
+    turnInProgressRef.current = true;
     setActionLoading('takeTurn', true);
     setActionError('takeTurn', null);
+    window.playGameSound?.('take_turn');
     try {
       const data = await apiCall('/api/kingdom/turn', { method: 'POST' });
       if (data.error) {
@@ -43,9 +56,45 @@ export function useGameActions() {
         return null;
       }
       applyResult(data, 'turn');
-      if (data.events) {
+      window.syncFromState?.();
+
+      let completedBuildingsMsg = '';
+      const blurbs = [];
+      if (Array.isArray(data.events)) {
         window.dispatchEvent(new CustomEvent('narmir:news-items', { detail: data.events }));
         window.appendNewsItems?.(data.events);
+        for (const ev of data.events) {
+          const msg = ev?.message || '';
+          if (msg.includes('Completed: ')) {
+            const idx = msg.indexOf('Completed: ');
+            const endPart = msg.substring(idx + 'Completed: '.length);
+            const periodIdx = endPart.indexOf('.');
+            completedBuildingsMsg = periodIdx !== -1 ? endPart.substring(0, periodIdx) : endPart;
+          }
+          if (msg.includes('ACHIEVEMENT UNLOCKED')) playAchievementSound();
+        }
+        if (completedBuildingsMsg && typeof window.getCompletionBlurb === 'function') {
+          completedBuildingsMsg.split(',').forEach((item) => {
+            const blurb = window.getCompletionBlurb(item.trim());
+            if (blurb) blurbs.push(blurb);
+          });
+        }
+      }
+
+      const state = gameStateManager.getState();
+      const turnsLeft = state?.turns_stored ?? 0;
+      const currentTurn = state?.turn;
+      const turnStatus = `Turn ${currentTurn || '?'} - ${turnsLeft} turns left`;
+      const buildStatus = completedBuildingsMsg
+        ? `Completed: ${completedBuildingsMsg}!\n${blurbs.join('\n') || ''}`
+        : '';
+
+      if ((state?.food || 0) < 1000) {
+        toast(`Warning: Food levels are dangerously low!\n${buildStatus ? `${buildStatus}\n` : ''}${turnStatus}`, 'warning');
+      } else if ((state?.gold || 0) < 1000) {
+        toast(`Warning: Gold reserves are almost empty!\n${buildStatus ? `${buildStatus}\n` : ''}${turnStatus}`, 'warning');
+      } else {
+        toast(buildStatus ? `${buildStatus}\n${turnStatus}` : turnStatus, 'success');
       }
       return data;
     } catch (err) {
@@ -53,11 +102,11 @@ export function useGameActions() {
       toast('Failed to take turn: ' + err.message, 'error');
       return null;
     } finally {
+      turnInProgressRef.current = false;
       setActionLoading('takeTurn', false);
     }
   }, [setActionLoading, setActionError]);
 
-  // type: 'food' | 'gold' | 'land', rangers: number
   const search = useCallback(async (type, rangers) => {
     setActionLoading('search', true);
     setActionError('search', null);
