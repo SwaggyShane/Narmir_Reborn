@@ -71,6 +71,17 @@ function setActivePanels(rawTab, activeTab) {
 
 export const gameState = gameStateManager.getMutableState();
 
+function getTimeOfDay() {
+  const h = new Date().getUTCHours();
+  const isNight = h >= 1 && h < 13;
+  const estHour = (h - 5 + 24) % 24;
+  const ampm = estHour >= 12 ? 'PM' : 'AM';
+  const display12 = estHour > 12 ? estHour - 12 : (estHour === 0 ? 12 : estHour);
+  const timeStr = `${String(display12).padStart(2, ' ')}:00 ${ampm} EST`;
+  const isDaylight = h < 1 || h >= 13;
+  return { isNight, isDaylight, timeStr, hour: h };
+}
+
 export function syncUI() {
   const sourceState = window.state || gameStateManager.getState();
   const kingdomName = repairMojibake(sourceState.kingdomName || sourceState.name || 'My Kingdom');
@@ -107,6 +118,25 @@ export function syncUI() {
   if (xpBar) xpBar.style.width = `${xpPct}%`;
   const xpLabel = document.getElementById('kh-xp-label');
   if (xpLabel) xpLabel.textContent = xpNeeded > 0 ? `${xpInLevel.toLocaleString()} / ${xpNeeded.toLocaleString()} XP` : 'Max Level';
+
+  const timeInfo = getTimeOfDay();
+  const timeEl = document.getElementById('time-of-day-badge');
+  if (timeEl) {
+    timeEl.textContent = timeInfo.timeStr;
+    timeEl.style.color = timeInfo.isDaylight ? 'var(--gold)' : 'var(--green)';
+  }
+  if (sourceState.race === 'vampire') {
+    const sunsetBadge = document.getElementById('vampire-sunset-badge');
+    if (sunsetBadge) {
+      if (timeInfo.isDaylight) {
+        const hoursToSunset = 13 - timeInfo.hour;
+        sunsetBadge.textContent = `Sunset in ${hoursToSunset}h`;
+        sunsetBadge.style.display = 'inline-flex';
+      } else {
+        sunsetBadge.style.display = 'none';
+      }
+    }
+  }
 }
 
 export function switchTab(tabName) {
