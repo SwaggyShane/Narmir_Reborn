@@ -90,6 +90,7 @@ function HeroLoreContent({ heroKey, hero }) {
 }
 
 function RaceLoreContent({ rKey, lore, regionName, regionBonus, portraitUrl, repair, onHeroClick }) {
+  const [hasPortraitError, setHasPortraitError] = useState(false);
   const strengths = Array.isArray(lore.strengths) ? lore.strengths : [];
   const weaknesses = Array.isArray(lore.weaknesses) ? lore.weaknesses : [];
   const heroes = Array.isArray(lore.heroes) ? lore.heroes : [];
@@ -98,13 +99,13 @@ function RaceLoreContent({ rKey, lore, regionName, regionBonus, portraitUrl, rep
     <>
       <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '20px' }}>
         <div style={{ flexShrink: 0 }}>
-          {portraitUrl ? (
+          {portraitUrl && !hasPortraitError ? (
             <div style={{ width: '140px', height: '140px', borderRadius: '16px', boxShadow: '0 6px 16px rgba(0,0,0,0.5)', overflow: 'hidden', background: '#15171e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <img
                 src={portraitUrl}
                 style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                 alt={repair(lore.title || '')}
-                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                onError={() => setHasPortraitError(true)}
               />
             </div>
           ) : (
@@ -212,7 +213,7 @@ const RacesPanel = () => {
         return;
       }
     }
-    const found = Object.entries(classes || {}).find(([, c]) => c.name === heroName);
+    const found = Object.entries(classes || {}).find(([, c]) => c?.name === heroName);
     if (found) setHeroLoreKey(found[0]);
   }, [cachedHeroClasses]);
 
@@ -235,7 +236,7 @@ const RacesPanel = () => {
           {raceEntries.map(([key, r]) => {
             const portraitUrl = getRacePortrait(key);
             const cardStyle = r.color
-              ? { background: `${r.color}15`, borderLeft: `3px solid ${r.color}`, padding: '16px', borderRadius: 'var(--radius)' }
+              ? { background: `color-mix(in srgb, ${r.color} 8%, transparent)`, borderLeft: `3px solid ${r.color}`, padding: '16px', borderRadius: 'var(--radius)' }
               : { background: 'var(--bg3)', padding: '16px', borderRadius: 'var(--radius)' };
             const strengths = Array.isArray(r.strengths) ? r.strengths : [];
             const weaknesses = Array.isArray(r.weaknesses) ? r.weaknesses : [];
@@ -319,7 +320,7 @@ const RacesPanel = () => {
           <RaceLoreContent
             rKey={selectedRace}
             lore={selectedLore}
-            regionName={(regionMeta[selectedRace] || {}).name || ''}
+            regionName={repair((regionMeta[selectedRace] || {}).name || '')}
             regionBonus={regionBonuses[selectedRace] || ''}
             portraitUrl={getRacePortrait(selectedRace)}
             repair={repair}
