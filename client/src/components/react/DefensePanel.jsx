@@ -114,24 +114,24 @@ const DefensePanel = () => {
       <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-white/10 bg-zinc-950/80 p-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <div className="card-title mb-1 flex items-center gap-2">
-            <span>??? Defense</span>
+            <span>🛡️ Defense</span>
             <span
               id="citadel-badge-title"
               className="hidden rounded-full bg-[var(--gold)]/15 px-2 py-0.5 text-[11px] font-semibold text-[var(--gold)]"
             >
-              ?? Citadel
+              🏰 Citadel
             </span>
           </div>
           <div className="text-[13px] text-[var(--text3)]">
             Rating: <span id="def-rating" className="font-bold">?</span>
           </div>
         </div>
-        <button className="base-btn rounded-full px-3 py-1.5 text-[11px] font-semibold" onClick={refreshDefense}>? Refresh</button>
+        <button className="base-btn rounded-full px-3 py-1.5 text-[11px] font-semibold" onClick={refreshDefense}>↻ Refresh</button>
       </div>
 
       <div className="card mb-3 rounded-2xl border border-white/10 bg-zinc-950/80" id="defense-tiers-card">
         <div className="mb-2 flex items-center justify-between gap-3">
-          <div className="card-title m-0">??? Defense Tiers</div>
+            <div className="card-title m-0">🛡️ Defense Tiers</div>
           <span id="tier-status" className="text-[12px] text-[var(--text3)]">Evaluating...</span>
         </div>
         <div id="tier-desc" className="mb-3 text-[12px] text-[var(--text3)]">
@@ -163,16 +163,16 @@ const DefensePanel = () => {
 
         <div className="mt-3 grid gap-1.5 rounded-lg border border-white/10 bg-[var(--bg1)] p-2 text-[11px] text-[var(--text3)]">
           <div id="tier-1" className="flex justify-between p-1">
-            <div className="font-semibold text-[var(--text2)]">??? Fortified</div>
-            <div>100 Walls ? 10 Towers ? 10 Outposts</div>
+            <div className="font-semibold text-[var(--text2)]">🛡️ Fortified</div>
+            <div>100 Walls · 10 Towers · 10 Outposts</div>
           </div>
           <div id="tier-2" className="flex justify-between border-t border-[var(--border)] p-1">
-            <div className="font-semibold text-[var(--text2)]">?? Keep</div>
-            <div>350 Walls ? 30 Towers ? 30 Outposts</div>
+            <div className="font-semibold text-[var(--text2)]">🏰 Keep</div>
+            <div>350 Walls · 30 Towers · 30 Outposts</div>
           </div>
           <div id="tier-3" className="flex justify-between border-t border-[var(--border)] p-1">
-            <div className="font-semibold text-[var(--text2)]">?? Citadel</div>
-            <div>500 Walls ? 50 Towers ? 50 Outposts ? 1 Castle</div>
+            <div className="font-semibold text-[var(--text2)]">👑 Citadel</div>
+            <div>500 Walls · 50 Towers · 50 Outposts · 1 Castle</div>
           </div>
         </div>
       </div>
