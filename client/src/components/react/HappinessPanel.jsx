@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import HappinessGraph from './HappinessGraph';
-import '../../css/happiness.css';
 
 const DEFAULT_COMPONENTS = {
   base: 50,
@@ -138,38 +137,28 @@ const HappinessPanel = () => {
 
         {/* Component Breakdown */}
         <div style={{ marginBottom: '24px' }}>
-          <div className="happiness-graph-label">Component Breakdown</div>
-          <div className="happiness-components">
+          <div className="text-xs font-semibold text-zinc-400 uppercase tracking-widest mb-3">Component Breakdown</div>
+          <div className="flex flex-col gap-2 mb-5">
             {Object.entries(components).map(([key, value]) => (
               <div
                 key={key}
-                className={`happiness-component-row ${filter === key ? 'active' : ''}`}
+                className={`flex justify-between items-center p-3 bg-zinc-800 rounded border transition-all cursor-pointer ${filter === key ? 'border-orange-500 bg-orange-500/10' : 'border-zinc-700 hover:bg-zinc-700 hover:translate-x-0.5'}`}
                 style={{
                   opacity: !filter || filter === key ? 1 : 0.5,
                 }}
                 onClick={() => setFilter(filter === key ? null : key)}
               >
-                <span className="happiness-component-name">
+                <span className="flex items-center gap-2 text-sm font-semibold text-white">
                   {getComponentEmoji(key)} {getComponentLabel(key)}
                 </span>
-                <span className={`happiness-component-value ${value > 0 ? 'positive' : value < 0 ? 'negative' : 'neutral'}`}>
+                <span className={`font-mono text-sm font-bold min-w-[40px] text-right ${value > 0 ? 'text-green-500' : value < 0 ? 'text-red-500' : 'text-zinc-400'}`}>
                   {value > 0 ? '+' : ''}{value}
                 </span>
               </div>
             ))}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '8px',
-              background: 'var(--bg2)',
-              borderRadius: '8px',
-              border: '1px solid var(--border2)',
-              marginTop: '4px',
-              fontWeight: 700
-            }}>
-              <span style={{ fontSize: '13px', color: 'var(--text)' }}>Recovery/turn</span>
-              <span style={{ fontSize: '14px', color: recoveryRate >= 0 ? 'var(--gold)' : 'var(--red)', fontFamily: 'monospace' }}>
+            <div className="flex justify-between items-center p-2 bg-zinc-700 rounded border border-zinc-600 mt-1 font-bold">
+              <span className="text-xs text-white">Recovery/turn</span>
+              <span className="text-sm font-mono" style={{ color: recoveryRate >= 0 ? 'var(--gold)' : 'var(--red)' }}>
                 {recoveryRate >= 0 ? '+' : ''}{recoveryRate.toFixed(2)}
               </span>
             </div>
@@ -178,24 +167,24 @@ const HappinessPanel = () => {
 
         {/* Recent Changes Log */}
         <div style={{ marginBottom: '16px' }}>
-          <div className="happiness-graph-label">
+          <div className="text-xs font-semibold text-zinc-400 uppercase tracking-widest mb-3">
             Recent Changes {filter && `(${getComponentLabel(filter)})`}
           </div>
-          <div className="happiness-events-log">
+          <div className="max-h-[300px] overflow-y-auto bg-zinc-800 rounded border border-zinc-700">
             {filteredEvents.length === 0 ? (
-              <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text3)', fontSize: '12px' }}>
+              <div className="p-4 text-center text-zinc-500 text-xs">
                 No changes recorded
               </div>
             ) : (
               filteredEvents.map((event, idx) => (
-                <div key={idx} className="happiness-event-item">
-                  <div className="happiness-event-turn">
+                <div key={idx} className="p-3 border-b border-zinc-700 text-xs text-zinc-300 leading-relaxed transition-all hover:bg-zinc-700 last:border-b-0">
+                  <div className="flex justify-between mb-1 font-semibold text-white">
                     <span>Turn {event.turn}: {event.description}</span>
-                    <span className={`happiness-event-delta ${event.delta > 0 ? 'positive' : event.delta < 0 ? 'negative' : 'neutral'}`}>
+                    <span className={`font-mono font-bold min-w-[45px] text-right ${event.delta > 0 ? 'text-green-500' : event.delta < 0 ? 'text-red-500' : 'text-zinc-400'}`}>
                       {event.delta > 0 ? '+' : ''}{event.delta}
                     </span>
                   </div>
-                  <div className="happiness-event-transition">
+                  <div className="text-xs text-zinc-500 mt-1">
                     {event.old_happiness} → {event.new_happiness}
                   </div>
                 </div>
