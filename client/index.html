@@ -2841,7 +2841,13 @@
 
       .status-bar {
 
-        margin-top: auto;
+        position: fixed;
+
+        bottom: 0;
+
+        left: 220px;
+
+        right: 0;
 
         height: 48px;
 
@@ -2865,9 +2871,17 @@
 
         pointer-events: none;
 
+        z-index: var(--z-sidebar);
+
       }
 
-      @media (max-width: 699px) {
+      body.force-bottom-nav .status-bar {
+
+        left: 0;
+
+      }
+
+      @media (max-width: 767px) {
 
         .status-bar {
 
@@ -4296,55 +4310,55 @@
 
 
 
-        <!-- Status Bar -->
-
-        <footer class="status-bar">
-
-          <div style="display: flex; align-items: center; gap: 24px">
-
-            <div style="display: flex; align-items: center; gap: 8px">
-
-              <span
-
-                style="
-
-                  width: 6px;
-
-                  height: 6px;
-
-                  border-radius: 50%;
-
-                  background: var(--green);
-
-                  box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
-
-                "
-
-              ></span>
-
-              SYSTEM CLOUD SYNCED
-
-            </div>
-
-            <div style="opacity: 0.6">UPTIME: <span id="status-uptime">Ã¢â‚¬ï¿½</span></div>
-
-          </div>
-
-          <div
-
-            style="display: flex; gap: 16px; opacity: 0.6; letter-spacing: 1px"
-
-          >
-
-            <span id="status-version">Ã¢â‚¬ï¿½</span>
-
-            <span>NODE ID: <span id="status-nodeid">Ã¢â‚¬ï¿½</span></span>
-
-          </div>
-
-        </footer>
-
       </main>
+
+      <!-- Status Bar Footer -->
+
+      <footer class="status-bar">
+
+        <div style="display: flex; align-items: center; gap: 24px">
+
+          <div style="display: flex; align-items: center; gap: 8px">
+
+            <span
+
+              style="
+
+                width: 6px;
+
+                height: 6px;
+
+                border-radius: 50%;
+
+                background: var(--green);
+
+                box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+
+              "
+
+            ></span>
+
+            SYSTEM CLOUD SYNCED
+
+          </div>
+
+          <div style="opacity: 0.6">UPTIME: <span id="status-uptime">—</span></div>
+
+        </div>
+
+        <div
+
+          style="display: flex; gap: 16px; opacity: 0.6; letter-spacing: 1px"
+
+        >
+
+          <span id="status-version">—</span>
+
+          <span>NODE ID: <span id="status-nodeid">—</span></span>
+
+        </div>
+
+      </footer>
 
 
 
