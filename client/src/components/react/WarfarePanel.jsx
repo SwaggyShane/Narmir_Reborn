@@ -23,7 +23,7 @@ function buildTargetList(targets, disc, state, { prependSelf = false } = {}) {
 
   Object.entries(disc).forEach(([id, d]) => {
     if (
-      d.mapped &&
+      d?.mapped &&
       !mapped.find((f) => String(f.id) === String(id)) &&
       String(id) !== String(state?.kingdomId)
     ) {
@@ -397,6 +397,10 @@ const WarfarePanel = () => {
       g('atk-bully-warn-w').textContent = bullyMsg;
     }
   }, [state, selectedTarget]);
+
+  useEffect(() => {
+    updateAtkEstimateW();
+  }, [updateAtkEstimateW]);
 
   const setMaxValue = (inputId) => {
     const el = document.getElementById(inputId);
