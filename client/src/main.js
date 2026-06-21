@@ -16,9 +16,7 @@ import WorldmapPanelReact from "./components/react/WorldmapPanel.jsx";
 import RankingsPanelReact from "./components/react/RankingsPanel.jsx";
 import BuildPanelReact from "./components/react/BuildPanel.jsx";
 import DefensePanelReact from "./components/react/DefensePanel.jsx";
-import EconomyPanelReact from "./components/react/EconomyPanel.jsx";
 import ExplorationPanelReact from "./components/react/ExplorationPanel.jsx";
-import MarketPanelReact from "./components/react/MarketPanel.jsx";
 import WarfarePanelReact from "./components/react/WarfarePanel.jsx";
 import TrainingPanelReact from "./components/react/TrainingPanel.jsx";
 import StatusPanelReact from "./components/react/StatusPanel.jsx";
@@ -33,29 +31,12 @@ import SchoolSelectionControllerReact from "./components/react/SchoolSelectionCo
 import ForumSectionReact from "./components/forum/ForumSection.jsx";
 import "./css/forum.css";
 import ResourceStripReact from "./components/react/ResourceStrip.jsx";
-import { replayWarReport as replayWarReportAction } from "./actions/replayWarReport.js";
+import { replayWarReport as replayWarReportAction } from "./utils/replayWarReport.js";
 import { openKingdomProfile as openKingdomProfileAction } from "./actions/openKingdomProfile.js";
-import { loadEconomy as loadEconomyAction } from "./actions/loadEconomy.js";
-import { buyUpgrade as buyUpgradeAction } from "./actions/buyUpgrade.js";
-import {
-  renderCommodityMarket as renderCommodityMarketAction,
-  renderActiveMercs as renderActiveMercsAction,
-} from "./actions/economyRenderers.js";
-import { renderUpgrades as renderUpgradesAction } from "./actions/economyUpgrades.js";
-import {
-  populateTradeTargets as populateTradeTargetsAction,
-  loadTradeOffers as loadTradeOffersAction,
-  clearTradeLogs as clearTradeLogsAction,
-  sendTradeOffer as sendTradeOfferAction,
-  acceptTrade as acceptTradeAction,
-  declineTrade as declineTradeAction,
-} from "./actions/economyTrades.js";
-import { loadWorldMap as loadWorldMapAction } from "./actions/loadWorldMap.js";
-import { renderWorldMap as renderWorldMapAction } from "./actions/renderWorldMap.js";
-import { renderRegionLegend as renderRegionLegendAction, highlightRegion as highlightRegionAction } from "./actions/worldMapLegend.js";
-import { showMapKingdomCard as showMapKingdomCardAction } from "./actions/showMapKingdomCard.js";
-import { renderTargets as renderTargetsAction } from "./actions/renderTargets.js";
-import { loadWarfarePanel as loadWarfarePanelAction } from "./actions/loadWarfarePanel.js";
+import { loadWorldMap as loadWorldMapAction } from "./components/react/WorldmapPanel.jsx";
+import { renderWorldMap as renderWorldMapAction } from "./components/react/WorldmapRenderer.jsx";
+import { renderRegionLegend as renderRegionLegendAction, highlightRegion as highlightRegionAction } from "./components/react/WorldmapLegend.jsx";
+import { showMapKingdomCard as showMapKingdomCardAction } from "./components/react/MapKingdomCard.jsx";
 import { applyServerUpdates as applyServerUpdatesAction } from "./utils/gameMutations.js";
 import { bindGeneralSocketHandlers as bindGeneralSocketHandlersImpl } from "./utils/socketHandlers.js";
 import {
@@ -72,6 +53,21 @@ import {
 } from "./actions/authModal.js";
 import { closeKingdomProfile as closeKingdomProfileImpl } from "./utils/kingdomProfileModal.js";
 import { apiCall, syncUI, switchTab, initGameStateManager, applyGameMutation, gameState } from "./utils/shellBridge.js";
+import EconomyPanelReact, {
+  loadEconomy as loadEconomyAction,
+  buyUpgrade as buyUpgradeAction,
+  renderUpgrades as renderUpgradesAction,
+} from "./components/react/EconomyPanel.jsx";
+import MarketPanelReact, {
+  populateTradeTargets as populateTradeTargetsAction,
+  loadTradeOffers as loadTradeOffersAction,
+  clearTradeLogs as clearTradeLogsAction,
+  sendTradeOffer as sendTradeOfferAction,
+  acceptTrade as acceptTradeAction,
+  declineTrade as declineTradeAction,
+  renderCommodityMarket as renderCommodityMarketAction,
+  renderActiveMercs as renderActiveMercsAction,
+} from "./components/react/MarketPanel.jsx";
 
 window.apiCall = apiCall;
 window.switchTab = switchTab;
@@ -94,8 +90,6 @@ window.__renderWorldMapImpl = renderWorldMapAction;
 window.__renderRegionLegendImpl = renderRegionLegendAction;
 window.__highlightRegionImpl = highlightRegionAction;
 window.__showMapKingdomCardImpl = showMapKingdomCardAction;
-window.__renderTargetsImpl = renderTargetsAction;
-window.__loadWarfarePanelImpl = loadWarfarePanelAction;
 window.__applyServerUpdatesImpl = applyServerUpdatesAction;
 window.__bindGeneralSocketHandlersImpl = bindGeneralSocketHandlersImpl;
 window.__initLoginModalImpl = initLoginModalImpl;

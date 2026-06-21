@@ -6,12 +6,167 @@ import WarfareIntelTab from './WarfareIntelTab';
 import WarfareReportsTab from './WarfareReportsTab';
 import { fmt } from "../../utils/fmt";
 import { applyGameMutation } from '../../utils/gameMutations.js';
-import { filterWarfareTargetsUnified } from '../../actions/renderWarfareTargets.js';
+
+// ─── helpers ─────────────────────────────────────────────────────────────────
+
+function parseDisc(raw) {
+  if (!raw) return {};
+  if (typeof raw === 'string') {
+    try { return JSON.parse(raw); } catch { return {}; }
+  }
+  return raw;
+}
+
+// Merge ranked targets with discovered_kingdoms; optionally prepend self for spell tab.
+function buildTargetList(targets, disc, state, { prependSelf = false } = {}) {
+  const sourceTargets = Array.isArray(targets) ? targets : [];
+  const discovered = disc && typeof disc === 'object' ? disc : {};
+  const mapped = sourceTargets.filter((t) => t && discovered?.[t.id]?.mapped);
+
+  Object.entries(discovered).forEach(([id, d]) => {
+    if (
+      d?.mapped &&
+      !mapped.find((f) => String(f.id) === String(id)) &&
+      String(id) !== String(state?.kingdomId)
+    ) {
+      mapped.push({
+        id,
+        name: d.name || `Kingdom #${id}`,
+        race: d.race || 'unknown',
+        level: d.level || 1,
+        rank: d.rank || 'none',
+        fighters: d.fighters || 0,
+        land: d.land || 0,
+        is_ai: d.is_ai || false,
+        is_location: true,
+      });
+    }
+  });
+
+  if (prependSelf && !mapped.some((r) => String(r.id) === String(state?.kingdomId))) {
+    mapped.unshift({
+      id: state?.kingdomId,
+      name: `${state?.kingdomName || state?.name || 'My Kingdom'} (You)`,
+      race: state?.race || 'human',
+      level: state?.level || 1,
+      rank: state?.rank || '-',
+      fighters: state?.fighters || 0,
+      land: state?.land || 0,
+      is_ai: false,
+    });
+  }
+
+  return mapped;
+}
+
+function filterByQuery(list, q) {
+  if (!q) return list;
+  const lq = q.toLowerCase();
+  return list.filter((t) => (t.name || '').toLowerCase().includes(lq));
+}
+
+// ─── sub-component: target card ───────────────────────────────────────────────
+
+function KingdomTargetCard({ target, isSelected, onSelect }) {
+  const raceIcon = (window.RACE_ICONS || {})[target.race] || '👤';
+  return (
+    <div
+      className={`target-row${isSelected ? ' selected' : ''}`}
+      style={{ marginBottom: '4px', cursor: 'pointer' }}
+      onClick={() => onSelect(target)}
+    >
+      <span style={{ fontSize: '18px', marginRight: '10px' }}>
+        {target.is_location ? '📍' : raceIcon}
+      </span>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontWeight: 600, color: 'var(--text)' }}>
+          {target.name}{target.is_ai ? ' (AI)' : ''}
+        </div>
+        <div style={{ fontSize: '10px', color: 'var(--text3)' }}>
+          {target.is_location
+            ? 'Discovered Site'
+            : `Lv ${target.level} · ${(target.race || '').replace(/_/g, ' ')}`}
+        </div>
+      </div>
+      <div style={{ textAlign: 'right' }}>
+        <div style={{ fontSize: '12px', color: 'var(--gold)', fontWeight: 600 }}>
+          {target.is_location ? '???' : fmt(target.land)} ac
+        </div>
+        <div style={{ fontSize: '10px', color: 'var(--text3)' }}>#{target.rank || '?'}</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── target list section ──────────────────────────────────────────────────────
+
+function TargetListSection({ targets, selected, onSelect, searchQ, onSearchChange, placeholder }) {
+  return (
+    <div style={{ marginBottom: '16px' }}>
+      <input
+        type="text"
+        className="input"
+        placeholder={placeholder || 'Search kingdoms…'}
+        value={searchQ}
+        onChange={(e) => onSearchChange(e.target.value)}
+        style={{ width: '100%', marginBottom: '8px', padding: '6px 10px', fontSize: '13px' }}
+      />
+      {selected && (
+        <div style={{
+          padding: '8px 10px', marginBottom: '8px', borderRadius: 'var(--radius)',
+          background: 'var(--bg2)', border: '1px solid var(--accent)', fontSize: '13px',
+        }}>
+          <span style={{ color: 'var(--text3)', marginRight: '6px' }}>Target:</span>
+          <span style={{ fontWeight: 700, color: 'var(--text)' }}>{selected.name}</span>
+          <span style={{ color: 'var(--text3)', marginLeft: '8px', fontSize: '11px' }}>
+            {selected.is_location ? '📍 Site' : `${fmt(selected.land)} ac · #${selected.rank || '?'}`}
+          </span>
+          <button
+            className="base-btn"
+            style={{ float: 'right', fontSize: '10px', padding: '2px 6px' }}
+            onClick={() => onSelect(null)}
+          >✕</button>
+        </div>
+      )}
+      <div style={{ maxHeight: '260px', overflowY: 'auto' }}>
+        {targets.length === 0
+          ? (
+            <div style={{ color: 'var(--text3)', fontSize: '13px', padding: '16px', textAlign: 'center' }}>
+              No mapped targets found.{' '}
+              <button className="btn" style={{ fontSize: '11px' }} onClick={() => window.switchTab?.('exploration')}>
+                Go Explore
+              </button>
+            </div>
+          )
+          : targets.map((t) => (
+            <KingdomTargetCard
+              key={t.id}
+              target={t}
+              isSelected={selected && String(selected.id) === String(t.id)}
+              onSelect={onSelect}
+            />
+          ))
+        }
+      </div>
+    </div>
+  );
+}
+
+// ─── main component ───────────────────────────────────────────────────────────
 
 const WarfarePanel = () => {
   const { state } = useGameState();
   const [activeTab, setActiveTab] = useState('attack');
+
+  // target data
+  const [targets, setTargets] = useState([]);
+  const [selectedTarget, setSelectedTarget] = useState(null);
+  const [atkSearchQ, setAtkSearchQ] = useState('');
+  const [wspSearchQ, setWspSearchQ] = useState('');
+  const [wcovSearchQ, setWcovSearchQ] = useState('');
   const [wcovTargetRace, setWcovTargetRace] = useState(null);
+
+  // report data
   const [warLogRows, setWarLogRows] = useState([]);
   const [spyReports, setSpyReports] = useState([]);
   const [allianceIntel, setAllianceIntel] = useState([]);
@@ -21,6 +176,29 @@ const WarfarePanel = () => {
   const [warLogError, setWarLogError] = useState('');
   const [spyError, setSpyError] = useState('');
   const [allianceError, setAllianceError] = useState('');
+
+  // Keep window.selectedTargetW in sync for vanilla interop (wspells, wcovert still use it)
+  useEffect(() => {
+    window.selectedTargetW = selectedTarget;
+  }, [selectedTarget]);
+
+  // Derived: disc kingdoms parsed from state
+  const disc = useMemo(() => parseDisc(state?.discovered_kingdoms), [state?.discovered_kingdoms]);
+
+  // Filtered target lists per tab
+  const filteredAtkTargets = useMemo(
+    () => filterByQuery(buildTargetList(targets, disc, state), atkSearchQ),
+    [targets, disc, state, atkSearchQ],
+  );
+  const filteredWspTargets = useMemo(
+    () => filterByQuery(buildTargetList(targets, disc, state, { prependSelf: true }), wspSearchQ),
+    [targets, disc, state, wspSearchQ],
+  );
+  const filteredWcovTargets = useMemo(() => {
+    const list = buildTargetList(targets, disc, state);
+    const byRace = wcovTargetRace ? list.filter((t) => t.race === wcovTargetRace) : list;
+    return filterByQuery(byRace, wcovSearchQ);
+  }, [targets, disc, state, wcovTargetRace, wcovSearchQ]);
 
   const refreshAttackTargets = useCallback(async () => {
     try {
@@ -45,9 +223,7 @@ const WarfarePanel = () => {
 
       window.rankingsCache = kingdoms;
       window.targets = mappedTargets;
-      filterWarfareTargetsUnified('', 'atk-target-list-w');
-      filterWarfareTargetsUnified('', 'wsp-target-list-w');
-      filterWarfareTargetsUnified('', 'wcov-target-list-w');
+      setTargets(mappedTargets);
     } catch (err) {
       console.error('[WarfarePanel] Failed to refresh attack targets:', err);
     }
@@ -60,6 +236,7 @@ const WarfarePanel = () => {
       const result = await apiCall('/api/kingdom/war-log');
       if (result?.error) throw new Error(result.error);
       const rows = Array.isArray(result) ? result : Array.isArray(result?.rows) ? result.rows : [];
+      window.warLogCache = rows;
       setWarLogRows(rows);
     } catch (err) {
       console.error('[WarfarePanel] Failed to load war log:', err);
@@ -113,7 +290,7 @@ const WarfarePanel = () => {
       window.removeEventListener('wcovTargetRaceChange', handleRaceChange);
       delete window.setWarfareTab;
     };
-  }, [refreshAttackTargets]);
+  }, []);
 
   useEffect(() => {
     if (activeTab === 'attack') {
@@ -123,8 +300,10 @@ const WarfarePanel = () => {
     } else if (activeTab === 'wintel') {
       loadSpyReports();
       loadAllianceIntel();
+    } else if ((activeTab === 'wspells' || activeTab === 'wcovert') && targets.length === 0) {
+      refreshAttackTargets();
     }
-  }, [activeTab, loadAllianceIntel, loadSpyReports, loadWarLog, refreshAttackTargets]);
+  }, [activeTab, loadAllianceIntel, loadSpyReports, loadWarLog, refreshAttackTargets, targets.length]);
 
   const handleTabClick = (tabId) => {
     setActiveTab(tabId);
@@ -133,14 +312,14 @@ const WarfarePanel = () => {
   };
 
   const updateAtkEstimateW = useCallback(() => {
-    const fmt = (value) => {
+    const fmtN = (value) => {
       const n = Number(value || 0);
       return Number.isFinite(n) ? Math.round(n).toLocaleString() : '0';
     };
 
     const setAvail = (id, val) => {
       const node = document.getElementById(id);
-      if (node) node.textContent = `(${fmt(val)})`;
+      if (node) node.textContent = `(${fmtN(val)})`;
     };
 
     setAvail('atk-fighters-avail-w', state?.fighters || 0);
@@ -162,7 +341,7 @@ const WarfarePanel = () => {
     const eng = parseInt(document.getElementById('atk-engineers-w')?.value, 10) || 0;
     if (f + rn + m + wm + ld + cle + eng === 0) return;
 
-    const target = window.selectedTargetW || null;
+    const target = selectedTarget;
     const engLvlArray = state?.troop_levels?.engineers?.level || 1;
     const baseCrew = state?.race === 'human' ? 10 : state?.race === 'dwarf' ? 8 : 12;
     const crewReq = Math.max(1, Math.round(baseCrew * (1 - Math.min(0.5, (engLvlArray - 1) / 100))));
@@ -202,24 +381,28 @@ const WarfarePanel = () => {
     const g = (id) => document.getElementById(id);
 
     if (g('atk-est-power-w')) {
-      g('atk-est-power-w').textContent = fmt(atkPower);
+      g('atk-est-power-w').textContent = fmtN(atkPower);
       g('atk-est-power-w').style.color = winPct >= 50 ? 'var(--green)' : 'var(--amber)';
     }
     if (g('atk-est-def-w')) {
-      g('atk-est-def-w').textContent = defPower > 0 ? `~${fmt(defPower)} (est.)` : '—';
+      g('atk-est-def-w').textContent = defPower > 0 ? `~${fmtN(defPower)} (est.)` : '—';
     }
     if (g('atk-est-winpct-w')) {
       g('atk-est-winpct-w').textContent = `${winPct}%`;
       g('atk-est-winpct-w').style.color = winColor;
     }
     if (g('atk-est-land-w')) {
-      g('atk-est-land-w').textContent = land > 0 ? `+${fmt(land)} ac` : '—';
+      g('atk-est-land-w').textContent = land > 0 ? `+${fmtN(land)} ac` : '—';
     }
     if (g('atk-bully-warn-w')) {
       g('atk-bully-warn-w').style.display = bullyMsg ? 'block' : 'none';
       g('atk-bully-warn-w').textContent = bullyMsg;
     }
-  }, [state]);
+  }, [state, selectedTarget]);
+
+  useEffect(() => {
+    updateAtkEstimateW();
+  }, [updateAtkEstimateW]);
 
   const setMaxValue = (inputId) => {
     const el = document.getElementById(inputId);
@@ -252,13 +435,12 @@ const WarfarePanel = () => {
   };
 
   const launchAttackW = useCallback(async () => {
-    const selectedTarget = window.selectedTargetW || null;
     if (!selectedTarget) {
       toast('Select a target kingdom first', 'error');
       return;
     }
 
-    const fmt = (value) => {
+    const fmtN = (value) => {
       const n = Number(value || 0);
       return Number.isFinite(n) ? Math.round(n).toLocaleString() : '0';
     };
@@ -308,36 +490,36 @@ const WarfarePanel = () => {
     const r = result.report || {};
     const rows = [
       ['Outcome', r.win ? '🏆 Victory' : '❌ Repelled'],
-      ['Land Seized', `+${fmt(r.landTransferred || 0)} acres`],
-      ['Your Power', fmt(r.atkPower)],
-      ['Enemy Power', fmt(r.defPower)],
+      ['Land Seized', `+${fmtN(r.landTransferred || 0)} acres`],
+      ['Your Power', fmtN(r.atkPower)],
+      ['Enemy Power', fmtN(r.defPower)],
     ];
 
-    if (r.ninjaKills > 0) rows.push(['Assassinations (Ninjas)', fmt(r.ninjaKills)]);
-    if (r.flankKills > 0) rows.push(['Flank Action', fmt(r.flankKills)]);
-    if (r.rangerKills > 0) rows.push(['Opening Volley', fmt(r.rangerKills)]);
-    if (r.thiefSabotage > 0) rows.push(['Enemy WM Disabled', fmt(r.thiefSabotage)]);
+    if (r.ninjaKills > 0) rows.push(['Assassinations (Ninjas)', fmtN(r.ninjaKills)]);
+    if (r.flankKills > 0) rows.push(['Flank Action', fmtN(r.flankKills)]);
+    if (r.rangerKills > 0) rows.push(['Opening Volley', fmtN(r.rangerKills)]);
+    if (r.thiefSabotage > 0) rows.push(['Enemy WM Disabled', fmtN(r.thiefSabotage)]);
 
     rows.push(['---', 'YOUR LOSSES']);
-    if (r.atkFightersLost > 0) rows.push(['Fighters Lost', fmt(r.atkFightersLost)]);
-    if (r.atkRangersLost > 0) rows.push(['Rangers Lost', fmt(r.atkRangersLost)]);
-    if (r.atkMagesLost > 0) rows.push(['Mages Lost', fmt(r.atkMagesLost)]);
-    if (r.atkNinjasLost > 0) rows.push(['Ninjas Lost', fmt(r.atkNinjasLost)]);
-    if (r.atkClericsLost > 0) rows.push(['Clerics Lost', fmt(r.atkClericsLost)]);
-    if (r.atkThievesLost > 0) rows.push(['Thieves Lost', fmt(r.atkThievesLost)]);
-    if (r.atkEngineersLost > 0) rows.push(['Engineers Lost', fmt(r.atkEngineersLost)]);
-    if (r.atkWmLost > 0) rows.push(['War Machines Lost', fmt(r.atkWmLost)]);
+    if (r.atkFightersLost > 0) rows.push(['Fighters Lost', fmtN(r.atkFightersLost)]);
+    if (r.atkRangersLost > 0) rows.push(['Rangers Lost', fmtN(r.atkRangersLost)]);
+    if (r.atkMagesLost > 0) rows.push(['Mages Lost', fmtN(r.atkMagesLost)]);
+    if (r.atkNinjasLost > 0) rows.push(['Ninjas Lost', fmtN(r.atkNinjasLost)]);
+    if (r.atkClericsLost > 0) rows.push(['Clerics Lost', fmtN(r.atkClericsLost)]);
+    if (r.atkThievesLost > 0) rows.push(['Thieves Lost', fmtN(r.atkThievesLost)]);
+    if (r.atkEngineersLost > 0) rows.push(['Engineers Lost', fmtN(r.atkEngineersLost)]);
+    if (r.atkWmLost > 0) rows.push(['War Machines Lost', fmtN(r.atkWmLost)]);
 
     rows.push(['---', 'ENEMY LOSSES']);
-    if (r.defFightersLost > 0) rows.push(['Fighters Slain', fmt(r.defFightersLost)]);
-    if (r.defRangersLost > 0) rows.push(['Rangers Slain', fmt(r.defRangersLost)]);
-    if (r.defMagesLost > 0) rows.push(['Mages Slain', fmt(r.defMagesLost)]);
-    if (r.defNinjasLost > 0) rows.push(['Ninjas Slain', fmt(r.defNinjasLost)]);
-    if (r.defClericsLost > 0) rows.push(['Clerics Slain', fmt(r.defClericsLost)]);
-    if (r.defThievesLost > 0) rows.push(['Thieves Slain', fmt(r.defThievesLost)]);
-    if (r.defEngineersLost > 0) rows.push(['Engineers Slain', fmt(r.defEngineersLost)]);
-    if (r.defWmLost > 0) rows.push(['War Machines Slain', fmt(r.defWmLost)]);
-    if (r.wallsDestroyed > 0) rows.push(['Walls Destroyed', fmt(r.wallsDestroyed)]);
+    if (r.defFightersLost > 0) rows.push(['Fighters Slain', fmtN(r.defFightersLost)]);
+    if (r.defRangersLost > 0) rows.push(['Rangers Slain', fmtN(r.defRangersLost)]);
+    if (r.defMagesLost > 0) rows.push(['Mages Slain', fmtN(r.defMagesLost)]);
+    if (r.defNinjasLost > 0) rows.push(['Ninjas Slain', fmtN(r.defNinjasLost)]);
+    if (r.defClericsLost > 0) rows.push(['Clerics Slain', fmtN(r.defClericsLost)]);
+    if (r.defThievesLost > 0) rows.push(['Thieves Slain', fmtN(r.defThievesLost)]);
+    if (r.defEngineersLost > 0) rows.push(['Engineers Slain', fmtN(r.defEngineersLost)]);
+    if (r.defWmLost > 0) rows.push(['War Machines Slain', fmtN(r.defWmLost)]);
+    if (r.wallsDestroyed > 0) rows.push(['Walls Destroyed', fmtN(r.wallsDestroyed)]);
     if (r.bullyMsg) rows.push(['⚠️ Penalty', r.bullyMsg]);
 
     applyGameMutation(result, { reason: 'attack' });
@@ -348,7 +530,7 @@ const WarfarePanel = () => {
       rows,
     });
     refreshAttackTargets();
-  }, [refreshAttackTargets, state]);
+  }, [refreshAttackTargets, state, selectedTarget]);
 
   const castWspell = () => {
     if (window.castWspell) window.castWspell();
@@ -360,21 +542,6 @@ const WarfarePanel = () => {
 
   const updateWspellCalc = () => {
     if (window.updateWspellCalc) window.updateWspellCalc();
-  };
-
-  const handleTargetSearchW = (event) => {
-    const val = event?.target ? event.target.value : event;
-    filterWarfareTargetsUnified(val, 'atk-target-list-w');
-  };
-
-  const handleTargetSearchWsp = (event) => {
-    const val = event?.target ? event.target.value : event;
-    filterWarfareTargetsUnified(val, 'wsp-target-list-w');
-  };
-
-  const handleTargetSearchWco = (event) => {
-    const val = event?.target ? event.target.value : event;
-    filterWarfareTargetsUnified(val, 'wcov-target-list-w');
   };
 
   const fmtDate = (value) => {
@@ -414,8 +581,8 @@ const WarfarePanel = () => {
       return (
         <div style={{ textAlign: 'center', padding: '32px 16px' }}>
           <div style={{ fontSize: '32px', marginBottom: '10px' }}>🕊️</div>
-          <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text2)', marginBottom: '6px' }}>It's been a quiet day.</div>
-          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--red)' }}>BREAK SOME $#@&!</div>
+          <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text2)', marginBottom: '6px' }}>It&apos;s been a quiet day.</div>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--red)' }}>BREAK SOME $#@&amp;!</div>
         </div>
       );
     }
@@ -551,7 +718,20 @@ const WarfarePanel = () => {
         onRefreshAllianceIntel={loadAllianceIntel}
       />
 
+      {/* ── Attack tab ─────────────────────────────────────────────────────── */}
       <div style={{ display: activeTab === 'attack' ? 'block' : 'none' }}>
+        <div className="card" style={{ marginBottom: '12px' }}>
+          <div className="card-title" style={{ marginBottom: '8px' }}>Select Target</div>
+          <TargetListSection
+            targets={filteredAtkTargets}
+            selected={selectedTarget}
+            onSelect={setSelectedTarget}
+            searchQ={atkSearchQ}
+            onSearchChange={setAtkSearchQ}
+            placeholder="Search kingdoms…"
+          />
+        </div>
+
         <div className="card" id="atk-panel-w">
           <div className="card-title" style={{ marginBottom: '12px' }}>Warfare: Army Selection</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '20px' }}>
@@ -627,11 +807,21 @@ const WarfarePanel = () => {
         </div>
       </div>
 
-      {/* TODO: keep spells on the existing shell path for this PR; move them in a later phase. */}
+      {/* ── Spells tab ─────────────────────────────────────────────────────── */}
       <div style={{ display: activeTab === 'wspells' ? 'block' : 'none' }}>
+        <div className="card" style={{ marginBottom: '12px' }}>
+          <div className="card-title" style={{ marginBottom: '8px' }}>Select Target</div>
+          <TargetListSection
+            targets={filteredWspTargets}
+            selected={selectedTarget}
+            onSelect={setSelectedTarget}
+            searchQ={wspSearchQ}
+            onSearchChange={setWspSearchQ}
+            placeholder="Search kingdoms…"
+          />
+        </div>
         <div className="card">
           <div className="card-title">Warfare Spells</div>
-          <div style={{ color: 'var(--text3)', fontSize: '13px' }}>Spell casting remains on the existing shell path for now.</div>
           <div style={{ marginTop: '12px' }}>
             <button className="base-btn" onClick={castWspell}>Prepare Spell Targeting</button>
             <button className="base-btn" style={{ marginLeft: '8px' }} onClick={updateWspellCalc}>Refresh Spell Estimates</button>
@@ -639,11 +829,21 @@ const WarfarePanel = () => {
         </div>
       </div>
 
-      {/* TODO: keep covert on the existing shell path for this PR; move it in a later phase. */}
+      {/* ── Covert tab ─────────────────────────────────────────────────────── */}
       <div style={{ display: activeTab === 'wcovert' ? 'block' : 'none' }}>
+        <div className="card" style={{ marginBottom: '12px' }}>
+          <div className="card-title" style={{ marginBottom: '8px' }}>Select Target</div>
+          <TargetListSection
+            targets={filteredWcovTargets}
+            selected={selectedTarget}
+            onSelect={setSelectedTarget}
+            searchQ={wcovSearchQ}
+            onSearchChange={setWcovSearchQ}
+            placeholder="Search kingdoms…"
+          />
+        </div>
         <div className="card">
           <div className="card-title">Warfare Covert Ops</div>
-          <div style={{ color: 'var(--text3)', fontSize: '13px' }}>Covert targeting still uses the existing shell helpers.</div>
           <div style={{ marginTop: '12px' }}>
             <button className="base-btn" onClick={() => doWcovert('spy')}>Spy</button>
             <button className="base-btn" style={{ marginLeft: '8px' }} onClick={() => doWcovert('loot')}>Loot</button>
