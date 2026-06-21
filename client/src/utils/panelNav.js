@@ -3,6 +3,7 @@ import { setActivePanelGlobal } from '../hooks/useActivePanel.js';
 import { repairMojibake } from './repairMojibake.js';
 import { fmt } from './fmt.js';
 import { xpForLevel } from './xp.js';
+import { setWarfareTab as applyWarfareTab } from './warfareTabs.js';
 
 function getCsrfToken() {
   try {
@@ -150,11 +151,7 @@ export function switchTab(tabName) {
   setActivePanels(rawTab, activeTab);
 
   if (warfareSubtab) {
-    window.__pendingWarfareTab = warfareSubtab;
-    if (typeof window.setWarfareTab === 'function') {
-      window.setWarfareTab(warfareSubtab);
-      window.__pendingWarfareTab = null;
-    }
+    applyWarfareTab(warfareSubtab);
   }
 
   if (window.location.hash !== `#${rawTab}`) {
