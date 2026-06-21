@@ -390,9 +390,9 @@ const MarketPanel = () => {
         </div>
       </div>
 
-      <div id="market-list" className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]">
+      <div id="market-list" className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3">
         {loading && (
-          <div className="col-span-full rounded-2xl border border-white/10 bg-zinc-950/70 p-10 text-center text-[var(--text3)]">
+          <div className="col-span-full rounded-2xl border border-white/10 bg-zinc-950/70 p-10 text-center text-sm text-[var(--text3)]">
             Loading market data...
           </div>
         )}
@@ -403,11 +403,11 @@ const MarketPanel = () => {
               <div className="flex items-center gap-2">
                 <span className="text-[24px]">{icons[p.id] || '📦'}</span>
                 <div>
-                  <div className="text-[16px] font-bold text-[var(--text)]">
+                  <div className="text-base font-bold text-[var(--text)]">
                     {formatLabel(p.id)}
                   </div>
-                  <div className="text-[11px] text-[var(--text3)]">
-                    Owned: <span style={{ color: 'var(--text)' }}>{fmt(ownedAmount(p.id))}</span>
+                  <div className="text-xs text-[var(--text3)]">
+                    Owned: <span className="text-[var(--text)]">{fmt(ownedAmount(p.id))}</span>
                   </div>
                 </div>
               </div>
