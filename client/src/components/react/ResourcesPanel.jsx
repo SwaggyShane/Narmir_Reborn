@@ -1,22 +1,23 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { apiCall } from '../../utils/api';
 import { useActivePanel } from '../../hooks/useActivePanel';
 import { useGameState } from '../../hooks/useGameState';
 import { applyGameMutation } from '../../utils/gameMutations.js';
+import { logExpeditionEntry } from '../../utils/expeditionLog.js';
 
 const REFRESH_INTERVAL_MS = 10 * 1000;
 
 const tabs = [
-  { id: 'stockpiles', label: '📦 Stockpiles' },
-  { id: 'buildings', label: '🏭 Buildings' },
-  { id: 'expeditions', label: '🧭 Expeditions' },
-  { id: 'inventory', label: '🎒 Inventory' },
+  { id: 'stockpiles', label: 'ðŸ“¦ Stockpiles' },
+  { id: 'buildings', label: 'ðŸ­ Buildings' },
+  { id: 'expeditions', label: 'ðŸ§­ Expeditions' },
+  { id: 'inventory', label: 'ðŸŽ’ Inventory' },
 ];
 
 const resourceTypes = [
-  { key: 'wood',  label: 'Wood',  icon: '🪵' },
-  { key: 'stone', label: 'Stone', icon: '🪨' },
-  { key: 'iron',  label: 'Iron',  icon: '🔗' },
+  { key: 'wood',  label: 'Wood',  icon: 'ðŸªµ' },
+  { key: 'stone', label: 'Stone', icon: 'ðŸª¨' },
+  { key: 'iron',  label: 'Iron',  icon: 'ðŸ”—' },
 ];
 
 const BUILDING_CONFIG = {
@@ -71,7 +72,7 @@ function formatDuration(secs) {
   if (h > 0) return `${h}h ${m}m`;
   return `${m}m`;
 }
-function typeIcon(type) { return { wood: '🪵', stone: '🪨', iron: '🔗', gold: '💰' }[type] || '❓'; }
+function typeIcon(type) { return { wood: 'ðŸªµ', stone: 'ðŸª¨', iron: 'ðŸ”—', gold: 'ðŸ’°' }[type] || 'â“'; }
 function formatLoot(loot) {
   if (!loot || typeof loot !== 'object') return '';
   return Object.entries(loot).filter(([k]) => !k.startsWith('_')).map(([r, q]) => `${q} ${r}`).join(', ');
@@ -81,12 +82,12 @@ function statusColor(status) {
 }
 function itemIcon(id) {
   const icons = {
-    earth_fragment: '🌍', water_fragment: '💧', fire_fragment: '🔥', air_fragment: '💨',
-    ancient_oak_shard: '🌳', petrified_heartwood: '🪵', ironbark_splinter: '🌲',
-    crystalline_core: '💎', primordial_geode: '🪨', fossil_remnant: '🦕',
-    meteoric_shard: '☄️', deep_vein_ore: '⛏️', lodestone_fragment: '🧲',
+    earth_fragment: 'ðŸŒ', water_fragment: 'ðŸ’§', fire_fragment: 'ðŸ”¥', air_fragment: 'ðŸ’¨',
+    ancient_oak_shard: 'ðŸŒ³', petrified_heartwood: 'ðŸªµ', ironbark_splinter: 'ðŸŒ²',
+    crystalline_core: 'ðŸ’Ž', primordial_geode: 'ðŸª¨', fossil_remnant: 'ðŸ¦•',
+    meteoric_shard: 'â˜„ï¸', deep_vein_ore: 'â›ï¸', lodestone_fragment: 'ðŸ§²',
   };
-  return icons[id] || '📦';
+  return icons[id] || 'ðŸ“¦';
 }
 
 const ResourcesPanel = () => {
@@ -275,7 +276,7 @@ const ResourcesPanel = () => {
       const cost = BUILDING_COST[bld.key];
       const engineers = alloc[bld.key] || 0;
       const pct = Math.min(100, Math.round(progress / cost * 100));
-      const remaining = engineers > 0 ? Math.ceil((cost - progress) / engineers) : '∞';
+      const remaining = engineers > 0 ? Math.ceil((cost - progress) / engineers) : 'âˆž';
       return { key: bld.key, label: bld.label, stage: bld.stage, progress, cost, engineers, pct, remaining };
     }
     return null;
@@ -309,7 +310,7 @@ const ResourcesPanel = () => {
 
   const turnsToComplete = (bld) => {
     const eng = getAvailableEngineers();
-    if (eng <= 0) return '∞';
+    if (eng <= 0) return 'âˆž';
     return Math.ceil(BUILDING_COST[bld.key] / eng);
   };
   const isBuildingActive = (key) => (getParsedStateProp('build_queue')[key] || 0) > 0;
@@ -325,9 +326,9 @@ const ResourcesPanel = () => {
     const remaining = cost - progress;
     if (remaining <= 0) return 0;
     const eng = getBuildEngineers(key);
-    if (!eng || eng <= 0) return '∞';
+    if (!eng || eng <= 0) return 'âˆž';
     const result = Math.ceil(remaining / eng);
-    return isFinite(result) && result > 0 ? result : '∞';
+    return isFinite(result) && result > 0 ? result : 'âˆž';
   };
 
   const scoutNode = async () => {
@@ -355,12 +356,10 @@ const ResourcesPanel = () => {
       });
       if (data.ok) {
         await loadExpeditions();
-        if (window.logExpeditionEntry) {
-          const typeEmoji = { wood: '🪵', stone: '🪨', iron: '🔗' };
-          const icon = typeEmoji[node.type] || '🧭';
-          const foodStr = data.foodTaken > 0 ? ` · 🍖 ${data.foodTaken.toLocaleString()} food taken` : '';
-          window.logExpeditionEntry(icon, `Resource expedition departed to ${node.name}`, `${pop.toLocaleString()} civilians · ${node.type}${foodStr}`);
-        }
+        const typeEmoji = { wood: 'WOOD', stone: 'STONE', iron: 'IRON' };
+        const icon = typeEmoji[node.type] || 'EXPEDITION';
+        const foodStr = data.foodTaken > 0 ? ` · food ${data.foodTaken.toLocaleString()} taken` : '';
+        logExpeditionEntry(icon, `Resource expedition departed to ${node.name}`, `${pop.toLocaleString()} civilians · ${node.type}${foodStr}`);
         await refreshKingdom();
       } else { if(toast) toast('Failed: ' + (data.error || 'Unknown'), 'error'); }
     } catch(e) { if(toast) toast('Error: ' + e.message, 'error'); }
@@ -474,7 +473,7 @@ const ResourcesPanel = () => {
             Manage stockpiles, buildings, expeditions, and inventory in one place.
           </div>
         </div>
-        <button className="base-btn rounded-full px-3 py-1.5 text-[11px] font-semibold" onClick={handleRefresh}>↻ Refresh</button>
+        <button className="base-btn rounded-full px-3 py-1.5 text-[11px] font-semibold" onClick={handleRefresh}>â†» Refresh</button>
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2 border-b border-white/10 pb-1.5">
@@ -524,7 +523,7 @@ const ResourcesPanel = () => {
                     <div style={{ fontSize: '11px', color: 'var(--text3)' }}>
                       <div title={titleStr}>Yield: <span style={{ color: 'var(--text)' }} id={`res-yield-${res.key}`}>{strYield}</span></div>
                       <div>Workers needed: <span style={{ color: 'var(--text)' }} id={`res-workers-${res.key}`}>{fmt(totalWorkers)}</span></div>
-                      <div>Status: <span id={`res-status-${res.key}`} style={{ color: freePop >= totalWorkers ? 'var(--green)' : 'var(--red)' }}>{totalWorkers === 0 ? '—' : freePop >= totalWorkers ? 'Operating' : 'Understaffed'}</span></div>
+                      <div>Status: <span id={`res-status-${res.key}`} style={{ color: freePop >= totalWorkers ? 'var(--green)' : 'var(--red)' }}>{totalWorkers === 0 ? '-' : freePop >= totalWorkers ? 'Operating' : 'Understaffed'}</span></div>
                     </div>
                   </div>
                 );
@@ -547,7 +546,7 @@ const ResourcesPanel = () => {
           <div id="buildings-guide-card" className="card" style={{ marginBottom: '12px', background: 'rgba(59, 130, 246, 0.03)', border: '1px solid rgba(59, 130, 246, 0.15)', padding: '12px 14px' }}>
             <div id="guide-header-toggle" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' }} onClick={() => setShowGuide(!showGuide)}>
               <div style={{ fontWeight: 600, fontSize: '13px', color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                💡 <span>Guide: How to build buildings &amp; produce resources</span>
+                ðŸ’¡ <span>Guide: How to build buildings &amp; produce resources</span>
               </div>
               <span style={{ fontSize: '11px', color: 'var(--text3)' }}>{showGuide ? 'Collapse [\u2212]' : 'Expand Guide [+]'}</span>
             </div>
@@ -584,7 +583,7 @@ const ResourcesPanel = () => {
           {resourceTypes.map(rtype => activeBldTab === rtype.key && (
             <div key={rtype.key}>
               <div className="card" style={{ marginBottom: '10px', padding: '10px 14px', fontSize: '12px', color: 'var(--text3)' }}>
-                🔧 Available engineers: <span style={{ color: 'var(--green)', fontWeight: 600 }}>{fmt(getAvailableEngineers())}</span>
+                ðŸ”§ Available engineers: <span style={{ color: 'var(--green)', fontWeight: 600 }}>{fmt(getAvailableEngineers())}</span>
                 &nbsp;&middot;&nbsp; Total: {fmt(kingdom.engineers || 0)}
                 &nbsp;&middot;&nbsp; Engaged: {fmt((kingdom.engineers || 0) - getAvailableEngineers())}
               </div>
@@ -624,7 +623,7 @@ const ResourcesPanel = () => {
                           </div>
                         )}
                         <div id={`bracket-lock-${rtype.key}-${bld.stage}`} style={{ fontSize: '11px', color: 'var(--red)', marginTop: '3px', display: 'none' }}>
-                          Bracket locked — advance a level bracket to build more.
+                          Bracket locked - advance a level bracket to build more.
                         </div>
                         <div style={{ marginTop: '6px', fontSize: '11px', color: 'var(--text3)' }}>
                           Cost:
@@ -703,7 +702,7 @@ const ResourcesPanel = () => {
             <div style={{ fontSize: '12px', color: 'var(--text3)', margin: '6px 0 10px' }}>Pay 500 gold to discover a new resource node.</div>
             <button onClick={scoutNode} disabled={scouting}
               style={{ padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600, background: 'var(--green)', color: '#000' }}>
-              {scouting ? 'Scouting...' : '🔭 Scout Node (500 gold)'}
+              {scouting ? 'Scouting...' : 'ðŸ”­ Scout Node (500 gold)'}
             </button>
             {scoutMsg && (
               <div style={{ marginTop: '8px', fontSize: '12px', color: scoutMsg.startsWith('Error') ? 'var(--red)' : 'var(--green)' }}>{scoutMsg}</div>
@@ -722,7 +721,7 @@ const ResourcesPanel = () => {
                   <div>
                     <div style={{ fontWeight: 600, fontSize: '13px' }}>{node.name}</div>
                     <div style={{ fontSize: '11px', color: 'var(--text3)', marginTop: '2px' }}>
-                      {typeIcon(node.type)} {node.type} &nbsp;&middot;&nbsp; Richness: <span style={{ color: 'var(--gold)' }}>{'★'.repeat(node.richness)}</span>
+                      {typeIcon(node.type)} {node.type} &nbsp;&middot;&nbsp; Richness: <span style={{ color: 'var(--gold)' }}>{'*'.repeat(node.richness)}</span>
                       &nbsp;&middot;&nbsp; Distance: {formatDuration(node.distance)}
                     </div>
                   </div>
@@ -754,7 +753,7 @@ const ResourcesPanel = () => {
                     <div style={{ fontWeight: 600, fontSize: '13px' }}>{exp.node_name} <span style={{ fontSize: '11px', color: 'var(--text3)' }}>({typeIcon(exp.node_type)} {exp.node_type})</span></div>
                     <div style={{ fontSize: '11px', color: 'var(--text3)', marginTop: '2px' }}>
                       Pop: {fmt(exp.population_sent)} &middot; Status: <span style={statusColor(exp.status)}>{exp.status}</span>
-                      {exp.food_taken > 0 && <span> &middot; 🍖 {fmt(exp.food_taken)} food taken</span>}
+                      {exp.food_taken > 0 && <span> &middot; ðŸ– {fmt(exp.food_taken)} food taken</span>}
                     </div>
                     {exp.loot && Object.keys(exp.loot).filter(k => !k.startsWith('_')).length > 0 && (
                       <div style={{ fontSize: '11px', color: 'var(--green)', marginTop: '2px' }}>
@@ -781,7 +780,7 @@ const ResourcesPanel = () => {
               {visibleExps.map(vExp => (
                 <div key={vExp.id} style={{ marginTop: '8px', padding: '8px', background: 'var(--bg2)', borderRadius: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                   <div style={{ fontSize: '12px' }}>
-                    <span style={{ color: 'var(--text3)' }}>{vExp.kingdom_name}</span> — {typeIcon(vExp.node_type)} &middot; <span style={statusColor(vExp.status)}>{vExp.status}</span> &middot; Pop: {fmt(vExp.population_sent)}
+                    <span style={{ color: 'var(--text3)' }}>{vExp.kingdom_name}</span> - {typeIcon(vExp.node_type)} &middot; <span style={statusColor(vExp.status)}>{vExp.status}</span> &middot; Pop: {fmt(vExp.population_sent)}
                   </div>
                   <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                     <input type="number" min="1" placeholder="Fighters" value={interceptFighters[vExp.id] || ''} onChange={(e) => setInterceptFighters(p => ({...p, [vExp.id]: parseInt(e.target.value)}))}
@@ -818,3 +817,4 @@ const ResourcesPanel = () => {
 };
 
 export default ResourcesPanel;
+
