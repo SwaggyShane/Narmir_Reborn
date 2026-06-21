@@ -2,21 +2,302 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { apiCall } from '../../utils/api';
 import { useGameState } from '../../hooks/useGameState';
 import { applyGameMutation } from '../../utils/gameMutations.js';
+import { syncUI } from '../../utils/shellBridge.js';
+import { gameStateManager } from '../../GameStateManager.js';
+import { fmt } from '../../utils/fmt.js';
 import { fmtShort } from '../../utils/numberFormat.js';
+import { toast } from '../../utils/toast.js';
+
+function getState() {
+  return window.state || gameStateManager.getState();
+}
+
+function escapeHtmlValue(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  })[ch]);
+}
+
+function callIfAvailable(name, ...args) {
+  const fn = typeof window !== 'undefined' ? window[name] : null;
+  if (typeof fn === 'function') {
+    return fn(...args);
+  }
+  return undefined;
+}
+
+export async function loadEconomy() {
+  const state = getState();
+  const data = await apiCall('/api/kingdom/economy/overview');
+
+  if (data.error) return toast(data.error, 'error');
+
+  console.log('loadEconomy data:', data);
+
+  window.econData = data;
+
+  const el = (id) => document.getElementById(id);
+
+  if (el('econ-farms')) el('econ-farms').textContent = String(state.bld_farms || 0);
+  if (el('econ-worked-farms')) el('econ-worked-farms').textContent = fmt(data.workedFarms || 0);
+  if (el('econ-production')) el('econ-production').textContent = '+' + fmt(data.farmProduction || 0);
+  if (el('econ-consumption')) el('econ-consumption').textContent = '-' + fmt(data.foodConsumption || 0);
+
+  const bal = (data.farmProduction || 0) - (data.foodConsumption || 0);
+  if (el('econ-balance')) {
+    el('econ-balance').textContent = (bal >= 0 ? '+' : '') + fmt(bal);
+    el('econ-balance').style.color = bal >= 0 ? 'var(--green)' : 'var(--red)';
+  }
+
+  if (el('econ-shortage')) el('econ-shortage').textContent = data.food_shortage_turns || 0;
+
+  const wpf = (window.FARM_WORKERS_PER || {})[state.race] || 10;
+  if (el('econ-workers-per-farm')) el('econ-workers-per-farm').textContent = wpf;
+
+  if (el('gran-food-stored')) el('gran-food-stored').textContent = fmt(state.food || 0) + ' bushels';
+  if (el('gran-max-storage')) el('gran-max-storage').textContent = fmt(data.maxFoodStorage || 0) + ' bushels';
+  if (el('gran-spoilage')) {
+    const pct = ((data.foodSpoilageRate || 0) * 100).toFixed(1);
+    el('gran-spoilage').textContent = fmt(data.foodSpoilageAmount || 0) + ' (' + pct + '%)';
+  }
+  if (el('gran-degrade-time')) {
+    const dt = data.foodDegradeTurns;
+    el('gran-degrade-time').textContent = dt === Infinity || dt > 1000 ? 'Stable / Growing' : dt + ' turns';
+    el('gran-degrade-time').style.color = dt === Infinity || dt > 100
+      ? 'var(--green)'
+      : dt > 20
+        ? 'var(--accent1)'
+        : 'var(--red)';
+  }
+
+  if (el('econ-markets')) el('econ-markets').textContent = fmt(state.bld_markets || 0);
+  if (el('econ-market-income')) el('econ-market-income').textContent = fmt(data.marketIncome || 0) + ' GC';
+  if (el('econ-trade-routes')) el('econ-trade-routes').textContent = fmt(data.activeTradeRouteCount || 0);
+
+  const tradeLocked = !(data.market_upgrades || {}).trading_post;
+  if (el('econ-trade-unlocked')) {
+    el('econ-trade-unlocked').textContent = tradeLocked ? 'No' : 'Yes';
+    el('econ-trade-unlocked').style.color = tradeLocked ? 'var(--red)' : 'var(--green)';
+  }
+  if (el('trade-locked-msg')) el('trade-locked-msg').style.display = tradeLocked ? 'block' : 'none';
+  if (el('trade-panel')) el('trade-panel').style.display = tradeLocked ? 'none' : 'block';
+
+  if (el('econ-taverns')) el('econ-taverns').textContent = fmt(state.bld_taverns || 0);
+  if (el('econ-entertainment')) el('econ-entertainment').textContent = '+' + fmt(data.tavernBonus || 0) + '/turn';
+
+  callIfAvailable('__renderUpgradesImpl', 'farm', window.FARM_UPGRADES, data.farm_upgrades || {}, 'farm-upgrade-list');
+  callIfAvailable('__renderUpgradesImpl', 'granary', window.GRANARY_UPGRADES, data.granary_upgrades || {}, 'granary-page-upgrade-list');
+  callIfAvailable('__renderUpgradesImpl', 'market', window.MARKET_UPGRADES, data.market_upgrades || {}, 'market-upgrade-list');
+  callIfAvailable('__renderUpgradesImpl', 'tavern', window.TAVERN_UPGRADES, data.tavern_upgrades || {}, 'tavern-upgrade-list');
+
+  callIfAvailable('__renderCommodityMarketImpl', data.market_upgrades || {});
+  callIfAvailable('__renderActiveMercsImpl', data.mercenaries || []);
+  callIfAvailable('__populateTradeTargetsImpl');
+}
+
+export function renderUpgrades(category, defs, owned, containerId) {
+  const el = document.getElementById(containerId);
+  if (!el) {
+    console.warn('renderUpgrades: Container not found: ' + containerId);
+    return;
+  }
+
+  if (!defs || typeof defs !== 'object') {
+    console.error('renderUpgrades: Invalid defs for ' + category);
+    el.innerHTML = '<div style="color:var(--red);font-size:12px">Error loading upgrade data</div>';
+    return;
+  }
+
+  console.log('Rendering upgrades for ' + category, { defs, owned });
+
+  const state = getState();
+  const entries = Object.entries(defs);
+  if (entries.length === 0) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:8px 0">No upgrades available in this category.</div>';
+    return;
+  }
+
+  el.innerHTML = entries
+    .map((e) => {
+      const key = e[0];
+      const def = e[1];
+      const have = !!owned[key];
+      const hasReq = !def.requires || !!owned[def.requires];
+      const raceOk = !def.raceOnly || state.race === def.raceOnly;
+      const canBuy =
+        !have && hasReq && raceOk &&
+        (state.gold || 0) >= (def.cost || 0) &&
+        (state.wood || 0) >= (def.costWood || 0) &&
+        (state.stone || 0) >= (def.costStone || 0) &&
+        (state.iron || 0) >= (def.costIron || 0);
+
+      const statusBadge = have
+        ? '<span style="color:var(--green);font-size:11px">✅ Owned</span>'
+        : !hasReq
+          ? '<span style="color:var(--text3);font-size:11px">🔒 Need ' + String(def.requires || '').replace(/_/g, ' ') + '</span>'
+          : !raceOk
+            ? '<span style="color:var(--text3);font-size:11px">🔒 Race locked</span>'
+            : '';
+
+      let costStr = fmt(def.cost) + ' GC';
+      const extraCosts = [];
+      if (def.costWood > 0) extraCosts.push(fmt(def.costWood) + ' wood');
+      if (def.costStone > 0) extraCosts.push(fmt(def.costStone) + ' stone');
+      if (def.costIron > 0) extraCosts.push(fmt(def.costIron) + ' iron');
+      if (extraCosts.length > 0) costStr += ' + ' + extraCosts.join(', ');
+
+      return (
+        '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)">' +
+        '<div style="flex:1"><div style="font-size:13px;color:var(--text);font-weight:600">' +
+        def.name +
+        '</div>' +
+        '<div style="font-size:11px;color:var(--text3)">' +
+        def.desc +
+        ' · ' +
+        costStr +
+        '</div></div>' +
+        statusBadge +
+        (!have && hasReq && raceOk
+          ? '<button class="btn btn-gold" style="font-size:11px;padding:3px 10px;' +
+            (!canBuy ? 'opacity:.5' : '') +
+            `" onclick="buyUpgrade('${category}','${key}')" ` +
+            (!canBuy ? 'disabled' : '') +
+            '>Buy</button>'
+          : '') +
+        '</div>'
+      );
+    })
+    .join('');
+}
+
+export async function buyUpgrade(category, key) {
+  const endpoint = category === 'mausoleum'
+    ? '/api/kingdom/buy-mausoleum-upgrade'
+    : '/api/kingdom/economy/upgrade';
+
+  const result = await apiCall('POST', endpoint, {
+    category,
+    upgradeKey: key,
+  });
+
+  if (result.error) return toast(result.error, 'error');
+
+  window.playGameSound?.('upgrade_purchased');
+
+  if (result.updates) {
+    applyGameMutation(result, { reason: 'economy-upgrade' });
+  }
+
+  syncUI();
+
+  toast('Upgrade purchased! Refresh the panel to see the next upgrade.', 'success');
+
+  const btn = document.querySelector(
+    `[onclick="buyUpgrade('${category}','${key}')"]`,
+  );
+
+  if (btn) {
+    btn.textContent = '✅ Purchased';
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+  }
+}
+
+export function renderCommodityMarket(mktUpgrades) {
+  const el = document.getElementById('commodity-list');
+  if (!el) return;
+
+  const state = getState();
+  const race = state.race || 'human';
+  const racDisc = window.COMMODITY_RACE_DISCOUNT?.[race] || {};
+  const items = [
+    'food',
+    'weapons',
+    'armor',
+    'mana',
+    'maps',
+    'blueprints',
+    'war_machines',
+    'ballistae',
+    'land',
+  ];
+
+  el.innerHTML =
+    '<div style="display:grid;grid-template-columns:1fr 60px 60px;gap:4px;padding:4px 0;border-bottom:1px solid var(--border2)">' +
+    '<span style="font-size:10px;color:var(--text3);text-transform:uppercase">Item</span>' +
+    '<span style="font-size:10px;color:var(--text3);text-transform:uppercase;text-align:right">Base</span>' +
+    '<span style="font-size:10px;color:var(--text3);text-transform:uppercase;text-align:right">Your price</span>' +
+    '</div>' +
+    items
+      .map((item) => {
+        const base = window.COMMODITY_VALUES?.[item] || 1;
+        const disc = racDisc[item] || racDisc._all || 1.0;
+        const yours = Math.max(1, Math.round(base * disc));
+        const diff =
+          yours < base
+            ? '<span style="color:var(--green)">−</span>'
+            : yours > base
+              ? '<span style="color:var(--red)">↑</span>'
+              : '';
+        return (
+          '<div style="display:grid;grid-template-columns:1fr 60px 60px;gap:4px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)">' +
+          '<span style="font-size:13px;color:var(--text)">' +
+          item.charAt(0).toUpperCase() +
+          item.slice(1) +
+          '</span>' +
+          '<span style="font-size:13px;text-align:right;color:var(--text3)">' +
+          base +
+          ' GC</span>' +
+          '<span style="font-size:13px;text-align:right;color:var(--gold);font-weight:600">' +
+          yours +
+          ' GC ' +
+          diff +
+          '</span>' +
+          '</div>'
+        );
+      })
+      .join('');
+}
+
+export function renderActiveMercs(mercs) {
+  const el = document.getElementById('active-mercs-list');
+  if (!el) return;
+  if (!mercs || !mercs.length) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:13px;text-align:center;padding:12px">No mercenaries under contract.</div>';
+    return;
+  }
+
+  const state = getState();
+  el.innerHTML = mercs
+    .map((m) => {
+      const served = (state.turn || 0) - (m.hired_at_turn || 0);
+      const remaining = Math.max(0, m.duration_turns - served);
+      return (
+        '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">' +
+        '<div style="flex:1"><div style="font-size:13px;color:var(--text);font-weight:600">' +
+        m.count +
+        ' ' +
+        escapeHtmlValue(m.tier) +
+        ' ' +
+        escapeHtmlValue(m.unit_type) +
+        '</div>' +
+        '<div style="font-size:11px;color:var(--text3)">Remaining: ' +
+        remaining +
+        ' turns</div></div>' +
+        '</div>'
+      );
+    })
+    .join('');
+}
 
 const EconomyPanel = () => {
   const { state } = useGameState();
   const [activeTab, setActiveTab] = useState('farms');
-
-  const escapeHtml = useCallback((value) => {
-    return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;',
-    })[ch]);
-  }, []);
+  const escapeHtml = escapeHtmlValue;
 
   const handleTabClick = (tabId) => {
     setActiveTab(tabId);
