@@ -3726,7 +3726,7 @@
 
               >
 
-                Ã¢â‚¬ï¿½
+                —
 
               </h1>
 
@@ -3738,7 +3738,7 @@
 
               >
 
-                <span id="kingdom-owner-line">Ã¢â‚¬ï¿½</span> | Turn
+                <span id="kingdom-owner-line">—</span> | Turn
 
                 <span id="turn-num" style="color: var(--text); font-weight: 600"
 
@@ -3779,6 +3779,22 @@
                   >Protected</span
 
                 >
+
+              </div>
+
+              <!-- Level & XP line -->
+
+              <div style="margin-top:4px; display:flex; align-items:center; gap:6px; font-size:11px">
+
+                <span style="color:var(--text3)">Level <span id="kh-level" style="color:var(--gold); font-weight:700">1</span></span>
+
+                <div style="flex:1; max-width:120px; height:3px; background:var(--bg4); border-radius:1.5px; overflow:hidden">
+
+                  <div id="kh-xp-bar" style="height:3px; width:0%; background:linear-gradient(90deg, var(--accent1), var(--gold)); border-radius:1.5px; transition:width 0.4s"></div>
+
+                </div>
+
+                <span id="kh-xp-label" style="font-size:9px; color:var(--text3)">0 / 500 XP</span>
 
               </div>
 
@@ -3828,7 +3844,7 @@
 
           <!-- Metrics strip -->
 
-          <div class="metrics grid grid-cols-2 gap-2 md:grid-cols-[repeat(auto-fit,minmax(130px,1fr))] md:gap-3" id="react-resource-strip">
+          <div class="metrics flex flex-nowrap overflow-x-auto gap-2 pb-1 md:grid md:grid-cols-[repeat(auto-fit,minmax(130px,1fr))] md:gap-3 md:pb-0 md:overflow-x-visible" id="react-resource-strip">
 
             <div class="metric" id="metric-gold">
 

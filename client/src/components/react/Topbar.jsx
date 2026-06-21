@@ -127,9 +127,24 @@ const Topbar = () => {
           >
             Take Turn
           </button>
-          <button className="btn" style={{ padding: '6px 10px', fontSize: '12px', marginLeft: '8px', whiteSpace: 'nowrap' }} onClick={handleAccount}>
-            {state?.username ? 'Logout' : 'Sign In'}
-          </button>
+          {!state?.username && (
+            <button
+              className="btn"
+              style={{ padding: '6px 10px', fontSize: '12px', marginLeft: '8px', whiteSpace: 'nowrap' }}
+              onClick={handleAccount}
+            >
+              Sign In
+            </button>
+          )}
+          {state?.username && (
+            <button
+              className="btn hidden md:inline-flex"
+              style={{ padding: '6px 10px', fontSize: '12px', marginLeft: '8px', whiteSpace: 'nowrap' }}
+              onClick={handleAccount}
+            >
+              Logout
+            </button>
+          )}
         </div>
       </div>
     </header>

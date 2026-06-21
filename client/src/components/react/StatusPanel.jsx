@@ -309,10 +309,10 @@ const StatusPanel = () => {
               Fighters
             </span>
             <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-fighters">
-              0
+              {(state?.fighters ?? 0).toLocaleString()}
             </span>
             <span style={{ textAlign: 'center', fontSize: '11px', fontWeight: 600 }} id="s-lv-fighters">
-              --
+              Lv {troopLevels?.fighters?.level || 1}
             </span>
             <span className="badge badge-red" style={{ textAlign: 'center', fontSize: '9px' }}>
               Combat
@@ -333,10 +333,10 @@ const StatusPanel = () => {
               Rangers
             </span>
             <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-rangers">
-              0
+              {(state?.rangers ?? 0).toLocaleString()}
             </span>
             <span style={{ textAlign: 'center', fontSize: '11px', fontWeight: 600 }} id="s-lv-rangers">
-              --
+              Lv {troopLevels?.rangers?.level || 1}
             </span>
             <span className="badge badge-blue" style={{ textAlign: 'center', fontSize: '9px' }}>
               Ranged
@@ -358,10 +358,10 @@ const StatusPanel = () => {
               Clerics
             </span>
             <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-clerics">
-              0
+              {(state?.clerics ?? 0).toLocaleString()}
             </span>
             <span style={{ textAlign: 'center', fontSize: '11px', fontWeight: 600 }} id="s-lv-clerics">
-              --
+              Lv {troopLevels?.clerics?.level || 1}
             </span>
             <span className="badge badge-green" style={{ textAlign: 'center', fontSize: '9px' }}>
               Heal
@@ -383,10 +383,10 @@ const StatusPanel = () => {
               Thralls
             </span>
             <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-thralls">
-              0
+              {(state?.thralls ?? 0).toLocaleString()}
             </span>
             <span style={{ textAlign: 'center', fontSize: '11px', fontWeight: 600 }} id="s-lv-thralls">
-              --
+              Lv {troopLevels?.thralls?.level || 1}
             </span>
             <span className="badge badge-gray" style={{ textAlign: 'center', fontSize: '9px', background: '#444' }}>
               Defense
@@ -407,10 +407,10 @@ const StatusPanel = () => {
               Mages
             </span>
             <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-mages">
-              0
+              {(state?.mages ?? 0).toLocaleString()}
             </span>
             <span style={{ textAlign: 'center', fontSize: '11px', fontWeight: 600 }} id="s-lv-mages">
-              --
+              Lv {troopLevels?.mages?.level || 1}
             </span>
             <span className="badge badge-amber" style={{ textAlign: 'center', fontSize: '9px' }}>
               Magic
@@ -431,10 +431,10 @@ const StatusPanel = () => {
               Thieves
             </span>
             <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-thieves">
-              0
+              {(state?.thieves ?? 0).toLocaleString()}
             </span>
             <span style={{ textAlign: 'center', fontSize: '11px', fontWeight: 600 }} id="s-lv-thieves">
-              --
+              Lv {troopLevels?.thieves?.level || 1}
             </span>
             <span className="badge badge-amber" style={{ textAlign: 'center', fontSize: '9px' }}>
               Covert
@@ -455,10 +455,10 @@ const StatusPanel = () => {
               Ninjas
             </span>
             <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-ninjas">
-              0
+              {(state?.ninjas ?? 0).toLocaleString()}
             </span>
             <span style={{ textAlign: 'center', fontSize: '11px', fontWeight: 600 }} id="s-lv-ninjas">
-              --
+              Lv {troopLevels?.ninjas?.level || 1}
             </span>
             <span className="badge badge-amber" style={{ textAlign: 'center', fontSize: '9px' }}>
               Covert
@@ -479,7 +479,7 @@ const StatusPanel = () => {
               Engineers
             </span>
             <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-engineers">
-              0
+              {(state?.engineers ?? 0).toLocaleString()}
             </span>
             <span style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text3)' }} id="s-lv-engineers">
               Lv {Number(troopLevels.engineers?.level || 1)}
@@ -503,7 +503,7 @@ const StatusPanel = () => {
               Scribes
             </span>
             <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-scribes">
-              0
+              {(state?.scribes ?? 0).toLocaleString()}
             </span>
             <span style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text3)' }} id="s-lv-scribes">
               Lv {Number(troopLevels.scribes?.level || 1)}
@@ -527,7 +527,7 @@ const StatusPanel = () => {
               Researchers
             </span>
             <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-researchers">
-              0
+              {(state?.researchers ?? 0).toLocaleString()}
             </span>
             <span style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text3)' }} id="s-lv-researchers">
               Lv {Number(troopLevels.researchers?.level || 1)}
@@ -549,7 +549,7 @@ const StatusPanel = () => {
           >
             <span style={{ fontSize: '13px', color: 'var(--text)' }}>Warmachines</span>
             <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-war_machines">
-              0
+              {(state?.war_machines ?? 0).toLocaleString()}
             </span>
             <span />
             <span className="badge badge-gold" style={{ textAlign: 'center', fontSize: '9px' }}>
@@ -571,7 +571,7 @@ const StatusPanel = () => {
               Ladders
             </span>
             <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-ladders">
-              0
+              {(state?.ladders ?? 0).toLocaleString()}
             </span>
             <span />
             <span className="badge badge-gold" style={{ textAlign: 'center', fontSize: '9px' }}>
@@ -591,7 +591,7 @@ const StatusPanel = () => {
           >
             <span style={{ fontSize: '13px', color: 'var(--text)' }}>Weapons</span>
             <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-weapons">
-              0
+              {(state?.weapons_stockpile ?? 0).toLocaleString()}
             </span>
             <span />
             <span className="badge badge-gold" style={{ textAlign: 'center', fontSize: '9px' }}>
@@ -602,7 +602,7 @@ const StatusPanel = () => {
           <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr 52px 52px', gap: '4px', alignItems: 'center', padding: '5px 0' }}>
             <span style={{ fontSize: '13px', color: 'var(--text)' }}>Armor</span>
             <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-armor">
-              0
+              {(state?.armor_stockpile ?? 0).toLocaleString()}
             </span>
             <span />
             <span className="badge badge-gold" style={{ textAlign: 'center', fontSize: '9px' }}>
