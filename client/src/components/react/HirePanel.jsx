@@ -81,7 +81,6 @@ const HirePanel = () => {
   const [quantities, setQuantities] = useState(initialQuantities);
 
   const isVampire = state?.race === 'vampire';
-  const fmt = (value) => Number(value || 0).toLocaleString();
   const unitCount = (key) => fmt(state?.[key]);
 
   const hiredUnits = useMemo(
