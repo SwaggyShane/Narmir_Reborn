@@ -16,21 +16,19 @@ outside the slice currently assigned.
 
 ## Slice 0 — Foundation
 
-**Goal:** Replace the `window.*` interop layer with proper React primitives. All other slices
-depend on this landing first.
+**Goal:** Create the new React hook primitives that Slices 1–5 will consume. The existing
+`window.*` interop layer (`shellBridge.js`, `switchTab.js`, `gameMutations.js`) stays alive
+throughout Slices 1–5 so unmigrated action files keep working. Tear-down happens in Slice 6.
 
 **Touches:**
 - `client/src/hooks/useGameState.js` — finish / wire `useGameMetrics`
 - `client/src/hooks/useActivePanel.js` — finish / wire
 - `client/src/hooks/useGameActions.js` — create (takeTurn, quickSearch, castSpell, attack)
 - `client/src/hooks/usePanelState.js` — create
+- `client/src/hooks/useSocket.js` — create from `socketHandlers.js` logic
 - `client/src/GameStateManager.js` — audit; remove any direct DOM calls
-- `client/src/utils/switchTab.js` — migrate logic into `useActivePanel`, then delete
-- `client/src/utils/gameMutations.js` — migrate into `useGameActions`, then delete
-- `client/src/utils/socketHandlers.js` — convert to `useSocket` hook in `hooks/useSocket.js`
-- `client/src/utils/shellBridge.js` — delete once `window.*` assignments are removed
-- `client/src/utils/applyNavLayout.js` — audit; delete if layout is owned by Sidebar/BottomNav JSX
-- `client/src/main.js` — remove `window.*` assignments as each is replaced
+- `client/src/main.js` — wire new hooks alongside existing `window.*` assignments;
+  do NOT remove `window.*` yet (removal is Slice 6)
 
 **Creates:**
 - `client/src/hooks/useGameActions.js`
@@ -38,6 +36,7 @@ depend on this landing first.
 - `client/src/hooks/useSocket.js`
 
 **Does NOT touch:** any panel JSX, any action file, any game/ server code.
+`shellBridge.js`, `switchTab.js`, `gameMutations.js`, `applyNavLayout.js` — leave intact.
 
 ---
 
@@ -135,12 +134,18 @@ depend on this landing first.
 
 ## Slice 6 — Turn + Final Cleanup
 
-**Goal:** Migrate the last action file, remove all remaining `window.*` globals, clean `main.js`.
+**Goal:** Migrate the last action file, then tear down the entire interop layer now that all
+vanilla action files are gone. `window.*` globals are safe to remove only here.
 
 **Touches:**
 - `client/src/actions/takeTurn.js` — delete after migrating into `useGameActions`
-- `client/src/utils/shellBridge.js` — delete (should be empty by now)
-- `client/src/main.js` — final cleanup; only `ReactDOM.createRoot(...).render(<App />)` remains
+- `client/src/utils/shellBridge.js` — delete
+- `client/src/utils/switchTab.js` — delete (logic already in `useActivePanel` from Slice 0)
+- `client/src/utils/gameMutations.js` — delete (logic already in `useGameActions` from Slice 0)
+- `client/src/utils/socketHandlers.js` — delete (logic already in `useSocket` from Slice 0)
+- `client/src/utils/applyNavLayout.js` — delete if layout fully owned by Sidebar/BottomNav JSX
+- `client/src/main.js` — final cleanup; strip all `window.*` assignments;
+  only `ReactDOM.createRoot(...).render(<App />)` remains
 - Any surviving `window.*` references across the client tree
 
 **Does NOT touch:** game/ server code, any panel not already cleaned.
