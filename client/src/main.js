@@ -40,8 +40,8 @@ import KingdomProfileModalReact from "./components/react/KingdomProfileModal.jsx
 
 window.apiCall = apiCall;
 window.applyGameMutation = applyGameMutation;
-window.__applyServerUpdatesImpl = applyServerUpdatesAction;
-window.__bindGeneralSocketHandlersImpl = initSocketHandlers;
+window.applyServerUpdatesAction = applyServerUpdatesAction;
+window.initSocketHandlers = initSocketHandlers;
 
 const reactRoots = new Map();
 

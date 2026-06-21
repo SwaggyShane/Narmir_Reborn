@@ -7314,8 +7314,8 @@
           tryResolveSocket();
         }).then(function (sock) {
           socket = sock;
-          if (typeof window.__bindGeneralSocketHandlersImpl === "function") {
-            window.__bindGeneralSocketHandlersImpl(socket);
+          if (typeof initSocketHandlers === "function") {
+            initSocketHandlers(socket);
           }
           return socket;
         });
@@ -10043,8 +10043,8 @@
 
       // Central helper Ã¢â‚¬ï¿½ remaps server update keys to frontend state keys
       function applyServerUpdates(u) {
-        if (typeof window.__applyServerUpdatesImpl === "function") {
-          return window.__applyServerUpdatesImpl(u, { reason: "server-updates" });
+        if (typeof applyServerUpdatesAction === "function") {
+          return applyServerUpdatesAction(u, { reason: "server-updates" });
         }
       }
 
@@ -20265,7 +20265,6 @@
   </body>
 
 </html>
-
 
 
 
