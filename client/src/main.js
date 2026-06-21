@@ -39,7 +39,6 @@ import AuthModalReact from "./components/react/AuthModal.jsx";
 import KingdomProfileModalReact from "./components/react/KingdomProfileModal.jsx";
 
 window.apiCall = apiCall;
-window.switchTab = switchTab;
 window.applyGameMutation = applyGameMutation;
 window.__applyServerUpdatesImpl = applyServerUpdatesAction;
 window.__bindGeneralSocketHandlersImpl = initSocketHandlers;
