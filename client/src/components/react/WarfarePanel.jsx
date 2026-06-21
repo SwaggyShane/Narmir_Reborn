@@ -19,9 +19,11 @@ function parseDisc(raw) {
 
 // Merge ranked targets with discovered_kingdoms; optionally prepend self for spell tab.
 function buildTargetList(targets, disc, state, { prependSelf = false } = {}) {
-  const mapped = targets.filter((t) => disc[t.id]?.mapped);
+  const sourceTargets = Array.isArray(targets) ? targets : [];
+  const discovered = disc && typeof disc === 'object' ? disc : {};
+  const mapped = sourceTargets.filter((t) => t && discovered?.[t.id]?.mapped);
 
-  Object.entries(disc).forEach(([id, d]) => {
+  Object.entries(discovered).forEach(([id, d]) => {
     if (
       d?.mapped &&
       !mapped.find((f) => String(f.id) === String(id)) &&
