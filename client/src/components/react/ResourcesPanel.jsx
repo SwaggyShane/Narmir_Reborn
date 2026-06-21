@@ -466,21 +466,28 @@ const ResourcesPanel = () => {
   }, [syncFromState]);
 
   return (
-    <div id="resources" className="panel" style={{ display: 'none' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', borderBottom: '2px solid var(--border2)', paddingBottom: 0 }}>
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              className={`admin-tab base-btn ${activeTab === tab.id ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
-              style={{ borderRadius: 0, paddingBottom: activeTab === tab.id ? '10px' : '8px' }}
-            >
-              {tab.label}
-            </button>
-          ))}
+    <div id="resources" className="panel min-h-0 w-full overflow-y-auto px-4 pb-5" style={{ display: 'none' }}>
+      <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-white/10 bg-zinc-950/80 p-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <div className="card-title mb-1">Resources</div>
+          <div className="text-[13px] text-[var(--text3)]">
+            Manage stockpiles, buildings, expeditions, and inventory in one place.
+          </div>
         </div>
-        <button className="base-btn" onClick={handleRefresh} style={{ fontSize: '11px', padding: '4px 10px' }}>↻ Refresh</button>
+        <button className="base-btn rounded-full px-3 py-1.5 text-[11px] font-semibold" onClick={handleRefresh}>↻ Refresh</button>
+      </div>
+
+      <div className="mb-4 flex flex-wrap gap-2 border-b border-white/10 pb-1.5">
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            className={`admin-tab base-btn rounded-t-xl border border-white/10 px-3 py-2 text-[12px] ${activeTab === tab.id ? 'active' : ''}`}
+            onClick={() => setActiveTab(tab.id)}
+            style={{ borderRadius: 0, paddingBottom: activeTab === tab.id ? '10px' : '8px' }}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {activeTab === 'stockpiles' && (
