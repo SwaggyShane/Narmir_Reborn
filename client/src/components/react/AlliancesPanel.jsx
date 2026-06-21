@@ -44,12 +44,12 @@ const AlliancesPanel = () => {
   };
 
   return (
-    <div id="alliances" className="panel panel-immersive" style={{ display: 'none' }}>
+    <div id="alliances" className="panel panel-immersive min-h-0 w-full overflow-y-auto px-4 pb-5" style={{ display: 'none' }}>
       {/* Not in alliance */}
       <div id="ally-none" style={{ display: 'none' }}>
-        <div className="card" style={{ marginBottom: '14px' }}>
+        <div className="card mb-4 rounded-2xl border border-white/10 bg-zinc-950/80">
           <div className="card-title">Found an Alliance</div>
-          <div style={{ fontSize: '13px', color: 'var(--text2)', marginBottom: '12px' }}>
+          <div className="mb-3 text-[13px] text-[var(--text2)]">
             Create a new Alliance and become its leader. Up to 6 members.
           </div>
           <input
@@ -57,27 +57,26 @@ const AlliancesPanel = () => {
             className="input"
             id="new-ally-name"
             placeholder="Alliance name..."
-            style={{ width: '100%', marginBottom: '10px', textAlign: 'left', padding: '7px 10px' }}
+            className="mb-2 w-full px-3 py-2 text-left"
             maxLength="40"
           />
-          <button className="base-btn variant-gold w-full" style={{ background: 'var(--gold)', color: '#000', width: '100%' }} onClick={foundAlliance}>
+          <button className="base-btn variant-gold w-full bg-[var(--gold)] text-black" onClick={foundAlliance}>
             Found Alliance
           </button>
         </div>
-        <div className="card" style={{ marginBottom: '14px' }}>
+        <div className="card mb-4 rounded-2xl border border-white/10 bg-zinc-950/80">
           <div className="card-title">Open Alliances</div>
           <div style={{ fontSize: '13px', color: 'var(--text2)', marginBottom: '10px' }}>
             Ask a leader to invite you, or find Alliances accepting members.
           </div>
           <div
             id="ally-search-list"
-            style={{ maxHeight: '180px', overflowY: 'auto', fontSize: '13px', color: 'var(--text3)' }}
+            className="max-h-[180px] overflow-y-auto text-[13px] text-[var(--text3)]"
           >
             No alliances found.
           </div>
           <button
-            className="base-btn w-full"
-            style={{ width: '100%', marginTop: '10px' }}
+            className="base-btn mt-2.5 w-full"
             onClick={loadAllianceSearch}
           >
             &#8635; Refresh
@@ -88,57 +87,39 @@ const AlliancesPanel = () => {
       {/* In alliance */}
       <div
         id="ally-active"
-        style={{ display: 'none', flexDirection: 'column', height: '100%' }}
+        className="flex h-full flex-col gap-4" style={{ display: 'none' }}
       >
         {/* Alliance Summary Card (Prominent Header) */}
         <div
-          className="card"
-          style={{ marginBottom: '16px', borderLeft: '4px solid var(--accent1)' }}
+          className="card rounded-2xl border border-white/10 border-l-4 border-l-[var(--accent1)] bg-zinc-950/80"
         >
           <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: '12px',
-            }}
+            className="mb-3 flex flex-wrap items-center justify-between gap-3"
           >
             <span
-              style={{
-                fontSize: '12px',
-                fontWeight: 800,
-                color: 'var(--text3)',
-                textTransform: 'uppercase',
-                letterSpacing: '1px',
-              }}
+              className="text-[12px] font-extrabold uppercase tracking-[1px] text-[var(--text3)]"
             >
               🛡️ Alliance Overview
             </span>
             <button
               className="base-btn variant-gold"
-              style={{ fontSize: '11px', padding: '4px 12px', background: 'var(--gold)', color: '#000' }}
+              className="base-btn variant-gold bg-[var(--gold)] px-3 py-1 text-[11px] text-black"
               onClick={loadAllianceInfo}
             >
               ↻ Refresh
             </button>
           </div>
           <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '16px',
-            }}
+            className="flex flex-wrap items-center justify-between gap-4"
           >
             <div>
               <div
-                style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text)', marginBottom: '4px' }}
+                className="mb-1 text-[22px] font-extrabold text-[var(--text)]"
                 id="ally-name"
               >
                 —
               </div>
-              <div style={{ display: 'flex', gap: '12px', fontSize: '13px', color: 'var(--text3)' }}>
+              <div className="flex gap-3 text-[13px] text-[var(--text3)]">
                 <span>
                   👥 <strong style={{ color: 'var(--text2)' }} id="ally-member-count">0</strong> members
                 </span>
@@ -149,7 +130,7 @@ const AlliancesPanel = () => {
             </div>
             <button
               className="base-btn variant-red"
-              style={{ fontSize: '12px', background: 'var(--red)' }}
+              className="base-btn variant-red bg-[var(--red)] text-[12px]"
               onClick={leaveAlliance}
             >
               Leave Alliance
@@ -160,51 +141,47 @@ const AlliancesPanel = () => {
         {/* Tabs Content Container */}
         <div
           className="card"
-          style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}
+          className="card flex min-h-0 flex-1 flex-col overflow-hidden p-0 rounded-2xl border border-white/10 bg-zinc-950/80"
         >
-          <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--border)', background: 'var(--bg3)', flexShrink: 0 }}>
+          <div className="flex shrink-0 gap-0 border-b border-[var(--border)] bg-[var(--bg3)]">
             <button
-              className={`base-btn admin-tab ${activeTab === 'members' ? 'active' : ''}`}
+              className={`base-btn admin-tab flex-1 rounded-none ${activeTab === 'members' ? 'active' : ''}`}
               onClick={() => handleTabClick('members')}
-              style={{ flex: 1, borderRadius: 0 }}
             >
               📋 Members
             </button>
             <button
-              className={`base-btn admin-tab ${activeTab === 'vault' ? 'active' : ''}`}
+              className={`base-btn admin-tab flex-1 rounded-none ${activeTab === 'vault' ? 'active' : ''}`}
               onClick={() => handleTabClick('vault')}
-              style={{ flex: 1, borderRadius: 0 }}
             >
               🏦 Vault
             </button>
             <button
-              className={`base-btn admin-tab ${activeTab === 'board' ? 'active' : ''}`}
+              className={`base-btn admin-tab flex-1 rounded-none ${activeTab === 'board' ? 'active' : ''}`}
               onClick={() => handleTabClick('board')}
-              style={{ flex: 1, borderRadius: 0 }}
             >
               💬 Chat
             </button>
             <button
-              className={`base-btn admin-tab ${activeTab === 'pledge' ? 'active' : ''}`}
+              className={`base-btn admin-tab flex-1 rounded-none ${activeTab === 'pledge' ? 'active' : ''}`}
               onClick={() => handleTabClick('pledge')}
-              style={{ flex: 1, borderRadius: 0 }}
             >
               🛡️ Pledge
             </button>
             <button
-              className={`base-btn admin-tab ${activeTab === 'manage' ? 'active' : ''}`}
+              className={`base-btn admin-tab flex-1 rounded-none ${activeTab === 'manage' ? 'active' : ''}`}
               onClick={() => handleTabClick('manage')}
               id="ally-manage-tab"
-              style={{ display: 'none', flex: 1, borderRadius: 0 }}
+              style={{ display: 'none' }}
             >
               ⚙️ Manage
             </button>
           </div>
 
-          <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          <div className="flex min-h-0 flex-1 flex-col gap-4 p-4">
             {/* MEMBERS TAB */}
             <div style={{ display: activeTab === 'members' ? 'block' : 'none' }} className="ally-tab-content">
-              <div className="card-title" style={{ marginBottom: '16px' }}>
+              <div className="card-title" className="mb-4">
                 Alliance Members List
               </div>
               <div id="ally-list"></div>
@@ -212,23 +189,23 @@ const AlliancesPanel = () => {
 
             {/* VAULT TAB */}
             <div style={{ display: activeTab === 'vault' ? 'block' : 'none' }} className="ally-tab-content">
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
-                <div style={{ flex: '1 1 300px', minWidth: 0 }}>
-                  <div className="card-title" style={{ marginBottom: '8px' }}>
+              <div className="flex flex-wrap gap-4">
+                <div className="min-w-0 flex-[1_1_300px]">
+                  <div className="card-title" className="mb-2">
                     🏦 Alliance Vault
                   </div>
-                  <div style={{ fontSize: '13px', color: 'var(--text2)', marginBottom: '12px' }}>
+                  <div className="mb-3 text-[13px] text-[var(--text2)]">
                     Fund massive alliance projects collectively. All members benefit.
                   </div>
-                  <div style={{ background: 'var(--bg2)', padding: '12px', borderRadius: '8px', marginBottom: '12px', border: '1px solid var(--border)' }}>
-                    <div style={{ fontSize: '12px', color: 'var(--text3)', textTransform: 'uppercase' }}>
+                  <div className="mb-3 rounded-xl border border-white/10 bg-[var(--bg2)] p-3">
+                    <div className="text-[12px] uppercase text-[var(--text3)]">
                       Vault Balance
                     </div>
-                    <div style={{ fontSize: '24px', color: 'var(--gold)', fontWeight: 'bold' }}>
+                    <div className="text-[24px] font-bold text-[var(--gold)]">
                       <span id="ally-vault-gold">0</span> GC
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                  <div className="flex gap-2">
                     <input
                       type="number"
                       className="input"
@@ -236,19 +213,19 @@ const AlliancesPanel = () => {
                       placeholder="Gold amount..."
                       style={{ flex: 1, minWidth: 0 }}
                     />
-                    <button className="base-btn variant-gold" style={{ flexShrink: 0, background: 'var(--gold)', color: '#000' }} onClick={allianceDeposit}>
+                    <button className="base-btn variant-gold" className="shrink-0 bg-[var(--gold)] text-black" onClick={allianceDeposit}>
                       Deposit
                     </button>
                   </div>
-                  <div style={{ marginTop: '16px', maxHeight: '200px', overflowY: 'auto', fontSize: '12px' }} id="ally-vault-log">
+                  <div className="mt-4 max-h-[200px] overflow-y-auto text-[12px]" id="ally-vault-log">
                     {/* Vault log renders here */}
                   </div>
                 </div>
-                <div style={{ flex: '1 1 300px', minWidth: 0 }}>
-                  <div className="card-title" style={{ marginBottom: '8px' }}>
+                <div className="min-w-0 flex-[1_1_300px]">
+                  <div className="card-title" className="mb-2">
                     🏗️ Active Projects
                   </div>
-                  <div id="ally-projects-list" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div id="ally-projects-list" className="flex flex-col gap-2">
                     {/* Projects render here */}
                   </div>
                 </div>
@@ -261,7 +238,7 @@ const AlliancesPanel = () => {
               className="ally-tab-content"
               style={{ display: activeTab === 'board' ? 'flex' : 'none', flexDirection: 'column', flex: 1, minHeight: 0 }}
             >
-              <div className="card-title" style={{ marginBottom: '12px' }}>
+              <div className="card-title" className="mb-3">
                 Alliance Communication
               </div>
               <div
@@ -290,7 +267,7 @@ const AlliancesPanel = () => {
                   className="input"
                   id="ally-msg"
                   placeholder="Message your alliance..."
-                  style={{ flex: 1, width: 'auto' }}
+                  className="w-auto flex-1"
                   maxLength="300"
                   onKeyDown={handleAllyMsgKeydown}
                 />
@@ -305,7 +282,7 @@ const AlliancesPanel = () => {
               <div className="card-title" style={{ marginBottom: '10px' }}>
                 Defense Pledge Settings
               </div>
-              <div style={{ fontSize: '13px', color: 'var(--text2)', marginBottom: '12px', lineHeight: 1.7 }}>
+              <div className="mb-3 text-[13px] leading-7 text-[var(--text2)]">
                 When an ally is attacked, this % of your troops auto-deploy to their defense.
               </div>
               <div
@@ -329,42 +306,42 @@ const AlliancesPanel = () => {
                   step="1"
                   defaultValue="3"
                   onChange={(e) => updatePledge(e.target.value)}
-                  style={{ flex: 1 }}
+                  className="flex-1"
                 />
-                <span id="pledge-val" style={{ color: 'var(--gold)', fontSize: '20px', fontWeight: 800, minWidth: '50px', textAlign: 'center' }}>
+                <span id="pledge-val" className="min-w-[50px] text-center text-[20px] font-extrabold text-[var(--gold)]">
                   3%
                 </span>
               </div>
-              <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '16px' }} id="pledge-desc">
+              <div className="mb-4 text-[12px] text-[var(--text3)]" id="pledge-desc">
                 At 3%: your fighters deploy to defend allies when attacked.
               </div>
-              <button className="base-btn variant-accent w-full" style={{ background: 'var(--accent1)', width: '100%' }} onClick={savePledge}>
+              <button className="base-btn variant-accent w-full" className="w-full bg-[var(--accent1)]" onClick={savePledge}>
                 Save Pledge Changes
               </button>
             </div>
 
             {/* MANAGE TAB */}
             <div id="ally-tab-manage" className="ally-tab-content" style={{ display: activeTab === 'manage' ? 'block' : 'none' }}>
-              <div className="card-title" style={{ marginBottom: '12px' }}>
+              <div className="card-title" className="mb-3">
                 Invite Members
               </div>
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
+              <div className="mb-6 flex gap-2">
                 <input
                   type="text"
                   className="input"
                   id="invite-name"
                   placeholder="Kingdom name..."
-                  style={{ flex: 1, width: 'auto' }}
+                  className="w-auto flex-1"
                 />
-                <button className="base-btn variant-gold" style={{ background: 'var(--gold)', color: '#000' }} onClick={inviteAlly}>
+                <button className="base-btn variant-gold" className="bg-[var(--gold)] text-black" onClick={inviteAlly}>
                   Invite
                 </button>
               </div>
 
-              <div className="card-title" style={{ marginBottom: '12px' }}>
+              <div className="card-title" className="mb-3">
                 Dismiss Member
               </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div className="flex gap-2">
                 <select
                   id="dismiss-sel"
                   className="input"
@@ -380,7 +357,7 @@ const AlliancesPanel = () => {
                 >
                   <option>— no members —</option>
                 </select>
-                <button className="base-btn variant-red" style={{ background: 'var(--red)' }} onClick={dismissAlly}>
+                <button className="base-btn variant-red" className="bg-[var(--red)]" onClick={dismissAlly}>
                   Dismiss
                 </button>
               </div>
