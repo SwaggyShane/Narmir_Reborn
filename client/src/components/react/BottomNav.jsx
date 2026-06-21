@@ -138,69 +138,73 @@ const BottomNav = () => {
         </button>
       </nav>
 
-      {drawerOpen ? (
+      <div
+        className={[
+          'fixed inset-0 z-[80] bg-black/50 backdrop-blur-[1px] transition-opacity duration-200',
+          drawerOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
+        ].join(' ')}
+        onClick={() => setDrawerOpen(false)}
+        role="presentation"
+      >
         <div
-          className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-[1px]"
-          onClick={() => setDrawerOpen(false)}
-          role="presentation"
+          id="bottom-nav-drawer"
+          className={[
+            'absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+72px)] mx-auto max-h-[65vh] max-w-5xl overflow-y-auto rounded-t-[28px] border border-amber-900/40 bg-zinc-950/98 p-3 shadow-[0_-20px_60px_rgba(0,0,0,0.6)] transition-transform duration-200',
+            drawerOpen ? 'translate-y-0' : 'translate-y-full',
+          ].join(' ')}
+          onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-label="More navigation"
         >
-          <div
-            id="bottom-nav-drawer"
-            className="absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+72px)] mx-auto max-h-[65vh] max-w-5xl overflow-y-auto rounded-t-[28px] border border-amber-900/40 bg-zinc-950/98 p-3 shadow-[0_-20px_60px_rgba(0,0,0,0.6)]"
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-label="More navigation"
-          >
-            <div className="mb-3 flex items-center justify-between px-1">
-              <div className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-200/80">More</div>
-              <button
-                type="button"
-                className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-slate-200 transition active:scale-95"
-                onClick={() => setDrawerOpen(false)}
-              >
-                Close
-              </button>
-            </div>
+          <div className="mb-3 flex items-center justify-between px-1">
+            <div className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-200/80">More</div>
+            <button
+              type="button"
+              className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-slate-200 transition active:scale-95"
+              onClick={() => setDrawerOpen(false)}
+            >
+              Close
+            </button>
+          </div>
 
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-              {DRAWER_TABS.map((tab) => (
-                <DrawerChip
-                  key={tab.id}
-                  id={tab.id}
-                  label={tab.label}
-                  icon={tab.icon}
-                  color={tab.color}
-                  active={activePanel === tab.id}
-                  onClick={() => handleSwitchTab(tab.id)}
-                  badgeId={tab.badgeId}
-                />
-              ))}
-            </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+            {DRAWER_TABS.map((tab) => (
+              <DrawerChip
+                key={tab.id}
+                id={tab.id}
+                label={tab.label}
+                icon={tab.icon}
+                color={tab.color}
+                active={activePanel === tab.id}
+                onClick={() => handleSwitchTab(tab.id)}
+                badgeId={tab.badgeId}
+              />
+            ))}
+          </div>
 
-            <div className="mt-3 flex flex-wrap gap-2 border-t border-white/5 pt-3">
-              {isAdmin ? (
-                <a
-                  id="admin-bnav-link"
-                  href="/admin"
-                  className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 text-sm font-semibold text-amber-100 transition active:scale-95"
-                >
-                  👑 Admin
-                </a>
-              ) : null}
-              <button
-                type="button"
-                className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-red-500/30 bg-red-500/10 px-4 text-sm font-semibold text-red-100 transition active:scale-95"
-                onClick={() => {
-                  setDrawerOpen(false);
-                  logout();
-                }}
+          <div className="mt-3 flex flex-wrap gap-2 border-t border-white/5 pt-3">
+            {isAdmin ? (
+              <a
+                id="admin-bnav-link"
+                href="/admin"
+                className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 text-sm font-semibold text-amber-100 transition active:scale-95"
               >
-                🚪 Logout
-              </button>
-            </div>
+                👑 Admin
+              </a>
+            ) : null}
+            <button
+              type="button"
+              className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-red-500/30 bg-red-500/10 px-4 text-sm font-semibold text-red-100 transition active:scale-95"
+              onClick={() => {
+                setDrawerOpen(false);
+                logout();
+              }}
+            >
+              🚪 Logout
+            </button>
           </div>
         </div>
-      ) : null}
+      </div>
     </>
   );
 };
