@@ -155,63 +155,51 @@ const GlobalchatPanel = () => {
   };
 
   return (
-    <div id="globalchat" className="panel panel-immersive" style={{ display: 'none' }}>
-      <div className="chat-container-card chat-layout">
+    <div id="globalchat" className="panel panel-immersive h-full min-h-0 w-full">
+      <div className="chat-container-card chat-layout grid h-full min-h-0 overflow-hidden rounded-2xl border border-white/5 bg-zinc-950/95 shadow-[0_18px_40px_rgba(0,0,0,0.35)] lg:grid-cols-[minmax(0,1fr)_280px]">
         {/* Messages area */}
-        <div className="chat-messages-area">
+        <div className="chat-messages-area flex min-h-0 flex-col">
           <div
             id="global-chat-messages"
-            style={{
-              flex: 1,
-              overflowY: 'auto',
-              overflowX: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '1px',
-              padding: '14px 16px',
-              wordBreak: 'break-word',
-              alignItems: 'flex-start',
-            }}
+            className="flex min-h-0 flex-1 flex-col gap-px overflow-x-hidden overflow-y-auto px-4 py-3 break-words"
           >
-            <div style={{ textAlign: 'center', color: 'var(--text3)', fontSize: '13px', padding: '40px 0' }}>
+            <div className="py-10 text-center text-[13px] text-[var(--text3)]">
               Connecting to chat...
             </div>
           </div>
-          <div style={{ borderTop: '1px solid var(--border)', padding: '12px 16px', background: 'var(--bg2)', flexShrink: 0 }}>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div className="shrink-0 border-t border-white/5 bg-zinc-900/80 px-4 py-3">
+            <div className="flex items-center gap-2">
               <input
                 type="text"
-                className="input"
                 id="global-chat-input"
                 placeholder="Message the world... (/me action &middot; /msg user text)"
-                style={{ flex: 1, width: 'auto' }}
+                className="input w-full min-w-0 flex-1"
                 maxLength="300"
                 onKeyDown={handleKeydown}
               />
               <button
-                className="base-btn variant-accent"
+                className="base-btn variant-accent shrink-0 whitespace-nowrap rounded-xl px-4 py-2.5 text-[13px] font-semibold"
                 onClick={sendGlobalChat}
-                style={{ whiteSpace: 'nowrap', padding: '9px 18px', background: 'var(--accent1)' }}
               >
                 Send &crarr;
               </button>
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--text3)', marginTop: '5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div className="mt-1.5 truncate text-[11px] text-[var(--text3)]">
               /me action &nbsp;&middot;&nbsp; /msg &lt;user&gt; &lt;text&gt; &nbsp;&middot;&nbsp; max 300 chars
             </div>
           </div>
         </div>
 
         {/* Online users sidebar */}
-        <div className="chat-online-sidebar">
-          <div style={{ padding: '16px', borderBottom: '1px solid var(--border)', background: 'var(--bg3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text3)' }}>
+        <div className="chat-online-sidebar flex min-h-0 flex-col border-t border-white/5 bg-zinc-950/90 lg:border-l lg:border-t-0">
+          <div className="flex items-center justify-between border-b border-white/5 bg-zinc-900/80 px-4 py-3">
+            <div className="text-[11px] font-bold uppercase tracking-[0.5px] text-[var(--text3)]">
               Online
             </div>
             <span id="chat-online-count" className="badge badge-green">0</span>
           </div>
-          <div id="chat-online-list" style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
-            <div style={{ fontSize: '12px', color: 'var(--text3)', padding: '8px 10px' }}>
+          <div id="chat-online-list" className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
+            <div className="px-2 py-2 text-[12px] text-[var(--text3)]">
               No one online
             </div>
           </div>
