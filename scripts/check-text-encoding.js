@@ -1,0 +1,133 @@
+#!/usr/bin/env node
+
+const { execFileSync } = require("child_process");
+const fs = require("fs");
+const path = require("path");
+
+const TEXT_EXTENSIONS = new Set([
+  ".js",
+  ".jsx",
+  ".ts",
+  ".tsx",
+  ".html",
+  ".css",
+  ".json",
+  ".yml",
+  ".yaml",
+  ".ps1",
+  ".sh",
+  ".txt",
+]);
+
+const SUSPICIOUS_TOKENS = [
+  "Ãƒ",
+  "Ã‚",
+  "Ã¢",
+  "â€",
+  "Â�",
+  "Â·",
+  "ï¿½",
+];
+
+function runGit(args) {
+  return execFileSync("git", args, { encoding: "utf8", maxBuffer: 20 * 1024 * 1024 });
+}
+
+function getStagedFiles() {
+  return runGit(["diff", "--cached", "--name-only", "--diff-filter=ACM"])
+    .split(/\r?\n/)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function getTrackedFiles() {
+  return runGit(["ls-files"])
+    .split(/\r?\n/)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function getFilesChangedSince(baseRef) {
+  return runGit(["diff", "--name-only", "--diff-filter=ACM", `${baseRef}...HEAD`])
+    .split(/\r?\n/)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function readStagedFile(filePath) {
+  try {
+    return runGit(["show", `:${filePath}`]);
+  } catch (err) {
+    if (fs.existsSync(filePath)) {
+      return fs.readFileSync(filePath, "utf8");
+    }
+    throw err;
+  }
+}
+
+function findProblems(content) {
+  const problems = [];
+  const lines = content.split(/\r?\n/);
+
+  lines.forEach((line, index) => {
+    for (const token of SUSPICIOUS_TOKENS) {
+      if (line.includes(token)) {
+        problems.push({
+          line: index + 1,
+          token,
+          excerpt: line.trim().slice(0, 220),
+        });
+        break;
+      }
+    }
+  });
+
+  return problems;
+}
+
+const sinceIndex = process.argv.indexOf("--since");
+const scanAllTracked = process.argv.includes("--all");
+let stagedFiles;
+
+if (sinceIndex !== -1) {
+  const baseRef = process.argv[sinceIndex + 1];
+  if (!baseRef) {
+    console.error("Missing ref after --since.");
+    process.exit(1);
+  }
+  stagedFiles = getFilesChangedSince(baseRef);
+} else {
+  stagedFiles = scanAllTracked ? getTrackedFiles() : getStagedFiles();
+}
+const failures = [];
+const SELF_PATH = path.normalize("scripts/check-text-encoding.js");
+
+for (const filePath of stagedFiles) {
+  const ext = path.extname(filePath).toLowerCase();
+  if (!TEXT_EXTENSIONS.has(ext)) continue;
+  if (path.normalize(filePath) === SELF_PATH) continue;
+
+  const content = readStagedFile(filePath);
+  if (!content || content.includes("\u0000")) continue;
+
+  const problems = findProblems(content);
+  if (problems.length > 0) {
+    failures.push({ filePath, problems });
+  }
+}
+
+if (failures.length > 0) {
+  console.error("Text encoding check failed. Mojibake-like fingerprints were found in staged files:");
+  for (const failure of failures) {
+    console.error(`- ${failure.filePath}`);
+    for (const problem of failure.problems.slice(0, 5)) {
+      console.error(`  line ${problem.line}: ${problem.token} :: ${problem.excerpt}`);
+    }
+    if (failure.problems.length > 5) {
+      console.error(`  ... and ${failure.problems.length - 5} more matches`);
+    }
+  }
+  process.exit(1);
+}
+
+console.log("Text encoding check passed.");

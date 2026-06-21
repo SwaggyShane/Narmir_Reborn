@@ -23,3 +23,24 @@ jobs:
 
       - name: Validate CODEOWNERS format
         run: grep -E '^(\*|/)[^ ]*[ \t]+@[a-zA-Z0-9_-]+$' .github/CODEOWNERS
+
+  encoding-check:
+    runs-on: ubuntu-latest
+    name: Validate Text Encoding
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Scan tracked text for mojibake
+        run: |
+          base_ref="$(git merge-base origin/main HEAD)"
+          node scripts/check-text-encoding.js --since "$base_ref"

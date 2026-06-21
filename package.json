@@ -8,6 +8,7 @@
     "bot": "node discord-bot.js",
     "build": "vite build",
     "lint": "eslint . --ext js --report-unused-disable-directives",
+    "check:encoding": "node scripts/check-text-encoding.js",
     "smoke:combat-v2": "node test-combat-harness/v2-adapter-smoke.js",
     "scenario:combat-v2": "node test-combat-harness/v2-scenario-runner.js",
     "route-smoke:combat-v2": "node test-combat-harness/v2-route-persistence-smoke.js",
