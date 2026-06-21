@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { apiCall } from '../../utils/api';
 import { useActivePanel } from '../../hooks/useActivePanel';
 import { useGameState } from '../../hooks/useGameState';
@@ -8,16 +8,16 @@ import { logExpeditionEntry } from '../../utils/expeditionLog.js';
 const REFRESH_INTERVAL_MS = 10 * 1000;
 
 const tabs = [
-  { id: 'stockpiles', label: 'ðŸ“¦ Stockpiles' },
-  { id: 'buildings', label: 'ðŸ­ Buildings' },
-  { id: 'expeditions', label: 'ðŸ§­ Expeditions' },
-  { id: 'inventory', label: 'ðŸŽ’ Inventory' },
+  { id: 'stockpiles', label: '📦 Stockpiles' },
+  { id: 'buildings', label: '🏭 Buildings' },
+  { id: 'expeditions', label: '🧭 Expeditions' },
+  { id: 'inventory', label: '🎒 Inventory' },
 ];
 
 const resourceTypes = [
-  { key: 'wood',  label: 'Wood',  icon: 'ðŸªµ' },
-  { key: 'stone', label: 'Stone', icon: 'ðŸª¨' },
-  { key: 'iron',  label: 'Iron',  icon: 'ðŸ”—' },
+  { key: 'wood',  label: 'Wood',  icon: '🪵' },
+  { key: 'stone', label: 'Stone', icon: '🪨' },
+  { key: 'iron',  label: 'Iron',  icon: '🔗' },
 ];
 
 const BUILDING_CONFIG = {
@@ -72,7 +72,7 @@ function formatDuration(secs) {
   if (h > 0) return `${h}h ${m}m`;
   return `${m}m`;
 }
-function typeIcon(type) { return { wood: 'ðŸªµ', stone: 'ðŸª¨', iron: 'ðŸ”—', gold: 'ðŸ’°' }[type] || 'â“'; }
+function typeIcon(type) { return { wood: '🪵', stone: '🪨', iron: '🔗', gold: '💰' }[type] || '❓'; }
 function formatLoot(loot) {
   if (!loot || typeof loot !== 'object') return '';
   return Object.entries(loot).filter(([k]) => !k.startsWith('_')).map(([r, q]) => `${q} ${r}`).join(', ');
@@ -83,11 +83,11 @@ function statusColor(status) {
 function itemIcon(id) {
   const icons = {
     earth_fragment: 'ðŸŒ', water_fragment: 'ðŸ’§', fire_fragment: 'ðŸ”¥', air_fragment: 'ðŸ’¨',
-    ancient_oak_shard: 'ðŸŒ³', petrified_heartwood: 'ðŸªµ', ironbark_splinter: 'ðŸŒ²',
-    crystalline_core: 'ðŸ’Ž', primordial_geode: 'ðŸª¨', fossil_remnant: 'ðŸ¦•',
+    ancient_oak_shard: 'ðŸŒ³', petrified_heartwood: '🪵', ironbark_splinter: 'ðŸŒ²',
+    crystalline_core: 'ðŸ’Ž', primordial_geode: '🪨', fossil_remnant: 'ðŸ¦•',
     meteoric_shard: 'â˜„ï¸', deep_vein_ore: 'â›ï¸', lodestone_fragment: 'ðŸ§²',
   };
-  return icons[id] || 'ðŸ“¦';
+  return icons[id] || '📦';
 }
 
 const ResourcesPanel = () => {
@@ -276,7 +276,7 @@ const ResourcesPanel = () => {
       const cost = BUILDING_COST[bld.key];
       const engineers = alloc[bld.key] || 0;
       const pct = Math.min(100, Math.round(progress / cost * 100));
-      const remaining = engineers > 0 ? Math.ceil((cost - progress) / engineers) : 'âˆž';
+      const remaining = engineers > 0 ? Math.ceil((cost - progress) / engineers) : '∞';
       return { key: bld.key, label: bld.label, stage: bld.stage, progress, cost, engineers, pct, remaining };
     }
     return null;
@@ -310,7 +310,7 @@ const ResourcesPanel = () => {
 
   const turnsToComplete = (bld) => {
     const eng = getAvailableEngineers();
-    if (eng <= 0) return 'âˆž';
+    if (eng <= 0) return '∞';
     return Math.ceil(BUILDING_COST[bld.key] / eng);
   };
   const isBuildingActive = (key) => (getParsedStateProp('build_queue')[key] || 0) > 0;
@@ -326,9 +326,9 @@ const ResourcesPanel = () => {
     const remaining = cost - progress;
     if (remaining <= 0) return 0;
     const eng = getBuildEngineers(key);
-    if (!eng || eng <= 0) return 'âˆž';
+    if (!eng || eng <= 0) return '∞';
     const result = Math.ceil(remaining / eng);
-    return isFinite(result) && result > 0 ? result : 'âˆž';
+    return isFinite(result) && result > 0 ? result : '∞';
   };
 
   const scoutNode = async () => {
@@ -356,8 +356,8 @@ const ResourcesPanel = () => {
       });
       if (data.ok) {
         await loadExpeditions();
-        const typeEmoji = { wood: 'WOOD', stone: 'STONE', iron: 'IRON' };
-        const icon = typeEmoji[node.type] || 'EXPEDITION';
+        const typeEmoji = { wood: '🪵', stone: '🪨', iron: '🔗' };
+        const icon = typeEmoji[node.type] || '🧭';
         const foodStr = data.foodTaken > 0 ? ` · food ${data.foodTaken.toLocaleString()} taken` : '';
         logExpeditionEntry(icon, `Resource expedition departed to ${node.name}`, `${pop.toLocaleString()} civilians · ${node.type}${foodStr}`);
         await refreshKingdom();
@@ -721,7 +721,7 @@ const ResourcesPanel = () => {
                   <div>
                     <div style={{ fontWeight: 600, fontSize: '13px' }}>{node.name}</div>
                     <div style={{ fontSize: '11px', color: 'var(--text3)', marginTop: '2px' }}>
-                      {typeIcon(node.type)} {node.type} &nbsp;&middot;&nbsp; Richness: <span style={{ color: 'var(--gold)' }}>{'*'.repeat(node.richness)}</span>
+                      {typeIcon(node.type)} {node.type} &nbsp;&middot;&nbsp; Richness: <span style={{ color: 'var(--gold)' }}>{'★'.repeat(node.richness)}</span>
                       &nbsp;&middot;&nbsp; Distance: {formatDuration(node.distance)}
                     </div>
                   </div>

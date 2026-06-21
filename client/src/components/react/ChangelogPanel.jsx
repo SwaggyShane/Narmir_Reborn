@@ -1,6 +1,6 @@
 import React from 'react';
 import { toast } from '../../utils/toast.js';
-import { switchTab } from '../../utils/switchTab.js';
+import { switchTab } from '../../utils/panelNav.js';
 
 const sectionCard = 'rounded-2xl border border-[var(--border)] bg-[var(--bg3)] p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.02)_inset]';
 const titleLine = 'mb-4 border-b border-[var(--border2)] pb-2 text-[16px] font-bold text-[var(--gold)]';

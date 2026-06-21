@@ -45,9 +45,9 @@ export function useGameActions() {
       toast(`No turns available. Refills in ${countdown}`, 'warning');
       return null;
     }
-      turnInProgressRef.current = true;
-      setActionLoading('takeTurn', true);
-      setActionError('takeTurn', null);
+    turnInProgressRef.current = true;
+    setActionLoading('takeTurn', true);
+    setActionError('takeTurn', null);
     playGameSound('take_turn');
     try {
       const data = await apiCall('/api/kingdom/turn', { method: 'POST' });
