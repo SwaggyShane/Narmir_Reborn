@@ -111,22 +111,22 @@ const HappinessPanel = () => {
       <div className="space-y-6 p-4 md:p-5">
         <section className="rounded-2xl border border-white/5 bg-zinc-950/95 p-4 shadow-[0_18px_40px_rgba(0,0,0,0.28)]">
           <div className="mb-2 flex items-center justify-between gap-3">
-            <span className="text-[14px] font-semibold text-[var(--text)]">Current Happiness</span>
-            <span className="font-serif text-[24px] font-bold text-[var(--gold)]">{happiness}/120</span>
+            <span className="text-sm font-semibold text-[var(--text)]">Current Happiness</span>
+            <span className="font-serif text-2xl font-bold text-[var(--gold)]">{happiness}/120</span>
           </div>
           <div className="overflow-hidden rounded-full border border-white/5 bg-[var(--bg3)] shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]">
             <div
-              className="h-6 transition-[width] duration-300"
+              className={`h-6 transition-[width] duration-300 ${
+                happiness >= 80
+                  ? 'bg-emerald-500'
+                  : happiness >= 50
+                    ? 'bg-amber-400'
+                    : happiness >= 30
+                      ? 'bg-orange-500'
+                      : 'bg-red-500'
+              }`}
               style={{
                 width: `${Math.min(100, Math.max(0, (happiness / 120) * 100))}%`,
-                background:
-                  happiness >= 80
-                    ? 'var(--green)'
-                    : happiness >= 50
-                      ? 'var(--gold)'
-                      : happiness >= 30
-                        ? 'var(--amber)'
-                        : 'var(--red)',
               }}
             />
           </div>
@@ -143,15 +143,14 @@ const HappinessPanel = () => {
               <button
                 key={key}
                 type="button"
-                className={`flex w-full items-center justify-between rounded-xl border border-white/5 bg-zinc-950/80 px-3 py-2 text-left transition-colors ${filter === key ? 'ring-1 ring-[var(--gold)]' : ''}`}
-                style={{ opacity: !filter || filter === key ? 1 : 0.5 }}
+                className={`flex w-full items-center justify-between rounded-xl border border-white/5 bg-zinc-950/80 px-3 py-2 text-left transition-colors ${filter === key ? 'ring-1 ring-[var(--gold)]' : ''} ${!filter || filter === key ? 'opacity-100' : 'opacity-50'}`}
                 onClick={() => setFilter(filter === key ? null : key)}
                 aria-pressed={filter === key}
               >
                 <span className="happiness-component-name">
                   {getComponentEmoji(key)} {getComponentLabel(key)}
                 </span>
-                <span className={`happiness-component-value ${value > 0 ? 'positive' : value < 0 ? 'negative' : 'neutral'}`}>
+                <span className={`happiness-component-value ${value > 0 ? 'text-emerald-400' : value < 0 ? 'text-red-400' : 'text-slate-400'}`}>
                   {value > 0 ? '+' : ''}
                   {value}
                 </span>
@@ -159,7 +158,7 @@ const HappinessPanel = () => {
             ))}
             <div className="mt-2 flex items-center justify-between rounded-xl border border-white/5 bg-zinc-900/80 px-3 py-2 font-bold">
               <span className="text-[13px] text-[var(--text)]">Recovery/turn</span>
-              <span className="font-mono text-[14px]" style={{ color: recoveryRate >= 0 ? 'var(--gold)' : 'var(--red)' }}>
+              <span className={`font-mono text-sm ${recoveryRate >= 0 ? 'text-amber-400' : 'text-red-400'}`}>
                 {recoveryRate >= 0 ? '+' : ''}
                 {recoveryRate.toFixed(2)}
               </span>
@@ -183,9 +182,7 @@ const HappinessPanel = () => {
                     <span>
                       Turn {event.turn}: {event.description}
                     </span>
-                    <span
-                      className={`happiness-event-delta ${event.delta > 0 ? 'positive' : event.delta < 0 ? 'negative' : 'neutral'}`}
-                    >
+                    <span className={`happiness-event-delta ${event.delta > 0 ? 'text-emerald-400' : event.delta < 0 ? 'text-red-400' : 'text-slate-400'}`}>
                       {event.delta > 0 ? '+' : ''}
                       {event.delta}
                     </span>
