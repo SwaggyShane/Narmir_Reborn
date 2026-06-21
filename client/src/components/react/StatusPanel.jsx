@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { apiCall } from '../../utils/api';
 import { useGameState } from '../../hooks/useGameState';
-import { openRaceLore } from '../../actions/openRaceLore';
 import { repairMojibake } from '../../utils/repairMojibake';
 import { applyGameMutation } from '../../utils/gameMutations.js';
 
@@ -145,7 +144,7 @@ const StatusPanel = () => {
         <div
           id="race-tag-display"
           className="race-tag-block"
-          onClick={() => openRaceLore()}
+          onClick={() => { if (typeof window.openRaceLore === 'function') window.openRaceLore(); }}
           style={{
             cursor: 'pointer',
             padding: '16px',
