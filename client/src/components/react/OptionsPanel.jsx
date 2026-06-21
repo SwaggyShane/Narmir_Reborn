@@ -4,7 +4,7 @@ import { applyNavLayout } from '../../utils/applyNavLayout.js';
 import { useGameState } from '../../hooks/useGameState';
 
 const API = (path, opts = {}) => {
-  const token = localStorage.getItem('narmir_token');
+  const token = readStorage('narmir_token');
   return fetch(`/api/discord${path}`, {
     ...opts,
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, ...(opts.headers || {}) },
@@ -16,6 +16,24 @@ const sectionTitle = 'card-title !mb-0';
 const labelClass = 'mb-1 block text-[12px] text-[var(--text3)]';
 const inputShell =
   'w-full rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg3)] px-3 py-2 text-[13px] text-[var(--text)] outline-none transition focus:border-[var(--accent1)]';
+
+const readStorage = (key, fallback = '') => {
+  try {
+    return localStorage.getItem(key) ?? fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+const readJSONStorage = (key, fallback = {}) => {
+  const raw = readStorage(key, '');
+  if (!raw) return fallback;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return fallback;
+  }
+};
 
 const DiscordSection = () => {
   const [linkStatus, setLinkStatus] = useState(null);
@@ -148,7 +166,7 @@ const DiscordSection = () => {
             <strong className="text-[var(--text)]">Step 1.</strong> In the Narmir Reborn Discord server, type:
             <br />
             <code className="mt-1 inline-block rounded bg-[var(--bg2)] px-2 py-1 text-[var(--accent1)]">
-              !link {(JSON.parse(localStorage.getItem('player') || '{}').username) || 'YourUsername'}
+              !link {(readJSONStorage('player').username) || 'YourUsername'}
             </code>
             <br />
             <br />
@@ -295,12 +313,12 @@ function PortraitUploadCard() {
 }
 
 const OptionsPanel = () => {
-  const [navLayout, setNavLayout] = useState(localStorage.getItem('narmir_nav_layout') || 'responsive');
+  const [navLayout, setNavLayout] = useState(() => readStorage('narmir_nav_layout', 'responsive'));
   const [skipIntro, setSkipIntro] = useState(() => {
-    try { return localStorage.getItem('narmir_skip_intro') === '1'; } catch { return false; }
+    return readStorage('narmir_skip_intro') === '1';
   });
   const [skipGlitch, setSkipGlitch] = useState(() => {
-    try { return localStorage.getItem('narmir_skip_glitch') === '1'; } catch { return false; }
+    return readStorage('narmir_skip_glitch') === '1';
   });
 
   const updateNavLayout = (e) => {
