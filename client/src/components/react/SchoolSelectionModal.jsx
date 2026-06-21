@@ -95,14 +95,14 @@ export default function SchoolSelectionModal({ onClose, onSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[2000] backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-modal backdrop-blur-sm" onClick={onClose}>
       <div className="rounded-xl border border-white/10 bg-gradient-to-br from-zinc-900 to-white/5 max-w-[900px] w-[90%] max-h-[85vh] overflow-y-auto shadow-2xl p-8" onClick={e => e.stopPropagation()}>
         <div className="text-center mb-8 border-b border-white/10 pb-5">
           <h2 className="text-2xl font-bold mb-2 text-white">🔮 Choose Your School of Magic</h2>
           <p className="text-sm text-zinc-400 font-medium">Select a specialization path for your spellcasting. This choice is permanent!</p>
         </div>
 
-        {error && <div className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-3 rounded mb-4 text-xs">{error}</div>}
+        {error && <div className="bg-red/10 border border-red text-red px-4 py-3 rounded mb-4 text-xs">{error}</div>}
 
         <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 mb-6">
           {SCHOOLS.map(school => (
@@ -139,7 +139,7 @@ function SchoolCard({ school, isSelected, isLoading, onSelect }) {
       <div className="text-4xl leading-none">{school.emoji}</div>
       <h3 className="my-2 text-base font-semibold text-white">{school.name}</h3>
       <p className="m-0 text-xs text-zinc-400 leading-relaxed">{school.desc}</p>
-      {isSelected && <div className="absolute -top-3 -right-3 bg-blue-500 text-white w-8 h-8 rounded-full flex items-center justify-center text-lg font-bold">✓</div>}
+      {isSelected && <div className="absolute -top-3 -right-3 bg-blue text-white w-8 h-8 rounded-full flex items-center justify-center text-lg font-bold">✓</div>}
       {isSelected && isLoading && <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-2xl animate-spin">⏳</div>}
     </div>
   );

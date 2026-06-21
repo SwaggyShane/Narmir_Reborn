@@ -151,14 +151,14 @@ const HappinessPanel = () => {
                 <span className="flex items-center gap-2 text-sm font-semibold text-white">
                   {getComponentEmoji(key)} {getComponentLabel(key)}
                 </span>
-                <span className={`font-mono text-sm font-bold min-w-[40px] text-right ${value > 0 ? 'text-green-500' : value < 0 ? 'text-red-500' : 'text-zinc-400'}`}>
+                <span className={`font-mono text-sm font-bold min-w-[40px] text-right ${value > 0 ? 'text-green' : value < 0 ? 'text-red' : 'text-zinc-400'}`}>
                   {value > 0 ? '+' : ''}{value}
                 </span>
               </div>
             ))}
             <div className="flex justify-between items-center p-2 bg-zinc-700 rounded border border-zinc-600 mt-1 font-bold">
               <span className="text-xs text-white">Recovery/turn</span>
-              <span className="text-sm font-mono" style={{ color: recoveryRate >= 0 ? 'var(--gold)' : 'var(--red)' }}>
+              <span className={`text-sm font-mono ${recoveryRate >= 0 ? 'text-gold' : 'text-red'}`}>
                 {recoveryRate >= 0 ? '+' : ''}{recoveryRate.toFixed(2)}
               </span>
             </div>
@@ -180,7 +180,7 @@ const HappinessPanel = () => {
                 <div key={idx} className="p-3 border-b border-zinc-700 text-xs text-zinc-300 leading-relaxed transition-all hover:bg-zinc-700 last:border-b-0">
                   <div className="flex justify-between mb-1 font-semibold text-white">
                     <span>Turn {event.turn}: {event.description}</span>
-                    <span className={`font-mono font-bold min-w-[45px] text-right ${event.delta > 0 ? 'text-green-500' : event.delta < 0 ? 'text-red-500' : 'text-zinc-400'}`}>
+                    <span className={`font-mono font-bold min-w-[45px] text-right ${event.delta > 0 ? 'text-green' : event.delta < 0 ? 'text-red' : 'text-zinc-400'}`}>
                       {event.delta > 0 ? '+' : ''}{event.delta}
                     </span>
                   </div>
