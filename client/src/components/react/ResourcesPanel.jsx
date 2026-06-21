@@ -481,9 +481,8 @@ const ResourcesPanel = () => {
         {tabs.map(tab => (
           <button
             key={tab.id}
-            className={`admin-tab base-btn rounded-t-xl border border-white/10 px-3 py-2 text-[12px] ${activeTab === tab.id ? 'active' : ''}`}
+            className={`admin-tab base-btn rounded-t-xl border border-white/10 px-3 text-[12px] ${activeTab === tab.id ? 'active pb-[10px]' : 'pb-2'}`}
             onClick={() => setActiveTab(tab.id)}
-            style={{ borderRadius: 0, paddingBottom: activeTab === tab.id ? '10px' : '8px' }}
           >
             {tab.label}
           </button>
