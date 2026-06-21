@@ -31,18 +31,12 @@ function clearAuthToken() {
 function syncIdentity(me, fallbackUsername) {
   const username = (me && me.username) || fallbackUsername || '';
   const isAdmin = !!(me && me.isAdmin);
-  if (typeof window !== 'undefined') {
-    window.state = { ...(window.state || {}), username, isAdmin };
-  }
   gameStateManager.setState({ username, isAdmin }, { reason: 'auth-session' });
 }
 
 export async function loadKingdom() {
   const kingdom = await apiCall('GET', '/api/kingdom/me');
   if (kingdom && !kingdom.error) {
-    if (typeof window !== 'undefined') {
-      window.state = { ...(window.state || {}), ...kingdom };
-    }
     applyGameMutation(kingdom, { reason: 'kingdom-refresh' });
   }
   return kingdom;
