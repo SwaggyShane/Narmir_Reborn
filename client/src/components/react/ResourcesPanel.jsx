@@ -494,7 +494,7 @@ const ResourcesPanel = () => {
         <div>
           <div className="card">
             <div className="card-title">Resource Stockpiles</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginTop: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginTop: '12px', width: '100%' }}>
               {resourceTypes.map(res => {
                 const raceMult = RACE_YIELD_BONUS[kingdom.race]?.[res.key] ?? 1.0;
                 let totalWorkers = 0;
