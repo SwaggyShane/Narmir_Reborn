@@ -172,25 +172,7 @@ function trunc(value) {
 }
 
 function metricClass(extra = '') {
-  return [
-    'metric',
-    'relative',
-    'min-w-0',
-    'rounded-xl',
-    'border',
-    'border-white/5',
-    'bg-zinc-950/90',
-    'px-3',
-    'py-2',
-    'shadow-[0_12px_24px_rgba(0,0,0,0.25)]',
-    'transition-transform',
-    'duration-200',
-    'md:px-4',
-    'md:py-3',
-    extra,
-  ]
-    .filter(Boolean)
-    .join(' ');
+  return 'metric relative min-w-0 rounded-xl border border-white/5 bg-zinc-950/90 px-3 py-2 shadow-[0_12px_24px_rgba(0,0,0,0.25)] transition-transform duration-200 md:px-4 md:py-3' + (extra ? ' ' + extra : '');
 }
 
 function population(state) {
