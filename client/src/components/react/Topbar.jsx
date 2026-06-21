@@ -52,41 +52,6 @@ const Topbar = () => {
             <div className="countdown text-[10px] font-sans text-[var(--text3)]">
               +7 in <span id="regen-countdown">25:00</span>
             </div>
-            <div className="mt-1 flex flex-wrap items-center gap-1.5">
-              <span
-                className="cursor-pointer text-[11px] text-[var(--text3)]"
-                onClick={openXpModal}
-                title="Click for XP breakdown"
-              >
-                Level
-                <span
-                  id="kingdom-level"
-                  className="text-[13px] font-bold text-[var(--gold)] underline decoration-dotted underline-offset-2"
-                >
-                  {level}
-                </span>
-              </span>
-              <div
-                className="min-w-[80px] max-w-[150px] flex-1 cursor-pointer"
-                onClick={openXpModal}
-                title="Click for XP breakdown"
-              >
-                <div className="h-[3px] overflow-hidden rounded-[1.5px] bg-[var(--bg4)]">
-                  <div
-                    id="xp-bar"
-                    className="h-[3px] rounded-[1.5px] transition-[width] duration-300"
-                    style={{ width: `${xpPct}%`, background: 'linear-gradient(90deg, var(--accent1), var(--gold))' }}
-                  />
-                </div>
-              </div>
-              <span
-                id="xp-label"
-                className="cursor-pointer text-[9px] text-[var(--text3)]"
-                onClick={openXpModal}
-              >
-                {xpNeeded > 0 ? `${xpInLevel.toLocaleString()} / ${xpNeeded.toLocaleString()} XP` : 'Max Level'}
-              </span>
-            </div>
           </div>
           <button
             className="turn-btn shrink-0 px-3.5 py-1.5 text-[12px] leading-none"
@@ -96,9 +61,15 @@ const Topbar = () => {
           >
             Take Turn
           </button>
-          <button className="btn ml-2 shrink-0 whitespace-nowrap px-2.5 py-1.5 text-[12px]" onClick={handleAccount}>
-            {state?.username ? 'Logout' : 'Sign In'}
-          </button>
+          {!state?.username && (
+            <button
+              className="btn"
+              style={{ padding: '6px 10px', fontSize: '12px', marginLeft: '8px', whiteSpace: 'nowrap' }}
+              onClick={handleAccount}
+            >
+              Sign In
+            </button>
+          )}
         </div>
       </div>
     </header>

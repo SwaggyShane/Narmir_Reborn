@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import HappinessGraph from './HappinessGraph';
-import '../../css/happiness.css';
 
 const DEFAULT_COMPONENTS = {
   base: 50,
@@ -136,64 +135,58 @@ const HappinessPanel = () => {
           <HappinessGraph history={history} />
         </section>
 
-        <section className="rounded-2xl border border-white/5 bg-zinc-950/95 p-4 shadow-[0_18px_40px_rgba(0,0,0,0.28)]">
-          <div className="happiness-graph-label mb-3">Component Breakdown</div>
-          <div className="space-y-2">
+        {/* Component Breakdown */}
+        <div style={{ marginBottom: '24px' }}>
+          <div className="text-xs font-semibold text-zinc-400 uppercase tracking-widest mb-3">Component Breakdown</div>
+          <div className="flex flex-col gap-2 mb-5">
             {Object.entries(components).map(([key, value]) => (
               <button
                 key={key}
-                type="button"
-                className={`flex w-full items-center justify-between rounded-xl border border-white/5 bg-zinc-950/80 px-3 py-2 text-left transition-colors ${filter === key ? 'ring-1 ring-[var(--gold)]' : ''}`}
-                style={{ opacity: !filter || filter === key ? 1 : 0.5 }}
+                className={`flex justify-between items-center p-3 bg-zinc-800 rounded border transition-all cursor-pointer ${filter === key ? 'border-orange-500 bg-orange-500/10' : 'border-zinc-700 hover:bg-zinc-700 hover:translate-x-0.5'}`}
+                style={{
+                  opacity: !filter || filter === key ? 1 : 0.5,
+                }}
                 onClick={() => setFilter(filter === key ? null : key)}
                 aria-pressed={filter === key}
               >
-                <span className="happiness-component-name">
+                <span className="flex items-center gap-2 text-sm font-semibold text-white">
                   {getComponentEmoji(key)} {getComponentLabel(key)}
                 </span>
-                <span className={`happiness-component-value ${value > 0 ? 'positive' : value < 0 ? 'negative' : 'neutral'}`}>
-                  {value > 0 ? '+' : ''}
-                  {value}
+                <span className={`font-mono text-sm font-bold min-w-[40px] text-right ${value > 0 ? 'text-green' : value < 0 ? 'text-red' : 'text-zinc-400'}`}>
+                  {value > 0 ? '+' : ''}{value}
                 </span>
               </button>
             ))}
-            <div className="mt-2 flex items-center justify-between rounded-xl border border-white/5 bg-zinc-900/80 px-3 py-2 font-bold">
-              <span className="text-[13px] text-[var(--text)]">Recovery/turn</span>
-              <span className="font-mono text-[14px]" style={{ color: recoveryRate >= 0 ? 'var(--gold)' : 'var(--red)' }}>
-                {recoveryRate >= 0 ? '+' : ''}
-                {recoveryRate.toFixed(2)}
+            <div className="flex justify-between items-center p-2 bg-zinc-700 rounded border border-zinc-600 mt-1 font-bold">
+              <span className="text-xs text-white">Recovery/turn</span>
+              <span className={`text-sm font-mono ${recoveryRate >= 0 ? 'text-gold' : 'text-red'}`}>
+                {recoveryRate >= 0 ? '+' : ''}{recoveryRate.toFixed(2)}
               </span>
             </div>
           </div>
         </section>
 
-        <section className="rounded-2xl border border-white/5 bg-zinc-950/95 p-4 shadow-[0_18px_40px_rgba(0,0,0,0.28)]">
-          <div className="happiness-graph-label mb-3">
+        {/* Recent Changes Log */}
+        <div style={{ marginBottom: '16px' }}>
+          <div className="text-xs font-semibold text-zinc-400 uppercase tracking-widest mb-3">
             Recent Changes {filter && `(${getComponentLabel(filter)})`}
           </div>
-          <div className="space-y-2">
+          <div className="max-h-[300px] overflow-y-auto bg-zinc-800 rounded border border-zinc-700">
             {filteredEvents.length === 0 ? (
-              <div className="rounded-xl border border-white/5 bg-zinc-950/80 px-4 py-4 text-center text-[12px] text-[var(--text3)]">
+              <div className="p-4 text-center text-zinc-500 text-xs">
                 No changes recorded
               </div>
             ) : (
               filteredEvents.map((event, idx) => (
-                <article key={idx} className="rounded-xl border border-white/5 bg-zinc-950/80 px-3 py-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <span>
-                      Turn {event.turn}: {event.description}
-                    </span>
-                    <span
-                      className={`happiness-event-delta ${event.delta > 0 ? 'positive' : event.delta < 0 ? 'negative' : 'neutral'}`}
-                    >
-                      {event.delta > 0 ? '+' : ''}
-                      {event.delta}
+                <div key={idx} className="p-3 border-b border-zinc-700 text-xs text-zinc-300 leading-relaxed transition-all hover:bg-zinc-700 last:border-b-0">
+                  <div className="flex justify-between mb-1 font-semibold text-white">
+                    <span>Turn {event.turn}: {event.description}</span>
+                    <span className={`font-mono font-bold min-w-[45px] text-right ${event.delta > 0 ? 'text-green' : event.delta < 0 ? 'text-red' : 'text-zinc-400'}`}>
+                      {event.delta > 0 ? '+' : ''}{event.delta}
                     </span>
                   </div>
-                  <div className="mt-1 text-[12px] text-[var(--text3)]">
-                    {event.old_happiness}
-                    {' -> '}
-                    {event.new_happiness}
+                  <div className="text-xs text-zinc-500 mt-1">
+                    {event.old_happiness} → {event.new_happiness}
                   </div>
                 </article>
               ))
