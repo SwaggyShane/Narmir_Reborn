@@ -133,7 +133,8 @@ const ExplorationPanel = () => {
   const availableFighters = Number(state?.fighters || 0);
   const availableFood = Number(state?.food || 0);
   const expeditionTurns = useMemo(() => EXPEDITION_TURNS, []);
-  const mountainFoodCost = Math.ceil(mountainRangers * 0.5 * 100 * 0.75);
+  const mountainFoodPerTurn = Math.ceil(mountainRangers * 0.5 * 0.75);
+  const mountainFoodCost = mountainFoodPerTurn * expeditionTurns.mountain;
 
   const applyResult = useCallback((result, reason) => {
     if (applyGameMutation) {
@@ -589,7 +590,7 @@ const ExplorationPanel = () => {
                 </div>
                 {mountainFoodCost > 0 && (
                   <div className="mb-3 rounded-md border-l-[3px] border-l-[#8b5cf6] bg-[rgba(139,92,246,0.1)] p-2 text-[11px] text-[var(--text2)]">
-                    🍖 <strong>Food required:</strong> {formatNum(mountainFoodCost)} (100 turns at {Math.round(mountainRangers * 0.5)}/turn)
+                    🍖 <strong>Food required:</strong> {formatNum(mountainFoodCost)} (100 turns at {formatNum(mountainFoodPerTurn)}/turn)
                   </div>
                 )}
                 <button className="base-btn variant-blue w-full bg-[#6b9bd1]" id="btn-exp-mountain" onClick={() => handleLaunchExpedition('mountain')}>
