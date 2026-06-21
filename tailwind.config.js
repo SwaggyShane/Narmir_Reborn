@@ -74,8 +74,8 @@ module.exports = {
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
       },
       fontSize: {
-        '2xs': ['6.5px', { lineHeight: '1' }],
-        '3xs': ['7px', { lineHeight: '1' }],
+        '2xs': ['7px', { lineHeight: '1' }],
+        '3xs': ['6.5px', { lineHeight: '1' }],
         xs: ['9px', { lineHeight: '1.4' }],
         sm: ['11px', { lineHeight: '1.5' }],
         base: ['13px', { lineHeight: '1.5' }],

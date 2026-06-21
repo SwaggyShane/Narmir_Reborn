@@ -86,13 +86,14 @@ function findProblems(content) {
 }
 
 function getChangedLinesContent(filePath, baseRef) {
-  const diffArgs = baseRef
+  const useBaseRef = baseRef && !baseRef.startsWith("-");
+  const diffArgs = useBaseRef
     ? ["diff", "--unified=0", `${baseRef}...HEAD`, "--", filePath]
     : ["diff", "--cached", "--unified=0", "--", filePath];
   const diff = runGit(diffArgs);
   const lines = [];
   for (const line of diff.split(/\r?\n/)) {
-    if (!line.startsWith("+") || line.startsWith("+++")) continue;
+    if (!line.startsWith("+") || line.startsWith("+++ ")) continue;
     lines.push(line.slice(1));
   }
   return lines.join("\n");
