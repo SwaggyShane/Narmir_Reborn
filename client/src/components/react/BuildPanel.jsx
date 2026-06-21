@@ -641,22 +641,22 @@ const BuildPanel = () => {
   };
 
   return (
-    <div id="build" className="panel" data-ui-tick={buildUiTick}>
-      <div className="build-sticky-header">
-        <div className="card" style={{ margin: 0, boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-            <div>
+    <div id="build" className="panel min-h-0 w-full overflow-y-auto" data-ui-tick={buildUiTick}>
+      <div className="build-sticky-header px-4 pt-4">
+        <div className="card rounded-2xl border border-white/10 bg-zinc-950/80 shadow-[0_12px_32px_rgba(0,0,0,0.35)]" style={{ margin: 0 }}>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-1">
               <div className="card-title" style={{ marginBottom: '2px' }}>Construction</div>
-              <div style={{ fontSize: '12px', color: 'var(--text3)' }}>
+              <div className="text-[12px] text-[var(--text3)]">
                 🏗️ Engineer Level: <span id="engineer-level" style={{ color: 'var(--gold)', fontWeight: 600 }}>{engineerLevel}</span> ·
                 XP: <span id="engineer-xp" style={{ color: 'var(--text)' }}>{fmt(engineerXp)}</span>/<span id="engineer-xp-needed" style={{ color: 'var(--text3)' }}>{fmt(engineerXpNeeded)}</span>
               </div>
-              <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '2px' }}>
+              <div className="text-[12px] text-[var(--text3)]">
                 Engineers: <span id="b-engineers-available" style={{ color: 'var(--text)' }}>{fmt(totalEngineers)}</span> available ·
                 <span id="b-total-assigned" style={{ color: 'var(--gold)', margin: '0 4px' }}>{fmt(allocatedEngineers)}</span> assigned ·
                 <span id="b-total-unassigned" style={{ color: remainingEngineers > 0 ? 'var(--green)' : 'var(--red)', margin: '0 4px' }}>{fmt(remainingEngineers)}</span> unassigned
               </div>
-              <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '2px' }}>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-[var(--text3)]">
                 Resources:
                 <span id="b-wood" style={{ color: 'var(--text)', margin: '0 2px' }}>{fmt(state?.wood || 0)}</span>🪵 ·
                 <span id="b-stone" style={{ color: 'var(--text)', margin: '0 2px' }}>{fmt(state?.stone || 0)}</span>🪨 ·
@@ -664,44 +664,45 @@ const BuildPanel = () => {
                 <span id="b-steel" style={{ color: 'var(--text)', margin: '0 2px' }}>{fmt(state?.steel || 0)}</span>📏 ·
                 <span id="b-coal" style={{ color: 'var(--text)', margin: '0 2px' }}>{fmt(state?.coal || 0)}</span>🌑
               </div>
-              <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '2px' }}>
+              <div className="text-[12px] text-[var(--text3)]">
                 Land: <span id="b-land-available" style={{ color: 'var(--text)' }}>{fmt(landAvailable)} / {fmt(state?.land || 0)}</span> available
               </div>
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button className="base-btn variant-accent" style={{ whiteSpace: 'nowrap', padding: '6px 12px', fontSize: '11px', background: 'var(--accent1)' }} onClick={distributeBuildEvenly}>
+            <div className="flex flex-wrap gap-2">
+              <button className="base-btn variant-accent rounded-full px-3 py-1.5 text-[11px] font-semibold shadow-sm" style={{ background: 'var(--accent1)' }} onClick={distributeBuildEvenly}>
                 Distribute Evenly
               </button>
-              <button className="base-btn variant-red" style={{ whiteSpace: 'nowrap', padding: '6px 12px', fontSize: '11px', background: 'var(--red)' }} onClick={releaseAllEngineers}>
+              <button className="base-btn variant-red rounded-full px-3 py-1.5 text-[11px] font-semibold shadow-sm" style={{ background: 'var(--red)' }} onClick={releaseAllEngineers}>
                 Release All
               </button>
-              <button className="base-btn variant-gold" style={{ whiteSpace: 'nowrap', padding: '6px 16px', fontSize: '12px', background: 'var(--gold)', color: '#000' }} onClick={saveBuildAllocation}>
+              <button className="base-btn variant-gold rounded-full px-4 py-1.5 text-[12px] font-semibold shadow-sm" style={{ background: 'var(--gold)', color: '#000' }} onClick={saveBuildAllocation}>
                 Save Allocation
               </button>
             </div>
           </div>
         </div>
       </div>
-      <div className="build-content-scroll">
+      <div className="build-content-scroll space-y-4 px-4 pb-5">
 
-        <div className="card" style={{ marginTop: '14px' }}>
-          <div style={{ padding: '12px 0', borderBottom: '1px solid var(--border)', marginBottom: '12px' }}>
+        <div className="card mt-4 rounded-2xl border border-white/10 bg-zinc-950/80">
+          <div className="mb-3 border-b border-white/10 pb-3 pt-3">
             <button
               onClick={() => setShowBuildingRef(!showBuildingRef)}
-              style={{ background: 'none', border: '2px solid var(--orange)', borderRadius: '4px', cursor: 'pointer', padding: '8px 12px', width: '100%', textAlign: 'left', boxSizing: 'border-box', marginBottom: showBuildingRef ? '8px' : '0' }}
+              className="w-full rounded-lg border-2 border-[var(--orange)] px-3 py-2 text-left transition-colors hover:bg-white/5"
+              style={{ background: 'none', marginBottom: showBuildingRef ? '8px' : '0' }}
             >
-              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="flex items-center gap-2 text-[13px] font-semibold text-[var(--text)]">
                 <span style={{ fontSize: '10px' }}>{showBuildingRef ? '▼' : '▶'}</span>
                 Building Requirements Reference
               </div>
             </button>
             {showBuildingRef && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '8px', fontSize: '11px' }}>
+              <div className="grid gap-2 text-[11px] md:grid-cols-2 xl:grid-cols-3">
                 {BUILDINGS_DISPLAY_ORDER.map(id => {
                   const b = BUILDINGS_MAP[id];
                   return b ? (
-                    <div key={b.id} style={{ padding: '8px', background: 'var(--bg3)', borderRadius: '4px' }}>
-                      <div style={{ fontWeight: 600, color: 'var(--gold)', marginBottom: '4px' }}>{b.name}</div>
+                    <div key={b.id} className="rounded-lg border border-white/10 bg-[var(--bg3)] p-2.5">
+                      <div className="mb-1 font-semibold text-[var(--gold)]">{b.name}</div>
                       <div>{formatReq(b)}{b.land ? ` | 📍 ${b.land} Land` : ''}</div>
                       <div style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '4px' }}>🪵 {b.wood} · 🪨 {b.stone} · 🔗 {b.iron}</div>
                     </div>
