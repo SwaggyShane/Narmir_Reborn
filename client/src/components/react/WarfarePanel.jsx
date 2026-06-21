@@ -8,6 +8,7 @@ import { fmt } from "../../utils/fmt";
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import { registerTargetFromRankings } from '../../utils/rankingsTarget.js';
 import { switchTab } from '../../utils/panelNav.js';
+<<<<<<< HEAD
 import { registerWarfareTab } from '../../utils/warfareTabs.js';
 import { RACE_ICONS } from '../../utils/raceIcons.js';
 
