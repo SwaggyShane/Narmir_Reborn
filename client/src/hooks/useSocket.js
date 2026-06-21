@@ -7,7 +7,7 @@ export function initSocketHandlers(socket) {
   if (!socket || socket._narmirGeneralHandlersBound) return;
 
   socket.on('event:attack_received', (data) => {
-    toast('⚔️ ' + (data.from || 'Someone') + ' attacked your kingdom!', 'error');
+    toast('⚔️ ' + (data?.from || 'Someone') + ' attacked your kingdom!', 'error');
     window.dispatchEvent(new CustomEvent('narmir:news-refresh'));
     window.loadKingdom?.();
   });
@@ -39,7 +39,7 @@ export function initSocketHandlers(socket) {
   });
 
   socket.on('event:global_message', (data) => {
-    console.log('[event:global_message]', data.message || 'A global event occurred.');
+    console.log('[event:global_message]', data?.message || 'A global event occurred.');
   });
 
   socket._narmirGeneralHandlersBound = true;

@@ -23,10 +23,10 @@ export function useGameActions() {
     attack: null,
   });
 
-  const setActionLoading = (action, value) =>
-    setLoading((prev) => ({ ...prev, [action]: value }));
-  const setActionError = (action, value) =>
-    setErrors((prev) => ({ ...prev, [action]: value }));
+  const setActionLoading = useCallback((action, value) =>
+    setLoading((prev) => ({ ...prev, [action]: value })), []);
+  const setActionError = useCallback((action, value) =>
+    setErrors((prev) => ({ ...prev, [action]: value })), []);
 
   const takeTurn = useCallback(async () => {
     if ((gameStateManager.getState()?.turns_stored || 0) < 1) {
@@ -55,7 +55,7 @@ export function useGameActions() {
     } finally {
       setActionLoading('takeTurn', false);
     }
-  }, []);
+  }, [setActionLoading, setActionError]);
 
   // type: 'food' | 'gold' | 'land', rangers: number
   const search = useCallback(async (type, rangers) => {
@@ -77,7 +77,7 @@ export function useGameActions() {
     } finally {
       setActionLoading('search', false);
     }
-  }, []);
+  }, [setActionLoading, setActionError]);
 
   const castSpell = useCallback(async (spellId, targetId, obscure = false) => {
     setActionLoading('castSpell', true);
@@ -98,7 +98,7 @@ export function useGameActions() {
     } finally {
       setActionLoading('castSpell', false);
     }
-  }, []);
+  }, [setActionLoading, setActionError]);
 
   const attack = useCallback(async (targetId, units) => {
     setActionLoading('attack', true);
@@ -119,7 +119,7 @@ export function useGameActions() {
     } finally {
       setActionLoading('attack', false);
     }
-  }, []);
+  }, [setActionLoading, setActionError]);
 
   return { takeTurn, search, castSpell, attack, loading, errors };
 }
