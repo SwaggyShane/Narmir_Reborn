@@ -141,7 +141,7 @@ const StatusPanel = () => {
   const troopLevels = state?.troop_levels || {};
 
   return (
-    <div id="status" className="panel active w-full min-w-0" style={{ display: 'flex', flexDirection: 'column' }}>
+    <div id="status" className="panel active w-full min-w-0">
       <div className="mb-5">
         <div
           id="race-tag-display"
@@ -257,7 +257,7 @@ const StatusPanel = () => {
         </div>
       </div>
 
-      <div className="status-grid grid gap-5 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 w-full flex-1" id="status-grid" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-around', alignItems: 'stretch' }}>
+      <div className="status-grid grid gap-5 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 w-full" id="status-grid">
         <div className={STATUS_CARD_CLASS}>
           <div className="card-title">
             Military &amp; support
