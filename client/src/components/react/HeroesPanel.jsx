@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useGameState } from '../../hooks/useGameState';
 import { apiCall } from '../../utils/api.js';
 import { fmt } from "../../utils/fmt";
+import LoreModal from './LoreModal.jsx';
 
 const HERO_PORTRAITS = {
   // Dwarf
@@ -53,6 +54,7 @@ const HeroesPanel = () => {
   const [selectedHeroClass, setSelectedHeroClass] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showXpModal, setShowXpModal] = useState(false);
+  const [heroLoreKey, setHeroLoreKey] = useState(null);
   const [refreshTick, setRefreshTick] = useState(0);
 
   const fmt = useCallback((value) => Number(value || 0).toLocaleString(), []);
@@ -289,9 +291,6 @@ const HeroesPanel = () => {
           </div>
           {(c.abilities || []).map((a, idx) => {
             const unlockLvl = idx === 0 ? 1 : idx === 1 ? 5 : 10;
-            const xpText = unlockLvl === 1
-              ? ''
-              : ` <span style="color:var(--text3);font-size:9px">(Unlocks at Lvl ${unlockLvl})</span>`;
             return (
               <div key={`${id}-${a.name}`} style={{ marginBottom: '2px' }}>
                 ✨ <strong style={{ color: 'var(--text)' }}>{a.name}:</strong> <span style={{ color: 'var(--text2)' }}>{a.description}</span>
@@ -300,6 +299,13 @@ const HeroesPanel = () => {
             );
           })}
         </div>
+        <button
+          className="base-btn"
+          style={{ fontSize: '11px', padding: '3px 10px', marginTop: '6px', alignSelf: 'flex-start' }}
+          onClick={(e) => { e.stopPropagation(); setHeroLoreKey(id); }}
+        >
+          📖 View Lore
+        </button>
       </div>
     ));
   }, [fmt, recruitableClasses, selectedHeroClass]);
@@ -386,6 +392,56 @@ const HeroesPanel = () => {
           </div>
         </div>
       </div>
+
+      <LoreModal
+        isOpen={!!heroLoreKey}
+        onClose={() => setHeroLoreKey(null)}
+        title={heroLoreKey && allHeroClasses[heroLoreKey] ? `${allHeroClasses[heroLoreKey].name || ''} Class Lore` : 'Hero Lore'}
+      >
+        {heroLoreKey && allHeroClasses[heroLoreKey] && (() => {
+          const cls = allHeroClasses[heroLoreKey];
+          const abilities = Array.isArray(cls.abilities) ? cls.abilities : [];
+          return (
+            <>
+              <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+                <img
+                  src={heroPortrait(heroLoreKey)}
+                  width="240"
+                  height="240"
+                  style={{ maxWidth: '100%', height: 'auto', objectFit: 'cover', display: 'block', margin: '0 auto 12px auto', borderRadius: '8px' }}
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                  alt={cls.name || ''}
+                />
+                <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text)' }}>{cls.name || ''}</div>
+                <div style={{ fontSize: '12px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '1px' }}>Legendary Hero Class</div>
+              </div>
+              {abilities.length > 0 && (
+                <div style={{ marginBottom: '20px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--gold)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>Signature Abilities</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {abilities.map((a, i) => (
+                      <div key={i} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px' }}>
+                        <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', marginBottom: '2px' }}>{a.name || ''}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text3)' }}>{a.description || ''}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div style={{ background: 'var(--bg4)', borderRadius: '8px', padding: '10px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '10px', color: 'var(--text3)', textTransform: 'uppercase' }}>Recruit Cost</div>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--gold)' }}>{fmt(cls.recruitCost)} GC</div>
+                </div>
+                <div style={{ background: 'var(--bg4)', borderRadius: '8px', padding: '10px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '10px', color: 'var(--text3)', textTransform: 'uppercase' }}>Mana Cost</div>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--blue)' }}>{fmt(cls.recruitMana)} ✨</div>
+                </div>
+              </div>
+            </>
+          );
+        })()}
+      </LoreModal>
 
       {showXpModal && (
         <div

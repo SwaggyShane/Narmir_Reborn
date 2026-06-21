@@ -33,9 +33,7 @@ import SchoolSelectionControllerReact from "./components/react/SchoolSelectionCo
 import ForumSectionReact from "./components/forum/ForumSection.jsx";
 import "./css/forum.css";
 import ResourceStripReact from "./components/react/ResourceStrip.jsx";
-import { openRaceLore as openRaceLoreAction } from "./actions/openRaceLore.js";
 import { replayWarReport as replayWarReportAction } from "./actions/replayWarReport.js";
-import { showHeroLore as showHeroLoreAction } from "./actions/showHeroLore.js";
 import { openKingdomProfile as openKingdomProfileAction } from "./actions/openKingdomProfile.js";
 import { loadEconomy as loadEconomyAction } from "./actions/loadEconomy.js";
 import { buyUpgrade as buyUpgradeAction } from "./actions/buyUpgrade.js";
@@ -78,9 +76,7 @@ import { apiCall, syncUI, switchTab, initGameStateManager, applyGameMutation, ga
 window.apiCall = apiCall;
 window.switchTab = switchTab;
 window.applyGameMutation = applyGameMutation;
-window.__openRaceLoreImpl = openRaceLoreAction;
 window.__replayWarReportImpl = replayWarReportAction;
-window.__showHeroLoreImpl = showHeroLoreAction;
 window.__openKingdomProfileImpl = openKingdomProfileAction;
 window.__loadEconomyImpl = loadEconomyAction;
 window.__buyUpgradeImpl = buyUpgradeAction;
