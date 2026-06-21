@@ -7,11 +7,6 @@ export async function loadWorldMap({ setLoading, setError } = {}) {
   if (typeof setLoading === 'function') setLoading(true);
   if (typeof setError === 'function') setError('');
   try {
-    const container = document.getElementById('world-map-container');
-    if (container) {
-      container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3)">Scanning the horizon...</div>';
-    }
-
     const data = await apiCall('/api/kingdom/world-map');
     if (data?.error) throw new Error(data.error);
 
@@ -22,10 +17,6 @@ export async function loadWorldMap({ setLoading, setError } = {}) {
   } catch (err) {
     console.error('World map fail:', err);
     if (typeof setError === 'function') setError(err.message || 'Failed to load world map');
-    const container = document.getElementById('world-map-container');
-    if (container) {
-      container.innerHTML = '';
-    }
     throw err;
   } finally {
     if (typeof setLoading === 'function') setLoading(false);
@@ -58,17 +49,17 @@ const WorldmapPanel = () => {
       <div className="r-grid-sidebar">
         {/* Map SVG */}
         <div className="card" style={{ padding: '8px' }}>
+          {loading ? (
+            <div style={{ textAlign: 'center', color: 'var(--text3)', padding: '40px 0', fontSize: '13px' }}>
+              Loading map...
+            </div>
+          ) : error ? (
+            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--red)' }}>
+              Failed to load world map.
+              <button className="btn" onClick={refreshWorldMap} style={{ marginTop: '10px' }}>Retry</button>
+            </div>
+          ) : null}
           <div id="world-map-container" style={{ width: '100%', overflow: 'hidden' }}>
-            {loading ? (
-              <div style={{ textAlign: 'center', color: 'var(--text3)', padding: '40px 0', fontSize: '13px' }}>
-                Loading map...
-              </div>
-            ) : error ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--red)' }}>
-                Failed to load world map.
-                <button className="btn" onClick={refreshWorldMap} style={{ marginTop: '10px' }}>Retry</button>
-              </div>
-            ) : null}
           </div>
         </div>
         {/* Region legend + info */}
