@@ -14,9 +14,7 @@ import WorldmapPanelReact from "./components/react/WorldmapPanel.jsx";
 import RankingsPanelReact from "./components/react/RankingsPanel.jsx";
 import BuildPanelReact from "./components/react/BuildPanel.jsx";
 import DefensePanelReact from "./components/react/DefensePanel.jsx";
-import EconomyPanelReact from "./components/react/EconomyPanel.jsx";
 import ExplorationPanelReact from "./components/react/ExplorationPanel.jsx";
-import MarketPanelReact from "./components/react/MarketPanel.jsx";
 import WarfarePanelReact from "./components/react/WarfarePanel.jsx";
 import TrainingPanelReact from "./components/react/TrainingPanel.jsx";
 import StatusPanelReact from "./components/react/StatusPanel.jsx";
@@ -34,10 +32,18 @@ import ResourceStripReact from "./components/react/ResourceStrip.jsx";
 import { apiCall, switchTab, initGameStateManager, applyGameMutation } from "./utils/panelNav.js";
 import { applyServerUpdates as applyServerUpdatesAction } from "./utils/gameMutations.js";
 import { initSocketHandlers } from "./hooks/useSocket.js";
+import AuthModalReact, {
+  loadKingdom as loadKingdomImpl,
+  logout as logoutImpl,
+} from "./components/react/AuthModal.jsx";
+import KingdomProfileModalReact from "./components/react/KingdomProfileModal.jsx";
 
 window.apiCall = apiCall;
 window.switchTab = switchTab;
 window.applyGameMutation = applyGameMutation;
+window.__loadKingdomImpl = loadKingdomImpl;
+window.loadKingdom = loadKingdomImpl;
+window.__logoutImpl = logoutImpl;
 window.__applyServerUpdatesImpl = applyServerUpdatesAction;
 window.__bindGeneralSocketHandlersImpl = initSocketHandlers;
 
@@ -101,6 +107,8 @@ export const mountReactApps = () => {
   tryMount("vue-panel-globalchat", GlobalchatPanelReact);
   tryMount("vue-panel-school-selection", SchoolSelectionControllerReact);
   tryMount("vue-panel-forum", ForumSectionReact);
+  tryMount("login-overlay", AuthModalReact);
+  tryMount("kingdom-profile-modal", KingdomProfileModalReact);
 
   window.__reactAppsMounted = true;
   console.log("[react] All apps mounted");

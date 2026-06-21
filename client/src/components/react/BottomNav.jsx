@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useGameState } from '../../hooks/useGameState';
-import { logout } from '../../actions/logout';
+import { logout } from './AuthModal.jsx';
 import { switchTab } from '../../utils/switchTab.js';
 
 const BottomNav = () => {
