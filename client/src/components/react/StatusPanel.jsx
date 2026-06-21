@@ -257,7 +257,7 @@ const StatusPanel = () => {
         </div>
       </div>
 
-      <div className="status-grid grid gap-5 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 w-full flex-1" id="status-grid" style={{ display: 'grid', gridAutoRows: 'minmax(auto, 1fr)', alignContent: 'space-around' }}>
+      <div className="status-grid w-full flex-1" id="status-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', gridAutoRows: 'minmax(auto, 1fr)', alignContent: 'space-around' }}>
         <div className={STATUS_CARD_CLASS}>
           <div className="card-title">
             Military &amp; support
