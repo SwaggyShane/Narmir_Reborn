@@ -4,6 +4,7 @@ import { fmt } from '../../utils/fmt.js';
 import { fmtShort } from '../../utils/numberFormat.js';
 import { repairMojibake } from '../../utils/repairMojibake.js';
 import { useGameState } from '../../hooks/useGameState';
+import { switchTab } from '../../utils/switchTab.js';
 
 let profileApi = null;
 
@@ -264,7 +265,7 @@ export default function KingdomProfileModal() {
               </button>
               {isMapped && !isMe ? (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <button type="button" className="btn btn-gold" style={{ padding: '10px' }} onClick={() => { window.switchTab?.('bounties'); closeKingdomProfile(); }}>
+                  <button type="button" className="btn btn-gold" style={{ padding: '10px' }} onClick={() => { switchTab('bounties'); closeKingdomProfile(); }}>
                     Place Bounty
                   </button>
                   <button type="button" className="btn btn-gold" style={{ padding: '10px' }} onClick={() => { window.establishTradeRoute?.(data.id); closeKingdomProfile(); }}>
@@ -292,6 +293,5 @@ export default function KingdomProfileModal() {
     </div>
   );
 }
-
 
 
