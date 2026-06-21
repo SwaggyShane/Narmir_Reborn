@@ -1,6 +1,7 @@
 import { gameStateManager } from '../../GameStateManager.js';
 import { fmtShort } from '../../utils/numberFormat.js';
 import { repairMojibake } from '../../utils/repairMojibake.js';
+import { getWorldMapData } from '../../utils/worldMapData.js';
 
 const REGION_META = {
   dwarf: { name: 'The Iron Holds', stroke: '#c8962a' },
@@ -35,7 +36,7 @@ function escapeJsString(value) {
 }
 
 export function showMapKingdomCard(id) {
-  const worldMapData = Array.isArray(window.worldMapData) ? window.worldMapData : [];
+  const worldMapData = getWorldMapData();
   const k = worldMapData.find((entry) => entry.id === id);
   if (!k) return;
 
