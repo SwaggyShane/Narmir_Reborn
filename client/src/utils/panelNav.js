@@ -142,6 +142,7 @@ export function initGameStateManager() {
       population: sourceState.population ?? sourceState.pop ?? 0,
     }, { reason: 'init' });
   }
+  syncUI();
 }
 
 function applyServerUpdatesToGame(updates, context = {}) {

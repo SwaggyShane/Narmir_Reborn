@@ -52,72 +52,6 @@ const Topbar = () => {
             <div className="countdown" style={{ fontSize: '10px', fontFamily: '"Inter", sans-serif' }}>
               +7 in <span id="regen-countdown">25:00</span>
             </div>
-            <div
-              style={{
-                marginTop: '4px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                flexWrap: 'wrap',
-              }}
-            >
-              <span
-                style={{ fontSize: '11px', color: 'var(--text3)', cursor: 'pointer' }}
-                onClick={openXpModal}
-                title="Click for XP breakdown"
-              >
-                Level
-                <span
-                  id="kingdom-level"
-                  style={{
-                    color: 'var(--gold)',
-                    fontWeight: 700,
-                    fontSize: '13px',
-                    textDecoration: 'underline dotted',
-                    textUnderlineOffset: '2px',
-                  }}
-                >
-                  {level}
-                </span>
-              </span>
-              <div
-                style={{
-                  flex: 1,
-                  minWidth: '80px',
-                  maxWidth: '150px',
-                  cursor: 'pointer',
-                }}
-                onClick={openXpModal}
-                title="Click for XP breakdown"
-              >
-                <div
-                  style={{
-                    height: '3px',
-                    background: 'var(--bg4)',
-                    borderRadius: '1.5px',
-                    overflow: 'hidden',
-                  }}
-                >
-                  <div
-                    id="xp-bar"
-                    style={{
-                      height: '3px',
-                      width: `${xpPct}%`,
-                      background: 'linear-gradient(90deg, var(--accent1), var(--gold))',
-                      borderRadius: '1.5px',
-                      transition: 'width 0.4s',
-                    }}
-                  />
-                </div>
-              </div>
-              <span
-                id="xp-label"
-                style={{ fontSize: '9px', color: 'var(--text3)', cursor: 'pointer' }}
-                onClick={openXpModal}
-              >
-                {xpNeeded > 0 ? `${xpInLevel.toLocaleString()} / ${xpNeeded.toLocaleString()} XP` : 'Max Level'}
-              </span>
-            </div>
           </div>
           <button
             className="turn-btn"
@@ -134,15 +68,6 @@ const Topbar = () => {
               onClick={handleAccount}
             >
               Sign In
-            </button>
-          )}
-          {state?.username && (
-            <button
-              className="btn hidden md:inline-flex"
-              style={{ padding: '6px 10px', fontSize: '12px', marginLeft: '8px', whiteSpace: 'nowrap' }}
-              onClick={handleAccount}
-            >
-              Logout
             </button>
           )}
         </div>
