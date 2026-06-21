@@ -129,7 +129,7 @@ export function syncUI() {
     const sunsetBadge = document.getElementById('vampire-sunset-badge');
     if (sunsetBadge) {
       if (timeInfo.isDaylight) {
-        const hoursToSunset = 13 - timeInfo.hour;
+        const hoursToSunset = timeInfo.hour >= 13 ? 25 - timeInfo.hour : 1 - timeInfo.hour;
         sunsetBadge.textContent = `Sunset in ${hoursToSunset}h`;
         sunsetBadge.style.display = 'inline-flex';
       } else {
