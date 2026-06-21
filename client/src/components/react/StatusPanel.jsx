@@ -139,8 +139,8 @@ const StatusPanel = () => {
   const troopLevels = state?.troop_levels || {};
 
   return (
-    <div id="status" className="panel active">
-      <div style={{ marginBottom: '20px' }}>
+    <div id="status" className="panel active w-full min-w-0">
+      <div className="mb-5">
         <div
           id="race-tag-display"
           className="race-tag-block"
@@ -255,7 +255,7 @@ const StatusPanel = () => {
         </div>
       </div>
 
-      <div className="status-grid" id="status-grid">
+      <div className="status-grid grid gap-5 md:grid-cols-2 xl:grid-cols-3" id="status-grid">
         <div className="card">
           <div className="card-title">
             Military &amp; support
