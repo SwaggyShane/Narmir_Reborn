@@ -275,6 +275,20 @@ export async function sendGlobalChat(message) {
   });
 }
 
+export async function sendDirectMessage(recipient, message) {
+  const socketInstance = await getSocket();
+  const target = String(recipient || '').trim();
+  const payload = (typeof message === "string" ? message : "").trim();
+  if (!target) return { error: "Recipient required" };
+  if (!payload) return { error: "Message required" };
+
+  return new Promise((resolve) => {
+    socketInstance.emit("chat:global", { message: `/msg ${target} ${payload}` }, (ack) => {
+      resolve(ack || {});
+    });
+  });
+}
+
 if (typeof window !== "undefined") {
   window.__narmirGetSocket = getSocket;
   window.__narmirSocketClient = {
@@ -286,5 +300,6 @@ if (typeof window !== "undefined") {
     appendSystemMessage,
     appendWhisperMessage,
     sendGlobalChat,
+    sendDirectMessage,
   };
 }

@@ -1,10 +1,12 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { apiCall } from '../../utils/api.js';
 import { fmt } from '../../utils/fmt.js';
 import { fmtShort } from '../../utils/numberFormat.js';
 import { repairMojibake } from '../../utils/repairMojibake.js';
 import { useGameState } from '../../hooks/useGameState';
-import { switchTab } from '../../utils/switchTab.js';
+import { switchTab } from '../../utils/panelNav.js';
+import { openDirectMessage } from '../../utils/directMessage.js';
+import { targetFromRankings } from '../../utils/rankingsTarget.js';
 
 let profileApi = null;
 
@@ -259,7 +261,7 @@ export default function KingdomProfileModal() {
                 type="button"
                 className="btn btn-accent"
                 style={{ width: '100%', padding: '12px', fontWeight: 700 }}
-                onClick={() => { window.openDirectMessage?.(data.player_id, data.name); closeKingdomProfile(); }}
+                onClick={() => { openDirectMessage(data.player_id, data.name); closeKingdomProfile(); }}
               >
                 Send Message to Ruler
               </button>
@@ -271,13 +273,13 @@ export default function KingdomProfileModal() {
                   <button type="button" className="btn btn-gold" style={{ padding: '10px' }} onClick={() => { window.establishTradeRoute?.(data.id); closeKingdomProfile(); }}>
                     Trade Route
                   </button>
-                  <button type="button" className="btn btn-red" style={{ padding: '10px' }} onClick={() => { window.targetFromRankings?.(data.id, 'attack'); closeKingdomProfile(); }}>
+                  <button type="button" className="btn btn-red" style={{ padding: '10px' }} onClick={() => { targetFromRankings(data.id, 'attack'); closeKingdomProfile(); }}>
                     Attack
                   </button>
-                  <button type="button" className="btn btn-accent" style={{ padding: '10px' }} onClick={() => { window.targetFromRankings?.(data.id, 'spells'); closeKingdomProfile(); }}>
+                  <button type="button" className="btn btn-accent" style={{ padding: '10px' }} onClick={() => { targetFromRankings(data.id, 'spells'); closeKingdomProfile(); }}>
                     Cast Spell
                   </button>
-                  <button type="button" className="btn" style={{ gridColumn: 'span 2', padding: '10px' }} onClick={() => { window.targetFromRankings?.(data.id, 'covert'); closeKingdomProfile(); }}>
+                  <button type="button" className="btn" style={{ gridColumn: 'span 2', padding: '10px' }} onClick={() => { targetFromRankings(data.id, 'covert'); closeKingdomProfile(); }}>
                     Covert Operation
                   </button>
                 </div>
@@ -293,5 +295,3 @@ export default function KingdomProfileModal() {
     </div>
   );
 }
-
-

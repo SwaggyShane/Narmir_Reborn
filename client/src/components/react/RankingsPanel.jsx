@@ -5,6 +5,10 @@ import { repairMojibake } from '../../utils/repairMojibake';
 import { fmt } from "../../utils/fmt";
 import { toast as showToast } from '../../utils/toast.js';
 import { openKingdomProfile } from './KingdomProfileModal.jsx';
+import { openDirectMessage } from '../../utils/directMessage.js';
+import { selectBountyTarget } from '../../utils/bountyTarget.js';
+import { targetFromRankings } from '../../utils/rankingsTarget.js';
+import { switchTab } from '../../utils/panelNav.js';
 
 const RACE_ICONS = {
   human: '🧑',
@@ -99,10 +103,13 @@ const RankingsPanel = () => {
   const handleRefresh = () => loadRankings();
   const handleSetRankType = (type) => setActiveTab(type);
   const handleSearch = (event) => setSearch(event.target.value);
-  const handleDirectMessage = (row) => window.openDirectMessage?.(row.player_id, row.name);
+  const handleDirectMessage = (row) => openDirectMessage(row.player_id, row.name);
   const handleProfile = (row) => openKingdomProfile(row.name);
-  const handleBounty = (row) => window.openBountyAction?.(row.id, row.name);
-  const handleTarget = (row, mode) => window.targetFromRankings?.(row.id, mode);
+  const handleBounty = (row) => {
+    selectBountyTarget(row.id);
+    switchTab('bounties');
+  };
+  const handleTarget = (row, mode) => targetFromRankings(row.id, mode);
   const handleTrade = useCallback(async (row) => {
     try {
       const result = await apiCall('/api/kingdom/trade-routes/establish', {
