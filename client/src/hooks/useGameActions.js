@@ -10,19 +10,35 @@ function applyResult(data, reason) {
 }
 
 export function useGameActions() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState({
+    takeTurn: false,
+    search: false,
+    castSpell: false,
+    attack: false,
+  });
+  const [errors, setErrors] = useState({
+    takeTurn: null,
+    search: null,
+    castSpell: null,
+    attack: null,
+  });
+
+  const setActionLoading = (action, value) =>
+    setLoading((prev) => ({ ...prev, [action]: value }));
+  const setActionError = (action, value) =>
+    setErrors((prev) => ({ ...prev, [action]: value }));
 
   const takeTurn = useCallback(async () => {
     if ((gameStateManager.getState()?.turns_stored || 0) < 1) {
       toast('No turns available.', 'warning');
       return null;
     }
-    setLoading(true);
-    setError(null);
+    setActionLoading('takeTurn', true);
+    setActionError('takeTurn', null);
     try {
       const data = await apiCall('/api/kingdom/turn', { method: 'POST' });
       if (data.error) {
+        setActionError('takeTurn', data.error);
         toast(data.error, data.error.includes('No turns') ? 'warning' : 'error');
         return null;
       }
@@ -33,65 +49,77 @@ export function useGameActions() {
       }
       return data;
     } catch (err) {
-      setError(err.message);
+      setActionError('takeTurn', err.message);
       toast('Failed to take turn: ' + err.message, 'error');
       return null;
     } finally {
-      setLoading(false);
+      setActionLoading('takeTurn', false);
     }
   }, []);
 
   // type: 'food' | 'gold' | 'land', rangers: number
   const search = useCallback(async (type, rangers) => {
-    setLoading(true);
-    setError(null);
+    setActionLoading('search', true);
+    setActionError('search', null);
     try {
       const data = await apiCall('/api/kingdom/search', { method: 'POST', body: { type, rangers } });
-      if (data.error) { toast(data.error, 'error'); return null; }
+      if (data.error) {
+        setActionError('search', data.error);
+        toast(data.error, 'error');
+        return null;
+      }
       applyResult(data, 'search');
       return data;
     } catch (err) {
-      setError(err.message);
+      setActionError('search', err.message);
       toast('Search failed: ' + err.message, 'error');
       return null;
     } finally {
-      setLoading(false);
+      setActionLoading('search', false);
     }
   }, []);
 
   const castSpell = useCallback(async (spellId, targetId, obscure = false) => {
-    setLoading(true);
-    setError(null);
+    setActionLoading('castSpell', true);
+    setActionError('castSpell', null);
     try {
       const data = await apiCall('/api/kingdom/spell', { method: 'POST', body: { spellId, targetId, obscure } });
-      if (data.error) { toast(data.error, 'error'); return null; }
+      if (data.error) {
+        setActionError('castSpell', data.error);
+        toast(data.error, 'error');
+        return null;
+      }
       applyResult(data, 'spell');
       return data;
     } catch (err) {
-      setError(err.message);
+      setActionError('castSpell', err.message);
       toast('Spell failed: ' + err.message, 'error');
       return null;
     } finally {
-      setLoading(false);
+      setActionLoading('castSpell', false);
     }
   }, []);
 
   const attack = useCallback(async (targetId, units) => {
-    setLoading(true);
-    setError(null);
+    setActionLoading('attack', true);
+    setActionError('attack', null);
     try {
       const data = await apiCall('/api/kingdom/attack', { method: 'POST', body: { targetId, units } });
-      if (data.error) { toast(data.error, 'error'); return null; }
+      if (data.error) {
+        setActionError('attack', data.error);
+        toast(data.error, 'error');
+        return null;
+      }
       applyResult(data, 'attack');
       return data;
     } catch (err) {
-      setError(err.message);
+      setActionError('attack', err.message);
       toast('Attack failed: ' + err.message, 'error');
       return null;
     } finally {
-      setLoading(false);
+      setActionLoading('attack', false);
     }
   }, []);
 
-  return { takeTurn, search, castSpell, attack, loading, error };
+  return { takeTurn, search, castSpell, attack, loading, errors };
 }

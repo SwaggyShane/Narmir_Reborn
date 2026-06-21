@@ -7,11 +7,13 @@ export function usePanelState(panelName, initialState = {}) {
   });
 
   const setPanelState = (nextState) => {
-    const merged = typeof nextState === 'function'
-      ? nextState(state)
-      : { ...state, ...nextState };
-    gameStateManager.setPanelState(panelName, merged);
-    setState(merged);
+    setState((prevState) => {
+      const merged = typeof nextState === 'function'
+        ? nextState(prevState)
+        : { ...prevState, ...nextState };
+      gameStateManager.setPanelState(panelName, merged);
+      return merged;
+    });
   };
 
   return { state, setState: setPanelState };
