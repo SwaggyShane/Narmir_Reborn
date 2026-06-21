@@ -7,6 +7,7 @@ import { gameStateManager } from '../../GameStateManager.js';
 import { fmt } from '../../utils/fmt.js';
 import { fmtShort } from '../../utils/numberFormat.js';
 import { toast } from '../../utils/toast.js';
+import { playGameSound } from '../../utils/audio.js';
 
 function getState() {
   return window.state || gameStateManager.getState();
@@ -189,7 +190,7 @@ export async function buyUpgrade(category, key) {
 
   if (result.error) return toast(result.error, 'error');
 
-  window.playGameSound?.('upgrade_purchased');
+  playGameSound('upgrade_purchased');
 
   if (result.updates) {
     applyGameMutation(result, { reason: 'economy-upgrade' });

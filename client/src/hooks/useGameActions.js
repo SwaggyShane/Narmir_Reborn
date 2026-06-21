@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { apiCall } from '../utils/api.js';
 import { toast } from '../utils/toast.js';
 import { gameStateManager } from '../GameStateManager.js';
+import { playGameSound } from '../utils/audio.js';
 
 function applyResult(data, reason) {
   const updates = data?.updates || data?.kUpdates || null;
@@ -44,10 +45,10 @@ export function useGameActions() {
       toast(`No turns available. Refills in ${countdown}`, 'warning');
       return null;
     }
-    turnInProgressRef.current = true;
-    setActionLoading('takeTurn', true);
-    setActionError('takeTurn', null);
-    window.playGameSound?.('take_turn');
+      turnInProgressRef.current = true;
+      setActionLoading('takeTurn', true);
+      setActionError('takeTurn', null);
+    playGameSound('take_turn');
     try {
       const data = await apiCall('/api/kingdom/turn', { method: 'POST' });
       if (data.error) {
@@ -56,13 +57,10 @@ export function useGameActions() {
         return null;
       }
       applyResult(data, 'turn');
-      window.syncFromState?.();
 
       let completedBuildingsMsg = '';
-      const blurbs = [];
       if (Array.isArray(data.events)) {
         window.dispatchEvent(new CustomEvent('narmir:news-items', { detail: data.events }));
-        window.appendNewsItems?.(data.events);
         for (const ev of data.events) {
           const msg = ev?.message || '';
           if (msg.includes('Completed: ')) {
@@ -73,12 +71,6 @@ export function useGameActions() {
           }
           if (msg.includes('ACHIEVEMENT UNLOCKED')) playAchievementSound();
         }
-        if (completedBuildingsMsg && typeof window.getCompletionBlurb === 'function') {
-          completedBuildingsMsg.split(',').forEach((item) => {
-            const blurb = window.getCompletionBlurb(item.trim());
-            if (blurb) blurbs.push(blurb);
-          });
-        }
       }
 
       const state = gameStateManager.getState();
@@ -86,7 +78,7 @@ export function useGameActions() {
       const currentTurn = state?.turn;
       const turnStatus = `Turn ${currentTurn || '?'} - ${turnsLeft} turns left`;
       const buildStatus = completedBuildingsMsg
-        ? `Completed: ${completedBuildingsMsg}!\n${blurbs.join('\n') || ''}`
+        ? `Completed: ${completedBuildingsMsg}!`
         : '';
 
       if ((state?.food || 0) < 1000) {
