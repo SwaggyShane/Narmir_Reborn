@@ -276,54 +276,14 @@ function processLocationMapsWip(k, events) {
       updates.discovered_kingdoms = JSON.stringify(disc);
       events.push({
         type: "system",
-        message: `☣️ Plague ravages your kingdom — ${lost.toLocaleString()} citizens have perished.`,
-        });
-      } else if (effect === "silence") {
-        // Research suppressed — handled in processTurn by checking for silence
-      } else if (effect === "summon_rats") {
-        const foodDmg = data.food_damage_per_turn || 0;
-        if (foodDmg > 0) {
-          updates.food = Math.max(0, (updates.food !== undefined ? updates.food : k.food) - foodDmg);
-          events.push({ type: "attack", message: `🐀 Summoned rats devour ${foodDmg.toLocaleString()} food from your stores.` });
-        }
-      } else if (effect === "life_drain_aura") {
-        const drainPct = data.population_drain || 0.1;
-        const lost = Math.floor(k.population * drainPct);
-        if (lost > 0) {
-          updates.population = Math.max(0, (updates.population !== undefined ? updates.population : k.population) - lost);
-          events.push({ type: "attack", message: `💀 Life drain aura saps ${lost.toLocaleString()} population from your kingdom.` });
-        }
-      } else if (effect === "mutate_crops") {
-        const penalty = data.food_penalty || 0.3;
-        const foodLost = Math.floor(k.food * penalty);
-        if (foodLost > 0) {
-          updates.food = Math.max(0, (updates.food !== undefined ? updates.food : k.food) - foodLost);
-          events.push({ type: "attack", message: `🌿 Mutated crops rot — ${foodLost.toLocaleString()} food spoiled.` });
-        }
-      } else if (effect === "command_legion") {
-        const friendlyFire = data.damage_per_turn || 0;
-        if (friendlyFire > 0) {
-          updates.fighters = Math.max(0, (updates.fighters !== undefined ? updates.fighters : k.fighters) - friendlyFire);
-          events.push({ type: "attack", message: `⚔️ Command legion confusion — ${friendlyFire.toLocaleString()} fighters lost to friendly fire.` });
-        }
-      } else if (effect === "conjure_abundance") {
-        // Unlimited food: generate food equal to 20% of population each turn
-        const foodGenerated = Math.floor(k.population * 0.2);
-        updates.food = (updates.food !== undefined ? updates.food : k.food) + foodGenerated;
-        events.push({ type: "system", message: `🌾 Conjured abundance generates ${foodGenerated.toLocaleString()} food.` });
-      } else if (effect === "death_dominion") {
-        // Enemy deaths reanimate under control — bonus fighters each turn based on flag
-        const bonusFighters = Math.floor(k.fighters * 0.01);
-        if (bonusFighters > 0) {
-          updates.fighters = (updates.fighters !== undefined ? updates.fighters : k.fighters) + bonusFighters;
-        }
-      }
-      effects[effect] = { ...data, turns_left: remaining };
+        message: `🗺️ Scribes have completed a location map for ${item.target_name}. You may now interact with them.`,
+      });
+    } else {
+      remaining.push(item);
     }
   }
 
-  expired.forEach((e) => delete effects[e]);
-  updates.active_effects = JSON.stringify(effects);
+  updates.location_maps_wip = JSON.stringify(remaining);
   return updates;
 }
 

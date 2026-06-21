@@ -28,7 +28,7 @@ function processActiveEffects(k, events) {
       expired.push(effect);
       events.push({
         type: "system",
-        message: `☣️ Plague ravages your kingdom — ${lost.toLocaleString()} citizens have perished.`,
+        message: `The ${effect.replace(/_/g, " ")} effect on your kingdom has expired.`,
         });
       } else if (effect === "silence") {
         // Research suppressed — handled in processTurn by checking for silence
@@ -72,7 +72,6 @@ function processActiveEffects(k, events) {
       }
       effects[effect] = { ...data, turns_left: remaining };
     }
-  }
 
   expired.forEach((e) => delete effects[e]);
   updates.active_effects = JSON.stringify(effects);

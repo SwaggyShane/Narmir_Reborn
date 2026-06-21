@@ -31,7 +31,7 @@ export function repairMojibake(value) {
     .replace(/Ã°Å¸Å’Â²/g, "Ã°Å¸Å’Â²")
     .replace(/Ã°Å¸Ââ€Ã¯Â¸Â/g, "Ã°Å¸Ââ€Ã¯Â¸Â")
     .replace(/Ã°Å¸Â§Â­/g, "Ã°Å¸Â§Â­")
-    .replace(/Ã°Å¸Ââ€ /g, "Ã°Å¸Ââ€ ")
+    .replace(/Ã°Å¸Ââ€\u00a0/g, "Ã°Å¸Ââ€\u00a0")
     .replace(/Ã°Å¸â€â€™/g, "Ã°Å¸â€â€™")
     .replace(/Ã°Å¸â€Â®/g, "Ã°Å¸â€Â®")
     .replace(/Ã°Å¸Â¤Â/g, "Ã°Å¸Â¤Â")

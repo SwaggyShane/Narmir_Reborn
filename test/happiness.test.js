@@ -12,7 +12,6 @@ function makeKingdom(overrides = {}) {
     race: 'human',
     tax: 42,
     land: 1000,
-    happiness: 50,
     prestige_level: 0,
     turn: 10,
     mana: 0,
