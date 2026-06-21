@@ -216,8 +216,12 @@ export default function AuthModal() {
           return;
         }
         setError('');
-        await submitAuthRequest('/api/auth/login', { username, password });
-        await finishAuthSession(username);
+        try {
+          await submitAuthRequest('/api/auth/login', { username, password });
+          await finishAuthSession(username);
+        } catch (err) {
+          setError(err?.message || 'Login failed.');
+        }
       },
       async doRegister() {
         const current = formRef.current;
@@ -232,15 +236,19 @@ export default function AuthModal() {
           return;
         }
         setError('');
-        await submitAuthRequest('/api/auth/register', {
-          username,
-          password,
-          email,
-          kingdomName,
-          race,
-          gender,
-        });
-        await finishAuthSession(username);
+        try {
+          await submitAuthRequest('/api/auth/register', {
+            username,
+            password,
+            email,
+            kingdomName,
+            race,
+            gender,
+          });
+          await finishAuthSession(username);
+        } catch (err) {
+          setError(err?.message || 'Registration failed.');
+        }
       },
     };
 

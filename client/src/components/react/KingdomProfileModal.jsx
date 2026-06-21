@@ -43,12 +43,6 @@ export default function KingdomProfileModal() {
   const [profile, setProfile] = useState(null);
   const [name, setName] = useState('');
 
-  useEffect(() => {    setShellVisible('kingdom-profile-modal', visible, 'flex');
-    if (!visible) {
-      setShellVisible('kingdom-profile-modal', false);
-    }
-  }, [visible]);
-
   useEffect(() => {
     profileApi = {
       async open(nextName) {
@@ -90,12 +84,17 @@ export default function KingdomProfileModal() {
 
   useEffect(() => {
     setShellVisible('kingdom-profile-modal', visible, 'flex');
-    if (typeof document !== 'undefined') {
-      const app = document.getElementById('app');
-      const nav = document.getElementById('bottom-nav');
-      if (app) app.style.pointerEvents = visible ? 'none' : '';
-      if (nav) nav.style.pointerEvents = visible ? 'none' : '';
-    }
+    if (typeof document === 'undefined') return undefined;
+    const app = document.getElementById('app');
+    const nav = document.getElementById('bottom-nav');
+    const prevApp = app ? app.style.pointerEvents : '';
+    const prevNav = nav ? nav.style.pointerEvents : '';
+    if (app) app.style.pointerEvents = visible ? 'none' : prevApp;
+    if (nav) nav.style.pointerEvents = visible ? 'none' : prevNav;
+    return () => {
+      if (app) app.style.pointerEvents = prevApp;
+      if (nav) nav.style.pointerEvents = prevNav;
+    };
   }, [visible]);
 
   const data = profile || {};
