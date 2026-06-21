@@ -484,6 +484,9 @@ async function initDb(options = {}) {
     // were to hang, complementing the app-side reaper below.
     idle_in_transaction_session_timeout: 60000,
     application_name: 'narmir-game',
+    // Force UTF-8 encoding on every connection to prevent emoji/special character
+    // corruption when PostgreSQL's locale defaults differ from UTF-8.
+    options: '-c client_encoding=UTF8',
   });
 
   // Monitor pool health

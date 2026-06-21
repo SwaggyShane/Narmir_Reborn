@@ -109,7 +109,7 @@ function createMessageRow(data, mode) {
   body.style.fontSize = "13px";
   body.style.lineHeight = "1.45";
   body.style.color = "var(--text2)";
-  body.textContent = data?.message || "";
+  body.textContent = repairMojibake(data?.message || "");
 
   if (mode === "system") {
     header.style.fontWeight = "700";
@@ -241,7 +241,7 @@ export function renderOnlineList(users = []) {
     item.style.color = "var(--text)";
 
     const name = document.createElement("span");
-    name.textContent = user?.username || "Unknown";
+    name.textContent = repairMojibake(user?.username || "Unknown");
     name.style.color = user?.chatColor || "var(--text)";
     item.appendChild(name);
 
