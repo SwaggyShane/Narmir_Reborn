@@ -2845,7 +2845,7 @@
 
         bottom: 0;
 
-        left: 0;
+        left: 220px;
 
         right: 0;
 
@@ -2871,11 +2871,17 @@
 
         pointer-events: none;
 
-        z-index: 1000;
+        z-index: var(--z-sidebar);
 
       }
 
-      @media (max-width: 699px) {
+      body.force-bottom-nav .status-bar {
+
+        left: 0;
+
+      }
+
+      @media (max-width: 767px) {
 
         .status-bar {
 
