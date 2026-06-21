@@ -1,4 +1,5 @@
 import { toast } from '../utils/toast.js';
+import { repairMojibake } from '../utils/repairMojibake.js';
 
 // Binds global socket event handlers once when the socket is ready.
 // Must NOT be called inside a React component — these handlers are app-wide
@@ -7,7 +8,7 @@ export function initSocketHandlers(socket) {
   if (!socket || socket._narmirGeneralHandlersBound) return;
 
   socket.on('event:attack_received', (data) => {
-    toast('⚔️ ' + (data?.from || 'Someone') + ' attacked your kingdom!', 'error');
+    toast('⚔️ ' + repairMojibake(data?.from || 'Someone') + ' attacked your kingdom!', 'error');
     window.dispatchEvent(new CustomEvent('narmir:news-refresh'));
     window.loadKingdom?.();
   });
