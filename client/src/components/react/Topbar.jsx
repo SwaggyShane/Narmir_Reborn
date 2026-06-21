@@ -1,6 +1,7 @@
 import React from 'react';
 import { useGameState } from '../../hooks/useGameState';
 import { takeTurn } from '../../actions/takeTurn';
+import { showLoginModal, logout } from './AuthModal.jsx';
 import { xpForLevel } from '../../utils/xp';
 
 const Topbar = () => {
@@ -15,6 +16,13 @@ const Topbar = () => {
   const xpNeeded = Math.max(0, nextLvl - thisLvl);
   const xpPct = xpNeeded > 0 ? Math.min(100, Math.floor((xpInLevel / xpNeeded) * 100)) : 100;
   const openXpModal = () => window.showXpModal?.();
+  const handleAccount = () => {
+    if (state?.username) {
+      logout();
+      return;
+    }
+    showLoginModal();
+  };
 
   return (
     <header className="topbar">
@@ -112,6 +120,9 @@ const Topbar = () => {
           </div>
           <button className="turn-btn" style={{ padding: '6px 14px', fontSize: '12px' }} onClick={takeTurn}>
             Take Turn
+          </button>
+          <button className="btn" style={{ padding: '6px 10px', fontSize: '12px', marginLeft: '8px', whiteSpace: 'nowrap' }} onClick={handleAccount}>
+            {state?.username ? 'Logout' : 'Sign In'}
           </button>
         </div>
       </div>
