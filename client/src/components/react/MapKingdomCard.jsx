@@ -25,6 +25,15 @@ function escapeHtml(value) {
   })[ch]);
 }
 
+// Escape a string for use inside a JS single-quoted string literal that is
+// embedded in an HTML attribute (e.g. onclick="fn('...')"). The browser
+// HTML-decodes the attribute before passing it to the JS engine, so &#39;
+// becomes ' again and breaks the string. We must escape \ and ' at the JS
+// level first, then HTML-escape the whole thing.
+function escapeJsString(value) {
+  return escapeHtml(String(value ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'"));
+}
+
 export function showMapKingdomCard(id) {
   const worldMapData = Array.isArray(window.worldMapData) ? window.worldMapData : [];
   const k = worldMapData.find((entry) => entry.id === id);
@@ -68,7 +77,7 @@ export function showMapKingdomCard(id) {
 
   actEl.innerHTML = !isMe
     ? '<button class="btn" style="font-size:11px;padding:4px 10px" onclick="openKingdomProfile(\'' +
-      escapeHtml(repairMojibake(k.name || '')) +
+      escapeJsString(repairMojibake(k.name || '')) +
       "')\">🤴 Profile</button>" +
       '<button class="btn btn-red" style="font-size:11px;padding:4px 10px" onclick="targetFromRankings(' +
       k.id +
