@@ -28,11 +28,11 @@ const Topbar = () => {
   return (
     <header className="topbar flex h-14 items-center justify-between gap-2 border-b border-white/5 bg-zinc-950/95 px-3 backdrop-blur-md md:px-4">
       <div className="logo-container min-w-0">
-        <div className="logo truncate font-serif text-[13px] font-black uppercase tracking-[0.12em] text-[var(--gold)] md:text-[14px]">NARMIR REBORN</div>
-        <div className="tagline truncate text-[11px] text-[var(--text2)] md:text-[12px]">Pure. Damn. Evil.</div>
+        <div className="logo truncate font-serif text-[13px] font-black uppercase tracking-[0.12em] text-[var(--gold)] md:text-sm">NARMIR REBORN</div>
+        <div className="tagline truncate text-[11px] text-[var(--text2)] md:text-xs">Pure. Damn. Evil.</div>
       </div>
       <div className="topbar-stats flex min-w-0 items-center gap-2 md:gap-3">
-        <div className="tstat hide-sm hidden shrink-0 md:block">
+        <div className="tstat hidden shrink-0 md:block">
           <div className="val" id="top-rank">—</div>
           <div className="lbl">Rank</div>
         </div>
@@ -42,7 +42,7 @@ const Topbar = () => {
               <span className="hide-xs text-[11px] uppercase tracking-[0.5px] text-[var(--text3)]">
                 Turns:
               </span>
-              <span id="turns-stored-disp" className="text-[16px] font-bold text-[var(--gold)]">
+              <span id="turns-stored-disp" className="text-base font-bold text-[var(--gold)]">
                 {turnsStored}
               </span>
               <span className="hide-xs text-[11px] text-[var(--text3)]">
@@ -89,14 +89,14 @@ const Topbar = () => {
             </div>
           </div>
           <button
-            className="turn-btn shrink-0 px-3.5 py-1.5 text-[12px] leading-none"
+            className="turn-btn shrink-0 px-3.5 py-1.5 text-xs leading-none"
             style={{ opacity: loading.takeTurn ? 0.6 : 1 }}
             onClick={takeTurn}
             disabled={loading.takeTurn}
           >
             Take Turn
           </button>
-          <button className="btn ml-2 shrink-0 whitespace-nowrap px-2.5 py-1.5 text-[12px]" onClick={handleAccount}>
+          <button className="btn ml-2 shrink-0 whitespace-nowrap px-2.5 py-1.5 text-xs" onClick={handleAccount}>
             {state?.username ? 'Logout' : 'Sign In'}
           </button>
         </div>
