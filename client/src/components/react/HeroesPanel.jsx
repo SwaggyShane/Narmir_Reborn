@@ -396,9 +396,9 @@ const HeroesPanel = () => {
       <LoreModal
         isOpen={!!heroLoreKey}
         onClose={() => setHeroLoreKey(null)}
-        title={heroLoreKey && allHeroClasses[heroLoreKey] ? `${allHeroClasses[heroLoreKey].name || ''} Class Lore` : 'Hero Lore'}
+      title={heroLoreKey && allHeroClasses?.[heroLoreKey] ? `${allHeroClasses[heroLoreKey].name || ''} Class Lore` : 'Hero Lore'}
       >
-        {heroLoreKey && allHeroClasses[heroLoreKey] && (() => {
+        {heroLoreKey && allHeroClasses?.[heroLoreKey] && (() => {
           const cls = allHeroClasses[heroLoreKey];
           const abilities = Array.isArray(cls.abilities) ? cls.abilities : [];
           return (

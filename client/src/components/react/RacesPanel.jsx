@@ -94,6 +94,7 @@ function RaceLoreContent({ rKey, lore, regionName, regionBonus, portraitUrl, rep
   const strengths = Array.isArray(lore.strengths) ? lore.strengths : [];
   const weaknesses = Array.isArray(lore.weaknesses) ? lore.weaknesses : [];
   const heroes = Array.isArray(lore.heroes) ? lore.heroes : [];
+  const cleanedRegionName = repair(regionName || '');
 
   return (
     <>
@@ -118,9 +119,9 @@ function RaceLoreContent({ rKey, lore, regionName, regionBonus, portraitUrl, rep
           <h2 style={{ color: lore.color || 'var(--gold)', margin: '0 0 6px', fontSize: '24px', letterSpacing: '-0.5px', fontFamily: "'Cinzel', serif", fontWeight: 700 }}>
             {repair(lore.title || 'Unknown')}
           </h2>
-          {regionName && (
+          {cleanedRegionName && (
             <div style={{ fontSize: '13px', color: 'var(--text2)', marginBottom: '6px', fontWeight: 600 }}>
-              {regionName} Region
+              {cleanedRegionName} Region
             </div>
           )}
           {regionBonus && (
@@ -184,6 +185,26 @@ function RaceLoreContent({ rKey, lore, regionName, regionBonus, portraitUrl, rep
   );
 }
 
+function RaceCardPortrait({ portraitUrl, icon, alt }) {
+  const [failed, setFailed] = useState(false);
+  if (!portraitUrl || failed) {
+    return (
+      <div style={{ width: '100%', maxHeight: '180px', aspectRatio: '3 / 4', objectFit: 'contain', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '56px', background: 'var(--bg3)', borderRadius: 'var(--radius)' }}>
+        {repairMojibake(String(icon ?? '⚔'))}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={portraitUrl}
+      alt={alt}
+      style={{ width: '100%', maxHeight: '180px', aspectRatio: '3 / 4', objectFit: 'contain', marginBottom: '12px', display: 'block' }}
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 const RacesPanel = () => {
   const [selectedRace, setSelectedRace] = useState(null);
   const [heroLoreKey, setHeroLoreKey] = useState(null);
@@ -243,14 +264,7 @@ const RacesPanel = () => {
             const heroes = Array.isArray(r.heroes) ? r.heroes : [];
             return (
               <div key={key} style={cardStyle}>
-                {portraitUrl && (
-                  <img
-                    src={portraitUrl}
-                    alt={repair(r.title || key)}
-                    style={{ width: '100%', maxHeight: '180px', aspectRatio: '3 / 4', objectFit: 'contain', marginBottom: '12px', display: 'block' }}
-                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                  />
-                )}
+                <RaceCardPortrait portraitUrl={portraitUrl} icon={r.icon || '⚔'} alt={repair(r.title || key)} />
                 <div
                   onClick={() => setSelectedRace(key)}
                   style={{ cursor: 'pointer', fontSize: '16px', fontWeight: 'bold', color: 'var(--gold)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}
