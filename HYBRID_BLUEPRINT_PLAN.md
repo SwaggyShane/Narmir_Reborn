@@ -1,5 +1,20 @@
 # Hybrid Blueprint & World Fragment Bonuses - Implementation Plan
 
+## Implementation Status
+
+| Component | Status |
+|---|---|
+| Backend API endpoints (`get-buildings`, `confirm-assignment`, `assign-hybrid-blueprint`) | ✅ Implemented (`routes/kingdom.js`) |
+| Database schema (`hybrid_blueprints`, `fragment_bonuses` columns) | ✅ Implemented |
+| Fragment bonus manager (`game/fragment-bonus-manager.js`) | ✅ Implemented |
+| Fragment bonuses in engine calculations (housing, barracks, schools, libraries, etc.) | ✅ Integrated (`game/engine.js`) |
+| Vanilla JS frontend (Library panel + `assignHybridBlueprint()`) | ✅ Implemented (`client/index.html`) |
+| React frontend (`HybridBlueprintPanel.jsx`, `HybridBlueprintModal.jsx`) | ⏳ Pending — part of vanilla → React migration |
+| Special mechanics (map theft block, void randomness, etc.) | ⚠️ Partial — varies by fragment type |
+| Fragment bonuses in combat calculations | ⚠️ Partial — see `WORLD_FRAGMENT_SYSTEM.md` pending items |
+
+---
+
 ## Overview
 Complete workflow for applying world fragments to buildings through hybrid blueprints:
 1. Fragment is found/obtained

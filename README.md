@@ -1,13 +1,13 @@
-# Narmir — Land of Magic and Conquest
+# Narmir Reborn — Land of Magic and Conquest
 
-A browser-based multiplayer kingdom management game with real-time chat, turn-based strategy, and deep race customisation. Built with Node.js, Express, Socket.io, and PostgreSQL.
+A browser-based multiplayer kingdom management game with real-time chat, turn-based strategy, and deep race customisation. Built with Node.js, Express, Socket.io, PostgreSQL, and React.
 
 ---
 
 ## Live
 
-**Game:** https://narmir-server.onrender.com  
-**Admin:** https://narmir-server.onrender.com/admin
+**Game:** https://narmirreborn.com  
+**Hosting:** Railway (PostgreSQL on Railway)
 
 ---
 
@@ -15,31 +15,51 @@ A browser-based multiplayer kingdom management game with real-time chat, turn-ba
 
 | Layer | Technology |
 |---|---|
-| Runtime | Node.js |
+| Runtime | Node.js 20+ |
 | Framework | Express |
 | Real-time | Socket.io |
 | Database | PostgreSQL (via `pg` driver) |
 | Auth | JWT — httpOnly cookie + localStorage fallback |
-| Frontend | Vanilla JS, single-file HTML/CSS |
-| Hosting | Render (persistent PostgreSQL database) |
+| Frontend | React 19 + Vite (migrating from vanilla JS) |
+| Discord | discord.js 14 |
+| Hosting | Railway |
 
 ---
 
 ## Setup
 
 ```bash
-yarn install
-node index.js
+npm install
 ```
 
 **Environment variables:**
 
 | Variable | Description |
 |---|---|
+| `DATABASE_URL` | PostgreSQL connection string |
 | `JWT_SECRET` | Secret key for JWT signing |
 | `ADMIN_SECRET` | Password for admin panel access |
-| `DATABASE_URL` | PostgreSQL connection string (e.g., `postgres://user:pass@host:5432/narmir`) |
 | `PORT` | Server port (default: 3000) |
+| `DISCORD_BOT_TOKEN` | Discord bot token (optional) |
+| `USE_COMBAT_V2` | Set to `1` to enable Combat V2 HP/DMG system (default off) |
+
+**Run:**
+
+```bash
+npm start           # production
+npm run dev         # development
+npm run build       # compile React client (Vite)
+npm run bot         # start Discord bot separately
+```
+
+**Smoke and test scripts:**
+
+```bash
+npm run smoke:combat-v2        # V2 adapter smoke test
+npm run scenario:combat-v2     # V2 named scenario runner
+npm run route-smoke:combat-v2  # V2 route persistence smoke
+npm run sweep:combat-v2-broad  # V2 broad balance sweep
+```
 
 ---
 
@@ -47,88 +67,133 @@ node index.js
 
 ```
 narmir-server/
-├── index.js                  # Entry point — Express app, Socket.io, turn regen
+├── index.js                      # Entry point — Express, Socket.io, turn regen
+├── discord-bot.js                # Discord integration bot
 ├── game/
-│   ├── engine.js             # All game logic — combat, spells, expeditions, upkeep, XP
-│   └── sockets.js            # Socket.io event handlers — chat, combat, covert, real-time events
+│   ├── engine.js                 # Core game logic — upkeep, spells, expeditions, XP
+│   ├── turn.js                   # Per-turn processing — gold, food, research, happiness
+│   ├── combat.js                 # V1 combat (aggregate power/percentage)
+│   ├── combat-new.js             # V2 combat — individual HP/DMG/injury (feature-flagged)
+│   ├── combat-resolver.js        # V2 combat execution engine
+│   ├── happiness.js              # Happiness calculation, recovery, rebellion triggers
+│   ├── magic.js                  # Spell casting, school validation, mana costs
+│   ├── heroes.js                 # Hero classes, recruitment, leveling, passive bonuses
+│   ├── expeditions.js            # Expedition rewards, attrition, ultra-rare drops
+│   ├── construction.js           # Building queue, engineer allocation
+│   ├── economy.js                # Gold/food/trade calculations
+│   ├── covert.js                 # Spy, loot, assassinate, sabotage
+│   ├── mercenaries.js            # Mercenary hiring and management
+│   ├── forge.js                  # Equipment crafting and upgrades
+│   ├── fragment-synergies.js     # World fragment synergy definitions and effects
+│   ├── fragment-attunements.js   # Per-building fragment attunement effects
+│   ├── fragment-bonus-manager.js # Fragment bonus calculation utility
+│   ├── achievements.js           # Achievement tracking and unlocks
+│   ├── goals.js                  # Kingdom goals and milestones
+│   ├── prestige.js               # Prestige system
+│   ├── trade-routes.js           # Trade route income and management
+│   ├── xp.js                     # XP curves and leveling logic
+│   ├── config.js                 # All game constants, races, spells, fragments
+│   └── sockets.js                # Socket.io event handlers — chat, combat, real-time
 ├── routes/
-│   ├── auth.js               # Register, login, logout
-│   ├── kingdom.js            # All kingdom actions — build, hire, attack, research, expedition, covert
-│   ├── admin.js              # Admin routes — kingdoms, promotions, bans, chat mods
-│   └── middleware.js         # requireAuth JWT middleware
+│   ├── auth.js                   # Register, login, logout
+│   ├── kingdom.js                # All kingdom actions — build, hire, attack, research, expedition
+│   ├── admin.js                  # Admin panel routes
+│   ├── hero.js                   # Hero-specific routes
+│   ├── forum.js                  # In-game forum
+│   ├── discord.js                # Discord channel sync
+│   └── middleware.js             # requireAuth JWT middleware
 ├── db/
-│   └── schema.js             # Table creation + safe column migrations on boot
-└── public/
-    ├── index.html            # Full game frontend (single file)
-    ├── admin.html            # Admin panel
-    └── throne.png            # The Throne of Nazdreg Grishnak
+│   └── schema.js                 # Table creation + safe column migrations on boot
+├── client/
+│   ├── index.html                # Main game shell + vanilla JS (being migrated to React)
+│   ├── src/
+│   │   ├── main.jsx              # React entry point
+│   │   └── components/react/     # React panel components (34 panels)
+│   └── admin.html                # Admin panel
+├── test-combat-harness/          # V2 combat test suite and balance sweeps
+└── tools/security-auditor/       # Security audit tooling
 ```
 
 ---
 
 ## Races
 
+Nine playable races, each with distinct stat profiles:
+
 | Race | Strengths | Weaknesses |
 |---|---|---|
-| **Dwarf** | Construction ×1.20, Economy ×1.202, War machines ×1.25 | Magic ×0.75, Research ×0.90 |
-| **High Elf** | Magic ×1.30, Research ×1.20 | Economy ×1.05, Military ×0.90 |
-| **Orc** | Military ×1.25, Fighters ×1.60 | Research ×0.80, Magic ×0.70 |
-| **Dark Elf** | Stealth ×1.40, Ninjas ×1.30 | Economy ×0.90, Military ×0.90 |
-| **Human** | Balanced — ×1.05–1.10 most categories | No dominant weakness |
-| **Dire Wolf** | Fighters ×1.80, Exploration ×1.40 | Economy ×0.70, Magic ×0.60 |
+| **Human** | Economy ×1.50, balanced across all systems | No dominant weakness |
+| **High Elf** | Research ×1.25, Magic ×1.20, Rare finds ×1.40 | Military ×0.90, Food storage ×0.70 |
+| **Dwarf** | Construction ×1.20, War machines ×1.25, Economy ×1.20, Iron ×1.30 | Magic ×0.75, Research ×0.90 |
+| **Orc** | Military ×1.20, Iron ×1.20, Economy ×1.10 | Research ×0.80, Magic ×0.65 |
+| **Dire Wolf** | Military ×1.30, Expedition speed ×1.40, Food storage ×2.0 | Magic ×0.25, Research ×0.60, Economy ×0.80 |
+| **Dark Elf** | Covert ×1.25, Stealth ×1.30, Rare finds ×1.25 | Military ×0.85, Happiness ×0.90 |
+| **Vampire** | Covert ×1.25, Stealth ×1.20, Military ×1.15 | Food storage ×0.50, Economy ×0.90 |
+| **Wood Elf** | Wood yield ×1.50, Expedition speed ×1.20, Rare finds ×1.30 | Iron ×0.75, Stone ×0.80 |
+| **Ogre** | Military ×1.25, Iron ×1.40, Stone ×1.30 | Research ×0.70, Economy ×0.85 |
+
+Races also unlock a level-25 unit milestone bonus (e.g. Dwarf engineers solo-crew war machines, High Elf mages produce double scrolls).
 
 ---
 
 ## Core Game Loop
 
 1. **Turns** regenerate at +7 every 25 minutes (max 400 stored)
-2. Spend turns to: build, research, hire, attack, cast spells, send expeditions
-3. Engineers build continuously based on allocation — no turn cost per building
-4. Gold is produced each turn based on land × tax × economy research × race bonus
-5. Support units (researchers, engineers, scribes) are housed in their buildings and pay no upkeep
-6. All units gain XP from activity, levelling up to provide up to +50% effectiveness at level 100
-7. Races unlock a unique racial bonus when their signature unit reaches level 5
+2. Spend turns to: build, research, hire troops, attack, cast spells, send expeditions
+3. Engineers build continuously from allocation — no per-turn turn cost
+4. Gold produced each turn: land × tax rate × economy research × race bonus
+5. Support units (researchers, engineers, scribes) are housed in buildings; no upkeep
+6. All units gain XP from activity, leveling up to +50% effectiveness at level 100
+7. **Happiness** affects population growth, production efficiency, and combat power — managed through food, safety, entertainment research, tax rate, and prosperity
+8. **Heroes** can be recruited and leveled, providing passive bonuses to their kingdom
 
 ---
 
-## Turn Economy
+## Magic Schools
 
-**Gold per turn** (baseline: 404 land, 42% tax, 100% economy research):
+Kingdoms choose one school of magic after reaching spellbook 100. School spells cost 15% less spellbook to cast and unlock Tier 5 Ascendant spells.
 
-| Race | GC/turn |
+| School | Focus |
 |---|---|
-| Dwarf | 457 |
-| Orc | 418 |
-| High Elf | 399 |
-| Human | 399 |
-| Dark Elf | 342 |
-| Dire Wolf | 266 |
+| **Abjuration** | Protection, wards, barriers |
+| **Conjuration** | Summoning, resources, healing |
+| **Divination** | Intelligence, foresight, scrying |
+| **Enchantment** | Mind control, troop manipulation |
+| **Evocation** | Offensive elemental damage |
+| **Illusion** | Deception, false armies, misdirection |
+| **Necromancy** | Undead troops, life drain, death curses |
+| **Transmutation** | Transformation, gold conversion, metamorphosis |
+
+Each school has 25 spells across 5 tiers (Tier 1: minSB 100 → Tier 5: minSB 1000+).
 
 ---
 
-## Building Tool System
+## World Fragment System
 
-Three types of construction tools are produced in smithies:
+Ten World Fragment types can be found on expeditions, studied, transcribed into hybrid blueprints, and applied permanently to buildings. Only one fragment can be applied per building; the choice is irreversible.
 
-| Tool | Source | Cap | Effect |
-|---|---|---|---|
-| **Hammers** | Smithy (1 turn) | 25/smithy | +5% build speed each, degrade after 20 turns of use |
-| **Scaffolding** | Smithy (1 turn + 2,500 GC) | 10/smithy | Required for >100t buildings; speed bonus for <100t buildings |
-| **Blueprints** | Library (scribes) | 25/smithy | Required for 100t+ buildings; also drop from dungeons (20%) |
+Fragment synergies activate when all 10 required fragments are placed across specific buildings — one synergy active at a time, with both passive bonuses (gold, mana, population, food, happiness) and a cooldown-gated active ability.
 
 ---
 
-## Expedition Rewards
+## Expeditions
 
-Gold formula: `rangers × 12 × tacBonus × raceBonus × rangerLevel × turns × rand(1.05–1.30)`
-
-| Type | Turns | Map drop | Blueprint drop |
+| Type | Turns | Rangers required | Notes |
 |---|---|---|---|
-| Scout | 10 | 5% | — |
-| Deep | 25 | 15% | — |
-| Dungeon | 50 | 25% | 20% |
+| Scout | 10 | Any | 5% map drop |
+| Deep | 25 | Any | 15% map drop, 0.5% ultra-rare |
+| Dungeon | 50 | Any | 25% map drop, 20% blueprint drop, 1% ultra-rare |
+| Mountain | 100 | 10,000+ (rangers only) | Heavy avalanche attrition, Air Fragment, 2.5% ultra-rare |
 
-Ultra-rare prizes: 0.5% chance on deep, 1% on dungeon. The Throne of Nazdreg Grishnak has a 0.1% chance on deep/dungeon and can only be found once across the entire server.
+Ultra-rare prizes include unique items, stat bonuses, and World Fragment drops. **The Throne of Nazdreg Grishnak** (0.1% on deep/dungeon) can only be found once per server.
+
+---
+
+## Combat
+
+**V1 (default):** Aggregate power vs. aggregate power. Percentage-based casualties.
+
+**V2 (opt-in, `USE_COMBAT_V2=1`):** Individual troop HP and damage, injury states, cleric healing, war machine crew requirements, wall HP pools, equipment stockpile tracking, and per-unit critical hits. V2 is fully implemented and tested behind a feature flag. See `COMBAT_V2_MODEL.md`.
 
 ---
 
@@ -139,7 +204,7 @@ Real-time global chat via Socket.io. Messages use username (not kingdom name).
 **User commands:** `/me <action>` · `/msg <username> <text>`  
 **Mod commands:** `/kick` · `/ban [reason]` · `/unban` · `/delete <id>`
 
-Moderators are assigned via the admin panel. Banned users can be unbanned from the admin chat ban list.
+Moderators assigned via admin panel. In-game forum also available for longer-form posts.
 
 ---
 
@@ -147,50 +212,30 @@ Moderators are assigned via the admin panel. Banned users can be unbanned from t
 
 Access at `/admin` with the `ADMIN_SECRET` password.
 
-- **⚙️ Manage** — global announcements, chat moderators, ban list, promote to admin
-- **🏰 Kingdoms** — full kingdom editor, AI seeding, bulk reset tools
-- **📋 Changelog** — completed features list and wishlist
+- **Manage** — global announcements, chat moderators, ban list, promotions
+- **Kingdoms** — full kingdom editor, AI kingdom seeding, bulk reset tools
+- **Changelog** — completed feature log
 
 ---
 
-## Special: The Throne of Nazdreg Grishnak
+## The Throne of Nazdreg Grishnak
 
-A tribute to a real player. The throne exists once in the entire game world and can never be found again once discovered.
+A tribute to a real player. The throne exists once in the entire game world and cannot be found again once discovered.
 
 > *Nazdreg Grishnak · August 13, 1975 — August 19, 2012*
 >
-> "An orc who sat upon this throne once commanded armies and shaped the world.
+> "An orc who sat upon this throne once commanded armies and shaped the world.  
 > His name is remembered. His legacy endures."
 
 When found, every kingdom receives a news event and a global chat broadcast. The finder receives all stats +100, 1,000,000 gold, 1,000 land, 100,000 population, +50 happiness, and 50,000 fighters.
 
 ---
 
-## GitHub Deployment Checklist
+## Database
 
-Before pushing to a public repository, ensure you have completed these steps:
+PostgreSQL connection via `DATABASE_URL`. Schema migrations apply automatically on boot (`db/schema.js`). No manual migration steps required for column additions.
 
-1. **Environment Variables**: Never commit your real `.env` file. Ensure `.env.example` is up to date and contains placeholders (e.g., `DATABASE_URL`, `JWT_SECRET`, `ADMIN_SECRET`).
-2. **Database**: Verify that all sensitive database credentials are kept in the `.env` file and excluded from version control. The `.gitignore` correctly excludes `.env*` files except `.env.example`.
-3. **Secrets Audit**: Scan your code for any hardcoded API keys, passwords, or tokens (use `npm run lint` to verify).
-4. **README Update**: Ensure URLs and instructions in this README match your target environment.
-
-### Database Deployment
-
-Narmir uses **PostgreSQL** as its database. The database helper in `db/schema.js` normalizes a few legacy SQL shorthand forms into PostgreSQL syntax:
-- `DATETIME` becomes `TIMESTAMP`
-- conflict upserts become `ON CONFLICT ... DO UPDATE`
-- conflict ignores become `ON CONFLICT ... DO NOTHING`
-- epoch helpers become PostgreSQL epoch functions
-
-Connection is configured via `DATABASE_URL` environment variable. Migrations apply automatically on boot.
-
-### Pushing to GitHub
-
-1. Create a new repository on GitHub.
-2. Open the AI Studio **Settings** menu and select **Export to GitHub**.
-3. Follow the prompts to link your repository and push the code.
-4. Alternatively, use the **Download ZIP** option if you prefer manual Git management.
+For production schema changes: write migration SQL, test against a local `narmir_smoke` database, then execute via pgAdmin against Railway.
 
 ---
 
