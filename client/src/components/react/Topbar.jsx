@@ -26,93 +26,62 @@ const Topbar = () => {
   };
 
   return (
-    <header className="topbar">
-      <div className="logo-container">
-        <div className="logo">NARMIR REBORN</div>
-        <div className="tagline">Pure. Damn. Evil.</div>
+    <header className="topbar flex h-14 items-center justify-between gap-2 border-b border-white/5 bg-zinc-950/95 px-3 backdrop-blur-md md:px-4">
+      <div className="logo-container min-w-0">
+        <div className="logo truncate font-serif text-[13px] font-black uppercase tracking-[0.12em] text-[var(--gold)] md:text-[14px]">NARMIR REBORN</div>
+        <div className="tagline truncate text-[11px] text-[var(--text2)] md:text-[12px]">Pure. Damn. Evil.</div>
       </div>
-      <div className="topbar-stats">
-        <div className="tstat hide-sm">
+      <div className="topbar-stats flex min-w-0 items-center gap-2 md:gap-3">
+        <div className="tstat hide-sm hidden shrink-0 md:block">
           <div className="val" id="top-rank">—</div>
           <div className="lbl">Rank</div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ textAlign: 'right', fontFamily: '"Cinzel", serif', lineHeight: 1.1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span style={{ fontSize: '11px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }} className="hide-xs">
+        <div className="flex items-center gap-2">
+          <div className="text-right font-serif leading-none">
+            <div className="flex items-center gap-1.5">
+              <span className="hide-xs text-[11px] uppercase tracking-[0.5px] text-[var(--text3)]">
                 Turns:
               </span>
-              <span id="turns-stored-disp" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--gold)' }}>
+              <span id="turns-stored-disp" className="text-[16px] font-bold text-[var(--gold)]">
                 {turnsStored}
               </span>
-              <span style={{ fontSize: '11px', color: 'var(--text3)' }} className="hide-xs">
+              <span className="hide-xs text-[11px] text-[var(--text3)]">
                 / 400
               </span>
             </div>
-            <div className="countdown" style={{ fontSize: '10px', fontFamily: '"Inter", sans-serif' }}>
+            <div className="countdown text-[10px] font-sans text-[var(--text3)]">
               +7 in <span id="regen-countdown">25:00</span>
             </div>
-            <div
-              style={{
-                marginTop: '4px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                flexWrap: 'wrap',
-              }}
-            >
+            <div className="mt-1 flex flex-wrap items-center gap-1.5">
               <span
-                style={{ fontSize: '11px', color: 'var(--text3)', cursor: 'pointer' }}
+                className="cursor-pointer text-[11px] text-[var(--text3)]"
                 onClick={openXpModal}
                 title="Click for XP breakdown"
               >
                 Level
                 <span
                   id="kingdom-level"
-                  style={{
-                    color: 'var(--gold)',
-                    fontWeight: 700,
-                    fontSize: '13px',
-                    textDecoration: 'underline dotted',
-                    textUnderlineOffset: '2px',
-                  }}
+                  className="text-[13px] font-bold text-[var(--gold)] underline decoration-dotted underline-offset-2"
                 >
                   {level}
                 </span>
               </span>
               <div
-                style={{
-                  flex: 1,
-                  minWidth: '80px',
-                  maxWidth: '150px',
-                  cursor: 'pointer',
-                }}
+                className="min-w-[80px] max-w-[150px] flex-1 cursor-pointer"
                 onClick={openXpModal}
                 title="Click for XP breakdown"
               >
-                <div
-                  style={{
-                    height: '3px',
-                    background: 'var(--bg4)',
-                    borderRadius: '1.5px',
-                    overflow: 'hidden',
-                  }}
-                >
+                <div className="h-[3px] overflow-hidden rounded-[1.5px] bg-[var(--bg4)]">
                   <div
                     id="xp-bar"
-                    style={{
-                      height: '3px',
-                      width: `${xpPct}%`,
-                      background: 'linear-gradient(90deg, var(--accent1), var(--gold))',
-                      borderRadius: '1.5px',
-                      transition: 'width 0.4s',
-                    }}
+                    className="h-[3px] rounded-[1.5px] transition-[width] duration-300"
+                    style={{ width: `${xpPct}%`, background: 'linear-gradient(90deg, var(--accent1), var(--gold))' }}
                   />
                 </div>
               </div>
               <span
                 id="xp-label"
-                style={{ fontSize: '9px', color: 'var(--text3)', cursor: 'pointer' }}
+                className="cursor-pointer text-[9px] text-[var(--text3)]"
                 onClick={openXpModal}
               >
                 {xpNeeded > 0 ? `${xpInLevel.toLocaleString()} / ${xpNeeded.toLocaleString()} XP` : 'Max Level'}
@@ -120,31 +89,16 @@ const Topbar = () => {
             </div>
           </div>
           <button
-            className="turn-btn"
-            style={{ padding: '6px 14px', fontSize: '12px', opacity: loading.takeTurn ? 0.6 : 1 }}
+            className="turn-btn shrink-0 px-3.5 py-1.5 text-[12px] leading-none"
+            style={{ opacity: loading.takeTurn ? 0.6 : 1 }}
             onClick={takeTurn}
             disabled={loading.takeTurn}
           >
             Take Turn
           </button>
-          {!state?.username && (
-            <button
-              className="btn"
-              style={{ padding: '6px 10px', fontSize: '12px', marginLeft: '8px', whiteSpace: 'nowrap' }}
-              onClick={handleAccount}
-            >
-              Sign In
-            </button>
-          )}
-          {state?.username && (
-            <button
-              className="btn hidden md:inline-flex"
-              style={{ padding: '6px 10px', fontSize: '12px', marginLeft: '8px', whiteSpace: 'nowrap' }}
-              onClick={handleAccount}
-            >
-              Logout
-            </button>
-          )}
+          <button className="btn ml-2 shrink-0 whitespace-nowrap px-2.5 py-1.5 text-[12px]" onClick={handleAccount}>
+            {state?.username ? 'Logout' : 'Sign In'}
+          </button>
         </div>
       </div>
     </header>

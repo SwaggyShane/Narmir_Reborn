@@ -110,181 +110,72 @@ const DefensePanel = () => {
   }, [refreshDefense]);
 
   return (
-    <div id="defense" className="panel" style={{ display: 'none' }}>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: '14px',
-          flexWrap: 'wrap',
-          gap: '8px',
-        }}
-      >
+    <div id="defense" className="panel min-h-0 w-full overflow-y-auto px-4 pb-5" style={{ display: 'none' }}>
+      <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-white/10 bg-zinc-950/80 p-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <div className="card-title" style={{ marginBottom: '2px' }}>
-            🛡️ Defense
+          <div className="card-title mb-1 flex items-center gap-2">
+            <span>??? Defense</span>
             <span
               id="citadel-badge-title"
-              style={{
-                display: 'none',
-                marginLeft: '8px',
-                fontSize: '11px',
-                fontWeight: 600,
-                color: 'var(--gold)',
-              }}
+              className="hidden rounded-full bg-[var(--gold)]/15 px-2 py-0.5 text-[11px] font-semibold text-[var(--gold)]"
             >
-              🏰 Citadel
+              ?? Citadel
             </span>
           </div>
-          <div style={{ fontSize: '13px', color: 'var(--text3)', marginTop: '2px' }}>
-            Rating: <span id="def-rating" style={{ fontWeight: 700 }}>—</span>
+          <div className="text-[13px] text-[var(--text3)]">
+            Rating: <span id="def-rating" className="font-bold">?</span>
           </div>
         </div>
-        <button className="base-btn" onClick={refreshDefense}>↻ Refresh</button>
+        <button className="base-btn rounded-full px-3 py-1.5 text-[11px] font-semibold" onClick={refreshDefense}>? Refresh</button>
       </div>
 
-      {/* Defense Tiers progress */}
-      <div className="card" id="defense-tiers-card" style={{ marginBottom: '12px' }}>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '8px',
-          }}
-        >
-          <div className="card-title" style={{ marginBottom: 0 }}>🛡️ Defense Tiers</div>
-          <span id="tier-status" style={{ fontSize: '12px', color: 'var(--text3)' }}>
-            Evaluating...
-          </span>
+      <div className="card mb-3 rounded-2xl border border-white/10 bg-zinc-950/80" id="defense-tiers-card">
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <div className="card-title m-0">??? Defense Tiers</div>
+          <span id="tier-status" className="text-[12px] text-[var(--text3)]">Evaluating...</span>
         </div>
-        <div
-          id="tier-desc"
-          style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '10px' }}
-        >
+        <div id="tier-desc" className="mb-3 text-[12px] text-[var(--text3)]">
           Build walls, guard towers, outposts, and castles to reach new tiers and
           gain permanent defense and mitigation bonuses.
         </div>
-        <div
-          style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '8px' }}
-        >
-          <div
-            style={{
-              textAlign: 'center',
-              background: 'var(--bg3)',
-              borderRadius: 'var(--radius)',
-              padding: '8px',
-            }}
-          >
-            <div style={{ fontSize: '10px', color: 'var(--text3)', marginBottom: '3px' }}>
-              WALLS
-            </div>
-            <div style={{ fontSize: '16px', fontWeight: 700 }} id="cit-walls">0</div>
-            <div style={{ fontSize: '10px', color: 'var(--text3)' }} id="cit-walls-max">
-              / 500
-            </div>
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+          <div className="rounded-lg border border-white/10 bg-[var(--bg3)] p-2 text-center">
+            <div className="mb-1 text-[10px] text-[var(--text3)]">WALLS</div>
+            <div className="text-[16px] font-bold" id="cit-walls">0</div>
+            <div className="text-[10px] text-[var(--text3)]" id="cit-walls-max">/ 500</div>
           </div>
-          <div
-            style={{
-              textAlign: 'center',
-              background: 'var(--bg3)',
-              borderRadius: 'var(--radius)',
-              padding: '8px',
-            }}
-          >
-            <div style={{ fontSize: '10px', color: 'var(--text3)', marginBottom: '3px' }}>
-              TOWERS
-            </div>
-            <div style={{ fontSize: '16px', fontWeight: 700 }} id="cit-towers">0</div>
-            <div style={{ fontSize: '10px', color: 'var(--text3)' }} id="cit-towers-max">
-              / 50
-            </div>
+          <div className="rounded-lg border border-white/10 bg-[var(--bg3)] p-2 text-center">
+            <div className="mb-1 text-[10px] text-[var(--text3)]">TOWERS</div>
+            <div className="text-[16px] font-bold" id="cit-towers">0</div>
+            <div className="text-[10px] text-[var(--text3)]" id="cit-towers-max">/ 50</div>
           </div>
-          <div
-            style={{
-              textAlign: 'center',
-              background: 'var(--bg3)',
-              borderRadius: 'var(--radius)',
-              padding: '8px',
-            }}
-          >
-            <div style={{ fontSize: '10px', color: 'var(--text3)', marginBottom: '3px' }}>
-              OUTPOSTS
-            </div>
-            <div style={{ fontSize: '16px', fontWeight: 700 }} id="cit-outposts">0</div>
-            <div
-              style={{ fontSize: '10px', color: 'var(--text3)' }}
-              id="cit-outposts-max"
-            >
-              / 50
-            </div>
+          <div className="rounded-lg border border-white/10 bg-[var(--bg3)] p-2 text-center">
+            <div className="mb-1 text-[10px] text-[var(--text3)]">OUTPOSTS</div>
+            <div className="text-[16px] font-bold" id="cit-outposts">0</div>
+            <div className="text-[10px] text-[var(--text3)]" id="cit-outposts-max">/ 50</div>
           </div>
-          <div
-            style={{
-              textAlign: 'center',
-              background: 'var(--bg3)',
-              borderRadius: 'var(--radius)',
-              padding: '8px',
-            }}
-          >
-            <div style={{ fontSize: '10px', color: 'var(--text3)', marginBottom: '3px' }}>
-              CASTLE
-            </div>
-            <div style={{ fontSize: '16px', fontWeight: 700 }} id="cit-castle">0</div>
-            <div style={{ fontSize: '10px', color: 'var(--text3)' }} id="cit-castle-max">
-              / 1
-            </div>
+          <div className="rounded-lg border border-white/10 bg-[var(--bg3)] p-2 text-center">
+            <div className="mb-1 text-[10px] text-[var(--text3)]">CASTLE</div>
+            <div className="text-[16px] font-bold" id="cit-castle">0</div>
+            <div className="text-[10px] text-[var(--text3)]" id="cit-castle-max">/ 1</div>
           </div>
         </div>
 
-        <div
-          style={{
-            marginTop: '12px',
-            fontSize: '11px',
-            color: 'var(--text3)',
-            background: 'var(--bg1)',
-            padding: '8px',
-            borderRadius: 'var(--radius)',
-            display: 'grid',
-            gridTemplateColumns: '1fr',
-            gap: '4px',
-          }}
-        >
-          <div
-            id="tier-1"
-            style={{ display: 'flex', justifyContent: 'space-between', padding: '4px' }}
-          >
-            <div style={{ color: 'var(--text2)', fontWeight: 600 }}>🛡️ Fortified</div>
-            <div>100 Walls · 10 Towers · 10 Outposts</div>
+        <div className="mt-3 grid gap-1.5 rounded-lg border border-white/10 bg-[var(--bg1)] p-2 text-[11px] text-[var(--text3)]">
+          <div id="tier-1" className="flex justify-between p-1">
+            <div className="font-semibold text-[var(--text2)]">??? Fortified</div>
+            <div>100 Walls ? 10 Towers ? 10 Outposts</div>
           </div>
-          <div
-            id="tier-2"
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              padding: '4px',
-              borderTop: '1px solid var(--border)',
-            }}
-          >
-            <div style={{ color: 'var(--text2)', fontWeight: 600 }}>🏰 Keep</div>
-            <div>350 Walls · 30 Towers · 30 Outposts</div>
+          <div id="tier-2" className="flex justify-between border-t border-[var(--border)] p-1">
+            <div className="font-semibold text-[var(--text2)]">?? Keep</div>
+            <div>350 Walls ? 30 Towers ? 30 Outposts</div>
           </div>
-          <div
-            id="tier-3"
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              padding: '4px',
-              borderTop: '1px solid var(--border)',
-            }}
-          >
-            <div style={{ color: 'var(--text2)', fontWeight: 600 }}>👑 Citadel</div>
-            <div>500 Walls · 50 Towers · 50 Outposts · 1 Castle</div>
+          <div id="tier-3" className="flex justify-between border-t border-[var(--border)] p-1">
+            <div className="font-semibold text-[var(--text2)]">?? Citadel</div>
+            <div>500 Walls ? 50 Towers ? 50 Outposts ? 1 Castle</div>
           </div>
         </div>
       </div>
-
       {/* Tabs */}
       <div
         style={{

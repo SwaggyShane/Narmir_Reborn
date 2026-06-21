@@ -13,7 +13,7 @@ const DEFAULT_COMPONENTS = {
   synergy: 0,
   tax: 0,
   overcrowding: 0,
-  fragments: 0
+  fragments: 0,
 };
 
 const toFiniteNumber = (value, fallback = 0) => {
@@ -26,7 +26,7 @@ const HappinessPanel = () => {
   const [components, setComponents] = useState(DEFAULT_COMPONENTS);
   const [events, setEvents] = useState([]);
   const [history, setHistory] = useState([]);
-  const [filter, setFilter] = useState(null); // null = all, or component name
+  const [filter, setFilter] = useState(null);
   const [recoveryRate, setRecoveryRate] = useState(0);
 
   const fetchHappinessData = async () => {
@@ -40,13 +40,17 @@ const HappinessPanel = () => {
         ...DEFAULT_COMPONENTS,
         ...Object.fromEntries(
           Object.entries(data.components || {}).map(([key, value]) => [key, toFiniteNumber(value)])
-        )
+        ),
       });
       setEvents(data.recent || []);
-      setHistory((data.last50Turns || []).map(point => ({
-        ...point,
-        happiness: toFiniteNumber(point.happiness, null)
-      })).filter(point => point.happiness !== null));
+      setHistory(
+        (data.last50Turns || [])
+          .map((point) => ({
+            ...point,
+            happiness: toFiniteNumber(point.happiness, null),
+          }))
+          .filter((point) => point.happiness !== null)
+      );
       setRecoveryRate(toFiniteNumber(data.recoveryRate));
     } catch (err) {
       console.error('Happiness panel error:', err);
@@ -56,7 +60,6 @@ const HappinessPanel = () => {
   useEffect(() => {
     fetchHappinessData();
 
-    // Listen for game data updates via custom event
     const handleGameDataUpdate = () => {
       fetchHappinessData();
     };
@@ -79,7 +82,7 @@ const HappinessPanel = () => {
       synergy: '+',
       tax: '%',
       overcrowding: '!',
-      fragments: '-'
+      fragments: '-',
     };
     return emojis[name] || '•';
   };
@@ -96,113 +99,107 @@ const HappinessPanel = () => {
       synergy: 'Synergy',
       tax: 'Tax',
       overcrowding: 'Overcrowding',
-      fragments: 'Fragments'
+      fragments: 'Fragments',
     };
     return labels[name] || name;
   };
 
-  const filteredEvents = filter
-    ? events.filter(e => e.component === filter)
-    : events;
+  const filteredEvents = filter ? events.filter((e) => e.component === filter) : events;
 
   return (
-    <div id="happiness" className="panel">
-      <div style={{ padding: '16px' }}>
-        {/* Current Happiness Display */}
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>Current Happiness</span>
-            <span style={{ fontSize: '24px', fontWeight: 700, color: 'var(--gold)', fontFamily: '"Cinzel", serif' }}>
-              {happiness}/120
-            </span>
+    <div id="happiness" className="panel min-h-0 w-full overflow-y-auto">
+      <div className="space-y-6 p-4 md:p-5">
+        <section className="rounded-2xl border border-white/5 bg-zinc-950/95 p-4 shadow-[0_18px_40px_rgba(0,0,0,0.28)]">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <span className="text-[14px] font-semibold text-[var(--text)]">Current Happiness</span>
+            <span className="font-serif text-[24px] font-bold text-[var(--gold)]">{happiness}/120</span>
           </div>
-          <div style={{
-            height: '24px',
-            background: 'var(--bg3)',
-            borderRadius: '12px',
-            overflow: 'hidden',
-            border: '1px solid var(--border)',
-            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.3)'
-          }}>
-            <div style={{
-              height: '100%',
-              width: `${Math.min(100, Math.max(0, (happiness / 120) * 100))}%`,
-              background: happiness >= 80 ? 'var(--green)' : happiness >= 50 ? 'var(--gold)' : happiness >= 30 ? 'var(--amber)' : 'var(--red)',
-              transition: 'width 0.3s ease'
-            }} />
+          <div className="overflow-hidden rounded-full border border-white/5 bg-[var(--bg3)] shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]">
+            <div
+              className="h-6 transition-[width] duration-300"
+              style={{
+                width: `${Math.min(100, Math.max(0, (happiness / 120) * 100))}%`,
+                background:
+                  happiness >= 80
+                    ? 'var(--green)'
+                    : happiness >= 50
+                      ? 'var(--gold)'
+                      : happiness >= 30
+                        ? 'var(--amber)'
+                        : 'var(--red)',
+              }}
+            />
           </div>
-        </div>
+        </section>
 
-        {/* Happiness Graph */}
-        <HappinessGraph history={history} />
+        <section className="rounded-2xl border border-white/5 bg-zinc-950/95 p-4 shadow-[0_18px_40px_rgba(0,0,0,0.28)]">
+          <HappinessGraph history={history} />
+        </section>
 
-        {/* Component Breakdown */}
-        <div style={{ marginBottom: '24px' }}>
-          <div className="happiness-graph-label">Component Breakdown</div>
-          <div className="happiness-components">
+        <section className="rounded-2xl border border-white/5 bg-zinc-950/95 p-4 shadow-[0_18px_40px_rgba(0,0,0,0.28)]">
+          <div className="happiness-graph-label mb-3">Component Breakdown</div>
+          <div className="space-y-2">
             {Object.entries(components).map(([key, value]) => (
-              <div
+              <button
                 key={key}
-                className={`happiness-component-row ${filter === key ? 'active' : ''}`}
-                style={{
-                  opacity: !filter || filter === key ? 1 : 0.5,
-                }}
+                type="button"
+                className={`flex w-full items-center justify-between rounded-xl border border-white/5 bg-zinc-950/80 px-3 py-2 text-left transition-colors ${filter === key ? 'ring-1 ring-[var(--gold)]' : ''}`}
+                style={{ opacity: !filter || filter === key ? 1 : 0.5 }}
                 onClick={() => setFilter(filter === key ? null : key)}
+                aria-pressed={filter === key}
               >
                 <span className="happiness-component-name">
                   {getComponentEmoji(key)} {getComponentLabel(key)}
                 </span>
                 <span className={`happiness-component-value ${value > 0 ? 'positive' : value < 0 ? 'negative' : 'neutral'}`}>
-                  {value > 0 ? '+' : ''}{value}
+                  {value > 0 ? '+' : ''}
+                  {value}
                 </span>
-              </div>
+              </button>
             ))}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '8px',
-              background: 'var(--bg2)',
-              borderRadius: '8px',
-              border: '1px solid var(--border2)',
-              marginTop: '4px',
-              fontWeight: 700
-            }}>
-              <span style={{ fontSize: '13px', color: 'var(--text)' }}>Recovery/turn</span>
-              <span style={{ fontSize: '14px', color: recoveryRate >= 0 ? 'var(--gold)' : 'var(--red)', fontFamily: 'monospace' }}>
-                {recoveryRate >= 0 ? '+' : ''}{recoveryRate.toFixed(2)}
+            <div className="mt-2 flex items-center justify-between rounded-xl border border-white/5 bg-zinc-900/80 px-3 py-2 font-bold">
+              <span className="text-[13px] text-[var(--text)]">Recovery/turn</span>
+              <span className="font-mono text-[14px]" style={{ color: recoveryRate >= 0 ? 'var(--gold)' : 'var(--red)' }}>
+                {recoveryRate >= 0 ? '+' : ''}
+                {recoveryRate.toFixed(2)}
               </span>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Recent Changes Log */}
-        <div style={{ marginBottom: '16px' }}>
-          <div className="happiness-graph-label">
+        <section className="rounded-2xl border border-white/5 bg-zinc-950/95 p-4 shadow-[0_18px_40px_rgba(0,0,0,0.28)]">
+          <div className="happiness-graph-label mb-3">
             Recent Changes {filter && `(${getComponentLabel(filter)})`}
           </div>
-          <div className="happiness-events-log">
+          <div className="space-y-2">
             {filteredEvents.length === 0 ? (
-              <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text3)', fontSize: '12px' }}>
+              <div className="rounded-xl border border-white/5 bg-zinc-950/80 px-4 py-4 text-center text-[12px] text-[var(--text3)]">
                 No changes recorded
               </div>
             ) : (
               filteredEvents.map((event, idx) => (
-                <div key={idx} className="happiness-event-item">
-                  <div className="happiness-event-turn">
-                    <span>Turn {event.turn}: {event.description}</span>
-                    <span className={`happiness-event-delta ${event.delta > 0 ? 'positive' : event.delta < 0 ? 'negative' : 'neutral'}`}>
-                      {event.delta > 0 ? '+' : ''}{event.delta}
+                <article key={idx} className="rounded-xl border border-white/5 bg-zinc-950/80 px-3 py-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <span>
+                      Turn {event.turn}: {event.description}
+                    </span>
+                    <span
+                      className={`happiness-event-delta ${event.delta > 0 ? 'positive' : event.delta < 0 ? 'negative' : 'neutral'}`}
+                    >
+                      {event.delta > 0 ? '+' : ''}
+                      {event.delta}
                     </span>
                   </div>
-                  <div className="happiness-event-transition">
-                    {event.old_happiness} → {event.new_happiness}
+                  <div className="mt-1 text-[12px] text-[var(--text3)]">
+                    {event.old_happiness}
+                    {' -> '}
+                    {event.new_happiness}
                   </div>
-                </div>
+                </article>
               ))
             )}
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );
