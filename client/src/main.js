@@ -37,7 +37,6 @@ import { openRaceLore as openRaceLoreAction } from "./actions/openRaceLore.js";
 import { replayWarReport as replayWarReportAction } from "./actions/replayWarReport.js";
 import { showHeroLore as showHeroLoreAction } from "./actions/showHeroLore.js";
 import { openKingdomProfile as openKingdomProfileAction } from "./actions/openKingdomProfile.js";
-import { loadKingdom as loadKingdomAction } from "./actions/loadKingdom.js";
 import { loadEconomy as loadEconomyAction } from "./actions/loadEconomy.js";
 import { buyUpgrade as buyUpgradeAction } from "./actions/buyUpgrade.js";
 import {
@@ -73,12 +72,7 @@ import {
   doLogin as doLoginImpl,
   doRegister as doRegisterImpl,
 } from "./actions/authModal.js";
-import { openLoreModal as openLoreModalImpl, closeLoreModal as closeLoreModalImpl } from "./utils/loreModal.js";
 import { closeKingdomProfile as closeKingdomProfileImpl } from "./utils/kingdomProfileModal.js";
-import { applyNavLayout as applyNavLayoutImpl } from "./utils/applyNavLayout.js";
-import { fmt as fmtImpl } from "./utils/fmt.js";
-import { fmtShort as fmtShortImpl, trunc as truncImpl } from "./utils/numberFormat.js";
-import { toast as toastImpl } from "./utils/toast.js";
 import { apiCall, syncUI, switchTab, initGameStateManager, applyGameMutation, gameState } from "./utils/shellBridge.js";
 
 window.apiCall = apiCall;
@@ -88,7 +82,6 @@ window.__openRaceLoreImpl = openRaceLoreAction;
 window.__replayWarReportImpl = replayWarReportAction;
 window.__showHeroLoreImpl = showHeroLoreAction;
 window.__openKingdomProfileImpl = openKingdomProfileAction;
-window.__loadKingdomImpl = loadKingdomAction;
 window.__loadEconomyImpl = loadEconomyAction;
 window.__buyUpgradeImpl = buyUpgradeAction;
 window.__renderCommodityMarketImpl = renderCommodityMarketAction;
@@ -119,14 +112,6 @@ window.__updatePasswordRequirementsImpl = updatePasswordRequirementsImpl;
 window.__clearTokenImpl = clearTokenImpl;
 window.__doLoginImpl = doLoginImpl;
 window.__doRegisterImpl = doRegisterImpl;
-window.__closeKingdomProfileImpl = closeKingdomProfileImpl;
-window.__openLoreModalImpl = openLoreModalImpl;
-window.__closeLoreModalImpl = closeLoreModalImpl;
-window.__applyNavLayoutImpl = applyNavLayoutImpl;
-window.__fmtImpl = fmtImpl;
-window.__fmtShortImpl = fmtShortImpl;
-window.__truncImpl = truncImpl;
-window.__toastImpl = toastImpl;
 
 const reactRoots = new Map();
 

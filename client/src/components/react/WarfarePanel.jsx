@@ -6,6 +6,7 @@ import WarfareIntelTab from './WarfareIntelTab';
 import WarfareReportsTab from './WarfareReportsTab';
 import { fmt } from "../../utils/fmt";
 import { applyGameMutation } from '../../utils/gameMutations.js';
+import { filterWarfareTargetsUnified } from '../../actions/renderWarfareTargets.js';
 
 const WarfarePanel = () => {
   const { state } = useGameState();
@@ -360,24 +361,6 @@ const WarfarePanel = () => {
   const updateWspellCalc = () => {
     if (window.updateWspellCalc) window.updateWspellCalc();
   };
-
-  const filterWarfareTargetsUnified = useCallback((val, targetListId) => {
-    const q = String(val || '').toLowerCase();
-    const targets = Array.isArray(window.targets) ? window.targets : [];
-    const filtered = q
-      ? targets.filter((t) => String(t.name || '').toLowerCase().includes(q))
-      : targets;
-
-    const selectFn = targetListId === 'atk-target-list-w'
-      ? 'selectTargetW'
-      : targetListId === 'wsp-target-list-w'
-        ? 'selectWspellTarget'
-        : targetListId === 'wcov-target-list-w'
-          ? 'selectWcovTarget'
-          : '';
-
-    window.renderKingdomCardList?.(filtered, targetListId, selectFn);
-  }, []);
 
   const handleTargetSearchW = (event) => {
     const val = event?.target ? event.target.value : event;

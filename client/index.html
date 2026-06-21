@@ -4303,10 +4303,6 @@
       /* Ã¢ï¿½â‚¬Ã¢ï¿½â‚¬ Core state (defined first so all functions below can access it) Ã¢ï¿½â‚¬Ã¢ï¿½â‚¬ */
 
       function applyNavLayout() {
-        if (typeof window.__applyNavLayoutImpl === "function") {
-          return window.__applyNavLayoutImpl();
-        }
-
         var layout = localStorage.getItem("narmir_nav_layout") || "responsive";
 
         document.body.classList.remove("force-left-nav", "force-bottom-nav");
@@ -4479,10 +4475,6 @@
 
 
       function fmt(n) {
-        if (typeof window.__fmtImpl === "function") {
-          return window.__fmtImpl(n);
-        }
-
         if (n === undefined || n === null || isNaN(n)) return "0";
 
         return Math.round(n).toLocaleString();
@@ -4490,10 +4482,6 @@
       }
 
       function fmtShort(n) {
-        if (typeof window.__fmtShortImpl === "function") {
-          return window.__fmtShortImpl(n);
-        }
-
         if (n === undefined || n === null || isNaN(n)) return "0";
 
         return trunc(n);
@@ -4503,10 +4491,6 @@
 
 
       function trunc(n) {
-        if (typeof window.__truncImpl === "function") {
-          return window.__truncImpl(n);
-        }
-
         n = Math.round(n);
 
         if (n >= 1000000)
@@ -7103,9 +7087,12 @@
       var allianceChatMessages = [];
 
       function loadKingdom() {
-        if (typeof window.__loadKingdomImpl === "function") {
-          return window.__loadKingdomImpl();
-        }
+        return window.apiCall("GET", "/api/kingdom/me").then(function (kingdom) {
+          if (kingdom && !kingdom.error && typeof window.applyGameMutation === "function") {
+            window.applyGameMutation(kingdom, { reason: "kingdom-refresh" });
+          }
+          return kingdom;
+        });
       }
 
       function loadMe() {
@@ -7905,10 +7892,6 @@
 
 
       function toast(message, type) {
-        if (typeof window.__toastImpl === "function") {
-          return window.__toastImpl(message, type);
-        }
-
         function positionToastContainer(node) {
 
           if (!node) return;
@@ -14004,9 +13987,9 @@
 
 
       function closeKingdomProfile() {
-        if (typeof window.__closeKingdomProfileImpl === "function") {
-          return window.__closeKingdomProfileImpl();
-        }
+        var modal = document.getElementById("kingdom-profile-modal");
+
+        if (modal) modal.style.display = "none";
       }
 
 
@@ -14016,15 +13999,39 @@
 
 
       function openLoreModal(title, msg, isHtml) {
-        if (typeof window.__openLoreModalImpl === "function") {
-          return window.__openLoreModalImpl(title, msg, isHtml);
+        var modal = document.getElementById("lore-entry-modal");
+        var content = document.getElementById("lore-entry-content");
+
+        if (modal) modal.style.display = "flex";
+
+        function escHtml(value) {
+          return String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+        }
+
+        var body = isHtml ? msg : escHtml(msg).replace(/\n/g, "<br>");
+
+        if (content) {
+          content.innerHTML =
+            '<div style="text-align:center;margin-bottom:20px">' +
+            '<h2 style="color:var(--gold);margin:0 0 4px;font-size:20px">' +
+            escHtml(title) +
+            "</h2>" +
+            "</div>" +
+            '<div style="font-size:14px;color:var(--text2);line-height:1.6;padding:12px;background:var(--bg3);border-radius:var(--radius);border:1px solid var(--border)">' +
+            body +
+            "</div>";
         }
       }
 
       function closeLoreModal() {
-        if (typeof window.__closeLoreModalImpl === "function") {
-          return window.__closeLoreModalImpl();
-        }
+        var modal = document.getElementById("lore-entry-modal");
+
+        if (modal) modal.style.display = "none";
       }
 
 
