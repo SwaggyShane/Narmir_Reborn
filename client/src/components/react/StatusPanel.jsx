@@ -55,7 +55,7 @@ const RACE_PORTRAITS = {
   ogre: '/race/ogre_male.webp',
 };
 
-const STATUS_CARD_CLASS = 'card rounded-2xl border border-white/5 bg-zinc-950/95 p-4 shadow-[0_16px_32px_rgba(0,0,0,0.28)]';
+const STATUS_CARD_CLASS = 'card rounded-2xl border border-white/5 bg-zinc-950/95 shadow-[0_16px_32px_rgba(0,0,0,0.28)]';
 
 const toRaceKey = (value) =>
   String(value || '')
@@ -222,7 +222,7 @@ const StatusPanel = () => {
         </div>
       </div>
 
-      <div className={STATUS_CARD_CLASS} id="status-tax-card" style={{ marginTop: 0, marginBottom: '16px', display: 'none' }}>
+      <div className={STATUS_CARD_CLASS + ' p-4'} id="status-tax-card" style={{ marginTop: 0, marginBottom: '16px', display: 'none' }}>
         <div className="card-title">Tax rate</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '10px' }}>
           <input
@@ -258,7 +258,7 @@ const StatusPanel = () => {
       </div>
 
       <div className="status-grid grid gap-5 md:grid-cols-2 xl:grid-cols-3" id="status-grid">
-        <div className={STATUS_CARD_CLASS}>
+        <div className={STATUS_CARD_CLASS + ' p-4'}>
           <div className="card-title">
             Military &amp; support
             <span
@@ -613,7 +613,7 @@ const StatusPanel = () => {
           </div>
         </div>
 
-        <div className={STATUS_CARD_CLASS}>
+        <div className={STATUS_CARD_CLASS + ' p-4'}>
           <div className="card-title">Research levels</div>
           <div className="trow">
             <span className="name">Economy</span>
@@ -677,7 +677,7 @@ const StatusPanel = () => {
           </div>
         </div>
 
-        <div className={STATUS_CARD_CLASS}>
+        <div className={STATUS_CARD_CLASS + ' p-4'}>
           <div className="card-title">Key buildings</div>
           <div className="trow">
             <span className="name">Farm</span>
@@ -723,7 +723,7 @@ const StatusPanel = () => {
       </div>
 
       <div id="active-effects-bar" style={{ display: 'none', marginTop: '14px' }}>
-        <div className={STATUS_CARD_CLASS} style={{ padding: '12px 16px' }}>
+        <div className={STATUS_CARD_CLASS + ' py-3 px-4'}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <span
               style={{
