@@ -12,7 +12,7 @@ const DEFAULT_COMPONENTS = {
   synergy: 0,
   tax: 0,
   overcrowding: 0,
-  fragments: 0
+  fragments: 0,
 };
 
 const toFiniteNumber = (value, fallback = 0) => {
@@ -25,7 +25,7 @@ const HappinessPanel = () => {
   const [components, setComponents] = useState(DEFAULT_COMPONENTS);
   const [events, setEvents] = useState([]);
   const [history, setHistory] = useState([]);
-  const [filter, setFilter] = useState(null); // null = all, or component name
+  const [filter, setFilter] = useState(null);
   const [recoveryRate, setRecoveryRate] = useState(0);
 
   const fetchHappinessData = async () => {
@@ -39,13 +39,17 @@ const HappinessPanel = () => {
         ...DEFAULT_COMPONENTS,
         ...Object.fromEntries(
           Object.entries(data.components || {}).map(([key, value]) => [key, toFiniteNumber(value)])
-        )
+        ),
       });
       setEvents(data.recent || []);
-      setHistory((data.last50Turns || []).map(point => ({
-        ...point,
-        happiness: toFiniteNumber(point.happiness, null)
-      })).filter(point => point.happiness !== null));
+      setHistory(
+        (data.last50Turns || [])
+          .map((point) => ({
+            ...point,
+            happiness: toFiniteNumber(point.happiness, null),
+          }))
+          .filter((point) => point.happiness !== null)
+      );
       setRecoveryRate(toFiniteNumber(data.recoveryRate));
     } catch (err) {
       console.error('Happiness panel error:', err);
@@ -55,7 +59,6 @@ const HappinessPanel = () => {
   useEffect(() => {
     fetchHappinessData();
 
-    // Listen for game data updates via custom event
     const handleGameDataUpdate = () => {
       fetchHappinessData();
     };
@@ -78,7 +81,7 @@ const HappinessPanel = () => {
       synergy: '+',
       tax: '%',
       overcrowding: '!',
-      fragments: '-'
+      fragments: '-',
     };
     return emojis[name] || '•';
   };
@@ -95,58 +98,56 @@ const HappinessPanel = () => {
       synergy: 'Synergy',
       tax: 'Tax',
       overcrowding: 'Overcrowding',
-      fragments: 'Fragments'
+      fragments: 'Fragments',
     };
     return labels[name] || name;
   };
 
-  const filteredEvents = filter
-    ? events.filter(e => e.component === filter)
-    : events;
+  const filteredEvents = filter ? events.filter((e) => e.component === filter) : events;
 
   return (
-    <div id="happiness" className="panel">
-      <div style={{ padding: '16px' }}>
-        {/* Current Happiness Display */}
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>Current Happiness</span>
-            <span style={{ fontSize: '24px', fontWeight: 700, color: 'var(--gold)', fontFamily: '"Cinzel", serif' }}>
-              {happiness}/120
-            </span>
+    <div id="happiness" className="panel min-h-0 w-full overflow-y-auto">
+      <div className="space-y-6 p-4 md:p-5">
+        <section className="rounded-2xl border border-white/5 bg-zinc-950/95 p-4 shadow-[0_18px_40px_rgba(0,0,0,0.28)]">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <span className="text-[14px] font-semibold text-[var(--text)]">Current Happiness</span>
+            <span className="font-serif text-[24px] font-bold text-[var(--gold)]">{happiness}/120</span>
           </div>
-          <div style={{
-            height: '24px',
-            background: 'var(--bg3)',
-            borderRadius: '12px',
-            overflow: 'hidden',
-            border: '1px solid var(--border)',
-            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.3)'
-          }}>
-            <div style={{
-              height: '100%',
-              width: `${Math.min(100, Math.max(0, (happiness / 120) * 100))}%`,
-              background: happiness >= 80 ? 'var(--green)' : happiness >= 50 ? 'var(--gold)' : happiness >= 30 ? 'var(--amber)' : 'var(--red)',
-              transition: 'width 0.3s ease'
-            }} />
+          <div className="overflow-hidden rounded-full border border-white/5 bg-[var(--bg3)] shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]">
+            <div
+              className="h-6 transition-[width] duration-300"
+              style={{
+                width: `${Math.min(100, Math.max(0, (happiness / 120) * 100))}%`,
+                background:
+                  happiness >= 80
+                    ? 'var(--green)'
+                    : happiness >= 50
+                      ? 'var(--gold)'
+                      : happiness >= 30
+                        ? 'var(--amber)'
+                        : 'var(--red)',
+              }}
+            />
           </div>
-        </div>
+        </section>
 
-        {/* Happiness Graph */}
-        <HappinessGraph history={history} />
+        <section className="rounded-2xl border border-white/5 bg-zinc-950/95 p-4 shadow-[0_18px_40px_rgba(0,0,0,0.28)]">
+          <HappinessGraph history={history} />
+        </section>
 
         {/* Component Breakdown */}
         <div style={{ marginBottom: '24px' }}>
           <div className="text-xs font-semibold text-zinc-400 uppercase tracking-widest mb-3">Component Breakdown</div>
           <div className="flex flex-col gap-2 mb-5">
             {Object.entries(components).map(([key, value]) => (
-              <div
+              <button
                 key={key}
                 className={`flex justify-between items-center p-3 bg-zinc-800 rounded border transition-all cursor-pointer ${filter === key ? 'border-orange-500 bg-orange-500/10' : 'border-zinc-700 hover:bg-zinc-700 hover:translate-x-0.5'}`}
                 style={{
                   opacity: !filter || filter === key ? 1 : 0.5,
                 }}
                 onClick={() => setFilter(filter === key ? null : key)}
+                aria-pressed={filter === key}
               >
                 <span className="flex items-center gap-2 text-sm font-semibold text-white">
                   {getComponentEmoji(key)} {getComponentLabel(key)}
@@ -154,7 +155,7 @@ const HappinessPanel = () => {
                 <span className={`font-mono text-sm font-bold min-w-[40px] text-right ${value > 0 ? 'text-green' : value < 0 ? 'text-red' : 'text-zinc-400'}`}>
                   {value > 0 ? '+' : ''}{value}
                 </span>
-              </div>
+              </button>
             ))}
             <div className="flex justify-between items-center p-2 bg-zinc-700 rounded border border-zinc-600 mt-1 font-bold">
               <span className="text-xs text-white">Recovery/turn</span>
@@ -163,7 +164,7 @@ const HappinessPanel = () => {
               </span>
             </div>
           </div>
-        </div>
+        </section>
 
         {/* Recent Changes Log */}
         <div style={{ marginBottom: '16px' }}>
@@ -187,11 +188,11 @@ const HappinessPanel = () => {
                   <div className="text-xs text-zinc-500 mt-1">
                     {event.old_happiness} → {event.new_happiness}
                   </div>
-                </div>
+                </article>
               ))
             )}
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );

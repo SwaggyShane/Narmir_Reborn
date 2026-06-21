@@ -26,36 +26,36 @@ const Topbar = () => {
   };
 
   return (
-    <header className="topbar">
-      <div className="logo-container">
-        <div className="logo">NARMIR REBORN</div>
-        <div className="tagline">Pure. Damn. Evil.</div>
+    <header className="topbar flex h-14 items-center justify-between gap-2 border-b border-white/5 bg-zinc-950/95 px-3 backdrop-blur-md md:px-4">
+      <div className="logo-container min-w-0">
+        <div className="logo truncate font-serif text-[13px] font-black uppercase tracking-[0.12em] text-[var(--gold)] md:text-[14px]">NARMIR REBORN</div>
+        <div className="tagline truncate text-[11px] text-[var(--text2)] md:text-[12px]">Pure. Damn. Evil.</div>
       </div>
-      <div className="topbar-stats">
-        <div className="tstat hide-sm">
+      <div className="topbar-stats flex min-w-0 items-center gap-2 md:gap-3">
+        <div className="tstat hide-sm hidden shrink-0 md:block">
           <div className="val" id="top-rank">—</div>
           <div className="lbl">Rank</div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ textAlign: 'right', fontFamily: '"Cinzel", serif', lineHeight: 1.1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span style={{ fontSize: '11px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }} className="hide-xs">
+        <div className="flex items-center gap-2">
+          <div className="text-right font-serif leading-none">
+            <div className="flex items-center gap-1.5">
+              <span className="hide-xs text-[11px] uppercase tracking-[0.5px] text-[var(--text3)]">
                 Turns:
               </span>
-              <span id="turns-stored-disp" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--gold)' }}>
+              <span id="turns-stored-disp" className="text-[16px] font-bold text-[var(--gold)]">
                 {turnsStored}
               </span>
-              <span style={{ fontSize: '11px', color: 'var(--text3)' }} className="hide-xs">
+              <span className="hide-xs text-[11px] text-[var(--text3)]">
                 / 400
               </span>
             </div>
-            <div className="countdown" style={{ fontSize: '10px', fontFamily: '"Inter", sans-serif' }}>
+            <div className="countdown text-[10px] font-sans text-[var(--text3)]">
               +7 in <span id="regen-countdown">25:00</span>
             </div>
           </div>
           <button
-            className="turn-btn"
-            style={{ padding: '6px 14px', fontSize: '12px', opacity: loading.takeTurn ? 0.6 : 1 }}
+            className="turn-btn shrink-0 px-3.5 py-1.5 text-[12px] leading-none"
+            style={{ opacity: loading.takeTurn ? 0.6 : 1 }}
             onClick={takeTurn}
             disabled={loading.takeTurn}
           >
