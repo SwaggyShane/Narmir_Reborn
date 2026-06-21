@@ -1,41 +1,46 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { apiCall } from '../../utils/api';
+import { renderWorldMap } from './WorldmapRenderer.jsx';
+import { renderRegionLegend } from './WorldmapLegend.jsx';
+
+export async function loadWorldMap({ setLoading, setError } = {}) {
+  if (typeof setLoading === 'function') setLoading(true);
+  if (typeof setError === 'function') setError('');
+  try {
+    const container = document.getElementById('world-map-container');
+    if (container) {
+      container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3)">Scanning the horizon...</div>';
+    }
+
+    const data = await apiCall('/api/kingdom/world-map');
+    if (data?.error) throw new Error(data.error);
+
+    const kingdoms = data.kingdoms || (Array.isArray(data) ? data : []);
+    window.worldMapData = kingdoms;
+    renderWorldMap(kingdoms, data.tradeRoutes || []);
+    renderRegionLegend();
+  } catch (err) {
+    console.error('World map fail:', err);
+    if (typeof setError === 'function') setError(err.message || 'Failed to load world map');
+    const container = document.getElementById('world-map-container');
+    if (container) {
+      container.innerHTML = '';
+    }
+    throw err;
+  } finally {
+    if (typeof setLoading === 'function') setLoading(false);
+  }
+}
 
 const WorldmapPanel = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const loadWorldMap = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const container = document.getElementById('world-map-container');
-      if (container) {
-        container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3)">Scanning the horizon...</div>';
-      }
-
-      const data = await apiCall('/api/kingdom/world-map');
-      if (data?.error) throw new Error(data.error);
-
-      const kingdoms = data.kingdoms || (Array.isArray(data) ? data : []);
-      window.worldMapData = kingdoms;
-      window.renderWorldMap?.(kingdoms, data.tradeRoutes || []);
-      window.renderRegionLegend?.();
-    } catch (err) {
-      console.error('World map fail:', err);
-      setError(err.message || 'Failed to load world map');
-      const container = document.getElementById('world-map-container');
-      if (container) {
-        container.innerHTML = '';
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const refreshWorldMap = useCallback(() => loadWorldMap({ setLoading, setError }), []);
 
   useEffect(() => {
-    loadWorldMap();
-  }, [loadWorldMap]);
+    refreshWorldMap();
+  }, [refreshWorldMap]);
 
   return (
     <div id="worldmap" className="panel" style={{ display: 'none' }}>
@@ -48,7 +53,7 @@ const WorldmapPanel = () => {
             Six ancient regions, each shaped by the race that claims it.
           </div>
         </div>
-        <button className="base-btn" onClick={loadWorldMap}>↻ Refresh</button>
+        <button className="base-btn" onClick={refreshWorldMap}>↻ Refresh</button>
       </div>
       <div className="r-grid-sidebar">
         {/* Map SVG */}
@@ -61,7 +66,7 @@ const WorldmapPanel = () => {
             ) : error ? (
               <div style={{ padding: '40px', textAlign: 'center', color: 'var(--red)' }}>
                 Failed to load world map.
-                <button className="btn" onClick={loadWorldMap} style={{ marginTop: '10px' }}>Retry</button>
+                <button className="btn" onClick={refreshWorldMap} style={{ marginTop: '10px' }}>Retry</button>
               </div>
             ) : null}
           </div>

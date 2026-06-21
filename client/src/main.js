@@ -16,9 +16,7 @@ import WorldmapPanelReact from "./components/react/WorldmapPanel.jsx";
 import RankingsPanelReact from "./components/react/RankingsPanel.jsx";
 import BuildPanelReact from "./components/react/BuildPanel.jsx";
 import DefensePanelReact from "./components/react/DefensePanel.jsx";
-import EconomyPanelReact from "./components/react/EconomyPanel.jsx";
 import ExplorationPanelReact from "./components/react/ExplorationPanel.jsx";
-import MarketPanelReact from "./components/react/MarketPanel.jsx";
 import WarfarePanelReact from "./components/react/WarfarePanel.jsx";
 import TrainingPanelReact from "./components/react/TrainingPanel.jsx";
 import StatusPanelReact from "./components/react/StatusPanel.jsx";
@@ -52,10 +50,12 @@ import {
   acceptTrade as acceptTradeAction,
   declineTrade as declineTradeAction,
 } from "./actions/economyTrades.js";
-import { loadWorldMap as loadWorldMapAction } from "./actions/loadWorldMap.js";
-import { renderWorldMap as renderWorldMapAction } from "./actions/renderWorldMap.js";
-import { renderRegionLegend as renderRegionLegendAction, highlightRegion as highlightRegionAction } from "./actions/worldMapLegend.js";
-import { showMapKingdomCard as showMapKingdomCardAction } from "./actions/showMapKingdomCard.js";
+import EconomyPanelReact from "./components/react/EconomyPanel.jsx";
+import MarketPanelReact from "./components/react/MarketPanel.jsx";
+import { loadWorldMap as loadWorldMapAction } from "./components/react/WorldmapPanel.jsx";
+import { renderWorldMap as renderWorldMapAction } from "./components/react/WorldmapRenderer.jsx";
+import { renderRegionLegend as renderRegionLegendAction, highlightRegion as highlightRegionAction } from "./components/react/WorldmapLegend.jsx";
+import { showMapKingdomCard as showMapKingdomCardAction } from "./components/react/MapKingdomCard.jsx";
 import { renderTargets as renderTargetsAction } from "./actions/renderTargets.js";
 import { loadWarfarePanel as loadWarfarePanelAction } from "./actions/loadWarfarePanel.js";
 import { applyServerUpdates as applyServerUpdatesAction } from "./utils/gameMutations.js";
