@@ -7,6 +7,11 @@ const panelShell = 'panel panel-immersive min-h-0 w-full overflow-y-auto px-4 pb
 const insetCard =
   'rounded-2xl border border-[var(--border)] bg-[var(--bg3)] p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.02)_inset]';
 const softCard = 'rounded-xl border border-[var(--border)] bg-[var(--bg2)] p-4';
+const formatBountyDate = (value) => {
+  if (!value) return 'Unknown date';
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? 'Unknown date' : parsed.toLocaleDateString();
+};
 
 const BountiesPanel = () => {
   const [bounties, setBounties] = useState([]);
@@ -113,20 +118,23 @@ const BountiesPanel = () => {
                     No active bounties.
                   </div>
                 ) : (
-                  bounties.map((b) => (
-                    <div key={b.id} className={`${softCard} mb-2 last:mb-0`}>
-                      <div className="mb-1 flex items-center justify-between gap-3">
-                        <span className="text-[15px] font-bold text-[var(--text)]">{b.target_name}</span>
-                        <span className="text-[16px] font-extrabold text-[var(--gold)]">
-                          {fmt(b.amount)} GC
-                        </span>
+                  bounties.map((b) => {
+                    const placedAt = formatBountyDate(b.created_at);
+                    return (
+                      <div key={b.id} className={`${softCard} mb-2 last:mb-0`}>
+                        <div className="mb-1 flex items-center justify-between gap-3">
+                          <span className="text-[15px] font-bold text-[var(--text)]">{b.target_name}</span>
+                          <span className="text-[16px] font-extrabold text-[var(--gold)]">
+                            {fmt(b.amount)} GC
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-[var(--text3)]">
+                          Placed by <span className="text-[var(--accent1)]">{b.placer_name}</span> ·{' '}
+                          {placedAt}
+                        </div>
                       </div>
-                      <div className="text-[11px] text-[var(--text3)]">
-                        Placed by <span className="text-[var(--accent1)]">{b.placer_name}</span> ·{' '}
-                        {new Date(b.created_at).toLocaleDateString()}
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>
