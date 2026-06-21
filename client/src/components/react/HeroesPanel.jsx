@@ -3,6 +3,7 @@ import { useGameState } from '../../hooks/useGameState';
 import { apiCall } from '../../utils/api.js';
 import { fmt } from "../../utils/fmt";
 import LoreModal from './LoreModal.jsx';
+import { repairMojibake } from '../../utils/repairMojibake.js';
 
 const HERO_PORTRAITS = {
   // Dwarf
@@ -187,7 +188,7 @@ const HeroesPanel = () => {
             alt={cls}
           />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--gold)', marginBottom: '2px' }}>{h.name}</div>
+            <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--gold)', marginBottom: '2px' }}>{repairMojibake(h.name || '')}</div>
             <div style={{ fontSize: '12px', marginBottom: '8px' }}>
               <span style={{ color: 'var(--red)', fontWeight: 600 }}>{cls}</span>
               <span style={{ color: 'var(--text3)' }}> · Level {h.level}</span>
