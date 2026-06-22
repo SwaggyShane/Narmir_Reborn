@@ -14,13 +14,16 @@ This migration begins **after** the vanilla → React migration is complete. Do 
 | 1 | Design Token Bridge | Zero | Phase 0 |
 | 2 | Shared Component Classes | Low | Phase 1 |
 | 3 | Global Layout | Medium | Phase 2 |
-| 4 | React Component Migration | Medium | Phase 3 |
-| 5 | Isolated CSS Files | Low | Phase 4 |
+| 4a | React Component Migration (Pure React) | Medium | Phase 3 |
+| 4b | Vanilla JS → React Conversion | **High** | Phase 4a |
+| 5 | Isolated CSS Files | Low | Phase 4b |
 | 6 | Panel System Modernization | Medium | Phase 5 |
 | 7 | Mobile Nav Overhaul | High | Phase 6 |
 | 8 | QA & Dead CSS Removal | Low | Phase 7 |
 
 Each phase ends with a build + smoke test + visual review before the next begins.
+
+**Note:** Phase 4b is high-risk because it converts imperative DOM manipulation to declarative React. The 17 vanilla JS components must be converted before Phases 5–8 can complete. This is a hard dependency.
 
 ---
 
@@ -561,6 +564,197 @@ className="hover:bg-bg3 transition-colors cursor-pointer"
 
 ---
 
+## Phase 4b — Vanilla JS → React Conversion
+
+**Goal:** Convert 17 vanilla JS components (using `el()` helper + `style.cssText` mutations) to React components with Tailwind + clsx. This is a critical blocking dependency for Phases 5–8.
+
+### Why This Matters
+
+The following 17 components currently use imperative DOM manipulation instead of React:
+- `AuthModal.jsx`, `BuildPanel.jsx`, `DefensePanel.jsx`, `EconomyPanel.jsx`, `GlobalchatPanel.jsx`
+- `KingdomProfileModal.jsx`, `MapKingdomCard.jsx`, `MarketPanel.jsx`, `NewsPanel.jsx`, `OptionsPanel.jsx`
+- `ResourcesPanel.jsx`, `StatusPanel.jsx`, `StudiesPanel.jsx`, `TrainingPanel.jsx`, `WarfarePanel.jsx`
+- `WorldmapLegend.jsx`, `WorldmapRenderer.jsx`
+
+These components:
+1. Use `const el = (id) => document.getElementById(id)` to get DOM refs
+2. Mutate styles via `el('id').style.color = 'var(--X)'` or `style.cssText = '...'`
+3. Are outside React's control → can't use clsx, conditional classes, or Tailwind utilities
+4. **Block** Phase 5 (CSS file removal) and Phase 6 (panel system cleanup)
+
+### Conversion Strategy
+
+**Pattern: Before (vanilla JS)**
+```js
+function loadEconomy() {
+  const el = (id) => document.getElementById(id);
+  
+  if (el('econ-balance')) {
+    el('econ-balance').textContent = fmt(bal);
+    el('econ-balance').style.color = bal >= 0 ? 'var(--green)' : 'var(--red)';
+  }
+  
+  if (el('gran-degrade-time')) {
+    el('gran-degrade-time').style.color = dt > 100 ? 'var(--green)' : 'var(--red)';
+  }
+}
+```
+
+**Pattern: After (React + Tailwind)**
+```jsx
+function EconomyPanel() {
+  const [econ, setEcon] = useState(null);
+  
+  useEffect(() => {
+    loadEconomy().then(data => setEcon(data));
+  }, []);
+  
+  return (
+    <div className="panel">
+      <div className={clsx('font-bold', econ.balance >= 0 ? 'text-green' : 'text-red')}>
+        {fmt(econ.balance)}
+      </div>
+      
+      <div className={clsx(econ.degradeTime > 100 ? 'text-green' : 'text-red')}>
+        {econ.degradeTime > 1000 ? 'Stable' : econ.degradeTime + ' turns'}
+      </div>
+    </div>
+  );
+}
+```
+
+### Conversion Order (by complexity)
+
+**Tier 1 — Simple (start here)**
+1. `MapKingdomCard.jsx` — minimal DOM updates
+2. `NewsPanel.jsx` — simple text/color updates
+3. `GlobalchatPanel.jsx` — message list with conditional styling
+4. `OptionsPanel.jsx` — toggle switches with color changes
+5. `WorldmapLegend.jsx` — legend rendering
+
+**Tier 2 — Medium (game logic intact)**
+6. `MarketPanel.jsx` — market table, some conditional colors
+7. `ResourcesPanel.jsx` — resource grid, progress bars
+8. `StudiesPanel.jsx` — research tree display
+9. `HirePanel.jsx` — unit hiring grid
+10. `AuthModal.jsx` — login modal (isolated, low risk)
+
+**Tier 3 — Complex (high risk, test heavily)**
+11. `DefensePanel.jsx` — defense unit grid + conditional styling
+12. `StatusPanel.jsx` — unit grid (100px 1fr 52px 52px columns), complex state
+13. `KingdomProfileModal.jsx` — kingdom stats modal
+14. `EconomyPanel.jsx` — 96 style.cssText mutations, complex calculations (RISKIEST)
+15. `TrainingPanel.jsx` — unit training queue
+16. `BuildPanel.jsx` — building queue grid (most complex grid logic)
+17. `WarfarePanel.jsx` — warfare UI, conditional displays
+
+### Key Patterns for Conversion
+
+#### 1. Replace `el()` with React state + useEffect
+
+```js
+// Before: vanilla JS with side effects
+function loadData() {
+  const el = (id) => document.getElementById(id);
+  const data = await apiCall('/api/data');
+  if (el('my-div')) el('my-div').textContent = data.value;
+}
+
+// After: React with hooks
+function Panel() {
+  const [data, setData] = useState(null);
+  
+  useEffect(() => {
+    apiCall('/api/data').then(setData);
+  }, []);
+  
+  return <div>{data?.value}</div>;
+}
+```
+
+#### 2. Replace `style.color = X ? 'var(--Y)' : 'var(--Z)'` with `clsx`
+
+```js
+// Before
+el('balance').style.color = bal >= 0 ? 'var(--green)' : 'var(--red)';
+
+// After
+<div className={clsx('font-bold', bal >= 0 ? 'text-green' : 'text-red')}>
+  {fmt(bal)}
+</div>
+```
+
+#### 3. Replace `style.cssText` with inline className + clsx
+
+```js
+// Before
+el('card').style.cssText = 'padding: 8px; border: 1px solid var(--border); background: var(--bg2);';
+
+// After
+<div className="p-2 border border-white/5 bg-bg2">
+  {/* content */}
+</div>
+```
+
+#### 4. Replace `el().textContent = value` with React interpolation
+
+```js
+// Before
+el('econ-farms').textContent = String(state.bld_farms || 0);
+
+// After
+<div>{state.bld_farms || 0}</div>
+```
+
+### Testing Requirements for Phase 4b
+
+Each tier must pass before moving to the next:
+
+**Smoke tests (mandatory):**
+```bash
+npm run lint                          # 0 errors required
+npm run build                          # Must succeed
+curl http://localhost:3000/api/...     # API still works
+```
+
+**Functional tests (for each component):**
+- Component renders without errors
+- All data loads correctly
+- Conditional styling applies (colors, visibility)
+- State updates trigger re-renders
+- No console errors or warnings
+- No missing element IDs (common mistake during conversion)
+
+**Visual regression (Tier 3 especially):**
+- StatusPanel: grid columns align correctly
+- BuildPanel: engineer allocation displays correctly
+- EconomyPanel: all metrics visible, colors correct
+- WarfarePanel: troop lists render, conditionals work
+
+### Risk Mitigation
+
+Since Phase 4b is **high risk**, do this:
+
+1. **Convert one tier at a time** — don't combine Tier 1 + Tier 2 in one PR
+2. **Keep the `el()` function defined but unused** in case you need to revert (remove only in Phase 8)
+3. **Run full smoke suite after each component** — don't batch multiple conversions
+4. **Have a rollback plan** — keep the vanilla JS versions in a branch in case a complex component (EconomyPanel, BuildPanel) breaks production logic
+5. **For complex game logic (EconomyPanel, BuildPanel):** Add integration tests first to verify the React version produces identical output
+
+### Success Criteria for Phase 4b
+
+- [ ] All 17 components converted to React
+- [ ] All components use clsx for conditionals
+- [ ] Zero `el()`, `style.cssText`, `style.color =` mutations remaining in these files
+- [ ] Lint: 0 errors
+- [ ] Smoke tests: 100% pass
+- [ ] Build: succeeds
+- [ ] Visual regression tests: pass
+
+Once Phase 4b is complete, Phases 5–8 can proceed cleanly.
+
+---
+
 ## Phase 5 — Isolated CSS Files
 
 Each of these files is self-contained and can be migrated independently.
@@ -778,16 +972,22 @@ Target: < 30KB gzipped for the CSS bundle.
 
 ## PR Sequence
 
-| PR | Phase | Contents |
-|----|-------|----------|
-| 1 | 0 | Install, tailwind.config.js, tailwind.css entry, token bridge |
-| 2 | 1–2 | Design token bridge + shared component @layer classes |
-| 3 | 3 | Global layout (app shell, topbar, sidebar, main, bottom nav, panel system) |
-| 4–6 | 4 | React components Tier 1 + Tier 2 (one PR per 5–7 components) |
-| 7–8 | 4 | React components Tier 3 + Tier 4 |
-| 9 | 5 | Isolated CSS files deleted |
-| 10 | 6 | Panel system cleanup, main.js cssText removal |
-| 11 | 7 | Mobile nav overhaul + landscape guard |
-| 12 | 8 | Dead CSS removal, final grep audit |
+| PR | Phase | Contents | Risk |
+|----|-------|----------|------|
+| 1 | 0 | Install, tailwind.config.js, tailwind.css entry, token bridge | Zero |
+| 2 | 1–2 | Design token bridge + shared component @layer classes | Low |
+| 3 | 3 | Global layout (app shell, topbar, sidebar, main, bottom nav, panel system) | Medium |
+| 4–6 | 4a | React components Tier 1 + Tier 2 (one PR per 5–7 components) | Medium |
+| 7–8 | 4a | React components Tier 3 + Tier 4 | Medium |
+| **9–11** | **4b** | **Vanilla JS → React Tier 1–3 (one PR per 5–6 components)** | **HIGH** |
+| 12 | 5 | Isolated CSS files deleted | Low |
+| 13 | 6 | Panel system cleanup, main.js cssText removal | Medium |
+| 14 | 7 | Mobile nav overhaul + landscape guard | High |
+| 15 | 8 | Dead CSS removal, final grep audit | Low |
 
-No single PR changes more than one phase. Phase 3 (global layout) is the one PR that requires the most review — treat it as a mandatory hold point before proceeding.
+**Critical hold points:**
+- **After PR 3:** Global layout must be pixel-perfect before proceeding to React migration
+- **After PR 8:** All pure React components done before vanilla JS conversion
+- **After PR 11:** All vanilla JS components converted before isolated CSS removal
+
+Phase 4b (Tier 1) should be completed and tested thoroughly before moving to Tier 2. If Tier 1 goes smoothly, proceed with Tier 2–3. If Tier 1 hits blockers, pause and stabilize before continuing.
