@@ -5,6 +5,8 @@ Finish the mixed-state UI by removing the remaining legacy CSS and inline-style 
 
 Tailwind completion ends when the remaining UI is consistently Tailwind-driven and only thin shared primitives or unavoidable runtime styles remain.
 
+Treat "unavoidable runtime styles" narrowly: only values that are genuinely data-driven or state-driven, not leftover layout work that should be converted into utilities.
+
 ## Key Changes
 - **Tailwind foundation**
   - Expand `tailwind.config.js` into a fuller dark-fantasy theme system with semantic colors, spacing, borders, shadows, typography, and component tokens.
@@ -14,6 +16,7 @@ Tailwind completion ends when the remaining UI is consistently Tailwind-driven a
   - Convert the remaining inline-style and old-class surfaces into Tailwind utilities, starting with the remaining shell-heavy panels and chrome.
   - Reduce or remove old CSS files that still carry layout responsibility, keeping only truly shared primitives or other genuinely shared base styling if needed.
   - Standardize reusable patterns for card shells, tabs, headers, scroll areas, and modal bodies so panels stop drifting stylistically.
+  - Prefer shared utility classes or tiny shared components only when a pattern repeats enough to justify the abstraction; otherwise keep it local and explicit.
 
 - **Mobile pass**
   - Apply the aggressive mobile plan after the Tailwind base is stable.

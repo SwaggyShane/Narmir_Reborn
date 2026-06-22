@@ -8,6 +8,19 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        void: {
+          950: '#07070a',
+          900: '#0a0a0f',
+          800: '#12121a',
+          700: '#181824',
+        },
+        ember: {
+          900: '#341406',
+          700: '#5a2108',
+          500: '#f06202',
+          400: '#ff8b3d',
+          300: '#ffb366',
+        },
         bg: 'var(--bg)',
         bg2: 'var(--bg2)',
         bg3: 'var(--bg3)',
@@ -24,6 +37,11 @@ module.exports = {
         blue: 'var(--blue)',
         amber: 'var(--amber)',
         logo: 'var(--logo)',
+      },
+      boxShadow: {
+        panel: '0 1px 0 rgba(255,255,255,0.03) inset, 0 14px 36px rgba(0,0,0,0.35)',
+        ember: '0 0 0 1px rgba(240, 98, 2, 0.18), 0 0 28px rgba(240, 98, 2, 0.12)',
+        glow: '0 0 24px rgba(240, 98, 2, 0.16)',
       },
       borderColor: {
         DEFAULT: 'var(--border)',
