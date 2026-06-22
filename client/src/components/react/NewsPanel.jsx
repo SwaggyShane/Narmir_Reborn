@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
 import { useGameState, useGameMutationEvents } from '../../hooks/useGameState';
 import { replayWarReport } from '../../utils/replayWarReport';
@@ -172,18 +173,18 @@ const NewsPanel = () => {
 
   return (
     <div id="news" className="panel">
-      <div className="card" style={{ marginTop: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
-          <div className="card-title" style={{ marginBottom: 0 }}>
+      <div className="card mt-0">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="card-title m-0">
             📰 Kingdom news — Turn <span id="news-turn-num">{state?.turn || 0}</span>
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div className="flex gap-2">
             <button className="base-btn" onClick={loadNews}>↻ Refresh</button>
-            <button className="base-btn variant-red" style={{ background: 'var(--red)' }} onClick={clearNews}>Clear all</button>
+            <button className="base-btn variant-red bg-[var(--red)]" onClick={clearNews}>Clear all</button>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '6px', marginBottom: '14px', flexWrap: 'wrap' }}>
+        <div className="mb-3.5 flex flex-wrap gap-1.5">
           {[
             ['all', 'All'],
             ['attack', '⚔️ Combat'],
@@ -193,10 +194,9 @@ const NewsPanel = () => {
           ].map(([value, label]) => (
             <button
               key={value}
-              className={`base-btn news-filter${newsFilter === value ? ' active' : ''}`}
+              className={clsx('base-btn news-filter text-[12px] px-2.5 py-1', newsFilter === value && 'active')}
               data-filter={value}
               onClick={() => setNewsFilter(value)}
-              style={{ fontSize: '12px', padding: '4px 10px' }}
             >
               {label}
             </button>
@@ -205,7 +205,7 @@ const NewsPanel = () => {
 
         <div id="news-list">
           {visibleGroups.length === 0 ? (
-            <div style={{ color: 'var(--text3)', fontSize: '13px', padding: '16px 0', textAlign: 'center' }}>
+            <div className="py-4 text-center text-[13px] text-[var(--text3)]">
               {newsFilter === 'all' ? 'No news yet — take some turns!' : `No ${newsFilter} events yet.`}
             </div>
           ) : visibleGroups.map((group) => (
@@ -231,8 +231,7 @@ const NewsPanel = () => {
                       {displayMessage}
                       {item.combat_log_id ? (
                         <button
-                          className="btn"
-                          style={{ padding: '2px 8px', fontSize: '10px', marginTop: '4px', marginLeft: '10px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                          className="btn inline-flex items-center gap-1 text-[10px] px-2 py-0.5 mt-1 ml-2.5"
                           onClick={() => replayWarReport(item.combat_log_id)}
                         >
                           ▶ Replay
@@ -247,8 +246,8 @@ const NewsPanel = () => {
         </div>
       </div>
 
-      <div id="vue-panel-races" style={{ display: 'contents' }} />
-      <div id="vue-panel-bounties" style={{ display: 'contents' }} />
+      <div id="vue-panel-races" className="contents" />
+      <div id="vue-panel-bounties" className="contents" />
     </div>
   );
 };
