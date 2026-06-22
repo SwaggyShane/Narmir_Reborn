@@ -237,15 +237,19 @@
 
   /* ── Navigation Items ── */
   .nav-section {
-    @apply mb-0;
+    @apply mb-0 px-3 pt-4 pb-1 text-[10px] font-black uppercase tracking-[0.3em] text-ember-400/80;
   }
 
   .nav-item {
-    @apply relative flex items-center gap-2 px-3 py-2 rounded text-text3 text-xs cursor-pointer transition-colors hover:bg-bg3 hover:text-text;
+    @apply relative flex items-center gap-2 rounded-xl border border-transparent bg-void-900/55 px-3 py-2 text-xs text-text3 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] transition hover:border-ember-500/30 hover:bg-void-800/85 hover:text-text;
+  }
+
+  .nav-item.active {
+    @apply border-ember-500/50 bg-ember-500/10 text-text shadow-ember;
   }
 
   .nav-badge {
-    @apply absolute -top-0.5 -right-0.5 min-w-4 h-4 flex items-center justify-center rounded-full bg-red text-white text-2xs font-bold px-0.5;
+    @apply absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-ember-500 px-0.5 text-2xs font-bold text-white;
   }
 }
 
