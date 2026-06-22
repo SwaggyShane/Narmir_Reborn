@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import clsx from 'clsx';
 import { useGameState } from '../../hooks/useGameState';
 import { apiCall } from '../../utils/api.js';
 import { fmt } from "../../utils/fmt";
@@ -8,31 +9,24 @@ import { toast as showToast } from '../../utils/toast.js';
 import { registerShowHeroXpModal } from '../../utils/showHeroXpModal.js';
 
 const HERO_PORTRAITS = {
-  // Dwarf
   siegebreaker: '/hero/siegebreaker.webp',
   forge_lord: '/hero/forge_lord.webp',
   stonelord: '/hero/stonelord.webp',
-  // High Elf
   archmage: '/hero/archmage.webp',
   lunar_sentinel: '/hero/lunar_sentinel.webp',
   mage_king: '/hero/mage_king.webp',
-  // Orc
   warlord: '/hero/warlord.webp',
   high_chieftain: '/hero/high_chieftain.webp',
   warshaman: '/hero/warshaman.webp',
-  // Dark Elf
   assassin: '/hero/assassin.webp',
   void_weaver: '/hero/void_weaver.webp',
   shadowmaster: '/hero/shadowmaster.webp',
-  // Human
   paladin: '/hero/paladin.webp',
   grand_chancellor: '/hero/grand_chancellor.webp',
   high_consul: '/hero/grand_chancellor.webp',
-  // Dire Wolf
   alpha: '/hero/warlord.webp',
   storm_howler: '/hero/warshaman.webp',
   blood_shaman: '/hero/warshaman.webp',
-  // Vampire
   night_lord: '/hero/void_weaver.webp',
   sanguine_oracle: '/hero/shadowmaster.webp',
   blood_matriarch: '/hero/assassin.webp',
@@ -145,7 +139,7 @@ const HeroesPanel = () => {
   const heroCards = useMemo(() => {
     if (!heroes.length) {
       return (
-        <div style={{ color: 'var(--text3)', fontSize: '13px', padding: '20px', textAlign: 'center', gridColumn: '1/-1' }}>
+        <div className="col-span-full text-center px-5 py-5 text-[13px] text-[var(--text3)]">
           No heroes recruited yet. Build a Castle to recruit your first hero!
         </div>
       );
@@ -166,59 +160,50 @@ const HeroesPanel = () => {
       return (
         <div
           key={h.id || `${h.name}-${h.class}`}
-          className="card"
-          style={{
-            margin: 0,
-            border: '1px solid var(--border2)',
-            background: 'linear-gradient(135deg, var(--bg2), var(--bg3))',
-            display: 'flex',
-            gap: '12px',
-            alignItems: 'flex-start',
-          }}
+          className="card m-0 flex gap-3 items-start border border-[var(--border2)] bg-gradient-to-br from-[var(--bg2)] to-[var(--bg3)]"
         >
           <img
             src={heroPortrait(h.class)}
             width="56"
             height="56"
-            style={{ borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }}
+            className="rounded-[8px] object-cover flex-shrink-0"
             onError={(e) => { e.currentTarget.style.display = 'none'; }}
             alt={cls}
           />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--gold)', marginBottom: '2px' }}>{repairMojibake(h.name || '')}</div>
-            <div style={{ fontSize: '12px', marginBottom: '8px' }}>
-              <span style={{ color: 'var(--red)', fontWeight: 600 }}>{cls}</span>
-              <span style={{ color: 'var(--text3)' }}> · Level {h.level}</span>
+          <div className="flex-1 min-w-0">
+            <div className="text-[16px] font-bold text-[var(--gold)] mb-0.5">{repairMojibake(h.name || '')}</div>
+            <div className="text-[12px] mb-2">
+              <span className="text-[var(--red)] font-semibold">{cls}</span>
+              <span className="text-[var(--text3)]"> · Level {h.level}</span>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '8px' }}>
+            <div className="flex flex-col mb-2">
               {unlockedAbilities.length ? unlockedAbilities.map((a, i) => {
                 const label = typeof a === 'object' && a !== null ? a.name : a;
                 const desc = typeof a === 'object' && a !== null ? a.description : '';
                 const isLatest = i === unlockedAbilities.length - 1;
                 return (
-                  <div key={`${h.id || h.name}-${label}`} style={{ fontSize: '11px', marginBottom: '4px', lineHeight: 1.3 }}>
-                    <strong style={{ color: isLatest ? 'var(--accent1)' : 'var(--gold)' }}>✨ {label}:</strong>
-                    <span style={{ color: 'var(--text2)' }}> {desc}</span>
+                  <div key={`${h.id || h.name}-${label}`} className="text-[11px] mb-1 leading-[1.3]">
+                    <strong className={isLatest ? 'text-[var(--accent1)]' : 'text-[var(--gold)]'}>✨ {label}:</strong>
+                    <span className="text-[var(--text2)]"> {desc}</span>
                   </div>
                 );
-              }) : <span style={{ fontSize: '10px', color: 'var(--text3)' }}>No abilities yet</span>}
+              }) : <span className="text-[10px] text-[var(--text3)]">No abilities yet</span>}
             </div>
             {isMaxLevel ? (
-              <div style={{ fontSize: '10px', color: 'var(--text3)', marginBottom: '3px' }}>Max Level Reached</div>
+              <div className="text-[10px] text-[var(--text3)] mb-0.75">Max Level Reached</div>
             ) : levelReady ? (
-              <div style={{ fontSize: '10px', color: 'var(--green)', marginBottom: '3px', fontWeight: 600 }}>⬆ Ready to level up!</div>
+              <div className="text-[10px] text-[var(--green)] mb-0.75 font-semibold">⬆ Ready to level up!</div>
             ) : (
-              <div style={{ fontSize: '10px', color: 'var(--text3)', marginBottom: '3px' }}>
+              <div className="text-[10px] text-[var(--text3)] mb-0.75">
                 XP: {fmt(xpIntoLevel)} / {fmt(xpNeeded)} to Lv{(h.level || 1) + 1} ({xpPct}%)
               </div>
             )}
-            <div style={{ height: '4px', background: 'var(--bg3)', borderRadius: '2px', overflow: 'hidden' }}>
+            <div className="h-1 bg-[var(--bg3)] rounded-[2px] overflow-hidden">
               <div
+                className="h-full rounded-[2px]"
                 style={{
-                  height: '100%',
                   width: `${isMaxLevel ? 100 : xpPct}%`,
                   background: isMaxLevel ? 'var(--gold)' : levelReady ? 'var(--green)' : 'var(--gold)',
-                  borderRadius: '2px',
                 }}
               />
             </div>
@@ -231,7 +216,7 @@ const HeroesPanel = () => {
   const heroClassOptions = useMemo(() => {
     if (recruitableClasses.length === 0) {
       return (
-        <div style={{ color: 'var(--text3)', fontSize: '13px', padding: '20px', textAlign: 'center' }}>
+        <div className="text-center px-5 py-5 text-[13px] text-[var(--text3)]">
           No more heroes available to recruit.
         </div>
       );
@@ -240,33 +225,25 @@ const HeroesPanel = () => {
     return recruitableClasses.map(([id, c]) => (
       <div
         key={id}
-        className="hero-class-opt"
+        className="hero-class-opt flex flex-col gap-2.5 cursor-pointer p-3 bg-[var(--bg3)] rounded-[var(--radius)] border transition"
         onClick={() => selectHeroClass(id)}
         style={{
-          display: 'flex',
-          gap: '10px',
-          alignItems: 'flex-start',
-          background: 'var(--bg3)',
-          padding: '12px',
-          borderRadius: 'var(--radius)',
-          border: `1px solid ${selectedHeroClass === id ? 'var(--accent1)' : 'var(--border)'}`,
-          cursor: 'pointer',
-          flexDirection: 'column',
+          borderColor: selectedHeroClass === id ? 'var(--accent1)' : 'var(--border)',
         }}
       >
-        <div style={{ display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div className="flex w-full items-center justify-between">
+          <div className="flex gap-2.5 items-center">
             <img
               src={heroPortrait(id)}
               width="40"
               height="40"
-              style={{ borderRadius: '6px', objectFit: 'cover', display: 'block', flexShrink: 0 }}
+              className="rounded-[6px] object-cover block flex-shrink-0"
               onError={(e) => { e.currentTarget.style.display = 'none'; }}
               alt={c.name}
             />
             <div>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--gold)' }}>{c.name}</div>
-              <div style={{ fontSize: '11px', color: 'var(--text3)' }}>
+              <div className="text-[14px] font-bold text-[var(--gold)]">{c.name}</div>
+              <div className="text-[11px] text-[var(--text3)]">
                 Cost: {fmt(c.recruitCost)} GC · {fmt(c.recruitMana)} Mana
               </div>
             </div>
@@ -277,29 +254,28 @@ const HeroesPanel = () => {
             value={id}
             checked={selectedHeroClass === id}
             onChange={() => selectHeroClass(id)}
-            style={{ margin: 0 }}
+            className="m-0"
           />
         </div>
 
-        <div style={{ fontSize: '12px', color: 'var(--text2)', marginTop: '4px' }}>{c.description}</div>
+        <div className="text-[12px] text-[var(--text2)] mt-1">{c.description}</div>
 
-        <div style={{ fontSize: '11px', color: 'var(--text)', marginTop: '8px' }}>
-          <div style={{ fontWeight: 700, marginBottom: '2px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.5px', fontSize: '10px' }}>
+        <div className="text-[11px] text-[var(--text)] mt-2">
+          <div className="font-bold mb-0.5 text-[var(--text3)] text-[10px] uppercase tracking-[0.5px]">
             Abilities
           </div>
           {(c.abilities || []).map((a, idx) => {
             const unlockLvl = idx === 0 ? 1 : idx === 1 ? 5 : 10;
             return (
-              <div key={`${id}-${a.name}`} style={{ marginBottom: '2px' }}>
-                ✨ <strong style={{ color: 'var(--text)' }}>{a.name}:</strong> <span style={{ color: 'var(--text2)' }}>{a.description}</span>
-                {unlockLvl === 1 ? null : <span style={{ color: 'var(--text3)', fontSize: '9px' }}> (Unlocks at Lvl {unlockLvl})</span>}
+              <div key={`${id}-${a.name}`} className="mb-0.5">
+                ✨ <strong className="text-[var(--text)]">{a.name}:</strong> <span className="text-[var(--text2)]">{a.description}</span>
+                {unlockLvl === 1 ? null : <span className="text-[var(--text3)] text-[9px]"> (Unlocks at Lvl {unlockLvl})</span>}
               </div>
             );
           })}
         </div>
         <button
-          className="base-btn"
-          style={{ fontSize: '11px', padding: '3px 10px', marginTop: '6px', alignSelf: 'flex-start' }}
+          className="base-btn text-[11px] px-2.5 py-0.75 mt-1.5 self-start"
           onClick={(e) => { e.stopPropagation(); setHeroLoreKey(id); }}
         >
           📖 View Lore
@@ -309,7 +285,7 @@ const HeroesPanel = () => {
   }, [fmt, recruitableClasses, selectedHeroClass]);
 
   return (
-    <div id="heroes" className="panel panel-immersive min-h-0 w-full overflow-y-auto px-4 pb-5" style={{ display: 'none' }}>
+    <div id="heroes" className={clsx('panel panel-immersive min-h-0 w-full overflow-y-auto px-4 pb-5', 'hidden')}>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div className="card-title mb-0">Heroes</div>
         <button className="base-btn" onClick={handleRefresh} disabled={loading}>
@@ -339,7 +315,7 @@ const HeroesPanel = () => {
               <div className="mb-2 text-[11px] font-bold uppercase text-[var(--text3)]">Hero Advancement</div>
               <div className="mb-1.5 flex items-center justify-between text-[11px]"><span className="text-[var(--text2)]">Combat Win</span><span className="text-[var(--gold)]">500 XP</span></div>
               <div className="mb-1.5 flex items-center justify-between text-[11px]"><span className="text-[var(--text2)]">Combat Loss</span><span className="text-[var(--gold)]">100 XP</span></div>
-              <div className="mb-1.5 flex items-center justify-between text-[11px]"><span className="text-[var(--text2)]">Leveling</span><span style={{ color: 'var(--accent1)', cursor: 'pointer', textDecoration: 'underline' }} onClick={openHeroXpModal}>View XP Table</span></div>
+              <div className="mb-1.5 flex items-center justify-between text-[11px]"><span className="text-[var(--text2)]">Leveling</span><span className="text-[var(--accent1)] cursor-pointer underline" onClick={openHeroXpModal}>View XP Table</span></div>
             </div>
 
             <div className="mb-4">
@@ -347,7 +323,7 @@ const HeroesPanel = () => {
               <div className="flex flex-col gap-2">{heroClassOptions}</div>
             </div>
 
-            <button className="base-btn variant-accent w-full" id="btn-recruit-hero" style={{ padding: '10px', fontWeight: 700, width: '100%', background: 'var(--accent1)' }} onClick={recruitHeroAction}>
+            <button className="base-btn variant-accent w-full px-2.5 py-2.5 font-bold bg-[var(--accent1)]" id="btn-recruit-hero" onClick={recruitHeroAction}>
               Recruit Hero
             </button>
           </div>
@@ -356,7 +332,7 @@ const HeroesPanel = () => {
             <div className="card-title mb-2 text-[14px]">Hero Slots</div>
             <div className="mt-2 flex items-center justify-between"><span className="text-[13px] text-[var(--text2)]">Occupied</span><span id="hero-slots-used" className="font-bold text-[var(--text)]">{heroes.length}</span></div>
             <div className="mt-1 flex items-center justify-between"><span className="text-[13px] text-[var(--text2)]">Total available</span><span id="hero-slots-total" className="font-bold text-[var(--gold)]">{maxHeroes}</span></div>
-            <div className="mt-2.5 h-1.5 overflow-hidden rounded-[3px] bg-[var(--bg3)]"><div id="hero-slots-bar" style={{ height: '100%', width: `${maxHeroes > 0 ? Math.min(100, (heroes.length / maxHeroes) * 100) : 0}%`, background: 'var(--accent1)', transition: 'width 0.3s' }} /></div>
+            <div className="mt-2.5 h-1.5 overflow-hidden rounded-[3px] bg-[var(--bg3)]"><div id="hero-slots-bar" className="h-full bg-[var(--accent1)]" style={{ width: `${maxHeroes > 0 ? Math.min(100, (heroes.length / maxHeroes) * 100) : 0}%`, transition: 'width 0.3s' }} /></div>
           </div>
         </div>
       </div>
@@ -370,39 +346,39 @@ const HeroesPanel = () => {
           const abilities = Array.isArray(cls.abilities) ? cls.abilities : [];
           return (
             <>
-              <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+              <div className="mb-5 text-center">
                 <img
                   src={heroPortrait(heroLoreKey)}
                   width="240"
                   height="240"
-                  style={{ maxWidth: '100%', height: 'auto', objectFit: 'cover', display: 'block', margin: '0 auto 12px auto', borderRadius: '8px' }}
+                  className="max-w-full h-auto object-cover block mx-auto mb-3 rounded-[8px]"
                   onError={(e) => { e.currentTarget.style.display = 'none'; }}
                   alt={cls.name || ''}
                 />
-                <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text)' }}>{cls.name || ''}</div>
-                <div style={{ fontSize: '12px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '1px' }}>Legendary Hero Class</div>
+                <div className="text-[20px] font-bold text-[var(--text)]">{cls.name || ''}</div>
+                <div className="text-[12px] text-[var(--text3)] uppercase tracking-[1px]">Legendary Hero Class</div>
               </div>
               {abilities.length > 0 && (
-                <div style={{ marginBottom: '20px' }}>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--gold)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>Signature Abilities</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div className="mb-5">
+                  <div className="text-[11px] font-bold text-[var(--gold)] mb-2.5 uppercase tracking-[1px]">Signature Abilities</div>
+                  <div className="flex flex-col gap-2.5">
                     {abilities.map((a, i) => (
-                      <div key={i} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px' }}>
-                        <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', marginBottom: '2px' }}>{a.name || ''}</div>
-                        <div style={{ fontSize: '12px', color: 'var(--text3)' }}>{a.description || ''}</div>
+                      <div key={i} className="bg-white/[0.02] border border-[var(--border)] rounded-[8px] p-2.5">
+                        <div className="text-[13px] font-semibold text-[var(--text)] mb-0.5">{a.name || ''}</div>
+                        <div className="text-[12px] text-[var(--text3)]">{a.description || ''}</div>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <div style={{ background: 'var(--bg4)', borderRadius: '8px', padding: '10px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '10px', color: 'var(--text3)', textTransform: 'uppercase' }}>Recruit Cost</div>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--gold)' }}>{fmt(cls.recruitCost)} GC</div>
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="bg-[var(--bg4)] rounded-[8px] p-2.5 text-center">
+                  <div className="text-[10px] text-[var(--text3)] uppercase">Recruit Cost</div>
+                  <div className="text-[14px] font-bold text-[var(--gold)]">{fmt(cls.recruitCost)} GC</div>
                 </div>
-                <div style={{ background: 'var(--bg4)', borderRadius: '8px', padding: '10px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '10px', color: 'var(--text3)', textTransform: 'uppercase' }}>Mana Cost</div>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--blue)' }}>{fmt(cls.recruitMana)} ✨</div>
+                <div className="bg-[var(--bg4)] rounded-[8px] p-2.5 text-center">
+                  <div className="text-[10px] text-[var(--text3)] uppercase">Mana Cost</div>
+                  <div className="text-[14px] font-bold text-[var(--blue)]">{fmt(cls.recruitMana)} ✨</div>
                 </div>
               </div>
             </>
@@ -413,30 +389,30 @@ const HeroesPanel = () => {
       {showXpModal && (
         <div
           onClick={(e) => { if (e.target === e.currentTarget) setShowXpModal(false); }}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.72)', zIndex: 9000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
+          className="fixed inset-0 bg-black/72 z-[9000] flex items-center justify-center p-4"
         >
-          <div style={{ background: 'var(--bg2)', border: '2px solid var(--purple)', borderRadius: '6px', width: '100%', maxWidth: '700px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--border)' }}>
-              <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)' }}>👑 Hero XP Progression</span>
+          <div className="bg-[var(--bg2)] border-2 border-[var(--purple)] rounded-[6px] w-full max-w-[700px] max-h-[80vh] flex flex-col shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
+            <div className="flex items-center justify-between p-3.5 border-b border-[var(--border)]">
+              <span className="text-[14px] font-bold text-[var(--text)]">👑 Hero XP Progression</span>
               <button
                 onClick={() => setShowXpModal(false)}
-                style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: '18px', cursor: 'pointer', lineHeight: 1, padding: '0 4px' }}
+                className="bg-none border-none text-[var(--text3)] text-[18px] cursor-pointer leading-none p-0 px-1"
               >
                 ✕
               </button>
             </div>
-            <div style={{ maxHeight: '60vh', overflowY: 'auto', padding: '16px 18px' }}>
-              <div style={{ marginBottom: '16px', textAlign: 'center' }}>
-                <div style={{ fontSize: '40px', marginBottom: '8px' }}>👑</div>
-                <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text)' }}>Hero XP Progression</div>
-                <div style={{ fontSize: '12px', color: 'var(--text3)' }}>Max Level is 20</div>
+            <div className="max-h-[60vh] overflow-y-auto p-4.5">
+              <div className="mb-4 text-center">
+                <div className="text-[40px] mb-2">👑</div>
+                <div className="text-[18px] font-bold text-[var(--text)]">Hero XP Progression</div>
+                <div className="text-[12px] text-[var(--text3)]">Max Level is 20</div>
               </div>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+              <table className="w-full border-collapse text-[13px] text-left">
                 <thead>
                   <tr>
-                    <th style={{ padding: '8px', borderBottom: '1px solid var(--border)', color: 'var(--text3)' }}>Level</th>
-                    <th style={{ padding: '8px', borderBottom: '1px solid var(--border)', color: 'var(--text3)' }}>Total XP Req.</th>
-                    <th style={{ padding: '8px', borderBottom: '1px solid var(--border)', color: 'var(--text3)' }}>XP for Level</th>
+                    <th className="p-2 border-b border-[var(--border)] text-[var(--text3)]">Level</th>
+                    <th className="p-2 border-b border-[var(--border)] text-[var(--text3)]">Total XP Req.</th>
+                    <th className="p-2 border-b border-[var(--border)] text-[var(--text3)]">XP for Level</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -446,12 +422,12 @@ const HeroesPanel = () => {
                     const xpNeeded = currentTotalXp - previousTotalXp;
                     return (
                       <tr key={level}>
-                        <td style={{ padding: '8px', borderBottom: '1px solid var(--border)', color: 'var(--gold)', fontWeight: 700 }}>{level}</td>
-                        <td style={{ padding: '8px', borderBottom: '1px solid var(--border)', color: 'var(--text2)' }}>
-                          {fmt(currentTotalXp)} <span style={{ color: 'var(--text3)', fontSize: '10px' }}>XP</span>
+                        <td className="p-2 border-b border-[var(--border)] text-[var(--gold)] font-bold">{level}</td>
+                        <td className="p-2 border-b border-[var(--border)] text-[var(--text2)]">
+                          {fmt(currentTotalXp)} <span className="text-[var(--text3)] text-[10px]">XP</span>
                         </td>
-                        <td style={{ padding: '8px', borderBottom: '1px solid var(--border)', color: 'var(--text)' }}>
-                          {fmt(xpNeeded)} <span style={{ color: 'var(--text3)', fontSize: '10px' }}>XP</span>
+                        <td className="p-2 border-b border-[var(--border)] text-[var(--text)]">
+                          {fmt(xpNeeded)} <span className="text-[var(--text3)] text-[10px]">XP</span>
                         </td>
                       </tr>
                     );
