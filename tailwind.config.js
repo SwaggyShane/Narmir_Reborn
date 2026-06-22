@@ -99,7 +99,7 @@ export default {
       },
       fontFamily: {
         serif: ['Cinzel', 'Playfair Display', 'serif'],
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'system-ui', 'Apple Color Emoji', 'Noto Color Emoji', 'sans-serif'],
         cinzel: ['Cinzel', 'Playfair Display', 'serif'],
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
       },
