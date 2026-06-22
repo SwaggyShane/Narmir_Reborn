@@ -28,12 +28,12 @@ const Topbar = () => {
   };
 
   return (
-    <header className="topbar flex h-14 items-center justify-between gap-2 border-b border-white/5 bg-bg px-3 backdrop-blur-md md:px-4">
+    <header className="topbar flex h-14 items-center justify-between gap-2 border-b border-ember-900/40 bg-void-950/95 px-3 shadow-panel backdrop-blur-xl md:px-4">
       <div className="logo-container min-w-0">
-        <div className="logo truncate font-serif text-base font-black uppercase tracking-[0.12em] text-gold md:text-md">NARMIR REBORN</div>
+        <div className="logo truncate font-serif text-base font-black uppercase tracking-[0.12em] text-ember-400 md:text-md">NARMIR REBORN</div>
         <div className="tagline truncate text-sm text-text2 md:text-sm">Pure. Damn. Evil.</div>
       </div>
-      <div className="topbar-stats flex min-w-0 items-center gap-2 md:gap-3">
+      <div className="topbar-stats flex min-w-0 items-center gap-2 rounded-2xl border border-ember-900/30 bg-void-900/70 px-2.5 py-2 shadow-panel md:gap-3 md:px-3">
         <div className="tstat hide-sm hidden shrink-0 md:block">
           <div className="val text-text" id="top-rank">—</div>
           <div className="lbl text-text3">Rank</div>

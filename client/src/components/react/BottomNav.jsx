@@ -103,7 +103,7 @@ const BottomNav = () => {
   return (
     <>
       <nav
-        className="bottom-nav fixed inset-x-0 bottom-0 z-[3000] grid grid-cols-6 gap-2 border-t border-amber-900/40 bg-zinc-950/95 px-2 py-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_30px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+        className="bottom-nav fixed inset-x-0 bottom-0 z-[3000] grid grid-cols-6 gap-2 border-t border-ember-900/40 bg-void-950/95 px-2 py-2 pb-[env(safe-area-inset-bottom)] shadow-panel backdrop-blur-xl"
         id="bottom-nav"
       >
         {CORE_TABS.map((tab) => (
@@ -139,8 +139,8 @@ const BottomNav = () => {
       </nav>
 
       <div
-        className={[
-          'fixed inset-0 z-[3100] bg-black/50 backdrop-blur-[1px] transition-opacity duration-200',
+          className={[
+            'fixed inset-0 z-[3100] bg-black/55 backdrop-blur-[1px] transition-opacity duration-200',
           drawerOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
         ].join(' ')}
         onClick={() => setDrawerOpen(false)}
@@ -149,7 +149,7 @@ const BottomNav = () => {
         <div
           id="bottom-nav-drawer"
           className={[
-            'absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+72px)] mx-auto max-h-[65vh] max-w-5xl overflow-y-auto rounded-t-[28px] border border-amber-900/40 bg-zinc-950/98 p-3 shadow-[0_-20px_60px_rgba(0,0,0,0.6)] transition-transform duration-200',
+            'absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+72px)] mx-auto max-h-[65vh] max-w-5xl overflow-y-auto rounded-t-[28px] border border-ember-900/40 bg-void-950/98 p-3 shadow-panel transition-transform duration-200',
             drawerOpen ? 'translate-y-0' : 'translate-y-full',
           ].join(' ')}
           onClick={(e) => e.stopPropagation()}

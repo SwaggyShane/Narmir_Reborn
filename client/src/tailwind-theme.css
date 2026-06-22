@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-void-950 text-zinc-200 font-sans antialiased;
+  }
+
+  .game-panel {
+    @apply bg-void-900 border border-ember-900/50 rounded-2xl overflow-hidden;
+  }
+
+  .panel-header {
+    @apply text-ember-400 font-bold tracking-widest text-xl;
+  }
+}
+
+@layer components {
+  .card-glow {
+    @apply border border-ember-900/50 hover:border-ember-500/50 transition-all duration-200;
+  }
+}
