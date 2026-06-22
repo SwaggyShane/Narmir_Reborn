@@ -799,9 +799,5 @@ export function renderWorldMap(kingdoms, routes = []) {
 
         svg += "</svg>";
 
-        document.getElementById("world-map-container").innerHTML = svg;
-
+        return svg;
       }
-
-
-

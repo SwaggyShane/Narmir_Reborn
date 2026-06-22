@@ -4,8 +4,11 @@ import { apiCall } from '../../utils/api';
 import { setWorldMapData } from '../../utils/worldMapData.js';
 import { renderWorldMap } from './WorldmapRenderer.jsx';
 import { renderRegionLegend } from './WorldmapLegend.jsx';
+import { fmtShort } from '../../utils/numberFormat.js';
+import { repairMojibake } from '../../utils/repairMojibake.js';
+import { RACE_ICONS } from '../../utils/raceIcons.js';
 
-export async function loadWorldMap({ setLoading, setError } = {}) {
+export async function loadWorldMap({ setLoading, setError, setMapSvg } = {}) {
   if (typeof setLoading === 'function') setLoading(true);
   if (typeof setError === 'function') setError('');
   try {
@@ -14,7 +17,8 @@ export async function loadWorldMap({ setLoading, setError } = {}) {
 
     const kingdoms = data.kingdoms || (Array.isArray(data) ? data : []);
     setWorldMapData(kingdoms);
-    renderWorldMap(kingdoms, data.tradeRoutes || []);
+    const svg = renderWorldMap(kingdoms, data.tradeRoutes || []);
+    if (typeof setMapSvg === 'function') setMapSvg(svg || '');
     renderRegionLegend();
   } catch (err) {
     console.error('World map fail:', err);
@@ -28,12 +32,22 @@ export async function loadWorldMap({ setLoading, setError } = {}) {
 const WorldmapPanel = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [mapSvg, setMapSvg] = useState('');
+  const [mapCard, setMapCard] = useState(null);
 
-  const refreshWorldMap = useCallback(() => loadWorldMap({ setLoading, setError }), []);
+  const refreshWorldMap = useCallback(() => loadWorldMap({ setLoading, setError, setMapSvg }), []);
 
   useEffect(() => {
     refreshWorldMap();
   }, [refreshWorldMap]);
+
+  useEffect(() => {
+    const handler = (event) => {
+      setMapCard(event.detail);
+    };
+    window.addEventListener('narmir:map-kingdom-card', handler);
+    return () => window.removeEventListener('narmir:map-kingdom-card', handler);
+  }, []);
 
   return (
     <div id="worldmap" className={clsx('panel min-h-0 w-full overflow-y-auto px-4 pb-5', 'hidden')}>
@@ -64,7 +78,9 @@ const WorldmapPanel = () => {
                 </button>
               </div>
             ) : null}
-            <div id="world-map-container" className="w-full overflow-hidden" />
+            {!loading && !error && mapSvg && (
+              <div className="w-full overflow-hidden" dangerouslySetInnerHTML={{ __html: mapSvg }} />
+            )}
           </div>
 
           <div className="flex flex-col gap-4">
@@ -72,13 +88,54 @@ const WorldmapPanel = () => {
               <div className="card-title !mb-3">Regions</div>
               <div id="region-legend-list" />
             </div>
-            <div className="card" id="map-kingdom-card" style={{ display: 'none' }}>
-              <div className="card-title !mb-2" id="mkc-name">
-                —
+            {mapCard && (
+              <div className="card">
+                <div className="card-title !mb-2">
+                  {RACE_ICONS[mapCard.kingdom.race] || '🤴'} {repairMojibake(mapCard.kingdom.name || '')}
+                  {mapCard.kingdom.is_ai && <span className="text-[10px] text-[var(--text3)]"> AI</span>}
+                </div>
+                <div className="text-[12px] text-[var(--text3)] mb-2">
+                  <span style={{ color: mapCard.meta.stroke || '#fff' }}>
+                    {mapCard.meta.name || mapCard.kingdom.region || '—'}
+                  </span>{' '}
+                  · Level {mapCard.kingdom.level || 1} · Turn {mapCard.kingdom.turn || 0}
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-[12px] mb-3">
+                  <div className="bg-[var(--bg3)] rounded text-center p-2">
+                    <div className="text-[10px] text-[var(--text3)]">LAND</div>
+                    <div className="text-[var(--gold)] font-bold">{fmtShort(mapCard.kingdom.land)}</div>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {!mapCard.isMe ? (
+                    <>
+                      <button className="btn text-[11px] px-2 py-1" onClick={() => window.openKingdomProfile(mapCard.kingdom.name)}>
+                        🤴 Profile
+                      </button>
+                      <button className="btn btn-red text-[11px] px-2 py-1" onClick={() => window.targetFromRankings(mapCard.kingdom.id, 'attack')}>
+                        ⚔️ Attack
+                      </button>
+                      <button className="btn btn-accent text-[11px] px-2 py-1" onClick={() => window.targetFromRankings(mapCard.kingdom.id, 'spells')}>
+                        ✨ Spell
+                      </button>
+                      <div className="w-full text-center mt-2">
+                        {mapCard.hasTradingPost ? (
+                          <button className="btn btn-gold text-[11px] px-2 py-1 w-full" onClick={() => window.establishTradeRoute(mapCard.kingdom.id)}>
+                            🤝 Trade Route (10k GC)
+                          </button>
+                        ) : (
+                          <div className="text-[10px] text-[var(--red)] border border-[var(--red)] p-1 rounded">
+                            Trading Post required to establish routes
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <span className="text-[12px] text-[var(--accent1)]">Your kingdom</span>
+                  )}
+                </div>
               </div>
-              <div id="mkc-body" />
-              <div id="mkc-actions" className="mt-3 flex flex-wrap gap-2" />
-            </div>
+            )}
           </div>
         </div>
       </div>

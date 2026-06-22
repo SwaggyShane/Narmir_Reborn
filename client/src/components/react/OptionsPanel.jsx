@@ -307,6 +307,7 @@ const OptionsPanel = () => {
   const [skipGlitch, setSkipGlitch] = useState(() => {
     try { return localStorage.getItem('narmir_skip_glitch') === '1'; } catch { return false; }
   });
+  const [description, setDescription] = useState('');
 
   const updateNavLayout = (e) => {
     const val = e.target.value;
@@ -359,7 +360,6 @@ const OptionsPanel = () => {
   };
 
   const saveDescription = async () => {
-    const description = document.getElementById('kingdom-description-input')?.value || '';
     const result = await apiCall('/api/kingdom/description', {
       method: 'POST',
       body: { description },
@@ -376,9 +376,10 @@ const OptionsPanel = () => {
           <section className={cardShell}>
             <div className="card-title">Kingdom bio</div>
             <textarea
-              id="kingdom-description-input"
               maxLength="1000"
               placeholder="Tell the world about your kingdom..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
               className="min-h-[100px] w-full rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg3)] p-3 text-[13px] text-[var(--text2)] outline-none transition focus:border-[var(--accent1)]"
             />
             <div className="mt-3 flex justify-end">

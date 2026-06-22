@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
 import { useGameMutationEvents, useGameState } from '../../hooks/useGameState';
@@ -39,22 +39,20 @@ function escapeHtml(value) {
   })[ch]);
 }
 
-export function populateTradeTargets() {
-  const sel = document.getElementById('trade-target-select');
-  const tradeTargets = Array.isArray(window.targets) ? window.targets : [];
-  if (!sel || !tradeTargets.length) return;
+let marketPanelApi = null;
 
-  sel.innerHTML =
-    '<option value="">- select kingdom -</option>' +
-    tradeTargets
-      .map((t) => (`<option value="${t.id}">${escapeHtml(t.name)} - ${fmt(t.land)} acres</option>`))
-      .join('');
+export function populateTradeTargets() {
+  const tradeTargets = Array.isArray(window.targets) ? window.targets : [];
+  if (!tradeTargets.length || !marketPanelApi?.setTradeTargets) return;
+  marketPanelApi.setTradeTargets(tradeTargets);
 }
 
 export async function loadTradeOffers() {
   const result = await apiCall('/api/kingdom/economy/trade/list');
   if (result.error) return;
-  renderTradeOffers(result.received || [], result.sent || []);
+  if (marketPanelApi?.setTradeOffers) {
+    marketPanelApi.setTradeOffers({ received: result.received || [], sent: result.sent || [] });
+  }
 }
 
 export function renderTradeOffers(received, sent) {
@@ -119,135 +117,30 @@ export async function clearTradeLogs() {
 }
 
 export async function sendTradeOffer() {
-  const targetId = document.getElementById('trade-target-select')?.value;
-  if (!targetId) return toast('Select a target kingdom', 'error');
-
-  const offerItem = document.getElementById('trade-offer-item')?.value;
-  const offerQty = parseInt(document.getElementById('trade-offer-qty')?.value, 10) || 0;
-  const requestItem = document.getElementById('trade-request-item')?.value;
-  const requestQty = parseInt(document.getElementById('trade-request-qty')?.value, 10) || 0;
-  if (offerQty <= 0 || requestQty <= 0) return toast('Enter quantities', 'error');
-
-  const result = await apiCall('/api/kingdom/economy/trade/send', {
-    method: 'POST',
-    body: {
-      targetId,
-      offer: { [offerItem]: offerQty },
-      request: { [requestItem]: requestQty },
-    },
-  });
-  if (result.error) return toast(result.error, 'error');
-  toast('Trade offer sent!', 'success');
-  await loadTradeOffers();
+  if (!marketPanelApi?.handleSendTrade) return;
+  await marketPanelApi.handleSendTrade();
 }
 
 export async function acceptTrade(offerId) {
-  const result = await apiCall('/api/kingdom/economy/trade/accept', {
-    method: 'POST',
-    body: { offerId },
-  });
-  if (result.error) return toast(result.error, 'error');
-  applyGameMutation(result, { reason: 'accept-trade' });
-  syncUI();
-  toast('Trade accepted!', 'success');
-  await loadTradeOffers();
+  if (!marketPanelApi?.handleAcceptTrade) return;
+  await marketPanelApi.handleAcceptTrade(offerId);
 }
 
 export async function declineTrade(offerId) {
-  const result = await apiCall('/api/kingdom/economy/trade/decline', {
-    method: 'POST',
-    body: { offerId },
-  });
-  if (result.error) return toast(result.error, 'error');
-  toast('Trade declined', 'success');
-  await loadTradeOffers();
+  if (!marketPanelApi?.handleDeclineTrade) return;
+  await marketPanelApi.handleDeclineTrade(offerId);
 }
 
 export function renderCommodityMarket(mktUpgrades) {
-  const el = document.getElementById('commodity-list');
-  if (!el) return;
-
-  const state = getState();
-  const race = state.race || 'human';
-  const racDisc = window.COMMODITY_RACE_DISCOUNT?.[race] || {};
-  const items = [
-    'food',
-    'weapons',
-    'armor',
-    'mana',
-    'maps',
-    'blueprints',
-    'war_machines',
-    'ballistae',
-    'land',
-  ];
-
-  el.innerHTML =
-    '<div style="display:grid;grid-template-columns:1fr 60px 60px;gap:4px;padding:4px 0;border-bottom:1px solid var(--border2)">' +
-    '<span style="font-size:10px;color:var(--text3);text-transform:uppercase">Item</span>' +
-    '<span style="font-size:10px;color:var(--text3);text-transform:uppercase;text-align:right">Base</span>' +
-    '<span style="font-size:10px;color:var(--text3);text-transform:uppercase;text-align:right">Your price</span>' +
-    '</div>' +
-    items
-      .map((item) => {
-        const base = window.COMMODITY_VALUES?.[item] || 1;
-        const disc = racDisc[item] || racDisc._all || 1.0;
-        const yours = Math.max(1, Math.round(base * disc));
-        const diff =
-          yours < base
-            ? '<span style="color:var(--green)">-</span>'
-            : yours > base
-              ? '<span style="color:var(--red)">+</span>'
-              : '';
-        return (
-          '<div style="display:grid;grid-template-columns:1fr 60px 60px;gap:4px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)">' +
-          '<span style="font-size:13px;color:var(--text)">' +
-          item.charAt(0).toUpperCase() +
-          item.slice(1) +
-          '</span>' +
-          '<span style="font-size:13px;text-align:right;color:var(--text3)">' +
-          base +
-          ' GC</span>' +
-          '<span style="font-size:13px;text-align:right;color:var(--gold);font-weight:600">' +
-          yours +
-          ' GC ' +
-          diff +
-          '</span>' +
-          '</div>'
-        );
-      })
-      .join('');
+  if (marketPanelApi?.refreshMarketUI) {
+    marketPanelApi.refreshMarketUI();
+  }
 }
 
 export function renderActiveMercs(mercs) {
-  const el = document.getElementById('active-mercs-list');
-  if (!el) return;
-  if (!mercs || !mercs.length) {
-    el.innerHTML = '<div style="color:var(--text3);font-size:13px;text-align:center;padding:12px">No mercenaries under contract.</div>';
-    return;
+  if (marketPanelApi?.setActiveMercs) {
+    marketPanelApi.setActiveMercs(mercs || []);
   }
-
-  const state = getState();
-  el.innerHTML = mercs
-    .map((m) => {
-      const served = (state.turn || 0) - (m.hired_at_turn || 0);
-      const remaining = Math.max(0, m.duration_turns - served);
-      return (
-        '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">' +
-        '<div style="flex:1"><div style="font-size:13px;color:var(--text);font-weight:600">' +
-        m.count +
-        ' ' +
-        escapeHtml(m.tier) +
-        ' ' +
-        escapeHtml(m.unit_type) +
-        '</div>' +
-        '<div style="font-size:11px;color:var(--text3)">Remaining: ' +
-        remaining +
-        ' turns</div></div>' +
-        '</div>'
-      );
-    })
-    .join('');
 }
 
 
@@ -257,6 +150,13 @@ const MarketPanel = () => {
   const [prices, setPrices] = useState([]);
   const [quantities, setQuantities] = useState({});
 
+  // Trade state
+  const [tradeOffers, setTradeOffers] = useState({ received: [], sent: [] });
+  const [tradeTargets, setTradeTargets] = useState([]);
+  const [tradeForm, setTradeForm] = useState({
+    targetId: '', offerItem: '', offerQty: '', requestItem: '', requestQty: '',
+  });
+  const [activeMercs, setActiveMercs] = useState([]);
 
   const fmtPrice = (n) => {
     if (n === undefined || n === null || Number.isNaN(n)) return '0';
@@ -362,6 +262,57 @@ const MarketPanel = () => {
     }
     setQuantities((prev) => ({ ...prev, [resource]: (q > 0 ? q : 0).toString() }));
   };
+
+  const handleSendTrade = useCallback(async () => {
+    const { targetId, offerItem, offerQty, requestItem, requestQty } = tradeForm;
+    if (!targetId) return toast('Select a target kingdom', 'error');
+    const oQty = parseInt(offerQty, 10) || 0;
+    const rQty = parseInt(requestQty, 10) || 0;
+    if (oQty <= 0 || rQty <= 0) return toast('Enter quantities', 'error');
+
+    const result = await apiCall('/api/kingdom/economy/trade/send', {
+      method: 'POST',
+      body: { targetId, offer: { [offerItem]: oQty }, request: { [requestItem]: rQty } },
+    });
+    if (result.error) return toast(result.error, 'error');
+    toast('Trade offer sent!', 'success');
+    setTradeForm({ targetId: '', offerItem: '', offerQty: '', requestItem: '', requestQty: '' });
+    await loadTradeOffers();
+  }, [tradeForm]);
+
+  const handleAcceptTrade = useCallback(async (offerId) => {
+    const result = await apiCall('/api/kingdom/economy/trade/accept', {
+      method: 'POST',
+      body: { offerId },
+    });
+    if (result.error) return toast(result.error, 'error');
+    applyGameMutation(result, { reason: 'accept-trade' });
+    syncUI();
+    toast('Trade accepted!', 'success');
+    await loadTradeOffers();
+  }, []);
+
+  const handleDeclineTrade = useCallback(async (offerId) => {
+    const result = await apiCall('/api/kingdom/economy/trade/decline', {
+      method: 'POST',
+      body: { offerId },
+    });
+    if (result.error) return toast(result.error, 'error');
+    toast('Trade declined', 'success');
+    await loadTradeOffers();
+  }, []);
+
+  useEffect(() => {
+    marketPanelApi = {
+      setTradeTargets,
+      setTradeOffers,
+      setActiveMercs,
+      handleSendTrade,
+      handleAcceptTrade,
+      handleDeclineTrade,
+      refreshMarketUI: () => {},
+    };
+  }, [handleSendTrade, handleAcceptTrade, handleDeclineTrade]);
 
   return (
     <div id="market" className={clsx('panel min-h-0 w-full overflow-y-auto px-4 pb-5', 'hidden')}>
@@ -469,6 +420,108 @@ const MarketPanel = () => {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="mt-8 space-y-6">
+        <div className="rounded-2xl border border-purple-500/20 bg-purple-500/10 p-4">
+          <div className="mb-4 text-[14px] font-bold text-[var(--text)]">💜 Kingdom Trade Offers</div>
+
+          <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--bg2)] p-3">
+              <div className="mb-2 text-[11px] font-bold uppercase text-[var(--text3)]">Received Offers</div>
+              <div className="max-h-[200px] space-y-2 overflow-y-auto">
+                {tradeOffers.received.length ? (
+                  tradeOffers.received.map((o) => {
+                    const offer = JSON.parse(o.offer || '{}');
+                    const request = JSON.parse(o.request || '{}');
+                    const offerStr = Object.entries(offer).map((e) => `${e[1]} ${e[0]}`).join(', ');
+                    const requestStr = Object.entries(request).map((e) => `${e[1]} ${e[0]}`).join(', ');
+                    return (
+                      <div key={o.id} className="rounded bg-[var(--bg3)] p-2">
+                        <div className="mb-2 text-[12px] text-[var(--text)]">
+                          <strong>{escapeHtml(o.sender_name)}</strong> offers <span className="text-[var(--green)]">{escapeHtml(offerStr)}</span> for <span className="text-[var(--amber)]">{escapeHtml(requestStr)}</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <button className="base-btn flex-1 bg-green-600 text-[10px]" onClick={() => handleAcceptTrade(o.id)}>Accept</button>
+                          <button className="base-btn flex-1 bg-red-600 text-[10px]" onClick={() => handleDeclineTrade(o.id)}>Decline</button>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-center text-[11px] text-[var(--text3)]">No pending offers</div>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--bg2)] p-3">
+              <div className="mb-2 text-[11px] font-bold uppercase text-[var(--text3)]">Sent Offers</div>
+              <div className="max-h-[200px] space-y-2 overflow-y-auto text-[11px]">
+                {tradeOffers.sent.length ? (
+                  tradeOffers.sent.map((o) => {
+                    const offer = JSON.parse(o.offer || '{}');
+                    const request = JSON.parse(o.request || '{}');
+                    const offerStr = Object.entries(offer).map((e) => `${e[1]} ${e[0]}`).join(', ');
+                    const requestStr = Object.entries(request).map((e) => `${e[1]} ${e[0]}`).join(', ');
+                    const statusColor = o.status === 'accepted' ? 'var(--green)' : o.status === 'declined' ? 'var(--red)' : 'var(--amber)';
+                    return (
+                      <div key={o.id} className="border-b border-[var(--border)] pb-1 text-[var(--text3)]">
+                        To <strong className="text-[var(--text)]">{escapeHtml(o.receiver_name)}</strong>: {escapeHtml(offerStr)} for {escapeHtml(requestStr)} <span style={{ color: statusColor }}>({escapeHtml(o.status)})</span>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-center text-[11px] text-[var(--text3)]">No sent offers</div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-4 space-y-2 rounded-xl border border-[var(--border)] bg-[var(--bg3)] p-3">
+            <div className="text-[11px] font-bold uppercase text-[var(--text3)]">Create Trade Offer</div>
+            <select
+              className="input w-full text-[12px]"
+              value={tradeForm.targetId}
+              onChange={(e) => setTradeForm((prev) => ({ ...prev, targetId: e.target.value }))}
+            >
+              <option value="">- select kingdom -</option>
+              {tradeTargets.map((t) => (
+                <option key={t.id} value={t.id}>{escapeHtml(t.name)} - {fmt(t.land)} acres</option>
+              ))}
+            </select>
+            <div className="grid grid-cols-2 gap-2">
+              <input className="input text-[12px]" placeholder="Offer item" value={tradeForm.offerItem} onChange={(e) => setTradeForm((prev) => ({ ...prev, offerItem: e.target.value }))} />
+              <input className="input text-[12px]" type="number" placeholder="Qty" value={tradeForm.offerQty} onChange={(e) => setTradeForm((prev) => ({ ...prev, offerQty: e.target.value }))} />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <input className="input text-[12px]" placeholder="Request item" value={tradeForm.requestItem} onChange={(e) => setTradeForm((prev) => ({ ...prev, requestItem: e.target.value }))} />
+              <input className="input text-[12px]" type="number" placeholder="Qty" value={tradeForm.requestQty} onChange={(e) => setTradeForm((prev) => ({ ...prev, requestQty: e.target.value }))} />
+            </div>
+            <button className="base-btn variant-gold w-full bg-purple-600" onClick={handleSendTrade}>Send Trade Offer</button>
+          </div>
+
+          <button className="base-btn w-full text-[11px]" onClick={clearTradeLogs}>Clear Trade Logs</button>
+        </div>
+
+        {activeMercs.length > 0 && (
+          <div className="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-4">
+            <div className="mb-3 text-[14px] font-bold text-[var(--text)]">💪 Mercenary Contracts</div>
+            <div className="space-y-2">
+              {activeMercs.map((m, idx) => {
+                const served = (state.turn || 0) - (m.hired_at_turn || 0);
+                const remaining = Math.max(0, m.duration_turns - served);
+                return (
+                  <div key={idx} className="flex items-center gap-2 border-b border-[var(--border)] pb-2">
+                    <div className="flex-1">
+                      <div className="text-[13px] font-semibold text-[var(--text)]">{m.count} {escapeHtml(m.tier)} {escapeHtml(m.unit_type)}</div>
+                      <div className="text-[11px] text-[var(--text3)]">Remaining: {remaining} turns</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

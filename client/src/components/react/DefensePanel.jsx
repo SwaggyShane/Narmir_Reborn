@@ -4,6 +4,7 @@ import { apiCall } from '../../utils/api';
 import { useGameState } from '../../hooks/useGameState';
 import { fmt } from "../../utils/fmt";
 import { applyGameMutation } from '../../utils/gameMutations.js';
+import { toast } from '../../utils/toast.js';
 import { renderUpgrades } from './EconomyPanel.jsx';
 import {
   WALL_UPGRADES_JS,
@@ -17,29 +18,36 @@ import {
 const DefensePanel = () => {
   const { state } = useGameState();
   const [activeTab, setActiveTab] = useState('walls');
+  const [defenseData, setDefenseData] = useState({
+    defense_rating: '—',
+    tierStatus: { text: 'Not fortified', color: 'var(--text3)' },
+    walls: 0, towers: 0, outposts: 0, castles: 0,
+    targetWalls: 100, targetTowers: 10, targetOutposts: 10, targetCastles: 0,
+    bld_walls: 0, wm_on_walls: 0, wall_power: 0, wall_race: 1,
+    bld_guard_towers: 0, thieves_on_watch: 0, tower_cap: 0, tower_power: 0, tower_race: 1,
+    bld_outposts: 0, rangers_on_patrol: 0, outpost_cap: 0, outpost_power: 0, outpost_race: 1,
+  });
 
   const handleTabClick = (tabId) => {
     setActiveTab(tabId);
   };
 
+  const getStatColor = (val, max) => {
+    if (val >= max) return 'var(--gold)';
+    if (val >= Math.floor(max * 0.5)) return 'var(--green)';
+    return 'var(--text2)';
+  };
+
   const refreshDefense = useCallback(async () => {
     const data = await apiCall('/api/kingdom/defense/overview');
     if (data?.error) {
-      toast(data.error, 'error');
+      if (typeof toast !== 'undefined') toast(data.error, 'error');
       return;
     }
 
     const race = state?.race || 'human';
-
-    const el = (id) => document.getElementById(id);
-    const fmt = (value) => {
-      const n = Number(value || 0);
-      return Number.isFinite(n) ? Math.round(n).toLocaleString() : '0';
-    };
-
-    if (el('def-rating')) el('def-rating').textContent = data.defense_rating || '—';
-
     const du = data.defense_upgrades || {};
+
     let statusText = 'Not fortified';
     let statusColor = 'var(--text3)';
     let targetWalls = 100;
@@ -70,45 +78,32 @@ const DefensePanel = () => {
       targetCastles = 0;
     }
 
-    if (el('tier-status')) {
-      el('tier-status').textContent = statusText;
-      el('tier-status').style.color = statusColor;
-    }
-
-    const setBar = (id, val, max) => {
-      const node = el(id);
-      if (!node) return;
-      node.textContent = fmt(val);
-      node.style.color = val >= max
-        ? 'var(--gold)'
-        : val >= Math.floor(max * 0.5)
-          ? 'var(--green)'
-          : 'var(--text2)';
-      const maxEl = el(`${id}-max`);
-      if (maxEl) maxEl.textContent = `/ ${fmt(max)}`;
-    };
-
-    setBar('cit-walls', data.bld_walls || 0, targetWalls);
-    setBar('cit-towers', data.bld_guard_towers || 0, targetTowers);
-    setBar('cit-outposts', data.bld_outposts || 0, targetOutposts);
-    setBar('cit-castle', data.bld_castles || 0, targetCastles);
-
-    if (el('def-walls')) el('def-walls').textContent = fmt(data.bld_walls || 0);
-    if (el('def-wm-walls')) el('def-wm-walls').textContent = fmt(data.wm_on_walls || 0);
-    if (el('def-wall-power')) el('def-wall-power').textContent = fmt(data.wall_power || 0);
-    if (el('def-wall-race')) el('def-wall-race').textContent = `×${(WALL_RACE_MULT[race] || 1.0).toFixed(2)}`;
-
-    if (el('def-gtowers')) el('def-gtowers').textContent = fmt(data.bld_guard_towers || 0);
-    if (el('def-thieves-watch')) el('def-thieves-watch').textContent = fmt(data.thieves_on_watch || 0);
-    if (el('def-tower-cap')) el('def-tower-cap').textContent = fmt((data.bld_guard_towers || 0) * 10);
-    if (el('def-tower-power')) el('def-tower-power').textContent = fmt(data.tower_power || 0);
-    if (el('def-tower-race')) el('def-tower-race').textContent = `×${(TOWER_RACE_MULT[race] || 1.0).toFixed(2)}`;
-
-    if (el('def-outposts')) el('def-outposts').textContent = fmt(data.bld_outposts || 0);
-    if (el('def-rangers-patrol')) el('def-rangers-patrol').textContent = fmt(data.rangers_on_patrol || 0);
-    if (el('def-outpost-cap')) el('def-outpost-cap').textContent = fmt((data.bld_outposts || 0) * 20);
-    if (el('def-outpost-power')) el('def-outpost-power').textContent = fmt(data.outpost_power || 0);
-    if (el('def-outpost-race')) el('def-outpost-race').textContent = `×${(OUTPOST_RACE_MULT[race] || 1.0).toFixed(2)}`;
+    setDefenseData({
+      defense_rating: data.defense_rating || '—',
+      tierStatus: { text: statusText, color: statusColor },
+      walls: data.bld_walls || 0,
+      towers: data.bld_guard_towers || 0,
+      outposts: data.bld_outposts || 0,
+      castles: data.bld_castles || 0,
+      targetWalls,
+      targetTowers,
+      targetOutposts,
+      targetCastles,
+      bld_walls: data.bld_walls || 0,
+      wm_on_walls: data.wm_on_walls || 0,
+      wall_power: data.wall_power || 0,
+      wall_race: WALL_RACE_MULT[race] || 1.0,
+      bld_guard_towers: data.bld_guard_towers || 0,
+      thieves_on_watch: data.thieves_on_watch || 0,
+      tower_cap: (data.bld_guard_towers || 0) * 10,
+      tower_power: data.tower_power || 0,
+      tower_race: TOWER_RACE_MULT[race] || 1.0,
+      bld_outposts: data.bld_outposts || 0,
+      rangers_on_patrol: data.rangers_on_patrol || 0,
+      outpost_cap: (data.bld_outposts || 0) * 20,
+      outpost_power: data.outpost_power || 0,
+      outpost_race: OUTPOST_RACE_MULT[race] || 1.0,
+    });
 
     renderUpgrades('wall', WALL_UPGRADES_JS, data.wall_upgrades || {}, 'wall-upgrade-list');
     renderUpgrades('tower_def', TOWER_DEF_UPGRADES_JS, data.tower_def_upgrades || {}, 'tower-def-upgrade-list');
@@ -133,16 +128,16 @@ const DefensePanel = () => {
             </span>
           </div>
           <div className="text-[13px] text-[var(--text3)]">
-            Rating: <span id="def-rating" className="font-bold">?</span>
+            Rating: <span className="font-bold">{defenseData.defense_rating}</span>
           </div>
         </div>
-        <button className="base-btn rounded-full px-3 py-1.5 text-[11px] font-semibold" onClick={refreshDefense}>? Refresh</button>
+        <button className="base-btn rounded-full px-3 py-1.5 text-[11px] font-semibold" onClick={refreshDefense}>🔄 Refresh</button>
       </div>
 
       <div className="card mb-3 rounded-2xl border border-white/10 bg-zinc-950/80" id="defense-tiers-card">
         <div className="mb-2 flex items-center justify-between gap-3">
-          <div className="card-title m-0">??? Defense Tiers</div>
-          <span id="tier-status" className="text-[12px] text-[var(--text3)]">Evaluating...</span>
+          <div className="card-title m-0">🛡️ Defense Tiers</div>
+          <span className="text-[12px]" style={{ color: defenseData.tierStatus.color }}>{defenseData.tierStatus.text}</span>
         </div>
         <div id="tier-desc" className="mb-3 text-[12px] text-[var(--text3)]">
           Build walls, guard towers, outposts, and castles to reach new tiers and
@@ -151,23 +146,23 @@ const DefensePanel = () => {
         <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
           <div className="rounded-lg border border-white/10 bg-[var(--bg3)] p-2 text-center">
             <div className="mb-1 text-[10px] text-[var(--text3)]">WALLS</div>
-            <div className="text-[16px] font-bold" id="cit-walls">0</div>
-            <div className="text-[10px] text-[var(--text3)]" id="cit-walls-max">/ 500</div>
+            <div className="text-[16px] font-bold" style={{ color: getStatColor(defenseData.walls, defenseData.targetWalls) }}>{fmt(defenseData.walls)}</div>
+            <div className="text-[10px] text-[var(--text3)]">/ {fmt(defenseData.targetWalls)}</div>
           </div>
           <div className="rounded-lg border border-white/10 bg-[var(--bg3)] p-2 text-center">
             <div className="mb-1 text-[10px] text-[var(--text3)]">TOWERS</div>
-            <div className="text-[16px] font-bold" id="cit-towers">0</div>
-            <div className="text-[10px] text-[var(--text3)]" id="cit-towers-max">/ 50</div>
+            <div className="text-[16px] font-bold" style={{ color: getStatColor(defenseData.towers, defenseData.targetTowers) }}>{fmt(defenseData.towers)}</div>
+            <div className="text-[10px] text-[var(--text3)]">/ {fmt(defenseData.targetTowers)}</div>
           </div>
           <div className="rounded-lg border border-white/10 bg-[var(--bg3)] p-2 text-center">
             <div className="mb-1 text-[10px] text-[var(--text3)]">OUTPOSTS</div>
-            <div className="text-[16px] font-bold" id="cit-outposts">0</div>
-            <div className="text-[10px] text-[var(--text3)]" id="cit-outposts-max">/ 50</div>
+            <div className="text-[16px] font-bold" style={{ color: getStatColor(defenseData.outposts, defenseData.targetOutposts) }}>{fmt(defenseData.outposts)}</div>
+            <div className="text-[10px] text-[var(--text3)]">/ {fmt(defenseData.targetOutposts)}</div>
           </div>
           <div className="rounded-lg border border-white/10 bg-[var(--bg3)] p-2 text-center">
             <div className="mb-1 text-[10px] text-[var(--text3)]">CASTLE</div>
-            <div className="text-[16px] font-bold" id="cit-castle">0</div>
-            <div className="text-[10px] text-[var(--text3)]" id="cit-castle-max">/ 1</div>
+            <div className="text-[16px] font-bold" style={{ color: getStatColor(defenseData.castles, defenseData.targetCastles) }}>{fmt(defenseData.castles)}</div>
+            <div className="text-[10px] text-[var(--text3)]">/ {fmt(defenseData.targetCastles)}</div>
           </div>
         </div>
 
@@ -217,23 +212,23 @@ const DefensePanel = () => {
             </div>
             <div className="trow">
               <span className="name">Walls built</span>
-              <span className="count" id="def-walls">0</span>
+              <span className="count">{fmt(defenseData.bld_walls)}</span>
             </div>
             <div className="trow">
               <span className="name">War machines mounted</span>
-              <span className="count text-[var(--gold)]" id="def-wm-walls">
-                0
+              <span className="count text-[var(--gold)]">
+                {fmt(defenseData.wm_on_walls)}
               </span>
             </div>
             <div className="trow">
               <span className="name">Wall defense power</span>
-              <span className="count text-[var(--green)]" id="def-wall-power">
-                0
+              <span className="count text-[var(--green)]">
+                {fmt(defenseData.wall_power)}
               </span>
             </div>
             <div className="trow">
               <span className="name">Race modifier</span>
-              <span className="count" id="def-wall-race">×1.00</span>
+              <span className="count">×{defenseData.wall_race.toFixed(2)}</span>
             </div>
             <div className="trow border-t border-[var(--border2)] mt-1 pt-1">
               <span className="name text-[var(--amber)] text-[11px]">
@@ -259,33 +254,31 @@ const DefensePanel = () => {
             </div>
             <div className="trow">
               <span className="name">Guard towers</span>
-              <span className="count" id="def-gtowers">0</span>
+              <span className="count">{fmt(defenseData.bld_guard_towers)}</span>
             </div>
             <div className="trow">
               <span className="name">Thieves on watch</span>
               <span
                 className="count text-[var(--amber)]"
-                id="def-thieves-watch"
               >
-                0
+                {fmt(defenseData.thieves_on_watch)}
               </span>
             </div>
             <div className="trow">
               <span className="name">Max capacity</span>
-              <span className="count" id="def-tower-cap">0</span>
+              <span className="count">{fmt(defenseData.tower_cap)}</span>
             </div>
             <div className="trow">
               <span className="name">Tower defense power</span>
               <span
                 className="count text-[var(--green)]"
-                id="def-tower-power"
               >
-                0
+                {fmt(defenseData.tower_power)}
               </span>
             </div>
             <div className="trow">
               <span className="name">Detection modifier</span>
-              <span className="count" id="def-tower-race">×1.00</span>
+              <span className="count">×{defenseData.tower_race.toFixed(2)}</span>
             </div>
           </div>
           <div className="card m-0">
@@ -306,33 +299,31 @@ const DefensePanel = () => {
             </div>
             <div className="trow">
               <span className="name">Outposts</span>
-              <span className="count" id="def-outposts">0</span>
+              <span className="count">{fmt(defenseData.bld_outposts)}</span>
             </div>
             <div className="trow">
               <span className="name">Rangers on patrol</span>
               <span
                 className="count text-[var(--blue)]"
-                id="def-rangers-patrol"
               >
-                0
+                {fmt(defenseData.rangers_on_patrol)}
               </span>
             </div>
             <div className="trow">
               <span className="name">Max capacity</span>
-              <span className="count" id="def-outpost-cap">0</span>
+              <span className="count">{fmt(defenseData.outpost_cap)}</span>
             </div>
             <div className="trow">
               <span className="name">Outpost defense power</span>
               <span
                 className="count text-[var(--green)]"
-                id="def-outpost-power"
               >
-                0
+                {fmt(defenseData.outpost_power)}
               </span>
             </div>
             <div className="trow">
               <span className="name">Patrol modifier</span>
-              <span className="count" id="def-outpost-race">×1.00</span>
+              <span className="count">×{defenseData.outpost_race.toFixed(2)}</span>
             </div>
           </div>
           <div className="card m-0">

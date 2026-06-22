@@ -33,14 +33,7 @@ const GlobalchatPanel = () => {
 
             const panel = document.getElementById('globalchat');
             if (!panel || panel.style.display === 'none') {
-              const b = document.getElementById('chat-badge');
-              if (b) b.style.display = 'inline';
-
-              const nc = document.getElementById('nav-chat-item');
-              if (nc && !nc.classList.contains('nav-flash')) nc.classList.add('nav-flash');
-
-              const bnc = document.getElementById('bnav-chat-item');
-              if (bnc && !bnc.classList.contains('nav-flash')) bnc.classList.add('nav-flash');
+              window.dispatchEvent(new CustomEvent('narmir:chat-badge-alert'));
             }
           } else if (data.room === 'alliance') {
             appendChatMessage('alliance-chat', data);
@@ -58,12 +51,7 @@ const GlobalchatPanel = () => {
 
         handlers.whisper = (data) => {
           appendWhisperMessage('global-chat-messages', data.from, data.message, false);
-          const b = document.getElementById('chat-badge');
-          if (b) b.style.display = 'inline';
-          const nc = document.getElementById('nav-chat-item');
-          if (nc && !nc.classList.contains('nav-flash')) nc.classList.add('nav-flash');
-          const bnc = document.getElementById('bnav-chat-item');
-          if (bnc && !bnc.classList.contains('nav-flash')) bnc.classList.add('nav-flash');
+          window.dispatchEvent(new CustomEvent('narmir:chat-badge-alert'));
           if (typeof window !== 'undefined' && typeof toast === 'function') toast(`PM from ${repairMojibake(data.from || '')}`, 'success');
         };
 
