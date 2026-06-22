@@ -40,6 +40,11 @@ function calculateHappiness(k) {
   }
   safetyHappiness = Math.max(-30, Math.min(20, safetyHappiness));
 
+  const turnsSinceAttack = k.last_attack_turn ? Math.max(0, (k.turn || 0) - k.last_attack_turn) : null;
+  const warWearinessComponent = turnsSinceAttack === null
+    ? 0
+    : -Math.max(0, Math.min(8, Math.floor((24 - Math.min(24, turnsSinceAttack)) * 0.35)));
+
   // 4. Prosperity Happiness (0-20)
   const goldTarget = (k.population || 1) * 2;
   const goldRatio = goldTarget > 0 ? (k.gold || 0) / goldTarget : 1;
@@ -53,7 +58,7 @@ function calculateHappiness(k) {
   const sizeComponent = -Math.min(30, Math.floor(Math.log10(populationBase) * 5));
 
   // Base + components
-  let happiness = 50 + foodHappiness + entertainmentHappiness + safetyHappiness + prosperityHappiness + raceModifier + sizeComponent;
+  let happiness = 50 + foodHappiness + entertainmentHappiness + safetyHappiness + warWearinessComponent + prosperityHappiness + raceModifier + sizeComponent;
 
   // Apply active effect bonuses (Bless, Divine Favor, etc.)
   const effects = safeJsonParse(k.active_effects, {}, 'calculateHappiness:active_effects');
@@ -99,6 +104,7 @@ function calculateHappiness(k) {
       food: foodHappiness,
       entertainment: entertainmentHappiness,
       safety: safetyHappiness,
+      warWeariness: warWearinessComponent,
       prosperity: prosperityHappiness,
       race: raceModifier,
       size: sizeComponent
