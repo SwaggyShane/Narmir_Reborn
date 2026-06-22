@@ -64,7 +64,7 @@ function queueBuildings(k, orders) {
       };
     }
 
-    const goldPerUnit = BUILDING_GOLD_COST[key] ?? 100;
+    const goldPerUnit = BUILDING_GOLD_COST[key] ? 100;
     const landPerUnit = BUILDING_LAND_COST[key] || 0;
     totalCost += goldPerUnit * n;
     totalLand += landPerUnit * n;
@@ -105,7 +105,7 @@ function queueBuildings(k, orders) {
     };
   }
 
-  // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Resource building bracket-lock validation + resource cost ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+  // ── Resource building bracket-lock validation + resource cost ────────────────
   const level = k.level || 1;
   const resSeqRaw = safeJsonParse(k.resource_sequence, {}, 'queueBuildings:resource_sequence');
   let totalWoodCost = 0;
@@ -142,7 +142,7 @@ function queueBuildings(k, orders) {
 
     if (rbCfg.stage === 1) {
       if (s3Current >= s3Cap) {
-        return { error: `${key.replace(/_/g, ' ')} is locked ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â you have reached the maximum number of stage-3 ${rbCfg.type} buildings (${s3Cap}) for your level.` };
+        return { error: `${key.replace(/_/g, ' ')} is locked — you have reached the maximum number of stage-3 ${rbCfg.type} buildings (${s3Cap}) for your level.` };
       }
       // Stage 1 hard cap of 3
       const s1Current = k[s1Col] || 0;
@@ -151,11 +151,11 @@ function queueBuildings(k, orders) {
       }
       const s2Current = (k[s2Col] || 0) + (queue[config.RESOURCE_STAGE2_BUILDINGS[rbCfg.type]] || 0);
       if (s2Current > 0) {
-        return { error: `${key.replace(/_/g, ' ')} is locked ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â you already have Stage 2 ${rbCfg.type} buildings in progress or built.` };
+        return { error: `${key.replace(/_/g, ' ')} is locked — you already have Stage 2 ${rbCfg.type} buildings in progress or built.` };
       }
     } else if (rbCfg.stage === 2) {
       if (s3Current >= s3Cap) {
-        return { error: `${key.replace(/_/g, ' ')} is locked ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â you have reached the maximum number of stage-3 ${rbCfg.type} buildings (${s3Cap}) for your level.` };
+        return { error: `${key.replace(/_/g, ' ')} is locked — you have reached the maximum number of stage-3 ${rbCfg.type} buildings (${s3Cap}) for your level.` };
       }
       if (seq.s2_paid_at_bracket <= -1) {
         return { error: `You must purchase the Stage 2 ${rbCfg.type} upgrade before building ${key.replace(/_/g, ' ')}.` };
@@ -244,7 +244,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
   const baseToolMult =
     hammerBonus * smithyBonus * raceConstr * engLevelMult * resConstr * effectiveSmithyMult;
 
-  // Consumable tool pools ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â tracked across the building loop this turn
+  // Consumable tool pools — tracked across the building loop this turn
   let blueprintsLeft = k.blueprints_stored || 0;
   let scaffoldingLeft = k[sl] || 0;
   let blueprintsUsed = 0;
@@ -313,7 +313,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
     const cost = BUILDING_COST[building];
     if (!cost) continue;
 
-    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Blueprint gate ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â required for buildings with base cost >= 100 turns ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+    // ── Blueprint gate — required for buildings with base cost >= 100 turns ──
     if (BLUEPRINT_REQUIRED.has(building) && blueprintsLeft <= 0) {
       updates._blueprint_needed = updates._blueprint_needed || [];
       if (!updates._blueprint_needed.includes(building))
@@ -321,7 +321,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
       continue; // skip this building entirely this turn
     }
 
-    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Scaffolding gate ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â required for buildings > 100 turns base ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+    // ── Scaffolding gate — required for buildings > 100 turns base ──────────
     if (SCAFFOLDING_REQUIRED.has(building) && scaffoldingLeft <= 0) {
       updates._scaffolding_needed = updates._scaffolding_needed || [];
       if (!updates._scaffolding_needed.includes(building))
@@ -329,10 +329,10 @@ function processBuildQueue(k, events, xpSourcesAccum) {
       continue;
     }
 
-    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Per-building tool multiplier ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+    // ── Per-building tool multiplier ─────────────────────────────────────────
     let toolMult = baseToolMult;
 
-    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Resource building race bonus (additional multiplier) ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+    // ── Resource building race bonus (additional multiplier) ─────────────────
     if (RESOURCE_BUILDING_CONFIG[building]) {
       toolMult *= raceBonus(k, 'resource_build');
     }
@@ -343,16 +343,16 @@ function processBuildQueue(k, events, xpSourcesAccum) {
     if (engAssigned > 0 && workDone <= 0) workDone = 1; // Prevent complete stalling for low bonuses
     if (workDone <= 0) continue;
 
-    // Resource buildings require a queue entry ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â engineers alone cannot build them
+    // Resource buildings require a queue entry — engineers alone cannot build them
     if (RESOURCE_BUILDING_CONFIG[building] && !(queue[building] > 0)) continue;
 
     totalEngineersWorked += engAssigned;
 
-    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Completion ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+    // ── Completion ──────────────────────────────────────────────────────────
     const prevProgress = progress[building] || 0;
     const totalProgress = prevProgress + workDone;
     const rawCompleted = Math.floor(totalProgress / cost);
-    // Resource buildings require a queue entry ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â completion capped to queue count.
+    // Resource buildings require a queue entry — completion capped to queue count.
     // Regular buildings (farms, barracks, etc.) complete freely from allocation;
     // they have no per-unit gold/land deduction via queue.
     // Resource buildings: capped by queue count (queue entry required, already
@@ -375,7 +375,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
         // Regular buildings: units from the queue were already paid in queueBuildings;
         // only deduct gold/land/resources for units built beyond the queue via engineer allocation.
         if (!RESOURCE_BUILDING_CONFIG[building] && canAdd > 0) {
-          const goldPerUnit = BUILDING_GOLD_COST[building] ?? 100;
+          const goldPerUnit = BUILDING_GOLD_COST[building] ? 100;
           const landPerUnit = BUILDING_LAND_COST[building] || 0;
           const woodPerUnit = BUILDING_WOOD_COST[building] || 0;
           const stonePerUnit = BUILDING_STONE_COST[building] || 0;
@@ -456,7 +456,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
             else if (woodPerUnit > 0 && curWood < woodPerUnit) reason = 'wood';
             else if (stonePerUnit > 0 && curStone < stonePerUnit) reason = 'stone';
             else if (ironPerUnit > 0 && curIron < ironPerUnit) reason = 'iron';
-            constructionNotes.push(`ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â ${building.replace(/_/g, ' ')} paused ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â not enough ${reason}.`);
+            constructionNotes.push(`${building.replace(/_/g, ' ')} paused - not enough ${reason}.`);
           }
           canAdd = finalCanAdd;
         }
@@ -464,7 +464,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
         updates[col] = current + canAdd;
         if (canAdd < completed && canAdd === 0) {
           constructionNotes.push(
-            `ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â ${building.replace(/_/g, " ")} cap reached at level ${k.level || 1} (max ${cap.toLocaleString()}) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â level up to build more.`,
+            `${building.replace(/_/g, " ")} cap reached at level ${k.level || 1} (max ${cap.toLocaleString()}) - level up to build more.`, 
           );
         }
         if (canAdd > 0) {
@@ -472,21 +472,21 @@ function processBuildQueue(k, events, xpSourcesAccum) {
             `${canAdd.toLocaleString()} ${building.replace(/_/g, " ")}`,
           );
 
-          // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Consume blueprint on completion ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+          // ── Consume blueprint on completion ─────────────────────────────
           if (BLUEPRINT_REQUIRED.has(building)) {
             const consume = Math.min(canAdd, blueprintsLeft);
             blueprintsLeft -= consume;
             blueprintsUsed += consume;
           }
 
-          // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Consume scaffolding on completion ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+          // ── Consume scaffolding on completion ───────────────────────────
           if (SCAFFOLDING_REQUIRED.has(building)) {
             const consume = Math.min(canAdd, scaffoldingLeft);
             scaffoldingLeft -= consume;
             scaffoldingUsed += consume;
           }
 
-          // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Resource building auto-consumption on first completion ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+          // ── Resource building auto-consumption on first completion ────────
           // Stage 2 (lumber_camp/blockfield/strip_mine): on first one, consume 3 stage-1
           // Stage 3 (sawmill/stone_quarry/deep_mine): on first one per bracket, consume 5 stage-2
           const rbCfg = RESOURCE_BUILDING_CONFIG[building];
@@ -506,7 +506,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
                   const toConsume = Math.min(s1Current, 3);
                   updates[s1Col] = s1Current - toConsume;
                   updates.land = (updates.land !== undefined ? updates.land : k.land) + toConsume;
-                  constructionNotes.push(`ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ¢â‚¬Å¾ 3 ${s1Col.replace('bld_', '')} converted into ${building.replace(/_/g, ' ')}.`);
+                  constructionNotes.push(`🔄 3 ${s1Col.replace('bld_', '')} converted into ${building.replace(/_/g, ' ')}.`);
                 }
               }
             } else if (rbCfg.stage === 3) {
@@ -525,7 +525,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
                   if (!updatedSeq[rbCfg.type]) updatedSeq[rbCfg.type] = { s2_paid_at_bracket: -1, s3_paid_at_bracket: -1, last_s3_bracket: -1 };
                   updatedSeq[rbCfg.type].last_s3_bracket = currentBracket;
                   updates.resource_sequence = JSON.stringify(updatedSeq);
-                  constructionNotes.push(`ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ¢â‚¬Å¾ 5 ${s2Col.replace('bld_', '')} consumed. ${building.replace(/_/g, ' ')} bracket locked.`);
+                  constructionNotes.push(`🔄 5 ${s2Col.replace('bld_', '')} consumed. ${building.replace(/_/g, ' ')} bracket locked.`);
                 }
               }
             }
@@ -541,7 +541,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
             // Production buildings auto-release engineers on completion
             delete allocation[building];
           }
-          // Reset progress to 0 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â nothing queued to build toward
+          // Reset progress to 0 — nothing queued to build toward
           delete progress[building];
         }
       }
@@ -584,7 +584,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
     }
   }
 
-  // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Hammer degradation ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+  // ── Hammer degradation ──
   const hammerCount = k[hl] || 0;
   if (hammerCount > 0 && activeBuildings.size > 0 && totalEngineersWorked > 0) {
     const hammersUsedThisTurn = Math.min(hammerCount, totalEngineersWorked);
@@ -673,23 +673,23 @@ function processBuildQueue(k, events, xpSourcesAccum) {
       finalMsg += `Completed: ${completedItems.join(", ")}. `;
     }
     if (updates._build_estimates && updates._build_estimates.length > 0) {
-      finalMsg += `Actively constructing: ${updates._build_estimates.join(" · ")}. `;
+      finalMsg += `Actively constructing: ${updates._build_estimates.join(" - ")}. `;
     }
     if (constructionNotes.length > 0) {
       finalMsg += constructionNotes.join(" ") + " ";
     }
     if (engXpRes.levelUps.length) {
       const engLvl = safeJsonParse(engXpRes.troop_levels, {}, "auto:troop_levels").engineers?.level || "";
-      finalMsg += `ÃƒÂ¢Ã…Â¡Ã¢â‚¬â„¢ÃƒÂ¯Ã‚Â¸Ã‚Â Engineers grew more skilled (Level ${engLvl})!`;
+      finalMsg += `⚒️ Engineers grew more skilled (Level ${engLvl})!`;
     }
 
     if (finalMsg) {
-      events.push({ type: "system", message: `ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬â€ÃƒÂ¯Ã‚Â¸Ã‚Â ${finalMsg.trim()}` });
+      events.push({ type: "system", message: `🏗️ ${finalMsg.trim()}` });
     }
   } else if (activeBuildings.size > 0) {
     let finalMsg = "";
     if (updates._build_estimates && updates._build_estimates.length > 0) {
-      finalMsg += `Actively constructing: ${updates._build_estimates.join(" · ")}. `;
+      finalMsg += `Actively constructing: ${updates._build_estimates.join(" - ")}. `;
     } else {
       if (totalEngineersWorked > 0) {
         finalMsg += `Engineers making progress on ${activeBuildings.size} building type${activeBuildings.size > 1 ? "s" : ""}. `;
@@ -700,7 +700,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
     if (constructionNotes.length > 0) {
       finalMsg += constructionNotes.join(" ");
     }
-    events.push({ type: "system", message: `ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬â€ÃƒÂ¯Ã‚Â¸Ã‚Â ${finalMsg.trim()}` });
+    events.push({ type: "system", message: `🏗️ ${finalMsg.trim()}` });
   }
 
   delete updates._build_estimates;

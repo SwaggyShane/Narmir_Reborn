@@ -1,4 +1,4 @@
-﻿const express = require("express");
+const express = require("express");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
@@ -21,7 +21,7 @@ const router = express.Router();
 function repairMojibake(value) {
   if (value === null || value === undefined) return value;
   let text = String(value);
-  if (!/[ÃƒÃ‚Ã¢Ã°Å¸ðâÂï¿½]/.test(text)) return text;
+  if (!/[\u00C3\u00C2\u00E2\u00F0\u00C5\uFFFD]/.test(text)) return text;
   for (let i = 0; i < 20; i++) {
     let next;
     try {
@@ -845,7 +845,7 @@ module.exports = function (db) {
       const newVal = resCol ? finalUpdates[resCol] : "?";
       events.push({
         type: "system",
-        message: `📚 Studied ${discipline} with ${Number(researchers).toLocaleString()} researchers · +${resResult.increment} → now ${newVal}${discipline !== "spellbook" ? "%" : ""}.`,
+        message: `📚 Studied ${discipline} with ${Number(researchers).toLocaleString()} researchers - +${resResult.increment} -> now ${newVal}${discipline !== "spellbook" ? "%" : ""}.`,
       });
       await bulkInsertNews(
         db,

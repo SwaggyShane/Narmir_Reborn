@@ -195,7 +195,7 @@ function hireUnits(k, unit, amount) {
   if (!validUnits.includes(unit)) return { error: "Invalid unit type" };
   if (amount <= 0) return { error: "Amount must be positive" };
 
-  // School cap ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â researchers need schools (100 per school)
+  // School cap - researchers need schools (100 per school)
   if (unit === "researchers") {
     const schoolCap = (k.bld_schools || 0) * 100;
     const currentResearchers = k.researchers || 0;
@@ -203,15 +203,15 @@ function hireUnits(k, unit, amount) {
       return { error: "You need at least 1 school to hire researchers" };
     if (currentResearchers >= schoolCap)
       return {
-        error: `School capacity full ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â ${schoolCap.toLocaleString()} researchers max with ${k.bld_schools} school${k.bld_schools > 1 ? "s" : ""} (100 per school)`,
+        error: `School capacity full - ${schoolCap.toLocaleString()} researchers max with ${k.bld_schools} school${k.bld_schools > 1 ? "s" : ""} (100 per school)`, 
       };
     if (currentResearchers + amount > schoolCap)
       return {
-        error: `Only room for ${(schoolCap - currentResearchers).toLocaleString()} more researchers ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â build more schools (100 per school)`,
+        error: `Only room for ${(schoolCap - currentResearchers).toLocaleString()} more researchers - build more schools (100 per school)`, 
       };
   }
 
-  // Barracks cap ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â military troops need barracks (500 per barracks)
+  // Barracks cap - military troops need barracks (500 per barracks)
   const BARRACKS_TROOPS = [
     "fighters",
     "rangers",
@@ -227,11 +227,11 @@ function hireUnits(k, unit, amount) {
       return { error: "You need at least 1 barracks to hire troops" };
     if (currentTroops >= barracksCap)
       return {
-        error: `Barracks full ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â ${barracksCap.toLocaleString()} troops max with ${k.bld_barracks} barracks (500 per barracks)`,
+        error: `Barracks full - ${barracksCap.toLocaleString()} troops max with ${k.bld_barracks} barracks (500 per barracks)`, 
       };
     if (currentTroops + amount > barracksCap)
       return {
-        error: `Only room for ${(barracksCap - currentTroops).toLocaleString()} more troops ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â build more barracks (500 per barracks)`,
+        error: `Only room for ${(barracksCap - currentTroops).toLocaleString()} more troops - build more barracks (500 per barracks)`, 
       };
   }
 
@@ -245,7 +245,7 @@ function hireUnits(k, unit, amount) {
     const current = k[unit] || 0;
     if (current >= cap)
       return {
-        error: `Level ${k.level || 1} cap reached for ${unit} (max ${cap.toLocaleString()}) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â gain levels to increase`,
+        error: `Level ${k.level || 1} cap reached for ${unit} (max ${cap.toLocaleString()}) - gain levels to increase`, 
       };
     if (current + amount > cap)
       return {
@@ -257,11 +257,11 @@ function hireUnits(k, unit, amount) {
   const currentGold = k.gold || 0;
   const currentPopulation = k.population || 0;
   if (currentGold < cost)
-    return { error: `Not enough gold ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â need ${cost.toLocaleString()} gold` };
+    return { error: `Not enough gold - need ${cost.toLocaleString()} gold` };
   if (amount > currentPopulation)
     return { error: "Not enough population available" };
 
-  // Dilute unit XP pool when new recruits join ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â new troops lower the average
+  // Dilute unit XP pool when new recruits join - new troops lower the average
   const dilutedLevels = diluteTroopXp(k, unit, amount);
 
   return {
@@ -327,11 +327,11 @@ function _selectSchool(k, schoolName) {
   const schoolLabel = schoolName.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   return {
     updates: { school_of_magic: schoolName, school_spellbook: 0 },
-    events: [{ type: 'system', message: `ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ‚Â® You have chosen the school of ${schoolLabel}. You can now research school-specific spells!` }]
+    events: [{ type: 'system', message: `You have chosen the school of ${schoolLabel}. You can now research school-specific spells!` } ]
   };
 }
 
-// Add buildings to the queue ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â charges gold, no turn cost
+// Add buildings to the queue - charges gold, no turn cost
 function queueBuildings(k, orders) {
   const queue = safeJsonParse(k.build_queue, {}, "queueBuildings:build_queue");
 
@@ -410,7 +410,7 @@ function queueBuildings(k, orders) {
     };
   }
 
-  // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Resource building bracket-lock validation + resource cost ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+  // Resource building bracket-lock validation + resource cost
   const level = k.level || 1;
   const resSeqRaw = safeJsonParse(k.resource_sequence, {}, 'queueBuildings:resource_sequence');
   let totalWoodCost = 0;
@@ -440,7 +440,7 @@ function queueBuildings(k, orders) {
 
     if (rbCfg.stage === 1) {
       if (s3Current >= s3Cap) {
-        return { error: `${key.replace(/_/g, ' ')} is locked ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â you have reached the maximum number of stage-3 ${rbCfg.type} buildings (${s3Cap}) for your level.` };
+        return { error: `${key.replace(/_/g, ' ')} is locked - you have reached the maximum number of stage-3 ${rbCfg.type} buildings (${s3Cap}) for your level.` };
       }
       // Stage 1 hard cap of 3
       const s1Current = k[s1Col] || 0;
@@ -449,11 +449,11 @@ function queueBuildings(k, orders) {
       }
       const s2Current = (k[s2Col] || 0) + (queue[config.RESOURCE_STAGE2_BUILDINGS[rbCfg.type]] || 0);
       if (s2Current > 0) {
-        return { error: `${key.replace(/_/g, ' ')} is locked ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â you already have Stage 2 ${rbCfg.type} buildings in progress or built.` };
+        return { error: `${key.replace(/_/g, ' ')} is locked - you already have Stage 2 ${rbCfg.type} buildings in progress or built.` };
       }
     } else if (rbCfg.stage === 2) {
       if (s3Current >= s3Cap) {
-        return { error: `${key.replace(/_/g, ' ')} is locked ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â you have reached the maximum number of stage-3 ${rbCfg.type} buildings (${s3Cap}) for your level.` };
+        return { error: `${key.replace(/_/g, ' ')} is locked - you have reached the maximum number of stage-3 ${rbCfg.type} buildings (${s3Cap}) for your level.` };
       }
       if (seq.s2_paid_at_bracket <= -1) {
         return { error: `You must purchase the Stage 2 ${rbCfg.type} upgrade before building ${key.replace(/_/g, ' ')}.` };
@@ -525,7 +525,7 @@ function queueBuildings(k, orders) {
   };
 }
 
-// Forge construction tools ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â costs gold, no engineer requirement
+// Forge construction tools - costs gold, no engineer requirement
 function forgeTools(k, toolType, quantity) {
   quantity = Math.floor(Number(quantity));
   if (isNaN(quantity) || quantity <= 0) return { error: "Quantity must be a positive integer" };
@@ -581,8 +581,8 @@ function raidTradeRoute(attacker, defender, unitCount) {
       defenderUpdates: {
         trade_routes: Math.max(0, (defender.trade_routes || 0) - raided),
       },
-      atkEvent: `ÃƒÂ°Ã…Â¸Ã‚ÂÃ‚Â´ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã‹Å"Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â SUCCESS: You raided ${raided} trade routes of ${defender.name} and looted ${loot.toLocaleString()} gold! (Losses: ${losses} thieves)`,
-      defEvent: `🛶 RAIDED: ${attacker.name}'s Orcs raided your trade routes! You lost ${raided} routes and ${loot.toLocaleString()} gold was stolen!`,
+      atkEvent: `SUCCESS: You raided ${raided} trade routes of ${defender.name} and looted ${loot.toLocaleString()} gold! (Losses: ${losses} thieves)`, 
+      defEvent: `RAIDED: ${attacker.name}'s Orcs raided your trade routes! You lost ${raided} routes and ${loot.toLocaleString()} gold was stolen!`,
     };
   } else {
     const losses = Math.floor(unitCount * 0.15);
@@ -591,8 +591,8 @@ function raidTradeRoute(attacker, defender, unitCount) {
       attackerUpdates: {
         thieves: Math.max(0, (attacker.thieves || 0) - losses),
       },
-      atkEvent: `💀 FAILURE: Your raid on ${defender.name}'s trade routes failed. You lost ${losses} thieves in the ambush.`,
-      defEvent: `ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂºÃ‚Â¡ÃƒÂ¯Ã‚Â¸Ã‚Â Your guards repelled an Orc raid from ${attacker.name} on your trade routes!`,
+      atkEvent: `FAILURE: Your raid on ${defender.name}'s trade routes failed. You lost ${losses} thieves in the ambush.`,
+      defEvent: `Your guards repelled an Orc raid from ${attacker.name} on your trade routes!`,
     };
   }
 }

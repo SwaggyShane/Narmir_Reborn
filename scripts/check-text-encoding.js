@@ -19,14 +19,12 @@ const TEXT_EXTENSIONS = new Set([
   ".txt",
 ]);
 
-const SUSPICIOUS_TOKENS = [
-  "Ãƒ",
-  "Ã‚",
-  "Ã¢",
-  "â€",
-  "Â�",
-  "Â·",
-  "ï¿½",
+const SUSPICIOUS_PATTERNS = [
+  /\u00C3[\u0080-\u00BF]/,
+  /\u00C2[\u0080-\u00BF]/,
+  /\u00E2[\u0080-\u00BF]/,
+  /\u00EF\u00BF\u00BD/,
+  /\u00B7/,
 ];
 
 function runGit(args) {
@@ -70,11 +68,11 @@ function findProblems(content) {
   const lines = content.split(/\r?\n/);
 
   lines.forEach((line, index) => {
-    for (const token of SUSPICIOUS_TOKENS) {
-      if (line.includes(token)) {
+    for (const pattern of SUSPICIOUS_PATTERNS) {
+      if (pattern.test(line)) {
         problems.push({
           line: index + 1,
-          token,
+          token: pattern.toString(),
           excerpt: line.trim().slice(0, 220),
         });
         break;
@@ -121,8 +119,14 @@ for (const filePath of stagedFiles) {
   if (!TEXT_EXTENSIONS.has(ext)) continue;
   if (path.normalize(filePath) === SELF_PATH) continue;
 
-  const content = getChangedLinesContent(filePath, sinceIndex !== -1 ? process.argv[sinceIndex + 1] : null);
-  if (!content || content.includes("\u0000")) continue;
+  let content;
+  if (sinceIndex !== -1) {
+    content = getChangedLinesContent(filePath, process.argv[sinceIndex + 1]);
+  } else if (scanAllTracked) {
+    content = fs.existsSync(filePath) ? fs.readFileSync(filePath, "utf8") : "";
+  } else {
+    content = readStagedFile(filePath);
+  }
 
   const problems = findProblems(content);
   if (problems.length > 0) {
@@ -131,17 +135,15 @@ for (const filePath of stagedFiles) {
 }
 
 if (failures.length > 0) {
-  console.error("Text encoding check failed. Mojibake-like fingerprints were found in staged files:");
+  console.error("Potential text encoding issues detected:\n");
   for (const failure of failures) {
     console.error(`- ${failure.filePath}`);
-    for (const problem of failure.problems.slice(0, 5)) {
-      console.error(`  line ${problem.line}: ${problem.token} :: ${problem.excerpt}`);
+    for (const problem of failure.problems.slice(0, 10)) {
+      console.error(`  line ${problem.line}: ${problem.excerpt}`);
     }
-    if (failure.problems.length > 5) {
-      console.error(`  ... and ${failure.problems.length - 5} more matches`);
+    if (failure.problems.length > 10) {
+      console.error(`  ... and ${failure.problems.length - 10} more matches`);
     }
   }
   process.exit(1);
 }
-
-console.log("Text encoding check passed.");

@@ -56,11 +56,7 @@ export function renderWorldMap(kingdoms, routes = []) {
           H +
 
           '" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;border-radius:12px;box-shadow:inset 0 0 40px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.5); background:#040710;">';
-
-
-
-        // Defs â€� filters and gradients
-
+        // Defs - filters and gradients
         svg +=
 
           "<defs>" +
@@ -360,11 +356,7 @@ export function renderWorldMap(kingdoms, routes = []) {
           svg += "</g>";
 
         });
-
-
-
-        // Grid lines â€� subtle
-
+        // Grid lines - subtle
         for (gx = 0; gx < W; gx += 80) {
 
           svg +=

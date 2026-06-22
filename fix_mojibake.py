@@ -1,23 +1,21 @@
 #!/usr/bin/env python3
 """
-Fixes triple-encoded cp1252→UTF-8 mojibake in Narmir Reborn source files.
+Repair triple-encoded cp1252-to-UTF-8 mojibake in Narmir Reborn source files.
 Run from the repo root: python3 fix_mojibake.py
 """
 import os, sys
 
-# Build cp1252 reverse mapping (char → original byte value)
 cp1252_reverse = {}
 for byte_val in range(256):
     try:
         char = bytes([byte_val]).decode('cp1252')
         cp1252_reverse[char] = byte_val
     except Exception:
-        # Latin-1 passthrough for undefined cp1252 bytes (0x81, 0x8D, 0x8F, 0x90, 0x9D)
-        char = chr(byte_val)
-        cp1252_reverse[char] = byte_val
+        cp1252_reverse[chr(byte_val)] = byte_val
+
 
 def un_encode_once(b: bytes):
-    """One round: read bytes as UTF-8, reverse-map each codepoint back through cp1252."""
+    """Read bytes as UTF-8, then reverse-map each codepoint through cp1252."""
     try:
         s = b.decode('utf-8')
     except UnicodeDecodeError:
@@ -27,8 +25,9 @@ def un_encode_once(b: bytes):
         if ch in cp1252_reverse:
             out.append(cp1252_reverse[ch])
         else:
-            return None  # codepoint not in cp1252 — stop here
+            return None
     return bytes(out)
+
 
 def fully_decode(raw: bytes) -> bytes:
     """Keep un-encoding until the result stops changing or becomes invalid UTF-8."""
@@ -46,6 +45,7 @@ def fully_decode(raw: bytes) -> bytes:
         b = b2
     return b
 
+
 def fix_file(filepath: str):
     with open(filepath, 'rb') as f:
         content = f.read()
@@ -59,7 +59,7 @@ def fix_file(filepath: str):
             result.append(content[i])
             i += 1
         else:
-            # Collect contiguous high bytes (≥ 0x80)
+            # Collect contiguous high bytes (>= 0x80).
             start = i
             while i < len(content) and content[i] >= 0x80:
                 i += 1
@@ -72,9 +72,9 @@ def fix_file(filepath: str):
                 line_no = content[:start].count(b'\n') + 1
             else:
                 # Only report as unfixed if the span contains known mojibake
-                # signature bytes (Ã=0xC3, â=0xC2, Å=0xC5). Valid UTF-8
-                # characters such as emojis or accented letters are left
-                # unchanged by fully_decode and must not be flagged as errors.
+                # signature bytes (0xC3, 0xC2, 0xC5). Valid UTF-8 characters
+                # such as emojis or accented letters are left unchanged by
+                # fully_decode and must not be flagged as errors.
                 MOJIBAKE_SIGS = {0xC3, 0xC2, 0xC5}
                 if any(b in MOJIBAKE_SIGS for b in span):
                     line_no = content[:start].count(b'\n') + 1

@@ -6,20 +6,13 @@ import { replayWarReport } from '../../utils/replayWarReport';
 import { repairMojibake } from '../../utils/repairMojibake';
 
 const NEWS_META = {
-  attack: { color: 'var(--red)', label: 'Combat' },
-  spell: { color: 'var(--accent1)', label: 'Spell' },
-  covert: { color: 'var(--amber)', label: 'Covert' },
-  system: { color: 'var(--text2)', label: 'System' },
-  alliance: { color: 'var(--blue)', label: 'Alliance' },
-  expedition: { color: 'var(--gold)', label: 'Expedition' },
+  attack: { icon: '\u2694\ufe0f', color: 'var(--red)', label: 'Combat' },
+  spell: { icon: '\u2728', color: 'var(--accent1)', label: 'Spell' },
+  covert: { icon: '\ud83d\udd75\ufe0f', color: 'var(--amber)', label: 'Covert' },
+  system: { icon: '\ud83d\udccb', color: 'var(--text2)', label: 'System' },
+  alliance: { icon: '\ud83e\udd1d', color: 'var(--blue)', label: 'Alliance' },
+  expedition: { icon: '\ud83e\udded', color: 'var(--gold)', label: 'Expedition' },
 };
-
-const stripEmoji = (value) =>
-  String(value ?? '')
-    .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '')
-    .replace(/[\uFE0F\u200D]/g, '')
-    .replace(/\s{2,}/g, ' ')
-    .trim();
 
 const NewsPanel = () => {
   const { state } = useGameState();
@@ -28,7 +21,7 @@ const NewsPanel = () => {
 
   const repairText = useCallback((value) => {
     const text = value === null || value === undefined ? '' : String(value);
-    return stripEmoji(repairMojibake(text));
+    return repairMojibake(text);
   }, []);
 
   const timeAgo = useCallback((unixTs) => {
@@ -180,10 +173,10 @@ const NewsPanel = () => {
       <div className="card mt-0">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="card-title m-0">
-            Kingdom news - Turn <span id="news-turn-num">{state?.turn || 0}</span>
+            \ud83d\udcf0 Kingdom news \u2014 Turn <span id="news-turn-num">{state?.turn || 0}</span>
           </div>
           <div className="flex gap-2">
-            <button className="base-btn" onClick={loadNews}>Refresh</button>
+            <button className="base-btn" onClick={loadNews}>\u21bb Refresh</button>
             <button className="base-btn variant-red bg-[var(--red)]" onClick={clearNews}>Clear all</button>
           </div>
         </div>
@@ -191,10 +184,10 @@ const NewsPanel = () => {
         <div className="mb-3.5 flex flex-wrap gap-1.5">
           {[
             ['all', 'All'],
-            ['attack', 'Combat'],
-            ['spell', 'Spells'],
-            ['covert', 'Covert'],
-            ['system', 'System'],
+            ['attack', '\u2694\ufe0f Combat'],
+            ['spell', '\u2728 Spells'],
+            ['covert', '\ud83d\udd75\ufe0f Covert'],
+            ['system', '\ud83d\udccb System'],
           ].map(([value, label]) => (
             <button
               key={value}
@@ -210,18 +203,18 @@ const NewsPanel = () => {
         <div id="news-list">
           {visibleGroups.length === 0 ? (
             <div className="py-4 text-center text-[13px] text-[var(--text3)]">
-              {newsFilter === 'all' ? 'No news yet - take some turns!' : `No ${newsFilter} events yet.`}
+              {newsFilter === 'all' ? 'No news yet — take some turns!' : `No ${newsFilter} events yet.`}
             </div>
           ) : visibleGroups.map((group) => (
             <div className="news-turn-group" key={group.turn}>
               <div className="news-turn-header">
-                <span className="turn-label">• {group.turn > 0 ? `Turn ${group.turn}` : 'Before game start'}</span>
+                <span className="turn-label">\u25c6 {group.turn > 0 ? `Turn ${group.turn}` : 'Before game start'}</span>
                 <span className="turn-time">{group.timeLabel}</span>
               </div>
               {group.items.map((item, idx) => {
                 let type = item.type || 'system';
                 const rawMessage = repairText(item.message || '');
-                if (rawMessage && /^[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(rawMessage)) type = 'expedition';
+                if (rawMessage && /^[\ud83d\udd2d\ud83c\udf32\u2694\ud83e\udded\u2022]/u.test(rawMessage)) type = 'expedition';
                 const meta = NEWS_META[type] || NEWS_META.system;
                 const displayMessage = newsFilter === 'all' && type === 'attack'
                   ? summarizeAttackNewsForAll(item)
@@ -230,11 +223,7 @@ const NewsPanel = () => {
                 const borderStyle = isBorderType ? { borderLeft: `3px solid ${meta.color}`, paddingLeft: '10px' } : {};
                 return (
                   <div className="news-item" style={borderStyle} key={`${group.turn}-${idx}-${item.combat_log_id || item.created_at || item.message?.slice(0, 32) || 'news'}`}>
-                    <span
-                      className="news-icon"
-                      aria-hidden="true"
-                      style={{ backgroundColor: meta.color }}
-                    />
+                    <span className="news-icon">{meta.icon}</span>
                     <span className="news-body" style={{ color: isBorderType ? 'var(--text)' : 'var(--text2)' }}>
                       {displayMessage}
                       {item.combat_log_id ? (
@@ -242,7 +231,7 @@ const NewsPanel = () => {
                           className="btn inline-flex items-center gap-1 text-[10px] px-2 py-0.5 mt-1 ml-2.5"
                           onClick={() => replayWarReport(item.combat_log_id)}
                         >
-                          Replay
+                          \u25b6 Replay
                         </button>
                       ) : null}
                     </span>
