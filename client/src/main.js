@@ -35,12 +35,14 @@ import "./css/forum.css";
 import ResourceStripReact from "./components/react/ResourceStrip.jsx";
 import { apiCall, switchTab, initGameStateManager, applyGameMutation } from "./utils/panelNav.js";
 import { applyServerUpdates as applyServerUpdatesAction } from "./utils/gameMutations.js";
+import { applyNavLayout } from "./utils/applyNavLayout.js";
 import { initSocketHandlers } from "./hooks/useSocket.js";
 import AuthModalReact from "./components/react/AuthModal.jsx";
 import KingdomProfileModalReact from "./components/react/KingdomProfileModal.jsx";
 
 window.apiCall = apiCall;
 window.applyGameMutation = applyGameMutation;
+window.applyNavLayout = applyNavLayout;
 window.applyServerUpdatesAction = applyServerUpdatesAction;
 window.initSocketHandlers = initSocketHandlers;
 
