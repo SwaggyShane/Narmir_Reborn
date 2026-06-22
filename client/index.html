@@ -6777,6 +6777,28 @@
 
 
 
+      function showChatBadgeAlert() {
+
+        var b = document.getElementById("chat-badge");
+
+        if (b) b.style.display = "inline";
+
+        var nc = document.getElementById("nav-chat-item");
+
+        if (nc && !nc.classList.contains("nav-flash")) nc.classList.add("nav-flash");
+
+        var bnc = document.getElementById("bnav-chat-item");
+
+        if (bnc && !bnc.classList.contains("nav-flash")) bnc.classList.add("nav-flash");
+
+      }
+
+
+
+      window.addEventListener("narmir:chat-badge-alert", showChatBadgeAlert);
+
+
+
       function appendNewsItems(events) {
 
         if (!events || !events.length) return;
