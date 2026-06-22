@@ -86,7 +86,7 @@ const Sidebar = () => {
         <span className="icon text-blue">💬</span>Chat
         <span
           id="chat-badge"
-          className="ml-1 hidden rounded-md bg-red px-1.5 py-px text-[10px] text-white"
+          className="ml-1 hidden rounded-md bg-red px-1.5 py-px text-xs text-white"
         >!</span>
       </button>
       <button className="nav-item" data-tab="news" onClick={(e) => handleSwitchTab('news', e)}>
