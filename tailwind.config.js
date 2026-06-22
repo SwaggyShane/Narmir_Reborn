@@ -1,128 +1,51 @@
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   content: [
-    './client/index.html',
-    './client/src/**/*.{js,jsx,ts,tsx}',
+    "./index.html",
+    "./client/src/**/*.{js,jsx,ts,tsx}",
+    "./client/**/*.{js,jsx}",
   ],
-  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        bg: 'var(--bg)',
-        bg2: 'var(--bg2)',
-        bg3: 'var(--bg3)',
-        bg4: 'var(--bg4)',
-        text: 'var(--text)',
-        text2: 'var(--text2)',
-        text3: 'var(--text3)',
-        gold: 'var(--gold)',
-        gold2: 'var(--gold2)',
-        accent1: 'var(--accent1)',
-        accent2: 'var(--accent2)',
-        green: 'var(--green)',
-        red: 'var(--red)',
-        blue: 'var(--blue)',
-        amber: 'var(--amber)',
-        logo: 'var(--logo)',
-      },
-      borderColor: {
-        DEFAULT: 'var(--border)',
-        strong: 'var(--border2)',
-      },
-      borderRadius: {
-        none: '0',
-        sm: '2px',
-        DEFAULT: '8px',
-        md: '10px',
-        lg: '12px',
-        xl: '24px',
-        full: '9999px',
-      },
-      screens: {
-        xs: '380px',
-        sm: '500px',
-        md: '650px',
-        lg: '768px',
-        xl: '900px',
-        '2xl': '1100px',
-      },
-      spacing: {
-        13: '52px',
-        14: '56px',
-        18: '72px',
-        30: '120px',
-        55: '220px',
-        75: '300px',
-      },
-      zIndex: {
-        base: '1',
-        sticky: '20',
-        normal: '100',
-        backdrop: '200',
-        overlay: '500',
-        dropdown: '999',
-        sidebar: '1000',
-        topbar: '1100',
-        'topbar-mobile': '2000',
-        fixed: '3000',
-        tooltip: '9999',
-        modal: '10000',
+        // Dark Fantasy Core Palette
+        void: {
+          950: '#0a0a0a',
+          900: '#111111',
+          850: '#1a1a1a',
+          800: '#222222',
+        },
+        blood: {
+          400: '#f87171',
+          500: '#ef4444',
+          600: '#dc2626',
+        },
+        ember: {
+          400: '#fb923c',
+          500: '#f97316',
+          600: '#ea580c',
+        },
+        shadow: {
+          400: '#64748b',
+          500: '#475569',
+          600: '#334155',
+        },
+        arcane: {
+          400: '#a78bfa',
+          500: '#8b5cf6',
+          600: '#7c3aed',
+        },
       },
       fontFamily: {
-        cinzel: ['"Cinzel"', 'serif'],
-        sans: ['"Inter"', 'system-ui', '-apple-system', 'sans-serif'],
-        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+        serif: ['Cinzel', 'Playfair Display', 'serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
       },
-      fontSize: {
-        '2xs': ['7px', { lineHeight: '1' }],
-        '3xs': ['6.5px', { lineHeight: '1' }],
-        xs: ['9px', { lineHeight: '1.4' }],
-        sm: ['11px', { lineHeight: '1.5' }],
-        base: ['13px', { lineHeight: '1.5' }],
-        md: ['14px', { lineHeight: '1.5' }],
-        lg: ['16px', { lineHeight: '1.4' }],
-        xl: ['18px', { lineHeight: '1.3' }],
-        '2xl': ['20px', { lineHeight: '1.3' }],
-        '3xl': ['24px', { lineHeight: '1.2' }],
-        '4xl': ['32px', { lineHeight: '1.1' }],
-      },
-      animation: {
-        'pulse-red': 'pulse-red 2s infinite',
-        'news-flash': 'news-flash 1.5s infinite ease-in-out',
-        'chat-flash': 'chat-flash 0.7s infinite alternate',
-        'delta-fade': 'delta-fade 2.4s ease-out forwards',
-        'happiness-pulse': 'happiness-pulse 0.6s ease-in-out',
-      },
-      keyframes: {
-        'pulse-red': {
-          '0%, 100%': { textShadow: '0 0 5px #ff0000', opacity: '0.8', transform: 'scale(1)' },
-          '50%': { textShadow: '0 0 15px #ff0000, 0 0 25px #ff0000', opacity: '1', transform: 'scale(1.05)' },
-        },
-        'news-flash': {
-          '0%, 100%': { backgroundColor: '#b43c00', boxShadow: '0 0 0px #b43c00', transform: 'scale(1)' },
-          '50%': { backgroundColor: '#ff4d4d', boxShadow: '0 0 10px #b43c00', transform: 'scale(1.15)' },
-        },
-        'chat-flash': {
-          '0%': { backgroundColor: 'transparent' },
-          '100%': { backgroundColor: 'rgba(224, 92, 92, 0.25)' },
-        },
-        'delta-fade': {
-          '0%': { opacity: '0', transform: 'translateY(4px)' },
-          '15%': { opacity: '1', transform: 'translateY(0)' },
-          '70%': { opacity: '1', transform: 'translateY(0)' },
-          '100%': { opacity: '0', transform: 'translateY(-6px)' },
-        },
-        'happiness-pulse': {
-          '0%, 100%': { opacity: '1' },
-          '50%': { opacity: '0.7' },
-        },
-      },
-      backgroundImage: {
-        'gold-gradient': 'linear-gradient(135deg, #f06202 0%, #d97706 100%)',
-        'accent-gradient': 'linear-gradient(135deg, #f06202 0%, #f06202 100%)',
-        'card-top-border': 'linear-gradient(90deg, transparent, rgba(240, 98, 2, 0.3), transparent)',
-      },
+      boxShadow: {
+        'glow-ember': '0 0 15px -3px rgb(249 115 22 / 0.5)',
+        'glow-blood': '0 0 15px -3px rgb(239 68 68 / 0.5)',
+        'glow-arcane': '0 0 15px -3px rgb(139 92 246 / 0.5)',
+      }
     },
   },
   plugins: [],
-};
+}
