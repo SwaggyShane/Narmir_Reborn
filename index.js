@@ -65,7 +65,7 @@ console.warn = function(...args) {
 let isBooted = false;
 let bootError = null;
 
-const { initDb } = require('./db/schema');
+const { initDb, repairJsonRows } = require('./db/schema');
 const setupSockets    = require('./game/sockets');
 const engine          = require('./game/engine');
 const { requireAuth, cacheKingdomId } = require('./routes/middleware');
@@ -497,32 +497,15 @@ async function start() {
       await refreshLore(db);
       console.log('[lore] Lore and Random events refreshed');
 
-      // -- Fix database corruption --
-      (async () => {
-        try {
-          const cols = [
-            "active_effects", "troop_levels", "research_allocation", "build_queue", "build_progress",
-            "build_allocation", "scrolls", "mage_tower_allocation", "shrine_allocation",
-            "library_allocation", "mausoleum_allocation", "library_progress", "tower_progress",
-            "bank_upgrades", "bank_deposits", "market_upgrades", "mausoleum_upgrades",
-            "shrine_upgrades", "school_upgrades", "tower_upgrades", "tower_def_upgrades",
-            "outpost_upgrades", "wall_upgrades", "tavern_upgrades", "farm_upgrades",
-            "granary_upgrades", "library_upgrades"
-          ];
-          const validCols = new Set(cols);
-          let fixedRows = 0;
-          for (let c of cols) {
-            if (!validCols.has(c)) continue;
-            let res = await db.run(`UPDATE kingdoms SET ${c} = '{}' WHERE ${c} LIKE '{%' AND length(${c}) < 5`);
-            if (res.changes) fixedRows += res.changes;
-            res = await db.run(`UPDATE kingdoms SET ${c} = '[]' WHERE ${c} LIKE '[%' AND length(${c}) < 5`);
-            if (res.changes) fixedRows += res.changes;
-          }
-          if (fixedRows > 0) console.log(`[db] Fixed ${fixedRows} corrupted JSON rows.`);
-        } catch (err) {
-          console.error('[db] Error in fixing corrupted JSON rows:', err.message);
+      // Normalize structured JSON columns so startup can heal bad rows
+      try {
+        const repairResult = await repairJsonRows(db);
+        if (repairResult.fixedCells > 0) {
+          console.log(`[db] Fixed ${repairResult.fixedCells} JSON cells across ${repairResult.fixedRows} rows.`);
         }
-      })();
+      } catch (err) {
+        console.error('[db] Error in fixing corrupted JSON rows:', err.message);
+      }
 
       // ── Crash-safe regen on boot ─────────────────────────────────────────────────
       // Calculate how many 15-min windows passed since last regen and apply them now
