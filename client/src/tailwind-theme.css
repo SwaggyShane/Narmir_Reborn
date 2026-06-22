@@ -84,4 +84,8 @@
     background: var(--bg);
     padding: 0;
   }
+
+  body.nav-layout-bottom .status-bar {
+    left: 0;
+  }
 }
