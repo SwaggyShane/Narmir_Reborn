@@ -572,9 +572,9 @@ className="hover:bg-bg3 transition-colors cursor-pointer"
 
 The following 17 components currently use imperative DOM manipulation instead of React:
 - `AuthModal.jsx`, `BuildPanel.jsx`, `DefensePanel.jsx`, `EconomyPanel.jsx`, `GlobalchatPanel.jsx`
-- `KingdomProfileModal.jsx`, `MapKingdomCard.jsx`, `MarketPanel.jsx`, `NewsPanel.jsx`, `OptionsPanel.jsx`
-- `ResourcesPanel.jsx`, `StatusPanel.jsx`, `StudiesPanel.jsx`, `TrainingPanel.jsx`, `WarfarePanel.jsx`
-- `WorldmapLegend.jsx`, `WorldmapRenderer.jsx`
+- `HirePanel.jsx`, `KingdomProfileModal.jsx`, `MapKingdomCard.jsx`, `MarketPanel.jsx`, `NewsPanel.jsx`
+- `OptionsPanel.jsx`, `ResourcesPanel.jsx`, `StatusPanel.jsx`, `StudiesPanel.jsx`, `TrainingPanel.jsx`
+- `WarfarePanel.jsx`, `WorldmapLegend.jsx`, `WorldmapRenderer.jsx`
 
 These components:
 1. Use `const el = (id) => document.getElementById(id)` to get DOM refs
@@ -608,6 +608,10 @@ function EconomyPanel() {
   useEffect(() => {
     loadEconomy().then(data => setEcon(data));
   }, []);
+  
+  if (!econ) {
+    return <div className="panel">Loading...</div>;
+  }
   
   return (
     <div className="panel">
