@@ -20,7 +20,6 @@ const HappinessWidget = ({ onOpenTab }) => {
   useEffect(() => {
     fetchHappinessData();
 
-    // Listen for game data updates via custom event
     const handleGameDataUpdate = () => {
       fetchHappinessData();
     };
@@ -50,51 +49,25 @@ const HappinessWidget = ({ onOpenTab }) => {
   const barWidth = (happiness / 120) * 100;
 
   return (
-    <div className="happiness-widget card" style={{ marginBottom: '16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-        <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+    <div className="happiness-widget card mb-4">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="text-[13px] font-semibold uppercase tracking-[0.5px] text-[var(--gold)]">
           😊 Happiness
         </div>
-        <div style={{ fontSize: '12px', color: 'var(--text3)' }}>
-          {happiness}/120
-        </div>
+        <div className="text-[12px] text-[var(--text3)]">{happiness}/120</div>
       </div>
 
-      {/* Happiness bar */}
-      <div style={{
-        height: '16px',
-        background: 'var(--bg3)',
-        borderRadius: '8px',
-        overflow: 'hidden',
-        marginBottom: '8px',
-        border: '1px solid var(--border)'
-      }}>
-        <div style={{
-          height: '100%',
-          width: `${barWidth}%`,
-          background: getHappinessColor(happiness),
-          transition: 'width 0.3s ease',
-          borderRadius: '7px'
-        }} />
+      <div className="mb-2 h-4 overflow-hidden rounded-full border border-[var(--border)] bg-[var(--bg3)]">
+        <div
+          className="h-full rounded-[7px] transition-[width] duration-300"
+          style={{ width: `${barWidth}%`, background: getHappinessColor(happiness) }}
+        />
       </div>
 
-      {/* Trend and details */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: 'var(--text3)' }}>
+      <div className="flex items-center justify-between text-[12px] text-[var(--text3)]">
         <span>{getTrend()} Trending</span>
         <button
-          style={{
-            background: 'none',
-            border: 'none',
-            color: 'var(--gold)',
-            cursor: 'pointer',
-            fontSize: '12px',
-            fontWeight: 600,
-            padding: '2px 6px',
-            borderRadius: '4px',
-            transition: 'background 0.2s'
-          }}
-          onMouseEnter={(e) => e.target.style.background = 'var(--bg3)'}
-          onMouseLeave={(e) => e.target.style.background = 'none'}
+          className="rounded px-1.5 py-0.5 text-[12px] font-semibold text-[var(--gold)] transition hover:bg-[var(--bg3)]"
           onClick={onOpenTab}
         >
           View Details →

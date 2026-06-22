@@ -55,8 +55,7 @@ const Topbar = () => {
             </div>
           </div>
           <button
-            className="turn-btn shrink-0 px-3.5 py-1.5 text-[12px] leading-none"
-            style={{ opacity: loading.takeTurn ? 0.6 : 1 }}
+            className={`turn-btn shrink-0 px-3.5 py-1.5 text-[12px] leading-none ${loading.takeTurn ? 'opacity-60' : 'opacity-100'}`}
             onClick={takeTurn}
             disabled={loading.takeTurn}
           >
@@ -64,8 +63,7 @@ const Topbar = () => {
           </button>
           {!state?.username && (
             <button
-              className="btn"
-              style={{ padding: '6px 10px', fontSize: '12px', marginLeft: '8px', whiteSpace: 'nowrap' }}
+              className="btn ml-2 whitespace-nowrap px-2.5 py-1.5 text-[12px]"
               onClick={handleAccount}
             >
               Sign In
