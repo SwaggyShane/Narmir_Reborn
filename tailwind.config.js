@@ -98,10 +98,10 @@ export default {
         modal: '10000',
       },
       fontFamily: {
-        serif: ['Cinzel', 'Playfair Display', 'Apple Color Emoji', 'Noto Color Emoji', 'serif'],
-        sans: ['Inter', 'system-ui', 'Apple Color Emoji', 'Noto Color Emoji', 'sans-serif'],
-        cinzel: ['Cinzel', 'Playfair Display', 'Apple Color Emoji', 'Noto Color Emoji', 'serif'],
-        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Apple Color Emoji', 'Noto Color Emoji', 'monospace'],
+        serif: ['Cinzel', 'Playfair Display', 'serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        cinzel: ['Cinzel', 'Playfair Display', 'serif'],
+        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
       },
       fontSize: {
         '2xs': ['7px', { lineHeight: '1' }],
