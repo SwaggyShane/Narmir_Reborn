@@ -42,9 +42,10 @@ import KingdomProfileModalReact from "./components/react/KingdomProfileModal.jsx
 
 window.apiCall = apiCall;
 window.applyGameMutation = applyGameMutation;
-window.applyNavLayout = applyNavLayout;
 window.applyServerUpdatesAction = applyServerUpdatesAction;
 window.initSocketHandlers = initSocketHandlers;
+
+applyNavLayout();
 
 const reactRoots = new Map();
 
