@@ -83,7 +83,7 @@ function HeroLoreContent({ heroKey, hero }) {
         </div>
         <div className="rounded-lg bg-[var(--bg4)] p-2.5 text-center">
           <div className="text-[10px] uppercase text-[var(--text3)]">Mana Cost</div>
-          <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--blue)' }}>{fmt(hero.recruitMana)} ✨</div>
+          <div className="text-sm font-bold text-[var(--blue)]">{fmt(hero.recruitMana)} ?</div>
         </div>
       </div>
     </>
@@ -141,27 +141,27 @@ function RaceLoreContent({ rKey, lore, regionName, regionBonus, portraitUrl, rep
         <div className="rounded-[var(--radius)] border border-[rgba(76,175,130,.2)] bg-[rgba(76,175,130,.08)] p-3">
           <div className="mb-2 text-[11px] font-bold uppercase tracking-[.5px] text-[var(--green)]">Strengths</div>
           {strengths.map((s, i) => (
-            <div key={i} style={{ fontSize: '12px', color: 'var(--text2)', padding: '2px 0' }}>✓ {repair(s)}</div>
+            <div key={i} className="py-0.5 text-xs text-[var(--text2)]">? {repair(s)}</div>
           ))}
         </div>
         <div className="rounded-[var(--radius)] border border-[rgba(224,92,92,.2)] bg-[rgba(224,92,92,.08)] p-3">
           <div className="mb-2 text-[11px] font-bold uppercase tracking-[.5px] text-[var(--red)]">Weaknesses</div>
           {weaknesses.map((w, i) => (
-            <div key={i} style={{ fontSize: '12px', color: 'var(--text2)', padding: '2px 0' }}>✗ {repair(w)}</div>
+            <div key={i} className="py-0.5 text-xs text-[var(--text2)]">? {repair(w)}</div>
           ))}
         </div>
       </div>
 
       {lore.special && (
         <div className="mb-3 rounded-[var(--radius)] border border-[rgba(232,184,75,.25)] bg-[rgba(232,184,75,.08)] p-3">
-          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--gold)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '.5px' }}>✨ Racial mastery — unlocks at unit level 25</div>
+          <div className="mb-1.5 text-[11px] font-bold uppercase tracking-[.5px] text-[var(--gold)]">? Racial mastery ? unlocks at unit level 25</div>
           <div className="text-[13px] text-[var(--text)]">{repair(lore.special)}</div>
         </div>
       )}
 
       {heroes.length > 0 && (
         <div className="mb-3 rounded-[var(--radius)] border border-[rgba(143,184,74,.25)] bg-[rgba(143,184,74,.08)] p-3">
-          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--green)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '.5px' }}>🦻 Notable Race Heroes</div>
+          <div className="mb-2 text-[11px] font-bold uppercase tracking-[.5px] text-[var(--green)]">?? Notable Race Heroes</div>
           <div className="flex flex-wrap gap-1.5">
             {heroes.map((h) => (
               <div
