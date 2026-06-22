@@ -9,10 +9,9 @@
   }
 
   body {
-    background-color: var(--bg);
-    color: var(--text);
     @apply font-sans;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
   }
 }
