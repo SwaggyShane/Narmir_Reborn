@@ -66,7 +66,7 @@ const NewsPanel = () => {
 
   const loadNews = useCallback(async () => {
     try {
-      const items = await apiCall('GET', '/api/kingdom/news/list');
+      const items = await apiCall('/api/kingdom/news/list');
       if (!Array.isArray(items)) return;
 
       setNewsItems(items);
@@ -78,7 +78,7 @@ const NewsPanel = () => {
   }, [clearBadges]);
 
   const clearNews = useCallback(async () => {
-    const result = await apiCall('DELETE', '/api/kingdom/news/clear');
+    const result = await apiCall('/api/kingdom/news/clear', { method: 'DELETE' });
     if (result?.error) {
       console.error('[NewsPanel] Error clearing news:', result.error);
       return;
