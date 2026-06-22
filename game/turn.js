@@ -127,8 +127,12 @@ function calculateHappiness(k) {
   // 5. Race Modifier
   const raceModifier = raceModifiers[k.race] || 0;
 
+  // 6. Empire Size Pressure
+  const populationBase = Math.max(1, k.population || 1);
+  const sizeComponent = -Math.min(30, Math.floor(Math.log10(populationBase) * 5));
+
   // Base + components
-  let happiness = 50 + foodHappiness + entertainmentHappiness + safetyHappiness + prosperityHappiness + raceModifier;
+  let happiness = 50 + foodHappiness + entertainmentHappiness + safetyHappiness + prosperityHappiness + raceModifier + sizeComponent;
 
   // Apply active effect bonuses (Bless, Divine Favor, etc.)
   const effects = safeJsonParse(k.active_effects, {}, "calculateHappiness:active_effects");
@@ -175,7 +179,8 @@ function calculateHappiness(k) {
       entertainment: entertainmentHappiness,
       safety: safetyHappiness,
       prosperity: prosperityHappiness,
-      race: raceModifier
+      race: raceModifier,
+      size: sizeComponent
     },
     recovery: recoveryRate
   };
@@ -304,6 +309,5 @@ module.exports = {
   processBuildQueue,
   processActiveEffects,
 };
-
 
 
