@@ -125,6 +125,13 @@ const BuildPanel = () => {
   const [loading, setLoading] = useState(false);
   const [buildUiTick, setBuildUiTick] = useState(0);
   const [engineerAllocations, setEngineerAllocations] = useState({});
+  const [smithyDisplay, setSmithyDisplay] = useState({
+    hammersStored: 0, hammersCap: 0, hammersAfford: 0,
+    scaffoldingStored: 0, scaffoldingCap: 0, scaffoldingAfford: 0,
+    smithyNote: null,
+  });
+  const [smithyInputs, setSmithyInputs] = useState({ hammers: 0, scaffolding: 0 });
+  const [demolishAmounts, setDemolishAmounts] = useState({});
   const isVampire = state?.race === 'vampire';
   const totalEngineers = Number(state?.engineers || 0);
   const engineerLevel = Number(state?.engineer_level || 1);
@@ -351,115 +358,38 @@ const BuildPanel = () => {
       setBuildFieldValue(`bld-eng-${key}`, alloc[sourceKey] || 0);
     });
   };
-  const updateBuildDisplay = () => {
-    const total = Number(state?.engineers || 0);
-    const allocated = getAllocatedEngineers();
-    const remaining = Math.max(0, total - allocated);
-
-    const tea = document.getElementById('b-engineers-available');
-    if (tea) tea.textContent = fmt(total);
-
-    const ta = document.getElementById('b-total-assigned');
-    const tu = document.getElementById('b-total-unassigned');
-    if (ta) ta.textContent = fmt(allocated);
-    if (tu) {
-      tu.textContent = fmt(remaining);
-      tu.style.color = allocated > total ? 'var(--red)' : 'var(--green)';
-    }
-
-    const bWood = document.getElementById('b-wood');
-    if (bWood) bWood.textContent = fmt(state?.wood || 0);
-    const bStone = document.getElementById('b-stone');
-    if (bStone) bStone.textContent = fmt(state?.stone || 0);
-    const bIron = document.getElementById('b-iron');
-    if (bIron) bIron.textContent = fmt(state?.iron || 0);
-    const bSteel = document.getElementById('b-steel');
-    if (bSteel) bSteel.textContent = fmt(state?.steel || 0);
-    const bCoal = document.getElementById('b-coal');
-    if (bCoal) bCoal.textContent = fmt(state?.coal || 0);
-
-    const bLand = document.getElementById('b-land-available');
-    if (bLand) {
-      const availLand = (state?.land || 0) - (state?.built_land || 0);
-      bLand.textContent = `${fmt(availLand)} / ${fmt(state?.land || 0)}`;
-    }
-
-    const shrineRow = document.getElementById('ba-shrine')?.closest('.trow');
-    const mausoleumRow = document.getElementById('ba-mausoleum')?.closest('.trow');
-    if (shrineRow) shrineRow.style.display = isVampire ? 'none' : '';
-    if (mausoleumRow) mausoleumRow.style.display = isVampire ? '' : 'none';
-
+  const buildDisplay = useMemo(() => {
     const BLUEPRINT_REQUIRED = new Set(['vaults', 'smithies', 'markets', 'mage_towers', 'training', 'castles']);
     const SCAFFOLDING_REQUIRED = new Set(['mage_towers', 'training', 'castles', 'libraries']);
     const bp = state?.blueprints_stored || 0;
     const sc = state?.scaffolding_stored || 0;
 
-    BUILDINGS_DISPLAY_ORDER.forEach((key) => {
-      const input = document.getElementById(`bld-eng-${key}`);
-      if (!input) return;
-      const noticeId = `tool-notice-${key}`;
-      const existing = document.getElementById(noticeId);
-      const engVal = parseInt(input.value || '0', 10) || 0;
-      let msg = '';
-      if (engVal > 0) {
-        if (BLUEPRINT_REQUIRED.has(key) && bp === 0) msg += '?? Blueprint needed ';
-        if (SCAFFOLDING_REQUIRED.has(key) && sc === 0) msg += '?? Scaffolding needed';
-      }
-      if (msg && !existing) {
-        const row = input.closest('.trow');
-        if (row) {
-          const notice = document.createElement('span');
-          notice.id = noticeId;
-          notice.className = 'text-[10px] text-amber whitespace-nowrap ml-1';
-          notice.textContent = msg.trim();
-          row.appendChild(notice);
-        }
-      } else if (existing) {
-        if (msg && engVal > 0) {
-          existing.textContent = msg.trim();
-          existing.style.display = 'inline';
-        } else {
-          existing.style.display = 'none';
-        }
-      }
-    });
+    const warnings = {};
+    const estimates = {};
 
     BUILDINGS_DISPLAY_ORDER.forEach((key) => {
-      const input = document.getElementById(`bld-eng-${key}`);
-      if (!input) return;
-      const estId = `turns-est-${key}`;
-      const existing = document.getElementById(estId);
-      const engVal = parseInt(input.value || '0', 10) || 0;
+      const engVal = getBuildFieldValue(`bld-eng-${key}`);
+      let msg = '';
+      if (engVal > 0) {
+        if (BLUEPRINT_REQUIRED.has(key) && bp === 0) msg += 'Blueprint needed ';
+        if (SCAFFOLDING_REQUIRED.has(key) && sc === 0) msg += 'Scaffolding needed';
+      }
+      if (msg.trim()) warnings[key] = msg.trim();
+
       const cost = BUILDINGS_MAP[key]?.time || 100;
       if (engVal > 0) {
         const turns = Math.ceil(cost / engVal);
-        let el = existing;
-        if (!el) {
-          const row = input.closest('.trow');
-          if (row) {
-            el = document.createElement('span');
-            el.id = estId;
-            el.className = 'text-[10px] text-text3 whitespace-nowrap ml-1';
-            row.appendChild(el);
-          }
-        }
-        if (el) {
-          el.textContent = `~${turns.toLocaleString()} turn${turns === 1 ? '' : 's'}/unit`;
-          el.style.display = 'inline';
-        }
-      } else if (existing) {
-        existing.style.display = 'none';
+        estimates[key] = `~${turns.toLocaleString()} turn${turns === 1 ? '' : 's'}/unit`;
       }
     });
 
-    return { total, allocated, remaining };
-  };
+    return { warnings, estimates };
+  }, [state?.blueprints_stored, state?.scaffolding_stored, engineerAllocations]);
   useEffect(() => {
     loadBuildAllocationInputs();
   }, [JSON.stringify(state?.build_allocation || {})]);
 
   useEffect(() => {
-    updateBuildDisplay();
     updateSmithyDisplay();
   }, [state, buildUiTick]);
   const setMaxValue = (fieldId) => {
@@ -528,70 +458,58 @@ const BuildPanel = () => {
 
     const maxH = Math.max(0, Math.min(hammerCap - hammers, Math.floor(gold / 25)));
     const maxS = Math.max(0, Math.min(scaffCap - scaff, Math.floor(gold / scaffPrice)));
-    const g = (id) => document.getElementById(id);
 
-    if (g('smith-hammers-stored')) g('smith-hammers-stored').textContent = fmt(hammers);
-    if (g('smith-hammers-cap')) g('smith-hammers-cap').textContent = fmt(hammerCap);
-    if (g('smith-hammers-afford')) g('smith-hammers-afford').textContent = fmt(maxH);
-    if (g('smith-scaffolding-stored')) g('smith-scaffolding-stored').textContent = fmt(scaff);
-    if (g('smith-scaffolding-cap')) g('smith-scaffolding-cap').textContent = fmt(scaffCap);
-    if (g('smith-scaffolding-afford')) g('smith-scaffolding-afford').textContent = fmt(maxS);
+    const note = smithies === 0 ? 'need-smithy' : null;
 
-    const note = g('smithy-alloc-note');
-    if (note) {
-      if (smithies === 0) {
-        note.innerHTML = "<div class='text-text3 text-xs mb-2'>You need a smithy to buy hammers.</div><div class='text-gold text-xs'>Scaffolding is available without a smithy (25% markup).</div>";
-      } else {
-        note.textContent = '';
-      }
-    }
+    setSmithyDisplay({
+      hammersStored: hammers,
+      hammersCap: hammerCap,
+      hammersAfford: maxH,
+      scaffoldingStored: scaff,
+      scaffoldingCap: scaffCap,
+      scaffoldingAfford: maxS,
+      smithyNote: note,
+    });
   };
   const setSmithyMax = (type) => {
     const smithies = Number(state?.bld_smithies || 0);
     const gold = Number(state?.gold || 0);
     if (type === 'hammers') {
       const max = Math.max(0, Math.min(smithies * 25 - Number(state?.hammers_stored || 0), Math.floor(gold / 25)));
-      const el = document.getElementById('smith-buy-hammers');
-      if (el) el.value = max;
+      setSmithyInputs(prev => ({ ...prev, hammers: max }));
       return;
     }
     const scaffCap = Math.max(10, smithies * 10);
     const scaffPrice = smithies > 0 ? 2500 : 3125;
     const max2 = Math.max(0, Math.min(scaffCap - Number(state?.scaffolding_stored || 0), Math.floor(gold / scaffPrice)));
-    const el2 = document.getElementById('smith-buy-scaffolding');
-    if (el2) el2.value = max2;
+    setSmithyInputs(prev => ({ ...prev, scaffolding: max2 }));
   };
   const buySmithyTool = async (type) => {
-    const id = type === 'hammers' ? 'smith-buy-hammers' : 'smith-buy-scaffolding';
-    const amount = parseInt(document.getElementById(id)?.value, 10) || 0;
+    const amount = type === 'hammers' ? smithyInputs.hammers : smithyInputs.scaffolding;
     if (amount <= 0) return toast('Enter a quantity', 'error');
     const ep = type === 'hammers' ? '/api/kingdom/smithy/buy-hammers' : '/api/kingdom/smithy/buy-scaffolding';
     const result = await apiCall(ep, { method: 'POST', body: { amount } });
     if (result.error) return toast(result.error, 'error');
-    if (result.hammers_stored !== undefined) state.hammers_stored = result.hammers_stored;
-    if (result.scaffolding_stored !== undefined) state.scaffolding_stored = result.scaffolding_stored;
-    if (result.gold !== undefined) state.gold = result.gold;
     applyGameMutation({
       hammers_stored: result.hammers_stored,
       scaffolding_stored: result.scaffolding_stored,
       gold: result.gold,
     }, { reason: 'smithy-buy' });
+    setSmithyInputs({ hammers: 0, scaffolding: 0 });
     refreshBuildUi();
-    updateSmithyDisplay();
     if (typeof window !== 'undefined' && typeof toast === 'function') toast(`Purchased ${result.bought} ${type} for ${fmt(result.cost)} GC`, 'success');
   };
   const demolishB = async (type) => {
-    const id = type === 'wm' ? 'ballistae' : type;
-    const amountId = `demolish-${id}`;
-    const amount = parseInt(document.getElementById(amountId)?.value, 10) || 0;
+    const key = type === 'wm' ? 'ballistae' : type;
+    const amount = demolishAmounts[key] || 1;
     if (amount <= 0) return toast('Enter a quantity', 'error');
     const result = await apiCall('/api/kingdom/demolish', { method: 'POST', body: { building: type, amount } });
     if (result.error) return toast(result.error, 'error');
     if (result.updates) {
       applyGameMutation(result.updates, { reason: 'demolish' });
     }
+    setDemolishAmounts(prev => ({ ...prev, [key]: 1 }));
     refreshBuildUi();
-    updateSmithyDisplay();
     if (typeof window !== 'undefined' && typeof toast === 'function') {
       toast(result.message || `Demolished ${amount} ${type.replace(/_/g, ' ')}`, 'success');
     }
@@ -608,8 +526,14 @@ const BuildPanel = () => {
         <span className="count" id={`bld-${b.id}`}>{fmt(getBuildCount(b.id))}</span>
         {b.id !== 'wm' && b.id !== 'ballistae' && b.id !== 'ladders' && b.id !== 'weapons' && b.id !== 'armor' ? (
           <div className="bld-demolish">
-            <input type="number" className="input text-center" id={demoAmountId} defaultValue="1" min="1" />
-            <button className="base-btn variant-red px-1.5 py-1 text-[10px]" onClick={() => demolishB(b.id, demoAmountId)}>🗑️</button>
+            <input
+              type="number"
+              className="input text-center"
+              value={demolishAmounts[b.id] || 1}
+              onChange={(e) => setDemolishAmounts(prev => ({ ...prev, [b.id]: parseInt(e.target.value, 10) || 1 }))}
+              min="1"
+            />
+            <button className="base-btn variant-red px-1.5 py-1 text-[10px]" onClick={() => demolishB(b.id)}>🗑️</button>
           </div>
         ) : <span></span>}
 
@@ -619,8 +543,11 @@ const BuildPanel = () => {
             className="input text-right"
             id={baId}
             min="0"
-            defaultValue="0"
-            onChange={refreshBuildUi}
+            value={getBuildFieldValue(baId)}
+            onChange={(e) => {
+              setBuildFieldValue(baId, e.target.value);
+              refreshBuildUi();
+            }}
             placeholder="Qty"
           />
           <button
@@ -635,6 +562,13 @@ const BuildPanel = () => {
           >
             Max
           </button>
+          {(buildDisplay.warnings[b.id] || buildDisplay.estimates[b.id]) && (
+            <div className="text-[10px] text-text3 whitespace-nowrap ml-1">
+              {buildDisplay.warnings[b.id] && <span className="text-amber">{buildDisplay.warnings[b.id]}</span>}
+              {buildDisplay.warnings[b.id] && buildDisplay.estimates[b.id] && ' · '}
+              {buildDisplay.estimates[b.id] && <span>{buildDisplay.estimates[b.id]}</span>}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -934,30 +868,35 @@ const BuildPanel = () => {
           <div className="text-[12px] text-text3 mb-3.5">
             Hammers and scaffolding can be purchased here. Blueprints are crafted in the Library by scribes.
           </div>
-          <div id="smithy-alloc-note" className="text-[11px] text-gold mb-2.5" />
+          {smithyDisplay.smithyNote === 'need-smithy' && (
+            <div className="text-[11px] mb-2.5">
+              <div className="text-text3 text-xs mb-2">You need a smithy to buy hammers.</div>
+              <div className="text-gold text-xs">Scaffolding is available without a smithy (25% markup).</div>
+            </div>
+          )}
 
           <div className="grid auto-fit gap-2.5 mb-4 [grid-template-columns:repeat(auto-fit,minmax(140px,1fr))]">
             <div className="rounded-lg border border-white/5 bg-bg3 px-3 py-3 text-center">
               <div className="text-[20px] mb-1">🔨</div>
               <div className="text-[12px] font-semibold text-text">Hammers</div>
               <div className="text-[11px] text-text3 mb-1.5">+5% speed each · degrade</div>
-              <div className="text-[18px] font-bold text-gold" id="tools-hammers">0</div>
-              <div className="text-[11px] text-text3">/ <span id="hammers-cap">0</span> cap</div>
+              <div className="text-[18px] font-bold text-gold">{fmt(smithyDisplay.hammersStored)}</div>
+              <div className="text-[11px] text-text3">/ {fmt(smithyDisplay.hammersCap)} cap</div>
               <div className="text-[11px] text-amber mt-0.5" id="hammers-durability"></div>
             </div>
             <div className="rounded-lg border border-white/5 bg-bg3 px-3 py-3 text-center">
               <div className="text-[20px] mb-1">🏗️</div>
               <div className="text-[12px] font-semibold text-text">Scaffolding</div>
               <div className="text-[11px] text-text3 mb-1.5">req &gt;100t · bonus &lt;100t</div>
-              <div className="text-[18px] font-bold text-gold" id="tools-scaffolding">0</div>
-              <div className="text-[11px] text-text3">/ <span id="scaffolding-cap">0</span> cap</div>
+              <div className="text-[18px] font-bold text-gold">{fmt(smithyDisplay.scaffoldingStored)}</div>
+              <div className="text-[11px] text-text3">/ {fmt(smithyDisplay.scaffoldingCap)} cap</div>
             </div>
             <div className="rounded-lg border border-white/5 bg-bg3 px-3 py-3 text-center">
               <div className="text-[20px] mb-1">📐</div>
               <div className="text-[12px] font-semibold text-text">Blueprints</div>
               <div className="text-[11px] text-text3 mb-1.5">req for 100t+ buildings</div>
-              <div className="text-[18px] font-bold text-gold" id="tools-blueprints">0</div>
-              <div className="text-[11px] text-text3">/ <span id="blueprints-cap">0</span> cap</div>
+              <div className="text-[18px] font-bold text-gold">{fmt(state?.blueprints_stored || 0)}</div>
+              <div className="text-[11px] text-text3">/ {fmt((state?.bld_libraries || 0) * 100)} cap</div>
             </div>
           </div>
 
@@ -971,10 +910,10 @@ const BuildPanel = () => {
                   🔨 Hammers — <strong className="text-gold">25 GC each</strong>
                 </div>
                 <div className="text-[11px] text-text3 mb-2">
-                  Stored: <span id="smith-hammers-stored" className="text-text">0</span> / <span id="smith-hammers-cap">0</span> · Max afford: <span id="smith-hammers-afford" className="text-gold">0</span>
+                  Stored: <span className="text-text">{fmt(smithyDisplay.hammersStored)}</span> / {fmt(smithyDisplay.hammersCap)} · Max afford: <span className="text-gold">{fmt(smithyDisplay.hammersAfford)}</span>
                 </div>
                 <div className="flex flex-col items-center gap-2">
-                  <input type="number" className="input" id="smith-buy-hammers" min="1" defaultValue="0" placeholder="Qty" style={{ width: '160px' }} />
+                  <input type="number" className="input" id="smith-buy-hammers" min="1" value={smithyInputs.hammers} onChange={(e) => setSmithyInputs(prev => ({ ...prev, hammers: parseInt(e.target.value, 10) || 0 }))} placeholder="Qty" style={{ width: '160px' }} />
                   <div className="flex gap-2" style={{ width: '160px' }}>
                     <button className="base-btn variant-gold flex-1 text-[12px] px-3 py-1.5" style={{ background: 'var(--gold)', color: '#000' }} onClick={() => buySmithyTool('hammers')}>Buy</button>
                     <button className="base-btn flex-1 text-[11px] px-2 py-1.5" onClick={() => setSmithyMax('hammers')}>Max</button>
@@ -986,10 +925,10 @@ const BuildPanel = () => {
                   🏗️ Scaffolding — <strong className="text-gold">2,500 GC each</strong>
                 </div>
                 <div className="text-[11px] text-text3 mb-2">
-                  Stored: <span id="smith-scaffolding-stored" className="text-text">0</span> / <span id="smith-scaffolding-cap">0</span> · Max afford: <span id="smith-scaffolding-afford" className="text-gold">0</span>
+                  Stored: <span className="text-text">{fmt(smithyDisplay.scaffoldingStored)}</span> / {fmt(smithyDisplay.scaffoldingCap)} · Max afford: <span className="text-gold">{fmt(smithyDisplay.scaffoldingAfford)}</span>
                 </div>
                 <div className="flex flex-col items-center gap-2">
-                  <input type="number" className="input" id="smith-buy-scaffolding" min="1" defaultValue="0" placeholder="Qty" style={{ width: '160px' }} />
+                  <input type="number" className="input" id="smith-buy-scaffolding" min="1" value={smithyInputs.scaffolding} onChange={(e) => setSmithyInputs(prev => ({ ...prev, scaffolding: parseInt(e.target.value, 10) || 0 }))} placeholder="Qty" style={{ width: '160px' }} />
                   <div className="flex gap-2" style={{ width: '160px' }}>
                     <button className="base-btn variant-gold flex-1 text-[12px] px-3 py-1.5" style={{ background: 'var(--gold)', color: '#000' }} onClick={() => buySmithyTool('scaffolding')}>Buy</button>
                     <button className="base-btn flex-1 text-[11px] px-2 py-1.5" onClick={() => setSmithyMax('scaffolding')}>Max</button>
