@@ -276,10 +276,10 @@ function assignRegion(race) {
 
 
 function getHappinessRecoveryRate(k) {
-  const baseRecovery = (k.res_entertainment || 100) / 1000 + ((k.bld_taverns || 0) * 0.25);
+  const baseRecovery = (k.res_entertainment || 100) / 1200 + ((k.bld_taverns || 0) * 0.2);
   const taxRate = Number(k.tax ?? 42);
-  const taxDrag = taxRate > 42 ? Math.min(4, Math.floor((taxRate - 42) / 18)) : 0;
-  return Math.max(0.25, Math.min(5, baseRecovery - taxDrag));
+  const taxDrag = taxRate > 42 ? Math.min(5, Math.floor((taxRate - 42) / 14)) : 0;
+  return Math.max(0.2, Math.min(2.8, baseRecovery - taxDrag));
 }
 
 function calculateHappiness(k) {
@@ -307,8 +307,8 @@ function calculateHappiness(k) {
     safetyHappiness = 20; // Never attacked
   } else {
     const turnsSinceLast = Math.max(0, (k.turn || 0) - k.last_attack_turn);
-    // Linear recovery: -10 at turn 0, +20 at turn 10, capped at 20
-    safetyHappiness = -10 + Math.min(10, turnsSinceLast) * 3;
+    // Slower recovery: -15 at turn 0, +15 at turn 15, capped at 20
+    safetyHappiness = -15 + Math.min(15, turnsSinceLast) * 2;
   }
   safetyHappiness = Math.max(-30, Math.min(20, safetyHappiness));
 
@@ -346,7 +346,7 @@ function calculateHappiness(k) {
   let taxComponent = 0;
   const taxRate = k.tax ?? 42;
   if (taxRate > 42) {
-    taxComponent = -Math.floor(((taxRate - 42) / 58) * 60 + Math.max(0, (taxRate - 80) / 20) * 15);
+    taxComponent = -Math.floor(((taxRate - 42) / 58) * 85 + Math.max(0, (taxRate - 80) / 20) * 20);
     happiness += taxComponent;
   } else if (taxRate < 42) {
     taxComponent = Math.floor(12 * ((42 - taxRate) / 42));
@@ -6224,6 +6224,5 @@ module.exports = {
   engineerConstructionMult,
   clearSynergyCache,
 };
-
 
 

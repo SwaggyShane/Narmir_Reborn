@@ -85,8 +85,8 @@ const BLUEPRINT_REQUIRED = new Set(BP_REQ);
 const SCAFFOLDING_REQUIRED = new Set(SCAFF_REQ);
 
 function getHappinessRecoveryRate(k) {
-  const baseRecovery = (k.res_entertainment || 100) / 1000 + ((k.bld_taverns || 0) * 0.25);
-  return Math.max(0.5, Math.min(5, baseRecovery));
+  const baseRecovery = (k.res_entertainment || 100) / 1200 + ((k.bld_taverns || 0) * 0.2);
+  return Math.max(0.2, Math.min(2.8, baseRecovery));
 }
 
 function calculateHappiness(k) {
@@ -114,8 +114,8 @@ function calculateHappiness(k) {
     safetyHappiness = 20; // Never attacked
   } else {
     const turnsSinceLast = Math.max(0, (k.turn || 0) - k.last_attack_turn);
-    // Linear recovery: -10 at turn 0, +20 at turn 10, capped at 20
-    safetyHappiness = -10 + Math.min(10, turnsSinceLast) * 3;
+    // Slower recovery: -15 at turn 0, +15 at turn 15, capped at 20
+    safetyHappiness = -15 + Math.min(15, turnsSinceLast) * 2;
   }
   safetyHappiness = Math.max(-30, Math.min(20, safetyHappiness));
 
@@ -150,7 +150,7 @@ function calculateHappiness(k) {
   // Apply tax penalty/bonus
   const taxRate = k.tax ?? 42;
   if (taxRate > 42) {
-    const taxPenalty = Math.floor(((taxRate - 42) / 58) * 60);
+    const taxPenalty = Math.floor(((taxRate - 42) / 58) * 85 + Math.max(0, (taxRate - 80) / 20) * 20);
     happiness -= taxPenalty;
   } else if (taxRate < 42) {
     const taxBonus = Math.floor(12 * ((42 - taxRate) / 42));
@@ -304,7 +304,6 @@ module.exports = {
   processBuildQueue,
   processActiveEffects,
 };
-
 
 
 
