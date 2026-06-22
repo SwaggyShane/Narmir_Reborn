@@ -160,13 +160,13 @@ function trunc(value) {
 }
 
 function metricClass(extra = '') {
-  return 'metric relative min-w-[110px] rounded-2xl border border-ember-900/30 bg-void-900/90 px-3 py-2 shadow-panel transition-transform duration-200 md:min-w-0 md:px-4 md:py-3' + (extra ? ' ' + extra : '');
+  return 'metric card-glow relative min-w-[110px] rounded-2xl border border-ember-900/30 bg-void-900/90 px-3 py-2 shadow-panel transition-transform duration-200 md:min-w-0 md:px-4 md:py-3' + (extra ? ' ' + extra : '');
 }
 
 const happinessBarOuterClass =
   'relative my-1.5 h-[18px] w-full overflow-hidden rounded-full bg-void-800/90';
 const happinessBarInnerClass =
-  'h-full rounded-full bg-gradient-to-r from-ember-500 via-yellow-400 via-67% to-green-500 to-green-600 transition-[width] duration-300 ease-in-out';
+  'h-full rounded-full bg-gradient-to-r from-ember-500 via-yellow-400 via-67% to-green-600 transition-[width] duration-300 ease-in-out';
 const metricSubClass = 'flex w-full justify-between text-[11px] text-text2';
 
 function population(state) {
@@ -262,7 +262,7 @@ const ResourceStrip = () => {
 
   return (
     <>
-      <div className={metricClass('card-glow')} id="metric-gold">
+      <div className={metricClass()} id="metric-gold">
         <DeltaBadge flash={goldFlash} />
         <div className="lbl">Gold</div>
         <div className={`val ${numberValue(state.gold) < 1000 ? 'text-[var(--red)]' : ''}`} id="m-gold">
@@ -272,7 +272,7 @@ const ResourceStrip = () => {
           {numberValue(state.gold_income) >= 0 ? '+' : ''}{trunc(state.gold_income || 0)}/turn
         </div>
       </div>
-      <div className={metricClass('card-glow')} id="metric-mana">
+      <div className={metricClass()} id="metric-mana">
         <DeltaBadge flash={manaFlash} />
         <div className="lbl">Mana</div>
         <div className="val" id="m-mana">{trunc(state.mana)}</div>
@@ -280,13 +280,13 @@ const ResourceStrip = () => {
           {numberValue(state.mana_regen) >= 0 ? '+' : ''}{trunc(state.mana_regen || 0)}/turn
         </div>
       </div>
-      <div className={metricClass('card-glow')} id="metric-land">
+      <div className={metricClass()} id="metric-land">
         <DeltaBadge flash={landFlash} />
         <div className="lbl">Land</div>
         <div className="val" id="m-land">{trunc(state.land)}</div>
         <div className="sub"><span id="m-land-free">{trunc(freeLand(state))}</span> free</div>
       </div>
-      <div className={metricClass('card-glow')} id="metric-pop">
+      <div className={metricClass()} id="metric-pop">
         <DeltaBadge flash={popFlash} />
         <div className="lbl">Population</div>
         <div className="val" id="m-pop">{trunc(pop)}</div>
@@ -295,7 +295,7 @@ const ResourceStrip = () => {
         </div>
       </div>
       {isVampire && (
-        <div className={metricClass('card-glow')} id="metric-thralls">
+        <div className={metricClass()} id="metric-thralls">
           <DeltaBadge flash={thrallFlash} />
           <div className="lbl">Thralls</div>
           <div className="val" id="m-thralls">{trunc(thralls)}</div>
@@ -304,7 +304,7 @@ const ResourceStrip = () => {
           </div>
         </div>
       )}
-      <div className={metricClass('overflow-hidden card-glow')} id="metric-happiness">
+      <div className={metricClass('overflow-hidden')} id="metric-happiness">
         <div className="lbl">Happiness</div>
         <div className={happinessBarOuterClass} title="Population happiness">
           <div
@@ -317,7 +317,7 @@ const ResourceStrip = () => {
           <span id="m-happiness-breakdown">{happinessLabel(happiness)}</span>
         </div>
       </div>
-      <div className={metricClass('card-glow')} id="metric-food">
+      <div className={metricClass()} id="metric-food">
         <DeltaBadge flash={foodFlash} />
         <div className="lbl">Food</div>
         <div className={`val ${numberValue(state.food) < 1000 ? 'text-[var(--red)]' : ''}`} id="m-food">
@@ -329,7 +329,7 @@ const ResourceStrip = () => {
           </span>/turn
         </div>
       </div>
-      <div className={metricClass('card-glow')} id="metric-defense">
+      <div className={metricClass()} id="metric-defense">
         <div className="lbl">Defense</div>
         <div className="val text-[11px]" id="m-defense-rating" style={{ color: defenseColor }}>
           {defenseRating}
