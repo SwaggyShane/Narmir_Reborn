@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import clsx from 'clsx';
 import { useGameState } from '../../hooks/useGameState.js';
 
 // Tracks the previous numeric value for a key and returns a short-lived delta
@@ -59,15 +60,15 @@ function DeltaBadge({ flash, color }) {
   const value = flash?.delta;
   if (value == null) return null;
   const label = formatDelta(value);
-  const tone = color || (value >= 0 ? 'var(--green)' : 'var(--red)');
+  const isPositive = value >= 0;
+  const colorClass = color || (isPositive ? 'text-green' : 'text-red');
   // key={flash.flashId} forces React to remount on every new flash so the
   // `forwards`-pinned CSS animation replays even when two consecutive deltas
   // are equal.
   return (
     <span
       key={flash.flashId}
-      className="pointer-events-none absolute -right-0.5 -top-1 rounded-lg bg-[var(--bg2)] px-1.5 py-px text-[10px] font-bold shadow-[0_0_4px_rgba(0,0,0,0.4)]"
-      style={{ color: tone, animation: 'rs-delta-fade 2.4s ease-out forwards' }}
+      className={clsx('pointer-events-none absolute -right-0.5 -top-1 rounded-lg bg-bg2 px-1.5 py-px text-[10px] font-bold shadow-[0_0_4px_rgba(0,0,0,0.4)] animate-delta-fade', colorClass)}
     >
       {label}
     </span>
