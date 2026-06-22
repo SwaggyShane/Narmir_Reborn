@@ -6745,6 +6745,38 @@
 
 
 
+      function syncAuthModalVisibility(event) {
+
+        var visible = event.detail?.visible ?? false;
+
+        var appEl = document.getElementById("app");
+
+        var navEl = document.getElementById("bottom-nav");
+
+        var overlayEl = document.getElementById("login-overlay");
+
+        if (appEl) appEl.style.display = visible ? "none" : "";
+
+        if (navEl) navEl.style.display = visible ? "none" : "";
+
+        if (overlayEl) overlayEl.style.display = visible ? "flex" : "none";
+
+        var passwordResetEl = document.getElementById("password-reset-modal");
+
+        if (passwordResetEl && !visible) passwordResetEl.style.display = "none";
+
+        var registrationEl = document.getElementById("registration-modal");
+
+        if (registrationEl && !visible) registrationEl.style.display = "none";
+
+      }
+
+
+
+      window.addEventListener("narmir:auth-modal-visibility", syncAuthModalVisibility);
+
+
+
       function appendNewsItems(events) {
 
         if (!events || !events.length) return;
