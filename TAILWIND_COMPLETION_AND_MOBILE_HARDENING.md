@@ -3,7 +3,24 @@
 ## Summary
 Finish the mixed-state UI by removing the last legacy CSS and inline-style surfaces, then harden the Tailwind theme, then apply the aggressive mobile plan on top of that stable base. The work stays split into small, reviewable PRs, with no gameplay logic changes.
 
-Phase 0 is complete and landed on remote. The remaining work begins with shell/chrome hardening and continues through panel modernization, legacy CSS cleanup, and mobile polish.
+Phase 0 is implemented and the remaining work is now in the open PR queue. The remaining work continues with shell/chrome hardening, panel modernization, legacy CSS cleanup, and mobile polish.
+
+## Current Progress Snapshot
+
+| Phase | Status | Open PRs | What still needs finishing |
+| --- | --- | --- | --- |
+| Phase 0: Tailwind Foundation | Implemented, final review slice still open | #525 | Final Tailwind base-layer polish, including the review note about font smoothing / redundant body color handling. |
+| Phase 1: Global Shell & Chrome | In progress | #526, #527, #528, #530 | Shell chrome token cleanup, shell layout/frame cleanup, and final nav/header polish. |
+| Phase 2: High-Visibility Panels | In progress | #529 | Panel visual refinements and token alignment. |
+| Phase 3: Vanilla -> React Conversion | In progress | #531 | Fix the remaining NewsPanel API-call bug and finish the next React conversion slice. |
+| Phase 4: Legacy CSS Cleanup | Not started | None yet | Remove or sharply reduce the old CSS files after the panel migration settles. |
+| Phase 5: Aggressive Mobile Hardening | Not started | None yet | Apply the mobile plan once the base Tailwind layer and shell/panel migration are stable. |
+
+### Open Review Notes
+- #525: Tailwind base layer review note about font smoothing / redundant body background-text styling.
+- #527: unused color prop / Tailwind token consistency in shell components.
+- #529: hover translation, recovery contrast, and `border-strong` alignment in the high-visibility panels.
+- #531: `apiCall` signature bug in `NewsPanel.jsx`.
 
 ## Parallel Ownership
 ### Codex lane
@@ -37,6 +54,7 @@ Own the gameplay panel and legacy cleanup work:
 **Owner: Codex**
 - Convert topbar, sidebar, main container, resource bars, turn display, and similar shell elements.
 - Standardize layout containers, spacing, and responsive shell behavior.
+- Current Codex shell slices are represented by PRs #526, #527, #528, and #530.
 
 ### Phase 2: High-Visibility Panels
 **Owner: Claude**
@@ -46,6 +64,7 @@ Own the gameplay panel and legacy cleanup work:
   - Happiness
   - Kingdom overview
 - Focus on visual polish first.
+- Current panel slice is represented by PR #529.
 
 ### Phase 3: Vanilla -> React Conversion
 **Owner: Claude**
@@ -54,6 +73,7 @@ Own the gameplay panel and legacy cleanup work:
 - Use feature flags only for risky behavior changes, not ordinary presentation refactors.
 - Treat the remaining component list as a moving backlog, not a fixed promise.
 - Smoke test after each component to catch regressions early.
+- Current conversion slice is represented by PR #531.
 
 ### Phase 4: Legacy CSS Cleanup
 **Owner: Claude**
