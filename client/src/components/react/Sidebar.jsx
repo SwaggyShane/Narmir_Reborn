@@ -114,11 +114,10 @@ const Sidebar = () => {
       {isAdmin && (
         <a
           id="admin-nav-link"
-          className="nav-item"
+          className="nav-item no-underline"
           href="/admin"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ textDecoration: 'none' }}
         >
           <span className="icon text-[#ff9800]">👑</span>Admin
         </a>

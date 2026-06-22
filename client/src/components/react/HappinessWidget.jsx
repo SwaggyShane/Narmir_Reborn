@@ -47,6 +47,11 @@ const HappinessWidget = ({ onOpenTab }) => {
   };
 
   const barWidth = (happiness / 120) * 100;
+  const barColor =
+    happiness >= 80 ? 'bg-[var(--green)]' :
+    happiness >= 50 ? 'bg-[var(--gold)]' :
+    happiness >= 30 ? 'bg-[var(--amber)]' :
+    'bg-[var(--red)]';
 
   return (
     <div className="happiness-widget card mb-4">
@@ -59,8 +64,8 @@ const HappinessWidget = ({ onOpenTab }) => {
 
       <div className="mb-2 h-4 overflow-hidden rounded-full border border-[var(--border)] bg-[var(--bg3)]">
         <div
-          className="h-full rounded-[7px] transition-[width] duration-300"
-          style={{ width: `${barWidth}%`, background: getHappinessColor(happiness) }}
+          className={`h-full rounded-[7px] transition-[width] duration-300 ${barColor}`}
+          style={{ width: `${barWidth}%` }}
         />
       </div>
 
