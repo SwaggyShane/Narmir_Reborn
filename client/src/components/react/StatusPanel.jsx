@@ -214,7 +214,7 @@ const StatusPanel = () => {
               🏰 Citadel
             </span>
           </div>
-          <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 py-1 px-0 border-b border-white/5">
+          <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 py-1 px-0 border-b border-strong">
             <span className="text-[10px] text-text3 uppercase tracking-[0.5px]">Unit</span>
             <span className="text-[10px] text-text3 uppercase tracking-[0.5px] text-right">Count</span>
             <span className="text-[10px] text-text3 uppercase tracking-[0.5px] text-center">Lv</span>
@@ -263,7 +263,7 @@ const StatusPanel = () => {
             <span className="badge badge-amber text-center text-[9px]">Covert</span>
           </div>
 
-          <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5">
+          <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-strong">
             <span className="text-[13px] text-text" id="s-label-ninjas">Ninjas</span>
             <span className="text-[13px] font-semibold text-right text-text" id="s-ninjas">{(state?.ninjas ?? 0).toLocaleString()}</span>
             <span className="text-center text-[11px] font-semibold" id="s-lv-ninjas">Lv {troopLevels?.ninjas?.level || 1}</span>

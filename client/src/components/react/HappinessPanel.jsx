@@ -143,7 +143,7 @@ const HappinessPanel = () => {
             {Object.entries(components).map(([key, value]) => (
               <button
                 key={key}
-                className={clsx('flex justify-between items-center p-3 rounded border transition-all cursor-pointer', filter === key ? 'border-gold bg-gold/10' : 'border-white/10 bg-bg2 hover:bg-bg3', !filter || filter === key ? 'opacity-100' : 'opacity-50')}
+                className={clsx('flex justify-between items-center p-3 rounded border transition-all cursor-pointer', filter === key ? 'border-gold bg-gold/10' : 'border-white/10 bg-bg2 hover:bg-bg3 hover:translate-x-0.5', !filter || filter === key ? 'opacity-100' : 'opacity-50')}
                 onClick={() => setFilter(filter === key ? null : key)}
                 aria-pressed={filter === key}
               >
@@ -155,7 +155,7 @@ const HappinessPanel = () => {
                 </span>
               </button>
             ))}
-            <div className="flex justify-between items-center p-2 bg-bg2 rounded border border-white/10 mt-1 font-bold">
+            <div className="flex justify-between items-center p-2 bg-bg3 rounded border border-white/10 mt-1 font-bold">
               <span className="text-xs text-text">Recovery/turn</span>
               <span className={clsx('text-sm font-mono', recoveryRate >= 0 ? 'text-gold' : 'text-red')}>
                 {recoveryRate >= 0 ? '+' : ''}{recoveryRate.toFixed(2)}
