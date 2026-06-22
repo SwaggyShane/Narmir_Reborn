@@ -1,4 +1,5 @@
 import React from 'react';
+import clsx from 'clsx';
 import { toast } from '../../utils/toast.js';
 import { switchTab } from '../../utils/panelNav.js';
 
@@ -19,7 +20,7 @@ const ChangelogPanel = () => {
   };
 
   return (
-    <div id="changelog" className="panel min-h-0 w-full overflow-y-auto px-4 pb-5" style={{ display: 'none' }}>
+    <div id="changelog" className={clsx('panel min-h-0 w-full overflow-y-auto px-4 pb-5', 'hidden')}>
       <div className="mx-auto mt-0 w-full max-w-6xl rounded-[20px] border border-[var(--border)] bg-[var(--bg2)] p-6">
         <div className="mb-6 flex items-center justify-between gap-3">
           <div className="card-title !mb-0">📋 Changelog & Updates</div>
@@ -240,8 +241,7 @@ const ChangelogPanel = () => {
               className="mb-3 min-h-[110px] w-full rounded-xl border border-[var(--border)] bg-[var(--bg2)] p-3 text-[13px] text-[var(--text)] outline-none transition focus:border-[var(--accent1)]"
             />
             <button
-              className="base-btn variant-green w-full px-4 py-3"
-              style={{ background: 'var(--green)' }}
+              className="base-btn variant-green w-full px-4 py-3 bg-[var(--green)]"
               onClick={submitSuggestion}
             >
               Submit Idea
@@ -249,8 +249,7 @@ const ChangelogPanel = () => {
           </section>
 
           <button
-            className="base-btn variant-accent w-full px-4 py-3"
-            style={{ background: 'var(--accent1)', marginTop: 0 }}
+            className="base-btn variant-accent w-full px-4 py-3 bg-[var(--accent1)] mt-0"
             onClick={returnToKingdom}
           >
             Return to Kingdom
