@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
 
 const REFRESH_INTERVAL_MS = 2 * 60 * 1000;
@@ -68,9 +69,9 @@ const GoalsPanel = () => {
 
   return (
     <div id="goals" className="panel">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-        <h2 style={{ margin: 0 }}>📝 Goals</h2>
-        <button className="base-btn" onClick={fetchGoals} style={{ fontSize: '11px', padding: '4px 10px' }}>↻ Refresh</button>
+      <div className="mb-2 flex items-center justify-between">
+        <h2 className="m-0">📝 Goals</h2>
+        <button className="base-btn text-[11px] px-2.5 py-1" onClick={fetchGoals}>↻ Refresh</button>
       </div>
       <p>Complete daily and weekly goals to earn powerful rewards!</p>
 
