@@ -3,6 +3,22 @@ import { apiCall } from '../../utils/api';
 
 const REFRESH_INTERVAL_MS = 2 * 60 * 1000;
 
+const goalGroupClass = 'rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg2)] p-4';
+const goalListClass = 'flex flex-col gap-3';
+const goalCardClass =
+  'flex items-center justify-between rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg3)] p-3 transition-opacity';
+const goalInfoClass = 'flex-1 pr-4';
+const goalTitleClass = 'mb-2 font-bold text-[var(--text)]';
+const goalProgressClass = 'flex items-center';
+const progressBarBgClass = 'mr-3 h-2 flex-1 overflow-hidden rounded bg-[var(--bg)]';
+const progressBarFillClass = 'h-full bg-[var(--gold)] transition-[width] duration-300';
+const progressTextClass = 'whitespace-nowrap text-xs text-[var(--text2)]';
+const goalActionClass = 'min-w-[120px] text-right';
+const goalPrizeClass = 'mb-2 text-[13px] font-bold text-[var(--gold)]';
+const goalButtonBaseClass = 'base-btn px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50';
+const goalButtonReadyClass = 'bg-[var(--green)] text-white';
+const claimedTextClass = 'font-bold text-[var(--green)]';
+
 const GoalsPanel = () => {
   const [loading, setLoading] = useState(true);
   const [goalsData, setGoalsData] = useState({});
@@ -17,7 +33,7 @@ const GoalsPanel = () => {
       } else if (res) {
         setGoalsData(res);
       }
-    } catch(e) {
+    } catch (e) {
       if (typeof window !== 'undefined' && typeof toast === 'function') toast('Failed to fetch goals', 'error');
     }
     setLoading(false);
@@ -37,23 +53,22 @@ const GoalsPanel = () => {
     try {
       const res = await apiCall('/api/kingdom/goals/claim', { method: 'POST', body: { groupId, goalId } });
       if (res && res.ok) {
-        if (typeof window !== 'undefined' && typeof toast === 'function') toast(res.message, "success");
-        // Find and mark claimed locally
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast(res.message, 'success');
         const newGoalsData = { ...goalsData };
-        const goal = newGoalsData[groupId].goals.find(g => g.id === goalId);
+        const goal = newGoalsData[groupId].goals.find((g) => g.id === goalId);
         if (goal) goal.claimed = true;
         setGoalsData(newGoalsData);
       } else if (res && res.error) {
-        if (typeof window !== 'undefined' && typeof toast === 'function') toast(res.error, "error");
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast(res.error, 'error');
       }
-    } catch(e) {
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast(e.message || "Failed to claim goal", "error");
+    } catch (e) {
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast(e.message || 'Failed to claim goal', 'error');
     }
   };
 
   const formatPrize = (type) => {
     if (!type) return '';
-    return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    return type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
   const timeUntil = (ms) => {
@@ -66,6 +81,38 @@ const GoalsPanel = () => {
     return `${hrs}h ${mins}m`;
   };
 
+  const renderGoal = (groupId, goal) => (
+    <div key={goal.id} className={`${goalCardClass} ${goal.claimed ? 'opacity-60' : ''}`}>
+      <div className={goalInfoClass}>
+        <div className={goalTitleClass}>{goal.label}</div>
+        <div className={goalProgressClass}>
+          <div className={progressBarBgClass}>
+            <div className={progressBarFillClass} style={{ width: `${Math.min(100, (goal.progress / goal.target) * 100)}%` }} />
+          </div>
+          <span className={progressTextClass}>
+            {goal.progress} / {goal.target}
+          </span>
+        </div>
+      </div>
+      <div className={goalActionClass}>
+        <div className={goalPrizeClass}>
+          {goal.prizeAmount} {formatPrize(goal.prizeType)}
+        </div>
+        {!goal.claimed ? (
+          <button
+            onClick={() => claimGoal(groupId, goal.id)}
+            disabled={goal.progress < goal.target}
+            className={`${goalButtonBaseClass} ${goal.progress >= goal.target ? goalButtonReadyClass : ''}`}
+          >
+            {goal.progress >= goal.target ? 'Claim' : 'Incomplete'}
+          </button>
+        ) : (
+          <span className={claimedTextClass}>Claimed ✔</span>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div id="goals" className="panel">
       <div className="mb-2 flex items-center justify-between">
@@ -75,84 +122,22 @@ const GoalsPanel = () => {
       <p>Complete daily and weekly goals to earn powerful rewards!</p>
 
       {loading ? (
-        <div className="text-center p-4">Loading goals...</div>
+        <div className="p-4 text-center">Loading goals...</div>
       ) : (
         <div>
           {goalsData.daily && (
-            <div className="goal-group">
+            <div className={goalGroupClass}>
               <h3>Daily Goals</h3>
-              <p className="subtext">Resets in {timeUntil(goalsData.daily.expiresAt)}</p>
-              <div className="goal-list">
-                {goalsData.daily.goals.map((goal) => (
-                  <div key={goal.id} className={`goal-card ${goal.claimed ? 'claimed' : ''}`}>
-                    <div className="goal-info">
-                      <div className="goal-title">{goal.label}</div>
-                      <div className="goal-progress">
-                        <div className="progress-bar-bg">
-                          <div
-                            className="progress-bar-fill"
-                            style={{ width: `${Math.min(100, (goal.progress / goal.target) * 100)}%` }}
-                          ></div>
-                        </div>
-                        <span className="progress-text">{goal.progress} / {goal.target}</span>
-                      </div>
-                    </div>
-                    <div className="goal-action">
-                      <div className="goal-prize">{goal.prizeAmount} {formatPrize(goal.prizeType)}</div>
-                      {!goal.claimed ? (
-                        <button
-                          onClick={() => claimGoal('daily', goal.id)}
-                          disabled={goal.progress < goal.target}
-                          className={`base-btn ${goal.progress >= goal.target ? 'ready' : ''}`}
-                        >
-                          {goal.progress >= goal.target ? 'Claim' : 'Incomplete'}
-                        </button>
-                      ) : (
-                        <span className="claimed-text">Claimed ✔</span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <p className="-mt-2 mb-3 text-xs text-[var(--text3)]">Resets in {timeUntil(goalsData.daily.expiresAt)}</p>
+              <div className={goalListClass}>{goalsData.daily.goals.map((goal) => renderGoal('daily', goal))}</div>
             </div>
           )}
 
           {goalsData.weekly && (
-            <div className="goal-group mt-4">
+            <div className={`${goalGroupClass} mt-4`}>
               <h3>Weekly Goals</h3>
-              <p className="subtext">Resets in {timeUntil(goalsData.weekly.expiresAt)}</p>
-              <div className="goal-list">
-                {goalsData.weekly.goals.map((goal) => (
-                  <div key={goal.id} className={`goal-card ${goal.claimed ? 'claimed' : ''}`}>
-                    <div className="goal-info">
-                      <div className="goal-title">{goal.label}</div>
-                      <div className="goal-progress">
-                        <div className="progress-bar-bg">
-                          <div
-                            className="progress-bar-fill"
-                            style={{ width: `${Math.min(100, (goal.progress / goal.target) * 100)}%` }}
-                          ></div>
-                        </div>
-                        <span className="progress-text">{goal.progress} / {goal.target}</span>
-                      </div>
-                    </div>
-                    <div className="goal-action">
-                      <div className="goal-prize">{goal.prizeAmount} {formatPrize(goal.prizeType)}</div>
-                      {!goal.claimed ? (
-                        <button
-                          onClick={() => claimGoal('weekly', goal.id)}
-                          disabled={goal.progress < goal.target}
-                          className={`base-btn ${goal.progress >= goal.target ? 'ready' : ''}`}
-                        >
-                          {goal.progress >= goal.target ? 'Claim' : 'Incomplete'}
-                        </button>
-                      ) : (
-                        <span className="claimed-text">Claimed ✔</span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <p className="-mt-2 mb-3 text-xs text-[var(--text3)]">Resets in {timeUntil(goalsData.weekly.expiresAt)}</p>
+              <div className={goalListClass}>{goalsData.weekly.goals.map((goal) => renderGoal('weekly', goal))}</div>
             </div>
           )}
         </div>
