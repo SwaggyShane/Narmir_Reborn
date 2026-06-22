@@ -581,9 +581,13 @@ Delete `forum.css` when done.
 
 Convert to Tailwind classes inline in the modal JSX. Both are small and self-contained.
 
-### `Portal.css` / `Splash.css`
+### `Portal.css`
 
-Migrate last. These are shown pre-login so risk of regression is isolated from the main game UI.
+Migrate last (low risk; pre-login but actively used by players).
+
+### `Splash.css` — DO NOT TOUCH
+
+**Splash is out of scope.** Leave `Splash.jsx` and `Splash.css` completely untouched. This is a stable, isolated pre-login landing page and is not part of this migration.
 
 ---
 

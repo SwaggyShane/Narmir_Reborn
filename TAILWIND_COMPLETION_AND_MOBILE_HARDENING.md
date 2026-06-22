@@ -5,6 +5,8 @@ Finish the mixed-state UI by removing the remaining legacy CSS and inline-style 
 
 Tailwind completion ends when the remaining UI is consistently Tailwind-driven and only thin shared primitives or unavoidable runtime styles remain.
 
+**Exception: Splash.jsx and Splash.css are DO NOT TOUCH.** Pre-login UI is stable and out of scope for this migration.
+
 ## Critical Blocking Dependency: Vanilla JS → React Conversion
 
 **This work CANNOT proceed in parallel with Tailwind completion.** 17 components currently use imperative DOM manipulation (`el()` + `style.cssText`) instead of React:
