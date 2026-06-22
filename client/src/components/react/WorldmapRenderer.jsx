@@ -1,4 +1,5 @@
 import { setWorldMapData } from '../../utils/worldMapData.js';
+import { gameStateManager } from '../../GameStateManager.js';
 
 const REGION_META = {
   dwarf: { name: 'The Iron Holds', color: '#8B6914', stroke: '#c8962a' },
@@ -32,6 +33,7 @@ function escapeHtml(value) {
 export function renderWorldMap(kingdoms, routes = []) {
   setWorldMapData(kingdoms || []);
   const worldMapData = kingdoms || [];
+  const state = gameStateManager.getState();
 
         var W = 900,
 

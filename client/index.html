@@ -6154,8 +6154,9 @@
       }
 
       function repairMojibake(value) {
-        var text = value == null ? "" : String(value);
-        if (!text || !/[]/.test(text)) return text;
+        if (value === null || value === undefined) return "";
+        var text = String(value);
+        if (!text) return text;
         var current = text;
         for (var i = 0; i < 20; i++) {
           var next = current;
@@ -6173,33 +6174,6 @@
           if (!next || next === current) break;
           current = next;
         }
-        current = current
-          .replace(//g, "")
-          .replace(//g, "")
-          .replace(//g, "")
-          .replace(//g, "-")
-          .replace(//g, "")
-          .replace(/|/g, "'")
-          .replace(/|"/g, '"')
-          .replace(//g, "")
-          .replace(//g, "")
-          .replace(//g, "")
-          .replace(//g, "")
-          .replace(//g, "")
-          .replace(//g, "")
-          .replace(//g, "")
-          .replace(//g, "")
-          .replace(//g, "")
-          .replace(//g, "")
-          .replace(//g, "")
-          .replace(//g, "")
-          .replace(//g, "")
-          .replace(//g, "")
-          .replace(//g, "")
-          .replace(//g, "")
-          .replace(//g, "")
-          .replace(//g, "")
-          .replace(//g, "");
         return current;
       }
 
@@ -17985,6 +17959,8 @@
   </body>
 
 </html>
+
+
 
 
 

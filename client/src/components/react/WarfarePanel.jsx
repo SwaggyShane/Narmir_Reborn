@@ -160,7 +160,7 @@ const WarfarePanel = () => {
 
   // target data
   const [targets, setTargets] = useState([]);
-  const [selectedTarget, setSelectedTarget] = useState(null);
+  const [attackTarget, setAttackTarget] = useState(null);
   const [atkSearchQ, setAtkSearchQ] = useState('');
   const [wspSearchQ, setWspSearchQ] = useState('');
   const [wcovSearchQ, setWcovSearchQ] = useState('');
@@ -179,8 +179,8 @@ const WarfarePanel = () => {
 
   // Keep window.selectedTargetW in sync for vanilla interop (wspells, wcovert still use it)
   useEffect(() => {
-    window.selectedTargetW = selectedTarget;
-  }, [selectedTarget]);
+    window.selectedTargetW = attackTarget;
+  }, [attackTarget]);
 
   // Derived: disc kingdoms parsed from state
   const disc = useMemo(() => parseDisc(state?.discovered_kingdoms), [state?.discovered_kingdoms]);
@@ -341,7 +341,7 @@ const WarfarePanel = () => {
     const eng = parseInt(document.getElementById('atk-engineers-w')?.value, 10) || 0;
     if (f + rn + m + wm + ld + cle + eng === 0) return;
 
-    const target = selectedTarget;
+    const target = attackTarget;
     const engLvlArray = state?.troop_levels?.engineers?.level || 1;
     const baseCrew = state?.race === 'human' ? 10 : state?.race === 'dwarf' ? 8 : 12;
     const crewReq = Math.max(1, Math.round(baseCrew * (1 - Math.min(0.5, (engLvlArray - 1) / 100))));
@@ -398,7 +398,7 @@ const WarfarePanel = () => {
       g('atk-bully-warn-w').style.display = bullyMsg ? 'block' : 'none';
       g('atk-bully-warn-w').textContent = bullyMsg;
     }
-  }, [state, selectedTarget]);
+  }, [state, attackTarget]);
 
   useEffect(() => {
     updateAtkEstimateW();
@@ -435,7 +435,7 @@ const WarfarePanel = () => {
   };
 
   const launchAttackW = useCallback(async () => {
-    if (!selectedTarget) {
+    if (!attackTarget) {
       toast('Select a target kingdom first', 'error');
       return;
     }
@@ -469,7 +469,7 @@ const WarfarePanel = () => {
     const result = await apiCall('/api/kingdom/attack', {
       method: 'POST',
       body: {
-        targetId: selectedTarget.id,
+        targetId: attackTarget.id,
         fighters: f,
         rangers: rn,
         mages: m,
@@ -525,12 +525,12 @@ const WarfarePanel = () => {
     applyGameMutation(result, { reason: 'attack' });
     window.showBattleReport?.({
       type: 'Military attack',
-      target: selectedTarget.name,
+      target: attackTarget.name,
       win: r.win,
       rows,
     });
     refreshAttackTargets();
-  }, [refreshAttackTargets, state, selectedTarget]);
+  }, [refreshAttackTargets, state, attackTarget]);
 
   const castWspell = () => {
     if (window.castWspell) window.castWspell();
