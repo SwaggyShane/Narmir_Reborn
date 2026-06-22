@@ -126,6 +126,26 @@ const NewsPanel = () => {
     loadNews();
   }, [loadNews]);
 
+  useEffect(() => {
+    const handleItems = (event) => {
+      const items = Array.isArray(event?.detail) ? event.detail : [];
+      if (!items.length) return;
+      setNewsItems((prev) => {
+        const merged = [...items, ...prev];
+        const seen = new Set();
+        return merged.filter((item) => {
+          const key = `${item?.turn_num || 0}:${item?.type || 'system'}:${item?.message || ''}:${item?.created_at || ''}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+      });
+      window.newsCache = Array.isArray(window.newsCache) ? [...items, ...window.newsCache] : items;
+    };
+    window.addEventListener('narmir:news-items', handleItems);
+    return () => window.removeEventListener('narmir:news-items', handleItems);
+  }, []);
+
   useGameMutationEvents((event) => {
     const reason = String(event?.reason || '');
     if ([

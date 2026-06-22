@@ -6,6 +6,11 @@ import WarfareIntelTab from './WarfareIntelTab';
 import WarfareReportsTab from './WarfareReportsTab';
 import { fmt } from "../../utils/fmt";
 import { applyGameMutation } from '../../utils/gameMutations.js';
+import { registerTargetFromRankings } from '../../utils/rankingsTarget.js';
+import { switchTab } from '../../utils/panelNav.js';
+import { registerWarfareTab } from '../../utils/warfareTabs.js';
+import { RACE_ICONS } from '../../utils/raceIcons.js';
+import { playGameSound } from '../../utils/audio.js';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -68,7 +73,7 @@ function filterByQuery(list, q) {
 // ─── sub-component: target card ───────────────────────────────────────────────
 
 function KingdomTargetCard({ target, isSelected, onSelect }) {
-  const raceIcon = (window.RACE_ICONS || {})[target.race] || '👤';
+  const raceIcon = RACE_ICONS[target.race] || '👤';
   return (
     <div
       className={`target-row${isSelected ? ' selected' : ''}`}
@@ -724,8 +729,8 @@ const WarfarePanel = () => {
           <div className="card-title" style={{ marginBottom: '8px' }}>Select Target</div>
           <TargetListSection
             targets={filteredAtkTargets}
-            selected={selectedTarget}
-            onSelect={setSelectedTarget}
+            selected={attackTarget}
+            onSelect={setAttackTarget}
             searchQ={atkSearchQ}
             onSearchChange={setAtkSearchQ}
             placeholder="Search kingdoms…"
@@ -813,8 +818,8 @@ const WarfarePanel = () => {
           <div className="card-title" style={{ marginBottom: '8px' }}>Select Target</div>
           <TargetListSection
             targets={filteredWspTargets}
-            selected={selectedTarget}
-            onSelect={setSelectedTarget}
+            selected={spellTarget}
+            onSelect={setSpellTarget}
             searchQ={wspSearchQ}
             onSearchChange={setWspSearchQ}
             placeholder="Search kingdoms…"
@@ -835,8 +840,8 @@ const WarfarePanel = () => {
           <div className="card-title" style={{ marginBottom: '8px' }}>Select Target</div>
           <TargetListSection
             targets={filteredWcovTargets}
-            selected={selectedTarget}
-            onSelect={setSelectedTarget}
+            selected={covertTarget}
+            onSelect={setCovertTarget}
             searchQ={wcovSearchQ}
             onSearchChange={setWcovSearchQ}
             placeholder="Search kingdoms…"

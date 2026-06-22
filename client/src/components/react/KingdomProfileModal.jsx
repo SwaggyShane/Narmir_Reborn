@@ -1,10 +1,14 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { apiCall } from '../../utils/api.js';
 import { fmt } from '../../utils/fmt.js';
 import { fmtShort } from '../../utils/numberFormat.js';
 import { repairMojibake } from '../../utils/repairMojibake.js';
 import { useGameState } from '../../hooks/useGameState';
-import { switchTab } from '../../utils/switchTab.js';
+import { switchTab } from '../../utils/panelNav.js';
+import { openDirectMessage } from '../../utils/directMessage.js';
+import { targetFromRankings } from '../../utils/rankingsTarget.js';
+import { toast } from '../../utils/toast.js';
+import { RACE_ICONS } from '../../utils/raceIcons.js';
 
 let profileApi = null;
 
@@ -15,8 +19,7 @@ function setShellVisible(id, visible, display = 'flex') {
 }
 
 function normalizeRaceIcon(race) {
-  const icons = typeof window !== 'undefined' ? window.RACE_ICONS || {} : {};
-  return icons[race] || 'Kingdom';
+  return RACE_ICONS[race] || 'Kingdom';
 }
 
 function getPortrait(race, gender) {
@@ -116,6 +119,14 @@ export default function KingdomProfileModal() {
   const raceIcon = normalizeRaceIcon(data.race);
   const racePortrait = getPortrait(data.race, data.gender || 'male');
   const topNews = Array.isArray(data.news) ? data.news.slice(0, 5) : [];
+  const establishTradeRoute = async () => {
+    const result = await apiCall('/api/kingdom/trade-routes/establish', {
+      method: 'POST',
+      body: { targetId: data.id },
+    });
+    if (result.error) return toast(result.error, 'error');
+    toast(result.message || 'Trade route established', 'success');
+  };
 
   const resFields = [
     { key: 'res_military', label: 'Military' },
@@ -259,7 +270,7 @@ export default function KingdomProfileModal() {
                 type="button"
                 className="btn btn-accent"
                 style={{ width: '100%', padding: '12px', fontWeight: 700 }}
-                onClick={() => { window.openDirectMessage?.(data.player_id, data.name); closeKingdomProfile(); }}
+                onClick={() => { openDirectMessage(data.player_id, data.name); closeKingdomProfile(); }}
               >
                 Send Message to Ruler
               </button>
@@ -268,16 +279,16 @@ export default function KingdomProfileModal() {
                   <button type="button" className="btn btn-gold" style={{ padding: '10px' }} onClick={() => { switchTab('bounties'); closeKingdomProfile(); }}>
                     Place Bounty
                   </button>
-                  <button type="button" className="btn btn-gold" style={{ padding: '10px' }} onClick={() => { window.establishTradeRoute?.(data.id); closeKingdomProfile(); }}>
+                  <button type="button" className="btn btn-gold" style={{ padding: '10px' }} onClick={async () => { await establishTradeRoute(); closeKingdomProfile(); }}>
                     Trade Route
                   </button>
-                  <button type="button" className="btn btn-red" style={{ padding: '10px' }} onClick={() => { window.targetFromRankings?.(data.id, 'attack'); closeKingdomProfile(); }}>
+                  <button type="button" className="btn btn-red" style={{ padding: '10px' }} onClick={() => { targetFromRankings(data.id, 'attack'); closeKingdomProfile(); }}>
                     Attack
                   </button>
-                  <button type="button" className="btn btn-accent" style={{ padding: '10px' }} onClick={() => { window.targetFromRankings?.(data.id, 'spells'); closeKingdomProfile(); }}>
+                  <button type="button" className="btn btn-accent" style={{ padding: '10px' }} onClick={() => { targetFromRankings(data.id, 'spells'); closeKingdomProfile(); }}>
                     Cast Spell
                   </button>
-                  <button type="button" className="btn" style={{ gridColumn: 'span 2', padding: '10px' }} onClick={() => { window.targetFromRankings?.(data.id, 'covert'); closeKingdomProfile(); }}>
+                  <button type="button" className="btn" style={{ gridColumn: 'span 2', padding: '10px' }} onClick={() => { targetFromRankings(data.id, 'covert'); closeKingdomProfile(); }}>
                     Covert Operation
                   </button>
                 </div>
@@ -293,5 +304,3 @@ export default function KingdomProfileModal() {
     </div>
   );
 }
-
-

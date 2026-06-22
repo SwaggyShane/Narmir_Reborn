@@ -1,3 +1,5 @@
+import { setWorldMapData } from '../../utils/worldMapData.js';
+
 const REGION_META = {
   dwarf: { name: 'The Iron Holds', color: '#8B6914', stroke: '#c8962a' },
   high_elf: { name: 'The Silverwood', color: '#1a4a2e', stroke: '#4caf82' },
@@ -28,7 +30,7 @@ function escapeHtml(value) {
 }
 
 export function renderWorldMap(kingdoms, routes = []) {
-  window.worldMapData = kingdoms || [];
+  setWorldMapData(kingdoms || []);
   const worldMapData = kingdoms || [];
 
         var W = 900,
@@ -800,7 +802,6 @@ export function renderWorldMap(kingdoms, routes = []) {
         document.getElementById("world-map-container").innerHTML = svg;
 
       }
-
 
 
 

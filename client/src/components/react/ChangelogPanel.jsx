@@ -1,5 +1,6 @@
 import React from 'react';
-import { switchTab } from '../../utils/switchTab.js';
+import { toast } from '../../utils/toast.js';
+import { switchTab } from '../../utils/panelNav.js';
 
 const sectionCard = 'rounded-2xl border border-[var(--border)] bg-[var(--bg3)] p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.02)_inset]';
 const titleLine = 'mb-4 border-b border-[var(--border2)] pb-2 text-[16px] font-bold text-[var(--gold)]';
@@ -10,9 +11,7 @@ const smallLabel = 'text-[11px] uppercase tracking-[0.18em] text-[var(--text3)]'
 
 const ChangelogPanel = () => {
   const submitSuggestion = () => {
-    if (window.submitSuggestion) {
-      window.submitSuggestion();
-    }
+    toast('Suggestion submission is not wired up yet.', 'warn');
   };
 
   const returnToKingdom = () => {

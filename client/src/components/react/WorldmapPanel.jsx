@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { apiCall } from '../../utils/api';
+import { setWorldMapData } from '../../utils/worldMapData.js';
 import { renderWorldMap } from './WorldmapRenderer.jsx';
 import { renderRegionLegend } from './WorldmapLegend.jsx';
 
@@ -11,7 +12,7 @@ export async function loadWorldMap({ setLoading, setError } = {}) {
     if (data?.error) throw new Error(data.error);
 
     const kingdoms = data.kingdoms || (Array.isArray(data) ? data : []);
-    window.worldMapData = kingdoms;
+    setWorldMapData(kingdoms);
     renderWorldMap(kingdoms, data.tradeRoutes || []);
     renderRegionLegend();
   } catch (err) {

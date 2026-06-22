@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiCall } from '../../utils/api';
-import { fmt } from '../../utils/fmt';
+import { useGameState } from '../../hooks/useGameState';
+import { fmt } from "../../utils/fmt";
+import { toast } from '../../utils/toast.js';
+import { registerSetBountyTarget } from '../../utils/bountyTarget.js';
+import { registerOpenDirectMessage } from '../../utils/directMessage.js';
+import { sendDirectMessage } from '../../socket-client.js';
+import { switchTab } from '../../utils/panelNav.js';
 
 const REFRESH_INTERVAL_MS = 60 * 1000;
 const panelShell = 'panel panel-immersive min-h-0 w-full overflow-y-auto px-4 pb-5';
@@ -16,6 +22,10 @@ const BountiesPanel = () => {
   const [selectedTarget, setSelectedTarget] = useState('');
   const [amount, setAmount] = useState('');
   const [placing, setPlacing] = useState(false);
+  const [dmTarget, setDmTarget] = useState(null);
+  const [dmMessage, setDmMessage] = useState('');
+
+  const { state } = useGameState();
 
   const fetchBounties = useCallback(async () => {
     try {
@@ -34,24 +44,30 @@ const BountiesPanel = () => {
   }, []);
 
   const loadTargets = useCallback(() => {
-    const rankings = window.rankingsCache || [];
-    const myId = window.state?.kingdomId;
-    setTargets(rankings.filter((r) => r.id !== myId).slice(0, 50));
-  }, []);
+    const rankings = Array.isArray(state?.rankingsCache) ? state.rankingsCache : (window.rankingsCache || []);
+    const myId = state?.kingdomId;
+    setTargets(rankings.filter(r => r.id !== myId).slice(0, 50));
+  }, [state?.kingdomId, state?.rankingsCache]);
 
   useEffect(() => {
     fetchBounties();
     loadTargets();
 
-    window.refreshBountiesPanel = fetchBounties;
-    // Exposed so legacy openBountyAction/selectBountyTarget can drive React state
-    window.setBountyTarget = (id) => setSelectedTarget(id ? String(id) : '');
+    const unregister = registerSetBountyTarget((id) => setSelectedTarget(id ? String(id) : ''));
+    const unregisterDm = registerOpenDirectMessage(({ playerId, name }) => {
+      setDmTarget({
+        playerId,
+        name: String(name || '').trim(),
+      });
+      setDmMessage('');
+      switchTab('messages');
+    });
 
     const interval = setInterval(fetchBounties, REFRESH_INTERVAL_MS);
     return () => {
       clearInterval(interval);
-      delete window.refreshBountiesPanel;
-      delete window.setBountyTarget;
+      unregister?.();
+      unregisterDm?.();
     };
   }, [fetchBounties, loadTargets]);
 
@@ -59,7 +75,7 @@ const BountiesPanel = () => {
     const parsedAmount = parseInt(amount, 10);
     if (!selectedTarget) return toast('Select a target kingdom first', 'error');
     if (!parsedAmount || parsedAmount < 1000) return toast('Minimum bounty is 1,000 GC', 'error');
-    if (parsedAmount > (window.state?.gold || 0)) return toast('Not enough gold', 'error');
+    if (parsedAmount > (state?.gold || 0)) return toast('Not enough gold', 'error');
 
     setPlacing(true);
     try {
@@ -72,8 +88,6 @@ const BountiesPanel = () => {
         return;
       }
       toast(res.message, 'success');
-      if (window.state) window.state.gold -= parsedAmount;
-      if (window.updateTopStats) window.updateTopStats();
       setAmount('');
       setSelectedTarget('');
       await fetchBounties();
@@ -229,19 +243,36 @@ const BountiesPanel = () => {
                   type="text"
                   className="input"
                   id="msg-input"
-                  placeholder="Type a message..."
+                  placeholder={dmTarget?.name ? `Message ${dmTarget.name}...` : 'Pick a kingdom from Rankings to message them...'}
                   style={{ flex: 1 }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && window.sendDirectMessage) window.sendDirectMessage();
+                  value={dmMessage}
+                  onChange={e => setDmMessage(e.target.value)}
+                  onKeyDown={async e => {
+                    if (e.key !== 'Enter') return;
+                    e.preventDefault();
+                    if (!dmTarget?.name) return toast('Pick a kingdom to message first', 'error');
+                    const ack = await sendDirectMessage(dmTarget.name, dmMessage);
+                    if (ack?.error) return toast(ack.error, 'error');
+                    setDmMessage('');
+                    toast(ack?.message || `Message sent to ${dmTarget.name}`, 'success');
                   }}
                 />
                 <button
                   className="base-btn variant-accent"
                   style={{ background: 'var(--accent1)' }}
-                  onClick={() => window.sendDirectMessage?.()}
+                  onClick={async () => {
+                    if (!dmTarget?.name) return toast('Pick a kingdom to message first', 'error');
+                    const ack = await sendDirectMessage(dmTarget.name, dmMessage);
+                    if (ack?.error) return toast(ack.error, 'error');
+                    setDmMessage('');
+                    toast(ack?.message || `Message sent to ${dmTarget.name}`, 'success');
+                  }}
                 >
                   Send
                 </button>
+              </div>
+              <div style={{ marginTop: '8px', fontSize: '11px', color: 'var(--text3)' }}>
+                {dmTarget?.name ? `Recipient: ${dmTarget.name}` : 'Open a kingdom profile or Rankings message action to set a recipient.'}
               </div>
             </div>
           </div>

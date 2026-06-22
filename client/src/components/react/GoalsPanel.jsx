@@ -27,11 +27,9 @@ const GoalsPanel = () => {
     fetchGoals();
     const clockTimer = setInterval(() => setNow(Date.now()), 1000);
     const refreshTimer = setInterval(fetchGoals, REFRESH_INTERVAL_MS);
-    window.refreshGoalsPanel = fetchGoals;
     return () => {
       clearInterval(clockTimer);
       clearInterval(refreshTimer);
-      delete window.refreshGoalsPanel;
     };
   }, [fetchGoals]);
 

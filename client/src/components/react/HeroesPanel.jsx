@@ -5,6 +5,7 @@ import { fmt } from "../../utils/fmt";
 import LoreModal from './LoreModal.jsx';
 import { repairMojibake } from '../../utils/repairMojibake.js';
 import { toast as showToast } from '../../utils/toast.js';
+import { registerShowHeroXpModal } from '../../utils/showHeroXpModal.js';
 
 const HERO_PORTRAITS = {
   // Dwarf
@@ -103,6 +104,8 @@ const HeroesPanel = () => {
   const handleRefresh = () => setRefreshTick((n) => n + 1);
 
   const openHeroXpModal = () => setShowXpModal(true);
+
+  useEffect(() => registerShowHeroXpModal(openHeroXpModal), [openHeroXpModal]);
 
   const recruitHeroAction = async () => {
     if (!selectedHeroClass) return showToast('Select a hero class first.', 'error');

@@ -1,8 +1,9 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { apiCall } from '../../utils/api.js';
 import { repairMojibake } from '../../utils/repairMojibake.js';
 import { fmt } from '../../utils/fmt.js';
 import LoreModal from './LoreModal.jsx';
+import { registerOpenRaceLore } from '../../utils/openRaceLore.js';
 
 const HERO_PORTRAITS = {
   siegebreaker: '/hero/siegebreaker.webp',
@@ -237,6 +238,8 @@ const RacesPanel = () => {
     const found = Object.entries(classes || {}).find(([, c]) => c?.name === heroName);
     if (found) setHeroLoreKey(found[0]);
   }, [cachedHeroClasses]);
+
+  useEffect(() => registerOpenRaceLore((race) => setSelectedRace(race || null)), []);
 
   const raceEntries = useMemo(
     () => Object.entries(raceLore).filter(([, r]) => r.lore),

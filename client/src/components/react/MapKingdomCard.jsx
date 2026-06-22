@@ -1,6 +1,8 @@
 import { gameStateManager } from '../../GameStateManager.js';
 import { fmtShort } from '../../utils/numberFormat.js';
 import { repairMojibake } from '../../utils/repairMojibake.js';
+import { getWorldMapData } from '../../utils/worldMapData.js';
+import { RACE_ICONS } from '../../utils/raceIcons.js';
 
 const REGION_META = {
   dwarf: { name: 'The Iron Holds', stroke: '#c8962a' },
@@ -12,7 +14,7 @@ const REGION_META = {
 };
 
 function getState() {
-  return window.state || gameStateManager.getState();
+  return gameStateManager.getState();
 }
 
 function escapeHtml(value) {
@@ -35,7 +37,7 @@ function escapeJsString(value) {
 }
 
 export function showMapKingdomCard(id) {
-  const worldMapData = Array.isArray(window.worldMapData) ? window.worldMapData : [];
+  const worldMapData = getWorldMapData();
   const k = worldMapData.find((entry) => entry.id === id);
   if (!k) return;
 
@@ -50,7 +52,7 @@ export function showMapKingdomCard(id) {
   const state = getState();
   const meta = REGION_META[k.race] || {};
   nameEl.innerHTML =
-    ((window.RACE_ICONS && window.RACE_ICONS[k.race]) || '🤴') +
+    (RACE_ICONS[k.race] || '🤴') +
     ' ' +
     escapeHtml(repairMojibake(k.name || '')) +
     (k.is_ai ? ' <span style="font-size:10px;color:var(--text3)">AI</span>' : '');
