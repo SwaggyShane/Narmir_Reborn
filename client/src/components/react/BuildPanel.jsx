@@ -124,6 +124,7 @@ const BuildPanel = () => {
   const [activatingAbility, setActivatingAbility] = useState(false);
   const [loading, setLoading] = useState(false);
   const [buildUiTick, setBuildUiTick] = useState(0);
+  const [engineerAllocations, setEngineerAllocations] = useState({});
   const isVampire = state?.race === 'vampire';
   const totalEngineers = Number(state?.engineers || 0);
   const engineerLevel = Number(state?.engineer_level || 1);
@@ -156,10 +157,11 @@ const BuildPanel = () => {
   }, [showAttunements]);
 
   useEffect(() => {
+    const newAllocations = {};
     Object.entries(BUILD_ALLOCATION_KEYS).forEach(([inputId, key]) => {
-      const el = document.getElementById(inputId);
-      if (el) el.value = buildAllocation[key] || 0;
+      newAllocations[inputId] = buildAllocation[key] || 0;
     });
+    setEngineerAllocations(newAllocations);
     refreshBuildUi();
   }, [buildAllocation, refreshBuildUi]);
 
@@ -325,10 +327,9 @@ const BuildPanel = () => {
     weapons: 'weapons',
     armor: 'armor',
   };
-  const getBuildFieldValue = (fieldId) => parseInt(document.getElementById(fieldId)?.value || '0', 10) || 0;
+  const getBuildFieldValue = (fieldId) => parseInt(engineerAllocations[fieldId] || '0', 10) || 0;
   const setBuildFieldValue = (fieldId, value) => {
-    const el = document.getElementById(fieldId);
-    if (el) el.value = Math.max(0, Number(value) || 0);
+    setEngineerAllocations((prev) => ({ ...prev, [fieldId]: Math.max(0, Number(value) || 0) }));
   };
   const getAllocatedEngineers = () =>
     BUILDINGS_DISPLAY_ORDER.reduce((sum, key) => sum + getBuildFieldValue(`bld-eng-${key}`), 0);

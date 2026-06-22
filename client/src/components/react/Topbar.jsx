@@ -1,4 +1,5 @@
 import React from 'react';
+import clsx from 'clsx';
 import { useGameState } from '../../hooks/useGameState';
 import { useGameActions } from '../../hooks/useGameActions';
 import { showLoginModal, logout } from './AuthModal.jsx';
@@ -27,35 +28,35 @@ const Topbar = () => {
   };
 
   return (
-    <header className="topbar flex h-14 items-center justify-between gap-2 border-b border-white/5 bg-zinc-950/95 px-3 backdrop-blur-md md:px-4">
+    <header className="topbar flex h-14 items-center justify-between gap-2 border-b border-ember-900/40 bg-void-950/95 px-3 shadow-panel backdrop-blur-xl md:px-4">
       <div className="logo-container min-w-0">
-        <div className="logo truncate font-serif text-[13px] font-black uppercase tracking-[0.12em] text-[var(--gold)] md:text-[14px]">NARMIR REBORN</div>
-        <div className="tagline truncate text-[11px] text-[var(--text2)] md:text-[12px]">Pure. Damn. Evil.</div>
+        <div className="logo truncate font-serif text-base font-black uppercase tracking-[0.12em] text-ember-400 md:text-md">NARMIR REBORN</div>
+        <div className="tagline truncate text-sm text-text2 md:text-sm">Pure. Damn. Evil.</div>
       </div>
-      <div className="topbar-stats flex min-w-0 items-center gap-2 md:gap-3">
+      <div className="topbar-stats flex min-w-0 items-center gap-2 rounded-2xl border border-ember-900/30 bg-void-900/70 px-2.5 py-2 shadow-panel md:gap-3 md:px-3">
         <div className="tstat hide-sm hidden shrink-0 md:block">
-          <div className="val" id="top-rank">—</div>
-          <div className="lbl">Rank</div>
+          <div className="val text-text" id="top-rank">—</div>
+          <div className="lbl text-text3">Rank</div>
         </div>
         <div className="flex items-center gap-2">
           <div className="text-right font-serif leading-none">
             <div className="flex items-center gap-1.5">
-              <span className="hide-xs text-[11px] uppercase tracking-[0.5px] text-[var(--text3)]">
+              <span className="hide-xs text-sm uppercase tracking-[0.5px] text-text3">
                 Turns:
               </span>
-              <span id="turns-stored-disp" className="text-[16px] font-bold text-[var(--gold)]">
+              <span id="turns-stored-disp" className="text-lg font-bold text-gold">
                 {turnsStored}
               </span>
-              <span className="hide-xs text-[11px] text-[var(--text3)]">
+              <span className="hide-xs text-sm text-text3">
                 / 400
               </span>
             </div>
-            <div className="countdown text-[10px] font-sans text-[var(--text3)]">
+            <div className="countdown text-xs font-sans text-text3">
               +7 in <span id="regen-countdown">25:00</span>
             </div>
           </div>
           <button
-            className={`turn-btn shrink-0 px-3.5 py-1.5 text-[12px] leading-none ${loading.takeTurn ? 'opacity-60' : 'opacity-100'}`}
+            className={clsx('turn-btn shrink-0 px-3.5 py-1.5 text-sm leading-none transition-opacity', loading.takeTurn ? 'opacity-60' : 'opacity-100')}
             onClick={takeTurn}
             disabled={loading.takeTurn}
           >
@@ -63,7 +64,7 @@ const Topbar = () => {
           </button>
           {!state?.username && (
             <button
-              className="btn ml-2 whitespace-nowrap px-2.5 py-1.5 text-[12px]"
+              className="btn ml-2 whitespace-nowrap px-2.5 py-1.5 text-sm"
               onClick={handleAccount}
             >
               Sign In

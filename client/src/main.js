@@ -1,6 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import "./tailwind.css";
+import "./tailwind-theme.css";
 import TopbarReact from "./components/react/Topbar.jsx";
 import GoalsPanelReact from "./components/react/GoalsPanel.jsx";
 import SidebarReact from "./components/react/Sidebar.jsx";

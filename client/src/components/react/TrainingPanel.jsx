@@ -10,11 +10,16 @@ const TROOP_TYPES = ['fighters', 'rangers', 'clerics', 'mages', 'thieves', 'ninj
 const TrainingPanel = () => {
   const { state } = useGameState();
   const [trainingUiTick, setTrainingUiTick] = useState(0);
+  const [trainingAllocations, setTrainingAllocations] = useState({});
   const isVampire = state?.race === 'vampire';
   const fmt = (value) => Number(value || 0).toLocaleString();
   const refreshTrainingUi = useCallback(() => {
     setTrainingUiTick((tick) => tick + 1);
   }, []);
+  const handleTrainingValueChange = (unit, value) => {
+    setTrainingValue(unit, value);
+    refreshTrainingUi();
+  };
   const getTroopLevel = (unit) => state?.troop_levels?.[unit] || { level: 1, xp: 0 };
   const getTroopXpView = (unit) => {
     const data = getTroopLevel(unit);
@@ -27,10 +32,12 @@ const TrainingPanel = () => {
       barWidth: `${pct}%`,
     };
   };
-  const getTrainingValue = (unit) => parseInt(document.getElementById(`ta-${unit}`)?.value || '0', 10) || 0;
+  const getTrainingValue = (unit) => trainingAllocations[unit] || 0;
   const setTrainingValue = (unit, value) => {
-    const el = document.getElementById(`ta-${unit}`);
-    if (el) el.value = Math.max(0, Number(value) || 0);
+    setTrainingAllocations((prev) => ({
+      ...prev,
+      [unit]: Math.max(0, Number(value) || 0),
+    }));
   };
   const getAllocatedTraining = () => TROOP_TYPES.reduce((sum, unit) => sum + getTrainingValue(unit), 0);
   const loadTrainingAllocation = () => {
@@ -226,7 +233,7 @@ const TrainingPanel = () => {
           <span id="tr-level-fighters" className="count min-w-[70px]">Lv {fighterXpView.level}</span>
           <span id="tr-xp-fighters" className="text-[11px] text-[var(--text3)] min-w-[80px]">{fighterXpView.xpText}</span>
           <div className="flex items-center mb-1">
-             <input type="number" className="input text-right flex-1" id="ta-fighters" min="0" defaultValue="0" onChange={refreshTrainingUi} placeholder="Qty" />
+             <input type="number" className="input text-right flex-1" min="0" value={getTrainingValue('fighters')} onChange={(e) => handleTrainingValueChange('fighters', e.target.value)} placeholder="Qty" />
              <button className="base-btn px-2 py-1 text-[10px] ml-1" onClick={() => setTrainingMax('fighters')}>Max</button>
           </div>
         </div>
@@ -239,7 +246,7 @@ const TrainingPanel = () => {
           <span id="tr-level-rangers" className="count min-w-[70px]">Lv {rangerXpView.level}</span>
           <span id="tr-xp-rangers" className="text-[11px] text-[var(--text3)] min-w-[80px]">{rangerXpView.xpText}</span>
           <div className="flex items-center mb-1">
-             <input type="number" className="input text-right flex-1" id="ta-rangers" min="0" defaultValue="0" onChange={refreshTrainingUi} placeholder="Qty" />
+             <input type="number" className="input text-right flex-1" min="0" value={getTrainingValue('rangers')} onChange={(e) => handleTrainingValueChange('rangers', e.target.value)} placeholder="Qty" />
              <button className="base-btn px-2 py-1 text-[10px] ml-1" onClick={() => setTrainingMax('rangers')}>Max</button>
           </div>
         </div>
@@ -252,7 +259,7 @@ const TrainingPanel = () => {
           <span id="tr-level-clerics" className="count min-w-[70px]">Lv {clericXpView.level}</span>
           <span id="tr-xp-clerics" className="text-[11px] text-[var(--text3)] min-w-[80px]">{clericXpView.xpText}</span>
           <div className="flex items-center mb-1">
-             <input type="number" className="input text-right flex-1" id="ta-clerics" min="0" defaultValue="0" onChange={refreshTrainingUi} placeholder="Qty" />
+             <input type="number" className="input text-right flex-1" min="0" value={getTrainingValue('clerics')} onChange={(e) => handleTrainingValueChange('clerics', e.target.value)} placeholder="Qty" />
              <button className="base-btn px-2 py-1 text-[10px] ml-1" onClick={() => setTrainingMax('clerics')}>Max</button>
           </div>
         </div>
@@ -265,7 +272,7 @@ const TrainingPanel = () => {
           <span id="tr-level-mages" className="count min-w-[70px]">Lv {mageXpView.level}</span>
           <span id="tr-xp-mages" className="text-[11px] text-[var(--text3)] min-w-[80px]">{mageXpView.xpText}</span>
           <div className="flex items-center mb-1">
-             <input type="number" className="input text-right flex-1" id="ta-mages" min="0" defaultValue="0" onChange={refreshTrainingUi} placeholder="Qty" />
+             <input type="number" className="input text-right flex-1" min="0" value={getTrainingValue('mages')} onChange={(e) => handleTrainingValueChange('mages', e.target.value)} placeholder="Qty" />
              <button className="base-btn px-2 py-1 text-[10px] ml-1" onClick={() => setTrainingMax('mages')}>Max</button>
           </div>
         </div>
@@ -278,7 +285,7 @@ const TrainingPanel = () => {
           <span id="tr-level-thieves" className="count min-w-[70px]">Lv {thiefXpView.level}</span>
           <span id="tr-xp-thieves" className="text-[11px] text-[var(--text3)] min-w-[80px]">{thiefXpView.xpText}</span>
           <div className="flex items-center mb-1">
-             <input type="number" className="input text-right flex-1" id="ta-thieves" min="0" defaultValue="0" onChange={refreshTrainingUi} placeholder="Qty" />
+             <input type="number" className="input text-right flex-1" min="0" value={getTrainingValue('thieves')} onChange={(e) => handleTrainingValueChange('thieves', e.target.value)} placeholder="Qty" />
              <button className="base-btn px-2 py-1 text-[10px] ml-1" onClick={() => setTrainingMax('thieves')}>Max</button>
           </div>
         </div>
@@ -291,7 +298,7 @@ const TrainingPanel = () => {
           <span id="tr-level-ninjas" className="count min-w-[70px]">Lv {ninjaXpView.level}</span>
           <span id="tr-xp-ninjas" className="text-[11px] text-[var(--text3)] min-w-[80px]">{ninjaXpView.xpText}</span>
           <div className="flex items-center mb-1">
-             <input type="number" className="input text-right flex-1" id="ta-ninjas" min="0" defaultValue="0" onChange={refreshTrainingUi} placeholder="Qty" />
+             <input type="number" className="input text-right flex-1" min="0" value={getTrainingValue('ninjas')} onChange={(e) => handleTrainingValueChange('ninjas', e.target.value)} placeholder="Qty" />
              <button className="base-btn px-2 py-1 text-[10px] ml-1" onClick={() => setTrainingMax('ninjas')}>Max</button>
           </div>
         </div>

@@ -5,17 +5,8 @@ import { gameStateManager } from '../../GameStateManager.js';
 
 let authApi = null;
 
-function setVisible(id, visible, display = 'flex') {
-  if (typeof document === 'undefined') return;
-  const el = document.getElementById(id);
-  if (el) el.style.display = visible ? display : 'none';
-}
-
 function syncShellChrome(visible) {
-  setVisible('app', !visible, '');
-  setVisible('bottom-nav', !visible, '');
-  setVisible('password-reset-modal', false);
-  if (!visible) setVisible('registration-modal', false);
+  window.dispatchEvent(new CustomEvent('narmir:auth-modal-visibility', { detail: { visible } }));
 }
 
 function clearAuthToken() {
@@ -154,10 +145,6 @@ export default function AuthModal() {
 
   useEffect(() => {
     syncShellChrome(visible);
-    if (typeof document !== 'undefined') {
-      const overlay = document.getElementById('login-overlay');
-      if (overlay) overlay.style.display = visible ? 'flex' : 'none';
-    }
     if (visible) {
       setTimeout(() => userRef.current?.focus?.(), 0);
     }

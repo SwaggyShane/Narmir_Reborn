@@ -12,10 +12,8 @@ import { RACE_ICONS } from '../../utils/raceIcons.js';
 
 let profileApi = null;
 
-function setShellVisible(id, visible, display = 'flex') {
-  if (typeof document === 'undefined') return;
-  const el = document.getElementById(id);
-  if (el) el.style.display = visible ? display : 'none';
+function syncModalVisibility(visible) {
+  window.dispatchEvent(new CustomEvent('narmir:kingdom-profile-modal', { detail: { visible } }));
 }
 
 function normalizeRaceIcon(race) {
@@ -87,18 +85,7 @@ export default function KingdomProfileModal() {
   }, []);
 
   useEffect(() => {
-    setShellVisible('kingdom-profile-modal', visible, 'flex');
-    if (typeof document === 'undefined') return undefined;
-    const app = document.getElementById('app');
-    const nav = document.getElementById('bottom-nav');
-    const prevApp = app ? app.style.pointerEvents : '';
-    const prevNav = nav ? nav.style.pointerEvents : '';
-    if (app) app.style.pointerEvents = visible ? 'none' : prevApp;
-    if (nav) nav.style.pointerEvents = visible ? 'none' : prevNav;
-    return () => {
-      if (app) app.style.pointerEvents = prevApp;
-      if (nav) nav.style.pointerEvents = prevNav;
-    };
+    syncModalVisibility(visible);
   }, [visible]);
 
   const data = profile || {};

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
 import { useGameState } from '../../hooks/useGameState';
@@ -73,6 +73,8 @@ const toRaceLabel = (value) =>
 
 const StatusPanel = () => {
   const { state } = useGameState();
+  const [taxDisplayValue, setTaxDisplayValue] = useState('');
+  const [taxValue, setTaxValue] = useState('');
 
   const cleanText = (value) => {
     if (value === null || value === undefined) return '';
@@ -81,14 +83,13 @@ const StatusPanel = () => {
   };
 
   const updateTaxDisplay = (value) => {
-    const disp = document.getElementById('strip-tax-disp');
-    if (disp) disp.textContent = String(value ?? '');
+    const val = String(value ?? '');
+    setTaxDisplayValue(val);
+    setTaxValue(val);
   };
 
-  const lockTax = async (elementId) => {
-    const slider = document.getElementById(elementId);
-    if (!slider) return;
-    const tax = Number(slider.value);
+  const lockTax = async (taxValue) => {
+    const tax = Number(taxValue);
     if (Number.isNaN(tax)) return;
 
     try {
@@ -186,12 +187,17 @@ const StatusPanel = () => {
             defaultValue="42"
             onChange={(e) => updateTaxDisplay(e.target.value)}
           />
-          <span className="text-[22px] font-bold text-gold min-w-[48px]" id="strip-tax-disp" />
+          <span
+            id="strip-tax-disp"
+            className="text-[22px] font-bold text-[var(--gold)] min-w-[48px]"
+          >
+            {taxDisplayValue}
+          </span>
         </div>
         <div className="flex gap-2 mb-2.5">
           <button
             className="base-btn variant-gold flex-1 bg-[var(--gold)] text-black"
-            onClick={() => lockTax('strip-tax-slider')}
+            onClick={() => lockTax(taxValue)}
           >
             🔒 Lock
           </button>

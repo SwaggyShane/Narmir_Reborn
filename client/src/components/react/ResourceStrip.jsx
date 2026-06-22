@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import clsx from 'clsx';
 import { useGameState } from '../../hooks/useGameState.js';
 
 // Tracks the previous numeric value for a key and returns a short-lived delta
@@ -55,19 +56,19 @@ function formatDelta(delta) {
   return `${sign}${Math.round(abs).toLocaleString()}`;
 }
 
-function DeltaBadge({ flash, color }) {
+function DeltaBadge({ flash }) {
   const value = flash?.delta;
   if (value == null) return null;
   const label = formatDelta(value);
-  const tone = color || (value >= 0 ? 'var(--green)' : 'var(--red)');
+  const isPositive = value >= 0;
+  const colorClass = isPositive ? 'text-green' : 'text-red';
   // key={flash.flashId} forces React to remount on every new flash so the
   // `forwards`-pinned CSS animation replays even when two consecutive deltas
   // are equal.
   return (
     <span
       key={flash.flashId}
-      className="pointer-events-none absolute -right-0.5 -top-1 rounded-lg bg-[var(--bg2)] px-1.5 py-px text-[10px] font-bold shadow-[0_0_4px_rgba(0,0,0,0.4)]"
-      style={{ color: tone, animation: 'rs-delta-fade 2.4s ease-out forwards' }}
+      className={clsx('pointer-events-none absolute -right-0.5 -top-1 rounded-lg bg-bg2 px-1.5 py-px text-xs font-bold shadow-[0_0_4px_rgba(0,0,0,0.4)] animate-delta-fade', colorClass)}
     >
       {label}
     </span>
@@ -167,7 +168,7 @@ const happinessBarOuterClass =
   'relative my-1.5 h-[18px] w-full overflow-hidden rounded bg-[var(--bg2)]';
 const happinessBarInnerClass =
   'h-full rounded bg-gradient-to-r from-red-500 via-yellow-400 via-67% to-green-500 to-green-600 transition-[width] duration-300 ease-in-out';
-const metricSubClass = 'flex w-full justify-between text-[11px] text-[var(--text2)]';
+const metricSubClass = 'flex w-full justify-between text-xs text-[var(--text2)]';
 
 function population(state) {
   return numberValue(state.population ?? state.pop);
@@ -331,7 +332,7 @@ const ResourceStrip = () => {
       </div>
       <div className={metricClass()} id="metric-defense">
         <div className="lbl">Defense</div>
-        <div className="val text-[11px]" id="m-defense-rating" style={{ color: defenseColor }}>
+        <div className="val text-xs" id="m-defense-rating" style={{ color: defenseColor }}>
           {defenseRating}
         </div>
         <div className="sub"><span id="m-walls">{numberValue(state.bld_walls).toLocaleString()}</span> walls</div>

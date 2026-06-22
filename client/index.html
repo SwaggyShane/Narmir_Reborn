@@ -6715,6 +6715,114 @@
 
 
 
+      function clearNewsBadges() {
+
+        var sideB = document.getElementById("news-badge");
+
+        if (sideB) {
+
+          sideB.style.display = "none";
+
+          sideB.textContent = "";
+
+        }
+
+        var bnavB = document.getElementById("bnav-news-badge");
+
+        if (bnavB) {
+
+          bnavB.style.display = "none";
+
+          bnavB.textContent = "";
+
+        }
+
+      }
+
+
+
+      window.addEventListener("narmir:clear-news-badges", clearNewsBadges);
+
+
+
+      function syncAuthModalVisibility(event) {
+
+        var visible = event.detail?.visible ?? false;
+
+        var appEl = document.getElementById("app");
+
+        var navEl = document.getElementById("bottom-nav");
+
+        var overlayEl = document.getElementById("login-overlay");
+
+        if (appEl) appEl.style.display = visible ? "none" : "";
+
+        if (navEl) navEl.style.display = visible ? "none" : "";
+
+        if (overlayEl) overlayEl.style.display = visible ? "flex" : "none";
+
+        var passwordResetEl = document.getElementById("password-reset-modal");
+
+        if (passwordResetEl && !visible) passwordResetEl.style.display = "none";
+
+        var registrationEl = document.getElementById("registration-modal");
+
+        if (registrationEl && !visible) registrationEl.style.display = "none";
+
+      }
+
+
+
+      window.addEventListener("narmir:auth-modal-visibility", syncAuthModalVisibility);
+
+
+
+      function showChatBadgeAlert() {
+
+        var b = document.getElementById("chat-badge");
+
+        if (b) b.style.display = "inline";
+
+        var nc = document.getElementById("nav-chat-item");
+
+        if (nc && !nc.classList.contains("nav-flash")) nc.classList.add("nav-flash");
+
+        var bnc = document.getElementById("bnav-chat-item");
+
+        if (bnc && !bnc.classList.contains("nav-flash")) bnc.classList.add("nav-flash");
+
+      }
+
+
+
+      window.addEventListener("narmir:chat-badge-alert", showChatBadgeAlert);
+
+
+
+      function syncKingdomProfileModal(event) {
+
+        var visible = event.detail?.visible ?? false;
+
+        var modalEl = document.getElementById("kingdom-profile-modal");
+
+        if (modalEl) modalEl.style.display = visible ? "flex" : "none";
+
+        var appEl = document.getElementById("app");
+
+        var navEl = document.getElementById("bottom-nav");
+
+        if (appEl) appEl.style.pointerEvents = visible ? "none" : "";
+
+        if (navEl) navEl.style.pointerEvents = visible ? "none" : "";
+
+      }
+
+
+
+      window.addEventListener("narmir:kingdom-profile-modal", syncKingdomProfileModal);
+
+
+
       function appendNewsItems(events) {
 
         if (!events || !events.length) return;
