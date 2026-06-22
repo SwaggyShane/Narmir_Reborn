@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import clsx from 'clsx';
 import { apiCall } from '../../utils/api.js';
 import { repairMojibake } from '../../utils/repairMojibake.js';
 import { fmt } from '../../utils/fmt.js';
@@ -250,8 +251,8 @@ const RacesPanel = () => {
   const heroLoreData = heroLoreKey && cachedHeroClasses ? cachedHeroClasses[heroLoreKey] : null;
 
   return (
-    <div id="races" className="panel" style={{ display: 'none' }}>
-      <div className="card" style={{ marginTop: 0 }}>
+    <div id="races" className={clsx('panel', 'hidden')}>
+      <div className="card mt-0">
         <div className="card-title">🦄 Race Information</div>
         <div style={{ fontSize: '13px', color: 'var(--text2)', lineHeight: 1.6, marginBottom: '16px' }}>
           Learn about the various races of Narmir, their history, and their unique passives and abilities.
