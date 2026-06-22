@@ -253,64 +253,34 @@ export default function AuthModal() {
 
   const checks = useMemo(() => passwordRules(form.password || ''), [form.password]);
   const isPasswordStrongEnough = checks.every((item) => item.ok);
-
-  const panelStyle = {
-    background: 'rgba(19, 20, 29, 0.85)',
-    backdropFilter: 'blur(8px)',
-    borderLeft: '1px solid #363a52',
-    padding: '40px 60px',
-    width: '45%',
-    zIndex: 1,
-    position: 'relative',
-    overflowY: 'auto',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    minHeight: '100vh',
-    boxSizing: 'border-box',
-  };
-
-  const inputStyle = {
-    width: '100%',
-    marginBottom: '10px',
-    padding: '10px 12px',
-    fontSize: '16px',
-    background: '#1a1c27',
-    border: '1px solid #363a52',
-    borderRadius: '8px',
-    color: '#e8e9f0',
-    boxSizing: 'border-box',
-  };
-
-  const helpStyle = {
-    fontSize: '12px',
-    background: 'rgba(224, 92, 92, 0.1)',
-    border: '1px solid rgba(224, 92, 92, 0.3)',
-    borderRadius: '6px',
-    padding: '10px',
-    marginBottom: '10px',
-    color: '#e8b84b',
-    lineHeight: 1.6,
-  };
+  const panelClass =
+    'relative z-[1] flex min-h-screen w-[45%] flex-col justify-center overflow-y-auto border-l border-[#363a52] bg-[rgba(19,20,29,0.85)] px-[60px] py-[40px] backdrop-blur-md box-border';
+  const inputClass =
+    'mb-2.5 box-border w-full rounded-lg border border-[#363a52] bg-[#1a1c27] px-3 py-2.5 text-[16px] text-[#e8e9f0]';
+  const helpClass =
+    'mb-2.5 rounded-[6px] border border-[rgba(224,92,92,0.3)] bg-[rgba(224,92,92,0.1)] p-2.5 text-[12px] leading-6 text-[var(--gold)]';
+  const buttonRowClass = 'flex gap-2.5';
+  const primaryButtonClass = 'btn btn-accent flex-1 px-3 py-3.5 font-bold';
+  const secondaryButtonClass = 'btn border border-[#363a52] bg-[rgba(255,255,255,0.03)] px-3.5 py-3.5';
 
   if (!visible) return null;
 
   return (
-    <div style={panelStyle}>
-      <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-        <div style={{ fontSize: '24px', fontWeight: 700, color: '#e8b84b', marginBottom: '8px' }}>
+    <div className={panelClass}>
+      <div className="mb-6 text-center">
+        <div className="mb-2 text-[24px] font-bold text-[var(--gold)]">
           {mode === 'register' ? 'Create Account' : 'Login'}
         </div>
         <button
           type="button"
           onClick={() => setMode((prev) => (prev === 'login' ? 'register' : 'login'))}
-          style={{ background: 'none', border: 'none', color: '#7880b0', fontSize: '12px', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
+          className="cursor-pointer border-0 bg-transparent p-0 text-[12px] text-[#7880b0] underline"
         >
           {mode === 'register' ? 'Already have an account? Login' : 'Need an account? Register'}
         </button>
       </div>
 
-      <div id="auth-error" style={{ fontSize: '13px', color: '#e05c5c', marginBottom: '12px', minHeight: '18px' }}>
+      <div id="auth-error" className="mb-3 min-h-[18px] text-[13px] text-[#e05c5c]">
         {error}
       </div>
 
@@ -320,7 +290,7 @@ export default function AuthModal() {
         onChange={(e) => setForm((prev) => ({ ...prev, username: e.target.value }))}
         type="text"
         placeholder="Username"
-        style={inputStyle}
+        className={inputClass}
         autoComplete="username"
       />
 
@@ -329,53 +299,53 @@ export default function AuthModal() {
         onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
         type="password"
         placeholder="Password"
-        style={{ ...inputStyle, marginBottom: '8px' }}
+        className={`${inputClass} mb-2`}
         autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
       />
 
       {mode === 'register' ? (
-        <div id="password-requirements" style={helpStyle}>
-          <div style={{ fontWeight: 600, marginBottom: '6px' }}>Password Requirements</div>
+        <div id="password-requirements" className={helpClass}>
+          <div className="mb-1.5 font-semibold">Password Requirements</div>
           {checks.map((item) => (
-            <div key={item.id} style={{ color: item.ok ? 'var(--green)' : '#e05c5c' }}>
+            <div key={item.id} className={item.ok ? 'text-[var(--green)]' : 'text-[#e05c5c]'}>
               {item.ok ? 'OK' : 'NO'} {item.label}
             </div>
           ))}
         </div>
       ) : null}
 
-      <div style={{ textAlign: 'right', marginBottom: '12px' }}>
+      <div className="mb-3 text-right">
         <button
           type="button"
           onClick={() => setShowHelp((prev) => !prev)}
-          style={{ background: 'none', border: 'none', color: '#7880b0', fontSize: '12px', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
+          className="cursor-pointer border-0 bg-transparent p-0 text-[12px] text-[#7880b0] underline"
         >
           {showHelp ? 'Hide password help' : 'Forgot password?'}
         </button>
       </div>
 
       {showHelp ? (
-        <div style={{ ...helpStyle, background: 'rgba(96, 96, 96, 0.14)' }}>
-          <div style={{ fontWeight: 700, marginBottom: '6px' }}>Password Requirements</div>
+        <div className="mb-2.5 rounded-[6px] border border-[rgba(224,92,92,0.3)] bg-[rgba(96,96,96,0.14)] p-2.5 text-[12px] leading-6 text-[var(--gold)]">
+          <div className="mb-1.5 font-bold">Password Requirements</div>
           <div>8 or more characters</div>
           <div>Uppercase letter (A-Z)</div>
           <div>Lowercase letter (a-z)</div>
           <div>Number (0-9)</div>
           <div>Special character: @$!%*?&</div>
-          <div style={{ marginTop: '8px' }}>
+          <div className="mt-2">
             If you have forgotten your password, contact an administrator for assistance.
           </div>
         </div>
       ) : null}
 
       {mode === 'register' ? (
-        <div style={{ display: 'grid', gap: '10px', marginBottom: '12px' }}>
+        <div className="mb-3 grid gap-2.5">
           <input
             value={form.email}
             onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
             type="email"
             placeholder="Email address"
-            style={inputStyle}
+            className={inputClass}
             autoComplete="email"
           />
           <input
@@ -383,10 +353,10 @@ export default function AuthModal() {
             onChange={(e) => setForm((prev) => ({ ...prev, kingdomName: e.target.value }))}
             type="text"
             placeholder="Kingdom name"
-            style={inputStyle}
+            className={inputClass}
             autoComplete="off"
           />
-          <select value={form.race} onChange={(e) => setForm((prev) => ({ ...prev, race: e.target.value }))} style={inputStyle}>
+          <select value={form.race} onChange={(e) => setForm((prev) => ({ ...prev, race: e.target.value }))} className={inputClass}>
             <option value="high_elf">High Elf</option>
             <option value="dwarf">Dwarf</option>
             <option value="dire_wolf">Dire Wolf</option>
@@ -396,22 +366,21 @@ export default function AuthModal() {
             <option value="vampire">Vampire</option>
           </select>
           {form.race === 'vampire' ? (
-            <div style={{ fontSize: '12px', color: '#e87070', background: 'rgba(200, 50, 50, 0.12)', border: '1px solid rgba(200, 50, 50, 0.3)', borderRadius: '6px', padding: '8px 10px', lineHeight: 1.5 }}>
+            <div className="rounded-[6px] border border-[rgba(200,50,50,0.3)] bg-[rgba(200,50,50,0.12)] px-2.5 py-2 text-[12px] leading-6 text-[#e87070]">
               Experienced players only. Vampires are nearly powerless during daylight hours and rely on Thralls for daytime support.
             </div>
           ) : null}
-          <select value={form.gender} onChange={(e) => setForm((prev) => ({ ...prev, gender: e.target.value }))} style={inputStyle}>
+          <select value={form.gender} onChange={(e) => setForm((prev) => ({ ...prev, gender: e.target.value }))} className={inputClass}>
             <option value="male">Male</option>
             <option value="female">Female</option>
           </select>
         </div>
       ) : null}
 
-      <div style={{ display: 'flex', gap: '10px' }}>
+      <div className={buttonRowClass}>
         <button
           type="button"
-          className="btn btn-accent"
-          style={{ flex: 1, padding: '12px', fontWeight: 700 }}
+          className={primaryButtonClass}
           onClick={mode === 'register' ? doRegister : doLogin}
           disabled={mode === 'register' && !isPasswordStrongEnough}
         >
@@ -419,8 +388,7 @@ export default function AuthModal() {
         </button>
         <button
           type="button"
-          className="btn"
-          style={{ padding: '12px 14px', border: '1px solid #363a52', background: 'rgba(255,255,255,0.03)' }}
+          className={secondaryButtonClass}
           onClick={() => hideLoginModal()}
         >
           Close
