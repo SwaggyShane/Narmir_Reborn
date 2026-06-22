@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
 import { useGameState } from '../../hooks/useGameState';
 import { repairMojibake } from '../../utils/repairMojibake';
@@ -210,7 +211,7 @@ const RankingsPanel = () => {
 
   return (
     <div id="rankings" className="panel">
-      <div className="card" style={{ marginTop: 0 }}>
+      <div className="card mt-0">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div id="rankings-title" className="card-title" style={{ margin: 0 }}>Rankings</div>
@@ -220,12 +221,12 @@ const RankingsPanel = () => {
             </div>
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <input type="text" id="rank-search" className="input" placeholder="Search..." style={{ width: '180px' }} value={search} onChange={handleSearch} />
+            <input type="text" id="rank-search" className="input w-[180px]" placeholder="Search..." value={search} onChange={handleSearch} />
             <button className="base-btn" onClick={handleRefresh}>↻ Refresh</button>
           </div>
         </div>
 
-        <div id="rank-view-kingdoms" style={{ overflowX: 'auto', display: activeTab === 'kingdoms' ? 'block' : 'none' }}>
+        <div id="rank-view-kingdoms" className={clsx('overflow-x-auto', activeTab === 'kingdoms' ? 'block' : 'hidden')}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr style={{ color: 'var(--text3)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '2px solid var(--border2)' }}>
@@ -251,7 +252,7 @@ const RankingsPanel = () => {
           </table>
         </div>
 
-        <div id="rank-view-alliances" style={{ overflowX: 'auto', display: activeTab === 'alliances' ? 'block' : 'none' }}>
+        <div id="rank-view-alliances" className={clsx('overflow-x-auto', activeTab === 'alliances' ? 'block' : 'hidden')}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr style={{ color: 'var(--text3)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '2px solid var(--border2)' }}>
