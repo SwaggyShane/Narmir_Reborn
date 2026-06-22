@@ -4,13 +4,13 @@ const WarfareReportsTab = ({ isActive, content, onRefresh }) => {
   if (!isActive) return null;
 
   return (
-    <div style={{ display: 'block' }}>
-      <div className="card" style={{ marginBottom: '14px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>📝 War &amp; Covert Reports</span>
-          <button className="base-btn" style={{ fontSize: '11px', padding: '4px 10px' }} onClick={onRefresh}>↻ Refresh</button>
+    <div className="block">
+      <div className="card mb-3.5">
+        <div className="mb-2.5 flex items-center justify-between">
+          <span className="text-[13px] font-bold text-[var(--text)]">📝 War &amp; Covert Reports</span>
+          <button className="base-btn px-2.5 py-1 text-[11px]" onClick={onRefresh}>↻ Refresh</button>
         </div>
-        <div id="war-log-list-warfare" style={{ maxHeight: '500px', overflowY: 'auto' }}>
+        <div id="war-log-list-warfare" className="max-h-[500px] overflow-y-auto">
           {content}
         </div>
       </div>

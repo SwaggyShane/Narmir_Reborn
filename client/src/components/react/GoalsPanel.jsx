@@ -116,10 +116,8 @@ const GoalsPanel = () => {
   return (
     <div id="goals" className="panel">
       <div className="mb-2 flex items-center justify-between">
-        <h2 className="m-0">📝 Goals</h2>
-        <button className="base-btn px-2.5 py-1 text-[11px]" onClick={fetchGoals}>
-          ↻ Refresh
-        </button>
+        <h2 style={{ margin: 0 }}>📝 Goals</h2>
+        <button className="base-btn" onClick={fetchGoals} style={{ fontSize: '11px', padding: '4px 10px' }}>↻ Refresh</button>
       </div>
       <p>Complete daily and weekly goals to earn powerful rewards!</p>
 
@@ -144,6 +142,99 @@ const GoalsPanel = () => {
           )}
         </div>
       )}
+      <style>{`
+        .goal-group {
+          background: var(--bg2);
+          border: 1px solid var(--border);
+          padding: 16px;
+          border-radius: var(--radius);
+        }
+        .subtext {
+          font-size: 12px;
+          color: var(--text3);
+          margin-top: -8px;
+          margin-bottom: 12px;
+        }
+        .goal-list {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+        .goal-card {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background: var(--bg3);
+          border: 1px solid var(--border);
+          border-radius: var(--radius);
+          padding: 12px;
+        }
+        .goal-card.claimed {
+          opacity: 0.6;
+        }
+        .goal-info {
+          flex: 1;
+          padding-right: 16px;
+        }
+        .goal-title {
+          font-weight: bold;
+          color: var(--text);
+          margin-bottom: 8px;
+        }
+        .progress-bar-bg {
+          background: var(--bg);
+          height: 8px;
+          border-radius: 4px;
+          flex: 1;
+          overflow: hidden;
+          margin-right: 12px;
+        }
+        .progress-bar-fill {
+          background: var(--gold);
+          height: 100%;
+          transition: width 0.3s;
+        }
+        .goal-progress {
+          display: flex;
+          align-items: center;
+        }
+        .progress-text {
+          font-size: 12px;
+          color: var(--text2);
+          white-space: nowrap;
+        }
+        .goal-action {
+          text-align: right;
+          min-width: 120px;
+        }
+        .goal-prize {
+          font-size: 13px;
+          color: var(--gold);
+          margin-bottom: 8px;
+          font-weight: bold;
+        }
+        .base-btn {
+          background: var(--bg-hover);
+          color: var(--text);
+          border: 1px solid var(--border);
+          padding: 6px 12px;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 14px;
+        }
+        .base-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+        .base-btn.ready {
+          background: var(--green) !important;
+          color: white !important;
+        }
+        .claimed-text {
+          color: var(--green);
+          font-weight: bold;
+        }
+      `}</style>
     </div>
   );
 };

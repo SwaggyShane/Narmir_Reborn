@@ -104,6 +104,11 @@ const HappinessPanel = () => {
   };
 
   const filteredEvents = filter ? events.filter((e) => e.component === filter) : events;
+  const happinessBarClass =
+    happiness >= 80 ? 'bg-[var(--green)]' :
+    happiness >= 50 ? 'bg-[var(--gold)]' :
+    happiness >= 30 ? 'bg-[var(--amber)]' :
+    'bg-[var(--red)]';
 
   return (
     <div id="happiness" className="panel min-h-0 w-full overflow-y-auto">
@@ -115,18 +120,8 @@ const HappinessPanel = () => {
           </div>
           <div className="overflow-hidden rounded-full border border-white/5 bg-[var(--bg3)] shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]">
             <div
-              className="h-6 transition-[width] duration-300"
-              style={{
-                width: `${Math.min(100, Math.max(0, (happiness / 120) * 100))}%`,
-                background:
-                  happiness >= 80
-                    ? 'var(--green)'
-                    : happiness >= 50
-                      ? 'var(--gold)'
-                      : happiness >= 30
-                        ? 'var(--amber)'
-                        : 'var(--red)',
-              }}
+              className={`h-6 transition-[width] duration-300 ${happinessBarClass}`}
+              style={{ width: `${Math.min(100, Math.max(0, (happiness / 120) * 100))}%` }}
             />
           </div>
         </section>
@@ -136,16 +131,13 @@ const HappinessPanel = () => {
         </section>
 
         {/* Component Breakdown */}
-        <div style={{ marginBottom: '24px' }}>
+        <div className="mb-6">
           <div className="text-xs font-semibold text-zinc-400 uppercase tracking-widest mb-3">Component Breakdown</div>
           <div className="flex flex-col gap-2 mb-5">
             {Object.entries(components).map(([key, value]) => (
               <button
                 key={key}
-                className={`flex justify-between items-center p-3 bg-zinc-800 rounded border transition-all cursor-pointer ${filter === key ? 'border-orange-500 bg-orange-500/10' : 'border-zinc-700 hover:bg-zinc-700 hover:translate-x-0.5'}`}
-                style={{
-                  opacity: !filter || filter === key ? 1 : 0.5,
-                }}
+                className={`flex items-center justify-between rounded border bg-zinc-800 p-3 text-left transition-all cursor-pointer ${filter === key ? 'border-orange-500 bg-orange-500/10' : 'border-zinc-700 hover:bg-zinc-700 hover:translate-x-0.5'} ${!filter || filter === key ? 'opacity-100' : 'opacity-50'}`}
                 onClick={() => setFilter(filter === key ? null : key)}
                 aria-pressed={filter === key}
               >
@@ -167,7 +159,7 @@ const HappinessPanel = () => {
         </div>
 
         {/* Recent Changes Log */}
-        <div style={{ marginBottom: '16px' }}>
+        <div className="mb-4">
           <div className="text-xs font-semibold text-zinc-400 uppercase tracking-widest mb-3">
             Recent Changes {filter && `(${getComponentLabel(filter)})`}
           </div>
