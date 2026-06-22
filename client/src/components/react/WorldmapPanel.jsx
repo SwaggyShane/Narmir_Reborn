@@ -5,7 +5,7 @@ import { setWorldMapData } from '../../utils/worldMapData.js';
 import { renderWorldMap } from './WorldmapRenderer.jsx';
 import { renderRegionLegend } from './WorldmapLegend.jsx';
 
-export async function loadWorldMap({ setLoading, setError } = {}) {
+export async function loadWorldMap({ setLoading, setError, setMapSvg } = {}) {
   if (typeof setLoading === 'function') setLoading(true);
   if (typeof setError === 'function') setError('');
   try {
@@ -14,7 +14,8 @@ export async function loadWorldMap({ setLoading, setError } = {}) {
 
     const kingdoms = data.kingdoms || (Array.isArray(data) ? data : []);
     setWorldMapData(kingdoms);
-    renderWorldMap(kingdoms, data.tradeRoutes || []);
+    const svg = renderWorldMap(kingdoms, data.tradeRoutes || []);
+    if (typeof setMapSvg === 'function') setMapSvg(svg || '');
     renderRegionLegend();
   } catch (err) {
     console.error('World map fail:', err);
@@ -28,8 +29,9 @@ export async function loadWorldMap({ setLoading, setError } = {}) {
 const WorldmapPanel = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [mapSvg, setMapSvg] = useState('');
 
-  const refreshWorldMap = useCallback(() => loadWorldMap({ setLoading, setError }), []);
+  const refreshWorldMap = useCallback(() => loadWorldMap({ setLoading, setError, setMapSvg }), []);
 
   useEffect(() => {
     refreshWorldMap();
@@ -64,7 +66,9 @@ const WorldmapPanel = () => {
                 </button>
               </div>
             ) : null}
-            <div id="world-map-container" className="w-full overflow-hidden" />
+            {!loading && !error && mapSvg && (
+              <div className="w-full overflow-hidden" dangerouslySetInnerHTML={{ __html: mapSvg }} />
+            )}
           </div>
 
           <div className="flex flex-col gap-4">
