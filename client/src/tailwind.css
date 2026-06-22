@@ -22,7 +22,8 @@
 
   .card::before {
     content: '';
-    @apply absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-gold/30 to-transparent;
+    @apply absolute top-0 left-0 right-0 h-0.5;
+    background: linear-gradient(90deg, transparent 0%, rgba(240, 98, 2, 0.3) 50%, transparent 100%);
   }
 
   .card-title {
@@ -45,7 +46,7 @@
 
   /* ── Table Rows ── */
   .trow {
-    @apply flex items-center gap-2 py-2 px-0 border-b border-white/5 flex-wrap transition-all rounded sm;
+    @apply flex items-center gap-2 py-2 px-0 border-b border-white/5 flex-wrap transition-all rounded-sm;
   }
 
   .trow:last-child {
@@ -61,7 +62,7 @@
   }
 
   .trow .count {
-    @apply min-w-15 text-right font-semibold text-base text-text whitespace-nowrap;
+    @apply min-w-[60px] text-right font-semibold text-base text-text whitespace-nowrap;
   }
 
   .trow .cost-lbl {
@@ -70,7 +71,8 @@
 
   /* ── Buttons ── */
   .btn {
-    @apply relative inline-flex items-center justify-center gap-2 bg-bg3 border-2 border-white/10 rounded-md px-4 py-2.5 text-base font-bold text-text cursor-pointer whitespace-nowrap transition-all active:scale-95 -webkit-tap-highlight-color-transparent;
+    @apply relative inline-flex items-center justify-center gap-2 bg-bg3 border-2 border-white/10 rounded-md px-4 py-2.5 text-base font-bold text-text cursor-pointer whitespace-nowrap transition-all active:scale-95;
+    -webkit-tap-highlight-color: transparent;
   }
 
   .btn-gold {
@@ -90,7 +92,7 @@
   }
 
   .btn-red:active {
-    @apply bg-red/15;
+    background: rgba(180, 60, 0, 0.15);
   }
 
   .btn-green {
@@ -98,7 +100,7 @@
   }
 
   .btn-green:active {
-    @apply bg-green/15;
+    background: rgba(16, 185, 129, 0.15);
   }
 
   .btn-amber {
@@ -106,7 +108,7 @@
   }
 
   .btn-amber:active {
-    @apply bg-amber/15;
+    background: rgba(245, 158, 11, 0.15);
   }
 
   .btn-blue {
@@ -114,7 +116,7 @@
   }
 
   .btn-blue:active {
-    @apply bg-blue/15;
+    background: rgba(59, 130, 246, 0.15);
   }
 
   /* ── Badges ── */
@@ -127,23 +129,28 @@
   }
 
   .badge-gold {
-    @apply badge bg-gold/15 text-gold;
+    @apply badge text-gold;
+    background: rgba(240, 98, 2, 0.15);
   }
 
   .badge-green {
-    @apply badge bg-green/15 text-green;
+    @apply badge text-green;
+    background: rgba(16, 185, 129, 0.15);
   }
 
   .badge-blue {
-    @apply badge bg-blue/15 text-blue;
+    @apply badge text-blue;
+    background: rgba(59, 130, 246, 0.15);
   }
 
   .badge-red {
-    @apply badge bg-red/15 text-red;
+    @apply badge text-red;
+    background: rgba(180, 60, 0, 0.15);
   }
 
   .badge-amber {
-    @apply badge bg-amber/15 text-amber;
+    @apply badge text-amber;
+    background: rgba(245, 158, 11, 0.15);
   }
 
   /* ── Metrics ── */
@@ -151,14 +158,8 @@
     @apply flex flex-wrap gap-0.5 mb-1.5 w-full;
   }
 
-  @media (min-width: 650px) {
-    #kd-top .metrics {
-      @apply flex-col flex-1 justify-around;
-    }
-  }
-
   .metric {
-    @apply bg-bg2 border border-white/5 rounded px-1.5 py-0.5 transition-all flex flex-col gap-0 justify-center flex-1 min-w-15 min-h-7.5;
+    @apply bg-bg2 border border-white/5 rounded px-1.5 py-0.5 transition-all flex flex-col gap-0 justify-center flex-1 min-w-[60px] min-h-[30px];
   }
 
   .metric .lbl {
@@ -183,7 +184,7 @@
 
   /* ── Progress Bars ── */
   .prog-wrap {
-    @apply flex-1 min-w-15 h-1.5 bg-white/5 rounded-full overflow-hidden;
+    @apply flex-1 min-w-[60px] h-1.5 bg-white/5 rounded-full overflow-hidden;
   }
 
   .prog-bar {
@@ -224,20 +225,6 @@
     @apply px-6 pb-6;
   }
 
-  @media (min-width: 768px) {
-    #build.panel {
-      @apply overflow-hidden p-0;
-    }
-
-    .build-sticky-header {
-      @apply static flex-shrink-0 px-6 pt-4 pb-3 shadow-lg;
-    }
-
-    .build-content-scroll {
-      @apply flex-1 overflow-y-auto min-h-0;
-    }
-  }
-
   /* ── Kingdom Header ── */
   .kingdom-header {
     @apply mb-2;
@@ -254,15 +241,39 @@
   }
 
   .nav-item {
-    @apply relative flex items-center gap-2 px-3 py-2 rounded text-text3 text-xs cursor-pointer transition-colors;
-  }
-
-  .nav-item:hover {
-    @apply bg-bg3 text-text;
+    @apply relative flex items-center gap-2 px-3 py-2 rounded text-text3 text-xs cursor-pointer transition-colors hover:bg-bg3 hover:text-text;
   }
 
   .nav-badge {
     @apply absolute -top-0.5 -right-0.5 min-w-4 h-4 flex items-center justify-center rounded-full bg-red text-white text-2xs font-bold px-0.5;
+  }
+}
+
+@media (min-width: 768px) {
+  #build.panel {
+    overflow: hidden;
+    padding: 0;
+  }
+
+  .build-sticky-header {
+    position: static;
+    flex-shrink: 0;
+    padding: 1rem 1.5rem 0.75rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  }
+
+  .build-content-scroll {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+  }
+}
+
+@media (min-width: 650px) {
+  #kd-top .metrics {
+    flex-direction: column;
+    flex: 1;
+    justify-content: space-around;
   }
 }
 
