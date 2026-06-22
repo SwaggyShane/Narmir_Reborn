@@ -10,6 +10,7 @@ import { registerTargetFromRankings } from '../../utils/rankingsTarget.js';
 import { switchTab } from '../../utils/panelNav.js';
 import { registerWarfareTab } from '../../utils/warfareTabs.js';
 import { RACE_ICONS } from '../../utils/raceIcons.js';
+import { playGameSound } from '../../utils/audio.js';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -164,11 +165,15 @@ const WarfarePanel = () => {
 
   // target data
   const [targets, setTargets] = useState([]);
-  const [selectedTarget, setSelectedTarget] = useState(null);
+  const [attackTarget, setAttackTarget] = useState(null);
+  const [spellTarget, setSpellTarget] = useState(null);
+  const [covertTarget, setCovertTarget] = useState(null);
   const [atkSearchQ, setAtkSearchQ] = useState('');
   const [wspSearchQ, setWspSearchQ] = useState('');
   const [wcovSearchQ, setWcovSearchQ] = useState('');
   const [wcovTargetRace, setWcovTargetRace] = useState(null);
+  const [selectedSpell, setSelectedSpell] = useState(null);
+  const [spellObscure, setSpellObscure] = useState(false);
 
   // report data
   const [warLogRows, setWarLogRows] = useState([]);
@@ -181,13 +186,26 @@ const WarfarePanel = () => {
   const [spyError, setSpyError] = useState('');
   const [allianceError, setAllianceError] = useState('');
 
-  // Keep window.selectedTargetW in sync for vanilla interop (wspells, wcovert still use it)
-  useEffect(() => {
-    window.selectedTargetW = selectedTarget;
-  }, [selectedTarget]);
-
   // Derived: disc kingdoms parsed from state
   const disc = useMemo(() => parseDisc(state?.discovered_kingdoms), [state?.discovered_kingdoms]);
+
+  const spellDefs = useMemo(() => {
+    const source = [...(state?.spellbook_spells || []), ...(state?.school_spells || [])];
+    const deduped = new Map();
+    source.forEach((spell) => {
+      if (spell && spell.id && !deduped.has(spell.id)) {
+        deduped.set(spell.id, spell);
+      }
+    });
+    return [...deduped.values()]
+      .filter((spell) => Number(state?.scrolls?.[spell.id] || 0) > 0)
+      .sort((a, b) => {
+        const tierA = Number(a.tier || 0);
+        const tierB = Number(b.tier || 0);
+        if (tierA !== tierB) return tierA - tierB;
+        return String(a.label || a.name || a.id || '').localeCompare(String(b.label || b.name || b.id || ''));
+      });
+  }, [state?.school_spells, state?.scrolls, state?.spellbook_spells]);
 
   // Filtered target lists per tab
   const filteredAtkTargets = useMemo(
@@ -212,7 +230,13 @@ const WarfarePanel = () => {
         toast('Kingdom not found in target list', 'error');
         return;
       }
-      setSelectedTarget(target);
+      if (tab === 'attack') {
+        setAttackTarget(target);
+      } else if (tab === 'spells') {
+        setSpellTarget(target);
+      } else if (tab === 'covert') {
+        setCovertTarget(target);
+      }
       if (tab === 'attack') {
         setActiveTab('attack');
       } else if (tab === 'spells') {
@@ -245,8 +269,6 @@ const WarfarePanel = () => {
           is_ai: row.is_ai || 0,
         }));
 
-      window.rankingsCache = kingdoms;
-      window.targets = mappedTargets;
       setTargets(mappedTargets);
     } catch (err) {
       console.error('[WarfarePanel] Failed to refresh attack targets:', err);
@@ -327,8 +349,6 @@ const WarfarePanel = () => {
 
   const handleTabClick = (tabId) => {
     setActiveTab(tabId);
-    if (tabId === 'wspells' && window.initWspells) window.initWspells();
-    if (tabId === 'wcovert' && window.initWcovert) window.initWcovert();
   };
 
   const updateAtkEstimateW = useCallback(() => {
@@ -361,7 +381,7 @@ const WarfarePanel = () => {
     const eng = parseInt(document.getElementById('atk-engineers-w')?.value, 10) || 0;
     if (f + rn + m + wm + ld + cle + eng === 0) return;
 
-    const target = selectedTarget;
+    const target = attackTarget;
     const engLvlArray = state?.troop_levels?.engineers?.level || 1;
     const baseCrew = state?.race === 'human' ? 10 : state?.race === 'dwarf' ? 8 : 12;
     const crewReq = Math.max(1, Math.round(baseCrew * (1 - Math.min(0.5, (engLvlArray - 1) / 100))));
@@ -418,7 +438,7 @@ const WarfarePanel = () => {
       g('atk-bully-warn-w').style.display = bullyMsg ? 'block' : 'none';
       g('atk-bully-warn-w').textContent = bullyMsg;
     }
-  }, [state, selectedTarget]);
+  }, [attackTarget, state]);
 
   useEffect(() => {
     updateAtkEstimateW();
@@ -455,7 +475,7 @@ const WarfarePanel = () => {
   };
 
   const launchAttackW = useCallback(async () => {
-    if (!selectedTarget) {
+    if (!attackTarget) {
       toast('Select a target kingdom first', 'error');
       return;
     }
@@ -489,7 +509,7 @@ const WarfarePanel = () => {
     const result = await apiCall('/api/kingdom/attack', {
       method: 'POST',
       body: {
-        targetId: selectedTarget.id,
+        targetId: attackTarget.id,
         fighters: f,
         rangers: rn,
         mages: m,
@@ -543,26 +563,110 @@ const WarfarePanel = () => {
     if (r.bullyMsg) rows.push(['⚠️ Penalty', r.bullyMsg]);
 
     applyGameMutation(result, { reason: 'attack' });
+    playGameSound(r.win ? 'attack_victory' : 'attack_repelled');
     window.showBattleReport?.({
       type: 'Military attack',
-      target: selectedTarget.name,
+      target: attackTarget.name,
       win: r.win,
       rows,
     });
     refreshAttackTargets();
-  }, [refreshAttackTargets, state, selectedTarget]);
+  }, [attackTarget, refreshAttackTargets, state]);
 
-  const castWspell = () => {
-    if (window.castWspell) window.castWspell();
-  };
+  const castWspell = useCallback(async () => {
+    if (!selectedSpell) {
+      toast('Select a spell', 'error');
+      return;
+    }
 
-  const doWcovert = (type) => {
-    if (window.doWcovert) window.doWcovert(type);
-  };
+    const totalMana = spellObscure ? Math.ceil((selectedSpell.manaCost || 0) * 1.5) : (selectedSpell.manaCost || 0);
+    const held = Number(state?.scrolls?.[selectedSpell.id] || 0);
+    if (selectedSpell.scrollRequired && held < 1) {
+      toast('You need a scroll for this spell', 'error');
+      return;
+    }
+    if ((state?.mana || 0) < totalMana) {
+      toast('Not enough mana', 'error');
+      return;
+    }
 
-  const updateWspellCalc = () => {
-    if (window.updateWspellCalc) window.updateWspellCalc();
-  };
+    const result = await apiCall('/api/kingdom/spell', {
+      method: 'POST',
+      body: {
+        spellId: selectedSpell.id,
+        targetId: spellTarget?.id || null,
+        obscure: !!spellObscure,
+      },
+    });
+    if (result?.error) return toast(result.error, 'error');
+
+    playGameSound('spell_cast');
+    applyGameMutation(result, { reason: 'warfare-spell' });
+    toast((selectedSpell.label || selectedSpell.name || selectedSpell.id) + ' cast!', 'success');
+    setSelectedSpell(null);
+    refreshAttackTargets();
+  }, [refreshAttackTargets, selectedSpell, spellObscure, spellTarget, state]);
+
+  const doWcovert = useCallback(async (type) => {
+    if (!covertTarget) {
+      toast('Select a target kingdom', 'error');
+      return;
+    }
+
+    const lootType = document.getElementById('wcov-loot-type')?.value;
+
+    if (type === 'loot' && lootType === 'location_map') {
+      const result = await apiCall('/api/kingdom/locations/steal-map', {
+        method: 'POST',
+        body: { targetId: covertTarget.id },
+      });
+      if (result?.error) return toast(result.error, 'error');
+      if (result?.updates) applyGameMutation(result, { reason: 'steal-map' });
+      toast(result.message || 'Operation complete', result.success ? 'success' : 'error');
+      refreshAttackTargets();
+      return;
+    }
+
+    const payload = { targetId: covertTarget.id, op: type };
+    if (type === 'spy') {
+      payload.units = parseInt(document.getElementById('wcov-spy-units')?.value || '0', 10) || 0;
+      payload.spyType = document.getElementById('wcov-spy-type')?.value || 'full';
+    } else if (type === 'loot') {
+      payload.units = parseInt(document.getElementById('wcov-loot-thieves')?.value || '0', 10) || 0;
+      payload.lootType = document.getElementById('wcov-loot-type')?.value;
+    } else if (type === 'assassinate') {
+      payload.units = parseInt(document.getElementById('wcov-assn-ninjas')?.value || '0', 10) || 0;
+      payload.unitType = document.getElementById('wcov-assass-type')?.value;
+    } else if (type === 'sabotage') {
+      payload.units = parseInt(document.getElementById('wcov-sab-thieves')?.value || '0', 10) || 0;
+      payload.bldType = document.getElementById('wcov-sab-type')?.value;
+    }
+
+    if (payload.units <= 0) {
+      toast('Enter number of units to send', 'error');
+      return;
+    }
+
+    const result = await apiCall('/api/kingdom/covert', {
+      method: 'POST',
+      body: payload,
+    });
+    if (result?.error) return toast(result.error, 'error');
+
+    applyGameMutation(result, { reason: `covert-${type}` });
+
+    if (type === 'spy') {
+      if (result.success && result.report) {
+        toast('Spy mission complete', 'success');
+      } else {
+        toast(result.event || 'Spy mission failed', 'error');
+      }
+    } else {
+      toast(`${type.charAt(0).toUpperCase()}${type.slice(1)} operation complete`, result.success ? 'success' : 'error');
+    }
+
+    refreshAttackTargets();
+  }, [covertTarget, refreshAttackTargets]);
 
   const fmtDate = (value) => {
     if (!value) return 'Just now';
@@ -744,8 +848,8 @@ const WarfarePanel = () => {
           <div className="card-title" style={{ marginBottom: '8px' }}>Select Target</div>
           <TargetListSection
             targets={filteredAtkTargets}
-            selected={selectedTarget}
-            onSelect={setSelectedTarget}
+            selected={attackTarget}
+            onSelect={setAttackTarget}
             searchQ={atkSearchQ}
             onSearchChange={setAtkSearchQ}
             placeholder="Search kingdoms…"
@@ -833,18 +937,88 @@ const WarfarePanel = () => {
           <div className="card-title" style={{ marginBottom: '8px' }}>Select Target</div>
           <TargetListSection
             targets={filteredWspTargets}
-            selected={selectedTarget}
-            onSelect={setSelectedTarget}
+            selected={spellTarget}
+            onSelect={setSpellTarget}
             searchQ={wspSearchQ}
             onSearchChange={setWspSearchQ}
             placeholder="Search kingdoms…"
           />
         </div>
+        <div className="card" style={{ marginBottom: '12px' }}>
+          <div className="card-title" style={{ marginBottom: '8px' }}>Spellbook Spells</div>
+          {spellDefs.length === 0 ? (
+            <div style={{ color: 'var(--text3)', fontSize: '13px', padding: '12px 0' }}>
+              No scrolls available. Craft them in the Library.
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gap: '8px' }}>
+              {spellDefs.map((spell) => {
+                const held = Number(state?.scrolls?.[spell.id] || 0);
+                const isSelected = selectedSpell && String(selectedSpell.id) === String(spell.id);
+                return (
+                  <button
+                    key={spell.id}
+                    className={`base-btn ${isSelected ? 'active' : ''}`}
+                    style={{
+                      textAlign: 'left',
+                      padding: '10px 12px',
+                      border: '1px solid var(--border)',
+                      background: isSelected ? 'var(--bg3)' : 'var(--bg2)',
+                    }}
+                    onClick={() => setSelectedSpell(spell)}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
+                      <div style={{ fontWeight: 700, color: 'var(--accent1)' }}>
+                        {spell.label || spell.name || spell.id}
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--gold)', fontWeight: 700 }}>
+                        {fmt(held)} scroll{held === 1 ? '' : 's'}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text3)', marginTop: '3px' }}>
+                      {spell.desc || 'Unknown spell'}
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text3)', marginTop: '3px' }}>
+                      {fmt(spell.manaCost || 0)} mana{spell.scrollRequired ? ' · 1 scroll' : ''}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
         <div className="card">
-          <div className="card-title">Warfare Spells</div>
-          <div style={{ marginTop: '12px' }}>
-            <button className="base-btn" onClick={castWspell}>Prepare Spell Targeting</button>
-            <button className="base-btn" style={{ marginLeft: '8px' }} onClick={updateWspellCalc}>Refresh Spell Estimates</button>
+          <div className="card-title">Cast Spell</div>
+          <div style={{ display: 'grid', gap: '10px', marginTop: '12px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text2)' }}>
+              <input
+                type="checkbox"
+                checked={spellObscure}
+                onChange={(e) => setSpellObscure(e.target.checked)}
+              />
+              Obscure casting
+            </label>
+            <div style={{ fontSize: '13px', color: 'var(--text3)' }}>
+              {selectedSpell ? (
+                <>
+                  <strong style={{ color: 'var(--text)' }}>{selectedSpell.label || selectedSpell.name || selectedSpell.id}</strong>
+                  <span> · </span>
+                  {selectedSpell.desc || 'No description'}
+                </>
+              ) : (
+                'Choose a spell above to continue.'
+              )}
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--text3)' }}>
+              Target: <strong style={{ color: 'var(--text)' }}>{spellTarget ? spellTarget.name : 'none selected'}</strong>
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--text3)' }}>
+              Mana cost: <strong style={{ color: 'var(--gold)' }}>{selectedSpell ? fmt(spellObscure ? Math.ceil((selectedSpell.manaCost || 0) * 1.5) : (selectedSpell.manaCost || 0)) : '0'}</strong>
+              {selectedSpell ? ` · Scrolls held: ${fmt(Number(state?.scrolls?.[selectedSpell.id] || 0))}` : ''}
+            </div>
+            <button className="base-btn" onClick={castWspell} disabled={!selectedSpell}>
+              Cast Spell
+            </button>
           </div>
         </div>
       </div>
@@ -855,8 +1029,8 @@ const WarfarePanel = () => {
           <div className="card-title" style={{ marginBottom: '8px' }}>Select Target</div>
           <TargetListSection
             targets={filteredWcovTargets}
-            selected={selectedTarget}
-            onSelect={setSelectedTarget}
+            selected={covertTarget}
+            onSelect={setCovertTarget}
             searchQ={wcovSearchQ}
             onSearchChange={setWcovSearchQ}
             placeholder="Search kingdoms…"
@@ -864,11 +1038,47 @@ const WarfarePanel = () => {
         </div>
         <div className="card">
           <div className="card-title">Warfare Covert Ops</div>
-          <div style={{ marginTop: '12px' }}>
-            <button className="base-btn" onClick={() => doWcovert('spy')}>Spy</button>
-            <button className="base-btn" style={{ marginLeft: '8px' }} onClick={() => doWcovert('loot')}>Loot</button>
-            <button className="base-btn" style={{ marginLeft: '8px' }} onClick={() => doWcovert('assassinate')}>Assassinate</button>
-            <button className="base-btn" style={{ marginLeft: '8px' }} onClick={() => doWcovert('sabotage')}>Sabotage</button>
+          <div style={{ display: 'grid', gap: '10px', marginTop: '12px' }}>
+            <div style={{ display: 'grid', gap: '6px' }}>
+              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text2)' }}>Spy</div>
+              <input id="wcov-spy-units" className="input" type="number" min="0" defaultValue="0" placeholder="Thieves + ninjas" />
+              <select id="wcov-spy-type" className="input">
+                <option value="full">Full intel</option>
+                <option value="economy">Economy</option>
+                <option value="military">Military</option>
+              </select>
+              <button className="base-btn" onClick={() => doWcovert('spy')}>Spy</button>
+            </div>
+            <div style={{ display: 'grid', gap: '6px' }}>
+              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text2)' }}>Loot</div>
+              <input id="wcov-loot-thieves" className="input" type="number" min="0" defaultValue="0" placeholder="Thieves" />
+              <select id="wcov-loot-type" className="input">
+                <option value="gold">Gold</option>
+                <option value="food">Food</option>
+                <option value="location_map">Location map</option>
+              </select>
+              <button className="base-btn" onClick={() => doWcovert('loot')}>Loot</button>
+            </div>
+            <div style={{ display: 'grid', gap: '6px' }}>
+              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text2)' }}>Assassinate</div>
+              <input id="wcov-assn-ninjas" className="input" type="number" min="0" defaultValue="0" placeholder="Ninjas" />
+              <select id="wcov-assass-type" className="input">
+                <option value="leaders">Leaders</option>
+                <option value="mages">Mages</option>
+                <option value="engineers">Engineers</option>
+              </select>
+              <button className="base-btn" onClick={() => doWcovert('assassinate')}>Assassinate</button>
+            </div>
+            <div style={{ display: 'grid', gap: '6px' }}>
+              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text2)' }}>Sabotage</div>
+              <input id="wcov-sab-thieves" className="input" type="number" min="0" defaultValue="0" placeholder="Thieves" />
+              <select id="wcov-sab-type" className="input">
+                <option value="walls">Walls</option>
+                <option value="towers">Towers</option>
+                <option value="upgrades">Upgrades</option>
+              </select>
+              <button className="base-btn" onClick={() => doWcovert('sabotage')}>Sabotage</button>
+            </div>
           </div>
         </div>
       </div>
