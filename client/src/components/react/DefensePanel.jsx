@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
 import { useGameState } from '../../hooks/useGameState';
 import { fmt } from "../../utils/fmt";
@@ -119,7 +120,7 @@ const DefensePanel = () => {
   }, [refreshDefense]);
 
   return (
-    <div id="defense" className="panel min-h-0 w-full overflow-y-auto px-4 pb-5" style={{ display: 'none' }}>
+    <div id="defense" className="panel min-h-0 w-full overflow-y-auto px-4 pb-5 hidden">
       <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-white/10 bg-zinc-950/80 p-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <div className="card-title mb-1 flex items-center gap-2">
@@ -186,51 +187,32 @@ const DefensePanel = () => {
         </div>
       </div>
       {/* Tabs */}
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '4px',
-          marginBottom: '16px',
-          borderBottom: '2px solid var(--border2)',
-          paddingBottom: 0,
-        }}
-      >
+      <div className="flex flex-wrap gap-1 mb-4 border-b-2 border-[var(--border2)]">
         <button
-          className={`base-btn admin-tab ${activeTab === 'walls' ? 'active' : ''}`}
+          className={clsx('base-btn admin-tab rounded-none', activeTab === 'walls' && 'active')}
           onClick={() => handleTabClick('walls')}
-          style={{ borderRadius: '0' }}
         >
           🧱 Walls
         </button>
         <button
-          className={`base-btn admin-tab ${activeTab === 'towers' ? 'active' : ''}`}
+          className={clsx('base-btn admin-tab rounded-none', activeTab === 'towers' && 'active')}
           onClick={() => handleTabClick('towers')}
-          style={{ borderRadius: '0' }}
         >
           🗼 Guard Towers
         </button>
         <button
-          className={`base-btn admin-tab ${activeTab === 'outposts' ? 'active' : ''}`}
+          className={clsx('base-btn admin-tab rounded-none', activeTab === 'outposts' && 'active')}
           onClick={() => handleTabClick('outposts')}
-          style={{ borderRadius: '0' }}
         >
           ⛺ Outposts
         </button>
       </div>
 
       {/* WALLS TAB */}
-      <div style={{ display: activeTab === 'walls' ? 'block' : 'none' }}>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '12px',
-            marginBottom: '12px',
-          }}
-        >
-          <div className="card" style={{ margin: 0 }}>
-            <div className="card-title" style={{ marginBottom: '10px' }}>
+      <div className={clsx(activeTab === 'walls' ? 'block' : 'hidden')}>
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="card m-0">
+            <div className="card-title mb-2.5">
               Wall overview
             </div>
             <div className="trow">
@@ -239,13 +221,13 @@ const DefensePanel = () => {
             </div>
             <div className="trow">
               <span className="name">War machines mounted</span>
-              <span className="count" id="def-wm-walls" style={{ color: 'var(--gold)' }}>
+              <span className="count text-[var(--gold)]" id="def-wm-walls">
                 0
               </span>
             </div>
             <div className="trow">
               <span className="name">Wall defense power</span>
-              <span className="count" id="def-wall-power" style={{ color: 'var(--green)' }}>
+              <span className="count text-[var(--green)]" id="def-wall-power">
                 0
               </span>
             </div>
@@ -253,21 +235,14 @@ const DefensePanel = () => {
               <span className="name">Race modifier</span>
               <span className="count" id="def-wall-race">×1.00</span>
             </div>
-            <div
-              className="trow"
-              style={{
-                borderTop: '1px solid var(--border2)',
-                marginTop: '4px',
-                paddingTop: '4px',
-              }}
-            >
-              <span className="name" style={{ color: 'var(--amber)', fontSize: '11px' }}>
+            <div className="trow border-t border-[var(--border2)] mt-1 pt-1">
+              <span className="name text-[var(--amber)] text-[11px]">
                 No walls = buildings can be damaged by attackers
               </span>
             </div>
           </div>
-          <div className="card" style={{ margin: 0 }}>
-            <div className="card-title" style={{ marginBottom: '10px' }}>
+          <div className="card m-0">
+            <div className="card-title mb-2.5">
               Wall upgrades
             </div>
             <div id="wall-upgrade-list"></div>
@@ -276,17 +251,10 @@ const DefensePanel = () => {
       </div>
 
       {/* GUARD TOWERS TAB */}
-      <div style={{ display: activeTab === 'towers' ? 'block' : 'none' }}>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '12px',
-            marginBottom: '12px',
-          }}
-        >
-          <div className="card" style={{ margin: 0 }}>
-            <div className="card-title" style={{ marginBottom: '10px' }}>
+      <div className={clsx(activeTab === 'towers' ? 'block' : 'hidden')}>
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="card m-0">
+            <div className="card-title mb-2.5">
               Guard Tower overview
             </div>
             <div className="trow">
@@ -296,9 +264,8 @@ const DefensePanel = () => {
             <div className="trow">
               <span className="name">Thieves on watch</span>
               <span
-                className="count"
+                className="count text-[var(--amber)]"
                 id="def-thieves-watch"
-                style={{ color: 'var(--amber)' }}
               >
                 0
               </span>
@@ -310,9 +277,8 @@ const DefensePanel = () => {
             <div className="trow">
               <span className="name">Tower defense power</span>
               <span
-                className="count"
+                className="count text-[var(--green)]"
                 id="def-tower-power"
-                style={{ color: 'var(--green)' }}
               >
                 0
               </span>
@@ -322,8 +288,8 @@ const DefensePanel = () => {
               <span className="count" id="def-tower-race">×1.00</span>
             </div>
           </div>
-          <div className="card" style={{ margin: 0 }}>
-            <div className="card-title" style={{ marginBottom: '10px' }}>
+          <div className="card m-0">
+            <div className="card-title mb-2.5">
               Tower upgrades
             </div>
             <div id="tower-def-upgrade-list"></div>
@@ -332,17 +298,10 @@ const DefensePanel = () => {
       </div>
 
       {/* OUTPOSTS TAB */}
-      <div style={{ display: activeTab === 'outposts' ? 'block' : 'none' }}>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '12px',
-            marginBottom: '12px',
-          }}
-        >
-          <div className="card" style={{ margin: 0 }}>
-            <div className="card-title" style={{ marginBottom: '10px' }}>
+      <div className={clsx(activeTab === 'outposts' ? 'block' : 'hidden')}>
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="card m-0">
+            <div className="card-title mb-2.5">
               Outpost overview
             </div>
             <div className="trow">
@@ -352,9 +311,8 @@ const DefensePanel = () => {
             <div className="trow">
               <span className="name">Rangers on patrol</span>
               <span
-                className="count"
+                className="count text-[var(--blue)]"
                 id="def-rangers-patrol"
-                style={{ color: 'var(--blue)' }}
               >
                 0
               </span>
@@ -366,9 +324,8 @@ const DefensePanel = () => {
             <div className="trow">
               <span className="name">Outpost defense power</span>
               <span
-                className="count"
+                className="count text-[var(--green)]"
                 id="def-outpost-power"
-                style={{ color: 'var(--green)' }}
               >
                 0
               </span>
@@ -378,8 +335,8 @@ const DefensePanel = () => {
               <span className="count" id="def-outpost-race">×1.00</span>
             </div>
           </div>
-          <div className="card" style={{ margin: 0 }}>
-            <div className="card-title" style={{ marginBottom: '10px' }}>
+          <div className="card m-0">
+            <div className="card-title mb-2.5">
               Outpost upgrades
             </div>
             <div id="outpost-upgrade-list"></div>

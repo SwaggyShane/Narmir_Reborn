@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import clsx from 'clsx';
 import { toast } from '../../utils/toast.js';
 import { apiCall } from '../../utils/api';
 import { useGameState } from '../../hooks/useGameState';
@@ -76,28 +77,27 @@ function KingdomTargetCard({ target, isSelected, onSelect }) {
   const raceIcon = RACE_ICONS[target.race] || '👤';
   return (
     <div
-      className={`target-row${isSelected ? ' selected' : ''}`}
-      style={{ marginBottom: '4px', cursor: 'pointer' }}
+      className={clsx('target-row cursor-pointer mb-1', isSelected && 'selected')}
       onClick={() => onSelect(target)}
     >
-      <span style={{ fontSize: '18px', marginRight: '10px' }}>
+      <span className="text-[18px] mr-2.5">
         {target.is_location ? '📍' : raceIcon}
       </span>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontWeight: 600, color: 'var(--text)' }}>
+      <div className="flex-1">
+        <div className="font-semibold text-[var(--text)]">
           {target.name}{target.is_ai ? ' (AI)' : ''}
         </div>
-        <div style={{ fontSize: '10px', color: 'var(--text3)' }}>
+        <div className="text-[10px] text-[var(--text3)]">
           {target.is_location
             ? 'Discovered Site'
             : `Lv ${target.level} · ${(target.race || '').replace(/_/g, ' ')}`}
         </div>
       </div>
-      <div style={{ textAlign: 'right' }}>
-        <div style={{ fontSize: '12px', color: 'var(--gold)', fontWeight: 600 }}>
+      <div className="text-right">
+        <div className="text-[12px] text-[var(--gold)] font-semibold">
           {target.is_location ? '???' : fmt(target.land)} ac
         </div>
-        <div style={{ fontSize: '10px', color: 'var(--text3)' }}>#{target.rank || '?'}</div>
+        <div className="text-[10px] text-[var(--text3)]">#{target.rank || '?'}</div>
       </div>
     </div>
   );
@@ -107,38 +107,33 @@ function KingdomTargetCard({ target, isSelected, onSelect }) {
 
 function TargetListSection({ targets, selected, onSelect, searchQ, onSearchChange, placeholder }) {
   return (
-    <div style={{ marginBottom: '16px' }}>
+    <div className="mb-4">
       <input
         type="text"
-        className="input"
+        className="input w-full mb-2 px-2.5 py-1.5 text-[13px]"
         placeholder={placeholder || 'Search kingdoms…'}
         value={searchQ}
         onChange={(e) => onSearchChange(e.target.value)}
-        style={{ width: '100%', marginBottom: '8px', padding: '6px 10px', fontSize: '13px' }}
       />
       {selected && (
-        <div style={{
-          padding: '8px 10px', marginBottom: '8px', borderRadius: 'var(--radius)',
-          background: 'var(--bg2)', border: '1px solid var(--accent)', fontSize: '13px',
-        }}>
-          <span style={{ color: 'var(--text3)', marginRight: '6px' }}>Target:</span>
-          <span style={{ fontWeight: 700, color: 'var(--text)' }}>{selected.name}</span>
-          <span style={{ color: 'var(--text3)', marginLeft: '8px', fontSize: '11px' }}>
+        <div className="px-2.5 py-2 mb-2 rounded-[var(--radius)] bg-[var(--bg2)] border border-[var(--accent)] text-[13px]">
+          <span className="text-[var(--text3)] mr-1.5">Target:</span>
+          <span className="font-bold text-[var(--text)]">{selected.name}</span>
+          <span className="text-[var(--text3)] ml-2 text-[11px]">
             {selected.is_location ? '📍 Site' : `${fmt(selected.land)} ac · #${selected.rank || '?'}`}
           </span>
           <button
-            className="base-btn"
-            style={{ float: 'right', fontSize: '10px', padding: '2px 6px' }}
+            className="base-btn float-right text-[10px] px-1.5 py-0.5"
             onClick={() => onSelect(null)}
           >✕</button>
         </div>
       )}
-      <div style={{ maxHeight: '260px', overflowY: 'auto' }}>
+      <div className="max-h-[260px] overflow-y-auto">
         {targets.length === 0
           ? (
-            <div style={{ color: 'var(--text3)', fontSize: '13px', padding: '16px', textAlign: 'center' }}>
+            <div className="text-[var(--text3)] text-[13px] px-4 py-4 text-center">
               No mapped targets found.{' '}
-              <button className="btn" style={{ fontSize: '11px' }} onClick={() => switchTab('exploration')}>
+              <button className="btn text-[11px]" onClick={() => window.switchTab?.('exploration')}>
                 Go Explore
               </button>
             </div>
@@ -165,15 +160,11 @@ const WarfarePanel = () => {
 
   // target data
   const [targets, setTargets] = useState([]);
-  const [attackTarget, setAttackTarget] = useState(null);
-  const [spellTarget, setSpellTarget] = useState(null);
-  const [covertTarget, setCovertTarget] = useState(null);
+  const [selectedTarget, setSelectedTarget] = useState(null);
   const [atkSearchQ, setAtkSearchQ] = useState('');
   const [wspSearchQ, setWspSearchQ] = useState('');
   const [wcovSearchQ, setWcovSearchQ] = useState('');
   const [wcovTargetRace, setWcovTargetRace] = useState(null);
-  const [selectedSpell, setSelectedSpell] = useState(null);
-  const [spellObscure, setSpellObscure] = useState(false);
 
   // report data
   const [warLogRows, setWarLogRows] = useState([]);
@@ -186,26 +177,13 @@ const WarfarePanel = () => {
   const [spyError, setSpyError] = useState('');
   const [allianceError, setAllianceError] = useState('');
 
+  // Keep window.selectedTargetW in sync for vanilla interop (wspells, wcovert still use it)
+  useEffect(() => {
+    window.selectedTargetW = selectedTarget;
+  }, [selectedTarget]);
+
   // Derived: disc kingdoms parsed from state
   const disc = useMemo(() => parseDisc(state?.discovered_kingdoms), [state?.discovered_kingdoms]);
-
-  const spellDefs = useMemo(() => {
-    const source = [...(state?.spellbook_spells || []), ...(state?.school_spells || [])];
-    const deduped = new Map();
-    source.forEach((spell) => {
-      if (spell && spell.id && !deduped.has(spell.id)) {
-        deduped.set(spell.id, spell);
-      }
-    });
-    return [...deduped.values()]
-      .filter((spell) => Number(state?.scrolls?.[spell.id] || 0) > 0)
-      .sort((a, b) => {
-        const tierA = Number(a.tier || 0);
-        const tierB = Number(b.tier || 0);
-        if (tierA !== tierB) return tierA - tierB;
-        return String(a.label || a.name || a.id || '').localeCompare(String(b.label || b.name || b.id || ''));
-      });
-  }, [state?.school_spells, state?.scrolls, state?.spellbook_spells]);
 
   // Filtered target lists per tab
   const filteredAtkTargets = useMemo(
@@ -221,32 +199,6 @@ const WarfarePanel = () => {
     const byRace = wcovTargetRace ? list.filter((t) => t.race === wcovTargetRace) : list;
     return filterByQuery(byRace, wcovSearchQ);
   }, [targets, disc, state, wcovTargetRace, wcovSearchQ]);
-
-  useEffect(() => {
-    const unregister = registerTargetFromRankings((id, tab) => {
-      const list = buildTargetList(targets, disc, state, { prependSelf: tab === 'spells' });
-      const target = list.find((row) => String(row.id) === String(id));
-      if (!target) {
-        toast('Kingdom not found in target list', 'error');
-        return;
-      }
-      if (tab === 'attack') {
-        setAttackTarget(target);
-      } else if (tab === 'spells') {
-        setSpellTarget(target);
-      } else if (tab === 'covert') {
-        setCovertTarget(target);
-      }
-      if (tab === 'attack') {
-        setActiveTab('attack');
-      } else if (tab === 'spells') {
-        setActiveTab('wspells');
-      } else if (tab === 'covert') {
-        setActiveTab('wcovert');
-      }
-    });
-    return () => unregister?.();
-  }, [targets, disc, state]);
 
   const refreshAttackTargets = useCallback(async () => {
     try {
@@ -269,6 +221,8 @@ const WarfarePanel = () => {
           is_ai: row.is_ai || 0,
         }));
 
+      window.rankingsCache = kingdoms;
+      window.targets = mappedTargets;
       setTargets(mappedTargets);
     } catch (err) {
       console.error('[WarfarePanel] Failed to refresh attack targets:', err);
@@ -327,10 +281,14 @@ const WarfarePanel = () => {
   useEffect(() => {
     const handleRaceChange = (e) => setWcovTargetRace(e.detail);
     window.addEventListener('wcovTargetRaceChange', handleRaceChange);
-    const unregisterWarfareTab = registerWarfareTab(setActiveTab);
+    window.setWarfareTab = setActiveTab;
+    if (window.__pendingWarfareTab) {
+      setActiveTab(window.__pendingWarfareTab);
+      window.__pendingWarfareTab = null;
+    }
     return () => {
       window.removeEventListener('wcovTargetRaceChange', handleRaceChange);
-      unregisterWarfareTab?.();
+      delete window.setWarfareTab;
     };
   }, []);
 
@@ -349,6 +307,8 @@ const WarfarePanel = () => {
 
   const handleTabClick = (tabId) => {
     setActiveTab(tabId);
+    if (tabId === 'wspells' && window.initWspells) window.initWspells();
+    if (tabId === 'wcovert' && window.initWcovert) window.initWcovert();
   };
 
   const updateAtkEstimateW = useCallback(() => {
@@ -381,7 +341,7 @@ const WarfarePanel = () => {
     const eng = parseInt(document.getElementById('atk-engineers-w')?.value, 10) || 0;
     if (f + rn + m + wm + ld + cle + eng === 0) return;
 
-    const target = attackTarget;
+    const target = selectedTarget;
     const engLvlArray = state?.troop_levels?.engineers?.level || 1;
     const baseCrew = state?.race === 'human' ? 10 : state?.race === 'dwarf' ? 8 : 12;
     const crewReq = Math.max(1, Math.round(baseCrew * (1 - Math.min(0.5, (engLvlArray - 1) / 100))));
@@ -438,7 +398,7 @@ const WarfarePanel = () => {
       g('atk-bully-warn-w').style.display = bullyMsg ? 'block' : 'none';
       g('atk-bully-warn-w').textContent = bullyMsg;
     }
-  }, [attackTarget, state]);
+  }, [state, selectedTarget]);
 
   useEffect(() => {
     updateAtkEstimateW();
@@ -475,7 +435,7 @@ const WarfarePanel = () => {
   };
 
   const launchAttackW = useCallback(async () => {
-    if (!attackTarget) {
+    if (!selectedTarget) {
       toast('Select a target kingdom first', 'error');
       return;
     }
@@ -509,7 +469,7 @@ const WarfarePanel = () => {
     const result = await apiCall('/api/kingdom/attack', {
       method: 'POST',
       body: {
-        targetId: attackTarget.id,
+        targetId: selectedTarget.id,
         fighters: f,
         rangers: rn,
         mages: m,
@@ -563,110 +523,26 @@ const WarfarePanel = () => {
     if (r.bullyMsg) rows.push(['⚠️ Penalty', r.bullyMsg]);
 
     applyGameMutation(result, { reason: 'attack' });
-    playGameSound(r.win ? 'attack_victory' : 'attack_repelled');
     window.showBattleReport?.({
       type: 'Military attack',
-      target: attackTarget.name,
+      target: selectedTarget.name,
       win: r.win,
       rows,
     });
     refreshAttackTargets();
-  }, [attackTarget, refreshAttackTargets, state]);
+  }, [refreshAttackTargets, state, selectedTarget]);
 
-  const castWspell = useCallback(async () => {
-    if (!selectedSpell) {
-      toast('Select a spell', 'error');
-      return;
-    }
+  const castWspell = () => {
+    if (window.castWspell) window.castWspell();
+  };
 
-    const totalMana = spellObscure ? Math.ceil((selectedSpell.manaCost || 0) * 1.5) : (selectedSpell.manaCost || 0);
-    const held = Number(state?.scrolls?.[selectedSpell.id] || 0);
-    if (selectedSpell.scrollRequired && held < 1) {
-      toast('You need a scroll for this spell', 'error');
-      return;
-    }
-    if ((state?.mana || 0) < totalMana) {
-      toast('Not enough mana', 'error');
-      return;
-    }
+  const doWcovert = (type) => {
+    if (window.doWcovert) window.doWcovert(type);
+  };
 
-    const result = await apiCall('/api/kingdom/spell', {
-      method: 'POST',
-      body: {
-        spellId: selectedSpell.id,
-        targetId: spellTarget?.id || null,
-        obscure: !!spellObscure,
-      },
-    });
-    if (result?.error) return toast(result.error, 'error');
-
-    playGameSound('spell_cast');
-    applyGameMutation(result, { reason: 'warfare-spell' });
-    toast((selectedSpell.label || selectedSpell.name || selectedSpell.id) + ' cast!', 'success');
-    setSelectedSpell(null);
-    refreshAttackTargets();
-  }, [refreshAttackTargets, selectedSpell, spellObscure, spellTarget, state]);
-
-  const doWcovert = useCallback(async (type) => {
-    if (!covertTarget) {
-      toast('Select a target kingdom', 'error');
-      return;
-    }
-
-    const lootType = document.getElementById('wcov-loot-type')?.value;
-
-    if (type === 'loot' && lootType === 'location_map') {
-      const result = await apiCall('/api/kingdom/locations/steal-map', {
-        method: 'POST',
-        body: { targetId: covertTarget.id },
-      });
-      if (result?.error) return toast(result.error, 'error');
-      if (result?.updates) applyGameMutation(result, { reason: 'steal-map' });
-      toast(result.message || 'Operation complete', result.success ? 'success' : 'error');
-      refreshAttackTargets();
-      return;
-    }
-
-    const payload = { targetId: covertTarget.id, op: type };
-    if (type === 'spy') {
-      payload.units = parseInt(document.getElementById('wcov-spy-units')?.value || '0', 10) || 0;
-      payload.spyType = document.getElementById('wcov-spy-type')?.value || 'full';
-    } else if (type === 'loot') {
-      payload.units = parseInt(document.getElementById('wcov-loot-thieves')?.value || '0', 10) || 0;
-      payload.lootType = document.getElementById('wcov-loot-type')?.value;
-    } else if (type === 'assassinate') {
-      payload.units = parseInt(document.getElementById('wcov-assn-ninjas')?.value || '0', 10) || 0;
-      payload.unitType = document.getElementById('wcov-assass-type')?.value;
-    } else if (type === 'sabotage') {
-      payload.units = parseInt(document.getElementById('wcov-sab-thieves')?.value || '0', 10) || 0;
-      payload.bldType = document.getElementById('wcov-sab-type')?.value;
-    }
-
-    if (payload.units <= 0) {
-      toast('Enter number of units to send', 'error');
-      return;
-    }
-
-    const result = await apiCall('/api/kingdom/covert', {
-      method: 'POST',
-      body: payload,
-    });
-    if (result?.error) return toast(result.error, 'error');
-
-    applyGameMutation(result, { reason: `covert-${type}` });
-
-    if (type === 'spy') {
-      if (result.success && result.report) {
-        toast('Spy mission complete', 'success');
-      } else {
-        toast(result.event || 'Spy mission failed', 'error');
-      }
-    } else {
-      toast(`${type.charAt(0).toUpperCase()}${type.slice(1)} operation complete`, result.success ? 'success' : 'error');
-    }
-
-    refreshAttackTargets();
-  }, [covertTarget, refreshAttackTargets]);
+  const updateWspellCalc = () => {
+    if (window.updateWspellCalc) window.updateWspellCalc();
+  };
 
   const fmtDate = (value) => {
     if (!value) return 'Just now';
@@ -696,17 +572,17 @@ const WarfarePanel = () => {
 
   const warLogContent = useMemo(() => {
     if (loadingWarLog) {
-      return <div style={{ color: 'var(--text3)', fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>Loading...</div>;
+      return <div className="text-[var(--text3)] text-[13px] text-center py-6">Loading...</div>;
     }
     if (warLogError) {
-      return <div style={{ color: 'var(--red)', textAlign: 'center', padding: '20px' }}>{warLogError}</div>;
+      return <div className="text-[var(--red)] text-center p-5">{warLogError}</div>;
     }
     if (!warLogRows.length) {
       return (
-        <div style={{ textAlign: 'center', padding: '32px 16px' }}>
-          <div style={{ fontSize: '32px', marginBottom: '10px' }}>🕊️</div>
-          <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text2)', marginBottom: '6px' }}>It&apos;s been a quiet day.</div>
-          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--red)' }}>BREAK SOME $#@&amp;!</div>
+        <div className="text-center px-4 py-8">
+          <div className="text-[32px] mb-2.5">🕊️</div>
+          <div className="text-[15px] font-semibold text-[var(--text2)] mb-1.5">It&apos;s been a quiet day.</div>
+          <div className="text-[18px] font-bold text-[var(--red)]">BREAK SOME $#@&amp;!</div>
         </div>
       );
     }
@@ -730,18 +606,18 @@ const WarfarePanel = () => {
           ? 'var(--amber)'
           : 'var(--text3)';
       return (
-        <div key={row.id} style={{ borderBottom: '1px solid var(--border)', padding: '12px 4px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'baseline', flexWrap: 'wrap' }}>
-            <div style={{ color: 'var(--text)', fontWeight: 700 }}>
-              <span style={{ marginRight: '8px' }}>{icon}</span>
+        <div key={row.id} className="border-b border-[var(--border)] px-1 py-3">
+          <div className="flex justify-between gap-3 items-baseline flex-wrap">
+            <div className="text-[var(--text)] font-bold">
+              <span className="mr-2">{icon}</span>
               {row.action_type || 'event'} — {row.attacker_name || 'Unknown'} vs {row.defender_name || 'Unknown'}
             </div>
-            <div style={{ color: outcomeColor, fontWeight: 700 }}>{outcome}</div>
+            <div style={{ color: outcomeColor }} className="font-bold">{outcome}</div>
           </div>
           {row.detail ? (
-            <pre style={{ margin: '8px 0 0', whiteSpace: 'pre-wrap', color: 'var(--text2)', fontSize: '12px' }}>{renderDetail(row.detail)}</pre>
+            <pre className="mt-2 whitespace-pre-wrap text-[var(--text2)] text-[12px]">{renderDetail(row.detail)}</pre>
           ) : null}
-          <div style={{ marginTop: '6px', color: 'var(--text3)', fontSize: '11px' }}>{fmtDate(row.created_at)}</div>
+          <div className="mt-1.5 text-[var(--text3)] text-[11px]">{fmtDate(row.created_at)}</div>
         </div>
       );
     });
@@ -749,31 +625,30 @@ const WarfarePanel = () => {
 
   const spyReportsContent = useMemo(() => {
     if (loadingSpyReports) {
-      return <div style={{ color: 'var(--text3)', padding: '20px', textAlign: 'center' }}>Loading spy reports...</div>;
+      return <div className="text-[var(--text3)] p-5 text-center">Loading spy reports...</div>;
     }
     if (spyError) {
-      return <div style={{ color: 'var(--red)', padding: '20px', textAlign: 'center' }}>{spyError}</div>;
+      return <div className="text-[var(--red)] p-5 text-center">{spyError}</div>;
     }
     if (!spyReports.length) {
-      return <div style={{ color: 'var(--text3)', padding: '20px', textAlign: 'center' }}>No reports yet. Send spies to gather intel.</div>;
+      return <div className="text-[var(--text3)] p-5 text-center">No reports yet. Send spies to gather intel.</div>;
     }
     return spyReports.map((row) => (
-      <div key={row.id} style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '12px', marginBottom: '10px', background: 'var(--bg2)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap', marginBottom: '6px' }}>
-          <div style={{ fontWeight: 700, color: 'var(--text)' }}>{row.target_name || 'Unknown target'}</div>
-          <div style={{ color: 'var(--text3)', fontSize: '11px' }}>{fmtDate(row.created_at)}</div>
+      <div key={row.id} className="border border-[var(--border)] rounded-[12px] p-3 mb-2.5 bg-[var(--bg2)]">
+        <div className="flex justify-between gap-2 flex-wrap mb-1.5">
+          <div className="font-bold text-[var(--text)]">{row.target_name || 'Unknown target'}</div>
+          <div className="text-[var(--text3)] text-[11px]">{fmtDate(row.created_at)}</div>
         </div>
-        <div style={{ color: 'var(--text2)', fontSize: '13px', marginBottom: '8px' }}>{row.outcome || 'Unknown outcome'}</div>
+        <div className="text-[var(--text2)] text-[13px] mb-2">{row.outcome || 'Unknown outcome'}</div>
         {row.report ? (
-          <pre style={{ margin: 0, whiteSpace: 'pre-wrap', color: 'var(--text3)', fontSize: '12px' }}>{renderDetail(row.report)}</pre>
+          <pre className="whitespace-pre-wrap text-[var(--text3)] text-[12px]">{renderDetail(row.report)}</pre>
         ) : null}
-        <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'space-between', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <span style={{ color: row.shared_to_alliance ? 'var(--green)' : 'var(--text3)', fontSize: '11px' }}>
+        <div className="mt-2 flex justify-between gap-2 items-center flex-wrap">
+          <span style={{ color: row.shared_to_alliance ? 'var(--green)' : 'var(--text3)' }} className="text-[11px]">
             {row.shared_to_alliance ? 'Shared to alliance' : 'Private report'}
           </span>
           <button
-            className="btn btn-accent"
-            style={{ fontSize: '11px', padding: '4px 10px' }}
+            className="btn btn-accent text-[11px] px-2.5 py-1"
             onClick={async () => {
               const res = await apiCall(`/api/kingdom/spy-reports/${row.id}/share`, { method: 'POST' });
               if (res?.error) {
@@ -794,38 +669,38 @@ const WarfarePanel = () => {
 
   const allianceIntelContent = useMemo(() => {
     if (loadingAllianceIntel) {
-      return <div style={{ color: 'var(--text3)', padding: '20px', textAlign: 'center' }}>Loading alliance intel...</div>;
+      return <div className="text-[var(--text3)] p-5 text-center">Loading alliance intel...</div>;
     }
     if (allianceError) {
-      return <div style={{ color: 'var(--red)', padding: '20px', textAlign: 'center' }}>{allianceError}</div>;
+      return <div className="text-[var(--red)] p-5 text-center">{allianceError}</div>;
     }
     if (!allianceIntel.length) {
-      return <div style={{ color: 'var(--text3)', padding: '20px', textAlign: 'center' }}>No shared reports in your alliance.</div>;
+      return <div className="text-[var(--text3)] p-5 text-center">No shared reports in your alliance.</div>;
     }
     return allianceIntel.map((row) => (
-      <div key={row.id} style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '12px', marginBottom: '10px', background: 'var(--bg2)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap', marginBottom: '6px' }}>
-          <div style={{ fontWeight: 700, color: 'var(--text)' }}>{row.target_name || 'Unknown target'}</div>
-          <div style={{ color: 'var(--text3)', fontSize: '11px' }}>{fmtDate(row.created_at)}</div>
+      <div key={row.id} className="border border-[var(--border)] rounded-[12px] p-3 mb-2.5 bg-[var(--bg2)]">
+        <div className="flex justify-between gap-2 flex-wrap mb-1.5">
+          <div className="font-bold text-[var(--text)]">{row.target_name || 'Unknown target'}</div>
+          <div className="text-[var(--text3)] text-[11px]">{fmtDate(row.created_at)}</div>
         </div>
-        <div style={{ color: 'var(--text2)', fontSize: '13px', marginBottom: '8px' }}>
+        <div className="text-[var(--text2)] text-[13px] mb-2">
           Shared by {row.shared_by_name || 'an ally'} · {row.outcome || 'Unknown outcome'}
         </div>
         {row.report ? (
-          <pre style={{ margin: 0, whiteSpace: 'pre-wrap', color: 'var(--text3)', fontSize: '12px' }}>{renderDetail(row.report)}</pre>
+          <pre className="whitespace-pre-wrap text-[var(--text3)] text-[12px]">{renderDetail(row.report)}</pre>
         ) : null}
       </div>
     ));
   }, [allianceError, allianceIntel, loadingAllianceIntel]);
 
   return (
-    <div id="warfare" className="panel" style={{ display: 'none' }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', borderBottom: '2px solid var(--border2)', marginBottom: '16px', paddingBottom: '4px' }}>
-        <button className={`base-btn admin-tab ${activeTab === 'attack' ? 'active' : ''}`} onClick={() => handleTabClick('attack')} style={{ borderRadius: 0 }}>⚔️ Attack</button>
-        <button className={`base-btn admin-tab ${activeTab === 'wspells' ? 'active' : ''}`} onClick={() => handleTabClick('wspells')} style={{ borderRadius: 0 }}>✨ Spells</button>
-        <button className={`base-btn admin-tab ${activeTab === 'wcovert' ? 'active' : ''}`} onClick={() => handleTabClick('wcovert')} style={{ borderRadius: 0 }}>🕵️ Covert</button>
-        <button className={`base-btn admin-tab ${activeTab === 'wintel' ? 'active' : ''}`} onClick={() => handleTabClick('wintel')} style={{ borderRadius: 0 }}>📊 Intel</button>
-        <button className={`base-btn admin-tab ${activeTab === 'wreports' ? 'active' : ''}`} onClick={() => handleTabClick('wreports')} style={{ borderRadius: 0 }}>📝 Reports</button>
+    <div id="warfare" className="panel hidden">
+      <div className="flex flex-wrap gap-1 border-b-2 border-[var(--border2)] mb-4 pb-1">
+        <button className={clsx('base-btn admin-tab rounded-none', activeTab === 'attack' && 'active')} onClick={() => handleTabClick('attack')}>⚔️ Attack</button>
+        <button className={clsx('base-btn admin-tab rounded-none', activeTab === 'wspells' && 'active')} onClick={() => handleTabClick('wspells')}>✨ Spells</button>
+        <button className={clsx('base-btn admin-tab rounded-none', activeTab === 'wcovert' && 'active')} onClick={() => handleTabClick('wcovert')}>🕵️ Covert</button>
+        <button className={clsx('base-btn admin-tab rounded-none', activeTab === 'wintel' && 'active')} onClick={() => handleTabClick('wintel')}>📊 Intel</button>
+        <button className={clsx('base-btn admin-tab rounded-none', activeTab === 'wreports' && 'active')} onClick={() => handleTabClick('wreports')}>📝 Reports</button>
       </div>
 
       <WarfareReportsTab
@@ -843,9 +718,9 @@ const WarfarePanel = () => {
       />
 
       {/* ── Attack tab ─────────────────────────────────────────────────────── */}
-      <div style={{ display: activeTab === 'attack' ? 'block' : 'none' }}>
-        <div className="card" style={{ marginBottom: '12px' }}>
-          <div className="card-title" style={{ marginBottom: '8px' }}>Select Target</div>
+      <div className={clsx(activeTab === 'attack' ? 'block' : 'hidden')}>
+        <div className="card mb-3">
+          <div className="card-title mb-2">Select Target</div>
           <TargetListSection
             targets={filteredAtkTargets}
             selected={attackTarget}
@@ -857,84 +732,84 @@ const WarfarePanel = () => {
         </div>
 
         <div className="card" id="atk-panel-w">
-          <div className="card-title" style={{ marginBottom: '12px' }}>Warfare: Army Selection</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '20px' }}>
+          <div className="card-title mb-3">Warfare: Army Selection</div>
+          <div className="flex flex-col gap-1.5 mb-5">
             <div className="trow">
-              <span className="name" style={{ fontSize: '13px', fontWeight: 700 }}>
-                ⚔️ Fighters <span id="atk-fighters-avail-w" style={{ color: 'var(--text3)', fontWeight: 400 }}></span>
+              <span className="name text-[13px] font-bold">
+                ⚔️ Fighters <span id="atk-fighters-avail-w" className="text-[var(--text3)] font-normal"></span>
               </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <input type="number" className="input" id="atk-fighters-w" min="0" defaultValue="0" style={{ textAlign: 'right', width: '90px', padding: '6px' }} onChange={updateAtkEstimateW} placeholder="Qty" />
-                <button className="base-btn" style={{ fontSize: '10px', padding: '6px 8px' }} onClick={() => setMaxValue('atk-fighters-w')}>MAX</button>
+              <div className="flex items-center gap-1">
+                <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" id="atk-fighters-w" min="0" defaultValue="0" onChange={updateAtkEstimateW} placeholder="Qty" />
+                <button className="base-btn text-[10px] px-2 py-1.5" onClick={() => setMaxValue('atk-fighters-w')}>MAX</button>
               </div>
             </div>
             <div className="trow">
-              <span className="name" style={{ fontSize: '13px', fontWeight: 700 }}>
-                🏹 Rangers <span id="atk-rangers-avail-w" style={{ color: 'var(--text3)', fontWeight: 400 }}></span>
+              <span className="name text-[13px] font-bold">
+                🏹 Rangers <span id="atk-rangers-avail-w" className="text-[var(--text3)] font-normal"></span>
               </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <input type="number" className="input" id="atk-rangers-w" min="0" defaultValue="0" style={{ textAlign: 'right', width: '90px', padding: '6px' }} onChange={updateAtkEstimateW} placeholder="Qty" />
-                <button className="base-btn" style={{ fontSize: '10px', padding: '6px 8px' }} onClick={() => setMaxValue('atk-rangers-w')}>MAX</button>
+              <div className="flex items-center gap-1">
+                <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" id="atk-rangers-w" min="0" defaultValue="0" onChange={updateAtkEstimateW} placeholder="Qty" />
+                <button className="base-btn text-[10px] px-2 py-1.5" onClick={() => setMaxValue('atk-rangers-w')}>MAX</button>
               </div>
             </div>
             <div className="trow">
-              <span className="name" style={{ fontSize: '13px', fontWeight: 700 }}>
-                ✨ Mages <span id="atk-mages-avail-w" style={{ color: 'var(--text3)', fontWeight: 400 }}></span>
+              <span className="name text-[13px] font-bold">
+                ✨ Mages <span id="atk-mages-avail-w" className="text-[var(--text3)] font-normal"></span>
               </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <input type="number" className="input" id="atk-mages-w" min="0" defaultValue="0" style={{ textAlign: 'right', width: '90px', padding: '6px' }} onChange={updateAtkEstimateW} placeholder="Qty" />
-                <button className="base-btn" style={{ fontSize: '10px', padding: '6px 8px' }} onClick={() => setMaxValue('atk-mages-w')}>MAX</button>
+              <div className="flex items-center gap-1">
+                <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" id="atk-mages-w" min="0" defaultValue="0" onChange={updateAtkEstimateW} placeholder="Qty" />
+                <button className="base-btn text-[10px] px-2 py-1.5" onClick={() => setMaxValue('atk-mages-w')}>MAX</button>
               </div>
             </div>
             <div className="trow">
-              <span className="name" style={{ fontSize: '13px', fontWeight: 700 }}>
-                ⛪ Clerics <span id="atk-clerics-avail-w" style={{ color: 'var(--text3)', fontWeight: 400 }}></span>
+              <span className="name text-[13px] font-bold">
+                ⛪ Clerics <span id="atk-clerics-avail-w" className="text-[var(--text3)] font-normal"></span>
               </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <input type="number" className="input" id="atk-clerics-w" min="0" defaultValue="0" style={{ textAlign: 'right', width: '90px', padding: '6px' }} onChange={updateAtkEstimateW} placeholder="Qty" />
-                <button className="base-btn" style={{ fontSize: '10px', padding: '6px 8px' }} onClick={() => setMaxValue('atk-clerics-w')}>MAX</button>
+              <div className="flex items-center gap-1">
+                <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" id="atk-clerics-w" min="0" defaultValue="0" onChange={updateAtkEstimateW} placeholder="Qty" />
+                <button className="base-btn text-[10px] px-2 py-1.5" onClick={() => setMaxValue('atk-clerics-w')}>MAX</button>
               </div>
             </div>
-            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '8px', marginTop: '4px' }}>
+            <div className="border-t border-[var(--border)] pt-2 mt-1">
               <div className="trow">
-                <span className="name" style={{ fontSize: '13px', fontWeight: 700 }}>
-                  ⚙️ War Machines <span id="atk-wm-avail-w" style={{ color: 'var(--text3)', fontWeight: 400 }}></span>
+                <span className="name text-[13px] font-bold">
+                  ⚙️ War Machines <span id="atk-wm-avail-w" className="text-[var(--text3)] font-normal"></span>
                 </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <input type="number" className="input" id="atk-wm-w" min="0" defaultValue="0" style={{ textAlign: 'right', width: '90px', padding: '6px' }} onChange={updateAtkEstimateW} placeholder="Qty" />
-                  <button className="base-btn" style={{ fontSize: '10px', padding: '6px 8px' }} onClick={() => setMaxValue('atk-wm-w')}>MAX</button>
+                <div className="flex items-center gap-1">
+                  <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" id="atk-wm-w" min="0" defaultValue="0" onChange={updateAtkEstimateW} placeholder="Qty" />
+                  <button className="base-btn text-[10px] px-2 py-1.5" onClick={() => setMaxValue('atk-wm-w')}>MAX</button>
                 </div>
               </div>
               <div className="trow">
-                <span className="name" style={{ fontSize: '13px', fontWeight: 700 }}>
-                  🪜 Ladders <span id="atk-ladders-avail-w" style={{ color: 'var(--text3)', fontWeight: 400 }}></span>
+                <span className="name text-[13px] font-bold">
+                  🪜 Ladders <span id="atk-ladders-avail-w" className="text-[var(--text3)] font-normal"></span>
                 </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <input type="number" className="input" id="atk-ladders-w" min="0" defaultValue="0" style={{ textAlign: 'right', width: '90px', padding: '6px' }} onChange={updateAtkEstimateW} placeholder="Qty" />
-                  <button className="base-btn" style={{ fontSize: '10px', padding: '6px 8px' }} onClick={() => setMaxValue('atk-ladders-w')}>MAX</button>
+                <div className="flex items-center gap-1">
+                  <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" id="atk-ladders-w" min="0" defaultValue="0" onChange={updateAtkEstimateW} placeholder="Qty" />
+                  <button className="base-btn text-[10px] px-2 py-1.5" onClick={() => setMaxValue('atk-ladders-w')}>MAX</button>
                 </div>
               </div>
             </div>
-            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '8px', marginTop: '4px' }}>
+            <div className="border-t border-[var(--border)] pt-2 mt-1">
               <div className="trow">
-                <span className="name" style={{ fontSize: '13px', fontWeight: 700 }}>
-                  🕵️ Ninjas <span id="atk-ninjas-avail-w" style={{ color: 'var(--text3)', fontWeight: 400 }}></span>
+                <span className="name text-[13px] font-bold">
+                  🕵️ Ninjas <span id="atk-ninjas-avail-w" className="text-[var(--text3)] font-normal"></span>
                 </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <input type="number" className="input" id="atk-ninjas-w" min="0" defaultValue="0" style={{ textAlign: 'right', width: '90px', padding: '6px' }} onChange={updateAtkEstimateW} placeholder="Qty" />
-                  <button className="base-btn" style={{ fontSize: '10px', padding: '6px 8px' }} onClick={() => setMaxValue('atk-ninjas-w')}>MAX</button>
+                <div className="flex items-center gap-1">
+                  <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" id="atk-ninjas-w" min="0" defaultValue="0" onChange={updateAtkEstimateW} placeholder="Qty" />
+                  <button className="base-btn text-[10px] px-2 py-1.5" onClick={() => setMaxValue('atk-ninjas-w')}>MAX</button>
                 </div>
               </div>
             </div>
-            <button className="btn btn-red" style={{ fontWeight: 700, marginTop: '8px' }} onClick={launchAttackW}>⚔️ Launch Attack</button>
+            <button className="btn btn-red font-bold mt-2" onClick={launchAttackW}>⚔️ Launch Attack</button>
           </div>
         </div>
       </div>
 
       {/* ── Spells tab ─────────────────────────────────────────────────────── */}
-      <div style={{ display: activeTab === 'wspells' ? 'block' : 'none' }}>
-        <div className="card" style={{ marginBottom: '12px' }}>
-          <div className="card-title" style={{ marginBottom: '8px' }}>Select Target</div>
+      <div className={clsx(activeTab === 'wspells' ? 'block' : 'hidden')}>
+        <div className="card mb-3">
+          <div className="card-title mb-2">Select Target</div>
           <TargetListSection
             targets={filteredWspTargets}
             selected={spellTarget}
@@ -944,89 +819,19 @@ const WarfarePanel = () => {
             placeholder="Search kingdoms…"
           />
         </div>
-        <div className="card" style={{ marginBottom: '12px' }}>
-          <div className="card-title" style={{ marginBottom: '8px' }}>Spellbook Spells</div>
-          {spellDefs.length === 0 ? (
-            <div style={{ color: 'var(--text3)', fontSize: '13px', padding: '12px 0' }}>
-              No scrolls available. Craft them in the Library.
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gap: '8px' }}>
-              {spellDefs.map((spell) => {
-                const held = Number(state?.scrolls?.[spell.id] || 0);
-                const isSelected = selectedSpell && String(selectedSpell.id) === String(spell.id);
-                return (
-                  <button
-                    key={spell.id}
-                    className={`base-btn ${isSelected ? 'active' : ''}`}
-                    style={{
-                      textAlign: 'left',
-                      padding: '10px 12px',
-                      border: '1px solid var(--border)',
-                      background: isSelected ? 'var(--bg3)' : 'var(--bg2)',
-                    }}
-                    onClick={() => setSelectedSpell(spell)}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
-                      <div style={{ fontWeight: 700, color: 'var(--accent1)' }}>
-                        {spell.label || spell.name || spell.id}
-                      </div>
-                      <div style={{ fontSize: '11px', color: 'var(--gold)', fontWeight: 700 }}>
-                        {fmt(held)} scroll{held === 1 ? '' : 's'}
-                      </div>
-                    </div>
-                    <div style={{ fontSize: '11px', color: 'var(--text3)', marginTop: '3px' }}>
-                      {spell.desc || 'Unknown spell'}
-                    </div>
-                    <div style={{ fontSize: '11px', color: 'var(--text3)', marginTop: '3px' }}>
-                      {fmt(spell.manaCost || 0)} mana{spell.scrollRequired ? ' · 1 scroll' : ''}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
         <div className="card">
-          <div className="card-title">Cast Spell</div>
-          <div style={{ display: 'grid', gap: '10px', marginTop: '12px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text2)' }}>
-              <input
-                type="checkbox"
-                checked={spellObscure}
-                onChange={(e) => setSpellObscure(e.target.checked)}
-              />
-              Obscure casting
-            </label>
-            <div style={{ fontSize: '13px', color: 'var(--text3)' }}>
-              {selectedSpell ? (
-                <>
-                  <strong style={{ color: 'var(--text)' }}>{selectedSpell.label || selectedSpell.name || selectedSpell.id}</strong>
-                  <span> · </span>
-                  {selectedSpell.desc || 'No description'}
-                </>
-              ) : (
-                'Choose a spell above to continue.'
-              )}
-            </div>
-            <div style={{ fontSize: '12px', color: 'var(--text3)' }}>
-              Target: <strong style={{ color: 'var(--text)' }}>{spellTarget ? spellTarget.name : 'none selected'}</strong>
-            </div>
-            <div style={{ fontSize: '12px', color: 'var(--text3)' }}>
-              Mana cost: <strong style={{ color: 'var(--gold)' }}>{selectedSpell ? fmt(spellObscure ? Math.ceil((selectedSpell.manaCost || 0) * 1.5) : (selectedSpell.manaCost || 0)) : '0'}</strong>
-              {selectedSpell ? ` · Scrolls held: ${fmt(Number(state?.scrolls?.[selectedSpell.id] || 0))}` : ''}
-            </div>
-            <button className="base-btn" onClick={castWspell} disabled={!selectedSpell}>
-              Cast Spell
-            </button>
+          <div className="card-title">Warfare Spells</div>
+          <div className="mt-3">
+            <button className="base-btn" onClick={castWspell}>Prepare Spell Targeting</button>
+            <button className="base-btn ml-2" onClick={updateWspellCalc}>Refresh Spell Estimates</button>
           </div>
         </div>
       </div>
 
       {/* ── Covert tab ─────────────────────────────────────────────────────── */}
-      <div style={{ display: activeTab === 'wcovert' ? 'block' : 'none' }}>
-        <div className="card" style={{ marginBottom: '12px' }}>
-          <div className="card-title" style={{ marginBottom: '8px' }}>Select Target</div>
+      <div className={clsx(activeTab === 'wcovert' ? 'block' : 'hidden')}>
+        <div className="card mb-3">
+          <div className="card-title mb-2">Select Target</div>
           <TargetListSection
             targets={filteredWcovTargets}
             selected={covertTarget}
@@ -1038,47 +843,11 @@ const WarfarePanel = () => {
         </div>
         <div className="card">
           <div className="card-title">Warfare Covert Ops</div>
-          <div style={{ display: 'grid', gap: '10px', marginTop: '12px' }}>
-            <div style={{ display: 'grid', gap: '6px' }}>
-              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text2)' }}>Spy</div>
-              <input id="wcov-spy-units" className="input" type="number" min="0" defaultValue="0" placeholder="Thieves + ninjas" />
-              <select id="wcov-spy-type" className="input">
-                <option value="full">Full intel</option>
-                <option value="economy">Economy</option>
-                <option value="military">Military</option>
-              </select>
-              <button className="base-btn" onClick={() => doWcovert('spy')}>Spy</button>
-            </div>
-            <div style={{ display: 'grid', gap: '6px' }}>
-              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text2)' }}>Loot</div>
-              <input id="wcov-loot-thieves" className="input" type="number" min="0" defaultValue="0" placeholder="Thieves" />
-              <select id="wcov-loot-type" className="input">
-                <option value="gold">Gold</option>
-                <option value="food">Food</option>
-                <option value="location_map">Location map</option>
-              </select>
-              <button className="base-btn" onClick={() => doWcovert('loot')}>Loot</button>
-            </div>
-            <div style={{ display: 'grid', gap: '6px' }}>
-              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text2)' }}>Assassinate</div>
-              <input id="wcov-assn-ninjas" className="input" type="number" min="0" defaultValue="0" placeholder="Ninjas" />
-              <select id="wcov-assass-type" className="input">
-                <option value="leaders">Leaders</option>
-                <option value="mages">Mages</option>
-                <option value="engineers">Engineers</option>
-              </select>
-              <button className="base-btn" onClick={() => doWcovert('assassinate')}>Assassinate</button>
-            </div>
-            <div style={{ display: 'grid', gap: '6px' }}>
-              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text2)' }}>Sabotage</div>
-              <input id="wcov-sab-thieves" className="input" type="number" min="0" defaultValue="0" placeholder="Thieves" />
-              <select id="wcov-sab-type" className="input">
-                <option value="walls">Walls</option>
-                <option value="towers">Towers</option>
-                <option value="upgrades">Upgrades</option>
-              </select>
-              <button className="base-btn" onClick={() => doWcovert('sabotage')}>Sabotage</button>
-            </div>
+          <div className="mt-3">
+            <button className="base-btn" onClick={() => doWcovert('spy')}>Spy</button>
+            <button className="base-btn ml-2" onClick={() => doWcovert('loot')}>Loot</button>
+            <button className="base-btn ml-2" onClick={() => doWcovert('assassinate')}>Assassinate</button>
+            <button className="base-btn ml-2" onClick={() => doWcovert('sabotage')}>Sabotage</button>
           </div>
         </div>
       </div>

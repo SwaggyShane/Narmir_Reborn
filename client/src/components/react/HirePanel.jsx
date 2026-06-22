@@ -186,7 +186,7 @@ const HirePanel = () => {
   }, [isVampire]);
 
   return (
-    <div id="hire" className="panel min-h-0 w-full overflow-y-auto px-4 pb-5" style={{ display: 'none' }}>
+    <div id="hire" className="panel hidden min-h-0 w-full overflow-y-auto px-4 pb-5">
       <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-white/10 bg-zinc-950/80 p-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <div className="card-title mb-1">Hire units</div>
@@ -207,25 +207,25 @@ const HirePanel = () => {
         <div className="rounded-xl border border-white/10 bg-zinc-950/60 p-3">
           <div className="text-[9px] uppercase tracking-[1px] text-[var(--text3)]">Barracks</div>
           <div className="text-[13px] font-bold">
-              <span id="hire-barracks-used">0</span> <span style={{ color: 'var(--text3)', fontWeight: 400 }}>/</span> <span id="hire-barracks-cap" style={{ color: 'var(--gold)' }}>0</span>
+              <span id="hire-barracks-used">0</span> <span className="text-[var(--text3)] font-normal">/</span> <span id="hire-barracks-cap" className="text-[var(--gold)]">0</span>
             </div>
         </div>
         <div className="rounded-xl border border-white/10 bg-zinc-950/60 p-3">
           <div className="text-[9px] uppercase tracking-[1px] text-[var(--text3)]">Schools</div>
           <div className="text-[13px] font-bold">
-              <span id="hire-school-used">0</span> <span style={{ color: 'var(--text3)', fontWeight: 400 }}>/</span> <span id="hire-school-cap" style={{ color: 'var(--gold)' }}>0</span>
+              <span id="hire-school-used">0</span> <span className="text-[var(--text3)] font-normal">/</span> <span id="hire-school-cap" className="text-[var(--gold)]">0</span>
             </div>
         </div>
         <div className="rounded-xl border border-white/10 bg-zinc-950/60 p-3">
           <div className="text-[9px] uppercase tracking-[1px] text-[var(--text3)]">Smithies</div>
           <div className="text-[13px] font-bold">
-              <span id="hire-smithy-used">0</span> <span style={{ color: 'var(--text3)', fontWeight: 400 }}>/</span> <span id="hire-smithy-cap" style={{ color: 'var(--gold)' }}>0</span>
+              <span id="hire-smithy-used">0</span> <span className="text-[var(--text3)] font-normal">/</span> <span id="hire-smithy-cap" className="text-[var(--gold)]">0</span>
             </div>
         </div>
         <div className="rounded-xl border border-white/10 bg-zinc-950/60 p-3">
           <div className="text-[9px] uppercase tracking-[1px] text-[var(--text3)]">Library</div>
           <div className="text-[13px] font-bold">
-              <span id="hire-library-used">0</span> <span style={{ color: 'var(--text3)', fontWeight: 400 }}>/</span> <span id="hire-library-cap" style={{ color: 'var(--gold)' }}>0</span>
+              <span id="hire-library-used">0</span> <span className="text-[var(--text3)] font-normal">/</span> <span id="hire-library-cap" className="text-[var(--gold)]">0</span>
             </div>
         </div>
       </div>
@@ -247,25 +247,24 @@ const HirePanel = () => {
               </div>
               <div className="hcount" id={`h-${row.key}`}>{unitCount(row.key)}</div>
               <div className="hprice" id={`hp-${row.key}`}>{row.price} GC</div>
-              <div className="hbtns" style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
+              <div className="hbtns flex items-center gap-1 justify-end">
                 <input
                   type="number"
-                  className="input"
+                  className="input text-right w-[60px]"
                   id={`hire-${row.key}`}
                   min="0"
                   value={quantities[row.key] || ''}
                   onChange={(e) => setQuantities((prev) => ({ ...prev, [row.key]: e.target.value }))}
-                  style={{ textAlign: 'right', width: '60px' }}
                   placeholder="Qty"
                 />
-                <button className="base-btn" style={{ fontSize: '10px', padding: '3px 6px' }} onClick={() => setMaxValue(row)}>Max</button>
-                <button className="base-btn variant-gold" style={{ fontSize: '10px', padding: '3px 8px', background: 'var(--gold)', color: '#000' }} onClick={() => hire(row)}>Hire</button>
-                <button className="base-btn variant-red" style={{ fontSize: '10px', padding: '3px 8px', background: 'var(--red)' }} onClick={() => fire(row)}>Fire</button>
+                <button className="base-btn text-[10px] px-1.5 py-0.75" onClick={() => setMaxValue(row)}>Max</button>
+                <button className="base-btn variant-gold text-[10px] px-2 py-0.75 bg-[var(--gold)] text-black" onClick={() => hire(row)}>Hire</button>
+                <button className="base-btn variant-red text-[10px] px-2 py-0.75 bg-[var(--red)]" onClick={() => fire(row)}>Fire</button>
               </div>
             </div>
           );
         })}
-      <div style={{ fontSize: '12px', color: 'var(--text3)', padding: '0 4px' }}>
+      <div className="text-[12px] text-[var(--text3)] px-1">
         Hired units are subtracted from the population pool. Population returns over time based on happiness and entertainment.
       </div>
     </div>

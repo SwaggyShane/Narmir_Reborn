@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
 import { useGameState } from '../../hooks/useGameState';
 import { applyGameMutation } from '../../utils/gameMutations.js';
@@ -596,66 +597,44 @@ const EconomyPanel = () => {
   }, [activeTab, loadTradeOffers, loadTradeRoutes]);
 
   return (
-    <div id="economy" className="panel" style={{ display: 'none' }}>
-      <div className="card" style={{ marginTop: 0, flexShrink: 0 }}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'baseline',
-          }}
-        >
+    <div id="economy" className="panel hidden">
+      <div className="card flex-shrink-0">
+        <div className="flex justify-between items-baseline">
           <div className="card-title">Tax policy</div>
-          <div
-            id="tax-metrics"
-            style={{ fontSize: '12px', color: 'var(--text3)', display: 'flex', gap: '12px' }}
-          >
+          <div id="tax-metrics" className="text-[12px] text-[var(--text3)] flex gap-3">
             <span>
-              Income: <strong id="econ-income" style={{ color: 'var(--green)' }}>+0</strong>
+              Income: <strong id="econ-income" className="text-[var(--green)]">+0</strong>
             </span>
             <span>
-              Upkeep: <strong id="econ-upkeep" style={{ color: 'var(--red)' }}>-0</strong>
+              Upkeep: <strong id="econ-upkeep" className="text-[var(--red)]">-0</strong>
             </span>
             <span>
-              Net: <strong id="econ-net" style={{ color: 'var(--gold)' }}>0</strong>
+              Net: <strong id="econ-net" className="text-[var(--gold)]">0</strong>
             </span>
           </div>
         </div>
-        <div
-          style={{ display: 'flex', alignItems: 'center', gap: '14px', margin: '12px 0' }}
-          className="tax-slider-container"
-        >
+        <div className="flex items-center gap-3.5 my-3 tax-slider-container">
           <input
             type="range"
             id="tax-slider"
-            className="input"
+            className="input flex-1 min-w-[120px]"
             min="1"
             max="100"
             step="1"
             defaultValue="42"
             onChange={(e) => updateTax(e.target.value)}
-            style={{ flex: 1, minWidth: '120px' }}
           />
-          <span
-            style={{
-              fontSize: '22px',
-              fontWeight: 700,
-              color: 'var(--gold)',
-              minWidth: '48px',
-            }}
-            id="tax-disp"
-          ></span>
+          <span className="text-[22px] font-bold text-[var(--gold)] min-w-[48px]" id="tax-disp"></span>
         </div>
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+        <div className="flex gap-2 mb-2.5">
           <button
-            className="base-btn variant-gold"
+            className="base-btn variant-gold flex-1 p-2 bg-[var(--gold)] text-black"
             onClick={() => lockTax('tax-slider')}
-            style={{ flex: 1, padding: '8px', background: 'var(--gold)', color: '#000' }}
           >
             🔒 Lock changes
           </button>
         </div>
-        <div style={{ fontSize: '12px', color: 'var(--text3)', lineHeight: 1.6 }}>
+        <div className="text-[12px] text-[var(--text3)] leading-relaxed">
           Taxing your citizens directly affects their happiness. Tax them high and
           they will probably leave. Tax them low and they will rejoice. Net income
           is calculated per turn spent.
@@ -663,172 +642,100 @@ const EconomyPanel = () => {
       </div>
 
       {/* FINANCIAL LEDGER */}
-      <div className="card" style={{ flexShrink: 0 }}>
-        <div className="card-title" style={{ marginBottom: '8px' }}>Financial Ledger</div>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-            gap: '16px',
-            fontSize: '13px',
-          }}
-        >
+      <div className="card flex-shrink-0">
+        <div className="card-title mb-2">Financial Ledger</div>
+        <div className="grid [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))] gap-4 text-[13px]">
           <div>
-            <div
-              style={{
-                fontWeight: 'bold',
-                color: 'var(--green)',
-                marginBottom: '4px',
-                borderBottom: '1px solid var(--border1)',
-                paddingBottom: '2px',
-              }}
-            >
+            <div className="font-bold text-[var(--green)] mb-1 border-b border-[var(--border)] pb-0.5">
               Income / Turn
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span className="text3">Taxes</span>
-              <span id="ledger-tax" className="green">0</span>
+            <div className="flex justify-between">
+              <span className="text-[var(--text3)]">Taxes</span>
+              <span id="ledger-tax" className="text-[var(--green)]">0</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span className="text3">Markets</span>
-              <span id="ledger-markets" className="green">0</span>
+            <div className="flex justify-between">
+              <span className="text-[var(--text3)]">Markets</span>
+              <span id="ledger-markets" className="text-[var(--green)]">0</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span className="text3">Trade Routes</span>
-              <span id="ledger-trade" className="green">0</span>
+            <div className="flex justify-between">
+              <span className="text-[var(--text3)]">Trade Routes</span>
+              <span id="ledger-trade" className="text-[var(--green)]">0</span>
             </div>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                fontWeight: 'bold',
-                borderTop: '1px solid var(--border1)',
-                marginTop: '4px',
-                paddingTop: '2px',
-              }}
-            >
-              <span className="text2">Total Income</span>
-              <span id="ledger-income-total" className="green">0</span>
+            <div className="flex justify-between font-bold border-t border-[var(--border)] mt-1 pt-0.5">
+              <span className="text-text2">Total Income</span>
+              <span id="ledger-income-total" className="text-[var(--green)]">0</span>
             </div>
           </div>
           <div>
-            <div
-              style={{
-                fontWeight: 'bold',
-                color: 'var(--red)',
-                marginBottom: '4px',
-                borderBottom: '1px solid var(--border1)',
-                paddingBottom: '2px',
-              }}
-            >
+            <div className="font-bold text-[var(--red)] mb-1 border-b border-[var(--border)] pb-0.5">
               Expenses / Turn
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span className="text3">Troop Upkeep</span>
-              <span id="ledger-upkeep" className="red">0</span>
+            <div className="flex justify-between">
+              <span className="text-[var(--text3)]">Troop Upkeep</span>
+              <span id="ledger-upkeep" className="text-[var(--red)]">0</span>
             </div>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                fontWeight: 'bold',
-                borderTop: '1px solid var(--border1)',
-                marginTop: '4px',
-                paddingTop: '2px',
-              }}
-            >
-              <span className="text2">Total Expenses</span>
-              <span id="ledger-expense-total" className="red">0</span>
+            <div className="flex justify-between font-bold border-t border-[var(--border)] mt-1 pt-0.5">
+              <span className="text-text2">Total Expenses</span>
+              <span id="ledger-expense-total" className="text-[var(--red)]">0</span>
             </div>
           </div>
         </div>
-        <div
-          style={{
-            marginTop: '8px',
-            textAlign: 'center',
-            fontWeight: 'bold',
-            padding: '4px',
-            background: 'var(--bg2)',
-            borderRadius: '4px',
-          }}
-        >
+        <div className="mt-2 text-center font-bold p-1 bg-bg2 rounded-sm">
           Net Balance: <span id="ledger-net">0</span>
         </div>
       </div>
 
       {/* Tab nav */}
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '4px',
-          marginBottom: '16px',
-          borderBottom: '2px solid var(--border2)',
-          paddingBottom: 0,
-        }}
-      >
+      <div className="flex flex-wrap gap-1 mb-4 border-b-2 border-[var(--border2)] pb-0">
         <button
-          className={`base-btn admin-tab ${activeTab === 'farms' ? 'active' : ''}`}
+          className={clsx('base-btn admin-tab rounded-none', activeTab === 'farms' && 'active')}
           id="econ-tab-farms"
           onClick={() => handleTabClick('farms')}
-          style={{ borderRadius: '0' }}
         >
           🌾 Farm
         </button>
         <button
-          className={`base-btn admin-tab ${activeTab === 'granary' ? 'active' : ''}`}
+          className={clsx('base-btn admin-tab rounded-none', activeTab === 'granary' && 'active')}
           id="econ-tab-granary"
           onClick={() => handleTabClick('granary')}
-          style={{ borderRadius: '0' }}
         >
           🌾 Granary
         </button>
         <button
-          className={`base-btn admin-tab ${activeTab === 'markets' ? 'active' : ''}`}
+          className={clsx('base-btn admin-tab rounded-none', activeTab === 'markets' && 'active')}
           id="econ-tab-markets"
           onClick={() => handleTabClick('markets')}
-          style={{ borderRadius: '0' }}
         >
           🏪 Market
         </button>
         <button
-          className={`base-btn admin-tab ${activeTab === 'tavern' ? 'active' : ''}`}
+          className={clsx('base-btn admin-tab rounded-none', activeTab === 'tavern' && 'active')}
           id="econ-tab-tavern"
           onClick={() => handleTabClick('tavern')}
-          style={{ borderRadius: '0' }}
         >
           🍺 Tavern
         </button>
         <button
-          className={`base-btn admin-tab ${activeTab === 'bank' ? 'active' : ''}`}
+          className={clsx('base-btn admin-tab rounded-none', activeTab === 'bank' && 'active')}
           id="econ-tab-bank"
           onClick={() => handleTabClick('bank')}
-          style={{ borderRadius: '0' }}
         >
           🏦 Bank
         </button>
         <button
-          className={`base-btn admin-tab ${activeTab === 'trade-routes' ? 'active' : ''}`}
+          className={clsx('base-btn admin-tab rounded-none', activeTab === 'trade-routes' && 'active')}
           id="econ-tab-trade-routes"
           onClick={() => handleTabClick('trade-routes')}
-          style={{ borderRadius: '0' }}
         >
           🤝 Trade Routes
         </button>
       </div>
 
       {/* FARMS TAB */}
-      <div style={{ display: activeTab === 'farms' ? 'block' : 'none' }}>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '12px',
-            marginBottom: '16px',
-          }}
-        >
-          <div className="card" style={{ margin: 0 }}>
-            <div className="card-title" style={{ marginBottom: '10px' }}>Farm overview</div>
+      <div className={clsx(activeTab === 'farms' ? 'block' : 'hidden')}>
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="card m-0">
+            <div className="card-title mb-2.5">Farm overview</div>
             <div className="trow">
               <span className="name">Farm</span>
               <span className="count" id="econ-farms">0</span>
@@ -872,7 +779,7 @@ const EconomyPanel = () => {
       </div>
 
       {/* GRANARY TAB */}
-      <div style={{ display: activeTab === 'granary' ? 'block' : 'none' }}>
+      <div className={clsx(activeTab === 'granary' ? 'block' : 'hidden')}>
         <div
           style={{
             display: 'grid',
@@ -920,7 +827,7 @@ const EconomyPanel = () => {
       </div>
 
       {/* MARKETS TAB */}
-      <div style={{ display: activeTab === 'markets' ? 'block' : 'none' }}>
+      <div className={clsx(activeTab === 'markets' ? 'block' : 'hidden')}>
         <div
           style={{
             display: 'grid',
@@ -1032,7 +939,7 @@ const EconomyPanel = () => {
       </div>
 
       {/* TAVERN TAB */}
-      <div style={{ display: activeTab === 'tavern' ? 'block' : 'none' }}>
+      <div className={clsx(activeTab === 'tavern' ? 'block' : 'hidden')}>
         <div
           style={{
             display: 'grid',
@@ -1100,7 +1007,7 @@ const EconomyPanel = () => {
       </div>
 
       {/* BANK TAB */}
-      <div style={{ display: activeTab === 'bank' ? 'block' : 'none' }}>
+      <div className={clsx(activeTab === 'bank' ? 'block' : 'hidden')}>
         <div
           id="bank-locked-msg"
           style={{
@@ -1161,7 +1068,7 @@ const EconomyPanel = () => {
       </div>
 
       {/* TRADE ROUTES TAB */}
-      <div style={{ display: activeTab === 'trade-routes' ? 'block' : 'none' }}>
+      <div className={clsx(activeTab === 'trade-routes' ? 'block' : 'hidden')}>
         <div className="card" style={{ marginTop: 0, marginBottom: '20px' }}>
           <div className="card-title">Establish New Route</div>
           <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '12px' }}>

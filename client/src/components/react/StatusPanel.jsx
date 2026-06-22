@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
 import { useGameState } from '../../hooks/useGameState';
 import { repairMojibake } from '../../utils/repairMojibake';
@@ -147,471 +148,175 @@ const StatusPanel = () => {
       <div className="mb-5">
         <div
           id="race-tag-display"
-          className="race-tag-block"
+          className="race-tag-block cursor-pointer p-4 bg-bg3 border border-white/5 rounded-lg flex flex-row items-center gap-4 transition-all w-full"
           onClick={() => { openRaceLore(); }}
-          style={{
-            cursor: 'pointer',
-            padding: '16px',
-            background: 'var(--bg3)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius)',
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: '16px',
-            transition: 'border-color 0.2s ease, background-color 0.2s ease',
-            width: '100%',
-            boxSizing: 'border-box',
-          }}
           title="Click for race lore"
         >
           {portraitUrl ? (
-            <div
-              style={{
-                flexShrink: 0,
-                width: '80px',
-                height: '80px',
-                borderRadius: '8px',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
-                overflow: 'hidden',
-                background: '#15171e',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
+            <div className="flex-shrink-0 w-20 h-20 rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.5)] overflow-hidden bg-[#15171e] flex items-center justify-center">
               <img
                 src={portraitUrl}
                 alt={cleanText(raceInfo.label)}
                 referrerPolicy="no-referrer"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  display: 'block',
-                  transition: 'transform 0.3s ease',
-                }}
-                className="race-portrait"
+                className="race-portrait w-full h-full object-cover block transition-transform"
               />
             </div>
           ) : null}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
-            <div
-              style={{
-                fontFamily: '"Cinzel", serif',
-                fontSize: '18px',
-                fontWeight: '700',
-                color: 'var(--gold)',
-                letterSpacing: '1px',
-                textTransform: 'uppercase',
-              }}
-            >
+          <div className="flex flex-col gap-1.5 flex-1">
+            <div className="font-cinzel text-[18px] font-bold text-gold uppercase tracking-[1px]">
               {cleanText(raceInfo.label)}
             </div>
-            <div
-              style={{
-                fontSize: '12.5px',
-                color: 'var(--text2)',
-                lineHeight: '1.6',
-                fontFamily: 'sans-serif',
-                letterSpacing: '0.3px',
-                fontWeight: 'normal',
-              }}
-            >
+            <div className="text-[12.5px] text-text2 leading-relaxed font-normal tracking-[0.3px]">
               {cleanText(raceInfo.bonus)}
             </div>
           </div>
         </div>
       </div>
 
-      <div className={STATUS_CARD_CLASS} id="status-tax-card" style={{ marginTop: 0, marginBottom: '16px', display: 'none' }}>
+      <div className={clsx(STATUS_CARD_CLASS, 'hidden mb-4')} id="status-tax-card">
         <div className="card-title">Tax rate</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '10px' }}>
+        <div className="flex items-center gap-3.5 mb-2.5">
           <input
             type="range"
-            className="input"
+            className="input flex-1"
             id="strip-tax-slider"
             min="1"
             max="100"
             step="1"
             defaultValue="42"
             onChange={(e) => updateTaxDisplay(e.target.value)}
-            style={{ flex: 1 }}
           />
-          <span
-            style={{ fontSize: '22px', fontWeight: 700, color: 'var(--gold)', minWidth: '48px' }}
-            id="strip-tax-disp"
-          />
+          <span className="text-[22px] font-bold text-[var(--gold)] min-w-[48px]" id="strip-tax-disp" />
         </div>
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+        <div className="flex gap-2 mb-2.5">
           <button
-            className="base-btn variant-gold"
+            className="base-btn variant-gold flex-1 bg-[var(--gold)] text-black"
             onClick={() => lockTax('strip-tax-slider')}
-            style={{ flex: 1, background: 'var(--gold)', color: '#000' }}
           >
             🔒 Lock
           </button>
         </div>
-        <div style={{ fontSize: '12px', color: 'var(--text3)', lineHeight: 1.7 }}>
+        <div className="text-[12px] text-[var(--text3)] leading-[1.7]">
           Taxing your citizens directly affects their happiness. Tax them high and they will probably leave.
           Tax them low and they will rejoice.{' '}
-          <strong style={{ color: 'var(--gold)' }}>Enter a rate then press Lock to save.</strong>
+          <strong className="text-[var(--gold)]">Enter a rate then press Lock to save.</strong>
         </div>
       </div>
 
-      <div className="status-grid w-full flex-1" id="status-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '20px', gridAutoRows: 'minmax(auto, 1fr)', alignContent: 'space-around' }}>
+      <div className="status-grid w-full flex-1 grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))] gap-5 [grid-auto-rows:minmax(auto,1fr)] [align-content:space-around]" id="status-grid">
         <div className={STATUS_CARD_CLASS}>
           <div className="card-title">
             Military &amp; support
             <span
               id="citadel-badge"
-              style={{ display: 'none', marginLeft: '8px', fontSize: '11px', fontWeight: 600, color: 'var(--gold)' }}
+              className="hidden ml-2 text-[11px] font-semibold text-[var(--gold)]"
             >
               🏰 Citadel
             </span>
           </div>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '100px 1fr 52px 52px',
-              gap: '4px',
-              padding: '4px 0 6px',
-              borderBottom: '1px solid var(--border2)',
-            }}
-          >
-            <span style={{ fontSize: '10px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Unit
-            </span>
-            <span
-              style={{ fontSize: '10px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'right' }}
-            >
-              Count
-            </span>
-            <span
-              style={{ fontSize: '10px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}
-            >
-              Lv
-            </span>
-            <span
-              style={{ fontSize: '10px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}
-            >
-              Role
-            </span>
+          <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 py-1 px-0 border-b border-[var(--border2)]">
+            <span className="text-[10px] text-[var(--text3)] uppercase tracking-[0.5px]">Unit</span>
+            <span className="text-[10px] text-[var(--text3)] uppercase tracking-[0.5px] text-right">Count</span>
+            <span className="text-[10px] text-[var(--text3)] uppercase tracking-[0.5px] text-center">Lv</span>
+            <span className="text-[10px] text-[var(--text3)] uppercase tracking-[0.5px] text-center">Role</span>
           </div>
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '100px 1fr 52px 52px',
-              gap: '4px',
-              alignItems: 'center',
-              padding: '5px 0',
-              borderBottom: '1px solid var(--border)',
-            }}
-          >
-            <span style={{ fontSize: '13px', color: 'var(--text)' }} id="s-label-fighters">
-              Fighters
-            </span>
-            <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-fighters">
-              {(state?.fighters ?? 0).toLocaleString()}
-            </span>
-            <span style={{ textAlign: 'center', fontSize: '11px', fontWeight: 600 }} id="s-lv-fighters">
-              Lv {troopLevels?.fighters?.level || 1}
-            </span>
-            <span className="badge badge-red" style={{ textAlign: 'center', fontSize: '9px' }}>
-              Combat
-            </span>
+          <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5">
+            <span className="text-[13px] text-text" id="s-label-fighters">Fighters</span>
+            <span className="text-[13px] font-semibold text-right text-text" id="s-fighters">{(state?.fighters ?? 0).toLocaleString()}</span>
+            <span className="text-center text-[11px] font-semibold" id="s-lv-fighters">Lv {troopLevels?.fighters?.level || 1}</span>
+            <span className="badge badge-red text-center text-[9px]">Combat</span>
           </div>
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '100px 1fr 52px 52px',
-              gap: '4px',
-              alignItems: 'center',
-              padding: '5px 0',
-              borderBottom: '1px solid var(--border)',
-            }}
-          >
-            <span style={{ fontSize: '13px', color: 'var(--text)' }} id="s-label-rangers">
-              Rangers
-            </span>
-            <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-rangers">
-              {(state?.rangers ?? 0).toLocaleString()}
-            </span>
-            <span style={{ textAlign: 'center', fontSize: '11px', fontWeight: 600 }} id="s-lv-rangers">
-              Lv {troopLevels?.rangers?.level || 1}
-            </span>
-            <span className="badge badge-blue" style={{ textAlign: 'center', fontSize: '9px' }}>
-              Ranged
-            </span>
+          <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5">
+            <span className="text-[13px] text-text" id="s-label-rangers">Rangers</span>
+            <span className="text-[13px] font-semibold text-right text-text" id="s-rangers">{(state?.rangers ?? 0).toLocaleString()}</span>
+            <span className="text-center text-[11px] font-semibold" id="s-lv-rangers">Lv {troopLevels?.rangers?.level || 1}</span>
+            <span className="badge badge-blue text-center text-[9px]">Ranged</span>
           </div>
 
-          <div
-            id="s-row-clerics"
-            style={{
-              display: isVampire ? 'none' : 'grid',
-              gridTemplateColumns: '100px 1fr 52px 52px',
-              gap: '4px',
-              alignItems: 'center',
-              padding: '5px 0',
-              borderBottom: '1px solid var(--border)',
-            }}
-          >
-            <span style={{ fontSize: '13px', color: 'var(--text)' }} id="s-label-clerics">
-              Clerics
-            </span>
-            <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-clerics">
-              {(state?.clerics ?? 0).toLocaleString()}
-            </span>
-            <span style={{ textAlign: 'center', fontSize: '11px', fontWeight: 600 }} id="s-lv-clerics">
-              Lv {troopLevels?.clerics?.level || 1}
-            </span>
-            <span className="badge badge-green" style={{ textAlign: 'center', fontSize: '9px' }}>
-              Heal
-            </span>
+          <div id="s-row-clerics" className={clsx('grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5', isVampire && 'hidden')}>
+            <span className="text-[13px] text-text" id="s-label-clerics">Clerics</span>
+            <span className="text-[13px] font-semibold text-right text-text" id="s-clerics">{(state?.clerics ?? 0).toLocaleString()}</span>
+            <span className="text-center text-[11px] font-semibold" id="s-lv-clerics">Lv {troopLevels?.clerics?.level || 1}</span>
+            <span className="badge badge-green text-center text-[9px]">Heal</span>
           </div>
 
-          <div
-            id="s-row-thralls"
-            style={{
-              display: isVampire ? 'grid' : 'none',
-              gridTemplateColumns: '100px 1fr 52px 52px',
-              gap: '4px',
-              alignItems: 'center',
-              padding: '5px 0',
-              borderBottom: '1px solid var(--border)',
-            }}
-          >
-            <span style={{ fontSize: '13px', color: 'var(--text)' }} id="s-label-thralls">
-              Thralls
-            </span>
-            <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-thralls">
-              {(state?.thralls ?? 0).toLocaleString()}
-            </span>
-            <span style={{ textAlign: 'center', fontSize: '11px', fontWeight: 600 }} id="s-lv-thralls">
-              Lv {troopLevels?.thralls?.level || 1}
-            </span>
-            <span className="badge badge-gray" style={{ textAlign: 'center', fontSize: '9px', background: '#444' }}>
-              Defense
-            </span>
+          <div id="s-row-thralls" className={clsx('grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5', !isVampire && 'hidden')}>
+            <span className="text-[13px] text-text" id="s-label-thralls">Thralls</span>
+            <span className="text-[13px] font-semibold text-right text-text" id="s-thralls">{(state?.thralls ?? 0).toLocaleString()}</span>
+            <span className="text-center text-[11px] font-semibold" id="s-lv-thralls">Lv {troopLevels?.thralls?.level || 1}</span>
+            <span className="badge text-center text-[9px]" style={{ background: '#444' }}>Defense</span>
           </div>
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '100px 1fr 52px 52px',
-              gap: '4px',
-              alignItems: 'center',
-              padding: '5px 0',
-              borderBottom: '1px solid var(--border)',
-            }}
-          >
-            <span style={{ fontSize: '13px', color: 'var(--text)' }} id="s-label-mages">
-              Mages
-            </span>
-            <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-mages">
-              {(state?.mages ?? 0).toLocaleString()}
-            </span>
-            <span style={{ textAlign: 'center', fontSize: '11px', fontWeight: 600 }} id="s-lv-mages">
-              Lv {troopLevels?.mages?.level || 1}
-            </span>
-            <span className="badge badge-amber" style={{ textAlign: 'center', fontSize: '9px' }}>
-              Magic
-            </span>
+          <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5">
+            <span className="text-[13px] text-text" id="s-label-mages">Mages</span>
+            <span className="text-[13px] font-semibold text-right text-text" id="s-mages">{(state?.mages ?? 0).toLocaleString()}</span>
+            <span className="text-center text-[11px] font-semibold" id="s-lv-mages">Lv {troopLevels?.mages?.level || 1}</span>
+            <span className="badge badge-amber text-center text-[9px]">Magic</span>
           </div>
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '100px 1fr 52px 52px',
-              gap: '4px',
-              alignItems: 'center',
-              padding: '5px 0',
-              borderBottom: '1px solid var(--border)',
-            }}
-          >
-            <span style={{ fontSize: '13px', color: 'var(--text)' }} id="s-label-thieves">
-              Thieves
-            </span>
-            <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-thieves">
-              {(state?.thieves ?? 0).toLocaleString()}
-            </span>
-            <span style={{ textAlign: 'center', fontSize: '11px', fontWeight: 600 }} id="s-lv-thieves">
-              Lv {troopLevels?.thieves?.level || 1}
-            </span>
-            <span className="badge badge-amber" style={{ textAlign: 'center', fontSize: '9px' }}>
-              Covert
-            </span>
+          <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5">
+            <span className="text-[13px] text-text" id="s-label-thieves">Thieves</span>
+            <span className="text-[13px] font-semibold text-right text-text" id="s-thieves">{(state?.thieves ?? 0).toLocaleString()}</span>
+            <span className="text-center text-[11px] font-semibold" id="s-lv-thieves">Lv {troopLevels?.thieves?.level || 1}</span>
+            <span className="badge badge-amber text-center text-[9px]">Covert</span>
           </div>
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '100px 1fr 52px 52px',
-              gap: '4px',
-              alignItems: 'center',
-              padding: '5px 0',
-              borderBottom: '1px solid var(--border2)',
-            }}
-          >
-            <span style={{ fontSize: '13px', color: 'var(--text)' }} id="s-label-ninjas">
-              Ninjas
-            </span>
-            <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-ninjas">
-              {(state?.ninjas ?? 0).toLocaleString()}
-            </span>
-            <span style={{ textAlign: 'center', fontSize: '11px', fontWeight: 600 }} id="s-lv-ninjas">
-              Lv {troopLevels?.ninjas?.level || 1}
-            </span>
-            <span className="badge badge-amber" style={{ textAlign: 'center', fontSize: '9px' }}>
-              Covert
-            </span>
+          <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-[var(--border2)]">
+            <span className="text-[13px] text-text" id="s-label-ninjas">Ninjas</span>
+            <span className="text-[13px] font-semibold text-right text-text" id="s-ninjas">{(state?.ninjas ?? 0).toLocaleString()}</span>
+            <span className="text-center text-[11px] font-semibold" id="s-lv-ninjas">Lv {troopLevels?.ninjas?.level || 1}</span>
+            <span className="badge badge-amber text-center text-[9px]">Covert</span>
           </div>
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '100px 1fr 52px 52px',
-              gap: '4px',
-              alignItems: 'center',
-              padding: '5px 0',
-              borderBottom: '1px solid var(--border)',
-            }}
-          >
-            <span style={{ fontSize: '13px', color: 'var(--text)' }} id="s-label-engineers">
-              Engineers
-            </span>
-            <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-engineers">
-              {(state?.engineers ?? 0).toLocaleString()}
-            </span>
-            <span style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text3)' }} id="s-lv-engineers">
-              Lv {Number(troopLevels.engineers?.level || 1)}
-            </span>
-            <span className="badge badge-blue" style={{ textAlign: 'center', fontSize: '9px' }}>
-              Build
-            </span>
+          <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5">
+            <span className="text-[13px] text-text" id="s-label-engineers">Engineers</span>
+            <span className="text-[13px] font-semibold text-right text-text" id="s-engineers">{(state?.engineers ?? 0).toLocaleString()}</span>
+            <span className="text-center text-[11px] text-[var(--text3)]" id="s-lv-engineers">Lv {Number(troopLevels.engineers?.level || 1)}</span>
+            <span className="badge badge-blue text-center text-[9px]">Build</span>
           </div>
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '100px 1fr 52px 52px',
-              gap: '4px',
-              alignItems: 'center',
-              padding: '5px 0',
-              borderBottom: '1px solid var(--border)',
-            }}
-          >
-            <span style={{ fontSize: '13px', color: 'var(--text)' }} id="s-label-scribes">
-              Scribes
-            </span>
-            <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-scribes">
-              {(state?.scribes ?? 0).toLocaleString()}
-            </span>
-            <span style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text3)' }} id="s-lv-scribes">
-              Lv {Number(troopLevels.scribes?.level || 1)}
-            </span>
-            <span className="badge badge-blue" style={{ textAlign: 'center', fontSize: '9px' }}>
-              Library
-            </span>
+          <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5">
+            <span className="text-[13px] text-text" id="s-label-scribes">Scribes</span>
+            <span className="text-[13px] font-semibold text-right text-text" id="s-scribes">{(state?.scribes ?? 0).toLocaleString()}</span>
+            <span className="text-center text-[11px] text-[var(--text3)]" id="s-lv-scribes">Lv {Number(troopLevels.scribes?.level || 1)}</span>
+            <span className="badge badge-blue text-center text-[9px]">Library</span>
           </div>
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '100px 1fr 52px 52px',
-              gap: '4px',
-              alignItems: 'center',
-              padding: '5px 0',
-              borderBottom: '1px solid var(--border)',
-            }}
-          >
-            <span style={{ fontSize: '13px', color: 'var(--text)' }} id="s-label-researchers">
-              Researchers
-            </span>
-            <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-researchers">
-              {(state?.researchers ?? 0).toLocaleString()}
-            </span>
-            <span style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text3)' }} id="s-lv-researchers">
-              Lv {Number(troopLevels.researchers?.level || 1)}
-            </span>
-            <span className="badge badge-blue" style={{ textAlign: 'center', fontSize: '9px' }}>
-              Study
-            </span>
+          <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5">
+            <span className="text-[13px] text-text" id="s-label-researchers">Researchers</span>
+            <span className="text-[13px] font-semibold text-right text-text" id="s-researchers">{(state?.researchers ?? 0).toLocaleString()}</span>
+            <span className="text-center text-[11px] text-[var(--text3)]" id="s-lv-researchers">Lv {Number(troopLevels.researchers?.level || 1)}</span>
+            <span className="badge badge-blue text-center text-[9px]">Study</span>
           </div>
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '100px 1fr 52px 52px',
-              gap: '4px',
-              alignItems: 'center',
-              padding: '5px 0',
-              borderBottom: '1px solid var(--border)',
-            }}
-          >
-            <span style={{ fontSize: '13px', color: 'var(--text)' }}>Warmachines</span>
-            <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-war_machines">
-              {(state?.war_machines ?? 0).toLocaleString()}
-            </span>
+          <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5">
+            <span className="text-[13px] text-text">Warmachines</span>
+            <span className="text-[13px] font-semibold text-right text-text" id="s-war_machines">{(state?.war_machines ?? 0).toLocaleString()}</span>
             <span />
-            <span className="badge badge-gold" style={{ textAlign: 'center', fontSize: '9px' }}>
-              Siege
-            </span>
+            <span className="badge badge-gold text-center text-[9px]">Siege</span>
           </div>
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '100px 1fr 52px 52px',
-              gap: '4px',
-              alignItems: 'center',
-              padding: '5px 0',
-              borderBottom: '1px solid var(--border)',
-            }}
-          >
-            <span style={{ fontSize: '13px', color: 'var(--text)' }} id="s-label-ladders">
-              Ladders
-            </span>
-            <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-ladders">
-              {(state?.ladders ?? 0).toLocaleString()}
-            </span>
+          <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5">
+            <span className="text-[13px] text-text" id="s-label-ladders">Ladders</span>
+            <span className="text-[13px] font-semibold text-right text-text" id="s-ladders">{(state?.ladders ?? 0).toLocaleString()}</span>
             <span />
-            <span className="badge badge-gold" style={{ textAlign: 'center', fontSize: '9px' }}>
-              Siege
-            </span>
+            <span className="badge badge-gold text-center text-[9px]">Siege</span>
           </div>
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '100px 1fr 52px 52px',
-              gap: '4px',
-              alignItems: 'center',
-              padding: '5px 0',
-              borderBottom: '1px solid var(--border)',
-            }}
-          >
-            <span style={{ fontSize: '13px', color: 'var(--text)' }}>Weapons</span>
-            <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-weapons">
-              {(state?.weapons_stockpile ?? 0).toLocaleString()}
-            </span>
+          <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5">
+            <span className="text-[13px] text-text">Weapons</span>
+            <span className="text-[13px] font-semibold text-right text-text" id="s-weapons">{(state?.weapons_stockpile ?? 0).toLocaleString()}</span>
             <span />
-            <span className="badge badge-gold" style={{ textAlign: 'center', fontSize: '9px' }}>
-              Stock
-            </span>
+            <span className="badge badge-gold text-center text-[9px]">Stock</span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr 52px 52px', gap: '4px', alignItems: 'center', padding: '5px 0' }}>
-            <span style={{ fontSize: '13px', color: 'var(--text)' }}>Armor</span>
-            <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'right', color: 'var(--text)' }} id="s-armor">
-              {(state?.armor_stockpile ?? 0).toLocaleString()}
-            </span>
+          <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0">
+            <span className="text-[13px] text-text">Armor</span>
+            <span className="text-[13px] font-semibold text-right text-text" id="s-armor">{(state?.armor_stockpile ?? 0).toLocaleString()}</span>
             <span />
-            <span className="badge badge-gold" style={{ textAlign: 'center', fontSize: '9px' }}>
-              Stock
-            </span>
+            <span className="badge badge-gold text-center text-[9px]">Stock</span>
           </div>
         </div>
 
@@ -650,7 +355,7 @@ const StatusPanel = () => {
           <div className="trow">
             <span className="name">Atk magic</span>
             <div className="prog-wrap">
-              <div className="prog-bar" id="pb-atk-st" style={{ width: '0%', background: 'var(--red)' }} />
+              <div className="prog-bar bg-[var(--red)]" id="pb-atk-st" style={{ width: '0%' }} />
             </div>
           </div>
           <div className="trow">
@@ -668,13 +373,13 @@ const StatusPanel = () => {
           <div className="trow">
             <span className="name">Entertainment</span>
             <div className="prog-wrap">
-              <div className="prog-bar" id="pb-ent-s" style={{ width: '0%', background: 'var(--green)' }} />
+              <div className="prog-bar bg-[var(--green)]" id="pb-ent-s" style={{ width: '0%' }} />
             </div>
           </div>
-          <div className="trow" style={{ borderBottom: 'none' }}>
+          <div className="trow border-b-0">
             <span className="name">Construction</span>
             <div className="prog-wrap">
-              <div className="prog-bar" id="pb-con-st" style={{ width: '0%', background: 'var(--amber)' }} />
+              <div className="prog-bar bg-[var(--amber)]" id="pb-con-st" style={{ width: '0%' }} />
             </div>
           </div>
         </div>
@@ -717,29 +422,20 @@ const StatusPanel = () => {
             <span className="name">Training Fields</span>
             <span className="count" id="kb-training">{state?.bld_training ?? 0}</span>
           </div>
-          <div className="trow" style={{ borderBottom: 'none' }}>
+          <div className="trow border-b-0">
             <span className="name">Castles</span>
             <span className="count" id="kb-castles">{state?.bld_castles ?? 0}</span>
           </div>
         </div>
       </div>
 
-      <div id="active-effects-bar" style={{ display: 'none', marginTop: '14px' }}>
-        <div className={STATUS_CARD_CLASS} style={{ padding: '12px 16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            <span
-              style={{
-                fontSize: '12px',
-                color: 'var(--text3)',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                marginRight: '4px',
-              }}
-            >
+      <div id="active-effects-bar" className="hidden mt-3.5">
+        <div className={clsx(STATUS_CARD_CLASS, 'p-3 pl-4')}>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[12px] text-[var(--text3)] font-semibold uppercase tracking-[0.5px] mr-1">
               Active effects
             </span>
-            <div id="active-effects-list" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }} />
+            <div id="active-effects-list" className="flex gap-1.5 flex-wrap" />
           </div>
         </div>
       </div>

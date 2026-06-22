@@ -1,4 +1,5 @@
 ﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
 import { useGameMutationEvents, useGameState } from '../../hooks/useGameState';
 import { fmt } from "../../utils/fmt";
@@ -363,7 +364,7 @@ const MarketPanel = () => {
   };
 
   return (
-    <div id="market" className="panel min-h-0 w-full overflow-y-auto px-4 pb-5" style={{ display: 'none' }}>
+    <div id="market" className={clsx('panel min-h-0 w-full overflow-y-auto px-4 pb-5', 'hidden')}>
       <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-white/10 bg-zinc-950/80 p-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <div className="card-title mb-1">⚖️ Commodity Market</div>
@@ -433,10 +434,9 @@ const MarketPanel = () => {
             <div className="flex gap-2">
               <input
                 type="number"
-                className="input"
+                className="input w-[70px] text-[12px]"
                 value={quantities[p.id] || ''}
                 onChange={(e) => setQuantities((prev) => ({ ...prev, [p.id]: e.target.value }))}
-                style={{ width: '70px', fontSize: '12px' }}
                 placeholder="Qty"
                 min="1"
               />

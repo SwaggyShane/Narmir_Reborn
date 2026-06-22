@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
 import { useGameState } from '../../hooks/useGameState';
 import { fmt } from "../../utils/fmt";
@@ -98,7 +99,7 @@ const BountiesPanel = () => {
 
   return (
     <>
-      <div id="bounties" className={panelShell} style={{ display: 'none' }}>
+      <div id="bounties" className={clsx(panelShell, 'hidden')}>
         <div className="card mx-auto mt-0 w-full max-w-6xl">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
             <div className="card-title !mb-0">🏴‍☠️ Bounty Board</div>
@@ -153,8 +154,7 @@ const BountiesPanel = () => {
                 <label className="mb-1 block text-[11px] text-[var(--text3)]">TARGET KINGDOM</label>
                 <select
                   id="react-bounty-select"
-                  className="input"
-                  style={{ width: '100%' }}
+                  className="input w-full"
                   value={selectedTarget}
                   onChange={(e) => setSelectedTarget(e.target.value)}
                   onFocus={loadTargets}
@@ -173,11 +173,10 @@ const BountiesPanel = () => {
                 <label className="mb-1 block text-[11px] text-[var(--text3)]">REWARD (GOLD)</label>
                 <input
                   type="number"
-                  className="input"
+                  className="input text-right w-full"
                   id="bounty-amount"
                   min="1000"
                   step="1000"
-                  style={{ textAlign: 'right', width: '100%' }}
                   placeholder="Qty"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
@@ -185,8 +184,7 @@ const BountiesPanel = () => {
               </div>
 
               <button
-                className="base-btn variant-gold w-full"
-                style={{ background: 'var(--gold)', color: '#000' }}
+                className="base-btn variant-gold w-full bg-[var(--gold)] text-black"
                 onClick={handlePlaceBounty}
                 disabled={placing}
               >
@@ -197,7 +195,7 @@ const BountiesPanel = () => {
         </div>
       </div>
 
-      <div id="messages" className={panelShell} style={{ display: 'none' }}>
+      <div id="messages" className={clsx(panelShell, 'hidden')}>
         <div className="mx-auto grid w-full max-w-6xl min-h-[680px] grid-cols-1 overflow-hidden rounded-[20px] border border-[var(--border)] bg-[var(--bg2)] xl:grid-cols-[300px_minmax(0,1fr)]">
           <div className="flex min-h-0 flex-col border-b border-[var(--border)] xl:border-b-0 xl:border-r xl:border-[var(--border)]">
             <div className="border-b border-[var(--border)] bg-[var(--bg3)] px-4 py-4">
@@ -235,16 +233,14 @@ const BountiesPanel = () => {
 
             <div
               id="msg-input-wrap"
-              className="border-t border-[var(--border)] bg-[var(--bg2)] px-4 py-4"
-              style={{ display: 'none' }}
+              className="hidden border-t border-[var(--border)] bg-[var(--bg2)] px-4 py-4"
             >
               <div className="flex gap-2.5">
                 <input
                   type="text"
-                  className="input"
+                  className="input flex-1"
                   id="msg-input"
                   placeholder={dmTarget?.name ? `Message ${dmTarget.name}...` : 'Pick a kingdom from Rankings to message them...'}
-                  style={{ flex: 1 }}
                   value={dmMessage}
                   onChange={e => setDmMessage(e.target.value)}
                   onKeyDown={async e => {
@@ -258,8 +254,7 @@ const BountiesPanel = () => {
                   }}
                 />
                 <button
-                  className="base-btn variant-accent"
-                  style={{ background: 'var(--accent1)' }}
+                  className="base-btn variant-accent bg-[var(--accent1)]"
                   onClick={async () => {
                     if (!dmTarget?.name) return toast('Pick a kingdom to message first', 'error');
                     const ack = await sendDirectMessage(dmTarget.name, dmMessage);
@@ -271,7 +266,7 @@ const BountiesPanel = () => {
                   Send
                 </button>
               </div>
-              <div style={{ marginTop: '8px', fontSize: '11px', color: 'var(--text3)' }}>
+              <div className="mt-2 text-[11px] text-[var(--text3)]">
                 {dmTarget?.name ? `Recipient: ${dmTarget.name}` : 'Open a kingdom profile or Rankings message action to set a recipient.'}
               </div>
             </div>
