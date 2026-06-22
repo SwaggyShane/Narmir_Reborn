@@ -131,8 +131,6 @@ const BuildPanel = () => {
     smithyNote: null,
   });
   const [smithyInputs, setSmithyInputs] = useState({ hammers: 0, scaffolding: 0 });
-  const [buildWarnings, setBuildWarnings] = useState({});
-  const [turnEstimates, setTurnEstimates] = useState({});
   const [demolishAmounts, setDemolishAmounts] = useState({});
   const isVampire = state?.race === 'vampire';
   const totalEngineers = Number(state?.engineers || 0);
@@ -360,7 +358,7 @@ const BuildPanel = () => {
       setBuildFieldValue(`bld-eng-${key}`, alloc[sourceKey] || 0);
     });
   };
-  const updateBuildDisplay = () => {
+  const buildDisplay = useMemo(() => {
     const BLUEPRINT_REQUIRED = new Set(['vaults', 'smithies', 'markets', 'mage_towers', 'training', 'castles']);
     const SCAFFOLDING_REQUIRED = new Set(['mage_towers', 'training', 'castles', 'libraries']);
     const bp = state?.blueprints_stored || 0;
@@ -385,15 +383,13 @@ const BuildPanel = () => {
       }
     });
 
-    setBuildWarnings(warnings);
-    setTurnEstimates(estimates);
-  };
+    return { warnings, estimates };
+  }, [state?.blueprints_stored, state?.scaffolding_stored, engineerAllocations]);
   useEffect(() => {
     loadBuildAllocationInputs();
   }, [JSON.stringify(state?.build_allocation || {})]);
 
   useEffect(() => {
-    updateBuildDisplay();
     updateSmithyDisplay();
   }, [state, buildUiTick]);
   const setMaxValue = (fieldId) => {
@@ -505,7 +501,7 @@ const BuildPanel = () => {
   };
   const demolishB = async (type) => {
     const key = type === 'wm' ? 'ballistae' : type;
-    const amount = demolishAmounts[key] || 0;
+    const amount = demolishAmounts[key] || 1;
     if (amount <= 0) return toast('Enter a quantity', 'error');
     const result = await apiCall('/api/kingdom/demolish', { method: 'POST', body: { building: type, amount } });
     if (result.error) return toast(result.error, 'error');
@@ -566,11 +562,11 @@ const BuildPanel = () => {
           >
             Max
           </button>
-          {(buildWarnings[b.id] || turnEstimates[b.id]) && (
+          {(buildDisplay.warnings[b.id] || buildDisplay.estimates[b.id]) && (
             <div className="text-[10px] text-text3 whitespace-nowrap ml-1">
-              {buildWarnings[b.id] && <span className="text-amber">{buildWarnings[b.id]}</span>}
-              {buildWarnings[b.id] && turnEstimates[b.id] && ' · '}
-              {turnEstimates[b.id] && <span>{turnEstimates[b.id]}</span>}
+              {buildDisplay.warnings[b.id] && <span className="text-amber">{buildDisplay.warnings[b.id]}</span>}
+              {buildDisplay.warnings[b.id] && buildDisplay.estimates[b.id] && ' · '}
+              {buildDisplay.estimates[b.id] && <span>{buildDisplay.estimates[b.id]}</span>}
             </div>
           )}
         </div>
