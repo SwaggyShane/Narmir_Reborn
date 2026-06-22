@@ -361,7 +361,8 @@ function calculateHappiness(k) {
   let housingCap = (k.bld_housing || 0) * capPerBuilding;
   const housingMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'capacity');
   housingCap *= housingMult;
-  const overcrowded = housingCap > 0 && (k.population || 0) > housingCap;
+  const overcrowdingThreshold = housingCap * 1.3;
+  const overcrowded = housingCap > 0 && (k.population || 0) > overcrowdingThreshold;
   let overcrowdingComponent = 0;
   if (overcrowded) {
     let overcrowdMult = { dire_wolf: 0.5, high_elf: 2.0 }[k.race] || 1.0;
@@ -371,7 +372,7 @@ function calculateHappiness(k) {
     }
     overcrowdingComponent = -Math.max(
       0,
-      Math.floor((((k.population || 0) - housingCap) / 1000) * overcrowdMult)
+      Math.floor(Math.max(0, ((k.population || 0) - overcrowdingThreshold) * 0.018 * overcrowdMult))
     );
     happiness += overcrowdingComponent;
   }
@@ -1287,7 +1288,8 @@ function processTurn(k, db = null) {
     // Apply world fragment bonuses for housing capacity
     const housingMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'capacity');
     housingCap *= housingMult;
-    const overcrowded = housingCap > 0 && k.population > housingCap;
+    const overcrowdingThreshold = housingCap * 1.3;
+    const overcrowded = housingCap > 0 && k.population > overcrowdingThreshold;
 
     // Race overcrowding penalty modifiers
     let overcrowdMult = { dire_wolf: 0.5, high_elf: 2.0 }[k.race] || 1.0;
@@ -1298,9 +1300,7 @@ function processTurn(k, db = null) {
     const overcrowdPenalty = overcrowded
       ? Math.max(
           0,
-          Math.floor(
-            ((k.population - housingCap) / 1000) * overcrowdMult,
-          ),
+          Math.floor(Math.max(0, (k.population - overcrowdingThreshold) * 0.018 * overcrowdMult)),
         )
       : 0;
 
@@ -6229,4 +6229,3 @@ module.exports = {
   engineerConstructionMult,
   clearSynergyCache,
 };
-
