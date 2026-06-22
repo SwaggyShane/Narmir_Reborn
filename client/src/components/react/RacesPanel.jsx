@@ -240,7 +240,13 @@ const RacesPanel = () => {
     if (found) setHeroLoreKey(found[0]);
   }, [cachedHeroClasses]);
 
-  useEffect(() => registerOpenRaceLore((race) => setSelectedRace(race || null)), []);
+  useEffect(() => {
+    const unregister = registerOpenRaceLore((race) => {
+      console.log('[RacesPanel] setSelectedRace called with:', race);
+      setSelectedRace(race || null);
+    });
+    return unregister;
+  }, []);
 
   const raceEntries = useMemo(
     () => Object.entries(raceLore).filter(([, r]) => r.lore),
