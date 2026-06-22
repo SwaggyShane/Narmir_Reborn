@@ -5,35 +5,35 @@ import { logout } from './AuthModal.jsx';
 import { switchTab } from '../../utils/switchTab.js';
 
 const CORE_TABS = [
-  { id: 'status', label: 'Status', icon: '🏰', color: 'text-sky-300' },
-  { id: 'economy', label: 'Economy', icon: '💰', color: 'text-amber-300' },
-  { id: 'warfare', label: 'War', icon: '⚔️', color: 'text-red-300' },
-  { id: 'news', label: 'News', icon: '🗞️', color: 'text-amber-200', badgeId: 'bnav-news-badge' },
-  { id: 'globalchat', label: 'Chat', icon: '💬', color: 'text-fuchsia-300', badgeId: 'chat-badge', domId: 'bnav-chat-item' },
+  { id: 'status', label: 'Status', icon: '??', color: 'text-sky-300' },
+  { id: 'economy', label: 'Economy', icon: '??', color: 'text-amber-300' },
+  { id: 'warfare', label: 'War', icon: '??', color: 'text-red-300' },
+  { id: 'news', label: 'News', icon: '???', color: 'text-amber-200', badgeId: 'bnav-news-badge' },
+  { id: 'globalchat', label: 'Chat', icon: '??', color: 'text-fuchsia-300', badgeId: 'chat-badge', domId: 'bnav-chat-item' },
 ];
 
 const DRAWER_TABS = [
-  { id: 'messages', label: 'Messages', icon: '✉️', color: 'text-amber-200', badgeId: 'bnav-msg-badge' },
-  { id: 'happiness', label: 'Happiness', icon: '😊', color: 'text-amber-300' },
-  { id: 'studies', label: 'Studies', icon: '🏛️', color: 'text-red-300' },
-  { id: 'build', label: 'Build', icon: '🛠️', color: 'text-orange-300' },
-  { id: 'exploration', label: 'Explore', icon: '🧭', color: 'text-lime-300' },
-  { id: 'market', label: 'Market', icon: '⚖️', color: 'text-yellow-300' },
-  { id: 'resources', label: 'Resources', icon: '🌲', color: 'text-green-300' },
-  { id: 'rankings', label: 'Ranks', icon: '🏆', color: 'text-yellow-300' },
-  { id: 'hire', label: 'Hire', icon: '🤝', color: 'text-emerald-300' },
-  { id: 'defense', label: 'Defense', icon: '🛡️', color: 'text-slate-300' },
-  { id: 'bounties', label: 'Bounties', icon: '🪙', color: 'text-yellow-200' },
-  { id: 'training', label: 'Training', icon: '🎯', color: 'text-amber-300' },
-  { id: 'heroes', label: 'Heroes', icon: '👑', color: 'text-fuchsia-300' },
-  { id: 'worldmap', label: 'Map', icon: '🌎', color: 'text-cyan-300' },
-  { id: 'alliances', label: 'Alliance', icon: '🤝', color: 'text-purple-300' },
-  { id: 'forum', label: 'Forum', icon: '📚', color: 'text-violet-300' },
-  { id: 'goals', label: 'Goals', icon: '📝', color: 'text-amber-300' },
-  { id: 'races', label: 'Races', icon: '🦄', color: 'text-fuchsia-300' },
-  { id: 'changelog', label: 'Changelog', icon: '📋', color: 'text-emerald-300' },
-  { id: 'testing', label: 'Testing', icon: '🧪', color: 'text-violet-300' },
-  { id: 'options', label: 'Settings', icon: '⚙️', color: 'text-slate-300' },
+  { id: 'messages', label: 'Messages', icon: '??', color: 'text-amber-200', badgeId: 'bnav-msg-badge' },
+  { id: 'happiness', label: 'Happiness', icon: '??', color: 'text-amber-300' },
+  { id: 'studies', label: 'Studies', icon: '???', color: 'text-red-300' },
+  { id: 'build', label: 'Build', icon: '???', color: 'text-orange-300' },
+  { id: 'exploration', label: 'Explore', icon: '??', color: 'text-lime-300' },
+  { id: 'market', label: 'Market', icon: '??', color: 'text-yellow-300' },
+  { id: 'resources', label: 'Resources', icon: '??', color: 'text-green-300' },
+  { id: 'rankings', label: 'Ranks', icon: '??', color: 'text-yellow-300' },
+  { id: 'hire', label: 'Hire', icon: '??', color: 'text-emerald-300' },
+  { id: 'defense', label: 'Defense', icon: '???', color: 'text-slate-300' },
+  { id: 'bounties', label: 'Bounties', icon: '??', color: 'text-yellow-200' },
+  { id: 'training', label: 'Training', icon: '??', color: 'text-amber-300' },
+  { id: 'heroes', label: 'Heroes', icon: '??', color: 'text-fuchsia-300' },
+  { id: 'worldmap', label: 'Map', icon: '??', color: 'text-cyan-300' },
+  { id: 'alliances', label: 'Alliance', icon: '??', color: 'text-purple-300' },
+  { id: 'forum', label: 'Forum', icon: '??', color: 'text-violet-300' },
+  { id: 'goals', label: 'Goals', icon: '??', color: 'text-amber-300' },
+  { id: 'races', label: 'Races', icon: '??', color: 'text-fuchsia-300' },
+  { id: 'changelog', label: 'Changelog', icon: '??', color: 'text-emerald-300' },
+  { id: 'testing', label: 'Testing', icon: '??', color: 'text-violet-300' },
+  { id: 'options', label: 'Settings', icon: '??', color: 'text-slate-300' },
 ];
 
 function NavChip({ id, label, icon, color, active, onClick, badgeId, domId }) {
@@ -133,7 +133,7 @@ const BottomNav = () => {
           aria-expanded={drawerOpen}
           aria-controls="bottom-nav-drawer"
         >
-          <span className="text-lg leading-none text-amber-300">⋯</span>
+          <span className="text-lg leading-none text-amber-300">?</span>
           <span>More</span>
         </button>
       </nav>
