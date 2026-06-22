@@ -6,8 +6,8 @@ const { raceBonus } = require('./lib/race-bonus');
 const { getSynergyPassiveBonusAbsolute } = require('./lib/synergy-cache');
 
 function getHappinessRecoveryRate(k) {
-  const baseRecovery = (k.res_entertainment || 100) / 1000 + ((k.bld_taverns || 0) * 0.25);
-  return Math.max(0.5, Math.min(5, baseRecovery));
+  const baseRecovery = (k.res_entertainment || 100) / 1200 + ((k.bld_taverns || 0) * 0.2);
+  return Math.max(0.2, Math.min(2.8, baseRecovery));
 }
 
 function calculateHappiness(k) {
@@ -35,10 +35,15 @@ function calculateHappiness(k) {
     safetyHappiness = 20; // Never attacked
   } else {
     const turnsSinceLast = Math.max(0, (k.turn || 0) - k.last_attack_turn);
-    // Linear recovery: -10 at turn 0, +20 at turn 10, capped at 20
-    safetyHappiness = -10 + Math.min(10, turnsSinceLast) * 3;
+    // Slower recovery: -15 at turn 0, +15 at turn 15, capped at 20
+    safetyHappiness = -15 + Math.min(15, turnsSinceLast) * 2;
   }
   safetyHappiness = Math.max(-30, Math.min(20, safetyHappiness));
+
+  const turnsSinceAttack = k.last_attack_turn ? Math.max(0, (k.turn || 0) - k.last_attack_turn) : null;
+  const warWearinessComponent = turnsSinceAttack === null
+    ? 0
+    : -Math.max(0, Math.min(8, Math.floor((24 - Math.min(24, turnsSinceAttack)) * 0.35)));
 
   // 4. Prosperity Happiness (0-20)
   const goldTarget = (k.population || 1) * 2;
@@ -48,8 +53,12 @@ function calculateHappiness(k) {
   // 5. Race Modifier
   const raceModifier = raceModifiers[k.race] || 0;
 
+  // 6. Empire Size Pressure
+  const populationBase = Math.max(1, k.population || 1);
+  const sizeComponent = -Math.min(30, Math.floor(Math.log10(populationBase) * 5));
+
   // Base + components
-  let happiness = 50 + foodHappiness + entertainmentHappiness + safetyHappiness + prosperityHappiness + raceModifier;
+  let happiness = 50 + foodHappiness + entertainmentHappiness + safetyHappiness + warWearinessComponent + prosperityHappiness + raceModifier + sizeComponent;
 
   // Apply active effect bonuses (Bless, Divine Favor, etc.)
   const effects = safeJsonParse(k.active_effects, {}, 'calculateHappiness:active_effects');
@@ -71,7 +80,7 @@ function calculateHappiness(k) {
   // Apply tax penalty/bonus — use nullish coalesce to allow 0% tax
   const taxRate = k.tax !== undefined && k.tax !== null ? k.tax : 42;
   if (taxRate > 42) {
-    const taxPenalty = Math.floor(((taxRate - 42) / 58) * 60);
+    const taxPenalty = Math.floor(((taxRate - 42) / 58) * 85);
     happiness -= taxPenalty;
   } else if (taxRate < 42) {
     const taxBonus = Math.floor(12 * ((42 - taxRate) / 42));
@@ -95,8 +104,10 @@ function calculateHappiness(k) {
       food: foodHappiness,
       entertainment: entertainmentHappiness,
       safety: safetyHappiness,
+      warWeariness: warWearinessComponent,
       prosperity: prosperityHappiness,
-      race: raceModifier
+      race: raceModifier,
+      size: sizeComponent
     },
     recovery: recoveryRate
   };

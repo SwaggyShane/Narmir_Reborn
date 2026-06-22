@@ -2,62 +2,14 @@ import React, { useState } from 'react';
 import { apiCall } from '../../utils/api';
 
 const SCHOOLS = [
-  {
-    id: 'abjuration',
-    name: 'Abjuration',
-    emoji: '🛡️',
-    desc: 'Protection & Defense — Shield your kingdom with powerful defensive magic',
-    color: '#4A90E2',
-  },
-  {
-    id: 'conjuration',
-    name: 'Conjuration',
-    emoji: '✨',
-    desc: 'Creation & Summoning — Manifest powerful entities and supplies',
-    color: '#7ED321',
-  },
-  {
-    id: 'divination',
-    name: 'Divination',
-    emoji: '🔮',
-    desc: 'Foresight & Information — Unveil hidden truths and futures',
-    color: '#9013FE',
-  },
-  {
-    id: 'enchantment',
-    name: 'Enchantment',
-    emoji: '💫',
-    desc: 'Charm & Influence — Control minds and bend wills',
-    color: '#F5A623',
-  },
-  {
-    id: 'evocation',
-    name: 'Evocation',
-    emoji: '⚡',
-    desc: 'Damage & Force — Unleash raw magical power and destruction',
-    color: '#FF6B6B',
-  },
-  {
-    id: 'illusion',
-    name: 'Illusion',
-    emoji: '👁️',
-    desc: 'Deception & Trickery — Manipulate perception and reality',
-    color: '#50E3C2',
-  },
-  {
-    id: 'necromancy',
-    name: 'Necromancy',
-    emoji: '💀',
-    desc: 'Death & Undeath — Command the forces of death itself',
-    color: '#B8E986',
-  },
-  {
-    id: 'transmutation',
-    name: 'Transmutation',
-    emoji: '🔄',
-    desc: 'Transformation — Reshape matter and transform all things',
-    color: '#FF6B9D',
-  },
+  { id: 'abjuration', name: 'Abjuration', emoji: '???', desc: 'Protection & Defense ? Shield your kingdom with powerful defensive magic', color: '#4A90E2' },
+  { id: 'conjuration', name: 'Conjuration', emoji: '?', desc: 'Creation & Summoning ? Manifest powerful entities and supplies', color: '#7ED321' },
+  { id: 'divination', name: 'Divination', emoji: '??', desc: 'Foresight & Information ? Unveil hidden truths and futures', color: '#9013FE' },
+  { id: 'enchantment', name: 'Enchantment', emoji: '??', desc: 'Charm & Influence ? Control minds and bend wills', color: '#F5A623' },
+  { id: 'evocation', name: 'Evocation', emoji: '?', desc: 'Damage & Force ? Unleash raw magical power and destruction', color: '#FF6B6B' },
+  { id: 'illusion', name: 'Illusion', emoji: '???', desc: 'Deception & Trickery ? Manipulate perception and reality', color: '#50E3C2' },
+  { id: 'necromancy', name: 'Necromancy', emoji: '??', desc: 'Death & Undeath ? Command the forces of death itself', color: '#B8E986' },
+  { id: 'transmutation', name: 'Transmutation', emoji: '??', desc: 'Transformation ? Reshape matter and transform all things', color: '#FF6B9D' },
 ];
 
 export default function SchoolSelectionModal({ onClose, onSuccess }) {
@@ -95,17 +47,20 @@ export default function SchoolSelectionModal({ onClose, onSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-modal backdrop-blur-sm" onClick={onClose}>
-      <div className="rounded-xl border border-white/10 bg-gradient-to-br from-zinc-900 to-white/5 max-w-[900px] w-[90%] max-h-[85vh] overflow-y-auto shadow-2xl p-8" onClick={e => e.stopPropagation()}>
-        <div className="text-center mb-8 border-b border-white/10 pb-5">
-          <h2 className="text-2xl font-bold mb-2 text-white">🔮 Choose Your School of Magic</h2>
-          <p className="text-sm text-zinc-400 font-medium">Select a specialization path for your spellcasting. This choice is permanent!</p>
+    <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="max-h-[85vh] w-[90%] max-w-[900px] overflow-y-auto rounded-xl border border-white/10 bg-gradient-to-br from-zinc-900 to-white/5 p-8 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-8 border-b border-white/10 pb-5 text-center">
+          <h2 className="mb-2 text-2xl font-bold text-white">🔮 Choose Your School of Magic</h2>
+          <p className="text-sm font-medium text-zinc-400">Select a specialization path for your spellcasting. This choice is permanent!</p>
         </div>
 
-        {error && <div className="bg-red/10 border border-red text-red px-4 py-3 rounded mb-4 text-xs">{error}</div>}
+        {error && <div className="mb-4 rounded border border-red-500/50 bg-red-500/10 px-4 py-3 text-xs text-red-300">{error}</div>}
 
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 mb-6">
-          {SCHOOLS.map(school => (
+        <div className="mb-6 grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
+          {SCHOOLS.map((school) => (
             <SchoolCard
               key={school.id}
               school={school}
@@ -116,8 +71,8 @@ export default function SchoolSelectionModal({ onClose, onSuccess }) {
           ))}
         </div>
 
-        <div className="text-center border-t border-white/10 pt-5">
-          <p className="text-xs text-zinc-400 m-0 italic">
+        <div className="border-t border-white/10 pt-5 text-center">
+          <p className="m-0 text-xs italic text-zinc-400">
             ✨ Each school offers 25 unique spells across 5 tiers. Spells from your chosen school cost 15% less mana!
           </p>
         </div>
@@ -129,18 +84,13 @@ export default function SchoolSelectionModal({ onClose, onSuccess }) {
 function SchoolCard({ school, isSelected, isLoading, onSelect }) {
   return (
     <div
-      className={`bg-zinc-900 border rounded-lg p-4 cursor-pointer transition-all relative text-center flex flex-col items-center gap-2 ${isSelected ? 'shadow-xl scale-[1.02]' : 'hover:-translate-y-1 hover:shadow-lg'} ${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
-      onClick={isLoading ? undefined : onSelect}
-      style={{
-        borderColor: isSelected ? school.color : undefined,
-        backgroundColor: isSelected ? `${school.color}20` : undefined,
-      }}
-    >
+      className={`relative flex cursor-pointer flex-col items-center gap-2 rounded-lg border bg-zinc-900 p-4 text-center transition-all ${isSelected ? 'scale-[1.02] shadow-xl' : 'hover:-translate-y-1 hover:shadow-lg'} ${isLoading ? 'cursor-not-allowed opacity-60' : ''}`}
+      onClick={isLoading ? undefined : onSelect}>
       <div className="text-4xl leading-none">{school.emoji}</div>
       <h3 className="my-2 text-base font-semibold text-white">{school.name}</h3>
-      <p className="m-0 text-xs text-zinc-400 leading-relaxed">{school.desc}</p>
-      {isSelected && <div className="absolute -top-3 -right-3 bg-blue text-white w-8 h-8 rounded-full flex items-center justify-center text-lg font-bold">✓</div>}
-      {isSelected && isLoading && <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-2xl animate-spin">⏳</div>}
+      <p className="m-0 text-xs leading-relaxed text-zinc-400">{school.desc}</p>
+      {isSelected && <div className="absolute -right-3 -top-3 flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-lg font-bold text-white">✓</div>}
+      {isSelected && isLoading && <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 animate-spin text-2xl">⏳</div>}
     </div>
   );
 }

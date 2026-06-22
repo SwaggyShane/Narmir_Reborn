@@ -10,23 +10,23 @@ const WarfareIntelTab = ({
   if (!isActive) return null;
 
   return (
-    <div style={{ display: 'block' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+    <div className="block">
+      <div className="grid gap-4 lg:grid-cols-2">
         <div className="card">
-          <div className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="card-title flex items-center justify-between">
             <span>🕵️ Your Spy Reports</span>
-            <button className="base-btn" style={{ fontSize: '10px', padding: '2px 6px' }} onClick={onRefreshSpyReports}>↻</button>
+            <button className="base-btn px-1.5 py-0.5 text-[10px]" onClick={onRefreshSpyReports}>↻</button>
           </div>
-          <div id="spy-reports-list" style={{ maxHeight: '500px', overflowY: 'auto', fontSize: '13px' }}>
+          <div id="spy-reports-list" className="max-h-[500px] overflow-y-auto text-[13px]">
             {spyContent}
           </div>
         </div>
         <div className="card">
-          <div className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="card-title flex items-center justify-between">
             <span>🤝 Alliance Intelligence</span>
-            <button className="base-btn" style={{ fontSize: '10px', padding: '2px 6px' }} onClick={onRefreshAllianceIntel}>↻</button>
+            <button className="base-btn px-1.5 py-0.5 text-[10px]" onClick={onRefreshAllianceIntel}>↻</button>
           </div>
-          <div id="alliance-intel-list" style={{ maxHeight: '500px', overflowY: 'auto', fontSize: '13px' }}>
+          <div id="alliance-intel-list" className="max-h-[500px] overflow-y-auto text-[13px]">
             {allianceContent}
           </div>
         </div>

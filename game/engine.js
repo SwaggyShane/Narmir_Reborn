@@ -276,10 +276,10 @@ function assignRegion(race) {
 
 
 function getHappinessRecoveryRate(k) {
-  const baseRecovery = (k.res_entertainment || 100) / 1000 + ((k.bld_taverns || 0) * 0.25);
+  const baseRecovery = (k.res_entertainment || 100) / 1200 + ((k.bld_taverns || 0) * 0.2);
   const taxRate = Number(k.tax ?? 42);
-  const taxDrag = taxRate > 42 ? Math.min(4, Math.floor((taxRate - 42) / 18)) : 0;
-  return Math.max(0.25, Math.min(5, baseRecovery - taxDrag));
+  const taxDrag = taxRate > 42 ? Math.min(5, Math.floor((taxRate - 42) / 14)) : 0;
+  return Math.max(0.2, Math.min(2.8, baseRecovery - taxDrag));
 }
 
 function calculateHappiness(k) {
@@ -307,10 +307,16 @@ function calculateHappiness(k) {
     safetyHappiness = 20; // Never attacked
   } else {
     const turnsSinceLast = Math.max(0, (k.turn || 0) - k.last_attack_turn);
-    // Linear recovery: -10 at turn 0, +20 at turn 10, capped at 20
-    safetyHappiness = -10 + Math.min(10, turnsSinceLast) * 3;
+    // Slower recovery: -15 at turn 0, +15 at turn 15, capped at 20
+    safetyHappiness = -15 + Math.min(15, turnsSinceLast) * 2;
   }
   safetyHappiness = Math.max(-30, Math.min(20, safetyHappiness));
+
+  // 4b. War Weariness (-8 to 0) — a lighter lingering penalty after attacks
+  const turnsSinceAttack = k.last_attack_turn ? Math.max(0, (k.turn || 0) - k.last_attack_turn) : null;
+  const warWearinessComponent = turnsSinceAttack === null
+    ? 0
+    : -Math.max(0, Math.min(8, Math.floor((24 - Math.min(24, turnsSinceAttack)) * 0.35)));
 
   // 4. Prosperity Happiness (0-20)
   const goldTarget = (k.population || 1) * 2;
@@ -320,8 +326,12 @@ function calculateHappiness(k) {
   // 5. Race Modifier
   const raceModifier = raceModifiers[k.race] || 0;
 
+  // 6. Empire Size Pressure
+  const populationBase = Math.max(1, k.population || 1);
+  const sizeComponent = -Math.min(30, Math.floor(Math.log10(populationBase) * 5));
+
   // Base + components
-  let happiness = 50 + foodHappiness + entertainmentHappiness + safetyHappiness + prosperityHappiness + raceModifier;
+  let happiness = 50 + foodHappiness + entertainmentHappiness + safetyHappiness + warWearinessComponent + prosperityHappiness + raceModifier + sizeComponent;
 
   // Apply active effect bonuses (Bless, Divine Favor, etc.)
   const effects = safeJsonParse(k.active_effects, {}, "calculateHappiness:active_effects");
@@ -346,7 +356,7 @@ function calculateHappiness(k) {
   let taxComponent = 0;
   const taxRate = k.tax ?? 42;
   if (taxRate > 42) {
-    taxComponent = -Math.floor(((taxRate - 42) / 58) * 60 + Math.max(0, (taxRate - 80) / 20) * 15);
+    taxComponent = -Math.floor(((taxRate - 42) / 58) * 85);
     happiness += taxComponent;
   } else if (taxRate < 42) {
     taxComponent = Math.floor(12 * ((42 - taxRate) / 42));
@@ -357,7 +367,8 @@ function calculateHappiness(k) {
   let housingCap = (k.bld_housing || 0) * capPerBuilding;
   const housingMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'capacity');
   housingCap *= housingMult;
-  const overcrowded = housingCap > 0 && (k.population || 0) > housingCap;
+  const overcrowdingThreshold = housingCap * 1.3;
+  const overcrowded = housingCap > 0 && (k.population || 0) > overcrowdingThreshold;
   let overcrowdingComponent = 0;
   if (overcrowded) {
     let overcrowdMult = { dire_wolf: 0.5, high_elf: 2.0 }[k.race] || 1.0;
@@ -367,7 +378,7 @@ function calculateHappiness(k) {
     }
     overcrowdingComponent = -Math.max(
       0,
-      Math.floor((((k.population || 0) - housingCap) / 1000) * overcrowdMult)
+      Math.floor(Math.max(0, ((k.population || 0) - overcrowdingThreshold) * 0.018 * overcrowdMult))
     );
     happiness += overcrowdingComponent;
   }
@@ -389,8 +400,10 @@ function calculateHappiness(k) {
       food: foodHappiness,
       entertainment: entertainmentHappiness,
       safety: safetyHappiness,
+      warWeariness: warWearinessComponent,
       prosperity: prosperityHappiness,
       race: raceModifier,
+      size: sizeComponent,
       effects: effectComponent,
       synergy: synergyHappinessBonus,
       tax: taxComponent,
@@ -1282,7 +1295,8 @@ function processTurn(k, db = null) {
     // Apply world fragment bonuses for housing capacity
     const housingMult = fragmentBonusManager.getBonusMultiplier(k, 'housing', 'capacity');
     housingCap *= housingMult;
-    const overcrowded = housingCap > 0 && k.population > housingCap;
+    const overcrowdingThreshold = housingCap * 1.3;
+    const overcrowded = housingCap > 0 && k.population > overcrowdingThreshold;
 
     // Race overcrowding penalty modifiers
     let overcrowdMult = { dire_wolf: 0.5, high_elf: 2.0 }[k.race] || 1.0;
@@ -1293,9 +1307,7 @@ function processTurn(k, db = null) {
     const overcrowdPenalty = overcrowded
       ? Math.max(
           0,
-          Math.floor(
-            ((k.population - housingCap) / 1000) * overcrowdMult,
-          ),
+          Math.floor(Math.max(0, (k.population - overcrowdingThreshold) * 0.018 * overcrowdMult)),
         )
       : 0;
 
@@ -6224,6 +6236,3 @@ module.exports = {
   engineerConstructionMult,
   clearSynergyCache,
 };
-
-
-
