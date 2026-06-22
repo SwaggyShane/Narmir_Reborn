@@ -350,7 +350,7 @@ function calculateHappiness(k) {
   let taxComponent = 0;
   const taxRate = k.tax ?? 42;
   if (taxRate > 42) {
-    taxComponent = -Math.floor(((taxRate - 42) / 58) * 85 + Math.max(0, (taxRate - 80) / 20) * 20);
+    taxComponent = -Math.floor(((taxRate - 42) / 58) * 85);
     happiness += taxComponent;
   } else if (taxRate < 42) {
     taxComponent = Math.floor(12 * ((42 - taxRate) / 42));
