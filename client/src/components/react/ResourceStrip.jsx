@@ -56,12 +56,12 @@ function formatDelta(delta) {
   return `${sign}${Math.round(abs).toLocaleString()}`;
 }
 
-function DeltaBadge({ flash, color }) {
+function DeltaBadge({ flash }) {
   const value = flash?.delta;
   if (value == null) return null;
   const label = formatDelta(value);
   const isPositive = value >= 0;
-  const colorClass = color || (isPositive ? 'text-green' : 'text-red');
+  const colorClass = isPositive ? 'text-green' : 'text-red';
   // key={flash.flashId} forces React to remount on every new flash so the
   // `forwards`-pinned CSS animation replays even when two consecutive deltas
   // are equal.

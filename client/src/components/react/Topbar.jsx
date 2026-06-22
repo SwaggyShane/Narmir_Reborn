@@ -30,8 +30,8 @@ const Topbar = () => {
   return (
     <header className="topbar flex h-14 items-center justify-between gap-2 border-b border-white/5 bg-bg px-3 backdrop-blur-md md:px-4">
       <div className="logo-container min-w-0">
-        <div className="logo truncate font-serif text-[13px] font-black uppercase tracking-[0.12em] text-gold md:text-[14px]">NARMIR REBORN</div>
-        <div className="tagline truncate text-[11px] text-text2 md:text-[12px]">Pure. Damn. Evil.</div>
+        <div className="logo truncate font-serif text-base font-black uppercase tracking-[0.12em] text-gold md:text-md">NARMIR REBORN</div>
+        <div className="tagline truncate text-sm text-text2 md:text-[12px]">Pure. Damn. Evil.</div>
       </div>
       <div className="topbar-stats flex min-w-0 items-center gap-2 md:gap-3">
         <div className="tstat hide-sm hidden shrink-0 md:block">
@@ -41,13 +41,13 @@ const Topbar = () => {
         <div className="flex items-center gap-2">
           <div className="text-right font-serif leading-none">
             <div className="flex items-center gap-1.5">
-              <span className="hide-xs text-[11px] uppercase tracking-[0.5px] text-text3">
+              <span className="hide-xs text-sm uppercase tracking-[0.5px] text-text3">
                 Turns:
               </span>
-              <span id="turns-stored-disp" className="text-[16px] font-bold text-gold">
+              <span id="turns-stored-disp" className="text-lg font-bold text-gold">
                 {turnsStored}
               </span>
-              <span className="hide-xs text-[11px] text-text3">
+              <span className="hide-xs text-sm text-text3">
                 / 400
               </span>
             </div>
