@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { apiCall } from '../../utils/api';
 
 const SCHOOLS = [
-  { id: 'abjuration', name: 'Abjuration', emoji: '🛡️', desc: 'Protection & Defense — Shield your kingdom with powerful defensive magic', color: '#4A90E2' },
-  { id: 'conjuration', name: 'Conjuration', emoji: '✨', desc: 'Creation & Summoning — Manifest powerful entities and supplies', color: '#7ED321' },
-  { id: 'divination', name: 'Divination', emoji: '🔮', desc: 'Foresight & Information — Unveil hidden truths and futures', color: '#9013FE' },
-  { id: 'enchantment', name: 'Enchantment', emoji: '💫', desc: 'Charm & Influence — Control minds and bend wills', color: '#F5A623' },
-  { id: 'evocation', name: 'Evocation', emoji: '⚡', desc: 'Damage & Force — Unleash raw magical power and destruction', color: '#FF6B6B' },
-  { id: 'illusion', name: 'Illusion', emoji: '👁️', desc: 'Deception & Trickery — Manipulate perception and reality', color: '#50E3C2' },
-  { id: 'necromancy', name: 'Necromancy', emoji: '💀', desc: 'Death & Undeath — Command the forces of death itself', color: '#B8E986' },
-  { id: 'transmutation', name: 'Transmutation', emoji: '🔄', desc: 'Transformation — Reshape matter and transform all things', color: '#FF6B9D' },
+  { id: 'abjuration', name: 'Abjuration', emoji: '???', desc: 'Protection & Defense ? Shield your kingdom with powerful defensive magic', color: '#4A90E2' },
+  { id: 'conjuration', name: 'Conjuration', emoji: '?', desc: 'Creation & Summoning ? Manifest powerful entities and supplies', color: '#7ED321' },
+  { id: 'divination', name: 'Divination', emoji: '??', desc: 'Foresight & Information ? Unveil hidden truths and futures', color: '#9013FE' },
+  { id: 'enchantment', name: 'Enchantment', emoji: '??', desc: 'Charm & Influence ? Control minds and bend wills', color: '#F5A623' },
+  { id: 'evocation', name: 'Evocation', emoji: '?', desc: 'Damage & Force ? Unleash raw magical power and destruction', color: '#FF6B6B' },
+  { id: 'illusion', name: 'Illusion', emoji: '???', desc: 'Deception & Trickery ? Manipulate perception and reality', color: '#50E3C2' },
+  { id: 'necromancy', name: 'Necromancy', emoji: '??', desc: 'Death & Undeath ? Command the forces of death itself', color: '#B8E986' },
+  { id: 'transmutation', name: 'Transmutation', emoji: '??', desc: 'Transformation ? Reshape matter and transform all things', color: '#FF6B9D' },
 ];
 
 export default function SchoolSelectionModal({ onClose, onSuccess }) {
@@ -85,12 +85,7 @@ function SchoolCard({ school, isSelected, isLoading, onSelect }) {
   return (
     <div
       className={`relative flex cursor-pointer flex-col items-center gap-2 rounded-lg border bg-zinc-900 p-4 text-center transition-all ${isSelected ? 'scale-[1.02] shadow-xl' : 'hover:-translate-y-1 hover:shadow-lg'} ${isLoading ? 'cursor-not-allowed opacity-60' : ''}`}
-      onClick={isLoading ? undefined : onSelect}
-      style={{
-        borderColor: isSelected ? school.color : undefined,
-        backgroundColor: isSelected ? `${school.color}20` : undefined,
-      }}
-    >
+      onClick={isLoading ? undefined : onSelect}>
       <div className="text-4xl leading-none">{school.emoji}</div>
       <h3 className="my-2 text-base font-semibold text-white">{school.name}</h3>
       <p className="m-0 text-xs leading-relaxed text-zinc-400">{school.desc}</p>
