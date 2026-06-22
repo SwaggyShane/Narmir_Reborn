@@ -55,7 +55,7 @@ function raidTradeRoute(attacker, defender, unitCount) {
         thieves: Math.max(0, (attacker.thieves || 0) - losses),
       },
       atkEvent: `🏹 ✗ FAILURE: Your raid on ${defender.name}'s trade routes failed. You lost ${losses} thieves in the ambush.`,
-      defEvent: `🏹 ⚔️ ¡ 🌪️ Your guards repelled an Orc raid from ${attacker.name} on your trade routes!`,
+      defEvent: `🏹 ⚔️ 🌪️ Your guards repelled an Orc raid from ${attacker.name} on your trade routes!`,
     };
   }
 }

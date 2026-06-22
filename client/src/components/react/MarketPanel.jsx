@@ -9,19 +9,19 @@ import { gameStateManager } from '../../GameStateManager.js';
 import { toast } from '../../utils/toast.js';
 
 const icons = {
-  food: 'ðŸŒ¾',
-  wood: 'ðŸªµ',
-  stone: 'ðŸª¨',
-  iron: 'â›“',
-  coal: 'ðŸŒ‘',
-  steel: 'ðŸ“',
-  mana: 'âœ¨',
-  hammers: 'ðŸ”¨',
-  weapons: 'âš”ï¸',
-  armor: 'ðŸ›¡ï¸',
-  war_machines: 'ðŸ¹',
-  ballistae: 'ðŸ¹',
-  land: 'ðŸ—ºï¸',
+  food: '🌾',
+  wood: '🪵',
+  stone: '🪨',
+  iron: '⛓️',
+  coal: '🌑',
+  steel: '📏',
+  mana: '✨',
+  hammers: '🔨',
+  weapons: '⚔️',
+  armor: '🛡️',
+  war_machines: '🏹',
+  ballistae: '🏹',
+  land: '🗺️',
 };
 
 
@@ -71,8 +71,8 @@ export function renderTradeOffers(received, sent) {
               <div style="background:var(--bg3);border-radius:var(--radius);padding:10px;margin-bottom:8px">
                 <div style="font-size:13px;color:var(--text);margin-bottom:4px"><strong>${escapeHtml(o.sender_name)}</strong> offers <span style="color:var(--green)">${escapeHtml(offerStr)}</span> for <span style="color:var(--amber)">${escapeHtml(requestStr)}</span></div>
                 <div style="display:flex;gap:6px;margin-top:6px">
-                  <button class="btn btn-green" style="font-size:11px;padding:3px 10px" onclick="acceptTrade(${o.id})">âœ… Accept</button>
-                  <button class="btn btn-red" style="font-size:11px;padding:3px 10px" onclick="declineTrade(${o.id})">âŒ Decline</button>
+                  <button class="btn btn-green" style="font-size:11px;padding:3px 10px" onclick="acceptTrade(${o.id})">✅ Accept</button>
+                  <button class="btn btn-red" style="font-size:11px;padding:3px 10px" onclick="declineTrade(${o.id})">❌ Decline</button>
                 </div>
               </div>`;
           })

@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { apiCall } from '../../utils/api';
 
 const SCHOOLS = [
-  { id: 'abjuration', name: 'Abjuration', emoji: '???', desc: 'Protection & Defense ? Shield your kingdom with powerful defensive magic', color: '#4A90E2' },
-  { id: 'conjuration', name: 'Conjuration', emoji: '?', desc: 'Creation & Summoning ? Manifest powerful entities and supplies', color: '#7ED321' },
-  { id: 'divination', name: 'Divination', emoji: '??', desc: 'Foresight & Information ? Unveil hidden truths and futures', color: '#9013FE' },
-  { id: 'enchantment', name: 'Enchantment', emoji: '??', desc: 'Charm & Influence ? Control minds and bend wills', color: '#F5A623' },
-  { id: 'evocation', name: 'Evocation', emoji: '?', desc: 'Damage & Force ? Unleash raw magical power and destruction', color: '#FF6B6B' },
-  { id: 'illusion', name: 'Illusion', emoji: '???', desc: 'Deception & Trickery ? Manipulate perception and reality', color: '#50E3C2' },
-  { id: 'necromancy', name: 'Necromancy', emoji: '??', desc: 'Death & Undeath ? Command the forces of death itself', color: '#B8E986' },
-  { id: 'transmutation', name: 'Transmutation', emoji: '??', desc: 'Transformation ? Reshape matter and transform all things', color: '#FF6B9D' },
+  { id: 'abjuration', name: 'Abjuration', emoji: '🛡️', desc: 'Protection & Defense — Shield your kingdom with powerful defensive magic', color: '#4A90E2' },
+  { id: 'conjuration', name: 'Conjuration', emoji: '✨', desc: 'Creation & Summoning — Manifest powerful entities and supplies', color: '#7ED321' },
+  { id: 'divination', name: 'Divination', emoji: '🔮', desc: 'Foresight & Information — Unveil hidden truths and futures', color: '#9013FE' },
+  { id: 'enchantment', name: 'Enchantment', emoji: '💫', desc: 'Charm & Influence — Control minds and bend wills', color: '#F5A623' },
+  { id: 'evocation', name: 'Evocation', emoji: '🔥', desc: 'Damage & Force — Unleash raw magical power and destruction', color: '#FF6B6B' },
+  { id: 'illusion', name: 'Illusion', emoji: '🎭', desc: 'Deception & Trickery — Manipulate perception and reality', color: '#50E3C2' },
+  { id: 'necromancy', name: 'Necromancy', emoji: '☠️', desc: 'Death & Undeath — Command the forces of death itself', color: '#B8E986' },
+  { id: 'transmutation', name: 'Transmutation', emoji: '⚗️', desc: 'Transformation — Reshape matter and transform all things', color: '#FF6B9D' },
 ];
 
 export default function SchoolSelectionModal({ onClose, onSuccess }) {

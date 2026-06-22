@@ -1,4 +1,4 @@
-const MOJIBAKE_SIGNATURE = /[\u00C3\u00C2\u00E2\u00EF\uFFFD]/;
+const MOJIBAKE_SIGNATURE = /[\u00C3\u00C2\u00E2\u00EF\u00F0\uFFFD]/;
 
 export function repairMojibake(value) {
   if (value === null || value === undefined) return '';
