@@ -6715,6 +6715,36 @@
 
 
 
+      function clearNewsBadges() {
+
+        var sideB = document.getElementById("news-badge");
+
+        if (sideB) {
+
+          sideB.style.display = "none";
+
+          sideB.textContent = "";
+
+        }
+
+        var bnavB = document.getElementById("bnav-news-badge");
+
+        if (bnavB) {
+
+          bnavB.style.display = "none";
+
+          bnavB.textContent = "";
+
+        }
+
+      }
+
+
+
+      window.addEventListener("narmir:clear-news-badges", clearNewsBadges);
+
+
+
       function appendNewsItems(events) {
 
         if (!events || !events.length) return;

@@ -60,6 +60,10 @@ const NewsPanel = () => {
     return 'Combat report available.';
   }, [repairText]);
 
+  const clearBadges = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('narmir:clear-news-badges'));
+  }, []);
+
   const loadNews = useCallback(async () => {
     try {
       const items = await apiCall('GET', '/api/kingdom/news/list');
@@ -67,18 +71,11 @@ const NewsPanel = () => {
 
       setNewsItems(items);
       window.newsCache = items;
-
-      ['news-badge', 'bnav-news-badge'].forEach((id) => {
-        const b = document.getElementById(id);
-        if (b) {
-          b.style.display = 'none';
-          b.textContent = '';
-        }
-      });
+      clearBadges();
     } catch (err) {
       console.error('[NewsPanel] Error loading news:', err);
     }
-  }, []);
+  }, [clearBadges]);
 
   const clearNews = useCallback(async () => {
     const result = await apiCall('DELETE', '/api/kingdom/news/clear');
