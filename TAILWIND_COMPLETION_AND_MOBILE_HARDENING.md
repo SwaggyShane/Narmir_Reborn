@@ -1,37 +1,80 @@
 # Tailwind Completion + Mobile Hardening
 
 ## Summary
-Finish the mixed-state UI by removing the remaining legacy CSS and inline-style surfaces, then harden the Tailwind theme, then apply the aggressive mobile plan on top of that stable base. Keep the work split into reviewable slices and avoid gameplay logic changes.
+Finish the mixed-state UI by removing the last legacy CSS / inline-style surfaces, then harden the Tailwind theme, then apply the aggressive mobile plan on top of that stable base. Keep the work split into small, reviewable PRs, with no gameplay logic changes.
 
 Tailwind completion ends when the remaining UI is consistently Tailwind-driven and only thin shared primitives or unavoidable runtime styles remain.
 
 Treat "unavoidable runtime styles" narrowly: only values that are genuinely data-driven or state-driven, not leftover layout work that should be converted into utilities.
 
-## Key Changes
-- **Tailwind foundation**
-  - Expand `tailwind.config.js` into a fuller dark-fantasy theme system with semantic colors, spacing, borders, shadows, typography, and component tokens.
-  - Keep the existing CSS-variable source of truth where it already exists, but map it into clearer Tailwind names for consistent use across panels.
+## Goals
+- Achieve a consistent, modern, dark-fantasy aesthetic across the entire game.
+- Make the UI fully responsive and pleasant on mobile.
+- Eliminate technical debt from old CSS and vanilla DOM code.
+- Keep the UI stable and reviewable at every step.
 
-- **Legacy UI cleanup**
-  - Convert the remaining inline-style and old-class surfaces into Tailwind utilities, starting with the remaining shell-heavy panels and chrome.
-  - Reduce or remove old CSS files that still carry layout responsibility, keeping only truly shared primitives or other genuinely shared base styling if needed.
-  - Standardize reusable patterns for card shells, tabs, headers, scroll areas, and modal bodies so panels stop drifting stylistically.
-  - Prefer shared utility classes or tiny shared components only when a pattern repeats enough to justify the abstraction; otherwise keep it local and explicit.
+## Critical Blocking Dependency
+Phase 3 vanilla → React conversion is still a hard dependency for anything that needs imperative DOM replacement. Don’t try to force mobile polish or CSS cleanup through components that still rely on heavy `el()` / `style.cssText` mutation.
 
-- **Mobile pass**
-  - Apply the aggressive mobile plan after the Tailwind base is stable.
-  - Prioritize navigation, shell spacing, dense panels, and tap targets first.
-  - Keep desktop behavior intact while tightening layout at tablet and phone widths.
+## Execution Phases
+### Phase 0: Tailwind Foundation
+- Expand `tailwind.config.js` into a full dark-fantasy design system:
+  - semantic colors
+  - spacing scale
+  - shadows
+  - typography
+  - component tokens
+- Use `clsx` utility for conditional class composition.
+- Set up global base styles and CSS variable mapping.
+
+### Phase 1: Global Shell & Chrome
+- Convert topbar, sidebar, main container, resource bars, turn display, and similar shell elements.
+- Standardize layout containers and spacing.
+
+### Phase 2: High-Visibility Panels
+- Convert the visible panels that players see constantly:
+  - Studies
+  - Status
+  - Happiness
+  - Kingdom overview
+- Focus on visual polish first.
+
+### Phase 3: Vanilla → React Conversion
+- Convert the remaining components that still use heavy imperative DOM manipulation.
+- Work one panel at a time.
+- Use feature flags only for risky behavior changes, not ordinary presentation refactors.
+- Treat the list of remaining components as a moving backlog, not a fixed promise.
+- Smoke test after each component to catch regressions early.
+
+### Phase 4: Legacy CSS Cleanup
+- Remove or drastically reduce old `.css` files.
+- Standardize reusable components where repetition justifies it:
+  - `GameCard`
+  - `PanelHeader`
+  - `TabGroup`
+  - `Modal`
+  - `ResourceStat`
+- Prefer shared utility classes or tiny shared components only when the pattern repeats enough to justify the abstraction.
+
+### Phase 5: Aggressive Mobile Hardening
+- Apply the full mobile plan:
+  - bottom nav overhaul
+  - touch targets
+  - safe areas
+  - responsive grids
+- Test thoroughly on real devices.
 
 ## Test Plan
-- Run a build after each slice.
-- Smoke the touched UI in the browser after each slice.
-- Verify layout at desktop, tablet, and narrow phone widths.
-- Check for console errors after each change.
-- Merge only after the PR slice is clean and the branch is still visually stable.
+After every PR:
+- Build the project.
+- Smoke test the touched panels in the browser.
+- Test at desktop, tablet, and mobile widths.
+- Check for console errors.
+- Verify no regression in gameplay feel.
 
-## Assumptions
-- Gameplay behavior stays unchanged; this is presentation and shell/layout work only.
-- CSS variables remain the visual source of truth unless a slice explicitly replaces them.
-- Work stays split into small PRs so review and rollback stay easy.
-- The aggressive mobile plan is applied after the Tailwind base is finished, not in parallel.
+## Success Criteria
+- No more old CSS classes or heavy inline styles in new components.
+- Consistent visual language across all panels.
+- Mobile experience is comfortable for daily play.
+- Old CSS files are minimized or gone.
+- The end state is clearly Tailwind-driven, with only thin shared primitives or genuinely unavoidable runtime styles left.

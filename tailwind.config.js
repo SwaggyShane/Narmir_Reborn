@@ -1,16 +1,17 @@
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   content: [
-    './client/index.html',
+    './index.html',
     './client/src/**/*.{js,jsx,ts,tsx}',
+    './client/**/*.{js,jsx}',
   ],
-  darkMode: 'class',
   theme: {
     extend: {
       colors: {
         void: {
           950: '#07070a',
           900: '#0a0a0f',
+          850: '#111118',
           800: '#12121a',
           700: '#181824',
         },
@@ -20,6 +21,21 @@ module.exports = {
           500: '#f06202',
           400: '#ff8b3d',
           300: '#ffb366',
+        },
+        blood: {
+          400: '#f87171',
+          500: '#ef4444',
+          600: '#dc2626',
+        },
+        shadow: {
+          400: '#64748b',
+          500: '#475569',
+          600: '#334155',
+        },
+        arcane: {
+          400: '#a78bfa',
+          500: '#8b5cf6',
+          600: '#7c3aed',
         },
         bg: 'var(--bg)',
         bg2: 'var(--bg2)',
@@ -37,11 +53,6 @@ module.exports = {
         blue: 'var(--blue)',
         amber: 'var(--amber)',
         logo: 'var(--logo)',
-      },
-      boxShadow: {
-        panel: '0 1px 0 rgba(255,255,255,0.03) inset, 0 14px 36px rgba(0,0,0,0.35)',
-        ember: '0 0 0 1px rgba(240, 98, 2, 0.18), 0 0 28px rgba(240, 98, 2, 0.12)',
-        glow: '0 0 24px rgba(240, 98, 2, 0.16)',
       },
       borderColor: {
         DEFAULT: 'var(--border)',
@@ -87,8 +98,9 @@ module.exports = {
         modal: '10000',
       },
       fontFamily: {
-        cinzel: ['"Cinzel"', 'serif'],
-        sans: ['"Inter"', 'system-ui', '-apple-system', 'sans-serif'],
+        serif: ['Cinzel', 'Playfair Display', 'serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        cinzel: ['Cinzel', 'Playfair Display', 'serif'],
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
       },
       fontSize: {
@@ -139,6 +151,14 @@ module.exports = {
         'gold-gradient': 'linear-gradient(135deg, #f06202 0%, #d97706 100%)',
         'accent-gradient': 'linear-gradient(135deg, #f06202 0%, #f06202 100%)',
         'card-top-border': 'linear-gradient(90deg, transparent, rgba(240, 98, 2, 0.3), transparent)',
+      },
+      boxShadow: {
+        panel: '0 1px 0 rgba(255,255,255,0.03) inset, 0 14px 36px rgba(0,0,0,0.35)',
+        ember: '0 0 0 1px rgba(240, 98, 2, 0.18), 0 0 28px rgba(240, 98, 2, 0.12)',
+        glow: '0 0 24px rgba(240, 98, 2, 0.16)',
+        'glow-ember': '0 0 15px -3px rgb(249 115 22 / 0.5)',
+        'glow-blood': '0 0 15px -3px rgb(239 68 68 / 0.5)',
+        'glow-arcane': '0 0 15px -3px rgb(139 92 246 / 0.5)',
       },
     },
   },
