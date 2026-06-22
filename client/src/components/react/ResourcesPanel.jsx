@@ -110,6 +110,7 @@ const ResourcesPanel = () => {
   const [scouting, setScouting] = useState(false);
   const [scoutMsg, setScoutMsg] = useState('');
   const [now, setNow] = useState(Math.floor(Date.now() / 1000));
+  const [engineerAllocations, setEngineerAllocations] = useState({});
   const { activePanel } = useActivePanel();
   const { state } = useGameState();
   currentResourcesState = state || {};
@@ -387,8 +388,7 @@ const ResourcesPanel = () => {
   const startBuild = async (bld) => {
     const type = BUILDING_CONFIG[bld.key]?.type;
     if (buildingInProgress[type] || getActiveBuild(type)) return;
-    const el = document.getElementById('bld-eng-' + bld.key);
-    const engineers = parseInt(el?.value || '0') || 0;
+    const engineers = parseInt(engineerAllocations[bld.key] || '0', 10) || 0;
     if (engineers < 1) return toast('Assign at least 1 engineer to start this build.', 'error');
     const avail = getAvailableEngineers();
     if (engineers > avail) return toast(`Only ${avail.toLocaleString()} engineers available.`, 'error');
@@ -447,8 +447,7 @@ const ResourcesPanel = () => {
   };
 
   const setMax = (bld) => {
-    const el = document.getElementById('bld-eng-' + bld.key);
-    if (el) el.value = getAvailableEngineers();
+    setEngineerAllocations((prev) => ({ ...prev, [bld.key]: getAvailableEngineers() }));
   };
 
   const getPopData = () => {
@@ -655,7 +654,7 @@ const ResourcesPanel = () => {
                         ) : (
                           <React.Fragment>
                             <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                              <input type="number" min="0" id={`bld-eng-${bld.key}`} defaultValue="0" placeholder="Eng"
+                              <input type="number" min="0" value={engineerAllocations[bld.key] || ''} onChange={(e) => setEngineerAllocations((prev) => ({ ...prev, [bld.key]: e.target.value }))} placeholder="Eng"
                                 disabled={disab}
                                 style={{ width: '70px', padding: '4px 6px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '12px', textAlign: 'center' }} />
                               <button onClick={() => setMax(bld)} disabled={disab}
