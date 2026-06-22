@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import React, { useState, useCallback, useEffect } from 'react';
 
 const TEST_DESCRIPTIONS = {
@@ -289,7 +290,7 @@ const TestingPanel = () => {
 
   return (
     <div id="testing" className="panel">
-      <div className="card" style={{ marginTop: 0 }}>
+      <div className="card mt-0">
         <div style={{ marginBottom: '16px' }}>
           <h2 style={{ margin: 0, marginBottom: '8px' }}>🧪 Testing Dashboard</h2>
           <p style={{ margin: 0, fontSize: '12px', color: 'var(--text2)' }}>

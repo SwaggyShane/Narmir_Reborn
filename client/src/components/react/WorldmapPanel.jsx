@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import React, { useCallback, useEffect, useState } from 'react';
 import { apiCall } from '../../utils/api';
 import { setWorldMapData } from '../../utils/worldMapData.js';
@@ -35,7 +36,7 @@ const WorldmapPanel = () => {
   }, [refreshWorldMap]);
 
   return (
-    <div id="worldmap" className="panel min-h-0 w-full overflow-y-auto px-4 pb-5" style={{ display: 'none' }}>
+    <div id="worldmap" className={clsx('panel min-h-0 w-full overflow-y-auto px-4 pb-5', 'hidden')}>
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-4">
         <div className="card flex items-center justify-between gap-3">
           <div>
