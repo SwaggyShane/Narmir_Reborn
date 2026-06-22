@@ -1,9 +1,10 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 
 const LoreModal = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null;
 
-  return (
+  const portal = (
     <div
       className="fixed inset-0 z-[9000] flex items-center justify-center bg-black/70 p-4"
       onClick={(e) => {
@@ -24,6 +25,8 @@ const LoreModal = ({ isOpen, onClose, title, children }) => {
       </div>
     </div>
   );
+
+  return createPortal(portal, document.body);
 };
 
 export default LoreModal;
