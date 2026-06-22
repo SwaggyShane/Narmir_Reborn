@@ -58,7 +58,7 @@ const RACE_PORTRAITS = {
   ogre: '/race/ogre_male.webp',
 };
 
-const STATUS_CARD_CLASS = 'card rounded-2xl border border-white/5 bg-zinc-950/95 p-4 shadow-[0_16px_32px_rgba(0,0,0,0.28)]';
+const STATUS_CARD_CLASS = 'card rounded-2xl border border-white/5 bg-bg p-4 shadow-[0_16px_32px_rgba(0,0,0,0.28)]';
 
 const toRaceKey = (value) =>
   String(value || '')
@@ -186,7 +186,7 @@ const StatusPanel = () => {
             defaultValue="42"
             onChange={(e) => updateTaxDisplay(e.target.value)}
           />
-          <span className="text-[22px] font-bold text-[var(--gold)] min-w-[48px]" id="strip-tax-disp" />
+          <span className="text-[22px] font-bold text-gold min-w-[48px]" id="strip-tax-disp" />
         </div>
         <div className="flex gap-2 mb-2.5">
           <button
@@ -196,10 +196,10 @@ const StatusPanel = () => {
             🔒 Lock
           </button>
         </div>
-        <div className="text-[12px] text-[var(--text3)] leading-[1.7]">
+        <div className="text-[12px] text-text3 leading-[1.7]">
           Taxing your citizens directly affects their happiness. Tax them high and they will probably leave.
           Tax them low and they will rejoice.{' '}
-          <strong className="text-[var(--gold)]">Enter a rate then press Lock to save.</strong>
+          <strong className="text-gold">Enter a rate then press Lock to save.</strong>
         </div>
       </div>
 
@@ -209,16 +209,16 @@ const StatusPanel = () => {
             Military &amp; support
             <span
               id="citadel-badge"
-              className="hidden ml-2 text-[11px] font-semibold text-[var(--gold)]"
+              className="hidden ml-2 text-[11px] font-semibold text-gold"
             >
               🏰 Citadel
             </span>
           </div>
-          <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 py-1 px-0 border-b border-[var(--border2)]">
-            <span className="text-[10px] text-[var(--text3)] uppercase tracking-[0.5px]">Unit</span>
-            <span className="text-[10px] text-[var(--text3)] uppercase tracking-[0.5px] text-right">Count</span>
-            <span className="text-[10px] text-[var(--text3)] uppercase tracking-[0.5px] text-center">Lv</span>
-            <span className="text-[10px] text-[var(--text3)] uppercase tracking-[0.5px] text-center">Role</span>
+          <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 py-1 px-0 border-b border-white/5">
+            <span className="text-[10px] text-text3 uppercase tracking-[0.5px]">Unit</span>
+            <span className="text-[10px] text-text3 uppercase tracking-[0.5px] text-right">Count</span>
+            <span className="text-[10px] text-text3 uppercase tracking-[0.5px] text-center">Lv</span>
+            <span className="text-[10px] text-text3 uppercase tracking-[0.5px] text-center">Role</span>
           </div>
 
           <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5">
@@ -263,7 +263,7 @@ const StatusPanel = () => {
             <span className="badge badge-amber text-center text-[9px]">Covert</span>
           </div>
 
-          <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-[var(--border2)]">
+          <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5">
             <span className="text-[13px] text-text" id="s-label-ninjas">Ninjas</span>
             <span className="text-[13px] font-semibold text-right text-text" id="s-ninjas">{(state?.ninjas ?? 0).toLocaleString()}</span>
             <span className="text-center text-[11px] font-semibold" id="s-lv-ninjas">Lv {troopLevels?.ninjas?.level || 1}</span>
@@ -273,21 +273,21 @@ const StatusPanel = () => {
           <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5">
             <span className="text-[13px] text-text" id="s-label-engineers">Engineers</span>
             <span className="text-[13px] font-semibold text-right text-text" id="s-engineers">{(state?.engineers ?? 0).toLocaleString()}</span>
-            <span className="text-center text-[11px] text-[var(--text3)]" id="s-lv-engineers">Lv {Number(troopLevels.engineers?.level || 1)}</span>
+            <span className="text-center text-[11px] text-text3" id="s-lv-engineers">Lv {Number(troopLevels.engineers?.level || 1)}</span>
             <span className="badge badge-blue text-center text-[9px]">Build</span>
           </div>
 
           <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5">
             <span className="text-[13px] text-text" id="s-label-scribes">Scribes</span>
             <span className="text-[13px] font-semibold text-right text-text" id="s-scribes">{(state?.scribes ?? 0).toLocaleString()}</span>
-            <span className="text-center text-[11px] text-[var(--text3)]" id="s-lv-scribes">Lv {Number(troopLevels.scribes?.level || 1)}</span>
+            <span className="text-center text-[11px] text-text3" id="s-lv-scribes">Lv {Number(troopLevels.scribes?.level || 1)}</span>
             <span className="badge badge-blue text-center text-[9px]">Library</span>
           </div>
 
           <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5">
             <span className="text-[13px] text-text" id="s-label-researchers">Researchers</span>
             <span className="text-[13px] font-semibold text-right text-text" id="s-researchers">{(state?.researchers ?? 0).toLocaleString()}</span>
-            <span className="text-center text-[11px] text-[var(--text3)]" id="s-lv-researchers">Lv {Number(troopLevels.researchers?.level || 1)}</span>
+            <span className="text-center text-[11px] text-text3" id="s-lv-researchers">Lv {Number(troopLevels.researchers?.level || 1)}</span>
             <span className="badge badge-blue text-center text-[9px]">Study</span>
           </div>
 
@@ -355,7 +355,7 @@ const StatusPanel = () => {
           <div className="trow">
             <span className="name">Atk magic</span>
             <div className="prog-wrap">
-              <div className="prog-bar bg-[var(--red)]" id="pb-atk-st" style={{ width: '0%' }} />
+              <div className="prog-bar bg-red" id="pb-atk-st" style={{ width: '0%' }} />
             </div>
           </div>
           <div className="trow">
@@ -373,13 +373,13 @@ const StatusPanel = () => {
           <div className="trow">
             <span className="name">Entertainment</span>
             <div className="prog-wrap">
-              <div className="prog-bar bg-[var(--green)]" id="pb-ent-s" style={{ width: '0%' }} />
+              <div className="prog-bar bg-green" id="pb-ent-s" style={{ width: '0%' }} />
             </div>
           </div>
           <div className="trow border-b-0">
             <span className="name">Construction</span>
             <div className="prog-wrap">
-              <div className="prog-bar bg-[var(--amber)]" id="pb-con-st" style={{ width: '0%' }} />
+              <div className="prog-bar bg-amber" id="pb-con-st" style={{ width: '0%' }} />
             </div>
           </div>
         </div>
@@ -432,7 +432,7 @@ const StatusPanel = () => {
       <div id="active-effects-bar" className="hidden mt-3.5">
         <div className={clsx(STATUS_CARD_CLASS, 'p-3 pl-4')}>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[12px] text-[var(--text3)] font-semibold uppercase tracking-[0.5px] mr-1">
+            <span className="text-[12px] text-text3 font-semibold uppercase tracking-[0.5px] mr-1">
               Active effects
             </span>
             <div id="active-effects-list" className="flex gap-1.5 flex-wrap" />
