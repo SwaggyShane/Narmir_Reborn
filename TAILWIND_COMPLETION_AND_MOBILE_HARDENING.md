@@ -4,9 +4,9 @@
 Finish the mixed-state UI by removing the last legacy CSS and inline-style surfaces, then harden the Tailwind theme, then apply the aggressive mobile plan on top of that stable base. The work stays split into small, reviewable PRs, with no gameplay logic changes.
 
 ## Status
-Complete.
+In progress.
 
-Phase 0 through Phase 5 have been executed, reviewed, and merged on remote. The remaining work is normal maintenance, bugfixes, and follow-up polish rather than active roadmap execution.
+Phase 0 is complete and landed on remote. Codex-owned shell and chrome slices are complete, but Claude still has active roadmap work remaining in his lane. The remaining work is still being executed in reviewable slices rather than treated as finished roadmap cleanup.
 
 ## Parallel Ownership
 ### Codex lane
