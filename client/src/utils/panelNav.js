@@ -42,7 +42,7 @@ function normalizePanelName(tabName) {
 }
 
 function setActiveNavButtons(rawTab, activeTab) {
-  document.querySelectorAll('.nav-item[data-tab], .bnav-item[data-tab]').forEach((button) => {
+  document.querySelectorAll('.nav-item[data-tab]').forEach((button) => {
     const buttonTab = normalizePanelName(button.dataset.tab);
     const isActive = buttonTab === activeTab;
     button.classList.toggle('active', isActive);
