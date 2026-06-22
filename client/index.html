@@ -6799,6 +6799,30 @@
 
 
 
+      function syncKingdomProfileModal(event) {
+
+        var visible = event.detail?.visible ?? false;
+
+        var modalEl = document.getElementById("kingdom-profile-modal");
+
+        if (modalEl) modalEl.style.display = visible ? "flex" : "none";
+
+        var appEl = document.getElementById("app");
+
+        var navEl = document.getElementById("bottom-nav");
+
+        if (appEl) appEl.style.pointerEvents = visible ? "none" : "";
+
+        if (navEl) navEl.style.pointerEvents = visible ? "none" : "";
+
+      }
+
+
+
+      window.addEventListener("narmir:kingdom-profile-modal", syncKingdomProfileModal);
+
+
+
       function appendNewsItems(events) {
 
         if (!events || !events.length) return;
