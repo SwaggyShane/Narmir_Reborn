@@ -16,7 +16,7 @@ const Sidebar = () => {
   };
 
   return (
-    <nav className="sidebar">
+    <nav className="sidebar game-panel">
       <div className="nav-section">Kingdom</div>
       <button className="nav-item active" data-tab="status" onClick={(e) => handleSwitchTab('status', e)}>
         <span className="icon text-[#4a90e2]">🏰</span>Status
