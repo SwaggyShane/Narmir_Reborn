@@ -68,7 +68,7 @@ const GoalsPanel = () => {
 
   return (
     <div id="goals" className="panel">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+      <div className="mb-2 flex items-center justify-between">
         <h2 style={{ margin: 0 }}>📝 Goals</h2>
         <button className="base-btn" onClick={fetchGoals} style={{ fontSize: '11px', padding: '4px 10px' }}>↻ Refresh</button>
       </div>
@@ -249,7 +249,6 @@ const GoalsPanel = () => {
           color: var(--green);
           font-weight: bold;
         }
-        .mt-4 { margin-top: 16px; }
       `}</style>
     </div>
   );

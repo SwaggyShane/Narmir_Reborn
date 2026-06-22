@@ -99,6 +99,7 @@ const HappinessGraph = ({ history = [] }) => {
               cy={p.y}
               r="3"
               fill="currentColor"
+              className="text-current"
               style={{ color: getColor(p.happiness) }}
               opacity={idx === points.length - 1 ? 1 : 0.6}
             />
@@ -106,8 +107,8 @@ const HappinessGraph = ({ history = [] }) => {
 
           {points.length > 0 && (
             <g>
-              <circle cx={points[points.length - 1].x} cy={points[points.length - 1].y} r="5" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: currentColor }} />
-              <text x={points[points.length - 1].x} y={points[points.length - 1].y - 15} fontSize="12" fontWeight="bold" fill="currentColor" textAnchor="middle" style={{ color: currentColor }}>
+              <circle cx={points[points.length - 1].x} cy={points[points.length - 1].y} r="5" fill="none" stroke="currentColor" strokeWidth="2" className="text-current" style={{ color: currentColor }} />
+              <text x={points[points.length - 1].x} y={points[points.length - 1].y - 15} fontSize="12" fontWeight="bold" fill="currentColor" textAnchor="middle" className="text-current" style={{ color: currentColor }}>
                 {currentHappiness}
               </text>
             </g>
@@ -121,7 +122,7 @@ const HappinessGraph = ({ history = [] }) => {
       <div className="mt-3 flex gap-4 text-[12px]">
         <div className="flex-1 rounded-md border border-[var(--border)] bg-[var(--bg3)] px-3 py-2">
           <div className="mb-0.5 text-[11px] text-[var(--text3)]">Current</div>
-          <div className="text-[14px] font-bold" style={{ color: currentColor }}>
+          <div className="text-[14px] font-bold text-current" style={{ color: currentColor }}>
             {currentHappiness}/120
           </div>
         </div>

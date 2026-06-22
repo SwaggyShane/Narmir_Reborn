@@ -66,20 +66,8 @@ function DeltaBadge({ flash, color }) {
   return (
     <span
       key={flash.flashId}
-      style={{
-        position: 'absolute',
-        top: '-4px',
-        right: '-2px',
-        fontSize: '10px',
-        fontWeight: 700,
-        color: tone,
-        background: 'var(--bg2)',
-        padding: '1px 5px',
-        borderRadius: '8px',
-        boxShadow: '0 0 4px rgba(0,0,0,0.4)',
-        pointerEvents: 'none',
-        animation: 'rs-delta-fade 2.4s ease-out forwards',
-      }}
+      className="pointer-events-none absolute -right-0.5 -top-1 rounded-lg bg-[var(--bg2)] px-1.5 py-px text-[10px] font-bold shadow-[0_0_4px_rgba(0,0,0,0.4)]"
+      style={{ color: tone, animation: 'rs-delta-fade 2.4s ease-out forwards' }}
     >
       {label}
     </span>
