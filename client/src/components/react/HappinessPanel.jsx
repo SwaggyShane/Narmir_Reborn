@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import clsx from 'clsx';
 import HappinessGraph from './HappinessGraph';
 
 const DEFAULT_COMPONENTS = {
@@ -136,16 +137,13 @@ const HappinessPanel = () => {
         </section>
 
         {/* Component Breakdown */}
-        <div style={{ marginBottom: '24px' }}>
+        <div className="mb-6">
           <div className="text-xs font-semibold text-zinc-400 uppercase tracking-widest mb-3">Component Breakdown</div>
           <div className="flex flex-col gap-2 mb-5">
             {Object.entries(components).map(([key, value]) => (
               <button
                 key={key}
-                className={`flex justify-between items-center p-3 bg-zinc-800 rounded border transition-all cursor-pointer ${filter === key ? 'border-orange-500 bg-orange-500/10' : 'border-zinc-700 hover:bg-zinc-700 hover:translate-x-0.5'}`}
-                style={{
-                  opacity: !filter || filter === key ? 1 : 0.5,
-                }}
+                className={clsx('flex justify-between items-center p-3 bg-zinc-800 rounded border transition-all cursor-pointer', filter === key ? 'border-orange-500 bg-orange-500/10 opacity-100' : 'border-zinc-700 hover:bg-zinc-700 hover:translate-x-0.5', !filter || filter === key ? 'opacity-100' : 'opacity-50')}
                 onClick={() => setFilter(filter === key ? null : key)}
                 aria-pressed={filter === key}
               >
@@ -167,7 +165,7 @@ const HappinessPanel = () => {
         </div>
 
         {/* Recent Changes Log */}
-        <div style={{ marginBottom: '16px' }}>
+        <div className="mb-4">
           <div className="text-xs font-semibold text-zinc-400 uppercase tracking-widest mb-3">
             Recent Changes {filter && `(${getComponentLabel(filter)})`}
           </div>
