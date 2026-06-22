@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import clsx from 'clsx';
 import { toast } from '../../utils/toast.js';
 import { apiCall } from '../../utils/api';
 import { useGameState } from '../../hooks/useGameState';
@@ -76,28 +77,27 @@ function KingdomTargetCard({ target, isSelected, onSelect }) {
   const raceIcon = RACE_ICONS[target.race] || '👤';
   return (
     <div
-      className={`target-row${isSelected ? ' selected' : ''}`}
-      style={{ marginBottom: '4px', cursor: 'pointer' }}
+      className={clsx('target-row cursor-pointer mb-1', isSelected && 'selected')}
       onClick={() => onSelect(target)}
     >
-      <span style={{ fontSize: '18px', marginRight: '10px' }}>
+      <span className="text-[18px] mr-2.5">
         {target.is_location ? '📍' : raceIcon}
       </span>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontWeight: 600, color: 'var(--text)' }}>
+      <div className="flex-1">
+        <div className="font-semibold text-[var(--text)]">
           {target.name}{target.is_ai ? ' (AI)' : ''}
         </div>
-        <div style={{ fontSize: '10px', color: 'var(--text3)' }}>
+        <div className="text-[10px] text-[var(--text3)]">
           {target.is_location
             ? 'Discovered Site'
             : `Lv ${target.level} · ${(target.race || '').replace(/_/g, ' ')}`}
         </div>
       </div>
-      <div style={{ textAlign: 'right' }}>
-        <div style={{ fontSize: '12px', color: 'var(--gold)', fontWeight: 600 }}>
+      <div className="text-right">
+        <div className="text-[12px] text-[var(--gold)] font-semibold">
           {target.is_location ? '???' : fmt(target.land)} ac
         </div>
-        <div style={{ fontSize: '10px', color: 'var(--text3)' }}>#{target.rank || '?'}</div>
+        <div className="text-[10px] text-[var(--text3)]">#{target.rank || '?'}</div>
       </div>
     </div>
   );
@@ -107,38 +107,33 @@ function KingdomTargetCard({ target, isSelected, onSelect }) {
 
 function TargetListSection({ targets, selected, onSelect, searchQ, onSearchChange, placeholder }) {
   return (
-    <div style={{ marginBottom: '16px' }}>
+    <div className="mb-4">
       <input
         type="text"
-        className="input"
+        className="input w-full mb-2 px-2.5 py-1.5 text-[13px]"
         placeholder={placeholder || 'Search kingdoms…'}
         value={searchQ}
         onChange={(e) => onSearchChange(e.target.value)}
-        style={{ width: '100%', marginBottom: '8px', padding: '6px 10px', fontSize: '13px' }}
       />
       {selected && (
-        <div style={{
-          padding: '8px 10px', marginBottom: '8px', borderRadius: 'var(--radius)',
-          background: 'var(--bg2)', border: '1px solid var(--accent)', fontSize: '13px',
-        }}>
-          <span style={{ color: 'var(--text3)', marginRight: '6px' }}>Target:</span>
-          <span style={{ fontWeight: 700, color: 'var(--text)' }}>{selected.name}</span>
-          <span style={{ color: 'var(--text3)', marginLeft: '8px', fontSize: '11px' }}>
+        <div className="px-2.5 py-2 mb-2 rounded-[var(--radius)] bg-[var(--bg2)] border border-[var(--accent)] text-[13px]">
+          <span className="text-[var(--text3)] mr-1.5">Target:</span>
+          <span className="font-bold text-[var(--text)]">{selected.name}</span>
+          <span className="text-[var(--text3)] ml-2 text-[11px]">
             {selected.is_location ? '📍 Site' : `${fmt(selected.land)} ac · #${selected.rank || '?'}`}
           </span>
           <button
-            className="base-btn"
-            style={{ float: 'right', fontSize: '10px', padding: '2px 6px' }}
+            className="base-btn float-right text-[10px] px-1.5 py-0.5"
             onClick={() => onSelect(null)}
           >✕</button>
         </div>
       )}
-      <div style={{ maxHeight: '260px', overflowY: 'auto' }}>
+      <div className="max-h-[260px] overflow-y-auto">
         {targets.length === 0
           ? (
-            <div style={{ color: 'var(--text3)', fontSize: '13px', padding: '16px', textAlign: 'center' }}>
+            <div className="text-[var(--text3)] text-[13px] px-4 py-4 text-center">
               No mapped targets found.{' '}
-              <button className="btn" style={{ fontSize: '11px' }} onClick={() => window.switchTab?.('exploration')}>
+              <button className="btn text-[11px]" onClick={() => window.switchTab?.('exploration')}>
                 Go Explore
               </button>
             </div>
@@ -577,17 +572,17 @@ const WarfarePanel = () => {
 
   const warLogContent = useMemo(() => {
     if (loadingWarLog) {
-      return <div style={{ color: 'var(--text3)', fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>Loading...</div>;
+      return <div className="text-[var(--text3)] text-[13px] text-center py-6">Loading...</div>;
     }
     if (warLogError) {
-      return <div style={{ color: 'var(--red)', textAlign: 'center', padding: '20px' }}>{warLogError}</div>;
+      return <div className="text-[var(--red)] text-center p-5">{warLogError}</div>;
     }
     if (!warLogRows.length) {
       return (
-        <div style={{ textAlign: 'center', padding: '32px 16px' }}>
-          <div style={{ fontSize: '32px', marginBottom: '10px' }}>🕊️</div>
-          <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text2)', marginBottom: '6px' }}>It&apos;s been a quiet day.</div>
-          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--red)' }}>BREAK SOME $#@&amp;!</div>
+        <div className="text-center px-4 py-8">
+          <div className="text-[32px] mb-2.5">🕊️</div>
+          <div className="text-[15px] font-semibold text-[var(--text2)] mb-1.5">It&apos;s been a quiet day.</div>
+          <div className="text-[18px] font-bold text-[var(--red)]">BREAK SOME $#@&amp;!</div>
         </div>
       );
     }
@@ -611,18 +606,18 @@ const WarfarePanel = () => {
           ? 'var(--amber)'
           : 'var(--text3)';
       return (
-        <div key={row.id} style={{ borderBottom: '1px solid var(--border)', padding: '12px 4px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'baseline', flexWrap: 'wrap' }}>
-            <div style={{ color: 'var(--text)', fontWeight: 700 }}>
-              <span style={{ marginRight: '8px' }}>{icon}</span>
+        <div key={row.id} className="border-b border-[var(--border)] px-1 py-3">
+          <div className="flex justify-between gap-3 items-baseline flex-wrap">
+            <div className="text-[var(--text)] font-bold">
+              <span className="mr-2">{icon}</span>
               {row.action_type || 'event'} — {row.attacker_name || 'Unknown'} vs {row.defender_name || 'Unknown'}
             </div>
-            <div style={{ color: outcomeColor, fontWeight: 700 }}>{outcome}</div>
+            <div style={{ color: outcomeColor }} className="font-bold">{outcome}</div>
           </div>
           {row.detail ? (
-            <pre style={{ margin: '8px 0 0', whiteSpace: 'pre-wrap', color: 'var(--text2)', fontSize: '12px' }}>{renderDetail(row.detail)}</pre>
+            <pre className="mt-2 whitespace-pre-wrap text-[var(--text2)] text-[12px]">{renderDetail(row.detail)}</pre>
           ) : null}
-          <div style={{ marginTop: '6px', color: 'var(--text3)', fontSize: '11px' }}>{fmtDate(row.created_at)}</div>
+          <div className="mt-1.5 text-[var(--text3)] text-[11px]">{fmtDate(row.created_at)}</div>
         </div>
       );
     });
@@ -630,31 +625,30 @@ const WarfarePanel = () => {
 
   const spyReportsContent = useMemo(() => {
     if (loadingSpyReports) {
-      return <div style={{ color: 'var(--text3)', padding: '20px', textAlign: 'center' }}>Loading spy reports...</div>;
+      return <div className="text-[var(--text3)] p-5 text-center">Loading spy reports...</div>;
     }
     if (spyError) {
-      return <div style={{ color: 'var(--red)', padding: '20px', textAlign: 'center' }}>{spyError}</div>;
+      return <div className="text-[var(--red)] p-5 text-center">{spyError}</div>;
     }
     if (!spyReports.length) {
-      return <div style={{ color: 'var(--text3)', padding: '20px', textAlign: 'center' }}>No reports yet. Send spies to gather intel.</div>;
+      return <div className="text-[var(--text3)] p-5 text-center">No reports yet. Send spies to gather intel.</div>;
     }
     return spyReports.map((row) => (
-      <div key={row.id} style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '12px', marginBottom: '10px', background: 'var(--bg2)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap', marginBottom: '6px' }}>
-          <div style={{ fontWeight: 700, color: 'var(--text)' }}>{row.target_name || 'Unknown target'}</div>
-          <div style={{ color: 'var(--text3)', fontSize: '11px' }}>{fmtDate(row.created_at)}</div>
+      <div key={row.id} className="border border-[var(--border)] rounded-[12px] p-3 mb-2.5 bg-[var(--bg2)]">
+        <div className="flex justify-between gap-2 flex-wrap mb-1.5">
+          <div className="font-bold text-[var(--text)]">{row.target_name || 'Unknown target'}</div>
+          <div className="text-[var(--text3)] text-[11px]">{fmtDate(row.created_at)}</div>
         </div>
-        <div style={{ color: 'var(--text2)', fontSize: '13px', marginBottom: '8px' }}>{row.outcome || 'Unknown outcome'}</div>
+        <div className="text-[var(--text2)] text-[13px] mb-2">{row.outcome || 'Unknown outcome'}</div>
         {row.report ? (
-          <pre style={{ margin: 0, whiteSpace: 'pre-wrap', color: 'var(--text3)', fontSize: '12px' }}>{renderDetail(row.report)}</pre>
+          <pre className="whitespace-pre-wrap text-[var(--text3)] text-[12px]">{renderDetail(row.report)}</pre>
         ) : null}
-        <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'space-between', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <span style={{ color: row.shared_to_alliance ? 'var(--green)' : 'var(--text3)', fontSize: '11px' }}>
+        <div className="mt-2 flex justify-between gap-2 items-center flex-wrap">
+          <span style={{ color: row.shared_to_alliance ? 'var(--green)' : 'var(--text3)' }} className="text-[11px]">
             {row.shared_to_alliance ? 'Shared to alliance' : 'Private report'}
           </span>
           <button
-            className="btn btn-accent"
-            style={{ fontSize: '11px', padding: '4px 10px' }}
+            className="btn btn-accent text-[11px] px-2.5 py-1"
             onClick={async () => {
               const res = await apiCall(`/api/kingdom/spy-reports/${row.id}/share`, { method: 'POST' });
               if (res?.error) {
@@ -675,38 +669,38 @@ const WarfarePanel = () => {
 
   const allianceIntelContent = useMemo(() => {
     if (loadingAllianceIntel) {
-      return <div style={{ color: 'var(--text3)', padding: '20px', textAlign: 'center' }}>Loading alliance intel...</div>;
+      return <div className="text-[var(--text3)] p-5 text-center">Loading alliance intel...</div>;
     }
     if (allianceError) {
-      return <div style={{ color: 'var(--red)', padding: '20px', textAlign: 'center' }}>{allianceError}</div>;
+      return <div className="text-[var(--red)] p-5 text-center">{allianceError}</div>;
     }
     if (!allianceIntel.length) {
-      return <div style={{ color: 'var(--text3)', padding: '20px', textAlign: 'center' }}>No shared reports in your alliance.</div>;
+      return <div className="text-[var(--text3)] p-5 text-center">No shared reports in your alliance.</div>;
     }
     return allianceIntel.map((row) => (
-      <div key={row.id} style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '12px', marginBottom: '10px', background: 'var(--bg2)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap', marginBottom: '6px' }}>
-          <div style={{ fontWeight: 700, color: 'var(--text)' }}>{row.target_name || 'Unknown target'}</div>
-          <div style={{ color: 'var(--text3)', fontSize: '11px' }}>{fmtDate(row.created_at)}</div>
+      <div key={row.id} className="border border-[var(--border)] rounded-[12px] p-3 mb-2.5 bg-[var(--bg2)]">
+        <div className="flex justify-between gap-2 flex-wrap mb-1.5">
+          <div className="font-bold text-[var(--text)]">{row.target_name || 'Unknown target'}</div>
+          <div className="text-[var(--text3)] text-[11px]">{fmtDate(row.created_at)}</div>
         </div>
-        <div style={{ color: 'var(--text2)', fontSize: '13px', marginBottom: '8px' }}>
+        <div className="text-[var(--text2)] text-[13px] mb-2">
           Shared by {row.shared_by_name || 'an ally'} · {row.outcome || 'Unknown outcome'}
         </div>
         {row.report ? (
-          <pre style={{ margin: 0, whiteSpace: 'pre-wrap', color: 'var(--text3)', fontSize: '12px' }}>{renderDetail(row.report)}</pre>
+          <pre className="whitespace-pre-wrap text-[var(--text3)] text-[12px]">{renderDetail(row.report)}</pre>
         ) : null}
       </div>
     ));
   }, [allianceError, allianceIntel, loadingAllianceIntel]);
 
   return (
-    <div id="warfare" className="panel" style={{ display: 'none' }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', borderBottom: '2px solid var(--border2)', marginBottom: '16px', paddingBottom: '4px' }}>
-        <button className={`base-btn admin-tab ${activeTab === 'attack' ? 'active' : ''}`} onClick={() => handleTabClick('attack')} style={{ borderRadius: 0 }}>⚔️ Attack</button>
-        <button className={`base-btn admin-tab ${activeTab === 'wspells' ? 'active' : ''}`} onClick={() => handleTabClick('wspells')} style={{ borderRadius: 0 }}>✨ Spells</button>
-        <button className={`base-btn admin-tab ${activeTab === 'wcovert' ? 'active' : ''}`} onClick={() => handleTabClick('wcovert')} style={{ borderRadius: 0 }}>🕵️ Covert</button>
-        <button className={`base-btn admin-tab ${activeTab === 'wintel' ? 'active' : ''}`} onClick={() => handleTabClick('wintel')} style={{ borderRadius: 0 }}>📊 Intel</button>
-        <button className={`base-btn admin-tab ${activeTab === 'wreports' ? 'active' : ''}`} onClick={() => handleTabClick('wreports')} style={{ borderRadius: 0 }}>📝 Reports</button>
+    <div id="warfare" className="panel hidden">
+      <div className="flex flex-wrap gap-1 border-b-2 border-[var(--border2)] mb-4 pb-1">
+        <button className={clsx('base-btn admin-tab rounded-none', activeTab === 'attack' && 'active')} onClick={() => handleTabClick('attack')}>⚔️ Attack</button>
+        <button className={clsx('base-btn admin-tab rounded-none', activeTab === 'wspells' && 'active')} onClick={() => handleTabClick('wspells')}>✨ Spells</button>
+        <button className={clsx('base-btn admin-tab rounded-none', activeTab === 'wcovert' && 'active')} onClick={() => handleTabClick('wcovert')}>🕵️ Covert</button>
+        <button className={clsx('base-btn admin-tab rounded-none', activeTab === 'wintel' && 'active')} onClick={() => handleTabClick('wintel')}>📊 Intel</button>
+        <button className={clsx('base-btn admin-tab rounded-none', activeTab === 'wreports' && 'active')} onClick={() => handleTabClick('wreports')}>📝 Reports</button>
       </div>
 
       <WarfareReportsTab
@@ -724,9 +718,9 @@ const WarfarePanel = () => {
       />
 
       {/* ── Attack tab ─────────────────────────────────────────────────────── */}
-      <div style={{ display: activeTab === 'attack' ? 'block' : 'none' }}>
-        <div className="card" style={{ marginBottom: '12px' }}>
-          <div className="card-title" style={{ marginBottom: '8px' }}>Select Target</div>
+      <div className={clsx(activeTab === 'attack' ? 'block' : 'hidden')}>
+        <div className="card mb-3">
+          <div className="card-title mb-2">Select Target</div>
           <TargetListSection
             targets={filteredAtkTargets}
             selected={attackTarget}
@@ -738,84 +732,84 @@ const WarfarePanel = () => {
         </div>
 
         <div className="card" id="atk-panel-w">
-          <div className="card-title" style={{ marginBottom: '12px' }}>Warfare: Army Selection</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '20px' }}>
+          <div className="card-title mb-3">Warfare: Army Selection</div>
+          <div className="flex flex-col gap-1.5 mb-5">
             <div className="trow">
-              <span className="name" style={{ fontSize: '13px', fontWeight: 700 }}>
-                ⚔️ Fighters <span id="atk-fighters-avail-w" style={{ color: 'var(--text3)', fontWeight: 400 }}></span>
+              <span className="name text-[13px] font-bold">
+                ⚔️ Fighters <span id="atk-fighters-avail-w" className="text-[var(--text3)] font-normal"></span>
               </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <input type="number" className="input" id="atk-fighters-w" min="0" defaultValue="0" style={{ textAlign: 'right', width: '90px', padding: '6px' }} onChange={updateAtkEstimateW} placeholder="Qty" />
-                <button className="base-btn" style={{ fontSize: '10px', padding: '6px 8px' }} onClick={() => setMaxValue('atk-fighters-w')}>MAX</button>
+              <div className="flex items-center gap-1">
+                <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" id="atk-fighters-w" min="0" defaultValue="0" onChange={updateAtkEstimateW} placeholder="Qty" />
+                <button className="base-btn text-[10px] px-2 py-1.5" onClick={() => setMaxValue('atk-fighters-w')}>MAX</button>
               </div>
             </div>
             <div className="trow">
-              <span className="name" style={{ fontSize: '13px', fontWeight: 700 }}>
-                🏹 Rangers <span id="atk-rangers-avail-w" style={{ color: 'var(--text3)', fontWeight: 400 }}></span>
+              <span className="name text-[13px] font-bold">
+                🏹 Rangers <span id="atk-rangers-avail-w" className="text-[var(--text3)] font-normal"></span>
               </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <input type="number" className="input" id="atk-rangers-w" min="0" defaultValue="0" style={{ textAlign: 'right', width: '90px', padding: '6px' }} onChange={updateAtkEstimateW} placeholder="Qty" />
-                <button className="base-btn" style={{ fontSize: '10px', padding: '6px 8px' }} onClick={() => setMaxValue('atk-rangers-w')}>MAX</button>
+              <div className="flex items-center gap-1">
+                <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" id="atk-rangers-w" min="0" defaultValue="0" onChange={updateAtkEstimateW} placeholder="Qty" />
+                <button className="base-btn text-[10px] px-2 py-1.5" onClick={() => setMaxValue('atk-rangers-w')}>MAX</button>
               </div>
             </div>
             <div className="trow">
-              <span className="name" style={{ fontSize: '13px', fontWeight: 700 }}>
-                ✨ Mages <span id="atk-mages-avail-w" style={{ color: 'var(--text3)', fontWeight: 400 }}></span>
+              <span className="name text-[13px] font-bold">
+                ✨ Mages <span id="atk-mages-avail-w" className="text-[var(--text3)] font-normal"></span>
               </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <input type="number" className="input" id="atk-mages-w" min="0" defaultValue="0" style={{ textAlign: 'right', width: '90px', padding: '6px' }} onChange={updateAtkEstimateW} placeholder="Qty" />
-                <button className="base-btn" style={{ fontSize: '10px', padding: '6px 8px' }} onClick={() => setMaxValue('atk-mages-w')}>MAX</button>
+              <div className="flex items-center gap-1">
+                <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" id="atk-mages-w" min="0" defaultValue="0" onChange={updateAtkEstimateW} placeholder="Qty" />
+                <button className="base-btn text-[10px] px-2 py-1.5" onClick={() => setMaxValue('atk-mages-w')}>MAX</button>
               </div>
             </div>
             <div className="trow">
-              <span className="name" style={{ fontSize: '13px', fontWeight: 700 }}>
-                ⛪ Clerics <span id="atk-clerics-avail-w" style={{ color: 'var(--text3)', fontWeight: 400 }}></span>
+              <span className="name text-[13px] font-bold">
+                ⛪ Clerics <span id="atk-clerics-avail-w" className="text-[var(--text3)] font-normal"></span>
               </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <input type="number" className="input" id="atk-clerics-w" min="0" defaultValue="0" style={{ textAlign: 'right', width: '90px', padding: '6px' }} onChange={updateAtkEstimateW} placeholder="Qty" />
-                <button className="base-btn" style={{ fontSize: '10px', padding: '6px 8px' }} onClick={() => setMaxValue('atk-clerics-w')}>MAX</button>
+              <div className="flex items-center gap-1">
+                <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" id="atk-clerics-w" min="0" defaultValue="0" onChange={updateAtkEstimateW} placeholder="Qty" />
+                <button className="base-btn text-[10px] px-2 py-1.5" onClick={() => setMaxValue('atk-clerics-w')}>MAX</button>
               </div>
             </div>
-            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '8px', marginTop: '4px' }}>
+            <div className="border-t border-[var(--border)] pt-2 mt-1">
               <div className="trow">
-                <span className="name" style={{ fontSize: '13px', fontWeight: 700 }}>
-                  ⚙️ War Machines <span id="atk-wm-avail-w" style={{ color: 'var(--text3)', fontWeight: 400 }}></span>
+                <span className="name text-[13px] font-bold">
+                  ⚙️ War Machines <span id="atk-wm-avail-w" className="text-[var(--text3)] font-normal"></span>
                 </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <input type="number" className="input" id="atk-wm-w" min="0" defaultValue="0" style={{ textAlign: 'right', width: '90px', padding: '6px' }} onChange={updateAtkEstimateW} placeholder="Qty" />
-                  <button className="base-btn" style={{ fontSize: '10px', padding: '6px 8px' }} onClick={() => setMaxValue('atk-wm-w')}>MAX</button>
+                <div className="flex items-center gap-1">
+                  <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" id="atk-wm-w" min="0" defaultValue="0" onChange={updateAtkEstimateW} placeholder="Qty" />
+                  <button className="base-btn text-[10px] px-2 py-1.5" onClick={() => setMaxValue('atk-wm-w')}>MAX</button>
                 </div>
               </div>
               <div className="trow">
-                <span className="name" style={{ fontSize: '13px', fontWeight: 700 }}>
-                  🪜 Ladders <span id="atk-ladders-avail-w" style={{ color: 'var(--text3)', fontWeight: 400 }}></span>
+                <span className="name text-[13px] font-bold">
+                  🪜 Ladders <span id="atk-ladders-avail-w" className="text-[var(--text3)] font-normal"></span>
                 </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <input type="number" className="input" id="atk-ladders-w" min="0" defaultValue="0" style={{ textAlign: 'right', width: '90px', padding: '6px' }} onChange={updateAtkEstimateW} placeholder="Qty" />
-                  <button className="base-btn" style={{ fontSize: '10px', padding: '6px 8px' }} onClick={() => setMaxValue('atk-ladders-w')}>MAX</button>
+                <div className="flex items-center gap-1">
+                  <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" id="atk-ladders-w" min="0" defaultValue="0" onChange={updateAtkEstimateW} placeholder="Qty" />
+                  <button className="base-btn text-[10px] px-2 py-1.5" onClick={() => setMaxValue('atk-ladders-w')}>MAX</button>
                 </div>
               </div>
             </div>
-            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '8px', marginTop: '4px' }}>
+            <div className="border-t border-[var(--border)] pt-2 mt-1">
               <div className="trow">
-                <span className="name" style={{ fontSize: '13px', fontWeight: 700 }}>
-                  🕵️ Ninjas <span id="atk-ninjas-avail-w" style={{ color: 'var(--text3)', fontWeight: 400 }}></span>
+                <span className="name text-[13px] font-bold">
+                  🕵️ Ninjas <span id="atk-ninjas-avail-w" className="text-[var(--text3)] font-normal"></span>
                 </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <input type="number" className="input" id="atk-ninjas-w" min="0" defaultValue="0" style={{ textAlign: 'right', width: '90px', padding: '6px' }} onChange={updateAtkEstimateW} placeholder="Qty" />
-                  <button className="base-btn" style={{ fontSize: '10px', padding: '6px 8px' }} onClick={() => setMaxValue('atk-ninjas-w')}>MAX</button>
+                <div className="flex items-center gap-1">
+                  <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" id="atk-ninjas-w" min="0" defaultValue="0" onChange={updateAtkEstimateW} placeholder="Qty" />
+                  <button className="base-btn text-[10px] px-2 py-1.5" onClick={() => setMaxValue('atk-ninjas-w')}>MAX</button>
                 </div>
               </div>
             </div>
-            <button className="btn btn-red" style={{ fontWeight: 700, marginTop: '8px' }} onClick={launchAttackW}>⚔️ Launch Attack</button>
+            <button className="btn btn-red font-bold mt-2" onClick={launchAttackW}>⚔️ Launch Attack</button>
           </div>
         </div>
       </div>
 
       {/* ── Spells tab ─────────────────────────────────────────────────────── */}
-      <div style={{ display: activeTab === 'wspells' ? 'block' : 'none' }}>
-        <div className="card" style={{ marginBottom: '12px' }}>
-          <div className="card-title" style={{ marginBottom: '8px' }}>Select Target</div>
+      <div className={clsx(activeTab === 'wspells' ? 'block' : 'hidden')}>
+        <div className="card mb-3">
+          <div className="card-title mb-2">Select Target</div>
           <TargetListSection
             targets={filteredWspTargets}
             selected={spellTarget}
@@ -827,17 +821,17 @@ const WarfarePanel = () => {
         </div>
         <div className="card">
           <div className="card-title">Warfare Spells</div>
-          <div style={{ marginTop: '12px' }}>
+          <div className="mt-3">
             <button className="base-btn" onClick={castWspell}>Prepare Spell Targeting</button>
-            <button className="base-btn" style={{ marginLeft: '8px' }} onClick={updateWspellCalc}>Refresh Spell Estimates</button>
+            <button className="base-btn ml-2" onClick={updateWspellCalc}>Refresh Spell Estimates</button>
           </div>
         </div>
       </div>
 
       {/* ── Covert tab ─────────────────────────────────────────────────────── */}
-      <div style={{ display: activeTab === 'wcovert' ? 'block' : 'none' }}>
-        <div className="card" style={{ marginBottom: '12px' }}>
-          <div className="card-title" style={{ marginBottom: '8px' }}>Select Target</div>
+      <div className={clsx(activeTab === 'wcovert' ? 'block' : 'hidden')}>
+        <div className="card mb-3">
+          <div className="card-title mb-2">Select Target</div>
           <TargetListSection
             targets={filteredWcovTargets}
             selected={covertTarget}
@@ -849,11 +843,11 @@ const WarfarePanel = () => {
         </div>
         <div className="card">
           <div className="card-title">Warfare Covert Ops</div>
-          <div style={{ marginTop: '12px' }}>
+          <div className="mt-3">
             <button className="base-btn" onClick={() => doWcovert('spy')}>Spy</button>
-            <button className="base-btn" style={{ marginLeft: '8px' }} onClick={() => doWcovert('loot')}>Loot</button>
-            <button className="base-btn" style={{ marginLeft: '8px' }} onClick={() => doWcovert('assassinate')}>Assassinate</button>
-            <button className="base-btn" style={{ marginLeft: '8px' }} onClick={() => doWcovert('sabotage')}>Sabotage</button>
+            <button className="base-btn ml-2" onClick={() => doWcovert('loot')}>Loot</button>
+            <button className="base-btn ml-2" onClick={() => doWcovert('assassinate')}>Assassinate</button>
+            <button className="base-btn ml-2" onClick={() => doWcovert('sabotage')}>Sabotage</button>
           </div>
         </div>
       </div>

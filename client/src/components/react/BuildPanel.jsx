@@ -4,10 +4,6 @@ import { apiCall } from '../../utils/api.js';
 import { fmt } from "../../utils/fmt";
 import { applyGameMutation } from '../../utils/gameMutations.js';
 
-// Atmospheric synergy hint text. Tiers map to how close a contributing
-// synergy is to completion (without revealing counts or formulas).
-// Players discover combinations by experimentation; the only signal we
-// give is "the fragments are noticing each other more than before."
 const RESONANCE_HINTS = {
   faint: [
     'A faint resonance hums within these walls.',
@@ -82,7 +78,6 @@ const BUILDINGS_MAP = BUILDINGS.reduce((acc, b) => {
   return acc;
 }, {});
 
-// Display order for buildings (matches the order in the building rows below)
 const BUILDINGS_DISPLAY_ORDER = [
   'farms', 'granaries', 'housing', 'schools', 'libraries', 'mage_towers',
   'shrines', 'mausoleums', 'markets', 'taverns', 'smithies', 'vaults',
@@ -154,7 +149,6 @@ const BuildPanel = () => {
     setBuildUiTick((tick) => tick + 1);
   }, []);
 
-  // Load attunements when panel opens
   React.useEffect(() => {
     if (showAttunements) {
       loadAttunements();
@@ -179,7 +173,6 @@ const BuildPanel = () => {
       const statusData = await apiCall('/api/kingdom/attunements');
       if (statusData.error) throw new Error(statusData.error);
 
-      // API returns an array; convert to object keyed by buildingType for O(1) lookup
       const attunementArray = statusData.attunements || [];
       const attunements = {};
       for (const att of attunementArray) {
@@ -187,9 +180,6 @@ const BuildPanel = () => {
       }
       setCurrentAttunements(attunements);
 
-      // Check synergy contributions for each attunement in parallel.
-      // Server returns an opaque resonance tier (faint/alignment/convergence)
-      // so the synergy formula is never exposed to the client.
       const contributions = {};
       const attunementEntries = Object.entries(attunements).filter(([_, att]) => att && att.fragmentName);
       await Promise.all(
@@ -291,7 +281,6 @@ const BuildPanel = () => {
     }
   };
 
-  // Build a human-readable tooltip string from passive bonuses + special
   const formatBonusTooltip = (bonuses, special) => {
     const parts = [];
     if (bonuses && typeof bonuses === 'object') {
@@ -420,7 +409,7 @@ const BuildPanel = () => {
         if (row) {
           const notice = document.createElement('span');
           notice.id = noticeId;
-          notice.style.cssText = 'font-size:10px;color:var(--amber);white-space:nowrap;margin-left:4px';
+          notice.className = 'text-[10px] text-amber whitespace-nowrap ml-1';
           notice.textContent = msg.trim();
           row.appendChild(notice);
         }
@@ -449,7 +438,7 @@ const BuildPanel = () => {
           if (row) {
             el = document.createElement('span');
             el.id = estId;
-            el.style.cssText = 'font-size:10px;color:var(--text3);white-space:nowrap;margin-left:4px';
+            el.className = 'text-[10px] text-text3 whitespace-nowrap ml-1';
             row.appendChild(el);
           }
         }
@@ -466,13 +455,11 @@ const BuildPanel = () => {
   };
   useEffect(() => {
     loadBuildAllocationInputs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(state?.build_allocation || {})]);
 
   useEffect(() => {
     updateBuildDisplay();
     updateSmithyDisplay();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, buildUiTick]);
   const setMaxValue = (fieldId) => {
     const total = Number(state?.engineers || 0);
@@ -552,7 +539,7 @@ const BuildPanel = () => {
     const note = g('smithy-alloc-note');
     if (note) {
       if (smithies === 0) {
-        note.innerHTML = "You need a smithy to buy hammers.<br><span style='color:var(--gold)'>Scaffolding is available without a smithy (25% markup).</span>";
+        note.innerHTML = "<div class='text-text3 text-xs mb-2'>You need a smithy to buy hammers.</div><div class='text-gold text-xs'>Scaffolding is available without a smithy (25% markup).</div>";
       } else {
         note.textContent = '';
       }
@@ -611,7 +598,6 @@ const BuildPanel = () => {
 
   const renderBuildingRow = (b, icon, baId, demoAmountId) => {
     const isEng = !['wm', 'ballistae', 'weapons', 'armor'].includes(b.id);
-
     return (
       <div className="trow" title={getTooltip(b)} key={b.id}>
         <div className="bld-main">
@@ -621,25 +607,23 @@ const BuildPanel = () => {
         <span className="count" id={`bld-${b.id}`}>{fmt(getBuildCount(b.id))}</span>
         {b.id !== 'wm' && b.id !== 'ballistae' && b.id !== 'ladders' && b.id !== 'weapons' && b.id !== 'armor' ? (
           <div className="bld-demolish">
-            <input type="number" className="input" id={demoAmountId} defaultValue="1" min="1" style={{ textAlign: 'center' }} />
-            <button className="base-btn variant-red" style={{ padding: '4px 6px', fontSize: '10px' }} onClick={() => demolishB(b.id, demoAmountId)}>🗑️</button>
+            <input type="number" className="input text-center" id={demoAmountId} defaultValue="1" min="1" />
+            <button className="base-btn variant-red px-1.5 py-1 text-[10px]" onClick={() => demolishB(b.id, demoAmountId)}>🗑️</button>
           </div>
         ) : <span></span>}
 
         <div className="bld-eng">
           <input
             type="number"
-            className="input"
+            className="input text-right"
             id={baId}
             min="0"
             defaultValue="0"
             onChange={refreshBuildUi}
-            style={{ textAlign: 'right' }}
             placeholder="Qty"
           />
           <button
-            className="base-btn"
-            style={{ padding: '4px 8px', fontSize: '10px' }}
+            className="base-btn px-2 py-1 text-[10px]"
             onClick={() => {
               if (isEng) setMaxValue(baId);
               else if (b.id === 'wm') setBuildMax(baId);
@@ -658,29 +642,29 @@ const BuildPanel = () => {
   return (
     <div id="build" className="panel min-h-0 w-full overflow-y-auto" data-ui-tick={buildUiTick}>
       <div className="build-sticky-header px-4 pt-4">
-        <div className="card rounded-2xl border border-white/10 bg-zinc-950/80 shadow-[0_12px_32px_rgba(0,0,0,0.35)]" style={{ margin: 0 }}>
+        <div className="card rounded-2xl border border-white/10 bg-zinc-950/80 shadow-[0_12px_32px_rgba(0,0,0,0.35)]">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-1">
-              <div className="card-title" style={{ marginBottom: '2px' }}>Construction</div>
-              <div className="text-[12px] text-[var(--text3)]">
-                🏗️ Engineer Level: <span id="engineer-level" style={{ color: 'var(--gold)', fontWeight: 600 }}>{engineerLevel}</span> ·
-                XP: <span id="engineer-xp" style={{ color: 'var(--text)' }}>{fmt(engineerXp)}</span>/<span id="engineer-xp-needed" style={{ color: 'var(--text3)' }}>{fmt(engineerXpNeeded)}</span>
+              <div className="card-title mb-0.5">Construction</div>
+              <div className="text-[12px] text-text3">
+                🏗️ Engineer Level: <span id="engineer-level" className="text-gold font-semibold">{engineerLevel}</span> ·
+                XP: <span id="engineer-xp" className="text-text">{fmt(engineerXp)}</span>/<span id="engineer-xp-needed" className="text-text3">{fmt(engineerXpNeeded)}</span>
               </div>
-              <div className="text-[12px] text-[var(--text3)]">
-                Engineers: <span id="b-engineers-available" style={{ color: 'var(--text)' }}>{fmt(totalEngineers)}</span> available ·
-                <span id="b-total-assigned" style={{ color: 'var(--gold)', margin: '0 4px' }}>{fmt(allocatedEngineers)}</span> assigned ·
-                <span id="b-total-unassigned" style={{ color: remainingEngineers > 0 ? 'var(--green)' : 'var(--red)', margin: '0 4px' }}>{fmt(remainingEngineers)}</span> unassigned
+              <div className="text-[12px] text-text3">
+                Engineers: <span id="b-engineers-available" className="text-text">{fmt(totalEngineers)}</span> available ·
+                <span id="b-total-assigned" className="text-gold mx-1">{fmt(allocatedEngineers)}</span> assigned ·
+                <span id="b-total-unassigned" className={`mx-1 ${remainingEngineers > 0 ? 'text-green' : 'text-red'}`}>{fmt(remainingEngineers)}</span> unassigned
               </div>
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-[var(--text3)]">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-text3">
                 Resources:
-                <span id="b-wood" style={{ color: 'var(--text)', margin: '0 2px' }}>{fmt(state?.wood || 0)}</span>🪵 ·
-                <span id="b-stone" style={{ color: 'var(--text)', margin: '0 2px' }}>{fmt(state?.stone || 0)}</span>🪨 ·
-                <span id="b-iron" style={{ color: 'var(--text)', margin: '0 2px' }}>{fmt(state?.iron || 0)}</span>🔗 ·
-                <span id="b-steel" style={{ color: 'var(--text)', margin: '0 2px' }}>{fmt(state?.steel || 0)}</span>📏 ·
-                <span id="b-coal" style={{ color: 'var(--text)', margin: '0 2px' }}>{fmt(state?.coal || 0)}</span>🌑
+                <span id="b-wood" className="text-text mx-0.5">{fmt(state?.wood || 0)}</span>🪵 ·
+                <span id="b-stone" className="text-text mx-0.5">{fmt(state?.stone || 0)}</span>🪨 ·
+                <span id="b-iron" className="text-text mx-0.5">{fmt(state?.iron || 0)}</span>🔗 ·
+                <span id="b-steel" className="text-text mx-0.5">{fmt(state?.steel || 0)}</span>📏 ·
+                <span id="b-coal" className="text-text mx-0.5">{fmt(state?.coal || 0)}</span>🌑
               </div>
-              <div className="text-[12px] text-[var(--text3)]">
-                Land: <span id="b-land-available" style={{ color: 'var(--text)' }}>{fmt(landAvailable)} / {fmt(state?.land || 0)}</span> available
+              <div className="text-[12px] text-text3">
+                Land: <span id="b-land-available" className="text-text">{fmt(landAvailable)} / {fmt(state?.land || 0)}</span> available
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -704,10 +688,10 @@ const BuildPanel = () => {
             <button
               onClick={() => setShowBuildingRef(!showBuildingRef)}
               className="w-full rounded-lg border-2 border-[var(--orange)] px-3 py-2 text-left transition-colors hover:bg-white/5"
-              style={{ background: 'none', marginBottom: showBuildingRef ? '8px' : '0' }}
+              style={{ marginBottom: showBuildingRef ? '8px' : '0' }}
             >
-              <div className="flex items-center gap-2 text-[13px] font-semibold text-[var(--text)]">
-                <span style={{ fontSize: '10px' }}>{showBuildingRef ? '▼' : '▶'}</span>
+              <div className="flex items-center gap-2 text-[13px] font-semibold text-text">
+                <span className="text-[10px]">{showBuildingRef ? '▼' : '▶'}</span>
                 Building Requirements Reference
               </div>
             </button>
@@ -716,10 +700,10 @@ const BuildPanel = () => {
                 {BUILDINGS_DISPLAY_ORDER.map(id => {
                   const b = BUILDINGS_MAP[id];
                   return b ? (
-                    <div key={b.id} className="rounded-lg border border-white/10 bg-[var(--bg3)] p-2.5">
-                      <div className="mb-1 font-semibold text-[var(--gold)]">{b.name}</div>
+                    <div key={b.id} className="rounded-lg border border-white/10 bg-bg3 p-2.5">
+                      <div className="mb-1 font-semibold text-gold">{b.name}</div>
                       <div>{formatReq(b)}{b.land ? ` | 📍 ${b.land} Land` : ''}</div>
-                      <div style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '4px' }}>🪵 {b.wood} · 🪨 {b.stone} · 🔗 {b.iron}</div>
+                      <div className="mt-1 text-[10px] text-text3">🪵 {b.wood} · 🪨 {b.stone} · 🔗 {b.iron}</div>
                     </div>
                   ) : null;
                 })}
@@ -731,38 +715,36 @@ const BuildPanel = () => {
         {showAttunements && (
           <div
             onClick={(e) => { if (e.target === e.currentTarget) setShowAttunements(false); }}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.72)', zIndex: 9000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
+            className="fixed inset-0 z-[9000] flex items-center justify-center bg-black/72 p-4"
           >
-            <div style={{ background: 'var(--bg2)', border: '2px solid var(--purple)', borderRadius: '6px', width: '100%', maxWidth: '680px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }}>
-              {/* Modal header */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--border)' }}>
-                <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)' }}>🌌 Building Attunements</span>
+            <div className="flex w-full max-h-[80vh] max-w-[680px] flex-col rounded-sm border-2 border-purple bg-bg2 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
+              <div className="flex items-center justify-between border-b border-white/5 px-4.5 py-3.5">
+                <span className="text-[14px] font-bold text-text">🌌 Building Attunements</span>
                 <button
                   onClick={() => setShowAttunements(false)}
-                  style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: '18px', cursor: 'pointer', lineHeight: 1, padding: '0 4px' }}
+                  className="p-1 text-[18px] text-text3 cursor-pointer leading-none"
                 >✕</button>
               </div>
 
-              {/* Modal body */}
-              <div style={{ overflowY: 'auto', padding: '16px 18px', flex: 1 }}>
+              <div className="flex-1 overflow-y-auto px-4.5 py-4">
                 {loading ? (
-                  <div style={{ padding: '24px', color: 'var(--text3)', textAlign: 'center' }}>Loading attunements...</div>
+                  <div className="p-6 text-center text-text3">Loading attunements...</div>
                 ) : (
                   <>
                     {synergyStatus?.activeSynergy && (
-                      <div style={{ marginBottom: '20px', padding: '12px 14px', background: 'linear-gradient(135deg, rgba(124,58,237,0.15) 0%, rgba(251,191,36,0.08) 100%)', border: '1px solid var(--purple, #a78bfa)', borderRadius: '6px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '18px' }}>{synergyStatus.activeSynergy.emoji}</span>
-                          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--gold)' }}>{synergyStatus.activeSynergy.name}</span>
-                          <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--purple, #a78bfa)', background: 'rgba(124,58,237,0.2)', padding: '1px 6px', borderRadius: '10px', marginLeft: 'auto' }}>ACTIVE</span>
+                      <div className="mb-5 rounded-sm border border-purple bg-gradient-to-r from-purple/15 to-amber/8 p-3.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[18px]">{synergyStatus.activeSynergy.emoji}</span>
+                          <span className="text-[13px] font-bold text-gold">{synergyStatus.activeSynergy.name}</span>
+                          <span className="ml-auto rounded-full bg-purple/20 px-1.5 py-0.5 text-[10px] font-semibold text-purple">ACTIVE</span>
                         </div>
                       </div>
                     )}
 
                     {Object.keys(currentAttunements).length > 0 && (
-                      <div style={{ marginBottom: '20px' }}>
-                        <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--gold)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Current Attunements</div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px' }}>
+                      <div className="mb-5">
+                        <div className="mb-2 text-[12px] font-semibold text-gold uppercase tracking-wider">Current Attunements</div>
+                        <div className="grid gap-2 auto-fill [grid-template-columns:repeat(auto-fill,minmax(200px,1fr))]">
                           {Object.entries(currentAttunements).map(([buildingType, att]) => {
                             if (!att || !att.fragmentName) return null;
                             const key = `${buildingType}:${att.fragmentName}`;
@@ -770,33 +752,33 @@ const BuildPanel = () => {
                             const tier = contrib?.tier || null;
                             const hint = tier ? pickResonanceHint(key, tier) : null;
                             return (
-                              <div key={buildingType} style={{ fontSize: '11px', color: 'var(--text)', padding: '8px 10px', background: 'var(--bg3)', borderRadius: '4px', border: '1px solid var(--border)' }}>
-                                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '6px', marginBottom: '4px' }}>
+                              <div key={buildingType} className="rounded-sm border border-white/5 bg-bg3 p-2.5 text-[11px] text-text">
+                                <div className="mb-1 flex items-start justify-between gap-1.5">
                                   <div>
-                                    <div style={{ color: 'var(--gold)', fontWeight: 600 }}>{BUILDINGS_MAP[buildingType]?.name || buildingType}</div>
-                                    <div style={{ color: 'var(--text)', marginTop: '1px' }}>{att.fragmentName}</div>
+                                    <div className="font-semibold text-gold">{BUILDINGS_MAP[buildingType]?.name || buildingType}</div>
+                                    <div className="mt-0.5 text-text">{att.fragmentName}</div>
                                   </div>
                                   <button
                                     onClick={() => removeAttunement(buildingType)}
                                     title="Remove attunement — fragment can then be applied elsewhere"
-                                    style={{ flexShrink: 0, padding: '2px 6px', fontSize: '9px', background: 'transparent', border: '1px solid var(--red,#c0392b)', borderRadius: '3px', color: 'var(--red,#c0392b)', cursor: 'pointer', lineHeight: '1.4' }}
+                                    className="flex-shrink-0 rounded-sm border border-red px-1.5 py-0.5 text-[9px] text-red cursor-pointer leading-none"
                                   >Remove</button>
                                 </div>
                                 {att.passive && Object.keys(att.passive).length > 0 && (
-                                  <div style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '4px' }}>
+                                  <div className="mt-1 text-[10px] text-text3">
                                     {Object.entries(att.passive).map(([k, v]) => v ? (
-                                      <div key={k}>{k.replace(/_/g, ' ')}: <span style={{ color: 'var(--text)' }}>+{v}</span></div>
+                                      <div key={k}>{k.replace(/_/g, ' ')}: <span className="text-text">+{v}</span></div>
                                     ) : null)}
                                   </div>
                                 )}
                                 {att.special?.name && (
-                                  <div style={{ fontSize: '10px', color: 'var(--purple,#a78bfa)', marginTop: '3px' }}>
+                                  <div className="mt-0.5 text-[10px] text-purple">
                                     ✦ {att.special.name}{att.special.desc ? ': ' + att.special.desc : ''}
                                   </div>
                                 )}
                                 {hint && (
-                                  <div style={{ fontSize: '10px', color: RESONANCE_COLOR[tier] || 'var(--text3)', marginTop: '6px', fontStyle: 'italic', letterSpacing: '0.2px', opacity: resonanceOpacity(contrib?.count || 1) }}>
-                                    <span style={{ marginRight: '4px' }}>{RESONANCE_GLYPH[tier] || '·'}</span>{hint}
+                                  <div className="mt-1.5 text-[10px] italic" style={{ color: RESONANCE_COLOR[tier] || 'var(--text3)', opacity: resonanceOpacity(contrib?.count || 1), letterSpacing: '0.2px' }}>
+                                    <span className="mr-1">{RESONANCE_GLYPH[tier] || '·'}</span>{hint}
                                   </div>
                                 )}
                               </div>
@@ -808,15 +790,15 @@ const BuildPanel = () => {
 
                     {synergyStatus?.activeSynergy ? (
                       <div>
-                        <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Synergy Details</div>
+                        <div className="mb-2.5 text-[12px] font-semibold text-text uppercase tracking-wider">Synergy Details</div>
 
-                        <div style={{ marginBottom: '12px', padding: '10px 12px', background: 'var(--bg3)', borderRadius: '4px', border: '1px solid var(--border)' }}>
-                          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--gold)', marginBottom: '4px' }}>✦ {synergyStatus.activeSynergy.passive?.name}</div>
-                          <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '6px' }}>{synergyStatus.activeSynergy.passive?.desc}</div>
+                        <div className="mb-3 rounded-sm border border-white/5 bg-bg3 p-3">
+                          <div className="mb-1 text-[11px] font-bold text-gold">✦ {synergyStatus.activeSynergy.passive?.name}</div>
+                          <div className="mb-1.5 text-[11px] text-text3">{synergyStatus.activeSynergy.passive?.desc}</div>
                           {synergyStatus.activeSynergy.passive?.effects && (
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                            <div className="flex flex-wrap gap-1">
                               {Object.entries(synergyStatus.activeSynergy.passive.effects).map(([k, v]) => (
-                                <span key={k} style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '10px', background: v >= 0 ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', color: v >= 0 ? 'var(--green,#4ade80)' : 'var(--red,#f87171)' }}>
+                                <span key={k} className={`rounded-full px-1.5 py-0.5 text-[10px] ${v >= 0 ? 'bg-green/15 text-green' : 'bg-red/15 text-red'}`}>
                                   {k.replace(/_/g, ' ')}: {v >= 0 ? '+' : ''}{typeof v === 'number' && Math.abs(v) < 2 && k !== 'happiness' ? `${Math.round(v * 100)}%` : v}
                                 </span>
                               ))}
@@ -824,16 +806,16 @@ const BuildPanel = () => {
                           )}
                         </div>
 
-                        <div style={{ marginBottom: '12px', padding: '10px 12px', background: 'var(--bg3)', borderRadius: '4px', border: '1px solid var(--border)' }}>
-                          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text2)', marginBottom: '4px' }}>⚡ {synergyStatus.activeSynergy.active?.name}</div>
-                          <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '6px' }}>{synergyStatus.activeSynergy.active?.desc}</div>
+                        <div className="mb-3 rounded-sm border border-white/5 bg-bg3 p-3">
+                          <div className="mb-1 text-[11px] font-bold text-text2">⚡ {synergyStatus.activeSynergy.active?.name}</div>
+                          <div className="mb-1.5 text-[11px] text-text3">{synergyStatus.activeSynergy.active?.desc}</div>
                           {synergyStatus.activeSynergy.active?.cooldown_days && (
-                            <div style={{ fontSize: '10px', color: 'var(--text3)' }}>Cooldown: {synergyStatus.activeSynergy.active.cooldown_days} day{synergyStatus.activeSynergy.active.cooldown_days !== 1 ? 's' : ''}</div>
+                            <div className="text-[10px] text-text3">Cooldown: {synergyStatus.activeSynergy.active.cooldown_days} day{synergyStatus.activeSynergy.active.cooldown_days !== 1 ? 's' : ''}</div>
                           )}
                         </div>
 
                         {synergyCooldown?.on_cooldown ? (
-                          <div style={{ padding: '10px 12px', background: 'var(--bg3)', borderRadius: '4px', border: '1px solid var(--border)', fontSize: '11px', color: 'var(--text3)', textAlign: 'center' }}>
+                          <div className="rounded-sm border border-white/5 bg-bg3 p-3 text-center text-[11px] text-text3">
                             Ability on cooldown — ready in {synergyCooldown.cooldown_remaining_seconds < 3600
                               ? `${Math.ceil(synergyCooldown.cooldown_remaining_seconds / 60)}m`
                               : `${Math.ceil(synergyCooldown.cooldown_remaining_seconds / 3600)}h`}
@@ -842,7 +824,7 @@ const BuildPanel = () => {
                           <button
                             onClick={activateSynergyAbility}
                             disabled={activatingAbility}
-                            style={{ width: '100%', padding: '10px', fontSize: '12px', fontWeight: 700, background: activatingAbility ? 'var(--bg3)' : 'var(--purple)', color: 'var(--text)', border: 'none', borderRadius: '4px', cursor: activatingAbility ? 'default' : 'pointer' }}
+                            className={`w-full rounded-sm border-0 p-2.5 text-[12px] font-bold text-text cursor-pointer ${activatingAbility ? 'bg-bg3' : 'bg-purple'}`}
                           >
                             {activatingAbility ? 'Activating...' : `⚡ Activate ${synergyStatus.activeSynergy.active?.name}`}
                           </button>
@@ -850,19 +832,19 @@ const BuildPanel = () => {
                       </div>
                     ) : (
                       <div>
-                        <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Available Fragments</div>
+                        <div className="mb-2 text-[12px] font-semibold text-text uppercase tracking-wider">Available Fragments</div>
                         {availableAttunements.length > 0 ? (
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px' }}>
+                          <div className="grid gap-2 auto-fill [grid-template-columns:repeat(auto-fill,minmax(200px,1fr))]">
                             {availableAttunements.map((frag) => (
-                              <div key={frag.fragmentName} style={{ padding: '10px', background: 'var(--bg3)', borderRadius: '4px', border: '1px solid var(--border)' }}>
-                                <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px' }}>{frag.fragmentName}</div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <div key={frag.fragmentName} className="rounded-sm border border-white/5 bg-bg3 p-2.5">
+                                <div className="mb-2 text-[12px] font-semibold text-text">{frag.fragmentName}</div>
+                                <div className="flex flex-col gap-1">
                                   {frag.buildings.map((bld) => (
                                     <button
                                       key={bld.buildingType}
                                       onClick={() => applyAttunement(frag.fragmentName, bld.buildingType)}
                                       title={formatBonusTooltip(bld.bonuses, bld.special)}
-                                      style={{ padding: '6px 8px', fontSize: '11px', background: 'var(--accent1)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '3px', cursor: 'pointer', textAlign: 'left' }}
+                                      className="rounded-sm border border-white/5 bg-accent1 px-2 py-1.5 text-[11px] text-text cursor-pointer text-left"
                                     >
                                       ✨ {BUILDINGS_MAP[bld.buildingType]?.name || bld.buildingType} ({bld.count})
                                     </button>
@@ -872,7 +854,7 @@ const BuildPanel = () => {
                             ))}
                           </div>
                         ) : (
-                          <div style={{ padding: '24px', color: 'var(--text3)', textAlign: 'center', fontSize: '12px' }}>
+                          <div className="rounded-sm bg-bg3 p-6 text-center text-[12px] text-text3">
                             No available fragments to attune. Find and study world fragments first!
                           </div>
                         )}
@@ -885,19 +867,19 @@ const BuildPanel = () => {
           </div>
         )}
 
-        <div className="card" style={{ marginTop: '14px' }}>
+        <div className="card mt-4">
           <div id="build-rows">
             <div id="build-header">
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span className="flex items-center gap-2">
                 Building
                 <button
                   onClick={() => setShowAttunements(true)}
-                  style={{ padding: '2px 8px', fontSize: '9px', fontWeight: 600, color: '#60a5fa', background: 'transparent', border: '1px solid #60a5fa', borderRadius: '999px', cursor: 'pointer', lineHeight: '1.4', whiteSpace: 'nowrap' }}
+                  className="rounded-full border border-blue-400 px-2 py-0.5 text-[9px] font-semibold text-blue-400 cursor-pointer leading-none whitespace-nowrap"
                 >Attunement</button>
               </span>
-              <span style={{ textAlign: 'right' }}>Built</span>
-              <span style={{ textAlign: 'center' }}>Demolish</span>
-              <span style={{ textAlign: 'center' }}>Engineers</span>
+              <span className="text-right">Built</span>
+              <span className="text-center">Demolish</span>
+              <span className="text-center">Engineers</span>
             </div>
 
             {BUILDINGS_MAP['farms'] && renderBuildingRow(BUILDINGS_MAP['farms'], { emoji: '🌾', color: '#4a7c3f' }, 'ba-farm', 'demolish-amount-farms')}
@@ -920,7 +902,7 @@ const BuildPanel = () => {
             {BUILDINGS_MAP['training'] && renderBuildingRow(BUILDINGS_MAP['training'], { emoji: '⚔️', color: '#1a4a2a' }, 'ba-training', 'demolish-amount-training')}
             {BUILDINGS_MAP['castles'] && renderBuildingRow(BUILDINGS_MAP['castles'], { emoji: '🏰', color: '#5a1a1a' }, 'ba-castle', 'demolish-amount-castles')}
 
-            <div style={{ fontSize: '11px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', padding: '14px 0 6px' }}>
+            <div className="text-[11px] text-text3 uppercase tracking-wider py-3.5 px-0">
               Equipment & War Machines
             </div>
 
@@ -928,90 +910,88 @@ const BuildPanel = () => {
             {BUILDINGS_MAP['ballistae'] && renderBuildingRow(BUILDINGS_MAP['ballistae'], { emoji: '🏹', color: '#5a3a1a' }, 'ba-ballistae', '')}
             {BUILDINGS_MAP['ladders'] && renderBuildingRow(BUILDINGS_MAP['ladders'], { emoji: '🪜', color: '#3a2a1a' }, 'ba-ladders', '')}
             {BUILDINGS_MAP['weapons'] && renderBuildingRow(BUILDINGS_MAP['weapons'], { emoji: '🗡️', color: '#6a1a1a' }, 'ba-weapons', '')}
-            <div style={{ borderWidth: '1px 1px 0', borderStyle: 'solid', borderColor: 'var(--border)' }}>
+            <div className="border-t border-white/5">
               {BUILDINGS_MAP['armor'] && renderBuildingRow(BUILDINGS_MAP['armor'], { emoji: '🔰', color: '#1a3a6a' }, 'ba-armor', '')}
             </div>
 
           </div>
         </div>
 
-        {/* Build queue */}
-        <div className="card" style={{ marginTop: 0 }}>
+        <div className="card mt-0">
           <div className="card-title">
             Build queue — engineers work each turn automatically
           </div>
           <div id="build-queue-display">
-            <div style={{ color: 'var(--text3)', fontSize: '13px', padding: '8px 0' }}>
+            <div className="text-text3 text-[13px] py-2">
               No buildings queued.
             </div>
           </div>
         </div>
 
-        {/* Tools */}
-        <div className="card" style={{ marginTop: 0 }}>
-          <div className="card-title" style={{ marginBottom: '4px' }}>⚒️ Smithy</div>
-          <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '14px' }}>
+        <div className="card mt-0">
+          <div className="card-title mb-1">⚒️ Smithy</div>
+          <div className="text-[12px] text-text3 mb-3.5">
             Hammers and scaffolding can be purchased here. Blueprints are crafted in the Library by scribes.
           </div>
-          <div id="smithy-alloc-note" style={{ fontSize: '11px', color: 'var(--gold)', marginBottom: '10px' }} />
+          <div id="smithy-alloc-note" className="text-[11px] text-gold mb-2.5" />
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px', marginBottom: '16px' }}>
-            <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '12px', textAlign: 'center' }}>
-              <div style={{ fontSize: '20px', marginBottom: '4px' }}>🔨</div>
-              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)' }}>Hammers</div>
-              <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '6px' }}>+5% speed each · degrade</div>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--gold)' }} id="tools-hammers">0</div>
-              <div style={{ fontSize: '11px', color: 'var(--text3)' }}>/ <span id="hammers-cap">0</span> cap</div>
-              <div style={{ fontSize: '11px', color: 'var(--amber)', marginTop: '3px' }} id="hammers-durability"></div>
+          <div className="grid auto-fit gap-2.5 mb-4 [grid-template-columns:repeat(auto-fit,minmax(140px,1fr))]">
+            <div className="rounded-lg border border-white/5 bg-bg3 px-3 py-3 text-center">
+              <div className="text-[20px] mb-1">🔨</div>
+              <div className="text-[12px] font-semibold text-text">Hammers</div>
+              <div className="text-[11px] text-text3 mb-1.5">+5% speed each · degrade</div>
+              <div className="text-[18px] font-bold text-gold" id="tools-hammers">0</div>
+              <div className="text-[11px] text-text3">/ <span id="hammers-cap">0</span> cap</div>
+              <div className="text-[11px] text-amber mt-0.5" id="hammers-durability"></div>
             </div>
-            <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '12px', textAlign: 'center' }}>
-              <div style={{ fontSize: '20px', marginBottom: '4px' }}>🏗️</div>
-              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)' }}>Scaffolding</div>
-              <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '6px' }}>req &gt;100t · bonus &lt;100t</div>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--gold)' }} id="tools-scaffolding">0</div>
-              <div style={{ fontSize: '11px', color: 'var(--text3)' }}>/ <span id="scaffolding-cap">0</span> cap</div>
+            <div className="rounded-lg border border-white/5 bg-bg3 px-3 py-3 text-center">
+              <div className="text-[20px] mb-1">🏗️</div>
+              <div className="text-[12px] font-semibold text-text">Scaffolding</div>
+              <div className="text-[11px] text-text3 mb-1.5">req &gt;100t · bonus &lt;100t</div>
+              <div className="text-[18px] font-bold text-gold" id="tools-scaffolding">0</div>
+              <div className="text-[11px] text-text3">/ <span id="scaffolding-cap">0</span> cap</div>
             </div>
-            <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '12px', textAlign: 'center' }}>
-              <div style={{ fontSize: '20px', marginBottom: '4px' }}>📐</div>
-              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)' }}>Blueprints</div>
-              <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '6px' }}>req for 100t+ buildings</div>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--gold)' }} id="tools-blueprints">0</div>
-              <div style={{ fontSize: '11px', color: 'var(--text3)' }}>/ <span id="blueprints-cap">0</span> cap</div>
+            <div className="rounded-lg border border-white/5 bg-bg3 px-3 py-3 text-center">
+              <div className="text-[20px] mb-1">📐</div>
+              <div className="text-[12px] font-semibold text-text">Blueprints</div>
+              <div className="text-[11px] text-text3 mb-1.5">req for 100t+ buildings</div>
+              <div className="text-[18px] font-bold text-gold" id="tools-blueprints">0</div>
+              <div className="text-[11px] text-text3">/ <span id="blueprints-cap">0</span> cap</div>
             </div>
           </div>
 
-          <div style={{ background: 'var(--bg4)', borderRadius: 'var(--radius)', padding: '12px', marginBottom: '12px' }}>
-            <div style={{ fontSize: '12px', color: 'var(--text2)', fontWeight: 600, marginBottom: '14px', textAlign: 'center' }}>
-              Purchase tools <span style={{ color: 'var(--text3)', fontWeight: 400 }}>— instant gold purchase · requires at least 1 smithy</span>
+          <div className="rounded-lg bg-bg4 px-3 py-3 mb-3">
+            <div className="text-[12px] text-text2 font-semibold mb-3.5 text-center">
+              Purchase tools <span className="text-text3 font-normal">— instant gold purchase · requires at least 1 smithy</span>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '6px' }}>
-                  🔨 Hammers — <strong style={{ color: 'var(--gold)' }}>25 GC each</strong>
+            <div className="flex flex-col gap-6">
+              <div className="text-center">
+                <div className="text-[12px] text-text3 mb-1.5">
+                  🔨 Hammers — <strong className="text-gold">25 GC each</strong>
                 </div>
-                <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '8px' }}>
-                  Stored: <span id="smith-hammers-stored" style={{ color: 'var(--text)' }}>0</span> / <span id="smith-hammers-cap">0</span> · Max afford: <span id="smith-hammers-afford" style={{ color: 'var(--gold)' }}>0</span>
+                <div className="text-[11px] text-text3 mb-2">
+                  Stored: <span id="smith-hammers-stored" className="text-text">0</span> / <span id="smith-hammers-cap">0</span> · Max afford: <span id="smith-hammers-afford" className="text-gold">0</span>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                  <input type="number" className="input" id="smith-buy-hammers" min="1" defaultValue="0" style={{ width: '160px', textAlign: 'right' }} placeholder="Qty" />
-                  <div style={{ display: 'flex', gap: '8px', width: '160px' }}>
-                    <button className="base-btn variant-gold" style={{ flex: 1, fontSize: '12px', padding: '6px 12px', background: 'var(--gold)', color: '#000' }} onClick={() => buySmithyTool('hammers')}>Buy</button>
-                    <button className="base-btn" style={{ flex: 1, fontSize: '11px', padding: '6px 8px' }} onClick={() => setSmithyMax('hammers')}>Max</button>
+                <div className="flex flex-col items-center gap-2">
+                  <input type="number" className="input" id="smith-buy-hammers" min="1" defaultValue="0" placeholder="Qty" style={{ width: '160px' }} />
+                  <div className="flex gap-2" style={{ width: '160px' }}>
+                    <button className="base-btn variant-gold flex-1 text-[12px] px-3 py-1.5" style={{ background: 'var(--gold)', color: '#000' }} onClick={() => buySmithyTool('hammers')}>Buy</button>
+                    <button className="base-btn flex-1 text-[11px] px-2 py-1.5" onClick={() => setSmithyMax('hammers')}>Max</button>
                   </div>
                 </div>
               </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '6px' }}>
-                  🏗️ Scaffolding — <strong style={{ color: 'var(--gold)' }}>2,500 GC each</strong>
+              <div className="text-center">
+                <div className="text-[12px] text-text3 mb-1.5">
+                  🏗️ Scaffolding — <strong className="text-gold">2,500 GC each</strong>
                 </div>
-                <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '8px' }}>
-                  Stored: <span id="smith-scaffolding-stored" style={{ color: 'var(--text)' }}>0</span> / <span id="smith-scaffolding-cap">0</span> · Max afford: <span id="smith-scaffolding-afford" style={{ color: 'var(--gold)' }}>0</span>
+                <div className="text-[11px] text-text3 mb-2">
+                  Stored: <span id="smith-scaffolding-stored" className="text-text">0</span> / <span id="smith-scaffolding-cap">0</span> · Max afford: <span id="smith-scaffolding-afford" className="text-gold">0</span>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                  <input type="number" className="input" id="smith-buy-scaffolding" min="1" defaultValue="0" style={{ width: '160px', textAlign: 'right' }} placeholder="Qty" />
-                  <div style={{ display: 'flex', gap: '8px', width: '160px' }}>
-                    <button className="base-btn variant-gold" style={{ flex: 1, fontSize: '12px', padding: '6px 12px', background: 'var(--gold)', color: '#000' }} onClick={() => buySmithyTool('scaffolding')}>Buy</button>
-                    <button className="base-btn" style={{ flex: 1, fontSize: '11px', padding: '6px 8px' }} onClick={() => setSmithyMax('scaffolding')}>Max</button>
+                <div className="flex flex-col items-center gap-2">
+                  <input type="number" className="input" id="smith-buy-scaffolding" min="1" defaultValue="0" placeholder="Qty" style={{ width: '160px' }} />
+                  <div className="flex gap-2" style={{ width: '160px' }}>
+                    <button className="base-btn variant-gold flex-1 text-[12px] px-3 py-1.5" style={{ background: 'var(--gold)', color: '#000' }} onClick={() => buySmithyTool('scaffolding')}>Buy</button>
+                    <button className="base-btn flex-1 text-[11px] px-2 py-1.5" onClick={() => setSmithyMax('scaffolding')}>Max</button>
                   </div>
                 </div>
               </div>

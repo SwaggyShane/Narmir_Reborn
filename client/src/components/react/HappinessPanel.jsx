@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import clsx from 'clsx';
 import HappinessGraph from './HappinessGraph';
 
 const DEFAULT_COMPONENTS = {
@@ -104,11 +105,6 @@ const HappinessPanel = () => {
   };
 
   const filteredEvents = filter ? events.filter((e) => e.component === filter) : events;
-  const happinessBarClass =
-    happiness >= 80 ? 'bg-[var(--green)]' :
-    happiness >= 50 ? 'bg-[var(--gold)]' :
-    happiness >= 30 ? 'bg-[var(--amber)]' :
-    'bg-[var(--red)]';
 
   return (
     <div id="happiness" className="panel min-h-0 w-full overflow-y-auto">
@@ -120,8 +116,18 @@ const HappinessPanel = () => {
           </div>
           <div className="overflow-hidden rounded-full border border-white/5 bg-[var(--bg3)] shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]">
             <div
-              className={`h-6 transition-[width] duration-300 ${happinessBarClass}`}
-              style={{ width: `${Math.min(100, Math.max(0, (happiness / 120) * 100))}%` }}
+              className="h-6 transition-[width] duration-300"
+              style={{
+                width: `${Math.min(100, Math.max(0, (happiness / 120) * 100))}%`,
+                background:
+                  happiness >= 80
+                    ? 'var(--green)'
+                    : happiness >= 50
+                      ? 'var(--gold)'
+                      : happiness >= 30
+                        ? 'var(--amber)'
+                        : 'var(--red)',
+              }}
             />
           </div>
         </section>
@@ -137,7 +143,7 @@ const HappinessPanel = () => {
             {Object.entries(components).map(([key, value]) => (
               <button
                 key={key}
-                className={`flex items-center justify-between rounded border bg-zinc-800 p-3 text-left transition-all cursor-pointer ${filter === key ? 'border-orange-500 bg-orange-500/10' : 'border-zinc-700 hover:bg-zinc-700 hover:translate-x-0.5'} ${!filter || filter === key ? 'opacity-100' : 'opacity-50'}`}
+                className={clsx('flex justify-between items-center p-3 bg-zinc-800 rounded border transition-all cursor-pointer', filter === key ? 'border-orange-500 bg-orange-500/10 opacity-100' : 'border-zinc-700 hover:bg-zinc-700 hover:translate-x-0.5', !filter || filter === key ? 'opacity-100' : 'opacity-50')}
                 onClick={() => setFilter(filter === key ? null : key)}
                 aria-pressed={filter === key}
               >

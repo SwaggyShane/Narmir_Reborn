@@ -13,3 +13,291 @@
     text-rendering: optimizeLegibility;
   }
 }
+
+@layer components {
+  /* ── Cards ── */
+  .card {
+    @apply relative bg-bg2 border border-white/5 rounded-xl px-3.5 py-4 mb-3 transition-all shadow-lg overflow-hidden flex-shrink-0;
+  }
+
+  .card::before {
+    content: '';
+    @apply absolute top-0 left-0 right-0 h-0.5;
+    background: linear-gradient(90deg, transparent 0%, rgba(240, 98, 2, 0.3) 50%, transparent 100%);
+  }
+
+  .card-title {
+    @apply text-xs font-black text-gold font-cinzel mb-5 uppercase tracking-wider;
+    text-shadow: 0 0 8px rgba(240, 98, 2, 0.3);
+  }
+
+  /* ── Grid Layouts ── */
+  .two-col {
+    @apply grid grid-cols-1 gap-0;
+  }
+
+  .three-col {
+    @apply grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5;
+  }
+
+  .status-grid {
+    @apply grid grid-cols-1 gap-5;
+  }
+
+  /* ── Table Rows ── */
+  .trow {
+    @apply flex items-center gap-2 py-2 px-0 border-b border-white/5 flex-wrap transition-all rounded-sm;
+  }
+
+  .trow:last-child {
+    @apply border-b-0;
+  }
+
+  .trow .name {
+    @apply flex-1 min-w-20 text-text text-base font-semibold;
+  }
+
+  .trow .desc {
+    @apply hidden;
+  }
+
+  .trow .count {
+    @apply min-w-[60px] text-right font-semibold text-base text-text whitespace-nowrap;
+  }
+
+  .trow .cost-lbl {
+    @apply text-xs text-gold min-w-12 text-right;
+  }
+
+  /* ── Buttons ── */
+  .btn {
+    @apply relative inline-flex items-center justify-center gap-2 bg-bg3 border-2 border-white/10 rounded-md px-4 py-2.5 text-base font-bold text-text cursor-pointer whitespace-nowrap transition-all active:scale-95;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .btn-gold {
+    @apply btn bg-gradient-to-r from-gold to-gold2 border-gold text-black font-black shadow-lg;
+  }
+
+  .btn-accent {
+    @apply btn bg-gradient-to-r from-accent2 to-gold border-accent2 text-white font-black shadow-lg;
+  }
+
+  .btn-accent:active {
+    @apply bg-gradient-to-r from-gold to-accent2;
+  }
+
+  .btn-red {
+    @apply btn bg-transparent border-red text-red;
+  }
+
+  .btn-red:active {
+    background: rgba(180, 60, 0, 0.15);
+  }
+
+  .btn-green {
+    @apply btn bg-transparent border-green text-green;
+  }
+
+  .btn-green:active {
+    background: rgba(16, 185, 129, 0.15);
+  }
+
+  .btn-amber {
+    @apply btn bg-transparent border-amber text-amber;
+  }
+
+  .btn-amber:active {
+    background: rgba(245, 158, 11, 0.15);
+  }
+
+  .btn-blue {
+    @apply btn bg-transparent border-blue text-blue;
+  }
+
+  .btn-blue:active {
+    background: rgba(59, 130, 246, 0.15);
+  }
+
+  /* ── Badges ── */
+  .badge {
+    @apply inline-block text-xs font-bold px-2 py-0.5 rounded-full;
+  }
+
+  .badge-sm {
+    @apply text-2xs px-1.5 py-0;
+  }
+
+  .badge-gold {
+    @apply badge text-gold;
+    background: rgba(240, 98, 2, 0.15);
+  }
+
+  .badge-green {
+    @apply badge text-green;
+    background: rgba(16, 185, 129, 0.15);
+  }
+
+  .badge-blue {
+    @apply badge text-blue;
+    background: rgba(59, 130, 246, 0.15);
+  }
+
+  .badge-red {
+    @apply badge text-red;
+    background: rgba(180, 60, 0, 0.15);
+  }
+
+  .badge-amber {
+    @apply badge text-amber;
+    background: rgba(245, 158, 11, 0.15);
+  }
+
+  /* ── Metrics ── */
+  .metrics {
+    @apply flex flex-wrap gap-0.5 mb-1.5 w-full;
+  }
+
+  .metric {
+    @apply bg-bg2 border border-white/5 rounded px-1.5 py-0.5 transition-all flex flex-col gap-0 justify-center flex-1 min-w-[60px] min-h-[30px];
+  }
+
+  .metric .lbl {
+    @apply text-2xs text-text3 uppercase tracking-wider font-black m-0 leading-none;
+  }
+
+  .metric .val {
+    @apply text-xs font-bold text-text m-0 leading-none whitespace-nowrap overflow-hidden text-ellipsis;
+  }
+
+  .metric .sub {
+    @apply text-3xs text-text3 m-0 flex items-center gap-0.5 opacity-80 leading-none;
+  }
+
+  .metric.gold .val {
+    @apply text-gold;
+  }
+
+  .metric.alert .val {
+    @apply text-red;
+  }
+
+  /* ── Progress Bars ── */
+  .prog-wrap {
+    @apply flex-1 min-w-[60px] h-1.5 bg-white/5 rounded-full overflow-hidden;
+  }
+
+  .prog-bar {
+    @apply h-full rounded-full bg-accent1 transition-all;
+    box-shadow: 0 0 10px rgba(180, 60, 0, 0.3);
+  }
+
+  .prog-bar.eco {
+    @apply bg-gold;
+  }
+
+  .prog-bar.wep {
+    @apply bg-red;
+  }
+
+  .prog-bar.arm {
+    @apply bg-blue;
+  }
+
+  .prog-bar.mil {
+    @apply bg-amber;
+  }
+
+  .prog-bar.spell {
+    @apply bg-accent1;
+  }
+
+  .prog-bar.mana {
+    @apply bg-green;
+  }
+
+  /* ── Build Panel Sticky Header ── */
+  .build-sticky-header {
+    @apply sticky top-14 z-sticky bg-bg;
+  }
+
+  .build-content-scroll {
+    @apply px-6 pb-6;
+  }
+
+  /* ── Kingdom Header ── */
+  .kingdom-header {
+    @apply mb-2;
+  }
+
+  .kingdom-header h1,
+  #kingdom-name {
+    @apply text-lg;
+  }
+
+  /* ── Navigation Items ── */
+  .nav-section {
+    @apply mb-0;
+  }
+
+  .nav-item {
+    @apply relative flex items-center gap-2 px-3 py-2 rounded text-text3 text-xs cursor-pointer transition-colors hover:bg-bg3 hover:text-text;
+  }
+
+  .nav-badge {
+    @apply absolute -top-0.5 -right-0.5 min-w-4 h-4 flex items-center justify-center rounded-full bg-red text-white text-2xs font-bold px-0.5;
+  }
+}
+
+@media (min-width: 768px) {
+  #build.panel {
+    overflow: hidden;
+    padding: 0;
+  }
+
+  .build-sticky-header {
+    position: static;
+    flex-shrink: 0;
+    padding: 1rem 1.5rem 0.75rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  }
+
+  .build-content-scroll {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+  }
+}
+
+@media (min-width: 650px) {
+  #kd-top .metrics {
+    flex-direction: column;
+    flex: 1;
+    justify-content: space-around;
+  }
+}
+
+@layer utilities {
+  /* Text shadows */
+  .text-shadow-gold {
+    text-shadow: 0 0 8px rgba(240, 98, 2, 0.3);
+  }
+
+  .text-shadow-logo {
+    text-shadow: 0 0 10px #ff4500, 0 0 20px #ff8c00;
+  }
+
+  /* Scrollbar styling */
+  .scrollbar-game::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-game::-webkit-scrollbar-track {
+    @apply bg-bg3;
+  }
+
+  .scrollbar-game::-webkit-scrollbar-thumb {
+    @apply bg-bg4 rounded;
+  }
+}

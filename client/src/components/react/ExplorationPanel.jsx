@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import clsx from 'clsx';
 import { toast } from '../../utils/toast.js';
 import { apiCall } from '../../utils/api';
 import { useGameMutationEvents, useGameState } from '../../hooks/useGameState';
@@ -319,7 +320,7 @@ const ExplorationPanel = () => {
     : 'No expeditions are currently underway.';
 
   return (
-    <div id="exploration" className="panel min-h-0 w-full overflow-y-auto px-4 pb-5" style={{ display: 'none' }}>
+    <div id="exploration" className="panel min-h-0 w-full overflow-y-auto px-4 pb-5 hidden">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-4">
         <div id="exp-counter-card" className="card">
           <div className="flex items-center justify-between gap-3">

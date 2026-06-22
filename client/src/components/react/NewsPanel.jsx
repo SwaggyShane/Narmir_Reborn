@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
 import { useGameState, useGameMutationEvents } from '../../hooks/useGameState';
 import { replayWarReport } from '../../utils/replayWarReport';
@@ -174,7 +175,7 @@ const NewsPanel = () => {
     <div id="news" className="panel">
       <div className="card mt-0">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <div className="card-title !mb-0">
+          <div className="card-title m-0">
             📰 Kingdom news — Turn <span id="news-turn-num">{state?.turn || 0}</span>
           </div>
           <div className="flex gap-2">
@@ -193,9 +194,9 @@ const NewsPanel = () => {
           ].map(([value, label]) => (
             <button
               key={value}
+              className={clsx('base-btn news-filter text-[12px] px-2.5 py-1', newsFilter === value && 'active')}
               data-filter={value}
               onClick={() => setNewsFilter(value)}
-              className={`base-btn news-filter px-2.5 py-1 text-[12px]${newsFilter === value ? ' active' : ''}`}
             >
               {label}
             </button>
@@ -208,10 +209,10 @@ const NewsPanel = () => {
               {newsFilter === 'all' ? 'No news yet — take some turns!' : `No ${newsFilter} events yet.`}
             </div>
           ) : visibleGroups.map((group) => (
-            <div className="space-y-2.5" key={group.turn}>
-              <div className="flex items-center justify-between border-b border-[var(--border)] pb-2">
-                <span className="text-[13px] font-semibold text-[var(--text)]">◆ {group.turn > 0 ? `Turn ${group.turn}` : 'Before game start'}</span>
-                <span className="text-[11px] text-[var(--text3)]">{group.timeLabel}</span>
+            <div className="news-turn-group" key={group.turn}>
+              <div className="news-turn-header">
+                <span className="turn-label">◆ {group.turn > 0 ? `Turn ${group.turn}` : 'Before game start'}</span>
+                <span className="turn-time">{group.timeLabel}</span>
               </div>
               {group.items.map((item, idx) => {
                 let type = item.type || 'system';
@@ -226,11 +227,11 @@ const NewsPanel = () => {
                 return (
                   <div className="news-item" style={borderStyle} key={`${group.turn}-${idx}-${item.combat_log_id || item.created_at || item.message?.slice(0, 32) || 'news'}`}>
                     <span className="news-icon">{meta.icon}</span>
-                    <span className={`news-body ${isBorderType ? 'text-[var(--text)]' : 'text-[var(--text2)]'}`}>
+                    <span className="news-body" style={{ color: isBorderType ? 'var(--text)' : 'var(--text2)' }}>
                       {displayMessage}
                       {item.combat_log_id ? (
                         <button
-                          className="btn ml-2 mt-1 inline-flex items-center gap-1 px-2 py-0.5 text-[10px]"
+                          className="btn inline-flex items-center gap-1 text-[10px] px-2 py-0.5 mt-1 ml-2.5"
                           onClick={() => replayWarReport(item.combat_log_id)}
                         >
                           ▶ Replay
