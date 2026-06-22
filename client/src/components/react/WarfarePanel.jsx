@@ -161,6 +161,8 @@ const WarfarePanel = () => {
   // target data
   const [targets, setTargets] = useState([]);
   const [attackTarget, setAttackTarget] = useState(null);
+  const [spellTarget, setSpellTarget] = useState(null);
+  const [covertTarget, setCovertTarget] = useState(null);
   const [atkSearchQ, setAtkSearchQ] = useState('');
   const [wspSearchQ, setWspSearchQ] = useState('');
   const [wcovSearchQ, setWcovSearchQ] = useState('');
