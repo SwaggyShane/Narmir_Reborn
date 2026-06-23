@@ -83,10 +83,10 @@ function statusColor(status) {
 }
 function itemIcon(id) {
   const icons = {
-    earth_fragment: 'ðŸŒ', water_fragment: 'ðŸ’§', fire_fragment: 'ðŸ”¥', air_fragment: 'ðŸ’¨',
-    ancient_oak_shard: 'ðŸŒ³', petrified_heartwood: '🪵', ironbark_splinter: 'ðŸŒ²',
-    crystalline_core: 'ðŸ’Ž', primordial_geode: '🪨', fossil_remnant: 'ðŸ¦•',
-    meteoric_shard: 'â˜„ï¸', deep_vein_ore: 'â›ï¸', lodestone_fragment: 'ðŸ§²',
+    earth_fragment: '🌍', water_fragment: '💧', fire_fragment: '🔥', air_fragment: '💨',
+    ancient_oak_shard: '🌳', petrified_heartwood: '🪵', ironbark_splinter: '🌲',
+    crystalline_core: '💎', primordial_geode: '🪨', fossil_remnant: '🦕',
+    meteoric_shard: '☄️', deep_vein_ore: '⛏️', lodestone_fragment: '🧲',
   };
   return icons[id] || '📦';
 }
@@ -360,8 +360,8 @@ const ResourcesPanel = () => {
         await loadExpeditions();
         const typeEmoji = { wood: '🪵', stone: '🪨', iron: '🔗' };
         const icon = typeEmoji[node.type] || '🧭';
-        const foodStr = data.foodTaken > 0 ? ` · food ${data.foodTaken.toLocaleString()} taken` : '';
-        logExpeditionEntry(icon, `Resource expedition departed to ${node.name}`, `${pop.toLocaleString()} civilians · ${node.type}${foodStr}`);
+        const foodStr = data.foodTaken > 0 ? ` - food ${data.foodTaken.toLocaleString()} taken` : '';
+        logExpeditionEntry(icon, `Resource expedition departed to ${node.name}`, `${pop.toLocaleString()} civilians - ${node.type}${foodStr}`);
         await refreshKingdom();
       } else { if(toast) toast('Failed: ' + (data.error || 'Unknown'), 'error'); }
     } catch(e) { if(toast) toast('Error: ' + e.message, 'error'); }
@@ -473,7 +473,7 @@ const ResourcesPanel = () => {
             Manage stockpiles, buildings, expeditions, and inventory in one place.
           </div>
         </div>
-        <button className="base-btn rounded-full px-3 py-1.5 text-[11px] font-semibold" onClick={handleRefresh}>â†» Refresh</button>
+        <button className="base-btn rounded-full px-3 py-1.5 text-[11px] font-semibold" onClick={handleRefresh}>↻ Refresh</button>
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2 border-b border-white/10 pb-1.5">
@@ -546,7 +546,7 @@ const ResourcesPanel = () => {
           <div id="buildings-guide-card" className="card" style={{ marginBottom: '12px', background: 'rgba(59, 130, 246, 0.03)', border: '1px solid rgba(59, 130, 246, 0.15)', padding: '12px 14px' }}>
             <div id="guide-header-toggle" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' }} onClick={() => setShowGuide(!showGuide)}>
               <div style={{ fontWeight: 600, fontSize: '13px', color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                ðŸ’¡ <span>Guide: How to build buildings &amp; produce resources</span>
+                💡 <span>Guide: How to build buildings &amp; produce resources</span>
               </div>
               <span style={{ fontSize: '11px', color: 'var(--text3)' }}>{showGuide ? 'Collapse [\u2212]' : 'Expand Guide [+]'}</span>
             </div>
@@ -583,7 +583,7 @@ const ResourcesPanel = () => {
           {resourceTypes.map(rtype => activeBldTab === rtype.key && (
             <div key={rtype.key}>
               <div className="card" style={{ marginBottom: '10px', padding: '10px 14px', fontSize: '12px', color: 'var(--text3)' }}>
-                ðŸ”§ Available engineers: <span style={{ color: 'var(--green)', fontWeight: 600 }}>{fmt(getAvailableEngineers())}</span>
+                🔧 Available engineers: <span style={{ color: 'var(--green)', fontWeight: 600 }}>{fmt(getAvailableEngineers())}</span>
                 &nbsp;&middot;&nbsp; Total: {fmt(kingdom.engineers || 0)}
                 &nbsp;&middot;&nbsp; Engaged: {fmt((kingdom.engineers || 0) - getAvailableEngineers())}
               </div>
@@ -702,7 +702,7 @@ const ResourcesPanel = () => {
             <div style={{ fontSize: '12px', color: 'var(--text3)', margin: '6px 0 10px' }}>Pay 500 gold to discover a new resource node.</div>
             <button onClick={scoutNode} disabled={scouting}
               style={{ padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600, background: 'var(--green)', color: '#000' }}>
-              {scouting ? 'Scouting...' : 'ðŸ”­ Scout Node (500 gold)'}
+              {scouting ? 'Scouting...' : '🔭 Scout Node (500 gold)'}
             </button>
             {scoutMsg && (
               <div style={{ marginTop: '8px', fontSize: '12px', color: scoutMsg.startsWith('Error') ? 'var(--red)' : 'var(--green)' }}>{scoutMsg}</div>
@@ -753,7 +753,7 @@ const ResourcesPanel = () => {
                     <div style={{ fontWeight: 600, fontSize: '13px' }}>{exp.node_name} <span style={{ fontSize: '11px', color: 'var(--text3)' }}>({typeIcon(exp.node_type)} {exp.node_type})</span></div>
                     <div style={{ fontSize: '11px', color: 'var(--text3)', marginTop: '2px' }}>
                       Pop: {fmt(exp.population_sent)} &middot; Status: <span style={statusColor(exp.status)}>{exp.status}</span>
-                      {exp.food_taken > 0 && <span> &middot; ðŸ– {fmt(exp.food_taken)} food taken</span>}
+                      {exp.food_taken > 0 && <span> &middot; 🍖 {fmt(exp.food_taken)} food taken</span>}
                     </div>
                     {exp.loot && Object.keys(exp.loot).filter(k => !k.startsWith('_')).length > 0 && (
                       <div style={{ fontSize: '11px', color: 'var(--green)', marginTop: '2px' }}>
@@ -817,4 +817,3 @@ const ResourcesPanel = () => {
 };
 
 export default ResourcesPanel;
-
