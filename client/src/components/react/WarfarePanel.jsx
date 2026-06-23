@@ -179,11 +179,6 @@ const WarfarePanel = () => {
   const [spyError, setSpyError] = useState('');
   const [allianceError, setAllianceError] = useState('');
 
-  // Keep window.selectedTargetW in sync for vanilla interop (wspells, wcovert still use it)
-  useEffect(() => {
-    window.selectedTargetW = attackTarget;
-  }, [attackTarget]);
-
   // Derived: disc kingdoms parsed from state
   const disc = useMemo(() => parseDisc(state?.discovered_kingdoms), [state?.discovered_kingdoms]);
 
@@ -306,8 +301,6 @@ const WarfarePanel = () => {
 
   const handleTabClick = (tabId) => {
     setActiveTab(tabId);
-    if (tabId === 'wspells' && window.initWspells) window.initWspells();
-    if (tabId === 'wcovert' && window.initWcovert) window.initWcovert();
   };
 
   const updateAtkEstimateW = useCallback(() => {
@@ -531,17 +524,10 @@ const WarfarePanel = () => {
     refreshAttackTargets();
   }, [refreshAttackTargets, state, attackTarget]);
 
-  const castWspell = () => {
-    if (window.castWspell) window.castWspell();
-  };
-
-  const doWcovert = (type) => {
-    if (window.doWcovert) window.doWcovert(type);
-  };
-
-  const updateWspellCalc = () => {
-    if (window.updateWspellCalc) window.updateWspellCalc();
-  };
+  // wspells/wcovert action stubs — not yet implemented; buttons present for future use
+  const castWspell = () => {};
+  const doWcovert = () => {};
+  const updateWspellCalc = () => {};
 
   const fmtDate = (value) => {
     if (!value) return 'Just now';
