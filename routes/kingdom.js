@@ -4327,21 +4327,19 @@ module.exports = function (db) {
     );
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
 
-    // Fetch trade routes so calculateTradeIncome can use them
-    const tradeRoutesRows = await db.all(
-      "SELECT id, kingdom_id, partner_id, stability, efficiency, distance FROM trade_routes WHERE kingdom_id=? OR partner_id=?",
-      [k.id, k.id]
-    );
-    k._trade_routes = tradeRoutesRows;
+    // Fetch and normalize trade routes so calculateTradeIncome can use them
+    await loadTradeRoutes(k);
 
     // Compute troop upkeep (mirrors processTurn logic)
     const upkeepMult = { high_elf: 1.0, dwarf: 0.85, dire_wolf: 1.2, dark_elf: 1.1, human: 1.0, orc: 1.15 }[k.race] || 1.0;
     const combatTroops = (k.fighters || 0) + (k.rangers || 0) + (k.clerics || 0) + (k.mages || 0) + (k.thieves || 0) + (k.ninjas || 0);
-    const researcherCap = Math.floor((k.bld_schools || 0) * 100);
-    const engineerCap = Math.floor((k.bld_smithies || 0) * 50);
-    const scribeCap = Math.floor((k.bld_libraries || 0) * 20);
+    const capRace = config.SUPPORT_CAP_RACE[k.race] || { researcher: 1.0, engineer: 1.0, scribe: 1.0 };
+    const researcherCap = Math.floor((k.bld_schools || 0) * 100 * (capRace.researcher || 1.0));
+    const engineerCap = Math.floor((k.bld_smithies || 0) * 50 * (capRace.engineer || 1.0));
+    const scribeCap = Math.floor((k.bld_libraries || 0) * 20 * (capRace.scribe || 1.0));
     const supportOverflow = Math.max(0, (k.researchers || 0) - researcherCap) + Math.max(0, (k.engineers || 0) - engineerCap) + Math.max(0, (k.scribes || 0) - scribeCap);
-    const barrackDiscount = Math.min(0.5, Math.floor((k.bld_barracks || 0) / 2) * 0.01);
+    const barracksTrainingMult = fragmentBonusManager.getBonusMultiplier(k, 'barracks', 'training');
+    const barrackDiscount = Math.min(0.5, Math.floor((k.bld_barracks || 0) / 2) * 0.01 * barracksTrainingMult);
     const troopUpkeep = Math.floor((combatTroops + supportOverflow) * upkeepMult * (1 - barrackDiscount));
 
     const marketInc = engine.marketIncomeFull(k);
@@ -4425,7 +4423,7 @@ module.exports = function (db) {
       mercenaries: safeJsonParse(k.mercenaries, [], "auto:mercenaries"),
       food_shortage_turns: k.food_shortage_turns,
       food_surplus_turns: k.food_surplus_turns,
-      activeTradeRouteCount: tradeRoutesRows.length,
+      activeTradeRouteCount: k._trade_routes.length,
     });
   });
   router.get("/profile/:name", async (req, res) => {
