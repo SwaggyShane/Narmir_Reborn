@@ -68,16 +68,11 @@ Use that inventory as the baseline progress metric for the remaining work.
 
 - [x] PR #545 merged cleanly to main.
 - [x] PR #546 merged cleanly to main.
-- [ ] PR #543 is conflicting. Preserve the branch; its shell work is already represented by later Codex slices, so do not delete anything.
-- [ ] PR #544 is conflicting. Preserve the branch; do not force a rebase unless we explicitly decide there is still unique work worth extracting. Its useful follow-up work is already reflected in the cleaner merged line.
+- [x] PR #543 preserved as historical branch; shell work represented by later Codex slices.
+- [x] PR #544 merged cleanly to main — UpgradesList.jsx + economyUpgrades.js landed; EconomyPanel callIfAvailable fully removed.
 
 ### Current Open Queue
-- [ ] PR #543
-- [ ] PR #544
-
-### Guidance
-- Do not spend time forcing PR #544 through the old cache-shim shape; the useful panel/socket cleanup is already present on the merged line.
-- Keep PR #543 and PR #544 preserved as historical branches unless a future slice specifically needs their remaining deltas.
+*(none)*
 
 ## Current Handoff
 
@@ -94,9 +89,11 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] WarfarePanel globals sweep — ✅ COMPLETE (in PR #546): all 16 remaining globals resolved; 1 deferred (showBattleReport, live vanilla)
 - [x] MarketPanel window.targets — ✅ COMPLETE (in PR #546)
 - [x] showBattleReport modal — ✅ COMPLETE (in PR #546): BattleReportModal.jsx React portal; no more window.showBattleReport in WarfarePanel
-- [ ] **IN PROGRESS**: EconomyPanel upgrade rendering (4 window.*_UPGRADES via callIfAvailable → React) — UpgradesList.jsx component + upgradeDefinitions.js module; removes all callIfAvailable calls for farm/granary/market/tavern upgrades
+- [x] EconomyPanel upgrade rendering — ✅ COMPLETE (PR #544): UpgradesList.jsx component + economyUpgrades.js module; all callIfAvailable calls removed
 - [ ] AlliancesPanel: deferred; alliance backend not yet implemented
 - [x] CSS: no action needed — audit found only forum.css, all active
+- [x] TrainingPanel.jsx — ✅ COMPLETE: removed all 13 DOM mutations; fixed broken Max/Distribute buttons (were reading non-existent `ta-${unit}` DOM IDs); added missing toast import; race bonus + capacity color now inline React
+- [ ] **NEXT**: StudiesPanel.jsx DOM audit (14 direct mutations) — convert to React state
 
 ### Codex Next
 - [x] Slice 1: Kill the shell in `client/index.html` — ✅ COMPLETE
@@ -117,12 +114,12 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [ ] Next: finish the last clean helper seams still hanging off `client/index.html`, then move to the remaining React panel upgrade-rendering work in any other panels still using shell-era helpers.
 - [ ] Ongoing: confirm `client/index.html` is still boot-only after Slices 1-14.
 
-### Current Inventory Snapshot
-- document.getElementById: 239
-- el(: 98
-- .innerHTML =: 80
-- .style.: 207
-- window.someGlobal: 0
+### Current Inventory Snapshot (updated 2026-06-23 post-PR #544)
+- document.getElementById: 96
+- el(: 26
+- .innerHTML =: 30
+- .style.: 138
+- window.* globals (non-bootstrap): 21 (10 AlliancesPanel deferred, 4 main.js bootstrap, 3 socket-client.js, 1 GameStateManager, 1 attunementShell, 1 HeroesPanel window.prompt, 1 window.buyUpgrade)
 
 ## Codex Lane
 
@@ -183,8 +180,11 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] WarfarePanel (16 remaining globals) — ✅ COMPLETE (in PR #546): window.spyReportsCache/allianceIntelCache/targets → setState(); window.setWarfareTab → registerWarfareTab(); window.switchTab → direct import from panelNav.js; 6 dead globals removed (castWspell, doWcovert, updateWspellCalc, initWspells, initWcovert, selectedTargetW — none defined anywhere in codebase); window.wcovTargetRaceChange uses standard browser event API
 - [x] MarketPanel (window.targets read) — ✅ COMPLETE (in PR #546): → gameStateManager.getState().targets
 - [x] WarfarePanel (window.showBattleReport) — ✅ COMPLETE (in PR #546): new BattleReportModal.jsx React portal; WarfarePanel uses setBattleReport() local state; vanilla battle-overlay in index.html is now unreachable from the React attack flow (Codex to remove when vanilla spell path is ported)
-- [ ] EconomyPanel (4 upgrade defs) — deferred: window.*_UPGRADES passed through callIfAvailable vanilla bridge; requires converting upgrade rendering to React
+- [x] EconomyPanel (4 upgrade defs) — ✅ COMPLETE (PR #544): UpgradesList.jsx + economyUpgrades.js; all callIfAvailable removed
 - [ ] AlliancesPanel (10 vanilla delegates) — deferred; underlying alliance API not yet implemented (foundAlliance, loadAllianceSearch, etc. have no backend routes)
+- [x] TrainingPanel.jsx (13 DOM mutations) — ✅ COMPLETE: all removed; Max/Distribute buttons fixed; toast imported
+- [ ] StudiesPanel.jsx (14 DOM mutations) — next up: convert to React state
+- [ ] replayWarReport.js (21 DOM mutations) — imperative renderer, needs full React rewrite (blocked: review first)
 
 ### 4. Clean up the remaining legacy CSS surfaces — ✅ COMPLETE (audit)
 - [x] Review files still importing from `client/src/css/` — only `forum.css` exists and is actively used by main.js and Portal.jsx; nothing to remove
