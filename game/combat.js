@@ -669,7 +669,7 @@ function resolveMilitaryAttack(
       phase: "Sabotage",
       title: "Thief Sabotage",
       msg: `Thieves disabled ${disabledWm} defending war machines.`,
-        icon: "âš”ï¸",
+        icon: "??",
     });
   }
 
@@ -692,7 +692,7 @@ function resolveMilitaryAttack(
       phase: "Stealth",
       title: "Ninja Strike",
       msg: `Ninjas struck the defense line causing ${ninjaKills} casualties (${ninjaIntercepted} intercepted).`,
-        icon: "âš”ï¸",
+        icon: "??",
     });
   }
   const defFightersAfterNinja = Math.max(0, defAvail.fighters - ninjaKills);
@@ -708,7 +708,7 @@ function resolveMilitaryAttack(
         phase: "Tactical",
         title: "Flank Maneuver",
         msg: `Your swift units flanked the enemy, causing ${flankKills} casualties behind the main line!`,
-        icon: "\\u2694\\uFE0F",
+        icon: "??",
       });
     }
   }
@@ -724,7 +724,7 @@ function resolveMilitaryAttack(
       phase: "Ranged",
       title: "Opening Volley",
       msg: `Rangers fired a volley causing ${rangerKills} casualties.`,
-        icon: "âš”ï¸",
+        icon: "??",
     });
   const defFightersAfterVolley = Math.max(
     0,
@@ -893,14 +893,14 @@ function resolveMilitaryAttack(
       phase: "Siege",
       title: "🪜 Ladder Assault",
       msg: `${laddersActive} 🪜 ladders scaled the walls (crewed by engineers), bypassing ${bypassPct}% of wall defenses!`,
-        icon: "âš”ï¸",
+        icon: "??",
     });
   } else if (laddersActive > 0) {
     steps.push({
       phase: "Siege",
       title: "🪜 Ladder Party",
       msg: `🪜 Ladders were raised but the enemy has no walls to scale.`, 
-        icon: "âš”ï¸",
+        icon: "??",
     });
   }
 
@@ -977,7 +977,7 @@ function resolveMilitaryAttack(
     phase: "Clash",
     title: "Main Assault",
     msg: `Attacker Power (${Math.round(atkPower)}) vs Defender Power (${Math.round(defPowerFinal)}).`,
-        icon: "âš”ï¸",
+        icon: "??",
   });
 
   // Step 7: Casualties
@@ -995,7 +995,7 @@ function resolveMilitaryAttack(
       phase: "Healing",
       title: "Divine Intervention",
       msg: healMsg.trim(),
-        icon: "âš”ï¸",
+        icon: "??",
     });
   }
 
@@ -1103,7 +1103,7 @@ function resolveMilitaryAttack(
           phase: "Siege",
           title: "Wall Breach",
           msg: `Your war machines battered the fortifications, destroying ${wallsLost} walls!`,
-        icon: "âš”ï¸",
+        icon: "??",
         });
       }
     } else {
@@ -1118,7 +1118,7 @@ function resolveMilitaryAttack(
           phase: "Siege",
           title: "Building Damage",
           msg: `With the walls down, your troops razed ${amt} ${buildingName}!`,
-        icon: "âš”ï¸",
+        icon: "??",
         });
       }
     }
