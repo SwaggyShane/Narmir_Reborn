@@ -14,6 +14,37 @@ const NEWS_META = {
   expedition: { icon: '🧭', color: 'var(--gold)', label: 'Expedition' },
 };
 
+const NEWS_EMOJI_RULES = [
+  { test: (text) => /^Food surplus:/i.test(text) || /^Food:/i.test(text), emoji: '🌽' },
+  { test: (text) => /^Tears of the World Tree:/i.test(text), emoji: '💧' },
+  { test: (text) => /^Foresters report:/i.test(text), emoji: '🌲' },
+  { test: (text) => /^Resource production:/i.test(text) && /\bwood\./i.test(text), emoji: '🪵' },
+  { test: (text) => /^Resource production:/i.test(text) && /\bstone\./i.test(text), emoji: '🪨' },
+  { test: (text) => /^Resource production:/i.test(text) && /\biron\./i.test(text), emoji: '🔗' },
+  { test: (text) => /^\d[\d,]* researchers studying/i.test(text), emoji: '🔬' },
+  { test: (text) => /^Mana:/i.test(text), emoji: '🔮' },
+  { test: (text) => /^Population grew\b/i.test(text), emoji: '👥' },
+  { test: (text) => /^Population declined\b/i.test(text), emoji: '⚠️' },
+  { test: (text) => /^Happiness:/i.test(text), emoji: '😊' },
+  { test: (text) => /^Turn \d+: .*gold earned/i.test(text), emoji: '🪙' },
+  { test: (text) => /^Troop upkeep:/i.test(text), emoji: '⚙️' },
+  { test: (text) => /^End of Turn \d+\b/i.test(text), emoji: '🏦' },
+  { test: (text) => /^Geared Self-Construction:/i.test(text), emoji: '⚙️' },
+  { test: (text) => /^Actively constructing:/i.test(text), emoji: '🏗️' },
+  { test: (text) => /^Mage research advanced:/i.test(text), emoji: '✨' },
+];
+
+const decorateNewsMessage = (value) => {
+  const text = repairMojibake(String(value ?? ''));
+  if (!text) return text;
+  if (/^\p{Extended_Pictographic}/u.test(text)) return text;
+  const cleaned = text.replace(/^[<>=\-\u2022\u00B7\/\\|]+\s*/, '');
+  for (const rule of NEWS_EMOJI_RULES) {
+    if (rule.test(cleaned)) return `${rule.emoji} ${cleaned}`;
+  }
+  return `📋 ${cleaned}`;
+};
+
 const NewsPanel = () => {
   const { state } = useGameState();
   const [newsItems, setNewsItems] = useState([]);
@@ -21,7 +52,7 @@ const NewsPanel = () => {
 
   const repairText = useCallback((value) => {
     const text = value === null || value === undefined ? '' : String(value);
-    return repairMojibake(text);
+    return decorateNewsMessage(text);
   }, []);
 
   const timeAgo = useCallback((unixTs) => {
