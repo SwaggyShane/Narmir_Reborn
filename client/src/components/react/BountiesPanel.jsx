@@ -45,7 +45,7 @@ const BountiesPanel = () => {
   }, []);
 
   const loadTargets = useCallback(() => {
-    const rankings = Array.isArray(state?.rankingsCache) ? state.rankingsCache : (window.rankingsCache || []);
+    const rankings = Array.isArray(state?.rankingsCache) ? state.rankingsCache : [];
     const myId = state?.kingdomId;
     setTargets(rankings.filter(r => r.id !== myId).slice(0, 50));
   }, [state?.kingdomId, state?.rankingsCache]);

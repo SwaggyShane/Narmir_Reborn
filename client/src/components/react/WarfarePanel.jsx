@@ -12,6 +12,7 @@ import { switchTab } from '../../utils/panelNav.js';
 import { registerWarfareTab } from '../../utils/warfareTabs.js';
 import { RACE_ICONS } from '../../utils/raceIcons.js';
 import { playGameSound } from '../../utils/audio.js';
+import BattleReportModal from './BattleReportModal.jsx';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -133,7 +134,7 @@ function TargetListSection({ targets, selected, onSelect, searchQ, onSearchChang
           ? (
             <div className="text-[var(--text3)] text-[13px] px-4 py-4 text-center">
               No mapped targets found.{' '}
-              <button className="btn text-[11px]" onClick={() => window.switchTab?.('exploration')}>
+              <button className="btn text-[11px]" onClick={() => switchTab('exploration')}>
                 Go Explore
               </button>
             </div>
@@ -155,8 +156,9 @@ function TargetListSection({ targets, selected, onSelect, searchQ, onSearchChang
 // ─── main component ───────────────────────────────────────────────────────────
 
 const WarfarePanel = () => {
-  const { state } = useGameState();
+  const { state, setState } = useGameState();
   const [activeTab, setActiveTab] = useState('attack');
+  const [battleReport, setBattleReport] = useState(null);
 
   // target data
   const [targets, setTargets] = useState([]);
@@ -178,11 +180,6 @@ const WarfarePanel = () => {
   const [warLogError, setWarLogError] = useState('');
   const [spyError, setSpyError] = useState('');
   const [allianceError, setAllianceError] = useState('');
-
-  // Keep window.selectedTargetW in sync for vanilla interop (wspells, wcovert still use it)
-  useEffect(() => {
-    window.selectedTargetW = attackTarget;
-  }, [attackTarget]);
 
   // Derived: disc kingdoms parsed from state
   const disc = useMemo(() => parseDisc(state?.discovered_kingdoms), [state?.discovered_kingdoms]);
@@ -223,8 +220,7 @@ const WarfarePanel = () => {
           is_ai: row.is_ai || 0,
         }));
 
-      window.rankingsCache = kingdoms;
-      window.targets = mappedTargets;
+      setState({ rankingsCache: kingdoms, targets: mappedTargets });
       setTargets(mappedTargets);
     } catch (err) {
       console.error('[WarfarePanel] Failed to refresh attack targets:', err);
@@ -238,7 +234,7 @@ const WarfarePanel = () => {
       const result = await apiCall('/api/kingdom/war-log');
       if (result?.error) throw new Error(result.error);
       const rows = Array.isArray(result) ? result : Array.isArray(result?.rows) ? result.rows : [];
-      window.warLogCache = rows;
+      setState({ warLogCache: rows });
       setWarLogRows(rows);
     } catch (err) {
       console.error('[WarfarePanel] Failed to load war log:', err);
@@ -254,8 +250,9 @@ const WarfarePanel = () => {
     try {
       const result = await apiCall('/api/kingdom/spy-reports');
       if (result?.error) throw new Error(result.error);
-      setSpyReports(Array.isArray(result) ? result : []);
-      window.spyReportsCache = Array.isArray(result) ? result : [];
+      const spyData = Array.isArray(result) ? result : [];
+      setSpyReports(spyData);
+      setState({ spyReportsCache: spyData });
     } catch (err) {
       console.error('[WarfarePanel] Failed to load spy reports:', err);
       setSpyError(err.message || 'Failed to load spy reports');
@@ -270,8 +267,9 @@ const WarfarePanel = () => {
     try {
       const result = await apiCall('/api/kingdom/spy-reports/alliance');
       if (result?.error) throw new Error(result.error);
-      setAllianceIntel(Array.isArray(result) ? result : []);
-      window.allianceIntelCache = Array.isArray(result) ? result : [];
+      const intelData = Array.isArray(result) ? result : [];
+      setAllianceIntel(intelData);
+      setState({ allianceIntelCache: intelData });
     } catch (err) {
       console.error('[WarfarePanel] Failed to load alliance intel:', err);
       setAllianceError(err.message || 'Failed to load alliance intel');
@@ -283,14 +281,10 @@ const WarfarePanel = () => {
   useEffect(() => {
     const handleRaceChange = (e) => setWcovTargetRace(e.detail);
     window.addEventListener('wcovTargetRaceChange', handleRaceChange);
-    window.setWarfareTab = setActiveTab;
-    if (window.__pendingWarfareTab) {
-      setActiveTab(window.__pendingWarfareTab);
-      window.__pendingWarfareTab = null;
-    }
+    const unregister = registerWarfareTab(setActiveTab);
     return () => {
       window.removeEventListener('wcovTargetRaceChange', handleRaceChange);
-      delete window.setWarfareTab;
+      unregister();
     };
   }, []);
 
@@ -309,8 +303,6 @@ const WarfarePanel = () => {
 
   const handleTabClick = (tabId) => {
     setActiveTab(tabId);
-    if (tabId === 'wspells' && window.initWspells) window.initWspells();
-    if (tabId === 'wcovert' && window.initWcovert) window.initWcovert();
   };
 
   const updateAtkEstimateW = useCallback(() => {
@@ -525,7 +517,7 @@ const WarfarePanel = () => {
     if (r.bullyMsg) rows.push(['⚠️ Penalty', r.bullyMsg]);
 
     applyGameMutation(result, { reason: 'attack' });
-    window.showBattleReport?.({
+    setBattleReport({
       type: 'Military attack',
       target: attackTarget.name,
       win: r.win,
@@ -534,17 +526,10 @@ const WarfarePanel = () => {
     refreshAttackTargets();
   }, [refreshAttackTargets, state, attackTarget]);
 
-  const castWspell = () => {
-    if (window.castWspell) window.castWspell();
-  };
-
-  const doWcovert = (type) => {
-    if (window.doWcovert) window.doWcovert(type);
-  };
-
-  const updateWspellCalc = () => {
-    if (window.updateWspellCalc) window.updateWspellCalc();
-  };
+  // wspells/wcovert action stubs — not yet implemented; buttons present for future use
+  const castWspell = () => {};
+  const doWcovert = () => {};
+  const updateWspellCalc = () => {};
 
   const fmtDate = (value) => {
     if (!value) return 'Just now';
@@ -696,6 +681,7 @@ const WarfarePanel = () => {
   }, [allianceError, allianceIntel, loadingAllianceIntel]);
 
   return (
+    <>
     <div id="warfare" className="panel hidden">
       <div className="flex flex-wrap gap-1 border-b-2 border-[var(--border2)] mb-4 pb-1">
         <button className={clsx('base-btn admin-tab rounded-none', activeTab === 'attack' && 'active')} onClick={() => handleTabClick('attack')}>⚔️ Attack</button>
@@ -854,6 +840,8 @@ const WarfarePanel = () => {
         </div>
       </div>
     </div>
+    <BattleReportModal data={battleReport} onClose={() => setBattleReport(null)} />
+    </>
   );
 };
 

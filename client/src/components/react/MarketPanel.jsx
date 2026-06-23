@@ -42,7 +42,7 @@ function escapeHtml(value) {
 let marketPanelApi = null;
 
 export function populateTradeTargets() {
-  const tradeTargets = Array.isArray(window.targets) ? window.targets : [];
+  const tradeTargets = Array.isArray(gameStateManager.getState().targets) ? gameStateManager.getState().targets : [];
   if (!tradeTargets.length || !marketPanelApi?.setTradeTargets) return;
   marketPanelApi.setTradeTargets(tradeTargets);
 }

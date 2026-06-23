@@ -69,7 +69,6 @@ const NewsPanel = () => {
       }));
 
       setNewsItems(normalized);
-      window.newsCache = normalized;
       clearBadges();
     } catch (err) {
       console.error('[NewsPanel] Error loading news:', err);
@@ -83,7 +82,6 @@ const NewsPanel = () => {
       return;
     }
     setNewsItems([]);
-    window.newsCache = [];
   }, []);
 
   const visibleGroups = useMemo(() => {
@@ -141,7 +139,6 @@ const NewsPanel = () => {
           return true;
         });
       });
-      window.newsCache = Array.isArray(window.newsCache) ? [...normalized, ...window.newsCache] : normalized;
     };
     window.addEventListener('narmir:news-items', handleItems);
     return () => window.removeEventListener('narmir:news-items', handleItems);

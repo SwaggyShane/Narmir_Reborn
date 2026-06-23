@@ -5,6 +5,8 @@ import { repairMojibake } from '../../utils/repairMojibake.js';
 import { fmt } from '../../utils/fmt.js';
 import LoreModal from './LoreModal.jsx';
 import { registerOpenRaceLore } from '../../utils/openRaceLore.js';
+import { getRacePortrait } from '../../utils/racePortraits.js';
+import { RACE_LORE, REGION_META, REGION_BONUSES } from '../../utils/raceData.js';
 
 const HERO_PORTRAITS = {
   siegebreaker: '/hero/siegebreaker.webp',
@@ -212,14 +214,14 @@ const RacesPanel = () => {
   const [heroLoreKey, setHeroLoreKey] = useState(null);
   const [cachedHeroClasses, setCachedHeroClasses] = useState(null);
 
-  const raceLore = useMemo(() => window.RACE_LORE || {}, []);
-  const regionMeta = useMemo(() => window.REGION_META || {}, []);
-  const regionBonuses = useMemo(() => window.REGION_BONUSES || {}, []);
+  const raceLore = RACE_LORE;
+  const regionMeta = REGION_META;
+  const regionBonuses = REGION_BONUSES;
 
   const repair = useCallback((v) => repairMojibake(String(v ?? '')), []);
 
-  const getRacePortrait = useCallback((key) =>
-    typeof window.getRacePortrait === 'function' ? window.getRacePortrait(key, 'male') : '',
+  const getPortraitUrl = useCallback((key) =>
+    getRacePortrait(key, 'male') || '',
   []);
 
   const openHeroLore = useCallback(async (heroName) => {
@@ -259,7 +261,7 @@ const RacesPanel = () => {
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {raceEntries.map(([key, r]) => {
-            const portraitUrl = getRacePortrait(key);
+            const portraitUrl = getPortraitUrl(key);
             const cardStyle = r.color
               ? { background: `color-mix(in srgb, ${r.color} 8%, transparent)`, borderLeft: `3px solid ${r.color}`, padding: '16px', borderRadius: 'var(--radius)' }
               : { background: 'var(--bg3)', padding: '16px', borderRadius: 'var(--radius)' };
@@ -340,7 +342,7 @@ const RacesPanel = () => {
             lore={selectedLore}
             regionName={repair((regionMeta[selectedRace] || {}).name || '')}
             regionBonus={regionBonuses[selectedRace] || ''}
-            portraitUrl={getRacePortrait(selectedRace)}
+            portraitUrl={getPortraitUrl(selectedRace)}
             repair={repair}
             onHeroClick={(name) => {
               setSelectedRace(null);

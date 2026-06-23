@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import clsx from 'clsx';
 import { useGameState } from '../../hooks/useGameState.js';
+import { FARM_WORKERS_PER } from '../../utils/economyConstants.js';
 
 // Tracks the previous numeric value for a key and returns a short-lived delta
 // (e.g. "+150", "-50") that fades after a few seconds. Used to flash
@@ -107,15 +108,6 @@ const LAND_COST = {
   bld_walls: 3,
 };
 
-const FARM_WORKERS_PER = {
-  human: 10,
-  dwarf: 8,
-  high_elf: 12,
-  orc: 15,
-  dark_elf: 10,
-  dire_wolf: 12,
-  vampire: 2,
-};
 
 const FARM_YIELD_MULT = {
   human: 1,

@@ -24,7 +24,7 @@ const RACE_ICONS = {
 };
 
 const RankingsPanel = () => {
-  const { state } = useGameState();
+  const { state, setState } = useGameState();
   const [activeTab, setActiveTab] = useState('kingdoms');
   const [search, setSearch] = useState('');
   const [kingdomRows, setKingdomRows] = useState([]);
@@ -71,8 +71,7 @@ const RankingsPanel = () => {
 
       setKingdomRows(kingdoms);
       setAllianceRows(alliances);
-      window.rankingsCache = kingdoms;
-      window.allianceRankingsCache = alliances;
+      setState({ rankingsCache: kingdoms, allianceRankingsCache: alliances });
     } catch (err) {
       console.error('[RankingsPanel] Failed to load rankings:', err);
       setError(err.message || 'Failed to load rankings');
