@@ -161,14 +161,14 @@ function trunc(value) {
 }
 
 function metricClass(extra = '') {
-  return 'metric relative min-w-[110px] rounded-xl border border-white/5 bg-zinc-950/90 px-3 py-2 shadow-[0_12px_24px_rgba(0,0,0,0.25)] transition-transform duration-200 md:min-w-0 md:px-4 md:py-3' + (extra ? ' ' + extra : '');
+  return 'metric relative min-w-[110px] rounded-xl border border-white/5 bg-zinc-950/90 px-3 py-3 shadow-[0_12px_24px_rgba(0,0,0,0.25)] transition-transform duration-200 md:min-w-0 md:px-4 md:py-3' + (extra ? ' ' + extra : '');
 }
 
 const happinessBarOuterClass =
   'relative my-1.5 h-[18px] w-full overflow-hidden rounded bg-[var(--bg2)]';
 const happinessBarInnerClass =
   'h-full rounded bg-gradient-to-r from-red-500 via-yellow-400 via-67% to-green-500 to-green-600 transition-[width] duration-300 ease-in-out';
-const metricSubClass = 'flex w-full justify-between text-xs text-[var(--text2)]';
+const metricSubClass = 'flex w-full justify-between text-[9px] md:text-xs text-[var(--text2)]';
 
 function population(state) {
   return numberValue(state.population ?? state.pop);
