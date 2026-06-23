@@ -64,11 +64,15 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] PR #545 merged cleanly to main.
 - [x] PR #546 merged cleanly to main.
 - [ ] PR #543 is conflicting. Preserve the branch; its shell work is already represented by later Codex slices, so do not delete anything.
-- [ ] PR #544 is conflicting. Preserve the branch; it still contains the remaining Claude panel/socket work and should be rebased or split after the clean PRs land.
+- [ ] PR #544 is conflicting. Preserve the branch; do not force a rebase unless we explicitly decide there is still unique work worth extracting. Its useful follow-up work is already reflected in the cleaner merged line.
 
 ### Current Open Queue
 - [ ] PR #543
 - [ ] PR #544
+
+### Guidance
+- Do not spend time forcing PR #544 through the old cache-shim shape; the useful panel/socket cleanup is already present on the merged line.
+- Keep PR #543 and PR #544 preserved as historical branches unless a future slice specifically needs their remaining deltas.
 
 ## Current Handoff
 
