@@ -7,6 +7,8 @@ import { renderRegionLegend } from './WorldmapLegend.jsx';
 import { fmtShort } from '../../utils/numberFormat.js';
 import { repairMojibake } from '../../utils/repairMojibake.js';
 import { RACE_ICONS } from '../../utils/raceIcons.js';
+import { openKingdomProfile } from './KingdomProfileModal.jsx';
+import { targetFromRankings } from '../../utils/rankingsTarget.js';
 
 export async function loadWorldMap({ setLoading, setError, setMapSvg } = {}) {
   if (typeof setLoading === 'function') setLoading(true);
@@ -26,6 +28,24 @@ export async function loadWorldMap({ setLoading, setError, setMapSvg } = {}) {
     throw err;
   } finally {
     if (typeof setLoading === 'function') setLoading(false);
+  }
+}
+
+async function establishTradeRoute(targetId) {
+  if (!targetId) return;
+  try {
+    const result = await apiCall('/api/kingdom/trade-routes/establish', {
+      method: 'POST',
+      body: { targetId },
+    });
+    if (result.error) {
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.error, 'error');
+      return;
+    }
+    if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Trade route established', 'success');
+  } catch (err) {
+    console.error('[worldmap] establish trade route failed:', err);
+    if (typeof window !== 'undefined' && typeof toast === 'function') toast('Failed to establish trade route', 'error');
   }
 }
 
@@ -109,18 +129,18 @@ const WorldmapPanel = () => {
                 <div className="flex flex-wrap gap-2 mt-3">
                   {!mapCard.isMe ? (
                     <>
-                      <button className="btn text-[11px] px-2 py-1" onClick={() => window.openKingdomProfile(mapCard.kingdom.name)}>
+                      <button className="btn text-[11px] px-2 py-1" onClick={() => openKingdomProfile(mapCard.kingdom.name)}>
                         🤴 Profile
                       </button>
-                      <button className="btn btn-red text-[11px] px-2 py-1" onClick={() => window.targetFromRankings(mapCard.kingdom.id, 'attack')}>
+                      <button className="btn btn-red text-[11px] px-2 py-1" onClick={() => targetFromRankings(mapCard.kingdom.id, 'attack')}>
                         ⚔️ Attack
                       </button>
-                      <button className="btn btn-accent text-[11px] px-2 py-1" onClick={() => window.targetFromRankings(mapCard.kingdom.id, 'spells')}>
+                      <button className="btn btn-accent text-[11px] px-2 py-1" onClick={() => targetFromRankings(mapCard.kingdom.id, 'spells')}>
                         ✨ Spell
                       </button>
                       <div className="w-full text-center mt-2">
                         {mapCard.hasTradingPost ? (
-                          <button className="btn btn-gold text-[11px] px-2 py-1 w-full" onClick={() => window.establishTradeRoute(mapCard.kingdom.id)}>
+                          <button className="btn btn-gold text-[11px] px-2 py-1 w-full" onClick={() => establishTradeRoute(mapCard.kingdom.id)}>
                             🤝 Trade Route (10k GC)
                           </button>
                         ) : (
