@@ -17,6 +17,16 @@ Remove the remaining vanilla shell, hybrid bridge code, and legacy DOM mutation 
 - Claude must complete the socket audit before Codex starts Slice 2.
 - Record FCP/LCP before the `WorldmapRenderer.jsx` slice starts.
 
+## Coordination Protocol
+- We work back and forth in the simplest possible way:
+  - Codex does a slice.
+  - Claude does the next related slice or audit.
+  - Codex responds to Claude’s findings.
+  - Claude responds to Codex’s findings.
+- Keep the handoff explicit in the plan and in PR notes.
+- If a slice depends on the other lane, wait for the gate instead of guessing.
+- If a file or helper is shared, call it out before editing it.
+
 ### Quick Global Searches (Do These First)
 - `document.getElementById`
 - `el(`
