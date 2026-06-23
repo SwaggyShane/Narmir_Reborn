@@ -26,6 +26,7 @@ const LoreModal = ({ isOpen, onClose, title, children }) => {
     </div>
   );
 
+  if (typeof document === 'undefined') return null;
   return createPortal(portal, document.body);
 };
 

@@ -150,7 +150,7 @@ const StatusPanel = () => {
         <div
           id="race-tag-display"
           className="race-tag-block cursor-pointer p-4 bg-bg3 border border-white/5 rounded-lg flex flex-row items-center gap-4 transition-all w-full"
-          onClick={() => { console.log('[StatusPanel] Clicking race, raceKey=', raceKey, 'state.race=', state?.race); openRaceLore(raceKey); }}
+          onClick={() => { openRaceLore(raceKey); }}
           title="Click for race lore"
         >
           {portraitUrl ? (
