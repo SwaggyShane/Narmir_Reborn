@@ -166,7 +166,7 @@ const EconomyPanel = () => {
     const turns = MERC_TURNS[mercTier] || 10;
     const count = Number(mercCount) || 0;
     const total = price * count;
-    return `${fmtShort(total)} GC · ${turns} turns · ${count > 0 ? `${count} ${mercUnit}` : 'select a contract size'}`;
+    return `${fmtShort(total)} GC - ${turns} turns - ${count > 0 ? `${count} ${mercUnit}` : 'select a contract size'}`;
   }, [mercTier, mercCount, mercUnit]);
 
   const tradeLocked = !econData?.market_upgrades?.trading_post;
@@ -531,7 +531,7 @@ const EconomyPanel = () => {
         <div className="card" id="commodity-market-card">
           <div className="card-title" style={{ marginBottom: '8px' }}>📦 Commodity market</div>
           <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '12px' }}>
-            Base prices · your race modifiers applied · prices fluctuate by supply
+            Base prices - your race modifiers applied - prices fluctuate by supply
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 60px 60px', gap: '4px', padding: '4px 0', borderBottom: '1px solid var(--border2)' }}>
             <span style={{ fontSize: '10px', color: 'var(--text3)', textTransform: 'uppercase' }}>Item</span>
@@ -790,7 +790,7 @@ const EconomyPanel = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <div style={{ fontWeight: 700, color: 'var(--gold)' }}>🤝 {r.partner_name}</div>
-                  <div style={{ fontSize: '11px', color: 'var(--text3)' }}>{String(r.partner_race || 'unknown').replace(/_/g, ' ')} · {fmtShort(r.partner_land)} acres</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text3)' }}>{String(r.partner_race || 'unknown').replace(/_/g, ' ')} - {fmtShort(r.partner_land)} acres</div>
                 </div>
                 <div style={{ textAlign: 'right', margin: '0 16px' }}>
                   <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--green)' }}>+{fmtShort(Math.floor((r.stability || 0) * 2.5))} GC / turn</div>
