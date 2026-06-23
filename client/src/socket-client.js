@@ -62,34 +62,75 @@ function loadSocketIoClient() {
   return ioLoaderPromise;
 }
 
+export function createMessageData(data, mode) {
+  const styles = {
+    row: {
+      width: "100%",
+      display: "flex",
+      flexDirection: "column",
+      gap: "2px",
+      padding: "6px 0",
+      wordBreak: "break-word",
+    },
+    header: {
+      display: "flex",
+      alignItems: "center",
+      gap: "6px",
+      fontSize: "12px",
+      fontWeight: "600",
+      lineHeight: "1.3",
+    },
+    name: {
+      color: data?.chatColor || "var(--text)",
+    },
+    body: {
+      fontSize: "13px",
+      lineHeight: "1.45",
+      color: "var(--text2)",
+    },
+  };
+
+  if (mode === "system") {
+    styles.header.fontWeight = "700";
+    styles.header.color = "var(--gold)";
+    styles.body.color = "var(--text3)";
+  } else if (mode === "whisper") {
+    styles.body.color = "var(--accent1)";
+  } else if (data?.type === "me" || String(data?.message || "").startsWith("/me ")) {
+    styles.header.fontStyle = "italic";
+    styles.body.fontStyle = "italic";
+  }
+
+  return {
+    id: data?.id,
+    from: repairMojibake(data?.from || data?.username || "Unknown"),
+    message: repairMojibake(data?.message || ""),
+    isMod: data?.isMod || false,
+    type: mode,
+    sent: data?.sent || false,
+    styles,
+  };
+}
+
 function createMessageRow(data, mode) {
+  const messageData = createMessageData(data, mode);
   const row = document.createElement("div");
   row.className = "chat-message-row";
-  row.style.width = "100%";
-  row.style.display = "flex";
-  row.style.flexDirection = "column";
-  row.style.gap = "2px";
-  row.style.padding = "6px 0";
-  row.style.wordBreak = "break-word";
+  Object.assign(row.style, messageData.styles.row);
 
-  if (data?.id !== undefined && data?.id !== null) {
-    row.id = `cmsg-${data.id}`;
+  if (messageData.id !== undefined && messageData.id !== null) {
+    row.id = `cmsg-${messageData.id}`;
   }
 
   const header = document.createElement("div");
-  header.style.display = "flex";
-  header.style.alignItems = "center";
-  header.style.gap = "6px";
-  header.style.fontSize = "12px";
-  header.style.fontWeight = "600";
-  header.style.lineHeight = "1.3";
+  Object.assign(header.style, messageData.styles.header);
 
   const name = document.createElement("span");
-  name.textContent = repairMojibake(data?.from || data?.username || "Unknown");
-  name.style.color = data?.chatColor || "var(--text)";
+  name.textContent = messageData.from;
+  Object.assign(name.style, messageData.styles.name);
   header.appendChild(name);
 
-  if (data?.isMod) {
+  if (messageData.isMod) {
     const mod = document.createElement("span");
     mod.textContent = "MOD";
     mod.className = "badge badge-green";
@@ -97,30 +138,17 @@ function createMessageRow(data, mode) {
     header.appendChild(mod);
   }
 
-  if (mode === "whisper") {
+  if (messageData.type === "whisper") {
     const whisper = document.createElement("span");
-    whisper.textContent = data?.sent ? "whisper sent" : "whisper";
+    whisper.textContent = messageData.sent ? "whisper sent" : "whisper";
     whisper.style.fontSize = "10px";
     whisper.style.color = "var(--text3)";
     header.appendChild(whisper);
   }
 
   const body = document.createElement("div");
-  body.style.fontSize = "13px";
-  body.style.lineHeight = "1.45";
-  body.style.color = "var(--text2)";
-  body.textContent = repairMojibake(data?.message || "");
-
-  if (mode === "system") {
-    header.style.fontWeight = "700";
-    header.style.color = "var(--gold)";
-    body.style.color = "var(--text3)";
-  } else if (mode === "whisper") {
-    body.style.color = "var(--accent1)";
-  } else if (data?.type === "me" || String(data?.message || "").startsWith("/me ")) {
-    header.style.fontStyle = "italic";
-    body.style.fontStyle = "italic";
-  }
+  body.textContent = messageData.message;
+  Object.assign(body.style, messageData.styles.body);
 
   row.appendChild(header);
   row.appendChild(body);
@@ -213,6 +241,28 @@ export function appendWhisperMessage(listId, from, message, sent) {
   return row;
 }
 
+export function buildOnlineListData(users = []) {
+  return users.map(user => ({
+    username: repairMojibake(user?.username || "Unknown"),
+    chatColor: user?.chatColor || "var(--text)",
+    isMod: user?.isMod || false,
+    styles: {
+      item: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "8px",
+        padding: "6px 10px",
+        fontSize: "12px",
+        color: "var(--text)",
+      },
+      name: {
+        color: user?.chatColor || "var(--text)",
+      },
+    },
+  }));
+}
+
 export function renderOnlineList(users = []) {
   const list = document.getElementById("chat-online-list");
   const count = document.getElementById("chat-online-count");
@@ -230,22 +280,17 @@ export function renderOnlineList(users = []) {
     return users;
   }
 
-  users.forEach((user) => {
+  const userItems = buildOnlineListData(users);
+  userItems.forEach((userItem) => {
     const item = document.createElement("div");
-    item.style.display = "flex";
-    item.style.alignItems = "center";
-    item.style.justifyContent = "space-between";
-    item.style.gap = "8px";
-    item.style.padding = "6px 10px";
-    item.style.fontSize = "12px";
-    item.style.color = "var(--text)";
+    Object.assign(item.style, userItem.styles.item);
 
     const name = document.createElement("span");
-    name.textContent = repairMojibake(user?.username || "Unknown");
-    name.style.color = user?.chatColor || "var(--text)";
+    name.textContent = userItem.username;
+    Object.assign(name.style, userItem.styles.name);
     item.appendChild(name);
 
-    if (user?.isMod) {
+    if (userItem.isMod) {
       const mod = document.createElement("span");
       mod.textContent = "MOD";
       mod.className = "badge badge-green";
@@ -301,5 +346,7 @@ if (typeof window !== "undefined") {
     appendWhisperMessage,
     sendGlobalChat,
     sendDirectMessage,
+    createMessageData,
+    buildOnlineListData,
   };
 }

@@ -1,85 +1,149 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { repairMojibake } from '../../utils/repairMojibake.js';
 import {
   getSocket,
-  renderGlobalChatHistory,
-  renderOnlineList,
-  appendChatMessage,
-  appendSystemMessage,
-  appendWhisperMessage,
+  loadGlobalChatHistory,
+  createMessageData,
+  buildOnlineListData,
   sendGlobalChat as emitGlobalChat,
 } from '../../socket-client';
 
+const MessageRow = ({ messageData }) => {
+  if (!messageData) return null;
+
+  const { from, message, isMod, type, sent, styles } = messageData;
+  const isItalic = type === 'whisper' || message?.startsWith('/me ');
+
+  return (
+    <div className="chat-message-row" style={styles.row}>
+      <div style={styles.header}>
+        <span style={styles.name}>{from}</span>
+        {isMod && <span className="badge badge-green" style={{ fontSize: '10px' }}>MOD</span>}
+        {type === 'whisper' && (
+          <span style={{ fontSize: '10px', color: 'var(--text3)' }}>
+            {sent ? 'whisper sent' : 'whisper'}
+          </span>
+        )}
+      </div>
+      <div style={{ ...styles.body, fontStyle: isItalic ? 'italic' : 'normal' }}>
+        {message}
+      </div>
+    </div>
+  );
+};
+
+const OnlineUsersList = ({ users }) => {
+  if (!users || users.length === 0) {
+    return (
+      <div style={{ fontSize: '12px', color: 'var(--text3)', padding: '8px 10px' }}>
+        No one online
+      </div>
+    );
+  }
+
+  return users.map((user, idx) => (
+    <div key={idx} style={user.styles.item}>
+      <span style={user.styles.name}>{user.username}</span>
+      {user.isMod && <span className="badge badge-green" style={{ fontSize: '10px' }}>MOD</span>}
+    </div>
+  ));
+};
+
 const GlobalchatPanel = () => {
+  const [messages, setMessages] = useState([]);
+  const [onlineUsers, setOnlineUsers] = useState([]);
+
   useEffect(() => {
     let cancelled = false;
     let socket = null;
     const handlers = {};
 
+    const addMessage = (data, type = 'normal') => {
+      const msgData = createMessageData(data, type);
+      setMessages(prev => [...prev, msgData]);
+    };
+
     const boot = async () => {
       try {
         socket = await getSocket();
-        if (!cancelled) await renderGlobalChatHistory();
+        if (!cancelled) {
+          const history = await loadGlobalChatHistory();
+          if (!cancelled) {
+            const msgList = history.map(msg => createMessageData(msg, msg.type));
+            setMessages(msgList);
+          }
+        }
 
         handlers.connect = () => {
-          renderGlobalChatHistory().catch((error) => {
+          loadGlobalChatHistory().then(history => {
+            if (!cancelled) {
+              const msgList = history.map(msg => createMessageData(msg, msg.type));
+              setMessages(msgList);
+            }
+          }).catch((error) => {
             console.warn('[chat] Failed to load history:', error);
           });
         };
 
         handlers.message = (data) => {
           if (data.room === 'global' || !data.room) {
-            appendChatMessage('global-chat-messages', data);
+            addMessage(data, 'normal');
 
             const panel = document.getElementById('globalchat');
             if (!panel || panel.style.display === 'none') {
               window.dispatchEvent(new CustomEvent('narmir:chat-badge-alert'));
             }
           } else if (data.room === 'alliance') {
-            appendChatMessage('alliance-chat', data);
+            // Alliance messages would go to a separate panel/list
+            console.log('[chat] Alliance message:', data);
           }
         };
 
         handlers.system = (data) => {
-          appendSystemMessage('global-chat-messages', data.message);
+          addMessage({ message: data.message }, 'system');
         };
 
         handlers.delete = (data) => {
-          const el = document.getElementById(`cmsg-${data.id}`);
-          if (el) el.remove();
+          setMessages(prev => prev.filter(msg => msg.id !== data.id));
         };
 
         handlers.whisper = (data) => {
-          appendWhisperMessage('global-chat-messages', data.from, data.message, false);
+          addMessage({ from: data.from, message: data.message, sent: false }, 'whisper');
           window.dispatchEvent(new CustomEvent('narmir:chat-badge-alert'));
-          if (typeof window !== 'undefined' && typeof toast === 'function') toast(`PM from ${repairMojibake(data.from || '')}`, 'success');
+          if (typeof window !== 'undefined' && typeof toast === 'function') {
+            toast(`PM from ${repairMojibake(data.from || '')}`, 'success');
+          }
         };
 
         handlers.whisperSent = (data) => {
-          appendWhisperMessage('global-chat-messages', data.to, data.message, true);
+          addMessage({ from: data.to, message: data.message, sent: true }, 'whisper');
         };
 
         handlers.kicked = (data) => {
-          appendSystemMessage('global-chat-messages', `You were kicked. ${data.reason || ''}`);
-          if (typeof window !== 'undefined' && typeof toast === 'function') toast(`Kicked: ${data.reason || ''}`, 'error');
+          addMessage({ message: `You were kicked. ${data.reason || ''}` }, 'system');
+          if (typeof window !== 'undefined' && typeof toast === 'function') {
+            toast(`Kicked: ${data.reason || ''}`, 'error');
+          }
         };
 
         handlers.banned = (data) => {
-          appendSystemMessage('global-chat-messages', `You are banned from chat. ${data.reason || ''}`);
-          if (typeof window !== 'undefined' && typeof toast === 'function') toast(`Chat banned: ${data.reason || ''}`, 'error');
+          addMessage({ message: `You are banned from chat. ${data.reason || ''}` }, 'system');
+          if (typeof window !== 'undefined' && typeof toast === 'function') {
+            toast(`Chat banned: ${data.reason || ''}`, 'error');
+          }
         };
 
         handlers.online = (data) => {
-          renderOnlineList(data.users || []);
+          const userList = buildOnlineListData(data.users || []);
+          setOnlineUsers(userList);
         };
 
         handlers.chatClear = () => {
-          const list = document.getElementById('global-chat-messages');
-          if (list) list.innerHTML = '';
+          setMessages([]);
         };
 
         handlers.globalMessage = (data) => {
-          appendSystemMessage('global-chat-messages', data.message || 'A global event occurred.');
+          addMessage({ message: data.message || 'A global event occurred.' }, 'system');
         };
 
         socket.on('connect', handlers.connect);
@@ -101,11 +165,15 @@ const GlobalchatPanel = () => {
     boot();
 
     // Poll for new messages every 5s to catch Discord relay messages
-    // that are inserted directly into DB without a socket broadcast
     const interval = setInterval(() => {
       const panel = document.getElementById('globalchat');
       if (panel && panel.style.display !== 'none') {
-        renderGlobalChatHistory().catch((error) => {
+        loadGlobalChatHistory().then(history => {
+          if (!cancelled) {
+            const msgList = history.map(msg => createMessageData(msg, msg.type));
+            setMessages(msgList);
+          }
+        }).catch((error) => {
           console.warn('[chat] Failed to refresh global chat history:', error);
         });
       }
@@ -139,7 +207,9 @@ const GlobalchatPanel = () => {
 
   const sendGlobalChat = async () => {
     const ack = await emitGlobalChat();
-    if (ack && ack.error && toast) toast(ack.error, 'error');
+    if (ack && ack.error && typeof toast === 'function') {
+      toast(ack.error, 'error');
+    }
   };
 
   return (
@@ -148,12 +218,17 @@ const GlobalchatPanel = () => {
         {/* Messages area */}
         <div className="chat-messages-area flex min-h-0 flex-col">
           <div
-            id="global-chat-messages"
             className="flex min-h-0 flex-1 flex-col gap-px overflow-x-hidden overflow-y-auto px-4 py-3 break-words"
           >
-            <div className="py-10 text-center text-[13px] text-[var(--text3)]">
-              Connecting to chat...
-            </div>
+            {messages.length === 0 ? (
+              <div className="py-10 text-center text-[13px] text-[var(--text3)]">
+                Connecting to chat...
+              </div>
+            ) : (
+              messages.map((msg, idx) => (
+                <MessageRow key={msg.id || idx} messageData={msg} />
+              ))
+            )}
           </div>
           <div className="shrink-0 border-t border-white/5 bg-zinc-900/80 px-4 py-3">
             <div className="flex items-center gap-2">
@@ -184,12 +259,10 @@ const GlobalchatPanel = () => {
             <div className="text-[11px] font-bold uppercase tracking-[0.5px] text-[var(--text3)]">
               Online
             </div>
-            <span id="chat-online-count" className="badge badge-green">0</span>
+            <span className="badge badge-green">{onlineUsers.length}</span>
           </div>
-          <div id="chat-online-list" className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
-            <div className="px-2 py-2 text-[12px] text-[var(--text3)]">
-              No one online
-            </div>
+          <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
+            <OnlineUsersList users={onlineUsers} />
           </div>
         </div>
       </div>
