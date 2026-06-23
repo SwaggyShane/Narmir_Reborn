@@ -12,6 +12,7 @@ import { switchTab } from '../../utils/panelNav.js';
 import { registerWarfareTab } from '../../utils/warfareTabs.js';
 import { RACE_ICONS } from '../../utils/raceIcons.js';
 import { playGameSound } from '../../utils/audio.js';
+import BattleReportModal from './BattleReportModal.jsx';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -157,6 +158,7 @@ function TargetListSection({ targets, selected, onSelect, searchQ, onSearchChang
 const WarfarePanel = () => {
   const { state, setState } = useGameState();
   const [activeTab, setActiveTab] = useState('attack');
+  const [battleReport, setBattleReport] = useState(null);
 
   // target data
   const [targets, setTargets] = useState([]);
@@ -515,7 +517,7 @@ const WarfarePanel = () => {
     if (r.bullyMsg) rows.push(['⚠️ Penalty', r.bullyMsg]);
 
     applyGameMutation(result, { reason: 'attack' });
-    window.showBattleReport?.({
+    setBattleReport({
       type: 'Military attack',
       target: attackTarget.name,
       win: r.win,
@@ -679,6 +681,7 @@ const WarfarePanel = () => {
   }, [allianceError, allianceIntel, loadingAllianceIntel]);
 
   return (
+    <>
     <div id="warfare" className="panel hidden">
       <div className="flex flex-wrap gap-1 border-b-2 border-[var(--border2)] mb-4 pb-1">
         <button className={clsx('base-btn admin-tab rounded-none', activeTab === 'attack' && 'active')} onClick={() => handleTabClick('attack')}>⚔️ Attack</button>
@@ -837,6 +840,8 @@ const WarfarePanel = () => {
         </div>
       </div>
     </div>
+    <BattleReportModal data={battleReport} onClose={() => setBattleReport(null)} />
+    </>
   );
 };
 
