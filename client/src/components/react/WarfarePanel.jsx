@@ -238,7 +238,7 @@ const WarfarePanel = () => {
       const result = await apiCall('/api/kingdom/war-log');
       if (result?.error) throw new Error(result.error);
       const rows = Array.isArray(result) ? result : Array.isArray(result?.rows) ? result.rows : [];
-      window.warLogCache = rows;
+      setState({ warLogCache: rows });
       setWarLogRows(rows);
     } catch (err) {
       console.error('[WarfarePanel] Failed to load war log:', err);

@@ -2,6 +2,7 @@
 import { apiCall } from '../../utils/api.js';
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import { gameStateManager } from '../../GameStateManager.js';
+import { getSocket } from '../../socket-client.js';
 
 let authApi = null;
 
@@ -51,11 +52,9 @@ async function finishAuthSession(fallbackUsername) {
 
   await loadKingdom();
 
-  if (typeof window !== 'undefined' && typeof window.initSocket === 'function') {
-    window.initSocket().catch(function (err) {
-      console.warn('[socket] Failed to initialize after auth:', err);
-    });
-  }
+  getSocket().catch(function (err) {
+    console.warn('[socket] Failed to initialize after auth:', err);
+  });
 }
 
 async function submitAuthRequest(endpoint, payload) {

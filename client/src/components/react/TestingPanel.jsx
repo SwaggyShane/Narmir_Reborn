@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import React, { useState, useCallback, useEffect } from 'react';
+import { getSocket } from '../../socket-client.js';
 
 const TEST_DESCRIPTIONS = {
   // Economy
@@ -209,11 +210,13 @@ const TestingPanel = () => {
     fetchResults();
 
     // Listen for real-time updates via WebSocket
-    if (window.socket) {
-      window.socket.on('test-result-update', (data) => {
-        setCollaborativeResults(prev => [data, ...prev]);
-      });
-    }
+    let cleanup = () => {};
+    getSocket().then((sock) => {
+      const handler = (data) => setCollaborativeResults(prev => [data, ...prev]);
+      sock.on('test-result-update', handler);
+      cleanup = () => sock.off('test-result-update', handler);
+    }).catch(() => {});
+    return () => cleanup();
   }, []);
 
   const saveStatus = useCallback((newStatus) => {

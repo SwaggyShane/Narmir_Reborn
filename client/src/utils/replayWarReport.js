@@ -1,6 +1,7 @@
 import { apiCall } from './api.js';
 import { toast } from './toast.js';
 import { repairMojibake } from './repairMojibake.js';
+import { gameStateManager } from '../GameStateManager.js';
 
 const escapeHtml = (value) =>
   String(value ?? '')
@@ -12,7 +13,7 @@ const escapeHtml = (value) =>
 
 export const replayWarReport = async (id) => {
   try {
-    const warLogCache = Array.isArray(window.warLogCache) ? window.warLogCache : [];
+    const warLogCache = Array.isArray(gameStateManager.getState().warLogCache) ? gameStateManager.getState().warLogCache : [];
     let row = warLogCache.find((r) => r.id == id);
 
     if (!row) {
