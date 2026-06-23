@@ -86,6 +86,8 @@ Use that inventory as the baseline progress metric for the remaining work.
 - ✅ Fixed EconomyPanel.jsx merge conflict markers (blocking build on both branches)
 - ✅ All review feedback addressed: input focus guards, server data sync, optimistic update safety, performance (removed key-induced remounts)
 - ✅ Both PRs merged to main with green CI checks
+- ✅ EconomyPanel.jsx DOM mutations removed (PR #552): 27 → 1; all handlers wired; bank/tax/trade fully React-owned
+- ✅ EconomyPanel ledger follow-up (PR #554): /economy/overview now returns real income/upkeep breakdown; financial ledger shows live values; trade route normalization and SUPPORT_CAP_RACE + barracksTrainingMult accuracy fixes from Gemini review applied
 
 ### Claude Lane — ✅ All tractable items complete
 - [x] All lanes from prior sessions complete — see PR #546 for full scope
@@ -124,7 +126,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [ ] Next: finish the last clean helper seams still hanging off `client/index.html`, then move to the remaining React panel / shell-helper cleanup in any other panels still using shell-era helpers.
 - [ ] Ongoing: confirm `client/index.html` is still boot-only after Slices 1-18.
 
-### Current Inventory Snapshot (updated 2026-06-23 post-PR #552)
+### Current Inventory Snapshot (updated 2026-06-23 post-PR #554)
 - document.getElementById: 179 total (134 in index.html [Codex target], 45 in client/src/)
   - Biggest src concentrations: WarfarePanel 19, panelNav.js 5, socket-client.js 5, GlobalchatPanel 4, MarketPanel 2; EconomyPanel down to 1 (renderUpgrades export for DefensePanel)
 - el(: 20 in index.html (local variable pattern, not a helper); ~18 in client/src/
@@ -197,6 +199,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] StudiesPanel.jsx (14 DOM mutations) — ✅ COMPLETE (PR #549): all removed; controlled inputs; JSX rendering; useRef focus guards; server sync
 - [x] replayWarReport.js (21 DOM mutations) — ✅ COMPLETE (PR #550): ReplayModal.jsx React portal; vanilla bridge function and replay-modal div removed from index.html
 - [x] EconomyPanel.jsx (27 → 1 DOM mutations) — ✅ COMPLETE (PR #552): converted all 27 getElementById calls to React state; removed dead exports (loadEconomy, renderCommodityMarket, renderActiveMercs); replaced innerHTML upgrade containers with UpgradesList component; bank visibility now driven by state.bld_vaults; tax rate initialized from state.tax; applyGameMutation/syncUI wired to all mutating handlers; 1 getElementById remains in exported renderUpgrades() which DefensePanel imports directly
+- [x] EconomyPanel ledger follow-up — ✅ COMPLETE (PR #554): extended /economy/overview to compute and return taxIncome, marketIncome, tradeRouteIncome, totalIncome, troopUpkeep, netIncome; uses loadTradeRoutes() helper for normalization; applies SUPPORT_CAP_RACE multipliers and fragmentBonusManager barracks discount to match processTurn exactly; financial ledger in EconomyPanel now shows real values instead of hardcoded zeros
 
 ### 4. Clean up the remaining legacy CSS surfaces — ✅ COMPLETE (audit)
 - [x] Review files still importing from `client/src/css/` — only `forum.css` exists and is actively used by main.js and Portal.jsx; nothing to remove
