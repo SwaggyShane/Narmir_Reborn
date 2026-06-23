@@ -161,19 +161,19 @@
   }
 
   .metric {
-    @apply bg-bg2 border border-white/5 rounded px-1.5 py-0.5 transition-all flex flex-col gap-0 justify-center flex-1 min-w-[60px] min-h-[48px] md:min-h-[30px];
+    @apply bg-bg2 border border-white/5 rounded px-1.5 py-0.5 transition-all flex flex-col gap-0 justify-center flex-1 min-w-[60px] min-h-[48px] md:min-h-0 md:flex-none;
   }
 
   .metric .lbl {
-    @apply text-[10px] md:text-2xs text-text3 uppercase tracking-wider font-black m-0 leading-none;
+    @apply text-[10px] md:text-[14px] text-text3 uppercase tracking-wider font-black m-0 leading-none;
   }
 
   .metric .val {
-    @apply text-sm md:text-xs font-bold text-text m-0 leading-none whitespace-nowrap overflow-hidden text-ellipsis;
+    @apply text-sm md:text-xs font-bold text-text m-0 leading-none whitespace-nowrap overflow-hidden text-ellipsis md:text-right;
   }
 
   .metric .sub {
-    @apply text-[9px] md:text-3xs text-text3 m-0 flex items-center gap-0.5 opacity-80 leading-none;
+    @apply text-[9px] md:text-[8px] text-text3 m-0 flex items-center gap-0.5 opacity-80 leading-none md:justify-end;
   }
 
   .metric.gold .val {
@@ -279,7 +279,8 @@
   #kd-top .metrics {
     flex-direction: column;
     flex: 1;
-    justify-content: space-around;
+    justify-content: space-evenly;
+    overflow-y: auto;
   }
 }
 
