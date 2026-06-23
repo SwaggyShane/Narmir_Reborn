@@ -53,13 +53,12 @@ Use that inventory as the baseline progress metric for the remaining work.
 
 ## Current Handoff
 
-### Claude Message
-- Claude, take the remaining `event:chat_clear` exception and fix it in `client/src/hooks/useSocket.js` and `client/src/components/react/GlobalchatPanel.jsx`.
-- Remove the direct DOM-clearing path from `client/src/hooks/useSocket.js`.
-- Keep the clear handling in `client/src/components/react/GlobalchatPanel.jsx`, but make it React-owned only: no `document.getElementById`, no `.innerHTML =`, no direct DOM wiping.
-- If the panel cannot own it cleanly in one step, leave the panel handler in place and move the actual clear into React state/render logic before merging.
-- Do not touch any other socket events in this slice.
-- Build it, smoke test it, and then update this doc with the exact files changed and whether chat still clears correctly.
+### Claude Message — ✅ COMPLETE (PR #544)
+- ✅ Fixed `event:chat_clear` in `client/src/hooks/useSocket.js` and `client/src/components/react/GlobalchatPanel.jsx`
+- ✅ Removed direct DOM-clearing from useSocket.js (was: `getElementById('global-chat-messages').innerHTML = ''`)
+- ✅ Implemented React-owned clear in GlobalchatPanel: `setMessages([])`
+- ✅ All socket listeners now React-safe — zero DOM mutations in socket flow
+- ✅ Built and smoke tested successfully
 
 ### Claude Next
 - [x] Check for DOM mutations inside `GameStateManager` - clean, no mutations.
