@@ -51,15 +51,17 @@ const TrainingPanel = () => {
         try { return JSON.parse(state.training_allocation || '{}'); } catch { return {}; }
       })()
       : (state?.training_allocation || {});
-    setTrainingAllocations(
-      TROOP_TYPES.reduce((acc, unit) => ({ ...acc, [unit]: alloc[unit] || 0 }), {}),
-    );
+    const nextAllocations = {};
+    TROOP_TYPES.forEach((unit) => {
+      nextAllocations[unit] = alloc[unit] || 0;
+    });
+    setTrainingAllocations(nextAllocations);
   };
 
   const setTrainingMax = (unit) => {
     const capacity = (state?.bld_training || 0) * 100;
     const allocated = getAllocatedTraining();
-    const current = getTrainingValue(unit);
+    const current = Number(getTrainingValue(unit)) || 0;
     const available = capacity - allocated + current;
     setTrainingValue(unit, Math.max(0, Math.min(available, state?.[unit] || 0)));
   };
@@ -67,12 +69,11 @@ const TrainingPanel = () => {
   const distributeTrainingEvenly = () => {
     const capacity = (state?.bld_training || 0) * 100;
     const each = Math.floor(capacity / TROOP_TYPES.length);
-    setTrainingAllocations(
-      TROOP_TYPES.reduce((acc, unit) => ({
-        ...acc,
-        [unit]: Math.min(each, state?.[unit] || 0),
-      }), {}),
-    );
+    const nextAllocations = {};
+    TROOP_TYPES.forEach((unit) => {
+      nextAllocations[unit] = Math.min(each, state?.[unit] || 0);
+    });
+    setTrainingAllocations(nextAllocations);
   };
 
   const saveTrainingAllocation = async () => {
@@ -163,13 +164,13 @@ const TrainingPanel = () => {
               Troop Training
             </div>
             <div className="text-[12px] text-[var(--text3)]">
-              Training fields: <span className="text-text">{fmt(state?.bld_training || 0)}</span>
-              {' · '}Capacity:{' '}
+              {'Training fields: '}<span className="text-text">{fmt(state?.bld_training || 0)}</span>
+              {' - Capacity: '}
               <span style={{ color: totalAllocated > capacity ? 'var(--red)' : 'var(--gold)' }}>
                 {fmt(capacity)}
               </span>
-              {' '}troops/turn · Weapons: <span className="text-text">{fmt(state?.weapons_stockpile || 0)}</span>
-              {' · '}Armor: <span className="text-text">{fmt(state?.armor_stockpile || 0)}</span>
+              {' troops/turn - Weapons: '}<span className="text-text">{fmt(state?.weapons_stockpile || 0)}</span>
+              {' - Armor: '}<span className="text-text">{fmt(state?.armor_stockpile || 0)}</span>
             </div>
           </div>
           <div className="flex gap-2">
