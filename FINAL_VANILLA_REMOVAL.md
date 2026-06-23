@@ -83,17 +83,19 @@ Use that inventory as the baseline progress metric for the remaining work.
 - ✅ All review feedback addressed: input focus guards, server data sync, optimistic update safety, performance (removed key-induced remounts)
 - ✅ Both PRs merged to main with green CI checks
 
-### Claude Next
+### Claude Lane — ✅ All tractable items complete
 - [x] All lanes from prior sessions complete — see PR #546 for full scope
-- [x] WarfarePanel globals sweep — ✅ COMPLETE (in PR #546): all 16 remaining globals resolved; 1 deferred (showBattleReport, live vanilla)
+- [x] WarfarePanel globals sweep — ✅ COMPLETE (in PR #546): all 16 remaining globals resolved
 - [x] MarketPanel window.targets — ✅ COMPLETE (in PR #546)
-- [x] showBattleReport modal — ✅ COMPLETE (in PR #546): BattleReportModal.jsx React portal; no more window.showBattleReport in WarfarePanel
-- [x] EconomyPanel upgrade rendering — ✅ COMPLETE (PR #544): UpgradesList.jsx component + economyUpgrades.js module; all callIfAvailable calls removed
-- [ ] AlliancesPanel: deferred; alliance backend not yet implemented
+- [x] showBattleReport modal — ✅ COMPLETE (in PR #546): BattleReportModal.jsx React portal
+- [x] EconomyPanel upgrade rendering — ✅ COMPLETE (PR #544): UpgradesList.jsx + economyUpgrades.js; all callIfAvailable removed
 - [x] CSS: no action needed — audit found only forum.css, all active
-- [x] TrainingPanel.jsx — ✅ COMPLETE: removed all 13 DOM mutations; fixed broken Max/Distribute buttons (were reading non-existent `ta-${unit}` DOM IDs); added missing toast import; race bonus + capacity color now inline React
-- [x] StudiesPanel.jsx — ✅ COMPLETE (PR #549): removed all 14 DOM mutations; converted mage allocation inputs to controlled state; replaced updateFocusPreview innerHTML builder with JSX rendering; removed getMageInputValue/setMageInputValue helper functions; replaced mageUiTick/refreshMageUi with direct state setters; focus display now inline React
-- [ ] **NEXT**: Remaining panels with DOM mutations (if any identified)
+- [x] TrainingPanel.jsx — ✅ COMPLETE (PR #548): removed all 13 DOM mutations; fixed broken Max/Distribute buttons; added toast import
+- [x] StudiesPanel.jsx — ✅ COMPLETE (PR #549): removed all 14 DOM mutations; controlled inputs; JSX rendering; useRef focus guards; server sync
+
+**Deferred / blocked:**
+- [ ] AlliancesPanel: deferred; alliance backend not yet implemented
+- [ ] replayWarReport.js (21 DOM mutations): imperative renderer, needs full React rewrite — review before starting
 
 ### Codex Next
 - [x] Slice 1: Kill the shell in `client/index.html` — ✅ COMPLETE
