@@ -10,6 +10,13 @@ import { fmtShort } from '../../utils/numberFormat.js';
 import { toast } from '../../utils/toast.js';
 import { playGameSound } from '../../utils/audio.js';
 import { FARM_WORKERS_PER, COMMODITY_VALUES, COMMODITY_RACE_DISCOUNT } from '../../utils/economyConstants.js';
+import { populateTradeTargets } from './MarketPanel.jsx';
+import {
+  FARM_UPGRADES,
+  GRANARY_UPGRADES,
+  MARKET_UPGRADES,
+  TAVERN_UPGRADES,
+} from '../../utils/economyUpgrades.js';
 
 function getState() {
   return gameStateManager.getState();
@@ -23,14 +30,6 @@ function escapeHtmlValue(value) {
     '"': '&quot;',
     "'": '&#39;',
   })[ch]);
-}
-
-function callIfAvailable(name, ...args) {
-  const fn = typeof window !== 'undefined' ? window[name] : null;
-  if (typeof fn === 'function') {
-    return fn(...args);
-  }
-  return undefined;
 }
 
 export async function loadEconomy() {
@@ -88,14 +87,14 @@ export async function loadEconomy() {
   if (el('econ-taverns')) el('econ-taverns').textContent = fmt(state.bld_taverns || 0);
   if (el('econ-entertainment')) el('econ-entertainment').textContent = '+' + fmt(data.tavernBonus || 0) + '/turn';
 
-  callIfAvailable('__renderUpgradesImpl', 'farm', window.FARM_UPGRADES, data.farm_upgrades || {}, 'farm-upgrade-list');
-  callIfAvailable('__renderUpgradesImpl', 'granary', window.GRANARY_UPGRADES, data.granary_upgrades || {}, 'granary-page-upgrade-list');
-  callIfAvailable('__renderUpgradesImpl', 'market', window.MARKET_UPGRADES, data.market_upgrades || {}, 'market-upgrade-list');
-  callIfAvailable('__renderUpgradesImpl', 'tavern', window.TAVERN_UPGRADES, data.tavern_upgrades || {}, 'tavern-upgrade-list');
+  renderUpgrades('farm', FARM_UPGRADES, data.farm_upgrades || {}, 'farm-upgrade-list');
+  renderUpgrades('granary', GRANARY_UPGRADES, data.granary_upgrades || {}, 'granary-page-upgrade-list');
+  renderUpgrades('market', MARKET_UPGRADES, data.market_upgrades || {}, 'market-upgrade-list');
+  renderUpgrades('tavern', TAVERN_UPGRADES, data.tavern_upgrades || {}, 'tavern-upgrade-list');
 
-  callIfAvailable('__renderCommodityMarketImpl', data.market_upgrades || {});
-  callIfAvailable('__renderActiveMercsImpl', data.mercenaries || []);
-  callIfAvailable('__populateTradeTargetsImpl');
+  renderCommodityMarket(data.market_upgrades || {});
+  renderActiveMercs(data.mercenaries || []);
+  populateTradeTargets();
 }
 
 export function renderUpgrades(category, defs, owned, containerId) {
@@ -156,7 +155,7 @@ export function renderUpgrades(category, defs, owned, containerId) {
         '</div>' +
         '<div style="font-size:11px;color:var(--text3)">' +
         def.desc +
-        ' · ' +
+        ' - ' +
         costStr +
         '</div></div>' +
         statusBadge +
@@ -435,7 +434,7 @@ const EconomyPanel = () => {
         <div style="display:flex; justify-content:space-between; align-items:center">
           <div>
             <div style="font-weight:700; color:var(--gold)">🤝 ${escapeHtml(r.partner_name)}</div>
-            <div style="font-size:11px; color:var(--text3)">${escapeHtml(String(r.partner_race || 'unknown').replace(/_/g, ' '))} · ${fmtShort(r.partner_land)} acres</div>
+            <div style="font-size:11px; color:var(--text3)">${escapeHtml(String(r.partner_race || 'unknown').replace(/_/g, ' '))} - ${fmtShort(r.partner_land)} acres</div>
           </div>
           <div style="text-align:right; margin: 0 16px">
             <div style="font-size:14px; font-weight:700; color:var(--green)">+${fmtShort(Math.floor((r.stability || 0) * 2.5))} GC / turn</div>
@@ -500,7 +499,7 @@ const EconomyPanel = () => {
     const total = price * count;
     const preview = document.getElementById('merc-preview');
     if (preview) {
-      preview.textContent = `${fmtShort(total)} GC · ${turns} turns · ${count > 0 ? `${count} ${unitType}` : 'select a contract size'}`;
+      preview.textContent = `${fmtShort(total)} GC - ${turns} turns - ${count > 0 ? `${count} ${unitType}` : 'select a contract size'}`;
     }
   }, [fmtShort]);
   const handleUpdateMercPreview = () => {
@@ -862,7 +861,7 @@ const EconomyPanel = () => {
         <div className="card" id="commodity-market-card">
           <div className="card-title" style={{ marginBottom: '8px' }}>📦 Commodity market</div>
           <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '12px' }}>
-            Base prices · your race modifiers applied · prices fluctuate by supply
+            Base prices - your race modifiers applied - prices fluctuate by supply
           </div>
           <div id="commodity-list"></div>
         </div>
@@ -989,7 +988,7 @@ const EconomyPanel = () => {
               <button className="base-btn" style={{ fontSize: '10px', padding: '3px 6px' }} onClick={() => setMaxValue('merc-count', 'gold')}>Max</button>
             </div>
             <div style={{ fontSize: '11px', color: 'var(--text3)' }} id="merc-preview">
-              50 GC · 10 turns
+              50 GC - 10 turns
             </div>
             <div className="merc-btn-col">
               <button className="base-btn variant-amber w-full" style={{ background: '#d97706', color: '#fff', width: '100%' }} onClick={hireMercs}>Hire</button>

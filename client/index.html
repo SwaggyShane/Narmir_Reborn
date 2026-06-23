@@ -10068,41 +10068,6 @@
 
       }
 
-      async function loadEconomy() {
-        if (typeof window.__loadEconomyImpl === "function") {
-          return window.__loadEconomyImpl();
-        }
-        console.warn("loadEconomy impl is not ready yet");
-        return null;
-      }
-
-
-
-      function renderUpgrades(category, defs, owned, containerId) {
-        if (typeof window.__renderUpgradesImpl === "function") {
-          return window.__renderUpgradesImpl(category, defs, owned, containerId);
-        }
-        return null;
-      }
-      async function buyUpgrade(category, key) {
-        if (typeof window.__buyUpgradeImpl === "function") {
-          return window.__buyUpgradeImpl(category, key);
-        }
-        return null;
-      }
-      function renderCommodityMarket(mktUpgrades) {
-        if (typeof window.__renderCommodityMarketImpl === "function") {
-          return window.__renderCommodityMarketImpl(mktUpgrades);
-        }
-        return null;
-      }
-
-      function renderActiveMercs(mercs) {
-        if (typeof window.__renderActiveMercsImpl === "function") {
-          return window.__renderActiveMercsImpl(mercs);
-        }
-        return null;
-      }
       var REGION_META = {
 
         dwarf: {

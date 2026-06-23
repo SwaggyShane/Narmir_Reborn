@@ -59,6 +59,7 @@ import { showHeroLore as showHeroLoreImpl } from "./utils/showHeroLore.js";
 import { closeRaceLore as closeRaceLoreImpl } from "./utils/closeRaceLore.js";
 import { showToast } from "./utils/toastShell.js";
 import { showHeroXpModal as showHeroXpModalImpl } from "./utils/showHeroXpModal.js";
+import { buyUpgrade as buyUpgradeImpl } from "./components/react/EconomyPanel.jsx";
 
 window.apiCall = apiCall;
 window.applyGameMutation = applyGameMutation;
@@ -78,6 +79,7 @@ window.__openSchoolModalImpl = openSchoolModalImpl;
 window.__closeSchoolModalImpl = closeSchoolModalImpl;
 window.__openGenericModalImpl = openGenericModalImpl;
 window.__closeGenericModalImpl = closeGenericModalImpl;
+window.buyUpgrade = buyUpgradeImpl;
 window.__openAttunementModalImpl = openAttunementModalImpl;
 window.__closeAttunementModalImpl = closeAttunementModalImpl;
 window.__loadAttunementDataImpl = loadAttunementDataImpl;
