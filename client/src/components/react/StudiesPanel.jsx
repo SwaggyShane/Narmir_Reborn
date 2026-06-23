@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useActivePanel } from '../../hooks/useActivePanel';
 import { useGameState } from '../../hooks/useGameState';
 import { toast } from '../../utils/toast.js';
@@ -11,9 +11,10 @@ const StudiesPanel = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [mageSpellbookValue, setMageSpellbookValue] = useState(0);
   const [mageSchoolValue, setMageSchoolValue] = useState(0);
-  const [focusPreviewKey, setFocusPreviewKey] = useState(0);
   const [focus1Value, setFocus1Value] = useState('economy');
   const [focus2Value, setFocus2Value] = useState('weapons');
+  const spellbookInputRef = useRef(null);
+  const schoolInputRef = useRef(null);
   const { activePanel } = useActivePanel();
   const { state, applyUpdates } = useGameState();
 
@@ -47,13 +48,22 @@ const StudiesPanel = () => {
     load();
   }, [activePanel, state, fetchStudiesData]);
 
-  // Sync state with server data
+  // Sync state with server data, guarding against overwriting active input
   useEffect(() => {
     if (studiesData?.research_allocation) {
-      setMageSpellbookValue(studiesData.research_allocation.spellbook_mages || 0);
-      setMageSchoolValue(studiesData.research_allocation.school_spellbook_mages || 0);
+      if (document.activeElement !== spellbookInputRef.current) {
+        setMageSpellbookValue(studiesData.research_allocation.spellbook_mages || 0);
+      }
+      if (document.activeElement !== schoolInputRef.current) {
+        setMageSchoolValue(studiesData.research_allocation.school_spellbook_mages || 0);
+      }
     }
-  }, [studiesData?.research_allocation]);
+    if (studiesData?.research_focus) {
+      const [f1, f2] = studiesData.research_focus;
+      if (f1) setFocus1Value(f1);
+      if (f2) setFocus2Value(f2);
+    }
+  }, [studiesData?.research_allocation, studiesData?.research_focus]);
 
   const DISC_COLS = {
     economy: "res_economy",
@@ -104,7 +114,6 @@ const StudiesPanel = () => {
     }
     if (data.research_focus) {
       applyUpdates({ research_focus: data.research_focus }, { reason: 'research-focus' });
-      setFocusPreviewKey((k) => k + 1);
       toast(`Research focus saved — ${data.research_focus.join(' & ')}`, 'success');
     }
   }, [studiesData?.school_upgrades, focus1Value, focus2Value, applyUpdates]);
@@ -143,8 +152,6 @@ const StudiesPanel = () => {
   }, [fetchStudiesData, mageSpellbookValue, mageSchoolValue, totalMages]);
 
   const releaseMageAllocation = useCallback(async () => {
-    setMageSpellbookValue(0);
-    setMageSchoolValue(0);
     const response = await fetch('/api/kingdom/school-allocation', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -156,6 +163,8 @@ const StudiesPanel = () => {
       return;
     }
     if (data.ok) {
+      setMageSpellbookValue(0);
+      setMageSchoolValue(0);
       await fetchStudiesData();
       toast('Mage allocation released', 'success');
     }
@@ -333,7 +342,7 @@ const StudiesPanel = () => {
               <div style={{ fontSize: '11px', color: 'var(--text3)' }}>Focus 2 Current: {state?.[DISC_COLS[focus2Value]] || 0}%</div>
             </div>
             <button className="base-btn variant-green w-full" onClick={saveResearchFocus} style={{ width: '100%', background: 'var(--green)' }}>Save focus</button>
-            <div key={focusPreviewKey} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '16px' }}>
               {Object.keys(DISC_COLS).map((k) => {
                 const val = state?.[DISC_COLS[k]] || 0;
                 const label = k.charAt(0).toUpperCase() + k.slice(1).replace(/_/g, ' ');
@@ -393,6 +402,7 @@ const StudiesPanel = () => {
                   <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '8px' }}>General spellbook continuation</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <input
+                      ref={spellbookInputRef}
                       type="number"
                       className="input"
                       min="0"
@@ -411,6 +421,7 @@ const StudiesPanel = () => {
                   <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '8px' }}>School-specific specialization</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <input
+                      ref={schoolInputRef}
                       type="number"
                       className="input"
                       min="0"
