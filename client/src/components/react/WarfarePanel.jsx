@@ -133,7 +133,7 @@ function TargetListSection({ targets, selected, onSelect, searchQ, onSearchChang
           ? (
             <div className="text-[var(--text3)] text-[13px] px-4 py-4 text-center">
               No mapped targets found.{' '}
-              <button className="btn text-[11px]" onClick={() => window.switchTab?.('exploration')}>
+              <button className="btn text-[11px]" onClick={() => switchTab('exploration')}>
                 Go Explore
               </button>
             </div>
@@ -223,8 +223,7 @@ const WarfarePanel = () => {
           is_ai: row.is_ai || 0,
         }));
 
-      setState({ rankingsCache: kingdoms });
-      window.targets = mappedTargets;
+      setState({ rankingsCache: kingdoms, targets: mappedTargets });
       setTargets(mappedTargets);
     } catch (err) {
       console.error('[WarfarePanel] Failed to refresh attack targets:', err);
@@ -254,8 +253,9 @@ const WarfarePanel = () => {
     try {
       const result = await apiCall('/api/kingdom/spy-reports');
       if (result?.error) throw new Error(result.error);
-      setSpyReports(Array.isArray(result) ? result : []);
-      window.spyReportsCache = Array.isArray(result) ? result : [];
+      const spyData = Array.isArray(result) ? result : [];
+      setSpyReports(spyData);
+      setState({ spyReportsCache: spyData });
     } catch (err) {
       console.error('[WarfarePanel] Failed to load spy reports:', err);
       setSpyError(err.message || 'Failed to load spy reports');
@@ -270,8 +270,9 @@ const WarfarePanel = () => {
     try {
       const result = await apiCall('/api/kingdom/spy-reports/alliance');
       if (result?.error) throw new Error(result.error);
-      setAllianceIntel(Array.isArray(result) ? result : []);
-      window.allianceIntelCache = Array.isArray(result) ? result : [];
+      const intelData = Array.isArray(result) ? result : [];
+      setAllianceIntel(intelData);
+      setState({ allianceIntelCache: intelData });
     } catch (err) {
       console.error('[WarfarePanel] Failed to load alliance intel:', err);
       setAllianceError(err.message || 'Failed to load alliance intel');
@@ -283,14 +284,10 @@ const WarfarePanel = () => {
   useEffect(() => {
     const handleRaceChange = (e) => setWcovTargetRace(e.detail);
     window.addEventListener('wcovTargetRaceChange', handleRaceChange);
-    window.setWarfareTab = setActiveTab;
-    if (window.__pendingWarfareTab) {
-      setActiveTab(window.__pendingWarfareTab);
-      window.__pendingWarfareTab = null;
-    }
+    const unregister = registerWarfareTab(setActiveTab);
     return () => {
       window.removeEventListener('wcovTargetRaceChange', handleRaceChange);
-      delete window.setWarfareTab;
+      unregister();
     };
   }, []);
 
