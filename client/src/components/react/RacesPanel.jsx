@@ -6,6 +6,7 @@ import { fmt } from '../../utils/fmt.js';
 import LoreModal from './LoreModal.jsx';
 import { registerOpenRaceLore } from '../../utils/openRaceLore.js';
 import { getRacePortrait } from '../../utils/racePortraits.js';
+import { RACE_LORE, REGION_META, REGION_BONUSES } from '../../utils/raceData.js';
 
 const HERO_PORTRAITS = {
   siegebreaker: '/hero/siegebreaker.webp',
@@ -213,9 +214,9 @@ const RacesPanel = () => {
   const [heroLoreKey, setHeroLoreKey] = useState(null);
   const [cachedHeroClasses, setCachedHeroClasses] = useState(null);
 
-  const raceLore = useMemo(() => window.RACE_LORE || {}, []);
-  const regionMeta = useMemo(() => window.REGION_META || {}, []);
-  const regionBonuses = useMemo(() => window.REGION_BONUSES || {}, []);
+  const raceLore = RACE_LORE;
+  const regionMeta = REGION_META;
+  const regionBonuses = REGION_BONUSES;
 
   const repair = useCallback((v) => repairMojibake(String(v ?? '')), []);
 
