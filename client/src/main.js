@@ -39,13 +39,15 @@ import { initSocketHandlers } from "./hooks/useSocket.js";
 import AuthModalReact from "./components/react/AuthModal.jsx";
 import KingdomProfileModalReact from "./components/react/KingdomProfileModal.jsx";
 import newsEmojiTools from "../../game/news-emoji.js";
-import { bindShellChromeEvents } from "./utils/shellChrome.js";
+import { applyNavLayout, bindShellChromeEvents, incrementNewsBadge } from "./utils/shellChrome.js";
 
 window.apiCall = apiCall;
 window.applyGameMutation = applyGameMutation;
 window.applyServerUpdatesAction = applyServerUpdatesAction;
 window.initSocketHandlers = initSocketHandlers;
 window.__NEWS_EMOJI_TOOLS__ = newsEmojiTools;
+window.__applyNavLayoutImpl = applyNavLayout;
+window.__incrementNewsBadgeImpl = incrementNewsBadge;
 
 const reactRoots = new Map();
 

@@ -13,6 +13,23 @@ function incrementBadge(id, displayValue) {
   badge.textContent = (parseInt(badge.textContent) || 0) + 1;
 }
 
+export function applyNavLayout() {
+  const layout = localStorage.getItem("narmir_nav_layout") || "responsive";
+  document.body.classList.remove("force-left-nav", "force-bottom-nav");
+  if (layout === "left") {
+    document.body.classList.add("force-left-nav");
+  } else if (layout === "bottom") {
+    document.body.classList.add("force-bottom-nav");
+  }
+  window.dispatchEvent(new Event("resize"));
+}
+
+export function incrementNewsBadge(count) {
+  if (!count || count <= 0) return;
+  incrementBadge("news-badge", "inline-block");
+  incrementBadge("bnav-news-badge", "inline-block");
+}
+
 function clearBadge(id) {
   const badge = document.getElementById(id);
   if (!badge) return;
@@ -63,4 +80,3 @@ export function bindShellChromeEvents() {
   window.addEventListener("narmir:chat-badge-alert", showChatBadgeAlert);
   window.addEventListener("narmir:kingdom-profile-modal", syncKingdomProfileModal);
 }
-

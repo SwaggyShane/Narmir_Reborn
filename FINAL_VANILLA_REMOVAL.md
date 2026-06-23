@@ -47,7 +47,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 ## Progress
 
 ### Completed
-- [x] Codex Slice 1: moved shell chrome listeners out of `client/index.html` into `client/src/utils/shellChrome.js` and `client/src/main.js` ([PR #543](https://github.com/SwaggyShane/Narmir_Reborn/pull/543))
+- [x] Codex Slice 1: moved shell chrome listeners, `applyNavLayout`, and the news badge incrementer out of `client/index.html` into `client/src/utils/shellChrome.js` and `client/src/main.js` ([PR #543](https://github.com/SwaggyShane/Narmir_Reborn/pull/543))
 
 ## Codex Lane
 
