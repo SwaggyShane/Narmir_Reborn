@@ -12,6 +12,8 @@ Remove the remaining vanilla shell, hybrid bridge code, and legacy DOM mutation 
   - a draft PR
 - Keep gameplay behavior unchanged unless a slice explicitly needs a small fix to preserve existing behavior.
 - Prefer moving logic out of `client/index.html` before touching lower-level helpers.
+- If a risky slice starts to sprawl, stop, roll it back, and file it for the next cycle.
+- If a temporary feature flag is used, set a hard removal deadline before the slice lands.
 
 ### Quick Global Searches (Do These First)
 - `document.getElementById`
@@ -19,6 +21,16 @@ Remove the remaining vanilla shell, hybrid bridge code, and legacy DOM mutation 
 - `.innerHTML =`
 - `.style.`
 - `window.someGlobal`
+
+### Pre-Flight Inventory
+Before any more refactoring, record the current counts for:
+- `document.getElementById`
+- `el(`
+- `.innerHTML =`
+- `.style.`
+- `window.someGlobal`
+
+Use that inventory as the baseline progress metric for the remaining work.
 
 ## Codex Lane
 
@@ -39,6 +51,8 @@ Remove the remaining vanilla shell, hybrid bridge code, and legacy DOM mutation 
 - [ ] Review `WarfarePanel.jsx` for remaining legacy global calls
 - [ ] Review any other panel still reaching into shell globals
 - [ ] Convert one panel at a time and keep each PR narrow
+- [ ] Use a temporary feature flag only for the riskiest panel slices
+- [ ] Remove any temporary flag immediately after the slice is stable
 
 ### 4. Trim the last CSS dependency edges
 - [ ] Identify old CSS files still carrying layout responsibility
@@ -77,6 +91,18 @@ Remove the remaining vanilla shell, hybrid bridge code, and legacy DOM mutation 
 5. `WorldmapRenderer.jsx`
 6. `WarfarePanel.jsx`
 7. remaining `client/src/css/*`
+
+## Rollback Threshold
+- If a slice touches more than 30 files, pause and split it.
+- If `WorldmapRenderer.jsx` or the socket flow starts breaking live updates, revert the slice and file a follow-up issue.
+- If a refactor cannot be built and smoke-tested cleanly within the slice, stop and keep it out of the merge queue.
+
+## Strategy Summary
+1. Do the one-time global inventory first.
+2. Attack `client/index.html` and shell orchestration aggressively.
+3. Keep the socket -> GameStateManager -> React flow extremely clean.
+4. Use a temporary feature flag only for the riskiest panels, with a hard deadline to remove it.
+5. Roll back any slice that crosses the agreed threshold.
 
 ## Success Criteria
 - `client/index.html` is boot-only, with no real UI ownership left in it.
