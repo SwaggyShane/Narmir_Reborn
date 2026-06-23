@@ -52,6 +52,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] Codex Slice 3: moved the status refresh loop out of `client/index.html` into `client/src/utils/statusShell.js` and `client/src/main.js`
 - [x] Codex Slice 4: moved `appendNewsItems` out of `client/index.html` into `client/src/utils/newsShell.js` and bridged it through `client/src/main.js`
 - [x] Codex Slice 5: moved shell toast rendering out of `client/index.html` into `client/src/utils/toastShell.js` and bridged it through `client/src/main.js`
+- [x] Codex Slice 6: bridged `loadKingdom` and `openKingdomProfile` through React-owned helpers so the shell no longer owns the kingdom profile/auth refresh path
 
 ## Current Handoff
 
@@ -78,8 +79,9 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] **Gate cleared:** Socket audit complete, all listeners are React-safe. Claude fixed `event:chat_clear`.
 - [x] Slice 4: moved `appendNewsItems` out of `client/index.html` into `client/src/utils/newsShell.js` and bridged it through `client/src/main.js`
 - [x] Slice 5: moved shell toast rendering out of `client/index.html` into `client/src/utils/toastShell.js` and bridged it through `client/src/main.js`
+- [x] Slice 6: bridged `loadKingdom` and `openKingdomProfile` through React-owned helpers
 - [ ] Next: Take the next safe shell/helper slice and update the doc again.
-- [ ] Next likely target: `openKingdomProfile` or the remaining shell helper clusters if they can be peeled without touching Claude-owned socket paths.
+- [ ] Next likely target: `openLoreModal` / `closeLoreModal` or the remaining shell helper clusters if they can be peeled without touching Claude-owned socket paths.
 
 ## Codex Lane
 

@@ -38,6 +38,8 @@ import { applyServerUpdates as applyServerUpdatesAction } from "./utils/gameMuta
 import { initSocketHandlers } from "./hooks/useSocket.js";
 import AuthModalReact from "./components/react/AuthModal.jsx";
 import KingdomProfileModalReact from "./components/react/KingdomProfileModal.jsx";
+import { openKingdomProfile as openKingdomProfileImpl, closeKingdomProfile as closeKingdomProfileImpl } from "./components/react/KingdomProfileModal.jsx";
+import { loadKingdom as loadKingdomImpl } from "./components/react/AuthModal.jsx";
 import newsEmojiTools from "../../game/news-emoji.js";
 import { appendNewsItems } from "./utils/newsShell.js";
 import { showToast } from "./utils/toastShell.js";
@@ -49,6 +51,9 @@ window.initSocketHandlers = initSocketHandlers;
 window.__NEWS_EMOJI_TOOLS__ = newsEmojiTools;
 window.__appendNewsItemsImpl = appendNewsItems;
 window.__toastImpl = showToast;
+window.__openKingdomProfileImpl = openKingdomProfileImpl;
+window.__closeKingdomProfileImpl = closeKingdomProfileImpl;
+window.__loadKingdomImpl = loadKingdomImpl;
 
 const reactRoots = new Map();
 
