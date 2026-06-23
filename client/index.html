@@ -1547,7 +1547,9 @@
 
           flex: 1;
 
-          justify-content: space-around;
+          justify-content: space-evenly;
+
+          overflow-y: auto;
 
         }
 
@@ -3383,27 +3385,33 @@
 
         .metric {
 
-          padding: 10px 14px;
+          padding: 6px 12px;
 
-          border-radius: 12px;
+          border-radius: 8px;
+
+          flex: none;
 
         }
 
         .metric .val {
 
-          font-size: 21px;
+          font-size: 12px;
+
+          text-align: right;
 
         }
 
         .metric .lbl {
 
-          font-size: 10.5px;
+          font-size: 14px;
 
         }
 
         .metric .sub {
 
-          font-size: 10px;
+          font-size: 8px;
+
+          justify-content: flex-end;
 
         }
 
@@ -3918,7 +3926,7 @@
 
           <!-- Metrics strip -->
 
-          <div class="metrics flex flex-nowrap overflow-x-auto gap-2 pb-1 md:grid md:grid-cols-[repeat(auto-fit,minmax(130px,1fr))] md:gap-3 md:pb-0 md:overflow-x-visible" id="react-resource-strip">
+          <div class="metrics flex flex-nowrap overflow-x-auto gap-2 pb-1 md:pb-0 md:overflow-x-visible" id="react-resource-strip">
 
             <div class="metric" id="metric-gold">
 
