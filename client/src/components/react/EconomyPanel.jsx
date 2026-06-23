@@ -143,7 +143,7 @@ const EconomyPanel = () => {
   const [sentOffers, setSentOffers] = useState([]);
   const [tradeRoutes, setTradeRoutes] = useState([]);
 
-  const [taxValue, setTaxValue] = useState(42);
+  const [taxValue, setTaxValue] = useState(state?.tax ?? 42);
   const [tradeOfferItem, setTradeOfferItem] = useState('food');
   const [tradeOfferQty, setTradeOfferQty] = useState('');
   const [tradeRequestItem, setTradeRequestItem] = useState('gold');
@@ -175,7 +175,7 @@ const EconomyPanel = () => {
     const data = await apiCall('/api/kingdom/economy/overview');
     if (data?.error) return;
     setEconData(data);
-    if (data.tax_rate != null) setTaxValue(data.tax_rate);
+    if (data.tax != null) setTaxValue(data.tax);
   }, []);
 
   const loadTradeOffers = useCallback(async () => {
@@ -232,6 +232,8 @@ const EconomyPanel = () => {
       body: { targetId: tradeTargetId, offer: { [tradeOfferItem]: oQty }, request: { [tradeRequestItem]: rQty } },
     });
     if (result?.error) return toast(result.error, 'error');
+    applyGameMutation(result, { reason: 'send-trade-offer' });
+    syncUI();
     toast('Trade offer sent!', 'success');
     setTradeOfferQty('');
     setTradeRequestQty('');
@@ -259,7 +261,9 @@ const EconomyPanel = () => {
     if (!confirm('Clear all completed/expired trade logs?')) return;
     try {
       const res = await apiCall('/api/kingdom/trade/clear-logs', { method: 'POST' });
-      if (res.ok) { toast('Trade logs cleared', 'success'); await loadTradeOffers(); }
+      if (res.error) { toast(res.error, 'error'); return; }
+      toast('Trade logs cleared', 'success');
+      await loadTradeOffers();
     } catch (err) {
       toast('Failed to clear logs', 'error');
     }
@@ -309,6 +313,8 @@ const EconomyPanel = () => {
         body: { targetId: tradeRouteTargetId },
       });
       if (result.error) { toast(result.error, 'error'); return; }
+      applyGameMutation(result, { reason: 'establish-trade-route' });
+      syncUI();
       toast(result.message || 'Trade route established', 'success');
       setTradeRouteTargetId('');
       await loadTradeRoutes();
@@ -719,12 +725,12 @@ const EconomyPanel = () => {
 
       {/* BANK TAB */}
       <div className={clsx(activeTab === 'bank' ? 'block' : 'hidden')}>
-        <div id="bank-locked-msg" style={{ display: 'none', padding: '24px', textAlign: 'center', color: 'var(--text2)', background: 'var(--bg2)', borderRadius: '8px' }}>
+        <div id="bank-locked-msg" style={{ display: (state?.bld_vaults || 0) >= 25 ? 'none' : 'block', padding: '24px', textAlign: 'center', color: 'var(--text2)', background: 'var(--bg2)', borderRadius: '8px' }}>
           <div style={{ fontSize: '32px', marginBottom: '12px' }}>🏦</div>
           <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '8px' }}>Bank Locked</div>
           <div style={{ fontSize: '14px' }}>Construct at least 25 Vaults to access the Royal Bank.</div>
         </div>
-        <div id="bank-content" style={{ display: 'none' }}>
+        <div id="bank-content" style={{ display: (state?.bld_vaults || 0) >= 25 ? 'block' : 'none' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
             <div className="card" style={{ margin: 0 }}>
               <div className="card-title">Fixed-Term Deposits</div>
