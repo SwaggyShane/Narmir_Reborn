@@ -32,18 +32,21 @@ export async function loadWorldMap({ setLoading, setError, setMapSvg } = {}) {
   }
 }
 
-async function establishTradeRoute(targetId) {
+async function establishTradeRoute(targetId, onSuccess) {
   if (!targetId) return;
   try {
     const result = await apiCall('/api/kingdom/trade-routes/establish', {
       method: 'POST',
       body: { targetId },
     });
-    if (result.error) {
+    if (result?.error) {
       toast(result.error, 'error');
       return;
     }
-    toast(result.message || 'Trade route established', 'success');
+    toast(result?.message || 'Trade route established', 'success');
+    if (typeof onSuccess === 'function') {
+      onSuccess();
+    }
   } catch (err) {
     console.error('[worldmap] establish trade route failed:', err);
     toast('Failed to establish trade route', 'error');
@@ -141,7 +144,7 @@ const WorldmapPanel = () => {
                       </button>
                       <div className="w-full text-center mt-2">
                         {mapCard.hasTradingPost ? (
-                          <button className="btn btn-gold text-[11px] px-2 py-1 w-full" onClick={() => establishTradeRoute(mapCard.kingdom.id)}>
+                          <button className="btn btn-gold text-[11px] px-2 py-1 w-full" onClick={() => establishTradeRoute(mapCard.kingdom.id, refreshWorldMap)}>
                             🤝 Trade Route (10k GC)
                           </button>
                         ) : (
