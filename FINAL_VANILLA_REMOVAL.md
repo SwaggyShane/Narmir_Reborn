@@ -63,6 +63,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] Codex Slice 12: bridged the hero lore / race lore helper cluster through `client/src/utils/showHeroLore.js` and `client/src/utils/closeRaceLore.js`; `RacesPanel.jsx` now owns the hero lore callback directly and `client/index.html` only delegates thin wrappers
 - [x] Codex Slice 13: removed the EconomyPanel `callIfAvailable` bridge, switched upgrade rendering to client-owned data helpers in `client/src/utils/economyUpgrades.js`, and kept the economy panel rendering on the React side
 - [x] Codex Slice 14: bridged the battle report modal through `client/src/utils/showBattleReport.js` and `WarfarePanel.jsx`, then removed the shell-owned battle report body from `client/index.html`
+- [x] Codex Slice 15: bridged the spy report modal through `client/src/utils/showSpyReport.js` and removed the shell-owned spy report body from `client/index.html`
 
 ## Open PR Assessment
 
@@ -113,8 +114,9 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] Slice 12: bridged the hero lore / race lore helper cluster through `client/src/utils/showHeroLore.js` and `client/src/utils/closeRaceLore.js`
 - [x] Slice 13: removed the EconomyPanel `callIfAvailable` bridge, switched upgrade rendering to client-owned data helpers in `client/src/utils/economyUpgrades.js`, and kept the economy panel rendering on the React side
 - [x] Slice 14: bridged the battle report modal through `client/src/utils/showBattleReport.js` and `WarfarePanel.jsx`, then removed the shell-owned battle report body from `client/index.html`
-- [ ] Next: finish the last clean helper seams still hanging off `client/index.html`, then move to the remaining React panel upgrade-rendering work in any other panels still using shell-era helpers.
-- [ ] Ongoing: confirm `client/index.html` is still boot-only after Slices 1-14.
+- [x] Slice 15: bridged the spy report modal through `client/src/utils/showSpyReport.js` and removed the shell-owned spy report body from `client/index.html`
+- [ ] Next: finish the last clean helper seams still hanging off `client/index.html`, then move to the remaining React panel / shell-helper cleanup in any other panels still using shell-era helpers.
+- [ ] Ongoing: confirm `client/index.html` is still boot-only after Slices 1-15.
 
 ### Current Inventory Snapshot (updated 2026-06-23 post-PR #544)
 - document.getElementById: 96

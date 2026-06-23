@@ -59,6 +59,7 @@ import { showHeroLore as showHeroLoreImpl } from "./utils/showHeroLore.js";
 import { closeRaceLore as closeRaceLoreImpl } from "./utils/closeRaceLore.js";
 import { renderTargets as renderTargetsImpl } from "./utils/renderTargets.js";
 import { showBattleReport as showBattleReportImpl } from "./utils/showBattleReport.js";
+import { showSpyReport as showSpyReportImpl } from "./utils/showSpyReport.js";
 import { showToast } from "./utils/toastShell.js";
 import { showHeroXpModal as showHeroXpModalImpl } from "./utils/showHeroXpModal.js";
 import { buyUpgrade as buyUpgradeImpl } from "./components/react/EconomyPanel.jsx";
@@ -93,6 +94,7 @@ window.__showHeroLoreImpl = showHeroLoreImpl;
 window.__closeRaceLoreImpl = closeRaceLoreImpl;
 window.__renderTargetsImpl = renderTargetsImpl;
 window.__showBattleReportImpl = showBattleReportImpl;
+window.__showSpyReportImpl = showSpyReportImpl;
 
 const reactRoots = new Map();
 
