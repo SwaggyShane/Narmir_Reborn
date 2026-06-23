@@ -120,12 +120,13 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [ ] Next: finish the last clean helper seams still hanging off `client/index.html`, then move to the remaining React panel / shell-helper cleanup in any other panels still using shell-era helpers.
 - [ ] Ongoing: confirm `client/index.html` is still boot-only after Slices 1-16.
 
-### Current Inventory Snapshot (updated 2026-06-23 post-PR #544)
-- document.getElementById: 96
-- el(: 26
-- .innerHTML =: 30
-- .style.: 138
-- window.* globals (non-bootstrap): 21 (10 AlliancesPanel deferred, 4 main.js bootstrap, 3 socket-client.js, 1 GameStateManager, 1 attunementShell, 1 HeroesPanel window.prompt, 1 window.buyUpgrade)
+### Current Inventory Snapshot (updated 2026-06-23 post-PR #550)
+- document.getElementById: 205 total (134 in index.html [Codex target], 71 in client/src/)
+  - Biggest src concentrations: EconomyPanel 27, WarfarePanel 19, panelNav.js 5, socket-client.js 5, GlobalchatPanel 4
+- el(: 20 in index.html (local variable pattern, not a helper); ~18 in client/src/
+- .innerHTML =: 72 total (45 in index.html, 27 in client/src/)
+- .style.: 167 total (46 in index.html, 121 in client/src/)
+- window.* globals (non-bootstrap): 10 AlliancesPanel deferred; main.js bootstrap exports (~31); socket-client.js bootstrap (4); 1 GameStateManager; 0 in utils (clean)
 
 ## Codex Lane
 
@@ -190,7 +191,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [ ] AlliancesPanel (10 vanilla delegates) — deferred; underlying alliance API not yet implemented (foundAlliance, loadAllianceSearch, etc. have no backend routes)
 - [x] TrainingPanel.jsx (13 DOM mutations) — ✅ COMPLETE: all removed; Max/Distribute buttons fixed; toast imported
 - [x] StudiesPanel.jsx (14 DOM mutations) — ✅ COMPLETE (PR #549): all removed; controlled inputs; JSX rendering; useRef focus guards; server sync
-- [ ] replayWarReport.js (21 DOM mutations) — imperative renderer, needs full React rewrite (blocked: review first)
+- [x] replayWarReport.js (21 DOM mutations) — ✅ COMPLETE (PR #550): ReplayModal.jsx React portal; vanilla bridge function and replay-modal div removed from index.html
 
 ### 4. Clean up the remaining legacy CSS surfaces — ✅ COMPLETE (audit)
 - [x] Review files still importing from `client/src/css/` — only `forum.css` exists and is actively used by main.js and Portal.jsx; nothing to remove
