@@ -71,9 +71,12 @@ Use that inventory as the baseline progress metric for the remaining work.
 
 ### Claude Next
 - [x] All lanes from prior sessions complete — see PR #546 for full scope
-- [ ] Next: WarfarePanel dedicated slice (18 remaining globals, complex — await Codex alignment)
-- [ ] Next: AlliancesPanel dedicated slice (10 vanilla delegates — await Codex alignment)
-- [ ] CSS: no action needed — audit found only forum.css, all active
+- [x] WarfarePanel globals sweep — ✅ COMPLETE (in PR #546): all 16 remaining globals resolved; 1 deferred (showBattleReport, live vanilla)
+- [x] MarketPanel window.targets — ✅ COMPLETE (in PR #546)
+- [ ] Next: port `showBattleReport` modal to React (removes last WarfarePanel vanilla bridge)
+- [ ] Next: EconomyPanel upgrade defs (4 window.*_UPGRADES, requires React upgrade rendering)
+- [ ] AlliancesPanel: deferred; alliance backend not yet implemented
+- [x] CSS: no action needed — audit found only forum.css, all active
 
 ### Codex Next
 - [x] Slice 1: Kill the shell in `client/index.html` — ✅ COMPLETE
@@ -88,8 +91,8 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] Slice 9: bridged `openSchoolModal` and `closeSchoolModal` through `client/src/utils/schoolShell.js`
 - [x] Slice 10: bridged `openGenericModal` and `closeGenericModal` through `client/src/utils/genericShell.js`
 - [x] Slice 11: bridged the fragment attunement modal cluster through `client/src/utils/attunementShell.js`
-- [ ] Next: Take the next safe shell/helper slice and update the doc again.
-- [ ] Next likely target: `showHeroLore` / `openRaceLore` or the remaining lore/shell helper cluster if it can be peeled without touching Claude-owned socket paths.
+- [ ] Next: React panel window.* globals now essentially clear (PR #546). Next likely targets: port `showBattleReport` to React (removes last live vanilla bridge in WarfarePanel), EconomyPanel upgrade rendering (callIfAvailable → React), or `showHeroLore`/`openRaceLore` shell helper cluster.
+- [ ] Ongoing: confirm `client/index.html` is still boot-only after Slices 1-11.
 
 ### Current Inventory Snapshot
 - document.getElementById: 239
@@ -141,7 +144,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] Move render behavior out of state mutation paths — already true
 - [x] Confirm socket listeners only update state or dispatch React-safe events — ✅ CLEAN
 
-### 3. Remove or replace legacy bridge helpers — IN PROGRESS
+### 3. Remove or replace legacy bridge helpers — ✅ COMPLETE (all tractable globals done; 3 items correctly deferred)
 - [x] Find remaining shell-era globals — ✅ Found in 7 React panels
 - [x] WorldmapPanel (3 globals) — ✅ COMPLETE (PR #545): openKingdomProfile, targetFromRankings, establishTradeRoute (with auto-refresh callback for better UX)
 - [x] NewsPanel (1 cache) — ✅ COMPLETE (PR #546): removed window.newsCache (write-only, never read)
@@ -154,10 +157,11 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] AuthModal (window.initSocket) — ✅ COMPLETE (in PR #546): → getSocket() from socket-client.js
 - [x] TestingPanel (window.socket) — ✅ COMPLETE (in PR #546): → getSocket().then() with proper off() cleanup
 - [x] replayWarReport.js (window.warLogCache read) — ✅ COMPLETE (in PR #546): → gameStateManager.getState().warLogCache
+- [x] WarfarePanel (16 remaining globals) — ✅ COMPLETE (in PR #546): window.spyReportsCache/allianceIntelCache/targets → setState(); window.setWarfareTab → registerWarfareTab(); window.switchTab → direct import from panelNav.js; 6 dead globals removed (castWspell, doWcovert, updateWspellCalc, initWspells, initWcovert, selectedTargetW — none defined anywhere in codebase); window.wcovTargetRaceChange uses standard browser event API
+- [x] MarketPanel (window.targets read) — ✅ COMPLETE (in PR #546): → gameStateManager.getState().targets
+- [ ] WarfarePanel (1 remaining: window.showBattleReport) — deferred; live vanilla function defined in index.html line 5723; requires porting battle report modal to React
 - [ ] EconomyPanel (4 upgrade defs) — deferred: window.*_UPGRADES passed through callIfAvailable vanilla bridge; requires converting upgrade rendering to React
-- [ ] WarfarePanel (16 remaining globals) — deferred, dedicated slice; largest remaining target
-- [ ] MarketPanel reads window.targets — set by WarfarePanel, deferred until WarfarePanel slice
-- [ ] AlliancesPanel (10 vanilla delegates) — deferred; underlying alliance API not yet implemented
+- [ ] AlliancesPanel (10 vanilla delegates) — deferred; underlying alliance API not yet implemented (foundAlliance, loadAllianceSearch, etc. have no backend routes)
 
 ### 4. Clean up the remaining legacy CSS surfaces — ✅ COMPLETE (audit)
 - [x] Review files still importing from `client/src/css/` — only `forum.css` exists and is actively used by main.js and Portal.jsx; nothing to remove
