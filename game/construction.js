@@ -64,7 +64,7 @@ function queueBuildings(k, orders) {
       };
     }
 
-    const goldPerUnit = BUILDING_GOLD_COST[key] ? 100;
+    const goldPerUnit = BUILDING_GOLD_COST[key] ?? 100;
     const landPerUnit = BUILDING_LAND_COST[key] || 0;
     totalCost += goldPerUnit * n;
     totalLand += landPerUnit * n;
@@ -375,7 +375,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
         // Regular buildings: units from the queue were already paid in queueBuildings;
         // only deduct gold/land/resources for units built beyond the queue via engineer allocation.
         if (!RESOURCE_BUILDING_CONFIG[building] && canAdd > 0) {
-          const goldPerUnit = BUILDING_GOLD_COST[building] ? 100;
+          const goldPerUnit = BUILDING_GOLD_COST[building] ?? 100;
           const landPerUnit = BUILDING_LAND_COST[building] || 0;
           const woodPerUnit = BUILDING_WOOD_COST[building] || 0;
           const stonePerUnit = BUILDING_STONE_COST[building] || 0;
