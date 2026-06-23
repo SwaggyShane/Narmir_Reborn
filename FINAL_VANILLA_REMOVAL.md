@@ -1,4 +1,4 @@
-# Final Vanilla Removal
+﻿# Final Vanilla Removal
 
 ## Goal
 Remove the remaining vanilla shell, hybrid bridge code, and legacy DOM mutation paths so the client is fully React-owned, with only thin shared helpers left where they genuinely make sense.
@@ -17,6 +17,16 @@ Remove the remaining vanilla shell, hybrid bridge code, and legacy DOM mutation 
 - Claude must complete the socket audit before Codex starts Slice 2.
 - Record FCP/LCP before the `WorldmapRenderer.jsx` slice starts.
 
+## Coordination Protocol
+- We work back and forth in the simplest possible way:
+  - Codex does a slice.
+  - Claude does the next related slice or audit.
+  - Codex responds to Claude’s findings.
+  - Claude responds to Codex’s findings.
+- Keep the handoff explicit in the plan and in PR notes.
+- If a slice depends on the other lane, wait for the gate instead of guessing.
+- If a file or helper is shared, call it out before editing it.
+
 ### Quick Global Searches (Do These First)
 - `document.getElementById`
 - `el(`
@@ -34,6 +44,38 @@ Before any more refactoring, record the current counts for:
 
 Use that inventory as the baseline progress metric for the remaining work.
 
+## Progress
+
+### Completed
+- [x] Codex Slice 1: moved shell chrome listeners, `applyNavLayout`, and the news badge incrementer out of `client/index.html` into `client/src/utils/shellChrome.js` and `client/src/main.js` ([PR #543](https://github.com/SwaggyShane/Narmir_Reborn/pull/543))
+- [x] Codex Slice 2: removed the auth shell forwarding stubs from `client/index.html` and bridged the auth modal globals through `client/src/main.js`
+- [x] Codex Slice 3: moved the status refresh loop out of `client/index.html` into `client/src/utils/statusShell.js` and `client/src/main.js`
+
+## Current Handoff
+
+### Claude Message
+- Claude, take the remaining `event:chat_clear` exception and fix it in `client/src/hooks/useSocket.js` and `client/src/components/react/GlobalchatPanel.jsx`.
+- Remove the direct DOM-clearing path from `client/src/hooks/useSocket.js`.
+- Keep the clear handling in `client/src/components/react/GlobalchatPanel.jsx`, but make it React-owned only: no `document.getElementById`, no `.innerHTML =`, no direct DOM wiping.
+- If the panel cannot own it cleanly in one step, leave the panel handler in place and move the actual clear into React state/render logic before merging.
+- Do not touch any other socket events in this slice.
+- Build it, smoke test it, and then update this doc with the exact files changed and whether chat still clears correctly.
+
+### Claude Next
+- [x] Check for DOM mutations inside `GameStateManager` - clean, no mutations.
+- [x] Confirm render behavior is out of state mutation paths - already true.
+- [x] Confirm socket listeners only update state or dispatch React-safe events - mostly clean.
+- [ ] Resolve the remaining socket exception: `event:chat_clear`.
+- [ ] Start with `client/src/hooks/useSocket.js` and `client/src/components/react/GlobalchatPanel.jsx`; make `event:chat_clear` React-safe and keep it out of DOM mutation paths.
+- [ ] Record the final socket -> GameStateManager -> React flow map in the doc.
+- [ ] Update the inventory counts in the doc after the audit.
+
+### Codex Next
+- [ ] Stay on the shell lane and keep `client/index.html` thinning.
+- [ ] Do not start Slice 2 until Claude marks the socket audit complete.
+- [ ] When the gate clears, take the next safe shell/helper slice and update the doc again.
+- [ ] Next likely target: `appendNewsItems` or the remaining shell helper clusters if they can be peeled without touching Claude-owned socket paths.
+
 ## Codex Lane
 
 ### 1. Kill the shell in `client/index.html`
@@ -47,6 +89,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [ ] Remove or thin any bridge code that still mutates the DOM directly
 - [ ] Keep `GameStateManager` as the state source only, not a renderer
 - [ ] Convert any remaining shell-era event forwarding into React-safe helpers
+- [ ] Confirm `event:chat_clear` is handled without reintroducing DOM mutation
 
 ### 3. Triage the heaviest hybrid panels
 - [ ] Review `WorldmapRenderer.jsx` for imperative DOM behavior
@@ -112,3 +155,4 @@ Use that inventory as the baseline progress metric for the remaining work.
 - Remaining helpers are shared utilities, not bridge glue.
 - Legacy CSS is reduced to the minimum needed for shared primitives.
 - Each slice is reviewable, testable, and safe to merge on its own.
+
