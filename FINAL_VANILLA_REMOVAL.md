@@ -54,9 +54,11 @@ Use that inventory as the baseline progress metric for the remaining work.
 ## Current Handoff
 
 ### Claude Next
-- [ ] Finish the socket audit.
-- [ ] Build the socket -> GameStateManager -> React flow map.
-- [ ] Record the remaining DOM mutation paths in the doc.
+- [x] Check for DOM mutations inside `GameStateManager` - clean, no mutations.
+- [x] Confirm render behavior is out of state mutation paths - already true.
+- [x] Confirm socket listeners only update state or dispatch React-safe events - mostly clean.
+- [ ] Resolve the remaining socket exception: `event:chat_clear`.
+- [ ] Record the final socket -> GameStateManager -> React flow map in the doc.
 - [ ] Update the inventory counts in the doc after the audit.
 
 ### Codex Next
@@ -78,6 +80,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [ ] Remove or thin any bridge code that still mutates the DOM directly
 - [ ] Keep `GameStateManager` as the state source only, not a renderer
 - [ ] Convert any remaining shell-era event forwarding into React-safe helpers
+- [ ] Confirm `event:chat_clear` is handled without reintroducing DOM mutation
 
 ### 3. Triage the heaviest hybrid panels
 - [ ] Review `WorldmapRenderer.jsx` for imperative DOM behavior
