@@ -76,13 +76,12 @@ Use that inventory as the baseline progress metric for the remaining work.
 
 ## Current Handoff
 
-### Claude Message — ✅ COMPLETE (PR #546)
-- ✅ Removed window globals from 7 React panels: NewsPanel, RankingsPanel, BountiesPanel, RacesPanel, KingdomProfileModal, EconomyPanel, WarfarePanel (partial)
-- ✅ Created 3 new shared modules: racePortraits.js, raceData.js, economyConstants.js
-- ✅ Fixed BountiesPanel regression: WarfarePanel now writes rankingsCache to GameStateManager
-- ✅ ResourceStrip de-duplicated its local FARM_WORKERS_PER (now imports from economyConstants.js)
-- ✅ CSS audit complete — client/src/css/ has only forum.css, all actively used
-- ✅ Built and smoke tested clean
+### Claude Session (2026-06-23) — ✅ COMPLETE
+- ✅ TrainingPanel.jsx DOM mutations removed (PR #548): 13 mutations → 0; controlled state for training allocations; fixed broken Max/Distribute buttons
+- ✅ StudiesPanel.jsx DOM mutations removed (PR #549): 14 mutations → 0; converted mage allocation to controlled inputs; replaced innerHTML builders with JSX; added useRef focus guards to prevent background sync overwrites; initialized focus dropdowns from server data
+- ✅ Fixed EconomyPanel.jsx merge conflict markers (blocking build on both branches)
+- ✅ All review feedback addressed: input focus guards, server data sync, optimistic update safety, performance (removed key-induced remounts)
+- ✅ Both PRs merged to main with green CI checks
 
 ### Claude Next
 - [x] All lanes from prior sessions complete — see PR #546 for full scope
