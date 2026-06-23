@@ -97,7 +97,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 
 **Deferred / blocked:**
 - [ ] AlliancesPanel: deferred; alliance backend not yet implemented
-- [ ] replayWarReport.js (21 DOM mutations): imperative renderer, needs full React rewrite — review before starting
+- [x] replayWarReport.js (21 DOM mutations) — ✅ COMPLETE (PR #550): ReplayModal.jsx React portal; vanilla bridge function and replay-modal div removed from index.html
 
 ### Codex Next
 - [x] Slice 1: Kill the shell in `client/index.html` — ✅ COMPLETE
