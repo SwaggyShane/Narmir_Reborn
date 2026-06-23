@@ -108,19 +108,20 @@ Use that inventory as the baseline progress metric for the remaining work.
 ## Claude Lane
 
 ### 1. Inventory remaining imperative client calls
-- [ ] Search the client for `document.getElementById`
-- [ ] Search the client for `el(`
-- [ ] Search the client for `innerHTML`
-- [ ] Search the client for `.style.`
-- [ ] Search for any remaining direct DOM mutation helpers in `socket-client.js`
+- [x] Search the client for `document.getElementById` — 96 instances
+- [x] Search the client for `el(` — 26 instances
+- [x] Search the client for `innerHTML` — 23 instances
+- [x] Search the client for `.style.` — 82 instances
+- [x] Search for direct DOM mutation helpers in `socket-client.js` — createMessageRow, renderOnlineList, etc. (moved to React)
 
 ### 2. Audit `GameStateManager` and socket paths
-- [ ] Check for DOM mutation methods inside `GameStateManager`
-- [ ] Move render behavior out of state mutation paths where possible
-- [ ] Confirm socket listeners only update state or dispatch React-safe events
+- [x] Check for DOM mutation methods inside `GameStateManager` — CLEAN
+- [x] Move render behavior out of state mutation paths — already true
+- [x] Confirm socket listeners only update state or dispatch React-safe events — ✅ CLEAN
 
-### 3. Remove or replace legacy bridge helpers
-- [ ] Find remaining shell-era globals still used by React panels
+### 3. Remove or replace legacy bridge helpers — IN PROGRESS
+- [x] Find remaining shell-era globals — ✅ Found in 7 React panels
+- [ ] Priority targets: WorldmapPanel (3 globals), NewsPanel (1 cache), KingdomProfileModal (1 utility)
 - [ ] Replace them with shared helpers or local React props/state
 - [ ] Keep compatibility shims only where a slice cannot be moved safely in one step
 
