@@ -73,8 +73,8 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] All lanes from prior sessions complete — see PR #546 for full scope
 - [x] WarfarePanel globals sweep — ✅ COMPLETE (in PR #546): all 16 remaining globals resolved; 1 deferred (showBattleReport, live vanilla)
 - [x] MarketPanel window.targets — ✅ COMPLETE (in PR #546)
-- [ ] Next: port `showBattleReport` modal to React (removes last WarfarePanel vanilla bridge)
-- [ ] Next: EconomyPanel upgrade defs (4 window.*_UPGRADES, requires React upgrade rendering)
+- [x] showBattleReport modal — ✅ COMPLETE (in PR #546): BattleReportModal.jsx React portal; no more window.showBattleReport in WarfarePanel
+- [ ] Next: EconomyPanel upgrade defs (4 window.*_UPGRADES, requires React upgrade rendering — own slice)
 - [ ] AlliancesPanel: deferred; alliance backend not yet implemented
 - [x] CSS: no action needed — audit found only forum.css, all active
 
@@ -159,7 +159,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] replayWarReport.js (window.warLogCache read) — ✅ COMPLETE (in PR #546): → gameStateManager.getState().warLogCache
 - [x] WarfarePanel (16 remaining globals) — ✅ COMPLETE (in PR #546): window.spyReportsCache/allianceIntelCache/targets → setState(); window.setWarfareTab → registerWarfareTab(); window.switchTab → direct import from panelNav.js; 6 dead globals removed (castWspell, doWcovert, updateWspellCalc, initWspells, initWcovert, selectedTargetW — none defined anywhere in codebase); window.wcovTargetRaceChange uses standard browser event API
 - [x] MarketPanel (window.targets read) — ✅ COMPLETE (in PR #546): → gameStateManager.getState().targets
-- [ ] WarfarePanel (1 remaining: window.showBattleReport) — deferred; live vanilla function defined in index.html line 5723; requires porting battle report modal to React
+- [x] WarfarePanel (window.showBattleReport) — ✅ COMPLETE (in PR #546): new BattleReportModal.jsx React portal; WarfarePanel uses setBattleReport() local state; vanilla battle-overlay in index.html is now unreachable from the React attack flow (Codex to remove when vanilla spell path is ported)
 - [ ] EconomyPanel (4 upgrade defs) — deferred: window.*_UPGRADES passed through callIfAvailable vanilla bridge; requires converting upgrade rendering to React
 - [ ] AlliancesPanel (10 vanilla delegates) — deferred; underlying alliance API not yet implemented (foundAlliance, loadAllianceSearch, etc. have no backend routes)
 
