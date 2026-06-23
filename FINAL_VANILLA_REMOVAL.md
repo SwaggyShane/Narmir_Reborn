@@ -59,6 +59,13 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] Codex Slice 10: bridged `openGenericModal` and `closeGenericModal` through `client/src/utils/genericShell.js`
 - [x] Codex Slice 11: bridged the fragment attunement modal cluster through `client/src/utils/attunementShell.js`
 
+## Open PR Assessment
+
+- [x] PR #545 is mergeable and clean. Safe to merge.
+- [x] PR #546 is mergeable and clean. Safe to merge.
+- [ ] PR #543 is conflicting. Preserve the branch; its shell work is already represented by later Codex slices, so do not delete anything.
+- [ ] PR #544 is conflicting. Preserve the branch; it still contains the remaining Claude panel/socket work and should be rebased or split after the clean PRs land.
+
 ## Current Handoff
 
 ### Claude Message — ✅ COMPLETE (PR #546)
