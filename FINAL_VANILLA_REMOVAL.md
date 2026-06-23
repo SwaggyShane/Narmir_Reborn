@@ -80,28 +80,19 @@ Use that inventory as the baseline progress metric for the remaining work.
 
 ## Current Handoff
 
-### Claude Session (2026-06-23) — ✅ COMPLETE
-- ✅ TrainingPanel.jsx DOM mutations removed (PR #548): 13 mutations → 0; controlled state for training allocations; fixed broken Max/Distribute buttons
-- ✅ StudiesPanel.jsx DOM mutations removed (PR #549): 14 mutations → 0; converted mage allocation to controlled inputs; replaced innerHTML builders with JSX; added useRef focus guards to prevent background sync overwrites; initialized focus dropdowns from server data
-- ✅ Fixed EconomyPanel.jsx merge conflict markers (blocking build on both branches)
-- ✅ All review feedback addressed: input focus guards, server data sync, optimistic update safety, performance (removed key-induced remounts)
-- ✅ Both PRs merged to main with green CI checks
-- ✅ EconomyPanel.jsx DOM mutations removed (PR #552): 27 → 1; all handlers wired; bank/tax/trade fully React-owned
-- ✅ EconomyPanel ledger follow-up (PR #554): /economy/overview now returns real income/upkeep breakdown; financial ledger shows live values; trade route normalization and SUPPORT_CAP_RACE + barracksTrainingMult accuracy fixes from Gemini review applied
+### Live Status
+- Codex slices 1 through 18 are complete.
+- Claude’s tracked DOM-mutation cleanup is complete for the tractable panels.
+- PR queue is empty.
+- `client/index.html` is still shrinking, but the remaining work is now mostly larger panel-level or backend-dependent seams.
 
-### Claude Lane — ✅ All tractable items complete
-- [x] All lanes from prior sessions complete — see PR #546 for full scope
-- [x] WarfarePanel globals sweep — ✅ COMPLETE (in PR #546): all 16 remaining globals resolved
-- [x] MarketPanel window.targets — ✅ COMPLETE (in PR #546)
-- [x] showBattleReport modal — ✅ COMPLETE (in PR #546): BattleReportModal.jsx React portal
-- [x] EconomyPanel upgrade rendering — ✅ COMPLETE (PR #544): UpgradesList.jsx + economyUpgrades.js; all callIfAvailable removed
-- [x] CSS: no action needed — audit found only forum.css, all active
-- [x] TrainingPanel.jsx — ✅ COMPLETE (PR #548): removed all 13 DOM mutations; fixed broken Max/Distribute buttons; added toast import
-- [x] StudiesPanel.jsx — ✅ COMPLETE (PR #549): removed all 14 DOM mutations; controlled inputs; JSX rendering; useRef focus guards; server sync
-
-**Deferred / blocked:**
-- [ ] AlliancesPanel: deferred; alliance backend not yet implemented
-- [x] replayWarReport.js (21 DOM mutations) — ✅ COMPLETE (PR #550): ReplayModal.jsx React portal; vanilla bridge function and replay-modal div removed from index.html
+### Claude Lane
+- [x] TrainingPanel.jsx DOM mutations removed (PR #548)
+- [x] StudiesPanel.jsx DOM mutations removed (PR #549)
+- [x] replayWarReport.js DOM mutations removed (PR #550)
+- [x] EconomyPanel.jsx DOM mutations removed (PR #552)
+- [x] EconomyPanel ledger follow-up (PR #554): live financial ledger and trade route normalization fixes landed
+- [ ] AlliancesPanel remains deferred until backend routes exist
 
 ### Codex Next
 - [x] Slice 1: Kill the shell in `client/index.html` — ✅ COMPLETE
@@ -123,8 +114,8 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] Slice 16: bridged the war replay modal through `client/src/utils/replayWarReport.js` and removed the shell-owned replay body from `client/index.html`
 - [x] Slice 17: removed the shell-only `showRegionDetails` helper from `client/index.html`
 - [x] Slice 18: removed the dead `loadAvailableSounds` shell bootstrap, wired the shared sound library through `client/src/utils/audio.js`, and kept `playGameSound` backed by React bootstrap state
-- [ ] Next: finish the last clean helper seams still hanging off `client/index.html`, then move to the remaining React panel / shell-helper cleanup in any other panels still using shell-era helpers.
-- [ ] Ongoing: confirm `client/index.html` is still boot-only after Slices 1-18.
+- [ ] Next: finish the last shell helper seams that still have a small, safe extraction path; otherwise move to the remaining panel-level cleanup or backend-dependent deferred items.
+- [ ] Ongoing: confirm `client/index.html` keeps trending toward boot-only after Slices 1-18.
 
 ### Current Inventory Snapshot (updated 2026-06-23 post-PR #554)
 - document.getElementById: 179 total (134 in index.html [Codex target], 45 in client/src/)
