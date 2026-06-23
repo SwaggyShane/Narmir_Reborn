@@ -132,11 +132,14 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] BountiesPanel (1 read fallback) — ✅ COMPLETE (in PR #546): removed window.rankingsCache fallback, now reads entirely from state.rankingsCache
 - [x] RacesPanel (3 data globals) — ✅ COMPLETE (in PR #546): window.RACE_LORE/REGION_META/REGION_BONUSES → new data module client/src/utils/raceData.js
 - [x] EconomyPanel (3 constants) — ✅ COMPLETE (in PR #546): window.FARM_WORKERS_PER/COMMODITY_VALUES/COMMODITY_RACE_DISCOUNT → new module client/src/utils/economyConstants.js; ResourceStrip also de-duplicated its local copy
-- [x] WarfarePanel (window.rankingsCache write) — ✅ COMPLETE (in PR #546): migrated to setState() to fix BountiesPanel cross-panel regression
+- [x] WarfarePanel (window.rankingsCache + window.warLogCache writes) — ✅ COMPLETE (in PR #546): both migrated to setState()
+- [x] AuthModal (window.initSocket) — ✅ COMPLETE (in PR #546): → getSocket() from socket-client.js
+- [x] TestingPanel (window.socket) — ✅ COMPLETE (in PR #546): → getSocket().then() with proper off() cleanup
+- [x] replayWarReport.js (window.warLogCache read) — ✅ COMPLETE (in PR #546): → gameStateManager.getState().warLogCache
 - [ ] EconomyPanel (4 upgrade defs) — deferred: window.*_UPGRADES passed through callIfAvailable vanilla bridge; requires converting upgrade rendering to React
-- [ ] WarfarePanel (18 remaining globals) — deferred, dedicated slice; largest remaining target
+- [ ] WarfarePanel (16 remaining globals) — deferred, dedicated slice; largest remaining target
 - [ ] MarketPanel reads window.targets — set by WarfarePanel, deferred until WarfarePanel slice
-- [ ] Keep compatibility shims only where a slice cannot be moved safely in one step
+- [ ] AlliancesPanel (10 vanilla delegates) — deferred; underlying alliance API not yet implemented
 
 ### 4. Clean up the remaining legacy CSS surfaces — ✅ COMPLETE (audit)
 - [x] Review files still importing from `client/src/css/` — only `forum.css` exists and is actively used by main.js and Portal.jsx; nothing to remove
