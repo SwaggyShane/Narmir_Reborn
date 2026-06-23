@@ -13,6 +13,13 @@ Remove the remaining vanilla shell, hybrid bridge code, and legacy DOM mutation 
 - Keep gameplay behavior unchanged unless a slice explicitly needs a small fix to preserve existing behavior.
 - Prefer moving logic out of `client/index.html` before touching lower-level helpers.
 
+### Quick Global Searches (Do These First)
+- `document.getElementById`
+- `el(`
+- `.innerHTML =`
+- `.style.`
+- `window.someGlobal`
+
 ## Codex Lane
 
 ### 1. Kill the shell in `client/index.html`
@@ -77,4 +84,3 @@ Remove the remaining vanilla shell, hybrid bridge code, and legacy DOM mutation 
 - Remaining helpers are shared utilities, not bridge glue.
 - Legacy CSS is reduced to the minimum needed for shared primitives.
 - Each slice is reviewable, testable, and safe to merge on its own.
-
