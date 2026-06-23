@@ -125,8 +125,9 @@ Use that inventory as the baseline progress metric for the remaining work.
 
 ### 3. Remove or replace legacy bridge helpers — IN PROGRESS
 - [x] Find remaining shell-era globals — ✅ Found in 7 React panels
-- [x] WorldmapPanel (3 globals) — ✅ COMPLETE (PR #545): openKingdomProfile, targetFromRankings, establishTradeRoute
-- [ ] Next targets: NewsPanel (1 cache), KingdomProfileModal (1 utility)
+- [x] WorldmapPanel (3 globals) — ✅ COMPLETE (PR #545): openKingdomProfile, targetFromRankings, establishTradeRoute (with auto-refresh callback for better UX)
+- [x] NewsPanel (1 cache) — ✅ COMPLETE (PR #546): removed window.newsCache (write-only, never read)
+- [ ] Next targets: KingdomProfileModal (1 utility), remaining panels
 - [ ] Replace remaining with shared helpers or local React props/state
 - [ ] Keep compatibility shims only where a slice cannot be moved safely in one step
 
