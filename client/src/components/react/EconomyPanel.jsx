@@ -87,7 +87,6 @@ export async function loadEconomy() {
 
   if (el('econ-taverns')) el('econ-taverns').textContent = fmt(state.bld_taverns || 0);
   if (el('econ-entertainment')) el('econ-entertainment').textContent = '+' + fmt(data.tavernBonus || 0) + '/turn';
-<<<<<<< HEAD
 
   renderUpgrades('farm', FARM_UPGRADES, data.farm_upgrades || {}, 'farm-upgrade-list');
   renderUpgrades('granary', GRANARY_UPGRADES, data.granary_upgrades || {}, 'granary-page-upgrade-list');
@@ -97,8 +96,6 @@ export async function loadEconomy() {
   renderCommodityMarket(data.market_upgrades || {});
   renderActiveMercs(data.mercenaries || []);
   populateTradeTargets();
-=======
->>>>>>> 2e1c6d3 (Create upgrade definitions module and React component for economy rendering)
 }
 
 
