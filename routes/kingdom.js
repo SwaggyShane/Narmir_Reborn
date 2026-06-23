@@ -4318,12 +4318,13 @@ module.exports = function (db) {
               bld_granaries, granary_upgrades, food, food_shortage_turns,
               food_surplus_turns, fragment_bonuses, tavern_upgrades, mercenaries,
               fighters, rangers, mages, clerics, thieves, ninjas,
-              researchers, engineers, scribes
+              researchers, engineers, scribes, tax
        FROM kingdoms WHERE player_id = ?`,
       [req.player.playerId]
     );
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
     res.json({
+      tax: k.tax,
       farmProduction: engine.farmProduction(k),
       foodConsumption: engine.foodConsumption(k),
       foodBalance: engine.farmProduction(k) - engine.foodConsumption(k),
