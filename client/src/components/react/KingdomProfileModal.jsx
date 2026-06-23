@@ -9,6 +9,7 @@ import { openDirectMessage } from '../../utils/directMessage.js';
 import { targetFromRankings } from '../../utils/rankingsTarget.js';
 import { toast } from '../../utils/toast.js';
 import { RACE_ICONS } from '../../utils/raceIcons.js';
+import { getRacePortrait } from '../../utils/racePortraits.js';
 
 let profileApi = null;
 
@@ -21,9 +22,8 @@ function normalizeRaceIcon(race) {
 }
 
 function getPortrait(race, gender) {
-  if (typeof window === 'undefined' || typeof window.getRacePortrait !== 'function') return '';
   try {
-    return window.getRacePortrait(race, gender || 'male') || '';
+    return getRacePortrait(race, gender || 'male') || '';
   } catch {
     return '';
   }
