@@ -56,21 +56,19 @@ Use that inventory as the baseline progress metric for the remaining work.
 
 ## Current Handoff
 
-### Claude Message — ✅ COMPLETE (PR #544)
-- ✅ Fixed `event:chat_clear` in `client/src/hooks/useSocket.js` and `client/src/components/react/GlobalchatPanel.jsx`
-- ✅ Removed direct DOM-clearing from useSocket.js (was: `getElementById('global-chat-messages').innerHTML = ''`)
-- ✅ Implemented React-owned clear in GlobalchatPanel: `setMessages([])`
-- ✅ All socket listeners now React-safe — zero DOM mutations in socket flow
-- ✅ Built and smoke tested successfully
+### Claude Message — ✅ COMPLETE (PR #546)
+- ✅ Removed window globals from 7 React panels: NewsPanel, RankingsPanel, BountiesPanel, RacesPanel, KingdomProfileModal, EconomyPanel, WarfarePanel (partial)
+- ✅ Created 3 new shared modules: racePortraits.js, raceData.js, economyConstants.js
+- ✅ Fixed BountiesPanel regression: WarfarePanel now writes rankingsCache to GameStateManager
+- ✅ ResourceStrip de-duplicated its local FARM_WORKERS_PER (now imports from economyConstants.js)
+- ✅ CSS audit complete — client/src/css/ has only forum.css, all actively used
+- ✅ Built and smoke tested clean
 
 ### Claude Next
-- [x] Check for DOM mutations inside `GameStateManager` - clean, no mutations.
-- [x] Confirm render behavior is out of state mutation paths - already true.
-- [x] Confirm socket listeners only update state or dispatch React-safe events - ✅ CLEAN.
-- [x] Resolve the remaining socket exception: `event:chat_clear` - ✅ FIXED (PR #544).
-- [x] Start with `client/src/hooks/useSocket.js` and `client/src/components/react/GlobalchatPanel.jsx`; make `event:chat_clear` React-safe and keep it out of DOM mutation paths - ✅ COMPLETE.
-- [x] Record the final socket -> GameStateManager -> React flow map in the doc.
-- [x] Update the inventory counts in the doc after the audit.
+- [x] All lanes from prior sessions complete — see PR #546 for full scope
+- [ ] Next: WarfarePanel dedicated slice (18 remaining globals, complex — await Codex alignment)
+- [ ] Next: AlliancesPanel dedicated slice (10 vanilla delegates — await Codex alignment)
+- [ ] CSS: no action needed — audit found only forum.css, all active
 
 ### Codex Next
 - [x] Slice 1: Kill the shell in `client/index.html` — ✅ COMPLETE
@@ -140,10 +138,9 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [ ] MarketPanel reads window.targets — set by WarfarePanel, deferred until WarfarePanel slice
 - [ ] Keep compatibility shims only where a slice cannot be moved safely in one step
 
-### 4. Clean up the remaining legacy CSS surfaces
-- [ ] Review files still importing from `client/src/css/`
-- [ ] Remove obsolete styles after the owning panel has been converted
-- [ ] Leave shared utility styles alone if they still serve active UI
+### 4. Clean up the remaining legacy CSS surfaces — ✅ COMPLETE (audit)
+- [x] Review files still importing from `client/src/css/` — only `forum.css` exists and is actively used by main.js and Portal.jsx; nothing to remove
+- [x] No obsolete styles found; shared primitives are all in active use
 
 ## File Order Recommendation
 1. `client/index.html`
