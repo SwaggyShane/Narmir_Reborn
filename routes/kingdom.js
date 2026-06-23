@@ -42,10 +42,42 @@ function repairMojibake(value) {
   return text;
 }
 
+const NEWS_EMOJI_RULES = [
+  { test: (text) => /^Food surplus:/i.test(text) || /^Food:/i.test(text), emoji: '🌽' },
+  { test: (text) => /^Tears of the World Tree:/i.test(text), emoji: '💧' },
+  { test: (text) => /^Foresters report:/i.test(text), emoji: '🌲' },
+  { test: (text) => /^Resource production:/i.test(text) && /\bwood\./i.test(text), emoji: '🪵' },
+  { test: (text) => /^Resource production:/i.test(text) && /\bstone\./i.test(text), emoji: '🪨' },
+  { test: (text) => /^Resource production:/i.test(text) && /\biron\./i.test(text), emoji: '🔗' },
+  { test: (text) => /^\d[\d,]* researchers studying/i.test(text), emoji: '🔬' },
+  { test: (text) => /^Mana:/i.test(text), emoji: '🔮' },
+  { test: (text) => /^Population grew\b/i.test(text), emoji: '👥' },
+  { test: (text) => /^Population declined\b/i.test(text), emoji: '⚠️' },
+  { test: (text) => /^Happiness:/i.test(text), emoji: '😊' },
+  { test: (text) => /^Turn \d+: .*gold earned/i.test(text), emoji: '🪙' },
+  { test: (text) => /^Troop upkeep:/i.test(text), emoji: '⚙️' },
+  { test: (text) => /^End of Turn \d+\b/i.test(text), emoji: '🏦' },
+  { test: (text) => /^Geared Self-Construction:/i.test(text), emoji: '⚙️' },
+  { test: (text) => /^Actively constructing:/i.test(text), emoji: '🏗️' },
+  { test: (text) => /^Mage research advanced:/i.test(text), emoji: '✨' },
+];
+
+function decorateNewsMessage(value) {
+  if (value === null || value === undefined) return value;
+  let text = repairMojibake(value);
+  if (!text) return text;
+  if (/^\p{Extended_Pictographic}/u.test(text)) return text;
+  text = text.replace(/^[<>=\-\u2022\u00B7/\\|]+\s*/, '');
+  for (const rule of NEWS_EMOJI_RULES) {
+    if (rule.test(text)) return `${rule.emoji} ${text}`;
+  }
+  return `📋 ${text}`;
+}
+
 function normalizeNewsRow(row) {
   if (!row || typeof row !== "object") return row;
   if (typeof row.message === "string") {
-    return { ...row, message: repairMojibake(row.message) };
+    return { ...row, message: decorateNewsMessage(row.message) };
   }
   return row;
 }

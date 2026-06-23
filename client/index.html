@@ -6545,6 +6545,37 @@
 
       };
 
+      var NEWS_EMOJI_RULES = [
+        { test: function (text) { return /^Food surplus:/i.test(text) || /^Food:/i.test(text); }, emoji: "🌽" },
+        { test: function (text) { return /^Tears of the World Tree:/i.test(text); }, emoji: "💧" },
+        { test: function (text) { return /^Foresters report:/i.test(text); }, emoji: "🌲" },
+        { test: function (text) { return /^Resource production:/i.test(text) && /\bwood\./i.test(text); }, emoji: "🪵" },
+        { test: function (text) { return /^Resource production:/i.test(text) && /\bstone\./i.test(text); }, emoji: "🪨" },
+        { test: function (text) { return /^Resource production:/i.test(text) && /\biron\./i.test(text); }, emoji: "🔗" },
+        { test: function (text) { return /^\d[\d,]* researchers studying/i.test(text); }, emoji: "🔬" },
+        { test: function (text) { return /^Mana:/i.test(text); }, emoji: "🔮" },
+        { test: function (text) { return /^Population grew\b/i.test(text); }, emoji: "👥" },
+        { test: function (text) { return /^Population declined\b/i.test(text); }, emoji: "⚠️" },
+        { test: function (text) { return /^Happiness:/i.test(text); }, emoji: "😊" },
+        { test: function (text) { return /^Turn \d+: .*gold earned/i.test(text); }, emoji: "🪙" },
+        { test: function (text) { return /^Troop upkeep:/i.test(text); }, emoji: "⚙️" },
+        { test: function (text) { return /^End of Turn \d+\b/i.test(text); }, emoji: "🏦" },
+        { test: function (text) { return /^Geared Self-Construction:/i.test(text); }, emoji: "⚙️" },
+        { test: function (text) { return /^Actively constructing:/i.test(text); }, emoji: "🏗️" },
+        { test: function (text) { return /^Mage research advanced:/i.test(text); }, emoji: "✨" },
+      ];
+
+      function decorateNewsMessage(value) {
+        var text = repairMojibake(String(value || ""));
+        if (!text) return text;
+        if (/^\p{Extended_Pictographic}/u.test(text)) return text;
+        text = text.replace(/^[<>=\-\u2022\u00B7\/\\|]+\s*/, "");
+        for (var i = 0; i < NEWS_EMOJI_RULES.length; i++) {
+          if (NEWS_EMOJI_RULES[i].test(text)) return NEWS_EMOJI_RULES[i].emoji + " " + text;
+        }
+        return "📋 " + text;
+      }
+
 
 
       function getNewsPriority(item) {
@@ -6912,6 +6943,8 @@
                 ? summarizeAttackNewsForAll(ev)
 
               : repairMojibake(ev.message || ev);
+
+            msg = decorateNewsMessage(msg);
 
             var isBorderType =
 

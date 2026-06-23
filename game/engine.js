@@ -956,7 +956,7 @@ function processTurn(k, db = null) {
     }
     events.push({
       type: 'system',
-      message: `Happiness: ${happinessResult.happiness}/120 (recovery +${happinessResult.recovery}${happinessParts.length ? ', ' + happinessParts.join(', ') : ''})`
+      message: `😊 Happiness: ${happinessResult.happiness}/120 (recovery +${happinessResult.recovery}${happinessParts.length ? ', ' + happinessParts.join(', ') : ''})`
     });
   }
 
@@ -979,7 +979,7 @@ function processTurn(k, db = null) {
   updates.mana = k.mana + manaGain;
   events.push({
     type: "system",
-    message: `Mana: +${manaGain.toLocaleString()} restored. Total: ${updates.mana.toLocaleString()}.`,
+    message: `🔮 Mana: +${manaGain.toLocaleString()} restored. Total: ${updates.mana.toLocaleString()}.`,
   });
 
   // Mages gain XP when producing mana
@@ -994,12 +994,12 @@ function processTurn(k, db = null) {
   if (growth > 0) {
     events.push({
       type: "system",
-      message: `Population grew by ${growth.toLocaleString()} to ${updates.population.toLocaleString()}.`,
+      message: `👥 Population grew by ${growth.toLocaleString()} to ${updates.population.toLocaleString()}.`,
     });
   } else if (growth < 0) {
     events.push({
       type: "system",
-      message: `Population declined by ${Math.abs(growth).toLocaleString()} to ${updates.population.toLocaleString()} due to low happiness.`,
+      message: `⚠️ Population declined by ${Math.abs(growth).toLocaleString()} to ${updates.population.toLocaleString()} due to low happiness.`,
     });
   }
 
@@ -3218,7 +3218,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
       finalMsg += `Completed: ${completedItems.join(", ")}. `;
     }
     if (updates._build_estimates && updates._build_estimates.length > 0) {
-      finalMsg += `Actively constructing: ${updates._build_estimates.join(" · ")}. `;
+        finalMsg += `Actively constructing: ${updates._build_estimates.join(" \u00B7 ")}. `;
     }
     if (constructionNotes.length > 0) {
       finalMsg += constructionNotes.join(" ") + " ";
@@ -3234,7 +3234,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
   } else if (activeBuildings.size > 0) {
     let finalMsg = "";
     if (updates._build_estimates && updates._build_estimates.length > 0) {
-      finalMsg += `Actively constructing: ${updates._build_estimates.join(" · ")}. `;
+        finalMsg += `Actively constructing: ${updates._build_estimates.join(" \u00B7 ")}. `;
     } else {
       if (totalEngineersWorked > 0) {
         finalMsg += `Engineers making progress on ${activeBuildings.size} building type${activeBuildings.size > 1 ? "s" : ""}. `;
@@ -5865,7 +5865,7 @@ function processActiveEffects(k, events) {
         // Unlimited food: generate food equal to 20% of population each turn
         const foodGenerated = Math.floor(k.population * 0.2);
         updates.food = (updates.food !== undefined ? updates.food : k.food) + foodGenerated;
-        events.push({ type: "system", message: `🌾 Conjured abundance generates ${foodGenerated.toLocaleString()} food.` });
+        events.push({ type: "system", message: `🌽 Conjured abundance generates ${foodGenerated.toLocaleString()} food.` });
       } else if (effect === "death_dominion") {
         // Enemy deaths reanimate under control — bonus fighters each turn based on flag
         const bonusFighters = Math.floor(k.fighters * 0.01);

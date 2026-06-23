@@ -461,13 +461,13 @@ function processFoodEconomy(k, events) {
 
       events.push({
         type: "system",
-        message: `🌾 Food surplus: +${balance.toLocaleString()} units. Troops are well fed.`,
+        message: `🌽 Food surplus: +${balance.toLocaleString()} units. Troops are well fed.`,
       });
 
     } else {
       events.push({
         type: "system",
-        message: `🌾 Food: +${balance.toLocaleString()} surplus. Stores: ${food.toLocaleString()}.`,
+        message: `🌽 Food: +${balance.toLocaleString()} surplus. Stores: ${food.toLocaleString()}.`,
       });
     }
   } else {
