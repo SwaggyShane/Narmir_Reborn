@@ -53,6 +53,13 @@ Use that inventory as the baseline progress metric for the remaining work.
 
 ## Current Handoff
 
+### Claude Message
+- Claude, take the remaining `event:chat_clear` exception and fix it in `client/src/hooks/useSocket.js` and `client/src/components/react/GlobalchatPanel.jsx`.
+- Remove the direct DOM-clearing path from the socket handler.
+- Make the clear action React-owned only.
+- Do not touch any other socket events in this slice.
+- Build it, smoke test it, and then update this doc with the exact files changed and whether chat still clears correctly.
+
 ### Claude Next
 - [x] Check for DOM mutations inside `GameStateManager` - clean, no mutations.
 - [x] Confirm render behavior is out of state mutation paths - already true.
