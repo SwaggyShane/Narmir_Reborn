@@ -42,7 +42,21 @@ import { openKingdomProfile as openKingdomProfileImpl, closeKingdomProfile as cl
 import { loadKingdom as loadKingdomImpl } from "./components/react/AuthModal.jsx";
 import newsEmojiTools from "../../game/news-emoji.js";
 import { appendNewsItems } from "./utils/newsShell.js";
+import { openLoreModal as openLoreModalImpl, closeLoreModal as closeLoreModalImpl } from "./utils/loreShell.js";
+import { closeXpModal as closeXpModalImpl } from "./utils/xpShell.js";
+import { openSchoolModal as openSchoolModalImpl, closeSchoolModal as closeSchoolModalImpl } from "./utils/schoolShell.js";
+import { openGenericModal as openGenericModalImpl, closeGenericModal as closeGenericModalImpl } from "./utils/genericShell.js";
+import {
+  openAttunementModal as openAttunementModalImpl,
+  closeAttunementModal as closeAttunementModalImpl,
+  loadAttunementData as loadAttunementDataImpl,
+  showFragmentBuildingConfirm as showFragmentBuildingConfirmImpl,
+  toggleFragmentDetailsPublic as toggleFragmentDetailsImpl,
+  applyAttunement as applyAttunementImpl,
+  removeAttunement as removeAttunementImpl,
+} from "./utils/attunementShell.js";
 import { showToast } from "./utils/toastShell.js";
+import { showHeroXpModal as showHeroXpModalImpl } from "./utils/showHeroXpModal.js";
 
 window.apiCall = apiCall;
 window.applyGameMutation = applyGameMutation;
@@ -54,6 +68,21 @@ window.__toastImpl = showToast;
 window.__openKingdomProfileImpl = openKingdomProfileImpl;
 window.__closeKingdomProfileImpl = closeKingdomProfileImpl;
 window.__loadKingdomImpl = loadKingdomImpl;
+window.__openLoreModalImpl = openLoreModalImpl;
+window.__closeLoreModalImpl = closeLoreModalImpl;
+window.__showHeroXpModalImpl = showHeroXpModalImpl;
+window.__closeXpModalImpl = closeXpModalImpl;
+window.__openSchoolModalImpl = openSchoolModalImpl;
+window.__closeSchoolModalImpl = closeSchoolModalImpl;
+window.__openGenericModalImpl = openGenericModalImpl;
+window.__closeGenericModalImpl = closeGenericModalImpl;
+window.__openAttunementModalImpl = openAttunementModalImpl;
+window.__closeAttunementModalImpl = closeAttunementModalImpl;
+window.__loadAttunementDataImpl = loadAttunementDataImpl;
+window.__showFragmentBuildingConfirmImpl = showFragmentBuildingConfirmImpl;
+window.__toggleFragmentDetailsImpl = toggleFragmentDetailsImpl;
+window.__applyAttunementImpl = applyAttunementImpl;
+window.__removeAttunementImpl = removeAttunementImpl;
 
 const reactRoots = new Map();
 

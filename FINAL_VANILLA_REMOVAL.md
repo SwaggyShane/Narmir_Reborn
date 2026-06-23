@@ -53,6 +53,11 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] Codex Slice 4: moved `appendNewsItems` out of `client/index.html` into `client/src/utils/newsShell.js` and bridged it through `client/src/main.js`
 - [x] Codex Slice 5: moved shell toast rendering out of `client/index.html` into `client/src/utils/toastShell.js` and bridged it through `client/src/main.js`
 - [x] Codex Slice 6: bridged `loadKingdom` and `openKingdomProfile` through React-owned helpers so the shell no longer owns the kingdom profile/auth refresh path
+- [x] Codex Slice 7: bridged `openLoreModal` and `closeLoreModal` through `client/src/utils/loreShell.js`
+- [x] Codex Slice 8: bridged `showXpModal` and `closeXpModal` through `client/src/utils/xpShell.js` and `client/src/utils/showHeroXpModal.js`
+- [x] Codex Slice 9: bridged `openSchoolModal` and `closeSchoolModal` through `client/src/utils/schoolShell.js`
+- [x] Codex Slice 10: bridged `openGenericModal` and `closeGenericModal` through `client/src/utils/genericShell.js`
+- [x] Codex Slice 11: bridged the fragment attunement modal cluster through `client/src/utils/attunementShell.js`
 
 ## Current Handoff
 
@@ -78,8 +83,20 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] Slice 4: moved `appendNewsItems` out of `client/index.html` into `client/src/utils/newsShell.js` and bridged it through `client/src/main.js`
 - [x] Slice 5: moved shell toast rendering out of `client/index.html` into `client/src/utils/toastShell.js` and bridged it through `client/src/main.js`
 - [x] Slice 6: bridged `loadKingdom` and `openKingdomProfile` through React-owned helpers
+- [x] Slice 7: bridged `openLoreModal` and `closeLoreModal` through `client/src/utils/loreShell.js`
+- [x] Slice 8: bridged `showXpModal` and `closeXpModal` through `client/src/utils/xpShell.js` and `client/src/utils/showHeroXpModal.js`
+- [x] Slice 9: bridged `openSchoolModal` and `closeSchoolModal` through `client/src/utils/schoolShell.js`
+- [x] Slice 10: bridged `openGenericModal` and `closeGenericModal` through `client/src/utils/genericShell.js`
+- [x] Slice 11: bridged the fragment attunement modal cluster through `client/src/utils/attunementShell.js`
 - [ ] Next: Take the next safe shell/helper slice and update the doc again.
-- [ ] Next likely target: `openLoreModal` / `closeLoreModal` or the remaining shell helper clusters if they can be peeled without touching Claude-owned socket paths.
+- [ ] Next likely target: `showHeroLore` / `openRaceLore` or the remaining lore/shell helper cluster if it can be peeled without touching Claude-owned socket paths.
+
+### Current Inventory Snapshot
+- document.getElementById: 239
+- el(: 98
+- .innerHTML =: 80
+- .style.: 207
+- window.someGlobal: 0
 
 ## Codex Lane
 
@@ -88,6 +105,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [ ] Move panel switching into React-owned code or a small shared helper
 - [ ] Remove remaining global shell wiring that is only there to bootstrap the old UI
 - [ ] Keep `client/index.html` focused on bootstrapping, not UI ownership
+- [ ] Use the new attunement shell helper as the pattern for the next modal/helper slice
 
 ### 2. Reduce hybrid bridge code
 - [ ] Search for direct DOM mutation paths in `client/src/main.js`

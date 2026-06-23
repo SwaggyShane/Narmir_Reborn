@@ -3440,7 +3440,7 @@
         }
       }
 
-      
+
 
       .trow .desc {
 
@@ -4010,7 +4010,7 @@
 
               <div class="val" id="m-defense-rating" style="font-size: 11px">
 
-                
+
 
               </div>
 
@@ -4300,7 +4300,7 @@
 
             >
 
-              
+
 
             </div>
 
@@ -4358,7 +4358,7 @@
 
           </div>
 
-          <div style="opacity: 0.6">UPTIME: <span id="status-uptime">—</span></div>
+          <div style="opacity: 0.6">UPTIME: <span id="status-uptime">â€”</span></div>
 
         </div>
 
@@ -4368,9 +4368,9 @@
 
         >
 
-          <span id="status-version">—</span>
+          <span id="status-version">â€”</span>
 
-          <span>NODE ID: <span id="status-nodeid">—</span></span>
+          <span>NODE ID: <span id="status-nodeid">â€”</span></span>
 
         </div>
 
@@ -4419,7 +4419,7 @@
 
 
 
-      //  Expedition dedup cache 
+      //  Expedition dedup cache
 
       // Prevents duplicate API calls when player clicks button rapidly
 
@@ -6128,7 +6128,7 @@
 
       /*  Alliance  */
 
-      //  Socket.io connection 
+      //  Socket.io connection
 
       var socket = null;
 
@@ -6886,7 +6886,7 @@
 
 
 
-      //  War Log 
+      //  War Log
 
 
 
@@ -7636,7 +7636,7 @@
 
 
 
-      //  Rankings 
+      //  Rankings
 
 
 
@@ -8411,7 +8411,7 @@
 
 
 
-      //  Unified Warfare Target Selection 
+      //  Unified Warfare Target Selection
 
       function filterWarfareTargetsUnified(q, containerId) {
 
@@ -9531,7 +9531,7 @@
 
 
 
-      //  Warfare Panel 
+      //  Warfare Panel
 
 
 
@@ -9645,7 +9645,7 @@
 
         <div style="font-size:12px;color:var(--text2)">
 
-          ${detail.race ? `Race: ${detail.race}  ` : ""} 
+          ${detail.race ? `Race: ${detail.race}  ` : ""}
 
           ${detail.land ? `Land: ${fmt(detail.land)}  ` : ""}
 
@@ -9751,7 +9751,7 @@
 
         <div style="font-size:12px;color:var(--text2)">
 
-          ${detail.race ? `Race: ${detail.race}  ` : ""} 
+          ${detail.race ? `Race: ${detail.race}  ` : ""}
 
           ${detail.land ? `Land: ${fmt(detail.land)}  ` : ""}
 
@@ -11057,7 +11057,7 @@
 
 
 
-      //  Kingdom Profile Modal 
+      //  Kingdom Profile Modal
 
 
 
@@ -11076,49 +11076,29 @@
 
 
 
-      //  Lore Entry Modal 
+      //  Lore Entry Modal
 
 
 
       function openLoreModal(title, msg, isHtml) {
-        var modal = document.getElementById("lore-entry-modal");
-        var content = document.getElementById("lore-entry-content");
-
-        if (modal) modal.style.display = "flex";
-
-        function escHtml(value) {
-          return String(value ?? "")
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#39;");
-        }
-
-        var body = isHtml ? msg : escHtml(msg).replace(/\n/g, "<br>");
-
-        if (content) {
-          content.innerHTML =
-            '<div style="text-align:center;margin-bottom:20px">' +
-            '<h2 style="color:var(--gold);margin:0 0 4px;font-size:20px">' +
-            escHtml(title) +
-            "</h2>" +
-            "</div>" +
-            '<div style="font-size:14px;color:var(--text2);line-height:1.6;padding:12px;background:var(--bg3);border-radius:var(--radius);border:1px solid var(--border)">' +
-            body +
-            "</div>";
+        if (typeof window.__openLoreModalImpl === "function") {
+          return window.__openLoreModalImpl(title, msg, isHtml, {
+            documentRef: document,
+          });
         }
       }
 
       function closeLoreModal() {
-        var modal = document.getElementById("lore-entry-modal");
-
-        if (modal) modal.style.display = "none";
+        if (typeof window.__closeLoreModalImpl === "function") {
+          return window.__closeLoreModalImpl({
+            documentRef: document,
+          });
+        }
       }
 
 
 
-      //  XP & Level system 
+      //  XP & Level system
 
 
 
@@ -11142,7 +11122,7 @@
 
       //  Training panel
 
-      //  Training panel 
+      //  Training panel
 
 
 
@@ -13597,401 +13577,21 @@
 
         return Math.floor(500000 * Math.pow((level - 1) / 24, 2.5));
 
+      }      function showXpModal() {
+        if (typeof window.__showHeroXpModalImpl === "function") {
+          return window.__showHeroXpModalImpl();
+        }
       }
-
-
-
-      function showXpModal() {
-
-        const xpmEl = document.getElementById("xp-modal");
-
-        if (!xpmEl) return;
-
-        var level = state.level || 1;
-
-        var xp = state.xp || 0;
-
-        var xpThisLevel = xpForLevelJS(level);
-
-        var xpNextLevel = xpForLevelJS(level + 1);
-
-        var xpNeeded = xpNextLevel - xpThisLevel;
-
-        var xpIntoLevel = xp - xpThisLevel;
-
-        var pct = Math.min(100, Math.floor((xpIntoLevel / xpNeeded) * 100));
-
-
-
-        var elLevel = document.getElementById("xp-modal-level");
-
-        if (elLevel) elLevel.textContent = level;
-
-        var elXp = document.getElementById("xp-modal-xp");
-
-        if (elXp) elXp.textContent = fmt(xp) + " XP total";
-
-        var elPct = document.getElementById("xp-modal-pct");
-
-        if (elPct) elPct.textContent = pct + "%";
-
-        var elBar = document.getElementById("xp-modal-bar");
-
-        if (elBar) elBar.style.width = pct + "%";
-
-        var elCurrent = document.getElementById("xp-modal-current-xp");
-
-        if (elCurrent)
-
-          elCurrent.textContent =
-
-            fmt(xpIntoLevel) + " / " + fmt(xpNeeded) + " XP";
-
-        var elNext = document.getElementById("xp-modal-next-xp");
-
-        if (elNext)
-
-          elNext.textContent =
-
-            fmt(xpNeeded - xpIntoLevel) + " XP to level " + (level + 1);
-
-
-
-        // Race bonus
-
-        var raceBonuses = {
-
-          high_elf: "Superior Research and Magic abilities",
-
-          dwarf: "Enhanced Construction and Economy",
-
-          dire_wolf: "Dominant Combat and Exploration",
-
-          dark_elf: "Exceptional Covert and Magic mastery",
-
-          human: "Balanced improvements across all activities",
-
-          orc: "Strong Combat and Economy focused for war",
-
-          vampire: "Mastery of Night and Shadow operations",
-
-        };
-
-        var raceText = document.getElementById("xp-race-bonus-text");
-
-        if (raceText) raceText.textContent = raceBonuses[state.race] || "None";
-
-
-
-        // Update XP source progress bars from actual earned XP
-
-        var xpSources = {};
-
-        if (state.xp_sources) {
-
-          try {
-
-            xpSources = typeof state.xp_sources === 'string' ? JSON.parse(state.xp_sources) : state.xp_sources;
-
-          } catch (e) {
-
-            xpSources = {};
-
-          }
-
-        }
-
-
-
-        // Calculate total XP earned across all sources
-
-        var totalEarned = 0;
-
-        Object.keys(xpSources).forEach(function(source) {
-
-          totalEarned += (xpSources[source] || 0);
-
-        });
-
-
-
-        // Update bars with actual proportions
-
-        var sourceOrder = ['turn', 'gold_earned', 'combat_win', 'combat_loss', 'research', 'construction', 'exploration', 'spell_cast', 'covert_op'];
-
-        var sourceMap = {
-
-          'turn': 'turn',
-
-          'gold_earned': 'gold',
-
-          'combat_win': 'combat_win',
-
-          'combat_loss': 'combat_loss',
-
-          'research': 'research',
-
-          'construction': 'construction',
-
-          'exploration': 'exploration',
-
-          'spell_cast': 'spell',
-
-          'covert_op': 'covert',
-
-        };
-
-
-
-        Object.keys(sourceMap).forEach(function(sourceKey) {
-
-          var barKey = sourceMap[sourceKey];
-
-          var bar = document.querySelector('[data-source="' + barKey + '"]');
-
-          if (bar) {
-
-            var earned = xpSources[sourceKey] || 0;
-
-            if (totalEarned > 0) {
-
-              var pct = (earned / totalEarned) * 100;
-
-              bar.style.width = Math.max(1, pct) + '%';
-
-              bar.textContent = ''; // No percentage label
-
-            } else {
-
-              bar.style.width = '0%';
-
-              bar.textContent = '';
-
-            }
-
-          }
-
-        });
-
-
-
-        // Milestone title & bonus summary
-
-        var msTitle = state.milestone_title || "";
-
-        var elMsTitle = document.getElementById("xp-modal-ms-title");
-
-        if (elMsTitle) elMsTitle.textContent = msTitle || "Fledgling";
-
-
-
-        var msBonuses = state.milestone_bonuses || {};
-
-        if (typeof msBonuses === "string") {
-
-          try { msBonuses = JSON.parse(msBonuses) || {}; } catch (e) { msBonuses = {}; }
-
-        }
-
-        var bonusParts = [];
-
-        if (msBonuses.gold_income_pct) bonusParts.push("+" + msBonuses.gold_income_pct + "% gold income");
-
-        if (msBonuses.attack_pct) bonusParts.push("+" + msBonuses.attack_pct + "% attack");
-
-        if (msBonuses.defense_pct) bonusParts.push("+" + msBonuses.defense_pct + "% defense");
-
-        if (msBonuses.research_speed_pct) bonusParts.push("+" + msBonuses.research_speed_pct + "% research");
-
-        if (msBonuses.construction_speed_pct) bonusParts.push("+" + msBonuses.construction_speed_pct + "% construction");
-
-        if (msBonuses.covert_pct) bonusParts.push("+" + msBonuses.covert_pct + "% covert");
-
-        var elMsBonus = document.getElementById("xp-modal-ms-bonuses");
-
-        if (elMsBonus) elMsBonus.textContent = bonusParts.length ? bonusParts.join("  ") : "None yet";
-
-
-
-        // Race-specific reward modifier shown as a footnote on each milestone
-
-        var RACE_REWARD_MOD = {
-
-          human:     "Your gold grants +25%",
-
-          high_elf:  "Troops  researchers; research bonuses 2",
-
-          dwarf:     "Gold grants +50%; construction bonuses 2",
-
-          dire_wolf: "Troop grants 2; attack bonuses 1.5",
-
-          dark_elf:  "Troops  thieves/ninjas; covert bonuses 2",
-
-          orc:       "Troop grants 2; attack bonuses 1.5",
-
-          vampire:   "Troop grants 1.5; gold +25%; covert bonuses 1.5",
-
-        };
-
-        var raceMod = RACE_REWARD_MOD[state.race] || "";
-
-
-
-        // Level milestones table (every 25 levels)
-
-        var milestones = [
-
-          { level: 1,   label: "Fledgling",            note: "Starting point" },
-
-          { level: 25,  label: "Budding Ruler",         note: "25,000 gold" },
-
-          { level: 50,  label: "Established Lord",      note: "50,000 gold  100 troops" },
-
-          { level: 75,  label: "Regional Power",        note: "75,000 gold  50 land" },
-
-          { level: 100, label: "Grand Duke",            note: "150,000 gold  200 troops  +1% income" },
-
-          { level: 125, label: "Proven Warlord",        note: "100,000 gold  +1% attack" },
-
-          { level: 150, label: "Master Builder",        note: "125,000 gold  100 land  +1% construction" },
-
-          { level: 175, label: "Sage of the Realm",     note: "125,000 gold  +1% research" },
-
-          { level: 200, label: "High King",             note: "300,000 gold  500 troops  +1% income, +1% defense" },
-
-          { level: 225, label: "Strategist",            note: "200,000 gold  +1% attack" },
-
-          { level: 250, label: "Dominator",             note: "250,000 gold  200 land  +1% covert" },
-
-          { level: 275, label: "Arcane Authority",      note: "200,000 gold  +1% research" },
-
-          { level: 300, label: "Realm Sovereign",       note: "500,000 gold  1,000 troops  +1% income, +1% attack" },
-
-          { level: 325, label: "Grand Marshal",         note: "300,000 gold  250 land  +1% defense" },
-
-          { level: 350, label: "Emperor",               note: "400,000 gold  +1% income, +1% covert" },
-
-          { level: 375, label: "Immortal General",      note: "350,000 gold  1,500 troops  +1% attack" },
-
-          { level: 400, label: "Legendary Sovereign",   note: "750,000 gold  400 land  +2% income, +1% defense" },
-
-          { level: 425, label: "Mythic Conqueror",      note: "500,000 gold  2,000 troops  +1% attack, +1% covert" },
-
-          { level: 450, label: "Eternal Ruler",         note: "600,000 gold  500 land  +2% income" },
-
-          { level: 475, label: "God-King",              note: "700,000 gold  2,500 troops  +1% attack, +1% defense" },
-
-          { level: 500, label: "Ascended",              note: "1,000,000 gold  750 land  +2% income, +2% attack" },
-
-        ];
-
-        var tableEl = document.getElementById("xp-level-table");
-
-        if (tableEl) {
-
-          tableEl.innerHTML = milestones
-
-            .map(function (m) {
-
-              var reached = level >= m.level;
-
-              var isCurrent =
-
-                level >= m.level &&
-
-                (milestones[milestones.indexOf(m) + 1]
-
-                  ? level < milestones[milestones.indexOf(m) + 1].level
-
-                  : true);
-
-              var xpReq = xpForLevelJS(m.level);
-
-              return (
-
-                '<div style="color:' +
-
-                (reached ? "var(--gold)" : "var(--text3)") +
-
-                ";font-weight:" +
-
-                (isCurrent ? "700" : "400") +
-
-                '">' +
-
-                (reached ? "" : "") +
-
-                " Lv " +
-
-                m.level +
-
-                "</div>" +
-
-                '<div style="color:' +
-
-                (reached ? "var(--text)" : "var(--text3)") +
-
-                ";font-weight:" +
-
-                (isCurrent ? "600" : "400") +
-
-                '">' +
-
-                m.label +
-
-                (isCurrent
-
-                  ? ' <span style="font-size:10px;color:var(--green)">(current)</span>'
-
-                  : "") +
-
-                '<div style="font-size:11px;color:var(--text3)">' +
-
-                m.note +
-
-                (m.level > 1 && raceMod ? '<div style="font-size:10px;color:var(--accent1);margin-top:2px">' + raceMod + "</div>" : "") +
-
-                "</div></div>" +
-
-                '<div style="color:var(--text3);text-align:right">' +
-
-                (m.level === 1 ? "" : fmt(xpReq) + " XP") +
-
-                "</div>"
-
-              );
-
-            })
-
-            .join("");
-
-        }
-
-
-
-        xpmEl.style.display = "block";
-
-        document.body.style.overflow = "hidden";
-
-      }
-
-
 
       function closeXpModal() {
-
-        var xpmEl = document.getElementById("xp-modal");
-
-        if (xpmEl) xpmEl.style.display = "none";
-
-        document.body.style.overflow = "";
-
+        if (typeof window.__closeXpModalImpl === "function") {
+          return window.__closeXpModalImpl({
+            documentRef: document,
+            windowRef: window,
+          });
+        }
       }
-
-
-
-
-
-      const SCHOOL_LORE = {
+const SCHOOL_LORE = {
 
         abjuration: "The art of warding and protection. Abjurers weave barriers against magical and physical harm, shielding their kingdom from danger with ancient protective wards.",
 
@@ -14036,107 +13636,22 @@
 
 
       function openSchoolModal() {
-
-        const modal = document.getElementById("school-modal");
-
-        if (modal) {
-
-          const optionsDiv = document.getElementById("school-options");
-
-          optionsDiv.innerHTML = "";
-
-
-
-          Object.keys(MAGIC_SCHOOLS).forEach(key => {
-
-            const school = MAGIC_SCHOOLS[key];
-
-            const btn = document.createElement("button");
-
-            btn.className = "btn";
-
-            btn.style.cssText = `
-
-              padding: 12px;
-
-              display: flex;
-
-              flex-direction: column;
-
-              align-items: center;
-
-              justify-content: center;
-
-              cursor: pointer;
-
-              border: 2px solid var(--border2);
-
-              background: var(--bg3);
-
-              color: var(--text1);
-
-              border-radius: var(--radius);
-
-              transition: all 0.2s ease;
-
-            `;
-
-            btn.innerHTML = `
-
-              <div style="font-size: 24px; margin-bottom: 4px;">${school.icon}</div>
-
-              <div style="font-size: 13px; font-weight: bold;">${school.name}</div>
-
-              <div style="font-size: 11px; color: var(--text3); margin-top: 2px;">${school.desc}</div>
-
-            `;
-
-            btn.onmouseover = () => {
-
-              btn.style.borderColor = "var(--gold)";
-
-              btn.style.background = "var(--bg2)";
-
-            };
-
-            btn.onmouseout = () => {
-
-              btn.style.borderColor = "var(--border2)";
-
-              btn.style.background = "var(--bg3)";
-
-            };
-
-            btn.onclick = () => selectSchool(key);
-
-            optionsDiv.appendChild(btn);
-
+        if (typeof window.__openSchoolModalImpl === "function") {
+          return window.__openSchoolModalImpl({
+            documentRef: document,
+            windowRef: window,
           });
-
-
-
-          modal.style.display = "flex";
-
-          document.body.style.overflow = "hidden";
-
         }
-
       }
 
 
 
       function closeSchoolModal() {
-
-        const modal = document.getElementById("school-modal");
-
-        if (modal) {
-
-          modal.style.display = "none";
-
-          document.body.style.overflow = "";
-
+        if (typeof window.__closeSchoolModalImpl === "function") {
+          return window.__closeSchoolModalImpl({
+            documentRef: document,
+          });
         }
-
       }
 
 
@@ -14230,30 +13745,28 @@
 
 
       function openGenericModal(htmlContent) {
-
-        const content = document.getElementById("generic-modal-content");
-
-        if (content) content.innerHTML = htmlContent;
-
-        const modal = document.getElementById("generic-modal");
-
-        if (modal) modal.style.display = "flex";
+        if (typeof window.__openGenericModalImpl === "function") {
+          return window.__openGenericModalImpl(htmlContent, {
+            documentRef: document,
+          });
+        }
 
       }
 
 
 
       function closeGenericModal() {
-
-        const modal = document.getElementById("generic-modal");
-
-        if (modal) modal.style.display = "none";
+        if (typeof window.__closeGenericModalImpl === "function") {
+          return window.__closeGenericModalImpl({
+            documentRef: document,
+          });
+        }
 
       }
 
 
 
-      //  Heroes 
+      //  Heroes
 
       var HERO_PORTRAITS = {
 
@@ -14988,7 +14501,7 @@
 
             <option value="dark_elf">
 
-              Dark Elf  Exceptional covert  Exceptional stealth  Good magic 
+              Dark Elf  Exceptional covert  Exceptional stealth  Good magic
 
               Poor military  Weak economy
 
@@ -15596,7 +15109,7 @@
 
         >
 
-          
+
 
         </button>
 
@@ -16162,7 +15675,7 @@
 
         >
 
-          
+
 
         </button>
 
@@ -16258,7 +15771,7 @@
 
         >
 
-          
+
 
         </button>
 
@@ -16362,7 +15875,7 @@
 
         >
 
-          
+
 
         </button>
 
@@ -16538,554 +16051,34 @@
 
 
 
-      //  Fragment Attunement Modal Functions 
+      // Fragment Attunement Modal Functions
 
       function openAttunementModal() {
-
-        const modal = document.getElementById("attunement-modal");
-
-        if (modal) {
-
-          modal.style.display = "flex";
-
-          loadAttunementData();
-
-        }
-
+        return window.__openAttunementModalImpl?.({ documentRef: document, windowRef: window });
       }
-
-
 
       function closeAttunementModal() {
-
-        const modal = document.getElementById("attunement-modal");
-
-        if (modal) {
-
-          modal.style.display = "none";
-
-        }
-
+        return window.__closeAttunementModalImpl?.({ documentRef: document, windowRef: window });
       }
 
-
-
-      async function loadAttunementData() {
-
-        const loadingEl = document.getElementById("attunement-loading");
-
-        const errorEl = document.getElementById("attunement-error");
-
-
-
-        if (loadingEl) loadingEl.style.display = "block";
-
-        if (errorEl) errorEl.style.display = "none";
-
-
-
-        try {
-
-          const statusRes = await apiCall("GET", "/api/kingdom/attunements");
-
-          if (statusRes.error) throw new Error(statusRes.error);
-
-
-
-          const availRes = await apiCall("GET", "/api/kingdom/available-attunements");
-
-          if (availRes.error) throw new Error(availRes.error);
-
-
-
-          renderCurrentAttunements(statusRes.attunements || []);
-
-          renderAvailableAttunements(availRes.available || []);
-
-
-
-          if (loadingEl) loadingEl.style.display = "none";
-
-        } catch (err) {
-
-          if (errorEl) {
-
-            errorEl.style.display = "block";
-
-            errorEl.textContent = "Error loading attunements: " + err.message;
-
-          }
-
-          if (loadingEl) loadingEl.style.display = "none";
-
-        }
-
+      function loadAttunementData() {
+        return window.__loadAttunementDataImpl?.({ documentRef: document, windowRef: window });
       }
-
-
-
-      function renderCurrentAttunements(attunements) {
-
-        const container = document.getElementById("attunement-current-list");
-
-        if (!container) return;
-
-
-
-        if (attunements.length === 0) {
-
-          container.innerHTML = '<div style="color: var(--text3); font-size: 13px;">No active attunements yet. Select one below!</div>';
-
-          return;
-
-        }
-
-
-
-        container.innerHTML = attunements.map(att => `
-
-          <div style="
-
-            display: flex;
-
-            justify-content: space-between;
-
-            align-items: flex-start;
-
-            padding: 12px;
-
-            background: rgba(16, 185, 129, 0.08);
-
-            border: 1px solid rgba(16, 185, 129, 0.2);
-
-            border-radius: 6px;
-
-          ">
-
-            <div style="flex: 1;">
-
-              <div style="font-weight: 600; color: var(--green); font-size: 13px;">
-
-                ${escapeHtml(att.fragmentName)}  ${escapeHtml(att.buildingType)}
-
-              </div>
-
-              ${att.special && att.special.name ? `
-
-                <div style="color: var(--text3); font-size: 11px; margin-top: 4px;">
-
-                  <strong>${escapeHtml(att.special.name)}:</strong> ${escapeHtml(att.special.desc)}
-
-                </div>
-
-              ` : ''}
-
-              <div style="color: var(--text3); font-size: 11px; margin-top: 4px;">
-
-                Applied Turn: ${att.appliedTurn || '?'}
-
-              </div>
-
-            </div>
-
-            <button
-
-              onclick="removeAttunement('${escapeHtml(att.buildingType)}')"
-
-              style="
-
-                padding: 6px 12px;
-
-                background: rgba(180, 60, 0, 0.2);
-
-                border: 1px solid rgba(180, 60, 0, 0.4);
-
-                border-radius: 4px;
-
-                color: var(--red);
-
-                font-size: 11px;
-
-                cursor: pointer;
-
-                flex-shrink: 0;
-
-                margin-left: 12px;
-
-                font-family: Inter, sans-serif;
-
-                font-weight: 600;
-
-              "
-
-            >
-
-              Unattune
-
-            </button>
-
-          </div>
-
-        `).join('');
-
-      }
-
-
-
-      function renderAvailableAttunements(available) {
-
-        const container = document.getElementById("attunement-available-list");
-
-        if (!container) return;
-
-
-
-        if (available.length === 0) {
-
-          container.innerHTML = '<div style="color: var(--text3); font-size: 13px;">No fragments available to attune. You may have all available fragments already attuned!</div>';
-
-          return;
-
-        }
-
-
-
-        container.innerHTML = available.map((frag, idx) => `
-
-          <div style="
-
-            padding: 14px;
-
-            background: rgba(240, 98, 2, 0.08);
-
-            border: 1px solid rgba(240, 98, 2, 0.2);
-
-            border-radius: 6px;
-
-          ">
-
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
-
-              <div style="font-weight: 600; color: var(--gold); font-size: 14px;">
-
-                ${escapeHtml(frag.fragmentName)}
-
-              </div>
-
-              <button
-
-                onclick="toggleFragmentDetails(${idx})"
-
-                style="
-
-                  padding: 4px 8px;
-
-                  background: none;
-
-                  border: 1px solid var(--border2);
-
-                  border-radius: 4px;
-
-                  color: var(--text3);
-
-                  font-size: 11px;
-
-                  cursor: pointer;
-
-                  font-family: Inter, sans-serif;
-
-                "
-
-              >
-
-                Details 
-
-              </button>
-
-            </div>
-
-
-
-            <div id="frag-details-${idx}" style="display: none; margin-bottom: 10px; padding: 10px; background: rgba(0, 0, 0, 0.2); border-radius: 4px; font-size: 12px;">
-
-              ${renderFragmentBonusDetails(frag)}
-
-            </div>
-
-
-
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-
-              ${frag.buildings.map(building => `
-
-                <button
-
-                  onclick="showFragmentBuildingConfirm('${escapeHtml(frag.fragmentName)}', '${escapeHtml(building.buildingType)}')"
-
-                  style="
-
-                    padding: 8px 12px;
-
-                    background: var(--gold);
-
-                    color: #000;
-
-                    border: none;
-
-                    border-radius: 4px;
-
-                    font-weight: 600;
-
-                    font-size: 12px;
-
-                    cursor: pointer;
-
-                    text-align: left;
-
-                    transition: all 0.2s;
-
-                    font-family: Inter, sans-serif;
-
-                  "
-
-                  onmouseover="this.style.opacity='0.8'"
-
-                  onmouseout="this.style.opacity='1'"
-
-                >
-
-                  Attune to ${escapeHtml(building.buildingType)} (${building.count} owned)
-
-                </button>
-
-              `).join('')}
-
-            </div>
-
-          </div>
-
-        `).join('');
-
-      }
-
-
-
-      function renderFragmentBonusDetails(fragment) {
-
-        let html = '';
-
-
-
-        for (const building of fragment.buildings) {
-
-          html += `<div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--border); font-size: 12px;">`;
-
-          html += `<strong>${escapeHtml(building.buildingType)}:</strong><br>`;
-
-
-
-          if (building.bonuses && Object.keys(building.bonuses).length > 0) {
-
-            html += `<div style="margin-left: 8px; color: var(--text3);">`;
-
-            for (const [key, value] of Object.entries(building.bonuses)) {
-
-              const displayVal = value > 0 ? '+' + (value * 100).toFixed(0) + '%' : (value * 100).toFixed(0) + '%';
-
-              html += `${escapeHtml(key)}: <span style="color: var(--green)">${displayVal}</span><br>`;
-
-            }
-
-            html += `</div>`;
-
-          }
-
-
-
-          if (building.special && building.special.name) {
-
-            html += `<div style="margin-top: 4px; margin-left: 8px; color: var(--amber); font-size: 11px;">`;
-
-            html += `<strong> ${escapeHtml(building.special.name)}:</strong> ${escapeHtml(building.special.desc)}`;
-
-            html += `</div>`;
-
-          }
-
-
-
-          html += `</div>`;
-
-        }
-
-
-
-        return html;
-
-      }
-
-
-
-      function toggleFragmentDetails(index) {
-
-        const el = document.getElementById(`frag-details-${index}`);
-
-        if (el) {
-
-          el.style.display = el.style.display === 'none' ? 'block' : 'none';
-
-        }
-
-      }
-
-
 
       function showFragmentBuildingConfirm(fragmentName, buildingType) {
-
-        const confirmed = confirm(
-
-          `Attune "${fragmentName}" to ${buildingType}?\n\n` +
-
-          `This will apply the fragment's bonuses to all ${buildingType} in your kingdom.`
-
-        );
-
-
-
-        if (confirmed) {
-
-          applyAttunement(fragmentName, buildingType);
-
-        }
-
+        return window.__showFragmentBuildingConfirmImpl?.(fragmentName, buildingType, { documentRef: document, windowRef: window });
       }
 
-
-
-      async function applyAttunement(fragmentName, buildingType) {
-
-        const loadingEl = document.getElementById("attunement-loading");
-
-        const errorEl = document.getElementById("attunement-error");
-
-
-
-        if (loadingEl) loadingEl.style.display = "block";
-
-        if (errorEl) errorEl.style.display = "none";
-
-
-
-        try {
-
-          const res = await apiCall("POST", "/api/kingdom/attune-fragment", {
-
-            fragmentName,
-
-            buildingType
-
-          });
-
-
-
-          if (res.error) throw new Error(res.error);
-
-
-
-          toast(` ${fragmentName} attuned to ${buildingType}!`, "success");
-
-          await loadAttunementData();
-
-          await loadKingdom();
-
-
-
-          if (loadingEl) loadingEl.style.display = "none";
-
-        } catch (err) {
-
-          if (errorEl) {
-
-            errorEl.style.display = "block";
-
-            errorEl.textContent = "Error applying attunement: " + err.message;
-
-          }
-
-          if (loadingEl) loadingEl.style.display = "none";
-
-        }
-
+      function toggleFragmentDetails(index) {
+        return window.__toggleFragmentDetailsImpl?.(index, { documentRef: document, windowRef: window });
       }
 
-
-
-      async function removeAttunement(buildingType) {
-
-        const confirmed = confirm(
-
-          `Remove attunement from ${buildingType}?\n\nYou can reattune this building type to a different fragment later.`
-
-        );
-
-
-
-        if (!confirmed) return;
-
-
-
-        try {
-
-          const res = await apiCall("POST", "/api/kingdom/remove-attunement", {
-
-            buildingType
-
-          });
-
-
-
-          if (res.error) throw new Error(res.error);
-
-
-
-          toast(` Attunement removed from ${buildingType}!`, "success");
-
-          await loadAttunementData();
-
-          await loadKingdom();
-
-
-
-        } catch (err) {
-
-          toast("Error: " + err.message, "error");
-
-        }
-
+      function applyAttunement(fragmentName, buildingType) {
+        return window.__applyAttunementImpl?.(fragmentName, buildingType, { documentRef: document, windowRef: window });
       }
 
-
-
-      function escapeHtml(text) {
-
-        if (!text) return '';
-
-        const map = {
-
-          '&': '&amp;',
-
-          '<': '&lt;',
-
-          '>': '&gt;',
-
-          '"': '&quot;',
-
-          "'": '&#039;'
-
-        };
-
-        return String(text).replace(/[&<>"']/g, m => map[m]);
-
+      function removeAttunement(buildingType) {
+        return window.__removeAttunementImpl?.(buildingType, { documentRef: document, windowRef: window });
       }
 
     </script>
@@ -17134,7 +16127,7 @@
 
           >
 
-            
+
 
           </button>
 
