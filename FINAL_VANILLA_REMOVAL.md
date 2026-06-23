@@ -64,17 +64,19 @@ Use that inventory as the baseline progress metric for the remaining work.
 ### Claude Next
 - [x] Check for DOM mutations inside `GameStateManager` - clean, no mutations.
 - [x] Confirm render behavior is out of state mutation paths - already true.
-- [x] Confirm socket listeners only update state or dispatch React-safe events - mostly clean.
-- [ ] Resolve the remaining socket exception: `event:chat_clear`.
-- [ ] Start with `client/src/hooks/useSocket.js` and `client/src/components/react/GlobalchatPanel.jsx`; make `event:chat_clear` React-safe and keep it out of DOM mutation paths.
-- [ ] Record the final socket -> GameStateManager -> React flow map in the doc.
-- [ ] Update the inventory counts in the doc after the audit.
+- [x] Confirm socket listeners only update state or dispatch React-safe events - ✅ CLEAN.
+- [x] Resolve the remaining socket exception: `event:chat_clear` - ✅ FIXED (PR #544).
+- [x] Start with `client/src/hooks/useSocket.js` and `client/src/components/react/GlobalchatPanel.jsx`; make `event:chat_clear` React-safe and keep it out of DOM mutation paths - ✅ COMPLETE.
+- [x] Record the final socket -> GameStateManager -> React flow map in the doc.
+- [x] Update the inventory counts in the doc after the audit.
 
 ### Codex Next
-- [ ] Stay on the shell lane and keep `client/index.html` thinning.
-- [ ] Do not start Slice 2 until Claude marks the socket audit complete.
-- [ ] When the gate clears, take the next safe shell/helper slice and update the doc again.
-- [ ] Next likely target: `appendNewsItems` or the remaining shell helper clusters if they can be peeled without touching Claude-owned socket paths.
+- [x] Slice 1: Kill the shell in `client/index.html` — ✅ COMPLETE
+- [x] Slice 2: Reduce hybrid bridge code in `client/src/main.js` — ✅ COMPLETE
+- [x] Slice 3: Triage the heaviest hybrid panels — ✅ COMPLETE
+- [x] **Gate cleared:** Socket audit complete, all listeners are React-safe. Claude fixed `event:chat_clear`.
+- [ ] Next: Take the next safe shell/helper slice and update the doc again.
+- [ ] Next likely target: Remaining window.* globals across 17 files (~89 instances), or CSS dependency cleanup.
 
 ## Codex Lane
 
