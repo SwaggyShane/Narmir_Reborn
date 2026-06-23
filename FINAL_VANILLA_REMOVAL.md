@@ -102,7 +102,9 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] Slice 9: bridged `openSchoolModal` and `closeSchoolModal` through `client/src/utils/schoolShell.js`
 - [x] Slice 10: bridged `openGenericModal` and `closeGenericModal` through `client/src/utils/genericShell.js`
 - [x] Slice 11: bridged the fragment attunement modal cluster through `client/src/utils/attunementShell.js`
-- [ ] Next: React panel window.* globals now essentially clear (PR #546). Next likely targets: port `showBattleReport` to React (removes last live vanilla bridge in WarfarePanel), EconomyPanel upgrade rendering (callIfAvailable → React), or `showHeroLore`/`openRaceLore` shell helper cluster.
+- [x] Socket audit complete: all handlers React-safe (PR #544 sockets lane + PR #546 integration)
+- [ ] **IN PROGRESS**: Refactor socket-client.js + GlobalchatPanel to React state (PR #547) — extract message rendering from handlers into pure data functions
+- [ ] Next: EconomyPanel upgrade rendering (callIfAvailable → React), or `showHeroLore`/`openRaceLore` shell helper cluster.
 - [ ] Ongoing: confirm `client/index.html` is still boot-only after Slices 1-11.
 
 ### Current Inventory Snapshot

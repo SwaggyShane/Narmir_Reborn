@@ -96,6 +96,7 @@ export function createMessageData(data, mode) {
     styles.body.color = "var(--text3)";
   } else if (mode === "whisper") {
     styles.body.color = "var(--accent1)";
+    styles.body.fontStyle = "italic";
   } else if (data?.type === "me" || String(data?.message || "").startsWith("/me ")) {
     styles.header.fontStyle = "italic";
     styles.body.fontStyle = "italic";

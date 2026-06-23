@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { repairMojibake } from '../../utils/repairMojibake.js';
 import {
   getSocket,
@@ -11,8 +11,7 @@ import {
 const MessageRow = ({ messageData }) => {
   if (!messageData) return null;
 
-  const { from, message, isMod, type, sent, styles } = messageData;
-  const isItalic = type === 'whisper' || message?.startsWith('/me ');
+  const { from, message, isMod, type, sent, styles = {} } = messageData;
 
   return (
     <div className="chat-message-row" style={styles.row}>
@@ -25,7 +24,7 @@ const MessageRow = ({ messageData }) => {
           </span>
         )}
       </div>
-      <div style={{ ...styles.body, fontStyle: isItalic ? 'italic' : 'normal' }}>
+      <div style={styles.body}>
         {message}
       </div>
     </div>
@@ -41,9 +40,9 @@ const OnlineUsersList = ({ users }) => {
     );
   }
 
-  return users.map((user, idx) => (
-    <div key={idx} style={user.styles.item}>
-      <span style={user.styles.name}>{user.username}</span>
+  return users.map((user) => (
+    <div key={user.username} style={user.styles?.item}>
+      <span style={user.styles?.name}>{user.username}</span>
       {user.isMod && <span className="badge badge-green" style={{ fontSize: '10px' }}>MOD</span>}
     </div>
   ));
@@ -52,6 +51,13 @@ const OnlineUsersList = ({ users }) => {
 const GlobalchatPanel = () => {
   const [messages, setMessages] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]);
+  const chatContainerRef = useRef(null);
+
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   useEffect(() => {
     let cancelled = false;
@@ -60,7 +66,7 @@ const GlobalchatPanel = () => {
 
     const addMessage = (data, type = 'normal') => {
       const msgData = createMessageData(data, type);
-      setMessages(prev => [...prev, msgData]);
+      setMessages(prev => [...prev, msgData].slice(-200));
     };
 
     const boot = async () => {
@@ -74,11 +80,18 @@ const GlobalchatPanel = () => {
           }
         }
 
+        if (cancelled) return;
+
         handlers.connect = () => {
           loadGlobalChatHistory().then(history => {
             if (!cancelled) {
-              const msgList = history.map(msg => createMessageData(msg, msg.type));
-              setMessages(msgList);
+              setMessages(prev => {
+                const existingIds = new Set(prev.map(msg => msg.id).filter(Boolean));
+                const newMsgs = history
+                  .filter(msg => msg.id && !existingIds.has(msg.id))
+                  .map(msg => createMessageData(msg, msg.type));
+                return newMsgs.length > 0 ? [...prev, ...newMsgs].slice(-200) : prev;
+              });
             }
           }).catch((error) => {
             console.warn('[chat] Failed to load history:', error);
@@ -218,6 +231,7 @@ const GlobalchatPanel = () => {
         {/* Messages area */}
         <div className="chat-messages-area flex min-h-0 flex-col">
           <div
+            ref={chatContainerRef}
             className="flex min-h-0 flex-1 flex-col gap-px overflow-x-hidden overflow-y-auto px-4 py-3 break-words"
           >
             {messages.length === 0 ? (
