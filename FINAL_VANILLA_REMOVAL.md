@@ -127,9 +127,12 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] Find remaining shell-era globals — ✅ Found in 7 React panels
 - [x] WorldmapPanel (3 globals) — ✅ COMPLETE (PR #545): openKingdomProfile, targetFromRankings, establishTradeRoute (with auto-refresh callback for better UX)
 - [x] NewsPanel (1 cache) — ✅ COMPLETE (PR #546): removed window.newsCache (write-only, never read)
-- [x] KingdomProfileModal + RacesPanel (1 utility) — ✅ COMPLETE (in PR #546): getRacePortrait → new helper module client/src/utils/racePortraits.js exports GENDER_RACE_PORTRAITS and getRacePortrait()
-- [ ] Next targets: remaining panels with window.* globals
-- [ ] Replace remaining with shared helpers or local React props/state
+- [x] KingdomProfileModal + RacesPanel (1 utility) — ✅ COMPLETE (in PR #546): getRacePortrait → new helper module client/src/utils/racePortraits.js
+- [x] RankingsPanel (2 write-only caches) — ✅ COMPLETE (in PR #546): window.rankingsCache/allianceRankingsCache → GameStateManager.setState()
+- [x] BountiesPanel (1 read fallback) — ✅ COMPLETE (in PR #546): removed window.rankingsCache fallback, now reads entirely from state.rankingsCache
+- [x] RacesPanel (3 data globals) — ✅ COMPLETE (in PR #546): window.RACE_LORE/REGION_META/REGION_BONUSES → new data module client/src/utils/raceData.js
+- [ ] Next targets: EconomyPanel (FARM_WORKERS_PER, *_UPGRADES, COMMODITY_VALUES), WarfarePanel (19 globals — deferred, complex)
+- [ ] MarketPanel reads window.targets — set by WarfarePanel, deferred until WarfarePanel slice
 - [ ] Keep compatibility shims only where a slice cannot be moved safely in one step
 
 ### 4. Clean up the remaining legacy CSS surfaces
