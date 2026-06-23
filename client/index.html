@@ -6187,71 +6187,6 @@
         return current;
       }
 
-      function initLoginModal() {
-        if (typeof window.__initLoginModalImpl === "function") {
-          return window.__initLoginModalImpl();
-        }
-      }
-
-      function showLoginModal() {
-        if (typeof window.__showLoginModalImpl === "function") {
-          return window.__showLoginModalImpl();
-        }
-      }
-
-      function hideLoginModal() {
-        if (typeof window.__hideLoginModalImpl === "function") {
-          return window.__hideLoginModalImpl();
-        }
-      }
-
-      function showPasswordReset() {
-        if (typeof window.__showPasswordResetImpl === "function") {
-          return window.__showPasswordResetImpl();
-        }
-      }
-
-      function closeRegistrationModal() {
-        if (typeof window.__closeRegistrationModalImpl === "function") {
-          return window.__closeRegistrationModalImpl();
-        }
-      }
-
-      function backToRaceSelection() {
-        if (typeof window.__backToRaceSelectionImpl === "function") {
-          return window.__backToRaceSelectionImpl();
-        }
-      }
-
-      function clearToken() {
-        if (typeof window.__clearTokenImpl === "function") {
-          return window.__clearTokenImpl();
-        }
-      }
-
-      async function doLogin() {
-        if (typeof window.__doLoginImpl === "function") {
-          return window.__doLoginImpl();
-        }
-      }
-
-      async function doRegister() {
-        if (typeof window.__doRegisterImpl === "function") {
-          return window.__doRegisterImpl();
-        }
-      }
-      document.getElementById("btn-login")?.addEventListener("click", doLogin);
-      document.getElementById("btn-register")?.addEventListener("click", doRegister);
-
-
-
-      function updatePasswordRequirements() {
-        if (typeof window.__updatePasswordRequirementsImpl === "function") {
-          return window.__updatePasswordRequirementsImpl();
-        }
-      }
-
-
       document.addEventListener("DOMContentLoaded", function () {
 
         const pass = document.getElementById("auth-pass");
@@ -17794,44 +17729,6 @@
     <div id="vue-panel-school-selection" style="display: contents"></div>
 
 
-
-    </script>
-
-    <script>
-
-      (function () {
-
-        function refreshStatus() {
-
-          fetch('/api/status')
-
-            .then(function (r) { return r.json(); })
-
-            .then(function (d) {
-
-              var u = document.getElementById('status-uptime');
-
-              var v = document.getElementById('status-version');
-
-              var n = document.getElementById('status-nodeid');
-
-              if (u) u.textContent = d.uptime;
-
-              if (v) v.textContent = d.version;
-
-              if (n) n.textContent = d.nodeId;
-
-            })
-
-            .catch(function () {});
-
-        }
-
-        refreshStatus();
-
-        setInterval(refreshStatus, 60000);
-
-      })();
 
     </script>
 

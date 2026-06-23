@@ -36,10 +36,22 @@ import ResourceStripReact from "./components/react/ResourceStrip.jsx";
 import { apiCall, switchTab, initGameStateManager, applyGameMutation } from "./utils/panelNav.js";
 import { applyServerUpdates as applyServerUpdatesAction } from "./utils/gameMutations.js";
 import { initSocketHandlers } from "./hooks/useSocket.js";
-import AuthModalReact from "./components/react/AuthModal.jsx";
+import AuthModalReact, {
+  backToRaceSelection as backToRaceSelectionAction,
+  clearToken as clearTokenAction,
+  doLogin as doLoginAction,
+  doRegister as doRegisterAction,
+  hideLoginModal as hideLoginModalAction,
+  initLoginModal as initLoginModalAction,
+  showLoginModal as showLoginModalAction,
+  showPasswordReset as showPasswordResetAction,
+  closeRegistrationModal as closeRegistrationModalAction,
+  updatePasswordRequirements as updatePasswordRequirementsAction,
+} from "./components/react/AuthModal.jsx";
 import KingdomProfileModalReact from "./components/react/KingdomProfileModal.jsx";
 import newsEmojiTools from "../../game/news-emoji.js";
 import { applyNavLayout, bindShellChromeEvents, incrementNewsBadge } from "./utils/shellChrome.js";
+import { setupStatusRefresh } from "./utils/statusShell.js";
 
 window.apiCall = apiCall;
 window.applyGameMutation = applyGameMutation;
@@ -48,6 +60,16 @@ window.initSocketHandlers = initSocketHandlers;
 window.__NEWS_EMOJI_TOOLS__ = newsEmojiTools;
 window.__applyNavLayoutImpl = applyNavLayout;
 window.__incrementNewsBadgeImpl = incrementNewsBadge;
+window.initLoginModal = initLoginModalAction;
+window.showLoginModal = showLoginModalAction;
+window.hideLoginModal = hideLoginModalAction;
+window.showPasswordReset = showPasswordResetAction;
+window.closeRegistrationModal = closeRegistrationModalAction;
+window.backToRaceSelection = backToRaceSelectionAction;
+window.clearToken = clearTokenAction;
+window.doLogin = doLoginAction;
+window.doRegister = doRegisterAction;
+window.updatePasswordRequirements = updatePasswordRequirementsAction;
 
 const reactRoots = new Map();
 
@@ -125,8 +147,9 @@ export const mountReactApps = () => {
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", () => {
     initGameStateManager();
-    bindShellChromeEvents();
-    mountReactApps();
+bindShellChromeEvents();
+setupStatusRefresh();
+mountReactApps();
   });
 } else {
   initGameStateManager();

@@ -48,6 +48,8 @@ Use that inventory as the baseline progress metric for the remaining work.
 
 ### Completed
 - [x] Codex Slice 1: moved shell chrome listeners, `applyNavLayout`, and the news badge incrementer out of `client/index.html` into `client/src/utils/shellChrome.js` and `client/src/main.js` ([PR #543](https://github.com/SwaggyShane/Narmir_Reborn/pull/543))
+- [x] Codex Slice 2: removed the auth shell forwarding stubs from `client/index.html` and bridged the auth modal globals through `client/src/main.js`
+- [x] Codex Slice 3: moved the status refresh loop out of `client/index.html` into `client/src/utils/statusShell.js` and `client/src/main.js`
 
 ## Current Handoff
 
@@ -61,6 +63,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [ ] Stay on the shell lane and keep `client/index.html` thinning.
 - [ ] Do not start Slice 2 until Claude marks the socket audit complete.
 - [ ] When the gate clears, take the next safe shell/helper slice and update the doc again.
+- [ ] Next likely target: `appendNewsItems` or the remaining shell helper clusters if they can be peeled without touching Claude-owned socket paths.
 
 ## Codex Lane
 
