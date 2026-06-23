@@ -55,6 +55,8 @@ import {
   applyAttunement as applyAttunementImpl,
   removeAttunement as removeAttunementImpl,
 } from "./utils/attunementShell.js";
+import { showHeroLore as showHeroLoreImpl } from "./utils/showHeroLore.js";
+import { closeRaceLore as closeRaceLoreImpl } from "./utils/closeRaceLore.js";
 import { showToast } from "./utils/toastShell.js";
 import { showHeroXpModal as showHeroXpModalImpl } from "./utils/showHeroXpModal.js";
 
@@ -83,6 +85,8 @@ window.__showFragmentBuildingConfirmImpl = showFragmentBuildingConfirmImpl;
 window.__toggleFragmentDetailsImpl = toggleFragmentDetailsImpl;
 window.__applyAttunementImpl = applyAttunementImpl;
 window.__removeAttunementImpl = removeAttunementImpl;
+window.__showHeroLoreImpl = showHeroLoreImpl;
+window.__closeRaceLoreImpl = closeRaceLoreImpl;
 
 const reactRoots = new Map();
 

@@ -59,6 +59,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] Codex Slice 9: bridged `openSchoolModal` and `closeSchoolModal` through `client/src/utils/schoolShell.js`
 - [x] Codex Slice 10: bridged `openGenericModal` and `closeGenericModal` through `client/src/utils/genericShell.js`
 - [x] Codex Slice 11: bridged the fragment attunement modal cluster through `client/src/utils/attunementShell.js`
+- [x] Codex Slice 12: bridged the hero lore / race lore helper cluster through `client/src/utils/showHeroLore.js` and `client/src/utils/closeRaceLore.js`; `RacesPanel.jsx` now owns the hero lore callback directly and `client/index.html` only delegates thin wrappers
 
 ## Open PR Assessment
 
@@ -90,7 +91,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] WarfarePanel globals sweep — ✅ COMPLETE (in PR #546): all 16 remaining globals resolved; 1 deferred (showBattleReport, live vanilla)
 - [x] MarketPanel window.targets — ✅ COMPLETE (in PR #546)
 - [x] showBattleReport modal — ✅ COMPLETE (in PR #546): BattleReportModal.jsx React portal; no more window.showBattleReport in WarfarePanel
-- [ ] Next: EconomyPanel upgrade defs (4 window.*_UPGRADES, requires React upgrade rendering — own slice)
+- [ ] Claude: take EconomyPanel next. Replace the remaining `window.*_UPGRADES` / `callIfAvailable` path with React-owned upgrade rendering, then update this doc with the exact files touched and stop before overlapping with Codex.
 - [ ] AlliancesPanel: deferred; alliance backend not yet implemented
 - [x] CSS: no action needed — audit found only forum.css, all active
 
@@ -107,8 +108,9 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] Slice 9: bridged `openSchoolModal` and `closeSchoolModal` through `client/src/utils/schoolShell.js`
 - [x] Slice 10: bridged `openGenericModal` and `closeGenericModal` through `client/src/utils/genericShell.js`
 - [x] Slice 11: bridged the fragment attunement modal cluster through `client/src/utils/attunementShell.js`
-- [ ] Next: React panel window.* globals now essentially clear (PR #546). Next likely targets: port `showBattleReport` to React (removes last live vanilla bridge in WarfarePanel), EconomyPanel upgrade rendering (callIfAvailable → React), or `showHeroLore`/`openRaceLore` shell helper cluster.
-- [ ] Ongoing: confirm `client/index.html` is still boot-only after Slices 1-11.
+- [x] Slice 12: bridged the hero lore / race lore helper cluster through `client/src/utils/showHeroLore.js` and `client/src/utils/closeRaceLore.js`
+- [ ] Next: finish the last clean helper seams still hanging off `client/index.html`, then move to the remaining React panel upgrade-rendering work in `EconomyPanel.jsx` and any other panels still using `callIfAvailable`-style vanilla bridges.
+- [ ] Ongoing: confirm `client/index.html` is still boot-only after Slices 1-12.
 
 ### Current Inventory Snapshot
 - document.getElementById: 239

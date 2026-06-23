@@ -5,6 +5,7 @@ import { repairMojibake } from '../../utils/repairMojibake.js';
 import { fmt } from '../../utils/fmt.js';
 import LoreModal from './LoreModal.jsx';
 import { registerOpenRaceLore } from '../../utils/openRaceLore.js';
+import { registerShowHeroLore } from '../../utils/showHeroLore.js';
 import { getRacePortrait } from '../../utils/racePortraits.js';
 import { RACE_LORE, REGION_META, REGION_BONUSES } from '../../utils/raceData.js';
 
@@ -243,6 +244,7 @@ const RacesPanel = () => {
   }, [cachedHeroClasses]);
 
   useEffect(() => registerOpenRaceLore((race) => setSelectedRace(race || null)), []);
+  useEffect(() => registerShowHeroLore(openHeroLore), [openHeroLore]);
 
   const raceEntries = useMemo(
     () => Object.entries(raceLore).filter(([, r]) => r.lore),
