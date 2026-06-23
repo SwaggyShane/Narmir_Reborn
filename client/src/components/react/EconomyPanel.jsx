@@ -17,7 +17,6 @@ import {
   MARKET_UPGRADES,
   TAVERN_UPGRADES,
 } from '../../utils/economyUpgrades.js';
-import UpgradesList from './UpgradesList.jsx';
 
 function getState() {
   return gameStateManager.getState();
@@ -98,7 +97,6 @@ export async function loadEconomy() {
   populateTradeTargets();
 }
 
-
 export function renderUpgrades(category, defs, owned, containerId) {
   const el = document.getElementById(containerId);
   if (!el) {
@@ -111,6 +109,8 @@ export function renderUpgrades(category, defs, owned, containerId) {
     el.innerHTML = '<div style="color:var(--red);font-size:12px">Error loading upgrade data</div>';
     return;
   }
+
+  console.log('Rendering upgrades for ' + category, { defs, owned });
 
   const state = getState();
   const entries = Object.entries(defs);
@@ -434,11 +434,7 @@ const EconomyPanel = () => {
         <div style="display:flex; justify-content:space-between; align-items:center">
           <div>
             <div style="font-weight:700; color:var(--gold)">🤝 ${escapeHtml(r.partner_name)}</div>
-<<<<<<< HEAD
             <div style="font-size:11px; color:var(--text3)">${escapeHtml(String(r.partner_race || 'unknown').replace(/_/g, ' '))} - ${fmtShort(r.partner_land)} acres</div>
-=======
-            <div style="font-size:11px; color:var(--text3)">${escapeHtml(String(r.partner_race || 'unknown').replace(/_/g, ' '))} · ${fmtShort(r.partner_land)} acres</div>
->>>>>>> 2e1c6d3 (Create upgrade definitions module and React component for economy rendering)
           </div>
           <div style="text-align:right; margin: 0 16px">
             <div style="font-size:14px; font-weight:700; color:var(--green)">+${fmtShort(Math.floor((r.stability || 0) * 2.5))} GC / turn</div>
@@ -503,11 +499,7 @@ const EconomyPanel = () => {
     const total = price * count;
     const preview = document.getElementById('merc-preview');
     if (preview) {
-<<<<<<< HEAD
       preview.textContent = `${fmtShort(total)} GC - ${turns} turns - ${count > 0 ? `${count} ${unitType}` : 'select a contract size'}`;
-=======
-      preview.textContent = `${fmtShort(total)} GC · ${turns} turns · ${count > 0 ? `${count} ${unitType}` : 'select a contract size'}`;
->>>>>>> 2e1c6d3 (Create upgrade definitions module and React component for economy rendering)
     }
   }, [fmtShort]);
   const handleUpdateMercPreview = () => {
@@ -592,22 +584,6 @@ const EconomyPanel = () => {
     if (el) establishTradeRoute(el.value);
   };
 
-<<<<<<< HEAD
-=======
-  const loadEconomyData = useCallback(async () => {
-    const data = await apiCall('/api/kingdom/economy/overview');
-    if (data.error) {
-      toast(data.error, 'error');
-      return;
-    }
-    setEconomyData(data);
-  }, []);
-
-  useEffect(() => {
-    loadEconomyData();
-  }, [loadEconomyData]);
-
->>>>>>> 2e1c6d3 (Create upgrade definitions module and React component for economy rendering)
   useEffect(() => {
     if (activeTab === 'markets') {
       loadTradeOffers();
@@ -786,18 +762,7 @@ const EconomyPanel = () => {
             <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '12px' }}>
               Instant gold purchase — applies to all farms.
             </div>
-<<<<<<< HEAD
             <div id="farm-upgrade-list"></div>
-=======
-            {economyData && (
-              <UpgradesList
-                category="farm"
-                defs={FARM_UPGRADES}
-                owned={economyData.farm_upgrades || {}}
-                state={state}
-              />
-            )}
->>>>>>> 2e1c6d3 (Create upgrade definitions module and React component for economy rendering)
           </div>
         </div>
         <div className="card">
@@ -843,14 +808,7 @@ const EconomyPanel = () => {
             <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '12px' }}>
               Enhances granaries to store more food and reduce rot.
             </div>
-            {economyData && (
-              <UpgradesList
-                category="granary"
-                defs={GRANARY_UPGRADES}
-                owned={economyData.granary_upgrades || {}}
-                state={state}
-              />
-            )}
+            <div id="granary-page-upgrade-list"></div>
           </div>
         </div>
         <div className="card">
@@ -895,14 +853,7 @@ const EconomyPanel = () => {
           </div>
           <div className="card" style={{ margin: 0 }}>
             <div className="card-title" style={{ marginBottom: '10px' }}>Market upgrades</div>
-            {economyData && (
-              <UpgradesList
-                category="market"
-                defs={MARKET_UPGRADES}
-                owned={economyData.market_upgrades || {}}
-                state={state}
-              />
-            )}
+            <div id="market-upgrade-list"></div>
           </div>
         </div>
 
@@ -1006,14 +957,7 @@ const EconomyPanel = () => {
           </div>
           <div className="card" style={{ margin: 0 }}>
             <div className="card-title" style={{ marginBottom: '10px' }}>Tavern upgrades</div>
-            {economyData && (
-              <UpgradesList
-                category="tavern"
-                defs={TAVERN_UPGRADES}
-                owned={economyData.tavern_upgrades || {}}
-                state={state}
-              />
-            )}
+            <div id="tavern-upgrade-list"></div>
           </div>
         </div>
 
@@ -1044,11 +988,7 @@ const EconomyPanel = () => {
               <button className="base-btn" style={{ fontSize: '10px', padding: '3px 6px' }} onClick={() => setMaxValue('merc-count', 'gold')}>Max</button>
             </div>
             <div style={{ fontSize: '11px', color: 'var(--text3)' }} id="merc-preview">
-<<<<<<< HEAD
               50 GC - 10 turns
-=======
-              50 GC · 10 turns
->>>>>>> 2e1c6d3 (Create upgrade definitions module and React component for economy rendering)
             </div>
             <div className="merc-btn-col">
               <button className="base-btn variant-amber w-full" style={{ background: '#d97706', color: '#fff', width: '100%' }} onClick={hireMercs}>Hire</button>
