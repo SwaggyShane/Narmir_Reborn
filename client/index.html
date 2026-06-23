@@ -4378,7 +4378,7 @@
 
           </div>
 
-          <div style="opacity: 0.6">UPTIME: <span id="status-uptime">—</span></div>
+          <div style="opacity: 0.6">UPTIME: <span id="status-uptime">â€”</span></div>
 
         </div>
 
@@ -4388,9 +4388,9 @@
 
         >
 
-          <span id="status-version">—</span>
+          <span id="status-version">â€”</span>
 
-          <span>NODE ID: <span id="status-nodeid">—</span></span>
+          <span>NODE ID: <span id="status-nodeid">â€”</span></span>
 
         </div>
 
@@ -6539,54 +6539,21 @@
 
 
 
-      var NEWS_META = {
+      var NEWS_EMOJI_TOOLS = window.__NEWS_EMOJI_TOOLS__ || null;
 
-        attack: { icon: "⚔️", color: "var(--red)", label: "Combat" },
-
-        spell: { icon: "✨", color: "var(--accent1)", label: "Spell" },
-
-        covert: { icon: "🕵️", color: "var(--amber)", label: "Covert" },
-
-        system: { icon: "📋", color: "var(--text2)", label: "System" },
-
-        alliance: { icon: "🤝", color: "var(--blue)", label: "Alliance" },
-
-        expedition: { icon: "🧭", color: "var(--gold)", label: "Expedition" },
-
-      };
-
-      var NEWS_EMOJI_RULES = [
-        { test: function (text) { return /^Food surplus:/i.test(text) || /^Food:/i.test(text); }, emoji: "🌽" },
-        { test: function (text) { return /^Tears of the World Tree:/i.test(text); }, emoji: "💧" },
-        { test: function (text) { return /^Foresters report:/i.test(text); }, emoji: "🌲" },
-        { test: function (text) { return /^Resource production:/i.test(text) && /\bwood\./i.test(text); }, emoji: "🪵" },
-        { test: function (text) { return /^Resource production:/i.test(text) && /\bstone\./i.test(text); }, emoji: "🪨" },
-        { test: function (text) { return /^Resource production:/i.test(text) && /\biron\./i.test(text); }, emoji: "🔗" },
-        { test: function (text) { return /^\d[\d,]* researchers studying/i.test(text); }, emoji: "🔬" },
-        { test: function (text) { return /^Mana:/i.test(text); }, emoji: "🔮" },
-        { test: function (text) { return /^Population grew\b/i.test(text); }, emoji: "👥" },
-        { test: function (text) { return /^Population declined\b/i.test(text); }, emoji: "⚠️" },
-        { test: function (text) { return /^Happiness:/i.test(text); }, emoji: "😊" },
-        { test: function (text) { return /^Turn \d+: .*gold earned/i.test(text); }, emoji: "🪙" },
-        { test: function (text) { return /^Troop upkeep:/i.test(text); }, emoji: "⚙️" },
-        { test: function (text) { return /^End of Turn \d+\b/i.test(text); }, emoji: "🏦" },
-        { test: function (text) { return /^Geared Self-Construction:/i.test(text); }, emoji: "⚙️" },
-        { test: function (text) { return /^Actively constructing:/i.test(text); }, emoji: "🏗️" },
-        { test: function (text) { return /^Mage research advanced:/i.test(text); }, emoji: "✨" },
-      ];
-
-      function decorateNewsMessage(value) {
-        var text = repairMojibake(String(value || ""));
-        if (!text) return text;
-        if (/^\p{Extended_Pictographic}/u.test(text)) return text;
-        text = text.replace(/^[<>=\-\u2022\u00B7\/\\|]+\s*/, "");
-        for (var i = 0; i < NEWS_EMOJI_RULES.length; i++) {
-          if (NEWS_EMOJI_RULES[i].test(text)) return NEWS_EMOJI_RULES[i].emoji + " " + text;
+      function getNewsMeta(type) {
+        if (NEWS_EMOJI_TOOLS && NEWS_EMOJI_TOOLS.NEWS_META) {
+          return NEWS_EMOJI_TOOLS.NEWS_META[type] || NEWS_EMOJI_TOOLS.NEWS_META.system;
         }
-        return "📋 " + text;
+        return { icon: "\uD83D\uDCCB", color: "var(--text2)", label: "System" };
       }
 
-
+      function decorateNewsMessage(value) {
+        if (NEWS_EMOJI_TOOLS && typeof NEWS_EMOJI_TOOLS.decorateNewsMessage === "function") {
+          return NEWS_EMOJI_TOOLS.decorateNewsMessage(value, repairMojibake);
+        }
+        return repairMojibake(String(value || ""));
+      }
 
       function getNewsPriority(item) {
 
@@ -6944,7 +6911,7 @@
 
             var type = ev.type || "system";
 
-            var meta = NEWS_META[type] || NEWS_META.system;
+            var meta = getNewsMeta(type);
 
             var msg =
 
@@ -18012,32 +17979,3 @@
   </body>
 
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -38,11 +38,13 @@ import { applyServerUpdates as applyServerUpdatesAction } from "./utils/gameMuta
 import { initSocketHandlers } from "./hooks/useSocket.js";
 import AuthModalReact from "./components/react/AuthModal.jsx";
 import KingdomProfileModalReact from "./components/react/KingdomProfileModal.jsx";
+import newsEmojiTools from "../../game/news-emoji.js";
 
 window.apiCall = apiCall;
 window.applyGameMutation = applyGameMutation;
 window.applyServerUpdatesAction = applyServerUpdatesAction;
 window.initSocketHandlers = initSocketHandlers;
+window.__NEWS_EMOJI_TOOLS__ = newsEmojiTools;
 
 const reactRoots = new Map();
 
