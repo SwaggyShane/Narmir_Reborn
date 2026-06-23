@@ -61,10 +61,14 @@ Use that inventory as the baseline progress metric for the remaining work.
 
 ## Open PR Assessment
 
-- [x] PR #545 is mergeable and clean. Safe to merge.
-- [x] PR #546 is mergeable and clean. Safe to merge.
+- [x] PR #545 merged cleanly to main.
+- [x] PR #546 merged cleanly to main.
 - [ ] PR #543 is conflicting. Preserve the branch; its shell work is already represented by later Codex slices, so do not delete anything.
 - [ ] PR #544 is conflicting. Preserve the branch; it still contains the remaining Claude panel/socket work and should be rebased or split after the clean PRs land.
+
+### Current Open Queue
+- [ ] PR #543
+- [ ] PR #544
 
 ## Current Handoff
 
