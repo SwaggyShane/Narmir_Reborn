@@ -103,7 +103,7 @@ const NEWS_EMOJI_RULES = Object.freeze([
 ]);
 
 function stripLeadingNoise(text) {
-  return text.replace(/^[<>=\-\u2022\u00B7\/\\|]+\s*/, "");
+  return text.replace(/^[<>=\-\u2022\u00B7/\\|]+\s*/, "");
 }
 
 function decorateNewsMessage(value, repairFn) {

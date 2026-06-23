@@ -2079,7 +2079,7 @@ module.exports = function (db) {
         [
           target.id,
           "system",
-          `âš ï¸ Watchtower scouts have detected ${k.name} massing troops at the border.`,
+          `⚠️ Watchtower scouts have detected ${k.name} massing troops at the border.`,
           target.turn,
         ],
       );
