@@ -120,9 +120,9 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [ ] Next: finish the last clean helper seams still hanging off `client/index.html`, then move to the remaining React panel / shell-helper cleanup in any other panels still using shell-era helpers.
 - [ ] Ongoing: confirm `client/index.html` is still boot-only after Slices 1-16.
 
-### Current Inventory Snapshot (updated 2026-06-23 post-PR #550)
-- document.getElementById: 205 total (134 in index.html [Codex target], 71 in client/src/)
-  - Biggest src concentrations: EconomyPanel 27, WarfarePanel 19, panelNav.js 5, socket-client.js 5, GlobalchatPanel 4
+### Current Inventory Snapshot (updated 2026-06-23 post-PR #552)
+- document.getElementById: 179 total (134 in index.html [Codex target], 45 in client/src/)
+  - Biggest src concentrations: WarfarePanel 19, panelNav.js 5, socket-client.js 5, GlobalchatPanel 4, MarketPanel 2; EconomyPanel down to 1 (renderUpgrades export for DefensePanel)
 - el(: 20 in index.html (local variable pattern, not a helper); ~18 in client/src/
 - .innerHTML =: 72 total (45 in index.html, 27 in client/src/)
 - .style.: 167 total (46 in index.html, 121 in client/src/)
@@ -192,6 +192,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] TrainingPanel.jsx (13 DOM mutations) — ✅ COMPLETE: all removed; Max/Distribute buttons fixed; toast imported
 - [x] StudiesPanel.jsx (14 DOM mutations) — ✅ COMPLETE (PR #549): all removed; controlled inputs; JSX rendering; useRef focus guards; server sync
 - [x] replayWarReport.js (21 DOM mutations) — ✅ COMPLETE (PR #550): ReplayModal.jsx React portal; vanilla bridge function and replay-modal div removed from index.html
+- [x] EconomyPanel.jsx (27 → 1 DOM mutations) — ✅ COMPLETE (PR #552): converted all 27 getElementById calls to React state; removed dead exports (loadEconomy, renderCommodityMarket, renderActiveMercs); replaced innerHTML upgrade containers with UpgradesList component; bank visibility now driven by state.bld_vaults; tax rate initialized from state.tax; applyGameMutation/syncUI wired to all mutating handlers; 1 getElementById remains in exported renderUpgrades() which DefensePanel imports directly
 
 ### 4. Clean up the remaining legacy CSS surfaces — ✅ COMPLETE (audit)
 - [x] Review files still importing from `client/src/css/` — only `forum.css` exists and is actively used by main.js and Portal.jsx; nothing to remove
