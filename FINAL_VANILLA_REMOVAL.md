@@ -183,7 +183,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] EconomyPanel (4 upgrade defs) — ✅ COMPLETE (PR #544): UpgradesList.jsx + economyUpgrades.js; all callIfAvailable removed
 - [ ] AlliancesPanel (10 vanilla delegates) — deferred; underlying alliance API not yet implemented (foundAlliance, loadAllianceSearch, etc. have no backend routes)
 - [x] TrainingPanel.jsx (13 DOM mutations) — ✅ COMPLETE: all removed; Max/Distribute buttons fixed; toast imported
-- [ ] StudiesPanel.jsx (14 DOM mutations) — next up: convert to React state
+- [x] StudiesPanel.jsx (14 DOM mutations) — ✅ COMPLETE (PR #549): all removed; controlled inputs; JSX rendering; useRef focus guards; server sync
 - [ ] replayWarReport.js (21 DOM mutations) — imperative renderer, needs full React rewrite (blocked: review first)
 
 ### 4. Clean up the remaining legacy CSS surfaces — ✅ COMPLETE (audit)
