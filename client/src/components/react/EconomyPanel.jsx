@@ -194,6 +194,10 @@ const EconomyPanel = () => {
   useEffect(() => { loadEconData(); }, [loadEconData]);
 
   useEffect(() => {
+    if (state?.tax != null) setTaxValue(state.tax);
+  }, [state?.tax]);
+
+  useEffect(() => {
     if (activeTab === 'markets') loadTradeOffers();
     else if (activeTab === 'trade-routes') loadTradeRoutes();
   }, [activeTab, loadTradeOffers, loadTradeRoutes]);
@@ -340,7 +344,10 @@ const EconomyPanel = () => {
   }, [loadTradeRoutes]);
 
   const setMaxTradeOfferQty = useCallback(() => {
-    const val = Number(state?.[tradeOfferItem] || 0);
+    const key = tradeOfferItem === 'weapons' ? 'weapons_stockpile'
+      : tradeOfferItem === 'armor' ? 'armor_stockpile'
+      : tradeOfferItem;
+    const val = Number(state?.[key] || 0);
     setTradeOfferQty(String(Math.max(0, val)));
   }, [state, tradeOfferItem]);
 
