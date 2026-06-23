@@ -372,9 +372,9 @@ const EconomyPanel = () => {
         <div className="flex justify-between items-baseline">
           <div className="card-title">Tax policy</div>
           <div id="tax-metrics" className="text-[12px] text-[var(--text3)] flex gap-3">
-            <span>Income: <strong id="econ-income" className="text-[var(--green)]">+0</strong></span>
-            <span>Upkeep: <strong id="econ-upkeep" className="text-[var(--red)]">-0</strong></span>
-            <span>Net: <strong id="econ-net" className="text-[var(--gold)]">0</strong></span>
+            <span>Income: <strong className="text-[var(--green)]">+{fmt(econData?.totalIncome || 0)}</strong></span>
+            <span>Upkeep: <strong className="text-[var(--red)]">-{fmt(econData?.troopUpkeep || 0)}</strong></span>
+            <span>Net: <strong style={{ color: (econData?.netIncome || 0) >= 0 ? 'var(--green)' : 'var(--red)' }}>{(econData?.netIncome || 0) >= 0 ? '+' : ''}{fmt(econData?.netIncome || 0)}</strong></span>
           </div>
         </div>
         <div className="flex items-center gap-3.5 my-3 tax-slider-container">
@@ -411,23 +411,23 @@ const EconomyPanel = () => {
         <div className="grid [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))] gap-4 text-[13px]">
           <div>
             <div className="font-bold text-[var(--green)] mb-1 border-b border-[var(--border)] pb-0.5">Income / Turn</div>
-            <div className="flex justify-between"><span className="text-[var(--text3)]">Taxes</span><span id="ledger-tax" className="text-[var(--green)]">0</span></div>
-            <div className="flex justify-between"><span className="text-[var(--text3)]">Markets</span><span id="ledger-markets" className="text-[var(--green)]">0</span></div>
-            <div className="flex justify-between"><span className="text-[var(--text3)]">Trade Routes</span><span id="ledger-trade" className="text-[var(--green)]">0</span></div>
+            <div className="flex justify-between"><span className="text-[var(--text3)]">Taxes</span><span className="text-[var(--green)]">{fmt(econData?.taxIncome || 0)}</span></div>
+            <div className="flex justify-between"><span className="text-[var(--text3)]">Markets</span><span className="text-[var(--green)]">{fmt(econData?.marketIncome || 0)}</span></div>
+            <div className="flex justify-between"><span className="text-[var(--text3)]">Trade Routes</span><span className="text-[var(--green)]">{fmt(econData?.tradeRouteIncome || 0)}</span></div>
             <div className="flex justify-between font-bold border-t border-[var(--border)] mt-1 pt-0.5">
-              <span className="text-text2">Total Income</span><span id="ledger-income-total" className="text-[var(--green)]">0</span>
+              <span className="text-text2">Total Income</span><span className="text-[var(--green)]">{fmt(econData?.totalIncome || 0)}</span>
             </div>
           </div>
           <div>
             <div className="font-bold text-[var(--red)] mb-1 border-b border-[var(--border)] pb-0.5">Expenses / Turn</div>
-            <div className="flex justify-between"><span className="text-[var(--text3)]">Troop Upkeep</span><span id="ledger-upkeep" className="text-[var(--red)]">0</span></div>
+            <div className="flex justify-between"><span className="text-[var(--text3)]">Troop Upkeep</span><span className="text-[var(--red)]">{fmt(econData?.troopUpkeep || 0)}</span></div>
             <div className="flex justify-between font-bold border-t border-[var(--border)] mt-1 pt-0.5">
-              <span className="text-text2">Total Expenses</span><span id="ledger-expense-total" className="text-[var(--red)]">0</span>
+              <span className="text-text2">Total Expenses</span><span className="text-[var(--red)]">{fmt(econData?.troopUpkeep || 0)}</span>
             </div>
           </div>
         </div>
         <div className="mt-2 text-center font-bold p-1 bg-bg2 rounded-sm">
-          Net Balance: <span id="ledger-net">0</span>
+          Net Balance: <span style={{ color: (econData?.netIncome || 0) >= 0 ? 'var(--green)' : 'var(--red)' }}>{(econData?.netIncome || 0) >= 0 ? '+' : ''}{fmt(econData?.netIncome || 0)}</span>
         </div>
       </div>
 
