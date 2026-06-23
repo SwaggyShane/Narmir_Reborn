@@ -1,4 +1,4 @@
-# Final Vanilla Removal
+﻿# Final Vanilla Removal
 
 ## Goal
 Remove the remaining vanilla shell, hybrid bridge code, and legacy DOM mutation paths so the client is fully React-owned, with only thin shared helpers left where they genuinely make sense.
@@ -143,3 +143,4 @@ Use that inventory as the baseline progress metric for the remaining work.
 - Remaining helpers are shared utilities, not bridge glue.
 - Legacy CSS is reduced to the minimum needed for shared primitives.
 - Each slice is reviewable, testable, and safe to merge on its own.
+
