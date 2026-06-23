@@ -93,7 +93,8 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [ ] AlliancesPanel: deferred; alliance backend not yet implemented
 - [x] CSS: no action needed — audit found only forum.css, all active
 - [x] TrainingPanel.jsx — ✅ COMPLETE: removed all 13 DOM mutations; fixed broken Max/Distribute buttons (were reading non-existent `ta-${unit}` DOM IDs); added missing toast import; race bonus + capacity color now inline React
-- [ ] **NEXT**: StudiesPanel.jsx DOM audit (14 direct mutations) — convert to React state
+- [x] StudiesPanel.jsx — ✅ COMPLETE (PR #549): removed all 14 DOM mutations; converted mage allocation inputs to controlled state; replaced updateFocusPreview innerHTML builder with JSX rendering; removed getMageInputValue/setMageInputValue helper functions; replaced mageUiTick/refreshMageUi with direct state setters; focus display now inline React
+- [ ] **NEXT**: Remaining panels with DOM mutations (if any identified)
 
 ### Codex Next
 - [x] Slice 1: Kill the shell in `client/index.html` — ✅ COMPLETE
