@@ -19,8 +19,7 @@
 @layer components {
   /* ── Cards ── */
   .card {
-    @apply relative bg-bg2 border border-white/5 rounded-2xl p-4 mb-3 transition-all overflow-hidden flex-shrink-0;
-    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.28);
+    @apply relative bg-bg2 border border-white/5 rounded-2xl p-4 mb-3 transition-all overflow-hidden flex-shrink-0 shadow-[0_16px_32px_rgba(0,0,0,0.28)];
   }
 
   .card::before {
