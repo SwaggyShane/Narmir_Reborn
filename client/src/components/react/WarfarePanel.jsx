@@ -12,6 +12,8 @@ import { switchTab } from '../../utils/panelNav.js';
 import { registerWarfareTab } from '../../utils/warfareTabs.js';
 import { RACE_ICONS } from '../../utils/raceIcons.js';
 import { playGameSound } from '../../utils/audio.js';
+import { renderTargets } from '../../utils/renderTargets.js';
+import { registerShowBattleReport } from '../../utils/showBattleReport.js';
 import BattleReportModal from './BattleReportModal.jsx';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -91,7 +93,7 @@ function KingdomTargetCard({ target, isSelected, onSelect }) {
         <div className="text-[10px] text-[var(--text3)]">
           {target.is_location
             ? 'Discovered Site'
-            : `Lv ${target.level} · ${(target.race || '').replace(/_/g, ' ')}`}
+            : `Lv ${target.level} - ${(target.race || '').replace(/_/g, ' ')}`}
         </div>
       </div>
       <div className="text-right">
@@ -121,7 +123,7 @@ function TargetListSection({ targets, selected, onSelect, searchQ, onSearchChang
           <span className="text-[var(--text3)] mr-1.5">Target:</span>
           <span className="font-bold text-[var(--text)]">{selected.name}</span>
           <span className="text-[var(--text3)] ml-2 text-[11px]">
-            {selected.is_location ? '📍 Site' : `${fmt(selected.land)} ac · #${selected.rank || '?'}`}
+            {selected.is_location ? 'Site' : `${fmt(selected.land)} ac - #${selected.rank || '?'}`}
           </span>
           <button
             className="base-btn float-right text-[10px] px-1.5 py-0.5"
@@ -282,9 +284,11 @@ const WarfarePanel = () => {
     const handleRaceChange = (e) => setWcovTargetRace(e.detail);
     window.addEventListener('wcovTargetRaceChange', handleRaceChange);
     const unregister = registerWarfareTab(setActiveTab);
+    const unregisterBattle = registerShowBattleReport(setBattleReport);
     return () => {
       window.removeEventListener('wcovTargetRaceChange', handleRaceChange);
       unregister();
+      unregisterBattle();
     };
   }, []);
 
@@ -671,7 +675,7 @@ const WarfarePanel = () => {
           <div className="text-[var(--text3)] text-[11px]">{fmtDate(row.created_at)}</div>
         </div>
         <div className="text-[var(--text2)] text-[13px] mb-2">
-          Shared by {row.shared_by_name || 'an ally'} · {row.outcome || 'Unknown outcome'}
+          Shared by {row.shared_by_name || 'an ally'} - {row.outcome || 'Unknown outcome'}
         </div>
         {row.report ? (
           <pre className="whitespace-pre-wrap text-[var(--text3)] text-[12px]">{renderDetail(row.report)}</pre>
