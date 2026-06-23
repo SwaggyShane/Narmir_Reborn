@@ -4318,17 +4318,48 @@ module.exports = function (db) {
               bld_granaries, granary_upgrades, food, food_shortage_turns,
               food_surplus_turns, fragment_bonuses, tavern_upgrades, mercenaries,
               fighters, rangers, mages, clerics, thieves, ninjas,
-              researchers, engineers, scribes, tax
+              researchers, engineers, scribes, tax,
+              land, happiness, bld_castles, res_economy, milestone_bonuses,
+              achievements, bld_barracks, bld_smithies, bld_libraries, bld_schools,
+              alliance_buffs, active_effects
        FROM kingdoms WHERE player_id = ?`,
       [req.player.playerId]
     );
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
+
+    // Fetch trade routes so calculateTradeIncome can use them
+    const tradeRoutesRows = await db.all(
+      "SELECT id, kingdom_id, partner_id, stability, efficiency, distance FROM trade_routes WHERE kingdom_id=? OR partner_id=?",
+      [k.id, k.id]
+    );
+    k._trade_routes = tradeRoutesRows;
+
+    // Compute troop upkeep (mirrors processTurn logic)
+    const upkeepMult = { high_elf: 1.0, dwarf: 0.85, dire_wolf: 1.2, dark_elf: 1.1, human: 1.0, orc: 1.15 }[k.race] || 1.0;
+    const combatTroops = (k.fighters || 0) + (k.rangers || 0) + (k.clerics || 0) + (k.mages || 0) + (k.thieves || 0) + (k.ninjas || 0);
+    const researcherCap = Math.floor((k.bld_schools || 0) * 100);
+    const engineerCap = Math.floor((k.bld_smithies || 0) * 50);
+    const scribeCap = Math.floor((k.bld_libraries || 0) * 20);
+    const supportOverflow = Math.max(0, (k.researchers || 0) - researcherCap) + Math.max(0, (k.engineers || 0) - engineerCap) + Math.max(0, (k.scribes || 0) - scribeCap);
+    const barrackDiscount = Math.min(0.5, Math.floor((k.bld_barracks || 0) / 2) * 0.01);
+    const troopUpkeep = Math.floor((combatTroops + supportOverflow) * upkeepMult * (1 - barrackDiscount));
+
+    const marketInc = engine.marketIncomeFull(k);
+    const goldIncome = engine.goldPerTurn(k);
+    const tradeRouteIncome = engine.calculateTradeIncome(k);
+    const totalIncome = goldIncome + tradeRouteIncome;
+
     res.json({
       tax: k.tax,
+      taxIncome: goldIncome - marketInc,
+      marketIncome: marketInc,
+      tradeRouteIncome,
+      totalIncome,
+      troopUpkeep,
+      netIncome: totalIncome - troopUpkeep,
       farmProduction: engine.farmProduction(k),
       foodConsumption: engine.foodConsumption(k),
       foodBalance: engine.farmProduction(k) - engine.foodConsumption(k),
-      marketIncome: engine.marketIncomeFull(k),
       tavernBonus: engine.tavernEntertainmentBonus(k),
       maxFoodStorage:
         k.bld_granaries *
@@ -4394,12 +4425,7 @@ module.exports = function (db) {
       mercenaries: safeJsonParse(k.mercenaries, [], "auto:mercenaries"),
       food_shortage_turns: k.food_shortage_turns,
       food_surplus_turns: k.food_surplus_turns,
-      activeTradeRouteCount: (
-        await db.get(
-          "SELECT COUNT(*) as count FROM trade_routes WHERE kingdom_id=? OR partner_id=?",
-          [k.id, k.id],
-        )
-      ).count,
+      activeTradeRouteCount: tradeRoutesRows.length,
     });
   });
   router.get("/profile/:name", async (req, res) => {
