@@ -298,10 +298,6 @@ export function renderActiveMercs(mercs) {
 const EconomyPanel = () => {
   const { state } = useGameState();
   const [activeTab, setActiveTab] = useState('farms');
-<<<<<<< HEAD
-=======
-  const [economyData, setEconomyData] = useState(null);
->>>>>>> 2e1c6d3 (Create upgrade definitions module and React component for economy rendering)
   const escapeHtml = escapeHtmlValue;
 
   const handleTabClick = (tabId) => {
