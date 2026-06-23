@@ -14,6 +14,7 @@ Remove the remaining vanilla shell, hybrid bridge code, and legacy DOM mutation 
 - Prefer moving logic out of `client/index.html` before touching lower-level helpers.
 - If a risky slice starts to sprawl, stop, roll it back, and file it for the next cycle.
 - If a temporary feature flag is used, set a hard removal deadline before the slice lands.
+- Merge a slice as soon as it is finished, green, and documented. Do not park clean work unless it is blocked by an unmerged dependency.
 - Claude must complete the socket audit before Codex starts Slice 2.
 - Record FCP/LCP before the `WorldmapRenderer.jsx` slice starts.
 
