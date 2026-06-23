@@ -6,12 +6,12 @@ import { replayWarReport } from '../../utils/replayWarReport';
 import { repairMojibake } from '../../utils/repairMojibake';
 
 const NEWS_META = {
-  attack: { icon: '\u2694\ufe0f', color: 'var(--red)', label: 'Combat' },
-  spell: { icon: '\u2728', color: 'var(--accent1)', label: 'Spell' },
-  covert: { icon: '\ud83d\udd75\ufe0f', color: 'var(--amber)', label: 'Covert' },
-  system: { icon: '\ud83d\udccb', color: 'var(--text2)', label: 'System' },
-  alliance: { icon: '\ud83e\udd1d', color: 'var(--blue)', label: 'Alliance' },
-  expedition: { icon: '\ud83e\udded', color: 'var(--gold)', label: 'Expedition' },
+  attack: { icon: '⚔️', color: 'var(--red)', label: 'Combat' },
+  spell: { icon: '✨', color: 'var(--accent1)', label: 'Spell' },
+  covert: { icon: '🕵️', color: 'var(--amber)', label: 'Covert' },
+  system: { icon: '📋', color: 'var(--text2)', label: 'System' },
+  alliance: { icon: '🤝', color: 'var(--blue)', label: 'Alliance' },
+  expedition: { icon: '🧭', color: 'var(--gold)', label: 'Expedition' },
 };
 
 const NewsPanel = () => {
@@ -173,10 +173,10 @@ const NewsPanel = () => {
       <div className="card mt-0">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="card-title m-0">
-            \ud83d\udcf0 Kingdom news \u2014 Turn <span id="news-turn-num">{state?.turn || 0}</span>
+            📰 Kingdom news — Turn <span id="news-turn-num">{state?.turn || 0}</span>
           </div>
           <div className="flex gap-2">
-            <button className="base-btn" onClick={loadNews}>\u21bb Refresh</button>
+            <button className="base-btn" onClick={loadNews}>↻ Refresh</button>
             <button className="base-btn variant-red bg-[var(--red)]" onClick={clearNews}>Clear all</button>
           </div>
         </div>
@@ -184,10 +184,10 @@ const NewsPanel = () => {
         <div className="mb-3.5 flex flex-wrap gap-1.5">
           {[
             ['all', 'All'],
-            ['attack', '\u2694\ufe0f Combat'],
-            ['spell', '\u2728 Spells'],
-            ['covert', '\ud83d\udd75\ufe0f Covert'],
-            ['system', '\ud83d\udccb System'],
+            ['attack', '⚔️ Combat'],
+            ['spell', '✨ Spells'],
+            ['covert', '🕵️ Covert'],
+            ['system', '📋 System'],
           ].map(([value, label]) => (
             <button
               key={value}
@@ -208,7 +208,7 @@ const NewsPanel = () => {
           ) : visibleGroups.map((group) => (
             <div className="news-turn-group" key={group.turn}>
               <div className="news-turn-header">
-                <span className="turn-label">\u25c6 {group.turn > 0 ? `Turn ${group.turn}` : 'Before game start'}</span>
+                <span className="turn-label">◆ {group.turn > 0 ? `Turn ${group.turn}` : 'Before game start'}</span>
                 <span className="turn-time">{group.timeLabel}</span>
               </div>
               {group.items.map((item, idx) => {
@@ -231,7 +231,7 @@ const NewsPanel = () => {
                           className="btn inline-flex items-center gap-1 text-[10px] px-2 py-0.5 mt-1 ml-2.5"
                           onClick={() => replayWarReport(item.combat_log_id)}
                         >
-                          \u25b6 Replay
+                          ▶ Replay
                         </button>
                       ) : null}
                     </span>
