@@ -155,7 +155,7 @@ function TargetListSection({ targets, selected, onSelect, searchQ, onSearchChang
 // ─── main component ───────────────────────────────────────────────────────────
 
 const WarfarePanel = () => {
-  const { state } = useGameState();
+  const { state, setState } = useGameState();
   const [activeTab, setActiveTab] = useState('attack');
 
   // target data
@@ -223,7 +223,7 @@ const WarfarePanel = () => {
           is_ai: row.is_ai || 0,
         }));
 
-      window.rankingsCache = kingdoms;
+      setState({ rankingsCache: kingdoms });
       window.targets = mappedTargets;
       setTargets(mappedTargets);
     } catch (err) {
