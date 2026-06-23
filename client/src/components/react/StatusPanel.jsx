@@ -58,7 +58,7 @@ const RACE_PORTRAITS = {
   ogre: '/race/ogre_male.webp',
 };
 
-const STATUS_CARD_CLASS = 'card rounded-2xl border border-white/5 bg-bg p-4 shadow-[0_16px_32px_rgba(0,0,0,0.28)]';
+const STATUS_CARD_CLASS = 'card';
 
 const toRaceKey = (value) =>
   String(value || '')
