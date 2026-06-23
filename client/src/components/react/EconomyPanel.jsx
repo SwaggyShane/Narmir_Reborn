@@ -9,6 +9,7 @@ import { fmt } from '../../utils/fmt.js';
 import { fmtShort } from '../../utils/numberFormat.js';
 import { toast } from '../../utils/toast.js';
 import { playGameSound } from '../../utils/audio.js';
+import { FARM_WORKERS_PER, COMMODITY_VALUES, COMMODITY_RACE_DISCOUNT } from '../../utils/economyConstants.js';
 
 function getState() {
   return gameStateManager.getState();
@@ -38,10 +39,6 @@ export async function loadEconomy() {
 
   if (data.error) return toast(data.error, 'error');
 
-  console.log('loadEconomy data:', data);
-
-  window.econData = data;
-
   const el = (id) => document.getElementById(id);
 
   if (el('econ-farms')) el('econ-farms').textContent = String(state.bld_farms || 0);
@@ -57,7 +54,7 @@ export async function loadEconomy() {
 
   if (el('econ-shortage')) el('econ-shortage').textContent = data.food_shortage_turns || 0;
 
-  const wpf = (window.FARM_WORKERS_PER || {})[state.race] || 10;
+  const wpf = FARM_WORKERS_PER[state.race] || 10;
   if (el('econ-workers-per-farm')) el('econ-workers-per-farm').textContent = wpf;
 
   if (el('gran-food-stored')) el('gran-food-stored').textContent = fmt(state.food || 0) + ' bushels';
@@ -218,7 +215,7 @@ export function renderCommodityMarket(mktUpgrades) {
 
   const state = getState();
   const race = state.race || 'human';
-  const racDisc = window.COMMODITY_RACE_DISCOUNT?.[race] || {};
+  const racDisc = COMMODITY_RACE_DISCOUNT[race] || {};
   const items = [
     'food',
     'weapons',
@@ -239,7 +236,7 @@ export function renderCommodityMarket(mktUpgrades) {
     '</div>' +
     items
       .map((item) => {
-        const base = window.COMMODITY_VALUES?.[item] || 1;
+        const base = COMMODITY_VALUES[item] || 1;
         const disc = racDisc[item] || racDisc._all || 1.0;
         const yours = Math.max(1, Math.round(base * disc));
         const diff =
