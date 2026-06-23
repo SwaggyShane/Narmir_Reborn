@@ -6425,21 +6425,9 @@
 
 
 
-      var soundLibrary = {};
-
-      function loadAvailableSounds() {
-
-        soundLibrary = {};
-
-        return soundLibrary;
-
-      }
-
-
-
       function playGameSound(soundKey) {
 
-        var src = soundLibrary[soundKey];
+        var src = window.__soundLibrary && window.__soundLibrary[soundKey];
 
         if (!src) return false;
 
@@ -13234,8 +13222,6 @@ const SCHOOL_LORE = {
         };
 
         document.documentElement.style.zoom = "";
-
-        loadAvailableSounds();
 
         initLoginModal();
 
