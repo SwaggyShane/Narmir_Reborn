@@ -58,6 +58,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] Confirm render behavior is out of state mutation paths - already true.
 - [x] Confirm socket listeners only update state or dispatch React-safe events - mostly clean.
 - [ ] Resolve the remaining socket exception: `event:chat_clear`.
+- [ ] Start with `client/src/hooks/useSocket.js` and `client/src/components/react/GlobalchatPanel.jsx`; make `event:chat_clear` React-safe and keep it out of DOM mutation paths.
 - [ ] Record the final socket -> GameStateManager -> React flow map in the doc.
 - [ ] Update the inventory counts in the doc after the audit.
 
