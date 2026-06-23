@@ -2,9 +2,10 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
 import { useGameState, useGameMutationEvents } from '../../hooks/useGameState';
-import { replayWarReport } from '../../utils/replayWarReport';
+import { replayWarReport, registerReplayModal } from '../../utils/replayWarReport';
 import { repairMojibake } from '../../utils/repairMojibake';
 import newsEmojiTools from '../../../../game/news-emoji.js';
+import ReplayModal from './ReplayModal.jsx';
 
 const { decorateNewsMessage, getNewsMeta } = newsEmojiTools;
 
@@ -12,6 +13,12 @@ const NewsPanel = () => {
   const { state } = useGameState();
   const [newsItems, setNewsItems] = useState([]);
   const [newsFilter, setNewsFilter] = useState('all');
+  const [replayData, setReplayData] = useState(null);
+
+  useEffect(() => {
+    registerReplayModal((data) => setReplayData(data));
+    return () => registerReplayModal(null);
+  }, []);
 
   const repairText = useCallback((value) => {
     const text = value === null || value === undefined ? '' : String(value);
@@ -245,6 +252,13 @@ const NewsPanel = () => {
 
       <div id="vue-panel-races" className="contents" />
       <div id="vue-panel-bounties" className="contents" />
+      {replayData && (
+        <ReplayModal
+          title={replayData.title}
+          steps={replayData.steps}
+          onClose={() => setReplayData(null)}
+        />
+      )}
     </div>
   );
 };
