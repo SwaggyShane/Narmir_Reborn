@@ -34,6 +34,11 @@ Before any more refactoring, record the current counts for:
 
 Use that inventory as the baseline progress metric for the remaining work.
 
+## Progress
+
+### Completed
+- [x] Codex Slice 1: moved shell chrome listeners out of `client/index.html` into `client/src/utils/shellChrome.js` and `client/src/main.js` ([PR #543](https://github.com/SwaggyShane/Narmir_Reborn/pull/543))
+
 ## Codex Lane
 
 ### 1. Kill the shell in `client/index.html`
