@@ -9,6 +9,7 @@ import { repairMojibake } from '../../utils/repairMojibake.js';
 import { RACE_ICONS } from '../../utils/raceIcons.js';
 import { openKingdomProfile } from './KingdomProfileModal.jsx';
 import { targetFromRankings } from '../../utils/rankingsTarget.js';
+import { toast } from '../../utils/toast.js';
 
 export async function loadWorldMap({ setLoading, setError, setMapSvg } = {}) {
   if (typeof setLoading === 'function') setLoading(true);
@@ -39,13 +40,13 @@ async function establishTradeRoute(targetId) {
       body: { targetId },
     });
     if (result.error) {
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.error, 'error');
+      toast(result.error, 'error');
       return;
     }
-    if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Trade route established', 'success');
+    toast(result.message || 'Trade route established', 'success');
   } catch (err) {
     console.error('[worldmap] establish trade route failed:', err);
-    if (typeof window !== 'undefined' && typeof toast === 'function') toast('Failed to establish trade route', 'error');
+    toast('Failed to establish trade route', 'error');
   }
 }
 
