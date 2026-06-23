@@ -144,17 +144,61 @@ const StatusPanel = () => {
   const isVampire = raceForPortrait === 'vampire';
   const troopLevels = state?.troop_levels || {};
 
+  const xp = state?.xp ?? 0;
+  const xpToNext = state?.xp_to_next ?? 1;
+  const xpPct = Math.min(100, Math.round((xp / Math.max(xpToNext, 1)) * 100));
+  const kingdomName = cleanText(state?.name || state?.kingdomName || 'Your Kingdom');
+
   return (
     <div id="status" className="panel active w-full min-w-0">
-      <div className="mb-5">
+
+      {/* ── Kingdom Header ── */}
+      <div className="mb-4 rounded-xl border border-ember-900/60 bg-void-800 p-4 shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
+        <div className="flex flex-col gap-3">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <h1 className="font-cinzel text-2xl font-black text-gold leading-none tracking-wide" style={{ textShadow: '0 0 16px rgba(240,98,2,0.4)' }}>
+              {kingdomName}
+            </h1>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {state?.turn != null && (
+                <span className="badge badge-amber text-[10px] px-2 py-0.5">Turn {state.turn}</span>
+              )}
+              {state?.score != null && (
+                <span className="badge badge-gold text-[10px] px-2 py-0.5">Score {(state.score ?? 0).toLocaleString()}</span>
+              )}
+              {state?.level != null && (
+                <span className="badge badge-blue text-[10px] px-2 py-0.5">Lv {state.level}</span>
+              )}
+            </div>
+          </div>
+
+          {state?.xp_to_next != null && (
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-widest text-ember-400/70">Experience</span>
+                <span className="text-[10px] text-text3">{xp.toLocaleString()} / {xpToNext.toLocaleString()} XP</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-void-950 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-ember-700 to-ember-500 transition-all"
+                  style={{ width: `${xpPct}%`, boxShadow: '0 0 8px rgba(240,98,2,0.5)' }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Race Banner ── */}
+      <div className="mb-4">
         <div
           id="race-tag-display"
-          className="race-tag-block cursor-pointer p-4 bg-bg3 border border-white/5 rounded-lg flex flex-row items-center gap-4 transition-all w-full"
+          className="race-tag-block cursor-pointer p-4 bg-void-900 border border-ember-900/50 rounded-xl flex flex-row items-center gap-4 transition-all w-full hover:border-ember-700/60 hover:bg-void-800"
           onClick={() => { openRaceLore(raceKey); }}
           title="Click for race lore"
         >
           {portraitUrl ? (
-            <div className="flex-shrink-0 w-20 h-20 rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.5)] overflow-hidden bg-[#15171e] flex items-center justify-center">
+            <div className="flex-shrink-0 w-20 h-20 rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.5)] overflow-hidden bg-void-950 flex items-center justify-center">
               <img
                 src={portraitUrl}
                 alt={cleanText(raceInfo.label)}
@@ -171,6 +215,7 @@ const StatusPanel = () => {
               {cleanText(raceInfo.bonus)}
             </div>
           </div>
+          <div className="flex-shrink-0 text-ember-500/40 text-lg">›</div>
         </div>
       </div>
 
