@@ -127,7 +127,8 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] Find remaining shell-era globals — ✅ Found in 7 React panels
 - [x] WorldmapPanel (3 globals) — ✅ COMPLETE (PR #545): openKingdomProfile, targetFromRankings, establishTradeRoute (with auto-refresh callback for better UX)
 - [x] NewsPanel (1 cache) — ✅ COMPLETE (PR #546): removed window.newsCache (write-only, never read)
-- [ ] Next targets: KingdomProfileModal (1 utility), remaining panels
+- [x] KingdomProfileModal + RacesPanel (1 utility) — ✅ COMPLETE (in PR #546): getRacePortrait → new helper module client/src/utils/racePortraits.js exports GENDER_RACE_PORTRAITS and getRacePortrait()
+- [ ] Next targets: remaining panels with window.* globals
 - [ ] Replace remaining with shared helpers or local React props/state
 - [ ] Keep compatibility shims only where a slice cannot be moved safely in one step
 
