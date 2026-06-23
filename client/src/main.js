@@ -39,12 +39,16 @@ import { initSocketHandlers } from "./hooks/useSocket.js";
 import AuthModalReact from "./components/react/AuthModal.jsx";
 import KingdomProfileModalReact from "./components/react/KingdomProfileModal.jsx";
 import newsEmojiTools from "../../game/news-emoji.js";
+import { appendNewsItems } from "./utils/newsShell.js";
+import { showToast } from "./utils/toastShell.js";
 
 window.apiCall = apiCall;
 window.applyGameMutation = applyGameMutation;
 window.applyServerUpdatesAction = applyServerUpdatesAction;
 window.initSocketHandlers = initSocketHandlers;
 window.__NEWS_EMOJI_TOOLS__ = newsEmojiTools;
+window.__appendNewsItemsImpl = appendNewsItems;
+window.__toastImpl = showToast;
 
 const reactRoots = new Map();
 

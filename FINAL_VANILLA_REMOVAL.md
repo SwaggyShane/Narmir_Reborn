@@ -50,6 +50,8 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] Codex Slice 1: moved shell chrome listeners, `applyNavLayout`, and the news badge incrementer out of `client/index.html` into `client/src/utils/shellChrome.js` and `client/src/main.js` ([PR #543](https://github.com/SwaggyShane/Narmir_Reborn/pull/543))
 - [x] Codex Slice 2: removed the auth shell forwarding stubs from `client/index.html` and bridged the auth modal globals through `client/src/main.js`
 - [x] Codex Slice 3: moved the status refresh loop out of `client/index.html` into `client/src/utils/statusShell.js` and `client/src/main.js`
+- [x] Codex Slice 4: moved `appendNewsItems` out of `client/index.html` into `client/src/utils/newsShell.js` and bridged it through `client/src/main.js`
+- [x] Codex Slice 5: moved shell toast rendering out of `client/index.html` into `client/src/utils/toastShell.js` and bridged it through `client/src/main.js`
 
 ## Current Handoff
 
@@ -74,8 +76,10 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] Slice 2: Reduce hybrid bridge code in `client/src/main.js` — ✅ COMPLETE
 - [x] Slice 3: Triage the heaviest hybrid panels — ✅ COMPLETE
 - [x] **Gate cleared:** Socket audit complete, all listeners are React-safe. Claude fixed `event:chat_clear`.
+- [x] Slice 4: moved `appendNewsItems` out of `client/index.html` into `client/src/utils/newsShell.js` and bridged it through `client/src/main.js`
+- [x] Slice 5: moved shell toast rendering out of `client/index.html` into `client/src/utils/toastShell.js` and bridged it through `client/src/main.js`
 - [ ] Next: Take the next safe shell/helper slice and update the doc again.
-- [ ] Next likely target: Remaining window.* globals across 17 files (~89 instances), or CSS dependency cleanup.
+- [ ] Next likely target: `openKingdomProfile` or the remaining shell helper clusters if they can be peeled without touching Claude-owned socket paths.
 
 ## Codex Lane
 
@@ -158,4 +162,3 @@ Use that inventory as the baseline progress metric for the remaining work.
 - Remaining helpers are shared utilities, not bridge glue.
 - Legacy CSS is reduced to the minimum needed for shared primitives.
 - Each slice is reviewable, testable, and safe to merge on its own.
-
