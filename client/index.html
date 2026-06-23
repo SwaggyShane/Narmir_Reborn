@@ -6900,7 +6900,7 @@
 
             type: ev.type || "system",
 
-            message: repairMojibake(ev.message || ev),
+            message: decorateNewsMessage(ev.message || ev),
 
             turn_num: state.turn || 0,
 
@@ -18010,7 +18010,6 @@
   </body>
 
 </html>
-
 
 
 

@@ -100,8 +100,13 @@ const NewsPanel = () => {
       const items = await apiCall('/api/kingdom/news/list');
       if (!Array.isArray(items)) return;
 
-      setNewsItems(items);
-      window.newsCache = items;
+      const normalized = items.map((item) => ({
+        ...item,
+        message: decorateNewsMessage(item?.message || ''),
+      }));
+
+      setNewsItems(normalized);
+      window.newsCache = normalized;
       clearBadges();
     } catch (err) {
       console.error('[NewsPanel] Error loading news:', err);
@@ -159,8 +164,12 @@ const NewsPanel = () => {
     const handleItems = (event) => {
       const items = Array.isArray(event?.detail) ? event.detail : [];
       if (!items.length) return;
+      const normalized = items.map((item) => ({
+        ...item,
+        message: decorateNewsMessage(item?.message || ''),
+      }));
       setNewsItems((prev) => {
-        const merged = [...items, ...prev];
+        const merged = [...normalized, ...prev];
         const seen = new Set();
         return merged.filter((item) => {
           const key = `${item?.turn_num || 0}:${item?.type || 'system'}:${item?.message || ''}:${item?.created_at || ''}`;
@@ -169,7 +178,7 @@ const NewsPanel = () => {
           return true;
         });
       });
-      window.newsCache = Array.isArray(window.newsCache) ? [...items, ...window.newsCache] : items;
+      window.newsCache = Array.isArray(window.newsCache) ? [...normalized, ...window.newsCache] : normalized;
     };
     window.addEventListener('narmir:news-items', handleItems);
     return () => window.removeEventListener('narmir:news-items', handleItems);

@@ -512,8 +512,20 @@ module.exports = function (db) {
         [k.id],
       ),
     ]);
+    const normalized = items.map(normalizeNewsRow);
+    const repairJobs = [];
+    for (let i = 0; i < items.length; i += 1) {
+      const original = items[i]?.message ?? "";
+      const repaired = normalized[i]?.message ?? original;
+      if (typeof original === "string" && repaired !== original) {
+        repairJobs.push(db.run("UPDATE news SET message = ? WHERE id = ?", [repaired, items[i].id]));
+      }
+    }
+    if (repairJobs.length > 0) {
+      await Promise.all(repairJobs);
+    }
     setUnreadCount(k.id, 0); // Mark all read, so unread count is 0
-    res.json(items.map(normalizeNewsRow));
+    res.json(normalized);
   });
 
   router.delete("/news/clear", requireAuth, async (req, res) => {
@@ -5875,7 +5887,7 @@ async function bulkInsertNews(db, rows) {
   const values = rows.flatMap((r) => [
     r.kingdom_id,
     r.type || "system",
-    repairMojibake(r.message),
+    decorateNewsMessage(r.message),
     r.turn_num || 0,
   ]);
   await db.run(
