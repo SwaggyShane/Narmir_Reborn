@@ -19,18 +19,18 @@
 @layer components {
   /* ── Cards ── */
   .card {
-    @apply relative bg-bg2 border border-white/5 rounded-xl px-3.5 py-4 mb-3 transition-all shadow-lg overflow-hidden flex-shrink-0;
+    @apply relative bg-bg2 border border-white/5 rounded-2xl p-4 mb-3 transition-all overflow-hidden flex-shrink-0 shadow-[0_16px_32px_rgba(0,0,0,0.28)];
   }
 
   .card::before {
     content: '';
     @apply absolute top-0 left-0 right-0 h-0.5;
-    background: linear-gradient(90deg, transparent 0%, rgba(240, 98, 2, 0.3) 50%, transparent 100%);
+    background: linear-gradient(90deg, transparent 0%, rgba(240, 98, 2, 0.45) 50%, transparent 100%);
   }
 
   .card-title {
     @apply text-xs font-black text-gold font-cinzel mb-5 uppercase tracking-wider;
-    text-shadow: 0 0 8px rgba(240, 98, 2, 0.3);
+    text-shadow: 0 0 8px rgba(240, 98, 2, 0.4);
   }
 
   /* ── Grid Layouts ── */

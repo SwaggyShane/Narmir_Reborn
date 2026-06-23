@@ -17,6 +17,7 @@ const Sidebar = () => {
 
   return (
     <nav className="sidebar game-panel">
+      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-game">
       <div className="nav-section">Kingdom</div>
       <button className="nav-item active" data-tab="status" onClick={(e) => handleSwitchTab('status', e)}>
         <span className="icon text-blue">🏰</span>Status
@@ -123,10 +124,10 @@ const Sidebar = () => {
         </a>
       )}
 
-      <div className="flex-1" />
+      </div>
       <button
         onClick={logout}
-        className="nav-item mt-2 text-red"
+        className="nav-item mt-1 mb-2 mx-1 text-red flex-shrink-0"
       >
         <span className="icon">&#10005;</span>Logout
       </button>
