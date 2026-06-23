@@ -39,6 +39,7 @@ import { initSocketHandlers } from "./hooks/useSocket.js";
 import AuthModalReact from "./components/react/AuthModal.jsx";
 import KingdomProfileModalReact from "./components/react/KingdomProfileModal.jsx";
 import newsEmojiTools from "../../game/news-emoji.js";
+import { bindShellChromeEvents } from "./utils/shellChrome.js";
 
 window.apiCall = apiCall;
 window.applyGameMutation = applyGameMutation;
@@ -122,9 +123,11 @@ export const mountReactApps = () => {
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", () => {
     initGameStateManager();
+    bindShellChromeEvents();
     mountReactApps();
   });
 } else {
   initGameStateManager();
+  bindShellChromeEvents();
   mountReactApps();
 }
