@@ -45,12 +45,11 @@ async function apiCall(url, options = {}) {
       ...rest,
     });
 
+    const text = await response.text();
     let data;
     try {
-      data = await response.json();
+      data = text ? JSON.parse(text) : {};
     } catch {
-      // Response is not valid JSON
-      const text = await response.text();
       data = { error: text || `Server error ${response.status}` };
     }
 
