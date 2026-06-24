@@ -36,8 +36,11 @@ import KingdomProfileModal from './components/react/KingdomProfileModal.jsx';
 import SchoolSelectionController from './components/react/SchoolSelectionController.jsx';
 import RaceLoreController from './components/react/RaceLoreController.jsx';
 
+const IMMERSIVE_PANELS = new Set(['globalchat', 'alliances']);
+
 const GameShell = () => {
   const { activePanel } = useActivePanel();
+  const immersiveMain = IMMERSIVE_PANELS.has(activePanel);
 
   useEffect(() => {
     const update = () => {};
@@ -85,7 +88,7 @@ const GameShell = () => {
     <div
       className={[
         'flex h-full min-h-0 w-full flex-col bg-bg pt-14',
-        'lg:grid lg:h-full lg:overflow-hidden lg:p-0',
+        'lg:grid lg:h-full lg:min-h-0 lg:overflow-hidden lg:p-0',
         'lg:grid-cols-[220px_175px_minmax(0,1fr)]',
         'lg:grid-rows-[56px_minmax(0,1fr)_32px]',
         "lg:[grid-template-areas:'top_top_top'_'side_resources_main'_'side_footer_footer']",
@@ -117,31 +120,31 @@ const GameShell = () => {
         </div>
       </aside>
 
-      <div
+      <main
         className={[
-          'relative flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-bg',
-          'pb-[calc(72px+env(safe-area-inset-bottom,0px))]',
-          'lg:min-w-0 lg:pb-0 lg:[grid-area:main]',
+          'relative flex min-h-0 w-full min-w-0 flex-1 flex-col bg-bg',
+          'pb-[calc(104px+env(safe-area-inset-bottom,0px))]',
+          'lg:min-h-0 lg:pb-0 lg:[grid-area:main]',
+          immersiveMain ? 'overflow-hidden' : 'overflow-y-auto',
         ].join(' ')}
       >
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          {renderPanel()}
-        </div>
-      </div>
+        {renderPanel()}
+      </main>
 
       <footer
         className={[
-          'hidden h-8 shrink-0 items-center justify-between border-t border-white/5',
+          'flex h-8 shrink-0 items-center justify-between border-t border-white/5',
           'bg-black/90 px-4 text-[11px] leading-none text-text2',
-          'lg:flex lg:min-w-0 lg:[grid-area:footer]',
+          'max-lg:fixed max-lg:inset-x-0 max-lg:bottom-[calc(72px+env(safe-area-inset-bottom,0px))] max-lg:z-[2900]',
+          'lg:min-w-0 lg:[grid-area:footer]',
         ].join(' ')}
       >
         <div>● SYSTEM CLOUD SYNCED</div>
         <div>UPTIME: 00h 00m 00s</div>
       </footer>
-
-      <BottomNav />
     </div>
+
+    <BottomNav />
 
     <AuthModal />
     <KingdomProfileModal />
