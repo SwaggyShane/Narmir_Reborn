@@ -257,14 +257,24 @@
     @apply px-6 pb-6;
   }
 
-  /* ── Kingdom Header ── */
+  /* ── Kingdom Header (main body kd-top) ── */
+  .kd-top {
+    @apply relative;
+  }
+
+  .kd-top::before {
+    content: '';
+    @apply absolute inset-x-0 top-0 h-px;
+    background: linear-gradient(90deg, transparent 0%, rgba(240, 98, 2, 0.35) 50%, transparent 100%);
+  }
+
   .kingdom-header {
-    @apply mb-2;
+    @apply mb-0;
   }
 
   .kingdom-header h1,
   #kingdom-name {
-    @apply text-lg;
+    @apply text-xl;
   }
 
   /* ── Navigation Items ── */
