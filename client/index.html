@@ -39,6 +39,9 @@
           logErr(msg, 'unhandledrejection', null, null, error ? error.stack : 'No stacktrace');
         });
       })();
+
+
+      
     </script>
   </head>
 
@@ -47,7 +50,7 @@
     <div id="global-bg-container" class="fixed inset-0 z-0 pointer-events-none"></div>
 
     <!-- Main App Container -->
-    <div id="app" class="app h-screen w-full flex flex-col overflow-hidden" style="display: none;">
+    <div id="app" class="app h-screen w-full flex flex-col overflow-hidden">
       <!-- React will mount everything here via GameShell -->
     </div>
 
@@ -62,6 +65,6 @@
     <!-- Toast Container -->
     <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 hidden"></div>
 
-    <script type="module" src="/src/main.js"></script>
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
