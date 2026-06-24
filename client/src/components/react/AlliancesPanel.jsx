@@ -45,7 +45,7 @@ const AlliancesPanel = () => {
   };
 
   return (
-    <div id="alliances" className="panel panel-immersive min-h-0 w-full overflow-y-auto px-4 pb-5 hidden">
+    <div id="alliances" className="panel panel-immersive">
       {/* Not in alliance */}
       <div id="ally-none" className="hidden">
         <div className="card mb-4 rounded-2xl border border-white/10 bg-zinc-950/80">

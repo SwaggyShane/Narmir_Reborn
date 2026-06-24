@@ -129,12 +129,17 @@ function getNewsMeta(type) {
   return NEWS_META[type] || NEWS_META.system;
 }
 
-module.exports = {
+// ESM exports for client (Vite / browser)
+export {
   NEWS_META,
   NEWS_EMOJI_RULES,
   decorateNewsMessage,
   getNewsMeta,
 };
 
-// Client-side uses the ESM sibling: game/news-emoji.mjs (same logic, proper export default + named exports).
-// Do not delete or change the .mjs without updating the .js (or vice versa).
+export default {
+  NEWS_META,
+  NEWS_EMOJI_RULES,
+  decorateNewsMessage,
+  getNewsMeta,
+};

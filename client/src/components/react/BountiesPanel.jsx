@@ -10,7 +10,7 @@ import { sendDirectMessage } from '../../socket-client.js';
 import { switchTab } from '../../utils/panelNav.js';
 
 const REFRESH_INTERVAL_MS = 60 * 1000;
-const panelShell = 'panel panel-immersive min-h-0 w-full overflow-y-auto px-4 pb-5';
+const panelShell = 'panel';
 const insetCard =
   'rounded-2xl border border-[var(--border)] bg-[var(--bg3)] p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.02)_inset]';
 const softCard = 'rounded-xl border border-[var(--border)] bg-[var(--bg2)] p-4';
@@ -99,7 +99,7 @@ const BountiesPanel = () => {
 
   return (
     <>
-      <div id="bounties" className={clsx(panelShell, 'hidden')}>
+      <div id="bounties" className={panelShell}>
         <div className="card mx-auto mt-0 w-full max-w-6xl">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
             <div className="card-title !mb-0">🏴‍☠️ Bounty Board</div>

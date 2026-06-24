@@ -1,7 +1,7 @@
 import React from 'react';
 import { fmt } from '../../utils/fmt.js';
 import { useGameState } from '../../hooks/useGameState.js';
-import { apiCall } from '../../utils/api.js';
+import { apiCall } from '../../utils/api.mjs';
 import { toast } from '../../utils/toast.js';
 import { playGameSound } from '../../utils/audio.js';
 import { applyGameMutation } from '../../utils/gameMutations.js';

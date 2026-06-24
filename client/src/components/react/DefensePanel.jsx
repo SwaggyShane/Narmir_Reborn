@@ -115,7 +115,7 @@ const DefensePanel = () => {
   }, [refreshDefense]);
 
   return (
-    <div id="defense" className="panel min-h-0 w-full overflow-y-auto px-4 pb-5 hidden">
+    <div id="defense" className="panel">
       <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-white/10 bg-zinc-950/80 p-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <div className="card-title mb-1 flex items-center gap-2">

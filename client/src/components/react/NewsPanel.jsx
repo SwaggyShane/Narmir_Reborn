@@ -4,10 +4,8 @@ import { apiCall } from '../../utils/api';
 import { useGameState, useGameMutationEvents } from '../../hooks/useGameState';
 import { replayWarReport, registerReplayModal } from '../../utils/replayWarReport';
 import { repairMojibake } from '../../utils/repairMojibake';
-import newsEmojiTools from '../../../../game/news-emoji.js';
+import { decorateNewsMessage, getNewsMeta } from '../../../../game/news-emoji.mjs';
 import ReplayModal from './ReplayModal.jsx';
-
-const { decorateNewsMessage, getNewsMeta } = newsEmojiTools;
 
 const NewsPanel = () => {
   const { state } = useGameState();

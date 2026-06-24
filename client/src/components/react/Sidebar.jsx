@@ -1,135 +1,103 @@
-import React, { useState } from 'react';
+import React from 'react';
+import clsx from 'clsx';
 import { useGameState } from '../../hooks/useGameState';
+import { useActivePanel } from '../../hooks/useActivePanel';
 import { logout } from './AuthModal.jsx';
 import { switchTab } from '../../utils/switchTab.js';
 
-const Sidebar = () => {
-  const [isAdmin, setIsAdmin] = useState(false);
-  const { state } = useGameState();
+const SECTION_CLASS = 'px-3 pb-0.5 pt-3 text-[10px] font-black uppercase tracking-[0.3em] text-ember-400/80';
 
-  React.useEffect(() => {
-    setIsAdmin(!!state?.isAdmin);
-  }, [state?.isAdmin]);
+const NAV_BUTTON_CLASS = {
+  base: 'relative flex w-full items-center gap-2 rounded-xl border px-3 py-2 text-xs transition shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]',
+  active: 'border-ember-500/50 bg-ember-500/10 text-text shadow-ember',
+  idle: 'border-transparent bg-void-900/55 text-text3 hover:border-ember-500/30 hover:bg-void-800/85 hover:text-text',
+};
 
-  const handleSwitchTab = (id, e) => {
-    switchTab(id, e.currentTarget);
-  };
+function NavButton({ panel, icon, label, iconClass = 'text-text3' }) {
+  const { activePanel } = useActivePanel();
+  const active = activePanel === panel;
 
   return (
-    <nav className="sidebar game-panel">
-      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-game">
-      <div className="nav-section">Kingdom</div>
-      <button className="nav-item active" data-tab="status" onClick={(e) => handleSwitchTab('status', e)}>
-        <span className="icon text-blue">🏰</span>Status
-      </button>
-      <button className="nav-item" data-tab="happiness" onClick={(e) => handleSwitchTab('happiness', e)}>
-        <span className="icon text-amber">😊</span>Happiness
-      </button>
-      <button className="nav-item" data-tab="studies" onClick={(e) => handleSwitchTab('studies', e)}>
-        <span className="icon text-red">🏛️</span>Studies
-      </button>
-      <button className="nav-item" data-tab="build" onClick={(e) => handleSwitchTab('build', e)}>
-        <span className="icon text-amber">🔨</span>Build
-      </button>
-      <button className="nav-item" data-tab="exploration" onClick={(e) => handleSwitchTab('exploration', e)}>
-        <span className="icon text-green">🧭</span>Exploration
-      </button>
+    <button
+      type="button"
+      onClick={() => switchTab(panel)}
+      aria-current={active ? 'page' : undefined}
+      className={clsx(NAV_BUTTON_CLASS.base, active ? NAV_BUTTON_CLASS.active : NAV_BUTTON_CLASS.idle)}
+    >
+      <span className={iconClass}>{icon}</span>
+      <span>{label}</span>
+    </button>
+  );
+}
 
-      <div className="nav-section">Wherewithal</div>
-      <button className="nav-item" data-tab="economy" onClick={(e) => handleSwitchTab('economy', e)}>
-        <span className="icon text-amber">💰</span>Economy
-      </button>
-      <button className="nav-item" data-tab="market" onClick={(e) => handleSwitchTab('market', e)}>
-        <span className="icon text-gold">⚖️</span>Market
-      </button>
-      <button className="nav-item" data-tab="resources" onClick={(e) => handleSwitchTab('resources', e)}>
-        <span className="icon text-green">🌲</span>Resources
-      </button>
+const Sidebar = () => {
+  const { state } = useGameState();
+  const isAdmin = !!state?.isAdmin;
 
-      <div className="nav-section">Warfare</div>
-      <button className="nav-item" data-tab="rankings" onClick={(e) => handleSwitchTab('rankings', e)}>
-        <span className="icon text-gold">🏆</span>Rankings
-      </button>
-      <button className="nav-item" data-tab="hire" onClick={(e) => handleSwitchTab('hire', e)}>
-        <span className="icon text-green">🤝</span>Hire
-      </button>
-      <button className="nav-item" data-tab="warfare" onClick={(e) => handleSwitchTab('warfare', e)}>
-        <span className="icon text-red">⚔️</span>Offense
-      </button>
-      <button className="nav-item" data-tab="defense" onClick={(e) => handleSwitchTab('defense', e)}>
-        <span className="icon text-text3">🛡️</span>Defense
-      </button>
-      <button className="nav-item" data-tab="bounties" onClick={(e) => handleSwitchTab('bounties', e)}>
-        <span className="icon text-gold">🪙</span>Bounties
-      </button>
-      <button className="nav-item" data-tab="training" onClick={(e) => handleSwitchTab('training', e)}>
-        <span className="icon text-amber">🎯</span>Training
-      </button>
-      <button className="nav-item" data-tab="heroes" onClick={(e) => handleSwitchTab('heroes', e)}>
-        <span className="icon text-accent2">👑</span>Heroes
-      </button>
-      <button className="nav-item" data-tab="worldmap" onClick={(e) => handleSwitchTab('worldmap', e)}>
-        <span className="icon text-blue">🗺️</span>World Map
-      </button>
-      <button className="nav-item" data-tab="alliances" onClick={(e) => handleSwitchTab('alliances', e)}>
-        <span className="icon text-accent2">🤝</span>Alliance
-      </button>
-
-      <div className="nav-section">Social</div>
-      <button className="nav-item" data-tab="messages" onClick={(e) => handleSwitchTab('messages', e)}>
-        <span className="icon text-accent1">✉️</span>Messages
-        <span id="msg-badge" className="nav-badge hidden" />
-      </button>
-      <button className="nav-item" data-tab="forum" onClick={(e) => handleSwitchTab('forum', e)}>
-        <span className="icon text-accent2">📚</span>Forum
-      </button>
-      <button id="nav-chat-item" className="nav-item" data-tab="globalchat" onClick={(e) => handleSwitchTab('globalchat', e)}>
-        <span className="icon text-blue">💬</span>Chat
-        <span
-          id="chat-badge"
-          className="ml-1 hidden rounded-md bg-red px-1.5 py-px text-xs text-white"
-        >!</span>
-      </button>
-      <button className="nav-item" data-tab="news" onClick={(e) => handleSwitchTab('news', e)}>
-        <span className="icon text-text3">📰</span>News
-        <span id="news-badge" className="nav-badge hidden" />
-      </button>
-
-      <div className="nav-section">Information</div>
-      <button className="nav-item" data-tab="goals" onClick={(e) => handleSwitchTab('goals', e)}>
-        <span className="icon text-amber">📝</span>Goals
-      </button>
-      <button className="nav-item" data-tab="races" onClick={(e) => handleSwitchTab('races', e)}>
-        <span className="icon text-accent2">🦄</span>Races
-      </button>
-      <button className="nav-item" data-tab="changelog" onClick={(e) => handleSwitchTab('changelog', e)}>
-        <span className="icon text-green">📋</span>Changelog
-      </button>
-      <button className="nav-item" data-tab="testing" onClick={(e) => handleSwitchTab('testing', e)}>
-        <span className="icon text-accent2">🧪</span>Testing
-      </button>
-      <button className="nav-item" data-tab="options" onClick={(e) => handleSwitchTab('options', e)}>
-        <span className="icon text-text3">⚙️</span>Settings
-      </button>
-
-      {isAdmin && (
-        <a
-          id="admin-nav-link"
-          className="nav-item no-underline"
-          href="/admin"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <span className="icon text-amber">👑</span>Admin
-        </a>
+  return (
+    <nav
+      className={clsx(
+        'hidden min-h-0 flex-col overflow-hidden border-r border-white/5 bg-bg2',
+        'lg:flex lg:[grid-area:side]',
       )}
+    >
+      <div className="min-h-0 flex-1 overflow-y-auto scrollbar-game">
+        <div className={SECTION_CLASS}>Kingdom</div>
+        <NavButton panel="status" icon="🏰" label="Status" iconClass="text-blue" />
+        <NavButton panel="happiness" icon="😊" label="Happiness" iconClass="text-amber" />
+        <NavButton panel="studies" icon="🏛️" label="Studies" iconClass="text-red" />
+        <NavButton panel="build" icon="🔨" label="Build" iconClass="text-amber" />
+        <NavButton panel="exploration" icon="🧭" label="Exploration" iconClass="text-green" />
 
+        <div className={SECTION_CLASS}>Wherewithal</div>
+        <NavButton panel="economy" icon="💰" label="Economy" iconClass="text-amber" />
+        <NavButton panel="market" icon="⚖️" label="Market" iconClass="text-gold" />
+        <NavButton panel="resources" icon="🌲" label="Resources" iconClass="text-green" />
+
+        <div className={SECTION_CLASS}>Warfare</div>
+        <NavButton panel="rankings" icon="🏆" label="Rankings" iconClass="text-gold" />
+        <NavButton panel="hire" icon="🤝" label="Hire" iconClass="text-green" />
+        <NavButton panel="warfare" icon="⚔️" label="Offense" iconClass="text-red" />
+        <NavButton panel="defense" icon="🛡️" label="Defense" iconClass="text-text3" />
+        <NavButton panel="bounties" icon="🪙" label="Bounties" iconClass="text-gold" />
+        <NavButton panel="training" icon="🎯" label="Training" iconClass="text-amber" />
+        <NavButton panel="heroes" icon="👑" label="Heroes" iconClass="text-accent2" />
+        <NavButton panel="worldmap" icon="🗺️" label="World Map" iconClass="text-blue" />
+        <NavButton panel="alliances" icon="🤝" label="Alliance" iconClass="text-accent2" />
+
+        <div className={SECTION_CLASS}>Social</div>
+        <NavButton panel="messages" icon="✉️" label="Messages" iconClass="text-accent1" />
+        <NavButton panel="forum" icon="📚" label="Forum" iconClass="text-accent2" />
+        <NavButton panel="globalchat" icon="💬" label="Chat" iconClass="text-blue" />
+        <NavButton panel="news" icon="📰" label="News" iconClass="text-text3" />
+
+        <div className={SECTION_CLASS}>Information</div>
+        <NavButton panel="goals" icon="📝" label="Goals" iconClass="text-amber" />
+        <NavButton panel="races" icon="🦄" label="Races" iconClass="text-accent2" />
+        <NavButton panel="changelog" icon="📋" label="Changelog" iconClass="text-green" />
+        <NavButton panel="testing" icon="🧪" label="Testing" iconClass="text-accent2" />
+        <NavButton panel="options" icon="⚙️" label="Settings" iconClass="text-text3" />
+
+        {isAdmin && (
+          <a
+            href="/admin"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={clsx(NAV_BUTTON_CLASS.base, NAV_BUTTON_CLASS.idle, 'mx-1 mt-1 no-underline')}
+          >
+            <span className="text-amber">👑</span>
+            <span>Admin</span>
+          </a>
+        )}
       </div>
+
       <button
+        type="button"
         onClick={logout}
-        className="nav-item mt-1 mb-2 mx-1 text-red flex-shrink-0"
+        className={clsx(NAV_BUTTON_CLASS.base, NAV_BUTTON_CLASS.idle, 'mx-1 mb-2 mt-1 shrink-0 text-red')}
       >
-        <span className="icon">&#10005;</span>Logout
+        <span>&#10005;</span>
+        <span>Logout</span>
       </button>
     </nav>
   );

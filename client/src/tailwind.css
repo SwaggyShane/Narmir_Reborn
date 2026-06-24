@@ -3,6 +3,29 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    color-scheme: dark;
+    --bg: #0a0a0b;
+    --bg2: #111113;
+    --bg3: #070708;
+    --bg4: #1c1c21;
+    --border: rgba(255, 255, 255, 0.05);
+    --border2: rgba(255, 255, 255, 0.1);
+    --text: #f8fafc;
+    --text2: #cbd5e1;
+    --text3: #64748b;
+    --gold: #f06202;
+    --gold2: #d97706;
+    --accent1: #b43c00;
+    --accent2: #f06202;
+    --green: #10b981;
+    --red: #b43c00;
+    --blue: #3b82f6;
+    --amber: #f59e0b;
+    --radius: 12px;
+    --radius-lg: 24px;
+  }
+
   html {
     background-color: var(--bg);
     color: var(--text);
@@ -253,9 +276,83 @@
   .nav-badge {
     @apply absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-ember-500 px-0.5 text-2xs font-bold text-white;
   }
+
+  /* ── Shell buttons (shared across panels) ── */
+  .base-btn {
+    @apply inline-flex items-center justify-center rounded-md border border-white/10 bg-bg3 px-3 py-1.5 text-sm font-semibold text-text transition active:scale-95;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .base-btn:disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
+
+  .base-btn.ready {
+    @apply border-green bg-green text-white;
+  }
+
+  .turn-btn {
+    @apply inline-flex shrink-0 items-center justify-center rounded-lg border-2 border-gold bg-gradient-to-r from-gold to-gold2 px-4 py-1.5 font-cinzel text-sm font-black tracking-wide text-black shadow-lg transition active:scale-95;
+  }
+
+  .admin-tab {
+    @apply shrink-0 cursor-pointer whitespace-nowrap rounded-t-md border-0 border-b-[3px] border-transparent bg-transparent px-3 py-2 text-sm font-semibold text-text3 transition;
+  }
+
+  .admin-tab.active {
+    @apply border-accent1 text-accent1;
+    background: rgba(180, 60, 0, 0.08);
+  }
+
+  .panel {
+    @apply flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-y-auto bg-bg;
+  }
+
+  .panel-immersive {
+    @apply flex flex-1 flex-col overflow-hidden p-0;
+  }
 }
 
 @media (min-width: 768px) {
+  .panel {
+    padding: 16px;
+  }
+
+  .panel-immersive {
+    padding: 0;
+  }
+
+  .card {
+    @apply mb-2 p-3;
+  }
+
+  .card-title {
+    @apply mb-3;
+  }
+
+  .three-col,
+  .status-grid {
+    @apply gap-3;
+  }
+
+  .btn {
+    @apply px-3 py-2;
+  }
+
+  .trow {
+    @apply py-1.5;
+  }
+
+  .nav-section {
+    @apply px-3 pb-0.5 pt-3;
+  }
+
+  .admin-tab {
+    @apply px-3 py-1.5 text-sm;
+  }
+
+
+
   #build.panel {
     overflow: hidden;
     padding: 0;
@@ -264,7 +361,7 @@
   .build-sticky-header {
     position: static;
     flex-shrink: 0;
-    padding: 1rem 1.5rem 0.75rem;
+    padding: 0.75rem 1rem 0.5rem;
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   }
 
@@ -272,14 +369,7 @@
     flex: 1;
     overflow-y: auto;
     min-height: 0;
-  }
-}
-
-@media (min-width: 650px) {
-  #kd-top .metrics {
-    flex-direction: column;
-    flex: 1;
-    justify-content: space-evenly;
+    padding: 0 1rem 1rem;
   }
 }
 

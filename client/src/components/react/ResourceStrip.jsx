@@ -153,7 +153,7 @@ function trunc(value) {
 }
 
 function metricClass(extra = '') {
-  return 'metric relative min-w-[110px] rounded-xl border border-white/5 bg-zinc-950/90 px-3 py-3 shadow-[0_12px_24px_rgba(0,0,0,0.25)] transition-transform duration-200 md:min-w-0 md:px-3 md:py-1.5' + (extra ? ' ' + extra : '');
+  return 'metric relative' + (extra ? ` ${extra}` : '');
 }
 
 const happinessBarOuterClass =

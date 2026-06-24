@@ -107,7 +107,7 @@ const HappinessPanel = () => {
   const filteredEvents = filter ? events.filter((e) => e.component === filter) : events;
 
   return (
-    <div id="happiness" className="panel min-h-0 w-full overflow-y-auto">
+    <div id="happiness" className="panel">
       <div className="space-y-6 p-4 md:p-5">
         <section className="rounded-2xl border border-white/5 bg-bg p-4 shadow-[0_18px_40px_rgba(0,0,0,0.28)]">
           <div className="mb-2 flex items-center justify-between gap-3">

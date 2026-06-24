@@ -9,7 +9,7 @@ const CORE_TABS = [
   { id: 'economy', label: 'Economy', icon: '💰', color: 'text-amber-300' },
   { id: 'warfare', label: 'War', icon: '⚔️', color: 'text-red-300' },
   { id: 'news', label: 'News', icon: '🗞️', color: 'text-amber-200', badgeId: 'bnav-news-badge' },
-  { id: 'globalchat', label: 'Chat', icon: '💬', color: 'text-fuchsia-300', badgeId: 'chat-badge', domId: 'bnav-chat-item' },
+  { id: 'globalchat', label: 'Chat', icon: '💬', color: 'text-fuchsia-300', badgeId: 'chat-badge' },
 ];
 
 const DRAWER_TABS = [
@@ -36,12 +36,10 @@ const DRAWER_TABS = [
   { id: 'options', label: 'Settings', icon: '⚙️', color: 'text-slate-300' },
 ];
 
-function NavChip({ id, label, icon, color, active, onClick, badgeId, domId }) {
+function NavChip({ label, icon, color, active, onClick, badgeId }) {
   return (
     <button
       type="button"
-      id={domId}
-      data-tab={id}
       onClick={onClick}
       aria-pressed={active}
       className={[
@@ -61,11 +59,10 @@ function NavChip({ id, label, icon, color, active, onClick, badgeId, domId }) {
   );
 }
 
-function DrawerChip({ id, label, icon, color, active, onClick, badgeId }) {
+function DrawerChip({ label, icon, color, active, onClick, badgeId }) {
   return (
     <button
       type="button"
-      data-tab={id}
       onClick={onClick}
       aria-pressed={active}
       className={[
@@ -103,14 +100,11 @@ const BottomNav = () => {
   return (
     <>
       <nav
-        className="bottom-nav fixed inset-x-0 bottom-0 z-[3000] grid grid-cols-6 gap-2 border-t border-ember-900/40 bg-void-950/95 px-2 py-2 pb-[env(safe-area-inset-bottom)] shadow-panel backdrop-blur-xl"
-        id="bottom-nav"
+        className="fixed inset-x-0 bottom-0 z-[3000] grid grid-cols-6 gap-2 border-t border-ember-900/40 bg-void-950/95 px-2 py-2 pb-[env(safe-area-inset-bottom)] shadow-panel backdrop-blur-xl lg:hidden"
       >
         {CORE_TABS.map((tab) => (
           <NavChip
             key={tab.id}
-            id={tab.id}
-            domId={tab.domId}
             label={tab.label}
             icon={tab.icon}
             color={tab.color}
@@ -171,7 +165,6 @@ const BottomNav = () => {
             {DRAWER_TABS.map((tab) => (
               <DrawerChip
                 key={tab.id}
-                id={tab.id}
                 label={tab.label}
                 icon={tab.icon}
                 color={tab.color}

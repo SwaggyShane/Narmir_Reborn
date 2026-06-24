@@ -1,7 +1,5 @@
-import newsEmojiTools from "../../../game/news-emoji.js";
+import { decorateNewsMessage, getNewsMeta } from "../../../game/news-emoji.mjs";
 import { repairMojibake } from "./repairMojibake.js";
-
-const { decorateNewsMessage, getNewsMeta } = newsEmojiTools;
 
 function escapeHtml(value) {
   return String(value)

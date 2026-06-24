@@ -41,35 +41,6 @@ function normalizePanelName(tabName) {
   return raw ? (PANEL_ALIASES[raw] || raw) : 'status';
 }
 
-function setActiveNavButtons(rawTab, activeTab) {
-  document.querySelectorAll('.nav-item[data-tab], .bnav-item[data-tab]').forEach((button) => {
-    const buttonTab = normalizePanelName(button.dataset.tab);
-    const isActive = buttonTab === activeTab;
-    button.classList.toggle('active', isActive);
-  });
-}
-
-function setActivePanels(rawTab, activeTab) {
-  const panels = document.querySelectorAll('.panel[id]');
-  panels.forEach((panel) => {
-    const panelTab = normalizePanelName(panel.id);
-    const isActive = panelTab === activeTab || panel.id === `vue-panel-${activeTab}`;
-    panel.classList.toggle('active', isActive);
-    panel.style.display = isActive ? '' : 'none';
-  });
-
-  [...document.body.classList].forEach((className) => {
-    if (className.startsWith('panel-')) document.body.classList.remove(className);
-  });
-
-  if (activeTab === 'globalchat') {
-    document.body.classList.add('panel-globalchat');
-    document.body.classList.add('panel-messages');
-  } else {
-    document.body.classList.add(`panel-${activeTab}`);
-  }
-}
-
 export const gameState = gameStateManager.getMutableState();
 
 function getTimeOfDay() {
@@ -147,8 +118,6 @@ export function switchTab(tabName) {
   const warfareSubtab = WARFARE_SUBTAB_ALIASES[rawTab] || null;
 
   setActivePanelGlobal(activeTab);
-  setActiveNavButtons(rawTab, activeTab);
-  setActivePanels(rawTab, activeTab);
 
   if (warfareSubtab) {
     applyWarfareTab(warfareSubtab);

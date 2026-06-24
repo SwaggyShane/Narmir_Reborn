@@ -150,7 +150,7 @@ const StatusPanel = () => {
   const kingdomName = cleanText(state?.name || state?.kingdomName || 'Your Kingdom');
 
   return (
-    <div id="status" className="panel active w-full min-w-0">
+    <div id="status" className="panel">
 
       {/* ── Kingdom Header ── */}
       <div className="mb-4 rounded-xl border border-ember-900/60 bg-void-800 p-4 shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
