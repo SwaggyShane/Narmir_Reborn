@@ -92,6 +92,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] replayWarReport.js DOM mutations removed (PR #550)
 - [x] EconomyPanel.jsx DOM mutations removed (PR #552)
 - [x] EconomyPanel ledger follow-up (PR #554): live financial ledger and trade route normalization fixes landed
+- [x] WarfarePanel.jsx DOM mutations removed (PR #556): 19 → 0; controlled atkQty state for all troop inputs; updateAtkEstimateW replaced with atkEstimate useMemo; estimate display panel now actually renders (was computed but never shown); stale-closure bug in launchAttackW fixed; fmtN dedup removed
 - [ ] AlliancesPanel remains deferred until backend routes exist
 
 ### Codex Next
@@ -117,9 +118,9 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [ ] Next: finish the last shell helper seams that still have a small, safe extraction path; otherwise move to the remaining panel-level cleanup or backend-dependent deferred items.
 - [ ] Ongoing: confirm `client/index.html` keeps trending toward boot-only after Slices 1-18.
 
-### Current Inventory Snapshot (updated 2026-06-23 post-PR #554)
-- document.getElementById: 179 total (134 in index.html [Codex target], 45 in client/src/)
-  - Biggest src concentrations: WarfarePanel 19, panelNav.js 5, socket-client.js 5, GlobalchatPanel 4, MarketPanel 2; EconomyPanel down to 1 (renderUpgrades export for DefensePanel)
+### Current Inventory Snapshot (updated 2026-06-24 post-PR #556)
+- document.getElementById: 160 total (134 in index.html [Codex target], 26 in client/src/)
+  - Biggest src concentrations: panelNav.js 5, socket-client.js 5, GlobalchatPanel 4, MarketPanel 2; WarfarePanel now 0; EconomyPanel 1 (renderUpgrades export for DefensePanel)
 - el(: 20 in index.html (local variable pattern, not a helper); ~18 in client/src/
 - .innerHTML =: 72 total (45 in index.html, 27 in client/src/)
 - .style.: 167 total (46 in index.html, 121 in client/src/)
@@ -191,6 +192,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] replayWarReport.js (21 DOM mutations) — ✅ COMPLETE (PR #550): ReplayModal.jsx React portal; vanilla bridge function and replay-modal div removed from index.html
 - [x] EconomyPanel.jsx (27 → 1 DOM mutations) — ✅ COMPLETE (PR #552): converted all 27 getElementById calls to React state; removed dead exports (loadEconomy, renderCommodityMarket, renderActiveMercs); replaced innerHTML upgrade containers with UpgradesList component; bank visibility now driven by state.bld_vaults; tax rate initialized from state.tax; applyGameMutation/syncUI wired to all mutating handlers; 1 getElementById remains in exported renderUpgrades() which DefensePanel imports directly
 - [x] EconomyPanel ledger follow-up — ✅ COMPLETE (PR #554): extended /economy/overview to compute and return taxIncome, marketIncome, tradeRouteIncome, totalIncome, troopUpkeep, netIncome; uses loadTradeRoutes() helper for normalization; applies SUPPORT_CAP_RACE multipliers and fragmentBonusManager barracks discount to match processTurn exactly; financial ledger in EconomyPanel now shows real values instead of hardcoded zeros
+- [x] WarfarePanel.jsx (19 → 0 DOM mutations) — ✅ COMPLETE (PR #556): atkQty controlled state for all 9 troop inputs; updateAtkEstimateW callback + useEffect replaced with atkEstimate useMemo; estimate display panel added to JSX (was computed but elements were missing, so it was never visible); setMaxValue DOM write replaced with setAtkMax; launchAttackW stale-closure bug fixed (atkQty added to deps); fmtN removed (duplicate of fmt)
 
 ### 4. Clean up the remaining legacy CSS surfaces — ✅ COMPLETE (audit)
 - [x] Review files still importing from `client/src/css/` — only `forum.css` exists and is actively used by main.js and Portal.jsx; nothing to remove
