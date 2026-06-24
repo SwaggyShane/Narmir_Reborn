@@ -34,6 +34,7 @@ import TestingPanel from './components/react/TestingPanel.jsx';
 import AuthModal from './components/react/AuthModal.jsx';
 import KingdomProfileModal from './components/react/KingdomProfileModal.jsx';
 import SchoolSelectionController from './components/react/SchoolSelectionController.jsx';
+import RaceLoreController from './components/react/RaceLoreController.jsx';
 
 const GameShell = () => {
   const { activePanel } = useActivePanel();
@@ -145,6 +146,7 @@ const GameShell = () => {
     <AuthModal />
     <KingdomProfileModal />
     <SchoolSelectionController />
+    <RaceLoreController />
     </>
   );
 };
