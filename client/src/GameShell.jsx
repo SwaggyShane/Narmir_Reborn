@@ -37,6 +37,8 @@ import SchoolSelectionController from './components/react/SchoolSelectionControl
 import RaceLoreController from './components/react/RaceLoreController.jsx';
 import ToastProvider from './components/react/ToastProvider.jsx';
 import HeroXpModalController from './components/react/HeroXpModalController.jsx';
+import KingdomXpModalController from './components/react/KingdomXpModalController.jsx';
+import ShellFooter from './components/react/ShellFooter.jsx';
 import LoreEntryController from './components/react/LoreEntryController.jsx';
 import GenericModalController from './components/react/GenericModalController.jsx';
 import SpyReportModalController from './components/react/SpyReportModalController.jsx';
@@ -131,17 +133,7 @@ const GameShell = () => {
           {renderPanel()}
         </main>
 
-        <footer
-          className={[
-            'flex h-8 shrink-0 items-center justify-between border-t border-white/5',
-            'bg-black/90 px-4 text-[11px] leading-none text-text2',
-            'max-lg:fixed max-lg:inset-x-0 max-lg:bottom-[calc(72px+env(safe-area-inset-bottom,0px))] max-lg:z-[2900]',
-            'lg:col-span-2 lg:col-start-2 lg:row-start-3',
-          ].join(' ')}
-        >
-          <div>● SYSTEM CLOUD SYNCED</div>
-          <div>UPTIME: 00h 00m 00s</div>
-        </footer>
+        <ShellFooter />
       </div>
 
       <BottomNav />
@@ -151,6 +143,7 @@ const GameShell = () => {
       <RaceLoreController />
       <ToastProvider />
       <HeroXpModalController />
+      <KingdomXpModalController />
       <LoreEntryController />
       <GenericModalController />
       <SpyReportModalController />
