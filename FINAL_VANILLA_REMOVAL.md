@@ -99,7 +99,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] EconomyPanel.jsx DOM mutations removed (PR #552)
 - [x] EconomyPanel ledger follow-up (PR #554): live financial ledger and trade route normalization fixes landed
 - [x] WarfarePanel.jsx DOM mutations removed (PR #556): 19 → 0; controlled `atkQty` state for all 9 troop inputs; `atkEstimate` useMemo (estimate panel now renders in JSX); `setAtkMax` replaces setMaxValue DOM write; stale-closure fix in `launchAttackW`; `targetKey()` from Slice 21 retained; fmtN dedup removed
-- [ ] AlliancesPanel remains deferred until backend routes exist
+- [x] AlliancesPanel.jsx — React-only; wired to /api/alliance/* routes and socket alliance chat
 
 ### Codex Next (post-Slice 21)
 - [x] Slice 19–21: shell kill + GameShell + pure Tailwind layout — ✅ COMPLETE on `GameShell_migration`
@@ -177,7 +177,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] MarketPanel (window.targets read) — ✅ COMPLETE (in PR #546): → gameStateManager.getState().targets
 - [x] WarfarePanel (window.showBattleReport) — ✅ COMPLETE (in PR #546): new BattleReportModal.jsx React portal; WarfarePanel uses setBattleReport() local state; vanilla battle-overlay in index.html is now unreachable from the React attack flow (Codex to remove when vanilla spell path is ported)
 - [x] EconomyPanel (4 upgrade defs) — ✅ COMPLETE (PR #544): UpgradesList.jsx + economyUpgrades.js; all callIfAvailable removed
-- [ ] AlliancesPanel (10 vanilla delegates) — deferred; underlying alliance API not yet implemented (foundAlliance, loadAllianceSearch, etc. have no backend routes)
+- [x] AlliancesPanel (10 vanilla delegates) — COMPLETE: full React state, API + socket chat, no window.* bridges
 - [x] TrainingPanel.jsx (13 DOM mutations) — ✅ COMPLETE: all removed; Max/Distribute buttons fixed; toast imported
 - [x] StudiesPanel.jsx (14 DOM mutations) — ✅ COMPLETE (PR #549): all removed; controlled inputs; JSX rendering; useRef focus guards; server sync
 - [x] replayWarReport.js (21 DOM mutations) — ✅ COMPLETE (PR #550): ReplayModal.jsx React portal; vanilla bridge function and replay-modal div removed from index.html

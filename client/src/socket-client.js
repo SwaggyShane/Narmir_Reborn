@@ -108,6 +108,27 @@ export async function sendDirectMessage(recipient, message) {
   });
 }
 
+export async function loadAllianceChatHistory(allianceId, limit = 80) {
+  const room = String(allianceId || '').trim();
+  if (!room) return [];
+  const res = await apiCall('GET', `/api/chat/${encodeURIComponent(room)}?limit=${encodeURIComponent(limit)}`);
+  if (Array.isArray(res)) return res;
+  if (res && !res.error && Array.isArray(res.messages)) return res.messages;
+  return [];
+}
+
+export async function sendAllianceChat(message) {
+  const socketInstance = await getSocket();
+  const payload = String(message || '').trim();
+  if (!payload) return { error: 'Message required' };
+
+  return new Promise((resolve) => {
+    socketInstance.emit('chat:alliance', { message: payload }, (ack) => {
+      resolve(ack || {});
+    });
+  });
+}
+
 if (typeof window !== 'undefined') {
   window.__narmirGetSocket = getSocket;
   window.__narmirSocketClient = {
