@@ -108,6 +108,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] **Slice 23:** Globalchat + `socket-client.js` chat rendering → React-only (`GlobalchatPanel` state, `ChatMessageRow`, slim `socket-client.js`)
 - [x] **Slice 24:** Modal migration — `ToastProvider`, `HeroXpModalController`, `LoreEntryController`, `GenericModalController`, `SpyReportModalController`; shell bridges thinned
 - [x] **Slice 25:** Dead code purge — deleted orphan shells (`newsShell`, `attunementShell`, `schoolShell`, `renderTargets`, `toastShell`, `loreShell`, `genericShell`, `xpShell`, `closeRaceLore`); replaced `applyNavLayout` body classes with `useNavLayout` hook; removed ResourceStrip legacy metric ids
+- [x] **Slice 26:** Worldmap React migration — deleted `WorldmapLegend.jsx`; region legend + highlight in `WorldmapPanel`; SVG uses `data-kingdom-id` + click delegation (no broken `onclick` globals); `event:world_updated` → `narmir:worldmap-refresh`
 - [ ] Ongoing: keep `client/index.html` boot-only; merge `GameShell_migration` → `main` when green
 
 ### Current Inventory Snapshot (updated 2026-06-24 post-Slice 25)
@@ -135,7 +136,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] Convert remaining `*Shell` modal bridges to React portals (Slice 24)
 
 ### 3. Triage the heaviest hybrid panels — WarfarePanel done; chat remains
-- [ ] Review `WorldmapRenderer.jsx` for imperative DOM behavior
+- [x] Review `WorldmapRenderer.jsx` for imperative DOM behavior — Slice 26: legend DOM removed; renderer is pure SVG string builder
 - [x] `WarfarePanel.jsx` — 0 `getElementById` (PR #556)
 - [x] `GlobalchatPanel.jsx` + `socket-client.js` — chat rendering React-only (Slice 23)
 - [ ] Convert one panel at a time and keep each PR narrow
@@ -194,7 +195,8 @@ Use that inventory as the baseline progress metric for the remaining work.
 2. ~~`client/src/socket-client.js` + `GlobalchatPanel.jsx` — chat DOM (Slice 23)~~ ✅
 3. ~~`*Shell` modal helpers — React portals (Slice 24)~~ ✅
 4. ~~Dead code purge (Slice 25)~~ ✅
-5. `WorldmapRenderer.jsx` — audit imperative DOM **← next**
+5. ~~`WorldmapRenderer.jsx` — audit imperative DOM (Slice 26)~~ ✅
+6. Merge `GameShell_migration` → `main` **← next**
 6. `AlliancesPanel.jsx` — deferred until backend routes exist
 
 ## Rollback Threshold
