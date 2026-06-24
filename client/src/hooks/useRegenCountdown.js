@@ -39,10 +39,12 @@ function tickRegenCountdown() {
   notifySubscribers();
 }
 
+let regenTickerId = null;
+
 function ensureRegenTicker() {
   if (typeof window === 'undefined') return;
-  if (window.__narmirRegenTicker) return;
-  window.__narmirRegenTicker = setInterval(tickRegenCountdown, 1000);
+  if (regenTickerId != null) return;
+  regenTickerId = setInterval(tickRegenCountdown, 1000);
 }
 
 export function getRegenCountdownLabel() {

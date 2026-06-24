@@ -9,19 +9,6 @@ import { registerShowHeroLore } from '../../utils/showHeroLore.js';
 import { getRacePortrait } from '../../utils/racePortraits.js';
 import { RACE_LORE } from '../../utils/raceData.js';
 
-// Legacy polyfill for old renderRaces call
-if (typeof window !== 'undefined') {
-  window.escHtml = window.escapeHtml = function(text) {
-    if (!text) return '';
-    return String(text)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  };
-}
-
 const HERO_PORTRAITS = {
   siegebreaker: '/hero/siegebreaker.webp',
   forge_lord: '/hero/forge_lord.webp',

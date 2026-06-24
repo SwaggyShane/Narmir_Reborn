@@ -22,7 +22,3 @@ export function openGenericModal(htmlContent) {
 export function closeGenericModal() {
   return closeGenericModalImpl ? closeGenericModalImpl() : null;
 }
-
-if (typeof window !== 'undefined') {
-  window.closeGenericModal = closeGenericModal;
-}

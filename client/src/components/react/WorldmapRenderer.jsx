@@ -1,20 +1,11 @@
 import { setWorldMapData } from '../../utils/worldMapData.js';
 import { gameStateManager } from '../../GameStateManager.js';
 import { REGION_META, REGION_BONUSES } from '../../utils/raceData.js';
+import { escapeHtml } from '../../utils/escapeHtml.js';
 
 function regionOpacity(race, highlightedRace, dim = '0.3') {
   if (!highlightedRace) return '1';
   return race === highlightedRace ? '1' : dim;
-}
-
-function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;',
-  })[ch]);
 }
 
 export function renderWorldMap(kingdoms, routes = [], highlightedRace = null) {

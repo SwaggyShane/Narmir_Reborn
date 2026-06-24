@@ -7,6 +7,7 @@ import { applyGameMutation } from '../../utils/gameMutations.js';
 
 import { gameStateManager } from '../../GameStateManager.js';
 import { toast } from '../../utils/toast.js';
+import { escapeHtml } from '../../utils/escapeHtml.js';
 
 const icons = {
   food: '🌾',
@@ -27,16 +28,6 @@ const icons = {
 
 function getState() {
   return gameStateManager.getState();
-}
-
-function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;',
-  })[ch]);
 }
 
 let marketPanelApi = null;
