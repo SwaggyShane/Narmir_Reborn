@@ -31,6 +31,9 @@ import GoalsPanel from './components/react/GoalsPanel.jsx';
 import RacesPanel from './components/react/RacesPanel.jsx';
 import ChangelogPanel from './components/react/ChangelogPanel.jsx';
 import TestingPanel from './components/react/TestingPanel.jsx';
+import AuthModal from './components/react/AuthModal.jsx';
+import KingdomProfileModal from './components/react/KingdomProfileModal.jsx';
+import SchoolSelectionController from './components/react/SchoolSelectionController.jsx';
 
 const GameShell = () => {
   const { activePanel } = useActivePanel();
@@ -77,6 +80,7 @@ const GameShell = () => {
   };
 
   return (
+    <>
     <div
       className={[
         'flex h-full min-h-0 w-full flex-col bg-bg pt-14',
@@ -137,6 +141,11 @@ const GameShell = () => {
 
       <BottomNav />
     </div>
+
+    <AuthModal />
+    <KingdomProfileModal />
+    <SchoolSelectionController />
+    </>
   );
 };
 

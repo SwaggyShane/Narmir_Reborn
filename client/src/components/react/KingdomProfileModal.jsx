@@ -128,7 +128,7 @@ export default function KingdomProfileModal() {
 
   return (
     <div
-      className="flex min-h-screen items-center justify-center bg-black/80 p-5"
+      className="fixed inset-0 z-modal flex items-center justify-center bg-black/80 p-5"
       onClick={(e) => {
         if (e.target === e.currentTarget) closeKingdomProfile();
       }}

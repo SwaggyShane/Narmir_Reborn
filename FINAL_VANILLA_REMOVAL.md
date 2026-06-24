@@ -95,28 +95,14 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] WarfarePanel.jsx DOM mutations removed (PR #556): 19 → 0; controlled atkQty state for all troop inputs; updateAtkEstimateW replaced with atkEstimate useMemo; estimate display panel now actually renders (was computed but never shown); stale-closure bug in launchAttackW fixed; fmtN dedup removed
 - [ ] AlliancesPanel remains deferred until backend routes exist
 
-### Codex Next
-- [x] Slice 1: Kill the shell in `client/index.html` — ✅ COMPLETE
-- [x] Slice 2: Reduce hybrid bridge code in `client/src/main.js` — ✅ COMPLETE
-- [x] Slice 3: Triage the heaviest hybrid panels — ✅ COMPLETE
-- [x] **Gate cleared:** Socket audit complete, all listeners are React-safe. Claude fixed `event:chat_clear`.
-- [x] Slice 4: moved `appendNewsItems` out of `client/index.html` into `client/src/utils/newsShell.js` and bridged it through `client/src/main.js`
-- [x] Slice 5: moved shell toast rendering out of `client/index.html` into `client/src/utils/toastShell.js` and bridged it through `client/src/main.js`
-- [x] Slice 6: bridged `loadKingdom` and `openKingdomProfile` through React-owned helpers
-- [x] Slice 7: bridged `openLoreModal` and `closeLoreModal` through `client/src/utils/loreShell.js`
-- [x] Slice 8: bridged `showXpModal` and `closeXpModal` through `client/src/utils/xpShell.js` and `client/src/utils/showHeroXpModal.js`
-- [x] Slice 9: bridged `openSchoolModal` and `closeSchoolModal` through `client/src/utils/schoolShell.js`
-- [x] Slice 10: bridged `openGenericModal` and `closeGenericModal` through `client/src/utils/genericShell.js`
-- [x] Slice 11: bridged the fragment attunement modal cluster through `client/src/utils/attunementShell.js`
-- [x] Slice 12: bridged the hero lore / race lore helper cluster through `client/src/utils/showHeroLore.js` and `client/src/utils/closeRaceLore.js`
-- [x] Slice 13: removed the EconomyPanel `callIfAvailable` bridge, switched upgrade rendering to client-owned data helpers in `client/src/utils/economyUpgrades.js`, and kept the economy panel rendering on the React side
-- [x] Slice 14: bridged the battle report modal through `client/src/utils/showBattleReport.js` and `WarfarePanel.jsx`, then removed the shell-owned battle report body from `client/index.html`
-- [x] Slice 15: bridged the spy report modal through `client/src/utils/showSpyReport.js` and removed the shell-owned spy report body from `client/index.html`
-- [x] Slice 16: bridged the war replay modal through `client/src/utils/replayWarReport.js` and removed the shell-owned replay body from `client/index.html`
-- [x] Slice 17: removed the shell-only `showRegionDetails` helper from `client/index.html`
-- [x] Slice 18: removed the dead `loadAvailableSounds` shell bootstrap, wired the shared sound library through `client/src/utils/audio.js`, and kept `playGameSound` backed by React bootstrap state
-- [ ] Next: finish the last shell helper seams that still have a small, safe extraction path; otherwise move to the remaining panel-level cleanup or backend-dependent deferred items.
-- [ ] Ongoing: confirm `client/index.html` keeps trending toward boot-only after Slices 1-18.
+### Codex Next (post-Slice 21)
+- [x] Slice 19–21: shell kill + GameShell + pure Tailwind layout — ✅ COMPLETE
+- [x] **Slice 22a:** Mount global overlays in `GameShell` — `AuthModal`, `KingdomProfileModal`, `SchoolSelectionController`; fixed `fixed inset-0 z-modal` positioning on auth/profile backdrops
+- [ ] **Slice 22b:** Gut `syncUI()` — stop no-op DOM writes; remove `gameStateManager.subscribe(syncUI)`; drop `syncUI()` calls from Economy/Market/UpgradesList
+- [ ] **Slice 23:** Globalchat + `socket-client.js` chat rendering → React-only (socket state paths are clean; chat row DOM is not)
+- [ ] **Slice 24:** Modal migration (xp, generic, lore, attunement, toast) → React portals (pattern: `ReplayModal`, `BattleReportModal`)
+- [ ] **Slice 25:** Dead code purge (`newsShell.mjs` orphan, `renderTargets.mjs`, `applyNavLayout` body classes, ResourceStrip legacy metric ids)
+- [ ] Ongoing: keep `client/index.html` boot-only; validate locally before any remote merge
 
 ### Current Inventory Snapshot (updated 2026-06-24 post-PR #556)
 - document.getElementById: 160 total (134 in index.html [Codex target], 26 in client/src/)
