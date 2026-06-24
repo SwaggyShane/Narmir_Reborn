@@ -30,7 +30,7 @@ const Topbar = () => {
   const rank = state?.rank ?? state?.kingdom_rank ?? state?.position;
 
   return (
-    <header className="fixed inset-x-0 top-0 z-topbar-mobile flex h-14 w-full shrink-0 items-center justify-between gap-2 border-b border-ember-900/40 bg-void-950/95 px-3 shadow-panel backdrop-blur-xl lg:relative lg:z-[1100] lg:[grid-area:top] md:px-4">
+    <header className="fixed inset-x-0 top-0 z-topbar-mobile flex h-14 w-full shrink-0 items-center justify-between gap-2 border-b border-ember-900/40 bg-void-950/95 px-3 shadow-panel backdrop-blur-xl lg:relative lg:col-span-3 lg:row-start-1 lg:z-[1100] md:px-4">
       <div className="min-w-0">
         <div className="truncate font-serif text-base font-black uppercase tracking-[0.12em] text-ember-400 md:text-md">NARMIR REBORN</div>
         <div className="truncate text-sm text-text2">Pure. Damn. Evil.</div>

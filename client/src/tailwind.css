@@ -26,6 +26,13 @@
     --radius-lg: 24px;
   }
 
+  html,
+  body,
+  #app {
+    height: 100%;
+    overflow: hidden;
+  }
+
   html {
     background-color: var(--bg);
     color: var(--text);
@@ -305,7 +312,7 @@
   }
 
   .panel {
-    @apply flex w-full min-w-0 flex-col bg-bg;
+    @apply flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-y-auto bg-bg;
   }
 
   .panel-immersive {
@@ -354,7 +361,7 @@
 
 
   #build.panel {
-    overflow: hidden;
+    @apply min-h-0 flex-1 overflow-y-auto;
     padding: 0;
   }
 
