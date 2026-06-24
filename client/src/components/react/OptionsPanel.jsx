@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import clsx from 'clsx';
-import { apiCall } from '../../utils/api.js';
+import { apiCall } from '../../utils/api.mjs';
 import { toast } from '../../utils/toast.js';
-import { applyNavLayout } from '../../utils/applyNavLayout.js';
 import { useGameState } from '../../hooks/useGameState';
+import { useNavLayout } from '../../hooks/useNavLayout.js';
 
 const API = (path, opts = {}) => {
   const token = localStorage.getItem('narmir_token');
@@ -277,7 +277,7 @@ function PortraitUploadCard() {
         <div className="text-[13px] leading-6 text-[var(--text2)]">
           Upload a custom portrait that appears next to your kingdom name. Max 5MB - JPG, PNG, GIF or WebP.
           <br />
-          <span className="text-[12px] text-[var(--text3)]">Recommended: 360x480px · 3:4 ratio (portrait orientation)</span>
+          <span className="text-[12px] text-[var(--text3)]">Recommended: 360x480px | 3:4 ratio (portrait orientation)</span>
         </div>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -298,9 +298,7 @@ function PortraitUploadCard() {
 
 const OptionsPanel = () => {
   const { applyUpdates } = useGameState();
-  const [navLayout, setNavLayout] = useState(
-    localStorage.getItem('narmir_nav_layout') || 'responsive'
-  );
+  const { layout: navLayout, setLayout: setNavLayout } = useNavLayout();
   const [skipIntro, setSkipIntro] = useState(() => {
     try { return localStorage.getItem('narmir_skip_intro') === '1'; } catch { return false; }
   });
@@ -310,10 +308,7 @@ const OptionsPanel = () => {
   const [description, setDescription] = useState('');
 
   const updateNavLayout = (e) => {
-    const val = e.target.value;
-    setNavLayout(val);
-    localStorage.setItem('narmir_nav_layout', val);
-    applyNavLayout();
+    setNavLayout(e.target.value);
   };
 
   const updateSkipIntro = (e) => {
@@ -370,7 +365,7 @@ const OptionsPanel = () => {
   };
 
   return (
-    <div id="options" className={clsx('panel min-h-0 w-full overflow-y-auto px-4 pb-5', 'hidden')}>
+    <div id="options" className="panel">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-4">
         <div className="grid gap-4 xl:grid-cols-2">
           <section className={cardShell}>
@@ -450,8 +445,6 @@ const OptionsPanel = () => {
         </section>
 
         <DiscordSection />
-
-        <div id="vue-panel-news" className="contents" />
       </div>
     </div>
   );

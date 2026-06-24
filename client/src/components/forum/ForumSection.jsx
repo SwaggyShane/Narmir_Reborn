@@ -5,6 +5,8 @@ import ForumThread from './ForumThread';
 import ForumTopicForm from './ForumTopicForm';
 import ModeratorManagementPanel from '../react/ModeratorManagementPanel';
 import { fetchApi } from '../../utils/api';
+import { AppEvent } from '../../utils/appEvents.js';
+import { useAppEvent } from '../../hooks/useAppEvent.js';
 
 const ForumSection = React.memo(function ForumSection({ user: propUser, standalone = false }) {
   const [user, setUser] = useState(propUser || null);
@@ -54,13 +56,7 @@ const ForumSection = React.memo(function ForumSection({ user: propUser, standalo
     loadBoards();
   }, [propUser, loadBoards]);
 
-  useEffect(() => {
-    const handleRefresh = () => {
-      loadBoards();
-    };
-    window.addEventListener('narmir:forum-refresh', handleRefresh);
-    return () => window.removeEventListener('narmir:forum-refresh', handleRefresh);
-  }, [loadBoards]);
+  useAppEvent(AppEvent.FORUM_REFRESH, loadBoards);
 
   const handleSelectBoard = useCallback((board) => {
     setSelectedBoard(board);

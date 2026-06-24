@@ -180,9 +180,21 @@ function makeRateLimiter(maxRequests, windowMs) {
   };
 }
 
-const authLimiter   = makeRateLimiter(10, 60 * 1000);      // 10 auth attempts/min
+const isProdEnv = process.env.NODE_ENV === 'production';
+const authAttemptLimiter = makeRateLimiter(isProdEnv ? 10 : 60, 60 * 1000); // login/register only
 const turnLimiter   = makeRateLimiter(300, 60 * 1000);     // 300 turn/action requests/min (5/sec)
 const generalLimiter= makeRateLimiter(500, 60 * 1000);     // 500 general requests/min
+
+function isAuthSensitiveRoute(req) {
+  if (req.method !== 'POST') return false;
+  const path = String(req.path || req.url || '').split('?')[0];
+  return path.endsWith('/login') || path.endsWith('/register');
+}
+
+function authSensitiveLimiter(req, res, next) {
+  if (!isAuthSensitiveRoute(req)) return next();
+  return authAttemptLimiter(req, res, next);
+}
 
 // ── BOOTSTRAP ────────────────────────────────────────────────────────────────
 let vite;
@@ -425,7 +437,7 @@ async function runRegen(db) {
   await db.run(
     "UPDATE server_state SET value = CAST(unixepoch() AS TEXT) WHERE key = 'last_regen_at'"
   );
-  console.log('[turns] Regen complete — +' + REGEN_AMOUNT + ' turns · season: ' + season);
+  console.log('[turns] Regen complete — +' + REGEN_AMOUNT + ' turns | season: ' + season);
 }
 
 async function updateMarketPrices(db) {
@@ -591,7 +603,7 @@ async function start() {
 
     // ── Routes ────────────────────────────────────────────────────────────────────
     const { ensureCsrfToken, cleanupOrphanedTransactions } = require('./routes/middleware');
-    app.use('/api/auth',         authLimiter,  require('./routes/auth')(db));
+    app.use('/api/auth',         authSensitiveLimiter, require('./routes/auth')(db));
     app.use('/api/forum',        ensureCsrfToken, require('./routes/forum')(db));
     app.use('/api/kingdom',      turnLimiter, cacheKingdomId(db), ensureCsrfToken, cleanupOrphanedTransactions(db), require('./routes/kingdom')(db));
     app.use('/api/hero',         turnLimiter, cacheKingdomId(db), ensureCsrfToken,  require('./routes/hero')(db));
@@ -1067,12 +1079,6 @@ async function start() {
       res.sendFile(adminPath);
     });
   
-    // Vite as middleware should be checked BEFORE static serving but AFTER API routes
-    if (vite) {
-      app.use(vite.middlewares);
-      console.log('[vite] Vite middleware active');
-    }
-
     // Platform health check
     app.get('/health', (req, res) => {
       if (bootError) return res.status(200).json({ status: 'error', error: String(bootError), database_offline: true });
@@ -1203,7 +1209,7 @@ async function start() {
         let html = fs.readFileSync(indexPath, 'utf-8');
       
   if (process.env.NODE_ENV !== 'production' && vite) {
-          html = await vite.transformIndexHtml(req.url || '/', html);
+          html = await vite.transformIndexHtml('/game', html);
         } else {
            const distPath = path.join(__dirname, 'dist');
           if (fs.existsSync(distPath)) {
@@ -1285,8 +1291,9 @@ async function start() {
         }
       }
 
-      console.error('[serveSplash] No splash assets found in dist — falling back to serveIndex');
-      return serveIndex(req, res, next);
+      console.error('[serveSplash] No splash assets found in dist — serving source splash.html');
+      let html = fs.readFileSync(path.join(__dirname, 'client', 'splash.html'), 'utf-8');
+      return res.set(NO_CACHE).status(503).send(html);
     } catch (e) {
       console.error('[serveSplash] Error:', e);
       next(e);
@@ -1338,9 +1345,17 @@ async function start() {
   };
 
 
+  // HTML entry points MUST register before Vite middleware — otherwise Vite serves
+  // client/index.html for /index.html and the splash intro disappears.
   app.get(['/', '/index.html'], serveSplash);
   app.get(['/game', '/game.html'], serveIndex);
   app.get(['/portal', '/portal.html'], servePortal);
+
+  if (vite) {
+    app.use(vite.middlewares);
+    console.log('[vite] Vite middleware active');
+  }
+
   app.use(express.static(path.join(__dirname, 'public'), { index: false }));
   app.use(express.static(path.join(__dirname, 'client'), { index: false }));
   app.use('/dist', express.static(path.join(__dirname, 'dist')));

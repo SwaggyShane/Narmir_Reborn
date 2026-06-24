@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { useGameState } from '../../hooks/useGameState';
-import { apiCall } from '../../utils/api.js';
+import { apiCall } from '../../utils/api.mjs';
 import { fmt } from "../../utils/fmt";
 import LoreModal from './LoreModal.jsx';
 import { repairMojibake } from '../../utils/repairMojibake.js';
 import { toast as showToast } from '../../utils/toast.js';
-import { registerShowHeroXpModal } from '../../utils/showHeroXpModal.js';
+
 
 const HERO_PORTRAITS = {
   siegebreaker: '/hero/siegebreaker.webp',
@@ -33,8 +33,6 @@ const HERO_PORTRAITS = {
   _default: '/hero/siegebreaker.webp',
 };
 
-const HERO_XP_LEVELS = Array.from({ length: 19 }, (_, idx) => idx + 2);
-
 function heroPortrait(cls) {
   return HERO_PORTRAITS[cls] || HERO_PORTRAITS._default || '';
 }
@@ -50,7 +48,6 @@ const HeroesPanel = () => {
   const [allHeroClasses, setAllHeroClasses] = useState({});
   const [selectedHeroClass, setSelectedHeroClass] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [showXpModal, setShowXpModal] = useState(false);
   const [heroLoreKey, setHeroLoreKey] = useState(null);
   const [refreshTick, setRefreshTick] = useState(0);
 
@@ -96,10 +93,6 @@ const HeroesPanel = () => {
   }, [state?.bld_castles]);
 
   const handleRefresh = () => setRefreshTick((n) => n + 1);
-
-  const openHeroXpModal = () => setShowXpModal(true);
-
-  useEffect(() => registerShowHeroXpModal(openHeroXpModal), [openHeroXpModal]);
 
   const recruitHeroAction = async () => {
     if (!selectedHeroClass) return showToast('Select a hero class first.', 'error');
@@ -174,7 +167,7 @@ const HeroesPanel = () => {
             <div className="text-[16px] font-bold text-[var(--gold)] mb-0.5">{repairMojibake(h.name || '')}</div>
             <div className="text-[12px] mb-2">
               <span className="text-[var(--red)] font-semibold">{cls}</span>
-              <span className="text-[var(--text3)]"> · Level {h.level}</span>
+              <span className="text-[var(--text3)]"> | Level {h.level}</span>
             </div>
             <div className="flex flex-col mb-2">
               {unlockedAbilities.length ? unlockedAbilities.map((a, i) => {
@@ -244,7 +237,7 @@ const HeroesPanel = () => {
             <div>
               <div className="text-[14px] font-bold text-[var(--gold)]">{c.name}</div>
               <div className="text-[11px] text-[var(--text3)]">
-                Cost: {fmt(c.recruitCost)} GC · {fmt(c.recruitMana)} Mana
+                Cost: {fmt(c.recruitCost)} GC | {fmt(c.recruitMana)} Mana
               </div>
             </div>
           </div>
@@ -285,7 +278,7 @@ const HeroesPanel = () => {
   }, [fmt, recruitableClasses, selectedHeroClass]);
 
   return (
-    <div id="heroes" className={clsx('panel panel-immersive min-h-0 w-full overflow-y-auto px-4 pb-5', 'hidden')}>
+    <div id="heroes" className="panel">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div className="card-title mb-0">Heroes</div>
         <button className="base-btn" onClick={handleRefresh} disabled={loading}>
@@ -386,58 +379,6 @@ const HeroesPanel = () => {
         })()}
       </LoreModal>
 
-      {showXpModal && (
-        <div
-          onClick={(e) => { if (e.target === e.currentTarget) setShowXpModal(false); }}
-          className="fixed inset-0 bg-black/72 z-[9000] flex items-center justify-center p-4"
-        >
-          <div className="bg-[var(--bg2)] border-2 border-[var(--purple)] rounded-[6px] w-full max-w-[700px] max-h-[80vh] flex flex-col shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
-            <div className="flex items-center justify-between p-3.5 border-b border-[var(--border)]">
-              <span className="text-[14px] font-bold text-[var(--text)]">👑 Hero XP Progression</span>
-              <button
-                onClick={() => setShowXpModal(false)}
-                className="bg-none border-none text-[var(--text3)] text-[18px] cursor-pointer leading-none p-0 px-1"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="max-h-[60vh] overflow-y-auto p-4.5">
-              <div className="mb-4 text-center">
-                <div className="text-[40px] mb-2">👑</div>
-                <div className="text-[18px] font-bold text-[var(--text)]">Hero XP Progression</div>
-                <div className="text-[12px] text-[var(--text3)]">Max Level is 20</div>
-              </div>
-              <table className="w-full border-collapse text-[13px] text-left">
-                <thead>
-                  <tr>
-                    <th className="p-2 border-b border-[var(--border)] text-[var(--text3)]">Level</th>
-                    <th className="p-2 border-b border-[var(--border)] text-[var(--text3)]">Total XP Req.</th>
-                    <th className="p-2 border-b border-[var(--border)] text-[var(--text3)]">XP for Level</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {HERO_XP_LEVELS.map((level) => {
-                    const currentTotalXp = heroXpForLevelJS(level);
-                    const previousTotalXp = heroXpForLevelJS(level - 1);
-                    const xpNeeded = currentTotalXp - previousTotalXp;
-                    return (
-                      <tr key={level}>
-                        <td className="p-2 border-b border-[var(--border)] text-[var(--gold)] font-bold">{level}</td>
-                        <td className="p-2 border-b border-[var(--border)] text-[var(--text2)]">
-                          {fmt(currentTotalXp)} <span className="text-[var(--text3)] text-[10px]">XP</span>
-                        </td>
-                        <td className="p-2 border-b border-[var(--border)] text-[var(--text)]">
-                          {fmt(xpNeeded)} <span className="text-[var(--text3)] text-[10px]">XP</span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

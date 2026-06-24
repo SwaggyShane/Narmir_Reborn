@@ -1,7 +1,7 @@
 import { toast } from '../utils/toast.js';
 import { repairMojibake } from '../utils/repairMojibake.js';
 import { loadKingdom } from '../components/react/AuthModal.jsx';
-import { loadWorldMap } from '../components/react/WorldmapPanel.jsx';
+import { AppEvent, emitAppEvent } from '../utils/appEvents.js';
 
 // Binds global socket event handlers once when the socket is ready.
 // Must NOT be called inside a React component — these handlers are app-wide
@@ -11,34 +11,32 @@ export function initSocketHandlers(socket) {
 
   socket.on('event:attack_received', (data) => {
     toast('⚔️ ' + repairMojibake(data?.from || 'Someone') + ' attacked your kingdom!', 'error');
-    window.dispatchEvent(new CustomEvent('narmir:news-refresh'));
+    emitAppEvent(AppEvent.NEWS_REFRESH);
     loadKingdom().catch(() => {});
   });
 
   socket.on('event:spell_received', () => {
-    window.dispatchEvent(new CustomEvent('narmir:news-refresh'));
+    emitAppEvent(AppEvent.NEWS_REFRESH);
     loadKingdom().catch(() => {});
   });
 
   socket.on('event:turn_update', () => {
-    window.dispatchEvent(new CustomEvent('narmir:news-refresh'));
+    emitAppEvent(AppEvent.NEWS_REFRESH);
     loadKingdom().catch(() => {});
   });
 
-  socket.on('event:forum_new', () => window.dispatchEvent(new CustomEvent('narmir:forum-refresh')));
-  socket.on('event:forum_new_post', () => window.dispatchEvent(new CustomEvent('narmir:forum-refresh')));
+  socket.on('event:forum_new', () => emitAppEvent(AppEvent.FORUM_REFRESH));
+  socket.on('event:forum_new_post', () => emitAppEvent(AppEvent.FORUM_REFRESH));
 
   socket.on('event:alliance_updated', () => {
-    window.dispatchEvent(new CustomEvent('narmir:alliance-refresh'));
+    emitAppEvent(AppEvent.ALLIANCE_REFRESH);
     loadKingdom().catch(() => {});
   });
 
-  socket.on('event:world_updated', () => loadWorldMap().catch(() => {}));
-  socket.on('event:active_counts', () => window.dispatchEvent(new CustomEvent('narmir:active-counts-refresh')));
+  socket.on('event:world_updated', () => emitAppEvent(AppEvent.WORLDMAP_REFRESH));
 
   socket.on('event:chat_clear', () => {
-    const list = document.getElementById('global-chat-messages');
-    if (list) list.innerHTML = '';
+    emitAppEvent(AppEvent.CHAT_CLEAR);
   });
 
   socket.on('event:global_message', (data) => {

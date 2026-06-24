@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useGameMutationEvents } from '../../hooks/useGameState';
 
 const HappinessWidget = ({ onOpenTab }) => {
   const [happiness, setHappiness] = useState(50);
@@ -19,16 +20,14 @@ const HappinessWidget = ({ onOpenTab }) => {
 
   useEffect(() => {
     fetchHappinessData();
-
-    const handleGameDataUpdate = () => {
-      fetchHappinessData();
-    };
-
-    window.addEventListener('game-data-updated', handleGameDataUpdate);
-    return () => {
-      window.removeEventListener('game-data-updated', handleGameDataUpdate);
-    };
   }, []);
+
+  useGameMutationEvents(useCallback((event) => {
+    const reason = String(event?.reason || '');
+    if (['turn', 'kingdom-refresh', 'server-updates', 'mutation'].includes(reason)) {
+      fetchHappinessData();
+    }
+  }, []));
 
   const getHappinessColor = (value) => {
     if (value >= 80) return 'var(--green)';

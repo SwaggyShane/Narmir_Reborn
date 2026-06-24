@@ -1,14 +1,11 @@
-﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { apiCall } from '../../utils/api.js';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { apiCall } from '../../utils/api.mjs';
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import { gameStateManager } from '../../GameStateManager.js';
 import { getSocket } from '../../socket-client.js';
+import { initSocketHandlers } from '../../hooks/useSocket.js';
 
 let authApi = null;
-
-function syncShellChrome(visible) {
-  window.dispatchEvent(new CustomEvent('narmir:auth-modal-visibility', { detail: { visible } }));
-}
 
 function clearAuthToken() {
   try {
@@ -27,38 +24,63 @@ function syncIdentity(me, fallbackUsername) {
 }
 
 export async function loadKingdom() {
-  const kingdom = await apiCall('GET', '/api/kingdom/me');
+  const kingdom = await apiCall('/api/kingdom/me');
   if (kingdom && !kingdom.error) {
     applyGameMutation(kingdom, { reason: 'kingdom-refresh' });
   }
   return kingdom;
 }
 
+async function connectSocketAfterAuth() {
+  try {
+    const sock = await getSocket();
+    initSocketHandlers(sock);
+  } catch (err) {
+    console.warn('[socket] Failed to initialize after auth:', err);
+  }
+}
+
+async function bootstrapAuthenticatedSession(fallbackUsername) {
+  try {
+    const me = await apiCall('/api/auth/me');
+    if (me && !me.error) {
+      syncIdentity(me, fallbackUsername);
+    } else if (fallbackUsername) {
+      syncIdentity(null, fallbackUsername);
+    } else {
+      return false;
+    }
+  } catch {
+    if (fallbackUsername) {
+      syncIdentity(null, fallbackUsername);
+    } else {
+      return false;
+    }
+  }
+
+  await loadKingdom();
+  await connectSocketAfterAuth();
+  return true;
+}
+
+let restorePromise = null;
+
+export async function restoreAuthSession() {
+  if (!restorePromise) {
+    restorePromise = bootstrapAuthenticatedSession();
+  }
+  return restorePromise;
+}
+
 async function finishAuthSession(fallbackUsername) {
   if (typeof authApi?.hideLoginModal === 'function') {
     authApi.hideLoginModal();
   }
-
-  try {
-    const me = await apiCall('GET', '/api/auth/me');
-    if (me && !me.error) {
-      syncIdentity(me, fallbackUsername);
-    } else {
-      syncIdentity(null, fallbackUsername);
-    }
-  } catch {
-    syncIdentity(null, fallbackUsername);
-  }
-
-  await loadKingdom();
-
-  getSocket().catch(function (err) {
-    console.warn('[socket] Failed to initialize after auth:', err);
-  });
+  await bootstrapAuthenticatedSession(fallbackUsername);
 }
 
 async function submitAuthRequest(endpoint, payload) {
-  const res = await apiCall('POST', endpoint, payload);
+  const res = await apiCall(endpoint, { method: 'POST', body: payload });
   if (res && res.error) throw new Error(res.error);
   return res || {};
 }
@@ -116,7 +138,7 @@ export async function doRegister() {
 
 export async function logout() {
   try {
-    await apiCall('POST', '/api/auth/logout');
+    await apiCall('/api/auth/logout', { method: 'POST' });
   } catch {}
   clearAuthToken();
   if (typeof window !== 'undefined') window.location.href = '/portal';
@@ -143,7 +165,6 @@ export default function AuthModal() {
   }, [form]);
 
   useEffect(() => {
-    syncShellChrome(visible);
     if (visible) {
       setTimeout(() => userRef.current?.focus?.(), 0);
     }
@@ -240,7 +261,7 @@ export default function AuthModal() {
   const checks = useMemo(() => passwordRules(form.password || ''), [form.password]);
   const isPasswordStrongEnough = checks.every((item) => item.ok);
   const panelClass =
-    'relative z-[1] flex min-h-screen w-[45%] flex-col justify-center overflow-y-auto border-l border-[#363a52] bg-[rgba(19,20,29,0.85)] px-[60px] py-[40px] backdrop-blur-md box-border';
+    'relative flex h-full w-full max-w-[520px] flex-col justify-center overflow-y-auto border-l border-[#363a52] bg-[rgba(19,20,29,0.95)] px-[60px] py-[40px] backdrop-blur-md box-border sm:w-[45vw]';
   const inputClass =
     'mb-2.5 box-border w-full rounded-lg border border-[#363a52] bg-[#1a1c27] px-3 py-2.5 text-[16px] text-[#e8e9f0]';
   const helpClass =
@@ -252,6 +273,12 @@ export default function AuthModal() {
   if (!visible) return null;
 
   return (
+    <div
+      className="fixed inset-0 z-modal flex justify-end bg-black/70 backdrop-blur-sm"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) hideLoginModal();
+      }}
+    >
     <div className={panelClass}>
       <div className="mb-6 text-center">
         <div className="mb-2 text-[24px] font-bold text-[var(--gold)]">
@@ -380,6 +407,7 @@ export default function AuthModal() {
           Close
         </button>
       </div>
+    </div>
     </div>
   );
 }

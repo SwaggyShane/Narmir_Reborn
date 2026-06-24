@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-let activePanel = 'news';
+let activePanel = 'status';
 const activePanelListeners = new Set();
 
 export function setActivePanelGlobal(panelName) {

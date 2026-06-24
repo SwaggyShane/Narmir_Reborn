@@ -118,7 +118,7 @@ function AuthBlock({ status, onEnter, fading }) {
   return (
     <div className="auth-continue">
       <a href="/portal" onClick={(e) => handleEnter(e, '/portal')} className="continue-btn">ENTER</a>
-      <p className="auth-sub">Rankings · Login · Forums</p>
+      <p className="auth-sub">Rankings | Login | Forums</p>
     </div>
   );
 }
@@ -280,7 +280,7 @@ function ModernSplash({ authStatus, onEnter, fading }) {
 
       <footer className="splash-footer">
         <span>© 2025 Narmir Reborn</span>
-        <span className="footer-sep">·</span>
+        <span className="footer-sep">|</span>
         <a href="/portal" className="footer-link">Enter</a>
       </footer>
     </div>
@@ -292,6 +292,11 @@ function ModernSplash({ authStatus, onEnter, fading }) {
 export default function Splash() {
   const [phase, setPhase] = useState(() => {
     try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('replay') === '1' || params.get('intro') === '1') {
+        sessionStorage.removeItem('narmir_intro_seen');
+        return 'retro';
+      }
       return (sessionStorage.getItem('narmir_intro_seen') || localStorage.getItem('narmir_skip_intro'))
         ? 'modern' : 'retro';
     } catch (e) {

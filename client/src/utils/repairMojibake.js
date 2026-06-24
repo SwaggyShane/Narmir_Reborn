@@ -1,4 +1,4 @@
-const MOJIBAKE_SIGNATURE = /[\u00C3\u00C2\u00E2\u00EF\u00F0\uFFFD]/;
+const MOJIBAKE_SIGNATURE = /[\u00C3\u00C2\u00E2\u00EF\u00F0\u00C5\uFFFD]/;
 
 const CP1252_TO_BYTE = new Map([
   [0x20AC, 0x80],
@@ -65,11 +65,58 @@ function decodeRepeatedly(text) {
   return current;
 }
 
+function decodeLatin1Utf8Once(text) {
+  const bytes = new Uint8Array(text.length);
+  for (let i = 0; i < text.length; i += 1) {
+    bytes[i] = text.charCodeAt(i) & 0xff;
+  }
+
+  try {
+    return UTF8_DECODER.decode(bytes);
+  } catch {
+    return null;
+  }
+}
+
+function decodeLatin1Repeatedly(text) {
+  let current = text;
+  for (let i = 0; i < 20; i += 1) {
+    const next = decodeLatin1Utf8Once(current);
+    if (!next || next === current) break;
+    current = next;
+  }
+  return current;
+}
+
+function polishCommonMojibake(text) {
+  return text
+    .replace(/\u00c2/g, '')
+    .replace(/\u00e2\u20ac\u201d/g, '\u2014')
+    .replace(/\u00e2\u20ac\u201c/g, '-')
+    .replace(/\u00e2\u20ac\u00a2/g, '\u2022')
+    .replace(/\u00e2\u20ac\u02dc|\u00e2\u20ac\u2122/g, '\u2019')
+    .replace(/\u00e2\u20ac\u0153/g, '\u201c');
+}
+
+function scrubCorruptedEmojiMarkers(text) {
+  return String(text)
+    .replace(/^\?+\s*/g, '')
+    .replace(/\s+\?\s+(?=Net Gold)/gi, ' — ')
+    .replace(/[\uFFFD\uFFFE\uFFFF]+/g, '');
+}
+
 export function repairMojibake(value) {
   if (value === null || value === undefined) return '';
   const text = String(value);
-  if (!text || !MOJIBAKE_SIGNATURE.test(text)) return text;
+  if (!text) return text;
 
-  const repaired = decodeRepeatedly(text);
+  let repaired = text;
+  if (MOJIBAKE_SIGNATURE.test(text)) {
+    repaired = decodeRepeatedly(text);
+    repaired = decodeLatin1Repeatedly(repaired);
+    repaired = polishCommonMojibake(repaired);
+    repaired = scrubCorruptedEmojiMarkers(repaired);
+  }
+
   return repaired || text;
 }

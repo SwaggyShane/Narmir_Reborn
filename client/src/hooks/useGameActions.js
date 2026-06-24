@@ -1,8 +1,10 @@
 import { useCallback, useRef, useState } from 'react';
-import { apiCall } from '../utils/api.js';
+import { apiCall } from '../utils/api.mjs';
 import { toast } from '../utils/toast.js';
 import { gameStateManager } from '../GameStateManager.js';
 import { playGameSound } from '../utils/audio.js';
+import { getRegenCountdownLabel } from './useRegenCountdown.js';
+import { AppEvent, emitAppEvent } from '../utils/appEvents.js';
 
 function applyResult(data, reason) {
   const updates = data?.updates || data?.kUpdates || null;
@@ -41,7 +43,7 @@ export function useGameActions() {
   const takeTurn = useCallback(async () => {
     if (turnInProgressRef.current) return null;
     if ((gameStateManager.getState()?.turns_stored || 0) < 1) {
-      const countdown = document.getElementById('regen-countdown')?.textContent || '25:00';
+      const countdown = getRegenCountdownLabel();
       toast(`No turns available. Refills in ${countdown}`, 'warning');
       return null;
     }
@@ -60,7 +62,7 @@ export function useGameActions() {
 
       let completedBuildingsMsg = '';
       if (Array.isArray(data.events)) {
-        window.dispatchEvent(new CustomEvent('narmir:news-items', { detail: data.events }));
+        emitAppEvent(AppEvent.NEWS_ITEMS, data.events);
         for (const ev of data.events) {
           const msg = ev?.message || '';
           if (msg.includes('Completed: ')) {

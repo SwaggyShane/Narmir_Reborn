@@ -67,6 +67,10 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] Codex Slice 16: bridged the war replay modal through `client/src/utils/replayWarReport.js` and removed the shell-owned replay body from `client/index.html`
 - [x] Codex Slice 17: removed the shell-only `showRegionDetails` helper from `client/index.html`
 - [x] Codex Slice 18: removed the dead `loadAvailableSounds` shell bootstrap, wired the shared sound library through `client/src/audio.js`, and kept `playGameSound` backed by React bootstrap state
+- [x] Codex Slice 19: major `client/index.html` cleanup — removed inline shell CSS/JS; boot-only entry (modals as empty containers)
+- [x] Codex Slice 20: `GameShell.jsx` + `main.jsx` — React owns the full shell; `main.js` deleted
+- [x] Codex Slice 21 (`GameShell_migration` branch): pure Tailwind grid shell, React panel routing via `useActivePanel`, `panelNav` DOM toggles removed, panel wrappers normalized
+- [x] WarfarePanel.jsx DOM mutations removed (PR #556, cherry-picked onto `GameShell_migration`): 19 → 0; controlled `atkQty` state; `atkEstimate` useMemo; `targetKey()` retained from Slice 21
 
 ## Open PR Assessment
 
@@ -81,10 +85,12 @@ Use that inventory as the baseline progress metric for the remaining work.
 ## Current Handoff
 
 ### Live Status
-- Codex slices 1 through 18 are complete.
-- Claude’s tracked DOM-mutation cleanup is complete for the tractable panels.
-- PR queue is empty.
-- `client/index.html` is still shrinking, but the remaining work is now mostly larger panel-level or backend-dependent seams.
+- **Active branch:** `gameshell-local` (local source of truth; cherry-pick of PR #558 + follow-up slices)
+- Codex slices 1 through 26 complete; post-merge local work: AlliancesPanel, MessagesPanel, portal auth, splash routing.
+- `client/index.html` is boot-only (~70 lines): mount point, error logging, empty modal containers.
+- `main.jsx` is minimal (~26 lines): `escapeHtml` polyfill + `GameShell` mount. `main.js` is deleted.
+- Shell layout and panel routing are React-owned (`GameShell.jsx`, `useActivePanel`, Tailwind grid).
+- Remaining optional debt: none tracked in `client/src` panel/shell DOM inventory; merge `gameshell-local` → `main` when ready.
 
 ### Claude Lane
 - [x] TrainingPanel.jsx DOM mutations removed (PR #548)
@@ -92,63 +98,53 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] replayWarReport.js DOM mutations removed (PR #550)
 - [x] EconomyPanel.jsx DOM mutations removed (PR #552)
 - [x] EconomyPanel ledger follow-up (PR #554): live financial ledger and trade route normalization fixes landed
-- [x] WarfarePanel.jsx DOM mutations removed (PR #556): 19 → 0; controlled atkQty state for all troop inputs; updateAtkEstimateW replaced with atkEstimate useMemo; estimate display panel now actually renders (was computed but never shown); stale-closure bug in launchAttackW fixed; fmtN dedup removed
-- [ ] AlliancesPanel remains deferred until backend routes exist
+- [x] WarfarePanel.jsx DOM mutations removed (PR #556): 19 → 0; controlled `atkQty` state for all 9 troop inputs; `atkEstimate` useMemo (estimate panel now renders in JSX); `setAtkMax` replaces setMaxValue DOM write; stale-closure fix in `launchAttackW`; `targetKey()` from Slice 21 retained; fmtN dedup removed
+- [x] AlliancesPanel.jsx — React-only; wired to /api/alliance/* routes and socket alliance chat
 
-### Codex Next
-- [x] Slice 1: Kill the shell in `client/index.html` — ✅ COMPLETE
-- [x] Slice 2: Reduce hybrid bridge code in `client/src/main.js` — ✅ COMPLETE
-- [x] Slice 3: Triage the heaviest hybrid panels — ✅ COMPLETE
-- [x] **Gate cleared:** Socket audit complete, all listeners are React-safe. Claude fixed `event:chat_clear`.
-- [x] Slice 4: moved `appendNewsItems` out of `client/index.html` into `client/src/utils/newsShell.js` and bridged it through `client/src/main.js`
-- [x] Slice 5: moved shell toast rendering out of `client/index.html` into `client/src/utils/toastShell.js` and bridged it through `client/src/main.js`
-- [x] Slice 6: bridged `loadKingdom` and `openKingdomProfile` through React-owned helpers
-- [x] Slice 7: bridged `openLoreModal` and `closeLoreModal` through `client/src/utils/loreShell.js`
-- [x] Slice 8: bridged `showXpModal` and `closeXpModal` through `client/src/utils/xpShell.js` and `client/src/utils/showHeroXpModal.js`
-- [x] Slice 9: bridged `openSchoolModal` and `closeSchoolModal` through `client/src/utils/schoolShell.js`
-- [x] Slice 10: bridged `openGenericModal` and `closeGenericModal` through `client/src/utils/genericShell.js`
-- [x] Slice 11: bridged the fragment attunement modal cluster through `client/src/utils/attunementShell.js`
-- [x] Slice 12: bridged the hero lore / race lore helper cluster through `client/src/utils/showHeroLore.js` and `client/src/utils/closeRaceLore.js`
-- [x] Slice 13: removed the EconomyPanel `callIfAvailable` bridge, switched upgrade rendering to client-owned data helpers in `client/src/utils/economyUpgrades.js`, and kept the economy panel rendering on the React side
-- [x] Slice 14: bridged the battle report modal through `client/src/utils/showBattleReport.js` and `WarfarePanel.jsx`, then removed the shell-owned battle report body from `client/index.html`
-- [x] Slice 15: bridged the spy report modal through `client/src/utils/showSpyReport.js` and removed the shell-owned spy report body from `client/index.html`
-- [x] Slice 16: bridged the war replay modal through `client/src/utils/replayWarReport.js` and removed the shell-owned replay body from `client/index.html`
-- [x] Slice 17: removed the shell-only `showRegionDetails` helper from `client/index.html`
-- [x] Slice 18: removed the dead `loadAvailableSounds` shell bootstrap, wired the shared sound library through `client/src/utils/audio.js`, and kept `playGameSound` backed by React bootstrap state
-- [ ] Next: finish the last shell helper seams that still have a small, safe extraction path; otherwise move to the remaining panel-level cleanup or backend-dependent deferred items.
-- [ ] Ongoing: confirm `client/index.html` keeps trending toward boot-only after Slices 1-18.
+### Codex Next (post-Slice 21)
+- [x] Slice 19–21: shell kill + GameShell + pure Tailwind layout — ✅ COMPLETE on `GameShell_migration`
+- [x] **Slice 22a:** Mount global overlays in `GameShell` — `AuthModal`, `KingdomProfileModal`, `SchoolSelectionController`; fixed `fixed inset-0 z-modal` positioning on auth/profile backdrops
+- [x] **Slice 22b:** Gut `syncUI()` — removed zombie DOM writes from `panelNav.js`, dropped `gameStateManager.subscribe(syncUI)`, removed calls from Economy/Market/UpgradesList
+- [x] **Slice 23:** Globalchat + `socket-client.js` chat rendering → React-only (`GlobalchatPanel` state, `ChatMessageRow`, slim `socket-client.js`)
+- [x] **Slice 24:** Modal migration — `ToastProvider`, `HeroXpModalController`, `LoreEntryController`, `GenericModalController`, `SpyReportModalController`; shell bridges thinned
+- [x] **Slice 25:** Dead code purge — deleted orphan shells (`newsShell`, `attunementShell`, `schoolShell`, `renderTargets`, `toastShell`, `loreShell`, `genericShell`, `xpShell`, `closeRaceLore`); replaced `applyNavLayout` body classes with `useNavLayout` hook; removed ResourceStrip legacy metric ids
+- [x] **Slice 26:** Worldmap React migration — deleted `WorldmapLegend.jsx`; region legend + highlight in `WorldmapPanel`; SVG uses `data-kingdom-id` + click delegation (no broken `onclick` globals); `event:world_updated` → `narmir:worldmap-refresh`
+- [x] **Slice 27 (local):** AlliancesPanel, MessagesPanel, DefensePanel UpgradesList, MarketPanel trade DOM purge
+- [x] **Slice 28 (local):** BuildPanel — 0 getElementById; unified `ba-*` allocation keys; React build queue + hammer durability; vampire shrine/mausoleum visibility
+- [x] **Slice 29 (local):** `useRegenCountdown` hook (Topbar + useGameActions); expedition log event bridge replaces `expeditionLog.mjs` DOM injection
+- [x] **Slice 30 (local):** `socket-client.js` npm `socket.io-client` import (0 DOM); dropped `window.__narmir*` / `gameStateManager` / `closeGenericModal` / `escapeHtml` globals; shared `escapeHtml.js` util
+- [x] **Slice 31 (local):** `appEvents.js` + `useAppEvent` replace window CustomEvent bus; `BottomNav` badges are React state
+- [x] **Slice 32 (local):** removed dead `#battle-overlay` from `index.html` and orphan `#vue-panel-*` mount stubs from NewsPanel/OptionsPanel
+- [ ] Ongoing: merge `gameshell-local` → `main` when ready (draft PR #559 on remote)
 
-### Current Inventory Snapshot (updated 2026-06-24 post-PR #556)
-- document.getElementById: 160 total (134 in index.html [Codex target], 26 in client/src/)
-  - Biggest src concentrations: panelNav.js 5, socket-client.js 5, GlobalchatPanel 4, MarketPanel 2; WarfarePanel now 0; EconomyPanel 1 (renderUpgrades export for DefensePanel)
-- el(: 20 in index.html (local variable pattern, not a helper); ~18 in client/src/
-- .innerHTML =: 72 total (45 in index.html, 27 in client/src/)
-- .style.: 167 total (46 in index.html, 121 in client/src/)
-- window.* globals (non-bootstrap): 10 AlliancesPanel deferred; main.js bootstrap exports (~31); socket-client.js bootstrap (4); 1 GameStateManager; 0 in utils (clean)
+### Current Inventory Snapshot (updated 2026-06-24 post-Slice 32 local)
+- document.getElementById: **0 in index.html**, **3 in client/src/** (React mount roots only: `app`, `portal-root`, `splash-root`)
+- el(: 0 in index.html; 0 in client/src/ (no `el()` helper remains)
+- .innerHTML =: **0 in index.html**, **0 in client/src/**
+- .style.: **0 in index.html**, ~30 in client/src/ (inline React handlers only; no socket-client DOM)
+- window.* globals: **0** — cross-panel signals use `appEvents.js` module pub/sub; remaining `window.*` is browser APIs only (`location`, `confirm`, `prompt`, error logging)
 
 ## Codex Lane
 
-### 1. Kill the shell in `client/index.html`
-- [ ] Remove remaining orchestration logic from `client/index.html`
-- [ ] Move panel switching into React-owned code or a small shared helper
-- [ ] Remove remaining global shell wiring that is only there to bootstrap the old UI
-- [ ] Keep `client/index.html` focused on bootstrapping, not UI ownership
-- [ ] Use the new attunement shell helper as the pattern for the next modal/helper slice
+### 1. Kill the shell in `client/index.html` — ✅ COMPLETE (Slices 19–21)
+- [x] Remove remaining orchestration logic from `client/index.html`
+- [x] Move panel switching into React-owned code (`useActivePanel`, `GameShell.jsx`)
+- [x] Remove remaining global shell wiring that is only there to bootstrap the old UI
+- [x] Keep `client/index.html` focused on bootstrapping, not UI ownership
+- [x] Modal portals mounted in `GameShell` (Slice 24); attunement shell deleted in Slice 25
 
-### 2. Reduce hybrid bridge code
-- [ ] Search for direct DOM mutation paths in `client/src/main.js`
-- [ ] Remove or thin any bridge code that still mutates the DOM directly
-- [ ] Keep `GameStateManager` as the state source only, not a renderer
-- [ ] Convert any remaining shell-era event forwarding into React-safe helpers
-- [ ] Confirm `event:chat_clear` is handled without reintroducing DOM mutation
+### 2. Reduce hybrid bridge code — COMPLETE
+- [x] `main.js` deleted; `main.jsx` is mount-only (no bridge exports)
+- [x] Remove `syncUI()` zombie DOM writes in `panelNav.js` (Slice 22b)
+- [x] `GameStateManager` is the state source; panels render from React hooks
+- [x] `event:chat_clear` handled without reintroducing shell DOM mutation
+- [x] Convert remaining `*Shell` modal bridges to React portals (Slice 24)
 
-### 3. Triage the heaviest hybrid panels
-- [ ] Review `WorldmapRenderer.jsx` for imperative DOM behavior
-- [ ] Review `WarfarePanel.jsx` for remaining legacy global calls
-- [ ] Review any other panel still reaching into shell globals
-- [ ] Convert one panel at a time and keep each PR narrow
-- [ ] Use a temporary feature flag only for the riskiest panel slices
-- [ ] Remove any temporary flag immediately after the slice is stable
+### 3. Triage the heaviest hybrid panels — WarfarePanel done; chat remains
+- [x] Review `WorldmapRenderer.jsx` for imperative DOM behavior — Slice 26: legend DOM removed; renderer is pure SVG string builder
+- [x] `WarfarePanel.jsx` — 0 `getElementById` (PR #556)
+- [x] `GlobalchatPanel.jsx` + `socket-client.js` — chat rendering React-only (Slice 23)
+- [x] Convert one panel at a time and keep each PR narrow — all tractable panels done
 
 ### 4. Trim the last CSS dependency edges
 - [ ] Identify old CSS files still carrying layout responsibility
@@ -184,28 +180,39 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] replayWarReport.js (window.warLogCache read) — ✅ COMPLETE (in PR #546): → gameStateManager.getState().warLogCache
 - [x] WarfarePanel (16 remaining globals) — ✅ COMPLETE (in PR #546): window.spyReportsCache/allianceIntelCache/targets → setState(); window.setWarfareTab → registerWarfareTab(); window.switchTab → direct import from panelNav.js; 6 dead globals removed (castWspell, doWcovert, updateWspellCalc, initWspells, initWcovert, selectedTargetW — none defined anywhere in codebase); window.wcovTargetRaceChange uses standard browser event API
 - [x] MarketPanel (window.targets read) — ✅ COMPLETE (in PR #546): → gameStateManager.getState().targets
-- [x] WarfarePanel (window.showBattleReport) — ✅ COMPLETE (in PR #546): new BattleReportModal.jsx React portal; WarfarePanel uses setBattleReport() local state; vanilla battle-overlay in index.html is now unreachable from the React attack flow (Codex to remove when vanilla spell path is ported)
+- [x] WarfarePanel (window.showBattleReport) — ✅ COMPLETE (in PR #546): new BattleReportModal.jsx React portal; WarfarePanel uses setBattleReport() local state; dead `#battle-overlay` stub removed in Slice 32
 - [x] EconomyPanel (4 upgrade defs) — ✅ COMPLETE (PR #544): UpgradesList.jsx + economyUpgrades.js; all callIfAvailable removed
-- [ ] AlliancesPanel (10 vanilla delegates) — deferred; underlying alliance API not yet implemented (foundAlliance, loadAllianceSearch, etc. have no backend routes)
+- [x] AlliancesPanel (10 vanilla delegates) — COMPLETE: full React state, API + socket chat, no window.* bridges
 - [x] TrainingPanel.jsx (13 DOM mutations) — ✅ COMPLETE: all removed; Max/Distribute buttons fixed; toast imported
 - [x] StudiesPanel.jsx (14 DOM mutations) — ✅ COMPLETE (PR #549): all removed; controlled inputs; JSX rendering; useRef focus guards; server sync
 - [x] replayWarReport.js (21 DOM mutations) — ✅ COMPLETE (PR #550): ReplayModal.jsx React portal; vanilla bridge function and replay-modal div removed from index.html
-- [x] EconomyPanel.jsx (27 → 1 DOM mutations) — ✅ COMPLETE (PR #552): converted all 27 getElementById calls to React state; removed dead exports (loadEconomy, renderCommodityMarket, renderActiveMercs); replaced innerHTML upgrade containers with UpgradesList component; bank visibility now driven by state.bld_vaults; tax rate initialized from state.tax; applyGameMutation/syncUI wired to all mutating handlers; 1 getElementById remains in exported renderUpgrades() which DefensePanel imports directly
+- [x] EconomyPanel.jsx (27 → 0 DOM mutations) — COMPLETE: UpgradesList everywhere; removed renderUpgrades/buyUpgrade DOM exports (Slice 27 local)
+- [x] DefensePanel.jsx — COMPLETE (Slice 27 local): wall/tower/outpost upgrades via UpgradesList; 0 getElementById
+- [x] MarketPanel.jsx — COMPLETE (Slice 27 local): removed renderTradeOffers innerHTML bridge; trade lists fully React
+- [x] MessagesPanel.jsx — COMPLETE (Slice 27 local): /api/messages inbox + socket message:received
+- [x] BuildPanel.jsx — COMPLETE (Slice 28 local): 0 getElementById; ba-* allocation keys unified; React build queue + hammer durability; vampire shrine/mausoleum toggle
+- [x] useGameActions.js + Topbar.jsx — COMPLETE (Slice 29 local): `useRegenCountdown` replaces `#regen-countdown` DOM read
+- [x] expeditionLog — COMPLETE (Slice 29 local): deleted `expeditionLog.mjs` innerHTML bridge; `narmir:expedition-log-entry` event from ResourcesPanel to ExplorationPanel
+- [x] socket-client.js — COMPLETE (Slice 30 local): `socket.io-client` npm import; 0 DOM; dropped `window.__narmir*` bootstrap
+- [x] Bootstrap globals purge — COMPLETE (Slice 30 local): `gameStateManager`, `closeGenericModal`, `escapeHtml` window exports removed; `escapeHtml.js` shared util
+- [x] App event bus — COMPLETE (Slice 31 local): `appEvents.js` + `useAppEvent` replace all `window.dispatchEvent`/`addEventListener` cross-panel bridges; `BottomNav` badges are React state; dead `game-data-updated` and `wcovTargetRaceChange` listeners removed
+- [x] Dead HTML stubs — COMPLETE (Slice 32 local): removed `#battle-overlay` from `index.html`; removed orphan `#vue-panel-races`, `#vue-panel-bounties`, `#vue-panel-news` from React panels
 - [x] EconomyPanel ledger follow-up — ✅ COMPLETE (PR #554): extended /economy/overview to compute and return taxIncome, marketIncome, tradeRouteIncome, totalIncome, troopUpkeep, netIncome; uses loadTradeRoutes() helper for normalization; applies SUPPORT_CAP_RACE multipliers and fragmentBonusManager barracks discount to match processTurn exactly; financial ledger in EconomyPanel now shows real values instead of hardcoded zeros
-- [x] WarfarePanel.jsx (19 → 0 DOM mutations) — ✅ COMPLETE (PR #556): atkQty controlled state for all 9 troop inputs; updateAtkEstimateW callback + useEffect replaced with atkEstimate useMemo; estimate display panel added to JSX (was computed but elements were missing, so it was never visible); setMaxValue DOM write replaced with setAtkMax; launchAttackW stale-closure bug fixed (atkQty added to deps); fmtN removed (duplicate of fmt)
+- [x] WarfarePanel.jsx (19 → 0 DOM mutations) — ✅ COMPLETE (PR #556): `atkQty` controlled state for all 9 troop inputs; `atkEstimate` useMemo; estimate display panel in JSX; `setAtkMax` replaces setMaxValue DOM write; `launchAttackW` stale-closure fix; `targetKey()` from Slice 21 retained; fmtN removed (duplicate of fmt)
 
-### 4. Clean up the remaining legacy CSS surfaces — ✅ COMPLETE (audit)
-- [x] Review files still importing from `client/src/css/` — only `forum.css` exists and is actively used by main.js and Portal.jsx; nothing to remove
+### 4. Clean up the remaining legacy CSS surfaces — shell CSS removed in Slice 21
+- [x] Shell layout CSS (`.game-shell`, `.resource-strip`, `.shell-footer`, etc.) removed from `tailwind.css`; layout is pure Tailwind in `GameShell.jsx`
+- [x] Review files still importing from `client/src/css/` — only `forum.css` exists and is actively used by Portal.jsx; nothing to remove
 - [x] No obsolete styles found; shared primitives are all in active use
 
-## File Order Recommendation
-1. `client/index.html`
-2. `client/src/main.js`
-3. `socket-client.js`
-4. `GameStateManager`
-5. `WorldmapRenderer.jsx`
-6. `WarfarePanel.jsx`
-7. remaining `client/src/css/*`
+## File Order Recommendation (post-Slice 21)
+1. ~~`client/src/utils/panelNav.js` — gut `syncUI()` (Slice 22b)~~ ✅
+2. ~~`client/src/socket-client.js` + `GlobalchatPanel.jsx` — chat DOM (Slice 23)~~ ✅
+3. ~~`*Shell` modal helpers — React portals (Slice 24)~~ ✅
+4. ~~Dead code purge (Slice 25)~~ ✅
+5. ~~`WorldmapRenderer.jsx` — audit imperative DOM (Slice 26)~~ ✅
+6. Merge `gameshell-local` → `main` **← next** (draft PR #559)
+7. Merge `gameshell-local` → `main` (draft PR #559 stale vs local)
 
 ## Rollback Threshold
 - If a slice touches more than 30 files, pause and split it.

@@ -60,6 +60,15 @@ npm run lint
 
 PostgreSQL is installed locally. Use it. Every time.
 
+A valid smoke pass requires **all three**:
+1. A **fresh server boot** (not curls against a stale `npm run dev` from hours ago)
+2. Boot log shows **`PostgreSQL connected successfully`** (not offline/error mode)
+3. All four baseline checks pass (forum, auth, portal, game entry)
+
+Use the platform block that matches the machine you are on. See `WINDOWS_LOCAL_SETUP.md` for full Windows setup.
+
+#### Linux / WSL / macOS
+
 ```bash
 # Step 1: Start PostgreSQL
 service postgresql start
@@ -68,7 +77,8 @@ service postgresql start
 sudo -u postgres psql -c "CREATE DATABASE narmir_smoke;" 2>/dev/null || true
 sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'smoke';" 2>/dev/null || true
 
-# Step 3: Start the server
+# Step 3: Start the server (kill anything already on :3000 first)
+kill $(lsof -t -i:3000) 2>/dev/null
 DATABASE_URL="postgresql://postgres:smoke@localhost/narmir_smoke" JWT_SECRET=test-smoke-secret node index.js &
 sleep 4
 
@@ -76,12 +86,53 @@ sleep 4
 curl -s http://localhost:3000/api/forum/boards | grep -q "General" && echo "✅ Forum boards" || echo "❌ Forum boards"
 curl -s http://localhost:3000/api/auth/me | grep -q "Not authenticated" && echo "✅ Auth/me" || echo "❌ Auth/me"
 curl -s http://localhost:3000/portal | grep -q "portal-root" && echo "✅ Portal" || echo "❌ Portal"
+curl -s http://localhost:3000/game | grep -q "main.jsx" && echo "✅ Game entry" || echo "❌ Game entry"
 
 # Step 5: Test the specific endpoints affected by your change
 
 # Step 6: Kill server
 kill $(lsof -t -i:3000) 2>/dev/null
 ```
+
+#### Windows (PowerShell)
+
+Windows dev setups use `narmir_dev` / `narmir_local` from `.env` — **not** `postgres:smoke`. The `postgres:smoke` recipe fails on Windows unless you manually create `narmir_smoke` as the postgres superuser (see `WINDOWS_LOCAL_SETUP.md`).
+
+```powershell
+# Step 1: Ensure PostgreSQL is running
+Get-Service postgresql* | Where-Object Status -ne Running | Start-Service
+
+# Step 2: Read credentials from .env (defaults shown — match your file)
+#   DATABASE_URL=postgresql://narmir_dev:narmir_local_dev@localhost:5432/narmir_local
+#   JWT_SECRET=narmir_local_dev_secret_key_123
+
+# Step 3: Kill anything on :3000, then start a FRESH server
+Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue |
+  Select-Object -ExpandProperty OwningProcess -Unique |
+  ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }
+
+$env:DATABASE_URL = "postgresql://narmir_dev:narmir_local_dev@localhost:5432/narmir_local"
+$env:JWT_SECRET   = "narmir_local_dev_secret_key_123"
+$env:NODE_ENV     = "development"
+Start-Process -NoNewWindow -FilePath "node" -ArgumentList "index.js" -WorkingDirectory (Get-Location)
+Start-Sleep -Seconds 5
+# Confirm boot log contains: [db] ✅ PostgreSQL connected successfully!
+
+# Step 4: Baseline checks (use curl.exe — PowerShell aliases curl to Invoke-WebRequest)
+curl.exe -s http://localhost:3000/api/forum/boards | Select-String "General"
+curl.exe -s http://localhost:3000/api/auth/me | Select-String "Not authenticated"
+curl.exe -s http://localhost:3000/portal | Select-String "portal-root"
+curl.exe -s http://localhost:3000/game | Select-String "main.jsx"
+
+# Step 5: Test endpoints affected by your change
+
+# Step 6: Kill server
+Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue |
+  Select-Object -ExpandProperty OwningProcess -Unique |
+  ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }
+```
+
+**Do not** report smoke as green if you only curled an already-running dev server without confirming a fresh boot and DB connection.
 
 **"DATABASE_URL not set" is not a valid excuse. Set it yourself.**
 **"I can't test this without a DB" is not a valid excuse. Start one.**
@@ -125,10 +176,17 @@ Use the actual session ID from this session. Do not use a placeholder.
 
 ### Local Smoke DB
 
+**Linux / WSL / macOS (preferred isolated DB):**
 - DB name: `narmir_smoke`
 - User: `postgres`, password: `smoke`
-- Always test schema changes against this DB before pushing.
-- "Test on local dev environment if possible" means **always**. Remove "if possible" from your thinking.
+
+**Windows (typical dev setup — see `WINDOWS_LOCAL_SETUP.md`):**
+- DB name: `narmir_local` (or `narmir_smoke` if you created it via postgres superuser)
+- User: `narmir_dev`, password: `narmir_local_dev`
+- `narmir_dev` cannot `CREATE DATABASE`; use pgAdmin or `psql -U postgres` once to add `narmir_smoke` if you want an isolated DB on Windows.
+
+Always test schema changes against a local DB before pushing.
+"Test on local dev environment if possible" means **always**. Remove "if possible" from your thinking.
 
 ### Production (Railway)
 

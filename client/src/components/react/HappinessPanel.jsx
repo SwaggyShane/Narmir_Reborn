@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import clsx from 'clsx';
 import HappinessGraph from './HappinessGraph';
+import { useGameMutationEvents } from '../../hooks/useGameState';
 
 const DEFAULT_COMPONENTS = {
   base: 50,
@@ -59,16 +60,14 @@ const HappinessPanel = () => {
 
   useEffect(() => {
     fetchHappinessData();
-
-    const handleGameDataUpdate = () => {
-      fetchHappinessData();
-    };
-
-    window.addEventListener('game-data-updated', handleGameDataUpdate);
-    return () => {
-      window.removeEventListener('game-data-updated', handleGameDataUpdate);
-    };
   }, []);
+
+  useGameMutationEvents(useCallback((event) => {
+    const reason = String(event?.reason || '');
+    if (['turn', 'kingdom-refresh', 'server-updates', 'mutation'].includes(reason)) {
+      fetchHappinessData();
+    }
+  }, []));
 
   const getComponentEmoji = (name) => {
     const emojis = {
@@ -107,7 +106,7 @@ const HappinessPanel = () => {
   const filteredEvents = filter ? events.filter((e) => e.component === filter) : events;
 
   return (
-    <div id="happiness" className="panel min-h-0 w-full overflow-y-auto">
+    <div id="happiness" className="panel">
       <div className="space-y-6 p-4 md:p-5">
         <section className="rounded-2xl border border-white/5 bg-bg p-4 shadow-[0_18px_40px_rgba(0,0,0,0.28)]">
           <div className="mb-2 flex items-center justify-between gap-3">

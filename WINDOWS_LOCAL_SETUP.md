@@ -262,6 +262,72 @@ SELECT COUNT(*) FROM kingdoms;
 
 ---
 
+## Pre-Commit Smoke Test (Windows)
+
+Run this before every commit (also documented in `Claude.md`). It must be a **fresh server boot** with a confirmed DB connection — not curls against a server that has been running for hours.
+
+### One-time: optional isolated smoke database
+
+`narmir_dev` cannot create databases. To use a separate `narmir_smoke` DB (like Linux CI), run once as the postgres superuser in pgAdmin or:
+
+```cmd
+"C:\Program Files\PostgreSQL\18\bin\psql.exe" -U postgres
+```
+
+```sql
+CREATE DATABASE narmir_smoke;
+GRANT ALL PRIVILEGES ON DATABASE narmir_smoke TO narmir_dev;
+\c narmir_smoke
+GRANT ALL ON SCHEMA public TO narmir_dev;
+\q
+```
+
+After that, point smoke tests at `narmir_smoke` instead of `narmir_local`.
+
+### Every commit: baseline smoke (PowerShell)
+
+From the project root, with PostgreSQL running:
+
+```powershell
+# 1. Stop anything on port 3000
+Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue |
+  Select-Object -ExpandProperty OwningProcess -Unique |
+  ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }
+
+# 2. Start fresh server using .env credentials
+$env:DATABASE_URL = "postgresql://narmir_dev:narmir_local_dev@localhost:5432/narmir_local"
+$env:JWT_SECRET   = "narmir_local_dev_secret_key_123"
+$env:NODE_ENV     = "development"
+node index.js
+```
+
+Wait for boot log: **`[db] ✅ PostgreSQL connected successfully!`** and **`Server listening on http://localhost:3000`**.
+
+Open a **second** PowerShell window for checks (use `curl.exe`, not `curl`):
+
+```powershell
+curl.exe -s http://localhost:3000/api/forum/boards | Select-String "General"    # expect match
+curl.exe -s http://localhost:3000/api/auth/me | Select-String "Not authenticated" # expect match
+curl.exe -s http://localhost:3000/portal | Select-String "portal-root"           # expect match
+curl.exe -s http://localhost:3000/game | Select-String "main.jsx"                # expect match
+```
+
+Stop the smoke server with `Ctrl+C` in the first window, or:
+
+```powershell
+Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue |
+  Select-Object -ExpandProperty OwningProcess -Unique |
+  ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }
+```
+
+### What does NOT count as smoke
+
+- Curling `localhost:3000` while `npm run dev` has been up for a long time, without confirming a fresh boot
+- Using `postgres:smoke@localhost/narmir_smoke` — that user/password is not configured on a standard Windows install
+- A server boot log showing `password authentication failed` or `OFFLINE/ERROR state`
+
+---
+
 ## Useful Commands
 
 ### Start the Server

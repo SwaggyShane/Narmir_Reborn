@@ -1,4 +1,4 @@
-import { apiCall } from './api.js';
+import { apiCall } from './api.mjs';
 import { toast } from './toast.js';
 import { repairMojibake } from './repairMojibake.js';
 import { gameStateManager } from '../GameStateManager.js';

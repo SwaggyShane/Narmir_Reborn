@@ -12,7 +12,6 @@ import { switchTab } from '../../utils/panelNav.js';
 import { registerWarfareTab } from '../../utils/warfareTabs.js';
 import { RACE_ICONS } from '../../utils/raceIcons.js';
 import { playGameSound } from '../../utils/audio.js';
-import { renderTargets } from '../../utils/renderTargets.js';
 import { registerShowBattleReport } from '../../utils/showBattleReport.js';
 import BattleReportModal from './BattleReportModal.jsx';
 
@@ -52,9 +51,13 @@ function buildTargetList(targets, disc, state, { prependSelf = false } = {}) {
     }
   });
 
-  if (prependSelf && !mapped.some((r) => String(r.id) === String(state?.kingdomId))) {
+  if (
+    prependSelf &&
+    state?.kingdomId != null &&
+    !mapped.some((r) => String(r.id) === String(state.kingdomId))
+  ) {
     mapped.unshift({
-      id: state?.kingdomId,
+      id: state.kingdomId,
       name: `${state?.kingdomName || state?.name || 'My Kingdom'} (You)`,
       race: state?.race || 'human',
       level: state?.level || 1,
@@ -72,6 +75,18 @@ function filterByQuery(list, q) {
   if (!q) return list;
   const lq = q.toLowerCase();
   return list.filter((t) => (t.name || '').toLowerCase().includes(lq));
+}
+
+function targetKey(target, index) {
+  const id = target?.id;
+  if (id !== undefined && id !== null && id !== '') {
+    return target.is_location ? `loc-${id}` : `kd-${id}`;
+  }
+  const slug = String(target?.name || 'unknown')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+  return `target-${slug || 'row'}-${index}`;
 }
 
 // ─── sub-component: target card ───────────────────────────────────────────────
@@ -141,9 +156,9 @@ function TargetListSection({ targets, selected, onSelect, searchQ, onSearchChang
               </button>
             </div>
           )
-          : targets.map((t) => (
+          : targets.map((t, index) => (
             <KingdomTargetCard
-              key={t.id}
+              key={targetKey(t, index)}
               target={t}
               isSelected={selected && String(selected.id) === String(t.id)}
               onSelect={onSelect}
@@ -289,12 +304,13 @@ const WarfarePanel = () => {
   }, []);
 
   useEffect(() => {
-    const handleRaceChange = (e) => setWcovTargetRace(e.detail);
-    window.addEventListener('wcovTargetRaceChange', handleRaceChange);
+    setWcovTargetRace(covertTarget?.race ?? null);
+  }, [covertTarget?.race]);
+
+  useEffect(() => {
     const unregister = registerWarfareTab(setActiveTab);
     const unregisterBattle = registerShowBattleReport(setBattleReport);
     return () => {
-      window.removeEventListener('wcovTargetRaceChange', handleRaceChange);
       unregister();
       unregisterBattle();
     };
@@ -625,7 +641,7 @@ const WarfarePanel = () => {
 
   return (
     <>
-    <div id="warfare" className="panel hidden">
+    <div id="warfare" className="panel">
       <div className="flex flex-wrap gap-1 border-b-2 border-[var(--border2)] mb-4 pb-1">
         <button className={clsx('base-btn admin-tab rounded-none', activeTab === 'attack' && 'active')} onClick={() => handleTabClick('attack')}>⚔️ Attack</button>
         <button className={clsx('base-btn admin-tab rounded-none', activeTab === 'wspells' && 'active')} onClick={() => handleTabClick('wspells')}>✨ Spells</button>

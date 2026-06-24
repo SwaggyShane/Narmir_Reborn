@@ -147,17 +147,19 @@ const StatusPanel = () => {
   const xp = state?.xp ?? 0;
   const xpToNext = state?.xp_to_next ?? 1;
   const xpPct = Math.min(100, Math.round((xp / Math.max(xpToNext, 1)) * 100));
+  const playerName = cleanText(state?.username || state?.owner_name || state?.owner || '');
   const kingdomName = cleanText(state?.name || state?.kingdomName || 'Your Kingdom');
+  const kingdomTitle = playerName ? `${playerName} of ${kingdomName}` : kingdomName;
 
   return (
-    <div id="status" className="panel active w-full min-w-0">
+    <div id="status" className="panel">
 
       {/* ── Kingdom Header ── */}
       <div className="mb-4 rounded-xl border border-ember-900/60 bg-void-800 p-4 shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
         <div className="flex flex-col gap-3">
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <h1 className="font-cinzel text-2xl font-black text-gold leading-none tracking-wide" style={{ textShadow: '0 0 16px rgba(240,98,2,0.4)' }}>
-              {kingdomName}
+              {kingdomTitle}
             </h1>
             <div className="flex items-center gap-1.5 flex-wrap">
               {state?.turn != null && (
@@ -211,9 +213,16 @@ const StatusPanel = () => {
             <div className="font-cinzel text-[18px] font-bold text-gold uppercase tracking-[1px]">
               {cleanText(raceInfo.label)}
             </div>
-            <div className="text-[12.5px] text-text2 leading-relaxed font-normal tracking-[0.3px]">
+            <button
+              type="button"
+              className="text-left text-[12.5px] text-text2 leading-relaxed font-normal tracking-[0.3px] underline decoration-ember-500/30 underline-offset-2 transition hover:text-text hover:decoration-ember-500/60"
+              onClick={(e) => {
+                e.stopPropagation();
+                openRaceLore(raceKey);
+              }}
+            >
               {cleanText(raceInfo.bonus)}
-            </div>
+            </button>
           </div>
           <div className="flex-shrink-0 text-ember-500/40 text-lg">›</div>
         </div>

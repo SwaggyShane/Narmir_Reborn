@@ -2,12 +2,12 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
 import { useGameState, useGameMutationEvents } from '../../hooks/useGameState';
+import { AppEvent, emitAppEvent } from '../../utils/appEvents.js';
+import { useAppEvent } from '../../hooks/useAppEvent.js';
 import { replayWarReport, registerReplayModal } from '../../utils/replayWarReport';
 import { repairMojibake } from '../../utils/repairMojibake';
-import newsEmojiTools from '../../../../game/news-emoji.js';
+import { formatNewsMessage, getNewsMeta } from '../../../../game/news-emoji.mjs';
 import ReplayModal from './ReplayModal.jsx';
-
-const { decorateNewsMessage, getNewsMeta } = newsEmojiTools;
 
 const NewsPanel = () => {
   const { state } = useGameState();
@@ -20,9 +20,8 @@ const NewsPanel = () => {
     return () => registerReplayModal(null);
   }, []);
 
-  const repairText = useCallback((value) => {
-    const text = value === null || value === undefined ? '' : String(value);
-    return decorateNewsMessage(text, repairMojibake);
+  const formatText = useCallback((value) => {
+    return formatNewsMessage(value, repairMojibake);
   }, []);
 
   const timeAgo = useCallback((unixTs) => {
@@ -36,7 +35,7 @@ const NewsPanel = () => {
 
   const getNewsPriority = useCallback((item) => {
     if (!item) return 13;
-    const msg = repairText(item.message).toLowerCase();
+    const msg = formatText(item.message).text.toLowerCase();
     const type = item.type || 'system';
     if (msg.includes('season:') || msg.includes('seasonal')) return 1;
     if (type === 'attack' || type === 'spell' || type === 'covert') return 2;
@@ -51,18 +50,18 @@ const NewsPanel = () => {
     if (msg.includes('happiness')) return 8;
     if (msg.includes('production:') || msg.includes('wood') || msg.includes('stone') || msg.includes('iron') || msg.includes('food') || msg.includes('forester')) return 3;
     return 13;
-  }, [repairText]);
+  }, [formatText]);
 
   const summarizeAttackNewsForAll = useCallback((item) => {
-    const message = repairText(item?.message || '');
+    const message = formatText(item?.message || '').text;
     if (message.indexOf('Defense report:') === 0) return 'You were attacked.';
     if (message.indexOf('Attack report:') === 0) return 'You launched an attack.';
     if (message.toLowerCase().includes('attacked your kingdom')) return 'You were attacked.';
     return 'Combat report available.';
-  }, [repairText]);
+  }, [formatText]);
 
   const clearBadges = useCallback(() => {
-    window.dispatchEvent(new CustomEvent('narmir:clear-news-badges'));
+    emitAppEvent(AppEvent.CLEAR_NEWS_BADGES);
   }, []);
 
   const loadNews = useCallback(async () => {
@@ -70,12 +69,7 @@ const NewsPanel = () => {
       const items = await apiCall('/api/kingdom/news/list');
       if (!Array.isArray(items)) return;
 
-      const normalized = items.map((item) => ({
-        ...item,
-        message: decorateNewsMessage(item?.message || '', repairMojibake),
-      }));
-
-      setNewsItems(normalized);
+      setNewsItems(items);
       clearBadges();
     } catch (err) {
       console.error('[NewsPanel] Error loading news:', err);
@@ -128,28 +122,22 @@ const NewsPanel = () => {
     loadNews();
   }, [loadNews]);
 
-  useEffect(() => {
-    const handleItems = (event) => {
-      const items = Array.isArray(event?.detail) ? event.detail : [];
-      if (!items.length) return;
-      const normalized = items.map((item) => ({
-        ...item,
-        message: decorateNewsMessage(item?.message || '', repairMojibake),
-      }));
-      setNewsItems((prev) => {
-        const merged = [...normalized, ...prev];
-        const seen = new Set();
-        return merged.filter((item) => {
-          const key = `${item?.turn_num || 0}:${item?.type || 'system'}:${item?.message || ''}:${item?.created_at || ''}`;
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        });
+  const handleNewsItems = useCallback((items) => {
+    const rows = Array.isArray(items) ? items : [];
+    if (!rows.length) return;
+    setNewsItems((prev) => {
+      const merged = [...rows, ...prev];
+      const seen = new Set();
+      return merged.filter((item) => {
+        const key = `${item?.turn_num || 0}:${item?.type || 'system'}:${item?.message || ''}:${item?.created_at || ''}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
       });
-    };
-    window.addEventListener('narmir:news-items', handleItems);
-    return () => window.removeEventListener('narmir:news-items', handleItems);
+    });
   }, []);
+
+  useAppEvent(AppEvent.NEWS_ITEMS, handleNewsItems);
 
   useGameMutationEvents((event) => {
     const reason = String(event?.reason || '');
@@ -169,21 +157,17 @@ const NewsPanel = () => {
     }
   });
 
-  useEffect(() => {
-    const onRefresh = () => loadNews();
-    window.addEventListener('narmir:news-refresh', onRefresh);
-    return () => window.removeEventListener('narmir:news-refresh', onRefresh);
-  }, [loadNews]);
+  useAppEvent(AppEvent.NEWS_REFRESH, loadNews);
 
   return (
     <div id="news" className="panel">
       <div className="card mt-0">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="card-title m-0">
-            ðŸ“° Kingdom news â€” Turn <span id="news-turn-num">{state?.turn || 0}</span>
+            📰 Kingdom news — Turn <span id="news-turn-num">{state?.turn || 0}</span>
           </div>
           <div className="flex gap-2">
-            <button className="base-btn" onClick={loadNews}>â†» Refresh</button>
+            <button className="base-btn" onClick={loadNews}>↻ Refresh</button>
             <button className="base-btn variant-red bg-[var(--red)]" onClick={clearNews}>Clear all</button>
           </div>
         </div>
@@ -191,10 +175,10 @@ const NewsPanel = () => {
         <div className="mb-3.5 flex flex-wrap gap-1.5">
           {[
             ['all', 'All'],
-            ['attack', 'âš”ï¸ Combat'],
-            ['spell', 'âœ¨ Spells'],
-            ['covert', 'ðŸ•µï¸ Covert'],
-            ['system', 'ðŸ“‹ System'],
+            ['attack', `${getNewsMeta('attack').icon} Combat`],
+            ['spell', `${getNewsMeta('spell').icon} Spells`],
+            ['covert', `${getNewsMeta('covert').icon} Covert`],
+            ['system', `${getNewsMeta('system').icon} System`],
           ].map(([value, label]) => (
             <button
               key={value}
@@ -207,30 +191,32 @@ const NewsPanel = () => {
           ))}
         </div>
 
-        <div id="news-list">
+        <div>
           {visibleGroups.length === 0 ? (
             <div className="py-4 text-center text-[13px] text-[var(--text3)]">
-              {newsFilter === 'all' ? 'No news yet â€” take some turns!' : `No ${newsFilter} events yet.`}
+              {newsFilter === 'all' ? 'No news yet — take some turns!' : `No ${newsFilter} events yet.`}
             </div>
           ) : visibleGroups.map((group) => (
             <div className="news-turn-group" key={group.turn}>
               <div className="news-turn-header">
-                <span className="turn-label">â—† {group.turn > 0 ? `Turn ${group.turn}` : 'Before game start'}</span>
+                <span className="turn-label">◆ {group.turn > 0 ? `Turn ${group.turn}` : 'Before game start'}</span>
                 <span className="turn-time">{group.timeLabel}</span>
               </div>
               {group.items.map((item, idx) => {
                 let type = item.type || 'system';
-                const rawMessage = repairText(item.message || '');
-                if (rawMessage && /^[\ud83d\udd2d\ud83c\udf32\u2694\ud83e\udded\u2022]/u.test(rawMessage)) type = 'expedition';
+                const formatted = formatText(item.message || '');
+                if (formatted.text && /^[\ud83d\udd2d\ud83c\udf32\u2694\ud83e\udded\u2022]/u.test(`${formatted.emoji} ${formatted.text}`)) {
+                  type = 'expedition';
+                }
                 const meta = getNewsMeta(type);
-                const displayMessage = newsFilter === 'all' && type === 'attack'
-                  ? summarizeAttackNewsForAll(item)
-                  : rawMessage;
+                const isAttackSummary = newsFilter === 'all' && type === 'attack';
+                const displayMessage = isAttackSummary ? summarizeAttackNewsForAll(item) : formatted.text;
+                const displayIcon = isAttackSummary ? meta.icon : formatted.emoji;
                 const isBorderType = type === 'attack' || type === 'spell' || type === 'covert';
                 const borderStyle = isBorderType ? { borderLeft: `3px solid ${meta.color}`, paddingLeft: '10px' } : {};
                 return (
                   <div className="news-item" style={borderStyle} key={`${group.turn}-${idx}-${item.combat_log_id || item.created_at || item.message?.slice(0, 32) || 'news'}`}>
-                    <span className="news-icon">{meta.icon}</span>
+                    <span className="news-icon">{displayIcon}</span>
                     <span className="news-body" style={{ color: isBorderType ? 'var(--text)' : 'var(--text2)' }}>
                       {displayMessage}
                       {item.combat_log_id ? (
@@ -238,7 +224,7 @@ const NewsPanel = () => {
                           className="btn inline-flex items-center gap-1 text-[10px] px-2 py-0.5 mt-1 ml-2.5"
                           onClick={() => replayWarReport(item.combat_log_id)}
                         >
-                          â–¶ Replay
+                          ▶ Replay
                         </button>
                       ) : null}
                     </span>
@@ -250,8 +236,6 @@ const NewsPanel = () => {
         </div>
       </div>
 
-      <div id="vue-panel-races" className="contents" />
-      <div id="vue-panel-bounties" className="contents" />
       {replayData && (
         <ReplayModal
           title={replayData.title}

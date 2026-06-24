@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { apiCall } from '../../utils/api.js';
+import { apiCall } from '../../utils/api.mjs';
 import { fmt } from '../../utils/fmt.js';
 import { fmtShort } from '../../utils/numberFormat.js';
 import { repairMojibake } from '../../utils/repairMojibake.js';
@@ -12,10 +12,6 @@ import { RACE_ICONS } from '../../utils/raceIcons.js';
 import { getRacePortrait } from '../../utils/racePortraits.js';
 
 let profileApi = null;
-
-function syncModalVisibility(visible) {
-  window.dispatchEvent(new CustomEvent('narmir:kingdom-profile-modal', { detail: { visible } }));
-}
 
 function normalizeRaceIcon(race) {
   return RACE_ICONS[race] || 'Kingdom';
@@ -56,7 +52,7 @@ export default function KingdomProfileModal() {
         setLoading(true);
         setVisible(true);
         try {
-          const data = await apiCall('GET', '/api/kingdom/profile/' + encodeURIComponent(target));
+          const data = await apiCall('/api/kingdom/profile/' + encodeURIComponent(target));
           if (data && data.error) {
             setError(data.error);
             setProfile(null);
@@ -83,10 +79,6 @@ export default function KingdomProfileModal() {
       if (profileApi) profileApi = null;
     };
   }, []);
-
-  useEffect(() => {
-    syncModalVisibility(visible);
-  }, [visible]);
 
   const data = profile || {};
   const isMe = !!(profile && state?.kingdomId && String(profile.id) === String(state.kingdomId));
@@ -128,7 +120,7 @@ export default function KingdomProfileModal() {
 
   return (
     <div
-      className="flex min-h-screen items-center justify-center bg-black/80 p-5"
+      className="fixed inset-0 z-modal flex items-center justify-center bg-black/80 p-5"
       onClick={(e) => {
         if (e.target === e.currentTarget) closeKingdomProfile();
       }}

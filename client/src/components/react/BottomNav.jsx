@@ -1,19 +1,22 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useActivePanel } from '../../hooks/useActivePanel';
 import { useGameState } from '../../hooks/useGameState';
 import { logout } from './AuthModal.jsx';
 import { switchTab } from '../../utils/switchTab.js';
+import { useNavLayout } from '../../hooks/useNavLayout.js';
+import { AppEvent } from '../../utils/appEvents.js';
+import { useAppEvent } from '../../hooks/useAppEvent.js';
 
 const CORE_TABS = [
   { id: 'status', label: 'Status', icon: '🏰', color: 'text-sky-300' },
   { id: 'economy', label: 'Economy', icon: '💰', color: 'text-amber-300' },
   { id: 'warfare', label: 'War', icon: '⚔️', color: 'text-red-300' },
-  { id: 'news', label: 'News', icon: '🗞️', color: 'text-amber-200', badgeId: 'bnav-news-badge' },
-  { id: 'globalchat', label: 'Chat', icon: '💬', color: 'text-fuchsia-300', badgeId: 'chat-badge', domId: 'bnav-chat-item' },
+  { id: 'news', label: 'News', icon: '🗞️', color: 'text-amber-200', badgeKey: 'news' },
+  { id: 'globalchat', label: 'Chat', icon: '💬', color: 'text-fuchsia-300', badgeKey: 'chat' },
 ];
 
 const DRAWER_TABS = [
-  { id: 'messages', label: 'Messages', icon: '✉️', color: 'text-amber-200', badgeId: 'bnav-msg-badge' },
+  { id: 'messages', label: 'Messages', icon: '✉️', color: 'text-amber-200', badgeKey: 'messages' },
   { id: 'happiness', label: 'Happiness', icon: '😊', color: 'text-amber-300' },
   { id: 'studies', label: 'Studies', icon: '🏛️', color: 'text-red-300' },
   { id: 'build', label: 'Build', icon: '🛠️', color: 'text-orange-300' },
@@ -36,12 +39,10 @@ const DRAWER_TABS = [
   { id: 'options', label: 'Settings', icon: '⚙️', color: 'text-slate-300' },
 ];
 
-function NavChip({ id, label, icon, color, active, onClick, badgeId, domId }) {
+function NavChip({ label, icon, color, active, onClick, showBadge }) {
   return (
     <button
       type="button"
-      id={domId}
-      data-tab={id}
       onClick={onClick}
       aria-pressed={active}
       className={[
@@ -55,17 +56,21 @@ function NavChip({ id, label, icon, color, active, onClick, badgeId, domId }) {
       <span className={`text-lg leading-none ${color || 'text-slate-200'}`}>{icon}</span>
       <span className="flex items-center gap-1 whitespace-nowrap">
         <span>{label}</span>
-        {badgeId ? <span id={badgeId} className="hidden min-w-4 rounded-full bg-red-500 px-1.5 text-[10px] leading-4 text-white" /> : null}
+        {showBadge ? (
+          <span
+            aria-hidden="true"
+            className="min-w-4 rounded-full bg-red-500 px-1.5 text-[10px] leading-4 text-white"
+          />
+        ) : null}
       </span>
     </button>
   );
 }
 
-function DrawerChip({ id, label, icon, color, active, onClick, badgeId }) {
+function DrawerChip({ label, icon, color, active, onClick, showBadge }) {
   return (
     <button
       type="button"
-      data-tab={id}
       onClick={onClick}
       aria-pressed={active}
       className={[
@@ -79,7 +84,12 @@ function DrawerChip({ id, label, icon, color, active, onClick, badgeId }) {
       <span className={`text-xl leading-none ${color || 'text-slate-200'}`}>{icon}</span>
       <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
         <span className="truncate text-sm font-semibold">{label}</span>
-        {badgeId ? <span id={badgeId} className="hidden min-w-4 rounded-full bg-red-500 px-1.5 text-[10px] leading-4 text-white" /> : null}
+        {showBadge ? (
+          <span
+            aria-hidden="true"
+            className="min-w-4 rounded-full bg-red-500 px-1.5 text-[10px] leading-4 text-white"
+          />
+        ) : null}
       </span>
     </button>
   );
@@ -88,35 +98,73 @@ function DrawerChip({ id, label, icon, color, active, onClick, badgeId }) {
 const BottomNav = () => {
   const { state } = useGameState();
   const { activePanel } = useActivePanel();
+  const { layout } = useNavLayout();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [badges, setBadges] = useState({ chat: false, news: false, messages: false });
   const isAdmin = !!state?.isAdmin;
+  const showBottomNav = layout === 'bottom' || layout === 'responsive';
 
   const drawerActive = useMemo(() => (
     drawerOpen || DRAWER_TABS.some((tab) => tab.id === activePanel)
   ), [drawerOpen, activePanel]);
+
+  const showBadgeFor = useCallback((badgeKey) => {
+    if (!badgeKey) return false;
+    return !!badges[badgeKey];
+  }, [badges]);
+
+  useAppEvent(AppEvent.CHAT_BADGE_ALERT, useCallback(() => {
+    setBadges((prev) => ({ ...prev, chat: true }));
+  }, []));
+
+  useAppEvent(AppEvent.CLEAR_NEWS_BADGES, useCallback(() => {
+    setBadges((prev) => ({ ...prev, news: false }));
+  }, []));
+
+  useAppEvent(AppEvent.NEWS_ITEMS, useCallback(() => {
+    setBadges((prev) => ({ ...prev, news: true }));
+  }, []));
+
+  useAppEvent(AppEvent.NEWS_REFRESH, useCallback(() => {
+    setBadges((prev) => ({ ...prev, news: true }));
+  }, []));
+
+  useEffect(() => {
+    if (activePanel === 'globalchat') {
+      setBadges((prev) => (prev.chat ? { ...prev, chat: false } : prev));
+    }
+    if (activePanel === 'news') {
+      setBadges((prev) => (prev.news ? { ...prev, news: false } : prev));
+    }
+    if (activePanel === 'messages') {
+      setBadges((prev) => (prev.messages ? { ...prev, messages: false } : prev));
+    }
+  }, [activePanel]);
 
   const handleSwitchTab = (id) => {
     setDrawerOpen(false);
     switchTab(id);
   };
 
+  if (!showBottomNav) return null;
+
   return (
     <>
       <nav
-        className="bottom-nav fixed inset-x-0 bottom-0 z-[3000] grid grid-cols-6 gap-2 border-t border-ember-900/40 bg-void-950/95 px-2 py-2 pb-[env(safe-area-inset-bottom)] shadow-panel backdrop-blur-xl"
-        id="bottom-nav"
+        className={[
+          'fixed inset-x-0 bottom-0 z-[3000] grid grid-cols-6 gap-2 border-t border-ember-900/40 bg-void-950/95 px-2 py-2 pb-[env(safe-area-inset-bottom)] shadow-panel backdrop-blur-xl',
+          layout === 'responsive' ? 'lg:hidden' : '',
+        ].join(' ')}
       >
         {CORE_TABS.map((tab) => (
           <NavChip
             key={tab.id}
-            id={tab.id}
-            domId={tab.domId}
             label={tab.label}
             icon={tab.icon}
             color={tab.color}
             active={activePanel === tab.id}
             onClick={() => handleSwitchTab(tab.id)}
-            badgeId={tab.badgeId}
+            showBadge={showBadgeFor(tab.badgeKey)}
           />
         ))}
 
@@ -171,13 +219,12 @@ const BottomNav = () => {
             {DRAWER_TABS.map((tab) => (
               <DrawerChip
                 key={tab.id}
-                id={tab.id}
                 label={tab.label}
                 icon={tab.icon}
                 color={tab.color}
                 active={activePanel === tab.id}
                 onClick={() => handleSwitchTab(tab.id)}
-                badgeId={tab.badgeId}
+                showBadge={showBadgeFor(tab.badgeKey)}
               />
             ))}
           </div>

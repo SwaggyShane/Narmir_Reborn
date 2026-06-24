@@ -1,17 +1,22 @@
 import clsx from 'clsx';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiCall } from '../../utils/api';
 import { setWorldMapData } from '../../utils/worldMapData.js';
 import { renderWorldMap } from './WorldmapRenderer.jsx';
-import { renderRegionLegend } from './WorldmapLegend.jsx';
 import { fmtShort } from '../../utils/numberFormat.js';
 import { repairMojibake } from '../../utils/repairMojibake.js';
 import { RACE_ICONS } from '../../utils/raceIcons.js';
+import { REGION_META, REGION_BONUSES } from '../../utils/raceData.js';
 import { openKingdomProfile } from './KingdomProfileModal.jsx';
 import { targetFromRankings } from '../../utils/rankingsTarget.js';
 import { toast } from '../../utils/toast.js';
+import { showMapKingdomCard } from './MapKingdomCard.jsx';
+import { AppEvent } from '../../utils/appEvents.js';
+import { useAppEvent } from '../../hooks/useAppEvent.js';
 
-export async function loadWorldMap({ setLoading, setError, setMapSvg } = {}) {
+const MAP_REGIONS = Object.keys(REGION_META);
+
+export async function loadWorldMap({ setLoading, setError, setKingdoms, setTradeRoutes } = {}) {
   if (typeof setLoading === 'function') setLoading(true);
   if (typeof setError === 'function') setError('');
   try {
@@ -19,10 +24,9 @@ export async function loadWorldMap({ setLoading, setError, setMapSvg } = {}) {
     if (data?.error) throw new Error(data.error);
 
     const kingdoms = data.kingdoms || (Array.isArray(data) ? data : []);
-    setWorldMapData(kingdoms);
-    const svg = renderWorldMap(kingdoms, data.tradeRoutes || []);
-    if (typeof setMapSvg === 'function') setMapSvg(svg || '');
-    renderRegionLegend();
+    const tradeRoutes = data.tradeRoutes || [];
+    if (typeof setKingdoms === 'function') setKingdoms(kingdoms);
+    if (typeof setTradeRoutes === 'function') setTradeRoutes(tradeRoutes);
   } catch (err) {
     console.error('World map fail:', err);
     if (typeof setError === 'function') setError(err.message || 'Failed to load world map');
@@ -53,35 +57,96 @@ async function establishTradeRoute(targetId, onSuccess) {
   }
 }
 
+function RegionLegend({ kingdoms, highlightedRace, onHighlight }) {
+  return (
+    <div className="flex flex-col">
+      {MAP_REGIONS.map((race) => {
+        const meta = REGION_META[race] || {};
+        const icon = RACE_ICONS[race] || '?';
+        const count = kingdoms.filter((k) => k.race === race).length;
+        const bonus = REGION_BONUSES[race] || '';
+        const active = highlightedRace === race;
+
+        return (
+          <button
+            key={race}
+            type="button"
+            onClick={() => onHighlight(active ? null : race)}
+            className={clsx(
+              'flex w-full items-center gap-2 border-b border-[var(--border)] px-0 py-1.5 text-left transition',
+              active ? 'opacity-100' : 'opacity-90 hover:opacity-100',
+            )}
+          >
+            <span
+              className="inline-block h-3 w-3 shrink-0 rounded-sm border-[1.5px]"
+              style={{ background: meta.color, borderColor: meta.stroke }}
+            />
+            <span className="text-sm">{icon}</span>
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-semibold text-[var(--text)]">{meta.name}</div>
+              <div className="text-[10px] text-[var(--text3)]">
+                {bonus} | {count} kingdoms
+              </div>
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 const WorldmapPanel = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [mapSvg, setMapSvg] = useState('');
+  const [kingdoms, setKingdoms] = useState([]);
+  const [tradeRoutes, setTradeRoutes] = useState([]);
+  const [highlightedRace, setHighlightedRace] = useState(null);
   const [mapCard, setMapCard] = useState(null);
 
-  const refreshWorldMap = useCallback(() => loadWorldMap({ setLoading, setError, setMapSvg }), []);
+  const mapSvg = useMemo(() => {
+    if (!kingdoms.length) return '';
+    return renderWorldMap(kingdoms, tradeRoutes, highlightedRace);
+  }, [kingdoms, tradeRoutes, highlightedRace]);
+
+  const refreshWorldMap = useCallback(
+    () => loadWorldMap({ setLoading, setError, setKingdoms, setTradeRoutes }),
+    [],
+  );
 
   useEffect(() => {
     refreshWorldMap();
   }, [refreshWorldMap]);
 
   useEffect(() => {
-    const handler = (event) => {
-      setMapCard(event.detail);
-    };
-    window.addEventListener('narmir:map-kingdom-card', handler);
-    return () => window.removeEventListener('narmir:map-kingdom-card', handler);
+    if (kingdoms.length) {
+      setWorldMapData(kingdoms);
+    }
+  }, [kingdoms]);
+
+  const onWorldMapRefresh = useCallback(() => {
+    refreshWorldMap().catch(() => {});
+  }, [refreshWorldMap]);
+
+  useAppEvent(AppEvent.WORLDMAP_REFRESH, onWorldMapRefresh);
+  useAppEvent(AppEvent.MAP_KINGDOM_CARD, setMapCard);
+
+  const handleMapClick = useCallback((event) => {
+    const dot = event.target.closest?.('.kd-dot');
+    const kingdomId = dot?.getAttribute('data-kingdom-id');
+    if (kingdomId) {
+      showMapKingdomCard(kingdomId);
+    }
   }, []);
 
   return (
-    <div id="worldmap" className={clsx('panel min-h-0 w-full overflow-y-auto px-4 pb-5', 'hidden')}>
+    <div id="worldmap" className="panel">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-4">
         <div className="card flex items-center justify-between gap-3">
           <div>
             <div className="card-title !mb-1">🗺️ World of Narmir</div>
-          <div className="text-xs text-[var(--text3)]">
-            Six ancient regions, each shaped by the race that claims it.
-          </div>
+            <div className="text-xs text-[var(--text3)]">
+              Six ancient regions, each shaped by the race that claims it.
+            </div>
           </div>
           <button className="base-btn px-3 py-1 text-[11px]" onClick={refreshWorldMap}>
             ↻ Refresh
@@ -103,14 +168,23 @@ const WorldmapPanel = () => {
               </div>
             ) : null}
             {!loading && !error && mapSvg && (
-              <div className="w-full overflow-hidden" dangerouslySetInnerHTML={{ __html: mapSvg }} />
+              <div
+                id="world-map-container"
+                className="w-full overflow-hidden"
+                onClick={handleMapClick}
+                dangerouslySetInnerHTML={{ __html: mapSvg }}
+              />
             )}
           </div>
 
           <div className="flex flex-col gap-4">
             <div className="card" id="region-legend">
               <div className="card-title !mb-3">Regions</div>
-              <div id="region-legend-list" />
+              <RegionLegend
+                kingdoms={kingdoms}
+                highlightedRace={highlightedRace}
+                onHighlight={setHighlightedRace}
+              />
             </div>
             {mapCard && (
               <div className="card">
@@ -122,7 +196,7 @@ const WorldmapPanel = () => {
                   <span style={{ color: mapCard.meta.stroke || '#fff' }}>
                     {mapCard.meta.name || mapCard.kingdom.region || '—'}
                   </span>{' '}
-                  · Level {mapCard.kingdom.level || 1} · Turn {mapCard.kingdom.turn || 0}
+                  | Level {mapCard.kingdom.level || 1} | Turn {mapCard.kingdom.turn || 0}
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-[12px] mb-3">
                   <div className="bg-[var(--bg3)] rounded text-center p-2">

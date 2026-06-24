@@ -197,7 +197,7 @@ const StudiesPanel = () => {
   }, [studiesData?.spellbook_spells]);
 
   return (
-    <div id="studies" className={clsx('panel', 'hidden')}>
+    <div id="studies" className="panel">
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
         <div className="card-title">🏛️ Studies</div>
         <button className="base-btn" onClick={loadStudies} disabled={isRefreshing} style={{ fontSize: '11px', opacity: isRefreshing ? 0.6 : 0.7, padding: '4px 8px' }}>

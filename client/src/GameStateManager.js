@@ -100,8 +100,3 @@ class GameStateManager {
 }
 
 export const gameStateManager = new GameStateManager();
-
-// Make globally accessible for vanilla JS code
-if (typeof window !== 'undefined') {
-  window.gameStateManager = gameStateManager;
-}

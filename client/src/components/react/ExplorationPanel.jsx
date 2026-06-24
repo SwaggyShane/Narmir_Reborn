@@ -5,6 +5,8 @@ import { apiCall } from '../../utils/api';
 import { useGameMutationEvents, useGameState } from '../../hooks/useGameState';
 import { repairMojibake } from '../../utils/repairMojibake';
 import { applyGameMutation } from '../../utils/gameMutations.js';
+import { AppEvent } from '../../utils/appEvents.js';
+import { useAppEvent } from '../../hooks/useAppEvent.js';
 
 const REFRESH_INTERVAL_MS = 2 * 60 * 1000;
 const EXPEDITION_TURNS = {
@@ -157,6 +159,12 @@ const ExplorationPanel = () => {
     setInstantEntries((prev) => [entry, ...prev].slice(0, 50));
   }, []);
 
+  useAppEvent(AppEvent.EXPEDITION_LOG_ENTRY, (detail) => {
+    const { icon, title, subtitle } = detail || {};
+    if (!title) return;
+    logInstantEntry(icon, title, subtitle);
+  });
+
   const handleSearch = useCallback(async (type) => {
     const r = Number(searchRangers || 0);
     if (r <= 0) {
@@ -190,7 +198,7 @@ const ExplorationPanel = () => {
       logInstantEntry(
         icons[type] || '🧭',
         repairText(result.message || 'Search complete'),
-        `Sent ${formatNum(r)} rangers · 1 turn used`,
+        `Sent ${formatNum(r)} rangers | 1 turn used`,
       );
       await refreshAll();
     } catch (err) {
@@ -251,7 +259,7 @@ const ExplorationPanel = () => {
       logInstantEntry(
         TYPE_META[type].icon,
         repairText(result.message || `${TYPE_META[type].label} launched!`),
-        `Sent ${formatNum(rangers)} rangers${fighters > 0 ? ` · ${formatNum(fighters)} fighters` : ''} · ${formatNum(foodNeeded)} food`,
+        `Sent ${formatNum(rangers)} rangers${fighters > 0 ? ` | ${formatNum(fighters)} fighters` : ''} | ${formatNum(foodNeeded)} food`,
       );
       await refreshAll();
     } catch (err) {
@@ -290,8 +298,8 @@ const ExplorationPanel = () => {
       ? [
           `${rewards.length > 0 ? `${rewards.length} reward${rewards.length === 1 ? '' : 's'}` : 'Returned'}`,
           troops,
-        ].join(' · ')
-      : `${troops}${entry.food_taken > 0 ? ` · 🍖 ${formatNum(entry.food_taken)} food taken` : ''}`;
+        ].join(' | ')
+      : `${troops}${entry.food_taken > 0 ? ` | 🍖 ${formatNum(entry.food_taken)} food taken` : ''}`;
 
     return (
       <div
@@ -320,7 +328,7 @@ const ExplorationPanel = () => {
     : 'No expeditions are currently underway.';
 
   return (
-    <div id="exploration" className="panel min-h-0 w-full overflow-y-auto px-4 pb-5 hidden">
+    <div id="exploration" className="panel">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-4">
         <div id="exp-counter-card" className="card">
           <div className="flex items-center justify-between gap-3">
