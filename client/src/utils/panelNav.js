@@ -1,8 +1,5 @@
 import { gameStateManager } from '../GameStateManager.js';
 import { setActivePanelGlobal } from '../hooks/useActivePanel.js';
-import { repairMojibake } from './repairMojibake.js';
-import { fmt } from './fmt.js';
-import { xpForLevel } from './xp.js';
 import { setWarfareTab as applyWarfareTab } from './warfareTabs.js';
 
 function getCsrfToken() {
@@ -43,74 +40,6 @@ function normalizePanelName(tabName) {
 
 export const gameState = gameStateManager.getMutableState();
 
-function getTimeOfDay() {
-  const h = new Date().getUTCHours();
-  const isNight = h >= 1 && h < 13;
-  const estHour = (h - 5 + 24) % 24;
-  const ampm = estHour >= 12 ? 'PM' : 'AM';
-  const display12 = estHour > 12 ? estHour - 12 : (estHour === 0 ? 12 : estHour);
-  const timeStr = `${String(display12).padStart(2, ' ')}:00 ${ampm} EST`;
-  const isDaylight = h < 1 || h >= 13;
-  return { isNight, isDaylight, timeStr, hour: h };
-}
-
-export function syncUI() {
-  const sourceState = gameStateManager.getState();
-  const kingdomName = repairMojibake(sourceState.kingdomName || sourceState.name || 'My Kingdom');
-  const kingdomOwner = repairMojibake(sourceState.username || sourceState.owner_name || sourceState.owner || kingdomName);
-  const turn = sourceState.turn ?? 0;
-  const score = sourceState.score ?? 0;
-  const scorePerTurn = sourceState.score_per_turn ?? sourceState.scorePerTurn ?? sourceState.score_income ?? 0;
-  const rank = sourceState.rank ?? sourceState.kingdom_rank ?? sourceState.position;
-
-  const setText = (id, value) => {
-    const el = document.getElementById(id);
-    if (el && value !== undefined && value !== null) {
-      el.textContent = String(value);
-    }
-  };
-
-  setText('kingdom-name', kingdomName);
-  setText('kingdom-owner-line', kingdomOwner);
-  setText('turn-num', turn);
-  setText('kingdom-score-disp', fmt(score));
-  setText('kingdom-score-per-turn', `(${scorePerTurn >= 0 ? '+' : ''}${fmt(scorePerTurn)}/turn)`);
-  setText('top-rank', rank !== undefined && rank !== null ? `#${rank}` : '-');
-
-  const level = sourceState.level ?? 1;
-  const xp = sourceState.xp ?? 0;
-  const prestige = sourceState.prestige_level ?? 0;
-  const thisLvl = xpForLevel(level, prestige);
-  const nextLvl = xpForLevel(level + 1, prestige);
-  const xpInLevel = Math.max(0, Math.min(xp - thisLvl, nextLvl - thisLvl));
-  const xpNeeded = Math.max(0, nextLvl - thisLvl);
-  const xpPct = xpNeeded > 0 ? Math.min(100, Math.floor((xpInLevel / xpNeeded) * 100)) : 100;
-  setText('kh-level', level);
-  const xpBar = document.getElementById('kh-xp-bar');
-  if (xpBar) xpBar.style.width = `${xpPct}%`;
-  const xpLabel = document.getElementById('kh-xp-label');
-  if (xpLabel) xpLabel.textContent = xpNeeded > 0 ? `${xpInLevel.toLocaleString()} / ${xpNeeded.toLocaleString()} XP` : 'Max Level';
-
-  const timeInfo = getTimeOfDay();
-  const timeEl = document.getElementById('time-of-day-badge');
-  if (timeEl) {
-    timeEl.textContent = timeInfo.timeStr;
-    timeEl.style.color = timeInfo.isDaylight ? 'var(--gold)' : 'var(--green)';
-  }
-  if (sourceState.race === 'vampire') {
-    const sunsetBadge = document.getElementById('vampire-sunset-badge');
-    if (sunsetBadge) {
-      if (timeInfo.isDaylight) {
-        const hoursToSunset = timeInfo.hour >= 13 ? 25 - timeInfo.hour : 1 - timeInfo.hour;
-        sunsetBadge.textContent = `Sunset in ${hoursToSunset}h`;
-        sunsetBadge.style.display = 'inline-flex';
-      } else {
-        sunsetBadge.style.display = 'none';
-      }
-    }
-  }
-}
-
 export function switchTab(tabName) {
   const WARFARE_SUBTAB_ALIASES = { attack: 'attack', spells: 'wspells', covert: 'wcovert' };
   const rawTab = String(tabName || '').trim().replace(/^#/, '') || 'status';
@@ -126,8 +55,6 @@ export function switchTab(tabName) {
   if (window.location.hash !== `#${rawTab}`) {
     window.location.hash = rawTab;
   }
-
-  syncUI();
 }
 
 export function initGameStateManager() {
@@ -138,7 +65,6 @@ export function initGameStateManager() {
       population: sourceState.population ?? sourceState.pop ?? 0,
     }, { reason: 'init' });
   }
-  syncUI();
 }
 
 function applyServerUpdatesToGame(updates, context = {}) {
@@ -152,12 +78,6 @@ function applyServerUpdatesToGame(updates, context = {}) {
     reason: context.reason || 'server-updates',
     payload: updates,
   });
-
-  try {
-    syncUI();
-  } catch (error) {
-    console.error('[UI] Error during syncUI execution:', error);
-  }
 }
 
 export function applyGameMutation(resultOrUpdates, context = {}) {
@@ -175,10 +95,3 @@ export function applyGameMutation(resultOrUpdates, context = {}) {
   }
   return resultOrUpdates;
 }
-
-// Keep vanilla DOM elements in kd-top in sync with game state changes.
-// applyGameMutation already calls syncUI(), but this catches direct setState()
-// calls (e.g. from the initial loadKingdom on page load) that bypass it.
-gameStateManager.subscribe(() => {
-  try { syncUI(); } catch { /* ignore */ }
-});

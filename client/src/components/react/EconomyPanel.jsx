@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
 import { useGameState, useGameMutationEvents } from '../../hooks/useGameState';
 import { applyGameMutation } from '../../utils/gameMutations.js';
-import { syncUI } from '../../utils/shellBridge.js';
+
 import { gameStateManager } from '../../GameStateManager.js';
 import { fmt } from '../../utils/fmt.js';
 import { fmtShort } from '../../utils/numberFormat.js';
@@ -125,7 +125,6 @@ export async function buyUpgrade(category, key) {
     applyGameMutation(result, { reason: 'economy-upgrade' });
   }
 
-  syncUI();
   toast('Upgrade purchased! Refresh the panel to see the next upgrade.', 'success');
 }
 
@@ -237,7 +236,6 @@ const EconomyPanel = () => {
     });
     if (result?.error) return toast(result.error, 'error');
     applyGameMutation(result, { reason: 'send-trade-offer' });
-    syncUI();
     toast('Trade offer sent!', 'success');
     setTradeOfferQty('');
     setTradeRequestQty('');
@@ -249,7 +247,6 @@ const EconomyPanel = () => {
     const result = await apiCall('/api/kingdom/economy/trade/accept', { method: 'POST', body: { offerId } });
     if (result.error) return toast(result.error, 'error');
     applyGameMutation(result, { reason: 'accept-trade' });
-    syncUI();
     toast('Trade accepted!', 'success');
     await loadTradeOffers();
   }, [loadTradeOffers]);
@@ -318,7 +315,6 @@ const EconomyPanel = () => {
       });
       if (result.error) { toast(result.error, 'error'); return; }
       applyGameMutation(result, { reason: 'establish-trade-route' });
-      syncUI();
       toast(result.message || 'Trade route established', 'success');
       setTradeRouteTargetId('');
       await loadTradeRoutes();

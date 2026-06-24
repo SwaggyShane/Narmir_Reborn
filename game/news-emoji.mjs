@@ -19,13 +19,20 @@ const NEWS_EMOJI_RULES = Object.freeze([
   { pattern: /^Resource production: .*stone\./i, emoji: "🪨" },
   { pattern: /^Resource production: .*iron\./i, emoji: "🔗" },
   { pattern: /^(\d[\d,]*) researchers studying/i, emoji: "🔬" },
-  { pattern: /^Mana:/i, emoji: "🔮" },
+  { pattern: /^Mana:/i, emoji: "✨" },
+  { pattern: /mana restored/i, emoji: "✨" },
+  { pattern: /Mana Infusion:/i, emoji: "✨" },
   { pattern: /^Population grew\b/i, emoji: "👥" },
   { pattern: /^Population declined\b/i, emoji: "⚠️" },
   { pattern: /^Happiness:/i, emoji: "😊" },
   { pattern: /^Turn \d+: .*gold earned/i, emoji: "🪙" },
+  { pattern: /^Kingdom reached Level \d+/i, emoji: "🏆" },
+  { pattern: /^Level \d+ milestone/i, emoji: "🏆" },
   { pattern: /^Troop upkeep:/i, emoji: "⚙️" },
-  { pattern: /^End of Turn \d+\b/i, emoji: "🏦" },
+  { pattern: /^Bank deposits matured!/i, emoji: "🏦" },
+  { pattern: /^End of Turn \d+.*Net Gold/i, emoji: "💰" },
+  { pattern: /^End of Turn \d+/i, emoji: "💰" },
+  { pattern: /^Net Gold:/i, emoji: "💰" },
   { pattern: /^Geared Self-Construction:/i, emoji: "⚙️" },
   { pattern: /^Actively constructing:/i, emoji: "🏗️" },
   { pattern: /^Mage research advanced:/i, emoji: "✨" },
@@ -102,27 +109,126 @@ const NEWS_EMOJI_RULES = Object.freeze([
   { pattern: /^Diplomat Influence:/i, emoji: "🤝" },
 ]);
 
+function stripLeadingEmoji(text) {
+  let result = String(text);
+  for (let i = 0; i < 3; i += 1) {
+    const next = result.replace(
+      /^(?:\p{Extended_Pictographic}(?:\uFE0F)?(?:\u200D\p{Extended_Pictographic}(?:\uFE0F)?)*)\s*/u,
+      "",
+    );
+    if (next === result) break;
+    result = next;
+  }
+  return result;
+}
+
+function stripLeadingMojibakeEmoji(text) {
+  return String(text).replace(
+    /^(?:[\u00F0\u00E2\u00EF][\u0080-\u00FF]{1,6})\s*/u,
+    "",
+  );
+}
+
 function stripLeadingNoise(text) {
   return text.replace(/^[<>=\-\u2022\u00B7/\\|]+\s*/, "");
 }
 
-function decorateNewsMessage(value, repairFn) {
-  if (value === null || value === undefined) return value;
-  let text = String(value);
+function stripReplacementChars(text) {
+  return String(text).replace(/[\uFFFD\uFFFE\uFFFF]+/g, "");
+}
+
+function stripLeadingCorruption(text) {
+  let result = String(text);
+  for (let i = 0; i < 8; i += 1) {
+    const next = result
+      .replace(/^\?+\s*/g, "")
+      .replace(/^[\u0080-\u00BF]{1,4}\s*/g, "")
+      .replace(/^[\u00C0-\u00FF]{1,4}\s*/g, "");
+    if (next === result) break;
+    result = next;
+  }
+  return result;
+}
+
+function scrubNewsBody(text) {
+  return String(text)
+    .replace(/^\?+\s*/g, "")
+    .replace(/\s+\?\s+(?=Net Gold)/gi, " — ")
+    .replace(/[\uFFFD\uFFFE\uFFFF]+/g, "")
+    .trim();
+}
+
+const DEFAULT_NEWS_EMOJI = "📋";
+
+function normalizeNewsText(value, repairFn) {
+  let text = String(value ?? "");
   if (typeof repairFn === "function") {
     text = repairFn(text);
   }
-  if (!text) return text;
-  if (/^\p{Extended_Pictographic}/u.test(text)) return text;
+  if (!text) return "";
 
-  const cleaned = stripLeadingNoise(text);
+  for (let pass = 0; pass < 8; pass += 1) {
+    const prev = text;
+    text = stripLeadingEmoji(text);
+    text = stripLeadingMojibakeEmoji(text);
+    text = stripLeadingCorruption(text);
+    text = stripReplacementChars(text);
+    text = stripLeadingNoise(text);
+    text = text.trimStart();
+    if (typeof repairFn === "function") {
+      text = repairFn(text);
+    }
+    if (text === prev) break;
+  }
+
+  return scrubNewsBody(text);
+}
+
+function matchNewsRule(text) {
   for (const rule of NEWS_EMOJI_RULES) {
-    if (rule.pattern.test(cleaned)) {
-      return rule.emoji ? `${rule.emoji} ${cleaned}` : cleaned;
+    if (rule.pattern.test(text)) {
+      return { emoji: rule.emoji, text };
     }
   }
 
-  return `📋 ${cleaned}`;
+  let probe = text;
+  for (let i = 0; i < 32 && probe.length > 3; i += 1) {
+    probe = probe.slice(1).trimStart();
+    for (const rule of NEWS_EMOJI_RULES) {
+      if (rule.pattern.test(probe)) {
+        return { emoji: rule.emoji, text: probe };
+      }
+    }
+  }
+
+  return null;
+}
+
+function formatNewsMessage(value, repairFn) {
+  if (value === null || value === undefined) {
+    return { emoji: DEFAULT_NEWS_EMOJI, text: "" };
+  }
+
+  const cleaned = normalizeNewsText(value, repairFn);
+  if (!cleaned) {
+    return { emoji: DEFAULT_NEWS_EMOJI, text: "" };
+  }
+
+  const matched = matchNewsRule(cleaned);
+  if (matched) {
+    return {
+      emoji: matched.emoji || DEFAULT_NEWS_EMOJI,
+      text: scrubNewsBody(matched.text),
+    };
+  }
+
+  return { emoji: DEFAULT_NEWS_EMOJI, text: cleaned };
+}
+
+function decorateNewsMessage(value, repairFn) {
+  const { emoji, text } = formatNewsMessage(value, repairFn);
+  if (!text) return text;
+  return `${emoji} ${text}`;
 }
 
 function getNewsMeta(type) {
@@ -134,6 +240,7 @@ export {
   NEWS_META,
   NEWS_EMOJI_RULES,
   decorateNewsMessage,
+  formatNewsMessage,
   getNewsMeta,
 };
 
@@ -141,5 +248,6 @@ export default {
   NEWS_META,
   NEWS_EMOJI_RULES,
   decorateNewsMessage,
+  formatNewsMessage,
   getNewsMeta,
 };

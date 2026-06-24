@@ -3,6 +3,7 @@ import { useActivePanel } from '../../hooks/useActivePanel';
 import { useGameState } from '../../hooks/useGameState';
 import { logout } from './AuthModal.jsx';
 import { switchTab } from '../../utils/switchTab.js';
+import { useNavLayout } from '../../hooks/useNavLayout.js';
 
 const CORE_TABS = [
   { id: 'status', label: 'Status', icon: '🏰', color: 'text-sky-300' },
@@ -85,8 +86,10 @@ function DrawerChip({ label, icon, color, active, onClick, badgeId }) {
 const BottomNav = () => {
   const { state } = useGameState();
   const { activePanel } = useActivePanel();
+  const { layout } = useNavLayout();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const isAdmin = !!state?.isAdmin;
+  const showBottomNav = layout === 'bottom' || layout === 'responsive';
 
   const drawerActive = useMemo(() => (
     drawerOpen || DRAWER_TABS.some((tab) => tab.id === activePanel)
@@ -97,10 +100,15 @@ const BottomNav = () => {
     switchTab(id);
   };
 
+  if (!showBottomNav) return null;
+
   return (
     <>
       <nav
-        className="fixed inset-x-0 bottom-0 z-[3000] grid grid-cols-6 gap-2 border-t border-ember-900/40 bg-void-950/95 px-2 py-2 pb-[env(safe-area-inset-bottom)] shadow-panel backdrop-blur-xl lg:hidden"
+        className={[
+          'fixed inset-x-0 bottom-0 z-[3000] grid grid-cols-6 gap-2 border-t border-ember-900/40 bg-void-950/95 px-2 py-2 pb-[env(safe-area-inset-bottom)] shadow-panel backdrop-blur-xl',
+          layout === 'responsive' ? 'lg:hidden' : '',
+        ].join(' ')}
       >
         {CORE_TABS.map((tab) => (
           <NavChip

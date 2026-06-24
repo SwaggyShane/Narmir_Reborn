@@ -37,8 +37,7 @@ export function initSocketHandlers(socket) {
   socket.on('event:active_counts', () => window.dispatchEvent(new CustomEvent('narmir:active-counts-refresh')));
 
   socket.on('event:chat_clear', () => {
-    const list = document.getElementById('global-chat-messages');
-    if (list) list.innerHTML = '';
+    window.dispatchEvent(new CustomEvent('narmir:chat-clear'));
   });
 
   socket.on('event:global_message', (data) => {

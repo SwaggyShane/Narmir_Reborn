@@ -90,7 +90,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - `client/index.html` is boot-only (~70 lines): mount point, error logging, empty modal containers.
 - `main.jsx` is minimal (~26 lines): `escapeHtml` polyfill + `GameShell` mount. `main.js` is deleted.
 - Shell layout and panel routing are React-owned (`GameShell.jsx`, `useActivePanel`, Tailwind grid).
-- Remaining debt is concentrated: `syncUI` zombie bridge, chat/socket DOM, vanilla modal `*Shell` helpers, dead code cleanup.
+- Slice 25 dead-code purge complete; remaining debt is `WorldmapRenderer.jsx` audit and AlliancesPanel (deferred).
 
 ### Claude Lane
 - [x] TrainingPanel.jsx DOM mutations removed (PR #548)
@@ -104,18 +104,18 @@ Use that inventory as the baseline progress metric for the remaining work.
 ### Codex Next (post-Slice 21)
 - [x] Slice 19–21: shell kill + GameShell + pure Tailwind layout — ✅ COMPLETE on `GameShell_migration`
 - [x] **Slice 22a:** Mount global overlays in `GameShell` — `AuthModal`, `KingdomProfileModal`, `SchoolSelectionController`; fixed `fixed inset-0 z-modal` positioning on auth/profile backdrops
-- [ ] **Slice 22b:** Gut `syncUI()` — stop no-op DOM writes; remove `gameStateManager.subscribe(syncUI)`; drop `syncUI()` calls from Economy/Market/UpgradesList
-- [ ] **Slice 23:** Globalchat + `socket-client.js` chat rendering → React-only (socket state paths are clean; chat row DOM is not)
-- [ ] **Slice 24:** Modal migration (xp, generic, lore, attunement, toast) → React portals (pattern: `ReplayModal`, `BattleReportModal`)
-- [ ] **Slice 25:** Dead code purge (`newsShell.mjs` orphan, `renderTargets.mjs`, `applyNavLayout` body classes, ResourceStrip legacy metric ids)
-- [ ] Ongoing: keep `client/index.html` boot-only; merge `GameShell_migration` → `main` when Slice 22+ are green
+- [x] **Slice 22b:** Gut `syncUI()` — removed zombie DOM writes from `panelNav.js`, dropped `gameStateManager.subscribe(syncUI)`, removed calls from Economy/Market/UpgradesList
+- [x] **Slice 23:** Globalchat + `socket-client.js` chat rendering → React-only (`GlobalchatPanel` state, `ChatMessageRow`, slim `socket-client.js`)
+- [x] **Slice 24:** Modal migration — `ToastProvider`, `HeroXpModalController`, `LoreEntryController`, `GenericModalController`, `SpyReportModalController`; shell bridges thinned
+- [x] **Slice 25:** Dead code purge — deleted orphan shells (`newsShell`, `attunementShell`, `schoolShell`, `renderTargets`, `toastShell`, `loreShell`, `genericShell`, `xpShell`, `closeRaceLore`); replaced `applyNavLayout` body classes with `useNavLayout` hook; removed ResourceStrip legacy metric ids
+- [ ] Ongoing: keep `client/index.html` boot-only; merge `GameShell_migration` → `main` when green
 
-### Current Inventory Snapshot (updated 2026-06-24 post-Slice 21 + PR #556)
-- document.getElementById: **0 in index.html**, **~45 in client/src/**
-  - Biggest src concentrations: attunementShell.mjs 9, panelNav.js 5, socket-client.js 5, GlobalchatPanel 4, loreShell/genericShell/schoolShell 3 each; WarfarePanel **0**; EconomyPanel 1 (renderUpgrades export for DefensePanel)
+### Current Inventory Snapshot (updated 2026-06-24 post-Slice 25)
+- document.getElementById: **0 in index.html**, **~30 in client/src/**
+  - Biggest src concentrations: socket-client.js 5, panelNav.js 5, GlobalchatPanel 4; WarfarePanel **0**; EconomyPanel 1 (renderUpgrades export for DefensePanel); orphan *Shell files **deleted**
 - el(: 0 in index.html; ~18 in client/src/
-- .innerHTML =: **0 in index.html**, ~19 in client/src/ (socket-client, *Shell modals, EconomyPanel/MarketPanel)
-- .style.: **0 in index.html**, ~113 in client/src/ (socket-client 41, toastShell 25, attunementShell 15)
+- .innerHTML =: **0 in index.html**, ~10 in client/src/ (socket-client, EconomyPanel/MarketPanel)
+- .style.: **0 in index.html**, ~70 in client/src/ (socket-client 41; toastShell/attunementShell removed)
 - window.* globals (non-bootstrap): 10 AlliancesPanel deferred; main.jsx polyfill only; socket-client.js bootstrap (4); 1 GameStateManager
 
 ## Codex Lane
@@ -129,15 +129,15 @@ Use that inventory as the baseline progress metric for the remaining work.
 
 ### 2. Reduce hybrid bridge code — mostly complete; `syncUI` remains
 - [x] `main.js` deleted; `main.jsx` is mount-only (no bridge exports)
-- [ ] Remove `syncUI()` zombie DOM writes in `panelNav.js` (Slice 22)
+- [x] Remove `syncUI()` zombie DOM writes in `panelNav.js` (Slice 22b)
 - [x] `GameStateManager` is the state source; panels render from React hooks
 - [x] `event:chat_clear` handled without reintroducing shell DOM mutation
-- [ ] Convert remaining `*Shell` modal bridges to React portals (Slice 24)
+- [x] Convert remaining `*Shell` modal bridges to React portals (Slice 24)
 
 ### 3. Triage the heaviest hybrid panels — WarfarePanel done; chat remains
 - [ ] Review `WorldmapRenderer.jsx` for imperative DOM behavior
 - [x] `WarfarePanel.jsx` — 0 `getElementById` (PR #556)
-- [ ] `GlobalchatPanel.jsx` + `socket-client.js` — chat row DOM still imperative (Slice 23)
+- [x] `GlobalchatPanel.jsx` + `socket-client.js` — chat rendering React-only (Slice 23)
 - [ ] Convert one panel at a time and keep each PR narrow
 
 ### 4. Trim the last CSS dependency edges
@@ -190,11 +190,11 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] No obsolete styles found; shared primitives are all in active use
 
 ## File Order Recommendation (post-Slice 21)
-1. `client/src/utils/panelNav.js` — gut `syncUI()` (Slice 22)
-2. `client/src/socket-client.js` + `GlobalchatPanel.jsx` — chat DOM (Slice 23)
-3. `*Shell` modal helpers — React portals (Slice 24)
-4. Dead code: `newsShell.mjs`, `renderTargets.mjs`, `applyNavLayout.js` (Slice 25)
-5. `WorldmapRenderer.jsx` — audit imperative DOM
+1. ~~`client/src/utils/panelNav.js` — gut `syncUI()` (Slice 22b)~~ ✅
+2. ~~`client/src/socket-client.js` + `GlobalchatPanel.jsx` — chat DOM (Slice 23)~~ ✅
+3. ~~`*Shell` modal helpers — React portals (Slice 24)~~ ✅
+4. ~~Dead code purge (Slice 25)~~ ✅
+5. `WorldmapRenderer.jsx` — audit imperative DOM **← next**
 6. `AlliancesPanel.jsx` — deferred until backend routes exist
 
 ## Rollback Threshold

@@ -117,7 +117,7 @@ function awardXp(k, activity, amount) {
   } else if (levelled) {
     events.push({
       type: 'system',
-      message: `🌟 Kingdom reached Level ${newLevel}! (${earned.toLocaleString()} XP earned)`,
+      message: `🏆 Kingdom reached Level ${newLevel}! (${earned.toLocaleString()} XP earned)`,
     });
   }
 

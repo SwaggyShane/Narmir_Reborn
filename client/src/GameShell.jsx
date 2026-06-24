@@ -35,6 +35,11 @@ import AuthModal from './components/react/AuthModal.jsx';
 import KingdomProfileModal from './components/react/KingdomProfileModal.jsx';
 import SchoolSelectionController from './components/react/SchoolSelectionController.jsx';
 import RaceLoreController from './components/react/RaceLoreController.jsx';
+import ToastProvider from './components/react/ToastProvider.jsx';
+import HeroXpModalController from './components/react/HeroXpModalController.jsx';
+import LoreEntryController from './components/react/LoreEntryController.jsx';
+import GenericModalController from './components/react/GenericModalController.jsx';
+import SpyReportModalController from './components/react/SpyReportModalController.jsx';
 
 const GameShell = () => {
   const { activePanel } = useActivePanel();
@@ -145,6 +150,11 @@ const GameShell = () => {
       <KingdomProfileModal />
       <SchoolSelectionController />
       <RaceLoreController />
+      <ToastProvider />
+      <HeroXpModalController />
+      <LoreEntryController />
+      <GenericModalController />
+      <SpyReportModalController />
     </div>
   );
 };
