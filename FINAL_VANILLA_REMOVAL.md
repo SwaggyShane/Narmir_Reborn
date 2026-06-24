@@ -98,7 +98,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] replayWarReport.js DOM mutations removed (PR #550)
 - [x] EconomyPanel.jsx DOM mutations removed (PR #552)
 - [x] EconomyPanel ledger follow-up (PR #554): live financial ledger and trade route normalization fixes landed
-- [x] WarfarePanel.jsx DOM mutations removed (PR #556): 19 → 0; controlled `atkQty` state; `atkEstimate` useMemo; stale-closure fix in `launchAttackW`
+- [x] WarfarePanel.jsx DOM mutations removed (PR #556): 19 → 0; controlled `atkQty` state for all 9 troop inputs; `atkEstimate` useMemo (estimate panel now renders in JSX); `setAtkMax` replaces setMaxValue DOM write; stale-closure fix in `launchAttackW`; `targetKey()` from Slice 21 retained; fmtN dedup removed
 - [ ] AlliancesPanel remains deferred until backend routes exist
 
 ### Codex Next (post-Slice 21)
@@ -111,12 +111,12 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] **Slice 26:** Worldmap React migration — deleted `WorldmapLegend.jsx`; region legend + highlight in `WorldmapPanel`; SVG uses `data-kingdom-id` + click delegation (no broken `onclick` globals); `event:world_updated` → `narmir:worldmap-refresh`
 - [ ] Ongoing: keep `client/index.html` boot-only; merge `GameShell_migration` → `main` when green
 
-### Current Inventory Snapshot (updated 2026-06-24 post-Slice 25)
-- document.getElementById: **0 in index.html**, **~30 in client/src/**
-  - Biggest src concentrations: socket-client.js 5, panelNav.js 5, GlobalchatPanel 4; WarfarePanel **0**; EconomyPanel 1 (renderUpgrades export for DefensePanel); orphan *Shell files **deleted**
+### Current Inventory Snapshot (updated 2026-06-24 post-Slice 26)
+- document.getElementById: **0 in index.html**, **~28 in client/src/**
+  - Biggest src concentrations: socket-client.js 5, panelNav.js 5, GlobalchatPanel 4; WarfarePanel **0**; Worldmap **0** (legend DOM deleted); EconomyPanel 1 (renderUpgrades export for DefensePanel); orphan *Shell files **deleted**
 - el(: 0 in index.html; ~18 in client/src/
 - .innerHTML =: **0 in index.html**, ~10 in client/src/ (socket-client, EconomyPanel/MarketPanel)
-- .style.: **0 in index.html**, ~70 in client/src/ (socket-client 41; toastShell/attunementShell removed)
+- .style.: **0 in index.html**, ~70 in client/src/ (socket-client 41; toastShell/attunementShell/WorldmapLegend removed)
 - window.* globals (non-bootstrap): 10 AlliancesPanel deferred; main.jsx polyfill only; socket-client.js bootstrap (4); 1 GameStateManager
 
 ## Codex Lane
@@ -126,7 +126,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] Move panel switching into React-owned code (`useActivePanel`, `GameShell.jsx`)
 - [x] Remove remaining global shell wiring that is only there to bootstrap the old UI
 - [x] Keep `client/index.html` focused on bootstrapping, not UI ownership
-- [ ] Use the new attunement shell helper as the pattern for the next modal/helper slice (Slice 24)
+- [x] Modal portals mounted in `GameShell` (Slice 24); attunement shell deleted in Slice 25
 
 ### 2. Reduce hybrid bridge code — mostly complete; `syncUI` remains
 - [x] `main.js` deleted; `main.jsx` is mount-only (no bridge exports)
@@ -183,7 +183,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] replayWarReport.js (21 DOM mutations) — ✅ COMPLETE (PR #550): ReplayModal.jsx React portal; vanilla bridge function and replay-modal div removed from index.html
 - [x] EconomyPanel.jsx (27 → 1 DOM mutations) — ✅ COMPLETE (PR #552): converted all 27 getElementById calls to React state; removed dead exports (loadEconomy, renderCommodityMarket, renderActiveMercs); replaced innerHTML upgrade containers with UpgradesList component; bank visibility now driven by state.bld_vaults; tax rate initialized from state.tax; applyGameMutation/syncUI wired to all mutating handlers; 1 getElementById remains in exported renderUpgrades() which DefensePanel imports directly
 - [x] EconomyPanel ledger follow-up — ✅ COMPLETE (PR #554): extended /economy/overview to compute and return taxIncome, marketIncome, tradeRouteIncome, totalIncome, troopUpkeep, netIncome; uses loadTradeRoutes() helper for normalization; applies SUPPORT_CAP_RACE multipliers and fragmentBonusManager barracks discount to match processTurn exactly; financial ledger in EconomyPanel now shows real values instead of hardcoded zeros
-- [x] WarfarePanel.jsx (19 → 0 DOM mutations) — ✅ COMPLETE (PR #556): `atkQty` controlled state for all 9 troop inputs; `atkEstimate` useMemo; estimate display panel in JSX; `launchAttackW` stale-closure fix; `targetKey()` from Slice 21 retained
+- [x] WarfarePanel.jsx (19 → 0 DOM mutations) — ✅ COMPLETE (PR #556): `atkQty` controlled state for all 9 troop inputs; `atkEstimate` useMemo; estimate display panel in JSX; `setAtkMax` replaces setMaxValue DOM write; `launchAttackW` stale-closure fix; `targetKey()` from Slice 21 retained; fmtN removed (duplicate of fmt)
 
 ### 4. Clean up the remaining legacy CSS surfaces — shell CSS removed in Slice 21
 - [x] Shell layout CSS (`.game-shell`, `.resource-strip`, `.shell-footer`, etc.) removed from `tailwind.css`; layout is pure Tailwind in `GameShell.jsx`
