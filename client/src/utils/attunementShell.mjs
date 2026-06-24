@@ -203,10 +203,10 @@ export async function loadAttunementData({ documentRef = document } = {}) {
   if (errorEl) errorEl.style.display = "none";
 
   try {
-    const statusRes = await apiCall("GET", "/api/kingdom/attunements");
+    const statusRes = await apiCall("/api/kingdom/attunements");
     if (statusRes.error) throw new Error(statusRes.error);
 
-    const availRes = await apiCall("GET", "/api/kingdom/available-attunements");
+    const availRes = await apiCall("/api/kingdom/available-attunements");
     if (availRes.error) throw new Error(availRes.error);
 
     renderCurrentAttunements(statusRes.attunements || [], { documentRef });
@@ -241,9 +241,12 @@ export async function applyAttunement(fragmentName, buildingType, { documentRef 
   if (errorEl) errorEl.style.display = "none";
 
   try {
-    const res = await apiCall("POST", "/api/kingdom/attune-fragment", {
-      fragmentName,
-      buildingType,
+    const res = await apiCall("/api/kingdom/attune-fragment", {
+      method: "POST",
+      body: {
+        fragmentName,
+        buildingType,
+      },
     });
 
     if (res.error) throw new Error(res.error);
@@ -270,8 +273,9 @@ export async function removeAttunement(buildingType, { documentRef = document } 
   if (!confirmed) return;
 
   try {
-    const res = await apiCall("POST", "/api/kingdom/remove-attunement", {
-      buildingType,
+    const res = await apiCall("/api/kingdom/remove-attunement", {
+      method: "POST",
+      body: { buildingType },
     });
 
     if (res.error) throw new Error(res.error);

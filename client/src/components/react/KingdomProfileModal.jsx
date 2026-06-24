@@ -56,7 +56,7 @@ export default function KingdomProfileModal() {
         setLoading(true);
         setVisible(true);
         try {
-          const data = await apiCall('GET', '/api/kingdom/profile/' + encodeURIComponent(target));
+          const data = await apiCall('/api/kingdom/profile/' + encodeURIComponent(target));
           if (data && data.error) {
             setError(data.error);
             setProfile(null);

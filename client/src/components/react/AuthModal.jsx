@@ -27,7 +27,7 @@ function syncIdentity(me, fallbackUsername) {
 }
 
 export async function loadKingdom() {
-  const kingdom = await apiCall('GET', '/api/kingdom/me');
+  const kingdom = await apiCall('/api/kingdom/me');
   if (kingdom && !kingdom.error) {
     applyGameMutation(kingdom, { reason: 'kingdom-refresh' });
   }
@@ -40,7 +40,7 @@ async function finishAuthSession(fallbackUsername) {
   }
 
   try {
-    const me = await apiCall('GET', '/api/auth/me');
+    const me = await apiCall('/api/auth/me');
     if (me && !me.error) {
       syncIdentity(me, fallbackUsername);
     } else {
@@ -58,7 +58,7 @@ async function finishAuthSession(fallbackUsername) {
 }
 
 async function submitAuthRequest(endpoint, payload) {
-  const res = await apiCall('POST', endpoint, payload);
+  const res = await apiCall(endpoint, { method: 'POST', body: payload });
   if (res && res.error) throw new Error(res.error);
   return res || {};
 }
@@ -116,7 +116,7 @@ export async function doRegister() {
 
 export async function logout() {
   try {
-    await apiCall('POST', '/api/auth/logout');
+    await apiCall('/api/auth/logout', { method: 'POST' });
   } catch {}
   clearAuthToken();
   if (typeof window !== 'undefined') window.location.href = '/portal';
