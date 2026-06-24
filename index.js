@@ -425,7 +425,7 @@ async function runRegen(db) {
   await db.run(
     "UPDATE server_state SET value = CAST(unixepoch() AS TEXT) WHERE key = 'last_regen_at'"
   );
-  console.log('[turns] Regen complete — +' + REGEN_AMOUNT + ' turns · season: ' + season);
+  console.log('[turns] Regen complete — +' + REGEN_AMOUNT + ' turns | season: ' + season);
 }
 
 async function updateMarketPrices(db) {
@@ -1067,12 +1067,6 @@ async function start() {
       res.sendFile(adminPath);
     });
   
-    // Vite as middleware should be checked BEFORE static serving but AFTER API routes
-    if (vite) {
-      app.use(vite.middlewares);
-      console.log('[vite] Vite middleware active');
-    }
-
     // Platform health check
     app.get('/health', (req, res) => {
       if (bootError) return res.status(200).json({ status: 'error', error: String(bootError), database_offline: true });
@@ -1203,7 +1197,7 @@ async function start() {
         let html = fs.readFileSync(indexPath, 'utf-8');
       
   if (process.env.NODE_ENV !== 'production' && vite) {
-          html = await vite.transformIndexHtml(req.url || '/', html);
+          html = await vite.transformIndexHtml('/game', html);
         } else {
            const distPath = path.join(__dirname, 'dist');
           if (fs.existsSync(distPath)) {
@@ -1285,8 +1279,9 @@ async function start() {
         }
       }
 
-      console.error('[serveSplash] No splash assets found in dist — falling back to serveIndex');
-      return serveIndex(req, res, next);
+      console.error('[serveSplash] No splash assets found in dist — serving source splash.html');
+      let html = fs.readFileSync(path.join(__dirname, 'client', 'splash.html'), 'utf-8');
+      return res.set(NO_CACHE).status(503).send(html);
     } catch (e) {
       console.error('[serveSplash] Error:', e);
       next(e);
@@ -1338,9 +1333,17 @@ async function start() {
   };
 
 
+  // HTML entry points MUST register before Vite middleware — otherwise Vite serves
+  // client/index.html for /index.html and the splash intro disappears.
   app.get(['/', '/index.html'], serveSplash);
   app.get(['/game', '/game.html'], serveIndex);
   app.get(['/portal', '/portal.html'], servePortal);
+
+  if (vite) {
+    app.use(vite.middlewares);
+    console.log('[vite] Vite middleware active');
+  }
+
   app.use(express.static(path.join(__dirname, 'public'), { index: false }));
   app.use(express.static(path.join(__dirname, 'client'), { index: false }));
   app.use('/dist', express.static(path.join(__dirname, 'dist')));
