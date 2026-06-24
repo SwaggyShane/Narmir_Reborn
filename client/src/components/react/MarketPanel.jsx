@@ -49,58 +49,11 @@ export function populateTradeTargets() {
 
 export async function loadTradeOffers() {
   const result = await apiCall('/api/kingdom/economy/trade/list');
-  if (result.error) return;
+  if (result.error) return result;
   if (marketPanelApi?.setTradeOffers) {
     marketPanelApi.setTradeOffers({ received: result.received || [], sent: result.sent || [] });
   }
-}
-
-export function renderTradeOffers(received, sent) {
-  const recEl = document.getElementById('trade-received-list');
-  const sntEl = document.getElementById('trade-sent-list');
-
-  if (recEl) {
-    recEl.innerHTML = received.length
-      ? received
-          .map((o) => {
-            const offer = JSON.parse(o.offer || '{}');
-            const request = JSON.parse(o.request || '{}');
-            const offerStr = Object.entries(offer).map((e) => `${e[1]} ${e[0]}`).join(', ');
-            const requestStr = Object.entries(request).map((e) => `${e[1]} ${e[0]}`).join(', ');
-            return `
-              <div style="background:var(--bg3);border-radius:var(--radius);padding:10px;margin-bottom:8px">
-                <div style="font-size:13px;color:var(--text);margin-bottom:4px"><strong>${escapeHtml(o.sender_name)}</strong> offers <span style="color:var(--green)">${escapeHtml(offerStr)}</span> for <span style="color:var(--amber)">${escapeHtml(requestStr)}</span></div>
-                <div style="display:flex;gap:6px;margin-top:6px">
-                  <button class="btn btn-green" style="font-size:11px;padding:3px 10px" onclick="acceptTrade(${o.id})">✅ Accept</button>
-                  <button class="btn btn-red" style="font-size:11px;padding:3px 10px" onclick="declineTrade(${o.id})">❌ Decline</button>
-                </div>
-              </div>`;
-          })
-          .join('')
-      : '<div style="color:var(--text3);font-size:13px">No pending offers.</div>';
-  }
-
-  if (sntEl) {
-    sntEl.innerHTML = sent.length
-      ? sent
-          .map((o) => {
-            const offer = JSON.parse(o.offer || '{}');
-            const request = JSON.parse(o.request || '{}');
-            const offerStr = Object.entries(offer).map((e) => `${e[1]} ${e[0]}`).join(', ');
-            const requestStr = Object.entries(request).map((e) => `${e[1]} ${e[0]}`).join(', ');
-            const statusColor = o.status === 'accepted'
-              ? 'var(--green)'
-              : o.status === 'declined'
-                ? 'var(--red)'
-                : 'var(--amber)';
-            return `
-              <div style="font-size:12px;color:var(--text3);padding:4px 0;border-bottom:1px solid var(--border)">
-                To <strong style="color:var(--text)">${escapeHtml(o.receiver_name)}</strong>: ${escapeHtml(offerStr)} for ${escapeHtml(requestStr)} <span style="color:${statusColor}">[${escapeHtml(o.status)}]</span>
-              </div>`;
-          })
-          .join('')
-      : '<div style="color:var(--text3);font-size:13px">No sent offers.</div>';
-  }
+  return result;
 }
 
 export async function clearTradeLogs() {
@@ -312,6 +265,15 @@ const MarketPanel = () => {
       refreshMarketUI: () => {},
     };
   }, [handleSendTrade, handleAcceptTrade, handleDeclineTrade]);
+
+  useEffect(() => {
+    void loadTradeOffers();
+  }, []);
+
+  useEffect(() => {
+    const targets = Array.isArray(state?.targets) ? state.targets : [];
+    if (targets.length) setTradeTargets(targets);
+  }, [state?.targets]);
 
   return (
     <div id="market" className="panel">

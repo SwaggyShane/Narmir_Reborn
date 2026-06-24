@@ -4,11 +4,9 @@ import { apiCall } from '../../utils/api';
 import { useGameState, useGameMutationEvents } from '../../hooks/useGameState';
 import { applyGameMutation } from '../../utils/gameMutations.js';
 
-import { gameStateManager } from '../../GameStateManager.js';
 import { fmt } from '../../utils/fmt.js';
 import { fmtShort } from '../../utils/numberFormat.js';
 import { toast } from '../../utils/toast.js';
-import { playGameSound } from '../../utils/audio.js';
 import { FARM_WORKERS_PER, COMMODITY_VALUES, COMMODITY_RACE_DISCOUNT } from '../../utils/economyConstants.js';
 import UpgradesList from './UpgradesList.jsx';
 import {
@@ -17,116 +15,6 @@ import {
   MARKET_UPGRADES,
   TAVERN_UPGRADES,
 } from '../../utils/economyUpgrades.js';
-
-function getState() {
-  return gameStateManager.getState();
-}
-
-function escapeHtmlValue(value) {
-  return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;',
-  })[ch]);
-}
-
-// Kept for DefensePanel which imports this directly.
-export function renderUpgrades(category, defs, owned, containerId) {
-  const el = document.getElementById(containerId);
-  if (!el) {
-    console.warn('renderUpgrades: Container not found: ' + containerId);
-    return;
-  }
-
-  if (!defs || typeof defs !== 'object') {
-    console.error('renderUpgrades: Invalid defs for ' + category);
-    el.innerHTML = '<div style="color:var(--red);font-size:12px">Error loading upgrade data</div>';
-    return;
-  }
-
-  const state = getState();
-  const entries = Object.entries(defs);
-  if (entries.length === 0) {
-    el.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:8px 0">No upgrades available in this category.</div>';
-    return;
-  }
-
-  el.innerHTML = entries
-    .map((e) => {
-      const key = e[0];
-      const def = e[1];
-      const have = !!owned[key];
-      const hasReq = !def.requires || !!owned[def.requires];
-      const raceOk = !def.raceOnly || state.race === def.raceOnly;
-      const canBuy =
-        !have && hasReq && raceOk &&
-        (state.gold || 0) >= (def.cost || 0) &&
-        (state.wood || 0) >= (def.costWood || 0) &&
-        (state.stone || 0) >= (def.costStone || 0) &&
-        (state.iron || 0) >= (def.costIron || 0);
-
-      const statusBadge = have
-        ? '<span style="color:var(--green);font-size:11px">✅ Owned</span>'
-        : !hasReq
-          ? '<span style="color:var(--text3);font-size:11px">🔒 Need ' + String(def.requires || '').replace(/_/g, ' ') + '</span>'
-          : !raceOk
-            ? '<span style="color:var(--text3);font-size:11px">🔒 Race locked</span>'
-            : '';
-
-      let costStr = fmt(def.cost) + ' GC';
-      const extraCosts = [];
-      if (def.costWood > 0) extraCosts.push(fmt(def.costWood) + ' wood');
-      if (def.costStone > 0) extraCosts.push(fmt(def.costStone) + ' stone');
-      if (def.costIron > 0) extraCosts.push(fmt(def.costIron) + ' iron');
-      if (extraCosts.length > 0) costStr += ' + ' + extraCosts.join(', ');
-
-      return (
-        '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)">' +
-        '<div style="flex:1"><div style="font-size:13px;color:var(--text);font-weight:600">' +
-        def.name +
-        '</div>' +
-        '<div style="font-size:11px;color:var(--text3)">' +
-        def.desc +
-        ' - ' +
-        costStr +
-        '</div></div>' +
-        statusBadge +
-        (!have && hasReq && raceOk
-          ? '<button class="btn btn-gold" style="font-size:11px;padding:3px 10px;' +
-            (!canBuy ? 'opacity:.5' : '') +
-            `" onclick="buyUpgrade('${category}','${key}')" ` +
-            (!canBuy ? 'disabled' : '') +
-            '>Buy</button>'
-          : '') +
-        '</div>'
-      );
-    })
-    .join('');
-}
-
-// Kept on window.buyUpgrade via main.js.
-export async function buyUpgrade(category, key) {
-  const endpoint = category === 'mausoleum'
-    ? '/api/kingdom/buy-mausoleum-upgrade'
-    : '/api/kingdom/economy/upgrade';
-
-  const result = await apiCall(endpoint, {
-    method: 'POST',
-    body: { category, upgradeKey: key },
-  });
-
-  if (result.error) return toast(result.error, 'error');
-
-  playGameSound('upgrade_purchased');
-
-  if (result.updates) {
-    applyGameMutation(result, { reason: 'economy-upgrade' });
-  }
-
-  toast('Upgrade purchased! Refresh the panel to see the next upgrade.', 'success');
-}
 
 const MERC_COST = { rabble: 50, sellsword: 125, veteran: 250, elite: 500 };
 const MERC_TURNS = { rabble: 10, sellsword: 25, veteran: 35, elite: 50 };

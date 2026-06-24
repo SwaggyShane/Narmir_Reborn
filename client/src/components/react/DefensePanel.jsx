@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
-import { useGameState } from '../../hooks/useGameState';
+import { useGameState, useGameMutationEvents } from '../../hooks/useGameState';
 import { fmt } from "../../utils/fmt";
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import { toast } from '../../utils/toast.js';
-import { renderUpgrades } from './EconomyPanel.jsx';
+import UpgradesList from './UpgradesList.jsx';
 import {
   WALL_UPGRADES_JS,
   TOWER_DEF_UPGRADES_JS,
@@ -17,6 +17,11 @@ import {
 
 const DefensePanel = () => {
   const { state } = useGameState();
+  const [upgradeOwned, setUpgradeOwned] = useState({
+    wall: {},
+    tower_def: {},
+    outpost: {},
+  });
   const [activeTab, setActiveTab] = useState('walls');
   const [defenseData, setDefenseData] = useState({
     defense_rating: '—',
@@ -105,14 +110,22 @@ const DefensePanel = () => {
       outpost_race: OUTPOST_RACE_MULT[race] || 1.0,
     });
 
-    renderUpgrades('wall', WALL_UPGRADES_JS, data.wall_upgrades || {}, 'wall-upgrade-list');
-    renderUpgrades('tower_def', TOWER_DEF_UPGRADES_JS, data.tower_def_upgrades || {}, 'tower-def-upgrade-list');
-    renderUpgrades('outpost', OUTPOST_UPGRADES_JS, data.outpost_upgrades || {}, 'outpost-upgrade-list');
+    setUpgradeOwned({
+      wall: data.wall_upgrades || {},
+      tower_def: data.tower_def_upgrades || {},
+      outpost: data.outpost_upgrades || {},
+    });
   }, [state?.race]);
 
   useEffect(() => {
     refreshDefense();
   }, [refreshDefense]);
+
+  useGameMutationEvents(useCallback((event) => {
+    if (String(event?.reason || '') === 'economy-upgrade') {
+      refreshDefense();
+    }
+  }, [refreshDefense]));
 
   return (
     <div id="defense" className="panel">
@@ -240,7 +253,12 @@ const DefensePanel = () => {
             <div className="card-title mb-2.5">
               Wall upgrades
             </div>
-            <div id="wall-upgrade-list"></div>
+            <UpgradesList
+              category="wall"
+              defs={WALL_UPGRADES_JS}
+              owned={upgradeOwned.wall}
+              state={state}
+            />
           </div>
         </div>
       </div>
@@ -285,7 +303,12 @@ const DefensePanel = () => {
             <div className="card-title mb-2.5">
               Tower upgrades
             </div>
-            <div id="tower-def-upgrade-list"></div>
+            <UpgradesList
+              category="tower_def"
+              defs={TOWER_DEF_UPGRADES_JS}
+              owned={upgradeOwned.tower_def}
+              state={state}
+            />
           </div>
         </div>
       </div>
@@ -330,7 +353,12 @@ const DefensePanel = () => {
             <div className="card-title mb-2.5">
               Outpost upgrades
             </div>
-            <div id="outpost-upgrade-list"></div>
+            <UpgradesList
+              category="outpost"
+              defs={OUTPOST_UPGRADES_JS}
+              owned={upgradeOwned.outpost}
+              state={state}
+            />
           </div>
         </div>
       </div>
