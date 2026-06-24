@@ -90,7 +90,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - `client/index.html` is boot-only (~70 lines): mount point, error logging, empty modal containers.
 - `main.jsx` is minimal (~26 lines): `escapeHtml` polyfill + `GameShell` mount. `main.js` is deleted.
 - Shell layout and panel routing are React-owned (`GameShell.jsx`, `useActivePanel`, Tailwind grid).
-- Remaining optional debt: `socket-client.js` bootstrap globals, `BuildPanel`/`useGameActions` stray getElementById.
+- Remaining optional debt: `socket-client.js` bootstrap globals, `useGameActions` stray getElementById.
 
 ### Claude Lane
 - [x] TrainingPanel.jsx DOM mutations removed (PR #548)
@@ -110,11 +110,12 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] **Slice 25:** Dead code purge — deleted orphan shells (`newsShell`, `attunementShell`, `schoolShell`, `renderTargets`, `toastShell`, `loreShell`, `genericShell`, `xpShell`, `closeRaceLore`); replaced `applyNavLayout` body classes with `useNavLayout` hook; removed ResourceStrip legacy metric ids
 - [x] **Slice 26:** Worldmap React migration — deleted `WorldmapLegend.jsx`; region legend + highlight in `WorldmapPanel`; SVG uses `data-kingdom-id` + click delegation (no broken `onclick` globals); `event:world_updated` → `narmir:worldmap-refresh`
 - [x] **Slice 27 (local):** AlliancesPanel, MessagesPanel, DefensePanel UpgradesList, MarketPanel trade DOM purge
+- [x] **Slice 28 (local):** BuildPanel — 0 getElementById; unified `ba-*` allocation keys; React build queue + hammer durability; vampire shrine/mausoleum visibility
 - [ ] Ongoing: validate locally on `gameshell-local`; merge to `main` when ready (draft PR #559 on remote)
 
-### Current Inventory Snapshot (updated 2026-06-24 post-Slice 27 local)
-- document.getElementById: **0 in index.html**, **~25 in client/src/**
-  - Biggest src concentrations: panelNav.js 5, GlobalchatPanel 4, BuildPanel 1, useGameActions 1; EconomyPanel **0**; MarketPanel **0**; DefensePanel **0**; WarfarePanel **0**
+### Current Inventory Snapshot (updated 2026-06-24 post-Slice 28 local)
+- document.getElementById: **0 in index.html**, **~24 in client/src/**
+  - Biggest src concentrations: panelNav.js 5, GlobalchatPanel 4, useGameActions 1; BuildPanel **0**; EconomyPanel **0**; MarketPanel **0**; DefensePanel **0**; WarfarePanel **0**
 - el(: 0 in index.html; ~18 in client/src/
 - .innerHTML =: **0 in index.html**, ~8 in client/src/ (socket-client only)
 - .style.: **0 in index.html**, ~70 in client/src/ (socket-client 41; orphan shells removed)
@@ -186,6 +187,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] DefensePanel.jsx — COMPLETE (Slice 27 local): wall/tower/outpost upgrades via UpgradesList; 0 getElementById
 - [x] MarketPanel.jsx — COMPLETE (Slice 27 local): removed renderTradeOffers innerHTML bridge; trade lists fully React
 - [x] MessagesPanel.jsx — COMPLETE (Slice 27 local): /api/messages inbox + socket message:received
+- [x] BuildPanel.jsx — COMPLETE (Slice 28 local): 0 getElementById; ba-* allocation keys unified; React build queue + hammer durability; vampire shrine/mausoleum toggle
 - [x] EconomyPanel ledger follow-up — ✅ COMPLETE (PR #554): extended /economy/overview to compute and return taxIncome, marketIncome, tradeRouteIncome, totalIncome, troopUpkeep, netIncome; uses loadTradeRoutes() helper for normalization; applies SUPPORT_CAP_RACE multipliers and fragmentBonusManager barracks discount to match processTurn exactly; financial ledger in EconomyPanel now shows real values instead of hardcoded zeros
 - [x] WarfarePanel.jsx (19 → 0 DOM mutations) — ✅ COMPLETE (PR #556): `atkQty` controlled state for all 9 troop inputs; `atkEstimate` useMemo; estimate display panel in JSX; `setAtkMax` replaces setMaxValue DOM write; `launchAttackW` stale-closure fix; `targetKey()` from Slice 21 retained; fmtN removed (duplicate of fmt)
 
@@ -201,7 +203,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 4. ~~Dead code purge (Slice 25)~~ ✅
 5. ~~`WorldmapRenderer.jsx` — audit imperative DOM (Slice 26)~~ ✅
 6. Merge `gameshell-local` → `main` **← next** (draft PR #559)
-7. Optional: `socket-client.js` DOM/style cleanup, `BuildPanel` engineer input refs
+7. Optional: `socket-client.js` DOM/style cleanup, `useGameActions` regen countdown
 
 ## Rollback Threshold
 - If a slice touches more than 30 files, pause and split it.

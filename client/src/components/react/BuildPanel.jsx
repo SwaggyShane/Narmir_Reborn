@@ -25,7 +25,7 @@ const RESONANCE_HINTS = {
   ],
 };
 
-const RESONANCE_GLYPH = { faint: '·', alignment: '✦', convergence: '✶' };
+const RESONANCE_GLYPH = { faint: '.', alignment: '✦', convergence: '✶' };
 const RESONANCE_COLOR = {
   faint: 'var(--text3)',
   alignment: 'var(--amber, #fbbf24)',
@@ -112,6 +112,38 @@ const BUILD_ALLOCATION_KEYS = {
   'ba-armor': 'armor',
 };
 
+const SERVER_KEY_TO_DISPLAY_ID = { war_machines: 'wm' };
+
+const BUILDING_TO_BA_ID = Object.fromEntries(
+  Object.entries(BUILD_ALLOCATION_KEYS).map(([baId, serverKey]) => [
+    SERVER_KEY_TO_DISPLAY_ID[serverKey] || serverKey,
+    baId,
+  ])
+);
+
+const BUILDING_EFFORT = {
+  farms: 25, granaries: 350, housing: 350, taverns: 350,
+  barracks: 1500, markets: 1500, libraries: 1500, schools: 1500, shrines: 1500, mausoleums: 1500,
+  guard_towers: 3500, outposts: 7000, smithies: 7000, walls: 7000,
+  armories: 13000, vaults: 13000, mage_towers: 13000,
+  training: 18000, castles: 40000,
+  war_machines: 1000, ballistae: 1000, weapons: 10, armor: 10, ladders: 100,
+};
+
+const BUILDING_ICONS = {
+  farms: '🌾', granaries: '🛖', housing: '🏘️', schools: '🏫', libraries: '📖',
+  mage_towers: '⛪', shrines: '⛩️', mausoleums: '⚰️', markets: '🏪', taverns: '🍺',
+  smithies: '⚒️', vaults: '💰', armories: '🛡️', barracks: '🏠', walls: '🧱',
+  guard_towers: '🗼', outposts: '🏴', training: '⚔️', castles: '🏰',
+  war_machines: '🪖', ballistae: '🏹', ladders: '🪜', weapons: '🗡️', armor: '🔰',
+};
+
+const isBuildingRowVisible = (buildingId, vampire) => {
+  if (buildingId === 'shrines') return !vampire;
+  if (buildingId === 'mausoleums') return vampire;
+  return true;
+};
+
 const BuildPanel = () => {
   const { state } = useGameState();
   const [showBuildingRef, setShowBuildingRef] = useState(false);
@@ -149,9 +181,27 @@ const BuildPanel = () => {
     return state?.build_allocation || {};
   }, [state?.build_allocation]);
   const allocatedEngineers = useMemo(
-    () => Object.values(BUILD_ALLOCATION_KEYS).reduce((sum, key) => sum + Number(buildAllocation[key] || 0), 0),
-    [buildAllocation]
+    () => Object.values(engineerAllocations).reduce((sum, val) => sum + Number(val || 0), 0),
+    [engineerAllocations]
   );
+  const buildProgress = useMemo(() => {
+    if (typeof state?.build_progress === 'string') {
+      try {
+        return JSON.parse(state.build_progress || '{}');
+      } catch {
+        return {};
+      }
+    }
+    return state?.build_progress || {};
+  }, [state?.build_progress]);
+  const hammerDurability = useMemo(() => {
+    const stored = Number(state?.hammers_stored || 0);
+    if (stored <= 0) return null;
+    return Math.max(
+      0,
+      Math.round(100 - ((Number(state?.hammer_turns_used || 0) / Math.max(1, stored)) * 2.5))
+    );
+  }, [state?.hammers_stored, state?.hammer_turns_used]);
   const remainingEngineers = Math.max(0, totalEngineers - allocatedEngineers);
   const refreshBuildUi = useCallback(() => {
     setBuildUiTick((tick) => tick + 1);
@@ -334,30 +384,21 @@ const BuildPanel = () => {
     weapons: 'weapons',
     armor: 'armor',
   };
-  const getBuildFieldValue = (fieldId) => parseInt(engineerAllocations[fieldId] || '0', 10) || 0;
-  const setBuildFieldValue = (fieldId, value) => {
-    setEngineerAllocations((prev) => ({ ...prev, [fieldId]: Math.max(0, Number(value) || 0) }));
+  const getBaId = (buildingId) => BUILDING_TO_BA_ID[buildingId];
+  const getServerKey = (buildingId) => BUILD_FIELD_MAP[buildingId] || buildingId;
+  const getBuildFieldValue = (buildingId) => {
+    const baId = getBaId(buildingId);
+    return parseInt(engineerAllocations[baId] || '0', 10) || 0;
+  };
+  const setBuildFieldValue = (buildingId, value) => {
+    const baId = getBaId(buildingId);
+    if (!baId) return;
+    setEngineerAllocations((prev) => ({ ...prev, [baId]: Math.max(0, Number(value) || 0) }));
   };
   const getAllocatedEngineers = () =>
-    BUILDINGS_DISPLAY_ORDER.reduce((sum, key) => sum + getBuildFieldValue(`bld-eng-${key}`), 0);
+    BUILDINGS_DISPLAY_ORDER.reduce((sum, key) => sum + getBuildFieldValue(key), 0);
   const getVisibleBuildFields = () =>
-    BUILDINGS_DISPLAY_ORDER.filter((key) => {
-      const inputEl = document.getElementById(`bld-eng-${key}`);
-      if (!inputEl) return false;
-      const trowEl = inputEl.closest('.trow');
-      return trowEl && trowEl.style.display !== 'none';
-    });
-  const loadBuildAllocationInputs = () => {
-    const alloc = typeof state?.build_allocation === 'string'
-      ? (() => {
-        try { return JSON.parse(state.build_allocation || '{}'); } catch { return {}; }
-      })()
-      : (state?.build_allocation || {});
-    BUILDINGS_DISPLAY_ORDER.forEach((key) => {
-      const sourceKey = BUILD_FIELD_MAP[key] || key;
-      setBuildFieldValue(`bld-eng-${key}`, alloc[sourceKey] || 0);
-    });
-  };
+    BUILDINGS_DISPLAY_ORDER.filter((key) => isBuildingRowVisible(key, isVampire));
   const buildDisplay = useMemo(() => {
     const BLUEPRINT_REQUIRED = new Set(['vaults', 'smithies', 'markets', 'mage_towers', 'training', 'castles']);
     const SCAFFOLDING_REQUIRED = new Set(['mage_towers', 'training', 'castles', 'libraries']);
@@ -368,7 +409,8 @@ const BuildPanel = () => {
     const estimates = {};
 
     BUILDINGS_DISPLAY_ORDER.forEach((key) => {
-      const engVal = getBuildFieldValue(`bld-eng-${key}`);
+      if (!isBuildingRowVisible(key, isVampire)) return;
+      const engVal = getBuildFieldValue(key);
       let msg = '';
       if (engVal > 0) {
         if (BLUEPRINT_REQUIRED.has(key) && bp === 0) msg += 'Blueprint needed ';
@@ -376,7 +418,8 @@ const BuildPanel = () => {
       }
       if (msg.trim()) warnings[key] = msg.trim();
 
-      const cost = BUILDINGS_MAP[key]?.time || 100;
+      const serverKey = getServerKey(key);
+      const cost = BUILDING_EFFORT[serverKey] || BUILDINGS_MAP[key]?.time || 100;
       if (engVal > 0) {
         const turns = Math.ceil(cost / engVal);
         estimates[key] = `~${turns.toLocaleString()} turn${turns === 1 ? '' : 's'}/unit`;
@@ -384,28 +427,44 @@ const BuildPanel = () => {
     });
 
     return { warnings, estimates };
-  }, [state?.blueprints_stored, state?.scaffolding_stored, engineerAllocations]);
-  useEffect(() => {
-    loadBuildAllocationInputs();
-  }, [JSON.stringify(state?.build_allocation || {})]);
+  }, [state?.blueprints_stored, state?.scaffolding_stored, engineerAllocations, isVampire]);
+  const buildQueueItems = useMemo(() => {
+    const items = [];
+    BUILDINGS_DISPLAY_ORDER.forEach((buildingId) => {
+      if (!isBuildingRowVisible(buildingId, isVampire)) return;
+      const serverKey = getServerKey(buildingId);
+      const eng = getBuildFieldValue(buildingId);
+      if (eng <= 0) return;
+      const cost = BUILDING_EFFORT[serverKey] || BUILDINGS_MAP[buildingId]?.time || 100;
+      const prog = Number(buildProgress[serverKey] || 0);
+      const progressPct = Math.min(100, Math.floor(((prog % cost) / cost) * 100));
+      const turnsRemaining = eng > 0 ? Math.ceil((cost - (prog % cost)) / eng) : '∞';
+      items.push({
+        key: serverKey,
+        buildingId,
+        label: BUILDINGS_MAP[buildingId]?.name || serverKey,
+        icon: BUILDING_ICONS[serverKey] || '🏗️',
+        eng,
+        turnsRemaining,
+        progressPct,
+      });
+    });
+    return items;
+  }, [buildProgress, engineerAllocations, isVampire]);
 
   useEffect(() => {
     updateSmithyDisplay();
   }, [state, buildUiTick]);
-  const setMaxValue = (fieldId) => {
+  const setMaxValue = (buildingId) => {
     const total = Number(state?.engineers || 0);
     const allocated = getAllocatedEngineers();
-    const current = getBuildFieldValue(fieldId);
+    const current = getBuildFieldValue(buildingId);
     const available = total - allocated + current;
-    setBuildFieldValue(fieldId, Math.max(0, available));
+    setBuildFieldValue(buildingId, Math.max(0, available));
     refreshBuildUi();
   };
-  const setBuildMax = (fieldId, key) => {
-    if (key === 'war_machine' || key === 'weapons' || key === 'armor') {
-      setMaxValue(fieldId);
-      return;
-    }
-    setMaxValue(fieldId);
+  const setBuildMax = (buildingId) => {
+    setMaxValue(buildingId);
   };
   const distributeBuildEvenly = () => {
     const visibleFields = getVisibleBuildFields();
@@ -415,15 +474,15 @@ const BuildPanel = () => {
     const each = Math.floor(total / count);
     const rem = total - each * count;
     visibleFields.forEach((key, i) => {
-      setBuildFieldValue(`bld-eng-${key}`, each + (i < rem ? 1 : 0));
+      setBuildFieldValue(key, each + (i < rem ? 1 : 0));
     });
     BUILDINGS_DISPLAY_ORDER.filter((key) => !visibleFields.includes(key)).forEach((key) => {
-      setBuildFieldValue(`bld-eng-${key}`, 0);
+      setBuildFieldValue(key, 0);
     });
     refreshBuildUi();
   };
   const releaseAllEngineers = async () => {
-    BUILDINGS_DISPLAY_ORDER.forEach((key) => setBuildFieldValue(`bld-eng-${key}`, 0));
+    BUILDINGS_DISPLAY_ORDER.forEach((key) => setBuildFieldValue(key, 0));
     const result = await apiCall('/api/kingdom/build-allocation', { method: 'POST', body: { allocation: {} } });
     if (result.error) return toast(result.error, 'error');
     applyGameMutation({ build_allocation: {} }, { reason: 'build-allocation' });
@@ -434,8 +493,8 @@ const BuildPanel = () => {
     const allocation = {};
     let total = 0;
     BUILDINGS_DISPLAY_ORDER.forEach((key) => {
-      const val = getBuildFieldValue(`bld-eng-${key}`);
-      allocation[BUILD_FIELD_MAP[key] || key] = val;
+      const val = getBuildFieldValue(key);
+      allocation[getServerKey(key)] = val;
       total += val;
     });
     if (total > (state?.engineers || 0)) {
@@ -445,7 +504,7 @@ const BuildPanel = () => {
     if (result.error) return toast(result.error, 'error');
     applyGameMutation({ build_allocation: allocation }, { reason: 'build-allocation' });
     refreshBuildUi();
-    if (typeof window !== 'undefined' && typeof toast === 'function') toast('Engineer allocation saved ? builds each turn automatically', 'success');
+    if (typeof window !== 'undefined' && typeof toast === 'function') toast('Engineer allocation saved | builds each turn automatically', 'success');
   };
   const updateSmithyDisplay = () => {
     const smithies = Number(state?.bld_smithies || 0);
@@ -515,7 +574,8 @@ const BuildPanel = () => {
     }
   };
 
-  const renderBuildingRow = (b, icon, baId, demoAmountId) => {
+  const renderBuildingRow = (b, icon) => {
+    const baId = BUILDING_TO_BA_ID[b.id];
     const isEng = !['wm', 'ballistae', 'weapons', 'armor'].includes(b.id);
     return (
       <div className="trow" title={getTooltip(b)} key={b.id}>
@@ -543,9 +603,9 @@ const BuildPanel = () => {
             className="input text-right"
             id={baId}
             min="0"
-            value={getBuildFieldValue(baId)}
+            value={getBuildFieldValue(b.id)}
             onChange={(e) => {
-              setBuildFieldValue(baId, e.target.value);
+              setBuildFieldValue(b.id, e.target.value);
               refreshBuildUi();
             }}
             placeholder="Qty"
@@ -553,11 +613,8 @@ const BuildPanel = () => {
           <button
             className="base-btn px-2 py-1 text-[10px]"
             onClick={() => {
-              if (isEng) setMaxValue(baId);
-              else if (b.id === 'wm') setBuildMax(baId);
-              else if (b.id === 'weapons') setBuildMax(baId);
-              else if (b.id === 'armor') setBuildMax(baId);
-              else setMaxValue(baId);
+              if (isEng) setMaxValue(b.id);
+              else setBuildMax(b.id);
             }}
           >
             Max
@@ -565,7 +622,7 @@ const BuildPanel = () => {
           {(buildDisplay.warnings[b.id] || buildDisplay.estimates[b.id]) && (
             <div className="text-[10px] text-text3 whitespace-nowrap ml-1">
               {buildDisplay.warnings[b.id] && <span className="text-amber">{buildDisplay.warnings[b.id]}</span>}
-              {buildDisplay.warnings[b.id] && buildDisplay.estimates[b.id] && ' · '}
+              {buildDisplay.warnings[b.id] && buildDisplay.estimates[b.id] && ' | '}
               {buildDisplay.estimates[b.id] && <span>{buildDisplay.estimates[b.id]}</span>}
             </div>
           )}
@@ -582,20 +639,20 @@ const BuildPanel = () => {
             <div className="space-y-1">
               <div className="card-title mb-0.5">Construction</div>
               <div className="text-[12px] text-text3">
-                🏗️ Engineer Level: <span id="engineer-level" className="text-gold font-semibold">{engineerLevel}</span> ·
+                🏗️ Engineer Level: <span id="engineer-level" className="text-gold font-semibold">{engineerLevel}</span> |
                 XP: <span id="engineer-xp" className="text-text">{fmt(engineerXp)}</span>/<span id="engineer-xp-needed" className="text-text3">{fmt(engineerXpNeeded)}</span>
               </div>
               <div className="text-[12px] text-text3">
-                Engineers: <span id="b-engineers-available" className="text-text">{fmt(totalEngineers)}</span> available ·
-                <span id="b-total-assigned" className="text-gold mx-1">{fmt(allocatedEngineers)}</span> assigned ·
+                Engineers: <span id="b-engineers-available" className="text-text">{fmt(totalEngineers)}</span> available |
+                <span id="b-total-assigned" className="text-gold mx-1">{fmt(allocatedEngineers)}</span> assigned |
                 <span id="b-total-unassigned" className={`mx-1 ${remainingEngineers > 0 ? 'text-green' : 'text-red'}`}>{fmt(remainingEngineers)}</span> unassigned
               </div>
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-text3">
                 Resources:
-                <span id="b-wood" className="text-text mx-0.5">{fmt(state?.wood || 0)}</span>🪵 ·
-                <span id="b-stone" className="text-text mx-0.5">{fmt(state?.stone || 0)}</span>🪨 ·
-                <span id="b-iron" className="text-text mx-0.5">{fmt(state?.iron || 0)}</span>🔗 ·
-                <span id="b-steel" className="text-text mx-0.5">{fmt(state?.steel || 0)}</span>📏 ·
+                <span id="b-wood" className="text-text mx-0.5">{fmt(state?.wood || 0)}</span>🪵 |
+                <span id="b-stone" className="text-text mx-0.5">{fmt(state?.stone || 0)}</span>🪨 |
+                <span id="b-iron" className="text-text mx-0.5">{fmt(state?.iron || 0)}</span>🔗 |
+                <span id="b-steel" className="text-text mx-0.5">{fmt(state?.steel || 0)}</span>📏 |
                 <span id="b-coal" className="text-text mx-0.5">{fmt(state?.coal || 0)}</span>🌑
               </div>
               <div className="text-[12px] text-text3">
@@ -638,7 +695,7 @@ const BuildPanel = () => {
                     <div key={b.id} className="rounded-lg border border-white/10 bg-bg3 p-2.5">
                       <div className="mb-1 font-semibold text-gold">{b.name}</div>
                       <div>{formatReq(b)}{b.land ? ` | 📍 ${b.land} Land` : ''}</div>
-                      <div className="mt-1 text-[10px] text-text3">🪵 {b.wood} · 🪨 {b.stone} · 🔗 {b.iron}</div>
+                      <div className="mt-1 text-[10px] text-text3">🪵 {b.wood} | 🪨 {b.stone} | 🔗 {b.iron}</div>
                     </div>
                   ) : null;
                 })}
@@ -713,7 +770,7 @@ const BuildPanel = () => {
                                 )}
                                 {hint && (
                                   <div className="mt-1.5 text-[10px] italic" style={{ color: RESONANCE_COLOR[tier] || 'var(--text3)', opacity: resonanceOpacity(contrib?.count || 1), letterSpacing: '0.2px' }}>
-                                    <span className="mr-1">{RESONANCE_GLYPH[tier] || '·'}</span>{hint}
+                                    <span className="mr-1">{RESONANCE_GLYPH[tier] || '.'}</span>{hint}
                                   </div>
                                 )}
                               </div>
@@ -817,36 +874,36 @@ const BuildPanel = () => {
               <span className="text-center">Engineers</span>
             </div>
 
-            {BUILDINGS_MAP['farms'] && renderBuildingRow(BUILDINGS_MAP['farms'], { emoji: '🌾', color: '#4a7c3f' }, 'ba-farm', 'demolish-amount-farms')}
-            {BUILDINGS_MAP['granaries'] && renderBuildingRow(BUILDINGS_MAP['granaries'], { emoji: '🛖', color: '#a08453' }, 'ba-granary', 'demolish-amount-granaries')}
-            {BUILDINGS_MAP['housing'] && renderBuildingRow(BUILDINGS_MAP['housing'], { emoji: '🏘️', color: '#4a5a3a' }, 'ba-housing', 'demolish-amount-housing')}
-            {BUILDINGS_MAP['schools'] && renderBuildingRow(BUILDINGS_MAP['schools'], { emoji: '🏫', color: '#3a5a7a' }, 'ba-school', 'demolish-amount-schools')}
-            {BUILDINGS_MAP['libraries'] && renderBuildingRow(BUILDINGS_MAP['libraries'], { emoji: '📖', color: '#2a3a6a' }, 'ba-library', 'demolish-amount-libraries')}
-            {BUILDINGS_MAP['mage_towers'] && renderBuildingRow(BUILDINGS_MAP['mage_towers'], { emoji: '⛪', color: '#4a2a7a' }, 'ba-mage_tower', 'demolish-amount-mage_towers')}
-            {BUILDINGS_MAP['shrines'] && renderBuildingRow(BUILDINGS_MAP['shrines'], { emoji: '⛩️', color: '#3a6a4a' }, 'ba-shrine', 'demolish-amount-shrines')}
-            {BUILDINGS_MAP['mausoleums'] && renderBuildingRow(BUILDINGS_MAP['mausoleums'], { emoji: '⚰️', color: '#333' }, 'ba-mausoleum', 'demolish-amount-mausoleums')}
-            {BUILDINGS_MAP['markets'] && renderBuildingRow(BUILDINGS_MAP['markets'], { emoji: '🏪', color: '#1a5a5a' }, 'ba-market', 'demolish-amount-markets')}
-            {BUILDINGS_MAP['taverns'] && renderBuildingRow(BUILDINGS_MAP['taverns'], { emoji: '🍺', color: '#3a2a1a' }, 'ba-tavern', 'demolish-amount-taverns')}
-            {BUILDINGS_MAP['smithies'] && renderBuildingRow(BUILDINGS_MAP['smithies'], { emoji: '⚒️', color: '#7a4a1a' }, 'ba-smithy', 'demolish-amount-smithies')}
-            {BUILDINGS_MAP['vaults'] && renderBuildingRow(BUILDINGS_MAP['vaults'], { emoji: '💰', color: '#3a6a3a' }, 'ba-vault', 'demolish-amount-vaults')}
-            {BUILDINGS_MAP['armories'] && renderBuildingRow(BUILDINGS_MAP['armories'], { emoji: '🛡️', color: '#6a3a1e' }, 'ba-armory', 'demolish-amount-armories')}
-            {BUILDINGS_MAP['barracks'] && renderBuildingRow(BUILDINGS_MAP['barracks'], { emoji: '🏠', color: '#7b3030' }, 'ba-barracks', 'demolish-amount-barracks')}
-            {BUILDINGS_MAP['walls'] && renderBuildingRow(BUILDINGS_MAP['walls'], { emoji: '🧱', color: '#3a3a3a' }, 'ba-walls', 'demolish-amount-walls')}
-            {BUILDINGS_MAP['guard_towers'] && renderBuildingRow(BUILDINGS_MAP['guard_towers'], { emoji: '🗼', color: '#2a4a6e' }, 'ba-tower', 'demolish-amount-guard_towers')}
-            {BUILDINGS_MAP['outposts'] && renderBuildingRow(BUILDINGS_MAP['outposts'], { emoji: '🏴', color: '#5a4a1e' }, 'ba-outpost', 'demolish-amount-outposts')}
-            {BUILDINGS_MAP['training'] && renderBuildingRow(BUILDINGS_MAP['training'], { emoji: '⚔️', color: '#1a4a2a' }, 'ba-training', 'demolish-amount-training')}
-            {BUILDINGS_MAP['castles'] && renderBuildingRow(BUILDINGS_MAP['castles'], { emoji: '🏰', color: '#5a1a1a' }, 'ba-castle', 'demolish-amount-castles')}
+            {BUILDINGS_MAP['farms'] && renderBuildingRow(BUILDINGS_MAP['farms'], { emoji: '🌾', color: '#4a7c3f' })}
+            {BUILDINGS_MAP['granaries'] && renderBuildingRow(BUILDINGS_MAP['granaries'], { emoji: '🛖', color: '#a08453' })}
+            {BUILDINGS_MAP['housing'] && renderBuildingRow(BUILDINGS_MAP['housing'], { emoji: '🏘️', color: '#4a5a3a' })}
+            {BUILDINGS_MAP['schools'] && renderBuildingRow(BUILDINGS_MAP['schools'], { emoji: '🏫', color: '#3a5a7a' })}
+            {BUILDINGS_MAP['libraries'] && renderBuildingRow(BUILDINGS_MAP['libraries'], { emoji: '📖', color: '#2a3a6a' })}
+            {BUILDINGS_MAP['mage_towers'] && renderBuildingRow(BUILDINGS_MAP['mage_towers'], { emoji: '⛪', color: '#4a2a7a' })}
+            {!isVampire && BUILDINGS_MAP['shrines'] && renderBuildingRow(BUILDINGS_MAP['shrines'], { emoji: '⛩️', color: '#3a6a4a' })}
+            {isVampire && BUILDINGS_MAP['mausoleums'] && renderBuildingRow(BUILDINGS_MAP['mausoleums'], { emoji: '⚰️', color: '#333' })}
+            {BUILDINGS_MAP['markets'] && renderBuildingRow(BUILDINGS_MAP['markets'], { emoji: '🏪', color: '#1a5a5a' })}
+            {BUILDINGS_MAP['taverns'] && renderBuildingRow(BUILDINGS_MAP['taverns'], { emoji: '🍺', color: '#3a2a1a' })}
+            {BUILDINGS_MAP['smithies'] && renderBuildingRow(BUILDINGS_MAP['smithies'], { emoji: '⚒️', color: '#7a4a1a' })}
+            {BUILDINGS_MAP['vaults'] && renderBuildingRow(BUILDINGS_MAP['vaults'], { emoji: '💰', color: '#3a6a3a' })}
+            {BUILDINGS_MAP['armories'] && renderBuildingRow(BUILDINGS_MAP['armories'], { emoji: '🛡️', color: '#6a3a1e' })}
+            {BUILDINGS_MAP['barracks'] && renderBuildingRow(BUILDINGS_MAP['barracks'], { emoji: '🏠', color: '#7b3030' })}
+            {BUILDINGS_MAP['walls'] && renderBuildingRow(BUILDINGS_MAP['walls'], { emoji: '🧱', color: '#3a3a3a' })}
+            {BUILDINGS_MAP['guard_towers'] && renderBuildingRow(BUILDINGS_MAP['guard_towers'], { emoji: '🗼', color: '#2a4a6e' })}
+            {BUILDINGS_MAP['outposts'] && renderBuildingRow(BUILDINGS_MAP['outposts'], { emoji: '🏴', color: '#5a4a1e' })}
+            {BUILDINGS_MAP['training'] && renderBuildingRow(BUILDINGS_MAP['training'], { emoji: '⚔️', color: '#1a4a2a' })}
+            {BUILDINGS_MAP['castles'] && renderBuildingRow(BUILDINGS_MAP['castles'], { emoji: '🏰', color: '#5a1a1a' })}
 
             <div className="text-[11px] text-text3 uppercase tracking-wider py-3.5 px-0">
               Equipment & War Machines
             </div>
 
-            {BUILDINGS_MAP['wm'] && renderBuildingRow(BUILDINGS_MAP['wm'], { emoji: '🪖', color: '#5a3a1a' }, 'ba-wm', '')}
-            {BUILDINGS_MAP['ballistae'] && renderBuildingRow(BUILDINGS_MAP['ballistae'], { emoji: '🏹', color: '#5a3a1a' }, 'ba-ballistae', '')}
-            {BUILDINGS_MAP['ladders'] && renderBuildingRow(BUILDINGS_MAP['ladders'], { emoji: '🪜', color: '#3a2a1a' }, 'ba-ladders', '')}
-            {BUILDINGS_MAP['weapons'] && renderBuildingRow(BUILDINGS_MAP['weapons'], { emoji: '🗡️', color: '#6a1a1a' }, 'ba-weapons', '')}
+            {BUILDINGS_MAP['wm'] && renderBuildingRow(BUILDINGS_MAP['wm'], { emoji: '🪖', color: '#5a3a1a' })}
+            {BUILDINGS_MAP['ballistae'] && renderBuildingRow(BUILDINGS_MAP['ballistae'], { emoji: '🏹', color: '#5a3a1a' })}
+            {BUILDINGS_MAP['ladders'] && renderBuildingRow(BUILDINGS_MAP['ladders'], { emoji: '🪜', color: '#3a2a1a' })}
+            {BUILDINGS_MAP['weapons'] && renderBuildingRow(BUILDINGS_MAP['weapons'], { emoji: '🗡️', color: '#6a1a1a' })}
             <div className="border-t border-white/5">
-              {BUILDINGS_MAP['armor'] && renderBuildingRow(BUILDINGS_MAP['armor'], { emoji: '🔰', color: '#1a3a6a' }, 'ba-armor', '')}
+              {BUILDINGS_MAP['armor'] && renderBuildingRow(BUILDINGS_MAP['armor'], { emoji: '🔰', color: '#1a3a6a' })}
             </div>
 
           </div>
@@ -857,9 +914,39 @@ const BuildPanel = () => {
             Build queue — engineers work each turn automatically
           </div>
           <div id="build-queue-display">
-            <div className="text-text3 text-[13px] py-2">
-              No buildings queued.
-            </div>
+            {buildQueueItems.length === 0 ? (
+              <div className="text-text3 text-[13px] py-2">
+                No engineers allocated | assign engineers above and save to start building.
+              </div>
+            ) : (
+              buildQueueItems.map((item) => {
+                const turnsStr = typeof item.turnsRemaining === 'number'
+                  ? `${item.turnsRemaining.toLocaleString()} turn${item.turnsRemaining === 1 ? '' : 's'}`
+                  : '∞';
+                return (
+                  <div
+                    key={item.key}
+                    className="flex items-center gap-2.5 border-b border-white/5 py-2 text-[13px] last:border-b-0"
+                  >
+                    <span className="text-[18px]">{item.icon}</span>
+                    <div className="flex-1">
+                      <div className="mb-1 flex justify-between">
+                        <span className="font-medium text-text">{item.label}</span>
+                        <span className="text-[12px] text-text3">
+                          {fmt(item.eng)} engineers | ~{turnsStr} per unit
+                        </span>
+                      </div>
+                      <div className="h-[5px] rounded-sm bg-bg4">
+                        <div
+                          className="h-[5px] rounded-sm bg-amber transition-[width] duration-300"
+                          style={{ width: `${item.progressPct}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
 
@@ -879,15 +966,28 @@ const BuildPanel = () => {
             <div className="rounded-lg border border-white/5 bg-bg3 px-3 py-3 text-center">
               <div className="text-[20px] mb-1">🔨</div>
               <div className="text-[12px] font-semibold text-text">Hammers</div>
-              <div className="text-[11px] text-text3 mb-1.5">+5% speed each · degrade</div>
+              <div className="text-[11px] text-text3 mb-1.5">+5% speed each | degrade</div>
               <div className="text-[18px] font-bold text-gold">{fmt(smithyDisplay.hammersStored)}</div>
               <div className="text-[11px] text-text3">/ {fmt(smithyDisplay.hammersCap)} cap</div>
-              <div className="text-[11px] text-amber mt-0.5" id="hammers-durability"></div>
+              {hammerDurability !== null && (
+                <div
+                  className="text-[11px] mt-0.5"
+                  style={{
+                    color: hammerDurability > 50
+                      ? 'var(--green)'
+                      : hammerDurability > 20
+                        ? 'var(--amber)'
+                        : 'var(--red)',
+                  }}
+                >
+                  {hammerDurability}% durability
+                </div>
+              )}
             </div>
             <div className="rounded-lg border border-white/5 bg-bg3 px-3 py-3 text-center">
               <div className="text-[20px] mb-1">🏗️</div>
               <div className="text-[12px] font-semibold text-text">Scaffolding</div>
-              <div className="text-[11px] text-text3 mb-1.5">req &gt;100t · bonus &lt;100t</div>
+              <div className="text-[11px] text-text3 mb-1.5">req &gt;100t | bonus &lt;100t</div>
               <div className="text-[18px] font-bold text-gold">{fmt(smithyDisplay.scaffoldingStored)}</div>
               <div className="text-[11px] text-text3">/ {fmt(smithyDisplay.scaffoldingCap)} cap</div>
             </div>
@@ -902,7 +1002,7 @@ const BuildPanel = () => {
 
           <div className="rounded-lg bg-bg4 px-3 py-3 mb-3">
             <div className="text-[12px] text-text2 font-semibold mb-3.5 text-center">
-              Purchase tools <span className="text-text3 font-normal">— instant gold purchase · requires at least 1 smithy</span>
+              Purchase tools <span className="text-text3 font-normal">— instant gold purchase | requires at least 1 smithy</span>
             </div>
             <div className="flex flex-col gap-6">
               <div className="text-center">
@@ -910,7 +1010,7 @@ const BuildPanel = () => {
                   🔨 Hammers — <strong className="text-gold">25 GC each</strong>
                 </div>
                 <div className="text-[11px] text-text3 mb-2">
-                  Stored: <span className="text-text">{fmt(smithyDisplay.hammersStored)}</span> / {fmt(smithyDisplay.hammersCap)} · Max afford: <span className="text-gold">{fmt(smithyDisplay.hammersAfford)}</span>
+                  Stored: <span className="text-text">{fmt(smithyDisplay.hammersStored)}</span> / {fmt(smithyDisplay.hammersCap)} | Max afford: <span className="text-gold">{fmt(smithyDisplay.hammersAfford)}</span>
                 </div>
                 <div className="flex flex-col items-center gap-2">
                   <input type="number" className="input" id="smith-buy-hammers" min="1" value={smithyInputs.hammers} onChange={(e) => setSmithyInputs(prev => ({ ...prev, hammers: parseInt(e.target.value, 10) || 0 }))} placeholder="Qty" style={{ width: '160px' }} />
@@ -925,7 +1025,7 @@ const BuildPanel = () => {
                   🏗️ Scaffolding — <strong className="text-gold">2,500 GC each</strong>
                 </div>
                 <div className="text-[11px] text-text3 mb-2">
-                  Stored: <span className="text-text">{fmt(smithyDisplay.scaffoldingStored)}</span> / {fmt(smithyDisplay.scaffoldingCap)} · Max afford: <span className="text-gold">{fmt(smithyDisplay.scaffoldingAfford)}</span>
+                  Stored: <span className="text-text">{fmt(smithyDisplay.scaffoldingStored)}</span> / {fmt(smithyDisplay.scaffoldingCap)} | Max afford: <span className="text-gold">{fmt(smithyDisplay.scaffoldingAfford)}</span>
                 </div>
                 <div className="flex flex-col items-center gap-2">
                   <input type="number" className="input" id="smith-buy-scaffolding" min="1" value={smithyInputs.scaffolding} onChange={(e) => setSmithyInputs(prev => ({ ...prev, scaffolding: parseInt(e.target.value, 10) || 0 }))} placeholder="Qty" style={{ width: '160px' }} />
