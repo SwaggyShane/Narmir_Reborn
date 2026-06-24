@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
 import { useGameState, useGameMutationEvents } from '../../hooks/useGameState';
+import { AppEvent, emitAppEvent } from '../../utils/appEvents.js';
+import { useAppEvent } from '../../hooks/useAppEvent.js';
 import { replayWarReport, registerReplayModal } from '../../utils/replayWarReport';
 import { repairMojibake } from '../../utils/repairMojibake';
 import { formatNewsMessage, getNewsMeta } from '../../../../game/news-emoji.mjs';
@@ -59,7 +61,7 @@ const NewsPanel = () => {
   }, [formatText]);
 
   const clearBadges = useCallback(() => {
-    window.dispatchEvent(new CustomEvent('narmir:clear-news-badges'));
+    emitAppEvent(AppEvent.CLEAR_NEWS_BADGES);
   }, []);
 
   const loadNews = useCallback(async () => {
@@ -120,24 +122,22 @@ const NewsPanel = () => {
     loadNews();
   }, [loadNews]);
 
-  useEffect(() => {
-    const handleItems = (event) => {
-      const items = Array.isArray(event?.detail) ? event.detail : [];
-      if (!items.length) return;
-      setNewsItems((prev) => {
-        const merged = [...items, ...prev];
-        const seen = new Set();
-        return merged.filter((item) => {
-          const key = `${item?.turn_num || 0}:${item?.type || 'system'}:${item?.message || ''}:${item?.created_at || ''}`;
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        });
+  const handleNewsItems = useCallback((items) => {
+    const rows = Array.isArray(items) ? items : [];
+    if (!rows.length) return;
+    setNewsItems((prev) => {
+      const merged = [...rows, ...prev];
+      const seen = new Set();
+      return merged.filter((item) => {
+        const key = `${item?.turn_num || 0}:${item?.type || 'system'}:${item?.message || ''}:${item?.created_at || ''}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
       });
-    };
-    window.addEventListener('narmir:news-items', handleItems);
-    return () => window.removeEventListener('narmir:news-items', handleItems);
+    });
   }, []);
+
+  useAppEvent(AppEvent.NEWS_ITEMS, handleNewsItems);
 
   useGameMutationEvents((event) => {
     const reason = String(event?.reason || '');
@@ -157,11 +157,7 @@ const NewsPanel = () => {
     }
   });
 
-  useEffect(() => {
-    const onRefresh = () => loadNews();
-    window.addEventListener('narmir:news-refresh', onRefresh);
-    return () => window.removeEventListener('narmir:news-refresh', onRefresh);
-  }, [loadNews]);
+  useAppEvent(AppEvent.NEWS_REFRESH, loadNews);
 
   return (
     <div id="news" className="panel">

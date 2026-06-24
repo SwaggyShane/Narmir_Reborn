@@ -1,6 +1,7 @@
 import { gameStateManager } from '../../GameStateManager.js';
 import { getWorldMapData } from '../../utils/worldMapData.js';
 import { REGION_META } from '../../utils/raceData.js';
+import { AppEvent, emitAppEvent } from '../../utils/appEvents.js';
 
 function getState() {
   return gameStateManager.getState();
@@ -25,5 +26,5 @@ export function showMapKingdomCard(id) {
     state,
   };
 
-  window.dispatchEvent(new CustomEvent('narmir:map-kingdom-card', { detail: cardData }));
+  emitAppEvent(AppEvent.MAP_KINGDOM_CARD, cardData);
 }

@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { repairMojibake } from '../../utils/repairMojibake.js';
 import { toast } from '../../utils/toast.js';
+import { AppEvent, emitAppEvent } from '../../utils/appEvents.js';
+import { useAppEvent } from '../../hooks/useAppEvent.js';
 import { useActivePanel } from '../../hooks/useActivePanel.js';
 import {
   createSystemMessage,
@@ -39,7 +41,7 @@ const GlobalchatPanel = () => {
   }, []);
 
   const alertChatBadge = useCallback(() => {
-    window.dispatchEvent(new CustomEvent('narmir:chat-badge-alert'));
+    emitAppEvent(AppEvent.CHAT_BADGE_ALERT);
   }, []);
 
   const refreshHistory = useCallback(async () => {
@@ -70,7 +72,7 @@ const GlobalchatPanel = () => {
 
         handlers.message = (data) => {
           if (data?.room === 'alliance') {
-            window.dispatchEvent(new CustomEvent('narmir:alliance-chat-message', { detail: data }));
+            emitAppEvent(AppEvent.ALLIANCE_CHAT_MESSAGE, data);
             return;
           }
           if (data?.room && data.room !== 'global') return;
@@ -165,12 +167,8 @@ const GlobalchatPanel = () => {
 
     boot();
 
-    const onChatClear = () => setMessages([]);
-    window.addEventListener('narmir:chat-clear', onChatClear);
-
     return () => {
       cancelled = true;
-      window.removeEventListener('narmir:chat-clear', onChatClear);
       if (socket) {
         if (handlers.connect) socket.off('connect', handlers.connect);
         if (handlers.message) socket.off('chat:message', handlers.message);
@@ -186,6 +184,8 @@ const GlobalchatPanel = () => {
       }
     };
   }, [alertChatBadge, refreshHistory, scrollToBottom]);
+
+  useAppEvent(AppEvent.CHAT_CLEAR, useCallback(() => setMessages([]), []));
 
   useEffect(() => {
     if (!chatVisible) return undefined;

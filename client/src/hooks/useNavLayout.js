@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
+import { AppEvent, emitAppEvent } from '../utils/appEvents.js';
+import { useAppEvent } from './useAppEvent.js';
 
 const STORAGE_KEY = 'narmir_nav_layout';
-const EVENT_NAME = 'narmir:nav-layout-change';
 
 export function readNavLayout() {
   try {
@@ -17,19 +18,15 @@ export function setNavLayout(layout) {
   } catch {
     // ignore storage failures
   }
-  window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: layout }));
+  emitAppEvent(AppEvent.NAV_LAYOUT_CHANGE, layout);
 }
 
 export function useNavLayout() {
   const [layout, setLayout] = useState(readNavLayout);
 
-  useEffect(() => {
-    const onChange = (event) => {
-      setLayout(event.detail || readNavLayout());
-    };
-    window.addEventListener(EVENT_NAME, onChange);
-    return () => window.removeEventListener(EVENT_NAME, onChange);
-  }, []);
+  useAppEvent(AppEvent.NAV_LAYOUT_CHANGE, (nextLayout) => {
+    setLayout(nextLayout || readNavLayout());
+  });
 
   const updateLayout = useCallback((nextLayout) => {
     setNavLayout(nextLayout);

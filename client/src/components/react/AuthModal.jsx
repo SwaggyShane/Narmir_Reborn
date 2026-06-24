@@ -7,10 +7,6 @@ import { initSocketHandlers } from '../../hooks/useSocket.js';
 
 let authApi = null;
 
-function syncShellChrome(visible) {
-  window.dispatchEvent(new CustomEvent('narmir:auth-modal-visibility', { detail: { visible } }));
-}
-
 function clearAuthToken() {
   try {
     localStorage.removeItem('narmir_token');
@@ -169,7 +165,6 @@ export default function AuthModal() {
   }, [form]);
 
   useEffect(() => {
-    syncShellChrome(visible);
     if (visible) {
       setTimeout(() => userRef.current?.focus?.(), 0);
     }

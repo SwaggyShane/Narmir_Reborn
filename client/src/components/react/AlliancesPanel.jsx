@@ -3,6 +3,8 @@ import clsx from 'clsx';
 import { apiCall } from '../../utils/api.mjs';
 import { fmt } from '../../utils/fmt';
 import { toast } from '../../utils/toast.js';
+import { AppEvent, emitAppEvent } from '../../utils/appEvents.js';
+import { useAppEvent } from '../../hooks/useAppEvent.js';
 import { repairMojibake } from '../../utils/repairMojibake.js';
 import { loadKingdom } from './AuthModal.jsx';
 import { useActivePanel } from '../../hooks/useActivePanel.js';
@@ -167,13 +169,11 @@ const AlliancesPanel = () => {
     });
   }, [refreshAlliance]);
 
-  useEffect(() => {
-    const onRefresh = () => {
-      refreshAlliance().catch(() => {});
-    };
-    window.addEventListener('narmir:alliance-refresh', onRefresh);
-    return () => window.removeEventListener('narmir:alliance-refresh', onRefresh);
+  const onAllianceRefresh = useCallback(() => {
+    refreshAlliance().catch(() => {});
   }, [refreshAlliance]);
+
+  useAppEvent(AppEvent.ALLIANCE_REFRESH, onAllianceRefresh);
 
   useEffect(() => {
     if (!inAlliance || !alliance?.id) return;
@@ -196,16 +196,11 @@ const AlliancesPanel = () => {
       requestAnimationFrame(scrollChatToBottom);
     };
 
-    const onCustomMessage = (event) => {
-      onSocketMessage(event?.detail);
-    };
-
     const boot = async () => {
       try {
         socket = await getSocket();
         if (cancelled) return;
         socket.on('chat:message', onSocketMessage);
-        window.addEventListener('narmir:alliance-chat-message', onCustomMessage);
       } catch (err) {
         console.warn('[alliances] Socket hookup failed:', err);
       }
@@ -216,7 +211,6 @@ const AlliancesPanel = () => {
     return () => {
       cancelled = true;
       if (socket) socket.off('chat:message', onSocketMessage);
-      window.removeEventListener('narmir:alliance-chat-message', onCustomMessage);
     };
   }, [inAlliance, scrollChatToBottom]);
 
@@ -299,7 +293,7 @@ const AlliancesPanel = () => {
       if (res?.error) throw new Error(res.error);
       toast('Project funded', 'success');
       await refreshAlliance();
-      window.dispatchEvent(new CustomEvent('narmir:alliance-refresh'));
+      emitAppEvent(AppEvent.ALLIANCE_REFRESH);
     });
   };
 

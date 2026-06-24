@@ -193,6 +193,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] expeditionLog — COMPLETE (Slice 29 local): deleted `expeditionLog.mjs` innerHTML bridge; `narmir:expedition-log-entry` event from ResourcesPanel to ExplorationPanel
 - [x] socket-client.js — COMPLETE (Slice 30 local): `socket.io-client` npm import; 0 DOM; dropped `window.__narmir*` bootstrap
 - [x] Bootstrap globals purge — COMPLETE (Slice 30 local): `gameStateManager`, `closeGenericModal`, `escapeHtml` window exports removed; `escapeHtml.js` shared util
+- [x] App event bus — COMPLETE (Slice 31 local): `appEvents.js` + `useAppEvent` replace all `window.dispatchEvent`/`addEventListener` cross-panel bridges; `BottomNav` badges are React state; dead `game-data-updated` and `wcovTargetRaceChange` listeners removed
 - [x] EconomyPanel ledger follow-up — ✅ COMPLETE (PR #554): extended /economy/overview to compute and return taxIncome, marketIncome, tradeRouteIncome, totalIncome, troopUpkeep, netIncome; uses loadTradeRoutes() helper for normalization; applies SUPPORT_CAP_RACE multipliers and fragmentBonusManager barracks discount to match processTurn exactly; financial ledger in EconomyPanel now shows real values instead of hardcoded zeros
 - [x] WarfarePanel.jsx (19 → 0 DOM mutations) — ✅ COMPLETE (PR #556): `atkQty` controlled state for all 9 troop inputs; `atkEstimate` useMemo; estimate display panel in JSX; `setAtkMax` replaces setMaxValue DOM write; `launchAttackW` stale-closure fix; `targetKey()` from Slice 21 retained; fmtN removed (duplicate of fmt)
 

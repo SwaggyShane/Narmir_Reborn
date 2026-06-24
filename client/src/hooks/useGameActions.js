@@ -4,6 +4,7 @@ import { toast } from '../utils/toast.js';
 import { gameStateManager } from '../GameStateManager.js';
 import { playGameSound } from '../utils/audio.js';
 import { getRegenCountdownLabel } from './useRegenCountdown.js';
+import { AppEvent, emitAppEvent } from '../utils/appEvents.js';
 
 function applyResult(data, reason) {
   const updates = data?.updates || data?.kUpdates || null;
@@ -61,7 +62,7 @@ export function useGameActions() {
 
       let completedBuildingsMsg = '';
       if (Array.isArray(data.events)) {
-        window.dispatchEvent(new CustomEvent('narmir:news-items', { detail: data.events }));
+        emitAppEvent(AppEvent.NEWS_ITEMS, data.events);
         for (const ev of data.events) {
           const msg = ev?.message || '';
           if (msg.includes('Completed: ')) {

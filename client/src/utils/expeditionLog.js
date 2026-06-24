@@ -1,8 +1,5 @@
-export const EXPEDITION_LOG_EVENT = 'narmir:expedition-log-entry';
+import { AppEvent, emitAppEvent } from './appEvents.js';
 
 export function dispatchExpeditionLogEntry(icon, title, subtitle) {
-  if (typeof window === 'undefined') return;
-  window.dispatchEvent(new CustomEvent(EXPEDITION_LOG_EVENT, {
-    detail: { icon, title, subtitle },
-  }));
+  emitAppEvent(AppEvent.EXPEDITION_LOG_ENTRY, { icon, title, subtitle });
 }

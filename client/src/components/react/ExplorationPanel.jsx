@@ -5,7 +5,8 @@ import { apiCall } from '../../utils/api';
 import { useGameMutationEvents, useGameState } from '../../hooks/useGameState';
 import { repairMojibake } from '../../utils/repairMojibake';
 import { applyGameMutation } from '../../utils/gameMutations.js';
-import { EXPEDITION_LOG_EVENT } from '../../utils/expeditionLog.js';
+import { AppEvent } from '../../utils/appEvents.js';
+import { useAppEvent } from '../../hooks/useAppEvent.js';
 
 const REFRESH_INTERVAL_MS = 2 * 60 * 1000;
 const EXPEDITION_TURNS = {
@@ -158,15 +159,11 @@ const ExplorationPanel = () => {
     setInstantEntries((prev) => [entry, ...prev].slice(0, 50));
   }, []);
 
-  useEffect(() => {
-    const onExternalEntry = (event) => {
-      const { icon, title, subtitle } = event.detail || {};
-      if (!title) return;
-      logInstantEntry(icon, title, subtitle);
-    };
-    window.addEventListener(EXPEDITION_LOG_EVENT, onExternalEntry);
-    return () => window.removeEventListener(EXPEDITION_LOG_EVENT, onExternalEntry);
-  }, [logInstantEntry]);
+  useAppEvent(AppEvent.EXPEDITION_LOG_ENTRY, (detail) => {
+    const { icon, title, subtitle } = detail || {};
+    if (!title) return;
+    logInstantEntry(icon, title, subtitle);
+  });
 
   const handleSearch = useCallback(async (type) => {
     const r = Number(searchRangers || 0);

@@ -11,6 +11,8 @@ import { openKingdomProfile } from './KingdomProfileModal.jsx';
 import { targetFromRankings } from '../../utils/rankingsTarget.js';
 import { toast } from '../../utils/toast.js';
 import { showMapKingdomCard } from './MapKingdomCard.jsx';
+import { AppEvent } from '../../utils/appEvents.js';
+import { useAppEvent } from '../../hooks/useAppEvent.js';
 
 const MAP_REGIONS = Object.keys(REGION_META);
 
@@ -116,21 +118,12 @@ const WorldmapPanel = () => {
     refreshWorldMap();
   }, [refreshWorldMap]);
 
-  useEffect(() => {
-    const onRefresh = () => {
-      refreshWorldMap().catch(() => {});
-    };
-    window.addEventListener('narmir:worldmap-refresh', onRefresh);
-    return () => window.removeEventListener('narmir:worldmap-refresh', onRefresh);
+  const onWorldMapRefresh = useCallback(() => {
+    refreshWorldMap().catch(() => {});
   }, [refreshWorldMap]);
 
-  useEffect(() => {
-    const handler = (event) => {
-      setMapCard(event.detail);
-    };
-    window.addEventListener('narmir:map-kingdom-card', handler);
-    return () => window.removeEventListener('narmir:map-kingdom-card', handler);
-  }, []);
+  useAppEvent(AppEvent.WORLDMAP_REFRESH, onWorldMapRefresh);
+  useAppEvent(AppEvent.MAP_KINGDOM_CARD, setMapCard);
 
   const handleMapClick = useCallback((event) => {
     const dot = event.target.closest?.('.kd-dot');

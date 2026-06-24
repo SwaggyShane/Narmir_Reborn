@@ -13,10 +13,6 @@ import { getRacePortrait } from '../../utils/racePortraits.js';
 
 let profileApi = null;
 
-function syncModalVisibility(visible) {
-  window.dispatchEvent(new CustomEvent('narmir:kingdom-profile-modal', { detail: { visible } }));
-}
-
 function normalizeRaceIcon(race) {
   return RACE_ICONS[race] || 'Kingdom';
 }
@@ -83,10 +79,6 @@ export default function KingdomProfileModal() {
       if (profileApi) profileApi = null;
     };
   }, []);
-
-  useEffect(() => {
-    syncModalVisibility(visible);
-  }, [visible]);
 
   const data = profile || {};
   const isMe = !!(profile && state?.kingdomId && String(profile.id) === String(state.kingdomId));

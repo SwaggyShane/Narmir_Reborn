@@ -32,9 +32,6 @@ function tickRegenCountdown() {
     const state = gameStateManager.getState();
     const next = Math.min(REGEN_MAX, (state?.turns_stored || 0) + REGEN_AMOUNT);
     gameStateManager.applyUpdates({ turns_stored: next }, { reason: 'regen-optimistic' });
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('narmir:turn-regen'));
-    }
   }
   notifySubscribers();
 }

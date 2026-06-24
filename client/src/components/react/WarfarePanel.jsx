@@ -304,12 +304,13 @@ const WarfarePanel = () => {
   }, []);
 
   useEffect(() => {
-    const handleRaceChange = (e) => setWcovTargetRace(e.detail);
-    window.addEventListener('wcovTargetRaceChange', handleRaceChange);
+    setWcovTargetRace(covertTarget?.race ?? null);
+  }, [covertTarget?.race]);
+
+  useEffect(() => {
     const unregister = registerWarfareTab(setActiveTab);
     const unregisterBattle = registerShowBattleReport(setBattleReport);
     return () => {
-      window.removeEventListener('wcovTargetRaceChange', handleRaceChange);
       unregister();
       unregisterBattle();
     };
