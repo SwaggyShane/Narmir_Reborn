@@ -180,9 +180,21 @@ function makeRateLimiter(maxRequests, windowMs) {
   };
 }
 
-const authLimiter   = makeRateLimiter(10, 60 * 1000);      // 10 auth attempts/min
+const isProdEnv = process.env.NODE_ENV === 'production';
+const authAttemptLimiter = makeRateLimiter(isProdEnv ? 10 : 60, 60 * 1000); // login/register only
 const turnLimiter   = makeRateLimiter(300, 60 * 1000);     // 300 turn/action requests/min (5/sec)
 const generalLimiter= makeRateLimiter(500, 60 * 1000);     // 500 general requests/min
+
+function isAuthSensitiveRoute(req) {
+  if (req.method !== 'POST') return false;
+  const path = String(req.path || req.url || '').split('?')[0];
+  return path === '/login' || path === '/register';
+}
+
+function authSensitiveLimiter(req, res, next) {
+  if (!isAuthSensitiveRoute(req)) return next();
+  return authAttemptLimiter(req, res, next);
+}
 
 // ── BOOTSTRAP ────────────────────────────────────────────────────────────────
 let vite;
@@ -591,7 +603,7 @@ async function start() {
 
     // ── Routes ────────────────────────────────────────────────────────────────────
     const { ensureCsrfToken, cleanupOrphanedTransactions } = require('./routes/middleware');
-    app.use('/api/auth',         authLimiter,  require('./routes/auth')(db));
+    app.use('/api/auth',         authSensitiveLimiter, require('./routes/auth')(db));
     app.use('/api/forum',        ensureCsrfToken, require('./routes/forum')(db));
     app.use('/api/kingdom',      turnLimiter, cacheKingdomId(db), ensureCsrfToken, cleanupOrphanedTransactions(db), require('./routes/kingdom')(db));
     app.use('/api/hero',         turnLimiter, cacheKingdomId(db), ensureCsrfToken,  require('./routes/hero')(db));
