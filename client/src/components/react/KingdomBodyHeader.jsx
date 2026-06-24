@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useGameState } from '../../hooks/useGameState';
 import { useActivePanel } from '../../hooks/useActivePanel';
+import { useKingdomRank } from '../../hooks/useKingdomRank.js';
 import { kingdomXpProgress } from '../../utils/xp.js';
 import { fmt } from '../../utils/fmt.js';
 import KingdomXpModal from './KingdomXpModal.jsx';
@@ -17,17 +18,18 @@ const HIDE_HEADER_PANELS = new Set([
   'forum',
 ]);
 
+const GAP = 8;
+
 function XpBar({ pct }) {
   const width = Math.max(pct > 0 ? 2 : 0, pct);
   return (
     <div
       style={{
-        height: 8,
-        minWidth: 120,
-        maxWidth: 160,
-        flex: '1 1 120px',
+        height: 6,
+        width: 110,
+        flexShrink: 0,
         background: 'var(--bg4)',
-        borderRadius: 4,
+        borderRadius: 3,
         overflow: 'hidden',
         border: '1px solid rgba(255,255,255,0.06)',
       }}
@@ -38,19 +40,31 @@ function XpBar({ pct }) {
         style={{
           height: '100%',
           width: `${width}%`,
-          borderRadius: 4,
+          borderRadius: 3,
           transition: 'width 0.4s ease',
           background: 'linear-gradient(90deg, var(--accent1), var(--gold))',
-          boxShadow: pct > 0 ? '0 0 8px rgba(240, 98, 2, 0.5)' : undefined,
+          boxShadow: pct > 0 ? '0 0 6px rgba(240, 98, 2, 0.45)' : undefined,
         }}
       />
     </div>
   );
 }
 
+function Stat({ label, value, valueStyle = {} }) {
+  return (
+    <span className="whitespace-nowrap" style={{ fontSize: 11, color: 'var(--text2)' }}>
+      {label}{' '}
+      <span style={{ color: 'var(--text)', fontWeight: 600, fontSize: 12, ...valueStyle }}>
+        {value}
+      </span>
+    </span>
+  );
+}
+
 const KingdomBodyHeader = () => {
   const { state } = useGameState();
   const { activePanel } = useActivePanel();
+  const rank = useKingdomRank();
   const [xpModalOpen, setXpModalOpen] = useState(false);
 
   const kingdomReady = Boolean(
@@ -72,48 +86,61 @@ const KingdomBodyHeader = () => {
     <>
       <div
         id="kd-top"
-        className="kd-top sticky top-0 z-20 shrink-0 border-b border-white/10 bg-bg px-4 py-3 shadow-[0_4px_12px_rgba(0,0,0,0.35)]"
+        className="kd-top sticky top-0 z-20 shrink-0 border-b border-white/10 px-3 py-2 shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
         style={{
           background: 'linear-gradient(180deg, rgba(18,18,26,0.98) 0%, var(--bg) 100%)',
         }}
       >
-        <div className="kingdom-header flex flex-wrap items-start justify-between gap-3">
-          <h1
-            id="kingdom-name"
-            className="min-w-0 flex-1 font-cinzel text-[18px] font-bold leading-tight"
-            style={{ color: 'var(--text)' }}
-          >
-            <span style={{ color: 'var(--text)' }}>{playerName}</span>
-            <span
-              className="mx-1.5 font-normal italic"
-              style={{ fontSize: '0.75em', color: 'var(--text3)' }}
+        <div
+          className="kingdom-header flex flex-wrap items-center justify-between"
+          style={{ gap: GAP }}
+        >
+          <div className="flex min-w-0 flex-1 flex-wrap items-center" style={{ gap: GAP }}>
+            <h1
+              id="kingdom-name"
+              className="min-w-0 font-cinzel font-bold leading-none"
+              style={{ fontSize: 16, color: 'var(--text)' }}
             >
-              of
-            </span>
-            <span
-              style={{
-                color: 'var(--gold)',
-                fontWeight: 700,
-                textShadow: '0 0 12px rgba(240, 98, 2, 0.4)',
-              }}
-            >
-              {kingdomName}
-            </span>
-          </h1>
+              <span style={{ color: 'var(--text)' }}>{playerName}</span>
+              <span
+                className="font-normal italic"
+                style={{ fontSize: '0.75em', color: 'var(--text3)', margin: '0 0.35em' }}
+              >
+                of
+              </span>
+              <span
+                style={{
+                  color: 'var(--gold)',
+                  fontWeight: 700,
+                  textShadow: '0 0 10px rgba(240, 98, 2, 0.35)',
+                }}
+              >
+                {kingdomName}
+              </span>
+            </h1>
 
-          <div className="ml-auto shrink-0 text-right" style={{ fontSize: 11, color: 'var(--text2)' }}>
-            <div style={{ lineHeight: 1.5 }}>
-              Turn{' '}
-              <span id="turn-num" style={{ color: 'var(--text)', fontWeight: 600, fontSize: 13 }}>
-                {turn}
+            {rank != null ? (
+              <span
+                id="kingdom-rank"
+                className="shrink-0 rounded border border-white/10 bg-void-900/80 px-2 py-0.5 font-cinzel text-[11px] font-bold leading-none text-text"
+                title="Kingdom rank by score"
+              >
+                #{rank}
               </span>
-            </div>
-            <div style={{ lineHeight: 1.5 }}>
-              Score{' '}
-              <span id="kingdom-score-disp" style={{ color: 'var(--gold)', fontWeight: 600, fontSize: 13 }}>
-                {score.toLocaleString()}
+            ) : (
+              <span
+                id="kingdom-rank"
+                className="shrink-0 text-[10px] text-text3"
+                title="Loading rank"
+              >
+                Rank ...
               </span>
-            </div>
+            )}
+          </div>
+
+          <div className="flex shrink-0 flex-wrap items-center justify-end" style={{ gap: GAP }}>
+            <Stat label="Turn" value={turn} />
+            <Stat label="Score" value={score.toLocaleString()} valueStyle={{ color: 'var(--gold)' }} />
           </div>
         </div>
 
@@ -121,17 +148,17 @@ const KingdomBodyHeader = () => {
           type="button"
           onClick={() => setXpModalOpen(true)}
           title="Click for XP breakdown"
-          className="mt-2.5 flex w-full cursor-pointer flex-wrap items-center justify-end gap-2 rounded-md border border-transparent bg-transparent px-1 py-1.5 transition hover:bg-[rgba(255,255,255,0.03)]"
-          style={{ maxWidth: '100%' }}
+          className="flex w-full cursor-pointer items-center justify-end border-none bg-transparent p-0 transition hover:opacity-90"
+          style={{ gap: GAP, marginTop: GAP }}
         >
           <span style={{ fontSize: 11, color: 'var(--text3)', flexShrink: 0 }}>
-            Level{' '}
+            Lv{' '}
             <span
               id="kingdom-level"
               style={{
                 color: 'var(--gold)',
                 fontWeight: 700,
-                fontSize: 13,
+                fontSize: 12,
                 textDecoration: 'underline',
                 textDecorationStyle: 'dotted',
                 textUnderlineOffset: 2,
@@ -142,7 +169,7 @@ const KingdomBodyHeader = () => {
           </span>
           <XpBar pct={pct} />
           <span id="xp-label" style={{ fontSize: 10, color: 'var(--text3)', flexShrink: 0 }}>
-            {fmt(xpIntoLevel)} / {fmt(xpNeeded)} XP
+            {fmt(xpIntoLevel)}/{fmt(xpNeeded)} XP
           </span>
         </button>
       </div>

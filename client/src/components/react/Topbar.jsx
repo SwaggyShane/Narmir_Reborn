@@ -19,8 +19,6 @@ const Topbar = () => {
     showLoginModal();
   };
 
-  const rank = state?.rank ?? state?.kingdom_rank ?? state?.position;
-
   return (
     <header className="fixed inset-x-0 top-0 z-topbar-mobile flex h-14 w-full shrink-0 items-center justify-between gap-2 border-b border-ember-900/40 bg-void-950/95 px-3 shadow-panel backdrop-blur-xl lg:relative lg:col-span-3 lg:row-start-1 lg:z-[1100] md:px-4">
       <div className="min-w-0">
@@ -28,12 +26,6 @@ const Topbar = () => {
         <div className="truncate text-sm text-text2">Pure. Damn. Evil.</div>
       </div>
       <div className="flex min-w-0 items-center gap-2 rounded-2xl border border-ember-900/30 bg-void-900/70 px-2.5 py-2 shadow-panel md:gap-3 md:px-3">
-        <div className="hidden shrink-0 md:block">
-          <div className="font-cinzel text-base font-black text-text">
-            {rank != null ? `#${rank}` : '—'}
-          </div>
-          <div className="text-[10px] font-bold uppercase tracking-wide text-text3">Rank</div>
-        </div>
         <div className="flex items-center gap-2">
           <div className="text-right font-serif leading-none">
             <div className="flex items-center gap-1.5">
