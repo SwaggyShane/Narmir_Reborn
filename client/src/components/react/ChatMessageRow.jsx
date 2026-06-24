@@ -1,6 +1,17 @@
 import React from 'react';
 import clsx from 'clsx';
 
+function chatMessageEqual(prev, next) {
+  const a = prev.message;
+  const b = next.message;
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return a.key === b.key
+    && a.message === b.message
+    && a.from === b.from
+    && a.kind === b.kind;
+}
+
 const ChatMessageRow = ({ message }) => {
   if (!message) return null;
 
@@ -45,4 +56,4 @@ const ChatMessageRow = ({ message }) => {
   );
 };
 
-export default ChatMessageRow;
+export default React.memo(ChatMessageRow, chatMessageEqual);

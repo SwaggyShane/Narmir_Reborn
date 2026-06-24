@@ -25,7 +25,6 @@ export async function loadWorldMap({ setLoading, setError, setKingdoms, setTrade
 
     const kingdoms = data.kingdoms || (Array.isArray(data) ? data : []);
     const tradeRoutes = data.tradeRoutes || [];
-    setWorldMapData(kingdoms);
     if (typeof setKingdoms === 'function') setKingdoms(kingdoms);
     if (typeof setTradeRoutes === 'function') setTradeRoutes(tradeRoutes);
   } catch (err) {
@@ -117,6 +116,12 @@ const WorldmapPanel = () => {
   useEffect(() => {
     refreshWorldMap();
   }, [refreshWorldMap]);
+
+  useEffect(() => {
+    if (kingdoms.length) {
+      setWorldMapData(kingdoms);
+    }
+  }, [kingdoms]);
 
   const onWorldMapRefresh = useCallback(() => {
     refreshWorldMap().catch(() => {});

@@ -1,4 +1,3 @@
-import { setWorldMapData } from '../../utils/worldMapData.js';
 import { gameStateManager } from '../../GameStateManager.js';
 import { REGION_META, REGION_BONUSES } from '../../utils/raceData.js';
 import { escapeHtml } from '../../utils/escapeHtml.js';
@@ -9,7 +8,6 @@ function regionOpacity(race, highlightedRace, dim = '0.3') {
 }
 
 export function renderWorldMap(kingdoms, routes = [], highlightedRace = null) {
-  setWorldMapData(kingdoms || []);
   const state = gameStateManager.getState();
 
         var W = 900,

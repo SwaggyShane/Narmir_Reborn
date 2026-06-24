@@ -31,17 +31,15 @@ export function sanitizeHtml(html) {
   if (typeof document === 'undefined') return String(html);
 
   const doc = new DOMParser().parseFromString(String(html), 'text/html');
-  const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_ELEMENT);
+  const elements = doc.body.querySelectorAll('*');
 
-  let node = walker.currentNode;
-  while (node) {
-    const tag = node.tagName?.toLowerCase();
+  for (const element of elements) {
+    const tag = element.tagName?.toLowerCase();
     if (BLOCKED_TAGS.has(tag)) {
-      node.remove();
+      element.remove();
     } else {
-      stripUnsafeAttributes(node);
+      stripUnsafeAttributes(element);
     }
-    node = walker.nextNode();
   }
 
   return doc.body.innerHTML;

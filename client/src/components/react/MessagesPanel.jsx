@@ -134,7 +134,7 @@ const MessagesPanel = () => {
 
     const onReceived = (data) => {
       const senderId = Number(data?.sender_id);
-      if (!senderId) return;
+      if (!senderId || (myPlayerId && senderId === myPlayerId)) return;
 
       setConversations((prev) => {
         const otherId = senderId;
@@ -203,7 +203,7 @@ const MessagesPanel = () => {
       cancelled = true;
       if (socket) socket.off('message:received', onReceived);
     };
-  }, [scrollToBottom]);
+  }, [scrollToBottom, myPlayerId]);
 
   useEffect(() => {
     requestAnimationFrame(scrollToBottom);

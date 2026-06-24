@@ -188,7 +188,7 @@ const generalLimiter= makeRateLimiter(500, 60 * 1000);     // 500 general reques
 function isAuthSensitiveRoute(req) {
   if (req.method !== 'POST') return false;
   const path = String(req.path || req.url || '').split('?')[0];
-  return path === '/login' || path === '/register';
+  return path.endsWith('/login') || path.endsWith('/register');
 }
 
 function authSensitiveLimiter(req, res, next) {
