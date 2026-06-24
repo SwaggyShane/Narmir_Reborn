@@ -4,7 +4,7 @@ import { apiCall } from '../../utils/api';
 import { useActivePanel } from '../../hooks/useActivePanel';
 import { useGameState } from '../../hooks/useGameState';
 import { applyGameMutation } from '../../utils/gameMutations.js';
-import { logExpeditionEntry } from '../../utils/expeditionLog.mjs';
+import { dispatchExpeditionLogEntry } from '../../utils/expeditionLog.js';
 
 const REFRESH_INTERVAL_MS = 10 * 1000;
 
@@ -361,7 +361,7 @@ const ResourcesPanel = () => {
         const typeEmoji = { wood: '🪵', stone: '🪨', iron: '🔗' };
         const icon = typeEmoji[node.type] || '🧭';
         const foodStr = data.foodTaken > 0 ? ` - food ${data.foodTaken.toLocaleString()} taken` : '';
-        logExpeditionEntry(icon, `Resource expedition departed to ${node.name}`, `${pop.toLocaleString()} civilians - ${node.type}${foodStr}`);
+        dispatchExpeditionLogEntry(icon, `Resource expedition departed to ${node.name}`, `${pop.toLocaleString()} civilians - ${node.type}${foodStr}`);
         await refreshKingdom();
       } else { if(toast) toast('Failed: ' + (data.error || 'Unknown'), 'error'); }
     } catch(e) { if(toast) toast('Error: ' + e.message, 'error'); }

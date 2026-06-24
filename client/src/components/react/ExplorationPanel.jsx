@@ -5,6 +5,7 @@ import { apiCall } from '../../utils/api';
 import { useGameMutationEvents, useGameState } from '../../hooks/useGameState';
 import { repairMojibake } from '../../utils/repairMojibake';
 import { applyGameMutation } from '../../utils/gameMutations.js';
+import { EXPEDITION_LOG_EVENT } from '../../utils/expeditionLog.js';
 
 const REFRESH_INTERVAL_MS = 2 * 60 * 1000;
 const EXPEDITION_TURNS = {
@@ -157,6 +158,16 @@ const ExplorationPanel = () => {
     setInstantEntries((prev) => [entry, ...prev].slice(0, 50));
   }, []);
 
+  useEffect(() => {
+    const onExternalEntry = (event) => {
+      const { icon, title, subtitle } = event.detail || {};
+      if (!title) return;
+      logInstantEntry(icon, title, subtitle);
+    };
+    window.addEventListener(EXPEDITION_LOG_EVENT, onExternalEntry);
+    return () => window.removeEventListener(EXPEDITION_LOG_EVENT, onExternalEntry);
+  }, [logInstantEntry]);
+
   const handleSearch = useCallback(async (type) => {
     const r = Number(searchRangers || 0);
     if (r <= 0) {
@@ -190,7 +201,7 @@ const ExplorationPanel = () => {
       logInstantEntry(
         icons[type] || '🧭',
         repairText(result.message || 'Search complete'),
-        `Sent ${formatNum(r)} rangers · 1 turn used`,
+        `Sent ${formatNum(r)} rangers | 1 turn used`,
       );
       await refreshAll();
     } catch (err) {
@@ -251,7 +262,7 @@ const ExplorationPanel = () => {
       logInstantEntry(
         TYPE_META[type].icon,
         repairText(result.message || `${TYPE_META[type].label} launched!`),
-        `Sent ${formatNum(rangers)} rangers${fighters > 0 ? ` · ${formatNum(fighters)} fighters` : ''} · ${formatNum(foodNeeded)} food`,
+        `Sent ${formatNum(rangers)} rangers${fighters > 0 ? ` | ${formatNum(fighters)} fighters` : ''} | ${formatNum(foodNeeded)} food`,
       );
       await refreshAll();
     } catch (err) {
@@ -290,8 +301,8 @@ const ExplorationPanel = () => {
       ? [
           `${rewards.length > 0 ? `${rewards.length} reward${rewards.length === 1 ? '' : 's'}` : 'Returned'}`,
           troops,
-        ].join(' · ')
-      : `${troops}${entry.food_taken > 0 ? ` · 🍖 ${formatNum(entry.food_taken)} food taken` : ''}`;
+        ].join(' | ')
+      : `${troops}${entry.food_taken > 0 ? ` | 🍖 ${formatNum(entry.food_taken)} food taken` : ''}`;
 
     return (
       <div

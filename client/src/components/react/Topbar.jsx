@@ -5,10 +5,12 @@ import { useGameActions } from '../../hooks/useGameActions';
 import { showLoginModal, logout } from './AuthModal.jsx';
 import { xpForLevel } from '../../utils/xp';
 import { showHeroXpModal } from '../../utils/showHeroXpModal.js';
+import { REGEN_AMOUNT, useRegenCountdown } from '../../hooks/useRegenCountdown.js';
 
 const Topbar = () => {
   const { state } = useGameState();
   const { takeTurn, loading } = useGameActions();
+  const regenCountdown = useRegenCountdown();
   const turnsStored = state?.turns_stored ?? 400;
   const level = state?.level ?? 1;
   const xp = state?.xp ?? 0;
@@ -56,7 +58,7 @@ const Topbar = () => {
               </span>
             </div>
             <div className="text-xs font-sans text-text3">
-              +7 in 25:00
+              +{REGEN_AMOUNT} in {regenCountdown}
             </div>
           </div>
           <button
