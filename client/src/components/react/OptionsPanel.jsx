@@ -445,8 +445,6 @@ const OptionsPanel = () => {
         </section>
 
         <DiscordSection />
-
-        <div id="vue-panel-news" className="contents" />
       </div>
     </div>
   );

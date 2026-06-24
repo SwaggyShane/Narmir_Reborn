@@ -236,8 +236,6 @@ const NewsPanel = () => {
         </div>
       </div>
 
-      <div id="vue-panel-races" className="contents" />
-      <div id="vue-panel-bounties" className="contents" />
       {replayData && (
         <ReplayModal
           title={replayData.title}

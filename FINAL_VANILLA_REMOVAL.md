@@ -113,14 +113,16 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] **Slice 28 (local):** BuildPanel — 0 getElementById; unified `ba-*` allocation keys; React build queue + hammer durability; vampire shrine/mausoleum visibility
 - [x] **Slice 29 (local):** `useRegenCountdown` hook (Topbar + useGameActions); expedition log event bridge replaces `expeditionLog.mjs` DOM injection
 - [x] **Slice 30 (local):** `socket-client.js` npm `socket.io-client` import (0 DOM); dropped `window.__narmir*` / `gameStateManager` / `closeGenericModal` / `escapeHtml` globals; shared `escapeHtml.js` util
-- [ ] Ongoing: validate locally on `gameshell-local`; merge to `main` when ready (draft PR #559 on remote)
+- [x] **Slice 31 (local):** `appEvents.js` + `useAppEvent` replace window CustomEvent bus; `BottomNav` badges are React state
+- [x] **Slice 32 (local):** removed dead `#battle-overlay` from `index.html` and orphan `#vue-panel-*` mount stubs from NewsPanel/OptionsPanel
+- [ ] Ongoing: merge `gameshell-local` → `main` when ready (draft PR #559 on remote)
 
-### Current Inventory Snapshot (updated 2026-06-24 post-Slice 30 local)
+### Current Inventory Snapshot (updated 2026-06-24 post-Slice 32 local)
 - document.getElementById: **0 in index.html**, **3 in client/src/** (React mount roots only: `app`, `portal-root`, `splash-root`)
-- el(: 0 in index.html; ~18 in client/src/
+- el(: 0 in index.html; 0 in client/src/ (no `el()` helper remains)
 - .innerHTML =: **0 in index.html**, **0 in client/src/**
 - .style.: **0 in index.html**, ~30 in client/src/ (inline React handlers only; no socket-client DOM)
-- window.* globals (non-event-bus): **0** — remaining `window.dispatchEvent` / `addEventListener` are intentional React event bus
+- window.* globals: **0** — cross-panel signals use `appEvents.js` module pub/sub; remaining `window.*` is browser APIs only (`location`, `confirm`, `prompt`, error logging)
 
 ## Codex Lane
 
@@ -178,7 +180,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] replayWarReport.js (window.warLogCache read) — ✅ COMPLETE (in PR #546): → gameStateManager.getState().warLogCache
 - [x] WarfarePanel (16 remaining globals) — ✅ COMPLETE (in PR #546): window.spyReportsCache/allianceIntelCache/targets → setState(); window.setWarfareTab → registerWarfareTab(); window.switchTab → direct import from panelNav.js; 6 dead globals removed (castWspell, doWcovert, updateWspellCalc, initWspells, initWcovert, selectedTargetW — none defined anywhere in codebase); window.wcovTargetRaceChange uses standard browser event API
 - [x] MarketPanel (window.targets read) — ✅ COMPLETE (in PR #546): → gameStateManager.getState().targets
-- [x] WarfarePanel (window.showBattleReport) — ✅ COMPLETE (in PR #546): new BattleReportModal.jsx React portal; WarfarePanel uses setBattleReport() local state; vanilla battle-overlay in index.html is now unreachable from the React attack flow (Codex to remove when vanilla spell path is ported)
+- [x] WarfarePanel (window.showBattleReport) — ✅ COMPLETE (in PR #546): new BattleReportModal.jsx React portal; WarfarePanel uses setBattleReport() local state; dead `#battle-overlay` stub removed in Slice 32
 - [x] EconomyPanel (4 upgrade defs) — ✅ COMPLETE (PR #544): UpgradesList.jsx + economyUpgrades.js; all callIfAvailable removed
 - [x] AlliancesPanel (10 vanilla delegates) — COMPLETE: full React state, API + socket chat, no window.* bridges
 - [x] TrainingPanel.jsx (13 DOM mutations) — ✅ COMPLETE: all removed; Max/Distribute buttons fixed; toast imported
@@ -194,6 +196,7 @@ Use that inventory as the baseline progress metric for the remaining work.
 - [x] socket-client.js — COMPLETE (Slice 30 local): `socket.io-client` npm import; 0 DOM; dropped `window.__narmir*` bootstrap
 - [x] Bootstrap globals purge — COMPLETE (Slice 30 local): `gameStateManager`, `closeGenericModal`, `escapeHtml` window exports removed; `escapeHtml.js` shared util
 - [x] App event bus — COMPLETE (Slice 31 local): `appEvents.js` + `useAppEvent` replace all `window.dispatchEvent`/`addEventListener` cross-panel bridges; `BottomNav` badges are React state; dead `game-data-updated` and `wcovTargetRaceChange` listeners removed
+- [x] Dead HTML stubs — COMPLETE (Slice 32 local): removed `#battle-overlay` from `index.html`; removed orphan `#vue-panel-races`, `#vue-panel-bounties`, `#vue-panel-news` from React panels
 - [x] EconomyPanel ledger follow-up — ✅ COMPLETE (PR #554): extended /economy/overview to compute and return taxIncome, marketIncome, tradeRouteIncome, totalIncome, troopUpkeep, netIncome; uses loadTradeRoutes() helper for normalization; applies SUPPORT_CAP_RACE multipliers and fragmentBonusManager barracks discount to match processTurn exactly; financial ledger in EconomyPanel now shows real values instead of hardcoded zeros
 - [x] WarfarePanel.jsx (19 → 0 DOM mutations) — ✅ COMPLETE (PR #556): `atkQty` controlled state for all 9 troop inputs; `atkEstimate` useMemo; estimate display panel in JSX; `setAtkMax` replaces setMaxValue DOM write; `launchAttackW` stale-closure fix; `targetKey()` from Slice 21 retained; fmtN removed (duplicate of fmt)
 
