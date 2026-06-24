@@ -38,7 +38,7 @@ const Sidebar = () => {
     <nav
       className={clsx(
         'hidden min-h-0 flex-col overflow-hidden border-r border-white/5 bg-bg2',
-        'lg:flex lg:[grid-area:side]',
+        'lg:col-start-1 lg:row-span-2 lg:row-start-2 lg:flex lg:overflow-y-auto',
       )}
     >
       <div className="min-h-0 flex-1 overflow-y-auto scrollbar-game">

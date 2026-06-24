@@ -36,11 +36,8 @@ import KingdomProfileModal from './components/react/KingdomProfileModal.jsx';
 import SchoolSelectionController from './components/react/SchoolSelectionController.jsx';
 import RaceLoreController from './components/react/RaceLoreController.jsx';
 
-const IMMERSIVE_PANELS = new Set(['globalchat', 'alliances']);
-
 const GameShell = () => {
   const { activePanel } = useActivePanel();
-  const immersiveMain = IMMERSIVE_PANELS.has(activePanel);
 
   useEffect(() => {
     const update = () => {};
@@ -84,73 +81,71 @@ const GameShell = () => {
   };
 
   return (
-    <>
-    <div
-      className={[
-        'flex h-full min-h-0 w-full flex-col bg-bg pt-14',
-        'lg:grid lg:h-full lg:min-h-0 lg:overflow-hidden lg:p-0',
-        'lg:grid-cols-[220px_175px_minmax(0,1fr)]',
-        'lg:grid-rows-[56px_minmax(0,1fr)_32px]',
-        "lg:[grid-template-areas:'top_top_top'_'side_resources_main'_'side_footer_footer']",
-      ].join(' ')}
-    >
-      <Topbar />
-
-      <Sidebar />
-
-      <aside
-        aria-label="Kingdom resources"
+    <div className="h-screen w-full overflow-hidden bg-bg">
+      <div
         className={[
-          'shrink-0 border-b border-white/5 bg-bg px-3 py-2 shadow-[0_4px_12px_rgba(0,0,0,0.3)]',
-          'lg:flex lg:min-h-0 lg:flex-col lg:gap-2 lg:overflow-x-hidden lg:overflow-y-auto',
-          'lg:border-b-0 lg:border-r lg:border-white/5 lg:bg-void-900/80 lg:px-2 lg:py-2.5',
-          'lg:[grid-area:resources]',
-          '[&_.metrics]:mb-0 [&_.metrics]:flex [&_.metrics]:w-full [&_.metrics]:flex-wrap [&_.metrics]:gap-1',
-          'lg:[&_.metrics]:flex-1 lg:[&_.metrics]:flex-col lg:[&_.metrics]:gap-1.5',
-          'lg:[&_.metric]:w-full lg:[&_.metric]:min-h-[54px] lg:[&_.metric]:rounded-xl lg:[&_.metric]:px-2.5 lg:[&_.metric]:py-2',
-          'lg:[&_.metric]:bg-void-950/90 lg:[&_.metric]:shadow-[0_10px_20px_rgba(0,0,0,0.22)]',
-          'lg:[&_.metric_.val]:text-right lg:[&_.metric_.sub]:justify-end',
+          'h-full w-full',
+          'max-lg:flex max-lg:min-h-0 max-lg:flex-col max-lg:pt-14',
+          'lg:grid lg:min-h-0 lg:overflow-hidden',
+          'lg:grid-cols-[220px_175px_minmax(0,1fr)]',
+          'lg:grid-rows-[56px_minmax(0,1fr)_32px]',
         ].join(' ')}
       >
-        <div className="hidden px-1 text-[10px] font-black uppercase tracking-[0.28em] text-ember-400/85 lg:block">
-          Resources
-        </div>
-        <div className="metrics">
-          <ResourceStrip />
-        </div>
-      </aside>
+        <Topbar />
 
-      <main
-        className={[
-          'relative flex min-h-0 w-full min-w-0 flex-1 flex-col bg-bg',
-          'pb-[calc(104px+env(safe-area-inset-bottom,0px))]',
-          'lg:min-h-0 lg:pb-0 lg:[grid-area:main]',
-          immersiveMain ? 'overflow-hidden' : 'overflow-y-auto',
-        ].join(' ')}
-      >
-        {renderPanel()}
-      </main>
+        <Sidebar />
 
-      <footer
-        className={[
-          'flex h-8 shrink-0 items-center justify-between border-t border-white/5',
-          'bg-black/90 px-4 text-[11px] leading-none text-text2',
-          'max-lg:fixed max-lg:inset-x-0 max-lg:bottom-[calc(72px+env(safe-area-inset-bottom,0px))] max-lg:z-[2900]',
-          'lg:min-w-0 lg:[grid-area:footer]',
-        ].join(' ')}
-      >
-        <div>● SYSTEM CLOUD SYNCED</div>
-        <div>UPTIME: 00h 00m 00s</div>
-      </footer>
+        <aside
+          aria-label="Kingdom resources"
+          className={[
+            'shrink-0 border-b border-white/5 bg-bg px-3 py-2 shadow-[0_4px_12px_rgba(0,0,0,0.3)]',
+            'lg:col-start-2 lg:row-start-2 lg:flex lg:min-h-0 lg:flex-col lg:gap-2',
+            'lg:overflow-x-hidden lg:overflow-y-auto',
+            'lg:border-b-0 lg:border-r lg:border-white/5 lg:bg-void-900/80 lg:px-2 lg:py-2.5',
+            '[&_.metrics]:mb-0 [&_.metrics]:flex [&_.metrics]:w-full [&_.metrics]:flex-wrap [&_.metrics]:gap-1',
+            'lg:[&_.metrics]:flex-1 lg:[&_.metrics]:flex-col lg:[&_.metrics]:gap-1.5',
+            'lg:[&_.metric]:w-full lg:[&_.metric]:min-h-[54px] lg:[&_.metric]:rounded-xl lg:[&_.metric]:px-2.5 lg:[&_.metric]:py-2',
+            'lg:[&_.metric]:bg-void-950/90 lg:[&_.metric]:shadow-[0_10px_20px_rgba(0,0,0,0.22)]',
+            'lg:[&_.metric_.val]:text-right lg:[&_.metric_.sub]:justify-end',
+          ].join(' ')}
+        >
+          <div className="hidden px-1 text-[10px] font-black uppercase tracking-[0.28em] text-ember-400/85 lg:block">
+            Resources
+          </div>
+          <div className="metrics">
+            <ResourceStrip />
+          </div>
+        </aside>
+
+        <main
+          className={[
+            'relative flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden bg-bg',
+            'max-lg:pb-[calc(104px+env(safe-area-inset-bottom,0px))]',
+            'lg:col-start-3 lg:row-start-2',
+          ].join(' ')}
+        >
+          {renderPanel()}
+        </main>
+
+        <footer
+          className={[
+            'flex h-8 shrink-0 items-center justify-between border-t border-white/5',
+            'bg-black/90 px-4 text-[11px] leading-none text-text2',
+            'max-lg:fixed max-lg:inset-x-0 max-lg:bottom-[calc(72px+env(safe-area-inset-bottom,0px))] max-lg:z-[2900]',
+            'lg:col-span-2 lg:col-start-2 lg:row-start-3',
+          ].join(' ')}
+        >
+          <div>● SYSTEM CLOUD SYNCED</div>
+          <div>UPTIME: 00h 00m 00s</div>
+        </footer>
+      </div>
+
+      <BottomNav />
+      <AuthModal />
+      <KingdomProfileModal />
+      <SchoolSelectionController />
+      <RaceLoreController />
     </div>
-
-    <BottomNav />
-
-    <AuthModal />
-    <KingdomProfileModal />
-    <SchoolSelectionController />
-    <RaceLoreController />
-    </>
   );
 };
 
