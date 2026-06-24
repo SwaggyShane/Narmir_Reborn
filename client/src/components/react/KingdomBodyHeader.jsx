@@ -98,8 +98,8 @@ const KingdomBodyHeader = () => {
           <div className="flex min-w-0 flex-1 flex-wrap items-center" style={{ gap: GAP }}>
             <h1
               id="kingdom-name"
-              className="min-w-0 font-cinzel font-bold leading-none"
-              style={{ fontSize: 16, color: 'var(--text)' }}
+              className="min-w-0 font-cinzel text-lg font-bold leading-none md:text-xl"
+              style={{ color: 'var(--text)' }}
             >
               <span style={{ color: 'var(--text)' }}>{playerName}</span>
               <span
@@ -122,10 +122,11 @@ const KingdomBodyHeader = () => {
             {rank != null ? (
               <span
                 id="kingdom-rank"
-                className="shrink-0 rounded border border-white/10 bg-void-900/80 px-2 py-0.5 font-cinzel text-[11px] font-bold leading-none text-text"
+                className="shrink-0 rounded border border-white/10 bg-void-900/80 px-2 py-0.5 text-[11px] font-semibold leading-none text-text2"
                 title="Kingdom rank by score"
               >
-                #{rank}
+                World Rank{' '}
+                <span className="font-cinzel font-bold text-text">#{rank}</span>
               </span>
             ) : (
               <span
@@ -133,7 +134,7 @@ const KingdomBodyHeader = () => {
                 className="shrink-0 text-[10px] text-text3"
                 title="Loading rank"
               >
-                Rank ...
+                World Rank ...
               </span>
             )}
           </div>
