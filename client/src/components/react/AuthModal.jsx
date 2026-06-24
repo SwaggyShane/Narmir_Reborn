@@ -3,6 +3,7 @@ import { apiCall } from '../../utils/api.mjs';
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import { gameStateManager } from '../../GameStateManager.js';
 import { getSocket } from '../../socket-client.js';
+import { initSocketHandlers } from '../../hooks/useSocket.js';
 
 let authApi = null;
 
@@ -34,27 +35,52 @@ export async function loadKingdom() {
   return kingdom;
 }
 
-async function finishAuthSession(fallbackUsername) {
-  if (typeof authApi?.hideLoginModal === 'function') {
-    authApi.hideLoginModal();
+async function connectSocketAfterAuth() {
+  try {
+    const sock = await getSocket();
+    initSocketHandlers(sock);
+  } catch (err) {
+    console.warn('[socket] Failed to initialize after auth:', err);
   }
+}
 
+async function bootstrapAuthenticatedSession(fallbackUsername) {
   try {
     const me = await apiCall('/api/auth/me');
     if (me && !me.error) {
       syncIdentity(me, fallbackUsername);
-    } else {
+    } else if (fallbackUsername) {
       syncIdentity(null, fallbackUsername);
+    } else {
+      return false;
     }
   } catch {
-    syncIdentity(null, fallbackUsername);
+    if (fallbackUsername) {
+      syncIdentity(null, fallbackUsername);
+    } else {
+      return false;
+    }
   }
 
   await loadKingdom();
+  await connectSocketAfterAuth();
+  return true;
+}
 
-  getSocket().catch(function (err) {
-    console.warn('[socket] Failed to initialize after auth:', err);
-  });
+let restorePromise = null;
+
+export async function restoreAuthSession() {
+  if (!restorePromise) {
+    restorePromise = bootstrapAuthenticatedSession();
+  }
+  return restorePromise;
+}
+
+async function finishAuthSession(fallbackUsername) {
+  if (typeof authApi?.hideLoginModal === 'function') {
+    authApi.hideLoginModal();
+  }
+  await bootstrapAuthenticatedSession(fallbackUsername);
 }
 
 async function submitAuthRequest(endpoint, payload) {
