@@ -1,13 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
 import { useGameState } from '../../hooks/useGameState';
 import { fmt } from "../../utils/fmt";
 import { toast } from '../../utils/toast.js';
 import { registerSetBountyTarget } from '../../utils/bountyTarget.js';
-import { registerOpenDirectMessage } from '../../utils/directMessage.js';
-import { sendDirectMessage } from '../../socket-client.js';
-import { switchTab } from '../../utils/panelNav.js';
 
 const REFRESH_INTERVAL_MS = 60 * 1000;
 const panelShell = 'panel';
@@ -23,9 +19,6 @@ const BountiesPanel = () => {
   const [selectedTarget, setSelectedTarget] = useState('');
   const [amount, setAmount] = useState('');
   const [placing, setPlacing] = useState(false);
-  const [dmTarget, setDmTarget] = useState(null);
-  const [dmMessage, setDmMessage] = useState('');
-
   const { state } = useGameState();
 
   const fetchBounties = useCallback(async () => {
@@ -55,20 +48,11 @@ const BountiesPanel = () => {
     loadTargets();
 
     const unregister = registerSetBountyTarget((id) => setSelectedTarget(id ? String(id) : ''));
-    const unregisterDm = registerOpenDirectMessage(({ playerId, name }) => {
-      setDmTarget({
-        playerId,
-        name: String(name || '').trim(),
-      });
-      setDmMessage('');
-      switchTab('messages');
-    });
 
     const interval = setInterval(fetchBounties, REFRESH_INTERVAL_MS);
     return () => {
       clearInterval(interval);
       unregister?.();
-      unregisterDm?.();
     };
   }, [fetchBounties, loadTargets]);
 
@@ -98,7 +82,6 @@ const BountiesPanel = () => {
   };
 
   return (
-    <>
       <div id="bounties" className={panelShell}>
         <div className="card mx-auto mt-0 w-full max-w-6xl">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
@@ -137,7 +120,7 @@ const BountiesPanel = () => {
                         </span>
                       </div>
                       <div className="text-[11px] text-[var(--text3)]">
-                        Placed by <span className="text-[var(--accent1)]">{b.placer_name}</span> ·{' '}
+                        Placed by <span className="text-[var(--accent1)]">{b.placer_name}</span> |{' '}
                         {new Date(b.created_at).toLocaleDateString()}
                       </div>
                     </div>
@@ -194,86 +177,6 @@ const BountiesPanel = () => {
           </div>
         </div>
       </div>
-
-      <div id="messages" className={clsx(panelShell, 'hidden')}>
-        <div className="mx-auto grid w-full max-w-6xl min-h-[680px] grid-cols-1 overflow-hidden rounded-[20px] border border-[var(--border)] bg-[var(--bg2)] xl:grid-cols-[300px_minmax(0,1fr)]">
-          <div className="flex min-h-0 flex-col border-b border-[var(--border)] xl:border-b-0 xl:border-r xl:border-[var(--border)]">
-            <div className="border-b border-[var(--border)] bg-[var(--bg3)] px-4 py-4">
-              <div className="text-[13px] font-bold text-[var(--text2)]">Inbox</div>
-            </div>
-            <div id="conv-list" className="min-h-0 flex-1 overflow-y-auto">
-              <div className="px-4 py-5 text-center text-[13px] text-[var(--text3)]">
-                No messages yet.
-              </div>
-            </div>
-          </div>
-
-          <div className="flex min-h-0 flex-col">
-            <div
-              id="active-conv-header"
-              className="border-b border-[var(--border2)] bg-[var(--bg3)] px-5 py-4"
-            >
-              <div className="text-[11px] uppercase tracking-[0.18em] text-[var(--text3)]">
-                Message
-              </div>
-              <div id="active-conv-name" className="text-[16px] font-bold text-[var(--text)]">
-                Select a conversation
-              </div>
-            </div>
-
-            <div
-              id="active-conv-messages"
-              className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-5 py-5"
-            >
-              <div className="mt-10 text-center text-[var(--text3)]">
-                <div className="mb-2 text-[40px]">✉️</div>
-                Select a kingdom member from the rankings to message them.
-              </div>
-            </div>
-
-            <div
-              id="msg-input-wrap"
-              className="hidden border-t border-[var(--border)] bg-[var(--bg2)] px-4 py-4"
-            >
-              <div className="flex gap-2.5">
-                <input
-                  type="text"
-                  className="input flex-1"
-                  id="msg-input"
-                  placeholder={dmTarget?.name ? `Message ${dmTarget.name}...` : 'Pick a kingdom from Rankings to message them...'}
-                  value={dmMessage}
-                  onChange={e => setDmMessage(e.target.value)}
-                  onKeyDown={async e => {
-                    if (e.key !== 'Enter') return;
-                    e.preventDefault();
-                    if (!dmTarget?.name) return toast('Pick a kingdom to message first', 'error');
-                    const ack = await sendDirectMessage(dmTarget.name, dmMessage);
-                    if (ack?.error) return toast(ack.error, 'error');
-                    setDmMessage('');
-                    toast(ack?.message || `Message sent to ${dmTarget.name}`, 'success');
-                  }}
-                />
-                <button
-                  className="base-btn variant-accent bg-[var(--accent1)]"
-                  onClick={async () => {
-                    if (!dmTarget?.name) return toast('Pick a kingdom to message first', 'error');
-                    const ack = await sendDirectMessage(dmTarget.name, dmMessage);
-                    if (ack?.error) return toast(ack.error, 'error');
-                    setDmMessage('');
-                    toast(ack?.message || `Message sent to ${dmTarget.name}`, 'success');
-                  }}
-                >
-                  Send
-                </button>
-              </div>
-              <div className="mt-2 text-[11px] text-[var(--text3)]">
-                {dmTarget?.name ? `Recipient: ${dmTarget.name}` : 'Open a kingdom profile or Rankings message action to set a recipient.'}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
   );
 };
 

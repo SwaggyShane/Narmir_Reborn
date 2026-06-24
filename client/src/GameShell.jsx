@@ -23,6 +23,7 @@ import WorldmapPanel from './components/react/WorldmapPanel.jsx';
 import OptionsPanel from './components/react/OptionsPanel.jsx';
 import BountiesPanel from './components/react/BountiesPanel.jsx';
 import AlliancesPanel from './components/react/AlliancesPanel.jsx';
+import MessagesPanel from './components/react/MessagesPanel.jsx';
 import DefensePanel from './components/react/DefensePanel.jsx';
 import HirePanel from './components/react/HirePanel.jsx';
 import TrainingPanel from './components/react/TrainingPanel.jsx';
@@ -82,8 +83,7 @@ const GameShell = () => {
       case 'testing': return <TestingPanel />;
       case 'worldmap': return <WorldmapPanel />;
       case 'options': return <OptionsPanel />;
-      case 'messages':
-        return <div className="panel flex flex-1 items-center justify-center text-center text-text3">Direct messages not yet implemented in React shell. Use Global Chat.</div>;
+      case 'messages': return <MessagesPanel />;
       case 'forum':
         return <div className="panel flex flex-1 items-center justify-center text-center text-text3">Forum lives in the Portal (separate entry point).</div>;
       default:
