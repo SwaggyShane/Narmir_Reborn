@@ -103,7 +103,8 @@ Use that inventory as the baseline progress metric for the remaining work.
 
 ### Codex Next (post-Slice 21)
 - [x] Slice 19–21: shell kill + GameShell + pure Tailwind layout — ✅ COMPLETE on `GameShell_migration`
-- [ ] **Slice 22:** Gut `syncUI()` — stop no-op DOM writes; remove `gameStateManager.subscribe(syncUI)`; drop `syncUI()` calls from Economy/Market/UpgradesList
+- [x] **Slice 22a:** Mount global overlays in `GameShell` — `AuthModal`, `KingdomProfileModal`, `SchoolSelectionController`; fixed `fixed inset-0 z-modal` positioning on auth/profile backdrops
+- [ ] **Slice 22b:** Gut `syncUI()` — stop no-op DOM writes; remove `gameStateManager.subscribe(syncUI)`; drop `syncUI()` calls from Economy/Market/UpgradesList
 - [ ] **Slice 23:** Globalchat + `socket-client.js` chat rendering → React-only (socket state paths are clean; chat row DOM is not)
 - [ ] **Slice 24:** Modal migration (xp, generic, lore, attunement, toast) → React portals (pattern: `ReplayModal`, `BattleReportModal`)
 - [ ] **Slice 25:** Dead code purge (`newsShell.mjs` orphan, `renderTargets.mjs`, `applyNavLayout` body classes, ResourceStrip legacy metric ids)

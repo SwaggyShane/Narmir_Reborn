@@ -240,7 +240,7 @@ export default function AuthModal() {
   const checks = useMemo(() => passwordRules(form.password || ''), [form.password]);
   const isPasswordStrongEnough = checks.every((item) => item.ok);
   const panelClass =
-    'relative z-[1] flex min-h-screen w-[45%] flex-col justify-center overflow-y-auto border-l border-[#363a52] bg-[rgba(19,20,29,0.85)] px-[60px] py-[40px] backdrop-blur-md box-border';
+    'relative flex h-full w-full max-w-[520px] flex-col justify-center overflow-y-auto border-l border-[#363a52] bg-[rgba(19,20,29,0.95)] px-[60px] py-[40px] backdrop-blur-md box-border sm:w-[45vw]';
   const inputClass =
     'mb-2.5 box-border w-full rounded-lg border border-[#363a52] bg-[#1a1c27] px-3 py-2.5 text-[16px] text-[#e8e9f0]';
   const helpClass =
@@ -252,6 +252,12 @@ export default function AuthModal() {
   if (!visible) return null;
 
   return (
+    <div
+      className="fixed inset-0 z-modal flex justify-end bg-black/70 backdrop-blur-sm"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) hideLoginModal();
+      }}
+    >
     <div className={panelClass}>
       <div className="mb-6 text-center">
         <div className="mb-2 text-[24px] font-bold text-[var(--gold)]">
@@ -380,6 +386,7 @@ export default function AuthModal() {
           Close
         </button>
       </div>
+    </div>
     </div>
   );
 }
