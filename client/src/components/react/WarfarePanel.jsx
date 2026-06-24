@@ -18,11 +18,6 @@ import BattleReportModal from './BattleReportModal.jsx';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
-function fmtN(value) {
-  const n = Number(value || 0);
-  return Number.isFinite(n) ? Math.round(n).toLocaleString() : '0';
-}
-
 function parseDisc(raw) {
   if (!raw) return {};
   if (typeof raw === 'string') {
@@ -179,6 +174,11 @@ const WarfarePanel = () => {
 
   // attack troop quantities (controlled inputs)
   const [atkQty, setAtkQty] = useState({ fighters: '0', rangers: '0', mages: '0', wm: '0', ladders: '0', clerics: '0', engineers: '0', ninjas: '0', thieves: '0' });
+  const handleQtyChange = useCallback((key, value) => {
+    if (value === '' || parseInt(value, 10) >= 0) {
+      setAtkQty((q) => ({ ...q, [key]: value }));
+    }
+  }, []);
 
   // report data
   const [warLogRows, setWarLogRows] = useState([]);
@@ -427,36 +427,36 @@ const WarfarePanel = () => {
     const r = result.report || {};
     const rows = [
       ['Outcome', r.win ? '🏆 Victory' : '❌ Repelled'],
-      ['Land Seized', `+${fmtN(r.landTransferred || 0)} acres`],
-      ['Your Power', fmtN(r.atkPower)],
-      ['Enemy Power', fmtN(r.defPower)],
+      ['Land Seized', `+${fmt(r.landTransferred || 0)} acres`],
+      ['Your Power', fmt(r.atkPower)],
+      ['Enemy Power', fmt(r.defPower)],
     ];
 
-    if (r.ninjaKills > 0) rows.push(['Assassinations (Ninjas)', fmtN(r.ninjaKills)]);
-    if (r.flankKills > 0) rows.push(['Flank Action', fmtN(r.flankKills)]);
-    if (r.rangerKills > 0) rows.push(['Opening Volley', fmtN(r.rangerKills)]);
-    if (r.thiefSabotage > 0) rows.push(['Enemy WM Disabled', fmtN(r.thiefSabotage)]);
+    if (r.ninjaKills > 0) rows.push(['Assassinations (Ninjas)', fmt(r.ninjaKills)]);
+    if (r.flankKills > 0) rows.push(['Flank Action', fmt(r.flankKills)]);
+    if (r.rangerKills > 0) rows.push(['Opening Volley', fmt(r.rangerKills)]);
+    if (r.thiefSabotage > 0) rows.push(['Enemy WM Disabled', fmt(r.thiefSabotage)]);
 
     rows.push(['---', 'YOUR LOSSES']);
-    if (r.atkFightersLost > 0) rows.push(['Fighters Lost', fmtN(r.atkFightersLost)]);
-    if (r.atkRangersLost > 0) rows.push(['Rangers Lost', fmtN(r.atkRangersLost)]);
-    if (r.atkMagesLost > 0) rows.push(['Mages Lost', fmtN(r.atkMagesLost)]);
-    if (r.atkNinjasLost > 0) rows.push(['Ninjas Lost', fmtN(r.atkNinjasLost)]);
-    if (r.atkClericsLost > 0) rows.push(['Clerics Lost', fmtN(r.atkClericsLost)]);
-    if (r.atkThievesLost > 0) rows.push(['Thieves Lost', fmtN(r.atkThievesLost)]);
-    if (r.atkEngineersLost > 0) rows.push(['Engineers Lost', fmtN(r.atkEngineersLost)]);
-    if (r.atkWmLost > 0) rows.push(['War Machines Lost', fmtN(r.atkWmLost)]);
+    if (r.atkFightersLost > 0) rows.push(['Fighters Lost', fmt(r.atkFightersLost)]);
+    if (r.atkRangersLost > 0) rows.push(['Rangers Lost', fmt(r.atkRangersLost)]);
+    if (r.atkMagesLost > 0) rows.push(['Mages Lost', fmt(r.atkMagesLost)]);
+    if (r.atkNinjasLost > 0) rows.push(['Ninjas Lost', fmt(r.atkNinjasLost)]);
+    if (r.atkClericsLost > 0) rows.push(['Clerics Lost', fmt(r.atkClericsLost)]);
+    if (r.atkThievesLost > 0) rows.push(['Thieves Lost', fmt(r.atkThievesLost)]);
+    if (r.atkEngineersLost > 0) rows.push(['Engineers Lost', fmt(r.atkEngineersLost)]);
+    if (r.atkWmLost > 0) rows.push(['War Machines Lost', fmt(r.atkWmLost)]);
 
     rows.push(['---', 'ENEMY LOSSES']);
-    if (r.defFightersLost > 0) rows.push(['Fighters Slain', fmtN(r.defFightersLost)]);
-    if (r.defRangersLost > 0) rows.push(['Rangers Slain', fmtN(r.defRangersLost)]);
-    if (r.defMagesLost > 0) rows.push(['Mages Slain', fmtN(r.defMagesLost)]);
-    if (r.defNinjasLost > 0) rows.push(['Ninjas Slain', fmtN(r.defNinjasLost)]);
-    if (r.defClericsLost > 0) rows.push(['Clerics Slain', fmtN(r.defClericsLost)]);
-    if (r.defThievesLost > 0) rows.push(['Thieves Slain', fmtN(r.defThievesLost)]);
-    if (r.defEngineersLost > 0) rows.push(['Engineers Slain', fmtN(r.defEngineersLost)]);
-    if (r.defWmLost > 0) rows.push(['War Machines Slain', fmtN(r.defWmLost)]);
-    if (r.wallsDestroyed > 0) rows.push(['Walls Destroyed', fmtN(r.wallsDestroyed)]);
+    if (r.defFightersLost > 0) rows.push(['Fighters Slain', fmt(r.defFightersLost)]);
+    if (r.defRangersLost > 0) rows.push(['Rangers Slain', fmt(r.defRangersLost)]);
+    if (r.defMagesLost > 0) rows.push(['Mages Slain', fmt(r.defMagesLost)]);
+    if (r.defNinjasLost > 0) rows.push(['Ninjas Slain', fmt(r.defNinjasLost)]);
+    if (r.defClericsLost > 0) rows.push(['Clerics Slain', fmt(r.defClericsLost)]);
+    if (r.defThievesLost > 0) rows.push(['Thieves Slain', fmt(r.defThievesLost)]);
+    if (r.defEngineersLost > 0) rows.push(['Engineers Slain', fmt(r.defEngineersLost)]);
+    if (r.defWmLost > 0) rows.push(['War Machines Slain', fmt(r.defWmLost)]);
+    if (r.wallsDestroyed > 0) rows.push(['Walls Destroyed', fmt(r.wallsDestroyed)]);
     if (r.bullyMsg) rows.push(['⚠️ Penalty', r.bullyMsg]);
 
     applyGameMutation(result, { reason: 'attack' });
@@ -467,7 +467,7 @@ const WarfarePanel = () => {
       rows,
     });
     refreshAttackTargets();
-  }, [refreshAttackTargets, state, attackTarget]);
+  }, [refreshAttackTargets, state, attackTarget, atkQty]);
 
   // wspells/wcovert action stubs — not yet implemented; buttons present for future use
   const castWspell = () => {};
@@ -670,7 +670,7 @@ const WarfarePanel = () => {
                 ⚔️ Fighters <span className="text-[var(--text3)] font-normal">({state?.fighters || 0})</span>
               </span>
               <div className="flex items-center gap-1">
-                <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" min="0" value={atkQty.fighters} onChange={(e) => setAtkQty((q) => ({ ...q, fighters: e.target.value }))} placeholder="Qty" />
+                <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" min="0" value={atkQty.fighters} onChange={(e) => handleQtyChange('fighters', e.target.value)} placeholder="Qty" />
                 <button className="base-btn text-[10px] px-2 py-1.5" onClick={() => setAtkMax('fighters')}>MAX</button>
               </div>
             </div>
@@ -679,7 +679,7 @@ const WarfarePanel = () => {
                 🏹 Rangers <span className="text-[var(--text3)] font-normal">({state?.rangers || 0})</span>
               </span>
               <div className="flex items-center gap-1">
-                <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" min="0" value={atkQty.rangers} onChange={(e) => setAtkQty((q) => ({ ...q, rangers: e.target.value }))} placeholder="Qty" />
+                <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" min="0" value={atkQty.rangers} onChange={(e) => handleQtyChange('rangers', e.target.value)} placeholder="Qty" />
                 <button className="base-btn text-[10px] px-2 py-1.5" onClick={() => setAtkMax('rangers')}>MAX</button>
               </div>
             </div>
@@ -688,7 +688,7 @@ const WarfarePanel = () => {
                 ✨ Mages <span className="text-[var(--text3)] font-normal">({state?.mages || 0})</span>
               </span>
               <div className="flex items-center gap-1">
-                <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" min="0" value={atkQty.mages} onChange={(e) => setAtkQty((q) => ({ ...q, mages: e.target.value }))} placeholder="Qty" />
+                <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" min="0" value={atkQty.mages} onChange={(e) => handleQtyChange('mages', e.target.value)} placeholder="Qty" />
                 <button className="base-btn text-[10px] px-2 py-1.5" onClick={() => setAtkMax('mages')}>MAX</button>
               </div>
             </div>
@@ -697,7 +697,7 @@ const WarfarePanel = () => {
                 ⛪ Clerics <span className="text-[var(--text3)] font-normal">({(state?.clerics || 0) + (state?.thralls || 0)})</span>
               </span>
               <div className="flex items-center gap-1">
-                <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" min="0" value={atkQty.clerics} onChange={(e) => setAtkQty((q) => ({ ...q, clerics: e.target.value }))} placeholder="Qty" />
+                <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" min="0" value={atkQty.clerics} onChange={(e) => handleQtyChange('clerics', e.target.value)} placeholder="Qty" />
                 <button className="base-btn text-[10px] px-2 py-1.5" onClick={() => setAtkMax('clerics')}>MAX</button>
               </div>
             </div>
@@ -707,7 +707,7 @@ const WarfarePanel = () => {
                   ⚙️ War Machines <span className="text-[var(--text3)] font-normal">({state?.war_machines || 0})</span>
                 </span>
                 <div className="flex items-center gap-1">
-                  <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" min="0" value={atkQty.wm} onChange={(e) => setAtkQty((q) => ({ ...q, wm: e.target.value }))} placeholder="Qty" />
+                  <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" min="0" value={atkQty.wm} onChange={(e) => handleQtyChange('wm', e.target.value)} placeholder="Qty" />
                   <button className="base-btn text-[10px] px-2 py-1.5" onClick={() => setAtkMax('wm')}>MAX</button>
                 </div>
               </div>
@@ -716,7 +716,7 @@ const WarfarePanel = () => {
                   🪜 Ladders <span className="text-[var(--text3)] font-normal">({state?.ladders || 0})</span>
                 </span>
                 <div className="flex items-center gap-1">
-                  <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" min="0" value={atkQty.ladders} onChange={(e) => setAtkQty((q) => ({ ...q, ladders: e.target.value }))} placeholder="Qty" />
+                  <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" min="0" value={atkQty.ladders} onChange={(e) => handleQtyChange('ladders', e.target.value)} placeholder="Qty" />
                   <button className="base-btn text-[10px] px-2 py-1.5" onClick={() => setAtkMax('ladders')}>MAX</button>
                 </div>
               </div>
@@ -727,7 +727,7 @@ const WarfarePanel = () => {
                   🕵️ Ninjas <span className="text-[var(--text3)] font-normal">({state?.ninjas || 0})</span>
                 </span>
                 <div className="flex items-center gap-1">
-                  <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" min="0" value={atkQty.ninjas} onChange={(e) => setAtkQty((q) => ({ ...q, ninjas: e.target.value }))} placeholder="Qty" />
+                  <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" min="0" value={atkQty.ninjas} onChange={(e) => handleQtyChange('ninjas', e.target.value)} placeholder="Qty" />
                   <button className="base-btn text-[10px] px-2 py-1.5" onClick={() => setAtkMax('ninjas')}>MAX</button>
                 </div>
               </div>
@@ -736,11 +736,11 @@ const WarfarePanel = () => {
               <div className="mt-3 pt-3 border-t border-[var(--border)] text-[13px]">
                 <div className="flex justify-between mb-1">
                   <span className="text-[var(--text3)]">Est. Attack Power</span>
-                  <span style={{ color: atkEstimate.winPct >= 50 ? 'var(--green)' : 'var(--amber)' }}>{fmtN(atkEstimate.atkPower)}</span>
+                  <span style={{ color: atkEstimate.winPct >= 50 ? 'var(--green)' : 'var(--amber)' }}>{fmt(atkEstimate.atkPower)}</span>
                 </div>
                 <div className="flex justify-between mb-1">
                   <span className="text-[var(--text3)]">Est. Enemy Defense</span>
-                  <span className="text-[var(--text)]">{atkEstimate.defPower > 0 ? `~${fmtN(atkEstimate.defPower)} (est.)` : '—'}</span>
+                  <span className="text-[var(--text)]">{atkEstimate.defPower > 0 ? `~${fmt(atkEstimate.defPower)} (est.)` : '—'}</span>
                 </div>
                 <div className="flex justify-between mb-1">
                   <span className="text-[var(--text3)]">Win Chance</span>
@@ -748,7 +748,7 @@ const WarfarePanel = () => {
                 </div>
                 <div className="flex justify-between mb-1">
                   <span className="text-[var(--text3)]">Est. Land Gain</span>
-                  <span className="text-[var(--green)]">{atkEstimate.land > 0 ? `+${fmtN(atkEstimate.land)} ac` : '—'}</span>
+                  <span className="text-[var(--green)]">{atkEstimate.land > 0 ? `+${fmt(atkEstimate.land)} ac` : '—'}</span>
                 </div>
                 {atkEstimate.bullyMsg && (
                   <div className="mt-1 text-[var(--red)] text-[12px]">{atkEstimate.bullyMsg}</div>
