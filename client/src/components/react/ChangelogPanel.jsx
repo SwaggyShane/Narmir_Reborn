@@ -20,7 +20,7 @@ const ChangelogPanel = () => {
   };
 
   return (
-    <div id="changelog" className={clsx('panel min-h-0 w-full overflow-y-auto px-4 pb-5', 'hidden')}>
+    <div id="changelog" className="panel">
       <div className="mx-auto mt-0 w-full max-w-6xl rounded-[20px] border border-[var(--border)] bg-[var(--bg2)] p-6">
         <div className="mb-6 flex items-center justify-between gap-3">
           <div className="card-title !mb-0">📋 Changelog & Updates</div>

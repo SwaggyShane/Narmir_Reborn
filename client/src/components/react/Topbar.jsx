@@ -27,32 +27,36 @@ const Topbar = () => {
     showLoginModal();
   };
 
+  const rank = state?.rank ?? state?.kingdom_rank ?? state?.position;
+
   return (
-    <header className="topbar flex h-14 items-center justify-between gap-2 border-b border-ember-900/40 bg-void-950/95 px-3 shadow-panel backdrop-blur-xl md:px-4">
-      <div className="logo-container min-w-0">
-        <div className="logo truncate font-serif text-base font-black uppercase tracking-[0.12em] text-ember-400 md:text-md">NARMIR REBORN</div>
-        <div className="tagline truncate text-sm text-text2 md:text-sm">Pure. Damn. Evil.</div>
+    <header className="fixed inset-x-0 top-0 z-topbar-mobile flex h-14 w-full shrink-0 items-center justify-between gap-2 border-b border-ember-900/40 bg-void-950/95 px-3 shadow-panel backdrop-blur-xl lg:relative lg:z-[1100] lg:[grid-area:top] md:px-4">
+      <div className="min-w-0">
+        <div className="truncate font-serif text-base font-black uppercase tracking-[0.12em] text-ember-400 md:text-md">NARMIR REBORN</div>
+        <div className="truncate text-sm text-text2">Pure. Damn. Evil.</div>
       </div>
-      <div className="topbar-stats flex min-w-0 items-center gap-2 rounded-2xl border border-ember-900/30 bg-void-900/70 px-2.5 py-2 shadow-panel md:gap-3 md:px-3">
-        <div className="tstat hide-sm hidden shrink-0 md:block">
-          <div className="val text-text" id="top-rank">—</div>
-          <div className="lbl text-text3">Rank</div>
+      <div className="flex min-w-0 items-center gap-2 rounded-2xl border border-ember-900/30 bg-void-900/70 px-2.5 py-2 shadow-panel md:gap-3 md:px-3">
+        <div className="hidden shrink-0 md:block">
+          <div className="font-cinzel text-base font-black text-text">
+            {rank != null ? `#${rank}` : '—'}
+          </div>
+          <div className="text-[10px] font-bold uppercase tracking-wide text-text3">Rank</div>
         </div>
         <div className="flex items-center gap-2">
           <div className="text-right font-serif leading-none">
             <div className="flex items-center gap-1.5">
-              <span className="hide-xs text-sm uppercase tracking-[0.5px] text-text3">
+              <span className="hidden text-sm uppercase tracking-[0.5px] text-text3 xs:inline">
                 Turns:
               </span>
-              <span id="turns-stored-disp" className="text-lg font-bold text-gold">
+              <span className="text-lg font-bold text-gold">
                 {turnsStored}
               </span>
-              <span className="hide-xs text-sm text-text3">
+              <span className="hidden text-sm text-text3 xs:inline">
                 / 400
               </span>
             </div>
-            <div className="countdown text-xs font-sans text-text3">
-              +7 in <span id="regen-countdown">25:00</span>
+            <div className="text-xs font-sans text-text3">
+              +7 in 25:00
             </div>
           </div>
           <button

@@ -74,7 +74,7 @@ const WorldmapPanel = () => {
   }, []);
 
   return (
-    <div id="worldmap" className={clsx('panel min-h-0 w-full overflow-y-auto px-4 pb-5', 'hidden')}>
+    <div id="worldmap" className="panel">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-4">
         <div className="card flex items-center justify-between gap-3">
           <div>

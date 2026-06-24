@@ -4,27 +4,35 @@ import path from 'path';
 
 export default defineConfig(({ command, mode }) => {
   const isProd = command === 'build' || mode === 'production' || process.env.NODE_ENV === 'production';
-    return {
-      root: path.resolve(__dirname, 'client'),
-      publicDir: false,
-      base: isProd ? '/dist/' : '/',
+
+  return {
+    root: path.resolve(__dirname, 'client'),
+    publicDir: false,
+    base: isProd ? '/dist/' : '/',
+    
     plugins: [
-  react({
-    jsxRuntime: 'automatic'
-  }),
-],
+      react({
+        jsxRuntime: 'automatic'
+      }),
+    ],
+
     resolve: {
       alias: {
         '@': path.resolve(__dirname, 'client/src'),
       },
     },
+
     server: {
-      hmr: true, // HMR is disabled in this environment
+      port: 5173,
+      strictPort: true,
+      hmr: false,
       allowedHosts: ['narmirreborn.com', 'localhost', '127.0.0.1']
     },
+
     css: {
       devSourcemap: false
     },
+
     build: {
       sourcemap: false,
       outDir: '../dist',

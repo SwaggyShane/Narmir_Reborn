@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import clsx from 'clsx';
-import { apiCall } from '../../utils/api.js';
+import { apiCall } from '../../utils/api.mjs';
 import { toast } from '../../utils/toast.js';
 import { applyNavLayout } from '../../utils/applyNavLayout.js';
 import { useGameState } from '../../hooks/useGameState';
@@ -370,7 +370,7 @@ const OptionsPanel = () => {
   };
 
   return (
-    <div id="options" className={clsx('panel min-h-0 w-full overflow-y-auto px-4 pb-5', 'hidden')}>
+    <div id="options" className="panel">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-4">
         <div className="grid gap-4 xl:grid-cols-2">
           <section className={cardShell}>

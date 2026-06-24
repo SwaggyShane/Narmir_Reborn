@@ -143,7 +143,7 @@ const GlobalchatPanel = () => {
   };
 
   return (
-    <div id="globalchat" className="panel panel-immersive h-full min-h-0 w-full">
+    <div id="globalchat" className="panel panel-immersive">
       <div className="chat-container-card chat-layout grid h-full min-h-0 overflow-hidden rounded-2xl border border-white/5 bg-zinc-950/95 shadow-[0_18px_40px_rgba(0,0,0,0.35)] lg:grid-cols-[minmax(0,1fr)_280px]">
         {/* Messages area */}
         <div className="chat-messages-area flex min-h-0 flex-col">

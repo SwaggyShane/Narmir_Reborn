@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useGameState } from '../../hooks/useGameState';
-import { apiCall } from '../../utils/api.js';
+import { apiCall } from '../../utils/api.mjs';
 import { fmt } from "../../utils/fmt";
 import { applyGameMutation } from '../../utils/gameMutations.js';
 
@@ -575,7 +575,7 @@ const BuildPanel = () => {
   };
 
   return (
-    <div id="build" className="panel min-h-0 w-full overflow-y-auto" data-ui-tick={buildUiTick}>
+    <div id="build" className="panel" data-ui-tick={buildUiTick}>
       <div className="build-sticky-header px-4 pt-4">
         <div className="card rounded-2xl border border-white/10 bg-zinc-950/80 shadow-[0_12px_32px_rgba(0,0,0,0.35)]">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">

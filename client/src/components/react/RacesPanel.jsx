@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import clsx from 'clsx';
-import { apiCall } from '../../utils/api.js';
+import { apiCall } from '../../utils/api.mjs';
 import { repairMojibake } from '../../utils/repairMojibake.js';
 import { fmt } from '../../utils/fmt.js';
 import LoreModal from './LoreModal.jsx';
@@ -268,7 +268,7 @@ const RacesPanel = () => {
   const heroLoreData = heroLoreKey && cachedHeroClasses ? cachedHeroClasses[heroLoreKey] : null;
 
   return (
-    <div id="races" className={clsx('panel', 'hidden')}>
+    <div id="races" className="panel">
       <div className="card mt-0">
         <div className="card-title">🦄 Race Information</div>
         <div style={{ fontSize: '13px', color: 'var(--text2)', lineHeight: 1.6, marginBottom: '16px' }}>

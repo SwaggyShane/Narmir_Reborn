@@ -367,7 +367,7 @@ const EconomyPanel = () => {
   const dtColor = dt == null || dt === Infinity || dt > 100 ? 'var(--green)' : dt > 20 ? 'var(--accent1)' : 'var(--red)';
 
   return (
-    <div id="economy" className="panel hidden">
+    <div id="economy" className="panel">
       <div className="card flex-shrink-0">
         <div className="flex justify-between items-baseline">
           <div className="card-title">Tax policy</div>

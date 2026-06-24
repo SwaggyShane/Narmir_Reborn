@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { useGameState } from '../../hooks/useGameState';
-import { apiCall } from '../../utils/api.js';
+import { apiCall } from '../../utils/api.mjs';
 import { fmt } from "../../utils/fmt";
 import LoreModal from './LoreModal.jsx';
 import { repairMojibake } from '../../utils/repairMojibake.js';
@@ -285,7 +285,7 @@ const HeroesPanel = () => {
   }, [fmt, recruitableClasses, selectedHeroClass]);
 
   return (
-    <div id="heroes" className={clsx('panel panel-immersive min-h-0 w-full overflow-y-auto px-4 pb-5', 'hidden')}>
+    <div id="heroes" className="panel">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div className="card-title mb-0">Heroes</div>
         <button className="base-btn" onClick={handleRefresh} disabled={loading}>

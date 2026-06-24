@@ -1,5 +1,5 @@
-﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { apiCall } from '../../utils/api.js';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { apiCall } from '../../utils/api.mjs';
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import { gameStateManager } from '../../GameStateManager.js';
 import { getSocket } from '../../socket-client.js';

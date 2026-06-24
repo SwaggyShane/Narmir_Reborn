@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { apiCall } from '../utils/api.js';
+import { apiCall } from '../utils/api.mjs';
 import { toast } from '../utils/toast.js';
 import { gameStateManager } from '../GameStateManager.js';
 import { playGameSound } from '../utils/audio.js';
