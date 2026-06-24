@@ -1,7 +1,7 @@
 import { toast } from '../utils/toast.js';
 import { repairMojibake } from '../utils/repairMojibake.js';
 import { loadKingdom } from '../components/react/AuthModal.jsx';
-import { loadWorldMap } from '../components/react/WorldmapPanel.jsx';
+
 
 // Binds global socket event handlers once when the socket is ready.
 // Must NOT be called inside a React component — these handlers are app-wide
@@ -33,7 +33,7 @@ export function initSocketHandlers(socket) {
     loadKingdom().catch(() => {});
   });
 
-  socket.on('event:world_updated', () => loadWorldMap().catch(() => {}));
+  socket.on('event:world_updated', () => window.dispatchEvent(new CustomEvent('narmir:worldmap-refresh')));
   socket.on('event:active_counts', () => window.dispatchEvent(new CustomEvent('narmir:active-counts-refresh')));
 
   socket.on('event:chat_clear', () => {

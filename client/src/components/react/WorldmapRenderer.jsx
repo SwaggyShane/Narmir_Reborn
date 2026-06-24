@@ -1,24 +1,11 @@
 import { setWorldMapData } from '../../utils/worldMapData.js';
 import { gameStateManager } from '../../GameStateManager.js';
+import { REGION_META, REGION_BONUSES } from '../../utils/raceData.js';
 
-const REGION_META = {
-  dwarf: { name: 'The Iron Holds', color: '#8B6914', stroke: '#c8962a' },
-  high_elf: { name: 'The Silverwood', color: '#1a4a2e', stroke: '#4caf82' },
-  orc: { name: 'The Bloodplains', color: '#4a1010', stroke: '#e05c5c' },
-  dark_elf: { name: 'The Underspire', color: '#1a1030', stroke: 'var(--accent1)' },
-  human: { name: 'The Heartlands', color: '#1a2a10', stroke: '#8fb84a' },
-  dire_wolf: { name: 'The Ashfang Wilds', color: '#0d1a20', stroke: '#4a8fb8' },
-};
-
-const REGION_BONUSES = {
-  dwarf: 'Improved construction speed',
-  high_elf: 'Increased mana production',
-  orc: 'Superior military strength',
-  dark_elf: 'Enhanced stealth and covert ops',
-  human: 'Better economy',
-  dire_wolf: 'Superior military strength',
-  vampire: 'Night combat specialization',
-};
+function regionOpacity(race, highlightedRace, dim = '0.3') {
+  if (!highlightedRace) return '1';
+  return race === highlightedRace ? '1' : dim;
+}
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
@@ -30,9 +17,8 @@ function escapeHtml(value) {
   })[ch]);
 }
 
-export function renderWorldMap(kingdoms, routes = []) {
+export function renderWorldMap(kingdoms, routes = [], highlightedRace = null) {
   setWorldMapData(kingdoms || []);
-  const worldMapData = kingdoms || [];
   const state = gameStateManager.getState();
 
         var W = 900,
@@ -253,7 +239,7 @@ export function renderWorldMap(kingdoms, routes = []) {
 
             race +
 
-            '" style="transition: opacity 0.3s"/>';
+            '" style="transition:opacity 0.3s;opacity:' + regionOpacity(race, highlightedRace) + '"/>';
 
           // Layer 4: Inner styling/texture (border coastline)
 
@@ -271,7 +257,7 @@ export function renderWorldMap(kingdoms, routes = []) {
 
             race +
 
-            '" stroke-dasharray="8 6" opacity="0.75" style="transition: opacity 0.3s"/>';
+            '" stroke-dasharray="8 6" opacity="0.75" style="transition:opacity 0.3s;opacity:' + regionOpacity(race, highlightedRace) + '"/>';
 
 
 
@@ -687,11 +673,9 @@ export function renderWorldMap(kingdoms, routes = []) {
 
             k.race +
 
-            '" style="cursor:pointer; transition: opacity 0.3s" onclick="showMapKingdomCard(\'' +
+            '" data-kingdom-id="' + escapeHtml(String(k.id)) +
 
-            k.id +
-
-            '\')" filter="' +
+            '" style="cursor:pointer;transition:opacity 0.3s;opacity:' + regionOpacity(k.race, highlightedRace, '0.2') + '" filter="' +
 
             (isMe ? "url(#glow)" : "url(#uiShadow)") +
 
