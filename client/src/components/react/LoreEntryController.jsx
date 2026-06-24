@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import LoreModal from './LoreModal.jsx';
 import { registerOpenLoreEntry } from '../../utils/openLoreEntry.js';
 import { repairMojibake } from '../../utils/repairMojibake.js';
+import { sanitizeHtml } from '../../utils/sanitizeHtml.js';
 
 export default function LoreEntryController() {
   const [entry, setEntry] = useState(null);
@@ -25,7 +26,7 @@ export default function LoreEntryController() {
       {entry?.isHtml ? (
         <div
           className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg3)] p-3 text-[14px] leading-relaxed text-[var(--text2)]"
-          dangerouslySetInnerHTML={{ __html: entry.message }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(entry.message) }}
         />
       ) : (
         <div className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg3)] p-3 text-[14px] leading-relaxed text-[var(--text2)] whitespace-pre-wrap">

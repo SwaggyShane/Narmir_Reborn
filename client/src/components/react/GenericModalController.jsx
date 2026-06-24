@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { registerCloseGenericModal, registerOpenGenericModal } from '../../utils/openGenericModal.js';
+import { sanitizeHtml } from '../../utils/sanitizeHtml.js';
 
 export default function GenericModalController() {
   const [html, setHtml] = useState('');
 
   useEffect(() => {
     const unregisterOpen = registerOpenGenericModal((content) => {
-      setHtml(String(content || ''));
+      setHtml(sanitizeHtml(content));
     });
     const unregisterClose = registerCloseGenericModal(() => setHtml(''));
     return () => {

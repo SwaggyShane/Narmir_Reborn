@@ -111,7 +111,7 @@ export function repairMojibake(value) {
   if (!text) return text;
 
   let repaired = text;
-  if (MOJIBAKE_SIGNATURE.test(text) || /\?/.test(text)) {
+  if (MOJIBAKE_SIGNATURE.test(text)) {
     repaired = decodeRepeatedly(text);
     repaired = decodeLatin1Repeatedly(repaired);
     repaired = polishCommonMojibake(repaired);

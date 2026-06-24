@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react';
-import { gameStateManager } from './GameStateManager';
 import { useActivePanel } from './hooks/useActivePanel.js';
 
 import Sidebar from './components/react/Sidebar.jsx';
@@ -44,12 +43,6 @@ import SpyReportModalController from './components/react/SpyReportModalControlle
 
 const GameShell = () => {
   const { activePanel } = useActivePanel();
-
-  useEffect(() => {
-    const update = () => {};
-    gameStateManager.addListener?.(update);
-    return () => gameStateManager.removeListener?.(update);
-  }, []);
 
   useEffect(() => {
     restoreAuthSession().catch((err) => {
