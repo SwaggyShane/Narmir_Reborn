@@ -8,14 +8,18 @@ export default defineConfig(({ command, mode }) => {
       root: path.resolve(__dirname, 'client'),
       publicDir: false,
       base: isProd ? '/dist/' : '/',
-    plugins: [react()],
+    plugins: [
+  react({
+    jsxRuntime: 'automatic'
+  }),
+],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, 'client/src'),
       },
     },
     server: {
-      hmr: false, // HMR is disabled in this environment
+      hmr: true, // HMR is disabled in this environment
       allowedHosts: ['narmirreborn.com', 'localhost', '127.0.0.1']
     },
     css: {
