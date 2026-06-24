@@ -39,6 +39,7 @@ import ToastProvider from './components/react/ToastProvider.jsx';
 import HeroXpModalController from './components/react/HeroXpModalController.jsx';
 import KingdomXpModalController from './components/react/KingdomXpModalController.jsx';
 import ShellFooter from './components/react/ShellFooter.jsx';
+import KingdomBodyHeader from './components/react/KingdomBodyHeader.jsx';
 import LoreEntryController from './components/react/LoreEntryController.jsx';
 import GenericModalController from './components/react/GenericModalController.jsx';
 import SpyReportModalController from './components/react/SpyReportModalController.jsx';
@@ -130,7 +131,10 @@ const GameShell = () => {
             'lg:col-start-3 lg:row-start-2',
           ].join(' ')}
         >
-          {renderPanel()}
+          <KingdomBodyHeader />
+          <div className="min-h-0 flex-1 overflow-hidden">
+            {renderPanel()}
+          </div>
         </main>
 
         <ShellFooter />

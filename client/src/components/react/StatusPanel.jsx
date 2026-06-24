@@ -144,52 +144,8 @@ const StatusPanel = () => {
   const isVampire = raceForPortrait === 'vampire';
   const troopLevels = state?.troop_levels || {};
 
-  const xp = state?.xp ?? 0;
-  const xpToNext = state?.xp_to_next ?? 1;
-  const xpPct = Math.min(100, Math.round((xp / Math.max(xpToNext, 1)) * 100));
-  const playerName = cleanText(state?.username || state?.owner_name || state?.owner || '');
-  const kingdomName = cleanText(state?.name || state?.kingdomName || 'Your Kingdom');
-  const kingdomTitle = playerName ? `${playerName} of ${kingdomName}` : kingdomName;
-
   return (
     <div id="status" className="panel">
-
-      {/* ── Kingdom Header ── */}
-      <div className="mb-4 rounded-xl border border-ember-900/60 bg-void-800 p-4 shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
-        <div className="flex flex-col gap-3">
-          <div className="flex items-start justify-between gap-3 flex-wrap">
-            <h1 className="font-cinzel text-2xl font-black text-gold leading-none tracking-wide" style={{ textShadow: '0 0 16px rgba(240,98,2,0.4)' }}>
-              {kingdomTitle}
-            </h1>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {state?.turn != null && (
-                <span className="badge badge-amber text-[10px] px-2 py-0.5">Turn {state.turn}</span>
-              )}
-              {state?.score != null && (
-                <span className="badge badge-gold text-[10px] px-2 py-0.5">Score {(state.score ?? 0).toLocaleString()}</span>
-              )}
-              {state?.level != null && (
-                <span className="badge badge-blue text-[10px] px-2 py-0.5">Lv {state.level}</span>
-              )}
-            </div>
-          </div>
-
-          {state?.xp_to_next != null && (
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase tracking-widest text-ember-400/70">Experience</span>
-                <span className="text-[10px] text-text3">{xp.toLocaleString()} / {xpToNext.toLocaleString()} XP</span>
-              </div>
-              <div className="h-1.5 rounded-full bg-void-950 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-ember-700 to-ember-500 transition-all"
-                  style={{ width: `${xpPct}%`, boxShadow: '0 0 8px rgba(240,98,2,0.5)' }}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* ── Race Banner ── */}
       <div className="mb-4">
