@@ -31,7 +31,7 @@ import GoalsPanel from './components/react/GoalsPanel.jsx';
 import RacesPanel from './components/react/RacesPanel.jsx';
 import ChangelogPanel from './components/react/ChangelogPanel.jsx';
 import TestingPanel from './components/react/TestingPanel.jsx';
-import AuthModal from './components/react/AuthModal.jsx';
+import AuthModal, { restoreAuthSession } from './components/react/AuthModal.jsx';
 import KingdomProfileModal from './components/react/KingdomProfileModal.jsx';
 import SchoolSelectionController from './components/react/SchoolSelectionController.jsx';
 import RaceLoreController from './components/react/RaceLoreController.jsx';
@@ -48,6 +48,12 @@ const GameShell = () => {
     const update = () => {};
     gameStateManager.addListener?.(update);
     return () => gameStateManager.removeListener?.(update);
+  }, []);
+
+  useEffect(() => {
+    restoreAuthSession().catch((err) => {
+      console.warn('[auth] Session restore failed:', err);
+    });
   }, []);
 
   const renderPanel = () => {
