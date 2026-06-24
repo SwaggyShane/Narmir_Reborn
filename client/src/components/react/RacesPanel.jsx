@@ -4,10 +4,10 @@ import { apiCall } from '../../utils/api.mjs';
 import { repairMojibake } from '../../utils/repairMojibake.js';
 import { fmt } from '../../utils/fmt.js';
 import LoreModal from './LoreModal.jsx';
-import { registerOpenRaceLore } from '../../utils/openRaceLore.js';
+import { openRaceLore } from '../../utils/openRaceLore.js';
 import { registerShowHeroLore } from '../../utils/showHeroLore.js';
 import { getRacePortrait } from '../../utils/racePortraits.js';
-import { RACE_LORE, REGION_META, REGION_BONUSES } from '../../utils/raceData.js';
+import { RACE_LORE } from '../../utils/raceData.js';
 
 // Legacy polyfill for old renderRaces call
 if (typeof window !== 'undefined') {
@@ -107,102 +107,6 @@ function HeroLoreContent({ heroKey, hero }) {
   );
 }
 
-function RaceLoreContent({ rKey, lore, regionName, regionBonus, portraitUrl, repair, onHeroClick }) {
-  const [hasPortraitError, setHasPortraitError] = useState(false);
-  const strengths = Array.isArray(lore.strengths) ? lore.strengths : [];
-  const weaknesses = Array.isArray(lore.weaknesses) ? lore.weaknesses : [];
-  const heroes = Array.isArray(lore.heroes) ? lore.heroes : [];
-  const cleanedRegionName = repair(regionName || '');
-
-  return (
-    <>
-      <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '20px' }}>
-        <div style={{ flexShrink: 0 }}>
-          {portraitUrl && !hasPortraitError ? (
-            <div style={{ width: '140px', height: '140px', borderRadius: '16px', boxShadow: '0 6px 16px rgba(0,0,0,0.5)', overflow: 'hidden', background: '#15171e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <img
-                src={portraitUrl}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                alt={repair(lore.title || '')}
-                onError={() => setHasPortraitError(true)}
-              />
-            </div>
-          ) : (
-            <div style={{ width: '140px', height: '140px', borderRadius: '16px', background: 'var(--bg3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '60px' }}>
-              {repair(lore.icon || '⚔')}
-            </div>
-          )}
-        </div>
-        <div style={{ flex: 1, paddingTop: '4px' }}>
-          <h2 style={{ color: lore.color || 'var(--gold)', margin: '0 0 6px', fontSize: '24px', letterSpacing: '-0.5px', fontFamily: "'Cinzel', serif", fontWeight: 700 }}>
-            {repair(lore.title || 'Unknown')}
-          </h2>
-          {cleanedRegionName && (
-            <div style={{ fontSize: '13px', color: 'var(--text2)', marginBottom: '6px', fontWeight: 600 }}>
-              {cleanedRegionName} Region
-            </div>
-          )}
-          {regionBonus && (
-            <div style={{ fontSize: '12px', color: 'var(--text3)', lineHeight: 1.4 }}>
-              {repair(regionBonus)}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <p style={{ fontSize: '13px', color: 'var(--text2)', lineHeight: 1.8, fontStyle: 'italic', marginBottom: '18px' }}>
-        {repair(lore.lore || '')}
-      </p>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-        <div style={{ background: 'rgba(76,175,130,.08)', border: '1px solid rgba(76,175,130,.2)', borderRadius: 'var(--radius)', padding: '12px' }}>
-          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--green)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '.5px' }}>Strengths</div>
-          {strengths.map((s, i) => (
-            <div key={i} style={{ fontSize: '12px', color: 'var(--text2)', padding: '2px 0' }}>✓ {repair(s)}</div>
-          ))}
-        </div>
-        <div style={{ background: 'rgba(224,92,92,.08)', border: '1px solid rgba(224,92,92,.2)', borderRadius: 'var(--radius)', padding: '12px' }}>
-          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--red)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '.5px' }}>Weaknesses</div>
-          {weaknesses.map((w, i) => (
-            <div key={i} style={{ fontSize: '12px', color: 'var(--text2)', padding: '2px 0' }}>✗ {repair(w)}</div>
-          ))}
-        </div>
-      </div>
-
-      {lore.special && (
-        <div style={{ background: 'rgba(232,184,75,.08)', border: '1px solid rgba(232,184,75,.25)', borderRadius: 'var(--radius)', padding: '12px', marginBottom: '12px' }}>
-          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--gold)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '.5px' }}>✨ Racial mastery — unlocks at unit level 25</div>
-          <div style={{ fontSize: '13px', color: 'var(--text)' }}>{repair(lore.special)}</div>
-        </div>
-      )}
-
-      {heroes.length > 0 && (
-        <div style={{ background: 'rgba(143,184,74,.08)', border: '1px solid rgba(143,184,74,.25)', borderRadius: 'var(--radius)', padding: '12px', marginBottom: '12px' }}>
-          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--green)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '.5px' }}>🦻 Notable Race Heroes</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-            {heroes.map((h) => (
-              <div
-                key={h}
-                onClick={() => onHeroClick(h)}
-                style={{ cursor: 'pointer', fontSize: '11px', background: 'var(--bg4)', padding: '3px 8px', borderRadius: '12px', color: 'var(--text2)', border: '1px solid var(--border2)' }}
-              >
-                {repair(h)}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {lore.playstyle && (
-        <div style={{ background: 'var(--bg3)', borderRadius: 'var(--radius)', padding: '12px' }}>
-          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text3)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '.5px' }}>Recommended playstyle</div>
-          <div style={{ fontSize: '13px', color: 'var(--text2)' }}>{repair(lore.playstyle)}</div>
-        </div>
-      )}
-    </>
-  );
-}
-
 function RaceCardPortrait({ portraitUrl, icon, alt }) {
   const [failed, setFailed] = useState(false);
   if (!portraitUrl || failed) {
@@ -224,13 +128,10 @@ function RaceCardPortrait({ portraitUrl, icon, alt }) {
 }
 
 const RacesPanel = () => {
-  const [selectedRace, setSelectedRace] = useState(null);
   const [heroLoreKey, setHeroLoreKey] = useState(null);
   const [cachedHeroClasses, setCachedHeroClasses] = useState(null);
 
   const raceLore = RACE_LORE;
-  const regionMeta = REGION_META;
-  const regionBonuses = REGION_BONUSES;
 
   const repair = useCallback((v) => repairMojibake(String(v ?? '')), []);
 
@@ -256,7 +157,6 @@ const RacesPanel = () => {
     if (found) setHeroLoreKey(found[0]);
   }, [cachedHeroClasses]);
 
-  useEffect(() => registerOpenRaceLore((race) => setSelectedRace(race || null)), []);
   useEffect(() => registerShowHeroLore(openHeroLore), [openHeroLore]);
 
   const raceEntries = useMemo(
@@ -264,7 +164,6 @@ const RacesPanel = () => {
     [raceLore],
   );
 
-  const selectedLore = selectedRace ? raceLore[selectedRace] : null;
   const heroLoreData = heroLoreKey && cachedHeroClasses ? cachedHeroClasses[heroLoreKey] : null;
 
   return (
@@ -287,7 +186,7 @@ const RacesPanel = () => {
               <div key={key} style={cardStyle}>
                 <RaceCardPortrait portraitUrl={portraitUrl} icon={r.icon || '⚔'} alt={repair(r.title || key)} />
                 <div
-                  onClick={() => setSelectedRace(key)}
+                  onClick={() => openRaceLore(key)}
                   style={{ cursor: 'pointer', fontSize: '16px', fontWeight: 'bold', color: 'var(--gold)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}
                   title="Click for detailed lore & details"
                 >
@@ -345,27 +244,6 @@ const RacesPanel = () => {
           })}
         </div>
       </div>
-
-      <LoreModal
-        isOpen={!!selectedRace}
-        onClose={() => setSelectedRace(null)}
-        title={selectedLore ? `${repair(selectedLore.icon || '')} ${repair(selectedLore.title || '')}` : ''}
-      >
-        {selectedLore && (
-          <RaceLoreContent
-            rKey={selectedRace}
-            lore={selectedLore}
-            regionName={repair((regionMeta[selectedRace] || {}).name || '')}
-            regionBonus={regionBonuses[selectedRace] || ''}
-            portraitUrl={getPortraitUrl(selectedRace)}
-            repair={repair}
-            onHeroClick={(name) => {
-              setSelectedRace(null);
-              openHeroLore(name);
-            }}
-          />
-        )}
-      </LoreModal>
 
       <LoreModal
         isOpen={!!heroLoreKey}
