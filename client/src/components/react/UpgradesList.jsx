@@ -5,7 +5,7 @@ import { apiCall } from '../../utils/api.mjs';
 import { toast } from '../../utils/toast.js';
 import { playGameSound } from '../../utils/audio.js';
 import { applyGameMutation } from '../../utils/gameMutations.js';
-import { syncUI } from '../../utils/shellBridge.js';
+
 
 function UpgradeRow({ category, upgradeKey, def, owned, state }) {
   const isOwned = !!owned[upgradeKey];
@@ -58,7 +58,6 @@ function UpgradeRow({ category, upgradeKey, def, owned, state }) {
       applyGameMutation(result, { reason: 'economy-upgrade' });
     }
 
-    syncUI();
     toast('Upgrade purchased! Refresh the panel to see the next upgrade.', 'success');
   };
 
@@ -75,7 +74,7 @@ function UpgradeRow({ category, upgradeKey, def, owned, state }) {
           {def.name}
         </div>
         <div style={{ fontSize: '11px', color: 'var(--text3)' }}>
-          {def.desc} · {costStr}
+          {def.desc} | {costStr}
         </div>
       </div>
       {statusBadge}

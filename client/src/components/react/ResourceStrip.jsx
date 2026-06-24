@@ -255,79 +255,78 @@ const ResourceStrip = () => {
 
   return (
     <>
-      <div className={metricClass()} id="metric-gold">
+      <div className={metricClass()}>
         <DeltaBadge flash={goldFlash} />
         <div className="lbl">Gold</div>
-        <div className={`val ${numberValue(state.gold) < 1000 ? 'text-[var(--red)]' : ''}`} id="m-gold">
+        <div className={`val ${numberValue(state.gold) < 1000 ? 'text-[var(--red)]' : ''}`}>
           {trunc(state.gold)}
         </div>
-        <div className="sub" id="m-gold-sub">
+        <div className="sub">
           {numberValue(state.gold_income) >= 0 ? '+' : ''}{trunc(state.gold_income || 0)}/turn
         </div>
       </div>
-      <div className={metricClass()} id="metric-mana">
+      <div className={metricClass()}>
         <DeltaBadge flash={manaFlash} />
         <div className="lbl">Mana</div>
-        <div className="val" id="m-mana">{trunc(state.mana)}</div>
-        <div className="sub" id="m-mana-sub">
+        <div className="val">{trunc(state.mana)}</div>
+        <div className="sub">
           {numberValue(state.mana_regen) >= 0 ? '+' : ''}{trunc(state.mana_regen || 0)}/turn
         </div>
       </div>
-      <div className={metricClass()} id="metric-land">
+      <div className={metricClass()}>
         <DeltaBadge flash={landFlash} />
         <div className="lbl">Land</div>
-        <div className="val" id="m-land">{trunc(state.land)}</div>
-        <div className="sub"><span id="m-land-free">{trunc(freeLand(state))}</span> free</div>
+        <div className="val">{trunc(state.land)}</div>
+        <div className="sub"><span>{trunc(freeLand(state))}</span> free</div>
       </div>
-      <div className={metricClass()} id="metric-pop">
+      <div className={metricClass()}>
         <DeltaBadge flash={popFlash} />
         <div className="lbl">Population</div>
-        <div className="val" id="m-pop">{trunc(pop)}</div>
+        <div className="val">{trunc(pop)}</div>
         <div className="sub">
-          cap: <span id="m-pop-cap" className={pop > popCap && popCap > 0 ? 'text-[var(--red)]' : ''}>{trunc(popCap)}</span>
+          cap: <span className={pop > popCap && popCap > 0 ? 'text-[var(--red)]' : ''}>{trunc(popCap)}</span>
         </div>
       </div>
       {isVampire && (
-        <div className={metricClass()} id="metric-thralls">
+        <div className={metricClass()}>
           <DeltaBadge flash={thrallFlash} />
           <div className="lbl">Thralls</div>
-          <div className="val" id="m-thralls">{trunc(thralls)}</div>
+          <div className="val">{trunc(thralls)}</div>
           <div className="sub">
-            cap: <span id="m-thralls-cap" className={thralls > maxThralls ? 'text-[var(--red)]' : ''}>{trunc(maxThralls)}</span>
+            cap: <span className={thralls > maxThralls ? 'text-[var(--red)]' : ''}>{trunc(maxThralls)}</span>
           </div>
         </div>
       )}
-      <div className={metricClass('overflow-hidden')} id="metric-happiness">
+      <div className={metricClass('overflow-hidden')}>
         <div className="lbl">Happiness</div>
         <div className={happinessBarOuterClass} title="Population happiness">
           <div
-            id="m-happiness-bar"
             className={happinessBarInnerClass}
             style={{ width: `${happinessPercent}%` }}
           />
         </div>
         <div className={metricSubClass}>
-          <span id="m-happiness-breakdown">{happinessLabel(happiness)}</span>
+          <span>{happinessLabel(happiness)}</span>
         </div>
       </div>
-      <div className={metricClass()} id="metric-food">
+      <div className={metricClass()}>
         <DeltaBadge flash={foodFlash} />
         <div className="lbl">Food</div>
-        <div className={`val ${numberValue(state.food) < 1000 ? 'text-[var(--red)]' : ''}`} id="m-food">
+        <div className={`val ${numberValue(state.food) < 1000 ? 'text-[var(--red)]' : ''}`}>
           {trunc(state.food)}
         </div>
         <div className="sub">
-          <span id="m-food-balance" className={`font-semibold ${foodDelta >= 0 ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
+          <span className={`font-semibold ${foodDelta >= 0 ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
             {foodDelta >= 0 ? '+' : ''}{trunc(foodDelta)}
           </span>/turn
         </div>
       </div>
-      <div className={metricClass()} id="metric-defense">
+      <div className={metricClass()}>
         <div className="lbl">Defense</div>
-        <div className="val text-xs" id="m-defense-rating" style={{ color: defenseColor }}>
+        <div className="val text-xs" style={{ color: defenseColor }}>
           {defenseRating}
         </div>
-        <div className="sub"><span id="m-walls">{numberValue(state.bld_walls).toLocaleString()}</span> walls</div>
+        <div className="sub"><span>{numberValue(state.bld_walls).toLocaleString()}</span> walls</div>
       </div>
     </>
   );

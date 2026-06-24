@@ -979,7 +979,7 @@ function processTurn(k, db = null) {
   updates.mana = k.mana + manaGain;
   events.push({
     type: "system",
-    message: `🔮 Mana: +${manaGain.toLocaleString()} restored. Total: ${updates.mana.toLocaleString()}.`,
+    message: `✨ Mana: +${manaGain.toLocaleString()} restored. Total: ${updates.mana.toLocaleString()}.`,
   });
 
   // Mages gain XP when producing mana
@@ -2215,7 +2215,7 @@ function processTurn(k, db = null) {
   const netSign = netGoldChange >= 0 ? "+" : "";
   events.push({
     type: "system",
-      message: `🏦 End of Turn ${updates.turn} — Net Gold: ${netSign}${netGoldChange.toLocaleString()}. Final Treasury: ${finalGold.toLocaleString()} gold.`,
+      message: `💰 End of Turn ${updates.turn} — Net Gold: ${netSign}${netGoldChange.toLocaleString()}. Final Treasury: ${finalGold.toLocaleString()} gold.`,
   });
 
   updates.last_turn_at = Math.floor(Date.now() / 1000);

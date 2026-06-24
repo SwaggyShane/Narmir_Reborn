@@ -4,6 +4,7 @@ import { useGameState } from '../../hooks/useGameState';
 import { useActivePanel } from '../../hooks/useActivePanel';
 import { logout } from './AuthModal.jsx';
 import { switchTab } from '../../utils/switchTab.js';
+import { useNavLayout } from '../../hooks/useNavLayout.js';
 
 const SECTION_CLASS = 'px-3 pb-0.5 pt-3 text-[10px] font-black uppercase tracking-[0.3em] text-ember-400/80';
 
@@ -32,13 +33,17 @@ function NavButton({ panel, icon, label, iconClass = 'text-text3' }) {
 
 const Sidebar = () => {
   const { state } = useGameState();
+  const { layout } = useNavLayout();
   const isAdmin = !!state?.isAdmin;
+  const showSidebar = layout === 'left' || layout === 'responsive';
 
   return (
     <nav
       className={clsx(
-        'hidden min-h-0 flex-col overflow-hidden border-r border-white/5 bg-bg2',
-        'lg:col-start-1 lg:row-span-2 lg:row-start-2 lg:flex lg:overflow-y-auto',
+        'min-h-0 flex-col overflow-hidden border-r border-white/5 bg-bg2',
+        showSidebar ? 'flex' : 'hidden',
+        layout === 'responsive' && 'max-lg:hidden',
+        'lg:col-start-1 lg:row-span-2 lg:row-start-2 lg:overflow-y-auto',
       )}
     >
       <div className="min-h-0 flex-1 overflow-y-auto scrollbar-game">

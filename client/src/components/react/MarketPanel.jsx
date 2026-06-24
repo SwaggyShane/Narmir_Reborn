@@ -4,7 +4,7 @@ import { apiCall } from '../../utils/api';
 import { useGameMutationEvents, useGameState } from '../../hooks/useGameState';
 import { fmt } from "../../utils/fmt";
 import { applyGameMutation } from '../../utils/gameMutations.js';
-import { syncUI } from '../../utils/shellBridge.js';
+
 import { gameStateManager } from '../../GameStateManager.js';
 import { toast } from '../../utils/toast.js';
 
@@ -287,7 +287,6 @@ const MarketPanel = () => {
     });
     if (result.error) return toast(result.error, 'error');
     applyGameMutation(result, { reason: 'accept-trade' });
-    syncUI();
     toast('Trade accepted!', 'success');
     await loadTradeOffers();
   }, []);

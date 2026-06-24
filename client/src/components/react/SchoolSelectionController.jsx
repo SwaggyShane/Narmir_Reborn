@@ -34,7 +34,7 @@ export default function SchoolSelectionController() {
     applyGameMutation({ school_of_magic: data.school }, { reason: 'school-selected' });
 
     // Show success message
-    toast(`???? You have chosen the school of ${data.school.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}!`, 'success');
+    toast(`✨ You have chosen the school of ${data.school.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}!`, 'success');
   };
 
   // Don't show anything if modal shouldn't be visible
