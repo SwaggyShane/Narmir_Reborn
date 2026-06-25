@@ -858,16 +858,10 @@ module.exports = function (db, io) {
                k.fighters, k.ninjas, k.mages, k.rangers, k.thieves, k.turns_stored, k.level,
                k.build_allocation, k.research_allocation,
                p.username,
-               COALESCE(w.wins, 0) AS wins,
-               COALESCE(l.losses, 0) AS losses
+               (SELECT COUNT(*) FROM war_log WHERE attacker_id = k.id) AS wins,
+               (SELECT COUNT(*) FROM war_log WHERE defender_id = k.id) AS losses
         FROM kingdoms k
         JOIN players p ON k.player_id = p.id
-        LEFT JOIN (
-          SELECT attacker_id, COUNT(*) AS wins FROM war_log GROUP BY attacker_id
-        ) w ON w.attacker_id = k.id
-        LEFT JOIN (
-          SELECT defender_id, COUNT(*) AS losses FROM war_log GROUP BY defender_id
-        ) l ON l.defender_id = k.id
         WHERE p.is_ai = 1
         ORDER BY k.land DESC
       `);

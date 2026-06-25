@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { AI_PRESETS } from '../lib/aiPresets.js';
 
 const COLS = [
@@ -39,6 +39,10 @@ export default function AiKingdomPanel({ adminFetch, onToast }) {
       setLoading(false);
     }
   }, [adminFetch, onToast]);
+
+  useEffect(() => {
+    loadSynopsis();
+  }, [loadSynopsis]);
 
   async function handleSeed() {
     setSeeding(true);

@@ -186,12 +186,15 @@ function buildPresetFields(presetId, race) {
 
   const fields = { ...preset.fields };
 
-  const mod = RACE_MODIFIERS[race] || {};
-  for (const [key, delta] of Object.entries(mod)) {
-    if (delta === null) {
-      fields[key] = 0;
-    } else {
-      fields[key] = (fields[key] || 0) + delta;
+  // turn_ready is specifically "fill turns only" — race modifiers must not bleed in
+  if (presetId !== 'turn_ready') {
+    const mod = RACE_MODIFIERS[race] || {};
+    for (const [key, delta] of Object.entries(mod)) {
+      if (delta === null) {
+        fields[key] = 0;
+      } else {
+        fields[key] = (fields[key] || 0) + delta;
+      }
     }
   }
 
