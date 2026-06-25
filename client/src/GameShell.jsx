@@ -111,17 +111,17 @@ const GameShell = () => {
             'flex min-h-0 w-full flex-col bg-bg',
             'max-lg:shrink-0 max-lg:px-3 max-lg:py-2',
             'lg:col-start-2 lg:row-start-2 lg:gap-2 lg:px-2 lg:py-2.5',
-            '[&_.metrics]:mb-0 [&_.metrics]:flex [&_.metrics]:w-full [&_.metrics]:flex-wrap [&_.metrics]:gap-1',
-            'lg:[&_.metrics]:flex-1 lg:[&_.metrics]:flex-col lg:[&_.metrics]:gap-1.5',
-            'lg:[&_.metric]:w-full lg:[&_.metric]:min-h-[54px]',
-            'lg:[&_.metric_.val]:text-right lg:[&_.metric_.sub]:justify-end',
+            '[&_.metrics]:flex [&_.metrics]:w-full',
+            'max-lg:[&_.metrics]:mb-0 max-lg:[&_.metrics]:flex-wrap max-lg:[&_.metrics]:gap-1',
+
+            'lg:[&_.metric_.sub]:justify-end',
           ].join(' ')}
         >
           <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-2 overflow-x-hidden overflow-y-auto">
             <div className="hidden px-1 text-[10px] font-black uppercase tracking-[0.28em] text-ember-400/85 lg:block">
               Resources
             </div>
-            <div className="metrics">
+            <div className="metrics resource-metrics">
               <ResourceStrip />
             </div>
           </div>

@@ -195,6 +195,21 @@
     @apply flex flex-wrap gap-0.5 mb-1.5 w-full;
   }
 
+  .resource-metrics {
+    @apply mb-0 w-full;
+  }
+
+  @media (min-width: 768px) {
+    .resource-metrics {
+      @apply min-h-0 flex-1 flex-col;
+      gap: clamp(4px, 1.75vh, 16px);
+    }
+
+    .resource-metrics .metric {
+      @apply w-full min-h-[48px] flex-1;
+    }
+  }
+
   .metric {
     @apply shell-box-frame px-2.5 py-2 transition-all flex flex-col gap-0 justify-center flex-1 min-w-[60px] min-h-[48px] md:min-h-0 md:flex-none;
   }
@@ -204,7 +219,18 @@
   }
 
   .metric .val {
-    @apply text-sm md:text-xs font-bold text-text m-0 leading-none whitespace-nowrap overflow-hidden text-ellipsis md:text-right;
+    @apply text-[15px] font-bold text-text m-0 leading-none whitespace-nowrap overflow-hidden text-ellipsis lg:text-[17px] lg:text-right;
+  }
+
+  .metric-happiness-track {
+    @apply relative my-1.5 h-[18px] w-full overflow-hidden rounded;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: linear-gradient(90deg, #ef4444 0%, #facc15 48%, #22c55e 100%);
+  }
+
+  .metric-happiness-mask {
+    @apply absolute inset-y-0 right-0 transition-[width] duration-300 ease-in-out;
+    background: var(--bg2);
   }
 
   .metric .sub {
