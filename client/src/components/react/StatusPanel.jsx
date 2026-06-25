@@ -169,13 +169,13 @@ const StatusPanel = () => {
   const troopLevels = state?.troop_levels || {};
 
   return (
-    <div id="status" className="panel">
+    <div id="status" className="panel !pt-0 md:!pt-0">
 
       {/* ── Race Banner ── */}
-      <div className="mb-4">
+      <div className="mb-3 sm:mb-4">
         <div
           id="race-tag-display"
-          className="race-tag-block shell-lore-box flex w-full cursor-pointer flex-col items-center gap-3 p-3 sm:flex-row sm:items-start sm:gap-4 sm:p-4"
+          className="race-tag-block shell-lore-box box-border flex w-full min-w-0 max-w-full cursor-pointer flex-col items-center gap-3 p-2.5 sm:gap-4 sm:p-3 lg:flex-row lg:items-start"
           onClick={() => { openRaceLore(raceKey); }}
           title="Click for race lore"
         >
@@ -183,12 +183,12 @@ const StatusPanel = () => {
             <RaceLorePortrait
               portraitUrl={portraitUrl}
               alt={cleanText(raceInfo.label)}
-              height={250}
+              height={188}
               aspectRatio="4 / 5"
-              className="mx-auto w-full max-w-[200px] sm:mx-0"
+              className="mx-auto w-full max-w-[150px] lg:mx-0"
             />
           ) : null}
-          <div className="flex w-full min-w-0 flex-col gap-1.5 text-center sm:flex-1 sm:text-left">
+          <div className="flex w-full min-w-0 flex-col gap-1.5 text-center lg:flex-1 lg:text-left">
             <div className="font-cinzel text-base font-bold text-gold uppercase tracking-[1px] sm:text-[18px]">
               {cleanText(raceInfo.label)}
             </div>
@@ -203,7 +203,7 @@ const StatusPanel = () => {
               {cleanText(raceInfo.bonus)}
             </button>
           </div>
-          <div className="hidden flex-shrink-0 text-ember-500/40 text-lg sm:block">›</div>
+          <div className="hidden flex-shrink-0 text-ember-500/40 text-lg lg:block">›</div>
         </div>
       </div>
 
@@ -242,7 +242,7 @@ const StatusPanel = () => {
         </div>
       </div>
 
-      <div className="status-grid w-full flex-1 grid grid-cols-1 gap-3 sm:gap-5 lg:[grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))] lg:[grid-auto-rows:minmax(auto,1fr)] lg:[align-content:space-around]" id="status-grid">
+      <div className="status-grid w-full flex-1 gap-3 sm:gap-4 lg:gap-3 lg:[grid-auto-rows:minmax(auto,1fr)] lg:[align-content:start]" id="status-grid">
         <div className={STATUS_CARD_CLASS}>
           <div className="card-title">
             Military &amp; support
@@ -253,7 +253,7 @@ const StatusPanel = () => {
               🏰 Citadel
             </span>
           </div>
-          <div className="status-unit-table -mx-1 overflow-x-auto px-1">
+          <div className="status-unit-table min-w-0 max-w-full overflow-x-auto">
           <div className="min-w-[280px]">
           <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 py-1 px-0 border-b border-strong">
             <span className="text-[10px] text-text3 uppercase tracking-[0.5px]">Unit</span>
