@@ -113,8 +113,7 @@ const GameShell = () => {
             'lg:col-start-2 lg:row-start-2 lg:gap-2 lg:px-2 lg:py-2.5',
             '[&_.metrics]:mb-0 [&_.metrics]:flex [&_.metrics]:w-full [&_.metrics]:flex-wrap [&_.metrics]:gap-1',
             'lg:[&_.metrics]:flex-1 lg:[&_.metrics]:flex-col lg:[&_.metrics]:gap-1.5',
-            'lg:[&_.metric]:w-full lg:[&_.metric]:min-h-[54px] lg:[&_.metric]:rounded-xl lg:[&_.metric]:px-2.5 lg:[&_.metric]:py-2',
-            'lg:[&_.metric]:bg-void-950/90 lg:[&_.metric]:shadow-[0_10px_20px_rgba(0,0,0,0.22)]',
+            'lg:[&_.metric]:w-full lg:[&_.metric]:min-h-[54px]',
             'lg:[&_.metric_.val]:text-right lg:[&_.metric_.sub]:justify-end',
           ].join(' ')}
         >

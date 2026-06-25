@@ -185,13 +185,18 @@
     background: rgba(245, 158, 11, 0.15);
   }
 
+  /* ── Shared panel box frame (lore, kingdom header, resources) ── */
+  .shell-box-frame {
+    @apply relative overflow-hidden rounded-xl border border-ember-900/50 bg-bg2;
+  }
+
   /* ── Metrics ── */
   .metrics {
     @apply flex flex-wrap gap-0.5 mb-1.5 w-full;
   }
 
   .metric {
-    @apply bg-bg2 border border-white/5 rounded px-1.5 py-0.5 transition-all flex flex-col gap-0 justify-center flex-1 min-w-[60px] min-h-[48px] md:min-h-0 md:flex-none;
+    @apply shell-box-frame px-2.5 py-2 transition-all flex flex-col gap-0 justify-center flex-1 min-w-[60px] min-h-[48px] md:min-h-0 md:flex-none;
   }
 
   .metric .lbl {
@@ -257,9 +262,8 @@
     @apply px-6 pb-6;
   }
 
-  /* ── Race lore / kingdom header box (shared frame) ── */
   .shell-lore-box {
-    @apply relative overflow-hidden rounded-xl border border-ember-900/50 bg-bg2 p-4;
+    @apply shell-box-frame p-4;
   }
 
   .shell-lore-box::before {
