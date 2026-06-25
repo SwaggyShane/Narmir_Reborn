@@ -15,20 +15,20 @@ function LoreForm({ initial, onSave, onCancel, busy }) {
           {initial.id ? 'Edit Lore Entry' : 'New Lore Entry'}
         </h3>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
-          <Field label="Key ID"><input style={INPUT} value={f.key_id} onChange={e => set('key_id', e.target.value)} /></Field>
+          <Field label="Key ID"><input style={INPUT} value={f.key_id || ''} onChange={e => set('key_id', e.target.value)} /></Field>
           <Field label="Category">
             <select style={INPUT} value={f.category} onChange={e => set('category', e.target.value)}>
               {LORE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </Field>
-          <Field label="Title" style={{ gridColumn: '1 / -1' }}><input style={INPUT} value={f.title} onChange={e => set('title', e.target.value)} /></Field>
+          <Field label="Title" style={{ gridColumn: '1 / -1' }}><input style={INPUT} value={f.title || ''} onChange={e => set('title', e.target.value)} /></Field>
         </div>
         <Field label="Content">
-          <textarea style={{ ...INPUT, resize: 'vertical' }} rows={6} value={f.content} onChange={e => set('content', e.target.value)} />
+          <textarea style={{ ...INPUT, resize: 'vertical' }} rows={6} value={f.content || ''} onChange={e => set('content', e.target.value)} />
         </Field>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
           <button onClick={onCancel} style={BTN}>Cancel</button>
-          <button onClick={() => onSave(f)} disabled={busy || !f.title.trim()} style={BTN_PRIMARY}>
+          <button onClick={() => onSave(f)} disabled={busy || !(f.title || '').trim()} style={BTN_PRIMARY}>
             {busy ? 'Saving...' : 'Save'}
           </button>
         </div>

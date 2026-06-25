@@ -22,8 +22,8 @@ function EventForm({ initial, onSave, onCancel, busy }) {
           {initial.id ? 'Edit Event' : 'New Event'}
         </h3>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
-          <Field label="Key"><input style={INPUT} value={f.key} onChange={e => set('key', e.target.value)} /></Field>
-          <Field label="Name"><input style={INPUT} value={f.name} onChange={e => set('name', e.target.value)} /></Field>
+          <Field label="Key"><input style={INPUT} value={f.key || ''} onChange={e => set('key', e.target.value)} /></Field>
+          <Field label="Name"><input style={INPUT} value={f.name || ''} onChange={e => set('name', e.target.value)} /></Field>
           <Field label="Season">
             <select style={INPUT} value={f.season} onChange={e => set('season', e.target.value)}>
               {SEASONS.map(s => <option key={s} value={s}>{s}</option>)}
@@ -43,7 +43,7 @@ function EventForm({ initial, onSave, onCancel, busy }) {
           <Field label="Effect Duration (turns)"><input style={INPUT} type="number" value={f.effect_duration} onChange={e => set('effect_duration', Number(e.target.value))} /></Field>
         </div>
         <Field label="Description">
-          <textarea style={{ ...INPUT, resize: 'vertical' }} rows={3} value={f.description} onChange={e => set('description', e.target.value)} />
+          <textarea style={{ ...INPUT, resize: 'vertical' }} rows={3} value={f.description || ''} onChange={e => set('description', e.target.value)} />
         </Field>
         <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
           <label style={CHECK_LABEL}>
@@ -57,7 +57,7 @@ function EventForm({ initial, onSave, onCancel, busy }) {
         </div>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
           <button onClick={onCancel} style={BTN}>Cancel</button>
-          <button onClick={() => onSave(f)} disabled={busy || !f.key.trim() || !f.name.trim()} style={BTN_PRIMARY}>
+          <button onClick={() => onSave(f)} disabled={busy || !(f.key || '').trim() || !(f.name || '').trim()} style={BTN_PRIMARY}>
             {busy ? 'Saving...' : 'Save'}
           </button>
         </div>

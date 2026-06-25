@@ -17,7 +17,7 @@ function GoalForm({ initial, onSave, onCancel, busy, isEdit }) {
   const [f, setF] = useState(initial);
   const set = (k, v) => setF(p => ({ ...p, [k]: v }));
 
-  const valid = f.goalId.trim() && f.label.trim() &&
+  const valid = (f.goalId || '').trim() && (f.label || '').trim() &&
     f.minTarget >= 1 && f.maxTarget >= 2 &&
     Number(f.minTarget) < Number(f.maxTarget) &&
     f.prizeMultiplier >= 0.5 && f.prizeMultiplier <= 100;
@@ -34,8 +34,8 @@ function GoalForm({ initial, onSave, onCancel, busy, isEdit }) {
               {TIERS.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </Field>
-          <Field label="Goal ID"><input style={INPUT} value={f.goalId} onChange={e => set('goalId', e.target.value)} disabled={isEdit} /></Field>
-          <Field label="Label" style={{ gridColumn: '1 / -1' }}><input style={INPUT} value={f.label} onChange={e => set('label', e.target.value)} /></Field>
+          <Field label="Goal ID"><input style={INPUT} value={f.goalId || ''} onChange={e => set('goalId', e.target.value)} disabled={isEdit} /></Field>
+          <Field label="Label" style={{ gridColumn: '1 / -1' }}><input style={INPUT} value={f.label || ''} onChange={e => set('label', e.target.value)} /></Field>
           <Field label="Min Target"><input style={INPUT} type="number" min={1} max={500} value={f.minTarget} onChange={e => set('minTarget', Number(e.target.value))} /></Field>
           <Field label="Max Target"><input style={INPUT} type="number" min={2} max={1000} value={f.maxTarget} onChange={e => set('maxTarget', Number(e.target.value))} /></Field>
           <Field label="Prize Type">
