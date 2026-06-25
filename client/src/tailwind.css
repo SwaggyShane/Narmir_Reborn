@@ -328,7 +328,7 @@
   }
 
   .turn-btn {
-    @apply relative isolate inline-flex shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-gold/90 px-4 py-1.5 font-cinzel text-sm font-black tracking-wide text-black shadow-[0_0_18px_rgba(240,178,2,0.42),0_4px_14px_rgba(0,0,0,0.38)] transition-all duration-200 active:scale-95;
+    @apply relative isolate inline-flex shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-gold px-4 py-1.5 font-cinzel text-sm font-black tracking-wide text-black shadow-[0_0_18px_rgba(240,178,2,0.42),0_4px_14px_rgba(0,0,0,0.38)] transition-all duration-200 active:scale-95;
     background: linear-gradient(135deg, #f0b202 0%, #ffd95a 45%, #f5c842 55%, #e5a800 100%);
     animation: turn-btn-glow 2.8s ease-in-out infinite;
   }
