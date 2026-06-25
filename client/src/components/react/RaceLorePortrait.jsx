@@ -24,6 +24,8 @@ export default function RaceLorePortrait({
   portraitUrl,
   alt = '',
   size = 300,
+  height = null,
+  aspectRatio = '1 / 1',
   fallbackIcon = '⚔',
 }) {
   const [failed, setFailed] = useState(false);
@@ -32,17 +34,27 @@ export default function RaceLorePortrait({
     setFailed(false);
   }, [portraitUrl]);
 
-  const frameStyle = {
-    ...FRAME_BASE,
-    width: `${size}px`,
-    maxWidth: '100%',
-    aspectRatio: '1 / 1',
-    height: 'auto',
-  };
+  const frameStyle = height != null
+    ? {
+        ...FRAME_BASE,
+        height: `${height}px`,
+        width: 'auto',
+        maxWidth: '100%',
+        aspectRatio,
+      }
+    : {
+        ...FRAME_BASE,
+        width: `${size}px`,
+        maxWidth: '100%',
+        aspectRatio,
+        height: 'auto',
+      };
+
+  const fallbackSize = height ?? size;
 
   if (!portraitUrl || failed) {
     return (
-      <div style={{ ...frameStyle, alignItems: 'center', fontSize: size >= 200 ? '60px' : '40px' }}>
+      <div style={{ ...frameStyle, alignItems: 'center', fontSize: fallbackSize >= 200 ? '60px' : '40px' }}>
         {fallbackIcon}
       </div>
     );
