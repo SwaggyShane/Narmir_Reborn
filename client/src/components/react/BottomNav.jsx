@@ -45,7 +45,7 @@ function NavChip({ label, icon, color, active, onClick, showBadge }) {
       onClick={onClick}
       aria-pressed={active}
       className={[
-        'flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 rounded-xl border px-0.5 py-1.5 text-[10px] font-semibold transition sm:min-h-[56px] sm:gap-1 sm:rounded-2xl sm:px-1 sm:py-2 sm:text-[11px]',
+        'flex min-h-[52px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl border px-0.5 py-1.5 text-[10px] font-semibold transition sm:min-h-[56px] sm:gap-1 sm:rounded-2xl sm:px-1 sm:py-2 sm:text-[11px]',
         'active:scale-95',
         active
           ? 'bottom-nav-chip is-active text-text'
@@ -108,7 +108,7 @@ const BottomNav = () => {
     <>
       <nav
         className={[
-          'fixed inset-x-0 bottom-0 z-[3000] grid grid-cols-6 gap-1 border-t border-ember-900/40 bg-void-950/95 px-1.5 py-1.5 pb-[env(safe-area-inset-bottom)] shadow-panel backdrop-blur-xl sm:gap-2 sm:px-2 sm:py-2',
+          'fixed inset-x-0 bottom-0 z-[3000] box-border grid w-full max-w-full grid-cols-6 gap-1 border-t border-ember-900/40 bg-void-950/95 px-1.5 py-1.5 pb-[env(safe-area-inset-bottom)] shadow-panel backdrop-blur-xl sm:gap-2 sm:px-2 sm:py-2',
           layout === 'responsive' ? 'lg:hidden' : '',
         ].join(' ')}
       >
@@ -127,7 +127,7 @@ const BottomNav = () => {
         <button
           type="button"
           className={[
-            'flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-xl border px-0.5 py-1.5 text-[10px] font-semibold transition sm:min-h-[56px] sm:gap-1 sm:rounded-2xl sm:px-1 sm:py-2 sm:text-[11px]',
+            'flex min-h-[52px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl border px-0.5 py-1.5 text-[10px] font-semibold transition sm:min-h-[56px] sm:gap-1 sm:rounded-2xl sm:px-1 sm:py-2 sm:text-[11px]',
             'active:scale-95',
             drawerActive
               ? 'bottom-nav-chip is-active text-text'
@@ -197,7 +197,7 @@ const BottomNav = () => {
             ) : null}
             <button
               type="button"
-              className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-red-500/30 bg-red-500/10 px-4 text-sm font-semibold text-red-100 transition active:scale-95"
+              className="shell-logout-btn min-h-11 px-4 text-sm"
               onClick={() => {
                 setDrawerOpen(false);
                 logout();

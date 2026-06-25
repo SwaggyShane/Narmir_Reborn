@@ -276,7 +276,7 @@ const HeroesPanel = () => {
           </div>
         </div>
 
-        <div className="xl:sticky xl:top-0">
+        <div>
           <div className="card mx-auto mt-0 w-full max-w-3xl rounded-2xl border border-[var(--border)] bg-[var(--bg2)] p-5">
             <div className="card-title mb-3">Recruit Hero</div>
             <div className="mb-4 text-[12px] leading-6 text-[var(--text3)]">

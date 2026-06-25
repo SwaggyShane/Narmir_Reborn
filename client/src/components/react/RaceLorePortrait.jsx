@@ -20,6 +20,11 @@ const IMG_STYLE = {
   display: 'block',
 };
 
+function parseAspectRatio(ratio) {
+  const [w, h] = String(ratio).split('/').map((v) => parseFloat(v.trim()));
+  return w > 0 && h > 0 ? w / h : 1;
+}
+
 export default function RaceLorePortrait({
   portraitUrl,
   alt = '',
@@ -35,20 +40,21 @@ export default function RaceLorePortrait({
     setFailed(false);
   }, [portraitUrl]);
 
+  const aspect = parseAspectRatio(aspectRatio);
+
   const frameStyle = height != null
     ? {
         ...FRAME_BASE,
-        height: `${height}px`,
-        width: 'auto',
-        maxWidth: '100%',
         aspectRatio,
+        width: `min(100%, ${Math.round(height * aspect)}px)`,
+        maxWidth: '100%',
+        maxHeight: `${height}px`,
       }
     : {
         ...FRAME_BASE,
-        width: `${size}px`,
-        maxWidth: '100%',
         aspectRatio,
-        height: 'auto',
+        width: `min(100%, ${size}px)`,
+        maxWidth: '100%',
       };
 
   const fallbackSize = height ?? size;

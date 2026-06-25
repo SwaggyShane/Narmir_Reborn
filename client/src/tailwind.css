@@ -99,7 +99,9 @@
   body,
   #app {
     height: 100%;
+    max-width: 100%;
     overflow: hidden;
+    overflow-x: clip;
   }
 
   html {
@@ -371,7 +373,7 @@
 
   /* ── Build Panel Sticky Header ── */
   .build-sticky-header {
-    @apply sticky top-14 z-sticky bg-bg;
+    @apply bg-bg;
   }
 
   .build-content-scroll {
@@ -553,9 +555,10 @@
   }
 
   .turn-btn {
-    @apply relative isolate inline-flex shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-gold px-4 py-1.5 font-cinzel text-sm font-black tracking-wide text-black transition-all duration-200 active:scale-95;
-    box-shadow: 0 0 18px rgba(var(--glow-rgb), 0.42), 0 4px 14px rgba(0, 0, 0, 0.38);
-    background: linear-gradient(135deg, #f0b202 0%, #ffd95a 45%, #f5c842 55%, #e5a800 100%);
+    @apply relative isolate inline-flex shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 px-4 py-1.5 font-cinzel text-sm font-black tracking-wide text-white transition-all duration-200 active:scale-95;
+    border-color: var(--accent1);
+    background: linear-gradient(135deg, var(--accent1) 0%, var(--accent2) 100%);
+    box-shadow: 0 0 18px rgba(var(--accent-rgb), 0.42), 0 4px 14px rgba(0, 0, 0, 0.38);
     animation: turn-btn-glow 2.8s ease-in-out infinite;
   }
 
@@ -572,8 +575,9 @@
   }
 
   .turn-btn:hover:not(:disabled) {
-    @apply scale-[1.03] border-gold brightness-110;
-    box-shadow: 0 0 26px rgba(var(--glow-rgb), 0.62), 0 6px 16px rgba(0, 0, 0, 0.42);
+    @apply scale-[1.03] brightness-110;
+    border-color: var(--accent2);
+    box-shadow: 0 0 26px rgba(var(--accent-rgb), 0.62), 0 6px 16px rgba(0, 0, 0, 0.42);
   }
 
   .turn-btn:disabled {
@@ -590,8 +594,10 @@
   }
 
   .shell-logout-btn {
-    @apply inline-flex items-center justify-center gap-1.5 rounded-md border border-[#dc2626] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-[0_2px_10px_rgba(220,38,38,0.38)] transition hover:brightness-110 active:scale-95;
-    background: linear-gradient(180deg, #ef4444 0%, #dc2626 55%, #b91c1c 100%);
+    @apply inline-flex items-center justify-center gap-1.5 rounded-md border-2 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white transition hover:brightness-110 active:scale-95;
+    border-color: var(--accent1);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--accent1) 82%, #000) 0%, var(--accent1) 55%, var(--accent2) 100%);
+    box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.35);
   }
 
   /* ── Topbar brand: flame title + landing tagline ── */
@@ -652,19 +658,9 @@
     @apply flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-y-auto bg-bg px-3 py-2;
   }
 
-  .race-status-portrait {
-    height: 200px !important;
-  }
-
-  @media (min-width: 640px) {
-    .race-status-portrait {
-      height: 250px !important;
-    }
-  }
-
   .mobile-metrics-scroll {
-    @apply relative -mx-1;
-    mask-image: linear-gradient(90deg, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%);
+    @apply relative w-full max-w-full min-w-0;
+    mask-image: linear-gradient(90deg, transparent 0, #000 8px, #000 calc(100% - 8px), transparent 100%);
   }
 
   .panel-immersive {
@@ -955,10 +951,10 @@
 @keyframes turn-btn-glow {
   0%,
   100% {
-    box-shadow: 0 0 16px rgba(var(--glow-rgb), 0.38), 0 4px 12px rgba(0, 0, 0, 0.34);
+    box-shadow: 0 0 16px rgba(var(--accent-rgb), 0.38), 0 4px 12px rgba(0, 0, 0, 0.34);
   }
 
   50% {
-    box-shadow: 0 0 24px rgba(var(--glow-rgb), 0.58), 0 4px 14px rgba(0, 0, 0, 0.38);
+    box-shadow: 0 0 24px rgba(var(--accent-rgb), 0.58), 0 4px 14px rgba(0, 0, 0, 0.38);
   }
 }

@@ -185,7 +185,7 @@ const StatusPanel = () => {
               alt={cleanText(raceInfo.label)}
               height={250}
               aspectRatio="4 / 5"
-              className="race-status-portrait mx-auto w-full max-w-[200px] sm:mx-0 sm:max-w-none"
+              className="mx-auto w-full max-w-[200px] sm:mx-0"
             />
           ) : null}
           <div className="flex w-full min-w-0 flex-col gap-1.5 text-center sm:flex-1 sm:text-left">
