@@ -15,6 +15,7 @@ const STYLES = {
   shellTitle: { color: '#d4af37', fontFamily: 'Cinzel, serif', margin: 0, fontSize: 20, letterSpacing: 2 },
   shellUser: { display: 'flex', alignItems: 'center', gap: 12 },
   shellUsername: { color: '#71717a', fontSize: 14 },
+  gameLink: { padding: '6px 14px', background: 'transparent', border: '1px solid #3f3f46', borderRadius: 4, color: '#a1a1aa', fontSize: 13, textDecoration: 'none', fontFamily: 'Inter, sans-serif' },
   logoutBtn: { padding: '6px 14px', background: '#27272a', border: '1px solid #3f3f46', borderRadius: 4, color: '#e4e4e7', fontSize: 13, cursor: 'pointer', fontFamily: 'Inter, sans-serif' },
   placeholder: { color: '#52525b', fontSize: 14 },
 };
@@ -123,6 +124,7 @@ export default function AdminAuthGate() {
       <div style={STYLES.shellHeader}>
         <h1 style={STYLES.shellTitle}>NARMIR ADMIN</h1>
         <div style={STYLES.shellUser}>
+          <a href="/game" style={STYLES.gameLink}>← Game</a>
           <span style={STYLES.shellUsername}>{adminUser}</span>
           <button onClick={handleLogout} style={STYLES.logoutBtn}>Logout</button>
         </div>
