@@ -6,12 +6,8 @@ import { useCloudSync } from '../../hooks/useCloudSync.js';
 import { useServerStatus } from '../../hooks/useServerStatus.js';
 import { useEstClock } from '../../hooks/useEstClock.js';
 import { useNightCycle } from '../../hooks/useNightCycle.js';
-import { useRegenCountdown } from '../../hooks/useRegenCountdown.js';
-
 const ShellFooter = () => {
   const { state } = useGameState();
-  const regenCountdown = useRegenCountdown();
-  const turnsStored = state?.turns_stored ?? 0;
   const synced = useCloudSync();
   const { uptime } = useServerStatus();
   const estClock = useEstClock();
@@ -43,12 +39,6 @@ const ShellFooter = () => {
       </div>
 
       <div className="flex min-w-0 items-center justify-end gap-3 sm:gap-4">
-        <div className="hidden items-center gap-1 font-mono tabular-nums text-gold sm:flex" title="Turns stored">
-          <span className="text-text3">Turns</span>
-          <span className="font-bold">{turnsStored}</span>
-          <span className="text-[10px] text-text3">+7 in {regenCountdown}</span>
-        </div>
-
         <div className="hidden font-mono tabular-nums text-text3 xs:block">
           {estClock}
         </div>
