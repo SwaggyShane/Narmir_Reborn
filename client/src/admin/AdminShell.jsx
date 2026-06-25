@@ -5,16 +5,16 @@ import AdminToast from './AdminToast.jsx';
 import { useAdminSession } from './hooks/useAdminSession.js';
 import KingdomsPanel from './panels/KingdomsPanel.jsx';
 import ManagePanel from './panels/ManagePanel.jsx';
+import EventsPanel from './panels/EventsPanel.jsx';
+import LorePanel from './panels/LorePanel.jsx';
+import GoalsPanel from './panels/GoalsPanel.jsx';
+import EvolutionPanel from './panels/EvolutionPanel.jsx';
 
 const PHASE_LABELS = {
-  events:    'Phase 4',
   config:    'Phase 5',
   sounds:    'Phase 5',
   prestige:  'Phase 5',
-  lore:      'Phase 4',
-  changelog: 'Phase 4',
   fragments: 'Phase 5',
-  goals:     'Phase 4',
   security:  'Phase 5',
 };
 
@@ -96,6 +96,26 @@ export default function AdminShell({ adminUser, onLogout }) {
             />
           ) : activeTab === 'manage' ? (
             <ManagePanel
+              adminFetch={adminFetch}
+              onToast={(msg, type) => setToast({ msg, type: type || 'info' })}
+            />
+          ) : activeTab === 'events' ? (
+            <EventsPanel
+              adminFetch={adminFetch}
+              onToast={(msg, type) => setToast({ msg, type: type || 'info' })}
+            />
+          ) : activeTab === 'lore' ? (
+            <LorePanel
+              adminFetch={adminFetch}
+              onToast={(msg, type) => setToast({ msg, type: type || 'info' })}
+            />
+          ) : activeTab === 'goals' ? (
+            <GoalsPanel
+              adminFetch={adminFetch}
+              onToast={(msg, type) => setToast({ msg, type: type || 'info' })}
+            />
+          ) : activeTab === 'changelog' ? (
+            <EvolutionPanel
               adminFetch={adminFetch}
               onToast={(msg, type) => setToast({ msg, type: type || 'info' })}
             />

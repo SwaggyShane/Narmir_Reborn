@@ -1,6 +1,6 @@
 # Admin Panel React + Tailwind Migration Roadmap
 
-**Status:** Phase 3 merged — Manage tab live in React  
+**Status:** Phase 4 merged — Content editors (Events, Lore, Goals, Evolution) live in React  
 **Source of truth audited:** `public/admin.html` (~5,150 lines), `routes/admin.js` (~1,580 lines), `index.js` route wiring  
 **Target:** Replace the monolithic vanilla HTML admin with a Vite/React/Tailwind app matching the game shell and portal patterns
 
@@ -513,12 +513,12 @@ Each phase is an independent draft PR. Do not delete `public/admin.html` until P
 
 ### Phase 4 — Content editors
 
-**Branch:** `admin-react-04-content`
+**Branch:** `claude/repo-health-assessment-2yvqdb`
 
-- [ ] Events tab (log + CRUD)
-- [ ] Lore & trips (4 pools)
-- [ ] Goals management (3 tiers + modals)
-- [ ] Evolution tab (wishlist, notes, changelog)
+- [x] Events tab (log + CRUD definitions with season/effect/race selects)
+- [x] Lore & trips (lore entries with PUT modal + random/junk/tax event pools)
+- [x] Goals management (3 tiers: daily/weekly/monthly with edit/add/remove modals)
+- [x] Evolution tab (wishlist, admin notes, player suggestions read-only)
 
 ### Phase 5 — Config, sounds, reference, security
 
@@ -635,7 +635,8 @@ Legacy admin uses **both** `localStorage.narmir_token` and cookies. React game u
 1. **Phase 2b PR** — MERGED (PR #584). JSON field widgets live in React.
 2. **Phase 2c PR** — MERGED (PR #585). AI backend APIs (`ai/seed`, `ai/reset`, `ai/synopsis`, `ai/apply-preset`, `ai/presets`) + `AiKingdomPanel` + `game/ai-presets.js` with 10 presets and race modifiers.
 3. **Phase 3 PR** — MERGED (PR #586). ManagePanel: announcements, AI hiatus, chat mods/bans, promote admin, test kingdoms, bulk/destructive actions.
-4. **Fix CSRF** on security audit + sounds in legacy admin (quick win) OR document as known bug until Phase 5.
+4. **Phase 4 PR** — MERGED (PR #587). EventsPanel, LorePanel, GoalsPanel, EvolutionPanel wired into AdminShell.
+5. **Fix CSRF** on security audit + sounds in legacy admin (quick win) OR document as known bug until Phase 5.
 
 ---
 
