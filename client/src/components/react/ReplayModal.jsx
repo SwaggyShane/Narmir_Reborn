@@ -63,7 +63,8 @@ export default function ReplayModal({ title, steps, onClose }) {
     >
       <div
         style={{
-          background: '#1a1a1a',
+          background: 'var(--bg2)',
+          border: '2px solid var(--accent1)',
           borderRadius: 'var(--radius-lg)',
           padding: '20px',
           maxWidth: '400px',

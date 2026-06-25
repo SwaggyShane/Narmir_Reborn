@@ -18,7 +18,7 @@ export default function HeroXpModal({ open, onClose }) {
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div className="flex max-h-[80vh] w-full max-w-[700px] flex-col rounded-md border-2 border-[var(--purple)] bg-[var(--bg2)] shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
+      <div className="flex max-h-[80vh] w-full max-w-[700px] flex-col rounded-md border-2 border-[var(--accent1)] bg-[var(--bg2)] shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
         <div className="flex items-center justify-between border-b border-[var(--border)] p-3.5">
           <span className="text-[14px] font-bold text-[var(--text)]">👑 Hero XP Progression</span>
           <button

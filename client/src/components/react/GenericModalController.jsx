@@ -27,7 +27,7 @@ export default function GenericModalController() {
       }}
     >
       <div
-        className="relative max-h-[85vh] w-full max-w-[520px] overflow-y-auto rounded-[var(--radius-lg)] border border-[var(--border2)] bg-[var(--bg2)] p-7"
+        className="relative max-h-[85vh] w-full max-w-[520px] overflow-y-auto rounded-[var(--radius-lg)] border-2 border-[var(--accent1)] bg-[var(--bg2)] p-7"
         dangerouslySetInnerHTML={{ __html: html }}
       />
     </div>,

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
+import RaceLorePortrait from './RaceLorePortrait.jsx';
 
 export default function RaceLoreContent({ lore, regionName, regionBonus, portraitUrl, repair, onHeroClick }) {
-  const [hasPortraitError, setHasPortraitError] = useState(false);
   const strengths = Array.isArray(lore.strengths) ? lore.strengths : [];
   const weaknesses = Array.isArray(lore.weaknesses) ? lore.weaknesses : [];
   const heroes = Array.isArray(lore.heroes) ? lore.heroes : [];
@@ -9,24 +9,13 @@ export default function RaceLoreContent({ lore, regionName, regionBonus, portrai
 
   return (
     <>
-      <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '20px' }}>
-        <div style={{ flexShrink: 0 }}>
-          {portraitUrl && !hasPortraitError ? (
-            <div style={{ width: '140px', height: '140px', borderRadius: '16px', boxShadow: '0 6px 16px rgba(0,0,0,0.5)', overflow: 'hidden', background: '#15171e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <img
-                src={portraitUrl}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                alt={repair(lore.title || '')}
-                onError={() => setHasPortraitError(true)}
-              />
-            </div>
-          ) : (
-            <div style={{ width: '140px', height: '140px', borderRadius: '16px', background: 'var(--bg3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '60px' }}>
-              {repair(lore.icon || '⚔')}
-            </div>
-          )}
-        </div>
-        <div style={{ flex: 1, paddingTop: '4px' }}>
+      <div className="mb-5 flex flex-col items-center gap-5 sm:flex-row sm:items-start">
+        <RaceLorePortrait
+          portraitUrl={portraitUrl}
+          alt={repair(lore.title || '')}
+          fallbackIcon={repair(lore.icon || '⚔')}
+        />
+        <div className="w-full flex-1 pt-0 text-center sm:pt-1 sm:text-left">
           <h2 style={{ color: lore.color || 'var(--gold)', margin: '0 0 6px', fontSize: '24px', letterSpacing: '-0.5px', fontFamily: "'Cinzel', serif", fontWeight: 700 }}>
             {repair(lore.title || 'Unknown')}
           </h2>

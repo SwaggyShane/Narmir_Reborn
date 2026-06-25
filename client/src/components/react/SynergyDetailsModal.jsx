@@ -65,7 +65,7 @@ export default function SynergyDetailsModal({ synergy, kingdom, onClose, onAbili
 
   return (
     <div className="fixed inset-0 bg-black/80 z-modal backdrop-blur-sm flex items-center justify-center p-5" onClick={onClose}>
-      <div className="rounded-xl border border-white/10 bg-gradient-to-br from-zinc-900 to-white/5 max-w-[800px] w-full max-h-[90vh] shadow-2xl flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+      <div className="rounded-xl border-2 border-[var(--accent1)] bg-gradient-to-br from-zinc-900 to-white/5 max-w-[800px] w-full max-h-[90vh] shadow-2xl flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
         <div className="p-8 border-b border-white/10 bg-gradient-to-br from-orange-500/5 to-transparent">
           <div className="flex items-center gap-4 mb-3">
             <span className="text-6xl leading-none">{synergy.emoji}</span>

@@ -78,7 +78,7 @@ export default function KingdomXpModal({ open, onClose }) {
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div className="relative mx-auto my-10 w-full max-w-[520px] rounded-xl border border-white/10 bg-bg2 p-6 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
+      <div className="relative mx-auto my-10 w-full max-w-[520px] rounded-xl border-2 border-[var(--accent1)] bg-bg2 p-6 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
         <button
           type="button"
           onClick={onClose}

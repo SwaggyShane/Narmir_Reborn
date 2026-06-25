@@ -33,7 +33,7 @@ export default function SpyReportModal({ data, onClose }) {
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div className="relative max-h-[85vh] w-full max-w-[520px] overflow-y-auto rounded-[var(--radius-lg)] border border-[var(--border2)] bg-[var(--bg2)] p-7">
+      <div className="relative max-h-[85vh] w-full max-w-[520px] overflow-y-auto rounded-[var(--radius-lg)] border-2 border-[var(--accent1)] bg-[var(--bg2)] p-7">
         <button
           type="button"
           className="absolute right-3 top-3 cursor-pointer border-none bg-transparent text-[18px] text-[var(--text3)]"
