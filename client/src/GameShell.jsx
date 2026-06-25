@@ -108,7 +108,7 @@ const GameShell = () => {
   };
 
   return (
-    <div className="game-shell h-screen w-full max-w-[100vw] overflow-hidden bg-bg" data-night={isNight ? 'true' : 'false'}>
+    <div className="game-shell h-screen w-full max-w-full overflow-hidden bg-bg" data-night={isNight ? 'true' : 'false'}>
       <div
         className={clsx(
           'h-full w-full min-w-0 max-w-full overflow-x-hidden',

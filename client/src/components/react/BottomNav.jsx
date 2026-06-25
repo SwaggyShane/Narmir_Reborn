@@ -108,7 +108,7 @@ const BottomNav = () => {
     <>
       <nav
         className={[
-          'fixed inset-x-0 bottom-0 z-[3000] box-border grid w-full max-w-[100vw] grid-cols-6 gap-1 border-t border-ember-900/40 bg-void-950/95 px-1.5 py-1.5 pb-[env(safe-area-inset-bottom)] shadow-panel backdrop-blur-xl sm:gap-2 sm:px-2 sm:py-2',
+          'fixed inset-x-0 bottom-0 z-[3000] box-border grid w-full max-w-full grid-cols-6 gap-1 border-t border-ember-900/40 bg-void-950/95 px-1.5 py-1.5 pb-[env(safe-area-inset-bottom)] shadow-panel backdrop-blur-xl sm:gap-2 sm:px-2 sm:py-2',
           layout === 'responsive' ? 'lg:hidden' : '',
         ].join(' ')}
       >
