@@ -9,6 +9,7 @@ export const AppEvent = {
   ALLIANCE_CHAT_MESSAGE: 'alliance-chat-message',
   CHAT_CLEAR: 'chat-clear',
   CHAT_BADGE_ALERT: 'chat-badge-alert',
+  MESSAGES_BADGE: 'messages-badge',
   WORLDMAP_REFRESH: 'worldmap-refresh',
   MAP_KINGDOM_CARD: 'map-kingdom-card',
   EXPEDITION_LOG_ENTRY: 'expedition-log-entry',

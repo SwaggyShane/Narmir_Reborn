@@ -5,6 +5,10 @@ import { repairMojibake } from '../../utils/repairMojibake.js';
 import { toast } from '../../utils/toast.js';
 import { registerOpenDirectMessage } from '../../utils/directMessage.js';
 import { getSocket } from '../../socket-client.js';
+import { useActivePanel } from '../../hooks/useActivePanel.js';
+import { AppEvent, emitAppEvent } from '../../utils/appEvents.js';
+import { switchTab } from '../../utils/switchTab.js';
+import EmptyState from './EmptyState.jsx';
 
 function formatTimestamp(unixTs) {
   if (!unixTs) return '';
@@ -51,6 +55,7 @@ function buildConversations(rows, myPlayerId) {
 }
 
 const MessagesPanel = () => {
+  const { activePanel } = useActivePanel();
   const [myPlayerId, setMyPlayerId] = useState(null);
   const [conversations, setConversations] = useState([]);
   const [activeOtherId, setActiveOtherId] = useState(null);
@@ -59,6 +64,8 @@ const MessagesPanel = () => {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const threadRef = useRef(null);
+  const activePanelRef = useRef(activePanel);
+  activePanelRef.current = activePanel;
 
   const activeConversation = useMemo(
     () => conversations.find((conv) => conv.otherId === activeOtherId) || null,
@@ -185,6 +192,9 @@ const MessagesPanel = () => {
 
       setActiveOtherId((current) => current || senderId);
       requestAnimationFrame(scrollToBottom);
+      if (activePanelRef.current !== 'messages') {
+        emitAppEvent(AppEvent.MESSAGES_BADGE);
+      }
     };
 
     const boot = async () => {
@@ -292,9 +302,13 @@ const MessagesPanel = () => {
                 </button>
               ))
             ) : (
-              <div className="px-4 py-5 text-center text-[13px] text-text3">
-                No messages yet. Open Rankings or a kingdom profile and choose Message.
-              </div>
+              <EmptyState
+                icon="✉️"
+                title="Inbox is empty"
+                description="Message a player from Rankings or a kingdom profile to start a conversation."
+                actionLabel="Open Rankings"
+                onAction={() => switchTab('rankings')}
+              />
             )}
           </div>
         </div>
@@ -337,16 +351,20 @@ const MessagesPanel = () => {
                   </div>
                 ))
               ) : (
-                <div className="mt-10 text-center text-text3">
-                  <div className="mb-2 text-[40px]">✉️</div>
-                  Start a conversation with {activeConversation.otherName}.
-                </div>
+                <EmptyState
+                  icon="✉️"
+                  title="New conversation"
+                  description={`Send the first message to ${activeConversation.otherName}.`}
+                />
               )
             ) : (
-              <div className="mt-10 text-center text-text3">
-                <div className="mb-2 text-[40px]">✉️</div>
-                Select a conversation or message a player from Rankings.
-              </div>
+              <EmptyState
+                icon="✉️"
+                title="Select a conversation"
+                description="Pick someone from your inbox, or message a player from Rankings."
+                actionLabel="Open Rankings"
+                onAction={() => switchTab('rankings')}
+              />
             )}
           </div>
 

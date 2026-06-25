@@ -254,7 +254,7 @@ const EconomyPanel = () => {
     <div id="economy" className="panel">
       <div className="card flex-shrink-0">
         <div className="flex justify-between items-baseline">
-          <div className="card-title">Tax policy</div>
+          <div className="card-title !mb-0">Tax policy</div>
           <div id="tax-metrics" className="text-[12px] text-[var(--text3)] flex gap-3">
             <span>Income: <strong className="text-[var(--green)]">+{fmt(econData?.totalIncome || 0)}</strong></span>
             <span>Upkeep: <strong className="text-[var(--red)]">-{fmt(econData?.troopUpkeep || 0)}</strong></span>
@@ -353,7 +353,7 @@ const EconomyPanel = () => {
             <div className="trow"><span className="name">Shortage turns</span><span className="count">{econData?.food_shortage_turns || 0}</span></div>
           </div>
           <div className="card" style={{ margin: 0 }}>
-            <div className="card-title" style={{ marginBottom: '10px' }}>Farm upgrades</div>
+            <div className="card-title !mb-2.5">Farm upgrades</div>
             <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '12px' }}>
               Instant gold purchase — applies to all farms.
             </div>
@@ -361,7 +361,7 @@ const EconomyPanel = () => {
           </div>
         </div>
         <div className="card">
-          <div className="card-title" style={{ marginBottom: '8px' }}>Food rules</div>
+          <div className="card-title !mb-2">Food rules</div>
           <div style={{ fontSize: '12px', color: 'var(--text3)', lineHeight: 1.9 }}>
             Each farm needs <strong style={{ color: 'var(--text)' }}>{wpf}</strong> free population to work it. Unworked farms produce nothing.<br />
             Shortage grace: <strong style={{ color: 'var(--amber)' }}>2 turns</strong> → happiness penalty → population flight → desertion.
@@ -373,7 +373,7 @@ const EconomyPanel = () => {
       <div className={clsx(activeTab === 'granary' ? 'block' : 'hidden')}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
           <div className="card" style={{ margin: 0 }}>
-            <div className="card-title" style={{ marginBottom: '10px' }}>Storage overview</div>
+            <div className="card-title !mb-2.5">Storage overview</div>
             <div className="trow"><span className="name">Food stored</span><span className="count">{fmt(state?.food || 0)} bushels</span></div>
             <div className="trow"><span className="name">Max storage</span><span className="count">{fmt(econData?.maxFoodStorage || 0)} bushels</span></div>
             <div className="trow" style={{ borderTop: '1px solid var(--border2)' }}>
@@ -385,7 +385,7 @@ const EconomyPanel = () => {
             <div className="trow"><span className="name">Time to degrade</span><span className="count" style={{ color: dtColor }}>{dtLabel}</span></div>
           </div>
           <div className="card" style={{ margin: 0 }}>
-            <div className="card-title" style={{ marginBottom: '10px' }}>Granary upgrades</div>
+            <div className="card-title !mb-2.5">Granary upgrades</div>
             <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '12px' }}>
               Enhances granaries to store more food and reduce rot.
             </div>
@@ -393,7 +393,7 @@ const EconomyPanel = () => {
           </div>
         </div>
         <div className="card">
-          <div className="card-title" style={{ marginBottom: '8px' }}>Storage rules</div>
+          <div className="card-title !mb-2">Storage rules</div>
           <div style={{ fontSize: '12px', color: 'var(--text3)', lineHeight: 1.9 }}>
             Food cannot be stored indefinitely and decays every turn based on the
             current spoilage rate. Upgrades can lower this rate and improve the
@@ -407,7 +407,7 @@ const EconomyPanel = () => {
       <div className={clsx(activeTab === 'markets' ? 'block' : 'hidden')}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
           <div className="card" style={{ margin: 0 }}>
-            <div className="card-title" style={{ marginBottom: '10px' }}>Market overview</div>
+            <div className="card-title !mb-2.5">Market overview</div>
             <div className="trow"><span className="name">Markets</span><span className="count">{fmt(state?.bld_markets || 0)}</span></div>
             <div className="trow"><span className="name">Market income/turn</span><span className="count" style={{ color: 'var(--gold)' }}>{fmt(econData?.marketIncome || 0)} GC</span></div>
             <div className="trow"><span className="name">Trade routes</span><span className="count">{fmt(econData?.activeTradeRouteCount || 0)}</span></div>
@@ -419,14 +419,14 @@ const EconomyPanel = () => {
             </div>
           </div>
           <div className="card" style={{ margin: 0 }}>
-            <div className="card-title" style={{ marginBottom: '10px' }}>Market upgrades</div>
+            <div className="card-title !mb-2.5">Market upgrades</div>
             <UpgradesList category="market" defs={MARKET_UPGRADES} owned={econData?.market_upgrades || {}} state={state || {}} />
           </div>
         </div>
 
         {/* Commodity market */}
         <div className="card" id="commodity-market-card">
-          <div className="card-title" style={{ marginBottom: '8px' }}>📦 Commodity market</div>
+          <div className="card-title !mb-2">📦 Commodity market</div>
           <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '12px' }}>
             Base prices - your race modifiers applied - prices fluctuate by supply
           </div>
@@ -453,7 +453,7 @@ const EconomyPanel = () => {
 
         {/* Trade offers */}
         <div className="card" id="trade-offers-card">
-          <div className="card-title" style={{ marginBottom: '8px' }}>🤝 Trade offers</div>
+          <div className="card-title !mb-2">🤝 Trade offers</div>
           {tradeLocked ? (
             <div style={{ fontSize: '13px', color: 'var(--text3)' }}>
               Build a <strong>Trading Post</strong> to send and receive trade offers.
@@ -555,17 +555,17 @@ const EconomyPanel = () => {
       <div className={clsx(activeTab === 'tavern' ? 'block' : 'hidden')}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
           <div className="card" style={{ margin: 0 }}>
-            <div className="card-title" style={{ marginBottom: '10px' }}>Tavern overview</div>
+            <div className="card-title !mb-2.5">Tavern overview</div>
             <div className="trow"><span className="name">Taverns</span><span className="count">{fmt(state?.bld_taverns || 0)}</span></div>
           </div>
           <div className="card" style={{ margin: 0 }}>
-            <div className="card-title" style={{ marginBottom: '10px' }}>Tavern upgrades</div>
+            <div className="card-title !mb-2.5">Tavern upgrades</div>
             <UpgradesList category="tavern" defs={TAVERN_UPGRADES} owned={econData?.tavern_upgrades || {}} state={state || {}} />
           </div>
         </div>
 
         <div className="card">
-          <div className="card-title" style={{ marginBottom: '8px' }}>⚔️ Mercenary board</div>
+          <div className="card-title !mb-2">⚔️ Mercenary board</div>
           <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '14px' }}>
             Mercenaries fight at a fixed level. They do not advance, do not use
             your weapon/armor stockpile, and leave when their contract expires.
@@ -624,7 +624,7 @@ const EconomyPanel = () => {
         <div id="bank-content" style={{ display: (state?.bld_vaults || 0) >= 25 ? 'block' : 'none' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
             <div className="card" style={{ margin: 0 }}>
-              <div className="card-title">Fixed-Term Deposits</div>
+              <div className="card-title !mb-2.5">Fixed-Term Deposits</div>
               <div style={{ color: 'var(--text3)', fontSize: '12px', marginBottom: '12px' }}>
                 Deposit your gold to earn a guaranteed return over time. You cannot withdraw early.
               </div>
@@ -643,12 +643,12 @@ const EconomyPanel = () => {
               </button>
             </div>
             <div className="card" style={{ margin: 0 }}>
-              <div className="card-title">Bank Upgrades</div>
+              <div className="card-title !mb-2.5">Bank Upgrades</div>
               <div id="bank-upgrades-list"></div>
             </div>
           </div>
           <div className="card" style={{ margin: 0 }}>
-            <div className="card-title">Active Deposits</div>
+            <div className="card-title !mb-2.5">Active Deposits</div>
             <div id="bank-deposits-list"></div>
           </div>
         </div>
@@ -657,7 +657,7 @@ const EconomyPanel = () => {
       {/* TRADE ROUTES TAB */}
       <div className={clsx(activeTab === 'trade-routes' ? 'block' : 'hidden')}>
         <div className="card" style={{ marginTop: 0, marginBottom: '20px' }}>
-          <div className="card-title">Establish New Route</div>
+          <div className="card-title !mb-2.5">Establish New Route</div>
           <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '12px' }}>
             Requires: 10,000 GC. Permanent routes provide steady income and improve with stability.
           </div>
@@ -674,7 +674,7 @@ const EconomyPanel = () => {
           </div>
         </div>
         <div className="card" style={{ marginTop: 0 }}>
-          <div className="card-title">Active Trade Routes</div>
+          <div className="card-title !mb-2.5">Active Trade Routes</div>
           <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '16px' }}>
             Established connections with other kingdoms provide steady gold income each turn. Stability increases over time, improving efficiency.
           </div>

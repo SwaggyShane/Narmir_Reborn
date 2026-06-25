@@ -36,6 +36,10 @@ import KingdomProfileModal from './components/react/KingdomProfileModal.jsx';
 import SchoolSelectionController from './components/react/SchoolSelectionController.jsx';
 import RaceLoreController from './components/react/RaceLoreController.jsx';
 import ToastProvider from './components/react/ToastProvider.jsx';
+import PanelContextHeader from './components/react/PanelContextHeader.jsx';
+import CommandPalette from './components/react/CommandPalette.jsx';
+import MobileTurnFab from './components/react/MobileTurnFab.jsx';
+import { useNightCycle } from './hooks/useNightCycle.js';
 import HeroXpModalController from './components/react/HeroXpModalController.jsx';
 import KingdomXpModalController from './components/react/KingdomXpModalController.jsx';
 import ShellFooter from './components/react/ShellFooter.jsx';
@@ -44,9 +48,11 @@ import KingdomBodyHeader from './components/react/KingdomBodyHeader.jsx';
 import LoreEntryController from './components/react/LoreEntryController.jsx';
 import GenericModalController from './components/react/GenericModalController.jsx';
 import SpyReportModalController from './components/react/SpyReportModalController.jsx';
+import EmptyState from './components/react/EmptyState.jsx';
 
 const GameShell = () => {
   const { activePanel } = useActivePanel();
+  const { isNight } = useNightCycle();
 
   useEffect(() => {
     restoreAuthSession().catch((err) => {
@@ -82,14 +88,24 @@ const GameShell = () => {
       case 'options': return <OptionsPanel />;
       case 'messages': return <MessagesPanel />;
       case 'forum':
-        return <div className="panel flex flex-1 items-center justify-center text-center text-text3">Forum lives in the Portal (separate entry point).</div>;
+        return (
+          <div className="panel flex flex-1 items-center justify-center">
+            <EmptyState
+              icon="📚"
+              title="Forum lives in the Portal"
+              description="Board discussions open from the main portal entry point, not inside the game shell."
+              actionLabel="Open Portal"
+              onAction={() => { window.location.href = '/portal'; }}
+            />
+          </div>
+        );
       default:
         return <div className="panel flex flex-1 items-center justify-center text-center text-text3">"{activePanel}" panel not wired yet.</div>;
     }
   };
 
   return (
-    <div className="h-screen w-full overflow-hidden bg-bg">
+    <div className="game-shell h-screen w-full overflow-hidden bg-bg" data-night={isNight ? 'true' : 'false'}>
       <div
         className={[
           'h-full w-full',
@@ -112,7 +128,7 @@ const GameShell = () => {
             'max-lg:shrink-0 max-lg:px-3 max-lg:py-2',
             'lg:col-start-2 lg:row-start-2 lg:gap-2 lg:px-2 lg:py-2.5',
             '[&_.metrics]:flex [&_.metrics]:w-full',
-            'max-lg:[&_.metrics]:mb-0 max-lg:[&_.metrics]:flex-wrap max-lg:[&_.metrics]:gap-1',
+            'max-lg:[&_.metrics]:mb-0 max-lg:[&_.metrics]:gap-1.5 max-lg:[&_.resource-metrics]:flex-nowrap max-lg:[&_.resource-metrics]:overflow-x-auto max-lg:[&_.resource-metrics]:snap-x max-lg:[&_.resource-metrics]:pb-1 max-lg:[&_.metric]:min-w-[92px] max-lg:[&_.metric]:snap-start max-lg:[&_.metric]:shrink-0',
 
             'lg:[&_.metric_.sub]:justify-end',
           ].join(' ')}
@@ -136,8 +152,11 @@ const GameShell = () => {
           ].join(' ')}
         >
           <KingdomBodyHeader />
+          <PanelContextHeader />
           <div className="relative z-10 min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
-            {renderPanel()}
+            <div key={activePanel} className="panel-enter min-h-full">
+              {renderPanel()}
+            </div>
           </div>
         </ShellColumnFrame>
 
@@ -150,6 +169,8 @@ const GameShell = () => {
       <SchoolSelectionController />
       <RaceLoreController />
       <ToastProvider />
+      <CommandPalette />
+      <MobileTurnFab />
       <HeroXpModalController />
       <KingdomXpModalController />
       <LoreEntryController />

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import clsx from 'clsx';
 import { useGameState } from '../../hooks/useGameState.js';
+import { switchTab } from '../../utils/switchTab.js';
 import { FARM_WORKERS_PER } from '../../utils/economyConstants.js';
 
 // Tracks the previous numeric value for a key and returns a short-lived delta
@@ -152,8 +153,30 @@ function trunc(value) {
   return Math.floor(n).toLocaleString();
 }
 
-function metricClass(extra = '') {
-  return 'metric relative' + (extra ? ` ${extra}` : '');
+const METRIC_TARGETS = {
+  gold: 'economy',
+  mana: 'studies',
+  land: 'build',
+  population: 'status',
+  thralls: 'status',
+  happiness: 'happiness',
+  food: 'economy',
+  defense: 'defense',
+};
+
+function MetricBox({ metricKey, className, title, children }) {
+  const target = METRIC_TARGETS[metricKey];
+  return (
+    <button
+      type="button"
+      className={clsx('metric relative metric-clickable text-left', className)}
+      onClick={() => target && switchTab(target)}
+      title={title || (target ? `Open ${target}` : undefined)}
+      disabled={!target}
+    >
+      {children}
+    </button>
+  );
 }
 
 function population(state) {
@@ -247,51 +270,52 @@ const ResourceStrip = () => {
   const thrallFlash = useDeltaFlash(thralls);
   const foodFlash = useDeltaFlash(state.food, { minStep: 10 });
 
+  const goldLow = numberValue(state.gold) < 1000;
+  const foodLow = numberValue(state.food) < 1000;
+
   return (
     <>
-      <div className={metricClass()}>
+      <MetricBox metricKey="gold" className={goldLow ? 'alert' : ''} title="Open Economy">
         <DeltaBadge flash={goldFlash} />
         <div className="lbl">Gold</div>
-        <div className={`val ${numberValue(state.gold) < 1000 ? 'text-[var(--red)]' : ''}`}>
-          {trunc(state.gold)}
-        </div>
+        <div className={`val ${goldLow ? 'text-[var(--red)]' : ''}`}>{trunc(state.gold)}</div>
         <div className="sub">
           {numberValue(state.gold_income) >= 0 ? '+' : ''}{trunc(state.gold_income || 0)}/turn
         </div>
-      </div>
-      <div className={metricClass()}>
+      </MetricBox>
+      <MetricBox metricKey="mana" title="Open Studies">
         <DeltaBadge flash={manaFlash} />
         <div className="lbl">Mana</div>
         <div className="val">{trunc(state.mana)}</div>
         <div className="sub">
           {numberValue(state.mana_regen) >= 0 ? '+' : ''}{trunc(state.mana_regen || 0)}/turn
         </div>
-      </div>
-      <div className={metricClass()}>
+      </MetricBox>
+      <MetricBox metricKey="land" title="Open Build">
         <DeltaBadge flash={landFlash} />
         <div className="lbl">Land</div>
         <div className="val">{trunc(state.land)}</div>
         <div className="sub"><span>{trunc(freeLand(state))}</span> free</div>
-      </div>
-      <div className={metricClass()}>
+      </MetricBox>
+      <MetricBox metricKey="population" title="Open Status">
         <DeltaBadge flash={popFlash} />
         <div className="lbl">Population</div>
         <div className="val">{trunc(pop)}</div>
         <div className="sub">
           cap: <span className={pop > popCap && popCap > 0 ? 'text-[var(--red)]' : ''}>{trunc(popCap)}</span>
         </div>
-      </div>
+      </MetricBox>
       {isVampire && (
-        <div className={metricClass()}>
+        <MetricBox metricKey="thralls" title="Open Status">
           <DeltaBadge flash={thrallFlash} />
           <div className="lbl">Thralls</div>
           <div className="val">{trunc(thralls)}</div>
           <div className="sub">
             cap: <span className={thralls > maxThralls ? 'text-[var(--red)]' : ''}>{trunc(maxThralls)}</span>
           </div>
-        </div>
+        </MetricBox>
       )}
-      <div className={metricClass('metric-happiness overflow-hidden')}>
+      <MetricBox metricKey="happiness" className="metric-happiness overflow-hidden" title="Open Happiness">
         <div className="lbl">Happiness</div>
         <div className="metric-happiness-center">
           <div className="metric-happiness-track" title="Population happiness">
@@ -305,26 +329,22 @@ const ResourceStrip = () => {
             <span>{happinessLabel(happiness)}</span>
           </div>
         </div>
-      </div>
-      <div className={metricClass()}>
+      </MetricBox>
+      <MetricBox metricKey="food" className={foodLow ? 'alert' : ''} title="Open Economy">
         <DeltaBadge flash={foodFlash} />
         <div className="lbl">Food</div>
-        <div className={`val ${numberValue(state.food) < 1000 ? 'text-[var(--red)]' : ''}`}>
-          {trunc(state.food)}
-        </div>
+        <div className={`val ${foodLow ? 'text-[var(--red)]' : ''}`}>{trunc(state.food)}</div>
         <div className="sub">
           <span className={`font-semibold ${foodDelta >= 0 ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
             {foodDelta >= 0 ? '+' : ''}{trunc(foodDelta)}
           </span>/turn
         </div>
-      </div>
-      <div className={metricClass()}>
+      </MetricBox>
+      <MetricBox metricKey="defense" title="Open Defense">
         <div className="lbl">Defense</div>
-        <div className="val" style={{ color: defenseColor }}>
-          {defenseRating}
-        </div>
+        <div className="val" style={{ color: defenseColor }}>{defenseRating}</div>
         <div className="sub"><span>{numberValue(state.bld_walls).toLocaleString()}</span> walls</div>
-      </div>
+      </MetricBox>
     </>
   );
 };

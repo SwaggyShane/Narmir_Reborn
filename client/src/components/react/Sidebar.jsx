@@ -1,25 +1,82 @@
-import React from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import clsx from 'clsx';
 import { useGameState } from '../../hooks/useGameState';
 import { useActivePanel } from '../../hooks/useActivePanel';
 import { switchTab } from '../../utils/switchTab.js';
 import { useNavLayout } from '../../hooks/useNavLayout.js';
+import { useShellBadges } from '../../hooks/useShellBadges.js';
+import { NAV_SECTIONS, PANEL_META } from '../../utils/panelMeta.js';
 import ShellColumnFrame from './ShellColumnFrame.jsx';
+import ShellExpeditionIndicator from './ShellExpeditionIndicator.jsx';
 
-function NavButton({ panel, icon, label, iconClass = 'text-text3' }) {
+const COLLAPSE_STORAGE_KEY = 'shell-nav-collapsed-v1';
+
+const PANEL_ICON_CLASS = {
+  status: 'text-blue',
+  happiness: 'text-amber',
+  studies: 'text-red',
+  build: 'text-amber',
+  exploration: 'text-green',
+  economy: 'text-amber',
+  market: 'text-gold',
+  resources: 'text-green',
+  rankings: 'text-gold',
+  hire: 'text-green',
+  warfare: 'text-red',
+  defense: 'text-text3',
+  bounties: 'text-gold',
+  training: 'text-amber',
+  heroes: 'text-accent2',
+  worldmap: 'text-blue',
+  alliances: 'text-accent2',
+  messages: 'text-accent1',
+  forum: 'text-accent2',
+  globalchat: 'text-blue',
+  news: 'text-text3',
+  goals: 'text-amber',
+  races: 'text-accent2',
+  changelog: 'text-green',
+  testing: 'text-accent2',
+  options: 'text-text3',
+};
+
+function readCollapsedSections() {
+  try {
+    const raw = localStorage.getItem(COLLAPSE_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function NavButton({ panel, icon, label, iconClass = 'text-text3', showBadge, buttonRef, onFocusNeighbor }) {
   const { activePanel } = useActivePanel();
   const active = activePanel === panel;
 
   return (
     <button
+      ref={buttonRef}
       type="button"
       onClick={() => switchTab(panel)}
+      onKeyDown={(event) => {
+        if (event.key === 'ArrowDown') {
+          event.preventDefault();
+          onFocusNeighbor?.(1);
+        }
+        if (event.key === 'ArrowUp') {
+          event.preventDefault();
+          onFocusNeighbor?.(-1);
+        }
+      }}
       aria-current={active ? 'page' : undefined}
       className={clsx('shell-nav-btn', active && 'is-active')}
     >
       <span className="shell-nav-btn__content">
         <span className={clsx('shell-nav-btn__icon text-[16.5px] leading-none', iconClass)}>{icon}</span>
         <span className="shell-nav-btn__label">{label}</span>
+        {showBadge ? <span className="nav-badge" aria-label="Unread" /> : null}
       </span>
     </button>
   );
@@ -28,55 +85,84 @@ function NavButton({ panel, icon, label, iconClass = 'text-text3' }) {
 const Sidebar = () => {
   const { state } = useGameState();
   const { layout } = useNavLayout();
+  const { hasBadge } = useShellBadges();
   const isAdmin = !!state?.isAdmin;
   const showSidebar = layout === 'left' || layout === 'responsive';
+  const [collapsed, setCollapsed] = useState(readCollapsedSections);
+  const buttonRefs = useRef([]);
+
+  const toggleSection = useCallback((sectionId) => {
+    setCollapsed((prev) => {
+      const next = { ...prev, [sectionId]: !prev[sectionId] };
+      try {
+        localStorage.setItem(COLLAPSE_STORAGE_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  const flatPanels = NAV_SECTIONS.flatMap((section) => section.panels);
+  const focusPanelAt = useCallback((flatIndex, delta) => {
+    const activeButtons = buttonRefs.current.filter(Boolean);
+    const currentBtn = buttonRefs.current[flatIndex];
+    const currentIdx = activeButtons.indexOf(currentBtn);
+    if (currentIdx !== -1) {
+      const nextIdx = Math.min(Math.max(currentIdx + delta, 0), activeButtons.length - 1);
+      activeButtons[nextIdx]?.focus();
+    }
+  }, []);
+
+  if (!showSidebar) return null;
+
+  let flatIndex = -1;
 
   return (
     <ShellColumnFrame
       as="nav"
+      aria-label="Game navigation"
       className={clsx(
         'min-h-0 flex-col bg-bg',
-        showSidebar ? 'flex' : 'hidden',
+        'flex',
         layout === 'responsive' && 'max-lg:hidden',
         'lg:col-start-1 lg:row-start-2',
       )}
     >
       <div className="scrollbar-none relative z-10 min-h-0 flex-1 overflow-y-auto">
-        <div className="shell-nav-section">Kingdom</div>
-        <NavButton panel="status" icon="🏰" label="Status" iconClass="text-blue" />
-        <NavButton panel="happiness" icon="😊" label="Happiness" iconClass="text-amber" />
-        <NavButton panel="studies" icon="🏛️" label="Studies" iconClass="text-red" />
-        <NavButton panel="build" icon="🔨" label="Build" iconClass="text-amber" />
-        <NavButton panel="exploration" icon="🧭" label="Exploration" iconClass="text-green" />
-
-        <div className="shell-nav-section">Wherewithal</div>
-        <NavButton panel="economy" icon="💰" label="Economy" iconClass="text-amber" />
-        <NavButton panel="market" icon="⚖️" label="Market" iconClass="text-gold" />
-        <NavButton panel="resources" icon="🌲" label="Resources" iconClass="text-green" />
-
-        <div className="shell-nav-section">Warfare</div>
-        <NavButton panel="rankings" icon="🏆" label="Rankings" iconClass="text-gold" />
-        <NavButton panel="hire" icon="🤝" label="Hire" iconClass="text-green" />
-        <NavButton panel="warfare" icon="⚔️" label="Offense" iconClass="text-red" />
-        <NavButton panel="defense" icon="🛡️" label="Defense" iconClass="text-text3" />
-        <NavButton panel="bounties" icon="🪙" label="Bounties" iconClass="text-gold" />
-        <NavButton panel="training" icon="🎯" label="Training" iconClass="text-amber" />
-        <NavButton panel="heroes" icon="👑" label="Heroes" iconClass="text-accent2" />
-        <NavButton panel="worldmap" icon="🗺️" label="World Map" iconClass="text-blue" />
-        <NavButton panel="alliances" icon="🤝" label="Alliance" iconClass="text-accent2" />
-
-        <div className="shell-nav-section">Social</div>
-        <NavButton panel="messages" icon="✉️" label="Messages" iconClass="text-accent1" />
-        <NavButton panel="forum" icon="📚" label="Forum" iconClass="text-accent2" />
-        <NavButton panel="globalchat" icon="💬" label="Chat" iconClass="text-blue" />
-        <NavButton panel="news" icon="📰" label="News" iconClass="text-text3" />
-
-        <div className="shell-nav-section">Information</div>
-        <NavButton panel="goals" icon="📝" label="Goals" iconClass="text-amber" />
-        <NavButton panel="races" icon="🦄" label="Races" iconClass="text-accent2" />
-        <NavButton panel="changelog" icon="📋" label="Changelog" iconClass="text-green" />
-        <NavButton panel="testing" icon="🧪" label="Testing" iconClass="text-accent2" />
-        <NavButton panel="options" icon="⚙️" label="Settings" iconClass="text-text3" />
+        <ShellExpeditionIndicator />
+        {NAV_SECTIONS.map((section) => {
+          const isCollapsed = !!collapsed[section.id];
+          return (
+            <div key={section.id}>
+              <button
+                type="button"
+                className="shell-nav-section flex w-full items-center justify-between"
+                onClick={() => toggleSection(section.id)}
+                aria-expanded={!isCollapsed}
+              >
+                <span>{section.label}</span>
+                <span className="text-[10px] text-text3" aria-hidden="true">{isCollapsed ? '▶' : '▼'}</span>
+              </button>
+              {!isCollapsed && section.panels.map((panelId) => {
+                flatIndex += 1;
+                const idx = flatIndex;
+                const meta = PANEL_META[panelId];
+                if (!meta) return null;
+                return (
+                  <NavButton
+                    key={panelId}
+                    panel={panelId}
+                    icon={meta.icon}
+                    label={meta.label}
+                    iconClass={PANEL_ICON_CLASS[panelId] || 'text-text3'}
+                    showBadge={hasBadge(meta.badgeKey)}
+                    buttonRef={(el) => { buttonRefs.current[idx] = el; }}
+                    onFocusNeighbor={(delta) => focusPanelAt(idx, delta)}
+                  />
+                );
+              })}
+            </div>
+          );
+        })}
 
         {isAdmin && (
           <a

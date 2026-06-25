@@ -6,17 +6,7 @@ import { kingdomXpProgress } from '../../utils/xp.js';
 import { fmt } from '../../utils/fmt.js';
 import KingdomXpModal from './KingdomXpModal.jsx';
 
-const HIDE_HEADER_PANELS = new Set([
-  'globalchat',
-  'defense',
-  'races',
-  'build',
-  'heroes',
-  'worldmap',
-  'bounties',
-  'messages',
-  'forum',
-]);
+import { HIDE_KINGDOM_HEADER_PANELS } from '../../utils/panelMeta.js';
 
 const GAP = 8;
 
@@ -71,7 +61,7 @@ const KingdomBodyHeader = () => {
     state?.username || state?.name || (state?.turn != null && Number(state.turn) > 0),
   );
 
-  if (!kingdomReady || HIDE_HEADER_PANELS.has(activePanel)) return null;
+  if (!kingdomReady || HIDE_KINGDOM_HEADER_PANELS.has(activePanel)) return null;
 
   const playerName = state.username || state.owner_name || state.owner || 'Player';
   const kingdomName = state.name || state.kingdomName || 'Kingdom';
