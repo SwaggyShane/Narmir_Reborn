@@ -242,7 +242,7 @@ const StatusPanel = () => {
         </div>
       </div>
 
-      <div className="status-grid w-full min-w-0 max-w-full flex-1 grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-3 lg:gap-3 lg:[grid-auto-rows:minmax(auto,1fr)] lg:[align-content:start]" id="status-grid">
+      <div className="status-grid w-full flex-1 gap-3 sm:gap-4 lg:gap-3 lg:[grid-auto-rows:minmax(auto,1fr)] lg:[align-content:start]" id="status-grid">
         <div className={STATUS_CARD_CLASS}>
           <div className="card-title">
             Military &amp; support

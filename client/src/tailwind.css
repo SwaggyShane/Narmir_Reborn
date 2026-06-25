@@ -144,7 +144,7 @@
   }
 
   .status-grid {
-    @apply grid min-w-0 max-w-full grid-cols-1 gap-5;
+    @apply grid min-w-0 max-w-full grid-cols-1 gap-5 lg:grid-cols-3;
   }
 
   .status-grid .card-title {
@@ -759,12 +759,6 @@
 
   .news-filter.active {
     @apply border-accent1 bg-accent1 text-white;
-  }
-}
-
-@media (min-width: 1024px) {
-  .status-grid {
-    @apply grid-cols-3;
   }
 }
 
