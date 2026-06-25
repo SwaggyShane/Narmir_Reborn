@@ -170,7 +170,9 @@ const GlobalchatPanel = () => {
         socket.on('event:chat_clear', handlers.chatClear);
         socket.on('event:global_message', handlers.globalMessage);
 
-        await requestOnlineUsers();
+        if (socket.connected) {
+          await requestOnlineUsers();
+        }
       } catch (error) {
         console.warn('[chat] Failed to boot global chat panel:', error);
         if (!cancelled) setLoading(false);
