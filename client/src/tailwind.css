@@ -259,7 +259,13 @@
 
   /* ── Race lore / kingdom header box (shared frame) ── */
   .shell-lore-box {
-    @apply rounded-xl border border-ember-900/50 bg-bg2 p-4;
+    @apply relative overflow-hidden rounded-xl border border-ember-900/50 bg-bg2 p-4;
+  }
+
+  .shell-lore-box::before {
+    content: '';
+    @apply pointer-events-none absolute inset-x-0 top-0 z-10 h-0.5;
+    background: linear-gradient(90deg, transparent 0%, rgba(240, 98, 2, 0.45) 50%, transparent 100%);
   }
 
   .kd-top {
