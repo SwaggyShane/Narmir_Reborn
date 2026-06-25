@@ -1,6 +1,6 @@
 # Admin Panel React + Tailwind Migration Roadmap
 
-**Status:** Planning document only — no implementation started  
+**Status:** Phase 2a merged — Kingdoms tab scalar fields live in React  
 **Source of truth audited:** `public/admin.html` (~5,150 lines), `routes/admin.js` (~1,580 lines), `index.js` route wiring  
 **Target:** Replace the monolithic vanilla HTML admin with a Vite/React/Tailwind app matching the game shell and portal patterns
 
@@ -460,26 +460,26 @@ Located in `KingdomsPanel` + dedicated `AiKingdomPanel` section:
 
 Each phase is an independent draft PR. Do not delete `public/admin.html` until Phase 6.
 
-### Phase 0 — Foundation (no user-visible change)
+### Phase 0 — Foundation (no user-visible change) ✅ MERGED (PR #580)
 
 **Branch:** `admin-react-00-foundation`
 
-- [ ] Add `client/admin.html` + `admin-main.jsx` with "Hello Admin" shell
-- [ ] Wire `serveAdmin()` in `index.js` (dev + prod)
-- [ ] Add Vite build entry for admin
-- [ ] `AdminAuthGate` with login + `/api/auth/me` restore
-- [ ] Feature flag: `?legacy=1` serves old `public/admin.html` for fallback
+- [x] Add `client/admin.html` + `admin-main.jsx` with "Hello Admin" shell
+- [x] Wire `serveAdmin()` in `index.js` (dev + prod)
+- [x] Add Vite build entry for admin
+- [x] `AdminAuthGate` with login + `/api/auth/me` restore
+- [x] Feature flag: `?legacy=1` serves old `public/admin.html` for fallback
 
 **Exit criteria:** `/admin` loads React shell; admin login works; lint + smoke pass.
 
-### Phase 1 — Shell + overview parity
+### Phase 1 — Shell + overview parity ✅ MERGED (PR #581)
 
 **Branch:** `admin-react-01-shell`
 
-- [ ] `AdminShell` with topbar, stat grid, tab navigation (12 tabs — empty placeholders)
-- [ ] Port `loadData()` → stats + kingdom list API integration
-- [ ] `AdminToast` notifications
-- [ ] Shared `useAdminSession` with 401 redirect
+- [x] `AdminShell` with topbar, stat grid, tab navigation (12 tabs — empty placeholders)
+- [x] Port `loadData()` → stats + kingdom list API integration
+- [x] `AdminToast` notifications
+- [x] Shared `useAdminSession` with 401 redirect
 
 **Exit criteria:** Stats match legacy; tab switching works; mobile tab scroll.
 
@@ -487,11 +487,11 @@ Each phase is an independent draft PR. Do not delete `public/admin.html` until P
 
 **Branch:** `admin-react-02-kingdoms`
 
-- [ ] Virtualized `AdminDataTable` for kingdoms
-- [ ] Search, ban/unban modal, delete/reset confirmations
-- [ ] `KingdomEditModal` — port `EDIT_SECTIONS` field widgets incrementally:
-  - PR 2a: scalar fields (attributes, resources, units, buildings, research)
-  - PR 2b: JSON widgets (fragments, troop-levels, effects, mercs, attunements)
+- [x] Virtualized `AdminDataTable` for kingdoms
+- [x] Search, ban/unban modal, delete/reset confirmations
+- [x] `KingdomEditModal` — port `EDIT_SECTIONS` field widgets incrementally:
+  - [x] PR 2a: scalar fields (attributes, resources, units, buildings, research) — MERGED (PR #582)
+  - [ ] PR 2b: JSON widgets (fragments, troop-levels, effects, mercs, attunements)
 - [ ] Implement missing `ai/seed`, `ai/reset`, `ai/synopsis` APIs
 - [ ] `AiKingdomPanel` with preset buttons (backend from §5.4)
 
@@ -626,9 +626,9 @@ Legacy admin uses **both** `localStorage.narmir_token` and cookies. React game u
 
 ## 10. Immediate next steps
 
-1. **Create Phase 0 PR** — admin Vite entry + auth gate only; no tab parity yet.
-2. **Backend spike** — implement `ai/seed`, `ai/reset`, `ai/synopsis` (fixes broken legacy buttons regardless of React timeline).
-3. **Extract `EDIT_SECTIONS`** to `client/src/admin/lib/editSections.js` as shared module with unit tests — unblocks both legacy fixes and React port.
+1. **Phase 2b PR** — JSON field widgets in `KingdomEditModal`: fragments (owned/studied), troop-levels, active-effects, mercenaries, attunements.
+2. **Phase 2c PR** — Implement `ai/seed`, `ai/reset`, `ai/synopsis`, `ai/apply-preset` APIs + `AiKingdomPanel` with preset buttons.
+3. **Phase 3 PR** — Manage tab: announcements, chat mods, promote admin, test kingdoms, bulk actions.
 4. **Fix CSRF** on security audit + sounds in legacy admin (quick win) OR document as known bug until Phase 5.
 
 ---
