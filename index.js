@@ -1369,7 +1369,7 @@ async function start() {
       } catch { /* not found, try injection fallback */ }
       try {
         const assets = await fsp.readdir(path.join(distPath, 'assets'));
-        const adminJs  = assets.find(f => f.startsWith('admin') && f.endsWith('.js'));
+        const adminJs  = assets.find(f => f === 'admin.js');
         const adminCss = assets.find(f => f.startsWith('admin-') && f.endsWith('.css'));
         if (adminJs) {
           let html = await fsp.readFile(path.join(__dirname, 'client', 'admin.html'), 'utf-8');
@@ -1381,6 +1381,9 @@ async function start() {
         }
       } catch { /* assets dir missing */ }
       console.error('[serveAdmin] No admin assets found in dist — falling back to legacy admin');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       return res.sendFile(path.join(__dirname, 'public', 'admin.html'));
     } catch (e) {
       console.error('[serveAdmin] Error:', e);
