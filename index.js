@@ -1071,13 +1071,8 @@ async function start() {
       res.sendFile(wipeAdminPath);
     });
 
-    app.get(['/admin', '/admin.html'], (_req, res) => {
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
-      const adminPath = path.join(__dirname, 'public', 'admin.html');
-      res.sendFile(adminPath);
-    });
+    // /admin is now served by the React admin shell (see serveAdmin below).
+    // ?legacy=1 falls back to public/admin.html for the duration of the migration.
   
     // Platform health check
     app.get('/health', (req, res) => {
@@ -1345,11 +1340,63 @@ async function start() {
   };
 
 
+  const serveAdmin = async (req, res, next) => {
+    if (req.query.legacy === '1') {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      return res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+    }
+    console.log(`[serveAdmin] HIT: ${req.method} ${req.url}`);
+    const NO_CACHE = {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    };
+    const fsp = fs.promises;
+    try {
+      if (process.env.NODE_ENV !== 'production' && vite) {
+        const adminHtmlPath = path.join(__dirname, 'client', 'admin.html');
+        let html = await fsp.readFile(adminHtmlPath, 'utf-8');
+        html = await vite.transformIndexHtml('/admin.html', html);
+        return res.set(NO_CACHE).send(html);
+      }
+      const distPath = path.join(__dirname, 'dist');
+      try {
+        const html = await fsp.readFile(path.join(distPath, 'admin.html'), 'utf-8');
+        return res.set(NO_CACHE).send(html);
+      } catch { /* not found, try injection fallback */ }
+      try {
+        const assets = await fsp.readdir(path.join(distPath, 'assets'));
+        const adminJs  = assets.find(f => f === 'admin.js');
+        const adminCss = assets.find(f => f.startsWith('admin-') && f.endsWith('.css'));
+        if (adminJs) {
+          let html = await fsp.readFile(path.join(__dirname, 'client', 'admin.html'), 'utf-8');
+          html = html.replace(/<script type="module" src="\/src\/admin-main\.jsx"><\/script>/, '');
+          let inject = `<script type="module" crossorigin src="/dist/assets/${adminJs}"></script>`;
+          if (adminCss) inject += `\n    <link rel="stylesheet" crossorigin href="/dist/assets/${adminCss}">`;
+          html = html.replace('</head>', `    ${inject}\n  </head>`);
+          return res.set(NO_CACHE).send(html);
+        }
+      } catch { /* assets dir missing */ }
+      console.error('[serveAdmin] No admin assets found in dist — falling back to legacy admin');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      return res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+    } catch (e) {
+      console.error('[serveAdmin] Error:', e);
+      next(e);
+    }
+  };
+
   // HTML entry points MUST register before Vite middleware — otherwise Vite serves
   // client/index.html for /index.html and the splash intro disappears.
   app.get(['/', '/index.html'], serveSplash);
   app.get(['/game', '/game.html'], serveIndex);
   app.get(['/portal', '/portal.html'], servePortal);
+  app.get(['/admin', '/admin.html'], serveAdmin);
 
   if (vite) {
     app.use(vite.middlewares);
