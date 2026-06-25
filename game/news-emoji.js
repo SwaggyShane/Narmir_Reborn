@@ -50,6 +50,7 @@ const NEWS_EMOJI_RULES = Object.freeze([
   { pattern: /^Scribes have completed a location map for/i, emoji: "🗺️" },
   { pattern: /^Engineers grew more skilled/i, emoji: "⚒️" },
   { pattern: /^Construction complete:/i, emoji: "✅" },
+  { pattern: / purchased\.$/i, emoji: "⬆️" },
   { pattern: /^All support units housed/i, emoji: "✅" },
   { pattern: /^Low Tax Event:/i, emoji: "🌟" },
   { pattern: /^UNREST:/i, emoji: "⚠️" },
