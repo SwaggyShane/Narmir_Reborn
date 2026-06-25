@@ -107,9 +107,21 @@ export default function ManagePanel({ adminFetch, onToast }) {
         adminFetch('/api/admin/chat-bans'),
         adminFetch('/api/admin/ai-hiatus'),
       ]);
-      if (Array.isArray(mods)) setChatMods(mods);
-      if (Array.isArray(bans)) setChatBans(bans);
-      if (hiatus && !hiatus.error) setHiatus(!!hiatus.hiatus);
+      if (mods?.error) {
+        onToast('Failed to load chat mods: ' + mods.error, 'error');
+      } else if (Array.isArray(mods)) {
+        setChatMods(mods);
+      }
+      if (bans?.error) {
+        onToast('Failed to load chat bans: ' + bans.error, 'error');
+      } else if (Array.isArray(bans)) {
+        setChatBans(bans);
+      }
+      if (hiatus?.error) {
+        onToast('Failed to load AI hiatus: ' + hiatus.error, 'error');
+      } else if (hiatus) {
+        setHiatus(!!hiatus.hiatus);
+      }
     } catch (err) {
       onToast('Load error: ' + (err.message || 'Unknown'), 'error');
     } finally {
@@ -170,10 +182,14 @@ export default function ManagePanel({ adminFetch, onToast }) {
   }
 
   async function handleChatUnban(username) {
-    const data = await adminFetch('/api/admin/chat-unban', { method: 'POST', body: { username } });
-    if (data?.error) { onToast('Unban failed: ' + data.error, 'error'); return; }
-    onToast(`Chat-unbanned ${username}`, 'success');
-    setChatBans(prev => prev.filter(b => b.username !== username));
+    try {
+      const data = await adminFetch('/api/admin/chat-unban', { method: 'POST', body: { username } });
+      if (data?.error) { onToast('Unban failed: ' + data.error, 'error'); return; }
+      onToast(`Chat-unbanned ${username}`, 'success');
+      setChatBans(prev => prev.filter(b => b.username !== username));
+    } catch (err) {
+      onToast('Unban failed: ' + (err.message || 'Unknown'), 'error');
+    }
   }
 
   // ── Promote admin ─────────────────────────────────────────────────────────
@@ -204,6 +220,8 @@ export default function ManagePanel({ adminFetch, onToast }) {
   // ── Test kingdoms ─────────────────────────────────────────────────────────
 
   async function handleTestKingdoms() {
+    if (!tkForm.usernamePrefix.trim()) { onToast('Username prefix is required', 'error'); return; }
+    if (!tkForm.kingdomPrefix.trim()) { onToast('Kingdom prefix is required', 'error'); return; }
     if (tkForm.password.length < 8) { onToast('Password must be at least 8 characters', 'error'); return; }
     setTkBusy(true);
     setTkResults(null);
@@ -415,7 +433,7 @@ export default function ManagePanel({ adminFetch, onToast }) {
             />
             Reset existing kingdoms
           </label>
-          <button onClick={handleTestKingdoms} disabled={tkBusy || tkForm.password.length < 8} style={BTN_PRIMARY}>
+          <button onClick={handleTestKingdoms} disabled={tkBusy || !tkForm.usernamePrefix.trim() || !tkForm.kingdomPrefix.trim() || tkForm.password.length < 8} style={BTN_PRIMARY}>
             {tkBusy ? 'Setting up...' : 'Setup Test Kingdoms'}
           </button>
         </div>
