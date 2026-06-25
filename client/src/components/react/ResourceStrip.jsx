@@ -69,7 +69,7 @@ function DeltaBadge({ flash }) {
   return (
     <span
       key={flash.flashId}
-      className={clsx('pointer-events-none absolute -right-0.5 -top-1 rounded-lg bg-bg2 px-1.5 py-px text-xs font-bold shadow-[0_0_4px_rgba(0,0,0,0.4)] animate-delta-fade', colorClass)}
+      className={clsx('metric-delta', colorClass)}
     >
       {label}
     </span>
@@ -155,12 +155,6 @@ function trunc(value) {
 function metricClass(extra = '') {
   return 'metric relative' + (extra ? ` ${extra}` : '');
 }
-
-const happinessBarOuterClass =
-  'relative my-1.5 h-[18px] w-full overflow-hidden rounded bg-[var(--bg2)]';
-const happinessBarInnerClass =
-  'h-full rounded bg-gradient-to-r from-red-500 via-yellow-400 via-67% to-green-500 to-green-600 transition-[width] duration-300 ease-in-out';
-const metricSubClass = 'flex w-full justify-between md:justify-end text-[9px] md:text-[8px] text-[var(--text2)]';
 
 function population(state) {
   return numberValue(state.population ?? state.pop);
@@ -297,16 +291,19 @@ const ResourceStrip = () => {
           </div>
         </div>
       )}
-      <div className={metricClass('overflow-hidden')}>
+      <div className={metricClass('metric-happiness overflow-hidden')}>
         <div className="lbl">Happiness</div>
-        <div className={happinessBarOuterClass} title="Population happiness">
-          <div
-            className={happinessBarInnerClass}
-            style={{ width: `${happinessPercent}%` }}
-          />
-        </div>
-        <div className={metricSubClass}>
-          <span>{happinessLabel(happiness)}</span>
+        <div className="metric-happiness-center">
+          <div className="metric-happiness-track" title="Population happiness">
+            <div
+              className="metric-happiness-mask"
+              style={{ width: `${100 - happinessPercent}%` }}
+              aria-hidden="true"
+            />
+          </div>
+          <div className="sub">
+            <span>{happinessLabel(happiness)}</span>
+          </div>
         </div>
       </div>
       <div className={metricClass()}>
@@ -323,7 +320,7 @@ const ResourceStrip = () => {
       </div>
       <div className={metricClass()}>
         <div className="lbl">Defense</div>
-        <div className="val text-xs" style={{ color: defenseColor }}>
+        <div className="val" style={{ color: defenseColor }}>
           {defenseRating}
         </div>
         <div className="sub"><span>{numberValue(state.bld_walls).toLocaleString()}</span> walls</div>

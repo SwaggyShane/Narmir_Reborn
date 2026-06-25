@@ -2,17 +2,9 @@ import React from 'react';
 import clsx from 'clsx';
 import { useGameState } from '../../hooks/useGameState';
 import { useActivePanel } from '../../hooks/useActivePanel';
-import { logout } from './AuthModal.jsx';
 import { switchTab } from '../../utils/switchTab.js';
 import { useNavLayout } from '../../hooks/useNavLayout.js';
-
-const SECTION_CLASS = 'px-3 pb-0.5 pt-3 text-[10px] font-black uppercase tracking-[0.3em] text-ember-400/80';
-
-const NAV_BUTTON_CLASS = {
-  base: 'relative flex w-full items-center gap-2 rounded-xl border px-3 py-2 text-xs transition shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]',
-  active: 'border-ember-500/50 bg-ember-500/10 text-text shadow-ember',
-  idle: 'border-transparent bg-void-900/55 text-text3 hover:border-ember-500/30 hover:bg-void-800/85 hover:text-text',
-};
+import ShellColumnFrame from './ShellColumnFrame.jsx';
 
 function NavButton({ panel, icon, label, iconClass = 'text-text3' }) {
   const { activePanel } = useActivePanel();
@@ -23,10 +15,12 @@ function NavButton({ panel, icon, label, iconClass = 'text-text3' }) {
       type="button"
       onClick={() => switchTab(panel)}
       aria-current={active ? 'page' : undefined}
-      className={clsx(NAV_BUTTON_CLASS.base, active ? NAV_BUTTON_CLASS.active : NAV_BUTTON_CLASS.idle)}
+      className={clsx('shell-nav-btn', active && 'is-active')}
     >
-      <span className={iconClass}>{icon}</span>
-      <span>{label}</span>
+      <span className="shell-nav-btn__content">
+        <span className={clsx('shell-nav-btn__icon text-[16.5px] leading-none', iconClass)}>{icon}</span>
+        <span className="shell-nav-btn__label">{label}</span>
+      </span>
     </button>
   );
 }
@@ -38,28 +32,29 @@ const Sidebar = () => {
   const showSidebar = layout === 'left' || layout === 'responsive';
 
   return (
-    <nav
+    <ShellColumnFrame
+      as="nav"
       className={clsx(
-        'min-h-0 flex-col overflow-hidden border-r border-white/5 bg-bg2',
+        'min-h-0 flex-col bg-bg',
         showSidebar ? 'flex' : 'hidden',
         layout === 'responsive' && 'max-lg:hidden',
-        'lg:col-start-1 lg:row-span-2 lg:row-start-2 lg:overflow-y-auto',
+        'lg:col-start-1 lg:row-start-2',
       )}
     >
-      <div className="min-h-0 flex-1 overflow-y-auto scrollbar-game">
-        <div className={SECTION_CLASS}>Kingdom</div>
+      <div className="scrollbar-none relative z-10 min-h-0 flex-1 overflow-y-auto">
+        <div className="shell-nav-section">Kingdom</div>
         <NavButton panel="status" icon="🏰" label="Status" iconClass="text-blue" />
         <NavButton panel="happiness" icon="😊" label="Happiness" iconClass="text-amber" />
         <NavButton panel="studies" icon="🏛️" label="Studies" iconClass="text-red" />
         <NavButton panel="build" icon="🔨" label="Build" iconClass="text-amber" />
         <NavButton panel="exploration" icon="🧭" label="Exploration" iconClass="text-green" />
 
-        <div className={SECTION_CLASS}>Wherewithal</div>
+        <div className="shell-nav-section">Wherewithal</div>
         <NavButton panel="economy" icon="💰" label="Economy" iconClass="text-amber" />
         <NavButton panel="market" icon="⚖️" label="Market" iconClass="text-gold" />
         <NavButton panel="resources" icon="🌲" label="Resources" iconClass="text-green" />
 
-        <div className={SECTION_CLASS}>Warfare</div>
+        <div className="shell-nav-section">Warfare</div>
         <NavButton panel="rankings" icon="🏆" label="Rankings" iconClass="text-gold" />
         <NavButton panel="hire" icon="🤝" label="Hire" iconClass="text-green" />
         <NavButton panel="warfare" icon="⚔️" label="Offense" iconClass="text-red" />
@@ -70,13 +65,13 @@ const Sidebar = () => {
         <NavButton panel="worldmap" icon="🗺️" label="World Map" iconClass="text-blue" />
         <NavButton panel="alliances" icon="🤝" label="Alliance" iconClass="text-accent2" />
 
-        <div className={SECTION_CLASS}>Social</div>
+        <div className="shell-nav-section">Social</div>
         <NavButton panel="messages" icon="✉️" label="Messages" iconClass="text-accent1" />
         <NavButton panel="forum" icon="📚" label="Forum" iconClass="text-accent2" />
         <NavButton panel="globalchat" icon="💬" label="Chat" iconClass="text-blue" />
         <NavButton panel="news" icon="📰" label="News" iconClass="text-text3" />
 
-        <div className={SECTION_CLASS}>Information</div>
+        <div className="shell-nav-section">Information</div>
         <NavButton panel="goals" icon="📝" label="Goals" iconClass="text-amber" />
         <NavButton panel="races" icon="🦄" label="Races" iconClass="text-accent2" />
         <NavButton panel="changelog" icon="📋" label="Changelog" iconClass="text-green" />
@@ -88,23 +83,16 @@ const Sidebar = () => {
             href="/admin"
             target="_blank"
             rel="noopener noreferrer"
-            className={clsx(NAV_BUTTON_CLASS.base, NAV_BUTTON_CLASS.idle, 'mx-1 mt-1 no-underline')}
+            className="shell-nav-btn mx-1 mt-1 no-underline"
           >
-            <span className="text-amber">👑</span>
-            <span>Admin</span>
+            <span className="shell-nav-btn__content">
+              <span className="shell-nav-btn__icon text-[16.5px] text-amber">👑</span>
+              <span className="shell-nav-btn__label">Admin</span>
+            </span>
           </a>
         )}
       </div>
-
-      <button
-        type="button"
-        onClick={logout}
-        className={clsx(NAV_BUTTON_CLASS.base, NAV_BUTTON_CLASS.idle, 'mx-1 mb-2 mt-1 shrink-0 text-red')}
-      >
-        <span>&#10005;</span>
-        <span>Logout</span>
-      </button>
-    </nav>
+    </ShellColumnFrame>
   );
 };
 

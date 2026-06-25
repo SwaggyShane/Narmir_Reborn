@@ -40,7 +40,7 @@ export default function ToastProvider() {
         style={{
           border: `1px solid ${theme.border}`,
           color: theme.text,
-          background: 'rgba(0,0,0,0.04)',
+          background: 'radial-gradient(ellipse 85% 100% at center, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.08) 100%)',
           boxShadow: `0 10px 26px rgba(0,0,0,0.22), inset 0 0 0 1px rgba(0,0,0,0.25), inset 0 0 18px rgba(0,0,0,0.25), 0 0 18px ${theme.glow}`,
         }}
       >

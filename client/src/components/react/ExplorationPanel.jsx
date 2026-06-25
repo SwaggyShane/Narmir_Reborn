@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
-import { toast } from '../../utils/toast.js';
+import { cleanMessageText, toast } from '../../utils/toast.js';
 import { apiCall } from '../../utils/api';
 import { useGameMutationEvents, useGameState } from '../../hooks/useGameState';
 import { repairMojibake } from '../../utils/repairMojibake';
@@ -52,7 +52,7 @@ const TYPE_META = {
 };
 
 const formatNum = (value) => Number(value || 0).toLocaleString();
-const repairText = (value) => repairMojibake(String(value ?? ''));
+const repairText = (value) => cleanMessageText(repairMojibake(String(value ?? '')));
 
 const normalizeRewards = (rewards) => {
   if (Array.isArray(rewards)) return rewards.map((msg) => repairText(msg));
@@ -192,7 +192,9 @@ const ExplorationPanel = () => {
       }
 
       applyResult(result, 'search');
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Search complete', 'success');
+      if (typeof window !== 'undefined' && typeof toast === 'function') {
+        toast(repairText(result.message || 'Search complete'), 'success');
+      }
 
       const icons = { land: '🗺️', gold: '⛏️', food: '🌾', targets: '🔭' };
       logInstantEntry(
@@ -323,20 +325,72 @@ const ExplorationPanel = () => {
     );
   };
 
-  const activeSummary = activeExpeditions.length
-    ? `${activeExpeditions.length} active expedition${activeExpeditions.length === 1 ? '' : 's'}`
-    : 'No expeditions are currently underway.';
+  const renderActiveSummary = (entry) => {
+    const meta = TYPE_META[entry.type] || {};
+    const label = meta.label || entry.type;
+    const icon = meta.icon || '🧭';
+    const totalTurns = expeditionTurns[entry.type] || Number(entry.turns_left) || 1;
+    const turnsLeft = Math.max(0, Number(entry.turns_left ?? 0));
+    const progressPct = totalTurns > 0
+      ? Math.min(100, Math.round(((totalTurns - turnsLeft) / totalTurns) * 100))
+      : 0;
+    const troops = `${formatNum(entry.rangers)} rangers${entry.fighters > 0 ? `, ${formatNum(entry.fighters)} fighters` : ''}`;
+    const countdownLabel = turnsLeft > 0
+      ? `${formatNum(turnsLeft)} turn${turnsLeft === 1 ? '' : 's'} left`
+      : 'Wrapping up…';
+
+    return (
+      <div
+        key={`active-summary-${entry.id}`}
+        className="rounded-xl border border-[var(--border)] bg-[rgba(255,255,255,0.04)] p-3"
+        style={{ borderLeftColor: meta.border || 'var(--border)', borderLeftWidth: '3px' }}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 text-[14px] font-semibold text-[var(--text)]">
+              <span className="text-[18px] leading-none">{icon}</span>
+              <span>{repairText(label)}</span>
+            </div>
+            <div className="mt-1 text-[11px] text-[var(--text3)]">{repairText(troops)}</div>
+          </div>
+          <div className="shrink-0 text-right">
+            <div
+              className="text-[26px] font-extrabold leading-none tabular-nums"
+              style={{ color: meta.color || 'var(--gold)' }}
+            >
+              {turnsLeft > 0 ? formatNum(turnsLeft) : '…'}
+            </div>
+            <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--text3)]">
+              {countdownLabel}
+            </div>
+          </div>
+        </div>
+        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/5">
+          <div
+            className="h-full rounded-full transition-all duration-300"
+            style={{
+              width: `${progressPct}%`,
+              background: meta.color || 'var(--gold)',
+              boxShadow: `0 0 10px ${meta.color || 'var(--gold)'}`,
+            }}
+          />
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div id="exploration" className="panel">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-4">
         <div id="exp-counter-card" className="card">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <div className="card-title !mb-1">Active expeditions</div>
-              <div className="text-[13px] text-[var(--text3)]">{activeSummary}</div>
+          <div className="card-title !mb-3">Active expeditions</div>
+          {activeExpeditions.length === 0 ? (
+            <div className="text-[13px] text-[var(--text3)]">No expeditions are currently underway.</div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {activeExpeditions.map(renderActiveSummary)}
             </div>
-          </div>
+          )}
         </div>
 
         <div className="card">

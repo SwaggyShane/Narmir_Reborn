@@ -98,8 +98,13 @@ function polishCommonMojibake(text) {
     .replace(/\u00e2\u20ac\u0153/g, '\u201c');
 }
 
+const MOJIBAKE_EMOJI_BYTES = /(?:[\u00F0\u00E2\u00EF][\u0080-\u00FF]{1,6})\s*/gu;
+
 function scrubCorruptedEmojiMarkers(text) {
   return String(text)
+    .replace(MOJIBAKE_EMOJI_BYTES, '')
+    .replace(/^\p{Extended_Pictographic}(?:\uFE0F)?(?:\u200D\p{Extended_Pictographic}(?:\uFE0F)?)*\s*/u, '')
+    .replace(/^=\s+/g, '')
     .replace(/^\?+\s*/g, '')
     .replace(/\s+\?\s+(?=Net Gold)/gi, ' — ')
     .replace(/[\uFFFD\uFFFE\uFFFF]+/g, '');
@@ -113,7 +118,9 @@ export function repairMojibake(value) {
   let repaired = text;
   if (MOJIBAKE_SIGNATURE.test(text)) {
     repaired = decodeRepeatedly(text);
-    repaired = decodeLatin1Repeatedly(repaired);
+    if (MOJIBAKE_SIGNATURE.test(repaired)) {
+      repaired = decodeLatin1Repeatedly(repaired);
+    }
     repaired = polishCommonMojibake(repaired);
     repaired = scrubCorruptedEmojiMarkers(repaired);
   }

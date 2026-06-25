@@ -4,7 +4,7 @@ import { toast } from '../../utils/toast.js';
 import { switchTab } from '../../utils/panelNav.js';
 
 const sectionCard = 'rounded-2xl border border-[var(--border)] bg-[var(--bg3)] p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.02)_inset]';
-const titleLine = 'mb-4 border-b border-[var(--border2)] pb-2 text-[16px] font-bold text-[var(--gold)]';
+const titleLine = 'mb-4 border-b border-[var(--border2)] pb-2 text-[15px] font-bold text-[var(--gold)]';
 const copy = 'text-[13px] leading-6 text-[var(--text2)]';
 const listCopy = 'space-y-3 text-[13px] leading-7 text-[var(--text2)]';
 const label = 'text-[14px] font-bold text-[var(--text)]';

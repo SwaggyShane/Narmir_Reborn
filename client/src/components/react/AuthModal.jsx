@@ -26,7 +26,13 @@ function syncIdentity(me, fallbackUsername) {
 export async function loadKingdom() {
   const kingdom = await apiCall('/api/kingdom/me');
   if (kingdom && !kingdom.error) {
-    applyGameMutation(kingdom, { reason: 'kingdom-refresh' });
+    applyGameMutation(
+      {
+        ...kingdom,
+        kingdomId: kingdom.kingdomId ?? kingdom.id ?? null,
+      },
+      { reason: 'kingdom-refresh' },
+    );
   }
   return kingdom;
 }

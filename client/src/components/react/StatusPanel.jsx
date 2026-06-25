@@ -60,6 +60,29 @@ const RACE_PORTRAITS = {
 
 const STATUS_CARD_CLASS = 'card';
 
+const RESEARCH_ROWS = [
+  { label: 'Economy', stateKey: 'res_economy', barId: 'eco', barClass: 'eco' },
+  { label: 'Weapons', stateKey: 'res_weapons', barId: 'wep', barClass: 'wep' },
+  { label: 'Armor', stateKey: 'res_armor', barId: 'arm', barClass: 'arm' },
+  { label: 'Military', stateKey: 'res_military', barId: 'mil', barClass: 'mil' },
+  { label: 'Spellbook', stateKey: 'res_spellbook', barId: 'spell', barClass: 'spell' },
+  { label: 'Atk magic', stateKey: 'res_attack_magic', barId: 'atk', barClass: 'bg-red' },
+  { label: 'Defense magic', stateKey: 'res_defense_magic', barId: 'def', barClass: 'arm' },
+  { label: 'Mana', stateKey: 'mana', barId: 'mana', barClass: 'mana', manaScale: true },
+  { label: 'Entertainment', stateKey: 'res_entertainment', barId: 'ent', barClass: 'bg-green' },
+  { label: 'Construction', stateKey: 'res_construction', barId: 'con', barClass: 'bg-amber' },
+];
+
+function researchBarWidth(value) {
+  const n = Number(value) || 0;
+  return `${Math.min(100, Math.max(0, n / 10))}%`;
+}
+
+function manaBarWidth(value) {
+  const n = Number(value) || 0;
+  return `${Math.min(100, Math.max(0, n / 500))}%`;
+}
+
 const toRaceKey = (value) =>
   String(value || '')
     .trim()
@@ -144,58 +167,14 @@ const StatusPanel = () => {
   const isVampire = raceForPortrait === 'vampire';
   const troopLevels = state?.troop_levels || {};
 
-  const xp = state?.xp ?? 0;
-  const xpToNext = state?.xp_to_next ?? 1;
-  const xpPct = Math.min(100, Math.round((xp / Math.max(xpToNext, 1)) * 100));
-  const playerName = cleanText(state?.username || state?.owner_name || state?.owner || '');
-  const kingdomName = cleanText(state?.name || state?.kingdomName || 'Your Kingdom');
-  const kingdomTitle = playerName ? `${playerName} of ${kingdomName}` : kingdomName;
-
   return (
     <div id="status" className="panel">
-
-      {/* ── Kingdom Header ── */}
-      <div className="mb-4 rounded-xl border border-ember-900/60 bg-void-800 p-4 shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
-        <div className="flex flex-col gap-3">
-          <div className="flex items-start justify-between gap-3 flex-wrap">
-            <h1 className="font-cinzel text-2xl font-black text-gold leading-none tracking-wide" style={{ textShadow: '0 0 16px rgba(240,98,2,0.4)' }}>
-              {kingdomTitle}
-            </h1>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {state?.turn != null && (
-                <span className="badge badge-amber text-[10px] px-2 py-0.5">Turn {state.turn}</span>
-              )}
-              {state?.score != null && (
-                <span className="badge badge-gold text-[10px] px-2 py-0.5">Score {(state.score ?? 0).toLocaleString()}</span>
-              )}
-              {state?.level != null && (
-                <span className="badge badge-blue text-[10px] px-2 py-0.5">Lv {state.level}</span>
-              )}
-            </div>
-          </div>
-
-          {state?.xp_to_next != null && (
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase tracking-widest text-ember-400/70">Experience</span>
-                <span className="text-[10px] text-text3">{xp.toLocaleString()} / {xpToNext.toLocaleString()} XP</span>
-              </div>
-              <div className="h-1.5 rounded-full bg-void-950 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-ember-700 to-ember-500 transition-all"
-                  style={{ width: `${xpPct}%`, boxShadow: '0 0 8px rgba(240,98,2,0.5)' }}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* ── Race Banner ── */}
       <div className="mb-4">
         <div
           id="race-tag-display"
-          className="race-tag-block cursor-pointer p-4 bg-void-900 border border-ember-900/50 rounded-xl flex flex-row items-center gap-4 transition-all w-full hover:border-ember-700/60 hover:bg-void-800"
+          className="race-tag-block shell-lore-box flex w-full cursor-pointer flex-row items-center gap-4"
           onClick={() => { openRaceLore(raceKey); }}
           title="Click for race lore"
         >
@@ -215,7 +194,7 @@ const StatusPanel = () => {
             </div>
             <button
               type="button"
-              className="text-left text-[12.5px] text-text2 leading-relaxed font-normal tracking-[0.3px] underline decoration-ember-500/30 underline-offset-2 transition hover:text-text hover:decoration-ember-500/60"
+              className="text-left text-[12.5px] text-text2 leading-relaxed font-normal tracking-[0.3px] underline decoration-ember-500/30 underline-offset-2"
               onClick={(e) => {
                 e.stopPropagation();
                 openRaceLore(raceKey);
@@ -382,66 +361,27 @@ const StatusPanel = () => {
 
         <div className={STATUS_CARD_CLASS}>
           <div className="card-title">Research levels</div>
-          <div className="trow">
-            <span className="name">Economy</span>
-            <div className="prog-wrap">
-              <div className="prog-bar eco" id="pb-eco-st" style={{ width: '0%' }} />
-            </div>
-          </div>
-          <div className="trow">
-            <span className="name">Weapons</span>
-            <div className="prog-wrap">
-              <div className="prog-bar wep" id="pb-wep-st" style={{ width: '0%' }} />
-            </div>
-          </div>
-          <div className="trow">
-            <span className="name">Armor</span>
-            <div className="prog-wrap">
-              <div className="prog-bar arm" id="pb-arm-st" style={{ width: '0%' }} />
-            </div>
-          </div>
-          <div className="trow">
-            <span className="name">Military</span>
-            <div className="prog-wrap">
-              <div className="prog-bar mil" id="pb-mil-st" style={{ width: '0%' }} />
-            </div>
-          </div>
-          <div className="trow">
-            <span className="name">Spellbook</span>
-            <div className="prog-wrap">
-              <div className="prog-bar spell" id="pb-spell-st" style={{ width: '0%' }} />
-            </div>
-          </div>
-          <div className="trow">
-            <span className="name">Atk magic</span>
-            <div className="prog-wrap">
-              <div className="prog-bar bg-red" id="pb-atk-st" style={{ width: '0%' }} />
-            </div>
-          </div>
-          <div className="trow">
-            <span className="name">Defense magic</span>
-            <div className="prog-wrap">
-              <div className="prog-bar arm" id="pb-def-st" style={{ width: '0%' }} />
-            </div>
-          </div>
-          <div className="trow">
-            <span className="name">Mana</span>
-            <div className="prog-wrap">
-              <div className="prog-bar mana" id="pb-mana-s" style={{ width: '0%' }} />
-            </div>
-          </div>
-          <div className="trow">
-            <span className="name">Entertainment</span>
-            <div className="prog-wrap">
-              <div className="prog-bar bg-green" id="pb-ent-s" style={{ width: '0%' }} />
-            </div>
-          </div>
-          <div className="trow border-b-0">
-            <span className="name">Construction</span>
-            <div className="prog-wrap">
-              <div className="prog-bar bg-amber" id="pb-con-st" style={{ width: '0%' }} />
-            </div>
-          </div>
+          {RESEARCH_ROWS.map((row, index) => {
+            const rawValue = state?.[row.stateKey];
+            const width = row.manaScale ? manaBarWidth(rawValue) : researchBarWidth(rawValue);
+            const barDomId = row.barId === 'mana' ? 'pb-mana-s' : `pb-${row.barId}-st`;
+
+            return (
+              <div
+                key={row.stateKey}
+                className={clsx('trow', index === RESEARCH_ROWS.length - 1 && 'border-b-0')}
+              >
+                <span className="name">{row.label}</span>
+                <div className="prog-wrap">
+                  <div
+                    id={barDomId}
+                    className={clsx('prog-bar', row.barClass)}
+                    style={{ width }}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         <div className={STATUS_CARD_CLASS}>

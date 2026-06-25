@@ -19,11 +19,14 @@ const { decorateNewsMessage } = require("../game/news-emoji");
 
 const router = express.Router();
 
+const MOJIBAKE_SIGNATURE = /[\u00C3\u00C2\u00E2\u00EF\u00F0\u00C5\uFFFD]/;
+
 function repairMojibake(value) {
   if (value === null || value === undefined) return value;
   let text = String(value);
-  if (!/[\u00C3\u00C2\u00E2\u00F0\u00C5\uFFFD]/.test(text)) return text;
+  if (!MOJIBAKE_SIGNATURE.test(text)) return text;
   for (let i = 0; i < 20; i++) {
+    if (!MOJIBAKE_SIGNATURE.test(text)) break;
     let next;
     try {
       next = Buffer.from(text, "latin1").toString("utf8");
@@ -1537,17 +1540,17 @@ module.exports = function (db) {
 
         updates.land = (kAfterTurn.land || 0) + found;
         searchResult = { found, unit: "acres" };
-        searchMessage = `ðŸ—ºï¸ Rangers discovered +${found.toLocaleString()} acres${found <= 1 ? " (land getting scarce)" : ""}.`;
+        searchMessage = `Rangers discovered +${found.toLocaleString()} acres${found <= 1 ? " (land getting scarce)" : ""}.`;
       } else if (type === "gold") {
         const found = Math.floor(r * 12 * tacticsMult);
         updates.gold = (updates.gold || kAfterTurn.gold || 0) + found;
         searchResult = { found, unit: "GC" };
-        searchMessage = `ðŸ’° Rangers returned with ${found.toLocaleString()} gold from foraging.`;
+        searchMessage = `Rangers returned with ${found.toLocaleString()} gold from foraging.`;
       } else if (type === "food") {
         const found = Math.floor(r * 0.5 * tacticsMult);
         updates.food = (kAfterTurn.food || 0) + found;
         searchResult = { found, unit: "food" };
-        searchMessage = `ðŸŒ¾ Rangers foraged ${found.toLocaleString()} food from the wilderness.`;
+        searchMessage = `Rangers foraged ${found.toLocaleString()} food from the wilderness.`;
       } else if (type === "targets") {
         const scouts = Math.max(1, r);
         const baseFound = Math.floor(scouts * 0.005) + 1; // scaled down slightly
@@ -1583,9 +1586,9 @@ module.exports = function (db) {
         searchMessage =
           foundCount > 0
             ? foundCount === 1
-              ? `ðŸ‘ï¸ Rangers scouted a new target: ${lastFoundName}.`
-              : `ðŸ‘ï¸ Rangers scouted ${foundCount} new target kingdoms.`
-            : `ðŸ” Rangers searched the area but found no new settlements.`;
+              ? `Rangers scouted a new target: ${lastFoundName}.`
+              : `Rangers scouted ${foundCount} new target kingdoms.`
+            : `Rangers searched the area but found no new settlements.`;
       } else {
         return res.status(400).json({ error: "Invalid search type" });
       }
@@ -1623,7 +1626,7 @@ module.exports = function (db) {
         events.push(
           ...rTroopXp.levelUps.map((msg) => ({
             type: "system",
-            message: `ðŸŽ–ï¸ ${msg}`,
+            message: msg,
           })),
         );
       }

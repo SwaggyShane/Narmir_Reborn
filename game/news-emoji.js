@@ -226,9 +226,8 @@ function formatNewsMessage(value, repairFn) {
 }
 
 function decorateNewsMessage(value, repairFn) {
-  const { emoji, text } = formatNewsMessage(value, repairFn);
-  if (!text) return text;
-  return `${emoji} ${text}`;
+  const { text } = formatNewsMessage(value, repairFn);
+  return text || "";
 }
 
 function getNewsMeta(type) {

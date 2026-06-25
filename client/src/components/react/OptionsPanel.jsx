@@ -421,7 +421,7 @@ const OptionsPanel = () => {
         </div>
 
         <section className="rounded-2xl border-2 border-[var(--accent1)] bg-[var(--bg2)] p-5">
-          <div className="card-title !mb-3 text-[18px] text-[var(--accent1)]">🌌 Empire Rebirth (Kingdom Prestige)</div>
+          <div className="card-title !mb-3 text-[var(--accent1)]">🌌 Empire Rebirth (Kingdom Prestige)</div>
           <div className="mb-4 text-[14px] leading-7 text-[var(--text2)]">
             When your kingdom reaches <strong className="text-[var(--gold)]">Level 50</strong>, you can choose to transcend. Your buildings, research, and army will be reset, but you will retain your <strong className="text-[var(--accent1)]">Prestige Level</strong> (currently: <span id="cur-prestige-lvl">0</span>).
             <br />

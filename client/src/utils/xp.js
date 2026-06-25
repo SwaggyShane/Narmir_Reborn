@@ -53,3 +53,16 @@ export function xpForLevel(level, prestige = 0) {
   return Math.floor(base * mult);
 }
 
+export function xpToNextLevel(level, prestige = 0) {
+  return xpForLevel(level + 1, prestige) - xpForLevel(level, prestige);
+}
+
+export function kingdomXpProgress(level, xp, prestige = 0) {
+  const xpThisLevel = xpForLevel(level, prestige);
+  const xpNextLevel = xpForLevel(level + 1, prestige);
+  const xpNeeded = Math.max(1, xpNextLevel - xpThisLevel);
+  const xpIntoLevel = Math.max(0, Math.min((xp || 0) - xpThisLevel, xpNeeded));
+  const pct = Math.min(100, Math.floor((xpIntoLevel / xpNeeded) * 100));
+  return { xpThisLevel, xpNextLevel, xpNeeded, xpIntoLevel, pct };
+}
+

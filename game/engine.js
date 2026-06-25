@@ -18,10 +18,14 @@ const effectsProcessor = require("./synergy-effects-processor");
 const combatResolverV2 = require("./combat-resolver");
 const { safeJsonParse, roll, rand, clearParseCache } = require('../utils/helpers');
 
+const MOJIBAKE_SIGNATURE = /[\u00C3\u00C2\u00E2\u00EF\u00F0\u00C5\uFFFD]/;
+
 function repairMojibake(value) {
   if (value === null || value === undefined) return value;
   let text = String(value);
+  if (!MOJIBAKE_SIGNATURE.test(text)) return text;
   for (let i = 0; i < 20; i++) {
+    if (!MOJIBAKE_SIGNATURE.test(text)) break;
     let next;
     try {
       next = Buffer.from(text, "latin1").toString("utf8");

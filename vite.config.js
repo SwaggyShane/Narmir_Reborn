@@ -25,7 +25,6 @@ export default defineConfig(({ command, mode }) => {
     server: {
       port: 5173,
       strictPort: true,
-      hmr: false,
       allowedHosts: ['narmirreborn.com', 'localhost', '127.0.0.1']
     },
 

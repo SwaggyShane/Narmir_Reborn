@@ -322,7 +322,7 @@ const HeroesPanel = () => {
           </div>
 
           <div className="card rounded-2xl border border-[var(--border)] bg-[var(--bg2)] p-5">
-            <div className="card-title mb-2 text-[14px]">Hero Slots</div>
+            <div className="card-title mb-2">Hero Slots</div>
             <div className="mt-2 flex items-center justify-between"><span className="text-[13px] text-[var(--text2)]">Occupied</span><span id="hero-slots-used" className="font-bold text-[var(--text)]">{heroes.length}</span></div>
             <div className="mt-1 flex items-center justify-between"><span className="text-[13px] text-[var(--text2)]">Total available</span><span id="hero-slots-total" className="font-bold text-[var(--gold)]">{maxHeroes}</span></div>
             <div className="mt-2.5 h-1.5 overflow-hidden rounded-[3px] bg-[var(--bg3)]"><div id="hero-slots-bar" className="h-full bg-[var(--accent1)]" style={{ width: `${maxHeroes > 0 ? Math.min(100, (heroes.length / maxHeroes) * 100) : 0}%`, transition: 'width 0.3s' }} /></div>
