@@ -6,6 +6,7 @@ import { fmt } from "../../utils/fmt";
 import { repairMojibake } from '../../utils/repairMojibake.js';
 import { heroPortraitUrl } from '../../utils/heroPortraits.js';
 import { openHeroLore } from '../../utils/openHeroLore.js';
+import { showHeroXpModal } from '../../utils/showHeroXpModal.js';
 import { toast as showToast } from '../../utils/toast.js';
 import { switchTab } from '../../utils/switchTab.js';
 import EmptyState from './EmptyState.jsx';
@@ -287,7 +288,7 @@ const HeroesPanel = () => {
               <div className="mb-2 text-[11px] font-bold uppercase text-[var(--text3)]">Hero Advancement</div>
               <div className="mb-1.5 flex items-center justify-between text-[11px]"><span className="text-[var(--text2)]">Combat Win</span><span className="text-[var(--gold)]">500 XP</span></div>
               <div className="mb-1.5 flex items-center justify-between text-[11px]"><span className="text-[var(--text2)]">Combat Loss</span><span className="text-[var(--gold)]">100 XP</span></div>
-              <div className="mb-1.5 flex items-center justify-between text-[11px]"><span className="text-[var(--text2)]">Leveling</span><span className="text-[var(--accent1)] cursor-pointer underline" onClick={openHeroXpModal}>View XP Table</span></div>
+              <div className="mb-1.5 flex items-center justify-between text-[11px]"><span className="text-[var(--text2)]">Leveling</span><span className="text-[var(--accent1)] cursor-pointer underline" onClick={showHeroXpModal}>View XP Table</span></div>
             </div>
 
             <div className="mb-4">
