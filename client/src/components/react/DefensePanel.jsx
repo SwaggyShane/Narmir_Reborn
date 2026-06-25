@@ -121,6 +121,10 @@ const DefensePanel = () => {
     refreshDefense();
   }, [refreshDefense]);
 
+  const syncDefenseUpgrades = useCallback((bucket, nextOwned) => {
+    setUpgradeOwned((prev) => ({ ...prev, [bucket]: nextOwned }));
+  }, []);
+
   useGameMutationEvents(useCallback((event) => {
     if (String(event?.reason || '') === 'economy-upgrade') {
       refreshDefense();
@@ -258,6 +262,7 @@ const DefensePanel = () => {
               defs={WALL_UPGRADES_JS}
               owned={upgradeOwned.wall}
               state={state}
+              onPurchased={(_, nextOwned) => syncDefenseUpgrades('wall', nextOwned)}
             />
           </div>
         </div>
@@ -308,6 +313,7 @@ const DefensePanel = () => {
               defs={TOWER_DEF_UPGRADES_JS}
               owned={upgradeOwned.tower_def}
               state={state}
+              onPurchased={(_, nextOwned) => syncDefenseUpgrades('tower_def', nextOwned)}
             />
           </div>
         </div>
@@ -358,6 +364,7 @@ const DefensePanel = () => {
               defs={OUTPOST_UPGRADES_JS}
               owned={upgradeOwned.outpost}
               state={state}
+              onPurchased={(_, nextOwned) => syncDefenseUpgrades('outpost', nextOwned)}
             />
           </div>
         </div>

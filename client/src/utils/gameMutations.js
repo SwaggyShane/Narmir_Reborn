@@ -1,8 +1,9 @@
 import { gameStateManager } from '../GameStateManager.js';
+import { normalizeMutationUpdates } from './upgradeUtils.js';
 
 export function applyServerUpdates(updates, context = {}) {
   if (!updates) return null;
-  return gameStateManager.applyUpdates(updates, context);
+  return gameStateManager.applyUpdates(normalizeMutationUpdates(updates), context);
 }
 
 export function applyGameMutation(resultOrUpdates, context = {}) {

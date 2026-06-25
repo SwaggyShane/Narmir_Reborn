@@ -1,8 +1,16 @@
 import clsx from 'clsx';
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useActivePanel } from '../../hooks/useActivePanel';
-import { useGameState } from '../../hooks/useGameState';
+import { useGameState, useGameMutationEvents } from '../../hooks/useGameState';
 import { toast } from '../../utils/toast.js';
+import UpgradesList from './UpgradesList.jsx';
+import {
+  TOWER_UPGRADES,
+  SCHOOL_UPGRADES,
+  SHRINE_UPGRADES,
+  LIBRARY_UPGRADES,
+} from '../../utils/studiesUpgrades.js';
+import { parseOwnedUpgrades } from '../../utils/upgradeUtils.js';
 
 const StudiesPanel = () => {
   const [activeTab, setActiveTab] = useState('tower');
@@ -99,6 +107,17 @@ const StudiesPanel = () => {
   const handleTabClick = useCallback((tabId) => {
     setActiveTab(tabId);
   }, []);
+
+  const syncStudiesUpgrades = useCallback((category, nextOwned) => {
+    const key = `${category}_upgrades`;
+    setStudiesData((prev) => (prev ? { ...prev, [key]: nextOwned } : prev));
+  }, []);
+
+  useGameMutationEvents(useCallback((event) => {
+    if (String(event?.reason || '') === 'economy-upgrade') {
+      fetchStudiesData();
+    }
+  }, [fetchStudiesData]));
 
   const loadStudies = useCallback(async () => {
     setIsRefreshing(true);
@@ -270,7 +289,13 @@ const StudiesPanel = () => {
 
             <div className="card" style={{ margin: 0 }}>
               <div className="card-title">Tower upgrades</div>
-              <div id="tower-upgrade-list"></div>
+              <UpgradesList
+                category="tower"
+                defs={TOWER_UPGRADES}
+                owned={parseOwnedUpgrades(studiesData?.tower_upgrades)}
+                state={state || {}}
+                onPurchased={(_, nextOwned) => syncStudiesUpgrades('tower', nextOwned)}
+              />
             </div>
           </div>
         </div>
@@ -315,7 +340,13 @@ const StudiesPanel = () => {
             </div>
             <div className="card" style={{ margin: 0 }}>
               <div className="card-title !mb-2.5">School upgrades</div>
-              <div id="school-upgrade-list"></div>
+              <UpgradesList
+                category="school"
+                defs={SCHOOL_UPGRADES}
+                owned={parseOwnedUpgrades(studiesData?.school_upgrades)}
+                state={state || {}}
+                onPurchased={(_, nextOwned) => syncStudiesUpgrades('school', nextOwned)}
+              />
             </div>
           </div>
 
@@ -620,7 +651,13 @@ const StudiesPanel = () => {
             </div>
             <div className="card" style={{ margin: 0 }}>
               <div className="card-title" id="st-shrine-upg-title">Shrine upgrades</div>
-              <div id="shrine-upgrade-list"></div>
+              <UpgradesList
+                category="shrine"
+                defs={SHRINE_UPGRADES}
+                owned={parseOwnedUpgrades(studiesData?.shrine_upgrades)}
+                state={state || {}}
+                onPurchased={(_, nextOwned) => syncStudiesUpgrades('shrine', nextOwned)}
+              />
             </div>
           </div>
           <div className="card" style={{ margin: 0 }}>
@@ -691,7 +728,13 @@ const StudiesPanel = () => {
             </div>
             <div className="card" style={{ margin: 0 }}>
               <div className="card-title">Library upgrades</div>
-              <div id="library-upgrade-list"></div>
+              <UpgradesList
+                category="library"
+                defs={LIBRARY_UPGRADES}
+                owned={parseOwnedUpgrades(studiesData?.library_upgrades)}
+                state={state || {}}
+                onPurchased={(_, nextOwned) => syncStudiesUpgrades('library', nextOwned)}
+              />
             </div>
           </div>
           
