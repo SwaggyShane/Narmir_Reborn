@@ -1,6 +1,6 @@
 # Admin Panel React + Tailwind Migration Roadmap
 
-**Status:** Phase 2a merged — Kingdoms tab scalar fields live in React  
+**Status:** Phase 2c in progress — AI backend APIs + AiKingdomPanel implemented  
 **Source of truth audited:** `public/admin.html` (~5,150 lines), `routes/admin.js` (~1,580 lines), `index.js` route wiring  
 **Target:** Replace the monolithic vanilla HTML admin with a Vite/React/Tailwind app matching the game shell and portal patterns
 
@@ -489,11 +489,13 @@ Each phase is an independent draft PR. Do not delete `public/admin.html` until P
 
 - [x] Virtualized `AdminDataTable` for kingdoms
 - [x] Search, ban/unban modal, delete/reset confirmations
-- [ ] `KingdomEditModal` — port `EDIT_SECTIONS` field widgets incrementally:
+- [x] `KingdomEditModal` — port `EDIT_SECTIONS` field widgets incrementally:
   - [x] PR 2a: scalar fields (attributes, resources, units, buildings, research) — MERGED (PR #582)
-  - [ ] PR 2b: JSON widgets (world_fragments, fragment_bonuses, troop_levels, active_effects, mercenaries)
-- [ ] Implement missing `ai/seed`, `ai/reset`, `ai/synopsis` APIs
-- [ ] `AiKingdomPanel` with preset buttons (backend from §5.4)
+  - [x] PR 2b: JSON widgets (world_fragments, fragment_bonuses, troop_levels, active_effects, mercenaries) — MERGED (PR #584)
+- [x] Implement `ai/seed`, `ai/reset`, `ai/synopsis`, `ai/apply-preset`, `ai/presets` APIs — PR 2c
+- [x] `AiKingdomPanel` with 10 preset buttons wired into KingdomsPanel — PR 2c
+- [x] `game/ai-presets.js` server-side preset catalog with race modifiers — PR 2c
+- [x] `client/src/admin/lib/aiPresets.js` client-side preset metadata — PR 2c
 
 **Exit criteria:** Edit save produces identical DB state as legacy for fixture kingdoms; AI seed/synopsis work; presets apply correctly per race.
 
@@ -626,8 +628,8 @@ Legacy admin uses **both** `localStorage.narmir_token` and cookies. React game u
 
 ## 10. Immediate next steps
 
-1. **Phase 2b PR** — JSON field widgets in `KingdomEditModal`: fragments (owned/studied), troop-levels, active-effects, mercenaries, attunements.
-2. **Phase 2c PR** — Implement `ai/seed`, `ai/reset`, `ai/synopsis`, `ai/apply-preset` APIs + `AiKingdomPanel` with preset buttons.
+1. **Phase 2b PR** — MERGED (PR #584). JSON field widgets live in React.
+2. **Phase 2c PR** — IN PROGRESS. AI backend APIs (`ai/seed`, `ai/reset`, `ai/synopsis`, `ai/apply-preset`, `ai/presets`) + `AiKingdomPanel` + `game/ai-presets.js` with 10 presets and race modifiers.
 3. **Phase 3 PR** — Manage tab: announcements, chat mods, promote admin, test kingdoms, bulk actions.
 4. **Fix CSRF** on security audit + sounds in legacy admin (quick win) OR document as known bug until Phase 5.
 

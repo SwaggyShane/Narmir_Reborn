@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import AdminDataTable from '../components/AdminDataTable.jsx';
 import KingdomEditModal from './KingdomEditModal.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
+import AiKingdomPanel from './AiKingdomPanel.jsx';
 
 export default function KingdomsPanel({ adminFetch, onToast }) {
   const [kingdoms, setKingdoms]     = useState([]);
@@ -185,6 +186,9 @@ export default function KingdomsPanel({ adminFetch, onToast }) {
           onCancel={() => setConfirm(null)}
         />
       )}
+
+      {/* AI kingdoms section */}
+      <AiKingdomPanel adminFetch={adminFetch} onToast={onToast} />
     </div>
   );
 }
