@@ -254,7 +254,8 @@ const StatusPanel = () => {
             </span>
           </div>
           <div className="status-unit-table -mx-1 overflow-x-auto px-1">
-          <div className="min-w-[280px] grid [grid-template-columns:100px_1fr_52px_52px] gap-1 py-1 px-0 border-b border-strong">
+          <div className="min-w-[280px]">
+          <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 py-1 px-0 border-b border-strong">
             <span className="text-[10px] text-text3 uppercase tracking-[0.5px]">Unit</span>
             <span className="text-[10px] text-text3 uppercase tracking-[0.5px] text-right">Count</span>
             <span className="text-[10px] text-text3 uppercase tracking-[0.5px] text-center">Lv</span>
@@ -357,6 +358,7 @@ const StatusPanel = () => {
             <span className="text-[13px] font-semibold text-right text-text" id="s-armor">{(state?.armor_stockpile ?? 0).toLocaleString()}</span>
             <span />
             <span className="badge badge-gold text-center text-[9px]">Stock</span>
+          </div>
           </div>
           </div>
         </div>

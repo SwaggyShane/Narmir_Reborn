@@ -19,7 +19,7 @@ const Topbar = () => {
   };
 
   return (
-    <header className="fixed inset-x-0 top-0 z-topbar-mobile flex h-12 w-full shrink-0 items-center justify-between gap-2 border-b border-ember-900/40 bg-void-950/95 px-3 pt-[env(safe-area-inset-top,0px)] shadow-panel backdrop-blur-xl sm:h-14 lg:relative lg:col-span-3 lg:row-start-1 lg:z-[1100] lg:pt-0 md:px-4">
+    <header className="fixed inset-x-0 top-0 z-topbar-mobile flex w-full shrink-0 items-center justify-between gap-2 border-b border-ember-900/40 bg-void-950/95 px-3 shadow-panel backdrop-blur-xl min-h-[calc(3rem+env(safe-area-inset-top,0px))] pt-[env(safe-area-inset-top,0px)] sm:min-h-[calc(3.5rem+env(safe-area-inset-top,0px))] lg:relative lg:col-span-3 lg:row-start-1 lg:z-[1100] lg:min-h-14 lg:pt-0 md:px-4">
       <div className="min-w-0 flex-1">
         <div className="brand-flame text-sm sm:text-base">NARMIR REBORN</div>
         <div className="brand-tagline hidden sm:block" aria-label="Pure. Damn. Evil.">
