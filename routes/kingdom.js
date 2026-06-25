@@ -4039,7 +4039,7 @@ module.exports = function (db) {
       engine.BANK_UPGRADES[upgradeKey];
     await db.run(
       "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
-      [k.id, "system", `âœ… ${def?.name || upgradeKey} purchased.`, k.turn],
+      [k.id, "system", `⬆️ ${def?.name || upgradeKey} purchased.`, k.turn],
     );
     res.json({ ok: true, updates: result.updates });
   });
