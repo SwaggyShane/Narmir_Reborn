@@ -55,6 +55,8 @@ export default function AdminAuthGate() {
       }
       setAdminUser(data.username);
       setStatus('authed');
+    } catch (err) {
+      setError(err.message || 'Connection error. Please try again.');
     } finally {
       setSubmitting(false);
     }

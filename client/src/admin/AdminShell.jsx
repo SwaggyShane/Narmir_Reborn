@@ -28,13 +28,18 @@ export default function AdminShell({ adminUser, onLogout }) {
   const { adminFetch } = useAdminSession({ onUnauthorized: onLogout });
 
   const loadStats = useCallback(async () => {
-    const data = await adminFetch('/api/admin/stats');
-    if (data?.error) {
-      setToast({ msg: 'Stats error: ' + data.error, type: 'error' });
-    } else if (data) {
-      setStats(data);
+    try {
+      const data = await adminFetch('/api/admin/stats');
+      if (data?.error) {
+        setToast({ msg: 'Stats error: ' + data.error, type: 'error' });
+      } else if (data) {
+        setStats(data);
+      }
+    } catch (err) {
+      setToast({ msg: 'Failed to load stats: ' + (err.message || 'Unknown error'), type: 'error' });
+    } finally {
+      setStatsLoading(false);
     }
-    setStatsLoading(false);
   }, [adminFetch]);
 
   useEffect(() => { loadStats(); }, [loadStats]);

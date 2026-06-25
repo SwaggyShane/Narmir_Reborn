@@ -1,12 +1,15 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 const BG = { error: 'var(--red)', success: 'var(--green)', info: 'var(--bg4)' };
 
 export default function AdminToast({ message, type = 'info', onDismiss }) {
+  const onDismissRef = useRef(onDismiss);
+  useEffect(() => { onDismissRef.current = onDismiss; }, [onDismiss]);
+
   useEffect(() => {
-    const t = setTimeout(onDismiss, 4000);
+    const t = setTimeout(() => { onDismissRef.current?.(); }, 4000);
     return () => clearTimeout(t);
-  }, [message, onDismiss]);
+  }, [message]);
 
   return (
     <div
