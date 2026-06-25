@@ -650,6 +650,19 @@
   .panel-immersive {
     @apply flex min-h-0 w-full flex-1 flex-col overflow-hidden p-0;
   }
+
+  /* ── Hero lore modal portrait ── */
+  .hero-lore-portrait-frame {
+    @apply mx-auto mb-3 overflow-hidden rounded-lg bg-bg3;
+    width: 280px;
+    max-width: 100%;
+    height: 360px;
+  }
+
+  .hero-lore-portrait {
+    @apply block h-full w-full object-cover;
+    object-position: top center;
+  }
 }
 
 @media (min-width: 768px) {
@@ -709,19 +722,6 @@
     overflow-y: auto;
     min-height: 0;
     padding: 0 1rem 1rem;
-  }
-
-  /* ── Hero lore modal portrait ── */
-  .hero-lore-portrait-frame {
-    @apply mx-auto mb-3 overflow-hidden rounded-lg bg-bg3;
-    width: 280px;
-    max-width: 100%;
-    height: 360px;
-  }
-
-  .hero-lore-portrait {
-    @apply block h-full w-full object-cover;
-    object-position: top center;
   }
 
   /* ── News panel ── */

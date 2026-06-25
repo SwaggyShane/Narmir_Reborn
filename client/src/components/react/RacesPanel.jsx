@@ -48,7 +48,7 @@ function HeroLoreContent({ heroKey, hero }) {
           <img
             src={heroPortraitUrl(heroKey)}
             className="hero-lore-portrait"
-            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
             alt={repair(hero.name || '')}
           />
         </div>
