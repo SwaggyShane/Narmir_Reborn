@@ -1,6 +1,6 @@
 # Admin Panel React + Tailwind Migration Roadmap
 
-**Status:** Phase 2c merged — AI backend APIs + AiKingdomPanel live in React  
+**Status:** Phase 3 merged — Manage tab live in React  
 **Source of truth audited:** `public/admin.html` (~5,150 lines), `routes/admin.js` (~1,580 lines), `index.js` route wiring  
 **Target:** Replace the monolithic vanilla HTML admin with a Vite/React/Tailwind app matching the game shell and portal patterns
 
@@ -503,9 +503,13 @@ Each phase is an independent draft PR. Do not delete `public/admin.html` until P
 
 **Branch:** `admin-react-03-manage`
 
-- [ ] Announcement, chat mods, promote admin, test kingdom provision
-- [ ] Bulk actions: reset all turns, reset all kingdoms, flush locations/troops
-- [ ] AI hiatus toggle
+- [x] Announcement (POST /announce — Socket.io global broadcast)
+- [x] Chat mod promote/demote (GET /chat-mods, POST /chat-mod)
+- [x] Chat ban list + unban (GET /chat-bans, POST /chat-unban)
+- [x] Promote to admin (POST /promote) with confirm dialog
+- [x] Test kingdom provision (POST /test-kingdoms/setup) with results table
+- [x] Bulk actions: Reset All Turns, Reset All Kingdoms, Flush Locations, Flush Support Troops
+- [x] AI hiatus toggle (duplicate of KingdomsPanel control for manage-tab convenience)
 
 ### Phase 4 — Content editors
 
@@ -630,7 +634,7 @@ Legacy admin uses **both** `localStorage.narmir_token` and cookies. React game u
 
 1. **Phase 2b PR** — MERGED (PR #584). JSON field widgets live in React.
 2. **Phase 2c PR** — MERGED (PR #585). AI backend APIs (`ai/seed`, `ai/reset`, `ai/synopsis`, `ai/apply-preset`, `ai/presets`) + `AiKingdomPanel` + `game/ai-presets.js` with 10 presets and race modifiers.
-3. **Phase 3 PR** — Manage tab: announcements, chat mods, promote admin, test kingdoms, bulk actions.
+3. **Phase 3 PR** — MERGED (PR #586). ManagePanel: announcements, AI hiatus, chat mods/bans, promote admin, test kingdoms, bulk/destructive actions.
 4. **Fix CSRF** on security audit + sounds in legacy admin (quick win) OR document as known bug until Phase 5.
 
 ---
