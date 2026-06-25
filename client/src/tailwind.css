@@ -144,7 +144,7 @@
   }
 
   .status-grid {
-    @apply grid grid-cols-1 gap-5;
+    @apply grid min-w-0 max-w-full grid-cols-1 gap-5;
   }
 
   .status-grid .card-title {
@@ -655,7 +655,7 @@
   }
 
   .panel {
-    @apply flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-y-auto bg-bg px-3 py-2;
+    @apply box-border flex min-h-0 w-full min-w-0 max-w-full flex-1 flex-col overflow-x-hidden overflow-y-auto bg-bg px-2 py-2;
   }
 
   .mobile-metrics-scroll {
@@ -759,6 +759,12 @@
 
   .news-filter.active {
     @apply border-accent1 bg-accent1 text-white;
+  }
+}
+
+@media (min-width: 1024px) {
+  .status-grid {
+    @apply grid-cols-3;
   }
 }
 

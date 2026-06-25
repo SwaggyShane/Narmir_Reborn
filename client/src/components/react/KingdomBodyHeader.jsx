@@ -76,7 +76,7 @@ const KingdomBodyHeader = () => {
     <>
       <div
         id="kd-top"
-        className="kd-top shell-lore-box relative z-10 mx-3 mb-2 mt-2 min-w-0 w-full max-w-full shrink-0 overflow-hidden sm:mx-4 sm:mb-3 sm:mt-3"
+        className="kd-top shell-lore-box relative z-10 mb-2 mt-2 box-border min-w-0 w-full max-w-full shrink-0 overflow-hidden px-2 sm:mb-3 sm:mt-3 sm:px-4"
       >
         <div
           className="kingdom-header flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between"

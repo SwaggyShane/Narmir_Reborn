@@ -12,7 +12,7 @@ const Topbar = () => {
   const isLoggedIn = !!state?.username;
 
   return (
-    <header className="fixed inset-x-0 top-0 z-topbar-mobile box-border flex w-full max-w-full shrink-0 items-center justify-between gap-2 border-b border-ember-900/40 bg-void-950/95 px-2.5 shadow-panel backdrop-blur-xl min-h-[calc(3.5rem+env(safe-area-inset-top,0px))] pt-[env(safe-area-inset-top,0px)] sm:min-h-[calc(3.5rem+env(safe-area-inset-top,0px))] sm:px-3 lg:relative lg:col-span-3 lg:row-start-1 lg:z-[1100] lg:min-h-14 lg:max-w-none lg:pt-0 md:px-4">
+    <header className="fixed inset-x-0 top-0 z-topbar-mobile box-border flex w-full max-w-full shrink-0 items-center justify-between gap-1.5 border-b border-ember-900/40 bg-void-950/95 px-2 shadow-panel backdrop-blur-xl min-h-[calc(3.5rem+env(safe-area-inset-top,0px))] pt-[env(safe-area-inset-top,0px)] sm:min-h-[calc(3.5rem+env(safe-area-inset-top,0px))] sm:gap-2 sm:px-3 lg:relative lg:col-span-3 lg:row-start-1 lg:z-[1100] lg:min-h-14 lg:max-w-none lg:pt-0 md:px-4">
       <div className="min-w-0 flex-1">
         <div className="brand-flame text-sm sm:text-base">NARMIR REBORN</div>
         <div className="brand-tagline hidden sm:block" aria-label="Pure. Damn. Evil.">
@@ -22,7 +22,7 @@ const Topbar = () => {
         </div>
       </div>
 
-      <div className="flex min-w-0 shrink-0 items-center gap-1.5 rounded-2xl border border-ember-900/30 bg-void-900/70 px-2 py-1.5 shadow-panel sm:gap-2 sm:px-2.5 sm:py-2 md:gap-3 md:px-3">
+      <div className="flex min-w-0 max-w-[min(100%,14rem)] shrink items-center gap-1 rounded-2xl border border-ember-900/30 bg-void-900/70 px-1.5 py-1 shadow-panel sm:max-w-none sm:gap-2 sm:px-2.5 sm:py-2 md:gap-3 md:px-3">
         <div className="hidden text-right font-serif leading-none sm:block">
           <div className="flex items-center justify-end gap-1.5">
             <span className="text-sm uppercase tracking-[0.5px] text-text3">Turns:</span>
@@ -45,7 +45,7 @@ const Topbar = () => {
 
         <button
           type="button"
-          className="turn-btn px-2.5 py-1 text-xs sm:px-4 sm:py-1.5 sm:text-sm"
+          className="turn-btn px-2 py-1 text-[11px] sm:px-4 sm:py-1.5 sm:text-sm"
           onClick={takeTurn}
           disabled={loading.takeTurn || turnsStored < 1}
         >

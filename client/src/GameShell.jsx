@@ -134,7 +134,7 @@ const GameShell = () => {
               'max-lg:shrink-0 max-lg:border-b max-lg:border-white/5 max-lg:px-3 max-lg:py-2',
               'lg:col-start-2 lg:row-start-2 lg:gap-2 lg:px-2 lg:py-2.5',
               '[&_.metrics]:flex [&_.metrics]:w-full',
-              'max-lg:[&_.metrics]:mobile-metrics-scroll max-lg:[&_.metrics]:mb-0 max-lg:[&_.metrics]:w-full max-lg:[&_.metrics]:max-w-full max-lg:[&_.metrics]:min-w-0 max-lg:[&_.metrics]:gap-1.5 max-lg:[&_.resource-metrics]:flex-nowrap max-lg:[&_.resource-metrics]:overflow-x-auto max-lg:[&_.resource-metrics]:overscroll-x-contain max-lg:[&_.resource-metrics]:snap-x max-lg:[&_.resource-metrics]:pb-1 max-lg:[&_.metric]:min-w-[88px] max-lg:[&_.metric]:max-w-[120px] max-lg:[&_.metric]:snap-start max-lg:[&_.metric]:shrink-0',
+              'max-lg:[&_.metrics]:mobile-metrics-scroll max-lg:[&_.metrics]:mb-0 max-lg:[&_.metrics]:w-full max-lg:[&_.metrics]:max-w-full max-lg:[&_.metrics]:min-w-0 max-lg:[&_.metrics]:gap-1 max-lg:[&_.resource-metrics]:flex-nowrap max-lg:[&_.resource-metrics]:overflow-x-auto max-lg:[&_.resource-metrics]:overscroll-x-contain max-lg:[&_.resource-metrics]:snap-x max-lg:[&_.resource-metrics]:pb-1 max-lg:[&_.metric]:min-w-[72px] max-lg:[&_.metric]:max-w-[100px] max-lg:[&_.metric]:snap-start max-lg:[&_.metric]:shrink-0',
               'lg:[&_.metric_.sub]:justify-end',
             )}
           >
@@ -169,7 +169,10 @@ const GameShell = () => {
           >
             <div
               key={activePanel}
-              className={clsx('panel-enter', isChatPanel ? 'flex h-full min-h-0 flex-col overflow-hidden' : 'min-h-full')}
+              className={clsx(
+                'panel-enter min-w-0 max-w-full',
+                isChatPanel ? 'flex h-full min-h-0 flex-col overflow-hidden' : 'min-h-full overflow-x-hidden',
+              )}
             >
               {renderPanel()}
             </div>
