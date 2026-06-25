@@ -348,14 +348,14 @@ const HeroesPanel = () => {
           return (
             <>
               <div className="mb-5 text-center">
-                <img
-                  src={heroPortrait(heroLoreKey)}
-                  width="240"
-                  height="240"
-                  className="max-w-full h-auto object-cover block mx-auto mb-3 rounded-[8px]"
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                  alt={cls.name || ''}
-                />
+                <div className="hero-lore-portrait-frame">
+                  <img
+                    src={heroPortrait(heroLoreKey)}
+                    className="hero-lore-portrait"
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    alt={cls.name || ''}
+                  />
+                </div>
                 <div className="text-[20px] font-bold text-[var(--text)]">{cls.name || ''}</div>
                 <div className="text-[12px] text-[var(--text3)] uppercase tracking-[1px]">Legendary Hero Class</div>
               </div>
