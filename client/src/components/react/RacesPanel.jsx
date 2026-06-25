@@ -44,14 +44,14 @@ function HeroLoreContent({ heroKey, hero }) {
   return (
     <>
       <div style={{ marginBottom: '20px', textAlign: 'center' }}>
-        <img
-          src={heroPortraitUrl(heroKey)}
-          width="240"
-          height="240"
-          style={{ maxWidth: '100%', height: 'auto', objectFit: 'cover', display: 'block', margin: '0 auto 12px auto', borderRadius: '8px' }}
-          onError={(e) => { e.currentTarget.style.display = 'none'; }}
-          alt={repair(hero.name || '')}
-        />
+        <div className="hero-lore-portrait-frame">
+          <img
+            src={heroPortraitUrl(heroKey)}
+            className="hero-lore-portrait"
+            onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
+            alt={repair(hero.name || '')}
+          />
+        </div>
         <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text)' }}>
           {repair(hero.name || '')}
         </div>
