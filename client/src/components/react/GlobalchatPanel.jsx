@@ -55,9 +55,8 @@ const GlobalchatPanel = () => {
     const rows = await loadGlobalChatHistory();
     setMessages(mapHistoryMessages(rows));
     setLoading(false);
-    scrollToBottomAfterPaint();
     return rows;
-  }, [scrollToBottomAfterPaint]);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -209,7 +208,7 @@ const GlobalchatPanel = () => {
   useLayoutEffect(() => {
     if (!chatVisible || loading) return;
     scrollToBottomAfterPaint();
-  }, [chatVisible, loading, messages, scrollToBottomAfterPaint]);
+  }, [chatVisible, loading, scrollToBottomAfterPaint]);
 
   const sendGlobalChat = async () => {
     const payload = inputValue.trim();
