@@ -14,6 +14,7 @@ export const AppEvent = {
   MAP_KINGDOM_CARD: 'map-kingdom-card',
   EXPEDITION_LOG_ENTRY: 'expedition-log-entry',
   NAV_LAYOUT_CHANGE: 'nav-layout-change',
+  COLOR_THEME_CHANGE: 'color-theme-change',
 };
 
 export function subscribeAppEvent(event, handler) {

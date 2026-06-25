@@ -4,6 +4,8 @@ import { apiCall } from '../../utils/api.mjs';
 import { toast } from '../../utils/toast.js';
 import { useGameState } from '../../hooks/useGameState';
 import { useNavLayout } from '../../hooks/useNavLayout.js';
+import { useColorTheme } from '../../hooks/useColorTheme.js';
+import { COLOR_THEMES } from '../../utils/colorTheme.js';
 
 const API = (path, opts = {}) => {
   const token = localStorage.getItem('narmir_token');
@@ -299,6 +301,7 @@ function PortraitUploadCard() {
 const OptionsPanel = () => {
   const { applyUpdates } = useGameState();
   const { layout: navLayout, setLayout: setNavLayout } = useNavLayout();
+  const { theme: colorTheme, setTheme: setColorTheme } = useColorTheme();
   const [skipIntro, setSkipIntro] = useState(() => {
     try { return localStorage.getItem('narmir_skip_intro') === '1'; } catch { return false; }
   });
@@ -309,6 +312,10 @@ const OptionsPanel = () => {
 
   const updateNavLayout = (e) => {
     setNavLayout(e.target.value);
+  };
+
+  const updateColorTheme = (e) => {
+    setColorTheme(e.target.value);
   };
 
   const updateSkipIntro = (e) => {
@@ -400,6 +407,33 @@ const OptionsPanel = () => {
             <div className="card-title">Interface Settings</div>
             <div className="mb-4 text-[13px] leading-6 text-[var(--text2)]">
               Customize your application layout and preferred navigation style. Choose between responsive defaults or force a specific nav bar.
+            </div>
+            <div className="mb-3">
+              <label className={labelClass}>Color Theme</label>
+              <select value={colorTheme} onChange={updateColorTheme} className={inputShell}>
+                {COLOR_THEMES.map((theme) => (
+                  <option key={theme.id} value={theme.id}>
+                    {theme.label}
+                  </option>
+                ))}
+              </select>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {COLOR_THEMES.map((theme) => (
+                  <button
+                    key={theme.id}
+                    type="button"
+                    title={theme.label}
+                    aria-label={theme.label}
+                    aria-pressed={colorTheme === theme.id}
+                    onClick={() => setColorTheme(theme.id)}
+                    className={clsx(
+                      'h-8 w-8 rounded-full border-2 transition hover:scale-105',
+                      colorTheme === theme.id ? 'border-white shadow-[0_0_10px_rgba(255,255,255,0.35)]' : 'border-white/20',
+                    )}
+                    style={{ background: theme.preview }}
+                  />
+                ))}
+              </div>
             </div>
             <div className="mb-3">
               <label className={labelClass}>Navigation Layout Style</label>
