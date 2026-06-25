@@ -3,10 +3,10 @@ import AdminStatGrid from './AdminStatGrid.jsx';
 import AdminTabNav, { ADMIN_TABS } from './AdminTabNav.jsx';
 import AdminToast from './AdminToast.jsx';
 import { useAdminSession } from './hooks/useAdminSession.js';
+import KingdomsPanel from './panels/KingdomsPanel.jsx';
 
 const PHASE_LABELS = {
   manage:    'Phase 3',
-  kingdoms:  'Phase 2',
   events:    'Phase 4',
   config:    'Phase 5',
   sounds:    'Phase 5',
@@ -87,15 +87,20 @@ export default function AdminShell({ adminUser, onLogout }) {
         <AdminStatGrid stats={stats} loading={statsLoading} />
         <AdminTabNav activeTab={activeTab} onTabChange={setActiveTab} />
 
-        {/* Tab content — all placeholders until Phase 2+ */}
-        <div style={{
-          background: 'var(--bg2)', border: '1px solid var(--border)',
-          borderRadius: 8, padding: '32px 24px', textAlign: 'center',
-          color: 'var(--text3)', fontSize: 14,
-        }}>
-          <div style={{ fontSize: 28, marginBottom: 10 }}>{activeTabMeta?.icon}</div>
-          <div style={{ color: 'var(--text2)', fontSize: 16, marginBottom: 6 }}>{activeTabMeta?.label}</div>
-          <div>Coming in {PHASE_LABELS[activeTab] ?? 'a future phase'}.</div>
+        {/* Tab content */}
+        <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 8, padding: '20px 24px' }}>
+          {activeTab === 'kingdoms' ? (
+            <KingdomsPanel
+              adminFetch={adminFetch}
+              onToast={(msg, type) => setToast({ msg, type: type || 'info' })}
+            />
+          ) : (
+            <div style={{ textAlign: 'center', color: 'var(--text3)', fontSize: 14, padding: '12px 0' }}>
+              <div style={{ fontSize: 28, marginBottom: 10 }}>{activeTabMeta?.icon}</div>
+              <div style={{ color: 'var(--text2)', fontSize: 16, marginBottom: 6 }}>{activeTabMeta?.label}</div>
+              <div>Coming in {PHASE_LABELS[activeTab] ?? 'a future phase'}.</div>
+            </div>
+          )}
         </div>
       </div>
 
