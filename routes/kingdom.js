@@ -587,11 +587,11 @@ module.exports = function (db) {
       if (
         existing &&
         !ev.message.includes("Troop upkeep") &&
-        !ev.message.includes("ðŸ—ï¸") &&
-        !ev.message.includes("ðŸ“š") &&
-        !ev.message.includes("âœ…")
+        !ev.message.includes("Actively constructing") &&
+        !ev.message.includes("Library Est:") &&
+        !ev.message.includes("Construction complete:")
       )
-        continue; // already sent â€” skip
+        continue; // already sent — skip
       filteredEvents.push(ev);
     }
 
