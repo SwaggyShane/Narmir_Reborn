@@ -180,6 +180,7 @@ export default function KingdomsPanel({ adminFetch, onToast }) {
         <ConfirmDialog
           title={confirm.title}
           message={confirm.message}
+          input={confirm.input}
           onConfirm={confirm.onConfirm}
           onCancel={() => setConfirm(null)}
         />

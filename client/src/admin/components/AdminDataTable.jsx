@@ -9,8 +9,8 @@ export default function AdminDataTable({ kingdoms, loading, onEdit, onReset, onR
     if (!query.trim()) return kingdoms;
     const q = query.toLowerCase();
     return kingdoms.filter(k =>
-      k.name.toLowerCase().includes(q) ||
-      k.username.toLowerCase().includes(q) ||
+      (k.name || '').toLowerCase().includes(q) ||
+      (k.username || '').toLowerCase().includes(q) ||
       (k.race || '').toLowerCase().includes(q),
     );
   }, [kingdoms, query]);

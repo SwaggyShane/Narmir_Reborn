@@ -208,7 +208,7 @@ export default function KingdomEditModal({ kingdomRow, adminFetch, onClose, onSa
       sec.fields.forEach(({ key, type }) => {
         const raw = detail[key];
         let formVal = form[key];
-        if (formVal === '' || formVal == null) return;
+        if (formVal === undefined) return;
 
         if (JSON_FIELDS.has(key)) {
           // Send as string (server validates and stores as-is)
@@ -227,9 +227,13 @@ export default function KingdomEditModal({ kingdomRow, adminFetch, onClose, onSa
         } else if (type === 'text') {
           if (String(formVal) !== String(raw ?? '')) fields[key] = formVal;
         } else {
-          // number — only include if changed
-          const num = formVal === '' ? null : Number(formVal);
-          if (num !== null && num !== (raw ?? null)) fields[key] = num;
+          // number — allow '' to clear a field (server maps '' → null)
+          if (formVal === '') {
+            if (raw !== null && raw !== undefined) fields[key] = '';
+          } else {
+            const num = Number(formVal);
+            if (num !== (raw ?? null)) fields[key] = num;
+          }
         }
       });
     });

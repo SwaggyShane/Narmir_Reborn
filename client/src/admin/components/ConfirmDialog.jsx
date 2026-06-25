@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function ConfirmDialog({ title, message, onConfirm, onCancel, danger = true }) {
+export default function ConfirmDialog({ title, message, onConfirm, onCancel, danger = true, input }) {
   return (
     <div style={OVERLAY} onClick={onCancel}>
       <div style={BOX} onClick={e => e.stopPropagation()}>
@@ -10,6 +10,23 @@ export default function ConfirmDialog({ title, message, onConfirm, onCancel, dan
         <p style={{ margin: '0 0 20px', fontSize: 14, color: 'var(--text2)', lineHeight: 1.5 }}>
           {message}
         </p>
+        {input && (
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: 'block', fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', marginBottom: 4 }}>
+              {input.label}
+            </label>
+            <input
+              type="text"
+              onChange={e => input.onChange(e.target.value)}
+              style={{
+                width: '100%', padding: '6px 8px', background: 'var(--bg4)',
+                border: '1px solid var(--border2)', borderRadius: 4,
+                color: 'var(--text)', fontSize: 13, outline: 'none', boxSizing: 'border-box',
+                fontFamily: 'Inter, sans-serif',
+              }}
+            />
+          </div>
+        )}
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button onClick={onCancel} style={BTN_CANCEL}>Cancel</button>
           <button onClick={onConfirm} style={danger ? BTN_DANGER : BTN_OK}>Confirm</button>
