@@ -1,6 +1,6 @@
 # Admin Panel React + Tailwind Migration Roadmap
 
-**Status:** Phase 4 merged — Content editors (Events, Lore, Goals, Evolution) live in React  
+**Status:** Phase 5 in progress — Config, Sounds, Prestige, Fragments, Security wired in React  
 **Source of truth audited:** `public/admin.html` (~5,150 lines), `routes/admin.js` (~1,580 lines), `index.js` route wiring  
 **Target:** Replace the monolithic vanilla HTML admin with a Vite/React/Tailwind app matching the game shell and portal patterns
 
@@ -522,13 +522,13 @@ Each phase is an independent draft PR. Do not delete `public/admin.html` until P
 
 ### Phase 5 — Config, sounds, reference, security
 
-**Branch:** `admin-react-05-config-sounds`
+**Branch:** `claude/repo-health-assessment-2yvqdb`
 
-- [ ] Config editor with nested JSON types
-- [ ] Sounds upload (FormData + CSRF) / delete / preview
-- [ ] Fragments + spells reference (read-only)
-- [ ] Prestige reference table
-- [ ] Security audit (fix CSRF; streaming results)
+- [x] Config editor (per-key JSON overrides with base-value reference, collapsible by CONFIG_CATEGORIES)
+- [x] Sounds upload (FormData + getCsrfToken) / delete / inline audio preview
+- [x] Fragments reference (read-only collapsible list with building bonuses)
+- [x] Prestige reference table (static 5-tier data)
+- [x] Security audit (POST with CSRF, severity filter, findings table)
 
 ### Phase 6 — Cutover + cleanup
 
@@ -636,6 +636,7 @@ Legacy admin uses **both** `localStorage.narmir_token` and cookies. React game u
 2. **Phase 2c PR** — MERGED (PR #585). AI backend APIs (`ai/seed`, `ai/reset`, `ai/synopsis`, `ai/apply-preset`, `ai/presets`) + `AiKingdomPanel` + `game/ai-presets.js` with 10 presets and race modifiers.
 3. **Phase 3 PR** — MERGED (PR #586). ManagePanel: announcements, AI hiatus, chat mods/bans, promote admin, test kingdoms, bulk/destructive actions.
 4. **Phase 4 PR** — MERGED (PR #587). EventsPanel, LorePanel, GoalsPanel, EvolutionPanel wired into AdminShell.
+5. **Phase 5 PR** — IN PROGRESS. ConfigPanel, SoundsPanel, PrestigePanel, FragmentsPanel, SecurityPanel wired into AdminShell.
 5. **Fix CSRF** on security audit + sounds in legacy admin (quick win) OR document as known bug until Phase 5.
 
 ---

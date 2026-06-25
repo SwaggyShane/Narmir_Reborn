@@ -9,14 +9,13 @@ import EventsPanel from './panels/EventsPanel.jsx';
 import LorePanel from './panels/LorePanel.jsx';
 import GoalsPanel from './panels/GoalsPanel.jsx';
 import EvolutionPanel from './panels/EvolutionPanel.jsx';
+import ConfigPanel from './panels/ConfigPanel.jsx';
+import SoundsPanel from './panels/SoundsPanel.jsx';
+import PrestigePanel from './panels/PrestigePanel.jsx';
+import FragmentsPanel from './panels/FragmentsPanel.jsx';
+import SecurityPanel from './panels/SecurityPanel.jsx';
 
-const PHASE_LABELS = {
-  config:    'Phase 5',
-  sounds:    'Phase 5',
-  prestige:  'Phase 5',
-  fragments: 'Phase 5',
-  security:  'Phase 5',
-};
+const PHASE_LABELS = {};
 
 export default function AdminShell({ adminUser, onLogout }) {
   const [stats, setStats]           = useState(null);
@@ -116,6 +115,28 @@ export default function AdminShell({ adminUser, onLogout }) {
             />
           ) : activeTab === 'changelog' ? (
             <EvolutionPanel
+              adminFetch={adminFetch}
+              onToast={(msg, type) => setToast({ msg, type: type || 'info' })}
+            />
+          ) : activeTab === 'config' ? (
+            <ConfigPanel
+              adminFetch={adminFetch}
+              onToast={(msg, type) => setToast({ msg, type: type || 'info' })}
+            />
+          ) : activeTab === 'sounds' ? (
+            <SoundsPanel
+              adminFetch={adminFetch}
+              onToast={(msg, type) => setToast({ msg, type: type || 'info' })}
+            />
+          ) : activeTab === 'prestige' ? (
+            <PrestigePanel />
+          ) : activeTab === 'fragments' ? (
+            <FragmentsPanel
+              adminFetch={adminFetch}
+              onToast={(msg, type) => setToast({ msg, type: type || 'info' })}
+            />
+          ) : activeTab === 'security' ? (
+            <SecurityPanel
               adminFetch={adminFetch}
               onToast={(msg, type) => setToast({ msg, type: type || 'info' })}
             />
