@@ -15,6 +15,7 @@ import {
 import {
   getSocket,
   loadGlobalChatHistory,
+  requestOnlineUsers,
   sendGlobalChat as emitGlobalChat,
 } from '../../socket-client';
 import ChatMessageRow from './ChatMessageRow.jsx';
@@ -71,6 +72,9 @@ const GlobalchatPanel = () => {
         await refreshHistory();
 
         handlers.connect = () => {
+          requestOnlineUsers().catch((error) => {
+            console.warn('[chat] Failed to refresh online users:', error);
+          });
           refreshHistory().catch((error) => {
             console.warn('[chat] Failed to load history:', error);
           });
@@ -165,6 +169,10 @@ const GlobalchatPanel = () => {
         socket.on('chat:online', handlers.online);
         socket.on('event:chat_clear', handlers.chatClear);
         socket.on('event:global_message', handlers.globalMessage);
+
+        if (socket.connected) {
+          await requestOnlineUsers();
+        }
       } catch (error) {
         console.warn('[chat] Failed to boot global chat panel:', error);
         if (!cancelled) setLoading(false);

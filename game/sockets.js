@@ -381,6 +381,10 @@ module.exports = function (io, db) {
       }
     });
 
+    socket.on("chat:request_online", () => {
+      socket.emit("chat:online", { users: buildOnlineList() });
+    });
+
     // ── GLOBAL CHAT ──────────────────────────────────────────────────────────
     socket.on("chat:global", async (data, ack) => {
       const p = await db.get(
@@ -632,15 +636,18 @@ module.exports = function (io, db) {
     }));
 };
 
-function broadcastOnlineList(io) {
-  const list = [...onlinePlayers.values()].map((p) => ({
+function buildOnlineList() {
+  return [...onlinePlayers.values()].map((p) => ({
     username: p.chatName || p.username,
     rawUsername: p.username,
     race: p.race,
     isMod: p.isMod,
     chatColor: p.chatColor,
   }));
-  io.to("global").emit("chat:online", { users: list });
+}
+
+function broadcastOnlineList(io) {
+  io.to("global").emit("chat:online", { users: buildOnlineList() });
 }
 
 const { applyKingdomUpdates } = require("../db/schema");
