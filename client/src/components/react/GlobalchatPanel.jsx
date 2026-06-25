@@ -236,9 +236,9 @@ const GlobalchatPanel = () => {
   };
 
   return (
-    <div id="globalchat" className="panel panel-immersive">
-      <div className="chat-container-card chat-layout grid h-full min-h-0 overflow-hidden rounded-2xl border border-white/5 bg-zinc-950/95 shadow-[0_18px_40px_rgba(0,0,0,0.35)] lg:grid-cols-[minmax(0,1fr)_280px]">
-        <div className="chat-messages-area flex min-h-0 flex-col">
+    <div id="globalchat" className="panel panel-immersive flex h-full min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4 pt-2">
+      <div className="chat-layout grid min-h-0 flex-1 overflow-hidden rounded-2xl border border-white/5 bg-zinc-950/95 shadow-[0_18px_40px_rgba(0,0,0,0.35)] max-lg:grid-rows-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_280px] lg:grid-rows-none">
+        <div className="chat-messages-area flex min-h-0 flex-col overflow-hidden">
           <div
             ref={messagesRef}
             className="flex min-h-0 flex-1 flex-col gap-px overflow-x-hidden overflow-y-auto px-4 py-3 break-words"
@@ -282,8 +282,8 @@ const GlobalchatPanel = () => {
           </div>
         </div>
 
-        <div className="chat-online-sidebar flex min-h-0 flex-col border-t border-white/5 bg-zinc-950/90 lg:border-l lg:border-t-0">
-          <div className="flex items-center justify-between border-b border-white/5 bg-zinc-900/80 px-4 py-3">
+        <div className="chat-online-sidebar flex min-h-0 max-lg:max-h-36 max-lg:shrink-0 flex-col overflow-hidden border-t border-white/5 bg-zinc-950/90 lg:max-h-none lg:border-l lg:border-t-0">
+          <div className="flex shrink-0 items-center justify-between border-b border-white/5 bg-zinc-900/80 px-4 py-3">
             <div className="text-[11px] font-bold uppercase tracking-[0.5px] text-text3">
               Online
             </div>
