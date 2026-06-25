@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { repairMojibake } from '../../utils/repairMojibake.js';
 import { toast } from '../../utils/toast.js';
 import { AppEvent, emitAppEvent } from '../../utils/appEvents.js';
@@ -40,6 +40,13 @@ const GlobalchatPanel = () => {
     el.scrollTop = el.scrollHeight;
   }, []);
 
+  const scrollToBottomAfterPaint = useCallback(() => {
+    requestAnimationFrame(() => {
+      scrollToBottom();
+      requestAnimationFrame(scrollToBottom);
+    });
+  }, [scrollToBottom]);
+
   const alertChatBadge = useCallback(() => {
     emitAppEvent(AppEvent.CHAT_BADGE_ALERT);
   }, []);
@@ -48,9 +55,8 @@ const GlobalchatPanel = () => {
     const rows = await loadGlobalChatHistory();
     setMessages(mapHistoryMessages(rows));
     setLoading(false);
-    requestAnimationFrame(scrollToBottom);
     return rows;
-  }, [scrollToBottom]);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -81,7 +87,7 @@ const GlobalchatPanel = () => {
           if (!normalized) return;
 
           setMessages((prev) => upsertChatMessage(prev, normalized));
-          requestAnimationFrame(scrollToBottom);
+          scrollToBottomAfterPaint();
 
           if (!chatVisibleRef.current) {
             alertChatBadge();
@@ -90,7 +96,7 @@ const GlobalchatPanel = () => {
 
         handlers.system = (data) => {
           setMessages((prev) => [...prev, createSystemMessage(data?.message || '')]);
-          requestAnimationFrame(scrollToBottom);
+          scrollToBottomAfterPaint();
         };
 
         handlers.delete = (data) => {
@@ -103,7 +109,7 @@ const GlobalchatPanel = () => {
             ...prev,
             createWhisperMessage(data?.from, data?.message, false),
           ]);
-          requestAnimationFrame(scrollToBottom);
+          scrollToBottomAfterPaint();
           alertChatBadge();
           toast(`PM from ${repairMojibake(data?.from || '')}`, 'success');
         };
@@ -113,7 +119,7 @@ const GlobalchatPanel = () => {
             ...prev,
             createWhisperMessage(data?.to, data?.message, true),
           ]);
-          requestAnimationFrame(scrollToBottom);
+          scrollToBottomAfterPaint();
         };
 
         handlers.kicked = (data) => {
@@ -145,7 +151,7 @@ const GlobalchatPanel = () => {
             ...prev,
             createSystemMessage(data?.message || 'A global event occurred.'),
           ]);
-          requestAnimationFrame(scrollToBottom);
+          scrollToBottomAfterPaint();
         };
 
         socket.on('connect', handlers.connect);
@@ -183,7 +189,7 @@ const GlobalchatPanel = () => {
         if (handlers.globalMessage) socket.off('event:global_message', handlers.globalMessage);
       }
     };
-  }, [alertChatBadge, refreshHistory, scrollToBottom]);
+  }, [alertChatBadge, refreshHistory, scrollToBottomAfterPaint]);
 
   useAppEvent(AppEvent.CHAT_CLEAR, useCallback(() => setMessages([]), []));
 
@@ -199,11 +205,10 @@ const GlobalchatPanel = () => {
     return () => clearInterval(interval);
   }, [chatVisible, refreshHistory]);
 
-  useEffect(() => {
-    if (chatVisible) {
-      requestAnimationFrame(scrollToBottom);
-    }
-  }, [chatVisible, messages.length, scrollToBottom]);
+  useLayoutEffect(() => {
+    if (!chatVisible || loading) return;
+    scrollToBottomAfterPaint();
+  }, [chatVisible, loading, scrollToBottomAfterPaint]);
 
   const sendGlobalChat = async () => {
     const payload = inputValue.trim();
@@ -230,9 +235,9 @@ const GlobalchatPanel = () => {
   };
 
   return (
-    <div id="globalchat" className="panel panel-immersive">
-      <div className="chat-container-card chat-layout grid h-full min-h-0 overflow-hidden rounded-2xl border border-white/5 bg-zinc-950/95 shadow-[0_18px_40px_rgba(0,0,0,0.35)] lg:grid-cols-[minmax(0,1fr)_280px]">
-        <div className="chat-messages-area flex min-h-0 flex-col">
+    <div id="globalchat" className="panel panel-immersive flex h-full min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4 pt-2">
+      <div className="chat-layout grid min-h-0 flex-1 overflow-hidden rounded-2xl border border-white/5 bg-zinc-950/95 shadow-[0_18px_40px_rgba(0,0,0,0.35)] max-lg:grid-rows-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_280px] lg:grid-rows-none">
+        <div className="chat-messages-area flex min-h-0 flex-col overflow-hidden">
           <div
             ref={messagesRef}
             className="flex min-h-0 flex-1 flex-col gap-px overflow-x-hidden overflow-y-auto px-4 py-3 break-words"
@@ -276,8 +281,8 @@ const GlobalchatPanel = () => {
           </div>
         </div>
 
-        <div className="chat-online-sidebar flex min-h-0 flex-col border-t border-white/5 bg-zinc-950/90 lg:border-l lg:border-t-0">
-          <div className="flex items-center justify-between border-b border-white/5 bg-zinc-900/80 px-4 py-3">
+        <div className="chat-online-sidebar flex min-h-0 max-lg:max-h-36 max-lg:shrink-0 flex-col overflow-hidden border-t border-white/5 bg-zinc-950/90 lg:max-h-none lg:border-l lg:border-t-0">
+          <div className="flex shrink-0 items-center justify-between border-b border-white/5 bg-zinc-900/80 px-4 py-3">
             <div className="text-[11px] font-bold uppercase tracking-[0.5px] text-text3">
               Online
             </div>

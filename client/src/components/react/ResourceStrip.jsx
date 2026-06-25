@@ -169,7 +169,7 @@ function MetricBox({ metricKey, className, title, children }) {
   return (
     <button
       type="button"
-      className={clsx('metric relative metric-clickable text-left', className)}
+      className={clsx('metric relative metric-clickable', className)}
       onClick={() => target && switchTab(target)}
       title={title || (target ? `Open ${target}` : undefined)}
       disabled={!target}
