@@ -257,7 +257,7 @@
     @apply px-6 pb-6;
   }
 
-  /* ── Kingdom Header (main body kd-top, mirrors race lore header) ── */
+  /* ── Kingdom Header (main body kd-top) ── */
   .kd-top {
     @apply relative;
   }
@@ -268,43 +268,13 @@
     background: linear-gradient(90deg, transparent 0%, rgba(240, 98, 2, 0.35) 50%, transparent 100%);
   }
 
-  .kingdom-lore-header {
-    @apply flex items-start gap-5;
-  }
-
-  .kingdom-lore-portrait {
-    @apply flex shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-[#15171e] shadow-[0_6px_16px_rgba(0,0,0,0.5)];
-    width: 96px;
-    height: 96px;
-  }
-
-  .kingdom-lore-portrait img {
-    @apply block h-full w-full object-cover;
-  }
-
-  .kingdom-lore-portrait--fallback {
-    @apply bg-bg3 text-5xl;
-  }
-
-  .kingdom-lore-title-group {
-    @apply min-w-0 flex-1 pt-1;
-  }
-
-  .kingdom-lore-title {
-    @apply mb-1.5 font-cinzel text-[22px] font-bold leading-tight;
-    letter-spacing: -0.5px;
-  }
-
-  .kingdom-lore-subtitle {
-    @apply mb-1 text-[13px] font-semibold text-text2;
-  }
-
-  .kingdom-lore-meta {
-    @apply text-xs leading-snug text-text3;
-  }
-
   .kingdom-header {
     @apply mb-0;
+  }
+
+  .kingdom-header h1,
+  #kingdom-name {
+    @apply text-xl;
   }
 
   /* ── Shell column frame (static border; content scrolls inside) ── */
