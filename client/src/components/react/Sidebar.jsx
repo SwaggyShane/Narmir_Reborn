@@ -6,10 +6,10 @@ import { switchTab } from '../../utils/switchTab.js';
 import { useNavLayout } from '../../hooks/useNavLayout.js';
 import ShellColumnFrame from './ShellColumnFrame.jsx';
 
-const SECTION_CLASS = 'px-3 pb-0.5 pt-3 text-[10px] font-black uppercase tracking-[0.3em] text-ember-400/80';
+const SECTION_CLASS = 'px-3.5 pb-0.5 pt-3 text-[11.5px] font-black uppercase tracking-[0.3em] text-ember-400/80';
 
 const NAV_BUTTON_CLASS = {
-  base: 'relative flex w-full items-center gap-2 rounded-xl border px-3 py-2 text-xs transition shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]',
+  base: 'relative flex w-full items-center gap-[9px] rounded-xl border px-3.5 py-[9px] text-[10.5px] transition shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]',
   active: 'border-ember-500/50 bg-ember-500/10 text-text shadow-ember',
   idle: 'border-transparent bg-void-900/55 text-text3 hover:border-ember-500/30 hover:bg-void-800/85 hover:text-text',
 };
@@ -25,7 +25,7 @@ function NavButton({ panel, icon, label, iconClass = 'text-text3' }) {
       aria-current={active ? 'page' : undefined}
       className={clsx(NAV_BUTTON_CLASS.base, active ? NAV_BUTTON_CLASS.active : NAV_BUTTON_CLASS.idle)}
     >
-      <span className={iconClass}>{icon}</span>
+      <span className={clsx('text-[14px] leading-none', iconClass)}>{icon}</span>
       <span>{label}</span>
     </button>
   );

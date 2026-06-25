@@ -95,7 +95,7 @@ const GameShell = () => {
           'h-full w-full',
           'max-lg:flex max-lg:min-h-0 max-lg:flex-col max-lg:pt-14',
           'lg:grid lg:min-h-0 lg:overflow-hidden',
-          'lg:grid-cols-[220px_175px_minmax(0,1fr)]',
+          'lg:grid-cols-[250px_175px_minmax(0,1fr)]',
           'lg:grid-rows-[56px_minmax(0,1fr)_32px]',
           'lg:gap-x-0.5 lg:gap-y-0',
         ].join(' ')}

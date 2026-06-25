@@ -29,7 +29,7 @@ const ShellFooter = () => {
           <button
             type="button"
             onClick={logout}
-            className="inline-flex items-center gap-1.5 text-red transition hover:text-red/80"
+            className="shell-logout-btn"
           >
             <span aria-hidden="true">&#10005;</span>
             <span>Logout</span>

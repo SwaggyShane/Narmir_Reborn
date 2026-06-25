@@ -1,5 +1,4 @@
 import React from 'react';
-import clsx from 'clsx';
 import { useGameState } from '../../hooks/useGameState';
 import { useGameActions } from '../../hooks/useGameActions';
 import { showLoginModal, logout } from './AuthModal.jsx';
@@ -44,11 +43,14 @@ const Topbar = () => {
             </div>
           </div>
           <button
-            className={clsx('turn-btn shrink-0 px-3.5 py-1.5 text-sm leading-none transition-opacity', loading.takeTurn ? 'opacity-60' : 'opacity-100')}
+            type="button"
+            className="turn-btn"
             onClick={takeTurn}
             disabled={loading.takeTurn}
           >
-            Take Turn
+            <span className="turn-btn__label">
+              {loading.takeTurn ? 'Processing...' : 'Take Turn'}
+            </span>
           </button>
           {!state?.username && (
             <button
