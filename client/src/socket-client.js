@@ -21,6 +21,11 @@ export async function getSocket() {
   return socketPromise;
 }
 
+export async function requestOnlineUsers() {
+  const socketInstance = await getSocket();
+  socketInstance.emit('chat:request_online');
+}
+
 export async function loadGlobalChatHistory(limit = 100) {
   const res = await apiCall(`/api/kingdom/chat/global?limit=${encodeURIComponent(limit)}`);
   if (res && !res.error && Array.isArray(res.messages)) {
