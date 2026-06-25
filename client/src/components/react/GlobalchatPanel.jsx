@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { repairMojibake } from '../../utils/repairMojibake.js';
 import { toast } from '../../utils/toast.js';
 import { AppEvent, emitAppEvent } from '../../utils/appEvents.js';
@@ -40,6 +40,13 @@ const GlobalchatPanel = () => {
     el.scrollTop = el.scrollHeight;
   }, []);
 
+  const scrollToBottomAfterPaint = useCallback(() => {
+    requestAnimationFrame(() => {
+      scrollToBottom();
+      requestAnimationFrame(scrollToBottom);
+    });
+  }, [scrollToBottom]);
+
   const alertChatBadge = useCallback(() => {
     emitAppEvent(AppEvent.CHAT_BADGE_ALERT);
   }, []);
@@ -48,9 +55,9 @@ const GlobalchatPanel = () => {
     const rows = await loadGlobalChatHistory();
     setMessages(mapHistoryMessages(rows));
     setLoading(false);
-    requestAnimationFrame(scrollToBottom);
+    scrollToBottomAfterPaint();
     return rows;
-  }, [scrollToBottom]);
+  }, [scrollToBottomAfterPaint]);
 
   useEffect(() => {
     let cancelled = false;
@@ -81,7 +88,7 @@ const GlobalchatPanel = () => {
           if (!normalized) return;
 
           setMessages((prev) => upsertChatMessage(prev, normalized));
-          requestAnimationFrame(scrollToBottom);
+          scrollToBottomAfterPaint();
 
           if (!chatVisibleRef.current) {
             alertChatBadge();
@@ -90,7 +97,7 @@ const GlobalchatPanel = () => {
 
         handlers.system = (data) => {
           setMessages((prev) => [...prev, createSystemMessage(data?.message || '')]);
-          requestAnimationFrame(scrollToBottom);
+          scrollToBottomAfterPaint();
         };
 
         handlers.delete = (data) => {
@@ -103,7 +110,7 @@ const GlobalchatPanel = () => {
             ...prev,
             createWhisperMessage(data?.from, data?.message, false),
           ]);
-          requestAnimationFrame(scrollToBottom);
+          scrollToBottomAfterPaint();
           alertChatBadge();
           toast(`PM from ${repairMojibake(data?.from || '')}`, 'success');
         };
@@ -113,7 +120,7 @@ const GlobalchatPanel = () => {
             ...prev,
             createWhisperMessage(data?.to, data?.message, true),
           ]);
-          requestAnimationFrame(scrollToBottom);
+          scrollToBottomAfterPaint();
         };
 
         handlers.kicked = (data) => {
@@ -145,7 +152,7 @@ const GlobalchatPanel = () => {
             ...prev,
             createSystemMessage(data?.message || 'A global event occurred.'),
           ]);
-          requestAnimationFrame(scrollToBottom);
+          scrollToBottomAfterPaint();
         };
 
         socket.on('connect', handlers.connect);
@@ -183,7 +190,7 @@ const GlobalchatPanel = () => {
         if (handlers.globalMessage) socket.off('event:global_message', handlers.globalMessage);
       }
     };
-  }, [alertChatBadge, refreshHistory, scrollToBottom]);
+  }, [alertChatBadge, refreshHistory, scrollToBottomAfterPaint]);
 
   useAppEvent(AppEvent.CHAT_CLEAR, useCallback(() => setMessages([]), []));
 
@@ -199,11 +206,10 @@ const GlobalchatPanel = () => {
     return () => clearInterval(interval);
   }, [chatVisible, refreshHistory]);
 
-  useEffect(() => {
-    if (chatVisible) {
-      requestAnimationFrame(scrollToBottom);
-    }
-  }, [chatVisible, messages.length, scrollToBottom]);
+  useLayoutEffect(() => {
+    if (!chatVisible || loading) return;
+    scrollToBottomAfterPaint();
+  }, [chatVisible, loading, messages, scrollToBottomAfterPaint]);
 
   const sendGlobalChat = async () => {
     const payload = inputValue.trim();

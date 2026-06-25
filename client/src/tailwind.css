@@ -223,7 +223,7 @@
   }
 
   .metric .lbl {
-    @apply text-[10px] md:text-[14px] text-text3 uppercase tracking-wider font-black m-0 leading-none;
+    @apply w-full text-center text-[10px] md:text-[14px] text-text3 uppercase tracking-wider font-black m-0 leading-none;
   }
 
   .metric .val {
@@ -398,7 +398,7 @@
   }
 
   .metric-clickable {
-    @apply cursor-pointer border-none bg-transparent p-0 text-left transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ember-500/50;
+    @apply w-full cursor-pointer border-none bg-transparent text-inherit transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ember-500/50;
   }
 
   .metric-clickable:disabled {
