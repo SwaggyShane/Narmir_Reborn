@@ -118,7 +118,7 @@
 @layer components {
   /* ── Cards ── */
   .card {
-    @apply relative bg-bg2 border border-white/5 rounded-2xl p-4 mb-3 transition-all overflow-hidden flex-shrink-0 shadow-[0_16px_32px_rgba(0,0,0,0.28)];
+    @apply relative bg-bg2 border border-white/5 rounded-2xl p-3 mb-2 transition-all overflow-hidden flex-shrink-0 shadow-[0_16px_32px_rgba(0,0,0,0.28)] sm:p-4 sm:mb-3;
   }
 
   .card::before {
@@ -128,7 +128,7 @@
   }
 
   .card-title {
-    @apply text-[15px] font-black text-gold font-cinzel mb-5 uppercase tracking-wider;
+    @apply text-sm font-black text-gold font-cinzel mb-3 uppercase tracking-wider sm:text-[15px] sm:mb-5;
     text-shadow: 0 0 8px rgba(var(--theme-rgb), 0.4);
   }
 
@@ -522,11 +522,16 @@
   }
 
   .mobile-turn-fab {
-    @apply fixed z-[3050] flex items-center gap-2 rounded-full border-2 border-gold px-4 py-2 font-cinzel text-sm font-black text-black transition active:scale-95 lg:hidden;
+    @apply fixed z-[3050] flex items-center gap-2 rounded-full border-2 border-gold px-3 py-2 font-cinzel text-xs font-black text-black transition active:scale-95 sm:px-4 sm:text-sm lg:hidden;
     box-shadow: 0 0 18px rgba(var(--glow-rgb), 0.42);
-    right: max(1rem, env(safe-area-inset-right));
-    bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+    right: max(0.75rem, env(safe-area-inset-right));
+    bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
     background: linear-gradient(135deg, #f0b202 0%, #ffd95a 45%, #f5c842 55%, #e5a800 100%);
+  }
+
+  .mobile-turn-fab:disabled {
+    @apply cursor-not-allowed opacity-55;
+    animation: none;
   }
 
   .mobile-turn-fab__count {
@@ -644,7 +649,22 @@
   }
 
   .panel {
-    @apply flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-y-auto bg-bg;
+    @apply flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-y-auto bg-bg px-3 py-2;
+  }
+
+  .race-status-portrait {
+    height: 200px !important;
+  }
+
+  @media (min-width: 640px) {
+    .race-status-portrait {
+      height: 250px !important;
+    }
+  }
+
+  .mobile-metrics-scroll {
+    @apply relative -mx-1;
+    mask-image: linear-gradient(90deg, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%);
   }
 
   .panel-immersive {

@@ -175,7 +175,7 @@ const StatusPanel = () => {
       <div className="mb-4">
         <div
           id="race-tag-display"
-          className="race-tag-block shell-lore-box flex w-full cursor-pointer flex-col items-center gap-4 sm:flex-row sm:items-start"
+          className="race-tag-block shell-lore-box flex w-full cursor-pointer flex-col items-center gap-3 p-3 sm:flex-row sm:items-start sm:gap-4 sm:p-4"
           onClick={() => { openRaceLore(raceKey); }}
           title="Click for race lore"
         >
@@ -185,10 +185,11 @@ const StatusPanel = () => {
               alt={cleanText(raceInfo.label)}
               height={250}
               aspectRatio="4 / 5"
+              className="race-status-portrait mx-auto w-full max-w-[200px] sm:mx-0 sm:max-w-none"
             />
           ) : null}
-          <div className="flex flex-col gap-1.5 flex-1">
-            <div className="font-cinzel text-[18px] font-bold text-gold uppercase tracking-[1px]">
+          <div className="flex w-full min-w-0 flex-col gap-1.5 text-center sm:flex-1 sm:text-left">
+            <div className="font-cinzel text-base font-bold text-gold uppercase tracking-[1px] sm:text-[18px]">
               {cleanText(raceInfo.label)}
             </div>
             <button
@@ -202,7 +203,7 @@ const StatusPanel = () => {
               {cleanText(raceInfo.bonus)}
             </button>
           </div>
-          <div className="flex-shrink-0 text-ember-500/40 text-lg">›</div>
+          <div className="hidden flex-shrink-0 text-ember-500/40 text-lg sm:block">›</div>
         </div>
       </div>
 
@@ -241,7 +242,7 @@ const StatusPanel = () => {
         </div>
       </div>
 
-      <div className="status-grid w-full flex-1 grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))] gap-5 [grid-auto-rows:minmax(auto,1fr)] [align-content:space-around]" id="status-grid">
+      <div className="status-grid w-full flex-1 grid grid-cols-1 gap-3 sm:gap-5 lg:[grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))] lg:[grid-auto-rows:minmax(auto,1fr)] lg:[align-content:space-around]" id="status-grid">
         <div className={STATUS_CARD_CLASS}>
           <div className="card-title">
             Military &amp; support
@@ -252,6 +253,8 @@ const StatusPanel = () => {
               🏰 Citadel
             </span>
           </div>
+          <div className="status-unit-table -mx-1 overflow-x-auto px-1">
+          <div className="min-w-[280px]">
           <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 py-1 px-0 border-b border-strong">
             <span className="text-[10px] text-text3 uppercase tracking-[0.5px]">Unit</span>
             <span className="text-[10px] text-text3 uppercase tracking-[0.5px] text-right">Count</span>
@@ -355,6 +358,8 @@ const StatusPanel = () => {
             <span className="text-[13px] font-semibold text-right text-text" id="s-armor">{(state?.armor_stockpile ?? 0).toLocaleString()}</span>
             <span />
             <span className="badge badge-gold text-center text-[9px]">Stock</span>
+          </div>
+          </div>
           </div>
         </div>
 

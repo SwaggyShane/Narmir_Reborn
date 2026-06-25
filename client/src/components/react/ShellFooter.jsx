@@ -19,7 +19,7 @@ const ShellFooter = () => {
       className={[
         'flex h-8 shrink-0 items-center justify-between gap-3 border-t border-white/5',
         'bg-bg px-4 text-[11px] leading-none text-text2',
-        'max-lg:fixed max-lg:inset-x-0 max-lg:bottom-[calc(72px+env(safe-area-inset-bottom,0px))] max-lg:z-[2900]',
+        'max-lg:hidden',
         'lg:col-span-3 lg:col-start-1 lg:row-start-3',
       ].join(' ')}
     >

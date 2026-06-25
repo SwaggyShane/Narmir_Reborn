@@ -45,15 +45,15 @@ function NavChip({ label, icon, color, active, onClick, showBadge }) {
       onClick={onClick}
       aria-pressed={active}
       className={[
-        'flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 rounded-2xl border px-1 py-2 text-[11px] font-semibold transition',
+        'flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 rounded-xl border px-0.5 py-1.5 text-[10px] font-semibold transition sm:min-h-[56px] sm:gap-1 sm:rounded-2xl sm:px-1 sm:py-2 sm:text-[11px]',
         'active:scale-95',
         active
           ? 'bottom-nav-chip is-active text-text'
           : 'bottom-nav-chip text-text3 hover:text-text',
       ].join(' ')}
     >
-      <span className={`text-lg leading-none ${color || 'text-slate-200'}`}>{icon}</span>
-      <span className="flex items-center gap-1 whitespace-nowrap">
+      <span className={`text-base leading-none sm:text-lg ${color || 'text-slate-200'}`}>{icon}</span>
+      <span className="flex items-center gap-1 whitespace-nowrap max-[380px]:sr-only sm:not-sr-only">
         <span>{label}</span>
         {showBadge ? <span className="nav-badge static !relative !top-0 !right-0" aria-label="Unread" /> : null}
       </span>
@@ -108,7 +108,7 @@ const BottomNav = () => {
     <>
       <nav
         className={[
-          'fixed inset-x-0 bottom-0 z-[3000] grid grid-cols-6 gap-2 border-t border-ember-900/40 bg-void-950/95 px-2 py-2 pb-[env(safe-area-inset-bottom)] shadow-panel backdrop-blur-xl',
+          'fixed inset-x-0 bottom-0 z-[3000] grid grid-cols-6 gap-1 border-t border-ember-900/40 bg-void-950/95 px-1.5 py-1.5 pb-[env(safe-area-inset-bottom)] shadow-panel backdrop-blur-xl sm:gap-2 sm:px-2 sm:py-2',
           layout === 'responsive' ? 'lg:hidden' : '',
         ].join(' ')}
       >
@@ -127,7 +127,7 @@ const BottomNav = () => {
         <button
           type="button"
           className={[
-            'flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl border px-1 py-2 text-[11px] font-semibold transition',
+            'flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-xl border px-0.5 py-1.5 text-[10px] font-semibold transition sm:min-h-[56px] sm:gap-1 sm:rounded-2xl sm:px-1 sm:py-2 sm:text-[11px]',
             'active:scale-95',
             drawerActive
               ? 'bottom-nav-chip is-active text-text'
@@ -137,8 +137,8 @@ const BottomNav = () => {
           aria-expanded={drawerOpen}
           aria-controls="bottom-nav-drawer"
         >
-          <span className="text-lg leading-none text-amber-300">⋯</span>
-          <span>More</span>
+          <span className="text-base leading-none text-amber-300 sm:text-lg">⋯</span>
+          <span className="max-[380px]:sr-only sm:not-sr-only">More</span>
         </button>
       </nav>
 

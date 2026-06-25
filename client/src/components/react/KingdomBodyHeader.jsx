@@ -76,16 +76,16 @@ const KingdomBodyHeader = () => {
     <>
       <div
         id="kd-top"
-        className="kd-top shell-lore-box relative z-10 mx-4 mb-3 mt-4 shrink-0"
+        className="kd-top shell-lore-box relative z-10 mx-3 mb-2 mt-2 shrink-0 sm:mx-4 sm:mb-3 sm:mt-3"
       >
         <div
-          className="kingdom-header flex flex-wrap items-center justify-between"
+          className="kingdom-header flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between"
           style={{ gap: GAP }}
         >
-          <div className="flex min-w-0 flex-1 flex-wrap items-center" style={{ gap: GAP }}>
+          <div className="flex min-w-0 w-full flex-wrap items-center sm:flex-1" style={{ gap: GAP }}>
             <h1
               id="kingdom-name"
-              className="min-w-0 font-cinzel text-lg font-bold leading-none md:text-xl"
+              className="min-w-0 font-cinzel text-base font-bold leading-snug sm:text-lg md:text-xl"
               style={{ color: 'var(--text)' }}
             >
               <span style={{ color: 'var(--text)' }}>{playerName}</span>
@@ -126,7 +126,7 @@ const KingdomBodyHeader = () => {
             )}
           </div>
 
-          <div className="flex shrink-0 flex-wrap items-center justify-end" style={{ gap: GAP }}>
+          <div className="flex w-full shrink-0 flex-wrap items-center justify-start sm:w-auto sm:justify-end" style={{ gap: GAP }}>
             <Stat label="Turn" value={turn} />
             <Stat label="Score" value={score.toLocaleString()} valueStyle={{ color: 'var(--gold)' }} />
           </div>
@@ -156,7 +156,7 @@ const KingdomBodyHeader = () => {
             </span>
           </span>
           <XpBar pct={pct} />
-          <span id="xp-label" style={{ fontSize: 10, color: 'var(--text3)', flexShrink: 0 }}>
+          <span id="xp-label" className="hidden xs:inline" style={{ fontSize: 10, color: 'var(--text3)', flexShrink: 0 }}>
             {fmt(xpIntoLevel)}/{fmt(xpNeeded)} XP
           </span>
         </button>

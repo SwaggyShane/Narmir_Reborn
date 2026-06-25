@@ -8,7 +8,7 @@ const MobileTurnFab = () => {
   const { takeTurn, loading } = useGameActions();
   const { layout } = useNavLayout();
   const turns = state?.turns_stored ?? 0;
-  const show = (layout === 'bottom' || layout === 'responsive') && turns > 0;
+  const show = layout === 'bottom' || layout === 'responsive';
 
   if (!show) return null;
 
@@ -17,7 +17,7 @@ const MobileTurnFab = () => {
       type="button"
       className="mobile-turn-fab lg:hidden"
       onClick={() => void takeTurn()}
-      disabled={loading.takeTurn}
+      disabled={loading.takeTurn || turns < 1}
       aria-label={`Take turn, ${turns} remaining`}
     >
       <span className="mobile-turn-fab__label">
