@@ -112,7 +112,7 @@ const GameShell = () => {
       <div
         className={clsx(
           'h-full w-full',
-          'max-lg:flex max-lg:min-h-0 max-lg:flex-col max-lg:pt-14',
+          'max-lg:flex max-lg:min-h-0 max-lg:flex-col max-lg:pt-[calc(3rem+env(safe-area-inset-top,0px))] sm:max-lg:pt-[calc(3.5rem+env(safe-area-inset-top,0px))]',
           'lg:grid lg:min-h-0 lg:overflow-hidden',
           'lg:grid-rows-[56px_minmax(0,1fr)_32px]',
           'lg:gap-x-0.5 lg:gap-y-0',
@@ -131,10 +131,10 @@ const GameShell = () => {
             aria-label="Kingdom resources"
             className={clsx(
               'flex min-h-0 w-full flex-col bg-bg',
-              'max-lg:shrink-0 max-lg:px-3 max-lg:py-2',
+              'max-lg:shrink-0 max-lg:border-b max-lg:border-white/5 max-lg:px-3 max-lg:py-2',
               'lg:col-start-2 lg:row-start-2 lg:gap-2 lg:px-2 lg:py-2.5',
               '[&_.metrics]:flex [&_.metrics]:w-full',
-              'max-lg:[&_.metrics]:mb-0 max-lg:[&_.metrics]:gap-1.5 max-lg:[&_.resource-metrics]:flex-nowrap max-lg:[&_.resource-metrics]:overflow-x-auto max-lg:[&_.resource-metrics]:snap-x max-lg:[&_.resource-metrics]:pb-1 max-lg:[&_.metric]:min-w-[92px] max-lg:[&_.metric]:snap-start max-lg:[&_.metric]:shrink-0',
+              'max-lg:[&_.metrics]:mobile-metrics-scroll max-lg:[&_.metrics]:mb-0 max-lg:[&_.metrics]:gap-1.5 max-lg:[&_.resource-metrics]:flex-nowrap max-lg:[&_.resource-metrics]:overflow-x-auto max-lg:[&_.resource-metrics]:snap-x max-lg:[&_.resource-metrics]:pb-1 max-lg:[&_.metric]:min-w-[100px] max-lg:[&_.metric]:snap-start max-lg:[&_.metric]:shrink-0',
               'lg:[&_.metric_.sub]:justify-end',
             )}
           >
@@ -153,7 +153,7 @@ const GameShell = () => {
           as="main"
           className={clsx(
             'flex min-h-0 w-full min-w-0 flex-1 flex-col bg-bg',
-            'max-lg:pb-[calc(104px+env(safe-area-inset-bottom,0px))]',
+            'max-lg:pb-[calc(4.75rem+env(safe-area-inset-bottom,0px))]',
             'lg:row-start-2',
             isChatPanel ? 'lg:col-start-2' : 'lg:col-start-3',
             isChatPanel && 'overflow-hidden',
