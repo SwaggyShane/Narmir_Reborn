@@ -21,7 +21,7 @@ export default function SecurityPanel({ adminFetch, onToast }) {
     setResult(null);
     try {
       const data = await adminFetch('/api/admin/security-audit', { method: 'POST', body: {} });
-      if (data?.error) { onToast('Audit failed: ' + data.error, 'error'); return; }
+      if (!data || data.error) { onToast('Audit failed: ' + (data?.error || 'No data returned'), 'error'); return; }
       setResult(data);
       const s = data.summary || {};
       onToast(`Audit complete — ${s.critical || 0} critical, ${s.high || 0} high, ${s.medium || 0} medium`, data.success ? 'success' : 'error');

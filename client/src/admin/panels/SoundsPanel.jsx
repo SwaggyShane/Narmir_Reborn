@@ -49,8 +49,8 @@ export default function SoundsPanel({ adminFetch, onToast }) {
         body: form,
       });
       const data = await resp.json();
-      if (data?.error) { onToast('Upload failed: ' + data.error, 'error'); return; }
-      onToast('Uploaded: ' + data.filename, 'success');
+      if (!data || data.error) { onToast('Upload failed: ' + (data?.error || 'No response data'), 'error'); return; }
+      onToast('Uploaded: ' + (data.filename || 'file'), 'success');
       if (fileRef.current) fileRef.current.value = '';
       loadSounds();
     } catch (err) { onToast('Upload failed: ' + (err.message || 'Unknown'), 'error'); }
@@ -125,7 +125,7 @@ export default function SoundsPanel({ adminFetch, onToast }) {
                 <tr key={s}>
                   <td style={TD}>{s}</td>
                   <td style={TD}>
-                    <audio controls style={{ height: 28, maxWidth: 220 }} src={`/sounds/${s}`} preload="none" />
+                    <audio controls style={{ height: 28, maxWidth: 220 }} src={`/sounds/${encodeURIComponent(s)}`} preload="none" />
                   </td>
                   <td style={TD}>
                     <button onClick={() => handleDelete(s)} style={{ ...BTN, padding: '3px 8px', fontSize: 11, color: 'var(--red, #e55)', borderColor: 'var(--red, #e55)' }}>Del</button>

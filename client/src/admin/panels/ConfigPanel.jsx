@@ -57,6 +57,10 @@ function ConfigKeyRow({ configKey, label, baseValue, overrideValue, onSave, savi
   );
   const [expanded, setExpanded] = useState(false);
 
+  useEffect(() => {
+    setDraft(overrideValue !== undefined ? JSON.stringify(overrideValue, null, 2) : '');
+  }, [overrideValue]);
+
   const parsed = draft.trim() ? tryParseJson(draft) : { ok: true, value: undefined };
   const isDirty = draft.trim() !== (overrideValue !== undefined ? JSON.stringify(overrideValue, null, 2) : '');
 
@@ -113,7 +117,7 @@ export default function ConfigPanel({ adminFetch, onToast }) {
     setLoading(true);
     try {
       const data = await adminFetch('/api/admin/config');
-      if (data?.error) { onToast('Config load error: ' + data.error, 'error'); return; }
+      if (!data || data.error) { onToast('Config load error: ' + (data?.error || 'No data returned'), 'error'); return; }
       setConfig(data.config || {});
       setOverrides(data.overrides || {});
     } catch (err) { onToast('Failed to load config: ' + (err.message || 'Unknown'), 'error'); }
@@ -132,7 +136,7 @@ export default function ConfigPanel({ adminFetch, onToast }) {
         return;
       }
       const data = await adminFetch('/api/admin/config', { method: 'POST', body: { overrides: overridePayload } });
-      if (data?.error) { onToast('Save failed: ' + data.error, 'error'); return; }
+      if (!data || data.error) { onToast('Save failed: ' + (data?.error || 'No data returned'), 'error'); return; }
       onToast(`Override saved for ${key}`, 'success');
       setOverrides(data.existing || {});
     } catch (err) { onToast('Save failed: ' + (err.message || 'Unknown'), 'error'); }
