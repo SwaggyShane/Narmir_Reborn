@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { heroPortraitUrl } from '../../utils/heroPortraits.js';
 
 const FRAME_STYLE = {
@@ -25,6 +25,10 @@ const IMG_STYLE = {
 export default function HeroLorePortrait({ heroKey, alt = '' }) {
   const [failed, setFailed] = useState(false);
   const src = heroPortraitUrl(heroKey);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [heroKey]);
 
   if (!src || failed) return null;
 

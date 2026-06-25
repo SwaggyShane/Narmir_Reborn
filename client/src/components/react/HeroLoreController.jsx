@@ -39,9 +39,10 @@ export default function HeroLoreController() {
   const openByName = useCallback(async (heroName) => {
     if (!heroName) return;
     const classes = await ensureHeroClasses();
-    const found = Object.entries(classes || {}).find(([, c]) => c?.name === heroName);
+    const target = repair(heroName);
+    const found = Object.entries(classes || {}).find(([, c]) => repair(c?.name) === target);
     if (found) setHeroLoreKey(found[0]);
-  }, [ensureHeroClasses]);
+  }, [ensureHeroClasses, repair]);
 
   useEffect(() => registerOpenHeroLore(openByKey), [openByKey]);
   useEffect(() => registerShowHeroLore(openByName), [openByName]);
