@@ -1,0 +1,152 @@
+export const TOWER_UPGRADES = {
+  arcane_focus: {
+    name: 'Arcane Focus',
+    cost: 5000,
+    costWood: 0,
+    costStone: 0,
+    costIron: 10,
+    desc: '+25% mana production per turn',
+    requires: null,
+  },
+  ley_line_tap: {
+    name: 'Ley Line Tap',
+    cost: 20000,
+    costWood: 0,
+    costStone: 0,
+    costIron: 40,
+    desc: 'Towers passively generate scroll energy',
+    requires: 'arcane_focus',
+  },
+  sanctum_of_power: {
+    name: 'Sanctum of Power',
+    cost: 75000,
+    costWood: 0,
+    costStone: 60,
+    costIron: 100,
+    desc: 'All spells twice as effective',
+    requires: 'ley_line_tap',
+  },
+};
+
+export const SCHOOL_UPGRADES = {
+  advanced_curriculum: {
+    name: 'Advanced Curriculum',
+    cost: 3000,
+    costWood: 8,
+    costStone: 0,
+    costIron: 0,
+    desc: '+20% research output per turn',
+    requires: null,
+  },
+  repository: {
+    name: 'Repository',
+    cost: 12000,
+    costWood: 25,
+    costStone: 0,
+    costIron: 0,
+    desc: 'Unlocks a second research discipline',
+    requires: 'advanced_curriculum',
+  },
+  grand_academy: {
+    name: 'Grand Academy',
+    cost: 40000,
+    costWood: 70,
+    costStone: 0,
+    costIron: 40,
+    desc: 'Researchers gain XP 50% faster',
+    requires: 'repository',
+  },
+};
+
+export const SHRINE_UPGRADES = {
+  divine_favor: {
+    name: 'Divine Favor',
+    cost: 5000,
+    costWood: 0,
+    costStone: 12,
+    costIron: 0,
+    desc: 'Clerics provide +20% bonus to kingdom happiness.',
+    requires: null,
+  },
+  healing_aura: {
+    name: 'Healing Aura',
+    cost: 20000,
+    costWood: 0,
+    costStone: 40,
+    costIron: 0,
+    desc: 'Troop casualties in defense are reduced by 10%.',
+    requires: 'divine_favor',
+  },
+  sanctuary: {
+    name: 'Sanctuary',
+    cost: 50000,
+    costWood: 0,
+    costStone: 70,
+    costIron: 40,
+    desc: 'Allows clerics to heal a larger portion of casualties after battle.',
+    requires: 'healing_aura',
+  },
+};
+
+export const LIBRARY_UPGRADES = {
+  surveyors_eyrie: {
+    name: "The Surveyor's Eyrie",
+    cost: 25000,
+    costWood: 0,
+    costStone: 15,
+    costIron: 0,
+    desc: 'Surveyors have a 20% chance of finding a location',
+    requires: null,
+  },
+  mason_sigil: {
+    name: "The Master Mason's Sigil",
+    cost: 150000,
+    costWood: 0,
+    costStone: 80,
+    costIron: 50,
+    desc: 'Buildings constructed with Certified plans are more resistant to attacks',
+    requires: 'surveyors_eyrie',
+  },
+  specimen_vault: {
+    name: 'The Specimen Vault',
+    cost: 50000,
+    costWood: 0,
+    costStone: 0,
+    costIron: 60,
+    desc: 'Study World Fragments to create Hybrid Blueprints',
+    requires: 'mason_sigil',
+  },
+};
+
+export const BANK_UPGRADES = {
+  ledger_ancients: {
+    name: 'Ledger of the Ancients',
+    cost: 25000,
+    costWood: 0,
+    costStone: 0,
+    costIron: 20,
+    desc: 'Grants ability to withdraw funds early from any term deposit (forfeits interest).',
+    requires: null,
+    reqVaults: 5,
+  },
+  trade_guild: {
+    name: 'Trade Guild Charter',
+    cost: 100000,
+    costWood: 40,
+    costStone: 0,
+    costIron: 60,
+    desc: 'Increases interest earned on all term deposits by an absolute +3%.',
+    requires: 'ledger_ancients',
+    reqVaults: 10,
+  },
+  iron_treasury: {
+    name: 'The Iron Treasury',
+    cost: 1500000,
+    costWood: 80,
+    costStone: 100,
+    costIron: 150,
+    desc: 'Unlocks 300-turn deposit yielding 60%. Protects 25% of liquid gold from thieves.',
+    requires: 'trade_guild',
+    reqVaults: 25,
+  },
+};

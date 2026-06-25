@@ -15,6 +15,8 @@ import {
   MARKET_UPGRADES,
   TAVERN_UPGRADES,
 } from '../../utils/economyUpgrades.js';
+import { BANK_UPGRADES } from '../../utils/studiesUpgrades.js';
+import { parseOwnedUpgrades } from '../../utils/upgradeUtils.js';
 
 const MERC_COST = { rabble: 50, sellsword: 125, veteran: 250, elite: 500 };
 const MERC_TURNS = { rabble: 10, sellsword: 25, veteran: 35, elite: 50 };
@@ -57,6 +59,11 @@ const EconomyPanel = () => {
   }, [mercTier, mercCount, mercUnit]);
 
   const tradeLocked = !econData?.market_upgrades?.trading_post;
+
+  const syncUpgradeOwned = useCallback((category, nextOwned) => {
+    const key = `${category}_upgrades`;
+    setEconData((prev) => (prev ? { ...prev, [key]: nextOwned } : prev));
+  }, []);
 
   const loadEconData = useCallback(async () => {
     const data = await apiCall('/api/kingdom/economy/overview');
@@ -357,7 +364,13 @@ const EconomyPanel = () => {
             <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '12px' }}>
               Instant gold purchase — applies to all farms.
             </div>
-            <UpgradesList category="farm" defs={FARM_UPGRADES} owned={econData?.farm_upgrades || {}} state={state || {}} />
+            <UpgradesList
+              category="farm"
+              defs={FARM_UPGRADES}
+              owned={econData?.farm_upgrades || {}}
+              state={state || {}}
+              onPurchased={(_, nextOwned) => syncUpgradeOwned('farm', nextOwned)}
+            />
           </div>
         </div>
         <div className="card">
@@ -389,7 +402,13 @@ const EconomyPanel = () => {
             <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '12px' }}>
               Enhances granaries to store more food and reduce rot.
             </div>
-            <UpgradesList category="granary" defs={GRANARY_UPGRADES} owned={econData?.granary_upgrades || {}} state={state || {}} />
+            <UpgradesList
+              category="granary"
+              defs={GRANARY_UPGRADES}
+              owned={econData?.granary_upgrades || {}}
+              state={state || {}}
+              onPurchased={(_, nextOwned) => syncUpgradeOwned('granary', nextOwned)}
+            />
           </div>
         </div>
         <div className="card">
@@ -420,7 +439,13 @@ const EconomyPanel = () => {
           </div>
           <div className="card" style={{ margin: 0 }}>
             <div className="card-title !mb-2.5">Market upgrades</div>
-            <UpgradesList category="market" defs={MARKET_UPGRADES} owned={econData?.market_upgrades || {}} state={state || {}} />
+            <UpgradesList
+              category="market"
+              defs={MARKET_UPGRADES}
+              owned={econData?.market_upgrades || {}}
+              state={state || {}}
+              onPurchased={(_, nextOwned) => syncUpgradeOwned('market', nextOwned)}
+            />
           </div>
         </div>
 
@@ -560,7 +585,13 @@ const EconomyPanel = () => {
           </div>
           <div className="card" style={{ margin: 0 }}>
             <div className="card-title !mb-2.5">Tavern upgrades</div>
-            <UpgradesList category="tavern" defs={TAVERN_UPGRADES} owned={econData?.tavern_upgrades || {}} state={state || {}} />
+            <UpgradesList
+              category="tavern"
+              defs={TAVERN_UPGRADES}
+              owned={econData?.tavern_upgrades || {}}
+              state={state || {}}
+              onPurchased={(_, nextOwned) => syncUpgradeOwned('tavern', nextOwned)}
+            />
           </div>
         </div>
 
@@ -644,7 +675,13 @@ const EconomyPanel = () => {
             </div>
             <div className="card" style={{ margin: 0 }}>
               <div className="card-title !mb-2.5">Bank Upgrades</div>
-              <div id="bank-upgrades-list"></div>
+              <UpgradesList
+                category="bank"
+                defs={BANK_UPGRADES}
+                owned={parseOwnedUpgrades(state?.bank_upgrades)}
+                state={state || {}}
+                onPurchased={(_, nextOwned) => syncUpgradeOwned('bank', nextOwned)}
+              />
             </div>
           </div>
           <div className="card" style={{ margin: 0 }}>

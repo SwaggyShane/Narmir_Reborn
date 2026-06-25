@@ -1,18 +1,18 @@
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { fmt } from '../../utils/fmt.js';
-import { useGameState } from '../../hooks/useGameState.js';
 import { apiCall } from '../../utils/api.mjs';
 import { toast } from '../../utils/toast.js';
 import { playGameSound } from '../../utils/audio.js';
 import { applyGameMutation } from '../../utils/gameMutations.js';
+import { ownedFromUpdates, parseOwnedUpgrades } from '../../utils/upgradeUtils.js';
 
-
-function UpgradeRow({ category, upgradeKey, def, owned, state }) {
+function UpgradeRow({ category, upgradeKey, def, owned, state, onPurchased }) {
   const isOwned = !!owned[upgradeKey];
   const hasReq = !def.requires || !!owned[def.requires];
   const raceOk = !def.raceOnly || state.race === def.raceOnly;
+  const vaultsOk = !def.reqVaults || Number(state.bld_vaults || 0) >= def.reqVaults;
   const canBuy =
-    !isOwned && hasReq && raceOk &&
+    !isOwned && hasReq && raceOk && vaultsOk &&
     (state.gold || 0) >= (def.cost || 0) &&
     (state.wood || 0) >= (def.costWood || 0) &&
     (state.stone || 0) >= (def.costStone || 0) &&
@@ -20,11 +20,13 @@ function UpgradeRow({ category, upgradeKey, def, owned, state }) {
 
   let statusBadge = null;
   if (isOwned) {
-    statusBadge = <span style={{ color: 'var(--green)', fontSize: '11px' }}>✅ Owned</span>;
+    statusBadge = <span style={{ color: 'var(--green)', fontSize: '11px' }}>Owned</span>;
   } else if (!hasReq) {
-    statusBadge = <span style={{ color: 'var(--text3)', fontSize: '11px' }}>🔒 Need {String(def.requires || '').replace(/_/g, ' ')}</span>;
+    statusBadge = <span style={{ color: 'var(--text3)', fontSize: '11px' }}>Need {String(def.requires || '').replace(/_/g, ' ')}</span>;
   } else if (!raceOk) {
-    statusBadge = <span style={{ color: 'var(--text3)', fontSize: '11px' }}>🔒 Race locked</span>;
+    statusBadge = <span style={{ color: 'var(--text3)', fontSize: '11px' }}>Race locked</span>;
+  } else if (!vaultsOk) {
+    statusBadge = <span style={{ color: 'var(--text3)', fontSize: '11px' }}>Need {def.reqVaults} vaults</span>;
   }
 
   let costStr = fmt(def.cost) + ' GC';
@@ -35,11 +37,29 @@ function UpgradeRow({ category, upgradeKey, def, owned, state }) {
   if (extraCosts.length > 0) costStr += ' + ' + extraCosts.join(', ');
 
   const handleBuy = async () => {
-    const endpoint = category === 'mausoleum'
-      ? '/api/kingdom/buy-mausoleum-upgrade'
-      : '/api/kingdom/economy/upgrade';
+    if (category === 'mausoleum') {
+      const result = await apiCall('/api/kingdom/buy-mausoleum-upgrade', {
+        method: 'POST',
+        body: { upgradeKey },
+      });
 
-    const result = await apiCall(endpoint, {
+      if (result.error) {
+        toast(result.error, 'error');
+        return;
+      }
+
+      playGameSound('upgrade_purchased');
+      const nextOwned = { ...owned, [upgradeKey]: true };
+      applyGameMutation({
+        gold: Math.max(0, Number(state.gold || 0) - Number(def.cost || 0)),
+        mausoleum_upgrades: nextOwned,
+      }, { reason: 'economy-upgrade' });
+      onPurchased?.(upgradeKey, nextOwned);
+      toast(`${def.name} purchased!`, 'success');
+      return;
+    }
+
+    const result = await apiCall('/api/kingdom/economy/upgrade', {
       method: 'POST',
       body: {
         category,
@@ -58,7 +78,10 @@ function UpgradeRow({ category, upgradeKey, def, owned, state }) {
       applyGameMutation(result, { reason: 'economy-upgrade' });
     }
 
-    toast('Upgrade purchased! Refresh the panel to see the next upgrade.', 'success');
+    const nextOwned = ownedFromUpdates(result.updates, category)
+      || { ...owned, [upgradeKey]: true };
+    onPurchased?.(upgradeKey, nextOwned);
+    toast(`${def.name} purchased!`, 'success');
   };
 
   return (
@@ -78,7 +101,7 @@ function UpgradeRow({ category, upgradeKey, def, owned, state }) {
         </div>
       </div>
       {statusBadge}
-      {!isOwned && hasReq && raceOk && (
+      {!isOwned && hasReq && raceOk && vaultsOk && (
         <button
           className="btn btn-gold"
           onClick={handleBuy}
@@ -96,7 +119,18 @@ function UpgradeRow({ category, upgradeKey, def, owned, state }) {
   );
 }
 
-export default function UpgradesList({ category, defs, owned, state }) {
+export default function UpgradesList({ category, defs, owned, state, onPurchased }) {
+  const [ownedLocal, setOwnedLocal] = useState(() => parseOwnedUpgrades(owned));
+
+  useEffect(() => {
+    setOwnedLocal(parseOwnedUpgrades(owned));
+  }, [owned]);
+
+  const handlePurchased = useCallback((upgradeKey, nextOwned) => {
+    setOwnedLocal(nextOwned);
+    onPurchased?.(upgradeKey, nextOwned);
+  }, [onPurchased]);
+
   if (!defs || typeof defs !== 'object') {
     return (
       <div style={{ color: 'var(--red)', fontSize: '12px' }}>
@@ -122,8 +156,9 @@ export default function UpgradesList({ category, defs, owned, state }) {
           category={category}
           upgradeKey={key}
           def={def}
-          owned={owned}
+          owned={ownedLocal}
           state={state}
+          onPurchased={handlePurchased}
         />
       ))}
     </>
