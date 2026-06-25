@@ -40,7 +40,7 @@ import HeroLoreController from './components/react/HeroLoreController.jsx';
 import ToastProvider from './components/react/ToastProvider.jsx';
 import PanelContextHeader from './components/react/PanelContextHeader.jsx';
 import CommandPalette from './components/react/CommandPalette.jsx';
-import MobileTurnFab from './components/react/MobileTurnFab.jsx';
+
 import { useNightCycle } from './hooks/useNightCycle.js';
 import HeroXpModalController from './components/react/HeroXpModalController.jsx';
 import KingdomXpModalController from './components/react/KingdomXpModalController.jsx';
@@ -112,7 +112,7 @@ const GameShell = () => {
       <div
         className={clsx(
           'h-full w-full min-w-0 max-w-full overflow-x-hidden',
-          'max-lg:flex max-lg:min-h-0 max-lg:flex-col max-lg:pt-[calc(3rem+env(safe-area-inset-top,0px))] sm:max-lg:pt-[calc(3.5rem+env(safe-area-inset-top,0px))]',
+          'max-lg:flex max-lg:min-h-0 max-lg:flex-col max-lg:pt-[calc(3.5rem+env(safe-area-inset-top,0px))]',
           'lg:grid lg:min-h-0 lg:overflow-hidden',
           'lg:grid-rows-[56px_minmax(0,1fr)_32px]',
           'lg:gap-x-0.5 lg:gap-y-0',
@@ -187,7 +187,7 @@ const GameShell = () => {
       <HeroLoreController />
       <ToastProvider />
       <CommandPalette />
-      <MobileTurnFab />
+
       <HeroXpModalController />
       <KingdomXpModalController />
       <LoreEntryController />

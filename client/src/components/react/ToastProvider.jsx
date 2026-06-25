@@ -33,7 +33,7 @@ export default function ToastProvider() {
 
   return createPortal(
     <div
-      className="pointer-events-none fixed inset-x-0 bottom-6 z-[99999] flex justify-center px-4 max-lg:bottom-[calc(88px+env(safe-area-inset-bottom,0px))]"
+      className="pointer-events-none fixed inset-x-0 bottom-6 z-[99999] flex justify-center px-4 max-lg:bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))]"
     >
       <div
         className="toast-card pointer-events-auto flex w-full max-w-[420px] items-stretch overflow-hidden rounded-lg text-[13px] leading-snug"

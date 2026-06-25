@@ -197,7 +197,7 @@ const BottomNav = () => {
             ) : null}
             <button
               type="button"
-              className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-red-500/30 bg-red-500/10 px-4 text-sm font-semibold text-red-100 transition active:scale-95"
+              className="shell-logout-btn min-h-11 px-4 text-sm"
               onClick={() => {
                 setDrawerOpen(false);
                 logout();
