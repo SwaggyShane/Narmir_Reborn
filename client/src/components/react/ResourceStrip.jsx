@@ -164,7 +164,7 @@ const METRIC_TARGETS = {
   defense: 'defense',
 };
 
-function MetricBox({ metricKey, className, onClick, title, children }) {
+function MetricBox({ metricKey, className, title, children }) {
   const target = METRIC_TARGETS[metricKey];
   return (
     <button

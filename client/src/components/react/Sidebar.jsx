@@ -103,8 +103,13 @@ const Sidebar = () => {
 
   const flatPanels = NAV_SECTIONS.flatMap((section) => section.panels);
   const focusPanelAt = useCallback((flatIndex, delta) => {
-    const next = Math.min(Math.max(flatIndex + delta, 0), buttonRefs.current.length - 1);
-    buttonRefs.current[next]?.focus();
+    const activeButtons = buttonRefs.current.filter(Boolean);
+    const currentBtn = buttonRefs.current[flatIndex];
+    const currentIdx = activeButtons.indexOf(currentBtn);
+    if (currentIdx !== -1) {
+      const nextIdx = Math.min(Math.max(currentIdx + delta, 0), activeButtons.length - 1);
+      activeButtons[nextIdx]?.focus();
+    }
   }, []);
 
   if (!showSidebar) return null;
