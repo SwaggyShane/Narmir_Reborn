@@ -31,7 +31,7 @@ export default function BattleReportModal({ data, onClose }) {
       <div
         style={{
           background: 'var(--bg2)',
-          border: '1px solid var(--border2)',
+          border: '2px solid var(--accent1)',
           borderRadius: 'var(--radius-lg)',
           padding: '28px 32px',
           maxWidth: 480,

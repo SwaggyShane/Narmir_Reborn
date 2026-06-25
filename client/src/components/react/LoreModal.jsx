@@ -11,7 +11,7 @@ const LoreModal = ({ isOpen, onClose, title, children }) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="flex max-h-[80vh] w-full max-w-[700px] flex-col rounded-lg border-2 border-[var(--purple)] bg-[var(--bg2)] shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
+      <div className="flex max-h-[80vh] w-full max-w-[700px] flex-col rounded-lg border-2 border-[var(--accent1)] bg-[var(--bg2)] shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
         <div className="flex shrink-0 items-center justify-between border-b border-[var(--border)] px-4 py-3.5">
           <span className="text-[14px] font-bold text-[var(--text)]">{title}</span>
           <button

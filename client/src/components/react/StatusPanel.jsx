@@ -6,6 +6,7 @@ import { repairMojibake } from '../../utils/repairMojibake';
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import { toast as showToast } from '../../utils/toast.js';
 import { openRaceLore } from '../../utils/openRaceLore.js';
+import RaceLorePortrait from './RaceLorePortrait.jsx';
 
 const RACE_CARD_DATA = {
   human: {
@@ -174,19 +175,16 @@ const StatusPanel = () => {
       <div className="mb-4">
         <div
           id="race-tag-display"
-          className="race-tag-block shell-lore-box flex w-full cursor-pointer flex-row items-center gap-4"
+          className="race-tag-block shell-lore-box flex w-full cursor-pointer flex-col items-center gap-4 sm:flex-row sm:items-start"
           onClick={() => { openRaceLore(raceKey); }}
           title="Click for race lore"
         >
           {portraitUrl ? (
-            <div className="flex-shrink-0 w-20 h-20 rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.5)] overflow-hidden bg-void-950 flex items-center justify-center">
-              <img
-                src={portraitUrl}
-                alt={cleanText(raceInfo.label)}
-                referrerPolicy="no-referrer"
-                className="race-portrait w-full h-full object-cover block transition-transform"
-              />
-            </div>
+            <RaceLorePortrait
+              portraitUrl={portraitUrl}
+              alt={cleanText(raceInfo.label)}
+              size={300}
+            />
           ) : null}
           <div className="flex flex-col gap-1.5 flex-1">
             <div className="font-cinzel text-[18px] font-bold text-gold uppercase tracking-[1px]">

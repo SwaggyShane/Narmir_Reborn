@@ -49,7 +49,7 @@ export default function SchoolSelectionModal({ onClose, onSuccess }) {
   return (
     <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="max-h-[85vh] w-[90%] max-w-[900px] overflow-y-auto rounded-xl border border-white/10 bg-gradient-to-br from-zinc-900 to-white/5 p-8 shadow-2xl"
+        className="max-h-[85vh] w-[90%] max-w-[900px] overflow-y-auto rounded-xl border-2 border-[var(--accent1)] bg-gradient-to-br from-zinc-900 to-white/5 p-8 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-8 border-b border-white/10 pb-5 text-center">

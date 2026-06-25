@@ -126,7 +126,7 @@ export default function KingdomProfileModal() {
       }}
     >
       <div
-        className="relative max-h-[90vh] w-full max-w-[560px] overflow-y-auto rounded-[var(--radius-lg)] border border-[var(--border2)] bg-[var(--bg2)] p-7"
+        className="relative max-h-[90vh] w-full max-w-[560px] overflow-y-auto rounded-[var(--radius-lg)] border-2 border-[var(--accent1)] bg-[var(--bg2)] p-7"
       >
         <button
           type="button"
