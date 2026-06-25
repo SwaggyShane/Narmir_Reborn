@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import {
+  FragmentsWidget, AttunementWidget, TroopLevelsWidget, InjuredCountsWidget,
+  EffectsWidget, MercenariesWidget, KvNumbersWidget, ItemsWidget, FortifiedWidget,
+} from '../lib/KingdomWidgets.jsx';
 
-// Fields that require a textarea (JSON blobs) — Phase 2b will add proper widgets
 const JSON_FIELDS = new Set([
   'world_fragments', 'fragment_bonuses', 'hybrid_blueprints', 'fortified_buildings',
   'active_effects', 'troop_levels', 'injured_troops', 'research_allocation',
@@ -12,92 +15,92 @@ const EDIT_SECTIONS = [
   {
     label: 'Attributes',
     fields: [
-      { key: 'name',           label: 'Name',             type: 'text' },
-      { key: 'race',           label: 'Race',             type: 'text' },
-      { key: 'region',         label: 'Region',           type: 'text' },
-      { key: 'gender',         label: 'Gender',           type: 'text' },
-      { key: 'description',    label: 'Description',      type: 'text' },
-      { key: 'school_of_magic',label: 'School of Magic',  type: 'text' },
-      { key: 'milestone_title',label: 'Milestone Title',  type: 'text' },
-      { key: 'prestige_level', label: 'Prestige',         type: 'number' },
+      { key: 'name',            label: 'Name',            type: 'text' },
+      { key: 'race',            label: 'Race',            type: 'text' },
+      { key: 'region',          label: 'Region',          type: 'text' },
+      { key: 'gender',          label: 'Gender',          type: 'text' },
+      { key: 'description',     label: 'Description',     type: 'text' },
+      { key: 'school_of_magic', label: 'School of Magic', type: 'text' },
+      { key: 'milestone_title', label: 'Milestone Title', type: 'text' },
+      { key: 'prestige_level',  label: 'Prestige' },
     ],
   },
   {
     label: 'Resources',
     fields: [
-      { key: 'gold',          label: 'Gold' },
-      { key: 'mana',          label: 'Mana' },
-      { key: 'land',          label: 'Land' },
-      { key: 'population',    label: 'Population' },
-      { key: 'food',          label: 'Food' },
-      { key: 'happiness',     label: 'Happiness' },
-      { key: 'tax',           label: 'Tax rate' },
-      { key: 'turn',          label: 'Turn #' },
-      { key: 'turns_stored',  label: 'Turns stored' },
-      { key: 'xp',            label: 'XP' },
-      { key: 'level',         label: 'Level' },
+      { key: 'gold',         label: 'Gold' },
+      { key: 'mana',         label: 'Mana' },
+      { key: 'land',         label: 'Land' },
+      { key: 'population',   label: 'Population' },
+      { key: 'food',         label: 'Food' },
+      { key: 'happiness',    label: 'Happiness' },
+      { key: 'tax',          label: 'Tax rate' },
+      { key: 'turn',         label: 'Turn #' },
+      { key: 'turns_stored', label: 'Turns stored' },
+      { key: 'xp',           label: 'XP' },
+      { key: 'level',        label: 'Level' },
     ],
   },
   {
     label: 'Units',
     fields: [
-      { key: 'fighters',           label: 'Fighters' },
-      { key: 'rangers',            label: 'Rangers' },
-      { key: 'clerics',            label: 'Clerics' },
-      { key: 'mages',              label: 'Mages' },
-      { key: 'thieves',            label: 'Thieves' },
-      { key: 'ninjas',             label: 'Ninjas' },
-      { key: 'thralls',            label: 'Thralls' },
-      { key: 'ladders',            label: 'Ladders' },
-      { key: 'researchers',        label: 'Researchers' },
-      { key: 'engineers',          label: 'Engineers' },
-      { key: 'scribes',            label: 'Scribes' },
-      { key: 'war_machines',       label: 'War Machines' },
-      { key: 'ballistae',          label: 'Ballistae' },
-      { key: 'weapons_stockpile',  label: 'Weapons Stockpile' },
-      { key: 'armor_stockpile',    label: 'Armor Stockpile' },
+      { key: 'fighters',          label: 'Fighters' },
+      { key: 'rangers',           label: 'Rangers' },
+      { key: 'clerics',           label: 'Clerics' },
+      { key: 'mages',             label: 'Mages' },
+      { key: 'thieves',           label: 'Thieves' },
+      { key: 'ninjas',            label: 'Ninjas' },
+      { key: 'thralls',           label: 'Thralls' },
+      { key: 'ladders',           label: 'Ladders' },
+      { key: 'researchers',       label: 'Researchers' },
+      { key: 'engineers',         label: 'Engineers' },
+      { key: 'scribes',           label: 'Scribes' },
+      { key: 'war_machines',      label: 'War Machines' },
+      { key: 'ballistae',         label: 'Ballistae' },
+      { key: 'weapons_stockpile', label: 'Weapons Stockpile' },
+      { key: 'armor_stockpile',   label: 'Armor Stockpile' },
     ],
   },
   {
     label: 'Buildings',
     fields: [
-      { key: 'bld_farms',        label: 'Farms' },
-      { key: 'bld_granaries',    label: 'Granaries' },
-      { key: 'bld_barracks',     label: 'Barracks' },
-      { key: 'bld_outposts',     label: 'Outposts' },
-      { key: 'bld_guard_towers', label: 'Guard Towers' },
-      { key: 'bld_walls',        label: 'Walls' },
-      { key: 'bld_schools',      label: 'Schools' },
-      { key: 'bld_armories',     label: 'Armories' },
-      { key: 'bld_vaults',       label: 'Vaults' },
-      { key: 'bld_smithies',     label: 'Smithies' },
-      { key: 'bld_markets',      label: 'Markets' },
-      { key: 'bld_mage_towers',  label: 'Mage Towers' },
-      { key: 'bld_training',     label: 'Training Fields' },
-      { key: 'bld_taverns',      label: 'Taverns' },
-      { key: 'bld_shrines',      label: 'Shrines' },
-      { key: 'bld_castles',      label: 'Castles' },
-      { key: 'bld_libraries',    label: 'Libraries' },
-      { key: 'bld_housing',      label: 'Housing' },
-      { key: 'bld_mausoleums',   label: 'Mausoleums' },
-      { key: 'bld_woodyard',     label: 'Woodyards' },
-      { key: 'bld_lumber_camp',  label: 'Lumber Camps' },
-      { key: 'bld_sawmill',      label: 'Sawmills' },
-      { key: 'bld_gravel_pit',   label: 'Gravel Pits' },
-      { key: 'bld_blockfield',   label: 'Blockfields' },
-      { key: 'bld_stone_quarry', label: 'Stone Quarries' },
-      { key: 'bld_open_pit',     label: 'Open Pits' },
-      { key: 'bld_strip_mine',   label: 'Strip Mines' },
-      { key: 'bld_deep_mine',    label: 'Deep Mines' },
-      { key: 'wood',             label: 'Wood' },
-      { key: 'stone',            label: 'Stone' },
-      { key: 'iron',             label: 'Iron' },
-      { key: 'coal',             label: 'Coal' },
-      { key: 'steel',            label: 'Steel' },
-      { key: 'maps',             label: 'Maps' },
-      { key: 'blueprints_stored',label: 'Blueprints' },
+      { key: 'bld_farms',         label: 'Farms' },
+      { key: 'bld_granaries',     label: 'Granaries' },
+      { key: 'bld_barracks',      label: 'Barracks' },
+      { key: 'bld_outposts',      label: 'Outposts' },
+      { key: 'bld_guard_towers',  label: 'Guard Towers' },
+      { key: 'bld_walls',         label: 'Walls' },
+      { key: 'bld_schools',       label: 'Schools' },
+      { key: 'bld_armories',      label: 'Armories' },
+      { key: 'bld_vaults',        label: 'Vaults' },
+      { key: 'bld_smithies',      label: 'Smithies' },
+      { key: 'bld_markets',       label: 'Markets' },
+      { key: 'bld_mage_towers',   label: 'Mage Towers' },
+      { key: 'bld_training',      label: 'Training Fields' },
+      { key: 'bld_taverns',       label: 'Taverns' },
+      { key: 'bld_shrines',       label: 'Shrines' },
+      { key: 'bld_castles',       label: 'Castles' },
+      { key: 'bld_libraries',     label: 'Libraries' },
+      { key: 'bld_housing',       label: 'Housing' },
+      { key: 'bld_mausoleums',    label: 'Mausoleums' },
+      { key: 'bld_woodyard',      label: 'Woodyards' },
+      { key: 'bld_lumber_camp',   label: 'Lumber Camps' },
+      { key: 'bld_sawmill',       label: 'Sawmills' },
+      { key: 'bld_gravel_pit',    label: 'Gravel Pits' },
+      { key: 'bld_blockfield',    label: 'Blockfields' },
+      { key: 'bld_stone_quarry',  label: 'Stone Quarries' },
+      { key: 'bld_open_pit',      label: 'Open Pits' },
+      { key: 'bld_strip_mine',    label: 'Strip Mines' },
+      { key: 'bld_deep_mine',     label: 'Deep Mines' },
+      { key: 'wood',              label: 'Wood' },
+      { key: 'stone',             label: 'Stone' },
+      { key: 'iron',              label: 'Iron' },
+      { key: 'coal',              label: 'Coal' },
+      { key: 'steel',             label: 'Steel' },
+      { key: 'maps',              label: 'Maps' },
+      { key: 'blueprints_stored', label: 'Blueprints' },
       { key: 'scaffolding_stored',label: 'Scaffolding' },
-      { key: 'hammers_stored',   label: 'Hammers' },
+      { key: 'hammers_stored',    label: 'Hammers' },
     ],
   },
   {
@@ -118,41 +121,75 @@ const EDIT_SECTIONS = [
   {
     label: 'Misc',
     fields: [
-      { key: 'wall_hp',                  label: 'Wall HP' },
-      { key: 'wall_defense_type',        label: 'Wall Defense Type', type: 'text' },
-      { key: 'racial_bonuses_unlocked',  label: 'Racial Bonuses Unlocked' },
-      { key: 'divine_sanctuary_used',    label: 'Divine Sanctuary Used' },
+      { key: 'wall_hp',                 label: 'Wall HP' },
+      { key: 'wall_defense_type',       label: 'Wall Defense Type', type: 'text' },
+      { key: 'racial_bonuses_unlocked', label: 'Racial Bonuses Unlocked' },
+      { key: 'divine_sanctuary_used',   label: 'Divine Sanctuary Used' },
     ],
   },
   {
-    label: 'JSON Fields (Phase 2b widgets)',
-    jsonSection: true,
+    label: 'Fragments',
     fields: [
-      { key: 'world_fragments',     label: 'World Fragments' },
-      { key: 'fragment_bonuses',    label: 'Fragment Bonuses' },
-      { key: 'hybrid_blueprints',   label: 'Hybrid Blueprints' },
-      { key: 'fortified_buildings', label: 'Fortified Buildings' },
-      { key: 'active_effects',      label: 'Active Effects' },
-      { key: 'troop_levels',        label: 'Troop Levels' },
-      { key: 'injured_troops',      label: 'Injured Troops' },
-      { key: 'research_allocation', label: 'Research Allocation' },
-      { key: 'build_queue',         label: 'Build Queue' },
-      { key: 'build_progress',      label: 'Build Progress' },
-      { key: 'build_allocation',    label: 'Build Allocation' },
-      { key: 'scrolls',             label: 'Scrolls' },
-      { key: 'alliance_buffs',      label: 'Alliance Buffs' },
-      { key: 'items',               label: 'Items' },
-      { key: 'mercenaries',         label: 'Mercenaries' },
+      { key: 'world_fragments',     label: 'World Fragments',     widgetType: 'fragments' },
+      { key: 'fragment_bonuses',    label: 'Attunements',         widgetType: 'attunements' },
+      { key: 'hybrid_blueprints',   label: 'Hybrid Blueprints',   widgetType: 'kv-numbers' },
+      { key: 'fortified_buildings', label: 'Fortified Buildings', widgetType: 'fortified' },
+    ],
+  },
+  {
+    label: 'Troops',
+    fields: [
+      { key: 'troop_levels',   label: 'Troop Levels',   widgetType: 'troop-levels' },
+      { key: 'injured_troops', label: 'Injured Troops', widgetType: 'injured' },
+      { key: 'mercenaries',    label: 'Mercenaries',    widgetType: 'mercenaries' },
+    ],
+  },
+  {
+    label: 'Effects',
+    fields: [
+      { key: 'active_effects', label: 'Active Effects', widgetType: 'effects' },
+      { key: 'scrolls',        label: 'Scrolls',        widgetType: 'kv-numbers' },
+      { key: 'items',          label: 'Items',          widgetType: 'items' },
+    ],
+  },
+  {
+    label: 'Construction',
+    fields: [
+      { key: 'research_allocation', label: 'Research Allocation', widgetType: 'kv-numbers' },
+      { key: 'build_queue',         label: 'Build Queue',         widgetType: 'kv-numbers' },
+      { key: 'build_progress',      label: 'Build Progress',      widgetType: 'kv-numbers' },
+      { key: 'build_allocation',    label: 'Build Allocation',    widgetType: 'kv-numbers' },
+      { key: 'alliance_buffs',      label: 'Alliance Buffs',      widgetType: 'kv-numbers' },
     ],
   },
 ];
 
+function WidgetForType({ widgetType, value, onChange }) {
+  switch (widgetType) {
+    case 'fragments':    return <FragmentsWidget    value={value} onChange={onChange} />;
+    case 'attunements':  return <AttunementWidget   value={value} onChange={onChange} />;
+    case 'troop-levels': return <TroopLevelsWidget  value={value} onChange={onChange} />;
+    case 'injured':      return <InjuredCountsWidget value={value} onChange={onChange} />;
+    case 'effects':      return <EffectsWidget      value={value} onChange={onChange} />;
+    case 'mercenaries':  return <MercenariesWidget  value={value} onChange={onChange} />;
+    case 'kv-numbers':   return <KvNumbersWidget    value={value} onChange={onChange} />;
+    case 'items':        return <ItemsWidget        value={value} onChange={onChange} />;
+    case 'fortified':    return <FortifiedWidget    value={value} onChange={onChange} />;
+    default:
+      return (
+        <textarea rows={3} value={value}
+          onChange={e => onChange(e.target.value)}
+          style={TEXTAREA} spellCheck={false} />
+      );
+  }
+}
+
 export default function KingdomEditModal({ kingdomRow, adminFetch, onClose, onSaved }) {
-  const [detail, setDetail]     = useState(null);
-  const [loadErr, setLoadErr]   = useState('');
-  const [form, setForm]         = useState({});
-  const [saving, setSaving]     = useState(false);
-  const [saveErr, setSaveErr]   = useState('');
+  const [detail, setDetail]   = useState(null);
+  const [loadErr, setLoadErr] = useState('');
+  const [form, setForm]       = useState({});
+  const [saving, setSaving]   = useState(false);
+  const [saveErr, setSaveErr] = useState('');
   const [activeSection, setActiveSection] = useState(0);
 
   const loadDetail = useCallback(async () => {
@@ -163,13 +200,11 @@ export default function KingdomEditModal({ kingdomRow, adminFetch, onClose, onSa
       if (data?.error) { setLoadErr(data.error); return; }
       if (!data?.id)   { setLoadErr('Kingdom not found'); return; }
       setDetail(data);
-      // Initialize form from all scalar + JSON fields
       const init = {};
       EDIT_SECTIONS.forEach(sec => {
         sec.fields.forEach(({ key }) => {
           const raw = data[key];
           if (JSON_FIELDS.has(key)) {
-            // Normalize to pretty JSON string for textarea
             try {
               const parsed = typeof raw === 'string' ? JSON.parse(raw || 'null') : raw;
               init[key] = JSON.stringify(parsed, null, 2);
@@ -192,7 +227,6 @@ export default function KingdomEditModal({ kingdomRow, adminFetch, onClose, onSa
   async function handleSave() {
     setSaveErr('');
     setSaving(true);
-    // Validate JSON fields before sending
     for (const key of JSON_FIELDS) {
       const val = form[key];
       if (val === '' || val == null) continue;
@@ -202,7 +236,6 @@ export default function KingdomEditModal({ kingdomRow, adminFetch, onClose, onSa
         return;
       }
     }
-    // Build fields object — only send changed values
     const fields = {};
     EDIT_SECTIONS.forEach(sec => {
       sec.fields.forEach(({ key, type }) => {
@@ -211,9 +244,7 @@ export default function KingdomEditModal({ kingdomRow, adminFetch, onClose, onSa
         if (formVal === undefined) return;
 
         if (JSON_FIELDS.has(key)) {
-          // Send as string (server validates and stores as-is)
-          const normalized = formVal.trim();
-          // Only include if changed
+          const normalized = (formVal + '').trim();
           let origStr;
           try {
             const parsed = typeof raw === 'string' ? JSON.parse(raw || 'null') : raw;
@@ -227,7 +258,6 @@ export default function KingdomEditModal({ kingdomRow, adminFetch, onClose, onSa
         } else if (type === 'text') {
           if (String(formVal) !== String(raw ?? '')) fields[key] = formVal;
         } else {
-          // number — allow '' to clear a field (server maps '' → null)
           if (formVal === '') {
             if (raw !== null && raw !== undefined) fields[key] = '';
           } else {
@@ -260,6 +290,7 @@ export default function KingdomEditModal({ kingdomRow, adminFetch, onClose, onSa
   }
 
   const section = EDIT_SECTIONS[activeSection];
+  const hasWidgets = section.fields.some(f => f.widgetType);
 
   return (
     <div style={OVERLAY} onClick={onClose}>
@@ -277,7 +308,7 @@ export default function KingdomEditModal({ kingdomRow, adminFetch, onClose, onSa
               </div>
             )}
           </div>
-          <button onClick={onClose} style={CLOSE_BTN}>✕</button>
+          <button onClick={onClose} style={CLOSE_BTN}>X</button>
         </div>
 
         {loadErr && (
@@ -285,7 +316,7 @@ export default function KingdomEditModal({ kingdomRow, adminFetch, onClose, onSa
         )}
 
         {!detail && !loadErr && (
-          <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>Loading…</div>
+          <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>Loading...</div>
         )}
 
         {detail && (
@@ -293,33 +324,27 @@ export default function KingdomEditModal({ kingdomRow, adminFetch, onClose, onSa
             {/* Section tabs */}
             <div style={SECTION_TABS}>
               {EDIT_SECTIONS.map((sec, i) => (
-                <button
-                  key={sec.label}
-                  onClick={() => setActiveSection(i)}
-                  style={{
-                    ...SEC_TAB,
-                    borderBottom: i === activeSection ? '2px solid var(--gold)' : '2px solid transparent',
-                    color: i === activeSection ? 'var(--gold)' : 'var(--text3)',
-                  }}
-                >
+                <button key={sec.label} onClick={() => setActiveSection(i)} style={{
+                  ...SEC_TAB,
+                  borderBottom: i === activeSection ? '2px solid var(--gold)' : '2px solid transparent',
+                  color: i === activeSection ? 'var(--gold)' : 'var(--text3)',
+                }}>
                   {sec.label}
                 </button>
               ))}
             </div>
 
-            {/* Fields grid */}
+            {/* Fields area */}
             <div style={FIELDS_AREA}>
-              {section.jsonSection ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {section.fields.map(({ key, label }) => (
+              {hasWidgets ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  {section.fields.map(({ key, label, widgetType }) => (
                     <div key={key}>
                       <label style={LABEL}>{label}</label>
-                      <textarea
-                        rows={4}
+                      <WidgetForType
+                        widgetType={widgetType}
                         value={form[key] ?? ''}
-                        onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                        style={TEXTAREA}
-                        spellCheck={false}
+                        onChange={val => setForm(f => ({ ...f, [key]: val }))}
                       />
                     </div>
                   ))}
@@ -347,7 +372,7 @@ export default function KingdomEditModal({ kingdomRow, adminFetch, onClose, onSa
               <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
                 <button onClick={onClose} style={BTN_CANCEL}>Cancel</button>
                 <button onClick={handleSave} disabled={saving} style={BTN_SAVE}>
-                  {saving ? 'Saving…' : 'Save Changes'}
+                  {saving ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </div>
@@ -404,7 +429,10 @@ const GRID = {
   display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px 16px',
 };
 
-const LABEL = { display: 'block', fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 };
+const LABEL = {
+  display: 'block', fontSize: 11, color: 'var(--text3)',
+  textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4,
+};
 
 const INPUT = {
   width: '100%', padding: '6px 8px', background: 'var(--bg4)',
