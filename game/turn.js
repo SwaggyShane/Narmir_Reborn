@@ -4,85 +4,11 @@
 // via module.exports for backward compatibility.
 
 const config = require("./config");
-const { progressGoal } = require('./goals');
-const fragmentBonusManager = require("./fragment-bonus-manager");
-const effectsProcessor = require("./synergy-effects-processor");
-const { safeJsonParse, clearParseCache } = require('../utils/helpers');
+const { safeJsonParse } = require('../utils/helpers');
 const { raceBonus } = require('./lib/race-bonus');
-const {
-  troopXpForLevel,
-  awardTroopXp,
-  unitLevelMult,
-  racialUnitBonus,
-  awardUnitXp,
-  getAvailableUnits,
-} = require('./lib/troops');
-const {
-  getSynergyPassiveBonusMultiplier,
-  getSynergyPassiveBonusAbsolute,
-} = require('./lib/synergy-cache');
-const { naturalHappinessCap } = require('./lib/happiness-cap');
-const {
-  goldPerTurn,
-  calculateTradeIncome,
-  processResourceYield,
-  processFoodEconomy,
-} = require('./economy');
-const {
-  manaPerTurn,
-  processMageTower,
-  processShrine,
-  processMausoleum,
-  processLibrary,
-} = require('./magic');
-const {
-  processGranaryAttunements,
-  processVaultAttunements,
-  processWallsAttunements,
-  processGuardTowerAttunements,
-  processOutpostAttunements,
-  processTrainingAttunements,
-  processBarracksAttunements,
-  processCastleAttunements,
-  processMausoleumAttunements,
-  processLibraryAttunements,
-  processMageTowerAttunements,
-  processSchoolAttunements,
-  processFarmAttunements,
-  processSmithyAttunements,
-  processMarketAttunements,
-  processShrineAttunements,
-  processTavernAttunements,
-  processHousingAttunements,
-} = require('./attunements');
-const { checkDefenseTiers } = require('./defense');
-const { awardEngineerXp } = require('./engineers');
-const { awardXp, checkMilestones } = require('./xp');
-const { housingCapPerBuilding, popGrowth } = require('./population');
+const { getSynergyPassiveBonusAbsolute } = require('./lib/synergy-cache');
 
-const {
-  PRESTIGE_MODIFIERS,
-  TROOP_RACE_BONUS,
-  LOCATE_RACE_MULT,
-  BUILDING_COST,
-  BUILDING_GOLD_COST,
-  BUILDING_LAND_COST,
-  SUPPORT_CAP_RACE,
-  BUILDING_ALIASES,
-  RACIAL_UNITS,
-  CAPS,
-  BUILDING_COL,
-  TOOL_COL,
-  RESOURCE_BUILDING_CONFIG,
-  BUILDING_WOOD_COST,
-  BUILDING_STONE_COST,
-  BUILDING_IRON_COST,
-  BLUEPRINT_REQUIRED: BP_REQ,
-  SCAFFOLDING_REQUIRED: SCAFF_REQ,
-} = config;
-
-const BLUEPRINT_REQUIRED = new Set(BP_REQ);
-const SCAFFOLDING_REQUIRED = new Set(SCAFF_REQ);
+const { LOCATE_RACE_MULT } = config;
 
 function getHappinessRecoveryRate(k) {
   const baseRecovery = (k.res_entertainment || 100) / 1200 + ((k.bld_taverns || 0) * 0.2);
@@ -305,13 +231,4 @@ module.exports = {
   logHappinessEvent,
   calcDiscoveryChance,
   processLocationMapsWip,
-  processMercenaries,
-  rebellionCheck,
-  rebellionEvent,
-  processTurn,
-  checkAchievements,
-  levelCap,
-  getCap,
-  processBuildQueue,
-  processActiveEffects,
 };

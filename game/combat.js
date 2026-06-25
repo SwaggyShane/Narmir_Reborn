@@ -195,7 +195,7 @@ function calcClericHeal(kingdom, clerics, denominator, heroes, shrineKey) {
 }
 
 function applyReanimation(win, attacker, defender, kills, attackerUpdates, defenderUpdates) {
-  const { atkSoldierKills, atkTotalKills, atkClericKills, atkClericsLost, defSoldierKills, defTotalKills, defClericKills, defClericsLost } = kills;
+  const { atkSoldierKills, atkTotalKills, atkClericKills, atkClericsLost, defSoldierKills, defClericKills, defClericsLost } = kills;
   let atkConversionAdded = 0;
   let defConversionAdded = 0;
   let necroMsg = "";
@@ -1414,7 +1414,6 @@ function resolveMilitaryAttack(
 }
 
 module.exports = {
-  happinessMult,
   sumRecordValues,
   normalizeCombatUnits,
   formatCombatUnitCounts,

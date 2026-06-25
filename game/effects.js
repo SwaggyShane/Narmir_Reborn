@@ -4,7 +4,6 @@
  */
 
 const { safeJsonParse } = require("../utils/helpers");
-const fragmentBonusManager = require("./fragment-bonus-manager");
 
 function processActiveEffects(k, events) {
   let effects = {};
