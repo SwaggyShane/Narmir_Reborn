@@ -2,7 +2,6 @@ import React from 'react';
 import clsx from 'clsx';
 import { useGameState } from '../../hooks/useGameState';
 import { useActivePanel } from '../../hooks/useActivePanel';
-import { logout } from './AuthModal.jsx';
 import { switchTab } from '../../utils/switchTab.js';
 import { useNavLayout } from '../../hooks/useNavLayout.js';
 
@@ -43,7 +42,7 @@ const Sidebar = () => {
         'min-h-0 flex-col overflow-hidden border-r border-white/5 bg-bg2',
         showSidebar ? 'flex' : 'hidden',
         layout === 'responsive' && 'max-lg:hidden',
-        'lg:col-start-1 lg:row-span-2 lg:row-start-2 lg:overflow-y-auto',
+        'lg:col-start-1 lg:row-start-2 lg:overflow-y-auto',
       )}
     >
       <div className="min-h-0 flex-1 overflow-y-auto scrollbar-game">
@@ -95,15 +94,6 @@ const Sidebar = () => {
           </a>
         )}
       </div>
-
-      <button
-        type="button"
-        onClick={logout}
-        className={clsx(NAV_BUTTON_CLASS.base, NAV_BUTTON_CLASS.idle, 'mx-1 mb-2 mt-1 shrink-0 text-red')}
-      >
-        <span>&#10005;</span>
-        <span>Logout</span>
-      </button>
     </nav>
   );
 };
