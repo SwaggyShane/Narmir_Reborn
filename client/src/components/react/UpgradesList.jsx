@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { fmt } from '../../utils/fmt.js';
 import { apiCall } from '../../utils/api.mjs';
 import { toast } from '../../utils/toast.js';
@@ -6,17 +6,21 @@ import { playGameSound } from '../../utils/audio.js';
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import { ownedFromUpdates, parseOwnedUpgrades } from '../../utils/upgradeUtils.js';
 
-function UpgradeRow({ category, upgradeKey, def, owned, state, onPurchased }) {
-  const isOwned = !!owned[upgradeKey];
-  const hasReq = !def.requires || !!owned[def.requires];
-  const raceOk = !def.raceOnly || state.race === def.raceOnly;
-  const vaultsOk = !def.reqVaults || Number(state.bld_vaults || 0) >= def.reqVaults;
+function isUpgradeOwned(owned, upgradeKey) {
+  return owned[upgradeKey] === true;
+}
+
+function UpgradeRow({ category, upgradeKey, def, owned, state, onPurchased, purchasing, setPurchasing }) {
+  const isOwned = isUpgradeOwned(owned, upgradeKey);
+  const hasReq = !def.requires || isUpgradeOwned(owned, def.requires);
+  const raceOk = !def.raceOnly || state?.race === def.raceOnly;
+  const vaultsOk = !def.reqVaults || Number(state?.bld_vaults || 0) >= def.reqVaults;
   const canBuy =
     !isOwned && hasReq && raceOk && vaultsOk &&
-    (state.gold || 0) >= (def.cost || 0) &&
-    (state.wood || 0) >= (def.costWood || 0) &&
-    (state.stone || 0) >= (def.costStone || 0) &&
-    (state.iron || 0) >= (def.costIron || 0);
+    (state?.gold || 0) >= (def.cost || 0) &&
+    (state?.wood || 0) >= (def.costWood || 0) &&
+    (state?.stone || 0) >= (def.costStone || 0) &&
+    (state?.iron || 0) >= (def.costIron || 0);
 
   let statusBadge = null;
   if (isOwned) {
@@ -37,51 +41,61 @@ function UpgradeRow({ category, upgradeKey, def, owned, state, onPurchased }) {
   if (extraCosts.length > 0) costStr += ' + ' + extraCosts.join(', ');
 
   const handleBuy = async () => {
-    if (category === 'mausoleum') {
-      const result = await apiCall('/api/kingdom/buy-mausoleum-upgrade', {
+    if (purchasing) return;
+    setPurchasing(true);
+
+    try {
+      if (category === 'mausoleum') {
+        const result = await apiCall('/api/kingdom/buy-mausoleum-upgrade', {
+          method: 'POST',
+          body: { upgradeKey },
+        });
+
+        if (result.error) {
+          toast(result.error, 'error');
+          return;
+        }
+
+        playGameSound('upgrade_purchased');
+        const nextOwned = { ...owned, [upgradeKey]: true };
+        applyGameMutation({
+          gold: Math.max(0, Number(state?.gold || 0) - Number(def.cost || 0)),
+          mausoleum_upgrades: nextOwned,
+        }, { reason: 'economy-upgrade' });
+        onPurchased?.(upgradeKey, nextOwned);
+        toast(`${def.name} purchased!`, 'success');
+        return;
+      }
+
+      const result = await apiCall('/api/kingdom/economy/upgrade', {
         method: 'POST',
-        body: { upgradeKey },
+        body: {
+          category,
+          upgradeKey,
+        },
       });
 
       if (result.error) {
         toast(result.error, 'error');
+        if (String(result.error).toLowerCase().includes('already purchased')) {
+          onPurchased?.(upgradeKey, { ...owned, [upgradeKey]: true });
+        }
         return;
       }
 
       playGameSound('upgrade_purchased');
-      const nextOwned = { ...owned, [upgradeKey]: true };
-      applyGameMutation({
-        gold: Math.max(0, Number(state.gold || 0) - Number(def.cost || 0)),
-        mausoleum_upgrades: nextOwned,
-      }, { reason: 'economy-upgrade' });
+
+      if (result.updates) {
+        applyGameMutation(result, { reason: 'economy-upgrade' });
+      }
+
+      const nextOwned = ownedFromUpdates(result.updates, category)
+        || { ...owned, [upgradeKey]: true };
       onPurchased?.(upgradeKey, nextOwned);
       toast(`${def.name} purchased!`, 'success');
-      return;
+    } finally {
+      setPurchasing(false);
     }
-
-    const result = await apiCall('/api/kingdom/economy/upgrade', {
-      method: 'POST',
-      body: {
-        category,
-        upgradeKey,
-      },
-    });
-
-    if (result.error) {
-      toast(result.error, 'error');
-      return;
-    }
-
-    playGameSound('upgrade_purchased');
-
-    if (result.updates) {
-      applyGameMutation(result, { reason: 'economy-upgrade' });
-    }
-
-    const nextOwned = ownedFromUpdates(result.updates, category)
-      || { ...owned, [upgradeKey]: true };
-    onPurchased?.(upgradeKey, nextOwned);
-    toast(`${def.name} purchased!`, 'success');
   };
 
   return (
@@ -105,14 +119,14 @@ function UpgradeRow({ category, upgradeKey, def, owned, state, onPurchased }) {
         <button
           className="btn btn-gold"
           onClick={handleBuy}
-          disabled={!canBuy}
+          disabled={!canBuy || purchasing}
           style={{
             fontSize: '11px',
             padding: '3px 10px',
-            opacity: canBuy ? 1 : 0.5,
+            opacity: canBuy && !purchasing ? 1 : 0.5,
           }}
         >
-          Buy
+          {purchasing ? 'Buying...' : 'Buy'}
         </button>
       )}
     </div>
@@ -120,14 +134,24 @@ function UpgradeRow({ category, upgradeKey, def, owned, state, onPurchased }) {
 }
 
 export default function UpgradesList({ category, defs, owned, state, onPurchased }) {
-  const [ownedLocal, setOwnedLocal] = useState(() => parseOwnedUpgrades(owned));
+  const kingdomId = state?.id ?? state?.kingdomId ?? null;
+  const ownedSig = JSON.stringify(parseOwnedUpgrades(owned));
+  const ownedParsed = useMemo(() => parseOwnedUpgrades(owned), [ownedSig]);
+  const [ownedLocal, setOwnedLocal] = useState(ownedParsed);
+  const [purchasing, setPurchasing] = useState(false);
 
   useEffect(() => {
-    setOwnedLocal(parseOwnedUpgrades(owned));
-  }, [owned]);
+    const parsed = parseOwnedUpgrades(owned);
+    setOwnedLocal((prev) => {
+      const parsedHasOwned = Object.keys(parsed).some((key) => parsed[key] === true);
+      const prevHasOwned = Object.keys(prev).some((key) => prev[key] === true);
+      if (!parsedHasOwned && prevHasOwned) return prev;
+      return parsed;
+    });
+  }, [kingdomId, ownedSig]);
 
   const handlePurchased = useCallback((upgradeKey, nextOwned) => {
-    setOwnedLocal(nextOwned);
+    setOwnedLocal(parseOwnedUpgrades(nextOwned));
     onPurchased?.(upgradeKey, nextOwned);
   }, [onPurchased]);
 
@@ -159,6 +183,8 @@ export default function UpgradesList({ category, defs, owned, state, onPurchased
           owned={ownedLocal}
           state={state}
           onPurchased={handlePurchased}
+          purchasing={purchasing}
+          setPurchasing={setPurchasing}
         />
       ))}
     </>

@@ -367,7 +367,7 @@ const EconomyPanel = () => {
             <UpgradesList
               category="farm"
               defs={FARM_UPGRADES}
-              owned={econData?.farm_upgrades || {}}
+              owned={parseOwnedUpgrades(econData?.farm_upgrades)}
               state={state || {}}
               onPurchased={(_, nextOwned) => syncUpgradeOwned('farm', nextOwned)}
             />
@@ -405,7 +405,7 @@ const EconomyPanel = () => {
             <UpgradesList
               category="granary"
               defs={GRANARY_UPGRADES}
-              owned={econData?.granary_upgrades || {}}
+              owned={parseOwnedUpgrades(econData?.granary_upgrades)}
               state={state || {}}
               onPurchased={(_, nextOwned) => syncUpgradeOwned('granary', nextOwned)}
             />
@@ -442,7 +442,7 @@ const EconomyPanel = () => {
             <UpgradesList
               category="market"
               defs={MARKET_UPGRADES}
-              owned={econData?.market_upgrades || {}}
+              owned={parseOwnedUpgrades(econData?.market_upgrades)}
               state={state || {}}
               onPurchased={(_, nextOwned) => syncUpgradeOwned('market', nextOwned)}
             />
@@ -588,7 +588,7 @@ const EconomyPanel = () => {
             <UpgradesList
               category="tavern"
               defs={TAVERN_UPGRADES}
-              owned={econData?.tavern_upgrades || {}}
+              owned={parseOwnedUpgrades(econData?.tavern_upgrades)}
               state={state || {}}
               onPurchased={(_, nextOwned) => syncUpgradeOwned('tavern', nextOwned)}
             />

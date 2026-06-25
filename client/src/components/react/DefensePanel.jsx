@@ -6,6 +6,7 @@ import { fmt } from "../../utils/fmt";
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import { toast } from '../../utils/toast.js';
 import UpgradesList from './UpgradesList.jsx';
+import { parseOwnedUpgrades } from '../../utils/upgradeUtils.js';
 import {
   WALL_UPGRADES_JS,
   TOWER_DEF_UPGRADES_JS,
@@ -111,9 +112,9 @@ const DefensePanel = () => {
     });
 
     setUpgradeOwned({
-      wall: data.wall_upgrades || {},
-      tower_def: data.tower_def_upgrades || {},
-      outpost: data.outpost_upgrades || {},
+      wall: parseOwnedUpgrades(data.wall_upgrades),
+      tower_def: parseOwnedUpgrades(data.tower_def_upgrades),
+      outpost: parseOwnedUpgrades(data.outpost_upgrades),
     });
   }, [state?.race]);
 
@@ -261,7 +262,7 @@ const DefensePanel = () => {
               category="wall"
               defs={WALL_UPGRADES_JS}
               owned={upgradeOwned.wall}
-              state={state}
+              state={state || {}}
               onPurchased={(_, nextOwned) => syncDefenseUpgrades('wall', nextOwned)}
             />
           </div>
@@ -312,7 +313,7 @@ const DefensePanel = () => {
               category="tower_def"
               defs={TOWER_DEF_UPGRADES_JS}
               owned={upgradeOwned.tower_def}
-              state={state}
+              state={state || {}}
               onPurchased={(_, nextOwned) => syncDefenseUpgrades('tower_def', nextOwned)}
             />
           </div>
@@ -363,7 +364,7 @@ const DefensePanel = () => {
               category="outpost"
               defs={OUTPOST_UPGRADES_JS}
               owned={upgradeOwned.outpost}
-              state={state}
+              state={state || {}}
               onPurchased={(_, nextOwned) => syncDefenseUpgrades('outpost', nextOwned)}
             />
           </div>
