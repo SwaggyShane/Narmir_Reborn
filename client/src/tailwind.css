@@ -257,15 +257,13 @@
     @apply px-6 pb-6;
   }
 
-  /* ── Kingdom Header (main body kd-top) ── */
-  .kd-top {
-    @apply relative;
+  /* ── Race lore / kingdom header box (shared frame) ── */
+  .shell-lore-box {
+    @apply rounded-xl border border-ember-900/50 bg-void-900 p-4;
   }
 
-  .kd-top::before {
-    content: '';
-    @apply absolute inset-x-0 top-0 h-px;
-    background: linear-gradient(90deg, transparent 0%, rgba(240, 98, 2, 0.35) 50%, transparent 100%);
+  .kd-top {
+    @apply relative;
   }
 
   .kingdom-header {

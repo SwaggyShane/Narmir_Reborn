@@ -151,7 +151,7 @@ const StatusPanel = () => {
       <div className="mb-4">
         <div
           id="race-tag-display"
-          className="race-tag-block cursor-pointer p-4 bg-void-900 border border-ember-900/50 rounded-xl flex flex-row items-center gap-4 transition-all w-full hover:border-ember-700/60 hover:bg-void-800"
+          className="race-tag-block shell-lore-box flex w-full cursor-pointer flex-row items-center gap-4"
           onClick={() => { openRaceLore(raceKey); }}
           title="Click for race lore"
         >
@@ -171,7 +171,7 @@ const StatusPanel = () => {
             </div>
             <button
               type="button"
-              className="text-left text-[12.5px] text-text2 leading-relaxed font-normal tracking-[0.3px] underline decoration-ember-500/30 underline-offset-2 transition hover:text-text hover:decoration-ember-500/60"
+              className="text-left text-[12.5px] text-text2 leading-relaxed font-normal tracking-[0.3px] underline decoration-ember-500/30 underline-offset-2"
               onClick={(e) => {
                 e.stopPropagation();
                 openRaceLore(raceKey);
