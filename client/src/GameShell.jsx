@@ -95,7 +95,7 @@ const GameShell = () => {
           'h-full w-full',
           'max-lg:flex max-lg:min-h-0 max-lg:flex-col max-lg:pt-14',
           'lg:grid lg:min-h-0 lg:overflow-hidden',
-          'lg:grid-cols-[250px_175px_minmax(0,1fr)]',
+          'lg:grid-cols-[200px_175px_minmax(0,1fr)]',
           'lg:grid-rows-[56px_minmax(0,1fr)_32px]',
           'lg:gap-x-0.5 lg:gap-y-0',
         ].join(' ')}
@@ -118,7 +118,7 @@ const GameShell = () => {
           ].join(' ')}
         >
           <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-2 overflow-x-hidden overflow-y-auto">
-            <div className="hidden px-1 text-[10px] font-black uppercase tracking-[0.28em] text-ember-400/85 lg:block">
+            <div className="shell-nav-section hidden !px-2 !pt-0 lg:block">
               Resources
             </div>
             <div className="metrics resource-metrics">

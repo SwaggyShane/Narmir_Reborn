@@ -198,13 +198,13 @@ function authSensitiveLimiter(req, res, next) {
 
 // ── BOOTSTRAP ────────────────────────────────────────────────────────────────
 let vite;
-async function setupVite() {
+async function setupVite(httpServer) {
   if (process.env.NODE_ENV === 'production') return;
   try {
     const { createServer } = require('vite');
     vite = await createServer({
       configFile: path.join(__dirname, 'vite.config.js'),
-      server: { middlewareMode: true, hmr: false },
+      server: { middlewareMode: true, hmr: { server: httpServer } },
       appType: 'custom',
       base: '/',
       root: path.join(__dirname, 'client'),
@@ -499,7 +499,7 @@ async function start() {
 
   try {
     if (process.env.NODE_ENV !== 'production') {
-      await setupVite();
+      await setupVite(server);
     }
     
     let db = null;

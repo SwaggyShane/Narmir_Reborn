@@ -59,7 +59,7 @@
   }
 
   .card-title {
-    @apply text-xs font-black text-gold font-cinzel mb-5 uppercase tracking-wider;
+    @apply text-[15px] font-black text-gold font-cinzel mb-5 uppercase tracking-wider;
     text-shadow: 0 0 8px rgba(240, 98, 2, 0.4);
   }
 
@@ -74,6 +74,10 @@
 
   .status-grid {
     @apply grid grid-cols-1 gap-5;
+  }
+
+  .status-grid .card-title {
+    @apply flex items-center justify-center gap-2 text-center;
   }
 
   /* ── Table Rows ── */
@@ -211,7 +215,11 @@
   }
 
   .metric {
-    @apply shell-box-frame px-2.5 py-2 transition-all flex flex-col gap-0 justify-center flex-1 min-w-[60px] min-h-[48px] md:min-h-0 md:flex-none;
+    @apply shell-box-frame px-2.5 pt-2 pb-[calc(5px+0.6875rem+2px+0.9375rem+4px)] transition-all flex flex-col gap-0 flex-1 min-w-[60px] min-h-[48px] md:min-h-0 md:flex-none lg:pb-[calc(5px+0.625rem+2px+1.0625rem+4px)];
+  }
+
+  .metric.metric-happiness {
+    @apply pb-2;
   }
 
   .metric .lbl {
@@ -219,11 +227,19 @@
   }
 
   .metric .val {
-    @apply text-[15px] font-bold text-text m-0 leading-none whitespace-nowrap overflow-hidden text-ellipsis lg:text-[17px] lg:text-right;
+    @apply absolute bottom-[calc(5px+0.6875rem+2px)] right-[11px] max-w-[calc(100%-22px)] text-[15px] font-bold text-text m-0 leading-none whitespace-nowrap overflow-hidden text-ellipsis lg:bottom-[calc(5px+0.625rem+2px)] lg:text-[17px] lg:text-right;
+  }
+
+  .metric-delta {
+    @apply pointer-events-none absolute bottom-[calc(5px+0.6875rem+0.9375rem+4px)] right-[11px] max-w-[calc(100%-22px)] rounded-lg bg-bg2 px-1.5 py-px text-right text-[12px] font-bold leading-none shadow-[0_0_4px_rgba(0,0,0,0.4)] animate-delta-fade lg:bottom-[calc(5px+0.625rem+1.0625rem+4px)];
+  }
+
+  .metric-happiness-center {
+    @apply flex min-h-0 w-full flex-1 flex-col items-stretch justify-center gap-1;
   }
 
   .metric-happiness-track {
-    @apply relative my-1.5 h-[18px] w-full overflow-hidden rounded;
+    @apply relative h-[18px] w-full overflow-hidden rounded;
     border: 1px solid rgba(255, 255, 255, 0.06);
     background: linear-gradient(90deg, #ef4444 0%, #facc15 48%, #22c55e 100%);
   }
@@ -234,7 +250,12 @@
   }
 
   .metric .sub {
-    @apply text-[9px] md:text-[8px] text-text3 m-0 flex items-center gap-0.5 opacity-80 leading-none md:justify-end;
+    @apply absolute bottom-[5px] right-[11px] m-0 max-w-[calc(100%-22px)] text-right text-[11px] leading-none lg:text-[10px];
+    color: rgb(225, 190, 150);
+  }
+
+  .metric.metric-happiness .sub {
+    @apply static self-end w-auto max-w-full;
   }
 
   .metric.gold .val {
@@ -330,7 +351,36 @@
     box-shadow: 0 8px 14px 2px rgba(0, 0, 0, 0.62);
   }
 
-  /* ── Navigation Items (+17% shell nav scale) ── */
+  /* ── Shell sidebar nav ── */
+  .shell-nav-section {
+    @apply mb-0 px-2.5 pt-4 pb-1 text-[11.5px] font-black uppercase tracking-[0.3em] text-ember-400/80;
+  }
+
+  .shell-nav-btn {
+    @apply relative flex w-full items-center justify-start rounded-xl border border-transparent bg-void-900/55 px-2.5 py-2 text-[13px] text-text3 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] transition hover:text-text;
+  }
+
+  .shell-nav-btn.is-active {
+    @apply border-transparent bg-void-900/55 text-text;
+  }
+
+  .shell-nav-btn__content {
+    @apply relative inline-flex w-[8.1rem] max-w-full items-center gap-2;
+  }
+
+  .shell-nav-btn:hover:not(.is-active) .shell-nav-btn__content::before,
+  .shell-nav-btn.is-active .shell-nav-btn__content::before {
+    content: '';
+    @apply pointer-events-none absolute -inset-x-1.5 -inset-y-0.5 rounded-md;
+    border: 1px solid rgba(240, 98, 2, 0.25);
+    background: linear-gradient(90deg, transparent 0%, transparent 72%, rgba(240, 98, 2, 0.17) 100%);
+  }
+
+  .shell-nav-btn__icon,
+  .shell-nav-btn__label {
+    @apply relative z-[1];
+  }
+
   .nav-section {
     @apply mb-0 px-3.5 pt-4 pb-1 text-[11.5px] font-black uppercase tracking-[0.3em] text-ember-400/80;
   }

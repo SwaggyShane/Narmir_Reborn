@@ -60,6 +60,29 @@ const RACE_PORTRAITS = {
 
 const STATUS_CARD_CLASS = 'card';
 
+const RESEARCH_ROWS = [
+  { label: 'Economy', stateKey: 'res_economy', barId: 'eco', barClass: 'eco' },
+  { label: 'Weapons', stateKey: 'res_weapons', barId: 'wep', barClass: 'wep' },
+  { label: 'Armor', stateKey: 'res_armor', barId: 'arm', barClass: 'arm' },
+  { label: 'Military', stateKey: 'res_military', barId: 'mil', barClass: 'mil' },
+  { label: 'Spellbook', stateKey: 'res_spellbook', barId: 'spell', barClass: 'spell' },
+  { label: 'Atk magic', stateKey: 'res_attack_magic', barId: 'atk', barClass: 'bg-red' },
+  { label: 'Defense magic', stateKey: 'res_defense_magic', barId: 'def', barClass: 'arm' },
+  { label: 'Mana', stateKey: 'mana', barId: 'mana', barClass: 'mana', manaScale: true },
+  { label: 'Entertainment', stateKey: 'res_entertainment', barId: 'ent', barClass: 'bg-green' },
+  { label: 'Construction', stateKey: 'res_construction', barId: 'con', barClass: 'bg-amber' },
+];
+
+function researchBarWidth(value) {
+  const n = Number(value) || 0;
+  return `${Math.min(100, Math.max(0, n / 10))}%`;
+}
+
+function manaBarWidth(value) {
+  const n = Number(value) || 0;
+  return `${Math.min(100, Math.max(0, n / 500))}%`;
+}
+
 const toRaceKey = (value) =>
   String(value || '')
     .trim()
@@ -338,66 +361,27 @@ const StatusPanel = () => {
 
         <div className={STATUS_CARD_CLASS}>
           <div className="card-title">Research levels</div>
-          <div className="trow">
-            <span className="name">Economy</span>
-            <div className="prog-wrap">
-              <div className="prog-bar eco" id="pb-eco-st" style={{ width: '0%' }} />
-            </div>
-          </div>
-          <div className="trow">
-            <span className="name">Weapons</span>
-            <div className="prog-wrap">
-              <div className="prog-bar wep" id="pb-wep-st" style={{ width: '0%' }} />
-            </div>
-          </div>
-          <div className="trow">
-            <span className="name">Armor</span>
-            <div className="prog-wrap">
-              <div className="prog-bar arm" id="pb-arm-st" style={{ width: '0%' }} />
-            </div>
-          </div>
-          <div className="trow">
-            <span className="name">Military</span>
-            <div className="prog-wrap">
-              <div className="prog-bar mil" id="pb-mil-st" style={{ width: '0%' }} />
-            </div>
-          </div>
-          <div className="trow">
-            <span className="name">Spellbook</span>
-            <div className="prog-wrap">
-              <div className="prog-bar spell" id="pb-spell-st" style={{ width: '0%' }} />
-            </div>
-          </div>
-          <div className="trow">
-            <span className="name">Atk magic</span>
-            <div className="prog-wrap">
-              <div className="prog-bar bg-red" id="pb-atk-st" style={{ width: '0%' }} />
-            </div>
-          </div>
-          <div className="trow">
-            <span className="name">Defense magic</span>
-            <div className="prog-wrap">
-              <div className="prog-bar arm" id="pb-def-st" style={{ width: '0%' }} />
-            </div>
-          </div>
-          <div className="trow">
-            <span className="name">Mana</span>
-            <div className="prog-wrap">
-              <div className="prog-bar mana" id="pb-mana-s" style={{ width: '0%' }} />
-            </div>
-          </div>
-          <div className="trow">
-            <span className="name">Entertainment</span>
-            <div className="prog-wrap">
-              <div className="prog-bar bg-green" id="pb-ent-s" style={{ width: '0%' }} />
-            </div>
-          </div>
-          <div className="trow border-b-0">
-            <span className="name">Construction</span>
-            <div className="prog-wrap">
-              <div className="prog-bar bg-amber" id="pb-con-st" style={{ width: '0%' }} />
-            </div>
-          </div>
+          {RESEARCH_ROWS.map((row, index) => {
+            const rawValue = state?.[row.stateKey];
+            const width = row.manaScale ? manaBarWidth(rawValue) : researchBarWidth(rawValue);
+            const barDomId = row.barId === 'mana' ? 'pb-mana-s' : `pb-${row.barId}-st`;
+
+            return (
+              <div
+                key={row.stateKey}
+                className={clsx('trow', index === RESEARCH_ROWS.length - 1 && 'border-b-0')}
+              >
+                <span className="name">{row.label}</span>
+                <div className="prog-wrap">
+                  <div
+                    id={barDomId}
+                    className={clsx('prog-bar', row.barClass)}
+                    style={{ width }}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         <div className={STATUS_CARD_CLASS}>
