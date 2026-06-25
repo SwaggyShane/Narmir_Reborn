@@ -9,6 +9,7 @@ const _config = require("../game/config");
 const { _GOAL_COUNTS, DAILY_GOALS, WEEKLY_GOALS, MONTHLY_GOALS } = require("../game/goals");
 const engine = require("../game/engine");
 const { FRAGMENT_METADATA } = require("../game/fragment-attunements");
+const { PRESETS, PRESET_IDS, buildPresetFields } = require("../game/ai-presets");
 
 const ALLOWED_PRIZE_TYPES = ['gold', 'mana', 'rangers', 'researchers', 'war_machines', 'world_fragment'];
 const ALLOWED_SOUND_EXTENSIONS = new Set([".mp3", ".wav"]);
@@ -849,31 +850,178 @@ module.exports = function (db, io) {
     }
   });
 
-  // DELETE /api/admin/kingdom/:id — delete a kingdom and all related records
-  router.delete("/kingdom/:id", async (req, res) => {
-    const kid = req.params.id;
+  // GET /api/admin/ai/synopsis — per-AI kingdom dashboard stats
+  router.get("/ai/synopsis", async (_req, res) => {
     try {
-      // Clear out relations so foreign keys don't block
-      await db.run("DELETE FROM alliance_members WHERE kingdom_id = ?", [kid]);
-      await db.run("DELETE FROM alliances WHERE leader_id = ?", [kid]);
-      await db.run("DELETE FROM news WHERE kingdom_id = ?", [kid]);
-      await db.run("DELETE FROM war_log WHERE attacker_id = ? OR defender_id = ?", [kid, kid]);
-      await db.run("DELETE FROM expeditions WHERE kingdom_id = ?", [kid]);
-      await db.run("DELETE FROM combat_log WHERE attacker_id = ? OR defender_id = ?", [kid, kid]);
-      await db.run("DELETE FROM chat_messages WHERE kingdom_id = ?", [kid]);
-      await db.run("DELETE FROM heroes WHERE kingdom_id = ?", [kid]);
-      await db.run("DELETE FROM spy_reports WHERE kingdom_id = ? OR target_id = ?", [kid, kid]);
-      await db.run("DELETE FROM trade_routes WHERE kingdom_id = ? OR partner_id = ?", [kid, kid]);
-      await db.run("DELETE FROM bounties WHERE target_id = ? OR claimed_by_id = ?", [kid, kid]);
-      await db.run("DELETE FROM trade_offers WHERE sender_id = ? OR receiver_id = ?", [kid, kid]);
-      await db.run("DELETE FROM mercenaries WHERE kingdom_id = ?", [kid]);
-      await db.run("DELETE FROM event_log WHERE kingdom_id = ?", [kid]);
-      // Finally delete the kingdom
-      await db.run("DELETE FROM kingdoms WHERE id = ?", [kid]);
-      res.json({ ok: true });
-    } catch (err) {
-      console.error("[admin] delete kingdom error:", err.message);
-      res.status(500).json({ error: err.message });
+      const rows = await db.all(`
+        SELECT k.id, k.name, k.race, k.land, k.population, k.gold, k.happiness, k.food,
+               k.fighters, k.ninjas, k.mages, k.rangers, k.thieves, k.turns_stored, k.level,
+               k.build_allocation, k.research_allocation,
+               p.username,
+               (SELECT COUNT(*) FROM war_log WHERE attacker_id = k.id) AS wins,
+               (SELECT COUNT(*) FROM war_log WHERE defender_id = k.id) AS losses
+        FROM kingdoms k
+        JOIN players p ON k.player_id = p.id
+        WHERE p.is_ai = 1
+        ORDER BY k.land DESC
+      `);
+
+      const result = rows.map(r => {
+        let topBuild = null;
+        let topResearch = null;
+        try {
+          const ba = JSON.parse(r.build_allocation || '{}');
+          let maxBld = -1;
+          for (const [k, v] of Object.entries(ba)) {
+            if (typeof v === 'number' && v > maxBld) { maxBld = v; topBuild = k; }
+          }
+        } catch { /* ignore malformed JSON */ }
+        try {
+          const ra = JSON.parse(r.research_allocation || '{}');
+          let maxRes = -1;
+          for (const [k, v] of Object.entries(ra)) {
+            if (typeof v === 'number' && v > maxRes) { maxRes = v; topResearch = k; }
+          }
+        } catch { /* ignore malformed JSON */ }
+        return {
+          id: r.id, name: r.name, race: r.race, username: r.username,
+          land: r.land, population: r.population, gold: r.gold,
+          happiness: r.happiness, food: r.food,
+          fighters: r.fighters, ninjas: r.ninjas, mages: r.mages,
+          rangers: r.rangers, thieves: r.thieves,
+          turns_stored: r.turns_stored, level: r.level,
+          wins: r.wins, losses: r.losses,
+          top_build: topBuild, top_research: topResearch,
+        };
+      });
+
+      res.json(result);
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // POST /api/admin/ai/seed — create AI players+kingdoms for each race (idempotent)
+  router.post("/ai/seed", async (req, res) => {
+    try {
+      const passwordHash = await bcrypt.hash('ai_narmir_internal_2026', BCRYPT_SALT_ROUNDS);
+      const results = [];
+
+      for (const race of TEST_RACES) {
+        const username = `ai_${race}`;
+        const prettyRace = race.replace(/_/g, ' ').replace(/\b\w/g, m => m.toUpperCase());
+        const kingdomName = `AI ${prettyRace}`;
+        const email = `${username}@narmir.ai`;
+
+        let player = await db.get('SELECT id, is_ai FROM players WHERE username = ?', [username]);
+        let created = false;
+
+        if (!player) {
+          const pr = await db.run(
+            'INSERT INTO players (username, password, email, is_admin, is_ai) VALUES (?, ?, ?, 0, 1)',
+            [username, passwordHash, email],
+          );
+          player = { id: pr.lastID, is_ai: 1 };
+          created = true;
+        } else if (!player.is_ai) {
+          await db.run('UPDATE players SET is_ai = 1 WHERE id = ?', [player.id]);
+        }
+
+        let kingdom = await db.get('SELECT id, race FROM kingdoms WHERE player_id = ?', [player.id]);
+
+        if (!kingdom) {
+          const profile = buildStartingProfile(race);
+          const region = engine.assignRegion(race);
+          const insertResult = await db.run(
+            `INSERT INTO kingdoms (
+              player_id, name, race, gender, region, gold, land, population, food,
+              researchers, engineers, fighters, rangers, thralls, turns_stored,
+              res_spellbook, blueprints_stored,
+              bld_farms, bld_schools, bld_barracks, bld_armories, bld_housing,
+              bld_markets, bld_smithies, bld_mage_towers, bld_shrines, bld_outposts,
+              bld_training, bld_mausoleums, world_fragments
+            ) VALUES (?, ?, ?, 'male', ?, 10000, ?, 50000, ?, 100, 100, ?, ?, ?, 400, 0, 0,
+              ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '[]')`,
+            [
+              player.id, kingdomName, race, region,
+              profile.land, profile.food,
+              profile.fighters, profile.rangers, profile.thralls,
+              profile.buildings.bld_farms, profile.buildings.bld_schools,
+              profile.buildings.bld_barracks, profile.buildings.bld_armories,
+              profile.buildings.bld_housing, profile.buildings.bld_markets,
+              profile.buildings.bld_smithies, profile.buildings.bld_mage_towers,
+              profile.buildings.bld_shrines, profile.buildings.bld_outposts,
+              profile.buildings.bld_training, profile.buildings.bld_mausoleums,
+            ],
+          );
+          kingdom = { id: insertResult.lastID, race };
+        }
+
+        results.push({ race, username, kingdomName, kingdomId: kingdom.id, created });
+      }
+
+      res.json({ ok: true, created: results.filter(r => r.created).length, total: results.length, results });
+    } catch (e) {
+      console.error('[admin] ai/seed error:', e.message);
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // POST /api/admin/ai/reset — reset all AI kingdoms to starting values
+  router.post("/ai/reset", async (_req, res) => {
+    try {
+      const aiKingdoms = await db.all(
+        'SELECT k.id, k.race FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE p.is_ai = 1',
+      );
+      for (const k of aiKingdoms) {
+        await resetKingdomLogic(db, k.id, k.race);
+      }
+      res.json({ ok: true, reset: aiKingdoms.length });
+    } catch (e) {
+      console.error('[admin] ai/reset error:', e.message);
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // GET /api/admin/ai/presets — list available preset IDs and labels
+  router.get("/ai/presets", (_req, res) => {
+    const list = PRESET_IDS.map(id => ({
+      id,
+      label: PRESETS[id].label,
+      description: PRESETS[id].description,
+    }));
+    res.json(list);
+  });
+
+  // POST /api/admin/ai/apply-preset — apply a preset to one kingdom
+  router.post("/ai/apply-preset", async (req, res) => {
+    try {
+      const { kingdomId, presetId, force } = req.body;
+      if (!kingdomId || !presetId) {
+        return res.status(400).json({ error: 'kingdomId and presetId required' });
+      }
+      if (!PRESET_IDS.includes(presetId)) {
+        return res.status(400).json({ error: `Unknown preset: ${presetId}` });
+      }
+
+      const kingdom = await db.get(
+        'SELECT k.id, k.race, p.is_ai FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.id = ?',
+        [kingdomId],
+      );
+      if (!kingdom) return res.status(404).json({ error: 'Kingdom not found' });
+      if (!kingdom.is_ai && !force) {
+        return res.status(400).json({ error: 'Kingdom is not AI-controlled. Pass force: true to override.' });
+      }
+
+      const fields = buildPresetFields(presetId, kingdom.race);
+      const setClauses = Object.keys(fields).map(k => `${k} = ?`).join(', ');
+      const values = [...Object.values(fields), kingdomId];
+      await db.run(`UPDATE kingdoms SET ${setClauses} WHERE id = ?`, values);
+
+      res.json({ ok: true, kingdomId: kingdom.id, presetId, race: kingdom.race, fieldsUpdated: Object.keys(fields).length });
+    } catch (e) {
+      console.error('[admin] ai/apply-preset error:', e.message);
+      res.status(500).json({ error: e.message });
     }
   });
 
