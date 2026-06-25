@@ -33,7 +33,7 @@ function XpBar({ pct }) {
           borderRadius: 3,
           transition: 'width 0.4s ease',
           background: 'linear-gradient(90deg, var(--accent1), var(--gold))',
-          boxShadow: pct > 0 ? '0 0 6px rgba(240, 98, 2, 0.45)' : undefined,
+          boxShadow: pct > 0 ? '0 0 6px rgba(var(--theme-rgb), 0.45)' : undefined,
         }}
       />
     </div>
@@ -99,7 +99,7 @@ const KingdomBodyHeader = () => {
                 style={{
                   color: 'var(--gold)',
                   fontWeight: 700,
-                  textShadow: '0 0 10px rgba(240, 98, 2, 0.35)',
+                  textShadow: '0 0 10px rgba(var(--theme-rgb), 0.35)',
                 }}
               >
                 {kingdomName}
