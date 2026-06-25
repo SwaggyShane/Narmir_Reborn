@@ -183,7 +183,8 @@ const StatusPanel = () => {
             <RaceLorePortrait
               portraitUrl={portraitUrl}
               alt={cleanText(raceInfo.label)}
-              size={300}
+              height={250}
+              aspectRatio="4 / 5"
             />
           ) : null}
           <div className="flex flex-col gap-1.5 flex-1">
