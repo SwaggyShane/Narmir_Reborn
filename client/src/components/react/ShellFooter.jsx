@@ -8,7 +8,7 @@ const ShellFooter = () => {
     <footer
       className={[
         'flex h-8 shrink-0 items-center justify-between border-t border-white/5',
-        'bg-black/90 px-4 text-[11px] leading-none text-text2',
+        'bg-bg px-4 text-[11px] leading-none text-text2',
         'max-lg:fixed max-lg:inset-x-0 max-lg:bottom-[calc(72px+env(safe-area-inset-bottom,0px))] max-lg:z-[2900]',
         'lg:col-span-2 lg:col-start-2 lg:row-start-3',
       ].join(' ')}
