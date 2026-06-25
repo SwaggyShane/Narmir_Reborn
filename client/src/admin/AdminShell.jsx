@@ -4,9 +4,9 @@ import AdminTabNav, { ADMIN_TABS } from './AdminTabNav.jsx';
 import AdminToast from './AdminToast.jsx';
 import { useAdminSession } from './hooks/useAdminSession.js';
 import KingdomsPanel from './panels/KingdomsPanel.jsx';
+import ManagePanel from './panels/ManagePanel.jsx';
 
 const PHASE_LABELS = {
-  manage:    'Phase 3',
   events:    'Phase 4',
   config:    'Phase 5',
   sounds:    'Phase 5',
@@ -91,6 +91,11 @@ export default function AdminShell({ adminUser, onLogout }) {
         <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 8, padding: '20px 24px' }}>
           {activeTab === 'kingdoms' ? (
             <KingdomsPanel
+              adminFetch={adminFetch}
+              onToast={(msg, type) => setToast({ msg, type: type || 'info' })}
+            />
+          ) : activeTab === 'manage' ? (
+            <ManagePanel
               adminFetch={adminFetch}
               onToast={(msg, type) => setToast({ msg, type: type || 'info' })}
             />
