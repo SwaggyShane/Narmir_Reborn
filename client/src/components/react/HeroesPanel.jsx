@@ -3,41 +3,14 @@ import clsx from 'clsx';
 import { useGameState } from '../../hooks/useGameState';
 import { apiCall } from '../../utils/api.mjs';
 import { fmt } from "../../utils/fmt";
-import LoreModal from './LoreModal.jsx';
 import { repairMojibake } from '../../utils/repairMojibake.js';
+import { heroPortraitUrl } from '../../utils/heroPortraits.js';
+import { openHeroLore } from '../../utils/openHeroLore.js';
+import { showHeroXpModal } from '../../utils/showHeroXpModal.js';
 import { toast as showToast } from '../../utils/toast.js';
 import { switchTab } from '../../utils/switchTab.js';
 import EmptyState from './EmptyState.jsx';
 
-
-const HERO_PORTRAITS = {
-  siegebreaker: '/hero/siegebreaker.webp',
-  forge_lord: '/hero/forge_lord.webp',
-  stonelord: '/hero/stonelord.webp',
-  archmage: '/hero/archmage.webp',
-  lunar_sentinel: '/hero/lunar_sentinel.webp',
-  mage_king: '/hero/mage_king.webp',
-  warlord: '/hero/warlord.webp',
-  high_chieftain: '/hero/high_chieftain.webp',
-  warshaman: '/hero/warshaman.webp',
-  assassin: '/hero/assassin.webp',
-  void_weaver: '/hero/void_weaver.webp',
-  shadowmaster: '/hero/shadowmaster.webp',
-  paladin: '/hero/paladin.webp',
-  grand_chancellor: '/hero/grand_chancellor.webp',
-  high_consul: '/hero/grand_chancellor.webp',
-  alpha: '/hero/warlord.webp',
-  storm_howler: '/hero/warshaman.webp',
-  blood_shaman: '/hero/warshaman.webp',
-  night_lord: '/hero/void_weaver.webp',
-  sanguine_oracle: '/hero/shadowmaster.webp',
-  blood_matriarch: '/hero/assassin.webp',
-  _default: '/hero/siegebreaker.webp',
-};
-
-function heroPortrait(cls) {
-  return HERO_PORTRAITS[cls] || HERO_PORTRAITS._default || '';
-}
 
 function heroXpForLevelJS(level) {
   return Math.floor(1000 * (Math.pow(1.5, level - 1) - 1));
@@ -50,7 +23,6 @@ const HeroesPanel = () => {
   const [allHeroClasses, setAllHeroClasses] = useState({});
   const [selectedHeroClass, setSelectedHeroClass] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [heroLoreKey, setHeroLoreKey] = useState(null);
   const [refreshTick, setRefreshTick] = useState(0);
 
   const loadHeroes = useCallback(async () => {
@@ -164,7 +136,7 @@ const HeroesPanel = () => {
           className="card m-0 flex gap-3 items-start border border-[var(--border2)] bg-gradient-to-br from-[var(--bg2)] to-[var(--bg3)]"
         >
           <img
-            src={heroPortrait(h.class)}
+            src={heroPortraitUrl(h.class)}
             width="56"
             height="56"
             className="rounded-[8px] object-cover flex-shrink-0"
@@ -235,7 +207,7 @@ const HeroesPanel = () => {
         <div className="flex w-full items-center justify-between">
           <div className="flex gap-2.5 items-center">
             <img
-              src={heroPortrait(id)}
+              src={heroPortraitUrl(id)}
               width="40"
               height="40"
               className="rounded-[6px] object-cover block flex-shrink-0"
@@ -277,7 +249,7 @@ const HeroesPanel = () => {
         </div>
         <button
           className="base-btn text-[11px] px-2.5 py-0.75 mt-1.5 self-start"
-          onClick={(e) => { e.stopPropagation(); setHeroLoreKey(id); }}
+          onClick={(e) => { e.stopPropagation(); openHeroLore(id); }}
         >
           📖 View Lore
         </button>
@@ -316,7 +288,7 @@ const HeroesPanel = () => {
               <div className="mb-2 text-[11px] font-bold uppercase text-[var(--text3)]">Hero Advancement</div>
               <div className="mb-1.5 flex items-center justify-between text-[11px]"><span className="text-[var(--text2)]">Combat Win</span><span className="text-[var(--gold)]">500 XP</span></div>
               <div className="mb-1.5 flex items-center justify-between text-[11px]"><span className="text-[var(--text2)]">Combat Loss</span><span className="text-[var(--gold)]">100 XP</span></div>
-              <div className="mb-1.5 flex items-center justify-between text-[11px]"><span className="text-[var(--text2)]">Leveling</span><span className="text-[var(--accent1)] cursor-pointer underline" onClick={openHeroXpModal}>View XP Table</span></div>
+              <div className="mb-1.5 flex items-center justify-between text-[11px]"><span className="text-[var(--text2)]">Leveling</span><span className="text-[var(--accent1)] cursor-pointer underline" onClick={showHeroXpModal}>View XP Table</span></div>
             </div>
 
             <div className="mb-4">
@@ -337,56 +309,6 @@ const HeroesPanel = () => {
           </div>
         </div>
       </div>
-      <LoreModal
-        isOpen={!!heroLoreKey}
-        onClose={() => setHeroLoreKey(null)}
-      title={heroLoreKey && allHeroClasses?.[heroLoreKey] ? `${allHeroClasses[heroLoreKey].name || ''} Class Lore` : 'Hero Lore'}
-      >
-        {heroLoreKey && allHeroClasses?.[heroLoreKey] && (() => {
-          const cls = allHeroClasses[heroLoreKey];
-          const abilities = Array.isArray(cls.abilities) ? cls.abilities : [];
-          return (
-            <>
-              <div className="mb-5 text-center">
-                <div className="hero-lore-portrait-frame">
-                  <img
-                    src={heroPortrait(heroLoreKey)}
-                    className="hero-lore-portrait"
-                    onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
-                    alt={cls.name || ''}
-                  />
-                </div>
-                <div className="text-[20px] font-bold text-[var(--text)]">{cls.name || ''}</div>
-                <div className="text-[12px] text-[var(--text3)] uppercase tracking-[1px]">Legendary Hero Class</div>
-              </div>
-              {abilities.length > 0 && (
-                <div className="mb-5">
-                  <div className="text-[11px] font-bold text-[var(--gold)] mb-2.5 uppercase tracking-[1px]">Signature Abilities</div>
-                  <div className="flex flex-col gap-2.5">
-                    {abilities.map((a, i) => (
-                      <div key={i} className="bg-white/[0.02] border border-[var(--border)] rounded-[8px] p-2.5">
-                        <div className="text-[13px] font-semibold text-[var(--text)] mb-0.5">{a.name || ''}</div>
-                        <div className="text-[12px] text-[var(--text3)]">{a.description || ''}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              <div className="grid grid-cols-2 gap-2.5">
-                <div className="bg-[var(--bg4)] rounded-[8px] p-2.5 text-center">
-                  <div className="text-[10px] text-[var(--text3)] uppercase">Recruit Cost</div>
-                  <div className="text-[14px] font-bold text-[var(--gold)]">{fmt(cls.recruitCost)} GC</div>
-                </div>
-                <div className="bg-[var(--bg4)] rounded-[8px] p-2.5 text-center">
-                  <div className="text-[10px] text-[var(--text3)] uppercase">Mana Cost</div>
-                  <div className="text-[14px] font-bold text-[var(--blue)]">{fmt(cls.recruitMana)} ✨</div>
-                </div>
-              </div>
-            </>
-          );
-        })()}
-      </LoreModal>
-
     </div>
   );
 };

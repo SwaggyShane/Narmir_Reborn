@@ -36,6 +36,7 @@ import AuthModal, { restoreAuthSession } from './components/react/AuthModal.jsx'
 import KingdomProfileModal from './components/react/KingdomProfileModal.jsx';
 import SchoolSelectionController from './components/react/SchoolSelectionController.jsx';
 import RaceLoreController from './components/react/RaceLoreController.jsx';
+import HeroLoreController from './components/react/HeroLoreController.jsx';
 import ToastProvider from './components/react/ToastProvider.jsx';
 import PanelContextHeader from './components/react/PanelContextHeader.jsx';
 import CommandPalette from './components/react/CommandPalette.jsx';
@@ -183,6 +184,7 @@ const GameShell = () => {
       <KingdomProfileModal />
       <SchoolSelectionController />
       <RaceLoreController />
+      <HeroLoreController />
       <ToastProvider />
       <CommandPalette />
       <MobileTurnFab />
