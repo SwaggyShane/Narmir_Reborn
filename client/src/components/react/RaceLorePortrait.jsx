@@ -35,8 +35,9 @@ export default function RaceLorePortrait({
   const frameStyle = {
     ...FRAME_BASE,
     width: `${size}px`,
-    height: `${size}px`,
     maxWidth: '100%',
+    aspectRatio: '1 / 1',
+    height: 'auto',
   };
 
   if (!portraitUrl || failed) {

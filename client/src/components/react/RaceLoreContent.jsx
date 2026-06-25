@@ -9,13 +9,13 @@ export default function RaceLoreContent({ lore, regionName, regionBonus, portrai
 
   return (
     <>
-      <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '20px' }}>
+      <div className="mb-5 flex flex-col items-center gap-5 sm:flex-row sm:items-start">
         <RaceLorePortrait
           portraitUrl={portraitUrl}
           alt={repair(lore.title || '')}
           fallbackIcon={repair(lore.icon || '⚔')}
         />
-        <div style={{ flex: 1, paddingTop: '4px' }}>
+        <div className="w-full flex-1 pt-0 text-center sm:pt-1 sm:text-left">
           <h2 style={{ color: lore.color || 'var(--gold)', margin: '0 0 6px', fontSize: '24px', letterSpacing: '-0.5px', fontFamily: "'Cinzel', serif", fontWeight: 700 }}>
             {repair(lore.title || 'Unknown')}
           </h2>
