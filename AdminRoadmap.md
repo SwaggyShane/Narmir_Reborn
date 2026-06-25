@@ -489,9 +489,9 @@ Each phase is an independent draft PR. Do not delete `public/admin.html` until P
 
 - [x] Virtualized `AdminDataTable` for kingdoms
 - [x] Search, ban/unban modal, delete/reset confirmations
-- [x] `KingdomEditModal` — port `EDIT_SECTIONS` field widgets incrementally:
+- [ ] `KingdomEditModal` — port `EDIT_SECTIONS` field widgets incrementally:
   - [x] PR 2a: scalar fields (attributes, resources, units, buildings, research) — MERGED (PR #582)
-  - [ ] PR 2b: JSON widgets (fragments, troop-levels, effects, mercs, attunements)
+  - [ ] PR 2b: JSON widgets (world_fragments, fragment_bonuses, troop_levels, active_effects, mercenaries)
 - [ ] Implement missing `ai/seed`, `ai/reset`, `ai/synopsis` APIs
 - [ ] `AiKingdomPanel` with preset buttons (backend from §5.4)
 
