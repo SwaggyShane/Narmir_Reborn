@@ -76,7 +76,7 @@ const KingdomBodyHeader = () => {
     <>
       <div
         id="kd-top"
-        className="kd-top shell-lore-box relative z-10 mx-3 mb-2 mt-2 shrink-0 sm:mx-4 sm:mb-3 sm:mt-3"
+        className="kd-top shell-lore-box relative z-10 mx-3 mb-2 mt-2 min-w-0 max-w-[calc(100vw-1.5rem)] shrink-0 overflow-hidden sm:mx-4 sm:mb-3 sm:mt-3 sm:max-w-none"
       >
         <div
           className="kingdom-header flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between"
@@ -85,7 +85,7 @@ const KingdomBodyHeader = () => {
           <div className="flex min-w-0 w-full flex-wrap items-center sm:flex-1" style={{ gap: GAP }}>
             <h1
               id="kingdom-name"
-              className="min-w-0 font-cinzel text-base font-bold leading-snug sm:text-lg md:text-xl"
+              className="min-w-0 break-words font-cinzel text-base font-bold leading-snug sm:text-lg md:text-xl"
               style={{ color: 'var(--text)' }}
             >
               <span style={{ color: 'var(--text)' }}>{playerName}</span>

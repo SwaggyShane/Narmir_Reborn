@@ -38,9 +38,10 @@ export default function RaceLorePortrait({
   const frameStyle = height != null
     ? {
         ...FRAME_BASE,
-        height: `${height}px`,
-        width: 'auto',
+        width: '100%',
         maxWidth: '100%',
+        height: 'auto',
+        maxHeight: `${height}px`,
         aspectRatio,
       }
     : {
