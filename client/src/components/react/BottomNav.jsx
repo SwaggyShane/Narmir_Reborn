@@ -1,11 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useActivePanel } from '../../hooks/useActivePanel';
 import { useGameState } from '../../hooks/useGameState';
 import { logout } from './AuthModal.jsx';
 import { switchTab } from '../../utils/switchTab.js';
 import { useNavLayout } from '../../hooks/useNavLayout.js';
-import { AppEvent } from '../../utils/appEvents.js';
-import { useAppEvent } from '../../hooks/useAppEvent.js';
+import { useShellBadges } from '../../hooks/useShellBadges.js';
 
 const CORE_TABS = [
   { id: 'status', label: 'Status', icon: '🏰', color: 'text-sky-300' },
@@ -49,19 +48,14 @@ function NavChip({ label, icon, color, active, onClick, showBadge }) {
         'flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 rounded-2xl border px-1 py-2 text-[11px] font-semibold transition',
         'active:scale-95',
         active
-          ? 'border-amber-400/60 bg-amber-500/15 text-amber-100 shadow-[0_0_0_1px_rgba(251,191,36,0.15)]'
-          : 'border-white/5 bg-zinc-950/70 text-slate-300 hover:border-amber-400/30 hover:bg-zinc-900/90',
+          ? 'bottom-nav-chip is-active text-text'
+          : 'bottom-nav-chip text-text3 hover:text-text',
       ].join(' ')}
     >
       <span className={`text-lg leading-none ${color || 'text-slate-200'}`}>{icon}</span>
       <span className="flex items-center gap-1 whitespace-nowrap">
         <span>{label}</span>
-        {showBadge ? (
-          <span
-            aria-hidden="true"
-            className="min-w-4 rounded-full bg-red-500 px-1.5 text-[10px] leading-4 text-white"
-          />
-        ) : null}
+        {showBadge ? <span className="nav-badge static !relative !top-0 !right-0" aria-label="Unread" /> : null}
       </span>
     </button>
   );
@@ -77,19 +71,14 @@ function DrawerChip({ label, icon, color, active, onClick, showBadge }) {
         'flex min-h-[54px] items-center gap-3 rounded-2xl border px-3 py-3 text-left transition',
         'active:scale-[0.98]',
         active
-          ? 'border-amber-400/60 bg-amber-500/15 text-amber-100'
-          : 'border-white/5 bg-zinc-950/80 text-slate-200 hover:border-amber-400/30 hover:bg-zinc-900/95',
+          ? 'bottom-nav-chip is-active text-text'
+          : 'bottom-nav-chip text-text2 hover:text-text',
       ].join(' ')}
     >
       <span className={`text-xl leading-none ${color || 'text-slate-200'}`}>{icon}</span>
       <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
         <span className="truncate text-sm font-semibold">{label}</span>
-        {showBadge ? (
-          <span
-            aria-hidden="true"
-            className="min-w-4 rounded-full bg-red-500 px-1.5 text-[10px] leading-4 text-white"
-          />
-        ) : null}
+        {showBadge ? <span className="nav-badge static !relative !top-0 !right-0" aria-label="Unread" /> : null}
       </span>
     </button>
   );
@@ -100,46 +89,13 @@ const BottomNav = () => {
   const { activePanel } = useActivePanel();
   const { layout } = useNavLayout();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [badges, setBadges] = useState({ chat: false, news: false, messages: false });
+  const { hasBadge } = useShellBadges();
   const isAdmin = !!state?.isAdmin;
   const showBottomNav = layout === 'bottom' || layout === 'responsive';
 
   const drawerActive = useMemo(() => (
     drawerOpen || DRAWER_TABS.some((tab) => tab.id === activePanel)
   ), [drawerOpen, activePanel]);
-
-  const showBadgeFor = useCallback((badgeKey) => {
-    if (!badgeKey) return false;
-    return !!badges[badgeKey];
-  }, [badges]);
-
-  useAppEvent(AppEvent.CHAT_BADGE_ALERT, useCallback(() => {
-    setBadges((prev) => ({ ...prev, chat: true }));
-  }, []));
-
-  useAppEvent(AppEvent.CLEAR_NEWS_BADGES, useCallback(() => {
-    setBadges((prev) => ({ ...prev, news: false }));
-  }, []));
-
-  useAppEvent(AppEvent.NEWS_ITEMS, useCallback(() => {
-    setBadges((prev) => ({ ...prev, news: true }));
-  }, []));
-
-  useAppEvent(AppEvent.NEWS_REFRESH, useCallback(() => {
-    setBadges((prev) => ({ ...prev, news: true }));
-  }, []));
-
-  useEffect(() => {
-    if (activePanel === 'globalchat') {
-      setBadges((prev) => (prev.chat ? { ...prev, chat: false } : prev));
-    }
-    if (activePanel === 'news') {
-      setBadges((prev) => (prev.news ? { ...prev, news: false } : prev));
-    }
-    if (activePanel === 'messages') {
-      setBadges((prev) => (prev.messages ? { ...prev, messages: false } : prev));
-    }
-  }, [activePanel]);
 
   const handleSwitchTab = (id) => {
     setDrawerOpen(false);
@@ -164,7 +120,7 @@ const BottomNav = () => {
             color={tab.color}
             active={activePanel === tab.id}
             onClick={() => handleSwitchTab(tab.id)}
-            showBadge={showBadgeFor(tab.badgeKey)}
+            showBadge={hasBadge(tab.badgeKey)}
           />
         ))}
 
@@ -174,8 +130,8 @@ const BottomNav = () => {
             'flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl border px-1 py-2 text-[11px] font-semibold transition',
             'active:scale-95',
             drawerActive
-              ? 'border-amber-400/60 bg-amber-500/15 text-amber-100'
-              : 'border-white/5 bg-zinc-950/70 text-slate-300 hover:border-amber-400/30 hover:bg-zinc-900/90',
+              ? 'bottom-nav-chip is-active text-text'
+              : 'bottom-nav-chip text-text3 hover:text-text',
           ].join(' ')}
           onClick={() => setDrawerOpen((open) => !open)}
           aria-expanded={drawerOpen}
@@ -224,7 +180,7 @@ const BottomNav = () => {
                 color={tab.color}
                 active={activePanel === tab.id}
                 onClick={() => handleSwitchTab(tab.id)}
-                showBadge={showBadgeFor(tab.badgeKey)}
+                showBadge={hasBadge(tab.badgeKey)}
               />
             ))}
           </div>

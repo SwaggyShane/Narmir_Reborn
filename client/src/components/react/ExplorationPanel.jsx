@@ -7,6 +7,7 @@ import { repairMojibake } from '../../utils/repairMojibake';
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import { AppEvent } from '../../utils/appEvents.js';
 import { useAppEvent } from '../../hooks/useAppEvent.js';
+import EmptyState from './EmptyState.jsx';
 
 const REFRESH_INTERVAL_MS = 2 * 60 * 1000;
 const EXPEDITION_TURNS = {
@@ -671,9 +672,11 @@ const ExplorationPanel = () => {
             </div>
             <div id="exploration-log" className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
               {instantEntries.length === 0 && activeExpeditions.length === 0 && completedExpeditions.length === 0 && (
-                <div data-empty className="py-3 text-[13px] text-[var(--text3)]">
-                  No expeditions sent yet.
-                </div>
+                <EmptyState
+                  icon="🧭"
+                  title="No expeditions yet"
+                  description="Send rangers on a scout, deep, dungeon, or mountain expedition to fill this log."
+                />
               )}
               {instantEntries.map((entry) => (
                 <div key={entry.id} className="exp-log-entry flex items-start gap-3 border-b border-[var(--border)] py-2 text-[13px]">

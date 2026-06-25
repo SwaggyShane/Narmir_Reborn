@@ -78,6 +78,24 @@ const StudiesPanel = () => {
     spellbook: "res_spellbook",
   };
 
+  const STUDIES_RESEARCH_ROWS = [
+    { label: 'Economy', stateKey: 'res_economy', barClass: 'eco' },
+    { label: 'Weapons', stateKey: 'res_weapons', barClass: 'wep' },
+    { label: 'Armor', stateKey: 'res_armor', barClass: 'arm' },
+    { label: 'Military', stateKey: 'res_military', barClass: 'mil' },
+    { label: 'Attack magic', stateKey: 'res_attack_magic', barClass: 'bg-red' },
+    { label: 'Defense magic', stateKey: 'res_defense_magic', barClass: 'arm' },
+    { label: 'Entertainment', stateKey: 'res_entertainment', barClass: 'bg-green' },
+    { label: 'Construction', stateKey: 'res_construction', barClass: 'bg-amber' },
+    { label: 'War machines', stateKey: 'res_war_machines', barClass: 'mil' },
+    { label: 'Spellbook', stateKey: 'res_spellbook', barClass: 'spell' },
+  ];
+
+  const researchBarWidth = (value) => {
+    const n = Number(value) || 0;
+    return `${Math.min(100, Math.max(0, n / 10))}%`;
+  };
+
   const handleTabClick = useCallback((tabId) => {
     setActiveTab(tabId);
   }, []);
@@ -284,7 +302,7 @@ const StudiesPanel = () => {
         <div style={{ display: activeSchoolSubTab === 'general' ? 'block' : 'none' }}>
           <div className="r-grid-2" style={{ marginBottom: '12px' }}>
             <div className="card" style={{ margin: 0 }}>
-              <div className="card-title" style={{ marginBottom: '10px' }}>General Spellbook</div>
+              <div className="card-title !mb-2.5">General Spellbook</div>
               <div className="trow">
                 <span className="name">Researchers</span><span className="count" id="st-researchers">0</span>
               </div>
@@ -296,14 +314,14 @@ const StudiesPanel = () => {
               </div>
             </div>
             <div className="card" style={{ margin: 0 }}>
-              <div className="card-title" style={{ marginBottom: '10px' }}>School upgrades</div>
+              <div className="card-title !mb-2.5">School upgrades</div>
               <div id="school-upgrade-list"></div>
             </div>
           </div>
 
           {/* Research focus - locked to spellbook */}
           <div className="card">
-            <div className="card-title" style={{ marginBottom: '8px' }}>Researcher Focus</div>
+            <div className="card-title !mb-2">Researcher Focus</div>
             <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '12px' }}>
               Researchers study the general spellbook. Once you reach level 100, you can choose a school of magic.
             </div>
@@ -342,14 +360,22 @@ const StudiesPanel = () => {
               <div style={{ fontSize: '11px', color: 'var(--text3)' }}>Focus 2 Current: {state?.[DISC_COLS[focus2Value]] || 0}%</div>
             </div>
             <button className="base-btn variant-green w-full" onClick={saveResearchFocus} style={{ width: '100%', background: 'var(--green)' }}>Save focus</button>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '16px' }}>
-              {Object.keys(DISC_COLS).map((k) => {
-                const val = state?.[DISC_COLS[k]] || 0;
-                const label = k.charAt(0).toUpperCase() + k.slice(1).replace(/_/g, ' ');
+            <div className="mt-4 border-t border-[var(--border)] pt-4">
+              <div className="card-title !mb-2">Research levels</div>
+              {STUDIES_RESEARCH_ROWS.map((row, index) => {
+                const rawValue = state?.[row.stateKey];
                 return (
-                  <div key={k} style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '8px', padding: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '11px', color: 'var(--text3)' }}>{label}</span>
-                    <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--gold)' }}>{val}%</span>
+                  <div
+                    key={row.stateKey}
+                    className={clsx('trow', index === STUDIES_RESEARCH_ROWS.length - 1 && 'border-b-0')}
+                  >
+                    <span className="name">{row.label}</span>
+                    <div className="prog-wrap">
+                      <div
+                        className={clsx('prog-bar', row.barClass)}
+                        style={{ width: researchBarWidth(rawValue) }}
+                      />
+                    </div>
                   </div>
                 );
               })}
@@ -369,7 +395,7 @@ const StudiesPanel = () => {
             {/* School Header */}
             <div className="card" style={{ marginBottom: '12px', textAlign: 'center' }}>
               <div style={{ fontSize: '32px', marginBottom: '8px' }}>🔮</div>
-              <div className="card-title" style={{ marginBottom: '4px', textTransform: 'capitalize' }}>
+              <div className="card-title !mb-1 capitalize">
                 {(studiesData?.school_of_magic || state?.school_of_magic)?.replace(/_/g, ' ')}
               </div>
               <div style={{ fontSize: '13px', color: 'var(--text3)', marginBottom: '8px' }}>
@@ -384,9 +410,9 @@ const StudiesPanel = () => {
             <div className="card" style={{ marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
                 <div>
-                  <div className="card-title" style={{ marginBottom: '2px' }}>Mage Research</div>
+                  <div className="card-title !mb-0.5">Mage Research</div>
                   <div style={{ fontSize: '12px', color: 'var(--text3)' }}>
-                    Total Mages: <span id="mage-total" style={{ color: 'var(--text)' }}>0</span> · Available: <span id="mage-available" style={{ color: 'var(--green)' }}>0</span> · Allocated: <span id="mage-allocated" style={{ color: 'var(--gold)' }}>0</span>
+                    Total Mages: <span id="mage-total" style={{ color: 'var(--text)' }}>0</span> | Available: <span id="mage-available" style={{ color: 'var(--green)' }}>0</span> | Allocated: <span id="mage-allocated" style={{ color: 'var(--gold)' }}>0</span>
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -443,7 +469,7 @@ const StudiesPanel = () => {
                 {/* Spellbook Card */}
                 <div className="card" style={{ margin: 0, padding: '16px' }}>
                   <div style={{ fontSize: '24px', marginBottom: '8px' }}>📖</div>
-                  <div className="card-title" style={{ marginBottom: '2px', fontSize: '14px' }}>Spellbook</div>
+                  <div className="card-title !mb-0.5 text-[14px]">Spellbook</div>
                   <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '12px' }}>Mages continuing study</div>
 
                   <div className="trow">
@@ -466,7 +492,7 @@ const StudiesPanel = () => {
 
                 {/* Spellbook Spells */}
                 <div className="card" style={{ margin: 0 }}>
-                  <div className="card-title" style={{ marginBottom: '12px' }}>Spellbook Spells</div>
+                  <div className="card-title !mb-3">Spellbook Spells</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     {Object.keys(spellbookSpellsByTier).length > 0 ? (
                       Object.keys(spellbookSpellsByTier)
@@ -504,7 +530,7 @@ const StudiesPanel = () => {
                 {/* School Spellbook Card */}
                 <div className="card" style={{ margin: 0, padding: '16px' }}>
                   <div style={{ fontSize: '24px', marginBottom: '8px' }}>🔮</div>
-                  <div className="card-title" style={{ marginBottom: '2px', fontSize: '14px' }} id="school-spellbook-title">School Spellbook</div>
+                  <div className="card-title !mb-0.5 text-[14px]" id="school-spellbook-title">School Spellbook</div>
                   <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '12px' }}>Mages specializing</div>
 
                   <div className="trow">
@@ -527,7 +553,7 @@ const StudiesPanel = () => {
 
                 {/* School Spells */}
                 <div className="card" style={{ margin: 0 }}>
-                  <div className="card-title" style={{ marginBottom: '12px', textTransform: 'capitalize' }}>
+                  <div className="card-title !mb-3 capitalize">
                     {(studiesData?.school_of_magic || state?.school_of_magic)?.replace(/_/g, ' ')} Spells
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

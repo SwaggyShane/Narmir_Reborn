@@ -6,6 +6,8 @@ import { fmt } from "../../utils/fmt";
 import LoreModal from './LoreModal.jsx';
 import { repairMojibake } from '../../utils/repairMojibake.js';
 import { toast as showToast } from '../../utils/toast.js';
+import { switchTab } from '../../utils/switchTab.js';
+import EmptyState from './EmptyState.jsx';
 
 
 const HERO_PORTRAITS = {
@@ -132,8 +134,14 @@ const HeroesPanel = () => {
   const heroCards = useMemo(() => {
     if (!heroes.length) {
       return (
-        <div className="col-span-full text-center px-5 py-5 text-[13px] text-[var(--text3)]">
-          No heroes recruited yet. Build a Castle to recruit your first hero!
+        <div className="col-span-full">
+          <EmptyState
+            icon="👑"
+            title="No heroes yet"
+            description="Build a Castle to unlock hero recruitment and lead your kingdom with a champion."
+            actionLabel="Open Build"
+            onAction={() => switchTab('build')}
+          />
         </div>
       );
     }

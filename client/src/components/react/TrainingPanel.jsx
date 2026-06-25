@@ -140,18 +140,27 @@ const TrainingPanel = () => {
             <div className="text-[11px] text-[var(--text3)] mb-0.75">ENGINEERS</div>
             <div className="text-[18px] font-bold text-text">{fmt(state?.engineers)}</div>
             <div className="text-[13px] font-semibold text-[var(--text3)] mt-0.5">Lv {engineerXpView.level}</div>
+            <div className="prog-wrap mx-auto mt-2 max-w-[120px]">
+              <div className="prog-bar bg-blue" style={{ width: engineerXpView.barWidth }} />
+            </div>
             <div className="text-[10px] text-[var(--text3)] mt-0.5">{engineerXpView.xpText}</div>
           </div>
           <div className="bg-bg3 rounded-lg p-2.5 text-center">
             <div className="text-[11px] text-[var(--text3)] mb-0.75">SCRIBES</div>
             <div className="text-[18px] font-bold text-text">{fmt(state?.scribes)}</div>
             <div className="text-[13px] font-semibold text-[var(--text3)] mt-0.5">Lv {scribeXpView.level}</div>
+            <div className="prog-wrap mx-auto mt-2 max-w-[120px]">
+              <div className="prog-bar bg-blue" style={{ width: scribeXpView.barWidth }} />
+            </div>
             <div className="text-[10px] text-[var(--text3)] mt-0.5">{scribeXpView.xpText}</div>
           </div>
           <div className="bg-bg3 rounded-lg p-2.5 text-center">
             <div className="text-[11px] text-[var(--text3)] mb-0.75">RESEARCHERS</div>
             <div className="text-[18px] font-bold text-text">{fmt(state?.researchers)}</div>
             <div className="text-[13px] font-semibold text-[var(--text3)] mt-0.5">Lv {researcherXpView.level}</div>
+            <div className="prog-wrap mx-auto mt-2 max-w-[120px]">
+              <div className="prog-bar bg-blue" style={{ width: researcherXpView.barWidth }} />
+            </div>
             <div className="text-[10px] text-[var(--text3)] mt-0.5">{researcherXpView.xpText}</div>
           </div>
         </div>
