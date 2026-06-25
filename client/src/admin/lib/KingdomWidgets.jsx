@@ -49,7 +49,8 @@ function safeParseJson(str, fallback) {
 // world_fragments: [{ type: "name", studied: bool }]
 export function FragmentsWidget({ value, onChange }) {
   const frags = safeParseJson(value, []);
-  const arr   = Array.isArray(frags) ? frags : [];
+  const raw   = Array.isArray(frags) ? frags : [];
+  const arr   = raw.map(f => typeof f === 'string' ? { type: f, studied: false } : f);
   const owned   = Object.fromEntries(arr.map(f => [f.type, true]));
   const studied = Object.fromEntries(arr.filter(f => f.studied).map(f => [f.type, true]));
 
@@ -201,7 +202,7 @@ export function EffectsWidget({ value, onChange }) {
 
   function add() {
     const k = newKey.trim();
-    if (!k || k in obj) return;
+    if (!k || Object.prototype.hasOwnProperty.call(obj, k)) return;
     onChange(JSON.stringify({ ...obj, [k]: { turns_left: 1 } }));
     setNewKey('');
   }
@@ -298,7 +299,7 @@ export function KvNumbersWidget({ value, onChange }) {
 
   function add() {
     const k = newKey.trim();
-    if (!k || k in obj) return;
+    if (!k || Object.prototype.hasOwnProperty.call(obj, k)) return;
     onChange(JSON.stringify({ ...obj, [k]: 0 }));
     setNewKey('');
   }
