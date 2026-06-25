@@ -4,6 +4,7 @@ import { useGameState } from '../../hooks/useGameState';
 import { useActivePanel } from '../../hooks/useActivePanel';
 import { switchTab } from '../../utils/switchTab.js';
 import { useNavLayout } from '../../hooks/useNavLayout.js';
+import ShellColumnFrame from './ShellColumnFrame.jsx';
 
 const SECTION_CLASS = 'px-3 pb-0.5 pt-3 text-[10px] font-black uppercase tracking-[0.3em] text-ember-400/80';
 
@@ -37,15 +38,16 @@ const Sidebar = () => {
   const showSidebar = layout === 'left' || layout === 'responsive';
 
   return (
-    <nav
+    <ShellColumnFrame
+      as="nav"
       className={clsx(
-        'min-h-0 flex-col overflow-hidden border-r border-white/5 bg-bg2',
+        'min-h-0 flex-col bg-bg',
         showSidebar ? 'flex' : 'hidden',
         layout === 'responsive' && 'max-lg:hidden',
-        'lg:col-start-1 lg:row-start-2 lg:overflow-y-auto',
+        'lg:col-start-1 lg:row-start-2',
       )}
     >
-      <div className="min-h-0 flex-1 overflow-y-auto scrollbar-game">
+      <div className="relative z-10 min-h-0 flex-1 overflow-y-auto scrollbar-game">
         <div className={SECTION_CLASS}>Kingdom</div>
         <NavButton panel="status" icon="🏰" label="Status" iconClass="text-blue" />
         <NavButton panel="happiness" icon="😊" label="Happiness" iconClass="text-amber" />
@@ -94,7 +96,7 @@ const Sidebar = () => {
           </a>
         )}
       </div>
-    </nav>
+    </ShellColumnFrame>
   );
 };
 

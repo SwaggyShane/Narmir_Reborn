@@ -39,6 +39,7 @@ import ToastProvider from './components/react/ToastProvider.jsx';
 import HeroXpModalController from './components/react/HeroXpModalController.jsx';
 import KingdomXpModalController from './components/react/KingdomXpModalController.jsx';
 import ShellFooter from './components/react/ShellFooter.jsx';
+import ShellColumnFrame from './components/react/ShellColumnFrame.jsx';
 import KingdomBodyHeader from './components/react/KingdomBodyHeader.jsx';
 import LoreEntryController from './components/react/LoreEntryController.jsx';
 import GenericModalController from './components/react/GenericModalController.jsx';
@@ -102,13 +103,13 @@ const GameShell = () => {
 
         <Sidebar />
 
-        <aside
+        <ShellColumnFrame
+          as="aside"
           aria-label="Kingdom resources"
           className={[
-            'shrink-0 border-b border-white/5 bg-bg px-3 py-2 shadow-[0_4px_12px_rgba(0,0,0,0.3)]',
-            'lg:col-start-2 lg:row-start-2 lg:flex lg:min-h-0 lg:flex-col lg:gap-2',
-            'lg:overflow-x-hidden lg:overflow-y-auto',
-            'lg:border-b-0 lg:border-r lg:border-white/5 lg:bg-void-900/80 lg:px-2 lg:py-2.5',
+            'flex min-h-0 w-full flex-col bg-bg',
+            'max-lg:shrink-0 max-lg:px-3 max-lg:py-2',
+            'lg:col-start-2 lg:row-start-2 lg:gap-2 lg:px-2 lg:py-2.5',
             '[&_.metrics]:mb-0 [&_.metrics]:flex [&_.metrics]:w-full [&_.metrics]:flex-wrap [&_.metrics]:gap-1',
             'lg:[&_.metrics]:flex-1 lg:[&_.metrics]:flex-col lg:[&_.metrics]:gap-1.5',
             'lg:[&_.metric]:w-full lg:[&_.metric]:min-h-[54px] lg:[&_.metric]:rounded-xl lg:[&_.metric]:px-2.5 lg:[&_.metric]:py-2',
@@ -116,28 +117,29 @@ const GameShell = () => {
             'lg:[&_.metric_.val]:text-right lg:[&_.metric_.sub]:justify-end',
           ].join(' ')}
         >
-          <div className="hidden px-1 text-[10px] font-black uppercase tracking-[0.28em] text-ember-400/85 lg:block">
-            Resources
+          <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-2 overflow-x-hidden overflow-y-auto">
+            <div className="hidden px-1 text-[10px] font-black uppercase tracking-[0.28em] text-ember-400/85 lg:block">
+              Resources
+            </div>
+            <div className="metrics">
+              <ResourceStrip />
+            </div>
           </div>
-          <div className="metrics">
-            <ResourceStrip />
-          </div>
-        </aside>
+        </ShellColumnFrame>
 
-        <main
+        <ShellColumnFrame
+          as="main"
           className={[
-            'main-body-frame flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden bg-bg',
+            'flex min-h-0 w-full min-w-0 flex-1 flex-col bg-bg',
             'max-lg:pb-[calc(104px+env(safe-area-inset-bottom,0px))]',
             'lg:col-start-3 lg:row-start-2',
           ].join(' ')}
         >
-          <div className="main-body-frame__border" aria-hidden="true" />
-          <div className="main-body-frame__shadow" aria-hidden="true" />
           <KingdomBodyHeader />
           <div className="relative z-10 min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
             {renderPanel()}
           </div>
-        </main>
+        </ShellColumnFrame>
 
         <ShellFooter />
       </div>

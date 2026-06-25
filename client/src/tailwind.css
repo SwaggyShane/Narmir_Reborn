@@ -277,16 +277,19 @@
     @apply text-xl;
   }
 
-  /* ── Main body frame (static border; content scrolls inside) ── */
+  /* ── Shell column frame (static border; content scrolls inside) ── */
+  .shell-column-frame,
   .main-body-frame {
     @apply relative isolate min-h-0 overflow-hidden rounded-lg;
   }
 
+  .shell-column-frame__border,
   .main-body-frame__border {
     @apply pointer-events-none absolute inset-0 z-30 rounded-lg;
     border: 2px solid rgba(180, 60, 0, 0.27);
   }
 
+  .shell-column-frame__shadow,
   .main-body-frame__shadow {
     @apply pointer-events-none absolute inset-x-0 bottom-0 z-30 rounded-b-lg;
     height: 0;
