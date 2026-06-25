@@ -269,7 +269,7 @@ export default function KingdomEditModal({ kingdomRow, adminFetch, onClose, onSa
             </div>
             {detail && (
               <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
-                {detail.name} · {detail.username} · {(detail.race || '').replace(/_/g, ' ')} · {(detail.land || 0).toLocaleString()} land
+                {detail.name} | {detail.username} | {(detail.race || '').replace(/_/g, ' ')} | {(detail.land || 0).toLocaleString()} land
               </div>
             )}
           </div>
