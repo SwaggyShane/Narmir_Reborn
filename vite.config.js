@@ -41,6 +41,7 @@ export default defineConfig(({ command, mode }) => {
           index: path.resolve(__dirname, 'client/index.html'),
           splash: path.resolve(__dirname, 'client/splash.html'),
           portal: path.resolve(__dirname, 'client/portal.html'),
+          admin: path.resolve(__dirname, 'client/admin.html'),
         },
         output: {
           entryFileNames: 'assets/[name].js',
