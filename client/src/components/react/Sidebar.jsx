@@ -47,7 +47,7 @@ const Sidebar = () => {
         'lg:col-start-1 lg:row-start-2',
       )}
     >
-      <div className="relative z-10 min-h-0 flex-1 overflow-y-auto scrollbar-game">
+      <div className="scrollbar-none relative z-10 min-h-0 flex-1 overflow-y-auto">
         <div className={SECTION_CLASS}>Kingdom</div>
         <NavButton panel="status" icon="🏰" label="Status" iconClass="text-blue" />
         <NavButton panel="happiness" icon="😊" label="Happiness" iconClass="text-amber" />

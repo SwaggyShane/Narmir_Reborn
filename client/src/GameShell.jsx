@@ -97,6 +97,7 @@ const GameShell = () => {
           'lg:grid lg:min-h-0 lg:overflow-hidden',
           'lg:grid-cols-[220px_175px_minmax(0,1fr)]',
           'lg:grid-rows-[56px_minmax(0,1fr)_32px]',
+          'lg:gap-x-0.5 lg:gap-y-0',
         ].join(' ')}
       >
         <Topbar />

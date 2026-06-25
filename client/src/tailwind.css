@@ -453,6 +453,15 @@
   }
 
   /* Scrollbar styling */
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
   .scrollbar-game::-webkit-scrollbar {
     width: 6px;
     height: 6px;
