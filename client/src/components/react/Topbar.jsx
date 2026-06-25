@@ -21,8 +21,12 @@ const Topbar = () => {
   return (
     <header className="fixed inset-x-0 top-0 z-topbar-mobile flex h-14 w-full shrink-0 items-center justify-between gap-2 border-b border-ember-900/40 bg-void-950/95 px-3 shadow-panel backdrop-blur-xl lg:relative lg:col-span-3 lg:row-start-1 lg:z-[1100] md:px-4">
       <div className="min-w-0">
-        <div className="truncate font-serif text-base font-black uppercase tracking-[0.12em] text-ember-400 md:text-md">NARMIR REBORN</div>
-        <div className="truncate text-sm text-text2">Pure. Damn. Evil.</div>
+        <div className="brand-flame">NARMIR REBORN</div>
+        <div className="brand-tagline" aria-label="Pure. Damn. Evil.">
+          <span className="brand-tagline__word brand-tagline__word--pure">Pure.</span>
+          <span className="brand-tagline__word brand-tagline__word--damn"> Damn.</span>
+          <span className="brand-tagline__word brand-tagline__word--evil"> Evil.</span>
+        </div>
       </div>
       <div className="flex min-w-0 items-center gap-2 rounded-2xl border border-ember-900/30 bg-void-900/70 px-2.5 py-2 shadow-panel md:gap-3 md:px-3">
         <div className="flex items-center gap-2">
