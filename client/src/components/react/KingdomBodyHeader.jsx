@@ -86,7 +86,7 @@ const KingdomBodyHeader = () => {
     <>
       <div
         id="kd-top"
-        className="kd-top relative z-10 shrink-0 border-b border-white/10 px-3 py-2 shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
+        className="kd-top relative z-10 shrink-0 border-b border-white/10 px-4 py-2 shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
         style={{
           background: 'linear-gradient(180deg, rgba(18,18,26,0.98) 0%, var(--bg) 100%)',
         }}
