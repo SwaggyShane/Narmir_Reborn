@@ -126,13 +126,15 @@ const GameShell = () => {
 
         <main
           className={[
-            'relative flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden bg-bg',
+            'main-body-frame flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden bg-bg',
             'max-lg:pb-[calc(104px+env(safe-area-inset-bottom,0px))]',
             'lg:col-start-3 lg:row-start-2',
           ].join(' ')}
         >
+          <div className="main-body-frame__border" aria-hidden="true" />
+          <div className="main-body-frame__shadow" aria-hidden="true" />
           <KingdomBodyHeader />
-          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="relative z-10 min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
             {renderPanel()}
           </div>
         </main>

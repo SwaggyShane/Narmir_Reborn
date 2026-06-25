@@ -277,6 +277,22 @@
     @apply text-xl;
   }
 
+  /* ── Main body frame (static border; content scrolls inside) ── */
+  .main-body-frame {
+    @apply relative isolate min-h-0;
+  }
+
+  .main-body-frame__border {
+    @apply pointer-events-none absolute inset-0 z-30;
+    border: 1px solid rgba(180, 60, 0, 0.42);
+  }
+
+  .main-body-frame__shadow {
+    @apply pointer-events-none absolute inset-x-0 bottom-0 z-30;
+    height: 0;
+    box-shadow: 0 8px 14px 2px rgba(0, 0, 0, 0.62);
+  }
+
   /* ── Navigation Items ── */
   .nav-section {
     @apply mb-0 px-3 pt-4 pb-1 text-[10px] font-black uppercase tracking-[0.3em] text-ember-400/80;
