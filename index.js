@@ -1453,8 +1453,8 @@ async function start() {
       } catch { /* not found, try injection fallback */ }
       try {
         const assets = await fsp.readdir(path.join(distPath, 'assets'));
-        const adminJs  = assets.find(f => f === 'admin.js');
-        const adminCss = assets.find(f => f.startsWith('admin-') && f.endsWith('.css'));
+        const adminJs  = assets.find(f => f.startsWith('admin') && f.endsWith('.js'));
+        const adminCss = assets.find(f => f.startsWith('admin') && f.endsWith('.css'));
         if (adminJs) {
           let html = await fsp.readFile(path.join(__dirname, 'client', 'admin.html'), 'utf-8');
           html = html.replace(/<script type="module" src="\/src\/admin-main\.jsx"><\/script>/, '');
