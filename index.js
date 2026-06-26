@@ -1431,12 +1431,6 @@ async function start() {
 
 
   const serveAdmin = async (req, res, next) => {
-    if (req.query.legacy === '1') {
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
-      return res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-    }
     console.log(`[serveAdmin] HIT: ${req.method} ${req.url}`);
     const NO_CACHE = {
       'Content-Type': 'text/html; charset=utf-8',
@@ -1470,11 +1464,8 @@ async function start() {
           return res.set(NO_CACHE).send(html);
         }
       } catch { /* assets dir missing */ }
-      console.error('[serveAdmin] No admin assets found in dist — falling back to legacy admin');
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
-      return res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+      console.error('[serveAdmin] CRITICAL: No React admin assets found in dist');
+      return res.status(500).send('Admin panel build missing. Please rebuild: npm run build');
     } catch (e) {
       console.error('[serveAdmin] Error:', e);
       next(e);
