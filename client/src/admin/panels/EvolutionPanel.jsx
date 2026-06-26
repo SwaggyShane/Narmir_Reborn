@@ -61,11 +61,13 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
       const listStr = localStorage.getItem('narmir_admin_notes_list');
       if (listStr) {
         const list = JSON.parse(listStr);
-        for (let i = list.length - 1; i >= 0; i--) {
-          await adminFetch('/api/admin/admin_notes', {
-            method: 'POST',
-            body: { message: list[i].text },
-          });
+        if (Array.isArray(list)) {
+          for (let i = list.length - 1; i >= 0; i--) {
+            await adminFetch('/api/admin/admin_notes', {
+              method: 'POST',
+              body: { message: list[i]?.text || '' },
+            });
+          }
         }
         localStorage.removeItem('narmir_admin_notes_list');
       }

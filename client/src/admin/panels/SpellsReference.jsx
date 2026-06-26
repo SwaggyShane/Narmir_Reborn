@@ -66,7 +66,7 @@ function SpellCard({ spellId, spell, schoolDiscount }) {
   );
 }
 
-export default function SpellsReference({ onToast }) {
+export default function SpellsReference({ adminFetch, onToast }) {
   const [spellDefs, setSpellDefs] = useState({});
   const [magicSchools, setMagicSchools] = useState({});
   const [loading, setLoading] = useState(true);
@@ -74,17 +74,19 @@ export default function SpellsReference({ onToast }) {
   const loadSpells = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/spell-definitions', { credentials: 'include' });
-      if (!res.ok) throw new Error(res.statusText);
-      const data = await res.json();
-      setSpellDefs(data.SPELL_DEFS || {});
-      setMagicSchools(data.MAGIC_SCHOOLS || {});
+      const data = await adminFetch('/api/spell-definitions');
+      if (data?.error) {
+        onToast?.('Failed to load spells: ' + data.error, 'error');
+        return;
+      }
+      setSpellDefs(data?.SPELL_DEFS || {});
+      setMagicSchools(data?.MAGIC_SCHOOLS || {});
     } catch (err) {
       onToast?.('Failed to load spells: ' + (err.message || 'Unknown'), 'error');
     } finally {
       setLoading(false);
     }
-  }, [onToast]);
+  }, [adminFetch, onToast]);
 
   useEffect(() => { loadSpells(); }, [loadSpells]);
 

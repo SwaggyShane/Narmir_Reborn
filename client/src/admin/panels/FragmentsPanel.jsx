@@ -45,7 +45,7 @@ export default function FragmentsPanel({ adminFetch, onToast }) {
       </div>
 
       {subTab === 'spells' ? (
-        <SpellsReference onToast={onToast} />
+        <SpellsReference adminFetch={adminFetch} onToast={onToast} />
       ) : (
         <>
           <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center' }}>
