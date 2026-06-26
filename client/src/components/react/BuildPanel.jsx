@@ -602,9 +602,10 @@ const BuildPanel = () => {
               <input
                 type="number"
                 className="input text-right"
-                value={demolishAmounts[b.id] || 1}
-                onChange={(e) => setDemolishAmounts(prev => ({ ...prev, [b.id]: parseInt(e.target.value, 10) || 1 }))}
+                value={demolishAmounts[b.id] ?? ''}
+                onChange={(e) => setDemolishAmounts(prev => ({ ...prev, [b.id]: e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value, 10) || 1) }))}
                 min="1"
+                placeholder="1"
               />
               <button className="base-btn variant-red px-1.5 py-1 text-[10px]" onClick={() => demolishB(b.id)}>🗑️</button>
             </div>
