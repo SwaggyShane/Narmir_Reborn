@@ -577,55 +577,61 @@ const BuildPanel = () => {
   const renderBuildingRow = (b, icon) => {
     const baId = BUILDING_TO_BA_ID[b.id];
     const isEng = !['wm', 'ballistae', 'weapons', 'armor'].includes(b.id);
+    const showDemolish = b.id !== 'wm' && b.id !== 'ballistae' && b.id !== 'ladders' && b.id !== 'weapons' && b.id !== 'armor';
     return (
       <div className="trow" title={getTooltip(b)} key={b.id}>
-        <div className="bld-main">
-          <span className="bld-icon" style={{ background: icon.color }}>{icon.emoji}</span>
-          <span className="name">{b.name}</span>
+        <div className="bld-left">
+          <div className="bld-main">
+            <span className="bld-icon" style={{ background: icon.color }}>{icon.emoji}</span>
+            <span className="name">{b.name}</span>
+          </div>
+          <div className="bld-sub">
+            <span className="count" id={`bld-${b.id}`}>{fmt(getBuildCount(b.id))}</span>
+            {(buildDisplay.warnings[b.id] || buildDisplay.estimates[b.id]) && (
+              <span className="bld-est">
+                {buildDisplay.warnings[b.id] && <span className="text-amber">{buildDisplay.warnings[b.id]}</span>}
+                {buildDisplay.warnings[b.id] && buildDisplay.estimates[b.id] && ' | '}
+                {buildDisplay.estimates[b.id] && <span>{buildDisplay.estimates[b.id]}</span>}
+              </span>
+            )}
+          </div>
         </div>
-        <span className="count" id={`bld-${b.id}`}>{fmt(getBuildCount(b.id))}</span>
-        {b.id !== 'wm' && b.id !== 'ballistae' && b.id !== 'ladders' && b.id !== 'weapons' && b.id !== 'armor' ? (
-          <div className="bld-demolish">
+        <div className="bld-controls">
+          {showDemolish && (
+            <div className="bld-demolish">
+              <input
+                type="number"
+                className="input text-right"
+                value={demolishAmounts[b.id] || 1}
+                onChange={(e) => setDemolishAmounts(prev => ({ ...prev, [b.id]: parseInt(e.target.value, 10) || 1 }))}
+                min="1"
+              />
+              <button className="base-btn variant-red px-1.5 py-1 text-[10px]" onClick={() => demolishB(b.id)}>🗑️</button>
+            </div>
+          )}
+          <div className="bld-eng">
             <input
               type="number"
               className="input text-right"
-              value={demolishAmounts[b.id] || 1}
-              onChange={(e) => setDemolishAmounts(prev => ({ ...prev, [b.id]: parseInt(e.target.value, 10) || 1 }))}
-              min="1"
+              id={baId}
+              min="0"
+              value={getBuildFieldValue(b.id)}
+              onChange={(e) => {
+                setBuildFieldValue(b.id, e.target.value);
+                refreshBuildUi();
+              }}
+              placeholder="Qty"
             />
-            <button className="base-btn variant-red px-1.5 py-1 text-[10px]" onClick={() => demolishB(b.id)}>🗑️</button>
+            <button
+              className="base-btn px-2 py-1 text-[10px]"
+              onClick={() => {
+                if (isEng) setMaxValue(b.id);
+                else setBuildMax(b.id);
+              }}
+            >
+              Max
+            </button>
           </div>
-        ) : <span></span>}
-
-        <div className="bld-eng">
-          <input
-            type="number"
-            className="input text-right"
-            id={baId}
-            min="0"
-            value={getBuildFieldValue(b.id)}
-            onChange={(e) => {
-              setBuildFieldValue(b.id, e.target.value);
-              refreshBuildUi();
-            }}
-            placeholder="Qty"
-          />
-          <button
-            className="base-btn px-2 py-1 text-[10px]"
-            onClick={() => {
-              if (isEng) setMaxValue(b.id);
-              else setBuildMax(b.id);
-            }}
-          >
-            Max
-          </button>
-          {(buildDisplay.warnings[b.id] || buildDisplay.estimates[b.id]) && (
-            <div className="text-[10px] text-text3 whitespace-nowrap ml-1">
-              {buildDisplay.warnings[b.id] && <span className="text-amber">{buildDisplay.warnings[b.id]}</span>}
-              {buildDisplay.warnings[b.id] && buildDisplay.estimates[b.id] && ' | '}
-              {buildDisplay.estimates[b.id] && <span>{buildDisplay.estimates[b.id]}</span>}
-            </div>
-          )}
         </div>
       </div>
     );
@@ -869,9 +875,7 @@ const BuildPanel = () => {
                   className="rounded-full border border-blue-400 px-2 py-0.5 text-[9px] font-semibold text-blue-400 cursor-pointer leading-none whitespace-nowrap"
                 >Attunement</button>
               </span>
-              <span className="text-right">Built</span>
-              <span className="text-center">Demolish</span>
-              <span className="text-center">Engineers</span>
+              <span className="text-right">Qty</span>
             </div>
 
             {BUILDINGS_MAP['farms'] && renderBuildingRow(BUILDINGS_MAP['farms'], { emoji: '🌾', color: '#4a7c3f' })}
