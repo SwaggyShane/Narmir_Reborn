@@ -9,6 +9,7 @@ function createdAtAgeMs(value) {
   if (Number.isFinite(num)) {
     if (num > 1_000_000_000_000) return Date.now() - num;
     if (num > 1_000_000_000) return Date.now() - num * 1000;
+    return Date.now() - num;
   }
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? Infinity : Date.now() - d.getTime();
@@ -19,8 +20,8 @@ function formatTimestamp(value) {
   if (value == null || value === '') return '-';
   const num = Number(value);
   let d;
-  if (Number.isFinite(num) && num > 1_000_000_000) {
-    d = new Date(num > 1_000_000_000_000 ? num : num * 1000);
+  if (Number.isFinite(num)) {
+    d = new Date(num > 1_000_000_000_000 ? num : (num > 1_000_000_000 ? num * 1000 : num));
   } else {
     d = new Date(value);
   }
@@ -32,8 +33,8 @@ function formatTimestampShort(value) {
   if (value == null || value === '') return '';
   const num = Number(value);
   let d;
-  if (Number.isFinite(num) && num > 1_000_000_000) {
-    d = new Date(num > 1_000_000_000_000 ? num : num * 1000);
+  if (Number.isFinite(num)) {
+    d = new Date(num > 1_000_000_000_000 ? num : (num > 1_000_000_000 ? num * 1000 : num));
   } else {
     d = new Date(value);
   }
