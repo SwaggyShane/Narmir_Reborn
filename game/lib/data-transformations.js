@@ -12,7 +12,7 @@ const config = require('../config');
 const { CAPS, PRESTIGE_MODIFIERS, LOCATE_RACE_MULT } = config;
 
 const _IS_PROD = process.env.NODE_ENV === 'production';
-const MOJIBAKE_SIGNATURE = /[ÃÂâïðÅ�]/;
+const MOJIBAKE_SIGNATURE = /[\u00C3\u00C2\u00E2\u00EF\u00F0\u00C5\uFFFD]/;
 
 // Dev-only log: kept out of production stdout to stop per-turn noise from
 // drowning real errors. Use console.error/warn directly for problems you
