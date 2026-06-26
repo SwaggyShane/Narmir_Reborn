@@ -13,13 +13,16 @@ const client = new Client({
 
 const DISCORD_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const UPDATES_CHANNEL_ID = process.env.DISCORD_UPDATES_CHANNEL_ID;
+const BUG_REPORTS_CHANNEL_ID = process.env.DISCORD_BUG_REPORTS_CHANNEL_ID;
 const GAME_SERVER_URL = process.env.GAME_SERVER_URL || 'http://localhost:3000';
+const { buildBugReportEmbed } = require('./lib/discord-notify');
 
 let db = null;
 
 console.log('🔍 Environment Variables Check:');
 console.log('  DISCORD_BOT_TOKEN:', DISCORD_TOKEN ? `✓ Set (${DISCORD_TOKEN.length} chars)` : '❌ NOT SET');
 console.log('  DISCORD_UPDATES_CHANNEL_ID:', UPDATES_CHANNEL_ID || '⚠️  Not set');
+console.log('  DISCORD_BUG_REPORTS_CHANNEL_ID:', BUG_REPORTS_CHANNEL_ID || '⚠️  Not set (will try #bug-reports by name)');
 
 if (!DISCORD_TOKEN) {
   console.error('❌ CRITICAL: DISCORD_BOT_TOKEN is missing!');
@@ -44,6 +47,7 @@ if (DISCORD_TOKEN.length < 50) {
 client.once('ready', async () => {
   console.log(`✅ Discord Bot logged in as ${client.user.tag}`);
   console.log(`📢 Updates channel ID: ${UPDATES_CHANNEL_ID || 'Not configured'}`);
+  console.log(`🐛 Bug reports channel ID: ${BUG_REPORTS_CHANNEL_ID || 'Not configured (will try #bug-reports by name)'}`);
   console.log(`🎮 Game server URL: ${GAME_SERVER_URL}`);
 
   // Initialize database connection
@@ -60,6 +64,7 @@ client.once('ready', async () => {
 
     // Start polling game messages
     pollAndSyncGameMessages();
+    pollAndSyncBugReports();
   } catch (error) {
     console.error('❌ Failed to initialize database:', error);
     console.error('Discord sync will be unavailable until database connects.');
@@ -120,6 +125,74 @@ async function pollAndSyncGameMessages() {
 
 // Poll for new game messages every 5 seconds
 setInterval(pollAndSyncGameMessages, 5000);
+
+let bugReportsChannel = null;
+let isBugPollRunning = false;
+
+async function resolveBugReportsChannel() {
+  if (bugReportsChannel?.isTextBased?.()) return bugReportsChannel;
+
+  if (BUG_REPORTS_CHANNEL_ID) {
+    const ch = await client.channels.fetch(BUG_REPORTS_CHANNEL_ID).catch(() => null);
+    if (ch?.isTextBased()) {
+      bugReportsChannel = ch;
+      console.log(`🐛 Bug reports channel: #${ch.name} (${ch.id})`);
+      return ch;
+    }
+  }
+
+  for (const [, guild] of client.guilds.cache) {
+    const ch = guild.channels.cache.find(
+      (c) => c.name === 'bug-reports' && c.type === ChannelType.GuildText,
+    );
+    if (ch) {
+      bugReportsChannel = ch;
+      console.log(`🐛 Bug reports channel (by name): #${ch.name} in ${guild.name}`);
+      return ch;
+    }
+  }
+
+  return null;
+}
+
+async function pollAndSyncBugReports() {
+  if (isBugPollRunning || !db || !client.isReady()) return;
+  isBugPollRunning = true;
+  try {
+    const channel = await resolveBugReportsChannel();
+    if (!channel) return;
+
+    const pending = await db.all(
+      'SELECT * FROM bug_reports WHERE discord_sent = 0 ORDER BY id ASC LIMIT 10',
+    );
+    if (!pending.length) return;
+
+    for (const row of pending) {
+      try {
+        const embed = buildBugReportEmbed({
+          reportId: row.id,
+          username: row.username,
+          kingdomName: row.kingdom_name,
+          category: row.category,
+          message: row.message,
+          contextPanel: row.context_panel,
+          pageUrl: row.page_url,
+        });
+        await channel.send({ embeds: [embed] });
+        await db.run('UPDATE bug_reports SET discord_sent = 1 WHERE id = ?', [row.id]);
+        console.log(`🐛 Posted bug report #${row.id} to #${channel.name}`);
+      } catch (error) {
+        console.error(`❌ Failed to post bug report #${row.id}:`, error.message || error);
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error polling bug reports:', error);
+  } finally {
+    isBugPollRunning = false;
+  }
+}
+
+setInterval(pollAndSyncBugReports, 10000);
 
 // Periodically reload sync configs and clean up expired tokens
 setInterval(async () => {

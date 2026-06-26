@@ -40,6 +40,7 @@ import HeroLoreController from './components/react/HeroLoreController.jsx';
 import ToastProvider from './components/react/ToastProvider.jsx';
 import PanelContextHeader from './components/react/PanelContextHeader.jsx';
 import CommandPalette from './components/react/CommandPalette.jsx';
+import BugReportModal from './components/react/BugReportModal.jsx';
 
 import { useNightCycle } from './hooks/useNightCycle.js';
 import HeroXpModalController from './components/react/HeroXpModalController.jsx';
@@ -196,6 +197,7 @@ const GameShell = () => {
       <LoreEntryController />
       <GenericModalController />
       <SpyReportModalController />
+      <BugReportModal />
     </div>
   );
 };

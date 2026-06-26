@@ -6,6 +6,7 @@ import { useGameState } from '../../hooks/useGameState';
 import { useNavLayout } from '../../hooks/useNavLayout.js';
 import { useColorTheme } from '../../hooks/useColorTheme.js';
 import { COLOR_THEMES } from '../../utils/colorTheme.js';
+import { showBugReportModal } from './BugReportModal.jsx';
 
 const API = (path, opts = {}) => {
   const token = localStorage.getItem('narmir_token');
@@ -400,6 +401,16 @@ const OptionsPanel = () => {
             </div>
             <button className="base-btn variant-red bg-[var(--red)] px-4 py-2 text-[12px]" onClick={requestVacation}>
               Request vacation mode
+            </button>
+          </section>
+
+          <section className={cardShell}>
+            <div className={sectionTitle}>Help & Feedback</div>
+            <p className="mb-3 text-[13px] leading-6 text-[var(--text2)]">
+              Found a bug or something broken? Send a report straight to the admin team (and Discord when configured).
+            </p>
+            <button type="button" className="base-btn variant-green bg-[var(--green)] px-4 py-2 text-[13px]" onClick={showBugReportModal}>
+              Report a Bug
             </button>
           </section>
 

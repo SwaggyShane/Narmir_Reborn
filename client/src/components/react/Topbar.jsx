@@ -2,6 +2,7 @@ import React from 'react';
 import { useGameState } from '../../hooks/useGameState';
 import { useGameActions } from '../../hooks/useGameActions';
 import { showLoginModal, logout } from './AuthModal.jsx';
+import { showBugReportModal } from './BugReportModal.jsx';
 import { REGEN_AMOUNT, useRegenCountdown } from '../../hooks/useRegenCountdown.js';
 
 const Topbar = () => {
@@ -58,6 +59,19 @@ const Topbar = () => {
             )}
           </span>
         </button>
+
+        {isLoggedIn ? (
+          <button
+            type="button"
+            className="base-btn px-2 py-1 text-xs sm:px-2.5 sm:py-1.5 sm:text-sm"
+            onClick={showBugReportModal}
+            title="Report a bug"
+            aria-label="Report a bug"
+          >
+            <span aria-hidden="true">🐛</span>
+            <span className="hidden min-[480px]:inline">Report</span>
+          </button>
+        ) : null}
 
         {isLoggedIn ? (
           <button

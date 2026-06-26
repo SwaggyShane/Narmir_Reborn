@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { formatTimestamp } from '../../utils/timestamp.js';
 
 const WISHLIST_CATEGORIES = ['feature', 'bugfix', 'balance', 'content', 'ui', 'performance', 'other'];
 
@@ -17,6 +18,14 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
 
   const [suggestions, setSuggestions] = useState([]);
   const [suggestLoading, setSuggestLoading] = useState(false);
+
+  const [bugReports, setBugReports] = useState([]);
+  const [bugLoading, setBugLoading] = useState(false);
+
+  const [changelogEntries, setChangelogEntries] = useState([]);
+  const [changelogLoading, setChangelogLoading] = useState(false);
+  const [newChangelog, setNewChangelog] = useState({ title: '', description: '', category: '' });
+  const [changelogPublishing, setChangelogPublishing] = useState(false);
 
   const loadWishlist = useCallback(async () => {
     setWishLoading(true);
@@ -46,6 +55,26 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
       if (Array.isArray(data)) setSuggestions(data);
     } catch (err) { onToast('Failed to load suggestions: ' + (err.message || 'Unknown'), 'error'); }
     finally { setSuggestLoading(false); }
+  }, [adminFetch, onToast]);
+
+  const loadChangelogEntries = useCallback(async () => {
+    setChangelogLoading(true);
+    try {
+      const data = await adminFetch('/api/admin/changelog_entries');
+      if (data?.error) { onToast('Changelog error: ' + data.error, 'error'); return; }
+      if (Array.isArray(data)) setChangelogEntries(data);
+    } catch (err) { onToast('Failed to load changelog: ' + (err.message || 'Unknown'), 'error'); }
+    finally { setChangelogLoading(false); }
+  }, [adminFetch, onToast]);
+
+  const loadBugReports = useCallback(async () => {
+    setBugLoading(true);
+    try {
+      const data = await adminFetch('/api/admin/bug_reports');
+      if (data?.error) { onToast('Bug reports error: ' + data.error, 'error'); return; }
+      if (Array.isArray(data)) setBugReports(data);
+    } catch (err) { onToast('Failed to load bug reports: ' + (err.message || 'Unknown'), 'error'); }
+    finally { setBugLoading(false); }
   }, [adminFetch, onToast]);
 
   const migrateLegacyNotes = useCallback(async () => {
@@ -81,8 +110,10 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
       loadWishlist();
       loadNotes();
       loadSuggestions();
+      loadBugReports();
+      loadChangelogEntries();
     });
-  }, [migrateLegacyNotes, loadWishlist, loadNotes, loadSuggestions]);
+  }, [migrateLegacyNotes, loadWishlist, loadNotes, loadSuggestions, loadBugReports, loadChangelogEntries]);
 
   async function handleAddWish() {
     if (!newWish.description.trim()) return;
@@ -101,9 +132,35 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
     try {
       const data = await adminFetch(`/api/admin/wishlist/${id}/complete`, { method: 'POST' });
       if (data?.error) { onToast('Complete failed: ' + data.error, 'error'); return; }
-      onToast('Marked complete', 'success');
+      onToast(
+        data?.discordSent ? 'Marked complete — changelog + #updates' : 'Marked complete — changelog saved',
+        'success',
+      );
       setWishlist(prev => prev.map(w => w.id === id ? { ...w, completed: 1 } : w));
+      loadChangelogEntries();
     } catch (err) { onToast('Complete failed: ' + (err.message || 'Unknown'), 'error'); }
+  }
+
+  async function handlePublishChangelog() {
+    if (!newChangelog.title.trim() || !newChangelog.description.trim()) {
+      onToast('Title and description required', 'error');
+      return;
+    }
+    setChangelogPublishing(true);
+    try {
+      const data = await adminFetch('/api/admin/changelog_entries', {
+        method: 'POST',
+        body: newChangelog,
+      });
+      if (data?.error) { onToast('Publish failed: ' + data.error, 'error'); return; }
+      onToast(
+        data?.discordSent ? 'Published to changelog + #updates' : 'Published to changelog',
+        'success',
+      );
+      setNewChangelog({ title: '', description: '', category: '' });
+      loadChangelogEntries();
+    } catch (err) { onToast('Publish failed: ' + (err.message || 'Unknown'), 'error'); }
+    finally { setChangelogPublishing(false); }
   }
 
   async function handleAddNote() {
@@ -135,7 +192,7 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
   return (
     <div>
       <div style={{ display: 'flex', gap: 4, marginBottom: 16, flexWrap: 'wrap' }}>
-        {[['wishlist', 'Wishlist'], ['changelog', 'Changelog'], ['notes', 'Admin Notes'], ['suggestions', 'Suggestions']].map(([id, label]) => (
+        {[['wishlist', 'Wishlist'], ['changelog', 'Changelog'], ['notes', 'Admin Notes'], ['suggestions', 'Suggestions'], ['bugs', 'Bug Reports']].map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)} style={{ ...BTN, color: tab === id ? 'var(--gold)' : 'var(--text3)', borderColor: tab === id ? 'var(--gold)' : 'var(--border2)' }}>
             {label}
           </button>
@@ -185,35 +242,69 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
 
       {tab === 'changelog' && (
         <div>
-          <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12 }}>
-            Completed wishlist items — mirrors legacy dynamic changelog.
+          <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12, lineHeight: 1.5, maxWidth: 720 }}>
+            Publish updates here — appears in-game Changelog panel, admin log, and #updates on Discord.
+            Description supports markdown: <code>##</code>, <code>###</code>, <code>**bold**</code>, <code>- bullets</code>, <code>{'>'} quote</code>.
+            Plain text auto-formats with emoji + category styling.
           </div>
-          <button onClick={loadWishlist} style={BTN} disabled={wishLoading}>
-            {wishLoading ? '...' : 'Refresh'}
-          </button>
-          {completed.length === 0 ? (
-            <div style={{ color: 'var(--text3)', fontSize: 13, padding: '12px 0' }}>
-              {wishLoading ? 'Loading...' : 'No completed items yet.'}
+
+          <div style={{ display: 'grid', gap: 8, marginBottom: 16, maxWidth: 640 }}>
+            <input
+              type="text"
+              placeholder="Title (e.g. Interface Patch 1.0.7)"
+              value={newChangelog.title}
+              onChange={(e) => setNewChangelog(v => ({ ...v, title: e.target.value }))}
+              style={INPUT}
+            />
+            <input
+              type="text"
+              placeholder="Category (optional)"
+              value={newChangelog.category}
+              onChange={(e) => setNewChangelog(v => ({ ...v, category: e.target.value }))}
+              style={INPUT}
+            />
+            <textarea
+              placeholder={'Description (markdown ok)\n\n- **Feature:** detail here\n- **Fix:** another line'}
+              value={newChangelog.description}
+              onChange={(e) => setNewChangelog(v => ({ ...v, description: e.target.value }))}
+              style={{ ...INPUT, minHeight: 120, resize: 'vertical', fontFamily: 'ui-monospace, monospace', fontSize: 12 }}
+            />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={handlePublishChangelog} style={BTN_PRIMARY} disabled={changelogPublishing}>
+                {changelogPublishing ? 'Publishing...' : 'Publish to Changelog'}
+              </button>
+              <button onClick={loadChangelogEntries} style={BTN} disabled={changelogLoading}>
+                {changelogLoading ? '...' : 'Refresh'}
+              </button>
+            </div>
+          </div>
+
+          {changelogEntries.length === 0 ? (
+            <div style={{ color: 'var(--text3)', fontSize: 13, padding: '4px 0' }}>
+              {changelogLoading ? 'Loading...' : 'No changelog entries yet.'}
             </div>
           ) : (
-            <div style={{ marginTop: 12 }}>
-              {Object.entries(
-                completed.reduce((acc, w) => {
-                  const cat = w.category || 'Other';
-                  if (!acc[cat]) acc[cat] = [];
-                  acc[cat].push(w);
-                  return acc;
-                }, {}),
-              ).map(([cat, items]) => (
-                <div key={cat} style={{ marginBottom: 16 }}>
-                  <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--gold)', marginBottom: 6 }}>{cat}</div>
-                  {items.map(w => (
-                    <div key={w.id} style={{ fontSize: 13, color: 'var(--text2)', padding: '4px 0', borderBottom: '1px solid var(--border3, #2a2a2a)' }}>
-                      ✓ {w.description}
-                    </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={TABLE}>
+                <thead><tr>
+                  {['ID', 'Title', 'Category', 'Source', 'Discord', 'Preview', 'Created'].map(h => <th key={h} style={TH}>{h}</th>)}
+                </tr></thead>
+                <tbody>
+                  {changelogEntries.map(entry => (
+                    <tr key={entry.id}>
+                      <td style={TD}>{entry.id}</td>
+                      <td style={{ ...TD, fontWeight: 600 }}>{entry.title}</td>
+                      <td style={TD}>{entry.category || '—'}</td>
+                      <td style={TD}>{entry.source || 'manual'}</td>
+                      <td style={TD}>{entry.discord_sent ? '✓' : '—'}</td>
+                      <td style={{ ...TD, whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxWidth: 360, fontSize: 11, fontFamily: 'ui-monospace, monospace' }}>
+                        {(entry.body_md || entry.description || '').slice(0, 180)}{(entry.body_md || entry.description || '').length > 180 ? '…' : ''}
+                      </td>
+                      <td style={TD}>{formatTimestamp(entry.created_at)}</td>
+                    </tr>
                   ))}
-                </div>
-              ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
@@ -283,7 +374,43 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
                       <td style={TD}>{s.kingdom_name || '-'}</td>
                       <td style={TD}>{s.username || '-'}</td>
                       <td style={{ ...TD, whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxWidth: 440 }}>{s.message}</td>
-                      <td style={TD}>{s.created_at ? new Date(s.created_at * 1000).toLocaleString() : '-'}</td>
+                      <td style={TD}>{formatTimestamp(s.created_at)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === 'bugs' && (
+        <div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+            <button onClick={loadBugReports} style={BTN} disabled={bugLoading}>
+              {bugLoading ? '...' : 'Refresh'}
+            </button>
+            <span style={{ color: 'var(--text3)', fontSize: 13, alignSelf: 'center' }}>In-game bug reports (Discord when configured)</span>
+          </div>
+          {bugReports.length === 0 ? (
+            <div style={{ color: 'var(--text3)', fontSize: 13, padding: '4px 0' }}>{bugLoading ? 'Loading...' : 'No bug reports yet.'}</div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={TABLE}>
+                <thead><tr>
+                  {['ID', 'Player', 'Kingdom', 'Category', 'Panel', 'Discord', 'Message', 'Created'].map(h => <th key={h} style={TH}>{h}</th>)}
+                </tr></thead>
+                <tbody>
+                  {bugReports.map(r => (
+                    <tr key={r.id}>
+                      <td style={TD}>{r.id}</td>
+                      <td style={TD}>{r.username || '-'}</td>
+                      <td style={TD}>{r.kingdom_name || '-'}</td>
+                      <td style={TD}>{r.category || '-'}</td>
+                      <td style={TD}>{r.context_panel || '-'}</td>
+                      <td style={TD}>{r.discord_sent ? '✓' : '—'}</td>
+                      <td style={{ ...TD, whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxWidth: 360 }}>{r.message}</td>
+                      <td style={TD}>{formatTimestamp(r.created_at)}</td>
                     </tr>
                   ))}
                 </tbody>

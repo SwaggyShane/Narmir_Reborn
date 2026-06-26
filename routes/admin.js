@@ -1151,6 +1151,13 @@ module.exports = function (db, io) {
     res.json(rows);
   });
 
+  router.get("/bug_reports", async (_req, res) => {
+    const rows = await db.all(`
+      SELECT * FROM bug_reports ORDER BY created_at DESC
+    `);
+    res.json(rows);
+  });
+
   // ── Admin Notes ───────────────────────────────────────────────────────────────
   router.get("/admin_notes", async (_req, res) => {
     const rows = await db.all(
@@ -1191,9 +1198,50 @@ module.exports = function (db, io) {
     res.json({ ok: true });
   });
 
+  router.get("/changelog_entries", async (_req, res) => {
+    const rows = await db.all(
+      `SELECT * FROM changelog_entries ORDER BY created_at DESC`,
+    );
+    res.json(rows);
+  });
+
+  router.post("/changelog_entries", async (req, res) => {
+    const { title, description, category } = req.body || {};
+    const author = req.player ? req.player.username : "Admin";
+    try {
+      const { publishChangelogEntry } = require("../lib/changelog-publish");
+      const result = await publishChangelogEntry(db, {
+        title,
+        description,
+        category,
+        source: "manual",
+        authorName: author,
+      });
+      res.json({ ok: true, ...result });
+    } catch (err) {
+      res.status(400).json({ error: err.message || "Failed to publish changelog" });
+    }
+  });
+
   router.post("/wishlist/:id/complete", async (req, res) => {
+    const row = await db.get(`SELECT * FROM wishlist WHERE id = ?`, [req.params.id]);
+    if (!row) return res.status(404).json({ error: "Wishlist item not found" });
+    if (row.completed) return res.json({ ok: true, alreadyCompleted: true });
+
     await db.run(`UPDATE wishlist SET completed = 1 WHERE id = ?`, [req.params.id]);
-    res.json({ ok: true });
+
+    const { publishChangelogEntry } = require("../lib/changelog-publish");
+    const author = req.player ? req.player.username : "Admin";
+    const result = await publishChangelogEntry(db, {
+      title: row.category || "Wishlist delivery",
+      description: row.description,
+      category: row.category,
+      source: "wishlist",
+      sourceId: row.id,
+      authorName: author,
+    });
+
+    res.json({ ok: true, ...result });
   });
 
   router.post("/events/create", async (req, res) => {
