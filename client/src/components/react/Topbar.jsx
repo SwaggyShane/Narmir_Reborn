@@ -1,11 +1,14 @@
 import React from 'react';
 import { useGameState } from '../../hooks/useGameState';
+import { useGameActions } from '../../hooks/useGameActions';
 import { showLoginModal } from './AuthModal.jsx';
 import { showBugReportModal } from './BugReportModal.jsx';
 
 const Topbar = () => {
   const { state } = useGameState();
+  const { takeTurn, loading } = useGameActions();
   const isLoggedIn = !!state?.username;
+  const turnsStored = state?.turns_stored ?? 400;
 
   return (
     <header className="fixed inset-x-0 top-0 z-topbar-mobile box-border flex w-full max-w-full shrink-0 items-center justify-between gap-1.5 border-b border-ember-900/40 bg-void-950/95 px-2 shadow-panel backdrop-blur-xl min-h-[calc(3.5rem+env(safe-area-inset-top,0px))] pt-[env(safe-area-inset-top,0px)] sm:min-h-[calc(3.5rem+env(safe-area-inset-top,0px))] sm:gap-2 sm:px-3 lg:relative lg:col-span-3 lg:row-start-1 lg:z-[1100] lg:min-h-14 lg:max-w-none lg:pt-0 md:px-4">
@@ -31,6 +34,22 @@ const Topbar = () => {
             <span className="hidden min-[480px]:inline">Report</span>
           </button>
         ) : null}
+
+        <button
+          type="button"
+          className="turn-btn px-2 py-1 text-[11px] sm:px-4 sm:py-1.5 sm:text-sm"
+          onClick={takeTurn}
+          disabled={loading.takeTurn || turnsStored < 1}
+        >
+          <span className="turn-btn__label">
+            {loading.takeTurn ? '…' : (
+              <>
+                <span className="sm:hidden">Turn</span>
+                <span className="hidden sm:inline">Take Turn</span>
+              </>
+            )}
+          </span>
+        </button>
 
         {!isLoggedIn ? (
           <button

@@ -1,7 +1,6 @@
 import React from 'react';
 import clsx from 'clsx';
 import { useGameState } from '../../hooks/useGameState.js';
-import { useGameActions } from '../../hooks/useGameActions.js';
 import { useCloudSync } from '../../hooks/useCloudSync.js';
 import { useServerStatus } from '../../hooks/useServerStatus.js';
 import { useEstClock } from '../../hooks/useEstClock.js';
@@ -10,7 +9,6 @@ import { REGEN_AMOUNT, useRegenCountdown } from '../../hooks/useRegenCountdown.j
 
 const ShellFooter = () => {
   const { state } = useGameState();
-  const { takeTurn, loading } = useGameActions();
   const synced = useCloudSync();
   const { uptime } = useServerStatus();
   const estClock = useEstClock();
@@ -65,42 +63,17 @@ const ShellFooter = () => {
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-1.5 border-l border-white/5 pl-2 sm:gap-2 sm:pl-3">
-        <div className="hidden text-right font-serif leading-none md:block">
-          <div className="flex items-center justify-end gap-1">
-            <span className="text-[10px] uppercase tracking-[0.5px] text-text3">Turns:</span>
-            <span className="text-sm font-bold text-accent1 tabular-nums">
-              {turnsStored}
-            </span>
-            <span className="text-[10px] text-text3">/ 400</span>
-          </div>
-          <div className="text-[10px] font-sans text-text3">
-            +{REGEN_AMOUNT} in {regenCountdown}
-          </div>
-        </div>
-
-        <span
-          className="text-sm font-bold text-accent1 tabular-nums md:hidden"
-          title={`${turnsStored} turns stored, +${REGEN_AMOUNT} in ${regenCountdown}`}
-        >
-          {turnsStored}
-        </span>
-
-        <button
-          type="button"
-          className="turn-btn px-2 py-1 text-[10px] sm:px-3 sm:py-1.5 sm:text-xs"
-          onClick={takeTurn}
-          disabled={loading.takeTurn || turnsStored < 1}
-        >
-          <span className="turn-btn__label">
-            {loading.takeTurn ? '…' : (
-              <>
-                <span className="sm:hidden">Turn</span>
-                <span className="hidden sm:inline">Take Turn</span>
-              </>
-            )}
+      <div className="shrink-0 border-l border-white/5 pl-2 text-right font-serif leading-none sm:pl-3">
+        <div className="flex items-center justify-end gap-1">
+          <span className="text-[10px] uppercase tracking-[0.5px] text-text3">Turns:</span>
+          <span className="text-sm font-bold text-accent1 tabular-nums">
+            {turnsStored}
           </span>
-        </button>
+          <span className="text-[10px] text-text3">/ 400</span>
+        </div>
+        <div className="text-[10px] font-sans text-text3">
+          +{REGEN_AMOUNT} in {regenCountdown}
+        </div>
       </div>
     </footer>
   );
