@@ -1501,6 +1501,40 @@ async function start() {
     serveSplash(req, res, next);
   });
 
+  // Express global error handler middleware — catches errors passed to next(err)
+  // Must be registered after all other middleware and route handlers
+  app.use((err, req, res, _next) => {
+    const requestId = Math.random().toString(36).substr(2, 9);
+    const statusCode = err.statusCode || err.status || 500;
+    const isDev = process.env.NODE_ENV !== 'production';
+
+    // Log error with context
+    const errorLog = {
+      requestId,
+      timestamp: new Date().toISOString(),
+      method: req.method,
+      url: req.url,
+      status: statusCode,
+      errorName: err.name,
+      errorMessage: err.message,
+      ...(isDev && { stack: err.stack })
+    };
+
+    if (statusCode >= 500) {
+      console.error('[ERROR]', JSON.stringify(errorLog));
+    } else if (statusCode >= 400) {
+      console.warn('[WARN]', JSON.stringify(errorLog));
+    }
+
+    // Send error response
+    if (!res.headersSent) {
+      res.status(statusCode).json({
+        error: isDev ? err.message : 'Internal server error',
+        ...(isDev && { requestId, stack: err.stack })
+      });
+    }
+  });
+
   setupSockets(io, db);
   engine.io = io;
   global._narmir_io = io;
