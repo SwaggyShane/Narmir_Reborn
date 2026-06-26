@@ -4,7 +4,7 @@
 
 **Precondition:** React admin (Ph6a) is live at `/admin`. Legacy fallback at `/admin?legacy=1` still works.
 
-**Exit criteria:** All 14 items below checked ✅ on staging/local environment.
+**Exit criteria:** All 17 items below checked ✅ on staging/local environment.
 
 ---
 
