@@ -401,6 +401,7 @@
 
   .kd-top {
     @apply relative;
+    position: static !important;
   }
 
   .kingdom-header {
@@ -799,7 +800,7 @@
   }
 
   .bld-main {
-    @apply flex min-w-0 items-center gap-1.5;
+    @apply flex min-w-0 items-center gap-2;
   }
 
   .bld-main .name {
@@ -808,40 +809,37 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     font-size: 13px;
+    flex: 1;
   }
 
-  .bld-sub {
-    @apply flex flex-wrap items-center gap-x-2;
-  }
-
-  .bld-sub .count {
-    font-size: 11px;
-    color: var(--text3);
-    min-width: 0;
+  .bld-main .count {
+    flex-shrink: 0;
+    font-size: 12px;
   }
 
   .bld-est {
     font-size: 10px;
     color: var(--text3);
+    margin-top: 2px;
   }
 
   .bld-controls {
-    @apply flex flex-shrink-0 flex-col items-end gap-1;
-  }
-
-  .bld-demolish {
-    @apply flex items-center gap-0.5;
-  }
-
-  .bld-demolish .input {
-    width: 48px;
+    @apply flex flex-shrink-0 flex-col items-end gap-2;
   }
 
   .bld-eng {
-    @apply flex items-center gap-1;
+    @apply flex flex-col items-end gap-0.5;
   }
 
   .bld-eng .input {
+    width: 60px;
+  }
+
+  .bld-demolish {
+    @apply flex flex-col items-end gap-0.5;
+  }
+
+  .bld-demolish .input {
     width: 60px;
   }
 

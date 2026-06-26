@@ -584,33 +584,19 @@ const BuildPanel = () => {
           <div className="bld-main">
             <span className="bld-icon" style={{ background: icon.color }}>{icon.emoji}</span>
             <span className="name">{b.name}</span>
-          </div>
-          <div className="bld-sub">
             <span className="count" id={`bld-${b.id}`}>{fmt(getBuildCount(b.id))}</span>
-            {(buildDisplay.warnings[b.id] || buildDisplay.estimates[b.id]) && (
-              <span className="bld-est">
-                {buildDisplay.warnings[b.id] && <span className="text-amber">{buildDisplay.warnings[b.id]}</span>}
-                {buildDisplay.warnings[b.id] && buildDisplay.estimates[b.id] && ' | '}
-                {buildDisplay.estimates[b.id] && <span>{buildDisplay.estimates[b.id]}</span>}
-              </span>
-            )}
           </div>
+          {(buildDisplay.warnings[b.id] || buildDisplay.estimates[b.id]) && (
+            <span className="bld-est">
+              {buildDisplay.warnings[b.id] && <span className="text-amber">{buildDisplay.warnings[b.id]}</span>}
+              {buildDisplay.warnings[b.id] && buildDisplay.estimates[b.id] && ' | '}
+              {buildDisplay.estimates[b.id] && <span>{buildDisplay.estimates[b.id]}</span>}
+            </span>
+          )}
         </div>
         <div className="bld-controls">
-          {showDemolish && (
-            <div className="bld-demolish">
-              <input
-                type="number"
-                className="input text-right"
-                value={demolishAmounts[b.id] ?? ''}
-                onChange={(e) => setDemolishAmounts(prev => ({ ...prev, [b.id]: e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value, 10) || 1) }))}
-                min="1"
-                placeholder="1"
-              />
-              <button className="base-btn variant-red px-1.5 py-1 text-[10px]" onClick={() => demolishB(b.id)}>🗑️</button>
-            </div>
-          )}
           <div className="bld-eng">
+            <div className="text-[10px] text-text3 mb-0.5">Hire</div>
             <input
               type="number"
               className="input text-right"
@@ -633,6 +619,20 @@ const BuildPanel = () => {
               Max
             </button>
           </div>
+          {showDemolish && (
+            <div className="bld-demolish">
+              <div className="text-[10px] text-text3 mb-0.5">Destroy</div>
+              <input
+                type="number"
+                className="input text-right"
+                value={demolishAmounts[b.id] ?? ''}
+                onChange={(e) => setDemolishAmounts(prev => ({ ...prev, [b.id]: e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value, 10) || 1) }))}
+                min="1"
+                placeholder="1"
+              />
+              <button className="base-btn px-1.5 py-1 text-[10px]" style={{ background: 'var(--red)', color: '#fff' }} onClick={() => demolishB(b.id)}>🗑️</button>
+            </div>
+          )}
         </div>
       </div>
     );

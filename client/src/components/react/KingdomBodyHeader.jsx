@@ -129,37 +129,44 @@ const KingdomBodyHeader = () => {
           <div className="flex w-full shrink-0 flex-wrap items-center justify-start sm:w-auto sm:justify-end" style={{ gap: GAP }}>
             <Stat label="Turn" value={turn} />
             <Stat label="Score" value={score.toLocaleString()} valueStyle={{ color: 'var(--gold)' }} />
+            <span style={{ fontSize: 11, color: 'var(--text3)', flexShrink: 0 }}>
+              Lv{' '}
+              <span
+                id="kingdom-level"
+                style={{
+                  color: 'var(--gold)',
+                  fontWeight: 700,
+                  fontSize: 12,
+                  textDecoration: 'underline',
+                  textDecorationStyle: 'dotted',
+                  textUnderlineOffset: 2,
+                }}
+              >
+                {level}
+              </span>
+            </span>
+            <button
+              type="button"
+              onClick={() => setXpModalOpen(true)}
+              title="Click for XP breakdown"
+              className="border-none bg-transparent p-0 transition hover:opacity-90"
+              style={{ display: 'flex', gap: GAP, alignItems: 'center', flexShrink: 0 }}
+            >
+              <XpBar pct={pct} />
+              <span id="xp-label" className="hidden xs:inline" style={{ fontSize: 10, color: 'var(--text3)', flexShrink: 0 }}>
+                {fmt(xpIntoLevel)}/{fmt(xpNeeded)} XP
+              </span>
+            </button>
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setXpModalOpen(true)}
-          title="Click for XP breakdown"
-          className="flex w-full cursor-pointer items-center justify-end border-none bg-transparent p-0 transition hover:opacity-90"
-          style={{ gap: GAP, marginTop: GAP }}
-        >
-          <span style={{ fontSize: 11, color: 'var(--text3)', flexShrink: 0 }}>
-            Lv{' '}
-            <span
-              id="kingdom-level"
-              style={{
-                color: 'var(--gold)',
-                fontWeight: 700,
-                fontSize: 12,
-                textDecoration: 'underline',
-                textDecorationStyle: 'dotted',
-                textUnderlineOffset: 2,
-              }}
-            >
-              {level}
-            </span>
-          </span>
-          <XpBar pct={pct} />
-          <span id="xp-label" className="hidden xs:inline" style={{ fontSize: 10, color: 'var(--text3)', flexShrink: 0 }}>
-            {fmt(xpIntoLevel)}/{fmt(xpNeeded)} XP
-          </span>
-        </button>
+        {state?.local_time || state?.vampire_countdown || state?.season && (
+          <div className="flex w-full shrink-0 flex-wrap items-center justify-start sm:w-auto sm:justify-end" style={{ gap: GAP, marginTop: GAP }}>
+            {state?.local_time && <Stat label="Time" value={state.local_time} />}
+            {state?.vampire_countdown && <Stat label="Vampire" value={state.vampire_countdown} />}
+            {state?.season && <Stat label="Season" value={state.season} />}
+          </div>
+        )}
       </div>
 
       <KingdomXpModal open={xpModalOpen} onClose={() => setXpModalOpen(false)} />
