@@ -1,6 +1,6 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
-const { requireAdmin, requireCsrfToken } = require("./middleware");
+const { requireAdmin, requireCsrfToken, ensureCsrfToken } = require("./middleware");
 const router = express.Router();
 const multer = require("multer");
 const path = require("path");
@@ -10,6 +10,7 @@ const { _GOAL_COUNTS, DAILY_GOALS, WEEKLY_GOALS, MONTHLY_GOALS } = require("../g
 const engine = require("../game/engine");
 const { FRAGMENT_METADATA } = require("../game/fragment-attunements");
 const { PRESETS, PRESET_IDS, buildPresetFields } = require("../game/ai-presets");
+const { incrementUnread } = require("../cache");
 
 const ALLOWED_PRIZE_TYPES = ['gold', 'mana', 'rangers', 'researchers', 'war_machines', 'world_fragment'];
 const ALLOWED_SOUND_EXTENSIONS = new Set([".mp3", ".wav"]);
@@ -46,6 +47,14 @@ function safeSoundPath(rawName) {
   const resolved = path.resolve(soundsPath, base);
   if (path.relative(soundsPath, resolved).startsWith("..")) return null;
   return resolved;
+}
+
+/** Register canonical kebab path plus legacy snake_plural alias (alpha backward compat). */
+function dualRoute(router, method, canonical, legacy, ...handlers) {
+  router[method](canonical, ...handlers);
+  if (legacy && legacy !== canonical) {
+    router[method](legacy, ...handlers);
+  }
 }
 
 async function refreshInMemoryGoals(db) {
@@ -204,6 +213,13 @@ module.exports = function (db, io) {
 
   // All admin routes require admin JWT
   router.use(requireAdmin);
+  // Issue CSRF cookie on read requests when an admin session exists
+  router.use(ensureCsrfToken);
+  // All state-changing admin routes require matching CSRF header + cookie
+  router.use((req, res, next) => {
+    if (!["POST", "PUT", "DELETE", "PATCH"].includes(req.method)) return next();
+    return requireCsrfToken(req, res, next);
+  });
 
   // GET /api/admin/kingdoms — all kingdoms with player info
   router.get("/kingdoms", async (_req, res) => {
@@ -635,7 +651,6 @@ module.exports = function (db, io) {
     res.json({ ok: true });
   });
 
-  // POST /api/admin/announce — broadcast a global message via Socket.io
   router.post("/set-kingdom", async (req, res) => {
     const { kingdomId, fields } = req.body;
     if (!kingdomId || !fields || typeof fields !== "object")
@@ -813,19 +828,49 @@ module.exports = function (db, io) {
     res.json({ ok: true, updated: Object.keys(safe) });
   });
 
-  // POST /api/admin/announce — broadcast a global message via Socket.io
+  // POST /api/admin/announce — persist to global chat + every kingdom's news feed
   router.post("/announce", async (req, res) => {
-    const { message } = req.body;
-    if (!message?.trim())
-      return res.status(400).json({ error: "message required" });
-    io.to("global").emit("chat:message", {
-      room: "global",
-      from: "[ADMIN]",
-      race: "admin",
-      message: message.trim(),
-      ts: Date.now(),
-    });
-    res.json({ ok: true });
+    try {
+      const text = (req.body.message || "").trim();
+      if (!text) return res.status(400).json({ error: "message required" });
+
+      const newsBlurb = `📢 Server announcement: ${text}`;
+
+      const chatInsert = await db.run(
+        "INSERT INTO chat_messages (kingdom_id, player_id, username, room, message) VALUES (?, ?, ?, ?, ?)",
+        [null, 0, "[ADMIN]", "global", text],
+      );
+      const chatId = chatInsert.lastID;
+
+      const kingdoms = await db.all("SELECT id FROM kingdoms");
+      if (kingdoms.length > 0) {
+        const placeholders = kingdoms.map(() => "(?,?,?,?)").join(",");
+        const values = kingdoms.flatMap((k) => [k.id, "announcement", newsBlurb, 0]);
+        await db.run(
+          `INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ${placeholders}`,
+          values,
+        );
+        for (const k of kingdoms) {
+          incrementUnread(k.id);
+          io.to(`kingdom:${k.id}`).emit("event:news_refresh");
+        }
+      }
+
+      io.to("global").emit("chat:message", {
+        id: chatId,
+        room: "global",
+        from: "[ADMIN]",
+        race: "admin",
+        isMod: true,
+        message: text,
+        ts: Date.now(),
+      });
+
+      res.json({ ok: true, chatId, kingdoms: kingdoms.length });
+    } catch (err) {
+      console.error("[admin] announce failed:", err.message);
+      res.status(500).json({ error: err.message });
+    }
   });
 
   // GET /api/admin/ai-hiatus — check current AI hiatus status
@@ -1151,7 +1196,7 @@ module.exports = function (db, io) {
     res.json(rows);
   });
 
-  router.get("/bug_reports", async (_req, res) => {
+  dualRoute(router, "get", "/bug-reports", "/bug_reports", async (_req, res) => {
     const rows = await db.all(`
       SELECT * FROM bug_reports ORDER BY created_at DESC
     `);
@@ -1159,14 +1204,14 @@ module.exports = function (db, io) {
   });
 
   // ── Admin Notes ───────────────────────────────────────────────────────────────
-  router.get("/admin_notes", async (_req, res) => {
+  dualRoute(router, "get", "/admin-notes", "/admin_notes", async (_req, res) => {
     const rows = await db.all(
       `SELECT * FROM admin_notes ORDER BY created_at DESC`,
     );
     res.json(rows);
   });
 
-  router.post("/admin_notes", async (req, res) => {
+  dualRoute(router, "post", "/admin-notes", "/admin_notes", async (req, res) => {
     const { message } = req.body;
     if (!message) return res.status(400).json({ error: "Message required" });
     const author = req.player ? req.player.username : "Unknown Admin";
@@ -1177,7 +1222,7 @@ module.exports = function (db, io) {
     res.json({ ok: true });
   });
 
-  router.delete("/admin_notes/:id", async (req, res) => {
+  dualRoute(router, "delete", "/admin-notes/:id", "/admin_notes/:id", async (req, res) => {
     await db.run(`DELETE FROM admin_notes WHERE id = ?`, [req.params.id]);
     res.json({ ok: true });
   });
@@ -1198,14 +1243,14 @@ module.exports = function (db, io) {
     res.json({ ok: true });
   });
 
-  router.get("/changelog_entries", async (_req, res) => {
+  dualRoute(router, "get", "/changelog-entries", "/changelog_entries", async (_req, res) => {
     const rows = await db.all(
       `SELECT * FROM changelog_entries ORDER BY created_at DESC`,
     );
     res.json(rows);
   });
 
-  router.post("/changelog_entries", async (req, res) => {
+  dualRoute(router, "post", "/changelog-entries", "/changelog_entries", async (req, res) => {
     const { title, description, category } = req.body || {};
     const author = req.player ? req.player.username : "Admin";
     try {
@@ -1354,18 +1399,18 @@ module.exports = function (db, io) {
     res.json({ ok: true });
   });
 
-  router.get("/random_events", async (_req, res) => {
+  dualRoute(router, "get", "/random-events", "/random_events", async (_req, res) => {
     const list = await db.all("SELECT * FROM random_events ORDER BY id ASC");
     res.json({ ok: true, list });
   });
-  router.post("/random_events", async (req, res) => {
+  dualRoute(router, "post", "/random-events", "/random_events", async (req, res) => {
     await db.run("INSERT INTO random_events (content) VALUES (?)", [
       req.body.content || "",
     ]);
     await require("../../index").refreshLore();
     res.json({ ok: true });
   });
-  router.put("/random_events/:id", async (req, res) => {
+  dualRoute(router, "put", "/random-events/:id", "/random_events/:id", async (req, res) => {
     await db.run("UPDATE random_events SET content=? WHERE id=?", [
       req.body.content || "",
       req.params.id,
@@ -1373,41 +1418,41 @@ module.exports = function (db, io) {
     await require("../../index").refreshLore();
     res.json({ ok: true });
   });
-  router.delete("/random_events/:id", async (req, res) => {
+  dualRoute(router, "delete", "/random-events/:id", "/random_events/:id", async (req, res) => {
     await db.run("DELETE FROM random_events WHERE id=?", [req.params.id]);
     await require("../../index").refreshLore();
     res.json({ ok: true });
   });
 
-  router.get("/junk_events", async (_req, res) => {
+  dualRoute(router, "get", "/junk-events", "/junk_events", async (_req, res) => {
     const list = await db.all("SELECT * FROM junk_events ORDER BY id ASC");
     res.json({ ok: true, list });
   });
-  router.post("/junk_events", async (req, res) => {
+  dualRoute(router, "post", "/junk-events", "/junk_events", async (req, res) => {
     await db.run("INSERT INTO junk_events (content) VALUES (?)", [
       req.body.content || "",
     ]);
     await require("../../index").refreshLore();
     res.json({ ok: true });
   });
-  router.delete("/junk_events/:id", async (req, res) => {
+  dualRoute(router, "delete", "/junk-events/:id", "/junk_events/:id", async (req, res) => {
     await db.run("DELETE FROM junk_events WHERE id=?", [req.params.id]);
     await require("../../index").refreshLore();
     res.json({ ok: true });
   });
 
-  router.get("/tax_events", async (_req, res) => {
+  dualRoute(router, "get", "/tax-events", "/tax_events", async (_req, res) => {
     const list = await db.all("SELECT * FROM tax_events ORDER BY id ASC");
     res.json({ ok: true, list });
   });
-  router.post("/tax_events", async (req, res) => {
+  dualRoute(router, "post", "/tax-events", "/tax_events", async (req, res) => {
     await db.run("INSERT INTO tax_events (content) VALUES (?)", [
       req.body.content || "",
     ]);
     await require("../../index").refreshLore();
     res.json({ ok: true });
   });
-  router.delete("/tax_events/:id", async (req, res) => {
+  dualRoute(router, "delete", "/tax-events/:id", "/tax_events/:id", async (req, res) => {
     await db.run("DELETE FROM tax_events WHERE id=?", [req.params.id]);
     await require("../../index").refreshLore();
     res.json({ ok: true });
@@ -1426,7 +1471,7 @@ module.exports = function (db, io) {
     });
   });
 
-  router.post("/sounds/upload", requireAdmin, requireCsrfToken, (req, res) => {
+  router.post("/sounds/upload", (req, res) => {
     upload.single("soundFile")(req, res, (err) => {
       if (err) {
         return res.status(400).json({ error: err.message });
@@ -1466,7 +1511,7 @@ module.exports = function (db, io) {
     });
   });
 
-  router.post("/sounds/delete", requireAdmin, requireCsrfToken, (req, res) => {
+  router.post("/sounds/delete", (req, res) => {
     if (!req.body.filename)
       return res.status(400).json({ error: "Filename required" });
     const targetPath = safeSoundPath(req.body.filename);
@@ -1691,7 +1736,7 @@ module.exports = function (db, io) {
     }
   });
 
-  router.post("/repair-resource-allocations", requireAdmin, requireCsrfToken, async (req, res) => {
+  router.post("/repair-resource-allocations", async (req, res) => {
     try {
       const kingdomId = req.body.kingdomId;
       if (!kingdomId) return res.status(400).json({ error: "kingdomId required" });
@@ -1729,7 +1774,7 @@ module.exports = function (db, io) {
     }
   });
 
-  router.post("/security-audit", requireAdmin, requireCsrfToken, async (req, res) => {
+  router.post("/security-audit", async (req, res) => {
     try {
       const AuditReportGenerator = require("../tools/security-auditor/report-generator");
       const generator = new AuditReportGenerator(path.join(__dirname, ".."));

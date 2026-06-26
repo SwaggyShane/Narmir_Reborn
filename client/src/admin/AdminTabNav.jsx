@@ -4,7 +4,7 @@ export const ADMIN_TABS = [
   { id: 'manage',    label: 'Manage',         icon: '⚙️' },
   { id: 'kingdoms',  label: 'Kingdoms',        icon: '🏰' },
   { id: 'events',    label: 'Events',          icon: '📅' },
-  { id: 'config',    label: 'Configs',         icon: '🛠️' },
+  { id: 'config',    label: 'Config',          icon: '🛠️' },
   { id: 'sounds',    label: 'Sounds',          icon: '🎵' },
   { id: 'prestige',  label: 'Prestige',        icon: '✨' },
   { id: 'lore',      label: 'Lore & Trips',    icon: '📖' },

@@ -43,5 +43,9 @@ export function initSocketHandlers(socket) {
     console.log('[event:global_message]', data?.message || 'A global event occurred.');
   });
 
+  socket.on('event:news_refresh', () => {
+    emitAppEvent(AppEvent.NEWS_REFRESH);
+  });
+
   socket._narmirGeneralHandlersBound = true;
 }

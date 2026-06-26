@@ -3,6 +3,7 @@ const NEWS_META = Object.freeze({
   spell: { icon: "✨", color: "var(--accent1)", label: "Spell" },
   covert: { icon: "🕵️", color: "var(--amber)", label: "Covert" },
   system: { icon: "📋", color: "var(--text2)", label: "System" },
+  announcement: { icon: "📢", color: "var(--gold)", label: "Announcement" },
   alliance: { icon: "🤝", color: "var(--blue)", label: "Alliance" },
   expedition: { icon: "🧭", color: "var(--gold)", label: "Expedition" },
 });

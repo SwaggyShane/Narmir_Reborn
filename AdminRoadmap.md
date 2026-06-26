@@ -1,6 +1,8 @@
 # Admin Panel React + Tailwind Migration Roadmap
 
-**Status:** Phase 6a merged (PR #589) — React admin is default at `/admin`; dogfood soak in progress. Phase 6b (hard cutover) deferred until verification checklist passes.
+**Status:** Phase 6a merged (PR #589) — React admin is default at `/admin`. Phase 6b (hard cutover) proceeds when verification checklist passes. **Alpha policy:** dogfood soak deferred — see `ALPHA_ROADMAP.md` Track D.
+
+**Alpha progress (2026-06-26, branch `fix/topbar-take-turn`):** Tracks A1, E1, E2, B1+B2, C1+C2, S0 splash retro, and forum overhaul (categorized index, in-game `ForumPanel`, avatars/badges) are complete locally. Next alpha focus: **D1** admin Tailwind shell, **C3** portal CSS cleanup, **E3** Vite bump.
 **Source of truth audited:** `public/admin.html` (~5,150 lines), `routes/admin.js` (~1,580 lines), `index.js` route wiring  
 **Target:** Replace the monolithic vanilla HTML admin with a Vite/React/Tailwind app matching the game shell and portal patterns
 
@@ -543,7 +545,7 @@ Each phase is an independent draft PR. Do not delete `public/admin.html` until P
 - [x] Soft-cutover banner in React admin shell
 - [x] Update `README.md` admin section
 - [x] Code review: `SpellsReference` uses `adminFetch`; Gemini `fortified_blueprints` JSON suggestion declined
-- [ ] **Dogfood ≥1 week** on React admin (target: before hard cutover) — **IN PROGRESS**
+- [ ] **Dogfood ≥1 week** — **DEFERRED (alpha)**; use verification matrix only — see `ALPHA_ROADMAP.md`
 - [ ] Verification matrix (one action per tab + kingdom edit spot-check vs legacy)
 
 **Do not delete `public/admin.html` during soft cutover.**

@@ -1186,6 +1186,20 @@ async function initDb(options = {}) {
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_forum_reports_post ON forum_reports(post_id)`);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_forum_moderation_log_mod ON forum_moderation_log(moderator_id)`);
 
+  const forumBoardCols = (await _db.all('PRAGMA table_info(forum_boards)').catch(() => [])).map((c) => c.name);
+  if (!forumBoardCols.includes('category_key')) await addColumn('forum_boards', 'category_key', 'TEXT', forumBoardCols);
+  if (!forumBoardCols.includes('category_label')) await addColumn('forum_boards', 'category_label', 'TEXT', forumBoardCols);
+  if (!forumBoardCols.includes('category_order')) await addColumn('forum_boards', 'category_order', 'INTEGER DEFAULT 0', forumBoardCols);
+
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS forum_profiles (
+      player_id     INTEGER PRIMARY KEY REFERENCES players(id),
+      avatar_mode   TEXT NOT NULL DEFAULT 'initials',
+      avatar_url    TEXT,
+      updated_at    INTEGER NOT NULL DEFAULT (unixepoch())
+    )
+  `);
+
   await _db.run(`
     CREATE TABLE IF NOT EXISTS bounties (
       id                INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -2058,26 +2072,12 @@ async function initDb(options = {}) {
     CREATE INDEX IF NOT EXISTS idx_synergy_cooldowns_until ON synergy_cooldowns(cooldown_until);
   `);
 
-  // Seed initial forum boards
-  const initialBoards = [
-    { name: 'General', description: 'General discussion about the game', order_index: 0 },
-    { name: 'Strategy', description: 'Tips, tactics, and strategic advice', order_index: 1 },
-    { name: 'Alliance News', description: 'Alliance announcements and updates', order_index: 2 },
-  ];
-  for (const board of initialBoards) {
-    try {
-      const existing = await _db.get(`SELECT id FROM forum_boards WHERE name = ?`, [board.name]);
-      if (!existing) {
-        await _db.run(
-          `INSERT INTO forum_boards (name, description, order_index, is_active, created_at, updated_at)
-           VALUES (?, ?, ?, 1, ?, ?)`,
-          [board.name, board.description, board.order_index, Math.floor(Date.now() / 1000), Math.floor(Date.now() / 1000)]
-        );
-        console.log(`[db] Seeded forum board: ${board.name}`);
-      }
-    } catch (err) {
-      console.error(`[db] Error seeding forum board ${board.name}:`, err.message);
-    }
+  try {
+    const { seedForumStructure } = require('../lib/forum-seed');
+    await seedForumStructure(_db);
+    console.log('[db] Forum categories and sub-boards seeded');
+  } catch (err) {
+    console.error('[db] Error seeding forum structure:', err.message);
   }
 
   return _db;

@@ -403,7 +403,7 @@ const AlliancesPanel = () => {
         </div>
 
         <div className="card mb-4 rounded-2xl border border-white/10 bg-zinc-950/80">
-          <div className="card-title">Open Alliances</div>
+          <div className="card-title">Join an Alliance</div>
           <div className="mb-2.5 text-[13px] text-text2">
             Ask a leader to invite you, or browse alliances with open slots.
           </div>

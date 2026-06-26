@@ -39,6 +39,9 @@ export const HIDE_KINGDOM_HEADER_PANELS = new Set([
   'forum',
 ]);
 
+/** Full-width shell: sidebar + topbar + footer only (no resource strip, no panel chrome). */
+export const FULL_BLEED_SHELL_PANELS = new Set(['globalchat', 'forum']);
+
 export const NAV_SECTIONS = Object.freeze([
   {
     id: 'kingdom',

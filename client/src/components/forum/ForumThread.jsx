@@ -2,11 +2,37 @@ import React, { useState, useEffect, useCallback } from 'react';
 import ForumPostForm from './ForumPostForm';
 import { fetchApi } from '../../utils/api';
 
-function avatarColor(name) {
-  const colors = ['#4a8fb8', '#c8962a', '#8fb84a', '#b43c00', '#4caf82', '#e05c5c', '#f06202', '#8b572a'];
-  let hash = 0;
-  for (let i = 0; i < (name || '').length; i++) hash = (hash * 31 + name.charCodeAt(i)) & 0xffffffff;
-  return colors[Math.abs(hash) % colors.length];
+function PostAvatar({ post }) {
+  if (post.avatarUrl) {
+    return (
+      <img
+        src={post.avatarUrl}
+        alt=""
+        className="forum-post-avatar-img"
+        loading="lazy"
+      />
+    );
+  }
+  const letter = (post.username || '?').charAt(0).toUpperCase();
+  return <div className="forum-post-avatar forum-post-avatar--fallback">{letter}</div>;
+}
+
+function PostBadges({ badges }) {
+  if (!badges?.length) return null;
+  return (
+    <div className="forum-post-badges" aria-label="Forum badges">
+      {badges.map((badge) => (
+        <span
+          key={badge.id}
+          className={`forum-post-badge forum-post-badge--${badge.id}`}
+          title={badge.tip}
+        >
+          <span className="forum-post-badge-emoji" aria-hidden="true">{badge.emoji}</span>
+          <span className="forum-post-badge-label">{badge.label}</span>
+        </span>
+      ))}
+    </div>
+  );
 }
 
 const ForumThread = React.memo(function ForumThread({ topic, user, onPostCreated }) {
@@ -104,12 +130,15 @@ const ForumThread = React.memo(function ForumThread({ topic, user, onPostCreated
     return <div className="forum-error">{error}</div>;
   }
 
+  const PAGE_SIZE = 20;
+
   return (
     <div className="forum-thread-section">
-      <div className="forum-thread-header">
+      <div className="forum-thread-toolbar">
         <h2 className="forum-thread-title">{threadData?.title}</h2>
         <div className="forum-thread-meta">
-          Started by {threadData?.author_username} • {formatTime(threadData?.created_at)}
+          Started by {threadData?.author_username} | {formatTime(threadData?.created_at)}
+          {posts?.length > 0 && ` | ${posts.length} post${posts.length === 1 ? '' : 's'} on this page`}
         </div>
       </div>
 
@@ -119,17 +148,20 @@ const ForumThread = React.memo(function ForumThread({ topic, user, onPostCreated
 
       <div className="forum-posts-list">
         {posts && posts.length > 0 ? (
-          posts.map((post) => (
-            <div key={post.id} className={`forum-post-item ${post.is_deleted ? 'forum-post-deleted' : ''}`}>
+          posts.map((post, index) => {
+            const postNum = (page - 1) * PAGE_SIZE + index + 1;
+            const isOp = postNum === 1;
+            return (
+            <div
+              key={post.id}
+              className={`forum-post-item${isOp ? ' forum-post-op' : ''}${post.is_deleted ? ' forum-post-deleted' : ''}`}
+            >
               <div className="forum-post-user-panel">
-                <div
-                  className="forum-post-avatar"
-                  style={{ background: post.is_deleted ? '#555' : avatarColor(post.username) }}
-                >
-                  {(post.username || '?')[0].toUpperCase()}
-                </div>
+                <span className="forum-post-number">#{postNum}</span>
+                <PostAvatar post={post} />
                 <div className="forum-post-username">{post.username || 'deleted'}</div>
-                <div className="forum-post-role">Member</div>
+                <PostBadges badges={post.badges} />
+                {isOp ? <span className="forum-post-op-badge">OP</span> : null}
               </div>
               <div className="forum-post-body">
                 <div className="forum-post-header">
@@ -195,7 +227,8 @@ const ForumThread = React.memo(function ForumThread({ topic, user, onPostCreated
                 )}
               </div>
             </div>
-          ))
+          );
+          })
         ) : (
           <div className="forum-empty-state">
             <p>No posts in this thread yet.</p>

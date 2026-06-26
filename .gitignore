@@ -58,6 +58,10 @@ AUDIT_REPORT.md
 # Claude Code agent worktrees (scratch space, never commit)
 .claude/worktrees/
 
+# Local agent/session scratch (never commit)
+agent-tools/
+terminals/
+
 # Local testing (combat test harness)
 test-combat-harness/*
 !test-combat-harness/isolated-defense-testing.js

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './Portal.css';
-import './css/forum.css';
 import ForumSection from './components/forum/ForumSection';
+import { useColorTheme } from './hooks/useColorTheme.js';
+import { COLOR_THEMES } from './utils/colorTheme.js';
 
 const RACE_DATA = [
   {
@@ -321,7 +322,7 @@ function RegistrationForm({ selectedRace, onBack }) {
               </div>
             </div>
 
-            <p className="auth-password-hint">8+ chars · uppercase · lowercase · number · special (@$!%*?&)</p>
+            <p className="auth-password-hint">8+ chars | uppercase | lowercase | number | special (@$!%*?&)</p>
             {error && <p className="portal-error">{error}</p>}
             <button type="submit" className="reg-submit-btn" disabled={submitting}>
               {submitting ? '…' : `BEGIN AS ${raceInfo?.title?.split(' of ')?.[0]?.toUpperCase() || 'COMMANDER'}`}
@@ -498,6 +499,28 @@ function RankingsTable() {
   );
 }
 
+// ─── Theme picker (syncs with game Options via localStorage) ─────────────────
+
+function PortalThemePicker() {
+  const { theme, setTheme } = useColorTheme();
+  return (
+    <div className="portal-theme-picker" role="group" aria-label="Color theme">
+      {COLOR_THEMES.map((t) => (
+        <button
+          key={t.id}
+          type="button"
+          title={t.label}
+          aria-label={t.label}
+          aria-pressed={theme === t.id}
+          className={`portal-theme-swatch${theme === t.id ? ' active' : ''}`}
+          style={{ background: t.preview }}
+          onClick={() => setTheme(t.id)}
+        />
+      ))}
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Portal() {
@@ -518,7 +541,7 @@ export default function Portal() {
     : null;
 
   return (
-    <div className="portal-root">
+    <div className="portal-shell">
       <header className="portal-header">
         <h1 className="portal-title">NARMIR REBORN</h1>
         <p className="portal-tagline">Rise From the Ashes. Forge Your Legacy.</p>
@@ -550,7 +573,7 @@ export default function Portal() {
             <RaceDetailPanel race={previewRace} />
           ) : authCollapsed ? (
             <button
-              className="portal-card portal-auth-expand-btn"
+              className="portal-card portal-auth-expand"
               onClick={() => setAuthCollapsed(false)}
             >
               Login / Register
@@ -586,6 +609,7 @@ export default function Portal() {
 
       <footer className="portal-footer">
         <span>© 2025 Narmir Reborn</span>
+        <PortalThemePicker />
         <a href="/" className="portal-footer-link">Back to Home</a>
       </footer>
     </div>

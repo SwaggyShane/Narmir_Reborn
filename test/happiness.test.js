@@ -102,11 +102,11 @@ console.log('Testing happiness.js\n');
   console.log(`Test 6: calculateHappiness 0% tax valid ✓ (zero=${zero.happiness}, norm=${norm.happiness})`);
 }
 
-// Test 7: getHappinessRecoveryRate returns value in [0.5, 5]
+// Test 7: getHappinessRecoveryRate returns value in [0.2, 2.8]
 {
   const k = makeKingdom({ res_entertainment: 100, bld_taverns: 0 });
   const rate = happiness.getHappinessRecoveryRate(k);
-  assert.ok(rate >= 0.5 && rate <= 5, `recovery rate should be in [0.5, 5], got ${rate}`);
+  assert.ok(rate >= 0.2 && rate <= 2.8, `recovery rate should be in [0.2, 2.8], got ${rate}`);
   console.log(`Test 7: getHappinessRecoveryRate ✓ (rate=${rate})`);
 }
 

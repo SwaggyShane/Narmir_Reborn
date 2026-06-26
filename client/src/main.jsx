@@ -4,6 +4,7 @@ import GameShell from './GameShell.jsx';
 import { applyColorTheme, readColorTheme } from './utils/colorTheme.js';
 import { initConsoleCapture } from './utils/consoleCapture.js';
 import './tailwind.css';
+import './css/forum.css';
 
 initConsoleCapture();
 applyColorTheme(readColorTheme());

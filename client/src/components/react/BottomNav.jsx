@@ -8,8 +8,8 @@ import { useShellBadges } from '../../hooks/useShellBadges.js';
 
 const CORE_TABS = [
   { id: 'status', label: 'Status', icon: '🏰', color: 'text-sky-300' },
-  { id: 'economy', label: 'Economy', icon: '💰', color: 'text-amber-300' },
-  { id: 'warfare', label: 'War', icon: '⚔️', color: 'text-red-300' },
+  { id: 'economy', label: 'Wherewithal', icon: '💰', color: 'text-amber-300' },
+  { id: 'warfare', label: 'Offense', icon: '⚔️', color: 'text-red-300' },
   { id: 'news', label: 'News', icon: '🗞️', color: 'text-amber-200', badgeKey: 'news' },
   { id: 'globalchat', label: 'Chat', icon: '💬', color: 'text-fuchsia-300', badgeKey: 'chat' },
 ];
@@ -102,7 +102,7 @@ const BottomNav = () => {
     switchTab(id);
   };
 
-  if (!showBottomNav) return null;
+  if (!showBottomNav || activePanel === 'forum') return null;
 
   return (
     <>

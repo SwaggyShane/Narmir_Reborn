@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════
    SPLASH PAGE — Three-phase experience:
-   1. Retro: faithful 2003-era Narmir.com recreation
-   2. Glitch: CSS-driven glitch sequence on first click
+   1. Retro: narmir.com/varuh frameset clone (public/retro assets)
+   2. Glitch: CSS-only sequence on first click (no JS text corruption)
    3. Modern: cinematic splash with video bg + ember particles
    ═══════════════════════════════════════════════════════════════ */
 
@@ -28,155 +28,158 @@ body:has(.phase-modern) {
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   PHASE 1 — RETRO SITE
+   PHASE 1 — RETRO SITE (narmir.com/varuh frameset clone)
+   Assets: public/retro/ — bg-left.gif, bg-top.jpg, nav images, bg-right.gif
    ══════════════════════════════════════════════════════════════════ */
 
 .retro-wrapper {
   position: fixed;
   inset: 0;
   overflow: hidden;
-  cursor: default;
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 13px;
-  background: #ffffff;
+  cursor: pointer;
+  background: #000000;
   z-index: 1;
 }
 
-.retro-site {
+/* cols="140,*,140" — left nav | center (top + content) | right gutter */
+.retro-frameset {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr) 140px;
   width: 100%;
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-/* Header */
-.retro-header {
+  min-height: 100vh;
   background: #000000;
-  padding: 6px 10px;
-  border-bottom: 3px solid #0000cc;
-  min-height: 82px;
-  display: flex;
-  align-items: center;
+}
+
+.retro-col {
+  background-color: #000000;
+  background-repeat: repeat;
+}
+
+.retro-col-left {
+  background-image: url('/retro/bg-left.gif');
+}
+
+.retro-col-right {
+  background-image: url('/retro/bg-right.gif');
+}
+
+.retro-nav-spacer {
+  width: 140px;
+  height: 150px;
   flex-shrink: 0;
 }
 
-.retro-logo-block {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.retro-logo-name {
-  font-family: 'Times New Roman', serif;
-  font-size: 32px;
-  font-weight: bold;
-  letter-spacing: 6px;
-  color: #c8c8c8;
-  text-shadow: 0 0 12px #888, 0 2px 4px #000;
-}
-
-.retro-logo-tagline {
-  font-size: 11px;
-  color: #666666;
-  font-style: italic;
-  letter-spacing: 1px;
-}
-
-/* Body layout */
-.retro-body {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-}
-
-/* Left nav */
 .retro-nav {
-  width: 158px;
-  min-width: 158px;
-  background: #0000aa;
-  border-right: 2px solid #3333ff;
-  padding: 2px 0;
   display: flex;
   flex-direction: column;
-  flex-shrink: 0;
+  align-items: flex-start;
+  padding: 0 0 8px;
+  gap: 0;
 }
 
-.retro-nav-link {
+.retro-nav a {
   display: block;
-  padding: 5px 8px;
-  color: #ffffff;
-  text-decoration: none;
-  font-size: 12px;
-  font-weight: bold;
-  border-bottom: 1px solid #2222cc;
-  background: #0000aa;
-}
-
-.retro-nav-link:hover {
-  background: #0000cc;
-  color: #ffff00;
+  line-height: 0;
   text-decoration: none;
 }
 
-.retro-nav-link.first::after {
-  content: '▋';
-  margin-left: 4px;
-  animation: blink 0.9s step-end infinite;
-  color: #ffff00;
-  font-size: 10px;
+.retro-nav a:hover img {
+  filter: brightness(1.15);
 }
 
-/* Content area */
+.retro-nav-first img {
+  outline: 1px solid #ffff00;
+  outline-offset: 1px;
+}
+
+.retro-center {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.retro-top-banner {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* gamemain.html content frame */
 .retro-content {
   flex: 1;
-  background: #ffffff;
-  padding: 10px 16px;
   overflow-y: auto;
-  color: #000000;
-  line-height: 1.55;
+  background: #000000;
+  color: #c0c0c0;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 8pt;
+  line-height: 1.45;
+  padding: 10px;
 }
 
-.retro-h2 {
-  font-size: 14px;
-  font-weight: bold;
-  color: #000080;
-  margin: 8px 0 6px;
+.retro-content p {
+  margin: 0 0 0.75em;
 }
 
-.retro-h3 {
-  font-size: 13px;
+.retro-content a {
+  color: #0000ff;
   font-weight: bold;
-  color: #000080;
-  margin: 8px 0 4px;
+  text-decoration: none;
+}
+
+.retro-content a:hover {
+  color: #ffffff;
 }
 
 .retro-hr {
   border: none;
-  border-top: 1px solid #0000ff;
+  border-top: 1px solid #808080;
   margin: 8px 0;
 }
 
-.retro-content a {
-  color: #0000cc;
-  text-decoration: underline;
+.retro-applet-wrap {
+  text-align: center;
+  margin: 12px 0;
+}
+
+.retro-applet-slot {
+  display: inline-block;
+  width: 200px;
+  height: 75px;
+  background: #1a1a1a;
+  border: 1px inset #404040;
+}
+
+.retro-java-fallback {
+  color: #ffffcc;
+  text-align: center;
+  margin: 8px 0;
 }
 
 .retro-small-red {
   color: #cc0000;
-  font-size: 11px;
 }
 
-/* Status bar */
-.retro-statusbar {
-  background: #d4d0c8;
-  border-top: 2px solid #808080;
-  padding: 2px 8px;
-  display: flex;
-  justify-content: space-between;
-  font-size: 11px;
-  color: #000000;
-  flex-shrink: 0;
+/* Narrow viewports: hide decorative gutters, keep nav + content */
+@media (max-width: 520px) {
+  .retro-frameset {
+    grid-template-columns: 120px minmax(0, 1fr);
+  }
+
+  .retro-col-right {
+    display: none;
+  }
+
+  .retro-nav-spacer {
+    width: 120px;
+    height: 100px;
+  }
+
+  .retro-nav img {
+    width: 110px;
+    height: auto;
+  }
 }
 
 /* Scanline overlay */
