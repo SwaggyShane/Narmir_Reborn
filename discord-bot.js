@@ -240,6 +240,7 @@ async function pollAndSyncBugReports() {
           message: row.message,
           contextPanel: row.context_panel,
           pageUrl: row.page_url,
+          consoleLog: row.console_log,
         });
         await channel.send({ embeds: [embed] });
         await db.run('UPDATE bug_reports SET discord_sent = 1 WHERE id = ?', [row.id]);
