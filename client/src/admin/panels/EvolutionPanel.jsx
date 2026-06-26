@@ -27,6 +27,11 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
   const [bugReports, setBugReports] = useState([]);
   const [bugLoading, setBugLoading] = useState(false);
 
+  const [changelogEntries, setChangelogEntries] = useState([]);
+  const [changelogLoading, setChangelogLoading] = useState(false);
+  const [newChangelog, setNewChangelog] = useState({ title: '', description: '', category: '' });
+  const [changelogPublishing, setChangelogPublishing] = useState(false);
+
   const loadWishlist = useCallback(async () => {
     setWishLoading(true);
     try {
@@ -55,6 +60,16 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
       if (Array.isArray(data)) setSuggestions(data);
     } catch (err) { onToast('Failed to load suggestions: ' + (err.message || 'Unknown'), 'error'); }
     finally { setSuggestLoading(false); }
+  }, [adminFetch, onToast]);
+
+  const loadChangelogEntries = useCallback(async () => {
+    setChangelogLoading(true);
+    try {
+      const data = await adminFetch('/api/admin/changelog_entries');
+      if (data?.error) { onToast('Changelog error: ' + data.error, 'error'); return; }
+      if (Array.isArray(data)) setChangelogEntries(data);
+    } catch (err) { onToast('Failed to load changelog: ' + (err.message || 'Unknown'), 'error'); }
+    finally { setChangelogLoading(false); }
   }, [adminFetch, onToast]);
 
   const loadBugReports = useCallback(async () => {
@@ -101,8 +116,9 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
       loadNotes();
       loadSuggestions();
       loadBugReports();
+      loadChangelogEntries();
     });
-  }, [migrateLegacyNotes, loadWishlist, loadNotes, loadSuggestions, loadBugReports]);
+  }, [migrateLegacyNotes, loadWishlist, loadNotes, loadSuggestions, loadBugReports, loadChangelogEntries]);
 
   async function handleAddWish() {
     if (!newWish.description.trim()) return;
@@ -122,11 +138,34 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
       const data = await adminFetch(`/api/admin/wishlist/${id}/complete`, { method: 'POST' });
       if (data?.error) { onToast('Complete failed: ' + data.error, 'error'); return; }
       onToast(
-        data?.discordSent ? 'Marked complete — posted to #updates' : 'Marked complete (changelog saved)',
+        data?.discordSent ? 'Marked complete — changelog + #updates' : 'Marked complete — changelog saved',
         'success',
       );
       setWishlist(prev => prev.map(w => w.id === id ? { ...w, completed: 1 } : w));
+      loadChangelogEntries();
     } catch (err) { onToast('Complete failed: ' + (err.message || 'Unknown'), 'error'); }
+  }
+
+  async function handlePublishChangelog() {
+    if (!newChangelog.title.trim() || !newChangelog.description.trim()) {
+      onToast('Title and description required', 'error');
+      return;
+    }
+    setChangelogPublishing(true);
+    try {
+      const data = await adminFetch('/api/admin/changelog_entries', {
+        method: 'POST',
+        body: newChangelog,
+      });
+      if (data?.error) { onToast('Publish failed: ' + data.error, 'error'); return; }
+      onToast(
+        data?.discordSent ? 'Published to changelog + #updates' : 'Published to changelog',
+        'success',
+      );
+      setNewChangelog({ title: '', description: '', category: '' });
+      loadChangelogEntries();
+    } catch (err) { onToast('Publish failed: ' + (err.message || 'Unknown'), 'error'); }
+    finally { setChangelogPublishing(false); }
   }
 
   async function handleAddNote() {
@@ -209,34 +248,65 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
       {tab === 'changelog' && (
         <div>
           <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12 }}>
-            Completed wishlist items — mirrors legacy dynamic changelog.
+            Publish updates here — saved to changelog and pushed to #updates when Discord is configured.
+            Completing a wishlist item also creates a changelog entry.
           </div>
-          <button onClick={loadWishlist} style={BTN} disabled={wishLoading}>
-            {wishLoading ? '...' : 'Refresh'}
-          </button>
-          {completed.length === 0 ? (
-            <div style={{ color: 'var(--text3)', fontSize: 13, padding: '12px 0' }}>
-              {wishLoading ? 'Loading...' : 'No completed items yet.'}
+
+          <div style={{ display: 'grid', gap: 8, marginBottom: 16, maxWidth: 640 }}>
+            <input
+              type="text"
+              placeholder="Title (e.g. Interface Patch 1.0.7)"
+              value={newChangelog.title}
+              onChange={(e) => setNewChangelog(v => ({ ...v, title: e.target.value }))}
+              style={INPUT}
+            />
+            <input
+              type="text"
+              placeholder="Category (optional)"
+              value={newChangelog.category}
+              onChange={(e) => setNewChangelog(v => ({ ...v, category: e.target.value }))}
+              style={INPUT}
+            />
+            <textarea
+              placeholder="Description — what shipped?"
+              value={newChangelog.description}
+              onChange={(e) => setNewChangelog(v => ({ ...v, description: e.target.value }))}
+              style={{ ...INPUT, minHeight: 90, resize: 'vertical' }}
+            />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={handlePublishChangelog} style={BTN_PRIMARY} disabled={changelogPublishing}>
+                {changelogPublishing ? 'Publishing...' : 'Publish to Changelog'}
+              </button>
+              <button onClick={loadChangelogEntries} style={BTN} disabled={changelogLoading}>
+                {changelogLoading ? '...' : 'Refresh'}
+              </button>
+            </div>
+          </div>
+
+          {changelogEntries.length === 0 ? (
+            <div style={{ color: 'var(--text3)', fontSize: 13, padding: '4px 0' }}>
+              {changelogLoading ? 'Loading...' : 'No changelog entries yet.'}
             </div>
           ) : (
-            <div style={{ marginTop: 12 }}>
-              {Object.entries(
-                completed.reduce((acc, w) => {
-                  const cat = w.category || 'Other';
-                  if (!acc[cat]) acc[cat] = [];
-                  acc[cat].push(w);
-                  return acc;
-                }, {}),
-              ).map(([cat, items]) => (
-                <div key={cat} style={{ marginBottom: 16 }}>
-                  <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--gold)', marginBottom: 6 }}>{cat}</div>
-                  {items.map(w => (
-                    <div key={w.id} style={{ fontSize: 13, color: 'var(--text2)', padding: '4px 0', borderBottom: '1px solid var(--border3, #2a2a2a)' }}>
-                      ✓ {w.description}
-                    </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={TABLE}>
+                <thead><tr>
+                  {['ID', 'Title', 'Category', 'Source', 'Discord', 'Description', 'Created'].map(h => <th key={h} style={TH}>{h}</th>)}
+                </tr></thead>
+                <tbody>
+                  {changelogEntries.map(entry => (
+                    <tr key={entry.id}>
+                      <td style={TD}>{entry.id}</td>
+                      <td style={{ ...TD, fontWeight: 600 }}>{entry.title}</td>
+                      <td style={TD}>{entry.category || '—'}</td>
+                      <td style={TD}>{entry.source || 'manual'}</td>
+                      <td style={TD}>{entry.discord_sent ? '✓' : '—'}</td>
+                      <td style={{ ...TD, whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxWidth: 360 }}>{entry.description}</td>
+                      <td style={TD}>{formatReportDate(entry.created_at)}</td>
+                    </tr>
                   ))}
-                </div>
-              ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>

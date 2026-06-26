@@ -1287,6 +1287,20 @@ async function initDb(options = {}) {
   `);
 
   await _db.run(`
+    CREATE TABLE IF NOT EXISTS changelog_entries (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL,
+      category TEXT,
+      source TEXT NOT NULL DEFAULT 'manual',
+      source_id INTEGER,
+      author_name TEXT,
+      discord_sent INTEGER NOT NULL DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  await _db.run(`
     CREATE TABLE IF NOT EXISTS bug_reports (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       player_id INTEGER,

@@ -1129,6 +1129,18 @@ async function start() {
       }
     });
 
+    app.get('/api/changelog', async (_req, res) => {
+      try {
+        const rows = await db.all(
+          `SELECT id, title, description, category, created_at FROM changelog_entries ORDER BY created_at DESC LIMIT 50`,
+        );
+        res.json(rows);
+      } catch (e) {
+        console.error('[changelog] Database error:', e);
+        res.status(500).json({ error: 'Failed to load changelog' });
+      }
+    });
+
     app.post('/api/suggestions', requireAuth, async (req, res) => {
       try {
         const { message } = req.body;

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import { toast } from '../../utils/toast.js';
 import { switchTab } from '../../utils/panelNav.js';
+import { apiCall } from '../../utils/api.mjs';
 
 const sectionCard = 'rounded-2xl border border-[var(--border)] bg-[var(--bg3)] p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.02)_inset]';
 const titleLine = 'mb-4 border-b border-[var(--border2)] pb-2 text-[15px] font-bold text-[var(--gold)]';
@@ -11,6 +12,14 @@ const label = 'text-[14px] font-bold text-[var(--text)]';
 const smallLabel = 'text-[11px] uppercase tracking-[0.18em] text-[var(--text3)]';
 
 const ChangelogPanel = () => {
+  const [liveEntries, setLiveEntries] = useState([]);
+
+  useEffect(() => {
+    apiCall('/api/changelog').then((data) => {
+      if (Array.isArray(data)) setLiveEntries(data);
+    }).catch(() => {});
+  }, []);
+
   const submitSuggestion = () => {
     toast('Suggestion submission is not wired up yet.', 'warn');
   };
@@ -27,6 +36,25 @@ const ChangelogPanel = () => {
         </div>
 
         <div className="space-y-6">
+          {liveEntries.length > 0 ? (
+            <section className={sectionCard}>
+              <h2 className={titleLine}>Latest from the team</h2>
+              <ul className={listCopy}>
+                {liveEntries.map((entry) => (
+                  <li key={entry.id}>
+                    <strong className="text-[var(--text)]">{entry.title}</strong>
+                    {entry.category ? (
+                      <span className="ml-2 text-[11px] uppercase tracking-wide text-[var(--text3)]">
+                        {entry.category}
+                      </span>
+                    ) : null}
+                    <div className="mt-1 text-[var(--text2)]">{entry.description}</div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
           <section className={sectionCard}>
             <h2 className={titleLine}>🔥 Latest Updates (May 2026)</h2>
             <div className="space-y-4">
