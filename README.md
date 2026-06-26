@@ -109,7 +109,8 @@ narmir-server/
 │   ├── src/
 │   │   ├── main.jsx              # React entry point
 │   │   └── components/react/     # React panel components (34 panels)
-│   └── admin.html                # Admin panel
+│   ├── admin.html                # React admin entry (Vite)
+│   └── src/admin/                # React admin panels
 ├── test-combat-harness/          # V2 combat test suite and balance sweeps
 └── tools/security-auditor/       # Security audit tooling
 ```
@@ -210,11 +211,15 @@ Moderators assigned via admin panel. In-game forum also available for longer-for
 
 ## Admin Panel
 
-Access at `/admin` with the `ADMIN_SECRET` password.
+Access at `/admin` — React + Tailwind admin shell (login with an admin account).
 
-- **Manage** — global announcements, chat moderators, ban list, promotions
-- **Kingdoms** — full kingdom editor, AI kingdom seeding, bulk reset tools
-- **Changelog** — completed feature log
+**Legacy fallback** (during soft cutover): `/admin?legacy=1` serves the archived vanilla `public/admin.html` panel.
+
+Initial admin setup still uses `ADMIN_SECRET` via `/api/setup-admin` (see env table above).
+
+Tabs: **Manage** · **Kingdoms** (editor, AI presets, bulk tools) · **Events** · **Configs** · **Sounds** · **Prestige** · **Lore & Trips** · **Evolution** (wishlist/changelog/notes) · **Detailed Lists** (fragments + spells) · **Goals** · **Security Audit**
+
+See `AdminRoadmap.md` for migration status and verification checklist.
 
 ---
 

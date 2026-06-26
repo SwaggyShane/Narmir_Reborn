@@ -48,11 +48,41 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
     finally { setSuggestLoading(false); }
   }, [adminFetch, onToast]);
 
+  const migrateLegacyNotes = useCallback(async () => {
+    try {
+      const oldNotes = localStorage.getItem('narmir_admin_notes');
+      if (oldNotes && !localStorage.getItem('narmir_admin_notes_list')) {
+        await adminFetch('/api/admin/admin_notes', {
+          method: 'POST',
+          body: { message: 'Legacy Notes:\n' + oldNotes },
+        });
+        localStorage.removeItem('narmir_admin_notes');
+      }
+      const listStr = localStorage.getItem('narmir_admin_notes_list');
+      if (listStr) {
+        const list = JSON.parse(listStr);
+        if (Array.isArray(list)) {
+          for (let i = list.length - 1; i >= 0; i--) {
+            await adminFetch('/api/admin/admin_notes', {
+              method: 'POST',
+              body: { message: list[i]?.text || '' },
+            });
+          }
+        }
+        localStorage.removeItem('narmir_admin_notes_list');
+      }
+    } catch {
+      /* non-fatal */
+    }
+  }, [adminFetch]);
+
   useEffect(() => {
-    loadWishlist();
-    loadNotes();
-    loadSuggestions();
-  }, [loadWishlist, loadNotes, loadSuggestions]);
+    migrateLegacyNotes().then(() => {
+      loadWishlist();
+      loadNotes();
+      loadSuggestions();
+    });
+  }, [migrateLegacyNotes, loadWishlist, loadNotes, loadSuggestions]);
 
   async function handleAddWish() {
     if (!newWish.description.trim()) return;
@@ -105,7 +135,7 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
   return (
     <div>
       <div style={{ display: 'flex', gap: 4, marginBottom: 16, flexWrap: 'wrap' }}>
-        {[['wishlist', 'Wishlist'], ['notes', 'Admin Notes'], ['suggestions', 'Suggestions']].map(([id, label]) => (
+        {[['wishlist', 'Wishlist'], ['changelog', 'Changelog'], ['notes', 'Admin Notes'], ['suggestions', 'Suggestions']].map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)} style={{ ...BTN, color: tab === id ? 'var(--gold)' : 'var(--text3)', borderColor: tab === id ? 'var(--gold)' : 'var(--border2)' }}>
             {label}
           </button>
@@ -149,6 +179,42 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
               </div>
               <WishTable items={completed} onComplete={null} />
             </>
+          )}
+        </div>
+      )}
+
+      {tab === 'changelog' && (
+        <div>
+          <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12 }}>
+            Completed wishlist items — mirrors legacy dynamic changelog.
+          </div>
+          <button onClick={loadWishlist} style={BTN} disabled={wishLoading}>
+            {wishLoading ? '...' : 'Refresh'}
+          </button>
+          {completed.length === 0 ? (
+            <div style={{ color: 'var(--text3)', fontSize: 13, padding: '12px 0' }}>
+              {wishLoading ? 'Loading...' : 'No completed items yet.'}
+            </div>
+          ) : (
+            <div style={{ marginTop: 12 }}>
+              {Object.entries(
+                completed.reduce((acc, w) => {
+                  const cat = w.category || 'Other';
+                  if (!acc[cat]) acc[cat] = [];
+                  acc[cat].push(w);
+                  return acc;
+                }, {}),
+              ).map(([cat, items]) => (
+                <div key={cat} style={{ marginBottom: 16 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--gold)', marginBottom: 6 }}>{cat}</div>
+                  {items.map(w => (
+                    <div key={w.id} style={{ fontSize: 13, color: 'var(--text2)', padding: '4px 0', borderBottom: '1px solid var(--border3, #2a2a2a)' }}>
+                      ✓ {w.description}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
           )}
         </div>
       )}
