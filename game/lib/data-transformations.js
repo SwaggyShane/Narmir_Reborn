@@ -2,7 +2,7 @@
 // Pure data transformation and utility functions extracted from engine.js
 // No I/O, no state mutations — safe for testing and reuse
 
-const { safeJsonParse } = require('../../utils/helpers');
+const { safeJsonParse, devLog } = require('../../utils/helpers');
 const { getSynergyPassiveBonusAbsolute } = require('./synergy-cache');
 const { raceBonus } = require('./race-bonus');
 const { housingCapPerBuilding } = require('../population');
@@ -11,15 +11,7 @@ const config = require('../config');
 
 const { CAPS, PRESTIGE_MODIFIERS, LOCATE_RACE_MULT } = config;
 
-const _IS_PROD = process.env.NODE_ENV === 'production';
 const MOJIBAKE_SIGNATURE = /[\u00C3\u00C2\u00E2\u00EF\u00F0\u00C5\uFFFD]/;
-
-// Dev-only log: kept out of production stdout to stop per-turn noise from
-// drowning real errors. Use console.error/warn directly for problems you
-// always want to see; use this for traces useful only during debugging.
-function devLog(...args) {
-  if (!_IS_PROD) console.log(...args);
-}
 
 // Repair UTF-8 mojibake by re-encoding through latin1 → utf8 codec
 function repairMojibake(value) {

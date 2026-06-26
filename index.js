@@ -1168,7 +1168,7 @@ async function start() {
         if (rawMessage.length > 2000) return res.status(400).json({ error: 'Report is too long (max 2000 characters).' });
 
         const playerId = req.player.playerId;
-        const { createdAtAgeMs, nowUnix } = require('./lib/timestamp-utils');
+        const { createdAtAgeMs, nowUnix } = require('./game/lib/timestamp');
         const recent = await db.get(
           `SELECT id, created_at FROM bug_reports WHERE player_id = ? ORDER BY id DESC LIMIT 1`,
           [playerId],

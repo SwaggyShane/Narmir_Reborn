@@ -1,8 +1,9 @@
-// Mirrors game/lib/timestamp.js for client-side use
-// (Cannot directly import due to server/client module system separation)
+// game/lib/timestamp.js
+// Canonical timestamp utility functions (server-side)
+// Consolidates from former lib/timestamp-utils.js and client/src/utils/timestamp.js
 
 // Age in ms since a created_at value (unix seconds, ms, or ISO string)
-export function createdAtAgeMs(value) {
+function createdAtAgeMs(value) {
   if (value == null || value === '') return Infinity;
   const num = Number(value);
   if (Number.isFinite(num)) {
@@ -15,7 +16,7 @@ export function createdAtAgeMs(value) {
 }
 
 // Format timestamp for display (long format with locale)
-export function formatTimestamp(value) {
+function formatTimestamp(value) {
   if (value == null || value === '') return '-';
   const num = Number(value);
   let d;
@@ -28,7 +29,7 @@ export function formatTimestamp(value) {
 }
 
 // Format timestamp for display (short date format)
-export function formatTimestampShort(value) {
+function formatTimestampShort(value) {
   if (value == null || value === '') return '';
   const num = Number(value);
   let d;
@@ -42,6 +43,13 @@ export function formatTimestampShort(value) {
 }
 
 // Current unix timestamp (seconds)
-export function nowUnix() {
+function nowUnix() {
   return Math.floor(Date.now() / 1000);
 }
+
+module.exports = {
+  createdAtAgeMs,
+  formatTimestamp,
+  formatTimestampShort,
+  nowUnix,
+};
