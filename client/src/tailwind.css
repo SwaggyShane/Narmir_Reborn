@@ -1085,10 +1085,11 @@
 
   .forum-form-input,
   .forum-form-textarea {
-    @apply w-full rounded border px-3 py-2 font-inherit text-sm;
+    @apply w-full rounded border px-3 py-2 text-sm;
     background: var(--bg4);
     border-color: var(--border);
     color: var(--text);
+    font-family: inherit;
   }
 
   .forum-form-input:focus,
