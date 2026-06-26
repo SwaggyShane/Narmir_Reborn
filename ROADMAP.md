@@ -172,16 +172,21 @@ Added `.github/workflows/ci.yml`:
 
 ### E.3 Dependency vulnerabilities
 
-**Status:** ⏳ **OPEN** (chore/vite-bump)
+**Status:** 🟡 **PARTIALLY FIXED** (4 of 8 vulns resolved; claude/repo-health-assessment-2yvqdb)
 
-| Package | Current | Fix | Priority |
-|---------|---------|-----|----------|
-| `vite` | 8.0.12 | ≥8.1.0 | **HIGH** (server FS bypass + NTLM leak on Windows) |
-| `undici` (discord.js) | indirect | await upstream | HIGH (HTTP header injection, WebSocket DoS) |
-| `multer` | 2.1.1 | latest | HIGH (deeply nested field DoS) |
-| `ws` (socket.io) | indirect | await upstream | HIGH (memory exhaustion via fragments) |
+#### Fixed (✅ 4 vulnerabilities)
+| Package | Issue | Resolution |
+|---------|-------|-----------|
+| `vite` | 8.0.12 → ≥8.1.0 | ✅ Already at ^8.1.0 (server FS bypass + NTLM leak on Windows) |
+| `multer` | 2.1.1 → 2.2.0 | ✅ Fixed DoS via deeply nested fields (2 HIGH vulns) |
+| `ws` | 8.x → 8.21.0 | ✅ Fixed memory exhaustion DoS (1 HIGH vuln) |
 
-**Quick win:** Vite bump is one-line change.
+#### Remaining (⏳ 4 vulnerabilities — undici chain)
+| Package | Issue | Path forward |
+|---------|-------|--------------|
+| `undici` ≤6.26.0 | 4 HIGH: HTTP injection, WebSocket DoS, keep-alive poisoning, SameSite downgrade | **Decision needed:** (A) await discord.js v14 undici update, (B) downgrade to discord.js v13.17.1 (requires refactor: GatewayIntentBits → Intents, EmbedBuilder → MessageEmbed, PermissionFlagsBits → Permissions) |
+
+**Note:** Tracked at RFC level — undici update bundled with discord.js maintainer releases. Current version (discord.js 14.26.4) uses undici 6.24.1; latest undici stable (6.27.0+) not yet adopted by discord.js v14.x line.
 
 ### E.4 Admin CSRF protection
 
