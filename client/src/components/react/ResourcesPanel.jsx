@@ -94,7 +94,7 @@ function itemIcon(id) {
 const ResourcesPanel = () => {
   const [activeTab, setActiveTab] = useState('stockpiles');
   const [activeBldTab, setActiveBldTab] = useState('wood');
-  const [showGuide, setShowGuide] = useState(true);
+  const [showGuide, setShowGuide] = useState(false);
   const [kingdom, setKingdom] = useState({});
   const [items, setItems] = useState([]);
   const [isOrc, setIsOrc] = useState(false);

@@ -588,7 +588,7 @@ const BuildPanel = () => {
           <div className="bld-demolish">
             <input
               type="number"
-              className="input text-center"
+              className="input text-right"
               value={demolishAmounts[b.id] || 1}
               onChange={(e) => setDemolishAmounts(prev => ({ ...prev, [b.id]: parseInt(e.target.value, 10) || 1 }))}
               min="1"
@@ -659,15 +659,15 @@ const BuildPanel = () => {
                 Land: <span id="b-land-available" className="text-text">{fmt(landAvailable)} / {fmt(state?.land || 0)}</span> available
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <button className="base-btn variant-accent rounded-full px-3 py-1.5 text-[11px] font-semibold shadow-sm" style={{ background: 'var(--accent1)' }} onClick={distributeBuildEvenly}>
-                Distribute Evenly
+            <div className="flex gap-1.5">
+              <button className="base-btn variant-accent flex-1 rounded-full px-3 py-1.5 text-[11px] font-semibold shadow-sm" style={{ background: 'var(--accent1)' }} onClick={distributeBuildEvenly}>
+                Distribute
               </button>
-              <button className="base-btn variant-red rounded-full px-3 py-1.5 text-[11px] font-semibold shadow-sm" style={{ background: 'var(--red)' }} onClick={releaseAllEngineers}>
+              <button className="base-btn variant-red flex-1 rounded-full px-3 py-1.5 text-[11px] font-semibold shadow-sm" style={{ background: 'var(--red)' }} onClick={releaseAllEngineers}>
                 Release All
               </button>
-              <button className="base-btn variant-gold rounded-full px-4 py-1.5 text-[12px] font-semibold shadow-sm" style={{ background: 'var(--gold)', color: '#000' }} onClick={saveBuildAllocation}>
-                Save Allocation
+              <button className="base-btn variant-gold flex-1 rounded-full px-3 py-1.5 text-[11px] font-semibold shadow-sm" style={{ background: 'var(--gold)', color: '#000' }} onClick={saveBuildAllocation}>
+                Allocate
               </button>
             </div>
           </div>
