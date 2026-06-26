@@ -2,6 +2,7 @@ import React, { useCallback, useRef, useState } from 'react';
 import clsx from 'clsx';
 import { useGameState } from '../../hooks/useGameState';
 import { useActivePanel } from '../../hooks/useActivePanel';
+import { logout } from './AuthModal.jsx';
 import { switchTab } from '../../utils/switchTab.js';
 import { useNavLayout } from '../../hooks/useNavLayout.js';
 import { useShellBadges } from '../../hooks/useShellBadges.js';
@@ -87,6 +88,7 @@ const Sidebar = () => {
   const { layout } = useNavLayout();
   const { hasBadge } = useShellBadges();
   const isAdmin = !!state?.isAdmin;
+  const isLoggedIn = !!state?.username;
   const showSidebar = layout === 'left' || layout === 'responsive';
   const [collapsed, setCollapsed] = useState(readCollapsedSections);
   const buttonRefs = useRef([]);
@@ -178,6 +180,20 @@ const Sidebar = () => {
           </a>
         )}
       </div>
+
+      {isLoggedIn ? (
+        <div className="relative z-10 shrink-0 border-t border-white/5 p-2">
+          <button
+            type="button"
+            onClick={logout}
+            className="shell-logout-btn w-full"
+            aria-label="Logout"
+          >
+            <span aria-hidden="true">&#10005;</span>
+            <span>Logout</span>
+          </button>
+        </div>
+      ) : null}
     </ShellColumnFrame>
   );
 };

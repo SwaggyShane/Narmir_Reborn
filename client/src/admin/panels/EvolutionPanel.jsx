@@ -398,7 +398,7 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
             <div style={{ overflowX: 'auto' }}>
               <table style={TABLE}>
                 <thead><tr>
-                  {['ID', 'Player', 'Kingdom', 'Category', 'Panel', 'Discord', 'Message', 'Created'].map(h => <th key={h} style={TH}>{h}</th>)}
+                  {['ID', 'Player', 'Kingdom', 'Category', 'Panel', 'Discord', 'Message', 'Console', 'Created'].map(h => <th key={h} style={TH}>{h}</th>)}
                 </tr></thead>
                 <tbody>
                   {bugReports.map(r => (
@@ -410,6 +410,29 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
                       <td style={TD}>{r.context_panel || '-'}</td>
                       <td style={TD}>{r.discord_sent ? '✓' : '—'}</td>
                       <td style={{ ...TD, whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxWidth: 360 }}>{r.message}</td>
+                      <td style={{ ...TD, maxWidth: 220, verticalAlign: 'top' }}>
+                        {r.console_log ? (
+                          <details style={{ fontSize: 11, color: 'var(--text3)' }}>
+                            <summary style={{ cursor: 'pointer', color: 'var(--accent1)' }}>
+                              {r.console_log.split('\n').length} lines
+                            </summary>
+                            <pre style={{
+                              marginTop: 6,
+                              maxHeight: 140,
+                              overflow: 'auto',
+                              whiteSpace: 'pre-wrap',
+                              wordBreak: 'break-word',
+                              fontFamily: 'ui-monospace, monospace',
+                              fontSize: 10,
+                              lineHeight: 1.45,
+                              color: 'var(--text2)',
+                            }}
+                            >
+                              {r.console_log}
+                            </pre>
+                          </details>
+                        ) : '—'}
+                      </td>
                       <td style={TD}>{formatTimestamp(r.created_at)}</td>
                     </tr>
                   ))}

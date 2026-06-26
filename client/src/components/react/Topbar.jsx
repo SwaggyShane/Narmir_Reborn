@@ -1,15 +1,10 @@
 import React from 'react';
 import { useGameState } from '../../hooks/useGameState';
-import { useGameActions } from '../../hooks/useGameActions';
-import { showLoginModal, logout } from './AuthModal.jsx';
+import { showLoginModal } from './AuthModal.jsx';
 import { showBugReportModal } from './BugReportModal.jsx';
-import { REGEN_AMOUNT, useRegenCountdown } from '../../hooks/useRegenCountdown.js';
 
 const Topbar = () => {
   const { state } = useGameState();
-  const { takeTurn, loading } = useGameActions();
-  const regenCountdown = useRegenCountdown();
-  const turnsStored = state?.turns_stored ?? 400;
   const isLoggedIn = !!state?.username;
 
   return (
@@ -23,43 +18,7 @@ const Topbar = () => {
         </div>
       </div>
 
-      <div className="flex min-w-0 max-w-[min(100%,14rem)] shrink items-center gap-1 rounded-2xl border border-ember-900/30 bg-void-900/70 px-1.5 py-1 shadow-panel sm:max-w-none sm:gap-2 sm:px-2.5 sm:py-2 md:gap-3 md:px-3">
-        <div className="hidden text-right font-serif leading-none sm:block">
-          <div className="flex items-center justify-end gap-1.5">
-            <span className="text-sm uppercase tracking-[0.5px] text-text3">Turns:</span>
-            <span className="text-lg font-bold text-accent1 tabular-nums">
-              {turnsStored}
-            </span>
-            <span className="text-sm text-text3">/ 400</span>
-          </div>
-          <div className="text-xs font-sans text-text3">
-            +{REGEN_AMOUNT} in {regenCountdown}
-          </div>
-        </div>
-
-        <span
-          className="text-sm font-bold text-accent1 tabular-nums sm:hidden"
-          title={`${turnsStored} turns stored`}
-        >
-          {turnsStored}
-        </span>
-
-        <button
-          type="button"
-          className="turn-btn px-2 py-1 text-[11px] sm:px-4 sm:py-1.5 sm:text-sm"
-          onClick={takeTurn}
-          disabled={loading.takeTurn || turnsStored < 1}
-        >
-          <span className="turn-btn__label">
-            {loading.takeTurn ? '…' : (
-              <>
-                <span className="sm:hidden">Turn</span>
-                <span className="hidden sm:inline">Take Turn</span>
-              </>
-            )}
-          </span>
-        </button>
-
+      <div className="flex shrink-0 items-center gap-1 sm:gap-2">
         {isLoggedIn ? (
           <button
             type="button"
@@ -73,17 +32,7 @@ const Topbar = () => {
           </button>
         ) : null}
 
-        {isLoggedIn ? (
-          <button
-            type="button"
-            className="shell-logout-btn"
-            onClick={logout}
-            aria-label="Logout"
-          >
-            <span aria-hidden="true">&#10005;</span>
-            <span className="hidden min-[400px]:inline">Logout</span>
-          </button>
-        ) : (
+        {!isLoggedIn ? (
           <button
             type="button"
             className="base-btn whitespace-nowrap px-2 py-1 text-xs sm:px-2.5 sm:py-1.5 sm:text-sm"
@@ -91,7 +40,7 @@ const Topbar = () => {
           >
             Sign In
           </button>
-        )}
+        ) : null}
       </div>
     </header>
   );

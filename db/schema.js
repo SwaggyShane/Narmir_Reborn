@@ -1318,10 +1318,16 @@ async function initDb(options = {}) {
       context_panel TEXT,
       page_url TEXT,
       user_agent TEXT,
+      console_log TEXT,
       discord_sent INTEGER NOT NULL DEFAULT 0,
       created_at INTEGER NOT NULL DEFAULT (unixepoch())
     )
   `);
+
+  const bugReportCols = (await _db.all('PRAGMA table_info(bug_reports)').catch(() => [])).map(c => c.name);
+  if (bugReportCols.length && !bugReportCols.includes('console_log')) {
+    await addColumn('bug_reports', 'console_log', 'TEXT', bugReportCols);
+  }
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS admin_notes (

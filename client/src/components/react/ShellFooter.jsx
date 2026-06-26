@@ -1,80 +1,106 @@
 import React from 'react';
 import clsx from 'clsx';
-import { logout } from './AuthModal.jsx';
 import { useGameState } from '../../hooks/useGameState.js';
+import { useGameActions } from '../../hooks/useGameActions.js';
 import { useCloudSync } from '../../hooks/useCloudSync.js';
 import { useServerStatus } from '../../hooks/useServerStatus.js';
 import { useEstClock } from '../../hooks/useEstClock.js';
 import { useNightCycle } from '../../hooks/useNightCycle.js';
+import { REGEN_AMOUNT, useRegenCountdown } from '../../hooks/useRegenCountdown.js';
+
 const ShellFooter = () => {
   const { state } = useGameState();
+  const { takeTurn, loading } = useGameActions();
   const synced = useCloudSync();
   const { uptime } = useServerStatus();
   const estClock = useEstClock();
   const { isNight, label: nightLabel } = useNightCycle();
-  const isLoggedIn = !!state?.username;
+  const regenCountdown = useRegenCountdown();
+  const turnsStored = state?.turns_stored ?? 400;
 
   return (
     <footer
       className={[
-        'flex h-8 shrink-0 items-center justify-between gap-3 border-t border-white/5',
-        'bg-bg px-4 text-[11px] leading-none text-text2',
-        'max-lg:hidden',
+        'flex h-8 shrink-0 items-center gap-2 border-t border-white/5',
+        'bg-bg px-2 text-[11px] leading-none text-text2 sm:px-4',
         'lg:col-span-3 lg:col-start-1 lg:row-start-3',
       ].join(' ')}
     >
-      <div className="min-w-0 shrink-0">
-        {isLoggedIn ? (
-          <button
-            type="button"
-            onClick={logout}
-            className="shell-logout-btn"
-          >
-            <span aria-hidden="true">&#10005;</span>
-            <span>Logout</span>
-          </button>
-        ) : (
-          <span className="text-text3">Guest</span>
-        )}
-      </div>
-
-      <div className="flex min-w-0 items-center justify-end gap-3 sm:gap-4">
-        <div className="hidden font-mono tabular-nums text-text3 xs:block">
+      <div className="flex min-w-0 flex-1 items-center justify-evenly gap-1 sm:gap-2">
+        <div className="min-w-0 truncate text-center font-mono tabular-nums text-text3">
           {estClock}
         </div>
 
         <div
           className={clsx(
-            'hidden items-center gap-1 font-mono tabular-nums sm:flex',
+            'flex min-w-0 items-center justify-center gap-1 truncate font-mono tabular-nums',
             isNight ? 'text-ember-400' : 'text-text3',
           )}
           title={isNight ? 'Night, vampires at full strength' : 'Daylight, vampires weakened'}
         >
           <span aria-hidden="true">🦇</span>
-          <span className="max-md:hidden">{nightLabel}</span>
-          <span className="md:hidden">
+          <span className="hidden truncate sm:inline">{nightLabel}</span>
+          <span className="truncate sm:hidden">
             {nightLabel.replace(' to dawn', '').replace(' to nightfall', '')}
           </span>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex min-w-0 items-center justify-center gap-1.5">
           <span
             className={clsx(
-              'inline-block h-1.5 w-1.5 rounded-full',
+              'inline-block h-1.5 w-1.5 shrink-0 rounded-full',
               synced
                 ? 'bg-green shadow-[0_0_6px_rgba(16,185,129,0.8)]'
                 : 'bg-red shadow-[0_0_6px_rgba(239,68,68,0.8)]',
             )}
             aria-hidden="true"
           />
-          <span className="hidden sm:inline">{synced ? 'SYSTEM CLOUD SYNCED' : 'SYNC OFFLINE'}</span>
-          <span className="sm:hidden">{synced ? 'SYNCED' : 'OFFLINE'}</span>
+          <span className="hidden truncate sm:inline">{synced ? 'SYSTEM CLOUD SYNCED' : 'SYNC OFFLINE'}</span>
+          <span className="truncate sm:hidden">{synced ? 'SYNCED' : 'OFFLINE'}</span>
         </div>
 
-        <div className="font-mono tabular-nums text-text3">
+        <div className="min-w-0 truncate text-center font-mono tabular-nums text-text3">
           <span className="hidden sm:inline">UPTIME: </span>
           {uptime}
         </div>
+      </div>
+
+      <div className="flex shrink-0 items-center gap-1.5 border-l border-white/5 pl-2 sm:gap-2 sm:pl-3">
+        <div className="hidden text-right font-serif leading-none md:block">
+          <div className="flex items-center justify-end gap-1">
+            <span className="text-[10px] uppercase tracking-[0.5px] text-text3">Turns:</span>
+            <span className="text-sm font-bold text-accent1 tabular-nums">
+              {turnsStored}
+            </span>
+            <span className="text-[10px] text-text3">/ 400</span>
+          </div>
+          <div className="text-[10px] font-sans text-text3">
+            +{REGEN_AMOUNT} in {regenCountdown}
+          </div>
+        </div>
+
+        <span
+          className="text-sm font-bold text-accent1 tabular-nums md:hidden"
+          title={`${turnsStored} turns stored, +${REGEN_AMOUNT} in ${regenCountdown}`}
+        >
+          {turnsStored}
+        </span>
+
+        <button
+          type="button"
+          className="turn-btn px-2 py-1 text-[10px] sm:px-3 sm:py-1.5 sm:text-xs"
+          onClick={takeTurn}
+          disabled={loading.takeTurn || turnsStored < 1}
+        >
+          <span className="turn-btn__label">
+            {loading.takeTurn ? '…' : (
+              <>
+                <span className="sm:hidden">Turn</span>
+                <span className="hidden sm:inline">Take Turn</span>
+              </>
+            )}
+          </span>
+        </button>
       </div>
     </footer>
   );

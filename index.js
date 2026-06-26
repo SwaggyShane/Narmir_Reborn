@@ -1162,6 +1162,7 @@ async function start() {
         const contextPanel = String(req.body?.contextPanel ?? '').trim().slice(0, 64) || null;
         const pageUrl = String(req.body?.pageUrl ?? '').trim().slice(0, 512) || null;
         const userAgent = String(req.body?.userAgent ?? '').trim().slice(0, 512) || null;
+        const consoleLog = String(req.body?.consoleLog ?? '').trim().slice(0, 6000) || null;
 
         if (rawMessage.length < 10) return res.status(400).json({ error: 'Please describe the issue in at least 10 characters.' });
         if (rawMessage.length > 2000) return res.status(400).json({ error: 'Report is too long (max 2000 characters).' });
@@ -1183,8 +1184,8 @@ async function start() {
         const username = req.player.username || 'Unknown';
 
         const insert = await db.run(
-          `INSERT INTO bug_reports (player_id, kingdom_id, username, kingdom_name, category, message, context_panel, page_url, user_agent, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO bug_reports (player_id, kingdom_id, username, kingdom_name, category, message, context_panel, page_url, user_agent, console_log, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             playerId,
             kingdom?.id ?? null,
@@ -1195,6 +1196,7 @@ async function start() {
             contextPanel,
             pageUrl,
             userAgent,
+            consoleLog,
             nowUnix(),
           ],
         );
@@ -1208,6 +1210,7 @@ async function start() {
           message: rawMessage,
           contextPanel,
           pageUrl,
+          consoleLog,
         });
 
         if (discordSent && reportId) {

@@ -5,6 +5,7 @@ import { apiCall } from '../../utils/api.mjs';
 import { toast } from '../../utils/toast.js';
 import { useActivePanel } from '../../hooks/useActivePanel.js';
 import { useGameState } from '../../hooks/useGameState.js';
+import { getCapturedConsoleLog } from '../../utils/consoleCapture.js';
 
 const CATEGORIES = [
   { id: 'bug', label: 'Bug / broken behavior' },
@@ -65,6 +66,7 @@ export default function BugReportModal() {
           contextPanel: activePanel,
           pageUrl: typeof window !== 'undefined' ? window.location.href : '',
           userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+          consoleLog: getCapturedConsoleLog(),
         },
       });
       if (data?.error) {
@@ -99,7 +101,7 @@ export default function BugReportModal() {
               Report a Bug
             </h2>
             <p className="mt-1 text-[13px] leading-6 text-[var(--text3)]">
-              Sent to the admin panel{state?.username ? ` as ${state.username}` : ''}. Discord notification when configured.
+              Sent to the admin panel{state?.username ? ` as ${state.username}` : ''}. Recent console output is attached automatically.
             </p>
           </div>
           <button

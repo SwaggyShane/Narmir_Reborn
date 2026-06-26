@@ -154,7 +154,7 @@ const GameShell = () => {
           as="main"
           className={clsx(
             'flex min-h-0 w-full min-w-0 flex-1 flex-col bg-bg',
-            'max-lg:pb-[calc(4.75rem+env(safe-area-inset-bottom,0px))]',
+            'max-lg:pb-[calc(6.75rem+env(safe-area-inset-bottom,0px))]',
             'lg:row-start-2',
             isChatPanel ? 'lg:col-start-2' : 'lg:col-start-3',
             isChatPanel && 'overflow-hidden',

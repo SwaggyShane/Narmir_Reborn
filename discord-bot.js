@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, EmbedBuilder, ChannelType, AttachmentBuilder } = require('discord.js');
+const { Client, GatewayIntentBits, EmbedBuilder, ChannelType, AttachmentBuilder, PermissionFlagsBits } = require('discord.js');
 const path = require('path');
 require('dotenv').config();
 
@@ -11,9 +11,13 @@ const client = new Client({
   ]
 });
 
-const DISCORD_TOKEN = process.env.DISCORD_BOT_TOKEN;
-const UPDATES_CHANNEL_ID = process.env.DISCORD_UPDATES_CHANNEL_ID;
-const BUG_REPORTS_CHANNEL_ID = process.env.DISCORD_BUG_REPORTS_CHANNEL_ID;
+function trimEnv(value) {
+  return String(value ?? '').trim().replace(/^["']|["']$/g, '');
+}
+
+const DISCORD_TOKEN = trimEnv(process.env.DISCORD_BOT_TOKEN);
+const UPDATES_CHANNEL_ID = trimEnv(process.env.DISCORD_UPDATES_CHANNEL_ID);
+const BUG_REPORTS_CHANNEL_ID = trimEnv(process.env.DISCORD_BUG_REPORTS_CHANNEL_ID);
 const GAME_SERVER_URL = process.env.GAME_SERVER_URL || 'http://localhost:3000';
 const { buildBugReportEmbed } = require('./lib/discord-notify');
 
@@ -64,6 +68,13 @@ client.once('ready', async () => {
 
     // Start polling game messages
     pollAndSyncGameMessages();
+
+    const bugChannel = await resolveBugReportsChannel();
+    if (bugChannel) {
+      auditBugReportsChannel(bugChannel);
+    } else {
+      console.error('❌ No #bug-reports channel found — set DISCORD_BUG_REPORTS_CHANNEL_ID to the numeric channel ID.');
+    }
     pollAndSyncBugReports();
   } catch (error) {
     console.error('❌ Failed to initialize database:', error);
@@ -128,16 +139,84 @@ setInterval(pollAndSyncGameMessages, 5000);
 
 let bugReportsChannel = null;
 let isBugPollRunning = false;
+const bugReportPermFailureLoggedAt = new Map();
+
+function isBugReportsChannelType(channel) {
+  return !!channel && (
+    channel.type === ChannelType.GuildText
+    || channel.type === ChannelType.GuildAnnouncement
+  );
+}
+
+function auditBugReportsChannel(channel) {
+  if (!channel || !client.user) return false;
+
+  const perms = channel.permissionsFor(client.user);
+  const checks = {
+    ViewChannel: perms?.has(PermissionFlagsBits.ViewChannel) ?? false,
+    SendMessages: perms?.has(PermissionFlagsBits.SendMessages) ?? false,
+    EmbedLinks: perms?.has(PermissionFlagsBits.EmbedLinks) ?? false,
+  };
+
+  const missing = Object.entries(checks).filter(([, ok]) => !ok).map(([name]) => name);
+  const typeLabel = ChannelType[channel.type] || String(channel.type);
+
+  console.log('🐛 Bug reports channel audit:');
+  console.log(`   Bot: ${client.user.tag} (${client.user.id})`);
+  console.log(`   Guild: ${channel.guild?.name || '?'} (${channel.guild?.id || '?'})`);
+  console.log(`   Channel: #${channel.name} [${typeLabel}] id=${channel.id}`);
+  console.log(`   Configured DISCORD_BUG_REPORTS_CHANNEL_ID: ${BUG_REPORTS_CHANNEL_ID || '(not set — matched by name)'}`);
+  console.log(`   Permissions: ${JSON.stringify(checks)}`);
+
+  if (!isBugReportsChannelType(channel)) {
+    console.error('❌ #bug-reports must be a text or announcement channel — forum/voice channels are not supported.');
+    return false;
+  }
+
+  if (missing.length) {
+    console.error(`❌ Bot is missing: ${missing.join(', ')}`);
+    console.error(`   In Discord: #${channel.name} → Edit Channel → Permissions → add "${client.user.username}" → Allow those permissions.`);
+    console.error('   Also check the parent category — category denies override channel allows.');
+    return false;
+  }
+
+  console.log('✅ Bug reports channel permissions look OK');
+  return true;
+}
+
+async function sendBugReportEmbed(channel, embed) {
+  if (!isBugReportsChannelType(channel)) {
+    throw new Error(`Unsupported channel type ${channel?.type} — use a text channel for #bug-reports`);
+  }
+  return channel.send({ embeds: [embed] });
+}
 
 async function resolveBugReportsChannel() {
-  if (bugReportsChannel?.isTextBased?.()) return bugReportsChannel;
+  if (isBugReportsChannelType(bugReportsChannel)) return bugReportsChannel;
 
   if (BUG_REPORTS_CHANNEL_ID) {
-    const ch = await client.channels.fetch(BUG_REPORTS_CHANNEL_ID).catch(() => null);
-    if (ch?.isTextBased()) {
+    const cached = client.channels.cache.get(BUG_REPORTS_CHANNEL_ID);
+    if (cached) {
+      if (isBugReportsChannelType(cached)) {
+        bugReportsChannel = cached;
+        console.log(`🐛 Bug reports channel: #${cached.name} (${cached.id})`);
+        return cached;
+      }
+      console.error(`❌ DISCORD_BUG_REPORTS_CHANNEL_ID points to #${cached.name} (type ${cached.type}) — use a text or announcement channel.`);
+      return null;
+    }
+
+    const ch = await client.channels.fetch(BUG_REPORTS_CHANNEL_ID).catch((err) => {
+      console.error(`❌ Could not fetch DISCORD_BUG_REPORTS_CHANNEL_ID=${BUG_REPORTS_CHANNEL_ID}:`, err.message || err);
+      return null;
+    });
+    if (isBugReportsChannelType(ch)) {
       bugReportsChannel = ch;
       console.log(`🐛 Bug reports channel: #${ch.name} (${ch.id})`);
       return ch;
+    }
+    if (ch) {
+      console.error(`❌ DISCORD_BUG_REPORTS_CHANNEL_ID points to #${ch.name} (type ${ch.type}) — use a text or announcement channel.`);
     }
   }
 
@@ -177,12 +256,23 @@ async function pollAndSyncBugReports() {
           message: row.message,
           contextPanel: row.context_panel,
           pageUrl: row.page_url,
+          consoleLog: row.console_log,
         });
-        await channel.send({ embeds: [embed] });
+        await sendBugReportEmbed(channel, embed);
         await db.run('UPDATE bug_reports SET discord_sent = 1 WHERE id = ?', [row.id]);
         console.log(`🐛 Posted bug report #${row.id} to #${channel.name}`);
       } catch (error) {
-        console.error(`❌ Failed to post bug report #${row.id}:`, error.message || error);
+        const isPermError = error?.code === 50013 || /missing permissions/i.test(String(error?.message || error));
+        if (isPermError) {
+          const lastLogged = bugReportPermFailureLoggedAt.get(row.id) || 0;
+          if (Date.now() - lastLogged > 300_000) {
+            bugReportPermFailureLoggedAt.set(row.id, Date.now());
+            auditBugReportsChannel(channel);
+            console.error(`❌ Failed to post bug report #${row.id}: Missing Permissions (audit above — will retry after you fix Discord)`);
+          }
+        } else {
+          console.error(`❌ Failed to post bug report #${row.id}:`, error.message || error);
+        }
       }
     }
   } catch (error) {
