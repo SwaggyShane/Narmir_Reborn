@@ -102,7 +102,7 @@ const BottomNav = () => {
     switchTab(id);
   };
 
-  if (!showBottomNav || activePanel === 'forum') return null;
+  if (!showBottomNav) return null;
 
   return (
     <>

@@ -1,12 +1,14 @@
 import React from 'react';
 import { useGameState } from '../../hooks/useGameState';
 import { useGameActions } from '../../hooks/useGameActions';
+import { useActivePanel } from '../../hooks/useActivePanel';
 import { showLoginModal } from './AuthModal.jsx';
 import { showBugReportModal } from './BugReportModal.jsx';
 
 const Topbar = () => {
   const { state } = useGameState();
   const { takeTurn, loading } = useGameActions();
+  const { activePanel } = useActivePanel();
   const isLoggedIn = !!state?.username;
   const turnsStored = state?.turns_stored ?? 400;
 
@@ -35,21 +37,23 @@ const Topbar = () => {
           </button>
         ) : null}
 
-        <button
-          type="button"
-          className="turn-btn px-2 py-1 text-[11px] sm:px-4 sm:py-1.5 sm:text-sm"
-          onClick={takeTurn}
-          disabled={loading.takeTurn || turnsStored < 1}
-        >
-          <span className="turn-btn__label">
-            {loading.takeTurn ? '…' : (
-              <>
-                <span className="sm:hidden">Turn</span>
-                <span className="hidden sm:inline">Take Turn</span>
-              </>
-            )}
-          </span>
-        </button>
+        {activePanel !== 'forum' ? (
+          <button
+            type="button"
+            className="turn-btn px-2 py-1 text-[11px] sm:px-4 sm:py-1.5 sm:text-sm"
+            onClick={takeTurn}
+            disabled={loading.takeTurn || turnsStored < 1}
+          >
+            <span className="turn-btn__label">
+              {loading.takeTurn ? '…' : (
+                <>
+                  <span className="sm:hidden">Turn</span>
+                  <span className="hidden sm:inline">Take Turn</span>
+                </>
+              )}
+            </span>
+          </button>
+        ) : null}
 
         {!isLoggedIn ? (
           <button

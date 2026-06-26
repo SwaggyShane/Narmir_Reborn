@@ -194,7 +194,8 @@ const ExplorationPanel = () => {
 
       applyResult(result, 'search');
       if (typeof window !== 'undefined' && typeof toast === 'function') {
-        toast(repairText(result.message || 'Search complete'), 'success');
+        const landNote = type === 'land' ? ' (diminishing returns apply)' : '';
+        toast(repairText(result.message || 'Search complete') + landNote, 'success');
       }
 
       const icons = { land: '🗺️', gold: '⛏️', food: '🌾', targets: '🔭' };
@@ -475,7 +476,6 @@ const ExplorationPanel = () => {
                 <button className="base-btn h-auto px-3 py-3 text-center text-[12px]" onClick={() => handleSearch('land')}>
                   <div className="mb-1 text-[18px]">🗺️</div>
                   Search for land
-                  <div className="mt-1 text-[10px] text-[var(--text3)]">Diminishing returns</div>
                 </button>
                 <button className="base-btn h-auto px-3 py-3 text-center text-[12px]" onClick={() => handleSearch('gold')}>
                   <div className="mb-1 text-[18px]">⛏️</div>
