@@ -95,13 +95,22 @@
     --ember-300-rgb: 252 165 165;
   }
 
-  html,
-  body,
+  html:has(#app),
+  body:has(#app),
   #app {
     height: 100%;
     max-width: 100%;
     overflow: hidden;
     overflow-x: clip;
+  }
+
+  html:has(#admin-root),
+  body:has(#admin-root),
+  #admin-root {
+    min-height: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+    overflow-y: auto;
   }
 
   html {
