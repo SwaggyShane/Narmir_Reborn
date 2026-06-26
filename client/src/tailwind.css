@@ -785,16 +785,17 @@
   }
 
   /* ── Build panel rows ── */
-  #build-header,
-  #build-rows .trow {
-    display: grid;
-    grid-template-columns: 1fr 48px 80px minmax(108px, auto);
-    gap: 4px;
-    align-items: center;
+  #build-header {
+    @apply flex items-center justify-between pb-2 mb-1 border-b border-white/10 text-[10px] uppercase tracking-wide text-text3;
   }
 
-  #build-header {
-    @apply pb-2 mb-1 border-b border-white/10 text-[10px] uppercase tracking-wide text-text3;
+  #build-rows .trow {
+    @apply flex flex-nowrap items-start justify-between;
+    gap: 8px;
+  }
+
+  .bld-left {
+    @apply flex min-w-0 flex-1 flex-col gap-0.5;
   }
 
   .bld-main {
@@ -806,13 +807,26 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 12px;
+    font-size: 13px;
   }
 
-  #build-rows .trow .count {
+  .bld-sub {
+    @apply flex flex-wrap items-center gap-x-2;
+  }
+
+  .bld-sub .count {
+    font-size: 11px;
+    color: var(--text3);
     min-width: 0;
-    font-size: 12px;
-    text-align: right;
+  }
+
+  .bld-est {
+    font-size: 10px;
+    color: var(--text3);
+  }
+
+  .bld-controls {
+    @apply flex flex-shrink-0 flex-col items-end gap-1;
   }
 
   .bld-demolish {
@@ -820,16 +834,15 @@
   }
 
   .bld-demolish .input {
-    width: 46px;
+    width: 48px;
   }
 
   .bld-eng {
-    @apply flex min-w-0 items-center gap-1;
+    @apply flex items-center gap-1;
   }
 
   .bld-eng .input {
-    width: 54px;
-    min-width: 0;
+    width: 60px;
   }
 
   /* ── News panel ── */
