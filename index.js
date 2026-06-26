@@ -1504,8 +1504,15 @@ async function start() {
   // Express global error handler middleware — catches errors passed to next(err)
   // Must be registered after all other middleware and route handlers
   app.use((err, req, res, _next) => {
-    const requestId = Math.random().toString(36).substr(2, 9);
-    const statusCode = err.statusCode || err.status || 500;
+    // Normalize err to ensure safe property access (handle null, undefined, primitives)
+    const errorObj = err instanceof Error
+      ? err
+      : (typeof err === 'object' && err !== null
+          ? err
+          : new Error(err ? String(err) : 'An unknown error occurred'));
+
+    const requestId = Math.random().toString(36).slice(2, 11);
+    const statusCode = errorObj.statusCode || errorObj.status || 500;
     const isDev = process.env.NODE_ENV !== 'production';
 
     // Log error with context
@@ -1515,9 +1522,9 @@ async function start() {
       method: req.method,
       url: req.url,
       status: statusCode,
-      errorName: err.name,
-      errorMessage: err.message,
-      ...(isDev && { stack: err.stack })
+      errorName: errorObj.name || 'Error',
+      errorMessage: errorObj.message || 'An unknown error occurred',
+      ...(isDev && { stack: errorObj.stack })
     };
 
     if (statusCode >= 500) {
@@ -1529,8 +1536,8 @@ async function start() {
     // Send error response
     if (!res.headersSent) {
       res.status(statusCode).json({
-        error: isDev ? err.message : 'Internal server error',
-        ...(isDev && { requestId, stack: err.stack })
+        error: isDev ? errorObj.message : 'Internal server error',
+        ...(isDev && { requestId, stack: errorObj.stack })
       });
     }
   });
