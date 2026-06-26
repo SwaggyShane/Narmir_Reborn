@@ -160,7 +160,7 @@ const KingdomBodyHeader = () => {
           </div>
         </div>
 
-        {state?.local_time || state?.vampire_countdown || state?.season && (
+        {(state?.local_time || state?.vampire_countdown || state?.season) && (
           <div className="flex w-full shrink-0 flex-wrap items-center justify-start sm:w-auto sm:justify-end" style={{ gap: GAP, marginTop: GAP }}>
             {state?.local_time && <Stat label="Time" value={state.local_time} />}
             {state?.vampire_countdown && <Stat label="Vampire" value={state.vampire_countdown} />}

@@ -400,7 +400,6 @@
   }
 
   .kd-top {
-    @apply relative;
     position: static !important;
   }
 
