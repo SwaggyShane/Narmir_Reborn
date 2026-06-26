@@ -3,7 +3,7 @@
 
 // Age in ms since a created_at value (unix seconds, ms, or ISO string)
 export function createdAtAgeMs(value) {
-  if (value == null || value === '') return Infinity;
+  if (value == null || (typeof value === 'string' && value.trim() === '')) return Infinity;
   const num = Number(value);
   if (Number.isFinite(num)) {
     if (num > 1_000_000_000_000) return Date.now() - num;
@@ -16,7 +16,7 @@ export function createdAtAgeMs(value) {
 
 // Format timestamp for display (long format with locale)
 export function formatTimestamp(value) {
-  if (value == null || value === '') return '-';
+  if (value == null || (typeof value === 'string' && value.trim() === '')) return '-';
   const num = Number(value);
   let d;
   if (Number.isFinite(num)) {
@@ -29,7 +29,7 @@ export function formatTimestamp(value) {
 
 // Format timestamp for display (short date format)
 export function formatTimestampShort(value) {
-  if (value == null || value === '') return '';
+  if (value == null || (typeof value === 'string' && value.trim() === '')) return '';
   const num = Number(value);
   let d;
   if (Number.isFinite(num)) {
