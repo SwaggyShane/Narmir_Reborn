@@ -202,7 +202,7 @@ const HirePanel = () => {
 
       <div
         id="hire-caps-container"
-        className="mb-5 grid grid-cols-4 gap-2 rounded-2xl border border-white/10 bg-black/20 p-3"
+        className="mb-5 grid grid-cols-4 gap-1 sm:gap-2 rounded-2xl border border-white/10 bg-black/20 p-2 sm:p-3"
       >
         <div className="rounded-xl border border-white/10 bg-zinc-950/60 p-3">
           <div className="text-[9px] uppercase tracking-[1px] text-[var(--text3)]">Barracks</div>
