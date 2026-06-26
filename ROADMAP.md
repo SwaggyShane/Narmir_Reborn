@@ -1,6 +1,6 @@
 # Narmir Reborn — Unified Development Roadmap
 
-**Status:** Alpha phase (ongoing) — Tracks A–E in flight; Track F deferred post-cutover  
+**Status:** Alpha phase (ongoing) — Tracks A–E complete; Track F.3 consolidation complete (PR #606–#608); F.1,2,4–8 deferred post-cutover  
 **Last updated:** 2026-06-26  
 **Single source of truth** for planning, replacing ALPHA_ROADMAP + AdminRoadmap + MAINTENANCE (see **Related Documents**)
 
@@ -204,20 +204,20 @@ Link updated doc to this roadmap; clarify resolved vs. open items.
 
 ## Track F — Architecture Debt (P4, post-cutover)
 
-**Status:** ⏳ **DEFERRED** (unblocked after Tracks A–E stable)
+**Status:** 🟡 **IN PROGRESS** — F3 consolidation phase complete (PR #606, #607, #608)
 
 From MAINTENANCE.md recommended order:
 
-| ID | Work | Notes | Timeline |
-|----|------|-------|----------|
-| **F1** | Express global error handler; audit silent `catch {}` | Medium priority | Post-cutover |
-| **F2** | Combat V2 decision | Complete or remove; requires design sign-off | Post-cutover |
-| **F3** | `kingdom.js` split → `build`, `warfare`, `economy`, `research` modules | Incremental refactor | Post-cutover |
-| **F4** | `engine.js` decomposition | Long horizon (6,242 lines) | Post-cutover |
-| **F5** | `GameStateManager` → React Context | Incremental per panel; align with frontend tests | Post-cutover |
-| **F6** | Frontend component tests (Vitest + RTL) | Start with shell nav + `panelMeta` | Post-cutover |
-| **F7** | Numeric range validation (troops, builds, research) | Prevents balance exploits | Post-cutover |
-| **F8** | Duplicate `timestamp.js` consolidation | Single module | Post-cutover |
+| ID | Work | Notes | Timeline | Status |
+|----|------|-------|----------|--------|
+| **F1** | Express global error handler; audit silent `catch {}` | Medium priority | Post-cutover | ⏳ Pending |
+| **F2** | Combat V2 decision | Complete or remove; requires design sign-off | Post-cutover | ⏳ Pending |
+| **F3** | Module consolidation & architecture foundation | ✅ Phase 1: data-transformations extraction (PR #606)<br/>✅ Phase 2: timestamp consolidation (PR #607)<br/>✅ Phase 3: architecture documentation + mobile hardening (PR #608) | Now | ✅ **DONE** |
+| **F4** | `engine.js` decomposition | Long horizon (6,242 lines); depends on F3 foundation | Post-cutover | ⏳ Pending |
+| **F5** | `GameStateManager` → React Context | Incremental per panel; align with frontend tests | Post-cutover | ⏳ Pending |
+| **F6** | Frontend component tests (Vitest + RTL) | Start with shell nav + `panelMeta` | Post-cutover | ⏳ Pending |
+| **F7** | Numeric range validation (troops, builds, research) | Prevents balance exploits | Post-cutover | ⏳ Pending |
+| **F8** | `kingdom.js` split → `build`, `warfare`, `economy`, `research` modules | Incremental refactor; enabled by F3 foundation | Post-cutover | ⏳ Pending |
 
 ---
 
@@ -320,12 +320,13 @@ Per `CLAUDE.md`:
 | **6** | **C1+C2** Portal Tailwind + forum | — | ✅ Done |
 | **7** | **Admin Ph0–6a** React admin soft cutover | — | ✅ Done (PR #589) |
 | **8** | **Mobile UI** Responsive refinements | — | ✅ Done (PR #596–#598) |
-| **9** | **E3** Vite 8.1+ bump | — | ⏳ Next |
-| **10** | **C3** Portal CSS cleanup | — | ⏳ After E3 |
-| **11** | **Admin Ph6b** Hard cutover (with verification matrix ✅) | — | ⏳ When ready |
-| **12** | **M1** MAINTENANCE refresh | — | ⏳ After E1–E3 |
-| **13** | **Tailwind consolidation** Static → utilities refactor | — | 📋 Future (low urgency) |
-| **14** | **Track F** Architecture debt (post-cutover) | — | ⏳ Deferred |
+| **9** | **F3 Consolidation** Module architecture & timestamps | — | ✅ Done (PR #606–#608) |
+| **10** | **E3** Vite 8.1+ bump | — | ⏳ Next |
+| **11** | **C3** Portal CSS cleanup | — | ⏳ After E3 |
+| **12** | **Admin Ph6b** Hard cutover (with verification matrix ✅) | — | ⏳ When ready |
+| **13** | **M1** MAINTENANCE refresh | — | ⏳ After E1–E3 |
+| **14** | **Tailwind consolidation** Static → utilities refactor | — | 📋 Future (low urgency) |
+| **15** | **Track F (F.1,2,4–8)** Remaining architecture debt | — | ⏳ Deferred post-cutover |
 
 ---
 
