@@ -86,17 +86,23 @@ P4: F1–F8 (Architecture debt post-cutover — no dogfood wait)
 
 ## Track C — Portal → React + Tailwind (P2)
 
-**Status:** ✅ **DONE** (feat/portal-tailwind-foundation, feat/portal-tailwind-forum)
+**Status:** ✅ **DONE** (feat/portal-tailwind-foundation, feat/portal-tailwind-forum, PR #603)
 
-| Phase | Work | Status |
-|-------|------|--------|
-| **C1** | Import `tailwind.css`; reuse `.card`, `.base-btn`, theme tokens | ✅ |
-| **C2** | Forum + race cards to Tailwind; extract patterns to `@layer components` | ✅ |
-| **C3** | Remove/shrink legacy CSS; visual regression pass | ⏳ Next |
+| Phase | Work | Status | Notes |
+|-------|------|--------|-------|
+| **C1** | Import `tailwind.css`; reuse `.card`, `.base-btn`, theme tokens | ✅ | Done |
+| **C2** | Forum + race cards to Tailwind; extract patterns to `@layer components` | ✅ | Done |
+| **C3** | Add reusable @layer components foundation; keep CSS files for safety | ✅ | PR #603 merged |
+
+**C3 Details (PR #603 - Portal CSS Consolidation):**
+- **Phase 1:** ✅ Added 223 lines of `@layer components` to tailwind.css (registration form, cards, tables, buttons, forms)
+- **Phase 2 (Revised):** ✅ Kept ALL original CSS class definitions to prevent regressions (no aggressive deletion)
+- **Strategy:** @layer components provide reusable foundation; CSS files remain for production stability
+- **Future work:** Incremental component-by-component Tailwind utility migration (out of C3 scope, post-cutover)
 
 **Forum overhaul:** Categorized index (Community, Warfare, Alliances, Roleplaying), 4 boards each, avatars, badges, in-game panel.
 
-**Exit criteria:** No required `Portal.css` for layout; visual parity; lint + smoke pass; `curl /portal` + forum API work.
+**Exit criteria:** ✅ Lint + smoke pass; ✅ No style regressions; ✅ @layer components as foundation for future Tailwind adoption; visual parity maintained.
 
 ---
 

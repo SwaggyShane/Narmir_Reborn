@@ -879,6 +879,230 @@
     @apply border-accent1 bg-accent1 text-white;
   }
 
+  /* ── Portal & Forum C3 Consolidation ── */
+  /* Registration form layout */
+  .reg-fullwidth-container {
+    @apply flex flex-col w-full h-full;
+    background: var(--bg);
+  }
+
+  .reg-header {
+    @apply flex items-center gap-6 p-6 border-b flex-shrink-0;
+    border-color: var(--border);
+    background: var(--bg2);
+  }
+
+  .reg-title {
+    @apply font-cinzel text-2xl font-bold text-gold flex-1 m-0;
+  }
+
+  .reg-content {
+    @apply flex-1 overflow-y-auto p-8 max-w-7xl w-full mx-auto;
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 2rem;
+  }
+
+  .reg-left-panel {
+    @apply flex flex-col gap-6 sticky top-0 max-h-screen overflow-y-auto;
+  }
+
+  .reg-right-panel {
+    @apply flex-1 flex flex-col justify-start;
+  }
+
+  .reg-form {
+    @apply flex flex-col gap-6 max-w-2xl;
+  }
+
+  .form-section {
+    @apply flex flex-col gap-3;
+  }
+
+  .form-label {
+    @apply text-xs text-text3 uppercase tracking-widest font-bold;
+  }
+
+  .form-grid {
+    @apply grid gap-4;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+
+  .form-group {
+    @apply flex flex-col gap-2;
+  }
+
+  /* Portal & Forum form inputs */
+  .portal-input,
+  .form-input {
+    @apply block w-full bg-bg2 border rounded px-4 py-3 text-base font-sans text-text placeholder-text3 transition;
+    border-color: var(--border);
+    font-size: 0.95rem;
+  }
+
+  .portal-input:focus,
+  .form-input:focus {
+    @apply outline-none;
+    border-color: var(--accent1);
+  }
+
+  /* Portal enter/submit buttons */
+  .portal-enter-btn,
+  .reg-submit-btn {
+    @apply block w-full text-white font-black border-none rounded px-6 py-3 cursor-pointer transition font-cinzel tracking-wide text-sm;
+    background: linear-gradient(135deg, var(--accent1), #ff7f3f);
+  }
+
+  .portal-enter-btn:hover:not(:disabled),
+  .reg-submit-btn:hover:not(:disabled) {
+    @apply -translate-y-0.5;
+    box-shadow: 0 8px 16px rgba(240, 98, 2, 0.3);
+  }
+
+  .portal-enter-btn:disabled,
+  .reg-submit-btn:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  /* Portal cards */
+  .portal-card {
+    @apply rounded-lg border bg-bg2 p-6;
+    border-color: var(--border);
+  }
+
+  .portal-section-title {
+    @apply mb-4 font-cinzel text-sm font-bold uppercase tracking-widest text-gold;
+  }
+
+  /* Forum table patterns */
+  .forum-table-wrap {
+    @apply border rounded-b-lg overflow-hidden;
+    border-color: var(--border);
+    background: var(--bg2);
+  }
+
+  .forum-table-head {
+    @apply grid gap-2 p-3 border-b font-bold text-sm uppercase tracking-wider;
+    border-color: rgba(var(--theme-rgb), 0.25);
+    background: linear-gradient(180deg, rgba(var(--theme-rgb), 0.22) 0%, rgba(var(--theme-rgb), 0.08) 100%);
+    color: var(--text2);
+    font-size: 0.65rem;
+  }
+
+  .forum-table-row {
+    @apply grid gap-2 w-full p-3 border-b cursor-pointer text-left transition;
+    border-color: var(--border);
+    background: var(--bg2);
+  }
+
+  .forum-table-row:last-child {
+    @apply border-b-0;
+  }
+
+  .forum-table-row:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  /* Forum header/breadcrumb */
+  .forum-header {
+    @apply relative flex justify-between items-center gap-4 p-3 border rounded-t-sm flex-shrink-0;
+    border-bottom: none;
+    border-color: var(--border);
+    background: linear-gradient(180deg, var(--bg3) 0%, var(--bg2) 100%);
+  }
+
+  .forum-header::before {
+    content: '';
+    @apply absolute top-0 left-0 right-0 h-1 rounded-t-sm;
+    background: linear-gradient(90deg, rgba(var(--theme-rgb), 0.15) 0%, rgba(var(--theme-rgb), 0.85) 35%, rgba(var(--glow-rgb), 0.75) 65%, rgba(var(--theme-rgb), 0.15) 100%);
+  }
+
+  .forum-header-title {
+    @apply font-cinzel text-sm font-bold text-gold uppercase tracking-wider m-0;
+  }
+
+  .forum-breadcrumb {
+    @apply flex flex-wrap items-center gap-1 text-xs text-text3 mt-1;
+  }
+
+  /* Forum post styles */
+  .forum-post-item {
+    @apply grid gap-0 border-b;
+    grid-template-columns: 130px minmax(0, 1fr);
+    border-color: var(--border);
+    background: var(--bg2);
+  }
+
+  .forum-post-user-panel {
+    @apply flex flex-col items-center gap-2 p-3 text-center border-r flex-shrink-0;
+    border-color: var(--border);
+    background: linear-gradient(180deg, var(--bg4) 0%, var(--bg3) 100%);
+  }
+
+  .forum-post-body {
+    @apply flex flex-col gap-3 p-3 min-w-0;
+  }
+
+  .forum-post-content {
+    @apply text-sm leading-relaxed p-2 rounded border whitespace-pre-wrap break-words;
+    border-color: var(--border);
+    background: rgba(0, 0, 0, 0.12);
+    color: var(--text);
+    min-height: 3.5rem;
+  }
+
+  /* Registration form portrait section */
+  .reg-portrait-section {
+    @apply flex flex-col items-center gap-4 bg-bg2 border rounded-lg p-4;
+    border-color: color-mix(in srgb, var(--race-color) 40%, transparent);
+  }
+
+  .stat-group {
+    @apply bg-bg2 border rounded p-3;
+    border-color: var(--border);
+  }
+
+  .stat-label {
+    @apply text-xs text-text3 uppercase tracking-widest font-bold mb-2;
+  }
+
+  .stat-list {
+    @apply flex flex-col gap-1 list-none;
+  }
+
+  .stat-list li {
+    @apply text-xs text-text2 leading-relaxed;
+  }
+
+  /* Forum-specific form */
+  .forum-form-group {
+    @apply flex flex-col gap-2;
+  }
+
+  .forum-form-label {
+    @apply text-xs font-bold text-text3 uppercase tracking-wider;
+  }
+
+  .forum-form-input,
+  .forum-form-textarea {
+    @apply w-full rounded border px-3 py-2 text-sm;
+    background: var(--bg4);
+    border-color: var(--border);
+    color: var(--text);
+    font-family: inherit;
+  }
+
+  .forum-form-input:focus,
+  .forum-form-textarea:focus {
+    @apply outline-none;
+    border-color: var(--accent2);
+  }
+
+  .forum-form-textarea {
+    @apply min-h-[120px];
+    resize: vertical;
+  }
+
 }
 
 @media (min-width: 768px) {
