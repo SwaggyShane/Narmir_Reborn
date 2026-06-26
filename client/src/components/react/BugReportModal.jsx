@@ -40,6 +40,15 @@ export default function BugReportModal() {
     setCategory('bug');
   }, [submitting]);
 
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') close();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, close]);
+
   const submit = async () => {
     const trimmed = message.trim();
     if (trimmed.length < 10) {

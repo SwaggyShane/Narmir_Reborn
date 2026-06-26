@@ -1,12 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { formatTimestamp } from '../../utils/timestamp.js';
 
 const WISHLIST_CATEGORIES = ['feature', 'bugfix', 'balance', 'content', 'ui', 'performance', 'other'];
-
-function formatReportDate(value) {
-  if (!value) return '-';
-  const d = typeof value === 'number' ? new Date(value * 1000) : new Date(value);
-  return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleString();
-}
 
 export default function EvolutionPanel({ adminFetch, onToast }) {
   const [tab, setTab] = useState('wishlist');
@@ -305,7 +300,7 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
                       <td style={{ ...TD, whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxWidth: 360, fontSize: 11, fontFamily: 'ui-monospace, monospace' }}>
                         {(entry.body_md || entry.description || '').slice(0, 180)}{(entry.body_md || entry.description || '').length > 180 ? '…' : ''}
                       </td>
-                      <td style={TD}>{formatReportDate(entry.created_at)}</td>
+                      <td style={TD}>{formatTimestamp(entry.created_at)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -379,7 +374,7 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
                       <td style={TD}>{s.kingdom_name || '-'}</td>
                       <td style={TD}>{s.username || '-'}</td>
                       <td style={{ ...TD, whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxWidth: 440 }}>{s.message}</td>
-                      <td style={TD}>{formatReportDate(s.created_at)}</td>
+                      <td style={TD}>{formatTimestamp(s.created_at)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -415,7 +410,7 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
                       <td style={TD}>{r.context_panel || '-'}</td>
                       <td style={TD}>{r.discord_sent ? '✓' : '—'}</td>
                       <td style={{ ...TD, whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxWidth: 360 }}>{r.message}</td>
-                      <td style={TD}>{formatReportDate(r.created_at)}</td>
+                      <td style={TD}>{formatTimestamp(r.created_at)}</td>
                     </tr>
                   ))}
                 </tbody>

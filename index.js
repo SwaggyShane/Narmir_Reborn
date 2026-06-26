@@ -1167,15 +1167,13 @@ async function start() {
         if (rawMessage.length > 2000) return res.status(400).json({ error: 'Report is too long (max 2000 characters).' });
 
         const playerId = req.player.playerId;
+        const { createdAtAgeMs, nowUnix } = require('./lib/timestamp-utils');
         const recent = await db.get(
           `SELECT id, created_at FROM bug_reports WHERE player_id = ? ORDER BY id DESC LIMIT 1`,
           [playerId],
         );
-        if (recent?.created_at) {
-          const ageMs = Date.now() - new Date(recent.created_at).getTime();
-          if (Number.isFinite(ageMs) && ageMs < 60_000) {
-            return res.status(429).json({ error: 'Please wait a minute before sending another report.' });
-          }
+        if (recent?.created_at != null && createdAtAgeMs(recent.created_at) < 60_000) {
+          return res.status(429).json({ error: 'Please wait a minute before sending another report.' });
         }
 
         const kingdom = await db.get(
@@ -1185,8 +1183,8 @@ async function start() {
         const username = req.player.username || 'Unknown';
 
         const insert = await db.run(
-          `INSERT INTO bug_reports (player_id, kingdom_id, username, kingdom_name, category, message, context_panel, page_url, user_agent)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO bug_reports (player_id, kingdom_id, username, kingdom_name, category, message, context_panel, page_url, user_agent, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             playerId,
             kingdom?.id ?? null,
@@ -1197,6 +1195,7 @@ async function start() {
             contextPanel,
             pageUrl,
             userAgent,
+            nowUnix(),
           ],
         );
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import clsx from 'clsx';
 import { renderChangelogMarkdown } from '../../utils/changelogMarkdown.jsx';
+import { formatTimestampShort } from '../../utils/timestamp.js';
 
 const CATEGORY_STYLES = {
   combat: { accent: 'from-red-600/80 to-orange-500/40', badge: 'bg-red-950/50 text-red-300 border-red-800/50', emoji: '🗡️' },
@@ -21,17 +22,10 @@ function styleForCategory(category) {
   return CATEGORY_STYLES[key] || CATEGORY_STYLES.default;
 }
 
-function formatDate(value) {
-  if (!value) return '';
-  const d = typeof value === 'number' ? new Date(value * 1000) : new Date(value);
-  if (Number.isNaN(d.getTime())) return '';
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
 export default function ChangelogEntryCard({ entry, featured = false }) {
   const style = styleForCategory(entry.category);
   const body = entry.body_md || entry.description;
-  const dateLabel = formatDate(entry.created_at);
+  const dateLabel = formatTimestampShort(entry.created_at);
 
   return (
     <article
