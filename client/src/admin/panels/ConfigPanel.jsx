@@ -91,7 +91,7 @@ function ConfigKeyRow({ configKey, label, baseValue, overrideValue, onSave, savi
             <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
               <button
                 onClick={() => onSave(configKey, parsed.value)}
-                disabled={saving || !parsed.ok || !isDirty}
+                disabled={saving || !parsed.ok || !isDirty || !draft.trim()}
                 style={BTN_PRIMARY}
               >
                 {saving ? 'Saving...' : 'Apply Override'}
