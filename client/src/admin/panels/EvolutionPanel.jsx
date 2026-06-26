@@ -247,9 +247,10 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
 
       {tab === 'changelog' && (
         <div>
-          <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12 }}>
-            Publish updates here — saved to changelog and pushed to #updates when Discord is configured.
-            Completing a wishlist item also creates a changelog entry.
+          <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12, lineHeight: 1.5, maxWidth: 720 }}>
+            Publish updates here — appears in-game Changelog panel, admin log, and #updates on Discord.
+            Description supports markdown: <code>##</code>, <code>###</code>, <code>**bold**</code>, <code>- bullets</code>, <code>{'>'} quote</code>.
+            Plain text auto-formats with emoji + category styling.
           </div>
 
           <div style={{ display: 'grid', gap: 8, marginBottom: 16, maxWidth: 640 }}>
@@ -268,10 +269,10 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
               style={INPUT}
             />
             <textarea
-              placeholder="Description — what shipped?"
+              placeholder={'Description (markdown ok)\n\n- **Feature:** detail here\n- **Fix:** another line'}
               value={newChangelog.description}
               onChange={(e) => setNewChangelog(v => ({ ...v, description: e.target.value }))}
-              style={{ ...INPUT, minHeight: 90, resize: 'vertical' }}
+              style={{ ...INPUT, minHeight: 120, resize: 'vertical', fontFamily: 'ui-monospace, monospace', fontSize: 12 }}
             />
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={handlePublishChangelog} style={BTN_PRIMARY} disabled={changelogPublishing}>
@@ -291,7 +292,7 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
             <div style={{ overflowX: 'auto' }}>
               <table style={TABLE}>
                 <thead><tr>
-                  {['ID', 'Title', 'Category', 'Source', 'Discord', 'Description', 'Created'].map(h => <th key={h} style={TH}>{h}</th>)}
+                  {['ID', 'Title', 'Category', 'Source', 'Discord', 'Preview', 'Created'].map(h => <th key={h} style={TH}>{h}</th>)}
                 </tr></thead>
                 <tbody>
                   {changelogEntries.map(entry => (
@@ -301,7 +302,9 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
                       <td style={TD}>{entry.category || '—'}</td>
                       <td style={TD}>{entry.source || 'manual'}</td>
                       <td style={TD}>{entry.discord_sent ? '✓' : '—'}</td>
-                      <td style={{ ...TD, whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxWidth: 360 }}>{entry.description}</td>
+                      <td style={{ ...TD, whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxWidth: 360, fontSize: 11, fontFamily: 'ui-monospace, monospace' }}>
+                        {(entry.body_md || entry.description || '').slice(0, 180)}{(entry.body_md || entry.description || '').length > 180 ? '…' : ''}
+                      </td>
                       <td style={TD}>{formatReportDate(entry.created_at)}</td>
                     </tr>
                   ))}

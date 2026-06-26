@@ -3,25 +3,41 @@ import clsx from 'clsx';
 import { toast } from '../../utils/toast.js';
 import { switchTab } from '../../utils/panelNav.js';
 import { apiCall } from '../../utils/api.mjs';
+import ChangelogEntryCard from './ChangelogEntryCard.jsx';
 
 const sectionCard = 'rounded-2xl border border-[var(--border)] bg-[var(--bg3)] p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.02)_inset]';
 const titleLine = 'mb-4 border-b border-[var(--border2)] pb-2 text-[15px] font-bold text-[var(--gold)]';
 const copy = 'text-[13px] leading-6 text-[var(--text2)]';
 const listCopy = 'space-y-3 text-[13px] leading-7 text-[var(--text2)]';
 const label = 'text-[14px] font-bold text-[var(--text)]';
-const smallLabel = 'text-[11px] uppercase tracking-[0.18em] text-[var(--text3)]';
 
 const ChangelogPanel = () => {
   const [liveEntries, setLiveEntries] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    apiCall('/api/changelog').then((data) => {
-      if (Array.isArray(data)) setLiveEntries(data);
-    }).catch(() => {});
+    apiCall('/api/changelog')
+      .then((data) => {
+        if (Array.isArray(data)) setLiveEntries(data);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
-  const submitSuggestion = () => {
-    toast('Suggestion submission is not wired up yet.', 'warn');
+  const submitSuggestion = async () => {
+    const el = document.getElementById('suggestion-input');
+    const message = el?.value?.trim();
+    if (!message || message.length < 5) {
+      toast('Enter at least 5 characters for your suggestion.', 'warn');
+      return;
+    }
+    const data = await apiCall('/api/suggestions', { method: 'POST', body: { message } });
+    if (data?.error) {
+      toast(data.error, 'error');
+      return;
+    }
+    toast(data?.message || 'Thank you!', 'success');
+    if (el) el.value = '';
   };
 
   const returnToKingdom = () => {
@@ -30,238 +46,94 @@ const ChangelogPanel = () => {
 
   return (
     <div id="changelog" className="panel">
-      <div className="mx-auto mt-0 w-full max-w-6xl rounded-[20px] border border-[var(--border)] bg-[var(--bg2)] p-6">
-        <div className="mb-6 flex items-center justify-between gap-3">
-          <div className="card-title !mb-0">📋 Changelog & Updates</div>
+      <div className="mx-auto mt-0 w-full max-w-6xl rounded-[20px] border border-[var(--border)] bg-[var(--bg2)] p-4 sm:p-6">
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <div className="card-title !mb-1">📋 Changelog & Updates</div>
+            <p className="text-[13px] leading-6 text-[var(--text3)]">
+              Live patch notes from the realm — updated when the team publishes.
+            </p>
+          </div>
+          <div className="rounded-full border border-ember-900/40 bg-void-950/60 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--gold)]">
+            Pure. Damn. Evil.
+          </div>
         </div>
 
         <div className="space-y-6">
-          {liveEntries.length > 0 ? (
-            <section className={sectionCard}>
-              <h2 className={titleLine}>Latest from the team</h2>
-              <ul className={listCopy}>
-                {liveEntries.map((entry) => (
-                  <li key={entry.id}>
-                    <strong className="text-[var(--text)]">{entry.title}</strong>
-                    {entry.category ? (
-                      <span className="ml-2 text-[11px] uppercase tracking-wide text-[var(--text3)]">
-                        {entry.category}
-                      </span>
-                    ) : null}
-                    <div className="mt-1 text-[var(--text2)]">{entry.description}</div>
-                  </li>
-                ))}
-              </ul>
+          {loading ? (
+            <div className="rounded-2xl border border-dashed border-white/10 px-6 py-12 text-center text-[13px] text-[var(--text3)]">
+              Summoning the latest dispatches...
+            </div>
+          ) : liveEntries.length > 0 ? (
+            <section className="space-y-5">
+              <div className="flex items-center gap-3">
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-ember-500/40 to-transparent" />
+                <span className="font-cinzel text-[12px] font-bold uppercase tracking-[0.28em] text-[var(--gold)]">
+                  Live Updates
+                </span>
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-ember-500/40 to-transparent" />
+              </div>
+              {liveEntries.map((entry, index) => (
+                <ChangelogEntryCard key={entry.id} entry={entry} featured={index === 0} />
+              ))}
             </section>
-          ) : null}
+          ) : (
+            <div className="rounded-2xl border border-dashed border-white/10 bg-[var(--bg3)]/50 px-6 py-10 text-center">
+              <div className="text-3xl">📜</div>
+              <p className="mt-3 text-[14px] font-semibold text-[var(--text2)]">No live updates yet</p>
+              <p className="mt-1 text-[13px] text-[var(--text3)]">New entries appear here when published from admin.</p>
+            </div>
+          )}
 
-          <section className={sectionCard}>
-            <h2 className={titleLine}>🔥 Latest Updates (May 2026)</h2>
-            <div className="space-y-4">
-              <div>
+          <details className="changelog-archive group rounded-2xl border border-white/5 bg-[var(--bg3)]/40 open:bg-[var(--bg3)]">
+            <summary className="cursor-pointer list-none px-5 py-4 font-cinzel text-[14px] font-bold text-[var(--text2)] transition hover:text-[var(--gold)] [&::-webkit-details-marker]:hidden">
+              <span className="inline-flex items-center gap-2">
+                <span className="text-[var(--text3)] transition group-open:rotate-90">▸</span>
+                Archive — earlier milestones
+              </span>
+            </summary>
+            <div className="space-y-6 border-t border-white/5 px-5 pb-5 pt-4">
+              <section className={sectionCard}>
+                <h2 className={titleLine}>🔥 Latest Updates (May 2026)</h2>
                 <div className={label}>🌲 Advanced Resources & Fortifications</div>
-                <ul className={listCopy}>
-                  <li>
-                    <strong className="text-[var(--text)]">🪨 Resource Systems:</strong>{' '}
-                    Wood, Stone, and Iron can now be gathered via specialized buildings and expeditions.
-                  </li>
-                  <li>
-                    <strong className="text-[var(--text)]">🥘 Food Supply:</strong>{' '}
-                    Manage starvation and surpluses to keep your troops ready and able to march on Resource Expeditions.
-                  </li>
-                  <li>
-                    <strong className="text-[var(--text)]">💀 Mausoleums & Thralls:</strong>{' '}
-                    Reanimate fallen enemies into Thralls to automate basic labor around your kingdom.
-                  </li>
-                  <li>
-                    <strong className="text-[var(--text)]">🧱 Advanced Defenses:</strong>{' '}
-                    Build and upgrade protective walls to secure your kingdom from hostile invaders.
-                  </li>
-                  <li>
-                    <strong className="text-[var(--text)]">⚙️ Advanced Blueprints:</strong>{' '}
-                    Craft Hybrid and Fortified blueprints using the new elemental fragments and rare materials.
-                  </li>
+                <ul className={clsx(listCopy, 'mt-3')}>
+                  <li><strong className="text-[var(--text)]">🪨 Resource Systems:</strong> Wood, Stone, and Iron via specialized buildings and expeditions.</li>
+                  <li><strong className="text-[var(--text)]">🥘 Food Supply:</strong> Manage starvation and surpluses for expeditions.</li>
+                  <li><strong className="text-[var(--text)]">💀 Mausoleums & Thralls:</strong> Reanimate fallen enemies into labor thralls.</li>
+                  <li><strong className="text-[var(--text)]">🧱 Advanced Defenses:</strong> Walls and fortified holdings.</li>
+                  <li><strong className="text-[var(--text)]">⚙️ Advanced Blueprints:</strong> Hybrid and Fortified blueprint crafting.</li>
                 </ul>
-              </div>
-            </div>
-          </section>
+              </section>
 
-          <section className={sectionCard}>
-            <h2 className={titleLine}>🔥 Latest Updates (April 2026)</h2>
-            <div className="space-y-4">
-              <div>
+              <section className={sectionCard}>
+                <h2 className={titleLine}>🔥 Latest Updates (April 2026)</h2>
                 <div className={label}>🛠️ Game Interface & Logic Patch (v1.0.6)</div>
-                <ul className={listCopy}>
-                  <li>
-                    <strong className="text-[var(--text)]">🏆 Achievements:</strong>{' '}
-                    Discover custom unlockables and titles inside your Library.
-                  </li>
-                  <li>
-                    <strong className="text-[var(--text)]">🎁 Prestige System:</strong>{' '}
-                    A new beginning awaits with permanent bonuses for max level resets.
-                  </li>
-                  <li>
-                    <strong className="text-[var(--text)]">🌦️ Seasons & Daily Events:</strong>{' '}
-                    Unpredicted world conditions impacting crop yields and happiness.
-                  </li>
-                  <li>
-                    <strong className="text-[var(--text)]">📈 Dynamic Pricing:</strong>{' '}
-                    Market commodities respond to supply and demand server-wide.
-                  </li>
-                  <li>
-                    <strong className="text-[var(--text)]">🤝 Trade Connections:</strong>{' '}
-                    Establish long-term trade routes for steady passive gold.
-                  </li>
-                  <li>
-                    <strong className="text-[var(--text)]">⚔️ Trade Raiding:</strong>{' '}
-                    Aggressive kingdoms can pillage the trade routes of their enemies.
-                  </li>
-                  <li>
-                    <strong className="text-[var(--text)]">🔊 Immersive Audio:</strong>{' '}
-                    Enjoy sound effects for various actions in your kingdom!
-                  </li>
-                  <li>
-                    <strong className="text-[var(--text)]">✨ Named Heroes:</strong>{' '}
-                    Recruit legendary leaders to lead your armies and research.
-                  </li>
-                  <li>
-                    <strong className="text-[var(--text)]">🧱 Siege Mechanics:</strong>{' '}
-                    Fortify with Walls to protect your holdings from damage.
-                  </li>
-                  <li>
-                    <strong className="text-[var(--text)]">🏰 Citadel Badge:</strong>{' '}
-                    Now displays on Defense and Status panels when met.
-                  </li>
-                  <li>
-                    <strong className="text-[var(--text)]">✨ Racial Gift Badge:</strong>{' '}
-                    Now visible on the Training panel for active bonuses.
-                  </li>
-                  <li>
-                    <strong className="text-[var(--text)]">⚓ Siege Badge:</strong>{' '}
-                    Added to war machines on the status page.
-                  </li>
-                  <li>
-                    <strong className="text-[var(--text)]">📈 Rankings Modernization:</strong>{' '}
-                    New columns (Player, Score, Turns) and stats privacy.
-                  </li>
-                  <li>
-                    <strong className="text-[var(--text)]">📦 Trade Logs:</strong>{' '}
-                    New "Clear Logs" button in markets to tidy up old offers.
-                  </li>
-                  <li>
-                    <strong className="text-[var(--text)]">💛 Hire Page Rework:</strong>{' '}
-                    High-contrast yellow labels and improved column alignment.
-                  </li>
-                  <li>
-                    <strong className="text-[var(--text)]">📖 Library Sync:</strong>{' '}
-                    Upgrades and residents (scribes only) are now correctly synced.
-                  </li>
+                <ul className={clsx(listCopy, 'mt-3')}>
+                  <li><strong className="text-[var(--text)]">🏆 Achievements:</strong> Unlockables and titles in your Library.</li>
+                  <li><strong className="text-[var(--text)]">🎁 Prestige System:</strong> Permanent bonuses for max-level resets.</li>
+                  <li><strong className="text-[var(--text)]">🌦️ Seasons & Daily Events:</strong> World conditions affecting yields and happiness.</li>
+                  <li><strong className="text-[var(--text)]">📈 Dynamic Pricing:</strong> Market commodities respond to supply and demand.</li>
+                  <li><strong className="text-[var(--text)]">🔊 Immersive Audio:</strong> Sound effects across kingdom actions.</li>
                 </ul>
+              </section>
+
+              <div className="grid gap-6 lg:grid-cols-2">
+                <section className={sectionCard}>
+                  <div className={label}>📜 Race Lore Expansion</div>
+                  <p className={copy}>Turn reports can surface rare historical events and lore tied to your race and region.</p>
+                </section>
+                <section className={sectionCard}>
+                  <div className={label}>🚩 Region Capture & Mastery</div>
+                  <p className={copy}>Alliances contest regions for +10% alliance-wide bonuses. Check the World Map.</p>
+                </section>
               </div>
             </div>
-          </section>
-
-          <div className="grid gap-6 lg:grid-cols-2">
-            <section className={sectionCard}>
-              <div className={label}>📜 Race Lore Expansion</div>
-              <p className={copy}>
-                Ancient secrets are beginning to stir. Your turn reports now have a chance to include rare historical events and lore snippets specific to your race and region, bringing the deep history of Narmir to life.
-              </p>
-            </section>
-
-            <section className={sectionCard}>
-              <div className={label}>🚩 Region Capture & Mastery</div>
-              <p className={copy}>
-                Alliances can now contest and capture the six major regions of Narmir. Holding a region grants your entire alliance a 10% bonus to that region's signature stat (Military, Magic, Economy, etc.). Check the 🗺️ World Map to see capture progress!
-              </p>
-            </section>
-
-            <section className={sectionCard}>
-              <div className={label}>📊 Alliance Leaderboards</div>
-              <p className={copy}>
-                A new "Alliance" tab has been added to the Rankings panel. Compare your coalition's total land, member counts, and average strength against every other Alliance in the realm.
-              </p>
-            </section>
-
-            <section className={sectionCard}>
-              <div className={label}>📝 Kingdom Lore & Bios</div>
-              <p className={copy}>
-                Tell your story. You can now write a custom lore description for your kingdom in your Kingdom view. These bios are saved to your profile and visible to all players who inspect your kingdom.
-              </p>
-            </section>
-          </div>
-
-          <div className="grid gap-6 lg:grid-cols-2">
-            <section className={sectionCard}>
-              <div className={label}>💀 Narmir Reborn: Pure. Damn. Evil.</div>
-              <p className={copy}>
-                Complete aesthetic overhaul. The land of Narmir has officially evolved into its darker, gritier "Reborn" state.
-              </p>
-            </section>
-
-            <section className={sectionCard}>
-              <div className={label}>✨ Racial masteries (Level 25+)</div>
-              <p className="mb-2 text-[13px] leading-6 text-[var(--text2)]">
-                Veteran units now unlock powerful race-specific abilities once they reach Level 5:
-              </p>
-              <ul className={listCopy}>
-                <li>
-                  <strong className="text-[var(--text)]">🔨 Dwarf Engineers:</strong>{' '}
-                  Can solo-crew heavy war machines.
-                </li>
-                <li>
-                  <strong className="text-[var(--text)]">✨ High Elf Mages:</strong>{' '}
-                  Produce two scrolls per crafting session.
-                </li>
-                <li>
-                  <strong className="text-[var(--text)]">🐺 Orc Fighters:</strong>{' '}
-                  Passively train 1 free fighter per 10 every turn.
-                </li>
-                <li>
-                  <strong className="text-[var(--text)]">🕵️ Dark Elf Ninjas:</strong>{' '}
-                  Silent assassination (targets get no news).
-                </li>
-                <li>
-                  <strong className="text-[var(--text)]">🐺 Dire Wolf Rangers:</strong>{' '}
-                  Expeditions return 1 turn early.
-                </li>
-                <li>
-                  <strong className="text-[var(--text)]">💚 Human Clerics:</strong>{' '}
-                  Radiate a happiness aura.
-                </li>
-              </ul>
-            </section>
-          </div>
-
-          <div className="grid gap-6 lg:grid-cols-2">
-            <section className={sectionCard}>
-              <div className={label}>💬 Chat Personalization</div>
-              <p className={copy}>
-                Use <code className="text-[var(--accent1)]">/nick &lt;name&gt;</code> to set a
-                persistent nickname and <code className="text-[var(--accent1)]">/color &lt;hex&gt;</code> to
-                choose your chat color. These settings are now saved to your profile!
-              </p>
-            </section>
-
-            <section className={sectionCard}>
-              <div className={label}>🛡️ Extended Newbie Protection</div>
-              <p className={copy}>
-                To ensure all new leaders have time to fortify their holds, protection from attacks and spells has been extended to <strong className="text-[var(--gold)]">Turn 400</strong>.
-              </p>
-            </section>
-
-            <section className={sectionCard}>
-              <div className={label}>🏗️ Racial Starting Buildings</div>
-              <p className={copy}>
-                Fresh kingdoms now receive a starting kit of buildings unique to their heritage, allowing you to leverage your race's strengths from day one.
-              </p>
-            </section>
-          </div>
+          </details>
 
           <section className={sectionCard}>
             <div className="mb-3 text-[14px] font-bold text-[var(--gold)]">💡 Have an Idea?</div>
             <p className="mb-3 text-[13px] leading-6 text-[var(--text3)]">
-              We want to build the ultimate dark fantasy world with you. Tell us what features or changes you'd like to see!
+              Help shape the realm — feature ideas go straight to the admin team.
             </p>
             <textarea
               id="suggestion-input"
@@ -277,7 +149,7 @@ const ChangelogPanel = () => {
           </section>
 
           <button
-            className="base-btn variant-accent w-full px-4 py-3 bg-[var(--accent1)] mt-0"
+            className="base-btn variant-accent w-full px-4 py-3 bg-[var(--accent1)]"
             onClick={returnToKingdom}
           >
             Return to Kingdom

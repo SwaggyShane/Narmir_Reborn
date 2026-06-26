@@ -1291,6 +1291,7 @@ async function initDb(options = {}) {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,
       description TEXT NOT NULL,
+      body_md TEXT,
       category TEXT,
       source TEXT NOT NULL DEFAULT 'manual',
       source_id INTEGER,
@@ -1299,6 +1300,11 @@ async function initDb(options = {}) {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  const changelogCols = (await _db.all('PRAGMA table_info(changelog_entries)').catch(() => [])).map(c => c.name);
+  if (changelogCols.length && !changelogCols.includes('body_md')) {
+    await addColumn('changelog_entries', 'body_md', 'TEXT', changelogCols);
+  }
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS bug_reports (

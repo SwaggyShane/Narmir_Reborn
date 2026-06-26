@@ -1132,7 +1132,8 @@ async function start() {
     app.get('/api/changelog', async (_req, res) => {
       try {
         const rows = await db.all(
-          `SELECT id, title, description, category, created_at FROM changelog_entries ORDER BY created_at DESC LIMIT 50`,
+          `SELECT id, title, description, body_md, category, source, created_at
+           FROM changelog_entries ORDER BY created_at DESC LIMIT 50`,
         );
         res.json(rows);
       } catch (e) {
