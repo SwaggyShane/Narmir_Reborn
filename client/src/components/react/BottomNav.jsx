@@ -185,27 +185,34 @@ const BottomNav = () => {
             ))}
           </div>
 
-          <div className="mt-3 flex flex-wrap gap-2 border-t border-white/5 pt-3">
-            {isAdmin ? (
+          {!!state?.username ? (
+            <div className="mt-3 border-t border-white/5 pt-3">
+              <button
+                type="button"
+                className="shell-logout-btn min-h-11 w-full text-sm"
+                onClick={() => {
+                  setDrawerOpen(false);
+                  logout();
+                }}
+                aria-label="Logout"
+              >
+                <span aria-hidden="true">&#10005;</span>
+                <span>Logout</span>
+              </button>
+            </div>
+          ) : null}
+
+          {isAdmin ? (
+            <div className="mt-3 border-t border-white/5 pt-3">
               <a
                 id="admin-bnav-link"
                 href="/admin"
-                className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 text-sm font-semibold text-amber-100 transition active:scale-95"
+                className="inline-flex min-h-11 w-full items-center justify-center rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 text-sm font-semibold text-amber-100 transition active:scale-95"
               >
                 👑 Admin
               </a>
-            ) : null}
-            <button
-              type="button"
-              className="shell-logout-btn min-h-11 px-4 text-sm"
-              onClick={() => {
-                setDrawerOpen(false);
-                logout();
-              }}
-            >
-              🚪 Logout
-            </button>
-          </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </>
