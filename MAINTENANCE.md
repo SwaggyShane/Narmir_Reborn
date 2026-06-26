@@ -104,6 +104,22 @@ Zero component tests exist. The test suite covers game logic only.
 
 ---
 
+### Inline CSS vs. Tailwind Consolidation
+React components mix inline `style={{}}` attributes with Tailwind utility classes. While dynamic values (widths, gaps, conditional colors) justify inline styles, static properties (font sizes, weights, borders) are often duplicated as inline styles when Tailwind utilities could express them.
+
+**Why this matters:** The React migration used "path of least resistance" shortcuts that created maintenance friction later. Preventing mixed styling patterns now avoids a future "huge icky sticky mess."
+
+**Fix (future, low urgency):**
+- Audit `KingdomBodyHeader.jsx`, `BuildPanel.jsx`, and other heavily-styled components
+- Migrate static inline styles → Tailwind utilities (`fontSize: 11` → `text-[11px]`, `fontWeight: 600` → `font-semibold`)
+- Keep inline only for: dynamic values, CSS variables, conditional logic
+- Document the decision: "Tailwind for static, inline only for calculated values"
+- Target: Single PR focusing purely on this refactor, zero logic changes
+
+This is preventative—lock in the pattern now rather than untangling mixed approaches later.
+
+---
+
 ## What Is Working Well
 
 | Area | Status | Notes |
