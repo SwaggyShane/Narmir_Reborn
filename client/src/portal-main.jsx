@@ -1,5 +1,15 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
+import { applyColorTheme, readColorTheme } from './utils/colorTheme.js';
+import './tailwind.css';
+import './css/forum.css';
+import './css/portal-content.css';
 import Portal from './Portal.jsx';
 
-createRoot(document.getElementById('portal-root')).render(<Portal />);
+applyColorTheme(readColorTheme());
+
+createRoot(document.getElementById('portal-root')).render(
+  <React.StrictMode>
+    <Portal />
+  </React.StrictMode>,
+);

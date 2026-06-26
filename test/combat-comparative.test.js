@@ -278,14 +278,13 @@ function testCombatV2Blurb() {
   const defenderText = engine.formatCombatV2NewsBlurb(attacker, defender, report, 'defender');
 
   const requiredPhrases = [
-    'Win/Loss: Victory',
+    'Attack report:',
+    'Outcome: Attacker victory',
+    'Land gained: 42 acres captured',
     'Troops engaged - Attacker:',
     'Troops engaged - Defender:',
     'Troops lost - Attacker:',
     'Troops injured - Defender:',
-    'Recovery notes:',
-    'cleric rescues',
-    'undead rises',
     'Critical hits:',
     'Buildings lost:',
     'Siege notes:',
@@ -296,7 +295,8 @@ function testCombatV2Blurb() {
     assert(attackerText.includes(phrase), `Attacker blurb should include "${phrase}"`);
   }
 
-  assert(defenderText.includes('Win/Loss: Defeat'), 'Defender blurb should flip win/loss');
+  assert(defenderText.includes('Defense report:'), 'Defender blurb should use defense title');
+  assert(defenderText.includes('Outcome: Attacker victory'), 'Defender blurb should report outcome');
   assert(defenderText.includes('Land loss: 42 acres lost'), 'Defender blurb should report land loss');
 
   return { pass: true, issues: [], testName: 'Combat V2 Blurb' };

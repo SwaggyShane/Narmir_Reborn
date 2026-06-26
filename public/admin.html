@@ -773,7 +773,7 @@
           📅 Events
         </button>
         <button class="admin-tab" onclick="showAdminTab('config', this)">
-          🛠️ Configs
+          🛠️ Config
         </button>
         <button class="admin-tab" onclick="showAdminTab('sounds', this)">
           🎵 Sounds
@@ -805,7 +805,7 @@
           <div class="announce-row">
             <textarea
               id="announce-msg"
-              placeholder="Message to broadcast to all players..."
+              placeholder="Broadcast to global chat and every kingdom's News feed..."
             ></textarea>
             <button
               class="btn btn-gold"
@@ -1385,7 +1385,7 @@
         </div>
       </div>
 
-      <!-- TAB: Configs -->
+      <!-- TAB: Config -->
       <div id="atab-config" class="atab" style="display: none">
         <div
           style="
@@ -2591,7 +2591,7 @@
           (k.username || "?") +
           ") — Race: " +
           (k.race || "?") +
-          " · Land: " +
+          " | Land: " +
           (k.land || 0).toLocaleString();
 
         function escHtml(s) {
@@ -3029,7 +3029,7 @@
             r.name +
             '</strong><br><span style="color:var(--text3);font-size:10px">Lv ' +
             r.level +
-            " · " +
+            " | " +
             r.race.replace(/_/g, " ") +
             "</span></td>" +
             '<td style="padding:8px;text-align:right;color:var(--gold)">' +
@@ -3991,7 +3991,7 @@
       }
 
       async function loadRandomEventsList() {
-        const result = await api("GET", "/api/admin/random_events");
+        const result = await api("GET", "/api/admin/random-events");
         if (result.error) return;
         const list = document.getElementById("random-events-list");
         list.innerHTML = result.list
@@ -4041,17 +4041,17 @@
       async function addRandomEvent() {
         const c = prompt("Enter new random expedition event text:");
         if (!c) return;
-        await api("POST", "/api/admin/random_events", { content: c });
+        await api("POST", "/api/admin/random-events", { content: c });
         loadRandomEventsList();
       }
       async function deleteRandomEvent(id) {
         if (!confirm("Delete this event?")) return;
-        await api("DELETE", "/api/admin/random_events/" + id);
+        await api("DELETE", "/api/admin/random-events/" + id);
         loadRandomEventsList();
       }
 
       async function loadJunkEventsList() {
-        const result = await api("GET", "/api/admin/junk_events");
+        const result = await api("GET", "/api/admin/junk-events");
         if (result.error) return;
         const list = document.getElementById("junk-events-list");
         list.innerHTML = result.list
@@ -4074,18 +4074,18 @@
       async function addJunkEvent() {
         const c = prompt("Enter new junk event text:");
         if (!c) return;
-        await api("POST", "/api/admin/junk_events", { content: c });
+        await api("POST", "/api/admin/junk-events", { content: c });
         loadJunkEventsList();
       }
 
       async function deleteJunkEvent(id) {
         if (!confirm("Delete this junk event?")) return;
-        await api("DELETE", "/api/admin/junk_events/" + id);
+        await api("DELETE", "/api/admin/junk-events/" + id);
         loadJunkEventsList();
       }
 
       async function loadTaxEventsList() {
-        const result = await api("GET", "/api/admin/tax_events");
+        const result = await api("GET", "/api/admin/tax-events");
         if (result.error) return;
         const list = document.getElementById("tax-events-list");
         list.innerHTML = result.list
@@ -4108,13 +4108,13 @@
       async function addTaxEvent() {
         const c = prompt("Enter new tax event text:");
         if (!c) return;
-        await api("POST", "/api/admin/tax_events", { content: c });
+        await api("POST", "/api/admin/tax-events", { content: c });
         loadTaxEventsList();
       }
 
       async function deleteTaxEvent(id) {
         if (!confirm("Delete this tax event?")) return;
-        await api("DELETE", "/api/admin/tax_events/" + id);
+        await api("DELETE", "/api/admin/tax-events/" + id);
         loadTaxEventsList();
       }
 
@@ -4253,11 +4253,11 @@
               "</div>" +
               '<div style="color:var(--text3);font-size:11px">' +
               escHtml(e.key) +
-              " · " +
+              " | " +
               e.effect_type +
               " " +
               e.effect_value +
-              (e.race_only ? " · " + e.race_only : "") +
+              (e.race_only ? " | " + e.race_only : "") +
               "</div>" +
               "</div>" +
               '<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:' +
@@ -4368,7 +4368,7 @@
         var text = input.value.trim();
         if (!text) return;
 
-        var r = await api("POST", "/api/admin/admin_notes", { message: text });
+        var r = await api("POST", "/api/admin/admin-notes", { message: text });
         if (r.error) return toast(r.error, "error");
 
         input.value = "";
@@ -4380,7 +4380,7 @@
         if (!confirm("Make sure this has been addressed. You will be removing this item for good!")) {
           return;
         }
-        var r = await api("DELETE", "/api/admin/admin_notes/" + id);
+        var r = await api("DELETE", "/api/admin/admin-notes/" + id);
         if (r.error) return toast(r.error, "error");
         
         loadAdminNotes();
@@ -4420,7 +4420,7 @@
         try {
           oldNotes = localStorage.getItem("narmir_admin_notes");
           if (oldNotes && !localStorage.getItem("narmir_admin_notes_list")) {
-             await api("POST", "/api/admin/admin_notes", { message: "Legacy Notes:\n" + oldNotes });
+             await api("POST", "/api/admin/admin-notes", { message: "Legacy Notes:\n" + oldNotes });
              localStorage.removeItem("narmir_admin_notes");
           }
           listStr = localStorage.getItem("narmir_admin_notes_list");
@@ -4429,12 +4429,12 @@
         if (listStr) {
            var list = JSON.parse(listStr);
            for (var i = list.length - 1; i >= 0; i--) {
-              await api("POST", "/api/admin/admin_notes", { message: list[i].text });
+              await api("POST", "/api/admin/admin-notes", { message: list[i].text });
            }
            try { localStorage.removeItem("narmir_admin_notes_list"); } catch(e) {}
         }
         
-        var rows = await api("GET", "/api/admin/admin_notes");
+        var rows = await api("GET", "/api/admin/admin-notes");
         if (Array.isArray(rows)) {
           renderAdminNotes(rows);
         } else {

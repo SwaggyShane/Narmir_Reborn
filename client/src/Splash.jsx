@@ -23,33 +23,31 @@ const FEATURES = [
   { id: 'prestige',  icon: '👑', title: 'Prestige System',     desc: 'Rebirth your kingdom, carrying hard-won wisdom forward into a more powerful incarnation.' },
 ];
 
-const NAV_LINKS = [
-  'Play Narmir', 'Forums', 'Rankings', 'Worlds',
-  'New Player Help', 'Hosted Sites', 'Windows Quest',
-  'Contact Us', 'Tradewars',
+// Mirrors narmir.com/varuh/left.html — image nav on textured sidebar
+const RETRO_NAV = [
+  { src: '/retro/play.jpg', alt: 'Play Narmir or Create an Account' },
+  { src: '/retro/forums.jpg', alt: 'Narmir Forums' },
+  { src: '/retro/rankings.jpg', alt: 'Rankings' },
+  { src: '/retro/worlds.jpg', alt: 'Worlds' },
+  { src: '/retro/help.jpg', alt: 'Narmir Help' },
+  { src: '/retro/players.jpg', alt: 'Hosted Sites' },
+  { src: '/retro/links.jpg', alt: 'Narmir Links' },
+  { src: '/retro/wq.jpg', alt: 'Windows Quest' },
+  { src: '/retro/contact.jpg', alt: 'Contact Us' },
+  { src: '/retro/tradewars.gif', alt: 'Play Tradewars' },
 ];
 
-// Approximate color of each horizontal eighth of the retro page
+// Horizontal tear bands — black frameset + gray content (varuh layout)
 const TEAR_GRADIENTS = [
-  'linear-gradient(to right, #050510 100%)',
-  'linear-gradient(to right, #0a0a1a 100%)',
-  'linear-gradient(to right, #0000bb 160px, #e8e8e8 160px)',
-  'linear-gradient(to right, #0000aa 160px, #f5f5f5 160px)',
-  'linear-gradient(to right, #0000bb 160px, #ffffff 160px)',
-  'linear-gradient(to right, #0000aa 160px, #f5f5f5 160px)',
-  'linear-gradient(to right, #0000bb 160px, #f0f0f0 160px)',
-  'linear-gradient(to right, #0000aa 160px, #e0e0e0 160px)',
+  'linear-gradient(to right, #000000 100%)',
+  'linear-gradient(to right, #000000 140px, #1a1a1a 140px)',
+  'linear-gradient(to right, #000000 140px, #c0c0c0 140px)',
+  'linear-gradient(to right, #000000 100%)',
+  'linear-gradient(to right, #000000 140px, #c0c0c0 140px)',
+  'linear-gradient(to right, #000000 140px, #1a1a1a 140px)',
+  'linear-gradient(to right, #000000 140px, #c0c0c0 140px)',
+  'linear-gradient(to right, #000000 100%)',
 ];
-
-const GLITCH_CHARS = '▒█▓░@#%&*^~!?><╗╔╚╝║═±§¶';
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function corruptString(str) {
-  return str.split('').map(c =>
-    Math.random() < 0.2 ? GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)] : c
-  ).join('');
-}
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -123,70 +121,71 @@ function AuthBlock({ status, onEnter, fading }) {
   );
 }
 
-function RetroSite({ glitch }) {
-  const g = glitch;
-  return (
-    <div className="retro-site">
-      <div className="retro-header">
-        <div className="retro-logo-block">
-          <span className="retro-logo-name">{g.title ?? 'NARMIR'}</span>
-          <span className="retro-logo-tagline">{g.tagline ?? 'Land of Magic and Conquest'}</span>
-        </div>
-      </div>
+function RetroSite() {
+  const blockNav = (e) => e.preventDefault();
 
-      <div className="retro-body">
+  return (
+    <div className="retro-frameset">
+      <aside className="retro-col retro-col-left" aria-label="Site navigation">
+        <div className="retro-nav-spacer" aria-hidden="true" />
         <nav className="retro-nav">
-          {NAV_LINKS.map((link, i) => (
+          {RETRO_NAV.map((item, i) => (
             <a
-              key={i}
+              key={item.src}
               href="#"
-              className={`retro-nav-link${i === 0 ? ' first' : ''}`}
-              onClick={e => e.preventDefault()}
+              className={i === 0 ? 'retro-nav-first' : undefined}
+              onClick={blockNav}
             >
-              {i === 0 ? (g.nav0 ?? link) : i === 1 ? (g.nav1 ?? link) : i === 2 ? (g.nav2 ?? link) : link}
+              <img src={item.src} width={120} height={18} alt={item.alt} />
             </a>
           ))}
         </nav>
+      </aside>
 
+      <div className="retro-center">
+        <header className="retro-top">
+          <img
+            src="/retro/bg-top.jpg"
+            alt="Narmir, Land of Magic and Conquest"
+            className="retro-top-banner"
+          />
+        </header>
         <main className="retro-content">
-          <h2 className="retro-h2">{g.heading ?? 'Welcome to Narmir'}</h2>
-          <hr className="retro-hr" />
           <p>
-            Welcome to Narmir a unique game experience like none other. Narmir is 100%
-            free and playable from any java capable browser such as Internet Explorer
-            or Netscape.
+            Welcome to Narmir a unique game experience like none other. Narmir is 100% free and
+            playable from any java capable browser such as Internet Explorer or Netscape.
           </p>
           <p>
-            If you have problems loading the game be sure to email us at the link below.
-            Also you might want to check at{' '}
-            <a href="#" onClick={e => e.preventDefault()}>online-java.com</a>{' '}
-            for help with computer and browser problems.
+            If you have problems loading the game be sure to email us at the link below. Also you
+            might want to check at{' '}
+            <a href="http://www.windowsquest.com/" onClick={blockNav}>windowsquest.com</a>
+            {' '}for help with computer and browser problems.
           </p>
-          <hr className="retro-hr" />
-          <h3 className="retro-h3">{g.java ?? 'Java Requirement'}</h3>
-          <p>
-            Sorry, you must use a Java capable browser or enable Java in your
-            browser&apos;s options to play Narmir. WebTV users, currently WebTV does
-            NOT support Java and so you won&apos;t be able to play this game, but you
-            might try{' '}
-            <a href="#" onClick={e => e.preventDefault()}>tradewars</a>, one of the most
-            popular games of this genre but requires no more than an HTML browser to
-            play. Another good game is{' '}
-            <a href="#" onClick={e => e.preventDefault()}>kingdoms</a> which is in
-            similar settings to this game.
-          </p>
-          <hr className="retro-hr" />
+
+          <div className="retro-applet-wrap">
+            <div className="retro-applet-slot" aria-hidden="true" />
+            <hr className="retro-hr" />
+            <p className="retro-java-fallback">
+              Sorry, you must use a Java capable browser or enable Java in your browser&apos;s
+              options to play Narmir. WebTV users, currently WebTV does NOT support Java and so
+              you won&apos;t be able to play this game, but you might try{' '}
+              <a href="http://www.solariagames.com" onClick={blockNav}>Earth: 2025</a>, one of the most
+              popular games of this genre but requires no more than an HTML browser to play. Another
+              good game is{' '}
+              <a href="http://monarchy.shareplay.com" onClick={blockNav}>Monarchy</a> which is in
+              similar settings to this game.
+            </p>
+            <hr className="retro-hr" />
+          </div>
+
           <p className="retro-small-red">
-            If you have any problems or need verification contact please email me at{' '}
-            <a href="#" onClick={e => e.preventDefault()}>admin@narmir.com</a>
+            If you have any problems or need verification codes please email me at{' '}
+            <a href="mailto:quickz@acs-isp.com" onClick={blockNav}>quickz@acs-isp.com</a>
           </p>
         </main>
       </div>
 
-      <div className="retro-statusbar">
-        <span>© 2003 Narmir.com — All Rights Reserved</span>
-        <span>Best viewed in Internet Explorer 6.0 at 800×600</span>
-      </div>
+      <aside className="retro-col retro-col-right" aria-hidden="true" />
     </div>
   );
 }
@@ -305,7 +304,6 @@ export default function Splash() {
   }); // 'retro' | 'glitch' | 'modern'
   const [tearing, setTearing] = useState(false);
   const [showFlash, setShowFlash] = useState(false);
-  const [glitch, setGlitch] = useState({});
   const [authStatus, setAuthStatus] = useState('loading');
   const [fading, setFading] = useState(false);
   const timers = useRef([]);
@@ -338,32 +336,13 @@ export default function Splash() {
 
     setPhase('glitch');
 
-    const interval = setInterval(() => {
-      setGlitch({
-        title:   corruptString('NARMIR'),
-        tagline: corruptString('Land of Magic and Conquest'),
-        nav0:    corruptString('Play Narmir'),
-        nav1:    corruptString('Forums'),
-        nav2:    corruptString('Rankings'),
-        heading: corruptString('Welcome to Narmir'),
-        java:    corruptString('Java Requirement'),
-      });
-    }, 75);
-    timers.current.push(interval);
-
-    // Tear slices appear at 1.4s
+    // CSS-only glitch (.glitching) — no React re-renders during sequence
     timers.current.push(setTimeout(() => setTearing(true), 1400));
-
-    // White flash at 2.1s
     timers.current.push(setTimeout(() => setShowFlash(true), 2100));
-
-    // Switch to modern at 2.5s, fade flash out shortly after
     timers.current.push(setTimeout(() => {
-      clearInterval(interval);
       try { sessionStorage.setItem('narmir_intro_seen', '1'); } catch (e) {}
       setPhase('modern');
       setTearing(false);
-      setGlitch({});
     }, 2500));
 
     timers.current.push(setTimeout(() => setShowFlash(false), 2700));
@@ -376,9 +355,18 @@ export default function Splash() {
         <div
           className={`retro-wrapper${phase === 'glitch' ? ' glitching' : ''}`}
           onClick={triggerGlitch}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              triggerGlitch();
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label="Original Narmir site — click or press Enter to reveal Narmir Reborn"
         >
           <div className="scanlines" aria-hidden="true" />
-          <RetroSite glitch={glitch} />
+          <RetroSite />
         </div>
       )}
 

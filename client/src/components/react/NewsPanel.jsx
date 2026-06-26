@@ -33,8 +33,15 @@ const NewsPanel = () => {
     return `${Math.floor(secs / 86400)}d ago`;
   }, []);
 
+  const isAnnouncement = useCallback((item) => {
+    if (!item) return false;
+    if (item.type === 'announcement') return true;
+    return formatText(item.message).text.includes('Server announcement:');
+  }, [formatText]);
+
   const getNewsPriority = useCallback((item) => {
     if (!item) return 13;
+    if (isAnnouncement(item)) return 0;
     const msg = formatText(item.message).text.toLowerCase();
     const type = item.type || 'system';
     if (msg.includes('season:') || msg.includes('seasonal')) return 1;
@@ -50,7 +57,7 @@ const NewsPanel = () => {
     if (msg.includes('happiness')) return 8;
     if (msg.includes('production:') || msg.includes('wood') || msg.includes('stone') || msg.includes('iron') || msg.includes('food') || msg.includes('forester')) return 3;
     return 13;
-  }, [formatText]);
+  }, [formatText, isAnnouncement]);
 
   const summarizeAttackNewsForAll = useCallback((item) => {
     const message = formatText(item?.message || '').text;
@@ -89,15 +96,23 @@ const NewsPanel = () => {
     const filtered = newsFilter === 'all'
       ? newsItems
       : newsItems.filter((item) => {
-          if (newsFilter === 'system') return !item.type || item.type === 'system';
+          if (newsFilter === 'system') {
+            return !item.type || item.type === 'system' || item.type === 'announcement';
+          }
           return item.type === newsFilter;
         });
 
     if (!filtered.length) return [];
 
+    const pinned = filtered
+      .filter(isAnnouncement)
+      .sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+
+    const regular = filtered.filter((item) => !isAnnouncement(item));
+
     const turnMap = {};
     const turnOrder = [];
-    filtered.forEach((item) => {
+    regular.forEach((item) => {
       const turn = item.turn_num || 0;
       if (!turnMap[turn]) {
         turnMap[turn] = [];
@@ -106,17 +121,30 @@ const NewsPanel = () => {
       turnMap[turn].push(item);
     });
 
-    return [...new Set(turnOrder)]
+    const turnGroups = [...new Set(turnOrder)]
       .sort((a, b) => b - a)
       .map((turn) => {
         const groupItems = [...turnMap[turn]].sort((a, b) => getNewsPriority(a) - getNewsPriority(b));
         return {
           turn,
+          pinned: false,
           timeLabel: timeAgo(groupItems[0]?.created_at),
           items: groupItems,
         };
       });
-  }, [getNewsPriority, newsFilter, newsItems, timeAgo]);
+
+    if (!pinned.length) return turnGroups;
+
+    return [
+      {
+        turn: 'announcement',
+        pinned: true,
+        timeLabel: timeAgo(pinned[0]?.created_at),
+        items: pinned,
+      },
+      ...turnGroups,
+    ];
+  }, [getNewsPriority, isAnnouncement, newsFilter, newsItems, timeAgo]);
 
   useEffect(() => {
     loadNews();
@@ -199,7 +227,7 @@ const NewsPanel = () => {
           ) : visibleGroups.map((group) => (
             <div className="news-turn-group" key={group.turn}>
               <div className="news-turn-header">
-                <span className="turn-label">◆ {group.turn > 0 ? `Turn ${group.turn}` : 'Before game start'}</span>
+                <span className="turn-label">◆ {group.pinned ? 'Server announcement' : group.turn > 0 ? `Turn ${group.turn}` : 'Before game start'}</span>
                 <span className="turn-time">{group.timeLabel}</span>
               </div>
               {group.items.map((item, idx) => {

@@ -94,16 +94,16 @@ console.log('Test 1: null kingdom safe ✓');
 {
   const k = {
     fragment_bonuses: JSON.stringify({
-      guard_towers: { fragment: 'Void Essence', applied_turn: 0, passive: {}, special: {} },
-      walls: { fragment: 'Cursed Bloodstone', applied_turn: 0, passive: {}, special: {} },
-      vaults: { fragment: 'Abyssal Crystal', applied_turn: 0, passive: {}, special: {} },
-      outposts: { fragment: 'Volcanic Rock', applied_turn: 0, passive: {}, special: {} },
-      mausoleums: { fragment: 'Titan Bone', applied_turn: 0, passive: {}, special: {} },
-      war_machines: { fragment: 'Dragon Scale', applied_turn: 0, passive: {}, special: {} },
-      mage_towers: { fragment: 'Ancient Elven Wood', applied_turn: 0, passive: {}, special: {} },
-      armories: { fragment: 'Dwarven Star-Metal', applied_turn: 0, passive: {}, special: {} },
-      training: { fragment: 'Celestial Feather', applied_turn: 0, passive: {}, special: {} },
-      libraries: { fragment: 'Tears of the World Tree', applied_turn: 0, passive: {}, special: {} },
+      mage_towers: { fragment: 'Void Essence', applied_turn: 0, passive: {}, special: {} },
+      guard_towers: { fragment: 'Abyssal Crystal', applied_turn: 0, passive: {}, special: {} },
+      vaults: { fragment: 'Cursed Bloodstone', applied_turn: 0, passive: {}, special: {} },
+      barracks: { fragment: 'Dragon Scale', applied_turn: 0, passive: {}, special: {} },
+      castles: { fragment: 'Volcanic Rock', applied_turn: 0, passive: {}, special: {} },
+      outposts: { fragment: 'Dwarven Star-Metal', applied_turn: 0, passive: {}, special: {} },
+      markets: { fragment: 'Celestial Feather', applied_turn: 0, passive: {}, special: {} },
+      training: { fragment: 'Ancient Elven Wood', applied_turn: 0, passive: {}, special: {} },
+      walls: { fragment: 'Titan Bone', applied_turn: 0, passive: {}, special: {} },
+      schools: { fragment: 'Tears of the World Tree', applied_turn: 0, passive: {}, special: {} },
     }),
   };
   assert.equal(getSynergyPassiveBonusMultiplier(k, 'combat_power'), 1.5);
@@ -128,11 +128,11 @@ console.log('Test 1: null kingdom safe ✓');
   };
   const happinessKingdom = {
     fragment_bonuses: JSON.stringify({
-      mausoleums: { fragment: 'Cursed Bloodstone', applied_turn: 0, passive: {}, special: {} },
+      castles: { fragment: 'Cursed Bloodstone', applied_turn: 0, passive: {}, special: {} },
       vaults: { fragment: 'Void Essence', applied_turn: 0, passive: {}, special: {} },
       smithies: { fragment: 'Abyssal Crystal', applied_turn: 0, passive: {}, special: {} },
       barracks: { fragment: 'Dragon Scale', applied_turn: 0, passive: {}, special: {} },
-      war_machines: { fragment: 'Volcanic Rock', applied_turn: 0, passive: {}, special: {} },
+      schools: { fragment: 'Volcanic Rock', applied_turn: 0, passive: {}, special: {} },
       markets: { fragment: 'Ancient Elven Wood', applied_turn: 0, passive: {}, special: {} },
       libraries: { fragment: 'Dwarven Star-Metal', applied_turn: 0, passive: {}, special: {} },
       shrines: { fragment: 'Celestial Feather', applied_turn: 0, passive: {}, special: {} },

@@ -229,9 +229,9 @@ export default function LorePanel({ adminFetch, onToast }) {
         </div>
       )}
 
-      {tab === 'random' && <EventPoolSection title="Random Events" endpoint="random_events" adminFetch={adminFetch} onToast={onToast} />}
-      {tab === 'junk'   && <EventPoolSection title="Junk Events"   endpoint="junk_events"   adminFetch={adminFetch} onToast={onToast} />}
-      {tab === 'tax'    && <EventPoolSection title="Tax Events"    endpoint="tax_events"    adminFetch={adminFetch} onToast={onToast} />}
+      {tab === 'random' && <EventPoolSection title="Random Events" endpoint="random-events" adminFetch={adminFetch} onToast={onToast} />}
+      {tab === 'junk'   && <EventPoolSection title="Junk Events"   endpoint="junk-events"   adminFetch={adminFetch} onToast={onToast} />}
+      {tab === 'tax'    && <EventPoolSection title="Tax Events"    endpoint="tax-events"    adminFetch={adminFetch} onToast={onToast} />}
 
       {editing && (
         <LoreForm

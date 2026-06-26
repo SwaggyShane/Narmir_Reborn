@@ -51,12 +51,13 @@ import KingdomBodyHeader from './components/react/KingdomBodyHeader.jsx';
 import LoreEntryController from './components/react/LoreEntryController.jsx';
 import GenericModalController from './components/react/GenericModalController.jsx';
 import SpyReportModalController from './components/react/SpyReportModalController.jsx';
-import EmptyState from './components/react/EmptyState.jsx';
+import ForumPanel from './components/react/ForumPanel.jsx';
+import { FULL_BLEED_SHELL_PANELS } from './utils/panelMeta.js';
 
 const GameShell = () => {
   const { activePanel } = useActivePanel();
   const { isNight } = useNightCycle();
-  const isChatPanel = activePanel === 'globalchat';
+  const isFullBleedPanel = FULL_BLEED_SHELL_PANELS.has(activePanel);
 
   useEffect(() => {
     restoreAuthSession().catch((err) => {
@@ -92,17 +93,7 @@ const GameShell = () => {
       case 'options': return <OptionsPanel />;
       case 'messages': return <MessagesPanel />;
       case 'forum':
-        return (
-          <div className="panel flex flex-1 items-center justify-center">
-            <EmptyState
-              icon="📚"
-              title="Forum lives in the Portal"
-              description="Board discussions open from the main portal entry point, not inside the game shell."
-              actionLabel="Open Portal"
-              onAction={() => { window.location.href = '/portal'; }}
-            />
-          </div>
-        );
+        return <ForumPanel />;
       default:
         return <div className="panel flex flex-1 items-center justify-center text-center text-text3">"{activePanel}" panel not wired yet.</div>;
     }
@@ -117,7 +108,7 @@ const GameShell = () => {
           'lg:grid lg:min-h-0 lg:overflow-hidden',
           'lg:grid-rows-[56px_minmax(0,1fr)_32px]',
           'lg:gap-x-0.5 lg:gap-y-0',
-          isChatPanel
+          isFullBleedPanel
             ? 'lg:grid-cols-[200px_minmax(0,1fr)]'
             : 'lg:grid-cols-[200px_175px_minmax(0,1fr)]',
         )}
@@ -126,7 +117,7 @@ const GameShell = () => {
 
         <Sidebar />
 
-        {!isChatPanel ? (
+        {!isFullBleedPanel ? (
           <ShellColumnFrame
             as="aside"
             aria-label="Kingdom resources"
@@ -154,25 +145,27 @@ const GameShell = () => {
           as="main"
           className={clsx(
             'flex min-h-0 w-full min-w-0 flex-1 flex-col bg-bg',
-            'max-lg:pb-[calc(6.75rem+env(safe-area-inset-bottom,0px))]',
+            isFullBleedPanel
+              ? 'max-lg:pb-[env(safe-area-inset-bottom,0px)]'
+              : 'max-lg:pb-[calc(6.75rem+env(safe-area-inset-bottom,0px))]',
             'lg:row-start-2',
-            isChatPanel ? 'lg:col-start-2' : 'lg:col-start-3',
-            isChatPanel && 'overflow-hidden',
+            isFullBleedPanel ? 'lg:col-start-2' : 'lg:col-start-3',
+            isFullBleedPanel && 'overflow-hidden',
           )}
         >
           <KingdomBodyHeader />
-          {!isChatPanel ? <PanelContextHeader /> : null}
+          {!isFullBleedPanel ? <PanelContextHeader /> : null}
           <div
             className={clsx(
               'relative z-10 min-h-0 flex-1',
-              isChatPanel ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden',
+              isFullBleedPanel ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden',
             )}
           >
             <div
               key={activePanel}
               className={clsx(
                 'panel-enter min-w-0 max-w-full',
-                isChatPanel ? 'flex h-full min-h-0 flex-col overflow-hidden' : 'min-h-full overflow-x-hidden',
+                isFullBleedPanel ? 'flex h-full min-h-0 flex-col overflow-hidden' : 'min-h-full overflow-x-hidden',
               )}
             >
               {renderPanel()}

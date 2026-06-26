@@ -1,9 +1,56 @@
 const express = require("express");
 const router = express.Router();
 const { requireAuth, requireAdmin } = require("./middleware");
+const { getForumIndex } = require("../lib/forum-index");
+const {
+  resolveForumAvatar,
+  getForumProfile,
+  upsertForumProfile,
+  normalizeAvatarMode,
+} = require("../lib/forum-profiles");
+const { getBadgesForPlayer } = require("../lib/forum-badges");
 
 module.exports = function (db) {
   // ──────────── HELPER FUNCTIONS ────────────────────────────────────────
+
+  async function enrichPosts(dbConn, posts) {
+    if (!posts?.length) return posts || [];
+
+    const playerIds = [...new Set(posts.map((p) => p.player_id).filter(Boolean))];
+    if (!playerIds.length) return posts;
+
+    const placeholders = playerIds.map(() => "?").join(",");
+    const players = await dbConn.all(
+      `SELECT id, username, email FROM players WHERE id IN (${placeholders})`,
+      playerIds,
+    );
+    const playerMap = new Map(players.map((p) => [p.id, p]));
+
+    const profiles = await dbConn.all(
+      `SELECT player_id, avatar_mode, avatar_url FROM forum_profiles WHERE player_id IN (${placeholders})`,
+      playerIds,
+    );
+    const profileMap = new Map(profiles.map((p) => [p.player_id, p]));
+
+    const badgeEntries = await Promise.all(
+      playerIds.map(async (id) => [id, await getBadgesForPlayer(dbConn, id)]),
+    );
+    const badgeMap = new Map(badgeEntries);
+
+    return posts.map((post) => {
+      const player = playerMap.get(post.player_id);
+      const profile = profileMap.get(post.player_id);
+      return {
+        ...post,
+        avatarUrl: resolveForumAvatar({
+          profile,
+          email: player?.email,
+          username: post.username,
+        }),
+        badges: badgeMap.get(post.player_id) || [],
+      };
+    });
+  }
 
   // Check if user is banned from posting
   const isUserBanned = async (playerId, boardId = null) => {
@@ -52,7 +99,18 @@ module.exports = function (db) {
 
   // ──────────── PUBLIC ENDPOINTS (No auth required) ────────────────────────
 
-  // GET /api/forum/boards - Get all active forum boards
+  // GET /api/forum/index - Categorized forum index with stats + latest activity
+  router.get("/index", async (req, res) => {
+    try {
+      const index = await getForumIndex(db);
+      res.json(index);
+    } catch (err) {
+      console.error("[forum] GET /index error:", err.message);
+      res.status(500).json({ error: "Failed to fetch forum index" });
+    }
+  });
+
+  // GET /api/forum/boards - Get all active forum boards (legacy flat list)
   router.get("/boards", async (req, res) => {
     try {
       const boards = await db.all(
@@ -175,10 +233,11 @@ module.exports = function (db) {
         [topicId]
       );
       const total = totalResult?.total || 0;
+      const enrichedPosts = await enrichPosts(db, posts || []);
 
       res.json({
         topic,
-        posts: posts || [],
+        posts: enrichedPosts,
         total,
         page,
         pageSize,
@@ -191,6 +250,65 @@ module.exports = function (db) {
   });
 
   // ──────────── PROTECTED ENDPOINTS (Auth required) ────────────
+
+  // GET /api/forum/profile - Current user's forum avatar settings
+  router.get("/profile", requireAuth, async (req, res) => {
+    try {
+      const playerId = req.player.playerId;
+      const player = await db.get(`SELECT id, username, email FROM players WHERE id = ?`, [playerId]);
+      if (!player) {
+        return res.status(404).json({ error: "Player not found" });
+      }
+
+      const profile = await getForumProfile(db, playerId);
+      const avatarMode = normalizeAvatarMode(profile?.avatar_mode);
+      const avatarUrl = resolveForumAvatar({
+        profile: profile || { avatar_mode: avatarMode },
+        email: player.email,
+        username: player.username,
+      });
+
+      res.json({
+        avatarMode,
+        customAvatarUrl: profile?.avatar_url || null,
+        previewUrl: avatarUrl,
+        hasEmail: !!player.email,
+      });
+    } catch (err) {
+      console.error("[forum] GET /profile error:", err.message);
+      res.status(500).json({ error: "Failed to fetch forum profile" });
+    }
+  });
+
+  // PATCH /api/forum/profile - Update forum avatar settings
+  router.patch("/profile", requireAuth, async (req, res) => {
+    try {
+      const playerId = req.player.playerId;
+      const { avatarMode, avatarUrl } = req.body || {};
+
+      const result = await upsertForumProfile(db, playerId, { avatarMode, avatarUrl });
+      if (result.error) {
+        return res.status(400).json({ error: result.error });
+      }
+
+      const player = await db.get(`SELECT username, email FROM players WHERE id = ?`, [playerId]);
+      const previewUrl = resolveForumAvatar({
+        profile: { avatar_mode: result.avatarMode, avatar_url: result.avatarUrl },
+        email: player?.email,
+        username: player?.username,
+      });
+
+      res.json({
+        success: true,
+        avatarMode: result.avatarMode,
+        customAvatarUrl: result.avatarUrl,
+        previewUrl,
+      });
+    } catch (err) {
+      console.error("[forum] PATCH /profile error:", err.message);
+      res.status(500).json({ error: "Failed to update forum profile" });
+    }
+  });
 
   // POST /api/forum/topics - Create a new topic
   router.post("/topics", requireAuth, checkBanBeforePost, async (req, res) => {

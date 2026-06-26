@@ -1,11 +1,12 @@
 import React from 'react';
 import { useActivePanel } from '../../hooks/useActivePanel.js';
-import { getPanelMeta, HIDE_KINGDOM_HEADER_PANELS } from '../../utils/panelMeta.js';
+import { getPanelMeta, HIDE_KINGDOM_HEADER_PANELS, FULL_BLEED_SHELL_PANELS } from '../../utils/panelMeta.js';
 
 const PanelContextHeader = () => {
   const { activePanel } = useActivePanel();
   const meta = getPanelMeta(activePanel);
 
+  if (FULL_BLEED_SHELL_PANELS.has(activePanel)) return null;
   if (!HIDE_KINGDOM_HEADER_PANELS.has(activePanel)) return null;
 
   return (

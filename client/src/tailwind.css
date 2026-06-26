@@ -676,6 +676,108 @@
     @apply flex min-h-0 w-full flex-1 flex-col overflow-hidden p-0;
   }
 
+  /* ── Portal shell (C1 foundation) ── */
+  .portal-shell {
+    @apply min-h-screen flex flex-col;
+  }
+
+  .portal-header {
+    @apply text-left border-b border-white/5 px-6 py-4 max-[720px]:px-4 max-[720px]:py-6;
+  }
+
+  .portal-title {
+    @apply font-cinzel text-2xl font-black tracking-[0.1em] mb-0.5 m-0;
+    background: linear-gradient(135deg, var(--accent2), var(--gold), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .portal-tagline {
+    @apply text-xs text-text2 tracking-wide m-0;
+  }
+
+  .portal-main {
+    @apply flex-1 grid grid-cols-1 w-full items-start min-h-0 gap-6 py-5 pl-6 pr-0 max-[720px]:p-4;
+  }
+
+  @media (min-width: 721px) {
+    .portal-main {
+      grid-template-columns: 1fr 360px;
+    }
+  }
+
+  .portal-col-main {
+    @apply min-w-0 flex flex-col gap-4;
+  }
+
+  .portal-col-right {
+    @apply flex flex-col gap-4 sticky top-6 pr-6 max-[720px]:static max-[720px]:order-first max-[720px]:pr-0;
+  }
+
+  .portal-auth-expand {
+    @apply w-full cursor-pointer rounded-lg border border-white/5 bg-bg2 px-4 py-3 text-center text-sm font-semibold tracking-wide text-text2 transition-all;
+  }
+
+  .portal-auth-expand:hover {
+    @apply border-accent1 text-accent1;
+    background: rgba(var(--theme-rgb), 0.06);
+  }
+
+  .portal-nav-panel {
+    @apply flex flex-col gap-2 rounded-lg border border-white/5 bg-bg2 p-3 max-[720px]:flex-row max-[720px]:flex-wrap;
+  }
+
+  .portal-nav-btn {
+    @apply cursor-pointer rounded-md border border-transparent bg-transparent px-4 py-2.5 text-left font-sans text-sm font-semibold tracking-wide text-text2 transition-all max-[720px]:flex-1 max-[720px]:text-center;
+  }
+
+  .portal-nav-btn:hover {
+    @apply border-white/5 bg-white/5 text-text;
+  }
+
+  .portal-nav-btn.active {
+    @apply border-accent1 font-bold text-accent1;
+    background: rgba(var(--theme-rgb), 0.12);
+  }
+
+  .portal-footer {
+    @apply mt-auto flex items-center justify-between border-t border-white/5 px-6 py-5 text-xs text-text3;
+  }
+
+  .portal-footer-link {
+    @apply text-text3 no-underline transition-colors;
+  }
+
+  .portal-footer-link:hover {
+    @apply text-text2;
+  }
+
+  .portal-theme-picker {
+    @apply flex items-center gap-1.5;
+  }
+
+  .portal-theme-swatch {
+    @apply h-6 w-6 cursor-pointer rounded-full border-2 border-white/20 transition hover:scale-105;
+  }
+
+  .portal-theme-swatch.active {
+    @apply border-white shadow-[0_0_8px_rgba(255,255,255,0.35)];
+  }
+
+  /* C2 — portal content primitives (detail in css/portal-content.css) */
+  .portal-card {
+    @apply rounded-lg border border-white/5 bg-bg2 p-6;
+  }
+
+  .portal-section-title {
+    @apply mb-4 font-cinzel text-sm font-bold uppercase tracking-widest text-gold;
+  }
+
+  .race-pick-card {
+    @apply flex cursor-pointer flex-col items-center gap-1 rounded-lg border-2 border-transparent bg-bg3 p-3 text-center transition-all;
+  }
+
 }
 
 @media (min-width: 768px) {

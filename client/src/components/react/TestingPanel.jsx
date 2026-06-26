@@ -142,7 +142,7 @@ const TEST_GROUPS = [
   {
     id: 'social',
     name: '👥 Social Systems',
-    tests: ['Alliances', 'Alliance Vault', 'Regional Control', 'Player-to-Player Trading', 'Messaging']
+    tests: ['Alliance', 'Alliance Vault', 'Regional Control', 'Player-to-Player Trading', 'Messaging']
   },
   {
     id: 'events',
@@ -441,7 +441,7 @@ const TestingPanel = () => {
 
                           {/* Result Stats */}
                           <div style={{ fontSize: '11px', color: 'var(--text2)', marginBottom: failureComments.length > 0 ? '8px' : '0' }}>
-                            ✅ {testStat.passed_count || 0} · ❌ {testStat.failed_count || 0} · ⏳ {testStat.pending_count || 0}
+                            ✅ {testStat.passed_count || 0} | ❌ {testStat.failed_count || 0} | ⏳ {testStat.pending_count || 0}
                           </div>
 
                           {/* Failure Comments */}
@@ -497,7 +497,7 @@ const TestingPanel = () => {
                 <div>
                   <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{group.name}</div>
                   <div style={{ fontSize: '11px', color: 'var(--text2)' }}>
-                    ✓ {stats.finished}/{stats.total} · ✅ {stats.passed} · ❌ {stats.failed}
+                    ✓ {stats.finished}/{stats.total} | ✅ {stats.passed} | ❌ {stats.failed}
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>

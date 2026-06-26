@@ -261,7 +261,7 @@ export default function ManagePanel({ adminFetch, onToast }) {
     <div>
       {/* Announce */}
       <Section title="Global Announcement">
-        <Field label="Message (broadcasts to all players in game chat)">
+        <Field label="Message (global chat + News blurb for every kingdom)">
           <textarea
             value={announceMsg}
             onChange={e => setAnnounceMsg(e.target.value)}

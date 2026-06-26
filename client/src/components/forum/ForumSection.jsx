@@ -3,20 +3,22 @@ import ForumBoards from './ForumBoards';
 import ForumTopicsList from './ForumTopicsList';
 import ForumThread from './ForumThread';
 import ForumTopicForm from './ForumTopicForm';
+import ForumAvatarSettings from './ForumAvatarSettings';
 import ModeratorManagementPanel from '../react/ModeratorManagementPanel';
 import { fetchApi } from '../../utils/api';
 import { AppEvent } from '../../utils/appEvents.js';
 import { useAppEvent } from '../../hooks/useAppEvent.js';
 
-const ForumSection = React.memo(function ForumSection({ user: propUser, standalone = false }) {
+const ForumSection = React.memo(function ForumSection({ user: propUser, standalone = false, gameShell = false }) {
   const [user, setUser] = useState(propUser || null);
   const [view, setView] = useState('boards');
-  const [boards, setBoards] = useState([]);
+  const [forumIndex, setForumIndex] = useState(null);
   const [selectedBoard, setSelectedBoard] = useState(null);
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showTopicForm, setShowTopicForm] = useState(false);
+  const [showAvatarSettings, setShowAvatarSettings] = useState(false);
   const isMounted = useRef(true);
 
   useEffect(() => {
@@ -24,20 +26,20 @@ const ForumSection = React.memo(function ForumSection({ user: propUser, standalo
     return () => { isMounted.current = false; };
   }, []);
 
-  const loadBoards = useCallback(async () => {
+  const loadForumIndex = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await fetchApi('/api/forum/boards');
+      const data = await fetchApi('/api/forum/index');
       if (!isMounted.current) return;
       if (data && data.error) {
         setError(data.error);
         return;
       }
-      setBoards(data || []);
+      setForumIndex(data || null);
     } catch (err) {
-      console.error('Error loading boards:', err);
-      if (isMounted.current) setError('Failed to load forum boards');
+      console.error('Error loading forum index:', err);
+      if (isMounted.current) setError('Failed to load forums');
     } finally {
       if (isMounted.current) setLoading(false);
     }
@@ -53,10 +55,10 @@ const ForumSection = React.memo(function ForumSection({ user: propUser, standalo
         })
         .catch((err) => console.error('Error loading user:', err));
     }
-    loadBoards();
-  }, [propUser, loadBoards]);
+    loadForumIndex();
+  }, [propUser, loadForumIndex]);
 
-  useAppEvent(AppEvent.FORUM_REFRESH, loadBoards);
+  useAppEvent(AppEvent.FORUM_REFRESH, loadForumIndex);
 
   const handleSelectBoard = useCallback((board) => {
     setSelectedBoard(board);
@@ -85,8 +87,8 @@ const ForumSection = React.memo(function ForumSection({ user: propUser, standalo
 
   const handleTopicCreated = useCallback(() => {
     setShowTopicForm(false);
-    loadBoards();
-  }, [loadBoards]);
+    loadForumIndex();
+  }, [loadForumIndex]);
 
   const handlePostCreated = useCallback(() => {
     if (selectedTopic) {
@@ -97,15 +99,50 @@ const ForumSection = React.memo(function ForumSection({ user: propUser, standalo
   const handleModClick = useCallback(() => setView('moderation'), []);
   const handleFormCancel = useCallback(() => setShowTopicForm(false), []);
 
-  const panelProps = standalone
-    ? { className: 'forum-section' }
+  const panelProps = standalone || gameShell
+    ? {
+        className: `forum-section${gameShell ? ' forum-section--game flex min-h-0 flex-1 flex-col' : ''}`,
+      }
     : { id: 'forum', className: 'panel forum-section', style: { display: 'none' } };
+
+  const wrapBody = (body) =>
+    gameShell ? <div className="forum-scroll-body">{body}</div> : body;
+
+  const breadcrumb = (() => {
+    const crumbs = [{ label: 'Boards', active: view === 'boards' }];
+    if (view === 'topics' && selectedBoard) {
+      crumbs.push({ label: selectedBoard.name, active: true });
+    } else if (view === 'thread' && selectedBoard && selectedTopic) {
+      crumbs.push({ label: selectedBoard.name, active: false });
+      crumbs.push({ label: selectedTopic.title, active: true });
+    } else if (view === 'moderation') {
+      crumbs.push({ label: 'Moderation', active: true });
+    }
+    return crumbs;
+  })();
+
+  const forumHeader = (actions) => (
+    <div className="forum-header">
+      <div>
+        <h2 className="forum-header-title">{gameShell ? 'Kingdom Forums' : 'Narmir Forums'}</h2>
+        <nav className="forum-breadcrumb" aria-label="Forum location">
+          {breadcrumb.map((crumb, i) => (
+            <React.Fragment key={`${crumb.label}-${i}`}>
+              {i > 0 && <span className="forum-breadcrumb-sep">›</span>}
+              <span className={crumb.active ? 'forum-breadcrumb-current' : undefined}>{crumb.label}</span>
+            </React.Fragment>
+          ))}
+        </nav>
+      </div>
+      {actions ? <div className="forum-header-actions">{actions}</div> : null}
+    </div>
+  );
 
   if (loading) {
     return (
       <div {...panelProps}>
-        <h2 className="forum-thread-title">Forums</h2>
-        <div className="forum-loading">Loading forums...</div>
+        {forumHeader()}
+        {wrapBody(<div className="forum-loading">Loading forums...</div>)}
       </div>
     );
   }
@@ -113,67 +150,90 @@ const ForumSection = React.memo(function ForumSection({ user: propUser, standalo
   if (error) {
     return (
       <div {...panelProps}>
-        <h2 className="forum-thread-title">Forums</h2>
-        <div className="forum-error">{error}</div>
-        <button className="forum-form-submit-btn" onClick={loadBoards} style={{ marginTop: '1rem' }}>
-          Retry
-        </button>
+        {forumHeader(
+          <button type="button" className="forum-form-submit-btn" onClick={loadForumIndex}>
+            Retry
+          </button>,
+        )}
+        {wrapBody(<div className="forum-error">{error}</div>)}
       </div>
     );
   }
 
   const showModButton = user?.isAdmin && view !== 'moderation';
   const showBackButton = view !== 'boards';
+  const showAvatarButton = user?.playerId && view === 'boards';
 
   return (
     <div {...panelProps}>
-      <div className="forum-header">
-        <h2 className="forum-thread-title">Forums</h2>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+      {forumHeader(
+        <>
+          {showAvatarButton && (
+            <button
+              type="button"
+              className="forum-back-btn"
+              onClick={() => setShowAvatarSettings(true)}
+            >
+              Avatar
+            </button>
+          )}
           {showModButton && (
-            <button className="forum-back-btn" onClick={handleModClick}>
-              ⚙️ Moderation
+            <button type="button" className="forum-back-btn" onClick={handleModClick}>
+              Moderation
             </button>
           )}
           {showBackButton && (
-            <button className="forum-back-btn" onClick={handleBack}>
+            <button type="button" className="forum-back-btn" onClick={handleBack}>
               ← Back
             </button>
           )}
-        </div>
-      </div>
+        </>,
+      )}
 
-      {view === 'boards' && <ForumBoards boards={boards} onSelectBoard={handleSelectBoard} />}
-
-      {view === 'topics' && selectedBoard && (
+      {wrapBody(
         <>
-          <ForumTopicsList
-            board={selectedBoard}
-            user={user}
-            onSelectTopic={handleSelectTopic}
-            onCreateClick={() => setShowTopicForm(true)}
-          />
-          {showTopicForm && (
-            <ForumTopicForm
-              board={selectedBoard}
+          {view === 'boards' && (
+            <ForumBoards forumIndex={forumIndex} onSelectBoard={handleSelectBoard} />
+          )}
+
+          {view === 'topics' && selectedBoard && (
+            <>
+              <ForumTopicsList
+                board={selectedBoard}
+                user={user}
+                onSelectTopic={handleSelectTopic}
+                onCreateClick={() => setShowTopicForm(true)}
+              />
+              {showTopicForm && (
+                <ForumTopicForm
+                  board={selectedBoard}
+                  user={user}
+                  onCreated={handleTopicCreated}
+                  onCancel={handleFormCancel}
+                />
+              )}
+            </>
+          )}
+
+          {view === 'thread' && selectedTopic && (
+            <ForumThread
+              topic={selectedTopic}
               user={user}
-              onCreated={handleTopicCreated}
-              onCancel={handleFormCancel}
+              onPostCreated={handlePostCreated}
             />
           )}
-        </>
+
+          {view === 'moderation' && user?.isAdmin && (
+            <ModeratorManagementPanel />
+          )}
+        </>,
       )}
 
-      {view === 'thread' && selectedTopic && (
-        <ForumThread
-          topic={selectedTopic}
+      {showAvatarSettings && (
+        <ForumAvatarSettings
           user={user}
-          onPostCreated={handlePostCreated}
+          onClose={() => setShowAvatarSettings(false)}
         />
-      )}
-
-      {view === 'moderation' && user?.isAdmin && (
-        <ModeratorManagementPanel />
       )}
     </div>
   );

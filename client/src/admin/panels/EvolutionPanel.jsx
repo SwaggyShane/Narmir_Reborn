@@ -40,7 +40,7 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
   const loadNotes = useCallback(async () => {
     setNotesLoading(true);
     try {
-      const data = await adminFetch('/api/admin/admin_notes');
+      const data = await adminFetch('/api/admin/admin-notes');
       if (data?.error) { onToast('Notes error: ' + data.error, 'error'); return; }
       if (Array.isArray(data)) setNotes(data);
     } catch (err) { onToast('Failed to load notes: ' + (err.message || 'Unknown'), 'error'); }
@@ -60,7 +60,7 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
   const loadChangelogEntries = useCallback(async () => {
     setChangelogLoading(true);
     try {
-      const data = await adminFetch('/api/admin/changelog_entries');
+      const data = await adminFetch('/api/admin/changelog-entries');
       if (data?.error) { onToast('Changelog error: ' + data.error, 'error'); return; }
       if (Array.isArray(data)) setChangelogEntries(data);
     } catch (err) { onToast('Failed to load changelog: ' + (err.message || 'Unknown'), 'error'); }
@@ -70,7 +70,7 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
   const loadBugReports = useCallback(async () => {
     setBugLoading(true);
     try {
-      const data = await adminFetch('/api/admin/bug_reports');
+      const data = await adminFetch('/api/admin/bug-reports');
       if (data?.error) { onToast('Bug reports error: ' + data.error, 'error'); return; }
       if (Array.isArray(data)) setBugReports(data);
     } catch (err) { onToast('Failed to load bug reports: ' + (err.message || 'Unknown'), 'error'); }
@@ -81,7 +81,7 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
     try {
       const oldNotes = localStorage.getItem('narmir_admin_notes');
       if (oldNotes && !localStorage.getItem('narmir_admin_notes_list')) {
-        await adminFetch('/api/admin/admin_notes', {
+        await adminFetch('/api/admin/admin-notes', {
           method: 'POST',
           body: { message: 'Legacy Notes:\n' + oldNotes },
         });
@@ -92,7 +92,7 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
         const list = JSON.parse(listStr);
         if (Array.isArray(list)) {
           for (let i = list.length - 1; i >= 0; i--) {
-            await adminFetch('/api/admin/admin_notes', {
+            await adminFetch('/api/admin/admin-notes', {
               method: 'POST',
               body: { message: list[i]?.text || '' },
             });
@@ -148,7 +148,7 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
     }
     setChangelogPublishing(true);
     try {
-      const data = await adminFetch('/api/admin/changelog_entries', {
+      const data = await adminFetch('/api/admin/changelog-entries', {
         method: 'POST',
         body: newChangelog,
       });
@@ -167,7 +167,7 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
     if (!newNote.trim()) return;
     setNoteAdding(true);
     try {
-      const data = await adminFetch('/api/admin/admin_notes', { method: 'POST', body: { message: newNote.trim() } });
+      const data = await adminFetch('/api/admin/admin-notes', { method: 'POST', body: { message: newNote.trim() } });
       if (data?.error) { onToast('Add failed: ' + data.error, 'error'); return; }
       onToast('Note added', 'success');
       setNewNote('');
@@ -179,7 +179,7 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
   async function handleDeleteNote(id) {
     if (!window.confirm('Delete this note?')) return;
     try {
-      const data = await adminFetch(`/api/admin/admin_notes/${id}`, { method: 'DELETE' });
+      const data = await adminFetch(`/api/admin/admin-notes/${id}`, { method: 'DELETE' });
       if (data?.error) { onToast('Delete failed: ' + data.error, 'error'); return; }
       onToast('Note deleted', 'success');
       setNotes(prev => prev.filter(n => n.id !== id));
