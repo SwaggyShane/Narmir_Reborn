@@ -2,6 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 
 const WISHLIST_CATEGORIES = ['feature', 'bugfix', 'balance', 'content', 'ui', 'performance', 'other'];
 
+function formatReportDate(value) {
+  if (!value) return '-';
+  const d = typeof value === 'number' ? new Date(value * 1000) : new Date(value);
+  return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleString();
+}
+
 export default function EvolutionPanel({ adminFetch, onToast }) {
   const [tab, setTab] = useState('wishlist');
 
@@ -17,6 +23,9 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
 
   const [suggestions, setSuggestions] = useState([]);
   const [suggestLoading, setSuggestLoading] = useState(false);
+
+  const [bugReports, setBugReports] = useState([]);
+  const [bugLoading, setBugLoading] = useState(false);
 
   const loadWishlist = useCallback(async () => {
     setWishLoading(true);
@@ -46,6 +55,16 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
       if (Array.isArray(data)) setSuggestions(data);
     } catch (err) { onToast('Failed to load suggestions: ' + (err.message || 'Unknown'), 'error'); }
     finally { setSuggestLoading(false); }
+  }, [adminFetch, onToast]);
+
+  const loadBugReports = useCallback(async () => {
+    setBugLoading(true);
+    try {
+      const data = await adminFetch('/api/admin/bug_reports');
+      if (data?.error) { onToast('Bug reports error: ' + data.error, 'error'); return; }
+      if (Array.isArray(data)) setBugReports(data);
+    } catch (err) { onToast('Failed to load bug reports: ' + (err.message || 'Unknown'), 'error'); }
+    finally { setBugLoading(false); }
   }, [adminFetch, onToast]);
 
   const migrateLegacyNotes = useCallback(async () => {
@@ -81,8 +100,9 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
       loadWishlist();
       loadNotes();
       loadSuggestions();
+      loadBugReports();
     });
-  }, [migrateLegacyNotes, loadWishlist, loadNotes, loadSuggestions]);
+  }, [migrateLegacyNotes, loadWishlist, loadNotes, loadSuggestions, loadBugReports]);
 
   async function handleAddWish() {
     if (!newWish.description.trim()) return;
@@ -135,7 +155,7 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
   return (
     <div>
       <div style={{ display: 'flex', gap: 4, marginBottom: 16, flexWrap: 'wrap' }}>
-        {[['wishlist', 'Wishlist'], ['changelog', 'Changelog'], ['notes', 'Admin Notes'], ['suggestions', 'Suggestions']].map(([id, label]) => (
+        {[['wishlist', 'Wishlist'], ['changelog', 'Changelog'], ['notes', 'Admin Notes'], ['suggestions', 'Suggestions'], ['bugs', 'Bug Reports']].map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)} style={{ ...BTN, color: tab === id ? 'var(--gold)' : 'var(--text3)', borderColor: tab === id ? 'var(--gold)' : 'var(--border2)' }}>
             {label}
           </button>
@@ -283,7 +303,43 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
                       <td style={TD}>{s.kingdom_name || '-'}</td>
                       <td style={TD}>{s.username || '-'}</td>
                       <td style={{ ...TD, whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxWidth: 440 }}>{s.message}</td>
-                      <td style={TD}>{s.created_at ? new Date(s.created_at * 1000).toLocaleString() : '-'}</td>
+                      <td style={TD}>{formatReportDate(s.created_at)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === 'bugs' && (
+        <div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+            <button onClick={loadBugReports} style={BTN} disabled={bugLoading}>
+              {bugLoading ? '...' : 'Refresh'}
+            </button>
+            <span style={{ color: 'var(--text3)', fontSize: 13, alignSelf: 'center' }}>In-game bug reports (Discord when configured)</span>
+          </div>
+          {bugReports.length === 0 ? (
+            <div style={{ color: 'var(--text3)', fontSize: 13, padding: '4px 0' }}>{bugLoading ? 'Loading...' : 'No bug reports yet.'}</div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={TABLE}>
+                <thead><tr>
+                  {['ID', 'Player', 'Kingdom', 'Category', 'Panel', 'Discord', 'Message', 'Created'].map(h => <th key={h} style={TH}>{h}</th>)}
+                </tr></thead>
+                <tbody>
+                  {bugReports.map(r => (
+                    <tr key={r.id}>
+                      <td style={TD}>{r.id}</td>
+                      <td style={TD}>{r.username || '-'}</td>
+                      <td style={TD}>{r.kingdom_name || '-'}</td>
+                      <td style={TD}>{r.category || '-'}</td>
+                      <td style={TD}>{r.context_panel || '-'}</td>
+                      <td style={TD}>{r.discord_sent ? '✓' : '—'}</td>
+                      <td style={{ ...TD, whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxWidth: 360 }}>{r.message}</td>
+                      <td style={TD}>{formatReportDate(r.created_at)}</td>
                     </tr>
                   ))}
                 </tbody>

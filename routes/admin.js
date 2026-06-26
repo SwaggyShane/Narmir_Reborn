@@ -1151,6 +1151,13 @@ module.exports = function (db, io) {
     res.json(rows);
   });
 
+  router.get("/bug_reports", async (_req, res) => {
+    const rows = await db.all(`
+      SELECT * FROM bug_reports ORDER BY created_at DESC
+    `);
+    res.json(rows);
+  });
+
   // ── Admin Notes ───────────────────────────────────────────────────────────────
   router.get("/admin_notes", async (_req, res) => {
     const rows = await db.all(

@@ -1139,6 +1139,81 @@ async function start() {
       } catch (e) { console.error('[suggestions] Database error:', e); res.status(500).json({ error: 'Failed to save suggestion' }); }
     });
 
+    const { postBugReportToDiscord } = require('./lib/discord-notify');
+    const BUG_CATEGORIES = new Set(['bug', 'ui', 'gameplay', 'performance', 'other']);
+
+    app.post('/api/bug-reports', requireAuth, async (req, res) => {
+      try {
+        const rawMessage = String(req.body?.message ?? '').trim();
+        const category = BUG_CATEGORIES.has(req.body?.category) ? req.body.category : 'bug';
+        const contextPanel = String(req.body?.contextPanel ?? '').trim().slice(0, 64) || null;
+        const pageUrl = String(req.body?.pageUrl ?? '').trim().slice(0, 512) || null;
+        const userAgent = String(req.body?.userAgent ?? '').trim().slice(0, 512) || null;
+
+        if (rawMessage.length < 10) return res.status(400).json({ error: 'Please describe the issue in at least 10 characters.' });
+        if (rawMessage.length > 2000) return res.status(400).json({ error: 'Report is too long (max 2000 characters).' });
+
+        const playerId = req.player.playerId;
+        const recent = await db.get(
+          `SELECT id, created_at FROM bug_reports WHERE player_id = ? ORDER BY id DESC LIMIT 1`,
+          [playerId],
+        );
+        if (recent?.created_at) {
+          const ageMs = Date.now() - new Date(recent.created_at).getTime();
+          if (Number.isFinite(ageMs) && ageMs < 60_000) {
+            return res.status(429).json({ error: 'Please wait a minute before sending another report.' });
+          }
+        }
+
+        const kingdom = await db.get(
+          'SELECT k.id, k.name FROM kingdoms k WHERE k.player_id = ?',
+          [playerId],
+        );
+        const username = req.player.username || 'Unknown';
+
+        const insert = await db.run(
+          `INSERT INTO bug_reports (player_id, kingdom_id, username, kingdom_name, category, message, context_panel, page_url, user_agent)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            playerId,
+            kingdom?.id ?? null,
+            username,
+            kingdom?.name ?? null,
+            category,
+            rawMessage,
+            contextPanel,
+            pageUrl,
+            userAgent,
+          ],
+        );
+
+        const reportId = insert?.lastID ?? insert?.lastId ?? null;
+        const discordSent = await postBugReportToDiscord({
+          reportId,
+          username,
+          kingdomName: kingdom?.name,
+          category,
+          message: rawMessage,
+          contextPanel,
+          pageUrl,
+        });
+
+        if (discordSent && reportId) {
+          await db.run('UPDATE bug_reports SET discord_sent = 1 WHERE id = ?', [reportId]);
+        }
+
+        res.json({
+          ok: true,
+          message: discordSent
+            ? 'Report sent — thank you! The team was notified on Discord.'
+            : 'Report saved — thank you! The team will review it in admin.',
+        });
+      } catch (e) {
+        console.error('[bug-reports] Error:', e);
+        res.status(500).json({ error: 'Failed to save bug report' });
+      }
+    });
+
     // Test Results - Collaborative Testing
     app.post('/api/test-result', requireAuth, async (req, res) => {
       try {

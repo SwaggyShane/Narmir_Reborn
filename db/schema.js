@@ -1287,6 +1287,23 @@ async function initDb(options = {}) {
   `);
 
   await _db.run(`
+    CREATE TABLE IF NOT EXISTS bug_reports (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      player_id INTEGER,
+      kingdom_id INTEGER,
+      username TEXT,
+      kingdom_name TEXT,
+      category TEXT NOT NULL DEFAULT 'bug',
+      message TEXT NOT NULL,
+      context_panel TEXT,
+      page_url TEXT,
+      user_agent TEXT,
+      discord_sent INTEGER NOT NULL DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  await _db.run(`
     CREATE TABLE IF NOT EXISTS admin_notes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       author_name TEXT,
