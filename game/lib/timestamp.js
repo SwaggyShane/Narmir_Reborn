@@ -4,7 +4,7 @@
 
 // Age in ms since a created_at value (unix seconds, ms, or ISO string)
 function createdAtAgeMs(value) {
-  if (value == null || value === '') return Infinity;
+  if (value == null || (typeof value === 'string' && value.trim() === '')) return Infinity;
   const num = Number(value);
   if (Number.isFinite(num)) {
     if (num > 1_000_000_000_000) return Date.now() - num;
@@ -17,7 +17,7 @@ function createdAtAgeMs(value) {
 
 // Format timestamp for display (long format with locale)
 function formatTimestamp(value) {
-  if (value == null || value === '') return '-';
+  if (value == null || (typeof value === 'string' && value.trim() === '')) return '-';
   const num = Number(value);
   let d;
   if (Number.isFinite(num)) {
@@ -25,12 +25,12 @@ function formatTimestamp(value) {
   } else {
     d = new Date(value);
   }
-  return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleString();
+  return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleString('en-US', { timeZone: 'America/New_York' });
 }
 
 // Format timestamp for display (short date format)
 function formatTimestampShort(value) {
-  if (value == null || value === '') return '';
+  if (value == null || (typeof value === 'string' && value.trim() === '')) return '';
   const num = Number(value);
   let d;
   if (Number.isFinite(num)) {
@@ -39,7 +39,7 @@ function formatTimestampShort(value) {
     d = new Date(value);
   }
   if (Number.isNaN(d.getTime())) return '';
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' });
 }
 
 // Current unix timestamp (seconds)
