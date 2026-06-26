@@ -11,7 +11,7 @@
 | Area | Today | Target | Track | Status |
 |------|-------|--------|-------|--------|
 | **Game navigation** | "War" + "Economy" labels | "Offense" + "Wherewithal" | A1 | ✅ Done |
-| **Admin panel** | Vanilla JS (`public/admin.html`) | React + Tailwind with AI presets | Admin Ph0–6 | 🟡 Phase 6a soft-cutover (PR #589) |
+| **Admin panel** | Vanilla JS (`public/admin.html`) | React + Tailwind with AI presets | Admin Ph0–6 | ✅ Ph6b hard cutover complete (PR #602) |
 | **Admin CSRF** | Missing on mutating routes | Protected all mutators | E1 | ✅ Done |
 | **CI/lint enforcement** | ESLint broken (silent) | `npm run lint` + test job | E2 | ✅ Done |
 | **API hygiene** | Mixed snake_plural routes | Canonical kebab + aliases | B1+B2 | ✅ Done |
@@ -119,7 +119,7 @@ P4: F1–F8 (Architecture debt post-cutover — no dogfood wait)
 | **Ph4** | claude/repo-health-assessment | ✅ Merged PR #587 | Events, Lore, Goals, Evolution panels |
 | **Ph5** | claude/repo-health-assessment | ✅ Merged PR #588 | Config, Sounds, Fragments, Prestige, Security |
 | **Ph6a** | admin-soft-six-prep | ✅ Merged PR #589 | Soft cutover: React default, legacy fallback at `?legacy=1` |
-| **Ph6b** | admin-react-06-cutover | ⏳ Deferred | Hard cutover (remove `?legacy=1`, archive `admin.html`) — **awaiting verification matrix pass** |
+| **Ph6b** | admin-react-06-cutover | ✅ Merged PR #602 | Hard cutover: React admin default, legacy `admin.html` archived to `/legacy/`, no `?legacy=1` fallback |
 
 ### D.1 Tailwind strategy
 
