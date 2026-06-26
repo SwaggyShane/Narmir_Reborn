@@ -141,11 +141,12 @@ let bugReportsChannel = null;
 let isBugPollRunning = false;
 const bugReportPermFailureLoggedAt = new Map();
 
-const BUG_REPORT_CHANNEL_TYPES = new Set([
-  ChannelType.GuildText,
-  ChannelType.GuildAnnouncement,
-  ChannelType.GuildForum,
-]);
+function isBugReportsChannelType(channel) {
+  return !!channel && (
+    channel.type === ChannelType.GuildText
+    || channel.type === ChannelType.GuildAnnouncement
+  );
+}
 
 function auditBugReportsChannel(channel) {
   if (!channel || !client.user) return false;
@@ -157,10 +158,6 @@ function auditBugReportsChannel(channel) {
     EmbedLinks: perms?.has(PermissionFlagsBits.EmbedLinks) ?? false,
   };
 
-  if (channel.type === ChannelType.GuildForum) {
-    checks.CreatePublicThreads = perms?.has(PermissionFlagsBits.CreatePublicThreads) ?? false;
-  }
-
   const missing = Object.entries(checks).filter(([, ok]) => !ok).map(([name]) => name);
   const typeLabel = ChannelType[channel.type] || String(channel.type);
 
@@ -171,8 +168,9 @@ function auditBugReportsChannel(channel) {
   console.log(`   Configured DISCORD_BUG_REPORTS_CHANNEL_ID: ${BUG_REPORTS_CHANNEL_ID || '(not set — matched by name)'}`);
   console.log(`   Permissions: ${JSON.stringify(checks)}`);
 
-  if (channel.type === ChannelType.GuildForum) {
-    console.warn('   Note: #bug-reports is a Forum channel — bot needs Create Public Threads, not just Send Messages.');
+  if (!isBugReportsChannelType(channel)) {
+    console.error('❌ #bug-reports must be a text or announcement channel — forum/voice channels are not supported.');
+    return false;
   }
 
   if (missing.length) {
@@ -186,21 +184,39 @@ function auditBugReportsChannel(channel) {
   return true;
 }
 
+async function sendBugReportEmbed(channel, embed) {
+  if (!isBugReportsChannelType(channel)) {
+    throw new Error(`Unsupported channel type ${channel?.type} — use a text channel for #bug-reports`);
+  }
+  return channel.send({ embeds: [embed] });
+}
+
 async function resolveBugReportsChannel() {
-  if (bugReportsChannel?.isTextBased?.()) return bugReportsChannel;
+  if (isBugReportsChannelType(bugReportsChannel)) return bugReportsChannel;
 
   if (BUG_REPORTS_CHANNEL_ID) {
+    const cached = client.channels.cache.get(BUG_REPORTS_CHANNEL_ID);
+    if (cached) {
+      if (isBugReportsChannelType(cached)) {
+        bugReportsChannel = cached;
+        console.log(`🐛 Bug reports channel: #${cached.name} (${cached.id})`);
+        return cached;
+      }
+      console.error(`❌ DISCORD_BUG_REPORTS_CHANNEL_ID points to #${cached.name} (type ${cached.type}) — use a text or announcement channel.`);
+      return null;
+    }
+
     const ch = await client.channels.fetch(BUG_REPORTS_CHANNEL_ID).catch((err) => {
       console.error(`❌ Could not fetch DISCORD_BUG_REPORTS_CHANNEL_ID=${BUG_REPORTS_CHANNEL_ID}:`, err.message || err);
       return null;
     });
-    if (ch && BUG_REPORT_CHANNEL_TYPES.has(ch.type)) {
+    if (isBugReportsChannelType(ch)) {
       bugReportsChannel = ch;
       console.log(`🐛 Bug reports channel: #${ch.name} (${ch.id})`);
       return ch;
     }
     if (ch) {
-      console.error(`❌ DISCORD_BUG_REPORTS_CHANNEL_ID points to #${ch.name} (type ${ch.type}) — use a text channel, not voice/category.`);
+      console.error(`❌ DISCORD_BUG_REPORTS_CHANNEL_ID points to #${ch.name} (type ${ch.type}) — use a text or announcement channel.`);
     }
   }
 
@@ -242,7 +258,7 @@ async function pollAndSyncBugReports() {
           pageUrl: row.page_url,
           consoleLog: row.console_log,
         });
-        await channel.send({ embeds: [embed] });
+        await sendBugReportEmbed(channel, embed);
         await db.run('UPDATE bug_reports SET discord_sent = 1 WHERE id = ?', [row.id]);
         console.log(`🐛 Posted bug report #${row.id} to #${channel.name}`);
       } catch (error) {

@@ -32,6 +32,15 @@ function pushLine(level, args) {
   while (buffer.length > MAX_LINES) buffer.shift();
 }
 
+/** Preserve stack traces as multiple concise lines instead of dropping them. */
+function pushErrorDetail(detail) {
+  const lines = String(detail).split('\n').map((line) => line.trim()).filter(Boolean);
+  const capped = lines.length ? lines.slice(0, 8) : ['Unknown error'];
+  for (const line of capped) {
+    pushLine('error', [line]);
+  }
+}
+
 /**
  * Hook console + global errors for automatic bug report attachment.
  * Safe to call once at app boot.
@@ -49,15 +58,19 @@ export function initConsoleCapture() {
   }
 
   window.addEventListener('error', (event) => {
+    if (event.error instanceof Error) {
+      pushErrorDetail(event.error.stack || event.error.message);
+      return;
+    }
     const loc = event.filename ? ` @ ${event.filename}:${event.lineno}` : '';
-    pushLine('error', [`${event.message}${loc}`]);
+    pushErrorDetail(`${event.message}${loc}`);
   });
 
   window.addEventListener('unhandledrejection', (event) => {
     const reason = event.reason instanceof Error
       ? (event.reason.stack || event.reason.message)
       : formatArg(event.reason);
-    pushLine('error', [`Unhandled rejection: ${reason}`]);
+    pushErrorDetail(`Unhandled rejection: ${reason}`);
   });
 }
 
