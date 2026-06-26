@@ -1,6 +1,6 @@
 # Admin Panel React + Tailwind Migration Roadmap
 
-**Status:** Phase 5 in progress — Config, Sounds, Prestige, Fragments, Security wired in React  
+**Status:** Phase 5 merged — All tabs live in React. Only Phase 6 (cutover) remains.  
 **Source of truth audited:** `public/admin.html` (~5,150 lines), `routes/admin.js` (~1,580 lines), `index.js` route wiring  
 **Target:** Replace the monolithic vanilla HTML admin with a Vite/React/Tailwind app matching the game shell and portal patterns
 
@@ -636,7 +636,7 @@ Legacy admin uses **both** `localStorage.narmir_token` and cookies. React game u
 2. **Phase 2c PR** — MERGED (PR #585). AI backend APIs (`ai/seed`, `ai/reset`, `ai/synopsis`, `ai/apply-preset`, `ai/presets`) + `AiKingdomPanel` + `game/ai-presets.js` with 10 presets and race modifiers.
 3. **Phase 3 PR** — MERGED (PR #586). ManagePanel: announcements, AI hiatus, chat mods/bans, promote admin, test kingdoms, bulk/destructive actions.
 4. **Phase 4 PR** — MERGED (PR #587). EventsPanel, LorePanel, GoalsPanel, EvolutionPanel wired into AdminShell.
-5. **Phase 5 PR** — IN PROGRESS. ConfigPanel, SoundsPanel, PrestigePanel, FragmentsPanel, SecurityPanel wired into AdminShell.
+5. **Phase 5 PR** — MERGED (PR #588). ConfigPanel, SoundsPanel, PrestigePanel, FragmentsPanel, SecurityPanel wired into AdminShell. All tabs live.
 5. **Fix CSRF** on security audit + sounds in legacy admin (quick win) OR document as known bug until Phase 5.
 
 ---
