@@ -83,6 +83,15 @@ export default function AdminShell({ adminUser, onLogout }) {
 
       {/* Main content */}
       <div style={{ padding: '20px 20px 40px' }}>
+        <div style={{
+          marginBottom: 16, padding: '10px 14px', borderRadius: 6,
+          background: 'rgba(var(--theme-rgb, 240, 98, 2), 0.08)',
+          border: '1px solid var(--border2)', fontSize: 12, color: 'var(--text2)',
+          display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center',
+        }}>
+          <span>React admin (soft cutover). Report issues or use legacy fallback:</span>
+          <a href="/admin?legacy=1" style={{ color: 'var(--gold)', fontWeight: 600 }}>/admin?legacy=1</a>
+        </div>
         <AdminStatGrid stats={stats} loading={statsLoading} />
         <AdminTabNav activeTab={activeTab} onTabChange={setActiveTab} />
 

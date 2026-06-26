@@ -133,6 +133,7 @@ const EDIT_SECTIONS = [
       { key: 'world_fragments',     label: 'World Fragments',     widgetType: 'fragments' },
       { key: 'fragment_bonuses',    label: 'Attunements',         widgetType: 'attunements' },
       { key: 'hybrid_blueprints',   label: 'Hybrid Blueprints',   widgetType: 'kv-numbers' },
+      { key: 'fortified_blueprints', label: 'Fortified Blueprints' },
       { key: 'fortified_buildings', label: 'Fortified Buildings', widgetType: 'fortified' },
     ],
   },

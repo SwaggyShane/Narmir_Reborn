@@ -530,16 +530,52 @@ Each phase is an independent draft PR. Do not delete `public/admin.html` until P
 - [x] Prestige reference table (static 5-tier data)
 - [x] Security audit (POST with CSRF, severity filter, findings table)
 
-### Phase 6 — Cutover + cleanup
+### Phase 6a — Soft cutover (ACTIVE)
 
-**Branch:** `admin-react-06-cutover`
+**Branch:** `admin-soft-six-prep` → dogfood on `main` after merge
 
-- [ ] Remove `?legacy=1` flag after 1 week dogfood
-- [ ] Delete `public/admin.html` (or move to `public/legacy/admin.html` archived)
-- [ ] Update `README.md` admin section
+**Status:** React admin is the default at `/admin`. Legacy fallback remains at `/admin?legacy=1`.
+
+- [x] P0 parity: `fortified_blueprints` in kingdom editor
+- [x] P0 parity: Spells reference sub-tab (Detailed Lists)
+- [x] P1 parity: Evolution changelog sub-tab (completed wishes)
+- [x] P2 parity: Admin notes localStorage migration
+- [x] Soft-cutover banner in React admin shell
+- [x] Update `README.md` admin section
+- [ ] **Dogfood ≥1 week** on React admin (target: before hard cutover)
+- [ ] Verification matrix (one action per tab + kingdom edit spot-check vs legacy)
+
+**Do not delete `public/admin.html` during soft cutover.**
+
+### Phase 6b — Hard cutover + cleanup
+
+**Branch:** `admin-react-06-cutover` (after soft cutover soak)
+
+- [ ] Remove `?legacy=1` flag
+- [ ] Move `public/admin.html` → `public/legacy/admin.html` (archive)
+- [ ] Remove dist fallback to legacy in `serveAdmin()`
 - [ ] Add `docs/admin.md` operator guide (optional)
 
-**Exit criteria:** Full parity checklist §3 all ✅; no references to inline admin scripts.
+**Exit criteria:** Full parity checklist §3 all ✅; no references to inline admin scripts; dogfood complete.
+
+#### Soft-cutover verification checklist
+
+| Tab | Smoke action | Pass? |
+|-----|--------------|-------|
+| Manage | Send test announcement (or dry-run cancel) | ☐ |
+| Kingdoms | Edit kingdom scalar field + save | ☐ |
+| Kingdoms | Apply AI preset to AI kingdom | ☐ |
+| Events | Load log + open event form | ☐ |
+| Config | Load config + verify one key displays | ☐ |
+| Sounds | List sounds (upload optional) | ☐ |
+| Prestige | Static table renders | ☐ |
+| Lore | Load lore list | ☐ |
+| Evolution | Wishlist + changelog + notes | ☐ |
+| Detailed Lists | Fragments + **Spells** sub-tabs | ☐ |
+| Goals | Load goals grid | ☐ |
+| Security | Run audit (CSRF) | ☐ |
+| Auth | Logout + re-login | ☐ |
+| Fallback | `/admin?legacy=1` still loads | ☐ |
 
 ---
 
