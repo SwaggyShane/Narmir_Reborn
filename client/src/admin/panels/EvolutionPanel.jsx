@@ -121,7 +121,10 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
     try {
       const data = await adminFetch(`/api/admin/wishlist/${id}/complete`, { method: 'POST' });
       if (data?.error) { onToast('Complete failed: ' + data.error, 'error'); return; }
-      onToast('Marked complete', 'success');
+      onToast(
+        data?.discordSent ? 'Marked complete — posted to #updates' : 'Marked complete (changelog saved)',
+        'success',
+      );
       setWishlist(prev => prev.map(w => w.id === id ? { ...w, completed: 1 } : w));
     } catch (err) { onToast('Complete failed: ' + (err.message || 'Unknown'), 'error'); }
   }

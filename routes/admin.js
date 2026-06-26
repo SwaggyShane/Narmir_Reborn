@@ -1199,8 +1199,20 @@ module.exports = function (db, io) {
   });
 
   router.post("/wishlist/:id/complete", async (req, res) => {
+    const row = await db.get(`SELECT * FROM wishlist WHERE id = ?`, [req.params.id]);
+    if (!row) return res.status(404).json({ error: "Wishlist item not found" });
+    if (row.completed) return res.json({ ok: true, alreadyCompleted: true });
+
     await db.run(`UPDATE wishlist SET completed = 1 WHERE id = ?`, [req.params.id]);
-    res.json({ ok: true });
+
+    const { postChangelogToDiscord } = require("../lib/discord-notify");
+    const discordSent = await postChangelogToDiscord({
+      category: row.category,
+      description: row.description,
+      wishlistId: row.id,
+    });
+
+    res.json({ ok: true, discordSent });
   });
 
   router.post("/events/create", async (req, res) => {
