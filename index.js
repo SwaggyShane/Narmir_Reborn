@@ -1206,7 +1206,7 @@ async function start() {
           ok: true,
           message: discordSent
             ? 'Report sent — thank you! The team was notified on Discord.'
-            : 'Report saved — thank you! The team will review it in admin.',
+            : 'Report saved — thank you! It will appear in admin and Discord shortly.',
         });
       } catch (e) {
         console.error('[bug-reports] Error:', e);
