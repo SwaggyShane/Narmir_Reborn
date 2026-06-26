@@ -1501,6 +1501,47 @@ async function start() {
     serveSplash(req, res, next);
   });
 
+  // Express global error handler middleware — catches errors passed to next(err)
+  // Must be registered after all other middleware and route handlers
+  app.use((err, req, res, _next) => {
+    // Normalize err to ensure safe property access (handle null, undefined, primitives)
+    const errorObj = err instanceof Error
+      ? err
+      : (typeof err === 'object' && err !== null
+          ? err
+          : new Error(err ? String(err) : 'An unknown error occurred'));
+
+    const requestId = Math.random().toString(36).slice(2, 11);
+    const statusCode = errorObj.statusCode || errorObj.status || 500;
+    const isDev = process.env.NODE_ENV !== 'production';
+
+    // Log error with context
+    const errorLog = {
+      requestId,
+      timestamp: new Date().toISOString(),
+      method: req.method,
+      url: req.url,
+      status: statusCode,
+      errorName: errorObj.name || 'Error',
+      errorMessage: errorObj.message || 'An unknown error occurred',
+      ...(isDev && { stack: errorObj.stack })
+    };
+
+    if (statusCode >= 500) {
+      console.error('[ERROR]', JSON.stringify(errorLog));
+    } else if (statusCode >= 400) {
+      console.warn('[WARN]', JSON.stringify(errorLog));
+    }
+
+    // Send error response
+    if (!res.headersSent) {
+      res.status(statusCode).json({
+        error: isDev ? errorObj.message : 'Internal server error',
+        ...(isDev && { requestId, stack: errorObj.stack })
+      });
+    }
+  });
+
   setupSockets(io, db);
   engine.io = io;
   global._narmir_io = io;
