@@ -150,6 +150,9 @@ export {
   useDescription,
   useCustomPortrait,
   useGender,
+  useXpSources,
+  useMilestoneBonuses,
+  useMilestoneTitle,
 } from './profileStore';
 
 /**

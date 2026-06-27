@@ -3,8 +3,7 @@ import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import { fmt } from '../../utils/fmt.js';
 import { kingdomXpProgress, xpForLevel } from '../../utils/xp.js';
-import { useLevel, useXp, usePrestige, useRace } from '../../stores';
-import { useGameState } from '../../hooks/useGameState';
+import { useLevel, useXp, usePrestige, useRace, useXpSources, useMilestoneBonuses, useMilestoneTitle } from '../../stores';
 import {
   formatMilestoneBonusSummary,
   KINGDOM_XP_MILESTONES,
@@ -40,24 +39,25 @@ export default function KingdomXpModal({ open, onClose }) {
   const xp = useXp();
   const prestige = usePrestige();
   const race = useRace() || 'human';
-  const { state } = useGameState();
+  const xpSourcesData = useXpSources();
+  const milestoneBonusesData = useMilestoneBonuses();
+  const msTitle = useMilestoneTitle();
 
   const { xpNeeded, xpIntoLevel, pct } = useMemo(
     () => kingdomXpProgress(level, xp, prestige),
     [level, xp, prestige],
   );
 
-  const xpSources = useMemo(() => parseXpSources(state?.xp_sources), [state?.xp_sources]);
+  const xpSources = useMemo(() => parseXpSources(xpSourcesData), [xpSourcesData]);
   const totalEarned = useMemo(
     () => Object.values(xpSources).reduce((sum, val) => sum + (Number(val) || 0), 0),
     [xpSources],
   );
 
   const msBonuses = useMemo(
-    () => parseMilestoneBonuses(state?.milestone_bonuses),
-    [state?.milestone_bonuses],
+    () => parseMilestoneBonuses(milestoneBonusesData),
+    [milestoneBonusesData],
   );
-  const msTitle = state?.milestone_title || 'Fledgling';
   const raceMod = RACE_REWARD_MODIFIERS[race] || '';
 
   useEffect(() => {
