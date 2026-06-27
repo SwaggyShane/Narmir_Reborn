@@ -15,6 +15,8 @@ export function createdAtAgeMs(value) {
 }
 
 // Format timestamp for display (long format with locale)
+// NOTE: Uses browser locale/timezone intentionally (not server's America/New_York).
+// Users see times in their own timezone. See game/ARCHITECTURE.md for rationale.
 export function formatTimestamp(value) {
   if (value == null || (typeof value === 'string' && value.trim() === '')) return '-';
   const num = Number(value);
@@ -28,6 +30,8 @@ export function formatTimestamp(value) {
 }
 
 // Format timestamp for display (short date format)
+// NOTE: Uses browser locale/timezone intentionally (not server's America/New_York).
+// Users see dates in their own timezone. See game/ARCHITECTURE.md for rationale.
 export function formatTimestampShort(value) {
   if (value == null || (typeof value === 'string' && value.trim() === '')) return '';
   const num = Number(value);
