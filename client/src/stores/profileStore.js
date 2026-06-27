@@ -14,6 +14,7 @@ export const useProfileStore = create(
   devtools(
     immer((set, _get) => ({
       // ===== AUTHORITATIVE STATE (from server) =====
+      kingdom_id: null,  // Unique kingdom ID for combat/targeting
       username: '',
       owner_name: '',
       owner: '',
@@ -42,6 +43,7 @@ export const useProfileStore = create(
        * receiveServerSnapshot: Overwrite authoritative profile state
        */
       receiveServerSnapshot: (data) => set((state) => {
+        if (data?.kingdom_id !== undefined) state.kingdom_id = data.kingdom_id;
         if (data?.username !== undefined) state.username = data.username;
         if (data?.owner_name !== undefined) state.owner_name = data.owner_name;
         if (data?.owner !== undefined) state.owner = data.owner;
@@ -97,6 +99,8 @@ export const useTurn = () => useProfileStore((state) => state.turn);
 export const useScore = () => useProfileStore((state) => state.score);
 
 export const useRank = () => useProfileStore((state) => state.rank);
+
+export const useKingdomId = () => useProfileStore((state) => state.kingdom_id);
 
 export const useKingdomMetadata = () =>
   useProfileStore(

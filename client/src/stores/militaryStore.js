@@ -37,6 +37,18 @@ export const useMillitaryStore = create(
           engineers: 0,
         },
 
+        // Special units and equipment
+        ladders: 0,
+        thralls: 0,
+        weapons_stockpile: 0,
+
+        // Troop levels (for engineer-related bonuses in combat)
+        troop_levels: {
+          engineers: {
+            level: 1,
+          },
+        },
+
         // Wall state
         wall_hp: 1000,
         wall_defense_type: 'fortified',
@@ -74,6 +86,18 @@ export const useMillitaryStore = create(
           }
           if (data.injuredTroops) {
             Object.assign(state.injuredTroops, data.injuredTroops);
+          }
+          if (data.ladders !== undefined) {
+            state.ladders = data.ladders;
+          }
+          if (data.thralls !== undefined) {
+            state.thralls = data.thralls;
+          }
+          if (data.weapons_stockpile !== undefined) {
+            state.weapons_stockpile = data.weapons_stockpile;
+          }
+          if (data.troop_levels) {
+            Object.assign(state.troop_levels, data.troop_levels);
           }
           if (data.wall_hp !== undefined) {
             state.wall_hp = data.wall_hp;
@@ -236,3 +260,29 @@ export const useSelectedArmy = () =>
 export const usePendingAttack = () => useMillitaryStore((state) => state.pendingAttack);
 
 export const useLastCombatResult = () => useMillitaryStore((state) => state.lastCombatResult);
+
+// Troop type selectors
+export const useFighters = () => useMillitaryStore((state) => state.troops.fighters || 0);
+
+export const useRangers = () => useMillitaryStore((state) => state.troops.rangers || 0);
+
+export const useMages = () => useMillitaryStore((state) => state.troops.mages || 0);
+
+export const useClerics = () => useMillitaryStore((state) => state.troops.clerics || 0);
+
+export const useNinjas = () => useMillitaryStore((state) => state.troops.ninjas || 0);
+
+export const useThieves = () => useMillitaryStore((state) => state.troops.thieves || 0);
+
+export const useEngineers = () => useMillitaryStore((state) => state.troops.engineers || 0);
+
+export const useWarMachines = () => useMillitaryStore((state) => state.troops.war_machines || 0);
+
+// Special units and equipment
+export const useLadders = () => useMillitaryStore((state) => state.ladders || 0);
+
+export const useThralls = () => useMillitaryStore((state) => state.thralls || 0);
+
+export const useWeaponsStockpile = () => useMillitaryStore((state) => state.weapons_stockpile || 0);
+
+export const useTroopLevels = () => useMillitaryStore((state) => state.troop_levels || {});
