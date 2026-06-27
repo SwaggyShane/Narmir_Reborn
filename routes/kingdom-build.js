@@ -8,13 +8,12 @@ const config = require('../game/config');
 
 const router = express.Router();
 
-// Column selection constants (imported from kingdom.js)
+// Column selection constants (deduplicated)
 const KINGDOM_RESOURCE = `id, player_id, name, race, turn, turns_stored, gold, food, population, land, happiness,
   wood, stone, iron, coal, steel, food_shortage_turns,
   bld_farms, bld_granaries, bld_walls, bld_guard_towers, bld_libraries, bld_mage_towers, bld_shrines, bld_vaults,
-  build_queue, level, resource_sequence, engineer_level, ballistae,
-  bld_farms, bld_granaries, bld_barracks, bld_outposts, bld_guard_towers, bld_schools, bld_armories, bld_vaults, bld_smithies, bld_markets, bld_mage_towers, bld_shrines, bld_training, bld_castles, bld_libraries, bld_taverns, bld_mausoleums, bld_walls, bld_housing, bld_woodyard, bld_lumber_camp, bld_sawmill, bld_gravel_pit, bld_blockfield, bld_stone_quarry, bld_open_pit, bld_strip_mine, bld_deep_mine,
-  build_progress, build_allocation, resource_build_allocation, research_allocation, engineers`;
+  bld_barracks, bld_outposts, bld_schools, bld_armories, bld_smithies, bld_markets, bld_training, bld_castles, bld_taverns, bld_mausoleums, bld_housing, bld_woodyard, bld_lumber_camp, bld_sawmill, bld_gravel_pit, bld_blockfield, bld_stone_quarry, bld_open_pit, bld_strip_mine, bld_deep_mine,
+  build_queue, build_progress, build_allocation, resource_build_allocation, research_allocation, level, resource_sequence, engineer_level, engineers, ballistae`;
 
 const KINGDOM_SMITHY = 'id, player_id, gold, bld_smithies, hammers_stored, scaffolding_stored';
 
@@ -244,108 +243,187 @@ module.exports = function (db) {
   // POST /demolish
   router.post('/demolish', requireAuth, requireCsrfToken, async (req, res) => {
     const { building, amount } = req.body;
-    const k = await db.get(`SELECT ${KINGDOM_RESOURCE} FROM kingdoms WHERE player_id = ?`, [req.player.playerId]);
-    if (!k) return res.status(404).json({ error: 'Kingdom not found' });
+    if (!building || typeof building !== 'string') {
+      return res.status(400).json({ error: 'Invalid building' });
+    }
 
-    const result = engine.demolishBuilding(k, building, parseInt(amount) || 1);
-    if (result.error) return res.status(400).json({ error: result.error });
+    const amountValidation = validateNonNegativeInteger(amount, {
+      min: 1,
+      max: 1000000,
+      fieldName: 'amount',
+    });
+    if (!amountValidation.valid) {
+      return res.status(400).json({ error: amountValidation.error });
+    }
 
-    await applyUpdates(db, k.id, result.updates);
-    const msg = `🗑️ Demolished ${result.refund.count} ${building.replace(/_/g, ' ')}. Refunded ${result.refund.gold.toLocaleString()} gold and ${result.refund.land} acres.`;
-    await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)', [
-      k.id,
-      'system',
-      msg,
-      k.turn,
-    ]);
+    try {
+      await db.run('BEGIN TRANSACTION');
 
-    res.json({ ok: true, updates: result.updates, message: msg });
+      const k = await db.get(`SELECT ${KINGDOM_RESOURCE} FROM kingdoms WHERE player_id = ? FOR UPDATE`, [
+        req.player.playerId,
+      ]);
+      if (!k) {
+        await db.run('ROLLBACK');
+        return res.status(404).json({ error: 'Kingdom not found' });
+      }
+
+      const result = engine.demolishBuilding(k, building, amountValidation.value);
+      if (result.error) {
+        await db.run('ROLLBACK');
+        return res.status(400).json({ error: result.error });
+      }
+
+      await applyUpdates(db, k.id, result.updates);
+      const msg = `🗑️ Demolished ${result.refund.count} ${building.replace(/_/g, ' ')}. Refunded ${result.refund.gold.toLocaleString()} gold and ${result.refund.land} acres.`;
+      await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)', [
+        k.id,
+        'system',
+        msg,
+        k.turn,
+      ]);
+
+      await db.run('COMMIT');
+      res.json({ ok: true, updates: result.updates, message: msg });
+    } catch (err) {
+      await db.run('ROLLBACK').catch(() => {});
+      console.error('[demolish] error:', err.message);
+      res.status(500).json({ error: 'Demolish failed' });
+    }
   });
 
   // POST /build
   router.post('/build', requireAuth, requireCsrfToken, async (req, res) => {
     const { building } = req.body;
+    if (!building || typeof building !== 'string') {
+      return res.status(400).json({ error: 'Invalid building' });
+    }
 
-    const k = await db.get(`SELECT ${KINGDOM_RESOURCE} FROM kingdoms WHERE player_id = ?`, [req.player.playerId]);
-    if (!k) return res.status(404).json({ error: 'Kingdom not found' });
+    try {
+      await db.run('BEGIN TRANSACTION');
 
-    const buildingId = building.startsWith('bld_') ? building : `bld_${building}`;
+      const k = await db.get(`SELECT ${KINGDOM_RESOURCE} FROM kingdoms WHERE player_id = ? FOR UPDATE`, [
+        req.player.playerId,
+      ]);
+      if (!k) {
+        await db.run('ROLLBACK');
+        return res.status(404).json({ error: 'Kingdom not found' });
+      }
 
-    const tier = config.BUILDING_TIERS[buildingId];
-    if (!tier) return res.status(400).json({ error: 'Invalid building' });
+      const buildingId = building.startsWith('bld_') ? building : `bld_${building}`;
 
-    const buildTime = engine.calculateBuildTime(k, tier);
-    const cost = engine.calculateBuildCost(k, tier);
+      const tier = config.BUILDING_TIERS[buildingId];
+      if (!tier) {
+        await db.run('ROLLBACK');
+        return res.status(400).json({ error: 'Invalid building' });
+      }
 
-    if (k.land < cost.land) return res.status(400).json({ error: 'Insufficient land' });
-    if (k.wood < cost.wood) return res.status(400).json({ error: 'Insufficient wood' });
-    if (k.stone < cost.stone) return res.status(400).json({ error: 'Insufficient stone' });
-    if (k.iron < cost.iron) return res.status(400).json({ error: 'Insufficient iron' });
+      const buildTime = engine.calculateBuildTime(k, tier);
+      const cost = engine.calculateBuildCost(k, tier);
 
-    const buildQueue = safeJsonParse(k.build_queue, {}, 'build:existing_queue');
-    const queueId = `${buildingId}_${Date.now()}`;
-    buildQueue[queueId] = {
-      building: buildingId,
-      started_at: k.turn,
-      turns_needed: buildTime,
-      turns_remaining: buildTime,
-      cost,
-    };
+      if (k.land < cost.land) {
+        await db.run('ROLLBACK');
+        return res.status(400).json({ error: 'Insufficient land' });
+      }
+      if (k.wood < cost.wood) {
+        await db.run('ROLLBACK');
+        return res.status(400).json({ error: 'Insufficient wood' });
+      }
+      if (k.stone < cost.stone) {
+        await db.run('ROLLBACK');
+        return res.status(400).json({ error: 'Insufficient stone' });
+      }
+      if (k.iron < cost.iron) {
+        await db.run('ROLLBACK');
+        return res.status(400).json({ error: 'Insufficient iron' });
+      }
 
-    const updates = {
-      wood: k.wood - cost.wood,
-      stone: k.stone - cost.stone,
-      iron: k.iron - cost.iron,
-      build_queue: JSON.stringify(buildQueue),
-    };
+      const buildQueue = safeJsonParse(k.build_queue, {}, 'build:existing_queue');
+      const queueId = `${buildingId}_${Date.now()}`;
+      buildQueue[queueId] = {
+        building: buildingId,
+        started_at: k.turn,
+        turns_needed: buildTime,
+        turns_remaining: buildTime,
+        cost,
+      };
 
-    await applyUpdates(db, k.id, updates);
-    const msg = `🗑️ Construction started: ${buildingId.replace(/^bld_/, '').replace(/_/g, ' ')}. Estimated completion: ${buildTime} turns.`;
-    await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)', [
-      k.id,
-      'system',
-      msg,
-      k.turn,
-    ]);
+      const updates = {
+        wood: k.wood - cost.wood,
+        stone: k.stone - cost.stone,
+        iron: k.iron - cost.iron,
+        build_queue: JSON.stringify(buildQueue),
+      };
 
-    res.json({ ok: true, updates, message: msg, buildTime, cost });
+      await applyUpdates(db, k.id, updates);
+      const msg = `🗑️ Construction started: ${buildingId.replace(/^bld_/, '').replace(/_/g, ' ')}. Estimated completion: ${buildTime} turns.`;
+      await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)', [
+        k.id,
+        'system',
+        msg,
+        k.turn,
+      ]);
+
+      await db.run('COMMIT');
+      res.json({ ok: true, updates, message: msg, buildTime, cost });
+    } catch (err) {
+      await db.run('ROLLBACK').catch(() => {});
+      console.error('[build] error:', err.message);
+      res.status(500).json({ error: 'Build failed' });
+    }
   });
 
   // POST /cancel-building
   router.post('/cancel-building', requireAuth, requireCsrfToken, async (req, res) => {
     const { queueId } = req.body;
+    if (!queueId || typeof queueId !== 'string') {
+      return res.status(400).json({ error: 'Invalid queueId' });
+    }
 
-    const k = await db.get(
-      'SELECT id, build_queue, land, wood, stone, iron, turn FROM kingdoms WHERE player_id = ?',
-      [req.player.playerId],
-    );
-    if (!k) return res.status(404).json({ error: 'Kingdom not found' });
+    try {
+      await db.run('BEGIN TRANSACTION');
 
-    const buildQueue = safeJsonParse(k.build_queue, {}, 'build:cancel_queue');
+      const k = await db.get(
+        'SELECT id, build_queue, land, wood, stone, iron, turn FROM kingdoms WHERE player_id = ? FOR UPDATE',
+        [req.player.playerId],
+      );
+      if (!k) {
+        await db.run('ROLLBACK');
+        return res.status(404).json({ error: 'Kingdom not found' });
+      }
 
-    if (!buildQueue[queueId]) return res.status(404).json({ error: 'Building not found in queue' });
+      const buildQueue = safeJsonParse(k.build_queue, {}, 'build:cancel_queue');
+      if (!buildQueue[queueId]) {
+        await db.run('ROLLBACK');
+        return res.status(404).json({ error: 'Building not found in queue' });
+      }
 
-    const buildJob = buildQueue[queueId];
-    delete buildQueue[queueId];
+      const buildJob = buildQueue[queueId];
+      delete buildQueue[queueId];
 
-    const updates = {
-      land: k.land + buildJob.cost.land,
-      wood: k.wood + buildJob.cost.wood,
-      stone: k.stone + buildJob.cost.stone,
-      iron: k.iron + buildJob.cost.iron,
-      build_queue: JSON.stringify(buildQueue),
-    };
+      const updates = {
+        land: k.land + buildJob.cost.land,
+        wood: k.wood + buildJob.cost.wood,
+        stone: k.stone + buildJob.cost.stone,
+        iron: k.iron + buildJob.cost.iron,
+        build_queue: JSON.stringify(buildQueue),
+      };
 
-    await applyUpdates(db, k.id, updates);
-    const msg = `🗑️ Construction cancelled: ${buildJob.building.replace(/_/g, ' ')}. Resources refunded.`;
-    await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)', [
-      k.id,
-      'system',
-      msg,
-      k.turn,
-    ]);
+      await applyUpdates(db, k.id, updates);
+      const msg = `🗑️ Construction cancelled: ${buildJob.building.replace(/_/g, ' ')}. Resources refunded.`;
+      await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)', [
+        k.id,
+        'system',
+        msg,
+        k.turn,
+      ]);
 
-    res.json({ ok: true, updates, message: msg });
+      await db.run('COMMIT');
+      res.json({ ok: true, updates, message: msg });
+    } catch (err) {
+      await db.run('ROLLBACK').catch(() => {});
+      console.error('[cancel-building] error:', err.message);
+      res.status(500).json({ error: 'Cancellation failed' });
+    }
   });
 
   // POST /smithy/buy-hammers
@@ -473,29 +551,53 @@ module.exports = function (db) {
   // POST /tower-craft
   router.post('/tower-craft', requireAuth, requireCsrfToken, async (req, res) => {
     const { item, qty } = req.body;
-    if (!item || qty <= 0) return res.status(400).json({ error: 'Invalid input' });
+    if (!item || typeof item !== 'string') return res.status(400).json({ error: 'Invalid input' });
 
-    const k = await db.get(
-      'SELECT id, bld_mage_towers, mage_tower_allocation FROM kingdoms WHERE player_id = ?',
-      [req.player.playerId],
-    );
-    if (!k) return res.status(404).json({ error: 'Kingdom not found' });
-    if (k.bld_mage_towers === 0)
-      return res.status(400).json({ error: 'You need at least 1 Mage Tower first' });
-
-    let alloc = {};
-    try {
-      alloc = safeJsonParse(k.mage_tower_allocation, {}, 'auto:mage_tower_allocation');
-    } catch {}
-    if (alloc.scroll_craft) {
-      alloc[alloc.scroll_craft] = alloc.scroll_target || 999;
-      delete alloc.scroll_craft;
-      delete alloc.scroll_target;
+    const qtyValidation = validateNonNegativeInteger(qty, {
+      min: 1,
+      max: 1000000,
+      fieldName: 'qty',
+    });
+    if (!qtyValidation.valid) {
+      return res.status(400).json({ error: qtyValidation.error });
     }
 
-    alloc[item] = (alloc[item] || 0) + Number(qty);
-    await db.run('UPDATE kingdoms SET mage_tower_allocation = ? WHERE id = ?', [JSON.stringify(alloc), k.id]);
-    res.json({ ok: true, allocation: JSON.stringify(alloc) });
+    try {
+      await db.run('BEGIN TRANSACTION');
+
+      const k = await db.get(
+        'SELECT id, bld_mage_towers, mage_tower_allocation FROM kingdoms WHERE player_id = ? FOR UPDATE',
+        [req.player.playerId],
+      );
+      if (!k) {
+        await db.run('ROLLBACK');
+        return res.status(404).json({ error: 'Kingdom not found' });
+      }
+      if (k.bld_mage_towers === 0) {
+        await db.run('ROLLBACK');
+        return res.status(400).json({ error: 'You need at least 1 Mage Tower first' });
+      }
+
+      let alloc = {};
+      try {
+        alloc = safeJsonParse(k.mage_tower_allocation, {}, 'auto:mage_tower_allocation');
+      } catch {}
+      if (alloc.scroll_craft) {
+        alloc[alloc.scroll_craft] = alloc.scroll_target || 999;
+        delete alloc.scroll_craft;
+        delete alloc.scroll_target;
+      }
+
+      alloc[item] = (alloc[item] || 0) + qtyValidation.value;
+      await db.run('UPDATE kingdoms SET mage_tower_allocation = ? WHERE id = ?', [JSON.stringify(alloc), k.id]);
+      await db.run('COMMIT');
+
+      res.json({ ok: true, allocation: JSON.stringify(alloc) });
+    } catch (err) {
+      await db.run('ROLLBACK').catch(() => {});
+      console.error('[tower-craft] error:', err.message);
+      res.status(500).json({ error: 'Crafting failed' });
+    }
   });
 
   // POST /tower-cancel
