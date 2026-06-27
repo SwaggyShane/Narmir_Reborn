@@ -3,7 +3,6 @@ import { apiCall } from '../../utils/api.mjs';
 import { fmt } from "../../utils/fmt";
 import {
   useEconomyStore,
-  useProfileStore,
   useRace,
   useEngineers,
   useEngineerLevel,
@@ -523,8 +522,8 @@ const BuildPanel = () => {
     BUILDINGS_DISPLAY_ORDER.forEach((key) => setBuildFieldValue(key, 0));
     const result = await apiCall('/api/kingdom/build-allocation', { method: 'POST', body: { allocation: {} } });
     if (result.error) return toast(result.error, 'error');
-    useProfileStore.setState((state) => {
-      state.build_allocation = {};
+    useEconomyStore.setState({
+      build_allocation: {},
     });
     refreshBuildUi();
     if (typeof window !== 'undefined' && typeof toast === 'function') toast('All engineers released', 'success');
@@ -542,8 +541,8 @@ const BuildPanel = () => {
     }
     const result = await apiCall('/api/kingdom/build-allocation', { method: 'POST', body: { allocation } });
     if (result.error) return toast(result.error, 'error');
-    useProfileStore.setState((state) => {
-      state.build_allocation = allocation;
+    useEconomyStore.setState({
+      build_allocation: allocation,
     });
     refreshBuildUi();
     if (typeof window !== 'undefined' && typeof toast === 'function') toast('Engineer allocation saved | builds each turn automatically', 'success');
@@ -587,11 +586,11 @@ const BuildPanel = () => {
     const ep = type === 'hammers' ? '/api/kingdom/smithy/buy-hammers' : '/api/kingdom/smithy/buy-scaffolding';
     const result = await apiCall(ep, { method: 'POST', body: { amount } });
     if (result.error) return toast(result.error, 'error');
-    useEconomyStore.setState((state) => {
-      if (result.hammers_stored !== undefined) state.hammers_stored = result.hammers_stored;
-      if (result.scaffolding_stored !== undefined) state.scaffolding_stored = result.scaffolding_stored;
-      if (result.gold !== undefined) state.gold = result.gold;
-    });
+    useEconomyStore.setState((state) => ({
+      hammers_stored: result.hammers_stored !== undefined ? result.hammers_stored : state.hammers_stored,
+      scaffolding_stored: result.scaffolding_stored !== undefined ? result.scaffolding_stored : state.scaffolding_stored,
+      gold: result.gold !== undefined ? result.gold : state.gold,
+    }));
     setSmithyInputs({ hammers: 0, scaffolding: 0 });
     refreshBuildUi();
     if (typeof window !== 'undefined' && typeof toast === 'function') toast(`Purchased ${result.bought} ${type} for ${fmt(result.cost)} GC`, 'success');
@@ -603,11 +602,9 @@ const BuildPanel = () => {
     const result = await apiCall('/api/kingdom/demolish', { method: 'POST', body: { building: type, amount } });
     if (result.error) return toast(result.error, 'error');
     if (result.updates && Object.keys(result.updates).length > 0) {
-      useProfileStore.setState((state) => ({
+      useEconomyStore.setState((state) => ({
         build_progress: result.updates.build_progress ? { ...state.build_progress, ...result.updates.build_progress } : state.build_progress,
         land: result.updates.land !== undefined ? result.updates.land : state.land,
-      }));
-      useEconomyStore.setState((state) => ({
         wood: result.updates.wood !== undefined ? result.updates.wood : state.wood,
         stone: result.updates.stone !== undefined ? result.updates.stone : state.stone,
         iron: result.updates.iron !== undefined ? result.updates.iron : state.iron,
