@@ -7,6 +7,32 @@ import { applyGameMutation } from '../../utils/gameMutations.js';
 import { toast as showToast } from '../../utils/toast.js';
 import { openRaceLore } from '../../utils/openRaceLore.js';
 import RaceLorePortrait from './RaceLorePortrait.jsx';
+import {
+  useRace,
+  useTroopLevels,
+  useBuildCount,
+  useFighters,
+  useRangers,
+  useMages,
+  useClerics,
+  useNinjas,
+  useThieves,
+  useEngineers as useMilitaryEngineers,
+  useWarMachines,
+  useLadders,
+  useWeaponsStockpile,
+  useArmorStockpile,
+  useResEconomy,
+  useResWeapons,
+  useResArmor,
+  useResMilitary,
+  useResSpellbook,
+  useResAttackMagic,
+  useResDefenseMagic,
+  useResEntertainment,
+  useResConstruction,
+  useMana,
+} from '../../stores';
 
 const RACE_CARD_DATA = {
   human: {
@@ -61,6 +87,17 @@ const RACE_PORTRAITS = {
 
 const STATUS_CARD_CLASS = 'card';
 
+function KeyBuildingsRow({ label, buildingId, isLast }) {
+  const count = useBuildCount(buildingId);
+  const id = `kb-${buildingId}`;
+  return (
+    <div className={clsx('trow', isLast && 'border-b-0')}>
+      <span className="name">{label}</span>
+      <span className="count" id={id}>{count}</span>
+    </div>
+  );
+}
+
 const RESEARCH_ROWS = [
   { label: 'Economy', stateKey: 'res_economy', barId: 'eco', barClass: 'eco' },
   { label: 'Weapons', stateKey: 'res_weapons', barId: 'wep', barClass: 'wep' },
@@ -99,6 +136,29 @@ const StatusPanel = () => {
   const { state } = useGameState();
   const [taxDisplayValue, setTaxDisplayValue] = useState('');
   const [taxValue, setTaxValue] = useState('');
+  const race = useRace();
+  const troopLevels = useTroopLevels();
+  const fighters = useFighters();
+  const rangers = useRangers();
+  const mages = useMages();
+  const clerics = useClerics();
+  const ninjas = useNinjas();
+  const thieves = useThieves();
+  const engineers = useMilitaryEngineers();
+  const warMachines = useWarMachines();
+  const ladders = useLadders();
+  const weaponsStockpile = useWeaponsStockpile();
+  const armorStockpile = useArmorStockpile();
+  const mana = useMana();
+  const resEconomy = useResEconomy();
+  const resWeapons = useResWeapons();
+  const resArmor = useResArmor();
+  const resMilitary = useResMilitary();
+  const resSpellbook = useResSpellbook();
+  const resAttackMagic = useResAttackMagic();
+  const resDefenseMagic = useResDefenseMagic();
+  const resEntertainment = useResEntertainment();
+  const resConstruction = useResConstruction();
 
   const cleanText = (value) => {
     if (value === null || value === undefined) return '';
@@ -137,7 +197,7 @@ const StatusPanel = () => {
     }
   };
 
-  const raceKey = useMemo(() => toRaceKey(state?.race), [state?.race]);
+  const raceKey = useMemo(() => toRaceKey(race), [race]);
 
   const raceInfo = useMemo(() => {
     const mapped = RACE_CARD_DATA[raceKey];
@@ -148,9 +208,9 @@ const StatusPanel = () => {
       };
     }
 
-    if (state?.race) {
+    if (race) {
       return {
-        label: cleanText(toRaceLabel(state.race)),
+        label: cleanText(toRaceLabel(race)),
         bonus: '',
       };
     }
@@ -159,14 +219,13 @@ const StatusPanel = () => {
       label: 'Unknown',
       bonus: '',
     };
-  }, [raceKey, state?.race]);
+  }, [raceKey, race]);
 
   const customPortrait = state?.customPortrait;
   const gender = state?.gender || 'male';
-  const raceForPortrait = raceKey || toRaceKey(state?.race);
+  const raceForPortrait = raceKey || toRaceKey(race);
   const portraitUrl = customPortrait || (RACE_PORTRAITS[raceForPortrait] ? `/race/${raceForPortrait}_${gender}.webp` : '');
   const isVampire = raceForPortrait === 'vampire';
-  const troopLevels = state?.troop_levels || {};
 
   return (
     <div id="status" className="panel !pt-0 md:!pt-0">
@@ -264,21 +323,21 @@ const StatusPanel = () => {
 
           <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5">
             <span className="text-[13px] text-text" id="s-label-fighters">Fighters</span>
-            <span className="text-[13px] font-semibold text-right text-text" id="s-fighters">{(state?.fighters ?? 0).toLocaleString()}</span>
+            <span className="text-[13px] font-semibold text-right text-text" id="s-fighters">{fighters.toLocaleString()}</span>
             <span className="text-center text-[11px] font-semibold" id="s-lv-fighters">Lv {troopLevels?.fighters?.level || 1}</span>
             <span className="badge badge-red text-center text-[9px]">Combat</span>
           </div>
 
           <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5">
             <span className="text-[13px] text-text" id="s-label-rangers">Rangers</span>
-            <span className="text-[13px] font-semibold text-right text-text" id="s-rangers">{(state?.rangers ?? 0).toLocaleString()}</span>
+            <span className="text-[13px] font-semibold text-right text-text" id="s-rangers">{rangers.toLocaleString()}</span>
             <span className="text-center text-[11px] font-semibold" id="s-lv-rangers">Lv {troopLevels?.rangers?.level || 1}</span>
             <span className="badge badge-blue text-center text-[9px]">Ranged</span>
           </div>
 
           <div id="s-row-clerics" className={clsx('grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5', isVampire && 'hidden')}>
             <span className="text-[13px] text-text" id="s-label-clerics">Clerics</span>
-            <span className="text-[13px] font-semibold text-right text-text" id="s-clerics">{(state?.clerics ?? 0).toLocaleString()}</span>
+            <span className="text-[13px] font-semibold text-right text-text" id="s-clerics">{clerics.toLocaleString()}</span>
             <span className="text-center text-[11px] font-semibold" id="s-lv-clerics">Lv {troopLevels?.clerics?.level || 1}</span>
             <span className="badge badge-green text-center text-[9px]">Heal</span>
           </div>
@@ -292,28 +351,28 @@ const StatusPanel = () => {
 
           <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5">
             <span className="text-[13px] text-text" id="s-label-mages">Mages</span>
-            <span className="text-[13px] font-semibold text-right text-text" id="s-mages">{(state?.mages ?? 0).toLocaleString()}</span>
+            <span className="text-[13px] font-semibold text-right text-text" id="s-mages">{mages.toLocaleString()}</span>
             <span className="text-center text-[11px] font-semibold" id="s-lv-mages">Lv {troopLevels?.mages?.level || 1}</span>
             <span className="badge badge-amber text-center text-[9px]">Magic</span>
           </div>
 
           <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5">
             <span className="text-[13px] text-text" id="s-label-thieves">Thieves</span>
-            <span className="text-[13px] font-semibold text-right text-text" id="s-thieves">{(state?.thieves ?? 0).toLocaleString()}</span>
+            <span className="text-[13px] font-semibold text-right text-text" id="s-thieves">{thieves.toLocaleString()}</span>
             <span className="text-center text-[11px] font-semibold" id="s-lv-thieves">Lv {troopLevels?.thieves?.level || 1}</span>
             <span className="badge badge-amber text-center text-[9px]">Covert</span>
           </div>
 
           <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-strong">
             <span className="text-[13px] text-text" id="s-label-ninjas">Ninjas</span>
-            <span className="text-[13px] font-semibold text-right text-text" id="s-ninjas">{(state?.ninjas ?? 0).toLocaleString()}</span>
+            <span className="text-[13px] font-semibold text-right text-text" id="s-ninjas">{ninjas.toLocaleString()}</span>
             <span className="text-center text-[11px] font-semibold" id="s-lv-ninjas">Lv {troopLevels?.ninjas?.level || 1}</span>
             <span className="badge badge-amber text-center text-[9px]">Covert</span>
           </div>
 
           <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5">
             <span className="text-[13px] text-text" id="s-label-engineers">Engineers</span>
-            <span className="text-[13px] font-semibold text-right text-text" id="s-engineers">{(state?.engineers ?? 0).toLocaleString()}</span>
+            <span className="text-[13px] font-semibold text-right text-text" id="s-engineers">{engineers.toLocaleString()}</span>
             <span className="text-center text-[11px] text-text3" id="s-lv-engineers">Lv {Number(troopLevels.engineers?.level || 1)}</span>
             <span className="badge badge-blue text-center text-[9px]">Build</span>
           </div>
@@ -334,28 +393,28 @@ const StatusPanel = () => {
 
           <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5">
             <span className="text-[13px] text-text">Warmachines</span>
-            <span className="text-[13px] font-semibold text-right text-text" id="s-war_machines">{(state?.war_machines ?? 0).toLocaleString()}</span>
+            <span className="text-[13px] font-semibold text-right text-text" id="s-war_machines">{warMachines.toLocaleString()}</span>
             <span />
             <span className="badge badge-gold text-center text-[9px]">Siege</span>
           </div>
 
           <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5">
             <span className="text-[13px] text-text" id="s-label-ladders">Ladders</span>
-            <span className="text-[13px] font-semibold text-right text-text" id="s-ladders">{(state?.ladders ?? 0).toLocaleString()}</span>
+            <span className="text-[13px] font-semibold text-right text-text" id="s-ladders">{ladders.toLocaleString()}</span>
             <span />
             <span className="badge badge-gold text-center text-[9px]">Siege</span>
           </div>
 
           <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5">
             <span className="text-[13px] text-text">Weapons</span>
-            <span className="text-[13px] font-semibold text-right text-text" id="s-weapons">{(state?.weapons_stockpile ?? 0).toLocaleString()}</span>
+            <span className="text-[13px] font-semibold text-right text-text" id="s-weapons">{weaponsStockpile.toLocaleString()}</span>
             <span />
             <span className="badge badge-gold text-center text-[9px]">Stock</span>
           </div>
 
           <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0">
             <span className="text-[13px] text-text">Armor</span>
-            <span className="text-[13px] font-semibold text-right text-text" id="s-armor">{(state?.armor_stockpile ?? 0).toLocaleString()}</span>
+            <span className="text-[13px] font-semibold text-right text-text" id="s-armor">{armorStockpile.toLocaleString()}</span>
             <span />
             <span className="badge badge-gold text-center text-[9px]">Stock</span>
           </div>
@@ -366,7 +425,18 @@ const StatusPanel = () => {
         <div className={STATUS_CARD_CLASS}>
           <div className="card-title">Research levels</div>
           {RESEARCH_ROWS.map((row, index) => {
-            const rawValue = state?.[row.stateKey];
+            let rawValue;
+            if (row.stateKey === 'res_economy') rawValue = resEconomy;
+            else if (row.stateKey === 'res_weapons') rawValue = resWeapons;
+            else if (row.stateKey === 'res_armor') rawValue = resArmor;
+            else if (row.stateKey === 'res_military') rawValue = resMilitary;
+            else if (row.stateKey === 'res_spellbook') rawValue = resSpellbook;
+            else if (row.stateKey === 'res_attack_magic') rawValue = resAttackMagic;
+            else if (row.stateKey === 'res_defense_magic') rawValue = resDefenseMagic;
+            else if (row.stateKey === 'res_entertainment') rawValue = resEntertainment;
+            else if (row.stateKey === 'res_construction') rawValue = resConstruction;
+            else if (row.stateKey === 'mana') rawValue = mana;
+
             const width = row.manaScale ? manaBarWidth(rawValue) : researchBarWidth(rawValue);
             const barDomId = row.barId === 'mana' ? 'pb-mana-s' : `pb-${row.barId}-st`;
 
@@ -390,46 +460,16 @@ const StatusPanel = () => {
 
         <div className={STATUS_CARD_CLASS}>
           <div className="card-title">Key buildings</div>
-          <div className="trow">
-            <span className="name">Farm</span>
-            <span className="count" id="kb-farms">{state?.bld_farms ?? 0}</span>
-          </div>
-          <div className="trow">
-            <span className="name">Barracks</span>
-            <span className="count" id="kb-barracks">{state?.bld_barracks ?? 0}</span>
-          </div>
-          <div className="trow">
-            <span className="name">Schools</span>
-            <span className="count" id="kb-schools">{state?.bld_schools ?? 0}</span>
-          </div>
-          <div className="trow">
-            <span className="name">Library</span>
-            <span className="count" id="kb-libraries">{state?.bld_libraries ?? 0}</span>
-          </div>
-          <div className="trow">
-            <span className="name">Mage Towers</span>
-            <span className="count" id="kb-mage_towers">{state?.bld_mage_towers ?? 0}</span>
-          </div>
-          <div className="trow">
-            <span className="name">Smithies</span>
-            <span className="count" id="kb-smithies">{state?.bld_smithies ?? 0}</span>
-          </div>
-          <div className="trow">
-            <span className="name">Markets</span>
-            <span className="count" id="kb-markets">{state?.bld_markets ?? 0}</span>
-          </div>
-          <div className="trow">
-            <span className="name">Guard Towers</span>
-            <span className="count" id="kb-guard_towers">{state?.bld_guard_towers ?? 0}</span>
-          </div>
-          <div className="trow">
-            <span className="name">Training Fields</span>
-            <span className="count" id="kb-training">{state?.bld_training ?? 0}</span>
-          </div>
-          <div className="trow border-b-0">
-            <span className="name">Castles</span>
-            <span className="count" id="kb-castles">{state?.bld_castles ?? 0}</span>
-          </div>
+          <KeyBuildingsRow label="Farm" buildingId="farms" />
+          <KeyBuildingsRow label="Barracks" buildingId="barracks" />
+          <KeyBuildingsRow label="Schools" buildingId="schools" />
+          <KeyBuildingsRow label="Library" buildingId="libraries" />
+          <KeyBuildingsRow label="Mage Towers" buildingId="mage_towers" />
+          <KeyBuildingsRow label="Smithies" buildingId="smithies" />
+          <KeyBuildingsRow label="Markets" buildingId="markets" />
+          <KeyBuildingsRow label="Guard Towers" buildingId="guard_towers" />
+          <KeyBuildingsRow label="Training Fields" buildingId="training" />
+          <KeyBuildingsRow label="Castles" buildingId="castles" isLast />
         </div>
       </div>
 
