@@ -4,6 +4,7 @@ import { logout } from './AuthModal.jsx';
 import { switchTab } from '../../utils/switchTab.js';
 import { useNavLayout } from '../../hooks/useNavLayout.js';
 import { useShellBadges } from '../../hooks/useShellBadges.js';
+import { useIsAdmin } from '../../stores';
 
 const CORE_TABS = [
   { id: 'status', label: 'Status', icon: '🏰', color: 'text-sky-300' },
@@ -84,12 +85,11 @@ function DrawerChip({ label, icon, color, active, onClick, showBadge }) {
 }
 
 const BottomNav = () => {
-  const { state } = useGameState();
+  const isAdmin = useIsAdmin();
   const { activePanel } = useActivePanel();
   const { layout } = useNavLayout();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { hasBadge } = useShellBadges();
-  const isAdmin = !!state?.isAdmin;
   const showBottomNav = layout === 'bottom' || layout === 'responsive';
 
   const drawerActive = useMemo(() => (

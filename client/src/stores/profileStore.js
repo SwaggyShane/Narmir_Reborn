@@ -40,6 +40,7 @@ export const useProfileStore = create(
       // Admin and system
       isAdmin: false,
       turns_stored: 0,
+      rankingsCache: [],
 
       // ===== ACTIONS =====
 
@@ -69,6 +70,7 @@ export const useProfileStore = create(
         if (data?.engineer_xp_needed !== undefined) state.engineer_xp_needed = data.engineer_xp_needed;
         if (data?.isAdmin !== undefined) state.isAdmin = data.isAdmin;
         if (data?.turns_stored !== undefined) state.turns_stored = data.turns_stored;
+        if (data?.rankingsCache !== undefined) state.rankingsCache = data.rankingsCache;
       }),
 
       /**
@@ -131,3 +133,7 @@ export const useEngineerXpNeeded = () => useProfileStore((state) => state.engine
 export const useIsAdmin = () => useProfileStore((state) => state.isAdmin);
 
 export const useTurnsStored = () => useProfileStore((state) => state.turns_stored);
+
+export const useUsername = () => useProfileStore((state) => state.username);
+
+export const useRankingsCache = () => useProfileStore((state) => state.rankingsCache);

@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import { fmt } from '../../utils/fmt.js';
 import { kingdomXpProgress, xpForLevel } from '../../utils/xp.js';
+import { useLevel, useXp, usePrestige, useRace } from '../../stores';
+import { useGameState } from '../../hooks/useGameState';
 import {
   formatMilestoneBonusSummary,
   KINGDOM_XP_MILESTONES,
@@ -34,11 +36,11 @@ function XpSourceBar({ label, earned, total, barClass, textClass = 'text-white' 
 }
 
 export default function KingdomXpModal({ open, onClose }) {
-
-  const level = state?.level ?? 1;
-  const xp = state?.xp ?? 0;
-  const prestige = state?.prestige_level ?? 0;
-  const race = state?.race || 'human';
+  const level = useLevel();
+  const xp = useXp();
+  const prestige = usePrestige();
+  const race = useRace() || 'human';
+  const { state } = useGameState();
 
   const { xpNeeded, xpIntoLevel, pct } = useMemo(
     () => kingdomXpProgress(level, xp, prestige),
