@@ -1,9 +1,8 @@
 import clsx from 'clsx';
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useActivePanel } from '../../hooks/useActivePanel';
-import { useGameMutationEvents } from '../../hooks/useGameState';
+import { useGameState, useGameMutationEvents } from '../../hooks/useGameState';
 import { toast } from '../../utils/toast.js';
-import { useProfileStore, useEconomyStore, useMillitaryStore, useResearchStore, usePopulationStore, useRace, useMages } from '../../stores';
 import UpgradesList from './UpgradesList.jsx';
 import {
   TOWER_UPGRADES,
@@ -14,9 +13,8 @@ import {
 import { parseOwnedUpgrades } from '../../utils/upgradeUtils.js';
 
 const StudiesPanel = () => {
+  const { state, applyUpdates } = useGameState();
   useGameMutationEvents();
-  const race = useRace();
-  const mages = useMages();
   const [activeTab, setActiveTab] = useState('tower');
   const [activeSchoolSubTab, setActiveSchoolSubTab] = useState('general');
   const [studiesData, setStudiesData] = useState(null);
@@ -44,7 +42,7 @@ const StudiesPanel = () => {
     } catch (err) {
       console.error('Failed to load studies data:', err);
     }
-  }, []);
+  }, [state]);
 
   // Fetch data on mount
   useEffect(() => {
@@ -57,7 +55,7 @@ const StudiesPanel = () => {
       fetchStudiesData();
     };
     load();
-  }, [activePanel, fetchStudiesData]);
+  }, [activePanel, state, fetchStudiesData]);
 
   // Sync state with server data, guarding against overwriting active input
   useEffect(() => {
@@ -131,19 +129,11 @@ const StudiesPanel = () => {
     }
   }, [fetchStudiesData]);
 
+  const race = state?.race || 'human';
   const researchAlloc = studiesData?.research_allocation || {};
-  const totalMages = Number(mages || 0);
+  const totalMages = Number(state?.mages || 0);
   const allocatedMages = Number(researchAlloc.spellbook_mages || 0) + Number(researchAlloc.school_spellbook_mages || 0);
   const availableMages = Math.max(0, totalMages - allocatedMages);
-
-  const syncResearchData = useCallback((researchData) => {
-    if (!researchData || Object.keys(researchData).length === 0) return;
-    useProfileStore.getState().receiveServerSnapshot(researchData);
-    useEconomyStore.getState().receiveServerSnapshot(researchData);
-    useMillitaryStore.getState().receiveServerSnapshot(researchData);
-    useResearchStore.getState().receiveServerSnapshot(researchData);
-    usePopulationStore.getState().receiveServerSnapshot(researchData);
-  }, []);
 
   const saveResearchFocus = useCallback(async () => {
     const hasRepo = !!(studiesData?.school_upgrades || {}).repository;
@@ -160,10 +150,10 @@ const StudiesPanel = () => {
       return;
     }
     if (data.research_focus) {
-      syncResearchData({ research_focus: data.research_focus });
+      applyUpdates({ research_focus: data.research_focus }, { reason: 'research-focus' });
       toast(`Research focus saved — ${data.research_focus.join(' & ')}`, 'success');
     }
-  }, [studiesData?.school_upgrades, focus1Value, focus2Value, syncResearchData]);
+  }, [studiesData?.school_upgrades, focus1Value, focus2Value, applyUpdates]);
 
   const setMageMax = useCallback((type) => {
     if (type === 'spellbook') {
