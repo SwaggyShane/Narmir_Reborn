@@ -60,7 +60,7 @@ export {
 
 export {
   // Military Store
-  useMillitaryStore,
+  useMilitaryStore,
   useTroops,
   useInjuredTroops,
   useWallHp,
@@ -157,14 +157,14 @@ export {
  *
  * socket.on('kingdom-update', (data) => {
  *   useEconomyStore.getState().receiveServerSnapshot(data.economy);
- *   useMillitaryStore.getState().receiveServerSnapshot(data.military);
+ *   useMilitaryStore.getState().receiveServerSnapshot(data.military);
  *   useResearchStore.getState().receiveServerSnapshot(data.research);
  *   usePopulationStore.getState().receiveServerSnapshot(data.population);
  * });
  *
  * socket.on('turn-tick', (turnData) => {
  *   useEconomyStore.getState().receiveTurnUpdate(turnData);
- *   useMillitaryStore.getState().receiveTurnUpdate(turnData);
+ *   useMilitaryStore.getState().receiveTurnUpdate(turnData);
  *   useResearchStore.getState().receiveTurnUpdate(turnData);
  *   usePopulationStore.getState().receiveTurnUpdate(turnData);
  * });

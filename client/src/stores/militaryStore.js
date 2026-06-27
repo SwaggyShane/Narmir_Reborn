@@ -10,7 +10,7 @@ import { persist } from 'zustand/middleware';
  * Entity normalization: armies use byId/allIds pattern for O(1) updates
  */
 
-export const useMillitaryStore = create(
+export const useMilitaryStore = create(
   persist(
     devtools(
       immer((set, _get) => ({
@@ -244,51 +244,51 @@ export const useMillitaryStore = create(
  * SELECTORS
  */
 
-export const useTroops = () => useMillitaryStore((state) => state.troops);
+export const useTroops = () => useMilitaryStore((state) => state.troops);
 
-export const useInjuredTroops = () => useMillitaryStore((state) => state.injuredTroops);
+export const useInjuredTroops = () => useMilitaryStore((state) => state.injuredTroops);
 
-export const useWallHp = () => useMillitaryStore((state) => state.wall_hp);
+export const useWallHp = () => useMilitaryStore((state) => state.wall_hp);
 
 export const useArmies = () =>
-  useMillitaryStore((state) =>
+  useMilitaryStore((state) =>
     state.armies.allIds.map(id => state.armies.byId[id])
   );
 
 export const useSelectedArmy = () =>
-  useMillitaryStore((state) => {
+  useMilitaryStore((state) => {
     if (!state.selectedArmy) return null;
     return state.armies.byId[state.selectedArmy] || null;
   });
 
-export const usePendingAttack = () => useMillitaryStore((state) => state.pendingAttack);
+export const usePendingAttack = () => useMilitaryStore((state) => state.pendingAttack);
 
-export const useLastCombatResult = () => useMillitaryStore((state) => state.lastCombatResult);
+export const useLastCombatResult = () => useMilitaryStore((state) => state.lastCombatResult);
 
 // Troop type selectors
-export const useFighters = () => useMillitaryStore((state) => state.troops.fighters || 0);
+export const useFighters = () => useMilitaryStore((state) => state.troops.fighters || 0);
 
-export const useRangers = () => useMillitaryStore((state) => state.troops.rangers || 0);
+export const useRangers = () => useMilitaryStore((state) => state.troops.rangers || 0);
 
-export const useMages = () => useMillitaryStore((state) => state.troops.mages || 0);
+export const useMages = () => useMilitaryStore((state) => state.troops.mages || 0);
 
-export const useClerics = () => useMillitaryStore((state) => state.troops.clerics || 0);
+export const useClerics = () => useMilitaryStore((state) => state.troops.clerics || 0);
 
-export const useNinjas = () => useMillitaryStore((state) => state.troops.ninjas || 0);
+export const useNinjas = () => useMilitaryStore((state) => state.troops.ninjas || 0);
 
-export const useThieves = () => useMillitaryStore((state) => state.troops.thieves || 0);
+export const useThieves = () => useMilitaryStore((state) => state.troops.thieves || 0);
 
-export const useEngineers = () => useMillitaryStore((state) => state.troops.engineers || 0);
+export const useEngineers = () => useMilitaryStore((state) => state.troops.engineers || 0);
 
-export const useWarMachines = () => useMillitaryStore((state) => state.troops.war_machines || 0);
+export const useWarMachines = () => useMilitaryStore((state) => state.troops.war_machines || 0);
 
 // Special units and equipment
-export const useLadders = () => useMillitaryStore((state) => state.ladders || 0);
+export const useLadders = () => useMilitaryStore((state) => state.ladders || 0);
 
-export const useThralls = () => useMillitaryStore((state) => state.thralls || 0);
+export const useThralls = () => useMilitaryStore((state) => state.thralls || 0);
 
-export const useWeaponsStockpile = () => useMillitaryStore((state) => state.weapons_stockpile || 0);
+export const useWeaponsStockpile = () => useMilitaryStore((state) => state.weapons_stockpile || 0);
 
-export const useArmorStockpile = () => useMillitaryStore((state) => state.armor_stockpile || 0);
+export const useArmorStockpile = () => useMilitaryStore((state) => state.armor_stockpile || 0);
 
-export const useTroopLevels = () => useMillitaryStore((state) => state.troop_levels || {});
+export const useTroopLevels = () => useMilitaryStore((state) => state.troop_levels || {});
