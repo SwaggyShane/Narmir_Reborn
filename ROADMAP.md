@@ -1,7 +1,7 @@
 # Narmir Reborn — Unified Development Roadmap
 
-**Status:** Alpha phase (ongoing) — Tracks A–D complete; E1–E2 fixed; E3 deferred (await discord.js v15); Track F.3 consolidation complete (PR #606–#608); **F.4 engine.js decomposition COMPLETE (PR #611); F.2 Combat V2 complete and alpha-ready (PR #612); F.5 Phase 1 PR #3–#5 COMPLETE (PR #617, #618, #619 merged); PR #6–#8 in progress**  
-**Last updated:** 2026-06-27 (F5 Phase 1: PR #3–#5 merged; PR #6 green CI; PR #7–#8 queue)  
+**Status:** Alpha phase (ongoing) — Tracks A–D complete; E1–E2 fixed; E3 deferred (await discord.js v15); Track F.3 consolidation complete (PR #606–#608); **F.4 engine.js decomposition COMPLETE (PR #611); F.2 Combat V2 complete and alpha-ready (PR #612); F.5 Phase 1 PR #3–#6 COMPLETE (PR #617, #618, #619, #620 merged); PR #7–#8 in queue**  
+**Last updated:** 2026-06-27 (F5 Phase 1: PR #3–#6 merged; PR #7–#8 in queue)  
 **Single source of truth** for planning, replacing ALPHA_ROADMAP + AdminRoadmap + MAINTENANCE (see **Related Documents**)
 
 ---
@@ -258,7 +258,7 @@ Link updated doc to this roadmap; clarify resolved vs. open items.
 | **F2** | Combat V2 complete + alpha-ready | Individual troop HP/DMG model; 26.8M simulated combats; balanced 48–52% outcomes; feature-flagged `USE_COMBAT_V2=1` | Alpha | ✅ **DONE** (PR #612) |
 | **F3** | Module consolidation & architecture foundation | ✅ Phase 1: data-transformations extraction (PR #606)<br/>✅ Phase 2: timestamp consolidation (PR #607)<br/>✅ Phase 3: architecture documentation + mobile hardening (PR #608) | Now | ✅ **DONE** |
 | **F4** | `engine.js` decomposition | 4 phases (all complete); 6,241 lines → 8 focused modules + re-exports | Now | ✅ **DONE** (PR #611) |
-| **F5** | `GameStateManager` → Zustand | 5-PR incremental migration; Phase 1 (Store infrastructure + all tier-1 panels) | Post-F4 | ✅ **PR #3–#5 merged (#617, #618, #619); PR #6 green CI (PR #620); PR #7–#8 queue** |
+| **F5** | `GameStateManager` → Zustand | 5-PR incremental migration; Phase 1 (Store infrastructure + all tier-1 panels) | Post-F4 | ✅ **PR #3–#6 COMPLETE (PR #617, #618, #619, #620 merged); PR #7–#8 in queue** |
 | **F6** | Frontend component tests (Vitest + RTL) | Start with shell nav + `panelMeta` | Post-F4 | ⏳ Pending |
 | **F7** | Numeric range validation (troops, builds, research) | Prevents balance exploits | Post-F4 | ⏳ Pending |
 | **F8** | `kingdom.js` split → `build`, `warfare`, `economy`, `research` modules | Incremental refactor; enabled by F3 foundation | Post-F4 | ⏳ Pending |
