@@ -31,9 +31,20 @@ export const useResearchStore = create(
           allIds: [],
         },
 
+        // Research focus and school management
+        research_focus: [], // Array of focused disciplines [primary, secondary]
+        research_allocation: {
+          spellbook_mages: 0,
+          school_spellbook_mages: 0,
+        }, // Mage allocation across schools
+        school_of_magic: null, // Researched school name or null
+        school_level: 0, // School advancement level
+        school_upgrades: {}, // Completed school upgrades
+        researchers: 0, // Total mages/researchers available
+
         // ===== CLIENT-OWNED STATE (UI only) =====
         selectedDiscipline: 'warfare',
-        researchAllocation: {}, // User's allocation before submitting
+        researchAllocationUI: {}, // User's allocation form state before submitting
 
         // ===== ACTIONS =====
 
@@ -41,6 +52,7 @@ export const useResearchStore = create(
          * receiveServerSnapshot: Overwrite authoritative research state
          */
         receiveServerSnapshot: (data) => set((state) => {
+          if (!data) return;
           if (data.mana !== undefined) {
             state.mana = data.mana;
           }
@@ -50,12 +62,31 @@ export const useResearchStore = create(
           if (data.disciplineProgress) {
             Object.assign(state.disciplineProgress, data.disciplineProgress);
           }
+          if (data.research_focus !== undefined) {
+            state.research_focus = data.research_focus;
+          }
+          if (data.research_allocation !== undefined) {
+            Object.assign(state.research_allocation, data.research_allocation);
+          }
+          if (data.school_of_magic !== undefined) {
+            state.school_of_magic = data.school_of_magic;
+          }
+          if (data.school_level !== undefined) {
+            state.school_level = data.school_level;
+          }
+          if (data.school_upgrades !== undefined) {
+            Object.assign(state.school_upgrades, data.school_upgrades);
+          }
+          if (data.researchers !== undefined) {
+            state.researchers = data.researchers;
+          }
         }),
 
         /**
          * completeResearch: Discipline research finished, update XP/level
          */
         completeResearch: (disciplineData) => set((state) => {
+          if (!disciplineData || !disciplineData.discipline) return;
           const discipline = state.disciplineProgress[disciplineData.discipline];
           if (discipline) {
             discipline.xp = disciplineData.xp || 0;
@@ -85,6 +116,7 @@ export const useResearchStore = create(
          * receiveResearchXp: XP allocated to active research
          */
         receiveResearchXp: (xpData) => set((state) => {
+          if (!xpData) return;
           Object.keys(xpData).forEach((discipline) => {
             if (state.disciplineProgress[discipline]) {
               state.disciplineProgress[discipline].xp += xpData[discipline];
@@ -127,7 +159,7 @@ export const useResearchStore = create(
          * setResearchAllocation: User input (not persisted until server accepts)
          */
         setResearchAllocation: (allocation) => set((state) => {
-          state.researchAllocation = allocation;
+          state.researchAllocationUI = allocation;
         }),
 
         /**
@@ -135,7 +167,49 @@ export const useResearchStore = create(
          */
         submitResearchAllocation: () => set((state) => {
           // Allocation sent to server; local copy cleared
-          state.researchAllocation = {};
+          state.researchAllocationUI = {};
+        }),
+
+        /**
+         * allocateResearchers: Update mage allocation to schools
+         */
+        allocateResearchers: (allocation) => set((state) => {
+          Object.assign(state.research_allocation, allocation);
+        }),
+
+        /**
+         * setResearchFocus: Set primary and secondary research focus
+         */
+        setResearchFocus: (focus) => set((state) => {
+          state.research_focus = Array.isArray(focus) ? focus : [];
+        }),
+
+        /**
+         * updateSchoolOfMagic: Set or update researched school
+         */
+        updateSchoolOfMagic: (school) => set((state) => {
+          state.school_of_magic = school;
+        }),
+
+        /**
+         * updateSchoolLevel: Update school advancement level
+         */
+        updateSchoolLevel: (level) => set((state) => {
+          state.school_level = Math.max(0, level);
+        }),
+
+        /**
+         * updateSchoolUpgrades: Add or update school upgrades
+         */
+        updateSchoolUpgrades: (upgrades) => set((state) => {
+          Object.assign(state.school_upgrades, upgrades);
+        }),
+
+        /**
+         * updateResearchersCount: Update available researcher count
+         */
+        updateResearchersCount: (count) => set((state) => {
+          state.researchers = Math.max(0, count);
         }),
       })),
       { name: 'research' }
@@ -172,3 +246,21 @@ export const useActiveResearch = () =>
 
 export const useSelectedDiscipline = () =>
   useResearchStore((state) => state.selectedDiscipline);
+
+export const useResearchFocus = () =>
+  useResearchStore((state) => state.research_focus);
+
+export const useResearchAllocation = () =>
+  useResearchStore((state) => state.research_allocation);
+
+export const useSchoolOfMagic = () =>
+  useResearchStore((state) => state.school_of_magic);
+
+export const useSchoolLevel = () =>
+  useResearchStore((state) => state.school_level);
+
+export const useSchoolUpgrades = () =>
+  useResearchStore((state) => state.school_upgrades);
+
+export const useResearchersCount = () =>
+  useResearchStore((state) => state.researchers);
