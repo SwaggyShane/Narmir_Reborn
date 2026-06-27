@@ -237,4 +237,27 @@ console.log('Testing numeric-validation.js\n');
   console.log('Test 22: validateGoldAmount accepts zero when allowZero=true ✓');
 }
 
-console.log('\nAll 28 numeric validation tests passed.');
+// Test 23: validatePositiveInteger rejects insecure type coercions
+{
+  const resultBoolTrue = validatePositiveInteger(true);
+  const resultBoolFalse = validatePositiveInteger(false);
+  const resultArray = validatePositiveInteger([10]);
+  const resultEmptyStr = validatePositiveInteger('');
+  const resultWhitespace = validatePositiveInteger('   ');
+  assert.ok(!resultBoolTrue.valid, 'should reject true');
+  assert.ok(!resultBoolFalse.valid, 'should reject false');
+  assert.ok(!resultArray.valid, 'should reject [10]');
+  assert.ok(!resultEmptyStr.valid, 'should reject empty string');
+  assert.ok(!resultWhitespace.valid, 'should reject whitespace string');
+  console.log('Test 23: validatePositiveInteger rejects insecure type coercions ✓');
+}
+
+// Test 24: validateAllocationObject rejects insecure type coercions
+{
+  const allocation = { fighters: true, rangers: [10], clerics: '' };
+  const result = validateAllocationObject(allocation);
+  assert.ok(!result.valid, 'should reject invalid types in allocation');
+  console.log('Test 24: validateAllocationObject rejects insecure type coercions ✓');
+}
+
+console.log('\nAll 30 numeric validation tests passed.');

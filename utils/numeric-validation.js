@@ -29,22 +29,27 @@ function validatePositiveInteger(value, { min = 1, max = MAX_REASONABLE_AMOUNT, 
     return { valid: false, error: `${fieldName} is required` };
   }
 
+  // Reject booleans, arrays, and objects (prevent insecure type coercion)
+  if (typeof value === 'boolean' || Array.isArray(value) || (typeof value === 'object')) {
+    return { valid: false, error: `${fieldName} must be a number (got: ${typeof value})` };
+  }
+
+  // Reject empty or whitespace-only strings
+  if (typeof value === 'string' && value.trim() === '') {
+    return { valid: false, error: `${fieldName} must be a number (got: empty string)` };
+  }
+
   // Convert to number
   const num = Number(value);
 
-  // Check for NaN
-  if (Number.isNaN(num)) {
+  // Check for NaN or non-finite values
+  if (!Number.isFinite(num)) {
     return { valid: false, error: `${fieldName} must be a number (got: ${value})` };
   }
 
   // Check for non-integer
   if (!Number.isInteger(num)) {
     return { valid: false, error: `${fieldName} must be an integer (got: ${value})` };
-  }
-
-  // Check for infinity
-  if (!Number.isFinite(num)) {
-    return { valid: false, error: `${fieldName} must be finite (got: ${value})` };
   }
 
   // Check minimum
@@ -74,6 +79,16 @@ function validateNonNegativeInteger(value, { min = 0, max = MAX_ALLOCATION, fiel
     return { valid: false, error: `${fieldName} is required` };
   }
 
+  // Reject booleans, arrays, and objects (prevent insecure type coercion)
+  if (typeof value === 'boolean' || Array.isArray(value) || (typeof value === 'object')) {
+    return { valid: false, error: `${fieldName} must be a number (got: ${typeof value})` };
+  }
+
+  // Reject empty or whitespace-only strings
+  if (typeof value === 'string' && value.trim() === '') {
+    return { valid: false, error: `${fieldName} must be a number (got: empty string)` };
+  }
+
   // Convert to number
   const num = Number(value);
 
@@ -82,14 +97,9 @@ function validateNonNegativeInteger(value, { min = 0, max = MAX_ALLOCATION, fiel
     return { valid: false, error: `${fieldName} must be a number (got: ${value})` };
   }
 
-  // Check for non-integer
+  // Check for non-integer (also catches Infinity and -Infinity)
   if (!Number.isInteger(num)) {
     return { valid: false, error: `${fieldName} must be an integer (got: ${value})` };
-  }
-
-  // Check for infinity
-  if (!Number.isFinite(num)) {
-    return { valid: false, error: `${fieldName} must be finite (got: ${value})` };
   }
 
   // Check minimum
@@ -198,6 +208,16 @@ function validateAllocationObject(allocation, {
     // Whitelist validation if validKeys provided
     if (validKeys && !validKeys.includes(key)) {
       return { valid: false, error: `Invalid ${fieldName} key: ${key}` };
+    }
+
+    // Reject booleans, arrays, and objects (prevent insecure type coercion)
+    if (typeof value === 'boolean' || Array.isArray(value) || (typeof value === 'object' && value !== null)) {
+      return { valid: false, error: `${fieldName}.${key} must be non-negative integer (got: ${typeof value})` };
+    }
+
+    // Reject empty or whitespace-only strings
+    if (typeof value === 'string' && value.trim() === '') {
+      return { valid: false, error: `${fieldName}.${key} must be non-negative integer (got: empty string)` };
     }
 
     // Validate amount
