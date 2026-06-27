@@ -1,9 +1,9 @@
 # F5: GameStateManager → Zustand Migration Plan
 
-**Status:** Design Phase  
+**Status:** Ready for Phase 1 Kickoff (Architecture Locked)  
 **Priority:** High (post-F4)  
-**Effort Estimate:** 15–20 hours across 2–3 PRs  
-**Target:** Incremental per-panel refactor (no big bang rewrite)
+**Effort Estimate:** 18–21 hours across 5 PRs  
+**Target:** Domain-based stores (split early) + incremental panel migration (small PRs)
 
 ---
 
@@ -308,8 +308,12 @@ submitResearchAllocation()       // Send to server
     // ... per-panel state
   },
   
-  // Modals (persistent state)
-  openModals: Set(['confirm-attack']),
+  // Modals (use object for better persistence + reactivity)
+  openModals: {
+    'confirm-attack': false,
+    'trade-dialog': false,
+    'settings': false,
+  },
   
   // Search/filter state (persistent)
   searchText: '',
@@ -339,9 +343,11 @@ function BuildPanel() {
 **Actions:**
 ```js
 setActivePanel(panelName)           // Switch active panel
-setPanelState(panelName, state)     // Update panel's local state
-toggleModal(modalName)              // Open/close a modal
-setHoveredTroop(troopId)            // Temporary hover state
+setPanelState(panelName, state)     // Update panel's local state (Immer-safe nested updates)
+toggleModal(modalName, isOpen)      // Open/close a modal by name
+openModal(modalName)                // Open specific modal
+closeModal(modalName)               // Close specific modal
+closeAllModals()                    // Close all modals at once
 clearPanelState(panelName)          // Reset panel to defaults
 ```
 
@@ -365,15 +371,17 @@ function BuildPanel() {
 
 ---
 
-### Store 3: Combat Store (Optional, Recommend Defer to F5-Phase2)
+### Store Integration: Combat V2 (Part of militaryStore)
 
-**Purpose:** Manage active combat state and Combat V2 diagnostics.
+**Purpose:** Manage active combat state and Combat V2 diagnostics within militaryStore.
 
-**Note:** Combat state is tied to gameplay and could live in `kingdomStore`. Recommend starting F5 with kingdomStore + uiStore, then extract combat if complexity warrants (Phase 2).
+**Implementation (PR #1):** Combat state is part of `militaryStore`, not a separate store. This keeps all combat-related state together with troops, armies, and wall HP.
 
-**If extracted, structure:**
+**State structure (in militaryStore):**
 ```js
 {
+  // ... troops, armies, walls, etc.
+  
   activeCombat: {
     id: 'combat-123',
     attacker: { name: 'Kingdom1', troops: {...} },
@@ -393,7 +401,9 @@ function BuildPanel() {
 }
 ```
 
-**Decision:** Keep in kingdomStore for F5-Phase1. Extract to combatStore in F5-Phase2 if UI components grow complex.
+**Action:** Combat results update via `applyCombatResult()` action in militaryStore.
+
+**Future extraction:** If combat UI grows complex (replay system, detailed diagnostics, etc.), extract to dedicated `combatStore` in Phase 2. For now, Phase 1 keeps it colocated with military state.
 
 ---
 
@@ -586,72 +596,98 @@ function GoldCounter() {
 
 ### DevTools Middleware
 
-**Purpose:** Integrate with Redux DevTools for debugging state changes.
+**Purpose:** Integrate with Redux DevTools for debugging state changes during development.
 
 **Location:** `client/src/stores/middleware/devtools.js`
 
-**Setup:**
+**Setup (after Immer, before persist):**
 ```js
+import { immer } from 'zustand/middleware/immer';
 import { devtools } from 'zustand/middleware';
 
 const useKingdomStore = create(
   devtools(
-    (set) => ({
+    immer((set) => ({
       // ... store definition
-    }),
+    })),
     { name: 'kingdom' }  // Name in DevTools
   )
 );
 ```
 
-**Benefit:** See every state update, rewind/replay, inspect diffs, etc.
+**Middleware order (critical):**
+1. Create store function: `(set) => ({ ... })`
+2. Wrap with Immer: `immer((set) => (...))`
+3. Wrap with DevTools: `devtools(immer(...))`
+4. Wrap with Persist (if UI state): `persist(devtools(immer(...)))`
+
+**Benefit:** See every state update, rewind/replay, inspect diffs, validate Immer mutations are immutable
 
 ---
 
-### Immer Middleware (Safe Nested Updates)
+### Immer Middleware (Safe Nested Updates) — **REQUIRED in Phase 1**
 
-**Purpose:** Enable immutable-style updates for complex nested state (e.g., `panelState.build.selectedItem`).
+**Purpose:** Enable immutable-style updates for complex nested state (e.g., `panelState.build.selectedItem`). Critical for managing deeply nested panel state and entity collections without spread operator chains.
 
 **Location:** Built into Zustand
 
-**Setup:**
+**Setup (Immer FIRST, before devtools/persist):**
 ```js
 import { immer } from 'zustand/middleware/immer';
+import { devtools } from 'zustand/middleware';
 
 const useUIStore = create(
-  immer((set) => ({
-    panelState: { build: { sortBy: 'time' } },
-    setPanelState: (panelName, updates) => set((state) => {
-      state.panelState[panelName] = { ...state.panelState[panelName], ...updates };
-    }),
-  }))
+  devtools(
+    immer((set) => ({
+      panelState: { build: { sortBy: 'time' } },
+      setPanelState: (panelName, updates) => set((state) => {
+        // Immer allows direct mutation; automatically creates immutable updates
+        state.panelState[panelName] = { ...state.panelState[panelName], ...updates };
+      }),
+      updatePanelNested: (panelName, path, value) => set((state) => {
+        // Even deep nested updates work without spread chains
+        state.panelState[panelName].sortBy = value;
+      }),
+    })),
+    { name: 'ui' }
+  )
 );
 ```
 
-**Benefit:** Avoids spread operator pain; mutations inside `set()` are automatically frozen and converted to immutable updates.
+**Benefits:**
+- ✅ Avoids `{ ...state, panelState: { ...state.panelState, build: { ...state.panelState.build, sortBy: 'new' } } }` chains
+- ✅ Mutations inside `set()` are automatically frozen and converted to immutable updates
+- ✅ Much cleaner for complex nested state (panel visibility, entity collections, etc.)
+- ✅ Prevents accidental mutations outside Immer scope
+
+**Middleware order:** Immer FIRST (wraps the create function), then devtools, then persist
 
 ---
 
 ### Persistence Middleware (UI State Only)
 
-**Purpose:** Restore UI state (active panel, sort preferences) across page reloads.
+**Purpose:** Restore UI state (active panel, sort preferences) across page reloads. **ONLY for uiStore**, not kingdom stores.
 
 **Location:** `client/src/stores/middleware/persistence.js`
 
-**Setup:**
+**Setup (correct middleware order):**
 ```js
 import { persist } from 'zustand/middleware';
+import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
 const useUIStore = create(
   persist(
-    immer((set) => ({
-      // ... store definition
-    })),
+    devtools(
+      immer((set) => ({
+        // ... store definition
+      })),
+      { name: 'ui' }
+    ),
     {
       name: 'ui-state',
-      // In Zustand v4, persist middleware defaults to localStorage
-      // No need to pass storage option explicitly
+      // Zustand v4: persist defaults to localStorage
+      // No explicit storage option needed
       partialize: (state) => ({
         activePanel: state.activePanel,
         panelState: state.panelState,
@@ -661,9 +697,15 @@ const useUIStore = create(
 );
 ```
 
-**Note:** Do NOT persist kingdom metrics (gold, mana, etc.) — always fetch fresh from server.
+**Critical rules:**
+- ✅ DO persist: activePanel, panelState, sort order, filter preferences, column visibility
+- ❌ DO NOT persist: gold, mana, population, troops, research progress (server is authoritative)
+- ❌ DO NOT persist: optimistic UI state (pendingAttack, selectedArmy) — lose it on reload
 
-**Middleware order:** Immer first, then persist (immer wraps the create function).
+**Middleware order (mandatory):**
+1. Immer first (enables nested mutations)
+2. DevTools second (sees Immer mutations correctly)
+3. Persist last (serializes final state to localStorage)
 
 ---
 
@@ -752,9 +794,9 @@ function App() {
 
 ## Migration Strategy
 
-### Phase 1: Domain Stores + Core Panels (2–3 PRs, Each <300 lines diff)
+### Phase 1: Domain Stores + Panel Migration (5 Small PRs)
 
-**Goal:** Set up domain-based stores (split early!) with domain actions; migrate highest-traffic panels with many small PRs.
+**Goal:** Set up domain-based stores (split early!) with domain actions; migrate panels incrementally via small PRs.
 
 **Why split domain stores in Phase 1:**
 - Prevents monolithic bloat from day one
@@ -762,100 +804,113 @@ function App() {
 - Team can work on domains independently
 - Clear separation of concerns from the start
 
-**PR Strategy:** Multiple small PRs instead of one big PR
-- PR 1: Core store infrastructure (economyStore + uiStore)
-- PR 2: Migrate KingdomBodyHeader (uses economyStore)
-- PR 3: Migrate BuildPanel (uses economyStore + researchStore)
-- PR 4: Create militaryStore + migrate WarfarePanel
-- Each PR: <300 lines, single concern, easy to review and rollback
+**PR Strategy (Locked):**
 
-**Phase 1 Work:**
+**PR #1: Store Infrastructure** (3 hrs)
+- Create `client/src/stores/` directory structure
+- Implement **Immer middleware first** (mandatory for all stores — enables clean nested updates)
+- Implement all domain stores with **domain actions** (not field setters):
+  - `economyStore.ts` — `receiveTurnUpdate()`, `completeBuild()`, `receiveTrade()`
+  - `militaryStore.ts` — `applyCombatResult()`, `injureTroops()`, `damageWalls()`
+  - `researchStore.ts` — `completeResearch()`, `spendMana()`
+  - `populationStore.ts` — `updatePopulation()`, `updateHappiness()`
+  - `uiStore.ts` — `setActivePanel()`, `toggleModal()`, `setPanelState()`, etc. (with Immer for nested updates)
+- Add DevTools middleware (for debugging state transitions during development)
+- Add persistence middleware (UI state only, with Immer applied first)
+- Add normalized entity collections (byId/allIds pattern for armies, routes, etc.)
+- Implement server vs client state separation (`receiveServerSnapshot()` is authoritative)
+- Update socket.io event handlers to dispatch domain actions
+- **Diff:** <300 lines | **Test:** Stores work standalone, DevTools shows updates, nested state mutations work via Immer
 
-1. **PR 1: Store Infrastructure** (core setup, no panels yet)
-   - Create `client/src/stores/` directory structure
-   - Implement domain stores with **domain actions** (not field setters):
-     - `economyStore.ts` — `receiveTurnUpdate()`, `completeBuild()`, `receiveTrade()`
-     - `militaryStore.ts` — `applyCombatResult()`, `injureTroops()`, `damageWalls()`
-     - `researchStore.ts` — `completeResearch()`, `spendMana()`
-     - `uiStore.ts` — `selectPanel()`, `setPendingAction()`, etc.
-   - Add DevTools and persistence middleware (v4 compatible)
-   - Add normalized entity collections (byId/allIds pattern)
-   - Implement server vs client state separation (`receiveServerSnapshot()` is authoritative)
-   - Update socket.io event handlers to dispatch domain actions
-   - **Test:** Stores work standalone, DevTools works, no errors
+**PR #2: Migrate KingdomBodyHeader** (1.5 hrs)
+- Replace GameStateManager selectors with Zustand selectors (economyStore)
+- Use `useShallow` for object selectors
+- Test re-render count (should only re-render on resource changes)
+- **Diff:** <150 lines | **Test:** Panel works, localStorage persists
 
-2. **PR 2–4: Migrate Panels Incrementally** (one or two panels per PR)
-   - Migrate highest-traffic panels first (fastest wins):
-     - **KingdomBodyHeader** — displays resources (high re-render frequency)
-     - **BuildPanel** — reads economy store, domain-based actions
-     - **WarfarePanel** — reads military store, domain-based actions
-   - Each panel PR: extract GameStateManager references, add selectors, test
-   - Remove GameStateManager references from migrated panels only
-   - **Test:** Panel works, no re-render bloat, localStorage persists UI state
+**PR #3: Migrate BuildPanel** (1.5 hrs)
+- Replace GameStateManager with economyStore + researchStore
+- Domain-based UI interactions (completeBuild → action)
+- **Diff:** <150 lines
 
-**Testing:**
-- Verify metrics update correctly on socket.io events
-- Verify only subscribed components re-render (use React DevTools profiler)
-- Test persistence (refresh page, check active panel remains)
-- Test DevTools replay
+**PR #4: Migrate WarfarePanel** (1.5 hrs)
+- Replace GameStateManager with militaryStore
+- Apply Combat V2 selector optimizations
+- **Diff:** <150 lines
 
-**Effort:** ~8 hours
+**PR #5: Remaining Panels + Cleanup** (10–12 hrs)
+- Migrate remaining panels (EconomyPanel, ResearchPanel, etc.)
+- Remove GameStateManager fallback entirely
+- Verify all 4 baseline smoke checks pass
+- **Diff:** ~200 lines per panel
 
-**PR:** `feat(F5-Phase1): Core Zustand stores + initial panel migration`
+**Testing per PR:**
+- Redux DevTools shows correct state transitions
+- React Profiler: components re-render only on relevant state changes
+- UI state persists across page reloads (localStorage)
+- Socket.io events dispatch to stores correctly
+- No performance regression
 
----
-
-### Phase 2: Remaining Panels
-
-**Goal:** Migrate all remaining panels (economy, research, alliances, etc.) to Zustand.
-
-**Work:**
-
-1. Migrate 3–4 panels per sub-phase (to keep PRs reviewable)
-2. Extract combatStore if combat-related state grows complex
-3. Audit for any lingering GameStateManager references
-4. Remove GameStateManager singleton entirely
-
-**Panels to migrate (suggested order):**
-1. KingdomBodyHeader (Phase 1)
-2. BuildPanel (Phase 1)
-3. WarfarePanel (Phase 1)
-4. EconomyPanel (Phase 2)
-5. ResearchPanel (Phase 2)
-6. AlliancesPanel (Phase 2)
-7. SettingsPanel, TavernPanel, other utility panels (Phase 2)
-
-**Testing:**
-- Per-panel integration tests (verify store actions trigger correct re-renders)
-- Full smoke test (server boot, all panels functional)
-- Performance profile (compare before/after render counts)
-
-**Effort:** ~8–10 hours
-
-**PRs:** 2–3 PRs, one per 3–4 panels
+**Total Phase 1 Effort:** 18–21 hours across 5 PRs  
+**Timeline:** 5–7 days (10–14 days with code review cycles)
 
 ---
 
-### Phase 3: Cleanup & Documentation
+### Phase 2 (Future): Enhancement & Expansion
 
-**Goal:** Remove old GameStateManager, add store documentation, train team.
+Once Phase 1 is complete and stabilized, Phase 2 covers:
+
+**Focus areas:**
+- Performance tuning and render count optimization (React DevTools profiler analysis)
+- Adding new domain stores (diplomacy, markets, replays) as game systems expand
+- Advanced selector patterns and memoization strategies
+- Full test coverage (unit, integration, e2e for store layers)
+
+**Specific work items:**
+1. **Extract combatStore** if combat-related state grows complex (militaryStore is primary home in Phase 1, can split if needed)
+2. **Implement federation stores** for diplomacy, trade agreements, alliance management
+3. **Add market/economy expansion** stores for price history, commodity futures, economic policies
+4. **Implement replay/observer mode** store for battle replays and spectating
+5. **Performance audit and optimization** — profile with React DevTools, optimize hot paths
+6. **Full test suite** — unit tests for all actions, integration tests for socket.io, e2e tests for critical flows
+7. **Team training** — document advanced patterns (custom hooks, selector composition, middleware)
+
+**Timeline:** After Phase 1 stabilizes (post-merge, post-validation). No blocking dependencies.
+
+**Effort estimate:** 15–20 hours across 3–4 PRs (lower priority, can be done iteratively)
+
+---
+
+### Phase 3 (Future): Cleanup & Documentation
+
+**Goal:** Finalize Zustand adoption, remove old GameStateManager entirely, document patterns for future teams.
+
+**Timing:** After all panel migrations complete and stabilize (post-Phase 1, before Phase 2 expansion).
 
 **Work:**
 
-1. Delete `client/src/GameStateManager.js`
-2. Delete any GameStateManager imports/references
-3. Write store documentation in `client/src/stores/README.md`:
-   - Store overview (what each store does)
-   - Common selectors (examples for fast reference)
-   - How to add new state
-   - How to subscribe/use in components
-4. Add TypeScript types (optional, if codebase uses TS)
-5. Add unit tests for store actions
-6. Add integration test for socket.io → store updates
+1. Delete `client/src/GameStateManager.js` entirely
+2. Audit and remove all GameStateManager imports/references
+3. Write comprehensive store documentation:
+   - `client/src/stores/README.md` — Store overview, domain responsibilities, when to add to which store
+   - `client/src/stores/SELECTORS.md` — Common selectors, patterns, performance tips
+   - `client/src/stores/ADDING_STATE.md` — Step-by-step guide for adding new state/actions
+   - `client/src/stores/TESTING.md` — How to unit test actions, mock stores, integration testing
+4. Convert stores to TypeScript (if not done incrementally in Phase 1)
+5. Add comprehensive unit tests for all store actions
+6. Add integration tests for socket.io → store dispatch flow
+7. Conduct team knowledge-share on Zustand patterns and best practices
 
-**Effort:** ~2–3 hours
+**Effort:** ~4–6 hours
 
-**PR:** `docs(F5-Phase3): Store documentation + cleanup`
+**PR:** `docs(F5-Phase3): GameStateManager removal + store documentation`
+
+**Success criteria:**
+- GameStateManager.js completely removed (no references in codebase)
+- All stores have full TypeScript types
+- Store documentation covers 90%+ of patterns used
+- Unit test coverage >80% for store actions
+- Team comfortable adding new state without guidance
 
 ---
 
@@ -954,7 +1009,7 @@ describe('GoldDisplay', () => {
 
 ---
 
-## TypeScript Integration (Strongly Recommended)
+## TypeScript Integration (Optional, Recommended for New Projects)
 
 Transitioning from GameStateManager.js to Zustand is an ideal time to add full TypeScript support. This prevents runtime bugs and enables IDE autocomplete.
 
@@ -1209,14 +1264,20 @@ git push
 
 ## Effort & Timeline
 
-| Phase | Work | Hours | Duration | PR |
-|-------|------|-------|----------|-----|
-| **1** | Core stores + KingdomBodyHeader/BuildPanel/WarfarePanel migration | 8 | ~3 days | #6XX |
-| **2** | Remaining panels (economy, research, alliances, utilities) | 8–10 | ~3 days | #6XX, #6XX |
-| **3** | Cleanup, docs, tests, GameStateManager removal | 2–3 | ~1 day | #6XX |
-| **Total** | — | 18–21 | ~7 days (if continuous) | — |
+**Phase 1: Five Small PRs (Incremental, Safe)**
 
-**Realistic timeline (accounting for code review, fixes):** 10–14 days spread across 2 weeks.
+| PR | Work | Hours | Effort | Diff |
+|----|------|-------|--------|------|
+| **#1** | Store infrastructure (economyStore, militaryStore, researchStore, uiStore + middleware) | 3 | 1 day | <300 lines |
+| **#2** | Migrate KingdomBodyHeader (economy store selectors) | 1.5 | 0.5 day | <150 lines |
+| **#3** | Migrate BuildPanel (economy + research stores) | 1.5 | 0.5 day | <150 lines |
+| **#4** | Migrate WarfarePanel (military store) | 1.5 | 0.5 day | <150 lines |
+| **#5** | Remaining panels + remove GameStateManager fallback | 10–12 | 2–3 days | <200 lines each |
+| **Total** | — | 18–21 | ~5–7 days | — |
+
+**Realistic timeline (accounting for code review, CI, fixes):** 10–14 days spread across 2 weeks.
+
+**Why many small PRs:** Easy review, independent testing, incremental deployment, safe rollback if issues emerge.
 
 ---
 
@@ -1298,45 +1359,71 @@ Stores created in Phase 1:
 
 ---
 
-## PR Strategy for Phase 1 (Many Small PRs)
+## Phase 1 PR Strategy (5 Small, Independent PRs)
 
-To keep reviews manageable and enable rollback, split Phase 1 into many small PRs:
+To keep reviews manageable, enable independent testing, and support safe rollback, Phase 1 is split into exactly 5 small PRs with clear ownership and success criteria:
 
-| PR | Scope | Diff | Effort |
-|----|-------|------|--------|
-| #1 | Store infrastructure (all stores + middleware) | <300 lines | 3 hrs |
-| #2 | Migrate KingdomBodyHeader | <150 lines | 1.5 hrs |
-| #3 | Migrate BuildPanel | <150 lines | 1.5 hrs |
-| #4 | Migrate WarfarePanel | <150 lines | 1.5 hrs |
-| #5 | Remove GameStateManager fallback | <50 lines | 0.5 hr |
+| PR | Scope | Diff | Effort | Review Focus |
+|----|-------|------|--------|---------------|
+| #1 | Store infrastructure (economyStore, militaryStore, researchStore, populationStore, uiStore + middleware) | <300 lines | 3 hrs | Architecture correctness, domain boundaries, action patterns, middleware setup |
+| #2 | Migrate KingdomBodyHeader (economyStore selectors, useShallow, persistence) | <150 lines | 1.5 hrs | Selector optimization, re-render counts, localStorage persistence |
+| #3 | Migrate BuildPanel (economyStore + researchStore) | <150 lines | 1.5 hrs | Multi-store coordination, domain actions, UI reactivity |
+| #4 | Migrate WarfarePanel (militaryStore, Combat V2 integration) | <150 lines | 1.5 hrs | Combat V2 selector performance, entity normalization (armies) |
+| #5 | Migrate remaining panels + full GameStateManager removal | <200 lines each panel | 10–12 hrs | Completeness, cleanup, final smoke test pass |
 
-**Benefits:**
-- Each PR is easy to review (tight scope, clear intent)
-- Each PR can be tested independently
-- If one PR breaks, only that PR needs revert
-- Team can merge and deploy incrementally
-- Easier to spot bugs (smaller diff = fewer possible issues)
+**Rationale for small PRs:**
+- ✅ Each PR easy to review (tight scope, clear intent)
+- ✅ Each PR independently testable (no blocking dependencies)
+- ✅ If one PR breaks, only that PR reverts (others unaffected)
+- ✅ Team can merge incrementally (not all-or-nothing)
+- ✅ CI runs faster (fewer files to lint/test per PR)
+- ✅ Bug isolation easier (smaller diff = fewer possible issues)
 
-**Timeline:** 5 PRs over 5–7 days (accounting for review cycles)
+**Per-PR testing checklist:**
+- [ ] Redux DevTools shows correct state transitions
+- [ ] React DevTools Profiler: components re-render only on relevant state changes
+- [ ] Smoke test (fresh server boot, all 4 baseline checks, manual panel navigation)
+- [ ] localStorage persists UI state across page reload (if applicable)
+- [ ] No performance regression
+
+**Realistic timeline:** 5 PRs over 7–10 days (5 dev days + 2–5 code review days)
 
 ---
 
 ## Phase 1 Kickoff Checklist
 
-Before starting Phase 1, confirm:
+Before starting PR #1, confirm all prerequisites are met:
 
-- [ ] Plan approved by team and stakeholders (final approval pending)
-- [ ] TypeScript setup ready (or upgrade plan documented)
-- [ ] Socket.io event handlers identified and mapped to domain actions
-- [ ] Middleware versions confirmed (Zustand v4, Immer v4 compatible)
-- [ ] DevTools browser extension installed for testing
-- [ ] localStorage strategy confirmed (UI state only)
-- [ ] Entity normalization patterns documented (byId/allIds for armies, routes, etc.)
-- [ ] Rollback plan tested (can revert to GameStateManager if critical issue)
-- [ ] Phase 1 PR templates prepared (store infrastructure, panel migration)
-- [ ] Team trained on Zustand hooks and selector patterns (useShallow, fine-grained selectors)
-- [ ] Test harness for selector optimization ready (render count tests)
-- [ ] Socket batching implementation ready (dynamic setTimeout, not setInterval)
+**Architecture & Planning:**
+- [x] Architecture locked (domain stores, game-event actions, server vs client state)
+- [x] Phase 1 scope finalized (5 small PRs, 18–21 hours total)
+- [x] Phase 2/3 roadmap documented (future expansions post-Phase 1)
+- [x] Success criteria defined (panels migrated, no GameStateManager fallback, smoke green)
+
+**Technical Prerequisites:**
+- [ ] TypeScript configuration ready (or plan to migrate incrementally)
+- [ ] Zustand v4 + Immer v4 versions confirmed in package.json
+- [ ] Redux DevTools browser extension installed for testing
+- [ ] Socket.io event handlers mapped to domain actions (receive handlers documented)
+- [ ] Entity normalization guide created (byId/allIds pattern for armies, routes, etc.)
+
+**Development Setup:**
+- [ ] Test database (`narmir_smoke` or `narmir_local` per WINDOWS_LOCAL_SETUP.md)
+- [ ] Fresh server boot tested (PostgreSQL connection, all 4 baseline smoke checks pass)
+- [ ] Selector optimization profiling setup (React DevTools Profiler enabled)
+- [ ] localStorage inspection ready (DevTools Application tab)
+
+**Team Readiness:**
+- [ ] Team trained on Zustand selectors (useShallow, fine-grained selectors, memoization)
+- [ ] Team understands domain action patterns (receiveTurnUpdate, applyCombatResult, etc.)
+- [ ] Team familiar with Zustand middleware (Immer, persist, devtools)
+- [ ] Code review checklist prepared (selector patterns, performance, state separation)
+
+**Safety & Rollback:**
+- [ ] Rollback plan tested (git revert HEAD~4..HEAD, restore GameStateManager from backup)
+- [ ] Feature flag for Zustand toggle prepared (optional: USE_ZUSTAND_STORES env var)
+- [ ] Smoke test framework updated to handle multi-store architecture
+- [ ] Backup of current codebase created (branch point before PR #1)
 
 ---
 
@@ -1349,4 +1436,15 @@ Before starting Phase 1, confirm:
 
 ---
 
-**Next step:** Review this plan, gather feedback, finalize store structure, and schedule Phase 1 kickoff.
+**Status:** ✅ **LOCKED & READY FOR PHASE 1 KICKOFF**
+
+All architectural decisions finalized. Incorporates professional feedback on:
+- Domain-based stores (split early, not monolithic)
+- Game-event actions (not field setters)
+- Server vs client state separation (authoritative snapshots)
+- Entity normalization (byId/allIds for O(1) updates)
+- Immer middleware for safe nested updates
+- Selective persistence (UI state only)
+- Realistic 5-PR incremental strategy with clear testing criteria
+
+**Next step:** Begin PR #1 (Store Infrastructure) — confirm checklist items, start coding domain stores with Immer + DevTools.
