@@ -2,7 +2,7 @@
 // Special event handlers: rebellion, prestige, alliance defense, trade route raids.
 // Pure functions for kingdom state mutations during exceptional events.
 
-const { unitLevelMult } = require('../lib/troops');
+const { unitLevelMult } = require('./troops');
 
 function rebellionCheck(k, happiness, updates, events) {
   if (happiness >= 50) return; // No rebellion risk if happiness >= 50
