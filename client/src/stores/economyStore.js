@@ -295,3 +295,27 @@ export const useScaffoldingStored = () => useEconomyStore((state) => state.scaff
 // Building count selector (dynamic field access: bld_farms, bld_barracks, etc.)
 export const useBuildCount = (buildingId) =>
   useEconomyStore((state) => Number(state[`bld_${buildingId}`] || 0));
+
+// All building counts as object (for use in components without calling hooks in helpers)
+export const useBuildingCounts = () =>
+  useEconomyStore((state) => ({
+    farms: state.bld_farms || 0,
+    housing: state.bld_housing || 0,
+    granaries: state.bld_granaries || 0,
+    taverns: state.bld_taverns || 0,
+    markets: state.bld_markets || 0,
+    barracks: state.bld_barracks || 0,
+    libraries: state.bld_libraries || 0,
+    schools: state.bld_schools || 0,
+    shrines: state.bld_shrines || 0,
+    mausoleums: state.bld_mausoleums || 0,
+    guard_towers: state.bld_guard_towers || 0,
+    walls: state.bld_walls || 0,
+    outposts: state.bld_outposts || 0,
+    smithies: state.bld_smithies || 0,
+    armories: state.bld_armories || 0,
+    vaults: state.bld_vaults || 0,
+    mage_towers: state.bld_mage_towers || 0,
+    training: state.bld_training || 0,
+    castles: state.bld_castles || 0,
+  }));

@@ -39,6 +39,7 @@ export {
   useBlueprintsStored,
   useScaffoldingStored,
   useBuildCount,
+  useBuildingCounts,
 } from './economyStore';
 
 export {
