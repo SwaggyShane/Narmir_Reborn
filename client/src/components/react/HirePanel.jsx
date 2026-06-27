@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiCall } from '../../utils/api';
 import { fmt } from "../../utils/fmt";
-import { useRace, useGold, usePopulation, useFighters, useRangers, useMages, useClerics, useNinjas, useThieves, useMilitaryEngineers as useEngineers, useEconomyStore, useMilitaryStore, usePopulationStore } from '../../stores';
+import { useRace, useGold, usePopulation, useFighters, useRangers, useMages, useClerics, useNinjas, useThieves, useMilitaryEngineers as useEngineers, useEconomyStore, useMilitaryStore, usePopulationStore, useResearchStore, useProfileStore } from '../../stores';
 
 const UNIT_ROWS = [
   {
@@ -142,6 +142,8 @@ const HirePanel = () => {
         if (res.updates.economy) useEconomyStore.getState().receiveServerSnapshot(res.updates.economy);
         if (res.updates.military) useMilitaryStore.getState().receiveServerSnapshot(res.updates.military);
         if (res.updates.population) usePopulationStore.getState().receiveServerSnapshot(res.updates.population);
+        if (res.updates.research) useResearchStore.getState().receiveServerSnapshot(res.updates.research);
+        if (res.updates.profile) useProfileStore.getState().receiveServerSnapshot(res.updates.profile);
       }
 
       setQuantities((prev) => ({ ...prev, [row.key]: '' }));
@@ -177,6 +179,8 @@ const HirePanel = () => {
         if (res.updates.economy) useEconomyStore.getState().receiveServerSnapshot(res.updates.economy);
         if (res.updates.military) useMilitaryStore.getState().receiveServerSnapshot(res.updates.military);
         if (res.updates.population) usePopulationStore.getState().receiveServerSnapshot(res.updates.population);
+        if (res.updates.research) useResearchStore.getState().receiveServerSnapshot(res.updates.research);
+        if (res.updates.profile) useProfileStore.getState().receiveServerSnapshot(res.updates.profile);
       }
 
       setQuantities((prev) => ({ ...prev, [row.key]: '' }));
