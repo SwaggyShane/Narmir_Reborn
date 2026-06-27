@@ -992,15 +992,22 @@ module.exports = function (db) {
     }
 
     const k = await db.get(
-      "SELECT id, engineers FROM kingdoms WHERE player_id = ?",
+      "SELECT id, engineers, resource_build_allocation FROM kingdoms WHERE player_id = ?",
       [req.player.playerId],
     );
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
 
+    // Account for resource_build_allocation when checking engineer capacity
+    const resourceAlloc = safeJsonParse(k.resource_build_allocation, {}, "build-allocation:resource_build_allocation");
+    const resourceTotal = Object.values(resourceAlloc).reduce(
+      (s, v) => s + (Number(v) || 0),
+      0,
+    );
+
     // Check engineer capacity
-    if (allocValidation.total > k.engineers)
+    if (allocValidation.total + resourceTotal > k.engineers)
       return res.status(400).json({
-        error: `Allocated ${allocValidation.total.toLocaleString()} but only have ${k.engineers.toLocaleString()} engineers`,
+        error: `Allocated ${allocValidation.total.toLocaleString()} build engineers and ${resourceTotal.toLocaleString()} resource engineers, but only have ${k.engineers.toLocaleString()} engineers total`,
       });
     await db.run("UPDATE kingdoms SET build_allocation = ? WHERE id = ?", [
       JSON.stringify(allocValidation.values),
@@ -1012,8 +1019,10 @@ module.exports = function (db) {
   router.post("/resource-build-allocation", requireAuth, requireCsrfToken, async (req, res) => {
     const { allocation } = req.body;
 
-    // Validate allocation using utility
+    // Validate allocation using utility (whitelist valid resource building types)
+    const validResourceBuildings = ['woodyard', 'lumber_camp', 'sawmill', 'gravel_pit', 'blockfield', 'stone_quarry', 'open_pit', 'strip_mine', 'deep_mine'];
     const allocValidation = validateAllocationObject(allocation, {
+      validKeys: validResourceBuildings,
       maxPerItem: 10000000,
       maxTotal: 10000000,
       fieldName: 'allocation',
