@@ -2,9 +2,10 @@ import clsx from 'clsx';
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiCall } from '../../utils/api';
 import { useActivePanel } from '../../hooks/useActivePanel';
+import { useGameState } from '../../hooks/useGameState';
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import { dispatchExpeditionLogEntry } from '../../utils/expeditionLog.js';
-import { useEconomyStore, useRace } from '../../stores';
+import { useRace } from '../../stores';
 
 const REFRESH_INTERVAL_MS = 10 * 1000;
 
@@ -54,7 +55,8 @@ const BUILDING_COST = { woodyard: 1000, lumber_camp: 10000, sawmill: 100000, gra
 function buildingsByType(type) {
   return Object.values(BUILDING_CONFIG).filter(b => b.type === type).sort((a, b) => a.stage - b.stage);
 }
-function getState() { return useEconomyStore.getState() || {}; }
+let currentResourcesState = {};
+function getState() { return currentResourcesState || {}; }
 
 function getParsedStateProp(propName, fallback = {}) {
   const s = getState();
@@ -111,7 +113,9 @@ const ResourcesPanel = () => {
   const [now, setNow] = useState(Math.floor(Date.now() / 1000));
   const [engineerAllocations, setEngineerAllocations] = useState({});
   const { activePanel } = useActivePanel();
+  const { state } = useGameState();
   const race = useRace();
+  currentResourcesState = state || {};
 
   const syncFromState = useCallback(() => {
     const s = getState();
@@ -146,7 +150,7 @@ const ResourcesPanel = () => {
     let seq = s.resource_sequence || {};
     if (typeof seq === 'string') { try { seq = JSON.parse(seq); } catch { seq = {}; } }
     setKingdom(prev => ({...prev, _seq: seq}));
-  }, []);
+  }, [race]);
 
   const loadNodes = async () => {
     try {
@@ -194,7 +198,7 @@ const ResourcesPanel = () => {
       clearInterval(cdt);
       clearInterval(refreshTimer);
     };
-  }, [syncFromState, race]);
+  }, [syncFromState]);
 
   useEffect(() => {
     if (activePanel !== 'resources') return;
