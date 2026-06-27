@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useShallow } from 'zustand/react/shallow';
 import { apiCall } from '../../utils/api.mjs';
 import { fmt } from "../../utils/fmt";
 import {
   useEconomyStore,
+  useProfileStore,
   useRace,
   useEngineers,
   useEngineerLevel,
@@ -27,7 +27,6 @@ import {
   useBuildCount,
   useBuildingCounts,
 } from '../../stores';
-import { applyGameMutation } from '../../utils/gameMutations.js';
 
 const RESONANCE_HINTS = {
   faint: [
@@ -524,7 +523,9 @@ const BuildPanel = () => {
     BUILDINGS_DISPLAY_ORDER.forEach((key) => setBuildFieldValue(key, 0));
     const result = await apiCall('/api/kingdom/build-allocation', { method: 'POST', body: { allocation: {} } });
     if (result.error) return toast(result.error, 'error');
-    applyGameMutation({ build_allocation: {} }, { reason: 'build-allocation' });
+    useProfileStore.setState((state) => {
+      state.build_allocation = {};
+    });
     refreshBuildUi();
     if (typeof window !== 'undefined' && typeof toast === 'function') toast('All engineers released', 'success');
   };
@@ -541,7 +542,9 @@ const BuildPanel = () => {
     }
     const result = await apiCall('/api/kingdom/build-allocation', { method: 'POST', body: { allocation } });
     if (result.error) return toast(result.error, 'error');
-    applyGameMutation({ build_allocation: allocation }, { reason: 'build-allocation' });
+    useProfileStore.setState((state) => {
+      state.build_allocation = allocation;
+    });
     refreshBuildUi();
     if (typeof window !== 'undefined' && typeof toast === 'function') toast('Engineer allocation saved | builds each turn automatically', 'success');
   };
@@ -584,11 +587,11 @@ const BuildPanel = () => {
     const ep = type === 'hammers' ? '/api/kingdom/smithy/buy-hammers' : '/api/kingdom/smithy/buy-scaffolding';
     const result = await apiCall(ep, { method: 'POST', body: { amount } });
     if (result.error) return toast(result.error, 'error');
-    applyGameMutation({
-      hammers_stored: result.hammers_stored,
-      scaffolding_stored: result.scaffolding_stored,
-      gold: result.gold,
-    }, { reason: 'smithy-buy' });
+    useEconomyStore.setState((state) => {
+      if (result.hammers_stored !== undefined) state.hammers_stored = result.hammers_stored;
+      if (result.scaffolding_stored !== undefined) state.scaffolding_stored = result.scaffolding_stored;
+      if (result.gold !== undefined) state.gold = result.gold;
+    });
     setSmithyInputs({ hammers: 0, scaffolding: 0 });
     refreshBuildUi();
     if (typeof window !== 'undefined' && typeof toast === 'function') toast(`Purchased ${result.bought} ${type} for ${fmt(result.cost)} GC`, 'success');
@@ -599,8 +602,17 @@ const BuildPanel = () => {
     if (amount <= 0) return toast('Enter a quantity', 'error');
     const result = await apiCall('/api/kingdom/demolish', { method: 'POST', body: { building: type, amount } });
     if (result.error) return toast(result.error, 'error');
-    if (result.updates) {
-      applyGameMutation(result.updates, { reason: 'demolish' });
+    if (result.updates && Object.keys(result.updates).length > 0) {
+      useProfileStore.setState((state) => ({
+        build_progress: result.updates.build_progress ? { ...state.build_progress, ...result.updates.build_progress } : state.build_progress,
+        land: result.updates.land !== undefined ? result.updates.land : state.land,
+      }));
+      useEconomyStore.setState((state) => ({
+        wood: result.updates.wood !== undefined ? result.updates.wood : state.wood,
+        stone: result.updates.stone !== undefined ? result.updates.stone : state.stone,
+        iron: result.updates.iron !== undefined ? result.updates.iron : state.iron,
+        gold: result.updates.gold !== undefined ? result.updates.gold : state.gold,
+      }));
     }
     setDemolishAmounts(prev => ({ ...prev, [key]: 1 }));
     refreshBuildUi();
