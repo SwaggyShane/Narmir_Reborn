@@ -3,7 +3,7 @@ import { apiCall } from '../../utils/api.mjs';
 import { fmt } from '../../utils/fmt.js';
 import { fmtShort } from '../../utils/numberFormat.js';
 import { repairMojibake } from '../../utils/repairMojibake.js';
-import { useGameState } from '../../hooks/useGameState';
+import { useKingdomId, useDiscoveredKingdoms } from '../../stores';
 import { switchTab } from '../../utils/panelNav.js';
 import { openDirectMessage } from '../../utils/directMessage.js';
 import { targetFromRankings } from '../../utils/rankingsTarget.js';
@@ -34,7 +34,8 @@ export async function openKingdomProfile(name) {
 }
 
 export default function KingdomProfileModal() {
-  const { state } = useGameState();
+  const kingdomId = useKingdomId();
+  const discoveredKingdoms = useDiscoveredKingdoms();
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -81,9 +82,9 @@ export default function KingdomProfileModal() {
   }, []);
 
   const data = profile || {};
-  const isMe = !!(profile && state?.kingdomId && String(profile.id) === String(state.kingdomId));
+  const isMe = !!(profile && kingdomId && String(profile.id) === String(kingdomId));
   const disc = useMemo(() => {
-    let discovered = state?.discovered_kingdoms || {};
+    let discovered = discoveredKingdoms || {};
     if (typeof discovered === 'string') {
       try {
         discovered = JSON.parse(discovered);
@@ -92,7 +93,7 @@ export default function KingdomProfileModal() {
       }
     }
     return discovered || {};
-  }, [state?.discovered_kingdoms]);
+  }, [discoveredKingdoms]);
   const isMapped = !!(profile && disc[profile.id] && disc[profile.id].mapped);
   const effHappiness = data.happiness !== undefined && data.happiness !== null ? data.happiness : 50;
   const raceIcon = normalizeRaceIcon(data.race);

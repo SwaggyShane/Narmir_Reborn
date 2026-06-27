@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
-import { useGameState } from '../../hooks/useGameState';
 import { fmt } from '../../utils/fmt.js';
 import { kingdomXpProgress, xpForLevel } from '../../utils/xp.js';
 import {
@@ -35,7 +34,6 @@ function XpSourceBar({ label, earned, total, barClass, textClass = 'text-white' 
 }
 
 export default function KingdomXpModal({ open, onClose }) {
-  const { state } = useGameState();
 
   const level = state?.level ?? 1;
   const xp = state?.xp ?? 0;

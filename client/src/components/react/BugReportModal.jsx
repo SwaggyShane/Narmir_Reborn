@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import { apiCall } from '../../utils/api.mjs';
 import { toast } from '../../utils/toast.js';
 import { useActivePanel } from '../../hooks/useActivePanel.js';
-import { useGameState } from '../../hooks/useGameState.js';
+import { usePlayerName } from '../../stores';
 import { getCapturedConsoleLog } from '../../utils/consoleCapture.js';
 
 const CATEGORIES = [
@@ -26,8 +26,8 @@ export default function BugReportModal() {
   const [message, setMessage] = useState('');
   const [category, setCategory] = useState('bug');
   const [submitting, setSubmitting] = useState(false);
+  const playerName = usePlayerName();
   const { activePanel } = useActivePanel();
-  const { state } = useGameState();
 
   useEffect(() => {
     openHandler = () => setOpen(true);
@@ -101,7 +101,7 @@ export default function BugReportModal() {
               Report a Bug
             </h2>
             <p className="mt-1 text-[13px] leading-6 text-[var(--text3)]">
-              Sent to the admin panel{state?.username ? ` as ${state.username}` : ''}. Recent console output is attached automatically.
+              Sent to the admin panel{playerName ? ` as ${playerName}` : ''}. Recent console output is attached automatically.
             </p>
           </div>
           <button

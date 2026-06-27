@@ -1,6 +1,5 @@
 import React from 'react';
 import clsx from 'clsx';
-import { useGameState } from '../../hooks/useGameState.js';
 import { useCloudSync } from '../../hooks/useCloudSync.js';
 import { useServerStatus } from '../../hooks/useServerStatus.js';
 import { useEstClock } from '../../hooks/useEstClock.js';
@@ -8,7 +7,6 @@ import { useNightCycle } from '../../hooks/useNightCycle.js';
 import { REGEN_AMOUNT, useRegenCountdown } from '../../hooks/useRegenCountdown.js';
 
 const ShellFooter = () => {
-  const { state } = useGameState();
   const synced = useCloudSync();
   const { uptime } = useServerStatus();
   const estClock = useEstClock();
