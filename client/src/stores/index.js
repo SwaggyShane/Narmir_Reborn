@@ -70,6 +70,7 @@ export {
   useLadders,
   useThralls,
   useWeaponsStockpile,
+  useArmorStockpile,
   useTroopLevels,
 } from './militaryStore';
 

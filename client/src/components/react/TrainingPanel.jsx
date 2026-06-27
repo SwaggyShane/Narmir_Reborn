@@ -4,7 +4,7 @@ import { apiCall } from '../../utils/api.mjs';
 import { fmt } from "../../utils/fmt";
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import { toast } from '../../utils/toast.js';
-import { useRace, useTroopLevels, useTrainingAllocation, useBuildTraining } from '../../stores';
+import { useRace, useTroopLevels, useTrainingAllocation, useBuildTraining, useWeaponsStockpile, useArmorStockpile } from '../../stores';
 import { useGameState } from '../../hooks/useGameState';
 
 const TROOP_TYPES = ['fighters', 'rangers', 'clerics', 'mages', 'thieves', 'ninjas'];
@@ -24,6 +24,8 @@ const TrainingPanel = () => {
   const troopLevels = useTroopLevels();
   const trainingAllocationData = useTrainingAllocation();
   const buildTraining = useBuildTraining();
+  const weaponsStockpile = useWeaponsStockpile();
+  const armorStockpile = useArmorStockpile();
   const { state } = useGameState();
   const [trainingAllocations, setTrainingAllocations] = useState({});
   const isVampire = race === 'vampire';
@@ -183,8 +185,8 @@ const TrainingPanel = () => {
               <span style={{ color: totalAllocated > capacity ? 'var(--red)' : 'var(--gold)' }}>
                 {fmt(capacity)}
               </span>
-              {' troops/turn - Weapons: '}<span className="text-text">{fmt(state?.weapons_stockpile || 0)}</span>
-              {' - Armor: '}<span className="text-text">{fmt(state?.armor_stockpile || 0)}</span>
+              {' troops/turn - Weapons: '}<span className="text-text">{fmt(weaponsStockpile)}</span>
+              {' - Armor: '}<span className="text-text">{fmt(armorStockpile)}</span>
             </div>
           </div>
           <div className="flex gap-2">
