@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import ForumSection from '../forum/ForumSection';
 import { fetchApi } from '../../utils/api';
+import { useUsername } from '../../stores';
 
 const ForumPanel = () => {
+  const username = useUsername();
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -13,7 +15,7 @@ const ForumPanel = () => {
       })
       .catch((err) => console.error('[forum] auth/me failed:', err));
     return () => { cancelled = true; };
-  }, [state?.username]);
+  }, [username]);
 
   return (
     <div

@@ -425,17 +425,19 @@ const StatusPanel = () => {
         <div className={STATUS_CARD_CLASS}>
           <div className="card-title">Research levels</div>
           {RESEARCH_ROWS.map((row, index) => {
-            let rawValue;
-            if (row.stateKey === 'res_economy') rawValue = resEconomy;
-            else if (row.stateKey === 'res_weapons') rawValue = resWeapons;
-            else if (row.stateKey === 'res_armor') rawValue = resArmor;
-            else if (row.stateKey === 'res_military') rawValue = resMilitary;
-            else if (row.stateKey === 'res_spellbook') rawValue = resSpellbook;
-            else if (row.stateKey === 'res_attack_magic') rawValue = resAttackMagic;
-            else if (row.stateKey === 'res_defense_magic') rawValue = resDefenseMagic;
-            else if (row.stateKey === 'res_entertainment') rawValue = resEntertainment;
-            else if (row.stateKey === 'res_construction') rawValue = resConstruction;
-            else if (row.stateKey === 'mana') rawValue = mana;
+            const researchValues = {
+              res_economy: resEconomy,
+              res_weapons: resWeapons,
+              res_armor: resArmor,
+              res_military: resMilitary,
+              res_spellbook: resSpellbook,
+              res_attack_magic: resAttackMagic,
+              res_defense_magic: resDefenseMagic,
+              res_entertainment: resEntertainment,
+              res_construction: resConstruction,
+              mana,
+            };
+            const rawValue = researchValues[row.stateKey];
 
             const width = row.manaScale ? manaBarWidth(rawValue) : researchBarWidth(rawValue);
             const barDomId = row.barId === 'mana' ? 'pb-mana-s' : `pb-${row.barId}-st`;

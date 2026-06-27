@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useGameActions } from '../../hooks/useGameActions.js';
 import { switchTab } from '../../utils/switchTab.js';
 import { PANEL_META } from '../../utils/panelMeta.js';
+import { useTurnsStored } from '../../stores';
 
 const PANEL_ENTRIES = Object.entries(PANEL_META).map(([id, meta]) => ({ id, ...meta }));
 
@@ -10,6 +11,7 @@ const CommandPalette = () => {
   const [query, setQuery] = useState('');
   const [highlight, setHighlight] = useState(0);
   const { takeTurn, loading } = useGameActions();
+  const turnsStoredSelector = useTurnsStored();
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -72,7 +74,7 @@ const CommandPalette = () => {
 
   if (!open) return null;
 
-  const turns = state?.turns_stored ?? 0;
+  const turns = turnsStoredSelector ?? 0;
 
   return (
     <div

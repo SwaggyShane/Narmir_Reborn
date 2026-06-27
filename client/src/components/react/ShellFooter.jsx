@@ -5,6 +5,7 @@ import { useServerStatus } from '../../hooks/useServerStatus.js';
 import { useEstClock } from '../../hooks/useEstClock.js';
 import { useNightCycle } from '../../hooks/useNightCycle.js';
 import { REGEN_AMOUNT, useRegenCountdown } from '../../hooks/useRegenCountdown.js';
+import { useTurnsStored } from '../../stores';
 
 const ShellFooter = () => {
   const synced = useCloudSync();
@@ -12,7 +13,7 @@ const ShellFooter = () => {
   const estClock = useEstClock();
   const { isNight, label: nightLabel } = useNightCycle();
   const regenCountdown = useRegenCountdown();
-  const turnsStored = state?.turns_stored ?? 400;
+  const turnsStored = useTurnsStored() ?? 400;
 
   return (
     <footer

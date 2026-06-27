@@ -4,6 +4,7 @@ import { apiCall } from '../../utils/api';
 import { repairMojibake } from '../../utils/repairMojibake';
 import { fmt } from "../../utils/fmt";
 import { toast as showToast } from '../../utils/toast.js';
+import { useGameState } from '../../hooks/useGameState';
 import { openKingdomProfile } from './KingdomProfileModal.jsx';
 import { openDirectMessage } from '../../utils/directMessage.js';
 import { selectBountyTarget } from '../../utils/bountyTarget.js';
@@ -23,6 +24,7 @@ const RACE_ICONS = {
 };
 
 const RankingsPanel = () => {
+  const { state, setState } = useGameState();
   const [activeTab, setActiveTab] = useState('kingdoms');
   const [search, setSearch] = useState('');
   const [kingdomRows, setKingdomRows] = useState([]);

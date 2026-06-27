@@ -6,6 +6,7 @@ import { repairMojibake } from '../../utils/repairMojibake';
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import { AppEvent } from '../../utils/appEvents.js';
 import { useAppEvent } from '../../hooks/useAppEvent.js';
+import { useGameState, useGameMutationEvents } from '../../hooks/useGameState';
 import EmptyState from './EmptyState.jsx';
 
 const REFRESH_INTERVAL_MS = 2 * 60 * 1000;
@@ -66,6 +67,8 @@ const normalizeRewards = (rewards) => {
 };
 
 const ExplorationPanel = () => {
+  const { state, applyUpdates } = useGameState();
+  useGameMutationEvents();
   const [inventory, setInventory] = useState({});
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [searchRangers, setSearchRangers] = useState(0);

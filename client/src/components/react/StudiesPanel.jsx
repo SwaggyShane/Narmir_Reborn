@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useActivePanel } from '../../hooks/useActivePanel';
+import { useGameState, useGameMutationEvents } from '../../hooks/useGameState';
 import { toast } from '../../utils/toast.js';
 import UpgradesList from './UpgradesList.jsx';
 import {
@@ -12,6 +13,8 @@ import {
 import { parseOwnedUpgrades } from '../../utils/upgradeUtils.js';
 
 const StudiesPanel = () => {
+  const { state, applyUpdates } = useGameState();
+  useGameMutationEvents();
   const [activeTab, setActiveTab] = useState('tower');
   const [activeSchoolSubTab, setActiveSchoolSubTab] = useState('general');
   const [studiesData, setStudiesData] = useState(null);
