@@ -3,7 +3,6 @@ import clsx from 'clsx';
 import { toast } from '../../utils/toast.js';
 import { apiCall } from '../../utils/api';
 import { fmt } from "../../utils/fmt";
-import { applyGameMutation } from '../../utils/gameMutations.js';
 import {
   useKingdomId,
   useKingdomName,
@@ -29,6 +28,11 @@ import {
   useResWarMachines,
   useDiscoveredKingdoms,
   useHappiness,
+  useMillitaryStore,
+  useProfileStore,
+  useEconomyStore,
+  useResearchStore,
+  usePopulationStore,
 } from '../../stores';
 import WarfareIntelTab from './WarfareIntelTab';
 import WarfareReportsTab from './WarfareReportsTab';
@@ -541,7 +545,22 @@ const WarfarePanel = () => {
     if (r.wallsDestroyed > 0) rows.push(['Walls Destroyed', fmt(r.wallsDestroyed)]);
     if (r.bullyMsg) rows.push(['⚠️ Penalty', r.bullyMsg]);
 
-    applyGameMutation(result, { reason: 'attack' });
+    if (result && Object.keys(result).length > 0) {
+      useMillitaryStore.setState((state) => {
+        if (result.troops) Object.assign(state.troops, result.troops);
+        if (result.wall_hp !== undefined) state.wall_hp = result.wall_hp;
+        if (result.troop_levels) Object.assign(state.troop_levels, result.troop_levels);
+      });
+      useEconomyStore.setState((state) => {
+        if (result.food !== undefined) state.food = result.food;
+        if (result.gold !== undefined) state.gold = result.gold;
+        if (result.morale !== undefined) state.happiness = result.morale;
+      });
+      useProfileStore.setState((state) => {
+        if (result.turns_stored !== undefined) state.turns_stored = result.turns_stored;
+      });
+    }
+
     setBattleReport({
       type: 'Military attack',
       target: attackTarget.name,
