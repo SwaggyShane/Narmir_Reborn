@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { devtools } from 'zustand/middleware';
 import { persist } from 'zustand/middleware';
+import { useShallow } from 'zustand/react';
 
 /**
  * Research Store — Disciplines, research progress, spell research
@@ -52,6 +53,7 @@ export const useResearchStore = create(
          * receiveServerSnapshot: Overwrite authoritative research state
          */
         receiveServerSnapshot: (data) => set((state) => {
+          if (!data) return;
           if (data.mana !== undefined) {
             state.mana = data.mana;
           }
@@ -85,6 +87,7 @@ export const useResearchStore = create(
          * completeResearch: Discipline research finished, update XP/level
          */
         completeResearch: (disciplineData) => set((state) => {
+          if (!disciplineData || !disciplineData.discipline) return;
           const discipline = state.disciplineProgress[disciplineData.discipline];
           if (discipline) {
             discipline.xp = disciplineData.xp || 0;
@@ -114,6 +117,7 @@ export const useResearchStore = create(
          * receiveResearchXp: XP allocated to active research
          */
         receiveResearchXp: (xpData) => set((state) => {
+          if (!xpData) return;
           Object.keys(xpData).forEach((discipline) => {
             if (state.disciplineProgress[discipline]) {
               state.disciplineProgress[discipline].xp += xpData[discipline];
@@ -156,7 +160,7 @@ export const useResearchStore = create(
          * setResearchAllocation: User input (not persisted until server accepts)
          */
         setResearchAllocation: (allocation) => set((state) => {
-          state.researchAllocation = allocation;
+          state.researchAllocationUI = allocation;
         }),
 
         /**
@@ -237,9 +241,7 @@ export const useDisciplineLevel = (discipline) =>
   useResearchStore((state) => state.disciplineProgress[discipline]?.level || 1);
 
 export const useActiveResearch = () =>
-  useResearchStore((state) =>
-    state.activeResearch.allIds.map(id => state.activeResearch.byId[id])
-  );
+  useResearchStore(useShallow((state) => state.activeResearch));
 
 export const useSelectedDiscipline = () =>
   useResearchStore((state) => state.selectedDiscipline);
