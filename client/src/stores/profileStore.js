@@ -83,6 +83,7 @@ export const useProfileStore = create(
         if (data?.rankingsCache !== undefined) state.rankingsCache = data.rankingsCache;
         if (data?.description !== undefined) state.description = data.description;
         if (data?.customPortrait !== undefined) state.customPortrait = data.customPortrait;
+        if (data?.custom_portrait !== undefined) state.customPortrait = data.custom_portrait;
       }),
 
       /**
