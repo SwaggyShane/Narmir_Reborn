@@ -6,20 +6,17 @@ const config = require("./config");
 const { progressGoal } = require('./goals');
 const {
   devLog,
-  repairMojibake,
-  cleanNewsEvent,
-  isNight,
   assignRegion,
   getHappinessRecoveryRate,
   calculateHappiness,
-  calcDiscoveryChance,
   getCap,
+  calcDiscoveryChance,
+  cleanNewsEvent,
 } = require('./lib/data-transformations');
 
 const fragmentBonusManager = require("./fragment-bonus-manager");
 const effectsProcessor = require("./synergy-effects-processor");
-const combatResolverV2 = require("./combat-resolver");
-const { safeJsonParse, roll, rand, clearParseCache } = require('../utils/helpers');
+const { safeJsonParse, clearParseCache } = require('../utils/helpers');
 
 // Shared domain helpers extracted to game/lib. These are the canonical
 // implementations; engine.js still re-exports them via module.exports so
@@ -62,7 +59,6 @@ const {
 } = require('./lib/special-events');
 const {
   resolveMilitaryAttack,
-  resolveMilitaryAttackV2Adapter,
   wmCrewRequired,
 } = require('./lib/combat-wrappers');
 const {
@@ -191,22 +187,18 @@ const {
   awardXp,
 } = xpMod;
 
-// Population domain — housing capacity, population growth, and research
-// increment. Defined in game/population.js; re-exported below.
+// Population domain — housing capacity, population growth. Defined in
+// game/population.js; re-exported below.
 const populationMod = require('./population');
 const {
   housingCapPerBuilding,
   popGrowth,
-  researchIncrement,
 } = populationMod;
 
 const {
   RACE_BONUSES,
   REGION_DATA,
-  PRESTIGE_MODIFIERS,
   UNIT_COST,
-  MAX_RESEARCH,
-  RESEARCH_DISCIPLINE_CAPS,
   HOUSING_CAP_BY_RACE,
   TROOP_RACE_BONUS,
   WALL_STRENGTH_MULT,
@@ -241,20 +233,13 @@ const {
   BUILDING_GOLD_COST,
   BUILDING_LAND_COST,
   SPELL_DEFS,
-  MAGIC_SCHOOLS,
   SCROLL_REQUIREMENTS,
   SCRIBE_ITEMS,
   SUPPORT_CAP_RACE,
   WM_CREW_REQUIRED,
-  RESEARCH_MAP,
-  BUILDING_ALIASES,
   RACIAL_UNITS,
   WORLD_FRAGMENTS,
-  JUNK_PRIZES,
-  INVENTORY_ITEMS,
-  ULTRA_RARE_PRIZES,
   THRONE_OF_NAZDREG,
-  EXPEDITION_TURNS,
   BUILDING_COL,
   TOOL_COL,
   TOOL_GOLD_COST,
@@ -276,11 +261,6 @@ const {
 const BLUEPRINT_REQUIRED = new Set(BP_REQ);
 const SCAFFOLDING_REQUIRED = new Set(SCAFF_REQ);
 const SCAFFOLDING_BONUS_BUILDINGS = new Set(SCAFF_BONUS);
-
-const USE_COMBAT_V2 = process.env.USE_COMBAT_V2 === "1";
-
-// Helpers (devLog, repairMojibake, cleanNewsEvent, isNight, assignRegion,
-// getHappinessRecoveryRate, calculateHappiness) imported from lib/data-transformations.js
 
 // ── Season system ─────────────────────────────────────────────────────────────
 
