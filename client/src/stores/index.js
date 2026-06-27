@@ -146,6 +146,7 @@ export {
   useTurnsStored,
   useUsername,
   useRankingsCache,
+  useAllianceRankingsCache,
   useDescription,
   useCustomPortrait,
   useGender,
