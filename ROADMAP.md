@@ -172,7 +172,7 @@ Added `.github/workflows/ci.yml`:
 
 ### E.3 Dependency vulnerabilities
 
-**Status:** 🟡 **PARTIALLY FIXED** (4 of 8 vulns resolved; claude/repo-health-assessment-2yvqdb)
+**Status:** ⏳ **DEFERRED** (4 vulnerabilities remain; discord.js v14 won't receive undici fix)
 
 #### Fixed (✅ 4 vulnerabilities)
 | Package | Issue | Resolution |
@@ -181,12 +181,17 @@ Added `.github/workflows/ci.yml`:
 | `multer` | 2.1.1 → 2.2.0 | ✅ Fixed DoS via deeply nested fields (2 HIGH vulns) |
 | `ws` | 8.x → 8.21.0 | ✅ Fixed memory exhaustion DoS (1 HIGH vuln) |
 
-#### Remaining (⏳ 4 vulnerabilities — undici chain)
-| Package | Issue | Path forward |
-|---------|-------|--------------|
-| `undici` ≤6.26.0 | 4 HIGH: HTTP injection, WebSocket DoS, keep-alive poisoning, SameSite downgrade | **Decision needed:** (A) await discord.js v14 undici update, (B) downgrade to discord.js v13.17.1 (requires refactor: GatewayIntentBits → Intents, EmbedBuilder → MessageEmbed, PermissionFlagsBits → Permissions) |
+#### Remaining (⏳ 4 vulnerabilities — undici chain, deferred)
+| Package | Issue | Path forward | Decision |
+|---------|-------|--------------|----------|
+| `undici` ≤6.26.0 | 4 HIGH: HTTP injection, WebSocket DoS, keep-alive poisoning, SameSite downgrade | (A) **Deferred:** await discord.js v15 stable (3-6 months+), (B) downgrade to discord.js v13.17.1 now (2-3 hr refactor: Intents, EmbedBuilder, Permissions) | **DEFER** — v14.x will not receive undici fix; v15 still in dev. Risk assessment: WebSocket DoS exploitable, others require MITM. Revisit when v15 stable or risk escalates. |
 
-**Note:** Tracked at RFC level — undici update bundled with discord.js maintainer releases. Current version (discord.js 14.26.4) uses undici 6.24.1; latest undici stable (6.27.0+) not yet adopted by discord.js v14.x line.
+**Analysis:** 
+- Tested discord.js 14.26.4 (latest v14) — still uses vulnerable undici 6.24.1
+- Fix requires undici >=6.27.0, not available in discord.js v14.x
+- discord.js v15 (dev) will have the fix, but ETA uncertain (weeks to months)
+- Real-world risk: low-moderate (WebSocket DoS direct, others need MITM)
+- Cost to fix now: ~2-3 hours refactoring; Cost to defer: ongoing security debt
 
 ### E.4 Admin CSRF protection
 
