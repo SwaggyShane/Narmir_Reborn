@@ -46,6 +46,12 @@ export {
   useResMilitary,
   useResAttackMagic,
   useResWarMachines,
+  useResEconomy,
+  useResSpellbook,
+  useResArmor,
+  useResDefenseMagic,
+  useResEntertainment,
+  useResConstruction,
   useDiscoveredKingdoms,
   useTrainingAllocation,
 } from './economyStore';
