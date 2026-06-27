@@ -61,60 +61,96 @@ Replace the custom `GameStateManager` singleton with Zustand stores. Zustand pro
 
 ## Proposed Zustand Architecture
 
-### Store Structure
+### Store Structure (Domain-Based)
+
+**Avoid monolithic stores.** Split by domain to keep each store focused and maintainable.
 
 ```
 client/src/stores/
 ├── index.js                 (export all stores)
-├── kingdomStore.js          (metrics: gold, mana, population, etc.)
-├── uiStore.js               (panel state, visibility, active tabs, etc.)
-├── combatStore.js           (optional: active combat, V2 diagnostics — see section 3.3)
+├── economyStore.js          (gold, food, trade, market prices)
+├── militaryStore.js         (troops, combat, war machines, battles)
+├── researchStore.js         (research progress, disciplines, schools)
+├── populationStore.js       (population, happiness, growth)
+├── uiStore.js               (panel state, visibility, active tabs, modals)
+├── notificationsStore.js    (alerts, news events)
+├── chatStore.js             (messages, alliance chat)
 └── middleware/
     ├── devtools.js          (Redux DevTools integration)
-    ├── persistence.js       (localStorage for UI state)
-    └── mutations.js         (mutation logging/tracking)
+    ├── persistence.js       (localStorage for UI state only)
+    └── serverSync.js        (server snapshot → store updates)
 ```
 
-### Store 1: Kingdom Metrics Store
+**Benefits:**
+- Each store stays under 200 lines
+- Components depend only on needed stores
+- Easier to test (mock one store at a time)
+- Clear domain boundaries
+- No mega-manager emerging over time
 
-**Purpose:** Manage all kingdom-level numeric/resource data.
+### Store 1: Economy Store
 
-**Location:** `client/src/stores/kingdomStore.js`
+**Purpose:** Manage economy-related state (gold, food, trade, market).
+
+**Location:** `client/src/stores/economyStore.js`
 
 **State:**
 ```js
 {
-  // Resources
+  // Authoritative (from server)
   gold: 0,
-  mana: 0,
-  population: 0,
   food: 0,
-  land: 0,
-  
-  // Calculations
+  mana: 0,
   mana_regen: 0,
-  gold_income: 0,
-  food_balance: 0,
-  
-  // Progression
-  turn: 0,
-  happiness: 50,
   tax: 42,
   
-  // Computed/Cached (optional, can also be selectors)
-  // food_surplus, population_happy_threshold, etc.
+  // Derived selectors (not stored, calculated on demand)
+  // gold_income, food_balance, food_surplus → use selectors
+  
+  // Market state
+  commodityPrices: { wheat: 100, lumber: 150, ore: 200 },
+  
+  // Trade routes (normalized: {byId, allIds})
+  tradeRoutes: {
+    byId: {
+      'route-1': { id: 'route-1', destination: 'Kingdom2', type: 'gold', active: true },
+    },
+    allIds: ['route-1'],
+  },
 }
 ```
 
-**Actions:**
+**Actions (domain-based, not field setters):**
 ```js
-updateMetrics(updates)      // Batch update multiple fields
-applyUpdates(updates)       // Alias for updateMetrics (backward compat)
-setGold(amount)             // Direct field setters (for fine-grained updates)
-setMana(amount)
-setPopulation(amount)
-// ... etc for each metric
-updateFromServer(data)      // Called when socket.io sends kingdom state
+// Authoritative updates from server
+receiveServerSnapshot(data)     // Overwrite authoritative state from server snapshot
+receiveTurnUpdate(turnData)     // Turn tick: resources generated, research progressed, etc.
+completeBuild(buildingType)     // Construction complete → deduct resources
+finishResearch(discipline)      // Research complete → consume mana
+applyCombatResult(result)       // Combat over → update gold/food/troops/happiness
+receiveTrade(tradeData)         // Trade completed → adjust gold/food
+
+// Client actions (optimistic updates)
+proposeTrade(tradeRoute)        // Optimistic UI update (server will confirm/deny)
+setTax(newTax)                  // UI change (server validates)
+
+// Clear, intent-driven naming: what happened in the game world
+```
+
+**Selectors (derived values):**
+```js
+// Don't store these; calculate on demand
+const goldIncome = useEconomyStore(state => 
+  state.gold_income * (state.happiness / 100)
+);
+
+const foodSurplus = useEconomyStore(state =>
+  state.food - state.population * 0.5
+);
+
+const tradingPartners = useEconomyStore(state =>
+  state.tradeRoutes.allIds.map(id => state.tradeRoutes.byId[id])
+);
 ```
 
 **Selectors (crucial for performance):**
@@ -144,7 +180,106 @@ function GoldDisplay() {
 
 ---
 
-### Store 2: UI State Store
+### Store 2: Military Store
+
+**Purpose:** Manage military state (troops, armies, combat, war machines).
+
+**Location:** `client/src/stores/militaryStore.js`
+
+**State:**
+```js
+{
+  // Authoritative (from server)
+  troops: {
+    fighters: 100,
+    rangers: 50,
+    mages: 25,
+    // ... unit counts
+  },
+  
+  // Entity collections (normalized)
+  armies: {
+    byId: {
+      'army-1': { id: 'army-1', destination: 'Kingdom2', troops: {...}, eta: 50 },
+    },
+    allIds: ['army-1'],
+  },
+  
+  // Authoritative from server
+  wall_hp: 1000,
+  wall_defense_type: 'fortified',
+  
+  // Client-owned (not from server)
+  selectedArmy: 'army-1',  // UI selection
+  pendingAttack: null,      // Optimistic state before confirm
+}
+```
+
+**Actions:**
+```js
+// Authoritative updates
+receiveServerSnapshot(data)     // Overwrite from server
+receiveTurnUpdate(turnData)     // Troops recruited, injured troops recovered
+applyCombatResult(combat)       // Casualties, injuries, equipment changes
+injureTroops(counts)            // Update injured_troops from combat V2
+damageWalls(damage)             // Wall HP changes
+
+// Client actions
+selectArmy(armyId)              // UI selection (local only)
+setPendingAttack(attackData)    // Optimistic: user is about to confirm
+cancelPendingAttack()           // User cancels pending action
+```
+
+---
+
+### Store 3: Research Store
+
+**Purpose:** Manage research progress and disciplines.
+
+**Location:** `client/src/stores/researchStore.js`
+
+**State:**
+```js
+{
+  // Authoritative (from server)
+  mana: 500,
+  disciplineProgress: {
+    warfare: { level: 5, xp: 300, xp_needed: 1000 },
+    economics: { level: 3, xp: 100, xp_needed: 500 },
+    // ...
+  },
+  
+  // Entity: active research (normalized)
+  activeResearch: {
+    byId: {
+      'discipline-warfare': { discipline: 'warfare', progress: 300 },
+    },
+    allIds: ['discipline-warfare'],
+  },
+  
+  // Client-owned
+  selectedDiscipline: 'warfare',  // UI selection
+  researchAllocation: {},         // User's allocation before submitting
+}
+```
+
+**Actions:**
+```js
+// Authoritative
+receiveServerSnapshot(data)
+completeResearch(discipline)    // Research finished → update xp, level
+spendMana(amount, reason)        // Mana spent on research
+receiveResearchXp(data)          // XP allocated
+
+// Client
+selectDiscipline(discipline)     // UI selection
+allocateResearch(allocation)     // User input (not persisted until server accepts)
+submitResearchAllocation()       // Send to server
+```
+
+---
+
+### Store 4: UI State Store
 
 **Purpose:** Manage panel visibility, active tabs, sort orders, persistent UI settings — anything that should survive across renders/page reloads.
 
@@ -262,6 +397,89 @@ function BuildPanel() {
 
 ---
 
+## Critical Architectural Patterns
+
+### Server vs Client State
+
+This distinction prevents multiplayer bugs and keeps architecture clean.
+
+**Authoritative (server-owned) state:**
+```js
+// These are never modified by UI actions directly
+// Instead: server sends update → store receives snapshot
+gold
+mana
+population
+troops
+research_progress
+wall_hp
+troop_levels
+injuries
+```
+
+**Client-owned state:**
+```js
+// UI controls these directly; server doesn't care about them
+activePanel
+selectedArmy
+hoveredUnit
+pendingAttack (optimistic UI before confirmation)
+formInputs
+searchText
+openModals
+```
+
+**The pattern:**
+```
+Server                Client
+   ↓                    ↑
+Socket event ── receiveServerSnapshot() → overwrite authoritative state
+   ↑                    ↓
+   └─ user action confirmed
+```
+
+**Key rule:** Authoritative state is write-once-per-snapshot. Don't incrementally modify it. This makes multiplayer, undo/redo, and debug much easier.
+
+---
+
+### Entity Collections (Normalization)
+
+As game grows, you'll have arrays of objects: armies, cities, trade routes, research queues, etc.
+
+**❌ Avoid:**
+```js
+armies: [
+  { id: 1, destination: 'Kingdom2', troops: {...} },
+  { id: 2, destination: 'Kingdom3', troops: {...} },
+]
+// Problem: Updating one army recreates entire array
+```
+
+**✅ Use normalized pattern:**
+```js
+armies: {
+  byId: {
+    'army-1': { id: 'army-1', destination: 'Kingdom2', troops: {...} },
+    'army-2': { id: 'army-2', destination: 'Kingdom3', troops: {...} },
+  },
+  allIds: ['army-1', 'army-2'],
+}
+
+// Updating one army is O(1), not O(n)
+// Selectors: 
+const allArmies = useSelector(state => 
+  state.armies.allIds.map(id => state.armies.byId[id])
+);
+
+const army1 = useSelector(state => state.armies.byId['army-1']);
+```
+
+**Apply to:**
+- Armies, trade routes, research queues, build queues
+- Any collection where you frequently update individual items
+
+---
+
 ## Middleware & Integration
 
 ### DevTools Middleware
@@ -330,7 +548,8 @@ const useUIStore = create(
     })),
     {
       name: 'ui-state',
-      storage: localStorage,
+      // In Zustand v4, persist middleware defaults to localStorage
+      // No need to pass storage option explicitly
       partialize: (state) => ({
         activePanel: state.activePanel,
         panelState: state.panelState,
@@ -374,22 +593,25 @@ socket.on('combat-update', (data) => {
   useKingdomStore.getState().setTroop(data.troopId, data.hp);  // 50 events = 50 re-renders
 });
 
-// ✅ Good: Batch updates over a time window
+// ✅ Good: Batch updates over a time window (dynamic timeout, not continuous interval)
 const batchQueue = [];
 const BATCH_INTERVAL = 50;  // ms
+let batchTimeout = null;
 
 socket.on('combat-update', (data) => {
   batchQueue.push(data);
-});
-
-setInterval(() => {
-  if (batchQueue.length > 0) {
-    const batchedUpdates = batchQueue.splice(0);
-    useKingdomStore.getState().updateMetrics({
-      troops: batchedUpdates,  // Apply all at once
-    });
+  
+  // Schedule batch processing only when first item arrives
+  if (!batchTimeout) {
+    batchTimeout = setTimeout(() => {
+      const batchedUpdates = batchQueue.splice(0);
+      useKingdomStore.getState().updateMetrics({
+        troops: batchedUpdates,  // Apply all at once
+      });
+      batchTimeout = null;
+    }, BATCH_INTERVAL);
   }
-}, BATCH_INTERVAL);
+});
 ```
 
 ---
@@ -402,8 +624,10 @@ setInterval(() => {
 ```js
 // On app start, before rendering React
 const initialData = window.__INITIAL_STATE__;  // From server
-useKingdomStore.setState(initialData.kingdom);
-useUIStore.setState(initialData.ui);
+if (initialData) {
+  if (initialData.kingdom) useKingdomStore.setState(initialData.kingdom);
+  if (initialData.ui) useUIStore.setState(initialData.ui);
+}
 
 // Then render React
 ReactDOM.createRoot(document.getElementById('root')).render(<App />);
@@ -426,21 +650,25 @@ function App() {
 
 ## Migration Strategy
 
-### Phase 1: Core Stores (kingdomStore + uiStore)
+### Phase 1: Core Stores (economyStore + militaryStore + uiStore)
 
-**Goal:** Get kingdomStore and uiStore wired up and working; migrate 2–3 panels as proof-of-concept.
+**Goal:** Set up domain-based stores with domain actions (not field setters); migrate 2–3 panels as proof-of-concept.
 
 **Work:**
 
-1. Create `client/src/stores/` directory structure
-2. Implement `kingdomStore.js` with all metrics + selectors
-3. Implement `uiStore.js` with panel state + selectors
-4. Add DevTools and persistence middleware
-5. Update socket.io event handlers to use stores
-6. Migrate highest-traffic panels first:
-   - **KingdomBodyHeader** (displays metrics, high re-render frequency)
-   - **BuildPanel** (reads gold, food, land frequently)
-   - **WarfarePanel** (reads troops, happiness)
+1. Create `client/src/stores/` directory structure with domain-based stores
+2. Implement domain stores with **domain actions** (not field setters):
+   - `economyStore.js` — `receiveTurnUpdate()`, `completeBuild()`, `receiveTrade()`
+   - `militaryStore.js` — `applyCombatResult()`, `injureTroops()`, `damageWalls()`
+   - `uiStore.js` — `selectPanel()`, `setPendingAction()`, etc.
+3. Add DevTools and persistence middleware (v4 compatible)
+4. Add normalized entity collections (byId/allIds pattern) for armies, trade routes, etc.
+5. Implement server vs client state separation (`receiveServerSnapshot()` is authoritative)
+6. Update socket.io event handlers to dispatch domain actions
+7. Migrate highest-traffic panels first:
+   - **KingdomBodyHeader** (displays resources, high re-render frequency)
+   - **BuildPanel** (reads economy store, domain-based actions)
+   - **WarfarePanel** (reads military store, domain-based actions)
 
 **Testing:**
 - Verify metrics update correctly on socket.io events
@@ -623,7 +851,7 @@ interface KingdomState {
   updateFromServer: (data: Partial<KingdomState>) => void;
 }
 
-export const useKingdomStore = create<KingdomState>((set) => ({
+export const useKingdomStore = create<KingdomState>()((set) => ({
   gold: 0,
   mana: 0,
   population: 0,
@@ -693,11 +921,18 @@ const richness = useShallow(state => ({
    // Option A: Computed selector (calculated on every render)
    const effectiveIncome = useKingdomStore(state => state.gold_income * state.happiness_mult);
    
-   // Option B: Derived state in store (cached, updates only when dependencies change)
+   // Option B: Derived state in store (must update manually in actions to avoid staleness)
    const useKingdomStore = create((set) => ({
      gold_income: 100,
      happiness_mult: 1.2,
-     effective_income: 120,  // Updated whenever gold_income or happiness_mult changes
+     effective_income: 120,
+     
+     // Update derived value explicitly in action
+     setIncome: (gold_income, happiness_mult) => set({
+       gold_income,
+       happiness_mult,
+       effective_income: gold_income * happiness_mult
+     })
    }));
    ```
 
