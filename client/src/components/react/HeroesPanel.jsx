@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
-import { useGameState } from '../../hooks/useGameState';
 import { apiCall } from '../../utils/api.mjs';
 import { fmt } from "../../utils/fmt";
 import { repairMojibake } from '../../utils/repairMojibake.js';
@@ -10,7 +9,7 @@ import { showHeroXpModal } from '../../utils/showHeroXpModal.js';
 import { toast as showToast } from '../../utils/toast.js';
 import { switchTab } from '../../utils/switchTab.js';
 import EmptyState from './EmptyState.jsx';
-import { useBuildCount } from '../../stores';
+import { useBuildCount, useProfileStore, useEconomyStore, useMillitaryStore, useResearchStore, usePopulationStore } from '../../stores';
 
 
 function heroXpForLevelJS(level) {
@@ -18,7 +17,6 @@ function heroXpForLevelJS(level) {
 }
 
 const HeroesPanel = () => {
-  const { state, applyUpdates } = useGameState();
   const castles = useBuildCount('castles');
   const [heroes, setHeroes] = useState([]);
   const [heroClasses, setHeroClasses] = useState({});
@@ -26,6 +24,15 @@ const HeroesPanel = () => {
   const [selectedHeroClass, setSelectedHeroClass] = useState(null);
   const [loading, setLoading] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
+
+  const syncKingdomData = useCallback((kingdomData) => {
+    if (!kingdomData || Object.keys(kingdomData).length === 0) return;
+    useProfileStore.getState().receiveServerSnapshot(kingdomData);
+    useEconomyStore.getState().receiveServerSnapshot(kingdomData);
+    useMillitaryStore.getState().receiveServerSnapshot(kingdomData);
+    useResearchStore.getState().receiveServerSnapshot(kingdomData);
+    usePopulationStore.getState().receiveServerSnapshot(kingdomData);
+  }, []);
 
   const loadHeroes = useCallback(async () => {
     setLoading(true);
@@ -45,14 +52,14 @@ const HeroesPanel = () => {
       setHeroes(Array.isArray(heroesRes) ? heroesRes : []);
       setHeroClasses(classesRes || {});
       setAllHeroClasses(allClassesRes || {});
-      applyUpdates(kingdomRes || {}, { reason: 'heroes/load' });
+      syncKingdomData(kingdomRes || {});
     } catch (err) {
       console.error('[heroes] load failed:', err);
       showToast(`Failed to load heroes: ${err.message}`, 'error');
     } finally {
       setLoading(false);
     }
-  }, [applyUpdates]);
+  }, [syncKingdomData]);
 
   useEffect(() => {
     void loadHeroes();
@@ -88,7 +95,7 @@ const HeroesPanel = () => {
       }
 
       const kingdomRes = await apiCall('/api/kingdom/me');
-      if (!kingdomRes?.error) applyUpdates(kingdomRes || {}, { reason: 'heroes/recruit' });
+      if (!kingdomRes?.error) syncKingdomData(kingdomRes || {});
       setSelectedHeroClass(null);
       setRefreshTick((n) => n + 1);
       showToast(`✨ ${name} has joined your cause!`, 'success');
