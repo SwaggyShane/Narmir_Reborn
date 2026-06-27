@@ -7,7 +7,7 @@ import { applyGameMutation } from '../../utils/gameMutations.js';
 import { AppEvent } from '../../utils/appEvents.js';
 import { useAppEvent } from '../../hooks/useAppEvent.js';
 import { useGameMutationEvents } from '../../hooks/useGameState';
-import { useEconomyStore, useProfileStore, useMillitaryStore, useResearchStore, usePopulationStore } from '../../stores';
+import { useEconomyStore, useProfileStore, useMilitaryStore, useResearchStore, usePopulationStore } from '../../stores';
 import EmptyState from './EmptyState.jsx';
 
 const REFRESH_INTERVAL_MS = 2 * 60 * 1000;
@@ -68,8 +68,8 @@ const normalizeRewards = (rewards) => {
 };
 
 const ExplorationPanel = () => {
-  const rangers = useMillitaryStore((state) => state.troops.rangers);
-  const fighters = useMillitaryStore((state) => state.troops.fighters);
+  const rangers = useMilitaryStore((state) => state.troops.rangers);
+  const fighters = useMilitaryStore((state) => state.troops.fighters);
   const food = useEconomyStore((state) => state.food);
   const turns_stored = useProfileStore((state) => state.turns_stored);
   useGameMutationEvents();
@@ -78,7 +78,7 @@ const ExplorationPanel = () => {
     if (!kingdomData || Object.keys(kingdomData).length === 0) return;
     useProfileStore.getState().receiveServerSnapshot(kingdomData);
     useEconomyStore.getState().receiveServerSnapshot(kingdomData);
-    useMillitaryStore.getState().receiveServerSnapshot(kingdomData);
+    useMilitaryStore.getState().receiveServerSnapshot(kingdomData);
     useResearchStore.getState().receiveServerSnapshot(kingdomData);
     usePopulationStore.getState().receiveServerSnapshot(kingdomData);
   }, []);

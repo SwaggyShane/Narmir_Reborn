@@ -169,14 +169,14 @@ const useStore = create(
 // In socket event handlers:
 socket.on('kingdom-update', (data) => {
   useEconomyStore.getState().receiveServerSnapshot(data.economy);
-  useMillitaryStore.getState().receiveServerSnapshot(data.military);
+  useMilitaryStore.getState().receiveServerSnapshot(data.military);
   useResearchStore.getState().receiveServerSnapshot(data.research);
   usePopulationStore.getState().receiveServerSnapshot(data.population);
 });
 
 socket.on('turn-tick', (turnData) => {
   useEconomyStore.getState().receiveTurnUpdate(turnData);
-  useMillitaryStore.getState().receiveTurnUpdate(turnData);
+  useMilitaryStore.getState().receiveTurnUpdate(turnData);
   // ... etc
 });
 ```
@@ -226,7 +226,7 @@ spendGold: (amount) => set((state) => {
 // In a turn processor or game loop:
 handleTurnTick: (turnData) => {
   useEconomyStore.getState().receiveTurnUpdate(turnData);
-  useMillitaryStore.getState().receiveTurnUpdate(turnData);
+  useMilitaryStore.getState().receiveTurnUpdate(turnData);
   
   const gold = useEconomyStore.getState().gold;
   if (gold < 100) {

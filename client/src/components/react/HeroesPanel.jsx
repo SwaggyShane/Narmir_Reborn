@@ -9,7 +9,7 @@ import { showHeroXpModal } from '../../utils/showHeroXpModal.js';
 import { toast as showToast } from '../../utils/toast.js';
 import { switchTab } from '../../utils/switchTab.js';
 import EmptyState from './EmptyState.jsx';
-import { useBuildCount, useProfileStore, useEconomyStore, useMillitaryStore, useResearchStore, usePopulationStore } from '../../stores';
+import { useBuildCount, useProfileStore, useEconomyStore, useMilitaryStore, useResearchStore, usePopulationStore } from '../../stores';
 
 
 function heroXpForLevelJS(level) {
@@ -29,7 +29,7 @@ const HeroesPanel = () => {
     if (!kingdomData || Object.keys(kingdomData).length === 0) return;
     useProfileStore.getState().receiveServerSnapshot(kingdomData);
     useEconomyStore.getState().receiveServerSnapshot(kingdomData);
-    useMillitaryStore.getState().receiveServerSnapshot(kingdomData);
+    useMilitaryStore.getState().receiveServerSnapshot(kingdomData);
     useResearchStore.getState().receiveServerSnapshot(kingdomData);
     usePopulationStore.getState().receiveServerSnapshot(kingdomData);
   }, []);
