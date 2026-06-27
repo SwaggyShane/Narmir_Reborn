@@ -24,6 +24,21 @@ export {
   useResources,
   useGoldIncome,
   useTradeRoutes,
+  useBuildAllocation,
+  useBuildProgress,
+  useLand,
+  useBuiltLand,
+  useHammersStored,
+  useHammerTurnsUsed,
+  useLandAvailable,
+  useWood,
+  useStone,
+  useIron,
+  useSteel,
+  useCoal,
+  useBlueprintsStored,
+  useScaffoldingStored,
+  useBuildCount,
 } from './economyStore';
 
 export {
@@ -83,6 +98,11 @@ export {
   useScore,
   useRank,
   useKingdomMetadata,
+  useRace,
+  useEngineers,
+  useEngineerLevel,
+  useEngineerXp,
+  useEngineerXpNeeded,
 } from './profileStore';
 
 /**

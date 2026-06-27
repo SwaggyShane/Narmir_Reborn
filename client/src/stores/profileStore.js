@@ -29,6 +29,13 @@ export const useProfileStore = create(
       season: null,
       rank: null,  // World rank (computed on server, synced here)
 
+      // Race and engineers
+      race: '',
+      engineers: 0,
+      engineer_level: 1,
+      engineer_xp: 0,
+      engineer_xp_needed: 1000,
+
       // ===== ACTIONS =====
 
       /**
@@ -49,6 +56,11 @@ export const useProfileStore = create(
         if (data?.vampire_countdown !== undefined) state.vampire_countdown = data.vampire_countdown;
         if (data?.season !== undefined) state.season = data.season;
         if (data?.rank !== undefined) state.rank = data.rank;
+        if (data?.race !== undefined) state.race = data.race;
+        if (data?.engineers !== undefined) state.engineers = data.engineers;
+        if (data?.engineer_level !== undefined) state.engineer_level = data.engineer_level;
+        if (data?.engineer_xp !== undefined) state.engineer_xp = data.engineer_xp;
+        if (data?.engineer_xp_needed !== undefined) state.engineer_xp_needed = data.engineer_xp_needed;
       }),
 
       /**
@@ -94,3 +106,14 @@ export const useKingdomMetadata = () =>
       season: state.season,
     }))
   );
+
+// Race and engineer selectors
+export const useRace = () => useProfileStore((state) => state.race);
+
+export const useEngineers = () => useProfileStore((state) => state.engineers);
+
+export const useEngineerLevel = () => useProfileStore((state) => state.engineer_level);
+
+export const useEngineerXp = () => useProfileStore((state) => state.engineer_xp);
+
+export const useEngineerXpNeeded = () => useProfileStore((state) => state.engineer_xp_needed);
