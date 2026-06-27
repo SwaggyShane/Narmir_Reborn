@@ -658,7 +658,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
       finalMsg += `Completed: ${completedItems.join(", ")}. `;
     }
     if (updates._build_estimates && updates._build_estimates.length > 0) {
-        finalMsg += `Actively constructing: ${updates._build_estimates.join(" · ")}. `;
+        finalMsg += `Actively constructing: ${updates._build_estimates.join(" - ")}. `;
     }
     if (constructionNotes.length > 0) {
       finalMsg += constructionNotes.join(" ") + " ";
@@ -674,7 +674,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
   } else if (activeBuildings.size > 0) {
     let finalMsg = "";
     if (updates._build_estimates && updates._build_estimates.length > 0) {
-        finalMsg += `Actively constructing: ${updates._build_estimates.join(" · ")}. `;
+        finalMsg += `Actively constructing: ${updates._build_estimates.join(" - ")}. `;
     } else {
       if (totalEngineersWorked > 0) {
         finalMsg += `Engineers making progress on ${activeBuildings.size} building type${activeBuildings.size > 1 ? "s" : ""}. `;
