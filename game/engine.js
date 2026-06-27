@@ -1,4 +1,4 @@
-﻿// src/game/engine.js
+// src/game/engine.js
 // Pure game logic — no I/O, no socket calls.
 // All functions take a kingdom row (or rows) and return mutations + events.
 
