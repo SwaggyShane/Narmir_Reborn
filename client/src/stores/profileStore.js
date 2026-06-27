@@ -49,6 +49,7 @@ export const useProfileStore = create(
       // Kingdom profile
       description: '',
       customPortrait: null,
+      gender: 'male',
 
       // ===== ACTIONS =====
 
@@ -84,6 +85,7 @@ export const useProfileStore = create(
         if (data?.description !== undefined) state.description = data.description;
         if (data?.customPortrait !== undefined) state.customPortrait = data.customPortrait;
         if (data?.custom_portrait !== undefined) state.customPortrait = data.custom_portrait;
+        if (data?.gender !== undefined) state.gender = data.gender;
       }),
 
       /**
@@ -179,3 +181,5 @@ export const useRankingsCache = () => useProfileStore((state) => state.rankingsC
 export const useDescription = () => useProfileStore((state) => state.description);
 
 export const useCustomPortrait = () => useProfileStore((state) => state.customPortrait);
+
+export const useGender = () => useProfileStore((state) => state.gender);
