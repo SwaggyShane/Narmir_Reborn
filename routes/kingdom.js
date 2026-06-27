@@ -8,7 +8,7 @@ const config = require("../game/config");
 const { requireAuth, requireCsrfToken } = require("./middleware");
 const { progressGoal, generateGoals, claimGoal } = require('../game/goals');
 const { safeJsonParse, devLog } = require('../utils/helpers');
-const { validateTroopAmount, validateResearchAmount, validateAllocationObject } = require('../utils/numeric-validation');
+const { validateTroopAmount, validateResearchAmount, validateNonNegativeInteger, validateAllocationObject } = require('../utils/numeric-validation');
 const { getKingdomAttunements } = require('../game/fragment-attunements');
 const fragmentBonusManager = require("../game/fragment-bonus-manager");
 const attunementManager = require('../game/attunement-manager');
@@ -980,23 +980,37 @@ module.exports = function (db) {
   });
   router.post("/build-allocation", requireAuth, requireCsrfToken, async (req, res) => {
     const { allocation } = req.body;
-    if (!allocation || typeof allocation !== "object")
-      return res.status(400).json({ error: "allocation required" });
+
+    // Validate allocation using utility
+    const allocValidation = validateAllocationObject(allocation, {
+      maxPerItem: 10000000,
+      maxTotal: 10000000,
+      fieldName: 'allocation',
+    });
+    if (!allocValidation.valid) {
+      return res.status(400).json({ error: allocValidation.error });
+    }
+
     const k = await db.get(
-      "SELECT id, engineers FROM kingdoms WHERE player_id = ?",
+      "SELECT id, engineers, resource_build_allocation FROM kingdoms WHERE player_id = ?",
       [req.player.playerId],
     );
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
-    const total = Object.values(allocation).reduce(
+
+    // Account for resource_build_allocation when checking engineer capacity
+    const resourceAlloc = safeJsonParse(k.resource_build_allocation, {}, "build-allocation:resource_build_allocation");
+    const resourceTotal = Object.values(resourceAlloc).reduce(
       (s, v) => s + (Number(v) || 0),
       0,
     );
-    if (total > k.engineers)
+
+    // Check engineer capacity
+    if (allocValidation.total + resourceTotal > k.engineers)
       return res.status(400).json({
-        error: `Allocated ${total.toLocaleString()} but only have ${k.engineers.toLocaleString()} engineers`,
+        error: `Allocated ${allocValidation.total.toLocaleString()} build engineers and ${resourceTotal.toLocaleString()} resource engineers, but only have ${k.engineers.toLocaleString()} engineers total`,
       });
     await db.run("UPDATE kingdoms SET build_allocation = ? WHERE id = ?", [
-      JSON.stringify(allocation),
+      JSON.stringify(allocValidation.values),
       k.id,
     ]);
     res.json({ ok: true });
@@ -1004,8 +1018,19 @@ module.exports = function (db) {
 
   router.post("/resource-build-allocation", requireAuth, requireCsrfToken, async (req, res) => {
     const { allocation } = req.body;
-    if (!allocation || typeof allocation !== "object")
-      return res.status(400).json({ error: "allocation required" });
+
+    // Validate allocation using utility (whitelist valid resource building types)
+    const validResourceBuildings = ['woodyard', 'lumber_camp', 'sawmill', 'gravel_pit', 'blockfield', 'stone_quarry', 'open_pit', 'strip_mine', 'deep_mine'];
+    const allocValidation = validateAllocationObject(allocation, {
+      validKeys: validResourceBuildings,
+      maxPerItem: 10000000,
+      maxTotal: 10000000,
+      fieldName: 'allocation',
+    });
+    if (!allocValidation.valid) {
+      return res.status(400).json({ error: allocValidation.error });
+    }
+
     const k = await db.get(
       "SELECT id, engineers, build_allocation FROM kingdoms WHERE player_id = ?",
       [req.player.playerId],
@@ -1017,16 +1042,13 @@ module.exports = function (db) {
       (s, v) => s + (Number(v) || 0),
       0,
     );
-    const total = Object.values(allocation).reduce(
-      (s, v) => s + (Number(v) || 0),
-      0,
-    );
-    if (total + buildTotal > k.engineers)
+
+    if (allocValidation.total + buildTotal > k.engineers)
       return res.status(400).json({
-        error: `Allocated ${total.toLocaleString()} resource engineers and ${buildTotal.toLocaleString()} build engineers, but only have ${k.engineers.toLocaleString()} engineers total`,
+        error: `Allocated ${allocValidation.total.toLocaleString()} resource engineers and ${buildTotal.toLocaleString()} build engineers, but only have ${k.engineers.toLocaleString()} engineers total`,
       });
     await db.run("UPDATE kingdoms SET resource_build_allocation = ? WHERE id = ?", [
-      JSON.stringify(allocation),
+      JSON.stringify(allocValidation.values),
       k.id,
     ]);
     res.json({ ok: true });
@@ -1034,8 +1056,25 @@ module.exports = function (db) {
 
   router.post("/school-allocation", requireAuth, requireCsrfToken, async (req, res) => {
     const { spellbook, school_spellbook } = req.body;
-    if (!Number.isInteger(spellbook) || !Number.isInteger(school_spellbook) || spellbook < 0 || school_spellbook < 0)
-      return res.status(400).json({ error: "spellbook and school_spellbook must be non-negative integers" });
+
+    // Validate both fields using utility
+    const spellbookValidation = validateNonNegativeInteger(spellbook, {
+      min: 0,
+      max: 1000000,
+      fieldName: 'spellbook',
+    });
+    if (!spellbookValidation.valid) {
+      return res.status(400).json({ error: spellbookValidation.error });
+    }
+
+    const schoolSpellbookValidation = validateNonNegativeInteger(school_spellbook, {
+      min: 0,
+      max: 1000000,
+      fieldName: 'school_spellbook',
+    });
+    if (!schoolSpellbookValidation.valid) {
+      return res.status(400).json({ error: schoolSpellbookValidation.error });
+    }
 
     const k = await db.get(
       "SELECT id, mages, school_of_magic, research_allocation FROM kingdoms WHERE player_id = ?",
@@ -1044,15 +1083,15 @@ module.exports = function (db) {
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
     if (!k.school_of_magic) return res.status(400).json({ error: "Must choose a school first" });
 
-    const total = spellbook + school_spellbook;
+    const total = spellbookValidation.value + schoolSpellbookValidation.value;
     if (total > (k.mages || 0))
       return res.status(400).json({
         error: `Allocated ${total.toLocaleString()} mages, but only have ${(k.mages || 0).toLocaleString()} mages`,
       });
 
     const researchAlloc = safeJsonParse(k.research_allocation, {}, "school-allocation:research_allocation");
-    researchAlloc.spellbook_mages = spellbook;
-    researchAlloc.school_spellbook_mages = school_spellbook;
+    researchAlloc.spellbook_mages = spellbookValidation.value;
+    researchAlloc.school_spellbook_mages = schoolSpellbookValidation.value;
 
     await db.run(
       "UPDATE kingdoms SET research_allocation = ? WHERE id = ?",
@@ -1730,8 +1769,18 @@ module.exports = function (db) {
   // â”€â”€ Shrine allocation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   router.post("/shrine-allocation", requireAuth, requireCsrfToken, async (req, res) => {
     const { allocation } = req.body;
-    if (!allocation || typeof allocation !== "object")
-      return res.status(400).json({ error: "allocation required" });
+
+    // Validate allocation object
+    const allocValidation = validateAllocationObject(allocation, {
+      validKeys: ['clerics'],
+      maxPerItem: 1000000,
+      maxTotal: 1000000,
+      fieldName: 'allocation',
+    });
+    if (!allocValidation.valid) {
+      return res.status(400).json({ error: allocValidation.error });
+    }
+
     const k = await db.get(
       "SELECT id, bld_shrines, clerics FROM kingdoms WHERE player_id = ?",
       [req.player.playerId],
@@ -1741,8 +1790,9 @@ module.exports = function (db) {
       return res
         .status(400)
         .json({ error: "You need at least 1 Shrine first" });
+
     const clericsAlloc = Math.min(
-      Number(allocation.clerics) || 0,
+      allocValidation.values.clerics || 0,
       k.clerics,
     );
     await db.run("UPDATE kingdoms SET shrine_allocation = ? WHERE id = ?", [
