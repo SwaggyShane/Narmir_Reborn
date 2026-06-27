@@ -1,33 +1,36 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { useGameMutationEvents } from '../../hooks/useGameState';
+import { useHappiness, usePopulationStore } from '../../stores';
 
 const HappinessWidget = ({ onOpenTab }) => {
-  const [happiness, setHappiness] = useState(50);
-  const [history, setHistory] = useState([]);
+  const happiness = useHappiness() ?? 50;
 
-  const fetchHappinessData = async () => {
+  const fetchHappinessData = useCallback(async () => {
     try {
       const response = await fetch('/api/kingdom/happiness-status');
       if (!response.ok) throw new Error('Failed to fetch happiness data');
 
       const data = await response.json();
-      setHappiness(data.happiness || 50);
-      setHistory(data.last50Turns || []);
+      if (data) {
+        usePopulationStore.setState({
+          happiness: data.happiness ?? 50,
+        });
+      }
     } catch (err) {
       console.error('Happiness widget error:', err);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchHappinessData();
-  }, []);
+  }, [fetchHappinessData]);
 
   useGameMutationEvents(useCallback((event) => {
     const reason = String(event?.reason || '');
     if (['turn', 'kingdom-refresh', 'server-updates', 'mutation'].includes(reason)) {
       fetchHappinessData();
     }
-  }, []));
+  }, [fetchHappinessData]));
 
   const getHappinessColor = (value) => {
     if (value >= 80) return 'var(--green)';
@@ -36,14 +39,7 @@ const HappinessWidget = ({ onOpenTab }) => {
     return 'var(--red)';
   };
 
-  const getTrend = () => {
-    if (history.length < 2) return '→';
-    const current = history[history.length - 1]?.happiness || happiness;
-    const previous = history[Math.max(0, history.length - 6)]?.happiness || current;
-    if (current > previous) return '📈';
-    if (current < previous) return '📉';
-    return '→';
-  };
+  const getTrend = () => '→';
 
   const barWidth = (happiness / 120) * 100;
   const barColor =
