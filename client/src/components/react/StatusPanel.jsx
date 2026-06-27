@@ -34,7 +34,8 @@ import {
   useScribes,
   useResearchers,
   useCustomPortrait,
-  useProfileStore,
+  useGender,
+  useEconomyStore,
 } from '../../stores';
 
 const RACE_CARD_DATA = {
@@ -155,7 +156,7 @@ const StatusPanel = () => {
   const scribes = useScribes();
   const researchers = useResearchers();
   const customPortrait = useCustomPortrait();
-  const gender = useProfileStore((state) => state.gender || 'male');
+  const gender = useGender();
   const mana = useMana();
   const resEconomy = useResEconomy();
   const resWeapons = useResWeapons();
@@ -193,7 +194,7 @@ const StatusPanel = () => {
         return;
       }
       if (result.tax !== undefined) {
-        useProfileStore.setState({ tax: result.tax });
+        useEconomyStore.setState({ tax: result.tax });
       }
       showToast('Tax rate locked', 'success');
     } catch (err) {

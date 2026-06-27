@@ -148,6 +148,7 @@ export {
   useRankingsCache,
   useDescription,
   useCustomPortrait,
+  useGender,
 } from './profileStore';
 
 /**
