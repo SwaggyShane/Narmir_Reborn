@@ -267,9 +267,15 @@ const EconomyPanel = () => {
       val = weaponsStockpile;
     } else if (tradeOfferItem === 'armor') {
       val = armorStockpile;
+    } else if (tradeOfferItem === 'gold') {
+      val = gold;
+    } else if (tradeOfferItem === 'food') {
+      val = food;
+    } else {
+      val = Number(state?.[tradeOfferItem] || 0);
     }
     setTradeOfferQty(String(Math.max(0, val)));
-  }, [tradeOfferItem, weaponsStockpile, armorStockpile]);
+  }, [tradeOfferItem, weaponsStockpile, armorStockpile, gold, food, state]);
 
   const setMaxMercCount = useCallback(() => {
     const price = MERC_COST[mercTier] || 50;
