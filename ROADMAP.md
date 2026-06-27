@@ -1,7 +1,7 @@
 # Narmir Reborn — Unified Development Roadmap
 
-**Status:** Alpha phase (ongoing) — Tracks A–E complete; Track F.3 consolidation complete (PR #606–#608); F.1,2,4–8 deferred post-cutover  
-**Last updated:** 2026-06-26  
+**Status:** Alpha phase (ongoing) — Tracks A–D complete; E1–E2 fixed; E3 deferred (await discord.js v15); Track F.3 consolidation complete (PR #606–#608); F.4 in progress  
+**Last updated:** 2026-06-27  
 **Single source of truth** for planning, replacing ALPHA_ROADMAP + AdminRoadmap + MAINTENANCE (see **Related Documents**)
 
 ---
@@ -151,7 +151,7 @@ Run once on staging/local; all must ✅:
 
 ## Track E — Platform Health (P0–P1)
 
-**Status:** 🟡 **E3 OPEN** (others done)
+**Status:** ✅ **E1, E2 DONE** | 🟡 **E3 DEFERRED** (await discord.js v15 stable, 3-6+ months)
 
 ### E.1 ESLint enforcement
 
@@ -189,7 +189,7 @@ Added `.github/workflows/ci.yml`:
 
 ### E.3 Dependency vulnerabilities
 
-**Status:** ⏳ **DEFERRED** (4 vulnerabilities remain; discord.js v14 won't receive undici fix)
+**Status:** 🟡 **DEFERRED INDEFINITELY** — Await discord.js v15 stable release (3-6+ months)
 
 #### Fixed (✅ 4 vulnerabilities)
 | Package | Issue | Resolution |
@@ -210,6 +210,8 @@ Added `.github/workflows/ci.yml`:
 - Real-world risk: low-moderate (WebSocket DoS direct, others need MITM)
 - Cost to fix now: ~2-3 hours refactoring; Cost to defer: ongoing security debt
 
+**Decision:** Defer indefinitely. Branch `claude/track-e3-dependencies` deleted. Revisit when discord.js v15 stable or if threat escalates (e.g., public WebSocket DoS PoC). No action needed until then.
+
 ### E.4 Admin CSRF protection
 
 **Status:** ✅ **FIXED** (fix/admin-csrf)
@@ -226,7 +228,7 @@ Link updated doc to this roadmap; clarify resolved vs. open items.
 
 ## Track F — Architecture Debt (P4, post-cutover)
 
-**Status:** 🟡 **IN PROGRESS** — F3 consolidation phase complete (PR #606, #607, #608)
+**Status:** 🟡 **IN PROGRESS** — F3 consolidation phase complete (PR #606–#608); F4 Phase 1–2A underway
 
 From MAINTENANCE.md recommended order:
 
@@ -319,7 +321,7 @@ Per `CLAUDE.md`:
 
 | Metric | Target |
 |--------|--------|
-| Tracks A, B, C, E completion | 100% (P0–P2 done; E3 pending Vite bump) |
+| Tracks A, B, C, E completion | 100% (P0–P2 done; E1–E2 fixed; E3 deferred) |
 | Admin parity (Ph6a) | 100% feature parity with legacy |
 | Admin hard cutover (Ph6b) | Deferred until verification matrix passes |
 | Lint | 0 errors on all new code |
@@ -343,12 +345,13 @@ Per `CLAUDE.md`:
 | **7** | **Admin Ph0–6a** React admin soft cutover | — | ✅ Done (PR #589) |
 | **8** | **Mobile UI** Responsive refinements | — | ✅ Done (PR #596–#598) |
 | **9** | **F3 Consolidation** Module architecture & timestamps | — | ✅ Done (PR #606–#608) |
-| **10** | **E3** Vite 8.1+ bump | — | ⏳ Next |
-| **11** | **C3** Portal CSS cleanup | — | ⏳ After E3 |
+| **10** | **F4 Phase 1–4** `engine.js` decomposition | — | 🟡 In progress (Phases 1–2A done) |
+| **11** | **C3** Portal CSS cleanup | — | ⏳ After F4 |
 | **12** | **Admin Ph6b** Hard cutover (with verification matrix ✅) | — | ⏳ When ready |
-| **13** | **M1** MAINTENANCE refresh | — | ⏳ After E1–E3 |
-| **14** | **Tailwind consolidation** Static → utilities refactor | — | 📋 Future (low urgency) |
-| **15** | **Track F (F.1,2,4–8)** Remaining architecture debt | — | ⏳ Deferred post-cutover |
+| **13** | **M1** MAINTENANCE refresh | — | ⏳ After F4 completes |
+| **14** | **E3** Discord.js v15 migration | — | 🟡 **DEFERRED** (indefinite — await v15 stable) |
+| **15** | **Tailwind consolidation** Static → utilities refactor | — | 📋 Future (low urgency) |
+| **16** | **Track F (F.2,5–8)** Remaining architecture debt | — | ⏳ Post-F4 |
 
 ---
 
