@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useActivePanel } from '../../hooks/useActivePanel';
-import { useKingdomRank } from '../../hooks/useKingdomRank.js';
 import { kingdomXpProgress } from '../../utils/xp.js';
 import { fmt } from '../../utils/fmt.js';
 import {
@@ -11,6 +10,7 @@ import {
   usePrestige,
   useTurn,
   useScore,
+  useRank,
   useKingdomMetadata,
   useProfileStore,
 } from '../../stores';
@@ -63,7 +63,7 @@ function Stat({ label, value, valueStyle = {} }) {
 
 const KingdomBodyHeader = () => {
   const { activePanel } = useActivePanel();
-  const rank = useKingdomRank();
+  const rank = useRank();
   const [xpModalOpen, setXpModalOpen] = useState(false);
 
   // Use Zustand selectors for each field (prevents re-renders on unrelated changes)
