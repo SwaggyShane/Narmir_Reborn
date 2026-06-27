@@ -4,7 +4,7 @@ import { apiCall } from '../../utils/api';
 import { fmt } from "../../utils/fmt";
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import { toast } from '../../utils/toast.js';
-import { useGameMutationEvents } from '../../hooks/useGameState';
+import { useGameState, useGameMutationEvents } from '../../hooks/useGameState';
 import { useRace } from '../../stores';
 import UpgradesList from './UpgradesList.jsx';
 import { parseOwnedUpgrades } from '../../utils/upgradeUtils.js';
@@ -18,6 +18,7 @@ import {
 } from '../../utils/defenseData.js';
 
 const DefensePanel = () => {
+  const { state } = useGameState();
   const race = useRace();
   useGameMutationEvents();
   const [upgradeOwned, setUpgradeOwned] = useState({
