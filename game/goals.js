@@ -35,7 +35,7 @@ function generateGoals(k) {
        goals = typeof k.goals === 'string' ? JSON.parse(k.goals) : k.goals;
     }
   } catch(err) {
-    console.warn(`[goals] Failed to parse goals for kingdom ${k.id}: ${err.message} — resetting to empty goals`);
+    console.warn(`[goals] Failed to parse goals for kingdom ${k.id || 'unknown'}: ${err.message} — resetting to empty goals`);
   }
 
   if (!goals.daily) goals.daily = { expiresAt: 0, goals: [] };
