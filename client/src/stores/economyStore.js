@@ -368,17 +368,17 @@ export const useResAttackMagic = () => useEconomyStore((state) => state.res_atta
 
 export const useResWarMachines = () => useEconomyStore((state) => state.res_war_machines || 100);
 
-export const useResEconomy = () => useEconomyStore((state) => state.res_economy || 100);
+export const useResEconomy = () => useEconomyStore((state) => state.res_economy ?? 100);
 
-export const useResSpellbook = () => useEconomyStore((state) => state.res_spellbook || 100);
+export const useResSpellbook = () => useEconomyStore((state) => state.res_spellbook ?? 100);
 
-export const useResArmor = () => useEconomyStore((state) => state.res_armor || 100);
+export const useResArmor = () => useEconomyStore((state) => state.res_armor ?? 100);
 
-export const useResDefenseMagic = () => useEconomyStore((state) => state.res_defense_magic || 100);
+export const useResDefenseMagic = () => useEconomyStore((state) => state.res_defense_magic ?? 100);
 
-export const useResEntertainment = () => useEconomyStore((state) => state.res_entertainment || 100);
+export const useResEntertainment = () => useEconomyStore((state) => state.res_entertainment ?? 100);
 
-export const useResConstruction = () => useEconomyStore((state) => state.res_construction || 100);
+export const useResConstruction = () => useEconomyStore((state) => state.res_construction ?? 100);
 
 // Discovered kingdoms for warfare targeting
 export const useDiscoveredKingdoms = () => useEconomyStore((state) => state.discovered_kingdoms || {});
@@ -387,4 +387,4 @@ export const useDiscoveredKingdoms = () => useEconomyStore((state) => state.disc
 export const useTax = () => useEconomyStore((state) => state.tax ?? 42);
 
 // Trade targets (list of kingdoms for trading/alliances)
-export const useTradeTargets = () => useEconomyStore((state) => state.targets || []);
+export const useTradeTargets = () => useEconomyStore((state) => Array.isArray(state.targets) ? state.targets : []);
