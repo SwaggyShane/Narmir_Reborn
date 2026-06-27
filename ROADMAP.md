@@ -1,7 +1,7 @@
 # Narmir Reborn — Unified Development Roadmap
 
-**Status:** Alpha phase (ongoing) — Tracks A–D complete; E1–E2 fixed; E3 deferred (await discord.js v15); Track F.3 consolidation complete (PR #606–#608); **F.4 engine.js decomposition COMPLETE (PR #611); F.2 Combat V2 complete and alpha-ready (PR #612); F.5 Phase 1 PR #3–#6 COMPLETE (PR #617, #618, #619, #620 merged); PR #9–#10 COMPLETE (PR #624 OptionsPanel, PR #625 HeroesPanel merged); PR #11+ queued**  
-**Last updated:** 2026-06-27 (F5 Phase 1: PR #3–#6 merged; PR #9–#10 complete; PR #11+ queued)  
+**Status:** Alpha phase (ongoing) — Tracks A–D complete; E1–E2 fixed; E3 deferred (await discord.js v15); Track F.3 consolidation complete (PR #606–#608); **F.4 engine.js decomposition COMPLETE (PR #611); F.2 Combat V2 complete and alpha-ready (PR #612); F.5 Phase 1 PR #3–#6 COMPLETE (PR #617, #618, #619, #620 merged); PR #9–#10 COMPLETE (PR #624 OptionsPanel, PR #625 HeroesPanel merged); Paused PR #11 (StudiesPanel); pivot to light-state components only**  
+**Last updated:** 2026-06-27 (F5 Phase 1: 2 migrations successful; learning: complex components require architectural refactoring, not hook replacement)  
 **Single source of truth** for planning, replacing ALPHA_ROADMAP + AdminRoadmap + MAINTENANCE (see **Related Documents**)
 
 ---
@@ -258,7 +258,7 @@ Link updated doc to this roadmap; clarify resolved vs. open items.
 | **F2** | Combat V2 complete + alpha-ready | Individual troop HP/DMG model; 26.8M simulated combats; balanced 48–52% outcomes; feature-flagged `USE_COMBAT_V2=1` | Alpha | ✅ **DONE** (PR #612) |
 | **F3** | Module consolidation & architecture foundation | ✅ Phase 1: data-transformations extraction (PR #606)<br/>✅ Phase 2: timestamp consolidation (PR #607)<br/>✅ Phase 3: architecture documentation + mobile hardening (PR #608) | Now | ✅ **DONE** |
 | **F4** | `engine.js` decomposition | 4 phases (all complete); 6,241 lines → 8 focused modules + re-exports | Now | ✅ **DONE** (PR #611) |
-| **F5** | `GameStateManager` → Zustand | 5-PR incremental migration; Phase 1 (Store infrastructure + all tier-1 panels) | Post-F4 | ✅ **PR #3–#6 COMPLETE (PR #617, #618, #619, #620 merged); PR #9–#10 COMPLETE (PR #624 OptionsPanel, PR #625 HeroesPanel merged); PR #11+ queued** |
+| **F5** | `GameStateManager` → Zustand | 5-PR incremental migration; Phase 1 (Store infrastructure + all tier-1 panels) | Post-F4 | ⏳ **PIVOT: Light-state components only** — PR #3–#6 COMPLETE (PR #617, #618, #619, #620); PR #9–#10 COMPLETE (PR #624 OptionsPanel, PR #625 HeroesPanel); PR #11 (StudiesPanel) deferred — complex components need architectural refactor before hook migration |
 | **F6** | Frontend component tests (Vitest + RTL) | Start with shell nav + `panelMeta` | Post-F4 | ⏳ Pending |
 | **F7** | Numeric range validation (troops, builds, research) | Prevents balance exploits | Post-F4 | ⏳ Pending |
 | **F8** | `kingdom.js` split → `build`, `warfare`, `economy`, `research` modules | Incremental refactor; enabled by F3 foundation | Post-F4 | ⏳ Pending |
@@ -391,6 +391,7 @@ Per `CLAUDE.md`:
 
 | Version | Date | Change |
 |---------|------|--------|
+| 1.7 | 2026-06-27 | **F5 PIVOT: Light-state components only** — PR #11 (StudiesPanel) closed after discovering component has 16+ state references throughout render tree; hook replacement insufficient for complex components. Strategy: Complete light-state migrations (OptionsPanel ✅, HeroesPanel ✅), defer complex ones (StudiesPanel, TrainingPanel, etc.) until architectural refactor plan ready. Pattern identified: simple components (applyUpdates only) → 1–2 hour migration; complex components → architectural refactor first. |
 | 1.6 | 2026-06-27 | **F5 Phase 1 PR #10 COMPLETE**: HeroesPanel migrated to Zustand; syncKingdomData helper syncs server snapshots to all stores after hero actions; Gemini review feedback optimized empty object check to prevent unnecessary store dispatches; all CI checks passing (PR #625) |
 | 1.5 | 2026-06-27 | **F5 Phase 1 PR #9 COMPLETE**: OptionsPanel migrated to Zustand; profileStore extended with description/customPortrait fields; Gemini review issues fixed (snake_case sync, component extraction, state initialization); all CI checks passing (PR #624) |
 | 1.4 | 2026-06-27 | **F5 Phase 1 PR #3–#5 COMPLETE**: StatusPanel, multiple UI/profile components migrated to Zustand; Gemini review issues resolved; PR #6 green CI with 20+ components ready; PR #7–#8 queued |
