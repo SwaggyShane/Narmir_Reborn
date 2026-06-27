@@ -50,6 +50,7 @@ const {
   happinessCombatMult,
   formatCombatV2NewsBlurb,
 } = require('./lib/combat-helpers');
+const { recordHappinessHistory, logHappinessEvent } = require('./lib/happiness-logging');
 
 // Economy domain — gold/food/trade per-turn calculations, food economy
 // settlement, resource yield, market and commodity pricing. Defined in
@@ -249,69 +250,6 @@ const USE_COMBAT_V2 = process.env.USE_COMBAT_V2 === "1";
 
 // Helpers (devLog, repairMojibake, cleanNewsEvent, isNight, assignRegion,
 // getHappinessRecoveryRate, calculateHappiness) imported from lib/data-transformations.js
-
-async function recordHappinessHistory(db, kingdomId, turn, happinessData) {
-  try {
-    await db.run(
-      `INSERT INTO happiness_history
-       (kingdom_id, turn, happiness_value, food_component, entertainment_component, safety_component, prosperity_component, race_modifier, tax_component, overcrowding_component, recovery_rate, effects_component, synergy_component, fragment_component)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT(kingdom_id, turn) DO UPDATE SET
-       happiness_value = EXCLUDED.happiness_value,
-       food_component = EXCLUDED.food_component,
-       entertainment_component = EXCLUDED.entertainment_component,
-       safety_component = EXCLUDED.safety_component,
-       prosperity_component = EXCLUDED.prosperity_component,
-       race_modifier = EXCLUDED.race_modifier,
-       tax_component = EXCLUDED.tax_component,
-       overcrowding_component = EXCLUDED.overcrowding_component,
-       recovery_rate = EXCLUDED.recovery_rate,
-       effects_component = EXCLUDED.effects_component,
-       synergy_component = EXCLUDED.synergy_component,
-       fragment_component = EXCLUDED.fragment_component`,
-      [
-        kingdomId,
-        turn,
-        happinessData.happiness,
-        happinessData.components.food || 0,
-        happinessData.components.entertainment || 0,
-        happinessData.components.safety || 0,
-        happinessData.components.prosperity || 0,
-        happinessData.components.race || 0,
-        happinessData.components.tax || 0,
-        happinessData.components.overcrowding || 0,
-        happinessData.recovery || 0,
-        happinessData.components.effects || 0,
-        happinessData.components.synergy || 0,
-        happinessData.components.fragments || 0
-      ]
-    );
-  } catch (err) {
-    console.error(`[happiness] recordHappinessHistory error: ${err.message}`);
-  }
-}
-
-async function logHappinessEvent(db, kingdomId, turn, eventData) {
-  try {
-    await db.run(
-      `INSERT INTO happiness_events
-       (kingdom_id, turn, event_type, old_happiness, new_happiness, component, delta, description)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        kingdomId,
-        turn,
-        eventData.event_type,
-        eventData.old_happiness,
-        eventData.new_happiness,
-        eventData.component,
-        eventData.delta,
-        eventData.description
-      ]
-    );
-  } catch (err) {
-    console.error(`[happiness] logHappinessEvent error: ${err.message}`);
-  }
-}
 
 // ── Season system ─────────────────────────────────────────────────────────────
 
