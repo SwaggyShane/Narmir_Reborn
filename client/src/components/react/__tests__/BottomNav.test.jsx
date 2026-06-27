@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // Mock hooks and dependencies BEFORE importing component
@@ -157,26 +157,24 @@ describe('BottomNav', () => {
       useActivePanel.mockReturnValue({ activePanel: 'messages' });
       render(<BottomNav />);
       const moreButton = screen.getByRole('button', { name: /More/i });
-      // When a drawer tab is active, the more button should have visual indication
-      // (checked via className containing 'is-active')
-      expect(moreButton.className).toContain('bottom-nav-chip');
+      expect(moreButton.className).toContain('is-active');
     });
   });
 
   describe('logout button', () => {
-    it('should render logout button when username is set', () => {
+    it('should render logout button when username is set', async () => {
       useUsername.mockReturnValue('testuser');
       render(<BottomNav />);
       const moreButton = screen.getByRole('button', { name: /More/i });
-      fireEvent.click(moreButton);
+      await userEvent.click(moreButton);
       expect(screen.getByLabelText(/Logout/i)).toBeInTheDocument();
     });
 
-    it('should not render logout button when no username', () => {
+    it('should not render logout button when no username', async () => {
       useUsername.mockReturnValue(null);
       render(<BottomNav />);
       const moreButton = screen.getByRole('button', { name: /More/i });
-      fireEvent.click(moreButton);
+      await userEvent.click(moreButton);
       expect(screen.queryByLabelText(/Logout/i)).not.toBeInTheDocument();
     });
 
@@ -202,27 +200,27 @@ describe('BottomNav', () => {
   });
 
   describe('admin button', () => {
-    it('should render admin button when user is admin', () => {
+    it('should render admin button when user is admin', async () => {
       useIsAdmin.mockReturnValue(true);
       render(<BottomNav />);
       const moreButton = screen.getByRole('button', { name: /More/i });
-      fireEvent.click(moreButton);
+      await userEvent.click(moreButton);
       expect(screen.getByRole('link', { name: /Admin/i })).toBeInTheDocument();
     });
 
-    it('should not render admin button when user is not admin', () => {
+    it('should not render admin button when user is not admin', async () => {
       useIsAdmin.mockReturnValue(false);
       render(<BottomNav />);
       const moreButton = screen.getByRole('button', { name: /More/i });
-      fireEvent.click(moreButton);
+      await userEvent.click(moreButton);
       expect(screen.queryByRole('link', { name: /Admin/i })).not.toBeInTheDocument();
     });
 
-    it('should link to admin page', () => {
+    it('should link to admin page', async () => {
       useIsAdmin.mockReturnValue(true);
       render(<BottomNav />);
       const moreButton = screen.getByRole('button', { name: /More/i });
-      fireEvent.click(moreButton);
+      await userEvent.click(moreButton);
       const adminLink = screen.getByRole('link', { name: /Admin/i });
       expect(adminLink).toHaveAttribute('href', '/admin');
     });
