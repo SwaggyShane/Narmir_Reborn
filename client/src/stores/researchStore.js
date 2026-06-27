@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { devtools } from 'zustand/middleware';
 import { persist } from 'zustand/middleware';
-import { useShallow } from 'zustand/react';
 
 /**
  * Research Store — Disciplines, research progress, spell research
@@ -241,7 +240,9 @@ export const useDisciplineLevel = (discipline) =>
   useResearchStore((state) => state.disciplineProgress[discipline]?.level || 1);
 
 export const useActiveResearch = () =>
-  useResearchStore(useShallow((state) => state.activeResearch));
+  useResearchStore((state) =>
+    state.activeResearch.allIds.map(id => state.activeResearch.byId[id])
+  );
 
 export const useSelectedDiscipline = () =>
   useResearchStore((state) => state.selectedDiscipline);
