@@ -23,6 +23,7 @@ export {
   useMana as useEconomyMana,
   useResources,
   useGoldIncome,
+  useFoodBalance,
   useTradeRoutes,
   useBuildAllocation,
   useBuildProgress,

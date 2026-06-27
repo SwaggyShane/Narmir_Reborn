@@ -270,6 +270,9 @@ export const useResources = () =>
 export const useGoldIncome = () =>
   useEconomyStore((state) => state.gold_income || 0); // Derived, not stored
 
+export const useFoodBalance = () =>
+  useEconomyStore((state) => state.food_balance || 0);
+
 // Trade routes as array (selector transforms normalized structure)
 export const useTradeRoutes = () =>
   useEconomyStore((state) =>
