@@ -52,6 +52,11 @@ export const useProfileStore = create(
       customPortrait: null,
       gender: 'male',
 
+      // XP and milestones
+      xp_sources: {},
+      milestone_bonuses: {},
+      milestone_title: 'Fledgling',
+
       // ===== ACTIONS =====
 
       /**
@@ -88,6 +93,9 @@ export const useProfileStore = create(
         if (data?.customPortrait !== undefined) state.customPortrait = data.customPortrait;
         if (data?.custom_portrait !== undefined) state.customPortrait = data.custom_portrait;
         if (data?.gender !== undefined) state.gender = data.gender;
+        if (data?.xp_sources !== undefined) state.xp_sources = data.xp_sources;
+        if (data?.milestone_bonuses !== undefined) state.milestone_bonuses = data.milestone_bonuses;
+        if (data?.milestone_title !== undefined) state.milestone_title = data.milestone_title;
       }),
 
       /**
@@ -187,3 +195,9 @@ export const useDescription = () => useProfileStore((state) => state.description
 export const useCustomPortrait = () => useProfileStore((state) => state.customPortrait);
 
 export const useGender = () => useProfileStore((state) => state.gender);
+
+export const useXpSources = () => useProfileStore((state) => state.xp_sources);
+
+export const useMilestoneBonuses = () => useProfileStore((state) => state.milestone_bonuses);
+
+export const useMilestoneTitle = () => useProfileStore((state) => state.milestone_title || 'Fledgling');
