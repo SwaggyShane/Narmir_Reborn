@@ -3,7 +3,7 @@
 ## PR Workflow
 
 ### Before Every Push — No Exceptions
-
+#### DO NOT TAKE THE PATH OF LEAST RESISTANCEE
 1. Confirm you are on the correct branch:
    ```bash
    git branch --show-current
