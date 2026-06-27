@@ -1,7 +1,32 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useGameState } from '../../hooks/useGameState';
+import { useShallow } from 'zustand/react/shallow';
 import { apiCall } from '../../utils/api.mjs';
 import { fmt } from "../../utils/fmt";
+import {
+  useEconomyStore,
+  useRace,
+  useEngineers,
+  useEngineerLevel,
+  useEngineerXp,
+  useEngineerXpNeeded,
+  useBuildAllocation,
+  useBuildProgress,
+  useLand,
+  useBuiltLand,
+  useHammersStored,
+  useHammerTurnsUsed,
+  useLandAvailable,
+  useGold,
+  useWood,
+  useStone,
+  useIron,
+  useSteel,
+  useCoal,
+  useBlueprintsStored,
+  useScaffoldingStored,
+  useBuildCount,
+  useBuildingCounts,
+} from '../../stores';
 import { applyGameMutation } from '../../utils/gameMutations.js';
 
 const RESONANCE_HINTS = {
@@ -145,7 +170,6 @@ const isBuildingRowVisible = (buildingId, vampire) => {
 };
 
 const BuildPanel = () => {
-  const { state } = useGameState();
   const [showBuildingRef, setShowBuildingRef] = useState(false);
   const [showAttunements, setShowAttunements] = useState(false);
   const [availableAttunements, setAvailableAttunements] = useState([]);
@@ -164,44 +188,61 @@ const BuildPanel = () => {
   });
   const [smithyInputs, setSmithyInputs] = useState({ hammers: 0, scaffolding: 0 });
   const [demolishAmounts, setDemolishAmounts] = useState({});
-  const isVampire = state?.race === 'vampire';
-  const totalEngineers = Number(state?.engineers || 0);
-  const engineerLevel = Number(state?.engineer_level || 1);
-  const engineerXp = Number(state?.engineer_xp || 0);
-  const engineerXpNeeded = Number(state?.engineer_xp_needed || 1000);
-  const landAvailable = Math.max(0, Number(state?.land || 0) - Number(state?.built_land || 0));
+
+  // Zustand selectors - called at top level to follow Rules of Hooks
+  const isVampire = useRace() === 'vampire';
+  const totalEngineers = Number(useEngineers() || 0);
+  const engineerLevel = Number(useEngineerLevel() || 1);
+  const engineerXp = Number(useEngineerXp() || 0);
+  const engineerXpNeeded = Number(useEngineerXpNeeded() || 1000);
+  const land = useLand();
+  const builtLand = useBuiltLand();
+  const landAvailable = useLandAvailable();
+  const buildAllocationRaw = useBuildAllocation();
+  const gold = useGold();
+  const wood = useWood();
+  const stone = useStone();
+  const iron = useIron();
+  const steel = useSteel();
+  const coal = useCoal();
+  const blueprintsStored = useBlueprintsStored();
+  const scaffoldingStored = useScaffoldingStored();
+  const hammersStored = useHammersStored();
+  const hammerTurnsUsed = useHammerTurnsUsed();
+  const bldLibraries = useBuildCount('libraries');
+  const buildingCounts = useBuildingCounts();
   const buildAllocation = useMemo(() => {
-    if (typeof state?.build_allocation === 'string') {
+    if (typeof buildAllocationRaw === 'string') {
       try {
-        return JSON.parse(state.build_allocation || '{}');
+        return JSON.parse(buildAllocationRaw || '{}');
       } catch {
         return {};
       }
     }
-    return state?.build_allocation || {};
-  }, [state?.build_allocation]);
+    return buildAllocationRaw || {};
+  }, [buildAllocationRaw]);
   const allocatedEngineers = useMemo(
     () => Object.values(engineerAllocations).reduce((sum, val) => sum + Number(val || 0), 0),
     [engineerAllocations]
   );
+  const buildProgressRaw = useBuildProgress();
   const buildProgress = useMemo(() => {
-    if (typeof state?.build_progress === 'string') {
+    if (typeof buildProgressRaw === 'string') {
       try {
-        return JSON.parse(state.build_progress || '{}');
+        return JSON.parse(buildProgressRaw || '{}');
       } catch {
         return {};
       }
     }
-    return state?.build_progress || {};
-  }, [state?.build_progress]);
+    return buildProgressRaw || {};
+  }, [buildProgressRaw]);
   const hammerDurability = useMemo(() => {
-    const stored = Number(state?.hammers_stored || 0);
-    if (stored <= 0) return null;
+    if (hammersStored <= 0) return null;
     return Math.max(
       0,
-      Math.round(100 - ((Number(state?.hammer_turns_used || 0) / Math.max(1, stored)) * 2.5))
+      Math.round(100 - ((hammerTurnsUsed / Math.max(1, hammersStored)) * 2.5))
     );
-  }, [state?.hammers_stored, state?.hammer_turns_used]);
+  }, [hammersStored, hammerTurnsUsed]);
   const remainingEngineers = Math.max(0, totalEngineers - allocatedEngineers);
   const refreshBuildUi = useCallback(() => {
     setBuildUiTick((tick) => tick + 1);
@@ -360,7 +401,7 @@ const BuildPanel = () => {
     return `${b.name}${tier}\nBase: ${b.time} turns | ${b.land ? b.land + " land" : ""}\n🪵 ${b.wood} 🪨 ${b.stone} 🔗 ${b.iron}`;
   };
 
-  const getBuildCount = (id) => Number(state?.[`bld_${id}`] || 0);
+  const getBuildCount = (id) => buildingCounts[id] || 0;
 
   const BUILD_FIELD_MAP = {
     farm: 'farms',
@@ -402,8 +443,8 @@ const BuildPanel = () => {
   const buildDisplay = useMemo(() => {
     const BLUEPRINT_REQUIRED = new Set(['vaults', 'smithies', 'markets', 'mage_towers', 'training', 'castles']);
     const SCAFFOLDING_REQUIRED = new Set(['mage_towers', 'training', 'castles', 'libraries']);
-    const bp = state?.blueprints_stored || 0;
-    const sc = state?.scaffolding_stored || 0;
+    const bp = blueprintsStored || 0;
+    const sc = scaffoldingStored || 0;
 
     const warnings = {};
     const estimates = {};
@@ -427,7 +468,7 @@ const BuildPanel = () => {
     });
 
     return { warnings, estimates };
-  }, [state?.blueprints_stored, state?.scaffolding_stored, engineerAllocations, isVampire]);
+  }, [blueprintsStored, scaffoldingStored, engineerAllocations, isVampire]);
   const buildQueueItems = useMemo(() => {
     const items = [];
     BUILDINGS_DISPLAY_ORDER.forEach((buildingId) => {
@@ -454,12 +495,11 @@ const BuildPanel = () => {
 
   useEffect(() => {
     updateSmithyDisplay();
-  }, [state, buildUiTick]);
+  }, [buildUiTick, hammersStored, scaffoldingStored, blueprintsStored, gold, buildingCounts]);
   const setMaxValue = (buildingId) => {
-    const total = Number(state?.engineers || 0);
     const allocated = getAllocatedEngineers();
     const current = getBuildFieldValue(buildingId);
-    const available = total - allocated + current;
+    const available = totalEngineers - allocated + current;
     setBuildFieldValue(buildingId, Math.max(0, available));
     refreshBuildUi();
   };
@@ -470,9 +510,8 @@ const BuildPanel = () => {
     const visibleFields = getVisibleBuildFields();
     const count = visibleFields.length;
     if (count === 0) return;
-    const total = Number(state?.engineers || 0);
-    const each = Math.floor(total / count);
-    const rem = total - each * count;
+    const each = Math.floor(totalEngineers / count);
+    const rem = totalEngineers - each * count;
     visibleFields.forEach((key, i) => {
       setBuildFieldValue(key, each + (i < rem ? 1 : 0));
     });
@@ -497,8 +536,8 @@ const BuildPanel = () => {
       allocation[getServerKey(key)] = val;
       total += val;
     });
-    if (total > (state?.engineers || 0)) {
-      return toast(`Allocated ${fmt(total)} but only have ${fmt(state?.engineers || 0)} engineers`, 'error');
+    if (total > totalEngineers) {
+      return toast(`Allocated ${fmt(total)} but only have ${fmt(totalEngineers)} engineers`, 'error');
     }
     const result = await apiCall('/api/kingdom/build-allocation', { method: 'POST', body: { allocation } });
     if (result.error) return toast(result.error, 'error');
@@ -507,40 +546,36 @@ const BuildPanel = () => {
     if (typeof window !== 'undefined' && typeof toast === 'function') toast('Engineer allocation saved | builds each turn automatically', 'success');
   };
   const updateSmithyDisplay = () => {
-    const smithies = Number(state?.bld_smithies || 0);
-    const hammerCap = smithies * 25;
-    const scaffCap = Math.max(10, smithies * 10);
-    const hammers = Number(state?.hammers_stored || 0);
-    const scaff = Number(state?.scaffolding_stored || 0);
-    const gold = Number(state?.gold || 0);
-    const scaffPrice = smithies > 0 ? 2500 : 3125;
+    const bldSmithies = buildingCounts.smithies || 0;
+    const hammerCap = bldSmithies * 25;
+    const scaffCap = Math.max(10, bldSmithies * 10);
+    const scaffPrice = bldSmithies > 0 ? 2500 : 3125;
 
-    const maxH = Math.max(0, Math.min(hammerCap - hammers, Math.floor(gold / 25)));
-    const maxS = Math.max(0, Math.min(scaffCap - scaff, Math.floor(gold / scaffPrice)));
+    const maxH = Math.max(0, Math.min(hammerCap - hammersStored, Math.floor(gold / 25)));
+    const maxS = Math.max(0, Math.min(scaffCap - scaffoldingStored, Math.floor(gold / scaffPrice)));
 
-    const note = smithies === 0 ? 'need-smithy' : null;
+    const note = bldSmithies === 0 ? 'need-smithy' : null;
 
     setSmithyDisplay({
-      hammersStored: hammers,
+      hammersStored: hammersStored,
       hammersCap: hammerCap,
       hammersAfford: maxH,
-      scaffoldingStored: scaff,
+      scaffoldingStored: scaffoldingStored,
       scaffoldingCap: scaffCap,
       scaffoldingAfford: maxS,
       smithyNote: note,
     });
   };
   const setSmithyMax = (type) => {
-    const smithies = Number(state?.bld_smithies || 0);
-    const gold = Number(state?.gold || 0);
+    const bldSmithies = buildingCounts.smithies || 0;
     if (type === 'hammers') {
-      const max = Math.max(0, Math.min(smithies * 25 - Number(state?.hammers_stored || 0), Math.floor(gold / 25)));
+      const max = Math.max(0, Math.min(bldSmithies * 25 - hammersStored, Math.floor(gold / 25)));
       setSmithyInputs(prev => ({ ...prev, hammers: max }));
       return;
     }
-    const scaffCap = Math.max(10, smithies * 10);
-    const scaffPrice = smithies > 0 ? 2500 : 3125;
-    const max2 = Math.max(0, Math.min(scaffCap - Number(state?.scaffolding_stored || 0), Math.floor(gold / scaffPrice)));
+    const scaffCap = Math.max(10, bldSmithies * 10);
+    const scaffPrice = bldSmithies > 0 ? 2500 : 3125;
+    const max2 = Math.max(0, Math.min(scaffCap - scaffoldingStored, Math.floor(gold / scaffPrice)));
     setSmithyInputs(prev => ({ ...prev, scaffolding: max2 }));
   };
   const buySmithyTool = async (type) => {
@@ -656,14 +691,14 @@ const BuildPanel = () => {
               </div>
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-text3">
                 Resources:
-                <span id="b-wood" className="text-text mx-0.5">{fmt(state?.wood || 0)}</span>🪵 |
-                <span id="b-stone" className="text-text mx-0.5">{fmt(state?.stone || 0)}</span>🪨 |
-                <span id="b-iron" className="text-text mx-0.5">{fmt(state?.iron || 0)}</span>🔗 |
-                <span id="b-steel" className="text-text mx-0.5">{fmt(state?.steel || 0)}</span>📏 |
-                <span id="b-coal" className="text-text mx-0.5">{fmt(state?.coal || 0)}</span>🌑
+                <span id="b-wood" className="text-text mx-0.5">{fmt(wood)}</span>🪵 |
+                <span id="b-stone" className="text-text mx-0.5">{fmt(stone)}</span>🪨 |
+                <span id="b-iron" className="text-text mx-0.5">{fmt(iron)}</span>🔗 |
+                <span id="b-steel" className="text-text mx-0.5">{fmt(steel)}</span>📏 |
+                <span id="b-coal" className="text-text mx-0.5">{fmt(coal)}</span>🌑
               </div>
               <div className="text-[12px] text-text3">
-                Land: <span id="b-land-available" className="text-text">{fmt(landAvailable)} / {fmt(state?.land || 0)}</span> available
+                Land: <span id="b-land-available" className="text-text">{fmt(landAvailable)} / {fmt(land)}</span> available
               </div>
             </div>
             <div className="flex gap-1.5">
@@ -1000,8 +1035,8 @@ const BuildPanel = () => {
               <div className="text-[20px] mb-1">📐</div>
               <div className="text-[12px] font-semibold text-text">Blueprints</div>
               <div className="text-[11px] text-text3 mb-1.5">req for 100t+ buildings</div>
-              <div className="text-[18px] font-bold text-gold">{fmt(state?.blueprints_stored || 0)}</div>
-              <div className="text-[11px] text-text3">/ {fmt((state?.bld_libraries || 0) * 100)} cap</div>
+              <div className="text-[18px] font-bold text-gold">{fmt(blueprintsStored)}</div>
+              <div className="text-[11px] text-text3">/ {fmt(bldLibraries * 100)} cap</div>
             </div>
           </div>
 
