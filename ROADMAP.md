@@ -1,7 +1,7 @@
 # Narmir Reborn — Unified Development Roadmap
 
-**Status:** Alpha phase (ongoing) — Tracks A–D complete; E1–E2 fixed; E3 deferred (await discord.js v15); Track F.3 consolidation complete (PR #606–#608); F.4 Phase 1–2C complete (PR #609–#611); Phase 2D underway  
-**Last updated:** 2026-06-27 (F4 Phase 2C complete, tracking Phase 2D–4)  
+**Status:** Alpha phase (ongoing) — Tracks A–D complete; E1–E2 fixed; E3 deferred (await discord.js v15); Track F.3 consolidation complete (PR #606–#608); F.4 Phase 1–3B complete (in-progress); Phase 4 pending  
+**Last updated:** 2026-06-27 (F4 Phase 3B complete, tracking Phase 4)  
 **Single source of truth** for planning, replacing ALPHA_ROADMAP + AdminRoadmap + MAINTENANCE (see **Related Documents**)
 
 ---
@@ -228,7 +228,7 @@ Link updated doc to this roadmap; clarify resolved vs. open items.
 
 ## Track F — Architecture Debt (P4, post-cutover)
 
-**Status:** 🟡 **IN PROGRESS** — F3 consolidation complete (PR #606–#608); F4 Phase 1–2C complete (PR #609–#611); Phase 2D–4 underway
+**Status:** 🟡 **IN PROGRESS** — F3 consolidation complete (PR #606–#608); F4 Phase 1–3B complete (PR #609–#611, in-progress); Phase 4 pending
 
 ### F4 Decomposition Progress
 
@@ -241,10 +241,10 @@ Link updated doc to this roadmap; clarify resolved vs. open items.
 | **Phase 2A** | happiness logging (DB) | `game/lib/happiness-logging.js` | ✅ | #609 |
 | **Phase 2B** | expedition utilities, transitions | `game/lib/expeditions.js` | ✅ | #610 |
 | **Phase 2C** | rebellion, prestige, trade raids, alliance defense | `game/lib/special-events.js` | ✅ | #611 |
-| **Phase 2D** | combat wrappers (~1,260 lines) | `game/lib/combat-wrappers.js` | ⏳ Next |
-| **Phase 3A** | building & research modules | Split from engine.js | ⏳ Pending |
-| **Phase 3B** | gameplay module | Split from engine.js | ⏳ Pending |
-| **Phase 4** | processTurn orchestration | Thin coordinator | ⏳ Pending |
+| **Phase 2D** | combat wrappers (~1,260 lines) | `game/lib/combat-wrappers.js` | ✅ | in-progress |
+| **Phase 3A** | building & research (6 functions) | `game/lib/building-research.js` | ✅ | in-progress |
+| **Phase 3B** | gameplay (7 functions) | `game/lib/gameplay.js` | ✅ | in-progress |
+| **Phase 4** | processTurn orchestration | Thin coordinator | ⏳ Next |
 
 **Architecture:** Pure functions extracted first; medium-risk functions with state mutations second; large orchestrators last.
 
