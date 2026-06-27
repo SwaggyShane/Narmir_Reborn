@@ -7,8 +7,10 @@
     "start": "node index.js",
     "bot": "node discord-bot.js",
     "build": "vite build",
-    "lint": "eslint . --ext js --report-unused-disable-directives",
+    "lint": "eslint . --ext js --report-unused-disable-directives --ignore-pattern 'client/src/**/*.test.jsx'",
     "test": "node scripts/run-tests.js",
+    "test:components": "vitest",
+    "test:components:ui": "vitest --ui",
     "check:encoding": "node scripts/check-text-encoding.js",
     "repair:json": "node scripts/repair-json-rows.js",
     "smoke:combat-v2": "node test-combat-harness/v2-adapter-smoke.js",
@@ -48,7 +50,12 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "eslint": "^10.2.1",
-    "globals": "^15.0.0"
+    "globals": "^15.0.0",
+    "jsdom": "^29.1.1",
+    "vitest": "^4.1.9"
   }
 }
