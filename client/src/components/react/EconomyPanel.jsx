@@ -3,6 +3,13 @@ import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
 import { useGameState, useGameMutationEvents } from '../../hooks/useGameState';
 import { applyGameMutation } from '../../utils/gameMutations.js';
+import {
+  useTax,
+  useTradeTargets,
+  useRace,
+  useGold,
+  useBuildCount,
+} from '../../stores';
 
 import { fmt } from '../../utils/fmt.js';
 import { fmtShort } from '../../utils/numberFormat.js';
@@ -26,13 +33,18 @@ const COMMODITY_ITEMS = ['food', 'weapons', 'armor', 'mana', 'maps', 'blueprints
 const EconomyPanel = () => {
   const { state } = useGameState();
   const [activeTab, setActiveTab] = useState('farms');
+  const tax = useTax();
+  const tradeTargets = useTradeTargets();
+  const race = useRace();
+  const gold = useGold();
+  const vaults = useBuildCount('vaults');
 
   const [econData, setEconData] = useState(null);
   const [receivedOffers, setReceivedOffers] = useState([]);
   const [sentOffers, setSentOffers] = useState([]);
   const [tradeRoutes, setTradeRoutes] = useState([]);
 
-  const [taxValue, setTaxValue] = useState(state?.tax ?? 42);
+  const [taxValue, setTaxValue] = useState(tax);
   const [tradeOfferItem, setTradeOfferItem] = useState('food');
   const [tradeOfferQty, setTradeOfferQty] = useState('');
   const [tradeRequestItem, setTradeRequestItem] = useState('gold');
@@ -45,10 +57,6 @@ const EconomyPanel = () => {
   const [bankTermIndex, setBankTermIndex] = useState('0');
   const [tradeRouteTargetId, setTradeRouteTargetId] = useState('');
 
-  const tradeTargets = useMemo(
-    () => (Array.isArray(state?.targets) ? state.targets : []),
-    [state?.targets],
-  );
 
   const mercPreview = useMemo(() => {
     const price = MERC_COST[mercTier] || 50;
@@ -88,8 +96,8 @@ const EconomyPanel = () => {
   useEffect(() => { loadEconData(); }, [loadEconData]);
 
   useEffect(() => {
-    if (state?.tax != null) setTaxValue(state.tax);
-  }, [state?.tax]);
+    if (tax != null) setTaxValue(tax);
+  }, [tax]);
 
   useEffect(() => {
     if (activeTab === 'markets') loadTradeOffers();
@@ -244,12 +252,11 @@ const EconomyPanel = () => {
 
   const setMaxMercCount = useCallback(() => {
     const price = MERC_COST[mercTier] || 50;
-    const max = Math.floor(Number(state?.gold || 0) / price);
+    const max = Math.floor(Number(gold || 0) / price);
     setMercCount(String(Math.max(0, max)));
-  }, [state, mercTier]);
+  }, [gold, mercTier]);
 
-  const race = state?.race || 'human';
-  const racDisc = COMMODITY_RACE_DISCOUNT[race] || {};
+  const racDisc = COMMODITY_RACE_DISCOUNT[race || 'human'] || {};
   const wpf = FARM_WORKERS_PER[race] || 10;
 
   const bal = (econData?.farmProduction || 0) - (econData?.foodConsumption || 0);
@@ -647,12 +654,12 @@ const EconomyPanel = () => {
 
       {/* BANK TAB */}
       <div className={clsx(activeTab === 'bank' ? 'block' : 'hidden')}>
-        <div id="bank-locked-msg" style={{ display: (state?.bld_vaults || 0) >= 25 ? 'none' : 'block', padding: '24px', textAlign: 'center', color: 'var(--text2)', background: 'var(--bg2)', borderRadius: '8px' }}>
+        <div id="bank-locked-msg" style={{ display: (vaults || 0) >= 25 ? 'none' : 'block', padding: '24px', textAlign: 'center', color: 'var(--text2)', background: 'var(--bg2)', borderRadius: '8px' }}>
           <div style={{ fontSize: '32px', marginBottom: '12px' }}>🏦</div>
           <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '8px' }}>Bank Locked</div>
           <div style={{ fontSize: '14px' }}>Construct at least 25 Vaults to access the Royal Bank.</div>
         </div>
-        <div id="bank-content" style={{ display: (state?.bld_vaults || 0) >= 25 ? 'block' : 'none' }}>
+        <div id="bank-content" style={{ display: (vaults || 0) >= 25 ? 'block' : 'none' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
             <div className="card" style={{ margin: 0 }}>
               <div className="card-title !mb-2.5">Fixed-Term Deposits</div>
