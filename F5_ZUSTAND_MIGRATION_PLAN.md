@@ -752,25 +752,46 @@ function App() {
 
 ## Migration Strategy
 
-### Phase 1: Core Stores (economyStore + militaryStore + uiStore)
+### Phase 1: Domain Stores + Core Panels (2–3 PRs, Each <300 lines diff)
 
-**Goal:** Set up domain-based stores with domain actions (not field setters); migrate 2–3 panels as proof-of-concept.
+**Goal:** Set up domain-based stores (split early!) with domain actions; migrate highest-traffic panels with many small PRs.
 
-**Work:**
+**Why split domain stores in Phase 1:**
+- Prevents monolithic bloat from day one
+- Each store stays focused and testable
+- Team can work on domains independently
+- Clear separation of concerns from the start
 
-1. Create `client/src/stores/` directory structure with domain-based stores
-2. Implement domain stores with **domain actions** (not field setters):
-   - `economyStore.js` — `receiveTurnUpdate()`, `completeBuild()`, `receiveTrade()`
-   - `militaryStore.js` — `applyCombatResult()`, `injureTroops()`, `damageWalls()`
-   - `uiStore.js` — `selectPanel()`, `setPendingAction()`, etc.
-3. Add DevTools and persistence middleware (v4 compatible)
-4. Add normalized entity collections (byId/allIds pattern) for armies, trade routes, etc.
-5. Implement server vs client state separation (`receiveServerSnapshot()` is authoritative)
-6. Update socket.io event handlers to dispatch domain actions
-7. Migrate highest-traffic panels first:
-   - **KingdomBodyHeader** (displays resources, high re-render frequency)
-   - **BuildPanel** (reads economy store, domain-based actions)
-   - **WarfarePanel** (reads military store, domain-based actions)
+**PR Strategy:** Multiple small PRs instead of one big PR
+- PR 1: Core store infrastructure (economyStore + uiStore)
+- PR 2: Migrate KingdomBodyHeader (uses economyStore)
+- PR 3: Migrate BuildPanel (uses economyStore + researchStore)
+- PR 4: Create militaryStore + migrate WarfarePanel
+- Each PR: <300 lines, single concern, easy to review and rollback
+
+**Phase 1 Work:**
+
+1. **PR 1: Store Infrastructure** (core setup, no panels yet)
+   - Create `client/src/stores/` directory structure
+   - Implement domain stores with **domain actions** (not field setters):
+     - `economyStore.ts` — `receiveTurnUpdate()`, `completeBuild()`, `receiveTrade()`
+     - `militaryStore.ts` — `applyCombatResult()`, `injureTroops()`, `damageWalls()`
+     - `researchStore.ts` — `completeResearch()`, `spendMana()`
+     - `uiStore.ts` — `selectPanel()`, `setPendingAction()`, etc.
+   - Add DevTools and persistence middleware (v4 compatible)
+   - Add normalized entity collections (byId/allIds pattern)
+   - Implement server vs client state separation (`receiveServerSnapshot()` is authoritative)
+   - Update socket.io event handlers to dispatch domain actions
+   - **Test:** Stores work standalone, DevTools works, no errors
+
+2. **PR 2–4: Migrate Panels Incrementally** (one or two panels per PR)
+   - Migrate highest-traffic panels first (fastest wins):
+     - **KingdomBodyHeader** — displays resources (high re-render frequency)
+     - **BuildPanel** — reads economy store, domain-based actions
+     - **WarfarePanel** — reads military store, domain-based actions
+   - Each panel PR: extract GameStateManager references, add selectors, test
+   - Remove GameStateManager references from migrated panels only
+   - **Test:** Panel works, no re-render bloat, localStorage persists UI state
 
 **Testing:**
 - Verify metrics update correctly on socket.io events
@@ -1213,16 +1234,109 @@ git push
 
 ---
 
-## Questions for Discussion
+## Key Architectural Decisions (Locked In)
 
-Before we commit to this plan:
+### 1. Actions Model: Game Events, Not Field Setters
 
-1. **Combat state isolation** — Should combatStore be extracted in Phase 1 or Phase 2?
-2. **Persistence scope** — Should only UI state persist, or also kingdom metrics?
-3. **TypeScript** — Should we add types to stores, or keep them dynamic?
-4. **Middleware priority** — Which is more important: DevTools or persistence?
-5. **Panel order** — Does the suggested migration order make sense, or should we prioritize differently?
-6. **Feature flag** — Do you want a fallback to GameStateManager during transition?
+**❌ Don't do this:**
+```js
+setGold(100)
+setMana(50)
+setPopulation(1000)
+```
+
+**✅ Do this instead:**
+```js
+receiveTurnUpdate({ gold: 100, mana: 50, population: 1000 })
+completeBuild('barracks')
+applyCombatResult({ win: true, casualties: 50 })
+finishResearch('warfare_5')
+```
+
+**Why:**
+- Actions represent what happened in the game world
+- Easier to reason about state transitions
+- Natural place for side effects (trigger modals, sounds, animations)
+- Transactional (all related state changes happen together)
+- Testable: given an action, what's the expected state?
+
+---
+
+### 2. Domain Stores Split Early (Phase 1)
+
+**Phase 1 includes full domain split, not a placeholder monolith.**
+
+Stores created in Phase 1:
+- `economyStore` — gold, food, trade routes
+- `militaryStore` — troops, armies, combat, walls
+- `researchStore` — research progress, disciplines
+- `populationStore` — population, happiness, growth
+- `uiStore` — panels, modals, selections
+
+**Prevents:** monolithic bloat, unclear dependencies, team coordination bottlenecks
+
+**Benefits for future growth:**
+- Adding diplomacy system? → new `diplomacyStore`
+- Adding markets? → separate `marketStore`
+- Adding combat replays? → new `replayStore`
+- Each system is isolated, testable, independently deployable
+
+---
+
+### 3. Selective Persistence (UI Only, Locked)
+
+**Do NOT persist:**
+- gold, mana, population, troops (server is authoritative)
+- research progress, building state (server validates)
+- injured_troops, wall_hp (server owns these)
+
+**DO persist:**
+- activePanel, sort order, filter preferences, column visibility
+- Allows users to resume their UI state across page reloads
+
+**Pattern:** `receiveServerSnapshot()` always overwrites authoritative state
+
+---
+
+## PR Strategy for Phase 1 (Many Small PRs)
+
+To keep reviews manageable and enable rollback, split Phase 1 into many small PRs:
+
+| PR | Scope | Diff | Effort |
+|----|-------|------|--------|
+| #1 | Store infrastructure (all stores + middleware) | <300 lines | 3 hrs |
+| #2 | Migrate KingdomBodyHeader | <150 lines | 1.5 hrs |
+| #3 | Migrate BuildPanel | <150 lines | 1.5 hrs |
+| #4 | Migrate WarfarePanel | <150 lines | 1.5 hrs |
+| #5 | Remove GameStateManager fallback | <50 lines | 0.5 hr |
+
+**Benefits:**
+- Each PR is easy to review (tight scope, clear intent)
+- Each PR can be tested independently
+- If one PR breaks, only that PR needs revert
+- Team can merge and deploy incrementally
+- Easier to spot bugs (smaller diff = fewer possible issues)
+
+**Timeline:** 5 PRs over 5–7 days (accounting for review cycles)
+
+---
+
+## Phase 1 Kickoff Checklist
+
+Before starting Phase 1, confirm:
+
+- [ ] Plan approved by team and stakeholders (final approval pending)
+- [ ] TypeScript setup ready (or upgrade plan documented)
+- [ ] Socket.io event handlers identified and mapped to domain actions
+- [ ] Middleware versions confirmed (Zustand v4, Immer v4 compatible)
+- [ ] DevTools browser extension installed for testing
+- [ ] localStorage strategy confirmed (UI state only)
+- [ ] Entity normalization patterns documented (byId/allIds for armies, routes, etc.)
+- [ ] Rollback plan tested (can revert to GameStateManager if critical issue)
+- [ ] Phase 1 PR templates prepared (store infrastructure, panel migration)
+- [ ] Team trained on Zustand hooks and selector patterns (useShallow, fine-grained selectors)
+- [ ] Test harness for selector optimization ready (render count tests)
+- [ ] Socket batching implementation ready (dynamic setTimeout, not setInterval)
 
 ---
 
