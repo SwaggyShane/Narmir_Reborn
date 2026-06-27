@@ -1,7 +1,7 @@
 # Narmir Reborn — Unified Development Roadmap
 
-**Status:** Alpha phase (ongoing) — Tracks A–D complete; E1–E2 fixed; E3 deferred (await discord.js v15); Track F.3 consolidation complete (PR #606–#608); **F.4 engine.js decomposition COMPLETE (PR #611); F.2 Combat V2 complete and alpha-ready (PR #612); F.5 Phase 1 PR #3–#5 COMPLETE (PR #617, #618, #619 merged); PR #6–#8 in progress**  
-**Last updated:** 2026-06-27 (F5 Phase 1: PR #3–#5 merged; PR #6 green CI; PR #7–#8 queue)  
+**Status:** Alpha phase (ongoing) — Tracks A–D complete; E1–E2 fixed; E3 deferred (await discord.js v15); Track F.3 consolidation complete (PR #606–#608); **F.4 engine.js decomposition COMPLETE (PR #611); F.2 Combat V2 complete and alpha-ready (PR #612); F.5 Phase 1 PR #3–#6 COMPLETE (PR #617, #618, #619, #620 merged); PR #7–#8 in progress**  
+**Last updated:** 2026-06-27 (F5 Phase 1: PR #3–#6 merged; PR #7–#8 in queue)  
 **Single source of truth** for planning, replacing ALPHA_ROADMAP + AdminRoadmap + MAINTENANCE (see **Related Documents**)
 
 ---
