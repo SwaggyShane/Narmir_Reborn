@@ -132,6 +132,8 @@ export {
   useEngineerLevel,
   useEngineerXp,
   useEngineerXpNeeded,
+  useScribes,
+  useResearchers,
   useIsAdmin,
   useTurnsStored,
   useUsername,
