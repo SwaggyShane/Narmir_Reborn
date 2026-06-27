@@ -5,6 +5,7 @@ import { fmt } from "../../utils/fmt";
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import { toast } from '../../utils/toast.js';
 import { useGameState, useGameMutationEvents } from '../../hooks/useGameState';
+import { useRace } from '../../stores';
 import UpgradesList from './UpgradesList.jsx';
 import { parseOwnedUpgrades } from '../../utils/upgradeUtils.js';
 import {
@@ -18,6 +19,7 @@ import {
 
 const DefensePanel = () => {
   const { state } = useGameState();
+  const race = useRace();
   useGameMutationEvents();
   const [upgradeOwned, setUpgradeOwned] = useState({
     wall: {},
@@ -52,7 +54,7 @@ const DefensePanel = () => {
       return;
     }
 
-    const race = state?.race || 'human';
+    const raceValue = race || 'human';
     const du = data.defense_upgrades || {};
 
     let statusText = 'Not fortified';
@@ -99,17 +101,17 @@ const DefensePanel = () => {
       bld_walls: data.bld_walls || 0,
       wm_on_walls: data.wm_on_walls || 0,
       wall_power: data.wall_power || 0,
-      wall_race: WALL_RACE_MULT[race] || 1.0,
+      wall_race: WALL_RACE_MULT[raceValue] || 1.0,
       bld_guard_towers: data.bld_guard_towers || 0,
       thieves_on_watch: data.thieves_on_watch || 0,
       tower_cap: (data.bld_guard_towers || 0) * 10,
       tower_power: data.tower_power || 0,
-      tower_race: TOWER_RACE_MULT[race] || 1.0,
+      tower_race: TOWER_RACE_MULT[raceValue] || 1.0,
       bld_outposts: data.bld_outposts || 0,
       rangers_on_patrol: data.rangers_on_patrol || 0,
       outpost_cap: (data.bld_outposts || 0) * 20,
       outpost_power: data.outpost_power || 0,
-      outpost_race: OUTPOST_RACE_MULT[race] || 1.0,
+      outpost_race: OUTPOST_RACE_MULT[raceValue] || 1.0,
     });
 
     setUpgradeOwned({
@@ -117,7 +119,7 @@ const DefensePanel = () => {
       tower_def: parseOwnedUpgrades(data.tower_def_upgrades),
       outpost: parseOwnedUpgrades(data.outpost_upgrades),
     });
-  }, [state?.race]);
+  }, [race]);
 
   useEffect(() => {
     refreshDefense();
