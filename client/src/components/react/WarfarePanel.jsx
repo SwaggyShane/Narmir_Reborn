@@ -10,6 +10,7 @@ import {
   useRace,
   useLevel,
   useRank,
+  useLand,
   useFighters,
   useRangers,
   useMages,
@@ -203,6 +204,7 @@ const WarfarePanel = () => {
   const race = useRace();
   const level = useLevel();
   const rank = useRank();
+  const myLand = useLand();
   const fighters = useFighters();
   const rangers = useRangers();
   const mages = useMages();
@@ -254,7 +256,7 @@ const WarfarePanel = () => {
   const [spyError, setSpyError] = useState('');
   const [allianceError, setAllianceError] = useState('');
 
-  // Build state-like object for compatibility with helper functions
+  // Build state-like object for compatibility with helper functions (only includes properties used by buildTargetList)
   const stateData = useMemo(() => ({
     kingdomId,
     kingdomName,
@@ -262,24 +264,8 @@ const WarfarePanel = () => {
     level,
     rank,
     fighters,
-    rangers,
-    mages,
-    clerics,
-    ninjas,
-    thieves,
-    engineers,
-    war_machines: warMachines,
-    ladders,
-    thralls,
-    weapons_stockpile: weaponsStockpile,
-    troop_levels: troopLevels,
-    res_weapons: resWeapons,
-    res_military: resMilitary,
-    res_attack_magic: resAttackMagic,
-    res_war_machines: resWarMachines,
-    discovered_kingdoms: discoveredKingdoms,
-    happiness,
-  }), [kingdomId, kingdomName, race, level, rank, fighters, rangers, mages, clerics, ninjas, thieves, engineers, warMachines, ladders, thralls, weaponsStockpile, troopLevels, resWeapons, resMilitary, resAttackMagic, resWarMachines, discoveredKingdoms, happiness]);
+    land: myLand,
+  }), [kingdomId, kingdomName, race, level, rank, fighters, myLand]);
 
   // Derived: disc kingdoms parsed from discovered_kingdoms
   const disc = useMemo(() => parseDisc(discoveredKingdoms), [discoveredKingdoms]);
@@ -429,7 +415,7 @@ const WarfarePanel = () => {
     const target = attackTarget;
     let bullyRatio = target
       ? Math.max(
-          fighters / Math.max(1, target.land || 1),
+          (myLand || 1) / Math.max(1, target.land || 1),
           (fighters / Math.max(1, target.fighters || 1)) * 0.5,
         )
       : 0;
@@ -452,16 +438,25 @@ const WarfarePanel = () => {
     const winColor = winPct >= 60 ? 'var(--green)' : winPct >= 40 ? 'var(--amber)' : 'var(--red)';
     const land = target ? Math.floor((target.land || 0) * 0.1) : 0;
     return { atkPower, defPower, winPct, winColor, land, bullyMsg };
-  }, [atkQty, stateData, attackTarget]);
+  }, [atkQty, troopLevels, race, engineers, weaponsStockpile, resWeapons, resMilitary, resAttackMagic, resWarMachines, happiness, fighters, myLand, attackTarget]);
 
   const setAtkMax = useCallback((key) => {
+    const troopMap = {
+      fighters,
+      rangers,
+      mages,
+      ladders,
+      ninjas,
+      thieves,
+      engineers,
+    };
     const val = key === 'wm'
       ? String(warMachines || 0)
       : key === 'clerics'
         ? String((clerics || 0) + (thralls || 0))
-        : String(stateData[key] || 0);
+        : String(troopMap[key] || 0);
     setAtkQty((q) => ({ ...q, [key]: val }));
-  }, [warMachines, clerics, thralls, stateData]);
+  }, [fighters, rangers, mages, ladders, ninjas, thieves, engineers, warMachines, clerics, thralls]);
 
   const launchAttackW = useCallback(async () => {
     if (!attackTarget) {
