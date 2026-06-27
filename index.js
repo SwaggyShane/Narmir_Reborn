@@ -607,6 +607,8 @@ async function start() {
     app.use('/api/forum',        ensureCsrfToken, require('./routes/forum')(db));
     // F8 Phase 1: Mount build module first (takes precedence for build routes)
     app.use('/api/kingdom',      turnLimiter, cacheKingdomId(db), ensureCsrfToken, cleanupOrphanedTransactions(db), require('./routes/kingdom-build')(db));
+    // F8 Phase 2: Mount warfare module (takes precedence for warfare routes)
+    app.use('/api/kingdom',      turnLimiter, cacheKingdomId(db), ensureCsrfToken, cleanupOrphanedTransactions(db), require('./routes/kingdom-warfare')(db));
     // Mount main kingdom router (handles all other routes)
     app.use('/api/kingdom',      turnLimiter, cacheKingdomId(db), ensureCsrfToken, cleanupOrphanedTransactions(db), require('./routes/kingdom')(db));
     app.use('/api/hero',         turnLimiter, cacheKingdomId(db), ensureCsrfToken,  require('./routes/hero')(db));
