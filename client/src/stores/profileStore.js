@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { useShallow } from 'zustand/react/shallow';
 import { immer } from 'zustand/middleware/immer';
 import { devtools } from 'zustand/middleware';
 
@@ -87,10 +86,8 @@ export const useScore = () => useProfileStore((state) => state.score);
 export const useRank = () => useProfileStore((state) => state.rank);
 
 export const useKingdomMetadata = () =>
-  useProfileStore(
-    useShallow((state) => ({
-      local_time: state.local_time,
-      vampire_countdown: state.vampire_countdown,
-      season: state.season,
-    }))
-  );
+  useProfileStore((state) => ({
+    local_time: state.local_time,
+    vampire_countdown: state.vampire_countdown,
+    season: state.season,
+  }));
