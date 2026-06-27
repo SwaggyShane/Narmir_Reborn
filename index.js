@@ -605,6 +605,9 @@ async function start() {
     const { ensureCsrfToken, cleanupOrphanedTransactions } = require('./routes/middleware');
     app.use('/api/auth',         authSensitiveLimiter, require('./routes/auth')(db));
     app.use('/api/forum',        ensureCsrfToken, require('./routes/forum')(db));
+    // F8 Phase 1: Mount build module first (takes precedence for build routes)
+    app.use('/api/kingdom',      turnLimiter, cacheKingdomId(db), ensureCsrfToken, cleanupOrphanedTransactions(db), require('./routes/kingdom-build')(db));
+    // Mount main kingdom router (handles all other routes)
     app.use('/api/kingdom',      turnLimiter, cacheKingdomId(db), ensureCsrfToken, cleanupOrphanedTransactions(db), require('./routes/kingdom')(db));
     app.use('/api/hero',         turnLimiter, cacheKingdomId(db), ensureCsrfToken,  require('./routes/hero')(db));
     const adminRouter = require('./routes/admin')(db, io);
