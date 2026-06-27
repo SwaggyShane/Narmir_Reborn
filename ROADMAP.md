@@ -160,6 +160,23 @@ Run once on staging/local; all must ✅:
 - Pre-commit hook now enforces `npm run lint` — 0 errors required
 - `@eslint/js` resolved; flat-config working
 
+### F.1 Express error handler & silent catch audit
+
+**Status:** ✅ **COMPLETE** (PR #610)
+
+**Findings:**
+- ✅ Express error middleware already in place (index.js ~1540–1570)
+- ✅ Global handlers: `unhandledRejection`, `uncaughtException` with proper logging
+- ✅ Database connection error recovery (distinguishes recoverable vs. fatal)
+- ✅ Audited 554 catch blocks; most are intentional (logging I/O, localStorage fallback, API error handling)
+
+**Improvements:**
+- Added logging to `game/goals.js` JSON parsing failure with kingdom ID fallback
+- Documented which "silent" catches are acceptable vs. problematic
+- Verified no critical silent error swallowing exists
+
+**Conclusion:** Error handling is solid. No additional global error handler needed; existing patterns are sufficient.
+
 ### E.2 CI lint + test job
 
 **Status:** ✅ **DONE** (ci/lint-test-build)
