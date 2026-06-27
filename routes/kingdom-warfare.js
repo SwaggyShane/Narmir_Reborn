@@ -336,15 +336,16 @@ module.exports = function (db) {
           WHERE am2.kingdom_id = ? AND am.kingdom_id != ?`,
           [target.id, target.id],
         );
-        for (const mem of allianceMembers) {
+        if (allianceMembers.length > 0) {
+          const placeholders = allianceMembers.map((_, i) => `($${i * 4 + 1}, $${i * 4 + 2}, $${i * 4 + 3}, $${i * 4 + 4})`).join(',');
+          const params = [];
+          const message = `📡 Signal Tower: Your ally ${target.name} is under attack by ${k.name}!`;
+          for (const mem of allianceMembers) {
+            params.push(mem.kingdom_id, "system", message, k.turn);
+          }
           await db.run(
-            "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
-            [
-              mem.kingdom_id,
-              "system",
-              `ðŸ"¡ Signal Tower: Your ally ${target.name} is under attack by ${k.name}!`,
-              k.turn,
-            ],
+            `INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ${placeholders}`,
+            params
           );
         }
       }
@@ -595,7 +596,7 @@ module.exports = function (db) {
         await db.run("ROLLBACK");
         return res.status(400).json({ error: "Not enough available thieves" });
       }
-      result = engine.covertSpy(k, target, unitsSent);
+      result = engine.covertSpy(attackerK, target, unitsSent);
       if (result.error) {
         await db.run("ROLLBACK");
         return res.status(400).json({ error: result.error });
@@ -653,12 +654,12 @@ module.exports = function (db) {
       });
     } else if (op === "loot") {
       const thievesSent = Math.max(1, parseInt(units) || 0);
-      if (thievesSent > engine.getAvailableUnits(k, "thieves")) {
+      if (thievesSent > engine.getAvailableUnits(attackerK, "thieves")) {
         await db.run("ROLLBACK");
         return res.status(400).json({ error: "Not enough available thieves" });
       }
       const loot = lootType === "wm" ? "war_machines" : lootType;
-      result = engine.covertLoot(k, target, loot, thievesSent);
+      result = engine.covertLoot(attackerK, target, loot, thievesSent);
       if (result.error) {
         await db.run("ROLLBACK");
         return res.status(400).json({ error: result.error });
@@ -671,45 +672,32 @@ module.exports = function (db) {
         "UPDATE kingdoms SET turns_stored = turns_stored - 1 WHERE id = ?",
         [attackerK.id],
       );
-      if (result.success) {
-        const logRes = await db.run(
-          `INSERT INTO war_log (action_type, attacker_id, attacker_name, defender_id, defender_name, outcome, detail, obscured) VALUES (?,?,?,?,?,?,?,?)`,
-          [
-            "loot",
-            attackerK.id,
-            attackerK.name,
-            target.id,
-            target.name,
-            result.success ? "success" : "caught",
-            result.success
-              ? `Stole ${loot.replace("_", " ")}`
-              : "Thieves captured",
-            result.success ? 1 : 0,
-          ],
+      const logRes = await db.run(
+        `INSERT INTO war_log (action_type, attacker_id, attacker_name, defender_id, defender_name, outcome, detail, obscured) VALUES (?,?,?,?,?,?,?,?)`,
+        [
+          "loot",
+          attackerK.id,
+          attackerK.name,
+          target.id,
+          target.name,
+          result.success ? "success" : "caught",
+          result.success
+            ? `Stole ${loot.replace("_", " ")}`
+            : "Thieves captured",
+          result.success ? 1 : 0,
+        ],
+      );
+      const reportId = logRes.lastID;
+      if (result.thiefEvent)
+        await db.run(
+          "INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES (?,?,?,?,?)",
+          [attackerK.id, "covert", result.thiefEvent, attackerK.turn, reportId],
         );
-        const reportId = logRes.lastID;
-        if (result.thiefEvent)
-          await db.run(
-            "INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES (?,?,?,?,?)",
-            [attackerK.id, "covert", result.thiefEvent, attackerK.turn, reportId],
-          );
-        if (result.targetEvent)
-          await db.run(
-            "INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES (?,?,?,?,?)",
-            [target.id, "covert", result.targetEvent, target.turn, reportId],
-          );
-      } else {
-        if (result.thiefEvent)
-          await db.run(
-            "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
-            [attackerK.id, "covert", result.thiefEvent, attackerK.turn],
-          );
-        if (result.targetEvent)
-          await db.run(
-            "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
-            [target.id, "covert", result.targetEvent, target.turn],
-          );
-      }
+      if (result.targetEvent)
+        await db.run(
+          "INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES (?,?,?,?,?)",
+          [target.id, "covert", result.targetEvent, target.turn, reportId],
+        );
       await db.run("COMMIT");
       return res.json({
         ok: true,
@@ -721,7 +709,7 @@ module.exports = function (db) {
       });
     } else if (op === "assassinate") {
       const ninjasSent = Math.max(1, parseInt(units) || 0);
-      if (ninjasSent > engine.getAvailableUnits(k, "ninjas")) {
+      if (ninjasSent > engine.getAvailableUnits(attackerK, "ninjas")) {
         await db.run("ROLLBACK");
         return res.status(400).json({ error: "Not enough available ninjas" });
       }
@@ -740,7 +728,7 @@ module.exports = function (db) {
         await db.run("ROLLBACK");
         return res.status(400).json({ error: "Invalid target unit type" });
       }
-      result = engine.covertAssassinate(k, target, ninjasSent, unitType);
+      result = engine.covertAssassinate(attackerK, target, ninjasSent, unitType);
       if (result.error) {
         await db.run("ROLLBACK");
         return res.status(400).json({ error: result.error });
@@ -753,45 +741,32 @@ module.exports = function (db) {
         "UPDATE kingdoms SET turns_stored = turns_stored - 1 WHERE id = ?",
         [attackerK.id],
       );
-      if (result.success) {
-        const logRes = await db.run(
-          `INSERT INTO war_log (action_type, attacker_id, attacker_name, defender_id, defender_name, outcome, detail, obscured) VALUES (?,?,?,?,?,?,?,?)`,
-          [
-            "assassinate",
-            attackerK.id,
-            attackerK.name,
-            target.id,
-            target.name,
-            result.success ? "success" : "caught",
-            result.success
-              ? `${(result.killed || 0).toLocaleString()} ${unitType} eliminated`
-              : "Ninjas compromised",
-            result.success ? 1 : 0,
-          ],
+      const logRes = await db.run(
+        `INSERT INTO war_log (action_type, attacker_id, attacker_name, defender_id, defender_name, outcome, detail, obscured) VALUES (?,?,?,?,?,?,?,?)`,
+        [
+          "assassinate",
+          attackerK.id,
+          attackerK.name,
+          target.id,
+          target.name,
+          result.success ? "success" : "caught",
+          result.success
+            ? `${(result.killed || 0).toLocaleString()} ${unitType} eliminated`
+            : "Ninjas compromised",
+          result.success ? 1 : 0,
+        ],
+      );
+      const reportId = logRes.lastID;
+      if (result.assassinEvent)
+        await db.run(
+          "INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES (?,?,?,?,?)",
+          [attackerK.id, "covert", result.assassinEvent, attackerK.turn, reportId],
         );
-        const reportId = logRes.lastID;
-        if (result.assassinEvent)
-          await db.run(
-            "INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES (?,?,?,?,?)",
-            [attackerK.id, "covert", result.assassinEvent, attackerK.turn, reportId],
-          );
-        if (result.targetEvent)
-          await db.run(
-            "INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES (?,?,?,?,?)",
-            [target.id, "covert", result.targetEvent, target.turn, reportId],
-          );
-      } else {
-        if (result.assassinEvent)
-          await db.run(
-            "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
-            [attackerK.id, "covert", result.assassinEvent, attackerK.turn],
-          );
-        if (result.targetEvent)
-          await db.run(
-            "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
-            [target.id, "covert", result.targetEvent, target.turn],
-          );
-      }
+      if (result.targetEvent)
+        await db.run(
+          "INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES (?,?,?,?,?)",
+          [target.id, "covert", result.targetEvent, target.turn, reportId],
+        );
       await db.run("COMMIT");
       return res.json({
         ok: true,
@@ -802,12 +777,12 @@ module.exports = function (db) {
       });
     } else if (op === "sabotage") {
       const ninjasSent = Math.max(1, parseInt(units) || 0);
-      if (ninjasSent > engine.getAvailableUnits(k, "ninjas")) {
+      if (ninjasSent > engine.getAvailableUnits(attackerK, "ninjas")) {
         await db.run("ROLLBACK");
         return res.status(400).json({ error: "Not enough available ninjas" });
       }
 
-      result = engine.covertSabotage(k, target, ninjasSent, bldType);
+      result = engine.covertSabotage(attackerK, target, ninjasSent, bldType);
       if (result.error) {
         await db.run("ROLLBACK");
         return res.status(400).json({ error: result.error });
@@ -867,23 +842,23 @@ module.exports = function (db) {
         await db.run("ROLLBACK");
         return res.status(400).json({ error: "Not enough thieves" });
       }
-      result = engine.raidTradeRoute(k, target, thievesSent);
+      result = engine.raidTradeRoute(attackerK, target, thievesSent);
       if (result.error) {
         await db.run("ROLLBACK");
         return res.status(400).json({ error: result.error });
       }
       const raidAttackerUpdates = { ...(result.attackerUpdates || {}) };
       raidAttackerUpdates.turns_stored = (attackerK.turns_stored || 0) - 1;
-      await applyKingdomUpdates(k.id, result.attackerUpdates || {});
+      await applyKingdomUpdates(attackerK.id, result.attackerUpdates || {});
       await applyKingdomUpdates(target.id, result.defenderUpdates || {});
       await db.run(
         "UPDATE kingdoms SET turns_stored = turns_stored - 1 WHERE id = ?",
-        [k.id],
+        [attackerK.id],
       );
       if (result.atkEvent)
         await db.run(
           "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
-          [k.id, "covert", result.atkEvent, k.turn],
+          [attackerK.id, "covert", result.atkEvent, attackerK.turn],
         );
       if (result.defEvent)
         await db.run(
@@ -894,8 +869,8 @@ module.exports = function (db) {
         `INSERT INTO war_log (action_type, attacker_id, attacker_name, defender_id, defender_name, outcome, detail, obscured) VALUES (?,?,?,?,?,?,?,?)`,
         [
           "raid_trade_route",
-          k.id,
-          k.name,
+          attackerK.id,
+          attackerK.name,
           target.id,
           target.name,
           result.success ? "success" : "failed",
@@ -917,15 +892,15 @@ module.exports = function (db) {
       await db.run("ROLLBACK");
       return res.status(400).json({ error: "Unknown covert operation" });
     }
-    } catch (err) {
-      try {
-        await db.run("ROLLBACK");
-      } catch (rollbackErr) {
-        console.error("[covert] rollback error:", rollbackErr.message);
-      }
-      console.error("[covert] operation failed:", err.message);
-      return res.status(500).json({ error: "Covert operation failed - please try again" });
+  } catch (err) {
+    try {
+      await db.run("ROLLBACK");
+    } catch (rollbackErr) {
+      console.error("[covert] rollback error:", rollbackErr.message);
     }
+    console.error("[covert] operation failed:", err.message);
+    return res.status(500).json({ error: "Covert operation failed - please try again" });
+  }
   });
 
   // â"€â"€ Fire units â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
@@ -977,7 +952,7 @@ module.exports = function (db) {
       `SELECT id, race, region, prestige_level, bld_walls, bld_guard_towers, bld_outposts, bld_castles,
               war_machines, ballistae, thieves, rangers, wall_upgrades, tower_def_upgrades,
               outpost_upgrades, defense_upgrades, alliance_buffs, res_war_machines,
-              troop_levels, fragment_bonuses
+              troop_levels, fragment_bonuses, wall_hp, wall_defense_type
        FROM kingdoms WHERE player_id = ?`,
       [req.player.playerId]
     );
@@ -1042,7 +1017,7 @@ module.exports = function (db) {
         [req.params.id, k.id],
       );
       if (!report) return res.status(404).json({ error: "Report not found" });
-      const newVal = report.shared_to_alliance ? 0 : 1;
+      const newVal = (report.shared_to_alliance === 1 || report.shared_to_alliance === "1") ? 0 : 1;
       await db.run(
         "UPDATE spy_reports SET shared_to_alliance = ? WHERE id = ?",
         [newVal, report.id],
