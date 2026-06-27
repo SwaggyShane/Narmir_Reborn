@@ -4,7 +4,7 @@ import { logout } from './AuthModal.jsx';
 import { switchTab } from '../../utils/switchTab.js';
 import { useNavLayout } from '../../hooks/useNavLayout.js';
 import { useShellBadges } from '../../hooks/useShellBadges.js';
-import { useIsAdmin } from '../../stores';
+import { useIsAdmin, useUsername } from '../../stores';
 
 const CORE_TABS = [
   { id: 'status', label: 'Status', icon: '🏰', color: 'text-sky-300' },
@@ -86,6 +86,7 @@ function DrawerChip({ label, icon, color, active, onClick, showBadge }) {
 
 const BottomNav = () => {
   const isAdmin = useIsAdmin();
+  const username = useUsername();
   const { activePanel } = useActivePanel();
   const { layout } = useNavLayout();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -184,7 +185,7 @@ const BottomNav = () => {
             ))}
           </div>
 
-          {!!state?.username ? (
+          {!!username ? (
             <div className="mt-3 border-t border-white/5 pt-3">
               <button
                 type="button"

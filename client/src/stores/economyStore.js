@@ -46,6 +46,12 @@ export const useEconomyStore = create(
         res_military: 100,
         res_attack_magic: 100,
         res_war_machines: 100,
+        res_economy: 100,
+        res_spellbook: 100,
+        res_armor: 100,
+        res_defense_magic: 100,
+        res_entertainment: 100,
+        res_construction: 100,
 
         // Build system
         build_allocation: {},
@@ -111,6 +117,12 @@ export const useEconomyStore = create(
           if (data?.res_military !== undefined) state.res_military = data.res_military;
           if (data?.res_attack_magic !== undefined) state.res_attack_magic = data.res_attack_magic;
           if (data?.res_war_machines !== undefined) state.res_war_machines = data.res_war_machines;
+          if (data?.res_economy !== undefined) state.res_economy = data.res_economy;
+          if (data?.res_spellbook !== undefined) state.res_spellbook = data.res_spellbook;
+          if (data?.res_armor !== undefined) state.res_armor = data.res_armor;
+          if (data?.res_defense_magic !== undefined) state.res_defense_magic = data.res_defense_magic;
+          if (data?.res_entertainment !== undefined) state.res_entertainment = data.res_entertainment;
+          if (data?.res_construction !== undefined) state.res_construction = data.res_construction;
           if (data?.commodityPrices) {
             Object.assign(state.commodityPrices, data.commodityPrices);
           }
@@ -270,6 +282,9 @@ export const useResources = () =>
 export const useGoldIncome = () =>
   useEconomyStore((state) => state.gold_income || 0); // Derived, not stored
 
+export const useFoodBalance = () =>
+  useEconomyStore((state) => state.food_balance || 0);
+
 // Trade routes as array (selector transforms normalized structure)
 export const useTradeRoutes = () =>
   useEconomyStore((state) =>
@@ -348,6 +363,18 @@ export const useResMilitary = () => useEconomyStore((state) => state.res_militar
 export const useResAttackMagic = () => useEconomyStore((state) => state.res_attack_magic || 100);
 
 export const useResWarMachines = () => useEconomyStore((state) => state.res_war_machines || 100);
+
+export const useResEconomy = () => useEconomyStore((state) => state.res_economy || 100);
+
+export const useResSpellbook = () => useEconomyStore((state) => state.res_spellbook || 100);
+
+export const useResArmor = () => useEconomyStore((state) => state.res_armor || 100);
+
+export const useResDefenseMagic = () => useEconomyStore((state) => state.res_defense_magic || 100);
+
+export const useResEntertainment = () => useEconomyStore((state) => state.res_entertainment || 100);
+
+export const useResConstruction = () => useEconomyStore((state) => state.res_construction || 100);
 
 // Discovered kingdoms for warfare targeting
 export const useDiscoveredKingdoms = () => useEconomyStore((state) => state.discovered_kingdoms || {});
