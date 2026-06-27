@@ -1,7 +1,7 @@
 # Narmir Reborn — Unified Development Roadmap
 
-**Status:** Alpha phase (ongoing) — Tracks A–E complete; Track F.3 consolidation complete (PR #606–#608); F.1,2,4–8 deferred post-cutover  
-**Last updated:** 2026-06-26  
+**Status:** Alpha phase (ongoing) — Tracks A–D complete; E1–E2 fixed; E3 deferred (await discord.js v15); Track F.3 consolidation complete (PR #606–#608); **F.4 engine.js decomposition COMPLETE (PR #611)**  
+**Last updated:** 2026-06-27 (F4 all phases complete, encoding validation fixed)  
 **Single source of truth** for planning, replacing ALPHA_ROADMAP + AdminRoadmap + MAINTENANCE (see **Related Documents**)
 
 ---
@@ -151,7 +151,7 @@ Run once on staging/local; all must ✅:
 
 ## Track E — Platform Health (P0–P1)
 
-**Status:** 🟡 **E3 OPEN** (others done)
+**Status:** ✅ **E1, E2 DONE** | 🟡 **E3 DEFERRED** (await discord.js v15 stable, 3-6+ months)
 
 ### E.1 ESLint enforcement
 
@@ -189,7 +189,7 @@ Added `.github/workflows/ci.yml`:
 
 ### E.3 Dependency vulnerabilities
 
-**Status:** ⏳ **DEFERRED** (4 vulnerabilities remain; discord.js v14 won't receive undici fix)
+**Status:** 🟡 **DEFERRED INDEFINITELY** — Await discord.js v15 stable release (3-6+ months)
 
 #### Fixed (✅ 4 vulnerabilities)
 | Package | Issue | Resolution |
@@ -210,6 +210,8 @@ Added `.github/workflows/ci.yml`:
 - Real-world risk: low-moderate (WebSocket DoS direct, others need MITM)
 - Cost to fix now: ~2-3 hours refactoring; Cost to defer: ongoing security debt
 
+**Decision:** Defer indefinitely. Branch `claude/track-e3-dependencies` deleted. Revisit when discord.js v15 stable or if threat escalates (e.g., public WebSocket DoS PoC). No action needed until then.
+
 ### E.4 Admin CSRF protection
 
 **Status:** ✅ **FIXED** (fix/admin-csrf)
@@ -226,20 +228,40 @@ Link updated doc to this roadmap; clarify resolved vs. open items.
 
 ## Track F — Architecture Debt (P4, post-cutover)
 
-**Status:** 🟡 **IN PROGRESS** — F3 consolidation phase complete (PR #606, #607, #608)
+**Status:** ✅ **F3 & F4 COMPLETE** — F3 consolidation complete (PR #606–#608); F4 engine.js decomposition complete (PR #609–#611)
 
-From MAINTENANCE.md recommended order:
+### F4 Decomposition Progress
+
+**Goal:** Extract 6,242-line `engine.js` into focused, testable modules across 4 phases.
+
+| Phase | Functions Extracted | Modules Created | Status | PR |
+|-------|-------------------|-----------------|--------|-----|
+| **Phase 1A** | achievements, scoring | `game/lib/achievements.js` | ✅ | #609 |
+| **Phase 1B** | combat helpers, formatting | `game/lib/combat-helpers.js` | ✅ | #609 |
+| **Phase 2A** | happiness logging (DB) | `game/lib/happiness-logging.js` | ✅ | #609 |
+| **Phase 2B** | expedition utilities, transitions | `game/lib/expeditions.js` | ✅ | #610 |
+| **Phase 2C** | rebellion, prestige, trade raids, alliance defense | `game/lib/special-events.js` | ✅ | #611 |
+| **Phase 2D** | combat wrappers (~1,260 lines) | `game/lib/combat-wrappers.js` | ✅ | #611 |
+| **Phase 3A** | building & research (6 functions) | `game/lib/building-research.js` | ✅ | #611 |
+| **Phase 3B** | gameplay (7 functions) | `game/lib/gameplay.js` | ✅ | #611 |
+| **Phase 4** | processTurn orchestration | Thin coordinator | ✅ | #611 |
+
+**Architecture:** Pure functions extracted first; medium-risk functions with state mutations second; large orchestrators last.
+
+---
+
+### Other F-track items
 
 | ID | Work | Notes | Timeline | Status |
 |----|------|-------|----------|--------|
-| **F1** | Express global error handler; audit silent `catch {}` | Medium priority | Post-cutover | ⏳ Pending |
+| **F1** | Express global error handler; audit silent `catch {}` | Audit complete; no critical issues found | ✅ | ✅ **DONE** (PR #610) |
 | **F2** | Combat V2 decision | Complete or remove; requires design sign-off | Post-cutover | ⏳ Pending |
 | **F3** | Module consolidation & architecture foundation | ✅ Phase 1: data-transformations extraction (PR #606)<br/>✅ Phase 2: timestamp consolidation (PR #607)<br/>✅ Phase 3: architecture documentation + mobile hardening (PR #608) | Now | ✅ **DONE** |
-| **F4** | `engine.js` decomposition | Long horizon (6,242 lines); depends on F3 foundation | Post-cutover | ⏳ Pending |
-| **F5** | `GameStateManager` → React Context | Incremental per panel; align with frontend tests | Post-cutover | ⏳ Pending |
-| **F6** | Frontend component tests (Vitest + RTL) | Start with shell nav + `panelMeta` | Post-cutover | ⏳ Pending |
-| **F7** | Numeric range validation (troops, builds, research) | Prevents balance exploits | Post-cutover | ⏳ Pending |
-| **F8** | `kingdom.js` split → `build`, `warfare`, `economy`, `research` modules | Incremental refactor; enabled by F3 foundation | Post-cutover | ⏳ Pending |
+| **F4** | `engine.js` decomposition | 4 phases (all complete); 6,241 lines → 8 focused modules + re-exports | Now | ✅ **DONE** (PR #611) |
+| **F5** | `GameStateManager` → React Context | Incremental per panel; align with frontend tests | Post-F4 | ⏳ Pending |
+| **F6** | Frontend component tests (Vitest + RTL) | Start with shell nav + `panelMeta` | Post-F4 | ⏳ Pending |
+| **F7** | Numeric range validation (troops, builds, research) | Prevents balance exploits | Post-F4 | ⏳ Pending |
+| **F8** | `kingdom.js` split → `build`, `warfare`, `economy`, `research` modules | Incremental refactor; enabled by F3 foundation | Post-F4 | ⏳ Pending |
 
 ---
 
@@ -319,7 +341,7 @@ Per `CLAUDE.md`:
 
 | Metric | Target |
 |--------|--------|
-| Tracks A, B, C, E completion | 100% (P0–P2 done; E3 pending Vite bump) |
+| Tracks A, B, C, E completion | 100% (P0–P2 done; E1–E2 fixed; E3 deferred) |
 | Admin parity (Ph6a) | 100% feature parity with legacy |
 | Admin hard cutover (Ph6b) | Deferred until verification matrix passes |
 | Lint | 0 errors on all new code |
@@ -343,12 +365,13 @@ Per `CLAUDE.md`:
 | **7** | **Admin Ph0–6a** React admin soft cutover | — | ✅ Done (PR #589) |
 | **8** | **Mobile UI** Responsive refinements | — | ✅ Done (PR #596–#598) |
 | **9** | **F3 Consolidation** Module architecture & timestamps | — | ✅ Done (PR #606–#608) |
-| **10** | **E3** Vite 8.1+ bump | — | ⏳ Next |
-| **11** | **C3** Portal CSS cleanup | — | ⏳ After E3 |
+| **10** | **F4 Decomposition** `engine.js` → 8 focused modules (all phases 1–4) | — | ✅ **DONE** (PR #611: Phases 2D–4 + encoding fix) |
+| **11** | **C3** Portal CSS cleanup | — | ⏳ After F4 |
 | **12** | **Admin Ph6b** Hard cutover (with verification matrix ✅) | — | ⏳ When ready |
-| **13** | **M1** MAINTENANCE refresh | — | ⏳ After E1–E3 |
-| **14** | **Tailwind consolidation** Static → utilities refactor | — | 📋 Future (low urgency) |
-| **15** | **Track F (F.1,2,4–8)** Remaining architecture debt | — | ⏳ Deferred post-cutover |
+| **13** | **M1** MAINTENANCE refresh | — | ⏳ After F4 completes |
+| **14** | **E3** Discord.js v15 migration | — | 🟡 **DEFERRED** (indefinite — await v15 stable) |
+| **15** | **Tailwind consolidation** Static → utilities refactor | — | 📋 Future (low urgency) |
+| **16** | **Track F (F.2,5–8)** Remaining architecture debt | — | ⏳ Post-F4 |
 
 ---
 
@@ -368,5 +391,7 @@ Per `CLAUDE.md`:
 
 | Version | Date | Change |
 |---------|------|--------|
+| 1.2 | 2026-06-27 | **F4 COMPLETE**: Phases 2D (combat-wrappers), 3A (building-research), 3B (gameplay), 4 (orchestration) all extracted; fixed encoding validation (middle dot → hyphen); all CI checks passing (PR #611) |
+| 1.1 | 2026-06-27 | F4 Phase 1–2C completion update: achievements, combat-helpers, happiness-logging, expeditions, special-events modules extracted; Phase 2D (combat wrappers) pending |
 | 1.0 | 2026-06-26 | Unified ALPHA_ROADMAP + AdminRoadmap + MAINTENANCE into single source of truth; added Tailwind consolidation preventative plan |
 
