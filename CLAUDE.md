@@ -56,6 +56,29 @@ npm run lint
 - Warnings must be individually justified in the commit message or fixed outright.
 - Do not let warning count grow. If a warning existed before your change, note it. If you introduced it, fix it.
 
+#### ⚠️ Lint Warnings — No Benign Debt
+
+**Nothing is benign.** ESLint warnings compound into maintenance friction and mask real issues.
+
+**Rule: Complete your current task, then immediately fix all warnings before moving on to the next task.**
+
+Examples of "innocent" warnings that became malignant:
+- Unused imports → shadowed module state → hard-to-trace bugs
+- Undefined variables → incorrect assumptions about which functions exist → breaking refactors
+- Unused variables → confusion about which code paths run → security gaps
+
+**When you see a warning:**
+1. Finish the current task (e.g., complete the module extraction, finish the feature)
+2. **Immediately after task completion**, diagnose and fix every warning:
+   - Unused import? Remove it or use it.
+   - Undefined variable? Add the import or check if function exists.
+   - Unused constant? Delete it or document why it's there.
+3. Do not defer. Do not ignore. Do not rationalize. Fix it now.
+
+**Never commit with warnings.** If you inherit warnings from a prior merge, address them in the next task as a quick separate PR.
+
+Warnings are the system's way of saying "pay attention here." Pay attention.
+
 ### 2. Smoke Test
 
 PostgreSQL is installed locally. Use it. Every time.
