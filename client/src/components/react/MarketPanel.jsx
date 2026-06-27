@@ -1,13 +1,23 @@
 ﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
-import { useGameMutationEvents, useGameState } from '../../hooks/useGameState';
+import { useGameMutationEvents } from '../../hooks/useGameState';
 import { fmt } from "../../utils/fmt";
 import { applyGameMutation } from '../../utils/gameMutations.js';
 
 import { gameStateManager } from '../../GameStateManager.js';
 import { toast } from '../../utils/toast.js';
 import { escapeHtml } from '../../utils/escapeHtml.js';
+
+import {
+  usePrestige,
+  useGold,
+  useTurn,
+  useTradeTargets,
+  useWeaponsStockpile,
+  useArmorStockpile,
+  useEconomyStore,
+} from '../../stores';
 
 const icons = {
   food: '🌾',
@@ -33,7 +43,7 @@ function getState() {
 let marketPanelApi = null;
 
 export function populateTradeTargets() {
-  const tradeTargets = Array.isArray(gameStateManager.getState().targets) ? gameStateManager.getState().targets : [];
+  const tradeTargets = Array.isArray(useEconomyStore.getState().targets) ? useEconomyStore.getState().targets : [];
   if (!tradeTargets.length || !marketPanelApi?.setTradeTargets) return;
   marketPanelApi.setTradeTargets(tradeTargets);
 }
@@ -89,14 +99,20 @@ export function renderActiveMercs(mercs) {
 
 
 const MarketPanel = () => {
-  const { state } = useGameState();
+  const prestigeLevel = usePrestige();
+  const gold = useGold();
+  const turn = useTurn();
+  const tradeTargets = useTradeTargets();
+  const weaponsStockpile = useWeaponsStockpile();
+  const armorStockpile = useArmorStockpile();
+
   const [loading, setLoading] = useState(true);
   const [prices, setPrices] = useState([]);
   const [quantities, setQuantities] = useState({});
 
   // Trade state
   const [tradeOffers, setTradeOffers] = useState({ received: [], sent: [] });
-  const [tradeTargets, setTradeTargets] = useState([]);
+  const [tradeTargetsState, setTradeTargetsState] = useState([]);
   const [tradeForm, setTradeForm] = useState({
     targetId: '', offerItem: '', offerQty: '', requestItem: '', requestQty: '',
   });
@@ -114,21 +130,17 @@ const MarketPanel = () => {
 
   const sellMultiplier = useMemo(() => {
     let mult = 0.7;
-    if (state?.prestige_level && state.prestige_level > 0) {
-      mult += Math.min(0.1, state.prestige_level * 0.02);
+    if (prestigeLevel && prestigeLevel > 0) {
+      mult += Math.min(0.1, prestigeLevel * 0.02);
     }
     return mult;
-  }, [state?.prestige_level]);
+  }, [prestigeLevel]);
 
   const ownedAmount = useCallback((id) => {
-    let key = id;
-    if (id === 'weapons') key = 'weapons_stockpile';
-    if (id === 'armor') key = 'armor_stockpile';
-
-    if (state?.[key] !== undefined) return state[key];
-    if (state?.resources && state.resources[key] !== undefined) return state.resources[key];
+    if (id === 'weapons') return weaponsStockpile;
+    if (id === 'armor') return armorStockpile;
     return 0;
-  }, [state]);
+  }, [weaponsStockpile, armorStockpile]);
 
   const refreshMarket = useCallback(async () => {
     setLoading(true);
@@ -199,8 +211,7 @@ const MarketPanel = () => {
   const setMktMax = (resource, op, priceObj) => {
     let q = 0;
     if (op === 'buy') {
-      const val = state?.resources ? (state.resources.gold || 0) : (state?.gold || 0);
-      q = priceObj > 0 ? Math.floor(val / priceObj) : 0;
+      q = priceObj > 0 ? Math.floor(gold / priceObj) : 0;
     } else {
       q = ownedAmount(resource);
     }
@@ -262,9 +273,10 @@ const MarketPanel = () => {
   }, []);
 
   useEffect(() => {
-    const targets = Array.isArray(state?.targets) ? state.targets : [];
-    if (targets.length) setTradeTargets(targets);
-  }, [state?.targets]);
+    if (Array.isArray(tradeTargets) && tradeTargets.length) {
+      setTradeTargetsState(tradeTargets);
+    }
+  }, [tradeTargets]);
 
   return (
     <div id="market" className="panel">
@@ -437,7 +449,7 @@ const MarketPanel = () => {
               onChange={(e) => setTradeForm((prev) => ({ ...prev, targetId: e.target.value }))}
             >
               <option value="">- select kingdom -</option>
-              {tradeTargets.map((t) => (
+              {tradeTargetsState.map((t) => (
                 <option key={t.id} value={t.id}>{escapeHtml(t.name)} - {fmt(t.land)} acres</option>
               ))}
             </select>
@@ -460,7 +472,7 @@ const MarketPanel = () => {
             <div className="mb-3 text-[14px] font-bold text-[var(--text)]">💪 Mercenary Contracts</div>
             <div className="space-y-2">
               {activeMercs.map((m, idx) => {
-                const served = (state.turn || 0) - (m.hired_at_turn || 0);
+                const served = (turn || 0) - (m.hired_at_turn || 0);
                 const remaining = Math.max(0, m.duration_turns - served);
                 return (
                   <div key={idx} className="flex items-center gap-2 border-b border-[var(--border)] pb-2">
