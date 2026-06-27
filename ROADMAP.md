@@ -1,7 +1,7 @@
 # Narmir Reborn — Unified Development Roadmap
 
-**Status:** Alpha phase (ongoing) — Tracks A–D complete; E1–E2 fixed; E3 deferred (await discord.js v15); Track F.3 consolidation complete (PR #606–#608); **F.4 engine.js decomposition COMPLETE (PR #611); F.2 Combat V2 complete and alpha-ready (PR #612); F.5 Phase 1 PR #2 (KingdomBodyHeader migration) READY FOR MERGE (PR #616)**  
-**Last updated:** 2026-06-27 (F5 Phase 1 starting: Store infrastructure + KingdomBodyHeader migration to Zustand)  
+**Status:** Alpha phase (ongoing) — Tracks A–D complete; E1–E2 fixed; E3 deferred (await discord.js v15); Track F.3 consolidation complete (PR #606–#608); **F.4 engine.js decomposition COMPLETE (PR #611); F.2 Combat V2 complete and alpha-ready (PR #612); F.5 Phase 1 PR #3 COMPLETE (BuildPanel → Zustand, PR #617 merged)**  
+**Last updated:** 2026-06-27 (F5 Phase 1 continuing: PR #3 BuildPanel merged; starting PR #4 WarfarePanel migration)  
 **Single source of truth** for planning, replacing ALPHA_ROADMAP + AdminRoadmap + MAINTENANCE (see **Related Documents**)
 
 ---
