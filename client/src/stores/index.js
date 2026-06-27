@@ -92,6 +92,12 @@ export {
   useDisciplineLevel,
   useActiveResearch,
   useSelectedDiscipline,
+  useResearchFocus,
+  useResearchAllocation,
+  useSchoolOfMagic,
+  useSchoolLevel,
+  useSchoolUpgrades,
+  useResearchersCount,
 } from './researchStore';
 
 export {
