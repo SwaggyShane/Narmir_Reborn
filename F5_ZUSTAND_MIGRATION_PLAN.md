@@ -399,6 +399,59 @@ function BuildPanel() {
 
 ## Critical Architectural Patterns
 
+### Inter-Store Communication
+
+**Problem:** Stores need to talk to each other without circular imports or spaghetti logic.
+
+**Scenario:** Resource drops to zero in economyStore → need to show warning modal in uiStore.
+
+**Solution:** Direct access via `getState()` (Zustand stores are plain JS objects):
+
+```js
+// economyStore.js
+import { useUIStore } from './uiStore';  // Safe: no circular dependency
+
+export const useEconomyStore = create((set) => ({
+  gold: 100,
+  
+  spendGold: (amount) => set((state) => {
+    const newGold = state.gold - amount;
+    
+    // Direct access to other store
+    if (newGold < 0) {
+      useUIStore.getState().openModal('insufficient_funds');
+    }
+    
+    return { gold: Math.max(0, newGold) };
+  }),
+}));
+```
+
+**Guidelines:**
+- Use `getState()` in actions when you need immediate access to another store
+- Only read other stores in actions; don't subscribe to them from components
+- For UI reactions, dispatch actions that trigger the modal (cleaner than direct calls)
+- Keep cross-store calls to a minimum (prefer: each store owns its domain)
+
+**Pattern for UI reactions:**
+```js
+// Cleaner: action in one store triggers action in another
+spendGold: (amount) => set((state) => {
+  const newGold = state.gold - amount;
+  
+  if (newGold < 0) {
+    // Return new state first
+    set({ gold: Math.max(0, newGold) });
+    // Then trigger side effect via other store
+    useUIStore.getState().openModal('insufficient_funds');
+  }
+  
+  return { gold: newGold };
+}),
+```
+
+---
+
 ### Server vs Client State
 
 This distinction prevents multiplayer bugs and keeps architecture clean.
@@ -477,6 +530,55 @@ const army1 = useSelector(state => state.armies.byId['army-1']);
 **Apply to:**
 - Armies, trade routes, research queues, build queues
 - Any collection where you frequently update individual items
+
+---
+
+### High-Frequency Updates (Transient Subscriptions)
+
+**Problem:** If game metrics update multiple times per second (combat health bars, animated resource tickers), React's render cycle may lag behind state changes.
+
+**Solution:** Use Zustand's direct subscription pattern for elements that need instant visual feedback without re-rendering the component.
+
+**Example: Animated gold counter**
+```jsx
+function GoldCounter() {
+  const goldRef = useRef<HTMLSpanElement>(null);
+  const [displayGold, setDisplayGold] = useState(0);
+  
+  useEffect(() => {
+    // Subscribe directly to store updates without triggering component re-render
+    const unsubscribe = useEconomyStore.subscribe(
+      state => state.gold,
+      gold => {
+        // Update DOM directly or local state for animation
+        if (goldRef.current) {
+          goldRef.current.innerText = gold.toString();
+        }
+      }
+    );
+    
+    return unsubscribe;
+  }, []);
+  
+  return <span ref={goldRef}>{displayGold}</span>;
+}
+```
+
+**When to use transient subscriptions:**
+- Animated counters (resources ticking up/down)
+- Combat health bars during active battle
+- Real-time status updates (timer countdowns)
+- High-frequency socket events (multiple updates per second)
+
+**When NOT to use:**
+- Regular panel rendering (use selectors instead)
+- State that needs React lifecycle (use hooks)
+- Complex UI logic (use components with selectors)
+
+**Performance benefit:**
+- Regular selector: triggers component re-render every update
+- Transient subscription: updates DOM directly, no React render
+- Example: 60 gold updates/sec with transient = 1 render; without = 60 renders
 
 ---
 
@@ -831,44 +933,123 @@ describe('GoldDisplay', () => {
 
 ---
 
-## TypeScript Integration (Optional, Recommended)
+## TypeScript Integration (Strongly Recommended)
 
-If codebase is using TypeScript (or considering it), this is an ideal time to add types to stores.
+Transitioning from GameStateManager.js to Zustand is an ideal time to add full TypeScript support. This prevents runtime bugs and enables IDE autocomplete.
 
-**Store type definitions:**
+### Complete TypeScript Setup
+
+**State Interface:**
 ```ts
-// stores/kingdomStore.ts
-import { create } from 'zustand';
-
-interface KingdomState {
+// stores/types.ts
+export interface EconomyState {
+  // State
   gold: number;
+  food: number;
   mana: number;
-  population: number;
-  happiness: number;
-  // ... other fields
+  mana_regen: number;
+  tax: number;
   
-  updateMetrics: (updates: Partial<KingdomState>) => void;
-  updateFromServer: (data: Partial<KingdomState>) => void;
+  // Derived (if stored)
+  effective_income: number;
+  
+  // Collections (normalized)
+  tradeRoutes: {
+    byId: Record<string, TradeRoute>;
+    allIds: string[];
+  };
+  
+  // Actions
+  receiveTurnUpdate: (data: TurnUpdate) => void;
+  spendGold: (amount: number) => void;
+  completeConstruction: (buildingType: string) => void;
+  receiveTrade: (tradeData: TradeResult) => void;
 }
+```
 
-export const useKingdomStore = create<KingdomState>()((set) => ({
-  gold: 0,
-  mana: 0,
-  population: 0,
-  happiness: 50,
+**Store Implementation:**
+```ts
+// stores/economyStore.ts
+import { create } from 'zustand';
+import { immer } from 'zustand/middleware/immer';
+import { devtools } from 'zustand/middleware';
+import type { EconomyState } from './types';
+
+export const useEconomyStore = create<EconomyState>()(
+  devtools(
+    immer((set) => ({
+      // Initial state
+      gold: 0,
+      food: 0,
+      mana: 0,
+      mana_regen: 0,
+      tax: 42,
+      effective_income: 0,
+      tradeRoutes: { byId: {}, allIds: [] },
+      
+      // Actions with full type safety
+      receiveTurnUpdate: (data) => set((state) => {
+        state.gold += data.gold_generated;
+        state.food += data.food_generated;
+        state.effective_income = data.gold_generated * (state.tax / 100);
+      }),
+      
+      spendGold: (amount) => set((state) => {
+        state.gold = Math.max(0, state.gold - amount);
+      }),
+      
+      completeConstruction: (buildingType) => set((state) => {
+        // Logic here — fully typed
+      }),
+      
+      receiveTrade: (tradeData) => set((state) => {
+        state.gold += tradeData.gold_received;
+        state.gold -= tradeData.gold_spent;
+      }),
+    })),
+    { name: 'economy' }
+  )
+);
+```
+
+**Component Usage (Full Type Safety):**
+```tsx
+import type { EconomyState } from './types';
+import { useEconomyStore } from './economyStore';
+
+function EconomyPanel() {
+  // Selector is fully typed; IDE autocompletes state properties
+  const gold = useEconomyStore((state: EconomyState) => state.gold);
   
-  updateMetrics: (updates) => set(updates),
-  updateFromServer: (data) => set(data),
-}));
+  // Action is fully typed; IDE catches typos and wrong signatures
+  const spendGold = useEconomyStore((state) => state.spendGold);
+  
+  return (
+    <div>
+      <p>Gold: {gold}</p>
+      <button onClick={() => spendGold(100)}>Spend 100 Gold</button>
+    </div>
+  );
+}
 ```
 
 **Benefits:**
-- IDE autocomplete for store selectors
-- Type safety prevents typos in property names
-- Future refactors caught at compile time
-- Better documentation (types are self-documenting)
+- ✅ IDE autocomplete for all state and actions
+- ✅ Type safety: typos caught at compile time, not runtime
+- ✅ Refactoring: renaming a field breaks builds, not production
+- ✅ Documentation: types are self-documenting
+- ✅ Team onboarding: new devs see what's available via autocomplete
 
-**Migration strategy:** Can add types incrementally (Phase 1 for core stores, expand as needed).
+**Migration Strategy:**
+- Phase 1: Add TypeScript to core stores (economy, military)
+- Phase 2: Type remaining stores incrementally
+- Can coexist with JS stores during transition (use `any` where needed, migrate gradually)
+
+**Zustand + TypeScript Best Practices:**
+- Use `create<State>()(middleware(...))` pattern (note double parens)
+- Separate state interface from component props
+- Use `Pick<State, 'field1' | 'field2'>` to strongly type component props
+- Actions should return `void` (mutations via immer) or new partial state
 
 ---
 
