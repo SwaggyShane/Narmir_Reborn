@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
 import { useActivePanel } from '../../hooks/useActivePanel';
-import { useGameState } from '../../hooks/useGameState';
 import { logout } from './AuthModal.jsx';
 import { switchTab } from '../../utils/switchTab.js';
 import { useNavLayout } from '../../hooks/useNavLayout.js';

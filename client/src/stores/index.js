@@ -122,6 +122,8 @@ export {
   useEngineerLevel,
   useEngineerXp,
   useEngineerXpNeeded,
+  useIsAdmin,
+  useTurnsStored,
 } from './profileStore';
 
 /**

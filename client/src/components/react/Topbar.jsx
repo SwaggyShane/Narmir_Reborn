@@ -1,16 +1,16 @@
 import React from 'react';
-import { useGameState } from '../../hooks/useGameState';
 import { useGameActions } from '../../hooks/useGameActions';
 import { useActivePanel } from '../../hooks/useActivePanel';
+import { usePlayerName, useTurnsStored } from '../../stores';
 import { showLoginModal } from './AuthModal.jsx';
 import { showBugReportModal } from './BugReportModal.jsx';
 
 const Topbar = () => {
-  const { state } = useGameState();
+  const playerName = usePlayerName();
+  const turnsStored = useTurnsStored() || 400;
   const { takeTurn, loading } = useGameActions();
   const { activePanel } = useActivePanel();
-  const isLoggedIn = !!state?.username;
-  const turnsStored = state?.turns_stored ?? 400;
+  const isLoggedIn = !!playerName;
 
   return (
     <header className="fixed inset-x-0 top-0 z-topbar-mobile box-border flex w-full max-w-full shrink-0 items-center justify-between gap-1.5 border-b border-ember-900/40 bg-void-950/95 px-2 shadow-panel backdrop-blur-xl min-h-[calc(3.5rem+env(safe-area-inset-top,0px))] pt-[env(safe-area-inset-top,0px)] sm:min-h-[calc(3.5rem+env(safe-area-inset-top,0px))] sm:gap-2 sm:px-3 lg:relative lg:col-span-3 lg:row-start-1 lg:z-[1100] lg:min-h-14 lg:max-w-none lg:pt-0 md:px-4">

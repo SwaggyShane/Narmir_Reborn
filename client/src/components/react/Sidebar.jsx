@@ -1,7 +1,7 @@
 import React, { useCallback, useRef, useState } from 'react';
 import clsx from 'clsx';
-import { useGameState } from '../../hooks/useGameState';
 import { useActivePanel } from '../../hooks/useActivePanel';
+import { usePlayerName, useIsAdmin } from '../../stores';
 import { logout } from './AuthModal.jsx';
 import { switchTab } from '../../utils/switchTab.js';
 import { useNavLayout } from '../../hooks/useNavLayout.js';
@@ -84,11 +84,11 @@ function NavButton({ panel, icon, label, iconClass = 'text-text3', showBadge, bu
 }
 
 const Sidebar = () => {
-  const { state } = useGameState();
+  const playerName = usePlayerName();
+  const isAdmin = useIsAdmin();
   const { layout } = useNavLayout();
   const { hasBadge } = useShellBadges();
-  const isAdmin = !!state?.isAdmin;
-  const isLoggedIn = !!state?.username;
+  const isLoggedIn = !!playerName;
   const showSidebar = layout === 'left' || layout === 'responsive';
   const [collapsed, setCollapsed] = useState(readCollapsedSections);
   const buttonRefs = useRef([]);

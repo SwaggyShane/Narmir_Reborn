@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
-import { useGameState, useGameMutationEvents } from '../../hooks/useGameState';
+import { useGameMutationEvents } from '../../hooks/useGameState';
+import { useTurn } from '../../stores';
 import { AppEvent, emitAppEvent } from '../../utils/appEvents.js';
 import { useAppEvent } from '../../hooks/useAppEvent.js';
 import { replayWarReport, registerReplayModal } from '../../utils/replayWarReport';
@@ -10,7 +11,7 @@ import { formatNewsMessage, getNewsMeta } from '../../../../game/news-emoji.mjs'
 import ReplayModal from './ReplayModal.jsx';
 
 const NewsPanel = () => {
-  const { state } = useGameState();
+  const turn = useTurn();
   const [newsItems, setNewsItems] = useState([]);
   const [newsFilter, setNewsFilter] = useState('all');
   const [replayData, setReplayData] = useState(null);
@@ -192,7 +193,7 @@ const NewsPanel = () => {
       <div className="card mt-0">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="card-title m-0">
-            📰 Kingdom news — Turn <span id="news-turn-num">{state?.turn || 0}</span>
+            📰 Kingdom news — Turn <span id="news-turn-num">{turn}</span>
           </div>
           <div className="flex gap-2">
             <button className="base-btn" onClick={loadNews}>↻ Refresh</button>
