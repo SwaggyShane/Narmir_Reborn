@@ -45,6 +45,7 @@ export const useProfileStore = create(
       isAdmin: false,
       turns_stored: 0,
       rankingsCache: [],
+      allianceRankingsCache: [],
 
       // Kingdom profile
       description: '',
@@ -82,6 +83,7 @@ export const useProfileStore = create(
         if (data?.isAdmin !== undefined) state.isAdmin = data.isAdmin;
         if (data?.turns_stored !== undefined) state.turns_stored = data.turns_stored;
         if (data?.rankingsCache !== undefined) state.rankingsCache = data.rankingsCache;
+        if (data?.allianceRankingsCache !== undefined) state.allianceRankingsCache = data.allianceRankingsCache;
         if (data?.description !== undefined) state.description = data.description;
         if (data?.customPortrait !== undefined) state.customPortrait = data.customPortrait;
         if (data?.custom_portrait !== undefined) state.customPortrait = data.custom_portrait;
@@ -177,6 +179,8 @@ export const useTurnsStored = () => useProfileStore((state) => state.turns_store
 export const useUsername = () => useProfileStore((state) => state.username);
 
 export const useRankingsCache = () => useProfileStore((state) => state.rankingsCache);
+
+export const useAllianceRankingsCache = () => useProfileStore((state) => state.allianceRankingsCache);
 
 export const useDescription = () => useProfileStore((state) => state.description);
 
