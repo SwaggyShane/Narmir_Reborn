@@ -40,6 +40,11 @@ export {
   useScaffoldingStored,
   useBuildCount,
   useBuildingCounts,
+  useResWeapons,
+  useResMilitary,
+  useResAttackMagic,
+  useResWarMachines,
+  useDiscoveredKingdoms,
 } from './economyStore';
 
 export {
@@ -52,6 +57,18 @@ export {
   useSelectedArmy,
   usePendingAttack,
   useLastCombatResult,
+  useFighters,
+  useRangers,
+  useMages,
+  useClerics,
+  useNinjas,
+  useThieves,
+  useEngineers as useMilitaryEngineers,
+  useWarMachines,
+  useLadders,
+  useThralls,
+  useWeaponsStockpile,
+  useTroopLevels,
 } from './militaryStore';
 
 export {
@@ -98,6 +115,7 @@ export {
   useTurn,
   useScore,
   useRank,
+  useKingdomId,
   useKingdomMetadata,
   useRace,
   useEngineers,

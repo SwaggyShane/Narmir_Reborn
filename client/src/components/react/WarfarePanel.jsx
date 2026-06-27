@@ -2,11 +2,35 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { toast } from '../../utils/toast.js';
 import { apiCall } from '../../utils/api';
-import { useGameState } from '../../hooks/useGameState';
-import WarfareIntelTab from './WarfareIntelTab';
-import WarfareReportsTab from './WarfareReportsTab';
 import { fmt } from "../../utils/fmt";
 import { applyGameMutation } from '../../utils/gameMutations.js';
+import {
+  useKingdomId,
+  useKingdomName,
+  useRace,
+  useLevel,
+  useRank,
+  useFighters,
+  useRangers,
+  useMages,
+  useClerics,
+  useNinjas,
+  useThieves,
+  useMilitaryEngineers,
+  useWarMachines,
+  useLadders,
+  useThralls,
+  useWeaponsStockpile,
+  useTroopLevels,
+  useResWeapons,
+  useResMilitary,
+  useResAttackMagic,
+  useResWarMachines,
+  useDiscoveredKingdoms,
+  useHappiness,
+} from '../../stores';
+import WarfareIntelTab from './WarfareIntelTab';
+import WarfareReportsTab from './WarfareReportsTab';
 import { registerTargetFromRankings } from '../../utils/rankingsTarget.js';
 import { switchTab } from '../../utils/panelNav.js';
 import { registerWarfareTab } from '../../utils/warfareTabs.js';
@@ -173,7 +197,31 @@ function TargetListSection({ targets, selected, onSelect, searchQ, onSearchChang
 // ─── main component ───────────────────────────────────────────────────────────
 
 const WarfarePanel = () => {
-  const { state, setState } = useGameState();
+  // Zustand selectors - called at top level
+  const kingdomId = useKingdomId();
+  const kingdomName = useKingdomName();
+  const race = useRace();
+  const level = useLevel();
+  const rank = useRank();
+  const fighters = useFighters();
+  const rangers = useRangers();
+  const mages = useMages();
+  const clerics = useClerics();
+  const ninjas = useNinjas();
+  const thieves = useThieves();
+  const engineers = useMilitaryEngineers();
+  const warMachines = useWarMachines();
+  const ladders = useLadders();
+  const thralls = useThralls();
+  const weaponsStockpile = useWeaponsStockpile();
+  const troopLevels = useTroopLevels();
+  const resWeapons = useResWeapons();
+  const resMilitary = useResMilitary();
+  const resAttackMagic = useResAttackMagic();
+  const resWarMachines = useResWarMachines();
+  const discoveredKingdoms = useDiscoveredKingdoms();
+  const happiness = useHappiness();
+
   const [activeTab, setActiveTab] = useState('attack');
   const [battleReport, setBattleReport] = useState(null);
 
@@ -206,23 +254,50 @@ const WarfarePanel = () => {
   const [spyError, setSpyError] = useState('');
   const [allianceError, setAllianceError] = useState('');
 
-  // Derived: disc kingdoms parsed from state
-  const disc = useMemo(() => parseDisc(state?.discovered_kingdoms), [state?.discovered_kingdoms]);
+  // Build state-like object for compatibility with helper functions
+  const stateData = useMemo(() => ({
+    kingdomId,
+    kingdomName,
+    race,
+    level,
+    rank,
+    fighters,
+    rangers,
+    mages,
+    clerics,
+    ninjas,
+    thieves,
+    engineers,
+    war_machines: warMachines,
+    ladders,
+    thralls,
+    weapons_stockpile: weaponsStockpile,
+    troop_levels: troopLevels,
+    res_weapons: resWeapons,
+    res_military: resMilitary,
+    res_attack_magic: resAttackMagic,
+    res_war_machines: resWarMachines,
+    discovered_kingdoms: discoveredKingdoms,
+    happiness,
+  }), [kingdomId, kingdomName, race, level, rank, fighters, rangers, mages, clerics, ninjas, thieves, engineers, warMachines, ladders, thralls, weaponsStockpile, troopLevels, resWeapons, resMilitary, resAttackMagic, resWarMachines, discoveredKingdoms, happiness]);
+
+  // Derived: disc kingdoms parsed from discovered_kingdoms
+  const disc = useMemo(() => parseDisc(discoveredKingdoms), [discoveredKingdoms]);
 
   // Filtered target lists per tab
   const filteredAtkTargets = useMemo(
-    () => filterByQuery(buildTargetList(targets, disc, state), atkSearchQ),
-    [targets, disc, state, atkSearchQ],
+    () => filterByQuery(buildTargetList(targets, disc, stateData), atkSearchQ),
+    [targets, disc, stateData, atkSearchQ],
   );
   const filteredWspTargets = useMemo(
-    () => filterByQuery(buildTargetList(targets, disc, state, { prependSelf: true }), wspSearchQ),
-    [targets, disc, state, wspSearchQ],
+    () => filterByQuery(buildTargetList(targets, disc, stateData, { prependSelf: true }), wspSearchQ),
+    [targets, disc, stateData, wspSearchQ],
   );
   const filteredWcovTargets = useMemo(() => {
-    const list = buildTargetList(targets, disc, state);
+    const list = buildTargetList(targets, disc, stateData);
     const byRace = wcovTargetRace ? list.filter((t) => t.race === wcovTargetRace) : list;
     return filterByQuery(byRace, wcovSearchQ);
-  }, [targets, disc, state, wcovTargetRace, wcovSearchQ]);
+  }, [targets, disc, stateData, wcovTargetRace, wcovSearchQ]);
 
   const refreshAttackTargets = useCallback(async () => {
     try {
@@ -231,7 +306,7 @@ const WarfarePanel = () => {
 
       const kingdoms = Array.isArray(result?.rankings) ? result.rankings : [];
       const mappedTargets = kingdoms
-        .filter((row) => String(row.id) !== String(state?.kingdomId))
+        .filter((row) => String(row.id) !== String(kingdomId))
         .map((row) => ({
           id: row.id,
           name: row.name || 'Unknown',
@@ -245,12 +320,11 @@ const WarfarePanel = () => {
           is_ai: row.is_ai || 0,
         }));
 
-      setState({ rankingsCache: kingdoms, targets: mappedTargets });
       setTargets(mappedTargets);
     } catch (err) {
       console.error('[WarfarePanel] Failed to refresh attack targets:', err);
     }
-  }, [state?.kingdomId]);
+  }, [kingdomId]);
 
   const loadWarLog = useCallback(async () => {
     setLoadingWarLog(true);
@@ -259,7 +333,6 @@ const WarfarePanel = () => {
       const result = await apiCall('/api/kingdom/war-log');
       if (result?.error) throw new Error(result.error);
       const rows = Array.isArray(result) ? result : Array.isArray(result?.rows) ? result.rows : [];
-      setState({ warLogCache: rows });
       setWarLogRows(rows);
     } catch (err) {
       console.error('[WarfarePanel] Failed to load war log:', err);
@@ -277,7 +350,6 @@ const WarfarePanel = () => {
       if (result?.error) throw new Error(result.error);
       const spyData = Array.isArray(result) ? result : [];
       setSpyReports(spyData);
-      setState({ spyReportsCache: spyData });
     } catch (err) {
       console.error('[WarfarePanel] Failed to load spy reports:', err);
       setSpyError(err.message || 'Failed to load spy reports');
@@ -294,7 +366,6 @@ const WarfarePanel = () => {
       if (result?.error) throw new Error(result.error);
       const intelData = Array.isArray(result) ? result : [];
       setAllianceIntel(intelData);
-      setState({ allianceIntelCache: intelData });
     } catch (err) {
       console.error('[WarfarePanel] Failed to load alliance intel:', err);
       setAllianceError(err.message || 'Failed to load alliance intel');
@@ -343,23 +414,23 @@ const WarfarePanel = () => {
     const eng = parseInt(atkQty.engineers, 10) || 0;
     if (f + rn + m + wm + ld + cle + eng === 0) return null;
 
-    const engLvlArray = state?.troop_levels?.engineers?.level || 1;
-    const baseCrew = state?.race === 'human' ? 10 : state?.race === 'dwarf' ? 8 : 12;
+    const engLvlArray = troopLevels?.engineers?.level || 1;
+    const baseCrew = race === 'human' ? 10 : race === 'dwarf' ? 8 : 12;
     const crewReq = Math.max(1, Math.round(baseCrew * (1 - Math.min(0.5, (engLvlArray - 1) / 100))));
-    const totalEng = (state?.engineers || 0) + eng;
+    const totalEng = engineers + eng;
     const wmCrewable = Math.min(wm, Math.floor(totalEng / crewReq));
-    const weaponBonus = 1 + Math.min(1, (state?.weapons_stockpile || 0) / Math.max(f, 1)) * 0.25;
-    const atkF = f * ((state?.res_weapons || 100) / 100) * weaponBonus * ((state?.res_military || 100) / 100);
-    const atkRn = rn * 0.7 * ((state?.res_military || 100) / 100);
-    const atkM = m * 2.5 * ((state?.res_attack_magic || 100) / 100);
-    const atkWm = wmCrewable * 500 * ((state?.res_war_machines || 100) / 100);
-    const happiness = state?.happiness !== undefined && state?.happiness !== null ? state.happiness : 50;
-    const mMult = Math.max(0.5, Math.min(1.5, 0.5 + happiness / 120));
+    const weaponBonus = 1 + Math.min(1, weaponsStockpile / Math.max(f, 1)) * 0.25;
+    const atkF = f * (resWeapons / 100) * weaponBonus * (resMilitary / 100);
+    const atkRn = rn * 0.7 * (resMilitary / 100);
+    const atkM = m * 2.5 * (resAttackMagic / 100);
+    const atkWm = wmCrewable * 500 * (resWarMachines / 100);
+    const happinessVal = happiness !== undefined && happiness !== null ? happiness : 50;
+    const mMult = Math.max(0.5, Math.min(1.5, 0.5 + happinessVal / 120));
     const target = attackTarget;
     let bullyRatio = target
       ? Math.max(
-          (state?.land || 1) / Math.max(1, target.land || 1),
-          ((state?.fighters || 1) / Math.max(1, target.fighters || 1)) * 0.5,
+          fighters / Math.max(1, target.land || 1),
+          (fighters / Math.max(1, target.fighters || 1)) * 0.5,
         )
       : 0;
     if (target && target.is_ai) bullyRatio = 1.0;
@@ -381,16 +452,16 @@ const WarfarePanel = () => {
     const winColor = winPct >= 60 ? 'var(--green)' : winPct >= 40 ? 'var(--amber)' : 'var(--red)';
     const land = target ? Math.floor((target.land || 0) * 0.1) : 0;
     return { atkPower, defPower, winPct, winColor, land, bullyMsg };
-  }, [atkQty, state, attackTarget]);
+  }, [atkQty, stateData, attackTarget]);
 
   const setAtkMax = useCallback((key) => {
     const val = key === 'wm'
-      ? String(state?.war_machines || 0)
+      ? String(warMachines || 0)
       : key === 'clerics'
-        ? String((state?.clerics || 0) + (state?.thralls || 0))
-        : String(state?.[key] || 0);
+        ? String((clerics || 0) + (thralls || 0))
+        : String(stateData[key] || 0);
     setAtkQty((q) => ({ ...q, [key]: val }));
-  }, [state]);
+  }, [warMachines, clerics, thralls, stateData]);
 
   const launchAttackW = useCallback(async () => {
     if (!attackTarget) {
@@ -409,15 +480,15 @@ const WarfarePanel = () => {
     const eng = parseInt(atkQty.engineers, 10) || 0;
 
     if (f + rn + m <= 0) return toast('Send at least some troops', 'error');
-    if (f > (state?.fighters || 0)) return toast('Not enough fighters', 'error');
-    if (rn > (state?.rangers || 0)) return toast('Not enough rangers', 'error');
-    if (m > (state?.mages || 0)) return toast('Not enough mages', 'error');
-    if (wm > (state?.war_machines || 0)) return toast('Not enough war machines', 'error');
-    if (ld > (state?.ladders || 0)) return toast('Not enough 🪜 ladders', 'error');
-    if (nj > (state?.ninjas || 0)) return toast('Not enough ninjas', 'error');
-    if (th > (state?.thieves || 0)) return toast('Not enough thieves', 'error');
-    if (cle > (state?.clerics || 0) + (state?.thralls || 0)) return toast('Not enough clerics/thralls', 'error');
-    if (eng > (state?.engineers || 0)) return toast('Not enough engineers', 'error');
+    if (f > (fighters || 0)) return toast('Not enough fighters', 'error');
+    if (rn > (rangers || 0)) return toast('Not enough rangers', 'error');
+    if (m > (mages || 0)) return toast('Not enough mages', 'error');
+    if (wm > (warMachines || 0)) return toast('Not enough war machines', 'error');
+    if (ld > (ladders || 0)) return toast('Not enough 🪜 ladders', 'error');
+    if (nj > (ninjas || 0)) return toast('Not enough ninjas', 'error');
+    if (th > (thieves || 0)) return toast('Not enough thieves', 'error');
+    if (cle > (clerics || 0) + (thralls || 0)) return toast('Not enough clerics/thralls', 'error');
+    if (eng > (engineers || 0)) return toast('Not enough engineers', 'error');
 
     const result = await apiCall('/api/kingdom/attack', {
       method: 'POST',
@@ -483,7 +554,7 @@ const WarfarePanel = () => {
       rows,
     });
     refreshAttackTargets();
-  }, [refreshAttackTargets, state, attackTarget, atkQty]);
+  }, [refreshAttackTargets, fighters, rangers, mages, warMachines, ladders, ninjas, thieves, clerics, engineers, attackTarget, atkQty]);
 
   // wspells/wcovert action stubs — not yet implemented; buttons present for future use
   const castWspell = () => {};
@@ -683,7 +754,7 @@ const WarfarePanel = () => {
           <div className="flex flex-col gap-1.5 mb-5">
             <div className="trow">
               <span className="name text-[13px] font-bold">
-                ⚔️ Fighters <span className="text-[var(--text3)] font-normal">({state?.fighters || 0})</span>
+                ⚔️ Fighters <span className="text-[var(--text3)] font-normal">({fighters})</span>
               </span>
               <div className="flex items-center gap-1">
                 <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" min="0" value={atkQty.fighters} onChange={(e) => handleQtyChange('fighters', e.target.value)} placeholder="Qty" />
@@ -692,7 +763,7 @@ const WarfarePanel = () => {
             </div>
             <div className="trow">
               <span className="name text-[13px] font-bold">
-                🏹 Rangers <span className="text-[var(--text3)] font-normal">({state?.rangers || 0})</span>
+                🏹 Rangers <span className="text-[var(--text3)] font-normal">({rangers})</span>
               </span>
               <div className="flex items-center gap-1">
                 <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" min="0" value={atkQty.rangers} onChange={(e) => handleQtyChange('rangers', e.target.value)} placeholder="Qty" />
@@ -701,7 +772,7 @@ const WarfarePanel = () => {
             </div>
             <div className="trow">
               <span className="name text-[13px] font-bold">
-                ✨ Mages <span className="text-[var(--text3)] font-normal">({state?.mages || 0})</span>
+                ✨ Mages <span className="text-[var(--text3)] font-normal">({mages})</span>
               </span>
               <div className="flex items-center gap-1">
                 <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" min="0" value={atkQty.mages} onChange={(e) => handleQtyChange('mages', e.target.value)} placeholder="Qty" />
@@ -710,7 +781,7 @@ const WarfarePanel = () => {
             </div>
             <div className="trow">
               <span className="name text-[13px] font-bold">
-                ⛪ Clerics <span className="text-[var(--text3)] font-normal">({(state?.clerics || 0) + (state?.thralls || 0)})</span>
+                ⛪ Clerics <span className="text-[var(--text3)] font-normal">({clerics + thralls})</span>
               </span>
               <div className="flex items-center gap-1">
                 <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" min="0" value={atkQty.clerics} onChange={(e) => handleQtyChange('clerics', e.target.value)} placeholder="Qty" />
@@ -720,7 +791,7 @@ const WarfarePanel = () => {
             <div className="border-t border-[var(--border)] pt-2 mt-1">
               <div className="trow">
                 <span className="name text-[13px] font-bold">
-                  ⚙️ War Machines <span className="text-[var(--text3)] font-normal">({state?.war_machines || 0})</span>
+                  ⚙️ War Machines <span className="text-[var(--text3)] font-normal">({warMachines})</span>
                 </span>
                 <div className="flex items-center gap-1">
                   <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" min="0" value={atkQty.wm} onChange={(e) => handleQtyChange('wm', e.target.value)} placeholder="Qty" />
@@ -729,7 +800,7 @@ const WarfarePanel = () => {
               </div>
               <div className="trow">
                 <span className="name text-[13px] font-bold">
-                  🪜 Ladders <span className="text-[var(--text3)] font-normal">({state?.ladders || 0})</span>
+                  🪜 Ladders <span className="text-[var(--text3)] font-normal">({ladders})</span>
                 </span>
                 <div className="flex items-center gap-1">
                   <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" min="0" value={atkQty.ladders} onChange={(e) => handleQtyChange('ladders', e.target.value)} placeholder="Qty" />
@@ -740,7 +811,7 @@ const WarfarePanel = () => {
             <div className="border-t border-[var(--border)] pt-2 mt-1">
               <div className="trow">
                 <span className="name text-[13px] font-bold">
-                  🕵️ Ninjas <span className="text-[var(--text3)] font-normal">({state?.ninjas || 0})</span>
+                  🕵️ Ninjas <span className="text-[var(--text3)] font-normal">({ninjas})</span>
                 </span>
                 <div className="flex items-center gap-1">
                   <input type="number" className="input text-right w-[90px] px-1.5 py-1.5" min="0" value={atkQty.ninjas} onChange={(e) => handleQtyChange('ninjas', e.target.value)} placeholder="Qty" />

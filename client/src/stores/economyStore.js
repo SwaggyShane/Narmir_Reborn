@@ -41,6 +41,12 @@ export const useEconomyStore = create(
         steel: 0,
         coal: 0,
 
+        // Resource modifiers (percentages: 100 = normal, 80 = -20%, 120 = +20%)
+        res_weapons: 100,
+        res_military: 100,
+        res_attack_magic: 100,
+        res_war_machines: 100,
+
         // Build system
         build_allocation: {},
         build_progress: {},
@@ -50,6 +56,9 @@ export const useEconomyStore = create(
         hammer_turns_used: 0,
         blueprints_stored: 0,
         scaffolding_stored: 0,
+
+        // Discovered kingdoms (for targeting UI)
+        discovered_kingdoms: {},
 
         // Building counts (dynamic: bld_farms, bld_barracks, etc.)
         bld_farms: 0,
@@ -97,6 +106,10 @@ export const useEconomyStore = create(
           if (data?.iron !== undefined) state.iron = data.iron;
           if (data?.steel !== undefined) state.steel = data.steel;
           if (data?.coal !== undefined) state.coal = data.coal;
+          if (data?.res_weapons !== undefined) state.res_weapons = data.res_weapons;
+          if (data?.res_military !== undefined) state.res_military = data.res_military;
+          if (data?.res_attack_magic !== undefined) state.res_attack_magic = data.res_attack_magic;
+          if (data?.res_war_machines !== undefined) state.res_war_machines = data.res_war_machines;
           if (data?.commodityPrices) {
             Object.assign(state.commodityPrices, data.commodityPrices);
           }
@@ -108,6 +121,7 @@ export const useEconomyStore = create(
           if (data?.hammer_turns_used !== undefined) state.hammer_turns_used = data.hammer_turns_used;
           if (data?.blueprints_stored !== undefined) state.blueprints_stored = data.blueprints_stored;
           if (data?.scaffolding_stored !== undefined) state.scaffolding_stored = data.scaffolding_stored;
+          if (data?.discovered_kingdoms !== undefined) state.discovered_kingdoms = data.discovered_kingdoms;
           // Sync building counts
           Object.keys(data || {}).forEach((key) => {
             if (key.startsWith('bld_')) {
@@ -319,3 +333,15 @@ export const useBuildingCounts = () =>
     training: state.bld_training || 0,
     castles: state.bld_castles || 0,
   }));
+
+// Resource modifiers
+export const useResWeapons = () => useEconomyStore((state) => state.res_weapons || 100);
+
+export const useResMilitary = () => useEconomyStore((state) => state.res_military || 100);
+
+export const useResAttackMagic = () => useEconomyStore((state) => state.res_attack_magic || 100);
+
+export const useResWarMachines = () => useEconomyStore((state) => state.res_war_machines || 100);
+
+// Discovered kingdoms for warfare targeting
+export const useDiscoveredKingdoms = () => useEconomyStore((state) => state.discovered_kingdoms || {});
