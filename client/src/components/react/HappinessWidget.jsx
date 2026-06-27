@@ -12,7 +12,7 @@ const HappinessWidget = ({ onOpenTab }) => {
 
       const data = await response.json();
       if (data) {
-        usePopulationStore.setState({
+        usePopulationStore.getState().receiveServerSnapshot({
           happiness: data.happiness ?? 50,
         });
       }
