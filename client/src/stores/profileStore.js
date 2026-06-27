@@ -46,6 +46,10 @@ export const useProfileStore = create(
       turns_stored: 0,
       rankingsCache: [],
 
+      // Kingdom profile
+      description: '',
+      customPortrait: null,
+
       // ===== ACTIONS =====
 
       /**
@@ -77,6 +81,9 @@ export const useProfileStore = create(
         if (data?.isAdmin !== undefined) state.isAdmin = data.isAdmin;
         if (data?.turns_stored !== undefined) state.turns_stored = data.turns_stored;
         if (data?.rankingsCache !== undefined) state.rankingsCache = data.rankingsCache;
+        if (data?.description !== undefined) state.description = data.description;
+        if (data?.customPortrait !== undefined) state.customPortrait = data.customPortrait;
+        if (data?.custom_portrait !== undefined) state.customPortrait = data.custom_portrait;
       }),
 
       /**
@@ -86,6 +93,27 @@ export const useProfileStore = create(
         if (turnData?.turn !== undefined) {
           state.turn = turnData.turn;
         }
+      }),
+
+      /**
+       * updateDescription: Update kingdom description
+       */
+      updateDescription: (description) => set((state) => {
+        state.description = description;
+      }),
+
+      /**
+       * updateCustomPortrait: Update kingdom custom portrait URL
+       */
+      updateCustomPortrait: (portraitUrl) => set((state) => {
+        state.customPortrait = portraitUrl;
+      }),
+
+      /**
+       * updatePrestigeLevel: Update prestige level after rebirth
+       */
+      updatePrestigeLevel: (level) => set((state) => {
+        state.prestige_level = level;
       }),
     })),
     { name: 'profile' }
@@ -147,3 +175,7 @@ export const useTurnsStored = () => useProfileStore((state) => state.turns_store
 export const useUsername = () => useProfileStore((state) => state.username);
 
 export const useRankingsCache = () => useProfileStore((state) => state.rankingsCache);
+
+export const useDescription = () => useProfileStore((state) => state.description);
+
+export const useCustomPortrait = () => useProfileStore((state) => state.customPortrait);
