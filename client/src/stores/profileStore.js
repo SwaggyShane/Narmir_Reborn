@@ -200,4 +200,4 @@ export const useXpSources = () => useProfileStore((state) => state.xp_sources);
 
 export const useMilestoneBonuses = () => useProfileStore((state) => state.milestone_bonuses);
 
-export const useMilestoneTitle = () => useProfileStore((state) => state.milestone_title);
+export const useMilestoneTitle = () => useProfileStore((state) => state.milestone_title || 'Fledgling');
