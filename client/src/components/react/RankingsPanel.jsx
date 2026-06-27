@@ -4,7 +4,7 @@ import { apiCall } from '../../utils/api';
 import { repairMojibake } from '../../utils/repairMojibake';
 import { fmt } from "../../utils/fmt";
 import { toast as showToast } from '../../utils/toast.js';
-import { useProfileStore } from '../../stores';
+import { useProfileStore, useKingdomId, useDiscoveredKingdoms } from '../../stores';
 import { openKingdomProfile } from './KingdomProfileModal.jsx';
 import { openDirectMessage } from '../../utils/directMessage.js';
 import { selectBountyTarget } from '../../utils/bountyTarget.js';
@@ -31,6 +31,8 @@ const RankingsPanel = () => {
   const [loadingKingdoms, setLoadingKingdoms] = useState(true);
   const [loadingAlliances, setLoadingAlliances] = useState(true);
   const [error, setError] = useState('');
+  const kingdomId = useKingdomId();
+  const discoveredKingdoms = useDiscoveredKingdoms();
 
   const repairText = useCallback((value) => {
     const text = value === null || value === undefined ? '' : String(value);
@@ -128,8 +130,8 @@ const RankingsPanel = () => {
   }, [loadRankings]);
 
   const renderKingdomRow = (row) => {
-    const isMe = row.id === state?.kingdomId;
-    const disc = state?.discovered_kingdoms || {};
+    const isMe = row.id === kingdomId;
+    const disc = discoveredKingdoms || {};
     const isMapped = !!(disc[row.id] && disc[row.id].mapped);
     const raceKey = String(row.race || 'human');
     const raceIcon = RACE_ICONS[raceKey] || '👤';
