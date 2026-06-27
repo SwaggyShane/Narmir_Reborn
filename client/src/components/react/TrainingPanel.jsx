@@ -2,10 +2,8 @@ import React, { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import { apiCall } from '../../utils/api.mjs';
 import { fmt } from "../../utils/fmt";
-import { applyGameMutation } from '../../utils/gameMutations.js';
 import { toast } from '../../utils/toast.js';
-import { useRace, useTroopLevels, useTrainingAllocation, useBuildTraining, useWeaponsStockpile, useArmorStockpile } from '../../stores';
-import { useGameState } from '../../hooks/useGameState';
+import { useRace, useTroopLevels, useTrainingAllocation, useBuildTraining, useWeaponsStockpile, useArmorStockpile, useEngineers, useScribes, useResearchers, useFighters, useRangers, useClerics, useMages, useThieves, useNinjas, useEconomyStore } from '../../stores';
 
 const TROOP_TYPES = ['fighters', 'rangers', 'clerics', 'mages', 'thieves', 'ninjas'];
 
@@ -26,7 +24,15 @@ const TrainingPanel = () => {
   const buildTraining = useBuildTraining();
   const weaponsStockpile = useWeaponsStockpile();
   const armorStockpile = useArmorStockpile();
-  const { state } = useGameState();
+  const engineers = useEngineers();
+  const scribes = useScribes();
+  const researchers = useResearchers();
+  const fighters = useFighters();
+  const rangers = useRangers();
+  const clerics = useClerics();
+  const mages = useMages();
+  const thieves = useThieves();
+  const ninjas = useNinjas();
   const [trainingAllocations, setTrainingAllocations] = useState({});
   const isVampire = race === 'vampire';
 
@@ -69,16 +75,18 @@ const TrainingPanel = () => {
     const capacity = (buildTraining || 0) * 100;
     const allocated = getAllocatedTraining();
     const current = Number(getTrainingValue(unit)) || 0;
+    const unitCounts = { fighters, rangers, clerics, mages, thieves, ninjas };
     const available = capacity - allocated + current;
-    setTrainingValue(unit, Math.max(0, Math.min(available, state?.[unit] || 0)));
+    setTrainingValue(unit, Math.max(0, Math.min(available, unitCounts[unit] || 0)));
   };
 
   const distributeTrainingEvenly = () => {
     const capacity = (buildTraining || 0) * 100;
     const each = Math.floor(capacity / TROOP_TYPES.length);
+    const unitCounts = { fighters, rangers, clerics, mages, thieves, ninjas };
     const nextAllocations = {};
     TROOP_TYPES.forEach((unit) => {
-      nextAllocations[unit] = Math.min(each, state?.[unit] || 0);
+      nextAllocations[unit] = Math.min(each, unitCounts[unit] || 0);
     });
     setTrainingAllocations(nextAllocations);
   };
@@ -101,7 +109,9 @@ const TrainingPanel = () => {
       body: { allocation: alloc },
     });
     if (result.error) return toast(result.error, 'error');
-    applyGameMutation({ training_allocation: alloc }, { reason: 'training-allocation' });
+    useEconomyStore.setState((state) => {
+      state.training_allocation = alloc;
+    });
     toast('Training allocation saved', 'success');
   };
 
@@ -112,7 +122,9 @@ const TrainingPanel = () => {
       body: { allocation: {} },
     });
     if (result.error) return toast(result.error, 'error');
-    applyGameMutation({ training_allocation: {} }, { reason: 'training-allocation' });
+    useEconomyStore.setState((state) => {
+      state.training_allocation = {};
+    });
     toast('All training released', 'success');
   };
 
@@ -145,7 +157,7 @@ const TrainingPanel = () => {
         <div className="grid [grid-template-columns:repeat(auto-fit,minmax(100px,1fr))] gap-2.5">
           <div className="bg-bg3 rounded-lg p-2.5 text-center">
             <div className="text-[11px] text-[var(--text3)] mb-0.75">ENGINEERS</div>
-            <div className="text-[18px] font-bold text-text">{fmt(state?.engineers)}</div>
+            <div className="text-[18px] font-bold text-text">{fmt(engineers)}</div>
             <div className="text-[13px] font-semibold text-[var(--text3)] mt-0.5">Lv {engineerXpView.level}</div>
             <div className="prog-wrap mx-auto mt-2 max-w-[120px]">
               <div className="prog-bar bg-blue" style={{ width: engineerXpView.barWidth }} />
@@ -154,7 +166,7 @@ const TrainingPanel = () => {
           </div>
           <div className="bg-bg3 rounded-lg p-2.5 text-center">
             <div className="text-[11px] text-[var(--text3)] mb-0.75">SCRIBES</div>
-            <div className="text-[18px] font-bold text-text">{fmt(state?.scribes)}</div>
+            <div className="text-[18px] font-bold text-text">{fmt(scribes)}</div>
             <div className="text-[13px] font-semibold text-[var(--text3)] mt-0.5">Lv {scribeXpView.level}</div>
             <div className="prog-wrap mx-auto mt-2 max-w-[120px]">
               <div className="prog-bar bg-blue" style={{ width: scribeXpView.barWidth }} />
@@ -163,7 +175,7 @@ const TrainingPanel = () => {
           </div>
           <div className="bg-bg3 rounded-lg p-2.5 text-center">
             <div className="text-[11px] text-[var(--text3)] mb-0.75">RESEARCHERS</div>
-            <div className="text-[18px] font-bold text-text">{fmt(state?.researchers)}</div>
+            <div className="text-[18px] font-bold text-text">{fmt(researchers)}</div>
             <div className="text-[13px] font-semibold text-[var(--text3)] mt-0.5">Lv {researcherXpView.level}</div>
             <div className="prog-wrap mx-auto mt-2 max-w-[120px]">
               <div className="prog-bar bg-blue" style={{ width: researcherXpView.barWidth }} />
@@ -286,7 +298,7 @@ const TrainingPanel = () => {
       <div className="card">
         <div className="card-title">Race training bonus</div>
         <div className="text-[13px] text-text2 leading-relaxed">
-          {RACE_TRAINING_BONUS[state?.race] || '—'}
+          {RACE_TRAINING_BONUS[race] || '—'}
         </div>
       </div>
     </div>
