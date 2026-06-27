@@ -4,7 +4,11 @@
 
 const config = require('../config');
 const { safeJsonParse, roll, rand } = require('../../utils/helpers');
-const { unitLevelMult } = require('./troops');
+const { unitLevelMult, effectiveTroopLevel, diluteTroopXp } = require('./troops');
+const { getCap, calcDiscoveryChance, repairMojibake, cleanNewsEvent } = require('./data-transformations');
+const fragmentBonusManager = require('../fragment-bonus-manager');
+const { checkAchievements } = require('./achievements');
+const { addItemToInventory } = require('./items');
 
 const {
   MERC_TIERS,
@@ -25,6 +29,7 @@ const {
   INVENTORY_ITEMS,
   JUNK_PRIZES,
   EXPEDITION_TURNS,
+  ULTRA_RARE_PRIZES,
 } = config;
 
 function processMercenaries(k, events) {

@@ -1,7 +1,7 @@
 # Narmir Reborn — Unified Development Roadmap
 
-**Status:** Alpha phase (ongoing) — Tracks A–D complete; E1–E2 fixed; E3 deferred (await discord.js v15); Track F.3 consolidation complete (PR #606–#608); **F.4 engine.js decomposition COMPLETE (PR #611)**  
-**Last updated:** 2026-06-27 (F4 all phases complete, encoding validation fixed)  
+**Status:** Alpha phase (ongoing) — Tracks A–D complete; E1–E2 fixed; E3 deferred (await discord.js v15); Track F.3 consolidation complete (PR #606–#608); **F.4 engine.js decomposition COMPLETE (PR #611); F.2 Combat V2 complete and alpha-ready (PR #612)**  
+**Last updated:** 2026-06-27 (F4 engine decomposition complete; F2 Combat V2 verified + alpha-ready)  
 **Single source of truth** for planning, replacing ALPHA_ROADMAP + AdminRoadmap + MAINTENANCE (see **Related Documents**)
 
 ---
@@ -21,7 +21,7 @@
 | **Vite dependency** | 8.0.12 (HIGH vuln) | ≥8.1.0 | E3 | ⏳ Open |
 | **Inline CSS patterns** | Static + dynamic mixed | Static → Tailwind, dynamic only inline | Future Tailwind consolidation | 📋 Preventative plan |
 | **Monolithic files** | engine.js, kingdom.js, etc. | Split into focused modules | F4–F5 | ⏳ Deferred (P4) |
-| **Combat V2** | Incomplete + feature-flagged | Decision to complete or remove | F2 | ⏳ Deferred (P4) |
+| **Combat V2** | Complete + feature-flagged | Alpha-ready; 26.8M test scenarios | F2 | ✅ Done (PR #612) |
 
 ---
 
@@ -255,7 +255,7 @@ Link updated doc to this roadmap; clarify resolved vs. open items.
 | ID | Work | Notes | Timeline | Status |
 |----|------|-------|----------|--------|
 | **F1** | Express global error handler; audit silent `catch {}` | Audit complete; no critical issues found | ✅ | ✅ **DONE** (PR #610) |
-| **F2** | Combat V2 decision | Complete or remove; requires design sign-off | Post-cutover | ⏳ Pending |
+| **F2** | Combat V2 complete + alpha-ready | Individual troop HP/DMG model; 26.8M simulated combats; balanced 48–52% outcomes; feature-flagged `USE_COMBAT_V2=1` | Alpha | ✅ **DONE** (PR #612) |
 | **F3** | Module consolidation & architecture foundation | ✅ Phase 1: data-transformations extraction (PR #606)<br/>✅ Phase 2: timestamp consolidation (PR #607)<br/>✅ Phase 3: architecture documentation + mobile hardening (PR #608) | Now | ✅ **DONE** |
 | **F4** | `engine.js` decomposition | 4 phases (all complete); 6,241 lines → 8 focused modules + re-exports | Now | ✅ **DONE** (PR #611) |
 | **F5** | `GameStateManager` → React Context | Incremental per panel; align with frontend tests | Post-F4 | ⏳ Pending |

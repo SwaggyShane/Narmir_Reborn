@@ -1039,7 +1039,7 @@ function resolveMilitaryAttack(
     sent,
     defenderEngaged: defAvail,
     landTransferred,
-    combatSystem: "legacy",
+    combatSystem: "v1",
     atkPower: Math.round(atkPower),
     defPower: Math.round(defPowerFinal),
     powerRatio: Math.round((atkPower / Math.max(1, defPowerFinal)) * 100) / 100,
