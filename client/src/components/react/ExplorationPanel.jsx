@@ -68,8 +68,8 @@ const normalizeRewards = (rewards) => {
 };
 
 const ExplorationPanel = () => {
-  const rangers = useEconomyStore((state) => state.rangers);
-  const fighters = useMillitaryStore((state) => state.fighters);
+  const rangers = useMillitaryStore((state) => state.troops.rangers);
+  const fighters = useMillitaryStore((state) => state.troops.fighters);
   const food = useEconomyStore((state) => state.food);
   const turns_stored = useProfileStore((state) => state.turns_stored);
   useGameMutationEvents();
