@@ -205,7 +205,7 @@ const ResourcesPanel = () => {
     syncFromState();
     loadNodes();
     loadExpeditions();
-  }, [activePanel, state, syncFromState]);
+  }, [activePanel, syncFromState]);
 
   useEffect(() => {
     if (activeTab === 'stockpiles' || activeTab === 'buildings') syncFromState();
