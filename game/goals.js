@@ -34,8 +34,9 @@ function generateGoals(k) {
     if (k.goals && Object.keys(k.goals).length > 0) {
        goals = typeof k.goals === 'string' ? JSON.parse(k.goals) : k.goals;
     }
-    // eslint-disable-next-line no-unused-vars
-  } catch(_e) {}
+  } catch(err) {
+    console.warn(`[goals] Failed to parse goals for kingdom ${k.id || 'unknown'}: ${err.message} — resetting to empty goals`);
+  }
 
   if (!goals.daily) goals.daily = { expiresAt: 0, goals: [] };
   if (!goals.weekly) goals.weekly = { expiresAt: 0, goals: [] };
