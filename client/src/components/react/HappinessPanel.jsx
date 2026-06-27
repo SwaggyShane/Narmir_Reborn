@@ -24,8 +24,7 @@ const toFiniteNumber = (value, fallback = 0) => {
 };
 
 const HappinessPanel = () => {
-  const storeHappiness = useHappiness();
-  const happiness = storeHappiness !== null && storeHappiness !== undefined ? storeHappiness : 50;
+  const happiness = toFiniteNumber(useHappiness(), 50);
   const [components, setComponents] = useState(DEFAULT_COMPONENTS);
   const [events, setEvents] = useState([]);
   const [history, setHistory] = useState([]);
