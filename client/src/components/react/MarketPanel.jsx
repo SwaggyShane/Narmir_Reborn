@@ -17,6 +17,13 @@ import {
   useWeaponsStockpile,
   useArmorStockpile,
   useEconomyStore,
+  useFood,
+  useWood,
+  useStone,
+  useIron,
+  useCoal,
+  useSteel,
+  useEconomyMana,
 } from '../../stores';
 
 const icons = {
@@ -105,6 +112,13 @@ const MarketPanel = () => {
   const tradeTargets = useTradeTargets();
   const weaponsStockpile = useWeaponsStockpile();
   const armorStockpile = useArmorStockpile();
+  const food = useFood();
+  const wood = useWood();
+  const stone = useStone();
+  const iron = useIron();
+  const coal = useCoal();
+  const steel = useSteel();
+  const mana = useEconomyMana();
 
   const [loading, setLoading] = useState(true);
   const [prices, setPrices] = useState([]);
@@ -139,8 +153,15 @@ const MarketPanel = () => {
   const ownedAmount = useCallback((id) => {
     if (id === 'weapons') return weaponsStockpile;
     if (id === 'armor') return armorStockpile;
+    if (id === 'food') return food;
+    if (id === 'wood') return wood;
+    if (id === 'stone') return stone;
+    if (id === 'iron') return iron;
+    if (id === 'coal') return coal;
+    if (id === 'steel') return steel;
+    if (id === 'mana') return mana;
     return 0;
-  }, [weaponsStockpile, armorStockpile]);
+  }, [weaponsStockpile, armorStockpile, food, wood, stone, iron, coal, steel, mana]);
 
   const refreshMarket = useCallback(async () => {
     setLoading(true);
@@ -273,7 +294,7 @@ const MarketPanel = () => {
   }, []);
 
   useEffect(() => {
-    if (Array.isArray(tradeTargets) && tradeTargets.length) {
+    if (Array.isArray(tradeTargets)) {
       setTradeTargetsState(tradeTargets);
     }
   }, [tradeTargets]);
