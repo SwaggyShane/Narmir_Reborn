@@ -146,9 +146,13 @@ function GoldDisplay() {
 
 ### Store 2: UI State Store
 
-**Purpose:** Manage panel visibility, active tabs, sort orders, form state — anything that's local to the UI.
+**Purpose:** Manage panel visibility, active tabs, sort orders, persistent UI settings — anything that should survive across renders/page reloads.
 
 **Location:** `client/src/stores/uiStore.js`
+
+**⚠️ Important distinction:**
+- **In uiStore:** Panel active state, sort order, filter preferences, visible columns (persist across page reloads)
+- **As local useState:** Form inputs being typed, hover states, transient animations, temporary selections (don't persist)
 
 **State:**
 ```js
@@ -160,6 +164,7 @@ function GoldDisplay() {
       sortBy: 'time',
       filter: 'all',
       selectedItem: null,
+      visibleColumns: ['name', 'level', 'progress'],
     },
     warfare: {
       selectedDefense: null,
@@ -168,15 +173,31 @@ function GoldDisplay() {
     // ... per-panel state
   },
   
-  // Modals
+  // Modals (persistent state)
   openModals: Set(['confirm-attack']),
   
-  // Temporary UI state
-  hoveredTroop: null,
-  selectedKingdoms: [],
-  
-  // Search/filter state
+  // Search/filter state (persistent)
   searchText: '',
+  
+  // ❌ NOT here: hoveredTroop, form input values — use useState in components
+}
+```
+
+**Component-level useState (not in uiStore):**
+```jsx
+function BuildPanel() {
+  // Transient state stays local
+  const [hoveredItem, setHoveredItem] = useState(null);  // ← stays in component
+  const [formInput, setFormInput] = useState('');        // ← stays in component
+  
+  // Persistent state goes to uiStore
+  const sortBy = useUIStore(state => state.panelState.build?.sortBy);
+  
+  return (
+    <div onMouseEnter={() => setHoveredItem(id)} onMouseLeave={() => setHoveredItem(null)}>
+      {/* ... */}
+    </div>
+  );
 }
 ```
 
@@ -267,6 +288,30 @@ const useKingdomStore = create(
 
 ---
 
+### Immer Middleware (Safe Nested Updates)
+
+**Purpose:** Enable immutable-style updates for complex nested state (e.g., `panelState.build.selectedItem`).
+
+**Location:** Built into Zustand
+
+**Setup:**
+```js
+import { immer } from 'zustand/middleware/immer';
+
+const useUIStore = create(
+  immer((set) => ({
+    panelState: { build: { sortBy: 'time' } },
+    setPanelState: (panelName, updates) => set((state) => {
+      state.panelState[panelName] = { ...state.panelState[panelName], ...updates };
+    }),
+  }))
+);
+```
+
+**Benefit:** Avoids spread operator pain; mutations inside `set()` are automatically frozen and converted to immutable updates.
+
+---
+
 ### Persistence Middleware (UI State Only)
 
 **Purpose:** Restore UI state (active panel, sort preferences) across page reloads.
@@ -276,12 +321,13 @@ const useKingdomStore = create(
 **Setup:**
 ```js
 import { persist } from 'zustand/middleware';
+import { immer } from 'zustand/middleware/immer';
 
 const useUIStore = create(
   persist(
-    (set) => ({
+    immer((set) => ({
       // ... store definition
-    }),
+    })),
     {
       name: 'ui-state',
       storage: localStorage,
@@ -295,6 +341,8 @@ const useUIStore = create(
 ```
 
 **Note:** Do NOT persist kingdom metrics (gold, mana, etc.) — always fetch fresh from server.
+
+**Middleware order:** Immer first, then persist (immer wraps the create function).
 
 ---
 
@@ -315,6 +363,64 @@ socket.on('kingdom-update', (data) => {
 ```
 
 **Benefit:** Direct state dispatch, no intermediate manager object, cleaner event handling.
+
+**⚠️ Batching optimization (Important):**
+
+If socket.io sends frequent updates (e.g., per-troop updates in combat), batching prevents cascading renders:
+
+```js
+// ❌ Bad: Each socket event → immediate store update → re-render
+socket.on('combat-update', (data) => {
+  useKingdomStore.getState().setTroop(data.troopId, data.hp);  // 50 events = 50 re-renders
+});
+
+// ✅ Good: Batch updates over a time window
+const batchQueue = [];
+const BATCH_INTERVAL = 50;  // ms
+
+socket.on('combat-update', (data) => {
+  batchQueue.push(data);
+});
+
+setInterval(() => {
+  if (batchQueue.length > 0) {
+    const batchedUpdates = batchQueue.splice(0);
+    useKingdomStore.getState().updateMetrics({
+      troops: batchedUpdates,  // Apply all at once
+    });
+  }
+}, BATCH_INTERVAL);
+```
+
+---
+
+### Initial Hydration (First Page Load)
+
+**Problem:** Stores are empty until server data arrives.
+
+**Solution 1: Eager hydration from initial payload**
+```js
+// On app start, before rendering React
+const initialData = window.__INITIAL_STATE__;  // From server
+useKingdomStore.setState(initialData.kingdom);
+useUIStore.setState(initialData.ui);
+
+// Then render React
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+```
+
+**Solution 2: Loading state while hydrating**
+```jsx
+function App() {
+  const kingdom = useKingdomStore(state => state.gold);
+  const isReady = kingdom > 0;  // Simple check: if gold is 0, we haven't hydrated yet
+  
+  if (!isReady) return <LoadingScreen />;
+  return <GameUI />;
+}
+```
+
+**Recommendation:** Use Solution 1 (eager hydration from server) to avoid loading screens.
 
 ---
 
@@ -472,6 +578,69 @@ describe('GoldDisplay', () => {
 - Use React DevTools Profiler to compare render counts
 - Measure component update times with/without Zustand
 - Verify selector optimization works (components shouldn't re-render on unrelated state changes)
+- **Render count test example:**
+  ```js
+  describe('selector optimization', () => {
+    it('GoldDisplay does not re-render when mana changes', () => {
+      let renderCount = 0;
+      function GoldDisplay() {
+        renderCount++;
+        const gold = useKingdomStore(state => state.gold);
+        return <div>{gold}</div>;
+      }
+      
+      render(<GoldDisplay />);
+      expect(renderCount).toBe(1);
+      
+      useKingdomStore.setState({ mana: 50 });  // Change unrelated state
+      expect(renderCount).toBe(1);  // No additional render
+      
+      useKingdomStore.setState({ gold: 1000 });  // Change related state
+      expect(renderCount).toBe(2);  // Now it re-renders
+    });
+  });
+  ```
+
+---
+
+## TypeScript Integration (Optional, Recommended)
+
+If codebase is using TypeScript (or considering it), this is an ideal time to add types to stores.
+
+**Store type definitions:**
+```ts
+// stores/kingdomStore.ts
+import { create } from 'zustand';
+
+interface KingdomState {
+  gold: number;
+  mana: number;
+  population: number;
+  happiness: number;
+  // ... other fields
+  
+  updateMetrics: (updates: Partial<KingdomState>) => void;
+  updateFromServer: (data: Partial<KingdomState>) => void;
+}
+
+export const useKingdomStore = create<KingdomState>((set) => ({
+  gold: 0,
+  mana: 0,
+  population: 0,
+  happiness: 50,
+  
+  updateMetrics: (updates) => set(updates),
+  updateFromServer: (data) => set(data),
+}));
+```
+
+**Benefits:**
+- IDE autocomplete for store selectors
+- Type safety prevents typos in property names
+- Future refactors caught at compile time
+- Better documentation (types are self-documenting)
+
+**Migration strategy:** Can add types incrementally (Phase 1 for core stores, expand as needed).
 
 ---
 
@@ -493,26 +662,44 @@ useKingdomStore.subscribe(() => {
 // ✅ Good: Only re-render if gold changed
 const gold = useKingdomStore(state => state.gold);
 
-// ✅ Good: Only re-render if any resource changed
-const resources = useKingdomStore(state => ({
+// ✅ Good: Only re-render if any resource changed (but use useShallow!)
+const resources = useShallow(state => ({
   gold: state.gold,
   mana: state.mana,
   food: state.food,
 }));
 
 // ✅ Good: Memoized computed selector (prevent re-renders due to object identity)
+import { useShallow } from 'zustand/react';
 const richness = useShallow(state => ({
   isRich: state.gold > 10000,
   isManaFull: state.mana > 500,
 }));
 ```
 
+**Why useShallow matters:**
+- Selectors that return objects create a new reference every time
+- React sees new reference → re-render, even if values are identical
+- `useShallow` uses shallow equality check: re-renders only if object contents changed
+
 ### Best Practices
 
 1. **One selector per field** when possible (prevents re-renders from unrelated fields)
-2. **Batch related fields** into one selector if they're always read together
-3. **Memoize computed selectors** using `useShallow` or custom memoization
+2. **Batch related fields** into one selector if they're always read together, **use `useShallow`**
+3. **Memoize computed selectors** using `useShallow` for object returns
 4. **Avoid object spreads** inside selectors (creates new object reference every time)
+5. **Derived/computed values** (e.g., effective gold income) can be calculated in selectors or stored as derived state:
+   ```js
+   // Option A: Computed selector (calculated on every render)
+   const effectiveIncome = useKingdomStore(state => state.gold_income * state.happiness_mult);
+   
+   // Option B: Derived state in store (cached, updates only when dependencies change)
+   const useKingdomStore = create((set) => ({
+     gold_income: 100,
+     happiness_mult: 1.2,
+     effective_income: 120,  // Updated whenever gold_income or happiness_mult changes
+   }));
+   ```
 
 ---
 
@@ -520,17 +707,37 @@ const richness = useShallow(state => ({
 
 ### Safe Migration Approach
 
-1. **Keep GameStateManager for 1 PR cycle** while rolling out kingdomStore
-   - GameStateManager syncs from kingdomStore (one-way)
-   - If migration breaks, quick rollback possible
+1. **Keep GameStateManager during Phase 1** while rolling out kingdomStore
+   - GameStateManager syncs from kingdomStore (one-way sync; kingdomStore is source of truth)
+   - If migration breaks, quick rollback possible (revert to old panel code)
    
-2. **Gradual panel migration** (not big-bang)
+2. **Clear cutover per panel** (not big-bang)
+   - Migrate one panel, test, confirm it works
+   - Remove that panel's GameStateManager references
+   - Move to next panel
+   - This prevents "both managers fighting over state" bugs
+   
+3. **Gradual panel migration** (Phase 1 → Phase 2)
    - Migrate highest-traffic panels first (quick win, biggest impact)
    - If issues found, only one panel needs fixing, others still work
 
-3. **Feature flag for new stores** (optional)
+4. **Feature flag for new stores** (optional, recommended)
    - Use environment variable `USE_ZUSTAND_STORES=true`
-   - Can toggle back to GameStateManager if needed
+   - Can toggle back to GameStateManager if needed during testing
+
+### Per-Panel Cutover Checklist
+
+```
+[ ] Panel using Zustand selectors (all GameStateManager.subscribe removed)
+[ ] Socket.io events dispatch to Zustand stores
+[ ] Component re-renders verified in React DevTools
+[ ] localStorage/persistence working (if applicable)
+[ ] All GameStateManager.getState() calls removed from panel
+[ ] Smoke test passes
+[ ] Manual testing complete (all panel interactions work)
+[ ] Remove panel from GameStateManager fallback
+[ ] Move to next panel
+```
 
 ### Rollback Plan
 
@@ -555,8 +762,11 @@ git push
 | Components re-render more after migration | Medium | Performance regression | Use React DevTools Profiler to verify selectors work; add selector tests |
 | Panel state lost on migration | Low | UX regression (users lose sort order, etc.) | Implement persistence middleware; test localStorage |
 | Socket.io updates not reaching stores | Low | Stale data displayed | Add debug logging; test socket.io events with mock data |
+| Socket.io batching — multiple updates cause cascade | Medium | Re-render churn | Batch socket updates before dispatching to store (e.g., collect 50ms worth, then `updateMetrics()` once) |
 | Selectors too granular, fragmented state | Medium | Hard to reason about state | Document selector patterns; code review selectors carefully |
 | Team unfamiliar with Zustand | Medium | Slow onboarding, bugs | Write store README; do quick knowledge-share meeting |
+| Initial page load — stores not hydrated | Low | Empty/null state on first render | Ensure server payload hydrates stores before UI mounts (or use loading state) |
+| Both managers active during transition | Medium | Conflicting updates, bugs | Clear cutover per panel (migrate panel → remove old GameStateManager reference for that panel) |
 
 ---
 
