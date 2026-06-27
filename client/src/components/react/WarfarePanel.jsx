@@ -28,7 +28,7 @@ import {
   useResWarMachines,
   useDiscoveredKingdoms,
   useHappiness,
-  useMillitaryStore,
+  useMilitaryStore,
   useProfileStore,
   useEconomyStore,
   useResearchStore,
@@ -546,7 +546,7 @@ const WarfarePanel = () => {
     if (r.bullyMsg) rows.push(['⚠️ Penalty', r.bullyMsg]);
 
     if (result && Object.keys(result).length > 0) {
-      useMillitaryStore.setState((state) => ({
+      useMilitaryStore.setState((state) => ({
         troops: result.troops ? { ...state.troops, ...result.troops } : state.troops,
         wall_hp: result.wall_hp !== undefined ? result.wall_hp : state.wall_hp,
         troop_levels: result.troop_levels ? { ...state.troop_levels, ...result.troop_levels } : state.troop_levels,
