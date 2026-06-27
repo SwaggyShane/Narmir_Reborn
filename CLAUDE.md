@@ -44,7 +44,7 @@ Always create PRs with `draft: true`. No exceptions.
 
 ## Quality Checks — Required Before Every Commit
 
-Run all three. In order. Every time. No exceptions.
+Run all three. In order. Every time. **Exception: Documentation-only changes (*.md files only) skip lint + smoke tests — commit directly after sanity check.**
 
 ### 1. Lint
 
