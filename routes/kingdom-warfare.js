@@ -77,8 +77,9 @@ module.exports = function (db) {
     };
 
     // Consolidate 3 queries into 2: attacker + target with AI status
+    // Lock attacker kingdom to prevent concurrent attack race conditions
     const k = await db.get(
-      `SELECT k.* FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.player_id = ?`,
+      `SELECT k.* FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.player_id = ? FOR UPDATE`,
       [req.player.playerId],
     );
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -91,10 +92,11 @@ module.exports = function (db) {
     )
       return res.status(400).json({ error: "Send at least some troops" });
 
+    // Lock target kingdom to prevent concurrent attack race conditions
     const target = await db.get(
       `SELECT k.* FROM kingdoms k
        JOIN players p ON k.player_id = p.id
-       WHERE k.id = ?`,
+       WHERE k.id = ? FOR UPDATE`,
       [targetId],
     );
     if (!target)
@@ -394,7 +396,8 @@ module.exports = function (db) {
     const { spellId, targetId, obscure } = req.body;
     if (!spellId) return res.status(400).json({ error: "spellId required" });
 
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
+    // Lock kingdom to prevent concurrent spell cast race conditions
+    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE", [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -404,8 +407,9 @@ module.exports = function (db) {
     const isFriendlySpell = engine.SPELL_DEFS[spellId]?.effect === "friendly";
     let target = null;
     if (targetId && targetId != k.id) {
+      // Lock target kingdom to prevent concurrent spell race conditions
       target = await db.get(
-        "SELECT k.* FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.id = ?",
+        "SELECT k.* FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.id = ? FOR UPDATE",
         [targetId],
       );
       if (!target) return res.status(404).json({ error: "Target kingdom not found" });
