@@ -54,6 +54,8 @@ export {
   useResConstruction,
   useDiscoveredKingdoms,
   useTrainingAllocation,
+  useTax,
+  useTradeTargets,
 } from './economyStore';
 
 export {
