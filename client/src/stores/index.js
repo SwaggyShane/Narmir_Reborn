@@ -71,6 +71,20 @@ export {
   getUIState,
 } from './uiStore';
 
+export {
+  // Profile Store
+  useProfileStore,
+  usePlayerName,
+  useKingdomName,
+  useLevel,
+  useXp,
+  usePrestige,
+  useTurn,
+  useScore,
+  useRank,
+  useKingdomMetadata,
+} from './profileStore';
+
 /**
  * SOCKET.IO INTEGRATION
  *
