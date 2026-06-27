@@ -56,6 +56,11 @@ export {
   useTrainingAllocation,
   useTax,
   useTradeTargets,
+  useBankUpgrades,
+  useFarmUpgrades,
+  useGranaryUpgrades,
+  useMarketUpgrades,
+  useTavernUpgrades,
 } from './economyStore';
 
 export {

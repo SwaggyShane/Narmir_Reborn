@@ -91,6 +91,13 @@ export const useEconomyStore = create(
         bld_training: 0,
         bld_castles: 0,
 
+        // Upgrades
+        bank_upgrades: {},
+        farm_upgrades: {},
+        granary_upgrades: {},
+        market_upgrades: {},
+        tavern_upgrades: {},
+
         // Entity collections (normalized: byId/allIds)
         tradeRoutes: {
           byId: {},
@@ -140,6 +147,11 @@ export const useEconomyStore = create(
           if (data?.scaffolding_stored !== undefined) state.scaffolding_stored = data.scaffolding_stored;
           if (data?.discovered_kingdoms !== undefined) state.discovered_kingdoms = data.discovered_kingdoms;
           if (data?.targets !== undefined) state.targets = data.targets;
+          if (data?.bank_upgrades !== undefined) state.bank_upgrades = data.bank_upgrades;
+          if (data?.farm_upgrades !== undefined) state.farm_upgrades = data.farm_upgrades;
+          if (data?.granary_upgrades !== undefined) state.granary_upgrades = data.granary_upgrades;
+          if (data?.market_upgrades !== undefined) state.market_upgrades = data.market_upgrades;
+          if (data?.tavern_upgrades !== undefined) state.tavern_upgrades = data.tavern_upgrades;
           // Sync building counts
           Object.keys(data || {}).forEach((key) => {
             if (key.startsWith('bld_')) {
@@ -388,3 +400,14 @@ export const useTax = () => useEconomyStore((state) => state.tax ?? 42);
 
 // Trade targets (list of kingdoms for trading/alliances)
 export const useTradeTargets = () => useEconomyStore((state) => Array.isArray(state.targets) ? state.targets : []);
+
+// Upgrades
+export const useBankUpgrades = () => useEconomyStore((state) => state.bank_upgrades || {});
+
+export const useFarmUpgrades = () => useEconomyStore((state) => state.farm_upgrades || {});
+
+export const useGranaryUpgrades = () => useEconomyStore((state) => state.granary_upgrades || {});
+
+export const useMarketUpgrades = () => useEconomyStore((state) => state.market_upgrades || {});
+
+export const useTavernUpgrades = () => useEconomyStore((state) => state.tavern_upgrades || {});

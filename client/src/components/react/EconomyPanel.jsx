@@ -9,6 +9,14 @@ import {
   useRace,
   useGold,
   useBuildCount,
+  useFood,
+  useWeaponsStockpile,
+  useArmorStockpile,
+  useBankUpgrades,
+  useFarmUpgrades,
+  useGranaryUpgrades,
+  useMarketUpgrades,
+  useTavernUpgrades,
 } from '../../stores';
 
 import { fmt } from '../../utils/fmt.js';
@@ -38,6 +46,17 @@ const EconomyPanel = () => {
   const race = useRace();
   const gold = useGold();
   const vaults = useBuildCount('vaults');
+  const food = useFood();
+  const weaponsStockpile = useWeaponsStockpile();
+  const armorStockpile = useArmorStockpile();
+  const bldFarms = useBuildCount('farms');
+  const bldMarkets = useBuildCount('markets');
+  const bldTaverns = useBuildCount('taverns');
+  const bankUpgrades = useBankUpgrades();
+  const farmUpgrades = useFarmUpgrades();
+  const granaryUpgrades = useGranaryUpgrades();
+  const marketUpgrades = useMarketUpgrades();
+  const tavernUpgrades = useTavernUpgrades();
 
   const [econData, setEconData] = useState(null);
   const [receivedOffers, setReceivedOffers] = useState([]);
@@ -243,12 +262,14 @@ const EconomyPanel = () => {
   }, [loadTradeRoutes]);
 
   const setMaxTradeOfferQty = useCallback(() => {
-    const key = tradeOfferItem === 'weapons' ? 'weapons_stockpile'
-      : tradeOfferItem === 'armor' ? 'armor_stockpile'
-      : tradeOfferItem;
-    const val = Number(state?.[key] || 0);
+    let val = 0;
+    if (tradeOfferItem === 'weapons') {
+      val = weaponsStockpile;
+    } else if (tradeOfferItem === 'armor') {
+      val = armorStockpile;
+    }
     setTradeOfferQty(String(Math.max(0, val)));
-  }, [state, tradeOfferItem]);
+  }, [tradeOfferItem, weaponsStockpile, armorStockpile]);
 
   const setMaxMercCount = useCallback(() => {
     const price = MERC_COST[mercTier] || 50;
@@ -354,7 +375,7 @@ const EconomyPanel = () => {
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div className="card m-0">
             <div className="card-title mb-2.5">Farm overview</div>
-            <div className="trow"><span className="name">Farms</span><span className="count">{fmt(state?.bld_farms || 0)}</span></div>
+            <div className="trow"><span className="name">Farms</span><span className="count">{fmt(bldFarms || 0)}</span></div>
             <div className="trow"><span className="name">Worked farms</span><span className="count" style={{ color: 'var(--green)' }}>{fmt(econData?.workedFarms || 0)}</span></div>
             <div className="trow"><span className="name">Production</span><span className="count" style={{ color: 'var(--green)' }}>+{fmt(econData?.farmProduction || 0)}</span></div>
             <div className="trow"><span className="name">Consumption</span><span className="count" style={{ color: 'var(--red)' }}>-{fmt(econData?.foodConsumption || 0)}</span></div>
@@ -374,7 +395,7 @@ const EconomyPanel = () => {
             <UpgradesList
               category="farm"
               defs={FARM_UPGRADES}
-              owned={parseOwnedUpgrades(econData?.farm_upgrades)}
+              owned={parseOwnedUpgrades(farmUpgrades)}
               state={state || {}}
               onPurchased={(_, nextOwned) => syncUpgradeOwned('farm', nextOwned)}
             />
@@ -394,7 +415,7 @@ const EconomyPanel = () => {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
           <div className="card" style={{ margin: 0 }}>
             <div className="card-title !mb-2.5">Storage overview</div>
-            <div className="trow"><span className="name">Food stored</span><span className="count">{fmt(state?.food || 0)} bushels</span></div>
+            <div className="trow"><span className="name">Food stored</span><span className="count">{fmt(food || 0)} bushels</span></div>
             <div className="trow"><span className="name">Max storage</span><span className="count">{fmt(econData?.maxFoodStorage || 0)} bushels</span></div>
             <div className="trow" style={{ borderTop: '1px solid var(--border2)' }}>
               <span className="name">Spoilage / turn</span>
@@ -412,7 +433,7 @@ const EconomyPanel = () => {
             <UpgradesList
               category="granary"
               defs={GRANARY_UPGRADES}
-              owned={parseOwnedUpgrades(econData?.granary_upgrades)}
+              owned={parseOwnedUpgrades(granaryUpgrades)}
               state={state || {}}
               onPurchased={(_, nextOwned) => syncUpgradeOwned('granary', nextOwned)}
             />
@@ -434,7 +455,7 @@ const EconomyPanel = () => {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
           <div className="card" style={{ margin: 0 }}>
             <div className="card-title !mb-2.5">Market overview</div>
-            <div className="trow"><span className="name">Markets</span><span className="count">{fmt(state?.bld_markets || 0)}</span></div>
+            <div className="trow"><span className="name">Markets</span><span className="count">{fmt(bldMarkets || 0)}</span></div>
             <div className="trow"><span className="name">Market income/turn</span><span className="count" style={{ color: 'var(--gold)' }}>{fmt(econData?.marketIncome || 0)} GC</span></div>
             <div className="trow"><span className="name">Trade routes</span><span className="count">{fmt(econData?.activeTradeRouteCount || 0)}</span></div>
             <div className="trow">
@@ -449,7 +470,7 @@ const EconomyPanel = () => {
             <UpgradesList
               category="market"
               defs={MARKET_UPGRADES}
-              owned={parseOwnedUpgrades(econData?.market_upgrades)}
+              owned={parseOwnedUpgrades(marketUpgrades)}
               state={state || {}}
               onPurchased={(_, nextOwned) => syncUpgradeOwned('market', nextOwned)}
             />
@@ -588,14 +609,14 @@ const EconomyPanel = () => {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
           <div className="card" style={{ margin: 0 }}>
             <div className="card-title !mb-2.5">Tavern overview</div>
-            <div className="trow"><span className="name">Taverns</span><span className="count">{fmt(state?.bld_taverns || 0)}</span></div>
+            <div className="trow"><span className="name">Taverns</span><span className="count">{fmt(bldTaverns || 0)}</span></div>
           </div>
           <div className="card" style={{ margin: 0 }}>
             <div className="card-title !mb-2.5">Tavern upgrades</div>
             <UpgradesList
               category="tavern"
               defs={TAVERN_UPGRADES}
-              owned={parseOwnedUpgrades(econData?.tavern_upgrades)}
+              owned={parseOwnedUpgrades(tavernUpgrades)}
               state={state || {}}
               onPurchased={(_, nextOwned) => syncUpgradeOwned('tavern', nextOwned)}
             />
@@ -685,7 +706,7 @@ const EconomyPanel = () => {
               <UpgradesList
                 category="bank"
                 defs={BANK_UPGRADES}
-                owned={parseOwnedUpgrades(state?.bank_upgrades)}
+                owned={parseOwnedUpgrades(bankUpgrades)}
                 state={state || {}}
                 onPurchased={(_, nextOwned) => syncUpgradeOwned('bank', nextOwned)}
               />
