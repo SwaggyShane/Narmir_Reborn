@@ -47,14 +47,8 @@ export const useUIStore = create(
           },
         },
 
-        // ===== MODAL STATE =====
-        openModals: {
-          'confirm-attack': false,
-          'trade-dialog': false,
-          'settings': false,
-          'help': false,
-          'unit-info': false,
-        },
+        // ===== MODAL STATE (dynamic — any modal name can be used) =====
+        openModals: {},
 
         // ===== SEARCH/FILTER STATE (persisted) =====
         searchText: '',
@@ -137,30 +131,24 @@ export const useUIStore = create(
         // ===== MODAL MANAGEMENT =====
 
         /**
-         * toggleModal: Open/close modal by name
+         * toggleModal: Open/close modal by name (supports dynamic modals)
          */
         toggleModal: (modalName) => set((state) => {
-          if (state.openModals[modalName] !== undefined) {
-            state.openModals[modalName] = !state.openModals[modalName];
-          }
+          state.openModals[modalName] = !state.openModals[modalName];
         }),
 
         /**
-         * openModal: Explicitly open modal
+         * openModal: Explicitly open modal (supports dynamic modals)
          */
         openModal: (modalName) => set((state) => {
-          if (state.openModals[modalName] !== undefined) {
-            state.openModals[modalName] = true;
-          }
+          state.openModals[modalName] = true;
         }),
 
         /**
-         * closeModal: Explicitly close modal
+         * closeModal: Explicitly close modal (supports dynamic modals)
          */
         closeModal: (modalName) => set((state) => {
-          if (state.openModals[modalName] !== undefined) {
-            state.openModals[modalName] = false;
-          }
+          state.openModals[modalName] = false;
         }),
 
         /**

@@ -104,7 +104,7 @@ export const usePopulationStore = create(
          */
         triggerRebellion: (rebellionData) => set((state) => {
           state.rebellionActive = true;
-          state.rebellionTurnsRemaining = rebellionData.duration || 10;
+          state.rebellionTurnsRemaining = rebellionData?.duration || 10;
         }),
 
         /**

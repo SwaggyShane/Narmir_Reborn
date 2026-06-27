@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { devtools } from 'zustand/middleware';
-import { persist } from 'zustand/middleware';
 
 /**
  * Economy Store — Authoritative kingdom economy state
@@ -15,15 +14,16 @@ import { persist } from 'zustand/middleware';
  */
 
 export const useEconomyStore = create(
-  persist(
-    devtools(
-      immer((set, _get) => ({
+  devtools(
+    immer((set, _get) => ({
         // ===== AUTHORITATIVE STATE (from server) =====
         gold: 0,
         food: 0,
         mana: 0,
         mana_regen: 0.0,
         tax: 42,
+        gold_income: 0,  // Derived from buildings, updated via receiveTurnUpdate
+        food_balance: 0, // Derived from production - consumption
 
         // Market prices
         commodityPrices: {
@@ -48,12 +48,13 @@ export const useEconomyStore = create(
          * This is write-once-per-snapshot pattern for multiplayer safety
          */
         receiveServerSnapshot: (data) => set((state) => {
-          if (data.gold !== undefined) state.gold = data.gold;
-          if (data.food !== undefined) state.food = data.food;
-          if (data.mana !== undefined) state.mana = data.mana;
-          if (data.mana_regen !== undefined) state.mana_regen = data.mana_regen;
-          if (data.tax !== undefined) state.tax = data.tax;
-          if (data.commodityPrices) {
+          if (data?.gold !== undefined) state.gold = data.gold;
+          if (data?.food !== undefined) state.food = data.food;
+          if (data?.mana !== undefined) state.mana = data.mana;
+          if (data?.mana_regen !== undefined) state.mana_regen = data.mana_regen;
+          if (data?.tax !== undefined) state.tax = data.tax;
+          if (data?.gold_income !== undefined) state.gold_income = data.gold_income;
+          if (data?.commodityPrices) {
             Object.assign(state.commodityPrices, data.commodityPrices);
           }
         }),
@@ -81,10 +82,11 @@ export const useEconomyStore = create(
          * completeBuild: Building construction finished, deduct resources
          */
         completeBuild: (buildingData) => set((state) => {
-          if (buildingData.goldCost) {
+          if (!buildingData) return;
+          if (buildingData?.goldCost) {
             state.gold = Math.max(0, state.gold - buildingData.goldCost);
           }
-          if (buildingData.foodCost) {
+          if (buildingData?.foodCost) {
             state.food = Math.max(0, state.food - buildingData.foodCost);
           }
         }),
@@ -93,7 +95,8 @@ export const useEconomyStore = create(
          * finishResearch: Research discipline complete, consume mana
          */
         finishResearch: (researchData) => set((state) => {
-          if (researchData.manaCost) {
+          if (!researchData) return;
+          if (researchData?.manaCost) {
             state.mana = Math.max(0, state.mana - researchData.manaCost);
           }
         }),
@@ -102,13 +105,14 @@ export const useEconomyStore = create(
          * applyCombatResult: Combat resolution, resources gained/lost
          */
         applyCombatResult: (combatResult) => set((state) => {
-          if (combatResult.goldTransferred) {
-            state.gold += combatResult.goldTransferred;
+          if (!combatResult) return;
+          if (combatResult?.goldTransferred) {
+            state.gold = Math.max(0, state.gold + combatResult.goldTransferred);
           }
-          if (combatResult.foodTransferred) {
-            state.food += combatResult.foodTransferred;
+          if (combatResult?.foodTransferred) {
+            state.food = Math.max(0, state.food + combatResult.foodTransferred);
           }
-          if (combatResult.landTransferred) {
+          if (combatResult?.landTransferred) {
             // Land doesn't live here, but gold/food adjustments might occur
           }
         }),
@@ -117,8 +121,9 @@ export const useEconomyStore = create(
          * receiveTrade: Trade route completes, adjust gold/food
          */
         receiveTrade: (tradeData) => set((state) => {
-          state.gold += (tradeData.goldReceived || 0) - (tradeData.goldSent || 0);
-          state.food += (tradeData.foodReceived || 0) - (tradeData.foodSent || 0);
+          if (!tradeData) return;
+          state.gold = Math.max(0, state.gold + (tradeData.goldReceived || 0) - (tradeData.goldSent || 0));
+          state.food = Math.max(0, state.food + (tradeData.foodReceived || 0) - (tradeData.foodSent || 0));
         }),
 
         /**
@@ -163,15 +168,7 @@ export const useEconomyStore = create(
         }),
       })),
       { name: 'economy' }
-    ),
-    {
-      name: 'economy-store',
-      partialize: (_state) => ({
-        // Persist UI state only; authoritative state always fetched from server
-        // Currently no UI state in economy store; but pattern in place for future
-      }),
-    }
-  )
+    )
 );
 
 /**

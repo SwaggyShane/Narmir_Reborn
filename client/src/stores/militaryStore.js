@@ -230,7 +230,7 @@ export const useArmies = () =>
 export const useSelectedArmy = () =>
   useMillitaryStore((state) => {
     if (!state.selectedArmy) return null;
-    return state.armies.byId[state.selectedArmy];
+    return state.armies.byId[state.selectedArmy] || null;
   });
 
 export const usePendingAttack = () => useMillitaryStore((state) => state.pendingAttack);
