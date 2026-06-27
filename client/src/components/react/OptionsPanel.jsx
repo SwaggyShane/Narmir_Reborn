@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import clsx from 'clsx';
 import { apiCall } from '../../utils/api.mjs';
 import { toast } from '../../utils/toast.js';
-import { useGameState } from '../../hooks/useGameState';
 import { useNavLayout } from '../../hooks/useNavLayout.js';
 import { useColorTheme } from '../../hooks/useColorTheme.js';
 import { COLOR_THEMES } from '../../utils/colorTheme.js';
@@ -212,7 +211,6 @@ function PortraitUploadCard() {
   const [preview, setPreview] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState('');
-  const { state, applyUpdates } = useGameState();
   const hasCustom = !!state?.customPortrait;
 
   const handleUpload = async (e) => {
