@@ -31,7 +31,7 @@ import {
   useResDefenseMagic,
   useResEntertainment,
   useResConstruction,
-  useMana,
+  useEconomyMana as useMana,
 } from '../../stores';
 
 const RACE_CARD_DATA = {
