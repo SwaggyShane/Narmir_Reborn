@@ -1,9 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
-import { useGameState } from '../../hooks/useGameState';
 import { repairMojibake } from '../../utils/repairMojibake';
-import { applyGameMutation } from '../../utils/gameMutations.js';
 import { toast as showToast } from '../../utils/toast.js';
 import { openRaceLore } from '../../utils/openRaceLore.js';
 import RaceLorePortrait from './RaceLorePortrait.jsx';
@@ -20,6 +18,7 @@ import {
   useEngineers as useMilitaryEngineers,
   useWarMachines,
   useLadders,
+  useThralls,
   useWeaponsStockpile,
   useArmorStockpile,
   useResEconomy,
@@ -34,6 +33,8 @@ import {
   useEconomyMana as useMana,
   useScribes,
   useResearchers,
+  useCustomPortrait,
+  useProfileStore,
 } from '../../stores';
 
 const RACE_CARD_DATA = {
@@ -135,7 +136,6 @@ const toRaceLabel = (value) =>
     .replace(/\b\w/g, (m) => m.toUpperCase());
 
 const StatusPanel = () => {
-  const { state } = useGameState();
   const [taxDisplayValue, setTaxDisplayValue] = useState('');
   const [taxValue, setTaxValue] = useState('');
   const race = useRace();
@@ -149,10 +149,13 @@ const StatusPanel = () => {
   const engineers = useMilitaryEngineers();
   const warMachines = useWarMachines();
   const ladders = useLadders();
+  const thralls = useThralls();
   const weaponsStockpile = useWeaponsStockpile();
   const armorStockpile = useArmorStockpile();
   const scribes = useScribes();
   const researchers = useResearchers();
+  const customPortrait = useCustomPortrait();
+  const gender = useProfileStore((state) => state.gender || 'male');
   const mana = useMana();
   const resEconomy = useResEconomy();
   const resWeapons = useResWeapons();
@@ -189,10 +192,8 @@ const StatusPanel = () => {
         showToast(result.error, 'error');
         return;
       }
-      if (applyGameMutation) {
-        applyGameMutation(result, { reason: 'tax-update' });
-      } else if (result.updates) {
-        applyGameMutation(result.updates, { reason: 'tax-update' });
+      if (result.tax !== undefined) {
+        useProfileStore.setState({ tax: result.tax });
       }
       showToast('Tax rate locked', 'success');
     } catch (err) {
@@ -225,8 +226,6 @@ const StatusPanel = () => {
     };
   }, [raceKey, race]);
 
-  const customPortrait = state?.customPortrait;
-  const gender = state?.gender || 'male';
   const raceForPortrait = raceKey || toRaceKey(race);
   const portraitUrl = customPortrait || (RACE_PORTRAITS[raceForPortrait] ? `/race/${raceForPortrait}_${gender}.webp` : '');
   const isVampire = raceForPortrait === 'vampire';
@@ -348,7 +347,7 @@ const StatusPanel = () => {
 
           <div id="s-row-thralls" className={clsx('grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5', !isVampire && 'hidden')}>
             <span className="text-[13px] text-text" id="s-label-thralls">Thralls</span>
-            <span className="text-[13px] font-semibold text-right text-text" id="s-thralls">{(state?.thralls ?? 0).toLocaleString()}</span>
+            <span className="text-[13px] font-semibold text-right text-text" id="s-thralls">{thralls.toLocaleString()}</span>
             <span className="text-center text-[11px] font-semibold" id="s-lv-thralls">Lv {troopLevels?.thralls?.level || 1}</span>
             <span className="badge text-center text-[9px]" style={{ background: '#444' }}>Defense</span>
           </div>
