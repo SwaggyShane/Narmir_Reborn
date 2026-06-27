@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import { apiCall } from '../../utils/api.mjs';
 import { fmt } from "../../utils/fmt";
 import { toast } from '../../utils/toast.js';
-import { useRace, useTroopLevels, useTrainingAllocation, useBuildTraining, useWeaponsStockpile, useArmorStockpile, useEngineers, useScribes, useResearchers, useProfileStore, useEconomyStore, useMillitaryStore, useResearchStore, usePopulationStore } from '../../stores';
+import { useRace, useTroopLevels, useTrainingAllocation, useBuildTraining, useWeaponsStockpile, useArmorStockpile, useEngineers, useScribes, useResearchers, useFighters, useRangers, useClerics, useMages, useThieves, useNinjas, useEconomyStore } from '../../stores';
 
 const TROOP_TYPES = ['fighters', 'rangers', 'clerics', 'mages', 'thieves', 'ninjas'];
 
@@ -27,39 +27,14 @@ const TrainingPanel = () => {
   const engineers = useEngineers();
   const scribes = useScribes();
   const researchers = useResearchers();
-  const fighters = useMillitaryStore((state) => state.troops.fighters);
-  const rangers = useMillitaryStore((state) => state.troops.rangers);
-  const clerics = useMillitaryStore((state) => state.troops.clerics);
-  const mages = useMillitaryStore((state) => state.troops.mages);
-  const thieves = useMillitaryStore((state) => state.troops.thieves);
-  const ninjas = useMillitaryStore((state) => state.troops.ninjas);
+  const fighters = useFighters();
+  const rangers = useRangers();
+  const clerics = useClerics();
+  const mages = useMages();
+  const thieves = useThieves();
+  const ninjas = useNinjas();
   const [trainingAllocations, setTrainingAllocations] = useState({});
   const isVampire = race === 'vampire';
-
-  const syncKingdomData = useCallback((kingdomData) => {
-    if (!kingdomData || Object.keys(kingdomData).length === 0) return;
-    useProfileStore.setState((state) => {
-      if (kingdomData.turns_stored !== undefined) state.turns_stored = kingdomData.turns_stored;
-    });
-    useEconomyStore.setState((state) => {
-      if (kingdomData.food !== undefined) state.food = kingdomData.food;
-      if (kingdomData.morale !== undefined) state.morale = kingdomData.morale;
-      if (kingdomData.gold !== undefined) state.gold = kingdomData.gold;
-    });
-    useMillitaryStore.setState((state) => {
-      if (kingdomData.troops) Object.assign(state.troops, kingdomData.troops);
-      if (kingdomData.weapons_stockpile !== undefined) state.weapons_stockpile = kingdomData.weapons_stockpile;
-      if (kingdomData.armor_stockpile !== undefined) state.armor_stockpile = kingdomData.armor_stockpile;
-      if (kingdomData.troop_levels) Object.assign(state.troop_levels, kingdomData.troop_levels);
-    });
-    useResearchStore.setState((state) => {
-      if (kingdomData.mana !== undefined) state.mana = kingdomData.mana;
-      if (kingdomData.mana_regen !== undefined) state.mana_regen = kingdomData.mana_regen;
-    });
-    usePopulationStore.setState((state) => {
-      if (kingdomData.population !== undefined) state.population = kingdomData.population;
-    });
-  }, []);
 
   const getTroopLevel = (unit) => troopLevels?.[unit] || { level: 1, xp: 0 };
   const getTroopXpView = (unit) => {
@@ -134,7 +109,7 @@ const TrainingPanel = () => {
       body: { allocation: alloc },
     });
     if (result.error) return toast(result.error, 'error');
-    useProfileStore.setState((state) => {
+    useEconomyStore.setState((state) => {
       state.training_allocation = alloc;
     });
     toast('Training allocation saved', 'success');
@@ -147,7 +122,7 @@ const TrainingPanel = () => {
       body: { allocation: {} },
     });
     if (result.error) return toast(result.error, 'error');
-    useProfileStore.setState((state) => {
+    useEconomyStore.setState((state) => {
       state.training_allocation = {};
     });
     toast('All training released', 'success');
