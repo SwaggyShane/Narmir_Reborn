@@ -41,6 +41,7 @@ export const useMillitaryStore = create(
         ladders: 0,
         thralls: 0,
         weapons_stockpile: 0,
+        armor_stockpile: 0,
 
         // Troop levels (for engineer-related bonuses in combat)
         troop_levels: {
@@ -95,6 +96,9 @@ export const useMillitaryStore = create(
           }
           if (data.weapons_stockpile !== undefined) {
             state.weapons_stockpile = data.weapons_stockpile;
+          }
+          if (data.armor_stockpile !== undefined) {
+            state.armor_stockpile = data.armor_stockpile;
           }
           if (data.troop_levels) {
             Object.assign(state.troop_levels, data.troop_levels);
@@ -284,5 +288,7 @@ export const useLadders = () => useMillitaryStore((state) => state.ladders || 0)
 export const useThralls = () => useMillitaryStore((state) => state.thralls || 0);
 
 export const useWeaponsStockpile = () => useMillitaryStore((state) => state.weapons_stockpile || 0);
+
+export const useArmorStockpile = () => useMillitaryStore((state) => state.armor_stockpile || 0);
 
 export const useTroopLevels = () => useMillitaryStore((state) => state.troop_levels || {});

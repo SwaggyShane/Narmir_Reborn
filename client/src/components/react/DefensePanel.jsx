@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
-import { useGameState, useGameMutationEvents } from '../../hooks/useGameState';
 import { fmt } from "../../utils/fmt";
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import { toast } from '../../utils/toast.js';
@@ -17,7 +16,6 @@ import {
 } from '../../utils/defenseData.js';
 
 const DefensePanel = () => {
-  const { state } = useGameState();
   const [upgradeOwned, setUpgradeOwned] = useState({
     wall: {},
     tower_def: {},

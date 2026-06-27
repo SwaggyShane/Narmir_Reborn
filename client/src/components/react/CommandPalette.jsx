@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useGameActions } from '../../hooks/useGameActions.js';
-import { useGameState } from '../../hooks/useGameState.js';
 import { switchTab } from '../../utils/switchTab.js';
 import { PANEL_META } from '../../utils/panelMeta.js';
 
@@ -10,7 +9,6 @@ const CommandPalette = () => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [highlight, setHighlight] = useState(0);
-  const { state } = useGameState();
   const { takeTurn, loading } = useGameActions();
 
   const filtered = useMemo(() => {

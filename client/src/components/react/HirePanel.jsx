@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiCall } from '../../utils/api';
-import { useGameState } from '../../hooks/useGameState';
 import { fmt } from "../../utils/fmt";
 import { applyGameMutation } from '../../utils/gameMutations.js';
+import { useRace, useGold, usePopulation, useFighters, useRangers, useMages, useClerics, useNinjas, useThieves, useMilitaryEngineers as useEngineers } from '../../stores';
 
 const UNIT_ROWS = [
   {
@@ -77,35 +77,46 @@ const initialQuantities = UNIT_ROWS.reduce((acc, row) => {
 }, {});
 
 const HirePanel = () => {
-  const { state } = useGameState();
+  const race = useRace();
+  const population = usePopulation();
+  const gold = useGold();
+  const fighters = useFighters();
+  const rangers = useRangers();
+  const mages = useMages();
+  const clerics = useClerics();
+  const ninjas = useNinjas();
+  const thieves = useThieves();
+  const engineers = useEngineers();
   const [quantities, setQuantities] = useState(initialQuantities);
 
-  const isVampire = state?.race === 'vampire';
-  const unitCount = (key) => fmt(state?.[key]);
+  const isVampire = race === 'vampire';
+  const troopCounts = useMemo(() => ({
+    fighters, rangers, mages, clerics, ninjas, thieves, engineers,
+  }), [fighters, rangers, mages, clerics, ninjas, thieves, engineers]);
+  const unitCount = (key) => fmt(troopCounts[key]);
 
   const hiredUnits = useMemo(
     () =>
       UNIT_ROWS.reduce((sum, row) => {
         if (row.key === 'clerics' && isVampire) return sum;
-        return sum + (Number(state?.[row.key] || 0));
+        return sum + (Number(troopCounts[row.key] || 0));
       }, 0),
-    [isVampire, state],
+    [isVampire, troopCounts],
   );
 
   const freePopulation = useMemo(() => {
-    const totalPop = Number(state?.population ?? state?.pop ?? 0);
     return Math.max(
       0,
-      totalPop - hiredUnits,
+      Number(population) - hiredUnits,
     );
-  }, [hiredUnits, state?.population, state?.pop]);
+  }, [hiredUnits, population]);
 
   const setMaxValue = useCallback((row) => {
-    const maxByGold = Math.floor(Number(state?.gold || 0) / Number(row.price || 1));
+    const maxByGold = Math.floor(Number(gold) / Number(row.price || 1));
     const maxByPop = row.key === 'clerics' && isVampire ? 0 : freePopulation;
     const max = Math.max(0, Math.min(maxByGold, maxByPop));
     setQuantities((prev) => ({ ...prev, [row.key]: String(max) }));
-  }, [freePopulation, isVampire, state?.gold]);
+  }, [freePopulation, isVampire, gold]);
 
   const hire = useCallback(async (row) => {
     const amount = Math.max(0, parseInt(quantities[row.key], 10) || 0);
@@ -195,8 +206,8 @@ const HirePanel = () => {
           </div>
         </div>
         <div className="flex flex-wrap gap-3 text-[12px] text-[var(--text2)]">
-          <span>Gold: <strong id="hire-strip-gold" className="text-[var(--gold)]">{fmt(state?.gold)}</strong></span>
-          <span>Population: <strong id="hire-pop" className="text-[var(--gold)]">{fmt(state?.population ?? state?.pop)}</strong></span>
+          <span>Gold: <strong id="hire-strip-gold" className="text-[var(--gold)]">{fmt(gold)}</strong></span>
+          <span>Population: <strong id="hire-pop" className="text-[var(--gold)]">{fmt(population)}</strong></span>
         </div>
       </div>
 
@@ -238,7 +249,7 @@ const HirePanel = () => {
         </div>
 
         {UNIT_ROWS.map((row) => {
-          if (row.hideWhenRace && row.hideWhenRace === state?.race) return null;
+          if (row.hideWhenRace && row.hideWhenRace === race) return null;
           return (
             <div className="hire-row" key={row.key}>
               <div>

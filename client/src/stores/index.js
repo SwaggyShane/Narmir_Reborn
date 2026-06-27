@@ -38,6 +38,7 @@ export {
   useCoal,
   useBlueprintsStored,
   useScaffoldingStored,
+  useBuildTraining,
   useBuildCount,
   useBuildingCounts,
   useResWeapons,
@@ -45,6 +46,7 @@ export {
   useResAttackMagic,
   useResWarMachines,
   useDiscoveredKingdoms,
+  useTrainingAllocation,
 } from './economyStore';
 
 export {
@@ -68,6 +70,7 @@ export {
   useLadders,
   useThralls,
   useWeaponsStockpile,
+  useArmorStockpile,
   useTroopLevels,
 } from './militaryStore';
 
@@ -122,6 +125,10 @@ export {
   useEngineerLevel,
   useEngineerXp,
   useEngineerXpNeeded,
+  useIsAdmin,
+  useTurnsStored,
+  useUsername,
+  useRankingsCache,
 } from './profileStore';
 
 /**

@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { cleanMessageText, toast } from '../../utils/toast.js';
 import { apiCall } from '../../utils/api';
-import { useGameMutationEvents, useGameState } from '../../hooks/useGameState';
 import { repairMojibake } from '../../utils/repairMojibake';
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import { AppEvent } from '../../utils/appEvents.js';
@@ -67,7 +66,6 @@ const normalizeRewards = (rewards) => {
 };
 
 const ExplorationPanel = () => {
-  const { state, applyUpdates } = useGameState();
   const [inventory, setInventory] = useState({});
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [searchRangers, setSearchRangers] = useState(0);

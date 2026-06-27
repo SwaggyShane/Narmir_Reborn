@@ -10,6 +10,7 @@ import { showHeroXpModal } from '../../utils/showHeroXpModal.js';
 import { toast as showToast } from '../../utils/toast.js';
 import { switchTab } from '../../utils/switchTab.js';
 import EmptyState from './EmptyState.jsx';
+import { useBuildCount } from '../../stores';
 
 
 function heroXpForLevelJS(level) {
@@ -18,6 +19,7 @@ function heroXpForLevelJS(level) {
 
 const HeroesPanel = () => {
   const { state, applyUpdates } = useGameState();
+  const castles = useBuildCount('castles');
   const [heroes, setHeroes] = useState([]);
   const [heroClasses, setHeroClasses] = useState({});
   const [allHeroClasses, setAllHeroClasses] = useState({});
@@ -59,12 +61,11 @@ const HeroesPanel = () => {
   const recruitableClasses = useMemo(() => Object.entries(heroClasses || {}), [heroClasses]);
 
   const maxHeroes = useMemo(() => {
-    const castles = Number(state?.bld_castles || 0);
     if (castles >= 50) return 3;
     if (castles >= 10) return 2;
     if (castles >= 1) return 1;
     return 0;
-  }, [state?.bld_castles]);
+  }, [castles]);
 
   const handleRefresh = () => setRefreshTick((n) => n + 1);
 

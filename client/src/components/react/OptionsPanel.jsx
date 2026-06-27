@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import clsx from 'clsx';
 import { apiCall } from '../../utils/api.mjs';
 import { toast } from '../../utils/toast.js';
-import { useGameState } from '../../hooks/useGameState';
 import { useNavLayout } from '../../hooks/useNavLayout.js';
 import { useColorTheme } from '../../hooks/useColorTheme.js';
 import { COLOR_THEMES } from '../../utils/colorTheme.js';
 import { showBugReportModal } from './BugReportModal.jsx';
+import { useGameState } from '../../hooks/useGameState';
 
 const API = (path, opts = {}) => {
   const token = localStorage.getItem('narmir_token');
@@ -208,97 +208,6 @@ const DiscordSection = () => {
   );
 };
 
-function PortraitUploadCard() {
-  const [preview, setPreview] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [msg, setMsg] = useState('');
-  const { state, applyUpdates } = useGameState();
-  const hasCustom = !!state?.customPortrait;
-
-  const handleUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const objectUrl = URL.createObjectURL(file);
-    setPreview(objectUrl);
-    setUploading(true);
-    setMsg('');
-    const form = new FormData();
-    form.append('portrait', file);
-    try {
-      const res = await fetch('/api/kingdom/portrait', {
-        method: 'POST',
-        credentials: 'include',
-        body: form,
-      });
-      const data = await res.json();
-      if (data.ok) {
-        applyUpdates({ customPortrait: data.portraitUrl }, { reason: 'portrait-upload' });
-        setMsg('Portrait updated.');
-      } else {
-        URL.revokeObjectURL(objectUrl);
-        setPreview(null);
-        setMsg(data.error || 'Upload failed.');
-      }
-    } catch {
-      URL.revokeObjectURL(objectUrl);
-      setPreview(null);
-      setMsg('Upload failed.');
-    }
-    setUploading(false);
-  };
-
-  const handleRemove = async () => {
-    setUploading(true);
-    setMsg('');
-    try {
-      const res = await fetch('/api/kingdom/portrait', { method: 'DELETE', credentials: 'include' });
-      const data = await res.json();
-      if (data.ok) {
-        applyUpdates({ customPortrait: null }, { reason: 'portrait-remove' });
-        setPreview(null);
-        setMsg('Portrait removed.');
-      } else {
-        setMsg(data.error || 'Failed to remove.');
-      }
-    } catch {
-      setMsg('Failed to remove.');
-    }
-    setUploading(false);
-  };
-
-  return (
-    <section className={cardShell}>
-      <div className="card-title">Custom portrait</div>
-      <div className="mb-3 flex items-start gap-3">
-        {(preview || hasCustom) && (
-          <img
-            src={preview || state?.customPortrait}
-            alt="Custom portrait"
-            className="h-16 w-16 rounded-md border border-[var(--border)] object-cover"
-          />
-        )}
-        <div className="text-[13px] leading-6 text-[var(--text2)]">
-          Upload a custom portrait that appears next to your kingdom name. Max 5MB - JPG, PNG, GIF or WebP.
-          <br />
-          <span className="text-[12px] text-[var(--text3)]">Recommended: 360x480px | 3:4 ratio (portrait orientation)</span>
-        </div>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        <label className="base-btn variant-accent cursor-pointer bg-[var(--accent1)] px-4 py-2 text-[12px]">
-          {uploading ? 'Uploading…' : 'Upload portrait'}
-          <input type="file" accept="image/*" className="hidden" onChange={handleUpload} disabled={uploading} />
-        </label>
-        {hasCustom && (
-          <button className="base-btn variant-red px-4 py-2 text-[12px]" onClick={handleRemove} disabled={uploading}>
-            Remove
-          </button>
-        )}
-      </div>
-      {msg && <div className="mt-2 text-[12px] text-[var(--text2)]">{msg}</div>}
-    </section>
-  );
-}
-
 const OptionsPanel = () => {
   const { applyUpdates } = useGameState();
   const { layout: navLayout, setLayout: setNavLayout } = useNavLayout();
@@ -370,6 +279,97 @@ const OptionsPanel = () => {
     if (result.error) return toast(result.error, 'error');
     applyUpdates({ description }, { reason: 'kingdom-description' });
     toast('Kingdom bio saved', 'success');
+  };
+
+  const PortraitUploadCard = () => {
+    const [preview, setPreview] = useState(null);
+    const [uploading, setUploading] = useState(false);
+    const [msg, setMsg] = useState('');
+    const { state } = useGameState();
+    const hasCustom = !!state?.customPortrait;
+
+    const handleUpload = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const objectUrl = URL.createObjectURL(file);
+      setPreview(objectUrl);
+      setUploading(true);
+      setMsg('');
+      const form = new FormData();
+      form.append('portrait', file);
+      try {
+        const res = await fetch('/api/kingdom/portrait', {
+          method: 'POST',
+          credentials: 'include',
+          body: form,
+        });
+        const data = await res.json();
+        if (data.ok) {
+          applyUpdates({ customPortrait: data.portraitUrl }, { reason: 'portrait-upload' });
+          setMsg('Portrait updated.');
+        } else {
+          URL.revokeObjectURL(objectUrl);
+          setPreview(null);
+          setMsg(data.error || 'Upload failed.');
+        }
+      } catch {
+        URL.revokeObjectURL(objectUrl);
+        setPreview(null);
+        setMsg('Upload failed.');
+      }
+      setUploading(false);
+    };
+
+    const handleRemove = async () => {
+      setUploading(true);
+      setMsg('');
+      try {
+        const res = await fetch('/api/kingdom/portrait', { method: 'DELETE', credentials: 'include' });
+        const data = await res.json();
+        if (data.ok) {
+          applyUpdates({ customPortrait: null }, { reason: 'portrait-remove' });
+          setPreview(null);
+          setMsg('Portrait removed.');
+        } else {
+          setMsg(data.error || 'Failed to remove.');
+        }
+      } catch {
+        setMsg('Failed to remove.');
+      }
+      setUploading(false);
+    };
+
+    return (
+      <section className={cardShell}>
+        <div className="card-title">Custom portrait</div>
+        <div className="mb-3 flex items-start gap-3">
+          {(preview || hasCustom) && (
+            <img
+              src={preview || state?.customPortrait}
+              alt="Custom portrait"
+              className="h-16 w-16 rounded-md border border-[var(--border)] object-cover"
+            />
+          )}
+          <div className="text-[13px] leading-6 text-[var(--text2)]">
+            Upload a custom portrait that appears next to your kingdom name. Max 5MB - JPG, PNG, GIF or WebP.
+            <br />
+            <span className="text-[12px] text-[var(--text3)]">Recommended: 360x480px | 3:4 ratio (portrait orientation)</span>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <label className="base-btn variant-accent cursor-pointer bg-[var(--accent1)] px-4 py-2 text-[12px]">
+            {uploading ? 'Uploading…' : 'Upload portrait'}
+            <input type="file" accept="image/*" className="hidden" onChange={handleUpload} disabled={uploading} />
+          </label>
+          {hasCustom && (
+            <button className="base-btn variant-red px-4 py-2 text-[12px]" onClick={handleRemove} disabled={uploading}>
+              Remove
+            </button>
+          )}
+        </div>
+        {msg && <div className="mt-2 text-[12px] text-[var(--text2)]">{msg}</div>}
+      </section>
+    );
   };
 
   return (

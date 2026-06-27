@@ -50,6 +50,7 @@ export const useEconomyStore = create(
         // Build system
         build_allocation: {},
         build_progress: {},
+        training_allocation: {},
         land: 0,
         built_land: 0,
         hammers_stored: 0,
@@ -115,6 +116,7 @@ export const useEconomyStore = create(
           }
           if (data?.build_allocation !== undefined) state.build_allocation = data.build_allocation;
           if (data?.build_progress !== undefined) state.build_progress = data.build_progress;
+          if (data?.training_allocation !== undefined) state.training_allocation = data.training_allocation;
           if (data?.land !== undefined) state.land = data.land;
           if (data?.built_land !== undefined) state.built_land = data.built_land;
           if (data?.hammers_stored !== undefined) state.hammers_stored = data.hammers_stored;
@@ -279,6 +281,8 @@ export const useBuildAllocation = () => useEconomyStore((state) => state.build_a
 
 export const useBuildProgress = () => useEconomyStore((state) => state.build_progress);
 
+export const useTrainingAllocation = () => useEconomyStore((state) => state.training_allocation);
+
 export const useLand = () => useEconomyStore((state) => state.land);
 
 export const useBuiltLand = () => useEconomyStore((state) => state.built_land);
@@ -305,6 +309,8 @@ export const useCoal = () => useEconomyStore((state) => state.coal);
 export const useBlueprintsStored = () => useEconomyStore((state) => state.blueprints_stored);
 
 export const useScaffoldingStored = () => useEconomyStore((state) => state.scaffolding_stored);
+
+export const useBuildTraining = () => useEconomyStore((state) => state.bld_training || 0);
 
 // Building count selector (dynamic field access: bld_farms, bld_barracks, etc.)
 export const useBuildCount = (buildingId) =>

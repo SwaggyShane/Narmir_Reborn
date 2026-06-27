@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import clsx from 'clsx';
-import { useGameState } from '../../hooks/useGameState';
 import { apiCall } from '../../utils/api.mjs';
 import { fmt } from "../../utils/fmt";
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import { toast } from '../../utils/toast.js';
+import { useRace, useTroopLevels, useTrainingAllocation, useBuildTraining, useWeaponsStockpile, useArmorStockpile } from '../../stores';
+import { useGameState } from '../../hooks/useGameState';
 
 const TROOP_TYPES = ['fighters', 'rangers', 'clerics', 'mages', 'thieves', 'ninjas'];
 
@@ -19,11 +20,17 @@ const RACE_TRAINING_BONUS = {
 };
 
 const TrainingPanel = () => {
+  const race = useRace();
+  const troopLevels = useTroopLevels();
+  const trainingAllocationData = useTrainingAllocation();
+  const buildTraining = useBuildTraining();
+  const weaponsStockpile = useWeaponsStockpile();
+  const armorStockpile = useArmorStockpile();
   const { state } = useGameState();
   const [trainingAllocations, setTrainingAllocations] = useState({});
-  const isVampire = state?.race === 'vampire';
+  const isVampire = race === 'vampire';
 
-  const getTroopLevel = (unit) => state?.troop_levels?.[unit] || { level: 1, xp: 0 };
+  const getTroopLevel = (unit) => troopLevels?.[unit] || { level: 1, xp: 0 };
   const getTroopXpView = (unit) => {
     const data = getTroopLevel(unit);
     const xpNeeded = 100;
@@ -46,11 +53,11 @@ const TrainingPanel = () => {
   const getAllocatedTraining = () => TROOP_TYPES.reduce((sum, unit) => sum + getTrainingValue(unit), 0);
 
   const loadTrainingAllocation = () => {
-    const alloc = typeof state?.training_allocation === 'string'
+    const alloc = typeof trainingAllocationData === 'string'
       ? (() => {
-        try { return JSON.parse(state.training_allocation || '{}'); } catch { return {}; }
+        try { return JSON.parse(trainingAllocationData || '{}'); } catch { return {}; }
       })()
-      : (state?.training_allocation || {});
+      : (trainingAllocationData || {});
     const nextAllocations = {};
     TROOP_TYPES.forEach((unit) => {
       nextAllocations[unit] = alloc[unit] || 0;
@@ -59,7 +66,7 @@ const TrainingPanel = () => {
   };
 
   const setTrainingMax = (unit) => {
-    const capacity = (state?.bld_training || 0) * 100;
+    const capacity = (buildTraining || 0) * 100;
     const allocated = getAllocatedTraining();
     const current = Number(getTrainingValue(unit)) || 0;
     const available = capacity - allocated + current;
@@ -67,7 +74,7 @@ const TrainingPanel = () => {
   };
 
   const distributeTrainingEvenly = () => {
-    const capacity = (state?.bld_training || 0) * 100;
+    const capacity = (buildTraining || 0) * 100;
     const each = Math.floor(capacity / TROOP_TYPES.length);
     const nextAllocations = {};
     TROOP_TYPES.forEach((unit) => {
@@ -84,7 +91,7 @@ const TrainingPanel = () => {
       alloc[unit] = val;
       total += val;
     });
-    const capacity = (state?.bld_training || 0) * 100;
+    const capacity = (buildTraining || 0) * 100;
     if (total > capacity) {
       toast(`Allocated ${fmt(total)} but only have ${fmt(capacity)} training capacity`, 'error');
       return;
@@ -112,9 +119,9 @@ const TrainingPanel = () => {
   useEffect(() => {
     loadTrainingAllocation();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(state?.training_allocation || {})]);
+  }, [JSON.stringify(trainingAllocationData || {})]);
 
-  const capacity = (state?.bld_training || 0) * 100;
+  const capacity = (buildTraining || 0) * 100;
   const totalAllocated = getAllocatedTraining();
 
   const engineerXpView = getTroopXpView('engineers');
@@ -173,13 +180,13 @@ const TrainingPanel = () => {
               Troop Training
             </div>
             <div className="text-[12px] text-[var(--text3)]">
-              {'Training fields: '}<span className="text-text">{fmt(state?.bld_training || 0)}</span>
+              {'Training fields: '}<span className="text-text">{fmt(buildTraining || 0)}</span>
               {' - Capacity: '}
               <span style={{ color: totalAllocated > capacity ? 'var(--red)' : 'var(--gold)' }}>
                 {fmt(capacity)}
               </span>
-              {' troops/turn - Weapons: '}<span className="text-text">{fmt(state?.weapons_stockpile || 0)}</span>
-              {' - Armor: '}<span className="text-text">{fmt(state?.armor_stockpile || 0)}</span>
+              {' troops/turn - Weapons: '}<span className="text-text">{fmt(weaponsStockpile)}</span>
+              {' - Armor: '}<span className="text-text">{fmt(armorStockpile)}</span>
             </div>
           </div>
           <div className="flex gap-2">

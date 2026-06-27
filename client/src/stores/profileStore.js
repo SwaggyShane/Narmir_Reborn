@@ -37,6 +37,11 @@ export const useProfileStore = create(
       engineer_xp: 0,
       engineer_xp_needed: 1000,
 
+      // Admin and system
+      isAdmin: false,
+      turns_stored: 0,
+      rankingsCache: [],
+
       // ===== ACTIONS =====
 
       /**
@@ -63,6 +68,9 @@ export const useProfileStore = create(
         if (data?.engineer_level !== undefined) state.engineer_level = data.engineer_level;
         if (data?.engineer_xp !== undefined) state.engineer_xp = data.engineer_xp;
         if (data?.engineer_xp_needed !== undefined) state.engineer_xp_needed = data.engineer_xp_needed;
+        if (data?.isAdmin !== undefined) state.isAdmin = data.isAdmin;
+        if (data?.turns_stored !== undefined) state.turns_stored = data.turns_stored;
+        if (data?.rankingsCache !== undefined) state.rankingsCache = data.rankingsCache;
       }),
 
       /**
@@ -121,3 +129,11 @@ export const useEngineerLevel = () => useProfileStore((state) => state.engineer_
 export const useEngineerXp = () => useProfileStore((state) => state.engineer_xp);
 
 export const useEngineerXpNeeded = () => useProfileStore((state) => state.engineer_xp_needed);
+
+export const useIsAdmin = () => useProfileStore((state) => state.isAdmin);
+
+export const useTurnsStored = () => useProfileStore((state) => state.turns_stored);
+
+export const useUsername = () => useProfileStore((state) => state.username);
+
+export const useRankingsCache = () => useProfileStore((state) => state.rankingsCache);

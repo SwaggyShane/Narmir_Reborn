@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
-import { useGameState } from '../../hooks/useGameState';
 import { repairMojibake } from '../../utils/repairMojibake';
 import { fmt } from "../../utils/fmt";
 import { toast as showToast } from '../../utils/toast.js';
@@ -24,7 +23,6 @@ const RACE_ICONS = {
 };
 
 const RankingsPanel = () => {
-  const { state, setState } = useGameState();
   const [activeTab, setActiveTab] = useState('kingdoms');
   const [search, setSearch] = useState('');
   const [kingdomRows, setKingdomRows] = useState([]);

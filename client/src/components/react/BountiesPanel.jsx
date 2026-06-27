@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiCall } from '../../utils/api';
-import { useGameState } from '../../hooks/useGameState';
 import { fmt } from "../../utils/fmt";
 import { toast } from '../../utils/toast.js';
 import { registerSetBountyTarget } from '../../utils/bountyTarget.js';
+import { useRankingsCache, useKingdomId, useGold } from '../../stores';
 
 const REFRESH_INTERVAL_MS = 60 * 1000;
 const panelShell = 'panel';
@@ -19,7 +19,9 @@ const BountiesPanel = () => {
   const [selectedTarget, setSelectedTarget] = useState('');
   const [amount, setAmount] = useState('');
   const [placing, setPlacing] = useState(false);
-  const { state } = useGameState();
+  const rankingsCache = useRankingsCache();
+  const kingdomId = useKingdomId();
+  const gold = useGold();
 
   const fetchBounties = useCallback(async () => {
     try {
@@ -38,10 +40,9 @@ const BountiesPanel = () => {
   }, []);
 
   const loadTargets = useCallback(() => {
-    const rankings = Array.isArray(state?.rankingsCache) ? state.rankingsCache : [];
-    const myId = state?.kingdomId;
-    setTargets(rankings.filter(r => r.id !== myId).slice(0, 50));
-  }, [state?.kingdomId, state?.rankingsCache]);
+    const rankings = Array.isArray(rankingsCache) ? rankingsCache : [];
+    setTargets(rankings.filter(r => r.id !== kingdomId).slice(0, 50));
+  }, [kingdomId, rankingsCache]);
 
   useEffect(() => {
     fetchBounties();
@@ -60,7 +61,7 @@ const BountiesPanel = () => {
     const parsedAmount = parseInt(amount, 10);
     if (!selectedTarget) return toast('Select a target kingdom first', 'error');
     if (!parsedAmount || parsedAmount < 1000) return toast('Minimum bounty is 1,000 GC', 'error');
-    if (parsedAmount > (state?.gold || 0)) return toast('Not enough gold', 'error');
+    if (parsedAmount > gold) return toast('Not enough gold', 'error');
 
     setPlacing(true);
     try {

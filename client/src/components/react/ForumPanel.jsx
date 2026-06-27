@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import ForumSection from '../forum/ForumSection';
 import { fetchApi } from '../../utils/api';
-import { useGameState } from '../../hooks/useGameState';
 
 const ForumPanel = () => {
-  const { state } = useGameState();
   const [user, setUser] = useState(null);
 
   useEffect(() => {
