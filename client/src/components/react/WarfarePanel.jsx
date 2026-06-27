@@ -546,19 +546,21 @@ const WarfarePanel = () => {
     if (r.bullyMsg) rows.push(['⚠️ Penalty', r.bullyMsg]);
 
     if (result && Object.keys(result).length > 0) {
-      useMillitaryStore.setState((state) => {
-        if (result.troops) Object.assign(state.troops, result.troops);
-        if (result.wall_hp !== undefined) state.wall_hp = result.wall_hp;
-        if (result.troop_levels) Object.assign(state.troop_levels, result.troop_levels);
-      });
-      useEconomyStore.setState((state) => {
-        if (result.food !== undefined) state.food = result.food;
-        if (result.gold !== undefined) state.gold = result.gold;
-        if (result.morale !== undefined) state.happiness = result.morale;
-      });
-      useProfileStore.setState((state) => {
-        if (result.turns_stored !== undefined) state.turns_stored = result.turns_stored;
-      });
+      useMillitaryStore.setState((state) => ({
+        troops: result.troops ? { ...state.troops, ...result.troops } : state.troops,
+        wall_hp: result.wall_hp !== undefined ? result.wall_hp : state.wall_hp,
+        troop_levels: result.troop_levels ? { ...state.troop_levels, ...result.troop_levels } : state.troop_levels,
+      }));
+      useEconomyStore.setState((state) => ({
+        food: result.food !== undefined ? result.food : state.food,
+        gold: result.gold !== undefined ? result.gold : state.gold,
+      }));
+      if (result.morale !== undefined) {
+        usePopulationStore.setState({ happiness: result.morale });
+      }
+      if (result.turns_stored !== undefined) {
+        useProfileStore.setState({ turns_stored: result.turns_stored });
+      }
     }
 
     setBattleReport({
