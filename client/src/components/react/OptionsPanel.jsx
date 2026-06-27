@@ -6,7 +6,7 @@ import { useNavLayout } from '../../hooks/useNavLayout.js';
 import { useColorTheme } from '../../hooks/useColorTheme.js';
 import { COLOR_THEMES } from '../../utils/colorTheme.js';
 import { showBugReportModal } from './BugReportModal.jsx';
-import { useGameState } from '../../hooks/useGameState';
+import { useProfileStore, useDescription, useCustomPortrait, usePrestige } from '../../stores';
 
 const API = (path, opts = {}) => {
   const token = localStorage.getItem('narmir_token');
@@ -209,7 +209,8 @@ const DiscordSection = () => {
 };
 
 const OptionsPanel = () => {
-  const { applyUpdates } = useGameState();
+  const storedDescription = useDescription();
+  const prestige = usePrestige();
   const { layout: navLayout, setLayout: setNavLayout } = useNavLayout();
   const { theme: colorTheme, setTheme: setColorTheme } = useColorTheme();
   const [skipIntro, setSkipIntro] = useState(() => {
@@ -218,7 +219,11 @@ const OptionsPanel = () => {
   const [skipGlitch, setSkipGlitch] = useState(() => {
     try { return localStorage.getItem('narmir_skip_glitch') === '1'; } catch { return false; }
   });
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState(storedDescription);
+
+  useEffect(() => {
+    setDescription(storedDescription);
+  }, [storedDescription]);
 
   const updateNavLayout = (e) => {
     setNavLayout(e.target.value);
@@ -265,7 +270,7 @@ const OptionsPanel = () => {
     const result = await apiCall('/api/kingdom/rebirth', { method: 'POST', body: {} });
     if (result.error) return toast(result.error, 'error');
     if (result.prestige_level !== undefined) {
-      applyUpdates({ prestige_level: result.prestige_level }, { reason: 'rebirth' });
+      useProfileStore.getState().updatePrestigeLevel(result.prestige_level);
     }
     toast('The kingdom has transcended. Reloading...', 'success');
     window.location.reload();
@@ -277,7 +282,7 @@ const OptionsPanel = () => {
       body: { description },
     });
     if (result.error) return toast(result.error, 'error');
-    applyUpdates({ description }, { reason: 'kingdom-description' });
+    useProfileStore.getState().updateDescription(description);
     toast('Kingdom bio saved', 'success');
   };
 
@@ -285,8 +290,8 @@ const OptionsPanel = () => {
     const [preview, setPreview] = useState(null);
     const [uploading, setUploading] = useState(false);
     const [msg, setMsg] = useState('');
-    const { state } = useGameState();
-    const hasCustom = !!state?.customPortrait;
+    const customPortrait = useCustomPortrait();
+    const hasCustom = !!customPortrait;
 
     const handleUpload = async (e) => {
       const file = e.target.files[0];
@@ -305,7 +310,7 @@ const OptionsPanel = () => {
         });
         const data = await res.json();
         if (data.ok) {
-          applyUpdates({ customPortrait: data.portraitUrl }, { reason: 'portrait-upload' });
+          useProfileStore.getState().updateCustomPortrait(data.portraitUrl);
           setMsg('Portrait updated.');
         } else {
           URL.revokeObjectURL(objectUrl);
@@ -327,7 +332,7 @@ const OptionsPanel = () => {
         const res = await fetch('/api/kingdom/portrait', { method: 'DELETE', credentials: 'include' });
         const data = await res.json();
         if (data.ok) {
-          applyUpdates({ customPortrait: null }, { reason: 'portrait-remove' });
+          useProfileStore.getState().updateCustomPortrait(null);
           setPreview(null);
           setMsg('Portrait removed.');
         } else {
@@ -345,7 +350,7 @@ const OptionsPanel = () => {
         <div className="mb-3 flex items-start gap-3">
           {(preview || hasCustom) && (
             <img
-              src={preview || state?.customPortrait}
+              src={preview || customPortrait}
               alt="Custom portrait"
               className="h-16 w-16 rounded-md border border-[var(--border)] object-cover"
             />

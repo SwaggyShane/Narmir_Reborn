@@ -140,6 +140,8 @@ export {
   useTurnsStored,
   useUsername,
   useRankingsCache,
+  useDescription,
+  useCustomPortrait,
 } from './profileStore';
 
 /**
