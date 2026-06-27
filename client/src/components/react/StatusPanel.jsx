@@ -32,6 +32,8 @@ import {
   useResEntertainment,
   useResConstruction,
   useEconomyMana as useMana,
+  useScribes,
+  useResearchers,
 } from '../../stores';
 
 const RACE_CARD_DATA = {
@@ -149,6 +151,8 @@ const StatusPanel = () => {
   const ladders = useLadders();
   const weaponsStockpile = useWeaponsStockpile();
   const armorStockpile = useArmorStockpile();
+  const scribes = useScribes();
+  const researchers = useResearchers();
   const mana = useMana();
   const resEconomy = useResEconomy();
   const resWeapons = useResWeapons();
@@ -379,14 +383,14 @@ const StatusPanel = () => {
 
           <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5">
             <span className="text-[13px] text-text" id="s-label-scribes">Scribes</span>
-            <span className="text-[13px] font-semibold text-right text-text" id="s-scribes">{(state?.scribes ?? 0).toLocaleString()}</span>
+            <span className="text-[13px] font-semibold text-right text-text" id="s-scribes">{scribes.toLocaleString()}</span>
             <span className="text-center text-[11px] text-text3" id="s-lv-scribes">Lv {Number(troopLevels.scribes?.level || 1)}</span>
             <span className="badge badge-blue text-center text-[9px]">Library</span>
           </div>
 
           <div className="grid [grid-template-columns:100px_1fr_52px_52px] gap-1 items-center py-1 px-0 border-b border-white/5">
             <span className="text-[13px] text-text" id="s-label-researchers">Researchers</span>
-            <span className="text-[13px] font-semibold text-right text-text" id="s-researchers">{(state?.researchers ?? 0).toLocaleString()}</span>
+            <span className="text-[13px] font-semibold text-right text-text" id="s-researchers">{researchers.toLocaleString()}</span>
             <span className="text-center text-[11px] text-text3" id="s-lv-researchers">Lv {Number(troopLevels.researchers?.level || 1)}</span>
             <span className="badge badge-blue text-center text-[9px]">Study</span>
           </div>
