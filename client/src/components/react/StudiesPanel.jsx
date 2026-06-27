@@ -1,7 +1,6 @@
 import clsx from 'clsx';
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useActivePanel } from '../../hooks/useActivePanel';
-import { useGameState, useGameMutationEvents } from '../../hooks/useGameState';
 import { toast } from '../../utils/toast.js';
 import UpgradesList from './UpgradesList.jsx';
 import {
@@ -24,7 +23,6 @@ const StudiesPanel = () => {
   const spellbookInputRef = useRef(null);
   const schoolInputRef = useRef(null);
   const { activePanel } = useActivePanel();
-  const { state, applyUpdates } = useGameState();
 
   const fetchStudiesData = useCallback(async () => {
     try {

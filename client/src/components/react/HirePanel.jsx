@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiCall } from '../../utils/api';
-import { useGameState } from '../../hooks/useGameState';
 import { fmt } from "../../utils/fmt";
 import { applyGameMutation } from '../../utils/gameMutations.js';
 
@@ -77,7 +76,6 @@ const initialQuantities = UNIT_ROWS.reduce((acc, row) => {
 }, {});
 
 const HirePanel = () => {
-  const { state } = useGameState();
   const [quantities, setQuantities] = useState(initialQuantities);
 
   const isVampire = state?.race === 'vampire';

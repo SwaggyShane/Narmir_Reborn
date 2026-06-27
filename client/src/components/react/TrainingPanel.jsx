@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import clsx from 'clsx';
-import { useGameState } from '../../hooks/useGameState';
 import { apiCall } from '../../utils/api.mjs';
 import { fmt } from "../../utils/fmt";
 import { applyGameMutation } from '../../utils/gameMutations.js';
@@ -19,7 +18,6 @@ const RACE_TRAINING_BONUS = {
 };
 
 const TrainingPanel = () => {
-  const { state } = useGameState();
   const [trainingAllocations, setTrainingAllocations] = useState({});
   const isVampire = state?.race === 'vampire';
 
