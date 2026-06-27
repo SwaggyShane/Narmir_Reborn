@@ -1,7 +1,7 @@
 # Narmir Reborn — Unified Development Roadmap
 
-**Status:** Alpha phase (ongoing) — Tracks A–D complete; E1–E2 fixed; E3 deferred (await discord.js v15); Track F.3 consolidation complete (PR #606–#608); F.4 in progress  
-**Last updated:** 2026-06-27  
+**Status:** Alpha phase (ongoing) — Tracks A–D complete; E1–E2 fixed; E3 deferred (await discord.js v15); Track F.3 consolidation complete (PR #606–#608); F.4 Phase 1–2C complete (PR #609–#611); Phase 2D underway  
+**Last updated:** 2026-06-27 (F4 Phase 2C complete, tracking Phase 2D–4)  
 **Single source of truth** for planning, replacing ALPHA_ROADMAP + AdminRoadmap + MAINTENANCE (see **Related Documents**)
 
 ---
@@ -228,20 +228,40 @@ Link updated doc to this roadmap; clarify resolved vs. open items.
 
 ## Track F — Architecture Debt (P4, post-cutover)
 
-**Status:** 🟡 **IN PROGRESS** — F3 consolidation phase complete (PR #606–#608); F4 Phase 1–2A underway
+**Status:** 🟡 **IN PROGRESS** — F3 consolidation complete (PR #606–#608); F4 Phase 1–2C complete (PR #609–#611); Phase 2D–4 underway
 
-From MAINTENANCE.md recommended order:
+### F4 Decomposition Progress
+
+**Goal:** Extract 6,242-line `engine.js` into focused, testable modules across 4 phases.
+
+| Phase | Functions Extracted | Modules Created | Status | PR |
+|-------|-------------------|-----------------|--------|-----|
+| **Phase 1A** | achievements, scoring | `game/lib/achievements.js` | ✅ | #609 |
+| **Phase 1B** | combat helpers, formatting | `game/lib/combat-helpers.js` | ✅ | #609 |
+| **Phase 2A** | happiness logging (DB) | `game/lib/happiness-logging.js` | ✅ | #609 |
+| **Phase 2B** | expedition utilities, transitions | `game/lib/expeditions.js` | ✅ | #610 |
+| **Phase 2C** | rebellion, prestige, trade raids, alliance defense | `game/lib/special-events.js` | ✅ | #611 |
+| **Phase 2D** | combat wrappers (~1,260 lines) | `game/lib/combat-wrappers.js` | ⏳ Next |
+| **Phase 3A** | building & research modules | Split from engine.js | ⏳ Pending |
+| **Phase 3B** | gameplay module | Split from engine.js | ⏳ Pending |
+| **Phase 4** | processTurn orchestration | Thin coordinator | ⏳ Pending |
+
+**Architecture:** Pure functions extracted first; medium-risk functions with state mutations second; large orchestrators last.
+
+---
+
+### Other F-track items
 
 | ID | Work | Notes | Timeline | Status |
 |----|------|-------|----------|--------|
-| **F1** | Express global error handler; audit silent `catch {}` | Medium priority | Post-cutover | ⏳ Pending |
+| **F1** | Express global error handler; audit silent `catch {}` | Audit complete; no critical issues found | ✅ | ✅ **DONE** (PR #610) |
 | **F2** | Combat V2 decision | Complete or remove; requires design sign-off | Post-cutover | ⏳ Pending |
 | **F3** | Module consolidation & architecture foundation | ✅ Phase 1: data-transformations extraction (PR #606)<br/>✅ Phase 2: timestamp consolidation (PR #607)<br/>✅ Phase 3: architecture documentation + mobile hardening (PR #608) | Now | ✅ **DONE** |
-| **F4** | `engine.js` decomposition | Long horizon (6,242 lines); depends on F3 foundation | Post-cutover | ⏳ Pending |
-| **F5** | `GameStateManager` → React Context | Incremental per panel; align with frontend tests | Post-cutover | ⏳ Pending |
-| **F6** | Frontend component tests (Vitest + RTL) | Start with shell nav + `panelMeta` | Post-cutover | ⏳ Pending |
-| **F7** | Numeric range validation (troops, builds, research) | Prevents balance exploits | Post-cutover | ⏳ Pending |
-| **F8** | `kingdom.js` split → `build`, `warfare`, `economy`, `research` modules | Incremental refactor; enabled by F3 foundation | Post-cutover | ⏳ Pending |
+| **F4** | `engine.js` decomposition | 4 phases; Phase 1–2C complete; depends on F3 foundation | Now | 🟡 **IN PROGRESS** |
+| **F5** | `GameStateManager` → React Context | Incremental per panel; align with frontend tests | Post-F4 | ⏳ Pending |
+| **F6** | Frontend component tests (Vitest + RTL) | Start with shell nav + `panelMeta` | Post-F4 | ⏳ Pending |
+| **F7** | Numeric range validation (troops, builds, research) | Prevents balance exploits | Post-F4 | ⏳ Pending |
+| **F8** | `kingdom.js` split → `build`, `warfare`, `economy`, `research` modules | Incremental refactor; enabled by F3 foundation | Post-F4 | ⏳ Pending |
 
 ---
 
@@ -345,7 +365,7 @@ Per `CLAUDE.md`:
 | **7** | **Admin Ph0–6a** React admin soft cutover | — | ✅ Done (PR #589) |
 | **8** | **Mobile UI** Responsive refinements | — | ✅ Done (PR #596–#598) |
 | **9** | **F3 Consolidation** Module architecture & timestamps | — | ✅ Done (PR #606–#608) |
-| **10** | **F4 Phase 1–4** `engine.js` decomposition | — | 🟡 In progress (Phases 1–2A done) |
+| **10** | **F4 Phase 1–2C** `engine.js` decomposition (Phase 1–2C complete) | — | 🟡 In progress (Phase 2C: PR #611; Phase 2D–4 pending) |
 | **11** | **C3** Portal CSS cleanup | — | ⏳ After F4 |
 | **12** | **Admin Ph6b** Hard cutover (with verification matrix ✅) | — | ⏳ When ready |
 | **13** | **M1** MAINTENANCE refresh | — | ⏳ After F4 completes |
@@ -371,5 +391,6 @@ Per `CLAUDE.md`:
 
 | Version | Date | Change |
 |---------|------|--------|
+| 1.1 | 2026-06-27 | F4 Phase 1–2C completion update: achievements, combat-helpers, happiness-logging, expeditions, special-events modules extracted; Phase 2D (combat wrappers) pending |
 | 1.0 | 2026-06-26 | Unified ALPHA_ROADMAP + AdminRoadmap + MAINTENANCE into single source of truth; added Tailwind consolidation preventative plan |
 
