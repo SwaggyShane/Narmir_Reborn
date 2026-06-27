@@ -26,7 +26,7 @@ const HeroesPanel = () => {
   const [refreshTick, setRefreshTick] = useState(0);
 
   const syncKingdomData = useCallback((kingdomData) => {
-    if (!kingdomData) return;
+    if (!kingdomData || Object.keys(kingdomData).length === 0) return;
     useProfileStore.getState().receiveServerSnapshot(kingdomData);
     useEconomyStore.getState().receiveServerSnapshot(kingdomData);
     useMillitaryStore.getState().receiveServerSnapshot(kingdomData);
