@@ -57,7 +57,11 @@ Direct imports across this boundary are not possible due to build system constra
 - **Server canonical:** game/lib/timestamp.js (CommonJS)
 - **Client mirror:** client/src/utils/timestamp.js (ES modules)
 
-Both implement identical logic. When the server version changes, the client version must be updated to stay in sync (and vice versa).
+Both implement identical transformation logic. When the server version changes, the client version must be updated to stay in sync — **except for locale/timezone settings**, which are context-dependent:
+- **Server:** Always uses `'en-US'` + `'America/New_York'` for consistency across environments and logs
+- **Client:** Uses browser's default locale/timezone so users see times in their own timezone
+
+The sync requirement applies to: input validation (whitespace trim), date parsing logic, format templates. The timezone difference is intentional and documented.
 
 ### 2. Consolidating Data Transformations
 

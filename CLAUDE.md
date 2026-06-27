@@ -222,6 +222,27 @@ Example of a bad suggestion that was applied: removing `style={{ display: 'none'
 
 ---
 
+## Post-Merge Housekeeping — No Exceptions
+
+After every PR merge to main:
+
+1. **Update ROADMAP.md** — Mark completed work, update status lines, move sprint items to ✅ Done
+   - Commit message: `docs: Update ROADMAP — <track/phase> complete`
+   - Create a draft PR immediately for the roadmap update
+   - Merge when CI passes
+
+2. **Delete the feature branch** — Clean up merged branches to keep repo tidy
+   ```bash
+   git push -d origin <branch-name>
+   git branch -d <branch-name>
+   ```
+   - If remote deletion fails (permissions), note it but do not block progress
+   - Local deletion should always succeed
+
+**Why:** Prevents stale branches cluttering the repo; keeps roadmap in sync with actual work so future sessions know what's done.
+
+---
+
 ## Notes
 
 - The pre-commit hook in `.git/hooks/pre-commit` enforces lint on every commit.
