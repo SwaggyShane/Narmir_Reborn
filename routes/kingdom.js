@@ -8,6 +8,7 @@ const config = require("../game/config");
 const { requireAuth, requireCsrfToken } = require("./middleware");
 const { progressGoal, generateGoals, claimGoal } = require('../game/goals');
 const { safeJsonParse, devLog } = require('../utils/helpers');
+const { validateTroopAmount, validateResearchAmount, validateAllocationObject } = require('../utils/numeric-validation');
 const { getKingdomAttunements } = require('../game/fragment-attunements');
 const fragmentBonusManager = require("../game/fragment-bonus-manager");
 const attunementManager = require('../game/attunement-manager');
@@ -259,31 +260,17 @@ module.exports = function (db) {
 
   router.post("/research-allocation", requireAuth, requireCsrfToken, async (req, res) => {
     const { allocation } = req.body;
-    if (!allocation || typeof allocation !== "object")
-      return res.status(400).json({ error: "allocation object required" });
 
-    // Validate allocation keys (whitelist valid research types)
-    const validKeys = new Set(['spellbook', 'school_spellbook']);
-    let totalAllocated = 0;
-
-    for (const [key, value] of Object.entries(allocation)) {
-      // Whitelist validation: reject unknown keys
-      if (!validKeys.has(key)) {
-        return res.status(400).json({ error: `Invalid allocation key: ${key}` });
-      }
-
-      // Type and range validation: ensure non-negative integers
-      const numVal = Number(value);
-      if (!Number.isInteger(numVal) || numVal < 0) {
-        return res.status(400).json({ error: `Allocation values must be non-negative integers (got ${value})` });
-      }
-
-      totalAllocated += numVal;
-    }
-
-    // Sanity check: prevent unreasonable allocations (max 10k researchers)
-    if (totalAllocated > 10000) {
-      return res.status(400).json({ error: "Allocation exceeds maximum of 10000" });
+    // Validate allocation using utility (whitelist valid research types, max 10k total)
+    const validKeys = ['spellbook', 'school_spellbook'];
+    const allocValidation = validateAllocationObject(allocation, {
+      validKeys,
+      maxPerItem: 10000,
+      maxTotal: 10000,
+      fieldName: 'allocation',
+    });
+    if (!allocValidation.valid) {
+      return res.status(400).json({ error: allocValidation.error });
     }
 
     const k = await db.get("SELECT id FROM kingdoms WHERE player_id = ?", [
@@ -292,7 +279,7 @@ module.exports = function (db) {
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
 
     await db.run("UPDATE kingdoms SET research_allocation = ? WHERE id = ?", [
-      JSON.stringify(allocation),
+      JSON.stringify(allocValidation.values),
       k.id,
     ]);
     res.json({ ok: true });
@@ -792,13 +779,20 @@ module.exports = function (db) {
   // â”€â”€ Hire units â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   router.post("/hire", requireAuth, requireCsrfToken, async (req, res) => {
     const { unit, amount } = req.body;
+
+    // Validate troop amount
+    const amountValidation = validateTroopAmount(amount, { fieldName: 'amount' });
+    if (!amountValidation.valid) {
+      return res.status(400).json({ error: amountValidation.error });
+    }
+
     const k = await db.get(`SELECT ${KINGDOM_HIRE} FROM kingdoms WHERE player_id = ?`, [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
 
     // Apply hire updates immediately without consuming a turn
-    const hireResult = engine.hireUnits(k, unit, Number(amount));
+    const hireResult = engine.hireUnits(k, unit, amountValidation.value);
     if (hireResult.error)
       return res.status(400).json({ error: hireResult.error });
 
@@ -820,6 +814,13 @@ module.exports = function (db) {
   // â”€â”€ Research â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   router.post("/research", requireAuth, requireCsrfToken, async (req, res) => {
     const { discipline, researchers } = req.body;
+
+    // Validate researcher amount
+    const researchValidation = validateResearchAmount(researchers, { fieldName: 'researchers' });
+    if (!researchValidation.valid) {
+      return res.status(400).json({ error: researchValidation.error });
+    }
+
     try {
       // Wrap in transaction with row-level lock to prevent concurrent conflicts
       await db.run("BEGIN TRANSACTION");
@@ -845,7 +846,7 @@ module.exports = function (db) {
       const resResult = engine.studyDiscipline(
         kAfterTurn,
         discipline,
-        Number(researchers),
+        researchValidation.value,
       );
       if (resResult.error) {
         await db.run("ROLLBACK");
@@ -895,8 +896,17 @@ module.exports = function (db) {
   // â”€â”€ Queue buildings â€” charges gold, no turn cost â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   router.post("/build-queue", requireAuth, requireCsrfToken, async (req, res) => {
     const { orders } = req.body;
-    if (!orders || typeof orders !== "object")
-      return res.status(400).json({ error: "orders required" });
+
+    // Validate orders object using utility (max 10k per building type per order)
+    const ordersValidation = validateAllocationObject(orders, {
+      maxPerItem: 10000,
+      maxTotal: 100000,
+      fieldName: 'orders',
+    });
+    if (!ordersValidation.valid) {
+      return res.status(400).json({ error: ordersValidation.error });
+    }
+
     const k = await db.get(`SELECT ${KINGDOM_RESOURCE} FROM kingdoms WHERE player_id = ?`, [
       req.player.playerId,
     ]);
@@ -906,7 +916,7 @@ module.exports = function (db) {
     } catch {
       k.build_queue = {};
     }
-    const result = engine.queueBuildings(k, orders);
+    const result = engine.queueBuildings(k, ordersValidation.values);
     if (result.error) return res.status(400).json({ error: result.error });
     await applyUpdates(db, k.id, result.updates);
     res.json({
@@ -931,39 +941,33 @@ module.exports = function (db) {
   // â”€â”€ Save training allocation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   router.post("/training-allocation", requireAuth, requireCsrfToken, async (req, res) => {
     const { allocation } = req.body;
-    if (!allocation || typeof allocation !== "object")
-      return res.status(400).json({ error: "allocation required" });
 
-    // Whitelist valid unit types to prevent injection of arbitrary keys
-    const validUnits = new Set(['fighters', 'rangers', 'mages', 'clerics', 'thieves', 'ninjas']);
+    // Validate allocation using utility (whitelist valid unit types)
+    const validUnits = ['fighters', 'rangers', 'mages', 'clerics', 'thieves', 'ninjas'];
+    const allocValidation = validateAllocationObject(allocation, {
+      validKeys: validUnits,
+      maxPerItem: 1000000,
+      maxTotal: 1000000,
+      fieldName: 'allocation',
+    });
+    if (!allocValidation.valid) {
+      return res.status(400).json({ error: allocValidation.error });
+    }
 
     const k = await db.get(`SELECT id, bld_training, fighters, rangers, mages, clerics, thieves, ninjas FROM kingdoms WHERE player_id = ?`, [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
 
-    let total = 0;
     const capacity = k.bld_training * 100;
-    const clean_alloc = {};
-    for (const [unit, amount] of Object.entries(allocation)) {
-      // Whitelist validation: reject unknown unit types
-      if (!validUnits.has(unit)) {
-        return res.status(400).json({ error: `Invalid unit type: ${unit}` });
-      }
+    const clean_alloc = allocValidation.values;
 
-      // Type validation: ensure non-negative integers
-      const numVal = Number(amount);
-      if (!Number.isInteger(numVal) || numVal < 0) {
-        return res.status(400).json({ error: `Unit allocations must be non-negative integers (${unit}: ${amount})` });
-      }
-
-      const amt = numVal;
-      if (amt > (k[unit] || 0))
+    // Business logic validations (unit availability and capacity)
+    for (const [unit, amount] of Object.entries(clean_alloc)) {
+      if (amount > (k[unit] || 0))
         return res.status(400).json({ error: `Not enough ${unit}` });
-      total += amt;
-      if (amt > 0) clean_alloc[unit] = amt;
     }
-    if (total > capacity)
+    if (allocValidation.total > capacity)
       return res
         .status(400)
         .json({ error: `Exceeds training capacity (${capacity})` });
