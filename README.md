@@ -20,7 +20,7 @@ A browser-based multiplayer kingdom management game with real-time chat, turn-ba
 | Real-time | Socket.io |
 | Database | PostgreSQL (via `pg` driver) |
 | Auth | JWT — httpOnly cookie + localStorage fallback |
-| Frontend | React 19 + Vite (migrating from vanilla JS) |
+| Frontend | React 19 + Vite |
 | Discord | discord.js 14 |
 | Hosting | Railway |
 
@@ -105,7 +105,7 @@ narmir-server/
 ├── db/
 │   └── schema.js                 # Table creation + safe column migrations on boot
 ├── client/
-│   ├── index.html                # Main game shell + vanilla JS (being migrated to React)
+│   ├── index.html                # Main game shell
 │   ├── src/
 │   │   ├── main.jsx              # React entry point
 │   │   └── components/react/     # React panel components (34 panels)

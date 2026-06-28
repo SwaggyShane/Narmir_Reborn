@@ -1,6 +1,6 @@
 # Game State Hooks
 
-Legacy compatibility hooks for panels that have not been fully migrated to Zustand yet.
+Legacy compatibility hooks for older code paths that still depend on the singleton bridge.
 New work should use the domain stores in `client/src/stores/`.
 
 ## Keep Using These For
@@ -13,8 +13,8 @@ New work should use the domain stores in `client/src/stores/`.
 ## What This Folder Is
 
 - A bridge, not the destination
-- A compatibility layer for older panels
-- A place to keep migration work working while the remaining consumers are removed
+- A compatibility layer for remaining legacy consumers
+- A place to keep older flows working while they are retired
 
 ## What New Code Should Do
 

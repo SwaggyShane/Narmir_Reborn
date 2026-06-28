@@ -1,6 +1,6 @@
 # Zustand Domain Stores
 
-**Status:** ✅ Phase 1 Infrastructure (PR #1) — All stores implemented with Immer + DevTools + Persist
+**Status:** ✅ Current architecture — domain stores implemented with Immer + DevTools + Persist
 
 ## Overview
 

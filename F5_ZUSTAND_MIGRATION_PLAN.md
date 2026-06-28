@@ -1,22 +1,16 @@
 # F5: GameStateManager → Zustand Migration Plan
 
-**Status:** Ready for Phase 1 Kickoff (Architecture Locked)  
-**Priority:** High (post-F4)  
-**Effort Estimate:** 18–21 hours across 5 PRs  
-**Target:** Domain-based stores (split early) + incremental panel migration (small PRs)
+**Status:** Archived reference — migration complete
+**Priority:** Historical
+**Effort Estimate:** N/A
+**Target:** Domain-based stores already implemented
 
 ---
 
 ## Executive Summary
 
-Replace the custom `GameStateManager` singleton with Zustand stores. Zustand provides:
-- **Better performance** for high-frequency updates (selectors prevent unnecessary re-renders)
-- **Simpler API** than current observer pattern
-- **DevTools integration** for easier debugging
-- **Cleaner separation** between kingdom state and UI state
-- **Socket.io friendly** — updates dispatch directly to stores
-
-**Why now:** F4 decomposed backend logic; F5 decomposes frontend state management. Natural progression toward modular architecture.
+This document captured the plan to replace the custom `GameStateManager` singleton with Zustand stores.
+The migration is complete; keep this file only as historical context for the frontend state split.
 
 ---
 
@@ -1390,9 +1384,9 @@ To keep reviews manageable, enable independent testing, and support safe rollbac
 
 ---
 
-## Phase 1 Kickoff Checklist
+## Historical Kickoff Checklist
 
-Before starting PR #1, confirm all prerequisites are met:
+Before starting the migration PRs, these were the prerequisites:
 
 **Architecture & Planning:**
 - [x] Architecture locked (domain stores, game-event actions, server vs client state)
@@ -1436,15 +1430,6 @@ Before starting PR #1, confirm all prerequisites are met:
 
 ---
 
-**Status:** ✅ **LOCKED & READY FOR PHASE 1 KICKOFF**
+**Status:** Archived reference — frontend store migration complete
 
-All architectural decisions finalized. Incorporates professional feedback on:
-- Domain-based stores (split early, not monolithic)
-- Game-event actions (not field setters)
-- Server vs client state separation (authoritative snapshots)
-- Entity normalization (byId/allIds for O(1) updates)
-- Immer middleware for safe nested updates
-- Selective persistence (UI state only)
-- Realistic 5-PR incremental strategy with clear testing criteria
-
-**Next step:** Begin PR #1 (Store Infrastructure) — confirm checklist items, start coding domain stores with Immer + DevTools.
+The implementation has already landed. This section is kept for design history only.
