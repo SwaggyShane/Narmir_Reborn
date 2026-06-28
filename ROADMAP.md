@@ -11,7 +11,7 @@
 | Area | Today | Target | Track | Status |
 |------|-------|--------|-------|--------|
 | **Game navigation** | "War" + "Economy" labels | "Offense" + "Wherewithal" | A1 | ? Done |
-| **Admin panel** | Vanilla JS (`public/admin.html`) | React + Tailwind with AI presets | Admin Ph0?6 | ✅ Ph6b hard cutover verified (PR #602; verification 2026-06-28) |
+| **Admin panel** | Vanilla JS (`public/admin.html`) | React + Tailwind with AI presets | Admin Ph0-Ph6 | ✅ Ph6b hard cutover verified (PR #602; verification 2026-06-28) |
 | **Admin CSRF** | Missing on mutating routes | Protected all mutators | E1 | ? Done |
 | **CI/lint enforcement** | ESLint broken (silent) | `npm run lint` + test job | E2 | ? Done |
 | **API hygiene** | Mixed snake_plural routes | Canonical kebab + aliases | B1+B2 | ? Done |
@@ -19,7 +19,7 @@
 | **Forum integration** | Vanilla phpBB rebuild | Categorized index + in-game panel + avatars/badges | ? | ? Done (fix/topbar-take-turn) |
 | **Mobile UI** | Unpolished panels | Responsive refinements across 7 panels | Mobile fixes | ? Done (PR #596, #597, #598) |
 | **Dependency hygiene** | Discord bot chain pinned to vulnerable `undici` | `undici` 6.27.0 via npm override | E3 | ? Done |
-| **Inline CSS patterns** | Static + dynamic mixed | Static ? Tailwind, dynamic only inline | Tailwind consolidation | ✅ Done (PR #656-659; duplicate className fixes + style consolidation) |
+| **Inline CSS patterns** | Static + dynamic mixed | Static → Tailwind, dynamic only inline | Tailwind consolidation | ✅ Done (PR #656-659; duplicate className fixes + style consolidation) |
 | **Monolithic files** | engine.js, kingdom.js, etc. | Split into focused modules | F4?F5 | ? Deferred (P4) |
 | **Combat** | Complete + feature-flagged | Alpha-ready; 26.8M test scenarios | F2 | ? Done (PR #612) |
 
@@ -354,9 +354,9 @@ Per `CLAUDE.md`:
 | **11** | **C3** Portal CSS cleanup | ? | ✅ **DONE** (PR #603) |
 | **12** | **Admin Ph6b** Hard cutover (with verification matrix ✅) | ? | ✅ **DONE** (PR #602; verified 2026-06-28) |
 | **13** | **M1** MAINTENANCE refresh | ? | ✅ **DONE** (PR #654) |
-| **14** | **E3** Discord.js v15 migration | ? | ?? **DEFERRED** (indefinite ? await v15 stable) |
-| **15** | **Tailwind consolidation** Static ? utilities refactor | ? | ✅ **DONE** (PR #656-659) |
-| **16** | **Track F (F.2,5?8)** Remaining architecture debt | ? | ✅ **DONE** (F1-F8 complete; latest: F8 phases 6.1-6.3) |
+| **14** | **E3** Discord.js v15 migration | ? | ?? **DEFERRED** (indefinite; await v15 stable) |
+| **15** | **Tailwind consolidation** Static → utilities refactor | ? | ✅ **DONE** (PR #656-659) |
+| **16** | **Track F (F.2, F.5-F.8)** Remaining architecture debt | ? | ✅ **DONE** (F1-F8 complete; latest: F8 phases 6.1-6.3) |
 
 ---
 
