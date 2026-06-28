@@ -52,6 +52,10 @@ export const ResearchFocusSection = ({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ focus }),
     });
+    if (!result.ok) {
+      toast('Failed to save research focus', 'error');
+      return;
+    }
     const data = await result.json();
     if (data.error) {
       toast(data.error, 'error');

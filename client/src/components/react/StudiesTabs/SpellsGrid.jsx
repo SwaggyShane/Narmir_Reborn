@@ -43,7 +43,7 @@ export const SpellsGrid = ({ title, icon, level, magesAssigned, spellsByTier }) 
                   </div>
                   <div className="flex flex-col gap-1.5 ml-3">
                     {spellsByTier[tier].map(spell => {
-                      const isFullyRevealed = spell.reveals.revealedCount === spell.reveals.totalLetters;
+                      const isFullyRevealed = spell.reveals?.revealedCount === spell.reveals?.totalLetters;
                       return (
                         <div
                           key={spell.id}

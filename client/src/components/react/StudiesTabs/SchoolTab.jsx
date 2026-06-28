@@ -55,6 +55,10 @@ export const SchoolTab = ({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ spellbook, school_spellbook }),
     });
+    if (!response.ok) {
+      toast('Failed to save mage allocation', 'error');
+      return;
+    }
     const data = await response.json();
     if (data.error) {
       toast(data.error, 'error');
@@ -72,6 +76,10 @@ export const SchoolTab = ({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ spellbook: 0, school_spellbook: 0 }),
     });
+    if (!response.ok) {
+      toast('Failed to release mage allocation', 'error');
+      return;
+    }
     const data = await response.json();
     if (data.error) {
       toast(data.error, 'error');
