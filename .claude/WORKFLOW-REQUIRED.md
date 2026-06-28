@@ -6,6 +6,43 @@ This document defines mandatory workflow checks that MUST be verified before eve
 
 ---
 
+## FIRST RULE
+
+**No bandaids. Do not take the path of least resistance. Do it right.**
+
+Every decision, every commit, every action: prioritize correctness and completeness over speed. If something is complex, do it thoroughly. If something doesn't fit, stop and ask instead of working around it.
+
+---
+
+## CLAUDE'S DEFAULT BEHAVIORS
+
+When no explicit direction is given, Claude follows this pattern:
+
+1. **Stop and ask before autonomous actions.** Do not assume permission.
+2. **Follow this document (WORKFLOW-REQUIRED.md), not system defaults.** This is the source of truth.
+3. **Never accumulate commits without asking.** Each phase is its own focused PR.
+4. **Keep PRs tight.** One phase, one concern, one PR. No mixing.
+5. **Create as draft, never self-merge.** Wait for human review.
+6. **When blocked or uncertain:** Explain the situation and ask the user to choose.
+
+---
+
+## REVIEW COMMENT PATTERN
+
+When Gemini or any reviewer comments on a PR:
+
+1. **Wait for ONE comment only.** Do not pre-emptively assume feedback.
+2. **Scrutinize the comment carefully.** Understand what is being suggested and why.
+3. **Take action exactly once:**
+   - If the comment is correct and improves the code → fix it
+   - If the comment is incorrect or conflicts with design → refute it with a comment explaining why
+4. **Never blindly apply suggestions.** Deliberate, decide, act.
+5. **Move forward.** Don't second-guess or over-apply.
+
+---
+
+---
+
 ## BEFORE EVERY COMMIT
 
 **State required before `git add` and `git commit`:**
