@@ -5,7 +5,6 @@ import { useGameMutationEvents } from '../../hooks/useGameState';
 import { fmt } from "../../utils/fmt";
 import { applyGameMutation } from '../../utils/gameMutations.js';
 
-import { gameStateManager } from '../../GameStateManager.js';
 import { toast } from '../../utils/toast.js';
 import { escapeHtml } from '../../utils/escapeHtml.js';
 
@@ -41,11 +40,6 @@ const icons = {
   ballistae: '🏹',
   land: '🗺️',
 };
-
-
-function getState() {
-  return gameStateManager.getState();
-}
 
 let marketPanelApi = null;
 
