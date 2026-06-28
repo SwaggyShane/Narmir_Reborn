@@ -4,7 +4,7 @@ import { applyGameMutation } from '../../utils/gameMutations.js';
 import { gameStateManager } from '../../GameStateManager.js';
 import { getSocket } from '../../socket-client.js';
 import { initSocketHandlers } from '../../hooks/useSocket.js';
-import { useProfileStore } from '../../stores/profileStore.js';
+import { useProfileStore, useEconomyStore, useMilitaryStore, useResearchStore, usePopulationStore } from '../../stores';
 
 let authApi = null;
 
@@ -29,6 +29,10 @@ export async function loadKingdom() {
   const kingdom = await apiCall('/api/kingdom/me');
   if (kingdom && !kingdom.error) {
     useProfileStore.getState().receiveServerSnapshot(kingdom);
+    useEconomyStore.getState().receiveServerSnapshot(kingdom);
+    useMilitaryStore.getState().receiveServerSnapshot(kingdom);
+    useResearchStore.getState().receiveServerSnapshot(kingdom);
+    usePopulationStore.getState().receiveServerSnapshot(kingdom);
     applyGameMutation(
       {
         ...kingdom,
