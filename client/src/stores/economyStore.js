@@ -40,6 +40,7 @@ export const useEconomyStore = create(
         iron: 0,
         steel: 0,
         coal: 0,
+        maps: 0,
 
         // Resource modifiers (percentages: 100 = normal, 80 = -20%, 120 = +20%)
         res_weapons: 100,
@@ -123,6 +124,7 @@ export const useEconomyStore = create(
           if (data?.iron !== undefined) state.iron = data.iron;
           if (data?.steel !== undefined) state.steel = data.steel;
           if (data?.coal !== undefined) state.coal = data.coal;
+          if (data?.maps !== undefined) state.maps = data.maps;
           if (data?.res_weapons !== undefined) state.res_weapons = data.res_weapons;
           if (data?.res_military !== undefined) state.res_military = data.res_military;
           if (data?.res_attack_magic !== undefined) state.res_attack_magic = data.res_attack_magic;
@@ -335,6 +337,8 @@ export const useIron = () => useEconomyStore((state) => state.iron);
 export const useSteel = () => useEconomyStore((state) => state.steel);
 
 export const useCoal = () => useEconomyStore((state) => state.coal);
+
+export const useMaps = () => useEconomyStore((state) => state.maps);
 
 // Build system selectors
 export const useBlueprintsStored = () => useEconomyStore((state) => state.blueprints_stored);

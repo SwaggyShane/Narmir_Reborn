@@ -4,8 +4,16 @@ import { apiCall } from '../../utils/api';
 import { fmt } from "../../utils/fmt";
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import { toast } from '../../utils/toast.js';
-import { useGameState, useGameMutationEvents } from '../../hooks/useGameState';
-import { useRace } from '../../stores';
+import { useGameMutationEvents } from '../../hooks/useGameState';
+import {
+  useRace,
+  useGold,
+  useKingdomId,
+  useWood,
+  useStone,
+  useIron,
+  useBuildCount,
+} from '../../stores';
 import UpgradesList from './UpgradesList.jsx';
 import { parseOwnedUpgrades } from '../../utils/upgradeUtils.js';
 import {
@@ -18,8 +26,13 @@ import {
 } from '../../utils/defenseData.js';
 
 const DefensePanel = () => {
-  const { state } = useGameState();
   const race = useRace();
+  const kingdomId = useKingdomId();
+  const gold = useGold();
+  const wood = useWood();
+  const stone = useStone();
+  const iron = useIron();
+  const vaults = useBuildCount('vaults');
   useGameMutationEvents();
   const [upgradeOwned, setUpgradeOwned] = useState({
     wall: {},
@@ -128,6 +141,17 @@ const DefensePanel = () => {
   const syncDefenseUpgrades = useCallback((bucket, nextOwned) => {
     setUpgradeOwned((prev) => ({ ...prev, [bucket]: nextOwned }));
   }, []);
+
+  const upgradeState = {
+    id: kingdomId,
+    kingdomId,
+    race,
+    gold,
+    wood,
+    stone,
+    iron,
+    bld_vaults: vaults,
+  };
 
   useGameMutationEvents(useCallback((event) => {
     if (String(event?.reason || '') === 'economy-upgrade') {
@@ -265,7 +289,7 @@ const DefensePanel = () => {
               category="wall"
               defs={WALL_UPGRADES_JS}
               owned={upgradeOwned.wall}
-              state={state || {}}
+              state={upgradeState}
               onPurchased={(_, nextOwned) => syncDefenseUpgrades('wall', nextOwned)}
             />
           </div>
@@ -316,7 +340,7 @@ const DefensePanel = () => {
               category="tower_def"
               defs={TOWER_DEF_UPGRADES_JS}
               owned={upgradeOwned.tower_def}
-              state={state || {}}
+              state={upgradeState}
               onPurchased={(_, nextOwned) => syncDefenseUpgrades('tower_def', nextOwned)}
             />
           </div>
@@ -367,7 +391,7 @@ const DefensePanel = () => {
               category="outpost"
               defs={OUTPOST_UPGRADES_JS}
               owned={upgradeOwned.outpost}
-              state={state || {}}
+              state={upgradeState}
               onPurchased={(_, nextOwned) => syncDefenseUpgrades('outpost', nextOwned)}
             />
           </div>

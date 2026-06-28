@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
-import { useGameState, useGameMutationEvents } from '../../hooks/useGameState';
+import { useGameMutationEvents } from '../../hooks/useGameState';
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import {
   useTax,
@@ -17,6 +17,12 @@ import {
   useGranaryUpgrades,
   useMarketUpgrades,
   useTavernUpgrades,
+  useKingdomId,
+  useTurn,
+  useWood,
+  useStone,
+  useIron,
+  useMaps,
 } from '../../stores';
 
 import { fmt } from '../../utils/fmt.js';
@@ -39,12 +45,17 @@ const MERC_TURNS = { rabble: 10, sellsword: 25, veteran: 35, elite: 50 };
 const COMMODITY_ITEMS = ['food', 'weapons', 'armor', 'mana', 'maps', 'blueprints', 'war_machines', 'ballistae', 'land'];
 
 const EconomyPanel = () => {
-  const { state } = useGameState();
   const [activeTab, setActiveTab] = useState('farms');
   const tax = useTax();
   const tradeTargets = useTradeTargets();
   const race = useRace();
+  const kingdomId = useKingdomId();
   const gold = useGold();
+  const turn = useTurn();
+  const wood = useWood();
+  const stone = useStone();
+  const iron = useIron();
+  const maps = useMaps();
   const vaults = useBuildCount('vaults');
   const food = useFood();
   const weaponsStockpile = useWeaponsStockpile();
@@ -272,10 +283,27 @@ const EconomyPanel = () => {
     } else if (tradeOfferItem === 'food') {
       val = food;
     } else {
-      val = Number(state?.[tradeOfferItem] || 0);
+      const resourceMap = {
+        wood,
+        stone,
+        iron,
+        maps,
+      };
+      val = Number(resourceMap[tradeOfferItem] || 0);
     }
     setTradeOfferQty(String(Math.max(0, val)));
-  }, [tradeOfferItem, weaponsStockpile, armorStockpile, gold, food, state]);
+  }, [tradeOfferItem, weaponsStockpile, armorStockpile, gold, food, wood, stone, iron, maps]);
+
+  const upgradeState = useMemo(() => ({
+    id: kingdomId,
+    kingdomId,
+    race,
+    gold,
+    wood,
+    stone,
+    iron,
+    bld_vaults: vaults,
+  }), [kingdomId, race, gold, wood, stone, iron, vaults]);
 
   const setMaxMercCount = useCallback(() => {
     const price = MERC_COST[mercTier] || 50;
@@ -402,7 +430,7 @@ const EconomyPanel = () => {
               category="farm"
               defs={FARM_UPGRADES}
               owned={parseOwnedUpgrades(farmUpgrades)}
-              state={state || {}}
+              state={upgradeState}
               onPurchased={(_, nextOwned) => syncUpgradeOwned('farm', nextOwned)}
             />
           </div>
@@ -440,7 +468,7 @@ const EconomyPanel = () => {
               category="granary"
               defs={GRANARY_UPGRADES}
               owned={parseOwnedUpgrades(granaryUpgrades)}
-              state={state || {}}
+              state={upgradeState}
               onPurchased={(_, nextOwned) => syncUpgradeOwned('granary', nextOwned)}
             />
           </div>
@@ -477,7 +505,7 @@ const EconomyPanel = () => {
               category="market"
               defs={MARKET_UPGRADES}
               owned={parseOwnedUpgrades(marketUpgrades)}
-              state={state || {}}
+              state={upgradeState}
               onPurchased={(_, nextOwned) => syncUpgradeOwned('market', nextOwned)}
             />
           </div>
@@ -665,7 +693,7 @@ const EconomyPanel = () => {
               No mercenaries under contract.
             </div>
           ) : econData.mercenaries.map((m, i) => {
-            const served = (state?.turn || 0) - (m.hired_at_turn || 0);
+            const served = (turn || 0) - (m.hired_at_turn || 0);
             const remaining = Math.max(0, m.duration_turns - served);
             return (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
