@@ -121,20 +121,6 @@ async function withTurnLock(playerId, fn) {
   return promise;
 }
 
-async function withTransaction(db, fn) {
-  await db.run("BEGIN TRANSACTION");
-  try {
-    const result = await fn();
-    await db.run("COMMIT");
-    return result;
-  } catch (err) {
-    try {
-      await db.run("ROLLBACK");
-    } catch {}
-    throw err;
-  }
-}
-
 // â”€â”€ Column Selection Constants for Query Optimization â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Avoid SELECT * for better performance: network, parsing, memory
 // Column sets: choose what's actually needed to reduce network/parsing overhead
