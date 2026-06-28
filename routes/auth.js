@@ -47,6 +47,16 @@ module.exports = function (db) {
         .json({
           error: "Username can only contain letters, numbers and underscores",
         });
+    if (kingdomName.length < 3 || kingdomName.length > 50)
+      return res
+        .status(400)
+        .json({ error: "Kingdom name must be 3–50 characters" });
+    if (!/^[a-zA-Z0-9\s'-]+$/.test(kingdomName))
+      return res
+        .status(400)
+        .json({
+          error: "Kingdom name can only contain letters, numbers, spaces, apostrophes, and hyphens",
+        });
 
     const validRaces = [
       "human",
