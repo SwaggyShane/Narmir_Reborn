@@ -54,6 +54,30 @@ function normalizeNewsRow(row) {
   return row;
 }
 
+async function getRandomKingdom(db, selfId, excludedIds = [], columns = "id, name") {
+  const forbidden = [selfId, ...excludedIds]
+    .map((id) => Number(id))
+    .filter((id) => Number.isInteger(id) && id > 0);
+  const uniqueForbidden = [...new Set(forbidden)];
+  const countRow = await db.get("SELECT COUNT(*) as c FROM kingdoms WHERE id != ?", [selfId]);
+  const total = Number(countRow?.c || 0);
+  if (total <= 0) return null;
+
+  const exclusionSet = new Set(uniqueForbidden);
+
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const offset = Math.floor(Math.random() * total);
+    const row = await db.get(
+      `SELECT ${columns} FROM kingdoms WHERE id != ? LIMIT 1 OFFSET ?`,
+      [selfId, offset],
+    );
+    if (!row) continue;
+    if (!exclusionSet.has(Number(row.id))) return row;
+  }
+
+  return null;
+}
+
 // Kingdoms we've already logged deprecated-inventory items for, so the warning fires
 // once per process instead of on every (frequently polled) inventory fetch.
 const _loggedDeprecatedInventory = new Set();
@@ -370,18 +394,12 @@ module.exports = function (db) {
       }
 
       if (updates._find_kingdom_surveyor) {
-        const other = await db.get(
-          "SELECT id, name FROM kingdoms WHERE id != ? ORDER BY RANDOM() LIMIT 1",
-          [k.id],
-        );
+        const discoveredSource = updates.discovered_kingdoms ?? k.discovered_kingdoms;
+        const other = await getRandomKingdom(db, k.id, [], "id, name");
         if (other) {
-          const freshK = await db.get(
-            "SELECT discovered_kingdoms FROM kingdoms WHERE id=?",
-            [k.id],
-          );
           let disc = {};
           try {
-            disc = safeJsonParse(freshK.discovered_kingdoms, {}, "auto:discovered_kingdoms");
+            disc = safeJsonParse(discoveredSource, {}, "auto:discovered_kingdoms");
           } catch {}
           if (!disc[other.id]) {
             disc[other.id] = { found: true, name: other.name };
@@ -1121,17 +1139,24 @@ module.exports = function (db) {
           .filter((id) => !isNaN(id));
         currentIds.push(k.id); // exclude self
 
-        const placeholders = currentIds.map(() => "?").join(",");
-        const query = `SELECT id, name FROM kingdoms WHERE id NOT IN (${placeholders}) ORDER BY RANDOM() LIMIT ?`;
-        const others = await db.all(query, [...currentIds, baseFound]);
-
         let foundCount = 0;
         let lastFoundName = "";
-        others.forEach((o) => {
-          disc[o.id] = { found: true, name: o.name };
+        const excluded = new Set(currentIds.map((id) => Number(id)).filter((id) => Number.isInteger(id) && id > 0));
+        const attemptsLimit = Math.max(12, baseFound * 8);
+        let attempts = 0;
+        while (foundCount < baseFound && attempts < attemptsLimit) {
+          attempts++;
+          const other = await getRandomKingdom(db, k.id, Array.from(excluded), "id, name");
+          if (!other) break;
+
+          const otherId = Number(other.id);
+          if (excluded.has(otherId)) continue;
+
+          excluded.add(otherId);
+          disc[otherId] = { found: true, name: other.name };
           foundCount++;
-          lastFoundName = o.name;
-        });
+          lastFoundName = other.name;
+        }
 
         if (foundCount > 0) {
           updates.discovered_kingdoms = JSON.stringify(disc);
