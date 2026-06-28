@@ -43,6 +43,7 @@
   - No deadlock issues reported
   - Backup strategy in place (user-configured)
 - **Performance:** Query optimizations in place (indexed columns, prepared statements)
+- **Connection pool:** Configured max=20, min=2 (defaults in db/schema.js; overridable via DATABASE_MAX_POOL env var)
 - **Future:** Consider query analysis for /expedition and /turn endpoints (highest load)
 
 ### Frontend (React)
@@ -69,7 +70,7 @@
 - **Status:** ✅ All jobs green
 - **Pipeline:**
   - Lint: `npm run lint` (0 errors required)
-  - Test: `npm test` (game logic tests, vitest component tests)
+  - Test: `npm test` (backend game logic tests via `node scripts/run-tests.js`); `npm run test:components` (vitest component tests, separate)
   - Build: `npm run build` (Vite production build)
   - Security: Encoding validation, text analysis
 - **Pre-commit hook:** Enforces lint; blocks commits with errors
