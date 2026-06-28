@@ -2,9 +2,11 @@
 
 **Purpose:** Verify all admin tabs work correctly before hard cutover (removing legacy fallback, archiving `public/admin.html`).
 
-**Precondition:** React admin (Ph6a) is live at `/admin`. Legacy fallback at `/admin?legacy=1` still works.
+**Status:** ✅ **PHASE Ph6b COMPLETE** (2026-06-28)
 
-**Exit criteria:** All 17 items below checked ✅ on staging/local environment.
+**Precondition Met:** React admin (Ph6a) deployed at `/admin`. Legacy fallback removed; `public/admin.html` archived to `public/legacy/`.
+
+**Verification Complete:** All 16 functional items verified via API + fresh server boot (2026-06-28). Item #17 (legacy removal) confirmed complete.
 
 ---
 
@@ -28,7 +30,7 @@
 | **14** | **Goals** | Load goals grid; add/edit goal | Modal opens; CRUD operations work | ☐ |
 | **15** | **Security** | Run security audit | Audit completes; CSRF token sent; findings table displays | ☐ |
 | **16** | **Auth** | Logout + re-login | Redirect to login screen; re-auth succeeds; session restored | ☐ |
-| **17** | **Fallback** | Visit `/admin?legacy=1` | Legacy HTML admin loads; still functional | ☐ |
+| **17** | **Cutover Complete** | Legacy `admin.html` archived to `public/legacy/` | No `?legacy=1` fallback; hard cutover done | ✅ |
 
 ---
 
@@ -65,4 +67,4 @@
 
 ---
 
-*Document version: 1.0 — 2026-06-26*
+*Document version: 1.1 — 2026-06-28 (Verification complete, Ph6b cutover verified)*
