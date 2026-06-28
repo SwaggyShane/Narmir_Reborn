@@ -537,7 +537,7 @@ module.exports = function (db) {
         updatesForDb.troop_levels = JSON.stringify(updatesForDb.troop_levels);
       }
 
-      const cols = Object.keys(updatesForDb).map(k => `${k} = ?`).join(', ');
+      const cols = Object.keys(updatesForDb).map(col => `${col} = ?`).join(', ');
       const vals = Object.values(updatesForDb);
       await db.run(
         `UPDATE kingdoms SET ${cols} WHERE id = ?`,
@@ -606,7 +606,7 @@ module.exports = function (db) {
         updatesForDb.troop_levels = JSON.stringify(updatesForDb.troop_levels);
       }
 
-      const cols = Object.keys(updatesForDb).map(k => `${k} = ?`).join(', ');
+      const cols = Object.keys(updatesForDb).map(col => `${col} = ?`).join(', ');
       const vals = Object.values(updatesForDb);
       await db.run(
         `UPDATE kingdoms SET ${cols} WHERE id = ?`,
