@@ -4,6 +4,8 @@
 **Last updated:** 2026-06-28 (PR #656-659 merged; Admin Ph6b verification complete)
 **Single source of truth** for planning, replacing ALPHA_ROADMAP + AdminRoadmap + MAINTENANCE (see **Related Documents**)
 
+> **📋 Note:** Completed work has been consolidated into **ARCHIVAL.md** for historical reference. This document focuses on current and future work only. See ARCHIVAL.md for details on all completed tracks, features, and initiatives.
+
 ---
 
 ## Executive Summary
@@ -365,10 +367,11 @@ Per `CLAUDE.md`:
 | Document | Purpose | Status |
 |----------|---------|--------|
 | `CLAUDE.md` | PR workflow, smoke recipe, quality rules | **Source of truth** |
-| `AdminRoadmap.md` | Admin parity detail + Phase 6b checklist | **Detailed reference** |
-| `MAINTENANCE.md` | Health audit + F track itemization | **Complete** (PR #654) |
-| `ALPHA_ROADMAP.md` | Alpha phase overview (superseded by this doc) | **Archived** (use ROADMAP.md instead) |
-| `TODO.md` | Feature-level todos + combat notes | Companion reference |
+| `ARCHIVAL.md` | Historical record of all completed work, tracks, and features | **Reference** (2026-06-28) |
+| `MAINTENANCE.md` | System health audit + architecture status | **Current** (PR #654) |
+| `TODO.md` | Feature-level todos + future work | Companion reference |
+| `AdminRoadmap.md` | Admin parity detail (historical) | **Archived** |
+| `ALPHA_ROADMAP.md` | Alpha phase overview (superseded) | **Archived** |
 
 ---
 
