@@ -833,6 +833,7 @@ module.exports = function (db, io) {
     try {
       const text = (req.body.message || "").trim();
       if (!text) return res.status(400).json({ error: "message required" });
+      if (text.length > 5000) return res.status(400).json({ error: "message cannot exceed 5000 characters" });
 
       const newsBlurb = `📢 Server announcement: ${text}`;
 
@@ -1404,15 +1405,17 @@ module.exports = function (db, io) {
     res.json({ ok: true, list });
   });
   dualRoute(router, "post", "/random-events", "/random_events", async (req, res) => {
-    await db.run("INSERT INTO random_events (content) VALUES (?)", [
-      req.body.content || "",
-    ]);
+    const content = (req.body.content || "").trim();
+    if (content.length > 10000) return res.status(400).json({ error: "content cannot exceed 10000 characters" });
+    await db.run("INSERT INTO random_events (content) VALUES (?)", [content]);
     await require("../../index").refreshLore();
     res.json({ ok: true });
   });
   dualRoute(router, "put", "/random-events/:id", "/random_events/:id", async (req, res) => {
+    const content = (req.body.content || "").trim();
+    if (content.length > 10000) return res.status(400).json({ error: "content cannot exceed 10000 characters" });
     await db.run("UPDATE random_events SET content=? WHERE id=?", [
-      req.body.content || "",
+      content,
       req.params.id,
     ]);
     await require("../../index").refreshLore();
@@ -1429,9 +1432,9 @@ module.exports = function (db, io) {
     res.json({ ok: true, list });
   });
   dualRoute(router, "post", "/junk-events", "/junk_events", async (req, res) => {
-    await db.run("INSERT INTO junk_events (content) VALUES (?)", [
-      req.body.content || "",
-    ]);
+    const content = (req.body.content || "").trim();
+    if (content.length > 10000) return res.status(400).json({ error: "content cannot exceed 10000 characters" });
+    await db.run("INSERT INTO junk_events (content) VALUES (?)", [content]);
     await require("../../index").refreshLore();
     res.json({ ok: true });
   });
@@ -1446,9 +1449,9 @@ module.exports = function (db, io) {
     res.json({ ok: true, list });
   });
   dualRoute(router, "post", "/tax-events", "/tax_events", async (req, res) => {
-    await db.run("INSERT INTO tax_events (content) VALUES (?)", [
-      req.body.content || "",
-    ]);
+    const content = (req.body.content || "").trim();
+    if (content.length > 10000) return res.status(400).json({ error: "content cannot exceed 10000 characters" });
+    await db.run("INSERT INTO tax_events (content) VALUES (?)", [content]);
     await require("../../index").refreshLore();
     res.json({ ok: true });
   });
