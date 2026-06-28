@@ -144,9 +144,7 @@ export const usePopulation = () => usePopulationStore((state) => state.populatio
 export const useHappiness = () => usePopulationStore((state) => state.happiness);
 
 export const useHappinessBreakdown = () =>
-  usePopulationStore(
-    useShallow((state) => state.happinessBreakdown)
-  );
+  usePopulationStore((state) => state.happinessBreakdown);
 
 export const useGrowthRate = () => usePopulationStore((state) => state.growthRate);
 
