@@ -29,6 +29,7 @@ export const useProfileStore = create(
       vampire_countdown: null,
       season: null,
       rank: null,  // World rank (computed on server, synced here)
+      defense_rating: 'Undefended',
 
       // Race and engineers
       race: '',
@@ -78,6 +79,7 @@ export const useProfileStore = create(
         if (data?.vampire_countdown !== undefined) state.vampire_countdown = data.vampire_countdown;
         if (data?.season !== undefined) state.season = data.season;
         if (data?.rank !== undefined) state.rank = data.rank;
+        if (data?.defense_rating !== undefined) state.defense_rating = data.defense_rating;
         if (data?.race !== undefined) state.race = data.race;
         if (data?.engineers !== undefined) state.engineers = data.engineers;
         if (data?.engineer_level !== undefined) state.engineer_level = data.engineer_level;
@@ -155,6 +157,8 @@ export const useScore = () => useProfileStore((state) => state.score);
 export const useRank = () => useProfileStore((state) => state.rank);
 
 export const useKingdomId = () => useProfileStore((state) => state.kingdom_id);
+
+export const useDefenseRating = () => useProfileStore((state) => state.defense_rating || 'Undefended');
 
 export const useKingdomMetadata = () =>
   useProfileStore(

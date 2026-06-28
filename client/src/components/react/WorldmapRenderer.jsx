@@ -1,6 +1,6 @@
-import { gameStateManager } from '../../GameStateManager.js';
 import { REGION_META, REGION_BONUSES } from '../../utils/raceData.js';
 import { escapeHtml } from '../../utils/escapeHtml.js';
+import { useProfileStore } from '../../stores';
 
 function regionOpacity(race, highlightedRace, dim = '0.3') {
   if (!highlightedRace) return '1';
@@ -8,7 +8,9 @@ function regionOpacity(race, highlightedRace, dim = '0.3') {
 }
 
 export function renderWorldMap(kingdoms, routes = [], highlightedRace = null) {
-  const state = gameStateManager.getState();
+  const state = {
+    kingdomId: useProfileStore.getState().kingdom_id,
+  };
 
         var W = 900,
 
