@@ -92,8 +92,7 @@
   - multer 2.1.1 → 2.2.0 (DoS via nested fields, 2 HIGH)
   - ws 8.x → 8.21.0 (memory exhaustion DoS)
   - undici via npm override (discord.js v14 dependency, 4 HIGH vulns; mitigation in place)
-- **discord.js:** Pinned to v14.26.4 (latest v14); v15 awaited for undici fix (not yet stable)
-- **Decision:** Defer discord.js v15 migration until stable release (est. 3-6+ months); WebSocket DoS risk acceptable for alpha
+- **discord.js:** Pinned to v14.26.4 with the undici override in place; no migration lane is active
 - **Last audit:** 2026-06-27; next audit: 2026-07-28
 
 ### Architecture
@@ -152,7 +151,6 @@
 |------|----------|-------------|----------|---------------|
 | Inline CSS consolidation | Low | 500+ inline `style={{}}` usages; static properties should be Tailwind utilities | No | 4–6 hours |
 | StudiesPanel refactor | Medium | Complex component with 16+ state refs; hook replacement insufficient; needs architectural redesign | No | 8–12 hours |
-| Discord.js v15 migration | Low | Awaiting v15 stable; current v14 pinned due to undici vulnerability (mitigated) | No | 2–3 hours (when v15 ready) |
 | Query performance audit | Low | Turn processing + expedition list endpoints under high load; no current bottleneck but worth profiling | No | 2–3 hours |
 | SQL injection audit | Medium | Verify 100% of queries use parameterized statements; spot-check critical endpoints | No | 1–2 hours |
 | Database backup testing | Low | Backup strategy exists; restore procedures untested | No | 1–2 hours |
@@ -229,7 +227,7 @@
 
 ### P3 (Low)
 1. **Backup testing:** Verify restore procedures work
-2. **Discord.js v15 migration:** When stable
+2. **Discord.js:** Keep the v14 pin with the undici override in place
 3. **Rate limiting:** DDoS hardening
 
 ---

@@ -313,7 +313,7 @@ Per `CLAUDE.md`:
 
 | Metric | Target |
 |--------|--------|
-| Tracks A, B, C, E completion | 100% (P0?P2 done; E1?E2 fixed; E3 deferred) |
+| Tracks A, B, C, E completion | 100% (P0?P2 done; E1?E3 fixed) |
 | Admin parity (Ph6a) | 100% feature parity with legacy |
 | Admin hard cutover (Ph6b) | Deferred until verification matrix passes |
 | Lint | 0 errors on all new code |
@@ -341,9 +341,8 @@ Per `CLAUDE.md`:
 | **11** | **C3** Portal CSS cleanup | ? | ? After F4 |
 | **12** | **Admin Ph6b** Hard cutover (with verification matrix ?) | ? | ? When ready |
 | **13** | **M1** MAINTENANCE refresh | ? | ? **DONE** (PR #654) |
-| **14** | **E3** Discord.js v15 migration | ? | ?? **DEFERRED** (indefinite ? await v15 stable) |
-| **15** | **Tailwind consolidation** Static ? utilities refactor | ? | ?? Future (low urgency) |
-| **16** | **Track F (F.2,5?8)** Remaining architecture debt | ? | ? Post-F4 |
+| **14** | **Tailwind consolidation** Static ? utilities refactor | ? | ?? Future (low urgency) |
+| **15** | **Track F (F.2,5?8)** Remaining architecture debt | ? | ? Post-F4 |
 
 ---
 
