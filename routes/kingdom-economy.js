@@ -662,7 +662,12 @@ module.exports = function (db) {
       return res.status(400).json({ error: "Invalid mercenary index" });
     const m = mercs[idx];
     mercs.splice(idx, 1);
-    const unitType = validateUnitType(m.unit_type);
+    let unitType;
+    try {
+      unitType = validateUnitType(m.unit_type);
+    } catch (err) {
+      return res.status(400).json({ error: err.message });
+    }
     const newCount = Math.max(0, (k[unitType] || 0) - m.count);
     await db.run(
       `UPDATE kingdoms SET mercenaries = ?, ${unitType} = ? WHERE id = ?`,
