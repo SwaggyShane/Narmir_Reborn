@@ -177,7 +177,7 @@
 ### Load Assumptions
 - **Baseline:** 100–1,000 concurrent players
 - **Peak:** 5,000–10,000 concurrent (not tested)
-- **Database pool:** Default (12 connections); sufficient for baseline
+- **Database pool:** Default (20 connections, min 2); sufficient for baseline
 - **Memory:** Node process ~500MB at baseline; monitor if peak load reached
 
 ---
