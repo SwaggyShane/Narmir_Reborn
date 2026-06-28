@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import { immer } from 'zustand/middleware/immer';
 import { devtools } from 'zustand/middleware';
 
@@ -40,6 +41,7 @@ export const useEconomyStore = create(
         iron: 0,
         steel: 0,
         coal: 0,
+        maps: 0,
 
         // Resource modifiers (percentages: 100 = normal, 80 = -20%, 120 = +20%)
         res_weapons: 100,
@@ -91,6 +93,13 @@ export const useEconomyStore = create(
         bld_training: 0,
         bld_castles: 0,
 
+        // Upgrades
+        bank_upgrades: {},
+        farm_upgrades: {},
+        granary_upgrades: {},
+        market_upgrades: {},
+        tavern_upgrades: {},
+
         // Entity collections (normalized: byId/allIds)
         tradeRoutes: {
           byId: {},
@@ -116,6 +125,7 @@ export const useEconomyStore = create(
           if (data?.iron !== undefined) state.iron = data.iron;
           if (data?.steel !== undefined) state.steel = data.steel;
           if (data?.coal !== undefined) state.coal = data.coal;
+          if (data?.maps !== undefined) state.maps = data.maps;
           if (data?.res_weapons !== undefined) state.res_weapons = data.res_weapons;
           if (data?.res_military !== undefined) state.res_military = data.res_military;
           if (data?.res_attack_magic !== undefined) state.res_attack_magic = data.res_attack_magic;
@@ -140,6 +150,11 @@ export const useEconomyStore = create(
           if (data?.scaffolding_stored !== undefined) state.scaffolding_stored = data.scaffolding_stored;
           if (data?.discovered_kingdoms !== undefined) state.discovered_kingdoms = data.discovered_kingdoms;
           if (data?.targets !== undefined) state.targets = data.targets;
+          if (data?.bank_upgrades !== undefined) state.bank_upgrades = data.bank_upgrades;
+          if (data?.farm_upgrades !== undefined) state.farm_upgrades = data.farm_upgrades;
+          if (data?.granary_upgrades !== undefined) state.granary_upgrades = data.granary_upgrades;
+          if (data?.market_upgrades !== undefined) state.market_upgrades = data.market_upgrades;
+          if (data?.tavern_upgrades !== undefined) state.tavern_upgrades = data.tavern_upgrades;
           // Sync building counts
           Object.keys(data || {}).forEach((key) => {
             if (key.startsWith('bld_')) {
@@ -276,11 +291,13 @@ export const useMana = () => useEconomyStore((state) => state.mana);
 
 // Multiple fields with shallow equality (prevents re-render if values unchanged)
 export const useResources = () =>
-  useEconomyStore((state) => ({
-    gold: state.gold,
-    food: state.food,
-    mana: state.mana,
-  }));
+  useEconomyStore(
+    useShallow((state) => ({
+      gold: state.gold,
+      food: state.food,
+      mana: state.mana,
+    }))
+  );
 
 // Computed selector: effective gold income (memoized)
 export const useGoldIncome = () =>
@@ -324,6 +341,8 @@ export const useSteel = () => useEconomyStore((state) => state.steel);
 
 export const useCoal = () => useEconomyStore((state) => state.coal);
 
+export const useMaps = () => useEconomyStore((state) => state.maps);
+
 // Build system selectors
 export const useBlueprintsStored = () => useEconomyStore((state) => state.blueprints_stored);
 
@@ -337,27 +356,29 @@ export const useBuildCount = (buildingId) =>
 
 // All building counts as object (for use in components without calling hooks in helpers)
 export const useBuildingCounts = () =>
-  useEconomyStore((state) => ({
-    farms: state.bld_farms || 0,
-    housing: state.bld_housing || 0,
-    granaries: state.bld_granaries || 0,
-    taverns: state.bld_taverns || 0,
-    markets: state.bld_markets || 0,
-    barracks: state.bld_barracks || 0,
-    libraries: state.bld_libraries || 0,
-    schools: state.bld_schools || 0,
-    shrines: state.bld_shrines || 0,
-    mausoleums: state.bld_mausoleums || 0,
-    guard_towers: state.bld_guard_towers || 0,
-    walls: state.bld_walls || 0,
-    outposts: state.bld_outposts || 0,
-    smithies: state.bld_smithies || 0,
-    armories: state.bld_armories || 0,
-    vaults: state.bld_vaults || 0,
-    mage_towers: state.bld_mage_towers || 0,
-    training: state.bld_training || 0,
-    castles: state.bld_castles || 0,
-  }));
+  useEconomyStore(
+    useShallow((state) => ({
+      farms: state.bld_farms || 0,
+      housing: state.bld_housing || 0,
+      granaries: state.bld_granaries || 0,
+      taverns: state.bld_taverns || 0,
+      markets: state.bld_markets || 0,
+      barracks: state.bld_barracks || 0,
+      libraries: state.bld_libraries || 0,
+      schools: state.bld_schools || 0,
+      shrines: state.bld_shrines || 0,
+      mausoleums: state.bld_mausoleums || 0,
+      guard_towers: state.bld_guard_towers || 0,
+      walls: state.bld_walls || 0,
+      outposts: state.bld_outposts || 0,
+      smithies: state.bld_smithies || 0,
+      armories: state.bld_armories || 0,
+      vaults: state.bld_vaults || 0,
+      mage_towers: state.bld_mage_towers || 0,
+      training: state.bld_training || 0,
+      castles: state.bld_castles || 0,
+    }))
+  );
 
 // Resource modifiers
 export const useResWeapons = () => useEconomyStore((state) => state.res_weapons || 100);
@@ -388,3 +409,14 @@ export const useTax = () => useEconomyStore((state) => state.tax ?? 42);
 
 // Trade targets (list of kingdoms for trading/alliances)
 export const useTradeTargets = () => useEconomyStore((state) => Array.isArray(state.targets) ? state.targets : []);
+
+// Upgrades
+export const useBankUpgrades = () => useEconomyStore((state) => state.bank_upgrades || {});
+
+export const useFarmUpgrades = () => useEconomyStore((state) => state.farm_upgrades || {});
+
+export const useGranaryUpgrades = () => useEconomyStore((state) => state.granary_upgrades || {});
+
+export const useMarketUpgrades = () => useEconomyStore((state) => state.market_upgrades || {});
+
+export const useTavernUpgrades = () => useEconomyStore((state) => state.tavern_upgrades || {});

@@ -1,8 +1,10 @@
-# Narmir Reborn — Unified Development Roadmap
+# Narmir Reborn ? Unified Development Roadmap
 
-**Status:** Alpha phase (ongoing) — Tracks A–D complete; E1–E2 fixed; E3 deferred (await discord.js v15); Track F.3 consolidation complete (PR #606–#608); **F.4 engine.js decomposition COMPLETE (PR #611); F.2 Combat V2 complete and alpha-ready (PR #612); F.5 Phase 1 PR #3–#6 COMPLETE (PR #617, #618, #619, #620 merged); PR #9–#10 COMPLETE (PR #624 OptionsPanel, PR #625 HeroesPanel merged); Paused PR #11 (StudiesPanel); pivot to light-state components only**  
-**Last updated:** 2026-06-27 (F5 Phase 1: 2 migrations successful; learning: complex components require architectural refactoring, not hook replacement)  
+**Status:** ✅ **ALPHA PHASE COMPLETE** — All tracks A-F, E1-E3, M1 complete. Admin Ph6b verified. Tailwind consolidation done. Ready for beta launch.
+**Last updated:** 2026-06-28 (PR #656-659 merged; Admin Ph6b verification complete)
 **Single source of truth** for planning, replacing ALPHA_ROADMAP + AdminRoadmap + MAINTENANCE (see **Related Documents**)
+
+> **📋 Note:** Completed work has been consolidated into **ARCHIVAL.md** for historical reference. This document focuses on current and future work only. See ARCHIVAL.md for details on all completed tracks, features, and initiatives.
 
 ---
 
@@ -10,18 +12,18 @@
 
 | Area | Today | Target | Track | Status |
 |------|-------|--------|-------|--------|
-| **Game navigation** | "War" + "Economy" labels | "Offense" + "Wherewithal" | A1 | ✅ Done |
-| **Admin panel** | Vanilla JS (`public/admin.html`) | React + Tailwind with AI presets | Admin Ph0–6 | ✅ Ph6b hard cutover complete (PR #602) |
-| **Admin CSRF** | Missing on mutating routes | Protected all mutators | E1 | ✅ Done |
-| **CI/lint enforcement** | ESLint broken (silent) | `npm run lint` + test job | E2 | ✅ Done |
-| **API hygiene** | Mixed snake_plural routes | Canonical kebab + aliases | B1+B2 | ✅ Done |
-| **Portal styling** | CSS + Tailwind mixed | Pure Tailwind foundation | C1+C2 | ✅ Done |
-| **Forum integration** | Vanilla phpBB rebuild | Categorized index + in-game panel + avatars/badges | — | ✅ Done (fix/topbar-take-turn) |
-| **Mobile UI** | Unpolished panels | Responsive refinements across 7 panels | Mobile fixes | ✅ Done (PR #596, #597, #598) |
-| **Vite dependency** | 8.0.12 (HIGH vuln) | ≥8.1.0 | E3 | ⏳ Open |
-| **Inline CSS patterns** | Static + dynamic mixed | Static → Tailwind, dynamic only inline | Future Tailwind consolidation | 📋 Preventative plan |
-| **Monolithic files** | engine.js, kingdom.js, etc. | Split into focused modules | F4–F5 | ⏳ Deferred (P4) |
-| **Combat V2** | Complete + feature-flagged | Alpha-ready; 26.8M test scenarios | F2 | ✅ Done (PR #612) |
+| **Game navigation** | "War" + "Economy" labels | "Offense" + "Wherewithal" | A1 | ? Done |
+| **Admin panel** | Vanilla JS (`public/admin.html`) | React + Tailwind with AI presets | Admin Ph0-Ph6 | ✅ Ph6b hard cutover verified (PR #602; verification 2026-06-28) |
+| **Admin CSRF** | Missing on mutating routes | Protected all mutators | E1 | ? Done |
+| **CI/lint enforcement** | ESLint broken (silent) | `npm run lint` + test job | E2 | ? Done |
+| **API hygiene** | Mixed snake_plural routes | Canonical kebab + aliases | B1+B2 | ? Done |
+| **Portal styling** | CSS + Tailwind mixed | Pure Tailwind foundation | C1+C2 | ? Done |
+| **Forum integration** | Vanilla phpBB rebuild | Categorized index + in-game panel + avatars/badges | ? | ? Done (fix/topbar-take-turn) |
+| **Mobile UI** | Unpolished panels | Responsive refinements across 7 panels | Mobile fixes | ? Done (PR #596, #597, #598) |
+| **Dependency hygiene** | Discord bot chain pinned to vulnerable `undici` | `undici` 6.27.0 via npm override | E3 | ? Done |
+| **Inline CSS patterns** | Static + dynamic mixed | Static → Tailwind, dynamic only inline | Tailwind consolidation | ✅ Done (PR #656-659; duplicate className fixes + style consolidation) |
+| **Monolithic files** | engine.js, kingdom.js, etc. | Split into focused modules | F4?F5 | ? Deferred (P4) |
+| **Combat** | Complete + feature-flagged | Alpha-ready; 26.8M test scenarios | F2 | ? Done (PR #612) |
 
 ---
 
@@ -29,48 +31,48 @@
 
 ### Three intertwined goals:
 
-1. **Alpha completeness** — Stabilize game UX, admin tooling, and API consistency for beta launch
-2. **Admin Tailwind cutover** — Migrate React admin from inline styles to production-ready UI (Phase 6b deferred until verification matrix passes)
-3. **Platform health** — Fix security gaps (CSRF, ESLint), dependency vulns, and unlock CI test enforcement
+1. **Alpha completeness** ? Stabilize game UX, admin tooling, and API consistency for beta launch
+2. **Admin Tailwind cutover** ? Migrate React admin from inline styles to production-ready UI (Phase 6b deferred until verification matrix passes)
+3. **Platform health** ? Fix security gaps (CSRF, ESLint), dependency vulns, and unlock CI test enforcement
 
 ### Dependency order:
 
 ```
-P0 (parallel): A1 (nav) + E1 (CSRF) + E2 (CI) + E3 (Vite) → unblock P1–P4
+P0 (parallel): A1 (nav) + E1 (CSRF) + E2 (CI) + E3 (Vite) ? unblock P1?P4
 P1: B1+B2 (API kebab) + M1 (MAINTENANCE refresh)
 P2: C1+C2+C3 (Portal Tailwind)
 P3: D1+D2+D3 (Admin Tailwind hard cutover, with verification matrix)
-P4: F1–F8 (Architecture debt post-cutover — no dogfood wait)
+P4: F1?F8 (Architecture debt post-cutover ? no dogfood wait)
 ```
 
 ### Rules (from `CLAUDE.md`):
 
 - Draft PRs only; never self-merge
-- Lint → smoke → sanity before every commit
+- Lint ? smoke ? sanity before every commit
 - Session URL in all commit messages
-- Verify inline styles only for dynamic/calculated values; static → Tailwind utilities
-- Preserve panel IDs (`warfare`, `economy`, `alliances`) — only labels change
+- Verify inline styles only for dynamic/calculated values; static ? Tailwind utilities
+- Preserve panel IDs (`warfare`, `economy`, `alliances`) ? only labels change
 
 ---
 
-## Track A — Vernacular & Naming (P0)
+## Track A ? Vernacular & Naming (P0)
 
-**Status:** ✅ **DONE** (fix/topbar-take-turn)
+**Status:** ? **DONE** (fix/topbar-take-turn)
 
 | Item | Change | File |
 |------|--------|------|
-| Bottom nav | "War" → "Offense" | BottomNav.jsx |
-| Bottom nav | "Economy" → "Wherewithal" | BottomNav.jsx |
-| Admin tab | "Configs" → "Config" | AdminTabNav.jsx |
-| Alliance UI | Plural copy → singular panel titles | AlliancesPanel.jsx + related |
+| Bottom nav | "War" ? "Offense" | BottomNav.jsx |
+| Bottom nav | "Economy" ? "Wherewithal" | BottomNav.jsx |
+| Admin tab | "Configs" ? "Config" | AdminTabNav.jsx |
+| Alliance UI | Plural copy ? singular panel titles | AlliancesPanel.jsx + related |
 
 **Exit criteria:** Lint + smoke pass; hash routes (`#warfare`, `#economy`, `#alliances`) unchanged; visual check mobile + desktop.
 
 ---
 
-## Track B — API Route Normalization (P1)
+## Track B ? API Route Normalization (P1)
 
-**Status:** ✅ **DONE** (fix/admin-api-kebab, fix/admin-api-clients)
+**Status:** ? **DONE** (fix/admin-api-kebab, fix/admin-api-clients)
 
 | Item | Scope |
 |------|-------|
@@ -84,53 +86,53 @@ P4: F1–F8 (Architecture debt post-cutover — no dogfood wait)
 
 ---
 
-## Track C — Portal → React + Tailwind (P2)
+## Track C ? Portal ? React + Tailwind (P2)
 
-**Status:** ✅ **DONE** (feat/portal-tailwind-foundation, feat/portal-tailwind-forum, PR #603)
+**Status:** ? **DONE** (feat/portal-tailwind-foundation, feat/portal-tailwind-forum, PR #603)
 
 | Phase | Work | Status | Notes |
 |-------|------|--------|-------|
-| **C1** | Import `tailwind.css`; reuse `.card`, `.base-btn`, theme tokens | ✅ | Done |
-| **C2** | Forum + race cards to Tailwind; extract patterns to `@layer components` | ✅ | Done |
-| **C3** | Add reusable @layer components foundation; keep CSS files for safety | ✅ | PR #603 merged |
+| **C1** | Import `tailwind.css`; reuse `.card`, `.base-btn`, theme tokens | ? | Done |
+| **C2** | Forum + race cards to Tailwind; extract patterns to `@layer components` | ? | Done |
+| **C3** | Add reusable @layer components foundation; keep CSS files for safety | ? | PR #603 merged |
 
 **C3 Details (PR #603 - Portal CSS Consolidation):**
-- **Phase 1:** ✅ Added 223 lines of `@layer components` to tailwind.css (registration form, cards, tables, buttons, forms)
-- **Phase 2 (Revised):** ✅ Kept ALL original CSS class definitions to prevent regressions (no aggressive deletion)
+- **Phase 1:** ? Added 223 lines of `@layer components` to tailwind.css (registration form, cards, tables, buttons, forms)
+- **Phase 2 (Revised):** ? Kept ALL original CSS class definitions to prevent regressions (no aggressive deletion)
 - **Strategy:** @layer components provide reusable foundation; CSS files remain for production stability
 - **Future work:** Incremental component-by-component Tailwind utility migration (out of C3 scope, post-cutover)
 
 **Forum overhaul:** Categorized index (Community, Warfare, Alliances, Roleplaying), 4 boards each, avatars, badges, in-game panel.
 
-**Exit criteria:** ✅ Lint + smoke pass; ✅ No style regressions; ✅ @layer components as foundation for future Tailwind adoption; visual parity maintained.
+**Exit criteria:** ? Lint + smoke pass; ? No style regressions; ? @layer components as foundation for future Tailwind adoption; visual parity maintained.
 
 ---
 
-## Track D — Admin Tailwind Migration & Hard Cutover (P3)
+## Track D ? Admin Tailwind Migration & Hard Cutover (P3)
 
-**Admin roadmap Phases 0–6 mapped to alpha tracks:**
+**Admin roadmap Phases 0?6 mapped to alpha tracks:**
 
 | Phase | Branch | Status | Notes |
 |-------|--------|--------|-------|
-| **Ph0** | admin-react-00-foundation | ✅ Merged PR #580 | React shell + auth gate + legacy fallback |
-| **Ph1** | admin-react-01-shell | ✅ Merged PR #581 | Shell, stats, 12 empty tabs |
-| **Ph2a–d** | admin-react-02-kingdoms | ✅ Merged PR #582–585 | Kingdom table + editor + AI presets |
-| **Ph3** | admin-react-03-manage | ✅ Merged PR #586 | Announcements, moderation, bulk actions |
-| **Ph4** | claude/repo-health-assessment | ✅ Merged PR #587 | Events, Lore, Goals, Evolution panels |
-| **Ph5** | claude/repo-health-assessment | ✅ Merged PR #588 | Config, Sounds, Fragments, Prestige, Security |
-| **Ph6a** | admin-soft-six-prep | ✅ Merged PR #589 | Soft cutover: React default, legacy fallback at `?legacy=1` |
-| **Ph6b** | admin-react-06-cutover | ✅ Merged PR #602 | Hard cutover: React admin default, legacy `admin.html` archived to `/legacy/`, no `?legacy=1` fallback |
+| **Ph0** | admin-react-00-foundation | ? Merged PR #580 | React shell + auth gate + legacy fallback |
+| **Ph1** | admin-react-01-shell | ? Merged PR #581 | Shell, stats, 12 empty tabs |
+| **Ph2a?d** | admin-react-02-kingdoms | ? Merged PR #582?585 | Kingdom table + editor + AI presets |
+| **Ph3** | admin-react-03-manage | ? Merged PR #586 | Announcements, moderation, bulk actions |
+| **Ph4** | claude/repo-health-assessment | ? Merged PR #587 | Events, Lore, Goals, Evolution panels |
+| **Ph5** | claude/repo-health-assessment | ? Merged PR #588 | Config, Sounds, Fragments, Prestige, Security |
+| **Ph6a** | admin-soft-six-prep | ? Merged PR #589 | Soft cutover: React default, legacy fallback at `?legacy=1` |
+| **Ph6b** | admin-react-06-cutover | ? Merged PR #602 | Hard cutover: React admin default, legacy `admin.html` archived to `/legacy/`, no `?legacy=1` fallback |
 
 ### D.1 Tailwind strategy
 
 - Replace 500+ inline `style={{}}` usages with Tailwind utilities
 - Reuse shell components (topbar, cards, buttons, CSS variables)
 - Admin-specific layers: `.admin-stat-grid`, `.admin-tab-nav`, `.admin-table-scroll`
-- **Do not** copy 650-line legacy CSS — map to utilities + tokens
+- **Do not** copy 650-line legacy CSS ? map to utilities + tokens
 
 ### D.2 Hard cutover checklist (before Ph6b)
 
-Run once on staging/local; all must ✅:
+Run once on staging/local; all must ?:
 
 - Manage: announcement + chat mods/bans
 - Kingdoms: edit kingdom + apply AI preset
@@ -149,26 +151,26 @@ Run once on staging/local; all must ✅:
 
 ---
 
-## Track E — Platform Health (P0–P1)
+## Track E ? Platform Health (P0?P1)
 
-**Status:** ✅ **E1, E2 DONE** | 🟡 **E3 DEFERRED** (await discord.js v15 stable, 3-6+ months)
+**Status:** ? **E1, E2, E3 DONE**
 
 ### E.1 ESLint enforcement
 
-**Status:** ✅ **FIXED**
+**Status:** ? **FIXED**
 
-- Pre-commit hook now enforces `npm run lint` — 0 errors required
+- Pre-commit hook now enforces `npm run lint` ? 0 errors required
 - `@eslint/js` resolved; flat-config working
 
 ### F.1 Express error handler & silent catch audit
 
-**Status:** ✅ **COMPLETE** (PR #610)
+**Status:** ? **COMPLETE** (PR #610)
 
 **Findings:**
-- ✅ Express error middleware already in place (index.js ~1540–1570)
-- ✅ Global handlers: `unhandledRejection`, `uncaughtException` with proper logging
-- ✅ Database connection error recovery (distinguishes recoverable vs. fatal)
-- ✅ Audited 554 catch blocks; most are intentional (logging I/O, localStorage fallback, API error handling)
+- ? Express error middleware already in place (index.js ~1540?1570)
+- ? Global handlers: `unhandledRejection`, `uncaughtException` with proper logging
+- ? Database connection error recovery (distinguishes recoverable vs. fatal)
+- ? Audited 554 catch blocks; most are intentional (logging I/O, localStorage fallback, API error handling)
 
 **Improvements:**
 - Added logging to `game/goals.js` JSON parsing failure with kingdom ID fallback
@@ -179,7 +181,7 @@ Run once on staging/local; all must ✅:
 
 ### E.2 CI lint + test job
 
-**Status:** ✅ **DONE** (ci/lint-test-build)
+**Status:** ? **DONE** (ci/lint-test-build)
 
 Added `.github/workflows/ci.yml`:
 - `npm ci`
@@ -189,64 +191,36 @@ Added `.github/workflows/ci.yml`:
 
 ### E.3 Dependency vulnerabilities
 
-**Status:** 🟡 **DEFERRED INDEFINITELY** — Await discord.js v15 stable release (3-6+ months)
+**Status:** ? **FIXED** via npm override
 
-#### Fixed (✅ 4 vulnerabilities)
-| Package | Issue | Resolution |
-|---------|-------|-----------|
-| `vite` | 8.0.12 → ≥8.1.0 | ✅ Already at ^8.1.0 (server FS bypass + NTLM leak on Windows) |
-| `multer` | 2.1.1 → 2.2.0 | ✅ Fixed DoS via deeply nested fields (2 HIGH vulns) |
-| `ws` | 8.x → 8.21.0 | ✅ Fixed memory exhaustion DoS (1 HIGH vuln) |
+- `discord.js@14.26.4` still pins `undici@6.24.1` upstream.
+- The local tree now forces `undici@6.27.0` under the Discord dependency chain.
+- This keeps the bot on v14 without a downgrade.
+- Remaining unrelated dependency audits can continue normally, but the Discord path itself is no longer blocked.
 
-#### Remaining (⏳ 4 vulnerabilities — undici chain, deferred)
-| Package | Issue | Path forward | Decision |
-|---------|-------|--------------|----------|
-| `undici` ≤6.26.0 | 4 HIGH: HTTP injection, WebSocket DoS, keep-alive poisoning, SameSite downgrade | (A) **Deferred:** await discord.js v15 stable (3-6 months+), (B) downgrade to discord.js v13.17.1 now (2-3 hr refactor: Intents, EmbedBuilder, Permissions) | **DEFER** — v14.x will not receive undici fix; v15 still in dev. Risk assessment: WebSocket DoS exploitable, others require MITM. Revisit when v15 stable or risk escalates. |
-
-**Analysis:** 
-- Tested discord.js 14.26.4 (latest v14) — still uses vulnerable undici 6.24.1
-- Fix requires undici >=6.27.0, not available in discord.js v14.x
-- discord.js v15 (dev) will have the fix, but ETA uncertain (weeks to months)
-- Real-world risk: low-moderate (WebSocket DoS direct, others need MITM)
-- Cost to fix now: ~2-3 hours refactoring; Cost to defer: ongoing security debt
-
-**Decision:** Defer indefinitely. Branch `claude/track-e3-dependencies` deleted. Revisit when discord.js v15 stable or if threat escalates (e.g., public WebSocket DoS PoC). No action needed until then.
+**Verified:** `npm ls discord.js @discordjs/rest undici` resolves `undici@6.27.0` for the bot chain.
 
 ### E.4 Admin CSRF protection
 
-**Status:** ✅ **FIXED** (fix/admin-csrf)
+**Status:** ? **FIXED** (fix/admin-csrf)
 
 All mutating routes now use `requireCsrfToken` middleware.
 
 ### E.5 MAINTENANCE.md refresh
 
-**Status:** ⏳ **M1** (docs/maintenance-refresh)
+**Status:** ? **M1** (PR #654)
 
-Link updated doc to this roadmap; clarify resolved vs. open items.
+Comprehensive system health audit documenting all component status, technical debt, performance notes, and recommended next actions.
 
 ---
 
-## Track F — Architecture Debt (P4, post-cutover)
+## Track F ? Architecture Debt (P4, post-cutover)
 
-**Status:** ✅ **F3 & F4 COMPLETE** — F3 consolidation complete (PR #606–#608); F4 engine.js decomposition complete (PR #609–#611)
+**Status:** ? **F3 & F4 COMPLETE** ? F3 consolidation complete (PR #606?#608); F4 engine.js decomposition complete (PR #609?#611)
 
 ### F4 Decomposition Progress
 
-**Goal:** Extract 6,242-line `engine.js` into focused, testable modules across 4 phases.
-
-| Phase | Functions Extracted | Modules Created | Status | PR |
-|-------|-------------------|-----------------|--------|-----|
-| **Phase 1A** | achievements, scoring | `game/lib/achievements.js` | ✅ | #609 |
-| **Phase 1B** | combat helpers, formatting | `game/lib/combat-helpers.js` | ✅ | #609 |
-| **Phase 2A** | happiness logging (DB) | `game/lib/happiness-logging.js` | ✅ | #609 |
-| **Phase 2B** | expedition utilities, transitions | `game/lib/expeditions.js` | ✅ | #610 |
-| **Phase 2C** | rebellion, prestige, trade raids, alliance defense | `game/lib/special-events.js` | ✅ | #611 |
-| **Phase 2D** | combat wrappers (~1,260 lines) | `game/lib/combat-wrappers.js` | ✅ | #611 |
-| **Phase 3A** | building & research (6 functions) | `game/lib/building-research.js` | ✅ | #611 |
-| **Phase 3B** | gameplay (7 functions) | `game/lib/gameplay.js` | ✅ | #611 |
-| **Phase 4** | processTurn orchestration | Thin coordinator | ✅ | #611 |
-
-**Architecture:** Pure functions extracted first; medium-risk functions with state mutations second; large orchestrators last.
+**Goal:** Extract `engine.js` into focused modules. Status: complete. See PRs #609?#611.
 
 ---
 
@@ -254,20 +228,20 @@ Link updated doc to this roadmap; clarify resolved vs. open items.
 
 | ID | Work | Notes | Timeline | Status |
 |----|------|-------|----------|--------|
-| **F1** | Express global error handler; audit silent `catch {}` | Audit complete; no critical issues found | ✅ | ✅ **DONE** (PR #610) |
-| **F2** | Combat V2 complete + alpha-ready | Individual troop HP/DMG model; 26.8M simulated combats; balanced 48–52% outcomes; feature-flagged `USE_COMBAT_V2=1` | Alpha | ✅ **DONE** (PR #612) |
-| **F3** | Module consolidation & architecture foundation | ✅ Phase 1: data-transformations extraction (PR #606)<br/>✅ Phase 2: timestamp consolidation (PR #607)<br/>✅ Phase 3: architecture documentation + mobile hardening (PR #608) | Now | ✅ **DONE** |
-| **F4** | `engine.js` decomposition | 4 phases (all complete); 6,241 lines → 8 focused modules + re-exports | Now | ✅ **DONE** (PR #611) |
-| **F5** | `GameStateManager` → Zustand | 5-PR incremental migration; Phase 1 (Store infrastructure + all tier-1 panels) | Post-F4 | ⏳ **PIVOT: Light-state components only** — PR #3–#6 COMPLETE (PR #617, #618, #619, #620); PR #9–#10 COMPLETE (PR #624 OptionsPanel, PR #625 HeroesPanel); PR #11 (StudiesPanel) deferred — complex components need architectural refactor before hook migration |
-| **F6** | Frontend component tests (Vitest + RTL) | Start with shell nav + `panelMeta` | Post-F4 | ⏳ Pending |
-| **F7** | Numeric range validation (troops, builds, research) | Prevents balance exploits | Post-F4 | ⏳ Pending |
-| **F8** | `kingdom.js` split → `build`, `warfare`, `economy`, `research` modules | Incremental refactor; enabled by F3 foundation | Post-F4 | ⏳ Pending |
+| **F1** | Express global error handler; audit silent `catch {}` | Audit complete; no critical issues found | ? | ? **DONE** (PR #610) |
+| **F2** | Combat complete + alpha-ready | Individual troop HP/DMG model; 26.8M simulated combats; balanced 48?52% outcomes; feature-flagged `USE_COMBAT_V2=1` | Alpha | ? **DONE** (PR #612) |
+| **F3** | Module consolidation & architecture foundation | ? Phase 1: data-transformations extraction (PR #606)<br/>? Phase 2: timestamp consolidation (PR #607)<br/>? Phase 3: architecture documentation + mobile hardening (PR #608) | Now | ? **DONE** |
+| **F4** | `engine.js` decomposition | 4 phases (all complete); 6,241 lines ? 8 focused modules + re-exports | Now | ? **DONE** (PR #611) |
+| **F5** | `GameStateManager` ? Zustand | Store migration complete; remaining bridges tracked separately | Post-F4 | ? **COMPLETE** (16/16 components) |
+| **F6** | Frontend component tests (Vitest + RTL) | Component test foundation | Post-F4 | ? **COMPLETE** (57 tests; panelMeta + BottomNav) |
+| **F7** | Numeric range validation (troops, builds, research) | Prevents balance exploits | Post-F4 | ? **COMPLETE** (validators + endpoint integration) |
+| **F8** | `kingdom.js` split ? `build`, `warfare`, `economy`, `research` modules | Incremental refactor | Post-F4 | ? **COMPLETE** |
 
 ---
 
-## Preventative: Inline CSS → Tailwind Consolidation
+## Preventative: Inline CSS ? Tailwind Consolidation
 
-**Status:** 📋 **Planned future work** (not blocking alpha)
+**Status:** ✅ **COMPLETE** (PR #656-659)
 
 ### Problem
 
@@ -286,19 +260,32 @@ The React migration used "path of least resistance" shortcuts that created maint
 | **Conditional** | Inline style | `{ color: isWarning ? 'var(--red)' : 'var(--text)' }` |
 | **CSS variables** | Inline style | `{ color: 'var(--gold)' }` |
 
-### Future PR (low urgency)
+### Completion Summary (PR #656-659)
 
-- Audit `KingdomBodyHeader.jsx`, `BuildPanel.jsx`, other heavily-styled components
-- Migrate static inline styles → Tailwind utilities
-- Keep inline only for: dynamic values, CSS variables, conditional logic
-- Regression test: no visual changes
-- Lint + smoke + sanity pass
+**Work completed:**
+- ✅ Consolidated duplicate `className` attributes in 9 component files
+- ✅ Merged inline styles into single Tailwind utility classes
+- ✅ Fixed all Gemini Code Assist review issues (high + medium priority)
+- ✅ Restored critical DOM IDs for external script integration (SchoolTab)
+- ✅ Corrected emoji sizes (text-8xl → text-4xl, text-6xl → text-2xl)
+- ✅ All lint + smoke + sanity checks passed
+
+**Components migrated:**
+- `BuildPanel.jsx` — removed redundant width styles, consolidated classes
+- `EconomyPanel.jsx` — border/color to Tailwind
+- `HappinessGraph.jsx` — removed duplicate class attributes
+- `KingdomBodyHeader.jsx` — color to text-[var(--text)]
+- `ResourcesPanel.jsx` — margin to mt-3
+- `RankingsPanel.jsx` — button styles to Tailwind
+- `StudiesPanel.jsx` — clsx → template literals, added rounded-none
+- `StudiesTabs/SchoolTab.jsx` — emoji sizing + DOM IDs
+- `StudiesTabs/SpellsGrid.jsx` — emoji sizing
 
 ---
 
 ## Splash & Glitch (Standalone)
 
-**Status:** ✅ **DONE** (S0)
+**Status:** ? **DONE** (S0)
 
 The retro phase (`public/retro/*` assets + `Splash.jsx` CSS-only glitch) is **not** folded into portal or game. It remains a separate rendition of the original frameset.
 
@@ -308,7 +295,7 @@ The retro phase (`public/retro/*` assets + `Splash.jsx` CSS-only glitch) is **no
 
 ## Mobile UI Refinements (Completed)
 
-**Status:** ✅ **DONE** (PR #596, #597, #598)
+**Status:** ? **DONE** (PR #596, #597, #598)
 
 | Item | Change |
 |------|--------|
@@ -327,28 +314,28 @@ The retro phase (`public/retro/*` assets + `Splash.jsx` CSS-only glitch) is **no
 
 Per `CLAUDE.md`:
 
-1. ✅ `npm run lint` — 0 errors
-2. ✅ Fresh server boot + `PostgreSQL connected successfully`
-3. ✅ Baseline smoke: forum boards, auth/me, portal, game entry
-4. ✅ Track-specific checks (nav labels, `/admin`, portal render, API paths, mobile viewport)
-5. ✅ Sanity questions answered in commit message or PR description
+1. ? `npm run lint` ? 0 errors
+2. ? Fresh server boot + `PostgreSQL connected successfully`
+3. ? Baseline smoke: forum boards, auth/me, portal, game entry
+4. ? Track-specific checks (nav labels, `/admin`, portal render, API paths, mobile viewport)
+5. ? Sanity questions answered in commit message or PR description
 
-**Before hard cutover (Ph6b):** Full admin checklist (§D.2) pass on staging + local.
+**Before hard cutover (Ph6b):** Full admin checklist (?D.2) pass on staging + local.
 
 ---
 
 ## Success Metrics
 
-| Metric | Target |
-|--------|--------|
-| Tracks A, B, C, E completion | 100% (P0–P2 done; E1–E2 fixed; E3 deferred) |
-| Admin parity (Ph6a) | 100% feature parity with legacy |
-| Admin hard cutover (Ph6b) | Deferred until verification matrix passes |
-| Lint | 0 errors on all new code |
-| CI | Lint + test jobs gate all PRs |
-| Mobile responsiveness | No horizontal page scroll at 360px width |
-| API coverage | Canonical paths + legacy aliases; deprecation headers |
-| Tailwind adoption | Foundation + patterns locked in; inline CSS reserved for dynamic use |
+| Metric | Target | Status |
+|--------|--------|--------|
+| Tracks A, B, C, E completion | 100% | ✅ 100% (All P0-P4 complete) |
+| Admin parity (Ph6a) | 100% feature parity with legacy | ✅ 100% (Ph6a complete) |
+| Admin hard cutover (Ph6b) | Verification matrix passes | ✅ **VERIFIED** (2026-06-28: all 12 checklist items confirmed) |
+| Lint | 0 errors on all new code | ✅ 0 errors (pre-commit hook enforced) |
+| CI | Lint + test jobs gate all PRs | ✅ Enabled (ci.yml active) |
+| Mobile responsiveness | No horizontal page scroll at 360px width | ✅ Achieved (PR #596-598) |
+| API coverage | Canonical paths + legacy aliases; deprecation headers | ✅ Done (dualRoute pattern) |
+| Tailwind adoption | Foundation + patterns locked in; inline CSS reserved for dynamic use | ✅ Done (9 components consolidated, PR #656-659) |
 
 ---
 
@@ -356,22 +343,22 @@ Per `CLAUDE.md`:
 
 | Priority | Track/Phase | Owner | Status |
 |----------|-------------|-------|--------|
-| **1** | **S0** Splash retro | — | ✅ Done |
-| **2** | **A1** Nav vernacular | — | ✅ Done |
-| **3** | **E1** Admin CSRF | — | ✅ Done |
-| **4** | **E2** CI lint + test | — | ✅ Done |
-| **5** | **B1+B2** API kebab | — | ✅ Done |
-| **6** | **C1+C2** Portal Tailwind + forum | — | ✅ Done |
-| **7** | **Admin Ph0–6a** React admin soft cutover | — | ✅ Done (PR #589) |
-| **8** | **Mobile UI** Responsive refinements | — | ✅ Done (PR #596–#598) |
-| **9** | **F3 Consolidation** Module architecture & timestamps | — | ✅ Done (PR #606–#608) |
-| **10** | **F4 Decomposition** `engine.js` → 8 focused modules (all phases 1–4) | — | ✅ **DONE** (PR #611: Phases 2D–4 + encoding fix) |
-| **11** | **C3** Portal CSS cleanup | — | ⏳ After F4 |
-| **12** | **Admin Ph6b** Hard cutover (with verification matrix ✅) | — | ⏳ When ready |
-| **13** | **M1** MAINTENANCE refresh | — | ⏳ After F4 completes |
-| **14** | **E3** Discord.js v15 migration | — | 🟡 **DEFERRED** (indefinite — await v15 stable) |
-| **15** | **Tailwind consolidation** Static → utilities refactor | — | 📋 Future (low urgency) |
-| **16** | **Track F (F.2,5–8)** Remaining architecture debt | — | ⏳ Post-F4 |
+| **1** | **S0** Splash retro | ? | ? Done |
+| **2** | **A1** Nav vernacular | ? | ? Done |
+| **3** | **E1** Admin CSRF | ? | ? Done |
+| **4** | **E2** CI lint + test | ? | ? Done |
+| **5** | **B1+B2** API kebab | ? | ? Done |
+| **6** | **C1+C2** Portal Tailwind + forum | ? | ? Done |
+| **7** | **Admin Ph0?6a** React admin soft cutover | ? | ? Done (PR #589) |
+| **8** | **Mobile UI** Responsive refinements | ? | ? Done (PR #596?#598) |
+| **9** | **F3 Consolidation** Module architecture & timestamps | ? | ? Done (PR #606?#608) |
+| **10** | **F4 Decomposition** `engine.js` ? 8 focused modules (all phases 1?4) | ? | ? **DONE** (PR #611: Phases 2D?4 + encoding fix) |
+| **11** | **C3** Portal CSS cleanup | ? | ✅ **DONE** (PR #603) |
+| **12** | **Admin Ph6b** Hard cutover (with verification matrix ✅) | ? | ✅ **DONE** (PR #602; verified 2026-06-28) |
+| **13** | **M1** MAINTENANCE refresh | ? | ✅ **DONE** (PR #654) |
+| **14** | **E3** Discord.js v15 migration | ? | ?? **DEFERRED** (indefinite; await v15 stable) |
+| **15** | **Tailwind consolidation** Static → utilities refactor | ? | ✅ **DONE** (PR #656-659) |
+| **16** | **Track F (F.2, F.5-F.8)** Remaining architecture debt | ? | ✅ **DONE** (F1-F8 complete; latest: F8 phases 6.1-6.3) |
 
 ---
 
@@ -380,23 +367,14 @@ Per `CLAUDE.md`:
 | Document | Purpose | Status |
 |----------|---------|--------|
 | `CLAUDE.md` | PR workflow, smoke recipe, quality rules | **Source of truth** |
-| `AdminRoadmap.md` | Admin parity detail + Phase 6b checklist | **Detailed reference** |
-| `MAINTENANCE.md` | Health audit + F track itemization | **Being refreshed** (M1) |
-| `ALPHA_ROADMAP.md` | Alpha phase overview (superseded by this doc) | **Archived** (use ROADMAP.md instead) |
-| `TODO.md` | Feature-level todos + Combat V2 notes | Companion reference |
+| `ARCHIVAL.md` | Historical record of all completed work, tracks, and features | **Reference** (2026-06-28) |
+| `MAINTENANCE.md` | System health audit + architecture status | **Current** (PR #654) |
+| `TODO.md` | Feature-level todos + future work | Companion reference |
+| `AdminRoadmap.md` | Admin parity detail (historical) | **Archived** |
+| `ALPHA_ROADMAP.md` | Alpha phase overview (superseded) | **Archived** |
 
 ---
 
 ## Document History
 
-| Version | Date | Change |
-|---------|------|--------|
-| 1.7 | 2026-06-27 | **F5 PIVOT: Light-state components only** — PR #11 (StudiesPanel) closed after discovering component has 16+ state references throughout render tree; hook replacement insufficient for complex components. Strategy: Complete light-state migrations (OptionsPanel ✅, HeroesPanel ✅), defer complex ones (StudiesPanel, TrainingPanel, etc.) until architectural refactor plan ready. Pattern identified: simple components (applyUpdates only) → 1–2 hour migration; complex components → architectural refactor first. |
-| 1.6 | 2026-06-27 | **F5 Phase 1 PR #10 COMPLETE**: HeroesPanel migrated to Zustand; syncKingdomData helper syncs server snapshots to all stores after hero actions; Gemini review feedback optimized empty object check to prevent unnecessary store dispatches; all CI checks passing (PR #625) |
-| 1.5 | 2026-06-27 | **F5 Phase 1 PR #9 COMPLETE**: OptionsPanel migrated to Zustand; profileStore extended with description/customPortrait fields; Gemini review issues fixed (snake_case sync, component extraction, state initialization); all CI checks passing (PR #624) |
-| 1.4 | 2026-06-27 | **F5 Phase 1 PR #3–#5 COMPLETE**: StatusPanel, multiple UI/profile components migrated to Zustand; Gemini review issues resolved; PR #6 green CI with 20+ components ready; PR #7–#8 queued |
-| 1.3 | 2026-06-27 | **F5 Phase 1 PR #2 READY**: profileStore + KingdomBodyHeader migration complete; all review feedback addressed (useShallow optimization, dependency management); all CI checks passing (PR #616) |
-| 1.2 | 2026-06-27 | **F4 COMPLETE**: Phases 2D (combat-wrappers), 3A (building-research), 3B (gameplay), 4 (orchestration) all extracted; fixed encoding validation (middle dot → hyphen); all CI checks passing (PR #611) |
-| 1.1 | 2026-06-27 | F4 Phase 1–2C completion update: achievements, combat-helpers, happiness-logging, expeditions, special-events modules extracted; Phase 2D (combat wrappers) pending |
-| 1.0 | 2026-06-26 | Unified ALPHA_ROADMAP + AdminRoadmap + MAINTENANCE into single source of truth; added Tailwind consolidation preventative plan |
-
+See `git log` for the detailed PR-by-PR history. This document keeps the current state and active direction only.

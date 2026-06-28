@@ -4,7 +4,16 @@ import { apiCall } from '../../utils/api';
 import { fmt } from "../../utils/fmt";
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import { toast } from '../../utils/toast.js';
-import { useGameState, useGameMutationEvents } from '../../hooks/useGameState';
+import { useGameMutationEvents } from '../../hooks/useGameState';
+import {
+  useRace,
+  useGold,
+  useKingdomId,
+  useWood,
+  useStone,
+  useIron,
+  useBuildCount,
+} from '../../stores';
 import UpgradesList from './UpgradesList.jsx';
 import { parseOwnedUpgrades } from '../../utils/upgradeUtils.js';
 import {
@@ -17,7 +26,13 @@ import {
 } from '../../utils/defenseData.js';
 
 const DefensePanel = () => {
-  const { state } = useGameState();
+  const race = useRace();
+  const kingdomId = useKingdomId();
+  const gold = useGold();
+  const wood = useWood();
+  const stone = useStone();
+  const iron = useIron();
+  const vaults = useBuildCount('vaults');
   useGameMutationEvents();
   const [upgradeOwned, setUpgradeOwned] = useState({
     wall: {},
@@ -52,7 +67,7 @@ const DefensePanel = () => {
       return;
     }
 
-    const race = state?.race || 'human';
+    const raceValue = race || 'human';
     const du = data.defense_upgrades || {};
 
     let statusText = 'Not fortified';
@@ -99,17 +114,17 @@ const DefensePanel = () => {
       bld_walls: data.bld_walls || 0,
       wm_on_walls: data.wm_on_walls || 0,
       wall_power: data.wall_power || 0,
-      wall_race: WALL_RACE_MULT[race] || 1.0,
+      wall_race: WALL_RACE_MULT[raceValue] || 1.0,
       bld_guard_towers: data.bld_guard_towers || 0,
       thieves_on_watch: data.thieves_on_watch || 0,
       tower_cap: (data.bld_guard_towers || 0) * 10,
       tower_power: data.tower_power || 0,
-      tower_race: TOWER_RACE_MULT[race] || 1.0,
+      tower_race: TOWER_RACE_MULT[raceValue] || 1.0,
       bld_outposts: data.bld_outposts || 0,
       rangers_on_patrol: data.rangers_on_patrol || 0,
       outpost_cap: (data.bld_outposts || 0) * 20,
       outpost_power: data.outpost_power || 0,
-      outpost_race: OUTPOST_RACE_MULT[race] || 1.0,
+      outpost_race: OUTPOST_RACE_MULT[raceValue] || 1.0,
     });
 
     setUpgradeOwned({
@@ -117,7 +132,7 @@ const DefensePanel = () => {
       tower_def: parseOwnedUpgrades(data.tower_def_upgrades),
       outpost: parseOwnedUpgrades(data.outpost_upgrades),
     });
-  }, [state?.race]);
+  }, [race]);
 
   useEffect(() => {
     refreshDefense();
@@ -126,6 +141,17 @@ const DefensePanel = () => {
   const syncDefenseUpgrades = useCallback((bucket, nextOwned) => {
     setUpgradeOwned((prev) => ({ ...prev, [bucket]: nextOwned }));
   }, []);
+
+  const upgradeState = {
+    id: kingdomId,
+    kingdomId,
+    race,
+    gold,
+    wood,
+    stone,
+    iron,
+    bld_vaults: vaults,
+  };
 
   useGameMutationEvents(useCallback((event) => {
     if (String(event?.reason || '') === 'economy-upgrade') {
@@ -263,7 +289,7 @@ const DefensePanel = () => {
               category="wall"
               defs={WALL_UPGRADES_JS}
               owned={upgradeOwned.wall}
-              state={state || {}}
+              state={upgradeState}
               onPurchased={(_, nextOwned) => syncDefenseUpgrades('wall', nextOwned)}
             />
           </div>
@@ -314,7 +340,7 @@ const DefensePanel = () => {
               category="tower_def"
               defs={TOWER_DEF_UPGRADES_JS}
               owned={upgradeOwned.tower_def}
-              state={state || {}}
+              state={upgradeState}
               onPurchased={(_, nextOwned) => syncDefenseUpgrades('tower_def', nextOwned)}
             />
           </div>
@@ -365,7 +391,7 @@ const DefensePanel = () => {
               category="outpost"
               defs={OUTPOST_UPGRADES_JS}
               owned={upgradeOwned.outpost}
-              state={state || {}}
+              state={upgradeState}
               onPurchased={(_, nextOwned) => syncDefenseUpgrades('outpost', nextOwned)}
             />
           </div>

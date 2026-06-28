@@ -4,7 +4,7 @@ import { apiCall } from '../../utils/api';
 import { repairMojibake } from '../../utils/repairMojibake';
 import { fmt } from "../../utils/fmt";
 import { toast as showToast } from '../../utils/toast.js';
-import { useGameState } from '../../hooks/useGameState';
+import { useProfileStore, useKingdomId, useDiscoveredKingdoms } from '../../stores';
 import { openKingdomProfile } from './KingdomProfileModal.jsx';
 import { openDirectMessage } from '../../utils/directMessage.js';
 import { selectBountyTarget } from '../../utils/bountyTarget.js';
@@ -24,7 +24,6 @@ const RACE_ICONS = {
 };
 
 const RankingsPanel = () => {
-  const { state, setState } = useGameState();
   const [activeTab, setActiveTab] = useState('kingdoms');
   const [search, setSearch] = useState('');
   const [kingdomRows, setKingdomRows] = useState([]);
@@ -32,6 +31,8 @@ const RankingsPanel = () => {
   const [loadingKingdoms, setLoadingKingdoms] = useState(true);
   const [loadingAlliances, setLoadingAlliances] = useState(true);
   const [error, setError] = useState('');
+  const kingdomId = useKingdomId();
+  const discoveredKingdoms = useDiscoveredKingdoms();
 
   const repairText = useCallback((value) => {
     const text = value === null || value === undefined ? '' : String(value);
@@ -71,7 +72,7 @@ const RankingsPanel = () => {
 
       setKingdomRows(kingdoms);
       setAllianceRows(alliances);
-      setState({ rankingsCache: kingdoms, allianceRankingsCache: alliances });
+      useProfileStore.getState().receiveServerSnapshot({ rankingsCache: kingdoms, allianceRankingsCache: alliances });
     } catch (err) {
       console.error('[RankingsPanel] Failed to load rankings:', err);
       setError(err.message || 'Failed to load rankings');
@@ -129,8 +130,8 @@ const RankingsPanel = () => {
   }, [loadRankings]);
 
   const renderKingdomRow = (row) => {
-    const isMe = row.id === state?.kingdomId;
-    const disc = state?.discovered_kingdoms || {};
+    const isMe = row.id === kingdomId;
+    const disc = discoveredKingdoms || {};
     const isMapped = !!(disc[row.id] && disc[row.id].mapped);
     const raceKey = String(row.race || 'human');
     const raceIcon = RACE_ICONS[raceKey] || '👤';
@@ -150,26 +151,26 @@ const RankingsPanel = () => {
       : null;
 
     const actionBtns = isMe
-      ? <button className="btn btn-accent" style={{ fontSize: '11px', padding: '3px 8px' }} onClick={() => handleDirectMessage(row)}>✉️ Message</button>
+      ? <button className="btn btn-accent text-[11px] px-2 py-0.5" onClick={() => handleDirectMessage(row)}>✉️ Message</button>
       : (row.turn || 0) < 400
         ? (
           <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
-            <button className="btn" style={{ fontSize: '11px', padding: '3px 8px' }} title="Kingdom Profile" onClick={() => handleProfile(row)}>👤</button>
-            <button className="btn btn-accent" style={{ fontSize: '11px', padding: '3px 8px' }} title="Send message" onClick={() => handleDirectMessage(row)}>✉️</button>
+            <button className="btn text-[11px] px-2 py-0.5" title="Kingdom Profile" onClick={() => handleProfile(row)}>👤</button>
+            <button className="btn btn-accent text-[11px] px-2 py-0.5" title="Send message" onClick={() => handleDirectMessage(row)}>✉️</button>
             <span style={{ fontSize: '11px', color: 'var(--green)', marginLeft: '4px' }} title="Protected until Turn 400">🛡️</span>
           </div>
         )
         : (
           <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
-            <button className="btn" style={{ fontSize: '11px', padding: '3px 8px' }} title="Kingdom Profile" onClick={() => handleProfile(row)}>👤</button>
-            <button className="btn btn-accent" style={{ fontSize: '11px', padding: '3px 8px' }} title="Send message" onClick={() => handleDirectMessage(row)}>✉️</button>
+            <button className="btn text-[11px] px-2 py-0.5" title="Kingdom Profile" onClick={() => handleProfile(row)}>👤</button>
+            <button className="btn btn-accent text-[11px] px-2 py-0.5" title="Send message" onClick={() => handleDirectMessage(row)}>✉️</button>
             {isMapped ? (
               <>
-                <button className="btn btn-gold" style={{ fontSize: '11px', padding: '3px 8px' }} title="Place Bounty" onClick={() => handleBounty(row)}>🪙</button>
-                <button className="btn btn-red" style={{ fontSize: '11px', padding: '3px 8px' }} onClick={() => handleTarget(row, 'attack')}>⚔️</button>
-                <button className="btn btn-accent" style={{ fontSize: '11px', padding: '3px 8px' }} onClick={() => handleTarget(row, 'spells')}>✨</button>
-                <button className="btn" style={{ fontSize: '11px', padding: '3px 8px' }} onClick={() => handleTarget(row, 'covert')}>🕵️</button>
-                <button className="btn btn-gold" style={{ fontSize: '11px', padding: '3px 8px' }} title="Establish Trade Route" onClick={() => handleTrade(row)}>🤝</button>
+                <button className="btn btn-gold text-[11px] px-2 py-0.5" title="Place Bounty" onClick={() => handleBounty(row)}>🪙</button>
+                <button className="btn btn-red text-[11px] px-2 py-0.5" onClick={() => handleTarget(row, 'attack')}>⚔️</button>
+                <button className="btn btn-accent text-[11px] px-2 py-0.5" onClick={() => handleTarget(row, 'spells')}>✨</button>
+                <button className="btn text-[11px] px-2 py-0.5" onClick={() => handleTarget(row, 'covert')}>🕵️</button>
+                <button className="btn btn-gold text-[11px] px-2 py-0.5" title="Establish Trade Route" onClick={() => handleTrade(row)}>🤝</button>
               </>
             ) : null}
           </div>

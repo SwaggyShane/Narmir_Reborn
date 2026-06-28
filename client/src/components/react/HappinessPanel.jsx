@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import clsx from 'clsx';
 import HappinessGraph from './HappinessGraph';
 import { useGameMutationEvents } from '../../hooks/useGameState';
+import { useHappiness } from '../../stores';
 
 const DEFAULT_COMPONENTS = {
   base: 50,
@@ -23,7 +24,7 @@ const toFiniteNumber = (value, fallback = 0) => {
 };
 
 const HappinessPanel = () => {
-  const [happiness, setHappiness] = useState(50);
+  const happiness = toFiniteNumber(useHappiness(), 50);
   const [components, setComponents] = useState(DEFAULT_COMPONENTS);
   const [events, setEvents] = useState([]);
   const [history, setHistory] = useState([]);
@@ -36,7 +37,6 @@ const HappinessPanel = () => {
       if (!response.ok) throw new Error('Failed to fetch');
 
       const data = await response.json();
-      setHappiness(toFiniteNumber(data.happiness, 50));
       setComponents({
         ...DEFAULT_COMPONENTS,
         ...Object.fromEntries(

@@ -1,3 +1,8 @@
+/**
+ * Legacy mutation bridge.
+ *
+ * Prefer direct Zustand store actions for new code.
+ */
 import { gameStateManager } from '../GameStateManager.js';
 import { normalizeMutationUpdates } from './upgradeUtils.js';
 

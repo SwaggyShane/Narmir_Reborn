@@ -6,7 +6,8 @@ import { repairMojibake } from '../../utils/repairMojibake';
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import { AppEvent } from '../../utils/appEvents.js';
 import { useAppEvent } from '../../hooks/useAppEvent.js';
-import { useGameState, useGameMutationEvents } from '../../hooks/useGameState';
+import { useGameMutationEvents } from '../../hooks/useGameState';
+import { useEconomyStore, useProfileStore, useMilitaryStore, useResearchStore, usePopulationStore } from '../../stores';
 import EmptyState from './EmptyState.jsx';
 
 const REFRESH_INTERVAL_MS = 2 * 60 * 1000;
@@ -67,8 +68,20 @@ const normalizeRewards = (rewards) => {
 };
 
 const ExplorationPanel = () => {
-  const { state, applyUpdates } = useGameState();
+  const rangers = useMilitaryStore((state) => state.troops.rangers);
+  const fighters = useMilitaryStore((state) => state.troops.fighters);
+  const food = useEconomyStore((state) => state.food);
+  const turns_stored = useProfileStore((state) => state.turns_stored);
   useGameMutationEvents();
+
+  const syncKingdomData = useCallback((kingdomData) => {
+    if (!kingdomData || Object.keys(kingdomData).length === 0) return;
+    useProfileStore.getState().receiveServerSnapshot(kingdomData);
+    useEconomyStore.getState().receiveServerSnapshot(kingdomData);
+    useMilitaryStore.getState().receiveServerSnapshot(kingdomData);
+    useResearchStore.getState().receiveServerSnapshot(kingdomData);
+    usePopulationStore.getState().receiveServerSnapshot(kingdomData);
+  }, []);
   const [inventory, setInventory] = useState({});
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [searchRangers, setSearchRangers] = useState(0);
@@ -134,9 +147,9 @@ const ExplorationPanel = () => {
   );
 
   const inventoryCount = Object.keys(inventory).length;
-  const availableRangers = Number(state?.rangers || 0);
-  const availableFighters = Number(state?.fighters || 0);
-  const availableFood = Number(state?.food || 0);
+  const availableRangers = Number(rangers || 0);
+  const availableFighters = Number(fighters || 0);
+  const availableFood = Number(food || 0);
   const expeditionTurns = useMemo(() => EXPEDITION_TURNS, []);
   const mountainFoodCost = Math.ceil(mountainRangers * 0.5 * 100 * 0.75);
 
@@ -145,10 +158,10 @@ const ExplorationPanel = () => {
       applyGameMutation(result, { reason });
       return;
     }
-    if (result?.updates && applyUpdates) {
-      applyUpdates(result.updates, reason);
+    if (result?.updates) {
+      syncKingdomData(result.updates);
     }
-  }, [applyUpdates]);
+  }, [syncKingdomData]);
 
   const logInstantEntry = useCallback((icon, title, subtitle) => {
     const entry = {
@@ -177,7 +190,7 @@ const ExplorationPanel = () => {
       if (typeof window !== 'undefined' && typeof toast === 'function') toast('Not enough rangers', 'error');
       return;
     }
-    if ((state?.turns_stored || 0) < 1) {
+    if ((turns_stored || 0) < 1) {
       if (typeof window !== 'undefined' && typeof toast === 'function') toast('No turns available', 'warn');
       return;
     }
@@ -210,7 +223,7 @@ const ExplorationPanel = () => {
       console.error('Search API error:', err);
       if (typeof window !== 'undefined' && typeof toast === 'function') toast(`Search action failed: ${err.message}`, 'error');
     }
-  }, [applyResult, availableRangers, logInstantEntry, refreshAll, searchRangers, state?.turns_stored]);
+  }, [applyResult, availableRangers, logInstantEntry, refreshAll, searchRangers, turns_stored]);
 
   const handleLaunchExpedition = useCallback(async (type) => {
     const rangers = Number(

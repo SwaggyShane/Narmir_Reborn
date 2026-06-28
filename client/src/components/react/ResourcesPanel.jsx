@@ -5,6 +5,7 @@ import { useActivePanel } from '../../hooks/useActivePanel';
 import { useGameState } from '../../hooks/useGameState';
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import { dispatchExpeditionLogEntry } from '../../utils/expeditionLog.js';
+import { useRace } from '../../stores';
 
 const REFRESH_INTERVAL_MS = 10 * 1000;
 
@@ -113,12 +114,13 @@ const ResourcesPanel = () => {
   const [engineerAllocations, setEngineerAllocations] = useState({});
   const { activePanel } = useActivePanel();
   const { state } = useGameState();
+  const race = useRace();
   currentResourcesState = state || {};
 
   const syncFromState = useCallback(() => {
     const s = getState();
     setKingdom(s);
-    setIsOrc(s.race === 'orc');
+    setIsOrc(race === 'orc');
 
     const bq = getParsedStateProp('build_queue');
     setBuildingInProgress(prev => {
@@ -148,7 +150,7 @@ const ResourcesPanel = () => {
     let seq = s.resource_sequence || {};
     if (typeof seq === 'string') { try { seq = JSON.parse(seq); } catch { seq = {}; } }
     setKingdom(prev => ({...prev, _seq: seq}));
-  }, []);
+  }, [race]);
 
   const loadNodes = async () => {
     try {
@@ -203,7 +205,7 @@ const ResourcesPanel = () => {
     syncFromState();
     loadNodes();
     loadExpeditions();
-  }, [activePanel, state, syncFromState]);
+  }, [activePanel, syncFromState]);
 
   useEffect(() => {
     if (activeTab === 'stockpiles' || activeTab === 'buildings') syncFromState();
@@ -530,7 +532,7 @@ const ResourcesPanel = () => {
               })}
             </div>
           </div>
-          <div className="card" style={{ marginTop: '12px' }}>
+          <div className="card mt-3">
             <div className="card-title">Workforce</div>
             <div style={{ fontSize: '13px', color: 'var(--text3)', marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <div>Total population: <span id="res-pop-total" style={{ color: 'var(--text)' }}>{fmt(pop)}</span></div>

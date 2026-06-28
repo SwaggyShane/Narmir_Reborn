@@ -29,6 +29,7 @@ export const useProfileStore = create(
       vampire_countdown: null,
       season: null,
       rank: null,  // World rank (computed on server, synced here)
+      defense_rating: 'Undefended',
 
       // Race and engineers
       race: '',
@@ -45,10 +46,17 @@ export const useProfileStore = create(
       isAdmin: false,
       turns_stored: 0,
       rankingsCache: [],
+      allianceRankingsCache: [],
 
       // Kingdom profile
       description: '',
       customPortrait: null,
+      gender: 'male',
+
+      // XP and milestones
+      xp_sources: {},
+      milestone_bonuses: {},
+      milestone_title: 'Fledgling',
 
       // ===== ACTIONS =====
 
@@ -71,6 +79,7 @@ export const useProfileStore = create(
         if (data?.vampire_countdown !== undefined) state.vampire_countdown = data.vampire_countdown;
         if (data?.season !== undefined) state.season = data.season;
         if (data?.rank !== undefined) state.rank = data.rank;
+        if (data?.defense_rating !== undefined) state.defense_rating = data.defense_rating;
         if (data?.race !== undefined) state.race = data.race;
         if (data?.engineers !== undefined) state.engineers = data.engineers;
         if (data?.engineer_level !== undefined) state.engineer_level = data.engineer_level;
@@ -81,9 +90,14 @@ export const useProfileStore = create(
         if (data?.isAdmin !== undefined) state.isAdmin = data.isAdmin;
         if (data?.turns_stored !== undefined) state.turns_stored = data.turns_stored;
         if (data?.rankingsCache !== undefined) state.rankingsCache = data.rankingsCache;
+        if (data?.allianceRankingsCache !== undefined) state.allianceRankingsCache = data.allianceRankingsCache;
         if (data?.description !== undefined) state.description = data.description;
         if (data?.customPortrait !== undefined) state.customPortrait = data.customPortrait;
         if (data?.custom_portrait !== undefined) state.customPortrait = data.custom_portrait;
+        if (data?.gender !== undefined) state.gender = data.gender;
+        if (data?.xp_sources !== undefined) state.xp_sources = data.xp_sources;
+        if (data?.milestone_bonuses !== undefined) state.milestone_bonuses = data.milestone_bonuses;
+        if (data?.milestone_title !== undefined) state.milestone_title = data.milestone_title;
       }),
 
       /**
@@ -144,6 +158,8 @@ export const useRank = () => useProfileStore((state) => state.rank);
 
 export const useKingdomId = () => useProfileStore((state) => state.kingdom_id);
 
+export const useDefenseRating = () => useProfileStore((state) => state.defense_rating || 'Undefended');
+
 export const useKingdomMetadata = () =>
   useProfileStore(
     useShallow((state) => ({
@@ -176,6 +192,16 @@ export const useUsername = () => useProfileStore((state) => state.username);
 
 export const useRankingsCache = () => useProfileStore((state) => state.rankingsCache);
 
+export const useAllianceRankingsCache = () => useProfileStore((state) => state.allianceRankingsCache);
+
 export const useDescription = () => useProfileStore((state) => state.description);
 
 export const useCustomPortrait = () => useProfileStore((state) => state.customPortrait);
+
+export const useGender = () => useProfileStore((state) => state.gender);
+
+export const useXpSources = () => useProfileStore((state) => state.xp_sources);
+
+export const useMilestoneBonuses = () => useProfileStore((state) => state.milestone_bonuses);
+
+export const useMilestoneTitle = () => useProfileStore((state) => state.milestone_title || 'Fledgling');

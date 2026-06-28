@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useShallow } from 'zustand/react/shallow';
 import { apiCall } from '../../utils/api.mjs';
 import { fmt } from "../../utils/fmt";
 import {
@@ -27,7 +26,6 @@ import {
   useBuildCount,
   useBuildingCounts,
 } from '../../stores';
-import { applyGameMutation } from '../../utils/gameMutations.js';
 
 const RESONANCE_HINTS = {
   faint: [
@@ -524,7 +522,9 @@ const BuildPanel = () => {
     BUILDINGS_DISPLAY_ORDER.forEach((key) => setBuildFieldValue(key, 0));
     const result = await apiCall('/api/kingdom/build-allocation', { method: 'POST', body: { allocation: {} } });
     if (result.error) return toast(result.error, 'error');
-    applyGameMutation({ build_allocation: {} }, { reason: 'build-allocation' });
+    useEconomyStore.getState().receiveServerSnapshot({
+      build_allocation: {},
+    });
     refreshBuildUi();
     if (typeof window !== 'undefined' && typeof toast === 'function') toast('All engineers released', 'success');
   };
@@ -541,7 +541,9 @@ const BuildPanel = () => {
     }
     const result = await apiCall('/api/kingdom/build-allocation', { method: 'POST', body: { allocation } });
     if (result.error) return toast(result.error, 'error');
-    applyGameMutation({ build_allocation: allocation }, { reason: 'build-allocation' });
+    useEconomyStore.getState().receiveServerSnapshot({
+      build_allocation: allocation,
+    });
     refreshBuildUi();
     if (typeof window !== 'undefined' && typeof toast === 'function') toast('Engineer allocation saved | builds each turn automatically', 'success');
   };
@@ -584,11 +586,11 @@ const BuildPanel = () => {
     const ep = type === 'hammers' ? '/api/kingdom/smithy/buy-hammers' : '/api/kingdom/smithy/buy-scaffolding';
     const result = await apiCall(ep, { method: 'POST', body: { amount } });
     if (result.error) return toast(result.error, 'error');
-    applyGameMutation({
+    useEconomyStore.getState().receiveServerSnapshot({
       hammers_stored: result.hammers_stored,
       scaffolding_stored: result.scaffolding_stored,
       gold: result.gold,
-    }, { reason: 'smithy-buy' });
+    });
     setSmithyInputs({ hammers: 0, scaffolding: 0 });
     refreshBuildUi();
     if (typeof window !== 'undefined' && typeof toast === 'function') toast(`Purchased ${result.bought} ${type} for ${fmt(result.cost)} GC`, 'success');
@@ -599,8 +601,8 @@ const BuildPanel = () => {
     if (amount <= 0) return toast('Enter a quantity', 'error');
     const result = await apiCall('/api/kingdom/demolish', { method: 'POST', body: { building: type, amount } });
     if (result.error) return toast(result.error, 'error');
-    if (result.updates) {
-      applyGameMutation(result.updates, { reason: 'demolish' });
+    if (result.updates && Object.keys(result.updates).length > 0) {
+      useEconomyStore.getState().receiveServerSnapshot(result.updates);
     }
     setDemolishAmounts(prev => ({ ...prev, [key]: 1 }));
     refreshBuildUi();
@@ -708,7 +710,7 @@ const BuildPanel = () => {
               <button className="base-btn variant-red flex-1 rounded-full px-3 py-1.5 text-[11px] font-semibold shadow-sm" style={{ background: 'var(--red)' }} onClick={releaseAllEngineers}>
                 Release All
               </button>
-              <button className="base-btn variant-gold flex-1 rounded-full px-3 py-1.5 text-[11px] font-semibold shadow-sm" style={{ background: 'var(--gold)', color: '#000' }} onClick={saveBuildAllocation}>
+              <button className="base-btn variant-gold flex-1 rounded-full px-3 py-1.5 text-[11px] font-semibold shadow-sm bg-[var(--gold)] text-black" onClick={saveBuildAllocation}>
                 Allocate
               </button>
             </div>
@@ -1053,9 +1055,9 @@ const BuildPanel = () => {
                   Stored: <span className="text-text">{fmt(smithyDisplay.hammersStored)}</span> / {fmt(smithyDisplay.hammersCap)} | Max afford: <span className="text-gold">{fmt(smithyDisplay.hammersAfford)}</span>
                 </div>
                 <div className="flex flex-col items-center gap-2">
-                  <input type="number" className="input" id="smith-buy-hammers" min="1" value={smithyInputs.hammers} onChange={(e) => setSmithyInputs(prev => ({ ...prev, hammers: parseInt(e.target.value, 10) || 0 }))} placeholder="Qty" style={{ width: '160px' }} />
-                  <div className="flex gap-2" style={{ width: '160px' }}>
-                    <button className="base-btn variant-gold flex-1 text-[12px] px-3 py-1.5" style={{ background: 'var(--gold)', color: '#000' }} onClick={() => buySmithyTool('hammers')}>Buy</button>
+                  <input type="number" className="input w-40" id="smith-buy-hammers" min="1" value={smithyInputs.hammers} onChange={(e) => setSmithyInputs(prev => ({ ...prev, hammers: parseInt(e.target.value, 10) || 0 }))} placeholder="Qty" />
+                  <div className="flex gap-2 w-40">
+                    <button className="base-btn variant-gold flex-1 text-[12px] px-3 py-1.5 bg-[var(--gold)] text-black" onClick={() => buySmithyTool('hammers')}>Buy</button>
                     <button className="base-btn flex-1 text-[11px] px-2 py-1.5" onClick={() => setSmithyMax('hammers')}>Max</button>
                   </div>
                 </div>
@@ -1068,9 +1070,9 @@ const BuildPanel = () => {
                   Stored: <span className="text-text">{fmt(smithyDisplay.scaffoldingStored)}</span> / {fmt(smithyDisplay.scaffoldingCap)} | Max afford: <span className="text-gold">{fmt(smithyDisplay.scaffoldingAfford)}</span>
                 </div>
                 <div className="flex flex-col items-center gap-2">
-                  <input type="number" className="input" id="smith-buy-scaffolding" min="1" value={smithyInputs.scaffolding} onChange={(e) => setSmithyInputs(prev => ({ ...prev, scaffolding: parseInt(e.target.value, 10) || 0 }))} placeholder="Qty" style={{ width: '160px' }} />
-                  <div className="flex gap-2" style={{ width: '160px' }}>
-                    <button className="base-btn variant-gold flex-1 text-[12px] px-3 py-1.5" style={{ background: 'var(--gold)', color: '#000' }} onClick={() => buySmithyTool('scaffolding')}>Buy</button>
+                  <input type="number" className="input w-40" id="smith-buy-scaffolding" min="1" value={smithyInputs.scaffolding} onChange={(e) => setSmithyInputs(prev => ({ ...prev, scaffolding: parseInt(e.target.value, 10) || 0 }))} placeholder="Qty" />
+                  <div className="flex gap-2 w-40">
+                    <button className="base-btn variant-gold flex-1 text-[12px] px-3 py-1.5 bg-[var(--gold)] text-black" onClick={() => buySmithyTool('scaffolding')}>Buy</button>
                     <button className="base-btn flex-1 text-[11px] px-2 py-1.5" onClick={() => setSmithyMax('scaffolding')}>Max</button>
                   </div>
                 </div>

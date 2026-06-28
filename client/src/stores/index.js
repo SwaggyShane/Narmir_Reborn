@@ -20,6 +20,7 @@ export {
   useEconomyStore,
   useGold,
   useFood,
+  useMana,
   useMana as useEconomyMana,
   useResources,
   useGoldIncome,
@@ -37,6 +38,7 @@ export {
   useIron,
   useSteel,
   useCoal,
+  useMaps,
   useBlueprintsStored,
   useScaffoldingStored,
   useBuildTraining,
@@ -56,11 +58,16 @@ export {
   useTrainingAllocation,
   useTax,
   useTradeTargets,
+  useBankUpgrades,
+  useFarmUpgrades,
+  useGranaryUpgrades,
+  useMarketUpgrades,
+  useTavernUpgrades,
 } from './economyStore';
 
 export {
   // Military Store
-  useMillitaryStore,
+  useMilitaryStore,
   useTroops,
   useInjuredTroops,
   useWallHp,
@@ -136,6 +143,7 @@ export {
   useKingdomId,
   useKingdomMetadata,
   useRace,
+  useDefenseRating,
   useEngineers,
   useEngineerLevel,
   useEngineerXp,
@@ -146,8 +154,13 @@ export {
   useTurnsStored,
   useUsername,
   useRankingsCache,
+  useAllianceRankingsCache,
   useDescription,
   useCustomPortrait,
+  useGender,
+  useXpSources,
+  useMilestoneBonuses,
+  useMilestoneTitle,
 } from './profileStore';
 
 /**
@@ -157,14 +170,14 @@ export {
  *
  * socket.on('kingdom-update', (data) => {
  *   useEconomyStore.getState().receiveServerSnapshot(data.economy);
- *   useMillitaryStore.getState().receiveServerSnapshot(data.military);
+ *   useMilitaryStore.getState().receiveServerSnapshot(data.military);
  *   useResearchStore.getState().receiveServerSnapshot(data.research);
  *   usePopulationStore.getState().receiveServerSnapshot(data.population);
  * });
  *
  * socket.on('turn-tick', (turnData) => {
  *   useEconomyStore.getState().receiveTurnUpdate(turnData);
- *   useMillitaryStore.getState().receiveTurnUpdate(turnData);
+ *   useMilitaryStore.getState().receiveTurnUpdate(turnData);
  *   useResearchStore.getState().receiveTurnUpdate(turnData);
  *   usePopulationStore.getState().receiveTurnUpdate(turnData);
  * });

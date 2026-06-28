@@ -159,12 +159,19 @@ module.exports = function (db) {
         return res.status(404).json({ error: "Board not found" });
       }
 
-      let orderClause = "ft.created_at DESC";
-      if (sort === "mostActive") {
-        orderClause = "ft.last_post_at DESC";
-      } else if (sort === "oldest") {
-        orderClause = "ft.created_at ASC";
+      // Whitelist of allowed sort orders (prevents SQL injection via ORDER BY)
+      const VALID_SORTS = {
+        "newest": "ft.created_at DESC",
+        "mostActive": "ft.last_post_at DESC",
+        "oldest": "ft.created_at ASC"
+      };
+
+      const activeSort = sort || "newest";
+      if (!VALID_SORTS[activeSort]) {
+        return res.status(400).json({ error: "Invalid sort parameter" });
       }
+
+      const orderClause = VALID_SORTS[activeSort];
 
       const topics = await db.all(
         `SELECT ft.id, ft.title, ft.board_id, ft.post_count, ft.last_post_at,

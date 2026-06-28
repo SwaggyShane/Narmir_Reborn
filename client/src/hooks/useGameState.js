@@ -1,3 +1,10 @@
+/**
+ * Legacy game-state bridge.
+ *
+ * New work should use the Zustand domain stores in `client/src/stores/`.
+ * This hook remains for older panels and compatibility paths that have not
+ * been migrated yet.
+ */
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import { gameStateManager } from '../GameStateManager';
 

@@ -1,3 +1,9 @@
+/**
+ * Legacy panel-state bridge.
+ *
+ * This keeps older panels working while the Zustand migration finishes.
+ * Prefer domain stores and selectors for new panel state.
+ */
 import { useState } from 'react';
 import { gameStateManager } from '../GameStateManager.js';
 

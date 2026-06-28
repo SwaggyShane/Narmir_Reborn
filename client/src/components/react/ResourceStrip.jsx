@@ -1,8 +1,31 @@
 import React, { useEffect, useRef, useState } from 'react';
 import clsx from 'clsx';
-import { useGameState } from '../../hooks/useGameState.js';
 import { switchTab } from '../../utils/switchTab.js';
 import { FARM_WORKERS_PER } from '../../utils/economyConstants.js';
+import {
+  useRace,
+  usePopulation,
+  useGold,
+  useMana,
+  useLand,
+  useFood,
+  useGoldIncome,
+  useManaRegen,
+  useFoodBalance,
+  useDefenseRating,
+  useThralls,
+  useHappiness,
+  useBuildingCounts,
+  useFighters,
+  useRangers,
+  useClerics,
+  useMages,
+  useThieves,
+  useNinjas,
+  useResearchers,
+  useEngineers,
+  useScribes,
+} from '../../stores';
 
 // Tracks the previous numeric value for a key and returns a short-lived delta
 // (e.g. "+150", "-50") that fades after a few seconds. Used to flash
@@ -251,50 +274,105 @@ function happinessLabel(value) {
 }
 
 const ResourceStrip = () => {
-  const { state } = useGameState();
-  const pop = population(state);
-  const popCap = housingCap(state);
-  const isVampire = state.race === 'vampire';
-  const thralls = numberValue(state.thralls);
-  const maxThralls = thrallCap(state);
-  const happiness = numberValue(state.happiness, 50);
+  const race = useRace();
+  const pop = usePopulation();
+  const buildingCounts = useBuildingCounts();
+  const popCap = housingCap({
+    race,
+    bld_housing: buildingCounts.housing,
+  });
+  const isVampire = race === 'vampire';
+  const thralls = useThralls();
+  const maxThralls = thrallCap({
+    bld_mausoleums: buildingCounts.mausoleums,
+  });
+  const happiness = useHappiness();
   const happinessPercent = Math.min(100, Math.max(0, (happiness / 120) * 100));
-  const foodDelta = foodBalance(state);
-  const defenseRating = state.defense_rating || 'Undefended';
+  const gold = useGold();
+  const mana = useMana();
+  const land = useLand();
+  const food = useFood();
+  const foodDelta = useFoodBalance();
+  const defenseRating = useDefenseRating();
   const defenseColor = String(defenseRating).toLowerCase().includes('undefended') ? 'var(--red)' : 'var(--gold)';
 
-  const goldFlash = useDeltaFlash(state.gold);
-  const manaFlash = useDeltaFlash(state.mana);
-  const landFlash = useDeltaFlash(state.land);
+  const goldIncome = useGoldIncome();
+  const manaRegen = useManaRegen();
+  const goldFlash = useDeltaFlash(gold);
+  const manaFlash = useDeltaFlash(mana);
+  const landFlash = useDeltaFlash(land);
   const popFlash = useDeltaFlash(pop);
   const thrallFlash = useDeltaFlash(thralls);
-  const foodFlash = useDeltaFlash(state.food, { minStep: 10 });
+  const foodFlash = useDeltaFlash(food, { minStep: 10 });
 
-  const goldLow = numberValue(state.gold) < 1000;
-  const foodLow = numberValue(state.food) < 1000;
+  const goldLow = numberValue(gold) < 1000;
+  const foodLow = numberValue(food) < 1000;
+  const state = {
+    race,
+    population: pop,
+    pop,
+    thralls,
+    happiness,
+    gold,
+    mana,
+    land,
+    food,
+    gold_income: goldIncome,
+    mana_regen: manaRegen,
+    food_balance: foodDelta,
+    defense_rating: defenseRating,
+    bld_housing: buildingCounts.housing,
+    bld_mausoleums: buildingCounts.mausoleums,
+    bld_farms: buildingCounts.farms,
+    bld_granaries: buildingCounts.granaries,
+    bld_barracks: buildingCounts.barracks,
+    bld_outposts: buildingCounts.outposts,
+    bld_guard_towers: buildingCounts.guard_towers,
+    bld_armories: buildingCounts.armories,
+    bld_vaults: buildingCounts.vaults,
+    bld_schools: buildingCounts.schools,
+    bld_smithies: buildingCounts.smithies,
+    bld_markets: buildingCounts.markets,
+    bld_shrines: buildingCounts.shrines,
+    bld_libraries: buildingCounts.libraries,
+    bld_mage_towers: buildingCounts.mage_towers,
+    bld_training: buildingCounts.training,
+    bld_castles: buildingCounts.castles,
+    bld_taverns: buildingCounts.taverns,
+    bld_walls: buildingCounts.walls,
+    fighters: useFighters(),
+    rangers: useRangers(),
+    clerics: useClerics(),
+    mages: useMages(),
+    thieves: useThieves(),
+    ninjas: useNinjas(),
+    researchers: useResearchers(),
+    engineers: useEngineers(),
+    scribes: useScribes(),
+  };
 
   return (
     <>
       <MetricBox metricKey="gold" className={goldLow ? 'alert' : ''} title="Open Economy">
         <DeltaBadge flash={goldFlash} />
         <div className="lbl">Gold</div>
-        <div className={`val ${goldLow ? 'text-[var(--red)]' : ''}`}>{trunc(state.gold)}</div>
+        <div className={`val ${goldLow ? 'text-[var(--red)]' : ''}`}>{trunc(gold)}</div>
         <div className="sub">
-          {numberValue(state.gold_income) >= 0 ? '+' : ''}{trunc(state.gold_income || 0)}/turn
+          {numberValue(goldIncome) >= 0 ? '+' : ''}{trunc(goldIncome || 0)}/turn
         </div>
       </MetricBox>
       <MetricBox metricKey="mana" title="Open Studies">
         <DeltaBadge flash={manaFlash} />
         <div className="lbl">Mana</div>
-        <div className="val">{trunc(state.mana)}</div>
+        <div className="val">{trunc(mana)}</div>
         <div className="sub">
-          {numberValue(state.mana_regen) >= 0 ? '+' : ''}{trunc(state.mana_regen || 0)}/turn
+          {numberValue(manaRegen) >= 0 ? '+' : ''}{trunc(manaRegen || 0)}/turn
         </div>
       </MetricBox>
       <MetricBox metricKey="land" title="Open Build">
         <DeltaBadge flash={landFlash} />
         <div className="lbl">Land</div>
-        <div className="val">{trunc(state.land)}</div>
+        <div className="val">{trunc(land)}</div>
         <div className="sub"><span>{trunc(freeLand(state))}</span> free</div>
       </MetricBox>
       <MetricBox metricKey="population" title="Open Status">
@@ -333,7 +411,7 @@ const ResourceStrip = () => {
       <MetricBox metricKey="food" className={foodLow ? 'alert' : ''} title="Open Economy">
         <DeltaBadge flash={foodFlash} />
         <div className="lbl">Food</div>
-        <div className={`val ${foodLow ? 'text-[var(--red)]' : ''}`}>{trunc(state.food)}</div>
+        <div className={`val ${foodLow ? 'text-[var(--red)]' : ''}`}>{trunc(food)}</div>
         <div className="sub">
           <span className={`font-semibold ${foodDelta >= 0 ? 'text-[var(--green)]' : 'text-[var(--red)]'}`}>
             {foodDelta >= 0 ? '+' : ''}{trunc(foodDelta)}
@@ -343,7 +421,7 @@ const ResourceStrip = () => {
       <MetricBox metricKey="defense" title="Open Defense">
         <div className="lbl">Defense</div>
         <div className="val" style={{ color: defenseColor }}>{defenseRating}</div>
-        <div className="sub"><span>{numberValue(state.bld_walls).toLocaleString()}</span> walls</div>
+        <div className="sub"><span>{numberValue(buildingCounts.walls).toLocaleString()}</span> walls</div>
       </MetricBox>
     </>
   );
