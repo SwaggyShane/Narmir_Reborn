@@ -410,10 +410,10 @@ const EconomyPanel = () => {
           <div className="card m-0">
             <div className="card-title mb-2.5">Farm overview</div>
             <div className="trow"><span className="name">Farms</span><span className="count">{fmt(bldFarms || 0)}</span></div>
-            <div className="trow"><span className="name">Worked farms</span><span className="count" style={{ color: 'var(--green)' }}>{fmt(econData?.workedFarms || 0)}</span></div>
-            <div className="trow"><span className="name">Production</span><span className="count" style={{ color: 'var(--green)' }}>+{fmt(econData?.farmProduction || 0)}</span></div>
-            <div className="trow"><span className="name">Consumption</span><span className="count" style={{ color: 'var(--red)' }}>-{fmt(econData?.foodConsumption || 0)}</span></div>
-            <div className="trow" style={{ borderTop: '1px solid var(--border2)' }}>
+            <div className="trow"><span className="name">Worked farms</span><span className="count text-[var(--green)]">{fmt(econData?.workedFarms || 0)}</span></div>
+            <div className="trow"><span className="name">Production</span><span className="count text-[var(--green)]">+{fmt(econData?.farmProduction || 0)}</span></div>
+            <div className="trow"><span className="name">Consumption</span><span className="count text-[var(--red)]">-{fmt(econData?.foodConsumption || 0)}</span></div>
+            <div className="trow border-t border-[var(--border2)]">
               <span className="name">Balance</span>
               <span className="count" style={{ fontWeight: 700, color: bal >= 0 ? 'var(--green)' : 'var(--red)' }}>
                 {(bal >= 0 ? '+' : '') + fmt(bal)}

@@ -532,7 +532,7 @@ const ResourcesPanel = () => {
               })}
             </div>
           </div>
-          <div className="card" style={{ marginTop: '12px' }}>
+          <div className="card mt-3">
             <div className="card-title">Workforce</div>
             <div style={{ fontSize: '13px', color: 'var(--text3)', marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <div>Total population: <span id="res-pop-total" style={{ color: 'var(--text)' }}>{fmt(pop)}</span></div>

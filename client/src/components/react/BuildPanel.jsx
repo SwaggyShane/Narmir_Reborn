@@ -710,7 +710,7 @@ const BuildPanel = () => {
               <button className="base-btn variant-red flex-1 rounded-full px-3 py-1.5 text-[11px] font-semibold shadow-sm" style={{ background: 'var(--red)' }} onClick={releaseAllEngineers}>
                 Release All
               </button>
-              <button className="base-btn variant-gold flex-1 rounded-full px-3 py-1.5 text-[11px] font-semibold shadow-sm" style={{ background: 'var(--gold)', color: '#000' }} onClick={saveBuildAllocation}>
+              <button className="base-btn variant-gold flex-1 rounded-full px-3 py-1.5 text-[11px] font-semibold shadow-sm bg-[var(--gold)] text-black" onClick={saveBuildAllocation}>
                 Allocate
               </button>
             </div>
@@ -1055,9 +1055,9 @@ const BuildPanel = () => {
                   Stored: <span className="text-text">{fmt(smithyDisplay.hammersStored)}</span> / {fmt(smithyDisplay.hammersCap)} | Max afford: <span className="text-gold">{fmt(smithyDisplay.hammersAfford)}</span>
                 </div>
                 <div className="flex flex-col items-center gap-2">
-                  <input type="number" className="input" id="smith-buy-hammers" min="1" value={smithyInputs.hammers} onChange={(e) => setSmithyInputs(prev => ({ ...prev, hammers: parseInt(e.target.value, 10) || 0 }))} placeholder="Qty" style={{ width: '160px' }} />
-                  <div className="flex gap-2" style={{ width: '160px' }}>
-                    <button className="base-btn variant-gold flex-1 text-[12px] px-3 py-1.5" style={{ background: 'var(--gold)', color: '#000' }} onClick={() => buySmithyTool('hammers')}>Buy</button>
+                  <input type="number" className="input w-40" id="smith-buy-hammers" min="1" value={smithyInputs.hammers} onChange={(e) => setSmithyInputs(prev => ({ ...prev, hammers: parseInt(e.target.value, 10) || 0 }))} placeholder="Qty" />
+                  <div className="flex gap-2 w-40">
+                    <button className="base-btn variant-gold flex-1 text-[12px] px-3 py-1.5 bg-[var(--gold)] text-black" onClick={() => buySmithyTool('hammers')}>Buy</button>
                     <button className="base-btn flex-1 text-[11px] px-2 py-1.5" onClick={() => setSmithyMax('hammers')}>Max</button>
                   </div>
                 </div>
@@ -1070,9 +1070,9 @@ const BuildPanel = () => {
                   Stored: <span className="text-text">{fmt(smithyDisplay.scaffoldingStored)}</span> / {fmt(smithyDisplay.scaffoldingCap)} | Max afford: <span className="text-gold">{fmt(smithyDisplay.scaffoldingAfford)}</span>
                 </div>
                 <div className="flex flex-col items-center gap-2">
-                  <input type="number" className="input" id="smith-buy-scaffolding" min="1" value={smithyInputs.scaffolding} onChange={(e) => setSmithyInputs(prev => ({ ...prev, scaffolding: parseInt(e.target.value, 10) || 0 }))} placeholder="Qty" style={{ width: '160px' }} />
-                  <div className="flex gap-2" style={{ width: '160px' }}>
-                    <button className="base-btn variant-gold flex-1 text-[12px] px-3 py-1.5" style={{ background: 'var(--gold)', color: '#000' }} onClick={() => buySmithyTool('scaffolding')}>Buy</button>
+                  <input type="number" className="input w-40" id="smith-buy-scaffolding" min="1" value={smithyInputs.scaffolding} onChange={(e) => setSmithyInputs(prev => ({ ...prev, scaffolding: parseInt(e.target.value, 10) || 0 }))} placeholder="Qty" />
+                  <div className="flex gap-2 w-40">
+                    <button className="base-btn variant-gold flex-1 text-[12px] px-3 py-1.5 bg-[var(--gold)] text-black" onClick={() => buySmithyTool('scaffolding')}>Buy</button>
                     <button className="base-btn flex-1 text-[11px] px-2 py-1.5" onClick={() => setSmithyMax('scaffolding')}>Max</button>
                   </div>
                 </div>
