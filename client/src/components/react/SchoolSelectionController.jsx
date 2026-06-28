@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useGameState } from '../../hooks/useGameState';
 import SchoolSelectionModal from './SchoolSelectionModal';
-import { applyGameMutation } from '../../utils/gameMutations.js';
 import { toast } from '../../utils/toast.js';
+import { useResearchStore, useSchoolOfMagic, useResSpellbook } from '../../stores';
 
 /**
  * SchoolSelectionController
@@ -15,12 +14,13 @@ import { toast } from '../../utils/toast.js';
  */
 export default function SchoolSelectionController() {
   const [showModal, setShowModal] = useState(false);
-  const { state } = useGameState();
+  const spellbook = useResSpellbook();
+  const school = useSchoolOfMagic();
 
   useEffect(() => {
-    const shouldShowModal = (state?.res_spellbook || 0) >= 100 && !state?.school_of_magic;
+    const shouldShowModal = (spellbook || 0) >= 100 && !school;
     setShowModal(shouldShowModal);
-  }, [state?.res_spellbook, state?.school_of_magic]);
+  }, [spellbook, school]);
 
   const handleModalClose = () => {
     setShowModal(false);
@@ -31,7 +31,7 @@ export default function SchoolSelectionController() {
     setShowModal(false);
 
     // Update game state with new school
-    applyGameMutation({ school_of_magic: data.school }, { reason: 'school-selected' });
+    useResearchStore.getState().updateSchoolOfMagic(data.school);
 
     // Show success message
     toast(`✨ You have chosen the school of ${data.school.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}!`, 'success');

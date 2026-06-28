@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useActivePanel } from '../../hooks/useActivePanel';
-import { useGameState, useGameMutationEvents } from '../../hooks/useGameState';
+import { useGameMutationEvents } from '../../hooks/useGameState';
 import { toast } from '../../utils/toast.js';
 import UpgradesList from './UpgradesList.jsx';
 import {
@@ -11,9 +11,29 @@ import {
   LIBRARY_UPGRADES,
 } from '../../utils/studiesUpgrades.js';
 import { parseOwnedUpgrades } from '../../utils/upgradeUtils.js';
+import {
+  useRace,
+  useGold,
+  useWood,
+  useStone,
+  useIron,
+  useBuildCount,
+  useMages,
+  useResEconomy,
+  useResWeapons,
+  useResArmor,
+  useResMilitary,
+  useResAttackMagic,
+  useResDefenseMagic,
+  useResEntertainment,
+  useResConstruction,
+  useResWarMachines,
+  useResSpellbook,
+  useSchoolOfMagic,
+  useResearchStore,
+} from '../../stores';
 
 const StudiesPanel = () => {
-  const { state, applyUpdates } = useGameState();
   useGameMutationEvents();
   const [activeTab, setActiveTab] = useState('tower');
   const [activeSchoolSubTab, setActiveSchoolSubTab] = useState('general');
@@ -26,6 +46,24 @@ const StudiesPanel = () => {
   const spellbookInputRef = useRef(null);
   const schoolInputRef = useRef(null);
   const { activePanel } = useActivePanel();
+  const race = useRace();
+  const gold = useGold();
+  const wood = useWood();
+  const stone = useStone();
+  const iron = useIron();
+  const vaults = useBuildCount('vaults');
+  const mages = useMages();
+  const schoolOfMagic = useSchoolOfMagic();
+  const resEconomy = useResEconomy();
+  const resWeapons = useResWeapons();
+  const resArmor = useResArmor();
+  const resMilitary = useResMilitary();
+  const resAttackMagic = useResAttackMagic();
+  const resDefenseMagic = useResDefenseMagic();
+  const resEntertainment = useResEntertainment();
+  const resConstruction = useResConstruction();
+  const resWarMachines = useResWarMachines();
+  const resSpellbook = useResSpellbook();
 
   const fetchStudiesData = useCallback(async () => {
     try {
@@ -42,7 +80,7 @@ const StudiesPanel = () => {
     } catch (err) {
       console.error('Failed to load studies data:', err);
     }
-  }, [state]);
+  }, []);
 
   // Fetch data on mount
   useEffect(() => {
@@ -55,7 +93,7 @@ const StudiesPanel = () => {
       fetchStudiesData();
     };
     load();
-  }, [activePanel, state, fetchStudiesData]);
+  }, [activePanel, fetchStudiesData]);
 
   // Sync state with server data, guarding against overwriting active input
   useEffect(() => {
@@ -129,11 +167,50 @@ const StudiesPanel = () => {
     }
   }, [fetchStudiesData]);
 
-  const race = state?.race || 'human';
   const researchAlloc = studiesData?.research_allocation || {};
-  const totalMages = Number(state?.mages || 0);
+  const totalMages = Number(mages || 0);
   const allocatedMages = Number(researchAlloc.spellbook_mages || 0) + Number(researchAlloc.school_spellbook_mages || 0);
   const availableMages = Math.max(0, totalMages - allocatedMages);
+
+  const state = useMemo(() => ({
+    race,
+    gold,
+    wood,
+    stone,
+    iron,
+    bld_vaults: vaults,
+    mages,
+    res_economy: resEconomy,
+    res_weapons: resWeapons,
+    res_armor: resArmor,
+    res_military: resMilitary,
+    res_attack_magic: resAttackMagic,
+    res_defense_magic: resDefenseMagic,
+    res_entertainment: resEntertainment,
+    res_construction: resConstruction,
+    res_war_machines: resWarMachines,
+    res_spellbook: resSpellbook,
+    school_of_magic: schoolOfMagic,
+  }), [
+    race,
+    gold,
+    wood,
+    stone,
+    iron,
+    vaults,
+    mages,
+    resEconomy,
+    resWeapons,
+    resArmor,
+    resMilitary,
+    resAttackMagic,
+    resDefenseMagic,
+    resEntertainment,
+    resConstruction,
+    resWarMachines,
+    resSpellbook,
+    schoolOfMagic,
+  ]);
 
 
   const saveResearchFocus = useCallback(async () => {
@@ -151,10 +228,10 @@ const StudiesPanel = () => {
       return;
     }
     if (data.research_focus) {
-      applyUpdates({ research_focus: data.research_focus }, { reason: 'research-focus' });
+      useResearchStore.getState().setResearchFocus(data.research_focus);
       toast(`Research focus saved — ${data.research_focus.join(' & ')}`, 'success');
     }
-  }, [studiesData?.school_upgrades, focus1Value, focus2Value, applyUpdates]);
+  }, [studiesData?.school_upgrades, focus1Value, focus2Value]);
 
   const setMageMax = useCallback((type) => {
     if (type === 'spellbook') {
