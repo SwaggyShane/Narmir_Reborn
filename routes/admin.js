@@ -843,18 +843,28 @@ module.exports = function (db, io) {
       );
       const chatId = chatInsert.lastID;
 
-      const kingdoms = await db.all("SELECT id FROM kingdoms");
-      if (kingdoms.length > 0) {
-        const placeholders = kingdoms.map(() => "(?,?,?,?)").join(",");
-        const values = kingdoms.flatMap((k) => [k.id, "announcement", newsBlurb, 0]);
+      const BATCH_SIZE = 1000;
+      let offset = 0;
+      let totalKingdoms = 0;
+      let hasMore = true;
+      while (hasMore) {
+        const batch = await db.all("SELECT id FROM kingdoms LIMIT ? OFFSET ?", [BATCH_SIZE, offset]);
+        if (batch.length === 0) {
+          hasMore = false;
+          break;
+        }
+        totalKingdoms += batch.length;
+        const placeholders = batch.map(() => "(?,?,?,?)").join(",");
+        const values = batch.flatMap((k) => [k.id, "announcement", newsBlurb, 0]);
         await db.run(
           `INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ${placeholders}`,
           values,
         );
-        for (const k of kingdoms) {
+        for (const k of batch) {
           incrementUnread(k.id);
           io.to(`kingdom:${k.id}`).emit("event:news_refresh");
         }
+        offset += BATCH_SIZE;
       }
 
       io.to("global").emit("chat:message", {
@@ -867,7 +877,7 @@ module.exports = function (db, io) {
         ts: Date.now(),
       });
 
-      res.json({ ok: true, chatId, kingdoms: kingdoms.length });
+      res.json({ ok: true, chatId, kingdoms: totalKingdoms });
     } catch (err) {
       console.error("[admin] announce failed:", err.message);
       res.status(500).json({ error: err.message });

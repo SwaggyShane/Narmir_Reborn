@@ -1989,16 +1989,24 @@ async function resolveExpeditions(db, k, engine) {
       const completionMsg = `${label} expedition returned -- check the Explore tab for rewards.`;
       expeditionEvents.push({ type: "system", message: completionMsg });
 
-      // Throne broadcast only
+      // Throne broadcast only (batch inserts to prevent memory spike)
       if (serverAnnounce) {
-        const allKingdoms = await db.all("SELECT id FROM kingdoms");
-        if (allKingdoms.length > 0) {
-          const placeholders = allKingdoms.map((_, i) => `($${i + 1},'system',$${allKingdoms.length + 1},$${allKingdoms.length + 2})`).join(',');
-          const values = [...allKingdoms.map(ak => ak.id), serverAnnounce, k.turn];
+        const BATCH_SIZE = 1000;
+        let offset = 0;
+        let hasMore = true;
+        while (hasMore) {
+          const batch = await db.all("SELECT id FROM kingdoms LIMIT ? OFFSET ?", [BATCH_SIZE, offset]);
+          if (batch.length === 0) {
+            hasMore = false;
+            break;
+          }
+          const placeholders = batch.map((_, i) => `($${i + 1},'system',$${batch.length + 1},$${batch.length + 2})`).join(',');
+          const values = [...batch.map(ak => ak.id), serverAnnounce, k.turn];
           await db.run(
             `INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ${placeholders}`,
             values,
           );
+          offset += BATCH_SIZE;
         }
         if (engine.io)
           engine.io.emit("chat:system", {
