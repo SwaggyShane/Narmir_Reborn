@@ -14,6 +14,8 @@ import { devtools } from 'zustand/middleware';
  * - Derived values (goldIncome, foodBalance) calculated via selectors, not stored
  */
 
+const EMPTY_OBJECT = {};
+
 export const useEconomyStore = create(
   devtools(
     immer((set, _get) => ({
@@ -405,7 +407,7 @@ export const useResConstruction = () => useEconomyStore((state) => state.res_con
 
 // Discovered kingdoms for warfare targeting
 export const useDiscoveredKingdoms = () =>
-  useEconomyStore((state) => state.discovered_kingdoms);
+  useEconomyStore((state) => state.discovered_kingdoms || EMPTY_OBJECT);
 
 // Tax rate
 export const useTax = () => useEconomyStore((state) => state.tax ?? 42);
@@ -415,16 +417,16 @@ export const useTradeTargets = () => useEconomyStore((state) => Array.isArray(st
 
 // Upgrades
 export const useBankUpgrades = () =>
-  useEconomyStore((state) => state.bank_upgrades);
+  useEconomyStore((state) => state.bank_upgrades || EMPTY_OBJECT);
 
 export const useFarmUpgrades = () =>
-  useEconomyStore((state) => state.farm_upgrades);
+  useEconomyStore((state) => state.farm_upgrades || EMPTY_OBJECT);
 
 export const useGranaryUpgrades = () =>
-  useEconomyStore((state) => state.granary_upgrades);
+  useEconomyStore((state) => state.granary_upgrades || EMPTY_OBJECT);
 
 export const useMarketUpgrades = () =>
-  useEconomyStore((state) => state.market_upgrades);
+  useEconomyStore((state) => state.market_upgrades || EMPTY_OBJECT);
 
 export const useTavernUpgrades = () =>
-  useEconomyStore((state) => state.tavern_upgrades);
+  useEconomyStore((state) => state.tavern_upgrades || EMPTY_OBJECT);
