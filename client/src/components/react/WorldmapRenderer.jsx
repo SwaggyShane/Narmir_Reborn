@@ -227,7 +227,7 @@ export function renderWorldMap(kingdoms, routes = [], highlightedRace = null, ki
 
             '" stroke-width="25" stroke-linejoin="round" stroke-linecap="round" fill-opacity="0.85" class="region-shape" data-race="' +
 
-            race +
+            escapeHtml(race) +
 
             '" style="transition:opacity 0.3s;opacity:' + regionOpacity(race, highlightedRace) + '"/>';
 
@@ -245,7 +245,7 @@ export function renderWorldMap(kingdoms, routes = [], highlightedRace = null, ki
 
             '" stroke-width="1.5" stroke-linejoin="round" class="region-shape" data-race="' +
 
-            race +
+            escapeHtml(race) +
 
             '" stroke-dasharray="8 6" opacity="0.75" style="transition:opacity 0.3s;opacity:' + regionOpacity(race, highlightedRace) + '"/>';
 
@@ -305,7 +305,7 @@ export function renderWorldMap(kingdoms, routes = [], highlightedRace = null, ki
 
             '" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="22" fill="#ffffff" opacity="0.9" pointer-events="none" style="text-transform:uppercase;letter-spacing:2px;">' +
 
-            meta.name +
+            escapeHtml(meta.name || '') +
 
             "</text>";
 
@@ -325,7 +325,7 @@ export function renderWorldMap(kingdoms, routes = [], highlightedRace = null, ki
 
             '" opacity="0.95" pointer-events="none">' +
 
-            (REGION_BONUSES[race] || "") +
+            escapeHtml(REGION_BONUSES[race] || "") +
 
             "</text>";
 

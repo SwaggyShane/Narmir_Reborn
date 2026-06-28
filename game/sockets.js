@@ -121,26 +121,28 @@ module.exports = function (io, db) {
       const { targetId, fighters, mages } = data;
       if (!targetId || !fighters)
         return ack?.({ error: "targetId and fighters required" });
-      const attacker = await db.get(
-        "SELECT * FROM kingdoms WHERE player_id = ?",
-        [playerId],
-      );
-      if (attacker.turns_stored < 1)
-        return ack?.({ error: "No turns available" });
-      const defender = await db.get("SELECT * FROM kingdoms WHERE id = ?", [
-        targetId,
-      ]);
-      if (!defender) return ack?.({ error: "Target not found" });
-      if (attacker.id === defender.id)
-        return ack?.({ error: "Cannot attack yourself" });
-      const result = engine.resolveMilitaryAttack(attacker, defender, {
-        fighters: Number(fighters) || 0,
-        mages: Number(mages) || 0,
-      });
-      if (result.error) return ack?.({ error: result.error });
       try {
-        result.attackerUpdates.turns_stored = attacker.turns_stored - 1;
-        await withTransaction(db, async () => {
+        const txResult = await withTransaction(db, async () => {
+          const attacker = await db.get(
+            "SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE",
+            [playerId],
+          );
+          if (!attacker) throw new Error("Kingdom not found");
+          if (attacker.turns_stored < 1) throw new Error("No turns available");
+
+          const defender = await db.get("SELECT * FROM kingdoms WHERE id = ? FOR UPDATE", [
+            targetId,
+          ]);
+          if (!defender) throw new Error("Target not found");
+          if (attacker.id === defender.id) throw new Error("Cannot attack yourself");
+
+          const result = engine.resolveMilitaryAttack(attacker, defender, {
+            fighters: Number(fighters) || 0,
+            mages: Number(mages) || 0,
+          });
+          if (result.error) throw new Error(result.error);
+
+          result.attackerUpdates.turns_stored = attacker.turns_stored - 1;
           await applyUpdates(db, attacker.id, result.attackerUpdates);
           await applyUpdates(db, defender.id, result.defenderUpdates);
           await db.run(
@@ -156,8 +158,11 @@ module.exports = function (io, db) {
           );
           await insertNews(db, attacker.id, "attack", result.atkEvent);
           await insertNews(db, defender.id, "attack", result.defEvent);
+
+          return { attacker, defender, result };
         });
 
+        const { attacker, defender, result } = txResult;
         await notifyUnread(attacker.id);
         await notifyUnread(defender.id);
 
@@ -175,46 +180,48 @@ module.exports = function (io, db) {
         });
       } catch (err) {
         console.error(err);
-        ack?.({ error: "Database error" });
+        ack?.({ error: err.message || "Database error" });
       }
     });
 
     // ── SPELL ────────────────────────────────────────────────────────────────
     socket.on("action:spell", async (data, ack) => {
-      const caster = await db.get(
-        "SELECT * FROM kingdoms WHERE player_id = ?",
-        [playerId],
-      );
-      if (caster.turns_stored < 1)
-        return ack?.({ error: "No turns available" });
       const spellDef = engine.SPELL_DEFS[data.spellId];
       if (!spellDef) return ack?.({ error: "Unknown spell" });
       const isFriendlySpell = spellDef.effect === "friendly";
-      let target = null;
-      if (data.targetId && data.targetId != caster.id) {
-        target = await db.get("SELECT * FROM kingdoms WHERE id = ?", [
-          data.targetId,
-        ]);
-        if (!target) return ack?.({ error: "Target not found" });
-      } else if (isFriendlySpell) {
-        target = caster;
-      } else {
-        return ack?.({ error: "targetId required for offensive spells" });
-      }
-
-      const validation = engine.validateSpellTarget(caster, target, data.spellId);
-      if (validation.error) return ack?.({ error: validation.error });
-
-      const result = engine.castSpell(
-        caster,
-        validation.target,
-        data.spellId,
-        Boolean(data.obscure),
-      );
-      if (result.error) return ack?.({ error: result.error });
       try {
-        result.casterUpdates.turns_stored = caster.turns_stored - 1;
-        await withTransaction(db, async () => {
+        const txResult = await withTransaction(db, async () => {
+          const caster = await db.get(
+            "SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE",
+            [playerId],
+          );
+          if (!caster) throw new Error("Kingdom not found");
+          if (caster.turns_stored < 1) throw new Error("No turns available");
+
+          let target = null;
+          if (data.targetId && data.targetId != caster.id) {
+            target = await db.get("SELECT * FROM kingdoms WHERE id = ? FOR UPDATE", [
+              data.targetId,
+            ]);
+            if (!target) throw new Error("Target not found");
+          } else if (isFriendlySpell) {
+            target = caster;
+          } else {
+            throw new Error("targetId required for offensive spells");
+          }
+
+          const validation = engine.validateSpellTarget(caster, target, data.spellId);
+          if (validation.error) throw new Error(validation.error);
+
+          const result = engine.castSpell(
+            caster,
+            validation.target,
+            data.spellId,
+            Boolean(data.obscure),
+          );
+          if (result.error) throw new Error(result.error);
+
+          result.casterUpdates.turns_stored = caster.turns_stored - 1;
           await applyUpdates(db, caster.id, result.casterUpdates);
           if (result.targetUpdates && Object.keys(result.targetUpdates).length)
             await applyUpdates(db, validation.target.id, result.targetUpdates);
@@ -222,14 +229,17 @@ module.exports = function (io, db) {
             await insertNews(db, caster.id, "spell", result.casterEvent);
           if (result.targetEvent)
             await insertNews(db, validation.target.id, "spell", result.targetEvent);
+
+          return { caster, target: validation.target, result };
         });
 
+        const { caster, target, result } = txResult;
         await notifyUnread(caster.id);
-        await notifyUnread(validation.target.id);
+        await notifyUnread(target.id);
 
-        const tgtInfo = onlinePlayers.get(validation.target.player_id);
+        const tgtInfo = onlinePlayers.get(target.player_id);
         if (tgtInfo && result.targetEvent) {
-          const eventName = validation.isFriendly ? "event:blessing_received" : "event:spell_received";
+          const eventName = isFriendlySpell ? "event:blessing_received" : "event:spell_received";
           io.to(tgtInfo.socketId).emit(eventName, {
             from: data.obscure ? null : caster.name,
             spellId: data.spellId,
@@ -243,31 +253,44 @@ module.exports = function (io, db) {
         });
       } catch (err) {
         console.error(err);
-        ack?.({ error: "Database error" });
+        ack?.({ error: err.message || "Database error" });
       }
     });
 
     // ── COVERT ───────────────────────────────────────────────────────────────
     socket.on("action:spy", async (data, ack) => {
-      const spy = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
-        playerId,
-      ]);
-      const target = await db.get("SELECT * FROM kingdoms WHERE id = ?", [
-        data.targetId,
-      ]);
-      if (!target) return ack?.({ error: "Target not found" });
-      const result = engine.covertSpy(spy, target, Number(data.units) || 100);
       try {
-        const upd = result.spyUpdates || {};
-        const xp = engine.awardXp(spy, "covert", 1);
-        upd.xp = xp.xp;
-        upd.level = xp.level;
-        if (Object.keys(upd).length) await applyUpdates(db, spy.id, upd);
-        await insertNews(db, spy.id, "covert", result.spyEvent);
+        const txResult = await withTransaction(db, async () => {
+          const spy = await db.get(
+            "SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE",
+            [playerId],
+          );
+          if (!spy) throw new Error("Kingdom not found");
+
+          const target = await db.get("SELECT * FROM kingdoms WHERE id = ? FOR UPDATE", [
+            data.targetId,
+          ]);
+          if (!target) throw new Error("Target not found");
+
+          const result = engine.covertSpy(spy, target, Number(data.units) || 100);
+          const upd = result.spyUpdates || {};
+          const xp = engine.awardXp(spy, "covert", 1);
+          upd.xp = xp.xp;
+          upd.level = xp.level;
+          if (Object.keys(upd).length) await applyUpdates(db, spy.id, upd);
+          await insertNews(db, spy.id, "covert", result.spyEvent);
+
+          if (result.targetEvent) {
+            await insertNews(db, target.id, "covert", result.targetEvent);
+          }
+
+          return { spy, target, result };
+        });
+
+        const { spy, target, result } = txResult;
         await notifyUnread(spy.id);
 
         if (result.targetEvent) {
-          await insertNews(db, target.id, "covert", result.targetEvent);
           await notifyUnread(target.id);
           const ti = onlinePlayers.get(target.player_id);
           if (ti)
@@ -287,38 +310,51 @@ module.exports = function (io, db) {
     });
 
     socket.on("action:loot", async (data, ack) => {
-      const thief = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
-        playerId,
-      ]);
-      const target = await db.get("SELECT * FROM kingdoms WHERE id = ?", [
-        data.targetId,
-      ]);
-      if (!target) return ack?.({ error: "Target not found" });
-      const result = engine.covertLoot(
-        thief,
-        target,
-        data.lootType,
-        Number(data.thieves) || 100,
-      );
-      if (result.error) return ack?.({ error: result.error });
       try {
-        const upd = result.thiefUpdates || {};
-        const xp = engine.awardXp(thief, "covert", 1);
-        upd.xp = xp.xp;
-        upd.level = xp.level;
-        if (Object.keys(upd).length) await applyUpdates(db, thief.id, upd);
-        if (result.success && result.targetUpdates)
-          await applyUpdates(db, target.id, result.targetUpdates);
-        await insertNews(
-          db,
-          thief.id,
-          "covert",
-          result.thiefEvent || result.event,
-        );
+        const txResult = await withTransaction(db, async () => {
+          const thief = await db.get(
+            "SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE",
+            [playerId],
+          );
+          if (!thief) throw new Error("Kingdom not found");
+
+          const target = await db.get("SELECT * FROM kingdoms WHERE id = ? FOR UPDATE", [
+            data.targetId,
+          ]);
+          if (!target) throw new Error("Target not found");
+
+          const result = engine.covertLoot(
+            thief,
+            target,
+            data.lootType,
+            Number(data.thieves) || 100,
+          );
+          if (result.error) throw new Error(result.error);
+
+          const upd = result.thiefUpdates || {};
+          const xp = engine.awardXp(thief, "covert", 1);
+          upd.xp = xp.xp;
+          upd.level = xp.level;
+          if (Object.keys(upd).length) await applyUpdates(db, thief.id, upd);
+          if (result.success && result.targetUpdates)
+            await applyUpdates(db, target.id, result.targetUpdates);
+          await insertNews(
+            db,
+            thief.id,
+            "covert",
+            result.thiefEvent || result.event,
+          );
+          if (result.targetEvent) {
+            await insertNews(db, target.id, "covert", result.targetEvent);
+          }
+
+          return { thief, target, result };
+        });
+
+        const { thief, target, result } = txResult;
         await notifyUnread(thief.id);
 
         if (result.targetEvent) {
-          await insertNews(db, target.id, "covert", result.targetEvent);
           await notifyUnread(target.id);
           const ti = onlinePlayers.get(target.player_id);
           if (ti)
@@ -334,39 +370,51 @@ module.exports = function (io, db) {
     });
 
     socket.on("action:assassinate", async (data, ack) => {
-      const assassin = await db.get(
-        "SELECT * FROM kingdoms WHERE player_id = ?",
-        [playerId],
-      );
-      const target = await db.get("SELECT * FROM kingdoms WHERE id = ?", [
-        data.targetId,
-      ]);
-      if (!target) return ack?.({ error: "Target not found" });
-      const result = engine.covertAssassinate(
-        assassin,
-        target,
-        Number(data.ninjas) || 50,
-        data.unitType,
-      );
-      if (result.error) return ack?.({ error: result.error });
       try {
-        const upd = result.assassinUpdates || {};
-        const xp = engine.awardXp(assassin, "covert", 1);
-        upd.xp = xp.xp;
-        upd.level = xp.level;
-        if (Object.keys(upd).length) await applyUpdates(db, assassin.id, upd);
-        if (result.success && result.targetUpdates)
-          await applyUpdates(db, target.id, result.targetUpdates);
-        await insertNews(
-          db,
-          assassin.id,
-          "covert",
-          result.assassinEvent || result.event,
-        );
+        const txResult = await withTransaction(db, async () => {
+          const assassin = await db.get(
+            "SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE",
+            [playerId],
+          );
+          if (!assassin) throw new Error("Kingdom not found");
+
+          const target = await db.get("SELECT * FROM kingdoms WHERE id = ? FOR UPDATE", [
+            data.targetId,
+          ]);
+          if (!target) throw new Error("Target not found");
+
+          const result = engine.covertAssassinate(
+            assassin,
+            target,
+            Number(data.ninjas) || 50,
+            data.unitType,
+          );
+          if (result.error) throw new Error(result.error);
+
+          const upd = result.assassinUpdates || {};
+          const xp = engine.awardXp(assassin, "covert", 1);
+          upd.xp = xp.xp;
+          upd.level = xp.level;
+          if (Object.keys(upd).length) await applyUpdates(db, assassin.id, upd);
+          if (result.success && result.targetUpdates)
+            await applyUpdates(db, target.id, result.targetUpdates);
+          await insertNews(
+            db,
+            assassin.id,
+            "covert",
+            result.assassinEvent || result.event,
+          );
+          if (result.targetEvent) {
+            await insertNews(db, target.id, "covert", result.targetEvent);
+          }
+
+          return { assassin, target, result };
+        });
+
+        const { assassin, target, result } = txResult;
         await notifyUnread(assassin.id);
 
         if (result.targetEvent) {
-          await insertNews(db, target.id, "covert", result.targetEvent);
           await notifyUnread(target.id);
           const ti = onlinePlayers.get(target.player_id);
           if (ti)

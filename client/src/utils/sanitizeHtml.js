@@ -1,3 +1,5 @@
+import { escapeHtml } from './escapeHtml.js';
+
 const BLOCKED_TAGS = new Set([
   'script',
   'iframe',
@@ -8,6 +10,10 @@ const BLOCKED_TAGS = new Set([
   'link',
   'meta',
   'style',
+  'svg',
+  'math',
+  'template',
+  'noscript',
   'animate',
   'set',
   'animateMotion',
@@ -24,26 +30,25 @@ const DANGEROUS_PROTOCOLS = new Set([
 function stripUnsafeAttributes(element) {
   for (const attr of [...element.attributes]) {
     const name = attr.name.toLowerCase();
-    const value = String(attr.value || '').trim();
+    const rawValue = String(attr.value || '').trim();
+    const normalizedValue = rawValue.toLowerCase().replace(/\s+/g, '');
 
     if (name.startsWith('on')) {
       element.removeAttribute(attr.name);
       continue;
     }
 
-    if (name === 'href' || name === 'src' || name === 'xlink:href') {
-      const lowerValue = value.toLowerCase();
-      let isDangerous = false;
+    if (name === 'style' || name === 'srcdoc') {
+      element.removeAttribute(attr.name);
+      continue;
+    }
 
+    if (name === 'href' || name === 'src' || name === 'xlink:href') {
       for (const protocol of DANGEROUS_PROTOCOLS) {
-        if (lowerValue.startsWith(protocol)) {
-          isDangerous = true;
+        if (normalizedValue.startsWith(protocol)) {
+          element.removeAttribute(attr.name);
           break;
         }
-      }
-
-      if (isDangerous) {
-        element.removeAttribute(attr.name);
       }
     }
   }
@@ -51,7 +56,7 @@ function stripUnsafeAttributes(element) {
 
 export function sanitizeHtml(html) {
   if (html == null || html === '') return '';
-  if (typeof document === 'undefined') return String(html);
+  if (typeof document === 'undefined') return escapeHtml(html);
 
   const doc = new DOMParser().parseFromString(String(html), 'text/html');
   const elements = doc.body.querySelectorAll('*');

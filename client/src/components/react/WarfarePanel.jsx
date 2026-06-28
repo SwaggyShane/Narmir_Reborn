@@ -571,6 +571,31 @@ const WarfarePanel = () => {
       type: 'Military attack',
       target: attackTarget.name,
       win: r.win,
+      summary: {
+        casualties:
+          (r.atkFightersLost || 0) +
+          (r.atkRangersLost || 0) +
+          (r.atkMagesLost || 0) +
+          (r.atkNinjasLost || 0) +
+          (r.atkClericsLost || 0) +
+          (r.atkThievesLost || 0) +
+          (r.atkEngineersLost || 0) +
+          (r.atkWmLost || 0) +
+          (r.defFightersLost || 0) +
+          (r.defRangersLost || 0) +
+          (r.defMagesLost || 0) +
+          (r.defNinjasLost || 0) +
+          (r.defClericsLost || 0) +
+          (r.defThievesLost || 0) +
+          (r.defEngineersLost || 0) +
+          (r.defWmLost || 0),
+        criticalHits: r.criticalHits || 0,
+        criticalKills: r.criticalKills || 0,
+        landTransferred: r.landTransferred || 0,
+        wallHpBefore: r.wallHpBefore || 0,
+        wallHpAfter: r.wallHpAfter || 0,
+        wallDamage: r.wallDamage || 0,
+      },
       rows,
     });
     refreshAttackTargets();
