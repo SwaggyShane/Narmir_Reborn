@@ -108,7 +108,7 @@ const HappinessGraph = ({ history = [] }) => {
           {points.length > 0 && (
             <g>
               <circle cx={points[points.length - 1].x} cy={points[points.length - 1].y} r="5" fill="none" stroke="currentColor" strokeWidth="2" className="text-current" style={{ color: currentColor }} />
-              <text x={points[points.length - 1].x} y={points[points.length - 1].y - 15} fontSize="12" fontWeight="bold" fill="currentColor" textAnchor="middle" className="text-current" style={{ color: currentColor }}>
+              <text x={points[points.length - 1].x} y={points[points.length - 1].y - 15} fontSize="12" fontWeight="bold" fill="currentColor" textAnchor="middle" style={{ color: currentColor }}>
                 {currentHappiness}
               </text>
             </g>

@@ -100,8 +100,7 @@ const KingdomBodyHeader = () => {
           <div className="flex min-w-0 w-full flex-wrap items-center sm:flex-1" style={{ gap: GAP }}>
             <h1
               id="kingdom-name"
-              className="min-w-0 break-words font-cinzel text-base font-bold leading-snug sm:text-lg md:text-xl"
-              style={{ color: 'var(--text)' }}
+              className="min-w-0 break-words font-cinzel text-base font-bold leading-snug sm:text-lg md:text-xl text-[var(--text)]"
             >
               <span style={{ color: 'var(--text)' }}>{playerName}</span>
               <span

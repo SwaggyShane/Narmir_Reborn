@@ -151,26 +151,26 @@ const RankingsPanel = () => {
       : null;
 
     const actionBtns = isMe
-      ? <button className="btn btn-accent" style={{ fontSize: '11px', padding: '3px 8px' }} onClick={() => handleDirectMessage(row)}>✉️ Message</button>
+      ? <button className="btn btn-accent text-[11px] px-2 py-0.5" onClick={() => handleDirectMessage(row)}>✉️ Message</button>
       : (row.turn || 0) < 400
         ? (
           <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
-            <button className="btn" style={{ fontSize: '11px', padding: '3px 8px' }} title="Kingdom Profile" onClick={() => handleProfile(row)}>👤</button>
-            <button className="btn btn-accent" style={{ fontSize: '11px', padding: '3px 8px' }} title="Send message" onClick={() => handleDirectMessage(row)}>✉️</button>
+            <button className="btn text-[11px] px-2 py-0.5" title="Kingdom Profile" onClick={() => handleProfile(row)}>👤</button>
+            <button className="btn btn-accent text-[11px] px-2 py-0.5" title="Send message" onClick={() => handleDirectMessage(row)}>✉️</button>
             <span style={{ fontSize: '11px', color: 'var(--green)', marginLeft: '4px' }} title="Protected until Turn 400">🛡️</span>
           </div>
         )
         : (
           <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
-            <button className="btn" style={{ fontSize: '11px', padding: '3px 8px' }} title="Kingdom Profile" onClick={() => handleProfile(row)}>👤</button>
-            <button className="btn btn-accent" style={{ fontSize: '11px', padding: '3px 8px' }} title="Send message" onClick={() => handleDirectMessage(row)}>✉️</button>
+            <button className="btn text-[11px] px-2 py-0.5" title="Kingdom Profile" onClick={() => handleProfile(row)}>👤</button>
+            <button className="btn btn-accent text-[11px] px-2 py-0.5" title="Send message" onClick={() => handleDirectMessage(row)}>✉️</button>
             {isMapped ? (
               <>
-                <button className="btn btn-gold" style={{ fontSize: '11px', padding: '3px 8px' }} title="Place Bounty" onClick={() => handleBounty(row)}>🪙</button>
-                <button className="btn btn-red" style={{ fontSize: '11px', padding: '3px 8px' }} onClick={() => handleTarget(row, 'attack')}>⚔️</button>
-                <button className="btn btn-accent" style={{ fontSize: '11px', padding: '3px 8px' }} onClick={() => handleTarget(row, 'spells')}>✨</button>
-                <button className="btn" style={{ fontSize: '11px', padding: '3px 8px' }} onClick={() => handleTarget(row, 'covert')}>🕵️</button>
-                <button className="btn btn-gold" style={{ fontSize: '11px', padding: '3px 8px' }} title="Establish Trade Route" onClick={() => handleTrade(row)}>🤝</button>
+                <button className="btn btn-gold text-[11px] px-2 py-0.5" title="Place Bounty" onClick={() => handleBounty(row)}>🪙</button>
+                <button className="btn btn-red text-[11px] px-2 py-0.5" onClick={() => handleTarget(row, 'attack')}>⚔️</button>
+                <button className="btn btn-accent text-[11px] px-2 py-0.5" onClick={() => handleTarget(row, 'spells')}>✨</button>
+                <button className="btn text-[11px] px-2 py-0.5" onClick={() => handleTarget(row, 'covert')}>🕵️</button>
+                <button className="btn btn-gold text-[11px] px-2 py-0.5" title="Establish Trade Route" onClick={() => handleTrade(row)}>🤝</button>
               </>
             ) : null}
           </div>

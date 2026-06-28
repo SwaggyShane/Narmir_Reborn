@@ -103,31 +103,27 @@ const StudiesPanel = () => {
 
       <div className="flex flex-wrap gap-1 mb-4 border-b-2 border-[var(--border2)] pb-0">
         <button
-          className={clsx('base-btn admin-tab', activeTab === 'tower' && 'active')}
+          className={`base-btn admin-tab ${activeTab === 'tower' ? 'active' : ''} rounded-none`}
           onClick={() => setActiveTab('tower')}
-          style={{ borderRadius: 0 }}
         >
           🗼 Tower
         </button>
         <button
-          className={clsx('base-btn admin-tab', activeTab === 'school' && 'active')}
+          className={`base-btn admin-tab ${activeTab === 'school' ? 'active' : ''} rounded-none`}
           onClick={() => setActiveTab('school')}
-          style={{ borderRadius: 0 }}
         >
           🏫 School
         </button>
         <button
           id="studies-tab-shrine-btn"
-          className={clsx('base-btn admin-tab', activeTab === 'shrine' && 'active')}
+          className={`base-btn admin-tab ${activeTab === 'shrine' ? 'active' : ''} rounded-none`}
           onClick={() => setActiveTab('shrine')}
-          style={{ borderRadius: 0 }}
         >
           {race === 'vampire' ? '🪦 Mausoleum' : '⛩️ Shrine'}
         </button>
         <button
-          className={clsx('base-btn admin-tab', activeTab === 'slibrary' && 'active')}
+          className={`base-btn admin-tab ${activeTab === 'slibrary' ? 'active' : ''} rounded-none`}
           onClick={() => setActiveTab('slibrary')}
-          style={{ borderRadius: 0 }}
         >
           📖 Library
         </button>
