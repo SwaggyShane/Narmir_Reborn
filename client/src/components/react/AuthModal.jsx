@@ -4,6 +4,7 @@ import { applyGameMutation } from '../../utils/gameMutations.js';
 import { gameStateManager } from '../../GameStateManager.js';
 import { getSocket } from '../../socket-client.js';
 import { initSocketHandlers } from '../../hooks/useSocket.js';
+import { useProfileStore } from '../../stores/profileStore.js';
 
 let authApi = null;
 
@@ -20,12 +21,14 @@ function clearAuthToken() {
 function syncIdentity(me, fallbackUsername) {
   const username = (me && me.username) || fallbackUsername || '';
   const isAdmin = !!(me && me.isAdmin);
+  useProfileStore.getState().receiveServerSnapshot({ username, isAdmin });
   gameStateManager.setState({ username, isAdmin }, { reason: 'auth-session' });
 }
 
 export async function loadKingdom() {
   const kingdom = await apiCall('/api/kingdom/me');
   if (kingdom && !kingdom.error) {
+    useProfileStore.getState().receiveServerSnapshot(kingdom);
     applyGameMutation(
       {
         ...kingdom,

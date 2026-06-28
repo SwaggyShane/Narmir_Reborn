@@ -241,6 +241,12 @@ Automated reviewers are helpful but sometimes wrong. Before applying any suggest
 2. **Check if the suggestion would break existing behavior.** Especially around CSS variables, panel display systems, or React reconciliation.
 3. **If it conflicts with how the game's panel system works, reject it and explain why in a reply comment.**
 
+### Gemini Feedback Gate
+
+- If Gemini review is still pending on a high-risk change, wait for it before pushing, merging, or declaring the work complete.
+- If you already have a strong reason to proceed, document that reason in the commit or review reply before moving on.
+- For low-risk docs-only cleanup, proceed without waiting unless the user asked to hold.
+
 Example of a bad suggestion that was applied: removing `style={{ display: 'none' }}` from React panels. The game's `switchTab()` requires it. Applying it broke the forum panel entirely.
 
 ---
