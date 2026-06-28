@@ -1,7 +1,10 @@
 # Narmir Reborn: Development Todos
 
-This is a single flat backlog of unfinished work. Items are ordered from easier to harder and tagged with their source doc.
+Local is truth. This backlog is split into two explicit ownership lanes so we can work in parallel without trampling each other.
 Archived reference docs and `BETA_PLAN.md` are intentionally excluded.
+
+## Codex Lane
+Local-first lane. I own this lane and keep it current in the working tree.
 
 1. [TODO] Battle Outcome Animation: Animate win/loss banners in combat results.
 2. [TODO] Battle Outcome Animation: Animate casualty and critical hit counters.
@@ -234,233 +237,237 @@ Archived reference docs and `BETA_PLAN.md` are intentionally excluded.
 229. [TEST] Food consumption = population/100 * race_consumption_mult * troops
 230. [TEST] Food balance = production - consumption per turn
 231. [TEST] Food stored (no cap listed, but practical limits)
-232. [TEST] Shortage auto-triggers happiness recovery spending
-233. [TEST] Food shortage = < 20% of population -> 0 food happiness
-234. [TEST] Housing capacity = bld_housing * per_building_cap (varies by race)
-235. [TEST] Housing fragment bonuses apply (+5% Celestial, +15% Ancient Elven Wood)
-236. [TEST] Above housing cap: growth capped at 0.1x
-237. [TEST] At 2x capacity: no growth
-238. [TEST] Housing buildings take land
-239. [TEST] Build command enqueues building (cost gold, land, resources if applicable)
-240. [TEST] Insufficient gold/land/resources = fails
-241. [TEST] Building progresses in queue (workers allocated)
-242. [TEST] Building completes and is added to kingdom
-243. [TEST] Land deducted on completion
-244. [TEST] Building provides stat bonuses (farms produce food, mage towers mana, etc.)
-245. [TEST] Queue up to 20 buildings (or game limit)
-246. [TEST] Allocate workers to specific queued buildings
-247. [TEST] Workers speed up construction time
-248. [TEST] Reorder queue (move building up/down)
-249. [TEST] Cancel building (refund partial resources if in progress)
-250. [TEST] Hammers increase build speed by 10% each (cap ~500)
-251. [TEST] Scaffolding reduces cost by 5% each (cap ~500)
-252. [TEST] Specific buildings get double scaffolding bonus (list in config)
-253. [TEST] Tools consumed on use
-254. [TEST] Tools crafted at Smithies
-255. [TEST] Regular blueprints: Basic construction (no bonus)
-256. [TEST] Certified blueprints: Studied from fragments, improve durability
-257. [TEST] Hybrid blueprints: Combine studied fragments for special effects
-258. [TEST] Blueprints consumed on building creation
-259. [TEST] Blueprint crafting at Scribe (requires fragment study)
-260. [TEST] All 27 building types recruitable
-261. [TEST] Hard caps enforced:
-262. [TEST] Achievment "Constructor": Bypass hard cap (get 100 smithies, then +100 more)
-263. [TEST] Each building type has specific upgrades
-264. [TEST] Upgrades cost resources and often research
-265. [TEST] Upgrades provide stat bonuses (farm yield, tower detection, etc.)
-266. [TEST] Upgrades tracked per building type
-267. [TEST] Multiple upgrades can stack on same building
-268. [TEST] Spy operation targets enemy kingdom
-269. [TEST] Success based on attacker thieves/detection, defender towers
-270. [TEST] Failure: Thieves caught/killed
-271. [TEST] Success: Report generated (shared with allies)
-272. [TEST] Assassination: Remove enemy troops
-273. [TEST] Sabotage: Damage buildings
-274. [TEST] Recruitment: Steal enemy troops
-275. [TEST] Send 3 types: Scout (10 turns), Deep (25 turns), Dungeon (50 turns)
-276. [TEST] Allocate fighters & rangers
-277. [TEST] Expedition completes, returns with loot
-278. [TEST] Loot tables: 40+ junk items, 6+ ultra-rare artifacts
-279. [TEST] Rare artifacts: Dragon Egg, Tome, Mana Heart, Vault, Legion Banner, World Tree Seed
-280. [TEST] Each artifact provides kingdom bonus
-281. [TEST] Expedition participants gain XP
-282. [TEST] 10 fragment types exist (Volcanic, Elven Wood, Dragon Scale, etc.)
-283. [TEST] Fragments found in expeditions (rare drops)
-284. [TEST] Fragments attune to specific building types
-285. [TEST] Attunement provides bonus multipliers (capacity, speed, output, etc.)
-286. [TEST] Studied fragments unlock hybrid blueprints
-287. [TEST] Fragment inventory tracked
-288. [TEST] 50+ junk items discoverable
-289. [TEST] Each item has description/rarity
-290. [TEST] Lore system: 200+ lore entries in categories
-291. [TEST] Players discover lore through exploration/events
-292. [TEST] Achievement tracking for collections
-293. [TEST] Fragments attune to buildings
-294. [TEST] Attunement affects specific building properties
-295. [TEST] Bonus types: capacity, speed, output, stability, growth, happiness, magic_output, income, prestige
-296. [TEST] Multipliers range from 1.0 to 1.5+ depending on fragment
-297. [TEST] Multiple fragments on same building multiply effects
-298. [TEST] Celestial Realm: +5% capacity, happiness
-299. [TEST] Ancient Elven Wood: +15% capacity, happiness
-300. [TEST] Abyssal Crystal: magic_output boost
-301. [TEST] Void Essence: stability penalty (example: -happiness)
-302. [TEST] Cursed Bloodstone: stability penalty (example: -happiness)
-303. [TEST] Tears of the World Tree: growth bonus
-304. [TEST] Test each of 10 fragments on appropriate buildings
-305. [TEST] Verify bonus multipliers correct
-306. [TEST] Test stacking (multiple fragments on same building)
-307. [TEST] Test hybrid blueprints created from studied fragments
-308. [TEST] Verify ultra-rare fragments discovered
-309. [TEST] XP gained from: turns, gold earned, combat wins/losses, research, construction, expeditions, spells, covert ops
-310. [TEST] XP requirements increase exponentially (level 50+ very slow)
-311. [TEST] Level determines unit cap increases
-312. [TEST] Prestige levels separate from kingdom levels
-313. [TEST] Kingdom level shown in UI
-314. [TEST] Each unit type (Fighters, Rangers, etc.) tracks XP separately
-315. [TEST] Troops gain XP from combat participation
-316. [TEST] Levels go 1-100+ with exponential scaling
-317. [TEST] Level thresholds: 1-10 fast, 10-25 medium, 25-50 slow, 50-75 very slow, 75+ extremely slow
-318. [TEST] High-level troops apply combat multiplier (level/50)
-319. [TEST] Racial bonuses above level 100
-320. [TEST] Recruit heroes from castle
-321. [TEST] Heroes have classes with stat bonuses (economy, magic, research, etc.)
-322. [TEST] Heroes level from XP
-323. [TEST] Abilities unlock at levels 1, 5, 10
-324. [TEST] Heroes can be idle, wounded, in-combat, on-quest
-325. [TEST] Passive stat bonuses apply to kingdom
-326. [TEST] Track various achievements (building, combat, research, etc.)
-327. [TEST] Show achievement titles (greyed out if not completed)
-328. [TEST] Show progress bar toward achievement
-329. [TEST] Milestone bonuses apply globally (e.g., +5% gold)
-330. [TEST] Multiple milestones can stack
-331. [TEST] Create alliance (name, description)
-332. [TEST] Invite/accept members
-333. [TEST] Leader promote/demote members
-334. [TEST] Alliance vault (shared gold pool)
-335. [TEST] Vault transactions logged
-336. [TEST] Alliance buffs (Merchant Guild, Shadow Network, Mercenary Subsidy)
-337. [TEST] Deposit gold into vault
-338. [TEST] Withdraw gold from vault (leader approval?)
-339. [TEST] Vault balance tracked
-340. [TEST] Transaction log visible
-341. [TEST] Interest applies to vault balance (if applicable)
-342. [TEST] 6 regions exist (Dwarf, High Elf, Orc, Dark Elf, Human, Dire Wolf)
-343. [TEST] Alliances contest for region control
-344. [TEST] Control = +5% to specific stat (magic, military, economy, etc.)
-345. [TEST] Home region bonus: +5% if own race controls native region
-346. [TEST] Region display on world map
-347. [TEST] Create trade offer (send resources to player)
-348. [TEST] Offer expires after 1 hour
-349. [TEST] Accept trade (auto-transfer resources)
-350. [TEST] Trade history visible
-351. [TEST] Can't trade with self
-352. [TEST] Global chat
-353. [TEST] Alliance-only chat
-354. [TEST] Private messages
-355. [TEST] Message history (clear history option)
-356. [TEST] Online players list
-357. [TEST] 4 seasons: Spring (3 turns), Summer (5 turns), Fall (2 turns), Winter (3 turns)
-358. [TEST] Farm yield multipliers per season: Spring 1.1x, Summer 1.2x, Fall 0.9x, Winter 0.7x
-359. [TEST] Seasons cycle continuously
-360. [TEST] Current season shown in UI
-361. [TEST] 20+ events with seasonal triggers
-362. [TEST] Event effects: happiness, farm yield, gold, population, food, military modifiers
-363. [TEST] Event log tracks all triggered events per kingdom
-364. [TEST] Random event notifications sent
-365. [TEST] Daily, weekly, monthly goals available
-366. [TEST] 3 difficulty tiers with different rewards
-367. [TEST] Goal types: combat, construction, research, exploration, economy, military
-368. [TEST] Reward pools: gold, resources, prestige points, multiplier bonuses
-369. [TEST] Goals reset on schedule
-370. [TEST] Tax increases sometimes trigger sentiment changes
-371. [TEST] Happiness penalties/bonuses from events
-372. [TEST] Random events affect various stats
-373. [TEST] Thralls function as alternative troops (population conversion)
-374. [TEST] Mausoleum building Vampire-exclusive
-375. [TEST] Mausoleum upgrades (Blood Sacrifice, Soul Vault, Night Watch)
-376. [TEST] Thrall capacity expandable via upgrades
-377. [TEST] Thralls provide food efficiency boost
-378. [TEST] Thralls provide defense bonus (time-dependent?)
-379. [TEST] Discover location maps (from expeditions or enemy surrender)
-380. [TEST] Maps stored in inventory
-381. [TEST] Maps can be stolen in combat (from thief operations)
-382. [TEST] Map data shared with alliance
-383. [TEST] Map visibility shows on world map
-384. [TEST] News items appear for: attacks, expeditions, research complete, buildings complete
-385. [TEST] News turn number shown
-386. [TEST] News filtering by type (combat, research, construction, exploration, etc.)
-387. [TEST] Happiness news items appear with calculations
-388. [TEST] Rebellion news items appear with details
-389. [TEST] Detailed combat history visible
-390. [TEST] Public record (all players can view)
-391. [TEST] Shows: attacker, defender, units lost, land transferred, gold stolen
-392. [TEST] Battle report on each entry
-393. [TEST] Timestamp for each battle
-394. [TEST] All stats displayed: Population, Happiness, Gold, Land, Food, Mana, XP, Level
-395. [TEST] Troop counts shown
-396. [TEST] Building counts shown
-397. [TEST] Research progress shown
-398. [TEST] Production rates shown (gold/turn, food/turn, mana/turn)
-399. [TEST] Happiness affects production (gold, food, mana, research)
-400. [TEST] Happiness affects growth (population multiplier)
-401. [TEST] Happiness affects rebellion risk
-402. [TEST] Happiness affects combat multiplier
-403. [TEST] Low happiness triggers rebellion events
-404. [TEST] Rebellion events reduce happiness further
-405. [TEST] Tax changes affect happiness
-406. [TEST] Combat multiplier uses happiness (not old happiness)
-407. [TEST] Combat updates last_attack_turn for attacker & defender
-408. [TEST] Defender safety happiness affected by attack
-409. [TEST] Winning army gains happiness bonus (safety)
-410. [TEST] Losing army loses happiness (safety)
-411. [TEST] Land loss affects kingdom prosperity (less gold potential)
-412. [TEST] Happiness multiplier applied to ALL production
-413. [TEST] Low happiness cascades: less gold → less research → less military
-414. [TEST] High happiness cascades: more gold → faster research → stronger military
-415. [TEST] Tax rate affects both gold and happiness
-416. [TEST] Buildings provide income (taverns, markets, castles)
-417. [TEST] Population growth depends on happiness & housing
-418. [TEST] Population affects food consumption
-419. [TEST] Population loss from rebellion affects everything
-420. [TEST] Housing provides capacity
-421. [TEST] Troop limits depend on population
-422. [TEST] Research speed affected by happiness
-423. [TEST] Research enables spells, building upgrades
-424. [TEST] Research provides hard caps on units/buildings
-425. [TEST] Racial bonuses apply to research
-426. [TEST] Spells require mana
-427. [TEST] Spells affect troops, buildings, resources
-428. [TEST] Buff spells increase happiness
-429. [TEST] Debuff spells reduce enemy happiness
-430. [TEST] Mana generation affected by happiness
-431. [TEST] Zero population: can't recruit troops, can't produce food
-432. [TEST] Zero gold: can't build, recruit, cast spells
-433. [TEST] Zero food: population starving (happiness penalty)
-434. [TEST] Negative happiness: population fleeing
-435. [TEST] Negative resources: prevented (clamped at 0)
-436. [TEST] Gold capped at 1M (or configured limit)
-437. [TEST] Population/troops capped by housing
-438. [TEST] Buildings capped by hard limits
-439. [TEST] Mana capped by tower storage
-440. [TEST] Queued buildings capped at 20
-441. [TEST] Can't build building if already at hard cap
-442. [TEST] Can't recruit troops if no housing
-443. [TEST] Can't cast spell without sufficient mana
-444. [TEST] Can't attack self
-445. [TEST] Can't trade with self
-446. [TEST] Can't join own alliance
-447. [TEST] All kingdom stats sum correctly
-448. [TEST] Buildings + troops fit within land
-449. [TEST] Resources don't go negative
-450. [TEST] XP values consistent
-451. [TEST] Timestamps accurate
-452. [TEST] All turns process without errors
-453. [TEST] Happiness recalculated each turn
-454. [TEST] Production applied each turn
-455. [TEST] Rebellion check happens each turn
-456. [TEST] Events triggered appropriately
-457. [TEST] News items created for major events
-458. [TEST] Invalid JSON in stored fields handled gracefully
-459. [TEST] Missing fields use defaults
-460. [TEST] Type mismatches caught (happiness_bonus must be number)
-461. [TEST] Out-of-range values clamped (happiness -50 to 120)
+
+## Claude Lane
+Remote-first lane. Claude can land branches here; I pull those changes down to local truth.
+
+1. [TEST] Shortage auto-triggers happiness recovery spending
+2. [TEST] Food shortage = < 20% of population -> 0 food happiness
+3. [TEST] Housing capacity = bld_housing * per_building_cap (varies by race)
+4. [TEST] Housing fragment bonuses apply (+5% Celestial, +15% Ancient Elven Wood)
+5. [TEST] Above housing cap: growth capped at 0.1x
+6. [TEST] At 2x capacity: no growth
+7. [TEST] Housing buildings take land
+8. [TEST] Build command enqueues building (cost gold, land, resources if applicable)
+9. [TEST] Insufficient gold/land/resources = fails
+10. [TEST] Building progresses in queue (workers allocated)
+11. [TEST] Building completes and is added to kingdom
+12. [TEST] Land deducted on completion
+13. [TEST] Building provides stat bonuses (farms produce food, mage towers mana, etc.)
+14. [TEST] Queue up to 20 buildings (or game limit)
+15. [TEST] Allocate workers to specific queued buildings
+16. [TEST] Workers speed up construction time
+17. [TEST] Reorder queue (move building up/down)
+18. [TEST] Cancel building (refund partial resources if in progress)
+19. [TEST] Hammers increase build speed by 10% each (cap ~500)
+20. [TEST] Scaffolding reduces cost by 5% each (cap ~500)
+21. [TEST] Specific buildings get double scaffolding bonus (list in config)
+22. [TEST] Tools consumed on use
+23. [TEST] Tools crafted at Smithies
+24. [TEST] Regular blueprints: Basic construction (no bonus)
+25. [TEST] Certified blueprints: Studied from fragments, improve durability
+26. [TEST] Hybrid blueprints: Combine studied fragments for special effects
+27. [TEST] Blueprints consumed on building creation
+28. [TEST] Blueprint crafting at Scribe (requires fragment study)
+29. [TEST] All 27 building types recruitable
+30. [TEST] Hard caps enforced:
+31. [TEST] Achievment "Constructor": Bypass hard cap (get 100 smithies, then +100 more)
+32. [TEST] Each building type has specific upgrades
+33. [TEST] Upgrades cost resources and often research
+34. [TEST] Upgrades provide stat bonuses (farm yield, tower detection, etc.)
+35. [TEST] Upgrades tracked per building type
+36. [TEST] Multiple upgrades can stack on same building
+37. [TEST] Spy operation targets enemy kingdom
+38. [TEST] Success based on attacker thieves/detection, defender towers
+39. [TEST] Failure: Thieves caught/killed
+40. [TEST] Success: Report generated (shared with allies)
+41. [TEST] Assassination: Remove enemy troops
+42. [TEST] Sabotage: Damage buildings
+43. [TEST] Recruitment: Steal enemy troops
+44. [TEST] Send 3 types: Scout (10 turns), Deep (25 turns), Dungeon (50 turns)
+45. [TEST] Allocate fighters & rangers
+46. [TEST] Expedition completes, returns with loot
+47. [TEST] Loot tables: 40+ junk items, 6+ ultra-rare artifacts
+48. [TEST] Rare artifacts: Dragon Egg, Tome, Mana Heart, Vault, Legion Banner, World Tree Seed
+49. [TEST] Each artifact provides kingdom bonus
+50. [TEST] Expedition participants gain XP
+51. [TEST] 10 fragment types exist (Volcanic, Elven Wood, Dragon Scale, etc.)
+52. [TEST] Fragments found in expeditions (rare drops)
+53. [TEST] Fragments attune to specific building types
+54. [TEST] Attunement provides bonus multipliers (capacity, speed, output, etc.)
+55. [TEST] Studied fragments unlock hybrid blueprints
+56. [TEST] Fragment inventory tracked
+57. [TEST] 50+ junk items discoverable
+58. [TEST] Each item has description/rarity
+59. [TEST] Lore system: 200+ lore entries in categories
+60. [TEST] Players discover lore through exploration/events
+61. [TEST] Achievement tracking for collections
+62. [TEST] Fragments attune to buildings
+63. [TEST] Attunement affects specific building properties
+64. [TEST] Bonus types: capacity, speed, output, stability, growth, happiness, magic_output, income, prestige
+65. [TEST] Multipliers range from 1.0 to 1.5+ depending on fragment
+66. [TEST] Multiple fragments on same building multiply effects
+67. [TEST] Celestial Realm: +5% capacity, happiness
+68. [TEST] Ancient Elven Wood: +15% capacity, happiness
+69. [TEST] Abyssal Crystal: magic_output boost
+70. [TEST] Void Essence: stability penalty (example: -happiness)
+71. [TEST] Cursed Bloodstone: stability penalty (example: -happiness)
+72. [TEST] Tears of the World Tree: growth bonus
+73. [TEST] Test each of 10 fragments on appropriate buildings
+74. [TEST] Verify bonus multipliers correct
+75. [TEST] Test stacking (multiple fragments on same building)
+76. [TEST] Test hybrid blueprints created from studied fragments
+77. [TEST] Verify ultra-rare fragments discovered
+78. [TEST] XP gained from: turns, gold earned, combat wins/losses, research, construction, expeditions, spells, covert ops
+79. [TEST] XP requirements increase exponentially (level 50+ very slow)
+80. [TEST] Level determines unit cap increases
+81. [TEST] Prestige levels separate from kingdom levels
+82. [TEST] Kingdom level shown in UI
+83. [TEST] Each unit type (Fighters, Rangers, etc.) tracks XP separately
+84. [TEST] Troops gain XP from combat participation
+85. [TEST] Levels go 1-100+ with exponential scaling
+86. [TEST] Level thresholds: 1-10 fast, 10-25 medium, 25-50 slow, 50-75 very slow, 75+ extremely slow
+87. [TEST] High-level troops apply combat multiplier (level/50)
+88. [TEST] Racial bonuses above level 100
+89. [TEST] Recruit heroes from castle
+90. [TEST] Heroes have classes with stat bonuses (economy, magic, research, etc.)
+91. [TEST] Heroes level from XP
+92. [TEST] Abilities unlock at levels 1, 5, 10
+93. [TEST] Heroes can be idle, wounded, in-combat, on-quest
+94. [TEST] Passive stat bonuses apply to kingdom
+95. [TEST] Track various achievements (building, combat, research, etc.)
+96. [TEST] Show achievement titles (greyed out if not completed)
+97. [TEST] Show progress bar toward achievement
+98. [TEST] Milestone bonuses apply globally (e.g., +5% gold)
+99. [TEST] Multiple milestones can stack
+100. [TEST] Create alliance (name, description)
+101. [TEST] Invite/accept members
+102. [TEST] Leader promote/demote members
+103. [TEST] Alliance vault (shared gold pool)
+104. [TEST] Vault transactions logged
+105. [TEST] Alliance buffs (Merchant Guild, Shadow Network, Mercenary Subsidy)
+106. [TEST] Deposit gold into vault
+107. [TEST] Withdraw gold from vault (leader approval?)
+108. [TEST] Vault balance tracked
+109. [TEST] Transaction log visible
+110. [TEST] Interest applies to vault balance (if applicable)
+111. [TEST] 6 regions exist (Dwarf, High Elf, Orc, Dark Elf, Human, Dire Wolf)
+112. [TEST] Alliances contest for region control
+113. [TEST] Control = +5% to specific stat (magic, military, economy, etc.)
+114. [TEST] Home region bonus: +5% if own race controls native region
+115. [TEST] Region display on world map
+116. [TEST] Create trade offer (send resources to player)
+117. [TEST] Offer expires after 1 hour
+118. [TEST] Accept trade (auto-transfer resources)
+119. [TEST] Trade history visible
+120. [TEST] Can't trade with self
+121. [TEST] Global chat
+122. [TEST] Alliance-only chat
+123. [TEST] Private messages
+124. [TEST] Message history (clear history option)
+125. [TEST] Online players list
+126. [TEST] 4 seasons: Spring (3 turns), Summer (5 turns), Fall (2 turns), Winter (3 turns)
+127. [TEST] Farm yield multipliers per season: Spring 1.1x, Summer 1.2x, Fall 0.9x, Winter 0.7x
+128. [TEST] Seasons cycle continuously
+129. [TEST] Current season shown in UI
+130. [TEST] 20+ events with seasonal triggers
+131. [TEST] Event effects: happiness, farm yield, gold, population, food, military modifiers
+132. [TEST] Event log tracks all triggered events per kingdom
+133. [TEST] Random event notifications sent
+134. [TEST] Daily, weekly, monthly goals available
+135. [TEST] 3 difficulty tiers with different rewards
+136. [TEST] Goal types: combat, construction, research, exploration, economy, military
+137. [TEST] Reward pools: gold, resources, prestige points, multiplier bonuses
+138. [TEST] Goals reset on schedule
+139. [TEST] Tax increases sometimes trigger sentiment changes
+140. [TEST] Happiness penalties/bonuses from events
+141. [TEST] Random events affect various stats
+142. [TEST] Thralls function as alternative troops (population conversion)
+143. [TEST] Mausoleum building Vampire-exclusive
+144. [TEST] Mausoleum upgrades (Blood Sacrifice, Soul Vault, Night Watch)
+145. [TEST] Thrall capacity expandable via upgrades
+146. [TEST] Thralls provide food efficiency boost
+147. [TEST] Thralls provide defense bonus (time-dependent?)
+148. [TEST] Discover location maps (from expeditions or enemy surrender)
+149. [TEST] Maps stored in inventory
+150. [TEST] Maps can be stolen in combat (from thief operations)
+151. [TEST] Map data shared with alliance
+152. [TEST] Map visibility shows on world map
+153. [TEST] News items appear for: attacks, expeditions, research complete, buildings complete
+154. [TEST] News turn number shown
+155. [TEST] News filtering by type (combat, research, construction, exploration, etc.)
+156. [TEST] Happiness news items appear with calculations
+157. [TEST] Rebellion news items appear with details
+158. [TEST] Detailed combat history visible
+159. [TEST] Public record (all players can view)
+160. [TEST] Shows: attacker, defender, units lost, land transferred, gold stolen
+161. [TEST] Battle report on each entry
+162. [TEST] Timestamp for each battle
+163. [TEST] All stats displayed: Population, Happiness, Gold, Land, Food, Mana, XP, Level
+164. [TEST] Troop counts shown
+165. [TEST] Building counts shown
+166. [TEST] Research progress shown
+167. [TEST] Production rates shown (gold/turn, food/turn, mana/turn)
+168. [TEST] Happiness affects production (gold, food, mana, research)
+169. [TEST] Happiness affects growth (population multiplier)
+170. [TEST] Happiness affects rebellion risk
+171. [TEST] Happiness affects combat multiplier
+172. [TEST] Low happiness triggers rebellion events
+173. [TEST] Rebellion events reduce happiness further
+174. [TEST] Tax changes affect happiness
+175. [TEST] Combat multiplier uses happiness (not old happiness)
+176. [TEST] Combat updates last_attack_turn for attacker & defender
+177. [TEST] Defender safety happiness affected by attack
+178. [TEST] Winning army gains happiness bonus (safety)
+179. [TEST] Losing army loses happiness (safety)
+180. [TEST] Land loss affects kingdom prosperity (less gold potential)
+181. [TEST] Happiness multiplier applied to ALL production
+182. [TEST] Low happiness cascades: less gold → less research → less military
+183. [TEST] High happiness cascades: more gold → faster research → stronger military
+184. [TEST] Tax rate affects both gold and happiness
+185. [TEST] Buildings provide income (taverns, markets, castles)
+186. [TEST] Population growth depends on happiness & housing
+187. [TEST] Population affects food consumption
+188. [TEST] Population loss from rebellion affects everything
+189. [TEST] Housing provides capacity
+190. [TEST] Troop limits depend on population
+191. [TEST] Research speed affected by happiness
+192. [TEST] Research enables spells, building upgrades
+193. [TEST] Research provides hard caps on units/buildings
+194. [TEST] Racial bonuses apply to research
+195. [TEST] Spells require mana
+196. [TEST] Spells affect troops, buildings, resources
+197. [TEST] Buff spells increase happiness
+198. [TEST] Debuff spells reduce enemy happiness
+199. [TEST] Mana generation affected by happiness
+200. [TEST] Zero population: can't recruit troops, can't produce food
+201. [TEST] Zero gold: can't build, recruit, cast spells
+202. [TEST] Zero food: population starving (happiness penalty)
+203. [TEST] Negative happiness: population fleeing
+204. [TEST] Negative resources: prevented (clamped at 0)
+205. [TEST] Gold capped at 1M (or configured limit)
+206. [TEST] Population/troops capped by housing
+207. [TEST] Buildings capped by hard limits
+208. [TEST] Mana capped by tower storage
+209. [TEST] Queued buildings capped at 20
+210. [TEST] Can't build building if already at hard cap
+211. [TEST] Can't recruit troops if no housing
+212. [TEST] Can't cast spell without sufficient mana
+213. [TEST] Can't attack self
+214. [TEST] Can't trade with self
+215. [TEST] Can't join own alliance
+216. [TEST] All kingdom stats sum correctly
+217. [TEST] Buildings + troops fit within land
+218. [TEST] Resources don't go negative
+219. [TEST] XP values consistent
+220. [TEST] Timestamps accurate
+221. [TEST] All turns process without errors
+222. [TEST] Happiness recalculated each turn
+223. [TEST] Production applied each turn
+224. [TEST] Rebellion check happens each turn
+225. [TEST] Events triggered appropriately
+226. [TEST] News items created for major events
+227. [TEST] Invalid JSON in stored fields handled gracefully
+228. [TEST] Missing fields use defaults
+229. [TEST] Type mismatches caught (happiness_bonus must be number)
+230. [TEST] Out-of-range values clamped (happiness -50 to 120)
