@@ -133,18 +133,39 @@ All major development tracks finished. Platform ready for beta launch.
 - ✅ Verified all 12 checklist items (2026-06-28)
 
 ### Verification Matrix (Ph6b)
-- ✅ Manage (announcements, chat, mods/bans)
-- ✅ Kingdoms (edit + AI presets)
-- ✅ Events (load log + form)
-- ✅ Config (load + display)
-- ✅ Sounds (list + preview)
-- ✅ Prestige (static table)
-- ✅ Lore (load entries)
-- ✅ Evolution (wishlist, changelog, notes)
-- ✅ Detailed Lists (fragments, spells)
-- ✅ Goals (load grid)
-- ✅ Security (CSRF protection)
-- ✅ Auth (logout + re-login)
+
+**Completion date:** 2026-06-28  
+**Method:** Fresh PostgreSQL boot + API endpoint testing + server verification  
+**All 17 items passed ✅**
+
+#### Functional Verification (16 items)
+- ✅ Manage — announcements, player promotion, chat/mods/bans
+- ✅ Kingdoms — edit kingdom fields (name, level, gold), apply AI presets
+- ✅ Events — load log with filters, open create form
+- ✅ Config — load all keys, expandable sections, edit overrides
+- ✅ Sounds — list sounds category without errors
+- ✅ Prestige — static reference table renders
+- ✅ Lore — load list, add entries via modal
+- ✅ Evolution — wishlist + changelog + admin notes (3 tabs)
+- ✅ Detailed Lists — Fragments + Spells tabs load data
+- ✅ Goals — load grid, CRUD operations (add/edit/delete)
+- ✅ Security — run audit, CSRF token sent, findings table displays
+- ✅ Auth — logout + re-login, session restored
+- ✅ CSRF — all mutating routes protected
+- ✅ Portal — integration functional
+- ✅ Game entry — page loads
+- ✅ Forum API — responds with categorized boards
+
+#### Hard Cutover Completion (1 item)
+- ✅ Legacy admin archived — `public/admin.html` → `public/legacy/admin.html`
+- ✅ No `?legacy=1` fallback (removed per hard cutover)
+- ✅ React admin is sole interface at `/admin`
+
+#### Known Risks (Mitigated)
+- ✅ Browser cache — clear cache + hard reload (Ctrl+Shift+R)
+- ✅ Stale admin token — logout + re-login per session
+- ✅ API CSRF failures — adminFetch includes CSRF header
+- ✅ Mobile responsiveness — tested at 360px width
 
 ---
 
