@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import SchoolSelectionModal from './SchoolSelectionModal';
 import { toast } from '../../utils/toast.js';
+import { apiCall } from '../../utils/api';
 import { useResearchStore, useSchoolOfMagic, useResSpellbook } from '../../stores';
 
 /**
@@ -16,6 +17,21 @@ export default function SchoolSelectionController() {
   const [showModal, setShowModal] = useState(false);
   const spellbook = useResSpellbook();
   const school = useSchoolOfMagic();
+
+  // Sync school_of_magic from server on mount (handles page refresh)
+  useEffect(() => {
+    const syncSchoolFromServer = async () => {
+      try {
+        const data = await apiCall('/api/kingdom/studies/overview');
+        if (data && data.school_of_magic) {
+          useResearchStore.getState().updateSchoolOfMagic(data.school_of_magic);
+        }
+      } catch (err) {
+        // Silently fail - the school will be set when user selects it
+      }
+    };
+    syncSchoolFromServer();
+  }, []);
 
   useEffect(() => {
     const shouldShowModal = (spellbook || 0) >= 100 && !school;

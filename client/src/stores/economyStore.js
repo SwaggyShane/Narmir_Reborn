@@ -308,8 +308,10 @@ export const useFoodBalance = () =>
 
 // Trade routes as array (selector transforms normalized structure)
 export const useTradeRoutes = () =>
-  useEconomyStore((state) =>
-    state.tradeRoutes.allIds.map(id => state.tradeRoutes.byId[id])
+  useEconomyStore(
+    useShallow((state) =>
+      state.tradeRoutes.allIds.map(id => state.tradeRoutes.byId[id])
+    )
   );
 
 // Build system selectors
@@ -402,7 +404,8 @@ export const useResEntertainment = () => useEconomyStore((state) => state.res_en
 export const useResConstruction = () => useEconomyStore((state) => state.res_construction ?? 100);
 
 // Discovered kingdoms for warfare targeting
-export const useDiscoveredKingdoms = () => useEconomyStore((state) => state.discovered_kingdoms || {});
+export const useDiscoveredKingdoms = () =>
+  useEconomyStore((state) => state.discovered_kingdoms);
 
 // Tax rate
 export const useTax = () => useEconomyStore((state) => state.tax ?? 42);
@@ -411,12 +414,17 @@ export const useTax = () => useEconomyStore((state) => state.tax ?? 42);
 export const useTradeTargets = () => useEconomyStore((state) => Array.isArray(state.targets) ? state.targets : []);
 
 // Upgrades
-export const useBankUpgrades = () => useEconomyStore((state) => state.bank_upgrades || {});
+export const useBankUpgrades = () =>
+  useEconomyStore((state) => state.bank_upgrades);
 
-export const useFarmUpgrades = () => useEconomyStore((state) => state.farm_upgrades || {});
+export const useFarmUpgrades = () =>
+  useEconomyStore((state) => state.farm_upgrades);
 
-export const useGranaryUpgrades = () => useEconomyStore((state) => state.granary_upgrades || {});
+export const useGranaryUpgrades = () =>
+  useEconomyStore((state) => state.granary_upgrades);
 
-export const useMarketUpgrades = () => useEconomyStore((state) => state.market_upgrades || {});
+export const useMarketUpgrades = () =>
+  useEconomyStore((state) => state.market_upgrades);
 
-export const useTavernUpgrades = () => useEconomyStore((state) => state.tavern_upgrades || {});
+export const useTavernUpgrades = () =>
+  useEconomyStore((state) => state.tavern_upgrades);
