@@ -1,6 +1,6 @@
 # Narmir Reborn — Unified Development Roadmap
 
-**Status:** Alpha phase ongoing. Tracks A-D complete. E1-E3 fixed. F2-F7 complete. F8 in progress.
+**Status:** Alpha phase ongoing. Tracks A-D complete. E1-E3 fixed. F2-F8 complete.
 **Last updated:** 2026-06-27
 **Single source of truth** for planning, replacing ALPHA_ROADMAP + AdminRoadmap + MAINTENANCE (see **Related Documents**)
 
@@ -233,7 +233,7 @@ Link updated doc to this roadmap; clarify resolved vs. open items.
 | **F5** | `GameStateManager` → Zustand | Store migration complete; remaining bridges tracked separately | Post-F4 | ✅ **COMPLETE** (16/16 components) |
 | **F6** | Frontend component tests (Vitest + RTL) | Component test foundation | Post-F4 | ✅ **COMPLETE** (57 tests; panelMeta + BottomNav) |
 | **F7** | Numeric range validation (troops, builds, research) | Prevents balance exploits | Post-F4 | ✅ **COMPLETE** (validators + endpoint integration) |
-| **F8** | `kingdom.js` split → `build`, `warfare`, `economy`, `research` modules | Incremental refactor | Post-F4 | 🟢 **PHASE 2b COMPLETE**; Phase 3 pending |
+| **F8** | `kingdom.js` split → `build`, `warfare`, `economy`, `research` modules | Incremental refactor | Post-F4 | ✅ **COMPLETE** |
 
 ---
 
