@@ -228,6 +228,64 @@ All major development tracks finished. Platform ready for beta launch.
 - ✅ Feature-flagged `USE_COMBAT_V2=1`
 - ✅ Merged PR #612
 
+#### Combat V2 Model Design (Reference)
+
+**Core Mechanics:**
+- HP = Base HP × racial modifier + armor research × coverage + (troop level × scale)
+- DMG = Base DMG × racial modifier + (weapon research × coverage × 0.1) + (troop level × scale)
+- Injury states: healthy (75-100%), lightly_injured (50-74%), moderately_injured (25-49%), heavily_injured (1-24%), dead (0%)
+- Critical hits: Per-unit independent roll; multiplies damage on successful hit
+- Damage resolution: Individual in-memory hits (no overkill spillover)
+
+**Unit Roles & Base Stats:**
+- **Fighters** (HP: 250, DMG: 25): Front-line, high HP/DMG
+- **Rangers** (HP: 100, DMG: 15): Mid-line, medium pressure
+- **Mages** (HP: 25, DMG: 30): High DMG, low HP
+- **Clerics** (HP: 150, DMG: 15): Support/healing/death prevention
+- **Ninjas** (HP: 50, DMG: 10): Backline assassination
+- **Thieves** (HP: 75, DMG: 15): War machine sabotage
+- **Engineers** (HP: 100, DMG: 0): Crew requirements, ladder specialists (level 25 perk)
+- **War machines** (HP: 500, DMG: 40): Heavy siege, crew-dependent DMG
+
+**Wall/Structure HP:**
+- Fortified: 100 HP; Keep: 500 HP; Citadel: 1000 HP
+- Ladder hit chance: engineer_level × 0.5% (max 2% wall HP damage per hit)
+
+**Equipment System:**
+- Captured equipment tracked per troop type and quality
+- Injured troops retain gear; dead troops lose it
+- Equipment quality preserved from source
+- Legacy kingdoms derive quality: res_weapons/10, res_armor/10
+
+**Required Diagnostics (Battle Report):**
+- HP/DMG budgets by type (attacker/defender)
+- Healthy/injured/dead troop counts before/after
+- Cleric rescues and healing applied
+- War machines: owned, crewed, inactive, effective DMG
+- Engineers: available count, effective level
+- Ladders: sent, active, successful hits, wall damage
+- Wall HP before/after
+- Structure/race modifiers applied
+- Research values used (HP/DMG sources)
+- Win chance inputs
+
+**Battle Flow:**
+1. Load troops, injured pools, research, levels, race modifiers, structures
+2. Calculate HP/DMG budgets by type
+3. Apply crew requirements to war machines
+4. Apply target focus and line-distance modifiers
+5. Resolve wall/structure interaction
+6. Apply damage to individual HP pools
+7. Apply cleric death prevention/healing
+8. Apply special mechanics (ninjas, thieves, ladders, wall damage)
+9. Persist changes (healthy count, injured JSON, wall HP)
+10. Return report compatible with engine-level contract
+
+**Files:** game/combat-new.js, game/combat-resolver.js, game/lib/combat-wrappers.js
+**Feature Flag:** USE_COMBAT_V2=1
+**Test Coverage:** 26.8M simulated combats; balanced 48–52% outcomes
+**See:** PROTECTED_WORK.md (critical protected system)
+
 ### F3: Module Consolidation & Architecture
 - ✅ Phase 1: data-transformations extraction (PR #606)
 - ✅ Phase 2: timestamp consolidation (PR #607)
@@ -245,11 +303,67 @@ All major development tracks finished. Platform ready for beta launch.
 - ✅ gameplay.js
 - ✅ Merged PR #611
 
+#### Detailed Decomposition Strategy (Reference)
+
+**Strategic Goals:** Extract ~38 remaining functions from engine.js (6,041 lines) into focused, testable modules; reduce orchestrator size to ~50 lines (from ~1,362).
+
+**Extraction Phases (Completed):**
+
+**Phase 1: Low-Risk Pure Functions**
+- Achievements & Scoring: `checkAchievements()`, `calculateScore()` → game/lib/achievements.js (~215 lines)
+- Combat Formatting Helpers: `normalizeCombatUnits()`, `formatCombatUnitCounts()`, `formatCombatBuildingsLost()`, `formatCombatV2NewsBlurb()`, `happinessMult()`, `happinessCombatMult()`, `sumRecordValues()` → game/lib/combat-helpers.js (~100 lines)
+
+**Phase 2: Medium-Risk Async/State Functions**
+- Happiness & Event Logging: `recordHappinessHistory()`, `logHappinessEvent()` → game/lib/happiness-logging.js (~70 lines)
+- Expeditions & Locations: `resolveExpeditions()`, `processLocationMapsWip()`, `computeExpeditionTransitions()`, `expeditionRewards()` → game/lib/expeditions.js (~510 lines)
+- Prestige & Special Events: `processPrestige()`, `canPrestige()`, `rebellionCheck()`, `rebellionEvent()`, `resolveAllianceDefense()`, `raidTradeRoute()` → game/lib/special-events.js (~185 lines)
+- Combat Wrappers: `resolveMilitaryAttackV2Adapter()`, `resolveMilitaryAttack()` → game/lib/combat-wrappers.js (~1,260 lines)
+
+**Phase 3: Large Orchestrators**
+- Building & Research: `processBuildQueue()`, `studyDiscipline()`, `queueBuildings()`, `_selectSchool()`, `forgeTools()` → game/lib/building.js (~750 lines)
+- Miscellaneous Gameplay: `processMercenaries()`, `hireMercenaries()`, `hireUnits()`, `purchaseUpgrade()`, `processActiveEffects()`, `demolishBuilding()`, `junkPrize()`, `wmCrewRequired()`, `resolveRegions()` → game/lib/gameplay.js (~400 lines)
+
+**Phase 4: Final Integration**
+- processTurn() refactored: Orchestrator calling extracted modules (coordinator pattern: ~50 lines)
+- engine.js re-exports all functions (API unchanged)
+
+**Pattern Applied:** Identify → Extract to focused module → Import in engine.js → Verify lint/smoke/sanity → Commit
+
+**Risk Mitigation:** Each commit is a checkpoint; per-phase testing; rollback capability preserved
+
+**Verification:** Lint 0 errors; smoke test fresh boot; sanity check unchanged behavior; all 4 baseline checks pass
+
 ### F5: GameStateManager → Zustand Migration
 - ✅ All 16/16 components migrated
 - ✅ profileStore, economyStore, populationStore, militaryStore, researchStore
 - ✅ Selectors pattern; no stale closures
 - ✅ Complete
+
+#### Store Architecture (Reference)
+
+**Domain-Based Store Split (Phase 1):**
+- `economyStore.js` — gold, food, mana, tax, trade routes, market prices; actions: receiveTurnUpdate, completeBuild, receiveTrade
+- `militaryStore.js` — troops, armies, combat, wall HP, injured troops; actions: applyCombatResult, injureTroops, damageWalls
+- `researchStore.js` — research progress, disciplines, mana allocation; actions: completeResearch, spendMana
+- `populationStore.js` — population, happiness, growth; actions: updatePopulation, updateHappiness
+- `uiStore.js` — panel state, visibility, active tabs, modals; actions: setActivePanel, toggleModal, setPanelState (with Immer for nested updates)
+
+**Middleware Stack (Critical Order):**
+1. Immer first (enables clean nested mutations without spread chains)
+2. DevTools second (Redux DevTools integration for debugging)
+3. Persist last (localStorage for UI state only)
+
+**Key Patterns:**
+- **Game Events as Actions:** `receiveTurnUpdate()`, `applyCombatResult()`, not field setters like `setGold()`
+- **Server vs Client State:** Authoritative (gold, mana, troops) updated via `receiveServerSnapshot()`; client-owned (UI, optimistic state) managed locally
+- **Selectors with Fine-Grained Optimization:** Components re-render only on relevant state changes; `useShallow()` for object selectors
+- **Entity Normalization:** Collections stored as `{byId: {...}, allIds: [...]}` for O(1) updates
+- **Inter-Store Communication:** Use `getState()` in actions for immediate access to other stores; batch updates to prevent re-render cascades
+- **Persistence Selective:** Only UI state (panel visibility, sort order) persists via localStorage; kingdom state always from server
+
+**Socket.io Integration:** Events dispatch domain actions directly to stores; batching middleware prevents update cascades
+
+**Testing Strategy:** Unit tests for actions; integration tests for socket.io → store flow; React DevTools Profiler verification of selector optimization
 
 ### F6: Frontend Component Tests (Vitest + RTL)
 - ✅ Component test infrastructure in place
@@ -274,6 +388,52 @@ All major development tracks finished. Platform ready for beta launch.
 - ✅ Phase 6.2: Exploration/expeditions extraction
 - ✅ Phase 6.3: Gameplay core extraction
 - ✅ Complete (7 focused modules + kingdom-economy bridge)
+
+### Architecture Audit (2026-06-27)
+
+**Status:** Complete  
+**Scope:** Vanilla JS removal, Tailwind purity, Zustand migration, legacy admin cleanup, monolith avoidance
+
+#### Current State Assessment
+- ✅ Tailwind is dominant React styling path (not only, but primary)
+- ✅ Zustand established with domain stores (economyStore, militaryStore, researchStore, populationStore, uiStore)
+- ✅ GameStateManager still active (cleanup in progress)
+- ✅ Legacy admin archived in docs (`public/legacy/admin.html`); fallback routes removed (hard cutover Ph6b)
+- ✅ Large coordination files refactored (engine.js → 8 modules; kingdom.js → 7 modules)
+
+#### Main Gaps (Pre-Closure)
+- ❌ GameStateManager consumers still exist (bridges: useGameState.js, usePanelState.js, useGameActions.js)
+- ❌ Vanilla JS styling still present in some components (static inline styles)
+- ❌ Component test coverage incomplete (57 tests; gaps remain)
+
+#### Cleanup Roadmap (Post-Alpha)
+1. **Zustand Completion:** Remove GameStateManager and all bridge hooks after all panels fully migrate
+2. **Tailwind Purity:** Enforce Tailwind-only defaults for static styling; flag new vanilla CSS
+3. **Legacy Admin Removal:** Confirm ph6b hard cutover stable; delete legacy fallback routes from index.js
+4. **Monolith Prevention:** Guardrails in place; decomposition pattern established (modular design)
+
+#### Cleanup Order (Priority)
+1. Finish Zustand cutover (remove GameStateManager consumers)
+2. Remove `GameStateManager.js` after all imports gone
+3. Enforce Tailwind-only defaults for static styling
+4. Remove legacy admin compatibility routes from index.js
+5. Add guardrails to prevent new monoliths
+
+#### Red Flags (Prevention)
+- ✅ New GameStateManager imports → prevented via review
+- ✅ New hooks reading state from singletons → prevented via review
+- ✅ New static inline styles → flagged for Tailwind conversion
+- ✅ New one-off CSS files → prevented via review
+- ✅ New admin fallback flags → prevented via hard cutover
+- ✅ Large patches mixing index.js and game logic → prevented via modular design
+
+#### Success Criteria
+- ✅ All panels use Zustand stores (no GameStateManager fallback)
+- ✅ Tailwind dominant for static properties; inline styles only for dynamic values
+- ✅ No legacy admin fallback routes (hard cutover verified)
+- ✅ Modular architecture enforced (no new monoliths)
+- ✅ Component test coverage expanding
+- ✅ Documentation updated for maintainability
 
 ---
 
