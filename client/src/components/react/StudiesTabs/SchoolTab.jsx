@@ -1,9 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import clsx from 'clsx';
 import UpgradesList from '../UpgradesList.jsx';
-import { SCHOOL_UPGRADES, SHRINE_UPGRADES } from '../../../utils/studiesUpgrades.js';
+import { SCHOOL_UPGRADES } from '../../../utils/studiesUpgrades.js';
 import { parseOwnedUpgrades } from '../../../utils/upgradeUtils.js';
-import { useResearchStore } from '../../../stores';
 import { toast } from '../../../utils/toast.js';
 import { MageAllocationCard } from './MageAllocationCard.jsx';
 import { ResearchFocusSection } from './ResearchFocusSection.jsx';
