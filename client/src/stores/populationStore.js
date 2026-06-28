@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import { immer } from 'zustand/middleware/immer';
 import { devtools } from 'zustand/middleware';
 import { persist } from 'zustand/middleware';
@@ -148,10 +149,12 @@ export const useHappinessBreakdown = () =>
 export const useGrowthRate = () => usePopulationStore((state) => state.growthRate);
 
 export const useRebellionState = () =>
-  usePopulationStore((state) => ({
-    active: state.rebellionActive,
-    turnsRemaining: state.rebellionTurnsRemaining,
-  }));
+  usePopulationStore(
+    useShallow((state) => ({
+      active: state.rebellionActive,
+      turnsRemaining: state.rebellionTurnsRemaining,
+    }))
+  );
 
 export const useShowHappinessBreakdown = () =>
   usePopulationStore((state) => state.showHappinessBreakdown);
