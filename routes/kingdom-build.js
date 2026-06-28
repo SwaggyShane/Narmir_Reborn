@@ -93,27 +93,48 @@ module.exports = function (db) {
       return res.status(400).json({ error: allocValidation.error });
     }
 
-    const k = await db.get(
-      'SELECT id, bld_training, fighters, rangers, mages, clerics, thieves, ninjas FROM kingdoms WHERE player_id = ?',
-      [req.player.playerId],
-    );
-    if (!k) return res.status(404).json({ error: 'Kingdom not found' });
+    try {
+      await db.run('BEGIN TRANSACTION');
 
-    const capacity = k.bld_training * 100;
-    const clean_alloc = allocValidation.values;
+      const k = await db.get(
+        'SELECT id, bld_training, fighters, rangers, mages, clerics, thieves, ninjas FROM kingdoms WHERE player_id = ? FOR UPDATE',
+        [req.player.playerId],
+      );
+      if (!k) {
+        await db.run('ROLLBACK');
+        return res.status(404).json({ error: 'Kingdom not found' });
+      }
 
-    for (const [unit, amount] of Object.entries(clean_alloc)) {
-      if (amount > (k[unit] || 0))
-        return res.status(400).json({ error: `Not enough ${unit}` });
+      const capacity = k.bld_training * 100;
+      const clean_alloc = allocValidation.values;
+
+      for (const [unit, amount] of Object.entries(clean_alloc)) {
+        if (amount > (k[unit] || 0)) {
+          await db.run('ROLLBACK');
+          return res.status(400).json({ error: `Not enough ${unit}` });
+        }
+      }
+      if (allocValidation.total > capacity) {
+        await db.run('ROLLBACK');
+        return res.status(400).json({ error: `Exceeds training capacity (${capacity})` });
+      }
+
+      await db.run('UPDATE kingdoms SET training_allocation = ? WHERE id = ?', [
+        JSON.stringify(clean_alloc),
+        k.id,
+      ]);
+
+      await db.run('COMMIT');
+      res.json({ ok: true });
+    } catch (err) {
+      try {
+        await db.run('ROLLBACK');
+      } catch (rollbackErr) {
+        console.error('[training-allocation] rollback error:', rollbackErr.message);
+      }
+      console.error('[training-allocation] error:', err.message);
+      res.status(500).json({ error: 'Failed to set training allocation' });
     }
-    if (allocValidation.total > capacity)
-      return res.status(400).json({ error: `Exceeds training capacity (${capacity})` });
-
-    await db.run('UPDATE kingdoms SET training_allocation = ? WHERE id = ?', [
-      JSON.stringify(clean_alloc),
-      k.id,
-    ]);
-    res.json({ ok: true });
   });
 
   // POST /build-allocation
@@ -129,24 +150,44 @@ module.exports = function (db) {
       return res.status(400).json({ error: allocValidation.error });
     }
 
-    const k = await db.get(
-      'SELECT id, engineers, resource_build_allocation FROM kingdoms WHERE player_id = ?',
-      [req.player.playerId],
-    );
-    if (!k) return res.status(404).json({ error: 'Kingdom not found' });
+    try {
+      await db.run('BEGIN TRANSACTION');
 
-    const resourceAlloc = safeJsonParse(k.resource_build_allocation, {}, 'build-allocation:resource_build_allocation');
-    const resourceTotal = Object.values(resourceAlloc).reduce((s, v) => s + (Number(v) || 0), 0);
+      const k = await db.get(
+        'SELECT id, engineers, resource_build_allocation FROM kingdoms WHERE player_id = ? FOR UPDATE',
+        [req.player.playerId],
+      );
+      if (!k) {
+        await db.run('ROLLBACK');
+        return res.status(404).json({ error: 'Kingdom not found' });
+      }
 
-    if (allocValidation.total + resourceTotal > k.engineers)
-      return res.status(400).json({
-        error: `Allocated ${allocValidation.total.toLocaleString()} build engineers and ${resourceTotal.toLocaleString()} resource engineers, but only have ${k.engineers.toLocaleString()} engineers total`,
-      });
-    await db.run('UPDATE kingdoms SET build_allocation = ? WHERE id = ?', [
-      JSON.stringify(allocValidation.values),
-      k.id,
-    ]);
-    res.json({ ok: true });
+      const resourceAlloc = safeJsonParse(k.resource_build_allocation, {}, 'build-allocation:resource_build_allocation');
+      const resourceTotal = Object.values(resourceAlloc).reduce((s, v) => s + (Number(v) || 0), 0);
+
+      if (allocValidation.total + resourceTotal > k.engineers) {
+        await db.run('ROLLBACK');
+        return res.status(400).json({
+          error: `Allocated ${allocValidation.total.toLocaleString()} build engineers and ${resourceTotal.toLocaleString()} resource engineers, but only have ${k.engineers.toLocaleString()} engineers total`,
+        });
+      }
+
+      await db.run('UPDATE kingdoms SET build_allocation = ? WHERE id = ?', [
+        JSON.stringify(allocValidation.values),
+        k.id,
+      ]);
+
+      await db.run('COMMIT');
+      res.json({ ok: true });
+    } catch (err) {
+      try {
+        await db.run('ROLLBACK');
+      } catch (rollbackErr) {
+        console.error('[build-allocation] rollback error:', rollbackErr.message);
+      }
+      console.error('[build-allocation] error:', err.message);
+      res.status(500).json({ error: 'Failed to set build allocation' });
+    }
   });
 
   // POST /resource-build-allocation

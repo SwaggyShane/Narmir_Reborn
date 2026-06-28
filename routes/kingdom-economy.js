@@ -452,79 +452,92 @@ module.exports = function (db) {
     if (!amount || amount <= 0)
       return res.status(400).json({ error: "Invalid amount." });
 
-    const k = await db.get("SELECT id, turn, gold, bld_vaults, bank_upgrades, bank_deposits FROM kingdoms WHERE player_id = ?", [
-      req.player.playerId,
-    ]);
-    if (!k) return res.status(404).json({ error: "Kingdom not found" });
+    try {
+      await db.run("BEGIN TRANSACTION");
 
-    if (k.bld_vaults < 5) {
-      return res
-        .status(400)
-        .json({ error: "Bank access requires at least 5 Vaults." });
+      const k = await db.get("SELECT id, turn, gold, bld_vaults, bank_upgrades, bank_deposits FROM kingdoms WHERE player_id = ? FOR UPDATE", [
+        req.player.playerId,
+      ]);
+      if (!k) {
+        await db.run("ROLLBACK");
+        return res.status(404).json({ error: "Kingdom not found" });
+      }
+
+      if (k.bld_vaults < 5) {
+        await db.run("ROLLBACK");
+        return res.status(400).json({ error: "Bank access requires at least 5 Vaults." });
+      }
+      if (k.gold < amount) {
+        await db.run("ROLLBACK");
+        return res.status(400).json({ error: "Not enough gold." });
+      }
+
+      const bankUpgrades = safeJsonParse(k.bank_upgrades, {}, "auto:bank_upgrades");
+      let interestBonus = 0;
+      if (bankUpgrades.trade_guild) interestBonus += 0.03;
+
+      const availableTerms = [
+        { turns: 10, interest: 0.02, reqUpgrade: null },
+        { turns: 25, interest: 0.07, reqUpgrade: null },
+        { turns: 50, interest: 0.15, reqUpgrade: null },
+        { turns: 150, interest: 0.25, reqUpgrade: null },
+        { turns: 300, interest: 0.6, reqUpgrade: "iron_treasury" },
+      ];
+
+      const termDef = availableTerms[termIndex];
+      if (!termDef) {
+        await db.run("ROLLBACK");
+        return res.status(400).json({ error: "Invalid term." });
+      }
+
+      if (termDef.reqUpgrade && !bankUpgrades[termDef.reqUpgrade]) {
+        await db.run("ROLLBACK");
+        return res.status(400).json({ error: "This term requires a bank upgrade." });
+      }
+
+      const deposits = safeJsonParse(k.bank_deposits, [], "auto:bank_deposits");
+      const startTurn = k.turn;
+      const targetTurn = startTurn + termDef.turns;
+      const finalInterest = termDef.interest + interestBonus;
+      const returnAmount = Math.floor(amount * (1 + finalInterest));
+
+      deposits.push({
+        id: Math.random().toString(36).substring(7),
+        amount: parseInt(amount, 10),
+        startTurn,
+        targetTurn,
+        returnAmount,
+        termTurns: termDef.turns,
+        interest: finalInterest,
+        status: "active",
+      });
+
+      await db.run(
+        "UPDATE kingdoms SET gold = gold - ?, bank_deposits = ? WHERE id = ?",
+        [amount, JSON.stringify(deposits), k.id],
+      );
+      await db.run(
+        "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
+        [
+          k.id,
+          "system",
+          `🏦 Deposited ${parseInt(amount).toLocaleString()} gold for ${termDef.turns} turns. Expected payout: ${returnAmount.toLocaleString()} gold.`,
+          k.turn,
+        ],
+      );
+
+      await db.run("COMMIT");
+
+      res.json({ message: "Deposit successful.", updates: { gold: k.gold - amount, bank_deposits: JSON.stringify(deposits) } });
+    } catch (err) {
+      try {
+        await db.run("ROLLBACK");
+      } catch (rollbackErr) {
+        console.error("[bank-deposit] rollback error:", rollbackErr.message);
+      }
+      console.error("[bank-deposit] error:", err.message);
+      res.status(500).json({ error: "Deposit failed" });
     }
-    if (k.gold < amount) {
-      return res.status(400).json({ error: "Not enough gold." });
-    }
-
-    const bankUpgrades = safeJsonParse(k.bank_upgrades, {}, "auto:bank_upgrades");
-
-    let interestBonus = 0;
-    if (bankUpgrades.trade_guild) interestBonus += 0.03;
-
-    const availableTerms = [
-      { turns: 10, interest: 0.02, reqUpgrade: null },
-      { turns: 25, interest: 0.07, reqUpgrade: null },
-      { turns: 50, interest: 0.15, reqUpgrade: null },
-      { turns: 150, interest: 0.25, reqUpgrade: null },
-      { turns: 300, interest: 0.6, reqUpgrade: "iron_treasury" },
-    ];
-
-    const termDef = availableTerms[termIndex];
-    if (!termDef) return res.status(400).json({ error: "Invalid term." });
-
-    if (termDef.reqUpgrade && !bankUpgrades[termDef.reqUpgrade]) {
-      return res
-        .status(400)
-        .json({ error: "This term requires a bank upgrade." });
-    }
-
-    const deposits = safeJsonParse(k.bank_deposits, [], "auto:bank_deposits");
-
-    // Add deposit
-    const startTurn = k.turn;
-    const targetTurn = startTurn + termDef.turns;
-    const finalInterest = termDef.interest + interestBonus;
-    const returnAmount = Math.floor(amount * (1 + finalInterest));
-
-    // use a unique id to easily withdraw
-    deposits.push({
-      id: Math.random().toString(36).substring(7),
-      amount: parseInt(amount, 10),
-      startTurn,
-      targetTurn,
-      returnAmount,
-      termTurns: termDef.turns,
-      interest: finalInterest,
-      status: "active",
-    });
-
-    const updates = {
-      gold: k.gold - amount,
-      bank_deposits: JSON.stringify(deposits),
-    };
-
-    await applyUpdates(db, k.id, updates);
-    await db.run(
-      "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
-      [
-        k.id,
-        "system",
-        `ðŸ¦ Deposited ${parseInt(amount).toLocaleString()} gold for ${termDef.turns} turns. Expected payout: ${returnAmount.toLocaleString()} gold.`,
-        k.turn,
-      ],
-    );
-
-    res.json({ message: "Deposit successful.", updates });
   });
   router.post("/economy/bank-withdraw", requireAuth, requireCsrfToken, async (req, res) => {
     const { depositId } = req.body;

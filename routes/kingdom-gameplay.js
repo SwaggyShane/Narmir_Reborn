@@ -509,25 +509,43 @@ module.exports = function (db) {
   router.post("/hire", requireAuth, requireCsrfToken, async (req, res) => {
     const { unit, amount } = req.body;
 
-    // Validate troop amount
     const amountValidation = validateTroopAmount(amount, { fieldName: 'amount' });
     if (!amountValidation.valid) {
       return res.status(400).json({ error: amountValidation.error });
     }
 
-    const k = await db.get(`SELECT ${KINGDOM_HIRE} FROM kingdoms WHERE player_id = ?`, [
-      req.player.playerId,
-    ]);
-    if (!k) return res.status(404).json({ error: "Kingdom not found" });
-
-    // Apply hire updates immediately without consuming a turn
-    const hireResult = engine.hireUnits(k, unit, amountValidation.value);
-    if (hireResult.error)
-      return res.status(400).json({ error: hireResult.error });
-
     try {
+      await db.run("BEGIN TRANSACTION");
+
+      const k = await db.get(`SELECT ${KINGDOM_HIRE} FROM kingdoms WHERE player_id = ? FOR UPDATE`, [
+        req.player.playerId,
+      ]);
+      if (!k) {
+        await db.run("ROLLBACK");
+        return res.status(404).json({ error: "Kingdom not found" });
+      }
+
+      const hireResult = engine.hireUnits(k, unit, amountValidation.value);
+      if (hireResult.error) {
+        await db.run("ROLLBACK");
+        return res.status(400).json({ error: hireResult.error });
+      }
+
       const hireUpdates = hireResult.updates;
-      await applyUpdates(db, k.id, hireUpdates);
+      const updatesForDb = { ...hireUpdates };
+      if (updatesForDb.troop_levels && typeof updatesForDb.troop_levels === 'object') {
+        updatesForDb.troop_levels = JSON.stringify(updatesForDb.troop_levels);
+      }
+
+      const cols = Object.keys(updatesForDb).map(k => `${k} = ?`).join(', ');
+      const vals = Object.values(updatesForDb);
+      await db.run(
+        `UPDATE kingdoms SET ${cols} WHERE id = ?`,
+        [...vals, k.id],
+      );
+
+      await db.run("COMMIT");
+
       res.json({
         ok: true,
         updates: hireUpdates,
@@ -535,8 +553,13 @@ module.exports = function (db) {
         turns_stored: k.turns_stored,
       });
     } catch (err) {
+      try {
+        await db.run("ROLLBACK");
+      } catch (rollbackErr) {
+        console.error("[hire] rollback error:", rollbackErr.message);
+      }
       console.error("[hire] failed:", err.message);
-      res.status(500).json({ error: "Hire failed â€” please try again" });
+      res.status(500).json({ error: "Hire failed — please try again" });
     }
   });
 
@@ -555,25 +578,59 @@ module.exports = function (db) {
       return res.status(400).json({ error: ordersValidation.error });
     }
 
-    const k = await db.get(`SELECT ${KINGDOM_RESOURCE} FROM kingdoms WHERE player_id = ?`, [
-      req.player.playerId,
-    ]);
-    if (!k) return res.status(404).json({ error: "Kingdom not found" });
     try {
-      k.build_queue = safeJsonParse(k.build_queue, {}, "auto:build_queue");
-    } catch {
-      k.build_queue = {};
+      await db.run("BEGIN TRANSACTION");
+
+      const k = await db.get(`SELECT ${KINGDOM_RESOURCE} FROM kingdoms WHERE player_id = ? FOR UPDATE`, [
+        req.player.playerId,
+      ]);
+      if (!k) {
+        await db.run("ROLLBACK");
+        return res.status(404).json({ error: "Kingdom not found" });
+      }
+
+      try {
+        k.build_queue = safeJsonParse(k.build_queue, {}, "auto:build_queue");
+      } catch {
+        k.build_queue = {};
+      }
+
+      const result = engine.queueBuildings(k, ordersValidation.values);
+      if (result.error) {
+        await db.run("ROLLBACK");
+        return res.status(400).json({ error: result.error });
+      }
+
+      const updatesForDb = { ...result.updates };
+      if (updatesForDb.troop_levels && typeof updatesForDb.troop_levels === 'object') {
+        updatesForDb.troop_levels = JSON.stringify(updatesForDb.troop_levels);
+      }
+
+      const cols = Object.keys(updatesForDb).map(k => `${k} = ?`).join(', ');
+      const vals = Object.values(updatesForDb);
+      await db.run(
+        `UPDATE kingdoms SET ${cols} WHERE id = ?`,
+        [...vals, k.id],
+      );
+
+      await db.run("COMMIT");
+
+      res.json({
+        ok: true,
+        queue: JSON.parse(result.updates.build_queue),
+        gold: result.updates.gold,
+        totalCost: result.totalCost,
+        engineers: k.engineers,
+      });
+    } catch (err) {
+      try {
+        await db.run("ROLLBACK");
+      } catch (rollbackErr) {
+        console.error("[build-queue] rollback error:", rollbackErr.message);
+      }
+      console.error("[build-queue] error:", err.message);
+      res.status(500).json({ error: "Build queue failed" });
     }
-    const result = engine.queueBuildings(k, ordersValidation.values);
-    if (result.error) return res.status(400).json({ error: result.error });
-    await applyUpdates(db, k.id, result.updates);
-    res.json({
-      ok: true,
-      queue: JSON.parse(result.updates.build_queue),
-      gold: result.updates.gold,
-      totalCost: result.totalCost,
-      engineers: k.engineers,
-    });
   });
 
   // â”€â”€ Get training allocation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
