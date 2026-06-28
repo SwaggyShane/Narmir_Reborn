@@ -86,7 +86,7 @@ This document defines mandatory workflow checks that MUST be verified before eve
 - [ ] Feature branch is correct (confirm `git branch --show-current`)
 - [ ] All commits are included (`git log --oneline origin/main..HEAD`)
 - [ ] All CI checks passed (verify in GitHub PR)
-- [ ] No unresolved review comments
+- [ ] Wait for Gemini to post ONE, and only ONE comment. Scrutinize it, verify validity, or refute it with a comment. 
 - [ ] ROADMAP.md updated to mark phase complete:
   ```
   Status field changed from "⏳ Pending" or "🟡 In Progress" to "✅ Complete"
