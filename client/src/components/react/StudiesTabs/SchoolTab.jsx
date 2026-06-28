@@ -1,9 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import clsx from 'clsx';
 import UpgradesList from '../UpgradesList.jsx';
-import { SCHOOL_UPGRADES, SHRINE_UPGRADES } from '../../../utils/studiesUpgrades.js';
+import { SCHOOL_UPGRADES } from '../../../utils/studiesUpgrades.js';
 import { parseOwnedUpgrades } from '../../../utils/upgradeUtils.js';
-import { useResearchStore } from '../../../stores';
 import { toast } from '../../../utils/toast.js';
 import { MageAllocationCard } from './MageAllocationCard.jsx';
 import { ResearchFocusSection } from './ResearchFocusSection.jsx';
@@ -55,6 +54,10 @@ export const SchoolTab = ({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ spellbook, school_spellbook }),
     });
+    if (!response.ok) {
+      toast('Failed to save mage allocation', 'error');
+      return;
+    }
     const data = await response.json();
     if (data.error) {
       toast(data.error, 'error');
@@ -72,6 +75,10 @@ export const SchoolTab = ({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ spellbook: 0, school_spellbook: 0 }),
     });
+    if (!response.ok) {
+      toast('Failed to release mage allocation', 'error');
+      return;
+    }
     const data = await response.json();
     if (data.error) {
       toast(data.error, 'error');

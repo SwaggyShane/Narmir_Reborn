@@ -4,8 +4,6 @@ import { SHRINE_UPGRADES } from '../../../utils/studiesUpgrades.js';
 import { parseOwnedUpgrades } from '../../../utils/upgradeUtils.js';
 
 export const ShrineTab = ({ studiesData, state, onUpgraded }) => {
-  const shrineLabel = state?.race === 'vampire' ? '🪦 Mausoleum' : '⛩️ Shrine';
-
   return (
     <div className="r-grid-2">
       <div className="flex flex-col gap-3">
