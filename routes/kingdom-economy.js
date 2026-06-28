@@ -5,10 +5,25 @@ const { applyKingdomUpdates } = require('../db/schema');
 const { marketPriceCache } = require('../cache.js');
 const engine = require('../game/engine');
 const config = require('../game/config');
-const { loadTradeRoutes } = require('../game/engine');
+const { calculateTradeIncome } = require('../game/economy');
 const fragmentBonusManager = require('../game/fragment-bonus-manager');
 
 const router = express.Router();
+
+// Load trade routes for a kingdom
+async function loadTradeRoutes(db, k) {
+  const tradeRoutes = await db.all(
+    "SELECT * FROM trade_routes WHERE kingdom_id = ? OR partner_id = ?",
+    [k.id, k.id],
+  );
+  k._trade_routes = tradeRoutes.map((r) => {
+    if (r.partner_id === k.id) {
+      return { ...r, partner_id: r.kingdom_id, kingdom_id: r.partner_id };
+    }
+    return r;
+  });
+  return k;
+}
 
 // Market liquidity constants
 const MARKET_LIQUIDITY = {
@@ -849,7 +864,7 @@ module.exports = function (db) {
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
 
     // Fetch and normalize trade routes so calculateTradeIncome can use them
-    await loadTradeRoutes(k);
+    await loadTradeRoutes(db, k);
 
     // Compute troop upkeep (mirrors processTurn logic)
     const upkeepMult = { high_elf: 1.0, dwarf: 0.85, dire_wolf: 1.2, dark_elf: 1.1, human: 1.0, orc: 1.15 }[k.race] || 1.0;
@@ -865,7 +880,7 @@ module.exports = function (db) {
 
     const marketInc = engine.marketIncomeFull(k);
     const goldIncome = engine.goldPerTurn(k);
-    const tradeRouteIncome = engine.calculateTradeIncome(k);
+    const tradeRouteIncome = calculateTradeIncome(k);
     const totalIncome = goldIncome + tradeRouteIncome;
 
     res.json({
