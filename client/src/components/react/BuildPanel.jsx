@@ -522,7 +522,7 @@ const BuildPanel = () => {
     BUILDINGS_DISPLAY_ORDER.forEach((key) => setBuildFieldValue(key, 0));
     const result = await apiCall('/api/kingdom/build-allocation', { method: 'POST', body: { allocation: {} } });
     if (result.error) return toast(result.error, 'error');
-    useEconomyStore.setState({
+    useEconomyStore.getState().receiveServerSnapshot({
       build_allocation: {},
     });
     refreshBuildUi();
@@ -541,7 +541,7 @@ const BuildPanel = () => {
     }
     const result = await apiCall('/api/kingdom/build-allocation', { method: 'POST', body: { allocation } });
     if (result.error) return toast(result.error, 'error');
-    useEconomyStore.setState({
+    useEconomyStore.getState().receiveServerSnapshot({
       build_allocation: allocation,
     });
     refreshBuildUi();
@@ -586,11 +586,11 @@ const BuildPanel = () => {
     const ep = type === 'hammers' ? '/api/kingdom/smithy/buy-hammers' : '/api/kingdom/smithy/buy-scaffolding';
     const result = await apiCall(ep, { method: 'POST', body: { amount } });
     if (result.error) return toast(result.error, 'error');
-    useEconomyStore.setState((state) => ({
-      hammers_stored: result.hammers_stored !== undefined ? result.hammers_stored : state.hammers_stored,
-      scaffolding_stored: result.scaffolding_stored !== undefined ? result.scaffolding_stored : state.scaffolding_stored,
-      gold: result.gold !== undefined ? result.gold : state.gold,
-    }));
+    useEconomyStore.getState().receiveServerSnapshot({
+      hammers_stored: result.hammers_stored,
+      scaffolding_stored: result.scaffolding_stored,
+      gold: result.gold,
+    });
     setSmithyInputs({ hammers: 0, scaffolding: 0 });
     refreshBuildUi();
     if (typeof window !== 'undefined' && typeof toast === 'function') toast(`Purchased ${result.bought} ${type} for ${fmt(result.cost)} GC`, 'success');
@@ -602,14 +602,7 @@ const BuildPanel = () => {
     const result = await apiCall('/api/kingdom/demolish', { method: 'POST', body: { building: type, amount } });
     if (result.error) return toast(result.error, 'error');
     if (result.updates && Object.keys(result.updates).length > 0) {
-      useEconomyStore.setState((state) => ({
-        build_progress: result.updates.build_progress ? { ...state.build_progress, ...result.updates.build_progress } : state.build_progress,
-        land: result.updates.land !== undefined ? result.updates.land : state.land,
-        wood: result.updates.wood !== undefined ? result.updates.wood : state.wood,
-        stone: result.updates.stone !== undefined ? result.updates.stone : state.stone,
-        iron: result.updates.iron !== undefined ? result.updates.iron : state.iron,
-        gold: result.updates.gold !== undefined ? result.updates.gold : state.gold,
-      }));
+      useEconomyStore.getState().receiveServerSnapshot(result.updates);
     }
     setDemolishAmounts(prev => ({ ...prev, [key]: 1 }));
     refreshBuildUi();

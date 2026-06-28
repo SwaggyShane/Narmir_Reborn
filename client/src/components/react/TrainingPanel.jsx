@@ -109,8 +109,8 @@ const TrainingPanel = () => {
       body: { allocation: alloc },
     });
     if (result.error) return toast(result.error, 'error');
-    useEconomyStore.setState((state) => {
-      state.training_allocation = alloc;
+    useEconomyStore.getState().receiveServerSnapshot({
+      training_allocation: alloc,
     });
     toast('Training allocation saved', 'success');
   };
@@ -122,8 +122,8 @@ const TrainingPanel = () => {
       body: { allocation: {} },
     });
     if (result.error) return toast(result.error, 'error');
-    useEconomyStore.setState((state) => {
-      state.training_allocation = {};
+    useEconomyStore.getState().receiveServerSnapshot({
+      training_allocation: {},
     });
     toast('All training released', 'success');
   };

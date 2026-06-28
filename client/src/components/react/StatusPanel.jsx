@@ -194,7 +194,7 @@ const StatusPanel = () => {
         return;
       }
       if (result.tax !== undefined) {
-        useEconomyStore.setState({ tax: result.tax });
+        useEconomyStore.getState().receiveServerSnapshot({ tax: result.tax });
       }
       showToast('Tax rate locked', 'success');
     } catch (err) {
