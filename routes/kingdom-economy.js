@@ -220,8 +220,8 @@ module.exports = function (db) {
     // Deletes trades involving this kingdom that are NOT pending
     await db.run(
       `
-      DELETE FROM trades 
-      WHERE (sender_id = ? OR receiver_id = ?) 
+      DELETE FROM trades
+      WHERE (sender_id = ? OR receiver_id = ?)
       AND status != 'pending'`,
       [k.id, k.id],
     );
