@@ -56,50 +56,52 @@ module.exports = function (db) {
     if (!name || !heroClass)
       return res.status(400).json({ error: "Name and class required" });
 
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
-      req.player.playerId,
-    ]);
-    if (!k) return res.status(404).json({ error: "Kingdom not found" });
+    try {
+      await db.run("BEGIN TRANSACTION");
 
-    // Check current hero count
-    const existing = await db.all(
-      "SELECT class FROM heroes WHERE kingdom_id = ?",
-      [k.id],
-    );
-    const existingClasses = existing.map((h) => h.class);
+      const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE", [
+        req.player.playerId,
+      ]);
+      if (!k) {
+        await db.run("ROLLBACK");
+        return res.status(404).json({ error: "Kingdom not found" });
+      }
 
-    // 1st hero: 1 castle, 2nd: 5 castles, 3rd: 10 castles
-    const castles = k.bld_castles || 0;
-    let maxHeroes = 0;
-    if (castles >= 10) maxHeroes = 3;
-    else if (castles >= 5) maxHeroes = 2;
-    else if (castles >= 1) maxHeroes = 1;
+      const existing = await db.all(
+        "SELECT class FROM heroes WHERE kingdom_id = ? FOR UPDATE",
+        [k.id],
+      );
+      const existingClasses = existing.map((h) => h.class);
 
-    if (existing.length >= maxHeroes) {
-      if (maxHeroes === 0)
-        return res
-          .status(400)
-          .json({ error: "Requires a Castle to house a Hero" });
-      const nextReq = maxHeroes === 1 ? "5" : "10";
-      return res
-        .status(400)
-        .json({
+      const castles = k.bld_castles || 0;
+      let maxHeroes = 0;
+      if (castles >= 10) maxHeroes = 3;
+      else if (castles >= 5) maxHeroes = 2;
+      else if (castles >= 1) maxHeroes = 1;
+
+      if (existing.length >= maxHeroes) {
+        await db.run("ROLLBACK");
+        if (maxHeroes === 0)
+          return res.status(400).json({ error: "Requires a Castle to house a Hero" });
+        const nextReq = maxHeroes === 1 ? "5" : "10";
+        return res.status(400).json({
           error: `You have reached your limit of ${maxHeroes} heroes. Build ${nextReq} Castles to unlock another slot (max 3).`,
         });
-    }
+      }
 
-    if (existingClasses.includes(heroClass)) {
-      return res
-        .status(400)
-        .json({
+      if (existingClasses.includes(heroClass)) {
+        await db.run("ROLLBACK");
+        return res.status(400).json({
           error: `You already have a ${heroClass} in your kingdom. Each hero must be a unique class.`,
         });
-    }
+      }
 
-    const { hero, cost, error } = engine.recruitHero(k, name, heroClass);
-    if (error) return res.status(400).json({ error });
+      const { hero, cost, error } = engine.recruitHero(k, name, heroClass);
+      if (error) {
+        await db.run("ROLLBACK");
+        return res.status(400).json({ error });
+      }
 
-    try {
       const result = await db.run(
         `INSERT INTO heroes (kingdom_id, name, class, level, xp, abilities, status, hp, max_hp)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -131,8 +133,15 @@ module.exports = function (db) {
         ],
       );
 
+      await db.run("COMMIT");
+
       res.json({ ok: true, heroId: result.lastID });
     } catch (err) {
+      try {
+        await db.run("ROLLBACK");
+      } catch (rollbackErr) {
+        console.error("[recruit] rollback error:", rollbackErr.message);
+      }
       console.error("[recruit] error:", err.message);
       res.status(500).json({ error: "Recruitment failed" });
     }
