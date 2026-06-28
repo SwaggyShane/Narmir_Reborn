@@ -41,6 +41,44 @@ const MARKET_LIQUIDITY = {
   land: 10
 };
 
+// Resource to database column mapping (prevents SQL injection)
+const RESOURCE_COLUMN_MAP = {
+  food: 'food',
+  wood: 'wood',
+  stone: 'stone',
+  iron: 'iron',
+  coal: 'coal',
+  steel: 'steel',
+  mana: 'mana',
+  weapons: 'weapons_stockpile',
+  armor: 'armor_stockpile',
+  war_machines: 'war_machines',
+  ballistae: 'ballistae',
+  maps: 'maps',
+  land: 'land'
+};
+
+// Validates and returns the database column name for a resource
+function getResourceColumn(resource) {
+  if (!RESOURCE_COLUMN_MAP.hasOwnProperty(resource)) {
+    throw new Error(`Invalid resource: ${resource}`);
+  }
+  return RESOURCE_COLUMN_MAP[resource];
+}
+
+// Valid unit types for mercenaries (prevents SQL injection)
+const VALID_UNIT_TYPES = new Set([
+  'fighters', 'rangers', 'clerics', 'mages', 'thieves', 'ninjas'
+]);
+
+// Validates unit type before using in SQL
+function validateUnitType(unitType) {
+  if (!VALID_UNIT_TYPES.has(unitType)) {
+    throw new Error(`Invalid unit type: ${unitType}`);
+  }
+  return unitType;
+}
+
 // Shared helper function
 async function applyUpdates(db, kingdomId, updates) {
   for (const [key, value] of Object.entries(updates)) {
@@ -280,12 +318,7 @@ module.exports = function (db) {
         return res.status(400).json({ error: `Need ${cost.toLocaleString()} GC (Avg price: ${avgPrice.toFixed(3)} GC)` });
       }
 
-      const dbCol =
-        resource === "weapons"
-          ? "weapons_stockpile"
-          : resource === "armor"
-            ? "armor_stockpile"
-            : resource;
+      const dbCol = getResourceColumn(resource);
       await db.run(
         `UPDATE kingdoms SET gold = gold - ?, ${dbCol} = ${dbCol} + ? WHERE id = ?`,
         [cost, qty, k.id],
@@ -342,12 +375,7 @@ module.exports = function (db) {
         return res.status(404).json({ error: "Kingdom not found" });
       }
 
-      const dbCol =
-        resource === "weapons"
-          ? "weapons_stockpile"
-          : resource === "armor"
-            ? "armor_stockpile"
-            : resource;
+      const dbCol = getResourceColumn(resource);
       if ((k[dbCol] || 0) < qty) {
         await db.run("ROLLBACK");
         return res.status(400).json({ error: "Not enough resource" });
@@ -634,9 +662,10 @@ module.exports = function (db) {
       return res.status(400).json({ error: "Invalid mercenary index" });
     const m = mercs[idx];
     mercs.splice(idx, 1);
-    const newCount = Math.max(0, (k[m.unit_type] || 0) - m.count);
+    const unitType = validateUnitType(m.unit_type);
+    const newCount = Math.max(0, (k[unitType] || 0) - m.count);
     await db.run(
-      `UPDATE kingdoms SET mercenaries = ?, ${m.unit_type} = ? WHERE id = ?`,
+      `UPDATE kingdoms SET mercenaries = ?, ${unitType} = ? WHERE id = ?`,
       [JSON.stringify(mercs), newCount, k.id],
     );
     res.json({ ok: true, dismissed: m });
