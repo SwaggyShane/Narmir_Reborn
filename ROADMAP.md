@@ -1,7 +1,7 @@
 # Narmir Reborn — Unified Development Roadmap
 
-**Status:** Alpha phase ongoing. Tracks A-D complete. E1-E3 fixed. F2-F8 complete.
-**Last updated:** 2026-06-27
+**Status:** Alpha phase ongoing. Tracks A-D complete. E1-E3 fixed. F2-F8 complete. M1 complete.
+**Last updated:** 2026-06-28
 **Single source of truth** for planning, replacing ALPHA_ROADMAP + AdminRoadmap + MAINTENANCE (see **Related Documents**)
 
 ---
@@ -206,9 +206,9 @@ All mutating routes now use `requireCsrfToken` middleware.
 
 ### E.5 MAINTENANCE.md refresh
 
-**Status:** ⏳ **M1** (docs/maintenance-refresh)
+**Status:** ✅ **M1** (PR #654)
 
-Link updated doc to this roadmap; clarify resolved vs. open items.
+Comprehensive system health audit documenting all component status, technical debt, performance notes, and recommended next actions.
 
 ---
 
@@ -340,7 +340,7 @@ Per `CLAUDE.md`:
 | **10** | **F4 Decomposition** `engine.js` → 8 focused modules (all phases 1–4) | — | ✅ **DONE** (PR #611: Phases 2D–4 + encoding fix) |
 | **11** | **C3** Portal CSS cleanup | — | ⏳ After F4 |
 | **12** | **Admin Ph6b** Hard cutover (with verification matrix ✅) | — | ⏳ When ready |
-| **13** | **M1** MAINTENANCE refresh | — | ⏳ After F4 completes |
+| **13** | **M1** MAINTENANCE refresh | — | ✅ **DONE** (PR #654) |
 | **14** | **E3** Discord.js v15 migration | — | 🟡 **DEFERRED** (indefinite — await v15 stable) |
 | **15** | **Tailwind consolidation** Static → utilities refactor | — | 📋 Future (low urgency) |
 | **16** | **Track F (F.2,5–8)** Remaining architecture debt | — | ⏳ Post-F4 |
@@ -353,7 +353,7 @@ Per `CLAUDE.md`:
 |----------|---------|--------|
 | `CLAUDE.md` | PR workflow, smoke recipe, quality rules | **Source of truth** |
 | `AdminRoadmap.md` | Admin parity detail + Phase 6b checklist | **Detailed reference** |
-| `MAINTENANCE.md` | Health audit + F track itemization | **Being refreshed** (M1) |
+| `MAINTENANCE.md` | Health audit + F track itemization | **Complete** (PR #654) |
 | `ALPHA_ROADMAP.md` | Alpha phase overview (superseded by this doc) | **Archived** (use ROADMAP.md instead) |
 | `TODO.md` | Feature-level todos + combat notes | Companion reference |
 
