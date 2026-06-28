@@ -48,6 +48,14 @@
     "vite": "^8.1.0",
     "zustand": "^5.0.14"
   },
+  "overrides": {
+    "discord.js": {
+      "undici": "6.27.0"
+    },
+    "@discordjs/rest": {
+      "undici": "6.27.0"
+    }
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.0",
     "@testing-library/jest-dom": "^6.9.1",

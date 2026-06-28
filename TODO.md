@@ -26,10 +26,10 @@
 
 ---
 
-## Combat Redesign
+## Combat
 **Status:** ✅ COMPLETE (alpha-ready)
 **Files:** `game/combat-new.js`, `game/combat-resolver.js`, `game/lib/combat-wrappers.js`
-**Description:** Combat V2 is a complete individual troop HP/DMG/injury system replacing power-percent legacy combat. Feature-flagged behind `USE_COMBAT_V2=1` (V1 is default). Validated across 26.8 million simulated combats with balanced 48–52% outcomes.
+**Description:** Advanced combat is a complete individual troop HP/DMG/injury system replacing the legacy percentage model. It is feature-flagged behind `USE_COMBAT_V2=1` and validated across 26.8 million simulated combats with balanced 48–52% outcomes.
 **See:** PROTECTED_WORK.md, test-combat-harness/
 
 **Completed Tasks:**
@@ -42,17 +42,17 @@
 - [x] Structure defense budgets (walls/castles/towers/outposts)
 - [x] War machine crew requirements (race-dependent, dwarf solo at level 25)
 - [x] Wall HP persistence and wall damage tracking
-- [x] V1 compatibility aliases in combat report (atkFightersLost, defPower, landTransferred, etc.)
+- [x] Compatibility aliases in combat report (atkFightersLost, defPower, landTransferred, etc.)
 - [x] Database schema support (injured_troops, wall_hp, equipment_levels columns)
-- [x] Route-level persistence for all V2 updates
+- [x] Route-level persistence for all combat updates
 - [x] Feature flag wiring (USE_COMBAT_V2 environment variable)
 - [x] Diagnostic reporting (HP by type, DMG by type, crew details)
 - [x] Test harnesses (smoke, scenario, route-persistence, dwarf-sweep, broad-sweep, overnight-balance-log)
 - [x] 26.8 million simulated combats across 56 sweeps (race matrix, archetype balance, fragment synergies)
-- [x] Fix V1 combat system label from "legacy" to "v1" for test compatibility
+- [x] Fix legacy combat system label for test compatibility
 
 **Test Results (All Green):**
-- ✅ smoke:combat-v2 (V1 default + V2 adapter)
+- ✅ smoke:combat-v2 (current combat plus advanced adapter)
 - ✅ scenario:combat-v2 (14 scenarios)
 - ✅ route-smoke:combat-v2 (DB persistence)
 - ✅ sweep:combat-v2-dwarf (crew balance testing)

@@ -1,3 +1,8 @@
+/**
+ * Legacy navigation bridge.
+ *
+ * Keep this only until the remaining panel consumers are fully migrated to Zustand.
+ */
 import { gameStateManager } from '../GameStateManager.js';
 import { setActivePanelGlobal } from '../hooks/useActivePanel.js';
 import { setWarfareTab as applyWarfareTab } from './warfareTabs.js';
@@ -20,16 +25,10 @@ export async function apiCall(method, endpoint, body = null) {
   if (body) options.body = JSON.stringify(body);
 
   const response = await fetch(endpoint, options);
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
   const contentType = response.headers.get('content-type');
-  if (contentType && contentType.includes('application/json')) {
-    return response.json();
-  }
-
-  return { ok: true };
+  return contentType && contentType.includes('application/json') ? response.json() : { ok: true };
 }
 
 function normalizePanelName(tabName) {
@@ -47,14 +46,8 @@ export function switchTab(tabName) {
   const warfareSubtab = WARFARE_SUBTAB_ALIASES[rawTab] || null;
 
   setActivePanelGlobal(activeTab);
-
-  if (warfareSubtab) {
-    applyWarfareTab(warfareSubtab);
-  }
-
-  if (window.location.hash !== `#${rawTab}`) {
-    window.location.hash = rawTab;
-  }
+  if (warfareSubtab) applyWarfareTab(warfareSubtab);
+  if (window.location.hash !== `#${rawTab}`) window.location.hash = rawTab;
 }
 
 export function initGameStateManager() {
@@ -69,7 +62,6 @@ export function initGameStateManager() {
 
 function applyServerUpdatesToGame(updates, context = {}) {
   if (!updates) return;
-
   const sourceState = gameStateManager.getState();
   const normalizedState = sourceState
     ? { ...sourceState, population: sourceState.population ?? sourceState.pop }
@@ -90,8 +82,6 @@ export function applyGameMutation(resultOrUpdates, context = {}) {
   const updates = resultOrUpdates.updates
     || resultOrUpdates.kUpdates
     || (directUpdateKeys.some(key => resultOrUpdates[key] !== undefined) ? resultOrUpdates : null);
-  if (updates) {
-    applyServerUpdatesToGame(updates, context);
-  }
+  if (updates) applyServerUpdatesToGame(updates, context);
   return resultOrUpdates;
 }

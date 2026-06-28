@@ -41,7 +41,7 @@ npm install
 | `ADMIN_SECRET` | Password for admin panel access |
 | `PORT` | Server port (default: 3000) |
 | `DISCORD_BOT_TOKEN` | Discord bot token (optional) |
-| `USE_COMBAT_V2` | Set to `1` to enable Combat V2 HP/DMG system (default off) |
+| `USE_COMBAT_V2` | Set to `1` to enable the advanced combat HP/DMG system (default off) |
 
 **Run:**
 
@@ -55,10 +55,10 @@ npm run bot         # start Discord bot separately
 **Smoke and test scripts:**
 
 ```bash
-npm run smoke:combat-v2        # V2 adapter smoke test
-npm run scenario:combat-v2     # V2 named scenario runner
-npm run route-smoke:combat-v2  # V2 route persistence smoke
-npm run sweep:combat-v2-broad  # V2 broad balance sweep
+npm run smoke:combat-v2        # Advanced combat adapter smoke test
+npm run scenario:combat-v2     # Advanced combat scenario runner
+npm run route-smoke:combat-v2  # Advanced combat route persistence smoke
+npm run sweep:combat-v2-broad  # Advanced combat broad balance sweep
 ```
 
 ---
@@ -72,9 +72,9 @@ narmir-server/
 ├── game/
 │   ├── engine.js                 # Core game logic — upkeep, spells, expeditions, XP
 │   ├── turn.js                   # Per-turn processing — gold, food, research, happiness
-│   ├── combat.js                 # V1 combat (aggregate power/percentage)
-│   ├── combat-new.js             # V2 combat — individual HP/DMG/injury (feature-flagged)
-│   ├── combat-resolver.js        # V2 combat execution engine
+│   ├── combat.js                 # Current combat engine (aggregate power/percentage)
+│   ├── combat-new.js             # Advanced combat model — individual HP/DMG/injury (feature-flagged)
+│   ├── combat-resolver.js        # Advanced combat execution engine
 │   ├── happiness.js              # Happiness calculation, recovery, rebellion triggers
 │   ├── magic.js                  # Spell casting, school validation, mana costs
 │   ├── heroes.js                 # Hero classes, recruitment, leveling, passive bonuses
@@ -111,7 +111,7 @@ narmir-server/
 │   │   └── components/react/     # React panel components (34 panels)
 │   ├── admin.html                # React admin entry (Vite)
 │   └── src/admin/                # React admin panels
-├── test-combat-harness/          # V2 combat test suite and balance sweeps
+├── test-combat-harness/          # Combat test suite and balance sweeps
 └── tools/security-auditor/       # Security audit tooling
 ```
 
@@ -192,9 +192,9 @@ Ultra-rare prizes include unique items, stat bonuses, and World Fragment drops. 
 
 ## Combat
 
-**V1 (default):** Aggregate power vs. aggregate power. Percentage-based casualties.
+**Combat:** Aggregate power vs. aggregate power. Percentage-based casualties.
 
-**V2 (opt-in, `USE_COMBAT_V2=1`):** Individual troop HP and damage, injury states, cleric healing, war machine crew requirements, wall HP pools, equipment stockpile tracking, and per-unit critical hits. V2 is fully implemented and tested behind a feature flag. See `COMBAT_V2_MODEL.md`.
+**Advanced combat model (`USE_COMBAT_V2=1`):** Individual troop HP and damage, injury states, cleric healing, war machine crew requirements, wall HP pools, equipment stockpile tracking, and per-unit critical hits. See `COMBAT_V2_MODEL.md`.
 
 ---
 

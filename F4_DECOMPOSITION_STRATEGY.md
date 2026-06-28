@@ -248,7 +248,7 @@ const result = myFunction(k, params);
 - [ ] Happiness logging module (game/lib/happiness-logging.js) created
 - [ ] Expeditions module (game/lib/expeditions.js) created with resolveExpeditions
 - [ ] Special events module (game/lib/special-events.js) created with prestige/rebellion/alliance
-- [ ] Combat wrappers module (game/lib/combat-wrappers.js) created (optional: keep V1 in engine as fallback)
+- [ ] Combat wrappers module (game/lib/combat-wrappers.js) created (optional: keep legacy combat in engine as fallback)
 - [ ] All modules callable from engine.js with identical behavior
 - [ ] Smoke tests pass, no behavior changes
 - [ ] Each commit is a checkpoint; can rollback if needed

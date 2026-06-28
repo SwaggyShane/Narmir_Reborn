@@ -371,9 +371,9 @@ function BuildPanel() {
 
 ---
 
-### Store Integration: Combat V2 (Part of militaryStore)
+### Store Integration: Combat (Part of militaryStore)
 
-**Purpose:** Manage active combat state and Combat V2 diagnostics within militaryStore.
+**Purpose:** Manage active combat state and combat diagnostics within militaryStore.
 
 **Implementation (PR #1):** Combat state is part of `militaryStore`, not a separate store. This keeps all combat-related state together with troops, armies, and wall HP.
 
@@ -835,7 +835,7 @@ function App() {
 
 **PR #4: Migrate WarfarePanel** (1.5 hrs)
 - Replace GameStateManager with militaryStore
-- Apply Combat V2 selector optimizations
+- Apply combat selector optimizations
 - **Diff:** <150 lines
 
 **PR #5: Remaining Panels + Cleanup** (10–12 hrs)
@@ -1368,7 +1368,7 @@ To keep reviews manageable, enable independent testing, and support safe rollbac
 | #1 | Store infrastructure (economyStore, militaryStore, researchStore, populationStore, uiStore + middleware) | <300 lines | 3 hrs | Architecture correctness, domain boundaries, action patterns, middleware setup |
 | #2 | Migrate KingdomBodyHeader (economyStore selectors, useShallow, persistence) | <150 lines | 1.5 hrs | Selector optimization, re-render counts, localStorage persistence |
 | #3 | Migrate BuildPanel (economyStore + researchStore) | <150 lines | 1.5 hrs | Multi-store coordination, domain actions, UI reactivity |
-| #4 | Migrate WarfarePanel (militaryStore, Combat V2 integration) | <150 lines | 1.5 hrs | Combat V2 selector performance, entity normalization (armies) |
+| #4 | Migrate WarfarePanel (militaryStore, combat integration) | <150 lines | 1.5 hrs | combat selector performance, entity normalization (armies) |
 | #5 | Migrate remaining panels + full GameStateManager removal | <200 lines each panel | 10–12 hrs | Completeness, cleanup, final smoke test pass |
 
 **Rationale for small PRs:**

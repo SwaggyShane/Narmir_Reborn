@@ -1,7 +1,7 @@
 # Narmir Reborn — Unified Development Roadmap
 
-**Status:** Alpha phase (ongoing) — Tracks A–D complete; E1–E2 fixed; E3 deferred (await discord.js v15); Track F.3 consolidation complete (PR #606–#608); **F.4 engine.js decomposition COMPLETE (PR #611); F.2 Combat V2 complete and alpha-ready (PR #612); F.5 Phase 1 ALL 16 COMPONENTS COMPLETE (PR #617–#641); F.6 Phase 1 COMPLETE (PR #642): Vitest + RTL infrastructure with 57 tests (panelMeta + BottomNav); F.7 Phase 1–3 COMPLETE (PR #643–#645): Numeric range validation utility + full endpoint integration with engineer capacity & key whitelisting fixes**  
-**Last updated:** 2026-06-27 (F7 Phase 3 COMPLETE: Integrated validators into 4 allocation endpoints (/build-allocation, /resource-build-allocation, /school-allocation, /shrine-allocation); fixed engineer capacity check; added resource building whitelist; all CI passing; ready to merge)
+**Status:** Alpha phase ongoing. Tracks A-D complete. E1-E3 fixed. F2-F7 complete. F8 in progress.
+**Last updated:** 2026-06-27
 **Single source of truth** for planning, replacing ALPHA_ROADMAP + AdminRoadmap + MAINTENANCE (see **Related Documents**)
 
 ---
@@ -18,10 +18,10 @@
 | **Portal styling** | CSS + Tailwind mixed | Pure Tailwind foundation | C1+C2 | ✅ Done |
 | **Forum integration** | Vanilla phpBB rebuild | Categorized index + in-game panel + avatars/badges | — | ✅ Done (fix/topbar-take-turn) |
 | **Mobile UI** | Unpolished panels | Responsive refinements across 7 panels | Mobile fixes | ✅ Done (PR #596, #597, #598) |
-| **Vite dependency** | 8.0.12 (HIGH vuln) | ≥8.1.0 | E3 | ⏳ Open |
+| **Dependency hygiene** | Discord bot chain pinned to vulnerable `undici` | `undici` 6.27.0 via npm override | E3 | ✅ Done |
 | **Inline CSS patterns** | Static + dynamic mixed | Static → Tailwind, dynamic only inline | Future Tailwind consolidation | 📋 Preventative plan |
 | **Monolithic files** | engine.js, kingdom.js, etc. | Split into focused modules | F4–F5 | ⏳ Deferred (P4) |
-| **Combat V2** | Complete + feature-flagged | Alpha-ready; 26.8M test scenarios | F2 | ✅ Done (PR #612) |
+| **Combat** | Complete + feature-flagged | Alpha-ready; 26.8M test scenarios | F2 | ✅ Done (PR #612) |
 
 ---
 
@@ -151,7 +151,7 @@ Run once on staging/local; all must ✅:
 
 ## Track E — Platform Health (P0–P1)
 
-**Status:** ✅ **E1, E2 DONE** | 🟡 **E3 DEFERRED** (await discord.js v15 stable, 3-6+ months)
+**Status:** ✅ **E1, E2, E3 DONE**
 
 ### E.1 ESLint enforcement
 
@@ -189,28 +189,14 @@ Added `.github/workflows/ci.yml`:
 
 ### E.3 Dependency vulnerabilities
 
-**Status:** 🟡 **DEFERRED INDEFINITELY** — Await discord.js v15 stable release (3-6+ months)
+**Status:** ✅ **FIXED** via npm override
 
-#### Fixed (✅ 4 vulnerabilities)
-| Package | Issue | Resolution |
-|---------|-------|-----------|
-| `vite` | 8.0.12 → ≥8.1.0 | ✅ Already at ^8.1.0 (server FS bypass + NTLM leak on Windows) |
-| `multer` | 2.1.1 → 2.2.0 | ✅ Fixed DoS via deeply nested fields (2 HIGH vulns) |
-| `ws` | 8.x → 8.21.0 | ✅ Fixed memory exhaustion DoS (1 HIGH vuln) |
+- `discord.js@14.26.4` still pins `undici@6.24.1` upstream.
+- The local tree now forces `undici@6.27.0` under the Discord dependency chain.
+- This keeps the bot on v14 without a downgrade.
+- Remaining unrelated dependency audits can continue normally, but the Discord path itself is no longer blocked.
 
-#### Remaining (⏳ 4 vulnerabilities — undici chain, deferred)
-| Package | Issue | Path forward | Decision |
-|---------|-------|--------------|----------|
-| `undici` ≤6.26.0 | 4 HIGH: HTTP injection, WebSocket DoS, keep-alive poisoning, SameSite downgrade | (A) **Deferred:** await discord.js v15 stable (3-6 months+), (B) downgrade to discord.js v13.17.1 now (2-3 hr refactor: Intents, EmbedBuilder, Permissions) | **DEFER** — v14.x will not receive undici fix; v15 still in dev. Risk assessment: WebSocket DoS exploitable, others require MITM. Revisit when v15 stable or risk escalates. |
-
-**Analysis:** 
-- Tested discord.js 14.26.4 (latest v14) — still uses vulnerable undici 6.24.1
-- Fix requires undici >=6.27.0, not available in discord.js v14.x
-- discord.js v15 (dev) will have the fix, but ETA uncertain (weeks to months)
-- Real-world risk: low-moderate (WebSocket DoS direct, others need MITM)
-- Cost to fix now: ~2-3 hours refactoring; Cost to defer: ongoing security debt
-
-**Decision:** Defer indefinitely. Branch `claude/track-e3-dependencies` deleted. Revisit when discord.js v15 stable or if threat escalates (e.g., public WebSocket DoS PoC). No action needed until then.
+**Verified:** `npm ls discord.js @discordjs/rest undici` resolves `undici@6.27.0` for the bot chain.
 
 ### E.4 Admin CSRF protection
 
@@ -232,21 +218,7 @@ Link updated doc to this roadmap; clarify resolved vs. open items.
 
 ### F4 Decomposition Progress
 
-**Goal:** Extract 6,242-line `engine.js` into focused, testable modules across 4 phases.
-
-| Phase | Functions Extracted | Modules Created | Status | PR |
-|-------|-------------------|-----------------|--------|-----|
-| **Phase 1A** | achievements, scoring | `game/lib/achievements.js` | ✅ | #609 |
-| **Phase 1B** | combat helpers, formatting | `game/lib/combat-helpers.js` | ✅ | #609 |
-| **Phase 2A** | happiness logging (DB) | `game/lib/happiness-logging.js` | ✅ | #609 |
-| **Phase 2B** | expedition utilities, transitions | `game/lib/expeditions.js` | ✅ | #610 |
-| **Phase 2C** | rebellion, prestige, trade raids, alliance defense | `game/lib/special-events.js` | ✅ | #611 |
-| **Phase 2D** | combat wrappers (~1,260 lines) | `game/lib/combat-wrappers.js` | ✅ | #611 |
-| **Phase 3A** | building & research (6 functions) | `game/lib/building-research.js` | ✅ | #611 |
-| **Phase 3B** | gameplay (7 functions) | `game/lib/gameplay.js` | ✅ | #611 |
-| **Phase 4** | processTurn orchestration | Thin coordinator | ✅ | #611 |
-
-**Architecture:** Pure functions extracted first; medium-risk functions with state mutations second; large orchestrators last.
+**Goal:** Extract `engine.js` into focused modules. Status: complete. See PRs #609–#611.
 
 ---
 
@@ -255,13 +227,13 @@ Link updated doc to this roadmap; clarify resolved vs. open items.
 | ID | Work | Notes | Timeline | Status |
 |----|------|-------|----------|--------|
 | **F1** | Express global error handler; audit silent `catch {}` | Audit complete; no critical issues found | ✅ | ✅ **DONE** (PR #610) |
-| **F2** | Combat V2 complete + alpha-ready | Individual troop HP/DMG model; 26.8M simulated combats; balanced 48–52% outcomes; feature-flagged `USE_COMBAT_V2=1` | Alpha | ✅ **DONE** (PR #612) |
+| **F2** | Combat complete + alpha-ready | Individual troop HP/DMG model; 26.8M simulated combats; balanced 48–52% outcomes; feature-flagged `USE_COMBAT_V2=1` | Alpha | ✅ **DONE** (PR #612) |
 | **F3** | Module consolidation & architecture foundation | ✅ Phase 1: data-transformations extraction (PR #606)<br/>✅ Phase 2: timestamp consolidation (PR #607)<br/>✅ Phase 3: architecture documentation + mobile hardening (PR #608) | Now | ✅ **DONE** |
 | **F4** | `engine.js` decomposition | 4 phases (all complete); 6,241 lines → 8 focused modules + re-exports | Now | ✅ **DONE** (PR #611) |
-| **F5** | `GameStateManager` → Zustand | 5-PR incremental migration; Phase 1 (Store infrastructure + all tier-1 panels) | Post-F4 | ✅ **COMPLETE (16/16 components)** — PR #3–#6 COMPLETE (PR #617, #618, #619, #620); PR #9–#10 COMPLETE (PR #624 OptionsPanel, PR #625 HeroesPanel); **Architectural foundation COMPLETE (PR #627 researchStore expansion)**; **PR #12 COMPLETE (PR #628 ExplorationPanel)**; **PR #13 COMPLETE (PR #629 TrainingPanel)**; **PR #4 COMPLETE (PR #630 WarfarePanel + typo fix)**; **PR #3 COMPLETE (PR #631 BuildPanel)**; **PR #14 COMPLETE (PR #632 HappinessPanel)**; **PR #15 COMPLETE (PR #633 StatusPanel)**; **PR #16 COMPLETE (PR #634 HappinessWidget)**; **PR #17 COMPLETE (PR #635 HirePanel)**; **PR #18 COMPLETE (PR #636 RankingsPanel)**; **PR #19 COMPLETE (PR #637 DefensePanel — hybrid approach keeping useGameState for UpgradesList deps while using useRace selector)**; **PR #20 COMPLETE (PR #638 KingdomXpModal — added xp_sources, milestone_bonuses, milestone_title selectors to profileStore)**; **PR #21 COMPLETE (PR #639 EconomyPanel — complex component with UpgradesList deps; hybrid pattern used; fixed critical setMaxTradeOfferQty bug in review cycle)**; **PR #22 COMPLETE (PR #640 MarketPanel — migrated all 9 commodity selectors; fixed ownedAmount callback; fixed useEffect trade targets sync for empty lists)**; **PR #23 COMPLETE (PR #641 ResourcesPanel — hybrid approach with useRace selector; fixed stale closures and dependency issues)**; PR #11 (StudiesPanel) deferred — complex components need architectural refactor first
-| **F6** | Frontend component tests (Vitest + RTL) | Phase 1: Vitest + RTL infrastructure (57 tests: panelMeta structure + BottomNav component); shell nav + panelMeta complete | Post-F4 | 🟢 **PHASE 1 IN PROGRESS (PR #642)** — Vitest config + setup files; panelMeta (37 tests: structure, sections, fallbacks, badges, keywords); BottomNav (20 tests: rendering, drawer, state, admin/logout, badges, ARIA); Gemini review feedback addressed (false positive assertion fixed, userEvent consistency); CI green (lint/test/build, security, encoding) |
-| **F7** | Numeric range validation (troops, builds, research) | Prevents balance exploits | Post-F4 | ✅ **COMPLETE** (PR #643–#645) — Phase 1: 8 validators, 30 tests; Phase 2: 5 endpoints (/hire, /research, /research-allocation, /training-allocation, /build-queue); Phase 3: 4 allocations (/build-allocation, /resource-build-allocation, /school-allocation, /shrine-allocation) with engineer capacity & key whitelisting |
-| **F8** | `kingdom.js` split → `build`, `warfare`, `economy`, `research` modules | Incremental refactor; enabled by F3 foundation | Post-F4 | 🟢 **PHASE 1 COMPLETE (PR #646)** — `kingdom-build.js` extracted (16 endpoints); All secured with transactions + FOR UPDATE + input validation<br/>🟢 **PHASE 2 COMPLETE (PR #647)** — `kingdom-warfare.js` extracted (10 endpoints: /war-log, /attack, /spell, /covert, /fire, /defense/overview, /spy-reports); Partially secured: /covert, /fire, /defense/overview, /spy-reports, /war-log fully secured with FOR UPDATE inside transaction; **ISSUE IDENTIFIED**: /attack and /spell validate outside transaction (race condition risk — pending fix)<br/>⏳ **PHASE 2b PENDING** — Fix /attack and /spell concurrency: move all fetches + validation inside transaction with FOR UPDATE locks<br/>⏳ **PHASE 3 PENDING** — Remove duplicate warfare endpoints from kingdom.js after Phase 2b fix |
+| **F5** | `GameStateManager` → Zustand | Store migration complete; remaining bridges tracked separately | Post-F4 | ✅ **COMPLETE** (16/16 components) |
+| **F6** | Frontend component tests (Vitest + RTL) | Component test foundation | Post-F4 | ✅ **COMPLETE** (57 tests; panelMeta + BottomNav) |
+| **F7** | Numeric range validation (troops, builds, research) | Prevents balance exploits | Post-F4 | ✅ **COMPLETE** (validators + endpoint integration) |
+| **F8** | `kingdom.js` split → `build`, `warfare`, `economy`, `research` modules | Incremental refactor | Post-F4 | 🟢 **PHASE 2b IN REVIEW**; Phase 3 pending |
 
 ---
 
@@ -383,31 +355,10 @@ Per `CLAUDE.md`:
 | `AdminRoadmap.md` | Admin parity detail + Phase 6b checklist | **Detailed reference** |
 | `MAINTENANCE.md` | Health audit + F track itemization | **Being refreshed** (M1) |
 | `ALPHA_ROADMAP.md` | Alpha phase overview (superseded by this doc) | **Archived** (use ROADMAP.md instead) |
-| `TODO.md` | Feature-level todos + Combat V2 notes | Companion reference |
+| `TODO.md` | Feature-level todos + combat notes | Companion reference |
 
 ---
 
 ## Document History
 
-| Version | Date | Change |
-|---------|------|--------|
-| 2.8 | 2026-06-27 | **F6 Phase 1 STARTED (PR #642)**: Vitest + React Testing Library infrastructure established for component testing; vitest.config.js with jsdom environment and focused include patterns; vitest.setup.js with localStorage and window.matchMedia mocks; 57 tests created and passing (37 panelMeta tests: structure validation, section routing, getPanelMeta function, badge keys, keywords; 20 BottomNav tests: rendering, drawer state, tab switching, admin/logout visibility, badges, ARIA attributes); npm scripts added (test:components, test:components:ui); Gemini review feedback fully addressed (false positive drawer active state assertion fixed from checking generic 'bottom-nav-chip' to specific 'is-active'; replaced fireEvent with userEvent consistently in 5 tests for realistic interaction simulation); all CI checks passing (lint, test, build success; text encoding validation success; security configuration validation success); ready for merge and F7 next steps. |
-| 2.7 | 2026-06-27 | **F5 Phase 1 PR #22 COMPLETE (PR #640)**: MarketPanel migrated to Zustand stores with complete commodity selector coverage; migrated prestige_level→usePrestige, gold→useGold, turn→useTurn, targets→useTradeTargets, weapons/armor→useWeaponsStockpile/useArmorStockpile, and 7 commodity selectors (useFood, useWood, useStone, useIron, useCoal, useSteel, useEconomyMana); fixed ownedAmount callback to handle all 9 commodities (was only handling weapons/armor); fixed useEffect trade targets sync bug that prevented empty arrays from being synced (removed .length check); updated module-level populateTradeTargets to use useEconomyStore.getState(); Gemini review feedback (missing imports, incomplete ownedAmount, useEffect bug) addressed in fix commit; manual smoke testing verified all functionality; all CI checks passing (lint, build, encoding validation, security); **15 components complete** (OptionsPanel, HeroesPanel, ExplorationPanel, TrainingPanel, WarfarePanel, BuildPanel, HappinessPanel, StatusPanel, HappinessWidget, HirePanel, RankingsPanel, DefensePanel, KingdomXpModal, EconomyPanel, MarketPanel). Ready to merge. |
-| 2.6 | 2026-06-27 | **F5 Phase 1 PR #21 COMPLETE (PR #639)**: EconomyPanel migrated to Zustand stores using hybrid pattern; added 5 upgrade field selectors to economyStore (bank_upgrades, farm_upgrades, granary_upgrades, market_upgrades, tavern_upgrades); replaced state references with fine-grained selectors (useFood, useWeaponsStockpile, useArmorStockpile, useBuildCount); fixed critical bug in setMaxTradeOfferQty that was breaking "Max" button for gold, food, mana, maps, blueprints, war_machines, ballistae, land items (only handled weapons/armor); kept useGameState for UpgradesList compatibility; all CI checks passing (lint, build, encoding validation, security); **14 components complete** (OptionsPanel, HeroesPanel, ExplorationPanel, TrainingPanel, WarfarePanel, BuildPanel, HappinessPanel, StatusPanel, HappinessWidget, HirePanel, RankingsPanel, DefensePanel, KingdomXpModal, EconomyPanel). Ready to merge. |
-| 2.5 | 2026-06-27 | **F5 Phase 1 PR #18 COMPLETE (PR #636)**: RankingsPanel migrated to Zustand stores; removed useGameState and added useProfileStore with allianceRankingsCache support; imported useKingdomId and useDiscoveredKingdoms selectors to replace state references in renderKingdomRow; addressed all Gemini review feedback; all CI checks passing (lint, build, encoding validation, security); **11 light-state components complete** (OptionsPanel, HeroesPanel, ExplorationPanel, TrainingPanel, WarfarePanel, BuildPanel, HappinessPanel, StatusPanel, HappinessWidget, HirePanel, RankingsPanel). Ready to merge. |
-| 2.4 | 2026-06-27 | **F5 Phase 1 PR #17 COMPLETE (PR #635)**: HirePanel migrated to Zustand stores; replaced applyGameMutation with fine-grained receiveServerSnapshot calls for economy, military, population, research, and profile stores in both hire() and fire() functions; addressed all Gemini review feedback regarding researchers and scribes store updates; all CI checks passing (lint, build, encoding validation, security); **10 light-state components complete** (OptionsPanel, HeroesPanel, ExplorationPanel, TrainingPanel, WarfarePanel, BuildPanel, HappinessPanel, StatusPanel, HappinessWidget, HirePanel). Ready to merge. |
-| 2.3 | 2026-06-27 | **F5 Phase 1 PR #16 COMPLETE (PR #634)**: HappinessWidget migrated to Zustand stores; replaced local happiness state with useHappiness selector from populationStore; fetch happiness data via API and use receiveServerSnapshot for store encapsulation; simplified trend calculation; addressed all Gemini review feedback; all CI checks passing (lint, build, encoding validation, security); **9 light-state components complete** (OptionsPanel, HeroesPanel, ExplorationPanel, TrainingPanel, WarfarePanel, BuildPanel, HappinessPanel, StatusPanel, HappinessWidget). Ready to merge. |
-| 2.2 | 2026-06-27 | **F5 Phase 1 PR #15 COMPLETE (PR #633)**: StatusPanel migrated to Zustand stores; added gender property to profileStore with state/snapshot sync; imported useEconomyStore and useGender selectors; fixed tax update to use useEconomyStore.setState; addressed all Gemini review feedback; all CI checks passing (lint, build, encoding validation, security); **8 light-state components complete** (OptionsPanel, HeroesPanel, ExplorationPanel, TrainingPanel, WarfarePanel, BuildPanel, HappinessPanel, StatusPanel). Ready to merge. |
-| 2.1 | 2026-06-27 | **F5 Phase 1 PR #14 COMPLETE (PR #632)**: HappinessPanel migrated to Zustand stores; replaced local happiness state with useHappiness selector from populationStore; used existing toFiniteNumber helper for value sanitization per Gemini feedback; all CI checks passing (lint, build, encoding validation, security); **7 light-state components complete** (OptionsPanel, HeroesPanel, ExplorationPanel, TrainingPanel, WarfarePanel, BuildPanel, HappinessPanel). Ready to merge. |
-| 2.0 | 2026-06-27 | **F5 Phase 1 PR #13 COMPLETE (PR #629)**: TrainingPanel migrated to Zustand stores; replaced useGameState with pre-defined selectors (useFighters, useRangers, useClerics, useMages, useThieves, useNinjas, useEngineers, useScribes, useResearchers); fixed training_allocation updates to useEconomyStore instead of useProfileStore; removed unused syncKingdomData helper (API calls don't return kingdom data); addressed all Gemini review feedback; all CI checks passing. **4 light-state components complete** (OptionsPanel, HeroesPanel, ExplorationPanel, TrainingPanel). Pipeline: WarfarePanel → BuildPanel next. |
-| 1.9 | 2026-06-27 | **F5 Phase 1 PR #12 COMPLETE (PR #628)**: ExplorationPanel migrated to Zustand stores; replaced useGameState with fine-grained selectors (militaryStore.troops.rangers/fighters, economyStore.food, profileStore.turns_stored); created syncKingdomData helper for multi-store updates; fixed Gemini review issues (selector nesting); all CI passing. Next light-state candidates: TrainingPanel, WarfarePanel, BuildPanel identified and ready. |
-| 1.8 | 2026-06-27 | **F5 Architectural Foundation COMPLETE (PR #627)**: researchStore expanded with school management (research_focus, research_allocation, school_of_magic, school_level, school_upgrades, researchers); defensive guards added to receiveServerSnapshot/completeResearch/receiveResearchXp; fixed setResearchAllocation bug; new selectors exported. Foundation enables proper StudiesPanel refactoring (complex component with 16+ state refs) without premature hook replacement. Next: light-state components (ExplorationPanel) before tackling complex refactors. |
-| 1.7 | 2026-06-27 | **F5 PIVOT: Light-state components only** — PR #11 (StudiesPanel) closed after discovering component has 16+ state references throughout render tree; hook replacement insufficient for complex components. Strategy: Complete light-state migrations (OptionsPanel ✅, HeroesPanel ✅), defer complex ones (StudiesPanel, TrainingPanel, etc.) until architectural refactor plan ready. Pattern identified: simple components (applyUpdates only) → 1–2 hour migration; complex components → architectural refactor first. |
-| 1.6 | 2026-06-27 | **F5 Phase 1 PR #10 COMPLETE**: HeroesPanel migrated to Zustand; syncKingdomData helper syncs server snapshots to all stores after hero actions; Gemini review feedback optimized empty object check to prevent unnecessary store dispatches; all CI checks passing (PR #625) |
-| 1.5 | 2026-06-27 | **F5 Phase 1 PR #9 COMPLETE**: OptionsPanel migrated to Zustand; profileStore extended with description/customPortrait fields; Gemini review issues fixed (snake_case sync, component extraction, state initialization); all CI checks passing (PR #624) |
-| 1.4 | 2026-06-27 | **F5 Phase 1 PR #3–#5 COMPLETE**: StatusPanel, multiple UI/profile components migrated to Zustand; Gemini review issues resolved; PR #6 green CI with 20+ components ready; PR #7–#8 queued |
-| 1.3 | 2026-06-27 | **F5 Phase 1 PR #2 READY**: profileStore + KingdomBodyHeader migration complete; all review feedback addressed (useShallow optimization, dependency management); all CI checks passing (PR #616) |
-| 1.2 | 2026-06-27 | **F4 COMPLETE**: Phases 2D (combat-wrappers), 3A (building-research), 3B (gameplay), 4 (orchestration) all extracted; fixed encoding validation (middle dot → hyphen); all CI checks passing (PR #611) |
-| 1.1 | 2026-06-27 | F4 Phase 1–2C completion update: achievements, combat-helpers, happiness-logging, expeditions, special-events modules extracted; Phase 2D (combat wrappers) pending |
-| 1.0 | 2026-06-26 | Unified ALPHA_ROADMAP + AdminRoadmap + MAINTENANCE into single source of truth; added Tailwind consolidation preventative plan |
-
+See `git log` for the detailed PR-by-PR history. This document keeps the current state and active direction only.

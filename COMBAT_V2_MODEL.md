@@ -1,11 +1,11 @@
-# Combat V2 Model
+# Combat Model
 
 **Status:** Living local specification
 **Scope:** Design and integration guardrails only. Do not treat this as final balance tuning.
 
 ## Intent
 
-Combat V2 replaces aggregate percentage combat with individual troop durability and damage.
+Combat replaces aggregate percentage combat with individual troop durability and damage.
 
 The core model is HP and DMG:
 
@@ -18,7 +18,7 @@ The core model is HP and DMG:
 
 ## Base Unit Stats
 
-Current V2 base stats from `game/combat-new.js`:
+Current base stats from `game/combat-new.js`:
 
 | Unit | Base HP | Base DMG | HP/Level | DMG/Level |
 | --- | ---: | ---: | ---: | ---: |
@@ -55,11 +55,11 @@ Research roles:
 - When an equipped troop dies on the field, its equipped weapon and/or armor is removed from that troop owner's stockpile, then recovered into the defender's stockpile. Injured troops retain their gear.
 - Equipment quality is tracked in `equipment_levels` as `{ weapons, armor }`, using the same `{ level, xp, count }` shape as troop XP.
 - Captured equipment keeps its source quality and dilutes into the defender's existing equipment average by count, following the same weighted-average principle as troop XP dilution.
-- When `equipment_levels` is absent for legacy kingdoms, V2 derives an initial equipment quality from the kingdom's research scale: `res_weapons / 10` for weapons and `res_armor / 10` for armor.
+- When `equipment_levels` is absent for legacy kingdoms, combat derives an initial equipment quality from the kingdom's research scale: `res_weapons / 10` for weapons and `res_armor / 10` for armor.
 
 ## Race Modifiers
 
-V2 should use the canonical config data instead of local hardcoded race tables:
+Combat should use the canonical config data instead of local hardcoded race tables:
 
 - `config.RACE_BONUSES` for broad race modifiers.
 - `config.TROOP_RACE_BONUS` for troop-specific modifiers.
@@ -98,7 +98,7 @@ Current injury bands:
 
 Healthy troop counts and injured pools must not double-count the same unit. When a healthy troop takes damage and survives, it should move out of the healthy count and into `injured_troops`.
 
-Combat damage is resolved as individual in-memory hits, not as one cumulative damage pool. A participating fighter hit damages one target unit; unused overkill does not spill into the next target. The database still stores healthy troops as aggregate counts, then V2 compresses the post-combat result back into healthy counts plus individual `injured_troops` records.
+Combat damage is resolved as individual in-memory hits, not as one cumulative damage pool. A participating fighter hit damages one target unit; unused overkill does not spill into the next target. The database still stores healthy troops as aggregate counts, then combat compresses the post-combat result back into healthy counts plus individual `injured_troops` records.
 
 Critical hits are the lethality layer on top of individual hits. Each participating unit rolls an independent critical chance based on troop type and level. A critical hit multiplies that one unit's damage and can finish a target if the hit drives it into moderate or heavy injury. This creates visible kills without returning to cumulative spillover damage.
 
@@ -133,7 +133,7 @@ Ninjas:
 Thieves:
 
 - Sabotage and disruption.
-- Current V2 records sabotage but does not apply it. Integration must decide whether sabotage reduces war machine DMG, crew efficiency, wall damage, or another concrete metric.
+- Current combat records sabotage but does not apply it. Integration must decide whether sabotage reduces war machine DMG, crew efficiency, wall damage, or another concrete metric.
 
 Engineers:
 
@@ -150,7 +150,7 @@ War machines:
 
 ## Battle Flow
 
-The intended V2 flow should be:
+The intended combat flow should be:
 
 1. Load attacker and defender troop counts, injured pools, research, levels, race modifiers, walls, and defensive structures.
 2. Calculate unit HP budgets by type.
@@ -162,7 +162,7 @@ The intended V2 flow should be:
 8. Apply cleric death prevention and healing to friendly troops.
 9. Apply special mechanics such as ninjas, thieves, ladders, and wall damage.
 10. Persist healthy troop count changes, injured troop JSON, and wall HP.
-11. Return a report compatible with the current V1 caller contract.
+11. Return a report compatible with the current caller contract.
 
 ## Walls And Defensive Structures
 
@@ -184,7 +184,7 @@ Integration must make sure ladder hit chance uses the attacker's engineers and e
 
 ## Required Adapter Contract
 
-The V2 adapter must preserve the current engine-level result shape:
+The combat adapter must preserve the current engine-level result shape:
 
 - `win`
 - `report`
@@ -194,11 +194,11 @@ The V2 adapter must preserve the current engine-level result shape:
 - `defEvent`
 - optional `shameEvent`
 
-This lets V2 be feature-flagged without forcing routes, sockets, or the frontend to change in the same step.
+This lets the advanced model be feature-flagged without forcing routes, sockets, or the frontend to change in the same step.
 
 ## Required Diagnostics
 
-Before balance testing resumes, every V2 combat report should include:
+Before balance testing resumes, every combat report should include:
 
 - attacker and defender HP budget by type
 - attacker and defender DMG budget by type
@@ -219,7 +219,7 @@ Before balance testing resumes, every V2 combat report should include:
 
 Most of the old integration defects have already been addressed in the current local codebase. Keep these notes as references rather than active blockers:
 
-- The V2 adapter now routes through `executeCombat` behind `USE_COMBAT_V2=1`.
+- The advanced adapter now routes through `executeCombat` behind `USE_COMBAT_V2=1`.
 - `combat-resolver.js` now uses canonical config race bonuses.
 - Repelled attacks now apply damage to both sides, with the attacker taking the heavier hit.
 - Cleric rescues are tracked by side and no longer cross over to the opponent by default.
@@ -239,4 +239,4 @@ Open design questions that still merit review:
 - Do not tune dwarf, mage, wall, fragment, or war-machine numbers yet.
 - Do not push to remote.
 - Do not merge or cherry-pick the old combat branch wholesale.
-- Do not treat V1 balance test reports as final V2 evidence.
+- Do not treat legacy balance test reports as final combat evidence.
