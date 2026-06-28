@@ -8,7 +8,7 @@ const config = require("../game/config");
 const { requireAuth, requireCsrfToken } = require("./middleware");
 const { progressGoal, generateGoals, claimGoal } = require('../game/goals');
 const { safeJsonParse, devLog } = require('../utils/helpers');
-const { validateTroopAmount, validateResearchAmount, validateNonNegativeInteger, validateAllocationObject } = require('../utils/numeric-validation');
+const { validateTroopAmount, validateAllocationObject } = require('../utils/numeric-validation');
 const { getKingdomAttunements } = require('../game/fragment-attunements');
 const fragmentBonusManager = require("../game/fragment-bonus-manager");
 const attunementManager = require('../game/attunement-manager');
@@ -238,33 +238,6 @@ module.exports = function (db) {
           isMod: !!(row.is_chat_mod || row.is_admin),
         })),
     });
-  });
-
-  router.post("/research-allocation", requireAuth, requireCsrfToken, async (req, res) => {
-    const { allocation } = req.body;
-
-    // Validate allocation using utility (whitelist valid research types, max 10k total)
-    const validKeys = ['spellbook', 'school_spellbook'];
-    const allocValidation = validateAllocationObject(allocation, {
-      validKeys,
-      maxPerItem: 10000,
-      maxTotal: 10000,
-      fieldName: 'allocation',
-    });
-    if (!allocValidation.valid) {
-      return res.status(400).json({ error: allocValidation.error });
-    }
-
-    const k = await db.get("SELECT id FROM kingdoms WHERE player_id = ?", [
-      req.player.playerId,
-    ]);
-    if (!k) return res.status(404).json({ error: "Kingdom not found" });
-
-    await db.run("UPDATE kingdoms SET research_allocation = ? WHERE id = ?", [
-      JSON.stringify(allocValidation.values),
-      k.id,
-    ]);
-    res.json({ ok: true });
   });
 
   router.post("/description", requireAuth, requireCsrfToken, async (req, res) => {
@@ -775,87 +748,6 @@ module.exports = function (db) {
   });
 
   // â”€â”€ Research â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  router.post("/research", requireAuth, requireCsrfToken, async (req, res) => {
-    const { discipline, researchers } = req.body;
-
-    // Validate researcher amount
-    const researchValidation = validateResearchAmount(researchers, { fieldName: 'researchers' });
-    if (!researchValidation.valid) {
-      return res.status(400).json({ error: researchValidation.error });
-    }
-
-    try {
-      // Wrap in transaction with row-level lock to prevent concurrent conflicts
-      await db.run("BEGIN TRANSACTION");
-      const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE", [
-        req.player.playerId,
-      ]);
-      if (!k) {
-        await db.run("ROLLBACK");
-        return res.status(404).json({ error: "Kingdom not found" });
-      }
-      if (k.turns_stored < 1) {
-        await db.run("ROLLBACK");
-        return res.status(429).json({ error: "No turns available" });
-      }
-
-      // Run full turn first
-      await loadTradeRoutes(k);
-      const { updates: turnUpdates, events } = engine.processTurn(k);
-      turnUpdates.turns_stored = k.turns_stored - 1;
-
-      // Apply research on top of turn state
-      const kAfterTurn = { ...k, ...turnUpdates };
-      const resResult = engine.studyDiscipline(
-        kAfterTurn,
-        discipline,
-        researchValidation.value,
-      );
-      if (resResult.error) {
-        await db.run("ROLLBACK");
-        return res.status(400).json({ error: resResult.error });
-      }
-
-      const finalUpdates = { ...turnUpdates, ...resResult.updates };
-      await applyUpdates(db, k.id, finalUpdates);
-
-      const resCol = Object.keys(resResult.updates).find((k) =>
-        k.startsWith("res_"),
-      );
-      const newVal = resCol ? finalUpdates[resCol] : "?";
-      events.push({
-        type: "system",
-        message: `ðŸ“š Studied ${discipline} with ${Number(researchers).toLocaleString()} researchers - +${resResult.increment} -> now ${newVal}${discipline !== "spellbook" ? "%" : ""}.`,
-      });
-      await bulkInsertNews(
-        db,
-        events.map((ev) => ({
-          kingdom_id: k.id,
-          type: ev.type || "system",
-          message: ev.message,
-          turn_num: turnUpdates.turn || k.turn,
-        })),
-      );
-      await db.run("COMMIT");
-
-      res.json({
-        ok: true,
-        increment: resResult.increment,
-        updates: finalUpdates,
-        events,
-        turns_stored: finalUpdates.turns_stored,
-      });
-    } catch (err) {
-      console.error("[research] error:", err.message);
-      try {
-        await db.run("ROLLBACK");
-      } catch (rollbackErr) {
-        console.error("[research] rollback error:", rollbackErr.message);
-      }
-      res.status(500).json({ error: "Research processing failed â€” please try again" });
-    }
-  });
-
   // â”€â”€ Queue buildings â€” charges gold, no turn cost â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   router.post("/build-queue", requireAuth, requireCsrfToken, async (req, res) => {
     const { orders } = req.body;
@@ -1014,52 +906,6 @@ module.exports = function (db) {
       JSON.stringify(allocValidation.values),
       k.id,
     ]);
-    res.json({ ok: true });
-  });
-
-  router.post("/school-allocation", requireAuth, requireCsrfToken, async (req, res) => {
-    const { spellbook, school_spellbook } = req.body;
-
-    // Validate both fields using utility
-    const spellbookValidation = validateNonNegativeInteger(spellbook, {
-      min: 0,
-      max: 1000000,
-      fieldName: 'spellbook',
-    });
-    if (!spellbookValidation.valid) {
-      return res.status(400).json({ error: spellbookValidation.error });
-    }
-
-    const schoolSpellbookValidation = validateNonNegativeInteger(school_spellbook, {
-      min: 0,
-      max: 1000000,
-      fieldName: 'school_spellbook',
-    });
-    if (!schoolSpellbookValidation.valid) {
-      return res.status(400).json({ error: schoolSpellbookValidation.error });
-    }
-
-    const k = await db.get(
-      "SELECT id, mages, school_of_magic, research_allocation FROM kingdoms WHERE player_id = ?",
-      [req.player.playerId],
-    );
-    if (!k) return res.status(404).json({ error: "Kingdom not found" });
-    if (!k.school_of_magic) return res.status(400).json({ error: "Must choose a school first" });
-
-    const total = spellbookValidation.value + schoolSpellbookValidation.value;
-    if (total > (k.mages || 0))
-      return res.status(400).json({
-        error: `Allocated ${total.toLocaleString()} mages, but only have ${(k.mages || 0).toLocaleString()} mages`,
-      });
-
-    const researchAlloc = safeJsonParse(k.research_allocation, {}, "school-allocation:research_allocation");
-    researchAlloc.spellbook_mages = spellbookValidation.value;
-    researchAlloc.school_spellbook_mages = schoolSpellbookValidation.value;
-
-    await db.run(
-      "UPDATE kingdoms SET research_allocation = ? WHERE id = ?",
-      [JSON.stringify(researchAlloc), k.id],
-    );
     res.json({ ok: true });
   });
 
@@ -2391,174 +2237,7 @@ module.exports = function (db) {
   // â”€â”€ Market â€” Buying resources â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   // â”€â”€ Research focus â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  router.post("/research-focus", requireAuth, requireCsrfToken, async (req, res) => {
-    const { focus } = req.body; // array of 1-2 discipline keys
-    const k = await db.get("SELECT id, school_upgrades FROM kingdoms WHERE player_id = ?", [
-      req.player.playerId,
-    ]);
-    if (!k) return res.status(404).json({ error: "Kingdom not found" });
-    let schoolUpgrades = {};
-    try {
-      schoolUpgrades = safeJsonParse(k.school_upgrades, {}, "auto:school_upgrades");
-    } catch {}
-    const maxSlots = schoolUpgrades.repository ? 2 : 1;
-    const validKeys = [
-      "economy",
-      "weapons",
-      "armor",
-      "military",
-      "attack_magic",
-      "defense_magic",
-      "entertainment",
-      "construction",
-      "war_machines",
-      "spellbook",
-    ];
-    const cleaned = (Array.isArray(focus) ? focus : [focus])
-      .filter((f) => validKeys.includes(f))
-      .slice(0, maxSlots);
-    if (!cleaned.length)
-      return res.status(400).json({ error: "Invalid discipline" });
-    await db.run("UPDATE kingdoms SET research_focus = ? WHERE id = ?", [
-      JSON.stringify(cleaned),
-      k.id,
-    ]);
-    res.json({ ok: true, research_focus: cleaned });
-  });
-
   // â”€â”€ Studies overview â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  router.get("/studies/overview", requireAuth, async (req, res) => {
-    const k = await db.get(
-      `SELECT id, race, region, prestige_level, alliance_buffs, mages, scribes, researchers, bld_libraries, bld_shrines,
-              bld_mausoleums, bld_mage_towers, bld_schools, bld_taverns,
-              research_focus, research_allocation, training_allocation,
-              mage_tower_allocation, shrine_allocation, library_allocation,
-              mausoleum_allocation, tower_upgrades, school_upgrades, shrine_upgrades,
-              library_upgrades, mausoleum_upgrades, scrolls, library_progress,
-              tower_progress, res_economy, res_weapons, res_armor, res_military,
-              res_attack_magic, res_defense_magic, res_entertainment, res_construction,
-              res_war_machines, res_spellbook, school_of_magic, school_spellbook,
-              divine_sanctuary_used, fragment_bonuses
-       FROM kingdoms WHERE player_id = ?`,
-      [req.player.playerId]
-    );
-    if (!k) return res.status(404).json({ error: "Kingdom not found" });
-    let focus = [];
-    try {
-      focus = safeJsonParse(k.research_focus, [], "auto:research_focus");
-    } catch {}
-    if (!focus.length) {
-      const disciplines = [
-        { key: "economy", col: "res_economy" },
-        { key: "weapons", col: "res_weapons" },
-        { key: "armor", col: "res_armor" },
-        { key: "military", col: "res_military" },
-        { key: "attack_magic", col: "res_attack_magic" },
-        { key: "defense_magic", col: "res_defense_magic" },
-        { key: "entertainment", col: "res_entertainment" },
-        { key: "construction", col: "res_construction" },
-        { key: "war_machines", col: "res_war_machines" },
-        { key: "spellbook", col: "res_spellbook" },
-      ];
-      focus = [
-        disciplines.reduce(
-          (b, d) => ((k[d.col] || 0) >= (k[b.col] || 0) ? d : b),
-          disciplines[0],
-        ).key,
-      ];
-    }
-    // Regular spellbook spells with rune encoding
-    const regularSpells = [
-      'spark', 'fog_of_war', 'mend', 'blight', 'rain', 'dispel',
-      'lightning', 'bless', 'silence', 'amnesia', 'drain',
-      'plague', 'earthquake', 'tempest', 'shield', 'armageddon'
-    ];
-    const spellbookSpells = regularSpells.map(name => {
-      const def = config.SPELL_DEFS[name] || {};
-      const displayName = name.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-      const minLevel = def.minSB || 0;
-      const maxLevel = (regularSpells.indexOf(name) < regularSpells.length - 1)
-        ? (config.SPELL_DEFS[regularSpells[regularSpells.indexOf(name) + 1]]?.minSB || minLevel + 100)
-        : minLevel + 100;
-
-      const reveals = config.calculateRuneReveals(displayName, k.res_spellbook || 0, minLevel, maxLevel);
-      const runeDisplay = config.getPartialRuneSpell(displayName, reveals);
-
-      return {
-        id: name,
-        name: displayName,
-        tier: def.tier || 1,
-        min_spellbook: minLevel,
-        desc: def.desc || 'Unknown spell',
-        runeDisplay: runeDisplay,
-        reveals: reveals,
-      };
-    }).sort((a, b) => {
-      if (a.tier !== b.tier) return a.tier - b.tier;
-      return a.min_spellbook - b.min_spellbook;
-    });
-
-    let schoolSpells = null;
-    if (k.school_of_magic && config.MAGIC_SCHOOLS[k.school_of_magic]) {
-      const spellNames = config.MAGIC_SCHOOLS[k.school_of_magic];
-      schoolSpells = spellNames.map(name => {
-        const def = config.SPELL_DEFS[name] || {};
-        const displayName = name.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-        const minLevel = def.minSB || 0;
-        const maxLevel = minLevel + 100;
-
-        const reveals = config.calculateRuneReveals(displayName, k.school_spellbook || 0, minLevel, maxLevel);
-        const runeDisplay = config.getPartialRuneSpell(displayName, reveals);
-
-        return {
-          id: name,
-          name: displayName,
-          tier: def.tier || 1,
-          min_school_spellbook: minLevel,
-          desc: def.desc || 'Unknown spell',
-          runeDisplay: runeDisplay,
-          reveals: reveals,
-        };
-      }).sort((a, b) => {
-        if (a.tier !== b.tier) return a.tier - b.tier;
-        return a.min_school_spellbook - b.min_school_spellbook;
-      });
-    }
-
-    res.json({
-      tower_upgrades: safeJsonParse(k.tower_upgrades, {}, "studies:tower_upgrades"),
-      school_upgrades: safeJsonParse(k.school_upgrades, {}, "studies:school_upgrades"),
-      shrine_upgrades: safeJsonParse(k.shrine_upgrades, {}, "studies:shrine_upgrades"),
-      library_upgrades: safeJsonParse(k.library_upgrades, {}, "studies:library_upgrades"),
-      research_focus: focus,
-      divine_sanctuary_used: k.divine_sanctuary_used,
-      mana_per_turn: engine.manaPerTurn(k),
-      scribes: k.scribes,
-      researchers: k.researchers,
-      bld_libraries: k.bld_libraries,
-      bld_shrines: k.bld_shrines,
-      bld_mausoleums: k.bld_mausoleums,
-      bld_mage_towers: k.bld_mage_towers,
-      bld_schools: k.bld_schools,
-      bld_taverns: k.bld_taverns,
-      mausoleum_upgrades: safeJsonParse(k.mausoleum_upgrades, {}, "studies:mausoleum_upgrades"),
-      mage_tower_allocation: safeJsonParse(k.mage_tower_allocation, {}, "studies:mage_tower"),
-      shrine_allocation: safeJsonParse(k.shrine_allocation, {}, "studies:shrine"),
-      library_allocation: safeJsonParse(k.library_allocation, {}, "studies:library"),
-      mausoleum_allocation: safeJsonParse(k.mausoleum_allocation, {}, "studies:mausoleum"),
-      research_allocation: safeJsonParse(k.research_allocation, {}, "studies:research"),
-      scrolls: safeJsonParse(k.scrolls, {}, "studies:scrolls"),
-      library_progress: safeJsonParse(k.library_progress, {}, "studies:library_progress"),
-      tower_progress: safeJsonParse(k.tower_progress, {}, "studies:tower_progress"),
-      res_spellbook: k.res_spellbook || 0,
-      school_spellbook: k.school_spellbook || 0,
-      school_of_magic: k.school_of_magic || null,
-      school_lore: k.school_of_magic ? config.SCHOOL_LORE[k.school_of_magic] : null,
-      spellbook_spells: spellbookSpells,
-      school_spells: schoolSpells,
-    });
-  });
-
   router.get("/profile/:name", async (req, res) => {
     try {
       const k = await db.get(
@@ -3734,51 +3413,6 @@ module.exports = function (db) {
     } catch (err) {
       console.error('[synergy] activate ability failed:', err.message);
       res.status(500).json({ error: 'Failed to activate synergy ability' });
-    }
-  });
-
-  router.post("/select-school", requireAuth, requireCsrfToken, async (req, res) => {
-    devLog('[select-school] Request received', { playerId: req.player?.playerId, school: req.body?.school });
-    try {
-      const { school } = req.body;
-      if (!school?.trim()) return res.status(400).json({ error: 'School name required' });
-
-      await db.run('BEGIN TRANSACTION');
-      try {
-        const kingdom = await db.get('SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE', [req.player.playerId]);
-        if (!kingdom) {
-          await db.run('ROLLBACK');
-          return res.status(404).json({ error: 'Kingdom not found' });
-        }
-
-        const result = engine.selectSchool(kingdom, school.trim().toLowerCase());
-        if (result.error) {
-          await db.run('ROLLBACK');
-          return res.status(400).json({ error: result.error });
-        }
-
-        await db.run(
-          'UPDATE kingdoms SET school_of_magic = ?, school_spellbook = ? WHERE id = ?',
-          [result.updates.school_of_magic, result.updates.school_spellbook, kingdom.id]
-        );
-
-        if (result.events && result.events.length > 0) {
-          await db.run(
-            'INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?, ?, ?, ?)',
-            [kingdom.id, result.events[0].type || 'system', result.events[0].message, kingdom.turn]
-          );
-        }
-        await db.run('COMMIT');
-
-        res.json({ ok: true, school: result.updates.school_of_magic, events: result.events });
-      } catch (txErr) {
-        await db.run('ROLLBACK').catch(() => {});
-        throw txErr;
-      }
-    } catch (e) {
-      if (!res.headersSent) {
-        res.status(500).json({ error: e.message });
-      }
     }
   });
 
