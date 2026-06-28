@@ -22,6 +22,22 @@ async function withTransaction(db, fn) {
   }
 }
 
+function httpError(status, message) {
+  const err = new Error(message);
+  err.status = status;
+  return err;
+}
+
+async function lockKingdomRows(db, kingdomIds) {
+  const ids = [...new Set(kingdomIds.map((id) => Number(id)).filter((id) => Number.isInteger(id) && id > 0))].sort((a, b) => a - b);
+  if (ids.length === 0) return [];
+  const placeholders = ids.map(() => "?").join(",");
+  return db.all(
+    `SELECT * FROM kingdoms WHERE id IN (${placeholders}) ORDER BY id FOR UPDATE`,
+    ids,
+  );
+}
+
 // â"€â"€ Column Selection Constants â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 const KINGDOM_CORE = 'id, player_id, name, race, turn, turns_stored, gold, food, population, land, happiness';
 const KINGDOM_COVERT = `${KINGDOM_CORE}, thieves, ninjas, troop_levels,
@@ -52,469 +68,325 @@ module.exports = function (db) {
 
   // â"€â"€ Military attack â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   router.post("/attack", requireAuth, requireCsrfToken, async (req, res) => {
-    const {
-      targetId,
-      fighters,
-      rangers,
-      mages,
-      warMachines,
-      ninjas,
-      thieves,
-      clerics,
-      engineers,
-      ladders,
-    } = req.body;
-    const sentUnits = {
-      fighters: Math.max(0, parseInt(fighters) || 0),
-      rangers: Math.max(0, parseInt(rangers) || 0),
-      mages: Math.max(0, parseInt(mages) || 0),
-      warMachines: Math.max(0, parseInt(warMachines) || 0),
-      ninjas: Math.max(0, parseInt(ninjas) || 0),
-      thieves: Math.max(0, parseInt(thieves) || 0),
-      clerics: Math.max(0, parseInt(clerics) || 0),
-      engineers: Math.max(0, parseInt(engineers) || 0),
-      ladders: Math.max(0, parseInt(ladders) || 0),
-    };
-
-    // Consolidate 3 queries into 2: attacker + target with AI status
-    const k = await db.get(
-      `SELECT k.* FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.player_id = ?`,
-      [req.player.playerId],
-    );
-    if (!k) return res.status(404).json({ error: "Kingdom not found" });
-    if (k.turns_stored < 1)
-      return res.status(429).json({ error: "No turns available" });
-    if (
-      sentUnits.fighters <= 0 &&
-      sentUnits.rangers <= 0 &&
-      sentUnits.mages <= 0
-    )
-      return res.status(400).json({ error: "Send at least some troops" });
-
-    const target = await db.get(
-      `SELECT k.* FROM kingdoms k
-       JOIN players p ON k.player_id = p.id
-       WHERE k.id = ?`,
-      [targetId],
-    );
-    if (!target)
-      return res.status(404).json({ error: "Target kingdom not found" });
-    if (target.id === k.id)
-      return res.status(400).json({ error: "Cannot attack yourself" });
-
-    if (sentUnits.fighters > engine.getAvailableUnits(k, "fighters"))
-      return res.status(400).json({
-        error: "Not enough available fighters (some may be in training)",
-      });
-    if (sentUnits.rangers > engine.getAvailableUnits(k, "rangers"))
-      return res.status(400).json({
-        error: "Not enough available rangers (some may be in training)",
-      });
-    if (sentUnits.mages > engine.getAvailableUnits(k, "mages"))
-      return res.status(400).json({
-        error: "Not enough available mages (some may be in training)",
-      });
-    if (sentUnits.warMachines > engine.getAvailableUnits(k, "war_machines"))
-      return res
-        .status(400)
-        .json({ error: "Not enough available war machines" });
-    if (sentUnits.ninjas > engine.getAvailableUnits(k, "ninjas"))
-      return res.status(400).json({
-        error: "Not enough available ninjas (some may be in training)",
-      });
-    if (sentUnits.thieves > engine.getAvailableUnits(k, "thieves"))
-      return res.status(400).json({
-        error: "Not enough available thieves (some may be in training)",
-      });
-    if (sentUnits.clerics > engine.getAvailableUnits(k, "clerics"))
-      return res.status(400).json({
-        error: "Not enough available clerics/thralls (some may be in training)",
-      });
-    if (sentUnits.engineers > engine.getAvailableUnits(k, "engineers"))
-      return res.status(400).json({
-        error: "Not enough available engineers (some may be in training)",
-      });
-    if (sentUnits.ladders > engine.getAvailableUnits(k, "ladders"))
-      return res.status(400).json({ error: "Not enough available ðŸªœ ladders" });
-
-    if (k.turn < 400)
-      return res.status(400).json({
-        error: `You are under newbie protection until Turn 400. You cannot attack yet.`,
-      });
-    if ((target.turn || 0) < 400)
-      return res.status(400).json({
-        error: `${target.name} is under newbie protection until Turn 400`,
-      });
-
-    // Location system â€" must have mapped this kingdom
-    let atkDisc = {};
     try {
-      atkDisc = safeJsonParse(k.discovered_kingdoms, {}, "auto:discovered_kingdoms");
-    } catch {}
-    if (!atkDisc[targetId] || !atkDisc[targetId].mapped) {
-      return res
-        .status(400)
-        .json({ error: "You need a location map for this target." });
-    }
+      const {
+        targetId,
+        fighters,
+        rangers,
+        mages,
+        warMachines,
+        ninjas,
+        thieves,
+        clerics,
+        engineers,
+        ladders,
+      } = req.body;
+      const sentUnits = {
+        fighters: Math.max(0, parseInt(fighters) || 0),
+        rangers: Math.max(0, parseInt(rangers) || 0),
+        mages: Math.max(0, parseInt(mages) || 0),
+        warMachines: Math.max(0, parseInt(warMachines) || 0),
+        ninjas: Math.max(0, parseInt(ninjas) || 0),
+        thieves: Math.max(0, parseInt(thieves) || 0),
+        clerics: Math.max(0, parseInt(clerics) || 0),
+        engineers: Math.max(0, parseInt(engineers) || 0),
+        ladders: Math.max(0, parseInt(ladders) || 0),
+      };
 
-    // Fetch heroes
-    const attackerHeroes = await db.all(
-      "SELECT * FROM heroes WHERE kingdom_id = ? AND status = ?",
-      [k.id, "idle"],
-    );
-    const defenderHeroes = await db.all(
-      "SELECT * FROM heroes WHERE kingdom_id = ? AND status = ?",
-      [target.id, "idle"],
-    );
-
-    // Location system â€" must have mapped this kingdom (warn but don't block during transition)
-    try {
-      safeJsonParse(k.discovered_kingdoms, {}, "auto:discovered_kingdoms");
-    } catch {}
-    // Defender auto-stores attacker's location on being attacked
-    let defDisc = {};
-    try {
-      defDisc = safeJsonParse(target.discovered_kingdoms, {}, "auto:discovered_kingdoms");
-    } catch {}
-    if (!defDisc[k.id]?.mapped) {
-      defDisc[k.id] = { found: true, mapped: true };
-      await db.run("UPDATE kingdoms SET discovered_kingdoms=? WHERE id=?", [
-        JSON.stringify(defDisc),
-        target.id,
-      ]);
-    }
-
-    const result = engine.resolveMilitaryAttack(
-      k,
-      target,
-      sentUnits,
-      attackerHeroes,
-      defenderHeroes,
-    );
-    if (result.error) return res.status(400).json({ error: result.error });
-
-    // Update heroes in DB (batch updates)
-    const heroUpdates = [];
-    for (const h of attackerHeroes) {
-      const resHero = engine.awardHeroXp(h, result.win ? 500 : 100);
-      heroUpdates.push([resHero.xp, resHero.level, h.id]);
-    }
-    for (const h of defenderHeroes) {
-      const resHero = engine.awardHeroXp(h, result.win ? 100 : 500);
-      heroUpdates.push([resHero.xp, resHero.level, h.id]);
-    }
-
-    if (heroUpdates.length > 0) {
-      const heroIds = heroUpdates.map(u => u[2]);
-      const xps = heroUpdates.map(u => u[0]);
-      const levels = heroUpdates.map(u => u[1]);
-      const placeholders = heroIds.map((_, i) => `$${i + 1}`).join(',');
-
-      await db.run(
-        `UPDATE heroes SET xp = CAST(CASE id ${heroIds.map((id, i) => `WHEN $${i + 1} THEN $${heroIds.length + i + 1}`).join(' ')} END AS real),
-         level = CAST(CASE id ${heroIds.map((id, i) => `WHEN $${i + 1} THEN $${heroIds.length * 2 + i + 1}`).join(' ')} END AS integer)
-         WHERE id IN (${placeholders})`,
-        [...heroIds, ...xps, ...levels]
-      );
-    }
-
-    progressGoal(k, result.attackerUpdates, 'attack_made', 1);
-
-    await withTransaction(db, async () => {
-      await applyKingdomUpdates(k.id, result.attackerUpdates);
-      await applyKingdomUpdates(target.id, result.defenderUpdates);
-      await db.run(
-        "UPDATE kingdoms SET turns_stored = turns_stored - 1 WHERE id = ?",
-        [k.id],
-      );
-
-    // Bounty claiming
-    if (result.win) {
-      const activeBounties = await db.all(
-        "SELECT * FROM bounties WHERE target_id = ? AND status = ?",
-        [target.id, "active"],
-      );
-      if (activeBounties.length > 0) {
-        let totalClaimed = 0;
-        const bountyIds = [];
-        for (const b of activeBounties) {
-          totalClaimed += b.amount;
-          bountyIds.push(b.id);
-        }
-
-        // Batch update all bounties in single query
-        if (bountyIds.length > 0) {
-          const placeholders = bountyIds.map((_, i) => `$${i + 3}`).join(',');
-          await db.run(
-            `UPDATE bounties SET status = $1, claimed_by_id = $2 WHERE id IN (${placeholders})`,
-            ["claimed", k.id, ...bountyIds],
-          );
-        }
-
-        if (totalClaimed > 0) {
-          await db.run("UPDATE kingdoms SET gold = gold + ? WHERE id = ?", [
-            totalClaimed,
-            k.id,
-          ]);
-          result.atkEvent += ` ðŸ'° BOUNTY CLAIMED! You collected ${totalClaimed.toLocaleString()} gold in bounties placed on ${target.name}.`;
-          await db.run(
-            "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
-            [
-              k.id,
-              "system",
-              `ðŸ'° You claimed ${totalClaimed.toLocaleString()} gold in bounties by defeating ${target.name}!`,
-              k.turn,
-            ],
-          );
-        }
+      if (sentUnits.fighters <= 0 && sentUnits.rangers <= 0 && sentUnits.mages <= 0) {
+        throw httpError(400, 'Send at least some troops');
       }
-    }
 
-    // 4% chance to find a map on a corpse if victory
-    if (result.win && Math.random() < 0.04) {
-      await db.run("UPDATE kingdoms SET maps = maps + 1 WHERE id = ?", [k.id]);
-      result.atkEvent += ` ðŸ—ºï¸ In the aftermath, your troops scavenged a map from a fallen scout's corpse.`;
-    }
+      const attackerIdRow = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
+      if (!attackerIdRow) throw httpError(404, 'Kingdom not found');
 
-    // War log
-    const detail = JSON.stringify({
-      sent: result.report.sent,
-      landTaken: result.report.landTransferred,
-      atkLost: result.report.atkFightersLost,
-      defLost: result.report.defFightersLost,
-      ninjaKills: result.report.ninjaKills || 0,
-      rangerKills: result.report.rangerKills || 0,
-      flankKills: result.report.flankKills || 0,
-      buildingsDestroyed: result.report.defBldLost || 0,
-      steps: result.report.steps || [],
-      ...result.report,
-    });
-    const logRes = await db.run(
-      `INSERT INTO war_log (action_type, attacker_id, attacker_name, defender_id, defender_name, outcome, detail, obscured) VALUES (?,?,?,?,?,?,?,0)`,
-      [
-        "attack",
-        k.id,
-        k.name,
-        target.id,
-        target.name,
-        result.win ? "victory" : "repelled",
-        detail,
-      ],
-    );
-    const reportId = logRes.lastID;
+      const attackerId = attackerIdRow.id;
+      let response;
+      const targetIdNum = Number(targetId);
+      if (!Number.isInteger(targetIdNum) || targetIdNum <= 0) {
+        throw httpError(400, 'Target kingdom not found');
+      }
+      if (targetIdNum === attackerId) {
+        throw httpError(400, 'Cannot attack yourself');
+      }
 
-    await db.run(
-      "INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES (?,?,?,?,?)",
-      [k.id, "attack", result.atkEvent, k.turn, reportId],
-    );
-    await db.run(
-      "INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES (?,?,?,?,?)",
-      [target.id, "attack", result.defEvent, target.turn, reportId],
-    );
+      await withTransaction(db, async () => {
+        const lockedKingdoms = await lockKingdomRows(db, [attackerId, targetIdNum]);
+        if (lockedKingdoms.length < 2) throw httpError(404, 'Target kingdom not found');
 
-    // Signal tower â€" warn defender (and alliance) of attack
-    let defTowerUpgrades = {};
-    try {
-      defTowerUpgrades = safeJsonParse(target.tower_def_upgrades, {}, "auto:tower_def_upgrades");
-    } catch {}
-    if (defTowerUpgrades.watchtower || defTowerUpgrades.signal_tower) {
-      await db.run(
-        "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
-        [
-          target.id,
-          "system",
-          `⚠️ Watchtower scouts have detected ${k.name} massing troops at the border.`,
-          target.turn,
-        ],
-      );
-      if (defTowerUpgrades.signal_tower) {
-        // Warn all alliance members
-        const allianceMembers = await db.all(
-          `
-          SELECT am.kingdom_id FROM alliance_members am
-          JOIN alliance_members am2 ON am.alliance_id = am2.alliance_id
-          WHERE am2.kingdom_id = ? AND am.kingdom_id != ?`,
-          [target.id, target.id],
-        );
-        if (allianceMembers.length > 0) {
-          const placeholders = allianceMembers.map((_, i) => `($${i * 4 + 1}, $${i * 4 + 2}, $${i * 4 + 3}, $${i * 4 + 4})`).join(',');
-          const params = [];
-          const message = `📡 Signal Tower: Your ally ${target.name} is under attack by ${k.name}!`;
-          for (const mem of allianceMembers) {
-            params.push(mem.kingdom_id, "system", message, k.turn);
+        const k = lockedKingdoms.find((row) => row.id === attackerId);
+        const target = lockedKingdoms.find((row) => row.id === targetIdNum);
+        if (!k) throw httpError(404, 'Kingdom not found');
+        if (!target) throw httpError(404, 'Target kingdom not found');
+
+        if (k.turns_stored < 1) throw httpError(429, 'No turns available');
+
+        if (sentUnits.fighters > engine.getAvailableUnits(k, 'fighters')) {
+          throw httpError(400, 'Not enough available fighters (some may be in training)');
+        }
+        if (sentUnits.rangers > engine.getAvailableUnits(k, 'rangers')) {
+          throw httpError(400, 'Not enough available rangers (some may be in training)');
+        }
+        if (sentUnits.mages > engine.getAvailableUnits(k, 'mages')) {
+          throw httpError(400, 'Not enough available mages (some may be in training)');
+        }
+        if (sentUnits.warMachines > engine.getAvailableUnits(k, 'war_machines')) {
+          throw httpError(400, 'Not enough available war machines');
+        }
+        if (sentUnits.ninjas > engine.getAvailableUnits(k, 'ninjas')) {
+          throw httpError(400, 'Not enough available ninjas (some may be in training)');
+        }
+        if (sentUnits.thieves > engine.getAvailableUnits(k, 'thieves')) {
+          throw httpError(400, 'Not enough available thieves (some may be in training)');
+        }
+        if (sentUnits.clerics > engine.getAvailableUnits(k, 'clerics')) {
+          throw httpError(400, 'Not enough available clerics/thralls (some may be in training)');
+        }
+        if (sentUnits.engineers > engine.getAvailableUnits(k, 'engineers')) {
+          throw httpError(400, 'Not enough available engineers (some may be in training)');
+        }
+        if (sentUnits.ladders > engine.getAvailableUnits(k, 'ladders')) {
+          throw httpError(400, 'Not enough available ladders');
+        }
+
+        if (k.turn < 400) {
+          throw httpError(400, 'You are under newbie protection until Turn 400. You cannot attack yet.');
+        }
+        if ((target.turn || 0) < 400) {
+          throw httpError(400, `${target.name} is under newbie protection until Turn 400`);
+        }
+
+        let atkDisc = {};
+        try {
+          atkDisc = safeJsonParse(k.discovered_kingdoms, {}, 'auto:discovered_kingdoms');
+        } catch {}
+        if (!atkDisc[targetIdNum] || !atkDisc[targetIdNum].mapped) {
+          throw httpError(400, 'You need a location map for this target.');
+        }
+
+        const attackerHeroes = await db.all('SELECT * FROM heroes WHERE kingdom_id = ? AND status = ?', [k.id, 'idle']);
+        const defenderHeroes = await db.all('SELECT * FROM heroes WHERE kingdom_id = ? AND status = ?', [target.id, 'idle']);
+
+        let defDisc = {};
+        try {
+          defDisc = safeJsonParse(target.discovered_kingdoms, {}, 'auto:discovered_kingdoms');
+        } catch {}
+        if (!defDisc[k.id]?.mapped) {
+          defDisc[k.id] = { found: true, mapped: true };
+          await db.run('UPDATE kingdoms SET discovered_kingdoms = ? WHERE id = ?', [JSON.stringify(defDisc), target.id]);
+        }
+
+        const result = engine.resolveMilitaryAttack(k, target, sentUnits, attackerHeroes, defenderHeroes);
+        if (result.error) throw httpError(400, result.error);
+
+        const heroUpdates = [];
+        for (const h of attackerHeroes) {
+          const resHero = engine.awardHeroXp(h, result.win ? 500 : 100);
+          heroUpdates.push([resHero.xp, resHero.level, h.id]);
+        }
+        for (const h of defenderHeroes) {
+          const resHero = engine.awardHeroXp(h, result.win ? 100 : 500);
+          heroUpdates.push([resHero.xp, resHero.level, h.id]);
+        }
+
+        if (heroUpdates.length > 0) {
+          const heroIds = heroUpdates.map((u) => u[2]);
+          const xps = heroUpdates.map((u) => u[0]);
+          const levels = heroUpdates.map((u) => u[1]);
+          const placeholders = heroIds.map((_, i) => `$${i + 1}`).join(',');
+          await db.run(
+            `UPDATE heroes SET xp = CAST(CASE id ${heroIds.map((id, i) => `WHEN $${i + 1} THEN $${heroIds.length + i + 1}`).join(' ')} END AS real),
+             level = CAST(CASE id ${heroIds.map((id, i) => `WHEN $${i + 1} THEN $${heroIds.length * 2 + i + 1}`).join(' ')} END AS integer)
+             WHERE id IN (${placeholders})`,
+            [...heroIds, ...xps, ...levels],
+          );
+        }
+
+        progressGoal(k, result.attackerUpdates, 'attack_made', 1);
+
+        await applyKingdomUpdates(k.id, result.attackerUpdates);
+        await applyKingdomUpdates(target.id, result.defenderUpdates);
+        await db.run('UPDATE kingdoms SET turns_stored = turns_stored - 1 WHERE id = ?', [k.id]);
+
+        if (result.win) {
+          const activeBounties = await db.all('SELECT * FROM bounties WHERE target_id = ? AND status = ?', [target.id, 'active']);
+          if (activeBounties.length > 0) {
+            let totalClaimed = 0;
+            const bountyIds = [];
+            for (const b of activeBounties) {
+              totalClaimed += b.amount;
+              bountyIds.push(b.id);
+            }
+            if (bountyIds.length > 0) {
+              const placeholders = bountyIds.map((_, i) => `$${i + 3}`).join(',');
+              await db.run('UPDATE bounties SET status = $1, claimed_by_id = $2 WHERE id IN (' + placeholders + ')', ['claimed', k.id, ...bountyIds]);
+            }
+            if (totalClaimed > 0) {
+              await db.run('UPDATE kingdoms SET gold = gold + ? WHERE id = ?', [totalClaimed, k.id]);
+              result.atkEvent += ` BOUNTY CLAIMED! You collected ${totalClaimed.toLocaleString()} gold in bounties placed on ${target.name}.`;
+              await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)', [k.id, 'system', `You claimed ${totalClaimed.toLocaleString()} gold in bounties by defeating ${target.name}!`, k.turn]);
+            }
           }
-          await db.run(
-            `INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ${placeholders}`,
-            params
-          );
         }
-      }
+
+        if (result.win && Math.random() < 0.04) {
+          await db.run('UPDATE kingdoms SET maps = maps + 1 WHERE id = ?', [k.id]);
+          result.atkEvent += ' In the aftermath, your troops scavenged a map from a fallen scout\'s corpse.';
+        }
+
+        const detail = JSON.stringify({
+          sent: result.report.sent,
+          landTaken: result.report.landTransferred,
+          atkLost: result.report.atkFightersLost,
+          defLost: result.report.defFightersLost,
+          ninjaKills: result.report.ninjaKills || 0,
+          rangerKills: result.report.rangerKills || 0,
+          flankKills: result.report.flankKills || 0,
+          buildingsDestroyed: result.report.defBldLost || 0,
+          steps: result.report.steps || [],
+          ...result.report,
+        });
+        const logRes = await db.run('INSERT INTO war_log (action_type, attacker_id, attacker_name, defender_id, defender_name, outcome, detail, obscured) VALUES (?,?,?,?,?,?,?,0)', ['attack', k.id, k.name, target.id, target.name, result.win ? 'victory' : 'repelled', detail]);
+        const reportId = logRes.lastID;
+
+        await db.run('INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES (?,?,?,?,?)', [k.id, 'attack', result.atkEvent, k.turn, reportId]);
+        await db.run('INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES (?,?,?,?,?)', [target.id, 'attack', result.defEvent, target.turn, reportId]);
+
+        let defTowerUpgrades = {};
+        try {
+          defTowerUpgrades = safeJsonParse(target.tower_def_upgrades, {}, 'auto:tower_def_upgrades');
+        } catch {}
+        if (defTowerUpgrades.watchtower || defTowerUpgrades.signal_tower) {
+          await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)', [target.id, 'system', `⚠️ Watchtower scouts have detected ${k.name} massing troops at the border.`, target.turn]);
+          if (defTowerUpgrades.signal_tower) {
+            const allianceMembers = await db.all(`
+              SELECT am.kingdom_id FROM alliance_members am
+              JOIN alliance_members am2 ON am.alliance_id = am2.alliance_id
+              WHERE am2.kingdom_id = ? AND am.kingdom_id != ?`, [target.id, target.id]);
+            if (allianceMembers.length > 0) {
+              const placeholders = allianceMembers.map((_, i) => `($${i * 4 + 1}, $${i * 4 + 2}, $${i * 4 + 3}, $${i * 4 + 4})`).join(',');
+              const params = [];
+              const message = `📡 Signal Tower: Your ally ${target.name} is under attack by ${k.name}!`;
+              for (const mem of allianceMembers) params.push(mem.kingdom_id, 'system', message, k.turn);
+              await db.run(`INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ${placeholders}`, params);
+            }
+          }
+        }
+
+        if (result.win) {
+          if (result.report.wallsDestroyed > 0) {
+            await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)', [target.id, 'attack', `${result.report.wallsDestroyed} walls were destroyed in the bombardment.`, target.turn]);
+          } else if (result.report.buildingDamaged) {
+            await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)', [target.id, 'attack', `Attackers burned ${result.report.buildingDamaged} with no walls to stop them.`, target.turn]);
+          }
+        }
+        response = { result, attackerId };
+      });
+
+      const freshK = await db.get("SELECT maps FROM kingdoms WHERE id = ?", [attackerId]);
+      const result = response?.result;
+      return res.json({
+        ok: true,
+        report: result?.report,
+        updates: { ...result?.attackerUpdates, maps: freshK?.maps ?? 0 },
+        event: result?.atkEvent,
+      });
+    } catch (err) {
+      if (err?.status) return res.status(err.status).json({ error: err.message });
+      console.error("❌ Attack route failed:", err);
+      return res.status(500).json({ error: "Failed to resolve attack" });
     }
-
-    // Warmachine damage report
-    if (result.win) {
-      if (result.report.wallsDestroyed > 0) {
-        await db.run(
-          "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
-          [
-            target.id,
-            "attack",
-            `ðŸ§± ${result.report.wallsDestroyed} walls were destroyed in the bombardment.`,
-            target.turn,
-          ],
-        );
-      } else if (result.report.buildingDamaged) {
-        await db.run(
-          "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
-          [
-            target.id,
-            "attack",
-            `ðŸ"¥ Attackers burned ${result.report.buildingDamaged} with no walls to stop them.`,
-            target.turn,
-          ],
-        );
-      }
-    }
-
-    });
-
-    const freshK = await db.get("SELECT maps FROM kingdoms WHERE id = ?", [
-      k.id,
-    ]);
-    res.json({
-      ok: true,
-      report: result.report,
-      updates: { ...result.attackerUpdates, maps: freshK.maps },
-      event: result.atkEvent,
-    });
   });
-
-  // â"€â"€ Cast spell â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   router.post("/spell", requireAuth, requireCsrfToken, async (req, res) => {
     const { spellId, targetId, obscure } = req.body;
     if (!spellId) return res.status(400).json({ error: "spellId required" });
 
-    const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ?", [
-      req.player.playerId,
-    ]);
-    if (!k) return res.status(404).json({ error: "Kingdom not found" });
-    if (k.turns_stored < 1)
-      return res.status(429).json({ error: "No turns available" });
+    const attackerRow = await db.get("SELECT id FROM kingdoms WHERE player_id = ?", [req.player.playerId]);
+    if (!attackerRow) return res.status(404).json({ error: "Kingdom not found" });
 
+    const attackerId = attackerRow.id;
+    const targetIdNum = targetId != null ? Number(targetId) : null;
     const isFriendlySpell = engine.SPELL_DEFS[spellId]?.effect === "friendly";
-    let target = null;
-    if (targetId && targetId != k.id) {
-      target = await db.get(
-        "SELECT k.* FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.id = ?",
-        [targetId],
-      );
-      if (!target) return res.status(404).json({ error: "Target kingdom not found" });
-    } else if (isFriendlySpell) {
-      target = k;
-    } else {
-      return res.status(400).json({ error: "targetId required for offensive spells" });
-    }
 
-    const validation = engine.validateSpellTarget(k, target, spellId);
-    if (validation.error) return res.status(400).json({ error: validation.error });
+    try {
+      let response;
+      await withTransaction(db, async () => {
+        const kingdomIds = [attackerId];
+        if (targetIdNum && targetIdNum !== attackerId) kingdomIds.push(targetIdNum);
+        const lockedKingdoms = await lockKingdomRows(db, kingdomIds);
 
-    const result = engine.castSpell(k, validation.target, spellId, !!obscure);
-    if (result.error) return res.status(400).json({ error: result.error });
+        const attackerK = lockedKingdoms.find((row) => row.id === attackerId);
+        if (!attackerK) throw httpError(404, "Kingdom not found");
+        if (attackerK.turns_stored < 1) throw httpError(429, "No turns available");
 
-    progressGoal(k, result.casterUpdates, 'spell_cast', 1);
+        let target = attackerK;
+        if (targetIdNum && targetIdNum !== attackerId) {
+          target = lockedKingdoms.find((row) => row.id === targetIdNum);
+          if (!target) throw httpError(404, "Target kingdom not found");
+        } else if (!isFriendlySpell) {
+          throw httpError(400, "targetId required for offensive spells");
+        }
 
-    await withTransaction(db, async () => {
-      await applyKingdomUpdates(k.id, result.casterUpdates);
-      await applyKingdomUpdates(validation.target.id, result.targetUpdates);
+        const validation = engine.validateSpellTarget(attackerK, target, spellId);
+        if (validation.error) throw httpError(400, validation.error);
 
-      await db.run(
-        "UPDATE kingdoms SET turns_stored = turns_stored - 1 WHERE id = ?",
-        [k.id],
-      );
+        const result = engine.castSpell(attackerK, validation.target, spellId, !!obscure);
+        if (result.error) throw httpError(400, result.error);
 
-    // War log for offensive spells or friendly spells on others
-      if (!validation.isFriendly || k.id !== validation.target.id) {
-      const logRes = await db.run(
-        `INSERT INTO war_log (action_type, attacker_id, attacker_name, defender_id, defender_name, outcome, detail, obscured)
-        VALUES (?,?,?,?,?,?,?,?)`,
-        [
-            validation.isFriendly ? "blessing" : "spell",
-          k.id,
-          k.name,
-            validation.target.id,
-            validation.target.name,
-          "cast",
-          `${spellId.replace(/_/g, " ")} - ${result.report.damageDesc || ""}`,
-          obscure ? 1 : 0,
-        ],
-      );
-      const reportId = logRes.lastID;
+        progressGoal(attackerK, result.casterUpdates, 'spell_cast', 1);
 
-      if (result.casterEvent) {
-        await db.run(
-          "INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES (?,?,?,?,?)",
-          [k.id, "system", result.casterEvent, k.turn, reportId],
-        );
-      }
-        if (result.targetEvent) {
-        await db.run(
-          "INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES (?,?,?,?,?)",
-          [
+        await applyKingdomUpdates(attackerK.id, result.casterUpdates);
+        await applyKingdomUpdates(validation.target.id, result.targetUpdates);
+        await db.run('UPDATE kingdoms SET turns_stored = turns_stored - 1 WHERE id = ?', [attackerK.id]);
+
+        if (!validation.isFriendly || attackerK.id !== validation.target.id) {
+          const logRes = await db.run(
+            `INSERT INTO war_log (action_type, attacker_id, attacker_name, defender_id, defender_name, outcome, detail, obscured)
+            VALUES (?,?,?,?,?,?,?,?)`,
+            [
+              validation.isFriendly ? 'blessing' : 'spell',
+              attackerK.id,
+              attackerK.name,
               validation.target.id,
-              validation.isFriendly ? "system" : "attack",
-            result.targetEvent,
-              validation.target.turn || 0,
-            reportId,
-          ],
-        );
-      }
-      } else {
-      // Self cast news only
-      if (result.casterEvent) {
-        await db.run(
-          "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
-          [k.id, "system", result.casterEvent, k.turn],
-        );
-      }
-    }
+              validation.target.name,
+              'cast',
+              `${spellId.replace(/_/g, ' ')} - ${result.report.damageDesc || ''}`,
+              obscure ? 1 : 0,
+            ],
+          );
+          const reportId = logRes.lastID;
+          if (result.casterEvent) {
+            await db.run('INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES (?,?,?,?,?)', [attackerK.id, 'system', result.casterEvent, attackerK.turn, reportId]);
+          }
+          if (result.targetEvent) {
+            await db.run('INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES (?,?,?,?,?)', [validation.target.id, validation.isFriendly ? 'system' : 'attack', result.targetEvent, validation.target.turn || 0, reportId]);
+          }
+        } else if (result.casterEvent) {
+          await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)', [attackerK.id, 'system', result.casterEvent, attackerK.turn]);
+        }
 
-    // Consume map on cast (map is used up like a compass â€" one per interaction)
-    // Map consumption for spells disabled - rely on location maps
-    // if (!isFriendly) {}
-
-    });
-
-    const freshK = await db.get(
-      "SELECT mana, scrolls, maps, active_effects FROM kingdoms WHERE id = ?",
-      [k.id],
-    );
-    res.json({
-      ok: true,
-      report: result.report,
-      updates: {
-        mana: freshK.mana,
-        scrolls: safeJsonParse(freshK.scrolls, {}, "auto:scrolls"),
-        maps: freshK.maps,
-        active_effects: safeJsonParse(freshK.active_effects, {}, "auto:active_effects"),
-        ...result.casterUpdates,
-      },
-    });
-
-    // Notify target via socket if online
-    if (global._narmir_io && k.id !== validation.target.id) {
-      const eventName = validation.isFriendly ? "event:blessing_received" : "event:spell_received";
-      global._narmir_io.to(`kingdom:${validation.target.id}`).emit(eventName, {
-        from: obscure ? null : k.name,
-        spellId: spellId,
-        message: result.targetEvent,
+        response = { result, attackerId };
       });
-      // Also notify unreads
-      const uCount = await db.get("SELECT COUNT(*) as c FROM news WHERE kingdom_id = ? AND is_read = 0", [validation.target.id]);
-      global._narmir_io.to(`kingdom:${validation.target.id}`).emit("unread_news", { count: uCount ? uCount.c : 0 });
+
+      const freshK = await db.get('SELECT mana, scrolls, maps, active_effects FROM kingdoms WHERE id = ?', [attackerId]);
+      const result = response?.result;
+      return res.json({
+        ok: true,
+        report: result?.report,
+        updates: {
+          mana: freshK?.mana,
+          scrolls: safeJsonParse(freshK?.scrolls, {}, 'auto:scrolls'),
+          maps: freshK?.maps,
+          active_effects: safeJsonParse(freshK?.active_effects, {}, 'auto:active_effects'),
+          ...result?.casterUpdates,
+        },
+      });
+    } catch (err) {
+      if (err?.status) return res.status(err.status).json({ error: err.message });
+      console.error('❌ Spell route failed:', err);
+      return res.status(500).json({ error: 'Failed to cast spell' });
     }
   });
-
-  // â"€â"€ Covert operations â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   router.post("/covert", requireAuth, requireCsrfToken, async (req, res) => {
     const { op, targetId, units, lootType, unitType, bldType } = req.body;
 
