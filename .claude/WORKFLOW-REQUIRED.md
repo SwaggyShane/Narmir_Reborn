@@ -43,6 +43,22 @@ When Gemini or any reviewer comments on a PR:
 
 ---
 
+## MERGE LANES
+
+The backlog is split into two ownership lanes:
+
+- `Codex Lane` is local-first and stays the source of truth in the working tree.
+- `Claude Lane` is remote-first and may land branches on origin for Codex to pull down.
+
+Merge rule:
+
+- Merge only at phase boundaries, after the phase is complete and validated.
+- Do not merge partial work or blend unrelated lane work into the same merge.
+- After each merge, fetch `origin` and check for Claude lane branches before starting the next merge.
+- Keep local as truth while reconciling any remote lane updates.
+
+---
+
 ## BEFORE EVERY COMMIT
 
 **State required before `git add` and `git commit`:**

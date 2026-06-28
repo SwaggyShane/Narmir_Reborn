@@ -42,6 +42,11 @@ Always create PRs with `draft: true`. No exceptions.
 7. Address review feedback with new commits
 8. Merge to main only after review approval
 
+### Merge Boundaries
+- Merge only at phase boundaries after the phase is complete and validated.
+- Keep local as truth while reconciling any remote Claude-lane work.
+- After each merge, fetch `origin` and check for Claude branch updates before starting the next merge.
+
 ---
 
 ## Quality Checks — Required Before Every Commit
