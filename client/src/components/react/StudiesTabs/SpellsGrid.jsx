@@ -4,7 +4,7 @@ export const SpellsGrid = ({ title, icon, level, magesAssigned, spellsByTier }) 
   return (
     <div className="flex flex-col gap-3">
       <div className="card m-0 p-4">
-        <div className="text-6xl mb-2">{icon}</div>
+        <div className="text-2xl mb-2">{icon}</div>
         <div className="card-title !mb-0.5 text-base">{title}</div>
         <div className="text-2xs text-[var(--text3)] mb-3">
           {icon === '📖' ? 'Mages continuing study' : 'Mages specializing'}

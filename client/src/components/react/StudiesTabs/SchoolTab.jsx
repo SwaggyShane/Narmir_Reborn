@@ -156,15 +156,15 @@ export const SchoolTab = ({
               <div className="card-title !mb-2.5">General Spellbook</div>
               <div className="trow">
                 <span className="name">Researchers</span>
-                <span className="count">0</span>
+                <span className="count" id="st-researchers">0</span>
               </div>
               <div className="trow">
                 <span className="name">Capacity</span>
-                <span className="count">0</span>
+                <span className="count" id="st-school-cap">0</span>
               </div>
               <div className="trow">
                 <span className="name">Spellbook Level</span>
-                <span className="count">0%</span>
+                <span className="count" id="st-general-spellbook-level">0%</span>
               </div>
             </div>
             <div className="card m-0">
@@ -195,7 +195,7 @@ export const SchoolTab = ({
       {activeSchoolSubTab === 'school' && (studiesData?.school_of_magic || state?.school_of_magic) && (
         <div>
           <div className="card mb-3 text-center">
-            <div className="text-8xl mb-2">🔮</div>
+            <div className="text-4xl mb-2">🔮</div>
             <div className="card-title !mb-0.5 capitalize text-base">
               {(studiesData?.school_of_magic || state?.school_of_magic)?.replace(/_/g, ' ')}
             </div>

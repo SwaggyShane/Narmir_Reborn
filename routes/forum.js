@@ -166,11 +166,12 @@ module.exports = function (db) {
         "oldest": "ft.created_at ASC"
       };
 
-      if (!VALID_SORTS[sort]) {
+      const activeSort = sort || "newest";
+      if (!VALID_SORTS[activeSort]) {
         return res.status(400).json({ error: "Invalid sort parameter" });
       }
 
-      const orderClause = VALID_SORTS[sort];
+      const orderClause = VALID_SORTS[activeSort];
 
       const topics = await db.all(
         `SELECT ft.id, ft.title, ft.board_id, ft.post_count, ft.last_post_at,

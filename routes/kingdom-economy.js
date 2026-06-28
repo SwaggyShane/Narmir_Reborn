@@ -58,11 +58,8 @@ const RESOURCE_COLUMN_MAP = {
   land: 'land'
 };
 
-// Validates and returns the database column name for a resource
+// Returns the database column name for a resource, or undefined if invalid
 function getResourceColumn(resource) {
-  if (!RESOURCE_COLUMN_MAP.hasOwnProperty(resource)) {
-    throw new Error(`Invalid resource: ${resource}`);
-  }
   return RESOURCE_COLUMN_MAP[resource];
 }
 
@@ -376,6 +373,10 @@ module.exports = function (db) {
       }
 
       const dbCol = getResourceColumn(resource);
+      if (!dbCol) {
+        await db.run("ROLLBACK");
+        return res.status(400).json({ error: "Invalid resource" });
+      }
       if ((k[dbCol] || 0) < qty) {
         await db.run("ROLLBACK");
         return res.status(400).json({ error: "Not enough resource" });
