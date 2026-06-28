@@ -13,6 +13,7 @@ import { toast } from '../../utils/toast.js';
 import { showMapKingdomCard } from './MapKingdomCard.jsx';
 import { AppEvent } from '../../utils/appEvents.js';
 import { useAppEvent } from '../../hooks/useAppEvent.js';
+import { useKingdomId, useMarketUpgrades } from '../../stores';
 
 const MAP_REGIONS = Object.keys(REGION_META);
 
@@ -102,11 +103,13 @@ const WorldmapPanel = () => {
   const [tradeRoutes, setTradeRoutes] = useState([]);
   const [highlightedRace, setHighlightedRace] = useState(null);
   const [mapCard, setMapCard] = useState(null);
+  const currentKingdomId = useKingdomId();
+  const marketUpgrades = useMarketUpgrades();
 
   const mapSvg = useMemo(() => {
     if (!kingdoms.length) return '';
-    return renderWorldMap(kingdoms, tradeRoutes, highlightedRace);
-  }, [kingdoms, tradeRoutes, highlightedRace]);
+    return renderWorldMap(kingdoms, tradeRoutes, highlightedRace, currentKingdomId);
+  }, [kingdoms, tradeRoutes, highlightedRace, currentKingdomId]);
 
   const refreshWorldMap = useCallback(
     () => loadWorldMap({ setLoading, setError, setKingdoms, setTradeRoutes }),
@@ -132,11 +135,11 @@ const WorldmapPanel = () => {
 
   const handleMapClick = useCallback((event) => {
     const dot = event.target.closest?.('.kd-dot');
-    const kingdomId = dot?.getAttribute('data-kingdom-id');
-    if (kingdomId) {
-      showMapKingdomCard(kingdomId);
+    const targetKingdomId = dot?.getAttribute('data-kingdom-id');
+    if (targetKingdomId) {
+      showMapKingdomCard(targetKingdomId, currentKingdomId, marketUpgrades);
     }
-  }, []);
+  }, [currentKingdomId, marketUpgrades]);
 
   return (
     <div id="worldmap" className="panel">

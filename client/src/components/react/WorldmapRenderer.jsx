@@ -1,15 +1,14 @@
 import { REGION_META, REGION_BONUSES } from '../../utils/raceData.js';
 import { escapeHtml } from '../../utils/escapeHtml.js';
-import { useProfileStore } from '../../stores';
 
 function regionOpacity(race, highlightedRace, dim = '0.3') {
   if (!highlightedRace) return '1';
   return race === highlightedRace ? '1' : dim;
 }
 
-export function renderWorldMap(kingdoms, routes = [], highlightedRace = null) {
+export function renderWorldMap(kingdoms, routes = [], highlightedRace = null, kingdomId = null) {
   const state = {
-    kingdomId: useProfileStore.getState().kingdom_id,
+    kingdomId,
   };
 
         var W = 900,
