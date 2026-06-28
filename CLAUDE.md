@@ -1,5 +1,7 @@
 # Claude Code Workflow Guide
 
+⚠️ **ENFORCEMENT SOURCE:** For explicit checklists and verification steps before every commit, push, and phase merge, see `.claude/WORKFLOW-REQUIRED.md` — that is the authoritative enforcement document. This guide provides context; WORKFLOW-REQUIRED.md provides the mandatory checklists.
+
 ## PR Workflow
 
 ### Before Every Push — No Exceptions
