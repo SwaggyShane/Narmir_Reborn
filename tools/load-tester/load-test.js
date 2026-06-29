@@ -35,6 +35,16 @@ class LoadTester {
     };
 
     this.protocol = this.baseUrl.startsWith('https') ? https : http;
+
+    const agentOptions = {
+      keepAlive: true,
+      maxSockets: this.concurrent,
+      maxFreeSockets: this.concurrent,
+      timeout: 60000
+    };
+    this.agent = this.baseUrl.startsWith('https')
+      ? new https.Agent(agentOptions)
+      : new http.Agent(agentOptions);
   }
 
   async runLoadTest() {
@@ -42,82 +52,57 @@ class LoadTester {
     console.log(`Concurrent: ${this.concurrent} | Duration: ${this.duration}ms | Ramp-up: ${this.rampUp}ms`);
     console.log('────────────────────────────────────────────');
 
-    this.stats.startTime = Date.now();
-    const endTime = this.stats.startTime + this.duration;
+    const startTime = Date.now();
+    const endTime = startTime + this.duration;
+    this.stats.startTime = startTime;
 
-    let activeConnections = 0;
-
-    return new Promise((resolve) => {
-      const rampUpInterval = this.rampUp / Math.min(this.concurrent, 100);
-      let spawnedConnections = 0;
-
-      const spawnConnection = () => {
-        if (spawnedConnections >= this.concurrent || Date.now() > endTime) {
-          if (activeConnections === 0) {
-            this.stats.endTime = Date.now();
-            resolve();
-          }
-          return;
-        }
-
-        spawnedConnections++;
-        this.stats.currentConcurrent = activeConnections + 1;
+    const runWorker = async () => {
+      while (Date.now() < endTime) {
+        this.stats.currentConcurrent++;
         if (this.stats.currentConcurrent > this.stats.peakConcurrent) {
           this.stats.peakConcurrent = this.stats.currentConcurrent;
         }
-
-        this.sendRequest()
-          .then(() => {
-            activeConnections--;
-            if (Date.now() <= endTime && spawnedConnections < this.concurrent) {
-              this.sendRequest().then(() => activeConnections--);
-            }
-          })
-          .catch(() => {
-            activeConnections--;
-          });
-
-        activeConnections++;
-
-        if (spawnedConnections < this.concurrent && Date.now() <= endTime) {
-          setTimeout(spawnConnection, rampUpInterval);
-        }
-      };
-
-      // Start spawning connections
-      for (let i = 0; i < Math.min(10, this.concurrent); i++) {
-        setTimeout(spawnConnection, 0);
+        await this.sendRequest();
+        this.stats.currentConcurrent--;
       }
+    };
 
-      // Monitor progress
-      const progressInterval = setInterval(() => {
-        if (Date.now() > endTime) {
-          clearInterval(progressInterval);
-          if (activeConnections === 0) {
-            this.stats.endTime = Date.now();
-            resolve();
-          }
+    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const workers = [];
+
+    for (let i = 0; i < this.concurrent; i++) {
+      const rampUpDelay = (this.rampUp / this.concurrent) * i;
+      workers.push((async () => {
+        if (rampUpDelay > 0) {
+          await delay(rampUpDelay);
         }
-      }, 1000);
-    });
+        if (Date.now() < endTime) {
+          await runWorker();
+        }
+      })());
+    }
+
+    await Promise.all(workers);
+    this.stats.endTime = Date.now();
   }
 
   async sendRequest() {
     return new Promise((resolve) => {
+      let finished = false;
       const startTime = Date.now();
       const url = new URL(this.endpoint, this.baseUrl);
 
       const options = {
         method: this.method,
-        timeout: 10000
+        timeout: 10000,
+        agent: this.agent
       };
 
       const req = this.protocol.request(url, options, (res) => {
-        let _data = '';
-        res.on('data', (chunk) => {
-          _data += chunk;
-        });
+        res.resume();
         res.on('end', () => {
+          if (finished) return;
+          finished = true;
           const responseTime = Date.now() - startTime;
           this.recordResponse(res.statusCode, responseTime);
           resolve();
@@ -125,11 +110,15 @@ class LoadTester {
       });
 
       req.on('error', (err) => {
+        if (finished) return;
+        finished = true;
         this.recordError(err.code || err.message);
         resolve();
       });
 
       req.on('timeout', () => {
+        if (finished) return;
+        finished = true;
         req.destroy();
         this.recordError('TIMEOUT');
         resolve();
@@ -141,7 +130,16 @@ class LoadTester {
 
   recordResponse(statusCode, responseTime) {
     this.stats.totalRequests++;
-    this.stats.responseTimes.push(responseTime);
+
+    const MAX_SAMPLES = 100000;
+    if (this.stats.responseTimes.length < MAX_SAMPLES) {
+      this.stats.responseTimes.push(responseTime);
+    } else {
+      const randomIndex = Math.floor(Math.random() * this.stats.totalRequests);
+      if (randomIndex < MAX_SAMPLES) {
+        this.stats.responseTimes[randomIndex] = responseTime;
+      }
+    }
 
     if (statusCode < 400) {
       this.stats.successfulRequests++;
@@ -170,14 +168,15 @@ class LoadTester {
     const p50 = responseTimes[Math.floor(responseTimes.length * 0.5)] || 0;
     const p95 = responseTimes[Math.floor(responseTimes.length * 0.95)] || 0;
     const p99 = responseTimes[Math.floor(responseTimes.length * 0.99)] || 0;
-    const max = Math.max(...responseTimes, 0);
+    const max = responseTimes.length > 0 ? responseTimes[responseTimes.length - 1] : 0;
 
     console.log('\n📊 RESULTS');
     console.log('────────────────────────────────────────────');
     console.log(`⏱️  Total Duration: ${elapsed}ms`);
     console.log(`✅ Successful: ${this.stats.successfulRequests}/${this.stats.totalRequests}`);
     console.log(`❌ Failed: ${this.stats.failedRequests}/${this.stats.totalRequests}`);
-    console.log(`📈 Requests/sec: ${Math.round(this.stats.totalRequests / (elapsed / 1000))}`);
+    const rps = elapsed > 0 ? Math.round(this.stats.totalRequests / (elapsed / 1000)) : 0;
+    console.log(`📈 Requests/sec: ${rps}`);
     console.log(`🔼 Peak Concurrent: ${this.stats.peakConcurrent}`);
 
     console.log('\n⏳ RESPONSE TIMES (ms)');
@@ -211,15 +210,27 @@ class LoadTester {
 }
 
 // CLI
-const args = require('minimist')(process.argv.slice(2));
+const { parseArgs } = require('util');
+
+const { values: cliArgs } = parseArgs({
+  options: {
+    url: { type: 'string' },
+    concurrent: { type: 'string' },
+    duration: { type: 'string' },
+    'ramp-up': { type: 'string' },
+    method: { type: 'string' },
+    endpoint: { type: 'string' }
+  },
+  strict: false
+});
 
 const tester = new LoadTester({
-  url: args.url || 'http://localhost:3000',
-  concurrent: parseInt(args.concurrent) || 100,
-  duration: parseInt(args.duration) || 30000,
-  rampUp: parseInt(args['ramp-up']) || 5000,
-  method: (args.method || 'GET').toUpperCase(),
-  endpoint: args.endpoint || '/api/auth/me'
+  url: cliArgs.url || 'http://localhost:3000',
+  concurrent: parseInt(cliArgs.concurrent) || 100,
+  duration: parseInt(cliArgs.duration) || 30000,
+  rampUp: parseInt(cliArgs['ramp-up']) || 5000,
+  method: (cliArgs.method || 'GET').toUpperCase(),
+  endpoint: cliArgs.endpoint || '/api/auth/me'
 });
 
 tester.runLoadTest().then(() => {
