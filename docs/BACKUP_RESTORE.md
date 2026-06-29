@@ -96,10 +96,11 @@ echo $DATABASE_URL
 **Step 2: Create Backup File**
 ```bash
 # On your local machine (requires PostgreSQL client tools)
-pg_dump "postgresql://user:pass@host:5432/database" > narmir_backup_$(date +%Y%m%d_%H%M%S).sql
+# Use --clean and --if-exists for reliable restores to existing databases
+pg_dump --clean --if-exists "postgresql://user:pass@host:5432/database" > narmir_backup_$(date +%Y%m%d_%H%M%S).sql
 
 # Example with example credentials:
-pg_dump "postgresql://postgres:mypassword@db.railway.internal:5432/railway" > narmir_backup_20260629_143022.sql
+pg_dump --clean --if-exists "postgresql://postgres:mypassword@db.railway.internal:5432/railway" > narmir_backup_20260629_143022.sql
 ```
 
 **Step 3: Verify Backup File**
@@ -171,15 +172,15 @@ SELECT schemaname, tablename FROM pg_tables WHERE schemaname='public' ORDER BY t
 
 **Step 3: Spot-Check Key Tables**
 ```bash
-# Check users table has data
-psql "postgresql://user:pass@host/database" -c "SELECT COUNT(*) FROM users;"
+# Check players table has data
+psql "postgresql://user:pass@host/database" -c "SELECT COUNT(*) FROM players;"
 # Expected: Non-zero count
 
 # Check kingdoms table
 psql "postgresql://user:pass@host/database" -c "SELECT COUNT(*) FROM kingdoms;"
 
-# Check game state
-psql "postgresql://user:pass@host/database" -c "SELECT COUNT(*) FROM buildings;"
+# Check forum boards
+psql "postgresql://user:pass@host/database" -c "SELECT COUNT(*) FROM forum_boards;"
 ```
 
 **Step 4: Application Health Check**
@@ -201,20 +202,20 @@ curl -s http://localhost:3000/portal
 Create a test script to verify critical data:
 ```javascript
 // test-restore.js
-const db = require('./src/db');
+const { initDb } = require('./db/schema');
 
 async function testRestore() {
+  const db = await initDb();
   const tests = [
-    { name: 'Users exist', query: 'SELECT COUNT(*) FROM users', min: 1 },
-    { name: 'Kingdoms exist', query: 'SELECT COUNT(*) FROM kingdoms', min: 1 },
-    { name: 'Buildings data intact', query: 'SELECT COUNT(*) FROM buildings', min: 1 },
-    { name: 'Forum boards exist', query: 'SELECT COUNT(*) FROM boards', min: 1 }
+    { name: 'Players exist', query: 'SELECT COUNT(*) AS count FROM players', min: 1 },
+    { name: 'Kingdoms exist', query: 'SELECT COUNT(*) AS count FROM kingdoms', min: 1 },
+    { name: 'Forum boards exist', query: 'SELECT COUNT(*) AS count FROM forum_boards', min: 1 }
   ];
 
   let passed = 0;
   for (const test of tests) {
-    const result = await db.query(test.query);
-    const count = parseInt(result.rows[0].count);
+    const result = await db.get(test.query);
+    const count = result ? result.count : 0;
     if (count >= test.min) {
       console.log(`✅ ${test.name}`);
       passed++;
