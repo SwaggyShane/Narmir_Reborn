@@ -97,7 +97,7 @@
 
 | Category | Count | Action |
 |----------|-------|--------|
-| Already done | 4 (18, 19, 20, 21) | Mark [done] in TODO |
+| Already done | 3 (18, 19, 21) | Mark [done] in TODO |
 | Analysis complete | 2 (20, 22) | Mark [done] + document finding |
 | Mostly complete | 2 (16, 17) | Mark [done] with notes |
 | Needs larger effort | 1 (15) | Defer to post-beta |
