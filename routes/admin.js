@@ -1883,6 +1883,7 @@ module.exports = function (db, io) {
         message: "JSON corruption repair completed",
         fixedRows: result.fixedRows,
         fixedCells: result.fixedCells,
+        details: result.details,
         duration: `${duration}ms`,
         timestamp: new Date().toISOString()
       });
