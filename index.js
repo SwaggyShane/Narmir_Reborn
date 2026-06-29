@@ -1566,6 +1566,11 @@ async function start() {
   await initializeConstants(db);
   console.log('[boot] Game constants loaded from database');
 
+  const AuditScheduler = require('./lib/audit-scheduler');
+  const auditScheduler = new AuditScheduler(db);
+  await auditScheduler.initialize();
+  global._audit_scheduler = auditScheduler;
+
   // Global error handlers to prevent silent crashes
   process.on('unhandledRejection', (reason, promise) => {
     console.error('[CRITICAL] Unhandled Rejection at:', promise, 'reason:', reason);
