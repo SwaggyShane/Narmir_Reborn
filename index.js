@@ -78,12 +78,20 @@ const io     = new Server(server, {
   cors: {
     origin: process.env.NODE_ENV === 'production' ? (process.env.CORS_ORIGIN || false) : '*',
     credentials: true
-  }
+  },
+  pingInterval: 25000,
+  pingTimeout: 60000,
+  maxHttpBufferSize: 1e6
 });
 app.set('trust proxy', 1);
 
 const PORT = 3000;
 const HOST = '0.0.0.0';
+
+server.requestTimeout = 30000;
+server.headersTimeout = 35000;
+server.keepAliveTimeout = 65000;
+server.clientTrackingDisabled = false;
 
 // ── Utility functions ────────────────────────────────────────────────────────
 
@@ -99,7 +107,8 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ limit: '1mb' }));
 app.use(cookieParser());
 
 // Content-Security-Policy.
@@ -184,6 +193,7 @@ const isProdEnv = process.env.NODE_ENV === 'production';
 const authAttemptLimiter = makeRateLimiter(isProdEnv ? 10 : 60, 60 * 1000); // login/register only
 const turnLimiter   = makeRateLimiter(300, 60 * 1000);     // 300 turn/action requests/min (5/sec)
 const generalLimiter= makeRateLimiter(500, 60 * 1000);     // 500 general requests/min
+const adminLimiter  = makeRateLimiter(isProdEnv ? 30 : 120, 60 * 1000); // strict admin limits
 
 function isAuthSensitiveRoute(req) {
   if (req.method !== 'POST') return false;
@@ -194,6 +204,19 @@ function isAuthSensitiveRoute(req) {
 function authSensitiveLimiter(req, res, next) {
   if (!isAuthSensitiveRoute(req)) return next();
   return authAttemptLimiter(req, res, next);
+}
+
+function adminIpCheck(req, res, next) {
+  const adminIpsStr = process.env.ADMIN_ALLOWED_IPS || '';
+  if (!adminIpsStr.trim()) return next();
+
+  const allowedIps = adminIpsStr.split(',').map(ip => ip.trim()).filter(Boolean);
+  const clientIp = req.ip || req.connection.remoteAddress || '';
+
+  if (!allowedIps.includes(clientIp)) {
+    return res.status(403).json({ error: 'Admin access denied' });
+  }
+  next();
 }
 
 // ── BOOTSTRAP ────────────────────────────────────────────────────────────────
@@ -619,7 +642,7 @@ async function start() {
     app.use('/api/kingdom',      turnLimiter, cacheKingdomId(db), ensureCsrfToken, cleanupOrphanedTransactions(db), require('./routes/kingdom-gameplay')(db));
     app.use('/api/hero',         turnLimiter, cacheKingdomId(db), ensureCsrfToken,  require('./routes/hero')(db));
     const adminRouter = require('./routes/admin')(db, io);
-    app.use('/api/admin', adminRouter);
+    app.use('/api/admin', adminLimiter, adminIpCheck, adminRouter);
     app.use('/api/discord', require('./routes/discord')(db));
 
     app.get('/api/alliance/list', requireAuth, async (req, res) => {
