@@ -7,12 +7,14 @@ const { progressGoal } = require('./goals');
 const {
   devLog,
   assignRegion,
-  getHappinessRecoveryRate,
-  calculateHappiness,
   getCap,
   calcDiscoveryChance,
   cleanNewsEvent,
 } = require('./lib/data-transformations');
+const {
+  calculateHappiness,
+  getHappinessRecoveryRate,
+} = require('./happiness');
 
 const fragmentBonusManager = require("./fragment-bonus-manager");
 const effectsProcessor = require("./synergy-effects-processor");
