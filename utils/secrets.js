@@ -10,7 +10,7 @@ class SecretsManager {
       DATABASE_URL: {
         required: true,
         description: 'PostgreSQL database connection string',
-        pattern: /^postgresql:\/\/.*$/i,
+        pattern: /^postgres(ql)?:\/\/.*$/i,
         env: 'DATABASE_URL'
       },
       NODE_ENV: {
@@ -20,7 +20,7 @@ class SecretsManager {
         env: 'NODE_ENV'
       },
       CORS_ORIGIN: {
-        required: true,
+        required: process.env.NODE_ENV === 'production',
         description: 'Frontend origin for CORS',
         env: 'CORS_ORIGIN'
       },
@@ -63,6 +63,7 @@ class SecretsManager {
       if (!value && spec.required) {
         errors.push(`❌ ${spec.env}: ${spec.description} (REQUIRED)`);
       } else if (!value && spec.defaultValue) {
+        process.env[spec.env] = spec.defaultValue;
         validated[spec.env] = spec.defaultValue;
         warnings.push(`⚠️  ${spec.env}: Using default value "${spec.defaultValue}"`);
       } else if (value) {
