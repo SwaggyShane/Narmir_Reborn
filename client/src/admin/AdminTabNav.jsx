@@ -12,6 +12,7 @@ export const ADMIN_TABS = [
   { id: 'fragments', label: 'Detailed Lists',  icon: '📊' },
   { id: 'goals',     label: 'Goals',           icon: '🎯' },
   { id: 'security',  label: 'Security Audit',  icon: '🔒' },
+  { id: 'audits',    label: 'Audit Schedules', icon: '📋' },
 ];
 
 export default function AdminTabNav({ activeTab, onTabChange }) {

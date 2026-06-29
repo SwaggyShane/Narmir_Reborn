@@ -14,6 +14,7 @@ import SoundsPanel from './panels/SoundsPanel.jsx';
 import PrestigePanel from './panels/PrestigePanel.jsx';
 import FragmentsPanel from './panels/FragmentsPanel.jsx';
 import SecurityPanel from './panels/SecurityPanel.jsx';
+import AuditSchedulesPanel from './panels/AuditSchedulesPanel.jsx';
 
 const PHASE_LABELS = {};
 
@@ -149,6 +150,8 @@ export default function AdminShell({ adminUser, onLogout }) {
               adminFetch={adminFetch}
               onToast={(msg, type) => setToast({ msg, type: type || 'info' })}
             />
+          ) : activeTab === 'audits' ? (
+            <AuditSchedulesPanel />
           ) : (
             <div style={{ textAlign: 'center', color: 'var(--text3)', fontSize: 14, padding: '12px 0' }}>
               <div style={{ fontSize: 28, marginBottom: 10 }}>{activeTabMeta?.icon}</div>
