@@ -5,7 +5,7 @@ const { safeJsonParse } = require('../utils/helpers');
 const { raceBonus } = require('./lib/race-bonus');
 const { getSynergyPassiveBonusAbsolute } = require('./lib/synergy-cache');
 const fragmentBonusManager = require('./fragment-bonus-manager');
-const { housingCapPerBuilding } = require('./lib/data-transformations');
+const { housingCapPerBuilding } = require('./population');
 
 function getHappinessRecoveryRate(k) {
   const baseRecovery = (k.res_entertainment || 100) / 1200 + ((k.bld_taverns || 0) * 0.2);
