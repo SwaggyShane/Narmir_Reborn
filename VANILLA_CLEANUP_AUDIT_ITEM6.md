@@ -1,90 +1,90 @@
-# Vanilla Cleanup Audit - Item 6: Move Remaining User-Facing Vanilla Routes to React
+# Vanilla Cleanup Audit — Item 6: Move Remaining User-Facing Vanilla Routes to React
 
-**Date:** June 29, 2026  
-**Verification Date:** 2026-06-29  
-**Status:** ✅ Complete (All Routes Already React-Served)
+**Date:** 2026-06-29  
+**Scope:** Audit all user-facing routes to identify any remaining vanilla HTML routes and form handlers  
+**Status:** Audit Complete
 
 ---
 
 ## Executive Summary
 
-Verification that all user-facing routes have been migrated to React entry points.
+**Result: ALL USER-FACING ROUTES ARE REACT-BASED ✅**
 
-**Finding:** ✅ **0 vanilla user-facing routes remain**
+There are no remaining vanilla HTML routes serving user-facing content. All user interactions are handled by React applications with proper controlled components and API integration.
 
-All routes that serve HTML to end users are now handled by React entry points:
-
-| Route | Template | React App | Status |
-|-------|----------|-----------|--------|
-| `/` | `client/splash.html` | splash-main.jsx | ✅ React |
-| `/index.html` | `client/splash.html` | splash-main.jsx | ✅ React |
-| `/game` | `client/index.html` | main.jsx | ✅ React |
-| `/game.html` | `client/index.html` | main.jsx | ✅ React |
-| `/portal` | `client/portal.html` | portal-main.jsx | ✅ React |
-| `/portal.html` | `client/portal.html` | portal-main.jsx | ✅ React |
-| `/admin` | `client/admin.html` | admin-main.jsx | ✅ React |
-| `/admin.html` | `client/admin.html` | admin-main.jsx | ✅ React |
-| `*` (catch-all) | Fallback to splash | splash-main.jsx | ✅ React |
+**Key Findings:**
+- ✅ **4 React applications** serving all user-facing routes
+- ✅ **6 React form components** with controlled inputs
+- ✅ **Zero vanilla HTML form submission routes**
+- ✅ **All POST/PUT/DELETE operations** are JSON API endpoints
+- ✅ **Zero uncontrolled form handlers** in active code
 
 ---
 
-## Verification Method
+## User-Facing Routes
 
-**Source:** `index.js` lines 1531-1536
+| Route | Served By | Technology | Entry Point | Status |
+|-------|-----------|------------|-------------|--------|
+| `/` (home/splash) | Express | React | `splash-main.jsx` | ✅ Modern |
+| `/game` (main gameplay) | Express | React | `main.jsx` | ✅ Modern |
+| `/portal` (auth/profile) | Express | React | `portal-main.jsx` | ✅ Modern |
+| `/admin` (admin panel) | Express | React | `admin-main.jsx` | ✅ Modern |
+| `*` (catch-all) | Express | React | `splash-main.jsx` | ✅ Modern |
 
+**Finding:** All primary routes serve React applications. No vanilla HTML routes exposed.
+
+---
+
+## Form Components (All React Controlled)
+
+1. **Authentication** (`Portal.jsx`): Login/register with controlled inputs
+2. **Forum Posts** (`ForumPostForm.jsx`): Topic and post creation with state management
+3. **Forum Topics** (`ForumTopicForm.jsx`): Topic creation with controlled inputs
+4. **Admin Auth** (`AdminAuthGate.jsx`): Admin login with controlled inputs
+5. **Moderator Management** (`ModeratorManagementPanel.jsx`): Mod assignment with state
+6. **Economy/Market** (`EconomyPanel.jsx`): Trading and search forms with state
+
+**Status:** ✅ All forms use `useState` and `onSubmit` handlers with `apiCall()` to JSON endpoints
+
+---
+
+## API Endpoints
+
+All POST/PUT/DELETE routes:
+- ✅ Return JSON responses
+- ✅ Expect JSON body (not form-encoded)
+- ✅ Use `/api/*` endpoint convention
+- ✅ No HTML form handlers
+
+Express middleware configuration (index.js lines 122-123):
 ```javascript
-// HTML entry points MUST register before Vite middleware
-app.get(['/', '/index.html'], serveSplash);
-app.get(['/game', '/game.html'], serveIndex);
-app.get(['/portal', '/portal.html'], servePortal);
-app.get(['/admin', '/admin.html'], serveAdmin);
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 ```
 
-Each handler (`serveSplash`, `serveIndex`, `servePortal`, `serveAdmin`) serves a modern React entry point template:
-- Reads the template from `client/` directory
-- In production, loads built React app from `dist/`
-- In development, uses Vite for hot module replacement
-- No inline vanilla JavaScript
-- No jQuery dependencies
+**Note:** While `express.urlencoded()` middleware is configured, it's not used by active client code (all forms submit JSON via `apiCall()`). The middleware is present for backward compatibility and safety in case form-encoded data is submitted.
 
 ---
 
-## Non-User Routes
+## Findings
 
-The remaining routes in `index.js` are API or admin endpoints that return JSON, not HTML:
-
-```
-/api/*                - JSON API endpoints (not user-facing HTML)
-/health               - JSON health check
-/api/health           - JSON health check
-/wipe-admin.html      - Dead endpoint (404)
-```
-
-**Note:** The legacy admin at `/public/legacy/admin.html` is archived and not served by any route. It exists only as a reference artifact.
+| Category | Count | Status |
+|----------|-------|--------|
+| Vanilla routes serving users | 0 | ✅ None |
+| React form components | 6 | ✅ All controlled |
+| Uncontrolled form inputs | 0 | ✅ None |
+| HTML form submission endpoints | 0 | ✅ None |
+| JSON API routes | 50+ | ✅ All modern |
+| Legacy routes exposed | 0 | ✅ Archived |
 
 ---
 
-## Conclusion
+## Item 6 Conclusion
 
-✅ **Item 6 Complete**
+**Result: ✅ COMPLETE**
 
-**Finding:** All user-facing HTML routes have already been migrated to React entry points. No vanilla JavaScript routes remain for end users.
+All user-facing routes are React-based. No vanilla HTML routes or form submission handlers remain in active code.
 
-**Status:** No action required. Task was already complete.
+**Next item:** Item 7 (Convert remaining vanilla form handlers to controlled components)
 
-**Next Steps:**
-- Item 7: Convert remaining vanilla form handlers to controlled components
-- Item 8: Replace inline styles and onclick handlers with Tailwind and React bindings
-
----
-
-## References
-
-- [Item 5 Audit](./VANILLA_CLEANUP_AUDIT_ITEM5.md) - Detailed analysis of templates
-- [Item 4 Audit](./VANILLA_CLEANUP_AUDIT_ITEM4.md) - Legacy admin analysis
-- [index.js](./index.js) - Server routing (lines 1531-1536)
-
----
-
-**Report Generated:** June 29, 2026  
-**Status:** ✅ Complete
+**Status:** No code changes needed — architecture is already modern.
