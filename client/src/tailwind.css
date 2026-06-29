@@ -271,11 +271,15 @@
 
   /* ── Battle Outcome Banners ── */
   .br-win {
-    @apply bg-green/15 border-l-4 border-green text-green;
+    background: color-mix(in srgb, var(--green) 15%, transparent);
+    border-left: 4px solid var(--green);
+    color: var(--green);
   }
 
   .br-lose {
-    @apply bg-red/15 border-l-4 border-red text-red;
+    background: color-mix(in srgb, var(--red) 15%, transparent);
+    border-left: 4px solid var(--red);
+    color: var(--red);
   }
 
   /* ── Shared panel box frame (lore, kingdom header, resources) ── */
