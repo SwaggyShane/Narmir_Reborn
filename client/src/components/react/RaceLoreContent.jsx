@@ -16,57 +16,57 @@ export default function RaceLoreContent({ lore, regionName, regionBonus, portrai
           fallbackIcon={repair(lore.icon || '⚔')}
         />
         <div className="w-full flex-1 pt-0 text-center sm:pt-1 sm:text-left">
-          <h2 style={{ color: lore.color || 'var(--gold)', margin: '0 0 6px', fontSize: '24px', letterSpacing: '-0.5px', fontFamily: "'Cinzel', serif", fontWeight: 700 }}>
+          <h2 className="font-cinzel m-0 mb-1.5 text-2xl font-bold tracking-tight" style={{ color: lore.color || 'var(--gold)' }}>
             {repair(lore.title || 'Unknown')}
           </h2>
           {cleanedRegionName && (
-            <div style={{ fontSize: '13px', color: 'var(--text2)', marginBottom: '6px', fontWeight: 600 }}>
+            <div className="mb-1.5 text-sm font-semibold text-gray-400">
               {cleanedRegionName} Region
             </div>
           )}
           {regionBonus && (
-            <div style={{ fontSize: '12px', color: 'var(--text3)', lineHeight: 1.4 }}>
+            <div className="text-xs text-gray-500 leading-relaxed">
               {repair(regionBonus)}
             </div>
           )}
         </div>
       </div>
 
-      <p style={{ fontSize: '13px', color: 'var(--text2)', lineHeight: 1.8, fontStyle: 'italic', marginBottom: '18px' }}>
+      <p className="mb-4 text-sm text-gray-400 leading-loose italic">
         {repair(lore.lore || '')}
       </p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-        <div style={{ background: 'rgba(76,175,130,.08)', border: '1px solid rgba(76,175,130,.2)', borderRadius: 'var(--radius)', padding: '12px' }}>
-          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--green)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '.5px' }}>Strengths</div>
+      <div className="mb-4 grid grid-cols-2 gap-3">
+        <div className="rounded-lg border border-green-900 bg-green-950 p-3">
+          <div className="mb-2 text-xs font-bold uppercase tracking-wider text-green-500">Strengths</div>
           {strengths.map((s, i) => (
-            <div key={i} style={{ fontSize: '12px', color: 'var(--text2)', padding: '2px 0' }}>✓ {repair(s)}</div>
+            <div key={i} className="py-0.5 text-xs text-gray-400">✓ {repair(s)}</div>
           ))}
         </div>
-        <div style={{ background: 'rgba(224,92,92,.08)', border: '1px solid rgba(224,92,92,.2)', borderRadius: 'var(--radius)', padding: '12px' }}>
-          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--red)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '.5px' }}>Weaknesses</div>
+        <div className="rounded-lg border border-red-900 bg-red-950 p-3">
+          <div className="mb-2 text-xs font-bold uppercase tracking-wider text-red-500">Weaknesses</div>
           {weaknesses.map((w, i) => (
-            <div key={i} style={{ fontSize: '12px', color: 'var(--text2)', padding: '2px 0' }}>✗ {repair(w)}</div>
+            <div key={i} className="py-0.5 text-xs text-gray-400">✗ {repair(w)}</div>
           ))}
         </div>
       </div>
 
       {lore.special && (
-        <div style={{ background: 'rgba(232,184,75,.08)', border: '1px solid rgba(232,184,75,.25)', borderRadius: 'var(--radius)', padding: '12px', marginBottom: '12px' }}>
-          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--gold)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '.5px' }}>✨ Racial mastery — unlocks at unit level 25</div>
-          <div style={{ fontSize: '13px', color: 'var(--text)' }}>{repair(lore.special)}</div>
+        <div className="mb-3 rounded-lg border border-yellow-900 bg-yellow-950 p-3">
+          <div className="mb-1.5 text-xs font-bold uppercase tracking-wider text-yellow-500">✨ Racial mastery — unlocks at unit level 25</div>
+          <div className="text-sm text-gray-100">{repair(lore.special)}</div>
         </div>
       )}
 
       {heroes.length > 0 && (
-        <div style={{ background: 'rgba(143,184,74,.08)', border: '1px solid rgba(143,184,74,.25)', borderRadius: 'var(--radius)', padding: '12px', marginBottom: '12px' }}>
-          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--green)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '.5px' }}>🦻 Notable Race Heroes</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+        <div className="mb-3 rounded-lg border border-green-900 bg-green-950 p-3">
+          <div className="mb-2 text-xs font-bold uppercase tracking-wider text-green-500">🦻 Notable Race Heroes</div>
+          <div className="flex flex-wrap gap-1.5">
             {heroes.map((h) => (
               <div
                 key={h}
                 onClick={() => onHeroClick(h)}
-                style={{ cursor: 'pointer', fontSize: '11px', background: 'var(--bg4)', padding: '3px 8px', borderRadius: '12px', color: 'var(--text2)', border: '1px solid var(--border2)' }}
+                className="cursor-pointer rounded-full border border-gray-600 bg-gray-800 px-2 py-0.5 text-xs text-gray-400 hover:text-gray-300 transition-colors"
               >
                 {repair(h)}
               </div>
@@ -76,9 +76,9 @@ export default function RaceLoreContent({ lore, regionName, regionBonus, portrai
       )}
 
       {lore.playstyle && (
-        <div style={{ background: 'var(--bg3)', borderRadius: 'var(--radius)', padding: '12px' }}>
-          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text3)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '.5px' }}>Recommended playstyle</div>
-          <div style={{ fontSize: '13px', color: 'var(--text2)' }}>{repair(lore.playstyle)}</div>
+        <div className="rounded-lg bg-gray-800 p-3">
+          <div className="mb-1.5 text-xs font-bold uppercase tracking-wider text-gray-500">Recommended playstyle</div>
+          <div className="text-sm text-gray-400">{repair(lore.playstyle)}</div>
         </div>
       )}
     </>
