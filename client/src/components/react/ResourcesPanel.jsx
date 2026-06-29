@@ -522,7 +522,7 @@ const ResourcesPanel = () => {
                         <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--green)' }} id={`res-stock-${res.key}`}>{fmt(kingdom[res.key] || 0)}</div>
                       </div>
                     </div>
-                    <div style={{ fontSize: '11px', color: 'var(--text3)' }}>
+                    <div className="text-[11px] text-[var(--text3)]">
                       <div title={titleStr}>Yield: <span style={{ color: 'var(--text)' }} id={`res-yield-${res.key}`}>{strYield}</span></div>
                       <div>Workers needed: <span style={{ color: 'var(--text)' }} id={`res-workers-${res.key}`}>{fmt(totalWorkers)}</span></div>
                       <div>Status: <span id={`res-status-${res.key}`} style={{ color: freePop >= totalWorkers ? 'var(--green)' : 'var(--red)' }}>{totalWorkers === 0 ? '-' : freePop >= totalWorkers ? 'Operating' : 'Understaffed'}</span></div>
@@ -550,7 +550,7 @@ const ResourcesPanel = () => {
               <div style={{ fontWeight: 600, fontSize: '13px', color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 💡 <span>Guide: How to build buildings &amp; produce resources</span>
               </div>
-              <span style={{ fontSize: '11px', color: 'var(--text3)' }}>{showGuide ? 'Collapse [\u2212]' : 'Expand Guide [+]'}</span>
+              <span className="text-[11px] text-[var(--text3)]">{showGuide ? 'Collapse [\u2212]' : 'Expand Guide [+]'}</span>
             </div>
             {showGuide && (
               <div style={{ marginTop: '10px', borderTop: '1px solid rgba(59, 130, 246, 0.1)', paddingTop: '10px' }}>
@@ -699,7 +699,7 @@ const ResourcesPanel = () => {
 
       {activeTab === 'expeditions' && (
         <div>
-          <div className="card" style={{ marginBottom: '12px' }}>
+          <div className="card" className="mb-3">
             <div className="card-title">Scout New Nodes</div>
             <div style={{ fontSize: '12px', color: 'var(--text3)', margin: '6px 0 10px' }}>Pay 500 gold to discover a new resource node.</div>
             <button onClick={scoutNode} disabled={scouting}
@@ -711,12 +711,12 @@ const ResourcesPanel = () => {
             )}
           </div>
 
-          <div className="card" style={{ marginBottom: '12px' }}>
+          <div className="card" className="mb-3">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div className="card-title">Discovered Nodes ({nodes.length})</div>
               <button onClick={loadNodes} style={{ padding: '4px 10px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text3)', cursor: 'pointer', fontSize: '11px' }}>Refresh</button>
             </div>
-            {nodes.length === 0 && <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '8px' }}>No nodes discovered yet. Scout to find resource nodes!</div>}
+            {nodes.length === 0 && <div className="text-[12px] text-[var(--text3)] mt-2">No nodes discovered yet. Scout to find resource nodes!</div>}
             {nodes.map(node => (
               <div key={node.id} style={{ marginTop: '10px', padding: '10px', borderRadius: '6px', background: 'var(--bg2)', border: '1px solid var(--border)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
@@ -742,17 +742,17 @@ const ResourcesPanel = () => {
             ))}
           </div>
 
-          <div className="card" style={{ marginBottom: '12px' }}>
+          <div className="card" className="mb-3">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div className="card-title">Active Expeditions ({activeExpeditions.length})</div>
               <button onClick={loadExpeditions} style={{ padding: '4px 10px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text3)', cursor: 'pointer', fontSize: '11px' }}>Refresh</button>
             </div>
-            {activeExpeditions.length === 0 && <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '8px' }}>No active expeditions.</div>}
+            {activeExpeditions.length === 0 && <div className="text-[12px] text-[var(--text3)] mt-2">No active expeditions.</div>}
             {activeExpeditions.map(exp => (
               <div key={exp.id} style={{ marginTop: '10px', padding: '10px', borderRadius: '6px', background: 'var(--bg2)', border: '1px solid var(--border)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
                   <div>
-                    <div style={{ fontWeight: 600, fontSize: '13px' }}>{exp.node_name} <span style={{ fontSize: '11px', color: 'var(--text3)' }}>({typeIcon(exp.node_type)} {exp.node_type})</span></div>
+                    <div style={{ fontWeight: 600, fontSize: '13px' }}>{exp.node_name} <span className="text-[11px] text-[var(--text3)]">({typeIcon(exp.node_type)} {exp.node_type})</span></div>
                     <div style={{ fontSize: '11px', color: 'var(--text3)', marginTop: '2px' }}>
                       Pop: {fmt(exp.population_sent)} &middot; Status: <span style={statusColor(exp.status)}>{exp.status}</span>
                       {exp.food_taken > 0 && <span> &middot; 🍖 {fmt(exp.food_taken)} food taken</span>}
@@ -802,7 +802,7 @@ const ResourcesPanel = () => {
       {activeTab === 'inventory' && (
         <div className="card">
           <div className="card-title">Item Inventory</div>
-          {items.length === 0 && <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '8px' }}>No items found.</div>}
+          {items.length === 0 && <div className="text-[12px] text-[var(--text3)] mt-2">No items found.</div>}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '10px', marginTop: '12px' }}>
             {items.map(item => (
               <div key={item.id} style={{ padding: '12px', borderRadius: '8px', background: 'var(--bg2)', textAlign: 'center', border: `1px solid ${(item.qty || 0) > 0 ? 'var(--green)' : 'var(--border)'}` }}>
