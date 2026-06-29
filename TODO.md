@@ -14,8 +14,9 @@ Remote is truth for shared project state. Completed work now lives in `ARCHIVAL.
 8. Codex merges approved PRs, deletes the associated branches, then fetches `origin` before starting the next merge.
 9. After every merge, re-check for newly landed Claude branches before picking up the next task.
 10. Use Gemini feedback for high-risk work before merge.
-11. Do not ask for permission to continue unless blocked or explicitly told to stop.
-12. Keep changes tight and task-scoped so the two lanes can move independently without stepping on each other.
+11. Move directly to the next task after each completion.
+12. Do not ask for permission to continue unless blocked or explicitly told to stop.
+13. Repeat until `TODO.md` is complete.
 
 ## Codex Lane
 
