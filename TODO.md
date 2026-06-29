@@ -2,6 +2,22 @@
 
 Local is truth. Completed work now lives in `ARCHIVAL.md`. The Claude completion log has been removed.
 
+## Workflow
+
+1. Create a new branch for each task.
+2. Open a new PR for each task. Do not use draft PRs.
+3. Wait for Gemini to comment before proceeding.
+4. Codex checks Claude's PR.
+5. Claude checks Codex's PR.
+6. Leave comments only when there is a real problem.
+7. Resolve every comment with a fix or a clear refutation.
+8. Claude amends `TODO.md` with completed work.
+9. Codex amends `TODO.md` with completed work.
+10. Only Codex merges PRs and deletes the associated branches after `TODO.md` is amended.
+11. Claude begins the next task.
+12. Codex begins the next task.
+13. Repeat until `TODO.md` is complete.
+
 ## Codex Lane
 
 1. Battle Outcome Animation: Animate win/loss banners in combat results.
