@@ -2,6 +2,20 @@
 
 Local is truth. Completed work now lives in `ARCHIVAL.md`. The Claude completion log has been removed.
 
+## Project Workflow
+
+1. Local is truth. Keep `origin` current, but do not let remote drift define the task state.
+2. New branch for each task.
+3. New PR for each branch. Do not create draft PRs.
+4. Wait for Gemini feedback before merging high-risk work.
+5. Codex checks Claude PRs. Claude checks Codex PRs.
+6. If there is a problem, comment it and close it with a fix or a clear refute.
+7. Claude and Codex both amend `TODO.md` with completed work.
+8. Codex merges PRs and deletes the associated branches after `TODO.md` is amended.
+9. After each merge, fetch `origin` and check for new Claude branches before starting the next merge.
+10. Keep going through the todo list until it is complete.
+11. Do not ask for permission to continue unless blocked or explicitly told to stop.
+
 ## Codex Lane
 
 1. Battle Outcome Animation: Animate win/loss banners in combat results.
