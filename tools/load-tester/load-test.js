@@ -52,50 +52,43 @@ class LoadTester {
     console.log(`Concurrent: ${this.concurrent} | Duration: ${this.duration}ms | Ramp-up: ${this.rampUp}ms`);
     console.log('────────────────────────────────────────────');
 
-    this.stats.startTime = Date.now();
-    const endTime = this.stats.startTime + this.duration;
+    const startTime = Date.now();
+    const endTime = startTime + this.duration;
+    this.stats.startTime = startTime;
 
-    let activeConnections = 0;
-    let finishedConnections = 0;
-
-    return new Promise((resolve) => {
-      const runConnection = async () => {
-        activeConnections++;
-        this.stats.currentConcurrent = activeConnections;
+    const runWorker = async () => {
+      while (Date.now() < endTime) {
+        this.stats.currentConcurrent++;
         if (this.stats.currentConcurrent > this.stats.peakConcurrent) {
           this.stats.peakConcurrent = this.stats.currentConcurrent;
         }
-
-        while (Date.now() < endTime) {
-          await this.sendRequest();
-        }
-
-        activeConnections--;
-        finishedConnections++;
-        if (finishedConnections === totalToSpawn) {
-          this.stats.endTime = Date.now();
-          resolve();
-        }
-      };
-
-      let totalToSpawn = 0;
-      for (let i = 0; i < this.concurrent; i++) {
-        const delay = this.concurrent > 1 ? (i / (this.concurrent - 1)) * this.rampUp : 0;
-        if (Date.now() + delay < endTime) {
-          totalToSpawn++;
-          setTimeout(runConnection, delay);
-        }
+        await this.sendRequest();
+        this.stats.currentConcurrent--;
       }
+    };
 
-      if (totalToSpawn === 0) {
-        this.stats.endTime = Date.now();
-        resolve();
-      }
-    });
+    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const workers = [];
+
+    for (let i = 0; i < this.concurrent; i++) {
+      const rampUpDelay = (this.rampUp / this.concurrent) * i;
+      workers.push((async () => {
+        if (rampUpDelay > 0) {
+          await delay(rampUpDelay);
+        }
+        if (Date.now() < endTime) {
+          await runWorker();
+        }
+      })());
+    }
+
+    await Promise.all(workers);
+    this.stats.endTime = Date.now();
   }
 
   async sendRequest() {
     return new Promise((resolve) => {
+      let finished = false;
       const startTime = Date.now();
       const url = new URL(this.endpoint, this.baseUrl);
 
@@ -108,6 +101,8 @@ class LoadTester {
       const req = this.protocol.request(url, options, (res) => {
         res.resume();
         res.on('end', () => {
+          if (finished) return;
+          finished = true;
           const responseTime = Date.now() - startTime;
           this.recordResponse(res.statusCode, responseTime);
           resolve();
@@ -115,11 +110,15 @@ class LoadTester {
       });
 
       req.on('error', (err) => {
+        if (finished) return;
+        finished = true;
         this.recordError(err.code || err.message);
         resolve();
       });
 
       req.on('timeout', () => {
+        if (finished) return;
+        finished = true;
         req.destroy();
         this.recordError('TIMEOUT');
         resolve();
@@ -211,15 +210,27 @@ class LoadTester {
 }
 
 // CLI
-const args = require('minimist')(process.argv.slice(2));
+const { parseArgs } = require('util');
+
+const { values: cliArgs } = parseArgs({
+  options: {
+    url: { type: 'string' },
+    concurrent: { type: 'string' },
+    duration: { type: 'string' },
+    'ramp-up': { type: 'string' },
+    method: { type: 'string' },
+    endpoint: { type: 'string' }
+  },
+  strict: false
+});
 
 const tester = new LoadTester({
-  url: args.url || 'http://localhost:3000',
-  concurrent: parseInt(args.concurrent) || 100,
-  duration: parseInt(args.duration) || 30000,
-  rampUp: parseInt(args['ramp-up']) || 5000,
-  method: (args.method || 'GET').toUpperCase(),
-  endpoint: args.endpoint || '/api/auth/me'
+  url: cliArgs.url || 'http://localhost:3000',
+  concurrent: parseInt(cliArgs.concurrent) || 100,
+  duration: parseInt(cliArgs.duration) || 30000,
+  rampUp: parseInt(cliArgs['ramp-up']) || 5000,
+  method: (cliArgs.method || 'GET').toUpperCase(),
+  endpoint: cliArgs.endpoint || '/api/auth/me'
 });
 
 tester.runLoadTest().then(() => {
