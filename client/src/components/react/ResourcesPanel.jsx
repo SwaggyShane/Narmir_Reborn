@@ -699,7 +699,7 @@ const ResourcesPanel = () => {
 
       {activeTab === 'expeditions' && (
         <div>
-          <div className="card" className="mb-3">
+          <div className="card mb-3">
             <div className="card-title">Scout New Nodes</div>
             <div style={{ fontSize: '12px', color: 'var(--text3)', margin: '6px 0 10px' }}>Pay 500 gold to discover a new resource node.</div>
             <button onClick={scoutNode} disabled={scouting}
@@ -711,7 +711,7 @@ const ResourcesPanel = () => {
             )}
           </div>
 
-          <div className="card" className="mb-3">
+          <div className="card mb-3">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div className="card-title">Discovered Nodes ({nodes.length})</div>
               <button onClick={loadNodes} style={{ padding: '4px 10px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text3)', cursor: 'pointer', fontSize: '11px' }}>Refresh</button>
@@ -742,7 +742,7 @@ const ResourcesPanel = () => {
             ))}
           </div>
 
-          <div className="card" className="mb-3">
+          <div className="card mb-3">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div className="card-title">Active Expeditions ({activeExpeditions.length})</div>
               <button onClick={loadExpeditions} style={{ padding: '4px 10px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text3)', cursor: 'pointer', fontSize: '11px' }}>Refresh</button>
