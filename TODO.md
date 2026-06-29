@@ -53,6 +53,7 @@
    - Scope: Test backup procedure on production DB
    - Test restore to alternate database
    - Document recovery procedures
+   - Status: Complete via PR #716
    - Deliverable: Verified backup script + runbook
    - Estimate: 1-2 hours
 
@@ -149,7 +150,7 @@
 **Beta Launch Readiness:**
 - [ ] SQL injection audit complete + no gaps
 - [ ] Load test passed (5,000+ concurrent, <3s response)
-- [ ] Backup/restore verified + documented
+- [x] Backup/restore verified + documented
 - [ ] Rate limiting deployed + tested
 - [ ] Monitoring + alerting active
 - [ ] User documentation complete
