@@ -20,6 +20,7 @@ if (!fs.existsSync(logsDir)) {
   fs.mkdirSync(logsDir, { recursive: true });
 }
 const logFilePath = path.join(logsDir, 'server.log');
+const rateLimitLogFilePath = path.join(logsDir, 'rate-limits.log');
 try {
   fs.writeFileSync(logFilePath, `=== SERVER LOG STARTED AT ${new Date().toISOString()} ===\nNODE_ENV: ${process.env.NODE_ENV}\n\n`);
   // eslint-disable-next-line no-unused-vars
@@ -70,6 +71,7 @@ const setupSockets    = require('./game/sockets');
 const engine          = require('./game/engine');
 const { requireAuth, cacheKingdomId } = require('./routes/middleware');
 const config = require('./game/config');
+const { rateLimitConfig, logRateLimitConfig } = require('./config/rate-limiting');
 const { safeJsonParse } = require('./utils/helpers');
 const SecretsManager = require('./utils/secrets');
 
@@ -159,8 +161,52 @@ app.use((req, res, next) => {
 });
 
 // ── Rate limiting ──────────────────────────────────────────────────────────────
-function makeRateLimiter(maxRequests, windowMs) {
+function normalizeClientIp(rawIp) {
+  let clientIp = rawIp || '';
+  if (clientIp.startsWith('::ffff:')) {
+    clientIp = clientIp.substring(7);
+  }
+  return clientIp;
+}
+
+function getAllowedAdminIps() {
+  return String(process.env.ADMIN_ALLOWED_IPS || '')
+    .split(',')
+    .map(ip => ip.trim())
+    .filter(Boolean);
+}
+
+function isAllowedAdminIp(req) {
+  const allowedIps = getAllowedAdminIps();
+  if (allowedIps.length === 0) return false;
+  return allowedIps.includes(normalizeClientIp(req.ip || req.socket?.remoteAddress || ''));
+}
+
+function isAdminRoute(req) {
+  const reqPath = String(req.path || req.url || '').split('?')[0];
+  return reqPath.startsWith('/api/admin');
+}
+
+function logRateLimitHit(req, maxRequests, windowMs) {
+  if (process.env.NODE_ENV !== 'production') return;
+
+  const entry = [
+    new Date().toISOString(),
+    '429',
+    normalizeClientIp(req.ip || req.socket?.remoteAddress || 'unknown'),
+    String(req.method || 'GET'),
+    String(req.originalUrl || req.url || ''),
+    `${maxRequests}/${windowMs}ms`
+  ].join(' | ');
+
+  try {
+    fs.appendFileSync(rateLimitLogFilePath, `${entry}\n`);
+  } catch {}
+}
+
+function makeRateLimiter(maxRequests, windowMs, options = {}) {
   const hits = new Map();
+  const { bypass } = options;
 
   // Periodically prune stale entries to prevent memory leaks
   setInterval(() => {
@@ -174,6 +220,10 @@ function makeRateLimiter(maxRequests, windowMs) {
   }, windowMs);
 
   return function(req, res, next) {
+    if (typeof bypass === 'function' && bypass(req)) {
+      return next();
+    }
+
     const key = req.ip || 'unknown';
     const now = Date.now();
     const windowStart = now - windowMs;
@@ -194,6 +244,7 @@ function makeRateLimiter(maxRequests, windowMs) {
 
     // Check if limit exceeded
     if (timestamps.length > maxRequests) {
+      logRateLimitHit(req, maxRequests, windowMs);
       return res.status(429).json({ error: 'Too many requests — slow down' });
     }
 
@@ -201,11 +252,16 @@ function makeRateLimiter(maxRequests, windowMs) {
   };
 }
 
-const isProdEnv = process.env.NODE_ENV === 'production';
-const authAttemptLimiter = makeRateLimiter(isProdEnv ? 10 : 60, 60 * 1000); // login/register only
-const turnLimiter   = makeRateLimiter(300, 60 * 1000);     // 300 turn/action requests/min (5/sec)
-const generalLimiter= makeRateLimiter(500, 60 * 1000);     // 500 general requests/min
-const adminLimiter  = makeRateLimiter(isProdEnv ? 30 : 120, 60 * 1000); // strict admin limits
+const authAttemptLimiter = makeRateLimiter(rateLimitConfig.auth.max, rateLimitConfig.auth.windowMs);
+const turnLimiter = makeRateLimiter(rateLimitConfig.turn.max, rateLimitConfig.turn.windowMs);
+const generalLimiter = makeRateLimiter(rateLimitConfig.general.max, rateLimitConfig.general.windowMs, {
+  bypass: (req) => isAdminRoute(req) && isAllowedAdminIp(req)
+});
+const adminLimiter = makeRateLimiter(rateLimitConfig.admin.max, rateLimitConfig.admin.windowMs, {
+  bypass: isAllowedAdminIp
+});
+
+logRateLimitConfig();
 
 function isAuthSensitiveRoute(req) {
   if (req.method !== 'POST') return false;
@@ -219,16 +275,9 @@ function authSensitiveLimiter(req, res, next) {
 }
 
 function adminIpCheck(req, res, next) {
-  const adminIpsStr = process.env.ADMIN_ALLOWED_IPS || '';
-  if (!adminIpsStr.trim()) return next();
+  if (getAllowedAdminIps().length === 0) return next();
 
-  const allowedIps = adminIpsStr.split(',').map(ip => ip.trim()).filter(Boolean);
-  let clientIp = req.ip || req.socket?.remoteAddress || '';
-  if (clientIp.startsWith('::ffff:')) {
-    clientIp = clientIp.substring(7);
-  }
-
-  if (!allowedIps.includes(clientIp)) {
+  if (!isAllowedAdminIp(req)) {
     return res.status(403).json({ error: 'Admin access denied' });
   }
   next();
