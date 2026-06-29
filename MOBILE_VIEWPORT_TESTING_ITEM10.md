@@ -190,7 +190,6 @@ Run this command in DevTools console at 360px to find overflow elements:
 
 ```javascript
 const overflowEls = [...document.querySelectorAll('*')].filter(el => {
-  const styles = window.getComputedStyle(el);
   return el.scrollWidth > window.innerWidth;
 });
 
@@ -205,7 +204,7 @@ overflowEls.forEach(el => {
 
 For any problematic element:
 ```javascript
-el = document.querySelector('.problematic-class');
+const el = document.querySelector('.problematic-class');
 const styles = window.getComputedStyle(el);
 console.log('Width:', styles.width);
 console.log('Padding:', styles.paddingLeft, styles.paddingRight);
@@ -219,7 +218,7 @@ Verify buttons/interactive elements are at least 44x44px:
 ```javascript
 [...document.querySelectorAll('button, a, [role="button"]')].forEach(el => {
   const rect = el.getBoundingClientRect();
-  if (rect.width < 44 || rect.height < 44) {
+  if ((rect.width > 0 || rect.height > 0) && (rect.width < 44 || rect.height < 44)) {
     console.warn(`Small touch target: ${rect.width}x${rect.height}`, el);
   }
 });
@@ -290,7 +289,7 @@ Verify buttons/interactive elements are at least 44x44px:
 ## Notes
 
 - 360px is the industry standard for minimum mobile width (iPhone SE)
-- Tailwind responsive breakpoints: sm=640px, md=768px, lg=1024px (all > 360px)
+- Tailwind responsive breakpoints: xs=380px, sm=500px, md=650px, lg=768px (all > 360px)
 - Use `w-full` instead of fixed pixel widths for mobile responsiveness
 - Test on actual devices if possible (Chrome DevTools is close but not perfect)
 
