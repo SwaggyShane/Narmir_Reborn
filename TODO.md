@@ -26,7 +26,7 @@ Remote is truth for shared project state. Completed work now lives in `ARCHIVAL.
 4. ✅ Mobile and Vanilla Cleanup: Scan `public/` for inline `<script>` blocks and jQuery usage.
 5. ✅ Mobile and Vanilla Cleanup: Audit `index.html` and fallback templates for non-React entry points.
 6. ✅ Mobile and Vanilla Cleanup: Move remaining user-facing vanilla routes to React.
-7. Mobile and Vanilla Cleanup: Convert remaining vanilla form handlers to controlled components.
+7. ✅ Mobile and Vanilla Cleanup: Convert remaining vanilla form handlers to controlled components.
 8. Mobile and Vanilla Cleanup: Replace inline styles and `onclick` handlers with Tailwind and React bindings.
 9. Mobile and Vanilla Cleanup: Consolidate vanilla template CSS into one Tailwind source.
 10. Mobile and Vanilla Cleanup: Verify no horizontal scroll at 360px.
