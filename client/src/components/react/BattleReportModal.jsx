@@ -18,7 +18,7 @@ function parseDisplayNumber(value) {
   return { sign, numeric, suffix };
 }
 
-function AnimatedValue({ value, active, delay = 0 }) {
+function AnimatedValue({ value, active, delay = 0, impact = false }) {
   const nodeRef = useRef(null);
   const tweenRef = useRef(null);
   const parsed = parseDisplayNumber(value);
@@ -54,6 +54,20 @@ function AnimatedValue({ value, active, delay = 0 }) {
       },
     );
 
+    if (impact) {
+      gsap.fromTo(
+        node,
+        { scale: 0.84, rotate: -2 },
+        {
+          scale: 1,
+          rotate: 0,
+          duration: 0.34,
+          delay: delay + 0.06,
+          ease: 'back.out(2.2)',
+        },
+      );
+    }
+
     return () => {
       tweenRef.current?.kill();
       tweenRef.current = null;
@@ -63,8 +77,9 @@ function AnimatedValue({ value, active, delay = 0 }) {
   return <span ref={nodeRef}>{value}</span>;
 }
 
-function SummaryCard({ label, value, tone = 'var(--text)', delay = 0, emphasis = false }) {
+function SummaryCard({ label, value, tone = 'var(--text)', delay = 0, emphasis = false, impact = false }) {
   const cardRef = useRef(null);
+  const valueRef = useRef(null);
 
   useLayoutEffect(() => {
     const node = cardRef.current;
@@ -102,24 +117,52 @@ function SummaryCard({ label, value, tone = 'var(--text)', delay = 0, emphasis =
       gsap.set(node, { scale: 1 });
     }
 
+    if (impact && !prefersReducedMotion && valueRef.current) {
+      gsap.fromTo(
+        valueRef.current,
+        { scale: 0.82, y: 4 },
+        {
+          scale: 1,
+          y: 0,
+          duration: 0.34,
+          delay: delay + 0.08,
+          ease: 'back.out(2.4)',
+        },
+      );
+    }
+
     return () => {
       gsap.killTweensOf(node);
+      if (valueRef.current) {
+        gsap.killTweensOf(valueRef.current);
+      }
     };
-  }, [delay, emphasis]);
+  }, [delay, emphasis, impact]);
 
   return (
     <div
       ref={cardRef}
       style={{
-        background: 'var(--bg3)',
+        background: impact
+          ? 'linear-gradient(180deg, rgba(34, 12, 12, 0.95) 0%, rgba(20, 10, 10, 0.98) 100%)'
+          : 'var(--bg3)',
         borderRadius: 8,
         padding: '8px 10px',
-        borderLeft: `3px solid ${tone}`,
+        borderLeft: impact ? `4px solid ${tone}` : `3px solid ${tone}`,
+        boxShadow: impact ? '0 0 0 1px rgba(255,255,255,0.03) inset' : 'none',
       }}
     >
       <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 2 }}>{label}</div>
-      <div style={{ fontSize: 15, fontWeight: 700, color: tone }}>
-        <AnimatedValue value={value} active delay={delay + 0.05} />
+      <div
+        ref={valueRef}
+        style={{
+          fontSize: 15,
+          fontWeight: 700,
+          color: tone,
+          transformOrigin: '50% 50%',
+        }}
+      >
+        <AnimatedValue value={value} active delay={delay + 0.05} impact={impact} />
       </div>
     </div>
   );
@@ -411,10 +454,10 @@ export default function BattleReportModal({ data, onClose }) {
         {showSummary && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8, marginBottom: 14 }}>
             <div data-summary-card="true">
-              <SummaryCard label="Casualties" value={casualties} tone="var(--red)" delay={0} emphasis />
+              <SummaryCard label="Casualties" value={casualties} tone="var(--red)" delay={0} emphasis impact />
             </div>
             <div data-summary-card="true">
-              <SummaryCard label="Critical Hits" value={criticalHits} tone="var(--amber)" delay={0.04} emphasis />
+              <SummaryCard label="Critical Hits" value={criticalHits} tone="var(--amber)" delay={0.04} emphasis impact />
             </div>
             <div data-summary-card="true">
               <SummaryCard label="Killing Blows" value={criticalKills} tone="var(--green)" delay={0.08} />
