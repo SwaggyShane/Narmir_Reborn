@@ -421,9 +421,9 @@ const EconomyPanel = () => {
             </div>
             <div className="trow"><span className="name">Shortage turns</span><span className="count">{econData?.food_shortage_turns || 0}</span></div>
           </div>
-          <div className="card" style={{ margin: 0 }}>
+          <div className="card m-0">
             <div className="card-title !mb-2.5">Farm upgrades</div>
-            <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '12px' }}>
+            <div className="text-[12px] text-[var(--text3)] mb-3">
               Instant gold purchase — applies to all farms.
             </div>
             <UpgradesList
@@ -437,7 +437,7 @@ const EconomyPanel = () => {
         </div>
         <div className="card">
           <div className="card-title !mb-2">Food rules</div>
-          <div style={{ fontSize: '12px', color: 'var(--text3)', lineHeight: 1.9 }}>
+          <div className="text-[12px] text-[var(--text3)]" style={{ lineHeight: 1.9 }}>
             Each farm needs <strong style={{ color: 'var(--text)' }}>{wpf}</strong> free population to work it. Unworked farms produce nothing.<br />
             Shortage grace: <strong style={{ color: 'var(--amber)' }}>2 turns</strong> → happiness penalty → population flight → desertion.
           </div>
@@ -447,7 +447,7 @@ const EconomyPanel = () => {
       {/* GRANARY TAB */}
       <div className={clsx(activeTab === 'granary' ? 'block' : 'hidden')}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-          <div className="card" style={{ margin: 0 }}>
+          <div className="card m-0">
             <div className="card-title !mb-2.5">Storage overview</div>
             <div className="trow"><span className="name">Food stored</span><span className="count">{fmt(food || 0)} bushels</span></div>
             <div className="trow"><span className="name">Max storage</span><span className="count">{fmt(econData?.maxFoodStorage || 0)} bushels</span></div>
@@ -459,9 +459,9 @@ const EconomyPanel = () => {
             </div>
             <div className="trow"><span className="name">Time to degrade</span><span className="count" style={{ color: dtColor }}>{dtLabel}</span></div>
           </div>
-          <div className="card" style={{ margin: 0 }}>
+          <div className="card m-0">
             <div className="card-title !mb-2.5">Granary upgrades</div>
-            <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '12px' }}>
+            <div className="text-[12px] text-[var(--text3)] mb-3">
               Enhances granaries to store more food and reduce rot.
             </div>
             <UpgradesList
@@ -487,7 +487,7 @@ const EconomyPanel = () => {
       {/* MARKETS TAB */}
       <div className={clsx(activeTab === 'markets' ? 'block' : 'hidden')}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-          <div className="card" style={{ margin: 0 }}>
+          <div className="card m-0">
             <div className="card-title !mb-2.5">Market overview</div>
             <div className="trow"><span className="name">Markets</span><span className="count">{fmt(bldMarkets || 0)}</span></div>
             <div className="trow"><span className="name">Market income/turn</span><span className="count" style={{ color: 'var(--gold)' }}>{fmt(econData?.marketIncome || 0)} GC</span></div>
@@ -499,7 +499,7 @@ const EconomyPanel = () => {
               </span>
             </div>
           </div>
-          <div className="card" style={{ margin: 0 }}>
+          <div className="card m-0">
             <div className="card-title !mb-2.5">Market upgrades</div>
             <UpgradesList
               category="market"
@@ -514,7 +514,7 @@ const EconomyPanel = () => {
         {/* Commodity market */}
         <div className="card" id="commodity-market-card">
           <div className="card-title !mb-2">📦 Commodity market</div>
-          <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '12px' }}>
+          <div className="text-[12px] text-[var(--text3)] mb-3">
             Base prices - your race modifiers applied - prices fluctuate by supply
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 60px 60px', gap: '4px', padding: '4px 0', borderBottom: '1px solid var(--border2)' }}>
@@ -548,7 +548,7 @@ const EconomyPanel = () => {
           ) : (
             <div>
               <div style={{ marginBottom: '14px' }}>
-                <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text2)', marginBottom: '8px' }}>Send a trade offer</div>
+                <div className="text-[12px] font-bold text-[var(--text2)] mb-2">Send a trade offer</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '10px' }}>
                   <div>
                     <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '4px' }}>I offer</div>
@@ -641,11 +641,11 @@ const EconomyPanel = () => {
       {/* TAVERN TAB */}
       <div className={clsx(activeTab === 'tavern' ? 'block' : 'hidden')}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-          <div className="card" style={{ margin: 0 }}>
+          <div className="card m-0">
             <div className="card-title !mb-2.5">Tavern overview</div>
             <div className="trow"><span className="name">Taverns</span><span className="count">{fmt(bldTaverns || 0)}</span></div>
           </div>
-          <div className="card" style={{ margin: 0 }}>
+          <div className="card m-0">
             <div className="card-title !mb-2.5">Tavern upgrades</div>
             <UpgradesList
               category="tavern"
@@ -683,7 +683,7 @@ const EconomyPanel = () => {
               <input type="number" className="input" min="1" value={mercCount} onChange={(e) => setMercCount(e.target.value)} style={{ textAlign: 'right', width: '100%', flex: 1 }} placeholder="Qty" />
               <button className="base-btn" style={{ fontSize: '10px', padding: '3px 6px' }} onClick={setMaxMercCount}>Max</button>
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--text3)' }}>{mercPreview}</div>
+            <div className="text-[11px] text-[var(--text3)]">{mercPreview}</div>
             <div className="merc-btn-col">
               <button className="base-btn variant-amber w-full" style={{ background: '#d97706', color: '#fff', width: '100%' }} onClick={handleHireMercs}>Hire</button>
             </div>
@@ -699,7 +699,7 @@ const EconomyPanel = () => {
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: '13px', color: 'var(--text)', fontWeight: 600 }}>{m.count} {m.tier} {m.unit_type}</div>
-                  <div style={{ fontSize: '11px', color: 'var(--text3)' }}>Remaining: {remaining} turns</div>
+                  <div className="text-[11px] text-[var(--text3)]">Remaining: {remaining} turns</div>
                 </div>
               </div>
             );
@@ -716,7 +716,7 @@ const EconomyPanel = () => {
         </div>
         <div id="bank-content" style={{ display: (vaults || 0) >= 25 ? 'block' : 'none' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-            <div className="card" style={{ margin: 0 }}>
+            <div className="card m-0">
               <div className="card-title !mb-2.5">Fixed-Term Deposits</div>
               <div style={{ color: 'var(--text3)', fontSize: '12px', marginBottom: '12px' }}>
                 Deposit your gold to earn a guaranteed return over time. You cannot withdraw early.
@@ -735,7 +735,7 @@ const EconomyPanel = () => {
                 Deposit Gold
               </button>
             </div>
-            <div className="card" style={{ margin: 0 }}>
+            <div className="card m-0">
               <div className="card-title !mb-2.5">Bank Upgrades</div>
               <UpgradesList
                 category="bank"
@@ -746,7 +746,7 @@ const EconomyPanel = () => {
               />
             </div>
           </div>
-          <div className="card" style={{ margin: 0 }}>
+          <div className="card m-0">
             <div className="card-title !mb-2.5">Active Deposits</div>
             <div id="bank-deposits-list"></div>
           </div>
@@ -757,7 +757,7 @@ const EconomyPanel = () => {
       <div className={clsx(activeTab === 'trade-routes' ? 'block' : 'hidden')}>
         <div className="card" style={{ marginTop: 0, marginBottom: '20px' }}>
           <div className="card-title !mb-2.5">Establish New Route</div>
-          <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '12px' }}>
+          <div className="text-[12px] text-[var(--text3)] mb-3">
             Requires: 10,000 GC. Permanent routes provide steady income and improve with stability.
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -786,10 +786,10 @@ const EconomyPanel = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <div style={{ fontWeight: 700, color: 'var(--gold)' }}>🤝 {r.partner_name}</div>
-                  <div style={{ fontSize: '11px', color: 'var(--text3)' }}>{String(r.partner_race || 'unknown').replace(/_/g, ' ')} - {fmtShort(r.partner_land)} acres</div>
+                  <div className="text-[11px] text-[var(--text3)]">{String(r.partner_race || 'unknown').replace(/_/g, ' ')} - {fmtShort(r.partner_land)} acres</div>
                 </div>
                 <div style={{ textAlign: 'right', margin: '0 16px' }}>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--green)' }}>+{fmtShort(Math.floor((r.stability || 0) * 2.5))} GC / turn</div>
+                  <div className="text-[14px] font-bold text-[var(--green)]">+{fmtShort(Math.floor((r.stability || 0) * 2.5))} GC / turn</div>
                   <div style={{ fontSize: '10px', color: 'var(--text3)' }}>Stability: {r.stability}%</div>
                 </div>
                 <button className="btn btn-red" style={{ fontSize: '11px', padding: '4px 8px' }} onClick={() => handleCancelTradeRoute(r.id)}>Cancel</button>
