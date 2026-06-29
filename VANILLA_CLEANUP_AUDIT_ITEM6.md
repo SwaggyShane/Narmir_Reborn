@@ -56,11 +56,13 @@ All POST/PUT/DELETE routes:
 - ✅ Use `/api/*` endpoint convention
 - ✅ No HTML form handlers
 
-Express middleware confirms JSON-only:
+Express middleware configuration (index.js lines 122-123):
 ```javascript
-app.use(express.json());  // ← JSON parsing only
-// No: app.use(express.urlencoded()) ← Not present
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 ```
+
+**Note:** While `express.urlencoded()` middleware is configured, it's not used by active client code (all forms submit JSON via `apiCall()`). The middleware is present for backward compatibility and safety in case form-encoded data is submitted.
 
 ---
 
