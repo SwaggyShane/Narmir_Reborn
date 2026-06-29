@@ -6,7 +6,6 @@ import { repairMojibake } from '../../utils/repairMojibake';
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import { AppEvent } from '../../utils/appEvents.js';
 import { useAppEvent } from '../../hooks/useAppEvent.js';
-import { useGameMutationEvents } from '../../hooks/useGameState';
 import { useEconomyStore, useProfileStore, useMilitaryStore, useResearchStore, usePopulationStore } from '../../stores';
 import EmptyState from './EmptyState.jsx';
 
@@ -72,7 +71,6 @@ const ExplorationPanel = () => {
   const fighters = useMilitaryStore((state) => state.troops.fighters);
   const food = useEconomyStore((state) => state.food);
   const turns_stored = useProfileStore((state) => state.turns_stored);
-  useGameMutationEvents();
 
   const syncKingdomData = useCallback((kingdomData) => {
     if (!kingdomData || Object.keys(kingdomData).length === 0) return;
@@ -127,24 +125,7 @@ const ExplorationPanel = () => {
     return () => clearInterval(refreshTimer);
   }, [refreshAll]);
 
-  useGameMutationEvents(
-    useCallback((event) => {
-      if (!event?.reason) return;
-      const reason = String(event.reason);
-      if (
-        reason === 'turn' ||
-        reason === 'search' ||
-        reason === 'expedition-start' ||
-        reason === 'expedition-complete' ||
-        reason === 'expedition-cancel' ||
-        reason === 'kingdom-refresh' ||
-        reason === 'apply-server-updates' ||
-        reason.startsWith('expedition')
-      ) {
-        void refreshAll();
-      }
-    }, [refreshAll]),
-  );
+  // Exploration data refreshes automatically on interval and component mount
 
   const inventoryCount = Object.keys(inventory).length;
   const availableRangers = Number(rangers || 0);

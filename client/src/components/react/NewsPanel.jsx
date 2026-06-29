@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
-import { useGameMutationEvents } from '../../hooks/useGameState';
-import { useTurn } from '../../stores';
+import { useTurn, useEconomyStore } from '../../stores';
 import { AppEvent, emitAppEvent } from '../../utils/appEvents.js';
 import { useAppEvent } from '../../hooks/useAppEvent.js';
 import { replayWarReport, registerReplayModal } from '../../utils/replayWarReport';
@@ -168,23 +167,14 @@ const NewsPanel = () => {
 
   useAppEvent(AppEvent.NEWS_ITEMS, handleNewsItems);
 
-  useGameMutationEvents((event) => {
-    const reason = String(event?.reason || '');
-    if ([
-      'turn',
-      'attack',
-      'spell',
-      'covert',
-      'expedition-start',
-      'expedition-complete',
-      'expedition-cancel',
-      'kingdom-refresh',
-      'server-updates',
-      'mutation',
-    ].includes(reason)) {
-      loadNews();
-    }
-  });
+  // Subscribe to turn changes to reload news (triggers on server updates)
+  useEffect(() => {
+    const unsubscribe = useEconomyStore.subscribe(
+      (state) => state.gold, // Subscribe to any economy changes
+      () => loadNews()
+    );
+    return unsubscribe;
+  }, []);
 
   useAppEvent(AppEvent.NEWS_REFRESH, loadNews);
 

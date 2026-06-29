@@ -1,5 +1,4 @@
 import React, { useEffect, useCallback } from 'react';
-import { useGameMutationEvents } from '../../hooks/useGameState';
 import { useHappiness, usePopulationStore } from '../../stores';
 
 const HappinessWidget = ({ onOpenTab }) => {
@@ -23,14 +22,15 @@ const HappinessWidget = ({ onOpenTab }) => {
 
   useEffect(() => {
     fetchHappinessData();
-  }, [fetchHappinessData]);
 
-  useGameMutationEvents(useCallback((event) => {
-    const reason = String(event?.reason || '');
-    if (['turn', 'kingdom-refresh', 'server-updates', 'mutation'].includes(reason)) {
-      fetchHappinessData();
-    }
-  }, [fetchHappinessData]));
+    // Subscribe to population store changes (refreshes on server updates)
+    const unsubscribe = usePopulationStore.subscribe(
+      (state) => state.population,
+      () => fetchHappinessData()
+    );
+
+    return unsubscribe;
+  }, [fetchHappinessData]);
 
   const getHappinessColor = (value) => {
     if (value >= 80) return 'var(--green)';

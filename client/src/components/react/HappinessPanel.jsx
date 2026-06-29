@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import clsx from 'clsx';
 import HappinessGraph from './HappinessGraph';
-import { useGameMutationEvents } from '../../hooks/useGameState';
-import { useHappiness } from '../../stores';
+import { useHappiness, usePopulationStore } from '../../stores';
 
 const DEFAULT_COMPONENTS = {
   base: 50,
@@ -60,14 +59,15 @@ const HappinessPanel = () => {
 
   useEffect(() => {
     fetchHappinessData();
-  }, []);
 
-  useGameMutationEvents(useCallback((event) => {
-    const reason = String(event?.reason || '');
-    if (['turn', 'kingdom-refresh', 'server-updates', 'mutation'].includes(reason)) {
-      fetchHappinessData();
-    }
-  }, []));
+    // Subscribe to population store changes (refreshes on server updates)
+    const unsubscribe = usePopulationStore.subscribe(
+      (state) => state.population,
+      () => fetchHappinessData()
+    );
+
+    return unsubscribe;
+  }, []);
 
   const getComponentEmoji = (name) => {
     const emojis = {

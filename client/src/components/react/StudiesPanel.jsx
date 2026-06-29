@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import clsx from 'clsx';
-import { useGameMutationEvents } from '../../hooks/useGameState';
 import { useStudiesData } from '../../hooks/useStudiesData';
 import {
   useRace,
@@ -23,7 +22,6 @@ import { ShrineTab } from './StudiesTabs/ShrineTab.jsx';
 import { LibraryTab } from './StudiesTabs/LibraryTab.jsx';
 
 const StudiesPanel = () => {
-  useGameMutationEvents();
   const [activeTab, setActiveTab] = useState('tower');
   const [mageSpellbookValue, setMageSpellbookValue] = useState(0);
   const [mageSchoolValue, setMageSchoolValue] = useState(0);
@@ -46,11 +44,7 @@ const StudiesPanel = () => {
   const resWarMachines = useResWarMachines();
   const resSpellbook = useResSpellbook();
 
-  useGameMutationEvents(useCallback((event) => {
-    if (String(event?.reason || '') === 'economy-upgrade') {
-      fetchStudiesData();
-    }
-  }, [fetchStudiesData]));
+  // No GameStateManager dependency - studies data fetches on component mount
 
   const handleTabUpgraded = useCallback((category, nextOwned) => {
     syncUpgrades(category, nextOwned);

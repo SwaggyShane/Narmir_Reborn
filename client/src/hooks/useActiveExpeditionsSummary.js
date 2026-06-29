@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
 import { apiCall } from '../utils/api';
-import { useGameMutationEvents } from './useGameState.js';
 
 export function useActiveExpeditionsSummary() {
   const [active, setActive] = useState([]);
@@ -17,22 +16,10 @@ export function useActiveExpeditionsSummary() {
 
   useEffect(() => {
     void refresh();
+    // Periodically refresh expedition status
+    const interval = setInterval(() => void refresh(), 30000);
+    return () => clearInterval(interval);
   }, [refresh]);
-
-  useGameMutationEvents(
-    useCallback((event) => {
-      const reason = String(event?.reason || '');
-      if (
-        reason === 'turn' ||
-        reason === 'expedition-start' ||
-        reason === 'expedition-complete' ||
-        reason === 'expedition-cancel' ||
-        reason.startsWith('expedition')
-      ) {
-        void refresh();
-      }
-    }, [refresh]),
-  );
 
   return active;
 }

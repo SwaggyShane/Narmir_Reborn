@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
-import { useGameMutationEvents } from '../../hooks/useGameState';
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import {
   useTax,
@@ -23,6 +22,7 @@ import {
   useStone,
   useIron,
   useMaps,
+  useEconomyStore,
 } from '../../stores';
 
 import { fmt } from '../../utils/fmt.js';
@@ -134,15 +134,14 @@ const EconomyPanel = () => {
     else if (activeTab === 'trade-routes') loadTradeRoutes();
   }, [activeTab, loadTradeOffers, loadTradeRoutes]);
 
-  useGameMutationEvents(useCallback((event) => {
-    const reason = String(event?.reason || '');
-    if (['turn', 'economy-upgrade', 'hire-mercs', 'bank-deposit', 'kingdom-refresh', 'mutation'].includes(reason)) {
-      loadEconData();
-    }
-    if (['accept-trade', 'decline-trade'].includes(reason)) {
-      loadTradeOffers();
-    }
-  }, [loadEconData, loadTradeOffers]));
+  // Subscribe to economy store changes to reload data on server updates
+  useEffect(() => {
+    const unsubscribe = useEconomyStore.subscribe(
+      (state) => state.gold,
+      () => loadEconData()
+    );
+    return unsubscribe;
+  }, [loadEconData]);
 
   const handleLockTax = useCallback(async () => {
     const tax = Number(taxValue);

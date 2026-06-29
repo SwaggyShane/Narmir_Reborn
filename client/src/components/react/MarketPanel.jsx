@@ -1,7 +1,6 @@
 ﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import clsx from 'clsx';
 import { apiCall } from '../../utils/api';
-import { useGameMutationEvents } from '../../hooks/useGameState';
 import { fmt } from "../../utils/fmt";
 import { applyGameMutation } from '../../utils/gameMutations.js';
 
@@ -187,8 +186,6 @@ const MarketPanel = () => {
   useEffect(() => {
     void refreshMarket();
   }, [refreshMarket]);
-
-  useGameMutationEvents(onMutation);
 
   const marketTrade = async (resource, op) => {
     const qtyStr = quantities[resource];

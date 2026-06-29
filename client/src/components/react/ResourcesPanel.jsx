@@ -2,7 +2,6 @@ import clsx from 'clsx';
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiCall } from '../../utils/api';
 import { useActivePanel } from '../../hooks/useActivePanel';
-import { useGameState } from '../../hooks/useGameState';
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import { dispatchExpeditionLogEntry } from '../../utils/expeditionLog.js';
 import { useRace } from '../../stores';
@@ -113,9 +112,8 @@ const ResourcesPanel = () => {
   const [now, setNow] = useState(Math.floor(Date.now() / 1000));
   const [engineerAllocations, setEngineerAllocations] = useState({});
   const { activePanel } = useActivePanel();
-  const { state } = useGameState();
   const race = useRace();
-  currentResourcesState = state || {};
+  // Resources state is managed through API calls and local React state
 
   const syncFromState = useCallback(() => {
     const s = getState();

@@ -4,7 +4,6 @@ import { apiCall } from '../../utils/api';
 import { fmt } from "../../utils/fmt";
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import { toast } from '../../utils/toast.js';
-import { useGameMutationEvents } from '../../hooks/useGameState';
 import {
   useRace,
   useGold,
@@ -33,7 +32,6 @@ const DefensePanel = () => {
   const stone = useStone();
   const iron = useIron();
   const vaults = useBuildCount('vaults');
-  useGameMutationEvents();
   const [upgradeOwned, setUpgradeOwned] = useState({
     wall: {},
     tower_def: {},
@@ -153,11 +151,7 @@ const DefensePanel = () => {
     bld_vaults: vaults,
   };
 
-  useGameMutationEvents(useCallback((event) => {
-    if (String(event?.reason || '') === 'economy-upgrade') {
-      refreshDefense();
-    }
-  }, [refreshDefense]));
+  // Defense data refreshes on component mount, no GameStateManager dependency
 
   return (
     <div id="defense" className="panel">
