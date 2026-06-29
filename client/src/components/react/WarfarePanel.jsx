@@ -199,15 +199,6 @@ function TargetListSection({ targets, selected, onSelect, searchQ, onSearchChang
   );
 }
 
-// ─── utility functions ────────────────────────────────────────────────────────
-
-function getOutcomeColor(outcome) {
-  const normalized = String(outcome || '').toLowerCase();
-  if (normalized.includes('victory') || normalized.includes('won')) return 'var(--green)';
-  if (normalized.includes('defeat') || normalized.includes('lost')) return 'var(--red)';
-  return 'var(--text2)';
-}
-
 // ─── main component ───────────────────────────────────────────────────────────
 
 const WarfarePanel = () => {
@@ -877,7 +868,7 @@ const WarfarePanel = () => {
               <div className="mt-3 pt-3 border-t border-[var(--border)] text-[13px]">
                 <div className="flex justify-between mb-1">
                   <span className="text-[var(--text3)]">Est. Attack Power</span>
-                  <span className={clsx(atkEstimate.winPct >= 50 ? 'text-green-500' : 'text-amber-500')}>{fmt(atkEstimate.atkPower)}</span>
+                  <span className={atkEstimate.winPct >= 50 ? 'text-[var(--green)]' : 'text-[var(--orange)]'}>{fmt(atkEstimate.atkPower)}</span>
                 </div>
                 <div className="flex justify-between mb-1">
                   <span className="text-[var(--text3)]">Est. Enemy Defense</span>
