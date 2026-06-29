@@ -6,7 +6,7 @@ const config = require('./config');
 const fragmentBonusManager = require('./fragment-bonus-manager');
 const { safeJsonParse, devLog } = require('../utils/helpers');
 const { diluteTroopXp, unitLevelMult } = require('./lib/troops');
-const { getCap } = require('./turn');
+const { getCap } = require('./lib/data-transformations');
 const { researchIncrement } = require('./population');
 
 const {
