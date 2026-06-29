@@ -65,10 +65,20 @@ Local development uses HTTP (NODE_ENV != production):
 - No HSTS header
 - Simpler development setup
 
-To test HTTPS locally:
+**Note:** The Node.js server only listens on HTTP. For TLS/SSL testing locally, use a reverse proxy:
+- Caddy (simple, auto-HTTPS)
+- Nginx (lightweight)
+- ngrok (tunneling with HTTPS)
+
+Example with Caddy:
 ```bash
-NODE_ENV=production npm start
-# Will require HTTPS or handle redirects
+# Create Caddyfile
+echo "localhost:3001 { reverse_proxy localhost:3000 }" > Caddyfile
+
+# Run Caddy
+caddy run
+
+# Now access https://localhost:3001 (Caddy provides TLS)
 ```
 
 ## Security Headers Summary
@@ -150,7 +160,7 @@ const url = 'https://api.example.com/resource';
 
 **Local development:**
 1. Set NODE_ENV to "development" (HTTP OK)
-2. Or accept the self-signed certificate warning
+2. To test production HTTPS behavior locally, use a local reverse proxy (such as Caddy, Nginx, or ngrok) to handle TLS termination, as the Node.js server itself only listens on HTTP.
 
 ### HSTS Errors
 
