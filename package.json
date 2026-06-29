@@ -21,7 +21,8 @@
     "series:combat-v2-broad": "node test-combat-harness/v2-broad-series-runner.js",
     "overnight:combat-v2": "node test-combat-harness/v2-overnight-balance-log.js",
     "load-test": "node tools/load-tester/load-test.js",
-    "load-test:websocket": "node tools/load-tester/websocket-tester.js"
+    "load-test:websocket": "node tools/load-tester/websocket-tester.js",
+    "load-test:tokens": "node scripts/generate-load-test-tokens.js"
   },
   "engines": {
     "node": "^20.19.0 || ^22.13.0 || >=24",
@@ -65,6 +66,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
+    "artillery": "^2.0.33",
     "eslint": "^10.2.1",
     "globals": "^15.0.0",
     "jsdom": "^29.1.1",
