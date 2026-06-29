@@ -24,17 +24,17 @@ Remote is truth for shared project state. Completed work now lives in `ARCHIVAL.
 1. [done] Battle Outcome Animation: Animate casualty and critical hit counters.
 2. [done] Battle Outcome Animation: Animate HP, wall, or power bars when results are shown.
 3. [done] Battle Outcome Animation: Keep combat resolution deterministic and presentation-only.
-4. Mobile and Vanilla Cleanup: Scan `public/` for inline `<script>` blocks and jQuery usage.
-5. Mobile and Vanilla Cleanup: Audit `index.html` and fallback templates for non-React entry points.
-6. Mobile and Vanilla Cleanup: Move remaining user-facing vanilla routes to React.
-7. Mobile and Vanilla Cleanup: Convert remaining vanilla form handlers to controlled components.
-8. Mobile and Vanilla Cleanup: Replace inline styles and `onclick` handlers with Tailwind and React bindings.
-9. Mobile and Vanilla Cleanup: Consolidate vanilla template CSS into one Tailwind source.
-10. Mobile and Vanilla Cleanup: Verify no horizontal scroll at 360px.
-11. Mobile and Vanilla Cleanup: Keep bottom nav visible without overlap.
-12. Mobile and Vanilla Cleanup: Preserve natural header scrolling.
-13. Mobile and Vanilla Cleanup: Enforce responsive breakpoints and 44x44 touch targets.
-14. Mobile and Vanilla Cleanup: Prevent layout shifts when nav appears or disappears.
+4. [done] Mobile and Vanilla Cleanup: Scan `public/` for inline `<script>` blocks and jQuery usage.
+5. [done] Mobile and Vanilla Cleanup: Audit `index.html` and fallback templates for non-React entry points.
+6. [done] Mobile and Vanilla Cleanup: Move remaining user-facing vanilla routes to React.
+7. [done] Mobile and Vanilla Cleanup: Convert remaining vanilla form handlers to controlled components.
+8. [done] Mobile and Vanilla Cleanup: Replace inline styles and `onclick` handlers with Tailwind and React bindings.
+9. [done] Mobile and Vanilla Cleanup: Consolidate vanilla template CSS into one Tailwind source.
+10. [done] Mobile and Vanilla Cleanup: Verify no horizontal scroll at 360px.
+11. [done] Mobile and Vanilla Cleanup: Keep bottom nav visible without overlap.
+12. [done] Mobile and Vanilla Cleanup: Preserve natural header scrolling.
+13. [done] Mobile and Vanilla Cleanup: Enforce responsive breakpoints and 44x44 touch targets.
+14. [done] Mobile and Vanilla Cleanup: Prevent layout shifts when nav appears or disappears.
 15. Beta Architecture Debt: Remove remaining GameStateManager bridge hooks after full Zustand coverage.
 16. [done] Beta Architecture Debt: Enforce Tailwind-only defaults for static styling.
 17. [done] Beta Architecture Debt: Remove legacy admin compatibility routes from `index.js`.
