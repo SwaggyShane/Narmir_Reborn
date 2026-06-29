@@ -2030,6 +2030,18 @@ module.exports = function (db, io) {
     }
   });
 
+  router.get("/audit-history", async (_req, res) => {
+    try {
+      const history = await db.all(
+        "SELECT * FROM audit_history ORDER BY run_at DESC LIMIT 50"
+      );
+      res.json({ success: true, history });
+    } catch (err) {
+      console.error("[admin] Audit history fetch error:", err);
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
   return router;
 };
 
