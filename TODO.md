@@ -39,8 +39,12 @@ Remote is truth for shared project state. Completed work now lives in `ARCHIVAL.
 8. Mobile and Vanilla Cleanup: Replace inline styles and `onclick` handlers with Tailwind and React bindings.
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 2c39d329 (docs: Update TODO — Mark Items 6-7 complete)
 9. Mobile and Vanilla Cleanup: Consolidate vanilla template CSS into one Tailwind source.
+=======
+9. [done] Mobile and Vanilla Cleanup: Consolidate vanilla template CSS into one Tailwind source.
+>>>>>>> fb3f81e0 (docs: Update TODO — Mark Item 9 complete)
 =======
 9. [done] Mobile and Vanilla Cleanup: Consolidate vanilla template CSS into one Tailwind source.
 >>>>>>> fb3f81e0 (docs: Update TODO — Mark Item 9 complete)
@@ -60,6 +64,7 @@ Remote is truth for shared project state. Completed work now lives in `ARCHIVAL.
 20. Beta Architecture Debt: Investigate `/expedition` and `/turn` query performance.
 21. [done] Beta Architecture Debt: Clean up duplicate happiness logic and related code-quality debt.
 22. Beta Architecture Debt: Decide whether Discord.js v15 migration is still needed before beta.
+
 
 
 
