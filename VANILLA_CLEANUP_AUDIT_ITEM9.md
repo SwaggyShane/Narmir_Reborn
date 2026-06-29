@@ -69,7 +69,7 @@ The codebase uses a single primary Tailwind CSS source (`tailwind.css`) with com
 
 **Organization:** Not redundant with `tailwind.css`; uses theme variables from root
 
-**Pattern:** Imported only in `splash-main.jsx`
+**Pattern:** Imported only in `Splash.jsx` (component)
 
 **Status:** ✅ Appropriate separation (splash is distinct visual experience)
 
