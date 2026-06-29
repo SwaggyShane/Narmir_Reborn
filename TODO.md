@@ -61,7 +61,7 @@ Remote is truth for shared project state. Completed work now lives in `ARCHIVAL.
 14. ✅ Production Maintenance: Load test for 5,000+ concurrent players.
 15. ✅ Production Maintenance: Verify backup and restore workflow.
 16. ✅ Production Maintenance: Configure API rate limiting.
-17. Production Maintenance: Add monitoring and alerting.
+17. ✅ Production Maintenance: Add monitoring and alerting.
 18. Production Maintenance: Refresh user-facing docs.
 19. Production Maintenance: Prepare the support runbook.
 20. Production Maintenance: Confirm production database URL and automated backups.
