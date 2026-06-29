@@ -19,7 +19,9 @@
     "sweep:combat-v2-dwarf": "node test-combat-harness/v2-dwarf-war-machine-sweep.js",
     "sweep:combat-v2-broad": "node test-combat-harness/v2-broad-balance-sweep.js",
     "series:combat-v2-broad": "node test-combat-harness/v2-broad-series-runner.js",
-    "overnight:combat-v2": "node test-combat-harness/v2-overnight-balance-log.js"
+    "overnight:combat-v2": "node test-combat-harness/v2-overnight-balance-log.js",
+    "load-test": "node tools/load-tester/load-test.js",
+    "load-test:websocket": "node tools/load-tester/websocket-tester.js"
   },
   "engines": {
     "node": "^20.19.0 || ^22.13.0 || >=24",
