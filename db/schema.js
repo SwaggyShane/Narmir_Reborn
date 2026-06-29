@@ -2099,6 +2099,38 @@ async function initDb(options = {}) {
     CREATE INDEX IF NOT EXISTS idx_synergy_cooldowns_until ON synergy_cooldowns(cooldown_until);
   `);
 
+  // Audit scheduling tables
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS audit_schedules (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      created_by    INTEGER NOT NULL REFERENCES players(id),
+      frequency     TEXT NOT NULL DEFAULT 'weekly',
+      is_enabled    INTEGER NOT NULL DEFAULT 1,
+      next_run_at   INTEGER,
+      last_run_at   INTEGER,
+      created_at    INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at    INTEGER NOT NULL DEFAULT (unixepoch())
+    )
+  `);
+
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS audit_history (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      schedule_id   INTEGER REFERENCES audit_schedules(id),
+      run_at        INTEGER NOT NULL,
+      status        TEXT NOT NULL DEFAULT 'success',
+      findings_count INTEGER NOT NULL DEFAULT 0,
+      findings      TEXT,
+      error_message TEXT,
+      duration_ms   INTEGER,
+      created_at    INTEGER NOT NULL DEFAULT (unixepoch())
+    )
+  `);
+
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_audit_schedules_enabled ON audit_schedules(is_enabled, next_run_at)`);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_audit_history_schedule ON audit_history(schedule_id, run_at DESC)`);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_audit_history_status ON audit_history(status, created_at DESC)`);
+
   try {
     const { seedForumStructure } = require('../lib/forum-seed');
     await seedForumStructure(_db);

@@ -289,6 +289,145 @@ class ASTAnalyzer {
 
     return results;
   }
+
+  // Recursively scan entire codebase, excluding build artifacts and dependencies
+  // Non-blocking async scan to prevent event loop blocking
+  async recursiveScanCodebase() {
+    const results = {};
+    const excludeDirs = new Set([
+      'node_modules', '.git', '.vscode', '.idea', 'dist', 'build',
+      'coverage', '.next', 'out', '.cache', 'temp', 'tmp', '.env.local',
+      'public/assets', '.claude'
+    ]);
+
+    const isJavaScriptFile = (filePath) => {
+      const validExts = ['.js', '.jsx', '.mjs', '.cjs'];
+      return validExts.includes(path.extname(filePath));
+    };
+
+    const shouldSkipDir = (dirName) => {
+      return excludeDirs.has(dirName) || dirName.startsWith('.');
+    };
+
+    let fileCount = 0;
+    const walkDirectory = async (dir) => {
+      try {
+        const entries = fs.readdirSync(dir, { withFileTypes: true });
+
+        for (const entry of entries) {
+          // Yield to event loop periodically to prevent blocking
+          if (fileCount % 10 === 0) {
+            await new Promise(resolve => setImmediate(resolve));
+          }
+
+          const fullPath = path.join(dir, entry.name);
+          const relPath = path.relative(this.projectRoot, fullPath);
+
+          if (entry.isDirectory()) {
+            if (!shouldSkipDir(entry.name)) {
+              await walkDirectory(fullPath);
+            }
+          } else if (isJavaScriptFile(fullPath)) {
+            try {
+              const analysis = this.analyzeFile(fullPath);
+              if (analysis) {
+                results[relPath] = analysis;
+              }
+              fileCount++;
+            } catch (err) {
+              console.error(`[WARNING] Failed to analyze ${relPath}: ${err.message}`);
+            }
+          }
+        }
+      } catch (err) {
+        console.error(`[ERROR] Failed to scan directory ${dir}: ${err.message}`);
+      }
+    };
+
+    await walkDirectory(this.projectRoot);
+    return results;
+  }
+
+  // Get summary statistics of audit findings (middleware checks only on entry points)
+  getAuditStats(results) {
+    const stats = {
+      totalFiles: Object.keys(results).length,
+      filesWithIssues: 0,
+      findings: {
+        critical: 0,
+        high: 0,
+        medium: 0,
+        low: 0,
+        info: 0
+      },
+      issuesByType: {},
+      filesByStatus: {
+        clean: 0,
+        hasWarnings: 0,
+        hasCritical: 0
+      }
+    };
+
+    const entryPointFiles = new Set(['index.js', 'app.js', 'server.js', 'routes/admin.js']);
+
+    for (const [file, analysis] of Object.entries(results)) {
+      if (!analysis) continue;
+
+      let fileHasCritical = false;
+      let fileHasWarning = false;
+
+      // Count security issues (checked in all files)
+      const securityIssues = [
+        ...analysis.security.sqlInjection,
+        ...analysis.security.hardcodedSecrets,
+        ...analysis.security.errorHandling
+      ];
+
+      for (const issue of securityIssues) {
+        const severity = issue.severity?.toLowerCase() || 'medium';
+        stats.findings[severity] = (stats.findings[severity] || 0) + 1;
+        stats.issuesByType[issue.type] = (stats.issuesByType[issue.type] || 0) + 1;
+
+        if (severity === 'critical') fileHasCritical = true;
+        if (severity === 'high' || severity === 'medium') fileHasWarning = true;
+      }
+
+      // Count middleware issues only on entry points to avoid false positives
+      const isEntryPoint = entryPointFiles.has(file) || file.endsWith('index.js');
+      if (isEntryPoint) {
+        if (!analysis.middleware.helmet.found) {
+          stats.findings.high += 1;
+          stats.issuesByType['MISSING_HELMET'] = (stats.issuesByType['MISSING_HELMET'] || 0) + 1;
+          fileHasWarning = true;
+        }
+
+        if (!analysis.middleware.rateLimit.found) {
+          stats.findings.high += 1;
+          stats.issuesByType['MISSING_RATE_LIMIT'] = (stats.issuesByType['MISSING_RATE_LIMIT'] || 0) + 1;
+          fileHasWarning = true;
+        }
+
+        if (!analysis.middleware.cors.found) {
+          stats.findings.medium += 1;
+          stats.issuesByType['MISSING_CORS'] = (stats.issuesByType['MISSING_CORS'] || 0) + 1;
+          fileHasWarning = true;
+        }
+      }
+
+      // Track file status
+      if (securityIssues.length === 0 && (isEntryPoint ? analysis.middleware.helmet.found : true)) {
+        stats.filesByStatus.clean += 1;
+      } else if (fileHasCritical) {
+        stats.filesWithIssues += 1;
+        stats.filesByStatus.hasCritical += 1;
+      } else if (fileHasWarning) {
+        stats.filesWithIssues += 1;
+        stats.filesByStatus.hasWarnings += 1;
+      }
+    }
+
+    return stats;
+  }
 }
 
 module.exports = ASTAnalyzer;
