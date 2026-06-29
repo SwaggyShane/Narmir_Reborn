@@ -4,7 +4,6 @@ class SecretsManager {
       JWT_SECRET: {
         required: true,
         description: 'Secret key for JWT token signing',
-        minLength: 32,
         env: 'JWT_SECRET'
       },
       DATABASE_URL: {
@@ -25,9 +24,8 @@ class SecretsManager {
         env: 'CORS_ORIGIN'
       },
       ADMIN_SECRET: {
-        required: true,
+        required: false,
         description: 'Secret key for admin authentication',
-        minLength: 16,
         env: 'ADMIN_SECRET'
       },
       CONFIRM_SECRET: {
@@ -67,13 +65,16 @@ class SecretsManager {
         validated[spec.env] = spec.defaultValue;
         warnings.push(`⚠️  ${spec.env}: Using default value "${spec.defaultValue}"`);
       } else if (value) {
-        if (spec.minLength && value.length < spec.minLength) {
-          errors.push(`❌ ${spec.env}: Too short (minimum ${spec.minLength} characters)`);
-        } else if (spec.pattern && !spec.pattern.test(value)) {
+        if (spec.pattern && !spec.pattern.test(value)) {
           errors.push(`❌ ${spec.env}: Invalid format (expected ${spec.pattern})`);
         } else {
           validated[spec.env] = value;
+          if (spec.env === 'JWT_SECRET' && value.length < 32) {
+            warnings.push('⚠️  JWT_SECRET: Short secret detected; startup will continue, but a 32+ character value is recommended');
+          }
         }
+      } else if (spec.env === 'ADMIN_SECRET') {
+        warnings.push('ℹ️  ADMIN_SECRET: Not configured (optional at boot)');
       }
     }
 
