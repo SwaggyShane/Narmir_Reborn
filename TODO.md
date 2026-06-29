@@ -41,5 +41,5 @@ Remote is truth for shared project state. Completed work now lives in `ARCHIVAL.
 18. Beta Architecture Debt: Expand component test coverage.
 19. Beta Architecture Debt: Refresh API documentation.
 20. Beta Architecture Debt: Investigate `/expedition` and `/turn` query performance.
-21. Beta Architecture Debt: Clean up duplicate happiness logic and related code-quality debt.
+21. [done] Beta Architecture Debt: Clean up duplicate happiness logic and related code-quality debt.
 22. Beta Architecture Debt: Decide whether Discord.js v15 migration is still needed before beta.
