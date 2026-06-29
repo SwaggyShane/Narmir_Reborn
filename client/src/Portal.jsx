@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import './Portal.css';
 import ForumSection from './components/forum/ForumSection';
 import { useColorTheme } from './hooks/useColorTheme.js';
 import { COLOR_THEMES } from './utils/colorTheme.js';
