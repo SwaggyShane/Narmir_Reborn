@@ -1,31 +1,21 @@
 # Narmir Reborn: Development Todos
 
-Local is truth. Completed work now lives in `ARCHIVAL.md`. The Claude completion log has been removed.
+Remote is truth for shared project state. Completed work now lives in `ARCHIVAL.md`. The Claude completion log has been removed.
 
-## Workflow
+## Project Workflow
 
-1. Create a new branch for each task.
-2. Open a new PR for each task. Do not use draft PRs.
-3. Wait for Gemini to comment before proceeding.
-4. Codex checks Claude's PR.
-5. Claude checks Codex's PR.
-6. Leave comments only when there is a real problem.
-7. Resolve every comment with a fix or a clear refutation.
-7.5. Run `lint`.
-7.6. Run `smoke`.
-7.7. Run `sanity` and answer these 5 questions before moving on:
-   1. What does this change break, if anything? Name it or confirm nothing.
-   2. Did I read every file I edited top to bottom after editing? If not, do it now.
-   3. Did I grep for all usages of any symbol I renamed, removed, or changed the signature of? If not, do it now.
-   4. Does the change work in both contexts it touches? (e.g. portal AND game, mobile AND desktop)
-   5. Did I introduce any new CSS variables, classes, or JS globals that might not exist in all contexts?
-8. Claude amends `TODO.md` with completed work.
-9. Codex amends `TODO.md` with completed work.
-10. Only Codex merges PRs and deletes the associated branches after `TODO.md` is amended.
-11. Claude begins the next task.
-12. Codex begins the next task.
-13. Repeat until `TODO.md` is complete.
-14. Do not ask for permission to continue unless blocked or explicitly told to stop.
+1. Treat `origin/main` as the shared project ledger; keep local branches disposable and task-specific.
+2. Keep one active owner per lane at a time. Codex works Codex lane items, Claude works Claude lane items.
+3. Never mix lanes in the same branch, commit, or PR.
+4. Create one branch and one PR per task. PRs are ready-for-review, not draft.
+5. Before starting a task, check the lane's current TODO item and any open PRs that already cover it.
+6. If a review comment is correct, fix it. If it is wrong, refute it with evidence and move on.
+7. Claude and Codex both amend `TODO.md` when their work is completed.
+8. Codex merges approved PRs, deletes the associated branches, then fetches `origin` before starting the next merge.
+9. After every merge, re-check for newly landed Claude branches before picking up the next task.
+10. Use Gemini feedback for high-risk work before merge.
+11. Do not ask for permission to continue unless blocked or explicitly told to stop.
+12. Keep changes tight and task-scoped so the two lanes can move independently without stepping on each other.
 
 ## Codex Lane
 
