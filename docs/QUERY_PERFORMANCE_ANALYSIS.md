@@ -64,7 +64,7 @@ const k = await db.get(
 
 | Line | Query | Issue | Optimization |
 |------|-------|-------|--------------|
-| 310-313 | `SELECT ... FROM regions WHERE name = ?` | No region index | Add: `idx_regions_name ON regions(name)` |
+| 310-313 | `SELECT ... FROM regions WHERE name = ?` | Already indexed (primary key) | No action needed |
 | 318-321 | `SELECT * FROM heroes WHERE kingdom_id = ? AND status = 'idle'` | All columns selected | Select specific columns only |
 | 353-356 | `SELECT DISTINCT message FROM news WHERE kingdom_id = ? AND message IN (...) AND created_at > (unixepoch() - 60)` | Good: Batched dedup | Already optimized ✓ |
 | 386-391 | Batch hero XP UPDATE | Good: Single CASE statement | Already optimized ✓ |
@@ -217,7 +217,7 @@ const k = await db.get('SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE', 
 |----------|-------|----------|-----------|-----|
 | `/turn` | `SELECT *` from kingdoms | Medium | Every player/25min | Select specific cols |
 | `/turn` → `runTurn()` | `SELECT *` from heroes | Medium | Every player/25min | Select specific cols |
-| `/turn` → `runTurn()` | No `idx_regions_name` | Low | Every turn | Add index |
+| `/turn` → `runTurn()` | `regions.name` already indexed | Low | Every turn | No action needed |
 | `/expedition/list` | `SELECT *` from expeditions | High | Frequent polling (5-15s) | Select specific cols OR add index |
 | `/expedition/list` | No composite index | High | Frequent polling | Add `idx_expeditions_by_kingdom_status` |
 | `/expedition/start` | `SELECT *` from kingdoms | Medium | Per expedition launch | Select specific cols |
@@ -275,12 +275,10 @@ const k = await db.get('SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE', 
    - Benefit: -20ms per `/expedition/list` query
    - **Note:** Must test on production-sized database before deploying
 
-5. **Add region name index** (Optional)
+5. **Region name index**
    - File: `db/schema.js`
-   - Change: Add 1 CREATE INDEX statement
-   - Time: 5 minutes
-   - Risk: Negligible
-   - Benefit: -2ms per turn
+   - Status: No action needed
+   - Reason: `regions.name` is the primary key and already indexed
 
 ---
 
@@ -329,7 +327,7 @@ Post-deployment, monitor:
 
 ## Conclusion
 
-The `/expedition` and `/turn` endpoints are not critically slow, but they use excessive data transfer via `SELECT *` and lack query indexes for high-frequency filters. 
+The `/expedition` and `/turn` endpoints are not critically slow, but they use excessive data transfer via `SELECT *` and lack one composite index for high-frequency expedition filters.
 
 **Quick wins (Phase 1):** 5 lines of code changes, -50-70% data transfer per request
 
