@@ -71,6 +71,7 @@ const engine          = require('./game/engine');
 const { requireAuth, cacheKingdomId } = require('./routes/middleware');
 const config = require('./game/config');
 const { safeJsonParse } = require('./utils/helpers');
+const SecretsManager = require('./utils/secrets');
 
 const app    = express();
 const server = http.createServer(app);
@@ -522,6 +523,13 @@ async function refreshLore(db) {
 
 async function start() {
   console.log('[boot] Starting Narmir server...');
+
+  const secretsManager = new SecretsManager();
+  secretsManager.ensureSecretsConfigured();
+  const railwayConfig = SecretsManager.validateRailwayConfig();
+  if (railwayConfig) {
+    console.log(`[boot] Running on Railway: ${railwayConfig.environment} (${railwayConfig.service})`);
+  }
 
   try {
     if (process.env.NODE_ENV !== 'production') {
