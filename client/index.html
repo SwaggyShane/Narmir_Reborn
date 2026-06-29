@@ -14,35 +14,6 @@
     <!-- Tailwind + Global Styles -->
     <link rel="stylesheet" href="/src/tailwind.css" />
 
-    <!-- Error Logging (Keep this) -->
-    <script>
-      (function() {
-        function logErr(message, source, line, col, stack) {
-          fetch('/api/log-error', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: String(message), source: String(source), line, col, stack: String(stack) })
-          }).catch(() => {});
-        }
-
-        window.onerror = function(message, source, lineno, colno, error) {
-          const msg = String(message || '');
-          if (msg.indexOf('WebSocket') !== -1) return false;
-          logErr(msg, source, lineno, colno, error ? error.stack : 'No stacktrace');
-          return false;
-        };
-
-        window.addEventListener('unhandledrejection', function(event) {
-          const error = event.reason;
-          const msg = error ? (error.message || String(error)) : 'Unhandled rejection';
-          if (msg.indexOf('WebSocket') !== -1) return;
-          logErr(msg, 'unhandledrejection', null, null, error ? error.stack : 'No stacktrace');
-        });
-      })();
-
-
-      
-    </script>
   </head>
 
   <body class="bg-void-950 text-zinc-200 overflow-hidden">
