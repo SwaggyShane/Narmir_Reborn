@@ -61,6 +61,7 @@
    - Scope: Implement DDoS protection on `/turn`, `/attack`, market endpoints
    - Token bucket or sliding window rate limiter
    - Configurable per endpoint
+   - Status: Complete via PR #717
    - Deliverable: Rate limiter middleware + config
    - Estimate: 2-3 hours
 
@@ -151,7 +152,7 @@
 - [ ] SQL injection audit complete + no gaps
 - [ ] Load test passed (5,000+ concurrent, <3s response)
 - [x] Backup/restore verified + documented
-- [ ] Rate limiting deployed + tested
+- [x] Rate limiting deployed + tested
 - [ ] Monitoring + alerting active
 - [ ] User documentation complete
 - [ ] Support runbook ready
