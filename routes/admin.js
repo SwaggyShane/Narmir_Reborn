@@ -1826,6 +1826,47 @@ module.exports = function (db, io) {
     }
   });
 
+  // POST /api/admin/security-audit-full — recursive scan of entire codebase
+  router.post("/security-audit-full", async (req, res) => {
+    try {
+      const AuditReportGenerator = require("../tools/security-auditor/report-generator");
+      const generator = new AuditReportGenerator(path.join(__dirname, ".."));
+
+      const result = await generator.generateFullCodebaseReport();
+      const allFindings = [
+        ...result.findings.critical,
+        ...result.findings.high,
+        ...result.findings.medium,
+        ...result.findings.low,
+        ...result.findings.info
+      ];
+
+      res.json({
+        success: true,
+        timestamp: new Date().toISOString(),
+        filesAnalyzed: result.stats.totalFiles,
+        stats: result.stats,
+        summary: {
+          critical: result.findings.critical.length,
+          high: result.findings.high.length,
+          medium: result.findings.medium.length,
+          low: result.findings.low.length,
+          info: result.findings.info.length,
+          total: allFindings.length
+        },
+        findings: allFindings.slice(0, 100),
+        totalFindingsAvailable: allFindings.length,
+        message: allFindings.length > 100 ? `Showing first 100 of ${allFindings.length} findings` : undefined
+      });
+    } catch (err) {
+      console.error("[admin] Full codebase audit error:", err);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+
   return router;
 };
 
