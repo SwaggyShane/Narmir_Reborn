@@ -16,10 +16,10 @@ function StepCard({ step, visible }) {
         transition: 'all 0.3s ease',
       }}
     >
-      <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text2)', marginBottom: '4px' }}>
+      <div className="text-[12px] font-bold text-[var(--text2)] mb-1">
         {repairMojibake(step.icon || '⚔')} {repairMojibake(step.title || 'Battle Step')}
       </div>
-      <div style={{ fontSize: '13px', color: 'var(--text)', whiteSpace: 'pre-wrap' }}>
+      <div className="text-[13px] text-[var(--text)] whitespace-pre-wrap">
         {repairMojibake(step.msg || '')}
       </div>
     </div>
@@ -72,13 +72,12 @@ export default function ReplayModal({ title, steps, onClose }) {
           position: 'relative',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-          <h2 style={{ margin: 0, fontSize: '18px', color: 'var(--text)' }}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="m-0 text-[18px] text-[var(--text)]">
             {repairMojibake(title)}
           </h2>
           <button
-            className="btn"
-            style={{ padding: '4px 8px', fontSize: '12px' }}
+            className="btn px-2 py-1 text-[12px]"
             onClick={onClose}
           >
             ✕
@@ -87,15 +86,14 @@ export default function ReplayModal({ title, steps, onClose }) {
 
         <div
           ref={contentRef}
-          style={{ maxHeight: '400px', overflowY: 'auto' }}
+          className="max-h-[400px] overflow-y-auto"
         >
           {steps.slice(0, visibleCount).map((step, i) => (
             <StepCard key={i} step={step} visible={true} />
           ))}
           {done && (
             <button
-              className="btn btn-primary"
-              style={{ width: '100%', marginTop: '16px' }}
+              className="btn btn-primary w-full mt-4"
               onClick={onClose}
             >
               Finish Replay

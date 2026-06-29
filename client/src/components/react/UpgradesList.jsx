@@ -24,13 +24,13 @@ function UpgradeRow({ category, upgradeKey, def, owned, state, onPurchased, purc
 
   let statusBadge = null;
   if (isOwned) {
-    statusBadge = <span style={{ color: 'var(--green)', fontSize: '11px' }}>Owned</span>;
+    statusBadge = <span className="text-[11px] text-[var(--green)]">Owned</span>;
   } else if (!hasReq) {
-    statusBadge = <span style={{ color: 'var(--text3)', fontSize: '11px' }}>Need {String(def.requires || '').replace(/_/g, ' ')}</span>;
+    statusBadge = <span className="text-[11px] text-[var(--text3)]">Need {String(def.requires || '').replace(/_/g, ' ')}</span>;
   } else if (!raceOk) {
-    statusBadge = <span style={{ color: 'var(--text3)', fontSize: '11px' }}>Race locked</span>;
+    statusBadge = <span className="text-[11px] text-[var(--text3)]">Race locked</span>;
   } else if (!vaultsOk) {
-    statusBadge = <span style={{ color: 'var(--text3)', fontSize: '11px' }}>Need {def.reqVaults} vaults</span>;
+    statusBadge = <span className="text-[11px] text-[var(--text3)]">Need {def.reqVaults} vaults</span>;
   }
 
   let costStr = fmt(def.cost) + ' GC';
@@ -99,30 +99,22 @@ function UpgradeRow({ category, upgradeKey, def, owned, state, onPurchased, purc
   };
 
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-      padding: '7px 0',
-      borderBottom: '1px solid var(--border)',
-    }}>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: '13px', color: 'var(--text)', fontWeight: '600' }}>
+    <div className="flex items-center gap-2 py-1.5 border-b border-[var(--border)]">
+      <div className="flex-1">
+        <div className="text-[13px] text-[var(--text)] font-semibold">
           {def.name}
         </div>
-        <div style={{ fontSize: '11px', color: 'var(--text3)' }}>
+        <div className="text-[11px] text-[var(--text3)]">
           {def.desc} | {costStr}
         </div>
       </div>
       {statusBadge}
       {!isOwned && hasReq && raceOk && vaultsOk && (
         <button
-          className="btn btn-gold"
+          className="btn btn-gold text-[11px] px-2.5 py-0.5"
           onClick={handleBuy}
           disabled={!canBuy || purchasing}
           style={{
-            fontSize: '11px',
-            padding: '3px 10px',
             opacity: canBuy && !purchasing ? 1 : 0.5,
           }}
         >
@@ -157,7 +149,7 @@ export default function UpgradesList({ category, defs, owned, state, onPurchased
 
   if (!defs || typeof defs !== 'object') {
     return (
-      <div style={{ color: 'var(--red)', fontSize: '12px' }}>
+      <div className="text-[12px] text-[var(--red)]">
         Error loading upgrade data
       </div>
     );
@@ -166,7 +158,7 @@ export default function UpgradesList({ category, defs, owned, state, onPurchased
   const entries = Object.entries(defs);
   if (entries.length === 0) {
     return (
-      <div style={{ color: 'var(--text3)', fontSize: '12px', padding: '8px 0' }}>
+      <div className="text-[12px] text-[var(--text3)] py-2">
         No upgrades available in this category.
       </div>
     );

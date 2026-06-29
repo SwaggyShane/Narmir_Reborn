@@ -9,7 +9,7 @@ function RaceCardPortrait({ portraitUrl, icon, alt }) {
   const [failed, setFailed] = useState(false);
   if (!portraitUrl || failed) {
     return (
-      <div style={{ width: '100%', maxHeight: '180px', aspectRatio: '3 / 4', objectFit: 'contain', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '56px', background: 'var(--bg3)', borderRadius: 'var(--radius)' }}>
+      <div className="w-full max-h-[180px] aspect-[3/4] object-contain mb-3 flex items-center justify-center text-6xl bg-[var(--bg3)] rounded-[var(--radius)]">
         {repairMojibake(String(icon ?? '⚔'))}
       </div>
     );
@@ -19,7 +19,7 @@ function RaceCardPortrait({ portraitUrl, icon, alt }) {
     <img
       src={portraitUrl}
       alt={alt}
-      style={{ width: '100%', maxHeight: '180px', aspectRatio: '3 / 4', objectFit: 'contain', marginBottom: '12px', display: 'block' }}
+      className="w-full max-h-[180px] aspect-[3/4] object-contain mb-3 block"
       onError={() => setFailed(true)}
     />
   );
@@ -43,10 +43,10 @@ const RacesPanel = () => {
     <div id="races" className="panel">
       <div className="card mt-0">
         <div className="card-title">🦄 Race Information</div>
-        <div style={{ fontSize: '13px', color: 'var(--text2)', lineHeight: 1.6, marginBottom: '16px' }}>
+        <div className="text-[13px] text-[var(--text2)] leading-relaxed mb-4">
           Learn about the various races of Narmir, their history, and their unique passives and abilities.
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div className="flex flex-col gap-5">
           {raceEntries.map(([key, r]) => {
             const portraitUrl = getPortraitUrl(key);
             const cardStyle = r.color
@@ -60,50 +60,50 @@ const RacesPanel = () => {
                 <RaceCardPortrait portraitUrl={portraitUrl} icon={r.icon || '⚔'} alt={repair(r.title || key)} />
                 <div
                   onClick={() => openRaceLore(key)}
-                  style={{ cursor: 'pointer', fontSize: '16px', fontWeight: 'bold', color: 'var(--gold)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  className="cursor-pointer text-base font-bold text-[var(--gold)] mb-2 flex items-center gap-1.5"
                   title="Click for detailed lore & details"
                 >
                   {repair(r.icon || '⚔')} {repair(r.title || r.label || key)}
-                  <span style={{ fontSize: '11px', opacity: 0.55, fontWeight: 'normal', fontFamily: 'sans-serif', textDecoration: 'underline' }}>(View details)</span>
+                  <span className="text-[11px] opacity-55 font-normal font-sans underline">(View details)</span>
                 </div>
-                <div style={{ fontSize: '13px', color: 'var(--text2)', marginBottom: '12px', lineHeight: 1.5 }}>
+                <div className="text-[13px] text-[var(--text2)] mb-3 leading-relaxed">
                   {repair(r.lore || r.bonus || '')}
                 </div>
                 {r.special && (
-                  <div style={{ fontSize: '12px', color: 'var(--gold)', marginBottom: '12px' }}>
+                  <div className="text-[12px] text-[var(--gold)] mb-3">
                     🌸 <strong>Special:</strong> {repair(r.special)}
                   </div>
                 )}
-                <div style={{ display: 'flex', gap: '20px', fontSize: '12px', flexWrap: 'wrap' }}>
+                <div className="flex gap-5 text-[12px] flex-wrap">
                   {strengths.length > 0 && (
-                    <div style={{ flex: 1, minWidth: '100px' }}>
-                      <strong style={{ color: 'var(--green)', marginBottom: '4px', display: 'block' }}>Strengths</strong>
-                      <ul style={{ margin: 0, paddingLeft: '16px', color: 'var(--text3)' }}>
+                    <div className="flex-1 min-w-[100px]">
+                      <strong className="text-[var(--green)] mb-1 block">Strengths</strong>
+                      <ul className="m-0 pl-4 text-[var(--text3)]">
                         {strengths.map((s, i) => (
-                          <li key={i} style={{ padding: '2px 0' }}>{repair(s)}</li>
+                          <li key={i} className="py-0.5">{repair(s)}</li>
                         ))}
                       </ul>
                     </div>
                   )}
                   {weaknesses.length > 0 && (
-                    <div style={{ flex: 1, minWidth: '100px' }}>
-                      <strong style={{ color: 'var(--red)', marginBottom: '4px', display: 'block' }}>Weaknesses</strong>
-                      <ul style={{ margin: 0, paddingLeft: '16px', color: 'var(--text3)' }}>
+                    <div className="flex-1 min-w-[100px]">
+                      <strong className="text-[var(--red)] mb-1 block">Weaknesses</strong>
+                      <ul className="m-0 pl-4 text-[var(--text3)]">
                         {weaknesses.map((w, i) => (
-                          <li key={i} style={{ padding: '2px 0' }}>{repair(w)}</li>
+                          <li key={i} className="py-0.5">{repair(w)}</li>
                         ))}
                       </ul>
                     </div>
                   )}
                   {heroes.length > 0 && (
-                    <div style={{ flex: 1, minWidth: '100px' }}>
-                      <strong style={{ color: 'var(--gold)', marginBottom: '4px', display: 'block' }}>Notable Heroes</strong>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                    <div className="flex-1 min-w-[100px]">
+                      <strong className="text-[var(--gold)] mb-1 block">Notable Heroes</strong>
+                      <div className="flex flex-wrap gap-1">
                         {heroes.map((h) => (
                           <span
                             key={h}
                             onClick={() => showHeroLore(h)}
-                            style={{ fontSize: '10px', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text2)', cursor: 'pointer' }}
+                            className="text-[10px] bg-white/5 px-1.5 py-0.5 rounded border border-white/10 text-[var(--text2)] cursor-pointer"
                           >
                             {repair(h)}
                           </span>

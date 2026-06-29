@@ -37,13 +37,13 @@ export default function RaceLoreContent({ lore, regionName, regionBonus, portrai
       </p>
 
       <div className="mb-4 grid grid-cols-2 gap-3">
-        <div className="rounded-lg border border-[var(--green-border)] bg-[var(--green-bg)] p-3">
+        <div className="rounded-lg border border-[rgba(76,175,130,0.2)] bg-[rgba(76,175,130,0.08)] p-3">
           <div className="mb-2 text-xs font-bold uppercase tracking-wider text-[var(--green)]">Strengths</div>
           {strengths.map((s, i) => (
             <div key={i} className="py-0.5 text-xs text-[var(--text2)]">✓ {repair(s)}</div>
           ))}
         </div>
-        <div className="rounded-lg border border-[var(--red-border)] bg-[var(--red-bg)] p-3">
+        <div className="rounded-lg border border-[rgba(224,92,92,0.2)] bg-[rgba(224,92,92,0.08)] p-3">
           <div className="mb-2 text-xs font-bold uppercase tracking-wider text-[var(--red)]">Weaknesses</div>
           {weaknesses.map((w, i) => (
             <div key={i} className="py-0.5 text-xs text-[var(--text2)]">✗ {repair(w)}</div>
@@ -52,7 +52,7 @@ export default function RaceLoreContent({ lore, regionName, regionBonus, portrai
       </div>
 
       {lore.special && (
-        <div className="mb-3 rounded-lg border border-[var(--gold-border)] bg-[var(--gold-bg)] p-3">
+        <div className="mb-3 rounded-lg border border-[rgba(232,184,75,0.25)] bg-[rgba(232,184,75,0.08)] p-3">
           <div className="mb-1.5 text-xs font-bold uppercase tracking-wider text-[var(--gold)]">✨ Racial mastery — unlocks at unit level 25</div>
           <div className="text-sm text-[var(--text)]">{repair(lore.special)}</div>
         </div>
