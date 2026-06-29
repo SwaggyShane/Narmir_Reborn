@@ -699,3 +699,23 @@ Completed work that was previously tracked in `TODO.md` has been consolidated he
 - Claude health-assessment work (`todoCLAUDEcompleted.md`) verified against the branch work and archived
 - Completed platform-health work archived into the main completion record
 - Completed engine, combat, admin, and migration checkpoints remain recorded above for reference
+- Claude Lane item 1: Weekly Deep Audit: Add schedule UI to the admin panel.
+- Claude Lane item 2: Weekly Deep Audit: Create database tables for audit schedules and history.
+- Claude Lane item 3: Weekly Deep Audit: Implement a cron scheduler for recurring scans.
+- Claude Lane item 4: Weekly Deep Audit: Add API endpoints for schedule management.
+- Claude Lane item 5: Weekly Deep Audit: Expand the auditor to recursively scan the full codebase.
+- Claude Lane item 6: Weekly Deep Audit: Generate comparison reports between audits.
+- Claude Lane item 7: Weekly Deep Audit: Add trend visualization for findings over time.
+- Claude Lane item 8: Weekly Deep Audit: Add notifications for new issues.
+- Claude Lane item 9: Weekly Deep Audit: Investigate and repair JSON row corruption.
+- Claude Lane item 10: Production Maintenance: Complete SQL injection audit coverage.
+- Claude Lane item 11: Production Maintenance: Harden rate limiting and DDoS mitigation.
+- Claude Lane item 12: Production Maintenance: Finish secrets management and verify Railway environment variables.
+- Claude Lane item 13: Production Maintenance: Enforce HTTPS in production.
+- Claude Lane item 14: Production Maintenance: Load test for 5,000+ concurrent players.
+- Claude Lane item 15: Production Maintenance: Verify backup and restore workflow.
+- Claude Lane item 16: Production Maintenance: Configure API rate limiting.
+- Claude Lane item 17: Production Maintenance: Add monitoring and alerting.
+- Claude Lane item 18: Production Maintenance: Refresh user-facing docs.
+- Claude Lane item 19: Production Maintenance: Prepare the support runbook.
+- Claude Lane item 20: Production Maintenance: Confirm production database URL and automated backups.
