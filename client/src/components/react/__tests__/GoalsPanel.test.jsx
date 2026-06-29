@@ -3,9 +3,6 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 vi.mock('../../../utils/api');
-vi.mock('../../../hooks/useShellBadges', () => ({
-  useShellBadges: () => ({ badgeCount: 0 })
-}));
 
 import GoalsPanel from '../GoalsPanel.jsx';
 import { apiCall } from '../../../utils/api';
@@ -154,7 +151,7 @@ describe('GoalsPanel', () => {
 
   it('should have goals panel structure', async () => {
     const { container } = render(<GoalsPanel />);
-    const panel = document.getElementById('goals') || container.querySelector('.panel');
+    const panel = container.querySelector('#goals') || container.querySelector('.panel');
     expect(panel).toBeInTheDocument();
   });
 });
