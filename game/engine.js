@@ -79,6 +79,23 @@ const {
   processActiveEffects,
 } = require('./lib/gameplay');
 
+async function getRandomKingdom(db, selfId) {
+  const countRow = await db.get("SELECT COUNT(*) as c FROM kingdoms WHERE id != ?", [selfId]);
+  const total = Number(countRow?.c || 0);
+  if (total <= 0) return null;
+
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const offset = Math.floor(Math.random() * total);
+    const row = await db.get(
+      "SELECT id, name FROM kingdoms WHERE id != ? LIMIT 1 OFFSET ?",
+      [selfId, offset],
+    );
+    if (row) return row;
+  }
+
+  return null;
+}
+
 // Economy domain — gold/food/trade per-turn calculations, food economy
 // settlement, resource yield, market and commodity pricing. Defined in
 // game/economy.js; re-exported below.
@@ -1790,10 +1807,7 @@ async function resolveExpeditions(db, k, engine) {
 
       if (updates._find_kingdom) {
         delete updates._find_kingdom;
-        const other = await db.get(
-          "SELECT id, name FROM kingdoms WHERE id != ? ORDER BY RANDOM() LIMIT 1",
-          [freshK.id],
-        );
+        const other = await getRandomKingdom(db, freshK.id);
         if (other) {
           let disc = {};
           try {

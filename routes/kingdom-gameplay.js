@@ -78,6 +78,44 @@ async function getRandomKingdom(db, selfId, excludedIds = [], columns = "id, nam
   return null;
 }
 
+async function batchUpdateExpeditions(db, updates, staticStatus, variableFields = []) {
+  if (!updates || updates.length === 0) return;
+
+  const ids = updates
+    .map((row) => Number(row.id))
+    .filter((id) => Number.isInteger(id) && id > 0);
+  if (ids.length === 0) return;
+
+  const setParts = ["status = ?"];
+  const params = [staticStatus];
+
+  for (const field of variableFields) {
+    const caseParts = updates.map(() => "WHEN ? THEN ?").join(" ");
+    setParts.push(`${field} = CASE id ${caseParts} END`);
+    for (const row of updates) {
+      params.push(row.id, row[field]);
+    }
+  }
+
+  params.push(...ids);
+  await db.run(
+    `UPDATE resource_expeditions SET ${setParts.join(", ")} WHERE id IN (${ids.map(() => "?").join(",")})`,
+    params,
+  );
+}
+
+async function batchCompleteExpeditions(db, ids) {
+  const cleanIds = ids
+    .map((id) => Number(id))
+    .filter((id) => Number.isInteger(id) && id > 0);
+  if (cleanIds.length === 0) return;
+
+  await db.run(
+    `UPDATE resource_expeditions SET status = 'completed' WHERE id IN (${cleanIds.map(() => "?").join(",")})`,
+    cleanIds,
+  );
+}
+
 // Kingdoms we've already logged deprecated-inventory items for, so the warning fires
 // once per process instead of on every (frequently polled) inventory fetch.
 const _loggedDeprecatedInventory = new Set();
@@ -2485,6 +2523,9 @@ module.exports = function (db) {
 
     const lootEvents = [];
     const kUpdates = {};
+    const outboundUpdates = [];
+    const harvestingUpdates = [];
+    const returningIds = [];
 
     for (const exp of exps) {
       const arriveAt = Number(exp.arrive_at) || 0;
@@ -2493,10 +2534,7 @@ module.exports = function (db) {
 
       if (exp.status === 'outbound' && now >= arriveAt) {
         const harvestDuration = HARVEST_DURATION_BY_RICHNESS[exp.richness] || 3600;
-        await db.run(
-          "UPDATE resource_expeditions SET status = 'harvesting', harvest_ends_at = ? WHERE id = ?",
-          [now + harvestDuration, exp.id]
-        );
+        outboundUpdates.push({ id: exp.id, harvest_ends_at: now + harvestDuration });
       } else if (exp.status === 'harvesting' && harvestEndsAt && now >= harvestEndsAt) {
         // Compute loot
         const baseLoot = exp.richness * 50 * (exp.population_sent / 100);
@@ -2537,10 +2575,7 @@ module.exports = function (db) {
         const travelTime = Math.ceil((exp.distance || 3600) / raceSpeedMult);
         const return_at = now + travelTime;
 
-        await db.run(
-          "UPDATE resource_expeditions SET status = 'returning', loot = ?, return_at = ? WHERE id = ?",
-          [JSON.stringify(loot), return_at, exp.id]
-        );
+        harvestingUpdates.push({ id: exp.id, loot: JSON.stringify(loot), return_at });
       } else if (exp.status === 'returning' && returnAt && now >= returnAt) {
         const loot = safeJsonParse(exp.loot, {}, 'expedition:loot');
         // Apply loot to kingdom
@@ -2552,9 +2587,19 @@ module.exports = function (db) {
         }
         // Return population to kingdom
         kUpdates.population = (kUpdates.population !== undefined ? kUpdates.population : k.population) + exp.population_sent;
-        await db.run("UPDATE resource_expeditions SET status = 'completed' WHERE id = ?", [exp.id]);
+        returningIds.push(exp.id);
         lootEvents.push({ type: 'system', message: `ðŸ—‚ï¸ Expedition returned with: ${Object.entries(loot).filter(([k]) => !k.startsWith('_')).map(([r,q]) => `${q} ${r}`).join(', ')}.` });
       }
+    }
+
+    if (outboundUpdates.length > 0) {
+      await batchUpdateExpeditions(db, outboundUpdates, 'harvesting', ['harvest_ends_at']);
+    }
+    if (harvestingUpdates.length > 0) {
+      await batchUpdateExpeditions(db, harvestingUpdates, 'returning', ['loot', 'return_at']);
+    }
+    if (returningIds.length > 0) {
+      await batchCompleteExpeditions(db, returningIds);
     }
 
     return { kUpdates, lootEvents };
