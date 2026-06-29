@@ -692,6 +692,7 @@ All major development tracks finished. Platform ready for beta launch.
 
 Completed work that was previously tracked in `TODO.md` has been consolidated here so the live backlog only contains unfinished tasks.
 
+- Battle Outcome Animation win/loss banner emphasis completed and merged via PR #668
 - Claude health-assessment work (`todoCLAUDEcompleted.md`) verified against the branch work and archived
 - Completed platform-health work archived into the main completion record
 - Completed engine, combat, admin, and migration checkpoints remain recorded above for reference
