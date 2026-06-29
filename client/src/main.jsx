@@ -3,10 +3,12 @@ import ReactDOM from 'react-dom/client';
 import GameShell from './GameShell.jsx';
 import { applyColorTheme, readColorTheme } from './utils/colorTheme.js';
 import { initConsoleCapture } from './utils/consoleCapture.js';
+import { initErrorLogging } from './utils/errorLogging.js';
 import './tailwind.css';
 import './css/forum.css';
 
 initConsoleCapture();
+initErrorLogging();
 applyColorTheme(readColorTheme());
 
 const root = ReactDOM.createRoot(document.getElementById('app'));
