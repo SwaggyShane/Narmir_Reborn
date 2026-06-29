@@ -63,7 +63,7 @@ function AnimatedValue({ value, active, delay = 0 }) {
   return <span ref={nodeRef}>{value}</span>;
 }
 
-function SummaryCard({ label, value, tone = 'var(--text)', delay = 0 }) {
+function SummaryCard({ label, value, tone = 'var(--text)', delay = 0, emphasis = false }) {
   const cardRef = useRef(null);
 
   useLayoutEffect(() => {
@@ -82,11 +82,23 @@ function SummaryCard({ label, value, tone = 'var(--text)', delay = 0 }) {
         ease: 'power2.out',
       },
     );
+    if (emphasis) {
+      gsap.fromTo(
+        node,
+        { scale: 0.95 },
+        {
+          scale: 1,
+          duration: 0.28,
+          delay: delay + 0.02,
+          ease: 'back.out(1.8)',
+        },
+      );
+    }
 
     return () => {
       gsap.killTweensOf(node);
     };
-  }, [delay]);
+  }, [delay, emphasis]);
 
   return (
     <div
@@ -392,10 +404,10 @@ export default function BattleReportModal({ data, onClose }) {
         {showSummary && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8, marginBottom: 14 }}>
             <div data-summary-card="true">
-              <SummaryCard label="Casualties" value={casualties} tone="var(--red)" delay={0} />
+              <SummaryCard label="Casualties" value={casualties} tone="var(--red)" delay={0} emphasis />
             </div>
             <div data-summary-card="true">
-              <SummaryCard label="Critical Hits" value={criticalHits} tone="var(--amber)" delay={0.04} />
+              <SummaryCard label="Critical Hits" value={criticalHits} tone="var(--amber)" delay={0.04} emphasis />
             </div>
             <div data-summary-card="true">
               <SummaryCard label="Killing Blows" value={criticalKills} tone="var(--green)" delay={0.08} />
