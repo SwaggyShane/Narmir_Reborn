@@ -1867,6 +1867,59 @@ module.exports = function (db, io) {
     }
   });
 
+  // POST /api/admin/repair-json-rows — repair corrupted JSON data
+  router.post("/repair-json-rows", async (req, res) => {
+    try {
+      const { repairJsonRows } = require("../db/schema");
+
+      const startTime = Date.now();
+      const result = await repairJsonRows(db);
+      const duration = Date.now() - startTime;
+
+      console.log(`[admin] JSON repair complete: ${result.fixedRows} rows, ${result.fixedCells} cells fixed in ${duration}ms`);
+
+      res.json({
+        success: true,
+        message: "JSON corruption repair completed",
+        fixedRows: result.fixedRows,
+        fixedCells: result.fixedCells,
+        duration: `${duration}ms`,
+        timestamp: new Date().toISOString()
+      });
+    } catch (err) {
+      console.error("[admin] JSON repair error:", err);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+
+  // GET /api/admin/repair-json-rows/status — get repair status/info
+  router.get("/repair-json-rows/status", async (req, res) => {
+    try {
+      res.json({
+        success: true,
+        message: "JSON repair endpoint ready",
+        tables: [
+          "kingdoms",
+          "alliances",
+          "heroes",
+          "resource_expeditions"
+        ],
+        description: "POST /api/admin/repair-json-rows to scan and repair corrupted JSON in these tables",
+        note: "This operation scans all rows and fixes invalid JSON, double-encoded strings, and type mismatches. Safe to run multiple times.",
+        timestamp: new Date().toISOString()
+      });
+    } catch (err) {
+      console.error("[admin] JSON repair status error:", err);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+
   return router;
 };
 

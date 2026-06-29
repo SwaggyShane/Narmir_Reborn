@@ -544,16 +544,24 @@ function parseJsonCandidate(raw) {
 
 function normalizeJsonForRepair(raw, spec) {
   const fallback = cloneJsonFallback(spec.fallback);
+
+  if (raw === null || raw === undefined) return JSON.stringify(fallback);
+
   const parsed = parseJsonCandidate(raw);
   if (parsed === null) return JSON.stringify(fallback);
+
   const matchesKind = spec.kind === 'array'
     ? Array.isArray(parsed)
     : spec.kind === 'object'
       ? parsed && typeof parsed === 'object' && !Array.isArray(parsed)
       : true;
+
   if (!matchesKind) return JSON.stringify(fallback);
+
   try {
-    return JSON.stringify(parsed);
+    const normalized = JSON.stringify(parsed);
+    if (!normalized) return JSON.stringify(fallback);
+    return normalized;
   } catch {
     return JSON.stringify(fallback);
   }
@@ -564,6 +572,7 @@ async function repairJsonRows(db = _db) {
 
   let fixedRows = 0;
   let fixedCells = 0;
+  const repairDetails = [];
 
   for (const [table, specs] of Object.entries(JSON_REPAIR_SPECS)) {
     const columns = await getTableColumns(table, db);
@@ -572,15 +581,19 @@ async function repairJsonRows(db = _db) {
     const jsonColumns = Object.keys(specs).filter(col => columns.includes(col));
     if (!jsonColumns.length) continue;
 
-    console.log(`[db] JSON repair scanning ${table} (${jsonColumns.join(', ')})`);
+    const rowCount = await db.get(`SELECT COUNT(*) as count FROM ${table}`);
+    console.log(`[db] JSON repair: scanning ${table} (${rowCount?.count || 0} rows, ${jsonColumns.length} JSON columns)`);
 
     const rows = await db.all(`SELECT id, ${jsonColumns.join(', ')} FROM ${table}`);
+    const tableDetails = { table, scannedRows: rows.length, fixedRows: 0, fixedCells: 0, fixedColumns: {} };
+
     for (const row of rows) {
       const updates = {};
       for (const col of jsonColumns) {
         const normalized = normalizeJsonForRepair(row[col], specs[col]);
         if (normalized !== row[col]) {
           updates[col] = normalized;
+          tableDetails.fixedColumns[col] = (tableDetails.fixedColumns[col] || 0) + 1;
         }
       }
       if (!Object.keys(updates).length) continue;
@@ -589,11 +602,18 @@ async function repairJsonRows(db = _db) {
       const values = [...Object.values(updates), row.id];
       await db.run(`UPDATE ${table} SET ${setClause} WHERE id = ?`, values);
       fixedRows += 1;
+      tableDetails.fixedRows += 1;
       fixedCells += Object.keys(updates).length;
+    }
+
+    if (tableDetails.fixedRows > 0) {
+      console.log(`[db] JSON repair: ${tableDetails.fixedRows} rows fixed in ${table}`);
+      repairDetails.push(tableDetails);
     }
   }
 
-  return { fixedRows, fixedCells };
+  console.log(`[db] JSON repair complete: ${fixedRows} rows and ${fixedCells} cells repaired across ${repairDetails.length} tables`);
+  return { fixedRows, fixedCells, details: repairDetails };
 }
 
 async function initDb(options = {}) {
