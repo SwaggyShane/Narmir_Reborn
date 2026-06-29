@@ -46,12 +46,14 @@
    - Tool: Artillery or k6 load test script
    - Success criteria: <3s response time at 5,000 concurrent
    - Deliverable: Load test results + bottleneck analysis
+   - Status: Harness/docs merged via PR #715; authenticated rerun with generated per-player JWTs still required before closure
    - Estimate: 3-4 hours
 
 3. **Database Backup & Restore Verification**
    - Scope: Test backup procedure on production DB
    - Test restore to alternate database
    - Document recovery procedures
+   - Status: Complete via PR #716
    - Deliverable: Verified backup script + runbook
    - Estimate: 1-2 hours
 
@@ -149,7 +151,7 @@
 **Beta Launch Readiness:**
 - [ ] SQL injection audit complete + no gaps
 - [ ] Load test passed (5,000+ concurrent, <3s response)
-- [ ] Backup/restore verified + documented
+- [x] Backup/restore verified + documented
 - [x] Rate limiting deployed + tested
 - [ ] Monitoring + alerting active
 - [ ] User documentation complete

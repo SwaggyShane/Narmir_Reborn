@@ -1,344 +1,114 @@
-# Load Testing & Performance Benchmarks
+# Load Testing
 
-Performance validation guide for 5,000+ concurrent players.
+Load testing for Narmir Reborn should exercise real authenticated gameplay traffic, not anonymous endpoint pings.
 
-## Overview
+## Goal
 
-Load testing ensures the server can handle peak concurrent players without degradation. Target: **5,000+ concurrent connections** with <2s response times (p95).
+Validate these endpoints at up to 5,000 concurrent players:
 
-## Quick Start
+- `POST /api/turn`
+- `GET /api/expedition?limit=20`
+- `GET /api/rankings?limit=100&page=1`
 
-### 1. Start Local Server
+Success target:
 
-```bash
-npm start
-# [boot] Server listening on http://localhost:3000
-```
+- p95 latency under 3s
+- expected `429` behavior under protection limits
+- no crashes, lock storms, or runaway resource usage
 
-### 2. Run Load Test
+## Required Setup
 
-```bash
-npm run load-test -- --concurrent 5000 --duration 60000
-# 🔥 LOAD TEST: GET /api/auth/me
-# Concurrent: 5000 | Duration: 60000ms | Ramp-up: 5000ms
-# ✅ Successful: 12345/12500
-# 📈 Requests/sec: 208
-# P95: 450ms | P99: 890ms
-```
+`/api/turn` and `/api/expedition` are authenticated and player-specific. They must be tested with valid JWTs for distinct player accounts.
 
-## Test Profiles
+The checked-in [load-test-tokens.csv](/C:/Users/king_/Narmir_Reborn/load-test-tokens.csv) file is placeholder data only. Regenerate it before any real run.
 
-### Local Development (Quick Validation)
+### 1. Ensure prerequisites
 
-Test basic functionality with minimal load:
+- `JWT_SECRET` must match the server being tested
+- the database must contain enough non-banned players with kingdoms
+- the target server must be running
+
+### 2. Generate real tokens
 
 ```bash
-npm run load-test -- \
-  --concurrent 100 \
-  --duration 10000 \
-  --endpoint /api/auth/me
+npm run load-test:tokens -- --count 5000
 ```
 
-**Expected Results:**
-- Response times: <100ms (average)
-- Success rate: >99%
-- Errors: None
-
-### Staging Warm-up
-
-Build confidence before production:
+Optional custom output path:
 
 ```bash
-npm run load-test -- \
-  --url https://staging.narmirreborn.com \
-  --concurrent 1000 \
-  --duration 30000 \
-  --ramp-up 10000
+npm run load-test:tokens -- --count 5000 --output tmp/load-test-tokens.csv
 ```
 
-**Expected Results:**
-- Response times: <500ms (p95)
-- Success rate: >98%
-- Max concurrent: 1000
+The generator reads eligible player rows from the database, signs fresh JWTs with `JWT_SECRET`, and writes a single-column CSV for Artillery.
 
-### Production Validation
+## Run the Artillery Suite
 
-Confirm production readiness:
+Default target:
 
 ```bash
-npm run load-test -- \
-  --url https://narmirreborn.com \
-  --concurrent 5000 \
-  --duration 300000 \
-  --ramp-up 30000 \
-  --endpoint /api/game
+npx artillery run load-test.yml
 ```
 
-**Expected Results:**
-- Response times: <1000ms (p95)
-- Success rate: >95%
-- Sustainable: 300 req/sec
-
-## Load Test Parameters
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `--url` | http://localhost:3000 | Server URL |
-| `--concurrent` | 100 | Max concurrent connections |
-| `--duration` | 30000 | Test duration (ms) |
-| `--ramp-up` | 5000 | Ramp-up time (ms) |
-| `--method` | GET | HTTP method |
-| `--endpoint` | /api/auth/me | API endpoint to test |
-
-## Benchmark Results
-
-### Reference System (Railway Standard)
-
-**Hardware:**
-- 2 CPU cores
-- 2 GB RAM
-- PostgreSQL: Shared cluster
-
-**Test Scenario:**
-- 5,000 concurrent connections
-- 60-second test duration
-- GET /api/auth/me endpoint
-- Local network
-
-**Results:**
-
-```
-✅ Successful: 31,242/31,500 (99.2%)
-📈 Requests/sec: 520
-⏱️  Response Times:
-  Average: 89ms
-  P50: 45ms
-  P95: 180ms
-  P99: 340ms
-  Max: 1,200ms
-```
-
-### Scaling Expectations
-
-| Players | Expected RPS | P95 Latency | RAM Impact |
-|---------|--------------|-------------|-----------|
-| 500 | 50 | <100ms | ~100MB |
-| 1,000 | 100 | <150ms | ~200MB |
-| 5,000 | 500 | <500ms | ~500MB |
-| 10,000 | 1000 | <1000ms | ~1GB |
-
-## WebSocket Load Testing
-
-For real-time gameplay connections (Socket.IO):
+Custom target:
 
 ```bash
-npm run load-test:websocket -- \
-  --concurrent 5000 \
-  --duration 60000 \
-  --events-per-sec 10
+npx artillery run --target https://narmirreborn.com load-test.yml
 ```
 
-**Simulates:**
-- 5,000 concurrent players
-- 10 events/second per player (50,000 events/sec total)
-- Connection holds for full test duration
-- Tracks memory and CPU usage
+What it does:
 
-## Performance Monitoring
+- `POST /api/turn` with per-player bearer tokens
+- `GET /api/expedition?limit=20` with per-player bearer tokens
+- `GET /api/rankings?limit=100&page=1` as public traffic
 
-### During Load Test
+## Test Shape
 
-Monitor server metrics in another terminal:
+| Phase | Duration | Arrival Rate |
+|---|---:|---:|
+| Warm up | 30s | 100 req/s |
+| Ramp up | 120s | 1000 req/s |
+| Peak | 180s | 5000 req/s |
+| Ramp down | 30s | 100 req/s |
 
-```bash
-watch -n 1 'ps aux | grep node | grep -v grep'
-# Monitor CPU, memory, and process status
+## Interpreting Results
 
-# Or use system monitor
-top -p $(pgrep -f "npm start")
-```
+Healthy runs should show:
 
-### Key Metrics
+- mostly `200` and expected `400` responses on `/api/turn`
+- some `429` responses once protections engage
+- no widespread `401` responses if tokens are valid
+- no Artillery processor crashes when responses are missing
 
-| Metric | Threshold | Impact |
-|--------|-----------|--------|
-| CPU Usage | <80% | Server responsiveness |
-| Memory | <80% of available | GC pause times |
-| Open Connections | <8000 | OS file descriptor limits |
-| Response Time P95 | <1000ms | User experience |
-| Error Rate | <5% | Data integrity |
+Investigate immediately if you see:
 
-## Stress Test (Beyond Limits)
-
-Find breaking point:
-
-```bash
-# Gradually increase concurrent connections
-for i in 1000 2000 5000 10000 20000; do
-  npm run load-test -- --concurrent $i --duration 30000
-  sleep 30
-done
-```
-
-**Expected Behavior:**
-- 1,000-5,000: Green (comfortable headroom)
-- 5,000-10,000: Yellow (acceptable, approaching limits)
-- >10,000: Red (performance degradation)
-
-**Failure Modes:**
-- Too many connection timeouts → Open file descriptor limit
-- Memory spike → Garbage collection pressure
-- High latency → CPU saturation
-
-## Optimization Strategies
-
-### If Latency Increases
-
-1. **Check Rate Limiter:**
-   - Verify limiter is not too strict
-   - Monitor 429 responses
-
-2. **Database Bottleneck:**
-   - Check query performance
-   - Verify connection pool size
-   - Monitor index usage
-
-3. **CPU Saturation:**
-   - Profile hot functions
-   - Check for infinite loops
-   - Verify async operations
-
-### If Memory Increases
-
-1. **Memory Leak Detection:**
-   ```bash
-   node --inspect=0.0.0.0:9229 index.js
-   # Then use Chrome DevTools (chrome://inspect)
-   ```
-
-2. **Cache Size:**
-   - Verify caches are bounded
-   - Monitor cache hit rates
-
-3. **Event Loop:**
-   - Check for blocked operations
-   - Use --trace-warnings
-
-### If Connections Drop
-
-1. **Rate Limiter:**
-   - Check limits per IP
-   - Verify clean state between tests
-
-2. **Server Resources:**
-   - Verify ulimits for open files
-   - Check OS network buffers
-
-3. **Network:**
-   - Verify network hardware (for remote tests)
-   - Check firewall rules
-
-## Railway Deployment Considerations
-
-### Scaling Options
-
-**Vertical Scaling:**
-- Upgrade instance size (2GB → 4GB → 8GB RAM)
-- Add CPU cores (2 → 4 → 8 cores)
-- Easier but has limits
-
-**Horizontal Scaling:**
-- Multiple instances behind load balancer
-- Share PostgreSQL connection pool
-- More complex but infinite scaling
-
-### Load Balancer Configuration
-
-```
-Client
-  ↓
-[Load Balancer]
-  ↓
-  ├→ [Instance 1] → Database
-  ├→ [Instance 2] → Database
-  └→ [Instance 3] → Database
-```
-
-**Sticky Sessions:**
-- WebSocket connections require sticky sessions
-- Route by IP or session ID
-
-### Database Scaling
-
-```
-[Instances] →
-  ├→ [Primary DB]
-  └→ [Read Replicas] (for read-heavy workloads)
-```
-
-## Pre-Production Checklist
-
-Before scaling to production load:
-
-- [ ] Run local load test (500+ concurrent)
-- [ ] Run staging test (1000+ concurrent)
-- [ ] Verify response times <500ms (p95)
-- [ ] Confirm memory stays <70% utilization
-- [ ] Check database query times
-- [ ] Verify no memory leaks (30min test)
-- [ ] Test graceful shutdown with connections
-- [ ] Verify rate limiting works correctly
-- [ ] Test error recovery under load
-- [ ] Confirm logging doesn't impact performance
+- `401` spikes: token file is stale, invalid, or signed with the wrong `JWT_SECRET`
+- `EMFILE`: host file descriptor limit is too low
+- `5xx`: application or database bottleneck
+- flat throughput with heavy lock contention: too few distinct player tokens
 
 ## Troubleshooting
 
-### "Too many open files"
+### Too many open files
 
-**Cause:** OS limit on open file descriptors
-
-**Fix:**
 ```bash
-# Check current limit
 ulimit -n
-
-# Increase (Linux/macOS)
 ulimit -n 65536
-
-# Permanent (Linux)
-echo "* soft nofile 65536" >> /etc/security/limits.conf
-echo "* hard nofile 65536" >> /etc/security/limits.conf
 ```
 
-### "Connection refused" at high concurrency
+### Tokens fail with `401`
 
-**Cause:** Backlog of connections exceeded
+- confirm the generator ran against the same environment being tested
+- confirm `JWT_SECRET` matches the target server
+- confirm the selected player rows still exist and own kingdoms
 
-**Fix:**
-```javascript
-// In index.js
-server.maxConnections = 10000;
-server.on('connection', (socket) => {
-  socket.setNoDelay(true);
-});
-```
+### Test is unrealistically serialized
 
-### "EADDRINUSE: Address already in use"
+If many requests are queued behind turn locking, the token pool is too small. Regenerate with more distinct players.
 
-**Cause:** Port still in use from previous test
+## Related Files
 
-**Fix:**
-```bash
-# Kill existing process
-lsof -ti:3000 | xargs kill -9
-
-# Then restart
-npm start
-```
-
-## Further Reading
-
-- [Node.js Performance Best Practices](https://nodejs.org/en/docs/guides/simple-profiling/)
-- [Express Optimization Guide](https://expressjs.com/en/advanced/best-practice-performance.html)
-- [PostgreSQL Performance Tuning](https://www.postgresql.org/docs/current/performance-tips.html)
-- [k6 Load Testing Framework](https://k6.io/) (advanced alternative)
+- [load-test.yml](/C:/Users/king_/Narmir_Reborn/load-test.yml)
+- [load-test-processor.js](/C:/Users/king_/Narmir_Reborn/load-test-processor.js)
+- [scripts/generate-load-test-tokens.js](/C:/Users/king_/Narmir_Reborn/scripts/generate-load-test-tokens.js)
+- [LOAD_TEST_REPORT.md](/C:/Users/king_/Narmir_Reborn/LOAD_TEST_REPORT.md)
