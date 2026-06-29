@@ -1,5 +1,7 @@
 # Claude Code Workflow Guide
 
+⚠️ **PROJECT-SPECIFIC WORKFLOW FIRST:** Before applying any rules from this guide, **check TODO.md for project-specific workflow instructions**. Project workflows override these defaults. If TODO.md defines interim or custom workflow rules, follow those instead of the standard CLAUDE.md workflow.
+
 ⚠️ **ENFORCEMENT SOURCE:** For explicit checklists and verification steps before every commit, push, and phase merge, see `.claude/WORKFLOW-REQUIRED.md` — that is the authoritative enforcement document. This guide provides context; WORKFLOW-REQUIRED.md provides the mandatory checklists.
 
 ## PR Workflow

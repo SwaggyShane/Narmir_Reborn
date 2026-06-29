@@ -2092,17 +2092,32 @@ async function initDb(options = {}) {
     CREATE INDEX IF NOT EXISTS idx_synergy_cooldowns_until ON synergy_cooldowns(cooldown_until);
   `);
 
-  // Audit history tracking
-  await _db.exec(`
+  // Audit scheduling tables
+  await _db.run(`
+    CREATE TABLE IF NOT EXISTS audit_schedules (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      created_by    INTEGER NOT NULL REFERENCES players(id),
+      frequency     TEXT NOT NULL DEFAULT 'weekly',
+      is_enabled    INTEGER NOT NULL DEFAULT 1,
+      next_run_at   INTEGER,
+      last_run_at   INTEGER,
+      created_at    INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at    INTEGER NOT NULL DEFAULT (unixepoch())
+    )
+  `);
+
+  await _db.run(`
     CREATE TABLE IF NOT EXISTS audit_history (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      run_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      findings TEXT NOT NULL DEFAULT '[]',
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      schedule_id   INTEGER REFERENCES audit_schedules(id),
+      run_at        INTEGER NOT NULL,
+      status        TEXT NOT NULL DEFAULT 'success',
       findings_count INTEGER NOT NULL DEFAULT 0,
-      status TEXT DEFAULT 'completed',
-      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-    CREATE INDEX IF NOT EXISTS idx_audit_history_run_at ON audit_history(run_at DESC);
+      findings      TEXT,
+      error_message TEXT,
+      duration_ms   INTEGER,
+      created_at    INTEGER NOT NULL DEFAULT (unixepoch())
+    )
   `);
 
   // Audit notification settings
@@ -2125,6 +2140,10 @@ async function initDb(options = {}) {
       VALUES (true, 'MEDIUM', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
     `);
   }
+
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_audit_schedules_enabled ON audit_schedules(is_enabled, next_run_at)`);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_audit_history_schedule ON audit_history(schedule_id, run_at DESC)`);
+  await _db.run(`CREATE INDEX IF NOT EXISTS idx_audit_history_status ON audit_history(status, created_at DESC)`);
 
   try {
     const { seedForumStructure } = require('../lib/forum-seed');

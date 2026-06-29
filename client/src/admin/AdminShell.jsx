@@ -14,6 +14,7 @@ import SoundsPanel from './panels/SoundsPanel.jsx';
 import PrestigePanel from './panels/PrestigePanel.jsx';
 import FragmentsPanel from './panels/FragmentsPanel.jsx';
 import SecurityPanel from './panels/SecurityPanel.jsx';
+import AuditSchedulesPanel from './panels/AuditSchedulesPanel.jsx';
 
 const PHASE_LABELS = {};
 
@@ -146,6 +147,11 @@ export default function AdminShell({ adminUser, onLogout }) {
             />
           ) : activeTab === 'security' ? (
             <SecurityPanel
+              adminFetch={adminFetch}
+              onToast={(msg, type) => setToast({ msg, type: type || 'info' })}
+            />
+          ) : activeTab === 'audits' ? (
+            <AuditSchedulesPanel
               adminFetch={adminFetch}
               onToast={(msg, type) => setToast({ msg, type: type || 'info' })}
             />
