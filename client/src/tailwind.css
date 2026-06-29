@@ -269,6 +269,15 @@
     background: rgba(245, 158, 11, 0.15);
   }
 
+  /* ── Battle Outcome Banners ── */
+  .br-win {
+    @apply bg-green/15 border-l-4 border-green text-green;
+  }
+
+  .br-lose {
+    @apply bg-red/15 border-l-4 border-red text-red;
+  }
+
   /* ── Shared panel box frame (lore, kingdom header, resources) ── */
   .shell-box-frame {
     @apply relative overflow-hidden rounded-xl border border-ember-900/50 bg-bg2;
