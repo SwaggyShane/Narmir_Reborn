@@ -164,7 +164,7 @@ class ComparisonAnalyzer {
       if (bySeverity[severity]) {
         output += `### ${severity} (${bySeverity[severity].length})\n`;
         bySeverity[severity].slice(0, 10).forEach((f, i) => {
-          output += `${i + 1}. **${f.issue || f.type || 'Unknown Issue'}** - \`${f.file}:${f.line || '?'}\`\n`;
+          output += `${i + 1}. **${f.issue || f.type || 'Unknown Issue'}** - \`${f.file || 'unknown'}:${f.line || '?'}\`\n`;
           if (f.message) output += `   ${f.message}\n`;
         });
         if (bySeverity[severity].length > 10) {
@@ -181,7 +181,7 @@ class ComparisonAnalyzer {
     const t1 = new Date(timestamp1).getTime();
     const t2 = new Date(timestamp2).getTime();
     const diffMs = Math.abs(t2 - t1);
-    if (isNaN(diffMs)) return 'unknown';
+    if (Number.isNaN(diffMs)) return 'unknown';
 
     const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
