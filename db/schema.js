@@ -125,6 +125,9 @@ const NUMERIC_FIELDS = [
   'safety_component', 'prosperity_component', 'race_modifier',
   'tax_component', 'overcrowding_component', 'recovery_rate',
   'effects_component', 'synergy_component', 'fragment_component',
+  // Weekly Deep Audit
+  'created_by', 'schedule_id', 'next_run_at', 'last_run_at', 'run_at',
+  'findings_count', 'duration_ms',
 ];
 
 function convertNumericFields(row) {
@@ -920,7 +923,31 @@ async function initDb(options = {}) {
       max_hp      INTEGER NOT NULL DEFAULT 100,
       created_at  INTEGER NOT NULL DEFAULT (unixepoch())
     );
+    CREATE TABLE IF NOT EXISTS audit_schedules (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      created_by  INTEGER NOT NULL REFERENCES players(id),
+      frequency   TEXT    NOT NULL,
+      is_enabled  INTEGER NOT NULL DEFAULT 1,
+      next_run_at INTEGER,
+      last_run_at INTEGER,
+      created_at  INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at  INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+    CREATE TABLE IF NOT EXISTS audit_history (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      schedule_id     INTEGER NOT NULL REFERENCES audit_schedules(id) ON DELETE CASCADE,
+      run_at          INTEGER NOT NULL,
+      status          TEXT    NOT NULL,
+      findings_count  INTEGER NOT NULL DEFAULT 0,
+      findings        TEXT,
+      error_message   TEXT,
+      duration_ms     INTEGER NOT NULL DEFAULT 0,
+      created_at      INTEGER NOT NULL DEFAULT (unixepoch())
+    );
     CREATE INDEX IF NOT EXISTS idx_heroes_kingdom ON heroes(kingdom_id);
+    CREATE INDEX IF NOT EXISTS idx_audit_schedules_enabled ON audit_schedules(is_enabled, next_run_at);
+    CREATE INDEX IF NOT EXISTS idx_audit_schedules_creator ON audit_schedules(created_by, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_audit_history_schedule ON audit_history(schedule_id, run_at DESC);
     -- kingdom_id is the 2nd column of alliance_members' composite PK, so it can't be
     -- used for kingdom_id-only lookups (every turn + every socket connect). Index it.
     CREATE INDEX IF NOT EXISTS idx_alliance_members_kingdom ON alliance_members(kingdom_id);
