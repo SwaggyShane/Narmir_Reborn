@@ -141,11 +141,6 @@
 | ROADMAP.md | Current | Feature roadmap + completion status |
 | CLAUDE.md | Current | PR workflow + quality rules |
 
-**Stale Documents (Delete After TODO Migration):**
-- ITEMS_15-22_ASSESSMENT.md (superseded by TODO)
-- VANILLA_CLEANUP_AUDIT_ITEM*.md (superseded by ARCHIVAL)
-- MOBILE_VIEWPORT_TESTING_ITEM10.md (superseded by ARCHIVAL)
-
 ---
 
 ## Success Criteria
