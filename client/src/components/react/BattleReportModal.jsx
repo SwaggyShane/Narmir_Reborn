@@ -290,14 +290,13 @@ export default function BattleReportModal({ data, onClose }) {
         if (defenseBarRef.current) {
           tl.to(defenseBarRef.current, { width: `${defPct}%`, duration: 0.45, ease: 'power3.out' }, 0.16);
         }
-        if (attackBarRef.current || defenseBarRef.current) {
+        if (powerBarWrapRef.current) {
           tl.fromTo(
-            [attackBarRef.current, defenseBarRef.current].filter(Boolean),
+            powerBarWrapRef.current,
             { boxShadow: '0 0 0 0 rgba(255,255,255,0)' },
             {
               boxShadow: '0 0 18px rgba(255,255,255,0.18)',
               duration: 0.18,
-              stagger: 0.04,
               yoyo: true,
               repeat: 1,
               ease: 'power1.out',
