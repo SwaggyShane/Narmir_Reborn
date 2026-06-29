@@ -21,8 +21,8 @@ Remote is truth for shared project state. Completed work now lives in `ARCHIVAL.
 ## Codex Lane
 
 1. ✅ Battle Outcome Animation: Animate casualty and critical hit counters.
-2. âœ… Battle Outcome Animation: Animate HP, wall, or power bars when results are shown.
-3. Battle Outcome Animation: Keep combat resolution deterministic and presentation-only.
+2. ✅ Battle Outcome Animation: Animate HP, wall, or power bars when results are shown.
+3. ✅ Battle Outcome Animation: Keep combat resolution deterministic and presentation-only.
 4. Mobile and Vanilla Cleanup: Scan `public/` for inline `<script>` blocks and jQuery usage.
 5. Mobile and Vanilla Cleanup: Audit `index.html` and fallback templates for non-React entry points.
 6. Mobile and Vanilla Cleanup: Move remaining user-facing vanilla routes to React.
@@ -60,8 +60,8 @@ Remote is truth for shared project state. Completed work now lives in `ARCHIVAL.
 13. ✅ Production Maintenance: Enforce HTTPS in production.
 14. ✅ Production Maintenance: Load test for 5,000+ concurrent players.
 15. ✅ Production Maintenance: Verify backup and restore workflow.
-16. Production Maintenance: Configure API rate limiting.
-17. Production Maintenance: Add monitoring and alerting.
-18. Production Maintenance: Refresh user-facing docs.
+16. ✅ Production Maintenance: Configure API rate limiting.
+17. ✅ Production Maintenance: Add monitoring and alerting.
+18. ✅ Production Maintenance: Refresh user-facing docs.
 19. Production Maintenance: Prepare the support runbook.
 20. Production Maintenance: Confirm production database URL and automated backups.

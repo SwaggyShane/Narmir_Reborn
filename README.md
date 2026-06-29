@@ -198,6 +198,22 @@ Ultra-rare prizes include unique items, stat bonuses, and World Fragment drops. 
 
 ---
 
+## Production Documentation
+
+Comprehensive guides for deploying and maintaining Narmir Reborn in production:
+
+**Deployment & Configuration:**
+- [Railway Setup Guide](docs/RAILWAY_SETUP.md) — Environment variables, PostgreSQL setup, custom domains
+- [HTTPS Enforcement](docs/HTTPS_ENFORCEMENT.md) — TLS configuration, HSTS, security headers
+
+**Operational Guides:**
+- [Load Testing](docs/LOAD_TESTING.md) — Performance validation for 5000+ concurrent players
+- [Backup & Restore](docs/BACKUP_RESTORE.md) — Database backup procedures and disaster recovery
+- [API Rate Limiting](docs/API_RATE_LIMITING.md) — Configure and monitor rate limits per endpoint
+- [Monitoring & Alerting](docs/MONITORING_ALERTING.md) — Set up production monitoring and alerts
+
+---
+
 ## Chat & Moderation
 
 Real-time global chat via Socket.io. Messages use username (not kingdom name).
