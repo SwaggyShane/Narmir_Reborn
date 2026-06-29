@@ -392,6 +392,514 @@ Real-time updates via Socket.io connection. Listen on client with `socket.on()`:
 
 ---
 
+## HTTP Status Codes & Error Codes
+
+### Success Codes
+
+| Code | Meaning | Example Scenario |
+|------|---------|------------------|
+| `200` | OK | Request succeeded, response body contains data |
+| `201` | Created | Resource created successfully (rare; most use 200) |
+| `204` | No Content | Request succeeded, no response body |
+
+### Client Error Codes
+
+| Code | Meaning | Common Causes |
+|------|---------|---------------|
+| `400` | Bad Request | Invalid input (wrong field format, missing required fields) |
+| `401` | Unauthorized | Missing or invalid JWT token |
+| `403` | Forbidden | Authenticated but insufficient permissions (e.g., player trying to delete another player's post) |
+| `404` | Not Found | Resource doesn't exist (kingdom ID, post ID, etc.) |
+| `422` | Unprocessable Entity | Validation failed (e.g., negative gold amount) |
+| `429` | Too Many Requests | Rate limit exceeded; check `Retry-After` header |
+
+### Server Error Codes
+
+| Code | Meaning | Action |
+|------|---------|--------|
+| `500` | Internal Server Error | Unexpected error; contact support if persistent |
+| `503` | Service Unavailable | Server is restarting or under maintenance |
+
+---
+
+## Common Error Response Codes
+
+Errors are returned with specific error codes to help clients handle them programmatically:
+
+| Error Code | HTTP Status | Meaning | Example |
+|------------|-------------|---------|---------|
+| `AUTH_REQUIRED` | 401 | No JWT token provided | Missing auth header/cookie |
+| `INVALID_TOKEN` | 401 | JWT token is invalid or expired | Token malformed or tampered |
+| `CSRF_FAILED` | 403 | CSRF token missing or invalid | POST without X-CSRF-Token header |
+| `INSUFFICIENT_PERMISSIONS` | 403 | User doesn't have permission | Non-admin accessing /admin endpoint |
+| `RESOURCE_NOT_FOUND` | 404 | Kingdom/post/item doesn't exist | Invalid ID in URL |
+| `INVALID_INPUT` | 400 | Request body validation failed | Negative troop count, invalid enum |
+| `INSUFFICIENT_RESOURCES` | 422 | Not enough resources for action | Buying troops without gold |
+| `RATE_LIMITED` | 429 | Too many requests from this IP | Exceeded rate limit threshold |
+| `ALREADY_EXISTS` | 409 | Resource already exists | Registering with existing email |
+| `CONFLICT` | 409 | Action conflicts with game state | Attacking ally when peace treaty active |
+
+---
+
+## Request/Response Examples
+
+### Authentication
+
+#### POST /auth/register
+
+**Request:**
+```bash
+curl -X POST https://narmirreborn.com/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "player@example.com",
+    "username": "Gandalf",
+    "password": "SecurePassword123!",
+    "race": "human"
+  }'
+```
+
+**Success Response (201):**
+```json
+{
+  "ok": true,
+  "data": {
+    "id": "user-uuid-123",
+    "email": "player@example.com",
+    "username": "Gandalf",
+    "kingdom": {
+      "id": "kingdom-uuid-456",
+      "name": "Gandalf's Realm",
+      "race": "human"
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
+**Error Response (400):**
+```json
+{
+  "error": "Invalid input: password must be at least 8 characters",
+  "code": "INVALID_INPUT",
+  "status": 400
+}
+```
+
+**Error Response (409):**
+```json
+{
+  "error": "Email already registered",
+  "code": "ALREADY_EXISTS",
+  "status": 409
+}
+```
+
+---
+
+#### POST /auth/login
+
+**Request:**
+```bash
+curl -X POST https://narmirreborn.com/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "player@example.com",
+    "password": "SecurePassword123!"
+  }'
+```
+
+**Success Response (200):**
+```json
+{
+  "ok": true,
+  "data": {
+    "id": "user-uuid-123",
+    "username": "Gandalf",
+    "kingdom": {
+      "id": "kingdom-uuid-456",
+      "name": "Gandalf's Realm"
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
+**Error Response (401):**
+```json
+{
+  "error": "Invalid email or password",
+  "code": "AUTH_REQUIRED",
+  "status": 401
+}
+```
+
+**Rate Limited Response (429):**
+```json
+{
+  "error": "Too many login attempts. Try again in 60 seconds.",
+  "code": "RATE_LIMITED",
+  "status": 429,
+  "retryAfter": 60
+}
+```
+
+---
+
+### Gameplay
+
+#### GET /kingdom/me
+
+**Request:**
+```bash
+curl https://narmirreborn.com/api/kingdom/me \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..."
+```
+
+**Success Response (200):**
+```json
+{
+  "ok": true,
+  "data": {
+    "id": "kingdom-123",
+    "name": "Gandalf's Realm",
+    "owner": "player-username",
+    "race": "human",
+    "level": 45,
+    "gold": 150000,
+    "happiness": 85,
+    "population": 25000,
+    "buildings": {
+      "barracks": 15,
+      "tower": 8,
+      "library": 5,
+      "smithy": 3
+    },
+    "troops": {
+      "swordsmen": 5000,
+      "cavalry": 2000,
+      "archers": 3000,
+      "mages": 800
+    },
+    "resources": {
+      "wood": 45000,
+      "stone": 32000,
+      "iron": 18000,
+      "coal": 12000,
+      "steel": 5000,
+      "mana": 8000,
+      "food": 95000
+    },
+    "turns": 3,
+    "turnLimitRemaining": 120,
+    "lastTurnAt": "2026-06-29T14:32:15Z"
+  }
+}
+```
+
+---
+
+#### POST /kingdom/turn
+
+**Request:**
+```bash
+curl -X POST https://narmirreborn.com/api/kingdom/turn \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..." \
+  -H "X-CSRF-Token: csrf-token-value" \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+**Success Response (200):**
+```json
+{
+  "ok": true,
+  "data": {
+    "turnNumber": 150,
+    "turnLimitRemaining": 119,
+    "resourcesProduced": {
+      "gold": 5000,
+      "wood": 2000,
+      "troops": 50
+    },
+    "newEvents": [
+      {
+        "type": "PRODUCTION_COMPLETE",
+        "message": "Your barracks completed 50 swordsmen"
+      },
+      {
+        "type": "DISCOVERY",
+        "message": "Your rangers discovered iron ore deposit"
+      }
+    ]
+  }
+}
+```
+
+**Error Response (422):**
+```json
+{
+  "error": "Not enough turn limit remaining",
+  "code": "INSUFFICIENT_RESOURCES",
+  "status": 422
+}
+```
+
+---
+
+#### POST /kingdom/attack
+
+**Request:**
+```bash
+curl -X POST https://narmirreborn.com/api/kingdom/attack \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..." \
+  -H "X-CSRF-Token: csrf-token-value" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "targetKingdomId": "enemy-kingdom-789",
+    "troops": {
+      "swordsmen": 500,
+      "cavalry": 200,
+      "archers": 300
+    }
+  }'
+```
+
+**Success Response (200):**
+```json
+{
+  "ok": true,
+  "data": {
+    "battleId": "battle-uuid-123",
+    "attacker": {
+      "kingdomId": "kingdom-123",
+      "kingdomName": "Gandalf's Realm",
+      "troopsDeployed": 1000,
+      "troopsKilled": 150,
+      "troopsReturning": 850
+    },
+    "defender": {
+      "kingdomId": "enemy-kingdom-789",
+      "kingdomName": "Sauron's Dark Tower",
+      "troopsKilled": 400,
+      "troopsLost": 400
+    },
+    "outcome": "ATTACKER_WINS",
+    "loot": {
+      "gold": 5000,
+      "resources": 2000
+    },
+    "duration": 45
+  }
+}
+```
+
+---
+
+### Forum
+
+#### GET /forum/boards
+
+**Request:**
+```bash
+curl https://narmirreborn.com/api/forum/boards
+```
+
+**Success Response (200):**
+```json
+{
+  "ok": true,
+  "data": [
+    {
+      "id": "general",
+      "name": "General Discussion",
+      "description": "Off-topic discussion and announcements",
+      "topicCount": 1245,
+      "postCount": 8934
+    },
+    {
+      "id": "strategies",
+      "name": "Strategies & Tips",
+      "description": "Share your kingdom strategies",
+      "topicCount": 432,
+      "postCount": 3201
+    }
+  ]
+}
+```
+
+---
+
+#### POST /forum/topics
+
+**Request:**
+```bash
+curl -X POST https://narmirreborn.com/api/forum/topics \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..." \
+  -H "X-CSRF-Token: csrf-token-value" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "boardId": "strategies",
+    "title": "Early Game Economy Guide",
+    "content": "Here are tips for managing early game resources..."
+  }'
+```
+
+**Success Response (201):**
+```json
+{
+  "ok": true,
+  "data": {
+    "id": "topic-uuid-456",
+    "boardId": "strategies",
+    "title": "Early Game Economy Guide",
+    "author": "Gandalf",
+    "createdAt": "2026-06-29T14:32:15Z",
+    "postCount": 1
+  }
+}
+```
+
+**Error Response (403):**
+```json
+{
+  "error": "User is banned from forum",
+  "code": "INSUFFICIENT_PERMISSIONS",
+  "status": 403
+}
+```
+
+---
+
+### Market
+
+#### GET /kingdom/market/prices
+
+**Request:**
+```bash
+curl https://narmirreborn.com/api/kingdom/market/prices \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..."
+```
+
+**Success Response (200):**
+```json
+{
+  "ok": true,
+  "data": [
+    {
+      "id": "wood",
+      "name": "Wood",
+      "basePriceInGold": 10,
+      "currentPrice": 12.5,
+      "priceHistory": [10.0, 10.5, 11.0, 11.5, 12.0, 12.5],
+      "marketVolume": 450000,
+      "trend": "RISING"
+    },
+    {
+      "id": "stone",
+      "name": "Stone",
+      "basePriceInGold": 15,
+      "currentPrice": 14.2,
+      "priceHistory": [15.0, 14.8, 14.5, 14.3, 14.2],
+      "marketVolume": 320000,
+      "trend": "FALLING"
+    }
+  ]
+}
+```
+
+---
+
+#### POST /kingdom/market/buy
+
+**Request:**
+```bash
+curl -X POST https://narmirreborn.com/api/kingdom/market/buy \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..." \
+  -H "X-CSRF-Token: csrf-token-value" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "resourceId": "wood",
+    "quantity": 5000
+  }'
+```
+
+**Success Response (200):**
+```json
+{
+  "ok": true,
+  "data": {
+    "transaction": {
+      "id": "tx-uuid-789",
+      "resource": "wood",
+      "quantity": 5000,
+      "unitPrice": 12.5,
+      "totalCost": 62500,
+      "timestamp": "2026-06-29T14:32:15Z"
+    },
+    "kingdom": {
+      "gold": 87500,
+      "wood": 50000
+    }
+  }
+}
+```
+
+**Error Response (422):**
+```json
+{
+  "error": "Insufficient gold: need 62500, have 40000",
+  "code": "INSUFFICIENT_RESOURCES",
+  "status": 422
+}
+```
+
+---
+
+## Rate Limiting Details
+
+### Rate Limit Headers
+
+All responses include rate limit information in headers:
+
+```
+X-RateLimit-Limit: 300           # Requests allowed per window
+X-RateLimit-Remaining: 287       # Requests remaining before limit
+X-RateLimit-Reset: 1625000000    # Unix timestamp when counter resets
+```
+
+### When Rate Limited (429)
+
+```
+HTTP/1.1 429 Too Many Requests
+Retry-After: 45
+X-RateLimit-Limit: 300
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1625000045
+
+{
+  "error": "Rate limit exceeded: 300 requests per 60 seconds",
+  "code": "RATE_LIMITED",
+  "status": 429,
+  "retryAfter": 45
+}
+```
+
+**Action:** Wait `Retry-After` seconds before retrying.
+
+### Rate Limit Categories
+
+| Category | Limit | Applies To |
+|----------|-------|-----------|
+| **Auth** | 10/min (prod) | /auth/login, /auth/register |
+| **Gameplay** | 300/min | /kingdom/turn, /kingdom/attack, /kingdom/spell |
+| **Admin** | 30/min (prod) | /admin/* endpoints |
+| **General** | 500/min | Forum, market, most other endpoints |
+
+See `docs/API_RATE_LIMITING.md` for detailed configuration.
+
+---
+
 ## Deprecated Endpoints
 
 None currently. All endpoints listed above are active and functional.
@@ -400,4 +908,4 @@ None currently. All endpoints listed above are active and functional.
 
 **Last Updated:** 2026-06-29  
 **API Version:** Pre-beta (Subject to change before v1.0)  
-**Scope:** Comprehensive — covers all 150+ endpoints across 9 major categories
+**Scope:** Comprehensive — covers all 150+ endpoints with examples and error codes
