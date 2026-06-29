@@ -1826,100 +1826,14 @@ module.exports = function (db, io) {
     }
   });
 
-  /* ── Audit Schedule Management ── */
-
-  router.get("/audit-schedules", async (_req, res) => {
-    try {
-      const schedules = await db.all(
-        "SELECT * FROM audit_schedules ORDER BY created_at DESC"
-      );
-      res.json({ success: true, schedules });
-    } catch (err) {
-      console.error("[admin] Audit schedules fetch error:", err);
-      res.status(500).json({ success: false, error: err.message });
-    }
-  });
-
-  router.post("/audit-schedules", async (req, res) => {
-    const { frequency, is_enabled } = req.body;
-    if (!frequency || !["daily", "weekly", "monthly"].includes(frequency)) {
-      return res.status(400).json({ success: false, error: "Invalid frequency" });
-    }
-    try {
-      const result = await db.run(
-        "INSERT INTO audit_schedules (created_by, frequency, is_enabled) VALUES (?, ?, ?)",
-        [req.player.id, frequency, is_enabled ? 1 : 0]
-      );
-      res.json({ success: true, schedule_id: result.lastID });
-    } catch (err) {
-      console.error("[admin] Audit schedule creation error:", err);
-      res.status(500).json({ success: false, error: err.message });
-    }
-  });
-
-  router.put("/audit-schedules/:id", async (req, res) => {
-    const { frequency, is_enabled } = req.body;
-    const scheduleId = parseInt(req.params.id, 10);
-    if (isNaN(scheduleId)) {
-      return res.status(400).json({ success: false, error: "Invalid schedule ID" });
-    }
-    if (!frequency || !["daily", "weekly", "monthly"].includes(frequency)) {
-      return res.status(400).json({ success: false, error: "Invalid frequency" });
-    }
-    try {
-      await db.run(
-        "UPDATE audit_schedules SET frequency = ?, is_enabled = ?, updated_at = unixepoch() WHERE id = ?",
-        [frequency, is_enabled ? 1 : 0, scheduleId]
-      );
-      res.json({ success: true });
-    } catch (err) {
-      console.error("[admin] Audit schedule update error:", err);
-      res.status(500).json({ success: false, error: err.message });
-    }
-  });
-
-  router.post("/audit-schedules/:id/run", async (req, res) => {
-    const scheduleId = parseInt(req.params.id, 10);
-    if (isNaN(scheduleId)) {
-      return res.status(400).json({ success: false, error: "Invalid schedule ID" });
-    }
-    try {
-      const schedule = await db.get("SELECT id FROM audit_schedules WHERE id = ?", [scheduleId]);
-      if (!schedule) {
-        return res.status(404).json({ success: false, error: "Schedule not found" });
-      }
-
-      const startTime = Date.now();
-      const basicFindings = [];
-      const findings = { critical: [], high: [], medium: [], low: [], info: basicFindings };
-
-      await db.run(
-        "INSERT INTO audit_history (schedule_id, run_at, status, findings_count, findings, duration_ms) VALUES (?, unixepoch(), ?, ?, ?, ?)",
-        [scheduleId, "success", findings.critical.length + findings.high.length + findings.medium.length + findings.low.length, JSON.stringify(findings), Date.now() - startTime]
-      );
-
-      await db.run(
-        "UPDATE audit_schedules SET last_run_at = unixepoch() WHERE id = ?",
-        [scheduleId]
-      );
-
-      res.json({ success: true, findings_count: basicFindings.length, duration_ms: Date.now() - startTime });
-    } catch (err) {
-      console.error("[admin] Audit run error:", err);
-      await db.run(
-        "INSERT INTO audit_history (schedule_id, run_at, status, error_message, duration_ms) VALUES (?, unixepoch(), ?, ?, ?)",
-        [scheduleId, "error", err.message, 0]
-      ).catch(e => console.error("Error logging audit failure:", e));
-      res.status(500).json({ success: false, error: err.message });
-    }
-  });
-
   // POST /api/admin/security-audit-full — recursive scan of entire codebase
   router.post("/security-audit-full", async (req, res) => {
     try {
       const AuditReportGenerator = require("../tools/security-auditor/report-generator");
-      const generator = new AuditReportGenerator(path.join(__dirname, ".."));
+      const NotificationService = require("../tools/security-auditor/notification-service");
+      const ComparisonAnalyzer = require("../tools/security-auditor/comparison-analyzer");
 
+      const generator = new AuditReportGenerator(path.join(__dirname, ".."));
       const result = await generator.generateFullCodebaseReport();
       const allFindings = [
         ...result.findings.critical,
@@ -1929,9 +1843,72 @@ module.exports = function (db, io) {
         ...result.findings.info
       ];
 
+      // Save audit results to database
+      const findingsJson = JSON.stringify(allFindings);
+      const timestamp = new Date().toISOString();
+      const auditId = await db.run(
+        "INSERT INTO audit_history (run_at, findings, findings_count, status) VALUES (?, ?, ?, ?)",
+        [timestamp, findingsJson, allFindings.length, 'completed']
+      ).then(stmt => stmt.lastID || null).catch(err => {
+        console.error("[audit] Failed to save audit history:", err);
+        return null;
+      });
+
+      // Compare with previous audit and send notifications
+      let comparisonData = null;
+      if (auditId) {
+        try {
+          const previousAudit = await db.get(
+            "SELECT id, run_at, findings FROM audit_history WHERE id < ? ORDER BY id DESC LIMIT 1",
+            [auditId]
+          );
+
+          if (previousAudit) {
+            const analyzer = new ComparisonAnalyzer();
+            let previousFindings = [];
+            try {
+              previousFindings = JSON.parse(previousAudit.findings || '[]');
+            } catch (e) {
+              console.warn("[audit] Failed to parse previous findings:", e.message);
+            }
+
+            comparisonData = analyzer.compare(previousFindings, allFindings);
+
+            // Send notifications for new issues
+            if (comparisonData.new.length > 0) {
+              const notificationSettings = await db.get(
+                "SELECT notify_on_new_issues, min_severity FROM audit_notification_settings LIMIT 1"
+              );
+
+              if (notificationSettings && notificationSettings.notify_on_new_issues) {
+                const notifier = new NotificationService();
+                const severitySummary = notifier.getSeveritySummary(comparisonData.new);
+                const shouldNotify = notifier.meetsSeverityThreshold(
+                  comparisonData.new,
+                  notificationSettings.min_severity || 'MEDIUM'
+                );
+
+                if (shouldNotify) {
+                  notifier.sendDiscordNotification(
+                    comparisonData.new.length,
+                    severitySummary,
+                    comparisonData.stats
+                  ).catch(err => {
+                    console.error("[audit] Background notification failed:", err);
+                  });
+                }
+              }
+            }
+          }
+        } catch (comparisonErr) {
+          console.error("[audit] Comparison/notification error:", comparisonErr.message);
+        }
+      }
+
       res.json({
         success: true,
-        timestamp: new Date().toISOString(),
+        auditId,
+        timestamp,
         filesAnalyzed: result.stats.totalFiles,
         stats: result.stats,
         summary: {
@@ -1944,7 +1921,8 @@ module.exports = function (db, io) {
         },
         findings: allFindings.slice(0, 100),
         totalFindingsAvailable: allFindings.length,
-        message: allFindings.length > 100 ? `Showing first 100 of ${allFindings.length} findings` : undefined
+        message: allFindings.length > 100 ? `Showing first 100 of ${allFindings.length} findings` : undefined,
+        comparison: comparisonData
       });
     } catch (err) {
       console.error("[admin] Full codebase audit error:", err);
@@ -1955,217 +1933,100 @@ module.exports = function (db, io) {
     }
   });
 
-  // GET /api/admin/audit-comparison/:id1/:id2 — compare two audit runs
-  router.get("/audit-comparison/:id1/:id2", requireAdmin, async (req, res) => {
+  // GET /api/admin/audit-notifications/settings — get notification configuration
+  router.get("/audit-notifications/settings", async (req, res) => {
     try {
-      const ComparisonAnalyzer = require("../tools/security-auditor/comparison-analyzer");
-      const analyzer = new ComparisonAnalyzer();
+      const settings = await db.get(
+        "SELECT id, notify_on_new_issues, min_severity, discord_channel_id, updated_at FROM audit_notification_settings LIMIT 1"
+      );
 
-      const { id1, id2 } = req.params;
-      const id1Num = parseInt(id1, 10);
-      const id2Num = parseInt(id2, 10);
-
-      if (isNaN(id1Num) || isNaN(id2Num)) {
-        return res.status(400).json({ error: "Invalid audit IDs" });
+      if (!settings) {
+        return res.json({
+          success: true,
+          settings: {
+            notify_on_new_issues: true,
+            min_severity: 'MEDIUM',
+            discord_channel_id: null
+          }
+        });
       }
-
-      const [audit1, audit2] = await Promise.all([
-        db.get(
-          "SELECT id, run_at, findings FROM audit_history WHERE id = ?",
-          [id1Num]
-        ),
-        db.get(
-          "SELECT id, run_at, findings FROM audit_history WHERE id = ?",
-          [id2Num]
-        )
-      ]);
-
-      if (!audit1 || !audit2) {
-        return res.status(404).json({ error: "One or both audits not found" });
-      }
-
-      let findings1 = [];
-      let findings2 = [];
-
-      try {
-        findings1 = JSON.parse(audit1.findings || "[]");
-        findings2 = JSON.parse(audit2.findings || "[]");
-      } catch (err) {
-        console.error("[admin] Failed to parse audit findings:", err.message);
-        return res.status(500).json({ error: "Failed to parse audit data" });
-      }
-
-      const comparison = analyzer.compare(findings1, findings2);
-      const report = analyzer.generateComparisonReport(comparison, audit1.run_at, audit2.run_at);
 
       res.json({
         success: true,
-        audit1Id: audit1.id,
-        audit2Id: audit2.id,
-        audit1Date: audit1.run_at,
-        audit2Date: audit2.run_at,
-        comparison,
-        report
+        settings
       });
     } catch (err) {
-      console.error("[admin] Audit comparison error:", err);
-      res.status(500).json({ error: err.message });
+      console.error("[admin] Error fetching notification settings:", err);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
     }
   });
 
-  // GET /api/admin/audit-trend — get trend summary across recent audits
-  router.get("/audit-trend", requireAdmin, async (req, res) => {
+  // POST /api/admin/audit-notifications/settings — update notification configuration
+  router.post("/audit-notifications/settings", async (req, res) => {
     try {
-      const ComparisonAnalyzer = require("../tools/security-auditor/comparison-analyzer");
-      const analyzer = new ComparisonAnalyzer();
+      const { notify_on_new_issues, min_severity, discord_channel_id } = req.body;
 
+      const validSeverities = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO'];
+      const severity = min_severity && validSeverities.includes(min_severity) ? min_severity : 'MEDIUM';
+
+      // Update or insert settings
+      const existing = await db.get("SELECT id FROM audit_notification_settings LIMIT 1");
+      if (existing) {
+        await db.run(
+          "UPDATE audit_notification_settings SET notify_on_new_issues = ?, min_severity = ?, discord_channel_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+          [notify_on_new_issues ? true : false, severity, discord_channel_id || null, existing.id]
+        );
+      } else {
+        await db.run(
+          "INSERT INTO audit_notification_settings (notify_on_new_issues, min_severity, discord_channel_id, created_at, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+          [notify_on_new_issues ? true : false, severity, discord_channel_id || null]
+        );
+      }
+
+      res.json({
+        success: true,
+        message: "Notification settings updated",
+        settings: {
+          notify_on_new_issues: !!notify_on_new_issues,
+          min_severity: severity,
+          discord_channel_id: discord_channel_id || null
+        }
+      });
+    } catch (err) {
+      console.error("[admin] Error updating notification settings:", err);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+
+  // GET /api/admin/audit-notifications/recent — get recent notifications
+  router.get("/audit-notifications/recent", async (req, res) => {
+    try {
       let limit = parseInt(req.query.limit || "10", 10);
       if (isNaN(limit) || limit <= 0) {
         limit = 10;
       }
-      const auditHistory = await db.all(
-        "SELECT id, run_at, findings_count, status FROM audit_history ORDER BY run_at DESC LIMIT ?",
+
+      const audits = await db.all(
+        "SELECT id, run_at, findings_count FROM audit_history ORDER BY run_at DESC LIMIT ?",
         [Math.min(limit, 100)]
       );
 
-      if (auditHistory.length === 0) {
-        return res.json({
-          success: true,
-          trend: "no_audits",
-          message: "No audit history available",
-          auditCount: 0
-        });
-      }
-
-      const trend = analyzer.getTrendSummary(auditHistory);
-
       res.json({
         success: true,
-        trend,
-        auditHistory: auditHistory.reverse(),
-        message: `Trend analysis across ${auditHistory.length} audits`
+        audits
       });
     } catch (err) {
-      console.error("[admin] Audit trend error:", err);
-      res.status(500).json({ error: err.message });
-    }
-  });
-
-  // GET /api/admin/audit-visualization/timeseries — timeseries data for trend charts
-  router.get("/audit-visualization/timeseries", requireAdmin, async (req, res) => {
-    try {
-      const TrendVisualizer = require("../tools/security-auditor/trend-visualizer");
-      const visualizer = new TrendVisualizer();
-
-      let limit = parseInt(req.query.limit || "50", 10);
-      if (isNaN(limit) || limit <= 0) {
-        limit = 50;
-      }
-      const auditHistory = await db.all(
-        "SELECT id, run_at, findings_count, findings, status FROM audit_history ORDER BY run_at DESC LIMIT ?",
-        [Math.min(limit, 500)]
-      );
-
-      if (auditHistory.length === 0) {
-        return res.json({
-          success: true,
-          data: [],
-          message: "No audit history available"
-        });
-      }
-
-      const timeseriesData = visualizer.generateTimeseriesData(auditHistory);
-
-      res.json({
-        success: true,
-        ...timeseriesData
+      console.error("[admin] Error fetching audit history:", err);
+      res.status(500).json({
+        success: false,
+        error: err.message
       });
-    } catch (err) {
-      console.error("[admin] Timeseries visualization error:", err);
-      res.status(500).json({ error: err.message });
-    }
-  });
-
-  // GET /api/admin/audit-visualization/severity-trend — severity distribution over time
-  router.get("/audit-visualization/severity-trend", requireAdmin, async (req, res) => {
-    try {
-      const TrendVisualizer = require("../tools/security-auditor/trend-visualizer");
-      const visualizer = new TrendVisualizer();
-
-      let limit = parseInt(req.query.limit || "50", 10);
-      if (isNaN(limit) || limit <= 0) {
-        limit = 50;
-      }
-      const auditHistory = await db.all(
-        "SELECT id, run_at, findings FROM audit_history ORDER BY run_at DESC LIMIT ?",
-        [Math.min(limit, 500)]
-      );
-
-      const severityTrend = visualizer.generateSeverityTrend(auditHistory);
-
-      res.json({
-        success: true,
-        ...severityTrend
-      });
-    } catch (err) {
-      console.error("[admin] Severity trend visualization error:", err);
-      res.status(500).json({ error: err.message });
-    }
-  });
-
-  // GET /api/admin/audit-visualization/stats — summary statistics for dashboard
-  router.get("/audit-visualization/stats", requireAdmin, async (req, res) => {
-    try {
-      const TrendVisualizer = require("../tools/security-auditor/trend-visualizer");
-      const visualizer = new TrendVisualizer();
-
-      let limit = parseInt(req.query.limit || "20", 10);
-      if (isNaN(limit) || limit <= 0) {
-        limit = 20;
-      }
-      const auditHistory = await db.all(
-        "SELECT id, run_at, findings_count, findings, status FROM audit_history ORDER BY run_at DESC LIMIT ?",
-        [Math.min(limit, 100)]
-      );
-
-      const summaryStats = visualizer.generateSummaryStats(auditHistory);
-      const trendStats = visualizer.calculateTrendStats(auditHistory);
-
-      res.json({
-        success: true,
-        summary: summaryStats,
-        trend: trendStats
-      });
-    } catch (err) {
-      console.error("[admin] Stats visualization error:", err);
-      res.status(500).json({ error: err.message });
-    }
-  });
-
-  // GET /api/admin/audit-visualization/heatmap — health score heatmap data
-  router.get("/audit-visualization/heatmap", requireAdmin, async (req, res) => {
-    try {
-      const TrendVisualizer = require("../tools/security-auditor/trend-visualizer");
-      const visualizer = new TrendVisualizer();
-
-      let limit = parseInt(req.query.limit || "90", 10);
-      if (isNaN(limit) || limit <= 0) {
-        limit = 90;
-      }
-      const auditHistory = await db.all(
-        "SELECT id, run_at, findings_count, findings, status FROM audit_history ORDER BY run_at DESC LIMIT ?",
-        [Math.min(limit, 500)]
-      );
-
-      const heatmapData = visualizer.generateHeatmapData(auditHistory);
-
-      res.json({
-        success: true,
-        ...heatmapData
-      });
-    } catch (err) {
-      console.error("[admin] Heatmap visualization error:", err);
-      res.status(500).json({ error: err.message });
     }
   });
 
