@@ -1,6 +1,21 @@
 # Narmir Reborn: Development Todos
 
-Local is truth. Completed work now lives in `ARCHIVAL.md`. The Claude completion log has been removed.
+Remote is truth for shared project state. Completed work now lives in `ARCHIVAL.md`. The Claude completion log has been removed.
+
+## Project Workflow
+
+1. Treat `origin/main` as the shared project ledger; keep local branches disposable and task-specific.
+2. Keep one active owner per lane at a time. Codex works Codex lane items, Claude works Claude lane items.
+3. Never mix lanes in the same branch, commit, or PR.
+4. Create one branch and one PR per task. PRs are ready-for-review, not draft.
+5. Before starting a task, check the lane's current TODO item and any open PRs that already cover it.
+6. If a review comment is correct, fix it. If it is wrong, refute it with evidence and move on.
+7. Claude and Codex both amend `TODO.md` when their work is completed.
+8. Codex merges approved PRs, deletes the associated branches, then fetches `origin` before starting the next merge.
+9. After every merge, re-check for newly landed Claude branches before picking up the next task.
+10. Use Gemini feedback for high-risk work before merge.
+11. Do not ask for permission to continue unless blocked or explicitly told to stop.
+12. Keep changes tight and task-scoped so the two lanes can move independently without stepping on each other.
 
 ## Codex Lane
 
