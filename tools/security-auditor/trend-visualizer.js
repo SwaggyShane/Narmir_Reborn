@@ -67,7 +67,7 @@ class TrendVisualizer {
 
       return {
         timestamp: audit.run_at,
-        date: new Date(audit.run_at).toLocaleDateString(),
+        date: new Date(audit.run_at).toLocaleDateString('en-US'),
         time: new Date(audit.run_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
         findings: aggregated,
         status: audit.status || 'unknown',
@@ -159,7 +159,7 @@ class TrendVisualizer {
       oldestTotal: oldestAgg.total,
       latestTotal: latestAgg.total,
       auditCount: auditHistory.length,
-      improvementRate: oldestAgg.total > 0 ? ((oldestAgg.total - latestAgg.total) / oldestAgg.total * 100).toFixed(1) : 0
+      improvementRate: oldestAgg.total > 0 ? parseFloat(((oldestAgg.total - latestAgg.total) / oldestAgg.total * 100).toFixed(1)) : 0
     };
   }
 
@@ -231,7 +231,7 @@ class TrendVisualizer {
 
       return {
         auditId: audit.id,
-        date: new Date(audit.run_at).toLocaleDateString(),
+        date: new Date(audit.run_at).toLocaleDateString('en-US'),
         timestamp: audit.run_at,
         healthScore,
         findingsCount: aggregated.total,

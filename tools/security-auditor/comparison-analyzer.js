@@ -78,8 +78,8 @@ class ComparisonAnalyzer {
 
   // Format comparison as markdown report
   formatComparisonReport(comparison, previousTimestamp, currentTimestamp) {
-    const prevDate = new Date(previousTimestamp).toLocaleString();
-    const currDate = new Date(currentTimestamp).toLocaleString();
+    const prevDate = new Date(previousTimestamp).toLocaleString('en-US');
+    const currDate = new Date(currentTimestamp).toLocaleString('en-US');
 
     let report = `# Audit Comparison Report\n\n`;
     report += `**Previous Audit:** ${prevDate}\n`;
@@ -125,7 +125,7 @@ class ComparisonAnalyzer {
         if (bySeverity[severity]) {
           report += `### ${severity} (${bySeverity[severity].length})\n`;
           bySeverity[severity].slice(0, 5).forEach((f, i) => {
-            report += `${i + 1}. **${f.issue}** - \`${f.file}:${f.line || '?'}\`\n`;
+            report += `${i + 1}. **${f.issue || f.type || 'Unknown Issue'}** - \`${f.file}:${f.line || '?'}\`\n`;
           });
           if (bySeverity[severity].length > 5) {
             report += `... and ${bySeverity[severity].length - 5} more\n`;
@@ -164,7 +164,7 @@ class ComparisonAnalyzer {
       if (bySeverity[severity]) {
         output += `### ${severity} (${bySeverity[severity].length})\n`;
         bySeverity[severity].slice(0, 10).forEach((f, i) => {
-          output += `${i + 1}. **${f.issue}** - \`${f.file}:${f.line || '?'}\`\n`;
+          output += `${i + 1}. **${f.issue || f.type || 'Unknown Issue'}** - \`${f.file}:${f.line || '?'}\`\n`;
           if (f.message) output += `   ${f.message}\n`;
         });
         if (bySeverity[severity].length > 10) {

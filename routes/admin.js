@@ -1931,7 +1931,10 @@ module.exports = function (db, io) {
       const ComparisonAnalyzer = require("../tools/security-auditor/comparison-analyzer");
       const analyzer = new ComparisonAnalyzer();
 
-      const limit = parseInt(req.query.limit || "10", 10);
+      let limit = parseInt(req.query.limit || "10", 10);
+      if (isNaN(limit) || limit <= 0) {
+        limit = 10;
+      }
       const auditHistory = await db.all(
         "SELECT id, run_at, findings_count, status FROM audit_history ORDER BY run_at DESC LIMIT ?",
         [Math.min(limit, 100)]
