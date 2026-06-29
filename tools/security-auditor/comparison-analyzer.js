@@ -10,7 +10,8 @@ class ComparisonAnalyzer {
 
   // Create a unique key for a finding (file + line + issue type)
   findingKey(finding) {
-    return `${finding.file}:${finding.line || 0}:${finding.type || finding.issue}`;
+    if (!finding) return 'unknown:0:unknown';
+    return `${finding.file || 'unknown'}:${finding.line || 0}:${finding.type || finding.issue || 'unknown'}`;
   }
 
   // Convert findings array to Map for comparison
@@ -77,8 +78,8 @@ class ComparisonAnalyzer {
 
   // Format comparison as markdown report
   formatComparisonReport(comparison, previousTimestamp, currentTimestamp) {
-    const prevDate = new Date(previousTimestamp).toLocaleString();
-    const currDate = new Date(currentTimestamp).toLocaleString();
+    const prevDate = new Date(previousTimestamp).toLocaleString('en-US');
+    const currDate = new Date(currentTimestamp).toLocaleString('en-US');
 
     let report = `# Audit Comparison Report\n\n`;
     report += `**Previous Audit:** ${prevDate}\n`;
@@ -163,7 +164,7 @@ class ComparisonAnalyzer {
       if (bySeverity[severity]) {
         output += `### ${severity} (${bySeverity[severity].length})\n`;
         bySeverity[severity].slice(0, 10).forEach((f, i) => {
-          output += `${i + 1}. **${f.issue}** - \`${f.file}:${f.line || '?'}\`\n`;
+          output += `${i + 1}. **${f.issue || f.type || 'Unknown Issue'}** - \`${f.file || 'unknown'}:${f.line || '?'}\`\n`;
           if (f.message) output += `   ${f.message}\n`;
         });
         if (bySeverity[severity].length > 10) {
@@ -180,6 +181,7 @@ class ComparisonAnalyzer {
     const t1 = new Date(timestamp1).getTime();
     const t2 = new Date(timestamp2).getTime();
     const diffMs = Math.abs(t2 - t1);
+    if (Number.isNaN(diffMs)) return 'unknown';
 
     const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
