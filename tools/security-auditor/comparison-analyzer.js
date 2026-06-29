@@ -125,7 +125,7 @@ class ComparisonAnalyzer {
         if (bySeverity[severity]) {
           report += `### ${severity} (${bySeverity[severity].length})\n`;
           bySeverity[severity].slice(0, 5).forEach((f, i) => {
-            report += `${i + 1}. **${f.issue}** - \`${f.file}:${f.line || '?'}\`\n`;
+            report += `${i + 1}. **${f.issue || f.type || 'Unknown Issue'}** - \`${f.file}:${f.line || '?'}\`\n`;
           });
           if (bySeverity[severity].length > 5) {
             report += `... and ${bySeverity[severity].length - 5} more\n`;

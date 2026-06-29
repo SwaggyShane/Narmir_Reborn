@@ -1969,14 +1969,16 @@ module.exports = function (db, io) {
         return res.status(400).json({ error: "Invalid audit IDs" });
       }
 
-      const audit1 = await db.get(
-        "SELECT id, run_at, findings FROM audit_history WHERE id = ?",
-        [id1Num]
-      );
-      const audit2 = await db.get(
-        "SELECT id, run_at, findings FROM audit_history WHERE id = ?",
-        [id2Num]
-      );
+      const [audit1, audit2] = await Promise.all([
+        db.get(
+          "SELECT id, run_at, findings FROM audit_history WHERE id = ?",
+          [id1Num]
+        ),
+        db.get(
+          "SELECT id, run_at, findings FROM audit_history WHERE id = ?",
+          [id2Num]
+        )
+      ]);
 
       if (!audit1 || !audit2) {
         return res.status(404).json({ error: "One or both audits not found" });
@@ -2017,7 +2019,10 @@ module.exports = function (db, io) {
       const ComparisonAnalyzer = require("../tools/security-auditor/comparison-analyzer");
       const analyzer = new ComparisonAnalyzer();
 
-      const limit = parseInt(req.query.limit || "10", 10);
+      let limit = parseInt(req.query.limit || "10", 10);
+      if (isNaN(limit) || limit <= 0) {
+        limit = 10;
+      }
       const auditHistory = await db.all(
         "SELECT id, run_at, findings_count, status FROM audit_history ORDER BY run_at DESC LIMIT ?",
         [Math.min(limit, 100)]
@@ -2042,6 +2047,124 @@ module.exports = function (db, io) {
       });
     } catch (err) {
       console.error("[admin] Audit trend error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // GET /api/admin/audit-visualization/timeseries — timeseries data for trend charts
+  router.get("/audit-visualization/timeseries", requireAdmin, async (req, res) => {
+    try {
+      const TrendVisualizer = require("../tools/security-auditor/trend-visualizer");
+      const visualizer = new TrendVisualizer();
+
+      let limit = parseInt(req.query.limit || "50", 10);
+      if (isNaN(limit) || limit <= 0) {
+        limit = 50;
+      }
+      const auditHistory = await db.all(
+        "SELECT id, run_at, findings_count, findings, status FROM audit_history ORDER BY run_at DESC LIMIT ?",
+        [Math.min(limit, 500)]
+      );
+
+      if (auditHistory.length === 0) {
+        return res.json({
+          success: true,
+          data: [],
+          message: "No audit history available"
+        });
+      }
+
+      const timeseriesData = visualizer.generateTimeseriesData(auditHistory);
+
+      res.json({
+        success: true,
+        ...timeseriesData
+      });
+    } catch (err) {
+      console.error("[admin] Timeseries visualization error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // GET /api/admin/audit-visualization/severity-trend — severity distribution over time
+  router.get("/audit-visualization/severity-trend", requireAdmin, async (req, res) => {
+    try {
+      const TrendVisualizer = require("../tools/security-auditor/trend-visualizer");
+      const visualizer = new TrendVisualizer();
+
+      let limit = parseInt(req.query.limit || "50", 10);
+      if (isNaN(limit) || limit <= 0) {
+        limit = 50;
+      }
+      const auditHistory = await db.all(
+        "SELECT id, run_at, findings FROM audit_history ORDER BY run_at DESC LIMIT ?",
+        [Math.min(limit, 500)]
+      );
+
+      const severityTrend = visualizer.generateSeverityTrend(auditHistory);
+
+      res.json({
+        success: true,
+        ...severityTrend
+      });
+    } catch (err) {
+      console.error("[admin] Severity trend visualization error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // GET /api/admin/audit-visualization/stats — summary statistics for dashboard
+  router.get("/audit-visualization/stats", requireAdmin, async (req, res) => {
+    try {
+      const TrendVisualizer = require("../tools/security-auditor/trend-visualizer");
+      const visualizer = new TrendVisualizer();
+
+      let limit = parseInt(req.query.limit || "20", 10);
+      if (isNaN(limit) || limit <= 0) {
+        limit = 20;
+      }
+      const auditHistory = await db.all(
+        "SELECT id, run_at, findings_count, findings, status FROM audit_history ORDER BY run_at DESC LIMIT ?",
+        [Math.min(limit, 100)]
+      );
+
+      const summaryStats = visualizer.generateSummaryStats(auditHistory);
+      const trendStats = visualizer.calculateTrendStats(auditHistory);
+
+      res.json({
+        success: true,
+        summary: summaryStats,
+        trend: trendStats
+      });
+    } catch (err) {
+      console.error("[admin] Stats visualization error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // GET /api/admin/audit-visualization/heatmap — health score heatmap data
+  router.get("/audit-visualization/heatmap", requireAdmin, async (req, res) => {
+    try {
+      const TrendVisualizer = require("../tools/security-auditor/trend-visualizer");
+      const visualizer = new TrendVisualizer();
+
+      let limit = parseInt(req.query.limit || "90", 10);
+      if (isNaN(limit) || limit <= 0) {
+        limit = 90;
+      }
+      const auditHistory = await db.all(
+        "SELECT id, run_at, findings_count, findings, status FROM audit_history ORDER BY run_at DESC LIMIT ?",
+        [Math.min(limit, 500)]
+      );
+
+      const heatmapData = visualizer.generateHeatmapData(auditHistory);
+
+      res.json({
+        success: true,
+        ...heatmapData
+      });
+    } catch (err) {
+      console.error("[admin] Heatmap visualization error:", err);
       res.status(500).json({ error: err.message });
     }
   });
