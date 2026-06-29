@@ -11,12 +11,21 @@ Local is truth. Completed work now lives in `ARCHIVAL.md`. The Claude completion
 5. Claude checks Codex's PR.
 6. Leave comments only when there is a real problem.
 7. Resolve every comment with a fix or a clear refutation.
+7.5. Run `lint`.
+7.6. Run `smoke`.
+7.7. Run `sanity` and answer these 5 questions before moving on:
+   1. What does this change break, if anything? Name it or confirm nothing.
+   2. Did I read every file I edited top to bottom after editing? If not, do it now.
+   3. Did I grep for all usages of any symbol I renamed, removed, or changed the signature of? If not, do it now.
+   4. Does the change work in both contexts it touches? (e.g. portal AND game, mobile AND desktop)
+   5. Did I introduce any new CSS variables, classes, or JS globals that might not exist in all contexts?
 8. Claude amends `TODO.md` with completed work.
 9. Codex amends `TODO.md` with completed work.
 10. Only Codex merges PRs and deletes the associated branches after `TODO.md` is amended.
 11. Claude begins the next task.
 12. Codex begins the next task.
 13. Repeat until `TODO.md` is complete.
+14. Do not ask for permission to continue unless blocked or explicitly told to stop.
 
 ## Codex Lane
 
