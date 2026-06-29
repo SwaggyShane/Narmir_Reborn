@@ -674,7 +674,7 @@ const WarfarePanel = () => {
               <span className="mr-2">{icon}</span>
               {row.action_type || 'event'} — {row.attacker_name || 'Unknown'} vs {row.defender_name || 'Unknown'}
             </div>
-            <div style={{ color: outcomeColor }} className="font-bold">{outcome}</div>
+            <div style={{ color: outcomeColor ?? 'var(--text2)' }} className="font-bold">{outcome}</div>
           </div>
           {row.detail ? (
             <pre className="mt-2 whitespace-pre-wrap text-[var(--text2)] text-[12px]">{renderDetail(row.detail)}</pre>
@@ -706,7 +706,7 @@ const WarfarePanel = () => {
           <pre className="whitespace-pre-wrap text-[var(--text3)] text-[12px]">{renderDetail(row.report)}</pre>
         ) : null}
         <div className="mt-2 flex justify-between gap-2 items-center flex-wrap">
-          <span style={{ color: row.shared_to_alliance ? 'var(--green)' : 'var(--text3)' }} className="text-[11px]">
+          <span className={clsx('text-[11px]', row.shared_to_alliance ? 'text-green-500' : 'text-gray-500')}>
             {row.shared_to_alliance ? 'Shared to alliance' : 'Private report'}
           </span>
           <button
@@ -868,7 +868,7 @@ const WarfarePanel = () => {
               <div className="mt-3 pt-3 border-t border-[var(--border)] text-[13px]">
                 <div className="flex justify-between mb-1">
                   <span className="text-[var(--text3)]">Est. Attack Power</span>
-                  <span style={{ color: atkEstimate.winPct >= 50 ? 'var(--green)' : 'var(--amber)' }}>{fmt(atkEstimate.atkPower)}</span>
+                  <span className={atkEstimate.winPct >= 50 ? 'text-[var(--green)]' : 'text-[var(--orange)]'}>{fmt(atkEstimate.atkPower)}</span>
                 </div>
                 <div className="flex justify-between mb-1">
                   <span className="text-[var(--text3)]">Est. Enemy Defense</span>
@@ -876,7 +876,7 @@ const WarfarePanel = () => {
                 </div>
                 <div className="flex justify-between mb-1">
                   <span className="text-[var(--text3)]">Win Chance</span>
-                  <span style={{ color: atkEstimate.winColor }}>{atkEstimate.winPct}%</span>
+                  <span style={{ color: atkEstimate.winColor ?? 'var(--text)' }}>{atkEstimate.winPct}%</span>
                 </div>
                 <div className="flex justify-between mb-1">
                   <span className="text-[var(--text3)]">Est. Land Gain</span>

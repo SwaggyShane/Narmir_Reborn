@@ -9,28 +9,28 @@ export default function HeroLoreContent({ heroKey, hero }) {
 
   return (
     <>
-      <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+      <div className="mb-5 text-center">
         <HeroLorePortrait heroKey={heroKey} alt={repair(hero.name || '')} />
-        <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text)' }}>
+        <div className="text-xl font-bold text-[var(--text)]">
           {repair(hero.name || '')}
         </div>
-        <div style={{ fontSize: '12px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+        <div className="text-xs uppercase tracking-wider text-[var(--text3)]">
           Legendary Hero Class
         </div>
       </div>
 
       {abilities.length > 0 && (
-        <div style={{ marginBottom: '20px' }}>
-          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--gold)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+        <div className="mb-5">
+          <div className="mb-2.5 text-xs font-bold uppercase tracking-wider text-[var(--gold)]">
             Signature Abilities
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div className="flex flex-col gap-2.5">
             {abilities.map((a, i) => (
-              <div key={i} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px' }}>
-                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', marginBottom: '2px' }}>
+              <div key={i} className="rounded-lg border border-[var(--border)] bg-white bg-opacity-5 p-2.5">
+                <div className="mb-0.5 text-sm font-semibold text-[var(--text)]">
                   {repair(a.name || '')}
                 </div>
-                <div style={{ fontSize: '12px', color: 'var(--text3)' }}>
+                <div className="text-xs text-[var(--text3)]">
                   {repair(a.description || '')}
                 </div>
               </div>
@@ -39,14 +39,14 @@ export default function HeroLoreContent({ heroKey, hero }) {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-        <div style={{ background: 'var(--bg4)', borderRadius: '8px', padding: '10px', textAlign: 'center' }}>
-          <div style={{ fontSize: '10px', color: 'var(--text3)', textTransform: 'uppercase' }}>Recruit Cost</div>
-          <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--gold)' }}>{fmt(hero.recruitCost)} GC</div>
+      <div className="grid grid-cols-2 gap-2.5">
+        <div className="rounded-lg bg-[var(--bg3)] p-2.5 text-center">
+          <div className="text-xs uppercase text-[var(--text3)]">Recruit Cost</div>
+          <div className="text-sm font-bold text-[var(--gold)]">{fmt(hero.recruitCost)} GC</div>
         </div>
-        <div style={{ background: 'var(--bg4)', borderRadius: '8px', padding: '10px', textAlign: 'center' }}>
-          <div style={{ fontSize: '10px', color: 'var(--text3)', textTransform: 'uppercase' }}>Mana Cost</div>
-          <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--blue)' }}>{fmt(hero.recruitMana)} ✨</div>
+        <div className="rounded-lg bg-[var(--bg3)] p-2.5 text-center">
+          <div className="text-xs uppercase text-[var(--text3)]">Mana Cost</div>
+          <div className="text-sm font-bold text-blue-400">{fmt(hero.recruitMana)} ✨</div>
         </div>
       </div>
     </>
