@@ -53,7 +53,7 @@ Remote is truth for shared project state. Completed work now lives in `ARCHIVAL.
 6. ✅ Weekly Deep Audit: Generate comparison reports between audits.
 7. ✅ Weekly Deep Audit: Add trend visualization for findings over time.
 8. ✅ Weekly Deep Audit: Add notifications for new issues.
-9. Weekly Deep Audit: Investigate and repair JSON row corruption.
+9. ✅ Weekly Deep Audit: Investigate and repair JSON row corruption.
 10. Production Maintenance: Complete SQL injection audit coverage.
 11. Production Maintenance: Harden rate limiting and DDoS mitigation.
 12. Production Maintenance: Finish secrets management and verify Railway environment variables.

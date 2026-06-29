@@ -2095,6 +2095,89 @@ module.exports = function (db, io) {
       res.status(500).json({ success: false, error: err.message });
     }
   });
+
+  // POST /api/admin/security-audit/sql-injection — scan for SQL injection vulnerabilities
+  router.post("/security-audit/sql-injection", async (req, res) => {
+    try {
+      const SQLInjectionAnalyzer = require("../tools/security-auditor/sql-injection-analyzer");
+      const analyzer = new SQLInjectionAnalyzer();
+
+      const startTime = Date.now();
+      const findings = await analyzer.scanDirectory(path.join(__dirname, ".."));
+      const duration = Date.now() - startTime;
+
+      const bySeverity = {
+        CRITICAL: [],
+        HIGH: [],
+        MEDIUM: [],
+        LOW: []
+      };
+
+      findings.forEach(f => {
+        const severity = f.severity || 'MEDIUM';
+        if (bySeverity[severity]) {
+          bySeverity[severity].push(f);
+        }
+      });
+
+      res.json({
+        success: true,
+        timestamp: new Date().toISOString(),
+        duration: `${duration}ms`,
+        summary: {
+          critical: bySeverity.CRITICAL.length,
+          high: bySeverity.HIGH.length,
+          medium: bySeverity.MEDIUM.length,
+          low: bySeverity.LOW.length,
+          total: findings.length
+        },
+        findings: findings.slice(0, 100),
+        totalFindingsAvailable: findings.length,
+        message: findings.length > 100 ? `Showing first 100 of ${findings.length} findings` : undefined
+      });
+    } catch (err) {
+      console.error("[admin] SQL injection audit error:", err);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+
+  // GET /api/admin/security-audit/sql-injection/status — get SQL injection scanner status
+  router.get("/security-audit/sql-injection/status", async (req, res) => {
+    try {
+      res.json({
+        success: true,
+        message: "SQL injection scanner ready",
+        description: "Scans codebase for SQL injection vulnerabilities including string concatenation, template literals, and unsafe dynamic queries",
+        patterns: [
+          "Direct string concatenation in SQL queries",
+          "Template literals with variables",
+          "Unsafe db.run/db.get/db.all with concatenation",
+          "Dynamic SQL keyword concatenation",
+          "Object property concatenation in queries"
+        ],
+        recommendations: [
+          "Use parameterized queries with ? placeholders",
+          "Use named parameters (:name) for clarity",
+          "Never concatenate user input directly",
+          "Validate all user inputs",
+          "Use ORM or query builder libraries",
+          "Implement input whitelisting"
+        ],
+        endpoint: "POST /api/admin/security-audit/sql-injection",
+        timestamp: new Date().toISOString()
+      });
+    } catch (err) {
+      console.error("[admin] SQL injection scanner status error:", err);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+
   return router;
 };
 
