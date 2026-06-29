@@ -1832,7 +1832,7 @@ module.exports = function (db, io) {
       const AuditReportGenerator = require("../tools/security-auditor/report-generator");
       const generator = new AuditReportGenerator(path.join(__dirname, ".."));
 
-      const result = generator.generateFullCodebaseReport();
+      const result = await generator.generateFullCodebaseReport();
       const allFindings = [
         ...result.findings.critical,
         ...result.findings.high,

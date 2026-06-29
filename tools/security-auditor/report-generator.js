@@ -14,12 +14,26 @@ class AuditReportGenerator {
     return report;
   }
 
-  // Generate report from full codebase scan
-  generateFullCodebaseReport() {
-    const analysis = this.analyzer.recursiveScanCodebase();
+  // Generate report from full codebase scan (async to prevent event loop blocking)
+  async generateFullCodebaseReport() {
+    const analysis = await this.analyzer.recursiveScanCodebase();
     const findings = this.compileFinding(analysis);
+
+    // Filter out middleware findings for non-entry point files to avoid false positives
+    const entryPointFiles = new Set(['index.js', 'app.js', 'server.js']);
+    const isEntryPoint = (file) => entryPointFiles.has(file) || file.endsWith('index.js');
+
+    findings.high = findings.high.filter(f => {
+      const middlewareIssues = ['Missing Helmet Middleware', 'Missing Rate Limiting'];
+      return !middlewareIssues.includes(f.issue) || isEntryPoint(f.file);
+    });
+
+    findings.medium = findings.medium.filter(f => {
+      return f.issue !== 'CORS Not Explicitly Configured' || isEntryPoint(f.file);
+    });
+
     const stats = this.analyzer.getAuditStats(analysis);
-    const report = this.formatFullCodebaseReport(findings, stats, Object.keys(analysis));
+    const report = this.formatFullCodebaseReport(findings, stats);
     return { report, findings, stats, filesAnalyzed: Object.keys(analysis) };
   }
 

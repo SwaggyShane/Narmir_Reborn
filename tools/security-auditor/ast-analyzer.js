@@ -291,7 +291,8 @@ class ASTAnalyzer {
   }
 
   // Recursively scan entire codebase, excluding build artifacts and dependencies
-  recursiveScanCodebase() {
+  // Non-blocking async scan to prevent event loop blocking
+  async recursiveScanCodebase() {
     const results = {};
     const excludeDirs = new Set([
       'node_modules', '.git', '.vscode', '.idea', 'dist', 'build',
@@ -308,17 +309,23 @@ class ASTAnalyzer {
       return excludeDirs.has(dirName) || dirName.startsWith('.');
     };
 
-    const walkDirectory = (dir) => {
+    let fileCount = 0;
+    const walkDirectory = async (dir) => {
       try {
         const entries = fs.readdirSync(dir, { withFileTypes: true });
 
         for (const entry of entries) {
+          // Yield to event loop periodically to prevent blocking
+          if (fileCount % 10 === 0) {
+            await new Promise(resolve => setImmediate(resolve));
+          }
+
           const fullPath = path.join(dir, entry.name);
           const relPath = path.relative(this.projectRoot, fullPath);
 
           if (entry.isDirectory()) {
             if (!shouldSkipDir(entry.name)) {
-              walkDirectory(fullPath);
+              await walkDirectory(fullPath);
             }
           } else if (isJavaScriptFile(fullPath)) {
             try {
@@ -326,6 +333,7 @@ class ASTAnalyzer {
               if (analysis) {
                 results[relPath] = analysis;
               }
+              fileCount++;
             } catch (err) {
               console.error(`[WARNING] Failed to analyze ${relPath}: ${err.message}`);
             }
@@ -336,11 +344,11 @@ class ASTAnalyzer {
       }
     };
 
-    walkDirectory(this.projectRoot);
+    await walkDirectory(this.projectRoot);
     return results;
   }
 
-  // Get summary statistics of audit findings
+  // Get summary statistics of audit findings (middleware checks only on entry points)
   getAuditStats(results) {
     const stats = {
       totalFiles: Object.keys(results).length,
@@ -360,13 +368,15 @@ class ASTAnalyzer {
       }
     };
 
-    for (const [_file, analysis] of Object.entries(results)) {
+    const entryPointFiles = new Set(['index.js', 'app.js', 'server.js', 'routes/admin.js']);
+
+    for (const [file, analysis] of Object.entries(results)) {
       if (!analysis) continue;
 
       let fileHasCritical = false;
       let fileHasWarning = false;
 
-      // Count security issues
+      // Count security issues (checked in all files)
       const securityIssues = [
         ...analysis.security.sqlInjection,
         ...analysis.security.hardcodedSecrets,
@@ -382,28 +392,30 @@ class ASTAnalyzer {
         if (severity === 'high' || severity === 'medium') fileHasWarning = true;
       }
 
-      // Count middleware issues
-      if (!analysis.middleware.helmet.found) {
-        stats.findings.high += 1;
-        stats.issuesByType['MISSING_HELMET'] = (stats.issuesByType['MISSING_HELMET'] || 0) + 1;
-        fileHasWarning = true;
-      }
+      // Count middleware issues only on entry points to avoid false positives
+      const isEntryPoint = entryPointFiles.has(file) || file.endsWith('index.js');
+      if (isEntryPoint) {
+        if (!analysis.middleware.helmet.found) {
+          stats.findings.high += 1;
+          stats.issuesByType['MISSING_HELMET'] = (stats.issuesByType['MISSING_HELMET'] || 0) + 1;
+          fileHasWarning = true;
+        }
 
-      if (!analysis.middleware.rateLimit.found) {
-        stats.findings.high += 1;
-        stats.issuesByType['MISSING_RATE_LIMIT'] = (stats.issuesByType['MISSING_RATE_LIMIT'] || 0) + 1;
-        fileHasWarning = true;
-      }
+        if (!analysis.middleware.rateLimit.found) {
+          stats.findings.high += 1;
+          stats.issuesByType['MISSING_RATE_LIMIT'] = (stats.issuesByType['MISSING_RATE_LIMIT'] || 0) + 1;
+          fileHasWarning = true;
+        }
 
-      if (!analysis.middleware.cors.found) {
-        stats.findings.medium += 1;
-        stats.issuesByType['MISSING_CORS'] = (stats.issuesByType['MISSING_CORS'] || 0) + 1;
-        fileHasWarning = true;
+        if (!analysis.middleware.cors.found) {
+          stats.findings.medium += 1;
+          stats.issuesByType['MISSING_CORS'] = (stats.issuesByType['MISSING_CORS'] || 0) + 1;
+          fileHasWarning = true;
+        }
       }
 
       // Track file status
-      if (securityIssues.length === 0 && analysis.middleware.helmet.found &&
-          analysis.middleware.rateLimit.found) {
+      if (securityIssues.length === 0 && (isEntryPoint ? analysis.middleware.helmet.found : true)) {
         stats.filesByStatus.clean += 1;
       } else if (fileHasCritical) {
         stats.filesWithIssues += 1;
