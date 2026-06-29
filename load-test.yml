@@ -14,6 +14,10 @@ config:
       arrivalRate: 100
       name: "Ramp down"
   processor: "./load-test-processor.js"
+  payload:
+    path: "./load-test-tokens.csv"
+    fields:
+      - "token"
   variables:
     kingdomIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
@@ -25,11 +29,11 @@ scenarios:
           url: "/api/turn"
           headers:
             Content-Type: "application/json"
-            Authorization: "Bearer test-token"
+            Authorization: "Bearer {{ token }}"
           json:
             action: "next_turn"
           capture:
-            - json: "$.success"
+            - json: "$.ok"
               as: "turnSuccess"
           expect:
             - statusCode: [200, 400]
@@ -40,7 +44,7 @@ scenarios:
       - get:
           url: "/api/expedition?limit=20"
           headers:
-            Authorization: "Bearer test-token"
+            Authorization: "Bearer {{ token }}"
           expect:
             - statusCode: 200
 

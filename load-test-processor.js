@@ -14,8 +14,11 @@ module.exports = {
   },
 
   afterResponse(requestParams, response, context, ee, next) {
-    // Track response times and status codes
-    const responseTime = response.statusCode === 200 ? response.timings.total : -1;
+    // Track response times and status codes safely
+    if (!response) {
+      return next();
+    }
+    const responseTime = response.statusCode === 200 && response.timings ? response.timings.total : -1;
     if (responseTime > 3000) {
       console.warn(`Slow response detected: ${response.statusCode} - ${responseTime}ms`);
     }
