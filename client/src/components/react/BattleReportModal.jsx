@@ -186,7 +186,7 @@ export default function BattleReportModal({ data, onClose }) {
       if (attackBarRef.current) gsap.set(attackBarRef.current, { width: '0%' });
       if (defenseBarRef.current) gsap.set(defenseBarRef.current, { width: '0%' });
       if (wallBarRef.current) gsap.set(wallBarRef.current, { width: '0%' });
-      if (outcomeRef.current) {
+      if (outcomeRef.current && !prefersReducedMotion) {
         gsap.set(outcomeRef.current, { autoAlpha: 0, y: 14, scale: 0.92, rotateX: 12 });
       }
 
@@ -270,7 +270,7 @@ export default function BattleReportModal({ data, onClose }) {
           win
             ? { scale: 1.03, boxShadow: '0 0 0 1px rgba(74, 222, 128, 0.3), 0 0 26px rgba(74, 222, 128, 0.14), 0 10px 28px rgba(0, 0, 0, 0.35)', duration: 0.14, ease: 'power1.out', yoyo: true, repeat: 1 }
             : { x: -4, duration: 0.06, ease: 'power1.inOut', repeat: 5, yoyo: true },
-          0.66,
+          0.72,
         )
         .to(buttonRef.current, { autoAlpha: 1, y: 0, duration: 0.2 }, 0.46);
     }, modal);
