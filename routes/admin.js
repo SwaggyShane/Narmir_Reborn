@@ -1849,7 +1849,10 @@ module.exports = function (db, io) {
       const auditId = await db.run(
         "INSERT INTO audit_history (run_at, findings, findings_count, status) VALUES (?, ?, ?, ?)",
         [timestamp, findingsJson, allFindings.length, 'completed']
-      ).then(stmt => stmt.lastID || null).catch(() => null);
+      ).then(stmt => stmt.lastID || null).catch(err => {
+        console.error("[audit] Failed to save audit history:", err);
+        return null;
+      });
 
       // Compare with previous audit and send notifications
       let comparisonData = null;
@@ -1886,11 +1889,13 @@ module.exports = function (db, io) {
                 );
 
                 if (shouldNotify) {
-                  await notifier.sendDiscordNotification(
+                  notifier.sendDiscordNotification(
                     comparisonData.new.length,
                     severitySummary,
                     comparisonData.stats
-                  );
+                  ).catch(err => {
+                    console.error("[audit] Background notification failed:", err);
+                  });
                 }
               }
             }
@@ -1972,12 +1977,12 @@ module.exports = function (db, io) {
       if (existing) {
         await db.run(
           "UPDATE audit_notification_settings SET notify_on_new_issues = ?, min_severity = ?, discord_channel_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-          [notify_on_new_issues ? 1 : 0, severity, discord_channel_id || null, existing.id]
+          [notify_on_new_issues ? true : false, severity, discord_channel_id || null, existing.id]
         );
       } else {
         await db.run(
           "INSERT INTO audit_notification_settings (notify_on_new_issues, min_severity, discord_channel_id, created_at, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
-          [notify_on_new_issues ? 1 : 0, severity, discord_channel_id || null]
+          [notify_on_new_issues ? true : false, severity, discord_channel_id || null]
         );
       }
 

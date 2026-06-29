@@ -115,7 +115,8 @@ class NotificationService {
   // Check if findings meet severity threshold
   meetsSeverityThreshold(findings, threshold) {
     const severityLevels = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO'];
-    const thresholdIndex = severityLevels.indexOf(threshold);
+    const thresholdUpper = (threshold || 'MEDIUM').toUpperCase();
+    const thresholdIndex = severityLevels.indexOf(thresholdUpper);
 
     return findings.some(f => {
       const findingSeverity = (f.severity || 'MEDIUM').toUpperCase();
@@ -125,15 +126,17 @@ class NotificationService {
   }
 
   // Get summary of new issues by severity
-  getSeveritySummary(newFindings) {
+  getSeveritySummary(newFindings = []) {
     const summary = {
       CRITICAL: 0,
       HIGH: 0,
       MEDIUM: 0,
       LOW: 0,
       INFO: 0,
-      total: newFindings.length
+      total: Array.isArray(newFindings) ? newFindings.length : 0
     };
+
+    if (!Array.isArray(newFindings)) return summary;
 
     newFindings.forEach(f => {
       const severity = (f.severity || 'MEDIUM').toUpperCase();

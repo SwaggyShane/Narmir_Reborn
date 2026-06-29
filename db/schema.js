@@ -2089,7 +2089,7 @@ async function initDb(options = {}) {
   await _db.exec(`
     CREATE TABLE IF NOT EXISTS audit_notification_settings (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      notify_on_new_issues BOOLEAN DEFAULT 1,
+      notify_on_new_issues BOOLEAN DEFAULT TRUE,
       min_severity TEXT DEFAULT 'MEDIUM',
       discord_channel_id TEXT,
       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -2102,7 +2102,7 @@ async function initDb(options = {}) {
   if (!notifSettings) {
     await _db.run(`
       INSERT INTO audit_notification_settings (notify_on_new_issues, min_severity, created_at, updated_at)
-      VALUES (1, 'MEDIUM', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      VALUES (true, 'MEDIUM', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
     `);
   }
 
