@@ -70,6 +70,11 @@ function SummaryCard({ label, value, tone = 'var(--text)', delay = 0, emphasis =
     const node = cardRef.current;
     if (!node) return undefined;
 
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     gsap.killTweensOf(node);
     gsap.fromTo(
       node,
@@ -82,7 +87,7 @@ function SummaryCard({ label, value, tone = 'var(--text)', delay = 0, emphasis =
         ease: 'power2.out',
       },
     );
-    if (emphasis) {
+    if (emphasis && !prefersReducedMotion) {
       gsap.fromTo(
         node,
         { scale: 0.95 },
@@ -93,6 +98,8 @@ function SummaryCard({ label, value, tone = 'var(--text)', delay = 0, emphasis =
           ease: 'back.out(1.8)',
         },
       );
+    } else {
+      gsap.set(node, { scale: 1 });
     }
 
     return () => {
