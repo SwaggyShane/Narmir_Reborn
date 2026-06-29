@@ -164,7 +164,7 @@ app.get('/wipe-admin.html', (_req, res) => {
 ```
 
 **Status:** ⚠️ Dead endpoint
-- File does not exist: `/home/user/Narmir_Reborn/public/wipe-admin.html`
+- File does not exist: `public/wipe-admin.html`
 - Returns 404 error
 - Likely leftover from migration or testing
 - **Recommendation:** Remove this endpoint in future cleanup
@@ -250,8 +250,7 @@ public/
 └── legacy/
     └── admin.html       ⚠️ Problematic (5,152 lines, legacy)
 
-server/
-└── index.js             ⚠️ Dead endpoint /wipe-admin.html
+index.js                ⚠️ Dead endpoint /wipe-admin.html
 ```
 
 ---
