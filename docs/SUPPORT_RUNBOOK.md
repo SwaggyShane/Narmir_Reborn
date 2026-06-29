@@ -181,7 +181,7 @@ df -h
 **Timeline:** Respond within 2-5 minutes
 
 1. **Acknowledge** in status page / Discord: "Investigating complete outage"
-2. **Check Rails dashboard:**
+2. **Check Railway dashboard:**
    - Is web service running? (check for crash)
    - Is PostgreSQL running? (check connection)
    - Is disk space available?

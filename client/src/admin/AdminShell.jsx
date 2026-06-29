@@ -151,7 +151,10 @@ export default function AdminShell({ adminUser, onLogout }) {
               onToast={(msg, type) => setToast({ msg, type: type || 'info' })}
             />
           ) : activeTab === 'audits' ? (
-            <AuditSchedulesPanel />
+            <AuditSchedulesPanel
+              adminFetch={adminFetch}
+              onToast={(msg, type) => setToast({ msg, type: type || 'info' })}
+            />
           ) : (
             <div style={{ textAlign: 'center', color: 'var(--text3)', fontSize: 14, padding: '12px 0' }}>
               <div style={{ fontSize: 28, marginBottom: 10 }}>{activeTabMeta?.icon}</div>

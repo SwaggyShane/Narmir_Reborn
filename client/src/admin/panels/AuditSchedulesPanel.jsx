@@ -1,35 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import { apiCall } from '../../utils/api';
 
 const FREQUENCIES = ['daily', 'weekly', 'monthly'];
 
-function AuditSchedulesPanel() {
+function AuditSchedulesPanel({ adminFetch, onToast }) {
   const [schedules, setSchedules] = useState([]);
   const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [formData, setFormData] = useState({ frequency: 'weekly' });
 
   useEffect(() => {
-    loadSchedules();
-    loadHistory();
-  }, []);
+    if (adminFetch) {
+      loadSchedules();
+      loadHistory();
+    }
+  }, [adminFetch]);
 
   const loadSchedules = async () => {
     try {
-      const data = await apiCall('/api/admin/audit-schedules');
+      const data = await adminFetch('/api/admin/audit-schedules');
       setSchedules(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to load schedules:', err);
+      onToast?.('Failed to load schedules: ' + (err.message || err), 'error');
     }
   };
 
   const loadHistory = async () => {
     try {
-      const data = await apiCall('/api/admin/audit-history');
+      const data = await adminFetch('/api/admin/audit-history');
       setHistory(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to load history:', err);
+      onToast?.('Failed to load history: ' + (err.message || err), 'error');
     }
   };
 
@@ -37,14 +39,16 @@ function AuditSchedulesPanel() {
     if (!formData.frequency) return;
     setCreating(true);
     try {
-      await apiCall('/api/admin/audit-schedules', {
+      await adminFetch('/api/admin/audit-schedules', {
         method: 'POST',
         body: { frequency: formData.frequency }
       });
       setFormData({ frequency: 'weekly' });
+      onToast?.('Schedule created successfully', 'success');
       await loadSchedules();
     } catch (err) {
       console.error('Failed to create schedule:', err);
+      onToast?.('Failed to create schedule: ' + (err.message || err), 'error');
     } finally {
       setCreating(false);
     }
@@ -52,23 +56,27 @@ function AuditSchedulesPanel() {
 
   const handleToggleSchedule = async (id, isEnabled) => {
     try {
-      await apiCall(`/api/admin/audit-schedules/${id}`, {
+      await adminFetch(`/api/admin/audit-schedules/${id}`, {
         method: 'PUT',
         body: { is_enabled: isEnabled ? 0 : 1 }
       });
+      onToast?.(`Schedule ${isEnabled ? 'disabled' : 'enabled'} successfully`, 'success');
       await loadSchedules();
     } catch (err) {
       console.error('Failed to toggle schedule:', err);
+      onToast?.('Failed to toggle schedule: ' + (err.message || err), 'error');
     }
   };
 
   const handleRunAudit = async (id) => {
     try {
-      await apiCall(`/api/admin/audit-schedules/${id}/run`, { method: 'POST' });
+      await adminFetch(`/api/admin/audit-schedules/${id}/run`, { method: 'POST' });
+      onToast?.('Audit run triggered successfully', 'success');
       await loadSchedules();
       await loadHistory();
     } catch (err) {
       console.error('Failed to run audit:', err);
+      onToast?.('Failed to run audit: ' + (err.message || err), 'error');
     }
   };
 
