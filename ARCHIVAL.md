@@ -2,7 +2,7 @@
 
 **Purpose:** Historical record of all completed features, tracks, and initiatives. Serves as reference for future work and decision rationale.
 
-**Last updated:** 2026-06-28 (Alpha phase complete)
+**Last updated:** 2026-06-29 (Alpha phase complete; ROADMAP consolidated into ARCHIVAL.md)
 
 ---
 
