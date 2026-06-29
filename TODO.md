@@ -46,6 +46,7 @@
    - Tool: Artillery or k6 load test script
    - Success criteria: <3s response time at 5,000 concurrent
    - Deliverable: Load test results + bottleneck analysis
+   - Status: Harness/docs merged via PR #715; authenticated rerun with generated per-player JWTs still required before closure
    - Estimate: 3-4 hours
 
 3. **Database Backup & Restore Verification**
