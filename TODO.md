@@ -23,8 +23,8 @@ Remote is truth for shared project state. Completed work now lives in `ARCHIVAL.
 1. ✅ Battle Outcome Animation: Animate casualty and critical hit counters.
 2. ✅ Battle Outcome Animation: Animate HP, wall, or power bars when results are shown.
 3. ✅ Battle Outcome Animation: Keep combat resolution deterministic and presentation-only.
-4. Mobile and Vanilla Cleanup: Scan `public/` for inline `<script>` blocks and jQuery usage.
-5. Mobile and Vanilla Cleanup: Audit `index.html` and fallback templates for non-React entry points.
+4. ✅ Mobile and Vanilla Cleanup: Scan `public/` for inline `<script>` blocks and jQuery usage.
+5. ✅ Mobile and Vanilla Cleanup: Audit `index.html` and fallback templates for non-React entry points.
 6. Mobile and Vanilla Cleanup: Move remaining user-facing vanilla routes to React.
 7. Mobile and Vanilla Cleanup: Convert remaining vanilla form handlers to controlled components.
 8. Mobile and Vanilla Cleanup: Replace inline styles and `onclick` handlers with Tailwind and React bindings.
