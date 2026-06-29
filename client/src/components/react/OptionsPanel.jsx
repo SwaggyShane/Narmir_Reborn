@@ -121,8 +121,7 @@ const DiscordSection = () => {
         </span>
         {linkStatus?.linked && (
           <button
-            className="base-btn variant-red px-3 py-1 text-[12px]"
-            style={{ background: 'var(--red)' }}
+            className="base-btn variant-red bg-[var(--red)] px-3 py-1 text-[12px]"
             onClick={handleUnlink}
             disabled={loading}
           >
