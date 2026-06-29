@@ -17,6 +17,7 @@ This document covers backup and restore procedures for Narmir Reborn's PostgreSQ
 - **Metadata files** track backup details for audit and recovery planning
 - **Scripts support both local and remote** PostgreSQL instances
 - **Restore requires explicit confirmation** to prevent accidental data loss
+- **FORCE_RESTORE=true** allows non-interactive restore automation
 
 ---
 
@@ -152,6 +153,9 @@ gzip backup.sql
 
 # Example (restore to production)
 ./scripts/restore-database.sh backups/prod-20260629.sql.gz "postgresql://user:pass@railway.internal:5432/narmir"
+
+# Non-interactive automation
+FORCE_RESTORE=true ./scripts/restore-database.sh backups/prod-20260629.sql.gz "$DATABASE_URL"
 ```
 
 **Safety Features:**
@@ -188,13 +192,13 @@ For advanced use cases or inspecting backup before restore:
 
 ```bash
 # Inspect backup contents (first 100 lines)
-zcat backup.sql.gz | head -100
+gzip -cd backup.sql.gz | head -100
 
 # Count INSERT statements in backup
-zcat backup.sql.gz | grep -c "^INSERT INTO" || echo "No data in backup"
+gzip -cd backup.sql.gz | grep -c "^INSERT INTO" || echo "No data in backup"
 
 # Restore manually (requires database already created)
-zcat backup.sql.gz | psql postgresql://user:pass@localhost:5432/narmir_smoke
+gzip -cd backup.sql.gz | psql postgresql://user:pass@localhost:5432/narmir_smoke
 ```
 
 ### Local Development Restore
@@ -313,7 +317,7 @@ SELECT COUNT(*) FROM kingdoms;
 **Recovery Time:** ~15-30 minutes (assuming backup exists)
 
 **Steps:**
-1. Verify backup file exists and is readable: `zcat backup.sql.gz | head`
+1. Verify backup file exists and is readable: `gzip -cd backup.sql.gz | head`
 2. Create new empty database (or use alternate instance)
 3. Run restore script
 4. Point application to new database (update DATABASE_URL)
@@ -365,13 +369,13 @@ echo "✅ Test complete"
 gzip -t backups/narmir_backup_*.sql.gz && echo "✅ File integrity OK" || echo "❌ File corrupt"
 
 # Estimate restore size (uncompressed)
-zcat backups/narmir_backup_*.sql.gz | wc -c
+gzip -cd backups/narmir_backup_*.sql.gz | wc -c
 
 # Count tables in backup
-zcat backups/narmir_backup_*.sql.gz | grep "^CREATE TABLE" | wc -l
+gzip -cd backups/narmir_backup_*.sql.gz | grep "^CREATE TABLE" | wc -l
 
 # Verify specific table exists in backup
-zcat backups/narmir_backup_*.sql.gz | grep -q "CREATE TABLE.*kingdoms" && echo "✅ kingdoms table found"
+gzip -cd backups/narmir_backup_*.sql.gz | grep -q "CREATE TABLE.*kingdoms" && echo "✅ kingdoms table found"
 ```
 
 ---
@@ -521,7 +525,7 @@ tail -f /tmp/restore.log
 gzip -t backup.sql.gz
 
 # Count tables in backup:
-zcat backup.sql.gz | grep "^CREATE TABLE" | wc -l
+gzip -cd backup.sql.gz | grep "^CREATE TABLE" | wc -l
 
 # Compare with current database:
 psql -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public';"

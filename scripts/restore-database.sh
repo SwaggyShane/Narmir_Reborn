@@ -15,9 +15,8 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# Helper functions
 log_info() {
   echo -e "${GREEN}[INFO]${NC} $1"
 }
@@ -34,7 +33,6 @@ log_prompt() {
   echo -e "${BLUE}[PROMPT]${NC} $1"
 }
 
-# Validate inputs
 if [ -z "$BACKUP_FILE" ]; then
   log_error "Backup file path is required"
   echo "Usage: $0 <backup-file> [target-database-url]"
@@ -53,7 +51,10 @@ if [ -z "$TARGET_DATABASE_URL" ]; then
   exit 1
 fi
 
-# Extract database name and connection details from DATABASE_URL
+if [[ "$TARGET_DATABASE_URL" =~ ^postgres:// ]]; then
+  TARGET_DATABASE_URL="postgresql://${TARGET_DATABASE_URL#postgres://}"
+fi
+
 if [[ $TARGET_DATABASE_URL =~ postgresql://([^:]+):([^@]+)@([^:/]+):?([0-9]*)/?([^?]*) ]]; then
   DB_USER="${BASH_REMATCH[1]}"
   DB_PASSWORD="${BASH_REMATCH[2]}"
@@ -68,7 +69,6 @@ fi
 log_info "Backup file: $BACKUP_FILE"
 log_info "Target database: $DB_NAME@$DB_HOST:$DB_PORT"
 
-# Check backup file format
 if [[ "$BACKUP_FILE" == *.sql.gz ]]; then
   log_info "Detected gzip-compressed SQL backup"
   USE_GUNZIP=true
@@ -80,19 +80,22 @@ else
   USE_GUNZIP=false
 fi
 
-# Confirmation prompt
-log_warn "⚠️  This will RESTORE data from: $BACKUP_FILE"
-log_warn "⚠️  This will OVERWRITE data in database: $DB_NAME"
-log_warn "⚠️  Current data will be PERMANENTLY LOST if not backed up"
+log_warn "This will RESTORE data from: $BACKUP_FILE"
+log_warn "This will OVERWRITE data in database: $DB_NAME"
+log_warn "Current data will be permanently lost if not backed up"
 log_prompt "Type 'RESTORE' to proceed: "
-read -r CONFIRMATION
+if [ "${FORCE_RESTORE:-}" = "true" ]; then
+  CONFIRMATION="RESTORE"
+  echo "RESTORE (bypassed via FORCE_RESTORE)"
+else
+  read -r CONFIRMATION
+fi
 
 if [ "$CONFIRMATION" != "RESTORE" ]; then
   log_info "Restore cancelled"
   exit 0
 fi
 
-# Create backup of current database before restoring (safety measure)
 log_info "Creating safety backup of current database..."
 SAFETY_BACKUP_DIR="./backups"
 mkdir -p "$SAFETY_BACKUP_DIR"
@@ -108,10 +111,9 @@ if pg_dump \
   "$DB_NAME" 2>/dev/null | gzip > "$SAFETY_BACKUP_FILE"; then
   log_info "Safety backup created: $SAFETY_BACKUP_FILE"
 else
-  log_warn "⚠️  Could not create safety backup (database may not exist yet)"
+  log_warn "Could not create safety backup (database may not exist yet)"
 fi
 
-# Drop all active connections to the target database
 log_info "Terminating active connections to $DB_NAME..."
 psql \
   --host="$DB_HOST" \
@@ -121,13 +123,11 @@ psql \
   --command="SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$DB_NAME' AND pid != pg_backend_pid();" \
   2>/dev/null || true
 
-# Drop and recreate the database
 log_info "Dropping existing database $DB_NAME..."
 dropdb \
   --host="$DB_HOST" \
   --port="$DB_PORT" \
   --username="$DB_USER" \
-  --force \
   "$DB_NAME" 2>/dev/null || log_warn "Database did not exist or could not be dropped"
 
 log_info "Creating new database $DB_NAME..."
@@ -137,18 +137,17 @@ createdb \
   --username="$DB_USER" \
   "$DB_NAME"
 
-# Restore from backup
 log_info "Restoring data from backup..."
 
 if [ "$USE_GUNZIP" = true ]; then
-  if zcat "$BACKUP_FILE" | psql \
+  if gzip -cd "$BACKUP_FILE" | psql \
     --host="$DB_HOST" \
     --port="$DB_PORT" \
     --username="$DB_USER" \
     --dbname="$DB_NAME" 2>&1; then
-    log_info "✅ Restore completed successfully"
+    log_info "Restore completed successfully"
   else
-    log_error "❌ Restore failed"
+    log_error "Restore failed"
     unset PGPASSWORD
     exit 1
   fi
@@ -159,18 +158,16 @@ else
     --username="$DB_USER" \
     --dbname="$DB_NAME" \
     --file="$BACKUP_FILE" 2>&1; then
-    log_info "✅ Restore completed successfully"
+    log_info "Restore completed successfully"
   else
-    log_error "❌ Restore failed"
+    log_error "Restore failed"
     unset PGPASSWORD
     exit 1
   fi
 fi
 
-# Cleanup
 unset PGPASSWORD
 
-# Verify restore
 log_info "Verifying restore integrity..."
 export PGPASSWORD="$DB_PASSWORD"
 
@@ -186,7 +183,6 @@ unset PGPASSWORD
 
 log_info "Restored tables: $TABLE_COUNT"
 log_info "Restore verification complete"
-
-log_info "✅ Database restore process complete"
+log_info "Database restore process complete"
 log_info "Safety backup location: $SAFETY_BACKUP_FILE"
 exit 0
