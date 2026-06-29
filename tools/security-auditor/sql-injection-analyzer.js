@@ -10,35 +10,35 @@ class SQLInjectionAnalyzer {
   constructor() {
     this.vulnerabilities = [];
     this.patterns = {
-      // Direct string concatenation in SQL queries
-      directConcat: /(['"`])?\s*\+\s*(?:req\.|params\.|user\.|input\.|data\.)[\w.]+\s*\+?\s*['"`]?/gi,
+      // Direct string concatenation in SQL queries (requires SQL keywords)
+      directConcat: /(?:SELECT|INSERT|UPDATE|DELETE|FROM|WHERE|JOIN|INTO)\b[^+\n]*\+\s*(?:req\.|params\.|user\.|input\.|data\.)[\w.]+/gi,
 
-      // Template literals with variables in queries
-      templateLiteral: /`[^`]*\$\{[^}]+\}[^`]*`/g,
+      // Template literals with variables in SQL queries (requires SQL keywords)
+      templateLiteral: /`[^`]*(?:SELECT|INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|WITH)\b[^`]*\$\{[^}]+\}[^`]*`/gi,
 
       // Dangerous SQL functions without parameterization
       dangerousPatterns: [
-        /db\.run\s*\(\s*[`'"]\s*[A-Z\s]+\s*\+/gi,
-        /db\.get\s*\(\s*[`'"]\s*[A-Z\s]+\s*\+/gi,
-        /db\.all\s*\(\s*[`'"]\s*[A-Z\s]+\s*\+/gi,
-        /db\.exec\s*\(\s*[`'"]\s*[A-Z\s]+\s*\+/gi,
-        /query\s*\(\s*[`'"]\s*[A-Z\s]+\s*\+/gi,
+        /db\.run\s*\(\s*[`'"\s]+[A-Z\s]+\s*\+/gi,
+        /db\.get\s*\(\s*[`'"\s]+[A-Z\s]+\s*\+/gi,
+        /db\.all\s*\(\s*[`'"\s]+[A-Z\s]+\s*\+/gi,
+        /db\.exec\s*\(\s*[`'"\s]+[A-Z\s]+\s*\+/gi,
+        /query\s*\(\s*[`'"\s]+[A-Z\s]+\s*\+/gi,
       ],
 
       // SQL keywords that indicate dynamic query construction
       dynamicKeywords: /(?:INSERT|SELECT|UPDATE|DELETE|DROP|CREATE)\s+(?:INTO|FROM|WHERE).*\+/gi,
 
-      // Concatenation with object properties (common vulnerability)
-      objectConcat: /['"`]\s*\+\s*(?:this\.|obj\.)[\w.]+/gi,
+      // Concatenation with object properties in SQL queries (requires SQL keywords)
+      objectConcat: /(?:SELECT|INSERT|UPDATE|DELETE|FROM|WHERE|JOIN|INTO)\b[^+\n]*\+\s*(?:this\.|obj\.)[\w.]+/gi,
     };
   }
 
   // Analyze a file for SQL injection vulnerabilities
-  analyzeFile(filePath) {
+  async analyzeFile(filePath) {
     const findings = [];
 
     try {
-      const content = fs.readFileSync(filePath, 'utf8');
+      const content = await fs.promises.readFile(filePath, 'utf8');
       const lines = content.split('\n');
 
       lines.forEach((line, index) => {
@@ -106,7 +106,7 @@ class SQLInjectionAnalyzer {
 
   // Check if query uses parameterized statements (safe)
   isParameterized(line) {
-    return /\?|:\w+|\$\d+/.test(line) && /\[\s*(?:values|params|args)/i.test(line);
+    return /\?|:\w+|\$\d+/.test(line) && /,\s*\[|,\s*[\w.]+/.test(line);
   }
 
   // Check if line contains user input references
@@ -125,18 +125,18 @@ class SQLInjectionAnalyzer {
 
     const scanDir = async (dir) => {
       try {
-        const files = fs.readdirSync(dir);
+        const files = await fs.promises.readdir(dir);
 
         for (const file of files) {
           const fullPath = path.join(dir, file);
-          const stat = fs.statSync(fullPath);
+          const stat = await fs.promises.stat(fullPath);
 
           if (stat.isDirectory()) {
             if (!excludeDirs.includes(file)) {
               await scanDir(fullPath);
             }
           } else if (/\.(js|jsx|mjs|cjs)$/.test(file)) {
-            const findings = this.analyzeFile(fullPath);
+            const findings = await this.analyzeFile(fullPath);
             allFindings.push(...findings);
           }
         }
