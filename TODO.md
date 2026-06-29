@@ -9,14 +9,15 @@ Remote is truth for shared project state. Completed work now lives in `ARCHIVAL.
 3. Never mix lanes in the same branch, commit, or PR.
 4. Create one branch and one PR per task. PRs are ready-for-review, not draft.
 5. Before starting a task, check the lane's current TODO item and any open PRs that already cover it.
-6. If a review comment is correct, fix it. If it is wrong, refute it with evidence and move on.
+6. For PRs, address Gemini review comments: fix correct ones or refute incorrect ones with evidence.
 7. Claude and Codex both amend `TODO.md` when their work is completed.
 8. Codex merges approved PRs, deletes the associated branches, then fetches `origin` before starting the next merge.
 9. After every merge, re-check for newly landed Claude branches before picking up the next task.
 10. Use Gemini feedback for high-risk work before merge.
-11. Move directly to the next task after each completion.
-12. Do not ask for permission to continue unless blocked or explicitly told to stop.
-13. Repeat until `TODO.md` is complete.
+11. When a PR is green, viable, and its review comments are resolved, merge it.
+12. Move directly to the next task after each completion.
+13. Do not ask for permission to continue unless blocked or explicitly told to stop.
+14. Repeat until `TODO.md` is complete.
 
 ## Codex Lane
 
