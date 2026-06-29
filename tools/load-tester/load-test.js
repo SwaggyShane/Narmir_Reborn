@@ -35,6 +35,16 @@ class LoadTester {
     };
 
     this.protocol = this.baseUrl.startsWith('https') ? https : http;
+
+    const agentOptions = {
+      keepAlive: true,
+      maxSockets: this.concurrent,
+      maxFreeSockets: this.concurrent,
+      timeout: 60000
+    };
+    this.agent = this.baseUrl.startsWith('https')
+      ? new https.Agent(agentOptions)
+      : new http.Agent(agentOptions);
   }
 
   async runLoadTest() {
@@ -46,59 +56,41 @@ class LoadTester {
     const endTime = this.stats.startTime + this.duration;
 
     let activeConnections = 0;
+    let finishedConnections = 0;
 
     return new Promise((resolve) => {
-      const rampUpInterval = this.rampUp / Math.min(this.concurrent, 100);
-      let spawnedConnections = 0;
-
-      const spawnConnection = () => {
-        if (spawnedConnections >= this.concurrent || Date.now() > endTime) {
-          if (activeConnections === 0) {
-            this.stats.endTime = Date.now();
-            resolve();
-          }
-          return;
-        }
-
-        spawnedConnections++;
-        this.stats.currentConcurrent = activeConnections + 1;
+      const runConnection = async () => {
+        activeConnections++;
+        this.stats.currentConcurrent = activeConnections;
         if (this.stats.currentConcurrent > this.stats.peakConcurrent) {
           this.stats.peakConcurrent = this.stats.currentConcurrent;
         }
 
-        this.sendRequest()
-          .then(() => {
-            activeConnections--;
-            if (Date.now() <= endTime && spawnedConnections < this.concurrent) {
-              this.sendRequest().then(() => activeConnections--);
-            }
-          })
-          .catch(() => {
-            activeConnections--;
-          });
+        while (Date.now() < endTime) {
+          await this.sendRequest();
+        }
 
-        activeConnections++;
-
-        if (spawnedConnections < this.concurrent && Date.now() <= endTime) {
-          setTimeout(spawnConnection, rampUpInterval);
+        activeConnections--;
+        finishedConnections++;
+        if (finishedConnections === totalToSpawn) {
+          this.stats.endTime = Date.now();
+          resolve();
         }
       };
 
-      // Start spawning connections
-      for (let i = 0; i < Math.min(10, this.concurrent); i++) {
-        setTimeout(spawnConnection, 0);
+      let totalToSpawn = 0;
+      for (let i = 0; i < this.concurrent; i++) {
+        const delay = this.concurrent > 1 ? (i / (this.concurrent - 1)) * this.rampUp : 0;
+        if (Date.now() + delay < endTime) {
+          totalToSpawn++;
+          setTimeout(runConnection, delay);
+        }
       }
 
-      // Monitor progress
-      const progressInterval = setInterval(() => {
-        if (Date.now() > endTime) {
-          clearInterval(progressInterval);
-          if (activeConnections === 0) {
-            this.stats.endTime = Date.now();
-            resolve();
-          }
-        }
-      }, 1000);
+      if (totalToSpawn === 0) {
+        this.stats.endTime = Date.now();
+        resolve();
+      }
     });
   }
 
@@ -109,14 +101,12 @@ class LoadTester {
 
       const options = {
         method: this.method,
-        timeout: 10000
+        timeout: 10000,
+        agent: this.agent
       };
 
       const req = this.protocol.request(url, options, (res) => {
-        let _data = '';
-        res.on('data', (chunk) => {
-          _data += chunk;
-        });
+        res.resume();
         res.on('end', () => {
           const responseTime = Date.now() - startTime;
           this.recordResponse(res.statusCode, responseTime);
@@ -141,7 +131,16 @@ class LoadTester {
 
   recordResponse(statusCode, responseTime) {
     this.stats.totalRequests++;
-    this.stats.responseTimes.push(responseTime);
+
+    const MAX_SAMPLES = 100000;
+    if (this.stats.responseTimes.length < MAX_SAMPLES) {
+      this.stats.responseTimes.push(responseTime);
+    } else {
+      const randomIndex = Math.floor(Math.random() * this.stats.totalRequests);
+      if (randomIndex < MAX_SAMPLES) {
+        this.stats.responseTimes[randomIndex] = responseTime;
+      }
+    }
 
     if (statusCode < 400) {
       this.stats.successfulRequests++;
@@ -170,14 +169,15 @@ class LoadTester {
     const p50 = responseTimes[Math.floor(responseTimes.length * 0.5)] || 0;
     const p95 = responseTimes[Math.floor(responseTimes.length * 0.95)] || 0;
     const p99 = responseTimes[Math.floor(responseTimes.length * 0.99)] || 0;
-    const max = Math.max(...responseTimes, 0);
+    const max = responseTimes.length > 0 ? responseTimes[responseTimes.length - 1] : 0;
 
     console.log('\n📊 RESULTS');
     console.log('────────────────────────────────────────────');
     console.log(`⏱️  Total Duration: ${elapsed}ms`);
     console.log(`✅ Successful: ${this.stats.successfulRequests}/${this.stats.totalRequests}`);
     console.log(`❌ Failed: ${this.stats.failedRequests}/${this.stats.totalRequests}`);
-    console.log(`📈 Requests/sec: ${Math.round(this.stats.totalRequests / (elapsed / 1000))}`);
+    const rps = elapsed > 0 ? Math.round(this.stats.totalRequests / (elapsed / 1000)) : 0;
+    console.log(`📈 Requests/sec: ${rps}`);
     console.log(`🔼 Peak Concurrent: ${this.stats.peakConcurrent}`);
 
     console.log('\n⏳ RESPONSE TIMES (ms)');
