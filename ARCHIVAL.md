@@ -683,3 +683,15 @@ All major development tracks finished. Platform ready for beta launch.
 **Final status:** 2026-06-28  
 **Platform state:** Alpha phase complete, ready for beta launch  
 **Work quality:** All quality gates passed (lint, smoke, security, verification)
+
+---
+
+## Backlog Cleanup Archive
+
+**Updated:** 2026-06-29
+
+Completed work that was previously tracked in `TODO.md` has been consolidated here so the live backlog only contains unfinished tasks.
+
+- Claude health-assessment work (`todoCLAUDEcompleted.md`) verified against the branch work and archived
+- Completed platform-health work archived into the main completion record
+- Completed engine, combat, admin, and migration checkpoints remain recorded above for reference
