@@ -174,9 +174,11 @@ export default function BattleReportModal({ data, onClose }) {
   const titleRef = useRef(null);
   const subtitleRef = useRef(null);
   const powerWrapRef = useRef(null);
+  const powerBarWrapRef = useRef(null);
   const attackBarRef = useRef(null);
   const defenseBarRef = useRef(null);
   const wallWrapRef = useRef(null);
+  const wallBarWrapRef = useRef(null);
   const wallBarRef = useRef(null);
   const rowsWrapRef = useRef(null);
   const outcomeRef = useRef(null);
@@ -232,7 +234,9 @@ export default function BattleReportModal({ data, onClose }) {
         titleRef.current,
         subtitleRef.current,
         powerWrapRef.current,
+        powerBarWrapRef.current,
         wallWrapRef.current,
+        wallBarWrapRef.current,
         rowsWrapRef.current,
         outcomeRef.current,
         buttonRef.current,
@@ -248,6 +252,8 @@ export default function BattleReportModal({ data, onClose }) {
       if (attackBarRef.current) gsap.set(attackBarRef.current, { width: '0%' });
       if (defenseBarRef.current) gsap.set(defenseBarRef.current, { width: '0%' });
       if (wallBarRef.current) gsap.set(wallBarRef.current, { width: '0%' });
+      if (powerBarWrapRef.current) gsap.set(powerBarWrapRef.current, { scaleY: 0.92 });
+      if (wallBarWrapRef.current) gsap.set(wallBarWrapRef.current, { scaleY: 0.92 });
       if (outcomeRef.current && !prefersReducedMotion) {
         gsap.set(outcomeRef.current, { autoAlpha: 0, y: 14, scale: 0.92, rotateX: 12 });
       }
@@ -263,6 +269,8 @@ export default function BattleReportModal({ data, onClose }) {
         if (attackBarRef.current) gsap.set(attackBarRef.current, { width: `${atkPct}%` });
         if (defenseBarRef.current) gsap.set(defenseBarRef.current, { width: `${defPct}%` });
         if (wallBarRef.current && showWallState) gsap.set(wallBarRef.current, { width: `${wallPct}%` });
+        if (powerBarWrapRef.current) gsap.set(powerBarWrapRef.current, { scaleY: 1 });
+        if (wallBarWrapRef.current) gsap.set(wallBarWrapRef.current, { scaleY: 1 });
         return;
       }
 
@@ -275,18 +283,45 @@ export default function BattleReportModal({ data, onClose }) {
 
       if (hasPowerBars) {
         tl.to(powerWrapRef.current, { autoAlpha: 1, y: 0, duration: 0.18 }, 0.13);
+        tl.to(powerBarWrapRef.current, { scaleY: 1, duration: 0.2, ease: 'back.out(2)' }, 0.14);
         if (attackBarRef.current) {
           tl.to(attackBarRef.current, { width: `${atkPct}%`, duration: 0.45, ease: 'power3.out' }, 0.16);
         }
         if (defenseBarRef.current) {
           tl.to(defenseBarRef.current, { width: `${defPct}%`, duration: 0.45, ease: 'power3.out' }, 0.16);
         }
+        if (attackBarRef.current || defenseBarRef.current) {
+          tl.fromTo(
+            [attackBarRef.current, defenseBarRef.current].filter(Boolean),
+            { boxShadow: '0 0 0 0 rgba(255,255,255,0)' },
+            {
+              boxShadow: '0 0 18px rgba(255,255,255,0.18)',
+              duration: 0.18,
+              stagger: 0.04,
+              yoyo: true,
+              repeat: 1,
+              ease: 'power1.out',
+            },
+            0.22,
+          );
+        }
       }
 
       if (showWallState) {
         tl.to(wallWrapRef.current, { autoAlpha: 1, y: 0, duration: 0.18 }, 0.17);
+        tl.to(wallBarWrapRef.current, { scaleY: 1, duration: 0.2, ease: 'back.out(2)' }, 0.18);
         if (wallBarRef.current) {
           tl.to(wallBarRef.current, { width: `${wallPct}%`, duration: 0.5, ease: 'power3.out' }, 0.2);
+          tl.fromTo(
+            wallBarRef.current,
+            { filter: 'brightness(1.25)' },
+            {
+              filter: 'brightness(1)',
+              duration: 0.24,
+              ease: 'power2.out',
+            },
+            0.22,
+          );
         }
       }
 
@@ -425,7 +460,7 @@ export default function BattleReportModal({ data, onClose }) {
                 Enemy power: <strong style={{ color: 'var(--red)' }}>{fmt(defPower)}</strong>
               </span>
             </div>
-            <div style={{ height: 8, borderRadius: 4, overflow: 'hidden', background: 'var(--bg4)', display: 'flex' }}>
+            <div ref={powerBarWrapRef} style={{ height: 8, borderRadius: 4, overflow: 'hidden', background: 'var(--bg4)', display: 'flex', transformOrigin: '50% 50%' }}>
               <div ref={attackBarRef} style={{ width: `${atkPct}%`, background: 'var(--green)' }} />
               <div ref={defenseBarRef} style={{ width: `${defPct}%`, background: 'var(--red)' }} />
             </div>
@@ -442,7 +477,7 @@ export default function BattleReportModal({ data, onClose }) {
                 Damage: <strong style={{ color: 'var(--red)' }}>-{fmt(wallDamage)}</strong>
               </span>
             </div>
-            <div style={{ height: 8, borderRadius: 4, overflow: 'hidden', background: 'var(--bg4)', display: 'flex' }}>
+            <div ref={wallBarWrapRef} style={{ height: 8, borderRadius: 4, overflow: 'hidden', background: 'var(--bg4)', display: 'flex', transformOrigin: '50% 50%' }}>
               <div ref={wallBarRef} style={{ width: `${wallPct}%`, background: 'var(--amber)' }} />
             </div>
             <div style={{ marginTop: 4, fontSize: 11, color: 'var(--text3)' }}>
