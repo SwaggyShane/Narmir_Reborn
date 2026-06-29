@@ -1830,8 +1830,10 @@ module.exports = function (db, io) {
   router.post("/security-audit-full", async (req, res) => {
     try {
       const AuditReportGenerator = require("../tools/security-auditor/report-generator");
-      const generator = new AuditReportGenerator(path.join(__dirname, ".."));
+      const NotificationService = require("../tools/security-auditor/notification-service");
+      const ComparisonAnalyzer = require("../tools/security-auditor/comparison-analyzer");
 
+      const generator = new AuditReportGenerator(path.join(__dirname, ".."));
       const result = await generator.generateFullCodebaseReport();
       const allFindings = [
         ...result.findings.critical,
@@ -1841,9 +1843,67 @@ module.exports = function (db, io) {
         ...result.findings.info
       ];
 
+      // Save audit results to database
+      const findingsJson = JSON.stringify(allFindings);
+      const timestamp = new Date().toISOString();
+      const auditId = await db.run(
+        "INSERT INTO audit_history (run_at, findings, findings_count, status) VALUES (?, ?, ?, ?)",
+        [timestamp, findingsJson, allFindings.length, 'completed']
+      ).then(stmt => stmt.lastID || null).catch(() => null);
+
+      // Compare with previous audit and send notifications
+      let comparisonData = null;
+      if (auditId) {
+        try {
+          const previousAudit = await db.get(
+            "SELECT id, run_at, findings FROM audit_history WHERE id < ? ORDER BY id DESC LIMIT 1",
+            [auditId]
+          );
+
+          if (previousAudit) {
+            const analyzer = new ComparisonAnalyzer();
+            let previousFindings = [];
+            try {
+              previousFindings = JSON.parse(previousAudit.findings || '[]');
+            } catch (e) {
+              console.warn("[audit] Failed to parse previous findings:", e.message);
+            }
+
+            comparisonData = analyzer.compare(previousFindings, allFindings);
+
+            // Send notifications for new issues
+            if (comparisonData.new.length > 0) {
+              const notificationSettings = await db.get(
+                "SELECT notify_on_new_issues, min_severity FROM audit_notification_settings LIMIT 1"
+              );
+
+              if (notificationSettings && notificationSettings.notify_on_new_issues) {
+                const notifier = new NotificationService();
+                const severitySummary = notifier.getSeveritySummary(comparisonData.new);
+                const shouldNotify = notifier.meetsSeverityThreshold(
+                  comparisonData.new,
+                  notificationSettings.min_severity || 'MEDIUM'
+                );
+
+                if (shouldNotify) {
+                  await notifier.sendDiscordNotification(
+                    comparisonData.new.length,
+                    severitySummary,
+                    comparisonData.stats
+                  );
+                }
+              }
+            }
+          }
+        } catch (comparisonErr) {
+          console.error("[audit] Comparison/notification error:", comparisonErr.message);
+        }
+      }
+
       res.json({
         success: true,
-        timestamp: new Date().toISOString(),
+        auditId,
+        timestamp,
         filesAnalyzed: result.stats.totalFiles,
         stats: result.stats,
         summary: {
@@ -1856,10 +1916,108 @@ module.exports = function (db, io) {
         },
         findings: allFindings.slice(0, 100),
         totalFindingsAvailable: allFindings.length,
-        message: allFindings.length > 100 ? `Showing first 100 of ${allFindings.length} findings` : undefined
+        message: allFindings.length > 100 ? `Showing first 100 of ${allFindings.length} findings` : undefined,
+        comparison: comparisonData
       });
     } catch (err) {
       console.error("[admin] Full codebase audit error:", err);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+
+  // GET /api/admin/audit-notifications/settings — get notification configuration
+  router.get("/audit-notifications/settings", async (req, res) => {
+    try {
+      const settings = await db.get(
+        "SELECT id, notify_on_new_issues, min_severity, discord_channel_id, updated_at FROM audit_notification_settings LIMIT 1"
+      );
+
+      if (!settings) {
+        return res.json({
+          success: true,
+          settings: {
+            notify_on_new_issues: true,
+            min_severity: 'MEDIUM',
+            discord_channel_id: null
+          }
+        });
+      }
+
+      res.json({
+        success: true,
+        settings
+      });
+    } catch (err) {
+      console.error("[admin] Error fetching notification settings:", err);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+
+  // POST /api/admin/audit-notifications/settings — update notification configuration
+  router.post("/audit-notifications/settings", async (req, res) => {
+    try {
+      const { notify_on_new_issues, min_severity, discord_channel_id } = req.body;
+
+      const validSeverities = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO'];
+      const severity = min_severity && validSeverities.includes(min_severity) ? min_severity : 'MEDIUM';
+
+      // Update or insert settings
+      const existing = await db.get("SELECT id FROM audit_notification_settings LIMIT 1");
+      if (existing) {
+        await db.run(
+          "UPDATE audit_notification_settings SET notify_on_new_issues = ?, min_severity = ?, discord_channel_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+          [notify_on_new_issues ? 1 : 0, severity, discord_channel_id || null, existing.id]
+        );
+      } else {
+        await db.run(
+          "INSERT INTO audit_notification_settings (notify_on_new_issues, min_severity, discord_channel_id, created_at, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+          [notify_on_new_issues ? 1 : 0, severity, discord_channel_id || null]
+        );
+      }
+
+      res.json({
+        success: true,
+        message: "Notification settings updated",
+        settings: {
+          notify_on_new_issues: !!notify_on_new_issues,
+          min_severity: severity,
+          discord_channel_id: discord_channel_id || null
+        }
+      });
+    } catch (err) {
+      console.error("[admin] Error updating notification settings:", err);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+
+  // GET /api/admin/audit-notifications/recent — get recent notifications
+  router.get("/audit-notifications/recent", async (req, res) => {
+    try {
+      let limit = parseInt(req.query.limit || "10", 10);
+      if (isNaN(limit) || limit <= 0) {
+        limit = 10;
+      }
+
+      const audits = await db.all(
+        "SELECT id, run_at, findings_count FROM audit_history ORDER BY run_at DESC LIMIT ?",
+        [Math.min(limit, 100)]
+      );
+
+      res.json({
+        success: true,
+        audits
+      });
+    } catch (err) {
+      console.error("[admin] Error fetching audit history:", err);
       res.status(500).json({
         success: false,
         error: err.message

@@ -2072,6 +2072,40 @@ async function initDb(options = {}) {
     CREATE INDEX IF NOT EXISTS idx_synergy_cooldowns_until ON synergy_cooldowns(cooldown_until);
   `);
 
+  // Audit history tracking
+  await _db.exec(`
+    CREATE TABLE IF NOT EXISTS audit_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      run_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      findings TEXT NOT NULL DEFAULT '[]',
+      findings_count INTEGER NOT NULL DEFAULT 0,
+      status TEXT DEFAULT 'completed',
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_audit_history_run_at ON audit_history(run_at DESC);
+  `);
+
+  // Audit notification settings
+  await _db.exec(`
+    CREATE TABLE IF NOT EXISTS audit_notification_settings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      notify_on_new_issues BOOLEAN DEFAULT 1,
+      min_severity TEXT DEFAULT 'MEDIUM',
+      discord_channel_id TEXT,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Ensure at least one settings record exists
+  const notifSettings = await _db.get('SELECT id FROM audit_notification_settings LIMIT 1');
+  if (!notifSettings) {
+    await _db.run(`
+      INSERT INTO audit_notification_settings (notify_on_new_issues, min_severity, created_at, updated_at)
+      VALUES (1, 'MEDIUM', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    `);
+  }
+
   try {
     const { seedForumStructure } = require('../lib/forum-seed');
     await seedForumStructure(_db);
