@@ -125,8 +125,17 @@ export default function BattleReportModal({ data, onClose }) {
   const { win, type, target, atkPower = 0, defPower = 0, rows = [], spellOutcome } = data ?? {};
 
   const titleColor = win ? 'var(--green)' : 'var(--red)';
-  const outcomeClass = win ? 'br-win' : 'br-lose';
   const outcomeText = win ? ' Victory! Land captured and enemies routed.' : ' Attack repelled. Regroup and try again.';
+  const outcomeStyle = {
+    border: `1px solid ${win ? 'rgba(74, 222, 128, 0.42)' : 'rgba(248, 113, 113, 0.42)'}`,
+    background: win
+      ? 'linear-gradient(180deg, rgba(18, 54, 31, 0.98) 0%, rgba(10, 18, 13, 0.98) 100%)'
+      : 'linear-gradient(180deg, rgba(58, 17, 17, 0.98) 0%, rgba(22, 11, 11, 0.98) 100%)',
+    boxShadow: win
+      ? '0 0 0 1px rgba(74, 222, 128, 0.18), 0 10px 28px rgba(0, 0, 0, 0.35)'
+      : '0 0 0 1px rgba(248, 113, 113, 0.18), 0 10px 28px rgba(0, 0, 0, 0.35)',
+    color: win ? 'var(--green)' : 'var(--red)',
+  };
   const total = atkPower + defPower || 1;
   const atkPct = Math.round((atkPower / total) * 100);
   const defPct = 100 - atkPct;
@@ -177,6 +186,9 @@ export default function BattleReportModal({ data, onClose }) {
       if (attackBarRef.current) gsap.set(attackBarRef.current, { width: '0%' });
       if (defenseBarRef.current) gsap.set(defenseBarRef.current, { width: '0%' });
       if (wallBarRef.current) gsap.set(wallBarRef.current, { width: '0%' });
+      if (outcomeRef.current && !prefersReducedMotion) {
+        gsap.set(outcomeRef.current, { autoAlpha: 0, y: 14, scale: 0.92, rotateX: 12 });
+      }
 
       if (prefersReducedMotion) {
         gsap.set(modal, { autoAlpha: 1 });
@@ -252,14 +264,21 @@ export default function BattleReportModal({ data, onClose }) {
         );
       }
 
-      tl.to(outcomeRef.current, { autoAlpha: 1, y: 0, duration: 0.2 }, 0.38)
+      tl.to(outcomeRef.current, { autoAlpha: 1, y: 0, scale: 1, rotateX: 0, duration: 0.34, ease: 'back.out(1.9)' }, 0.38)
+        .to(
+          outcomeRef.current,
+          win
+            ? { scale: 1.03, boxShadow: '0 0 0 1px rgba(74, 222, 128, 0.3), 0 0 26px rgba(74, 222, 128, 0.14), 0 10px 28px rgba(0, 0, 0, 0.35)', duration: 0.14, ease: 'power1.out', yoyo: true, repeat: 1 }
+            : { x: -4, duration: 0.06, ease: 'power1.inOut', repeat: 5, yoyo: true },
+          0.72,
+        )
         .to(buttonRef.current, { autoAlpha: 1, y: 0, duration: 0.2 }, 0.46);
     }, modal);
 
     return () => {
       ctx.revert();
     };
-  }, [atkPct, defPct, casualties, criticalHits, criticalKills, hasData, hasPowerBars, rows.length, showSummary, showWallState, wallPct]);
+  }, [atkPct, defPct, casualties, criticalHits, criticalKills, hasData, hasPowerBars, rows.length, showSummary, showWallState, wallPct, win]);
 
   if (!hasData) return null;
 
@@ -419,12 +438,12 @@ export default function BattleReportModal({ data, onClose }) {
 
         <div
           ref={outcomeRef}
-          className={outcomeClass}
           style={{
             borderRadius: 8,
             padding: 10,
             textAlign: 'center',
             fontWeight: 600,
+            ...outcomeStyle,
           }}
         >
           {outcomeText}
