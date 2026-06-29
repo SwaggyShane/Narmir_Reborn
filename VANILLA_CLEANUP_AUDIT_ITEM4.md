@@ -253,9 +253,9 @@ The file contains **extensive inline styles** (not counted in detail, but observ
 
 ## References
 
-- [README.md](../README.md) - Mentions legacy admin at `public/legacy/admin.html`
-- [Codebase](../client/src/admin/) - React admin panel is the canonical implementation
-- [ROADMAP.md](../ROADMAP.md) - Check for admin migration status
+- [README.md](./README.md) - Mentions legacy admin at `public/legacy/admin.html`
+- [Codebase](./client/src/admin/) - React admin panel is the canonical implementation
+- [ROADMAP.md](./ROADMAP.md) - Check for admin migration status
 
 ---
 
