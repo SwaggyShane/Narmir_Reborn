@@ -38,7 +38,7 @@ Remote is truth for shared project state. Completed work now lives in `ARCHIVAL.
 15. Beta Architecture Debt: Remove remaining GameStateManager bridge hooks after full Zustand coverage.
 16. Beta Architecture Debt: Enforce Tailwind-only defaults for static styling.
 17. Beta Architecture Debt: Remove legacy admin compatibility routes from `index.js`.
-18. Beta Architecture Debt: Expand component test coverage.
+18. [done] Beta Architecture Debt: Expand component test coverage.
 19. Beta Architecture Debt: Refresh API documentation.
 20. Beta Architecture Debt: Investigate `/expedition` and `/turn` query performance.
 21. [done] Beta Architecture Debt: Clean up duplicate happiness logic and related code-quality debt.
