@@ -10,7 +10,8 @@ class ComparisonAnalyzer {
 
   // Create a unique key for a finding (file + line + issue type)
   findingKey(finding) {
-    return `${finding.file}:${finding.line || 0}:${finding.type || finding.issue}`;
+    if (!finding) return 'unknown:0:unknown';
+    return `${finding.file || 'unknown'}:${finding.line || 0}:${finding.type || finding.issue || 'unknown'}`;
   }
 
   // Convert findings array to Map for comparison
@@ -180,6 +181,7 @@ class ComparisonAnalyzer {
     const t1 = new Date(timestamp1).getTime();
     const t2 = new Date(timestamp2).getTime();
     const diffMs = Math.abs(t2 - t1);
+    if (isNaN(diffMs)) return 'unknown';
 
     const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));

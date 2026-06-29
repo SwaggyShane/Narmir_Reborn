@@ -1881,14 +1881,16 @@ module.exports = function (db, io) {
         return res.status(400).json({ error: "Invalid audit IDs" });
       }
 
-      const audit1 = await db.get(
-        "SELECT id, run_at, findings FROM audit_history WHERE id = ?",
-        [id1Num]
-      );
-      const audit2 = await db.get(
-        "SELECT id, run_at, findings FROM audit_history WHERE id = ?",
-        [id2Num]
-      );
+      const [audit1, audit2] = await Promise.all([
+        db.get(
+          "SELECT id, run_at, findings FROM audit_history WHERE id = ?",
+          [id1Num]
+        ),
+        db.get(
+          "SELECT id, run_at, findings FROM audit_history WHERE id = ?",
+          [id2Num]
+        )
+      ]);
 
       if (!audit1 || !audit2) {
         return res.status(404).json({ error: "One or both audits not found" });
@@ -1964,7 +1966,10 @@ module.exports = function (db, io) {
       const TrendVisualizer = require("../tools/security-auditor/trend-visualizer");
       const visualizer = new TrendVisualizer();
 
-      const limit = parseInt(req.query.limit || "50", 10);
+      let limit = parseInt(req.query.limit || "50", 10);
+      if (isNaN(limit) || limit <= 0) {
+        limit = 50;
+      }
       const auditHistory = await db.all(
         "SELECT id, run_at, findings_count, findings, status FROM audit_history ORDER BY run_at DESC LIMIT ?",
         [Math.min(limit, 500)]
@@ -1996,7 +2001,10 @@ module.exports = function (db, io) {
       const TrendVisualizer = require("../tools/security-auditor/trend-visualizer");
       const visualizer = new TrendVisualizer();
 
-      const limit = parseInt(req.query.limit || "50", 10);
+      let limit = parseInt(req.query.limit || "50", 10);
+      if (isNaN(limit) || limit <= 0) {
+        limit = 50;
+      }
       const auditHistory = await db.all(
         "SELECT id, run_at, findings FROM audit_history ORDER BY run_at DESC LIMIT ?",
         [Math.min(limit, 500)]
@@ -2020,7 +2028,10 @@ module.exports = function (db, io) {
       const TrendVisualizer = require("../tools/security-auditor/trend-visualizer");
       const visualizer = new TrendVisualizer();
 
-      const limit = parseInt(req.query.limit || "20", 10);
+      let limit = parseInt(req.query.limit || "20", 10);
+      if (isNaN(limit) || limit <= 0) {
+        limit = 20;
+      }
       const auditHistory = await db.all(
         "SELECT id, run_at, findings_count, findings, status FROM audit_history ORDER BY run_at DESC LIMIT ?",
         [Math.min(limit, 100)]
@@ -2046,7 +2057,10 @@ module.exports = function (db, io) {
       const TrendVisualizer = require("../tools/security-auditor/trend-visualizer");
       const visualizer = new TrendVisualizer();
 
-      const limit = parseInt(req.query.limit || "90", 10);
+      let limit = parseInt(req.query.limit || "90", 10);
+      if (isNaN(limit) || limit <= 0) {
+        limit = 90;
+      }
       const auditHistory = await db.all(
         "SELECT id, run_at, findings_count, findings, status FROM audit_history ORDER BY run_at DESC LIMIT ?",
         [Math.min(limit, 500)]
