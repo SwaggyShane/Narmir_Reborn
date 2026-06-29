@@ -88,8 +88,8 @@ app.set('trust proxy', 1);
 const PORT = 3000;
 const HOST = '0.0.0.0';
 
-server.requestTimeout = 30000;
-server.headersTimeout = 35000;
+server.requestTimeout = 75000;
+server.headersTimeout = 70000;
 server.keepAliveTimeout = 65000;
 server.clientTrackingDisabled = false;
 
@@ -211,7 +211,10 @@ function adminIpCheck(req, res, next) {
   if (!adminIpsStr.trim()) return next();
 
   const allowedIps = adminIpsStr.split(',').map(ip => ip.trim()).filter(Boolean);
-  const clientIp = req.ip || req.connection.remoteAddress || '';
+  let clientIp = req.ip || req.socket?.remoteAddress || '';
+  if (clientIp.startsWith('::ffff:')) {
+    clientIp = clientIp.substring(7);
+  }
 
   if (!allowedIps.includes(clientIp)) {
     return res.status(403).json({ error: 'Admin access denied' });
