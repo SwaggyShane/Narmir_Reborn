@@ -1867,6 +1867,97 @@ module.exports = function (db, io) {
     }
   });
 
+  // GET /api/admin/audit-comparison/:id1/:id2 — compare two audit runs
+  router.get("/audit-comparison/:id1/:id2", requireAdmin, async (req, res) => {
+    try {
+      const ComparisonAnalyzer = require("../tools/security-auditor/comparison-analyzer");
+      const analyzer = new ComparisonAnalyzer();
+
+      const { id1, id2 } = req.params;
+      const id1Num = parseInt(id1, 10);
+      const id2Num = parseInt(id2, 10);
+
+      if (isNaN(id1Num) || isNaN(id2Num)) {
+        return res.status(400).json({ error: "Invalid audit IDs" });
+      }
+
+      const audit1 = await db.get(
+        "SELECT id, run_at, findings FROM audit_history WHERE id = ?",
+        [id1Num]
+      );
+      const audit2 = await db.get(
+        "SELECT id, run_at, findings FROM audit_history WHERE id = ?",
+        [id2Num]
+      );
+
+      if (!audit1 || !audit2) {
+        return res.status(404).json({ error: "One or both audits not found" });
+      }
+
+      let findings1 = [];
+      let findings2 = [];
+
+      try {
+        findings1 = JSON.parse(audit1.findings || "[]");
+        findings2 = JSON.parse(audit2.findings || "[]");
+      } catch (err) {
+        console.error("[admin] Failed to parse audit findings:", err.message);
+        return res.status(500).json({ error: "Failed to parse audit data" });
+      }
+
+      const comparison = analyzer.compare(findings1, findings2);
+      const report = analyzer.generateComparisonReport(comparison, audit1.run_at, audit2.run_at);
+
+      res.json({
+        success: true,
+        audit1Id: audit1.id,
+        audit2Id: audit2.id,
+        audit1Date: audit1.run_at,
+        audit2Date: audit2.run_at,
+        comparison,
+        report
+      });
+    } catch (err) {
+      console.error("[admin] Audit comparison error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // GET /api/admin/audit-trend — get trend summary across recent audits
+  router.get("/audit-trend", requireAdmin, async (req, res) => {
+    try {
+      const ComparisonAnalyzer = require("../tools/security-auditor/comparison-analyzer");
+      const analyzer = new ComparisonAnalyzer();
+
+      const limit = parseInt(req.query.limit || "10", 10);
+      const auditHistory = await db.all(
+        "SELECT id, run_at, findings_count, status FROM audit_history ORDER BY run_at DESC LIMIT ?",
+        [Math.min(limit, 100)]
+      );
+
+      if (auditHistory.length === 0) {
+        return res.json({
+          success: true,
+          trend: "no_audits",
+          message: "No audit history available",
+          auditCount: 0
+        });
+      }
+
+      const trend = analyzer.getTrendSummary(auditHistory);
+
+      res.json({
+        success: true,
+        trend,
+        auditHistory: auditHistory.reverse(),
+        message: `Trend analysis across ${auditHistory.length} audits`
+      });
+    } catch (err) {
+      console.error("[admin] Audit trend error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   return router;
 };
 
