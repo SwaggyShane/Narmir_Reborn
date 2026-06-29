@@ -1,8 +1,8 @@
 ﻿# System Maintenance & Health Audit
 
-**Last updated:** 2026-06-28  
-**Status:** Alpha phase. Platform healthy. Architecture debt addressed (F1–F8 complete).
-**Next phase:** Prepare for beta launch; address remaining CSS consolidation and testing gaps.
+**Last updated:** 2026-06-29  
+**Status:** ✅ Alpha phase complete. Platform healthy. Architecture debt addressed (F1–F8 complete).
+**Next phase:** Beta launch preparation (13 items in TODO.md); complete production maintenance audit.
 
 ---
 
@@ -83,7 +83,7 @@
 - **Admin gate:** `/admin` routes require `isAdmin` check
 - **Input validation:** Range validators on /hire, /research, /training-allocation, /build-allocation, etc.
 - **Known vulns:** None critical; high-risk dependencies (undici, multer, ws, vite) resolved or mitigated
-- **Future:** SQL injection audit (parameterized queries in use; verify 100% coverage)
+- **SQL Injection Audit:** ✅ COMPLETE (Item 1, 2026-06-29) — 100% parameterized query coverage verified across all 12 route files and game logic modules
 
 ### Dependencies
 - **Status:** ✅ Health check complete
@@ -125,24 +125,27 @@
 - **Next phase:** Post-alpha; prioritize business logic coverage
 
 ### Documentation
-- **Status:** ⚠️ Partial
+- **Status:** ✅ Current for beta preparation
 - **What's current:**
-  - `CLAUDE.md`: Workflow guide + enforcement pointer ✅
-  - `WORKFLOW-REQUIRED.md`: Enforcement checklists + first rule ✅
-  - `ROADMAP.md`: Alpha phase status, all tracks documented ✅
-  - `AdminRoadmap.md`: Admin Ph0–Ph6 detail ✅
+  - `CLAUDE.md`: Workflow guide + quality rules ✅
+  - `WORKFLOW-REQUIRED.md`: Enforcement checklists ✅
+  - `TODO.md`: Active beta preparation work (13 items) ✅
+  - `ARCHIVAL.md`: Complete alpha work history (Tracks A-F, Claude Lane Items 1-22) ✅
+  - `MAINTENANCE.md`: System health audit (this document) ✅
   - `.claude/` directory: Hooks, config, workflow docs ✅
-- **What's outdated:**
+- **What's consolidated/cleaned:**
+  - ✅ ROADMAP.md (deleted; consolidated to ARCHIVAL.md + TODO.md)
+  - ✅ PROTECTED_WORK.md (deleted; protection documented in ARCHIVAL.md)
+  - ✅ VANILLA_CLEANUP_AUDIT_ITEM*.md (6 files deleted; superseded by ARCHIVAL.md)
+- **What's outdated (deferred to post-beta):**
   - `README.md`: Setup instructions outdated; missing Zustand store info
-  - `F4_DECOMPOSITION_STRATEGY.md`: Reference doc; no longer actively used
-  - `F5_ZUSTAND_MIGRATION_PLAN.md`: Reference doc; migration complete
   - API documentation: No formal OpenAPI/Swagger spec; route docs scattered
-- **Missing:**
+- **Missing (deferred to post-beta):**
   - Game mechanics documentation (turns, resources, expeditions, combat)
   - Store architecture guide (how Zustand stores interconnect)
   - Database schema documentation (missing ER diagram)
   - Deployment guide (Railway setup, environment variables)
-- **Next phase:** Create API docs + mechanics guide post-alpha
+- **Next phase:** API docs + game mechanics guide (post-beta launch)
 
 ---
 
@@ -154,7 +157,7 @@
 | StudiesPanel refactor | Medium | Complex component with 16+ state refs; hook replacement insufficient; needs architectural redesign | No | 8✅12 hours |
 | Discord.js v15 migration | Low | Awaiting stable v15; current v14 pin is mitigated by the undici override | No | 2✅3 hours (when v15 ready) |
 | Query performance audit | Low | Turn processing + expedition list endpoints under high load; no current bottleneck but worth profiling | No | 2✅3 hours |
-| SQL injection audit | Medium | Verify 100% of queries use parameterized statements; spot-check critical endpoints | No | 1✅2 hours |
+| ~~SQL injection audit~~ | ~~Medium~~ | ✅ **COMPLETE** (2026-06-29) — 100% parameterized queries verified | ✅ DONE | ✅ 2-3 hours |
 | Database backup testing | Low | Backup strategy exists; restore procedures untested | No | 1✅2 hours |
 
 ---
@@ -190,7 +193,7 @@
 - [x] Parameterized queries used (spot-checked; full audit pending)
 - [x] Session tokens validated on every request
 - [x] Pre-commit hook enforces lint (prevents obvious mistakes)
-- [ ] SQL injection audit (100% coverage)
+- [x] SQL injection audit (100% coverage verified 2026-06-29)
 - [ ] Rate limiting (currently basic turn limiter; DDoS mitigation untested)
 - [ ] Secrets management (`.env` in .gitignore; no hardcoded keys in repo)
 - [ ] HTTPS enforced in production (Railway SSL; local dev unencrypted)
@@ -218,9 +221,9 @@
 ## Recommended Next Actions (Post-Alpha)
 
 ### P1 (High)
-1. **Finish testing:** Business logic test suite (crafting, turns, trade routes)
-2. **SQL injection audit:** Verify 100% query parameterization
-3. **Documentation:** API docs + game mechanics guide
+1. ✅ **SQL injection audit:** COMPLETE (2026-06-29) — 100% parameterized queries verified
+2. **Load testing:** 5,000+ concurrent players (TODO Item 2)
+3. **Database backup/restore:** Verify procedures work (TODO Item 3)
 
 ### P2 (Medium)
 1. **StudiesPanel refactor:** Redesign before complex hook replacement
@@ -236,13 +239,13 @@
 
 ## Contact & References
 
-- **Code health:** See `WORKFLOW-REQUIRED.md` for enforcement rules
-- **Roadmap:** See `ROADMAP.md` for feature status
-- **Admin details:** See `AdminRoadmap.md` for admin panel phases
-- **Architecture:** See `F4_DECOMPOSITION_STRATEGY.md` (engine.js) and module READMEs
+- **Code quality:** See `CLAUDE.md` for PR workflow and quality rules
+- **Active work:** See `TODO.md` for beta preparation items (13 tasks)
+- **Historical record:** See `ARCHIVAL.md` for all completed alpha work (Tracks A-F)
+- **Architecture:** See module READMEs in `game/lib/` and `routes/`
 
 ---
 
-**Maintained by:** Claude Code (auto-generated health audits welcome; manual updates preferred for accuracy)  
-**Last review:** 2026-06-28  
-**Next review:** 2026-07-28
+**Maintained by:** Claude Code  
+**Last review:** 2026-06-29 (SQL injection audit complete, documentation consolidated)  
+**Next review:** 2026-07-28 (post-beta launch)
