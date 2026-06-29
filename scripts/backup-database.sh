@@ -43,6 +43,11 @@ fi
 mkdir -p "$BACKUP_DIR"
 log_info "Backup directory: $BACKUP_DIR"
 
+# Normalize postgres:// to postgresql:// for consistent parsing
+if [[ "$DATABASE_URL" =~ ^postgres:// ]]; then
+  DATABASE_URL="postgresql://${DATABASE_URL#postgres://}"
+fi
+
 # Extract database name and connection details from DATABASE_URL
 # Format: postgresql://user:password@host:port/database
 if [[ $DATABASE_URL =~ postgresql://([^:]+):([^@]+)@([^:/]+):?([0-9]*)/?([^?]*) ]]; then
