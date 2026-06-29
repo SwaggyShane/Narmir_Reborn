@@ -5,7 +5,6 @@ import { applyColorTheme, readColorTheme } from './utils/colorTheme.js';
 import { initConsoleCapture } from './utils/consoleCapture.js';
 import { initErrorLogging } from './utils/errorLogging.js';
 import './tailwind.css';
-import './css/forum.css';
 
 initConsoleCapture();
 initErrorLogging();
