@@ -3126,6 +3126,747 @@
     opacity: 1;
     transform: none;
   }
+
+  /* ── Splash page styles (Splash.css) ── */
+  .splash-root {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: #000;
+  }
+
+  html:has(.phase-modern),
+  body:has(.phase-modern) {
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .splash-root.phase-modern {
+    position: relative;
+    overflow: visible;
+  }
+
+  .retro-wrapper {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    cursor: pointer;
+    background: #000000;
+    z-index: 1;
+  }
+
+  .retro-frameset {
+    display: grid;
+    grid-template-columns: 140px minmax(0, 1fr) 140px;
+    width: 100%;
+    height: 100%;
+    min-height: 100vh;
+    background: #000000;
+  }
+
+  .retro-col {
+    background-color: #000000;
+    background-repeat: repeat;
+  }
+
+  .retro-col-left {
+    background-image: url('/retro/bg-left.gif');
+  }
+
+  .retro-col-right {
+    background-image: url('/retro/bg-right.gif');
+  }
+
+  .retro-nav-spacer {
+    width: 140px;
+    height: 150px;
+    flex-shrink: 0;
+  }
+
+  .retro-nav {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0 0 8px;
+    gap: 0;
+  }
+
+  .retro-nav a {
+    display: block;
+    line-height: 0;
+    text-decoration: none;
+  }
+
+  .retro-nav a:hover img {
+    filter: brightness(1.15);
+  }
+
+  .retro-nav-first img {
+    outline: 1px solid #ffff00;
+    outline-offset: 1px;
+  }
+
+  .retro-center {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .retro-top-banner {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .retro-content {
+    flex: 1;
+    overflow-y: auto;
+    background: #000000;
+    color: #c0c0c0;
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 8pt;
+    line-height: 1.45;
+    padding: 10px;
+  }
+
+  .retro-content p {
+    margin: 0 0 0.75em;
+  }
+
+  .retro-content a {
+    color: #0000ff;
+    font-weight: bold;
+    text-decoration: none;
+  }
+
+  .retro-content a:hover {
+    color: #ffffff;
+  }
+
+  .retro-hr {
+    border: none;
+    border-top: 1px solid #808080;
+    margin: 8px 0;
+  }
+
+  .retro-applet-wrap {
+    text-align: center;
+    margin: 12px 0;
+  }
+
+  .retro-applet-slot {
+    display: inline-block;
+    width: 200px;
+    height: 75px;
+    background: #1a1a1a;
+    border: 1px inset #404040;
+  }
+
+  .retro-java-fallback {
+    color: #ffffcc;
+    text-align: center;
+    margin: 8px 0;
+  }
+
+  .retro-small-red {
+    color: #cc0000;
+  }
+
+  .scanlines {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.08) 0px,
+      rgba(0, 0, 0, 0.08) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    pointer-events: none;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.1s;
+  }
+
+  .tear-slice {
+    position: fixed;
+    left: 0;
+    right: 0;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0;
+  }
+
+  .tear-slice[data-dir="l"].tearing {
+    animation: tearL 0.72s cubic-bezier(0.55, 0, 1, 0.45) both;
+  }
+
+  .tear-slice[data-dir="r"].tearing {
+    animation: tearR 0.72s cubic-bezier(0.55, 0, 1, 0.45) both;
+  }
+
+  .flash-overlay {
+    position: fixed;
+    inset: 0;
+    background: #ffffff;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 500;
+    transition: opacity 0.18s ease-in;
+  }
+
+  .flash-overlay.active {
+    opacity: 1;
+  }
+
+  .modern-splash {
+    position: relative;
+    min-height: 100vh;
+    animation: modernIn 0.9s ease-out both;
+    --gold:    #f06202;
+    --accent1: #b43c00;
+    --text:    #f8fafc;
+  }
+
+  .video-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+  }
+
+  .video-bg video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .video-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(0,  0,  0, 0.35)  0%,
+      rgba(0,  0,  0, 0.55) 35%,
+      rgba(10,10, 11, 0.80) 70%,
+      rgba(10,10, 11, 1.00) 100%
+    );
+  }
+
+  .ember-container {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
+  }
+
+  .ember {
+    position: absolute;
+    bottom: -8px;
+    border-radius: 50%;
+    animation: emberFloat linear infinite both;
+  }
+
+  .hero-section {
+    position: relative;
+    z-index: 2;
+    min-height: 100vh;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    padding-top: max(2rem, env(safe-area-inset-top));
+    text-align: center;
+  }
+
+  .hero-title {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(2.8rem, 10vw, 7.5rem);
+    font-weight: 900;
+    letter-spacing: 0.16em;
+    margin: 0 0 0.4em;
+    background: linear-gradient(135deg, #ff9500, #f06202, #b43c00, #ff6600, #ff9500);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: fireTitle 4s ease-in-out infinite, titleReveal 1s ease-out both;
+    filter: drop-shadow(0 0 30px rgba(240,98,2,0.35));
+  }
+
+  .hero-tagline {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(0.9rem, 3vw, 1.35rem);
+    font-weight: 300;
+    color: rgba(248, 250, 252, 0.82);
+    letter-spacing: 0.1em;
+    margin: 0 0 2.5rem;
+    animation: fadeUp 1s ease-out 0.5s both;
+  }
+
+  .auth-block {
+    width: 100%;
+    max-width: 380px;
+    animation: fadeUp 1s ease-out 0.9s both;
+  }
+
+  .auth-loading {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 2rem 0;
+  }
+
+  .dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--gold);
+    animation: dotBounce 1s ease-in-out infinite;
+  }
+
+  .auth-continue {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .continue-btn {
+    display: inline-block;
+    padding: 0.95rem 2.8rem;
+    background: linear-gradient(135deg, #b43c00, #f06202);
+    color: #fff;
+    font-family: 'Cinzel', serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-decoration: none;
+    border-radius: 4px;
+    box-shadow: 0 0 30px rgba(240,98,2,0.4), 0 4px 16px rgba(0,0,0,0.5);
+    transition: box-shadow 0.25s, transform 0.2s;
+  }
+
+  .continue-btn:hover {
+    box-shadow: 0 0 55px rgba(240,98,2,0.75), 0 6px 24px rgba(0,0,0,0.5);
+    transform: translateY(-3px);
+  }
+
+  .auth-sub {
+    font-size: 0.82rem;
+    color: rgba(248,250,252,0.45);
+    margin: 0;
+    font-style: italic;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .auth-form-wrap {
+    background: rgba(10,10,11,0.72);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(240,98,2,0.22);
+    border-radius: 8px;
+    padding: 1.4rem;
+  }
+
+  .auth-tabs {
+    display: flex;
+    margin-bottom: 1.2rem;
+    border-bottom: 1px solid rgba(240,98,2,0.18);
+  }
+
+  .auth-tab {
+    flex: 1;
+    padding: 0.55rem 0;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    color: rgba(248,250,252,0.45);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  .auth-tab.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+  }
+
+  .auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .auth-input {
+    padding: 0.7rem 1rem;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    color: #f8fafc;
+    font-size: 0.95rem;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .auth-input:focus {
+    border-color: rgba(240,98,2,0.55);
+  }
+
+  .auth-input::placeholder {
+    color: rgba(248,250,252,0.28);
+  }
+
+  .auth-error {
+    color: #ff5555;
+    font-size: 0.84rem;
+    margin: 0;
+    text-align: center;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .auth-submit {
+    padding: 0.8rem;
+    background: linear-gradient(135deg, #b43c00, #f06202);
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    font-family: 'Cinzel', serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+
+  .auth-submit:hover:not(:disabled) {
+    opacity: 0.88;
+    transform: translateY(-1px);
+  }
+
+  .auth-submit:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    animation: fadeUp 1s ease-out 1.6s both;
+  }
+
+  .scroll-arrow {
+    font-size: 1.6rem;
+    color: rgba(248,250,252,0.35);
+    animation: arrowBounce 2s ease-in-out infinite;
+    display: block;
+  }
+
+  .race-section {
+    position: relative;
+    z-index: 2;
+    padding: 5rem 2rem 4rem;
+  }
+
+  .section-title {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(1.4rem, 4vw, 2.4rem);
+    font-weight: 700;
+    color: var(--gold);
+    text-align: center;
+    margin: 0 0 2.5rem;
+    letter-spacing: 0.12em;
+  }
+
+  .race-row {
+    display: flex;
+    gap: 1.4rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 0.5rem;
+  }
+
+  .race-card {
+    width: 155px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(10,10,11,0.72);
+    border: 1px solid rgba(240,98,2,0.14);
+    border-radius: 8px;
+    padding: 1.3rem 1rem;
+    text-align: center;
+    transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+  }
+
+  .race-card:hover {
+    border-color: rgba(240,98,2,0.55);
+    transform: translateY(-8px);
+    box-shadow: 0 14px 35px rgba(240,98,2,0.18);
+  }
+
+  .race-portrait {
+    width: 78px;
+    height: 78px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-bottom: 0.9rem;
+    border: 2px solid rgba(240,98,2,0.3);
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .race-portrait img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .race-fallback-emoji {
+    font-size: 2.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+  }
+
+  .race-name {
+    font-family: 'Cinzel', serif;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--gold);
+    margin-bottom: 0.35rem;
+    letter-spacing: 0.06em;
+  }
+
+  .race-lore {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.74rem;
+    color: rgba(248,250,252,0.55);
+    line-height: 1.45;
+  }
+
+  .features-section {
+    position: relative;
+    z-index: 2;
+    padding: 4rem 2rem 6rem;
+    max-width: 1020px;
+    margin: 0 auto;
+  }
+
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.4rem;
+  }
+
+  .feature-card {
+    background: rgba(10,10,11,0.72);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px;
+    padding: 1.8rem;
+    transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+  }
+
+  .feature-card:hover {
+    border-color: rgba(240,98,2,0.32);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  }
+
+  .feature-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+
+  .feature-title {
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--gold);
+    margin: 0 0 0.5rem;
+    letter-spacing: 0.06em;
+  }
+
+  .feature-desc {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.875rem;
+    color: rgba(248,250,252,0.62);
+    margin: 0;
+    line-height: 1.65;
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.65s ease-out, transform 0.65s ease-out;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .splash-footer {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    padding: 1.4rem 1rem;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    color: rgba(248,250,252,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+  }
+
+  .footer-sep {
+    opacity: 0.4;
+  }
+
+  .footer-link {
+    color: rgba(240,98,2,0.6);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .footer-link:hover {
+    color: var(--gold);
+  }
+
+  .splash-root.fading::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: #000;
+    animation: fadeOverlay 0.5s ease-out forwards;
+    pointer-events: auto;
+    z-index: 99999;
+  }
+
+  @media (max-width: 600px) {
+    .retro-body {
+      flex-direction: column;
+    }
+
+    .retro-nav {
+      width: 100%;
+      min-width: 0;
+      flex-direction: row;
+      flex-wrap: wrap;
+      border-right: none;
+      border-bottom: 2px solid #3333ff;
+      padding: 0;
+    }
+
+    .retro-nav-link {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-bottom: 1px solid #2222cc;
+      border-right: 1px solid #2222cc;
+      flex: 0 0 auto;
+    }
+
+    .retro-nav-link.first::after {
+      display: none;
+    }
+
+    .retro-logo-name {
+      font-size: 22px;
+      letter-spacing: 3px;
+    }
+
+    .retro-statusbar {
+      font-size: 10px;
+      gap: 4px;
+    }
+
+    .retro-statusbar span:last-child {
+      display: none;
+    }
+
+    .auth-block {
+      max-width: 100%;
+    }
+
+    .auth-form-wrap {
+      border-radius: 6px;
+      padding: 1.1rem;
+    }
+
+    .continue-btn {
+      padding: 0.85rem 2rem;
+      font-size: 0.95rem;
+    }
+
+    .race-row {
+      gap: 0.9rem;
+    }
+
+    .race-card {
+      width: 140px;
+      padding: 1rem 0.75rem;
+    }
+
+    .race-portrait {
+      width: 64px;
+      height: 64px;
+    }
+
+    .feature-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .race-section,
+    .features-section {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+  }
+
+  @media (max-width: 380px) {
+    .race-card {
+      width: 120px;
+    }
+
+    .hero-title {
+      letter-spacing: 0.1em;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .retro-frameset {
+      grid-template-columns: 120px minmax(0, 1fr);
+    }
+
+    .retro-col-right {
+      display: none;
+    }
+
+    .retro-nav-spacer {
+      width: 120px;
+      height: 100px;
+    }
+
+    .retro-nav img {
+      width: 110px;
+      height: auto;
+    }
+  }
 }
 
 @layer utilities {
