@@ -31,9 +31,9 @@
 **Files involved:** 3 core files + 1 database table
 
 ```
-discord-bot.js                  (350 lines) — Polling, chat relay, bug reports
-routes/discord.js               (150 lines) — Account linking REST endpoints
-lib/discord-notify.js           (200 lines) — Webhook + embed builders
+discord-bot.js                  (617 lines) — Polling, chat relay, bug reports
+routes/discord.js               (228 lines) — Account linking REST endpoints
+lib/discord-notify.js           (167 lines) — Webhook + embed builders
 db/discord_sync_config          (1 table)   — Channel configuration
 db/discord_links                (1 table)   — Player↔Discord linking
 ```
@@ -54,9 +54,9 @@ db/discord_links                (1 table)   — Player↔Discord linking
 
 ```javascript
 // Webhook fallback
-fetch('https://discord.com/api/v10/channels/{channelId}/messages', {
+fetch(webhookUrl, {
   method: 'POST',
-  headers: { Authorization: `Bot ${token}` },
+  headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ embeds: [...] })
 });
 ```
