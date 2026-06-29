@@ -190,8 +190,8 @@ const RankingsPanel = () => {
           </div>
         </td>
         <td style={{ padding: '10px 6px', textAlign: 'right', color: 'var(--gold)', fontWeight: 600 }}>{fmt(row.score !== undefined ? row.score : row.land)}</td>
-        <td style={{ padding: '10px 6px', textAlign: 'right', color: 'var(--text3)' }}>{row.level || 1}</td>
-        <td style={{ padding: '10px 6px', textAlign: 'right', color: 'var(--text3)' }}>{fmt(row.turn || 0)}</td>
+        <td className="px-[6px] py-2.5 text-right text-[var(--text3)]">{row.level || 1}</td>
+        <td className="px-[6px] py-2.5 text-right text-[var(--text3)]">{fmt(row.turn || 0)}</td>
         <td style={{ padding: '10px 6px', textAlign: 'center', color: 'var(--text3)', fontSize: '11px' }}>{row.last_combat_at ? timeAgo(row.last_combat_at) : '—'}</td>
         <td style={{ padding: '10px 8px', textAlign: 'center' }}>{actionBtns}</td>
       </tr>
@@ -202,10 +202,10 @@ const RankingsPanel = () => {
     <tr key={row.id} style={{ borderBottom: '1px solid var(--border)' }}>
       <td style={{ padding: '10px 6px', color: 'var(--text3)' }}>{row.rank}</td>
       <td style={{ padding: '10px 6px', color: 'var(--text)' }}>{repairText(row.name || '—')}</td>
-      <td style={{ padding: '10px 6px', textAlign: 'right', color: 'var(--text3)' }}>{fmt(row.member_count)}</td>
+      <td className="px-[6px] py-2.5 text-right text-[var(--text3)]">{fmt(row.member_count)}</td>
       <td style={{ padding: '10px 6px', textAlign: 'right', color: 'var(--gold)', fontWeight: 600 }}>{fmt(row.total_score)}</td>
-      <td style={{ padding: '10px 6px', textAlign: 'right', color: 'var(--text3)' }}>{fmt(row.member_count ? row.total_score / row.member_count : 0)}</td>
-      <td style={{ padding: '10px 6px', textAlign: 'right', color: 'var(--text3)' }}>{fmt(row.total_pop)}</td>
+      <td className="px-[6px] py-2.5 text-right text-[var(--text3)]">{fmt(row.member_count ? row.total_score / row.member_count : 0)}</td>
+      <td className="px-[6px] py-2.5 text-right text-[var(--text3)]">{fmt(row.total_pop)}</td>
     </tr>
   );
 
@@ -231,22 +231,22 @@ const RankingsPanel = () => {
             <thead>
               <tr style={{ color: 'var(--text3)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '2px solid var(--border2)' }}>
                 <th style={{ padding: '8px 6px', textAlign: 'left', width: '32px' }}>#</th>
-                <th style={{ padding: '8px 6px', textAlign: 'left' }}>Player</th>
-                <th style={{ padding: '8px 6px', textAlign: 'left' }}>Kingdom</th>
-                <th style={{ padding: '8px 6px', textAlign: 'right' }}>Score</th>
-                <th style={{ padding: '8px 6px', textAlign: 'right' }}>Level</th>
-                <th style={{ padding: '8px 6px', textAlign: 'right' }}>Turns Taken</th>
+                <th className="px-[6px] py-2 text-left">Player</th>
+                <th className="px-[6px] py-2 text-left">Kingdom</th>
+                <th className="px-[6px] py-2 text-right">Score</th>
+                <th className="px-[6px] py-2 text-right">Level</th>
+                <th className="px-[6px] py-2 text-right">Turns Taken</th>
                 <th style={{ padding: '8px 6px', textAlign: 'center' }}>Combat</th>
                 <th style={{ padding: '8px 6px', textAlign: 'center' }}>Action</th>
               </tr>
             </thead>
             <tbody id="rankings-list">
               {loadingKingdoms ? (
-                <tr><td colSpan="8" style={{ color: 'var(--text3)', fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>Loading rankings...</td></tr>
+                <tr><td colSpan="8" className="text-[var(--text3)] text-[13px] text-center py-6">Loading rankings...</td></tr>
               ) : error ? (
                 <tr><td colSpan="8" style={{ color: 'var(--red)', fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>{error}</td></tr>
               ) : filteredKingdoms.length === 0 ? (
-                <tr><td colSpan="8" style={{ color: 'var(--text3)', fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>No kingdoms found.</td></tr>
+                <tr><td colSpan="8" className="text-[var(--text3)] text-[13px] text-center py-6">No kingdoms found.</td></tr>
               ) : filteredKingdoms.map(renderKingdomRow)}
             </tbody>
           </table>
@@ -257,20 +257,20 @@ const RankingsPanel = () => {
             <thead>
               <tr style={{ color: 'var(--text3)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '2px solid var(--border2)' }}>
                 <th style={{ padding: '8px 6px', textAlign: 'left', width: '32px' }}>#</th>
-                <th style={{ padding: '8px 6px', textAlign: 'left' }}>Alliance</th>
-                <th style={{ padding: '8px 6px', textAlign: 'right' }}>Members</th>
-                <th style={{ padding: '8px 6px', textAlign: 'right' }}>Total Score</th>
-                <th style={{ padding: '8px 6px', textAlign: 'right' }}>Avg Score</th>
-                <th style={{ padding: '8px 6px', textAlign: 'right' }}>Total Pop</th>
+                <th className="px-[6px] py-2 text-left">Alliance</th>
+                <th className="px-[6px] py-2 text-right">Members</th>
+                <th className="px-[6px] py-2 text-right">Total Score</th>
+                <th className="px-[6px] py-2 text-right">Avg Score</th>
+                <th className="px-[6px] py-2 text-right">Total Pop</th>
               </tr>
             </thead>
             <tbody id="alliance-rankings-list">
               {loadingAlliances ? (
-                <tr><td colSpan="6" style={{ color: 'var(--text3)', fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>Loading...</td></tr>
+                <tr><td colSpan="6" className="text-[var(--text3)] text-[13px] text-center py-6">Loading...</td></tr>
               ) : allianceRows.length === 0 ? (
-                <tr><td colSpan="6" style={{ color: 'var(--text3)', fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>No alliances found.</td></tr>
+                <tr><td colSpan="6" className="text-[var(--text3)] text-[13px] text-center py-6">No alliances found.</td></tr>
               ) : filteredAlliances.length === 0 ? (
-                <tr><td colSpan="6" style={{ color: 'var(--text3)', fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>No alliances match your search.</td></tr>
+                <tr><td colSpan="6" className="text-[var(--text3)] text-[13px] text-center py-6">No alliances match your search.</td></tr>
               ) : filteredAlliances.map(renderAllianceRow)}
             </tbody>
           </table>

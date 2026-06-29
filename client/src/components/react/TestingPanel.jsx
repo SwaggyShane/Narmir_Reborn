@@ -340,21 +340,21 @@ const TestingPanel = () => {
           <div>
             {/* Summary Stats */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
-              <div style={{ padding: '12px', backgroundColor: 'var(--bg2)', borderRadius: '6px', textAlign: 'center' }}>
+              <div className="p-3 bg-[var(--bg2)] rounded text-center">
                 <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#4ade80' }}>{stats.passed}</div>
-                <div style={{ fontSize: '11px', color: 'var(--text2)', marginTop: '4px' }}>Tests Passed</div>
+                <div className="text-[11px] text-[var(--text2)] mt-1">Tests Passed</div>
               </div>
-              <div style={{ padding: '12px', backgroundColor: 'var(--bg2)', borderRadius: '6px', textAlign: 'center' }}>
+              <div className="p-3 bg-[var(--bg2)] rounded text-center">
                 <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ef4444' }}>{stats.failed}</div>
-                <div style={{ fontSize: '11px', color: 'var(--text2)', marginTop: '4px' }}>Tests Failed</div>
+                <div className="text-[11px] text-[var(--text2)] mt-1">Tests Failed</div>
               </div>
-              <div style={{ padding: '12px', backgroundColor: 'var(--bg2)', borderRadius: '6px', textAlign: 'center' }}>
+              <div className="p-3 bg-[var(--bg2)] rounded text-center">
                 <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#fbbf24' }}>{stats.pending}</div>
-                <div style={{ fontSize: '11px', color: 'var(--text2)', marginTop: '4px' }}>Pending</div>
+                <div className="text-[11px] text-[var(--text2)] mt-1">Pending</div>
               </div>
-              <div style={{ padding: '12px', backgroundColor: 'var(--bg2)', borderRadius: '6px', textAlign: 'center' }}>
+              <div className="p-3 bg-[var(--bg2)] rounded text-center">
                 <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#60a5fa' }}>{stats.totalTesters}</div>
-                <div style={{ fontSize: '11px', color: 'var(--text2)', marginTop: '4px' }}>Testers</div>
+                <div className="text-[11px] text-[var(--text2)] mt-1">Testers</div>
               </div>
             </div>
 
