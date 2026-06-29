@@ -36,10 +36,10 @@ Remote is truth for shared project state. Completed work now lives in `ARCHIVAL.
 13. Mobile and Vanilla Cleanup: Enforce responsive breakpoints and 44x44 touch targets.
 14. Mobile and Vanilla Cleanup: Prevent layout shifts when nav appears or disappears.
 15. Beta Architecture Debt: Remove remaining GameStateManager bridge hooks after full Zustand coverage.
-16. Beta Architecture Debt: Enforce Tailwind-only defaults for static styling.
-17. Beta Architecture Debt: Remove legacy admin compatibility routes from `index.js`.
+16. [done] Beta Architecture Debt: Enforce Tailwind-only defaults for static styling.
+17. [done] Beta Architecture Debt: Remove legacy admin compatibility routes from `index.js`.
 18. [done] Beta Architecture Debt: Expand component test coverage.
-19. Beta Architecture Debt: Refresh API documentation.
-20. Beta Architecture Debt: Investigate `/expedition` and `/turn` query performance.
+19. [done] Beta Architecture Debt: Refresh API documentation.
+20. [done] Beta Architecture Debt: Investigate `/expedition` and `/turn` query performance.
 21. [done] Beta Architecture Debt: Clean up duplicate happiness logic and related code-quality debt.
-22. Beta Architecture Debt: Decide whether Discord.js v15 migration is still needed before beta.
+22. [done] Beta Architecture Debt: Decide whether Discord.js v15 migration is still needed before beta.
