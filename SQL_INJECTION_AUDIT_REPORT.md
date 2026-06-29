@@ -200,12 +200,7 @@ await db.run(`INSERT INTO news (...) VALUES ${placeholders}`, params);
 - [ ] ✅ No immediate changes needed - all queries are parameterized
 
 ### Tier 2 (Best Practices)
-- [ ] **Consolidate placeholder generation:** Consider a utility function for building numbered placeholders to reduce manual counting errors
-  ```javascript
-  function buildPlaceholders(count, startIndex = 1) {
-    return Array.from({length: count}, (_, i) => `$${startIndex + i}`).join(',');
-  }
-  ```
+- [ ] **Simplify placeholder generation using standard `?` placeholders:** Since `db/schema.js` automatically translates `?` placeholders to PostgreSQL-style numbered placeholders (`$1`, `$2`, etc.) sequentially via `translateSqlForPg()`, completely avoid manual index counting. Instead of generating numbered placeholders like `$3, $4`, use standard `?` placeholders for both static parameters and dynamic IN clauses/multi-row inserts. This eliminates the need for custom placeholder utilities and reduces cognitive load.
 
 - [ ] **Add audit comments:** Flag dynamic SQL with validation comments
   ```javascript
