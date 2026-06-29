@@ -50,7 +50,8 @@ Remote is truth for shared project state. Completed work now lives in `ARCHIVAL.
 3. ✅ Weekly Deep Audit: Implement a cron scheduler for recurring scans.
 4. ✅ Weekly Deep Audit: Add API endpoints for schedule management.
 5. ✅ Weekly Deep Audit: Expand the auditor to recursively scan the full codebase.
-6. Weekly Deep Audit: Generate comparison reports between audits.
+6. ✅ Weekly Deep Audit: Generate comparison reports between audits.
+7. Weekly Deep Audit: Add trend visualization for findings over time.
 7. Weekly Deep Audit: Add trend visualization for findings over time.
 8. Weekly Deep Audit: Add notifications for new issues.
 9. Weekly Deep Audit: Investigate and repair JSON row corruption.
