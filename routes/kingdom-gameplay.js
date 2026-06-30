@@ -525,39 +525,38 @@ module.exports = function (db) {
     try {
       const result = await withTurnLock(req.player.playerId, async () => {
         // Wrap entire turn in transaction
-        await db.run("BEGIN TRANSACTION");
-        try {
+        return db.withTransaction(async () => {
           // Fetch kingdom with row-level lock INSIDE transaction
           const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE", [
             req.player.playerId,
           ]);
           if (!k) {
-            await db.run("ROLLBACK");
             throw new Error("Kingdom not found");
           }
           if (k.turns_stored < 1) {
-            await db.run("ROLLBACK");
             throw new Error("No turns available â€” next +7 turns in 25 minutes");
           }
 
           const { updates, events } = await runTurn(db, k);
-          await db.run("COMMIT");
           return { ok: true, updates, events, turns_stored: updates.turns_stored };
-        } catch (err) {
-          await db.run("ROLLBACK");
-          throw err;
-        }
+        });
       });
       res.json(result);
     } catch (err) {
-      console.error("[turn] failed:", err.message);
+      console.error("[turn] failed:", err.stack || err.message);
       if (err.message.includes("Kingdom not found")) {
         return res.status(404).json({ error: err.message });
       }
       if (err.message.includes("No turns available")) {
         return res.status(429).json({ error: err.message });
       }
-      res.status(500).json({ error: "Turn processing failed â€” please try again" });
+      const detail = process.env.NODE_ENV !== "production"
+        ? (err.stack || err.message)
+        : undefined;
+      res.status(500).json({
+        error: "Turn processing failed â€” please try again",
+        ...(detail ? { detail } : {}),
+      });
     }
   });
 
@@ -571,20 +570,20 @@ module.exports = function (db) {
     }
 
     try {
-      await db.run("BEGIN TRANSACTION");
+      const tx = await db.withTransaction(async () => {
 
       const k = await db.get(`SELECT ${KINGDOM_HIRE} FROM kingdoms WHERE player_id = ? FOR UPDATE`, [
         req.player.playerId,
       ]);
       if (!k) {
-        await db.run("ROLLBACK");
-        return res.status(404).json({ error: "Kingdom not found" });
+        throw new Error("Kingdom not found");
       }
 
       const hireResult = engine.hireUnits(k, unit, amountValidation.value);
       if (hireResult.error) {
-        await db.run("ROLLBACK");
-        return res.status(400).json({ error: hireResult.error });
+        const error = new Error(hireResult.error);
+        error.statusCode = 400;
+        throw error;
       }
 
       const hireUpdates = hireResult.updates;
@@ -593,14 +592,11 @@ module.exports = function (db) {
         updatesForDb.troop_levels = JSON.stringify(updatesForDb.troop_levels);
       }
 
-      const cols = Object.keys(updatesForDb).map(col => `${col} = ?`).join(', ');
-      const vals = Object.values(updatesForDb);
-      await db.run(
-        `UPDATE kingdoms SET ${cols} WHERE id = ?`,
-        [...vals, k.id],
-      );
+      await applyKingdomUpdates(k.id, updatesForDb);
+      return { k, hireUpdates };
+      });
 
-      await db.run("COMMIT");
+      const { k, hireUpdates } = tx;
 
       res.json({
         ok: true,
@@ -609,12 +605,13 @@ module.exports = function (db) {
         turns_stored: k.turns_stored,
       });
     } catch (err) {
-      try {
-        await db.run("ROLLBACK");
-      } catch (rollbackErr) {
-        console.error("[hire] rollback error:", rollbackErr.message);
-      }
       console.error("[hire] failed:", err.message);
+      if (err.message.includes("Kingdom not found")) {
+        return res.status(404).json({ error: err.message });
+      }
+      if (err.statusCode === 400) {
+        return res.status(400).json({ error: err.message });
+      }
       res.status(500).json({ error: "Hire failed — please try again" });
     }
   });
@@ -662,12 +659,7 @@ module.exports = function (db) {
         updatesForDb.troop_levels = JSON.stringify(updatesForDb.troop_levels);
       }
 
-      const cols = Object.keys(updatesForDb).map(col => `${col} = ?`).join(', ');
-      const vals = Object.values(updatesForDb);
-      await db.run(
-        `UPDATE kingdoms SET ${cols} WHERE id = ?`,
-        [...vals, k.id],
-      );
+      await applyKingdomUpdates(k.id, updatesForDb);
 
       await db.run("COMMIT");
 
@@ -2383,8 +2375,7 @@ module.exports = function (db) {
           }
         }
         if (Object.keys(lootUpdates).length > 0) {
-          const cols = Object.keys(lootUpdates).map(c => `${c} = ?`).join(', ');
-          await db.run(`UPDATE kingdoms SET ${cols} WHERE id = ?`, [...Object.values(lootUpdates), k.id]);
+          await applyKingdomUpdates(k.id, lootUpdates);
         }
       newsMessages.push({ kingdom_id: k.id, message: repairMojibake(`âš”ï¸ Your warriors intercepted an expedition! You seized: ${JSON.stringify(loot)}.`) });
       newsMessages.push({ kingdom_id: exp.kingdom_id, message: repairMojibake(`ðŸš¨ Orc raiders from ${k.name} intercepted your expedition and stole your loot! Your ${exp.population_sent.toLocaleString()} people fled home.`) });

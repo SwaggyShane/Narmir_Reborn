@@ -72,6 +72,7 @@ const engine          = require('./game/engine');
 const { requireAuth, cacheKingdomId } = require('./routes/middleware');
 const config = require('./game/config');
 const { rateLimitConfig, logRateLimitConfig } = require('./config/rate-limiting');
+const { monitoringConfig, logMonitoringConfig } = require('./config/monitoring');
 const { safeJsonParse } = require('./utils/helpers');
 const SecretsManager = require('./utils/secrets');
 
@@ -124,6 +125,26 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(cookieParser());
+
+app.use((req, res, next) => {
+  if (!monitoringConfig.responseTimeTracking.enabled) return next();
+
+  const startedAt = Date.now();
+  res.on('finish', () => {
+    const durationMs = Date.now() - startedAt;
+    const pathOnly = String(req.path || req.originalUrl || req.url || '').split('?')[0];
+    const baseline = monitoringConfig.responseTimeBaselines[pathOnly];
+    const thresholdMs = baseline?.alert || monitoringConfig.responseTimeTracking.slowThresholdMs;
+
+    if (durationMs >= thresholdMs) {
+      console.warn(
+        `[monitoring] Slow endpoint: ${req.method} ${pathOnly} ${durationMs}ms status=${res.statusCode}`
+      );
+    }
+  });
+
+  next();
+});
 
 // Content-Security-Policy.
 //   - In production we ship a strict-ish CSP: only same-origin scripts, plus
@@ -252,16 +273,21 @@ function makeRateLimiter(maxRequests, windowMs, options = {}) {
   };
 }
 
-const authAttemptLimiter = makeRateLimiter(rateLimitConfig.auth.max, rateLimitConfig.auth.windowMs);
-const turnLimiter = makeRateLimiter(rateLimitConfig.turn.max, rateLimitConfig.turn.windowMs);
+const authAttemptLimiter = makeRateLimiter(rateLimitConfig.auth.max, rateLimitConfig.auth.windowMs, {
+  bypass: () => process.env.NODE_ENV !== 'production',
+});
+const turnLimiter = makeRateLimiter(rateLimitConfig.turn.max, rateLimitConfig.turn.windowMs, {
+  bypass: () => process.env.NODE_ENV !== 'production',
+});
 const generalLimiter = makeRateLimiter(rateLimitConfig.general.max, rateLimitConfig.general.windowMs, {
-  bypass: (req) => isAdminRoute(req) && isAllowedAdminIp(req)
+  bypass: (req) => process.env.NODE_ENV !== 'production' || (isAdminRoute(req) && isAllowedAdminIp(req))
 });
 const adminLimiter = makeRateLimiter(rateLimitConfig.admin.max, rateLimitConfig.admin.windowMs, {
   bypass: isAllowedAdminIp
 });
 
 logRateLimitConfig();
+logMonitoringConfig();
 
 function isAuthSensitiveRoute(req) {
   if (req.method !== 'POST') return false;
