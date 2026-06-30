@@ -6,7 +6,7 @@ const isProd = process.env.NODE_ENV === 'production';
 const monitoringConfig = {
   // Error tracking
   sentry: {
-    enabled: !!process.env.SENTRY_DSN,
+    enabled: process.env.SENTRY_ENABLED === 'true' || (process.env.SENTRY_ENABLED !== 'false' && !!process.env.SENTRY_DSN),
     dsn: process.env.SENTRY_DSN || '',
     environment: process.env.SENTRY_ENVIRONMENT || (isProd ? 'production' : 'development'),
     sampleRate: parseFloat(process.env.SENTRY_SAMPLE_RATE || '0.1'),
@@ -114,7 +114,7 @@ function logMonitoringConfig() {
   if (monitoringConfig.sentry.enabled) {
     console.log(`[Sentry] Error tracking enabled (${monitoringConfig.sentry.environment})`);
   } else {
-    console.log('[Sentry] Error tracking disabled (set SENTRY_DSN to enable)');
+    console.log('[Sentry] Error tracking disabled (set SENTRY_ENABLED=true with SENTRY_DSN, or provide SENTRY_DSN directly)');
   }
 }
 

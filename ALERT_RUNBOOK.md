@@ -29,10 +29,12 @@ tail -f logs/server.log | grep ERROR
 
 # 3. Check database status
 # Connect to production database:
-psql $DATABASE_URL -c "SELECT datname, numbackends FROM pg_stat_database WHERE datname='narmir';"
+psql $DATABASE_URL -c "SELECT datname, numbackends FROM pg_stat_database WHERE datname = current_database();"
 
 # 4. Check if deployed recently
-git log --oneline origin/main | head -5
+git log --oneline -5
+# Or check Railway's deployment SHA directly:
+echo $RAILWAY_GIT_COMMIT_SHA
 ```
 
 ### Root Cause Check
@@ -236,7 +238,7 @@ psql $DATABASE_URL -c "
   SELECT pg_terminate_backend(pid) 
   FROM pg_stat_activity 
   WHERE state = 'idle in transaction' 
-  AND now() - query_start > interval '5 minutes';
+  AND now() - state_change > interval '5 minutes';
 "
 ```
 

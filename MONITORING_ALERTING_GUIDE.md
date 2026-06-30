@@ -153,12 +153,14 @@ Monitor database connection pool in `index.js`:
 ```javascript
 // Every 60 seconds, log pool stats if concerning
 const poolStatsInterval = setInterval(() => {
-  const available = pool.totalCount - pool.waitingCount;
-  const utilizationPercent = ((pool.totalCount - available) / pool.max) * 100;
+  const active = pool.totalCount - pool.idleCount;
+  const available = pool.idleCount;
+  const utilizationPercent = (active / pool.max) * 100;
   
   if (pool.waitingCount > 0) {
     console.warn(`[ALERT] Waiting connections: ${pool.waitingCount}`);
     Sentry.captureMessage('Connection pool saturation', 'warning', {
+      active,
       available,
       waiting: pool.waitingCount,
       utilization: utilizationPercent
@@ -168,6 +170,7 @@ const poolStatsInterval = setInterval(() => {
   if (available < pool.max * 0.2) {
     console.error(`[CRITICAL] Low available connections: ${available}/${pool.max}`);
     Sentry.captureMessage('Connection pool low', 'error', {
+      active,
       available,
       utilization: utilizationPercent
     });
