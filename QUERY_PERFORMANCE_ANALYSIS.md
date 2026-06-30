@@ -39,8 +39,8 @@ The `/turn` endpoint executes a complex sequence of operations:
    ├── SELECT alliance_id FROM alliance_members WHERE kingdom_id = ?
    └── SELECT * FROM heroes WHERE kingdom_id = ? AND status = 'idle'
    
-4. Fetch trade routes (N+1 dependent queries):
-   └── SELECT * FROM trade_routes WHERE ... (may be multiple queries)
+4. Fetch trade routes (single lookup):
+   └── SELECT * FROM trade_routes WHERE kingdom_id = ? OR partner_id = ?
    
 5. Process turn logic (in-memory calculation)
    
@@ -57,12 +57,12 @@ The `/turn` endpoint executes a complex sequence of operations:
    └── UPDATE kingdoms SET ... WHERE id = ?
    
 10. Resolve expeditions (parallel + transactional):
-    ├── SELECT * FROM expeditions WHERE kingdom_id = ? AND status = 'in_progress'
+    ├── SELECT * FROM expeditions WHERE kingdom_id = ? AND turns_left <= 0
     ├── UPDATE expeditions SET ... WHERE id = ?
     └── INSERT INTO news ... [batch]
    
 11. Process resource expeditions:
-    ├── SELECT * FROM resource_expeditions WHERE kingdom_id = ? AND status = 'in_progress'
+    ├── SELECT * FROM resource_expeditions WHERE kingdom_id = ? AND status NOT IN ('completed','intercepted')
     ├── UPDATE kingdoms SET resources = ... WHERE id = ?
     └── INSERT INTO news ... [batch]
    
@@ -95,7 +95,7 @@ The `/turn` endpoint executes a complex sequence of operations:
 
 | Condition | Query | Latency |
 |-----------|-------|---------|
-| Has trade routes | `loadTradeRoutes()` — N+1 queries | 5-20ms per route |
+| Has trade routes | `loadTradeRoutes()` — single indexed query | 5-20ms total |
 | Expeditions complete | Resolve expeditions (3+ queries) | 20-30ms |
 | Resource expeditions | Process resource expeditions | 15-25ms |
 | Kingdom surveyor active | Random kingdom lookup | 5ms |
@@ -179,22 +179,21 @@ This index enables:
 
 ---
 
-#### 4. Trade Routes N+1 Query (MEDIUM PRIORITY)
+#### 4. Trade Routes Lookup (LOW PRIORITY)
 
-**Issue:** `loadTradeRoutes(k)` (line 329) may execute N+1 queries
+**Observation:** `loadTradeRoutes(k)` already performs a single query in `routes/kingdom-gameplay.js`
 
-**Problem:**
-- If `loadTradeRoutes` fetches routes then queries each partner kingdom...
-- With 10 trade routes, could be 1 query + 10 queries = 11 queries
-- Trade routes are fetched but not commonly used in turn processing
+```sql
+SELECT * FROM trade_routes
+WHERE kingdom_id = ? OR partner_id = ?
+```
 
-**Current Code:** Not shown in excerpt, but likely in game/engine.js
+**Current Status:**
+- No N+1 pattern exists here
+- Route shaping happens in memory after the query returns
+- Existing indexes on `trade_routes(kingdom_id)`, `trade_routes(partner_id)`, and `(kingdom_id, partner_id)` already support this path
 
-**Recommended Optimization:**
-- Batch query: `SELECT * FROM kingdoms WHERE id IN (route_partner_ids)`
-- Or join: `SELECT k.* FROM kingdoms k JOIN trade_routes tr ON k.id = tr.partner_kingdom_id WHERE tr.kingdom_id = ?`
-
-**Estimated Impact:** 5-20ms saved per turn
+**Optimization:** No immediate change needed. Keep this path under observation if route volume grows substantially.
 
 ---
 
@@ -216,11 +215,11 @@ This index enables:
 1. Authenticate user
    └── JWT verification (in-memory)
 
-2. Fetch active expeditions:
-   └── SELECT * FROM expeditions WHERE kingdom_id = ? AND status IN ('in_progress', 'completed')
+2. Fetch standard expeditions:
+   └── SELECT * FROM expeditions WHERE kingdom_id = ? ORDER BY turns_left ASC
 
 3. Fetch resource expeditions (if any):
-   └── SELECT * FROM resource_expeditions WHERE kingdom_id = ? AND status != 'claimed'
+   └── SELECT * FROM resource_expeditions WHERE kingdom_id = ? AND status != 'completed' ORDER BY depart_at DESC
 
 4. Format & return
 ```
@@ -232,25 +231,18 @@ This index enables:
 #### Fetch Expeditions (PRIMARY)
 
 ```sql
-SELECT * FROM expeditions 
-WHERE kingdom_id = ? 
-  AND status IN ('in_progress', 'completed')
+SELECT * FROM expeditions
+WHERE kingdom_id = ?
+ORDER BY turns_left ASC
 ```
 
 **Performance:** 5-15ms (depending on expeditions count)
 
-**Current Index:** Likely on `kingdom_id`, but not `(kingdom_id, status)`
+**Current Index:** `idx_expeditions_kingdom ON expeditions(kingdom_id, turns_left)` already exists
 
-**Recommended Index:**
-```sql
-CREATE INDEX idx_expeditions_kingdom_status 
-ON expeditions(kingdom_id, status);
-```
-
-**Benefit:**
-- Fast filtered lookup
-- Estimated speedup: 5-15ms → 1-3ms
-- Used on every expedition list fetch
+**Assessment:**
+- The current query shape matches the existing composite index
+- No new expedition index is required unless this endpoint adds more filters later
 
 ---
 
@@ -259,16 +251,18 @@ ON expeditions(kingdom_id, status);
 ```sql
 SELECT * FROM resource_expeditions 
 WHERE kingdom_id = ? 
-  AND status != 'claimed'
+  AND status != 'completed'
+ORDER BY depart_at DESC
 ```
 
 **Performance:** 2-8ms
 
-**Recommended Index:**
-```sql
-CREATE INDEX idx_resource_expeditions_kingdom_status 
-ON resource_expeditions(kingdom_id, status);
-```
+**Current Indexes:**
+- `idx_res_expeditions_kingdom ON resource_expeditions(kingdom_id, status)`
+- `idx_res_expeditions_kingdom_recent ON resource_expeditions(kingdom_id, status, depart_at DESC)`
+- `idx_res_expeditions_kingdom_depart ON resource_expeditions(kingdom_id, depart_at DESC)`
+
+**Assessment:** This path is already indexed. No additional index is needed.
 
 ---
 
@@ -286,28 +280,19 @@ ON news(kingdom_id, created_at DESC);
 -- Idle heroes lookup (10-20ms → 2-3ms)
 CREATE INDEX idx_heroes_kingdom_status 
 ON heroes(kingdom_id, status);
-
--- Expeditions list (5-15ms → 1-3ms)
-CREATE INDEX idx_expeditions_kingdom_status 
-ON expeditions(kingdom_id, status);
-
--- Resource expeditions (2-8ms → <1ms)
-CREATE INDEX idx_resource_expeditions_kingdom_status 
-ON resource_expeditions(kingdom_id, status);
 ```
 
-**Combined Estimated Speedup:** 40-50% improvement (80-100ms → 50-60ms per turn)
+**Combined Estimated Speedup:** Concentrated on `/turn`; expedition endpoints are already covered by existing indexes.
 
 ### Priority 2: Important (Lower Impact)
 
 ```sql
--- Alliance members (already fast, but improves consistency)
-CREATE INDEX idx_alliance_members_kingdom 
-ON alliance_members(kingdom_id);
+-- Alliance members already indexed as idx_alliance_members_kingdom
+-- Add IF NOT EXISTS only if recreating outside schema bootstrapping
 
 -- Trade routes optimization
 CREATE INDEX idx_trade_routes_kingdom_partner 
-ON trade_routes(kingdom_id, partner_kingdom_id);
+ON trade_routes(kingdom_id, partner_id);
 
 -- Region ownership lookups
 CREATE INDEX idx_regions_owner 
@@ -343,26 +328,20 @@ railway connect postgres
 
 ```sql
 -- Critical indexes (must add these)
-CREATE INDEX CONCURRENTLY idx_news_kingdom_created 
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_news_kingdom_created 
 ON news(kingdom_id, created_at DESC);
 
-CREATE INDEX CONCURRENTLY idx_heroes_kingdom_status 
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_heroes_kingdom_status 
 ON heroes(kingdom_id, status);
 
-CREATE INDEX CONCURRENTLY idx_expeditions_kingdom_status 
-ON expeditions(kingdom_id, status);
-
-CREATE INDEX CONCURRENTLY idx_resource_expeditions_kingdom_status 
-ON resource_expeditions(kingdom_id, status);
-
 -- Important indexes (should add these)
-CREATE INDEX CONCURRENTLY idx_alliance_members_kingdom 
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_alliance_members_kingdom 
 ON alliance_members(kingdom_id);
 
-CREATE INDEX CONCURRENTLY idx_trade_routes_kingdom_partner 
-ON trade_routes(kingdom_id, partner_kingdom_id);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_trade_routes_kingdom_partner 
+ON trade_routes(kingdom_id, partner_id);
 
-CREATE INDEX CONCURRENTLY idx_regions_owner 
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_regions_owner 
 ON regions(owner_alliance_id);
 
 -- Verify indexes created:
@@ -431,7 +410,7 @@ if (duration > 200) {  // Log if > 200ms
 - P95: 150-200ms
 - P99: 300-500ms
 
-**Expected (with indexes):**
+**Expected (after targeted index verification/additions):**
 - Mean: 40-60ms (50% improvement)
 - P95: 80-120ms
 - P99: 150-250ms
@@ -441,8 +420,8 @@ if (duration > 200) {  // Log if > 200ms
 **Current (without indexes):**
 - Mean: 10-20ms
 
-**Expected (with indexes):**
-- Mean: 5-10ms
+**Expected (current indexed path):**
+- Mean: 5-10ms once production plans match schema assumptions
 
 ---
 
@@ -499,7 +478,7 @@ Current single-database is fine for beta (thousands of concurrent kingdoms).
 ### Phase 1: Create Indexes (Week 1)
 
 1. Test indexes on staging database
-2. Create indexes with `CONCURRENT` option (0 downtime)
+2. Create missing indexes with `CONCURRENTLY` / `IF NOT EXISTS` where needed (0 downtime)
 3. Verify with `EXPLAIN ANALYZE`
 4. Monitor index usage for 1 week
 
@@ -522,8 +501,8 @@ If storage becomes issue:
 ## Summary
 
 **What to do:**
-1. Add 4 critical indexes (Priority 1) — **Required**
-2. Add 3 important indexes (Priority 2) — **Recommended**
+1. Verify production already has the indexes the schema bootstraps locally
+2. Add only the missing targeted indexes for news and hero lookups
 3. Monitor with slow query logging
 4. Re-run load test to verify improvements
 5. Plan for horizontal scaling if load grows
