@@ -1,8 +1,8 @@
 ﻿# System Maintenance & Health Audit
 
-**Last updated:** 2026-06-29  
+**Last updated:** 2026-06-30  
 **Status:** ✅ Alpha phase complete. Platform healthy. Architecture debt addressed (F1–F8 complete).
-**Next phase:** Beta launch preparation (13 items in TODO.md); complete production maintenance audit.
+**Next phase:** Beta launch preparation; keep active docs short and current.
 
 ---
 
@@ -129,8 +129,8 @@
 - **What's current:**
   - `CLAUDE.md`: Workflow guide + quality rules ✅
   - `WORKFLOW-REQUIRED.md`: Enforcement checklists ✅
-  - `TODO.md`: Active beta preparation work (13 items) ✅
-  - `ARCHIVAL.md`: Complete alpha work history (Tracks A-F, Claude Lane Items 1-22) ✅
+  - `TODO.md`: Active beta preparation work ✅
+  - `ARCHIVAL.md`: Complete alpha history plus archived beta-prep completions ✅
   - `MAINTENANCE.md`: System health audit (this document) ✅
   - `.claude/` directory: Hooks, config, workflow docs ✅
 - **What's consolidated/cleaned:**
@@ -138,8 +138,8 @@
   - ✅ PROTECTED_WORK.md (deleted; protection documented in ARCHIVAL.md)
   - ✅ VANILLA_CLEANUP_AUDIT_ITEM*.md (6 files deleted; superseded by ARCHIVAL.md)
 - **What's outdated (deferred to post-beta):**
-  - `README.md`: Setup instructions outdated; missing Zustand store info
-  - API documentation: No formal OpenAPI/Swagger spec; route docs scattered
+  - `README.md`: Keep concise; core setup and combat notes are current
+  - API documentation: Route docs are concise; route files remain the source of truth
 - **Missing (deferred to post-beta):**
   - Game mechanics documentation (turns, resources, expeditions, combat)
   - Store architecture guide (how Zustand stores interconnect)
@@ -240,8 +240,8 @@
 ## Contact & References
 
 - **Code quality:** See `CLAUDE.md` for PR workflow and quality rules
-- **Active work:** See `TODO.md` for beta preparation items (13 tasks)
-- **Historical record:** See `ARCHIVAL.md` for all completed alpha work (Tracks A-F)
+- **Active work:** See `TODO.md` for open beta preparation items
+- **Historical record:** See `ARCHIVAL.md` for completed alpha work and archived beta-prep items
 - **Architecture:** See module READMEs in `game/lib/` and `routes/`
 
 ---

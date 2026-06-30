@@ -2,7 +2,20 @@
 
 **Purpose:** Historical record of all completed features, tracks, and initiatives. Serves as reference for future work and decision rationale.
 
-**Last updated:** 2026-06-29 (Alpha phase complete; ROADMAP consolidated into ARCHIVAL.md)
+**Last updated:** 2026-06-30 (Alpha phase complete; beta-prep completions archived)
+
+---
+
+## Beta Preparation Completed (2026-06-30)
+
+- SQL injection audit completed and route/query handling tightened.
+- Backup and restore verification completed.
+- API rate limiting configuration completed.
+- User-facing documentation refreshed and shortened.
+- Support runbook completed.
+- API documentation refreshed and shortened.
+- Query performance analysis completed.
+- Note: the newer local turn-run and tutorial docs now live separately and supersede older progression drafts.
 
 ---
 
@@ -730,4 +743,3 @@ Completed work that was previously tracked in `TODO.md` has been consolidated he
 - Claude health-assessment work (`todoCLAUDEcompleted.md`) verified against the branch work and archived
 - Completed platform-health work archived into the main completion record
 - Completed engine, combat, admin, and migration checkpoints remain recorded above for reference
-
