@@ -44,12 +44,13 @@
    - Merged via: claude/item-1-sql-injection-fixes
 
 2. **Load Testing — 5,000+ Concurrent Players**
+   - **Status: Claude: in progress**
    - Scope: Stress test `/turn`, `/expedition`, ranking endpoints
    - Tool: Artillery or k6 load test script
    - Success criteria: <3s response time at 5,000 concurrent
    - Deliverable: Load test results + bottleneck analysis
-   - Status: Harness/docs merged via PR #715; authenticated rerun with generated per-player JWTs still required before closure
-   - Estimate: 3-4 hours
+   - Current: Harness/docs merged via PR #715; running authenticated rerun with per-player JWTs
+   - Estimate: 2-3 hours
 
 3. **Database Backup & Restore Verification**
    - Scope: Test backup procedure on production DB
