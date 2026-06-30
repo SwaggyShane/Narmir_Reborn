@@ -167,7 +167,11 @@ style-src 'self' 'unsafe-inline' https://fonts.googleapis.com
 font-src 'self' https://fonts.gstatic.com data:
 img-src 'self' data: blob:
 media-src 'self'
-connect-src 'self'
+connect-src 'self' ws: wss:
+frame-ancestors 'none'
+form-action 'self'
+base-uri 'self'
+object-src 'none'
 ```
 
 **What this allows:**
@@ -175,7 +179,7 @@ connect-src 'self'
 - Fonts: Google Fonts + data URIs
 - Images: Same origin, data URIs, blob URLs
 - Media: Same origin only
-- API calls: Same origin only
+- API calls and WebSocket connections: Same origin plus `ws:` / `wss:` for Socket.io
 
 **What this blocks:**
 - Third-party scripts (prevents malicious script injection)
@@ -213,11 +217,11 @@ DOMAIN="narmirreborn.com"
 
 echo "=== HTTPS Enforcement Test ==="
 echo "Testing HTTP redirect..."
-HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -L "http://$DOMAIN")
-if [ "$HTTP_STATUS" = "200" ]; then
-  echo "✅ HTTP redirects to HTTPS successfully"
+HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://$DOMAIN")
+if [ "$HTTP_STATUS" = "301" ]; then
+  echo "HTTP redirects to HTTPS successfully (301)"
 else
-  echo "❌ HTTP redirect failed (status: $HTTP_STATUS)"
+  echo "HTTP redirect failed (status: $HTTP_STATUS, expected 301)"
 fi
 
 echo ""
