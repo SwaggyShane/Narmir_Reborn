@@ -651,7 +651,7 @@ const EconomyPanel = () => {
               category="tavern"
               defs={TAVERN_UPGRADES}
               owned={parseOwnedUpgrades(tavernUpgrades)}
-              state={state || {}}
+              state={upgradeState}
               onPurchased={(_, nextOwned) => syncUpgradeOwned('tavern', nextOwned)}
             />
           </div>
@@ -741,7 +741,7 @@ const EconomyPanel = () => {
                 category="bank"
                 defs={BANK_UPGRADES}
                 owned={parseOwnedUpgrades(bankUpgrades)}
-                state={state || {}}
+                state={upgradeState}
                 onPurchased={(_, nextOwned) => syncUpgradeOwned('bank', nextOwned)}
               />
             </div>
