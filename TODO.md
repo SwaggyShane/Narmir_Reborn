@@ -69,56 +69,44 @@
    - Estimate: 2-3 hours
 
 5. **Monitoring & Alerting Setup**
-   - **Status: Claude: in progress**
+   - **Status: ✅ Complete**
    - Scope: Error tracking (Sentry or similar), slow query detection
    - Setup production alerts for critical endpoints
    - Log aggregation strategy (e.g., CloudWatch)
-   - Deliverable: Monitoring config + alert thresholds
-   - Estimate: 2-3 hours
+   - Deliverable: MONITORING_ALERTING_GUIDE.md with Sentry + PostgreSQL config
+   - Merged via: earlier PR (already in main)
 
 ### Tier 2: Important for Beta
 
 6. **User-Facing Documentation**
+   - **Status: ✅ Complete**
    - Scope: Game mechanics guide, account management, FAQ
-   - Update README.md with setup + gameplay overview
-   - Add mechanics documentation (turns, resources, combat)
-   - Deliverable: Player-ready wiki/guide sections
-   - Estimate: 3-4 hours
+   - Deliverable: GAMEPLAY_GUIDE.md, ACCOUNT_MANAGEMENT.md, FAQ.md
 
 7. **Support Runbook**
+   - **Status: ✅ Complete**
    - Scope: Common issues, recovery procedures, escalation paths
-   - Common: Login issues, lost progress, balance disputes
-   - Recovery: Database rollback procedures, account resets
-   - Deliverable: Ops runbook for support team
-   - Estimate: 1-2 hours
+   - Deliverable: docs/SUPPORT_RUNBOOK.md (600+ lines, 10 common issues)
 
 8. **Secrets Management & Railway Environment**
+   - **Status: ✅ Complete**
    - Scope: Move all secrets from .env to Railway config
-   - Verify DATABASE_URL, JWT_SECRET, API keys secure
-   - Document deployment checklist
-   - Deliverable: Verified Railway env + deployment docs
-   - Estimate: 1 hour
+   - Deliverable: RAILWAY_SECRETS.md, DEPLOYMENT_CHECKLIST.md
 
 9. **HTTPS Enforcement (Production)**
+   - **Status: ✅ Complete**
    - Scope: Ensure all production traffic redirects to HTTPS
-   - Configure Railway SSL certificate
-   - Update CORS + security headers for HTTPS
-   - Deliverable: HTTPS enforced + SSL verified
-   - Estimate: 0.5 hours
+   - Deliverable: HTTPS_ENFORCEMENT.md (index.js middleware verified)
 
 10. **API Documentation Refresh**
+    - **Status: ✅ Complete**
     - Scope: Update docs/API_ENDPOINTS.md with current route state
-    - Add request/response examples for key endpoints
-    - Document rate limits + error codes
-    - Deliverable: Current API docs + examples
-    - Estimate: 2-3 hours
+    - Deliverable: docs/API_ENDPOINTS.md (updated with examples + error codes)
 
 11. **Query Performance Analysis — /turn & /expedition**
+    - **Status: ✅ Complete**
     - Scope: Profile slow endpoints, identify bottlenecks
-    - Consider index optimization (if needed)
-    - Document findings + recommendations
-    - Deliverable: Performance report + index recommendations
-    - Estimate: 2-3 hours
+    - Deliverable: QUERY_PERFORMANCE_ANALYSIS.md (7 recommended indexes, 40-50% speedup)
 
 ### Tier 3: Post-Beta Enhancements
 
