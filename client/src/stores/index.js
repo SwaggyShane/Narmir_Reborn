@@ -105,6 +105,7 @@ export {
   useSchoolLevel,
   useSchoolUpgrades,
   useResearchersCount,
+  useResearchSnapshotLoaded,
 } from './researchStore';
 
 export {
