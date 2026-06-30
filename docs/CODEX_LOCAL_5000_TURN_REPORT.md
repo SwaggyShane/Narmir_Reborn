@@ -1,0 +1,1734 @@
+# Codex Local 5,000 Turn Run
+
+- Started: 2026-06-30T22:39:39.701Z
+- Account: codex_local
+- Target turns spent: 5000
+- School choice target: conjuration
+
+## Plan
+
+- Phase 1: stabilize food, housing, schools, markets, and basic research.
+- Phase 2: grow researchers, engineers, libraries, and mage capacity.
+- Phase 3: choose a non-combat school, deepen economy, and add defense.
+- Phase 4: run safe exploration, improve storage, and smooth the build pipeline.
+- Phase 5: leave the kingdom in a readable, reviewable state and extract tutorial notes.
+
+## Summary
+
+- started_at: 2026-06-30T22:39:39.701Z
+- completed_at: 2026-06-30T22:52:10.119Z
+- initial_turns_stored: 5000
+- target_turns_spent: 5000
+- actual_turns_spent: 5000
+- final_turn: 5000
+- final_turns_stored: 0
+- final_score: 205,689
+- final_level: 89
+- final_gold: 72,164,285
+- final_food: 471,946
+- final_land: 14,276
+- final_population: 208,048
+- final_happiness: 100
+- final_school: conjuration
+- final_research_focus: military
+- latest_news_headline: Happiness: 57/120 (recovery +0.2, food +30, safety +20, prosperity +20, race +5, tax +2, overcrowding -45)
+
+## Turn Snapshots
+
+### Start
+
+- Turn: 0
+- Stored turns: 5000
+- Gold: 18,515,547
+- Food: 197,837
+- Land: 14,226
+- Population: 100,001
+- Happiness: 100
+- Level: 25
+- Score: 86,890
+- School: not selected yet
+- Research focus: economy
+- Research: economy 165, construction 100, military 100, spellbook 0, school spellbook 0
+- Buildings: farms 51, housing 133, granaries 6, markets 1, schools 3, libraries 0, barracks 3, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 300, engineers 137, mages 40, rangers 175, fighters 104, scribes 0
+
+### After 100 turns
+
+- Turn: 100
+- Stored turns: 4900
+- Gold: 23,797,722
+- Food: 194,300
+- Land: 14,226
+- Population: 109,917
+- Happiness: 100
+- Level: 29
+- Score: 97,564
+- School: not selected yet
+- Research focus: economy
+- Research: economy 170, construction 100, military 100, spellbook 0, school spellbook 0
+- Buildings: farms 51, housing 146, granaries 6, markets 1, schools 3, libraries 0, barracks 3, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 300, engineers 137, mages 40, rangers 175, fighters 104, scribes 0
+
+### After 200 turns
+
+- Turn: 200
+- Stored turns: 4800
+- Gold: 29,235,921
+- Food: 192,357
+- Land: 14,226
+- Population: 119,782
+- Happiness: 100
+- Level: 33
+- Score: 108,383
+- School: not selected yet
+- Research focus: economy
+- Research: economy 175, construction 100, military 100, spellbook 0, school spellbook 0
+- Buildings: farms 51, housing 159, granaries 6, markets 1, schools 3, libraries 0, barracks 3, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 300, engineers 137, mages 40, rangers 175, fighters 104, scribes 0
+
+### After 300 turns
+
+- Turn: 300
+- Stored turns: 4700
+- Gold: 34,798,217
+- Food: 190,259
+- Land: 14,226
+- Population: 129,402
+- Happiness: 100
+- Level: 37
+- Score: 119,337
+- School: not selected yet
+- Research focus: economy
+- Research: economy 178, construction 100, military 100, spellbook 0, school spellbook 0
+- Buildings: farms 51, housing 172, granaries 6, markets 1, schools 3, libraries 0, barracks 3, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 300, engineers 145, mages 40, rangers 175, fighters 104, scribes 0
+
+### After 400 turns
+
+- Turn: 400
+- Stored turns: 4600
+- Gold: 40,461,468
+- Food: 188,053
+- Land: 14,226
+- Population: 138,017
+- Happiness: 100
+- Level: 40
+- Score: 129,670
+- School: not selected yet
+- Research focus: economy
+- Research: economy 181, construction 100, military 100, spellbook 0, school spellbook 0
+- Buildings: farms 51, housing 180, granaries 6, markets 1, schools 3, libraries 0, barracks 3, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 300, engineers 162, mages 40, rangers 175, fighters 104, scribes 0
+
+### After 500 turns
+
+- Turn: 500
+- Stored turns: 4500
+- Gold: 46,214,332
+- Food: 186,716
+- Land: 14,226
+- Population: 142,903
+- Happiness: 100
+- Level: 43
+- Score: 138,211
+- School: not selected yet
+- Research focus: economy
+- Research: economy 184, construction 100, military 100, spellbook 0, school spellbook 0
+- Buildings: farms 51, housing 180, granaries 6, markets 1, schools 3, libraries 0, barracks 3, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 300, engineers 179, mages 40, rangers 175, fighters 104, scribes 0
+
+### After 600 turns
+
+- Turn: 600
+- Stored turns: 4400
+- Gold: 51,986,579
+- Food: 295,827
+- Land: 14,226
+- Population: 147,854
+- Happiness: 100
+- Level: 46
+- Score: 147,188
+- School: not selected yet
+- Research focus: economy
+- Research: economy 187, construction 100, military 100, spellbook 0, school spellbook 0
+- Buildings: farms 76, housing 189, granaries 10, markets 1, schools 5, libraries 0, barracks 5, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 400, engineers 195, mages 40, rangers 175, fighters 104, scribes 0
+
+### After 700 turns
+
+- Turn: 700
+- Stored turns: 4300
+- Gold: 57,870,914
+- Food: 291,384
+- Land: 14,226
+- Population: 152,885
+- Happiness: 100
+- Level: 48
+- Score: 156,070
+- School: not selected yet
+- Research focus: economy
+- Research: economy 190, construction 100, military 100, spellbook 0, school spellbook 0
+- Buildings: farms 76, housing 196, granaries 10, markets 1, schools 6, libraries 0, barracks 5, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 600, engineers 212, mages 40, rangers 175, fighters 104, scribes 0
+
+### After 800 turns
+
+- Turn: 800
+- Stored turns: 4200
+- Gold: 63,979,575
+- Food: 288,132
+- Land: 14,226
+- Population: 158,294
+- Happiness: 100
+- Level: 51
+- Score: 165,279
+- School: not selected yet
+- Research focus: economy
+- Research: economy 194, construction 100, military 100, spellbook 0, school spellbook 0
+- Buildings: farms 76, housing 196, granaries 10, markets 1, schools 6, libraries 0, barracks 5, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 600, engineers 229, mages 40, rangers 175, fighters 204, scribes 0
+
+### After 900 turns
+
+- Turn: 900
+- Stored turns: 4100
+- Gold: 70,077,175
+- Food: 284,225
+- Land: 14,226
+- Population: 163,898
+- Happiness: 100
+- Level: 53
+- Score: 174,469
+- School: not selected yet
+- Research focus: construction
+- Research: economy 194, construction 157, military 100, spellbook 0, school spellbook 0
+- Buildings: farms 76, housing 196, granaries 10, markets 1, schools 6, libraries 0, barracks 5, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 600, engineers 245, mages 40, rangers 175, fighters 204, scribes 0
+
+### After 1000 turns
+
+- Turn: 1000
+- Stored turns: 4000
+- Gold: 76,172,825
+- Food: 282,716
+- Land: 14,226
+- Population: 169,689
+- Happiness: 100
+- Level: 55
+- Score: 183,670
+- School: not selected yet
+- Research focus: construction
+- Research: economy 194, construction 170, military 100, spellbook 0, school spellbook 0
+- Buildings: farms 76, housing 196, granaries 10, markets 1, schools 6, libraries 0, barracks 5, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 600, engineers 262, mages 40, rangers 175, fighters 204, scribes 0
+
+### After 1100 turns
+
+- Turn: 1100
+- Stored turns: 3900
+- Gold: 82,223,375
+- Food: 278,725
+- Land: 14,226
+- Population: 175,559
+- Happiness: 100
+- Level: 56
+- Score: 193,007
+- School: not selected yet
+- Research focus: construction
+- Research: economy 194, construction 178, military 100, spellbook 0, school spellbook 0
+- Buildings: farms 76, housing 196, granaries 10, markets 1, schools 6, libraries 0, barracks 5, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 600, engineers 279, mages 40, rangers 300, fighters 204, scribes 0
+
+### After 1200 turns
+
+- Turn: 1200
+- Stored turns: 3800
+- Gold: 88,303,775
+- Food: 277,157
+- Land: 14,226
+- Population: 181,762
+- Happiness: 100
+- Level: 58
+- Score: 202,378
+- School: not selected yet
+- Research focus: construction
+- Research: economy 194, construction 184, military 100, spellbook 0, school spellbook 0
+- Buildings: farms 76, housing 196, granaries 10, markets 1, schools 6, libraries 0, barracks 5, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 600, engineers 295, mages 40, rangers 300, fighters 204, scribes 0
+
+### After 1300 turns
+
+- Turn: 1300
+- Stored turns: 3700
+- Gold: 94,382,275
+- Food: 275,541
+- Land: 14,226
+- Population: 188,180
+- Happiness: 100
+- Level: 60
+- Score: 211,909
+- School: not selected yet
+- Research focus: construction
+- Research: economy 194, construction 189, military 100, spellbook 0, school spellbook 0
+- Buildings: farms 76, housing 196, granaries 10, markets 1, schools 6, libraries 0, barracks 5, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 600, engineers 312, mages 40, rangers 300, fighters 204, scribes 0
+
+### After 1400 turns
+
+- Turn: 1400
+- Stored turns: 3600
+- Gold: 91,818,053
+- Food: 231,781
+- Land: 14,226
+- Population: 186,375
+- Happiness: 100
+- Level: 61
+- Score: 208,459
+- School: not selected yet
+- Research focus: construction
+- Research: economy 194, construction 192, military 100, spellbook 0, school spellbook 0
+- Buildings: farms 75, housing 196, granaries 10, markets 0, schools 6, libraries 0, barracks 5, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 600, engineers 329, mages 40, rangers 267, fighters 183, scribes 0
+
+### After 1500 turns
+
+- Turn: 1500
+- Stored turns: 3500
+- Gold: 97,778,603
+- Food: 263,921
+- Land: 14,226
+- Population: 192,621
+- Happiness: 100
+- Level: 63
+- Score: 218,361
+- School: not selected yet
+- Research focus: construction
+- Research: economy 194, construction 196, military 100, spellbook 0, school spellbook 0
+- Buildings: farms 75, housing 212, granaries 12, markets 0, schools 9, libraries 0, barracks 5, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 345, mages 40, rangers 300, fighters 183, scribes 0
+
+### After 1600 turns
+
+- Turn: 1600
+- Stored turns: 3400
+- Gold: 103,800,053
+- Food: 259,359
+- Land: 14,226
+- Population: 199,272
+- Happiness: 100
+- Level: 64
+- Score: 228,211
+- School: conjuration
+- Research focus: spellbook
+- Research: economy 194, construction 196, military 100, spellbook 160, school spellbook 0
+- Buildings: farms 75, housing 212, granaries 12, markets 0, schools 9, libraries 0, barracks 5, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 362, mages 120, rangers 300, fighters 250, scribes 0
+
+### After 1700 turns
+
+- Turn: 1700
+- Stored turns: 3300
+- Gold: 109,854,653
+- Food: 257,579
+- Land: 14,226
+- Population: 206,308
+- Happiness: 100
+- Level: 65
+- Score: 237,859
+- School: conjuration
+- Research focus: spellbook
+- Research: economy 194, construction 196, military 100, spellbook 176, school spellbook 0
+- Buildings: farms 75, housing 212, granaries 12, markets 0, schools 9, libraries 0, barracks 5, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 379, mages 120, rangers 300, fighters 250, scribes 0
+
+### After 1800 turns
+
+- Turn: 1800
+- Stored turns: 3200
+- Gold: 109,271,398
+- Food: 225,908
+- Land: 14,226
+- Population: 208,371
+- Happiness: 47
+- Level: 66
+- Score: 238,499
+- School: conjuration
+- Research focus: spellbook
+- Research: economy 194, construction 196, military 100, spellbook 185, school spellbook 0
+- Buildings: farms 75, housing 212, granaries 12, markets 0, schools 9, libraries 0, barracks 4, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 395, mages 120, rangers 300, fighters 250, scribes 0
+
+### After 1900 turns
+
+- Turn: 1900
+- Stored turns: 3100
+- Gold: 109,317,294
+- Food: 243,920
+- Land: 14,226
+- Population: 206,815
+- Happiness: 67
+- Level: 68
+- Score: 238,014
+- School: conjuration
+- Research focus: spellbook
+- Research: economy 194, construction 196, military 100, spellbook 191, school spellbook 0
+- Buildings: farms 75, housing 211, granaries 12, markets 0, schools 9, libraries 0, barracks 2, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 412, mages 120, rangers 300, fighters 250, scribes 0
+
+### After 2000 turns
+
+- Turn: 2000
+- Stored turns: 3000
+- Gold: 107,679,933
+- Food: 207,768
+- Land: 14,226
+- Population: 207,973
+- Happiness: 25
+- Level: 69
+- Score: 236,949
+- School: conjuration
+- Research focus: spellbook
+- Research: economy 194, construction 196, military 100, spellbook 196, school spellbook 0
+- Buildings: farms 74, housing 211, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 429, mages 120, rangers 283, fighters 236, scribes 0
+
+### After 2100 turns
+
+- Turn: 2100
+- Stored turns: 2900
+- Gold: 108,021,971
+- Food: 242,374
+- Land: 14,226
+- Population: 205,052
+- Happiness: 95
+- Level: 70
+- Score: 235,981
+- School: conjuration
+- Research focus: spellbook
+- Research: economy 194, construction 196, military 100, spellbook 200, school spellbook 0
+- Buildings: farms 72, housing 210, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 445, mages 120, rangers 283, fighters 236, scribes 0
+
+### After 2200 turns
+
+- Turn: 2200
+- Stored turns: 2800
+- Gold: 104,643,146
+- Food: 236,287
+- Land: 14,226
+- Population: 204,199
+- Happiness: 100
+- Level: 71
+- Score: 232,311
+- School: conjuration
+- Research focus: spellbook
+- Research: economy 194, construction 196, military 100, spellbook 203, school spellbook 0
+- Buildings: farms 71, housing 210, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 462, mages 120, rangers 283, fighters 236, scribes 0
+
+### After 2300 turns
+
+- Turn: 2300
+- Stored turns: 2700
+- Gold: 97,913,569
+- Food: 176,268
+- Land: 14,226
+- Population: 206,468
+- Happiness: 9
+- Level: 72
+- Score: 226,709
+- School: conjuration
+- Research focus: spellbook
+- Research: economy 194, construction 196, military 100, spellbook 206, school spellbook 0
+- Buildings: farms 69, housing 209, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 479, mages 120, rangers 275, fighters 229, scribes 0
+
+### After 2400 turns
+
+- Turn: 2400
+- Stored turns: 2600
+- Gold: 98,590,126
+- Food: 195,739
+- Land: 14,226
+- Population: 205,623
+- Happiness: 41
+- Level: 73
+- Score: 227,107
+- School: conjuration
+- Research focus: spellbook
+- Research: economy 194, construction 196, military 100, spellbook 208, school spellbook 0
+- Buildings: farms 68, housing 209, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 495, mages 120, rangers 275, fighters 229, scribes 0
+
+### After 2500 turns
+
+- Turn: 2500
+- Stored turns: 2500
+- Gold: 87,852,993
+- Food: 153,628
+- Land: 14,226
+- Population: 196,872
+- Happiness: 5
+- Level: 74
+- Score: 212,176
+- School: conjuration
+- Research focus: spellbook
+- Research: economy 194, construction 196, military 100, spellbook 211, school spellbook 0
+- Buildings: farms 64, housing 209, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 512, mages 120, rangers 267, fighters 223, scribes 0
+
+### After 2600 turns
+
+- Turn: 2600
+- Stored turns: 2400
+- Gold: 93,857,473
+- Food: 206,449
+- Land: 14,226
+- Population: 203,830
+- Happiness: 100
+- Level: 74
+- Score: 221,724
+- School: conjuration
+- Research focus: spellbook
+- Research: economy 194, construction 196, military 100, spellbook 213, school spellbook 0
+- Buildings: farms 64, housing 209, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 529, mages 120, rangers 267, fighters 223, scribes 0
+
+### After 2700 turns
+
+- Turn: 2700
+- Stored turns: 2300
+- Gold: 93,807,662
+- Food: 196,584
+- Land: 14,276
+- Population: 202,778
+- Happiness: 100
+- Level: 75
+- Score: 221,283
+- School: conjuration
+- Research focus: economy
+- Research: economy 198, construction 196, military 100, spellbook 213, school spellbook 0
+- Buildings: farms 62, housing 208, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 545, mages 120, rangers 252, fighters 211, scribes 0
+
+### After 2800 turns
+
+- Turn: 2800
+- Stored turns: 2200
+- Gold: 84,787,646
+- Food: 190,898
+- Land: 14,276
+- Population: 202,717
+- Happiness: 100
+- Level: 76
+- Score: 212,327
+- School: conjuration
+- Research focus: economy
+- Research: economy 202, construction 196, military 100, spellbook 213, school spellbook 0
+- Buildings: farms 61, housing 208, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 562, mages 120, rangers 238, fighters 199, scribes 0
+
+### After 2900 turns
+
+- Turn: 2900
+- Stored turns: 2100
+- Gold: 90,402,401
+- Food: 183,161
+- Land: 14,276
+- Population: 200,526
+- Happiness: 100
+- Level: 77
+- Score: 216,847
+- School: conjuration
+- Research focus: economy
+- Research: economy 205, construction 196, military 100, spellbook 213, school spellbook 0
+- Buildings: farms 59, housing 207, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 579, mages 120, rangers 231, fighters 194, scribes 0
+
+### After 3000 turns
+
+- Turn: 3000
+- Stored turns: 2000
+- Gold: 88,838,771
+- Food: 176,405
+- Land: 14,276
+- Population: 198,675
+- Happiness: 100
+- Level: 78
+- Score: 214,467
+- School: conjuration
+- Research focus: economy
+- Research: economy 207, construction 196, military 100, spellbook 213, school spellbook 0
+- Buildings: farms 58, housing 206, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 595, mages 120, rangers 225, fighters 189, scribes 0
+
+### After 3100 turns
+
+- Turn: 3100
+- Stored turns: 1900
+- Gold: 87,098,393
+- Food: 150,577
+- Land: 14,276
+- Population: 195,399
+- Happiness: 100
+- Level: 78
+- Score: 211,794
+- School: conjuration
+- Research focus: economy
+- Research: economy 210, construction 196, military 100, spellbook 213, school spellbook 0
+- Buildings: farms 55, housing 206, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 612, mages 320, rangers 213, fighters 179, scribes 0
+
+### After 3200 turns
+
+- Turn: 3200
+- Stored turns: 1800
+- Gold: 93,495,520
+- Food: 147,135
+- Land: 14,276
+- Population: 202,300
+- Happiness: 55
+- Level: 79
+- Score: 221,842
+- School: conjuration
+- Research focus: economy
+- Research: economy 212, construction 196, military 100, spellbook 213, school spellbook 0
+- Buildings: farms 55, housing 206, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 629, mages 320, rangers 213, fighters 179, scribes 0
+
+### After 3300 turns
+
+- Turn: 3300
+- Stored turns: 1700
+- Gold: 85,767,995
+- Food: 119,455
+- Land: 14,276
+- Population: 203,297
+- Happiness: 27
+- Level: 80
+- Score: 214,712
+- School: conjuration
+- Research focus: military
+- Research: economy 212, construction 196, military 165, spellbook 213, school spellbook 0
+- Buildings: farms 53, housing 206, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 645, mages 320, rangers 207, fighters 174, scribes 0
+
+### After 3400 turns
+
+- Turn: 3400
+- Stored turns: 1600
+- Gold: 90,200,577
+- Food: 134,117
+- Land: 14,276
+- Population: 201,258
+- Happiness: 65
+- Level: 80
+- Score: 218,145
+- School: conjuration
+- Research focus: military
+- Research: economy 212, construction 196, military 178, spellbook 213, school spellbook 0
+- Buildings: farms 51, housing 205, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 662, mages 320, rangers 201, fighters 169, scribes 0
+
+### After 3500 turns
+
+- Turn: 3500
+- Stored turns: 1500
+- Gold: 71,742,970
+- Food: 137,424
+- Land: 14,276
+- Population: 200,660
+- Happiness: 87
+- Level: 81
+- Score: 199,522
+- School: conjuration
+- Research focus: military
+- Research: economy 212, construction 196, military 187, spellbook 213, school spellbook 0
+- Buildings: farms 50, housing 205, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 679, mages 320, rangers 201, fighters 169, scribes 0
+
+### After 3600 turns
+
+- Turn: 3600
+- Stored turns: 1400
+- Gold: 72,255,228
+- Food: 136,654
+- Land: 14,276
+- Population: 199,427
+- Happiness: 100
+- Level: 82
+- Score: 199,418
+- School: conjuration
+- Research focus: military
+- Research: economy 212, construction 196, military 192, spellbook 213, school spellbook 0
+- Buildings: farms 49, housing 205, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 695, mages 320, rangers 201, fighters 169, scribes 0
+
+### After 3700 turns
+
+- Turn: 3700
+- Stored turns: 1300
+- Gold: 74,156,350
+- Food: 125,787
+- Land: 14,276
+- Population: 197,507
+- Happiness: 100
+- Level: 82
+- Score: 200,437
+- School: conjuration
+- Research focus: military
+- Research: economy 212, construction 196, military 197, spellbook 213, school spellbook 0
+- Buildings: farms 47, housing 205, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 712, mages 320, rangers 195, fighters 164, scribes 0
+
+### After 3800 turns
+
+- Turn: 3800
+- Stored turns: 1200
+- Gold: 73,738,960
+- Food: 106,502
+- Land: 14,276
+- Population: 194,351
+- Happiness: 100
+- Level: 83
+- Score: 198,532
+- School: conjuration
+- Research focus: military
+- Research: economy 212, construction 196, military 201, spellbook 213, school spellbook 0
+- Buildings: farms 45, housing 205, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 729, mages 320, rangers 185, fighters 156, scribes 0
+
+### After 3900 turns
+
+- Turn: 3900
+- Stored turns: 1100
+- Gold: 78,420,651
+- Food: 108,140
+- Land: 14,276
+- Population: 201,222
+- Happiness: 67
+- Level: 84
+- Score: 206,780
+- School: conjuration
+- Research focus: military
+- Research: economy 212, construction 196, military 204, spellbook 213, school spellbook 0
+- Buildings: farms 45, housing 205, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 745, mages 320, rangers 185, fighters 156, scribes 0
+
+### After 4000 turns
+
+- Turn: 4000
+- Stored turns: 1000
+- Gold: 77,719,900
+- Food: 84,133
+- Land: 14,276
+- Population: 201,231
+- Happiness: 26
+- Level: 84
+- Score: 206,153
+- School: conjuration
+- Research focus: military
+- Research: economy 212, construction 196, military 206, spellbook 213, school spellbook 0
+- Buildings: farms 44, housing 204, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 762, mages 320, rangers 180, fighters 152, scribes 0
+
+### After 4100 turns
+
+- Turn: 4100
+- Stored turns: 900
+- Gold: 68,102,773
+- Food: 74,231
+- Land: 14,276
+- Population: 197,156
+- Happiness: 100
+- Level: 85
+- Score: 194,579
+- School: conjuration
+- Research focus: military
+- Research: economy 212, construction 196, military 209, spellbook 213, school spellbook 0
+- Buildings: farms 41, housing 204, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 779, mages 320, rangers 165, fighters 140, scribes 0
+
+### After 4200 turns
+
+- Turn: 4200
+- Stored turns: 800
+- Gold: 68,103,165
+- Food: 77,444
+- Land: 14,276
+- Population: 196,534
+- Happiness: 100
+- Level: 85
+- Score: 194,284
+- School: conjuration
+- Research focus: military
+- Research: economy 212, construction 196, military 211, spellbook 213, school spellbook 0
+- Buildings: farms 39, housing 204, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 795, mages 320, rangers 161, fighters 136, scribes 0
+
+### After 4300 turns
+
+- Turn: 4300
+- Stored turns: 700
+- Gold: 68,163,086
+- Food: 68,101
+- Land: 14,276
+- Population: 198,356
+- Happiness: 89
+- Level: 86
+- Score: 195,378
+- School: conjuration
+- Research focus: military
+- Research: economy 212, construction 196, military 213, spellbook 213, school spellbook 0
+- Buildings: farms 38, housing 203, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 812, mages 320, rangers 161, fighters 136, scribes 0
+
+### After 4400 turns
+
+- Turn: 4400
+- Stored turns: 600
+- Gold: 72,261,976
+- Food: 64,600
+- Land: 14,276
+- Population: 197,917
+- Happiness: 100
+- Level: 86
+- Score: 199,271
+- School: conjuration
+- Research focus: military
+- Research: economy 212, construction 196, military 215, spellbook 213, school spellbook 0
+- Buildings: farms 36, housing 203, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 829, mages 320, rangers 157, fighters 132, scribes 0
+
+### After 4500 turns
+
+- Turn: 4500
+- Stored turns: 500
+- Gold: 67,069,819
+- Food: 50,762
+- Land: 14,276
+- Population: 199,026
+- Happiness: 60
+- Level: 87
+- Score: 194,733
+- School: conjuration
+- Research focus: military
+- Research: economy 212, construction 196, military 216, spellbook 213, school spellbook 0
+- Buildings: farms 35, housing 203, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 845, mages 320, rangers 149, fighters 126, scribes 0
+
+### After 4600 turns
+
+- Turn: 4600
+- Stored turns: 400
+- Gold: 64,748,799
+- Food: 30,029
+- Land: 14,276
+- Population: 196,037
+- Happiness: 90
+- Level: 87
+- Score: 190,748
+- School: conjuration
+- Research focus: military
+- Research: economy 212, construction 196, military 218, spellbook 213, school spellbook 0
+- Buildings: farms 32, housing 202, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 900, engineers 862, mages 320, rangers 141, fighters 120, scribes 0
+
+### After 4700 turns
+
+- Turn: 4700
+- Stored turns: 300
+- Gold: 63,016,730
+- Food: 480,514
+- Land: 14,276
+- Population: 196,385
+- Happiness: 100
+- Level: 88
+- Score: 190,431
+- School: conjuration
+- Research focus: military
+- Research: economy 212, construction 196, military 219, spellbook 213, school spellbook 0
+- Buildings: farms 137, housing 219, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 2, walls 1
+- Units: researchers 900, engineers 879, mages 320, rangers 133, fighters 114, scribes 0
+
+### After 4800 turns
+
+- Turn: 4800
+- Stored turns: 200
+- Gold: 67,769,630
+- Food: 536,787
+- Land: 14,276
+- Population: 203,325
+- Happiness: 100
+- Level: 88
+- Score: 198,795
+- School: conjuration
+- Research focus: military
+- Research: economy 212, construction 196, military 221, spellbook 213, school spellbook 0
+- Buildings: farms 137, housing 219, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 2, walls 2
+- Units: researchers 900, engineers 895, mages 320, rangers 133, fighters 114, scribes 0
+
+### After 4900 turns
+
+- Turn: 4900
+- Stored turns: 100
+- Gold: 72,524,180
+- Food: 535,571
+- Land: 14,276
+- Population: 210,515
+- Happiness: 100
+- Level: 89
+- Score: 207,324
+- School: conjuration
+- Research focus: military
+- Research: economy 212, construction 196, military 222, spellbook 213, school spellbook 0
+- Buildings: farms 137, housing 219, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 2, walls 2
+- Units: researchers 900, engineers 900, mages 320, rangers 133, fighters 114, scribes 0
+
+### After 5000 turns
+
+- Turn: 5000
+- Stored turns: 0
+- Gold: 72,164,285
+- Food: 471,946
+- Land: 14,276
+- Population: 208,048
+- Happiness: 100
+- Level: 89
+- Score: 205,689
+- School: conjuration
+- Research focus: military
+- Research: economy 212, construction 196, military 223, spellbook 213, school spellbook 0
+- Buildings: farms 136, housing 219, granaries 12, markets 0, schools 9, libraries 0, barracks 0, mage towers 0, taverns 0, vaults 0, guard towers 2, walls 2
+- Units: researchers 900, engineers 900, mages 320, rangers 130, fighters 111, scribes 0
+
+## Actions Taken
+
+- Turn 0: admin - Set stored turns to 5000 and reset current turn to 0.
+- Turn 0: engineers - Assigned engineers to housing 45, markets 45, libraries 47.
+- Turn 25: engineers - Assigned engineers to housing 45, markets 45, libraries 47.
+- Turn 50: engineers - Assigned engineers to housing 45, markets 45, libraries 47.
+- Turn 75: engineers - Assigned engineers to housing 45, markets 45, libraries 47.
+- Turn 100: checkpoint - Checkpoint at 100 spent turns with 4900 stored turns remaining.
+- Turn 100: engineers - Assigned engineers to housing 45, markets 45, libraries 47.
+- Turn 125: engineers - Assigned engineers to housing 45, markets 45, libraries 47.
+- Turn 150: engineers - Assigned engineers to housing 45, markets 45, libraries 47.
+- Turn 175: engineers - Assigned engineers to housing 45, markets 45, libraries 47.
+- Turn 200: checkpoint - Checkpoint at 200 spent turns with 4800 stored turns remaining.
+- Turn 200: engineers - Assigned engineers to housing 45, markets 45, libraries 47.
+- Turn 225: engineers - Assigned engineers to housing 45, markets 45, libraries 47.
+- Turn 250: hire - Hired 4 engineers.
+- Turn 250: engineers - Assigned engineers to housing 47, markets 47, libraries 47.
+- Turn 275: hire - Hired 4 engineers.
+- Turn 275: engineers - Assigned engineers to housing 48, markets 48, libraries 49.
+- Turn 300: checkpoint - Checkpoint at 300 spent turns with 4700 stored turns remaining.
+- Turn 300: hire - Hired 5 engineers.
+- Turn 300: engineers - Assigned engineers to housing 50, markets 50, libraries 50.
+- Turn 325: hire - Hired 4 engineers.
+- Turn 325: engineers - Assigned engineers to housing 51, markets 51, libraries 52.
+- Turn 350: hire - Hired 4 engineers.
+- Turn 350: engineers - Assigned engineers to markets 79, libraries 79.
+- Turn 375: hire - Hired 4 engineers.
+- Turn 375: engineers - Assigned engineers to markets 81, libraries 81.
+- Turn 400: checkpoint - Checkpoint at 400 spent turns with 4600 stored turns remaining.
+- Turn 400: hire - Hired 4 engineers.
+- Turn 400: engineers - Assigned engineers to markets 83, libraries 83.
+- Turn 425: hire - Hired 4 engineers.
+- Turn 425: engineers - Assigned engineers to markets 85, libraries 85.
+- Turn 450: hire - Hired 5 engineers.
+- Turn 450: engineers - Assigned engineers to markets 87, libraries 88.
+- Turn 475: hire - Hired 4 engineers.
+- Turn 500: checkpoint - Checkpoint at 500 spent turns with 4500 stored turns remaining.
+- Turn 500: hire - Hired 4 engineers.
+- Turn 500: build - Queued 9 farms, 16 housing, 4 granaries, 3 schools, 3 markets, 3 libraries, 2 barracks, 2 mage towers, 2 vaults, 2 taverns.
+- Turn 500: engineers - Assigned engineers to housing 26, farms 26, schools 26, markets 26, libraries 26, granaries 26, barracks 27.
+- Turn 525: hire - Hired 4 engineers.
+- Turn 525: engineers - Assigned engineers to housing 31, schools 31, markets 31, libraries 31, granaries 31, barracks 32.
+- Turn 550: hire - Hired 4 engineers.
+- Turn 550: engineers - Assigned engineers to housing 38, schools 38, markets 38, libraries 38, barracks 39.
+- Turn 575: hire - Hired 100 researchers.
+- Turn 575: hire - Hired 4 engineers.
+- Turn 575: engineers - Assigned engineers to housing 39, schools 39, markets 39, libraries 39, barracks 39.
+- Turn 600: checkpoint - Checkpoint at 600 spent turns with 4400 stored turns remaining.
+- Turn 600: hire - Hired 100 researchers.
+- Turn 600: hire - Hired 5 engineers.
+- Turn 600: engineers - Assigned engineers to housing 50, schools 50, markets 50, libraries 50.
+- Turn 625: hire - Hired 100 researchers.
+- Turn 625: hire - Hired 4 engineers.
+- Turn 625: engineers - Assigned engineers to housing 68, markets 68, libraries 68.
+- Turn 650: hire - Hired 4 engineers.
+- Turn 650: engineers - Assigned engineers to markets 104, libraries 104.
+- Turn 675: hire - Hired 4 engineers.
+- Turn 675: engineers - Assigned engineers to markets 106, libraries 106.
+- Turn 700: checkpoint - Checkpoint at 700 spent turns with 4300 stored turns remaining.
+- Turn 700: hire - Hired 4 engineers.
+- Turn 700: engineers - Assigned engineers to markets 108, libraries 108.
+- Turn 725: hire - Hired 4 engineers.
+- Turn 725: engineers - Assigned engineers to markets 110, libraries 110.
+- Turn 750: hire - Hired 5 engineers.
+- Turn 750: engineers - Assigned engineers to markets 112, libraries 113.
+- Turn 775: hire - Hired 4 engineers.
+- Turn 775: engineers - Assigned engineers to markets 114, libraries 115.
+- Turn 800: checkpoint - Checkpoint at 800 spent turns with 4200 stored turns remaining.
+- Turn 800: research - Set research focus to construction.
+- Turn 800: hire - Hired 4 engineers.
+- Turn 800: engineers - Assigned engineers to markets 116, libraries 117.
+- Turn 825: hire - Hired 4 engineers.
+- Turn 825: engineers - Assigned engineers to markets 118, libraries 119.
+- Turn 850: hire - Hired 4 engineers.
+- Turn 850: engineers - Assigned engineers to markets 120, libraries 121.
+- Turn 875: hire - Hired 4 engineers.
+- Turn 875: engineers - Assigned engineers to markets 122, libraries 123.
+- Turn 900: checkpoint - Checkpoint at 900 spent turns with 4100 stored turns remaining.
+- Turn 900: hire - Hired 5 engineers.
+- Turn 900: engineers - Assigned engineers to markets 125, libraries 125.
+- Turn 925: hire - Hired 4 engineers.
+- Turn 925: engineers - Assigned engineers to markets 127, libraries 127.
+- Turn 950: hire - Hired 4 engineers.
+- Turn 950: engineers - Assigned engineers to markets 129, libraries 129.
+- Turn 975: hire - Hired 4 engineers.
+- Turn 1000: checkpoint - Checkpoint at 1000 spent turns with 4000 stored turns remaining.
+- Turn 1000: hire - Hired 4 engineers.
+- Turn 1000: hire - Hired 125 rangers.
+- Turn 1000: engineers - Assigned engineers to markets 133, libraries 133.
+- Turn 1025: hire - Hired 4 engineers.
+- Turn 1025: engineers - Assigned engineers to markets 135, libraries 135.
+- Turn 1050: hire - Hired 5 engineers.
+- Turn 1050: engineers - Assigned engineers to markets 137, libraries 138.
+- Turn 1075: hire - Hired 4 engineers.
+- Turn 1075: engineers - Assigned engineers to markets 139, libraries 140.
+- Turn 1100: checkpoint - Checkpoint at 1100 spent turns with 3900 stored turns remaining.
+- Turn 1100: hire - Hired 4 engineers.
+- Turn 1100: engineers - Assigned engineers to markets 141, libraries 142.
+- Turn 1125: hire - Hired 4 engineers.
+- Turn 1125: engineers - Assigned engineers to markets 143, libraries 144.
+- Turn 1150: hire - Hired 4 engineers.
+- Turn 1150: engineers - Assigned engineers to markets 145, libraries 146.
+- Turn 1175: hire - Hired 4 engineers.
+- Turn 1175: engineers - Assigned engineers to markets 147, libraries 148.
+- Turn 1200: checkpoint - Checkpoint at 1200 spent turns with 3800 stored turns remaining.
+- Turn 1200: hire - Hired 5 engineers.
+- Turn 1200: engineers - Assigned engineers to markets 150, libraries 150.
+- Turn 1225: hire - Hired 4 engineers.
+- Turn 1225: engineers - Assigned engineers to markets 152, libraries 152.
+- Turn 1250: hire - Hired 4 engineers.
+- Turn 1250: engineers - Assigned engineers to markets 154, libraries 154.
+- Turn 1275: hire - Hired 4 engineers.
+- Turn 1275: engineers - Assigned engineers to markets 156, libraries 156.
+- Turn 1300: checkpoint - Checkpoint at 1300 spent turns with 3700 stored turns remaining.
+- Turn 1300: hire - Hired 4 engineers.
+- Turn 1300: engineers - Assigned engineers to markets 158, libraries 158.
+- Turn 1325: hire - Hired 4 engineers.
+- Turn 1325: engineers - Assigned engineers to markets 160, libraries 160.
+- Turn 1350: hire - Hired 5 engineers.
+- Turn 1350: engineers - Assigned engineers to markets 162, libraries 163.
+- Turn 1375: hire - Hired 4 engineers.
+- Turn 1375: engineers - Assigned engineers to markets 164, libraries 165.
+- Turn 1400: checkpoint - Checkpoint at 1400 spent turns with 3600 stored turns remaining.
+- Turn 1400: hire - Hired 4 engineers.
+- Turn 1400: hire - Hired 33 rangers.
+- Turn 1400: build - Queued 16 housing, 2 granaries, 3 schools, 3 markets, 2 libraries, 2 mage towers, 2 vaults, 2 taverns.
+- Turn 1400: engineers - Assigned engineers to housing 66, schools 66, markets 66, libraries 66, granaries 69.
+- Turn 1425: hire - Hired 200 researchers.
+- Turn 1425: hire - Hired 4 engineers.
+- Turn 1425: engineers - Assigned engineers to housing 84, schools 84, markets 84, libraries 85.
+- Turn 1450: hire - Hired 100 researchers.
+- Turn 1450: hire - Hired 4 engineers.
+- Turn 1450: engineers - Assigned engineers to markets 170, libraries 171.
+- Turn 1475: hire - Hired 4 engineers.
+- Turn 1500: checkpoint - Checkpoint at 1500 spent turns with 3500 stored turns remaining.
+- Turn 1500: research - Set research focus to spellbook.
+- Turn 1500: hire - Hired 5 engineers.
+- Turn 1500: hire - Hired 67 fighters.
+- Turn 1500: engineers - Assigned engineers to libraries 87, markets 87, mage_towers 87, vaults 89.
+- Turn 1525: school - Selected conjuration.
+- Turn 1525: hire - Hired 4 engineers.
+- Turn 1525: hire - Hired 80 mages.
+- Turn 1525: engineers - Assigned engineers to libraries 88, markets 88, mage_towers 88, vaults 90.
+- Turn 1525: mages - Assigned 0 mages to school spellbook.
+- Turn 1550: hire - Hired 4 engineers.
+- Turn 1550: engineers - Assigned engineers to libraries 89, markets 89, mage_towers 89, vaults 91.
+- Turn 1550: mages - Assigned 0 mages to school spellbook.
+- Turn 1575: hire - Hired 4 engineers.
+- Turn 1575: engineers - Assigned engineers to libraries 90, markets 90, mage_towers 90, vaults 92.
+- Turn 1575: mages - Assigned 0 mages to school spellbook.
+- Turn 1600: checkpoint - Checkpoint at 1600 spent turns with 3400 stored turns remaining.
+- Turn 1600: hire - Hired 4 engineers.
+- Turn 1600: engineers - Assigned engineers to libraries 91, markets 91, mage_towers 91, vaults 93.
+- Turn 1600: mages - Assigned 0 mages to school spellbook.
+- Turn 1625: hire - Hired 4 engineers.
+- Turn 1625: engineers - Assigned engineers to libraries 92, markets 92, mage_towers 92, vaults 94.
+- Turn 1625: mages - Assigned 0 mages to school spellbook.
+- Turn 1650: hire - Hired 5 engineers.
+- Turn 1650: engineers - Assigned engineers to libraries 93, markets 93, mage_towers 93, vaults 96.
+- Turn 1650: mages - Assigned 0 mages to school spellbook.
+- Turn 1675: hire - Hired 4 engineers.
+- Turn 1675: engineers - Assigned engineers to libraries 94, markets 94, mage_towers 94, vaults 97.
+- Turn 1675: mages - Assigned 0 mages to school spellbook.
+- Turn 1700: checkpoint - Checkpoint at 1700 spent turns with 3300 stored turns remaining.
+- Turn 1700: hire - Hired 4 engineers.
+- Turn 1700: engineers - Assigned engineers to libraries 95, markets 95, mage_towers 95, vaults 98.
+- Turn 1700: mages - Assigned 0 mages to school spellbook.
+- Turn 1725: hire - Hired 4 engineers.
+- Turn 1725: engineers - Assigned engineers to libraries 96, markets 96, mage_towers 96, vaults 99.
+- Turn 1725: mages - Assigned 0 mages to school spellbook.
+- Turn 1750: hire - Hired 4 engineers.
+- Turn 1750: engineers - Assigned engineers to libraries 97, markets 97, mage_towers 97, vaults 100.
+- Turn 1750: mages - Assigned 0 mages to school spellbook.
+- Turn 1775: hire - Hired 4 engineers.
+- Turn 1775: engineers - Assigned engineers to libraries 98, markets 98, mage_towers 98, vaults 101.
+- Turn 1775: mages - Assigned 0 mages to school spellbook.
+- Turn 1800: checkpoint - Checkpoint at 1800 spent turns with 3200 stored turns remaining.
+- Turn 1800: hire - Hired 5 engineers.
+- Turn 1800: engineers - Assigned engineers to libraries 100, markets 100, mage_towers 100, vaults 100.
+- Turn 1800: mages - Assigned 0 mages to school spellbook.
+- Turn 1825: hire - Hired 4 engineers.
+- Turn 1825: engineers - Assigned engineers to libraries 101, markets 101, mage_towers 101, vaults 101.
+- Turn 1825: mages - Assigned 0 mages to school spellbook.
+- Turn 1850: hire - Hired 4 engineers.
+- Turn 1850: engineers - Assigned engineers to libraries 102, markets 102, mage_towers 102, vaults 102.
+- Turn 1850: mages - Assigned 0 mages to school spellbook.
+- Turn 1875: hire - Hired 4 engineers.
+- Turn 1875: engineers - Assigned engineers to libraries 103, markets 103, mage_towers 103, vaults 103.
+- Turn 1875: mages - Assigned 0 mages to school spellbook.
+- Turn 1900: checkpoint - Checkpoint at 1900 spent turns with 3100 stored turns remaining.
+- Turn 1900: hire - Hired 4 engineers.
+- Turn 1900: engineers - Assigned engineers to libraries 104, markets 104, mage_towers 104, vaults 104.
+- Turn 1900: mages - Assigned 0 mages to school spellbook.
+- Turn 1925: hire - Hired 4 engineers.
+- Turn 1925: engineers - Assigned engineers to libraries 105, markets 105, mage_towers 105, vaults 105.
+- Turn 1925: mages - Assigned 0 mages to school spellbook.
+- Turn 1950: hire - Hired 5 engineers.
+- Turn 1950: engineers - Assigned engineers to libraries 106, markets 106, mage_towers 106, vaults 107.
+- Turn 1950: mages - Assigned 0 mages to school spellbook.
+- Turn 1975: hire - Hired 4 engineers.
+- Turn 1975: mages - Assigned 0 mages to school spellbook.
+- Turn 2000: checkpoint - Checkpoint at 2000 spent turns with 3000 stored turns remaining.
+- Turn 2000: hire - Hired 4 engineers.
+- Turn 2000: engineers - Assigned engineers to libraries 108, markets 108, mage_towers 108, vaults 109.
+- Turn 2000: mages - Assigned 0 mages to school spellbook.
+- Turn 2025: hire - Hired 4 engineers.
+- Turn 2025: engineers - Assigned engineers to libraries 109, markets 109, mage_towers 109, vaults 110.
+- Turn 2025: mages - Assigned 0 mages to school spellbook.
+- Turn 2050: hire - Hired 4 engineers.
+- Turn 2050: engineers - Assigned engineers to libraries 110, markets 110, mage_towers 110, vaults 111.
+- Turn 2050: mages - Assigned 0 mages to school spellbook.
+- Turn 2075: hire - Hired 4 engineers.
+- Turn 2075: engineers - Assigned engineers to libraries 111, markets 111, mage_towers 111, vaults 112.
+- Turn 2075: mages - Assigned 0 mages to school spellbook.
+- Turn 2100: checkpoint - Checkpoint at 2100 spent turns with 2900 stored turns remaining.
+- Turn 2100: hire - Hired 5 engineers.
+- Turn 2100: engineers - Assigned engineers to libraries 112, markets 112, mage_towers 112, vaults 114.
+- Turn 2100: mages - Assigned 0 mages to school spellbook.
+- Turn 2125: hire - Hired 4 engineers.
+- Turn 2125: engineers - Assigned engineers to libraries 113, markets 113, mage_towers 113, vaults 115.
+- Turn 2125: mages - Assigned 0 mages to school spellbook.
+- Turn 2150: hire - Hired 4 engineers.
+- Turn 2150: engineers - Assigned engineers to libraries 114, markets 114, mage_towers 114, vaults 116.
+- Turn 2150: mages - Assigned 0 mages to school spellbook.
+- Turn 2175: hire - Hired 4 engineers.
+- Turn 2175: engineers - Assigned engineers to libraries 115, markets 115, mage_towers 115, vaults 117.
+- Turn 2175: mages - Assigned 0 mages to school spellbook.
+- Turn 2200: checkpoint - Checkpoint at 2200 spent turns with 2800 stored turns remaining.
+- Turn 2200: hire - Hired 4 engineers.
+- Turn 2200: engineers - Assigned engineers to libraries 116, markets 116, mage_towers 116, vaults 118.
+- Turn 2200: mages - Assigned 0 mages to school spellbook.
+- Turn 2225: hire - Hired 4 engineers.
+- Turn 2225: engineers - Assigned engineers to libraries 117, markets 117, mage_towers 117, vaults 119.
+- Turn 2225: mages - Assigned 0 mages to school spellbook.
+- Turn 2250: hire - Hired 5 engineers.
+- Turn 2250: engineers - Assigned engineers to libraries 118, markets 118, mage_towers 118, vaults 121.
+- Turn 2250: mages - Assigned 0 mages to school spellbook.
+- Turn 2275: hire - Hired 4 engineers.
+- Turn 2275: engineers - Assigned engineers to libraries 119, markets 119, mage_towers 119, vaults 122.
+- Turn 2275: mages - Assigned 0 mages to school spellbook.
+- Turn 2300: checkpoint - Checkpoint at 2300 spent turns with 2700 stored turns remaining.
+- Turn 2300: hire - Hired 4 engineers.
+- Turn 2300: engineers - Assigned engineers to libraries 120, markets 120, mage_towers 120, vaults 123.
+- Turn 2300: mages - Assigned 0 mages to school spellbook.
+- Turn 2325: hire - Hired 4 engineers.
+- Turn 2325: engineers - Assigned engineers to libraries 121, markets 121, mage_towers 121, vaults 124.
+- Turn 2325: mages - Assigned 0 mages to school spellbook.
+- Turn 2350: hire - Hired 4 engineers.
+- Turn 2350: engineers - Assigned engineers to libraries 122, markets 122, mage_towers 122, vaults 125.
+- Turn 2350: mages - Assigned 0 mages to school spellbook.
+- Turn 2375: hire - Hired 4 engineers.
+- Turn 2375: engineers - Assigned engineers to libraries 123, markets 123, mage_towers 123, vaults 126.
+- Turn 2375: mages - Assigned 0 mages to school spellbook.
+- Turn 2400: checkpoint - Checkpoint at 2400 spent turns with 2600 stored turns remaining.
+- Turn 2400: hire - Hired 5 engineers.
+- Turn 2400: engineers - Assigned engineers to libraries 125, markets 125, mage_towers 125, vaults 125.
+- Turn 2400: mages - Assigned 0 mages to school spellbook.
+- Turn 2425: hire - Hired 4 engineers.
+- Turn 2425: engineers - Assigned engineers to libraries 126, markets 126, mage_towers 126, vaults 126.
+- Turn 2425: mages - Assigned 0 mages to school spellbook.
+- Turn 2450: hire - Hired 4 engineers.
+- Turn 2450: engineers - Assigned engineers to libraries 127, markets 127, mage_towers 127, vaults 127.
+- Turn 2450: mages - Assigned 0 mages to school spellbook.
+- Turn 2475: hire - Hired 4 engineers.
+- Turn 2475: mages - Assigned 0 mages to school spellbook.
+- Turn 2500: checkpoint - Checkpoint at 2500 spent turns with 2500 stored turns remaining.
+- Turn 2500: hire - Hired 4 engineers.
+- Turn 2500: engineers - Assigned engineers to libraries 129, markets 129, mage_towers 129, vaults 129.
+- Turn 2500: mages - Assigned 0 mages to school spellbook.
+- Turn 2525: hire - Hired 4 engineers.
+- Turn 2525: engineers - Assigned engineers to libraries 130, markets 130, mage_towers 130, vaults 130.
+- Turn 2525: mages - Assigned 0 mages to school spellbook.
+- Turn 2550: hire - Hired 5 engineers.
+- Turn 2550: engineers - Assigned engineers to libraries 131, markets 131, mage_towers 131, vaults 132.
+- Turn 2550: mages - Assigned 0 mages to school spellbook.
+- Turn 2575: hire - Hired 4 engineers.
+- Turn 2575: engineers - Assigned engineers to libraries 132, markets 132, mage_towers 132, vaults 133.
+- Turn 2575: mages - Assigned 0 mages to school spellbook.
+- Turn 2600: checkpoint - Checkpoint at 2600 spent turns with 2400 stored turns remaining.
+- Turn 2600: research - Set research focus to economy.
+- Turn 2600: hire - Hired 4 engineers.
+- Turn 2600: engineers - Assigned engineers to libraries 133, markets 133, mage_towers 133, vaults 134.
+- Turn 2600: mages - Assigned 0 mages to school spellbook.
+- Turn 2625: hire - Hired 4 engineers.
+- Turn 2625: engineers - Assigned engineers to libraries 134, markets 134, mage_towers 134, vaults 135.
+- Turn 2625: mages - Assigned 0 mages to school spellbook.
+- Turn 2650: hire - Hired 4 engineers.
+- Turn 2650: engineers - Assigned engineers to libraries 135, markets 135, mage_towers 135, vaults 136.
+- Turn 2650: mages - Assigned 0 mages to school spellbook.
+- Turn 2675: hire - Hired 4 engineers.
+- Turn 2675: engineers - Assigned engineers to libraries 136, markets 136, mage_towers 136, vaults 137.
+- Turn 2675: mages - Assigned 0 mages to school spellbook.
+- Turn 2700: checkpoint - Checkpoint at 2700 spent turns with 2300 stored turns remaining.
+- Turn 2700: hire - Hired 5 engineers.
+- Turn 2700: engineers - Assigned engineers to libraries 137, markets 137, mage_towers 137, vaults 139.
+- Turn 2700: mages - Assigned 0 mages to school spellbook.
+- Turn 2725: hire - Hired 4 engineers.
+- Turn 2725: engineers - Assigned engineers to libraries 138, markets 138, mage_towers 138, vaults 140.
+- Turn 2725: mages - Assigned 0 mages to school spellbook.
+- Turn 2750: hire - Hired 4 engineers.
+- Turn 2750: engineers - Assigned engineers to libraries 139, markets 139, mage_towers 139, vaults 141.
+- Turn 2750: mages - Assigned 0 mages to school spellbook.
+- Turn 2775: hire - Hired 4 engineers.
+- Turn 2775: engineers - Assigned engineers to libraries 140, markets 140, mage_towers 140, vaults 142.
+- Turn 2775: mages - Assigned 0 mages to school spellbook.
+- Turn 2800: checkpoint - Checkpoint at 2800 spent turns with 2200 stored turns remaining.
+- Turn 2800: hire - Hired 4 engineers.
+- Turn 2800: engineers - Assigned engineers to libraries 141, markets 141, mage_towers 141, vaults 143.
+- Turn 2800: mages - Assigned 0 mages to school spellbook.
+- Turn 2825: hire - Hired 4 engineers.
+- Turn 2825: engineers - Assigned engineers to libraries 142, markets 142, mage_towers 142, vaults 144.
+- Turn 2825: mages - Assigned 0 mages to school spellbook.
+- Turn 2850: hire - Hired 5 engineers.
+- Turn 2850: engineers - Assigned engineers to libraries 143, markets 143, mage_towers 143, vaults 146.
+- Turn 2850: mages - Assigned 0 mages to school spellbook.
+- Turn 2875: hire - Hired 4 engineers.
+- Turn 2875: engineers - Assigned engineers to libraries 144, markets 144, mage_towers 144, vaults 147.
+- Turn 2875: mages - Assigned 0 mages to school spellbook.
+- Turn 2900: checkpoint - Checkpoint at 2900 spent turns with 2100 stored turns remaining.
+- Turn 2900: hire - Hired 4 engineers.
+- Turn 2900: engineers - Assigned engineers to libraries 145, markets 145, mage_towers 145, vaults 148.
+- Turn 2900: mages - Assigned 0 mages to school spellbook.
+- Turn 2925: hire - Hired 4 engineers.
+- Turn 2925: engineers - Assigned engineers to libraries 146, markets 146, mage_towers 146, vaults 149.
+- Turn 2925: mages - Assigned 0 mages to school spellbook.
+- Turn 2950: hire - Hired 4 engineers.
+- Turn 2950: engineers - Assigned engineers to libraries 147, markets 147, mage_towers 147, vaults 150.
+- Turn 2950: mages - Assigned 0 mages to school spellbook.
+- Turn 2975: hire - Hired 4 engineers.
+- Turn 2975: mages - Assigned 0 mages to school spellbook.
+- Turn 3000: checkpoint - Checkpoint at 3000 spent turns with 2000 stored turns remaining.
+- Turn 3000: hire - Hired 5 engineers.
+- Turn 3000: hire - Hired 200 mages.
+- Turn 3000: engineers - Assigned engineers to libraries 150, markets 150, mage_towers 150, vaults 150.
+- Turn 3000: mages - Assigned 0 mages to school spellbook.
+- Turn 3025: hire - Hired 4 engineers.
+- Turn 3025: engineers - Assigned engineers to libraries 151, markets 151, mage_towers 151, vaults 151.
+- Turn 3025: mages - Assigned 0 mages to school spellbook.
+- Turn 3050: hire - Hired 4 engineers.
+- Turn 3050: engineers - Assigned engineers to libraries 152, markets 152, mage_towers 152, vaults 152.
+- Turn 3050: mages - Assigned 0 mages to school spellbook.
+- Turn 3075: hire - Hired 4 engineers.
+- Turn 3075: engineers - Assigned engineers to libraries 153, markets 153, mage_towers 153, vaults 153.
+- Turn 3075: mages - Assigned 0 mages to school spellbook.
+- Turn 3100: checkpoint - Checkpoint at 3100 spent turns with 1900 stored turns remaining.
+- Turn 3100: hire - Hired 4 engineers.
+- Turn 3100: engineers - Assigned engineers to libraries 154, markets 154, mage_towers 154, vaults 154.
+- Turn 3100: mages - Assigned 0 mages to school spellbook.
+- Turn 3125: hire - Hired 4 engineers.
+- Turn 3125: engineers - Assigned engineers to libraries 155, markets 155, mage_towers 155, vaults 155.
+- Turn 3125: mages - Assigned 0 mages to school spellbook.
+- Turn 3150: hire - Hired 5 engineers.
+- Turn 3150: engineers - Assigned engineers to libraries 156, markets 156, mage_towers 156, vaults 157.
+- Turn 3150: mages - Assigned 0 mages to school spellbook.
+- Turn 3175: hire - Hired 4 engineers.
+- Turn 3175: engineers - Assigned engineers to libraries 157, markets 157, mage_towers 157, vaults 158.
+- Turn 3175: mages - Assigned 0 mages to school spellbook.
+- Turn 3200: checkpoint - Checkpoint at 3200 spent turns with 1800 stored turns remaining.
+- Turn 3200: research - Set research focus to military.
+- Turn 3200: hire - Hired 4 engineers.
+- Turn 3200: engineers - Assigned engineers to libraries 158, markets 158, mage_towers 158, vaults 159.
+- Turn 3200: mages - Assigned 0 mages to school spellbook.
+- Turn 3225: hire - Hired 4 engineers.
+- Turn 3225: engineers - Assigned engineers to libraries 159, markets 159, mage_towers 159, vaults 160.
+- Turn 3225: mages - Assigned 0 mages to school spellbook.
+- Turn 3250: hire - Hired 4 engineers.
+- Turn 3250: engineers - Assigned engineers to libraries 160, markets 160, mage_towers 160, vaults 161.
+- Turn 3250: mages - Assigned 0 mages to school spellbook.
+- Turn 3275: hire - Hired 4 engineers.
+- Turn 3275: engineers - Assigned engineers to libraries 161, markets 161, mage_towers 161, vaults 162.
+- Turn 3275: mages - Assigned 0 mages to school spellbook.
+- Turn 3300: checkpoint - Checkpoint at 3300 spent turns with 1700 stored turns remaining.
+- Turn 3300: hire - Hired 5 engineers.
+- Turn 3300: engineers - Assigned engineers to libraries 162, markets 162, mage_towers 162, vaults 164.
+- Turn 3300: mages - Assigned 0 mages to school spellbook.
+- Turn 3325: hire - Hired 4 engineers.
+- Turn 3325: engineers - Assigned engineers to libraries 163, markets 163, mage_towers 163, vaults 165.
+- Turn 3325: mages - Assigned 0 mages to school spellbook.
+- Turn 3350: hire - Hired 4 engineers.
+- Turn 3350: engineers - Assigned engineers to libraries 164, markets 164, mage_towers 164, vaults 166.
+- Turn 3350: mages - Assigned 0 mages to school spellbook.
+- Turn 3375: hire - Hired 4 engineers.
+- Turn 3375: engineers - Assigned engineers to libraries 165, markets 165, mage_towers 165, vaults 167.
+- Turn 3375: mages - Assigned 0 mages to school spellbook.
+- Turn 3400: checkpoint - Checkpoint at 3400 spent turns with 1600 stored turns remaining.
+- Turn 3400: hire - Hired 4 engineers.
+- Turn 3400: engineers - Assigned engineers to libraries 166, markets 166, mage_towers 166, vaults 168.
+- Turn 3400: mages - Assigned 0 mages to school spellbook.
+- Turn 3425: hire - Hired 4 engineers.
+- Turn 3425: engineers - Assigned engineers to libraries 167, markets 167, mage_towers 167, vaults 169.
+- Turn 3425: mages - Assigned 0 mages to school spellbook.
+- Turn 3450: hire - Hired 5 engineers.
+- Turn 3450: engineers - Assigned engineers to libraries 168, markets 168, mage_towers 168, vaults 171.
+- Turn 3450: mages - Assigned 0 mages to school spellbook.
+- Turn 3475: hire - Hired 4 engineers.
+- Turn 3475: mages - Assigned 0 mages to school spellbook.
+- Turn 3500: checkpoint - Checkpoint at 3500 spent turns with 1500 stored turns remaining.
+- Turn 3500: hire - Hired 4 engineers.
+- Turn 3500: engineers - Assigned engineers to libraries 170, markets 170, mage_towers 170, vaults 173.
+- Turn 3500: mages - Assigned 0 mages to school spellbook.
+- Turn 3525: hire - Hired 4 engineers.
+- Turn 3525: engineers - Assigned engineers to libraries 171, markets 171, mage_towers 171, vaults 174.
+- Turn 3525: mages - Assigned 0 mages to school spellbook.
+- Turn 3550: hire - Hired 4 engineers.
+- Turn 3550: engineers - Assigned engineers to libraries 172, markets 172, mage_towers 172, vaults 175.
+- Turn 3550: mages - Assigned 0 mages to school spellbook.
+- Turn 3575: hire - Hired 4 engineers.
+- Turn 3575: engineers - Assigned engineers to libraries 173, markets 173, mage_towers 173, vaults 176.
+- Turn 3575: mages - Assigned 0 mages to school spellbook.
+- Turn 3600: checkpoint - Checkpoint at 3600 spent turns with 1400 stored turns remaining.
+- Turn 3600: hire - Hired 5 engineers.
+- Turn 3600: engineers - Assigned engineers to libraries 175, markets 175, mage_towers 175, vaults 175.
+- Turn 3600: mages - Assigned 0 mages to school spellbook.
+- Turn 3625: hire - Hired 4 engineers.
+- Turn 3625: engineers - Assigned engineers to libraries 176, markets 176, mage_towers 176, vaults 176.
+- Turn 3625: mages - Assigned 0 mages to school spellbook.
+- Turn 3650: hire - Hired 4 engineers.
+- Turn 3650: engineers - Assigned engineers to libraries 177, markets 177, mage_towers 177, vaults 177.
+- Turn 3650: mages - Assigned 0 mages to school spellbook.
+- Turn 3675: hire - Hired 4 engineers.
+- Turn 3675: engineers - Assigned engineers to libraries 178, markets 178, mage_towers 178, vaults 178.
+- Turn 3675: mages - Assigned 0 mages to school spellbook.
+- Turn 3700: checkpoint - Checkpoint at 3700 spent turns with 1300 stored turns remaining.
+- Turn 3700: hire - Hired 4 engineers.
+- Turn 3700: engineers - Assigned engineers to libraries 179, markets 179, mage_towers 179, vaults 179.
+- Turn 3700: mages - Assigned 0 mages to school spellbook.
+- Turn 3725: hire - Hired 4 engineers.
+- Turn 3725: engineers - Assigned engineers to libraries 180, markets 180, mage_towers 180, vaults 180.
+- Turn 3725: mages - Assigned 0 mages to school spellbook.
+- Turn 3750: hire - Hired 5 engineers.
+- Turn 3750: engineers - Assigned engineers to libraries 181, markets 181, mage_towers 181, vaults 182.
+- Turn 3750: mages - Assigned 0 mages to school spellbook.
+- Turn 3775: hire - Hired 4 engineers.
+- Turn 3775: engineers - Assigned engineers to libraries 182, markets 182, mage_towers 182, vaults 183.
+- Turn 3775: mages - Assigned 0 mages to school spellbook.
+- Turn 3800: checkpoint - Checkpoint at 3800 spent turns with 1200 stored turns remaining.
+- Turn 3800: hire - Hired 4 engineers.
+- Turn 3800: engineers - Assigned engineers to libraries 183, markets 183, mage_towers 183, vaults 184.
+- Turn 3800: mages - Assigned 0 mages to school spellbook.
+- Turn 3825: hire - Hired 4 engineers.
+- Turn 3825: engineers - Assigned engineers to libraries 184, markets 184, mage_towers 184, vaults 185.
+- Turn 3825: mages - Assigned 0 mages to school spellbook.
+- Turn 3850: hire - Hired 4 engineers.
+- Turn 3850: engineers - Assigned engineers to libraries 185, markets 185, mage_towers 185, vaults 186.
+- Turn 3850: mages - Assigned 0 mages to school spellbook.
+- Turn 3875: hire - Hired 4 engineers.
+- Turn 3875: engineers - Assigned engineers to libraries 186, markets 186, mage_towers 186, vaults 187.
+- Turn 3875: mages - Assigned 0 mages to school spellbook.
+- Turn 3900: checkpoint - Checkpoint at 3900 spent turns with 1100 stored turns remaining.
+- Turn 3900: hire - Hired 5 engineers.
+- Turn 3900: engineers - Assigned engineers to libraries 187, markets 187, mage_towers 187, vaults 189.
+- Turn 3900: mages - Assigned 0 mages to school spellbook.
+- Turn 3925: hire - Hired 4 engineers.
+- Turn 3925: engineers - Assigned engineers to libraries 188, markets 188, mage_towers 188, vaults 190.
+- Turn 3925: mages - Assigned 0 mages to school spellbook.
+- Turn 3950: hire - Hired 4 engineers.
+- Turn 3950: engineers - Assigned engineers to libraries 189, markets 189, mage_towers 189, vaults 191.
+- Turn 3950: mages - Assigned 0 mages to school spellbook.
+- Turn 3975: hire - Hired 4 engineers.
+- Turn 3975: mages - Assigned 0 mages to school spellbook.
+- Turn 4000: checkpoint - Checkpoint at 4000 spent turns with 1000 stored turns remaining.
+- Turn 4000: hire - Hired 4 engineers.
+- Turn 4000: engineers - Assigned engineers to libraries 191, markets 191, mage_towers 191, vaults 193.
+- Turn 4000: mages - Assigned 0 mages to school spellbook.
+- Turn 4025: hire - Hired 4 engineers.
+- Turn 4025: engineers - Assigned engineers to libraries 192, markets 192, mage_towers 192, vaults 194.
+- Turn 4025: mages - Assigned 0 mages to school spellbook.
+- Turn 4050: hire - Hired 5 engineers.
+- Turn 4050: engineers - Assigned engineers to libraries 193, markets 193, mage_towers 193, vaults 196.
+- Turn 4050: mages - Assigned 0 mages to school spellbook.
+- Turn 4075: hire - Hired 4 engineers.
+- Turn 4075: engineers - Assigned engineers to libraries 194, markets 194, mage_towers 194, vaults 197.
+- Turn 4075: mages - Assigned 0 mages to school spellbook.
+- Turn 4100: checkpoint - Checkpoint at 4100 spent turns with 900 stored turns remaining.
+- Turn 4100: hire - Hired 4 engineers.
+- Turn 4100: engineers - Assigned engineers to libraries 195, markets 195, mage_towers 195, vaults 198.
+- Turn 4100: mages - Assigned 0 mages to school spellbook.
+- Turn 4125: hire - Hired 4 engineers.
+- Turn 4125: engineers - Assigned engineers to libraries 196, markets 196, mage_towers 196, vaults 199.
+- Turn 4125: mages - Assigned 0 mages to school spellbook.
+- Turn 4150: hire - Hired 4 engineers.
+- Turn 4150: engineers - Assigned engineers to libraries 197, markets 197, mage_towers 197, vaults 200.
+- Turn 4150: mages - Assigned 0 mages to school spellbook.
+- Turn 4175: hire - Hired 4 engineers.
+- Turn 4175: engineers - Assigned engineers to libraries 198, markets 198, mage_towers 198, vaults 201.
+- Turn 4175: mages - Assigned 0 mages to school spellbook.
+- Turn 4200: checkpoint - Checkpoint at 4200 spent turns with 800 stored turns remaining.
+- Turn 4200: hire - Hired 5 engineers.
+- Turn 4200: engineers - Assigned engineers to libraries 200, markets 200, mage_towers 200, vaults 200.
+- Turn 4200: mages - Assigned 0 mages to school spellbook.
+- Turn 4225: hire - Hired 4 engineers.
+- Turn 4225: engineers - Assigned engineers to libraries 201, markets 201, mage_towers 201, vaults 201.
+- Turn 4225: mages - Assigned 0 mages to school spellbook.
+- Turn 4250: hire - Hired 4 engineers.
+- Turn 4250: engineers - Assigned engineers to libraries 202, markets 202, mage_towers 202, vaults 202.
+- Turn 4250: mages - Assigned 0 mages to school spellbook.
+- Turn 4275: hire - Hired 4 engineers.
+- Turn 4275: engineers - Assigned engineers to libraries 203, markets 203, mage_towers 203, vaults 203.
+- Turn 4275: mages - Assigned 0 mages to school spellbook.
+- Turn 4300: checkpoint - Checkpoint at 4300 spent turns with 700 stored turns remaining.
+- Turn 4300: hire - Hired 4 engineers.
+- Turn 4300: engineers - Assigned engineers to libraries 204, markets 204, mage_towers 204, vaults 204.
+- Turn 4300: mages - Assigned 0 mages to school spellbook.
+- Turn 4325: hire - Hired 4 engineers.
+- Turn 4325: engineers - Assigned engineers to libraries 205, markets 205, mage_towers 205, vaults 205.
+- Turn 4325: mages - Assigned 0 mages to school spellbook.
+- Turn 4350: hire - Hired 5 engineers.
+- Turn 4350: engineers - Assigned engineers to libraries 206, markets 206, mage_towers 206, vaults 207.
+- Turn 4350: mages - Assigned 0 mages to school spellbook.
+- Turn 4375: hire - Hired 4 engineers.
+- Turn 4375: engineers - Assigned engineers to libraries 207, markets 207, mage_towers 207, vaults 208.
+- Turn 4375: mages - Assigned 0 mages to school spellbook.
+- Turn 4400: checkpoint - Checkpoint at 4400 spent turns with 600 stored turns remaining.
+- Turn 4400: hire - Hired 4 engineers.
+- Turn 4400: engineers - Assigned engineers to libraries 208, markets 208, mage_towers 208, vaults 209.
+- Turn 4400: mages - Assigned 0 mages to school spellbook.
+- Turn 4425: hire - Hired 4 engineers.
+- Turn 4425: engineers - Assigned engineers to libraries 209, markets 209, mage_towers 209, vaults 210.
+- Turn 4425: mages - Assigned 0 mages to school spellbook.
+- Turn 4450: hire - Hired 4 engineers.
+- Turn 4450: engineers - Assigned engineers to libraries 210, markets 210, mage_towers 210, vaults 211.
+- Turn 4450: mages - Assigned 0 mages to school spellbook.
+- Turn 4475: hire - Hired 4 engineers.
+- Turn 4475: mages - Assigned 0 mages to school spellbook.
+- Turn 4500: checkpoint - Checkpoint at 4500 spent turns with 500 stored turns remaining.
+- Turn 4500: hire - Hired 5 engineers.
+- Turn 4500: engineers - Assigned engineers to libraries 212, markets 212, mage_towers 212, vaults 214.
+- Turn 4500: mages - Assigned 0 mages to school spellbook.
+- Turn 4525: hire - Hired 4 engineers.
+- Turn 4525: engineers - Assigned engineers to libraries 213, markets 213, mage_towers 213, vaults 215.
+- Turn 4525: mages - Assigned 0 mages to school spellbook.
+- Turn 4550: hire - Hired 4 engineers.
+- Turn 4550: engineers - Assigned engineers to libraries 214, markets 214, mage_towers 214, vaults 216.
+- Turn 4550: mages - Assigned 0 mages to school spellbook.
+- Turn 4575: hire - Hired 4 engineers.
+- Turn 4575: engineers - Assigned engineers to libraries 215, markets 215, mage_towers 215, vaults 217.
+- Turn 4575: mages - Assigned 0 mages to school spellbook.
+- Turn 4600: checkpoint - Checkpoint at 4600 spent turns with 400 stored turns remaining.
+- Turn 4600: hire - Hired 4 engineers.
+- Turn 4600: engineers - Assigned engineers to libraries 216, markets 216, mage_towers 216, vaults 218.
+- Turn 4600: mages - Assigned 0 mages to school spellbook.
+- Turn 4625: hire - Hired 4 engineers.
+- Turn 4625: engineers - Assigned engineers to libraries 217, markets 217, mage_towers 217, vaults 219.
+- Turn 4625: mages - Assigned 0 mages to school spellbook.
+- Turn 4650: hire - Hired 5 engineers.
+- Turn 4650: build - Queued 8 farms, 18 housing, 4 granaries, 3 schools, 3 markets, 3 libraries, 3 mage towers, 2 vaults, 2 guard towers, 2 walls, 2 taverns, 1 outposts.
+- Turn 4650: engineers - Assigned engineers to libraries 109, markets 109, mage_towers 109, vaults 109, guard_towers 109, walls 109, housing 109, farms 112.
+- Turn 4650: mages - Assigned 0 mages to school spellbook.
+- Turn 4675: hire - Hired 4 engineers.
+- Turn 4675: engineers - Assigned engineers to libraries 125, markets 125, mage_towers 125, vaults 125, guard_towers 125, walls 125, housing 129.
+- Turn 4675: mages - Assigned 0 mages to school spellbook.
+- Turn 4700: checkpoint - Checkpoint at 4700 spent turns with 300 stored turns remaining.
+- Turn 4700: hire - Hired 4 engineers.
+- Turn 4700: engineers - Assigned engineers to libraries 176, markets 176, mage_towers 176, vaults 176, walls 179.
+- Turn 4700: mages - Assigned 0 mages to school spellbook.
+- Turn 4725: hire - Hired 4 engineers.
+- Turn 4725: engineers - Assigned engineers to libraries 221, markets 221, mage_towers 221, vaults 224.
+- Turn 4725: mages - Assigned 0 mages to school spellbook.
+- Turn 4750: hire - Hired 4 engineers.
+- Turn 4750: engineers - Assigned engineers to libraries 222, markets 222, mage_towers 222, vaults 225.
+- Turn 4750: mages - Assigned 0 mages to school spellbook.
+- Turn 4775: hire - Hired 4 engineers.
+- Turn 4775: engineers - Assigned engineers to libraries 223, markets 223, mage_towers 223, vaults 226.
+- Turn 4775: mages - Assigned 0 mages to school spellbook.
+- Turn 4800: checkpoint - Checkpoint at 4800 spent turns with 200 stored turns remaining.
+- Turn 4800: hire - Hired 5 engineers.
+- Turn 4800: engineers - Assigned engineers to libraries 225, markets 225, mage_towers 225, vaults 225.
+- Turn 4800: mages - Assigned 0 mages to school spellbook.
+- Turn 4825: engineers - Assigned engineers to libraries 225, markets 225, mage_towers 225, vaults 225.
+- Turn 4825: mages - Assigned 0 mages to school spellbook.
+- Turn 4850: engineers - Assigned engineers to libraries 225, markets 225, mage_towers 225, vaults 225.
+- Turn 4850: mages - Assigned 0 mages to school spellbook.
+- Turn 4875: engineers - Assigned engineers to libraries 225, markets 225, mage_towers 225, vaults 225.
+- Turn 4875: mages - Assigned 0 mages to school spellbook.
+- Turn 4900: checkpoint - Checkpoint at 4900 spent turns with 100 stored turns remaining.
+- Turn 4900: engineers - Assigned engineers to libraries 225, markets 225, mage_towers 225, vaults 225.
+- Turn 4900: mages - Assigned 0 mages to school spellbook.
+- Turn 4925: engineers - Assigned engineers to libraries 225, markets 225, mage_towers 225, vaults 225.
+- Turn 4925: mages - Assigned 0 mages to school spellbook.
+- Turn 4950: engineers - Assigned engineers to libraries 225, markets 225, mage_towers 225, vaults 225.
+- Turn 4950: mages - Assigned 0 mages to school spellbook.
+- Turn 4975: mages - Assigned 0 mages to school spellbook.
+- Turn 5000: checkpoint - Checkpoint at 5000 spent turns with 0 stored turns remaining.
+
+## Tutorial Notes
+
+- Schools directly gate researcher capacity, so early economy growth should include more schools, not just more researchers.
+- Barracks gate troop headcount for most military units, so new players need barracks before broad recruiting.
+- Granaries are part of the stability layer, not just decoration; food security feels better once farms and granaries grow together.
+- School selection unlocks only after regular spellbook research reaches 100.
+- Regular spellbook research must advance before a kingdom can commit to a magic school.
+
+## Bugs Encountered
+
+- Turn 475: Engineer allocation blocked: POST /kingdom/build-allocation failed: 500 Failed to set build allocation
+- Turn 525: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 1.
+- Turn 550: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 1.
+- Turn 575: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 1.
+- Turn 600: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 1.
+- Turn 625: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 1.
+- Turn 643: Construction note: Actively constructing: 1 housing [1% done, ~5 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ housing cap reached at level 47 (max ∞) — level up to build more.
+- Turn 648: Construction note: Actively constructing: 1 housing [2% done, ~5 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ housing cap reached at level 47 (max ∞) — level up to build more.
+- Turn 650: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 1.
+- Turn 675: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 1.
+- Turn 700: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 1.
+- Turn 725: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 1.
+- Turn 750: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 1.
+- Turn 775: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 1.
+- Turn 800: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 1.
+- Turn 825: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 1.
+- Turn 850: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 1.
+- Turn 875: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 1.
+- Turn 900: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 1.
+- Turn 925: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 1.
+- Turn 950: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 1.
+- Turn 975: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 1.
+- Turn 975: Engineer allocation blocked: POST /kingdom/build-allocation failed: 500 Failed to set build allocation
+- Turn 1000: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 1025: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 1050: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 1075: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 1100: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 1125: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 1150: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 1175: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 1200: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 1200: Scout expedition failed: POST /kingdom/expedition/start failed: 400 A scout expedition is already underway
+- Turn 1225: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 1225: Scout expedition failed: POST /kingdom/expedition/start failed: 400 A scout expedition is already underway
+- Turn 1250: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 1250: Scout expedition failed: POST /kingdom/expedition/start failed: 400 A scout expedition is already underway
+- Turn 1275: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 1275: Scout expedition failed: POST /kingdom/expedition/start failed: 400 A scout expedition is already underway
+- Turn 1300: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 1300: Scout expedition failed: POST /kingdom/expedition/start failed: 400 A scout expedition is already underway
+- Turn 1325: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 1325: Scout expedition failed: POST /kingdom/expedition/start failed: 400 A scout expedition is already underway
+- Turn 1350: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 1350: Scout expedition failed: POST /kingdom/expedition/start failed: 400 A scout expedition is already underway
+- Turn 1375: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 1375: Scout expedition failed: POST /kingdom/expedition/start failed: 400 A scout expedition is already underway
+- Turn 1409: Construction note: Actively constructing: 13 housing [33% done, ~2 turns left] (Using 6,500 gc & 325 land) - 3 schools [77% done, ~3 turns left] (Using 1,500 gc & 375 land) - 1 granaries [16% done, ~3 turns left] (Using 250 gc & 15 land). ⚠️ granaries paused — not enough wood. ⚠️ granaries cap reached at level 61 (max 28) — level up to build more.
+- Turn 1412: Construction note: Actively constructing: 12 housing [44% done, ~2 turns left] (Using 6,000 gc & 300 land) - 2 schools [3% done, ~12 turns left] (Using 1,000 gc & 250 land) - 1 granaries [33% done, ~2 turns left] (Using 250 gc & 15 land). ⚠️ granaries paused — not enough wood. ⚠️ granaries cap reached at level 61 (max 28) — level up to build more.
+- Turn 1414: Construction note: Actively constructing: 11 housing [19% done, ~3 turns left] (Using 5,500 gc & 275 land) - 2 schools [21% done, ~10 turns left] (Using 1,000 gc & 250 land) - 1 granaries [10% done, ~3 turns left] (Using 250 gc & 15 land). ⚠️ granaries paused — not enough wood. ⚠️ granaries cap reached at level 61 (max 28) — level up to build more.
+- Turn 1417: Construction note: Actively constructing: 10 housing [30% done, ~2 turns left] (Using 5,000 gc & 250 land) - 2 schools [47% done, ~7 turns left] (Using 1,000 gc & 250 land) - 1 granaries [27% done, ~2 turns left] (Using 250 gc & 15 land). ⚠️ granaries paused — not enough wood. ⚠️ granaries cap reached at level 61 (max 28) — level up to build more.
+- Turn 1419: Construction note: Actively constructing: 9 housing [4% done, ~3 turns left] (Using 4,500 gc & 225 land) - 2 schools [64% done, ~5 turns left] (Using 1,000 gc & 250 land) - 1 granaries [5% done, ~3 turns left] (Using 250 gc & 15 land). ⚠️ granaries paused — not enough wood. ⚠️ granaries cap reached at level 61 (max 28) — level up to build more.
+- Turn 1422: Construction note: Actively constructing: 8 housing [16% done, ~3 turns left] (Using 4,000 gc & 200 land) - 2 schools [90% done, ~2 turns left] (Using 1,000 gc & 250 land) - 1 granaries [21% done, ~3 turns left] (Using 250 gc & 15 land). ⚠️ granaries paused — not enough wood. ⚠️ granaries cap reached at level 62 (max 28) — level up to build more.
+- Turn 1425: Construction note: Actively constructing: 7 housing [27% done, ~2 turns left] (Using 3,500 gc & 175 land) - 1 schools [16% done, ~10 turns left] (Using 500 gc & 125 land) - 1 granaries [38% done, ~2 turns left] (Using 250 gc & 15 land). ⚠️ granaries paused — not enough wood. ⚠️ granaries cap reached at level 62 (max 28) — level up to build more.
+- Turn 1425: Build queue planning blocked: POST /kingdom/build-queue failed: 400 markets cap reached (max 8).
+- Turn 1442: Construction note: Actively constructing: 1 housing [95% done, ~1 turns left] (Using 500 gc & 25 land) - 1 schools [0% done, ~9 turns left] (Using 500 gc & 125 land). ⚠️ schools paused — not enough wood. ⚠️ schools cap reached at level 62 (max 16) — level up to build more.
+- Turn 1443: Construction note: Actively constructing: 1 housing [43% done, ~2 turns left] (Using 500 gc & 25 land) - 1 schools [11% done, ~8 turns left] (Using 500 gc & 125 land). ⚠️ housing paused — not enough wood. ⚠️ housing cap reached at level 62 (max ∞) — level up to build more.
+- Turn 1445: Construction note: Actively constructing: 1 housing [38% done, ~2 turns left] (Using 500 gc & 25 land) - 1 schools [33% done, ~6 turns left] (Using 500 gc & 125 land). ⚠️ housing paused — not enough wood. ⚠️ housing cap reached at level 62 (max ∞) — level up to build more.
+- Turn 1447: Construction note: Actively constructing: 1 housing [34% done, ~2 turns left] (Using 500 gc & 25 land) - 1 schools [55% done, ~4 turns left] (Using 500 gc & 125 land). ⚠️ housing paused — not enough wood. ⚠️ housing cap reached at level 62 (max ∞) — level up to build more.
+- Turn 1449: Construction note: Actively constructing: 1 housing [29% done, ~2 turns left] (Using 500 gc & 25 land) - 1 schools [78% done, ~2 turns left] (Using 500 gc & 125 land). ⚠️ housing paused — not enough wood. ⚠️ housing cap reached at level 62 (max ∞) — level up to build more.
+- Turn 1450: Build queue planning blocked: POST /kingdom/build-queue failed: 400 markets cap reached (max 8).
+- Turn 1475: Build queue planning blocked: POST /kingdom/build-queue failed: 400 markets cap reached (max 8).
+- Turn 1475: Engineer allocation blocked: POST /kingdom/build-allocation failed: 500 Failed to set build allocation
+- Turn 1500: Build queue planning blocked: POST /kingdom/build-queue failed: 400 markets cap reached (max 8).
+- Turn 1525: Build queue planning blocked: POST /kingdom/build-queue failed: 400 markets cap reached (max 8).
+- Turn 1550: Build queue planning blocked: POST /kingdom/build-queue failed: 400 markets cap reached (max 8).
+- Turn 1575: Build queue planning blocked: POST /kingdom/build-queue failed: 400 markets cap reached (max 8).
+- Turn 1600: Build queue planning blocked: POST /kingdom/build-queue failed: 400 markets cap reached (max 8).
+- Turn 1625: Build queue planning blocked: POST /kingdom/build-queue failed: 400 markets cap reached (max 8).
+- Turn 1650: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 1675: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 1700: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 1725: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 1750: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 1775: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 1800: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 1825: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 1850: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 1875: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 1900: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 1925: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 1950: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 1975: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 1975: Engineer allocation blocked: POST /kingdom/build-allocation failed: 500 Failed to set build allocation
+- Turn 2000: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2025: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2050: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2075: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2100: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2125: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2150: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2175: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2200: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2225: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2250: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2275: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2300: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2325: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2350: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2375: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2400: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2425: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2450: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2475: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2475: Engineer allocation blocked: POST /kingdom/build-allocation failed: 500 Failed to set build allocation
+- Turn 2500: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2525: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2550: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2575: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2600: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2625: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2650: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2675: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2700: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2725: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 1.
+- Turn 2750: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 2.
+- Turn 2775: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 2.
+- Turn 2800: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 2.
+- Turn 2825: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 2.
+- Turn 2850: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 2.
+- Turn 2875: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 2.
+- Turn 2900: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 2.
+- Turn 2925: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 2.
+- Turn 2950: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 2.
+- Turn 2975: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 4 more markets. Only room for 2.
+- Turn 2975: Engineer allocation blocked: POST /kingdom/build-allocation failed: 500 Failed to set build allocation
+- Turn 3000: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3025: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3050: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3075: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3100: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3125: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3150: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3175: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3200: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3225: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3250: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3275: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3300: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3325: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3350: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3375: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3400: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3425: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3450: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3475: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3475: Engineer allocation blocked: POST /kingdom/build-allocation failed: 500 Failed to set build allocation
+- Turn 3500: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3525: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3550: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3575: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3600: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3625: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3650: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3675: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3700: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3725: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3750: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3775: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3800: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3825: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3850: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3875: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3900: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3925: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3950: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3975: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 3975: Engineer allocation blocked: POST /kingdom/build-allocation failed: 500 Failed to set build allocation
+- Turn 4000: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 4025: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 4050: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 4075: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 4100: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 4125: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 4150: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 4175: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 4200: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 4225: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 4250: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more markets. Only room for 2.
+- Turn 4275: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more mage towers. Only room for 2.
+- Turn 4300: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more mage towers. Only room for 2.
+- Turn 4325: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more mage towers. Only room for 2.
+- Turn 4350: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more mage towers. Only room for 2.
+- Turn 4375: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more mage towers. Only room for 2.
+- Turn 4400: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more mage towers. Only room for 2.
+- Turn 4425: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more mage towers. Only room for 2.
+- Turn 4450: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more mage towers. Only room for 2.
+- Turn 4475: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more mage towers. Only room for 2.
+- Turn 4475: Engineer allocation blocked: POST /kingdom/build-allocation failed: 500 Failed to set build allocation
+- Turn 4500: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more mage towers. Only room for 2.
+- Turn 4525: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more mage towers. Only room for 2.
+- Turn 4550: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more mage towers. Only room for 2.
+- Turn 4575: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more mage towers. Only room for 2.
+- Turn 4600: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more mage towers. Only room for 2.
+- Turn 4625: Build queue planning blocked: POST /kingdom/build-queue failed: 400 Cannot queue 3 more mage towers. Only room for 2.
+- Turn 4664: Construction note: Actively constructing: 2 guard towers [86% done, ~3 turns left] (Using 300 gc & 100 land) - 2 walls [43% done, ~19 turns left] (Using 600 gc & 100 land) - 10 housing [61% done, ~1 turns left] (Using 5,000 gc & 250 land) - 9 farms concluding [~9 next turn] (Using 450 gc & 90 land). ⚠️ farms paused — not enough gold. ⚠️ farms cap reached at level 88 (max ∞) — level up to build more.
+- Turn 4665: Construction note: Actively constructing: 2 guard towers [92% done, ~2 turns left] (Using 300 gc & 100 land) - 2 walls [46% done, ~18 turns left] (Using 600 gc & 100 land) - 9 housing [23% done, ~2 turns left] (Using 4,500 gc & 225 land) - 9 farms concluding [~9 next turn] (Using 450 gc & 90 land). ⚠️ farms paused — not enough gold. ⚠️ farms cap reached at level 88 (max ∞) — level up to build more.
+- Turn 4666: Construction note: Actively constructing: 2 guard towers [98% done, ~1 turns left] (Using 300 gc & 100 land) - 2 walls [49% done, ~17 turns left] (Using 600 gc & 100 land) - 9 housing [85% done, ~1 turns left] (Using 4,500 gc & 225 land) - 8 farms concluding [~8 next turn] (Using 400 gc & 80 land). ⚠️ farms paused — not enough gold. ⚠️ farms cap reached at level 88 (max ∞) — level up to build more.
+- Turn 4667: Construction note: Actively constructing: 1 guard towers [4% done, ~16 turns left] (Using 150 gc & 50 land) - 2 walls [52% done, ~16 turns left] (Using 600 gc & 100 land) - 8 housing [47% done, ~1 turns left] (Using 4,000 gc & 200 land) - 9 farms concluding [~9 next turn] (Using 450 gc & 90 land). ⚠️ farms paused — not enough gold. ⚠️ farms cap reached at level 88 (max ∞) — level up to build more.
+- Turn 4668: Construction note: Actively constructing: 1 guard towers [10% done, ~15 turns left] (Using 150 gc & 50 land) - 2 walls [55% done, ~15 turns left] (Using 600 gc & 100 land) - 7 housing [9% done, ~2 turns left] (Using 3,500 gc & 175 land) - 9 farms concluding [~9 next turn] (Using 450 gc & 90 land). ⚠️ farms paused — not enough gold. ⚠️ farms cap reached at level 88 (max ∞) — level up to build more.
+- Turn 4669: Construction note: Actively constructing: 1 guard towers [17% done, ~14 turns left] (Using 150 gc & 50 land) - 2 walls [58% done, ~14 turns left] (Using 600 gc & 100 land) - 7 housing [71% done, ~1 turns left] (Using 3,500 gc & 175 land) - 9 farms concluding [~9 next turn] (Using 450 gc & 90 land). ⚠️ farms paused — not enough gold. ⚠️ farms cap reached at level 88 (max ∞) — level up to build more.
+- Turn 4670: Construction note: Actively constructing: 1 guard towers [23% done, ~13 turns left] (Using 150 gc & 50 land) - 2 walls [61% done, ~13 turns left] (Using 600 gc & 100 land) - 6 housing [33% done, ~2 turns left] (Using 3,000 gc & 150 land) - 9 farms concluding [~9 next turn] (Using 450 gc & 90 land). ⚠️ farms paused — not enough gold. ⚠️ farms cap reached at level 88 (max ∞) — level up to build more.
+- Turn 4671: Construction note: Actively constructing: 1 guard towers [29% done, ~12 turns left] (Using 150 gc & 50 land) - 2 walls [64% done, ~12 turns left] (Using 600 gc & 100 land) - 6 housing [95% done, ~1 turns left] (Using 3,000 gc & 150 land) - 9 farms concluding [~9 next turn] (Using 450 gc & 90 land). ⚠️ farms paused — not enough gold. ⚠️ farms cap reached at level 88 (max ∞) — level up to build more.
+- Turn 4672: Construction note: Actively constructing: 1 guard towers [35% done, ~11 turns left] (Using 150 gc & 50 land) - 2 walls [67% done, ~11 turns left] (Using 600 gc & 100 land) - 5 housing [57% done, ~1 turns left] (Using 2,500 gc & 125 land) - 9 farms concluding [~9 next turn] (Using 450 gc & 90 land). ⚠️ farms paused — not enough gold. ⚠️ farms cap reached at level 88 (max ∞) — level up to build more.
+- Turn 4673: Construction note: Actively constructing: 1 guard towers [41% done, ~10 turns left] (Using 150 gc & 50 land) - 2 walls [70% done, ~10 turns left] (Using 600 gc & 100 land) - 4 housing [19% done, ~2 turns left] (Using 2,000 gc & 100 land) - 9 farms concluding [~9 next turn] (Using 450 gc & 90 land). ⚠️ farms paused — not enough gold. ⚠️ farms cap reached at level 88 (max ∞) — level up to build more.
+- Turn 4674: Construction note: Actively constructing: 1 guard towers [48% done, ~9 turns left] (Using 150 gc & 50 land) - 2 walls [74% done, ~9 turns left] (Using 600 gc & 100 land) - 4 housing [81% done, ~1 turns left] (Using 2,000 gc & 100 land) - 9 farms concluding [~9 next turn] (Using 450 gc & 90 land). ⚠️ farms paused — not enough gold. ⚠️ farms cap reached at level 88 (max ∞) — level up to build more.
+- Turn 4675: Construction note: Actively constructing: 1 guard towers [54% done, ~8 turns left] (Using 150 gc & 50 land) - 2 walls [77% done, ~8 turns left] (Using 600 gc & 100 land) - 3 housing [43% done, ~1 turns left] (Using 1,500 gc & 75 land) - 9 farms concluding [~9 next turn] (Using 450 gc & 90 land). ⚠️ farms paused — not enough gold. ⚠️ farms cap reached at level 88 (max ∞) — level up to build more.
+- Turn 4675: Build queue planning blocked: POST /kingdom/build-queue failed: 400 markets cap reached (max 11).
+- Turn 4681: Construction note: Actively constructing: 1 guard towers [97% done, ~1 turns left] (Using 150 gc & 50 land) - 2 walls [98% done, ~1 turns left] (Using 600 gc & 100 land) - 1 housing [48% done, ~1 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ housing cap reached at level 88 (max ∞) — level up to build more.
+- Turn 4682: Construction note: Actively constructing: 1 guard towers [NaN% done, ~NaN turns left] (Using 150 gc & 50 land) - 1 walls [2% done, ~28 turns left] (Using 300 gc & 50 land) - 1 housing [22% done, ~2 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ housing cap reached at level 88 (max ∞) — level up to build more.
+- Turn 4684: Construction note: Actively constructing: 1 guard towers [14% done, ~12 turns left] (Using 150 gc & 50 land) - 1 walls [9% done, ~26 turns left] (Using 300 gc & 50 land) - 1 housing [70% done, ~1 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ housing cap reached at level 88 (max ∞) — level up to build more.
+- Turn 4685: Construction note: Actively constructing: 1 guard towers [21% done, ~11 turns left] (Using 150 gc & 50 land) - 1 walls [13% done, ~25 turns left] (Using 300 gc & 50 land) - 1 housing [44% done, ~1 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ housing cap reached at level 88 (max ∞) — level up to build more.
+- Turn 4686: Construction note: Actively constructing: 1 guard towers [28% done, ~10 turns left] (Using 150 gc & 50 land) - 1 walls [16% done, ~24 turns left] (Using 300 gc & 50 land) - 1 housing [18% done, ~2 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ housing cap reached at level 88 (max ∞) — level up to build more.
+- Turn 4688: Construction note: Actively constructing: 1 guard towers [43% done, ~8 turns left] (Using 150 gc & 50 land) - 1 walls [23% done, ~22 turns left] (Using 300 gc & 50 land) - 1 housing [66% done, ~1 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ housing cap reached at level 88 (max ∞) — level up to build more.
+- Turn 4689: Construction note: Actively constructing: 1 guard towers [50% done, ~7 turns left] (Using 150 gc & 50 land) - 1 walls [27% done, ~21 turns left] (Using 300 gc & 50 land) - 1 housing [40% done, ~1 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ housing cap reached at level 88 (max ∞) — level up to build more.
+- Turn 4690: Construction note: Actively constructing: 1 guard towers [57% done, ~6 turns left] (Using 150 gc & 50 land) - 1 walls [30% done, ~20 turns left] (Using 300 gc & 50 land) - 1 housing [14% done, ~2 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ housing cap reached at level 88 (max ∞) — level up to build more.
+- Turn 4692: Construction note: Actively constructing: 1 guard towers [71% done, ~4 turns left] (Using 150 gc & 50 land) - 1 walls [38% done, ~18 turns left] (Using 300 gc & 50 land) - 1 housing [62% done, ~1 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ housing cap reached at level 88 (max ∞) — level up to build more.
+- Turn 4693: Construction note: Actively constructing: 1 guard towers [78% done, ~3 turns left] (Using 150 gc & 50 land) - 1 walls [41% done, ~17 turns left] (Using 300 gc & 50 land) - 1 housing [36% done, ~1 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ housing cap reached at level 88 (max ∞) — level up to build more.
+- Turn 4694: Construction note: Actively constructing: 1 guard towers [86% done, ~2 turns left] (Using 150 gc & 50 land) - 1 walls [45% done, ~16 turns left] (Using 300 gc & 50 land) - 1 housing [10% done, ~2 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ housing cap reached at level 88 (max ∞) — level up to build more.
+- Turn 4696: Construction note: Actively constructing: 1 guard towers [0% done, ~14 turns left] (Using 150 gc & 50 land) - 1 walls [52% done, ~14 turns left] (Using 300 gc & 50 land) - 1 housing [57% done, ~1 turns left] (Using 500 gc & 25 land). ⚠️ guard towers paused — not enough wood. ⚠️ guard towers cap reached at level 88 (max 21) — level up to build more. ⚠️ housing paused — not enough wood. ⚠️ housing cap reached at level 88 (max ∞) — level up to build more.
+- Turn 4697: Construction note: Actively constructing: 1 guard towers [7% done, ~13 turns left] (Using 150 gc & 50 land) - 1 walls [56% done, ~13 turns left] (Using 300 gc & 50 land) - 1 housing [32% done, ~1 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ housing cap reached at level 88 (max ∞) — level up to build more.
+- Turn 4698: Construction note: Actively constructing: 1 guard towers [14% done, ~12 turns left] (Using 150 gc & 50 land) - 1 walls [59% done, ~12 turns left] (Using 300 gc & 50 land) - 1 housing [6% done, ~2 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ housing cap reached at level 88 (max ∞) — level up to build more.
+- Turn 4700: Construction note: Actively constructing: 1 guard towers [29% done, ~10 turns left] (Using 150 gc & 50 land) - 1 walls [66% done, ~10 turns left] (Using 300 gc & 50 land) - 1 housing [54% done, ~1 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ housing cap reached at level 88 (max ∞) — level up to build more.
+- Turn 4700: Build queue planning blocked: POST /kingdom/build-queue failed: 400 markets cap reached (max 11).
+- Turn 4725: Build queue planning blocked: POST /kingdom/build-queue failed: 400 markets cap reached (max 11).
+- Turn 4750: Build queue planning blocked: POST /kingdom/build-queue failed: 400 markets cap reached (max 11).
+- Turn 4775: Build queue planning blocked: POST /kingdom/build-queue failed: 400 markets cap reached (max 11).
+- Turn 4800: Build queue planning blocked: POST /kingdom/build-queue failed: 400 markets cap reached (max 11).
+- Turn 4825: Build queue planning blocked: POST /kingdom/build-queue failed: 400 markets cap reached (max 11).
+- Turn 4850: Build queue planning blocked: POST /kingdom/build-queue failed: 400 markets cap reached (max 11).
+- Turn 4875: Build queue planning blocked: POST /kingdom/build-queue failed: 400 markets cap reached (max 11).
+- Turn 4900: Build queue planning blocked: POST /kingdom/build-queue failed: 400 markets cap reached (max 11).
+- Turn 4925: Build queue planning blocked: POST /kingdom/build-queue failed: 400 markets cap reached (max 11).
+- Turn 4950: Build queue planning blocked: POST /kingdom/build-queue failed: 400 markets cap reached (max 11).
+- Turn 4975: Build queue planning blocked: POST /kingdom/build-queue failed: 400 markets cap reached (max 11).
+- Turn 4975: Engineer allocation blocked: POST /kingdom/build-allocation failed: 500 Failed to set build allocation
