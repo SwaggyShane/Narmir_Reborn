@@ -51,7 +51,7 @@ export const useEconomyStore = create(
         res_attack_magic: 100,
         res_war_machines: 100,
         res_economy: 100,
-        res_spellbook: 100,
+        res_spellbook: 0,
         res_armor: 100,
         res_defense_magic: 100,
         res_entertainment: 100,
@@ -395,7 +395,7 @@ export const useResWarMachines = () => useEconomyStore((state) => state.res_war_
 
 export const useResEconomy = () => useEconomyStore((state) => state.res_economy ?? 100);
 
-export const useResSpellbook = () => useEconomyStore((state) => state.res_spellbook ?? 100);
+export const useResSpellbook = () => useEconomyStore((state) => state.res_spellbook ?? 0);
 
 export const useResArmor = () => useEconomyStore((state) => state.res_armor ?? 100);
 
