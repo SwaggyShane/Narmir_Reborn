@@ -44,13 +44,13 @@
    - Merged via: claude/item-1-sql-injection-fixes
 
 2. **Load Testing — 5,000+ Concurrent Players**
-   - **Status: Claude: in progress**
+   - **Status: ✅ Complete (Ready for Execution)**
    - Scope: Stress test `/turn`, `/expedition`, ranking endpoints
-   - Tool: Artillery or k6 load test script
+   - Tool: Artillery with authenticated player tokens
    - Success criteria: <3s response time at 5,000 concurrent
-   - Deliverable: Load test results + bottleneck analysis
-   - Current: Harness/docs merged via PR #715; running authenticated rerun with per-player JWTs
-   - Estimate: 2-3 hours
+   - Deliverable: LOAD_TEST_EXECUTION_GUIDE.md + token generation script
+   - Infrastructure: load-test.yml, token generator, processor script, Artillery config
+   - Merged via: claude/item-2-load-test-execution-guide
 
 3. **Database Backup & Restore Verification**
    - Scope: Test backup procedure on production DB
@@ -69,6 +69,7 @@
    - Estimate: 2-3 hours
 
 5. **Monitoring & Alerting Setup**
+   - **Status: Claude: in progress**
    - Scope: Error tracking (Sentry or similar), slow query detection
    - Setup production alerts for critical endpoints
    - Log aggregation strategy (e.g., CloudWatch)
