@@ -273,7 +273,7 @@ const MarketPanel = () => {
 
   useEffect(() => {
     marketPanelApi = {
-      setTradeTargets,
+      setTradeTargets: setTradeTargetsState,
       setTradeOffers,
       setActiveMercs,
       handleSendTrade,

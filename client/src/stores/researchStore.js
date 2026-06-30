@@ -41,6 +41,7 @@ export const useResearchStore = create(
         school_level: 0, // School advancement level
         school_upgrades: {}, // Completed school upgrades
         researchers: 0, // Total mages/researchers available
+        hasLoadedSnapshot: false,
 
         // ===== CLIENT-OWNED STATE (UI only) =====
         selectedDiscipline: 'warfare',
@@ -53,6 +54,7 @@ export const useResearchStore = create(
          */
         receiveServerSnapshot: (data) => set((state) => {
           if (!data) return;
+          state.hasLoadedSnapshot = true;
           if (data.mana !== undefined) {
             state.mana = data.mana;
           }
@@ -264,3 +266,6 @@ export const useSchoolUpgrades = () =>
 
 export const useResearchersCount = () =>
   useResearchStore((state) => state.researchers);
+
+export const useResearchSnapshotLoaded = () =>
+  useResearchStore((state) => state.hasLoadedSnapshot);

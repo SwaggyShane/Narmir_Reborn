@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import SchoolSelectionModal from './SchoolSelectionModal';
 import { toast } from '../../utils/toast.js';
-import { useResearchStore, useSchoolOfMagic, useResSpellbook } from '../../stores';
+import { useResearchStore, useSchoolOfMagic, useResSpellbook, useResearchSnapshotLoaded } from '../../stores';
 
 /**
  * SchoolSelectionController
@@ -16,13 +16,18 @@ export default function SchoolSelectionController() {
   const [showModal, setShowModal] = useState(false);
   const spellbook = useResSpellbook();
   const school = useSchoolOfMagic();
+  const researchLoaded = useResearchSnapshotLoaded();
 
   // Show modal only if spellbook >= 100 and school not yet chosen
   // (school_of_magic is synced from server in loadKingdom)
   useEffect(() => {
+    if (!researchLoaded) {
+      setShowModal(false);
+      return;
+    }
     const shouldShow = (spellbook || 0) >= 100 && !school;
     setShowModal(shouldShow);
-  }, [spellbook, school]);
+  }, [researchLoaded, spellbook, school]);
 
   const handleModalClose = () => {
     setShowModal(false);
