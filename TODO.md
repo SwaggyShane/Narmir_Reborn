@@ -36,6 +36,7 @@
 ### Tier 1: Critical for Beta Launch
 
 1. **Production SQL Injection Audit** — Verify 100% parameterized query coverage
+   - **Status: Claude: in progress**
    - Scope: All 12 route files + game logic modules
    - Focus: forum.js, kingdom-economy.js, critical endpoints
    - Deliverable: Audit report + fixes for any gaps
