@@ -455,6 +455,7 @@ curl -X POST https://narmirreborn.com/api/auth/register \
     "email": "player@example.com",
     "username": "Gandalf",
     "password": "SecurePassword123!",
+    "kingdomName": "Gandalfs Realm",
     "race": "human"
   }'
 ```
@@ -463,17 +464,9 @@ curl -X POST https://narmirreborn.com/api/auth/register \
 ```json
 {
   "ok": true,
-  "data": {
-    "id": "user-uuid-123",
-    "email": "player@example.com",
-    "username": "Gandalf",
-    "kingdom": {
-      "id": "kingdom-uuid-456",
-      "name": "Gandalf's Realm",
-      "race": "human"
-    },
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  }
+  "username": "Gandalf",
+  "kingdomName": "Gandalfs Realm",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
 
@@ -504,7 +497,7 @@ curl -X POST https://narmirreborn.com/api/auth/register \
 curl -X POST https://narmirreborn.com/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "player@example.com",
+    "username": "Gandalf",
     "password": "SecurePassword123!"
   }'
 ```
@@ -513,22 +506,16 @@ curl -X POST https://narmirreborn.com/api/auth/login \
 ```json
 {
   "ok": true,
-  "data": {
-    "id": "user-uuid-123",
-    "username": "Gandalf",
-    "kingdom": {
-      "id": "kingdom-uuid-456",
-      "name": "Gandalf's Realm"
-    },
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  }
+  "username": "Gandalf",
+  "isAdmin": false,
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
 
 **Error Response (401):**
 ```json
 {
-  "error": "Invalid email or password",
+  "error": "Invalid username or password",
   "code": "AUTH_REQUIRED",
   "status": 401
 }
@@ -559,41 +546,20 @@ curl https://narmirreborn.com/api/kingdom/me \
 **Success Response (200):**
 ```json
 {
-  "ok": true,
-  "data": {
-    "id": "kingdom-123",
-    "name": "Gandalf's Realm",
-    "owner": "player-username",
-    "race": "human",
-    "level": 45,
-    "gold": 150000,
-    "happiness": 85,
-    "population": 25000,
-    "buildings": {
-      "barracks": 15,
-      "tower": 8,
-      "library": 5,
-      "smithy": 3
-    },
-    "troops": {
-      "swordsmen": 5000,
-      "cavalry": 2000,
-      "archers": 3000,
-      "mages": 800
-    },
-    "resources": {
-      "wood": 45000,
-      "stone": 32000,
-      "iron": 18000,
-      "coal": 12000,
-      "steel": 5000,
-      "mana": 8000,
-      "food": 95000
-    },
-    "turns": 3,
-    "turnLimitRemaining": 120,
-    "lastTurnAt": "2026-06-29T14:32:15Z"
-  }
+  "id": 123,
+  "player_id": 456,
+  "name": "Gandalf's Realm",
+  "race": "human",
+  "gold": 150000,
+  "food": 95000,
+  "population": 25000,
+  "land": 1200,
+  "turn": 150,
+  "turns_stored": 120,
+  "username": "Gandalf",
+  "score": 18420,
+  "defense_rating": 9320,
+  "built_land": 840
 }
 ```
 
@@ -614,25 +580,23 @@ curl -X POST https://narmirreborn.com/api/kingdom/turn \
 ```json
 {
   "ok": true,
-  "data": {
-    "turnNumber": 150,
-    "turnLimitRemaining": 119,
-    "resourcesProduced": {
-      "gold": 5000,
-      "wood": 2000,
-      "troops": 50
+  "updates": {
+    "gold": 155000,
+    "food": 97000,
+    "turn": 151,
+    "turns_stored": 119
+  },
+  "events": [
+    {
+      "type": "system",
+      "message": "Your barracks completed 50 swordsmen"
     },
-    "newEvents": [
-      {
-        "type": "PRODUCTION_COMPLETE",
-        "message": "Your barracks completed 50 swordsmen"
-      },
-      {
-        "type": "DISCOVERY",
-        "message": "Your rangers discovered iron ore deposit"
-      }
-    ]
-  }
+    {
+      "type": "system",
+      "message": "Your rangers discovered an iron ore deposit"
+    }
+  ],
+  "turns_stored": 119
 }
 ```
 
@@ -707,25 +671,24 @@ curl https://narmirreborn.com/api/forum/boards
 
 **Success Response (200):**
 ```json
-{
-  "ok": true,
-  "data": [
-    {
-      "id": "general",
-      "name": "General Discussion",
-      "description": "Off-topic discussion and announcements",
-      "topicCount": 1245,
-      "postCount": 8934
-    },
-    {
-      "id": "strategies",
-      "name": "Strategies & Tips",
-      "description": "Share your kingdom strategies",
-      "topicCount": 432,
-      "postCount": 3201
-    }
-  ]
-}
+[
+  {
+    "id": "general",
+    "name": "General Discussion",
+    "description": "Off-topic discussion and announcements",
+    "order_index": 1,
+    "topicCount": 1245,
+    "postCount": 8934
+  },
+  {
+    "id": "strategies",
+    "name": "Strategies & Tips",
+    "description": "Share your kingdom strategies",
+    "order_index": 2,
+    "topicCount": 432,
+    "postCount": 3201
+  }
+]
 ```
 
 ---
@@ -748,15 +711,9 @@ curl -X POST https://narmirreborn.com/api/forum/topics \
 **Success Response (201):**
 ```json
 {
-  "ok": true,
-  "data": {
-    "id": "topic-uuid-456",
-    "boardId": "strategies",
-    "title": "Early Game Economy Guide",
-    "author": "Gandalf",
-    "createdAt": "2026-06-29T14:32:15Z",
-    "postCount": 1
-  }
+  "success": true,
+  "topicId": 456,
+  "message": "Topic created successfully"
 }
 ```
 
@@ -783,29 +740,20 @@ curl https://narmirreborn.com/api/kingdom/market/prices \
 
 **Success Response (200):**
 ```json
-{
-  "ok": true,
-  "data": [
-    {
-      "id": "wood",
-      "name": "Wood",
-      "basePriceInGold": 10,
-      "currentPrice": 12.5,
-      "priceHistory": [10.0, 10.5, 11.0, 11.5, 12.0, 12.5],
-      "marketVolume": 450000,
-      "trend": "RISING"
-    },
-    {
-      "id": "stone",
-      "name": "Stone",
-      "basePriceInGold": 15,
-      "currentPrice": 14.2,
-      "priceHistory": [15.0, 14.8, 14.5, 14.3, 14.2],
-      "marketVolume": 320000,
-      "trend": "FALLING"
-    }
-  ]
-}
+[
+  {
+    "id": "wood",
+    "base_price": 10,
+    "current_price": 12.5,
+    "updated_at": "2026-06-29T14:32:15Z"
+  },
+  {
+    "id": "stone",
+    "base_price": 15,
+    "current_price": 14.2,
+    "updated_at": "2026-06-29T14:32:15Z"
+  }
+]
 ```
 
 ---
@@ -819,8 +767,8 @@ curl -X POST https://narmirreborn.com/api/kingdom/market/buy \
   -H "X-CSRF-Token: csrf-token-value" \
   -H "Content-Type: application/json" \
   -d '{
-    "resourceId": "wood",
-    "quantity": 5000
+    "resource": "wood",
+    "amount": 5000
   }'
 ```
 
@@ -828,19 +776,12 @@ curl -X POST https://narmirreborn.com/api/kingdom/market/buy \
 ```json
 {
   "ok": true,
-  "data": {
-    "transaction": {
-      "id": "tx-uuid-789",
-      "resource": "wood",
-      "quantity": 5000,
-      "unitPrice": 12.5,
-      "totalCost": 62500,
-      "timestamp": "2026-06-29T14:32:15Z"
-    },
-    "kingdom": {
-      "gold": 87500,
-      "wood": 50000
-    }
+  "bought": 5000,
+  "cost": 62500,
+  "message": "Bought 5,000 wood from the market for 62,500 GC.",
+  "updates": {
+    "gold": 87500,
+    "wood": 50000
   }
 }
 ```
