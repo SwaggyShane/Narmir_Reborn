@@ -14,6 +14,10 @@ const DEFAULT_LAYERS = {
   expeditions: true,
 };
 
+function layerVisibilityStyle(enabled) {
+  return enabled ? '' : 'opacity:0;pointer-events:none';
+}
+
 export function renderWorldMap(
   kingdoms,
   routes = [],
@@ -184,6 +188,8 @@ export function renderWorldMap(
 
 
 
+        svg += '<g class="wm-layer wm-layer-regions">';
+
         // Region fills
 
         Object.entries(REGION_META).forEach(function (e) {
@@ -242,7 +248,7 @@ export function renderWorldMap(
 
             meta.color +
 
-            '" stroke-width="25" stroke-linejoin="round" stroke-linecap="round" fill-opacity="0.85" class="region-shape" data-race="' +
+            '" stroke-width="25" stroke-linejoin="round" stroke-linecap="round" fill-opacity="0.85" class="region-shape wm-region" data-race="' +
 
             escapeHtml(race) +
 
@@ -308,7 +314,7 @@ export function renderWorldMap(
 
 
 
-          svg += '<g filter="url(#uiShadow)">';
+          svg += '<g class="wm-region-label" filter="url(#uiShadow)">';
 
           svg +=
 
@@ -349,6 +355,9 @@ export function renderWorldMap(
           svg += "</g>";
 
         });
+
+        svg += '</g>';
+
         // Grid lines - subtle
         for (gx = 0; gx < W; gx += 80) {
 
@@ -548,7 +557,9 @@ export function renderWorldMap(
 
 
 
-        if (layers.expeditions && expeditions.length) {
+        svg += '<g class="wm-layer wm-layer-expeditions" style="' + layerVisibilityStyle(layers.expeditions !== false) + '">';
+
+        if (expeditions.length) {
 
           var homeCoords = kdCoords[state.kingdomId];
 
@@ -558,7 +569,7 @@ export function renderWorldMap(
 
             svg +=
 
-              '<line x1="' +
+              '<line class="wm-expedition-line" x1="' +
 
               homeCoords.x +
 
@@ -574,19 +585,19 @@ export function renderWorldMap(
 
               Number(exp.map_y) +
 
-              '" stroke="#7ec8ff" stroke-width="1.5" stroke-dasharray="6 4" opacity="0.55">' +
-
-              '<animate attributeName="stroke-dashoffset" from="20" to="0" dur="1.6s" repeatCount="indefinite" />' +
-
-              '</line>';
+              '" stroke="#7ec8ff" stroke-width="1.5" stroke-dasharray="6 4" opacity="0.55" />';
 
           });
 
         }
 
+        svg += '</g>';
 
 
-        if (layers.nodes && nodes.length) {
+
+        svg += '<g class="wm-layer wm-layer-nodes" style="' + layerVisibilityStyle(layers.nodes !== false) + '">';
+
+        if (nodes.length) {
 
           nodes.forEach(function (node) {
 
@@ -606,17 +617,13 @@ export function renderWorldMap(
 
             });
 
+            var strokeWidth = activeExp ? 2.5 : 1.5;
+
+            svg += '<g class="wm-node-group map-node-group" data-node-id="' + escapeHtml(String(node.id)) + '" transform="translate(' + nx + ',' + ny + ')">';
+
             svg +=
 
-              '<circle cx="' +
-
-              nx +
-
-              '" cy="' +
-
-              ny +
-
-              '" r="' +
+              '<circle class="wm-node-halo" cx="0" cy="0" r="' +
 
               (nr + 3) +
 
@@ -628,15 +635,7 @@ export function renderWorldMap(
 
             svg +=
 
-              '<circle cx="' +
-
-              nx +
-
-              '" cy="' +
-
-              ny +
-
-              '" r="' +
+              '<circle class="wm-node map-node" cx="0" cy="0" r="' +
 
               nr +
 
@@ -650,9 +649,13 @@ export function renderWorldMap(
 
               '" stroke-width="' +
 
-              (activeExp ? 2.5 : 1.5) +
+              strokeWidth +
 
-              '" class="map-node" data-node-id="' +
+              '" data-base-stroke="' +
+
+              strokeWidth +
+
+              '" data-node-id="' +
 
               escapeHtml(String(node.id)) +
 
@@ -668,29 +671,25 @@ export function renderWorldMap(
 
             svg +=
 
-              '<text x="' +
-
-              nx +
-
-              '" y="' +
-
-              (ny + 4) +
-
-              '" text-anchor="middle" font-size="9" pointer-events="none">' +
+              '<text class="wm-node-icon" x="0" y="4" text-anchor="middle" font-size="9" pointer-events="none">' +
 
               escapeHtml(meta.icon) +
 
               '</text>';
 
+            svg += '</g>';
+
           });
 
         }
 
+        svg += '</g>';
 
 
-        // Draw Trade Route Lines
 
-        if (layers.routes) routes.forEach(function (r) {
+        svg += '<g class="wm-layer wm-layer-routes" style="' + layerVisibilityStyle(layers.routes !== false) + '">';
+
+        routes.forEach(function (r) {
 
           var p1 = kdCoords[r.kingdom_id];
 
@@ -700,7 +699,7 @@ export function renderWorldMap(
 
             svg +=
 
-              '<line x1="' +
+              '<line class="wm-trade-line" x1="' +
 
               p1.x +
 
@@ -716,19 +715,17 @@ export function renderWorldMap(
 
               p2.y +
 
-              '" stroke="var(--gold)" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.4">' +
-
-              '<animate attributeName="stroke-dashoffset" from="16" to="0" dur="2s" repeatCount="indefinite" />' +
-
-              "</line>";
+              '" stroke="var(--gold)" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.4" />';
 
           }
 
         });
 
+        svg += '</g>';
 
 
-        if (layers.kingdoms) {
+
+        svg += '<g class="wm-layer wm-layer-kingdoms" style="' + layerVisibilityStyle(layers.kingdoms !== false) + '">';
 
         var sortedKingdoms = kingdoms.slice().sort(function (a, b) {
 
@@ -782,7 +779,7 @@ export function renderWorldMap(
 
             svg +=
 
-              '<circle cx="' +
+              '<circle class="wm-kingdom-ring" cx="' +
 
               jx +
 
@@ -790,11 +787,7 @@ export function renderWorldMap(
 
               jy +
 
-              '" r="15" fill="none" stroke="#e8b84b" stroke-width="1.5"><animate attributeName="r" values="' +
-
-              r +
-
-              ';24" dur="2s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.8;0" dur="2s" repeatCount="indefinite"/></circle>';
+              '" r="10" fill="none" stroke="#e8b84b" stroke-width="1.5" opacity="0.55" />';
 
           }
 
@@ -826,7 +819,7 @@ export function renderWorldMap(
 
             (isMe ? 2 : 1) +
 
-            '" class="kd-dot" data-race="' +
+            '" class="kd-dot wm-kingdom" data-race="' +
 
             k.race +
 
@@ -844,7 +837,7 @@ export function renderWorldMap(
 
             svg +=
 
-              '<text x="' +
+              '<text class="wm-kingdom-label" x="' +
 
               jx +
 
@@ -874,7 +867,7 @@ export function renderWorldMap(
 
         });
 
-        }
+        svg += '</g>';
 
 
 

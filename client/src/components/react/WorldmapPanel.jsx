@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { apiCall } from '../../utils/api';
 import { setWorldMapData } from '../../utils/worldMapData.js';
 import { renderWorldMap } from './WorldmapRenderer.jsx';
@@ -16,6 +16,10 @@ import { AppEvent } from '../../utils/appEvents.js';
 import { useAppEvent } from '../../hooks/useAppEvent.js';
 import { useKingdomId, useMarketUpgrades } from '../../stores';
 import { switchTab } from '../../utils/panelNav.js';
+import {
+  animateMapPanelCard,
+  animateWorldMap,
+} from '../../utils/worldMapGsap.js';
 
 const MAP_REGIONS = Object.keys(REGION_META);
 
@@ -152,15 +156,43 @@ const WorldmapPanel = () => {
   const [layers, setLayers] = useState(DEFAULT_LAYERS);
   const currentKingdomId = useKingdomId();
   const marketUpgrades = useMarketUpgrades();
+  const mapContainerRef = useRef(null);
+  const mapAnimatedKeyRef = useRef('');
+  const nodeCardRef = useRef(null);
+  const kingdomCardRef = useRef(null);
 
   const mapSvg = useMemo(() => {
     if (!kingdoms.length && !nodes.length) return '';
     return renderWorldMap(kingdoms, tradeRoutes, highlightedRace, currentKingdomId, {
       nodes,
       expeditions,
-      layers,
+      layers: DEFAULT_LAYERS,
     });
-  }, [kingdoms, tradeRoutes, highlightedRace, currentKingdomId, nodes, expeditions, layers]);
+  }, [kingdoms, tradeRoutes, highlightedRace, currentKingdomId, nodes, expeditions]);
+
+  const mapDataKey = useMemo(
+    () => `${kingdoms.length}:${nodes.length}:${expeditions.length}:${highlightedRace}:${currentKingdomId}`,
+    [kingdoms.length, nodes.length, expeditions.length, highlightedRace, currentKingdomId],
+  );
+
+  useLayoutEffect(() => {
+    if (!mapContainerRef.current || !mapSvg) return undefined;
+    const entrance = mapAnimatedKeyRef.current !== mapDataKey;
+    mapAnimatedKeyRef.current = mapDataKey;
+    return animateWorldMap(mapContainerRef.current, {
+      layers,
+      selectedNodeId: selectedNode?.id ?? null,
+      entrance,
+    });
+  }, [mapSvg, mapDataKey, layers, selectedNode?.id]);
+
+  useLayoutEffect(() => {
+    return animateMapPanelCard(nodeCardRef.current, { visible: Boolean(selectedNode) });
+  }, [selectedNode]);
+
+  useLayoutEffect(() => {
+    return animateMapPanelCard(kingdomCardRef.current, { visible: Boolean(mapCard) });
+  }, [mapCard]);
 
   const refreshWorldMap = useCallback(
     () => loadWorldMap({
@@ -196,7 +228,7 @@ const WorldmapPanel = () => {
   }, []);
 
   const handleMapClick = useCallback((event) => {
-    const nodeDot = event.target.closest?.('.map-node');
+    const nodeDot = event.target.closest?.('.map-node, .wm-node-group');
     const nodeId = nodeDot?.getAttribute('data-node-id');
     if (nodeId) {
       const node = nodes.find((entry) => String(entry.id) === String(nodeId));
@@ -255,6 +287,7 @@ const WorldmapPanel = () => {
             ) : null}
             {!loading && !error && mapSvg && (
               <div
+                ref={mapContainerRef}
                 id="world-map-container"
                 className="w-full overflow-hidden"
                 onClick={handleMapClick}
@@ -274,7 +307,7 @@ const WorldmapPanel = () => {
             </div>
 
             {selectedNode && nodeMeta && (
-              <div className="card">
+              <div ref={nodeCardRef} className="card">
                 <div className="card-title !mb-2">
                   {nodeMeta.icon} {repairMojibake(selectedNode.name || 'Resource Node')}
                 </div>
@@ -300,7 +333,7 @@ const WorldmapPanel = () => {
             )}
 
             {mapCard && (
-              <div className="card">
+              <div ref={kingdomCardRef} className="card">
                 <div className="card-title !mb-2">
                   {RACE_ICONS[mapCard.kingdom.race] || '🤴'} {repairMojibake(mapCard.kingdom.name || '')}
                   {mapCard.kingdom.is_ai && <span className="text-[10px] text-[var(--text3)]"> AI</span>}
