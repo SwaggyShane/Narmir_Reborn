@@ -77,9 +77,10 @@ for (const file of walk(path.join(__dirname, '..'))) {
 
 assert.deepStrictEqual(offenders, [], `SQL strings still use ? placeholders: ${offenders.join(', ')}`);
 
-const { pgInList, pgSetClause } = require('../lib/pg-placeholders');
+const { pgInList, pgSetClause, pgValueTuples } = require('../lib/pg-placeholders');
 assert.strictEqual(pgInList(3), '$1, $2, $3');
 assert.strictEqual(pgInList(2, 4), '$4, $5');
 assert.strictEqual(pgSetClause(['gold', 'food']), '"gold" = $1, "food" = $2');
+assert.strictEqual(pgValueTuples(2, 4), '($1,$2,$3,$4),($5,$6,$7,$8)');
 
 console.log('db-schema Phase D checks passed');

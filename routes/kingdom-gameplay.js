@@ -17,7 +17,7 @@ const { applyKingdomUpdates } = require('../db/schema');
 const { setUnreadCount } = require("../cache.js");
 const { decorateNewsMessage } = require("../game/news-emoji");
 const { EPOCH_NOW } = require("../lib/db-sql");
-const { pgInList } = require("../lib/pg-placeholders");
+const { pgInList, pgValueTuples } = require("../lib/pg-placeholders");
 
 const router = express.Router();
 
@@ -3222,7 +3222,7 @@ async function applyUpdates(db, kingdomId, updates) {
 // Insert multiple news rows in a single query â€” much faster than N sequential inserts
 async function bulkInsertNews(db, rows) {
   if (!rows || rows.length === 0) return;
-  const placeholders = rows.map(() => "($1,$2,$3,$4)").join(",");
+  const placeholders = pgValueTuples(rows.length, 4);
   const values = rows.flatMap((r) => [
     r.kingdom_id,
     r.type || "system",

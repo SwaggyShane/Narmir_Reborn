@@ -12,7 +12,7 @@ const { FRAGMENT_METADATA } = require("../game/fragment-attunements");
 const { PRESETS, PRESET_IDS, buildPresetFields } = require("../game/ai-presets");
 const { computeNextRunAt } = require("../lib/audit-scheduler");
 const { EPOCH_NOW } = require("../lib/db-sql");
-const { pgSetClause } = require("../lib/pg-placeholders");
+const { pgSetClause, pgValueTuples } = require("../lib/pg-placeholders");
 const { incrementUnread } = require("../cache");
 
 const ALLOWED_PRIZE_TYPES = ['gold', 'mana', 'rangers', 'researchers', 'war_machines', 'world_fragment'];
@@ -858,7 +858,7 @@ module.exports = function (db, io) {
           break;
         }
         totalKingdoms += batch.length;
-        const placeholders = batch.map(() => "($1,$2,$3,$4)").join(",");
+        const placeholders = pgValueTuples(batch.length, 4);
         const values = batch.flatMap((k) => [k.id, "announcement", newsBlurb, 0]);
         await db.run(
           `INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ${placeholders}`,
