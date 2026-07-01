@@ -765,3 +765,4 @@ Completed work that was previously tracked in `ROADMAP.md` has been consolidated
 - Claude health-assessment work (`todoCLAUDEcompleted.md`) verified against the branch work and archived
 - Completed platform-health work archived into the main completion record
 - Completed engine, combat, admin, and migration checkpoints remain recorded above for reference
+- Beta Launch Prerequisites (11 items): All Tier 1 Critical and Tier 2 Important items complete as of 2026-06-30
