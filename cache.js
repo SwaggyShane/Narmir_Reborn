@@ -66,7 +66,7 @@ async function getServerState(db, key, ttlMs = 60 * 60 * 1000) {
     return serverStateCache.get(cacheKey);
   }
 
-  const row = await db.get("SELECT value FROM server_state WHERE key = ?", [key]);
+  const row = await db.get("SELECT value FROM server_state WHERE key = $1", [key]);
   const value = row?.value || null;
   if (value) {
     serverStateCache.set(cacheKey, value, ttlMs);

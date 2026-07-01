@@ -118,7 +118,7 @@ async function pollAndSyncGameMessages() {
     const recentMessages = await db.all(`
       SELECT cm.id, cm.player_id, cm.username, cm.message, cm.room, cm.created_at
       FROM chat_messages cm
-      WHERE cm.created_at > ? AND cm.created_at <= ?
+      WHERE cm.created_at > $1 AND cm.created_at <= $2
         AND cm.id NOT IN (SELECT game_message_id FROM chat_sync_log WHERE game_message_id IS NOT NULL)
       ORDER BY cm.created_at ASC
       LIMIT 50
@@ -259,7 +259,7 @@ async function pollAndSyncBugReports() {
           consoleLog: row.console_log,
         });
         await sendBugReportEmbed(channel, embed);
-        await db.run('UPDATE bug_reports SET discord_sent = 1 WHERE id = ?', [row.id]);
+        await db.run('UPDATE bug_reports SET discord_sent = 1 WHERE id = $1', [row.id]);
         console.log(`🐛 Posted bug report #${row.id} to #${channel.name}`);
       } catch (error) {
         const isPermError = error?.code === 50013 || /missing permissions/i.test(String(error?.message || error));
@@ -289,7 +289,7 @@ setInterval(async () => {
   await loadSyncConfigs();
   if (db) {
     try {
-      await db.run('DELETE FROM discord_link_tokens WHERE expires_at < ?', [Math.floor(Date.now() / 1000)]);
+      await db.run('DELETE FROM discord_link_tokens WHERE expires_at < $1', [Math.floor(Date.now() / 1000)]);
     } catch (e) {
       console.error('❌ Failed to clean up expired link tokens:', e);
     }
@@ -332,7 +332,7 @@ client.on('messageCreate', async (message) => {
 
     try {
       // Check the game username exists
-      const player = await db.get('SELECT id, username FROM players WHERE LOWER(username) = LOWER(?)', [gameName]);
+      const player = await db.get('SELECT id, username FROM players WHERE LOWER(username) = LOWER($1)', [gameName]);
       if (!player) {
         return message.reply(`❌ No game account found with username **${gameName}**. Check your spelling.`);
       }
@@ -346,9 +346,9 @@ client.on('messageCreate', async (message) => {
       const expiresAt = Math.floor(Date.now() / 1000) + 600; // 10 minutes
 
       // Delete any existing token for this Discord user and upsert new one
-      await db.run('DELETE FROM discord_link_tokens WHERE discord_user_id = ?', [message.author.id]);
+      await db.run('DELETE FROM discord_link_tokens WHERE discord_user_id = $1', [message.author.id]);
       await db.run(
-        'INSERT INTO discord_link_tokens (token, discord_user_id, discord_username, game_username, expires_at) VALUES (?, ?, ?, ?, ?)',
+        'INSERT INTO discord_link_tokens (token, discord_user_id, discord_username, game_username, expires_at) VALUES ($1, $2, $3, $4, $5)',
         [token, message.author.id, message.author.username, player.username, expiresAt]
       );
 
@@ -368,7 +368,7 @@ client.on('messageCreate', async (message) => {
           `❌ I couldn't DM you. Please enable DMs from server members in Discord Settings → Privacy & Safety, then try again. Alternatively, use **Method 2 (Manual Entry)** in Settings → Discord.`
         );
         // Delete the token since we couldn't deliver it securely
-        await db.run('DELETE FROM discord_link_tokens WHERE discord_user_id = ?', [message.author.id]);
+        await db.run('DELETE FROM discord_link_tokens WHERE discord_user_id = $1', [message.author.id]);
       }
     } catch (error) {
       console.error('❌ Error processing !link command:', error);
@@ -492,7 +492,7 @@ async function relayDiscordMessageToGame(discordMessage, syncConfig) {
   try {
     // Find Discord user link
     const link = await db.get(
-      'SELECT player_id FROM discord_links WHERE discord_user_id = ?',
+      'SELECT player_id FROM discord_links WHERE discord_user_id = $1',
       [discordMessage.author.id]
     );
 
@@ -500,14 +500,14 @@ async function relayDiscordMessageToGame(discordMessage, syncConfig) {
       // Message from unlinked Discord user - store with NULL kingdom_id as Discord relay
       const displayName = `[Discord] ${discordMessage.author.username}`;
       const result = await db.run(
-        'INSERT INTO chat_messages (kingdom_id, player_id, username, room, message, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+        'INSERT INTO chat_messages (kingdom_id, player_id, username, room, message, created_at) VALUES ($1, $2, $3, $4, $5, $6)',
         [null, 0, displayName, syncConfig.game_room, content, Math.floor(Date.now() / 1000)]
       );
 
       // Log the sync
       if (result?.lastID) {
         await db.run(
-          'INSERT INTO chat_sync_log (game_message_id, discord_message_id, direction, synced_at) VALUES (?, ?, ?, ?)',
+          'INSERT INTO chat_sync_log (game_message_id, discord_message_id, direction, synced_at) VALUES ($1, $2, $3, $4)',
           [result.lastID, discordMessage.id, 'discord_to_game', Math.floor(Date.now() / 1000)]
         );
       }
@@ -517,7 +517,7 @@ async function relayDiscordMessageToGame(discordMessage, syncConfig) {
 
     // Get player's kingdom ID and username with a single query
     const player = await db.get(
-      'SELECT k.id AS kingdom_id, p.username FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.player_id = ?',
+      'SELECT k.id AS kingdom_id, p.username FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.player_id = $1',
       [link.player_id]
     );
 
@@ -525,13 +525,13 @@ async function relayDiscordMessageToGame(discordMessage, syncConfig) {
 
     // Insert chat message into game database using player's game username
     const result = await db.run(
-      'INSERT INTO chat_messages (kingdom_id, player_id, username, room, message, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT INTO chat_messages (kingdom_id, player_id, username, room, message, created_at) VALUES ($1, $2, $3, $4, $5, $6)',
       [player.kingdom_id, link.player_id, player.username, syncConfig.game_room, content, Math.floor(Date.now() / 1000)]
     );
 
     // Log the sync
     await db.run(
-      'INSERT INTO chat_sync_log (game_message_id, discord_message_id, direction, synced_at) VALUES (?, ?, ?, ?)',
+      'INSERT INTO chat_sync_log (game_message_id, discord_message_id, direction, synced_at) VALUES ($1, $2, $3, $4)',
       [result.lastID, discordMessage.id, 'discord_to_game', Math.floor(Date.now() / 1000)]
     );
 
@@ -567,7 +567,7 @@ async function relayGameMessageToDiscord(gameMessage) {
       let discordUserMention = `@${gameMessage.username}`;
       if (gameMessage.player_id) {
         const link = await db.get(
-          'SELECT discord_user_id FROM discord_links WHERE player_id = ?',
+          'SELECT discord_user_id FROM discord_links WHERE player_id = $1',
           [gameMessage.player_id]
         ).catch(() => null);
 
@@ -590,7 +590,7 @@ async function relayGameMessageToDiscord(gameMessage) {
       if (discordMsg) {
         // Log the sync
         await db.run(
-          'INSERT INTO chat_sync_log (game_message_id, discord_message_id, direction, synced_at) VALUES (?, ?, ?, ?)',
+          'INSERT INTO chat_sync_log (game_message_id, discord_message_id, direction, synced_at) VALUES ($1, $2, $3, $4)',
           [gameMessage.id, discordMsg.id, 'game_to_discord', Math.floor(Date.now() / 1000)]
         ).catch(error => {
           console.error('❌ Failed to log chat sync:', error);

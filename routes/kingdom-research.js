@@ -7,6 +7,7 @@ const engine = require('../game/engine');
 const { loadTradeRoutes } = require('../game/engine');
 const config = require('../game/config');
 const { decorateNewsMessage } = require('../game/news-emoji');
+const { pgValueTuples } = require('../lib/pg-placeholders');
 
 const router = express.Router();
 
@@ -66,7 +67,7 @@ function repairMojibake(value) {
 
 async function bulkInsertNews(db, rows) {
   if (!rows || rows.length === 0) return;
-  const placeholders = rows.map(() => "(?,?,?,?)").join(",");
+  const placeholders = pgValueTuples(rows.length, 4);
   const values = rows.flatMap((r) => [
     r.kingdom_id,
     r.type || "system",
@@ -95,12 +96,12 @@ module.exports = function (db) {
       return res.status(400).json({ error: allocValidation.error });
     }
 
-    const k = await db.get("SELECT id FROM kingdoms WHERE player_id = ?", [
+    const k = await db.get("SELECT id FROM kingdoms WHERE player_id = $1", [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
 
-    await db.run("UPDATE kingdoms SET research_allocation = ? WHERE id = ?", [
+    await db.run("UPDATE kingdoms SET research_allocation = $1 WHERE id = $2", [
       JSON.stringify(allocValidation.values),
       k.id,
     ]);
@@ -119,7 +120,7 @@ module.exports = function (db) {
     try {
       // Wrap in transaction with row-level lock to prevent concurrent conflicts
       await db.run("BEGIN TRANSACTION");
-      const k = await db.get("SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE", [
+      const k = await db.get("SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE", [
         req.player.playerId,
       ]);
       if (!k) {
@@ -211,7 +212,7 @@ module.exports = function (db) {
     }
 
     const k = await db.get(
-      "SELECT id, mages, school_of_magic, research_allocation FROM kingdoms WHERE player_id = ?",
+      "SELECT id, mages, school_of_magic, research_allocation FROM kingdoms WHERE player_id = $1",
       [req.player.playerId],
     );
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -228,7 +229,7 @@ module.exports = function (db) {
     researchAlloc.school_spellbook_mages = schoolSpellbookValidation.value;
 
     await db.run(
-      "UPDATE kingdoms SET research_allocation = ? WHERE id = ?",
+      "UPDATE kingdoms SET research_allocation = $1 WHERE id = $2",
       [JSON.stringify(researchAlloc), k.id],
     );
     res.json({ ok: true });
@@ -236,7 +237,7 @@ module.exports = function (db) {
 
   router.post("/research-focus", requireAuth, requireCsrfToken, async (req, res) => {
     const { focus } = req.body; // array of 1-2 discipline keys
-    const k = await db.get("SELECT id, school_upgrades FROM kingdoms WHERE player_id = ?", [
+    const k = await db.get("SELECT id, school_upgrades FROM kingdoms WHERE player_id = $1", [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -262,7 +263,7 @@ module.exports = function (db) {
       .slice(0, maxSlots);
     if (!cleaned.length)
       return res.status(400).json({ error: "Invalid discipline" });
-    await db.run("UPDATE kingdoms SET research_focus = ? WHERE id = ?", [
+    await db.run("UPDATE kingdoms SET research_focus = $1 WHERE id = $2", [
       JSON.stringify(cleaned),
       k.id,
     ]);
@@ -281,7 +282,7 @@ module.exports = function (db) {
               res_attack_magic, res_defense_magic, res_entertainment, res_construction,
               res_war_machines, res_spellbook, school_of_magic, school_spellbook,
               divine_sanctuary_used, fragment_bonuses
-       FROM kingdoms WHERE player_id = ?`,
+       FROM kingdoms WHERE player_id = $1`,
       [req.player.playerId]
     );
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -408,7 +409,7 @@ module.exports = function (db) {
       if (!school?.trim()) return res.status(400).json({ error: 'School name required' });
 
       const result = await db.withTransaction(async () => {
-        const kingdom = await db.get('SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE', [req.player.playerId]);
+        const kingdom = await db.get('SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE', [req.player.playerId]);
         if (!kingdom) {
           throw new Error('Kingdom not found');
         }
@@ -421,13 +422,13 @@ module.exports = function (db) {
         }
 
         await db.run(
-          'UPDATE kingdoms SET school_of_magic = ?, school_spellbook = ? WHERE id = ?',
+          'UPDATE kingdoms SET school_of_magic = $1, school_spellbook = $2 WHERE id = $3',
           [result.updates.school_of_magic, result.updates.school_spellbook, kingdom.id]
         );
 
         if (result.events && result.events.length > 0) {
           await db.run(
-            'INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?, ?, ?, ?)',
+            'INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1, $2, $3, $4)',
             [kingdom.id, result.events[0].type || 'system', result.events[0].message, kingdom.turn]
           );
         }

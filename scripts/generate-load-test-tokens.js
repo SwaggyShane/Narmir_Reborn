@@ -51,7 +51,7 @@ async function loadEligiblePlayers(requestedCount) {
       INNER JOIN kingdoms k ON k.player_id = p.id
       WHERE COALESCE(p.is_banned, 0) = 0
       ORDER BY p.id
-      LIMIT ?
+      LIMIT $1
     `,
     [requestedCount]
   );

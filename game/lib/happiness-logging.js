@@ -6,7 +6,7 @@ async function recordHappinessHistory(db, kingdomId, turn, happinessData) {
     await db.run(
       `INSERT INTO happiness_history
        (kingdom_id, turn, happiness_value, food_component, entertainment_component, safety_component, prosperity_component, race_modifier, tax_component, overcrowding_component, recovery_rate, effects_component, synergy_component, fragment_component)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        ON CONFLICT(kingdom_id, turn) DO UPDATE SET
        happiness_value = EXCLUDED.happiness_value,
        food_component = EXCLUDED.food_component,
@@ -47,7 +47,7 @@ async function logHappinessEvent(db, kingdomId, turn, eventData) {
     await db.run(
       `INSERT INTO happiness_events
        (kingdom_id, turn, event_type, old_happiness, new_happiness, component, delta, description)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
       [
         kingdomId,
         turn,

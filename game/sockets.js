@@ -28,11 +28,11 @@ module.exports = function (io, db) {
       ({ playerId, username } = socket.player);
 
       const player = await db.get(
-        "SELECT id, username, is_admin, is_chat_mod, chat_banned, chat_color, chat_name FROM players WHERE id = ?",
+        "SELECT id, username, is_admin, is_chat_mod, chat_banned, chat_color, chat_name FROM players WHERE id = $1",
         [playerId],
       );
       kingdom = await db.get(
-        "SELECT id, name, race FROM kingdoms WHERE player_id = ?",
+        "SELECT id, name, race FROM kingdoms WHERE player_id = $1",
         [playerId],
       );
       if (!kingdom || !player) return socket.disconnect();
@@ -79,7 +79,7 @@ module.exports = function (io, db) {
       broadcastOnlineList(io);
 
       const membership = await db.get(
-        "SELECT alliance_id FROM alliance_members WHERE kingdom_id = ?",
+        "SELECT alliance_id FROM alliance_members WHERE kingdom_id = $1",
         [kingdom.id],
       );
       if (membership) socket.join(`alliance:${membership.alliance_id}`);
@@ -89,7 +89,7 @@ module.exports = function (io, db) {
           let count = unreadNewsCache.get(`${kid}`);
           if (count === undefined) {
             const row = await db.get(
-              "SELECT COUNT(*) as c FROM news WHERE kingdom_id = ? AND is_read = 0",
+              "SELECT COUNT(*) as c FROM news WHERE kingdom_id = $1 AND is_read = 0",
               [kid]
             );
             count = row?.c || 0;
@@ -103,7 +103,7 @@ module.exports = function (io, db) {
 
       // Initialize unread count from DB and cache it (only on first socket connection)
       const unreadRow = await db.get(
-        "SELECT COUNT(*) as c FROM news WHERE kingdom_id = ? AND is_read = 0",
+        "SELECT COUNT(*) as c FROM news WHERE kingdom_id = $1 AND is_read = 0",
         [kingdom.id],
       );
       const unreadCount = unreadRow?.c || 0;
@@ -124,13 +124,13 @@ module.exports = function (io, db) {
       try {
         const txResult = await withTransaction(db, async () => {
           const attacker = await db.get(
-            "SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE",
+            "SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE",
             [playerId],
           );
           if (!attacker) throw new Error("Kingdom not found");
           if (attacker.turns_stored < 1) throw new Error("No turns available");
 
-          const defender = await db.get("SELECT * FROM kingdoms WHERE id = ? FOR UPDATE", [
+          const defender = await db.get("SELECT * FROM kingdoms WHERE id = $1 FOR UPDATE", [
             targetId,
           ]);
           if (!defender) throw new Error("Target not found");
@@ -146,7 +146,7 @@ module.exports = function (io, db) {
           await applyUpdates(db, attacker.id, result.attackerUpdates);
           await applyUpdates(db, defender.id, result.defenderUpdates);
           await db.run(
-            "INSERT INTO combat_log (attacker_id, defender_id, type, attacker_won, land_transferred, detail) VALUES (?,?,?,?,?,?)",
+            "INSERT INTO combat_log (attacker_id, defender_id, type, attacker_won, land_transferred, detail) VALUES ($1,$2,$3,$4,$5,$6)",
             [
               attacker.id,
               defender.id,
@@ -192,7 +192,7 @@ module.exports = function (io, db) {
       try {
         const txResult = await withTransaction(db, async () => {
           const caster = await db.get(
-            "SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE",
+            "SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE",
             [playerId],
           );
           if (!caster) throw new Error("Kingdom not found");
@@ -200,7 +200,7 @@ module.exports = function (io, db) {
 
           let target = null;
           if (data.targetId && data.targetId != caster.id) {
-            target = await db.get("SELECT * FROM kingdoms WHERE id = ? FOR UPDATE", [
+            target = await db.get("SELECT * FROM kingdoms WHERE id = $1 FOR UPDATE", [
               data.targetId,
             ]);
             if (!target) throw new Error("Target not found");
@@ -262,12 +262,12 @@ module.exports = function (io, db) {
       try {
         const txResult = await withTransaction(db, async () => {
           const spy = await db.get(
-            "SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE",
+            "SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE",
             [playerId],
           );
           if (!spy) throw new Error("Kingdom not found");
 
-          const target = await db.get("SELECT * FROM kingdoms WHERE id = ? FOR UPDATE", [
+          const target = await db.get("SELECT * FROM kingdoms WHERE id = $1 FOR UPDATE", [
             data.targetId,
           ]);
           if (!target) throw new Error("Target not found");
@@ -313,12 +313,12 @@ module.exports = function (io, db) {
       try {
         const txResult = await withTransaction(db, async () => {
           const thief = await db.get(
-            "SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE",
+            "SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE",
             [playerId],
           );
           if (!thief) throw new Error("Kingdom not found");
 
-          const target = await db.get("SELECT * FROM kingdoms WHERE id = ? FOR UPDATE", [
+          const target = await db.get("SELECT * FROM kingdoms WHERE id = $1 FOR UPDATE", [
             data.targetId,
           ]);
           if (!target) throw new Error("Target not found");
@@ -373,12 +373,12 @@ module.exports = function (io, db) {
       try {
         const txResult = await withTransaction(db, async () => {
           const assassin = await db.get(
-            "SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE",
+            "SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE",
             [playerId],
           );
           if (!assassin) throw new Error("Kingdom not found");
 
-          const target = await db.get("SELECT * FROM kingdoms WHERE id = ? FOR UPDATE", [
+          const target = await db.get("SELECT * FROM kingdoms WHERE id = $1 FOR UPDATE", [
             data.targetId,
           ]);
           if (!target) throw new Error("Target not found");
@@ -436,7 +436,7 @@ module.exports = function (io, db) {
     // ── GLOBAL CHAT ──────────────────────────────────────────────────────────
     socket.on("chat:global", async (data, ack) => {
       const p = await db.get(
-        "SELECT chat_banned, is_chat_mod, is_admin FROM players WHERE id = ?",
+        "SELECT chat_banned, is_chat_mod, is_admin FROM players WHERE id = $1",
         [playerId],
       );
       if (p?.chat_banned) return ack?.({ error: "You are banned from chat." });
@@ -458,7 +458,7 @@ module.exports = function (io, db) {
           const info = onlinePlayers.get(playerId);
           const activeName = info?.chatName || username;
           await db.run(
-            "INSERT INTO chat_messages (kingdom_id,player_id,username,room,message) VALUES (?,?,?,?,?)",
+            "INSERT INTO chat_messages (kingdom_id,player_id,username,room,message) VALUES ($1,$2,$3,$4,$5)",
             [kingdom.id, playerId, username, "global", `/me ${action}`],
           );
           io.to("global").emit("chat:message", {
@@ -485,7 +485,7 @@ module.exports = function (io, db) {
           ) {
             return ack?.({ error: "Invalid color format. Use #hex or name." });
           }
-          await db.run("UPDATE players SET chat_color = ? WHERE id = ?", [
+          await db.run("UPDATE players SET chat_color = $1 WHERE id = $2", [
             newColor,
             playerId,
           ]);
@@ -501,7 +501,7 @@ module.exports = function (io, db) {
         if (cmd === "nick" || cmd === "name") {
           const newName = args.join(" ").trim().slice(0, 20);
           if (!newName) return ack?.({ error: "Usage: /nick <name>" });
-          await db.run("UPDATE players SET chat_name = ? WHERE id = ?", [
+          await db.run("UPDATE players SET chat_name = $1 WHERE id = $2", [
             newName,
             playerId,
           ]);
@@ -521,7 +521,7 @@ module.exports = function (io, db) {
             return ack?.({ error: "Usage: /msg <username> <message>" });
 
           const tPlayer = await db.get(
-            "SELECT id FROM players WHERE username = ?",
+            "SELECT id FROM players WHERE username = $1",
             [targetName],
           );
           if (!tPlayer)
@@ -529,7 +529,7 @@ module.exports = function (io, db) {
 
           // Store in DB for persistent messages system
           await db.run(
-            "INSERT INTO messages (sender_id, recipient_id, content) VALUES (?, ?, ?)",
+            "INSERT INTO messages (sender_id, recipient_id, content) VALUES ($1, $2, $3)",
             [playerId, tPlayer.id, pmMsg],
           );
 
@@ -584,13 +584,13 @@ module.exports = function (io, db) {
           const targetName = args[0];
           const reason = args.slice(1).join(" ") || "No reason given";
           const tp = await db.get(
-            "SELECT id, is_admin FROM players WHERE username = ?",
+            "SELECT id, is_admin FROM players WHERE username = $1",
             [targetName],
           );
           if (!tp) return ack?.({ error: `User "${targetName}" not found` });
           if (tp.is_admin) return ack?.({ error: "Cannot ban an admin." });
           await db.run(
-            "UPDATE players SET chat_banned=1, chat_ban_reason=? WHERE id=?",
+            "UPDATE players SET chat_banned=1, chat_ban_reason=$1 WHERE id=$2",
             [reason, tp.id],
           );
           const tInfo = [...onlinePlayers.values()].find(
@@ -607,7 +607,7 @@ module.exports = function (io, db) {
         if (cmd === "unban") {
           const targetName = args[0];
           await db.run(
-            "UPDATE players SET chat_banned=0, chat_ban_reason=NULL WHERE username=?",
+            "UPDATE players SET chat_banned=0, chat_ban_reason=NULL WHERE username=$1",
             [targetName],
           );
           io.to("global").emit("chat:system", {
@@ -620,7 +620,7 @@ module.exports = function (io, db) {
         if (cmd === "delete") {
           const msgId = parseInt(args[0]);
           if (!msgId) return ack?.({ error: "Usage: /delete <message_id>" });
-          await db.run("UPDATE chat_messages SET deleted=1 WHERE id=?", [
+          await db.run("UPDATE chat_messages SET deleted=1 WHERE id=$1", [
             msgId,
           ]);
           io.to("global").emit("chat:delete", { id: msgId });
@@ -634,7 +634,7 @@ module.exports = function (io, db) {
       const info = onlinePlayers.get(playerId);
       const activeName = info?.chatName || username;
       const res = await db.run(
-        "INSERT INTO chat_messages (kingdom_id,player_id,username,room,message) VALUES (?,?,?,?,?)",
+        "INSERT INTO chat_messages (kingdom_id,player_id,username,room,message) VALUES ($1,$2,$3,$4,$5)",
         [kingdom.id, playerId, username, "global", raw],
       );
       io.to("global").emit("chat:message", {
@@ -656,12 +656,12 @@ module.exports = function (io, db) {
       const msg = (data.message || "").trim().slice(0, 300);
       if (!msg) return;
       const m = await db.get(
-        "SELECT alliance_id FROM alliance_members WHERE kingdom_id=?",
+        "SELECT alliance_id FROM alliance_members WHERE kingdom_id=$1",
         [kingdom.id],
       );
       if (!m) return ack?.({ error: "Not in an alliance" });
       await db.run(
-        "INSERT INTO chat_messages (kingdom_id,player_id,username,room,message) VALUES (?,?,?,?,?)",
+        "INSERT INTO chat_messages (kingdom_id,player_id,username,room,message) VALUES ($1,$2,$3,$4,$5)",
         [kingdom.id, playerId, username, String(m.alliance_id), msg],
       );
       io.to(`alliance:${m.alliance_id}`).emit("chat:message", {
@@ -720,7 +720,7 @@ async function applyUpdates(db, kingdomId, updates) {
 
 async function insertNews(db, kingdomId, type, message, turnNum) {
   await db.run(
-    "INSERT INTO news (kingdom_id,type,message,turn_num) VALUES (?,?,?,?)",
+    "INSERT INTO news (kingdom_id,type,message,turn_num) VALUES ($1,$2,$3,$4)",
     [kingdomId, type, message, turnNum || 0],
   );
   incrementUnread(kingdomId);

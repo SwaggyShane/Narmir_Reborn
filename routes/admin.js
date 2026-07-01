@@ -11,6 +11,8 @@ const engine = require("../game/engine");
 const { FRAGMENT_METADATA } = require("../game/fragment-attunements");
 const { PRESETS, PRESET_IDS, buildPresetFields } = require("../game/ai-presets");
 const { computeNextRunAt } = require("../lib/audit-scheduler");
+const { EPOCH_NOW } = require("../lib/db-sql");
+const { pgSetClause, pgValueTuples } = require("../lib/pg-placeholders");
 const { incrementUnread } = require("../cache");
 
 const ALLOWED_PRIZE_TYPES = ['gold', 'mana', 'rangers', 'researchers', 'war_machines', 'world_fragment'];
@@ -262,7 +264,7 @@ module.exports = function (db, io) {
     const { playerId, reason } = req.body;
     if (!playerId) return res.status(400).json({ error: "playerId required" });
     await db.run(
-      "UPDATE players SET is_banned = 1, ban_reason = ? WHERE id = ?",
+      "UPDATE players SET is_banned = 1, ban_reason = $1 WHERE id = $2",
       [reason || "Banned by admin", playerId],
     );
     res.json({ ok: true });
@@ -273,7 +275,7 @@ module.exports = function (db, io) {
     const { playerId } = req.body;
     if (!playerId) return res.status(400).json({ error: "playerId required" });
     await db.run(
-      "UPDATE players SET is_banned = 0, ban_reason = NULL WHERE id = ?",
+      "UPDATE players SET is_banned = 0, ban_reason = NULL WHERE id = $1",
       [playerId],
     );
     res.json({ ok: true });
@@ -284,7 +286,7 @@ module.exports = function (db, io) {
     const { kingdomId } = req.body;
     if (!kingdomId)
       return res.status(400).json({ error: "kingdomId required" });
-    await db.run("UPDATE kingdoms SET turns_stored = 400 WHERE id = ?", [
+    await db.run("UPDATE kingdoms SET turns_stored = 400 WHERE id = $1", [
       kingdomId,
     ]);
     res.json({ ok: true });
@@ -344,15 +346,15 @@ module.exports = function (db, io) {
   };
 
   const RESET_KINGDOM_SET = `UPDATE kingdoms SET
-      gold = 10000, mana = 0, land = 504, population = 50000, food = ?, happiness = 100,
+      gold = 10000, mana = 0, land = 504, population = 50000, food = $1, happiness = 100,
       turn = 0, turns_stored = 400,
-      fighters = ?, rangers = ?, clerics = 0, mages = 0, thieves = 0, ninjas = 0,
+      fighters = $2, rangers = $3, clerics = 0, mages = 0, thieves = 0, ninjas = 0,
       researchers = 100, engineers = 100, scribes = 0,
       war_machines = 0, ballistae = 0, weapons_stockpile = 0, armor_stockpile = 0,
-      bld_farms = ?, bld_barracks = ?, bld_outposts = ?, bld_guard_towers = 0,
-      bld_schools = ?, bld_armories = ?, bld_vaults = 0, bld_smithies = ?,
-      bld_markets = ?, bld_mage_towers = ?, bld_training = ?,
-      bld_castles = 0, bld_shrines = ?, bld_libraries = 0, bld_taverns = 0, bld_housing = ?,
+      bld_farms = $4, bld_barracks = $5, bld_outposts = $6, bld_guard_towers = 0,
+      bld_schools = $7, bld_armories = $8, bld_vaults = 0, bld_smithies = $9,
+      bld_markets = $10, bld_mage_towers = $11, bld_training = $12,
+      bld_castles = 0, bld_shrines = $13, bld_libraries = 0, bld_taverns = 0, bld_housing = $14,
       bld_walls = 0, bld_granaries = 0, bld_mausoleums = 0,
       res_economy = 100, res_weapons = 100, res_armor = 100, res_military = 100,
       res_attack_magic = 100, res_defense_magic = 100, res_entertainment = 100,
@@ -381,22 +383,22 @@ module.exports = function (db, io) {
       milestones_claimed = '[]', milestone_bonuses = '{}', milestone_title = ''`;
 
   const resetKingdomLogic = async (db, kingdomId, race) => {
-    await db.run(`${RESET_KINGDOM_SET} WHERE id = ?`, [
+    await db.run(`${RESET_KINGDOM_SET} WHERE id = $15`, [
       ...buildResetValues(race),
       kingdomId,
     ]);
 
     // Clear all related tables and data
-    await db.run("DELETE FROM expeditions WHERE kingdom_id = ?", [kingdomId]);
-    await db.run("DELETE FROM news WHERE kingdom_id = ?", [kingdomId]);
+    await db.run("DELETE FROM expeditions WHERE kingdom_id = $1", [kingdomId]);
+    await db.run("DELETE FROM news WHERE kingdom_id = $1", [kingdomId]);
     await db.run(
-      "DELETE FROM war_log WHERE attacker_id = ? OR defender_id = ?",
+      "DELETE FROM war_log WHERE attacker_id = $1 OR defender_id = $2",
       [kingdomId, kingdomId],
     );
-    await db.run("DELETE FROM heroes WHERE kingdom_id = ?", [kingdomId]);
-    await db.run("DELETE FROM trade_routes WHERE kingdom_id = ? OR partner_id = ?", [kingdomId, kingdomId]);
-    await db.run("DELETE FROM bounties WHERE target_id = ?", [kingdomId]);
-    await db.run("DELETE FROM spy_reports WHERE kingdom_id = ? OR target_id = ?", [kingdomId, kingdomId]);
+    await db.run("DELETE FROM heroes WHERE kingdom_id = $1", [kingdomId]);
+    await db.run("DELETE FROM trade_routes WHERE kingdom_id = $1 OR partner_id = $2", [kingdomId, kingdomId]);
+    await db.run("DELETE FROM bounties WHERE target_id = $1", [kingdomId]);
+    await db.run("DELETE FROM spy_reports WHERE kingdom_id = $1 OR target_id = $2", [kingdomId, kingdomId]);
   };
 
   // POST /api/admin/reset-kingdom — wipe a single kingdom back to starting stats
@@ -404,7 +406,7 @@ module.exports = function (db, io) {
     const { kingdomId } = req.body;
     if (!kingdomId)
       return res.status(400).json({ error: "kingdomId required" });
-    const k = await db.get("SELECT id, race FROM kingdoms WHERE id = ?", [
+    const k = await db.get("SELECT id, race FROM kingdoms WHERE id = $1", [
       kingdomId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -419,7 +421,7 @@ module.exports = function (db, io) {
     // instead of nine queries per kingdom.
     const races = await db.all("SELECT DISTINCT race FROM kingdoms");
     for (const { race } of races) {
-      await db.run(`${RESET_KINGDOM_SET} WHERE race = ?`, [
+      await db.run(`${RESET_KINGDOM_SET} WHERE race = $15`, [
         ...buildResetValues(race),
         race,
       ]);
@@ -461,18 +463,18 @@ module.exports = function (db, io) {
       const kingdomName = `${kingdomPrefixRaw} ${prettyRace}`;
       const email = `${username}@narmir.test`;
 
-      let player = await db.get("SELECT id FROM players WHERE username = ?", [username]);
+      let player = await db.get("SELECT id FROM players WHERE username = $1", [username]);
       let createdPlayer = false;
       if (!player) {
         const playerResult = await db.run(
-          "INSERT INTO players (username, password, email, is_admin) VALUES (?, ?, ?, 0)",
+          "INSERT INTO players (username, password, email, is_admin) VALUES ($1, $2, $3, 0)",
           [username, passwordHash, email],
         );
         player = { id: playerResult.lastID };
         createdPlayer = true;
       }
 
-      let kingdom = await db.get("SELECT id, race FROM kingdoms WHERE player_id = ?", [player.id]);
+      let kingdom = await db.get("SELECT id, race FROM kingdoms WHERE player_id = $1", [player.id]);
       let action = createdPlayer ? "created" : "updated";
 
       if (!kingdom) {
@@ -486,7 +488,7 @@ module.exports = function (db, io) {
             res_spellbook, blueprints_stored,
             bld_farms, bld_schools, bld_barracks, bld_armories, bld_housing,
             bld_markets, bld_smithies, bld_mage_towers, bld_shrines, bld_outposts, bld_training, bld_mausoleums, world_fragments
-          ) VALUES (?, ?, ?, ?, ?, 10000, ?, 50000, ?, 100, 100, ?, ?, ?, 400, 0, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '["Volcanic Rock", "Ancient Elven Wood", "Dragon Scale", "Abyssal Crystal", "Celestial Feather", "Dwarven Star-Metal", "Cursed Bloodstone", "Tears of the World Tree", "Void Essence", "Titan Bone"]')`,
+          ) VALUES ($1, $2, $3, $4, $5, 10000, $6, 50000, $7, 100, 100, $8, $9, $10, 400, 0, 0, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, '["Volcanic Rock", "Ancient Elven Wood", "Dragon Scale", "Abyssal Crystal", "Celestial Feather", "Dwarven Star-Metal", "Cursed Bloodstone", "Tears of the World Tree", "Void Essence", "Titan Bone"]')`,
           [
             player.id,
             kingdomName,
@@ -515,7 +517,7 @@ module.exports = function (db, io) {
         kingdom = { id: insertResult.lastID, race };
       } else {
         await db.run(
-          "UPDATE kingdoms SET name = ?, race = ?, gender = ?, region = ? WHERE id = ?",
+          "UPDATE kingdoms SET name = $1, race = $2, gender = $3, region = $4 WHERE id = $5",
           [kingdomName, race, "male", engine.assignRegion(race), kingdom.id],
         );
         if (resetExisting) {
@@ -546,7 +548,7 @@ module.exports = function (db, io) {
     const { kingdomId, amount } = req.body;
     if (!kingdomId || amount === undefined)
       return res.status(400).json({ error: "kingdomId and amount required" });
-    await db.run("UPDATE kingdoms SET gold = ? WHERE id = ?", [
+    await db.run("UPDATE kingdoms SET gold = $1 WHERE id = $2", [
       Number(amount),
       kingdomId,
     ]);
@@ -566,7 +568,7 @@ module.exports = function (db, io) {
     ];
     if (!allowed.includes(col))
       return res.status(400).json({ error: `Unknown building column: ${col}` });
-    await db.run(`UPDATE kingdoms SET ${col} = ? WHERE id = ?`, [Math.max(0, Number(amount)), kingdomId]);
+    await db.run(`UPDATE kingdoms SET ${col} = $1 WHERE id = $2`, [Math.max(0, Number(amount)), kingdomId]);
     res.json({ ok: true, col, amount: Math.max(0, Number(amount)) });
   });
 
@@ -592,12 +594,12 @@ module.exports = function (db, io) {
     if (!username || !action)
       return res.status(400).json({ error: "username and action required" });
     const val = action === "promote" ? 1 : 0;
-    const p = await db.get("SELECT id FROM players WHERE username = ?", [
+    const p = await db.get("SELECT id FROM players WHERE username = $1", [
       username,
     ]);
     if (!p)
       return res.status(404).json({ error: `Player "${username}" not found` });
-    await db.run("UPDATE players SET is_chat_mod = ? WHERE id = ?", [
+    await db.run("UPDATE players SET is_chat_mod = $1 WHERE id = $2", [
       val,
       p.id,
     ]);
@@ -609,7 +611,7 @@ module.exports = function (db, io) {
     const { username } = req.body;
     if (!username) return res.status(400).json({ error: "username required" });
     await db.run(
-      "UPDATE players SET chat_banned = 0, chat_ban_reason = NULL WHERE username = ?",
+      "UPDATE players SET chat_banned = 0, chat_ban_reason = NULL WHERE username = $1",
       [username],
     );
     res.json({ ok: true });
@@ -622,7 +624,7 @@ module.exports = function (db, io) {
         `
         SELECT k.*, p.username, p.is_admin, p.is_banned
         FROM kingdoms k JOIN players p ON k.player_id = p.id
-        WHERE k.id = ?
+        WHERE k.id = $1
       `,
         [req.params.id],
       );
@@ -640,7 +642,7 @@ module.exports = function (db, io) {
       return res.status(400).json({ error: "playerId or username required" });
     let player;
     if (username) {
-      player = await db.get("SELECT id FROM players WHERE username = ?", [
+      player = await db.get("SELECT id FROM players WHERE username = $1", [
         username,
       ]);
       if (!player)
@@ -649,7 +651,7 @@ module.exports = function (db, io) {
           .json({ error: `Player "${username}" not found` });
     }
     const id = playerId || player.id;
-    await db.run("UPDATE players SET is_admin = 1 WHERE id = ?", [id]);
+    await db.run("UPDATE players SET is_admin = 1 WHERE id = $1", [id]);
     res.json({ ok: true });
   });
 
@@ -821,9 +823,9 @@ module.exports = function (db, io) {
     }
 
     const cols = Object.keys(safe)
-      .map((c) => `${c} = ?`)
+      .map((c) => `${c} = $1`)
       .join(", ");
-    await db.run(`UPDATE kingdoms SET ${cols} WHERE id = ?`, [
+    await db.run(`UPDATE kingdoms SET ${cols} WHERE id = $1`, [
       ...Object.values(safe),
       kingdomId,
     ]);
@@ -840,7 +842,7 @@ module.exports = function (db, io) {
       const newsBlurb = `📢 Server announcement: ${text}`;
 
       const chatInsert = await db.run(
-        "INSERT INTO chat_messages (kingdom_id, player_id, username, room, message) VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO chat_messages (kingdom_id, player_id, username, room, message) VALUES ($1, $2, $3, $4, $5)",
         [null, 0, "[ADMIN]", "global", text],
       );
       const chatId = chatInsert.lastID;
@@ -850,13 +852,13 @@ module.exports = function (db, io) {
       let totalKingdoms = 0;
       let hasMore = true;
       while (hasMore) {
-        const batch = await db.all("SELECT id FROM kingdoms LIMIT ? OFFSET ?", [BATCH_SIZE, offset]);
+        const batch = await db.all("SELECT id FROM kingdoms LIMIT $1 OFFSET $2", [BATCH_SIZE, offset]);
         if (batch.length === 0) {
           hasMore = false;
           break;
         }
         totalKingdoms += batch.length;
-        const placeholders = batch.map(() => "(?,?,?,?)").join(",");
+        const placeholders = pgValueTuples(batch.length, 4);
         const values = batch.flatMap((k) => [k.id, "announcement", newsBlurb, 0]);
         await db.run(
           `INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ${placeholders}`,
@@ -901,7 +903,10 @@ module.exports = function (db, io) {
     try {
       const { hiatus } = req.body;
       const hiatusValue = hiatus ? 'true' : 'false';
-      await db.run("INSERT OR REPLACE INTO server_state (key, value) VALUES ('ai_hiatus', ?)", [hiatusValue]);
+      await db.run(
+        "INSERT INTO server_state (key, value) VALUES ('ai_hiatus', $1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+        [hiatusValue],
+      );
       res.json({ ok: true, hiatus });
     } catch (e) {
       res.status(500).json({ error: e.message });
@@ -971,21 +976,21 @@ module.exports = function (db, io) {
         const kingdomName = `AI ${prettyRace}`;
         const email = `${username}@narmir.ai`;
 
-        let player = await db.get('SELECT id, is_ai FROM players WHERE username = ?', [username]);
+        let player = await db.get('SELECT id, is_ai FROM players WHERE username = $1', [username]);
         let created = false;
 
         if (!player) {
           const pr = await db.run(
-            'INSERT INTO players (username, password, email, is_admin, is_ai) VALUES (?, ?, ?, 0, 1)',
+            'INSERT INTO players (username, password, email, is_admin, is_ai) VALUES ($1, $2, $3, 0, 1)',
             [username, passwordHash, email],
           );
           player = { id: pr.lastID, is_ai: 1 };
           created = true;
         } else if (!player.is_ai) {
-          await db.run('UPDATE players SET is_ai = 1 WHERE id = ?', [player.id]);
+          await db.run('UPDATE players SET is_ai = 1 WHERE id = $1', [player.id]);
         }
 
-        let kingdom = await db.get('SELECT id, race FROM kingdoms WHERE player_id = ?', [player.id]);
+        let kingdom = await db.get('SELECT id, race FROM kingdoms WHERE player_id = $1', [player.id]);
 
         if (!kingdom) {
           const profile = buildStartingProfile(race);
@@ -998,8 +1003,8 @@ module.exports = function (db, io) {
               bld_farms, bld_schools, bld_barracks, bld_armories, bld_housing,
               bld_markets, bld_smithies, bld_mage_towers, bld_shrines, bld_outposts,
               bld_training, bld_mausoleums, world_fragments
-            ) VALUES (?, ?, ?, 'male', ?, 10000, ?, 50000, ?, 100, 100, ?, ?, ?, 400, 0, 0,
-              ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '[]')`,
+            ) VALUES ($1, $2, $3, 'male', $4, 10000, $5, 50000, $6, 100, 100, $7, $8, $9, 400, 0, 0,
+              $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, '[]')`,
             [
               player.id, kingdomName, race, region,
               profile.land, profile.food,
@@ -1063,7 +1068,7 @@ module.exports = function (db, io) {
       }
 
       const kingdom = await db.get(
-        'SELECT k.id, k.race, p.is_ai FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.id = ?',
+        'SELECT k.id, k.race, p.is_ai FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.id = $1',
         [kingdomId],
       );
       if (!kingdom) return res.status(404).json({ error: 'Kingdom not found' });
@@ -1072,9 +1077,10 @@ module.exports = function (db, io) {
       }
 
       const fields = buildPresetFields(presetId, kingdom.race);
-      const setClauses = Object.keys(fields).map(k => `${k} = ?`).join(', ');
+      const fieldKeys = Object.keys(fields);
+      const setClauses = pgSetClause(fieldKeys);
       const values = [...Object.values(fields), kingdomId];
-      await db.run(`UPDATE kingdoms SET ${setClauses} WHERE id = ?`, values);
+      await db.run(`UPDATE kingdoms SET ${setClauses} WHERE id = $${fieldKeys.length + 1}`, values);
 
       res.json({ ok: true, kingdomId: kingdom.id, presetId, race: kingdom.race, fieldsUpdated: Object.keys(fields).length });
     } catch (e) {
@@ -1088,22 +1094,22 @@ module.exports = function (db, io) {
     const kid = req.params.id;
     try {
       // Clear out relations so foreign keys don't block
-      await db.run("DELETE FROM alliance_members WHERE kingdom_id = ?", [kid]);
-      await db.run("DELETE FROM alliances WHERE leader_id = ?", [kid]); // Or pick a new leader, but taking easiest route
-      await db.run("DELETE FROM news WHERE kingdom_id = ?", [kid]);
-      await db.run("DELETE FROM war_log WHERE attacker_id = ? OR defender_id = ?", [kid, kid]);
-      await db.run("DELETE FROM expeditions WHERE kingdom_id = ?", [kid]);
-      await db.run("DELETE FROM combat_log WHERE attacker_id = ? OR defender_id = ?", [kid, kid]);
-      await db.run("DELETE FROM chat_messages WHERE kingdom_id = ?", [kid]);
-      await db.run("DELETE FROM heroes WHERE kingdom_id = ?", [kid]);
-      await db.run("DELETE FROM spy_reports WHERE kingdom_id = ? OR target_id = ?", [kid, kid]);
-      await db.run("DELETE FROM trade_routes WHERE kingdom_id = ? OR partner_id = ?", [kid, kid]);
-      await db.run("DELETE FROM bounties WHERE target_id = ? OR claimed_by_id = ?", [kid, kid]);
-      await db.run("DELETE FROM trade_offers WHERE sender_id = ? OR receiver_id = ?", [kid, kid]);
-      await db.run("DELETE FROM mercenaries WHERE kingdom_id = ?", [kid]);
-      await db.run("DELETE FROM event_log WHERE kingdom_id = ?", [kid]);
+      await db.run("DELETE FROM alliance_members WHERE kingdom_id = $1", [kid]);
+      await db.run("DELETE FROM alliances WHERE leader_id = $1", [kid]); // Or pick a new leader, but taking easiest route
+      await db.run("DELETE FROM news WHERE kingdom_id = $1", [kid]);
+      await db.run("DELETE FROM war_log WHERE attacker_id = $1 OR defender_id = $2", [kid, kid]);
+      await db.run("DELETE FROM expeditions WHERE kingdom_id = $1", [kid]);
+      await db.run("DELETE FROM combat_log WHERE attacker_id = $1 OR defender_id = $2", [kid, kid]);
+      await db.run("DELETE FROM chat_messages WHERE kingdom_id = $1", [kid]);
+      await db.run("DELETE FROM heroes WHERE kingdom_id = $1", [kid]);
+      await db.run("DELETE FROM spy_reports WHERE kingdom_id = $1 OR target_id = $2", [kid, kid]);
+      await db.run("DELETE FROM trade_routes WHERE kingdom_id = $1 OR partner_id = $2", [kid, kid]);
+      await db.run("DELETE FROM bounties WHERE target_id = $1 OR claimed_by_id = $2", [kid, kid]);
+      await db.run("DELETE FROM trade_offers WHERE sender_id = $1 OR receiver_id = $2", [kid, kid]);
+      await db.run("DELETE FROM mercenaries WHERE kingdom_id = $1", [kid]);
+      await db.run("DELETE FROM event_log WHERE kingdom_id = $1", [kid]);
       // Finally delete the kingdom
-      await db.run("DELETE FROM kingdoms WHERE id = ?", [kid]);
+      await db.run("DELETE FROM kingdoms WHERE id = $1", [kid]);
       res.json({ ok: true });
     } catch (e) {
       console.error(e);
@@ -1229,14 +1235,14 @@ module.exports = function (db, io) {
     if (!message) return res.status(400).json({ error: "Message required" });
     const author = req.player ? req.player.username : "Unknown Admin";
     await db.run(
-      `INSERT INTO admin_notes (author_name, message) VALUES (?, ?)`,
+      `INSERT INTO admin_notes (author_name, message) VALUES ($1, $2)`,
       [author, message],
     );
     res.json({ ok: true });
   });
 
   dualRoute(router, "delete", "/admin-notes/:id", "/admin_notes/:id", async (req, res) => {
-    await db.run(`DELETE FROM admin_notes WHERE id = ?`, [req.params.id]);
+    await db.run(`DELETE FROM admin_notes WHERE id = $1`, [req.params.id]);
     res.json({ ok: true });
   });
 
@@ -1250,7 +1256,7 @@ module.exports = function (db, io) {
     const { category, description } = req.body;
     if (!description || !category) return res.status(400).json({ error: "Category and description required" });
     await db.run(
-      `INSERT INTO wishlist (category, description, completed) VALUES (?, ?, 0)`,
+      `INSERT INTO wishlist (category, description, completed) VALUES ($1, $2, 0)`,
       [category, description]
     );
     res.json({ ok: true });
@@ -1282,11 +1288,11 @@ module.exports = function (db, io) {
   });
 
   router.post("/wishlist/:id/complete", async (req, res) => {
-    const row = await db.get(`SELECT * FROM wishlist WHERE id = ?`, [req.params.id]);
+    const row = await db.get(`SELECT * FROM wishlist WHERE id = $1`, [req.params.id]);
     if (!row) return res.status(404).json({ error: "Wishlist item not found" });
     if (row.completed) return res.json({ ok: true, alreadyCompleted: true });
 
-    await db.run(`UPDATE wishlist SET completed = 1 WHERE id = ?`, [req.params.id]);
+    await db.run(`UPDATE wishlist SET completed = 1 WHERE id = $1`, [req.params.id]);
 
     const { publishChangelogEntry } = require("../lib/changelog-publish");
     const author = req.player ? req.player.username : "Admin";
@@ -1318,7 +1324,7 @@ module.exports = function (db, io) {
     if (!key || !name)
       return res.status(400).json({ error: "Key and name required" });
     await db.run(
-      `INSERT INTO events (key,name,description,season,effect_type,effect_value,effect_duration,race_only,is_active,is_positive) VALUES (?,?,?,?,?,?,?,?,?,?)`,
+      `INSERT INTO events (key,name,description,season,effect_type,effect_value,effect_duration,race_only,is_active,is_positive) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
       [
         key,
         name,
@@ -1351,7 +1357,7 @@ module.exports = function (db, io) {
     } = req.body;
     if (!id) return res.status(400).json({ error: "ID required" });
     await db.run(
-      `UPDATE events SET key=?,name=?,description=?,season=?,effect_type=?,effect_value=?,effect_duration=?,race_only=?,is_active=?,is_positive=? WHERE id=?`,
+      `UPDATE events SET key=$1,name=$2,description=$3,season=$4,effect_type=$5,effect_value=$6,effect_duration=$7,race_only=$8,is_active=$9,is_positive=$10 WHERE id=$11`,
       [
         key,
         name,
@@ -1372,7 +1378,7 @@ module.exports = function (db, io) {
   router.post("/events/delete", async (req, res) => {
     const { id } = req.body;
     if (!id) return res.status(400).json({ error: "ID required" });
-    await db.run("DELETE FROM events WHERE id = ?", [id]);
+    await db.run("DELETE FROM events WHERE id = $1", [id]);
     res.json({ ok: true });
   });
 
@@ -1385,7 +1391,7 @@ module.exports = function (db, io) {
   router.post("/lore", async (req, res) => {
     const { key_id, category, title, content } = req.body;
     await db.run(
-      "INSERT INTO lore_entries (key_id, category, title, content) VALUES (?, ?, ?, ?)",
+      "INSERT INTO lore_entries (key_id, category, title, content) VALUES ($1, $2, $3, $4)",
       [key_id || "", category || "general", title || "", content || ""],
     );
     await require("../../index").refreshLore();
@@ -1394,7 +1400,7 @@ module.exports = function (db, io) {
   router.put("/lore/:id", async (req, res) => {
     const { key_id, category, title, content } = req.body;
     await db.run(
-      "UPDATE lore_entries SET key_id=?, category=?, title=?, content=? WHERE id=?",
+      "UPDATE lore_entries SET key_id=$1, category=$2, title=$3, content=$4 WHERE id=$5",
       [
         key_id || "",
         category || "general",
@@ -1407,7 +1413,7 @@ module.exports = function (db, io) {
     res.json({ ok: true });
   });
   router.delete("/lore/:id", async (req, res) => {
-    await db.run("DELETE FROM lore_entries WHERE id=?", [req.params.id]);
+    await db.run("DELETE FROM lore_entries WHERE id=$1", [req.params.id]);
     await require("../../index").refreshLore();
     res.json({ ok: true });
   });
@@ -1419,14 +1425,14 @@ module.exports = function (db, io) {
   dualRoute(router, "post", "/random-events", "/random_events", async (req, res) => {
     const content = (req.body.content || "").trim();
     if (content.length > 10000) return res.status(400).json({ error: "content cannot exceed 10000 characters" });
-    await db.run("INSERT INTO random_events (content) VALUES (?)", [content]);
+    await db.run("INSERT INTO random_events (content) VALUES ($1)", [content]);
     await require("../../index").refreshLore();
     res.json({ ok: true });
   });
   dualRoute(router, "put", "/random-events/:id", "/random_events/:id", async (req, res) => {
     const content = (req.body.content || "").trim();
     if (content.length > 10000) return res.status(400).json({ error: "content cannot exceed 10000 characters" });
-    await db.run("UPDATE random_events SET content=? WHERE id=?", [
+    await db.run("UPDATE random_events SET content=$1 WHERE id=$2", [
       content,
       req.params.id,
     ]);
@@ -1434,7 +1440,7 @@ module.exports = function (db, io) {
     res.json({ ok: true });
   });
   dualRoute(router, "delete", "/random-events/:id", "/random_events/:id", async (req, res) => {
-    await db.run("DELETE FROM random_events WHERE id=?", [req.params.id]);
+    await db.run("DELETE FROM random_events WHERE id=$1", [req.params.id]);
     await require("../../index").refreshLore();
     res.json({ ok: true });
   });
@@ -1446,12 +1452,12 @@ module.exports = function (db, io) {
   dualRoute(router, "post", "/junk-events", "/junk_events", async (req, res) => {
     const content = (req.body.content || "").trim();
     if (content.length > 10000) return res.status(400).json({ error: "content cannot exceed 10000 characters" });
-    await db.run("INSERT INTO junk_events (content) VALUES (?)", [content]);
+    await db.run("INSERT INTO junk_events (content) VALUES ($1)", [content]);
     await require("../../index").refreshLore();
     res.json({ ok: true });
   });
   dualRoute(router, "delete", "/junk-events/:id", "/junk_events/:id", async (req, res) => {
-    await db.run("DELETE FROM junk_events WHERE id=?", [req.params.id]);
+    await db.run("DELETE FROM junk_events WHERE id=$1", [req.params.id]);
     await require("../../index").refreshLore();
     res.json({ ok: true });
   });
@@ -1463,12 +1469,12 @@ module.exports = function (db, io) {
   dualRoute(router, "post", "/tax-events", "/tax_events", async (req, res) => {
     const content = (req.body.content || "").trim();
     if (content.length > 10000) return res.status(400).json({ error: "content cannot exceed 10000 characters" });
-    await db.run("INSERT INTO tax_events (content) VALUES (?)", [content]);
+    await db.run("INSERT INTO tax_events (content) VALUES ($1)", [content]);
     await require("../../index").refreshLore();
     res.json({ ok: true });
   });
   dualRoute(router, "delete", "/tax-events/:id", "/tax_events/:id", async (req, res) => {
-    await db.run("DELETE FROM tax_events WHERE id=?", [req.params.id]);
+    await db.run("DELETE FROM tax_events WHERE id=$1", [req.params.id]);
     await require("../../index").refreshLore();
     res.json({ ok: true });
   });
@@ -1593,7 +1599,7 @@ module.exports = function (db, io) {
 
     try {
       const existing = await db.get(
-        `SELECT min_target, max_target FROM admin_goal_definitions WHERE tier = ? AND goal_id = ? AND active = 1`,
+        `SELECT min_target, max_target FROM admin_goal_definitions WHERE tier = $1 AND goal_id = $2 AND active = 1`,
         [tier, goalId]
       );
 
@@ -1615,13 +1621,13 @@ module.exports = function (db, io) {
       if (existing) {
         await db.run(
           `UPDATE admin_goal_definitions
-           SET label = COALESCE(?, label),
-               min_target = COALESCE(?, min_target),
-               max_target = COALESCE(?, max_target),
-               prize_type = COALESCE(?, prize_type),
-               prize_multiplier = COALESCE(?, prize_multiplier),
+           SET label = COALESCE($1, label),
+               min_target = COALESCE($2, min_target),
+               max_target = COALESCE($3, max_target),
+               prize_type = COALESCE($4, prize_type),
+               prize_multiplier = COALESCE($5, prize_multiplier),
                updated_at = CURRENT_TIMESTAMP
-           WHERE tier = ? AND goal_id = ? AND active = 1`,
+           WHERE tier = $6 AND goal_id = $7 AND active = 1`,
           [
             label !== undefined ? label : null,
             minTarget !== undefined ? minTarget : null,
@@ -1635,7 +1641,7 @@ module.exports = function (db, io) {
       } else {
         await db.run(
           `INSERT INTO admin_goal_definitions (tier, goal_id, label, min_target, max_target, prize_type, prize_multiplier, active)
-           VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
+           VALUES ($1, $2, $3, $4, $5, $6, $7, 1)`,
           [
             tier,
             goalId,
@@ -1688,7 +1694,7 @@ module.exports = function (db, io) {
     try {
       await db.run(
         `INSERT INTO admin_goal_definitions (tier, goal_id, label, min_target, max_target, prize_type, prize_multiplier, active)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, 1)
          ON CONFLICT (tier, goal_id) DO UPDATE SET
            label = EXCLUDED.label,
            min_target = EXCLUDED.min_target,
@@ -1721,13 +1727,13 @@ module.exports = function (db, io) {
 
     try {
       const existing = await db.get(
-        `SELECT 1 FROM admin_goal_definitions WHERE tier = ? AND goal_id = ?`,
+        `SELECT 1 FROM admin_goal_definitions WHERE tier = $1 AND goal_id = $2`,
         [tier, goalId]
       );
 
       if (existing) {
         await db.run(
-          `UPDATE admin_goal_definitions SET active = 0, updated_at = CURRENT_TIMESTAMP WHERE tier = ? AND goal_id = ?`,
+          `UPDATE admin_goal_definitions SET active = 0, updated_at = CURRENT_TIMESTAMP WHERE tier = $1 AND goal_id = $2`,
           [tier, goalId]
         );
       } else {
@@ -1739,7 +1745,7 @@ module.exports = function (db, io) {
 
         await db.run(
           `INSERT INTO admin_goal_definitions (tier, goal_id, label, min_target, max_target, prize_type, prize_multiplier, active)
-           VALUES (?, ?, ?, ?, ?, ?, ?, 0)`,
+           VALUES ($1, $2, $3, $4, $5, $6, $7, 0)`,
           [tier, goalId, defaultGoal.label, defaultGoal.min, defaultGoal.max, defaultGoal.prizeType, defaultGoal.prizeMult]
         );
       }
@@ -1756,7 +1762,7 @@ module.exports = function (db, io) {
       const kingdomId = req.body.kingdomId;
       if (!kingdomId) return res.status(400).json({ error: "kingdomId required" });
 
-      const k = await db.get("SELECT * FROM kingdoms WHERE id = ?", [kingdomId]);
+      const k = await db.get("SELECT * FROM kingdoms WHERE id = $1", [kingdomId]);
       if (!k) return res.status(404).json({ error: "Kingdom not found" });
 
       let buildProgress = {};
@@ -1774,7 +1780,7 @@ module.exports = function (db, io) {
         }
       }
 
-      await db.run("UPDATE kingdoms SET resource_build_allocation = ? WHERE id = ?", [
+      await db.run("UPDATE kingdoms SET resource_build_allocation = $1 WHERE id = $2", [
         JSON.stringify(repair),
         k.id,
       ]);
@@ -1849,7 +1855,7 @@ module.exports = function (db, io) {
       const findingsJson = JSON.stringify(allFindings);
       const timestamp = new Date().toISOString();
       const auditId = await db.run(
-        "INSERT INTO audit_history (run_at, findings, findings_count, status) VALUES (?, ?, ?, ?)",
+        "INSERT INTO audit_history (run_at, findings, findings_count, status) VALUES ($1, $2, $3, $4)",
         [timestamp, findingsJson, allFindings.length, 'completed']
       ).then(stmt => stmt.lastID || null).catch(err => {
         console.error("[audit] Failed to save audit history:", err);
@@ -1861,7 +1867,7 @@ module.exports = function (db, io) {
       if (auditId) {
         try {
           const previousAudit = await db.get(
-            "SELECT id, run_at, findings FROM audit_history WHERE id < ? ORDER BY id DESC LIMIT 1",
+            "SELECT id, run_at, findings FROM audit_history WHERE id < $1 ORDER BY id DESC LIMIT 1",
             [auditId]
           );
 
@@ -2032,12 +2038,12 @@ module.exports = function (db, io) {
       const existing = await db.get("SELECT id FROM audit_notification_settings LIMIT 1");
       if (existing) {
         await db.run(
-          "UPDATE audit_notification_settings SET notify_on_new_issues = ?, min_severity = ?, discord_channel_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+          "UPDATE audit_notification_settings SET notify_on_new_issues = $1, min_severity = $2, discord_channel_id = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $4",
           [notify_on_new_issues ? true : false, severity, discord_channel_id || null, existing.id]
         );
       } else {
         await db.run(
-          "INSERT INTO audit_notification_settings (notify_on_new_issues, min_severity, discord_channel_id, created_at, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+          "INSERT INTO audit_notification_settings (notify_on_new_issues, min_severity, discord_channel_id, created_at, updated_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
           [notify_on_new_issues ? true : false, severity, discord_channel_id || null]
         );
       }
@@ -2069,7 +2075,7 @@ module.exports = function (db, io) {
       }
 
       const audits = await db.all(
-        "SELECT id, run_at, findings_count FROM audit_history ORDER BY run_at DESC LIMIT ?",
+        "SELECT id, run_at, findings_count FROM audit_history ORDER BY run_at DESC LIMIT $1",
         [Math.min(limit, 100)]
       );
 
@@ -2109,11 +2115,11 @@ module.exports = function (db, io) {
 
       const result = await db.run(
         `INSERT INTO audit_schedules (created_by, frequency, is_enabled, next_run_at, created_at, updated_at)
-         VALUES (?, ?, 1, ?, unixepoch(), unixepoch())`,
+         VALUES ($1, $2, 1, $3, ${EPOCH_NOW}, ${EPOCH_NOW})`,
         [req.player.playerId, frequency, computeNextRunAt(frequency)]
       );
 
-      const schedule = await db.get("SELECT * FROM audit_schedules WHERE id = ?", [result.lastID]);
+      const schedule = await db.get("SELECT * FROM audit_schedules WHERE id = $1", [result.lastID]);
       if (global._audit_scheduler) {
         await global._audit_scheduler.registerSchedule(schedule);
       }
@@ -2132,7 +2138,7 @@ module.exports = function (db, io) {
         return res.status(400).json({ error: "Invalid schedule id" });
       }
 
-      const schedule = await db.get("SELECT * FROM audit_schedules WHERE id = ?", [scheduleId]);
+      const schedule = await db.get("SELECT * FROM audit_schedules WHERE id = $1", [scheduleId]);
       if (!schedule) {
         return res.status(404).json({ error: "Audit schedule not found" });
       }
@@ -2152,12 +2158,12 @@ module.exports = function (db, io) {
 
       await db.run(
         `UPDATE audit_schedules
-         SET frequency = ?, is_enabled = ?, next_run_at = ?, updated_at = unixepoch()
-         WHERE id = ?`,
+         SET frequency = $1, is_enabled = $2, next_run_at = $3, updated_at = ${EPOCH_NOW}
+         WHERE id = $4`,
         [nextFrequency, nextEnabled, nextRunAt, scheduleId]
       );
 
-      const updated = await db.get("SELECT * FROM audit_schedules WHERE id = ?", [scheduleId]);
+      const updated = await db.get("SELECT * FROM audit_schedules WHERE id = $1", [scheduleId]);
       if (global._audit_scheduler) {
         if (updated.is_enabled) {
           await global._audit_scheduler.registerSchedule(updated);
@@ -2180,7 +2186,7 @@ module.exports = function (db, io) {
         return res.status(400).json({ error: "Invalid schedule id" });
       }
 
-      const schedule = await db.get("SELECT * FROM audit_schedules WHERE id = ?", [scheduleId]);
+      const schedule = await db.get("SELECT * FROM audit_schedules WHERE id = $1", [scheduleId]);
       if (!schedule) {
         return res.status(404).json({ error: "Audit schedule not found" });
       }
@@ -2191,16 +2197,16 @@ module.exports = function (db, io) {
         await db.run(
           `INSERT INTO audit_history
            (schedule_id, run_at, status, findings_count, findings, duration_ms)
-           VALUES (?, unixepoch(), 'success', 0, ?, 0)`,
+           VALUES ($1, ${EPOCH_NOW}, 'success', 0, $2, 0)`,
           [scheduleId, JSON.stringify({ critical: [], high: [], medium: [], low: [], info: [] })]
         );
         await db.run(
-          'UPDATE audit_schedules SET last_run_at = unixepoch(), next_run_at = ?, updated_at = unixepoch() WHERE id = ?',
+          `UPDATE audit_schedules SET last_run_at = ${EPOCH_NOW}, next_run_at = $1, updated_at = ${EPOCH_NOW} WHERE id = $2`,
           [computeNextRunAt(schedule.frequency), scheduleId]
         );
       }
 
-      const updated = await db.get("SELECT * FROM audit_schedules WHERE id = ?", [scheduleId]);
+      const updated = await db.get("SELECT * FROM audit_schedules WHERE id = $1", [scheduleId]);
       res.json(updated);
     } catch (err) {
       console.error("[admin] Audit run error:", err);

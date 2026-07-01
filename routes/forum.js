@@ -9,6 +9,7 @@ const {
   normalizeAvatarMode,
 } = require("../lib/forum-profiles");
 const { getBadgesForPlayer } = require("../lib/forum-badges");
+const { pgInList } = require("../lib/pg-placeholders");
 
 module.exports = function (db) {
   // ──────────── HELPER FUNCTIONS ────────────────────────────────────────
@@ -19,15 +20,14 @@ module.exports = function (db) {
     const playerIds = [...new Set(posts.map((p) => p.player_id).filter(Boolean))];
     if (!playerIds.length) return posts;
 
-    const placeholders = playerIds.map(() => "?").join(",");
     const players = await dbConn.all(
-      `SELECT id, username, email FROM players WHERE id IN (${placeholders})`,
+      `SELECT id, username, email FROM players WHERE id IN (${pgInList(playerIds.length)})`,
       playerIds,
     );
     const playerMap = new Map(players.map((p) => [p.id, p]));
 
     const profiles = await dbConn.all(
-      `SELECT player_id, avatar_mode, avatar_url FROM forum_profiles WHERE player_id IN (${placeholders})`,
+      `SELECT player_id, avatar_mode, avatar_url FROM forum_profiles WHERE player_id IN (${pgInList(playerIds.length)})`,
       playerIds,
     );
     const profileMap = new Map(profiles.map((p) => [p.player_id, p]));
@@ -57,8 +57,8 @@ module.exports = function (db) {
     const now = Math.floor(Date.now() / 1000);
     const ban = await db.get(
       `SELECT id FROM forum_bans
-       WHERE player_id = ? AND (board_id = ? OR board_id IS NULL)
-       AND (expires_at IS NULL OR expires_at > ?)`,
+       WHERE player_id = $1 AND (board_id = $2 OR board_id IS NULL)
+       AND (expires_at IS NULL OR expires_at > $3)`,
       [playerId, boardId, now]
     );
     return !!ban;
@@ -80,7 +80,7 @@ module.exports = function (db) {
       } else if (req.params?.topicId) {
         // Replying to topic - get boardId from topic
         const topic = await db.get(
-          `SELECT board_id FROM forum_topics WHERE id = ?`,
+          `SELECT board_id FROM forum_topics WHERE id = $1`,
           [req.params.topicId]
         );
         boardId = topic?.board_id || null;
@@ -152,7 +152,7 @@ module.exports = function (db) {
 
       // Validate board exists
       const board = await db.get(
-        `SELECT id FROM forum_boards WHERE id = ? AND is_active = 1`,
+        `SELECT id FROM forum_boards WHERE id = $1 AND is_active = 1`,
         [boardId]
       );
       if (!board) {
@@ -178,14 +178,14 @@ module.exports = function (db) {
                 ft.is_pinned, ft.created_at, p.username
          FROM forum_topics ft
          INNER JOIN players p ON ft.player_id = p.id
-         WHERE ft.board_id = ?
+         WHERE ft.board_id = $1
          ORDER BY ft.is_pinned DESC, ${orderClause}
-         LIMIT ? OFFSET ?`,
+         LIMIT $2 OFFSET $3`,
         [boardId, pageSize, offset]
       );
 
       const totalResult = await db.get(
-        `SELECT COUNT(*) as total FROM forum_topics WHERE board_id = ?`,
+        `SELECT COUNT(*) as total FROM forum_topics WHERE board_id = $1`,
         [boardId]
       );
       const total = totalResult?.total || 0;
@@ -216,7 +216,7 @@ module.exports = function (db) {
         `SELECT ft.id, ft.title, ft.board_id, ft.created_at, p.username as author_username
          FROM forum_topics ft
          INNER JOIN players p ON ft.player_id = p.id
-         WHERE ft.id = ?`,
+         WHERE ft.id = $1`,
         [topicId]
       );
       if (!topic) {
@@ -229,14 +229,14 @@ module.exports = function (db) {
                 fp.updated_at, p.username, p.id as player_id
          FROM forum_posts fp
          INNER JOIN players p ON fp.player_id = p.id
-         WHERE fp.topic_id = ?
+         WHERE fp.topic_id = $1
          ORDER BY fp.created_at ASC
-         LIMIT ? OFFSET ?`,
+         LIMIT $2 OFFSET $3`,
         [topicId, pageSize, offset]
       );
 
       const totalResult = await db.get(
-        `SELECT COUNT(*) as total FROM forum_posts WHERE topic_id = ?`,
+        `SELECT COUNT(*) as total FROM forum_posts WHERE topic_id = $1`,
         [topicId]
       );
       const total = totalResult?.total || 0;
@@ -262,7 +262,7 @@ module.exports = function (db) {
   router.get("/profile", requireAuth, async (req, res) => {
     try {
       const playerId = req.player.playerId;
-      const player = await db.get(`SELECT id, username, email FROM players WHERE id = ?`, [playerId]);
+      const player = await db.get(`SELECT id, username, email FROM players WHERE id = $1`, [playerId]);
       if (!player) {
         return res.status(404).json({ error: "Player not found" });
       }
@@ -298,7 +298,7 @@ module.exports = function (db) {
         return res.status(400).json({ error: result.error });
       }
 
-      const player = await db.get(`SELECT username, email FROM players WHERE id = ?`, [playerId]);
+      const player = await db.get(`SELECT username, email FROM players WHERE id = $1`, [playerId]);
       const previewUrl = resolveForumAvatar({
         profile: { avatar_mode: result.avatarMode, avatar_url: result.avatarUrl },
         email: player?.email,
@@ -341,7 +341,7 @@ module.exports = function (db) {
 
       // Validate board exists
       const board = await db.get(
-        `SELECT id FROM forum_boards WHERE id = ? AND is_active = 1`,
+        `SELECT id FROM forum_boards WHERE id = $1 AND is_active = 1`,
         [boardId]
       );
       if (!board) {
@@ -355,7 +355,7 @@ module.exports = function (db) {
         const now = Math.floor(Date.now() / 1000);
         const result = await db.run(
           `INSERT INTO forum_topics (board_id, player_id, title, content, post_count, last_post_at, created_at, updated_at)
-           VALUES (?, ?, ?, ?, 1, ?, ?, ?)`,
+           VALUES ($1, $2, $3, $4, 1, $5, $6, $7)`,
           [boardId, playerId, title.trim(), content.trim(), now, now, now]
         );
 
@@ -364,7 +364,7 @@ module.exports = function (db) {
         // Create the first post
         await db.run(
           `INSERT INTO forum_posts (topic_id, player_id, content, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?)`,
+           VALUES ($1, $2, $3, $4, $5)`,
           [topicId, playerId, content.trim(), now, now]
         );
 
@@ -402,7 +402,7 @@ module.exports = function (db) {
 
       // Validate topic exists
       const topic = await db.get(
-        `SELECT id, is_locked FROM forum_topics WHERE id = ?`,
+        `SELECT id, is_locked FROM forum_topics WHERE id = $1`,
         [topicId]
       );
       if (!topic) {
@@ -421,7 +421,7 @@ module.exports = function (db) {
       try {
         const result = await db.run(
           `INSERT INTO forum_posts (topic_id, player_id, content, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?)`,
+           VALUES ($1, $2, $3, $4, $5)`,
           [topicId, playerId, content.trim(), now, now]
         );
 
@@ -430,8 +430,8 @@ module.exports = function (db) {
         // Update topic post_count and last_post_at
         await db.run(
           `UPDATE forum_topics
-           SET post_count = post_count + 1, last_post_at = ?, updated_at = ?
-           WHERE id = ?`,
+           SET post_count = post_count + 1, last_post_at = $1, updated_at = $2
+           WHERE id = $3`,
           [now, now, topicId]
         );
 
@@ -469,7 +469,7 @@ module.exports = function (db) {
 
       // Get post
       const post = await db.get(
-        `SELECT id, player_id, is_deleted FROM forum_posts WHERE id = ?`,
+        `SELECT id, player_id, is_deleted FROM forum_posts WHERE id = $1`,
         [postId]
       );
       if (!post) {
@@ -488,7 +488,7 @@ module.exports = function (db) {
 
       // Update post
       await db.run(
-        `UPDATE forum_posts SET content = ?, updated_at = ? WHERE id = ?`,
+        `UPDATE forum_posts SET content = $1, updated_at = $2 WHERE id = $3`,
         [content.trim(), now, postId]
       );
 
@@ -510,7 +510,7 @@ module.exports = function (db) {
 
       // Get post
       const post = await db.get(
-        `SELECT id, player_id, topic_id, is_deleted FROM forum_posts WHERE id = ?`,
+        `SELECT id, player_id, topic_id, is_deleted FROM forum_posts WHERE id = $1`,
         [postId]
       );
       if (!post) {
@@ -529,19 +529,19 @@ module.exports = function (db) {
 
       // Soft delete post
       await db.run(
-        `UPDATE forum_posts SET is_deleted = 1, deleted_at = ?, updated_at = ? WHERE id = ?`,
+        `UPDATE forum_posts SET is_deleted = 1, deleted_at = $1, updated_at = $2 WHERE id = $3`,
         [now, now, postId]
       );
 
       // Update topic post count (if not the first post)
       const firstPost = await db.get(
-        `SELECT id FROM forum_posts WHERE topic_id = ? ORDER BY created_at ASC LIMIT 1`,
+        `SELECT id FROM forum_posts WHERE topic_id = $1 ORDER BY created_at ASC LIMIT 1`,
         [post.topic_id]
       );
 
       if (firstPost.id !== postId) {
         await db.run(
-          `UPDATE forum_topics SET post_count = post_count - 1, updated_at = ? WHERE id = ?`,
+          `UPDATE forum_topics SET post_count = post_count - 1, updated_at = $1 WHERE id = $2`,
           [now, post.topic_id]
         );
       }
@@ -564,7 +564,7 @@ module.exports = function (db) {
 
       // Get topic
       const topic = await db.get(
-        `SELECT id, player_id FROM forum_topics WHERE id = ?`,
+        `SELECT id, player_id FROM forum_topics WHERE id = $1`,
         [topicId]
       );
       if (!topic) {
@@ -579,9 +579,9 @@ module.exports = function (db) {
       await db.run('BEGIN TRANSACTION');
       try {
         // Hard delete all posts in the topic first to satisfy foreign key constraints
-        await db.run(`DELETE FROM forum_posts WHERE topic_id = ?`, [topicId]);
+        await db.run(`DELETE FROM forum_posts WHERE topic_id = $1`, [topicId]);
         // Delete the topic
-        await db.run(`DELETE FROM forum_topics WHERE id = ?`, [topicId]);
+        await db.run(`DELETE FROM forum_topics WHERE id = $1`, [topicId]);
         await db.run('COMMIT');
       } catch (err) {
         await db.run('ROLLBACK').catch(() => {});
@@ -603,7 +603,7 @@ module.exports = function (db) {
   // Helper: Check if user is moderator for board
   const isBoardModerator = async (playerId, boardId) => {
     const result = await db.get(
-      `SELECT id FROM forum_moderators WHERE player_id = ? AND board_id = ?`,
+      `SELECT id FROM forum_moderators WHERE player_id = $1 AND board_id = $2`,
       [playerId, boardId]
     );
     return !!result;
@@ -636,7 +636,7 @@ module.exports = function (db) {
                 fbo.name as board_name
          FROM forum_bans fb
          LEFT JOIN forum_boards fbo ON fb.board_id = fbo.id
-         WHERE fb.expires_at IS NULL OR fb.expires_at > ?
+         WHERE fb.expires_at IS NULL OR fb.expires_at > $1
          ORDER BY fb.created_at DESC`,
         [now]
       );
@@ -655,7 +655,7 @@ module.exports = function (db) {
         `SELECT id, moderator_id, action, target_type, target_id, reason, created_at
          FROM forum_moderation_log
          ORDER BY created_at DESC
-         LIMIT ?`,
+         LIMIT $1`,
         [limit]
       );
       res.json(logs || []);
@@ -676,13 +676,13 @@ module.exports = function (db) {
       }
 
       // Verify board exists
-      const board = await db.get(`SELECT id FROM forum_boards WHERE id = ?`, [boardId]);
+      const board = await db.get(`SELECT id FROM forum_boards WHERE id = $1`, [boardId]);
       if (!board) {
         return res.status(404).json({ error: "Board not found" });
       }
 
       // Verify player exists
-      const player = await db.get(`SELECT id FROM players WHERE id = ?`, [playerId]);
+      const player = await db.get(`SELECT id FROM players WHERE id = $1`, [playerId]);
       if (!player) {
         return res.status(404).json({ error: "Player not found" });
       }
@@ -690,14 +690,14 @@ module.exports = function (db) {
       // Assign moderator
       await db.run(
         `INSERT INTO forum_moderators (player_id, board_id, assigned_by, created_at)
-         VALUES (?, ?, ?, ?)`,
+         VALUES ($1, $2, $3, $4)`,
         [playerId, boardId, adminId, Math.floor(Date.now() / 1000)]
       );
 
       // Log action
       await db.run(
         `INSERT INTO forum_moderation_log (moderator_id, action, target_type, target_id, created_at)
-         VALUES (?, 'assign_moderator', 'player', ?, ?)`,
+         VALUES ($1, 'assign_moderator', 'player', $2, $3)`,
         [adminId, playerId, Math.floor(Date.now() / 1000)]
       );
 
@@ -717,17 +717,17 @@ module.exports = function (db) {
       const { modId } = req.params;
       const adminId = req.player.playerId;
 
-      const mod = await db.get(`SELECT player_id FROM forum_moderators WHERE id = ?`, [modId]);
+      const mod = await db.get(`SELECT player_id FROM forum_moderators WHERE id = $1`, [modId]);
       if (!mod) {
         return res.status(404).json({ error: "Moderator assignment not found" });
       }
 
-      await db.run(`DELETE FROM forum_moderators WHERE id = ?`, [modId]);
+      await db.run(`DELETE FROM forum_moderators WHERE id = $1`, [modId]);
 
       // Log action
       await db.run(
         `INSERT INTO forum_moderation_log (moderator_id, action, target_type, target_id, created_at)
-         VALUES (?, 'remove_moderator', 'player', ?, ?)`,
+         VALUES ($1, 'remove_moderator', 'player', $2, $3)`,
         [adminId, mod.player_id, Math.floor(Date.now() / 1000)]
       );
 
@@ -764,14 +764,14 @@ module.exports = function (db) {
 
       await db.run(
         `INSERT INTO forum_bans (player_id, board_id, ban_type, reason, expires_at, banned_by, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         [playerId, boardId || null, banType, reason || null, expiresAt, modId, now]
       );
 
       // Log action
       await db.run(
         `INSERT INTO forum_moderation_log (moderator_id, action, target_type, target_id, reason, created_at)
-         VALUES (?, ?, 'player', ?, ?, ?)`,
+         VALUES ($1, $2, 'player', $3, $4, $5)`,
         [modId, banType === "forum_ban" ? "ban_user" : "silence_user", playerId, reason || null, now]
       );
 
@@ -788,7 +788,7 @@ module.exports = function (db) {
       const { banId } = req.params;
       const modId = req.player.playerId;
 
-      const ban = await db.get(`SELECT player_id, board_id FROM forum_bans WHERE id = ?`, [banId]);
+      const ban = await db.get(`SELECT player_id, board_id FROM forum_bans WHERE id = $1`, [banId]);
       if (!ban) {
         return res.status(404).json({ error: "Ban not found" });
       }
@@ -803,12 +803,12 @@ module.exports = function (db) {
         return res.status(403).json({ error: "Only admins can unban from forum" });
       }
 
-      await db.run(`DELETE FROM forum_bans WHERE id = ?`, [banId]);
+      await db.run(`DELETE FROM forum_bans WHERE id = $1`, [banId]);
 
       // Log action
       await db.run(
         `INSERT INTO forum_moderation_log (moderator_id, action, target_type, target_id, created_at)
-         VALUES (?, 'unban_user', 'player', ?, ?)`,
+         VALUES ($1, 'unban_user', 'player', $2, $3)`,
         [modId, ban.player_id, Math.floor(Date.now() / 1000)]
       );
 
@@ -832,7 +832,7 @@ module.exports = function (db) {
       const post = await db.get(
         `SELECT fp.id, ft.board_id FROM forum_posts fp
          INNER JOIN forum_topics ft ON fp.topic_id = ft.id
-         WHERE fp.id = ?`,
+         WHERE fp.id = $1`,
         [postId]
       );
       if (!post) {
@@ -849,14 +849,14 @@ module.exports = function (db) {
 
       // Soft delete (similar to user delete)
       await db.run(
-        `UPDATE forum_posts SET is_deleted = 1, deleted_at = ? WHERE id = ?`,
+        `UPDATE forum_posts SET is_deleted = 1, deleted_at = $1 WHERE id = $2`,
         [now, postId]
       );
 
       // Log action
       await db.run(
         `INSERT INTO forum_moderation_log (moderator_id, action, target_type, target_id, reason, created_at)
-         VALUES (?, 'hide_post', 'post', ?, ?, ?)`,
+         VALUES ($1, 'hide_post', 'post', $2, $3, $4)`,
         [modId, postId, reason || null, now]
       );
 
@@ -877,7 +877,7 @@ module.exports = function (db) {
         return res.status(400).json({ error: "postId is required" });
       }
 
-      const post = await db.get(`SELECT id FROM forum_posts WHERE id = ?`, [postId]);
+      const post = await db.get(`SELECT id FROM forum_posts WHERE id = $1`, [postId]);
       if (!post) {
         return res.status(404).json({ error: "Post not found" });
       }
@@ -886,7 +886,7 @@ module.exports = function (db) {
 
       await db.run(
         `INSERT INTO forum_reports (post_id, reporter_id, status, created_at)
-         VALUES (?, ?, 'open', ?)`,
+         VALUES ($1, $2, 'open', $3)`,
         [postId, reporterId, now]
       );
 
@@ -909,7 +909,7 @@ module.exports = function (db) {
         boardIds = boards.map(b => b.id);
       } else {
         const modBoards = await db.all(
-          `SELECT board_id FROM forum_moderators WHERE player_id = ?`,
+          `SELECT board_id FROM forum_moderators WHERE player_id = $1`,
           [modId]
         );
         boardIds = modBoards.map(b => b.board_id);
@@ -919,7 +919,6 @@ module.exports = function (db) {
         return res.json({ reports: [], stats: { open: 0, total: 0 } });
       }
 
-      const placeholders = boardIds.map(() => "?").join(",");
       const reports = await db.all(
         `SELECT fr.id, fr.post_id, fr.status, fr.created_at,
                 fp.content, fp.id as post_author_id,
@@ -927,7 +926,7 @@ module.exports = function (db) {
          FROM forum_reports fr
          INNER JOIN forum_posts fp ON fr.post_id = fp.id
          INNER JOIN forum_topics ft ON fp.topic_id = ft.id
-         WHERE ft.board_id IN (${placeholders}) AND fr.status = 'open'
+         WHERE ft.board_id IN (${pgInList(boardIds.length)}) AND fr.status = 'open'
          ORDER BY fr.created_at DESC`,
         boardIds
       );
@@ -936,7 +935,7 @@ module.exports = function (db) {
         `SELECT COUNT(*) as total FROM forum_reports fr
          INNER JOIN forum_posts fp ON fr.post_id = fp.id
          INNER JOIN forum_topics ft ON fp.topic_id = ft.id
-         WHERE ft.board_id IN (${placeholders})`,
+         WHERE ft.board_id IN (${pgInList(boardIds.length)})`,
         boardIds
       );
 
@@ -962,7 +961,7 @@ module.exports = function (db) {
         `SELECT fr.id, ft.board_id FROM forum_reports fr
          INNER JOIN forum_posts fp ON fr.post_id = fp.id
          INNER JOIN forum_topics ft ON fp.topic_id = ft.id
-         WHERE fr.id = ?`,
+         WHERE fr.id = $1`,
         [reportId]
       );
       if (!report) {
@@ -978,7 +977,7 @@ module.exports = function (db) {
       const now = Math.floor(Date.now() / 1000);
 
       await db.run(
-        `UPDATE forum_reports SET status = ?, action_taken = ?, reviewed_by = ?, reviewed_at = ? WHERE id = ?`,
+        `UPDATE forum_reports SET status = $1, action_taken = $2, reviewed_by = $3, reviewed_at = $4 WHERE id = $5`,
         [status, actionTaken || null, modId, now, reportId]
       );
 

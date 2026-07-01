@@ -36,7 +36,7 @@ module.exports = function (db) {
 
   router.get('/me', requireAuth, async (req, res) => {
     const k = await db.get(
-      'SELECT k.*, p.username, p.chat_name, p.chat_color FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.player_id = ?',
+      'SELECT k.*, p.username, p.chat_name, p.chat_color FROM kingdoms k JOIN players p ON k.player_id = p.id WHERE k.player_id = $1',
       [req.player.playerId],
     );
     if (!k) return res.status(404).json({ error: 'Kingdom not found' });
@@ -66,11 +66,11 @@ module.exports = function (db) {
       return res
         .status(400)
         .json({ error: 'Description too long (max 1000 chars)' });
-    const k = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [
+    const k = await db.get('SELECT id FROM kingdoms WHERE player_id = $1', [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: 'Kingdom not found' });
-    await db.run('UPDATE kingdoms SET description = ? WHERE id = ?', [
+    await db.run('UPDATE kingdoms SET description = $1 WHERE id = $2', [
       description || null,
       k.id,
     ]);
@@ -79,7 +79,7 @@ module.exports = function (db) {
 
   router.get('/rankings', requireAuth, async (req, res) => {
     const pk = await db.get(
-      'SELECT id, discovered_kingdoms FROM kingdoms WHERE player_id = ?',
+      'SELECT id, discovered_kingdoms FROM kingdoms WHERE player_id = $1',
       [req.player.playerId],
     );
     if (!pk) return res.status(404).json({ error: 'Kingdom not found' });

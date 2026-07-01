@@ -49,7 +49,7 @@ function processActiveEffects(k, events) {
         const foodLost = Math.floor(k.food * penalty);
         if (foodLost > 0) {
           updates.food = Math.max(0, (updates.food !== undefined ? updates.food : k.food) - foodLost);
-          events.push({ type: "attack", message: `🏹 ??? Mutated crops rot — ${foodLost.toLocaleString()} food spoiled.` });
+          events.push({ type: "attack", message: `🏹 ?? Mutated crops rot — ${foodLost.toLocaleString()} food spoiled.` });
         }
       } else if (effect === "command_legion") {
         const friendlyFire = data.damage_per_turn ?? 0;

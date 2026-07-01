@@ -47,7 +47,7 @@ module.exports = function (db) {
       return res.status(400).json({ error: ordersValidation.error });
     }
 
-    const k = await db.get(`SELECT ${KINGDOM_RESOURCE} FROM kingdoms WHERE player_id = ?`, [
+    const k = await db.get(`SELECT ${KINGDOM_RESOURCE} FROM kingdoms WHERE player_id = $1`, [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: 'Kingdom not found' });
@@ -70,7 +70,7 @@ module.exports = function (db) {
 
   // GET /training-allocation
   router.get('/training-allocation', requireAuth, async (req, res) => {
-    const k = await db.get('SELECT training_allocation FROM kingdoms WHERE player_id = ?', [
+    const k = await db.get('SELECT training_allocation FROM kingdoms WHERE player_id = $1', [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: 'Kingdom not found' });
@@ -97,7 +97,7 @@ module.exports = function (db) {
       await db.run('BEGIN TRANSACTION');
 
       const k = await db.get(
-        'SELECT id, bld_training, fighters, rangers, mages, clerics, thieves, ninjas FROM kingdoms WHERE player_id = ? FOR UPDATE',
+        'SELECT id, bld_training, fighters, rangers, mages, clerics, thieves, ninjas FROM kingdoms WHERE player_id = $1 FOR UPDATE',
         [req.player.playerId],
       );
       if (!k) {
@@ -119,7 +119,7 @@ module.exports = function (db) {
         return res.status(400).json({ error: `Exceeds training capacity (${capacity})` });
       }
 
-      await db.run('UPDATE kingdoms SET training_allocation = ? WHERE id = ?', [
+      await db.run('UPDATE kingdoms SET training_allocation = $1 WHERE id = $2', [
         JSON.stringify(clean_alloc),
         k.id,
       ]);
@@ -154,7 +154,7 @@ module.exports = function (db) {
       await db.run('BEGIN TRANSACTION');
 
       const k = await db.get(
-        'SELECT id, engineers, resource_build_allocation FROM kingdoms WHERE player_id = ? FOR UPDATE',
+        'SELECT id, engineers, resource_build_allocation FROM kingdoms WHERE player_id = $1 FOR UPDATE',
         [req.player.playerId],
       );
       if (!k) {
@@ -172,7 +172,7 @@ module.exports = function (db) {
         });
       }
 
-      await db.run('UPDATE kingdoms SET build_allocation = ? WHERE id = ?', [
+      await db.run('UPDATE kingdoms SET build_allocation = $1 WHERE id = $2', [
         JSON.stringify(allocValidation.values),
         k.id,
       ]);
@@ -216,7 +216,7 @@ module.exports = function (db) {
     }
 
     const k = await db.get(
-      'SELECT id, engineers, build_allocation FROM kingdoms WHERE player_id = ?',
+      'SELECT id, engineers, build_allocation FROM kingdoms WHERE player_id = $1',
       [req.player.playerId],
     );
     if (!k) return res.status(404).json({ error: 'Kingdom not found' });
@@ -228,7 +228,7 @@ module.exports = function (db) {
       return res.status(400).json({
         error: `Allocated ${allocValidation.total.toLocaleString()} resource engineers and ${buildTotal.toLocaleString()} build engineers, but only have ${k.engineers.toLocaleString()} engineers total`,
       });
-    await db.run('UPDATE kingdoms SET resource_build_allocation = ? WHERE id = ?', [
+    await db.run('UPDATE kingdoms SET resource_build_allocation = $1 WHERE id = $2', [
       JSON.stringify(allocValidation.values),
       k.id,
     ]);
@@ -258,7 +258,7 @@ module.exports = function (db) {
     }
 
     const k = await db.get(
-      'SELECT id, mages, school_of_magic, research_allocation FROM kingdoms WHERE player_id = ?',
+      'SELECT id, mages, school_of_magic, research_allocation FROM kingdoms WHERE player_id = $1',
       [req.player.playerId],
     );
     if (!k) return res.status(404).json({ error: 'Kingdom not found' });
@@ -274,7 +274,7 @@ module.exports = function (db) {
     researchAlloc.spellbook_mages = spellbookValidation.value;
     researchAlloc.school_spellbook_mages = schoolSpellbookValidation.value;
 
-    await db.run('UPDATE kingdoms SET research_allocation = ? WHERE id = ?', [
+    await db.run('UPDATE kingdoms SET research_allocation = $1 WHERE id = $2', [
       JSON.stringify(researchAlloc),
       k.id,
     ]);
@@ -300,7 +300,7 @@ module.exports = function (db) {
     try {
       await db.run('BEGIN TRANSACTION');
 
-      const k = await db.get(`SELECT ${KINGDOM_RESOURCE} FROM kingdoms WHERE player_id = ? FOR UPDATE`, [
+      const k = await db.get(`SELECT ${KINGDOM_RESOURCE} FROM kingdoms WHERE player_id = $1 FOR UPDATE`, [
         req.player.playerId,
       ]);
       if (!k) {
@@ -316,7 +316,7 @@ module.exports = function (db) {
 
       await applyUpdates(db, k.id, result.updates);
       const msg = `🗑️ Demolished ${result.refund.count} ${building.replace(/_/g, ' ')}. Refunded ${result.refund.gold.toLocaleString()} gold and ${result.refund.land} acres.`;
-      await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)', [
+      await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)', [
         k.id,
         'system',
         msg,
@@ -342,7 +342,7 @@ module.exports = function (db) {
     try {
       await db.run('BEGIN TRANSACTION');
 
-      const k = await db.get(`SELECT ${KINGDOM_RESOURCE} FROM kingdoms WHERE player_id = ? FOR UPDATE`, [
+      const k = await db.get(`SELECT ${KINGDOM_RESOURCE} FROM kingdoms WHERE player_id = $1 FOR UPDATE`, [
         req.player.playerId,
       ]);
       if (!k) {
@@ -397,7 +397,7 @@ module.exports = function (db) {
 
       await applyUpdates(db, k.id, updates);
       const msg = `🗑️ Construction started: ${buildingId.replace(/^bld_/, '').replace(/_/g, ' ')}. Estimated completion: ${buildTime} turns.`;
-      await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)', [
+      await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)', [
         k.id,
         'system',
         msg,
@@ -424,7 +424,7 @@ module.exports = function (db) {
       await db.run('BEGIN TRANSACTION');
 
       const k = await db.get(
-        'SELECT id, build_queue, land, wood, stone, iron, turn FROM kingdoms WHERE player_id = ? FOR UPDATE',
+        'SELECT id, build_queue, land, wood, stone, iron, turn FROM kingdoms WHERE player_id = $1 FOR UPDATE',
         [req.player.playerId],
       );
       if (!k) {
@@ -451,7 +451,7 @@ module.exports = function (db) {
 
       await applyUpdates(db, k.id, updates);
       const msg = `🗑️ Construction cancelled: ${buildJob.building.replace(/_/g, ' ')}. Resources refunded.`;
-      await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)', [
+      await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)', [
         k.id,
         'system',
         msg,
@@ -474,7 +474,7 @@ module.exports = function (db) {
     try {
       await db.run('BEGIN TRANSACTION');
 
-      const k = await db.get(`SELECT ${KINGDOM_SMITHY} FROM kingdoms WHERE player_id=? FOR UPDATE`, [
+      const k = await db.get(`SELECT ${KINGDOM_SMITHY} FROM kingdoms WHERE player_id=$1 FOR UPDATE`, [
         req.player.playerId,
       ]);
       if (!k) {
@@ -501,7 +501,7 @@ module.exports = function (db) {
       }
 
       const actualCost = bought * 25;
-      await db.run('UPDATE kingdoms SET gold=gold-?, hammers_stored=? WHERE id=?', [actualCost, newHammers, k.id]);
+      await db.run('UPDATE kingdoms SET gold=gold-$1, hammers_stored=$2 WHERE id=$3', [actualCost, newHammers, k.id]);
       await db.run('COMMIT');
 
       res.json({
@@ -529,7 +529,7 @@ module.exports = function (db) {
     try {
       await db.run('BEGIN TRANSACTION');
 
-      const k = await db.get(`SELECT ${KINGDOM_SMITHY} FROM kingdoms WHERE player_id=? FOR UPDATE`, [
+      const k = await db.get(`SELECT ${KINGDOM_SMITHY} FROM kingdoms WHERE player_id=$1 FOR UPDATE`, [
         req.player.playerId,
       ]);
       if (!k) {
@@ -558,7 +558,7 @@ module.exports = function (db) {
       }
 
       const actualCost = bought * unitPrice;
-      await db.run('UPDATE kingdoms SET gold=gold-?, scaffolding_stored=? WHERE id=?', [
+      await db.run('UPDATE kingdoms SET gold=gold-$1, scaffolding_stored=$2 WHERE id=$3', [
         actualCost,
         newScaff,
         k.id,
@@ -607,7 +607,7 @@ module.exports = function (db) {
       await db.run('BEGIN TRANSACTION');
 
       const k = await db.get(
-        'SELECT id, bld_mage_towers, mage_tower_allocation FROM kingdoms WHERE player_id = ? FOR UPDATE',
+        'SELECT id, bld_mage_towers, mage_tower_allocation FROM kingdoms WHERE player_id = $1 FOR UPDATE',
         [req.player.playerId],
       );
       if (!k) {
@@ -630,7 +630,7 @@ module.exports = function (db) {
       }
 
       alloc[item] = (alloc[item] || 0) + qtyValidation.value;
-      await db.run('UPDATE kingdoms SET mage_tower_allocation = ? WHERE id = ?', [JSON.stringify(alloc), k.id]);
+      await db.run('UPDATE kingdoms SET mage_tower_allocation = $1 WHERE id = $2', [JSON.stringify(alloc), k.id]);
       await db.run('COMMIT');
 
       res.json({ ok: true, allocation: JSON.stringify(alloc) });
@@ -645,7 +645,7 @@ module.exports = function (db) {
   router.post('/tower-cancel', requireAuth, requireCsrfToken, async (req, res) => {
     const { item } = req.body;
     const k = await db.get(
-      'SELECT id, mage_tower_allocation FROM kingdoms WHERE player_id = ?',
+      'SELECT id, mage_tower_allocation FROM kingdoms WHERE player_id = $1',
       [req.player.playerId],
     );
     if (!k) return res.status(404).json({ error: 'Kingdom not found' });
@@ -661,7 +661,7 @@ module.exports = function (db) {
     }
 
     delete alloc[item];
-    await db.run('UPDATE kingdoms SET mage_tower_allocation = ? WHERE id = ?', [JSON.stringify(alloc), k.id]);
+    await db.run('UPDATE kingdoms SET mage_tower_allocation = $1 WHERE id = $2', [JSON.stringify(alloc), k.id]);
     res.json({ ok: true, allocation: JSON.stringify(alloc) });
   });
 
@@ -680,14 +680,14 @@ module.exports = function (db) {
     }
 
     const k = await db.get(
-      'SELECT id, bld_shrines, clerics FROM kingdoms WHERE player_id = ?',
+      'SELECT id, bld_shrines, clerics FROM kingdoms WHERE player_id = $1',
       [req.player.playerId],
     );
     if (!k) return res.status(404).json({ error: 'Kingdom not found' });
     if (k.bld_shrines === 0) return res.status(400).json({ error: 'You need at least 1 Shrine first' });
 
     const clericsAlloc = Math.min(allocValidation.values.clerics || 0, k.clerics);
-    await db.run('UPDATE kingdoms SET shrine_allocation = ? WHERE id = ?', [
+    await db.run('UPDATE kingdoms SET shrine_allocation = $1 WHERE id = $2', [
       JSON.stringify({ clerics: clericsAlloc }),
       k.id,
     ]);
@@ -701,20 +701,20 @@ module.exports = function (db) {
       return res.status(400).json({ error: 'allocation required' });
 
     const k = await db.get(
-      'SELECT id, bld_mausoleums, thralls FROM kingdoms WHERE player_id = ?',
+      'SELECT id, bld_mausoleums, thralls FROM kingdoms WHERE player_id = $1',
       [req.player.playerId],
     );
     if (!k) return res.status(404).json({ error: 'Kingdom not found' });
     if (k.bld_mausoleums === 0) return res.status(400).json({ error: 'You need at least 1 Mausoleum first' });
 
-    await db.run('UPDATE kingdoms SET mausoleum_allocation = ? WHERE id = ?', [JSON.stringify(allocation), k.id]);
+    await db.run('UPDATE kingdoms SET mausoleum_allocation = $1 WHERE id = $2', [JSON.stringify(allocation), k.id]);
     res.json({ ok: true, allocation });
   });
 
   // POST /buy-mausoleum-upgrade
   router.post('/buy-mausoleum-upgrade', requireAuth, requireCsrfToken, async (req, res) => {
     const { upgradeKey } = req.body;
-    const k = await db.get('SELECT id, turn, race, gold, mausoleum_upgrades FROM kingdoms WHERE player_id = ?', [
+    const k = await db.get('SELECT id, turn, race, gold, mausoleum_upgrades FROM kingdoms WHERE player_id = $1', [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: 'Kingdom not found' });
@@ -736,7 +736,7 @@ module.exports = function (db) {
     if (k.gold < upg.cost) return res.status(400).json({ error: 'Not enough gold' });
 
     owned[upgradeKey] = true;
-    await db.run('UPDATE kingdoms SET gold = gold - ?, mausoleum_upgrades = ? WHERE id = ?', [
+    await db.run('UPDATE kingdoms SET gold = gold - $1, mausoleum_upgrades = $2 WHERE id = $3', [
       upg.cost,
       JSON.stringify(owned),
       k.id,

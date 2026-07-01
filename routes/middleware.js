@@ -45,7 +45,7 @@ function cacheKingdomId(db) {
 
     // Fetch from DB and cache
     try {
-      const row = await db.get("SELECT id FROM kingdoms WHERE player_id = ?", [playerId]);
+      const row = await db.get("SELECT id FROM kingdoms WHERE player_id = $1", [playerId]);
       if (row) {
         req.kingdomId = row.id;
         kingdomIdCache.set(cacheKey, row.id, 30 * 60 * 1000); // 30 min TTL

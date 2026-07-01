@@ -19,6 +19,8 @@ const {
 const fragmentBonusManager = require("./fragment-bonus-manager");
 const effectsProcessor = require("./synergy-effects-processor");
 const { safeJsonParse, clearParseCache } = require('../utils/helpers');
+const { EPOCH_NOW } = require('../lib/db-sql');
+const { pgInList } = require('../lib/pg-placeholders');
 
 // Shared domain helpers extracted to game/lib. These are the canonical
 // implementations; engine.js still re-exports them via module.exports so
@@ -82,14 +84,14 @@ const {
 } = require('./lib/gameplay');
 
 async function getRandomKingdom(db, selfId) {
-  const countRow = await db.get("SELECT COUNT(*) as c FROM kingdoms WHERE id != ?", [selfId]);
+  const countRow = await db.get("SELECT COUNT(*) as c FROM kingdoms WHERE id != $1", [selfId]);
   const total = Number(countRow?.c || 0);
   if (total <= 0) return null;
 
   for (let attempt = 0; attempt < 8; attempt++) {
     const offset = Math.floor(Math.random() * total);
     const row = await db.get(
-      "SELECT id, name FROM kingdoms WHERE id != ? LIMIT 1 OFFSET ?",
+      "SELECT id, name FROM kingdoms WHERE id != $1 LIMIT 1 OFFSET $2",
       [selfId, offset],
     );
     if (row) return row;
@@ -1694,7 +1696,7 @@ function processTurn(k, db = null) {
 async function resolveExpeditions(db, k, engine) {
   // Pick up active ones AND unclaimed ones (turns_left=0 but rewards_claimed=0)
   const exps = await db.all(
-    "SELECT * FROM expeditions WHERE kingdom_id = ? AND (turns_left > 0 OR (turns_left = 0 AND rewards_claimed = 0))",
+    "SELECT * FROM expeditions WHERE kingdom_id = $1 AND (turns_left > 0 OR (turns_left = 0 AND rewards_claimed = 0))",
     [k.id],
   );
   devLog(
@@ -1702,7 +1704,7 @@ async function resolveExpeditions(db, k, engine) {
   );
 
   // Fetch fresh kingdom state once instead of once per expedition
-  const freshK = (await db.get("SELECT * FROM kingdoms WHERE id = ?", [k.id])) || k;
+  const freshK = (await db.get("SELECT * FROM kingdoms WHERE id = $1", [k.id])) || k;
 
   const expeditionEvents = [];
 
@@ -1752,9 +1754,8 @@ async function resolveExpeditions(db, k, engine) {
 
   // Batch update: all completions in one statement
   if (completions.length > 0) {
-    const placeholders = completions.map(() => "?").join(",");
     const markResult = await db.run(
-      `UPDATE expeditions SET turns_left = 0, rewards_claimed = 1 WHERE id IN (${placeholders}) AND rewards_claimed = 0`,
+      `UPDATE expeditions SET turns_left = 0, rewards_claimed = 1 WHERE id IN (${pgInList(completions.length)}) AND rewards_claimed = 0`,
       completions,
     );
     devLog(`[expedition] Batched completion claim: ${markResult.changes} expeditions marked complete`);
@@ -1762,9 +1763,8 @@ async function resolveExpeditions(db, k, engine) {
 
   // Batch update: all retry claims in one statement
   if (retries.length > 0) {
-    const placeholders = retries.map(() => "?").join(",");
     const claimResult = await db.run(
-      `UPDATE expeditions SET rewards_claimed = 1 WHERE id IN (${placeholders}) AND rewards_claimed = 0`,
+      `UPDATE expeditions SET rewards_claimed = 1 WHERE id IN (${pgInList(retries.length)}) AND rewards_claimed = 0`,
       retries,
     );
     devLog(`[expedition] Batched retry claim: ${claimResult.changes} expeditions claimed`);
@@ -1977,9 +1977,9 @@ async function resolveExpeditions(db, k, engine) {
       );
       if (Object.keys(safeUpdates).length > 0) {
         const cols = Object.keys(safeUpdates)
-          .map((c) => `${c} = ?`)
+          .map((c) => `${c} = $1`)
           .join(", ");
-        await db.run(`UPDATE kingdoms SET ${cols} WHERE id = ?`, [
+        await db.run(`UPDATE kingdoms SET ${cols} WHERE id = $1`, [
           ...Object.values(safeUpdates),
           k.id,
         ]);
@@ -1988,12 +1988,12 @@ async function resolveExpeditions(db, k, engine) {
       }
       if (rangersReturned > 0)
         await db.run(
-          "UPDATE kingdoms SET rangers  = rangers  + ? WHERE id = ?",
+          "UPDATE kingdoms SET rangers  = rangers  + $1 WHERE id = $2",
           [rangersReturned, k.id],
         );
       if (fightersReturned > 0)
         await db.run(
-          "UPDATE kingdoms SET fighters = fighters + ? WHERE id = ?",
+          "UPDATE kingdoms SET fighters = fighters + $1 WHERE id = $2",
           [fightersReturned, k.id],
         );
 
@@ -2011,7 +2011,7 @@ async function resolveExpeditions(db, k, engine) {
         let offset = 0;
         let hasMore = true;
         while (hasMore) {
-          const batch = await db.all("SELECT id FROM kingdoms LIMIT ? OFFSET ?", [BATCH_SIZE, offset]);
+          const batch = await db.all("SELECT id FROM kingdoms LIMIT $1 OFFSET $2", [BATCH_SIZE, offset]);
           if (batch.length === 0) {
             hasMore = false;
             break;
@@ -2033,7 +2033,7 @@ async function resolveExpeditions(db, k, engine) {
 
       // Save rewards to expedition row for log display
       const rewardJson = JSON.stringify(rewards.map((r) => r.text));
-      await db.run("UPDATE expeditions SET rewards = ? WHERE id = ?", [
+      await db.run("UPDATE expeditions SET rewards = $1 WHERE id = $2", [
         rewardJson,
         exp.id,
       ]);
@@ -2048,22 +2048,22 @@ async function resolveExpeditions(db, k, engine) {
         err.stack,
       );
       // Still return troops so they're not lost
-      await db.run("UPDATE kingdoms SET rangers = rangers + ? WHERE id = ?", [
+      await db.run("UPDATE kingdoms SET rangers = rangers + $1 WHERE id = $2", [
         exp.rangers,
         k.id,
       ]);
       if (exp.fighters > 0)
         await db.run(
-          "UPDATE kingdoms SET fighters = fighters + ? WHERE id = ?",
+          "UPDATE kingdoms SET fighters = fighters + $1 WHERE id = $2",
           [exp.fighters, k.id],
         );
       const errMsg = `${exp.type} expedition returned -- an error occurred calculating rewards (troops returned safely).`;
-      await db.run("UPDATE expeditions SET rewards = ? WHERE id = ?", [
+      await db.run("UPDATE expeditions SET rewards = $1 WHERE id = $2", [
         JSON.stringify([errMsg]),
         exp.id,
       ]);
       await db.run(
-        "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?, ?, ?, ?)",
+        "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1, $2, $3, $4)",
         [k.id, "system", errMsg, k.turn],
       );
       expeditionEvents.push({ type: "system", message: errMsg });
@@ -2086,7 +2086,7 @@ async function resolveRegions(db, io) {
       SELECT am.alliance_id, SUM(k.land) as alliance_land
       FROM kingdoms k
       JOIN alliance_members am ON k.id = am.kingdom_id
-      WHERE k.region = ?
+      WHERE k.region = $1
       GROUP BY am.alliance_id
       ORDER BY alliance_land DESC
     `,
@@ -2112,7 +2112,7 @@ async function resolveRegions(db, io) {
         // Owner still dominate, reset contest if any
         if (region.contest_alliance_id) {
           await db.run(
-            "UPDATE regions SET contest_alliance_id = NULL, contest_progress = 0 WHERE name = ?",
+            "UPDATE regions SET contest_alliance_id = NULL, contest_progress = 0 WHERE name = $1",
             [region.name],
           );
         }
@@ -2125,14 +2125,14 @@ async function resolveRegions(db, io) {
             await db.run(
               `
               UPDATE regions 
-              SET owner_alliance_id = ?, contest_alliance_id = NULL, contest_progress = 0, last_captured_at = unixepoch()
-              WHERE name = ?
+              SET owner_alliance_id = $1, contest_alliance_id = NULL, contest_progress = 0, last_captured_at = ${EPOCH_NOW}
+              WHERE name = $2
             `,
               [topAllianceId, region.name],
             );
 
             const alliance = await db.get(
-              "SELECT name FROM alliances WHERE id = ?",
+              "SELECT name FROM alliances WHERE id = $1",
               [topAllianceId],
             );
             if (io)
@@ -2144,14 +2144,14 @@ async function resolveRegions(db, io) {
               });
           } else {
             await db.run(
-              "UPDATE regions SET contest_progress = ? WHERE name = ?",
+              "UPDATE regions SET contest_progress = $1 WHERE name = $2",
               [progress, region.name],
             );
           }
         } else {
           // New challenger
           await db.run(
-            "UPDATE regions SET contest_alliance_id = ?, contest_progress = 10 WHERE name = ?",
+            "UPDATE regions SET contest_alliance_id = $1, contest_progress = 10 WHERE name = $2",
             [topAllianceId, region.name],
           );
         }
@@ -2160,7 +2160,7 @@ async function resolveRegions(db, io) {
       // No dominance, decay contest
       if (region.contest_progress > 0) {
         const progress = Math.max(0, region.contest_progress - 5);
-        await db.run("UPDATE regions SET contest_progress = ? WHERE name = ?", [
+        await db.run("UPDATE regions SET contest_progress = $1 WHERE name = $2", [
           progress,
           region.name,
         ]);

@@ -93,7 +93,7 @@ async function resolveRegions(db, io) {
       SELECT am.alliance_id, SUM(k.land) as alliance_land
       FROM kingdoms k
       JOIN alliance_members am ON k.id = am.kingdom_id
-      WHERE k.region = ?
+      WHERE k.region = $1
       GROUP BY am.alliance_id
       ORDER BY alliance_land DESC
     `,
@@ -119,7 +119,7 @@ async function resolveRegions(db, io) {
         // Owner still dominate, reset contest if any
         if (region.contest_alliance_id) {
           await db.run(
-            "UPDATE regions SET contest_alliance_id = NULL, contest_progress = 0 WHERE name = ?",
+            "UPDATE regions SET contest_alliance_id = NULL, contest_progress = 0 WHERE name = $1",
             [region.name],
           );
         }
@@ -132,14 +132,14 @@ async function resolveRegions(db, io) {
             await db.run(
               `
               UPDATE regions
-              SET owner_alliance_id = ?, contest_alliance_id = NULL, contest_progress = 0, last_captured_at = ?
-              WHERE name = ?
+              SET owner_alliance_id = $1, contest_alliance_id = NULL, contest_progress = 0, last_captured_at = $2
+              WHERE name = $3
             `,
               [topAllianceId, Math.floor(Date.now() / 1000), region.name],
             );
 
             const alliance = await db.get(
-              "SELECT name FROM alliances WHERE id = ?",
+              "SELECT name FROM alliances WHERE id = $1",
               [topAllianceId],
             );
             if (io)
@@ -151,14 +151,14 @@ async function resolveRegions(db, io) {
               });
           } else {
             await db.run(
-              "UPDATE regions SET contest_progress = ? WHERE name = ?",
+              "UPDATE regions SET contest_progress = $1 WHERE name = $2",
               [progress, region.name],
             );
           }
         } else {
           // New challenger
           await db.run(
-            "UPDATE regions SET contest_alliance_id = ?, contest_progress = 10 WHERE name = ?",
+            "UPDATE regions SET contest_alliance_id = $1, contest_progress = 10 WHERE name = $2",
             [topAllianceId, region.name],
           );
         }
@@ -167,7 +167,7 @@ async function resolveRegions(db, io) {
       // No dominance, decay contest
       if (region.contest_progress > 0) {
         const progress = Math.max(0, region.contest_progress - 5);
-        await db.run("UPDATE regions SET contest_progress = ? WHERE name = ?", [
+        await db.run("UPDATE regions SET contest_progress = $1 WHERE name = $2", [
           progress,
           region.name,
         ]);
