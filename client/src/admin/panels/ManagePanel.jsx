@@ -27,8 +27,8 @@ function Section({ title, children, danger = false }) {
 
 function Field({ label, children }) {
   return (
-    <div style={{ marginBottom: 12 }}>
-      <label style={{ display: 'block', fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', marginBottom: 4 }}>
+    <div className="mb-3">
+      <label className="block text-[11px] text-[var(--text3)] uppercase mb-1">
         {label}
       </label>
       {children}
@@ -277,7 +277,7 @@ export default function ManagePanel({ adminFetch, onToast }) {
 
       {/* AI Hiatus */}
       <Section title="AI Hiatus">
-        <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--text3)' }}>
+        <p className="m-0 mb-3 text-[13px] text-[var(--text3)]">
           Pauses AI turn processing globally. Does not affect hiatus state after server restart unless persisted.
         </p>
         <button
@@ -292,17 +292,17 @@ export default function ManagePanel({ adminFetch, onToast }) {
       {/* Chat moderation */}
       <Section title="Chat Moderation">
         {/* Current mods */}
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 6 }}>Current chat mods ({chatMods.length})</div>
+        <div className="mb-4">
+          <div className="text-xs text-[var(--text3)] mb-1.5">Current chat mods ({chatMods.length})</div>
           {modLoading ? (
-            <span style={{ fontSize: 12, color: 'var(--text3)' }}>Loading...</span>
+            <span className="text-xs text-[var(--text3)]">Loading...</span>
           ) : chatMods.length === 0 ? (
-            <span style={{ fontSize: 12, color: 'var(--text3)' }}>None</span>
+            <span className="text-xs text-[var(--text3)]">None</span>
           ) : (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            <div className="flex flex-wrap gap-1.5">
               {chatMods.map(m => (
-                <div key={m.username} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg4)', border: '1px solid var(--border2)', borderRadius: 4, padding: '4px 8px' }}>
-                  <span style={{ fontSize: 13, color: 'var(--text2)' }}>{m.username}</span>
+                <div key={m.username} className="flex items-center gap-1.5 bg-[var(--bg4)] border border-[var(--border2)] rounded py-1 px-2">
+                  <span className="text-[13px] text-[var(--text2)]">{m.username}</span>
                   <button
                     onClick={() => handleChatMod(m.username, 'demote')}
                     disabled={chatModBusy}
@@ -317,8 +317,8 @@ export default function ManagePanel({ adminFetch, onToast }) {
         </div>
 
         {/* Promote input */}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, minWidth: 160 }}>
+        <div className="flex gap-2 items-end flex-wrap">
+          <div className="flex-1 min-w-[160px]">
             <Field label="Promote username to chat mod">
               <input
                 type="text"
@@ -339,19 +339,19 @@ export default function ManagePanel({ adminFetch, onToast }) {
         </div>
 
         {/* Chat bans */}
-        <div style={{ marginTop: 4 }}>
-          <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 6 }}>Chat-banned players ({chatBans.length})</div>
+        <div className="mt-1">
+          <div className="text-xs text-[var(--text3)] mb-1.5">Chat-banned players ({chatBans.length})</div>
           {modLoading ? (
-            <span style={{ fontSize: 12, color: 'var(--text3)' }}>Loading...</span>
+            <span className="text-xs text-[var(--text3)]">Loading...</span>
           ) : chatBans.length === 0 ? (
-            <span style={{ fontSize: 12, color: 'var(--text3)' }}>None</span>
+            <span className="text-xs text-[var(--text3)]">None</span>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div className="flex flex-col gap-1">
               {chatBans.map(b => (
-                <div key={b.username} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg4)', border: '1px solid var(--border2)', borderRadius: 4, padding: '5px 8px' }}>
-                  <span style={{ fontSize: 13, color: 'var(--text2)', flex: 1 }}>{b.username}</span>
+                <div key={b.username} className="flex items-center gap-2 bg-[var(--bg4)] border border-[var(--border2)] rounded py-[5px] px-2">
+                  <span className="text-[13px] text-[var(--text2)] flex-1">{b.username}</span>
                   {b.chat_ban_reason && (
-                    <span style={{ fontSize: 11, color: 'var(--text3)', flex: 2 }}>{b.chat_ban_reason}</span>
+                    <span className="text-[11px] text-[var(--text3)] flex-[2]">{b.chat_ban_reason}</span>
                   )}
                   <button
                     onClick={() => handleChatUnban(b.username)}
@@ -368,8 +368,8 @@ export default function ManagePanel({ adminFetch, onToast }) {
 
       {/* Promote admin */}
       <Section title="Promote to Admin">
-        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, minWidth: 160 }}>
+        <div className="flex gap-2 items-end flex-wrap">
+          <div className="flex-1 min-w-[160px]">
             <Field label="Grant full admin access to player">
               <input
                 type="text"
@@ -392,7 +392,7 @@ export default function ManagePanel({ adminFetch, onToast }) {
 
       {/* Test kingdoms */}
       <Section title="Test Kingdoms Setup">
-        <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--text3)' }}>
+        <p className="m-0 mb-3 text-[13px] text-[var(--text3)]">
           Provisions one kingdom per race with the given username/kingdom prefix. Safe to re-run — existing kingdoms are updated (or skipped if resetExisting is off).
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10, marginBottom: 12 }}>
@@ -424,8 +424,8 @@ export default function ManagePanel({ adminFetch, onToast }) {
             />
           </Field>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text2)', cursor: 'pointer' }}>
+        <div className="flex items-center gap-3 flex-wrap">
+          <label className="flex items-center gap-1.5 text-[13px] text-[var(--text2)] cursor-pointer">
             <input
               type="checkbox"
               checked={tkForm.resetExisting}
@@ -440,12 +440,12 @@ export default function ManagePanel({ adminFetch, onToast }) {
 
         {/* Results */}
         {tkResults && (
-          <div style={{ marginTop: 14, overflowX: 'auto' }}>
-            <table style={{ borderCollapse: 'collapse', fontSize: 12, color: 'var(--text2)', width: '100%' }}>
+          <div className="mt-3.5 overflow-x-auto">
+            <table className="border-collapse text-xs text-[var(--text2)] w-full">
               <thead>
                 <tr>
                   {['Race', 'Username', 'Kingdom', 'Status'].map(h => (
-                    <th key={h} style={{ padding: '5px 8px', textAlign: 'left', borderBottom: '1px solid var(--border2)', color: 'var(--text3)', fontWeight: 600 }}>{h}</th>
+                    <th key={h} className="py-[5px] px-2 text-left border-b border-[var(--border2)] text-[var(--text3)] font-semibold">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -468,10 +468,10 @@ export default function ManagePanel({ adminFetch, onToast }) {
 
       {/* Danger zone */}
       <Section title="Danger Zone" danger>
-        <p style={{ margin: '0 0 14px', fontSize: 13, color: 'var(--text3)' }}>
+        <p className="m-0 mb-3.5 text-[13px] text-[var(--text3)]">
           Bulk and irreversible operations. Every button requires confirmation.
         </p>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <div className="flex gap-2.5 flex-wrap">
           <button
             onClick={() => confirmBulk(
               'Reset All Turns',

@@ -191,7 +191,7 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: 4, marginBottom: 16, flexWrap: 'wrap' }}>
+      <div className="flex gap-1 mb-4 flex-wrap">
         {[['wishlist', 'Wishlist'], ['changelog', 'Changelog'], ['notes', 'Admin Notes'], ['suggestions', 'Suggestions'], ['bugs', 'Bug Reports']].map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)} style={{ ...BTN, color: tab === id ? 'var(--gold)' : 'var(--text3)', borderColor: tab === id ? 'var(--gold)' : 'var(--border2)' }}>
             {label}
@@ -201,15 +201,15 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
 
       {tab === 'wishlist' && (
         <div>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'flex-end' }}>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', marginBottom: 3 }}>Category</label>
+          <div className="flex gap-2 mb-3 items-end">
+            <div className="flex-1">
+              <label className="block text-[11px] text-[var(--text3)] uppercase mb-[3px]">Category</label>
               <select style={INPUT} value={newWish.category} onChange={e => setNewWish(p => ({ ...p, category: e.target.value }))}>
                 {WISHLIST_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
-            <div style={{ flex: 3 }}>
-              <label style={{ display: 'block', fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', marginBottom: 3 }}>Description</label>
+            <div className="flex-[3]">
+              <label className="block text-[11px] text-[var(--text3)] uppercase mb-[3px]">Description</label>
               <input style={INPUT} value={newWish.description} onChange={e => setNewWish(p => ({ ...p, description: e.target.value }))} placeholder="Describe the feature or fix..." />
             </div>
             <button onClick={handleAddWish} disabled={wishAdding || !newWish.description.trim()} style={BTN_PRIMARY}>
@@ -220,18 +220,18 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
             </button>
           </div>
 
-          <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--text1)', marginBottom: 6 }}>
+          <div className="font-semibold text-[13px] text-[var(--text1)] mb-1.5">
             Pending ({pending.length})
           </div>
           {pending.length === 0 ? (
-            <div style={{ color: 'var(--text3)', fontSize: 13, padding: '4px 0 12px' }}>No pending items.</div>
+            <div className="text-[var(--text3)] text-[13px] pt-1 pb-3">No pending items.</div>
           ) : (
             <WishTable items={pending} onComplete={handleCompleteWish} />
           )}
 
           {completed.length > 0 && (
             <>
-              <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--text3)', marginTop: 12, marginBottom: 6 }}>
+              <div className="font-semibold text-[13px] text-[var(--text3)] mt-3 mb-1.5">
                 Completed ({completed.length})
               </div>
               <WishTable items={completed} onComplete={null} />
@@ -242,13 +242,13 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
 
       {tab === 'changelog' && (
         <div>
-          <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12, lineHeight: 1.5, maxWidth: 720 }}>
+          <div className="text-xs text-[var(--text3)] mb-3 leading-normal max-w-[720px]">
             Publish updates here — appears in-game Changelog panel, admin log, and #updates on Discord.
             Description supports markdown: <code>##</code>, <code>###</code>, <code>**bold**</code>, <code>- bullets</code>, <code>{'>'} quote</code>.
             Plain text auto-formats with emoji + category styling.
           </div>
 
-          <div style={{ display: 'grid', gap: 8, marginBottom: 16, maxWidth: 640 }}>
+          <div className="grid gap-2 mb-4 max-w-[640px]">
             <input
               type="text"
               placeholder="Title (e.g. Interface Patch 1.0.7)"
@@ -269,7 +269,7 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
               onChange={(e) => setNewChangelog(v => ({ ...v, description: e.target.value }))}
               style={{ ...INPUT, minHeight: 120, resize: 'vertical', fontFamily: 'ui-monospace, monospace', fontSize: 12 }}
             />
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div className="flex gap-2">
               <button onClick={handlePublishChangelog} style={BTN_PRIMARY} disabled={changelogPublishing}>
                 {changelogPublishing ? 'Publishing...' : 'Publish to Changelog'}
               </button>
@@ -280,11 +280,11 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
           </div>
 
           {changelogEntries.length === 0 ? (
-            <div style={{ color: 'var(--text3)', fontSize: 13, padding: '4px 0' }}>
+            <div className="text-[var(--text3)] text-[13px] py-1">
               {changelogLoading ? 'Loading...' : 'No changelog entries yet.'}
             </div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
+            <div className="overflow-x-auto">
               <table style={TABLE}>
                 <thead><tr>
                   {['ID', 'Title', 'Category', 'Source', 'Discord', 'Preview', 'Created'].map(h => <th key={h} style={TH}>{h}</th>)}
@@ -312,9 +312,9 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
 
       {tab === 'notes' && (
         <div>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'flex-end' }}>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', marginBottom: 3 }}>New Note</label>
+          <div className="flex gap-2 mb-3 items-end">
+            <div className="flex-1">
+              <label className="block text-[11px] text-[var(--text3)] uppercase mb-[3px]">New Note</label>
               <textarea style={{ ...INPUT, resize: 'vertical' }} rows={2} value={newNote} onChange={e => setNewNote(e.target.value)} placeholder="Admin note message..." />
             </div>
             <button onClick={handleAddNote} disabled={noteAdding || !newNote.trim()} style={{ ...BTN_PRIMARY, alignSelf: 'flex-end' }}>
@@ -325,9 +325,9 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
             </button>
           </div>
           {notes.length === 0 ? (
-            <div style={{ color: 'var(--text3)', fontSize: 13, padding: '4px 0' }}>{notesLoading ? 'Loading...' : 'No notes.'}</div>
+            <div className="text-[var(--text3)] text-[13px] py-1">{notesLoading ? 'Loading...' : 'No notes.'}</div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
+            <div className="overflow-x-auto">
               <table style={TABLE}>
                 <thead><tr>
                   {['ID', 'Author', 'Message', 'Created', ''].map(h => <th key={h} style={TH}>{h}</th>)}
@@ -353,16 +353,16 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
 
       {tab === 'suggestions' && (
         <div>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+          <div className="flex gap-2 mb-3">
             <button onClick={loadSuggestions} style={BTN} disabled={suggestLoading}>
               {suggestLoading ? '...' : 'Refresh'}
             </button>
-            <span style={{ color: 'var(--text3)', fontSize: 13, alignSelf: 'center' }}>Read-only — player-submitted suggestions</span>
+            <span className="text-[var(--text3)] text-[13px] self-center">Read-only — player-submitted suggestions</span>
           </div>
           {suggestions.length === 0 ? (
-            <div style={{ color: 'var(--text3)', fontSize: 13, padding: '4px 0' }}>{suggestLoading ? 'Loading...' : 'No suggestions.'}</div>
+            <div className="text-[var(--text3)] text-[13px] py-1">{suggestLoading ? 'Loading...' : 'No suggestions.'}</div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
+            <div className="overflow-x-auto">
               <table style={TABLE}>
                 <thead><tr>
                   {['ID', 'Kingdom', 'Player', 'Message', 'Created'].map(h => <th key={h} style={TH}>{h}</th>)}
@@ -386,16 +386,16 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
 
       {tab === 'bugs' && (
         <div>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+          <div className="flex gap-2 mb-3">
             <button onClick={loadBugReports} style={BTN} disabled={bugLoading}>
               {bugLoading ? '...' : 'Refresh'}
             </button>
-            <span style={{ color: 'var(--text3)', fontSize: 13, alignSelf: 'center' }}>In-game bug reports (Discord when configured)</span>
+            <span className="text-[var(--text3)] text-[13px] self-center">In-game bug reports (Discord when configured)</span>
           </div>
           {bugReports.length === 0 ? (
-            <div style={{ color: 'var(--text3)', fontSize: 13, padding: '4px 0' }}>{bugLoading ? 'Loading...' : 'No bug reports yet.'}</div>
+            <div className="text-[var(--text3)] text-[13px] py-1">{bugLoading ? 'Loading...' : 'No bug reports yet.'}</div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
+            <div className="overflow-x-auto">
               <table style={TABLE}>
                 <thead><tr>
                   {['ID', 'Player', 'Kingdom', 'Category', 'Panel', 'Discord', 'Message', 'Console', 'Created'].map(h => <th key={h} style={TH}>{h}</th>)}
@@ -412,8 +412,8 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
                       <td style={{ ...TD, whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxWidth: 360 }}>{r.message}</td>
                       <td style={{ ...TD, maxWidth: 220, verticalAlign: 'top' }}>
                         {r.console_log ? (
-                          <details style={{ fontSize: 11, color: 'var(--text3)' }}>
-                            <summary style={{ cursor: 'pointer', color: 'var(--accent1)' }}>
+                          <details className="text-[11px] text-[var(--text3)]">
+                            <summary className="cursor-pointer text-[var(--accent1)]">
                               {r.console_log.split('\n').length} lines
                             </summary>
                             <pre style={{
@@ -448,7 +448,7 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
 
 function WishTable({ items, onComplete }) {
   return (
-    <div style={{ overflowX: 'auto', marginBottom: 12 }}>
+    <div className="overflow-x-auto mb-3">
       <table style={TABLE}>
         <thead><tr>
           {['ID', 'Category', 'Description', onComplete ? 'Action' : 'Status'].map(h => <th key={h} style={TH}>{h}</th>)}
@@ -463,7 +463,7 @@ function WishTable({ items, onComplete }) {
                 {onComplete && !w.completed ? (
                   <button onClick={() => onComplete(w.id)} style={{ ...BTN, padding: '3px 8px', fontSize: 11, color: 'var(--gold)', borderColor: 'var(--gold)' }}>Complete</button>
                 ) : (
-                  <span style={{ color: 'var(--text3)', fontSize: 11 }}>Done</span>
+                  <span className="text-[var(--text3)] text-[11px]">Done</span>
                 )}
               </td>
             </tr>
