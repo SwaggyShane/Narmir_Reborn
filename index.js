@@ -77,6 +77,7 @@ let isBooted = false;
 let bootError = null;
 
 const { initDb, repairJsonRows } = require('./db/schema');
+const { EPOCH_NOW_TEXT } = require('./lib/db-sql');
 const setupSockets    = require('./game/sockets');
 const engine          = require('./game/engine');
 const { requireAuth, cacheKingdomId } = require('./routes/middleware');
@@ -431,7 +432,7 @@ async function runRegen(db) {
     const ORDER = ['spring','summer','fall','winter'];
     season = ORDER[(ORDER.indexOf(season)+1)%ORDER.length];
     await db.run("UPDATE server_state SET value=? WHERE key='current_season'", [season]);
-    await db.run("UPDATE server_state SET value=CAST(unixepoch() AS TEXT) WHERE key='season_started_at'");
+    await db.run(`UPDATE server_state SET value=${EPOCH_NOW_TEXT} WHERE key='season_started_at'`);
     console.log('[season] Changed to', season);
   }
 
@@ -530,7 +531,7 @@ async function runRegen(db) {
 
   await db.run(`
     UPDATE kingdoms
-    SET turns_stored = MIN(?, turns_stored + ?)
+    SET turns_stored = LEAST(?, turns_stored + ?)
     WHERE turns_stored < ?
   `, [REGEN_MAX, REGEN_AMOUNT, REGEN_MAX]);
 
@@ -565,7 +566,7 @@ async function runRegen(db) {
   }
 
   await db.run(
-    "UPDATE server_state SET value = CAST(unixepoch() AS TEXT) WHERE key = 'last_regen_at'"
+    `UPDATE server_state SET value = ${EPOCH_NOW_TEXT} WHERE key = 'last_regen_at'`
   );
   console.log('[turns] Regen complete — +' + REGEN_AMOUNT + ' turns | season: ' + season);
 }
@@ -667,10 +668,10 @@ async function start() {
         if (windows > 0) {
           const catchUp = Math.min(windows * REGEN_AMOUNT, REGEN_MAX);
           await db.run(`
-            UPDATE kingdoms SET turns_stored = MIN(?, turns_stored + ?)
+            UPDATE kingdoms SET turns_stored = LEAST(?, turns_stored + ?)
           `, [REGEN_MAX, catchUp]);
           await db.run(
-            "UPDATE server_state SET value = CAST(unixepoch() AS TEXT) WHERE key = 'last_regen_at'"
+            `UPDATE server_state SET value = ${EPOCH_NOW_TEXT} WHERE key = 'last_regen_at'`
           );
           console.log('[turns] Boot catch-up: applied ' + windows + ' missed window(s), +'  + catchUp + ' turns');
         }

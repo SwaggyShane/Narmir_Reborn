@@ -19,6 +19,7 @@ const {
 const fragmentBonusManager = require("./fragment-bonus-manager");
 const effectsProcessor = require("./synergy-effects-processor");
 const { safeJsonParse, clearParseCache } = require('../utils/helpers');
+const { EPOCH_NOW } = require('../lib/db-sql');
 
 // Shared domain helpers extracted to game/lib. These are the canonical
 // implementations; engine.js still re-exports them via module.exports so
@@ -2125,7 +2126,7 @@ async function resolveRegions(db, io) {
             await db.run(
               `
               UPDATE regions 
-              SET owner_alliance_id = ?, contest_alliance_id = NULL, contest_progress = 0, last_captured_at = unixepoch()
+              SET owner_alliance_id = ?, contest_alliance_id = NULL, contest_progress = 0, last_captured_at = ${EPOCH_NOW}
               WHERE name = ?
             `,
               [topAllianceId, region.name],

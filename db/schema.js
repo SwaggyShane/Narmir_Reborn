@@ -11,13 +11,6 @@ function translateSqlForPg(sql) {
   // same statement are all handled and new tables added here won't silently fall
   // through due to an earlier else-if match.
 
-  if (/INSERT\s+OR\s+REPLACE\s+INTO\s+server_state/i.test(translated)) {
-    translated = translated.replace(
-      /INSERT\s+OR\s+REPLACE\s+INTO\s+server_state\s*\((.*?)\)\s*VALUES\s*\((.*?)\)/i,
-      "INSERT INTO server_state ($1) VALUES ($2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value"
-    );
-  }
-
   if (/INSERT\s+OR\s+REPLACE\s+INTO\s+market_prices/i.test(translated)) {
     translated = translated.replace(/INSERT\s+OR\s+REPLACE\s+INTO\s+market_prices/i, "INSERT INTO market_prices");
     if (!/ON\s+CONFLICT/i.test(translated)) {
@@ -61,13 +54,11 @@ function translateSqlForPg(sql) {
   // AUTOINCREMENT type translation
   translated = translated.replace(/INTEGER\s+PRIMARY\s+KEY\s+AUTOINCREMENT/gi, "SERIAL PRIMARY KEY");
 
-  // unixepoch() translation
-  translated = translated.replace(/unixepoch\(\)/gi, "date_part('epoch', now())::integer");
+  // unixepoch() — schema boot/migrations only until Phase C (runtime uses lib/db-sql.js).
   translated = translated.replace(/CAST\(unixepoch\(\) AS TEXT\)/gi, "CAST(date_part('epoch', now())::integer AS TEXT)");
+  translated = translated.replace(/unixepoch\(\)/gi, "date_part('epoch', now())::integer");
 
-  // Translate scalar MIN(...) and MAX(...) to LEAST and GREATEST
-  translated = translated.replace(/MIN\(([^)]*,[^)]*)\)/gi, "LEAST($1)");
-  translated = translated.replace(/MAX\(([^)]*,[^)]*)\)/gi, "GREATEST($1)");
+  // Scalar MIN/MAX and INSERT OR REPLACE server_state: migrated to PG-native runtime SQL.
 
   // Translate parameter query markers ? to $1, $2...
   let paramIndex = 1;

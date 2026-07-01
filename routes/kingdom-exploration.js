@@ -96,7 +96,7 @@ module.exports = function (db) {
         }
 
         await db.run(
-          'UPDATE kingdoms SET rangers = MAX(0, rangers - ?), fighters = MAX(0, fighters - ?), food = MAX(0, food - ?) WHERE id = ?',
+          'UPDATE kingdoms SET rangers = GREATEST(0, rangers - ?), fighters = GREATEST(0, fighters - ?), food = GREATEST(0, food - ?) WHERE id = ?',
           [r, f, foodNeeded, k.id]
         );
 

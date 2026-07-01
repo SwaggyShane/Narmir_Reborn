@@ -11,6 +11,7 @@ const engine = require("../game/engine");
 const { FRAGMENT_METADATA } = require("../game/fragment-attunements");
 const { PRESETS, PRESET_IDS, buildPresetFields } = require("../game/ai-presets");
 const { computeNextRunAt } = require("../lib/audit-scheduler");
+const { EPOCH_NOW } = require("../lib/db-sql");
 const { incrementUnread } = require("../cache");
 
 const ALLOWED_PRIZE_TYPES = ['gold', 'mana', 'rangers', 'researchers', 'war_machines', 'world_fragment'];
@@ -901,7 +902,10 @@ module.exports = function (db, io) {
     try {
       const { hiatus } = req.body;
       const hiatusValue = hiatus ? 'true' : 'false';
-      await db.run("INSERT OR REPLACE INTO server_state (key, value) VALUES ('ai_hiatus', ?)", [hiatusValue]);
+      await db.run(
+        "INSERT INTO server_state (key, value) VALUES ('ai_hiatus', ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+        [hiatusValue],
+      );
       res.json({ ok: true, hiatus });
     } catch (e) {
       res.status(500).json({ error: e.message });
@@ -2109,7 +2113,7 @@ module.exports = function (db, io) {
 
       const result = await db.run(
         `INSERT INTO audit_schedules (created_by, frequency, is_enabled, next_run_at, created_at, updated_at)
-         VALUES (?, ?, 1, ?, unixepoch(), unixepoch())`,
+         VALUES (?, ?, 1, ?, ${EPOCH_NOW}, ${EPOCH_NOW})`,
         [req.player.playerId, frequency, computeNextRunAt(frequency)]
       );
 
@@ -2152,7 +2156,7 @@ module.exports = function (db, io) {
 
       await db.run(
         `UPDATE audit_schedules
-         SET frequency = ?, is_enabled = ?, next_run_at = ?, updated_at = unixepoch()
+         SET frequency = ?, is_enabled = ?, next_run_at = ?, updated_at = ${EPOCH_NOW}
          WHERE id = ?`,
         [nextFrequency, nextEnabled, nextRunAt, scheduleId]
       );
@@ -2191,11 +2195,11 @@ module.exports = function (db, io) {
         await db.run(
           `INSERT INTO audit_history
            (schedule_id, run_at, status, findings_count, findings, duration_ms)
-           VALUES (?, unixepoch(), 'success', 0, ?, 0)`,
+           VALUES (?, ${EPOCH_NOW}, 'success', 0, ?, 0)`,
           [scheduleId, JSON.stringify({ critical: [], high: [], medium: [], low: [], info: [] })]
         );
         await db.run(
-          'UPDATE audit_schedules SET last_run_at = unixepoch(), next_run_at = ?, updated_at = unixepoch() WHERE id = ?',
+          `UPDATE audit_schedules SET last_run_at = ${EPOCH_NOW}, next_run_at = ?, updated_at = ${EPOCH_NOW} WHERE id = ?`,
           [computeNextRunAt(schedule.frequency), scheduleId]
         );
       }

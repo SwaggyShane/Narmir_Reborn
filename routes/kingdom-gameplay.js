@@ -16,6 +16,7 @@ const abilityManager = require('../game/active-ability-manager');
 const { applyKingdomUpdates } = require('../db/schema');
 const { setUnreadCount } = require("../cache.js");
 const { decorateNewsMessage } = require("../game/news-emoji");
+const { EPOCH_NOW } = require("../lib/db-sql");
 
 const router = express.Router();
 
@@ -351,7 +352,7 @@ module.exports = function (db) {
       if (uniqueMessages.length > 0) {
         const placeholders = uniqueMessages.map(() => '?').join(',');
         const existingNews = await db.all(
-          `SELECT DISTINCT message FROM news WHERE kingdom_id = ? AND message IN (${placeholders}) AND created_at > (unixepoch() - 60)`,
+          `SELECT DISTINCT message FROM news WHERE kingdom_id = ? AND message IN (${placeholders}) AND created_at > (${EPOCH_NOW} - 60)`,
           [k.id, ...uniqueMessages]
         );
         existingNews.forEach(row => {
@@ -2309,7 +2310,7 @@ module.exports = function (db) {
         // Atomic check-and-deduct: verify sufficient resources AND deduct in single UPDATE
         // This prevents two simultaneous launches from both seeing sufficient food
         const foodResult = await db.run(
-          'UPDATE kingdoms SET food = MAX(0, food - ?), population = MAX(0, population - ?) WHERE id = ? AND food >= ? AND population >= ?',
+          'UPDATE kingdoms SET food = GREATEST(0, food - ?), population = GREATEST(0, population - ?) WHERE id = ? AND food >= ? AND population >= ?',
           [foodNeeded, populationSent, k.id, foodNeeded, populationSent]
         );
         if (foodResult.changes === 0) {
