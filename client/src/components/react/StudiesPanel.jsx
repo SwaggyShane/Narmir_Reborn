@@ -1,5 +1,4 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import clsx from 'clsx';
 import { useGameMutationEvents } from '../../hooks/useGameState';
 import { useStudiesData } from '../../hooks/useStudiesData';
 import {
@@ -22,13 +21,23 @@ import { SchoolTab } from './StudiesTabs/SchoolTab.jsx';
 import { ShrineTab } from './StudiesTabs/ShrineTab.jsx';
 import { LibraryTab } from './StudiesTabs/LibraryTab.jsx';
 
+const TAB_CONFIG = [
+  { id: 'tower', label: '🗼 Tower' },
+  { id: 'school', label: '🏫 School' },
+  { id: 'shrine', label: '⛩️ Shrine', vampireLabel: '🪦 Mausoleum', buttonId: 'studies-tab-shrine-btn' },
+  { id: 'slibrary', label: '📖 Library' },
+];
+
+const SYNC_BUTTON_CLASS = 'base-btn px-2 py-1 text-[11px] disabled:opacity-60 opacity-70';
+
 const StudiesPanel = () => {
-  useGameMutationEvents();
   const [activeTab, setActiveTab] = useState('tower');
-  const [mageSpellbookValue, setMageSpellbookValue] = useState(0);
-  const [mageSchoolValue, setMageSchoolValue] = useState(0);
-  const [focus1Value, setFocus1Value] = useState('economy');
-  const [focus2Value, setFocus2Value] = useState('weapons');
+  const [schoolForm, setSchoolForm] = useState({
+    mageSpellbookValue: 0,
+    mageSchoolValue: 0,
+    focus1Value: 'economy',
+    focus2Value: 'weapons',
+  });
 
   const { studiesData, isRefreshing, loadStudies, fetchStudiesData, syncUpgrades } = useStudiesData();
 
@@ -56,6 +65,10 @@ const StudiesPanel = () => {
     syncUpgrades(category, nextOwned);
     fetchStudiesData();
   }, [syncUpgrades, fetchStudiesData]);
+
+  const updateSchoolForm = useCallback((key, value) => {
+    setSchoolForm((prev) => ({ ...prev, [key]: value }));
+  }, []);
 
   const state = useMemo(() => ({
     race,
@@ -92,41 +105,25 @@ const StudiesPanel = () => {
       <div className="flex items-center justify-between mb-3.5 flex-wrap gap-2">
         <div className="card-title">🏛️ Studies</div>
         <button
-          className="base-btn"
+          className={SYNC_BUTTON_CLASS}
           onClick={loadStudies}
           disabled={isRefreshing}
-          style={{ fontSize: '11px', opacity: isRefreshing ? 0.6 : 0.7, padding: '4px 8px' }}
         >
           {isRefreshing ? '⟳ Syncing...' : '↻ Sync'}
         </button>
       </div>
 
       <div className="flex flex-wrap gap-1 mb-4 border-b-2 border-[var(--border2)] pb-0">
-        <button
-          className={`base-btn admin-tab ${activeTab === 'tower' ? 'active' : ''} rounded-none`}
-          onClick={() => setActiveTab('tower')}
-        >
-          🗼 Tower
-        </button>
-        <button
-          className={`base-btn admin-tab ${activeTab === 'school' ? 'active' : ''} rounded-none`}
-          onClick={() => setActiveTab('school')}
-        >
-          🏫 School
-        </button>
-        <button
-          id="studies-tab-shrine-btn"
-          className={`base-btn admin-tab ${activeTab === 'shrine' ? 'active' : ''} rounded-none`}
-          onClick={() => setActiveTab('shrine')}
-        >
-          {race === 'vampire' ? '🪦 Mausoleum' : '⛩️ Shrine'}
-        </button>
-        <button
-          className={`base-btn admin-tab ${activeTab === 'slibrary' ? 'active' : ''} rounded-none`}
-          onClick={() => setActiveTab('slibrary')}
-        >
-          📖 Library
-        </button>
+        {TAB_CONFIG.map((tab) => (
+          <button
+            key={tab.id}
+            id={tab.buttonId}
+            className={`base-btn admin-tab ${activeTab === tab.id ? 'active' : ''} rounded-none`}
+            onClick={() => setActiveTab(tab.id)}
+          >
+            {tab.id === 'shrine' && race === 'vampire' ? tab.vampireLabel : tab.label}
+          </button>
+        ))}
       </div>
 
       {activeTab === 'tower' && (
@@ -139,14 +136,14 @@ const StudiesPanel = () => {
           state={state}
           onUpgraded={handleTabUpgraded}
           mages={mages}
-          mageSpellbookValue={mageSpellbookValue}
-          setMageSpellbookValue={setMageSpellbookValue}
-          mageSchoolValue={mageSchoolValue}
-          setMageSchoolValue={setMageSchoolValue}
-          focus1Value={focus1Value}
-          setFocus1Value={setFocus1Value}
-          focus2Value={focus2Value}
-          setFocus2Value={setFocus2Value}
+          mageSpellbookValue={schoolForm.mageSpellbookValue}
+          setMageSpellbookValue={(value) => updateSchoolForm('mageSpellbookValue', value)}
+          mageSchoolValue={schoolForm.mageSchoolValue}
+          setMageSchoolValue={(value) => updateSchoolForm('mageSchoolValue', value)}
+          focus1Value={schoolForm.focus1Value}
+          setFocus1Value={(value) => updateSchoolForm('focus1Value', value)}
+          focus2Value={schoolForm.focus2Value}
+          setFocus2Value={(value) => updateSchoolForm('focus2Value', value)}
           fetchStudiesData={fetchStudiesData}
         />
       )}

@@ -29,6 +29,8 @@ const STUDIES_RESEARCH_ROWS = [
   { label: 'Spellbook', stateKey: 'res_spellbook', barClass: 'spell' },
 ];
 
+const SAVE_FOCUS_BUTTON_CLASS = 'base-btn variant-green w-full bg-[var(--green)]';
+
 export const ResearchFocusSection = ({
   studiesData,
   state,
@@ -117,7 +119,7 @@ export const ResearchFocusSection = ({
           <div className="text-2xs text-[var(--text3)]">Focus 2 Current: {state?.[DISC_COLS[focus2Value]] || 0}%</div>
         </div>
       )}
-      <button className="base-btn variant-green w-full" onClick={saveResearchFocus} style={{ background: 'var(--green)' }}>
+      <button className={SAVE_FOCUS_BUTTON_CLASS} onClick={saveResearchFocus}>
         Save focus
       </button>
       <div className="mt-4 border-t border-[var(--border)] pt-4">

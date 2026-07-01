@@ -15,7 +15,7 @@ export const TowerTab = ({ studiesData, state, onUpgraded }) => {
           </div>
           <div className="trow">
             <span className="name">Mana/turn</span>
-            <span className="count" id="st-mana-turn" style={{ color: 'var(--accent1)' }}>0</span>
+            <span className="count text-[var(--accent1)]" id="st-mana-turn">0</span>
           </div>
           <div className="trow">
             <span className="name">Mages (Current/Cap)</span>

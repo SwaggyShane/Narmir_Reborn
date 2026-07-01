@@ -75,6 +75,19 @@ function requireAdmin(req, res, next) {
 }
 
 function requireCsrfToken(req, res, next) {
+  const hasHeaderAuth = Boolean(
+    req.headers.authorization?.replace("Bearer ", "") ||
+    req.headers["x-auth-token"],
+  );
+  const hasCookieAuth = Boolean(req.cookies?.token);
+
+  // Header-based auth is used by non-browser clients and load tooling.
+  // CSRF protection is necessary for cookie-auth browser requests, but not
+  // for explicit bearer-token calls that browsers do not attach automatically.
+  if (hasHeaderAuth && !hasCookieAuth) {
+    return next();
+  }
+
   const headerToken = req.headers["x-csrf-token"];
   if (!headerToken) {
     return res.status(403).json({ error: "CSRF token required" });

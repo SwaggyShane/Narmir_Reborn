@@ -8,6 +8,10 @@ import { MageAllocationCard } from './MageAllocationCard.jsx';
 import { ResearchFocusSection } from './ResearchFocusSection.jsx';
 import { SpellsGrid } from './SpellsGrid.jsx';
 
+const SCHOOL_SUBTAB_BUTTON_CLASS = 'base-btn admin-tab rounded-none';
+const RELEASE_BUTTON_CLASS = 'base-btn variant-red whitespace-nowrap bg-[var(--red)]';
+const STUDY_BUTTON_CLASS = 'base-btn variant-accent whitespace-nowrap bg-[var(--accent1)] text-white';
+
 export const SchoolTab = ({
   studiesData,
   state,
@@ -138,17 +142,15 @@ export const SchoolTab = ({
       {/* School Sub-tabs */}
       <div className="flex flex-wrap gap-1 mb-4 border-b-2 border-[var(--border2)] pb-0">
         <button
-          className={clsx('base-btn admin-tab', activeSchoolSubTab === 'general' && 'active')}
+          className={clsx(SCHOOL_SUBTAB_BUTTON_CLASS, activeSchoolSubTab === 'general' && 'active')}
           onClick={() => setActiveSchoolSubTab('general')}
-          style={{ borderRadius: 0 }}
         >
           📚 General Studies
         </button>
         {(studiesData?.school_of_magic || state?.school_of_magic) && (
           <button
-            className={clsx('base-btn admin-tab', activeSchoolSubTab === 'school' && 'active')}
+            className={clsx(SCHOOL_SUBTAB_BUTTON_CLASS, activeSchoolSubTab === 'school' && 'active')}
             onClick={() => setActiveSchoolSubTab('school')}
-            style={{ borderRadius: 0 }}
           >
             🔮 {(studiesData?.school_of_magic || state?.school_of_magic)?.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
           </button>
@@ -221,10 +223,10 @@ export const SchoolTab = ({
                 </div>
               </div>
               <div className="flex gap-2">
-                <button className="base-btn variant-red whitespace-nowrap" onClick={releaseMageAllocation} style={{ background: 'var(--red)' }}>
+                <button className={RELEASE_BUTTON_CLASS} onClick={releaseMageAllocation}>
                   Release all
                 </button>
-                <button className="base-btn variant-accent whitespace-nowrap" onClick={saveMageAllocation} style={{ background: 'var(--accent1)', color: '#fff' }}>
+                <button className={STUDY_BUTTON_CLASS} onClick={saveMageAllocation}>
                   Study
                 </button>
               </div>
