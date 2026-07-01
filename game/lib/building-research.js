@@ -382,6 +382,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
     const completed = RESOURCE_BUILDING_CONFIG[building]
       ? Math.min(rawCompleted, queue[building])
       : rawCompleted;
+    let completedApplied = 0;
 
     if (completed > 0) {
       const col =
@@ -392,7 +393,9 @@ function processBuildQueue(k, events, xpSourcesAccum) {
       if (col) {
         const current = updates[col] !== undefined ? updates[col] : k[col] || 0;
         const cap = getCap(col, k.level || 1);
-        let canAdd = Math.max(0, Math.min(completed, cap - current));
+        const capSpace = Math.max(0, cap - current);
+        const capBlocked = completed > 0 && capSpace <= 0;
+        let canAdd = Math.max(0, Math.min(completed, capSpace));
 
         if (!RESOURCE_BUILDING_CONFIG[building] && canAdd > 0) {
           const goldPerUnit = BUILDING_GOLD_COST[building] ?? 100;
@@ -403,11 +406,14 @@ function processBuildQueue(k, events, xpSourcesAccum) {
 
           const fromQueue = Math.min(canAdd, queue[building] || 0);
           let extraUnits = canAdd - fromQueue;
+          let blockReason = null;
 
           if (extraUnits > 0) {
             if (goldPerUnit > 0) {
               const curGold = updates.gold !== undefined ? updates.gold : k.gold;
-              extraUnits = Math.max(0, Math.min(extraUnits, Math.floor(curGold / goldPerUnit)));
+              const nextExtraUnits = Math.max(0, Math.min(extraUnits, Math.floor(curGold / goldPerUnit)));
+              if (nextExtraUnits === 0 && extraUnits > 0) blockReason = 'gold';
+              extraUnits = nextExtraUnits;
             }
             if (landPerUnit > 0 && extraUnits > 0) {
               let totalUsedLand = 0;
@@ -417,19 +423,27 @@ function processBuildQueue(k, events, xpSourcesAccum) {
                 totalUsedLand += (queue[bKey] || 0) * bCost;
               }
               const availLand = (updates.land !== undefined ? updates.land : k.land) - totalUsedLand;
-              extraUnits = Math.max(0, Math.min(extraUnits, Math.floor(availLand / landPerUnit)));
+              const nextExtraUnits = Math.max(0, Math.min(extraUnits, Math.floor(availLand / landPerUnit)));
+              if (nextExtraUnits === 0 && extraUnits > 0) blockReason = 'land';
+              extraUnits = nextExtraUnits;
             }
             if (woodPerUnit > 0 && extraUnits > 0) {
               const curWood = updates.wood !== undefined ? updates.wood : k.wood;
-              extraUnits = Math.max(0, Math.min(extraUnits, Math.floor(curWood / woodPerUnit)));
+              const nextExtraUnits = Math.max(0, Math.min(extraUnits, Math.floor(curWood / woodPerUnit)));
+              if (nextExtraUnits === 0 && extraUnits > 0) blockReason = 'wood';
+              extraUnits = nextExtraUnits;
             }
             if (stonePerUnit > 0 && extraUnits > 0) {
               const curStone = updates.stone !== undefined ? updates.stone : k.stone;
-              extraUnits = Math.max(0, Math.min(extraUnits, Math.floor(curStone / stonePerUnit)));
+              const nextExtraUnits = Math.max(0, Math.min(extraUnits, Math.floor(curStone / stonePerUnit)));
+              if (nextExtraUnits === 0 && extraUnits > 0) blockReason = 'stone';
+              extraUnits = nextExtraUnits;
             }
             if (ironPerUnit > 0 && extraUnits > 0) {
               const curIron = updates.iron !== undefined ? updates.iron : k.iron;
-              extraUnits = Math.max(0, Math.min(extraUnits, Math.floor(curIron / ironPerUnit)));
+              const nextExtraUnits = Math.max(0, Math.min(extraUnits, Math.floor(curIron / ironPerUnit)));
+              if (nextExtraUnits === 0 && extraUnits > 0) blockReason = 'iron';
+              extraUnits = nextExtraUnits;
             }
             if (extraUnits > 0 && goldPerUnit > 0) {
               const curGold = updates.gold !== undefined ? updates.gold : k.gold;
@@ -450,7 +464,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
           }
 
           const finalCanAdd = fromQueue + extraUnits;
-          if (finalCanAdd < canAdd && finalCanAdd === 0) {
+          if (finalCanAdd < canAdd && finalCanAdd === 0 && blockReason) {
             const curGold = updates.gold !== undefined ? updates.gold : k.gold;
             const curWood = updates.wood !== undefined ? updates.wood : k.wood;
             const curStone = updates.stone !== undefined ? updates.stone : k.stone;
@@ -466,7 +480,8 @@ function processBuildQueue(k, events, xpSourcesAccum) {
         }
 
         updates[col] = current + canAdd;
-        if (canAdd < completed && canAdd === 0) {
+        completedApplied = canAdd;
+        if (capBlocked && canAdd === 0) {
           constructionNotes.push(
             `⚠️ ${building.replace(/_/g, " ")} cap reached at level ${k.level || 1} (max ${cap.toLocaleString()}) — level up to build more.`,
           );
@@ -527,9 +542,9 @@ function processBuildQueue(k, events, xpSourcesAccum) {
           }
         }
       }
-      progress[building] = totalProgress - completed * cost;
+      progress[building] = totalProgress - completedApplied * cost;
       if (queue[building] > 0) {
-        queue[building] = Math.max(0, queue[building] - completed);
+        queue[building] = Math.max(0, queue[building] - completedApplied);
         if (queue[building] <= 0) {
           delete queue[building];
           if (RESOURCE_BUILDING_CONFIG[building]) {

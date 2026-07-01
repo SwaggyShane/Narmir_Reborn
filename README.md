@@ -63,6 +63,56 @@ npm run sweep:combat-v2-broad  # Advanced combat broad balance sweep
 
 ---
 
+## Documentation Map
+
+### For Developers
+- **[CLAUDE.md](CLAUDE.md)** — PR workflow, quality checks, branching strategy
+- **[TODO.md](TODO.md)** — Development roadmap and task tracking (current source of truth)
+- **[.claude/WORKFLOW-REQUIRED.md](.claude/WORKFLOW-REQUIRED.md)** — Enforcement checklist before commits/pushes
+- **[MAINTENANCE.md](MAINTENANCE.md)** — System health audit, architecture status
+- **[ARCHIVAL.md](ARCHIVAL.md)** — Completed tracks and features (historical record)
+
+### For Setup & Deployment
+- **[WINDOWS_LOCAL_SETUP.md](WINDOWS_LOCAL_SETUP.md)** — Local dev environment on Windows
+- **[DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md)** — Pre-production deployment verification
+- **[docs/RAILWAY_SETUP.md](docs/RAILWAY_SETUP.md)** — Railway deployment guide
+- **[RAILWAY_SECRETS.md](RAILWAY_SECRETS.md)** — Production secrets management in Railway
+- **[docs/BACKUP_RESTORE.md](docs/BACKUP_RESTORE.md)** — Database backup and recovery procedures
+
+### For Operations & Troubleshooting
+- **[docs/SUPPORT_RUNBOOK.md](docs/SUPPORT_RUNBOOK.md)** — Common issues, recovery, escalation (10+ scenarios)
+- **[ALERT_RUNBOOK.md](ALERT_RUNBOOK.md)** — On-call alert response guide
+- **[BACKUP_RESTORE_RUNBOOK.md](BACKUP_RESTORE_RUNBOOK.md)** — Backup and restore procedures
+
+### For Technical Reference
+- **[docs/API_ENDPOINTS.md](docs/API_ENDPOINTS.md)** — Complete API reference (900+ lines with examples)
+- **[QUERY_PERFORMANCE_ANALYSIS.md](QUERY_PERFORMANCE_ANALYSIS.md)** — Database query optimization guide
+- **[HTTPS_ENFORCEMENT.md](HTTPS_ENFORCEMENT.md)** — HTTPS and TLS configuration
+- **[docs/API_RATE_LIMITING.md](docs/API_RATE_LIMITING.md)** — Rate limiter setup and config
+- **[MONITORING_ALERTING_GUIDE.md](MONITORING_ALERTING_GUIDE.md)** — Error tracking and alerting setup
+
+### For Security & Compliance
+- **[SQL_INJECTION_AUDIT_REPORT.md](SQL_INJECTION_AUDIT_REPORT.md)** — Query injection audit (0 vulnerabilities)
+- **[SECURITY_AUDIT.md](SECURITY_AUDIT.md)** — General security audit report
+- **[docs/PRODUCTION_VERIFICATION.md](docs/PRODUCTION_VERIFICATION.md)** — Pre-launch security checklist
+
+### For Performance & Testing
+- **[LOAD_TEST_EXECUTION_GUIDE.md](LOAD_TEST_EXECUTION_GUIDE.md)** — Run load tests (5,000+ concurrent)
+- **[LOAD_TEST_REPORT.md](LOAD_TEST_REPORT.md)** — Load test results and baseline
+- **[docs/LOAD_TESTING.md](docs/LOAD_TESTING.md)** — Load testing infrastructure
+
+### For Players
+- **[GAMEPLAY_GUIDE.md](GAMEPLAY_GUIDE.md)** — Complete game mechanics reference
+- **[ACCOUNT_MANAGEMENT.md](ACCOUNT_MANAGEMENT.md)** — Account creation, security, recovery
+- **[FAQ.md](FAQ.md)** — Frequently asked questions
+
+### Reference & Standards
+- **[CHANGELOG.md](CHANGELOG.md)** — Feature history and release notes
+- **[TERMINOLOGY.md](TERMINOLOGY.md)** — Naming standards and conventions
+- **[TESTING_CHECKLISTS.md](TESTING_CHECKLISTS.md)** — QA test plans by system
+
+---
+
 ## Project Structure
 
 ```

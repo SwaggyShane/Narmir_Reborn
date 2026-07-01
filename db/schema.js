@@ -653,10 +653,11 @@ async function repairJsonRows(db = _db) {
     const jsonColumns = Object.keys(specs).filter(col => columns.includes(col));
     if (!jsonColumns.length) continue;
 
-    const rowCount = await db.get(`SELECT COUNT(*) as count FROM ${table}`);
+    const rowCount = await db.get(`SELECT COUNT(*) as count FROM "${table}"`);
     console.log(`[db] JSON repair: scanning ${table} (${rowCount?.count || 0} rows, ${jsonColumns.length} JSON columns)`);
 
-    const rows = await db.all(`SELECT id, ${jsonColumns.join(', ')} FROM ${table}`);
+    const quotedColumns = jsonColumns.map(col => `"${col}"`).join(', ');
+    const rows = await db.all(`SELECT id, ${quotedColumns} FROM "${table}"`);
     const tableDetails = { table, scannedRows: rows.length, fixedRows: 0, fixedCells: 0, fixedColumns: {} };
 
     for (const row of rows) {
@@ -670,9 +671,9 @@ async function repairJsonRows(db = _db) {
       }
       if (!Object.keys(updates).length) continue;
 
-      const setClause = Object.keys(updates).map(col => `${col} = ?`).join(', ');
+      const setClause = Object.keys(updates).map(col => `"${col}" = ?`).join(', ');
       const values = [...Object.values(updates), row.id];
-      await db.run(`UPDATE ${table} SET ${setClause} WHERE id = ?`, values);
+      await db.run(`UPDATE "${table}" SET ${setClause} WHERE id = ?`, values);
       fixedRows += 1;
       tableDetails.fixedRows += 1;
       fixedCells += Object.keys(updates).length;
@@ -2248,12 +2249,12 @@ async function applyKingdomUpdates(kingdomId, updates) {
     console.warn('[applyKingdomUpdates] No valid columns to update', { kingdomId, updates, validCols: Array.from(validCols).slice(0, 10) });
     return [];
   }
-  const cols = Object.keys(safe).map(k => `${k} = ?`).join(', ');
+  const cols = Object.keys(safe).map(k => `"${k}" = ?`).join(', ');
   const vals = [...Object.values(safe), kingdomId];
   if (process.env.NODE_ENV !== 'production') {
     console.log('[applyKingdomUpdates] Updating', { kingdomId, fields: Object.keys(safe), safe });
   }
-  await _db.run(`UPDATE kingdoms SET ${cols} WHERE id = ?`, vals);
+  await _db.run(`UPDATE "kingdoms" SET ${cols} WHERE id = ?`, vals);
   return Object.keys(safe);
 }
 
