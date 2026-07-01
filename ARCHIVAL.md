@@ -10,7 +10,10 @@
 
 ### 2026-07-01
 
-- Cleared the full `TODO.md` deferred/technical-debt backlog in one pass (PRs #737–#742).
+- Cleared the active `TODO.md` deferred work backlog in one pass (PRs #737–#742). Several
+  Known Technical Debt (Post-Beta) items remain open — admin inline CSS consolidation
+  (partially addressed, see PR #741), component test coverage expansion, and the dead
+  route handlers found in PR #738.
 - **Query performance verification** (PR #737): re-ran the 2026-06-29 analysis empirically
   against a stress-seeded local database; all `/turn` and `/expedition` hot-path queries
   already resolve via index scans in sub-millisecond time. Added `idx_heroes_kingdom_status`
