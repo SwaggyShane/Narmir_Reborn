@@ -31,6 +31,15 @@ const originalLog = console.log;
 const originalError = console.error;
 const originalWarn = console.warn;
 
+async function flushSentry(timeoutMs = 2000) {
+  if (!sentryEnabled) return;
+  try {
+    await Sentry.flush(timeoutMs);
+  } catch (err) {
+    console.error('[sentry] Flush failed:', err?.message || err);
+  }
+}
+
 console.log = function(...args) {
   originalLog.apply(console, args);
   try {
@@ -1733,7 +1742,7 @@ async function start() {
   process.on('SIGINT', shutdownAuditScheduler);
 
   // Global error handlers to prevent silent crashes
-    process.on('unhandledRejection', (reason, promise) => {
+  process.on('unhandledRejection', (reason, promise) => {
     console.error('[CRITICAL] Unhandled Rejection at:', promise, 'reason:', reason);
     if (sentryEnabled) {
       Sentry.captureException(reason instanceof Error ? reason : new Error(String(reason)));
@@ -1762,7 +1771,7 @@ async function start() {
   const isRecoverablePgError = (error) =>
     !!error && (RECOVERABLE_PG_CODES.has(error.code) || RECOVERABLE_SYSTEM_CODES.has(error.code));
 
-  process.on('uncaughtException', (error) => {
+  process.on('uncaughtException', async (error) => {
     if (isRecoverablePgError(error)) {
       console.error(`[db] Recovered from PG connection error (${error.code}): ${error.message} — pool will reconnect, not exiting.`);
       if (sentryEnabled) {
@@ -1778,6 +1787,7 @@ async function start() {
     if (sentryEnabled) {
       Sentry.captureException(error);
     }
+    await flushSentry();
     // Cannot safely recover - application is in undefined state. Exit for process manager to restart.
     process.exit(1);
   });
