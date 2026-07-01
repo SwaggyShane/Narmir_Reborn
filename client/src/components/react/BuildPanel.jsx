@@ -633,7 +633,7 @@ const BuildPanel = () => {
         </div>
         <div className="bld-controls">
           <div className="bld-eng">
-            <div className="text-[10px] text-text3 mb-0.5">Hire</div>
+            <span className="bld-control-label">Hire</span>
             <input
               type="number"
               className="input text-right"
@@ -658,7 +658,7 @@ const BuildPanel = () => {
           </div>
           {showDemolish && (
             <div className="bld-demolish">
-              <div className="text-[10px] text-text3 mb-0.5">Destroy</div>
+              <span className="bld-control-label">Destroy</span>
               <input
                 type="number"
                 className="input text-right"
@@ -718,6 +718,15 @@ const BuildPanel = () => {
         </div>
       </div>
       <div className="build-content-scroll space-y-4 px-4 pb-5">
+
+        <div className="flex justify-center pt-4">
+          <button
+            onClick={() => setShowAttunements(true)}
+            className="rounded-full border border-blue-400 px-4 py-1.5 text-[12px] font-semibold text-blue-400 cursor-pointer whitespace-nowrap"
+          >
+            🌌 Attunements
+          </button>
+        </div>
 
         <div className="card mt-4 rounded-2xl border border-white/10 bg-zinc-950/80">
           <div className="mb-3 border-b border-white/10 pb-3 pt-3">
@@ -906,13 +915,7 @@ const BuildPanel = () => {
         <div className="card mt-4">
           <div id="build-rows">
             <div id="build-header">
-              <span className="flex items-center gap-2">
-                Building
-                <button
-                  onClick={() => setShowAttunements(true)}
-                  className="rounded-full border border-blue-400 px-2 py-0.5 text-[9px] font-semibold text-blue-400 cursor-pointer leading-none whitespace-nowrap"
-                >Attunement</button>
-              </span>
+              <span>Building</span>
               <span className="text-right">Qty</span>
             </div>
 
