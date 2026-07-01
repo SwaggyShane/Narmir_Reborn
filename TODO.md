@@ -21,8 +21,8 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 
 - **Admin inline CSS consolidation** — 500+ inline style usages remain in the admin panel; migrate to Tailwind
 - **Component test coverage expansion** — 57+ component tests exist; gaps remain in some panels
-- **Query performance analysis** — `/expedition` and `/turn` endpoints could use a fresh look under load
-- **API documentation refresh** — `docs/API_ENDPOINTS.md` should be checked against current routes for drift
+- **Query performance analysis** — `/expedition` and `/turn` endpoints could use a fresh look under load (addressed in PR #737, pending merge)
+- **Dead route handlers in `kingdom-gameplay.js` and `kingdom-research.js`** — 16 routes in `kingdom-gameplay.js` and 1 in `kingdom-research.js` (`school-allocation`) are unreachable because `kingdom-build.js` mounts first on the same `/api/kingdom` prefix and defines the same paths (e.g. `POST /build-queue`, `POST /build`, `POST /tower-craft`). Needs a careful diff of each duplicate pair before removing the dead copies — see `docs/API_ENDPOINTS.md` for the full list.
 
 ---
 
