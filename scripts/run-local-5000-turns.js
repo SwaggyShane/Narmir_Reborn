@@ -102,7 +102,7 @@ class NarmirClient {
     try {
       res = await this.requestWithRetry("get", url, null, false);
     } catch (error) {
-      throw new Error(`GET ${url} failed: ${error.message}`);
+      throw new Error(`GET ${url} failed: ${error.message}`, { cause: error });
     }
     if (res.status >= 400) {
       throw new Error(`GET ${url} failed: ${res.status} ${res.data?.error || "unknown error"}`);
@@ -115,7 +115,7 @@ class NarmirClient {
     try {
       res = await this.requestWithRetry("post", url, body, true);
     } catch (error) {
-      throw new Error(`POST ${url} failed: ${error.message}`);
+      throw new Error(`POST ${url} failed: ${error.message}`, { cause: error });
     }
     if (res.status >= 400) {
       throw new Error(`POST ${url} failed: ${res.status} ${res.data?.error || "unknown error"}`);

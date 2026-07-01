@@ -1,12 +1,27 @@
 # Narmir Reborn: Completed Work Archive
 
-**Purpose:** Historical record of all completed features, tracks, and initiatives. Serves as reference for future work and decision rationale.
+**Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-06-30 (Alpha phase complete; beta-prep completions archived)
+**Last updated:** 2026-06-30
 
 ---
 
-## Beta Preparation Completed (2026-06-30)
+## Recent Chronology
+
+### 2026-06-30
+
+- Cleared repo-side beta-prep backlog and collapsed active tracking into `ROADMAP.md`.
+- Wired Sentry runtime capture for Express errors, browser error intake, slow endpoints, and crash reporting.
+- Hardened production secret validation for `JWT_SECRET`, `ADMIN_SECRET`, and `CORS_ORIGIN`.
+- Completed audit scheduler wiring: admin schedule routes, manual runs, history feed, and next-run tracking.
+- Verified app-side HTTPS redirect, HSTS, trust-proxy handling, and secure production cookies in code.
+- Validation completed:
+  - `eslint` passed for touched files
+  - route/module smoke load passed
+  - `npm test` passed
+  - `npm run build` passed
+
+### 2026-06-29
 
 - SQL injection audit completed and route/query handling tightened.
 - Backup and restore verification completed.
@@ -15,7 +30,14 @@
 - Support runbook completed.
 - API documentation refreshed and shortened.
 - Query performance analysis completed.
-- Note: the newer local turn-run and tutorial docs now live separately and supersede older progression drafts.
+- Load-test harness/tooling hardened for authenticated reruns.
+
+### 2026-06-28
+
+- Alpha phase declared complete.
+- Admin hard cutover verified.
+- Tailwind consolidation completed.
+- Combat system documentation and validation consolidated.
 
 ---
 
@@ -734,7 +756,7 @@ All major development tracks finished. Platform ready for beta launch.
 
 **Updated:** 2026-06-29
 
-Completed work that was previously tracked in `TODO.md` has been consolidated here so the live backlog only contains unfinished tasks.
+Completed work that was previously tracked in `ROADMAP.md` has been consolidated here so the live backlog only contains unfinished tasks.
 
 - Battle Outcome Animation win/loss banner emphasis completed and merged via PR #668
 - Battle Outcome Animation casualty and critical-hit counters completed and merged via PR #678

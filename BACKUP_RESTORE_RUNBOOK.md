@@ -538,8 +538,9 @@ psql -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='publ
 - PostgreSQL Documentation: https://www.postgresql.org/docs/12/backup.html
 - pg_dump manual: https://www.postgresql.org/docs/12/app-pgdump.html
 - Railway PostgreSQL: https://docs.railway.app/reference/metrics
-- MAINTENANCE.md: System health audit
-- TODO.md: Item 3 specification
+- ROADMAP.md: active unfinished work
+- ARCHIVAL.md: completed maintenance and verification history
+- ROADMAP.md: Item 3 specification
 
 ---
 

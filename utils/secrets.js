@@ -1,9 +1,13 @@
 class SecretsManager {
   constructor() {
+    const isProduction = (process.env.NODE_ENV || '').trim().toLowerCase() === 'production';
+
     this.requiredSecrets = {
       JWT_SECRET: {
         required: true,
         description: 'Secret key for JWT token signing',
+        minLength: 32,
+        strictMinLength: isProduction,
         env: 'JWT_SECRET'
       },
       DATABASE_URL: {
@@ -19,19 +23,22 @@ class SecretsManager {
         env: 'NODE_ENV'
       },
       CORS_ORIGIN: {
-        required: process.env.NODE_ENV === 'production',
+        required: isProduction,
         description: 'Frontend origin for CORS',
         env: 'CORS_ORIGIN'
       },
       ADMIN_SECRET: {
-        required: false,
+        required: isProduction,
         description: 'Secret key for admin authentication',
+        minLength: 16,
+        strictMinLength: isProduction,
         env: 'ADMIN_SECRET'
       },
       CONFIRM_SECRET: {
         required: false,
         description: 'Secret key for email confirmation tokens',
         minLength: 16,
+        strictMinLength: false,
         env: 'CONFIRM_SECRET'
       },
       DISCORD_BOT_TOKEN: {
@@ -59,22 +66,26 @@ class SecretsManager {
       const value = process.env[spec.env];
 
       if (!value && spec.required) {
-        errors.push(`❌ ${spec.env}: ${spec.description} (REQUIRED)`);
+        errors.push(`ERROR ${spec.env}: ${spec.description} (REQUIRED)`);
       } else if (!value && spec.defaultValue) {
         process.env[spec.env] = spec.defaultValue;
         validated[spec.env] = spec.defaultValue;
-        warnings.push(`⚠️  ${spec.env}: Using default value "${spec.defaultValue}"`);
+        warnings.push(`WARN ${spec.env}: Using default value "${spec.defaultValue}"`);
       } else if (value) {
         if (spec.pattern && !spec.pattern.test(value)) {
-          errors.push(`❌ ${spec.env}: Invalid format (expected ${spec.pattern})`);
+          errors.push(`ERROR ${spec.env}: Invalid format`);
+        } else if (spec.minLength && value.length < spec.minLength) {
+          if (spec.strictMinLength) {
+            errors.push(`ERROR ${spec.env}: Too short (minimum ${spec.minLength} characters)`);
+          } else {
+            validated[spec.env] = value;
+            warnings.push(`WARN ${spec.env}: Short value detected; ${spec.minLength}+ characters recommended`);
+          }
         } else {
           validated[spec.env] = value;
-          if (spec.env === 'JWT_SECRET' && value.length < 32) {
-            warnings.push('⚠️  JWT_SECRET: Short secret detected; startup will continue, but a 32+ character value is recommended');
-          }
         }
       } else if (spec.env === 'ADMIN_SECRET') {
-        warnings.push('ℹ️  ADMIN_SECRET: Not configured (optional at boot)');
+        warnings.push('INFO ADMIN_SECRET: Not configured (optional outside production)');
       }
     }
 
@@ -83,7 +94,7 @@ class SecretsManager {
       if (value) {
         validated[envVar] = value;
       } else {
-        warnings.push(`ℹ️  ${envVar}: Not configured (optional)`);
+        warnings.push(`INFO ${envVar}: Not configured (optional)`);
       }
     }
 
@@ -92,7 +103,7 @@ class SecretsManager {
 
   printReport(errors, warnings) {
     if (errors.length === 0 && warnings.length === 0) {
-      console.log('[secrets] ✅ All required secrets configured');
+      console.log('[secrets] All required secrets configured');
       return true;
     }
 
@@ -115,7 +126,7 @@ class SecretsManager {
     const isValid = this.printReport(errors, warnings);
 
     if (!isValid) {
-      console.error('[secrets] ❌ Server startup blocked due to missing secrets');
+      console.error('[secrets] Server startup blocked due to missing or invalid secrets');
       if (process.env.RAILWAY_ENVIRONMENT_NAME || process.env.RAILWAY_SERVICE_NAME) {
         console.error('[secrets] Railway deployment detected: set the required Variables in the Railway dashboard');
       }
