@@ -371,6 +371,78 @@ class PgDbAdapter {
     }
   }
 
+  async withTransaction(fn) {
+    const store = transactionStorage.getStore();
+    const isStoreActive = store && !store.released;
+
+    if (isStoreActive) {
+      store.depth += 1;
+      const savepointName = `sp_${store.depth}`;
+      try {
+        await store.client.query(`SAVEPOINT ${savepointName}`);
+        const result = await fn();
+        await store.client.query(`RELEASE SAVEPOINT ${savepointName}`);
+        store.depth -= 1;
+        return result;
+      } catch (err) {
+        try {
+          await store.client.query(`ROLLBACK TO SAVEPOINT ${savepointName}`);
+        } finally {
+          store.depth -= 1;
+        }
+        throw err;
+      }
+    }
+
+    const client = await this.pool.connect();
+
+    if (client[TXN_ERR_HANDLER]) {
+      client.removeListener('error', client[TXN_ERR_HANDLER]);
+    }
+    const txnErrorHandler = (err) => {
+      console.error(`[db] Transaction client error (connection terminated): ${err.code || ''} ${err.message}`);
+      const info = this.activeTxns.get(client);
+      if (info) {
+        if (info.store) info.store.released = true;
+        this.activeTxns.delete(client);
+        try { client.release(err); } catch { /* already gone */ }
+      }
+    };
+    client[TXN_ERR_HANDLER] = txnErrorHandler;
+    client.on('error', txnErrorHandler);
+
+    const txnStore = { client, depth: 1, released: false };
+
+    try {
+      await client.query('BEGIN');
+      this.activeTxns.set(client, { acquiredAt: Date.now(), store: txnStore });
+
+      return await transactionStorage.run(txnStore, async () => {
+        try {
+          const result = await fn();
+          await client.query('COMMIT');
+          return result;
+        } catch (err) {
+          try {
+            await client.query('ROLLBACK');
+          } catch (rollbackErr) {
+            console.error('[db] withTransaction rollback error:', rollbackErr.message);
+          }
+          throw err;
+        } finally {
+          txnStore.released = true;
+          this.activeTxns.delete(client);
+          client.release();
+        }
+      });
+    } catch (err) {
+      txnStore.released = true;
+      this.activeTxns.delete(client);
+      try { client.release(err); } catch { /* already gone */ }
+      throw err;
+    }
+  }
+
   // Safety net: force-return any transaction client held longer than maxAgeMs.
   // The res.on('finish') cleanup cannot see transactions started via enterWith
   // (it runs in a different async context), so this reaper — which tracks clients

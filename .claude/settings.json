@@ -10,7 +10,29 @@
             "statusMessage": "Checking git workflow..."
           }
         ]
+      },
+      {
+        "matcher": "PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'PowerShell command with expressions approved'",
+            "statusMessage": "Allowing PowerShell expressions..."
+          }
+        ]
       }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash",
+      "PowerShell",
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep",
+      "mcp__claude_ai_Claude_Code_Remote__*"
     ]
   }
 }

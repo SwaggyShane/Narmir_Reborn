@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 
+require("dotenv").config();
+
 const fs = require("fs");
 const path = require("path");
 const jwt = require("jsonwebtoken");
+const { Pool } = require("pg");
 const { parseArgs } = require("util");
 const { initDb } = require("../db/schema");
 
@@ -10,6 +13,48 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 if (!JWT_SECRET) {
   throw new Error("JWT_SECRET is required to generate load test tokens.");
+}
+
+async function loadEligiblePlayers(requestedCount) {
+  if (process.env.DATABASE_URL) {
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      max: 1,
+      min: 0,
+      idleTimeoutMillis: 5000,
+      connectionTimeoutMillis: 10000,
+    });
+
+    try {
+      const result = await pool.query(
+        `
+          SELECT p.id, p.username, COALESCE(p.is_admin, 0) AS is_admin
+          FROM players p
+          INNER JOIN kingdoms k ON k.player_id = p.id
+          WHERE COALESCE(p.is_banned, 0) = 0
+          ORDER BY p.id
+          LIMIT $1
+        `,
+        [requestedCount]
+      );
+      return result.rows;
+    } finally {
+      await pool.end();
+    }
+  }
+
+  const db = await initDb();
+  return db.all(
+    `
+      SELECT p.id, p.username, COALESCE(p.is_admin, 0) AS is_admin
+      FROM players p
+      INNER JOIN kingdoms k ON k.player_id = p.id
+      WHERE COALESCE(p.is_banned, 0) = 0
+      ORDER BY p.id
+      LIMIT ?
+    `,
+    [requestedCount]
+  );
 }
 
 async function main() {
@@ -26,19 +71,7 @@ async function main() {
   }
 
   const outputPath = path.resolve(values.output || "load-test-tokens.csv");
-  const db = await initDb();
-
-  const players = await db.all(
-    `
-      SELECT p.id, p.username, COALESCE(p.is_admin, 0) AS is_admin
-      FROM players p
-      INNER JOIN kingdoms k ON k.player_id = p.id
-      WHERE COALESCE(p.is_banned, 0) = 0
-      ORDER BY p.id
-      LIMIT ?
-    `,
-    [requestedCount]
-  );
+  const players = await loadEligiblePlayers(requestedCount);
 
   if (!players.length) {
     throw new Error("No active players with kingdoms were found for token generation.");

@@ -407,18 +407,17 @@ module.exports = function (db) {
       const { school } = req.body;
       if (!school?.trim()) return res.status(400).json({ error: 'School name required' });
 
-      await db.run('BEGIN TRANSACTION');
-      try {
+      const result = await db.withTransaction(async () => {
         const kingdom = await db.get('SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE', [req.player.playerId]);
         if (!kingdom) {
-          await db.run('ROLLBACK');
-          return res.status(404).json({ error: 'Kingdom not found' });
+          throw new Error('Kingdom not found');
         }
 
         const result = engine.selectSchool(kingdom, school.trim().toLowerCase());
         if (result.error) {
-          await db.run('ROLLBACK');
-          return res.status(400).json({ error: result.error });
+          const error = new Error(result.error);
+          error.statusCode = 400;
+          throw error;
         }
 
         await db.run(
@@ -432,14 +431,18 @@ module.exports = function (db) {
             [kingdom.id, result.events[0].type || 'system', result.events[0].message, kingdom.turn]
           );
         }
-        await db.run('COMMIT');
 
-        res.json({ ok: true, school: result.updates.school_of_magic, events: result.events });
-      } catch (txErr) {
-        await db.run('ROLLBACK').catch(() => {});
-        throw txErr;
-      }
+        return result;
+      });
+
+      res.json({ ok: true, school: result.updates.school_of_magic, events: result.events });
     } catch (e) {
+      if (e.message.includes('Kingdom not found')) {
+        return res.status(404).json({ error: e.message });
+      }
+      if (e.statusCode === 400) {
+        return res.status(400).json({ error: e.message });
+      }
       if (!res.headersSent) {
         res.status(500).json({ error: e.message });
       }

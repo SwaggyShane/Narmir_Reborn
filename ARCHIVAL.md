@@ -653,7 +653,7 @@ All major development tracks finished. Platform ready for beta launch.
 ## Notes for Future Reference
 
 ### Deferred Work
-- **E3: Discord.js v15 migration** — Deferred indefinitely pending v15 stable
+- **E3: Discord integration review** — Completed and no longer active
 - **UI Happiness Breakdown** — Enhancement, low priority
 - **Historical Happiness Tracking** — Enhancement, low priority
 - **Advanced Rebellion Events** — Enhancement
@@ -718,7 +718,7 @@ All major development tracks finished. Platform ready for beta launch.
 19. ✅ Beta Architecture Debt: Refresh API documentation
 20. ✅ Beta Architecture Debt: Investigate `/expedition` and `/turn` query performance
 21. ✅ Beta Architecture Debt: Clean up duplicate happiness logic and related code-quality debt
-22. ✅ Beta Architecture Debt: Decide whether Discord.js v15 migration is still needed before beta
+22. ✅ Beta Architecture Debt: Confirm Discord integration is stable and keep the current implementation
 
 ---
 

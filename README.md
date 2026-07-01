@@ -192,9 +192,9 @@ Ultra-rare prizes include unique items, stat bonuses, and World Fragment drops. 
 
 ## Combat
 
-**Combat:** Aggregate power vs. aggregate power. Percentage-based casualties.
+Combat is documented moving forward simply as **combat**.
 
-**Advanced combat model (`USE_COMBAT_V2=1`):** Individual troop HP and damage, injury states, cleric healing, war machine crew requirements, wall HP pools, equipment stockpile tracking, and per-unit critical hits. See `COMBAT_V2_MODEL.md`.
+The repo contains the current combat flow plus the more detailed simulation model covering troop HP, damage, injuries, cleric healing, war machine crew requirements, wall HP, equipment stockpiles, and critical hits.
 
 ---
 

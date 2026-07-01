@@ -15,7 +15,7 @@
 | 19 | Refresh API documentation | Docs update | docs/API_ENDPOINTS.md already created |
 | 20 | Query performance investigation | Analysis done | docs/QUERY_PERFORMANCE_ANALYSIS.md already created |
 | 21 | [done] Clean up happiness logic | ✅ Complete | Already marked done |
-| 22 | Discord.js v15 decision | Analysis done | docs/DISCORD_V15_ASSESSMENT.md already created |
+| 22 | Discord integration decision | Analysis done | documented in archival notes |
 
 ---
 
@@ -81,13 +81,12 @@
 ### Item 21: Clean up happiness logic
 **Status:** ✅ COMPLETE (already marked done)
 
-### Item 22: Discord.js v15 migration decision
-**Status:** ✅ ANALYSIS COMPLETE (docs/DISCORD_V15_ASSESSMENT.md created)
+### Item 22: Discord integration decision
+**Status:** ✅ ANALYSIS COMPLETE (documented in archival notes)
 
-**File:** docs/DISCORD_V15_ASSESSMENT.md (252 lines)
-- Current: discord.js v14.14.0 (stable)
-- Recommendation: Keep v14 through beta, defer v15 to Phase 7
-- Reason: Stability over features for beta phase
+**Current state:** Discord integration is stable and working
+- Recommendation: keep the current implementation
+- Reason: stability over feature churn for beta phase
 
 **Recommendation:** Mark as complete - decision documented
 

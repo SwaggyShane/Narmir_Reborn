@@ -92,8 +92,8 @@
   - multer 2.1.1 ✅ 2.2.0 (DoS via nested fields, 2 HIGH)
   - ws 8.x ✅ 8.21.0 (memory exhaustion DoS)
   - undici via npm override (discord.js v14 dependency, 4 HIGH vulns; mitigation in place)
-- **discord.js:** Pinned to v14.14.0 with the undici override in place; no migration lane is active
-- **Decision:** Keep discord.js v15 as a watch item; do not treat it as active beta work unless the upgrade becomes clearly justified
+- **discord.js:** Pinned and stable; no migration lane is active
+- **Decision:** Keep the current Discord integration as-is
 - **Last audit:** 2026-06-27; next audit: 2026-07-28
 
 ### Architecture
@@ -155,7 +155,7 @@
 |------|----------|-------------|----------|---------------|
 | Inline CSS consolidation | Low | 769 inline `style={{}}` usages remain; static properties should be Tailwind utilities | No | 4-6 hours |
 | StudiesPanel refactor | Medium | Complex component with layered state and store dependencies; still worth simplifying | No | 8-12 hours |
-| Discord.js v15 migration | Low | Watch item only; current v14 pin is stable and working | No | 2-3 hours (only if v15 becomes necessary) |
+| Discord integration review | Low | Current integration is stable and working | No | 0 hours |
 | Advanced audit infrastructure | Medium | Scheduler/UI/schema already exist; needs hardening, wiring, and real usage validation | No | 4-6 hours |
 | Query performance audit | Low | Turn processing + expedition list endpoints under high load; no current bottleneck but worth profiling | No | 2-3 hours |
 | ~~SQL injection audit~~ | ~~Medium~~ | ✅ **COMPLETE** (2026-06-29) — 100% parameterized queries verified | ✅ DONE | ✅ 2-3 hours |
@@ -233,7 +233,7 @@
 
 ### P3 (Low)
 1. **Backup testing:** Verify restore procedures work
-2. **Discord.js:** Keep v14 pinned; revisit only if v15 becomes clearly worth the migration cost
+2. **Discord.js:** Keep the current integration pinned and unchanged unless a new issue appears
 3. **Rate limiting:** DDoS hardening
 
 ---

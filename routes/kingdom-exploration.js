@@ -52,67 +52,67 @@ module.exports = function (db) {
       return res.status(400).json({ error: 'Mountain expeditions are rangers only - leave your fighters behind.' });
 
     try {
-      await db.run('BEGIN TRANSACTION');
+      const { k, updates, foodNeeded } = await db.withTransaction(async () => {
+        const k = await db.get('SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE', [
+          req.player.playerId,
+        ]);
+        if (!k) {
+          throw new Error('Kingdom not found');
+        }
 
-      const k = await db.get('SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE', [
-        req.player.playerId,
-      ]);
-      if (!k) {
-        await db.run('ROLLBACK');
-        return res.status(404).json({ error: 'Kingdom not found' });
-      }
+        if (k.turns_stored < 1) {
+          const error = new Error('No turns available');
+          error.statusCode = 429;
+          throw error;
+        }
+        if (r > engine.getAvailableUnits(k, 'rangers')) {
+          const error = new Error('Not enough available rangers (some may be in training)');
+          error.statusCode = 400;
+          throw error;
+        }
+        if (f > engine.getAvailableUnits(k, 'fighters')) {
+          const error = new Error('Not enough available fighters (some may be in training)');
+          error.statusCode = 400;
+          throw error;
+        }
 
-      if (k.turns_stored < 1) {
-        await db.run('ROLLBACK');
-        return res.status(429).json({ error: 'No turns available' });
-      }
-      if (r > engine.getAvailableUnits(k, 'rangers')) {
-        await db.run('ROLLBACK');
-        return res.status(400).json({
-          error: 'Not enough available rangers (some may be in training)',
-        });
-      }
-      if (f > engine.getAvailableUnits(k, 'fighters')) {
-        await db.run('ROLLBACK');
-        return res.status(400).json({
-          error: 'Not enough available fighters (some may be in training)',
-        });
-      }
+        const existing = await db.get(
+          'SELECT id FROM expeditions WHERE kingdom_id = ? AND type = ?',
+          [k.id, type],
+        );
+        if (existing) {
+          const error = new Error(`A ${type} expedition is already underway`);
+          error.statusCode = 400;
+          throw error;
+        }
 
-      const existing = await db.get(
-        'SELECT id FROM expeditions WHERE kingdom_id = ? AND type = ?',
-        [k.id, type],
-      );
-      if (existing) {
-        await db.run('ROLLBACK');
-        return res.status(400).json({ error: `A ${type} expedition is already underway` });
-      }
+        const foodMult = engine.FOOD_CONSUMPTION_MULT[k.race] || 1.0;
+        const foodPerTurn = (r * 0.5 + f * 1.0) * foodMult;
+        const foodNeeded = Math.ceil(EXP_TURNS[type] * foodPerTurn * 0.75);
+        if (k.food < foodNeeded) {
+          const error = new Error(`${type.charAt(0).toUpperCase() + type.slice(1)} expedition requires ${foodNeeded.toLocaleString()} food (you have ${k.food.toLocaleString()}).`);
+          error.statusCode = 400;
+          throw error;
+        }
 
-      const foodMult = engine.FOOD_CONSUMPTION_MULT[k.race] || 1.0;
-      const foodPerTurn = (r * 0.5 + f * 1.0) * foodMult;
-      const foodNeeded = Math.ceil(EXP_TURNS[type] * foodPerTurn * 0.75);
-      if (k.food < foodNeeded) {
-        await db.run('ROLLBACK');
-        return res.status(400).json({ error: `${type.charAt(0).toUpperCase() + type.slice(1)} expedition requires ${foodNeeded.toLocaleString()} food (you have ${k.food.toLocaleString()}).` });
-      }
+        await db.run(
+          'UPDATE kingdoms SET rangers = MAX(0, rangers - ?), fighters = MAX(0, fighters - ?), food = MAX(0, food - ?) WHERE id = ?',
+          [r, f, foodNeeded, k.id]
+        );
 
-      await db.run(
-        'UPDATE kingdoms SET rangers = MAX(0, rangers - ?), fighters = MAX(0, fighters - ?), food = MAX(0, food - ?) WHERE id = ?',
-        [r, f, foodNeeded, k.id]
-      );
+        await db.run(
+          'INSERT INTO expeditions (kingdom_id, type, turns_left, rangers, fighters, food_taken) VALUES (?, ?, ?, ?, ?, ?)',
+          [k.id, type, EXP_TURNS[type], r, f, foodNeeded],
+        );
 
-      await db.run(
-        'INSERT INTO expeditions (kingdom_id, type, turns_left, rangers, fighters, food_taken) VALUES (?, ?, ?, ?, ?, ?)',
-        [k.id, type, EXP_TURNS[type], r, f, foodNeeded],
-      );
+        let updates = { rangers: Math.max(0, k.rangers - r), fighters: Math.max(0, k.fighters - f), food: Math.max(0, k.food - foodNeeded) };
+        progressGoal(k, updates, 'expedition_started', 1);
+        if (updates.goals) {
+          await db.run('UPDATE kingdoms SET goals = ? WHERE id = ?', [updates.goals, k.id]);
+        }
 
-      let updates = { rangers: Math.max(0, k.rangers - r), fighters: Math.max(0, k.fighters - f), food: Math.max(0, k.food - foodNeeded) };
-      progressGoal(k, updates, 'expedition_started', 1);
-      if (updates.goals) {
-        await db.run('UPDATE kingdoms SET goals = ? WHERE id = ?', [updates.goals, k.id]);
-      }
-
-      await db.run('COMMIT');
+        return { k, updates, foodNeeded };
+      });
 
       const updatedK = await db.get('SELECT * FROM kingdoms WHERE id = ?', [k.id]);
       let expeditionEvents = [];
@@ -143,12 +143,13 @@ module.exports = function (db) {
         message: message,
       });
     } catch (err) {
-      try {
-        await db.run('ROLLBACK');
-      } catch (rollbackErr) {
-        console.error('[expedition/start] rollback error:', rollbackErr.message);
-      }
       console.error('[expedition/start] failed:', err.message);
+      if (err.message.includes('Kingdom not found')) {
+        return res.status(404).json({ error: err.message });
+      }
+      if (err.statusCode) {
+        return res.status(err.statusCode).json({ error: err.message });
+      }
       res.status(500).json({ error: 'Expedition failed - please try again' });
     }
   });
