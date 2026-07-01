@@ -368,6 +368,48 @@ curl -X GET http://localhost:3000/api/admin/stats \
 
 ---
 
+## Alliance, World, and Social
+
+Route file:
+- [index.js](../index.js) (defined directly on the app instance, not a separate router)
+
+Alliance:
+- `GET /alliance/list`
+- `GET /alliance/my`
+- `GET /alliance/:id`
+- `POST /alliance/create`
+- `POST /alliance/invite`
+- `POST /alliance/leave`
+- `POST /alliance/pledge`
+- `POST /alliance/dismiss`
+- `POST /alliance/vault/deposit`
+- `POST /alliance/vault/project`
+
+World and social:
+- `GET /regions`
+- `GET /world/bounties`
+- `POST /world/bounties`
+- `GET /messages`
+- `POST /messages`
+- `GET /chat/:room`
+
+Utility and feedback:
+- `GET /spell-definitions`
+- `GET /health`
+- `GET /status`
+- `GET /public/rankings`
+- `GET /changelog`
+- `POST /log-error`
+- `POST /suggestions`
+- `POST /bug-reports`
+- `POST /test-result`
+- `GET /test-results`
+- `GET /test-results/summary`
+- `POST /setup-admin` (initial admin bootstrap, see `ADMIN_SECRET` in `README.md`)
+- `POST /admin/wipe-players` (destructive — dev/test data reset)
+
+---
+
 ## Response Shape
 
 Common patterns:
