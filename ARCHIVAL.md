@@ -10,6 +10,42 @@
 
 ### 2026-07-01
 
+- Cleared the full `TODO.md` deferred/technical-debt backlog in one pass (PRs #737–#742).
+- **Query performance verification** (PR #737): re-ran the 2026-06-29 analysis empirically
+  against a stress-seeded local database; all `/turn` and `/expedition` hot-path queries
+  already resolve via index scans in sub-millisecond time. Added `idx_heroes_kingdom_status`
+  and dropped the now-redundant `idx_heroes_kingdom` (Gemini review).
+- **API documentation restore** (PR #738): `docs/API_ENDPOINTS.md` had been accidentally
+  deleted in the 2026-06-30 markdown cleanup; restored and refreshed against actual routes,
+  including the previously-undocumented `kingdom-build.js` router and the full
+  `kingdom-economy.js`/`admin.js` surfaces. Documented (but did not fix) 17 dead route
+  handlers caused by router mount-order shadowing.
+- **Component test coverage** (PR #739): added `HappinessWidget.test.jsx` and
+  `BountiesPanel.test.jsx`. Found and fixed a real state-mutation bug in
+  `GoalsPanel.jsx`'s `claimGoal()` — a shallow `{ ...goalsData }` copy followed by a
+  direct nested mutation (`goal.claimed = true`) that also silently corrupted the test
+  file's shared mock fixture across test runs.
+- **Happiness/rebellion logic dedup** (PR #740): `game/happiness.js` had dead local copies
+  of `happinessMult`/`happinessCombatMult`/`rebellionCheck`/`rebellionEvent` never actually
+  used by `engine.js` (which imports the real ones from `combat-helpers.js`/
+  `special-events.js`); converted to re-exports. Deleted `game/rebellion.js`, a third,
+  fully-orphaned duplicate of the same rebellion logic.
+- **Admin inline CSS consolidation** (PR #741): converted 59 static inline styles to
+  Tailwind in `EvolutionPanel.jsx`/`ManagePanel.jsx`, scoped to zero-dynamic-value cases
+  only. Caught and fixed a real visual regression flagged by Gemini review — this
+  project's `tailwind.config.js` overrides `text-xs` to `9px` (not the Tailwind default
+  `12px`), so `fontSize: 12` had been incorrectly mapped to `text-xs` in 8 places; fixed
+  to `text-[12px]`.
+- **Advanced rebellion events** (PR #742): added a 6th rebellion event type, Treasury
+  Looting (5-15% gold loss). Gemini review caught a critical, pre-existing bug this
+  surfaced: `processTurn()` in `engine.js` unconditionally overwrote `updates.gold` and
+  `updates.population` right after `rebellionCheck` ran, silently discarding rebellion
+  effects on both — meaning the original Unrest event's population loss had likely never
+  worked in production. Fixed both overwrite sites and added an integration-level
+  regression test proving the fix (and that it fails without it).
+- Validation across all six PRs: `npm run lint` clean, full test suite passing (55 files),
+  fresh PostgreSQL smoke boot with all baseline checks, on every PR before merge.
+
 - World map Sprint 1 — resource nodes on map (PR #732, merge `88e68c63`).
 - Added `resource_nodes.map_x/map_y` with boot backfill; `/api/kingdom/world-map` returns nodes and expeditions.
 - Scout-node assigns coordinates; `WorldmapRenderer` plots nodes, expedition lanes, and layer toggles.
