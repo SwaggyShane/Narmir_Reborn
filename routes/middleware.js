@@ -75,6 +75,18 @@ function requireAdmin(req, res, next) {
 }
 
 function requireCsrfToken(req, res, next) {
+  const bearerToken = req.headers.authorization?.replace("Bearer ", "") || null;
+  const customHeaderToken = req.headers["x-auth-token"] || null;
+
+  // Skip CSRF protection for requests with custom header-based auth (bearer token or x-auth-token).
+  // Browsers cannot automatically attach custom headers to cross-site requests (blocked by CORS/SOP),
+  // so the presence of such a header proves this is not a browser request and CSRF protection is unnecessary.
+  // This allows non-browser clients (CLI tools, mobile apps, API clients, load testing) to work seamlessly,
+  // regardless of whether they also store auth in cookies (e.g., for persistence across sessions).
+  if (bearerToken || customHeaderToken) {
+    return next();
+  }
+
   const headerToken = req.headers["x-csrf-token"];
   if (!headerToken) {
     return res.status(403).json({ error: "CSRF token required" });

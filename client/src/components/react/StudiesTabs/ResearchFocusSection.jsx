@@ -29,6 +29,8 @@ const STUDIES_RESEARCH_ROWS = [
   { label: 'Spellbook', stateKey: 'res_spellbook', barClass: 'spell' },
 ];
 
+const SAVE_FOCUS_BUTTON_CLASS = 'base-btn variant-green w-full bg-[var(--green)]';
+
 export const ResearchFocusSection = ({
   studiesData,
   state,
@@ -37,6 +39,8 @@ export const ResearchFocusSection = ({
   focus2Value,
   setFocus2Value,
   fetchStudiesData,
+  focus1SelectRef,
+  focus2SelectRef,
 }) => {
   const researchBarWidth = (value) => {
     const n = Number(value) || 0;
@@ -76,6 +80,7 @@ export const ResearchFocusSection = ({
       <div className="mb-3">
         <div className="text-xs font-semibold text-[var(--text2)] mb-1.5">Primary discipline</div>
         <select
+          ref={focus1SelectRef}
           className="input w-full mb-1.5"
           value={focus1Value}
           onChange={(e) => setFocus1Value(e.target.value)}
@@ -99,6 +104,7 @@ export const ResearchFocusSection = ({
             Secondary discipline <span className="text-[var(--gold)] text-2xs">Repository</span>
           </div>
           <select
+            ref={focus2SelectRef}
             className="input w-full mb-1.5"
             value={focus2Value}
             onChange={(e) => setFocus2Value(e.target.value)}
@@ -117,7 +123,7 @@ export const ResearchFocusSection = ({
           <div className="text-2xs text-[var(--text3)]">Focus 2 Current: {state?.[DISC_COLS[focus2Value]] || 0}%</div>
         </div>
       )}
-      <button className="base-btn variant-green w-full" onClick={saveResearchFocus} style={{ background: 'var(--green)' }}>
+      <button className={SAVE_FOCUS_BUTTON_CLASS} onClick={saveResearchFocus}>
         Save focus
       </button>
       <div className="mt-4 border-t border-[var(--border)] pt-4">

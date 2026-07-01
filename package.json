@@ -22,7 +22,8 @@
     "overnight:combat-v2": "node test-combat-harness/v2-overnight-balance-log.js",
     "load-test": "node tools/load-tester/load-test.js",
     "load-test:websocket": "node tools/load-tester/websocket-tester.js",
-    "load-test:tokens": "node scripts/generate-load-test-tokens.js"
+    "load-test:tokens": "node scripts/generate-load-test-tokens.js",
+    "load-test:seed": "node scripts/setup-load-test-accounts.js"
   },
   "engines": {
     "node": "^20.19.0 || ^22.13.0 || >=24",

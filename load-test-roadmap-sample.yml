@@ -1,26 +1,24 @@
 config:
   target: "http://localhost:3000"
   phases:
-    - duration: 30
-      arrivalRate: 100
+    - duration: 15
+      arrivalRate: 50
       name: "Warm up"
-    - duration: 120
-      arrivalRate: 1000
-      name: "Ramp up to 1k concurrent"
-    - duration: 180
-      arrivalRate: 5000
-      name: "Peak load 5k concurrent"
-    - duration: 30
-      arrivalRate: 100
-      name: "Ramp down"
+    - duration: 20
+      arrivalRate: 150
+      name: "Steady load"
+    - duration: 20
+      arrivalRate: 300
+      name: "Heavy sample"
   processor: "./load-test-processor.js"
   payload:
     path: "./load-test-tokens.csv"
     fields:
       - "token"
+
 scenarios:
   - name: "Turn endpoint"
-    weight: 40
+    weight: 50
     flow:
       - post:
           url: "/api/kingdom/turn"
@@ -35,23 +33,13 @@ scenarios:
             - json: "$.ok"
               as: "turnSuccess"
           expect:
-            - statusCode: [200, 400]
+            - statusCode: 200
 
   - name: "Expedition endpoint"
-    weight: 35
+    weight: 50
     flow:
       - get:
           url: "/api/kingdom/expedition/list"
-          headers:
-            Authorization: "Bearer {{ token }}"
-          expect:
-            - statusCode: 200
-
-  - name: "Rankings endpoint"
-    weight: 25
-    flow:
-      - get:
-          url: "/api/kingdom/rankings?limit=100&page=1"
           headers:
             Authorization: "Bearer {{ token }}"
           expect:

@@ -16,14 +16,13 @@ export const MageAllocationCard = ({
         <input
           ref={inputRef}
           type="number"
-          className="input"
+          className="input flex-1 text-right"
           min="0"
           value={value}
           onChange={(e) => onChange(Number(e.target.value) || 0)}
-          style={{ textAlign: 'right', flex: 1 }}
           placeholder="Qty"
         />
-        <button className="base-btn" onClick={onMax} style={{ padding: '4px 8px', fontSize: '10px' }}>
+        <button className="base-btn px-2 py-1 text-[10px]" onClick={onMax}>
           Max
         </button>
       </div>

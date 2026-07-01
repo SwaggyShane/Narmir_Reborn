@@ -19,7 +19,7 @@ export const ShrineTab = ({ studiesData, state, onUpgraded }) => {
           </div>
           <div className="trow hidden" id="st-shrine-row-happiness">
             <span className="name">Happiness gain/turn</span>
-            <span className="count" id="st-happiness-gain" style={{ color: 'var(--green)' }}>0</span>
+            <span className="count text-[var(--green)]" id="st-happiness-gain">0</span>
           </div>
           <div className="trow hidden" id="st-shrine-row-sanctuary">
             <span className="name">Divine Sanctuary</span>
