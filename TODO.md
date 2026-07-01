@@ -19,7 +19,7 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 
 ## Known Technical Debt (Post-Beta)
 
-- **Admin inline CSS consolidation** — 500+ inline style usages remain in the admin panel; migrate to Tailwind
+- **Admin inline CSS consolidation** — 59 static usages converted in `EvolutionPanel.jsx`/`ManagePanel.jsx`; ~440 remain across other admin panels, plus the shared `BTN`/`INPUT`/`TD`-style constant objects themselves still need a Tailwind equivalent before the conditional/dynamic usages that spread them can be converted
 - **Component test coverage expansion** — 57+ component tests exist; gaps remain in some panels
 - **Query performance analysis** — `/expedition` and `/turn` endpoints could use a fresh look under load
 - **API documentation refresh** — `docs/API_ENDPOINTS.md` should be checked against current routes for drift
