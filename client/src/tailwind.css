@@ -818,8 +818,7 @@
   }
 
   #build-rows .trow {
-    @apply flex flex-nowrap items-start;
-    gap: 8px;
+    @apply flex flex-nowrap items-start gap-2;
   }
 
   .bld-left {
