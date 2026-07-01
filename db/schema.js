@@ -910,9 +910,12 @@ async function initDb(options = {}) {
       max_hp      INTEGER NOT NULL DEFAULT 100,
       created_at  INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     );
-    CREATE INDEX IF NOT EXISTS idx_heroes_kingdom ON heroes(kingdom_id);
-    -- runTurn() filters idle heroes every turn by kingdom_id and status, and rosters
-    -- have no hard cap, so a composite index avoids a status filter pass as they grow.
+    -- idx_heroes_kingdom_status(kingdom_id, status) below serves kingdom_id-only
+    -- lookups too (leftmost-prefix rule), so a separate kingdom_id-only index would
+    -- just add write overhead. runTurn() filters idle heroes every turn by both
+    -- columns, and rosters have no hard cap, so the composite index avoids a status
+    -- filter pass as they grow.
+    DROP INDEX IF EXISTS idx_heroes_kingdom;
     CREATE INDEX IF NOT EXISTS idx_heroes_kingdom_status ON heroes(kingdom_id, status);
     -- kingdom_id is the 2nd column of alliance_members' composite PK, so it can't be
     -- used for kingdom_id-only lookups (every turn + every socket connect). Index it.
