@@ -19,7 +19,7 @@
 | **Dependencies** | ✅ Healthy | High-risk vulns resolved (undici, multer, ws, vite); discord.js pinned |
 | **Architecture** | ✅ Healthy | Monolithic decomposition complete (engine.js → 8 modules; kingdom.js → 7 modules) |
 | **Testing** | ⚠️ Partial | Vitest + RTL infrastructure in place; component tests started (57 tests); coverage gaps remain |
-| **Documentation** | ⚠️ Partial | CLAUDE.md + WORKFLOW-REQUIRED.md complete; README needs update; API docs outdated |
+| **Documentation** | ✅ Current | Active docs are concise; TODO is clear; archive and maintenance docs are current |
 
 ---
 
@@ -125,27 +125,17 @@
 - **Next phase:** Post-alpha; prioritize business logic coverage
 
 ### Documentation
-- **Status:** ✅ Current for beta preparation
+- **Status:** ✅ Current
 - **What's current:**
   - `CLAUDE.md`: Workflow guide + quality rules ✅
-  - `WORKFLOW-REQUIRED.md`: Enforcement checklists ✅
-  - `TODO.md`: Active beta preparation work ✅
+  - `TODO.md`: Clear state; no active repo backlog ✅
   - `ARCHIVAL.md`: Complete alpha history plus archived beta-prep completions ✅
   - `MAINTENANCE.md`: System health audit (this document) ✅
-  - `.claude/` directory: Hooks, config, workflow docs ✅
 - **What's consolidated/cleaned:**
-  - ✅ ROADMAP.md (deleted; consolidated to ARCHIVAL.md + TODO.md)
-  - ✅ PROTECTED_WORK.md (deleted; protection documented in ARCHIVAL.md)
-  - ✅ VANILLA_CLEANUP_AUDIT_ITEM*.md (6 files deleted; superseded by ARCHIVAL.md)
-- **What's outdated (deferred to post-beta):**
-  - `README.md`: Keep concise; core setup and combat notes are current
-  - API documentation: Route docs are concise; route files remain the source of truth
-- **Missing (deferred to post-beta):**
-  - Game mechanics documentation (turns, resources, expeditions, combat)
-  - Store architecture guide (how Zustand stores interconnect)
-  - Database schema documentation (missing ER diagram)
-  - Deployment guide (Railway setup, environment variables)
-- **Next phase:** API docs + game mechanics guide (post-beta launch)
+  - `ROADMAP.md` removed; status lives in `ARCHIVAL.md` + `TODO.md`
+  - `PROTECTED_WORK.md` removed; protected-system notes live in `ARCHIVAL.md`
+  - one-off cleanup docs removed or superseded where applicable
+- **Source of truth:** route files, current guides, `ARCHIVAL.md`, and this maintenance audit
 
 ---
 
@@ -156,7 +146,6 @@
 | Inline CSS consolidation | Low | 769 inline `style={{}}` usages remain; static properties should be Tailwind utilities | No | 4-6 hours |
 | StudiesPanel refactor | Medium | Complex component with layered state and store dependencies; still worth simplifying | No | 8-12 hours |
 | Discord integration review | Low | Current integration is stable and working | No | 0 hours |
-| Advanced audit infrastructure | Medium | Scheduler/UI/schema already exist; needs hardening, wiring, and real usage validation | No | 4-6 hours |
 | Query performance audit | Low | Turn processing + expedition list endpoints under high load; no current bottleneck but worth profiling | No | 2-3 hours |
 | ~~SQL injection audit~~ | ~~Medium~~ | ✅ **COMPLETE** (2026-06-29) — 100% parameterized queries verified | ✅ DONE | ✅ 2-3 hours |
 | Database backup testing | Low | Backup strategy exists; restore procedures untested | No | 1✅2 hours |
@@ -223,8 +212,8 @@
 
 ### P1 (High)
 1. ✅ **SQL injection audit:** COMPLETE (2026-06-29) — 100% parameterized queries verified
-2. **Load testing:** 5,000+ concurrent players (TODO Item 2)
-3. **Database backup/restore:** Verify procedures work (TODO Item 3)
+2. **Load testing rerun:** perform the authenticated 5,000-player rerun in the target environment
+3. **Database backup/restore:** keep periodic restore verification in the operations checklist
 
 ### P2 (Medium)
 1. **StudiesPanel refactor:** Simplify the component and reduce state churn
@@ -241,7 +230,7 @@
 ## Contact & References
 
 - **Code quality:** See `CLAUDE.md` for PR workflow and quality rules
-- **Active work:** See `TODO.md` for open beta preparation items
+- **Active work:** `TODO.md` is clear unless a new real task is added
 - **Historical record:** See `ARCHIVAL.md` for completed alpha work and archived beta-prep items
 - **Architecture:** See module READMEs in `game/lib/` and `routes/`
 

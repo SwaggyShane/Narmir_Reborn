@@ -29,6 +29,7 @@
     "npm": ">=9.0.0"
   },
   "dependencies": {
+    "@sentry/node": "^10.42.0",
     "@vitejs/plugin-react": "^6.0.2",
     "autoprefixer": "^10.5.0",
     "axios": "^1.18.1",

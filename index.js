@@ -6,6 +6,7 @@ require('dotenv').config();
 // CORS '*', no view caching). Trim whitespace to guard against cloud platform UI quirks.
 // Mutating process.env is safe: libraries read it lazily.
 if ((process.env.NODE_ENV || '').trim().toLowerCase() === 'production') process.env.NODE_ENV = 'production';
+const { Sentry, sentryEnabled } = require('./instrument');
 const express      = require('express');
 const http         = require('http');
 const { Server }   = require('socket.io');
@@ -140,6 +141,13 @@ app.use((req, res, next) => {
       console.warn(
         `[monitoring] Slow endpoint: ${req.method} ${pathOnly} ${durationMs}ms status=${res.statusCode}`
       );
+      if (sentryEnabled) {
+        Sentry.captureMessage(`Slow endpoint: ${req.method} ${pathOnly}`, {
+          level: 'warning',
+          tags: { area: 'monitoring', endpoint: pathOnly, method: req.method },
+          extra: { durationMs, statusCode: res.statusCode },
+        });
+      }
     }
   });
 
@@ -1189,6 +1197,19 @@ async function start() {
     app.post('/api/log-error', (req, res) => {
       const logMsg = `[browser-error] ${new Date().toISOString()} MESSAGE: ${req.body.message || "none"}\nSOURCE: ${req.body.source || "none"}\nLINE: ${req.body.line || "none"}\nCOL: ${req.body.col || "none"}\nSTACK: ${req.body.stack || "none"}\n\n`;
       console.error(logMsg);
+      if (sentryEnabled) {
+        Sentry.captureMessage('Browser error reported', {
+          level: 'error',
+          tags: { area: 'frontend', source: 'browser' },
+          extra: {
+            message: req.body.message || 'none',
+            source: req.body.source || 'none',
+            line: req.body.line || 'none',
+            col: req.body.col || 'none',
+            stack: req.body.stack || 'none',
+          },
+        });
+      }
       try {
         fs.appendFileSync(path.join(__dirname, 'public', 'browser_logs.txt'), logMsg);
       } catch (e) {
@@ -1632,6 +1653,17 @@ async function start() {
     serveSplash(req, res, next);
   });
 
+  if (sentryEnabled) {
+    Sentry.setupExpressErrorHandler(app, {
+      shouldHandleError(error) {
+        const statusCode =
+          Number.parseInt(String(error?.statusCode || error?.status || error?.status_code || error?.output?.statusCode || 500), 10)
+          || 500;
+        return statusCode >= 500;
+      },
+    });
+  }
+
   // Express global error handler middleware — catches errors passed to next(err)
   // Must be registered after all other middleware and route handlers
   app.use((err, req, res, _next) => {
@@ -1701,8 +1733,11 @@ async function start() {
   process.on('SIGINT', shutdownAuditScheduler);
 
   // Global error handlers to prevent silent crashes
-  process.on('unhandledRejection', (reason, promise) => {
+    process.on('unhandledRejection', (reason, promise) => {
     console.error('[CRITICAL] Unhandled Rejection at:', promise, 'reason:', reason);
+    if (sentryEnabled) {
+      Sentry.captureException(reason instanceof Error ? reason : new Error(String(reason)));
+    }
   });
 
   // Postgres connection-termination errors (e.g. idle-in-transaction timeout, admin
@@ -1730,9 +1765,19 @@ async function start() {
   process.on('uncaughtException', (error) => {
     if (isRecoverablePgError(error)) {
       console.error(`[db] Recovered from PG connection error (${error.code}): ${error.message} — pool will reconnect, not exiting.`);
+      if (sentryEnabled) {
+        Sentry.captureMessage(`Recovered PG connection error: ${error.code}`, {
+          level: 'warning',
+          tags: { area: 'database', recoverable: 'true' },
+          extra: { message: error.message },
+        });
+      }
       return;
     }
     console.error('[CRITICAL] Uncaught Exception:', error);
+    if (sentryEnabled) {
+      Sentry.captureException(error);
+    }
     // Cannot safely recover - application is in undefined state. Exit for process manager to restart.
     process.exit(1);
   });

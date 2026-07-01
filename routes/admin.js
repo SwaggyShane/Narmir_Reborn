@@ -10,11 +10,13 @@ const { _GOAL_COUNTS, DAILY_GOALS, WEEKLY_GOALS, MONTHLY_GOALS } = require("../g
 const engine = require("../game/engine");
 const { FRAGMENT_METADATA } = require("../game/fragment-attunements");
 const { PRESETS, PRESET_IDS, buildPresetFields } = require("../game/ai-presets");
+const { computeNextRunAt } = require("../lib/audit-scheduler");
 const { incrementUnread } = require("../cache");
 
 const ALLOWED_PRIZE_TYPES = ['gold', 'mana', 'rangers', 'researchers', 'war_machines', 'world_fragment'];
 const ALLOWED_SOUND_EXTENSIONS = new Set([".mp3", ".wav"]);
 const BCRYPT_SALT_ROUNDS = 10;
+const AUDIT_FREQUENCIES = new Set(["daily", "weekly", "monthly"]);
 const TEST_RACES = [
   "human",
   "high_elf",
@@ -2084,15 +2086,137 @@ module.exports = function (db, io) {
     }
   });
 
+  router.get("/audit-schedules", async (_req, res) => {
+    try {
+      const schedules = await db.all(
+        `SELECT id, created_by, frequency, is_enabled, next_run_at, last_run_at, created_at, updated_at
+         FROM audit_schedules
+         ORDER BY is_enabled DESC, created_at DESC`
+      );
+      res.json(schedules);
+    } catch (err) {
+      console.error("[admin] Audit schedule fetch error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  router.post("/audit-schedules", async (req, res) => {
+    try {
+      const frequency = String(req.body?.frequency || "weekly").toLowerCase();
+      if (!AUDIT_FREQUENCIES.has(frequency)) {
+        return res.status(400).json({ error: "Invalid audit frequency" });
+      }
+
+      const result = await db.run(
+        `INSERT INTO audit_schedules (created_by, frequency, is_enabled, next_run_at, created_at, updated_at)
+         VALUES (?, ?, 1, ?, unixepoch(), unixepoch())`,
+        [req.player.playerId, frequency, computeNextRunAt(frequency)]
+      );
+
+      const schedule = await db.get("SELECT * FROM audit_schedules WHERE id = ?", [result.lastID]);
+      if (global._audit_scheduler) {
+        await global._audit_scheduler.registerSchedule(schedule);
+      }
+
+      res.status(201).json(schedule);
+    } catch (err) {
+      console.error("[admin] Audit schedule create error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  router.put("/audit-schedules/:id", async (req, res) => {
+    try {
+      const scheduleId = Number.parseInt(req.params.id, 10);
+      if (!Number.isInteger(scheduleId) || scheduleId <= 0) {
+        return res.status(400).json({ error: "Invalid schedule id" });
+      }
+
+      const schedule = await db.get("SELECT * FROM audit_schedules WHERE id = ?", [scheduleId]);
+      if (!schedule) {
+        return res.status(404).json({ error: "Audit schedule not found" });
+      }
+
+      const nextFrequency = req.body?.frequency
+        ? String(req.body.frequency).toLowerCase()
+        : schedule.frequency;
+      if (!AUDIT_FREQUENCIES.has(nextFrequency)) {
+        return res.status(400).json({ error: "Invalid audit frequency" });
+      }
+
+      const nextEnabled = req.body?.is_enabled === undefined
+        ? schedule.is_enabled
+        : (req.body.is_enabled ? 1 : 0);
+
+      const nextRunAt = nextEnabled ? computeNextRunAt(nextFrequency) : null;
+
+      await db.run(
+        `UPDATE audit_schedules
+         SET frequency = ?, is_enabled = ?, next_run_at = ?, updated_at = unixepoch()
+         WHERE id = ?`,
+        [nextFrequency, nextEnabled, nextRunAt, scheduleId]
+      );
+
+      const updated = await db.get("SELECT * FROM audit_schedules WHERE id = ?", [scheduleId]);
+      if (global._audit_scheduler) {
+        if (updated.is_enabled) {
+          await global._audit_scheduler.registerSchedule(updated);
+        } else {
+          await global._audit_scheduler.unregisterSchedule(scheduleId);
+        }
+      }
+
+      res.json(updated);
+    } catch (err) {
+      console.error("[admin] Audit schedule update error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  router.post("/audit-schedules/:id/run", async (req, res) => {
+    try {
+      const scheduleId = Number.parseInt(req.params.id, 10);
+      if (!Number.isInteger(scheduleId) || scheduleId <= 0) {
+        return res.status(400).json({ error: "Invalid schedule id" });
+      }
+
+      const schedule = await db.get("SELECT * FROM audit_schedules WHERE id = ?", [scheduleId]);
+      if (!schedule) {
+        return res.status(404).json({ error: "Audit schedule not found" });
+      }
+
+      if (global._audit_scheduler) {
+        await global._audit_scheduler.runAudit(scheduleId);
+      } else {
+        await db.run(
+          `INSERT INTO audit_history
+           (schedule_id, run_at, status, findings_count, findings, duration_ms)
+           VALUES (?, unixepoch(), 'success', 0, ?, 0)`,
+          [scheduleId, JSON.stringify({ critical: [], high: [], medium: [], low: [], info: [] })]
+        );
+        await db.run(
+          'UPDATE audit_schedules SET last_run_at = unixepoch(), next_run_at = ?, updated_at = unixepoch() WHERE id = ?',
+          [computeNextRunAt(schedule.frequency), scheduleId]
+        );
+      }
+
+      const updated = await db.get("SELECT * FROM audit_schedules WHERE id = ?", [scheduleId]);
+      res.json(updated);
+    } catch (err) {
+      console.error("[admin] Audit run error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   router.get("/audit-history", async (_req, res) => {
     try {
       const history = await db.all(
         "SELECT * FROM audit_history ORDER BY run_at DESC LIMIT 50"
       );
-      res.json({ success: true, history });
+      res.json(history);
     } catch (err) {
       console.error("[admin] Audit history fetch error:", err);
-      res.status(500).json({ success: false, error: err.message });
+      res.status(500).json({ error: err.message });
     }
   });
 

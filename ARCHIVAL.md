@@ -15,6 +15,11 @@
 - Support runbook completed.
 - API documentation refreshed and shortened.
 - Query performance analysis completed.
+- Monitoring runtime wired for Express, browser-error intake, slow-endpoint warnings, and crash capture.
+- Production secret validation tightened for JWT, admin secret, and CORS requirements.
+- App-side HTTPS redirect, HSTS, trust-proxy handling, and secure production cookie settings verified in code.
+- Audit scheduler wiring completed: admin schedule routes, manual runs, history feed, and next-run tracking now work together.
+- Load-test harness/tooling hardened; final 5,000-player authenticated rerun remains an environment validation step, not an open repo task.
 - Note: the newer local turn-run and tutorial docs now live separately and supersede older progression drafts.
 
 ---
