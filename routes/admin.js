@@ -656,6 +656,7 @@ module.exports = function (db, io) {
   });
 
   router.post("/set-kingdom", async (req, res) => {
+    try {
     const { kingdomId, fields } = req.body;
     if (!kingdomId || !fields || typeof fields !== "object")
       return res.status(400).json({ error: "kingdomId and fields required" });
@@ -822,14 +823,17 @@ module.exports = function (db, io) {
       }
     }
 
-    const cols = Object.keys(safe)
-      .map((c) => `${c} = $1`)
-      .join(", ");
-    await db.run(`UPDATE kingdoms SET ${cols} WHERE id = $1`, [
+    const cols = pgSetClause(Object.keys(safe), 1);
+    const idPlaceholder = `$${Object.keys(safe).length + 1}`;
+    await db.run(`UPDATE kingdoms SET ${cols} WHERE id = ${idPlaceholder}`, [
       ...Object.values(safe),
       kingdomId,
     ]);
     res.json({ ok: true, updated: Object.keys(safe) });
+    } catch (err) {
+      console.error("[admin] set-kingdom failed:", err.message);
+      res.status(500).json({ error: err.message });
+    }
   });
 
   // POST /api/admin/announce — persist to global chat + every kingdom's news feed
