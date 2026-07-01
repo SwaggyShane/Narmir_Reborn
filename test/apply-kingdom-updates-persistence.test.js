@@ -56,8 +56,9 @@ async function runDbPersistenceCheck() {
 
   const { initDb, applyKingdomUpdates } = require('../db/schema');
   const db = await initDb();
-  const suffix = `p0_apply_${Date.now()}`;
+  const suffix = `p0_apply_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
   const username = `p0_apply_${suffix}`;
+  const kingdomName = `P0 Apply ${suffix}`;
 
   let playerId;
   let kingdomId;
@@ -73,7 +74,7 @@ async function runDbPersistenceCheck() {
     await db.run(
       `INSERT INTO kingdoms (player_id, name, race, turn, land, gold, fighters)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [playerId, `P0 Apply ${suffix}`, 'human', 1, 100, 1000, 0],
+      [playerId, kingdomName, 'human', 1, 100, 1000, 0],
     );
     const kingdom = await db.get('SELECT id, gold FROM kingdoms WHERE player_id = $1', [playerId]);
     kingdomId = kingdom.id;
@@ -89,11 +90,15 @@ async function runDbPersistenceCheck() {
     const afterUpdate = await db.get('SELECT gold FROM kingdoms WHERE id = $1', [kingdomId]);
     assert.strictEqual(afterUpdate.gold, 4242, 'correct arity must persist gold');
   } finally {
-    if (kingdomId) {
-      await db.run('DELETE FROM kingdoms WHERE id = $1', [kingdomId]);
+    try {
+      await db.run('DELETE FROM kingdoms WHERE name = $1', [kingdomName]);
+    } catch {
+      // best-effort cleanup
     }
-    if (playerId) {
-      await db.run('DELETE FROM players WHERE id = $1', [playerId]);
+    try {
+      await db.run('DELETE FROM players WHERE username = $1', [username]);
+    } catch {
+      // best-effort cleanup
     }
     if (db.pool && typeof db.pool.end === 'function') {
       await db.pool.end();
@@ -104,9 +109,6 @@ async function runDbPersistenceCheck() {
 (async () => {
   await runDbPersistenceCheck();
   console.log('apply-kingdom-updates persistence checks passed');
-  if (process.env.RUN_DB_PERSISTENCE === '1') {
-    process.exit(0);
-  }
 })().catch((err) => {
   console.error(err);
   process.exit(1);
