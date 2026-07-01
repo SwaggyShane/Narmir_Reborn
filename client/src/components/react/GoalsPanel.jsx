@@ -39,11 +39,14 @@ const GoalsPanel = () => {
       const res = await apiCall('/api/kingdom/goals/claim', { method: 'POST', body: { groupId, goalId } });
       if (res && res.ok) {
         if (typeof window !== 'undefined' && typeof toast === 'function') toast(res.message, "success");
-        // Find and mark claimed locally
-        const newGoalsData = { ...goalsData };
-        const goal = newGoalsData[groupId].goals.find(g => g.id === goalId);
-        if (goal) goal.claimed = true;
-        setGoalsData(newGoalsData);
+        // Mark claimed locally without mutating the previous state's nested objects
+        setGoalsData((prev) => ({
+          ...prev,
+          [groupId]: {
+            ...prev[groupId],
+            goals: prev[groupId].goals.map((g) => (g.id === goalId ? { ...g, claimed: true } : g)),
+          },
+        }));
       } else if (res && res.error) {
         if (typeof window !== 'undefined' && typeof toast === 'function') toast(res.error, "error");
       }
