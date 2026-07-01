@@ -15,6 +15,16 @@ assert.ok(!/\bDATETIME\b/i.test(schemaSource), 'schema.js must not use DATETIME'
 assert.ok(schemaSource.includes('SERIAL PRIMARY KEY'), 'schema uses SERIAL PRIMARY KEY');
 assert.ok(schemaSource.includes('FLOOR(EXTRACT(EPOCH FROM NOW()))'), 'schema uses PG epoch defaults');
 
+const pgMemEpochRe = /DEFAULT\s+\(FLOOR\(EXTRACT\(EPOCH FROM NOW\(\)\)\)::INTEGER(\s*\+\s*\d+)?\)/i;
+assert.ok(
+  pgMemEpochRe.test('DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)'),
+  'pg-mem epoch regex matches schema default shape',
+);
+assert.ok(
+  pgMemEpochRe.test('DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER + 3600)'),
+  'pg-mem epoch regex matches offset defaults',
+);
+
 assert.ok(!schemaSource.includes('function translateSqlForPg'), 'Phase D removed translateSqlForPg');
 
 console.log('db-schema Phase C checks passed');

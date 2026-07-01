@@ -377,7 +377,7 @@ class PgDbAdapter {
       if (this.isPgMem && translated) {
         // pg-mem doesn't support dynamic epoch defaults inside column definitions
         translated = translated.replace(
-          /DEFAULT\s+\(FLOOR\(EXTRACT\(EPOCH FROM NOW\(\)\)::INTEGER\)(\s*\+\s*\d+)?\)/gi,
+          /DEFAULT\s+\(FLOOR\(EXTRACT\(EPOCH FROM NOW\(\)\)\)::INTEGER(\s*\+\s*\d+)?\)/gi,
           'DEFAULT 1770000000',
         );
       }
