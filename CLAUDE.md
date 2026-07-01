@@ -28,18 +28,13 @@
    - If no open PR exists (previous one was merged or never created): open a new draft PR **immediately after the push**. Do not wait for the user to notice.
    - "I forgot to check" is not valid. Run this before every push. No exceptions.
 
-### Always Create PRs as Drafts
-
-Always create PRs with `draft: true`. No exceptions.
-
 ### Workflow Steps
 1. Make code changes on feature branch
 2. Run quality checks (lint → smoke → sanity) — see below
 3. Stage and commit: `git add <files>` → `git commit -m "..."`
 4. Confirm branch and commits (see above)
-5. Push: `git push -u origin <branch>`
-6. Create or update draft PR
-7. Address review feedback with new commits
+5. Push: `git push -u PR <branch>`
+6. Create or update PR. Address review feedback with new commits
 8. Merge to main only after review approval
 
 ### Merge Boundaries
