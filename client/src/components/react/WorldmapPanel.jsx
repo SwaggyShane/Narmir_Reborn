@@ -7,6 +7,7 @@ import { fmtShort } from '../../utils/numberFormat.js';
 import { repairMojibake } from '../../utils/repairMojibake.js';
 import { RACE_ICONS } from '../../utils/raceIcons.js';
 import { REGION_META, REGION_BONUSES } from '../../utils/raceData.js';
+import { NODE_TYPE_META, formatNodeDistance } from '../../utils/worldMapNodeMeta.js';
 import { openKingdomProfile } from './KingdomProfileModal.jsx';
 import { targetFromRankings } from '../../utils/rankingsTarget.js';
 import { toast } from '../../utils/toast.js';
@@ -14,10 +15,18 @@ import { showMapKingdomCard } from './MapKingdomCard.jsx';
 import { AppEvent } from '../../utils/appEvents.js';
 import { useAppEvent } from '../../hooks/useAppEvent.js';
 import { useKingdomId, useMarketUpgrades } from '../../stores';
+import { switchTab } from '../../utils/panelNav.js';
 
 const MAP_REGIONS = Object.keys(REGION_META);
 
-export async function loadWorldMap({ setLoading, setError, setKingdoms, setTradeRoutes } = {}) {
+const DEFAULT_LAYERS = {
+  kingdoms: true,
+  nodes: true,
+  routes: true,
+  expeditions: true,
+};
+
+export async function loadWorldMap({ setLoading, setError, setKingdoms, setTradeRoutes, setNodes, setExpeditions } = {}) {
   if (typeof setLoading === 'function') setLoading(true);
   if (typeof setError === 'function') setError('');
   try {
@@ -26,8 +35,12 @@ export async function loadWorldMap({ setLoading, setError, setKingdoms, setTrade
 
     const kingdoms = data.kingdoms || (Array.isArray(data) ? data : []);
     const tradeRoutes = data.tradeRoutes || [];
+    const nodes = data.nodes || [];
+    const expeditions = data.expeditions || [];
     if (typeof setKingdoms === 'function') setKingdoms(kingdoms);
     if (typeof setTradeRoutes === 'function') setTradeRoutes(tradeRoutes);
+    if (typeof setNodes === 'function') setNodes(nodes);
+    if (typeof setExpeditions === 'function') setExpeditions(expeditions);
   } catch (err) {
     console.error('World map fail:', err);
     if (typeof setError === 'function') setError(err.message || 'Failed to load world map');
@@ -96,23 +109,68 @@ function RegionLegend({ kingdoms, highlightedRace, onHighlight }) {
   );
 }
 
+function MapLayerToggles({ layers, onToggle }) {
+  const items = [
+    { key: 'kingdoms', label: 'Kingdoms', icon: '🏰' },
+    { key: 'nodes', label: 'Resource Nodes', icon: '⛏️' },
+    { key: 'routes', label: 'Trade Routes', icon: '🤝' },
+    { key: 'expeditions', label: 'Expeditions', icon: '🧭' },
+  ];
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {items.map((item) => {
+        const active = layers[item.key];
+        return (
+          <button
+            key={item.key}
+            type="button"
+            onClick={() => onToggle(item.key)}
+            className={clsx(
+              'base-btn px-2 py-1 text-[10px]',
+              active ? 'opacity-100' : 'opacity-50',
+            )}
+          >
+            {item.icon} {item.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 const WorldmapPanel = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [kingdoms, setKingdoms] = useState([]);
   const [tradeRoutes, setTradeRoutes] = useState([]);
+  const [nodes, setNodes] = useState([]);
+  const [expeditions, setExpeditions] = useState([]);
   const [highlightedRace, setHighlightedRace] = useState(null);
   const [mapCard, setMapCard] = useState(null);
+  const [selectedNode, setSelectedNode] = useState(null);
+  const [layers, setLayers] = useState(DEFAULT_LAYERS);
   const currentKingdomId = useKingdomId();
   const marketUpgrades = useMarketUpgrades();
 
   const mapSvg = useMemo(() => {
-    if (!kingdoms.length) return '';
-    return renderWorldMap(kingdoms, tradeRoutes, highlightedRace, currentKingdomId);
-  }, [kingdoms, tradeRoutes, highlightedRace, currentKingdomId]);
+    if (!kingdoms.length && !nodes.length) return '';
+    return renderWorldMap(kingdoms, tradeRoutes, highlightedRace, currentKingdomId, {
+      nodes,
+      expeditions,
+      layers,
+    });
+  }, [kingdoms, tradeRoutes, highlightedRace, currentKingdomId, nodes, expeditions, layers]);
 
   const refreshWorldMap = useCallback(
-    () => loadWorldMap({ setLoading, setError, setKingdoms, setTradeRoutes }),
+    () => loadWorldMap({
+      setLoading,
+      setError,
+      setKingdoms,
+      setTradeRoutes,
+      setNodes,
+      setExpeditions,
+    }),
     [],
   );
 
@@ -133,22 +191,44 @@ const WorldmapPanel = () => {
   useAppEvent(AppEvent.WORLDMAP_REFRESH, onWorldMapRefresh);
   useAppEvent(AppEvent.MAP_KINGDOM_CARD, setMapCard);
 
+  const toggleLayer = useCallback((key) => {
+    setLayers((prev) => ({ ...prev, [key]: !prev[key] }));
+  }, []);
+
   const handleMapClick = useCallback((event) => {
+    const nodeDot = event.target.closest?.('.map-node');
+    const nodeId = nodeDot?.getAttribute('data-node-id');
+    if (nodeId) {
+      const node = nodes.find((entry) => String(entry.id) === String(nodeId));
+      if (node) {
+        setSelectedNode(node);
+        setMapCard(null);
+      }
+      return;
+    }
+
     const dot = event.target.closest?.('.kd-dot');
     const targetKingdomId = dot?.getAttribute('data-kingdom-id');
     if (targetKingdomId) {
+      setSelectedNode(null);
       showMapKingdomCard(targetKingdomId, currentKingdomId, marketUpgrades);
     }
-  }, [currentKingdomId, marketUpgrades]);
+  }, [currentKingdomId, marketUpgrades, nodes]);
+
+  const activeExpedition = selectedNode
+    ? expeditions.find((exp) => String(exp.node_id) === String(selectedNode.id))
+    : null;
+
+  const nodeMeta = selectedNode ? (NODE_TYPE_META[selectedNode.type] || NODE_TYPE_META.wood) : null;
 
   return (
     <div id="worldmap" className="panel">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-4">
-        <div className="card flex items-center justify-between gap-3">
+        <div className="card flex items-center justify-between gap-3 flex-wrap">
           <div>
             <div className="card-title !mb-1">🗺️ World of Narmir</div>
             <div className="text-xs text-[var(--text3)]">
-              Six ancient regions, each shaped by the race that claims it.
+              Six ancient regions — kingdoms, trade lanes, and your scouted resource sites.
             </div>
           </div>
           <button className="base-btn px-3 py-1 text-[11px]" onClick={refreshWorldMap}>
@@ -158,6 +238,9 @@ const WorldmapPanel = () => {
 
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
           <div className="card xl:min-h-[620px] p-2">
+            <div className="mb-2 px-1">
+              <MapLayerToggles layers={layers} onToggle={toggleLayer} />
+            </div>
             {loading ? (
               <div className="grid place-items-center py-12 text-[13px] text-[var(--text3)]">
                 Loading map...
@@ -189,6 +272,33 @@ const WorldmapPanel = () => {
                 onHighlight={setHighlightedRace}
               />
             </div>
+
+            {selectedNode && nodeMeta && (
+              <div className="card">
+                <div className="card-title !mb-2">
+                  {nodeMeta.icon} {repairMojibake(selectedNode.name || 'Resource Node')}
+                </div>
+                <div className="text-[12px] text-[var(--text3)] mb-2">
+                  {nodeMeta.label} node | Richness {selectedNode.richness || 1} | {formatNodeDistance(selectedNode.distance)}
+                </div>
+                {activeExpedition ? (
+                  <div className="text-[11px] text-[var(--accent1)] mb-3">
+                    Active expedition: {activeExpedition.status} ({Number(activeExpedition.population_sent || 0).toLocaleString()} civilians)
+                  </div>
+                ) : (
+                  <div className="text-[11px] text-[var(--text3)] mb-3">No active expedition to this site.</div>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  <button className="btn text-[11px] px-2 py-1" onClick={() => switchTab('resources')}>
+                    ⛏️ Manage in Resources
+                  </button>
+                  <button className="base-btn text-[11px] px-2 py-1" onClick={() => setSelectedNode(null)}>
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
+
             {mapCard && (
               <div className="card">
                 <div className="card-title !mb-2">

@@ -1,12 +1,29 @@
 import { REGION_META, REGION_BONUSES } from '../../utils/raceData.js';
 import { escapeHtml } from '../../utils/escapeHtml.js';
+import { NODE_TYPE_META, getNodeRadius } from '../../utils/worldMapNodeMeta.js';
 
 function regionOpacity(race, highlightedRace, dim = '0.3') {
   if (!highlightedRace) return '1';
   return race === highlightedRace ? '1' : dim;
 }
 
-export function renderWorldMap(kingdoms, routes = [], highlightedRace = null, kingdomId = null) {
+const DEFAULT_LAYERS = {
+  kingdoms: true,
+  nodes: true,
+  routes: true,
+  expeditions: true,
+};
+
+export function renderWorldMap(
+  kingdoms,
+  routes = [],
+  highlightedRace = null,
+  kingdomId = null,
+  options = {},
+) {
+  const nodes = options.nodes || [];
+  const expeditions = options.expeditions || [];
+  const layers = { ...DEFAULT_LAYERS, ...(options.layers || {}) };
   const state = {
     kingdomId,
   };
@@ -507,6 +524,14 @@ export function renderWorldMap(kingdoms, routes = [], highlightedRace = null, ki
 
         kingdoms.forEach(function (k, i) {
 
+          if (Number.isFinite(Number(k.map_x)) && Number.isFinite(Number(k.map_y))) {
+
+            kdCoords[k.id] = { x: Number(k.map_x), y: Number(k.map_y) };
+
+            return;
+
+          }
+
           var seeds = regionSeeds[k.race] || [];
 
           var seed = seeds[i % seeds.length] || [W / 2, H / 2];
@@ -523,9 +548,149 @@ export function renderWorldMap(kingdoms, routes = [], highlightedRace = null, ki
 
 
 
+        if (layers.expeditions && expeditions.length) {
+
+          var homeCoords = kdCoords[state.kingdomId];
+
+          expeditions.forEach(function (exp) {
+
+            if (!homeCoords || !Number.isFinite(Number(exp.map_x)) || !Number.isFinite(Number(exp.map_y))) return;
+
+            svg +=
+
+              '<line x1="' +
+
+              homeCoords.x +
+
+              '" y1="' +
+
+              homeCoords.y +
+
+              '" x2="' +
+
+              Number(exp.map_x) +
+
+              '" y2="' +
+
+              Number(exp.map_y) +
+
+              '" stroke="#7ec8ff" stroke-width="1.5" stroke-dasharray="6 4" opacity="0.55">' +
+
+              '<animate attributeName="stroke-dashoffset" from="20" to="0" dur="1.6s" repeatCount="indefinite" />' +
+
+              '</line>';
+
+          });
+
+        }
+
+
+
+        if (layers.nodes && nodes.length) {
+
+          nodes.forEach(function (node) {
+
+            if (!Number.isFinite(Number(node.map_x)) || !Number.isFinite(Number(node.map_y))) return;
+
+            var meta = NODE_TYPE_META[node.type] || NODE_TYPE_META.wood;
+
+            var nx = Number(node.map_x);
+
+            var ny = Number(node.map_y);
+
+            var nr = getNodeRadius(node.richness);
+
+            var activeExp = expeditions.some(function (exp) {
+
+              return String(exp.node_id) === String(node.id);
+
+            });
+
+            svg +=
+
+              '<circle cx="' +
+
+              nx +
+
+              '" cy="' +
+
+              ny +
+
+              '" r="' +
+
+              (nr + 3) +
+
+              '" fill="' +
+
+              meta.fill +
+
+              '" opacity="0.18"/>';
+
+            svg +=
+
+              '<circle cx="' +
+
+              nx +
+
+              '" cy="' +
+
+              ny +
+
+              '" r="' +
+
+              nr +
+
+              '" fill="' +
+
+              meta.fill +
+
+              '" stroke="' +
+
+              meta.stroke +
+
+              '" stroke-width="' +
+
+              (activeExp ? 2.5 : 1.5) +
+
+              '" class="map-node" data-node-id="' +
+
+              escapeHtml(String(node.id)) +
+
+              '" data-node-type="' +
+
+              escapeHtml(String(node.type || '')) +
+
+              '" style="cursor:pointer" filter="' +
+
+              (activeExp ? 'url(#glow)' : 'url(#uiShadow)') +
+
+              '"/>';
+
+            svg +=
+
+              '<text x="' +
+
+              nx +
+
+              '" y="' +
+
+              (ny + 4) +
+
+              '" text-anchor="middle" font-size="9" pointer-events="none">' +
+
+              escapeHtml(meta.icon) +
+
+              '</text>';
+
+          });
+
+        }
+
+
+
         // Draw Trade Route Lines
 
-        routes.forEach(function (r) {
+        if (layers.routes) routes.forEach(function (r) {
 
           var p1 = kdCoords[r.kingdom_id];
 
@@ -562,6 +727,8 @@ export function renderWorldMap(kingdoms, routes = [], highlightedRace = null, ki
         });
 
 
+
+        if (layers.kingdoms) {
 
         var sortedKingdoms = kingdoms.slice().sort(function (a, b) {
 
@@ -706,6 +873,8 @@ export function renderWorldMap(kingdoms, routes = [], highlightedRace = null, ki
           }
 
         });
+
+        }
 
 
 

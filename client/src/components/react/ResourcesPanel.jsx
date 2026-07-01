@@ -5,6 +5,7 @@ import { useActivePanel } from '../../hooks/useActivePanel';
 import { useGameState } from '../../hooks/useGameState';
 import { applyGameMutation } from '../../utils/gameMutations.js';
 import { dispatchExpeditionLogEntry } from '../../utils/expeditionLog.js';
+import { AppEvent, emitAppEvent } from '../../utils/appEvents.js';
 import { useRace } from '../../stores';
 
 const REFRESH_INTERVAL_MS = 10 * 1000;
@@ -343,6 +344,7 @@ const ResourcesPanel = () => {
         setScoutMsg(`Discovered: ${data.node.name} (${data.node.type}, richness ${data.node.richness})`);
         await loadNodes();
         await refreshKingdom();
+        emitAppEvent(AppEvent.WORLDMAP_REFRESH);
       } else {
         setScoutMsg('Error: ' + (data.error || 'Unknown'));
       }
@@ -365,6 +367,7 @@ const ResourcesPanel = () => {
         const foodStr = data.foodTaken > 0 ? ` - food ${data.foodTaken.toLocaleString()} taken` : '';
         dispatchExpeditionLogEntry(icon, `Resource expedition departed to ${node.name}`, `${pop.toLocaleString()} civilians - ${node.type}${foodStr}`);
         await refreshKingdom();
+        emitAppEvent(AppEvent.WORLDMAP_REFRESH);
       } else { if(toast) toast('Failed: ' + (data.error || 'Unknown'), 'error'); }
     } catch(e) { if(toast) toast('Error: ' + e.message, 'error'); }
     setLaunching(p => ({...p, [node.id]: false}));
