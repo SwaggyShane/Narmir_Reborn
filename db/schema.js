@@ -1,70 +1,8 @@
-// Normalize legacy SQL shorthand into PostgreSQL syntax.
+// Phase D: placeholder mapping only. DDL and runtime SQL are PG-native (Phases A–C).
 function translateSqlForPg(sql) {
   if (typeof sql !== 'string') return sql;
-  let translated = sql;
-
-  // Replace DATETIME with TIMESTAMP
-  translated = translated.replace(/\bDATETIME\b/gi, "TIMESTAMP");
-
-  // INSERT OR REPLACE / INSERT OR IGNORE translations.
-  // Each block is an independent `if` (not else-if) so multiple patterns in the
-  // same statement are all handled and new tables added here won't silently fall
-  // through due to an earlier else-if match.
-
-  if (/INSERT\s+OR\s+REPLACE\s+INTO\s+market_prices/i.test(translated)) {
-    translated = translated.replace(/INSERT\s+OR\s+REPLACE\s+INTO\s+market_prices/i, "INSERT INTO market_prices");
-    if (!/ON\s+CONFLICT/i.test(translated)) {
-      translated = translated.replace(
-        /VALUES\s*\((.*?)\)/i,
-        "VALUES ($1) ON CONFLICT (id) DO UPDATE SET current_price = EXCLUDED.current_price, base_price = EXCLUDED.base_price, updated_at = EXCLUDED.updated_at"
-      );
-    }
-  }
-
-  if (/INSERT\s+OR\s+IGNORE\s+INTO\s+regions/i.test(translated)) {
-    translated = translated.replace(/INSERT\s+OR\s+IGNORE\s+INTO\s+regions/i, "INSERT INTO regions");
-    if (!/ON\s+CONFLICT/i.test(translated)) translated += " ON CONFLICT (name) DO NOTHING";
-  }
-
-  if (/INSERT\s+OR\s+REPLACE\s+INTO\s+regions/i.test(translated)) {
-    translated = translated.replace(/INSERT\s+OR\s+REPLACE\s+INTO\s+regions/i, "INSERT INTO regions");
-    if (!/ON\s+CONFLICT/i.test(translated)) {
-      translated = translated.replace(
-        /VALUES\s*\((.*?)\)/i,
-        "VALUES ($1) ON CONFLICT (name) DO UPDATE SET owner_alliance_id = EXCLUDED.owner_alliance_id, contest_alliance_id = EXCLUDED.contest_alliance_id, contest_progress = EXCLUDED.contest_progress, bonus_type = EXCLUDED.bonus_type, lore = EXCLUDED.lore, updated_at = EXCLUDED.updated_at"
-      );
-    }
-  }
-
-  if (/INSERT\s+OR\s+IGNORE\s+INTO\s+market_prices/i.test(translated)) {
-    translated = translated.replace(/INSERT\s+OR\s+IGNORE\s+INTO\s+market_prices/i, "INSERT INTO market_prices");
-    if (!/ON\s+CONFLICT/i.test(translated)) translated += " ON CONFLICT (id) DO NOTHING";
-  }
-
-  if (/INSERT\s+OR\s+IGNORE\s+INTO\s+server_state/i.test(translated)) {
-    translated = translated.replace(/INSERT\s+OR\s+IGNORE\s+INTO\s+server_state/i, "INSERT INTO server_state");
-    if (!/ON\s+CONFLICT/i.test(translated)) translated += " ON CONFLICT (key) DO NOTHING";
-  }
-
-  if (/INSERT\s+OR\s+IGNORE\s+INTO\s+events/i.test(translated)) {
-    translated = translated.replace(/INSERT\s+OR\s+IGNORE\s+INTO\s+events/i, "INSERT INTO events");
-    if (!/ON\s+CONFLICT/i.test(translated)) translated += " ON CONFLICT (key) DO NOTHING";
-  }
-
-  // AUTOINCREMENT type translation
-  translated = translated.replace(/INTEGER\s+PRIMARY\s+KEY\s+AUTOINCREMENT/gi, "SERIAL PRIMARY KEY");
-
-  // unixepoch() — schema boot/migrations only until Phase C (runtime uses lib/db-sql.js).
-  translated = translated.replace(/CAST\(unixepoch\(\) AS TEXT\)/gi, "CAST(date_part('epoch', now())::integer AS TEXT)");
-  translated = translated.replace(/unixepoch\(\)/gi, "date_part('epoch', now())::integer");
-
-  // Scalar MIN/MAX and INSERT OR REPLACE server_state: migrated to PG-native runtime SQL.
-
-  // Translate parameter query markers ? to $1, $2...
   let paramIndex = 1;
-  translated = translated.replace(/\?/g, () => `$${paramIndex++}`);
-
-  return translated;
+  return sql.replace(/\?/g, () => `$${paramIndex++}`);
 }
 
 // Cache numeric field names for efficient conversion (PostgreSQL NUMERIC/INTEGER returns strings)
@@ -130,6 +68,7 @@ function convertNumericFields(row) {
 
 const { AsyncLocalStorage } = require('async_hooks');
 const { queryTableColumns } = require('../lib/db-schema-introspection');
+const { EPOCH_NOW_TEXT } = require('../lib/db-sql');
 const transactionStorage = new AsyncLocalStorage();
 
 function resolveDbConnection(db) {
@@ -442,9 +381,11 @@ class PgDbAdapter {
     for (const statement of statements) {
       let translated = translateSqlForPg(statement);
       if (this.isPgMem && translated) {
-        // pg-mem doesn't support nested casts inside column defaults
-        translated = translated.replace(/DEFAULT\s+\(date_part\('epoch',\s*now\(\)\)::integer\)/gi, "DEFAULT 1770000000");
-        translated = translated.replace(/DEFAULT\s+date_part\('epoch',\s*now\(\)\)::integer/gi, "DEFAULT 1770000000");
+        // pg-mem doesn't support dynamic epoch defaults inside column definitions
+        translated = translated.replace(
+          /DEFAULT\s+\(FLOOR\(EXTRACT\(EPOCH FROM NOW\(\)\)::INTEGER\)(\s*\+\s*\d+)?\)/gi,
+          'DEFAULT 1770000000',
+        );
       }
       if (translated) {
         try {
@@ -781,12 +722,12 @@ async function initDb(options = {}) {
 
   await _db.exec(`
     CREATE TABLE IF NOT EXISTS migrations (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       name TEXT NOT NULL UNIQUE,
-      applied_at INTEGER NOT NULL DEFAULT (unixepoch())
+      applied_at INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     );
     CREATE TABLE IF NOT EXISTS players (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      id          SERIAL PRIMARY KEY,
       username    TEXT    NOT NULL UNIQUE,
       password    TEXT    NOT NULL,
       email       TEXT    UNIQUE,
@@ -794,10 +735,10 @@ async function initDb(options = {}) {
       is_banned   INTEGER NOT NULL DEFAULT 0,
       is_ai       INTEGER NOT NULL DEFAULT 0,
       ban_reason  TEXT,
-      created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at  INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     );
     CREATE TABLE IF NOT EXISTS kingdoms (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      id          SERIAL PRIMARY KEY,
       player_id   INTEGER NOT NULL UNIQUE REFERENCES players(id),
       name        TEXT    NOT NULL,
       race        TEXT    NOT NULL DEFAULT 'human',
@@ -812,7 +753,7 @@ async function initDb(options = {}) {
       mana        INTEGER NOT NULL DEFAULT 5000,
       food        INTEGER NOT NULL DEFAULT 0,
       turn        INTEGER NOT NULL DEFAULT 0,
-      last_turn_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      last_turn_at INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER),
       turns_stored INTEGER NOT NULL DEFAULT 400,
       res_economy       INTEGER NOT NULL DEFAULT 100,
       res_weapons       INTEGER NOT NULL DEFAULT 100,
@@ -886,34 +827,34 @@ async function initDb(options = {}) {
       steel             INTEGER NOT NULL DEFAULT 0,
       school_of_magic   TEXT,
       school_spellbook  INTEGER NOT NULL DEFAULT 0,
-      created_at  INTEGER NOT NULL DEFAULT (unixepoch()),
-      updated_at  INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at  INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER),
+      updated_at  INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     );
     CREATE TABLE IF NOT EXISTS alliances (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      id          SERIAL PRIMARY KEY,
       name        TEXT    NOT NULL UNIQUE,
       leader_id   INTEGER NOT NULL REFERENCES kingdoms(id),
-      created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at  INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     );
     CREATE TABLE IF NOT EXISTS alliance_members (
       alliance_id INTEGER NOT NULL REFERENCES alliances(id),
       kingdom_id  INTEGER NOT NULL REFERENCES kingdoms(id),
       pledge      INTEGER NOT NULL DEFAULT 3,
-      joined_at   INTEGER NOT NULL DEFAULT (unixepoch()),
+      joined_at   INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER),
       PRIMARY KEY (alliance_id, kingdom_id)
     );
     CREATE TABLE IF NOT EXISTS news (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      id          SERIAL PRIMARY KEY,
       kingdom_id  INTEGER NOT NULL REFERENCES kingdoms(id),
       type        TEXT    NOT NULL,
       message     TEXT    NOT NULL,
       turn_num    INTEGER NOT NULL DEFAULT 0,
       is_read     INTEGER NOT NULL DEFAULT 0,
       combat_log_id INTEGER,
-      created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at  INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     );
     CREATE TABLE IF NOT EXISTS war_log (
-      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      id              SERIAL PRIMARY KEY,
       action_type     TEXT    NOT NULL,
       attacker_id     INTEGER REFERENCES kingdoms(id),
       attacker_name   TEXT,
@@ -922,46 +863,46 @@ async function initDb(options = {}) {
       outcome         TEXT    NOT NULL,
       detail          TEXT,
       obscured        INTEGER NOT NULL DEFAULT 0,
-      created_at      INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at      INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     );
     CREATE INDEX IF NOT EXISTS idx_war_log_time ON war_log(created_at DESC);
     CREATE TABLE IF NOT EXISTS expeditions (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      id          SERIAL PRIMARY KEY,
       kingdom_id  INTEGER NOT NULL REFERENCES kingdoms(id),
       type        TEXT    NOT NULL,
       turns_left  INTEGER NOT NULL,
       rangers     INTEGER NOT NULL DEFAULT 0,
       fighters    INTEGER NOT NULL DEFAULT 0,
       rewards     TEXT,
-      created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at  INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     );
     CREATE INDEX IF NOT EXISTS idx_exp_kingdom ON expeditions(kingdom_id);
     CREATE TABLE IF NOT EXISTS combat_log (
-      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      id              SERIAL PRIMARY KEY,
       attacker_id     INTEGER NOT NULL REFERENCES kingdoms(id),
       defender_id     INTEGER NOT NULL REFERENCES kingdoms(id),
       type            TEXT    NOT NULL,
       attacker_won    INTEGER NOT NULL DEFAULT 0,
       land_transferred INTEGER NOT NULL DEFAULT 0,
       detail          TEXT,
-      created_at      INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at      INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     );
     CREATE TABLE IF NOT EXISTS chat_messages (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      id          SERIAL PRIMARY KEY,
       kingdom_id  INTEGER REFERENCES kingdoms(id),
       player_id   INTEGER NOT NULL DEFAULT 0,
       username    TEXT    NOT NULL DEFAULT '',
       room        TEXT    NOT NULL DEFAULT 'global',
       message     TEXT    NOT NULL,
       deleted     INTEGER NOT NULL DEFAULT 0,
-      created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at  INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     );
     CREATE TABLE IF NOT EXISTS server_state (
       key   TEXT PRIMARY KEY,
       value TEXT NOT NULL
     );
     CREATE TABLE IF NOT EXISTS heroes (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      id          SERIAL PRIMARY KEY,
       kingdom_id  INTEGER NOT NULL REFERENCES kingdoms(id),
       name        TEXT    NOT NULL,
       class       TEXT    NOT NULL,
@@ -971,7 +912,7 @@ async function initDb(options = {}) {
       status      TEXT    NOT NULL DEFAULT 'idle',
       hp          INTEGER NOT NULL DEFAULT 100,
       max_hp      INTEGER NOT NULL DEFAULT 100,
-      created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at  INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     );
     CREATE INDEX IF NOT EXISTS idx_heroes_kingdom ON heroes(kingdom_id);
     -- kingdom_id is the 2nd column of alliance_members' composite PK, so it can't be
@@ -995,14 +936,14 @@ async function initDb(options = {}) {
     CREATE INDEX IF NOT EXISTS idx_war_log_both    ON war_log(attacker_id, defender_id);
     CREATE INDEX IF NOT EXISTS idx_news_turn        ON news(kingdom_id, turn_num DESC);
     CREATE TABLE IF NOT EXISTS spy_reports (
-      id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+      id                  SERIAL PRIMARY KEY,
       kingdom_id          INTEGER NOT NULL REFERENCES kingdoms(id),
       target_id           INTEGER NOT NULL REFERENCES kingdoms(id),
       target_name         TEXT    NOT NULL,
       outcome             TEXT    NOT NULL,
       report              TEXT,
       shared_to_alliance  INTEGER NOT NULL DEFAULT 0,
-      created_at          INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at          INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     );
     CREATE INDEX IF NOT EXISTS idx_spy_reports_kingdom ON spy_reports(kingdom_id);
     CREATE INDEX IF NOT EXISTS idx_spy_reports_target  ON spy_reports(target_id);
@@ -1105,14 +1046,14 @@ async function initDb(options = {}) {
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS trade_routes (
-      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      id              SERIAL PRIMARY KEY,
       kingdom_id      INTEGER NOT NULL REFERENCES kingdoms(id),
       partner_id      INTEGER NOT NULL REFERENCES kingdoms(id),
       distance        INTEGER NOT NULL DEFAULT 0,
       stability       INTEGER NOT NULL DEFAULT 100,
       efficiency      REAL    NOT NULL DEFAULT 1.0,
       last_raid_at    INTEGER DEFAULT 0,
-      created_at      INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at      INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     )
   `);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_trade_routes_k ON trade_routes(kingdom_id)`);
@@ -1122,12 +1063,12 @@ async function initDb(options = {}) {
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS messages (
-      id                INTEGER PRIMARY KEY AUTOINCREMENT,
+      id                SERIAL PRIMARY KEY,
       sender_id         INTEGER NOT NULL REFERENCES players(id),
       recipient_id      INTEGER NOT NULL REFERENCES players(id),
       content           TEXT NOT NULL,
       is_read           INTEGER NOT NULL DEFAULT 0,
-      created_at        INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at        INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     )
   `);
 
@@ -1136,42 +1077,42 @@ async function initDb(options = {}) {
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS forum_boards (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      id          SERIAL PRIMARY KEY,
       name        TEXT NOT NULL UNIQUE,
       description TEXT,
       order_index INTEGER NOT NULL DEFAULT 0,
       is_active   INTEGER NOT NULL DEFAULT 1,
-      created_at  INTEGER NOT NULL DEFAULT (unixepoch()),
-      updated_at  INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at  INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER),
+      updated_at  INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     )
   `);
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS forum_topics (
-      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      id            SERIAL PRIMARY KEY,
       board_id      INTEGER NOT NULL REFERENCES forum_boards(id),
       player_id     INTEGER NOT NULL REFERENCES players(id),
       title         TEXT NOT NULL,
       content       TEXT NOT NULL,
       post_count    INTEGER NOT NULL DEFAULT 1,
-      last_post_at  INTEGER NOT NULL DEFAULT (unixepoch()),
+      last_post_at  INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER),
       is_pinned     INTEGER NOT NULL DEFAULT 0,
       is_locked     INTEGER NOT NULL DEFAULT 0,
-      created_at    INTEGER NOT NULL DEFAULT (unixepoch()),
-      updated_at    INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at    INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER),
+      updated_at    INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     )
   `);
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS forum_posts (
-      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      id            SERIAL PRIMARY KEY,
       topic_id      INTEGER NOT NULL REFERENCES forum_topics(id),
       player_id     INTEGER NOT NULL REFERENCES players(id),
       content       TEXT NOT NULL,
       is_deleted    INTEGER NOT NULL DEFAULT 0,
       deleted_at    INTEGER,
-      created_at    INTEGER NOT NULL DEFAULT (unixepoch()),
-      updated_at    INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at    INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER),
+      updated_at    INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     )
   `);
 
@@ -1184,50 +1125,50 @@ async function initDb(options = {}) {
   // Forum Moderation Tables
   await _db.run(`
     CREATE TABLE IF NOT EXISTS forum_moderators (
-      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      id            SERIAL PRIMARY KEY,
       player_id     INTEGER NOT NULL REFERENCES players(id),
       board_id      INTEGER NOT NULL REFERENCES forum_boards(id),
       assigned_by   INTEGER NOT NULL REFERENCES players(id),
-      created_at    INTEGER NOT NULL DEFAULT (unixepoch()),
+      created_at    INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER),
       UNIQUE(player_id, board_id)
     )
   `);
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS forum_bans (
-      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      id            SERIAL PRIMARY KEY,
       player_id     INTEGER NOT NULL REFERENCES players(id),
       board_id      INTEGER REFERENCES forum_boards(id),
       ban_type      TEXT NOT NULL,
       reason        TEXT,
       expires_at    INTEGER,
       banned_by     INTEGER NOT NULL REFERENCES players(id),
-      created_at    INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at    INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     )
   `);
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS forum_reports (
-      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      id            SERIAL PRIMARY KEY,
       post_id       INTEGER NOT NULL REFERENCES forum_posts(id),
       reporter_id   INTEGER NOT NULL REFERENCES players(id),
       status        TEXT NOT NULL DEFAULT 'open',
       reviewed_by   INTEGER REFERENCES players(id),
       action_taken  TEXT,
-      created_at    INTEGER NOT NULL DEFAULT (unixepoch()),
+      created_at    INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER),
       reviewed_at   INTEGER
     )
   `);
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS forum_moderation_log (
-      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      id            SERIAL PRIMARY KEY,
       moderator_id  INTEGER NOT NULL REFERENCES players(id),
       action        TEXT NOT NULL,
       target_type   TEXT NOT NULL,
       target_id     INTEGER NOT NULL,
       reason        TEXT,
-      created_at    INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at    INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     )
   `);
 
@@ -1249,19 +1190,19 @@ async function initDb(options = {}) {
       player_id     INTEGER PRIMARY KEY REFERENCES players(id),
       avatar_mode   TEXT NOT NULL DEFAULT 'initials',
       avatar_url    TEXT,
-      updated_at    INTEGER NOT NULL DEFAULT (unixepoch())
+      updated_at    INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     )
   `);
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS bounties (
-      id                INTEGER PRIMARY KEY AUTOINCREMENT,
+      id                SERIAL PRIMARY KEY,
       placer_id         INTEGER NOT NULL REFERENCES players(id),
       target_id         INTEGER NOT NULL REFERENCES kingdoms(id),
       amount            INTEGER NOT NULL,
       status            TEXT NOT NULL DEFAULT 'active',
       claimed_by_id     INTEGER REFERENCES kingdoms(id),
-      created_at        INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at        INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     )
   `);
 
@@ -1270,34 +1211,34 @@ async function initDb(options = {}) {
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS lore_entries (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       title TEXT NOT NULL DEFAULT '',
       content TEXT NOT NULL,
-      created_at INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     )
   `);
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS random_events (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       content TEXT NOT NULL,
-      created_at INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     )
   `);
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS junk_events (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       content TEXT NOT NULL,
-      created_at INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     )
   `);
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS tax_events (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       content TEXT NOT NULL,
-      created_at INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     )
   `);
 
@@ -1309,8 +1250,8 @@ async function initDb(options = {}) {
       contest_progress  INTEGER NOT NULL DEFAULT 0,
       bonus_type        TEXT,
       lore              TEXT,
-      created_at        INTEGER NOT NULL DEFAULT (unixepoch()),
-      updated_at        INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at        INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER),
+      updated_at        INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     )
   `);
 
@@ -1324,7 +1265,10 @@ async function initDb(options = {}) {
     ['The Ashfang Wilds',   'military']
   ];
   for (const [name, bonus] of REGION_DATA_LOCAL) {
-    await _db.run('INSERT OR IGNORE INTO regions (name, bonus_type) VALUES (?, ?)', [name, bonus]);
+    await _db.run(
+      'INSERT INTO regions (name, bonus_type) VALUES (?, ?) ON CONFLICT (name) DO NOTHING',
+      [name, bonus],
+    );
   }
 
   const pCols = await getTableColumns('players');
@@ -1345,17 +1289,17 @@ async function initDb(options = {}) {
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS suggestions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       player_id INTEGER,
       kingdom_id INTEGER,
       message TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS changelog_entries (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       title TEXT NOT NULL,
       description TEXT NOT NULL,
       body_md TEXT,
@@ -1364,7 +1308,7 @@ async function initDb(options = {}) {
       source_id INTEGER,
       author_name TEXT,
       discord_sent INTEGER NOT NULL DEFAULT 0,
-      created_at INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     )
   `);
 
@@ -1375,7 +1319,7 @@ async function initDb(options = {}) {
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS bug_reports (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       player_id INTEGER,
       kingdom_id INTEGER,
       username TEXT,
@@ -1387,7 +1331,7 @@ async function initDb(options = {}) {
       user_agent TEXT,
       console_log TEXT,
       discord_sent INTEGER NOT NULL DEFAULT 0,
-      created_at INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     )
   `);
 
@@ -1398,20 +1342,20 @@ async function initDb(options = {}) {
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS admin_notes (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       author_name TEXT,
       message TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS wishlist (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       category TEXT,
       description TEXT,
       completed INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
   
@@ -1433,14 +1377,14 @@ async function initDb(options = {}) {
       if (kingdomIdCol && kingdomIdCol.notnull) {
         await _db.exec(`
           CREATE TABLE chat_messages_new (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            id          SERIAL PRIMARY KEY,
             kingdom_id  INTEGER REFERENCES kingdoms(id),
             player_id   INTEGER NOT NULL DEFAULT 0,
             username    TEXT NOT NULL DEFAULT '',
             room        TEXT    NOT NULL DEFAULT 'global',
             message     TEXT    NOT NULL,
             deleted     INTEGER NOT NULL DEFAULT 0,
-            created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+            created_at  INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
           );
           INSERT INTO chat_messages_new (id, kingdom_id, player_id, username, room, message, deleted, created_at)
           SELECT id, kingdom_id, player_id, username, room, message, deleted, created_at FROM chat_messages;
@@ -1572,7 +1516,7 @@ async function initDb(options = {}) {
   // Trade offers table
   await _db.exec(`
     CREATE TABLE IF NOT EXISTS trade_offers (
-      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      id            SERIAL PRIMARY KEY,
       sender_id     INTEGER NOT NULL REFERENCES kingdoms(id),
       sender_name   TEXT    NOT NULL,
       receiver_id   INTEGER NOT NULL REFERENCES kingdoms(id),
@@ -1580,8 +1524,8 @@ async function initDb(options = {}) {
       offer         TEXT    NOT NULL,
       request       TEXT    NOT NULL,
       status        TEXT    NOT NULL DEFAULT 'pending',
-      created_at    INTEGER NOT NULL DEFAULT (unixepoch()),
-      expires_at    INTEGER NOT NULL DEFAULT (unixepoch() + 3600)
+      created_at    INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER),
+      expires_at    INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER + 3600)
     );
     CREATE INDEX IF NOT EXISTS idx_trade_offers_receiver ON trade_offers(receiver_id, status);
     CREATE INDEX IF NOT EXISTS idx_trade_offers_sender   ON trade_offers(sender_id, status);
@@ -1597,7 +1541,7 @@ async function initDb(options = {}) {
   // Mercenaries table
   await _db.exec(`
     CREATE TABLE IF NOT EXISTS mercenaries (
-      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      id              SERIAL PRIMARY KEY,
       kingdom_id      INTEGER NOT NULL REFERENCES kingdoms(id),
       unit_type       TEXT    NOT NULL,
       level           INTEGER NOT NULL,
@@ -1606,14 +1550,14 @@ async function initDb(options = {}) {
       hired_at_turn   INTEGER NOT NULL DEFAULT 0,
       duration_turns  INTEGER NOT NULL DEFAULT 20,
       upkeep_per_turn INTEGER NOT NULL DEFAULT 0,
-      created_at      INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at      INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     );
     CREATE INDEX IF NOT EXISTS idx_mercs_kingdom ON mercenaries(kingdom_id);
   `);
 
   await _db.exec(`
     CREATE TABLE IF NOT EXISTS war_log (
-      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      id              SERIAL PRIMARY KEY,
       action_type     TEXT    NOT NULL,
       attacker_id     INTEGER REFERENCES kingdoms(id),
       attacker_name   TEXT,
@@ -1622,7 +1566,7 @@ async function initDb(options = {}) {
       outcome         TEXT    NOT NULL,
       detail          TEXT,
       obscured        INTEGER NOT NULL DEFAULT 0,
-      created_at      INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at      INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     );
     CREATE INDEX IF NOT EXISTS idx_war_log_time ON war_log(created_at DESC);
   `);
@@ -1639,7 +1583,7 @@ async function initDb(options = {}) {
       id            TEXT PRIMARY KEY,
       current_price REAL NOT NULL,
       base_price    REAL NOT NULL,
-      updated_at    DATETIME DEFAULT CURRENT_TIMESTAMP
+      updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `);
   const freshDefaultPrices = [
@@ -1657,13 +1601,16 @@ async function initDb(options = {}) {
     ['land',    5000.0, 5000.0]
   ];
   for (const [id, current, base] of freshDefaultPrices) {
-    await _db.run('INSERT OR IGNORE INTO market_prices (id, current_price, base_price) VALUES (?, ?, ?)', [id, current, base]);
+    await _db.run(
+      'INSERT INTO market_prices (id, current_price, base_price) VALUES (?, ?, ?) ON CONFLICT (id) DO NOTHING',
+      [id, current, base],
+    );
   }
 
   // Events table
   await _db.exec(`
     CREATE TABLE IF NOT EXISTS events (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      id          SERIAL PRIMARY KEY,
       key         TEXT    NOT NULL UNIQUE,
       name        TEXT    NOT NULL,
       description TEXT    NOT NULL,
@@ -1674,28 +1621,32 @@ async function initDb(options = {}) {
       race_only   TEXT    DEFAULT NULL,
       is_positive INTEGER NOT NULL DEFAULT 1,
       is_active   INTEGER NOT NULL DEFAULT 1,
-      created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at  INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     );
   `);
 
   // Event log table
   await _db.exec(`
     CREATE TABLE IF NOT EXISTS event_log (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      id          SERIAL PRIMARY KEY,
       kingdom_id  INTEGER NOT NULL REFERENCES kingdoms(id),
       kingdom_name TEXT   NOT NULL,
       event_key   TEXT    NOT NULL,
       event_name  TEXT    NOT NULL,
       season      TEXT    NOT NULL,
-      fired_at    INTEGER NOT NULL DEFAULT (unixepoch())
+      fired_at    INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     );
     CREATE INDEX IF NOT EXISTS idx_event_log_fired ON event_log(fired_at DESC);
     CREATE INDEX IF NOT EXISTS idx_event_log_kingdom ON event_log(kingdom_id);
   `);
 
   // Seed season state
-  await _db.run(`INSERT OR IGNORE INTO server_state (key, value) VALUES ('current_season', 'spring')`);
-  await _db.run(`INSERT OR IGNORE INTO server_state (key, value) VALUES ('season_started_at', CAST(unixepoch() AS TEXT))`);
+  await _db.run(
+    `INSERT INTO server_state (key, value) VALUES ('current_season', 'spring') ON CONFLICT (key) DO NOTHING`,
+  );
+  await _db.run(
+    `INSERT INTO server_state (key, value) VALUES ('season_started_at', ${EPOCH_NOW_TEXT}) ON CONFLICT (key) DO NOTHING`,
+  );
 
   // Seed default events
   const defaultEvents = [
@@ -1727,8 +1678,10 @@ async function initDb(options = {}) {
     ['orc_rampage',       'Orc Rampage',           'Summer heat fuels Orcish aggression.',         'summer', 'military',  0.10, 2, 'orc',      1],
   ];
   for (const [key,name,description,season,effect_type,effect_value,effect_duration,race_only,is_positive] of defaultEvents) {
-    await _db.run(`INSERT OR IGNORE INTO events (key,name,description,season,effect_type,effect_value,effect_duration,race_only,is_positive) VALUES (?,?,?,?,?,?,?,?,?)`,
-      [key,name,description,season,effect_type,effect_value,effect_duration,race_only,is_positive]);
+    await _db.run(
+      `INSERT INTO events (key,name,description,season,effect_type,effect_value,effect_duration,race_only,is_positive) VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT (key) DO NOTHING`,
+      [key, name, description, season, effect_type, effect_value, effect_duration, race_only, is_positive],
+    );
   }
 
   const hasEvents = await _db.get("SELECT 1 FROM random_events LIMIT 1");
@@ -1867,8 +1820,9 @@ async function initDb(options = {}) {
 
   // Seed default server_state row for regen tracking
   await _db.run(`
-    INSERT OR IGNORE INTO server_state (key, value)
-    VALUES ('last_regen_at', CAST(unixepoch() AS TEXT))
+    INSERT INTO server_state (key, value)
+    VALUES ('last_regen_at', ${EPOCH_NOW_TEXT})
+    ON CONFLICT (key) DO NOTHING
   `);
 
   try {
@@ -1920,13 +1874,13 @@ async function initDb(options = {}) {
   // Resource nodes table
   await _db.run(`
     CREATE TABLE IF NOT EXISTS resource_nodes (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       kingdom_id INTEGER NOT NULL REFERENCES kingdoms(id),
       name TEXT NOT NULL,
       type TEXT NOT NULL,
       distance INTEGER NOT NULL,
       richness INTEGER NOT NULL,
-      discovered_at INTEGER NOT NULL DEFAULT (unixepoch())
+      discovered_at INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     )
   `);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_resource_nodes_kingdom ON resource_nodes(kingdom_id)`);
@@ -1934,7 +1888,7 @@ async function initDb(options = {}) {
   // Admin goal definitions table (overrides defaults from game/goals.js)
   await _db.run(`
     CREATE TABLE IF NOT EXISTS admin_goal_definitions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       tier TEXT NOT NULL,
       goal_id TEXT NOT NULL,
       label TEXT NOT NULL,
@@ -1943,8 +1897,8 @@ async function initDb(options = {}) {
       prize_type TEXT NOT NULL,
       prize_multiplier NUMERIC NOT NULL,
       active INTEGER NOT NULL DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(tier, goal_id)
     )
   `);
@@ -1953,13 +1907,13 @@ async function initDb(options = {}) {
   // Admin game constants override table
   await _db.run(`
     CREATE TABLE IF NOT EXISTS admin_game_constants (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       section TEXT NOT NULL,
       constant_key TEXT NOT NULL,
       override_value TEXT NOT NULL,
       data_type TEXT NOT NULL DEFAULT 'number',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(section, constant_key)
     )
   `);
@@ -1968,7 +1922,7 @@ async function initDb(options = {}) {
   // Resource expeditions table
   await _db.run(`
     CREATE TABLE IF NOT EXISTS resource_expeditions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       kingdom_id INTEGER NOT NULL REFERENCES kingdoms(id),
       node_id INTEGER NOT NULL REFERENCES resource_nodes(id),
       population_sent INTEGER NOT NULL,
@@ -1991,12 +1945,12 @@ async function initDb(options = {}) {
   // Discord integration tables
   await _db.run(`
     CREATE TABLE IF NOT EXISTS discord_links (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       player_id INTEGER NOT NULL UNIQUE REFERENCES players(id),
       discord_user_id TEXT NOT NULL UNIQUE,
       discord_username TEXT NOT NULL,
-      linked_at INTEGER NOT NULL DEFAULT (unixepoch()),
-      updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+      linked_at INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER),
+      updated_at INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     )
   `);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_discord_links_player ON discord_links(player_id)`);
@@ -2004,11 +1958,11 @@ async function initDb(options = {}) {
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS chat_sync_log (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       game_message_id INTEGER REFERENCES chat_messages(id),
       discord_message_id TEXT,
       direction TEXT NOT NULL,
-      synced_at INTEGER NOT NULL DEFAULT (unixepoch())
+      synced_at INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     )
   `);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_chat_sync_log_game_msg ON chat_sync_log(game_message_id)`);
@@ -2016,27 +1970,27 @@ async function initDb(options = {}) {
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS discord_sync_config (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       channel_id TEXT NOT NULL UNIQUE,
       channel_name TEXT NOT NULL,
       enabled INTEGER NOT NULL DEFAULT 1,
       sync_both_directions INTEGER NOT NULL DEFAULT 1,
       game_room TEXT NOT NULL DEFAULT 'global',
-      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-      updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER),
+      updated_at INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     )
   `);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_discord_sync_config_channel ON discord_sync_config(channel_id)`);
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS discord_link_tokens (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       token TEXT NOT NULL UNIQUE,
       discord_user_id TEXT NOT NULL,
       discord_username TEXT NOT NULL,
       game_username TEXT NOT NULL,
       expires_at INTEGER NOT NULL,
-      created_at INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     )
   `);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_discord_link_tokens_token ON discord_link_tokens(token)`);
@@ -2044,7 +1998,7 @@ async function initDb(options = {}) {
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS test_results (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       player_id INTEGER NOT NULL REFERENCES players(id),
       player_name TEXT NOT NULL,
       test_key TEXT NOT NULL,
@@ -2052,7 +2006,7 @@ async function initDb(options = {}) {
       test_name TEXT NOT NULL,
       passed INTEGER,
       comment TEXT,
-      submitted_at INTEGER NOT NULL DEFAULT (unixepoch())
+      submitted_at INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     )
   `);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_test_results_key ON test_results(test_key)`);
@@ -2062,7 +2016,7 @@ async function initDb(options = {}) {
   // Happiness tracking tables
   await _db.run(`
     CREATE TABLE IF NOT EXISTS happiness_history (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       kingdom_id INTEGER NOT NULL REFERENCES kingdoms(id),
       turn INTEGER NOT NULL,
       happiness_value INTEGER NOT NULL,
@@ -2077,7 +2031,7 @@ async function initDb(options = {}) {
       effects_component INTEGER DEFAULT 0,
       synergy_component INTEGER DEFAULT 0,
       fragment_component INTEGER DEFAULT 0,
-      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      created_at INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER),
       UNIQUE(kingdom_id, turn)
     )
   `);
@@ -2094,7 +2048,7 @@ async function initDb(options = {}) {
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS happiness_events (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       kingdom_id INTEGER NOT NULL REFERENCES kingdoms(id),
       turn INTEGER NOT NULL,
       event_type TEXT NOT NULL,
@@ -2103,7 +2057,7 @@ async function initDb(options = {}) {
       component TEXT,
       delta INTEGER,
       description TEXT NOT NULL,
-      created_at INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     )
   `);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_happiness_events_kingdom_turn ON happiness_events(kingdom_id, turn DESC)`);
@@ -2112,12 +2066,12 @@ async function initDb(options = {}) {
   // Synergy cooldown tracking
   await _db.exec(`
     CREATE TABLE IF NOT EXISTS synergy_cooldowns (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       kingdom_id INTEGER NOT NULL REFERENCES kingdoms(id),
       synergy_id TEXT NOT NULL,
       cooldown_until INTEGER NOT NULL,
-      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-      updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      created_at INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER),
+      updated_at INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER),
       UNIQUE(kingdom_id, synergy_id)
     );
     CREATE INDEX IF NOT EXISTS idx_synergy_cooldowns_kingdom ON synergy_cooldowns(kingdom_id);
@@ -2127,20 +2081,20 @@ async function initDb(options = {}) {
   // Audit scheduling tables
   await _db.run(`
     CREATE TABLE IF NOT EXISTS audit_schedules (
-      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      id            SERIAL PRIMARY KEY,
       created_by    INTEGER NOT NULL REFERENCES players(id),
       frequency     TEXT NOT NULL DEFAULT 'weekly',
       is_enabled    INTEGER NOT NULL DEFAULT 1,
       next_run_at   INTEGER,
       last_run_at   INTEGER,
-      created_at    INTEGER NOT NULL DEFAULT (unixepoch()),
-      updated_at    INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at    INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER),
+      updated_at    INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     )
   `);
 
   await _db.run(`
     CREATE TABLE IF NOT EXISTS audit_history (
-      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      id            SERIAL PRIMARY KEY,
       schedule_id   INTEGER REFERENCES audit_schedules(id),
       run_at        INTEGER NOT NULL,
       status        TEXT NOT NULL DEFAULT 'success',
@@ -2148,14 +2102,14 @@ async function initDb(options = {}) {
       findings      TEXT,
       error_message TEXT,
       duration_ms   INTEGER,
-      created_at    INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at    INTEGER NOT NULL DEFAULT (FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER)
     )
   `);
 
   // Audit notification settings
   await _db.exec(`
     CREATE TABLE IF NOT EXISTS audit_notification_settings (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       notify_on_new_issues BOOLEAN DEFAULT TRUE,
       min_severity TEXT DEFAULT 'MEDIUM',
       discord_channel_id TEXT,
