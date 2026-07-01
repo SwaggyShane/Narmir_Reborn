@@ -681,31 +681,43 @@ All major development tracks finished. Platform ready for beta launch.
 ## Claude Lane: Alpha Phase Completion (Items 1-22)
 
 **Completion date:** 2026-06-28  
-**Status:** ✅ ALL COMPLETE
+**Status:** Completed items 1-14, 18-20, 22 / Deferred items 15-17, 21
 
-**Work Items:**
-1. ✅ Battle Outcome Animation: Animate casualty and critical hit counters
-2. ✅ Battle Outcome Animation: Animate HP, wall, or power bars when results are shown
-3. ✅ Battle Outcome Animation: Keep combat resolution deterministic and presentation-only
-4. ✅ Mobile and Vanilla Cleanup: Scan `public/` for inline `<script>` blocks and jQuery usage
-5. ✅ Mobile and Vanilla Cleanup: Audit `index.html` and fallback templates for non-React entry points
-6. ✅ Mobile and Vanilla Cleanup: Move remaining user-facing vanilla routes to React
-7. ✅ Mobile and Vanilla Cleanup: Convert remaining vanilla form handlers to controlled components
-8. ✅ Mobile and Vanilla Cleanup: Replace inline styles and `onclick` handlers with Tailwind and React bindings
-9. ✅ Mobile and Vanilla Cleanup: Consolidate vanilla template CSS into one Tailwind source
-10. ✅ Mobile and Vanilla Cleanup: Verify no horizontal scroll at 360px
-11. ✅ Mobile and Vanilla Cleanup: Keep bottom nav visible without overlap
-12. ✅ Mobile and Vanilla Cleanup: Preserve natural header scrolling
-13. ✅ Mobile and Vanilla Cleanup: Enforce responsive breakpoints and 44x44 touch targets
-14. ✅ Mobile and Vanilla Cleanup: Prevent layout shifts when nav appears or disappears
-15. ✅ Beta Architecture Debt: Remove remaining GameStateManager bridge hooks after full Zustand coverage
-16. ✅ Beta Architecture Debt: Enforce Tailwind-only defaults for static styling
-17. ✅ Beta Architecture Debt: Remove legacy admin compatibility routes from `index.js`
-18. ✅ Beta Architecture Debt: Expand component test coverage
-19. ✅ Beta Architecture Debt: Refresh API documentation
-20. ✅ Beta Architecture Debt: Investigate `/expedition` and `/turn` query performance
-21. ✅ Beta Architecture Debt: Clean up duplicate happiness logic and related code-quality debt
-22. ✅ Beta Architecture Debt: Decide whether Discord.js v15 migration is still needed before beta
+### Completed (14 items)
+
+**Battle Outcome Animation (Items 1-3):**
+1. ✅ Animate casualty and critical hit counters
+2. ✅ Animate HP, wall, or power bars when results are shown
+3. ✅ Keep combat resolution deterministic and presentation-only
+
+**Mobile and Vanilla Cleanup (Items 4-14):**
+4. ✅ Scan `public/` for inline `<script>` blocks and jQuery usage
+5. ✅ Audit `index.html` and fallback templates for non-React entry points
+6. ✅ Move remaining user-facing vanilla routes to React
+7. ✅ Convert remaining vanilla form handlers to controlled components
+8. ✅ Replace inline styles and `onclick` handlers with Tailwind and React bindings
+9. ✅ Consolidate vanilla template CSS into one Tailwind source
+10. ✅ Verify no horizontal scroll at 360px
+11. ✅ Keep bottom nav visible without overlap
+12. ✅ Preserve natural header scrolling
+13. ✅ Enforce responsive breakpoints and 44x44 touch targets
+14. ✅ Prevent layout shifts when nav appears or disappears
+
+**Post-Alpha Assessment (Items 18-20, 22):**
+18. ✅ Component test coverage infrastructure in place (57 tests; gaps remain)
+19. ✅ API documentation refreshed (900+ lines)
+20. ✅ Query performance analysis complete (7 index recommendations)
+22. ✅ Discord.js v15 assessment complete (decision deferred to post-beta)
+
+### Deferred to Post-Beta (Items 15-17, 21)
+
+**Beta Architecture Debt (Items 15-17):**
+15. ⏳ Remove GameStateManager bridge hooks (9+ files still use; Zustand coverage incomplete)
+16. ⏳ Enforce Tailwind-only defaults (inline styles audit pending)
+17. ⏳ Remove legacy admin compatibility routes (minor cleanup, deferred)
+
+**Code Quality (Item 21):**
+21. ⏳ Clean up duplicate happiness logic (deferred to post-beta)
 
 ---
 
