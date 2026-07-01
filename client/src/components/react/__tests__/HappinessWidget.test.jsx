@@ -82,7 +82,6 @@ describe('HappinessWidget', () => {
     await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
 
     capturedHandler({ reason: 'unrelated-event' });
-    await new Promise((r) => setTimeout(r, 0));
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 

@@ -86,10 +86,10 @@ describe('BountiesPanel', () => {
       expect(screen.getByText(/Bounty Board/i)).toBeInTheDocument();
     });
 
-    const select = document.getElementById('react-bounty-select');
-    expect(select).toBeTruthy();
+    const select = screen.getByRole('combobox');
     expect(screen.queryByRole('option', { name: 'Iron Hold (alice)' })).not.toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Silverwood (bob)' })).toBeInTheDocument();
+    expect(select).toBeInTheDocument();
   });
 
   it('rejects placing a bounty with no target selected', async () => {
@@ -106,9 +106,9 @@ describe('BountiesPanel', () => {
     render(<BountiesPanel />);
     await waitFor(() => expect(apiCall).toHaveBeenCalledWith('/api/world/bounties'));
 
-    const select = document.getElementById('react-bounty-select');
+    const select = screen.getByRole('combobox');
     await user.selectOptions(select, '10');
-    const amountInput = document.getElementById('bounty-amount');
+    const amountInput = screen.getByPlaceholderText('Qty');
     await user.type(amountInput, '500');
     await user.click(screen.getByRole('button', { name: /Place Bounty/i }));
 
@@ -121,9 +121,9 @@ describe('BountiesPanel', () => {
     render(<BountiesPanel />);
     await waitFor(() => expect(apiCall).toHaveBeenCalledWith('/api/world/bounties'));
 
-    const select = document.getElementById('react-bounty-select');
+    const select = screen.getByRole('combobox');
     await user.selectOptions(select, '10');
-    const amountInput = document.getElementById('bounty-amount');
+    const amountInput = screen.getByPlaceholderText('Qty');
     await user.type(amountInput, '5000');
     await user.click(screen.getByRole('button', { name: /Place Bounty/i }));
 
@@ -140,9 +140,9 @@ describe('BountiesPanel', () => {
     render(<BountiesPanel />);
     await waitFor(() => expect(apiCall).toHaveBeenCalledWith('/api/world/bounties'));
 
-    const select = document.getElementById('react-bounty-select');
+    const select = screen.getByRole('combobox');
     await user.selectOptions(select, '10');
-    const amountInput = document.getElementById('bounty-amount');
+    const amountInput = screen.getByPlaceholderText('Qty');
     await user.type(amountInput, '5000');
     await user.click(screen.getByRole('button', { name: /Place Bounty/i }));
 

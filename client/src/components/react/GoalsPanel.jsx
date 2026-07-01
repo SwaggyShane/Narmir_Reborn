@@ -40,13 +40,16 @@ const GoalsPanel = () => {
       if (res && res.ok) {
         if (typeof window !== 'undefined' && typeof toast === 'function') toast(res.message, "success");
         // Mark claimed locally without mutating the previous state's nested objects
-        setGoalsData((prev) => ({
-          ...prev,
-          [groupId]: {
-            ...prev[groupId],
-            goals: prev[groupId].goals.map((g) => (g.id === goalId ? { ...g, claimed: true } : g)),
-          },
-        }));
+        setGoalsData((prev) => {
+          if (!prev[groupId]?.goals) return prev;
+          return {
+            ...prev,
+            [groupId]: {
+              ...prev[groupId],
+              goals: prev[groupId].goals.map((g) => (g.id === goalId ? { ...g, claimed: true } : g)),
+            },
+          };
+        });
       } else if (res && res.error) {
         if (typeof window !== 'undefined' && typeof toast === 'function') toast(res.error, "error");
       }
