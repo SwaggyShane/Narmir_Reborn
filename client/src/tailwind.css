@@ -859,7 +859,7 @@
 
   .bld-control-label {
     @apply text-[10px] text-text3 flex-shrink-0;
-    width: 34px;
+    width: 42px;
   }
 
   /* ── News panel ── */

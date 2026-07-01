@@ -722,7 +722,7 @@ const BuildPanel = () => {
         <div className="flex justify-center pt-4">
           <button
             onClick={() => setShowAttunements(true)}
-            className="rounded-full border border-blue-400 px-4 py-1.5 text-[12px] font-semibold text-blue-400 cursor-pointer whitespace-nowrap"
+            className="rounded-full border border-blue-400 px-4 py-1.5 text-[12px] font-semibold text-blue-400 cursor-pointer whitespace-nowrap hover:bg-blue-400/10 transition-colors"
           >
             🌌 Attunements
           </button>
