@@ -14,7 +14,6 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 
 ## Deferred Work
 
-- **Advanced rebellion events** — Expand rebellion mechanics beyond the current baseline (enhancement)
 - **Happiness logic code-quality cleanup** — Consolidate duplicated happiness calculation functions
 
 ## Known Technical Debt (Post-Beta)
