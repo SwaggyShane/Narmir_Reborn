@@ -12,7 +12,7 @@ const { FRAGMENT_METADATA } = require("../game/fragment-attunements");
 const { PRESETS, PRESET_IDS, buildPresetFields } = require("../game/ai-presets");
 const { computeNextRunAt } = require("../lib/audit-scheduler");
 const { EPOCH_NOW } = require("../lib/db-sql");
-const { pgSetClause, pgValueTuples } = require("../lib/pg-placeholders");
+const { pgSetClause, pgSetClauseWithNextPlaceholder, pgValueTuples } = require("../lib/pg-placeholders");
 const { incrementUnread } = require("../cache");
 
 const ALLOWED_PRIZE_TYPES = ['gold', 'mana', 'rangers', 'researchers', 'war_machines', 'world_fragment'];
@@ -823,16 +823,16 @@ module.exports = function (db, io) {
       }
     }
 
-    const cols = pgSetClause(Object.keys(safe), 1);
-    const idPlaceholder = `$${Object.keys(safe).length + 1}`;
-    await db.run(`UPDATE kingdoms SET ${cols} WHERE id = ${idPlaceholder}`, [
+    const safeKeys = Object.keys(safe);
+    const { setClause, nextPlaceholder } = pgSetClauseWithNextPlaceholder(safeKeys, 1);
+    await db.run(`UPDATE kingdoms SET ${setClause} WHERE id = ${nextPlaceholder}`, [
       ...Object.values(safe),
       kingdomId,
     ]);
-    res.json({ ok: true, updated: Object.keys(safe) });
+    res.json({ ok: true, updated: safeKeys });
     } catch (err) {
       console.error("[admin] set-kingdom failed:", err.message);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: "Failed to update kingdom" });
     }
   });
 

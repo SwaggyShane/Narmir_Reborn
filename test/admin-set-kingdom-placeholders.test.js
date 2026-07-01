@@ -7,14 +7,17 @@
  * ("bind message supplies N parameters, but prepared statement requires 1"),
  * and because the route had no try/catch, the request never got a response
  * — the client's fetch hung forever ("stuck on Saving...").
+ *
+ * This exercises pgSetClauseWithNextPlaceholder directly — the same shared
+ * helper routes/admin.js calls in its /set-kingdom handler — rather than a
+ * locally duplicated copy of the SQL-building logic.
  */
 const assert = require('assert');
-const { pgSetClause } = require('../lib/pg-placeholders');
+const { pgSetClauseWithNextPlaceholder } = require('../lib/pg-placeholders');
 
 function buildSetKingdomSql(fieldKeys) {
-  const cols = pgSetClause(fieldKeys, 1);
-  const idPlaceholder = `$${fieldKeys.length + 1}`;
-  return `UPDATE kingdoms SET ${cols} WHERE id = ${idPlaceholder}`;
+  const { setClause, nextPlaceholder } = pgSetClauseWithNextPlaceholder(fieldKeys, 1);
+  return `UPDATE kingdoms SET ${setClause} WHERE id = ${nextPlaceholder}`;
 }
 
 // Single field: SET "gold" = $1 WHERE id = $2
