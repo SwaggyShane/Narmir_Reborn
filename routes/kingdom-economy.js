@@ -99,7 +99,7 @@ async function applyUpdates(db, kingdomId, updates) {
     updatesForDb.trade_routes = JSON.stringify(updatesForDb.trade_routes);
   }
 
-  await applyKingdomUpdates(db, kingdomId, updatesForDb);
+  await applyKingdomUpdates(kingdomId, updatesForDb);
 }
 
 module.exports = function (db) {
