@@ -64,7 +64,7 @@
   - Feature parity verified: kingdoms, events, lore, config, sounds, prestige, security, evolution, goals
   - Tailwind styling applied; responsive design
 - **Auth:** Admin gate enforced; CSRF protection active
-- **Future:** Inline CSS consolidation (500+ usages) deferred to post-alpha
+- **Future:** Inline CSS consolidation remains viable work; it is still a cleanup target, not dead debt
 
 ### CI/CD
 - **Status:** ✅ All jobs green
@@ -93,7 +93,7 @@
   - ws 8.x ✅ 8.21.0 (memory exhaustion DoS)
   - undici via npm override (discord.js v14 dependency, 4 HIGH vulns; mitigation in place)
 - **discord.js:** Pinned to v14.14.0 with the undici override in place; no migration lane is active
-- **Decision:** Defer any discord.js v15 migration until a stable release is available
+- **Decision:** Keep discord.js v15 as a watch item; do not treat it as active beta work unless the upgrade becomes clearly justified
 - **Last audit:** 2026-06-27; next audit: 2026-07-28
 
 ### Architecture
@@ -121,7 +121,7 @@
   - Integration tests (multi-component workflows)
   - E2E tests (full user flows)
   - Coverage reporting (no current metrics)
-- **Deferred components:** StudiesPanel (complex; awaits architectural refactor before hook replacement)
+- **StudiesPanel:** Still viable; the component remains complex enough to justify a simplification pass
 - **Next phase:** Post-alpha; prioritize business logic coverage
 
 ### Documentation
@@ -153,10 +153,11 @@
 
 | Item | Severity | Description | Blocker✅ | Est. Fix Time |
 |------|----------|-------------|----------|---------------|
-| Inline CSS consolidation | Low | 500+ inline `style={{}}` usages; static properties should be Tailwind utilities | No | 4–6 hours |
-| StudiesPanel refactor | Medium | Complex component with 16+ state refs; hook replacement insufficient; needs architectural redesign | No | 8✅12 hours |
-| Discord.js v15 migration | Low | Awaiting stable v15; current v14 pin is mitigated by the undici override | No | 2✅3 hours (when v15 ready) |
-| Query performance audit | Low | Turn processing + expedition list endpoints under high load; no current bottleneck but worth profiling | No | 2✅3 hours |
+| Inline CSS consolidation | Low | 769 inline `style={{}}` usages remain; static properties should be Tailwind utilities | No | 4-6 hours |
+| StudiesPanel refactor | Medium | Complex component with layered state and store dependencies; still worth simplifying | No | 8-12 hours |
+| Discord.js v15 migration | Low | Watch item only; current v14 pin is stable and working | No | 2-3 hours (only if v15 becomes necessary) |
+| Advanced audit infrastructure | Medium | Scheduler/UI/schema already exist; needs hardening, wiring, and real usage validation | No | 4-6 hours |
+| Query performance audit | Low | Turn processing + expedition list endpoints under high load; no current bottleneck but worth profiling | No | 2-3 hours |
 | ~~SQL injection audit~~ | ~~Medium~~ | ✅ **COMPLETE** (2026-06-29) — 100% parameterized queries verified | ✅ DONE | ✅ 2-3 hours |
 | Database backup testing | Low | Backup strategy exists; restore procedures untested | No | 1✅2 hours |
 
@@ -226,13 +227,13 @@
 3. **Database backup/restore:** Verify procedures work (TODO Item 3)
 
 ### P2 (Medium)
-1. **StudiesPanel refactor:** Redesign before complex hook replacement
-2. **Inline CSS consolidation:** Migrate 500+ usages to Tailwind utilities
+1. **StudiesPanel refactor:** Simplify the component and reduce state churn
+2. **Inline CSS consolidation:** Migrate the remaining inline styles to Tailwind where static
 3. **Query performance audit:** Profile turn and expedition endpoints
 
 ### P3 (Low)
 1. **Backup testing:** Verify restore procedures work
-2. **Discord.js:** Keep the v14 pin with the undici override in place; revisit only when v15 stabilizes
+2. **Discord.js:** Keep v14 pinned; revisit only if v15 becomes clearly worth the migration cost
 3. **Rate limiting:** DDoS hardening
 
 ---
