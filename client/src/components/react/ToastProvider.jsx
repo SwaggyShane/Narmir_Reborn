@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { registerToastEmitter } from '../../utils/toast.js';
 
 const TOAST_THEME = {
-  success: { border: '#00ff2b', text: '#7dff86', glow: 'rgba(0, 255, 43, 0.22)', icon: '✓' },
+  success: { border: '#00ff2b', text: '#7dff86', glow: 'rgba(0, 255, 43, 0.22)', icon: '' },
   error: { border: '#ff5f5f', text: '#ffb4b4', glow: 'rgba(255, 95, 95, 0.18)', icon: '✕' },
   warning: { border: '#f4c95d', text: '#ffe7a4', glow: 'rgba(244, 201, 93, 0.18)', icon: '!' },
   warn: { border: '#f4c95d', text: '#ffe7a4', glow: 'rgba(244, 201, 93, 0.18)', icon: '!' },
@@ -45,7 +45,7 @@ export default function ToastProvider() {
         }}
       >
         <div
-          className="flex w-8 shrink-0 items-center justify-center text-[12px] font-black"
+          className={`flex shrink-0 items-center justify-center text-[12px] font-black ${theme.icon ? 'w-8' : 'w-1.5'}`}
           style={{ background: theme.border, color: '#0a0a0a' }}
           aria-hidden="true"
         >

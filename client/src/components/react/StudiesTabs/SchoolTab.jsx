@@ -30,6 +30,8 @@ export const SchoolTab = ({
   const [activeSchoolSubTab, setActiveSchoolSubTab] = useState('general');
   const spellbookInputRef = useRef(null);
   const schoolInputRef = useRef(null);
+  const focus1SelectRef = useRef(null);
+  const focus2SelectRef = useRef(null);
 
   const researchAlloc = studiesData?.research_allocation || {};
   const totalMages = Number(mages || 0);
@@ -108,8 +110,12 @@ export const SchoolTab = ({
     }
     if (studiesData?.research_focus) {
       const [f1, f2] = studiesData.research_focus;
-      if (f1) setFocus1Value(f1);
-      if (f2) setFocus2Value(f2);
+      if (f1 && document.activeElement !== focus1SelectRef.current) {
+        setFocus1Value(f1);
+      }
+      if (f2 && document.activeElement !== focus2SelectRef.current) {
+        setFocus2Value(f2);
+      }
     }
   }, [studiesData?.research_allocation, studiesData?.research_focus, setMageSpellbookValue, setMageSchoolValue, setFocus1Value, setFocus2Value]);
 
@@ -196,6 +202,8 @@ export const SchoolTab = ({
             focus2Value={focus2Value}
             setFocus2Value={setFocus2Value}
             fetchStudiesData={fetchStudiesData}
+            focus1SelectRef={focus1SelectRef}
+            focus2SelectRef={focus2SelectRef}
           />
         </div>
       )}

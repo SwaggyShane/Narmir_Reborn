@@ -621,7 +621,6 @@ const BuildPanel = () => {
           <div className="bld-main">
             <span className="bld-icon" style={{ background: icon.color }}>{icon.emoji}</span>
             <span className="name">{b.name}</span>
-            <span className="count" id={`bld-${b.id}`}>{fmt(getBuildCount(b.id))}</span>
           </div>
           {(buildDisplay.warnings[b.id] || buildDisplay.estimates[b.id]) && (
             <span className="bld-est">
@@ -631,9 +630,10 @@ const BuildPanel = () => {
             </span>
           )}
         </div>
+        <span className="bld-qty" id={`bld-${b.id}`}>{fmt(getBuildCount(b.id))}</span>
         <div className="bld-controls">
           <div className="bld-eng">
-            <div className="text-[10px] text-text3 mb-0.5">Hire</div>
+            <span className="bld-control-label">Hire</span>
             <input
               type="number"
               className="input text-right"
@@ -658,7 +658,7 @@ const BuildPanel = () => {
           </div>
           {showDemolish && (
             <div className="bld-demolish">
-              <div className="text-[10px] text-text3 mb-0.5">Destroy</div>
+              <span className="bld-control-label">Destroy</span>
               <input
                 type="number"
                 className="input text-right"
@@ -718,6 +718,15 @@ const BuildPanel = () => {
         </div>
       </div>
       <div className="build-content-scroll space-y-4 px-4 pb-5">
+
+        <div className="flex justify-center pt-4">
+          <button
+            onClick={() => setShowAttunements(true)}
+            className="rounded-full border border-blue-400 px-4 py-1.5 text-[12px] font-semibold text-blue-400 cursor-pointer whitespace-nowrap hover:bg-blue-400/10 transition-colors"
+          >
+            🌌 Attunements
+          </button>
+        </div>
 
         <div className="card mt-4 rounded-2xl border border-white/10 bg-zinc-950/80">
           <div className="mb-3 border-b border-white/10 pb-3 pt-3">
@@ -906,14 +915,9 @@ const BuildPanel = () => {
         <div className="card mt-4">
           <div id="build-rows">
             <div id="build-header">
-              <span className="flex items-center gap-2">
-                Building
-                <button
-                  onClick={() => setShowAttunements(true)}
-                  className="rounded-full border border-blue-400 px-2 py-0.5 text-[9px] font-semibold text-blue-400 cursor-pointer leading-none whitespace-nowrap"
-                >Attunement</button>
-              </span>
-              <span className="text-right">Qty</span>
+              <span className="bld-header-name">Building</span>
+              <span className="bld-header-qty">Qty</span>
+              <span className="bld-controls-spacer" aria-hidden="true" />
             </div>
 
             {BUILDINGS_MAP['farms'] && renderBuildingRow(BUILDINGS_MAP['farms'], { emoji: '🌾', color: '#4a7c3f' })}

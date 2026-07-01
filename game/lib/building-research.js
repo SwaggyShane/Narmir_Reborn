@@ -348,15 +348,23 @@ function processBuildQueue(k, events, xpSourcesAccum) {
 
     if (BLUEPRINT_REQUIRED.has(building) && blueprintsLeft <= 0) {
       updates._blueprint_needed = updates._blueprint_needed || [];
-      if (!updates._blueprint_needed.includes(building))
+      if (!updates._blueprint_needed.includes(building)) {
         updates._blueprint_needed.push(building);
+        if (engAssigned > 0) {
+          constructionNotes.push(`⚠️ ${building.replace(/_/g, ' ')} paused — no blueprints available.`);
+        }
+      }
       continue;
     }
 
     if (SCAFFOLDING_REQUIRED.has(building) && scaffoldingLeft <= 0) {
       updates._scaffolding_needed = updates._scaffolding_needed || [];
-      if (!updates._scaffolding_needed.includes(building))
+      if (!updates._scaffolding_needed.includes(building)) {
         updates._scaffolding_needed.push(building);
+        if (engAssigned > 0) {
+          constructionNotes.push(`⚠️ ${building.replace(/_/g, ' ')} paused — no scaffolding available.`);
+        }
+      }
       continue;
     }
 
@@ -465,16 +473,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
 
           const finalCanAdd = fromQueue + extraUnits;
           if (finalCanAdd < canAdd && finalCanAdd === 0 && blockReason) {
-            const curGold = updates.gold !== undefined ? updates.gold : k.gold;
-            const curWood = updates.wood !== undefined ? updates.wood : k.wood;
-            const curStone = updates.stone !== undefined ? updates.stone : k.stone;
-            const curIron = updates.iron !== undefined ? updates.iron : k.iron;
-            let reason = 'gold';
-            if (goldPerUnit > 0 && curGold < goldPerUnit) reason = 'gold';
-            else if (woodPerUnit > 0 && curWood < woodPerUnit) reason = 'wood';
-            else if (stonePerUnit > 0 && curStone < stonePerUnit) reason = 'stone';
-            else if (ironPerUnit > 0 && curIron < ironPerUnit) reason = 'iron';
-            constructionNotes.push(`⚠️ ${building.replace(/_/g, ' ')} paused — not enough ${reason}.`);
+            constructionNotes.push(`⚠️ ${building.replace(/_/g, ' ')} paused — not enough ${blockReason}.`);
           }
           canAdd = finalCanAdd;
         }
@@ -690,7 +689,7 @@ function processBuildQueue(k, events, xpSourcesAccum) {
     let finalMsg = "";
     if (updates._build_estimates && updates._build_estimates.length > 0) {
         finalMsg += `Actively constructing: ${updates._build_estimates.join(" - ")}. `;
-    } else {
+    } else if (constructionNotes.length === 0) {
       if (totalEngineersWorked > 0) {
         finalMsg += `Engineers making progress on ${activeBuildings.size} building type${activeBuildings.size > 1 ? "s" : ""}. `;
       } else {

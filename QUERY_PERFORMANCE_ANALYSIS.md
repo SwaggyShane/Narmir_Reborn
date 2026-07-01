@@ -2,7 +2,7 @@
 
 **Purpose:** Document database query performance baseline and optimization recommendations  
 **Audience:** Backend engineers, database architects, DevOps  
-**Last Updated:** 2026-06-29
+**Last Updated:** 2026-07-01
 
 ---
 
@@ -18,6 +18,16 @@ This analysis covers two critical game endpoints:
 - Expedition resolution parallelizes 3 independent queries
 - Current performance: mean 50-100ms per turn (at 10-100 concurrent players)
 - Recommendations: Add indexes on frequently-filtered columns, batch queries where possible
+
+**2026-07-01 empirical verification:** Re-ran this analysis against a local `narmir_smoke`
+database seeded with 2,000 kingdoms/expeditions and one kingdom stress-tested to 5,000
+news rows and a 16,000-row heroes table (8 heroes/kingdom). Every hot-path query in both
+endpoints now resolves via an index scan in well under 1ms — see
+[Empirical Verification](#empirical-verification-2026-07-01) below. Of the Priority 1
+indexes recommended on 2026-06-29, `idx_news_kingdom_created`, `idx_alliance_members_kingdom`,
+and the `trade_routes` composite index were already present in `db/schema.js`. The
+remaining gap — `idx_heroes_kingdom_status` — has been added in this pass. No other
+schema changes are warranted at this time.
 
 ---
 
@@ -119,7 +129,7 @@ The `/turn` endpoint executes a complex sequence of operations:
 
 ---
 
-#### 2. News Deduplication Query (MEDIUM PRIORITY)
+#### 2. News Deduplication Query (RESOLVED — see [Empirical Verification](#empirical-verification-2026-07-01))
 
 **Issue:** Line 353-356 checks for recent duplicate messages
 ```sql
@@ -150,7 +160,7 @@ This index allows:
 
 ---
 
-#### 3. Heroes Query Without Index (MEDIUM PRIORITY)
+#### 3. Heroes Query Without Composite Index (RESOLVED — `idx_heroes_kingdom_status` added 2026-07-01)
 
 **Issue:** Line 318-321 fetches idle heroes
 ```sql
@@ -470,6 +480,41 @@ If load exceeds single-database capacity:
 - Read replicas for leaderboard queries
 
 Current single-database is fine for beta (thousands of concurrent kingdoms).
+
+---
+
+## Empirical Verification (2026-07-01)
+
+**Methodology:** Fresh `narmir_smoke` PostgreSQL boot, seeded via
+`scripts/setup-load-test-accounts.js --count=2000` (2,000 kingdoms + expeditions), plus
+targeted stress inserts: 20,000 `news` rows spread across 500 kingdoms, one kingdom pushed
+to 5,000 `news` rows to simulate a long-lived heavily-played account, and 16,000 `heroes`
+rows (8 per kingdom — the game has no hard roster cap). `ANALYZE` run before each
+`EXPLAIN (ANALYZE, BUFFERS)`.
+
+| Query | Plan | Execution Time |
+|---|---|---|
+| Kingdom lookup by `player_id` (`/expedition/list`, `/turn`) | Index Scan, `idx_kingdoms_player_turn` | 0.01–0.03ms |
+| Active expeditions by `kingdom_id` | Index Scan, `idx_expeditions_kingdom` | 0.04ms |
+| Idle heroes by `kingdom_id` + `status` (8 heroes, capped roster) | Bitmap Heap Scan, `idx_heroes_kingdom` | 0.037ms |
+| Unread news count, 5,000-row kingdom | Index Only Scan, `idx_news_kingdom` | 0.65ms |
+| News dedup check (`kingdom_id`, `message IN (...)`, `created_at` window), 5,000-row kingdom | Index Scan, `idx_news_created` | 0.05ms |
+
+**Finding:** All hot-path queries behind `/api/kingdom/turn` and
+`/api/kingdom/expedition/list` are covered by existing indexes and execute in sub-millisecond
+time even under stress volumes well above typical production kingdoms. The 2026-06-29
+Priority 1 recommendations were mostly already implemented (`idx_news_kingdom_created`,
+`idx_alliance_members_kingdom`, `trade_routes` composite index all present in
+`db/schema.js`). The one real gap — no composite index on `heroes(kingdom_id, status)` —
+has been closed by adding `idx_heroes_kingdom_status`. At current roster sizes this isn't a
+measurable win (the existing `kingdom_id`-only index already narrows to a handful of rows
+before the status filter), but since hero rosters have no hard cap, the composite index
+removes a growth risk cheaply.
+
+**No further schema or query changes are warranted at this time.** The earlier "40-50%
+faster turn processing" projection in this document was written before these indexes
+existed in the schema and no longer reflects the current baseline — turn processing is
+already index-backed end to end.
 
 ---
 

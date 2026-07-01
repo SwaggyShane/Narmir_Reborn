@@ -192,12 +192,18 @@ function matchNewsRule(text) {
     }
   }
 
+  // This probe exists to recover the right icon when leading corruption
+  // couldn't be cleanly stripped by normalizeNewsText — it must NOT be used
+  // to truncate legitimate text (e.g. multi-sentence messages like
+  // "Completed: X. Actively constructing: Y." where only the second
+  // sentence matches a rule). Keep the original `text`, only borrow the
+  // matched rule's emoji.
   let probe = text;
   for (let i = 0; i < 32 && probe.length > 3; i += 1) {
     probe = probe.slice(1).trimStart();
     for (const rule of NEWS_EMOJI_RULES) {
       if (rule.pattern.test(probe)) {
-        return { emoji: rule.emoji, text: probe };
+        return { emoji: rule.emoji, text };
       }
     }
   }
