@@ -129,7 +129,14 @@ function convertNumericFields(row) {
 }
 
 const { AsyncLocalStorage } = require('async_hooks');
+const { queryTableColumns } = require('../lib/db-schema-introspection');
 const transactionStorage = new AsyncLocalStorage();
+
+function resolveDbConnection(db) {
+  const store = transactionStorage.getStore();
+  const isStoreActive = store && !store.released;
+  return isStoreActive ? store.client : db.pool;
+}
 
 // Marks a pg client that already has our transaction 'error' listener attached, so we
 // add it exactly once per physical connection (not once per transaction reuse).
@@ -154,26 +161,6 @@ class PgDbAdapter {
     const isStoreActive = store && !store.released;
     const connection = isStoreActive ? store.client : this.pool;
 
-    if (/PRAGMA\s+table_info\((.*?)\)/i.test(sql)) {
-      const match = sql.match(/PRAGMA\s+table_info\((.*?)\)/i);
-      const tableName = match[1].replace(/['"`]/g, '').trim();
-      try {
-        const pgResult = await connection.query(`
-          SELECT column_name AS name 
-          FROM information_schema.columns 
-          WHERE table_name = $1
-        `, [tableName]);
-        return pgResult.rows;
-      } catch (err) {
-        console.error("[db] PostgreSQL table_info failed for table:", tableName);
-        throw err;
-      }
-    }
-
-    if (/PRAGMA\s+user_version/i.test(sql)) {
-      return { user_version: 0 };
-    }
-
     const translatedSql = translateSqlForPg(sql);
     try {
       const res = await connection.query(translatedSql, params || []);
@@ -188,22 +175,6 @@ class PgDbAdapter {
     const store = transactionStorage.getStore();
     const isStoreActive = store && !store.released;
     const connection = isStoreActive ? store.client : this.pool;
-
-    if (/PRAGMA\s+table_info\((.*?)\)/i.test(sql)) {
-      const match = sql.match(/PRAGMA\s+table_info\((.*?)\)/i);
-      const tableName = match[1].replace(/['"`]/g, '').trim();
-      try {
-        const pgResult = await connection.query(`
-          SELECT column_name AS name 
-          FROM information_schema.columns 
-          WHERE table_name = $1
-        `, [tableName]);
-        return pgResult.rows;
-      } catch (err) {
-        console.error("[db] PostgreSQL table_info failed for table:", tableName);
-        throw err;
-      }
-    }
 
     const translatedSql = translateSqlForPg(sql);
     try {
@@ -469,9 +440,6 @@ class PgDbAdapter {
       .map(s => s.trim())
       .filter(s => s.length > 0);
     for (const statement of statements) {
-      if (/^PRAGMA/gi.test(statement)) {
-        continue;
-      }
       let translated = translateSqlForPg(statement);
       if (this.isPgMem && translated) {
         // pg-mem doesn't support nested casts inside column defaults
@@ -493,19 +461,20 @@ class PgDbAdapter {
 
 let _db = null;
 
-async function getTableColumns(table, db = _db) {
+async function fetchTableColumnInfo(table, db = _db) {
   if (!db) return [];
   try {
-    const result = await db.all(`PRAGMA table_info(${table})`);
-    if (!result || !Array.isArray(result)) {
-      console.warn(`[db] Migration: column check returned invalid result for ${table}`);
-      return [];
-    }
-    return result.map(c => c.name);
+    const connection = resolveDbConnection(db);
+    return await queryTableColumns(connection, table);
   } catch (e) {
     console.error(`[db] Migration: error fetching columns for ${table}:`, e.message);
     return [];
   }
+}
+
+async function getTableColumns(table, db = _db) {
+  const rows = await fetchTableColumnInfo(table, db);
+  return rows.map((c) => c.name);
 }
 
 const JSON_REPAIR_SPECS = {
@@ -1270,7 +1239,7 @@ async function initDb(options = {}) {
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_forum_reports_post ON forum_reports(post_id)`);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_forum_moderation_log_mod ON forum_moderation_log(moderator_id)`);
 
-  const forumBoardCols = (await _db.all('PRAGMA table_info(forum_boards)').catch(() => [])).map((c) => c.name);
+  const forumBoardCols = await getTableColumns('forum_boards');
   if (!forumBoardCols.includes('category_key')) await addColumn('forum_boards', 'category_key', 'TEXT', forumBoardCols);
   if (!forumBoardCols.includes('category_label')) await addColumn('forum_boards', 'category_label', 'TEXT', forumBoardCols);
   if (!forumBoardCols.includes('category_order')) await addColumn('forum_boards', 'category_order', 'INTEGER DEFAULT 0', forumBoardCols);
@@ -1358,13 +1327,13 @@ async function initDb(options = {}) {
     await _db.run('INSERT OR IGNORE INTO regions (name, bonus_type) VALUES (?, ?)', [name, bonus]);
   }
 
-  const pCols = (await _db.all('PRAGMA table_info(players)')).map(c => c.name);
+  const pCols = await getTableColumns('players');
   if (!pCols.includes('is_admin'))   await addColumn('players', 'is_admin',   'INTEGER NOT NULL DEFAULT 0');
   if (!pCols.includes('is_banned'))  await addColumn('players', 'is_banned',  'INTEGER NOT NULL DEFAULT 0');
   if (!pCols.includes('ban_reason')) await addColumn('players', 'ban_reason', 'TEXT');
   if (!pCols.includes('is_ai'))      await addColumn('players', 'is_ai',      'INTEGER NOT NULL DEFAULT 0');
 
-  const nCols = (await _db.all('PRAGMA table_info(news)')).map(c => c.name);
+  const nCols = await getTableColumns('news');
   if (!nCols.includes('turn_num')) await addColumn('news', 'turn_num', 'INTEGER NOT NULL DEFAULT 0');
   if (!nCols.includes('combat_log_id')) await addColumn('news', 'combat_log_id', 'INTEGER');
 
@@ -1399,7 +1368,7 @@ async function initDb(options = {}) {
     )
   `);
 
-  const changelogCols = (await _db.all('PRAGMA table_info(changelog_entries)').catch(() => [])).map(c => c.name);
+  const changelogCols = await getTableColumns('changelog_entries');
   if (changelogCols.length && !changelogCols.includes('body_md')) {
     await addColumn('changelog_entries', 'body_md', 'TEXT', changelogCols);
   }
@@ -1422,7 +1391,7 @@ async function initDb(options = {}) {
     )
   `);
 
-  const bugReportCols = (await _db.all('PRAGMA table_info(bug_reports)').catch(() => [])).map(c => c.name);
+  const bugReportCols = await getTableColumns('bug_reports');
   if (bugReportCols.length && !bugReportCols.includes('console_log')) {
     await addColumn('bug_reports', 'console_log', 'TEXT', bugReportCols);
   }
@@ -1446,7 +1415,7 @@ async function initDb(options = {}) {
     )
   `);
   
-  const cmCols = (await _db.all('PRAGMA table_info(chat_messages)').catch(() => [])).map(c => c.name);
+  const cmCols = await getTableColumns('chat_messages');
   if (!cmCols.includes('username')) await addColumn('chat_messages', 'username', 'TEXT NOT NULL DEFAULT \'\'');
   if (!cmCols.includes('player_id')) await addColumn('chat_messages', 'player_id', 'INTEGER NOT NULL DEFAULT 0');
   if (!cmCols.includes('deleted'))  await addColumn('chat_messages', 'deleted',  'INTEGER NOT NULL DEFAULT 0');
@@ -1459,7 +1428,7 @@ async function initDb(options = {}) {
   } catch {
     try {
       // Fallback table recreation path for older local schemas.
-      const cmInfo = await _db.all('PRAGMA table_info(chat_messages)').catch(() => []);
+      const cmInfo = await fetchTableColumnInfo('chat_messages');
       const kingdomIdCol = cmInfo.find(c => c.name === 'kingdom_id');
       if (kingdomIdCol && kingdomIdCol.notnull) {
         await _db.exec(`
@@ -1830,8 +1799,7 @@ async function initDb(options = {}) {
     }
   }
 
-  const loreColsRes = await _db.all("PRAGMA table_info(lore_entries)");
-  const loreCols = loreColsRes.map(c => c.name);
+  const loreCols = await getTableColumns('lore_entries');
   if (!loreCols.includes('title')) await addColumn('lore_entries', 'title', "TEXT NOT NULL DEFAULT ''");
   if (!loreCols.includes('category')) await addColumn('lore_entries', 'category', "TEXT NOT NULL DEFAULT 'general'");
   if (!loreCols.includes('key_id')) await addColumn('lore_entries', 'key_id', "TEXT NOT NULL DEFAULT ''");
@@ -1912,7 +1880,7 @@ async function initDb(options = {}) {
 
   // ── Resource Gathering System Migrations ─────────────────────────────────────
   // Re-read cols since earlier migrations may have added columns
-  const cols2 = (await _db.all('PRAGMA table_info(kingdoms)')).map(c => c.name);
+  const cols2 = await getTableColumns('kingdoms');
 
   // Resource stockpile columns
   if (!cols2.includes('wood'))               await addColumn('kingdoms', 'wood',               'INTEGER NOT NULL DEFAULT 0', kingdomsCols);
@@ -2224,8 +2192,7 @@ let _kingdomCols = null;
 
 async function getKingdomCols() {
   if (!_kingdomCols) {
-    const rows = await _db.all("PRAGMA table_info(kingdoms)");
-    _kingdomCols = new Set(rows.map(r => r.name));
+    _kingdomCols = new Set(await getTableColumns('kingdoms'));
   }
   return _kingdomCols;
 }
