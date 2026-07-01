@@ -111,7 +111,7 @@ narmir-server/
 │   │   └── components/react/     # React panel components (34 panels)
 │   ├── admin.html                # React admin entry (Vite)
 │   └── src/admin/                # React admin panels
-├── test-combat-harness/          # Combat test suite and balance sweeps
+├── test-combat-harness/          # Combat verification scripts
 └── tools/security-auditor/       # Security audit tooling
 ```
 
@@ -200,17 +200,15 @@ The repo contains the current combat flow plus the more detailed simulation mode
 
 ## Production Documentation
 
-Comprehensive guides for deploying and maintaining Narmir Reborn in production:
+Core production docs:
 
-**Deployment & Configuration:**
-- [Railway Setup Guide](docs/RAILWAY_SETUP.md) — Environment variables, PostgreSQL setup, custom domains
-- [HTTPS Enforcement](docs/HTTPS_ENFORCEMENT.md) — TLS configuration, HSTS, security headers
-
-**Operational Guides:**
-- [Load Testing](docs/LOAD_TESTING.md) — Performance validation for 5000+ concurrent players
-- [Backup & Restore](docs/BACKUP_RESTORE.md) — Database backup procedures and disaster recovery
-- [API Rate Limiting](docs/API_RATE_LIMITING.md) — Configure and monitor rate limits per endpoint
-- [Monitoring & Alerting](docs/MONITORING_ALERTING.md) — Set up production monitoring and alerts
+- [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) — deployment readiness and rollout checks
+- [RAILWAY_SECRETS.md](RAILWAY_SECRETS.md) — Railway environment and secret setup
+- [HTTPS_ENFORCEMENT.md](HTTPS_ENFORCEMENT.md) — TLS, HSTS, and secure-cookie notes
+- [BACKUP_RESTORE_RUNBOOK.md](BACKUP_RESTORE_RUNBOOK.md) — backup and restore procedures
+- [RATE_LIMITING_GUIDE.md](RATE_LIMITING_GUIDE.md) — rate-limit configuration notes
+- [MONITORING_ALERTING_GUIDE.md](MONITORING_ALERTING_GUIDE.md) — monitoring and alerting setup
+- [LOAD_TEST_REPORT.md](LOAD_TEST_REPORT.md) — current load-test findings and rerun gap
 
 ---
 
