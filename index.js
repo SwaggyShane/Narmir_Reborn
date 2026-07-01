@@ -380,7 +380,7 @@ async function fireDailyEvent(db, k, season) {
   const now = Math.floor(Date.now() / 1000);
   if ((now - (k.last_event_at || 0)) < 86400) return null;
   const allEvents = await db.all(
-    `SELECT * FROM events WHERE is_active=1 AND (season=? OR season='all') ORDER BY RANDOM() LIMIT 10`,
+    `SELECT * FROM events WHERE is_active=1 AND (season=$1 OR season='all') ORDER BY RANDOM() LIMIT 10`,
     [season]
   );
   if (!allEvents.length) return null;
@@ -431,7 +431,7 @@ async function runRegen(db) {
   if (daysSince >= (SEASON_DUR[season]||3)) {
     const ORDER = ['spring','summer','fall','winter'];
     season = ORDER[(ORDER.indexOf(season)+1)%ORDER.length];
-    await db.run("UPDATE server_state SET value=? WHERE key='current_season'", [season]);
+    await db.run("UPDATE server_state SET value=$1 WHERE key='current_season'", [season]);
     await db.run(`UPDATE server_state SET value=${EPOCH_NOW_TEXT} WHERE key='season_started_at'`);
     console.log('[season] Changed to', season);
   }
@@ -531,8 +531,8 @@ async function runRegen(db) {
 
   await db.run(`
     UPDATE kingdoms
-    SET turns_stored = LEAST(?, turns_stored + ?)
-    WHERE turns_stored < ?
+    SET turns_stored = LEAST($1, turns_stored + $2)
+    WHERE turns_stored < $3
   `, [REGEN_MAX, REGEN_AMOUNT, REGEN_MAX]);
 
   // Clean up old logs to prevent unbounded growth
@@ -543,19 +543,19 @@ async function runRegen(db) {
     let totalCleaned = 0;
 
     // Clean event logs
-    let result = await db.run('DELETE FROM event_log WHERE fired_at < ?', [now - RETENTION.EVENTS * 86400]);
+    let result = await db.run('DELETE FROM event_log WHERE fired_at < $1', [now - RETENTION.EVENTS * 86400]);
     totalCleaned += result.changes;
 
     // Clean news logs
-    result = await db.run('DELETE FROM news WHERE created_at < ?', [now - RETENTION.NEWS * 86400]);
+    result = await db.run('DELETE FROM news WHERE created_at < $1', [now - RETENTION.NEWS * 86400]);
     totalCleaned += result.changes;
 
     // Clean war logs (keep longer for history)
-    result = await db.run('DELETE FROM war_log WHERE created_at < ?', [now - RETENTION.WAR * 86400]);
+    result = await db.run('DELETE FROM war_log WHERE created_at < $1', [now - RETENTION.WAR * 86400]);
     totalCleaned += result.changes;
 
     // Clean spy reports (requires index on created_at for performance)
-    result = await db.run('DELETE FROM spy_reports WHERE created_at < ?', [now - RETENTION.SPY * 86400]);
+    result = await db.run('DELETE FROM spy_reports WHERE created_at < $1', [now - RETENTION.SPY * 86400]);
     totalCleaned += result.changes;
 
     if (totalCleaned > 0) {
@@ -668,7 +668,7 @@ async function start() {
         if (windows > 0) {
           const catchUp = Math.min(windows * REGEN_AMOUNT, REGEN_MAX);
           await db.run(`
-            UPDATE kingdoms SET turns_stored = LEAST(?, turns_stored + ?)
+            UPDATE kingdoms SET turns_stored = LEAST($1, turns_stored + $2)
           `, [REGEN_MAX, catchUp]);
           await db.run(
             `UPDATE server_state SET value = ${EPOCH_NOW_TEXT} WHERE key = 'last_regen_at'`
@@ -688,7 +688,7 @@ async function start() {
         });
         const c = getHeroConfig();
         for (const h of heroes) {
-            if (c[h.class]) await db.run('UPDATE heroes SET abilities = ? WHERE class = ?', [JSON.stringify(c[h.class]), h.class]);
+            if (c[h.class]) await db.run('UPDATE heroes SET abilities = $1 WHERE class = $2', [JSON.stringify(c[h.class]), h.class]);
         }
       } catch (err) {
         console.error('[heroes] Error setting hero abilities:', err.message);
@@ -772,9 +772,9 @@ async function start() {
     });
 
     app.post('/api/alliance/vault/deposit', requireAuth, async (req, res) => {
-      const kingdom = await db.get('SELECT id, gold, name FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
+      const kingdom = await db.get('SELECT id, gold, name FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
       if (!kingdom) return res.status(404).json({ error: 'Kingdom not found' });
-      const membership = await db.get('SELECT alliance_id FROM alliance_members WHERE kingdom_id = ?', [kingdom.id]);
+      const membership = await db.get('SELECT alliance_id FROM alliance_members WHERE kingdom_id = $1', [kingdom.id]);
       if (!membership) return res.status(400).json({ error: 'Not in an alliance' });
       const { amount } = req.body;
       const goldAmount = parseInt(amount) || 0;
@@ -783,14 +783,14 @@ async function start() {
       await db.run('BEGIN TRANSACTION');
       try {
         // Lock alliance FIRST (before kingdom) to establish consistent locking order and prevent deadlock
-        const alliance = await db.get('SELECT id, vault_log FROM alliances WHERE id = ? FOR UPDATE', [membership.alliance_id]);
+        const alliance = await db.get('SELECT id, vault_log FROM alliances WHERE id = $1 FOR UPDATE', [membership.alliance_id]);
         if (!alliance) {
           await db.run('ROLLBACK');
           return res.status(404).json({ error: 'Alliance not found or disbanded' });
         }
 
         // Check balance inside transaction with row locking
-        const k = await db.get('SELECT gold FROM kingdoms WHERE id = ? FOR UPDATE', [kingdom.id]);
+        const k = await db.get('SELECT gold FROM kingdoms WHERE id = $1 FOR UPDATE', [kingdom.id]);
         if (!k) {
           await db.run('ROLLBACK');
           return res.status(404).json({ error: 'Kingdom not found' });
@@ -800,12 +800,12 @@ async function start() {
           return res.status(400).json({ error: 'Not enough gold' });
         }
 
-        await db.run('UPDATE kingdoms SET gold = gold - ? WHERE id = ?', [goldAmount, kingdom.id]);
-        await db.run('UPDATE alliances SET vault_gold = vault_gold + ? WHERE id = ?', [goldAmount, membership.alliance_id]);
+        await db.run('UPDATE kingdoms SET gold = gold - $1 WHERE id = $2', [goldAmount, kingdom.id]);
+        await db.run('UPDATE alliances SET vault_gold = vault_gold + $1 WHERE id = $2', [goldAmount, membership.alliance_id]);
         let logs = safeJsonParse(alliance.vault_log || '[]', []);
         logs.unshift({ type: 'deposit', kingdom: kingdom.name, amount: goldAmount, date: new Date().toLocaleString() });
         if(logs.length > 20) logs = logs.slice(0, 20);
-        await db.run('UPDATE alliances SET vault_log = ? WHERE id = ?', [JSON.stringify(logs), membership.alliance_id]);
+        await db.run('UPDATE alliances SET vault_log = $1 WHERE id = $2', [JSON.stringify(logs), membership.alliance_id]);
         await db.run('COMMIT');
         res.json({ ok: true, deposited: goldAmount });
       } catch(e) {
@@ -816,8 +816,8 @@ async function start() {
     });
 
     app.post('/api/alliance/vault/project', requireAuth, async (req, res) => {
-      const kingdom = await db.get('SELECT id, name FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
-      const alliance = await db.get('SELECT * FROM alliances WHERE leader_id = ?', [kingdom.id]);
+      const kingdom = await db.get('SELECT id, name FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
+      const alliance = await db.get('SELECT * FROM alliances WHERE leader_id = $1', [kingdom.id]);
       if (!alliance) return res.status(403).json({ error: 'Only leader can fund projects' });
 
       const { project } = req.body;
@@ -827,7 +827,7 @@ async function start() {
       await db.run('BEGIN TRANSACTION');
       try {
         // Re-fetch alliance with row locking and check state inside transaction
-        const a = await db.get('SELECT * FROM alliances WHERE id = ? FOR UPDATE', [alliance.id]);
+        const a = await db.get('SELECT * FROM alliances WHERE id = $1 FOR UPDATE', [alliance.id]);
 
         let projects = safeJsonParse(a.projects, {});
         const currentLevel = projects[project] || 0;
@@ -843,16 +843,16 @@ async function start() {
         }
 
         projects[project] = currentLevel + 1;
-        await db.run('UPDATE alliances SET vault_gold = vault_gold - ?, projects = ? WHERE id = ?', [cost, JSON.stringify(projects), a.id]);
+        await db.run('UPDATE alliances SET vault_gold = vault_gold - $1, projects = $2 WHERE id = $3', [cost, JSON.stringify(projects), a.id]);
 
         let logs = safeJsonParse(a.vault_log, []);
         logs.unshift({ type: 'project', name: project.replace('_', ' '), level: currentLevel + 1, cost: cost, date: new Date().toLocaleString() });
         if(logs.length > 20) logs = logs.slice(0, 20);
-        await db.run('UPDATE alliances SET vault_log = ? WHERE id = ?', [JSON.stringify(logs), a.id]);
+        await db.run('UPDATE alliances SET vault_log = $1 WHERE id = $2', [JSON.stringify(logs), a.id]);
 
         // Sync buffs to all members with a single bulk UPDATE query
         await db.run(
-          'UPDATE kingdoms SET alliance_buffs = ? WHERE id IN (SELECT kingdom_id FROM alliance_members WHERE alliance_id = ?)',
+          'UPDATE kingdoms SET alliance_buffs = $1 WHERE id IN (SELECT kingdom_id FROM alliance_members WHERE alliance_id = $2)',
           [JSON.stringify(projects), a.id]
         );
 
@@ -866,67 +866,67 @@ async function start() {
     });
 
     app.get('/api/alliance/my', requireAuth, async (req, res) => {
-      const kingdom = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
+      const kingdom = await db.get('SELECT id FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
       if (!kingdom) return res.status(404).json({ error: 'Kingdom not found' });
-      const membership = await db.get('SELECT * FROM alliance_members WHERE kingdom_id = ?', [kingdom.id]);
+      const membership = await db.get('SELECT * FROM alliance_members WHERE kingdom_id = $1', [kingdom.id]);
       if (!membership) return res.json({ alliance: null });
-      const alliance = await db.get('SELECT * FROM alliances WHERE id = ?', [membership.alliance_id]);
+      const alliance = await db.get('SELECT * FROM alliances WHERE id = $1', [membership.alliance_id]);
       if (!alliance) {
-        await db.run('DELETE FROM alliance_members WHERE kingdom_id = ?', [kingdom.id]);
+        await db.run('DELETE FROM alliance_members WHERE kingdom_id = $1', [kingdom.id]);
         return res.json({ alliance: null });
       }
       const members = await db.all(`
         SELECT k.id, k.name, k.race, k.land, k.fighters, k.level, am.pledge
         FROM kingdoms k JOIN alliance_members am ON k.id = am.kingdom_id
-        WHERE am.alliance_id = ? ORDER BY k.land DESC`, [membership.alliance_id]);
+        WHERE am.alliance_id = $1 ORDER BY k.land DESC`, [membership.alliance_id]);
       res.json({ alliance, members, myPledge: membership.pledge, isLeader: alliance.leader_id === kingdom.id });
     });
 
     app.post('/api/alliance/pledge', requireAuth, async (req, res) => {
-      const kingdom = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
+      const kingdom = await db.get('SELECT id FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
       const { pledge } = req.body;
       const p = Math.max(0, Math.min(10, Number(pledge) || 3));
-      await db.run('UPDATE alliance_members SET pledge = ? WHERE kingdom_id = ?', [p, kingdom.id]);
+      await db.run('UPDATE alliance_members SET pledge = $1 WHERE kingdom_id = $2', [p, kingdom.id]);
       res.json({ ok: true, pledge: p });
     });
 
     app.post('/api/alliance/dismiss', requireAuth, async (req, res) => {
-      const kingdom = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
-      const alliance = await db.get('SELECT * FROM alliances WHERE leader_id = ?', [kingdom.id]);
+      const kingdom = await db.get('SELECT id FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
+      const alliance = await db.get('SELECT * FROM alliances WHERE leader_id = $1', [kingdom.id]);
       if (!alliance) return res.status(403).json({ error: 'Only leader can dismiss members' });
       const { targetKingdomId } = req.body;
       if (targetKingdomId === kingdom.id) return res.status(400).json({ error: 'Cannot dismiss yourself' });
-      await db.run('DELETE FROM alliance_members WHERE kingdom_id = ? AND alliance_id = ?', [targetKingdomId, alliance.id]);
-      await db.run('UPDATE kingdoms SET alliance_buffs = \'{}\' WHERE id = ?', [targetKingdomId]);
+      await db.run('DELETE FROM alliance_members WHERE kingdom_id = $1 AND alliance_id = $2', [targetKingdomId, alliance.id]);
+      await db.run('UPDATE kingdoms SET alliance_buffs = \'{}\' WHERE id = $1', [targetKingdomId]);
       res.json({ ok: true });
     });
 
     app.post('/api/alliance/create', requireAuth, async (req, res) => {
       const { name } = req.body;
       if (!name?.trim()) return res.status(400).json({ error: 'Alliance name required' });
-      const kingdom = await db.get('SELECT * FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
+      const kingdom = await db.get('SELECT * FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
       if (!kingdom) return res.status(404).json({ error: 'Kingdom not found' });
 
       await db.run('BEGIN TRANSACTION');
       try {
         // Lock kingdom to serialize alliance operations and prevent race conditions
-        const k = await db.get('SELECT id FROM kingdoms WHERE id = ? FOR UPDATE', [kingdom.id]);
+        const k = await db.get('SELECT id FROM kingdoms WHERE id = $1 FOR UPDATE', [kingdom.id]);
         if (!k) {
           await db.run('ROLLBACK');
           return res.status(404).json({ error: 'Kingdom not found' });
         }
 
         // Prevent alliance leaders from abandoning their alliance without disbanding it
-        const leading = await db.get('SELECT id FROM alliances WHERE leader_id = ?', [kingdom.id]);
+        const leading = await db.get('SELECT id FROM alliances WHERE leader_id = $1', [kingdom.id]);
         if (leading) {
           await db.run('ROLLBACK');
           return res.status(400).json({ error: 'You cannot create a new alliance while leading an existing one. Disband it first.' });
         }
 
         // Remove from any existing alliance and create new one atomically
-        await db.run('DELETE FROM alliance_members WHERE kingdom_id = ?', [kingdom.id]);
-        const result = await db.run('INSERT INTO alliances (name, leader_id) VALUES (?, ?)', [name.trim(), kingdom.id]);
-        await db.run('INSERT INTO alliance_members (alliance_id, kingdom_id, pledge) VALUES (?, ?, 3)', [result.lastID, kingdom.id]);
+        await db.run('DELETE FROM alliance_members WHERE kingdom_id = $1', [kingdom.id]);
+        const result = await db.run('INSERT INTO alliances (name, leader_id) VALUES ($1, $2)', [name.trim(), kingdom.id]);
+        await db.run('INSERT INTO alliance_members (alliance_id, kingdom_id, pledge) VALUES ($1, $2, 3)', [result.lastID, kingdom.id]);
         await db.run('COMMIT');
         res.json({ ok: true, allianceId: result.lastID });
       } catch (err) {
@@ -937,30 +937,30 @@ async function start() {
     });
 
     app.post('/api/alliance/invite', requireAuth, async (req, res) => {
-      const kingdom = await db.get('SELECT * FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
-      const membership = await db.get('SELECT * FROM alliance_members WHERE kingdom_id = ?', [kingdom.id]);
+      const kingdom = await db.get('SELECT * FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
+      const membership = await db.get('SELECT * FROM alliance_members WHERE kingdom_id = $1', [kingdom.id]);
       if (!membership) return res.status(400).json({ error: 'You are not in an alliance' });
-      const alliance = await db.get('SELECT * FROM alliances WHERE id = ?', [membership.alliance_id]);
+      const alliance = await db.get('SELECT * FROM alliances WHERE id = $1', [membership.alliance_id]);
       if (alliance.leader_id !== kingdom.id) return res.status(403).json({ error: 'Only the leader can invite' });
 
       const targetKingdomId = req.body.targetKingdomId;
       await db.run('BEGIN TRANSACTION');
       try {
         // Lock target kingdom to prevent concurrent alliance membership changes
-        const target = await db.get('SELECT id FROM kingdoms WHERE id = ? FOR UPDATE', [targetKingdomId]);
+        const target = await db.get('SELECT id FROM kingdoms WHERE id = $1 FOR UPDATE', [targetKingdomId]);
         if (!target) {
           await db.run('ROLLBACK');
           return res.status(404).json({ error: 'Target kingdom not found' });
         }
 
-        const existingMembership = await db.get('SELECT alliance_id FROM alliance_members WHERE kingdom_id = ?', [targetKingdomId]);
+        const existingMembership = await db.get('SELECT alliance_id FROM alliance_members WHERE kingdom_id = $1', [targetKingdomId]);
         if (existingMembership) {
           await db.run('ROLLBACK');
           return res.status(400).json({ error: 'Target kingdom is already in an alliance' });
         }
 
-        await db.run('INSERT INTO alliance_members (alliance_id, kingdom_id) VALUES (?, ?)', [membership.alliance_id, targetKingdomId]);
-        await db.run('UPDATE kingdoms SET alliance_buffs = ? WHERE id = ?', [alliance.projects || '{}', targetKingdomId]);
+        await db.run('INSERT INTO alliance_members (alliance_id, kingdom_id) VALUES ($1, $2)', [membership.alliance_id, targetKingdomId]);
+        await db.run('UPDATE kingdoms SET alliance_buffs = $1 WHERE id = $2', [alliance.projects || '{}', targetKingdomId]);
         await db.run('COMMIT');
         res.json({ ok: true });
       } catch {
@@ -970,20 +970,20 @@ async function start() {
     });
 
     app.post('/api/alliance/leave', requireAuth, async (req, res) => {
-      const kingdom = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
+      const kingdom = await db.get('SELECT id FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
 
       await db.run('BEGIN TRANSACTION');
       try {
-        const alliance = await db.get('SELECT * FROM alliances WHERE leader_id = ? FOR UPDATE', [kingdom.id]);
+        const alliance = await db.get('SELECT * FROM alliances WHERE leader_id = $1 FOR UPDATE', [kingdom.id]);
         if (alliance) {
           // Leader leaving: disband entire alliance
-          await db.run('UPDATE kingdoms SET alliance_buffs = \'{}\' WHERE id IN (SELECT kingdom_id FROM alliance_members WHERE alliance_id = ?)', [alliance.id]);
-          await db.run('DELETE FROM alliance_members WHERE alliance_id = ?', [alliance.id]);
-          await db.run('DELETE FROM alliances WHERE id = ?', [alliance.id]);
+          await db.run('UPDATE kingdoms SET alliance_buffs = \'{}\' WHERE id IN (SELECT kingdom_id FROM alliance_members WHERE alliance_id = $1)', [alliance.id]);
+          await db.run('DELETE FROM alliance_members WHERE alliance_id = $1', [alliance.id]);
+          await db.run('DELETE FROM alliances WHERE id = $1', [alliance.id]);
         } else {
           // Non-leader leaving: remove from alliance
-          await db.run('DELETE FROM alliance_members WHERE kingdom_id = ?', [kingdom.id]);
-          await db.run('UPDATE kingdoms SET alliance_buffs = \'{}\' WHERE id = ?', [kingdom.id]);
+          await db.run('DELETE FROM alliance_members WHERE kingdom_id = $1', [kingdom.id]);
+          await db.run('UPDATE kingdoms SET alliance_buffs = \'{}\' WHERE id = $1', [kingdom.id]);
         }
         await db.run('COMMIT');
         res.json({ ok: true });
@@ -1040,7 +1040,7 @@ async function start() {
         await db.run('BEGIN TRANSACTION');
         try {
           // Check gold and lock inside transaction
-          const k = await db.get('SELECT id, gold FROM kingdoms WHERE player_id = ? FOR UPDATE', [req.player.playerId]);
+          const k = await db.get('SELECT id, gold FROM kingdoms WHERE player_id = $1 FOR UPDATE', [req.player.playerId]);
           if (!k) {
             await db.run('ROLLBACK');
             return res.status(404).json({ error: 'Kingdom not found' });
@@ -1054,15 +1054,15 @@ async function start() {
             return res.status(400).json({ error: 'Cannot place bounty on yourself' });
           }
 
-          const target = await db.get('SELECT id FROM kingdoms WHERE id = ?', [target_id]);
+          const target = await db.get('SELECT id FROM kingdoms WHERE id = $1', [target_id]);
           if (!target) {
             await db.run('ROLLBACK');
             return res.status(404).json({ error: 'Target kingdom not found' });
           }
 
-          await db.run('UPDATE kingdoms SET gold = gold - ? WHERE id = ?', [amount, k.id]);
+          await db.run('UPDATE kingdoms SET gold = gold - $1 WHERE id = $2', [amount, k.id]);
           await db.run(
-            'INSERT INTO bounties (placer_id, target_id, amount) VALUES (?, ?, ?)',
+            'INSERT INTO bounties (placer_id, target_id, amount) VALUES ($1, $2, $3)',
             [req.player.playerId, target_id, amount]
           );
 
@@ -1087,12 +1087,12 @@ async function start() {
             m.*, 
             p1.username as sender_name, 
             p2.username as recipient_name,
-            CASE WHEN m.sender_id = ? THEN m.recipient_id ELSE m.sender_id END as other_id,
-            CASE WHEN m.sender_id = ? THEN p2.username ELSE p1.username END as other_name
+            CASE WHEN m.sender_id = $1 THEN m.recipient_id ELSE m.sender_id END as other_id,
+            CASE WHEN m.sender_id = $2 THEN p2.username ELSE p1.username END as other_name
           FROM messages m
           JOIN players p1 ON m.sender_id = p1.id
           JOIN players p2 ON m.recipient_id = p2.id
-          WHERE m.sender_id = ? OR m.recipient_id = ?
+          WHERE m.sender_id = $3 OR m.recipient_id = $4
           ORDER BY m.created_at DESC
         `, [req.player.playerId, req.player.playerId, req.player.playerId, req.player.playerId]);
       
@@ -1111,12 +1111,12 @@ async function start() {
         if (myId === recipient_id) return res.status(400).json({ error: 'Cannot message yourself' });
 
         const result = await db.run(
-          'INSERT INTO messages (sender_id, recipient_id, content) VALUES (?, ?, ?)',
+          'INSERT INTO messages (sender_id, recipient_id, content) VALUES ($1, $2, $3)',
           [myId, recipient_id, content]
         );
 
         // Emit real-time notification
-        const senderInfo = await db.get('SELECT username FROM players WHERE id = ?', [myId]);
+        const senderInfo = await db.get('SELECT username FROM players WHERE id = $1', [myId]);
         io.to(`player:${recipient_id}`).emit('message:received', {
           id: result.lastID,
           sender_id: myId,
@@ -1133,12 +1133,12 @@ async function start() {
     });
 
     app.get('/api/alliance/:id', requireAuth, async (req, res) => {
-      const alliance = await db.get('SELECT * FROM alliances WHERE id = ?', [req.params.id]);
+      const alliance = await db.get('SELECT * FROM alliances WHERE id = $1', [req.params.id]);
       if (!alliance) return res.status(404).json({ error: 'Not found' });
       const members = await db.all(`
         SELECT k.id, k.name, k.race, k.land, am.pledge
         FROM kingdoms k JOIN alliance_members am ON k.id = am.kingdom_id
-        WHERE am.alliance_id = ?`, [req.params.id]);
+        WHERE am.alliance_id = $1`, [req.params.id]);
       res.json({ ...alliance, members });
     });
 
@@ -1149,7 +1149,7 @@ async function start() {
         FROM chat_messages cm
         LEFT JOIN players p ON cm.player_id = p.id
         LEFT JOIN kingdoms k ON cm.kingdom_id = k.id
-        WHERE cm.room = ? AND cm.deleted = 0
+        WHERE cm.room = $1 AND cm.deleted = 0
         ORDER BY cm.created_at DESC LIMIT 80`, [req.params.room]);
       res.json(msgs.reverse());
     });
@@ -1249,9 +1249,9 @@ async function start() {
       if (!adminSecret) return res.status(500).json({ error: 'ADMIN_SECRET not set on server' });
       if (!secret || secret !== adminSecret) return res.status(403).json({ error: 'Invalid secret' });
       if (!username) return res.status(400).json({ error: 'username required' });
-      const player = await db.get('SELECT id, username FROM players WHERE username = ?', [username]);
+      const player = await db.get('SELECT id, username FROM players WHERE username = $1', [username]);
       if (!player) return res.status(404).json({ error: 'Player not found' });
-      await db.run('UPDATE players SET is_admin = 1 WHERE id = ?', [player.id]);
+      await db.run('UPDATE players SET is_admin = 1 WHERE id = $1', [player.id]);
       res.json({ ok: true, message: username + ' is now an admin. Log out and back in to get the admin token.' });
     });
 
@@ -1308,8 +1308,8 @@ async function start() {
       try {
         const { message } = req.body;
         if (!message || message.length < 5) return res.status(400).json({ error: 'Suggestion too short' });
-        const k = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
-        await db.run('INSERT INTO suggestions (player_id, kingdom_id, message) VALUES (?, ?, ?)', [req.player.playerId, k ? k.id : null, message]);
+        const k = await db.get('SELECT id FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
+        await db.run('INSERT INTO suggestions (player_id, kingdom_id, message) VALUES ($1, $2, $3)', [req.player.playerId, k ? k.id : null, message]);
         res.json({ ok: true, message: 'Thank you!' });
       } catch (e) { console.error('[suggestions] Database error:', e); res.status(500).json({ error: 'Failed to save suggestion' }); }
     });
@@ -1332,7 +1332,7 @@ async function start() {
         const playerId = req.player.playerId;
         const { createdAtAgeMs, nowUnix } = require('./game/lib/timestamp');
         const recent = await db.get(
-          `SELECT id, created_at FROM bug_reports WHERE player_id = ? ORDER BY id DESC LIMIT 1`,
+          `SELECT id, created_at FROM bug_reports WHERE player_id = $1 ORDER BY id DESC LIMIT 1`,
           [playerId],
         );
         if (recent?.created_at != null && createdAtAgeMs(recent.created_at) < 60_000) {
@@ -1340,14 +1340,14 @@ async function start() {
         }
 
         const kingdom = await db.get(
-          'SELECT k.id, k.name FROM kingdoms k WHERE k.player_id = ?',
+          'SELECT k.id, k.name FROM kingdoms k WHERE k.player_id = $1',
           [playerId],
         );
         const username = req.player.username || 'Unknown';
 
         const insert = await db.run(
           `INSERT INTO bug_reports (player_id, kingdom_id, username, kingdom_name, category, message, context_panel, page_url, user_agent, console_log, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
           [
             playerId,
             kingdom?.id ?? null,
@@ -1376,7 +1376,7 @@ async function start() {
         });
 
         if (discordSent && reportId) {
-          await db.run('UPDATE bug_reports SET discord_sent = 1 WHERE id = ?', [reportId]);
+          await db.run('UPDATE bug_reports SET discord_sent = 1 WHERE id = $1', [reportId]);
         }
 
         res.json({
@@ -1400,7 +1400,7 @@ async function start() {
         }
         const player = req.player;
         await db.run(
-          'INSERT INTO test_results (player_id, player_name, test_key, test_group, test_name, passed, comment) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          'INSERT INTO test_results (player_id, player_name, test_key, test_group, test_name, passed, comment) VALUES ($1, $2, $3, $4, $5, $6, $7)',
           [player.playerId, player.username, testKey, testGroup, testName, passed !== undefined ? (passed ? 1 : 0) : null, comment || null]
         );
         // Broadcast to all connected clients

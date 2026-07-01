@@ -13,7 +13,7 @@ const router = express.Router();
 // Load trade routes for a kingdom
 async function loadTradeRoutes(db, k) {
   const tradeRoutes = await db.all(
-    "SELECT * FROM trade_routes WHERE kingdom_id = ? OR partner_id = ?",
+    "SELECT * FROM trade_routes WHERE kingdom_id = $1 OR partner_id = $2",
     [k.id, k.id],
   );
   k._trade_routes = tradeRoutes.map((r) => {
@@ -104,7 +104,7 @@ async function applyUpdates(db, kingdomId, updates) {
 
 module.exports = function (db) {
   router.get("/trade-routes/list", requireAuth, async (req, res) => {
-    const k = await db.get("SELECT id FROM kingdoms WHERE player_id=?", [
+    const k = await db.get("SELECT id FROM kingdoms WHERE player_id=$1", [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -113,7 +113,7 @@ module.exports = function (db) {
       SELECT tr.*, k.name as partner_name, k.race as partner_race, k.land as partner_land
       FROM trade_routes tr
       JOIN kingdoms k ON (tr.partner_id = k.id OR tr.kingdom_id = k.id)
-      WHERE (tr.kingdom_id = ? OR tr.partner_id = ?) AND k.id != ?
+      WHERE (tr.kingdom_id = $1 OR tr.partner_id = $2) AND k.id != $3
     `,
       [k.id, k.id, k.id],
     );
@@ -125,7 +125,7 @@ module.exports = function (db) {
       if (isNaN(targetId))
         return res.status(400).json({ error: "Invalid target kingdom" });
 
-      const k = await db.get("SELECT id, name, gold, market_upgrades FROM kingdoms WHERE player_id=?", [
+      const k = await db.get("SELECT id, name, gold, market_upgrades FROM kingdoms WHERE player_id=$1", [
         req.player.playerId,
       ]);
       if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -148,7 +148,7 @@ module.exports = function (db) {
       if (k.id == targetId)
         return res.status(400).json({ error: "Cannot trade with yourself" });
 
-      const target = await db.get("SELECT id, turn FROM kingdoms WHERE id=?", [
+      const target = await db.get("SELECT id, turn FROM kingdoms WHERE id=$1", [
         targetId,
       ]);
       if (!target) return res.status(404).json({ error: "Target not found" });
@@ -156,9 +156,9 @@ module.exports = function (db) {
       // Check caps (UNION allows index optimization vs OR)
       const routeCount = await db.get(
         `SELECT COUNT(*) as count FROM (
-          SELECT id FROM trade_routes WHERE kingdom_id=?
+          SELECT id FROM trade_routes WHERE kingdom_id=$1
           UNION ALL
-          SELECT id FROM trade_routes WHERE partner_id=?
+          SELECT id FROM trade_routes WHERE partner_id=$2
         ) t`,
         [k.id, k.id],
       );
@@ -172,7 +172,7 @@ module.exports = function (db) {
 
       // Check if already exists
       const existing = await db.get(
-        "SELECT id FROM trade_routes WHERE (kingdom_id=? AND partner_id=?) OR (kingdom_id=? AND partner_id=?)",
+        "SELECT id FROM trade_routes WHERE (kingdom_id=$1 AND partner_id=$2) OR (kingdom_id=$3 AND partner_id=$4)",
         [k.id, targetId, targetId, k.id],
       );
       if (existing)
@@ -196,7 +196,7 @@ module.exports = function (db) {
       try {
         // Atomic balance check: verify sufficient gold within the UPDATE statement to prevent
         // concurrent requests from both bypassing the check and creating negative balances
-        const goldResult = await db.run("UPDATE kingdoms SET gold = gold - ? WHERE id = ? AND gold >= ?", [
+        const goldResult = await db.run("UPDATE kingdoms SET gold = gold - $1 WHERE id = $2 AND gold >= $3", [
           cost,
           k.id,
           cost,
@@ -208,11 +208,11 @@ module.exports = function (db) {
           });
         }
         await db.run(
-          "INSERT INTO trade_routes (kingdom_id, partner_id, distance, stability) VALUES (?, ?, ?, ?)",
+          "INSERT INTO trade_routes (kingdom_id, partner_id, distance, stability) VALUES ($1, $2, $3, $4)",
           [k.id, targetId, distance, 100],
         );
         await db.run(
-          "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?, ?, ?, ?)",
+          "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1, $2, $3, $4)",
           [
             target.id,
             "system",
@@ -238,17 +238,17 @@ module.exports = function (db) {
   });
   router.post("/trade-routes/cancel", requireAuth, requireCsrfToken, async (req, res) => {
     const { routeId } = req.body;
-    const k = await db.get("SELECT id FROM kingdoms WHERE player_id=?", [
+    const k = await db.get("SELECT id FROM kingdoms WHERE player_id=$1", [
       req.player.playerId,
     ]);
     await db.run(
-      "DELETE FROM trade_routes WHERE id = ? AND (kingdom_id = ? OR partner_id = ?)",
+      "DELETE FROM trade_routes WHERE id = $1 AND (kingdom_id = $2 OR partner_id = $3)",
       [routeId, k.id, k.id],
     );
     res.json({ ok: true });
   });
   router.post("/trade/clear-logs", requireAuth, requireCsrfToken, async (req, res) => {
-    const k = await db.get("SELECT id FROM kingdoms WHERE player_id = ?", [
+    const k = await db.get("SELECT id FROM kingdoms WHERE player_id = $1", [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -256,7 +256,7 @@ module.exports = function (db) {
     await db.run(
       `
       DELETE FROM trades
-      WHERE (sender_id = ? OR receiver_id = ?)
+      WHERE (sender_id = $1 OR receiver_id = $2)
       AND status != 'pending'`,
       [k.id, k.id],
     );
@@ -282,7 +282,7 @@ module.exports = function (db) {
     try {
       await db.run("BEGIN TRANSACTION");
 
-      const k = await db.get("SELECT id, turn, gold, wood, stone, iron, food, mana, maps, weapons_stockpile, armor_stockpile, coal, steel, war_machines, ballistae, land FROM kingdoms WHERE player_id = ? FOR UPDATE", [
+      const k = await db.get("SELECT id, turn, gold, wood, stone, iron, food, mana, maps, weapons_stockpile, armor_stockpile, coal, steel, war_machines, ballistae, land FROM kingdoms WHERE player_id = $1 FOR UPDATE", [
         req.player.playerId,
       ]);
       if (!k) {
@@ -290,7 +290,7 @@ module.exports = function (db) {
         return res.status(404).json({ error: "Kingdom not found" });
       }
 
-      const priceRow = await db.get("SELECT * FROM market_prices WHERE id = ? FOR UPDATE", [
+      const priceRow = await db.get("SELECT * FROM market_prices WHERE id = $1 FOR UPDATE", [
         resource,
       ]);
       if (!priceRow || resource === "hammers") {
@@ -317,18 +317,18 @@ module.exports = function (db) {
 
       const dbCol = getResourceColumn(resource);
       await db.run(
-        `UPDATE kingdoms SET gold = gold - ?, ${dbCol} = ${dbCol} + ? WHERE id = ?`,
+        `UPDATE kingdoms SET gold = gold - $1, ${dbCol} = ${dbCol} + $2 WHERE id = $3`,
         [cost, qty, k.id],
       );
 
       // Impact market: update the price to clamped progress
       await db.run(
-        "UPDATE market_prices SET current_price = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+        "UPDATE market_prices SET current_price = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
         [clampedNext, resource],
       );
 
       await db.run(
-        "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
+        "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)",
         [
           k.id,
           "system",
@@ -364,7 +364,7 @@ module.exports = function (db) {
     try {
       await db.run("BEGIN TRANSACTION");
 
-      const k = await db.get("SELECT id, turn, gold, wood, stone, iron, food, mana, maps, weapons_stockpile, armor_stockpile, coal, steel, war_machines, ballistae, land FROM kingdoms WHERE player_id = ? FOR UPDATE", [
+      const k = await db.get("SELECT id, turn, gold, wood, stone, iron, food, mana, maps, weapons_stockpile, armor_stockpile, coal, steel, war_machines, ballistae, land FROM kingdoms WHERE player_id = $1 FOR UPDATE", [
         req.player.playerId,
       ]);
       if (!k) {
@@ -382,7 +382,7 @@ module.exports = function (db) {
         return res.status(400).json({ error: "Not enough resource" });
       }
 
-      const priceRow = await db.get("SELECT * FROM market_prices WHERE id = ? FOR UPDATE", [
+      const priceRow = await db.get("SELECT * FROM market_prices WHERE id = $1 FOR UPDATE", [
         resource,
       ]);
       if (!priceRow || resource === "hammers") {
@@ -408,18 +408,18 @@ module.exports = function (db) {
       const gain = Math.floor(qty * avgPrice * sellMultiplier);
 
       await db.run(
-        `UPDATE kingdoms SET gold = gold + ?, ${dbCol} = ${dbCol} - ? WHERE id = ?`,
+        `UPDATE kingdoms SET gold = gold + $1, ${dbCol} = ${dbCol} - $2 WHERE id = $3`,
         [gain, qty, k.id],
       );
 
       // Impact market: update the price to clamped progress
       await db.run(
-        "UPDATE market_prices SET current_price = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+        "UPDATE market_prices SET current_price = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
         [clampedNext, resource],
       );
 
       await db.run(
-        "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
+        "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)",
         [
           k.id,
           "system",
@@ -455,7 +455,7 @@ module.exports = function (db) {
     try {
       await db.run("BEGIN TRANSACTION");
 
-      const k = await db.get("SELECT id, turn, gold, bld_vaults, bank_upgrades, bank_deposits FROM kingdoms WHERE player_id = ? FOR UPDATE", [
+      const k = await db.get("SELECT id, turn, gold, bld_vaults, bank_upgrades, bank_deposits FROM kingdoms WHERE player_id = $1 FOR UPDATE", [
         req.player.playerId,
       ]);
       if (!k) {
@@ -513,11 +513,11 @@ module.exports = function (db) {
       });
 
       await db.run(
-        "UPDATE kingdoms SET gold = gold - ?, bank_deposits = ? WHERE id = ?",
+        "UPDATE kingdoms SET gold = gold - $1, bank_deposits = $2 WHERE id = $3",
         [amount, JSON.stringify(deposits), k.id],
       );
       await db.run(
-        "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
+        "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)",
         [
           k.id,
           "system",
@@ -542,7 +542,7 @@ module.exports = function (db) {
   router.post("/economy/bank-withdraw", requireAuth, requireCsrfToken, async (req, res) => {
     const { depositId } = req.body;
 
-    const k = await db.get("SELECT id, turn, gold, bank_upgrades, bank_deposits FROM kingdoms WHERE player_id = ?", [
+    const k = await db.get("SELECT id, turn, gold, bank_upgrades, bank_deposits FROM kingdoms WHERE player_id = $1", [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -581,7 +581,7 @@ module.exports = function (db) {
 
     await applyUpdates(db, k.id, updates);
     await db.run(
-      "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
+      "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)",
       [
         k.id,
         "system",
@@ -601,7 +601,7 @@ module.exports = function (db) {
               granary_upgrades, market_upgrades, tavern_upgrades, tower_upgrades,
               school_upgrades, shrine_upgrades, mausoleum_upgrades, library_upgrades,
               wall_upgrades, tower_def_upgrades, outpost_upgrades, bank_upgrades
-       FROM kingdoms WHERE player_id = ?`,
+       FROM kingdoms WHERE player_id = $1`,
       [req.player.playerId]
     );
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -627,7 +627,7 @@ module.exports = function (db) {
       engine.OUTPOST_UPGRADES[upgradeKey] ||
       engine.BANK_UPGRADES[upgradeKey];
     await db.run(
-      "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
+      "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)",
       [k.id, "system", `⬆️ ${def?.name || upgradeKey} purchased.`, k.turn],
     );
     res.json({ ok: true, updates: result.updates });
@@ -638,7 +638,7 @@ module.exports = function (db) {
       `SELECT id, turn, gold, bld_taverns, tavern_upgrades, mercenaries,
               fighters, rangers, mages, clerics, thieves, ninjas,
               engineers, scribes, war_machines
-       FROM kingdoms WHERE player_id = ?`,
+       FROM kingdoms WHERE player_id = $1`,
       [req.player.playerId]
     );
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -651,7 +651,7 @@ module.exports = function (db) {
     if (result.error) return res.status(400).json({ error: result.error });
     await applyUpdates(db, k.id, result.updates);
     await db.run(
-      "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
+      "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)",
       [
         k.id,
         "system",
@@ -663,7 +663,7 @@ module.exports = function (db) {
   });
   router.post("/economy/dismiss-mercs", requireAuth, requireCsrfToken, async (req, res) => {
     const { mercIndex } = req.body;
-    const k = await db.get("SELECT id, mercenaries, fighters, rangers, mages, clerics, thieves, ninjas, researchers, engineers, scribes, war_machines FROM kingdoms WHERE player_id = ?", [
+    const k = await db.get("SELECT id, mercenaries, fighters, rangers, mages, clerics, thieves, ninjas, researchers, engineers, scribes, war_machines FROM kingdoms WHERE player_id = $1", [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -684,14 +684,14 @@ module.exports = function (db) {
     }
     const newCount = Math.max(0, (k[unitType] || 0) - m.count);
     await db.run(
-      `UPDATE kingdoms SET mercenaries = ?, ${unitType} = ? WHERE id = ?`,
+      `UPDATE kingdoms SET mercenaries = $1, ${unitType} = $2 WHERE id = $3`,
       [JSON.stringify(mercs), newCount, k.id],
     );
     res.json({ ok: true, dismissed: m });
   });
   router.post("/economy/trade/send", requireAuth, requireCsrfToken, async (req, res) => {
     const { targetId, offer, request } = req.body;
-    const k = await db.get("SELECT id, name, turn, market_upgrades, food, gold, mana, maps, blueprints_stored FROM kingdoms WHERE player_id = ?", [
+    const k = await db.get("SELECT id, name, turn, market_upgrades, food, gold, mana, maps, blueprints_stored FROM kingdoms WHERE player_id = $1", [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -721,7 +721,7 @@ module.exports = function (db) {
     }
     if (!targetId || !offer || !request)
       return res.status(400).json({ error: "Missing trade parameters" });
-    const target = await db.get("SELECT id, name FROM kingdoms WHERE id = ?", [
+    const target = await db.get("SELECT id, name FROM kingdoms WHERE id = $1", [
       targetId,
     ]);
     if (!target)
@@ -747,7 +747,7 @@ module.exports = function (db) {
         return res.status(400).json({ error: `Not enough ${item}` });
     }
     await db.run(
-      `INSERT INTO trade_offers (sender_id, sender_name, receiver_id, receiver_name, offer, request, expires_at) VALUES (?,?,?,?,?,?,?)`,
+      `INSERT INTO trade_offers (sender_id, sender_name, receiver_id, receiver_name, offer, request, expires_at) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
       [
         k.id,
         k.name,
@@ -759,7 +759,7 @@ module.exports = function (db) {
       ],
     );
     await db.run(
-      "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
+      "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)",
       [
         target.id,
         "system",
@@ -770,40 +770,40 @@ module.exports = function (db) {
     res.json({ ok: true });
   });
   router.get("/economy/trade/list", requireAuth, async (req, res) => {
-    const k = await db.get("SELECT id FROM kingdoms WHERE player_id = ?", [
+    const k = await db.get("SELECT id FROM kingdoms WHERE player_id = $1", [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
     const now = Math.floor(Date.now() / 1000);
     await db.run(
-      "UPDATE trade_offers SET status = ? WHERE expires_at < ? AND status = ?",
+      "UPDATE trade_offers SET status = $1 WHERE expires_at < $2 AND status = $3",
       ["expired", now, "pending"],
     );
     const sent = await db.all(
-      "SELECT * FROM trade_offers WHERE sender_id   = ? ORDER BY created_at DESC LIMIT 20",
+      "SELECT * FROM trade_offers WHERE sender_id   = $1 ORDER BY created_at DESC LIMIT 20",
       [k.id],
     );
     const received = await db.all(
-      "SELECT * FROM trade_offers WHERE receiver_id = ? AND status = ? ORDER BY created_at DESC LIMIT 20",
+      "SELECT * FROM trade_offers WHERE receiver_id = $1 AND status = $2 ORDER BY created_at DESC LIMIT 20",
       [k.id, "pending"],
     );
     res.json({ sent, received });
   });
   router.post("/economy/trade/accept", requireAuth, requireCsrfToken, async (req, res) => {
     const { offerId } = req.body;
-    const k = await db.get("SELECT id, name, gold, food, mana, maps, blueprints_stored, weapons_stockpile, armor_stockpile FROM kingdoms WHERE player_id = ?", [
+    const k = await db.get("SELECT id, name, gold, food, mana, maps, blueprints_stored, weapons_stockpile, armor_stockpile FROM kingdoms WHERE player_id = $1", [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
     const offer = await db.get(
-      "SELECT * FROM trade_offers WHERE id = ? AND receiver_id = ? AND status = ?",
+      "SELECT * FROM trade_offers WHERE id = $1 AND receiver_id = $2 AND status = $3",
       [offerId, k.id, "pending"],
     );
     if (!offer)
       return res
         .status(404)
         .json({ error: "Offer not found or already resolved" });
-    const sender = await db.get("SELECT id, turn, gold, food, mana, maps, blueprints_stored, weapons_stockpile, armor_stockpile FROM kingdoms WHERE id = ?", [
+    const sender = await db.get("SELECT id, turn, gold, food, mana, maps, blueprints_stored, weapons_stockpile, armor_stockpile FROM kingdoms WHERE id = $1", [
       offer.sender_id,
     ]);
     if (!sender) return res.status(404).json({ error: "Sender not found" });
@@ -859,12 +859,12 @@ module.exports = function (db) {
 
     await applyUpdates(db, k.id, kUpdates);
     await applyUpdates(db, sender.id, sUpdates);
-    await db.run("UPDATE trade_offers SET status = ? WHERE id = ?", [
+    await db.run("UPDATE trade_offers SET status = $1 WHERE id = $2", [
       "accepted",
       offer.id,
     ]);
     await db.run(
-      "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
+      "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)",
       [
         sender.id,
         "system",
@@ -876,21 +876,21 @@ module.exports = function (db) {
   });
   router.post("/economy/trade/decline", requireAuth, requireCsrfToken, async (req, res) => {
     const { offerId } = req.body;
-    const k = await db.get("SELECT id FROM kingdoms WHERE player_id = ?", [
+    const k = await db.get("SELECT id FROM kingdoms WHERE player_id = $1", [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
     const offer = await db.get(
-      "SELECT * FROM trade_offers WHERE id = ? AND receiver_id = ?",
+      "SELECT * FROM trade_offers WHERE id = $1 AND receiver_id = $2",
       [offerId, k.id],
     );
     if (!offer) return res.status(404).json({ error: "Offer not found" });
-    await db.run("UPDATE trade_offers SET status = ? WHERE id = ?", [
+    await db.run("UPDATE trade_offers SET status = $1 WHERE id = $2", [
       "declined",
       offer.id,
     ]);
     await db.run(
-      "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
+      "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)",
       [offer.sender_id, "system", `\u274C ${k.name} declined your trade offer.`, 0],
     );
     res.json({ ok: true });
@@ -906,7 +906,7 @@ module.exports = function (db) {
               land, happiness, bld_castles, res_economy, milestone_bonuses,
               achievements, bld_barracks, bld_smithies, bld_libraries, bld_schools,
               alliance_buffs, active_effects
-       FROM kingdoms WHERE player_id = ?`,
+       FROM kingdoms WHERE player_id = $1`,
       [req.player.playerId]
     );
     if (!k) return res.status(404).json({ error: "Kingdom not found" });

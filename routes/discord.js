@@ -13,7 +13,7 @@ module.exports = function (db) {
     try {
       // Check if Discord ID is already linked
       const existing = await db.get(
-        "SELECT player_id FROM discord_links WHERE discord_user_id = ?",
+        "SELECT player_id FROM discord_links WHERE discord_user_id = $1",
         [discordUserId]
       );
 
@@ -23,20 +23,20 @@ module.exports = function (db) {
 
       // Check if player already has a Discord link
       const playerLink = await db.get(
-        "SELECT id FROM discord_links WHERE player_id = ?",
+        "SELECT id FROM discord_links WHERE player_id = $1",
         [req.player.playerId]
       );
 
       if (playerLink) {
         // Update existing link
         await db.run(
-          "UPDATE discord_links SET discord_user_id = ?, discord_username = ?, updated_at = ? WHERE player_id = ?",
+          "UPDATE discord_links SET discord_user_id = $1, discord_username = $2, updated_at = $3 WHERE player_id = $4",
           [discordUserId, discordUsername, Math.floor(Date.now() / 1000), req.player.playerId]
         );
       } else {
         // Create new link
         await db.run(
-          "INSERT INTO discord_links (player_id, discord_user_id, discord_username) VALUES (?, ?, ?)",
+          "INSERT INTO discord_links (player_id, discord_user_id, discord_username) VALUES ($1, $2, $3)",
           [req.player.playerId, discordUserId, discordUsername]
         );
       }
@@ -51,7 +51,7 @@ module.exports = function (db) {
   // Unlink Discord account from game player
   router.post("/unlink-discord", requireAuth, requireCsrfToken, async (req, res) => {
     try {
-      await db.run("DELETE FROM discord_links WHERE player_id = ?", [req.player.playerId]);
+      await db.run("DELETE FROM discord_links WHERE player_id = $1", [req.player.playerId]);
       res.json({ ok: true, message: "Discord account unlinked" });
     } catch (err) {
       console.error("[discord] Unlink error:", err);
@@ -63,7 +63,7 @@ module.exports = function (db) {
   router.get("/link-status", requireAuth, async (req, res) => {
     try {
       const link = await db.get(
-        "SELECT discord_user_id, discord_username, linked_at FROM discord_links WHERE player_id = ?",
+        "SELECT discord_user_id, discord_username, linked_at FROM discord_links WHERE player_id = $1",
         [req.player.playerId]
       );
 
@@ -93,7 +93,7 @@ module.exports = function (db) {
     try {
       const now = Math.floor(Date.now() / 1000);
       const record = await db.get(
-        "SELECT * FROM discord_link_tokens WHERE token = ? AND expires_at > ?",
+        "SELECT * FROM discord_link_tokens WHERE token = $1 AND expires_at > $2",
         [token.trim().toUpperCase(), now]
       );
 
@@ -102,14 +102,14 @@ module.exports = function (db) {
       }
 
       // Verify the game username matches the logged-in player
-      const player = await db.get("SELECT username FROM players WHERE id = ?", [req.player.playerId]);
+      const player = await db.get("SELECT username FROM players WHERE id = $1", [req.player.playerId]);
       if (!player || player.username.toLowerCase() !== record.game_username.toLowerCase()) {
         return res.status(403).json({ error: "This code was generated for a different game account" });
       }
 
       // Check if Discord ID is already linked to another player
       const existing = await db.get(
-        "SELECT player_id FROM discord_links WHERE discord_user_id = ?",
+        "SELECT player_id FROM discord_links WHERE discord_user_id = $1",
         [record.discord_user_id]
       );
       if (existing && existing.player_id !== req.player.playerId) {
@@ -117,21 +117,21 @@ module.exports = function (db) {
       }
 
       // Upsert the link
-      const playerLink = await db.get("SELECT id FROM discord_links WHERE player_id = ?", [req.player.playerId]);
+      const playerLink = await db.get("SELECT id FROM discord_links WHERE player_id = $1", [req.player.playerId]);
       if (playerLink) {
         await db.run(
-          "UPDATE discord_links SET discord_user_id = ?, discord_username = ?, updated_at = ? WHERE player_id = ?",
+          "UPDATE discord_links SET discord_user_id = $1, discord_username = $2, updated_at = $3 WHERE player_id = $4",
           [record.discord_user_id, record.discord_username, now, req.player.playerId]
         );
       } else {
         await db.run(
-          "INSERT INTO discord_links (player_id, discord_user_id, discord_username) VALUES (?, ?, ?)",
+          "INSERT INTO discord_links (player_id, discord_user_id, discord_username) VALUES ($1, $2, $3)",
           [req.player.playerId, record.discord_user_id, record.discord_username]
         );
       }
 
       // Consume the token
-      await db.run("DELETE FROM discord_link_tokens WHERE token = ?", [record.token]);
+      await db.run("DELETE FROM discord_link_tokens WHERE token = $1", [record.token]);
 
       res.json({ ok: true, discordUsername: record.discord_username });
     } catch (err) {
@@ -149,20 +149,20 @@ module.exports = function (db) {
 
     try {
       const existing = await db.get(
-        "SELECT id FROM discord_sync_config WHERE channel_id = ?",
+        "SELECT id FROM discord_sync_config WHERE channel_id = $1",
         [channelId]
       );
 
       if (existing) {
         // Update existing config
         await db.run(
-          "UPDATE discord_sync_config SET channel_name = ?, game_room = ?, sync_both_directions = ?, updated_at = ? WHERE channel_id = ?",
+          "UPDATE discord_sync_config SET channel_name = $1, game_room = $2, sync_both_directions = $3, updated_at = $4 WHERE channel_id = $5",
           [channelName, gameRoom, syncBothDirections ? 1 : 0, Math.floor(Date.now() / 1000), channelId]
         );
       } else {
         // Create new config
         await db.run(
-          "INSERT INTO discord_sync_config (channel_id, channel_name, game_room, sync_both_directions) VALUES (?, ?, ?, ?)",
+          "INSERT INTO discord_sync_config (channel_id, channel_name, game_room, sync_both_directions) VALUES ($1, $2, $3, $4)",
           [channelId, channelName, gameRoom, syncBothDirections ? 1 : 0]
         );
       }
@@ -186,7 +186,7 @@ module.exports = function (db) {
 
     try {
       await db.run(
-        "UPDATE discord_sync_config SET enabled = ?, updated_at = ? WHERE channel_id = ?",
+        "UPDATE discord_sync_config SET enabled = $1, updated_at = $2 WHERE channel_id = $3",
         [enabled ? 1 : 0, Math.floor(Date.now() / 1000), channelId]
       );
 

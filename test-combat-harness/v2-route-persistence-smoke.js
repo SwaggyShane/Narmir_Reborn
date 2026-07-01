@@ -2,6 +2,7 @@ process.env.USE_COMBAT_V2 = '1';
 
 require('dotenv').config();
 const { initDb, applyKingdomUpdates } = require('../db/schema');
+const { pgInList } = require('../lib/pg-placeholders');
 const engine = require('../game/engine');
 
 const KINGDOM_ATTACK_SELECT = `id, player_id, name, race, turn, turns_stored, gold, food, population, land, happiness,
@@ -28,10 +29,10 @@ function assert(condition, message) {
 
 async function insertPlayer(db, username) {
   await db.run(
-    'INSERT INTO players (username, password, email) VALUES (?, ?, ?)',
+    'INSERT INTO players (username, password, email) VALUES ($1, $2, $3)',
     [username, 'codex-local-smoke', `${username}@local.test`],
   );
-  return db.get('SELECT id FROM players WHERE username = ?', [username]);
+  return db.get('SELECT id FROM players WHERE username = $1', [username]);
 }
 
 async function insertKingdom(db, playerId, data) {
@@ -41,7 +42,7 @@ async function insertKingdom(db, playerId, data) {
       engineers, war_machines, ballistae, ladders, bld_walls, wall_hp, wall_defense_type,
       res_weapons, res_armor, res_military, res_war_machines, res_attack_magic, res_defense_magic,
       troop_levels, equipment_levels, injured_troops, discovered_kingdoms, weapons_stockpile, armor_stockpile
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30)`,
     [
       playerId,
       data.name,
@@ -75,17 +76,18 @@ async function insertKingdom(db, playerId, data) {
       1000,
     ],
   );
-  return db.get('SELECT id FROM kingdoms WHERE player_id = ?', [playerId]);
+  return db.get('SELECT id FROM kingdoms WHERE player_id = $1', [playerId]);
 }
 
 async function cleanup(db, ids) {
   const validIds = ids.filter(Boolean);
   if (validIds.length === 0) return;
-  const placeholders = validIds.map(() => '?').join(',');
-  await db.run(`DELETE FROM news WHERE kingdom_id IN (${placeholders})`, validIds);
-  await db.run(`DELETE FROM war_log WHERE attacker_id IN (${placeholders}) OR defender_id IN (${placeholders})`, [...validIds, ...validIds]);
-  await db.run(`DELETE FROM kingdoms WHERE id IN (${placeholders})`, validIds);
-  await db.run(`DELETE FROM players WHERE username LIKE ?`, ['codex_v2_route_%']);
+  const inList = pgInList(validIds.length);
+  const inList2 = pgInList(validIds.length, validIds.length + 1);
+  await db.run(`DELETE FROM news WHERE kingdom_id IN (${inList})`, validIds);
+  await db.run(`DELETE FROM war_log WHERE attacker_id IN (${inList}) OR defender_id IN (${inList2})`, [...validIds, ...validIds]);
+  await db.run(`DELETE FROM kingdoms WHERE id IN (${inList})`, validIds);
+  await db.run(`DELETE FROM players WHERE username LIKE $1`, ['codex_v2_route_%']);
 }
 
 async function main() {
@@ -139,12 +141,12 @@ async function main() {
     createdKingdomIds.push(attackerRow.id, defenderRow.id);
 
     await db.run(
-      'UPDATE kingdoms SET discovered_kingdoms = ? WHERE id = ?',
+      'UPDATE kingdoms SET discovered_kingdoms = $1 WHERE id = $2',
       [JSON.stringify({ [defenderRow.id]: { found: true, mapped: true } }), attackerRow.id],
     );
 
-    const attacker = await db.get(`SELECT ${KINGDOM_ATTACK_SELECT} FROM kingdoms WHERE id = ?`, [attackerRow.id]);
-    const defender = await db.get(`SELECT ${KINGDOM_ATTACK_SELECT} FROM kingdoms WHERE id = ?`, [defenderRow.id]);
+    const attacker = await db.get(`SELECT ${KINGDOM_ATTACK_SELECT} FROM kingdoms WHERE id = $1`, [attackerRow.id]);
+    const defender = await db.get(`SELECT ${KINGDOM_ATTACK_SELECT} FROM kingdoms WHERE id = $1`, [defenderRow.id]);
 
     for (const field of ['ballistae', 'res_war_machines', 'res_attack_magic', 'res_defense_magic', 'injured_troops', 'wall_hp', 'wall_defense_type', 'discovered_kingdoms', 'weapons_stockpile', 'armor_stockpile', 'equipment_levels']) {
       assert(attacker[field] !== undefined, `Route attack SELECT missing attacker.${field}`);
@@ -179,13 +181,13 @@ async function main() {
     });
     await db.run(
       `INSERT INTO war_log (action_type, attacker_id, attacker_name, defender_id, defender_name, outcome, detail, obscured)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 0)`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 0)`,
       ['attack', attacker.id, attacker.name, defender.id, defender.name, result.win ? 'victory' : 'repelled', detail],
     );
 
-    const persistedAttacker = await db.get('SELECT injured_troops FROM kingdoms WHERE id = ?', [attacker.id]);
-    const persistedDefender = await db.get('SELECT wall_hp, injured_troops, weapons_stockpile, armor_stockpile, equipment_levels FROM kingdoms WHERE id = ?', [defender.id]);
-    const log = await db.get('SELECT detail FROM war_log WHERE attacker_id = ? AND defender_id = ? ORDER BY id DESC LIMIT 1', [attacker.id, defender.id]);
+    const persistedAttacker = await db.get('SELECT injured_troops FROM kingdoms WHERE id = $1', [attacker.id]);
+    const persistedDefender = await db.get('SELECT wall_hp, injured_troops, weapons_stockpile, armor_stockpile, equipment_levels FROM kingdoms WHERE id = $1', [defender.id]);
+    const log = await db.get('SELECT detail FROM war_log WHERE attacker_id = $1 AND defender_id = $2 ORDER BY id DESC LIMIT 1', [attacker.id, defender.id]);
     const parsedDetail = JSON.parse(log.detail);
 
     assert(JSON.parse(persistedAttacker.injured_troops), 'Persisted attacker injured_troops should be JSON');

@@ -78,7 +78,7 @@ module.exports = function (db) {
       const hash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
       const isAdminUser = false;
       const playerResult = await db.run(
-        "INSERT INTO players (username, password, email, is_admin) VALUES (?, ?, ?, ?)",
+        "INSERT INTO players (username, password, email, is_admin) VALUES ($1, $2, $3, $4)",
         [username, hash, email, 0],
       );
       const region = engine.assignRegion(chosenRace);
@@ -158,7 +158,7 @@ module.exports = function (db) {
           res_spellbook, blueprints_stored,
           bld_farms, bld_schools, bld_barracks, bld_armories, bld_housing,
           bld_markets, bld_smithies, bld_mage_towers, bld_shrines, bld_outposts, bld_training, bld_mausoleums, world_fragments
-        ) VALUES (?, ?, ?, ?, ?, 10000, ?, 50000, ?, 100, 100, ?, ?, ?, 400, 0, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '["Volcanic Rock", "Ancient Elven Wood", "Dragon Scale", "Abyssal Crystal", "Celestial Feather", "Dwarven Star-Metal", "Cursed Bloodstone", "Tears of the World Tree", "Void Essence", "Titan Bone"]')`,
+        ) VALUES ($1, $2, $3, $4, $5, 10000, $6, 50000, $7, 100, 100, $8, $9, $10, 400, 0, 0, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, '["Volcanic Rock", "Ancient Elven Wood", "Dragon Scale", "Abyssal Crystal", "Celestial Feather", "Dwarven Star-Metal", "Cursed Bloodstone", "Tears of the World Tree", "Void Essence", "Titan Bone"]')`,
         [
           playerResult.lastID,
           kingdomName,
@@ -220,7 +220,7 @@ module.exports = function (db) {
     if (!username || !password)
       return res.status(400).json({ error: "username and password required" });
 
-    const player = await db.get("SELECT * FROM players WHERE username = ?", [
+    const player = await db.get("SELECT * FROM players WHERE username = $1", [
       username,
     ]);
     if (!player) {

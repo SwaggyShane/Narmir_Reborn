@@ -4,6 +4,7 @@ const { requireAuth, requireCsrfToken } = require("./middleware");
 const { progressGoal } = require('../game/goals');
 const { safeJsonParse } = require('../utils/helpers');
 const { applyKingdomUpdates } = require('../db/schema');
+const { pgInList } = require('../lib/pg-placeholders');
 
 const router = express.Router();
 
@@ -31,9 +32,8 @@ function httpError(status, message) {
 async function lockKingdomRows(db, kingdomIds) {
   const ids = [...new Set(kingdomIds.map((id) => Number(id)).filter((id) => Number.isInteger(id) && id > 0))].sort((a, b) => a - b);
   if (ids.length === 0) return [];
-  const placeholders = ids.map(() => "?").join(",");
   return db.all(
-    `SELECT * FROM kingdoms WHERE id IN (${placeholders}) ORDER BY id FOR UPDATE`,
+    `SELECT * FROM kingdoms WHERE id IN (${pgInList(ids.length)}) ORDER BY id FOR UPDATE`,
     ids,
   );
 }
@@ -59,7 +59,7 @@ module.exports = function (db) {
   });
 
   router.get("/war-log/:id", requireAuth, async (req, res) => {
-    const row = await db.get("SELECT * FROM war_log WHERE id = ?", [
+    const row = await db.get("SELECT * FROM war_log WHERE id = $1", [
       req.params.id,
     ]);
     if (!row) return res.status(404).json({ error: "Log not found" });
@@ -97,7 +97,7 @@ module.exports = function (db) {
         throw httpError(400, 'Send at least some troops');
       }
 
-      const attackerIdRow = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
+      const attackerIdRow = await db.get('SELECT id FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
       if (!attackerIdRow) throw httpError(404, 'Kingdom not found');
 
       const attackerId = attackerIdRow.id;
@@ -164,8 +164,8 @@ module.exports = function (db) {
           throw httpError(400, 'You need a location map for this target.');
         }
 
-        const attackerHeroes = await db.all('SELECT * FROM heroes WHERE kingdom_id = ? AND status = ?', [k.id, 'idle']);
-        const defenderHeroes = await db.all('SELECT * FROM heroes WHERE kingdom_id = ? AND status = ?', [target.id, 'idle']);
+        const attackerHeroes = await db.all('SELECT * FROM heroes WHERE kingdom_id = $1 AND status = $2', [k.id, 'idle']);
+        const defenderHeroes = await db.all('SELECT * FROM heroes WHERE kingdom_id = $1 AND status = $2', [target.id, 'idle']);
 
         let defDisc = {};
         try {
@@ -173,7 +173,7 @@ module.exports = function (db) {
         } catch {}
         if (!defDisc[k.id]?.mapped) {
           defDisc[k.id] = { found: true, mapped: true };
-          await db.run('UPDATE kingdoms SET discovered_kingdoms = ? WHERE id = ?', [JSON.stringify(defDisc), target.id]);
+          await db.run('UPDATE kingdoms SET discovered_kingdoms = $1 WHERE id = $2', [JSON.stringify(defDisc), target.id]);
         }
 
         const result = engine.resolveMilitaryAttack(k, target, sentUnits, attackerHeroes, defenderHeroes);
@@ -206,10 +206,10 @@ module.exports = function (db) {
 
         await applyKingdomUpdates(k.id, result.attackerUpdates);
         await applyKingdomUpdates(target.id, result.defenderUpdates);
-        await db.run('UPDATE kingdoms SET turns_stored = turns_stored - 1 WHERE id = ?', [k.id]);
+        await db.run('UPDATE kingdoms SET turns_stored = turns_stored - 1 WHERE id = $1', [k.id]);
 
         if (result.win) {
-          const activeBounties = await db.all('SELECT * FROM bounties WHERE target_id = ? AND status = ?', [target.id, 'active']);
+          const activeBounties = await db.all('SELECT * FROM bounties WHERE target_id = $1 AND status = $2', [target.id, 'active']);
           if (activeBounties.length > 0) {
             let totalClaimed = 0;
             const bountyIds = [];
@@ -222,15 +222,15 @@ module.exports = function (db) {
               await db.run('UPDATE bounties SET status = $1, claimed_by_id = $2 WHERE id IN (' + placeholders + ')', ['claimed', k.id, ...bountyIds]);
             }
             if (totalClaimed > 0) {
-              await db.run('UPDATE kingdoms SET gold = gold + ? WHERE id = ?', [totalClaimed, k.id]);
+              await db.run('UPDATE kingdoms SET gold = gold + $1 WHERE id = $2', [totalClaimed, k.id]);
               result.atkEvent += ` BOUNTY CLAIMED! You collected ${totalClaimed.toLocaleString()} gold in bounties placed on ${target.name}.`;
-              await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)', [k.id, 'system', `You claimed ${totalClaimed.toLocaleString()} gold in bounties by defeating ${target.name}!`, k.turn]);
+              await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)', [k.id, 'system', `You claimed ${totalClaimed.toLocaleString()} gold in bounties by defeating ${target.name}!`, k.turn]);
             }
           }
         }
 
         if (result.win && Math.random() < 0.04) {
-          await db.run('UPDATE kingdoms SET maps = maps + 1 WHERE id = ?', [k.id]);
+          await db.run('UPDATE kingdoms SET maps = maps + 1 WHERE id = $1', [k.id]);
           result.atkEvent += ' In the aftermath, your troops scavenged a map from a fallen scout\'s corpse.';
         }
 
@@ -246,23 +246,23 @@ module.exports = function (db) {
           steps: result.report.steps || [],
           ...result.report,
         });
-        const logRes = await db.run('INSERT INTO war_log (action_type, attacker_id, attacker_name, defender_id, defender_name, outcome, detail, obscured) VALUES (?,?,?,?,?,?,?,0)', ['attack', k.id, k.name, target.id, target.name, result.win ? 'victory' : 'repelled', detail]);
+        const logRes = await db.run('INSERT INTO war_log (action_type, attacker_id, attacker_name, defender_id, defender_name, outcome, detail, obscured) VALUES ($1,$2,$3,$4,$5,$6,$7,0)', ['attack', k.id, k.name, target.id, target.name, result.win ? 'victory' : 'repelled', detail]);
         const reportId = logRes.lastID;
 
-        await db.run('INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES (?,?,?,?,?)', [k.id, 'attack', result.atkEvent, k.turn, reportId]);
-        await db.run('INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES (?,?,?,?,?)', [target.id, 'attack', result.defEvent, target.turn, reportId]);
+        await db.run('INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES ($1,$2,$3,$4,$5)', [k.id, 'attack', result.atkEvent, k.turn, reportId]);
+        await db.run('INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES ($1,$2,$3,$4,$5)', [target.id, 'attack', result.defEvent, target.turn, reportId]);
 
         let defTowerUpgrades = {};
         try {
           defTowerUpgrades = safeJsonParse(target.tower_def_upgrades, {}, 'auto:tower_def_upgrades');
         } catch {}
         if (defTowerUpgrades.watchtower || defTowerUpgrades.signal_tower) {
-          await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)', [target.id, 'system', `⚠️ Watchtower scouts have detected ${k.name} massing troops at the border.`, target.turn]);
+          await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)', [target.id, 'system', `⚠️ Watchtower scouts have detected ${k.name} massing troops at the border.`, target.turn]);
           if (defTowerUpgrades.signal_tower) {
             const allianceMembers = await db.all(`
               SELECT am.kingdom_id FROM alliance_members am
               JOIN alliance_members am2 ON am.alliance_id = am2.alliance_id
-              WHERE am2.kingdom_id = ? AND am.kingdom_id != ?`, [target.id, target.id]);
+              WHERE am2.kingdom_id = $1 AND am.kingdom_id != $2`, [target.id, target.id]);
             if (allianceMembers.length > 0) {
               const placeholders = allianceMembers.map((_, i) => `($${i * 4 + 1}, $${i * 4 + 2}, $${i * 4 + 3}, $${i * 4 + 4})`).join(',');
               const params = [];
@@ -275,15 +275,15 @@ module.exports = function (db) {
 
         if (result.win) {
           if (result.report.wallsDestroyed > 0) {
-            await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)', [target.id, 'attack', `${result.report.wallsDestroyed} walls were destroyed in the bombardment.`, target.turn]);
+            await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)', [target.id, 'attack', `${result.report.wallsDestroyed} walls were destroyed in the bombardment.`, target.turn]);
           } else if (result.report.buildingDamaged) {
-            await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)', [target.id, 'attack', `Attackers burned ${result.report.buildingDamaged} with no walls to stop them.`, target.turn]);
+            await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)', [target.id, 'attack', `Attackers burned ${result.report.buildingDamaged} with no walls to stop them.`, target.turn]);
           }
         }
         response = { result, attackerId };
       });
 
-      const freshK = await db.get("SELECT maps FROM kingdoms WHERE id = ?", [attackerId]);
+      const freshK = await db.get("SELECT maps FROM kingdoms WHERE id = $1", [attackerId]);
       const result = response?.result;
       return res.json({
         ok: true,
@@ -301,7 +301,7 @@ module.exports = function (db) {
     const { spellId, targetId, obscure } = req.body;
     if (!spellId) return res.status(400).json({ error: "spellId required" });
 
-    const attackerRow = await db.get("SELECT id FROM kingdoms WHERE player_id = ?", [req.player.playerId]);
+    const attackerRow = await db.get("SELECT id FROM kingdoms WHERE player_id = $1", [req.player.playerId]);
     if (!attackerRow) return res.status(404).json({ error: "Kingdom not found" });
 
     const attackerId = attackerRow.id;
@@ -337,12 +337,12 @@ module.exports = function (db) {
 
         await applyKingdomUpdates(attackerK.id, result.casterUpdates);
         await applyKingdomUpdates(validation.target.id, result.targetUpdates);
-        await db.run('UPDATE kingdoms SET turns_stored = turns_stored - 1 WHERE id = ?', [attackerK.id]);
+        await db.run('UPDATE kingdoms SET turns_stored = turns_stored - 1 WHERE id = $1', [attackerK.id]);
 
         if (!validation.isFriendly || attackerK.id !== validation.target.id) {
           const logRes = await db.run(
             `INSERT INTO war_log (action_type, attacker_id, attacker_name, defender_id, defender_name, outcome, detail, obscured)
-            VALUES (?,?,?,?,?,?,?,?)`,
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
             [
               validation.isFriendly ? 'blessing' : 'spell',
               attackerK.id,
@@ -356,19 +356,19 @@ module.exports = function (db) {
           );
           const reportId = logRes.lastID;
           if (result.casterEvent) {
-            await db.run('INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES (?,?,?,?,?)', [attackerK.id, 'system', result.casterEvent, attackerK.turn, reportId]);
+            await db.run('INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES ($1,$2,$3,$4,$5)', [attackerK.id, 'system', result.casterEvent, attackerK.turn, reportId]);
           }
           if (result.targetEvent) {
-            await db.run('INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES (?,?,?,?,?)', [validation.target.id, validation.isFriendly ? 'system' : 'attack', result.targetEvent, validation.target.turn || 0, reportId]);
+            await db.run('INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES ($1,$2,$3,$4,$5)', [validation.target.id, validation.isFriendly ? 'system' : 'attack', result.targetEvent, validation.target.turn || 0, reportId]);
           }
         } else if (result.casterEvent) {
-          await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)', [attackerK.id, 'system', result.casterEvent, attackerK.turn]);
+          await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)', [attackerK.id, 'system', result.casterEvent, attackerK.turn]);
         }
 
         response = { result, attackerId };
       });
 
-      const freshK = await db.get('SELECT mana, scrolls, maps, active_effects FROM kingdoms WHERE id = ?', [attackerId]);
+      const freshK = await db.get('SELECT mana, scrolls, maps, active_effects FROM kingdoms WHERE id = $1', [attackerId]);
       const result = response?.result;
       return res.json({
         ok: true,
@@ -395,7 +395,7 @@ module.exports = function (db) {
       await db.run("BEGIN TRANSACTION");
         // Lock kingdoms in ascending ID order to prevent deadlock
         // First fetch attacker without lock to get its ID
-        const k = await db.get("SELECT id FROM kingdoms WHERE player_id = ?", [
+        const k = await db.get("SELECT id FROM kingdoms WHERE player_id = $1", [
           req.player.playerId,
         ]);
         if (!k) {
@@ -406,7 +406,7 @@ module.exports = function (db) {
         // Lock both kingdoms in ascending ID order (prevents deadlock)
         const kingdomIds = [k.id, targetId].sort((a, b) => a - b);
         const lockedKingdoms = await db.all(
-          `SELECT ${KINGDOM_COVERT} FROM kingdoms WHERE id IN (${kingdomIds.map(() => '?').join(',')}) ORDER BY id FOR UPDATE`,
+          `SELECT ${KINGDOM_COVERT} FROM kingdoms WHERE id IN (${pgInList(kingdomIds.length)}) ORDER BY id FOR UPDATE`,
           kingdomIds,
         );
 
@@ -477,22 +477,22 @@ module.exports = function (db) {
       spyAttackerUpdates.turns_stored = (attackerK.turns_stored || 0) - 1;
       await applyKingdomUpdates(attackerK.id, result.spyUpdates || {});
       await db.run(
-        "UPDATE kingdoms SET turns_stored = turns_stored - 1 WHERE id = ?",
+        "UPDATE kingdoms SET turns_stored = turns_stored - 1 WHERE id = $1",
         [attackerK.id],
       );
       if (result.spyEvent)
         await db.run(
-          "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
+          "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)",
           [attackerK.id, "covert", result.spyEvent, attackerK.turn],
         );
       if (result.targetEvent)
         await db.run(
-          "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
+          "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)",
           [target.id, "covert", result.targetEvent, target.turn],
         );
       // Store spy report
       const reportRow = await db.run(
-        `INSERT INTO spy_reports (kingdom_id, target_id, target_name, outcome, report) VALUES (?,?,?,?,?)`,
+        `INSERT INTO spy_reports (kingdom_id, target_id, target_name, outcome, report) VALUES ($1,$2,$3,$4,$5)`,
         [
           attackerK.id,
           target.id,
@@ -503,7 +503,7 @@ module.exports = function (db) {
       );
       // War log: obscure attacker on success so target doesn't know who spied
       await db.run(
-        `INSERT INTO war_log (action_type, attacker_id, attacker_name, defender_id, defender_name, outcome, detail, obscured) VALUES (?,?,?,?,?,?,?,?)`,
+        `INSERT INTO war_log (action_type, attacker_id, attacker_name, defender_id, defender_name, outcome, detail, obscured) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
         [
           "spy",
           attackerK.id,
@@ -541,11 +541,11 @@ module.exports = function (db) {
       await applyKingdomUpdates(attackerK.id, result.thiefUpdates || {});
       await applyKingdomUpdates(target.id, result.targetUpdates || {});
       await db.run(
-        "UPDATE kingdoms SET turns_stored = turns_stored - 1 WHERE id = ?",
+        "UPDATE kingdoms SET turns_stored = turns_stored - 1 WHERE id = $1",
         [attackerK.id],
       );
       const logRes = await db.run(
-        `INSERT INTO war_log (action_type, attacker_id, attacker_name, defender_id, defender_name, outcome, detail, obscured) VALUES (?,?,?,?,?,?,?,?)`,
+        `INSERT INTO war_log (action_type, attacker_id, attacker_name, defender_id, defender_name, outcome, detail, obscured) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
         [
           "loot",
           attackerK.id,
@@ -562,12 +562,12 @@ module.exports = function (db) {
       const reportId = logRes.lastID;
       if (result.thiefEvent)
         await db.run(
-          "INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES (?,?,?,?,?)",
+          "INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES ($1,$2,$3,$4,$5)",
           [attackerK.id, "covert", result.thiefEvent, attackerK.turn, reportId],
         );
       if (result.targetEvent)
         await db.run(
-          "INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES (?,?,?,?,?)",
+          "INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES ($1,$2,$3,$4,$5)",
           [target.id, "covert", result.targetEvent, target.turn, reportId],
         );
       await db.run("COMMIT");
@@ -610,11 +610,11 @@ module.exports = function (db) {
       await applyKingdomUpdates(attackerK.id, result.assassinUpdates || {});
       await applyKingdomUpdates(target.id, result.targetUpdates || {});
       await db.run(
-        "UPDATE kingdoms SET turns_stored = turns_stored - 1 WHERE id = ?",
+        "UPDATE kingdoms SET turns_stored = turns_stored - 1 WHERE id = $1",
         [attackerK.id],
       );
       const logRes = await db.run(
-        `INSERT INTO war_log (action_type, attacker_id, attacker_name, defender_id, defender_name, outcome, detail, obscured) VALUES (?,?,?,?,?,?,?,?)`,
+        `INSERT INTO war_log (action_type, attacker_id, attacker_name, defender_id, defender_name, outcome, detail, obscured) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
         [
           "assassinate",
           attackerK.id,
@@ -631,12 +631,12 @@ module.exports = function (db) {
       const reportId = logRes.lastID;
       if (result.assassinEvent)
         await db.run(
-          "INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES (?,?,?,?,?)",
+          "INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES ($1,$2,$3,$4,$5)",
           [attackerK.id, "covert", result.assassinEvent, attackerK.turn, reportId],
         );
       if (result.targetEvent)
         await db.run(
-          "INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES (?,?,?,?,?)",
+          "INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES ($1,$2,$3,$4,$5)",
           [target.id, "covert", result.targetEvent, target.turn, reportId],
         );
       await db.run("COMMIT");
@@ -666,12 +666,12 @@ module.exports = function (db) {
       await applyKingdomUpdates(target.id, result.targetUpdates || {});
 
       await db.run(
-        "UPDATE kingdoms SET turns_stored = turns_stored - 1 WHERE id = ?",
+        "UPDATE kingdoms SET turns_stored = turns_stored - 1 WHERE id = $1",
         [attackerK.id],
       );
 
       const logRes = await db.run(
-        `INSERT INTO war_log (action_type, attacker_id, attacker_name, defender_id, defender_name, outcome, detail, obscured) VALUES (?,?,?,?,?,?,?,?)`,
+        `INSERT INTO war_log (action_type, attacker_id, attacker_name, defender_id, defender_name, outcome, detail, obscured) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
         [
           "sabotage",
           attackerK.id,
@@ -689,13 +689,13 @@ module.exports = function (db) {
 
       if (result.assassinEvent)
         await db.run(
-          "INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES (?,?,?,?,?)",
+          "INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES ($1,$2,$3,$4,$5)",
           [attackerK.id, "covert", result.assassinEvent, attackerK.turn, reportId],
         );
 
       if (result.targetEvent)
         await db.run(
-          "INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES (?,?,?,?,?)",
+          "INSERT INTO news (kingdom_id, type, message, turn_num, combat_log_id) VALUES ($1,$2,$3,$4,$5)",
           [target.id, "covert", result.targetEvent, target.turn, reportId],
         );
 
@@ -724,21 +724,21 @@ module.exports = function (db) {
       await applyKingdomUpdates(attackerK.id, result.attackerUpdates || {});
       await applyKingdomUpdates(target.id, result.defenderUpdates || {});
       await db.run(
-        "UPDATE kingdoms SET turns_stored = turns_stored - 1 WHERE id = ?",
+        "UPDATE kingdoms SET turns_stored = turns_stored - 1 WHERE id = $1",
         [attackerK.id],
       );
       if (result.atkEvent)
         await db.run(
-          "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
+          "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)",
           [attackerK.id, "covert", result.atkEvent, attackerK.turn],
         );
       if (result.defEvent)
         await db.run(
-          "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)",
+          "INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)",
           [target.id, "covert", result.defEvent, target.turn],
         );
       await db.run(
-        `INSERT INTO war_log (action_type, attacker_id, attacker_name, defender_id, defender_name, outcome, detail, obscured) VALUES (?,?,?,?,?,?,?,?)`,
+        `INSERT INTO war_log (action_type, attacker_id, attacker_name, defender_id, defender_name, outcome, detail, obscured) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
         [
           "raid_trade_route",
           attackerK.id,
@@ -794,7 +794,7 @@ module.exports = function (db) {
     const n = Math.max(0, parseInt(amount) || 0);
     if (n <= 0)
       return res.status(400).json({ error: "Amount must be positive" });
-    const k = await db.get("SELECT id, race, population, fighters, rangers, mages, clerics, thieves, ninjas, researchers, engineers, scribes, war_machines FROM kingdoms WHERE player_id = ?", [
+    const k = await db.get("SELECT id, race, population, fighters, rangers, mages, clerics, thieves, ninjas, researchers, engineers, scribes, war_machines FROM kingdoms WHERE player_id = $1", [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -825,7 +825,7 @@ module.exports = function (db) {
               war_machines, ballistae, thieves, rangers, wall_upgrades, tower_def_upgrades,
               outpost_upgrades, defense_upgrades, alliance_buffs, res_war_machines,
               troop_levels, fragment_bonuses, wall_hp, wall_defense_type
-       FROM kingdoms WHERE player_id = ?`,
+       FROM kingdoms WHERE player_id = $1`,
       [req.player.playerId]
     );
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -857,13 +857,13 @@ module.exports = function (db) {
   // â"€â"€ Spy reports â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   router.get("/spy-reports", requireAuth, async (req, res) => {
     try {
-      const k = await db.get("SELECT id FROM kingdoms WHERE player_id = ?", [
+      const k = await db.get("SELECT id FROM kingdoms WHERE player_id = $1", [
         req.player.playerId,
       ]);
       if (!k) return res.status(404).json({ error: "Kingdom not found" });
       const rows = await db.all(
         `SELECT id, target_id, target_name, outcome, report, shared_to_alliance, created_at
-         FROM spy_reports WHERE kingdom_id = ? ORDER BY created_at DESC LIMIT 100`,
+         FROM spy_reports WHERE kingdom_id = $1 ORDER BY created_at DESC LIMIT 100`,
         [k.id],
       );
       res.json(
@@ -880,18 +880,18 @@ module.exports = function (db) {
 
   router.post("/spy-reports/:id/share", requireAuth, requireCsrfToken, async (req, res) => {
     try {
-      const k = await db.get("SELECT id FROM kingdoms WHERE player_id = ?", [
+      const k = await db.get("SELECT id FROM kingdoms WHERE player_id = $1", [
         req.player.playerId,
       ]);
       if (!k) return res.status(404).json({ error: "Kingdom not found" });
       const report = await db.get(
-        "SELECT id, shared_to_alliance FROM spy_reports WHERE id = ? AND kingdom_id = ?",
+        "SELECT id, shared_to_alliance FROM spy_reports WHERE id = $1 AND kingdom_id = $2",
         [req.params.id, k.id],
       );
       if (!report) return res.status(404).json({ error: "Report not found" });
       const newVal = (report.shared_to_alliance === 1 || report.shared_to_alliance === "1") ? 0 : 1;
       await db.run(
-        "UPDATE spy_reports SET shared_to_alliance = ? WHERE id = ?",
+        "UPDATE spy_reports SET shared_to_alliance = $1 WHERE id = $2",
         [newVal, report.id],
       );
       res.json({ ok: true, shared: newVal === 1 });
@@ -903,12 +903,12 @@ module.exports = function (db) {
 
   router.get("/spy-reports/alliance", requireAuth, async (req, res) => {
     try {
-      const k = await db.get("SELECT id FROM kingdoms WHERE player_id = ?", [
+      const k = await db.get("SELECT id FROM kingdoms WHERE player_id = $1", [
         req.player.playerId,
       ]);
       if (!k) return res.status(404).json({ error: "Kingdom not found" });
       const membership = await db.get(
-        "SELECT alliance_id FROM alliance_members WHERE kingdom_id = ?",
+        "SELECT alliance_id FROM alliance_members WHERE kingdom_id = $1",
         [k.id],
       );
       if (!membership) return res.json([]);
@@ -919,7 +919,7 @@ module.exports = function (db) {
         FROM spy_reports sr
         JOIN kingdoms k ON sr.kingdom_id = k.id
         JOIN alliance_members am ON am.kingdom_id = sr.kingdom_id
-        WHERE am.alliance_id = ? AND sr.shared_to_alliance = 1
+        WHERE am.alliance_id = $1 AND sr.shared_to_alliance = 1
         ORDER BY sr.created_at DESC LIMIT 50
       `,
         [membership.alliance_id],

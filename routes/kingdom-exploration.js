@@ -53,7 +53,7 @@ module.exports = function (db) {
 
     try {
       const { k, updates, foodNeeded } = await db.withTransaction(async () => {
-        const k = await db.get('SELECT * FROM kingdoms WHERE player_id = ? FOR UPDATE', [
+        const k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1 FOR UPDATE', [
           req.player.playerId,
         ]);
         if (!k) {
@@ -77,7 +77,7 @@ module.exports = function (db) {
         }
 
         const existing = await db.get(
-          'SELECT id FROM expeditions WHERE kingdom_id = ? AND type = ?',
+          'SELECT id FROM expeditions WHERE kingdom_id = $1 AND type = $2',
           [k.id, type],
         );
         if (existing) {
@@ -96,25 +96,25 @@ module.exports = function (db) {
         }
 
         await db.run(
-          'UPDATE kingdoms SET rangers = GREATEST(0, rangers - ?), fighters = GREATEST(0, fighters - ?), food = GREATEST(0, food - ?) WHERE id = ?',
+          'UPDATE kingdoms SET rangers = GREATEST(0, rangers - $1), fighters = GREATEST(0, fighters - $2), food = GREATEST(0, food - $3) WHERE id = $4',
           [r, f, foodNeeded, k.id]
         );
 
         await db.run(
-          'INSERT INTO expeditions (kingdom_id, type, turns_left, rangers, fighters, food_taken) VALUES (?, ?, ?, ?, ?, ?)',
+          'INSERT INTO expeditions (kingdom_id, type, turns_left, rangers, fighters, food_taken) VALUES ($1, $2, $3, $4, $5, $6)',
           [k.id, type, EXP_TURNS[type], r, f, foodNeeded],
         );
 
         let updates = { rangers: Math.max(0, k.rangers - r), fighters: Math.max(0, k.fighters - f), food: Math.max(0, k.food - foodNeeded) };
         progressGoal(k, updates, 'expedition_started', 1);
         if (updates.goals) {
-          await db.run('UPDATE kingdoms SET goals = ? WHERE id = ?', [updates.goals, k.id]);
+          await db.run('UPDATE kingdoms SET goals = $1 WHERE id = $2', [updates.goals, k.id]);
         }
 
         return { k, updates, foodNeeded };
       });
 
-      const updatedK = await db.get('SELECT * FROM kingdoms WHERE id = ?', [k.id]);
+      const updatedK = await db.get('SELECT * FROM kingdoms WHERE id = $1', [k.id]);
       let expeditionEvents = [];
       try {
         expeditionEvents = await engine.resolveExpeditions(db, updatedK, engine);
@@ -155,20 +155,20 @@ module.exports = function (db) {
   });
 
   router.get('/expedition/list', requireAuth, async (req, res) => {
-    const k = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [
+    const k = await db.get('SELECT id FROM kingdoms WHERE player_id = $1', [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: 'Kingdom not found' });
     await db.run(
-      'DELETE FROM expeditions WHERE kingdom_id = ? AND turns_left = 0 AND seen = 1',
+      'DELETE FROM expeditions WHERE kingdom_id = $1 AND turns_left = 0 AND seen = 1',
       [k.id],
     );
     const completed = await db.all(
-      'SELECT * FROM expeditions WHERE kingdom_id = ? AND turns_left = 0 AND rewards IS NOT NULL AND (seen IS NULL OR seen = 0)',
+      'SELECT * FROM expeditions WHERE kingdom_id = $1 AND turns_left = 0 AND rewards IS NOT NULL AND (seen IS NULL OR seen = 0)',
       [k.id],
     );
     const active = await db.all(
-      'SELECT * FROM expeditions WHERE kingdom_id = ? AND (turns_left > 0 OR (turns_left = 0 AND rewards IS NULL)) ORDER BY created_at DESC',
+      'SELECT * FROM expeditions WHERE kingdom_id = $1 AND (turns_left > 0 OR (turns_left = 0 AND rewards IS NULL)) ORDER BY created_at DESC',
       [k.id],
     );
     const cleanRewards = (exp) => {
@@ -192,13 +192,13 @@ module.exports = function (db) {
     if (!id) return res.status(400).json({ error: 'Expedition ID required' });
 
     try {
-      const k = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [
+      const k = await db.get('SELECT id FROM kingdoms WHERE player_id = $1', [
         req.player.playerId,
       ]);
       if (!k) return res.status(404).json({ error: 'Kingdom not found' });
 
       const result = await db.run(
-        'DELETE FROM expeditions WHERE id = ? AND kingdom_id = ? AND turns_left <= 0',
+        'DELETE FROM expeditions WHERE id = $1 AND kingdom_id = $2 AND turns_left <= 0',
         [id, k.id],
       );
       if (result.changes === 0) {
@@ -212,18 +212,18 @@ module.exports = function (db) {
   });
 
   router.get('/goals', requireAuth, async (req, res) => {
-    const k = await db.get('SELECT id, goals FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
+    const k = await db.get('SELECT id, goals FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
     if (!k) return res.status(404).json({ error: 'Kingdom not found' });
     const { goals, updated } = generateGoals(k);
     if (updated) {
-       await db.run('UPDATE kingdoms SET goals = ? WHERE id = ?', [JSON.stringify(goals), k.id]);
+       await db.run('UPDATE kingdoms SET goals = $1 WHERE id = $2', [JSON.stringify(goals), k.id]);
     }
     res.json(goals);
   });
 
   router.post('/goals/claim', requireAuth, requireCsrfToken, async (req, res) => {
     const { groupId, goalId } = req.body;
-    const k = await db.get('SELECT * FROM kingdoms WHERE player_id = ?', [req.player.playerId]);
+    const k = await db.get('SELECT * FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
     if (!k) return res.status(404).json({ error: 'Kingdom not found' });
 
     let updates = {};
@@ -236,7 +236,7 @@ module.exports = function (db) {
 
     await applyKingdomUpdates(k.id, updates);
     for (const ev of events) {
-      await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES (?,?,?,?)',
+      await db.run('INSERT INTO news (kingdom_id, type, message, turn_num) VALUES ($1,$2,$3,$4)',
         [k.id, ev.type, ev.message, k.turn]);
     }
 
@@ -245,30 +245,30 @@ module.exports = function (db) {
 
   router.post('/expedition/cancel', requireAuth, requireCsrfToken, async (req, res) => {
     const { id } = req.body;
-    const k = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [
+    const k = await db.get('SELECT id FROM kingdoms WHERE player_id = $1', [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: 'Kingdom not found' });
     const exp = await db.get(
-      'SELECT * FROM expeditions WHERE id = ? AND kingdom_id = ?',
+      'SELECT * FROM expeditions WHERE id = $1 AND kingdom_id = $2',
       [id, k.id],
     );
     if (!exp) return res.status(404).json({ error: 'Expedition not found' });
     await db.run(
-      'UPDATE kingdoms SET rangers = rangers + ?, fighters = fighters + ? WHERE id = ?',
+      'UPDATE kingdoms SET rangers = rangers + $1, fighters = fighters + $2 WHERE id = $3',
       [exp.rangers, exp.fighters, k.id],
     );
-    await db.run('DELETE FROM expeditions WHERE id = ?', [id]);
+    await db.run('DELETE FROM expeditions WHERE id = $1', [id]);
     res.json({ ok: true });
   });
 
   router.delete('/expedition/clear-all', requireAuth, async (req, res) => {
-    const k = await db.get('SELECT id FROM kingdoms WHERE player_id = ?', [
+    const k = await db.get('SELECT id FROM kingdoms WHERE player_id = $1', [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: 'Kingdom not found' });
     const exps = await db.all(
-      'SELECT * FROM expeditions WHERE kingdom_id = ?',
+      'SELECT * FROM expeditions WHERE kingdom_id = $1',
       [k.id],
     );
     let rangers = 0,
@@ -278,10 +278,10 @@ module.exports = function (db) {
       fighters += e.fighters;
     });
     await db.run(
-      'UPDATE kingdoms SET rangers = rangers + ?, fighters = fighters + ? WHERE id = ?',
+      'UPDATE kingdoms SET rangers = rangers + $1, fighters = fighters + $2 WHERE id = $3',
       [rangers, fighters, k.id],
     );
-    await db.run('DELETE FROM expeditions WHERE kingdom_id = ?', [k.id]);
+    await db.run('DELETE FROM expeditions WHERE kingdom_id = $1', [k.id]);
     res.json({ ok: true, cleared: exps.length });
   });
 

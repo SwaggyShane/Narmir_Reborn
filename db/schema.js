@@ -1,9 +1,4 @@
-// Phase D: placeholder mapping only. DDL and runtime SQL are PG-native (Phases A–C).
-function translateSqlForPg(sql) {
-  if (typeof sql !== 'string') return sql;
-  let paramIndex = 1;
-  return sql.replace(/\?/g, () => `$${paramIndex++}`);
-}
+// Phase D complete: all SQL uses native PostgreSQL $1, $2, ... placeholders.
 
 // Cache numeric field names for efficient conversion (PostgreSQL NUMERIC/INTEGER returns strings)
 // Covers all INTEGER/REAL columns across kingdoms, expeditions, heroes, resource_nodes, trade_routes,
@@ -69,6 +64,7 @@ function convertNumericFields(row) {
 const { AsyncLocalStorage } = require('async_hooks');
 const { queryTableColumns } = require('../lib/db-schema-introspection');
 const { EPOCH_NOW_TEXT } = require('../lib/db-sql');
+const { pgSetClause } = require('../lib/pg-placeholders');
 const transactionStorage = new AsyncLocalStorage();
 
 function resolveDbConnection(db) {
@@ -100,12 +96,11 @@ class PgDbAdapter {
     const isStoreActive = store && !store.released;
     const connection = isStoreActive ? store.client : this.pool;
 
-    const translatedSql = translateSqlForPg(sql);
     try {
-      const res = await connection.query(translatedSql, params || []);
+      const res = await connection.query(sql, params || []);
       return convertNumericFields(res.rows[0]);
     } catch (err) {
-      console.error("[db] PostgreSQL get failed for statement:", translatedSql, "with params:", params);
+      console.error("[db] PostgreSQL get failed for statement:", sql, "with params:", params);
       throw err;
     }
   }
@@ -115,18 +110,17 @@ class PgDbAdapter {
     const isStoreActive = store && !store.released;
     const connection = isStoreActive ? store.client : this.pool;
 
-    const translatedSql = translateSqlForPg(sql);
     try {
-      const res = await connection.query(translatedSql, params || []);
+      const res = await connection.query(sql, params || []);
       return res.rows.map(convertNumericFields);
     } catch (err) {
-      console.error("[db] PostgreSQL all failed for statement:", translatedSql, "with params:", params);
+      console.error("[db] PostgreSQL all failed for statement:", sql, "with params:", params);
       throw err;
     }
   }
 
   async run(sql, params) {
-    let translatedSql = translateSqlForPg(sql);
+    let translatedSql = sql;
     const isBegin = /^\s*BEGIN\s+TRANSACTION/i.test(translatedSql);
     const isCommit = /^\s*COMMIT/i.test(translatedSql);
     const isRollback = /^\s*ROLLBACK/i.test(translatedSql);
@@ -379,7 +373,7 @@ class PgDbAdapter {
       .map(s => s.trim())
       .filter(s => s.length > 0);
     for (const statement of statements) {
-      let translated = translateSqlForPg(statement);
+      let translated = statement;
       if (this.isPgMem && translated) {
         // pg-mem doesn't support dynamic epoch defaults inside column definitions
         translated = translated.replace(
@@ -572,9 +566,10 @@ async function repairJsonRows(db = _db) {
       }
       if (!Object.keys(updates).length) continue;
 
-      const setClause = Object.keys(updates).map(col => `"${col}" = ?`).join(', ');
+      const cols = Object.keys(updates);
+      const setClause = pgSetClause(cols);
       const values = [...Object.values(updates), row.id];
-      await db.run(`UPDATE "${table}" SET ${setClause} WHERE id = ?`, values);
+      await db.run(`UPDATE "${table}" SET ${setClause} WHERE id = $${cols.length + 1}`, values);
       fixedRows += 1;
       tableDetails.fixedRows += 1;
       fixedCells += Object.keys(updates).length;
@@ -954,7 +949,7 @@ async function initDb(options = {}) {
   async function getColumnType(table, column) {
     try {
       const result = await _db.all(
-        `SELECT data_type AS type FROM information_schema.columns WHERE table_name = ? AND column_name = ?`,
+        `SELECT data_type AS type FROM information_schema.columns WHERE table_name = $1 AND column_name = $2`,
         [table, column],
       );
       return result?.[0]?.type || null;
@@ -1266,7 +1261,7 @@ async function initDb(options = {}) {
   ];
   for (const [name, bonus] of REGION_DATA_LOCAL) {
     await _db.run(
-      'INSERT INTO regions (name, bonus_type) VALUES (?, ?) ON CONFLICT (name) DO NOTHING',
+      'INSERT INTO regions (name, bonus_type) VALUES ($1, $2) ON CONFLICT (name) DO NOTHING',
       [name, bonus],
     );
   }
@@ -1409,7 +1404,7 @@ async function initDb(options = {}) {
     };
     const existing = await _db.all('SELECT id, race FROM kingdoms');
     for (const k of existing) {
-      await _db.run('UPDATE kingdoms SET region = ? WHERE id = ?', [RACE_REGIONS[k.race] || 'The Unknown Lands', k.id]);
+      await _db.run('UPDATE kingdoms SET region = $1 WHERE id = $2', [RACE_REGIONS[k.race] || 'The Unknown Lands', k.id]);
     }
   }
   if (!kingdomsCols.includes('smithy_allocation'))          await addColumn('kingdoms', 'smithy_allocation',          "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
@@ -1471,10 +1466,10 @@ async function initDb(options = {}) {
   // Legacy data migration: if defence_upgrades exists but defense_upgrades is empty, copy it
   if (kingdomsCols.includes('defence_upgrades') && kingdomsCols.includes('defense_upgrades')) {
     const migrationName = '001_migrate_defence_to_defense_upgrades';
-    const existing = await _db.get('SELECT id FROM migrations WHERE name = ?', [migrationName]);
+    const existing = await _db.get('SELECT id FROM migrations WHERE name = $1', [migrationName]);
     if (!existing) {
       await _db.run(`UPDATE kingdoms SET defense_upgrades = defence_upgrades WHERE defense_upgrades = '{}' AND defence_upgrades != '{}'`);
-      await _db.run('INSERT INTO migrations (name) VALUES (?)', [migrationName]);
+      await _db.run('INSERT INTO migrations (name) VALUES ($1)', [migrationName]);
       console.log('[db] Migration applied:', migrationName);
     }
   }
@@ -1497,7 +1492,7 @@ async function initDb(options = {}) {
 
   // Data migration: tools_* -> *_stored
   const toolsMigrationName = '002_migrate_tools_to_stored';
-  const toolsMigrationExists = await _db.get('SELECT id FROM migrations WHERE name = ?', [toolsMigrationName]);
+  const toolsMigrationExists = await _db.get('SELECT id FROM migrations WHERE name = $1', [toolsMigrationName]);
   if (!toolsMigrationExists) {
     if (kingdomsCols.includes('tools_scaffolding') && kingdomsCols.includes('scaffolding_stored')) {
       await _db.run("UPDATE kingdoms SET scaffolding_stored = tools_scaffolding WHERE scaffolding_stored = 0 AND tools_scaffolding > 0");
@@ -1505,7 +1500,7 @@ async function initDb(options = {}) {
     if (kingdomsCols.includes('tools_hammers') && kingdomsCols.includes('hammers_stored')) {
       await _db.run("UPDATE kingdoms SET hammers_stored = tools_hammers WHERE hammers_stored = 0 AND tools_hammers > 0");
     }
-    await _db.run('INSERT INTO migrations (name) VALUES (?)', [toolsMigrationName]);
+    await _db.run('INSERT INTO migrations (name) VALUES ($1)', [toolsMigrationName]);
     console.log('[db] Migration applied:', toolsMigrationName);
   }
 
@@ -1532,7 +1527,7 @@ async function initDb(options = {}) {
     CREATE INDEX IF NOT EXISTS idx_trade_offers_sender_recent ON trade_offers(sender_id, status, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_trade_offers_receiver_recent ON trade_offers(receiver_id, status, created_at DESC);
     -- Sort-covering index for the sender-side query that lists ALL offers
-    -- (no status filter): WHERE sender_id = ? ORDER BY created_at DESC LIMIT 20
+    -- (no status filter): WHERE sender_id = $1 ORDER BY created_at DESC LIMIT 20
     -- The (sender_id, status, created_at) index above isn't sort-covering
     -- without a status equality predicate.
     CREATE INDEX IF NOT EXISTS idx_trade_offers_sender_created ON trade_offers(sender_id, created_at DESC);
@@ -1602,7 +1597,7 @@ async function initDb(options = {}) {
   ];
   for (const [id, current, base] of freshDefaultPrices) {
     await _db.run(
-      'INSERT INTO market_prices (id, current_price, base_price) VALUES (?, ?, ?) ON CONFLICT (id) DO NOTHING',
+      'INSERT INTO market_prices (id, current_price, base_price) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING',
       [id, current, base],
     );
   }
@@ -1679,7 +1674,7 @@ async function initDb(options = {}) {
   ];
   for (const [key,name,description,season,effect_type,effect_value,effect_duration,race_only,is_positive] of defaultEvents) {
     await _db.run(
-      `INSERT INTO events (key,name,description,season,effect_type,effect_value,effect_duration,race_only,is_positive) VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT (key) DO NOTHING`,
+      `INSERT INTO events (key,name,description,season,effect_type,effect_value,effect_duration,race_only,is_positive) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT (key) DO NOTHING`,
       [key, name, description, season, effect_type, effect_value, effect_duration, race_only, is_positive],
     );
   }
@@ -1714,7 +1709,7 @@ async function initDb(options = {}) {
       'a coupon for 10% off at an inn that burned down decades ago',
     ];
     for (const e of defaultRandomEvents) {
-      await _db.run("INSERT INTO random_events (content) VALUES (?)", [e]);
+      await _db.run("INSERT INTO random_events (content) VALUES ($1)", [e]);
     }
   }
 
@@ -1748,7 +1743,7 @@ async function initDb(options = {}) {
       'The citizens built a small, slightly crooked statue of you in the park.'
     ];
     for (const e of defaultTaxEvents) {
-      await _db.run("INSERT INTO tax_events (content) VALUES (?)", [e]);
+      await _db.run("INSERT INTO tax_events (content) VALUES ($1)", [e]);
     }
   }
 
@@ -1770,10 +1765,10 @@ async function initDb(options = {}) {
   {
     const LORE_SEED = require('../game/lore');
     for (const cat of Object.keys(LORE_SEED)) {
-      const hasCat = await _db.get("SELECT 1 FROM lore_entries WHERE category = ? LIMIT 1", [cat]);
+      const hasCat = await _db.get("SELECT 1 FROM lore_entries WHERE category = $1 LIMIT 1", [cat]);
       if (hasCat) continue;
       for (const item of LORE_SEED[cat]) {
-        await _db.run("INSERT INTO lore_entries (key_id, category, title, content) VALUES (?, ?, ?, ?)", [item.id, cat, item.title, item.msg]);
+        await _db.run("INSERT INTO lore_entries (key_id, category, title, content) VALUES ($1, $2, $3, $4)", [item.id, cat, item.title, item.msg]);
       }
     }
   }
@@ -1814,7 +1809,7 @@ async function initDb(options = {}) {
       { category: 'Combat', desc: 'Naval Trade Routes — ocean routes for faster gold generation but higher risk' }
     ];
     for (const w of defaultWishlist) {
-      await _db.run("INSERT INTO wishlist (category, description) VALUES (?, ?)", [w.category, w.desc]);
+      await _db.run("INSERT INTO wishlist (category, description) VALUES ($1, $2)", [w.category, w.desc]);
     }
   }
 
@@ -2161,12 +2156,13 @@ async function applyKingdomUpdates(kingdomId, updates) {
     console.warn('[applyKingdomUpdates] No valid columns to update', { kingdomId, updates, validCols: Array.from(validCols).slice(0, 10) });
     return [];
   }
-  const cols = Object.keys(safe).map(k => `"${k}" = ?`).join(', ');
+  const cols = Object.keys(safe);
+  const setClause = pgSetClause(cols);
   const vals = [...Object.values(safe), kingdomId];
   if (process.env.NODE_ENV !== 'production') {
-    console.log('[applyKingdomUpdates] Updating', { kingdomId, fields: Object.keys(safe), safe });
+    console.log('[applyKingdomUpdates] Updating', { kingdomId, fields: cols, safe });
   }
-  await _db.run(`UPDATE "kingdoms" SET ${cols} WHERE id = ?`, vals);
+  await _db.run(`UPDATE "kingdoms" SET ${setClause} WHERE id = $${cols.length + 1}`, vals);
   return Object.keys(safe);
 }
 

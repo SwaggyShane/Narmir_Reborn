@@ -15,14 +15,6 @@ assert.ok(!/\bDATETIME\b/i.test(schemaSource), 'schema.js must not use DATETIME'
 assert.ok(schemaSource.includes('SERIAL PRIMARY KEY'), 'schema uses SERIAL PRIMARY KEY');
 assert.ok(schemaSource.includes('FLOOR(EXTRACT(EPOCH FROM NOW()))'), 'schema uses PG epoch defaults');
 
-// translateSqlForPg is placeholder-only
-const fnBody = schemaSource.slice(
-  schemaSource.indexOf('function translateSqlForPg'),
-  schemaSource.indexOf('// Cache numeric field names'),
-);
-assert.ok(!fnBody.includes('unixepoch'), 'translator must not rewrite unixepoch');
-assert.ok(!fnBody.includes('AUTOINCREMENT'), 'translator must not rewrite AUTOINCREMENT');
-assert.ok(!fnBody.includes('INSERT OR'), 'translator must not rewrite upsert dialect');
-assert.ok(fnBody.includes('replace(/\\?/g'), 'translator maps ? placeholders');
+assert.ok(!schemaSource.includes('function translateSqlForPg'), 'Phase D removed translateSqlForPg');
 
 console.log('db-schema Phase C checks passed');

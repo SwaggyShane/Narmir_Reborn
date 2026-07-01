@@ -1,24 +1,19 @@
 /**
- * Phase A: runtime SQL uses PG-native dialect; translator only maps placeholders.
+ * Phase A/D: runtime SQL uses PG-native dialect; no placeholder translator.
  */
 const assert = require('assert');
-
-function translateSqlForPg(sql) {
-  let paramIndex = 1;
-  return sql.replace(/\?/g, () => `$${paramIndex++}`);
-}
+const fs = require('fs');
+const path = require('path');
 
 const { EPOCH_NOW, EPOCH_NOW_TEXT } = require('../lib/db-sql');
+const schemaSource = fs.readFileSync(path.join(__dirname, '../db/schema.js'), 'utf8');
 
 assert.match(EPOCH_NOW, /EXTRACT\(EPOCH FROM NOW\(\)\)/);
 assert.match(EPOCH_NOW_TEXT, /CAST\(/);
+assert.ok(!schemaSource.includes('function translateSqlForPg'), 'translator removed in Phase D');
 
-const regenSql = translateSqlForPg('UPDATE kingdoms SET turns_stored = LEAST(?, turns_stored + ?)');
-assert.ok(regenSql.includes('LEAST'), 'LEAST should pass through untranslated');
-assert.ok(regenSql.includes('$1') && regenSql.includes('$2'), 'placeholders mapped');
-
-const legacyMin = translateSqlForPg('UPDATE kingdoms SET turns_stored = MIN(?, turns_stored + ?)');
-assert.ok(legacyMin.includes('MIN('), 'MIN must not be auto-translated');
-assert.ok(!legacyMin.includes('LEAST'), 'MIN must not become LEAST in translator');
+const regenSql = 'UPDATE kingdoms SET turns_stored = LEAST($1, turns_stored + $2)';
+assert.ok(regenSql.includes('LEAST'), 'LEAST is PG-native');
+assert.ok(regenSql.includes('$1') && regenSql.includes('$2'), 'native placeholders');
 
 console.log('db-sql Phase A checks passed');
