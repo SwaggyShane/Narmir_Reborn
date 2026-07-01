@@ -13,7 +13,8 @@ describe('GoalsPanel', () => {
       expiresAt: Date.now() + 3600000,
       goals: [
         { id: 1, label: 'Win 5 battles', progress: 3, target: 5, prizeAmount: 100, prizeType: 'gold', claimed: false },
-        { id: 2, label: 'Build 2 farms', progress: 2, target: 2, prizeAmount: 50, prizeType: 'resources', claimed: true }
+        { id: 2, label: 'Build 2 farms', progress: 2, target: 2, prizeAmount: 50, prizeType: 'resources', claimed: true },
+        { id: 4, label: 'Scout 1 kingdom', progress: 1, target: 1, prizeAmount: 25, prizeType: 'gold', claimed: false }
       ]
     },
     weekly: {
@@ -145,7 +146,8 @@ describe('GoalsPanel', () => {
   it('should display countdown time until goals reset', async () => {
     render(<GoalsPanel />);
     await waitFor(() => {
-      expect(screen.getByText(/Resets in/i)).toBeInTheDocument();
+      // Both the daily and weekly sections render their own countdown.
+      expect(screen.getAllByText(/Resets in/i)).toHaveLength(2);
     });
   });
 
