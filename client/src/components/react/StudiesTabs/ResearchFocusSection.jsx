@@ -39,6 +39,8 @@ export const ResearchFocusSection = ({
   focus2Value,
   setFocus2Value,
   fetchStudiesData,
+  focus1SelectRef,
+  focus2SelectRef,
 }) => {
   const researchBarWidth = (value) => {
     const n = Number(value) || 0;
@@ -78,6 +80,7 @@ export const ResearchFocusSection = ({
       <div className="mb-3">
         <div className="text-xs font-semibold text-[var(--text2)] mb-1.5">Primary discipline</div>
         <select
+          ref={focus1SelectRef}
           className="input w-full mb-1.5"
           value={focus1Value}
           onChange={(e) => setFocus1Value(e.target.value)}
@@ -101,6 +104,7 @@ export const ResearchFocusSection = ({
             Secondary discipline <span className="text-[var(--gold)] text-2xs">Repository</span>
           </div>
           <select
+            ref={focus2SelectRef}
             className="input w-full mb-1.5"
             value={focus2Value}
             onChange={(e) => setFocus2Value(e.target.value)}
