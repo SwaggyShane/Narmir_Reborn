@@ -10,6 +10,16 @@
 
 ### 2026-07-01
 
+- World map Sprint 1 — resource nodes on map (PR #732, merge `88e68c63`).
+- Added `resource_nodes.map_x/map_y` with boot backfill; `/api/kingdom/world-map` returns nodes and expeditions.
+- Scout-node assigns coordinates; `WorldmapRenderer` plots nodes, expedition lanes, and layer toggles.
+- GSAP entrance/layer animations, pan/zoom viewport, empty-state scout hint when no nodes discovered.
+- Validation completed:
+  - `npm run lint` passed
+  - `npm test` passed (53 files, including `world-map-coords.test.js`)
+  - fresh PostgreSQL smoke boot passed
+  - GitHub CI green on PR #732
+
 - Retired the SQLite-to-PostgreSQL SQL compatibility layer (Phases A–D, PR #730, merge `7d820dff`).
 - **Phase A:** PG-native runtime SQL fragments (`lib/db-sql.js`); runtime queries use `LEAST`/`GREATEST`, native epoch expressions.
 - **Phase B:** Dropped PRAGMA emulation; schema introspection via `information_schema` (`lib/db-schema-introspection.js`).
