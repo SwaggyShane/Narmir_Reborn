@@ -9,7 +9,10 @@ const { Pool } = require('pg');
 
 const DEFAULT_BACKUP_DIR = path.resolve(process.cwd(), 'backups');
 const DEFAULT_RESTORE_DB = 'narmir_restore_verify';
-const POSTGRES_BIN_FALLBACK = path.join('C:', 'Program Files', 'PostgreSQL', '18', 'bin');
+const isWindows = process.platform === 'win32';
+const POSTGRES_BIN_FALLBACK = isWindows
+  ? path.join('C:', 'Program Files', 'PostgreSQL', '18', 'bin')
+  : '/usr/lib/postgresql/18/bin';
 
 function parseConnectionString(connectionString) {
   const url = new URL(connectionString);
@@ -23,10 +26,11 @@ function parseConnectionString(connectionString) {
 }
 
 function resolvePgBinary(binaryName) {
+  const exeName = isWindows ? `${binaryName}.exe` : binaryName;
   if (process.env.PG_BIN_DIR) {
-    return path.join(process.env.PG_BIN_DIR, `${binaryName}.exe`);
+    return path.join(process.env.PG_BIN_DIR, exeName);
   }
-  return path.join(POSTGRES_BIN_FALLBACK, `${binaryName}.exe`);
+  return path.join(POSTGRES_BIN_FALLBACK, exeName);
 }
 
 function runProcess(binary, args, env = process.env, stdinValue = null) {
