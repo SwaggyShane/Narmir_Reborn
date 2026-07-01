@@ -1,12 +1,33 @@
 import { REGION_META, REGION_BONUSES } from '../../utils/raceData.js';
 import { escapeHtml } from '../../utils/escapeHtml.js';
+import { NODE_TYPE_META, getNodeRadius } from '../../utils/worldMapNodeMeta.js';
 
 function regionOpacity(race, highlightedRace, dim = '0.3') {
   if (!highlightedRace) return '1';
   return race === highlightedRace ? '1' : dim;
 }
 
-export function renderWorldMap(kingdoms, routes = [], highlightedRace = null, kingdomId = null) {
+const DEFAULT_LAYERS = {
+  kingdoms: true,
+  nodes: true,
+  routes: true,
+  expeditions: true,
+};
+
+function layerVisibilityStyle(enabled) {
+  return enabled ? '' : 'opacity:0;pointer-events:none';
+}
+
+export function renderWorldMap(
+  kingdoms,
+  routes = [],
+  highlightedRace = null,
+  kingdomId = null,
+  options = {},
+) {
+  const nodes = options.nodes || [];
+  const expeditions = options.expeditions || [];
+  const layers = { ...DEFAULT_LAYERS, ...(options.layers || {}) };
   const state = {
     kingdomId,
   };
@@ -167,6 +188,8 @@ export function renderWorldMap(kingdoms, routes = [], highlightedRace = null, ki
 
 
 
+        svg += '<g class="wm-layer wm-layer-regions">';
+
         // Region fills
 
         Object.entries(REGION_META).forEach(function (e) {
@@ -225,7 +248,7 @@ export function renderWorldMap(kingdoms, routes = [], highlightedRace = null, ki
 
             meta.color +
 
-            '" stroke-width="25" stroke-linejoin="round" stroke-linecap="round" fill-opacity="0.85" class="region-shape" data-race="' +
+            '" stroke-width="25" stroke-linejoin="round" stroke-linecap="round" fill-opacity="0.85" class="region-shape wm-region" data-race="' +
 
             escapeHtml(race) +
 
@@ -291,7 +314,7 @@ export function renderWorldMap(kingdoms, routes = [], highlightedRace = null, ki
 
 
 
-          svg += '<g filter="url(#uiShadow)">';
+          svg += '<g class="wm-region-label" filter="url(#uiShadow)">';
 
           svg +=
 
@@ -332,6 +355,9 @@ export function renderWorldMap(kingdoms, routes = [], highlightedRace = null, ki
           svg += "</g>";
 
         });
+
+        svg += '</g>';
+
         // Grid lines - subtle
         for (gx = 0; gx < W; gx += 80) {
 
@@ -507,6 +533,14 @@ export function renderWorldMap(kingdoms, routes = [], highlightedRace = null, ki
 
         kingdoms.forEach(function (k, i) {
 
+          if (Number.isFinite(Number(k.map_x)) && Number.isFinite(Number(k.map_y))) {
+
+            kdCoords[k.id] = { x: Number(k.map_x), y: Number(k.map_y) };
+
+            return;
+
+          }
+
           var seeds = regionSeeds[k.race] || [];
 
           var seed = seeds[i % seeds.length] || [W / 2, H / 2];
@@ -523,7 +557,137 @@ export function renderWorldMap(kingdoms, routes = [], highlightedRace = null, ki
 
 
 
-        // Draw Trade Route Lines
+        svg += '<g class="wm-layer wm-layer-expeditions" style="' + layerVisibilityStyle(layers.expeditions !== false) + '">';
+
+        if (expeditions.length) {
+
+          var homeCoords = kdCoords[state.kingdomId];
+
+          expeditions.forEach(function (exp) {
+
+            if (!homeCoords || !Number.isFinite(Number(exp.map_x)) || !Number.isFinite(Number(exp.map_y))) return;
+
+            svg +=
+
+              '<line class="wm-expedition-line" x1="' +
+
+              homeCoords.x +
+
+              '" y1="' +
+
+              homeCoords.y +
+
+              '" x2="' +
+
+              Number(exp.map_x) +
+
+              '" y2="' +
+
+              Number(exp.map_y) +
+
+              '" stroke="#7ec8ff" stroke-width="1.5" stroke-dasharray="6 4" opacity="0.55" />';
+
+          });
+
+        }
+
+        svg += '</g>';
+
+
+
+        svg += '<g class="wm-layer wm-layer-nodes" style="' + layerVisibilityStyle(layers.nodes !== false) + '">';
+
+        if (nodes.length) {
+
+          nodes.forEach(function (node) {
+
+            if (!Number.isFinite(Number(node.map_x)) || !Number.isFinite(Number(node.map_y))) return;
+
+            var meta = NODE_TYPE_META[node.type] || NODE_TYPE_META.wood;
+
+            var nx = Number(node.map_x);
+
+            var ny = Number(node.map_y);
+
+            var nr = getNodeRadius(node.richness);
+
+            var activeExp = expeditions.some(function (exp) {
+
+              return String(exp.node_id) === String(node.id);
+
+            });
+
+            var strokeWidth = activeExp ? 2.5 : 1.5;
+
+            svg += '<g class="wm-node-group map-node-group" data-node-id="' + escapeHtml(String(node.id)) + '" transform="translate(' + nx + ',' + ny + ')">';
+
+            svg +=
+
+              '<circle class="wm-node-halo" cx="0" cy="0" r="' +
+
+              (nr + 3) +
+
+              '" fill="' +
+
+              meta.fill +
+
+              '" opacity="0.18"/>';
+
+            svg +=
+
+              '<circle class="wm-node map-node" cx="0" cy="0" r="' +
+
+              nr +
+
+              '" fill="' +
+
+              meta.fill +
+
+              '" stroke="' +
+
+              meta.stroke +
+
+              '" stroke-width="' +
+
+              strokeWidth +
+
+              '" data-base-stroke="' +
+
+              strokeWidth +
+
+              '" data-node-id="' +
+
+              escapeHtml(String(node.id)) +
+
+              '" data-node-type="' +
+
+              escapeHtml(String(node.type || '')) +
+
+              '" style="cursor:pointer" filter="' +
+
+              (activeExp ? 'url(#glow)' : 'url(#uiShadow)') +
+
+              '"/>';
+
+            svg +=
+
+              '<text class="wm-node-icon" x="0" y="4" text-anchor="middle" font-size="9" pointer-events="none">' +
+
+              escapeHtml(meta.icon) +
+
+              '</text>';
+
+            svg += '</g>';
+
+          });
+
+        }
+
+        svg += '</g>';
+
+
+
+        svg += '<g class="wm-layer wm-layer-routes" style="' + layerVisibilityStyle(layers.routes !== false) + '">';
 
         routes.forEach(function (r) {
 
@@ -535,7 +699,7 @@ export function renderWorldMap(kingdoms, routes = [], highlightedRace = null, ki
 
             svg +=
 
-              '<line x1="' +
+              '<line class="wm-trade-line" x1="' +
 
               p1.x +
 
@@ -551,17 +715,17 @@ export function renderWorldMap(kingdoms, routes = [], highlightedRace = null, ki
 
               p2.y +
 
-              '" stroke="var(--gold)" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.4">' +
-
-              '<animate attributeName="stroke-dashoffset" from="16" to="0" dur="2s" repeatCount="indefinite" />' +
-
-              "</line>";
+              '" stroke="var(--gold)" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.4" />';
 
           }
 
         });
 
+        svg += '</g>';
 
+
+
+        svg += '<g class="wm-layer wm-layer-kingdoms" style="' + layerVisibilityStyle(layers.kingdoms !== false) + '">';
 
         var sortedKingdoms = kingdoms.slice().sort(function (a, b) {
 
@@ -615,7 +779,7 @@ export function renderWorldMap(kingdoms, routes = [], highlightedRace = null, ki
 
             svg +=
 
-              '<circle cx="' +
+              '<circle class="wm-kingdom-ring" cx="' +
 
               jx +
 
@@ -623,11 +787,7 @@ export function renderWorldMap(kingdoms, routes = [], highlightedRace = null, ki
 
               jy +
 
-              '" r="15" fill="none" stroke="#e8b84b" stroke-width="1.5"><animate attributeName="r" values="' +
-
-              r +
-
-              ';24" dur="2s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.8;0" dur="2s" repeatCount="indefinite"/></circle>';
+              '" r="10" fill="none" stroke="#e8b84b" stroke-width="1.5" opacity="0.55" />';
 
           }
 
@@ -659,7 +819,7 @@ export function renderWorldMap(kingdoms, routes = [], highlightedRace = null, ki
 
             (isMe ? 2 : 1) +
 
-            '" class="kd-dot" data-race="' +
+            '" class="kd-dot wm-kingdom" data-race="' +
 
             k.race +
 
@@ -677,7 +837,7 @@ export function renderWorldMap(kingdoms, routes = [], highlightedRace = null, ki
 
             svg +=
 
-              '<text x="' +
+              '<text class="wm-kingdom-label" x="' +
 
               jx +
 
@@ -706,6 +866,8 @@ export function renderWorldMap(kingdoms, routes = [], highlightedRace = null, ki
           }
 
         });
+
+        svg += '</g>';
 
 
 

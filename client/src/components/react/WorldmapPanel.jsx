@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { apiCall } from '../../utils/api';
 import { setWorldMapData } from '../../utils/worldMapData.js';
 import { renderWorldMap } from './WorldmapRenderer.jsx';
@@ -7,6 +7,7 @@ import { fmtShort } from '../../utils/numberFormat.js';
 import { repairMojibake } from '../../utils/repairMojibake.js';
 import { RACE_ICONS } from '../../utils/raceIcons.js';
 import { REGION_META, REGION_BONUSES } from '../../utils/raceData.js';
+import { NODE_TYPE_META, formatNodeDistance } from '../../utils/worldMapNodeMeta.js';
 import { openKingdomProfile } from './KingdomProfileModal.jsx';
 import { targetFromRankings } from '../../utils/rankingsTarget.js';
 import { toast } from '../../utils/toast.js';
@@ -14,10 +15,23 @@ import { showMapKingdomCard } from './MapKingdomCard.jsx';
 import { AppEvent } from '../../utils/appEvents.js';
 import { useAppEvent } from '../../hooks/useAppEvent.js';
 import { useKingdomId, useMarketUpgrades } from '../../stores';
+import { switchTab } from '../../utils/panelNav.js';
+import {
+  animateMapPanelCard,
+  animateWorldMap,
+} from '../../utils/worldMapGsap.js';
+import { useWorldMapViewport } from '../../hooks/useWorldMapViewport.js';
 
 const MAP_REGIONS = Object.keys(REGION_META);
 
-export async function loadWorldMap({ setLoading, setError, setKingdoms, setTradeRoutes } = {}) {
+const DEFAULT_LAYERS = {
+  kingdoms: true,
+  nodes: true,
+  routes: true,
+  expeditions: true,
+};
+
+export async function loadWorldMap({ setLoading, setError, setKingdoms, setTradeRoutes, setNodes, setExpeditions } = {}) {
   if (typeof setLoading === 'function') setLoading(true);
   if (typeof setError === 'function') setError('');
   try {
@@ -26,8 +40,12 @@ export async function loadWorldMap({ setLoading, setError, setKingdoms, setTrade
 
     const kingdoms = data.kingdoms || (Array.isArray(data) ? data : []);
     const tradeRoutes = data.tradeRoutes || [];
+    const nodes = data.nodes || [];
+    const expeditions = data.expeditions || [];
     if (typeof setKingdoms === 'function') setKingdoms(kingdoms);
     if (typeof setTradeRoutes === 'function') setTradeRoutes(tradeRoutes);
+    if (typeof setNodes === 'function') setNodes(nodes);
+    if (typeof setExpeditions === 'function') setExpeditions(expeditions);
   } catch (err) {
     console.error('World map fail:', err);
     if (typeof setError === 'function') setError(err.message || 'Failed to load world map');
@@ -96,23 +114,106 @@ function RegionLegend({ kingdoms, highlightedRace, onHighlight }) {
   );
 }
 
+function MapLayerToggles({ layers, onToggle }) {
+  const items = [
+    { key: 'kingdoms', label: 'Kingdoms', icon: '🏰' },
+    { key: 'nodes', label: 'Resource Nodes', icon: '⛏️' },
+    { key: 'routes', label: 'Trade Routes', icon: '🤝' },
+    { key: 'expeditions', label: 'Expeditions', icon: '🧭' },
+  ];
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {items.map((item) => {
+        const active = layers[item.key];
+        return (
+          <button
+            key={item.key}
+            type="button"
+            onClick={() => onToggle(item.key)}
+            className={clsx(
+              'base-btn px-2 py-1 text-[10px]',
+              active ? 'opacity-100' : 'opacity-50',
+            )}
+          >
+            {item.icon} {item.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 const WorldmapPanel = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [kingdoms, setKingdoms] = useState([]);
   const [tradeRoutes, setTradeRoutes] = useState([]);
+  const [nodes, setNodes] = useState([]);
+  const [expeditions, setExpeditions] = useState([]);
   const [highlightedRace, setHighlightedRace] = useState(null);
   const [mapCard, setMapCard] = useState(null);
+  const [selectedNode, setSelectedNode] = useState(null);
+  const [layers, setLayers] = useState(DEFAULT_LAYERS);
   const currentKingdomId = useKingdomId();
   const marketUpgrades = useMarketUpgrades();
+  const mapContainerRef = useRef(null);
+  const mapAnimatedKeyRef = useRef('');
+  const nodeCardRef = useRef(null);
+  const kingdomCardRef = useRef(null);
 
   const mapSvg = useMemo(() => {
-    if (!kingdoms.length) return '';
-    return renderWorldMap(kingdoms, tradeRoutes, highlightedRace, currentKingdomId);
-  }, [kingdoms, tradeRoutes, highlightedRace, currentKingdomId]);
+    if (!kingdoms.length && !nodes.length) return '';
+    return renderWorldMap(kingdoms, tradeRoutes, highlightedRace, currentKingdomId, {
+      nodes,
+      expeditions,
+      layers,
+    });
+  }, [kingdoms, tradeRoutes, highlightedRace, currentKingdomId, nodes, expeditions, layers]);
+
+  const mapDataKey = useMemo(
+    () => `${kingdoms.length}:${nodes.length}:${expeditions.length}:${highlightedRace}:${currentKingdomId}`,
+    [kingdoms.length, nodes.length, expeditions.length, highlightedRace, currentKingdomId],
+  );
+
+  const {
+    viewportRef,
+    stageRef,
+    zoomLabel,
+    resetViewport,
+    zoomIn,
+    zoomOut,
+    shouldSuppressClick,
+  } = useWorldMapViewport({ resetKey: mapDataKey, enabled: Boolean(mapSvg && !loading && !error) });
+
+  useLayoutEffect(() => {
+    if (!mapContainerRef.current || !mapSvg) return undefined;
+    const entrance = mapAnimatedKeyRef.current !== mapDataKey;
+    mapAnimatedKeyRef.current = mapDataKey;
+    return animateWorldMap(mapContainerRef.current, {
+      layers,
+      selectedNodeId: selectedNode?.id ?? null,
+      entrance,
+    });
+  }, [mapSvg, mapDataKey, layers, selectedNode?.id]);
+
+  useLayoutEffect(() => {
+    return animateMapPanelCard(nodeCardRef.current, { visible: Boolean(selectedNode) });
+  }, [selectedNode]);
+
+  useLayoutEffect(() => {
+    return animateMapPanelCard(kingdomCardRef.current, { visible: Boolean(mapCard) });
+  }, [mapCard]);
 
   const refreshWorldMap = useCallback(
-    () => loadWorldMap({ setLoading, setError, setKingdoms, setTradeRoutes }),
+    () => loadWorldMap({
+      setLoading,
+      setError,
+      setKingdoms,
+      setTradeRoutes,
+      setNodes,
+      setExpeditions,
+    }),
     [],
   );
 
@@ -133,22 +234,46 @@ const WorldmapPanel = () => {
   useAppEvent(AppEvent.WORLDMAP_REFRESH, onWorldMapRefresh);
   useAppEvent(AppEvent.MAP_KINGDOM_CARD, setMapCard);
 
+  const toggleLayer = useCallback((key) => {
+    setLayers((prev) => ({ ...prev, [key]: !prev[key] }));
+  }, []);
+
   const handleMapClick = useCallback((event) => {
+    if (shouldSuppressClick()) return;
+
+    const nodeDot = event.target.closest?.('.map-node, .wm-node-group');
+    const nodeId = nodeDot?.getAttribute('data-node-id');
+    if (nodeId) {
+      const node = nodes.find((entry) => String(entry.id) === String(nodeId));
+      if (node) {
+        setSelectedNode(node);
+        setMapCard(null);
+      }
+      return;
+    }
+
     const dot = event.target.closest?.('.kd-dot');
     const targetKingdomId = dot?.getAttribute('data-kingdom-id');
     if (targetKingdomId) {
+      setSelectedNode(null);
       showMapKingdomCard(targetKingdomId, currentKingdomId, marketUpgrades);
     }
-  }, [currentKingdomId, marketUpgrades]);
+  }, [currentKingdomId, marketUpgrades, nodes, shouldSuppressClick]);
+
+  const activeExpedition = selectedNode
+    ? expeditions.find((exp) => String(exp.node_id) === String(selectedNode.id))
+    : null;
+
+  const nodeMeta = selectedNode ? (NODE_TYPE_META[selectedNode.type] || NODE_TYPE_META.wood) : null;
 
   return (
     <div id="worldmap" className="panel">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-4">
-        <div className="card flex items-center justify-between gap-3">
+        <div className="card flex items-center justify-between gap-3 flex-wrap">
           <div>
             <div className="card-title !mb-1">🗺️ World of Narmir</div>
             <div className="text-xs text-[var(--text3)]">
-              Six ancient regions, each shaped by the race that claims it.
+              Six ancient regions — drag to pan, scroll to zoom, click sites for details.
             </div>
           </div>
           <button className="base-btn px-3 py-1 text-[11px]" onClick={refreshWorldMap}>
@@ -158,6 +283,9 @@ const WorldmapPanel = () => {
 
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
           <div className="card xl:min-h-[620px] p-2">
+            <div className="mb-2 px-1">
+              <MapLayerToggles layers={layers} onToggle={toggleLayer} />
+            </div>
             {loading ? (
               <div className="grid place-items-center py-12 text-[13px] text-[var(--text3)]">
                 Loading map...
@@ -172,11 +300,48 @@ const WorldmapPanel = () => {
             ) : null}
             {!loading && !error && mapSvg && (
               <div
-                id="world-map-container"
-                className="w-full overflow-hidden"
+                ref={viewportRef}
+                id="world-map-viewport"
+                className="relative min-h-[520px] overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)] bg-[#040710] touch-none cursor-grab"
                 onClick={handleMapClick}
-                dangerouslySetInnerHTML={{ __html: mapSvg }}
-              />
+              >
+                <div
+                  ref={stageRef}
+                  id="world-map-stage"
+                  className="wm-map-stage w-full will-change-transform"
+                >
+                  <div
+                    ref={mapContainerRef}
+                    id="world-map-container"
+                    className="w-full"
+                    dangerouslySetInnerHTML={{ __html: mapSvg }}
+                  />
+                </div>
+                <div className="pointer-events-none absolute left-2 top-2 rounded bg-black/45 px-2 py-1 text-[10px] text-[var(--text3)]">
+                  Drag to pan | Scroll to zoom
+                </div>
+                {layers.nodes && nodes.length === 0 && (
+                  <div className="pointer-events-none absolute inset-x-0 bottom-14 flex justify-center px-4">
+                    <div className="max-w-md rounded-lg border border-[var(--border)] bg-black/70 px-4 py-3 text-center text-[11px] text-[var(--text3)] backdrop-blur-sm">
+                      No resource nodes on the map yet. Scout sites in{' '}
+                      <button
+                        type="button"
+                        className="pointer-events-auto text-[var(--gold)] underline hover:opacity-90"
+                        onClick={(e) => { e.stopPropagation(); switchTab('resources'); }}
+                      >
+                        Resources
+                      </button>
+                      {' '}(Scout Node, 500 gold) to plot them here.
+                    </div>
+                  </div>
+                )}
+                <div className="absolute bottom-2 right-2 flex items-center gap-1">
+                  <span className="rounded bg-black/45 px-2 py-1 text-[10px] text-[var(--text3)]">{zoomLabel}</span>
+                  <button type="button" className="base-btn px-2 py-1 text-[11px]" onClick={(e) => { e.stopPropagation(); zoomOut(); }} aria-label="Zoom out">−</button>
+                  <button type="button" className="base-btn px-2 py-1 text-[11px]" onClick={(e) => { e.stopPropagation(); zoomIn(); }} aria-label="Zoom in">+</button>
+                  <button type="button" className="base-btn px-2 py-1 text-[11px]" onClick={(e) => { e.stopPropagation(); resetViewport(true); }} aria-label="Reset map view">⌂</button>
+                </div>
+              </div>
             )}
           </div>
 
@@ -189,8 +354,35 @@ const WorldmapPanel = () => {
                 onHighlight={setHighlightedRace}
               />
             </div>
+
+            {selectedNode && nodeMeta && (
+              <div ref={nodeCardRef} className="card">
+                <div className="card-title !mb-2">
+                  {nodeMeta.icon} {repairMojibake(selectedNode.name || 'Resource Node')}
+                </div>
+                <div className="text-[12px] text-[var(--text3)] mb-2">
+                  {nodeMeta.label} node | Richness {selectedNode.richness || 1} | {formatNodeDistance(selectedNode.distance)}
+                </div>
+                {activeExpedition ? (
+                  <div className="text-[11px] text-[var(--accent1)] mb-3">
+                    Active expedition: {activeExpedition.status} ({Number(activeExpedition.population_sent || 0).toLocaleString()} civilians)
+                  </div>
+                ) : (
+                  <div className="text-[11px] text-[var(--text3)] mb-3">No active expedition to this site.</div>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  <button className="btn text-[11px] px-2 py-1" onClick={() => switchTab('resources')}>
+                    ⛏️ Manage in Resources
+                  </button>
+                  <button className="base-btn text-[11px] px-2 py-1" onClick={() => setSelectedNode(null)}>
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
+
             {mapCard && (
-              <div className="card">
+              <div ref={kingdomCardRef} className="card">
                 <div className="card-title !mb-2">
                   {RACE_ICONS[mapCard.kingdom.race] || '🤴'} {repairMojibake(mapCard.kingdom.name || '')}
                   {mapCard.kingdom.is_ai && <span className="text-[10px] text-[var(--text3)]"> AI</span>}

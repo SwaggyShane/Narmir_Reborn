@@ -18,6 +18,7 @@ const { setUnreadCount } = require("../cache.js");
 const { decorateNewsMessage } = require("../game/news-emoji");
 const { EPOCH_NOW } = require("../lib/db-sql");
 const { pgInList, pgValueTuples } = require("../lib/pg-placeholders");
+const { getKingdomMapCoords, placeResourceNodeCoords } = require("../game/world-map-coords");
 
 const router = express.Router();
 
@@ -1954,12 +1955,33 @@ module.exports = function (db) {
         (r) => r.id === k.id || (discovered[r.id] && discovered[r.id].found),
       );
 
+      const kingdomsWithCoords = filtered.map((row) => {
+        const coords = getKingdomMapCoords(row);
+        return { ...row, map_x: coords.map_x, map_y: coords.map_y };
+      });
+
       const tradeRoutes = await db.all(
         "SELECT * FROM trade_routes WHERE kingdom_id = $1 OR partner_id = $2",
         [k.id, k.id],
       );
 
-      res.json({ kingdoms: filtered, tradeRoutes });
+      const nodes = await db.all(
+        `SELECT id, kingdom_id, name, type, distance, richness, map_x, map_y
+         FROM resource_nodes WHERE kingdom_id = $1 ORDER BY discovered_at DESC`,
+        [k.id],
+      );
+
+      const expeditions = await db.all(
+        `SELECT re.id, re.node_id, re.status, re.population_sent, re.depart_at, re.arrive_at, re.return_at,
+                rn.name AS node_name, rn.type AS node_type, rn.map_x, rn.map_y
+         FROM resource_expeditions re
+         JOIN resource_nodes rn ON re.node_id = rn.id
+         WHERE re.kingdom_id = $1 AND re.status NOT IN ('completed', 'intercepted')
+         ORDER BY re.depart_at DESC`,
+        [k.id],
+      );
+
+      res.json({ kingdoms: kingdomsWithCoords, tradeRoutes, nodes, expeditions });
     } catch {
       // region column may not exist yet â€” fallback query
       try {
@@ -1983,6 +2005,11 @@ module.exports = function (db) {
             (r.id === k.id || (discovered[r.id] && discovered[r.id].found)),
         );
 
+        const kingdomsWithCoords = filtered.map((row) => {
+          const coords = getKingdomMapCoords(row);
+          return { ...row, map_x: coords.map_x, map_y: coords.map_y };
+        });
+
         const tradeRoutes = k
           ? await db.all(
               "SELECT * FROM trade_routes WHERE kingdom_id = $1 OR partner_id = $2",
@@ -1990,7 +2017,27 @@ module.exports = function (db) {
             )
           : [];
 
-        res.json({ kingdoms: filtered, tradeRoutes });
+        const nodes = k
+          ? await db.all(
+              `SELECT id, kingdom_id, name, type, distance, richness, map_x, map_y
+               FROM resource_nodes WHERE kingdom_id = $1 ORDER BY discovered_at DESC`,
+              [k.id],
+            )
+          : [];
+
+        const expeditions = k
+          ? await db.all(
+              `SELECT re.id, re.node_id, re.status, re.population_sent, re.depart_at, re.arrive_at, re.return_at,
+                      rn.name AS node_name, rn.type AS node_type, rn.map_x, rn.map_y
+               FROM resource_expeditions re
+               JOIN resource_nodes rn ON re.node_id = rn.id
+               WHERE re.kingdom_id = $1 AND re.status NOT IN ('completed', 'intercepted')
+               ORDER BY re.depart_at DESC`,
+              [k.id],
+            )
+          : [];
+
+        res.json({ kingdoms: kingdomsWithCoords, tradeRoutes, nodes, expeditions });
       } catch (err2) {
         console.error("[world-map]", err2.message);
         res.status(500).json({ error: "Failed to load map data" });
@@ -2203,7 +2250,7 @@ module.exports = function (db) {
   // POST /scout-node â€” pay 500 gold, generate a random resource node
   router.post('/scout-node', requireAuth, requireCsrfToken, async (req, res) => {
     try {
-      const k = await db.get('SELECT id, gold FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
+      const k = await db.get('SELECT id, gold, race FROM kingdoms WHERE player_id = $1', [req.player.playerId]);
       if (!k) return res.status(404).json({ error: 'Kingdom not found' });
       if (k.gold < 500) return res.status(400).json({ error: 'Need 500 gold to scout a node.' });
 
@@ -2244,15 +2291,47 @@ module.exports = function (db) {
           'INSERT INTO resource_nodes (kingdom_id, name, type, distance, richness) VALUES ($1, $2, $3, $4, $5)',
           [k.id, name, nodeType, distance, richness]
         );
+        const home = getKingdomMapCoords({ id: k.id, race: k.race });
+        const nodeCoords = placeResourceNodeCoords({
+          kingdomId: k.id,
+          nodeId: result.lastID,
+          race: k.race,
+          distance,
+          kingdomX: home.map_x,
+          kingdomY: home.map_y,
+        });
+        await db.run(
+          'UPDATE resource_nodes SET map_x = $1, map_y = $2 WHERE id = $3',
+          [nodeCoords.map_x, nodeCoords.map_y, result.lastID],
+        );
         await db.run("COMMIT");
       } catch (txErr) {
         await db.run("ROLLBACK");
         throw txErr;
       }
 
+      const home = getKingdomMapCoords({ id: k.id, race: k.race });
+      const placed = placeResourceNodeCoords({
+        kingdomId: k.id,
+        nodeId: result.lastID,
+        race: k.race,
+        distance,
+        kingdomX: home.map_x,
+        kingdomY: home.map_y,
+      });
       res.json({
         ok: true,
-        node: { id: result.lastID, kingdom_id: k.id, name, type: nodeType, distance, richness, discovered_at: Math.floor(Date.now() / 1000) }
+        node: {
+          id: result.lastID,
+          kingdom_id: k.id,
+          name,
+          type: nodeType,
+          distance,
+          richness,
+          map_x: placed.map_x,
+          map_y: placed.map_y,
+          discovered_at: Math.floor(Date.now() / 1000),
+        },
       });
     } catch (e) {
       console.error('[scout-node] POST:', e.message);

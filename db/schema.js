@@ -1881,6 +1881,10 @@ async function initDb(options = {}) {
   `);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_resource_nodes_kingdom ON resource_nodes(kingdom_id)`);
 
+  const resourceNodeCols = await getTableColumns('resource_nodes');
+  if (!resourceNodeCols.includes('map_x')) await addColumn('resource_nodes', 'map_x', 'INTEGER', resourceNodeCols);
+  if (!resourceNodeCols.includes('map_y')) await addColumn('resource_nodes', 'map_y', 'INTEGER', resourceNodeCols);
+
   // Admin goal definitions table (overrides defaults from game/goals.js)
   await _db.run(`
     CREATE TABLE IF NOT EXISTS admin_goal_definitions (
@@ -2126,6 +2130,16 @@ async function initDb(options = {}) {
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_audit_schedules_enabled ON audit_schedules(is_enabled, next_run_at)`);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_audit_history_schedule ON audit_history(schedule_id, run_at DESC)`);
   await _db.run(`CREATE INDEX IF NOT EXISTS idx_audit_history_status ON audit_history(status, created_at DESC)`);
+
+  try {
+    const { backfillResourceNodeMapCoords } = require('../game/world-map-coords');
+    const backfilledNodes = await backfillResourceNodeMapCoords(_db);
+    if (backfilledNodes > 0) {
+      console.log(`[db] Backfilled map coordinates for ${backfilledNodes} resource node(s)`);
+    }
+  } catch (err) {
+    console.error('[db] Resource node map backfill failed:', err.message);
+  }
 
   try {
     const { seedForumStructure } = require('../lib/forum-seed');
