@@ -34,7 +34,7 @@ async function applyUpdates(db, kingdomId, updates) {
     updatesForDb.library_allocation = JSON.stringify(updatesForDb.library_allocation);
   }
 
-  await applyKingdomUpdates(db, kingdomId, updatesForDb);
+  await applyKingdomUpdates(kingdomId, updatesForDb);
 }
 
 // Mojibake repair for malformed unicode in old data

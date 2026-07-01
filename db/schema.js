@@ -657,6 +657,7 @@ async function initDb(options = {}) {
       console.log(`[db] Pool stats — Total: ${pool.totalCount}, Available: ${available}, Waiting: ${pool.waitingCount}`);
     }
   }, 60000);
+  if (poolStatsInterval.unref) poolStatsInterval.unref();
 
   // Ensure interval is cleared on shutdown to prevent dangling timers
   process.on('SIGTERM', () => clearInterval(poolStatsInterval));
