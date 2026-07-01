@@ -393,7 +393,10 @@ function processTurn(k, db = null) {
   // ── 1. Gold income ───────────────────────────────────────────────────────────
   const income = goldPerTurn(k);
   const tradeIncome = calculateTradeIncome(k);
-  updates.gold = k.gold + income + tradeIncome;
+  // Respect gold already set by rebellionCheck (e.g. Treasury Looting) instead of
+  // recomputing from the pre-turn k.gold snapshot and discarding it.
+  const goldBase = updates.gold !== undefined ? updates.gold : k.gold;
+  updates.gold = goldBase + income + tradeIncome;
 
   let incomeMsg = `🪙 Turn ${updates.turn}: +${income.toLocaleString()} gold earned.`;
   if (tradeIncome > 0) {
@@ -417,7 +420,10 @@ function processTurn(k, db = null) {
 
   // ── 3. Population growth ─────────────────────────────────────────────────────
   const growth = popGrowth(k);
-  updates.population = Math.max(0, k.population + growth);
+  // Respect population already set by rebellionCheck (e.g. Unrest) instead of
+  // recomputing from the pre-turn k.population snapshot and discarding it.
+  const populationBase = updates.population !== undefined ? updates.population : k.population;
+  updates.population = Math.max(0, populationBase + growth);
   if (growth > 0) {
     events.push({
       type: "system",

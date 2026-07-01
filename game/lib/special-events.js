@@ -25,7 +25,7 @@ function rebellionCheck(k, happiness, updates, events) {
 }
 
 function rebellionEvent(k, updates, events) {
-  const eventType = Math.floor(Math.random() * 5) + 1; // 1-5
+  const eventType = Math.floor(Math.random() * 6) + 1; // 1-6
 
   updates.rebellion_cooldown = k.turn + 20;
 
@@ -117,6 +117,16 @@ function rebellionEvent(k, updates, events) {
           }
         }
         newsMessage = `⚠️ MILITARY MUTINY: Troops are refusing orders due to low happiness! ${totalLost} units deserted.`;
+      }
+      break;
+
+    case 6: // Treasury Looting
+      {
+        const lossPercent = 0.05 + Math.random() * 0.1; // 5-15%
+        const currentGold = updates.gold ?? k.gold ?? 0;
+        const goldLoss = Math.floor(currentGold * lossPercent);
+        updates.gold = Math.max(0, currentGold - goldLoss);
+        newsMessage = `⚠️ TREASURY LOOTED: Rioters raided the treasury! Lost ${goldLoss.toLocaleString()} gold.`;
       }
       break;
   }
