@@ -20,6 +20,34 @@
   - fresh PostgreSQL smoke boot passed
   - GitHub CI green on PR #732
 
+- Completed the roadmap validation lane and retired `ROADMAP.md`.
+- Verified live Railway production secrets exist, production boot succeeds, and no secret-startup block remains.
+- Verified live domain enforcement:
+  - `http://narmirreborn.com` redirects to `https://narmirreborn.com`
+  - HTTPS responds successfully
+  - HSTS is present
+- Completed authenticated load-test validation on local PostgreSQL with a real 5,000-player pool:
+  - added `scripts/setup-load-test-accounts.js`
+  - corrected Artillery endpoints to `/api/kingdom/turn`, `/api/kingdom/expedition/list`, and `/api/kingdom/rankings`
+  - completed full rerun (`roadmap-load-test-report.json`) and focused follow-up sample (`roadmap-load-test-sample-report.json`)
+  - documented the current result in `LOAD_TEST_REPORT.md`: local single-node saturation is the limiting factor; expedition list degrades earlier than turn processing under pressure
+- Completed restore verification against a real local backup artifact:
+  - added `scripts/verify-backup-restore.js`
+  - restored into an isolated scratch schema because the local app role cannot create databases
+  - matched counts exactly for `players`, `kingdoms`, `expeditions`, and `resource_expeditions`
+- Completed header-auth CSRF cleanup:
+  - bearer-token requests now bypass cookie-CSRF enforcement only when no auth cookie is present
+  - added `test/middleware-csrf.test.js`
+- Completed `StudiesPanel` cleanup: removed duplicate mutation subscription, collapsed school-form state, rendered tabs from config, and added focused Vitest coverage.
+- Continued static inline-style consolidation in `EconomyPanel` commodity/trade sections using shared Tailwind class constants while keeping dynamic color logic inline.
+- Reduced additional static inline styling in studies-tab helpers and `MarketPanel`, leaving only runtime width/color/display cases inline in those touched areas.
+- Validation completed:
+  - `npm run lint` passed
+  - `npm test -- --runInBand` passed
+  - `node test/middleware-csrf.test.js` passed
+  - `npx vitest run client/src/components/react/__tests__/StudiesPanel.test.jsx` passed
+  - `npx vitest run client/src/components/react/__tests__/ResearchFocusSection.test.jsx client/src/components/react/__tests__/StudiesPanel.test.jsx` passed
+
 - Retired the SQLite-to-PostgreSQL SQL compatibility layer (Phases A–D, PR #730, merge `7d820dff`).
 - **Phase A:** PG-native runtime SQL fragments (`lib/db-sql.js`); runtime queries use `LEAST`/`GREATEST`, native epoch expressions.
 - **Phase B:** Dropped PRAGMA emulation; schema introspection via `information_schema` (`lib/db-schema-introspection.js`).

@@ -43,6 +43,24 @@ const MERC_COST = { rabble: 50, sellsword: 125, veteran: 250, elite: 500 };
 const MERC_TURNS = { rabble: 10, sellsword: 25, veteran: 35, elite: 50 };
 
 const COMMODITY_ITEMS = ['food', 'weapons', 'armor', 'mana', 'maps', 'blueprints', 'war_machines', 'ballistae', 'land'];
+const COMMODITY_GRID_CLASS = 'grid grid-cols-[1fr_60px_60px] gap-1';
+const COMMODITY_HEADER_CELL_CLASS = 'text-[10px] uppercase text-[var(--text3)]';
+const COMMODITY_VALUE_CLASS = 'text-right text-[13px]';
+const TRADE_LABEL_CLASS = 'mb-1 text-[11px] text-[var(--text3)]';
+const TRADE_TWO_COL_CLASS = 'mb-2.5 grid grid-cols-2 gap-3';
+const TRADE_INPUT_ROW_CLASS = 'flex items-center gap-1';
+const TRADE_MAX_BUTTON_CLASS = 'base-btn px-1.5 py-[3px] text-[10px]';
+const TRADE_STATUS_HEADING_CLASS = 'mb-1.5 text-[12px] font-bold text-[var(--text2)]';
+const TRADE_CARD_CLASS = 'mb-2 rounded-[var(--radius)] bg-[var(--bg3)] p-2.5';
+const TRADE_ACTION_ROW_CLASS = 'mt-1.5 flex gap-1.5';
+const TRADE_ACTION_BUTTON_CLASS = 'px-2.5 py-[3px] text-[11px]';
+const TWO_COL_PANEL_CLASS = 'mb-4 grid grid-cols-2 gap-3';
+const PANEL_COPY_CLASS = 'mb-3.5 text-[12px] text-[var(--text3)]';
+const INPUT_ROW_CLASS = 'flex items-center gap-1';
+const MAX_BUTTON_CLASS = 'base-btn px-1.5 py-[3px] text-[10px]';
+const PRIMARY_GOLD_BUTTON_CLASS = 'base-btn variant-gold text-black bg-[var(--gold)]';
+const RELAXED_COPY_CLASS = 'text-[12px] leading-[1.9] text-[var(--text3)]';
+const BANK_LOCKED_PANEL_CLASS = 'rounded-[8px] bg-[var(--bg2)] p-6 text-center text-[var(--text2)]';
 
 const EconomyPanel = () => {
   const [activeTab, setActiveTab] = useState('farms');
@@ -437,21 +455,21 @@ const EconomyPanel = () => {
         </div>
         <div className="card">
           <div className="card-title !mb-2">Food rules</div>
-          <div className="text-[12px] text-[var(--text3)]" style={{ lineHeight: 1.9 }}>
-            Each farm needs <strong style={{ color: 'var(--text)' }}>{wpf}</strong> free population to work it. Unworked farms produce nothing.<br />
-            Shortage grace: <strong style={{ color: 'var(--amber)' }}>2 turns</strong> → happiness penalty → population flight → desertion.
+          <div className={RELAXED_COPY_CLASS}>
+            Each farm needs <strong className="text-[var(--text)]">{wpf}</strong> free population to work it. Unworked farms produce nothing.<br />
+            Shortage grace: <strong className="text-[var(--amber)]">2 turns</strong> → happiness penalty → population flight → desertion.
           </div>
         </div>
       </div>
 
       {/* GRANARY TAB */}
       <div className={clsx(activeTab === 'granary' ? 'block' : 'hidden')}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+        <div className={TWO_COL_PANEL_CLASS}>
           <div className="card m-0">
             <div className="card-title !mb-2.5">Storage overview</div>
             <div className="trow"><span className="name">Food stored</span><span className="count">{fmt(food || 0)} bushels</span></div>
             <div className="trow"><span className="name">Max storage</span><span className="count">{fmt(econData?.maxFoodStorage || 0)} bushels</span></div>
-            <div className="trow" style={{ borderTop: '1px solid var(--border2)' }}>
+            <div className="trow border-t border-[var(--border2)]">
               <span className="name">Spoilage / turn</span>
               <span className="count" style={{ color: 'var(--red)' }}>
                 {fmt(econData?.foodSpoilageAmount || 0)} ({((econData?.foodSpoilageRate || 0) * 100).toFixed(1)}%)
@@ -475,7 +493,7 @@ const EconomyPanel = () => {
         </div>
         <div className="card">
           <div className="card-title !mb-2">Storage rules</div>
-          <div style={{ fontSize: '12px', color: 'var(--text3)', lineHeight: 1.9 }}>
+          <div className={RELAXED_COPY_CLASS}>
             Food cannot be stored indefinitely and decays every turn based on the
             current spoilage rate. Upgrades can lower this rate and improve the
             base amount of food you can securely store per granary. Baseline
@@ -486,7 +504,7 @@ const EconomyPanel = () => {
 
       {/* MARKETS TAB */}
       <div className={clsx(activeTab === 'markets' ? 'block' : 'hidden')}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+        <div className={TWO_COL_PANEL_CLASS}>
           <div className="card m-0">
             <div className="card-title !mb-2.5">Market overview</div>
             <div className="trow"><span className="name">Markets</span><span className="count">{fmt(bldMarkets || 0)}</span></div>
@@ -517,20 +535,20 @@ const EconomyPanel = () => {
           <div className="text-[12px] text-[var(--text3)] mb-3">
             Base prices - your race modifiers applied - prices fluctuate by supply
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 60px 60px', gap: '4px', padding: '4px 0', borderBottom: '1px solid var(--border2)' }}>
-            <span style={{ fontSize: '10px', color: 'var(--text3)', textTransform: 'uppercase' }}>Item</span>
-            <span style={{ fontSize: '10px', color: 'var(--text3)', textTransform: 'uppercase', textAlign: 'right' }}>Base</span>
-            <span style={{ fontSize: '10px', color: 'var(--text3)', textTransform: 'uppercase', textAlign: 'right' }}>Your price</span>
+          <div className={`${COMMODITY_GRID_CLASS} border-b border-[var(--border2)] py-1`}>
+            <span className={COMMODITY_HEADER_CELL_CLASS}>Item</span>
+            <span className={`${COMMODITY_HEADER_CELL_CLASS} text-right`}>Base</span>
+            <span className={`${COMMODITY_HEADER_CELL_CLASS} text-right`}>Your price</span>
           </div>
           {COMMODITY_ITEMS.map((item) => {
             const base = COMMODITY_VALUES[item] || 1;
             const disc = racDisc[item] || racDisc._all || 1.0;
             const yours = Math.max(1, Math.round(base * disc));
             return (
-              <div key={item} style={{ display: 'grid', gridTemplateColumns: '1fr 60px 60px', gap: '4px', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
-                <span style={{ fontSize: '13px', color: 'var(--text)' }}>{item.charAt(0).toUpperCase() + item.slice(1)}</span>
-                <span style={{ fontSize: '13px', textAlign: 'right', color: 'var(--text3)' }}>{base} GC</span>
-                <span style={{ fontSize: '13px', textAlign: 'right', color: 'var(--gold)', fontWeight: 600 }}>
+              <div key={item} className={`${COMMODITY_GRID_CLASS} items-center border-b border-[var(--border)] py-1.5`}>
+                <span className="text-[13px] text-[var(--text)]">{item.charAt(0).toUpperCase() + item.slice(1)}</span>
+                <span className={`${COMMODITY_VALUE_CLASS} text-[var(--text3)]`}>{base} GC</span>
+                <span className={`${COMMODITY_VALUE_CLASS} font-semibold text-[var(--gold)]`}>
                   {yours} GC{yours < base ? ' ↓' : yours > base ? ' ↑' : ''}
                 </span>
               </div>
@@ -542,17 +560,17 @@ const EconomyPanel = () => {
         <div className="card" id="trade-offers-card">
           <div className="card-title !mb-2">🤝 Trade offers</div>
           {tradeLocked ? (
-            <div style={{ fontSize: '13px', color: 'var(--text3)' }}>
+            <div className="text-[13px] text-[var(--text3)]">
               Build a <strong>Trading Post</strong> to send and receive trade offers.
             </div>
           ) : (
             <div>
-              <div style={{ marginBottom: '14px' }}>
+              <div className="mb-3.5">
                 <div className="text-[12px] font-bold text-[var(--text2)] mb-2">Send a trade offer</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '10px' }}>
+                <div className={TRADE_TWO_COL_CLASS}>
                   <div>
-                    <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '4px' }}>I offer</div>
-                    <select className="input" style={{ width: '100%', marginBottom: '6px' }} value={tradeOfferItem} onChange={(e) => setTradeOfferItem(e.target.value)}>
+                    <div className={TRADE_LABEL_CLASS}>I offer</div>
+                    <select className="input mb-1.5 w-full" value={tradeOfferItem} onChange={(e) => setTradeOfferItem(e.target.value)}>
                       <option value="food">Food</option>
                       <option value="gold">Gold</option>
                       <option value="mana">Mana</option>
@@ -560,14 +578,14 @@ const EconomyPanel = () => {
                       <option value="armor">Armor</option>
                       <option value="maps">Maps</option>
                     </select>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <input type="number" className="input" min="1" value={tradeOfferQty} onChange={(e) => setTradeOfferQty(e.target.value)} style={{ textAlign: 'right', width: '100%', flex: 1 }} placeholder="Qty" />
-                      <button className="base-btn" style={{ fontSize: '10px', padding: '3px 6px' }} onClick={setMaxTradeOfferQty}>Max</button>
+                    <div className={TRADE_INPUT_ROW_CLASS}>
+                      <input type="number" className="input flex-1 text-right" min="1" value={tradeOfferQty} onChange={(e) => setTradeOfferQty(e.target.value)} placeholder="Qty" />
+                      <button className={TRADE_MAX_BUTTON_CLASS} onClick={setMaxTradeOfferQty}>Max</button>
                     </div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '4px' }}>I want</div>
-                    <select className="input" style={{ width: '100%', marginBottom: '6px' }} value={tradeRequestItem} onChange={(e) => setTradeRequestItem(e.target.value)}>
+                    <div className={TRADE_LABEL_CLASS}>I want</div>
+                    <select className="input mb-1.5 w-full" value={tradeRequestItem} onChange={(e) => setTradeRequestItem(e.target.value)}>
                       <option value="gold">Gold</option>
                       <option value="food">Food</option>
                       <option value="mana">Mana</option>
@@ -575,50 +593,50 @@ const EconomyPanel = () => {
                       <option value="armor">Armor</option>
                       <option value="maps">Maps</option>
                     </select>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <input type="number" className="input" min="1" value={tradeRequestQty} onChange={(e) => setTradeRequestQty(e.target.value)} style={{ textAlign: 'right', width: '100%', flex: 1 }} placeholder="Qty" />
+                    <div className={TRADE_INPUT_ROW_CLASS}>
+                      <input type="number" className="input flex-1 text-right" min="1" value={tradeRequestQty} onChange={(e) => setTradeRequestQty(e.target.value)} placeholder="Qty" />
                     </div>
                   </div>
                 </div>
-                <select className="input" style={{ width: '100%', marginBottom: '8px' }} value={tradeTargetId} onChange={(e) => setTradeTargetId(e.target.value)}>
+                <select className="input mb-2 w-full" value={tradeTargetId} onChange={(e) => setTradeTargetId(e.target.value)}>
                   <option value="">— select kingdom —</option>
                   {tradeTargets.map((t) => (
                     <option key={t.id || t.kingdom_id} value={t.id || t.kingdom_id}>{t.name || t.kingdom_name}</option>
                   ))}
                 </select>
-                <button className="base-btn variant-green w-full" style={{ background: 'var(--green)', color: '#000', width: '100%' }} onClick={handleSendTradeOffer}>
+                <button className="base-btn variant-green w-full bg-[var(--green)] text-black" onClick={handleSendTradeOffer}>
                   📦 Send trade offer
                 </button>
               </div>
               <div>
-                <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text2)', marginBottom: '6px' }}>Incoming offers</div>
+                <div className={TRADE_STATUS_HEADING_CLASS}>Incoming offers</div>
                 {receivedOffers.length === 0 ? (
-                  <div style={{ color: 'var(--text3)', fontSize: '13px' }}>No pending offers.</div>
+                  <div className="text-[13px] text-[var(--text3)]">No pending offers.</div>
                 ) : receivedOffers.map((o) => {
                   const offer = typeof o.offer === 'string' ? JSON.parse(o.offer) : (o.offer || {});
                   const request = typeof o.request === 'string' ? JSON.parse(o.request) : (o.request || {});
                   const offerStr = Object.entries(offer).map(([item, qty]) => `${qty} ${item}`).join(', ');
                   const requestStr = Object.entries(request).map(([item, qty]) => `${qty} ${item}`).join(', ');
                   return (
-                    <div key={o.id} style={{ background: 'var(--bg3)', borderRadius: 'var(--radius)', padding: '10px', marginBottom: '8px' }}>
-                      <div style={{ fontSize: '13px', color: 'var(--text)', marginBottom: '4px' }}>
+                    <div key={o.id} className={TRADE_CARD_CLASS}>
+                      <div className="mb-1 text-[13px] text-[var(--text)]">
                         <strong>{o.sender_name}</strong> offers{' '}
-                        <span style={{ color: 'var(--green)' }}>{offerStr}</span> for{' '}
-                        <span style={{ color: 'var(--amber)' }}>{requestStr}</span>
+                        <span className="text-[var(--green)]">{offerStr}</span> for{' '}
+                        <span className="text-[var(--amber)]">{requestStr}</span>
                       </div>
-                      <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
-                        <button className="btn btn-green" style={{ fontSize: '11px', padding: '3px 10px' }} onClick={() => handleAcceptTrade(o.id)}>✅ Accept</button>
-                        <button className="btn btn-red" style={{ fontSize: '11px', padding: '3px 10px' }} onClick={() => handleDeclineTrade(o.id)}>❌ Decline</button>
+                      <div className={TRADE_ACTION_ROW_CLASS}>
+                        <button className={`btn btn-green ${TRADE_ACTION_BUTTON_CLASS}`} onClick={() => handleAcceptTrade(o.id)}>✅ Accept</button>
+                        <button className={`btn btn-red ${TRADE_ACTION_BUTTON_CLASS}`} onClick={() => handleDeclineTrade(o.id)}>❌ Decline</button>
                       </div>
                     </div>
                   );
                 })}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '12px 0 6px' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text2)' }}>Sent offers</div>
-                  <button className="base-btn variant-red" style={{ fontSize: '10px', padding: '2px 8px', background: 'var(--red)' }} onClick={handleClearTradeLogs}>Clear Logs</button>
+                <div className="my-3 flex items-center justify-between">
+                  <div className={TRADE_STATUS_HEADING_CLASS}>Sent offers</div>
+                  <button className="base-btn variant-red bg-[var(--red)] px-2 py-0.5 text-[10px]" onClick={handleClearTradeLogs}>Clear Logs</button>
                 </div>
                 {sentOffers.length === 0 ? (
-                  <div style={{ color: 'var(--text3)', fontSize: '13px' }}>No sent offers.</div>
+                  <div className="text-[13px] text-[var(--text3)]">No sent offers.</div>
                 ) : sentOffers.map((o) => {
                   const offer = typeof o.offer === 'string' ? JSON.parse(o.offer) : (o.offer || {});
                   const request = typeof o.request === 'string' ? JSON.parse(o.request) : (o.request || {});
@@ -626,8 +644,8 @@ const EconomyPanel = () => {
                   const requestStr = Object.entries(request).map(([item, qty]) => `${qty} ${item}`).join(', ');
                   const statusColor = o.status === 'accepted' ? 'var(--green)' : o.status === 'declined' ? 'var(--red)' : 'var(--amber)';
                   return (
-                    <div key={o.id} style={{ fontSize: '12px', color: 'var(--text3)', padding: '4px 0', borderBottom: '1px solid var(--border)' }}>
-                      To <strong style={{ color: 'var(--text)' }}>{o.receiver_name}</strong>: {offerStr} for {requestStr}{' '}
+                    <div key={o.id} className="border-b border-[var(--border)] py-1 text-[12px] text-[var(--text3)]">
+                      To <strong className="text-[var(--text)]">{o.receiver_name}</strong>: {offerStr} for {requestStr}{' '}
                       <span style={{ color: statusColor }}>[{o.status}]</span>
                     </div>
                   );
@@ -640,7 +658,7 @@ const EconomyPanel = () => {
 
       {/* TAVERN TAB */}
       <div className={clsx(activeTab === 'tavern' ? 'block' : 'hidden')}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+        <div className={TWO_COL_PANEL_CLASS}>
           <div className="card m-0">
             <div className="card-title !mb-2.5">Tavern overview</div>
             <div className="trow"><span className="name">Taverns</span><span className="count">{fmt(bldTaverns || 0)}</span></div>
@@ -659,13 +677,13 @@ const EconomyPanel = () => {
 
         <div className="card">
           <div className="card-title !mb-2">⚔️ Mercenary board</div>
-          <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '14px' }}>
+          <div className={PANEL_COPY_CLASS}>
             Mercenaries fight at a fixed level. They do not advance, do not use
             your weapon/armor stockpile, and leave when their contract expires.
             They count toward anti-bully ratios.
           </div>
-          <div className="merc-board-grid" style={{ marginBottom: '12px' }}>
-            <select className="input" style={{ fontSize: '12px' }} value={mercUnit} onChange={(e) => setMercUnit(e.target.value)}>
+          <div className="merc-board-grid mb-3">
+            <select className="input text-[12px]" value={mercUnit} onChange={(e) => setMercUnit(e.target.value)}>
               <option value="fighters">Fighters</option>
               <option value="rangers">Rangers</option>
               <option value="mages">Mages</option>
@@ -673,32 +691,32 @@ const EconomyPanel = () => {
               <option value="thieves">Thieves</option>
               <option value="ninjas">Ninjas</option>
             </select>
-            <select className="input" style={{ fontSize: '12px' }} value={mercTier} onChange={(e) => setMercTier(e.target.value)}>
+            <select className="input text-[12px]" value={mercTier} onChange={(e) => setMercTier(e.target.value)}>
               <option value="rabble">Rabble (Lv 5–10)</option>
               <option value="sellsword">Sellsword (Lv 15–25)</option>
               <option value="veteran">Veteran (Lv 30–45)</option>
               <option value="elite">Elite (Lv 50–65)</option>
             </select>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <input type="number" className="input" min="1" value={mercCount} onChange={(e) => setMercCount(e.target.value)} style={{ textAlign: 'right', width: '100%', flex: 1 }} placeholder="Qty" />
-              <button className="base-btn" style={{ fontSize: '10px', padding: '3px 6px' }} onClick={setMaxMercCount}>Max</button>
+            <div className={INPUT_ROW_CLASS}>
+              <input type="number" className="input flex-1 text-right" min="1" value={mercCount} onChange={(e) => setMercCount(e.target.value)} placeholder="Qty" />
+              <button className={MAX_BUTTON_CLASS} onClick={setMaxMercCount}>Max</button>
             </div>
             <div className="text-[11px] text-[var(--text3)]">{mercPreview}</div>
             <div className="merc-btn-col">
-              <button className="base-btn variant-amber w-full" style={{ background: '#d97706', color: '#fff', width: '100%' }} onClick={handleHireMercs}>Hire</button>
+              <button className="base-btn variant-amber w-full bg-amber-600 text-white" onClick={handleHireMercs}>Hire</button>
             </div>
           </div>
           {!econData?.mercenaries?.length ? (
-            <div style={{ color: 'var(--text3)', fontSize: '13px', textAlign: 'center', padding: '12px' }}>
+            <div className="p-3 text-center text-[13px] text-[var(--text3)]">
               No mercenaries under contract.
             </div>
           ) : econData.mercenaries.map((m, i) => {
             const served = (turn || 0) - (m.hired_at_turn || 0);
             const remaining = Math.max(0, m.duration_turns - served);
             return (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '13px', color: 'var(--text)', fontWeight: 600 }}>{m.count} {m.tier} {m.unit_type}</div>
+              <div key={i} className="flex items-center gap-2 border-b border-[var(--border)] py-2">
+                <div className="flex-1">
+                  <div className="text-[13px] font-semibold text-[var(--text)]">{m.count} {m.tier} {m.unit_type}</div>
                   <div className="text-[11px] text-[var(--text3)]">Remaining: {remaining} turns</div>
                 </div>
               </div>
@@ -709,21 +727,21 @@ const EconomyPanel = () => {
 
       {/* BANK TAB */}
       <div className={clsx(activeTab === 'bank' ? 'block' : 'hidden')}>
-        <div id="bank-locked-msg" style={{ display: (vaults || 0) >= 25 ? 'none' : 'block', padding: '24px', textAlign: 'center', color: 'var(--text2)', background: 'var(--bg2)', borderRadius: '8px' }}>
-          <div style={{ fontSize: '32px', marginBottom: '12px' }}>🏦</div>
-          <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '8px' }}>Bank Locked</div>
-          <div style={{ fontSize: '14px' }}>Construct at least 25 Vaults to access the Royal Bank.</div>
+        <div id="bank-locked-msg" className={BANK_LOCKED_PANEL_CLASS} style={{ display: (vaults || 0) >= 25 ? 'none' : 'block' }}>
+          <div className="mb-3 text-[32px]">🏦</div>
+          <div className="mb-2 text-[16px] font-bold">Bank Locked</div>
+          <div className="text-[14px]">Construct at least 25 Vaults to access the Royal Bank.</div>
         </div>
         <div id="bank-content" style={{ display: (vaults || 0) >= 25 ? 'block' : 'none' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+          <div className={TWO_COL_PANEL_CLASS}>
             <div className="card m-0">
               <div className="card-title !mb-2.5">Fixed-Term Deposits</div>
-              <div style={{ color: 'var(--text3)', fontSize: '12px', marginBottom: '12px' }}>
+              <div className="mb-3 text-[12px] text-[var(--text3)]">
                 Deposit your gold to earn a guaranteed return over time. You cannot withdraw early.
               </div>
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                <input type="number" className="input" placeholder="Amount" min="1" style={{ flex: 1 }} value={bankAmount} onChange={(e) => setBankAmount(e.target.value)} />
-                <select className="input" style={{ flex: 1 }} value={bankTermIndex} onChange={(e) => setBankTermIndex(e.target.value)}>
+              <div className="mb-3 flex gap-2">
+                <input type="number" className="input flex-1" placeholder="Amount" min="1" value={bankAmount} onChange={(e) => setBankAmount(e.target.value)} />
+                <select className="input flex-1" value={bankTermIndex} onChange={(e) => setBankTermIndex(e.target.value)}>
                   <option value="0">10 Turns (2% yield)</option>
                   <option value="1">25 Turns (7% yield)</option>
                   <option value="2">50 Turns (15% yield)</option>
@@ -731,7 +749,7 @@ const EconomyPanel = () => {
                   <option value="4">300 Turns (60% yield)</option>
                 </select>
               </div>
-              <button className="base-btn variant-gold w-full" style={{ background: 'var(--gold)', color: '#000', width: '100%' }} onClick={handleMakeBankDeposit}>
+              <button className={`${PRIMARY_GOLD_BUTTON_CLASS} w-full`} onClick={handleMakeBankDeposit}>
                 Deposit Gold
               </button>
             </div>
@@ -755,44 +773,44 @@ const EconomyPanel = () => {
 
       {/* TRADE ROUTES TAB */}
       <div className={clsx(activeTab === 'trade-routes' ? 'block' : 'hidden')}>
-        <div className="card" style={{ marginTop: 0, marginBottom: '20px' }}>
+        <div className="card mt-0 mb-5">
           <div className="card-title !mb-2.5">Establish New Route</div>
           <div className="text-[12px] text-[var(--text3)] mb-3">
             Requires: 10,000 GC. Permanent routes provide steady income and improve with stability.
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <select className="input" style={{ flex: 1 }} value={tradeRouteTargetId} onChange={(e) => setTradeRouteTargetId(e.target.value)}>
+          <div className="flex gap-2">
+            <select className="input flex-1" value={tradeRouteTargetId} onChange={(e) => setTradeRouteTargetId(e.target.value)}>
               <option value="">— Select Target Kingdom —</option>
               {tradeTargets.map((t) => (
                 <option key={t.id || t.kingdom_id} value={t.id || t.kingdom_id}>{t.name || t.kingdom_name}</option>
               ))}
             </select>
-            <button className="base-btn variant-gold" style={{ background: 'var(--gold)', color: '#000' }} onClick={handleEstablishTradeRoute}>
+            <button className={PRIMARY_GOLD_BUTTON_CLASS} onClick={handleEstablishTradeRoute}>
               Establish 🤝
             </button>
           </div>
         </div>
-        <div className="card" style={{ marginTop: 0 }}>
+        <div className="card mt-0">
           <div className="card-title !mb-2.5">Active Trade Routes</div>
-          <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '16px' }}>
+          <div className="mb-4 text-[12px] text-[var(--text3)]">
             Established connections with other kingdoms provide steady gold income each turn. Stability increases over time, improving efficiency.
           </div>
           {tradeRoutes.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text3)' }}>
+            <div className="p-5 text-center text-[var(--text3)]">
               No active trade routes. Discover other kingdoms and establish routes to earn gold!
             </div>
           ) : tradeRoutes.map((r) => (
-            <div key={r.id} className="card" style={{ marginBottom: '8px', border: '1px solid var(--border1)', padding: '10px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div key={r.id} className="card mb-2 border border-[var(--border1)] p-2.5">
+              <div className="flex items-center justify-between">
                 <div>
-                  <div style={{ fontWeight: 700, color: 'var(--gold)' }}>🤝 {r.partner_name}</div>
+                  <div className="font-bold text-[var(--gold)]">🤝 {r.partner_name}</div>
                   <div className="text-[11px] text-[var(--text3)]">{String(r.partner_race || 'unknown').replace(/_/g, ' ')} - {fmtShort(r.partner_land)} acres</div>
                 </div>
-                <div style={{ textAlign: 'right', margin: '0 16px' }}>
+                <div className="mx-4 text-right">
                   <div className="text-[14px] font-bold text-[var(--green)]">+{fmtShort(Math.floor((r.stability || 0) * 2.5))} GC / turn</div>
-                  <div style={{ fontSize: '10px', color: 'var(--text3)' }}>Stability: {r.stability}%</div>
+                  <div className="text-[10px] text-[var(--text3)]">Stability: {r.stability}%</div>
                 </div>
-                <button className="btn btn-red" style={{ fontSize: '11px', padding: '4px 8px' }} onClick={() => handleCancelTradeRoute(r.id)}>Cancel</button>
+                <button className="btn btn-red px-2 py-1 text-[11px]" onClick={() => handleCancelTradeRoute(r.id)}>Cancel</button>
               </div>
             </div>
           ))}

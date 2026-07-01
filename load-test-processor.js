@@ -7,6 +7,11 @@ module.exports = {
     next();
   },
 
+  beforeScenario(context, ee, next) {
+    context.vars.csrfToken = `load-test-${Math.random().toString(36).slice(2, 12)}`;
+    next();
+  },
+
   beforeRequest(requestParams, context, ee, next) {
     // Add any dynamic headers or auth tokens here
     requestParams.headers["User-Agent"] = "LoadTester/1.0";

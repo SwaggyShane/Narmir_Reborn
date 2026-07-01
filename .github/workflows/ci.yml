@@ -29,6 +29,8 @@ jobs:
 
       - name: Unit tests
         run: npm test
+        env:
+          JWT_SECRET: test-ci-secret
 
       - name: Production build
         run: npm run build

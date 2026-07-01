@@ -338,7 +338,7 @@ const MarketPanel = () => {
                     {formatLabel(p.id)}
                   </div>
                   <div className="text-[11px] text-[var(--text3)]">
-                    Owned: <span style={{ color: 'var(--text)' }}>{fmt(ownedAmount(p.id))}</span>
+                    Owned: <span className="text-[var(--text)]">{fmt(ownedAmount(p.id))}</span>
                   </div>
                 </div>
               </div>
