@@ -167,9 +167,9 @@ const WorldmapPanel = () => {
     return renderWorldMap(kingdoms, tradeRoutes, highlightedRace, currentKingdomId, {
       nodes,
       expeditions,
-      layers: DEFAULT_LAYERS,
+      layers,
     });
-  }, [kingdoms, tradeRoutes, highlightedRace, currentKingdomId, nodes, expeditions]);
+  }, [kingdoms, tradeRoutes, highlightedRace, currentKingdomId, nodes, expeditions, layers]);
 
   const mapDataKey = useMemo(
     () => `${kingdoms.length}:${nodes.length}:${expeditions.length}:${highlightedRace}:${currentKingdomId}`,
@@ -320,6 +320,21 @@ const WorldmapPanel = () => {
                 <div className="pointer-events-none absolute left-2 top-2 rounded bg-black/45 px-2 py-1 text-[10px] text-[var(--text3)]">
                   Drag to pan | Scroll to zoom
                 </div>
+                {layers.nodes && nodes.length === 0 && (
+                  <div className="pointer-events-none absolute inset-x-0 bottom-14 flex justify-center px-4">
+                    <div className="max-w-md rounded-lg border border-[var(--border)] bg-black/70 px-4 py-3 text-center text-[11px] text-[var(--text3)] backdrop-blur-sm">
+                      No resource nodes on the map yet. Scout sites in{' '}
+                      <button
+                        type="button"
+                        className="pointer-events-auto text-[var(--gold)] underline hover:opacity-90"
+                        onClick={(e) => { e.stopPropagation(); switchTab('resources'); }}
+                      >
+                        Resources
+                      </button>
+                      {' '}(Scout Node, 500 gold) to plot them here.
+                    </div>
+                  </div>
+                )}
                 <div className="absolute bottom-2 right-2 flex items-center gap-1">
                   <span className="rounded bg-black/45 px-2 py-1 text-[10px] text-[var(--text3)]">{zoomLabel}</span>
                   <button type="button" className="base-btn px-2 py-1 text-[11px]" onClick={(e) => { e.stopPropagation(); zoomOut(); }} aria-label="Zoom out">−</button>

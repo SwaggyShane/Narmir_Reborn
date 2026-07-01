@@ -37,7 +37,23 @@ export function applyWorldMapLayers(container, layers, { animate = true } = {}) 
   };
 
   Object.entries(mapping).forEach(([key, selector]) => {
-    setLayerVisible(svg.querySelector(selector), layers[key] !== false, { animate });
+    const visible = layers[key] !== false;
+    setLayerVisible(svg.querySelector(selector), visible, { animate });
+    if (key === 'nodes') {
+      const nodeGroups = svg.querySelectorAll('.wm-node-group');
+      gsap.killTweensOf(nodeGroups);
+      if (!animate) {
+        gsap.set(nodeGroups, { autoAlpha: visible ? 1 : 0, scale: 1 });
+      } else {
+        gsap.to(nodeGroups, {
+          autoAlpha: visible ? 1 : 0,
+          scale: 1,
+          duration: 0.32,
+          ease: 'power2.out',
+          overwrite: 'auto',
+        });
+      }
+    }
   });
 }
 
