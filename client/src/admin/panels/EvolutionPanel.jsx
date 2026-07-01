@@ -242,7 +242,7 @@ export default function EvolutionPanel({ adminFetch, onToast }) {
 
       {tab === 'changelog' && (
         <div>
-          <div className="text-xs text-[var(--text3)] mb-3 leading-normal max-w-[720px]">
+          <div className="text-[12px] text-[var(--text3)] mb-3 leading-normal max-w-[720px]">
             Publish updates here — appears in-game Changelog panel, admin log, and #updates on Discord.
             Description supports markdown: <code>##</code>, <code>###</code>, <code>**bold**</code>, <code>- bullets</code>, <code>{'>'} quote</code>.
             Plain text auto-formats with emoji + category styling.

@@ -293,11 +293,11 @@ export default function ManagePanel({ adminFetch, onToast }) {
       <Section title="Chat Moderation">
         {/* Current mods */}
         <div className="mb-4">
-          <div className="text-xs text-[var(--text3)] mb-1.5">Current chat mods ({chatMods.length})</div>
+          <div className="text-[12px] text-[var(--text3)] mb-1.5">Current chat mods ({chatMods.length})</div>
           {modLoading ? (
-            <span className="text-xs text-[var(--text3)]">Loading...</span>
+            <span className="text-[12px] text-[var(--text3)]">Loading...</span>
           ) : chatMods.length === 0 ? (
-            <span className="text-xs text-[var(--text3)]">None</span>
+            <span className="text-[12px] text-[var(--text3)]">None</span>
           ) : (
             <div className="flex flex-wrap gap-1.5">
               {chatMods.map(m => (
@@ -340,11 +340,11 @@ export default function ManagePanel({ adminFetch, onToast }) {
 
         {/* Chat bans */}
         <div className="mt-1">
-          <div className="text-xs text-[var(--text3)] mb-1.5">Chat-banned players ({chatBans.length})</div>
+          <div className="text-[12px] text-[var(--text3)] mb-1.5">Chat-banned players ({chatBans.length})</div>
           {modLoading ? (
-            <span className="text-xs text-[var(--text3)]">Loading...</span>
+            <span className="text-[12px] text-[var(--text3)]">Loading...</span>
           ) : chatBans.length === 0 ? (
-            <span className="text-xs text-[var(--text3)]">None</span>
+            <span className="text-[12px] text-[var(--text3)]">None</span>
           ) : (
             <div className="flex flex-col gap-1">
               {chatBans.map(b => (
@@ -441,7 +441,7 @@ export default function ManagePanel({ adminFetch, onToast }) {
         {/* Results */}
         {tkResults && (
           <div className="mt-3.5 overflow-x-auto">
-            <table className="border-collapse text-xs text-[var(--text2)] w-full">
+            <table className="border-collapse text-[12px] text-[var(--text2)] w-full">
               <thead>
                 <tr>
                   {['Race', 'Username', 'Kingdom', 'Status'].map(h => (
