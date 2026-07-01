@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useGameMutationEvents } from '../../hooks/useGameState';
 import { useStudiesData } from '../../hooks/useStudiesData';
 import {
@@ -69,6 +69,18 @@ const StudiesPanel = () => {
   const updateSchoolForm = useCallback((key, value) => {
     setSchoolForm((prev) => ({ ...prev, [key]: value }));
   }, []);
+
+  // Sync focus values from server data when component mounts or data loads
+  useEffect(() => {
+    if (studiesData?.research_focus) {
+      const [f1, f2] = studiesData.research_focus;
+      setSchoolForm((prev) => ({
+        ...prev,
+        focus1Value: f1 || prev.focus1Value,
+        focus2Value: f2 || prev.focus2Value,
+      }));
+    }
+  }, [studiesData?.research_focus]);
 
   const state = useMemo(() => ({
     race,
