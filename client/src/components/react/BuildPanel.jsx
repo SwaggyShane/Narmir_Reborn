@@ -621,7 +621,6 @@ const BuildPanel = () => {
           <div className="bld-main">
             <span className="bld-icon" style={{ background: icon.color }}>{icon.emoji}</span>
             <span className="name">{b.name}</span>
-            <span className="count" id={`bld-${b.id}`}>{fmt(getBuildCount(b.id))}</span>
           </div>
           {(buildDisplay.warnings[b.id] || buildDisplay.estimates[b.id]) && (
             <span className="bld-est">
@@ -631,6 +630,7 @@ const BuildPanel = () => {
             </span>
           )}
         </div>
+        <span className="bld-qty" id={`bld-${b.id}`}>{fmt(getBuildCount(b.id))}</span>
         <div className="bld-controls">
           <div className="bld-eng">
             <span className="bld-control-label">Hire</span>
@@ -915,8 +915,9 @@ const BuildPanel = () => {
         <div className="card mt-4">
           <div id="build-rows">
             <div id="build-header">
-              <span>Building</span>
-              <span className="text-right">Qty</span>
+              <span className="bld-header-name">Building</span>
+              <span className="bld-header-qty">Qty</span>
+              <span className="bld-controls-spacer" aria-hidden="true" />
             </div>
 
             {BUILDINGS_MAP['farms'] && renderBuildingRow(BUILDINGS_MAP['farms'], { emoji: '🌾', color: '#4a7c3f' })}
