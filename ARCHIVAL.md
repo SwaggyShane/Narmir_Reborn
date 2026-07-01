@@ -10,6 +10,16 @@
 
 ### 2026-07-01
 
+- World map Sprint 1 — resource nodes on map (PR #732, merge `88e68c63`).
+- Added `resource_nodes.map_x/map_y` with boot backfill; `/api/kingdom/world-map` returns nodes and expeditions.
+- Scout-node assigns coordinates; `WorldmapRenderer` plots nodes, expedition lanes, and layer toggles.
+- GSAP entrance/layer animations, pan/zoom viewport, empty-state scout hint when no nodes discovered.
+- Validation completed:
+  - `npm run lint` passed
+  - `npm test` passed (53 files, including `world-map-coords.test.js`)
+  - fresh PostgreSQL smoke boot passed
+  - GitHub CI green on PR #732
+
 - Completed the roadmap validation lane and retired `ROADMAP.md`.
 - Verified live Railway production secrets exist, production boot succeeds, and no secret-startup block remains.
 - Verified live domain enforcement:
