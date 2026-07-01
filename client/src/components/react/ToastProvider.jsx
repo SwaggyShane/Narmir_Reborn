@@ -45,7 +45,7 @@ export default function ToastProvider() {
         }}
       >
         <div
-          className="flex w-8 shrink-0 items-center justify-center text-[12px] font-black"
+          className={`flex shrink-0 items-center justify-center text-[12px] font-black ${theme.icon ? 'w-8' : 'w-1.5'}`}
           style={{ background: theme.border, color: '#0a0a0a' }}
           aria-hidden="true"
         >
