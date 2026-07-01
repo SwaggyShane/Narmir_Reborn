@@ -799,12 +799,26 @@
 
   /* ── Build panel rows ── */
   #build-header {
-    @apply flex items-center justify-between pb-2 mb-1 border-b border-white/10 text-[10px] uppercase tracking-wide text-text3;
+    @apply flex items-center gap-2 pb-2 mb-1 border-b border-white/10 text-[10px] uppercase tracking-wide text-text3;
+  }
+
+  .bld-header-name {
+    @apply flex-1;
+  }
+
+  .bld-header-qty {
+    width: 56px;
+    flex-shrink: 0;
+    text-align: right;
+  }
+
+  .bld-controls-spacer {
+    width: 160px;
+    flex-shrink: 0;
   }
 
   #build-rows .trow {
-    @apply flex flex-nowrap items-start justify-between;
-    gap: 8px;
+    @apply flex flex-nowrap items-start gap-2;
   }
 
   .bld-left {
@@ -824,11 +838,14 @@
     flex: 0 1 auto;
   }
 
-  .bld-main .count {
+  .bld-qty {
+    width: 56px;
     flex-shrink: 0;
-    font-size: 12px;
-    min-width: 0;
-    text-align: left;
+    text-align: right;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
   }
 
   .bld-est {
@@ -839,6 +856,7 @@
 
   .bld-controls {
     @apply flex flex-shrink-0 flex-col gap-1.5;
+    width: 160px;
   }
 
   .bld-eng {
