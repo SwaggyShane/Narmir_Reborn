@@ -20,6 +20,7 @@ import {
   animateMapPanelCard,
   animateWorldMap,
 } from '../../utils/worldMapGsap.js';
+import { useWorldMapViewport } from '../../hooks/useWorldMapViewport.js';
 
 const MAP_REGIONS = Object.keys(REGION_META);
 
@@ -175,6 +176,16 @@ const WorldmapPanel = () => {
     [kingdoms.length, nodes.length, expeditions.length, highlightedRace, currentKingdomId],
   );
 
+  const {
+    viewportRef,
+    stageRef,
+    zoomLabel,
+    resetViewport,
+    zoomIn,
+    zoomOut,
+    shouldSuppressClick,
+  } = useWorldMapViewport({ resetKey: mapDataKey, enabled: Boolean(mapSvg && !loading && !error) });
+
   useLayoutEffect(() => {
     if (!mapContainerRef.current || !mapSvg) return undefined;
     const entrance = mapAnimatedKeyRef.current !== mapDataKey;
@@ -228,6 +239,8 @@ const WorldmapPanel = () => {
   }, []);
 
   const handleMapClick = useCallback((event) => {
+    if (shouldSuppressClick()) return;
+
     const nodeDot = event.target.closest?.('.map-node, .wm-node-group');
     const nodeId = nodeDot?.getAttribute('data-node-id');
     if (nodeId) {
@@ -245,7 +258,7 @@ const WorldmapPanel = () => {
       setSelectedNode(null);
       showMapKingdomCard(targetKingdomId, currentKingdomId, marketUpgrades);
     }
-  }, [currentKingdomId, marketUpgrades, nodes]);
+  }, [currentKingdomId, marketUpgrades, nodes, shouldSuppressClick]);
 
   const activeExpedition = selectedNode
     ? expeditions.find((exp) => String(exp.node_id) === String(selectedNode.id))
@@ -260,7 +273,7 @@ const WorldmapPanel = () => {
           <div>
             <div className="card-title !mb-1">🗺️ World of Narmir</div>
             <div className="text-xs text-[var(--text3)]">
-              Six ancient regions — kingdoms, trade lanes, and your scouted resource sites.
+              Six ancient regions — drag to pan, scroll to zoom, click sites for details.
             </div>
           </div>
           <button className="base-btn px-3 py-1 text-[11px]" onClick={refreshWorldMap}>
@@ -287,12 +300,33 @@ const WorldmapPanel = () => {
             ) : null}
             {!loading && !error && mapSvg && (
               <div
-                ref={mapContainerRef}
-                id="world-map-container"
-                className="w-full overflow-hidden"
+                ref={viewportRef}
+                id="world-map-viewport"
+                className="relative min-h-[520px] overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)] bg-[#040710] touch-none cursor-grab"
                 onClick={handleMapClick}
-                dangerouslySetInnerHTML={{ __html: mapSvg }}
-              />
+              >
+                <div
+                  ref={stageRef}
+                  id="world-map-stage"
+                  className="wm-map-stage w-full will-change-transform"
+                >
+                  <div
+                    ref={mapContainerRef}
+                    id="world-map-container"
+                    className="w-full"
+                    dangerouslySetInnerHTML={{ __html: mapSvg }}
+                  />
+                </div>
+                <div className="pointer-events-none absolute left-2 top-2 rounded bg-black/45 px-2 py-1 text-[10px] text-[var(--text3)]">
+                  Drag to pan | Scroll to zoom
+                </div>
+                <div className="absolute bottom-2 right-2 flex items-center gap-1">
+                  <span className="rounded bg-black/45 px-2 py-1 text-[10px] text-[var(--text3)]">{zoomLabel}</span>
+                  <button type="button" className="base-btn px-2 py-1 text-[11px]" onClick={(e) => { e.stopPropagation(); zoomOut(); }} aria-label="Zoom out">−</button>
+                  <button type="button" className="base-btn px-2 py-1 text-[11px]" onClick={(e) => { e.stopPropagation(); zoomIn(); }} aria-label="Zoom in">+</button>
+                  <button type="button" className="base-btn px-2 py-1 text-[11px]" onClick={(e) => { e.stopPropagation(); resetViewport(true); }} aria-label="Reset map view">⌂</button>
+                </div>
+              </div>
             )}
           </div>
 
