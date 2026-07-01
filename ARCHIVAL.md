@@ -2,11 +2,25 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-06-30
+**Last updated:** 2026-07-01
 
 ---
 
 ## Recent Chronology
+
+### 2026-07-01
+
+- Retired the SQLite-to-PostgreSQL SQL compatibility layer (Phases A–D, PR #730, merge `7d820dff`).
+- **Phase A:** PG-native runtime SQL fragments (`lib/db-sql.js`); runtime queries use `LEAST`/`GREATEST`, native epoch expressions.
+- **Phase B:** Dropped PRAGMA emulation; schema introspection via `information_schema` (`lib/db-schema-introspection.js`).
+- **Phase C:** PG-native boot DDL in `db/schema.js` (`SERIAL`, `TIMESTAMP`, `EXTRACT(EPOCH...)`, `ON CONFLICT DO NOTHING`).
+- **Phase D:** Repo-wide `$1, $2, ...` placeholders; removed `translateSqlForPg`; added `lib/pg-placeholders.js` for dynamic IN/SET/tuple builders.
+- Post-merge fixes: multi-row news `pgValueTuples()` (admin announce, gameplay/research bulk insert); Gemini review (pg-mem epoch regex, Gravatar URL, forum-seed `$1`/`$2`).
+- Validation completed:
+  - `npm test` passed (51 files, including phase A–D and bulk-news regression tests)
+  - `npm run lint` passed
+  - fresh PostgreSQL smoke boot passed
+  - GitHub CI green on PR #730
 
 ### 2026-06-30
 

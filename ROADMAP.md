@@ -1,7 +1,7 @@
 # Narmir Reborn: ROADMAP
 
 **Status:** Active  
-**Last updated:** 2026-06-30
+**Last updated:** 2026-07-01
 
 ---
 
