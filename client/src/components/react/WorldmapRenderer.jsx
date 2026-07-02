@@ -120,6 +120,13 @@ export function renderWorldMap(
           '<filter id="softglow"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>' +
 
           '<filter id="uiShadow"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.9"/></filter>' +
+          '<pattern id="plainsPattern" patternUnits="userSpaceOnUse" width="40" height="40"><rect width="40" height="40" fill="#556b2f"/><path d="M0 40 L40 0" stroke="#4a5f2a" stroke-width="2" opacity="0.4"/></pattern>' +
+          '<pattern id="forestPattern" patternUnits="userSpaceOnUse" width="30" height="30"><rect width="30" height="30" fill="#2d4a2d"/><polygon points="5,20 10,10 15,20" fill="#1a3a1a"/><polygon points="15,25 20,15 25,25" fill="#1a3a1a"/></pattern>' +
+          '<pattern id="mountainsPattern" patternUnits="userSpaceOnUse" width="40" height="40"><rect width="40" height="40" fill="#5c4033"/><path d="M0 40 L10 20 L20 40 L30 10 L40 40" fill="none" stroke="#3d2a22" stroke-width="4" opacity="0.6"/></pattern>' +
+          '<pattern id="hillsPattern" patternUnits="userSpaceOnUse" width="30" height="30"><rect width="30" height="30" fill="#6b5b3f"/><path d="M0 15 Q15 5 30 15 Q15 25 0 15" fill="none" stroke="#4a3f2a" stroke-width="2" opacity="0.5"/></pattern>' +
+          '<pattern id="swampPattern" patternUnits="userSpaceOnUse" width="20" height="20"><rect width="20" height="20" fill="#3a3f2a"/><circle cx="5" cy="5" r="2" fill="#2a2f1a" opacity="0.6"/><circle cx="15" cy="15" r="2" fill="#2a2f1a" opacity="0.6"/></pattern>' +
+          '<pattern id="desertPattern" patternUnits="userSpaceOnUse" width="25" height="25"><rect width="25" height="25" fill="#8b7355"/><circle cx="5" cy="5" r="1.5" fill="#a88b66" opacity="0.7"/><circle cx="18" cy="18" r="1.5" fill="#a88b66" opacity="0.7"/></pattern>' +
+          '<pattern id="coastPattern" patternUnits="userSpaceOnUse" width="30" height="30"><rect width="30" height="30" fill="#3a5f7a"/><path d="M0 15 Q15 10 30 15" fill="none" stroke="#2a4f6a" stroke-width="3" opacity="0.5"/></pattern>' +
 
           "</defs>";
 
@@ -246,8 +253,31 @@ export function renderWorldMap(
           if (!path) return;
           var t = RACE_TO_TERRAIN[race] || 'plains';
           var fill = TERRAIN_COLORS[t] || TERRAIN_COLORS.plains;
-          svg += '<path d="' + path + '" fill="' + fill + '" opacity="0.65" class="terrain-shape" data-terrain="' + escapeHtml(t) + '" data-race="' + escapeHtml(race) + '" style="transform-box:fill-box;transform-origin:center;cursor:default" pointer-events="none"><title>' + escapeHtml(terrainTooltip(t)) + '</title></path>';
+          svg += '<path d="' + path + '" fill="url(#' + t + 'Pattern)" opacity="0.9" class="terrain-shape" data-terrain="' + escapeHtml(t) + '" data-race="' + escapeHtml(race) + '" style="transform-box:fill-box;transform-origin:center;cursor:default" pointer-events="none"><title>' + escapeHtml(terrainTooltip(t)) + '</title></path>';
         });
+        svg += '</g>';
+
+        // Additional mixed biomes inside Ironhold (dwarf territory) for variety
+        svg += '<path d="M190,260 L210,245 L225,265 L205,275 Z" fill="url(#plainsPattern)" opacity="0.85" class="terrain-shape" data-terrain="plains" data-race="dwarf" style="transform-box:fill-box;transform-origin:center;cursor:default" pointer-events="none"><title>Plains patch in Ironhold</title></path>';
+        svg += '<path d="M250,280 L270,265 L285,285 L265,295 Z" fill="url(#forestPattern)" opacity="0.85" class="terrain-shape" data-terrain="forest" data-race="dwarf" style="transform-box:fill-box;transform-origin:center;cursor:default" pointer-events="none"><title>Forest patch in Ironhold</title></path>';
+        svg += '<path d="M180,300 L200,290 L210,310 L190,315 Z" fill="url(#swampPattern)" opacity="0.85" class="terrain-shape" data-terrain="swamp" data-race="dwarf" style="transform-box:fill-box;transform-origin:center;cursor:default" pointer-events="none"><title>Swamp patch in Ironhold</title></path>';
+
+        // Water connections to link regions for future navies
+        svg += '<g class="wm-water" style="pointer-events:none">';
+        svg += '<path d="M150,480 Q200,550 280,530" fill="none" stroke="#1e90ff" stroke-width="15" opacity="0.4" />';
+        svg += '<path d="M200,300 Q150,380 160,450" fill="none" stroke="#4169e1" stroke-width="10" opacity="0.3" />';
+        svg += '<path d="M350,200 Q450,150 550,200" fill="none" stroke="#1e90ff" stroke-width="12" opacity="0.35" />';
+        svg += '<path d="M600,400 Q650,500 700,450" fill="none" stroke="#4169e1" stroke-width="8" opacity="0.3" />';
+        svg += '<path d="M300,350 Q400,400 500,350" fill="none" stroke="#1e90ff" stroke-width="10" opacity="0.3" />';
+        svg += '</g>';
+
+        // Volcanoes in Ironhold (dwarf mountains area)
+        svg += '<g class="wm-volcano" style="pointer-events:none">';
+        svg += '<path d="M215,285 L230,255 L245,285 Z" fill="#a52a2a" stroke="#4a0000" opacity="0.8" />';
+        svg += '<circle cx="230" cy="265" r="4" fill="#ff6600" />';
+        svg += '<path d="M230,260 L225,250 L235,250 Z" fill="#888" opacity="0.4" />';
+        svg += '<path d="M280,270 L295,240 L310,270 Z" fill="#a52a2a" stroke="#4a0000" opacity="0.7" />';
+        svg += '<circle cx="295" cy="250" r="3" fill="#ff4500" />';
         svg += '</g>';
 
         svg += '<g class="wm-layer wm-layer-regions">';
@@ -264,6 +294,12 @@ export function renderWorldMap(
 
           if (!path) return;
 
+          var t = RACE_TO_TERRAIN[race] || 'plains';
+
+          var landColor = (layers.terrain !== false) ? (TERRAIN_COLORS[t] || TERRAIN_COLORS.plains) : meta.color;
+
+          var landFill = (layers.terrain !== false) ? 'url(#' + t + 'Pattern)' : landColor;
+
 
 
           // Layer 1: Deep water shelf
@@ -276,7 +312,7 @@ export function renderWorldMap(
 
             '" fill="none" stroke="' +
 
-            meta.color +
+            landColor +
 
             '" opacity="0.15" stroke-width="70" stroke-linejoin="round" stroke-linecap="round"/>';
 
@@ -290,7 +326,7 @@ export function renderWorldMap(
 
             '" fill="none" stroke="' +
 
-            meta.color +
+            landColor +
 
             '" opacity="0.35" stroke-width="40" stroke-linejoin="round" stroke-linecap="round"/>';
 
@@ -304,13 +340,13 @@ export function renderWorldMap(
 
             '" fill="' +
 
-            meta.color +
+            landFill +
 
             '" stroke="' +
 
-            meta.color +
+            landColor +
 
-            '" stroke-width="25" stroke-linejoin="round" stroke-linecap="round" fill-opacity="' + (layers.terrain !== false ? '0.35' : '0.85') + '" class="region-shape wm-region" data-race="' +
+            '" stroke-width="25" stroke-linejoin="round" stroke-linecap="round" fill-opacity="' + (layers.terrain !== false ? '0.95' : '0.85') + '" class="region-shape wm-region" data-race="' +
 
             escapeHtml(race) +
 
@@ -326,7 +362,7 @@ export function renderWorldMap(
 
             '" fill="none" stroke="' +
 
-            meta.stroke +
+            landColor +
 
             '" stroke-width="1.5" stroke-linejoin="round" class="region-shape" data-race="' +
 
@@ -683,6 +719,9 @@ export function renderWorldMap(
 
             svg += '<g class="wm-node-group map-node-group" data-node-id="' + escapeHtml(String(node.id)) + '" transform="translate(' + nx + ',' + ny + ')">';
 
+            // larger hit area for easier clicking, transparent
+            svg += '<circle cx="0" cy="0" r="' + (nr + 8) + '" fill="transparent" style="pointer-events:visiblePainted" data-node-id="' + escapeHtml(String(node.id)) + '"/>';
+
             svg +=
 
               '<circle class="wm-node-halo" cx="0" cy="0" r="' +
@@ -703,7 +742,7 @@ export function renderWorldMap(
 
               '" fill="' +
 
-              meta.fill +
+              (node.terrain ? (TERRAIN_COLORS[node.terrain] || TERRAIN_COLORS.plains) : meta.fill) +
 
               '" stroke="' +
 

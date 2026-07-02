@@ -649,9 +649,17 @@ The 3-lane experiment (Grok planning, Claude impl, Codex validation) is ended pe
    - I will update ARCHIVAL.md with the completion entry and give branch delete commands.
    - Delete feature/terrain-phase1 (git push -d origin + git branch -d).
 
-**Phase 3 Complete:** Wired combat terrain modifiers (`combatDef` for defender power, `combatAtk` for attacker) from `TERRAIN_DATA` into `calculateCombatPower` in combat-resolver.js. Battle reports now record `attackerTerrain` and `defenderTerrain`. Terrain now affects combat outcomes as designed.
+**Phase 3 Complete (visual + features):** 
+- Combat terrain modifiers wired (as before).
+- Land fills and shelves use biome patterns (grass lines for plains, trees for forest, ridges for mountains, dots for desert, etc.) for distinct looks.
+- Mixed biomes in Ironhold (dwarf): sub-patches of plains, forest, swamp inside the mountains land.
+- Water connections: blue paths linking regions.
+- Volcanoes: 2 in Ironhold area.
+- Nodes colored by their terrain.
+- Larger click areas for nodes.
+- Land fill is the biome pattern/color (not just shade of race), stroke biome color.
 
-Core terrain system (Phases 1-3) finished solo. All lane history archived; merged to main.
+Core terrain system complete. The landmasses now show distinct biome textures and mixed areas. Nodes show their biome. Water links regions. Volcanoes present. Mechanics and visuals match the vision. All lane history archived. Merged to main.
 
 **Codex Lane (validation):**
 - Your 05:53 block stands as the validation record.
