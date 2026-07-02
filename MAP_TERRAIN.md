@@ -542,3 +542,66 @@ Now that the artifacts are real, we can treat Phase 2 as closed per signals.
 - To Grok/Codex: From my side, Phase 1 + Phase 2 are implemented, tested, and validated with real artifacts. I'm ready for merge whenever both lanes confirm alignment — this is a judgment call for the group, not something I'll do unilaterally.
 **Next for this lane:**
 - Standing by for explicit merge go-ahead from Grok + Codex alignment, per the project's phase-boundary merge rule.
+
+### GROK UPDATE - 2026-07-02 16:20 UTC
+**Status:** PHASE 1 + PHASE 2 COMPLETE + IN PR / PROCEED TO ALIGNMENT
+**Actions Performed:**
+- Received "claude is working on PR now, you can proceed".
+- Read the fresh CLAUDE UPDATE (16:15 UTC): independent verification of Codex 05:53 data, commit of the four 500-turn artifacts (9cfba504), PR #751 description updated with full Phase 1+2 summary + exact probe numbers, preflight checks done.
+- Cross-checked against prior GROK (16:05) and CODEX block: all consistent.
+- Confirmed current branch and PR state via tools.
+**Results:**
+- All three lanes are aligned: implementation done, validation artifacts real and verified, PR updated.
+- Phase 1 (data model, routes, basic layer, turn fix) + Phase 2 (GSAP terrain entrance/hover + expeditions expSpeed/resourceYield mechanic) are complete with matching evidence.
+**Metrics / Key Data:**
+- See 05:53 CODEX UPDATE + Claude's PR description for full details.
+- Key validation: mountains probe travel +40% vs plains (exact match to TERRAIN_DATA expSpeed 0.80 vs 1.12).
+**Observations / Issues:**
+- None. This is a clean close to the phase.
+- Reports are now committed.
+- PR #751 is the vehicle for the combined work.
+**Handoffs:**
+- To Claude: Good work getting the PR current and artifacts in. Since you are already on it, continue with any final polish on the PR description. Do not merge yet. Wait for explicit alignment from Grok + Codex.
+- To Codex: Your 05:53 block + probes were the key that allowed clean closure. Excellent. If we go to Phase 3, stand by for new validation targets.
+- To Grok: Phase 1+2 closed. I will now provide updated directions for the next decision point (merge to main vs. start Phase 3 on branch).
+**Next for this lane:**
+- Deliver clear post-Phase 2 directions.
+- Request user alignment on merge vs. Phase 3.
+
+**Updated Post-Phase 2 Directions:**
+
+**Current Status:** Phase 1 + Phase 2 fully implemented, validated with fresh 500-turn data + probes, artifacts committed, PR #751 updated by Claude. All lanes signaled complete.
+
+**Decision Point:** Merge Phase 1+2 to main (per phase-boundary rule) or continue on branch for Phase 3?
+
+**Recommended Path (my proposal):**
+Since the work is clean and validated, prepare for merge review. We can start Phase 3 scoping in parallel if desired (combat modifiers are the natural next mechanic).
+
+**Grok (planning):**
+- This GROK update closes Phase 1+2 in the handshake.
+- Will outline high-level Phase 3 scope below.
+- Once user confirms merge alignment or Phase 3 start, update MD accordingly.
+
+**Claude (implementation):**
+- You are already on the PR — keep it polished.
+- Run full pre-push checklist (branch check, fetch, log, gh pr list, lint, smoke) before any further push.
+- After merge (if approved): delete feature branch per post-merge housekeeping.
+- Be ready to implement Phase 3 items once scoped.
+
+**Codex (validation):**
+- Your block is the anchor for this close.
+- When Phase 3 starts, expect new instrumentation requests (e.g. combat terrain modifiers in the 500-turn harness).
+- Re-use the same 500-turn methodology.
+
+**High-level Phase 3 Sketch (combat + iteration):**
+- Wire combatDef / combatAtk modifiers from TERRAIN_DATA into combat resolver.
+- Add terrain flavor to battle reports.
+- Optional: world event biasing by terrain, more ambient GSAP, or simple seasonal overlays.
+- Validation: another 500-turn pair + combat-specific test runs.
+
+**Next action from user:**
+Confirm:
+A) Proceed to merge discussion / review for PR #751 (Phase 1+2 only), or
+B) Keep on branch and start Phase 3 implementation.
+
+I will update the MD and give precise next lane instructions once you choose.
