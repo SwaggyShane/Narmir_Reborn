@@ -241,6 +241,9 @@ const WarfarePanel = () => {
   const [wspSearchQ, setWspSearchQ] = useState('');
   const [wcovSearchQ, setWcovSearchQ] = useState('');
   const [wcovTargetRace, setWcovTargetRace] = useState(null);
+  const [spellDefs, setSpellDefs] = useState({});
+  const [selectedSpellId, setSelectedSpellId] = useState('');
+  const [spellDefsLoading, setSpellDefsLoading] = useState(false);
 
   // attack troop quantities (controlled inputs)
   const [atkQty, setAtkQty] = useState({ fighters: '0', rangers: '0', mages: '0', wm: '0', ladders: '0', clerics: '0', engineers: '0', ninjas: '0', thieves: '0' });
@@ -318,14 +321,30 @@ const WarfarePanel = () => {
   }, [kingdomId]);
 
   const syncSpellTargetFromHistory = useCallback(() => {
-    const lastTargetId = getLastSpellTarget();
+    const lastTargetId = getLastSpellTarget(selectedSpellId || undefined);
     if (!lastTargetId) return;
     const nextTarget = buildTargetList(targets, disc, stateData, { prependSelf: true })
       .find((entry) => String(entry.id) === String(lastTargetId));
     if (nextTarget) {
       setSpellTarget(nextTarget);
     }
-  }, [targets, disc, stateData]);
+  }, [targets, disc, stateData, selectedSpellId]);
+
+  const loadSpellDefs = useCallback(async () => {
+    setSpellDefsLoading(true);
+    try {
+      const data = await apiCall('/api/spell-definitions');
+      if (data?.error) {
+        console.error('[WarfarePanel] Failed to load spell definitions:', data.error);
+        return;
+      }
+      setSpellDefs(data?.SPELL_DEFS || {});
+    } catch (err) {
+      console.error('[WarfarePanel] Failed to load spell definitions:', err);
+    } finally {
+      setSpellDefsLoading(false);
+    }
+  }, []);
 
   const loadWarLog = useCallback(async () => {
     setLoadingWarLog(true);
@@ -402,16 +421,35 @@ const WarfarePanel = () => {
   }, [activeTab, loadAllianceIntel, loadSpyReports, loadWarLog, refreshAttackTargets, targets.length]);
 
   useEffect(() => {
+    if (activeTab === 'wspells' && !Object.keys(spellDefs).length && !spellDefsLoading) {
+      loadSpellDefs();
+    }
+  }, [activeTab, spellDefs, spellDefsLoading, loadSpellDefs]);
+
+  useEffect(() => {
     if (activeTab === 'wspells' && !spellTarget) {
       syncSpellTargetFromHistory();
     }
   }, [activeTab, spellTarget, syncSpellTargetFromHistory]);
 
   useEffect(() => {
-    if (spellTarget?.id) {
-      setLastSpellTarget('default', spellTarget.id);
+    if (selectedSpellId) {
+      const nextTargetId = getLastSpellTarget(selectedSpellId);
+      if (nextTargetId) {
+        const nextTarget = buildTargetList(targets, disc, stateData, { prependSelf: true })
+          .find((entry) => String(entry.id) === String(nextTargetId));
+        if (nextTarget) setSpellTarget(nextTarget);
+      } else {
+        setSpellTarget(null);
+      }
     }
-  }, [spellTarget?.id]);
+  }, [selectedSpellId, targets, disc, stateData]);
+
+  useEffect(() => {
+    if (spellTarget?.id) {
+      setLastSpellTarget(selectedSpellId || undefined, spellTarget.id);
+    }
+  }, [spellTarget?.id, selectedSpellId]);
 
   const handleTabClick = (tabId) => {
     setActiveTab(tabId);
@@ -919,16 +957,35 @@ const WarfarePanel = () => {
       <div className={clsx(activeTab === 'wspells' ? 'block' : 'hidden')}>
         <div className="card mb-3">
           <div className="card-title mb-2">Select Target</div>
+          <div className="mb-3">
+            <label className="mb-1 block text-[11px] uppercase tracking-[0.5px] text-[var(--text3)]">
+              Spell
+            </label>
+            <select
+              className="input w-full"
+              value={selectedSpellId}
+              onChange={(e) => setSelectedSpellId(e.target.value)}
+            >
+              <option value="">Pick a spell</option>
+              {Object.entries(spellDefs)
+                .sort((a, b) => String(a[0]).localeCompare(String(b[0])))
+                .map(([spellId, spell]) => (
+                  <option key={spellId} value={spellId}>
+                    {spellId.replace(/_/g, ' ')}{spell?.minSB ? ` (SB ${spell.minSB})` : ''}
+                  </option>
+                ))}
+            </select>
+          </div>
           <TargetListSection
             targets={filteredWspTargets}
             selected={spellTarget}
             onSelect={(target) => {
               setSpellTarget(target);
-              if (target?.id) setLastSpellTarget('default', target.id);
+              if (target?.id) setLastSpellTarget(selectedSpellId || undefined, target.id);
             }}
             searchQ={wspSearchQ}
             onSearchChange={setWspSearchQ}
-            placeholder="Search kingdoms…"
+            placeholder={selectedSpellId ? `Search targets for ${selectedSpellId.replace(/_/g, ' ')}…` : 'Pick a spell first'}
           />
         </div>
         <div className="card">
