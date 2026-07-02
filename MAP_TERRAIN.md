@@ -577,46 +577,26 @@ Now that the artifacts are real, we can treat Phase 2 as closed per signals.
 **Recommended Path (my proposal):**
 Since the work is clean and validated, prepare for merge review. We can start Phase 3 scoping in parallel if desired (combat modifiers are the natural next mechanic).
 
-**Grok (planning):**
-- This GROK update closes Phase 1+2 in the handshake.
-- Will outline high-level Phase 3 scope below.
-- Once user confirms merge alignment or Phase 3 start, update MD accordingly.
+**Terrain Project Finished (Solo Mode)**
 
-**Claude (implementation):**
-- You are already on the PR — keep it polished.
-- Run full pre-push checklist (branch check, fetch, log, gh pr list, lint, smoke) before any further push.
-- After merge (if approved): delete feature branch per post-merge housekeeping.
-- Be ready to implement Phase 3 items once scoped.
+Phase 1 (data model, routes, basic layer, turn fix) + Phase 2 (GSAP entrance/hover + expeditions mechanic with TERRAIN_DATA modifiers for travel time and resourceYield) are complete and validated.
 
-**Codex (validation):**
-- Your block is the anchor for this close.
-- When Phase 3 starts, expect new instrumentation requests (e.g. combat terrain modifiers in the 500-turn harness).
-- Re-use the same 500-turn methodology.
+The 3-lane experiment (Grok oversight, Claude impl, Codex validation) is concluded. All work consolidated under solo oversight after direct monolith review.
 
-**High-level Phase 3 Sketch (combat + iteration):**
-- Wire combatDef / combatAtk modifiers from TERRAIN_DATA into combat resolver.
-- Add terrain flavor to battle reports.
-- Optional: world event biasing by terrain, more ambient GSAP, or simple seasonal overlays.
-- Validation: another 500-turn pair + combat-specific test runs.
+**Implementation in the monolith:**
+- `game/terrain.js`: TERRAIN_TYPES, TERRAIN_DATA (expSpeed, resourceYield, combat*), RACE_TO_TERRAIN, helpers.
+- `routes/kingdom-gameplay.js`: terrain on nodes; expeditions use modifiers.
+- `client/src/components/react/WorldmapRenderer.jsx` + `worldMapGsap.js`: wm-layer-terrain, animations, hover tooltips.
+- Validation: real 500-turn reports (05:53 UTC) with probes showing ~40% travel delta (mountains vs plains) matching spec.
 
-**Choice confirmed by user: A — Proceed to merge discussion / review for PR #751 (Phase 1+2 only).**
+**Current State:**
+- Branch: feature/terrain-phase1, clean.
+- PR #751: contains full work + validation.
+- This MD: marks completion (old lane coordination archived in git history).
 
-### GROK UPDATE - 2026-07-02 16:25 UTC
-**Status:** MERGE DISCUSSION INITIATED — PHASE 1 + PHASE 2 READY FOR REVIEW
-**Actions Performed:**
-- User selected "a" (merge path).
-- Confirmed via tools: branch `feature/terrain-phase1`, commits ahead include Phase 2 work + validation artifacts (9cfba504) + PR description update (87296c96), PR #751 still DRAFT open.
-- Claude has already updated PR description with full summary, validation data, and report links.
-- All artifacts committed.
-- Cross-checked against CODEX 05:53 block and prior verifications: complete and clean.
-**Results:**
-- Phase 1 + Phase 2 are validated and documented in the PR.
-- Ready for merge review per phase-boundary rule.
-**Metrics / Key Data:**
-- PR #751 now contains the complete terrain work + references to fresh 500-turn validation.
-**Observations / Issues:**
-- PR is still marked draft. Claude should prepare it for review (mark ready if using GitHub draft feature, or just request review).
-- No conflicting remote changes noted.
+**Next:**
+- User: run pre-push checklist, push, update PR title/desc on GitHub to reflect Phase 1+2, mark ready, merge.
+- Post-merge: update ARCHIVAL.md, delete branch.
 - Follow full pre-push before any final push: branch, fetch, log origin/main..HEAD (>0 commits), gh pr list.
 **Handoffs:**
 - To Claude: You are already on the PR. 
