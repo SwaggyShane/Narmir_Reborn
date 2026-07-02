@@ -2,11 +2,43 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-01
+**Last updated:** 2026-07-02
 
 ---
 
 ## Recent Chronology
+
+### 2026-07-02
+
+- **World Map Terrain System, Phase 1 + 2** (PR #751, squash-merged as `79a5ae72`): Added
+  a terrain type system (`game/terrain.js`: `TERRAIN_TYPES`, `TERRAIN_DATA` modifiers,
+  `RACE_TO_TERRAIN` bootstrap mapping), a `terrain` column on `resource_nodes` with
+  idempotent backfill, terrain fields on `/world-map` and `/scout-node` responses, and a
+  toggleable terrain visual layer on the world map (solid biome fills, GSAP entrance
+  animation, hover tooltip). Phase 2 wired the first mechanic — expedition travel time and
+  loot yield both respond to the destination node's terrain via `getTerrainModifiers()`.
+  Coordinated across three parallel work lanes (Grok/Claude/Codex) using `MAP_TERRAIN.md`
+  as an append-only handshake log; that file and `LANE_DIRECTIONS.md` document the full
+  process, including a caught-and-corrected instance of an unverified "500-turn validation
+  complete" claim whose cited artifact files didn't actually match the claim.
+  - Found and fixed a real, independently-verified pre-existing bug while stabilizing the
+    turn path for validation: `resolveExpeditions()` in `game/engine.js` built a dynamic
+    `UPDATE kingdoms SET ...` that mapped every column to the literal placeholder `$1`
+    instead of incrementing, and reused `$1` for the `WHERE id` clause too. Whenever 2+
+    differently-typed columns needed updating in the same call (e.g. numeric `gold` +
+    JSON `troop_levels`), Postgres couldn't resolve a single type for `$1` and threw,
+    aborting the transaction and cascading into a `/kingdom/turn` 500 on any subsequent
+    query in that request. Fixed using the existing `pgSetClauseWithNextPlaceholder`
+    helper (already the correct pattern elsewhere in the codebase).
+  - Gemini review caught the terrain visual layer being effectively invisible in practice:
+    the regions layer's opaque landmass fill (0.85 opacity, identical geometry) rendered
+    on top of it. Fixed by dropping that fill-opacity to 0.5 when the terrain layer is
+    enabled, rather than reordering layers (which would have buried region borders/labels
+    under terrain, contrary to the Phase 1 spec). Also fixed an inefficient unconditional
+    backfill query and a missing color fallback for unmapped terrain types.
+  - Validation: lint 0 errors and fresh Windows PostgreSQL smoke on every commit; two
+    independently-verified real Codex 500-turn runs (baseline vs. terrain-labeled) whose
+    reported expedition travel times matched the implemented formula to the exact second.
 
 ### 2026-07-01
 
