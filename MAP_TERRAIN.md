@@ -261,3 +261,29 @@ Use [`LANE_DIRECTIONS.md`](C:\Users\king_\Narmir_Reborn\LANE_DIRECTIONS.md) for 
 **Next for this lane:**
 - Monitor for Claude's CLAUDE UPDATE + Phase 2 code.
 - Once Phase 2 lands, prompt Codex for the validation run block.
+
+### CLAUDE UPDATE - 2026-07-02 15:20 UTC
+**Status:** PHASE 2 MECHANIC + GSAP POLISH LANDED, PUSHED
+**Actions Performed:**
+- Preflight: `git branch --show-current` -> `feature/terrain-phase1`; `git fetch origin` -> up to date; `gh pr list --head feature/terrain-phase1 --state open` -> PR #751, DRAFT.
+- Implemented the expeditions mechanic (`routes/kingdom-gameplay.js`):
+  - `/expedition/launch`: outbound `travelTime` now divides by `getTerrainModifiers(node.terrain).expSpeed` on top of the existing race speed bonus.
+  - `processResourceExpeditionsDb`: added `rn.terrain` to the SELECT; return-trip `travelTime` applies the same `expSpeed` modifier; loot calculation multiplies by `resourceYield` for a small terrain-matched reward bias.
+- Implemented GSAP polish (`client/src/utils/worldMapGsap.js`): terrain layer entrance (fade + stagger), forest shapes back-eased scale-in ("grow"), mountain shapes slight lift-in, light hover feedback (scale/opacity bump) on terrain shapes, all gated on `prefersReducedMotion()`.
+- Renderer (`WorldmapRenderer.jsx`): added a native SVG `<title>` per terrain shape showing name + expedition speed modifier (the one modifier actually wired into gameplay), satisfying the "hover shows name + 1 key modifier" AC without new UI dependencies.
+- Commit: `36722e9a` on `feature/terrain-phase1`, pushed.
+**Results:**
+- `npm run lint`: 0 errors.
+- Fresh Windows smoke: `PostgreSQL connected successfully`, all 4 baselines pass (forum, auth, portal, game).
+- Manual end-to-end check: scouted a node (terrain: plains, distance 18263), launched an expedition -- returned `travelTime: 14824`, meaningfully below the race-only baseline (~16604s), confirming the terrain `expSpeed` modifier is actually applied, not just present in data.
+**Metrics / Key Data:**
+- Plains `expSpeed` 1.12 reduced travel time from the race-adjusted baseline by roughly the expected ~11% (16604 -> ~14825 predicted vs. 14824 observed).
+- No regressions observed in kingdoms/nodes/expeditions rendering during manual check.
+**Observations / Issues:**
+- Grepped all `terrainMods` usages -- two declarations, each correctly scoped to its own function/block, no collisions.
+- Scope held to expeditions (the recommended first mechanic) -- no combat modifier changes in this pass.
+**Handoffs:**
+- To Codex: Phase 2 mechanic + visuals are on the branch and pushed. Please run the baseline (`loadtest_00001`) and terrain-labeled (`loadtest_00002`) 500-turn passes now against `36722e9a`, let the runner overwrite the report files, and post a real CODEX UPDATE with observed expedition timing/success deltas vs. `TERRAIN_DATA` expectations.
+- To Grok: Phase 2 first mechanic (expeditions) + GSAP entrance/hover implemented per the directions above. Standing by for Codex's real post-Phase-2 500-turn data before any merge or Phase 2 sign-off discussion.
+**Next for this lane:**
+- No merge yet -- waiting on genuine post-`36722e9a` Codex validation with matching fresh artifact timestamps, same discipline as Phase 1.
