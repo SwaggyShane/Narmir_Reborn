@@ -2,7 +2,7 @@
 
 **Purpose:** Verify system readiness before deploying Narmir Reborn to production  
 **Audience:** DevOps engineers, deployment leads, engineering team  
-**Last Updated:** 2026-06-29
+**Last Updated:** 2026-07-01
 
 ---
 
@@ -20,7 +20,7 @@
 ### Documentation Readiness
 
 - [ ] CHANGELOG.md updated with new features/fixes
-- [ ] ROADMAP.md reflects completed work
+- [ ] TODO.md / ARCHIVAL.md reflect current work status (ROADMAP.md retired)
 - [ ] API_ENDPOINTS.md updated if any routes changed
 - [ ] Migration scripts tested locally (if database schema changed)
 - [ ] All .md docs pass grammar/spell check
@@ -391,6 +391,6 @@ Once all checks pass:
 
 ---
 
-**Last Updated:** 2026-06-29  
+**Last Updated:** 2026-07-01  
 **Next Review:** Before next deployment  
 **Maintained by:** DevOps / Deployment team

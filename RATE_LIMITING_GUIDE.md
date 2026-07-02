@@ -131,6 +131,5 @@ If tuning is needed, change the environment variables rather than editing hardco
 
 ## Related Files
 
-- [index.js](/C:/Users/king_/Narmir_Reborn/index.js)
-- [config/rate-limiting.js](/C:/Users/king_/Narmir_Reborn/config/rate-limiting.js)
-- [ROADMAP.md](/C:/Users/king_/Narmir_Reborn/ROADMAP.md)
+- `index.js`
+- `config/rate-limiting.js`
