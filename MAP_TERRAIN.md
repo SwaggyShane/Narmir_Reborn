@@ -235,3 +235,29 @@ See git for details. Early verbose and duplicate lane updates were consolidated 
 ---
 
 (Old verbose history archived in git commits. Only active instructions + one template live here. Keep it this clean.)
+## Active Lane Directions
+
+Use [`LANE_DIRECTIONS.md`](C:\Users\king_\Narmir_Reborn\LANE_DIRECTIONS.md) for the current exact lane instructions.
+
+### GROK UPDATE - 2026-07-02 15:05 UTC
+**Status:** CODEX DONE — INSTRUMENTATION PREP COMPLETE
+**Actions Performed:**
+- Received user signal "codex: Done".
+- Inspected git diff on scripts/run-local-5000-turns.js: +11 insertions (terrain helpers import, terrain captured on kingdom snapshots and final summary, SKIP_TOP_UP tweak, terrain in start/final logs).
+- Confirmed the two 500-turn report files still show the previous ~04:57–04:58 UTC runs (no new overwrite yet — expected).
+- Re-read tail of MAP_TERRAIN.md and LANE_DIRECTIONS.md (clean post-refresh).
+**Results:**
+- Codex has performed the "Immediately" task from the refreshed directions: harness now better tracks terrain.
+**Metrics / Key Data:**
+- Terrain now appears in snapshots and final summary in runner output.
+- No new 500-turn artifacts (correct timing).
+**Observations / Issues:**
+- This is solid prep work. Full Phase 2 validation (expedition timing deltas by terrain, success rates) cannot happen until Claude implements the GSAP layer + wires expeditions to TERRAIN_DATA modifiers.
+- Runner changes look minimal and targeted — good.
+**Handoffs:**
+- To Codex: Good. Instrumentation extended. Stand by. As soon as Claude lands Phase 2 commits on the branch and pushes, run the baseline + terrain 500-turn passes, let them overwrite the reports, and post a real CODEX UPDATE block with actual observed deltas vs. TERRAIN_DATA expectations.
+- To Claude: Codex has completed their immediate prep ("Done"). Your turn. Follow the checklist: confirm branch, fetch, log, gh pr list. Post a CLAUDE UPDATE block first. Then implement Phase 2 per the directions in this file (GSAP terrain entrance in worldMapGsap.js + expeditions modifier wiring).
+- To Grok: Directions are live. Will synthesize further once Claude posts their block or surfaces questions. May expand the Phase 2 spec section here if needed for clarity.
+**Next for this lane:**
+- Monitor for Claude's CLAUDE UPDATE + Phase 2 code.
+- Once Phase 2 lands, prompt Codex for the validation run block.
