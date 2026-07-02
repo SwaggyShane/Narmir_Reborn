@@ -5,6 +5,9 @@ export const REGION_META = {
   dark_elf: { name: 'The Underspire', color: '#1a1030', stroke: 'var(--accent1)', icon: '', x: 380, y: 340, w: 180, h: 200 },
   human: { name: 'The Heartlands', color: '#1a2a10', stroke: '#8fb84a', icon: '', x: 200, y: 380, w: 200, h: 180 },
   dire_wolf: { name: 'The Ashfang Wilds', color: '#0d1a20', stroke: '#4a8fb8', icon: '', x: 60, y: 390, w: 160, h: 170 },
+  vampire: { name: 'The Nightfall Marshes', color: '#2a0a1a', stroke: '#8b1a4a', icon: '', x: 420, y: 320, w: 180, h: 170 },
+  ogre: { name: 'The Cinder Reaches', color: '#3a2410', stroke: '#b8752a', icon: '', x: 780, y: 380, w: 190, h: 180 },
+  wood_elf: { name: 'The Emerald Vale', color: '#0f3018', stroke: '#3fae5c', icon: '', x: 700, y: 210, w: 190, h: 180 },
 };
 
 export const REGION_BONUSES = {
@@ -15,6 +18,8 @@ export const REGION_BONUSES = {
   human: 'Better economy',
   dire_wolf: 'Superior military strength',
   vampire: 'Night combat specialization',
+  ogre: 'Brute strength and intimidation',
+  wood_elf: 'Nature attunement and stealth',
 };
 
 export const RACE_LORE = {

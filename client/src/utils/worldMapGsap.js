@@ -29,12 +29,14 @@ export function applyWorldMapLayers(container, layers, { animate = true } = {}) 
   const svg = querySvg(container);
   if (!svg) return;
 
+  // Note: terrain is intentionally not in this mapping. The terrain toggle
+  // switches .wm-layer-terrain's fill color (biome vs. flat race color) in
+  // the renderer — it must stay visible either way, not be hidden here.
   const mapping = {
     nodes: '.wm-layer-nodes',
     routes: '.wm-layer-routes',
     expeditions: '.wm-layer-expeditions',
     kingdoms: '.wm-layer-kingdoms',
-    terrain: '.wm-layer-terrain',
   };
 
   Object.entries(mapping).forEach(([key, selector]) => {

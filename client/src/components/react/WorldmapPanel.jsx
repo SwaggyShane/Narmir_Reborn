@@ -29,7 +29,7 @@ const DEFAULT_LAYERS = {
   nodes: true,
   routes: true,
   expeditions: true,
-  terrain: true,
+  terrain: false,
 };
 
 export async function loadWorldMap({ setLoading, setError, setKingdoms, setTradeRoutes, setNodes, setExpeditions } = {}) {
@@ -200,11 +200,19 @@ const WorldmapPanel = () => {
   }, [mapSvg, mapDataKey, layers, selectedNode?.id]);
 
   useLayoutEffect(() => {
-    return animateMapPanelCard(nodeCardRef.current, { visible: Boolean(selectedNode) });
+    const cleanup = animateMapPanelCard(nodeCardRef.current, { visible: Boolean(selectedNode) });
+    if (selectedNode && nodeCardRef.current) {
+      nodeCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    return cleanup;
   }, [selectedNode]);
 
   useLayoutEffect(() => {
-    return animateMapPanelCard(kingdomCardRef.current, { visible: Boolean(mapCard) });
+    const cleanup = animateMapPanelCard(kingdomCardRef.current, { visible: Boolean(mapCard) });
+    if (mapCard && kingdomCardRef.current) {
+      kingdomCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    return cleanup;
   }, [mapCard]);
 
   const refreshWorldMap = useCallback(
@@ -361,15 +369,6 @@ const WorldmapPanel = () => {
           </div>
 
           <div className="flex flex-col gap-4">
-            <div className="card" id="region-legend">
-              <div className="card-title !mb-3">Regions</div>
-              <RegionLegend
-                kingdoms={kingdoms}
-                highlightedRace={highlightedRace}
-                onHighlight={setHighlightedRace}
-              />
-            </div>
-
             {selectedNode && nodeMeta && (
               <div ref={nodeCardRef} className="card">
                 <div className="card-title !mb-2">
@@ -444,6 +443,15 @@ const WorldmapPanel = () => {
                 </div>
               </div>
             )}
+
+            <div className="card" id="region-legend">
+              <div className="card-title !mb-3">Regions</div>
+              <RegionLegend
+                kingdoms={kingdoms}
+                highlightedRace={highlightedRace}
+                onHighlight={setHighlightedRace}
+              />
+            </div>
           </div>
         </div>
       </div>

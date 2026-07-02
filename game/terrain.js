@@ -8,6 +8,10 @@ const TERRAIN_TYPES = {
   SWAMP: 'swamp',
   HILLS: 'hills',
   COAST: 'coast',
+  TUNDRA: 'tundra',
+  VOLCANIC: 'volcanic',
+  LAKE: 'lake',
+  OCEAN: 'ocean',
 };
 
 const TERRAIN_DATA = {
@@ -81,7 +85,53 @@ const TERRAIN_DATA = {
       resourceYield: 1.15,
     },
   },
+  tundra: {
+    displayName: 'Tundra',
+    color: '#7a8a94',
+    modifiers: {
+      expSpeed: 0.75,     // -25%, harsh polar travel
+      combatDef: 1.10,
+      combatAtk: 0.90,
+      resourceYield: 0.75,
+    },
+  },
+  volcanic: {
+    displayName: 'Volcanic',
+    color: '#7a2e1a',
+    modifiers: {
+      expSpeed: 0.70,     // -30%, hazardous terrain
+      combatDef: 0.95,
+      combatAtk: 1.10,
+      resourceYield: 1.25, // rich but dangerous, matches "ancient artifacts" flavor
+    },
+  },
+  lake: {
+    displayName: 'Lake',
+    color: '#2a5f8a',
+    modifiers: {
+      expSpeed: 0.60,     // land expeditions crossing water, heavily slowed
+      combatDef: 1.15,    // natural barrier at a defender's back
+      combatAtk: 0.85,
+      resourceYield: 1.20, // fishing
+    },
+  },
+  ocean: {
+    displayName: 'Ocean',
+    color: '#0d3a5c',
+    modifiers: {
+      expSpeed: 0.55,     // open sea, slowest of all for land-based expeditions
+      combatDef: 1.05,
+      combatAtk: 0.85,
+      resourceYield: 1.10,
+    },
+  },
 };
+
+// Climate-band terrains (tundra, volcanic, ocean) are not tied to any race —
+// they appear at fixed map latitudes regardless of who lives there. Lake is
+// placed once per region (see WorldmapRenderer.jsx buildHexGrid), not
+// randomly mixed in like the others. No RACE_TO_TERRAIN entry needed for any
+// of these four.
 
 const RACE_TO_TERRAIN = {
   dwarf: 'mountains',

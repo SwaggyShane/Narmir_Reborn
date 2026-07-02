@@ -152,7 +152,14 @@ export function useWorldMapViewport({ resetKey = '', enabled = true } = {}) {
       if (!dragRef.current.active || dragRef.current.pointerId !== event.pointerId) return;
       const dx = event.clientX - dragRef.current.startX;
       const dy = event.clientY - dragRef.current.startY;
-      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+      // A real mouse/trackpad click almost never lands with zero movement between
+      // down and up - a few pixels of natural jitter is normal, especially when
+      // aiming at a small marker. 3px was tight enough that ordinary clicks were
+      // being misclassified as drags and silently suppressed (no error, since
+      // handleMapClick's shouldSuppressClick() just returns early). A real
+      // intentional drag moves far more than this within the first few pixels,
+      // so widening the threshold doesn't hurt drag detection.
+      if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
         dragRef.current.moved = true;
       }
       setViewport({
