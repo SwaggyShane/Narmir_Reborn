@@ -1,0 +1,689 @@
+# Codex Local 5,000 Turn Run
+
+- Started: 2026-07-02T05:52:48.988Z
+- Account: loadtest_00002
+- Target turns spent: 500
+- School choice target: conjuration
+
+## Plan
+
+- Phase 1: stabilize food, housing, schools, markets, and basic research.
+- Phase 2: grow researchers, engineers, libraries, and mage capacity.
+- Phase 3: choose a non-combat school, deepen economy, and add defense.
+- Phase 4: run safe exploration, improve storage, and smooth the build pipeline.
+- Phase 5: leave the kingdom in a readable, reviewable state and extract tutorial notes.
+
+## Summary
+
+- started_at: 2026-07-02T05:52:48.988Z
+- completed_at: 2026-07-02T05:53:37.864Z
+- initial_turns_stored: 500
+- target_turns_spent: 500
+- actual_turns_spent: 500
+- final_turn: 500
+- final_turns_stored: 0
+- final_score: 177,322
+- final_level: 60
+- final_gold: 66,825,471
+- final_food: 102,770
+- final_land: 14,226
+- final_population: 176,872
+- final_happiness: 53
+- final_school: none
+- final_terrain: Plains
+- final_research_focus: economy
+- latest_news_headline: Turn 499: +44,855 gold earned.
+
+## Turn Snapshots
+
+### Start
+
+- Turn: 0
+- Stored turns: 500
+- Gold: 65,176,114
+- Food: 129,690
+- Land: 14,226
+- Population: 167,363
+- Happiness: 100
+- Level: 51
+- Score: 170,095
+- School: not selected yet
+- Terrain: plains
+- Research focus: economy
+- Research: economy 191, construction 100, military 100, spellbook 0, school spellbook 0
+- Buildings: farms 40, housing 180, granaries 6, markets 1, schools 3, libraries 0, barracks 3, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 300, engineers 179, mages 0, rangers 175, fighters 200, scribes 0
+
+### After 100 turns
+
+- Turn: 100
+- Stored turns: 400
+- Gold: 71,214,438
+- Food: 128,508
+- Land: 14,226
+- Population: 173,295
+- Happiness: 100
+- Level: 53
+- Score: 179,299
+- School: not selected yet
+- Terrain: not set
+- Research focus: economy
+- Research: economy 193, construction 100, military 100, spellbook 0, school spellbook 0
+- Buildings: farms 40, housing 180, granaries 6, markets 1, schools 3, libraries 0, barracks 3, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 300, engineers 179, mages 0, rangers 175, fighters 200, scribes 0
+
+### After 200 turns
+
+- Turn: 200
+- Stored turns: 300
+- Gold: 63,654,103
+- Food: 107,503
+- Land: 14,226
+- Population: 170,536
+- Happiness: 100
+- Level: 55
+- Score: 170,513
+- School: not selected yet
+- Terrain: not set
+- Research focus: economy
+- Research: economy 194, construction 100, military 100, spellbook 0, school spellbook 0
+- Buildings: farms 39, housing 180, granaries 6, markets 1, schools 3, libraries 0, barracks 2, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 300, engineers 179, mages 0, rangers 165, fighters 189, scribes 0
+
+### After 300 turns
+
+- Turn: 300
+- Stored turns: 200
+- Gold: 69,699,545
+- Food: 116,577
+- Land: 14,226
+- Population: 176,580
+- Happiness: 67
+- Level: 57
+- Score: 179,788
+- School: not selected yet
+- Terrain: not set
+- Research focus: economy
+- Research: economy 196, construction 100, military 100, spellbook 0, school spellbook 0
+- Buildings: farms 39, housing 180, granaries 6, markets 1, schools 3, libraries 0, barracks 3, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 300, engineers 179, mages 0, rangers 165, fighters 189, scribes 0
+
+### After 400 turns
+
+- Turn: 400
+- Stored turns: 100
+- Gold: 68,776,643
+- Food: 107,036
+- Land: 14,226
+- Population: 177,223
+- Happiness: 45
+- Level: 58
+- Score: 179,281
+- School: not selected yet
+- Terrain: not set
+- Research focus: economy
+- Research: economy 197, construction 100, military 100, spellbook 0, school spellbook 0
+- Buildings: farms 39, housing 180, granaries 6, markets 0, schools 3, libraries 0, barracks 3, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 300, engineers 179, mages 0, rangers 165, fighters 189, scribes 0
+
+### After 500 turns
+
+- Turn: 500
+- Stored turns: 0
+- Gold: 66,825,471
+- Food: 102,853
+- Land: 14,226
+- Population: 176,972
+- Happiness: 53
+- Level: 60
+- Score: 177,372
+- School: not selected yet
+- Terrain: not set
+- Research focus: economy
+- Research: economy 198, construction 100, military 100, spellbook 0, school spellbook 0
+- Buildings: farms 37, housing 180, granaries 6, markets 0, schools 3, libraries 0, barracks 3, mage towers 0, taverns 0, vaults 0, guard towers 0, walls 0
+- Units: researchers 300, engineers 179, mages 0, rangers 157, fighters 179, scribes 0
+
+## Actions Taken
+
+- Turn 0: engineers - Assigned engineers to markets 89, libraries 90.
+- Turn 25: engineers - Assigned engineers to markets 89, libraries 90.
+- Turn 50: engineers - Assigned engineers to markets 89, libraries 90.
+- Turn 75: engineers - Assigned engineers to markets 89, libraries 90.
+- Turn 100: checkpoint - Checkpoint at 100 spent turns with 400 stored turns remaining.
+- Turn 100: engineers - Assigned engineers to markets 89, libraries 90.
+- Turn 125: engineers - Assigned engineers to markets 89, libraries 90.
+- Turn 150: engineers - Assigned engineers to markets 89, libraries 90.
+- Turn 175: engineers - Assigned engineers to markets 89, libraries 90.
+- Turn 200: checkpoint - Checkpoint at 200 spent turns with 300 stored turns remaining.
+- Turn 200: build - Queued 1 barracks.
+- Turn 200: engineers - Assigned engineers to markets 59, libraries 59, barracks 61.
+- Turn 225: engineers - Assigned engineers to markets 89, libraries 90.
+- Turn 250: engineers - Assigned engineers to markets 89, libraries 90.
+- Turn 275: engineers - Assigned engineers to markets 89, libraries 90.
+- Turn 300: checkpoint - Checkpoint at 300 spent turns with 200 stored turns remaining.
+- Turn 300: engineers - Assigned engineers to markets 89, libraries 90.
+- Turn 325: build - Queued 1 housing, 1 markets.
+- Turn 325: engineers - Assigned engineers to housing 59, markets 59, libraries 61.
+- Turn 350: engineers - Assigned engineers to markets 89, libraries 90.
+- Turn 375: engineers - Assigned engineers to markets 89, libraries 90.
+- Turn 400: checkpoint - Checkpoint at 400 spent turns with 100 stored turns remaining.
+- Turn 400: engineers - Assigned engineers to markets 89, libraries 90.
+- Turn 425: build - Queued 1 barracks.
+- Turn 425: engineers - Assigned engineers to markets 59, libraries 59, barracks 61.
+- Turn 475: engineers - Assigned engineers to markets 89, libraries 90.
+- Turn 500: checkpoint - Checkpoint at 500 spent turns with 0 stored turns remaining.
+
+## Tutorial Notes
+
+- Schools directly gate researcher capacity, so early economy growth should include more schools, not just more researchers.
+- Barracks gate troop headcount for most military units, so new players need barracks before broad recruiting.
+- Granaries are part of the stability layer, not just decoration; food security feels better once farms and granaries grow together.
+
+## Bugs Encountered
+
+- Turn 1: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 2: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 3: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 4: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 5: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 6: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 7: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 8: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 9: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 10: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 11: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 12: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 13: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 14: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 15: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 16: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 17: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 18: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 19: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 20: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 21: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 22: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 23: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 24: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 25: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 26: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 27: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 28: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 29: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 30: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 31: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 32: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 33: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 34: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 35: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 36: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 37: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 38: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 39: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 40: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 41: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 42: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 43: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 44: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 45: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 46: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 47: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 48: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 49: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 50: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 51: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 52: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 53: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 54: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 55: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 56: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 57: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 58: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 59: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 60: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 61: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 62: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 63: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 64: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 65: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 66: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 67: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 68: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 69: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 70: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 71: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 72: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 73: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 74: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 75: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 76: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 77: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 78: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 79: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 80: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 81: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 82: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 83: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 84: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 85: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 86: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 87: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 88: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 89: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 90: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 91: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 92: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 93: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 94: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 95: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 96: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 97: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 98: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 99: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 100: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 101: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 102: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 103: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 104: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 105: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 106: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 107: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 108: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 109: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 110: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 111: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 112: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 113: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 114: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 115: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 116: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 117: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 118: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 119: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 120: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 121: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 122: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 123: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 124: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 125: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 126: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 127: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 128: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 129: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 130: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 131: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 132: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 133: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 134: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 135: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 136: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 137: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 138: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 139: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 140: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 141: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 142: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 143: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 144: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 145: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 146: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 147: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 148: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 149: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 150: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 151: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 152: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 153: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 154: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 155: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 156: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 157: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 158: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 159: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 160: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 161: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 162: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 163: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 164: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 165: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 166: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 167: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 168: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 169: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 170: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 171: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 172: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 173: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 174: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 175: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 176: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 177: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 178: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 179: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 180: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 181: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 182: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 183: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 184: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 185: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 186: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 187: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 188: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 189: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 190: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 191: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 192: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 193: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 194: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 195: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 196: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 197: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 198: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 199: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 200: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 201: Construction note: Actively constructing: 1 barracks [4% done, ~24 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 202: Construction note: Actively constructing: 1 barracks [8% done, ~23 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 203: Construction note: Actively constructing: 1 barracks [12% done, ~22 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 204: Construction note: Actively constructing: 1 barracks [16% done, ~21 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 205: Construction note: Actively constructing: 1 barracks [20% done, ~20 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 206: Construction note: Actively constructing: 1 barracks [24% done, ~19 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 207: Construction note: Actively constructing: 1 barracks [28% done, ~18 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 208: Construction note: Actively constructing: 1 barracks [33% done, ~17 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 209: Construction note: Actively constructing: 1 barracks [37% done, ~16 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 210: Construction note: Actively constructing: 1 barracks [41% done, ~15 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 211: Construction note: Actively constructing: 1 barracks [45% done, ~14 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 212: Construction note: Actively constructing: 1 barracks [49% done, ~13 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 213: Construction note: Actively constructing: 1 barracks [53% done, ~12 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 214: Construction note: Actively constructing: 1 barracks [57% done, ~11 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 215: Construction note: Actively constructing: 1 barracks [62% done, ~10 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 216: Construction note: Actively constructing: 1 barracks [66% done, ~9 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 217: Construction note: Actively constructing: 1 barracks [70% done, ~8 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 218: Construction note: Actively constructing: 1 barracks [74% done, ~7 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 219: Construction note: Actively constructing: 1 barracks [78% done, ~6 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 220: Construction note: Actively constructing: 1 barracks [82% done, ~5 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 221: Construction note: Actively constructing: 1 barracks [86% done, ~4 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 222: Construction note: Actively constructing: 1 barracks [90% done, ~3 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 223: Construction note: Actively constructing: 1 barracks [95% done, ~2 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 224: Construction note: Actively constructing: 1 barracks [99% done, ~1 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 225: Construction note: Completed: 1 barracks. Actively constructing: 1 barracks [NaN% done, ~NaN turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 226: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 227: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 228: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 229: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 230: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 231: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 232: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 233: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 234: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 235: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 236: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 237: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 238: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 239: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 240: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 241: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 242: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 243: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 244: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 245: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 246: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 247: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 248: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 249: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 250: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 251: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 252: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 253: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 254: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 255: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 256: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 257: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 258: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 259: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 260: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 261: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 262: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 263: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 264: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 265: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 266: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 267: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 268: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 269: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 270: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 271: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 272: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 273: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 274: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 275: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 276: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 277: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 278: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 279: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 280: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 281: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 282: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 283: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 284: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 285: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 286: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 287: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 288: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 289: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 290: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 291: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 292: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 293: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 294: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 295: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 296: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 297: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 298: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 299: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 300: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 301: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 302: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 303: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 304: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 305: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 306: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 307: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 308: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 309: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 310: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 311: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 312: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 313: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 314: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 315: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 316: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 317: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 318: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 319: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 320: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 321: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 322: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 323: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 324: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 325: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 326: Construction note: Actively constructing: 1 housing [17% done, ~5 turns left] (Using 500 gc & 25 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 327: Construction note: Actively constructing: 1 housing [34% done, ~4 turns left] (Using 500 gc & 25 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 328: Construction note: Actively constructing: 1 housing [51% done, ~3 turns left] (Using 500 gc & 25 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 329: Construction note: Actively constructing: 1 housing [68% done, ~2 turns left] (Using 500 gc & 25 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 330: Construction note: Actively constructing: 1 housing [85% done, ~1 turns left] (Using 500 gc & 25 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 331: Construction note: Completed: 1 housing. Actively constructing: 1 housing [NaN% done, ~NaN turns left] (Using 500 gc & 25 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 332: Construction note: Actively constructing: 1 housing [17% done, ~5 turns left] (Using 500 gc & 25 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 333: Construction note: Actively constructing: 1 housing [34% done, ~4 turns left] (Using 500 gc & 25 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 334: Construction note: Actively constructing: 1 housing [51% done, ~3 turns left] (Using 500 gc & 25 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 335: Construction note: Actively constructing: 1 housing [68% done, ~2 turns left] (Using 500 gc & 25 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 336: Construction note: Actively constructing: 1 housing [85% done, ~1 turns left] (Using 500 gc & 25 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 337: Construction note: Actively constructing: 1 housing [102% done, ~0 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 338: Construction note: Actively constructing: 1 housing [120% done, ~-1 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 339: Construction note: Actively constructing: 1 housing [137% done, ~-2 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 340: Construction note: Actively constructing: 1 housing [154% done, ~-3 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 341: Construction note: Actively constructing: 1 housing [171% done, ~-4 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 342: Construction note: Actively constructing: 1 housing [188% done, ~-5 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 343: Construction note: Actively constructing: 1 housing [205% done, ~-6 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 344: Construction note: Actively constructing: 1 housing [222% done, ~-7 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 345: Construction note: Actively constructing: 1 housing [240% done, ~-8 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 346: Construction note: Actively constructing: 1 housing [257% done, ~-9 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 347: Construction note: Actively constructing: 1 housing [274% done, ~-10 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 348: Construction note: Actively constructing: 1 housing [291% done, ~-11 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 349: Construction note: Actively constructing: 1 housing [308% done, ~-12 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 350: Construction note: Actively constructing: 1 housing [325% done, ~-13 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 351: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 352: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 353: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 354: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 355: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 356: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 357: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 358: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 359: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 360: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 361: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 362: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 363: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 364: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 365: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 366: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 367: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 368: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 369: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 370: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 371: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 372: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 373: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 374: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 375: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 376: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 377: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 378: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 379: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 380: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 381: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 382: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 383: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 384: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 385: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 386: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 387: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 388: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 389: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 390: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 391: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 392: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 393: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 394: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 395: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 396: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 397: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 398: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 399: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 400: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 401: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 402: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 403: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 404: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 405: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 406: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 407: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 408: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 409: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 410: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 411: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 412: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 413: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 414: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 415: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 416: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 417: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 418: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 419: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 420: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 421: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 422: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 423: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 424: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 425: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 426: Construction note: Actively constructing: 1 barracks [4% done, ~24 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 427: Construction note: Actively constructing: 1 barracks [8% done, ~23 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 428: Construction note: Actively constructing: 1 barracks [12% done, ~22 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 429: Construction note: Actively constructing: 1 barracks [16% done, ~21 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 430: Construction note: Actively constructing: 1 barracks [20% done, ~20 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 431: Construction note: Actively constructing: 1 barracks [24% done, ~19 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 432: Construction note: Actively constructing: 1 barracks [28% done, ~18 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 433: Construction note: Actively constructing: 1 barracks [33% done, ~17 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 434: Construction note: Actively constructing: 1 barracks [37% done, ~16 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 435: Construction note: Actively constructing: 1 barracks [41% done, ~15 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 436: Construction note: Actively constructing: 1 barracks [45% done, ~14 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 437: Construction note: Actively constructing: 1 barracks [49% done, ~13 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 438: Construction note: Actively constructing: 1 barracks [53% done, ~12 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 439: Construction note: Actively constructing: 1 barracks [57% done, ~11 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 440: Construction note: Actively constructing: 1 barracks [62% done, ~10 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 441: Construction note: Actively constructing: 1 barracks [66% done, ~9 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 442: Construction note: Actively constructing: 1 barracks [70% done, ~8 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 443: Construction note: Actively constructing: 1 barracks [74% done, ~7 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 444: Construction note: Actively constructing: 1 barracks [78% done, ~6 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 445: Construction note: Actively constructing: 1 barracks [82% done, ~5 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 446: Construction note: Actively constructing: 1 barracks [86% done, ~4 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 447: Construction note: Actively constructing: 1 barracks [90% done, ~3 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 448: Construction note: Actively constructing: 1 barracks [95% done, ~2 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 449: Construction note: Actively constructing: 1 barracks [99% done, ~1 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 450: Construction note: Completed: 1 barracks. Actively constructing: 1 barracks [NaN% done, ~NaN turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 450: Engineer allocation blocked: POST /kingdom/build-allocation failed: 500 Failed to set build allocation
+- Turn 451: Construction note: Actively constructing: 1 barracks [4% done, ~24 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 452: Construction note: Actively constructing: 1 barracks [8% done, ~23 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 453: Construction note: Actively constructing: 1 barracks [12% done, ~22 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 454: Construction note: Actively constructing: 1 barracks [16% done, ~21 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 455: Construction note: Actively constructing: 1 barracks [20% done, ~20 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 456: Construction note: Actively constructing: 1 barracks [24% done, ~19 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 457: Construction note: Actively constructing: 1 barracks [28% done, ~18 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 458: Construction note: Actively constructing: 1 barracks [33% done, ~17 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 459: Construction note: Actively constructing: 1 barracks [37% done, ~16 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 460: Construction note: Actively constructing: 1 barracks [41% done, ~15 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 461: Construction note: Actively constructing: 1 barracks [45% done, ~14 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 462: Construction note: Actively constructing: 1 barracks [49% done, ~13 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 463: Construction note: Actively constructing: 1 barracks [53% done, ~12 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 464: Construction note: Actively constructing: 1 barracks [57% done, ~11 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 465: Construction note: Actively constructing: 1 barracks [62% done, ~10 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 466: Construction note: Actively constructing: 1 barracks [66% done, ~9 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 467: Construction note: Actively constructing: 1 barracks [70% done, ~8 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 468: Construction note: Actively constructing: 1 barracks [74% done, ~7 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 469: Construction note: Actively constructing: 1 barracks [78% done, ~6 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 470: Construction note: Actively constructing: 1 barracks [82% done, ~5 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 471: Construction note: Actively constructing: 1 barracks [86% done, ~4 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 472: Construction note: Actively constructing: 1 barracks [90% done, ~3 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 473: Construction note: Actively constructing: 1 barracks [95% done, ~2 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 474: Construction note: Actively constructing: 1 barracks [99% done, ~1 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 475: Construction note: Actively constructing: 1 barracks [103% done, ~0 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available. ⚠️ barracks paused — not enough wood.
+- Turn 476: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 477: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 478: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 479: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 480: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 481: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 482: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 483: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 484: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 485: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 486: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 487: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 488: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 489: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 490: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 491: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 492: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 493: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 494: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 495: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 496: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 497: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 498: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 499: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+- Turn 500: Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.
+
+## Expedition Probes
+
+- expedition:mountains: {"nodeId":2,"terrain":"mountains","travelTime":8182,"foodTaken":83,"arrive_at":1782979799,"distance":7200,"richness":3,"expectedExpSpeed":0.8,"expectedResourceYield":1.05,"note":"post-run expedition probe"}
