@@ -632,18 +632,23 @@ Since the work is clean and validated, prepare for merge review. We can start Ph
 
 **Terrain Project Finished (Solo Wrap - 2026-07-02)**
 
-Phase 1 (data model, DB/routes exposure, basic wm-layer-terrain) and Phase 2 (GSAP entrance/hover for terrain layer, expeditions wired to TERRAIN_DATA for travel time + resourceYield loot bias) are complete, validated with fresh 500-turn runs + manual probes, and documented in PR #751.
+Phase 1 (data model + basic visual layer + turn fix) and Phase 2 (GSAP entrance/hover + expeditions mechanic using TERRAIN_DATA for expSpeed travel time and resourceYield loot) are complete.
 
-The 3-lane experiment (Grok planning, Claude impl, Codex validation) is ended per user request. All work consolidated under solo oversight.
+The 3-lane parallel experiment is ended. All coordination consolidated; work finished under solo oversight.
+
+**Implementation Complete:**
+- `game/terrain.js`: TERRAIN_TYPES, TERRAIN_DATA (with expSpeed, resourceYield, combat* modifiers), RACE_TO_TERRAIN bootstrap, helpers.
+- `routes/kingdom-gameplay.js`: terrain in world-map, scout, node creation; expeditions launch/processing apply modifiers.
+- `client/src/utils/worldMapGsap.js` + `WorldmapRenderer.jsx`: wm-layer-terrain, entrance animations (stagger/scale/lift), hover titles with name + modifier, toggle support.
+- Validation: fresh 500-turn reports + probes (05:53 UTC) confirm mechanics (e.g. mountains probe travelTime 8182 vs plains 5845 on identical distance; ~40% delta matches 0.80 vs 1.12).
 
 **Current State:**
-- Implementation: complete in `game/terrain.js`, `routes/kingdom-gameplay.js`, `client/src/utils/worldMapGsap.js`, `WorldmapRenderer.jsx`.
-- Validation: real artifacts in docs/ (05:53 UTC runs) with probe data confirming ~40% travel time delta (plains 1.12x vs mountains 0.80x) matching spec.
-- PR #751: updated with full summary + validation. (Draft as of last check.)
-- Branch: feature/terrain-phase1, ahead with all terrain work.
+- Branch: feature/terrain-phase1 (ahead of main with full work + artifacts).
+- PR #751: contains Phase 1+2 + validation summary (updated).
+- MD: this file now marks completion (lanes archived in git).
 
-**Next (User Action Required for Merge):**
-1. Run pre-push checklist on branch:
+**To Merge (Do These Steps):**
+1. On this branch run:
    ```
    git branch --show-current
    git fetch origin
@@ -651,14 +656,18 @@ The 3-lane experiment (Grok planning, Claude impl, Codex validation) is ended pe
    gh pr list --head feature/terrain-phase1 --state open --repo swaggyshane/narmir_reborn
    npm run lint
    ```
-2. Ensure PR #751 description is polished (link this MD section + reports).
-3. Mark PR ready for review (remove draft).
-4. Merge to main after review/approval.
-5. Post-merge: I will handle MD/ARCHIVAL update and branch delete instructions.
+2. On GitHub:
+   - Edit PR #751 title to "feat: Terrain system - Phase 1+2 (data, visuals, GSAP, expeditions)".
+   - Update description to reference this MD + reports.
+   - Mark Ready for review (if still draft).
+   - Merge after any required review.
+3. Post-merge (tell me "merged"):
+   - I will update ARCHIVAL.md with completion entry.
+   - Delete feature/terrain-phase1 (git push -d origin + git branch -d).
 
-**Phase 3 Deferred:** Combat modifiers, event biasing, etc. can be added in a follow-up PR. The core terrain system (visual + expeditions mechanic) is shipped.
+Phase 3 (combat modifiers, events, etc.) deferred to follow-up.
 
-All prior lane instructions archived in git history. MD now reflects solo completion.
+Core terrain system shipped. All checks/lane history in git. Ready for main.
 
 **Codex Lane (validation):**
 - Your 05:53 block stands as the validation record.
