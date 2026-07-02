@@ -5,6 +5,7 @@ import { gameStateManager } from '../GameStateManager.js';
 import { playGameSound } from '../utils/audio.js';
 import { getRegenCountdownLabel } from './useRegenCountdown.js';
 import { AppEvent, emitAppEvent } from '../utils/appEvents.js';
+import { useProfileStore } from '../stores/profileStore.js';
 
 function applyResult(data, reason) {
   const updates = data?.updates || data?.kUpdates || null;
@@ -59,6 +60,8 @@ export function useGameActions() {
         return null;
       }
       applyResult(data, 'turn');
+      const updatedState = gameStateManager.getState();
+      useProfileStore.setState({ turn: updatedState.turn, turns_stored: updatedState.turns_stored });
 
       let completedBuildingsMsg = '';
       if (Array.isArray(data.events)) {
