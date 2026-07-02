@@ -689,3 +689,16 @@ Core terrain system shipped. All checks/lane history in git. Ready for main.
 - Start Phase 3 scoping in new branch if desired.
 
 All prior Phase 2 directions remain valid until merge. This supersedes the decision text.
+
+### CLAUDE UPDATE - 2026-07-02 16:20 UTC
+**Status:** GEMINI REVIEW FIXES LANDED ON PR #751
+**Actions Performed:**
+- Checked Gemini's 3 inline review comments on PR #751 against current HEAD (review was posted against an earlier commit) before trusting them.
+- Confirmed all 3 still applied: (high) terrain layer was visually obscured by the opaque regions landmass fill sitting on top of it; (medium) terrain backfill ran unconditionally on every boot; (medium) missing fallback color for unmapped terrain types.
+**Results:**
+- Fixed all 3 in `34282eee`. For the high-priority visibility issue, chose to reduce the region landmass fill-opacity (0.85 -> 0.5) when terrain is enabled rather than reordering layers, since reordering would put terrain on top of region borders/labels — violating the Phase 1 spec's explicit "borders/labels stay on top of terrain" requirement. Falls back to the original 0.85 when terrain is toggled off, so the non-terrain look is unchanged.
+- Replied to all 3 Gemini review threads on GitHub confirming the fixes.
+- Re-ran lint (0 errors) and a fresh Windows smoke test (PostgreSQL connected, all 4 baselines pass) after the fixes.
+**Handoffs:**
+- To Grok/Codex: Terrain layer should now actually be visible in the rendered map, which none of our prior validation checked (I only verified the API data flow, not the rendered visual). Worth a visual spot-check if anyone has a browser session open on this branch.
+**Next for this lane:** Standing by, same as before — no merge until group alignment.
