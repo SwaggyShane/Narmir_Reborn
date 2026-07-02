@@ -1,6 +1,6 @@
 # Claude Code Workflow Guide
 
-⚠️ **PROJECT-SPECIFIC WORKFLOW FIRST:** Before applying any rules from this guide, **check ROADMAP.md for project-specific workflow instructions**. Project workflows override these defaults. If ROADMAP.md defines interim or custom workflow rules, follow those instead of the standard CLAUDE.md workflow.
+⚠️ **PROJECT-SPECIFIC WORKFLOW FIRST:** Before applying any rules from this guide, **check TODO.md for active/deferred work items** (ROADMAP.md was retired 2026-07-01; history lives in ARCHIVAL.md). Project workflows override these defaults. If TODO.md defines interim or custom workflow rules, follow those instead of the standard CLAUDE.md workflow.
 
 ## PR Workflow
 
@@ -257,9 +257,9 @@ Example of a bad suggestion that was applied: removing `style={{ display: 'none'
 
 After every PR merge to main:
 
-1. **Update ROADMAP.md** — Mark completed work, update status lines, move sprint items to ✅ Done
-   - Commit message: `docs: Update ROADMAP — <track/phase> complete`
-   - Create a draft PR immediately for the roadmap update
+1. **Update TODO.md / ARCHIVAL.md** — When completing items: move entries from TODO.md to ARCHIVAL.md under a dated chronology section. Remove from TODO.
+   - Commit message: `docs: Update TODO/ARCHIVAL — <item> complete`
+   - Create a draft PR immediately for the docs update
    - Merge when CI passes
 
 2. **Delete the feature branch** — Clean up merged branches to keep repo tidy
@@ -270,7 +270,7 @@ After every PR merge to main:
    - If remote deletion fails (permissions), note it but do not block progress
    - Local deletion should always succeed
 
-**Why:** Prevents stale branches cluttering the repo; keeps roadmap in sync with actual work so future sessions know what's done.
+**Why:** Prevents stale branches cluttering the repo; keeps TODO/ARCHIVAL in sync with actual work so future sessions know what's done.
 
 ---
 

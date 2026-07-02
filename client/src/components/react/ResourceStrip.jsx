@@ -76,6 +76,8 @@ function formatDelta(delta) {
   if (delta == null) return null;
   const sign = delta >= 0 ? '+' : '−';
   const abs = Math.abs(delta);
+  if (abs >= 1000000000000) return `${sign}${(abs / 1000000000000).toFixed(1)}t`;
+  if (abs >= 1000000000) return `${sign}${(abs / 1000000000).toFixed(1)}b`;
   if (abs >= 1000000) return `${sign}${(abs / 1000000).toFixed(1)}m`;
   if (abs >= 1000) return `${sign}${(abs / 1000).toFixed(1)}k`;
   return `${sign}${Math.round(abs).toLocaleString()}`;
@@ -171,6 +173,8 @@ function parseObject(value, fallback = {}) {
 function trunc(value) {
   const n = numberValue(value);
   const abs = Math.abs(n);
+  if (abs >= 1000000000000) return `${(n / 1000000000000).toFixed(abs >= 10000000000000 ? 0 : 1)}t`;
+  if (abs >= 1000000000) return `${(n / 1000000000).toFixed(abs >= 10000000000 ? 0 : 1)}b`;
   if (abs >= 1000000) return `${(n / 1000000).toFixed(abs >= 10000000 ? 0 : 1)}m`;
   if (abs >= 1000) return `${(n / 1000).toFixed(abs >= 10000 ? 0 : 1)}k`;
   return Math.floor(n).toLocaleString();

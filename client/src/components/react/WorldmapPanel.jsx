@@ -241,8 +241,23 @@ const WorldmapPanel = () => {
   const handleMapClick = useCallback((event) => {
     if (shouldSuppressClick()) return;
 
-    const nodeDot = event.target.closest?.('.map-node, .wm-node-group');
-    const nodeId = nodeDot?.getAttribute('data-node-id');
+    let element = event.target;
+    let nodeId = null;
+    let targetKingdomId = null;
+
+    // Walk up the DOM tree to find node or kingdom element
+    while (element && element !== event.currentTarget) {
+      if (!nodeId) {
+        nodeId = element.getAttribute?.('data-node-id');
+        if (nodeId) break;
+      }
+      if (!targetKingdomId) {
+        targetKingdomId = element.getAttribute?.('data-kingdom-id');
+        if (targetKingdomId) break;
+      }
+      element = element.parentElement;
+    }
+
     if (nodeId) {
       const node = nodes.find((entry) => String(entry.id) === String(nodeId));
       if (node) {
@@ -252,8 +267,6 @@ const WorldmapPanel = () => {
       return;
     }
 
-    const dot = event.target.closest?.('.kd-dot');
-    const targetKingdomId = dot?.getAttribute('data-kingdom-id');
     if (targetKingdomId) {
       setSelectedNode(null);
       showMapKingdomCard(targetKingdomId, currentKingdomId, marketUpgrades);

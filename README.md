@@ -283,7 +283,7 @@ Initial admin setup still uses `ADMIN_SECRET` via `/api/setup-admin` (see env ta
 
 **Legacy note:** The vanilla `public/admin.html` has been archived to `public/legacy/admin.html`. React admin is the canonical panel as of Ph6b (2026-06-26).
 
-See `ROADMAP.md` for admin migration status and verification checklist.
+Admin migration to React + Tailwind panel is complete (see ARCHIVAL.md for history).
 
 ---
 
