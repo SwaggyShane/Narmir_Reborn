@@ -599,9 +599,68 @@ Since the work is clean and validated, prepare for merge review. We can start Ph
 - Optional: world event biasing by terrain, more ambient GSAP, or simple seasonal overlays.
 - Validation: another 500-turn pair + combat-specific test runs.
 
-**Next action from user:**
-Confirm:
-A) Proceed to merge discussion / review for PR #751 (Phase 1+2 only), or
-B) Keep on branch and start Phase 3 implementation.
+**Choice confirmed by user: A — Proceed to merge discussion / review for PR #751 (Phase 1+2 only).**
 
-I will update the MD and give precise next lane instructions once you choose.
+### GROK UPDATE - 2026-07-02 16:25 UTC
+**Status:** MERGE DISCUSSION INITIATED — PHASE 1 + PHASE 2 READY FOR REVIEW
+**Actions Performed:**
+- User selected "a" (merge path).
+- Confirmed via tools: branch `feature/terrain-phase1`, commits ahead include Phase 2 work + validation artifacts (9cfba504) + PR description update (87296c96), PR #751 still DRAFT open.
+- Claude has already updated PR description with full summary, validation data, and report links.
+- All artifacts committed.
+- Cross-checked against CODEX 05:53 block and prior verifications: complete and clean.
+**Results:**
+- Phase 1 + Phase 2 are validated and documented in the PR.
+- Ready for merge review per phase-boundary rule.
+**Metrics / Key Data:**
+- PR #751 now contains the complete terrain work + references to fresh 500-turn validation.
+**Observations / Issues:**
+- PR is still marked draft. Claude should prepare it for review (mark ready if using GitHub draft feature, or just request review).
+- No conflicting remote changes noted.
+- Follow full pre-push before any final push: branch, fetch, log origin/main..HEAD (>0 commits), gh pr list.
+**Handoffs:**
+- To Claude: You are already on the PR. 
+  1. Run full checks now (git branch --show-current, fetch, log origin/main..HEAD, gh pr list).
+  2. Polish PR description if needed (include the GROK/CODEX/CLAUDE blocks for the record).
+  3. Mark PR ready for review (remove draft status) and request review from relevant people.
+  4. Do not merge. Wait for explicit group alignment.
+- To Codex: Validation block is solid and was the key to clean closure. Confirm you are good with merge of this work.
+- To Grok: Will monitor PR updates. Once Claude confirms checks and PR is ready, we can call it aligned for merge. Post-merge: update ARCHIVAL.md / TODO, delete branch.
+**Next for this lane:**
+- Support Claude on PR readiness.
+- After merge, decide on Phase 3 start (combat modifiers etc.).
+
+**Merge Prep Directions (current active):**
+
+**Current Status:** Phase 1+2 complete, validated, artifacts in, PR #751 updated. User chose A: merge discussion.
+
+**Claude Lane (implementation - priority now):**
+- Perform the full pre-push checklist immediately:
+  ```
+  git branch --show-current   # must be feature/terrain-phase1
+  git fetch origin
+  git log --oneline origin/main..HEAD   # must show the Phase 1+2 + validation commits
+  gh pr list --head feature/terrain-phase1 --state open --repo swaggyshane/narmir_reborn
+  ```
+- Ensure lint, smoke (if changes), sanity.
+- Update PR description with latest if needed, link to this MD section.
+- Remove draft status and request review.
+- Report results back here.
+- After approval: merge (user will handle or direct).
+
+**Codex Lane (validation):**
+- Your 05:53 block stands as the validation record.
+- Reply here if you have any final notes before merge.
+- Post-merge you can help with any re-validation if needed.
+
+**Grok Lane (oversight):**
+- This update records the merge decision.
+- Will keep MD updated with PR status.
+- After merge: handle post-merge housekeeping in MD (move to ARCHIVAL).
+
+**Post-Merge Plan (once merged):**
+- Update TODO/ARCHIVAL.md with terrain Phase 1+2 completion.
+- Delete feature branch (local + origin if possible).
+- Start Phase 3 scoping in new branch if desired.
+
+All prior Phase 2 directions remain valid until merge. This supersedes the decision text.
