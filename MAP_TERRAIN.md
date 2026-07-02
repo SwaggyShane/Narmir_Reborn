@@ -409,3 +409,59 @@ Phase 1 code + turn fix (bc1a7d72) on feature/terrain-phase1. PR #751 open. Real
 - Draft and append Phase 2 notes using the template.
 - Monitor for Claude PR update.
 
+
+### GROK UPDATE - 2026-07-02 13:55 UTC
+**Status:** PHASE 1 VALIDATED WITH REAL FRESH DATA / PHASE 2 DESIGN DRAFT READY
+**Actions Performed:**
+- Confirmed via direct file inspection that Codex has executed the post-bc1a7d72 500-turn runs.
+- Both baseline and terrain-labeled completed full 500 turns without errors.
+- Fresh timestamps (~04:57-04:58 UTC).
+- Terrain data layer confirmed working (field present in reports).
+- Limited biome contrast in this test pair (both kingdoms resolved to Plains), but the core fix and data layer are validated.
+
+**Results:**
+- Phase 1 is now backed by genuine post-fix 500-turn artifacts.
+- Turn path stable.
+- Ready to proceed.
+
+**Handoffs:**
+- To Codex: Good work. Artifacts now match. Ready for Phase 2 validation once the GSAP + mechanic code lands (will need instrumentation for timing, success rates, etc.).
+- To Claude: Phase 1 validated with real data. Update PR #751 status. Proceed with merge prep on the branch. Push remaining commits. We can discuss merge once lanes align.
+- To Grok: Phase 2 design outline drafted below. Will expand as needed.
+
+**Next for this lane:**
+- Post Phase 2 design notes.
+- Monitor for Claude PR update.
+
+**Phase 2 Design Outline (GSAP + Polish UI - Parallel Grok + Claude per original plan):**
+
+**Goal:** Add entrance animations, hover/selection feedback, and UI polish for the terrain layer. Keep it light and performant. Respect reduced motion.
+
+**Grok Design Notes:**
+- Entrance: Stagger terrain features. Forests "grow" with scale + back.ease. Mountains fade in + slight lift. Use existing animateWorldMap or extend it.
+- Hover/Selection: Light scale (1.01-1.02) + saturation/glow on hovered regions. Reuse/extend highlightSelectedNode. Add tooltip: "Terrain: Mountains (+20% defense for defender)".
+- Ambient (minimal): Gentle tree sway in forests (slow yoyo scale/rotate on select elements). Water shimmer on coast if present. Gate with prefersReducedMotion().
+- Colors from spec: Use TERRAIN_COLORS (e.g., mountains '#5c4033', forest '#2d4a2d', etc.). Opacity ~0.48 for base layer.
+- Performance: Keep decorative elements sparse. Groups and CSS classes for targeting.
+
+**Claude Implementation Targets (Phase 2 scope):**
+- Extend worldMapGsap.js: add terrain layer to applyWorldMapLayers mapping. Implement animateTerrainEntrance or extend animateWorldMap.
+- WorldmapPanel.jsx: Ensure terrain toggle works (already in Phase 1).
+- WorldmapRenderer.jsx: Enhance terrain layer if needed for data-driven colors (already basic in Phase 1).
+- Add tooltips and hover effects in renderer or panel.
+- Full workflow: lint, fresh smoke, sanity before any commit. Draft PR updates.
+
+**Codex Prep for Validation:**
+- Extend runner/harness to log terrain-specific metrics (exp timing deltas, success rates by terrain type).
+- Visual/perf: Run under node density to measure any impact (FPS if client sim, turn time).
+
+**Files to touch (Phase 2):**
+- client/src/utils/worldMapGsap.js (main)
+- client/src/components/react/WorldmapPanel.jsx
+- client/src/components/react/WorldmapRenderer.jsx (enhance if needed)
+- Possibly client/src/utils/raceData.js for deduping consts.
+
+Once Claude implements and Codex validates, we can close Phase 2.
+
+**Next Milestone:** Claude starts Phase 2 GSAP implementation on the branch (post any merge). Codex instruments for validation.
+
