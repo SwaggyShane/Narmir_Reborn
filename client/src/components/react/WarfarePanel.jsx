@@ -44,6 +44,7 @@ import { RACE_ICONS } from '../../utils/raceIcons.js';
 import { playGameSound } from '../../utils/audio.js';
 import { registerShowBattleReport } from '../../utils/showBattleReport.js';
 import BattleReportModal from './BattleReportModal.jsx';
+import SpellCastingModal from './SpellCastingModal.jsx';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -237,6 +238,7 @@ const WarfarePanel = () => {
   const [attackTarget, setAttackTarget] = useState(null);
   const [spellTarget, setSpellTarget] = useState(null);
   const [covertTarget, setCovertTarget] = useState(null);
+  const [spellModalOpen, setSpellModalOpen] = useState(false);
   const [atkSearchQ, setAtkSearchQ] = useState('');
   const [wspSearchQ, setWspSearchQ] = useState('');
   const [wcovSearchQ, setWcovSearchQ] = useState('');
@@ -662,8 +664,34 @@ const WarfarePanel = () => {
     refreshAttackTargets();
   }, [refreshAttackTargets, fighters, rangers, mages, warMachines, ladders, ninjas, thieves, clerics, engineers, attackTarget, atkQty]);
 
-  // wspells/wcovert action stubs — not yet implemented; buttons present for future use
-  const castWspell = () => {};
+  const castWspell = async (spellId = selectedSpellId, target = spellTarget) => {
+    if (!spellId) {
+      toast('Pick a spell first.', 'error');
+      return null;
+    }
+    if (!target?.id && spellDefs?.[spellId]?.effect !== 'friendly') {
+      toast('Pick a target first.', 'error');
+      return null;
+    }
+    const data = await apiCall('/api/kingdom/spell', {
+      method: 'POST',
+      body: {
+        spellId,
+        targetId: target?.id ?? null,
+        obscure: false,
+      },
+    });
+    if (data?.error) {
+      toast(data.error, 'error');
+      return null;
+    }
+    if (spellId && target?.id) {
+      setLastSpellTarget(spellId, target.id);
+    }
+    setSpellModalOpen(false);
+    toast('Spell cast.', 'success');
+    return data;
+  };
   const doWcovert = () => {};
   const updateWspellCalc = () => {};
 
@@ -956,42 +984,46 @@ const WarfarePanel = () => {
       {/* ── Spells tab ─────────────────────────────────────────────────────── */}
       <div className={clsx(activeTab === 'wspells' ? 'block' : 'hidden')}>
         <div className="card mb-3">
-          <div className="card-title mb-2">Select Target</div>
-          <div className="mb-3">
-            <label className="mb-1 block text-[11px] uppercase tracking-[0.5px] text-[var(--text3)]">
-              Spell
-            </label>
-            <select
-              className="input w-full"
-              value={selectedSpellId}
-              onChange={(e) => setSelectedSpellId(e.target.value)}
-            >
-              <option value="">Pick a spell</option>
-              {Object.entries(spellDefs)
-                .sort((a, b) => String(a[0]).localeCompare(String(b[0])))
-                .map(([spellId, spell]) => (
-                  <option key={spellId} value={spellId}>
-                    {spellId.replace(/_/g, ' ')}{spell?.minSB ? ` (SB ${spell.minSB})` : ''}
-                  </option>
-                ))}
-            </select>
+          <div className="card-title mb-2">Spell Targeting</div>
+          <div className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg2)] p-3">
+            <div className="text-[12px] text-[var(--text3)]">
+              Open the spell modal to pick a spell and reuse its last target automatically.
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button className="btn btn-accent" onClick={() => setSpellModalOpen(true)}>
+                Open Spell Modal
+              </button>
+              <button
+                className="base-btn"
+                onClick={() => {
+                  setSelectedSpellId('');
+                  setSpellTarget(null);
+                  setSpellModalOpen(true);
+                }}
+              >
+                Reset and Open
+              </button>
+            </div>
           </div>
-          <TargetListSection
-            targets={filteredWspTargets}
-            selected={spellTarget}
-            onSelect={(target) => {
-              setSpellTarget(target);
-              if (target?.id) setLastSpellTarget(selectedSpellId || undefined, target.id);
-            }}
-            searchQ={wspSearchQ}
-            onSearchChange={setWspSearchQ}
-            placeholder={selectedSpellId ? `Search targets for ${selectedSpellId.replace(/_/g, ' ')}…` : 'Pick a spell first'}
-          />
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <div className="rounded-lg border border-[var(--border)] bg-[var(--bg3)] p-3">
+              <div className="text-[10px] uppercase tracking-[0.5px] text-[var(--text3)]">Active Spell</div>
+              <div className="text-[14px] font-semibold text-[var(--text)]">
+                {selectedSpellId ? selectedSpellId.replace(/_/g, ' ') : 'None selected'}
+              </div>
+            </div>
+            <div className="rounded-lg border border-[var(--border)] bg-[var(--bg3)] p-3">
+              <div className="text-[10px] uppercase tracking-[0.5px] text-[var(--text3)]">Current Target</div>
+              <div className="text-[14px] font-semibold text-[var(--text)]">
+                {spellTarget ? spellTarget.name : 'None selected'}
+              </div>
+            </div>
+          </div>
         </div>
         <div className="card">
           <div className="card-title">Warfare Spells</div>
           <div className="mt-3">
-            <button className="base-btn" onClick={castWspell}>Prepare Spell Targeting</button>
+            <button className="base-btn" onClick={() => setSpellModalOpen(true)}>Prepare Spell Targeting</button>
             <button className="base-btn ml-2" onClick={updateWspellCalc}>Refresh Spell Estimates</button>
           </div>
         </div>
@@ -1021,6 +1053,22 @@ const WarfarePanel = () => {
         </div>
       </div>
     </div>
+    <SpellCastingModal
+      open={spellModalOpen}
+      onClose={() => setSpellModalOpen(false)}
+      spellDefs={spellDefs}
+      spellDefsLoading={spellDefsLoading}
+      targets={filteredWspTargets}
+      selectedSpellId={selectedSpellId}
+      onSelectedSpellIdChange={setSelectedSpellId}
+      spellTarget={spellTarget}
+      onSpellTargetChange={setSpellTarget}
+      spellSearchQ={wspSearchQ}
+      onSpellSearchChange={setWspSearchQ}
+      targetSearchQ={wspSearchQ}
+      onTargetSearchChange={setWspSearchQ}
+      onCast={castWspell}
+    />
     <BattleReportModal data={battleReport} onClose={() => setBattleReport(null)} />
     </>
   );
