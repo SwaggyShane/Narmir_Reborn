@@ -1,4 +1,5 @@
 const STORAGE_KEY = 'narmir_spell_target_history';
+const DEFAULT_KEY = '__default__';
 
 function readHistory() {
   try {
@@ -19,14 +20,22 @@ function writeHistory(history) {
   }
 }
 
-export function getLastSpellTarget(spellId = 'default') {
+export function getLastSpellTarget(spellId = DEFAULT_KEY) {
   const history = readHistory();
-  const entry = history?.[String(spellId || 'default')];
-  return entry?.targetId ?? null;
+  const key = String(spellId || DEFAULT_KEY);
+  const entry = history?.[key];
+  if (entry?.targetId !== undefined && entry?.targetId !== null) {
+    return entry.targetId;
+  }
+  if (arguments.length === 0 || key === DEFAULT_KEY) {
+    const fallback = history?.[DEFAULT_KEY];
+    return fallback?.targetId ?? null;
+  }
+  return null;
 }
 
-export function setLastSpellTarget(spellId = 'default', targetId) {
-  const key = String(spellId || 'default');
+export function setLastSpellTarget(spellId = DEFAULT_KEY, targetId) {
+  const key = String(spellId || DEFAULT_KEY);
   const history = readHistory();
 
   if (targetId === null || targetId === undefined || targetId === '') {
@@ -36,11 +45,12 @@ export function setLastSpellTarget(spellId = 'default', targetId) {
       targetId: String(targetId),
       savedAt: Date.now(),
     };
+    history[DEFAULT_KEY] = history[key];
   }
 
   writeHistory(history);
 }
 
-export function clearSpellTargetHistory(spellId = 'default') {
+export function clearSpellTargetHistory(spellId = DEFAULT_KEY) {
   setLastSpellTarget(spellId, null);
 }

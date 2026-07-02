@@ -34,7 +34,8 @@ describe('spellTargetHistory', () => {
 
     expect(getLastSpellTarget('whisper')).toBe('42');
     expect(getLastSpellTarget('oracle')).toBe('99');
-    expect(getLastSpellTarget()).toBeNull();
+    expect(getLastSpellTarget()).toBe('99');
+    expect(getLastSpellTarget('missing-spell')).toBeNull();
   });
 
   it('clears an individual spell target history entry', () => {
