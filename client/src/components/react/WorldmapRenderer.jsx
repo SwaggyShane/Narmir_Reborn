@@ -408,36 +408,34 @@ export function renderWorldMap(
         });
         svg += '</g>';
 
-        // Region layer: draws only the true shared edge between two cells of
-        // different races (or the map's outer edge), as a continuous colored
-        // line — not a full hex ring per border cell, which fragmented into
-        // disconnected arcs instead of one clean boundary. Each seam picks a
-        // single race deterministically (alphabetically first of the two)
-        // regardless of which cell is scanned first, so a whole boundary run
-        // renders as one consistent color instead of alternating depending on
-        // grid iteration order. A dark underline is drawn first so borders
-        // read clearly against any biome color they happen to sit on.
+        // Region layer: each cell draws its OWN edge, inset slightly toward
+        // its own center, wherever that edge faces a different race (or the
+        // map's outer boundary). At an internal seam, both neighboring cells
+        // draw their own inset edge in their own color, producing two
+        // distinct parallel lines (one per side) instead of a single shared
+        // line that has to arbitrarily pick one color. A dark underline is
+        // drawn first so each line reads clearly against any biome color.
         svg += '<g class="wm-layer wm-layer-regions">';
+        var BORDER_INSET = 4;
         var borderSegments = [];
         hexGrid.cells.forEach(function (cell) {
           var neighborKeys = hexNeighborKeys(cell.col, cell.row);
-          var corners = hexCorners(cell.x, cell.y, HEX_SIZE);
+          var corners = hexCorners(cell.x, cell.y, HEX_SIZE - BORDER_INSET);
           neighborKeys.forEach(function (key, dirIndex) {
             var neighbor = hexGrid.cellMap.get(key);
             if (neighbor && neighbor.race === cell.race) return;
-            var borderRace = neighbor ? (cell.race < neighbor.race ? cell.race : neighbor.race) : cell.race;
             var edge = DIRECTION_EDGE_CORNERS[dirIndex];
             var p1 = corners[edge[0]];
             var p2 = corners[edge[1]];
-            borderSegments.push({ race: borderRace, p1: p1, p2: p2 });
+            borderSegments.push({ race: cell.race, p1: p1, p2: p2 });
           });
         });
         borderSegments.forEach(function (seg) {
-          svg += '<line x1="' + seg.p1[0] + '" y1="' + seg.p1[1] + '" x2="' + seg.p2[0] + '" y2="' + seg.p2[1] + '" stroke="#000" stroke-width="5" stroke-linecap="round" opacity="0.5" pointer-events="none"/>';
+          svg += '<line x1="' + seg.p1[0] + '" y1="' + seg.p1[1] + '" x2="' + seg.p2[0] + '" y2="' + seg.p2[1] + '" stroke="#000" stroke-width="4.5" stroke-linecap="round" opacity="0.5" pointer-events="none"/>';
         });
         borderSegments.forEach(function (seg) {
           var meta = REGION_META[seg.race] || {};
-          svg += '<line x1="' + seg.p1[0] + '" y1="' + seg.p1[1] + '" x2="' + seg.p2[0] + '" y2="' + seg.p2[1] + '" stroke="' + (meta.stroke || '#fff') + '" stroke-width="2.5" stroke-linecap="round" class="region-shape wm-region" data-race="' + escapeHtml(seg.race) + '" style="transition:opacity 0.3s;opacity:' + regionOpacity(seg.race, highlightedRace) + '" pointer-events="none"/>';
+          svg += '<line x1="' + seg.p1[0] + '" y1="' + seg.p1[1] + '" x2="' + seg.p2[0] + '" y2="' + seg.p2[1] + '" stroke="' + (meta.stroke || '#fff') + '" stroke-width="2.25" stroke-linecap="round" class="region-shape wm-region" data-race="' + escapeHtml(seg.race) + '" style="transition:opacity 0.3s;opacity:' + regionOpacity(seg.race, highlightedRace) + '" pointer-events="none"/>';
         });
         svg += '</g>';
 
