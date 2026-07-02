@@ -20,7 +20,7 @@ const fragmentBonusManager = require("./fragment-bonus-manager");
 const effectsProcessor = require("./synergy-effects-processor");
 const { safeJsonParse, clearParseCache } = require('../utils/helpers');
 const { EPOCH_NOW } = require('../lib/db-sql');
-const { pgInList } = require('../lib/pg-placeholders');
+const { pgInList, pgSetClauseWithNextPlaceholder } = require('../lib/pg-placeholders');
 
 // Shared domain helpers extracted to game/lib. These are the canonical
 // implementations; engine.js still re-exports them via module.exports so
@@ -1982,10 +1982,9 @@ async function resolveExpeditions(db, k, engine) {
         ),
       );
       if (Object.keys(safeUpdates).length > 0) {
-        const cols = Object.keys(safeUpdates)
-          .map((c) => `${c} = $1`)
-          .join(", ");
-        await db.run(`UPDATE kingdoms SET ${cols} WHERE id = $1`, [
+        const cols = Object.keys(safeUpdates);
+        const { setClause, nextPlaceholder } = pgSetClauseWithNextPlaceholder(cols);
+        await db.run(`UPDATE kingdoms SET ${setClause} WHERE id = ${nextPlaceholder}`, [
           ...Object.values(safeUpdates),
           k.id,
         ]);
