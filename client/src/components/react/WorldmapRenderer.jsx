@@ -245,7 +245,7 @@ export function renderWorldMap(
           var path = regionPaths[race] || "";
           if (!path) return;
           var t = RACE_TO_TERRAIN[race] || 'plains';
-          var fill = TERRAIN_COLORS[t];
+          var fill = TERRAIN_COLORS[t] || TERRAIN_COLORS.plains;
           svg += '<path d="' + path + '" fill="' + fill + '" opacity="0.48" class="terrain-shape" data-terrain="' + escapeHtml(t) + '" data-race="' + escapeHtml(race) + '" style="transform-box:fill-box;transform-origin:center;cursor:default"><title>' + escapeHtml(terrainTooltip(t)) + '</title></path>';
         });
         svg += '</g>';
@@ -310,7 +310,7 @@ export function renderWorldMap(
 
             meta.color +
 
-            '" stroke-width="25" stroke-linejoin="round" stroke-linecap="round" fill-opacity="0.85" class="region-shape wm-region" data-race="' +
+            '" stroke-width="25" stroke-linejoin="round" stroke-linecap="round" fill-opacity="' + (layers.terrain !== false ? '0.5' : '0.85') + '" class="region-shape wm-region" data-race="' +
 
             escapeHtml(race) +
 
