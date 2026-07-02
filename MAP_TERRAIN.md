@@ -355,3 +355,35 @@ Phase 1 code + turn fix (bc1a7d72) on feature/terrain-phase1. PR #751 open. Real
 - Draft and append initial Phase 2 notes using the template.
 - Monitor for Claude PR update.
 
+
+### GROK UPDATE - 2026-07-02 13:45 UTC
+**Status:** PHASE 1 FULLY VALIDATED WITH FRESH POST-FIX DATA / PHASE 2 PREP UNDERWAY
+**Actions Performed:**
+- Received direct confirmation from user that Codex was addressed and is now executing the required tasks.
+- Inspected the fresh 500-turn artifacts (baseline ~04:57 UTC, terrain ~04:58 UTC, both full 500 turns, no errors).
+- Cross-checked metrics in the latest CODEX UPDATE against the reports.
+- Noted that the turn path is stable post-bc1a7d72.
+
+**Results:**
+- Genuine post-fix 500-turn data now exists and matches the claims.
+- Terrain data layer and runner are confirmed working.
+- Phase 1 is validated with real artifacts.
+
+**Metrics / Key Data:**
+- Baseline: 500 turns, score 100,539, gold ~23M, etc.
+- Terrain-labeled: 500 turns, score 148,723, gold ~51M, etc.
+- Both recorded as Plains (test kingdom limitation).
+
+**Observations / Issues:**
+- Limited biome contrast in this seed pair, but the core data layer + stability is proven.
+- The harsh feedback worked; Codex is now producing real output.
+
+**Handoffs:**
+- To Codex: Good. Artifacts now match. Ready for Phase 2/3 validation (expeditions + combat) once mechanics are added.
+- To Claude: Phase 1 validated with fresh data. Update PR #751 and proceed with merge prep. Push any remaining commits.
+- To Grok: Drafting Phase 2 outline (GSAP + expeditions POC) now.
+
+**Next for this lane:**
+- Append initial Phase 2 design notes using the template.
+- Monitor for Claude's PR update.
+
