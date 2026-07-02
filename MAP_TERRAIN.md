@@ -652,7 +652,7 @@ The 3-lane experiment (Grok planning, Claude impl, Codex validation) is ended pe
 - MD: this file now marks completion (lanes archived in git).
 
 **To Merge (Do These Steps):**
-1. On this branch run:
+1. On this branch run the checklist:
    ```
    git branch --show-current
    git fetch origin
@@ -662,11 +662,11 @@ The 3-lane experiment (Grok planning, Claude impl, Codex validation) is ended pe
    ```
 2. On GitHub:
    - Edit PR #751 title to "feat: Terrain system - Phase 1+2 (data, visuals, GSAP, expeditions)".
-   - Update description to reference this MD + reports.
-   - Mark Ready for review (if still draft).
-   - Merge after any required review.
+   - Update description to link this MD + the fresh 05:53 validation reports.
+   - Mark Ready for review.
+   - Merge (squash if you want to hide the lane experiment noise).
 3. Post-merge (tell me "merged"):
-   - I will update ARCHIVAL.md with completion entry.
+   - I will update ARCHIVAL.md with the completion entry and give branch delete commands.
    - Delete feature/terrain-phase1 (git push -d origin + git branch -d).
 
 Phase 3 (combat modifiers, events, etc.) deferred to follow-up.
