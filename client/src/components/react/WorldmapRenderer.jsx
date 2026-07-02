@@ -38,6 +38,7 @@ const TERRAIN_COLORS = {
   coast: '#3a5f7a',
   tundra: '#7a8a94',
   volcanic: '#7a2e1a',
+  lake: '#2a5f8a',
 };
 
 const TERRAIN_DISPLAY_NAMES = {
@@ -50,6 +51,7 @@ const TERRAIN_DISPLAY_NAMES = {
   coast: 'Coast',
   tundra: 'Tundra',
   volcanic: 'Volcanic',
+  lake: 'Lake',
 };
 
 // Expedition speed modifier per terrain — kept in sync with game/terrain.js TERRAIN_DATA.
@@ -64,6 +66,7 @@ const TERRAIN_EXP_SPEED = {
   coast: 1.05,
   tundra: 0.75,
   volcanic: 0.70,
+  lake: 0.60,
 };
 
 function terrainTooltip(terrain) {
@@ -269,7 +272,89 @@ function buildHexGrid(W, H) {
     }
   }
 
-  return { cells, cellMap };
+  // One lake per region: the cell nearest that race's home point (guaranteed
+  // to belong to that race, since it's the same point the Voronoi assignment
+  // above is measured from) is overridden to lake terrain, regardless of what
+  // climate band or biome mix would otherwise have put there.
+  const lakeByRace = {};
+  Object.keys(RACE_HOMES).forEach((race) => {
+    const home = RACE_HOMES[race];
+    let best = null;
+    let bestDist = Infinity;
+    cells.forEach((c) => {
+      if (c.race !== race) return;
+      const dx = c.x - home.x;
+      const dy = c.y - home.y;
+      const dist = dx * dx + dy * dy;
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = c;
+      }
+    });
+    if (best) {
+      best.terrain = 'lake';
+      lakeByRace[race] = best;
+    }
+  });
+
+  const riverSegments = buildRiverNetwork(cells, cellMap, lakeByRace);
+
+  return { cells, cellMap, riverSegments };
+}
+
+// Generates 1-2 tributary paths per region, each a random walk (staying
+// within that region's own cells) from a peripheral source hex toward the
+// region's lake, biased toward reducing distance to the lake each step but
+// with enough randomness to wind naturally. Returns pixel-space line
+// segments (full HEX_SIZE, not inset — rivers overlay the terrain fill
+// rather than carving a gap the way region borders do) ready to render.
+function buildRiverNetwork(cells, cellMap, lakeByRace) {
+  const riverSegments = [];
+  const visitedEdges = new Set();
+
+  Object.keys(lakeByRace).forEach((race) => {
+    const lake = lakeByRace[race];
+    const regionCells = cells.filter((c) => c.race === race && c.terrain !== 'lake');
+    if (!regionCells.length) return;
+
+    const sourceCount = 1 + Math.floor(hexSeededRandom(lake.col, lake.row, 11) * 2);
+    for (let s = 0; s < sourceCount; s++) {
+      const sourceIdx = Math.floor(hexSeededRandom(lake.col + s, lake.row + s, 13) * regionCells.length);
+      let current = regionCells[sourceIdx];
+      let guard = 0;
+      while (current && (current.col !== lake.col || current.row !== lake.row) && guard < 40) {
+        guard++;
+        const neighborKeys = hexNeighborKeys(current.col, current.row);
+        const candidates = [];
+        neighborKeys.forEach((key, dirIndex) => {
+          const nb = cellMap.get(key);
+          if (nb && nb.race === race) candidates.push({ cell: nb, dirIndex });
+        });
+        if (!candidates.length) break;
+
+        candidates.sort((a, b) => {
+          const da = (a.cell.x - lake.x) ** 2 + (a.cell.y - lake.y) ** 2;
+          const db = (b.cell.x - lake.x) ** 2 + (b.cell.y - lake.y) ** 2;
+          return da - db;
+        });
+        const pickIdx = hexSeededRandom(current.col, current.row, 17 + s) < 0.75
+          ? 0
+          : Math.floor(hexSeededRandom(current.col, current.row, 19 + s) * candidates.length);
+        const choice = candidates[pickIdx];
+
+        const edgeKey = [`${current.col},${current.row}`, `${choice.cell.col},${choice.cell.row}`].sort().join('|');
+        if (!visitedEdges.has(edgeKey)) {
+          visitedEdges.add(edgeKey);
+          const corners = hexCorners(current.x, current.y, HEX_SIZE);
+          const edge = DIRECTION_EDGE_CORNERS[choice.dirIndex];
+          riverSegments.push({ p1: corners[edge[0]], p2: corners[edge[1]] });
+        }
+        current = choice.cell;
+      }
+    }
+  });
+
+  return riverSegments;
 }
 
 export function renderWorldMap(
@@ -431,10 +516,31 @@ export function renderWorldMap(
         svg += '<g class="wm-layer wm-layer-terrain">';
         hexGrid.cells.forEach(function (cell) {
           var meta = REGION_META[cell.race] || {};
-          var fill = (layers.terrain !== false)
-            ? (TERRAIN_COLORS[cell.terrain] || TERRAIN_COLORS.plains)
-            : lightenHexColor(meta.color || TERRAIN_COLORS.plains, 0.35);
+          var fill;
+          if (cell.terrain === 'lake') {
+            // Lakes are a fixed geographic landmark, not a biome-toggle
+            // cosmetic — always show as water regardless of the terrain
+            // toggle, the same way region borders always show.
+            fill = TERRAIN_COLORS.lake;
+          } else if (layers.terrain !== false) {
+            fill = TERRAIN_COLORS[cell.terrain] || TERRAIN_COLORS.plains;
+          } else {
+            fill = lightenHexColor(meta.color || TERRAIN_COLORS.plains, 0.35);
+          }
           svg += '<path d="' + hexPath(cell.x, cell.y, HEX_SIZE + 0.6) + '" fill="' + fill + '" class="terrain-shape" data-terrain="' + escapeHtml(cell.terrain) + '" data-race="' + escapeHtml(cell.race) + '" style="transform-box:fill-box;transform-origin:center;cursor:default" pointer-events="none"><title>' + escapeHtml(terrainTooltip(cell.terrain)) + '</title></path>';
+        });
+        svg += '</g>';
+
+        // River network: overlaid directly on the terrain fill (not a gap
+        // like region borders — rivers are a geographic feature painted on
+        // top of whatever biome they cross, not a boundary carved out of it).
+        // Always visible regardless of the terrain toggle, same as lakes.
+        svg += '<g class="wm-layer wm-layer-rivers">';
+        hexGrid.riverSegments.forEach(function (seg) {
+          svg += '<line x1="' + seg.p1[0] + '" y1="' + seg.p1[1] + '" x2="' + seg.p2[0] + '" y2="' + seg.p2[1] + '" stroke="#0d2a3a" stroke-width="4.5" stroke-linecap="round" opacity="0.5" pointer-events="none"/>';
+        });
+        hexGrid.riverSegments.forEach(function (seg) {
+          svg += '<line x1="' + seg.p1[0] + '" y1="' + seg.p1[1] + '" x2="' + seg.p2[0] + '" y2="' + seg.p2[1] + '" stroke="#4a9fd0" stroke-width="2.25" stroke-linecap="round" opacity="0.85" pointer-events="none"/>';
         });
         svg += '</g>';
 
