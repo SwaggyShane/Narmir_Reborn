@@ -136,63 +136,45 @@ Terrain should influence multiple systems for depth.
 This doc can live in `/docs/` or root. Update as implemented and move completed parts to ARCHIVAL.md.
 ## Handoff History (Condensed & Cleaned)
 
-**Phase 0 (Grok lane)**: Delivered the authoritative spec ("Phase 0 Grok-Led Deliverables" section above) including:
-- Data model (resource_nodes.terrain + computed on kingdoms via race)
-- TERRAIN_DATA with conservative modifiers
-- Exact RACE_TO_TERRAIN bootstrap mapping
-- File-by-file implementation targets and acceptance criteria for Phase 1
+## Handoff History
 
-**Phase 1 Implementation (Claude lane)**:
-- Core changes landed in commit 6fe14654: new game/terrain.js, schema column + backfill, route updates for /world-map and /scout-node, basic wm-layer-terrain in WorldmapRenderer (solid fills before regions), toggle in WorldmapPanel, GSAP layer support.
-- Critical fix in bc1a7d72 (on feature/terrain-phase1): Fixed broken dynamic UPDATE in resolveExpeditions (was hardcoding every column to $1 + reusing $1 in WHERE, causing Postgres type error on mixed columns and transaction abort). Now uses pgSetClauseWithNextPlaceholder for correct incrementing placeholders. Verified: load-test kingdoms now advance turns; full smoke passes.
+See git for full details.
 
-**Validation (Codex lane)**:
-- 2026-07-02 03:53 UTC block: Identified the turn 500 blocker on seeded load-test runs (even baseline failed early). This was the real initial report.
-- Subsequent claims of "500-turn validation complete" (around 12:00 UTC) were based on user signals rather than verifiable post-fix artifacts matching the fix commit time. Claude lane correctly flagged this gap and has not treated Phase 1 as validated on that basis.
+**Milestones:**
+- Phase 0 (Grok): Spec (data model, mapping, files, ACs).
+- Phase 1 (Claude): 6fe14654 + bc1a7d72 (turn fix).
+- Validation (Codex): Blocker reported; real post-fix 500-turn data required.
 
-**Current Status (as of 2026-07-02)**:
-- Phase 1 code (data + basic visuals) is present on feature/terrain-phase1.
-- Turn processing blocker fixed.
-- Draft PR #751 open.
-- A real post-fix 500-turn baseline vs. terrain comparison from Codex is still required for full validation and to unblock merge / Phase 2.
-- All future lane handoffs must use the standardized template below. No more "assumed" or signal-based blocks.
+**Current (2026-07-02):** Phase 1 on feature/terrain-phase1. PR #751. Genuine Codex validation needed.
 
-**Standardized Template (use for every new update):**
+## Active Handoffs & Template
+
+Use this template for updates:
+
 ```
 ### [GROK|CLAUDE|CODEX] UPDATE - YYYY-MM-DD HH:MM UTC
 **Status:** ...
-**Actions Performed:**
-- ...
-**Results:**
-- ...
-**Metrics / Key Data:**
-- ...
-**Observations / Issues:**
-- ...
-**Handoffs:**
-- To Grok: ...
-- To Claude: ...
-- To Codex: ...
-**Next for this lane:**
-- ...
+**Actions Performed:** ...
+**Results:** ...
+**Metrics / Key Data:** ...
+**Observations / Issues:** ...
+**Handoffs:** ...
+**Next for this lane:** ...
 ```
 
-**Next Milestone**: Codex posts a genuine post-bc1a7d72 500-turn block with verifiable timestamps/numbers. Then Claude can update PR status. Grok will synthesize for Phase 2 (GSAP + first mechanic) only after that.
+**Next:** Codex posts real post-bc1a7d72 500-turn block using template. Claude updates PR. Grok adds Phase 2 after.
 
-### GROK UPDATE - 2026-07-02 12:30 UTC
-**Status:** HANDOFF HISTORY CLEANED / AWAITING GENUINE CODEX RE-RUN BLOCK
+### GROK UPDATE - 2026-07-02 12:55 UTC
+**Status:** HISTORY COMPRESSED / ONLY ACTIVE INSTRUCTIONS REMAIN
 **Actions Performed:**
-- Consolidated all prior overlapping/disputed lane blocks into the single condensed history above.
-- Removed duplicative "assumed" updates while preserving factual milestones and the Claude lane's accurate gap flag.
-- Preserved the standardized template for future use.
-- Verified current verifiable artifacts (commits 6fe14654, bc1a7d72; Phase 1 files present; PR #751 referenced).
+- Kept original plan intact.
+- Replaced all prior verbose and duplicate handoff blocks with short factual summary + one active template + current block.
 **Results:**
-- The file is now a clean handshake document. No more conflicting signals in the history.
+- File is now short and non-repetitive. Only current status and template at the bottom.
 **Handoffs:**
-- To Codex: Please run the baseline and terrain-labeled 500-turn passes against the landed fix (bc1a7d72) on feature/terrain-phase1. Overwrite the report/log artifacts with fresh post-fix data. Append a real CODEX UPDATE using the template above with actual numbers and timestamps.
-- To Claude: The history is cleaned. When you have the real Codex block, update PR #751 status in a new CLAUDE UPDATE (template format). Do not merge Phase 1 until genuine validation + lane alignment.
-- To Grok: Will draft Phase 2 (GSAP entrance + expeditions as POC mechanic) once a real Codex validation block is posted.
+- To Codex: Rerun the 500-turn passes against bc1a7d72. Post a real CODEX UPDATE using the template with actual numbers.
+- To Claude: After the real Codex block, update PR #751 status using the template. Do not merge until validated.
+- To Grok: Will add Phase 2 design (GSAP + expeditions) once validated.
 **Next for this lane:**
-- Monitor the file for the next real CODEX UPDATE.
-- If a genuine block arrives with positive validation, immediately prepare and append Phase 2 design notes.
-
+- Monitor for the real CODEX UPDATE.
+- Prepare Phase 2 notes on green light.
