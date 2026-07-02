@@ -37,6 +37,36 @@ const TERRAIN_COLORS = {
   coast: '#3a5f7a',
 };
 
+const TERRAIN_DISPLAY_NAMES = {
+  plains: 'Plains',
+  forest: 'Forest',
+  mountains: 'Mountains',
+  hills: 'Hills',
+  swamp: 'Swamp',
+  desert: 'Desert',
+  coast: 'Coast',
+};
+
+// Expedition speed modifier per terrain — kept in sync with game/terrain.js TERRAIN_DATA.
+// Shown in the map tooltip since it's the modifier Phase 2 actually wires into gameplay.
+const TERRAIN_EXP_SPEED = {
+  plains: 1.12,
+  forest: 0.92,
+  mountains: 0.80,
+  hills: 0.95,
+  swamp: 0.78,
+  desert: 0.88,
+  coast: 1.05,
+};
+
+function terrainTooltip(terrain) {
+  const name = TERRAIN_DISPLAY_NAMES[terrain] || 'Plains';
+  const speed = TERRAIN_EXP_SPEED[terrain] ?? 1.0;
+  const pct = Math.round((speed - 1) * 100);
+  const speedLabel = pct === 0 ? 'no change' : `${pct > 0 ? '+' : ''}${pct}% expedition speed`;
+  return `${name} — ${speedLabel}`;
+}
+
 function layerVisibilityStyle(enabled) {
   return enabled ? '' : 'opacity:0;pointer-events:none';
 }
@@ -216,7 +246,7 @@ export function renderWorldMap(
           if (!path) return;
           var t = RACE_TO_TERRAIN[race] || 'plains';
           var fill = TERRAIN_COLORS[t];
-          svg += '<path d="' + path + '" fill="' + fill + '" opacity="0.48" class="terrain-shape" data-terrain="' + escapeHtml(t) + '" data-race="' + escapeHtml(race) + '"/>';
+          svg += '<path d="' + path + '" fill="' + fill + '" opacity="0.48" class="terrain-shape" data-terrain="' + escapeHtml(t) + '" data-race="' + escapeHtml(race) + '" style="transform-box:fill-box;transform-origin:center;cursor:default"><title>' + escapeHtml(terrainTooltip(t)) + '</title></path>';
         });
         svg += '</g>';
 

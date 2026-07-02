@@ -119,12 +119,15 @@ export function animateWorldMap(container, options = {}) {
     const kingdomLabels = primeHidden(svg, '.wm-kingdom-label');
     const expeditionLines = svg.querySelectorAll('.wm-expedition-line');
     const tradeLines = svg.querySelectorAll('.wm-trade-line');
+    const terrainShapes = svg.querySelectorAll('.terrain-shape');
+    const forestShapes = svg.querySelectorAll('.terrain-shape[data-terrain="forest"]');
+    const mountainShapes = svg.querySelectorAll('.terrain-shape[data-terrain="mountains"]');
 
     if (!entrance) {
       applyWorldMapLayers(container, layers, { animate: true });
       highlightSelectedNode(svg, selectedNodeId, { animate: !reduced });
       if (reduced) {
-        gsap.set([regions, regionLabels, nodeGroups, kingdoms, kingdomLabels], { autoAlpha: 1, y: 0 });
+        gsap.set([regions, regionLabels, nodeGroups, kingdoms, kingdomLabels, terrainShapes], { autoAlpha: 1, y: 0 });
       }
       return;
     }
@@ -132,7 +135,7 @@ export function animateWorldMap(container, options = {}) {
     applyWorldMapLayers(container, layers, { animate: false });
 
     if (reduced) {
-      gsap.set([regions, regionLabels, nodeGroups, kingdoms, kingdomLabels, expeditionLines, tradeLines], {
+      gsap.set([regions, regionLabels, nodeGroups, kingdoms, kingdomLabels, expeditionLines, tradeLines, terrainShapes], {
         autoAlpha: 1,
         strokeDashoffset: 0,
       });
@@ -143,17 +146,43 @@ export function animateWorldMap(container, options = {}) {
     if (entrance) {
       const tl = gsap.timeline({ defaults: { ease: 'power2.out' } });
 
+      if (layers.terrain !== false && terrainShapes.length) {
+        gsap.set(terrainShapes, { autoAlpha: 0 });
+        tl.to(terrainShapes, {
+          autoAlpha: 1,
+          duration: 0.5,
+          stagger: 0.06,
+        }, 0);
+        if (forestShapes.length) {
+          tl.fromTo(forestShapes, {
+            scale: 0.9,
+          }, {
+            scale: 1,
+            duration: 0.5,
+            ease: 'back.out(1.5)',
+          }, 0);
+        }
+        if (mountainShapes.length) {
+          tl.fromTo(mountainShapes, {
+            y: -6,
+          }, {
+            y: 0,
+            duration: 0.55,
+          }, 0);
+        }
+      }
+
       tl.to(regions, {
         autoAlpha: 1,
         duration: 0.55,
         stagger: 0.07,
-      }, 0)
+      }, 0.05)
         .to(regionLabels, {
           autoAlpha: 1,
           y: 0,
           duration: 0.45,
           stagger: 0.05,
-        }, 0.12);
+        }, 0.17);
 
       if (layers.kingdoms !== false) {
         tl.fromTo(kingdoms, {
@@ -220,11 +249,53 @@ export function animateWorldMap(container, options = {}) {
     });
 
     highlightSelectedNode(svg, selectedNodeId, { animate: entrance });
+
+    const unbindTerrainHover = bindTerrainHover(svg, reduced);
+    cleanups.push(unbindTerrainHover);
   });
 
   return () => {
     cleanups.forEach((fn) => fn());
     ctx.revert();
+  };
+}
+
+// Light hover feedback on terrain shapes — small scale bump, gated on reduced motion.
+// Tooltip content (name + expedition speed modifier) lives in the SVG's native <title>.
+function bindTerrainHover(svg, reduced) {
+  const shapes = svg.querySelectorAll('.terrain-shape');
+  if (!shapes.length) return () => {};
+
+  const onEnter = (event) => {
+    if (reduced) return;
+    gsap.to(event.currentTarget, {
+      scale: 1.015,
+      opacity: 0.62,
+      duration: 0.2,
+      ease: 'power2.out',
+      overwrite: 'auto',
+    });
+  };
+  const onLeave = (event) => {
+    gsap.to(event.currentTarget, {
+      scale: 1,
+      opacity: 0.48,
+      duration: reduced ? 0 : 0.2,
+      ease: 'power2.out',
+      overwrite: 'auto',
+    });
+  };
+
+  shapes.forEach((shape) => {
+    shape.addEventListener('pointerenter', onEnter);
+    shape.addEventListener('pointerleave', onLeave);
+  });
+
+  return () => {
+    shapes.forEach((shape) => {
+      shape.removeEventListener('pointerenter', onEnter);
+      shape.removeEventListener('pointerleave', onLeave);
+    });
   };
 }
 

@@ -19,7 +19,7 @@ const { decorateNewsMessage } = require("../game/news-emoji");
 const { EPOCH_NOW } = require("../lib/db-sql");
 const { pgInList, pgValueTuples } = require("../lib/pg-placeholders");
 const { getKingdomMapCoords, placeResourceNodeCoords } = require("../game/world-map-coords");
-const { getTerrainForRace } = require("../game/terrain");
+const { getTerrainForRace, getTerrainModifiers } = require("../game/terrain");
 
 const router = express.Router();
 
@@ -2374,9 +2374,10 @@ module.exports = function (db) {
       );
       if (activeExp) return res.status(400).json({ error: 'You already have an active expedition to this node.' });
 
-      // Get expedition speed bonus
+      // Get expedition speed bonus (race + terrain)
       const raceBonus = engine.raceBonus ? (engine.raceBonus(k, 'expedition_speed') || 1.0) : 1.0;
-      const travelTime = Math.ceil(node.distance / raceBonus);
+      const terrainMods = getTerrainModifiers(node.terrain);
+      const travelTime = Math.ceil(node.distance / raceBonus / terrainMods.expSpeed);
       const harvestDuration = HARVEST_DURATION_BY_RICHNESS[node.richness] || 3600;
       const totalSeconds = travelTime * 2 + harvestDuration; // outbound + harvest + return
       const totalMinutes = totalSeconds / 60;
@@ -2597,7 +2598,7 @@ module.exports = function (db) {
   async function processResourceExpeditionsDb(kingdomId, k) {
     const now = Math.floor(Date.now() / 1000);
     const exps = await db.all(
-      "SELECT re.*, rn.type as node_type, rn.richness FROM resource_expeditions re JOIN resource_nodes rn ON re.node_id = rn.id WHERE re.kingdom_id = $1 AND re.status NOT IN ('completed','intercepted')",
+      "SELECT re.*, rn.type as node_type, rn.richness, rn.terrain FROM resource_expeditions re JOIN resource_nodes rn ON re.node_id = rn.id WHERE re.kingdom_id = $1 AND re.status NOT IN ('completed','intercepted')",
       [kingdomId]
     );
 
@@ -2616,8 +2617,9 @@ module.exports = function (db) {
         const harvestDuration = HARVEST_DURATION_BY_RICHNESS[exp.richness] || 3600;
         outboundUpdates.push({ id: exp.id, harvest_ends_at: now + harvestDuration });
       } else if (exp.status === 'harvesting' && harvestEndsAt && now >= harvestEndsAt) {
-        // Compute loot
-        const baseLoot = exp.richness * 50 * (exp.population_sent / 100);
+        // Compute loot (terrain resourceYield modifier applies a small bias)
+        const terrainMods = getTerrainModifiers(exp.terrain);
+        const baseLoot = exp.richness * 50 * (exp.population_sent / 100) * terrainMods.resourceYield;
         const loot = { [exp.node_type]: Math.floor(baseLoot) };
 
         // 5% chance bonus rare item
@@ -2650,9 +2652,9 @@ module.exports = function (db) {
           k.items = kUpdates.items; // update local reference for subsequent expeditions
         }
 
-        // Get race bonus for speed (already used arrive_at, but for return trip)
+        // Get race + terrain bonus for speed (already used arrive_at, but for return trip)
         const raceSpeedMult = engine.raceBonus ? (engine.raceBonus(k, 'expedition_speed') || 1.0) : 1.0;
-        const travelTime = Math.ceil((exp.distance || 3600) / raceSpeedMult);
+        const travelTime = Math.ceil((exp.distance || 3600) / raceSpeedMult / terrainMods.expSpeed);
         const return_at = now + travelTime;
 
         harvestingUpdates.push({ id: exp.id, loot: JSON.stringify(loot), return_at });
