@@ -12,7 +12,7 @@ const DEFAULT_LAYERS = {
   nodes: true,
   routes: true,
   expeditions: true,
-  terrain: true,
+  terrain: false,
 };
 
 // Bootstrap race -> dominant biome mapping — kept in sync with game/terrain.js RACE_TO_TERRAIN.
@@ -90,6 +90,36 @@ function lightenHexColor(hex, amount) {
   const channels = [(num >> 16) & 0xff, (num >> 8) & 0xff, num & 0xff]
     .map((c) => Math.round(c + (255 - c) * amount));
   return '#' + channels.map((c) => c.toString(16).padStart(2, '0')).join('');
+}
+
+// Blends a hex color toward black by `amount` (0-1). Used for region title
+// text so it reads as a darker shade of the region's own color rather than
+// plain white, while staying visible against any biome fill underneath.
+function darkenHexColor(hex, amount) {
+  const match = /^#([0-9a-f]{6})$/i.exec(hex || '');
+  if (!match) return hex;
+  const num = parseInt(match[1], 16);
+  const channels = [(num >> 16) & 0xff, (num >> 8) & 0xff, num & 0xff]
+    .map((c) => Math.round(c * (1 - amount)));
+  return '#' + channels.map((c) => c.toString(16).padStart(2, '0')).join('');
+}
+
+// Splits a region name onto two lines at whichever space is closest to the
+// middle, so long names ("The Nightfall Marshes") fit inside a hex region
+// instead of overflowing it. Short names are left on one line.
+function wrapRegionName(name) {
+  if (!name || name.length <= 14) return [name || ''];
+  const spaceIndices = [];
+  for (let i = 0; i < name.length; i++) {
+    if (name[i] === ' ') spaceIndices.push(i);
+  }
+  if (!spaceIndices.length) return [name];
+  const mid = name.length / 2;
+  let best = spaceIndices[0];
+  spaceIndices.forEach((idx) => {
+    if (Math.abs(idx - mid) < Math.abs(best - mid)) best = idx;
+  });
+  return [name.slice(0, best), name.slice(best + 1)];
 }
 
 // ── World map region layout ─────────────────────────────────────────────────
@@ -440,6 +470,9 @@ export function renderWorldMap(
         svg += '</g>';
 
         // Region labels, one per race, centered on its home seed point.
+        // Title wraps to two lines when needed so it fits inside the region,
+        // and uses a darker shade of the region's own color instead of white
+        // so it visibly carries that race's identity.
         svg += '<g class="wm-layer wm-layer-region-labels">';
         Object.entries(REGION_META).forEach(function (e) {
           var race = e[0];
@@ -448,17 +481,23 @@ export function renderWorldMap(
           if (!home) return;
           var cx = home.x;
           var cy = home.y;
+          var titleColor = darkenHexColor(meta.color || '#333333', 0.35);
+          var titleLines = wrapRegionName(meta.name);
+          var titleFontSize = 15;
+          var titleLineHeight = titleFontSize + 3;
+          var titleTop = cy - 8 - ((titleLines.length - 1) * titleLineHeight) / 2;
 
           svg += '<g class="wm-region-label" filter="url(#uiShadow)" style="transition:opacity 0.3s;opacity:' + regionOpacity(race, highlightedRace) + '">';
+          titleLines.forEach(function (line, i) {
+            svg +=
+              '<text x="' + cx + '" y="' + (titleTop + i * titleLineHeight) +
+              '" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="' + titleFontSize + '" fill="' + titleColor + '" opacity="0.95" pointer-events="none" style="text-transform:uppercase;letter-spacing:1.5px;">' +
+              escapeHtml(line) +
+              "</text>";
+          });
           svg +=
-            '<text x="' + cx + '" y="' + (cy - 8) +
-            '" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="20" fill="#ffffff" opacity="0.9" pointer-events="none" style="text-transform:uppercase;letter-spacing:2px;">' +
-            escapeHtml(meta.name || '') +
-            "</text>";
-          svg +=
-            '<text x="' + cx + '" y="' + (cy + 12) +
-            '" text-anchor="middle" font-family="sans-serif" font-weight="600" font-size="11" fill="' + meta.stroke +
-            '" opacity="0.95" pointer-events="none">' +
+            '<text x="' + cx + '" y="' + (titleTop + titleLines.length * titleLineHeight + 6) +
+            '" text-anchor="middle" font-family="sans-serif" font-weight="600" font-size="11" fill="#ffffff" opacity="0.95" pointer-events="none">' +
             escapeHtml(REGION_BONUSES[race] || "") +
             "</text>";
           svg += "</g>";
@@ -877,7 +916,7 @@ export function renderWorldMap(
 
           ", " +
 
-          (H - 90) +
+          90 +
 
           ') scale(0.9)">' +
 

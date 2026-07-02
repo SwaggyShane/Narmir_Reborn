@@ -29,7 +29,7 @@ const DEFAULT_LAYERS = {
   nodes: true,
   routes: true,
   expeditions: true,
-  terrain: true,
+  terrain: false,
 };
 
 export async function loadWorldMap({ setLoading, setError, setKingdoms, setTradeRoutes, setNodes, setExpeditions } = {}) {
