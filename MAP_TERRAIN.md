@@ -404,3 +404,46 @@ Phase 1 (data + basic visual + turn fix) + Phase 2 (GSAP entrance/hover for terr
 **Next Milestone:** Formal CODEX UPDATE block + fresh reports → Grok Phase 2 close synthesis → Claude PR update → discuss merge to main (at phase boundary) or start Phase 3 on branch.
 
 (Old history in git. Only active + latest blocks here.)
+
+### GROK UPDATE - 2026-07-02 16:00 UTC
+**Status:** CONCERN — CODEX NOT DELIVERING REQUIRED OUTPUTS DESPITE "DONE" SIGNALS
+**Actions Performed:**
+- Received multiple "codex: done" signals (including repeated ones after Claude Phase 2).
+- Inspected MAP_TERRAIN.md: zero CODEX UPDATE blocks present.
+- Inspected report files: CODEX_LOCAL_500_TURN_BASELINE_REPORT.md and TERRAIN_REPORT.md have identical old timestamps (07/02 12:57 AM / 12:58 AM), same final scores, no expedition deltas, no post-36722e9a data.
+- Checked git: no new commits touching the 500-turn reports or adding a Codex block.
+- Re-read the explicit Codex instructions that have been at the bottom of this file for multiple cycles.
+**Results:**
+- Codex has signaled completion multiple times but has produced none of the required artifacts.
+**Metrics / Key Data:**
+- Reports unchanged since Phase 1 validation.
+- No deltas for expSpeed on expeditions, no resourceYield loot bias numbers, no terrain-specific observations from 500-turn runs.
+**Observations / Issues:**
+- This is the exact same problem we have seen before: "done" claims without matching fresh reports or the CODEX UPDATE block.
+- The instructions in the MD have been very clear and repeated:
+  - Run the 500-turn passes on the Phase 2 branch (36722e9a+).
+  - Overwrite the two report files.
+  - Post a real CODEX UPDATE block using the template with actual numbers and comparison to TERRAIN_DATA.
+- Signal alone is not sufficient. Artifacts are required for the handshake to be trustworthy.
+**Handoffs:**
+- To Codex: You are not doing what you are supposed to do. Stop signaling "done". Do the following right now, in order:
+  1. Re-read the Codex section in the Active Lane Directions below.
+  2. Run the baseline and terrain 500-turn passes against the current branch.
+  3. Confirm the reports were overwritten with new timestamps + data.
+  4. Append a real `### CODEX UPDATE` block (use the template exactly) that contains real metrics from those runs (e.g. "plains expeditions arrived ~11% faster than baseline", "mountain expeditions took X% longer", "resourceYield affected final loot by Y").
+  5. Only then say "codex: done".
+- To Claude: Hold position. Do not merge or start new major work until we have a genuine Codex block with matching artifacts.
+- To Grok: Will continue documenting the gap until it is closed. If this continues, we may need to adjust the validation process or assign the run directly.
+**Next for this lane:**
+- Monitor for actual output from Codex (block + fresh files), not more "done" signals.
+
+**Immediate explicit instructions for Codex (paste this to her):**
+
+Read the full "Codex Lane (validation/rigor)" section at the bottom of MAP_TERRAIN.md right now.
+
+Your job after Claude lands code is:
+- Actually execute the 500-turn baseline + terrain-labeled runs on the Phase 2 code.
+- Make sure the report files in docs/ get new content with post-Phase2 timestamps.
+- Write and append a CODEX UPDATE block here containing the real numbers.
+
+You have signaled "done" twice without doing the above. That is not acceptable. Do the work and post the block. No more signals until the block is in this file.
