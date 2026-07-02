@@ -649,9 +649,9 @@ The 3-lane experiment (Grok planning, Claude impl, Codex validation) is ended pe
    - I will update ARCHIVAL.md with the completion entry and give branch delete commands.
    - Delete feature/terrain-phase1 (git push -d origin + git branch -d).
 
-Phase 3 (combat modifiers, events, etc.) deferred to follow-up.
+**Phase 3 Complete:** Wired combat terrain modifiers (`combatDef` for defender power, `combatAtk` for attacker) from `TERRAIN_DATA` into `calculateCombatPower` in combat-resolver.js. Battle reports now record `attackerTerrain` and `defenderTerrain`. Terrain now affects combat outcomes as designed.
 
-Core terrain system shipped. All checks/lane history in git. Ready for main.
+Core terrain system (Phases 1-3) finished solo. All lane history archived; merged to main.
 
 **Codex Lane (validation):**
 - Your 05:53 block stands as the validation record.

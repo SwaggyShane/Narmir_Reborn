@@ -40,6 +40,11 @@
     independently-verified real Codex 500-turn runs (baseline vs. terrain-labeled) whose
     reported expedition travel times matched the implemented formula to the exact second.
 
+- **World Map Terrain System, Phase 3** (solo on main after 79a5ae72): Wired combat terrain modifiers (`combatDef` for defender power multiplier, `combatAtk` for attacker) from `TERRAIN_DATA` into `calculateCombatPower` in `combat-resolver.js`. Battle reports now record `attackerTerrain`/`defenderTerrain` and the applied mods. Added terrain flavor note to `formatCombatV2NewsBlurb` in combat-news. Modifiers now affect all combat types (military/covert/magic).
+  - Verified in monolith: no prior wiring; now power adjusted post-calc, reports updated.
+  - MD updated to mark Phase 3 complete.
+  - No new PR (post 1+2 merge); committed directly as part of solo finish.
+
 ### 2026-07-01
 
 - Cleared the active `TODO.md` deferred work backlog in one pass (PRs #737–#742). Several
