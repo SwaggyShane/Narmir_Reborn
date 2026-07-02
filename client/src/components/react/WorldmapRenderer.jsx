@@ -299,7 +299,10 @@ function buildHexGrid(W, H) {
   // biome mix would otherwise have put there. Explicitly excludes ocean/
   // tundra cells — a race's home can end up geometrically close to that
   // latitude band, and picking one of those cells as the lake would steal a
-  // tile from the ocean, breaking its contiguity as one connected body.
+  // tile from the ocean, breaking its contiguity as one connected body. Also
+  // excludes any cell touching an ocean tile: a lake directly beside the
+  // ocean reads as the same body of water split by an arbitrary terrain
+  // label, not two distinct features.
   const lakeByRace = {};
   Object.keys(RACE_HOMES).forEach((race) => {
     const home = RACE_HOMES[race];
@@ -308,6 +311,11 @@ function buildHexGrid(W, H) {
     cells.forEach((c) => {
       if (c.race !== race) return;
       if (c.terrain === 'ocean' || c.terrain === 'tundra') return;
+      const touchesOcean = hexNeighborKeys(c.col, c.row).some((key) => {
+        const nb = cellMap.get(key);
+        return nb && nb.terrain === 'ocean';
+      });
+      if (touchesOcean) return;
       const dx = c.x - home.x;
       const dy = c.y - home.y;
       const dist = dx * dx + dy * dy;
@@ -481,22 +489,36 @@ function buildRiverNetwork(cells, cellMap, lakeByRace) {
     waterGraph.get(toKey).add(fromKey);
   };
 
+  // A river only touches water at its two intended endpoints — the ocean
+  // cell it originates from, or the lake it ends at — never passing through
+  // some other, unrelated lake or extra ocean tile along the way. Both
+  // tributaries and trunk connectors route through this filter; the target
+  // itself is always exempt (bfsRiverPath never re-checks it), so the
+  // destination lake is reachable even though its own terrain is 'lake'.
+  const isLand = (cell) => cell.terrain !== 'lake' && cell.terrain !== 'ocean';
+
   // Tributaries: every region's lake gets a guaranteed path back to the
   // shared ocean, entering from whichever ocean cell is nearest that
-  // region's home point. Unrestricted BFS — only regions bordering the
-  // ocean band directly (roughly a third of them, on this map's geometry)
-  // have territory that touches it, so a same-region-only path is
-  // unreachable for everyone else and silently produces zero tributary.
-  // Letting the path cross intervening regions' land is also just
-  // realistic: real rivers flow through multiple territories before
-  // reaching the sea.
+  // region's home point AND already borders land — so the path's very first
+  // hop leaves the ocean, instead of potentially needing to cross a second
+  // ocean tile first (which the isLand filter above would otherwise block,
+  // silently failing the whole tributary). Only regions bordering the ocean
+  // band directly (roughly a third of them, on this map's geometry) have
+  // territory that touches it, so a same-region-only path is unreachable for
+  // everyone else and silently produces zero tributary — letting the path
+  // cross intervening regions' land is also just realistic: real rivers flow
+  // through multiple territories before reaching the sea.
   const oceanCells = cells.filter((c) => c.terrain === 'ocean');
+  const coastalOceanCells = oceanCells.filter((oc) => hexNeighborKeys(oc.col, oc.row).some((key) => {
+    const nb = cellMap.get(key);
+    return nb && isLand(nb);
+  }));
   Object.keys(lakeByRace).forEach((race) => {
     const lake = lakeByRace[race];
     const home = RACE_HOMES[race];
     let nearestOcean = null;
     let nearestDist = Infinity;
-    oceanCells.forEach((oc) => {
+    coastalOceanCells.forEach((oc) => {
       const dist = (oc.x - home.x) ** 2 + (oc.y - home.y) ** 2;
       if (dist < nearestDist) {
         nearestDist = dist;
@@ -505,7 +527,7 @@ function buildRiverNetwork(cells, cellMap, lakeByRace) {
     });
     if (!nearestOcean) return;
 
-    const edges = bfsRiverPath(nearestOcean, lake, cellMap);
+    const edges = bfsRiverPath(nearestOcean, lake, cellMap, isLand);
     if (edges) edges.forEach((edge) => addSegment(edge, 'tributary'));
   });
 
@@ -518,7 +540,7 @@ function buildRiverNetwork(cells, cellMap, lakeByRace) {
   const adjacentPairs = buildRegionAdjacency(cells, cellMap);
   const mstEdges = buildRegionMST(races, adjacentPairs);
   mstEdges.forEach(([raceA, raceB]) => {
-    const edges = bfsRiverPath(lakeByRace[raceA], lakeByRace[raceB], cellMap);
+    const edges = bfsRiverPath(lakeByRace[raceA], lakeByRace[raceB], cellMap, isLand);
     if (edges) edges.forEach((edge) => addSegment(edge, 'trunk'));
   });
 
