@@ -632,19 +632,23 @@ Since the work is clean and validated, prepare for merge review. We can start Ph
 
 **Terrain Project Finished (Solo Wrap - 2026-07-02)**
 
-Phase 1 (data model + basic visual layer + turn fix) and Phase 2 (GSAP entrance/hover + expeditions mechanic using TERRAIN_DATA for expSpeed travel time and resourceYield loot) are complete.
+**Note on "monolith" inspection:** The actual core codebase (the "monolith" of game/ + routes/ + client/src/) was inspected directly. Terrain integration is wired as specified:
 
-The 3-lane parallel experiment is ended. All coordination consolidated; work finished under solo oversight.
+- game/terrain.js: full TERRAIN_DATA (expSpeed, resourceYield, combat* ), RACE_TO_TERRAIN, helpers.
+- routes/kingdom-gameplay.js: terrain on nodes/world-map; expeditions use getTerrainModifiers for travel + loot.
+- client: wm-layer-terrain + GSAP entrance/hover + tooltips in Renderer; gsap handling.
+- db/schema: terrain column + backfill (idempotent after cleanup).
+
+Phase 1 (data + basic visual) + Phase 2 (GSAP + first mechanic: expeditions) complete and validated.
+
+The 3-lane experiment (Grok planning, Claude impl, Codex validation) is ended per user direction. All work consolidated under solo oversight after direct monolith check.
 
 **Implementation Complete:**
-- `game/terrain.js`: TERRAIN_TYPES, TERRAIN_DATA (with expSpeed, resourceYield, combat* modifiers), RACE_TO_TERRAIN bootstrap, helpers.
-- `routes/kingdom-gameplay.js`: terrain in world-map, scout, node creation; expeditions launch/processing apply modifiers.
-- `client/src/utils/worldMapGsap.js` + `WorldmapRenderer.jsx`: wm-layer-terrain, entrance animations (stagger/scale/lift), hover titles with name + modifier, toggle support.
-- Validation: fresh 500-turn reports + probes (05:53 UTC) confirm mechanics (e.g. mountains probe travelTime 8182 vs plains 5845 on identical distance; ~40% delta matches 0.80 vs 1.12).
+- See above + validation artifacts (05:53 UTC reports with probes: mountains ~40% longer travel vs plains on same distance, matching 0.80 vs 1.12).
 
 **Current State:**
-- Branch: feature/terrain-phase1 (ahead of main with full work + artifacts).
-- PR #751: contains Phase 1+2 + validation summary (updated).
+- Branch: feature/terrain-phase1 (ahead with full work + artifacts).
+- PR #751: contains Phase 1+2 + validation summary.
 - MD: this file now marks completion (lanes archived in git).
 
 **To Merge (Do These Steps):**
