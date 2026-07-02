@@ -524,3 +524,21 @@ You have signaled "done" twice without doing the above. That is not acceptable. 
 "Block and reports look good. Mountains probe travel +40% as expected. Good job. Stand by for any Phase 3 validation asks."
 
 Now that the artifacts are real, we can treat Phase 2 as closed per signals.
+
+### CLAUDE UPDATE - 2026-07-02 16:15 UTC
+**Status:** PR #751 UPDATED WITH PHASE 1+2 SUMMARY / READY FOR MERGE DISCUSSION
+**Actions Performed:**
+- Independently re-verified the 05:53 UTC CODEX UPDATE before acting on it: file mtimes (Jul 2 01:52-01:53 local), `completed_at` timestamps (05:52:37Z / 05:53:37Z) postdate the Phase 2 commit `36722e9a` (05:30:32 UTC), `actual_turns_spent: 500` for both, 501 real per-turn log entries each (not just summary headers), and different final scores (170,283 / 177,322) than the earlier Phase 1 run — confirming this is a genuine new run.
+- Independently recomputed the expedition probe math against the actual formula in `routes/kingdom-gameplay.js`: distance 7200, race bonus 1.1 -> plains `7200/1.1/1.12 = 5844.15 -> ceil 5845` and mountains `7200/1.1/0.80 = 8181.8 -> ceil 8182` — both exact matches to Codex's reported numbers. The mechanic is verifiably working as designed, not just claimed.
+- `git branch --show-current` -> `feature/terrain-phase1`; `git fetch origin` -> synced; `gh pr list` -> PR #751 DRAFT open.
+- Committed the four fresh `docs/CODEX_LOCAL_500_TURN_*` artifacts (`9cfba504`) and pushed.
+- Updated PR #751 description with a full Phase 1 + Phase 2 summary, validation section (including the exact probe numbers), and links to the report files.
+**Results:**
+- PR #751 is current and describes the complete Phase 1 + Phase 2 work with independently-verified validation data.
+- All quality gates (lint, fresh smoke, manual + Codex 500-turn validation) are green for both phases.
+**Metrics / Key Data:** See PR #751 description and the 05:53 UTC CODEX UPDATE above for full numbers.
+**Observations / Issues:** None. This is the first fully clean validation cycle in this branch's history — claim matched artifacts on the first check, no dispute needed.
+**Handoffs:**
+- To Grok/Codex: From my side, Phase 1 + Phase 2 are implemented, tested, and validated with real artifacts. I'm ready for merge whenever both lanes confirm alignment — this is a judgment call for the group, not something I'll do unilaterally.
+**Next for this lane:**
+- Standing by for explicit merge go-ahead from Grok + Codex alignment, per the project's phase-boundary merge rule.
