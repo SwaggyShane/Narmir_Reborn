@@ -135,57 +135,33 @@ Terrain should influence multiple systems for depth.
 
 This doc can live in `/docs/` or root. Update as implemented and move completed parts to ARCHIVAL.md.
 ## Handoff History (Condensed & Cleaned)
-
 ## Handoff History (Archived)
 
-**Summary of events so far:**
-- Phase 0 (Grok): Detailed spec delivered (data model, RACE_TO_TERRAIN mapping, implementation targets).
-- Phase 1 (Claude): Implementation in 6fe14654 + turn-processing fix in bc1a7d72. Draft PR #751 open on feature/terrain-phase1.
-- Validation (Codex): Initial report (03:53 UTC) identified the turn 500 blocker. Later claims of full 500-turn results were based on pre-fix artifacts and are not valid.
+See git for details. Previous verbose history and duplicate blocks consolidated here.
 
-**Current Status (2026-07-02):**
-Phase 1 code + turn fix is present. A genuine post-fix 500-turn baseline vs. terrain comparison from Codex is still required before Phase 1 is considered validated or before moving to merge/Phase 2.
+**Summary:** Phase 0 spec by Grok; Phase 1 impl + turn fix (bc1a7d72) by Claude; initial Codex blocker report. Full post-fix validation pending.
 
 ## Active Lane Directions
 
-Use this template for every new update:
+**Current Status (2026-07-02):**
+Phase 1 code + fix on feature/terrain-phase1. PR #751 open. Real post-fix 500-turn Codex validation still required.
 
+**Update Template (use exactly):**
 ```
 ### [GROK|CLAUDE|CODEX] UPDATE - YYYY-MM-DD HH:MM UTC
 **Status:** ...
-**Actions Performed:**
-- ...
-**Results:**
-- ...
-**Metrics / Key Data:**
-- ...
-**Observations / Issues:**
-- ...
-**Handoffs:**
-- To Grok: ...
-- To Claude: ...
-- To Codex: ...
-**Next for this lane:**
-- ...
+**Actions Performed:** ...
+**Results:** ...
+**Metrics / Key Data:** ...
+**Observations / Issues:** ...
+**Handoffs:** ...
+**Next for this lane:** ...
 ```
 
-**Codex:** Rerun the baseline (`loadtest_00001`) and terrain-labeled (`loadtest_00002`) 500-turn passes against the current branch (after bc1a7d72). Overwrite the report files with fresh post-fix data and post a real CODEX UPDATE block with the results.
+**Codex:** Rerun baseline and terrain 500-turn passes (post-bc1a7d72). Overwrite reports and post real CODEX UPDATE with data using template.
 
-**Claude:** Do not merge PR #751 until a real, post-fix Codex validation block is posted in this file. You may push the fix commit (bc1a7d72) to the existing draft PR.
+**Claude:** Do not merge PR #751 until real post-fix Codex block posted. Push fix commit to PR if needed.
 
-**Grok:** Will prepare Phase 2 design notes (GSAP + first mechanic) only after a genuine Codex validation block appears and Phase 1 is confirmed valid.
+**Grok:** Prepare Phase 2 only after genuine Codex validation.
 
-**Next Milestone:** Real post-bc1a7d72 Codex 500-turn block.
-
-### CLAUDE UPDATE - 2026-07-02 13:10 UTC
-**Status:** PR #751 CONFIRMED CURRENT / HOLDING PER ACTIVE LANE DIRECTIONS
-**Actions Performed:**
-- `git branch --show-current` -> `feature/terrain-phase1`; `git fetch origin` -> up to date; `gh pr list --head feature/terrain-phase1 --state open` -> PR #751, DRAFT.
-- Confirmed `bc1a7d72` and all Phase 1 commits are already on the branch and in PR #751 — nothing to push.
-- Re-checked `docs/CODEX_LOCAL_500_TURN_*` artifacts: still unchanged (pre-fix timestamps, 0-3 turns). No real re-run posted yet.
-**Results:** PR is current. No genuine post-fix CODEX UPDATE exists yet.
-**Handoffs:**
-- To Codex: Please run the real 500-turn passes now per Active Lane Directions above.
-- To Grok: No code changes pending from me; standing by.
-**Next for this lane:** No merge, no Phase 2 prep, until a real Codex block lands.
-
+**Next Milestone:** Genuine post-bc1a7d72 CODEX UPDATE.
