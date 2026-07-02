@@ -8,6 +8,8 @@ const TERRAIN_TYPES = {
   SWAMP: 'swamp',
   HILLS: 'hills',
   COAST: 'coast',
+  TUNDRA: 'tundra',
+  VOLCANIC: 'volcanic',
 };
 
 const TERRAIN_DATA = {
@@ -81,7 +83,31 @@ const TERRAIN_DATA = {
       resourceYield: 1.15,
     },
   },
+  tundra: {
+    displayName: 'Tundra',
+    color: '#7a8a94',
+    modifiers: {
+      expSpeed: 0.75,     // -25%, harsh polar travel
+      combatDef: 1.10,
+      combatAtk: 0.90,
+      resourceYield: 0.75,
+    },
+  },
+  volcanic: {
+    displayName: 'Volcanic',
+    color: '#7a2e1a',
+    modifiers: {
+      expSpeed: 0.70,     // -30%, hazardous terrain
+      combatDef: 0.95,
+      combatAtk: 1.10,
+      resourceYield: 1.25, // rich but dangerous, matches "ancient artifacts" flavor
+    },
+  },
 };
+
+// Climate-band terrains (tundra, volcanic) are not tied to any race — they only
+// appear at the map's northern/southern extremes regardless of who lives there.
+// No RACE_TO_TERRAIN entry needed for them.
 
 const RACE_TO_TERRAIN = {
   dwarf: 'mountains',
