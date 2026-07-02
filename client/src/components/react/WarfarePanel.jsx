@@ -37,6 +37,7 @@ import {
 import WarfareIntelTab from './WarfareIntelTab';
 import WarfareReportsTab from './WarfareReportsTab';
 import { registerTargetFromRankings } from '../../utils/rankingsTarget.js';
+import { getLastSpellTarget, setLastSpellTarget } from '../../utils/spellTargetHistory.js';
 import { switchTab } from '../../utils/panelNav.js';
 import { registerWarfareTab } from '../../utils/warfareTabs.js';
 import { RACE_ICONS } from '../../utils/raceIcons.js';
@@ -316,6 +317,16 @@ const WarfarePanel = () => {
     }
   }, [kingdomId]);
 
+  const syncSpellTargetFromHistory = useCallback(() => {
+    const lastTargetId = getLastSpellTarget();
+    if (!lastTargetId) return;
+    const nextTarget = buildTargetList(targets, disc, stateData, { prependSelf: true })
+      .find((entry) => String(entry.id) === String(lastTargetId));
+    if (nextTarget) {
+      setSpellTarget(nextTarget);
+    }
+  }, [targets, disc, stateData]);
+
   const loadWarLog = useCallback(async () => {
     setLoadingWarLog(true);
     setWarLogError('');
@@ -389,6 +400,18 @@ const WarfarePanel = () => {
       refreshAttackTargets();
     }
   }, [activeTab, loadAllianceIntel, loadSpyReports, loadWarLog, refreshAttackTargets, targets.length]);
+
+  useEffect(() => {
+    if (activeTab === 'wspells' && !spellTarget) {
+      syncSpellTargetFromHistory();
+    }
+  }, [activeTab, spellTarget, syncSpellTargetFromHistory]);
+
+  useEffect(() => {
+    if (spellTarget?.id) {
+      setLastSpellTarget('default', spellTarget.id);
+    }
+  }, [spellTarget?.id]);
 
   const handleTabClick = (tabId) => {
     setActiveTab(tabId);
@@ -899,7 +922,10 @@ const WarfarePanel = () => {
           <TargetListSection
             targets={filteredWspTargets}
             selected={spellTarget}
-            onSelect={setSpellTarget}
+            onSelect={(target) => {
+              setSpellTarget(target);
+              if (target?.id) setLastSpellTarget('default', target.id);
+            }}
             searchQ={wspSearchQ}
             onSearchChange={setWspSearchQ}
             placeholder="Search kingdoms…"
