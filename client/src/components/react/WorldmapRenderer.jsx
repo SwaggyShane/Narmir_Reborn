@@ -297,64 +297,230 @@ function buildHexGrid(W, H) {
     }
   });
 
-  const riverSegments = buildRiverNetwork(cells, cellMap, lakeByRace);
+  const network = buildRiverNetwork(cells, cellMap, lakeByRace);
 
-  return { cells, cellMap, riverSegments };
+  return { cells, cellMap, riverSegments: network.riverSegments, waterGraph: network.waterGraph };
 }
 
-// Generates 1-2 tributary paths per region, each a random walk (staying
-// within that region's own cells) from a peripheral source hex toward the
-// region's lake, biased toward reducing distance to the lake each step but
-// with enough randomness to wind naturally. Returns pixel-space line
-// segments (full HEX_SIZE, not inset — rivers overlay the terrain fill
-// rather than carving a gap the way region borders do) ready to render.
+// Random-walks hex-to-hex from `start` toward `target`, greedily reducing
+// distance to the target most of the time but with enough randomness to wind
+// naturally. `raceFilter` restricts which cells the walk may enter (a Set of
+// allowed races), or pass null to allow any cell — used for the cross-region
+// trunk connectors, which must be free to pass through whichever territory
+// is physically in between. Returns the list of hex-edge keys crossed.
+function riverWalk(start, target, cellMap, raceFilter, seedSalt, maxSteps) {
+  const edgeKeys = [];
+  let current = start;
+  let guard = 0;
+  while (current && (current.col !== target.col || current.row !== target.row) && guard < maxSteps) {
+    guard++;
+    const neighborKeys = hexNeighborKeys(current.col, current.row);
+    const candidates = [];
+    neighborKeys.forEach((key, dirIndex) => {
+      const nb = cellMap.get(key);
+      if (!nb) return;
+      if (raceFilter && !raceFilter.has(nb.race)) return;
+      candidates.push({ cell: nb, dirIndex });
+    });
+    if (!candidates.length) break;
+
+    candidates.sort((a, b) => {
+      const da = (a.cell.x - target.x) ** 2 + (a.cell.y - target.y) ** 2;
+      const db = (b.cell.x - target.x) ** 2 + (b.cell.y - target.y) ** 2;
+      return da - db;
+    });
+    const pickIdx = hexSeededRandom(current.col, current.row, seedSalt) < 0.75
+      ? 0
+      : Math.floor(hexSeededRandom(current.col, current.row, seedSalt + 1) * candidates.length);
+    const choice = candidates[pickIdx];
+
+    edgeKeys.push({
+      from: current,
+      to: choice.cell,
+      dirIndex: choice.dirIndex,
+      key: [`${current.col},${current.row}`, `${choice.cell.col},${choice.cell.row}`].sort().join('|'),
+    });
+    current = choice.cell;
+  }
+  return edgeKeys;
+}
+
+// Shortest hex-to-hex path between two cells via BFS. Unlike riverWalk's
+// greedy-with-randomness heuristic, this is guaranteed to find a route
+// whenever one exists — which it always does here, since the hex grid is one
+// contiguous graph. Trunk connectors need that guarantee (every region must
+// actually be reachable); riverWalk's occasional failure to converge near a
+// multi-region junction is fine for decorative tributaries but not for the
+// one connection a region depends on to reach the rest of the network.
+function bfsRiverPath(start, target, cellMap) {
+  const startKey = `${start.col},${start.row}`;
+  const targetKey = `${target.col},${target.row}`;
+  if (startKey === targetKey) return [];
+
+  const cameFrom = new Map();
+  const visited = new Set([startKey]);
+  const queue = [start];
+  let head = 0;
+  while (head < queue.length) {
+    const current = queue[head];
+    head++;
+    if (`${current.col},${current.row}` === targetKey) break;
+    const neighborKeys = hexNeighborKeys(current.col, current.row);
+    neighborKeys.forEach((key, dirIndex) => {
+      if (visited.has(key)) return;
+      const nb = cellMap.get(key);
+      if (!nb) return;
+      visited.add(key);
+      cameFrom.set(key, { from: current, dirIndex });
+      queue.push(nb);
+    });
+  }
+
+  if (!cameFrom.has(targetKey)) return null; // unreachable (shouldn't happen)
+
+  const edges = [];
+  let currentKey = targetKey;
+  while (currentKey !== startKey) {
+    const step = cameFrom.get(currentKey);
+    const to = cellMap.get(currentKey);
+    edges.unshift({
+      from: step.from,
+      to,
+      dirIndex: step.dirIndex,
+      key: [`${step.from.col},${step.from.row}`, currentKey].sort().join('|'),
+    });
+    currentKey = `${step.from.col},${step.from.row}`;
+  }
+  return edges;
+}
+
+// Every pair of races whose territories physically touch (share at least one
+// hex edge) — this is the graph a minimum spanning tree gets built over, so
+// trunk rivers only ever connect regions that are actually adjacent, the way
+// a real waterway would.
+function buildRegionAdjacency(cells, cellMap) {
+  const adjacentPairs = new Set();
+  cells.forEach((cell) => {
+    hexNeighborKeys(cell.col, cell.row).forEach((key) => {
+      const nb = cellMap.get(key);
+      if (nb && nb.race !== cell.race) {
+        adjacentPairs.add([cell.race, nb.race].sort().join('|'));
+      }
+    });
+  });
+  return adjacentPairs;
+}
+
+// Minimum spanning tree over the region-adjacency graph (Prim's algorithm,
+// edge weight = distance between the two races' home points). A spanning
+// tree is the minimal structure that still guarantees every region is
+// reachable from every other — exactly what "a navy needs to reach every
+// region" requires, without redundant connections. Falls back to connecting
+// via raw distance if two remaining groups somehow share no adjacency
+// (shouldn't happen since the tessellation is one contiguous map, but keeps
+// this from ever failing to fully connect the graph).
+function buildRegionMST(races, adjacentPairs) {
+  const mstEdges = [];
+  const visited = new Set([races[0]]);
+  const remaining = new Set(races.slice(1));
+
+  const homeDistSq = (a, b) => {
+    const ha = RACE_HOMES[a];
+    const hb = RACE_HOMES[b];
+    return (ha.x - hb.x) ** 2 + (ha.y - hb.y) ** 2;
+  };
+
+  while (remaining.size > 0) {
+    // Prefer the nearest pair that's actually physically adjacent; only fall
+    // back to the nearest pair overall if no adjacent option exists at all
+    // (shouldn't happen on one contiguous tessellation, but keeps this from
+    // ever failing to connect every region).
+    let bestAdjacent = null;
+    let bestAdjacentDist = Infinity;
+    let bestAny = null;
+    let bestAnyDist = Infinity;
+
+    visited.forEach((a) => {
+      remaining.forEach((b) => {
+        const dist = homeDistSq(a, b);
+        if (dist < bestAnyDist) {
+          bestAnyDist = dist;
+          bestAny = [a, b];
+        }
+        if (adjacentPairs.has([a, b].sort().join('|')) && dist < bestAdjacentDist) {
+          bestAdjacentDist = dist;
+          bestAdjacent = [a, b];
+        }
+      });
+    });
+
+    const chosen = bestAdjacent || bestAny;
+    if (!chosen) break;
+    mstEdges.push(chosen);
+    visited.add(chosen[1]);
+    remaining.delete(chosen[1]);
+  }
+  return mstEdges;
+}
+
+// Builds the full navigable water network: a short local tributary or two per
+// region feeding its own lake, plus trunk rivers along a minimum spanning
+// tree over region adjacency so every region's lake is connected to every
+// other by some path — the "roadway" a future navy can traverse end to end.
 function buildRiverNetwork(cells, cellMap, lakeByRace) {
   const riverSegments = [];
   const visitedEdges = new Set();
+  const waterGraph = new Map(); // "col,row" -> Set of connected "col,row" neighbor keys
 
+  const addSegment = (edge, kind) => {
+    if (visitedEdges.has(edge.key)) return;
+    visitedEdges.add(edge.key);
+    const corners = hexCorners(edge.from.x, edge.from.y, HEX_SIZE);
+    const edgeCorners = DIRECTION_EDGE_CORNERS[edge.dirIndex];
+    riverSegments.push({
+      p1: corners[edgeCorners[0]],
+      p2: corners[edgeCorners[1]],
+      kind,
+    });
+    const fromKey = `${edge.from.col},${edge.from.row}`;
+    const toKey = `${edge.to.col},${edge.to.row}`;
+    if (!waterGraph.has(fromKey)) waterGraph.set(fromKey, new Set());
+    if (!waterGraph.has(toKey)) waterGraph.set(toKey, new Set());
+    waterGraph.get(fromKey).add(toKey);
+    waterGraph.get(toKey).add(fromKey);
+  };
+
+  // Local tributaries: 1-2 per region, confined to that region's own cells.
   Object.keys(lakeByRace).forEach((race) => {
     const lake = lakeByRace[race];
     const regionCells = cells.filter((c) => c.race === race && c.terrain !== 'lake');
     if (!regionCells.length) return;
+    const raceFilter = new Set([race]);
 
     const sourceCount = 1 + Math.floor(hexSeededRandom(lake.col, lake.row, 11) * 2);
     for (let s = 0; s < sourceCount; s++) {
       const sourceIdx = Math.floor(hexSeededRandom(lake.col + s, lake.row + s, 13) * regionCells.length);
-      let current = regionCells[sourceIdx];
-      let guard = 0;
-      while (current && (current.col !== lake.col || current.row !== lake.row) && guard < 40) {
-        guard++;
-        const neighborKeys = hexNeighborKeys(current.col, current.row);
-        const candidates = [];
-        neighborKeys.forEach((key, dirIndex) => {
-          const nb = cellMap.get(key);
-          if (nb && nb.race === race) candidates.push({ cell: nb, dirIndex });
-        });
-        if (!candidates.length) break;
-
-        candidates.sort((a, b) => {
-          const da = (a.cell.x - lake.x) ** 2 + (a.cell.y - lake.y) ** 2;
-          const db = (b.cell.x - lake.x) ** 2 + (b.cell.y - lake.y) ** 2;
-          return da - db;
-        });
-        const pickIdx = hexSeededRandom(current.col, current.row, 17 + s) < 0.75
-          ? 0
-          : Math.floor(hexSeededRandom(current.col, current.row, 19 + s) * candidates.length);
-        const choice = candidates[pickIdx];
-
-        const edgeKey = [`${current.col},${current.row}`, `${choice.cell.col},${choice.cell.row}`].sort().join('|');
-        if (!visitedEdges.has(edgeKey)) {
-          visitedEdges.add(edgeKey);
-          const corners = hexCorners(current.x, current.y, HEX_SIZE);
-          const edge = DIRECTION_EDGE_CORNERS[choice.dirIndex];
-          riverSegments.push({ p1: corners[edge[0]], p2: corners[edge[1]] });
-        }
-        current = choice.cell;
-      }
+      const source = regionCells[sourceIdx];
+      const edges = riverWalk(source, lake, cellMap, raceFilter, 17 + s, 40);
+      edges.forEach((edge) => addSegment(edge, 'tributary'));
     }
   });
 
-  return riverSegments;
+  // Trunk connectors: a minimum spanning tree over region adjacency, so every
+  // region's lake is reachable from every other via a chain of trunk rivers.
+  // Uses bfsRiverPath (guaranteed shortest path), not the heuristic riverWalk
+  // — a trunk connector crossing near a multi-region junction can otherwise
+  // wander without ever converging on the target within a fixed step budget,
+  // which would silently leave that region disconnected from the network.
+  const races = Object.keys(lakeByRace);
+  const adjacentPairs = buildRegionAdjacency(cells, cellMap);
+  const mstEdges = buildRegionMST(races, adjacentPairs);
+  mstEdges.forEach(([raceA, raceB]) => {
+    const edges = bfsRiverPath(lakeByRace[raceA], lakeByRace[raceB], cellMap);
+    if (edges) edges.forEach((edge) => addSegment(edge, 'trunk'));
+  });
+
+  return { riverSegments, waterGraph };
 }
 
 export function renderWorldMap(
@@ -535,12 +701,18 @@ export function renderWorldMap(
         // like region borders — rivers are a geographic feature painted on
         // top of whatever biome they cross, not a boundary carved out of it).
         // Always visible regardless of the terrain toggle, same as lakes.
+        // Trunk segments (the spanning-tree connectors linking every region's
+        // lake to every other) render thicker/brighter than local tributaries
+        // — the "roadway" a navy actually travels, versus feeder streams.
         svg += '<g class="wm-layer wm-layer-rivers">';
         hexGrid.riverSegments.forEach(function (seg) {
-          svg += '<line x1="' + seg.p1[0] + '" y1="' + seg.p1[1] + '" x2="' + seg.p2[0] + '" y2="' + seg.p2[1] + '" stroke="#0d2a3a" stroke-width="4.5" stroke-linecap="round" opacity="0.5" pointer-events="none"/>';
+          var underWidth = seg.kind === 'trunk' ? 6 : 4.5;
+          svg += '<line x1="' + seg.p1[0] + '" y1="' + seg.p1[1] + '" x2="' + seg.p2[0] + '" y2="' + seg.p2[1] + '" stroke="#0d2a3a" stroke-width="' + underWidth + '" stroke-linecap="round" opacity="0.5" pointer-events="none"/>';
         });
         hexGrid.riverSegments.forEach(function (seg) {
-          svg += '<line x1="' + seg.p1[0] + '" y1="' + seg.p1[1] + '" x2="' + seg.p2[0] + '" y2="' + seg.p2[1] + '" stroke="#4a9fd0" stroke-width="2.25" stroke-linecap="round" opacity="0.85" pointer-events="none"/>';
+          var topWidth = seg.kind === 'trunk' ? 3.25 : 2.25;
+          var color = seg.kind === 'trunk' ? '#5cc0e8' : '#4a9fd0';
+          svg += '<line x1="' + seg.p1[0] + '" y1="' + seg.p1[1] + '" x2="' + seg.p2[0] + '" y2="' + seg.p2[1] + '" stroke="' + color + '" stroke-width="' + topWidth + '" stroke-linecap="round" opacity="0.85" class="water-edge" data-kind="' + seg.kind + '" pointer-events="none"/>';
         });
         svg += '</g>';
 
