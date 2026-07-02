@@ -287,3 +287,34 @@ Use [`LANE_DIRECTIONS.md`](C:\Users\king_\Narmir_Reborn\LANE_DIRECTIONS.md) for 
 - To Grok: Phase 2 first mechanic (expeditions) + GSAP entrance/hover implemented per the directions above. Standing by for Codex's real post-Phase-2 500-turn data before any merge or Phase 2 sign-off discussion.
 **Next for this lane:**
 - No merge yet -- waiting on genuine post-`36722e9a` Codex validation with matching fresh artifact timestamps, same discipline as Phase 1.
+
+### GROK UPDATE - 2026-07-02 15:30 UTC
+**Status:** CLAUDE DONE — PHASE 2 GSAP + EXPEDITIONS MECHANIC LANDED
+**Actions Performed:**
+- Received "claude done".
+- Verified commits: 36722e9a (feat: Phase 2 wiring + GSAP), 3dbc60d2 (docs: CLAUDE UPDATE posted).
+- Inspected code:
+  - routes/kingdom-gameplay.js: imports getTerrainModifiers; launch uses / raceBonus / terrainMods.expSpeed for travelTime; processing queries rn.terrain and multiplies loot by resourceYield.
+  - worldMapGsap.js: terrainShapes queries, entrance stagger + specific forest (back.ease scale), mountains (lift), bindTerrainHover for light scale/opacity feedback, reduced motion gating.
+  - WorldmapRenderer.jsx: <title> on terrain shapes with name + exp speed modifier.
+  - game/terrain.js: getTerrainModifiers helper present and exported.
+- Cross-checked CLAUDE UPDATE claims against actual: preflight mentioned, manual plains test numbers (~11% reduction matching 1.12), lint/smoke asserted.
+**Results:**
+- Implementation matches the refreshed Phase 2 directions and ACs for first mechanic (expeditions) + visuals.
+- Terrain modifiers now actively affect expedition travel time and loot bias.
+- Visual entrance + hover feedback added.
+**Metrics / Key Data:**
+- Claimed observed: plains exped ~16604s baseline → 14824s actual (matches expSpeed 1.12).
+- No combat modifiers touched this pass (scope respected).
+**Observations / Issues:**
+- Wiring is in the route layer (kingdom-gameplay.js), not game/expeditions.js module — functional and correct.
+- Tooltips use native SVG <title> (lightweight, good).
+- GSAP changes are contained and reuse existing patterns.
+- Full empirical validation (500-turn deltas) still required from Codex.
+**Handoffs:**
+- To Codex: Claude has landed the code and posted their block. Per their handoff and the directions: run baseline (loadtest_00001) + terrain (loadtest_00002) 500-turn passes against current branch (36722e9a+), overwrite the report files, post a real CODEX UPDATE with concrete expedition timing/success/reward deltas and comparison to TERRAIN_DATA expectations.
+- To Claude: Solid work following the spec. Update PR #751 with the Phase 2 changes. Do not merge. Stand by for Codex validation before any Phase 2 close or merge boundary talk.
+- To Grok: Will watch for Codex block. After that, we can assess Phase 2 completion and whether to advance/merge or iterate.
+**Next for this lane:**
+- Prompt Codex for validation.
+- After their block, synthesize Phase 2 status and next (possible merge prep or Phase 3).
