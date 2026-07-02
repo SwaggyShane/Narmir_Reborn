@@ -462,11 +462,15 @@ function buildRiverNetwork(cells, cellMap, lakeByRace) {
   const addSegment = (edge, kind) => {
     if (visitedEdges.has(edge.key)) return;
     visitedEdges.add(edge.key);
-    const corners = hexCorners(edge.from.x, edge.from.y, HEX_SIZE);
-    const edgeCorners = DIRECTION_EDGE_CORNERS[edge.dirIndex];
+    // Center-to-center, not the shared hex-boundary chord: a path that goes
+    // "straight" through a hex enters and exits on opposite (non-adjacent)
+    // edges of that hex, so consecutive boundary-chords don't share an
+    // endpoint and the drawn line fragments into disconnected dashes. Two
+    // cell centers are always connectable regardless of the path's turn
+    // angle, which is what a continuous, always-connected river needs.
     riverSegments.push({
-      p1: corners[edgeCorners[0]],
-      p2: corners[edgeCorners[1]],
+      p1: [edge.from.x, edge.from.y],
+      p2: [edge.to.x, edge.to.y],
       kind,
     });
     const fromKey = `${edge.from.col},${edge.from.row}`;
@@ -479,11 +483,13 @@ function buildRiverNetwork(cells, cellMap, lakeByRace) {
 
   // Tributaries: every region's lake gets a guaranteed path back to the
   // shared ocean, entering from whichever ocean cell is nearest that
-  // region's home point. The path may cross the ocean freely and this
-  // region's own territory, but not some unrelated third region's land —
-  // that keeps the tributary geographically sensible (it flows from the sea
-  // through this region to this region's lake) without needing to hand-pick
-  // a source cell.
+  // region's home point. Unrestricted BFS — only regions bordering the
+  // ocean band directly (roughly a third of them, on this map's geometry)
+  // have territory that touches it, so a same-region-only path is
+  // unreachable for everyone else and silently produces zero tributary.
+  // Letting the path cross intervening regions' land is also just
+  // realistic: real rivers flow through multiple territories before
+  // reaching the sea.
   const oceanCells = cells.filter((c) => c.terrain === 'ocean');
   Object.keys(lakeByRace).forEach((race) => {
     const lake = lakeByRace[race];
@@ -499,8 +505,7 @@ function buildRiverNetwork(cells, cellMap, lakeByRace) {
     });
     if (!nearestOcean) return;
 
-    const allowCell = (cell) => cell.terrain === 'ocean' || cell.race === race;
-    const edges = bfsRiverPath(nearestOcean, lake, cellMap, allowCell);
+    const edges = bfsRiverPath(nearestOcean, lake, cellMap);
     if (edges) edges.forEach((edge) => addSegment(edge, 'tributary'));
   });
 
