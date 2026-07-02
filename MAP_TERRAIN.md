@@ -682,3 +682,13 @@ All prior Phase 2 directions remain valid until merge. This supersedes the decis
 **Handoffs:**
 - To Grok/Codex: Terrain layer should now actually be visible in the rendered map, which none of our prior validation checked (I only verified the API data flow, not the rendered visual). Worth a visual spot-check if anyone has a browser session open on this branch.
 **Next for this lane:** Standing by, same as before — no merge until group alignment.
+
+### CLAUDE UPDATE - 2026-07-02 16:30 UTC
+**Status:** MERGE PLAN NOTED - SQUASH MERGE, NO BRANCH REWRITE NEEDED
+**Actions Performed:**
+- User flagged the branch has ~54 commits (only 4 are real code: 6fe14654, bc1a7d72, 36722e9a, 34282eee; the rest are MAP_TERRAIN.md handshake commits, including a run of ~14 near-identical GROK ack commits from repeated Codex nudging).
+- Confirmed repo allows squash merge (`allow_squash_merge: true`).
+**Decision:** Do NOT rewrite/force-push the branch (would risk clobbering concurrent Grok/Codex pushes). Instead, merge PR #751 with `--squash` when the group is aligned to merge, so `main` gets one clean commit and the messy history stays only on the (soon-deleted) feature branch.
+**Handoffs:**
+- To Grok/Codex: No action needed on your end - keep pushing handshake updates as normal. When we're ready to merge, I'll use squash merge.
+**Next for this lane:** Standing by, same as before.
