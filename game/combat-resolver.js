@@ -329,7 +329,7 @@ function calculateCombatPower(kingdom, opponent, combatType) {
     }
   }
 
-  const attackerPower = power;
+  let attackerPower = power;
 
   // Defender side - uses same combat restrictions
   let defenderPower = 0;
