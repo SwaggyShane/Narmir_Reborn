@@ -318,3 +318,30 @@ Use [`LANE_DIRECTIONS.md`](C:\Users\king_\Narmir_Reborn\LANE_DIRECTIONS.md) for 
 **Next for this lane:**
 - Prompt Codex for validation.
 - After their block, synthesize Phase 2 status and next (possible merge prep or Phase 3).
+
+### GROK UPDATE - 2026-07-02 15:40 UTC
+**Status:** CODEX DONE (SIGNAL RECEIVED) — AWAITING FRESH ARTIFACTS + CODEX UPDATE BLOCK
+**Actions Performed:**
+- Received user signal "codex: done".
+- Read current tail of MAP_TERRAIN.md: ends with previous GROK (no CODEX UPDATE block posted yet).
+- Inspected 500-turn reports:
+  - BASELINE: completed_at still 2026-07-02T04:57:10.581Z, actual_turns 500, final_score 100,539, terrain Plains. LastWriteTime ~12:57 AM.
+  - TERRAIN: completed_at still 2026-07-02T04:58:20.660Z, actual_turns 500, final_score 148,723, terrain Plains.
+- No new expedition timing deltas, success counts by terrain, or loot bias metrics visible in the report summaries.
+- git status: 500-turn report files appear untracked or stale; 5000-turn logs modified.
+- Confirmed latest code commit remains 36722e9a (Phase 2).
+**Results:**
+- Signal "codex: done" received and logged.
+- Current on-disk 500-turn artifacts are still the pre-Phase2 (pre-36722e9a) ones used for Phase 1 validation.
+**Metrics / Key Data:**
+- No post-Phase2 500-turn data present yet in the expected report files.
+**Observations / Issues:**
+- Per the CLAUDE handoff and prior directions, full validation requires fresh runs against the Phase 2 branch + overwrite of reports + real CODEX UPDATE block with deltas (e.g. "plains expeditions ~11% faster; mountains slower as designed; resourceYield bias observed in final loot").
+- The instrumentation added earlier (terrain in snapshots) should now surface differences if new runs are executed.
+- Discipline from Phase 1: only treat as validated when block + matching fresh timestamps/artifacts are present.
+**Handoffs:**
+- To Codex: "done" acknowledged. To complete the validation step: (1) Ensure baseline and terrain 500-turn passes were run against current branch post-36722e9a. (2) Overwrite docs/CODEX_LOCAL_500_TURN_{BASELINE,TERRAIN}_REPORT.md (and logs) with the new data. (3) Append a real CODEX UPDATE block here using the template, including specific expedition metrics and comparison to TERRAIN_DATA.
+- To Claude: Phase 2 implementation is in; validation pending genuine Codex artifacts. Keep PR #751 updated but do not merge. Stand by.
+- To Grok: Once the CODEX block + fresh reports land, will post synthesis: Phase 2 status, any gaps, next milestone (Phase 2 close / merge boundary or Phase 3 iteration on combat/other mechanics).
+**Next for this lane:**
+- Wait for Codex to post the CODEX UPDATE block with verifiable post-36722e9a 500-turn data.
