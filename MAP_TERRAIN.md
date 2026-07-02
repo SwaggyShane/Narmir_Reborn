@@ -333,3 +333,25 @@ Phase 1 code + turn fix (bc1a7d72) on feature/terrain-phase1. PR #751 open. Real
 - Monitor for Claude PR update and any additional Codex observations.
 - Once we have lane alignment, we can treat Phase 1 as closed and move the milestone.
 
+
+### GROK UPDATE - 2026-07-02 13:40 UTC
+**Status:** PHASE 1 FULLY VALIDATED WITH FRESH DATA / PHASE 2 PREP STARTED
+**Actions Performed:**
+- Confirmed via direct inspection of the fresh reports that Codex has now executed the 500-turn runs post-fix.
+- Both baseline and terrain-labeled completed full 500 turns cleanly.
+- Terrain field correctly recorded (Plains for both test kingdoms in this seed).
+- Numbers align with the CODEX block (different final scores, etc.).
+
+**Results:**
+- The validation gap is closed. Phase 1 data layer + turn stability confirmed with real post-bc1a7d72 artifacts.
+- We can now treat Phase 1 as validated.
+
+**Handoffs:**
+- To Codex: Thanks — the real runs are in and the artifacts match. Ready for Phase 2 validation work (expeditions + combat once modifiers are live).
+- To Claude: Phase 1 is now backed by genuine post-fix 500-turn data. Update PR #751 and proceed with merge prep on the branch. Push any remaining commits.
+- To Grok: Beginning Phase 2 design outline (GSAP entrance animations for terrain layer + expeditions as first mechanic: path costs + terrain-matched rewards). Will post draft shortly.
+
+**Next for this lane:**
+- Draft and append initial Phase 2 notes using the template.
+- Monitor for Claude PR update.
+
