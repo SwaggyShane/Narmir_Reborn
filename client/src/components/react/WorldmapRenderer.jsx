@@ -467,6 +467,8 @@ function buildRiverNetwork(cells, cellMap, lakeByRace) {
   const visitedEdges = new Set();
   const waterGraph = new Map(); // "col,row" -> Set of connected "col,row" neighbor keys
 
+  const isWaterTerrain = (t) => t === 'lake' || t === 'ocean';
+
   const addSegment = (edge, kind) => {
     if (visitedEdges.has(edge.key)) return;
     visitedEdges.add(edge.key);
@@ -476,11 +478,26 @@ function buildRiverNetwork(cells, cellMap, lakeByRace) {
     // endpoint and the drawn line fragments into disconnected dashes. Two
     // cell centers are always connectable regardless of the path's turn
     // angle, which is what a continuous, always-connected river needs.
-    riverSegments.push({
-      p1: [edge.from.x, edge.from.y],
-      p2: [edge.to.x, edge.to.y],
-      kind,
-    });
+    // Exception: whichever endpoint is a lake/ocean cell stops at the
+    // shared border instead of reaching all the way to that cell's center —
+    // a river should visibly meet the lake/ocean, not get drawn on top of
+    // it. The two cells are never both water (the isLand filter below
+    // guarantees that for every hop except the case of two directly
+    // adjacent lakes, handled separately).
+    const fromWater = isWaterTerrain(edge.from.terrain);
+    const toWater = isWaterTerrain(edge.to.terrain);
+    let p1 = [edge.from.x, edge.from.y];
+    let p2 = [edge.to.x, edge.to.y];
+    if (fromWater !== toWater) {
+      const corners = hexCorners(edge.from.x, edge.from.y, HEX_SIZE);
+      const edgeCorners = DIRECTION_EDGE_CORNERS[edge.dirIndex];
+      const c1 = corners[edgeCorners[0]];
+      const c2 = corners[edgeCorners[1]];
+      const mid = [(c1[0] + c2[0]) / 2, (c1[1] + c2[1]) / 2];
+      if (fromWater) p1 = mid;
+      if (toWater) p2 = mid;
+    }
+    riverSegments.push({ p1, p2, kind });
     const fromKey = `${edge.from.col},${edge.from.row}`;
     const toKey = `${edge.to.col},${edge.to.row}`;
     if (!waterGraph.has(fromKey)) waterGraph.set(fromKey, new Set());
