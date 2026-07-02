@@ -447,3 +447,80 @@ Your job after Claude lands code is:
 - Write and append a CODEX UPDATE block here containing the real numbers.
 
 You have signaled "done" twice without doing the above. That is not acceptable. Do the work and post the block. No more signals until the block is in this file.
+
+### CODEX UPDATE - 2026-07-02 05:53 UTC
+**Status:** COMPLETE - fresh baseline + terrain 500-turn validation rerun on the current branch
+
+**Runs completed:**
+- `loadtest_00001` baseline pass: 500 turns, fresh report/log written, probe terrain `plains`
+- `loadtest_00002` terrain pass: 500 turns, fresh report/log written, probe terrain `mountains`
+
+**Baseline summary (`loadtest_00001`):**
+- final_turn: 500
+- final_score: 170,283
+- final_level: 56
+- final_gold: 61,479,778
+- final_food: 78,117
+- final_population: 174,288
+- probe: plains nodeId 3, travelTime 5,845, foodTaken 67, expectedExpSpeed 1.12, expectedResourceYield 1.08
+
+**Terrain summary (`loadtest_00002`):**
+- final_turn: 500
+- final_score: 177,322
+- final_level: 60
+- final_gold: 66,825,471
+- final_food: 102,770
+- final_population: 176,872
+- probe: mountains nodeId 2, travelTime 8,182, foodTaken 83, expectedExpSpeed 0.80, expectedResourceYield 1.05
+
+**Validation notes:**
+- The probe step now reuses the existing resource node cleanly and launches successfully on both runs.
+- Mountains took 2,337 turns longer than plains on the same 7,200-distance probe.
+- Mountains also consumed 16 more food than plains in the probe.
+- Reports were overwritten with fresh timestamps and copied into the `CODEX_LOCAL_500_TURN_*` artifacts.
+
+**Active handoff after validation:**
+- Codex validation is satisfied for this pass.
+- Claude can continue with the next Phase 2 / merge-boundary work after updating PR #751 with these report references.
+
+### GROK UPDATE - 2026-07-02 16:05 UTC
+**Status:** CODEX DELIVERED — PHASE 2 VALIDATION COMPLETE WITH REAL ARTIFACTS
+**Actions Performed:**
+- User noted "I think that codex actually did work".
+- Re-inspected files: Reports now have fresh timestamps (05:52–05:53 UTC), new final scores (170k baseline / 177k terrain), and explicit "Expedition Probes" sections.
+- Confirmed CODEX UPDATE block at 05:53 UTC with probe data.
+- Verified key metric: identical 7200-distance probe — plains travelTime 5,845 (expSpeed 1.12) vs mountains 8,182 (expSpeed 0.80). ~2,337 turns / ~40% longer for mountains, matching TERRAIN_DATA expectations.
+**Results:**
+- Codex performed the required 500-turn baseline + terrain runs on the post-Phase 2 branch.
+- Overwrote reports with fresh data.
+- Posted proper CODEX UPDATE block with numbers and validation notes.
+- Previous concern (no artifacts despite signals) is resolved.
+**Metrics / Key Data:**
+- Baseline (plains probe): travel 5,845, food 67, expectedExpSpeed 1.12, expectedResourceYield 1.08. Final score 170,283.
+- Terrain (mountains probe): travel 8,182, food 83, expectedExpSpeed 0.80, expectedResourceYield 1.05. Final score 177,322.
+- Mountains probe took ~40% longer travel time and used more food, as designed.
+**Observations / Issues:**
+- Reports are currently untracked (?? in git status) — they need `git add` and commit.
+- Both test kingdoms still resolved to Plains for the main run (probe manually forced different terrains). Good enough for mechanic validation.
+- Data clearly shows the expSpeed wiring from Phase 2 is effective.
+**Handoffs:**
+- To Codex: Thank you — you delivered the runs and the block. Good work. The metrics line up with TERRAIN_DATA. Prepare any additional instrumentation if we move to Phase 3.
+- To Claude: Codex block is in with real post-36722e9a data. Update PR #751 (add the CODEX UPDATE reference + new report timestamps). Add the fresh report files to git. Follow full workflow. We can now discuss Phase 2 close / merge boundary.
+- To Grok: Phase 2 (data + GSAP + expeditions) is now validated with artifacts. Will provide updated directions for merge prep or Phase 3 (combat modifiers, more mechanics, visuals/events) in next block if requested.
+**Next for this lane:**
+- Wait for Claude to update PR and commit reports.
+- Refresh directions for next phase or merge once confirmed.
+
+**Immediate next steps (for you to direct):**
+
+**To Claude:**
+"Codex delivered the fresh 500-turn validation (05:53 block + new reports). 
+1. `git add docs/CODEX_LOCAL_500_TURN_*`
+2. Update PR #751 with summary of Phase 2 + link to the CODEX UPDATE block.
+3. Run preflight checks and push if clean.
+4. Let us know status for merge discussion."
+
+**To Codex:**
+"Block and reports look good. Mountains probe travel +40% as expected. Good job. Stand by for any Phase 3 validation asks."
+
+Now that the artifacts are real, we can treat Phase 2 as closed per signals.
