@@ -29,6 +29,7 @@ const DEFAULT_LAYERS = {
   nodes: true,
   routes: true,
   expeditions: true,
+  terrain: true,
 };
 
 export async function loadWorldMap({ setLoading, setError, setKingdoms, setTradeRoutes, setNodes, setExpeditions } = {}) {
@@ -120,6 +121,7 @@ function MapLayerToggles({ layers, onToggle }) {
     { key: 'nodes', label: 'Resource Nodes', icon: '⛏️' },
     { key: 'routes', label: 'Trade Routes', icon: '🤝' },
     { key: 'expeditions', label: 'Expeditions', icon: '🧭' },
+    { key: 'terrain', label: 'Terrain', icon: '🌄' },
   ];
 
   return (

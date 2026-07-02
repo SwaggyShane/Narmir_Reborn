@@ -12,6 +12,29 @@ const DEFAULT_LAYERS = {
   nodes: true,
   routes: true,
   expeditions: true,
+  terrain: true,
+};
+
+const RACE_TO_TERRAIN = {
+  dwarf: 'mountains',
+  high_elf: 'forest',
+  wood_elf: 'forest',
+  orc: 'plains',
+  human: 'plains',
+  dire_wolf: 'hills',
+  vampire: 'swamp',
+  dark_elf: 'hills',
+  ogre: 'mountains',
+};
+
+const TERRAIN_COLORS = {
+  plains: '#556b2f',
+  forest: '#2d4a2d',
+  mountains: '#5c4033',
+  hills: '#6b5b3f',
+  swamp: '#3a3f2a',
+  desert: '#8b7355',
+  coast: '#3a5f7a',
 };
 
 function layerVisibilityStyle(enabled) {
@@ -186,7 +209,16 @@ export function renderWorldMap(
 
         };
 
-
+        // Terrain layer
+        svg += '<g class="wm-layer wm-layer-terrain" style="' + layerVisibilityStyle(layers.terrain !== false) + '">';
+        Object.keys(regionPaths).forEach(function(race) {
+          var path = regionPaths[race] || "";
+          if (!path) return;
+          var t = RACE_TO_TERRAIN[race] || 'plains';
+          var fill = TERRAIN_COLORS[t];
+          svg += '<path d="' + path + '" fill="' + fill + '" opacity="0.48" class="terrain-shape" data-terrain="' + escapeHtml(t) + '" data-race="' + escapeHtml(race) + '"/>';
+        });
+        svg += '</g>';
 
         svg += '<g class="wm-layer wm-layer-regions">';
 

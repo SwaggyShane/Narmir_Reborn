@@ -19,6 +19,7 @@ const { decorateNewsMessage } = require("../game/news-emoji");
 const { EPOCH_NOW } = require("../lib/db-sql");
 const { pgInList, pgValueTuples } = require("../lib/pg-placeholders");
 const { getKingdomMapCoords, placeResourceNodeCoords } = require("../game/world-map-coords");
+const { getTerrainForRace } = require("../game/terrain");
 
 const router = express.Router();
 
@@ -1957,7 +1958,7 @@ module.exports = function (db) {
 
       const kingdomsWithCoords = filtered.map((row) => {
         const coords = getKingdomMapCoords(row);
-        return { ...row, map_x: coords.map_x, map_y: coords.map_y };
+        return { ...row, map_x: coords.map_x, map_y: coords.map_y, terrain: getTerrainForRace(row.race) };
       });
 
       const tradeRoutes = await db.all(
@@ -1966,7 +1967,7 @@ module.exports = function (db) {
       );
 
       const nodes = await db.all(
-        `SELECT id, kingdom_id, name, type, distance, richness, map_x, map_y
+        `SELECT id, kingdom_id, name, type, distance, richness, map_x, map_y, terrain
          FROM resource_nodes WHERE kingdom_id = $1 ORDER BY discovered_at DESC`,
         [k.id],
       );
@@ -2007,7 +2008,7 @@ module.exports = function (db) {
 
         const kingdomsWithCoords = filtered.map((row) => {
           const coords = getKingdomMapCoords(row);
-          return { ...row, map_x: coords.map_x, map_y: coords.map_y };
+          return { ...row, map_x: coords.map_x, map_y: coords.map_y, terrain: getTerrainForRace(row.race) };
         });
 
         const tradeRoutes = k
@@ -2019,7 +2020,7 @@ module.exports = function (db) {
 
         const nodes = k
           ? await db.all(
-              `SELECT id, kingdom_id, name, type, distance, richness, map_x, map_y
+              `SELECT id, kingdom_id, name, type, distance, richness, map_x, map_y, terrain
                FROM resource_nodes WHERE kingdom_id = $1 ORDER BY discovered_at DESC`,
               [k.id],
             )
@@ -2278,6 +2279,7 @@ module.exports = function (db) {
       const namePool = RESOURCE_NODE_NAMES[nodeType] || RESOURCE_NODE_NAMES.wood;
       const name = namePool[Math.floor(Math.random() * namePool.length)];
 
+      const terrain = getTerrainForRace(k.race);
       let result;
       await db.run("BEGIN TRANSACTION");
       try {
@@ -2288,8 +2290,8 @@ module.exports = function (db) {
           return res.status(400).json({ error: 'Need 500 gold to scout a node.' });
         }
         result = await db.run(
-          'INSERT INTO resource_nodes (kingdom_id, name, type, distance, richness) VALUES ($1, $2, $3, $4, $5)',
-          [k.id, name, nodeType, distance, richness]
+          'INSERT INTO resource_nodes (kingdom_id, name, type, distance, richness, terrain) VALUES ($1, $2, $3, $4, $5, $6)',
+          [k.id, name, nodeType, distance, richness, terrain]
         );
         const home = getKingdomMapCoords({ id: k.id, race: k.race });
         const nodeCoords = placeResourceNodeCoords({
@@ -2328,6 +2330,7 @@ module.exports = function (db) {
           type: nodeType,
           distance,
           richness,
+          terrain,
           map_x: placed.map_x,
           map_y: placed.map_y,
           discovered_at: Math.floor(Date.now() / 1000),

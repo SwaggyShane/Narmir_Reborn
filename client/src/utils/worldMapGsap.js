@@ -34,6 +34,7 @@ export function applyWorldMapLayers(container, layers, { animate = true } = {}) 
     routes: '.wm-layer-routes',
     expeditions: '.wm-layer-expeditions',
     kingdoms: '.wm-layer-kingdoms',
+    terrain: '.wm-layer-terrain',
   };
 
   Object.entries(mapping).forEach(([key, selector]) => {
