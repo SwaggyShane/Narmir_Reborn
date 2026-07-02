@@ -16,6 +16,7 @@
 
 const config = require('./config');
 const combatCalc = require('./combat-new');
+const { getTerrainModifiers, getTerrainDisplayName } = require('./terrain');
 
 const TROOP_TYPES = ['thralls', 'fighters', 'rangers', 'mages', 'clerics', 'ninjas', 'thieves', 'engineers', 'war_machines'];
 const WEAPON_EQUIPPED_TYPES = ['fighters', 'rangers', 'clerics', 'ninjas', 'thieves', 'engineers'];
@@ -99,6 +100,10 @@ function executeCombat(_db, attacker, defender, combatType, targetFocus, _engine
   result.win = Math.random() < winChance;
   result.outcome = result.win ? 'victory' : 'repelled';
   result.report.winChance = winChance;
+
+  // Phase 3: record terrain for reports
+  result.report.attackerTerrain = getTerrainDisplayName(attacker.terrain || 'plains');
+  result.report.defenderTerrain = getTerrainDisplayName(defender.terrain || 'plains');
 
   if (!result.win) {
     // Attacker repelled - attacker takes the heavier damage.
@@ -396,6 +401,16 @@ function calculateCombatPower(kingdom, opponent, combatType) {
 
   diagnostics.attacker.totalDmg = attackerPower;
   diagnostics.defender.totalDmg = defenderPower;
+
+  // Phase 3: Apply terrain combat modifiers
+  const attackerTerrain = getTerrainModifiers(kingdom.terrain || 'plains');
+  const defenderTerrain = getTerrainModifiers(opponent.terrain || 'plains');
+  attackerPower = Math.round(attackerPower * (attackerTerrain.combatAtk || 1));
+  defenderPower = Math.round(defenderPower * (defenderTerrain.combatDef || 1));
+  diagnostics.attacker.terrain = getTerrainDisplayName(kingdom.terrain || 'plains');
+  diagnostics.attacker.terrainMod = attackerTerrain.combatAtk || 1;
+  diagnostics.defender.terrain = getTerrainDisplayName(opponent.terrain || 'plains');
+  diagnostics.defender.terrainMod = defenderTerrain.combatDef || 1;
 
   return { attackerPower, defenderPower, diagnostics };
 }

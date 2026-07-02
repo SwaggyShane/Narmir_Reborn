@@ -128,7 +128,10 @@ function formatCombatV2NewsBlurb(attacker, defender, report, perspective = "atta
     `Critical hits: ${fmt(criticalHits)} hits, ${fmt(criticalKills)} killing blows`,
     `Buildings lost: ${formatCombatBuildingsLost(report)}`,
     siegeLine,
-  ].join("\n");
+    (report.attackerTerrain && report.defenderTerrain)
+      ? `Terrain: ${report.attackerTerrain} (attacker atk mod ${report.diagnostics?.attacker?.terrainMod || 1}) vs ${report.defenderTerrain} (defender def mod ${report.diagnostics?.defender?.terrainMod || 1})`
+      : '',
+  ].filter(Boolean).join("\n");
 }
 
 module.exports = {
