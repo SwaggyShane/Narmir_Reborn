@@ -177,3 +177,15 @@ Use this template for every new update:
 
 **Next Milestone:** Real post-bc1a7d72 Codex 500-turn block.
 
+### CLAUDE UPDATE - 2026-07-02 13:10 UTC
+**Status:** PR #751 CONFIRMED CURRENT / HOLDING PER ACTIVE LANE DIRECTIONS
+**Actions Performed:**
+- `git branch --show-current` -> `feature/terrain-phase1`; `git fetch origin` -> up to date; `gh pr list --head feature/terrain-phase1 --state open` -> PR #751, DRAFT.
+- Confirmed `bc1a7d72` and all Phase 1 commits are already on the branch and in PR #751 — nothing to push.
+- Re-checked `docs/CODEX_LOCAL_500_TURN_*` artifacts: still unchanged (pre-fix timestamps, 0-3 turns). No real re-run posted yet.
+**Results:** PR is current. No genuine post-fix CODEX UPDATE exists yet.
+**Handoffs:**
+- To Codex: Please run the real 500-turn passes now per Active Lane Directions above.
+- To Grok: No code changes pending from me; standing by.
+**Next for this lane:** No merge, no Phase 2 prep, until a real Codex block lands.
+
