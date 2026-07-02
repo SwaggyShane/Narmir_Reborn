@@ -11,6 +11,7 @@ const TERRAIN_TYPES = {
   TUNDRA: 'tundra',
   VOLCANIC: 'volcanic',
   LAKE: 'lake',
+  OCEAN: 'ocean',
 };
 
 const TERRAIN_DATA = {
@@ -114,13 +115,23 @@ const TERRAIN_DATA = {
       resourceYield: 1.20, // fishing
     },
   },
+  ocean: {
+    displayName: 'Ocean',
+    color: '#0d3a5c',
+    modifiers: {
+      expSpeed: 0.55,     // open sea, slowest of all for land-based expeditions
+      combatDef: 1.05,
+      combatAtk: 0.85,
+      resourceYield: 1.10,
+    },
+  },
 };
 
-// Climate-band terrains (tundra, volcanic) are not tied to any race — they only
-// appear at the map's northern/southern extremes regardless of who lives there.
-// Lake is placed once per region (see WorldmapRenderer.jsx buildHexGrid), not
+// Climate-band terrains (tundra, volcanic, ocean) are not tied to any race —
+// they appear at fixed map latitudes regardless of who lives there. Lake is
+// placed once per region (see WorldmapRenderer.jsx buildHexGrid), not
 // randomly mixed in like the others. No RACE_TO_TERRAIN entry needed for any
-// of these three.
+// of these four.
 
 const RACE_TO_TERRAIN = {
   dwarf: 'mountains',

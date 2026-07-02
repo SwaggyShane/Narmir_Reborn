@@ -39,6 +39,7 @@ const TERRAIN_COLORS = {
   tundra: '#7a8a94',
   volcanic: '#7a2e1a',
   lake: '#2a5f8a',
+  ocean: '#0d3a5c',
 };
 
 const TERRAIN_DISPLAY_NAMES = {
@@ -52,6 +53,7 @@ const TERRAIN_DISPLAY_NAMES = {
   tundra: 'Tundra',
   volcanic: 'Volcanic',
   lake: 'Lake',
+  ocean: 'Ocean',
 };
 
 // Expedition speed modifier per terrain — kept in sync with game/terrain.js TERRAIN_DATA.
@@ -67,6 +69,7 @@ const TERRAIN_EXP_SPEED = {
   tundra: 0.75,
   volcanic: 0.70,
   lake: 0.60,
+  ocean: 0.55,
 };
 
 function terrainTooltip(terrain) {
@@ -159,8 +162,23 @@ const BIOME_MIX_ALTERNATES = {
 const HEX_SIZE = 34; // center-to-corner radius
 const HEX_W = Math.sqrt(3) * HEX_SIZE;
 const HEX_VERT = HEX_SIZE * 1.5;
-const NORTH_BAND_FRAC = 0.15; // top strip of the map -> tundra only
 const SOUTH_BAND_FRAC = 0.15; // bottom strip of the map -> desert/volcanic
+
+const OCEAN_BASE_ROW = 2;
+const OCEAN_THICKNESS = 2; // rows — a strait, not a sea consuming the map
+
+// The sea dividing tundra from every other region. A gently wobbling
+// coastline (two smooth, low-frequency sine waves, not independent
+// per-column noise) rather than one straight line — bounded (max slope well
+// under the band thickness) so adjacent columns' bands always overlap by at
+// least a row, which is what actually guarantees the ocean stays one
+// connected body of water rather than random per-column jitter accidentally
+// splitting it into disconnected pockets.
+function oceanBandForColumn(col) {
+  const wave = Math.sin(col * 0.35) * 1.0 + Math.sin(col * 0.9 + 1.3) * 0.4;
+  const start = Math.round(OCEAN_BASE_ROW + wave);
+  return { start, end: start + OCEAN_THICKNESS };
+}
 
 // Deterministic per-cell "random" value so the map's biome mix is stable
 // across re-renders instead of reshuffling on every data refresh.
@@ -251,9 +269,12 @@ function buildHexGrid(W, H) {
       if (x < -HEX_W || x > W + HEX_W || y < -HEX_VERT || y > H + HEX_VERT) continue;
 
       const race = nearestRaceHome(x, y);
+      const oceanBand = oceanBandForColumn(col);
       let terrain;
-      if (y < H * NORTH_BAND_FRAC) {
+      if (row < oceanBand.start) {
         terrain = 'tundra';
+      } else if (row < oceanBand.end) {
+        terrain = 'ocean';
       } else if (y > H * (1 - SOUTH_BAND_FRAC)) {
         terrain = hexSeededRandom(col, row, 3) < 0.55 ? 'desert' : 'volcanic';
       } else {
@@ -275,7 +296,10 @@ function buildHexGrid(W, H) {
   // One lake per region: the cell nearest that race's home point (guaranteed
   // to belong to that race, since it's the same point the Voronoi assignment
   // above is measured from) is overridden to lake terrain, regardless of what
-  // climate band or biome mix would otherwise have put there.
+  // biome mix would otherwise have put there. Explicitly excludes ocean/
+  // tundra cells — a race's home can end up geometrically close to that
+  // latitude band, and picking one of those cells as the lake would steal a
+  // tile from the ocean, breaking its contiguity as one connected body.
   const lakeByRace = {};
   Object.keys(RACE_HOMES).forEach((race) => {
     const home = RACE_HOMES[race];
@@ -283,6 +307,7 @@ function buildHexGrid(W, H) {
     let bestDist = Infinity;
     cells.forEach((c) => {
       if (c.race !== race) return;
+      if (c.terrain === 'ocean' || c.terrain === 'tundra') return;
       const dx = c.x - home.x;
       const dy = c.y - home.y;
       const dist = dx * dx + dy * dy;
@@ -302,57 +327,18 @@ function buildHexGrid(W, H) {
   return { cells, cellMap, riverSegments: network.riverSegments, waterGraph: network.waterGraph };
 }
 
-// Random-walks hex-to-hex from `start` toward `target`, greedily reducing
-// distance to the target most of the time but with enough randomness to wind
-// naturally. `raceFilter` restricts which cells the walk may enter (a Set of
-// allowed races), or pass null to allow any cell — used for the cross-region
-// trunk connectors, which must be free to pass through whichever territory
-// is physically in between. Returns the list of hex-edge keys crossed.
-function riverWalk(start, target, cellMap, raceFilter, seedSalt, maxSteps) {
-  const edgeKeys = [];
-  let current = start;
-  let guard = 0;
-  while (current && (current.col !== target.col || current.row !== target.row) && guard < maxSteps) {
-    guard++;
-    const neighborKeys = hexNeighborKeys(current.col, current.row);
-    const candidates = [];
-    neighborKeys.forEach((key, dirIndex) => {
-      const nb = cellMap.get(key);
-      if (!nb) return;
-      if (raceFilter && !raceFilter.has(nb.race)) return;
-      candidates.push({ cell: nb, dirIndex });
-    });
-    if (!candidates.length) break;
-
-    candidates.sort((a, b) => {
-      const da = (a.cell.x - target.x) ** 2 + (a.cell.y - target.y) ** 2;
-      const db = (b.cell.x - target.x) ** 2 + (b.cell.y - target.y) ** 2;
-      return da - db;
-    });
-    const pickIdx = hexSeededRandom(current.col, current.row, seedSalt) < 0.75
-      ? 0
-      : Math.floor(hexSeededRandom(current.col, current.row, seedSalt + 1) * candidates.length);
-    const choice = candidates[pickIdx];
-
-    edgeKeys.push({
-      from: current,
-      to: choice.cell,
-      dirIndex: choice.dirIndex,
-      key: [`${current.col},${current.row}`, `${choice.cell.col},${choice.cell.row}`].sort().join('|'),
-    });
-    current = choice.cell;
-  }
-  return edgeKeys;
-}
-
-// Shortest hex-to-hex path between two cells via BFS. Unlike riverWalk's
-// greedy-with-randomness heuristic, this is guaranteed to find a route
-// whenever one exists — which it always does here, since the hex grid is one
-// contiguous graph. Trunk connectors need that guarantee (every region must
-// actually be reachable); riverWalk's occasional failure to converge near a
-// multi-region junction is fine for decorative tributaries but not for the
-// one connection a region depends on to reach the rest of the network.
-function bfsRiverPath(start, target, cellMap) {
+// Shortest hex-to-hex path between two cells via BFS — guaranteed to find a
+// route whenever one exists through cells `allowCell` accepts. An earlier
+// version used a greedy-with-randomness heuristic walk instead; that could
+// wander/oscillate near a multi-region junction and silently fail to
+// converge within a fixed step budget, which once left 6 of 9 regions
+// disconnected from the water network despite looking plausible on the
+// rendered map. Every water connection that connectivity depends on (region
+// tributaries reaching the ocean, trunk roadways between regions) now uses
+// this instead. `allowCell(cell)` optionally restricts which cells the path
+// may pass through (e.g. "ocean or this region's own territory"); omit it to
+// allow any cell.
+function bfsRiverPath(start, target, cellMap, allowCell) {
   const startKey = `${start.col},${start.row}`;
   const targetKey = `${target.col},${target.row}`;
   if (startKey === targetKey) return [];
@@ -370,13 +356,14 @@ function bfsRiverPath(start, target, cellMap) {
       if (visited.has(key)) return;
       const nb = cellMap.get(key);
       if (!nb) return;
+      if (allowCell && nb !== target && !allowCell(nb)) return;
       visited.add(key);
       cameFrom.set(key, { from: current, dirIndex });
       queue.push(nb);
     });
   }
 
-  if (!cameFrom.has(targetKey)) return null; // unreachable (shouldn't happen)
+  if (!cameFrom.has(targetKey)) return null; // unreachable given this filter
 
   const edges = [];
   let currentKey = targetKey;
@@ -490,28 +477,38 @@ function buildRiverNetwork(cells, cellMap, lakeByRace) {
     waterGraph.get(toKey).add(fromKey);
   };
 
-  // Local tributaries: 1-2 per region, confined to that region's own cells.
+  // Tributaries: every region's lake gets a guaranteed path back to the
+  // shared ocean, entering from whichever ocean cell is nearest that
+  // region's home point. The path may cross the ocean freely and this
+  // region's own territory, but not some unrelated third region's land —
+  // that keeps the tributary geographically sensible (it flows from the sea
+  // through this region to this region's lake) without needing to hand-pick
+  // a source cell.
+  const oceanCells = cells.filter((c) => c.terrain === 'ocean');
   Object.keys(lakeByRace).forEach((race) => {
     const lake = lakeByRace[race];
-    const regionCells = cells.filter((c) => c.race === race && c.terrain !== 'lake');
-    if (!regionCells.length) return;
-    const raceFilter = new Set([race]);
+    const home = RACE_HOMES[race];
+    let nearestOcean = null;
+    let nearestDist = Infinity;
+    oceanCells.forEach((oc) => {
+      const dist = (oc.x - home.x) ** 2 + (oc.y - home.y) ** 2;
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        nearestOcean = oc;
+      }
+    });
+    if (!nearestOcean) return;
 
-    const sourceCount = 1 + Math.floor(hexSeededRandom(lake.col, lake.row, 11) * 2);
-    for (let s = 0; s < sourceCount; s++) {
-      const sourceIdx = Math.floor(hexSeededRandom(lake.col + s, lake.row + s, 13) * regionCells.length);
-      const source = regionCells[sourceIdx];
-      const edges = riverWalk(source, lake, cellMap, raceFilter, 17 + s, 40);
-      edges.forEach((edge) => addSegment(edge, 'tributary'));
-    }
+    const allowCell = (cell) => cell.terrain === 'ocean' || cell.race === race;
+    const edges = bfsRiverPath(nearestOcean, lake, cellMap, allowCell);
+    if (edges) edges.forEach((edge) => addSegment(edge, 'tributary'));
   });
 
   // Trunk connectors: a minimum spanning tree over region adjacency, so every
-  // region's lake is reachable from every other via a chain of trunk rivers.
-  // Uses bfsRiverPath (guaranteed shortest path), not the heuristic riverWalk
-  // — a trunk connector crossing near a multi-region junction can otherwise
-  // wander without ever converging on the target within a fixed step budget,
-  // which would silently leave that region disconnected from the network.
+  // region's lake is also directly reachable from every physically-adjacent
+  // region without routing all the way up to the ocean — the "distinct
+  // roadway" between two regions, layered on top of (not instead of) the
+  // shared ocean network above.
   const races = Object.keys(lakeByRace);
   const adjacentPairs = buildRegionAdjacency(cells, cellMap);
   const mstEdges = buildRegionMST(races, adjacentPairs);
@@ -683,11 +680,11 @@ export function renderWorldMap(
         hexGrid.cells.forEach(function (cell) {
           var meta = REGION_META[cell.race] || {};
           var fill;
-          if (cell.terrain === 'lake') {
-            // Lakes are a fixed geographic landmark, not a biome-toggle
+          if (cell.terrain === 'lake' || cell.terrain === 'ocean') {
+            // Lakes and the ocean are fixed geography, not a biome-toggle
             // cosmetic — always show as water regardless of the terrain
             // toggle, the same way region borders always show.
-            fill = TERRAIN_COLORS.lake;
+            fill = TERRAIN_COLORS[cell.terrain];
           } else if (layers.terrain !== false) {
             fill = TERRAIN_COLORS[cell.terrain] || TERRAIN_COLORS.plains;
           } else {
