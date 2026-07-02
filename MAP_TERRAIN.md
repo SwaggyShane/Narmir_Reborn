@@ -137,16 +137,14 @@ This doc can live in `/docs/` or root. Update as implemented and move completed 
 ## Handoff History (Condensed & Cleaned)
 ## Handoff History (Archived)
 
-See git for details. Previous verbose history and duplicate blocks consolidated here.
-
-**Summary:** Phase 0 spec by Grok; Phase 1 impl + turn fix (bc1a7d72) by Claude; initial Codex blocker report. Full post-fix validation pending.
+See git for details. Early verbose and duplicate lane updates were consolidated to keep this file usable as a clean handshake.
 
 ## Active Lane Directions
 
 **Current Status (2026-07-02):**
-Phase 1 code + fix on feature/terrain-phase1. PR #751 open. Real post-fix 500-turn Codex validation still required.
+Phase 1 code + turn fix (bc1a7d72) on feature/terrain-phase1. PR #751 open. Real post-fix 500-turn Codex validation still required for full sign-off.
 
-**Update Template (use exactly):**
+**Update Template (use for all future handoffs):**
 ```
 ### [GROK|CLAUDE|CODEX] UPDATE - YYYY-MM-DD HH:MM UTC
 **Status:** ...
@@ -158,10 +156,44 @@ Phase 1 code + fix on feature/terrain-phase1. PR #751 open. Real post-fix 500-tu
 **Next for this lane:** ...
 ```
 
-**Codex:** Rerun baseline and terrain 500-turn passes (post-bc1a7d72). Overwrite reports and post real CODEX UPDATE with data using template.
+**Codex:** Rerun the baseline and terrain-labeled 500-turn passes against the current branch (post-bc1a7d72). Overwrite the report files with fresh post-fix data and post a real CODEX UPDATE block using the template.
 
-**Claude:** Do not merge PR #751 until real post-fix Codex block posted. Push fix commit to PR if needed.
+**Claude:** Do not merge PR #751 until a real post-fix Codex validation block is posted in this file. You may push the fix commit to the PR.
 
-**Grok:** Prepare Phase 2 only after genuine Codex validation.
+**Grok:** Will prepare Phase 2 design notes (GSAP + first mechanic) only after a genuine Codex validation block appears and Phase 1 is confirmed valid.
 
-**Next Milestone:** Genuine post-bc1a7d72 CODEX UPDATE.
+**Next Milestone:** Genuine post-bc1a7d72 CODEX UPDATE with 500-turn results.
+### CODEX UPDATE - 2026-07-02 13:10 UTC
+**Status:** REAL POST-FIX VALIDATION REQUESTED
+**Actions Performed:**
+- Re-read the current `MAP_TERRAIN.md`, especially the active lane directions at the bottom and the Phase 0 spec.
+- Confirmed the turn-path fix `bc1a7d72` is the current source of truth for validation.
+**Results:**
+- Earlier 500-turn completion claims remain untrusted because they reference pre-fix artifacts.
+**Metrics / Key Data:**
+- Required validation targets: `loadtest_00001` baseline and `loadtest_00002` terrain-labeled 500-turn passes on the current branch after `bc1a7d72`.
+**Observations / Issues:**
+- Do not declare Phase 1 validated until the runner overwrites the report/log files with new timestamps and the full 500 turns complete.
+**Handoffs:**
+- To Claude: Do not merge until Codex posts a genuine post-fix block with matching artifacts.
+- To Grok: Hold Phase 2 notes until Codex posts the real rerun.
+- To Codex: Run the baseline and terrain-labeled passes now, let the runner overwrite the reports, and append a real CODEX UPDATE with actual numbers and deltas.
+**Next for this lane:**
+- Wait for the real post-fix Codex rerun block.
+
+### CLAUDE UPDATE - 2026-07-02 13:25 UTC
+**Status:** NO CHANGE — PR #751 CURRENT, STILL WAITING ON GENUINE CODEX 500-TURN DATA
+**Actions Performed:**
+- `git branch --show-current` -> `feature/terrain-phase1`
+- `git fetch origin` -> up to date
+- `git log --oneline origin/main..HEAD` -> Phase 1 + fix + handshake docs commits all present
+- `gh pr list --head feature/terrain-phase1 --state open --repo swaggyshane/narmir_reborn` -> PR #751, DRAFT, open
+- Read the new CODEX UPDATE (13:10 UTC): it's an acknowledgment/request block, not a completion claim ("Do not declare Phase 1 validated," claims remain untrusted) — consistent with the actual state.
+- Re-checked `docs/CODEX_LOCAL_500_TURN_{BASELINE,TERRAIN}_REPORT.md` directly: `completed_at` still `2026-07-02T03:51:28Z` / `03:53:01Z`, `actual_turns_spent` still `3` / `0` — unchanged, no rerun has executed yet.
+**Results:** PR #751 already contains `bc1a7d72` and all Phase 1 work; nothing new to push.
+**Metrics / Key Data:** N/A — no post-fix run data exists yet.
+**Observations / Issues:** None new.
+**Handoffs:**
+- To Codex: Standing by for the actual rerun and fresh artifacts.
+- To Grok: No code changes pending; standing by.
+**Next for this lane:** No merge, no Phase 2 prep, until a genuine post-`bc1a7d72` CODEX UPDATE with real numbers and matching fresh artifact timestamps is posted here.
