@@ -12,7 +12,60 @@ const DEFAULT_LAYERS = {
   nodes: true,
   routes: true,
   expeditions: true,
+  terrain: true,
 };
+
+const RACE_TO_TERRAIN = {
+  dwarf: 'mountains',
+  high_elf: 'forest',
+  wood_elf: 'forest',
+  orc: 'plains',
+  human: 'plains',
+  dire_wolf: 'hills',
+  vampire: 'swamp',
+  dark_elf: 'hills',
+  ogre: 'mountains',
+};
+
+const TERRAIN_COLORS = {
+  plains: '#556b2f',
+  forest: '#2d4a2d',
+  mountains: '#5c4033',
+  hills: '#6b5b3f',
+  swamp: '#3a3f2a',
+  desert: '#8b7355',
+  coast: '#3a5f7a',
+};
+
+const TERRAIN_DISPLAY_NAMES = {
+  plains: 'Plains',
+  forest: 'Forest',
+  mountains: 'Mountains',
+  hills: 'Hills',
+  swamp: 'Swamp',
+  desert: 'Desert',
+  coast: 'Coast',
+};
+
+// Expedition speed modifier per terrain — kept in sync with game/terrain.js TERRAIN_DATA.
+// Shown in the map tooltip since it's the modifier Phase 2 actually wires into gameplay.
+const TERRAIN_EXP_SPEED = {
+  plains: 1.12,
+  forest: 0.92,
+  mountains: 0.80,
+  hills: 0.95,
+  swamp: 0.78,
+  desert: 0.88,
+  coast: 1.05,
+};
+
+function terrainTooltip(terrain) {
+  const name = TERRAIN_DISPLAY_NAMES[terrain] || 'Plains';
+  const speed = TERRAIN_EXP_SPEED[terrain] ?? 1.0;
+  const pct = Math.round((speed - 1) * 100);
+  const speedLabel = pct === 0 ? 'no change' : `${pct > 0 ? '+' : ''}${pct}% expedition speed`;
+  return `${name} — ${speedLabel}`;
+}
 
 function layerVisibilityStyle(enabled) {
   return enabled ? '' : 'opacity:0;pointer-events:none';
@@ -186,7 +239,16 @@ export function renderWorldMap(
 
         };
 
-
+        // Terrain layer
+        svg += '<g class="wm-layer wm-layer-terrain" style="' + layerVisibilityStyle(layers.terrain !== false) + '">';
+        Object.keys(regionPaths).forEach(function(race) {
+          var path = regionPaths[race] || "";
+          if (!path) return;
+          var t = RACE_TO_TERRAIN[race] || 'plains';
+          var fill = TERRAIN_COLORS[t] || TERRAIN_COLORS.plains;
+          svg += '<path d="' + path + '" fill="' + fill + '" opacity="0.48" class="terrain-shape" data-terrain="' + escapeHtml(t) + '" data-race="' + escapeHtml(race) + '" style="transform-box:fill-box;transform-origin:center;cursor:default"><title>' + escapeHtml(terrainTooltip(t)) + '</title></path>';
+        });
+        svg += '</g>';
 
         svg += '<g class="wm-layer wm-layer-regions">';
 
@@ -248,7 +310,7 @@ export function renderWorldMap(
 
             meta.color +
 
-            '" stroke-width="25" stroke-linejoin="round" stroke-linecap="round" fill-opacity="0.85" class="region-shape wm-region" data-race="' +
+            '" stroke-width="25" stroke-linejoin="round" stroke-linecap="round" fill-opacity="' + (layers.terrain !== false ? '0.5' : '0.85') + '" class="region-shape wm-region" data-race="' +
 
             escapeHtml(race) +
 

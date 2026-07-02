@@ -1,0 +1,3530 @@
+{
+  "startedAt": "2026-07-02T05:52:48.988Z",
+  "plan": [
+    "Phase 1: stabilize food, housing, schools, markets, and basic research.",
+    "Phase 2: grow researchers, engineers, libraries, and mage capacity.",
+    "Phase 3: choose a non-combat school, deepen economy, and add defense.",
+    "Phase 4: run safe exploration, improve storage, and smooth the build pipeline.",
+    "Phase 5: leave the kingdom in a readable, reviewable state and extract tutorial notes."
+  ],
+  "summary": {
+    "started_at": "2026-07-02T05:52:48.988Z",
+    "completed_at": "2026-07-02T05:53:37.864Z",
+    "initial_turns_stored": 500,
+    "target_turns_spent": 500,
+    "actual_turns_spent": 500,
+    "final_turn": 500,
+    "final_turns_stored": 0,
+    "final_score": "177,322",
+    "final_level": 60,
+    "final_gold": "66,825,471",
+    "final_food": "102,770",
+    "final_land": "14,226",
+    "final_population": "176,872",
+    "final_happiness": "53",
+    "final_school": "none",
+    "final_terrain": "Plains",
+    "final_research_focus": "economy",
+    "latest_news_headline": "Turn 499: +44,855 gold earned."
+  },
+  "tutorialNotes": [
+    "Schools directly gate researcher capacity, so early economy growth should include more schools, not just more researchers.",
+    "Barracks gate troop headcount for most military units, so new players need barracks before broad recruiting.",
+    "Granaries are part of the stability layer, not just decoration; food security feels better once farms and granaries grow together."
+  ],
+  "bugs": [
+    {
+      "turn": 1,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.225Z"
+    },
+    {
+      "turn": 2,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.244Z"
+    },
+    {
+      "turn": 3,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.268Z"
+    },
+    {
+      "turn": 4,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.286Z"
+    },
+    {
+      "turn": 5,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.305Z"
+    },
+    {
+      "turn": 6,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.324Z"
+    },
+    {
+      "turn": 7,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.343Z"
+    },
+    {
+      "turn": 8,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.360Z"
+    },
+    {
+      "turn": 9,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.379Z"
+    },
+    {
+      "turn": 10,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.399Z"
+    },
+    {
+      "turn": 11,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.418Z"
+    },
+    {
+      "turn": 12,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.443Z"
+    },
+    {
+      "turn": 13,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.465Z"
+    },
+    {
+      "turn": 14,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.484Z"
+    },
+    {
+      "turn": 15,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.507Z"
+    },
+    {
+      "turn": 16,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.526Z"
+    },
+    {
+      "turn": 17,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.545Z"
+    },
+    {
+      "turn": 18,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.564Z"
+    },
+    {
+      "turn": 19,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.583Z"
+    },
+    {
+      "turn": 20,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.608Z"
+    },
+    {
+      "turn": 21,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.630Z"
+    },
+    {
+      "turn": 22,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.653Z"
+    },
+    {
+      "turn": 23,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.677Z"
+    },
+    {
+      "turn": 24,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.697Z"
+    },
+    {
+      "turn": 25,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.718Z"
+    },
+    {
+      "turn": 26,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.854Z"
+    },
+    {
+      "turn": 27,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.875Z"
+    },
+    {
+      "turn": 28,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.897Z"
+    },
+    {
+      "turn": 29,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.921Z"
+    },
+    {
+      "turn": 30,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.944Z"
+    },
+    {
+      "turn": 31,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.961Z"
+    },
+    {
+      "turn": 32,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.979Z"
+    },
+    {
+      "turn": 33,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.995Z"
+    },
+    {
+      "turn": 34,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.015Z"
+    },
+    {
+      "turn": 35,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.036Z"
+    },
+    {
+      "turn": 36,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.053Z"
+    },
+    {
+      "turn": 37,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.075Z"
+    },
+    {
+      "turn": 38,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.099Z"
+    },
+    {
+      "turn": 39,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.125Z"
+    },
+    {
+      "turn": 40,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.150Z"
+    },
+    {
+      "turn": 41,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.178Z"
+    },
+    {
+      "turn": 42,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.203Z"
+    },
+    {
+      "turn": 43,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.228Z"
+    },
+    {
+      "turn": 44,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.252Z"
+    },
+    {
+      "turn": 45,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.276Z"
+    },
+    {
+      "turn": 46,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.303Z"
+    },
+    {
+      "turn": 47,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.326Z"
+    },
+    {
+      "turn": 48,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.352Z"
+    },
+    {
+      "turn": 49,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.376Z"
+    },
+    {
+      "turn": 50,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.398Z"
+    },
+    {
+      "turn": 51,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.561Z"
+    },
+    {
+      "turn": 52,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.588Z"
+    },
+    {
+      "turn": 53,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.613Z"
+    },
+    {
+      "turn": 54,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.638Z"
+    },
+    {
+      "turn": 55,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.664Z"
+    },
+    {
+      "turn": 56,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.691Z"
+    },
+    {
+      "turn": 57,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.720Z"
+    },
+    {
+      "turn": 58,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.746Z"
+    },
+    {
+      "turn": 59,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.769Z"
+    },
+    {
+      "turn": 60,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.787Z"
+    },
+    {
+      "turn": 61,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.810Z"
+    },
+    {
+      "turn": 62,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.828Z"
+    },
+    {
+      "turn": 63,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.847Z"
+    },
+    {
+      "turn": 64,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.868Z"
+    },
+    {
+      "turn": 65,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.888Z"
+    },
+    {
+      "turn": 66,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.907Z"
+    },
+    {
+      "turn": 67,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.930Z"
+    },
+    {
+      "turn": 68,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.954Z"
+    },
+    {
+      "turn": 69,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.977Z"
+    },
+    {
+      "turn": 70,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.999Z"
+    },
+    {
+      "turn": 71,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.021Z"
+    },
+    {
+      "turn": 72,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.039Z"
+    },
+    {
+      "turn": 73,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.056Z"
+    },
+    {
+      "turn": 74,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.074Z"
+    },
+    {
+      "turn": 75,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.092Z"
+    },
+    {
+      "turn": 76,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.238Z"
+    },
+    {
+      "turn": 77,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.255Z"
+    },
+    {
+      "turn": 78,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.271Z"
+    },
+    {
+      "turn": 79,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.287Z"
+    },
+    {
+      "turn": 80,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.303Z"
+    },
+    {
+      "turn": 81,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.319Z"
+    },
+    {
+      "turn": 82,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.335Z"
+    },
+    {
+      "turn": 83,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.353Z"
+    },
+    {
+      "turn": 84,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.369Z"
+    },
+    {
+      "turn": 85,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.385Z"
+    },
+    {
+      "turn": 86,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.401Z"
+    },
+    {
+      "turn": 87,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.417Z"
+    },
+    {
+      "turn": 88,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.433Z"
+    },
+    {
+      "turn": 89,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.449Z"
+    },
+    {
+      "turn": 90,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.464Z"
+    },
+    {
+      "turn": 91,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.480Z"
+    },
+    {
+      "turn": 92,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.498Z"
+    },
+    {
+      "turn": 93,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.518Z"
+    },
+    {
+      "turn": 94,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.538Z"
+    },
+    {
+      "turn": 95,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.559Z"
+    },
+    {
+      "turn": 96,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.579Z"
+    },
+    {
+      "turn": 97,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.597Z"
+    },
+    {
+      "turn": 98,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.621Z"
+    },
+    {
+      "turn": 99,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.646Z"
+    },
+    {
+      "turn": 100,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.667Z"
+    },
+    {
+      "turn": 101,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.890Z"
+    },
+    {
+      "turn": 102,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.918Z"
+    },
+    {
+      "turn": 103,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.948Z"
+    },
+    {
+      "turn": 104,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.980Z"
+    },
+    {
+      "turn": 105,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.005Z"
+    },
+    {
+      "turn": 106,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.030Z"
+    },
+    {
+      "turn": 107,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.053Z"
+    },
+    {
+      "turn": 108,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.073Z"
+    },
+    {
+      "turn": 109,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.094Z"
+    },
+    {
+      "turn": 110,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.114Z"
+    },
+    {
+      "turn": 111,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.139Z"
+    },
+    {
+      "turn": 112,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.165Z"
+    },
+    {
+      "turn": 113,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.192Z"
+    },
+    {
+      "turn": 114,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.215Z"
+    },
+    {
+      "turn": 115,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.239Z"
+    },
+    {
+      "turn": 116,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.267Z"
+    },
+    {
+      "turn": 117,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.290Z"
+    },
+    {
+      "turn": 118,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.312Z"
+    },
+    {
+      "turn": 119,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.334Z"
+    },
+    {
+      "turn": 120,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.359Z"
+    },
+    {
+      "turn": 121,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.385Z"
+    },
+    {
+      "turn": 122,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.410Z"
+    },
+    {
+      "turn": 123,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.439Z"
+    },
+    {
+      "turn": 124,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.467Z"
+    },
+    {
+      "turn": 125,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.492Z"
+    },
+    {
+      "turn": 126,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.679Z"
+    },
+    {
+      "turn": 127,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.706Z"
+    },
+    {
+      "turn": 128,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.729Z"
+    },
+    {
+      "turn": 129,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.758Z"
+    },
+    {
+      "turn": 130,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.787Z"
+    },
+    {
+      "turn": 131,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.826Z"
+    },
+    {
+      "turn": 132,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.856Z"
+    },
+    {
+      "turn": 133,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.888Z"
+    },
+    {
+      "turn": 134,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.922Z"
+    },
+    {
+      "turn": 135,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.953Z"
+    },
+    {
+      "turn": 136,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.983Z"
+    },
+    {
+      "turn": 137,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.009Z"
+    },
+    {
+      "turn": 138,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.039Z"
+    },
+    {
+      "turn": 139,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.067Z"
+    },
+    {
+      "turn": 140,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.096Z"
+    },
+    {
+      "turn": 141,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.123Z"
+    },
+    {
+      "turn": 142,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.147Z"
+    },
+    {
+      "turn": 143,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.174Z"
+    },
+    {
+      "turn": 144,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.201Z"
+    },
+    {
+      "turn": 145,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.228Z"
+    },
+    {
+      "turn": 146,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.255Z"
+    },
+    {
+      "turn": 147,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.277Z"
+    },
+    {
+      "turn": 148,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.302Z"
+    },
+    {
+      "turn": 149,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.326Z"
+    },
+    {
+      "turn": 150,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.346Z"
+    },
+    {
+      "turn": 151,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.509Z"
+    },
+    {
+      "turn": 152,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.537Z"
+    },
+    {
+      "turn": 153,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.563Z"
+    },
+    {
+      "turn": 154,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.588Z"
+    },
+    {
+      "turn": 155,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.615Z"
+    },
+    {
+      "turn": 156,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.643Z"
+    },
+    {
+      "turn": 157,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.667Z"
+    },
+    {
+      "turn": 158,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.689Z"
+    },
+    {
+      "turn": 159,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.710Z"
+    },
+    {
+      "turn": 160,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.732Z"
+    },
+    {
+      "turn": 161,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.756Z"
+    },
+    {
+      "turn": 162,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.776Z"
+    },
+    {
+      "turn": 163,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.795Z"
+    },
+    {
+      "turn": 164,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.814Z"
+    },
+    {
+      "turn": 165,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.832Z"
+    },
+    {
+      "turn": 166,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.850Z"
+    },
+    {
+      "turn": 167,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.868Z"
+    },
+    {
+      "turn": 168,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.886Z"
+    },
+    {
+      "turn": 169,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.905Z"
+    },
+    {
+      "turn": 170,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.924Z"
+    },
+    {
+      "turn": 171,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.943Z"
+    },
+    {
+      "turn": 172,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.965Z"
+    },
+    {
+      "turn": 173,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.987Z"
+    },
+    {
+      "turn": 174,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.007Z"
+    },
+    {
+      "turn": 175,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.025Z"
+    },
+    {
+      "turn": 176,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.169Z"
+    },
+    {
+      "turn": 177,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.192Z"
+    },
+    {
+      "turn": 178,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.212Z"
+    },
+    {
+      "turn": 179,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.236Z"
+    },
+    {
+      "turn": 180,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.256Z"
+    },
+    {
+      "turn": 181,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.276Z"
+    },
+    {
+      "turn": 182,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.295Z"
+    },
+    {
+      "turn": 183,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.314Z"
+    },
+    {
+      "turn": 184,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.336Z"
+    },
+    {
+      "turn": 185,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.357Z"
+    },
+    {
+      "turn": 186,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.375Z"
+    },
+    {
+      "turn": 187,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.393Z"
+    },
+    {
+      "turn": 188,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.412Z"
+    },
+    {
+      "turn": 189,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.432Z"
+    },
+    {
+      "turn": 190,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.459Z"
+    },
+    {
+      "turn": 191,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.481Z"
+    },
+    {
+      "turn": 192,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.502Z"
+    },
+    {
+      "turn": 193,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.520Z"
+    },
+    {
+      "turn": 194,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.538Z"
+    },
+    {
+      "turn": 195,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.556Z"
+    },
+    {
+      "turn": 196,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.575Z"
+    },
+    {
+      "turn": 197,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.593Z"
+    },
+    {
+      "turn": 198,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.612Z"
+    },
+    {
+      "turn": 199,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.630Z"
+    },
+    {
+      "turn": 200,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.651Z"
+    },
+    {
+      "turn": 201,
+      "detail": "Construction note: Actively constructing: 1 barracks [4% done, ~24 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.006Z"
+    },
+    {
+      "turn": 202,
+      "detail": "Construction note: Actively constructing: 1 barracks [8% done, ~23 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.028Z"
+    },
+    {
+      "turn": 203,
+      "detail": "Construction note: Actively constructing: 1 barracks [12% done, ~22 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.050Z"
+    },
+    {
+      "turn": 204,
+      "detail": "Construction note: Actively constructing: 1 barracks [16% done, ~21 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.071Z"
+    },
+    {
+      "turn": 205,
+      "detail": "Construction note: Actively constructing: 1 barracks [20% done, ~20 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.093Z"
+    },
+    {
+      "turn": 206,
+      "detail": "Construction note: Actively constructing: 1 barracks [24% done, ~19 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.113Z"
+    },
+    {
+      "turn": 207,
+      "detail": "Construction note: Actively constructing: 1 barracks [28% done, ~18 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.132Z"
+    },
+    {
+      "turn": 208,
+      "detail": "Construction note: Actively constructing: 1 barracks [33% done, ~17 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.148Z"
+    },
+    {
+      "turn": 209,
+      "detail": "Construction note: Actively constructing: 1 barracks [37% done, ~16 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.164Z"
+    },
+    {
+      "turn": 210,
+      "detail": "Construction note: Actively constructing: 1 barracks [41% done, ~15 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.181Z"
+    },
+    {
+      "turn": 211,
+      "detail": "Construction note: Actively constructing: 1 barracks [45% done, ~14 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.198Z"
+    },
+    {
+      "turn": 212,
+      "detail": "Construction note: Actively constructing: 1 barracks [49% done, ~13 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.218Z"
+    },
+    {
+      "turn": 213,
+      "detail": "Construction note: Actively constructing: 1 barracks [53% done, ~12 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.238Z"
+    },
+    {
+      "turn": 214,
+      "detail": "Construction note: Actively constructing: 1 barracks [57% done, ~11 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.257Z"
+    },
+    {
+      "turn": 215,
+      "detail": "Construction note: Actively constructing: 1 barracks [62% done, ~10 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.275Z"
+    },
+    {
+      "turn": 216,
+      "detail": "Construction note: Actively constructing: 1 barracks [66% done, ~9 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.292Z"
+    },
+    {
+      "turn": 217,
+      "detail": "Construction note: Actively constructing: 1 barracks [70% done, ~8 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.313Z"
+    },
+    {
+      "turn": 218,
+      "detail": "Construction note: Actively constructing: 1 barracks [74% done, ~7 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.336Z"
+    },
+    {
+      "turn": 219,
+      "detail": "Construction note: Actively constructing: 1 barracks [78% done, ~6 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.361Z"
+    },
+    {
+      "turn": 220,
+      "detail": "Construction note: Actively constructing: 1 barracks [82% done, ~5 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.390Z"
+    },
+    {
+      "turn": 221,
+      "detail": "Construction note: Actively constructing: 1 barracks [86% done, ~4 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.413Z"
+    },
+    {
+      "turn": 222,
+      "detail": "Construction note: Actively constructing: 1 barracks [90% done, ~3 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.438Z"
+    },
+    {
+      "turn": 223,
+      "detail": "Construction note: Actively constructing: 1 barracks [95% done, ~2 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.460Z"
+    },
+    {
+      "turn": 224,
+      "detail": "Construction note: Actively constructing: 1 barracks [99% done, ~1 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.485Z"
+    },
+    {
+      "turn": 225,
+      "detail": "Construction note: Completed: 1 barracks. Actively constructing: 1 barracks [NaN% done, ~NaN turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.511Z"
+    },
+    {
+      "turn": 226,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.663Z"
+    },
+    {
+      "turn": 227,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.685Z"
+    },
+    {
+      "turn": 228,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.707Z"
+    },
+    {
+      "turn": 229,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.727Z"
+    },
+    {
+      "turn": 230,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.747Z"
+    },
+    {
+      "turn": 231,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.765Z"
+    },
+    {
+      "turn": 232,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.783Z"
+    },
+    {
+      "turn": 233,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.803Z"
+    },
+    {
+      "turn": 234,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.823Z"
+    },
+    {
+      "turn": 235,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.842Z"
+    },
+    {
+      "turn": 236,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.864Z"
+    },
+    {
+      "turn": 237,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.885Z"
+    },
+    {
+      "turn": 238,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.905Z"
+    },
+    {
+      "turn": 239,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.925Z"
+    },
+    {
+      "turn": 240,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.945Z"
+    },
+    {
+      "turn": 241,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.965Z"
+    },
+    {
+      "turn": 242,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.983Z"
+    },
+    {
+      "turn": 243,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.002Z"
+    },
+    {
+      "turn": 244,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.020Z"
+    },
+    {
+      "turn": 245,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.040Z"
+    },
+    {
+      "turn": 246,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.060Z"
+    },
+    {
+      "turn": 247,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.080Z"
+    },
+    {
+      "turn": 248,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.098Z"
+    },
+    {
+      "turn": 249,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.118Z"
+    },
+    {
+      "turn": 250,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.137Z"
+    },
+    {
+      "turn": 251,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.272Z"
+    },
+    {
+      "turn": 252,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.289Z"
+    },
+    {
+      "turn": 253,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.307Z"
+    },
+    {
+      "turn": 254,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.325Z"
+    },
+    {
+      "turn": 255,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.342Z"
+    },
+    {
+      "turn": 256,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.361Z"
+    },
+    {
+      "turn": 257,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.379Z"
+    },
+    {
+      "turn": 258,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.396Z"
+    },
+    {
+      "turn": 259,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.415Z"
+    },
+    {
+      "turn": 260,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.434Z"
+    },
+    {
+      "turn": 261,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.450Z"
+    },
+    {
+      "turn": 262,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.468Z"
+    },
+    {
+      "turn": 263,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.488Z"
+    },
+    {
+      "turn": 264,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.505Z"
+    },
+    {
+      "turn": 265,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.523Z"
+    },
+    {
+      "turn": 266,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.542Z"
+    },
+    {
+      "turn": 267,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.559Z"
+    },
+    {
+      "turn": 268,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.579Z"
+    },
+    {
+      "turn": 269,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.597Z"
+    },
+    {
+      "turn": 270,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.621Z"
+    },
+    {
+      "turn": 271,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.644Z"
+    },
+    {
+      "turn": 272,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.663Z"
+    },
+    {
+      "turn": 273,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.685Z"
+    },
+    {
+      "turn": 274,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.707Z"
+    },
+    {
+      "turn": 275,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.726Z"
+    },
+    {
+      "turn": 276,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.877Z"
+    },
+    {
+      "turn": 277,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.897Z"
+    },
+    {
+      "turn": 278,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.917Z"
+    },
+    {
+      "turn": 279,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.935Z"
+    },
+    {
+      "turn": 280,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.950Z"
+    },
+    {
+      "turn": 281,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.966Z"
+    },
+    {
+      "turn": 282,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.981Z"
+    },
+    {
+      "turn": 283,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.002Z"
+    },
+    {
+      "turn": 284,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.018Z"
+    },
+    {
+      "turn": 285,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.035Z"
+    },
+    {
+      "turn": 286,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.052Z"
+    },
+    {
+      "turn": 287,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.071Z"
+    },
+    {
+      "turn": 288,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.088Z"
+    },
+    {
+      "turn": 289,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.107Z"
+    },
+    {
+      "turn": 290,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.126Z"
+    },
+    {
+      "turn": 291,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.144Z"
+    },
+    {
+      "turn": 292,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.164Z"
+    },
+    {
+      "turn": 293,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.182Z"
+    },
+    {
+      "turn": 294,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.200Z"
+    },
+    {
+      "turn": 295,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.218Z"
+    },
+    {
+      "turn": 296,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.238Z"
+    },
+    {
+      "turn": 297,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.257Z"
+    },
+    {
+      "turn": 298,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.277Z"
+    },
+    {
+      "turn": 299,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.295Z"
+    },
+    {
+      "turn": 300,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.313Z"
+    },
+    {
+      "turn": 301,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.468Z"
+    },
+    {
+      "turn": 302,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.493Z"
+    },
+    {
+      "turn": 303,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.517Z"
+    },
+    {
+      "turn": 304,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.539Z"
+    },
+    {
+      "turn": 305,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.560Z"
+    },
+    {
+      "turn": 306,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.577Z"
+    },
+    {
+      "turn": 307,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.596Z"
+    },
+    {
+      "turn": 308,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.615Z"
+    },
+    {
+      "turn": 309,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.634Z"
+    },
+    {
+      "turn": 310,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.652Z"
+    },
+    {
+      "turn": 311,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.671Z"
+    },
+    {
+      "turn": 312,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.693Z"
+    },
+    {
+      "turn": 313,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.716Z"
+    },
+    {
+      "turn": 314,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.733Z"
+    },
+    {
+      "turn": 315,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.755Z"
+    },
+    {
+      "turn": 316,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.773Z"
+    },
+    {
+      "turn": 317,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.793Z"
+    },
+    {
+      "turn": 318,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.812Z"
+    },
+    {
+      "turn": 319,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.833Z"
+    },
+    {
+      "turn": 320,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.855Z"
+    },
+    {
+      "turn": 321,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.880Z"
+    },
+    {
+      "turn": 322,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.904Z"
+    },
+    {
+      "turn": 323,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.927Z"
+    },
+    {
+      "turn": 324,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.953Z"
+    },
+    {
+      "turn": 325,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.978Z"
+    },
+    {
+      "turn": 326,
+      "detail": "Construction note: Actively constructing: 1 housing [17% done, ~5 turns left] (Using 500 gc & 25 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.166Z"
+    },
+    {
+      "turn": 327,
+      "detail": "Construction note: Actively constructing: 1 housing [34% done, ~4 turns left] (Using 500 gc & 25 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.188Z"
+    },
+    {
+      "turn": 328,
+      "detail": "Construction note: Actively constructing: 1 housing [51% done, ~3 turns left] (Using 500 gc & 25 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.213Z"
+    },
+    {
+      "turn": 329,
+      "detail": "Construction note: Actively constructing: 1 housing [68% done, ~2 turns left] (Using 500 gc & 25 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.237Z"
+    },
+    {
+      "turn": 330,
+      "detail": "Construction note: Actively constructing: 1 housing [85% done, ~1 turns left] (Using 500 gc & 25 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.260Z"
+    },
+    {
+      "turn": 331,
+      "detail": "Construction note: Completed: 1 housing. Actively constructing: 1 housing [NaN% done, ~NaN turns left] (Using 500 gc & 25 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.288Z"
+    },
+    {
+      "turn": 332,
+      "detail": "Construction note: Actively constructing: 1 housing [17% done, ~5 turns left] (Using 500 gc & 25 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.312Z"
+    },
+    {
+      "turn": 333,
+      "detail": "Construction note: Actively constructing: 1 housing [34% done, ~4 turns left] (Using 500 gc & 25 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.336Z"
+    },
+    {
+      "turn": 334,
+      "detail": "Construction note: Actively constructing: 1 housing [51% done, ~3 turns left] (Using 500 gc & 25 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.363Z"
+    },
+    {
+      "turn": 335,
+      "detail": "Construction note: Actively constructing: 1 housing [68% done, ~2 turns left] (Using 500 gc & 25 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.388Z"
+    },
+    {
+      "turn": 336,
+      "detail": "Construction note: Actively constructing: 1 housing [85% done, ~1 turns left] (Using 500 gc & 25 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.408Z"
+    },
+    {
+      "turn": 337,
+      "detail": "Construction note: Actively constructing: 1 housing [102% done, ~0 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.427Z"
+    },
+    {
+      "turn": 338,
+      "detail": "Construction note: Actively constructing: 1 housing [120% done, ~-1 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.451Z"
+    },
+    {
+      "turn": 339,
+      "detail": "Construction note: Actively constructing: 1 housing [137% done, ~-2 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.473Z"
+    },
+    {
+      "turn": 340,
+      "detail": "Construction note: Actively constructing: 1 housing [154% done, ~-3 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.505Z"
+    },
+    {
+      "turn": 341,
+      "detail": "Construction note: Actively constructing: 1 housing [171% done, ~-4 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.532Z"
+    },
+    {
+      "turn": 342,
+      "detail": "Construction note: Actively constructing: 1 housing [188% done, ~-5 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.562Z"
+    },
+    {
+      "turn": 343,
+      "detail": "Construction note: Actively constructing: 1 housing [205% done, ~-6 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.589Z"
+    },
+    {
+      "turn": 344,
+      "detail": "Construction note: Actively constructing: 1 housing [222% done, ~-7 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.616Z"
+    },
+    {
+      "turn": 345,
+      "detail": "Construction note: Actively constructing: 1 housing [240% done, ~-8 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.639Z"
+    },
+    {
+      "turn": 346,
+      "detail": "Construction note: Actively constructing: 1 housing [257% done, ~-9 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.665Z"
+    },
+    {
+      "turn": 347,
+      "detail": "Construction note: Actively constructing: 1 housing [274% done, ~-10 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.690Z"
+    },
+    {
+      "turn": 348,
+      "detail": "Construction note: Actively constructing: 1 housing [291% done, ~-11 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.712Z"
+    },
+    {
+      "turn": 349,
+      "detail": "Construction note: Actively constructing: 1 housing [308% done, ~-12 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.733Z"
+    },
+    {
+      "turn": 350,
+      "detail": "Construction note: Actively constructing: 1 housing [325% done, ~-13 turns left] (Using 500 gc & 25 land). ⚠️ housing paused — not enough wood. ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.752Z"
+    },
+    {
+      "turn": 351,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.909Z"
+    },
+    {
+      "turn": 352,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.931Z"
+    },
+    {
+      "turn": 353,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.958Z"
+    },
+    {
+      "turn": 354,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.982Z"
+    },
+    {
+      "turn": 355,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.004Z"
+    },
+    {
+      "turn": 356,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.025Z"
+    },
+    {
+      "turn": 357,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.048Z"
+    },
+    {
+      "turn": 358,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.068Z"
+    },
+    {
+      "turn": 359,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.089Z"
+    },
+    {
+      "turn": 360,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.109Z"
+    },
+    {
+      "turn": 361,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.130Z"
+    },
+    {
+      "turn": 362,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.151Z"
+    },
+    {
+      "turn": 363,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.174Z"
+    },
+    {
+      "turn": 364,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.199Z"
+    },
+    {
+      "turn": 365,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.221Z"
+    },
+    {
+      "turn": 366,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.244Z"
+    },
+    {
+      "turn": 367,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.265Z"
+    },
+    {
+      "turn": 368,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.286Z"
+    },
+    {
+      "turn": 369,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.312Z"
+    },
+    {
+      "turn": 370,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.337Z"
+    },
+    {
+      "turn": 371,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.359Z"
+    },
+    {
+      "turn": 372,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.383Z"
+    },
+    {
+      "turn": 373,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.406Z"
+    },
+    {
+      "turn": 374,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.433Z"
+    },
+    {
+      "turn": 375,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.454Z"
+    },
+    {
+      "turn": 376,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.596Z"
+    },
+    {
+      "turn": 377,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.612Z"
+    },
+    {
+      "turn": 378,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.628Z"
+    },
+    {
+      "turn": 379,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.645Z"
+    },
+    {
+      "turn": 380,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.661Z"
+    },
+    {
+      "turn": 381,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.677Z"
+    },
+    {
+      "turn": 382,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.694Z"
+    },
+    {
+      "turn": 383,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.713Z"
+    },
+    {
+      "turn": 384,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.733Z"
+    },
+    {
+      "turn": 385,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.758Z"
+    },
+    {
+      "turn": 386,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.778Z"
+    },
+    {
+      "turn": 387,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.799Z"
+    },
+    {
+      "turn": 388,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.823Z"
+    },
+    {
+      "turn": 389,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.844Z"
+    },
+    {
+      "turn": 390,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.867Z"
+    },
+    {
+      "turn": 391,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.890Z"
+    },
+    {
+      "turn": 392,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.910Z"
+    },
+    {
+      "turn": 393,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.931Z"
+    },
+    {
+      "turn": 394,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.949Z"
+    },
+    {
+      "turn": 395,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.966Z"
+    },
+    {
+      "turn": 396,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.987Z"
+    },
+    {
+      "turn": 397,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.008Z"
+    },
+    {
+      "turn": 398,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.031Z"
+    },
+    {
+      "turn": 399,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.054Z"
+    },
+    {
+      "turn": 400,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.076Z"
+    },
+    {
+      "turn": 401,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.319Z"
+    },
+    {
+      "turn": 402,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.337Z"
+    },
+    {
+      "turn": 403,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.355Z"
+    },
+    {
+      "turn": 404,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.375Z"
+    },
+    {
+      "turn": 405,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.394Z"
+    },
+    {
+      "turn": 406,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.413Z"
+    },
+    {
+      "turn": 407,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.435Z"
+    },
+    {
+      "turn": 408,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.457Z"
+    },
+    {
+      "turn": 409,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.475Z"
+    },
+    {
+      "turn": 410,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.493Z"
+    },
+    {
+      "turn": 411,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.514Z"
+    },
+    {
+      "turn": 412,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.533Z"
+    },
+    {
+      "turn": 413,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.558Z"
+    },
+    {
+      "turn": 414,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.582Z"
+    },
+    {
+      "turn": 415,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.606Z"
+    },
+    {
+      "turn": 416,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.630Z"
+    },
+    {
+      "turn": 417,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.654Z"
+    },
+    {
+      "turn": 418,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.679Z"
+    },
+    {
+      "turn": 419,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.700Z"
+    },
+    {
+      "turn": 420,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.721Z"
+    },
+    {
+      "turn": 421,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.741Z"
+    },
+    {
+      "turn": 422,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.761Z"
+    },
+    {
+      "turn": 423,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.780Z"
+    },
+    {
+      "turn": 424,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.797Z"
+    },
+    {
+      "turn": 425,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.814Z"
+    },
+    {
+      "turn": 426,
+      "detail": "Construction note: Actively constructing: 1 barracks [4% done, ~24 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:01.065Z"
+    },
+    {
+      "turn": 427,
+      "detail": "Construction note: Actively constructing: 1 barracks [8% done, ~23 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:01.092Z"
+    },
+    {
+      "turn": 428,
+      "detail": "Construction note: Actively constructing: 1 barracks [12% done, ~22 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:01.114Z"
+    },
+    {
+      "turn": 429,
+      "detail": "Construction note: Actively constructing: 1 barracks [16% done, ~21 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:01.135Z"
+    },
+    {
+      "turn": 430,
+      "detail": "Construction note: Actively constructing: 1 barracks [20% done, ~20 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:01.155Z"
+    },
+    {
+      "turn": 431,
+      "detail": "Construction note: Actively constructing: 1 barracks [24% done, ~19 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:01.176Z"
+    },
+    {
+      "turn": 432,
+      "detail": "Construction note: Actively constructing: 1 barracks [28% done, ~18 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:01.201Z"
+    },
+    {
+      "turn": 433,
+      "detail": "Construction note: Actively constructing: 1 barracks [33% done, ~17 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:01.222Z"
+    },
+    {
+      "turn": 434,
+      "detail": "Construction note: Actively constructing: 1 barracks [37% done, ~16 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:01.242Z"
+    },
+    {
+      "turn": 435,
+      "detail": "Construction note: Actively constructing: 1 barracks [41% done, ~15 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:01.261Z"
+    },
+    {
+      "turn": 436,
+      "detail": "Construction note: Actively constructing: 1 barracks [45% done, ~14 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:01.279Z"
+    },
+    {
+      "turn": 437,
+      "detail": "Construction note: Actively constructing: 1 barracks [49% done, ~13 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:01.302Z"
+    },
+    {
+      "turn": 438,
+      "detail": "Construction note: Actively constructing: 1 barracks [53% done, ~12 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:01.325Z"
+    },
+    {
+      "turn": 439,
+      "detail": "Construction note: Actively constructing: 1 barracks [57% done, ~11 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:01.345Z"
+    },
+    {
+      "turn": 440,
+      "detail": "Construction note: Actively constructing: 1 barracks [62% done, ~10 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:01.365Z"
+    },
+    {
+      "turn": 441,
+      "detail": "Construction note: Actively constructing: 1 barracks [66% done, ~9 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:01.387Z"
+    },
+    {
+      "turn": 442,
+      "detail": "Construction note: Actively constructing: 1 barracks [70% done, ~8 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:01.407Z"
+    },
+    {
+      "turn": 443,
+      "detail": "Construction note: Actively constructing: 1 barracks [74% done, ~7 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:01.428Z"
+    },
+    {
+      "turn": 444,
+      "detail": "Construction note: Actively constructing: 1 barracks [78% done, ~6 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:01.446Z"
+    },
+    {
+      "turn": 445,
+      "detail": "Construction note: Actively constructing: 1 barracks [82% done, ~5 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:01.470Z"
+    },
+    {
+      "turn": 446,
+      "detail": "Construction note: Actively constructing: 1 barracks [86% done, ~4 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:01.492Z"
+    },
+    {
+      "turn": 447,
+      "detail": "Construction note: Actively constructing: 1 barracks [90% done, ~3 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:01.514Z"
+    },
+    {
+      "turn": 448,
+      "detail": "Construction note: Actively constructing: 1 barracks [95% done, ~2 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:01.537Z"
+    },
+    {
+      "turn": 449,
+      "detail": "Construction note: Actively constructing: 1 barracks [99% done, ~1 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:01.563Z"
+    },
+    {
+      "turn": 450,
+      "detail": "Construction note: Completed: 1 barracks. Actively constructing: 1 barracks [NaN% done, ~NaN turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:01.583Z"
+    },
+    {
+      "turn": 450,
+      "detail": "Engineer allocation blocked: POST /kingdom/build-allocation failed: 500 Failed to set build allocation",
+      "data": {},
+      "at": "2026-07-02T05:53:21.619Z"
+    },
+    {
+      "turn": 451,
+      "detail": "Construction note: Actively constructing: 1 barracks [4% done, ~24 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:27.232Z"
+    },
+    {
+      "turn": 452,
+      "detail": "Construction note: Actively constructing: 1 barracks [8% done, ~23 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:27.253Z"
+    },
+    {
+      "turn": 453,
+      "detail": "Construction note: Actively constructing: 1 barracks [12% done, ~22 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:27.277Z"
+    },
+    {
+      "turn": 454,
+      "detail": "Construction note: Actively constructing: 1 barracks [16% done, ~21 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:27.294Z"
+    },
+    {
+      "turn": 455,
+      "detail": "Construction note: Actively constructing: 1 barracks [20% done, ~20 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:27.312Z"
+    },
+    {
+      "turn": 456,
+      "detail": "Construction note: Actively constructing: 1 barracks [24% done, ~19 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:27.329Z"
+    },
+    {
+      "turn": 457,
+      "detail": "Construction note: Actively constructing: 1 barracks [28% done, ~18 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:27.347Z"
+    },
+    {
+      "turn": 458,
+      "detail": "Construction note: Actively constructing: 1 barracks [33% done, ~17 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:27.366Z"
+    },
+    {
+      "turn": 459,
+      "detail": "Construction note: Actively constructing: 1 barracks [37% done, ~16 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:27.383Z"
+    },
+    {
+      "turn": 460,
+      "detail": "Construction note: Actively constructing: 1 barracks [41% done, ~15 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:27.401Z"
+    },
+    {
+      "turn": 461,
+      "detail": "Construction note: Actively constructing: 1 barracks [45% done, ~14 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:27.418Z"
+    },
+    {
+      "turn": 462,
+      "detail": "Construction note: Actively constructing: 1 barracks [49% done, ~13 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:27.438Z"
+    },
+    {
+      "turn": 463,
+      "detail": "Construction note: Actively constructing: 1 barracks [53% done, ~12 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:27.460Z"
+    },
+    {
+      "turn": 464,
+      "detail": "Construction note: Actively constructing: 1 barracks [57% done, ~11 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:27.493Z"
+    },
+    {
+      "turn": 465,
+      "detail": "Construction note: Actively constructing: 1 barracks [62% done, ~10 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:27.518Z"
+    },
+    {
+      "turn": 466,
+      "detail": "Construction note: Actively constructing: 1 barracks [66% done, ~9 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:27.542Z"
+    },
+    {
+      "turn": 467,
+      "detail": "Construction note: Actively constructing: 1 barracks [70% done, ~8 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:27.571Z"
+    },
+    {
+      "turn": 468,
+      "detail": "Construction note: Actively constructing: 1 barracks [74% done, ~7 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:27.593Z"
+    },
+    {
+      "turn": 469,
+      "detail": "Construction note: Actively constructing: 1 barracks [78% done, ~6 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:27.615Z"
+    },
+    {
+      "turn": 470,
+      "detail": "Construction note: Actively constructing: 1 barracks [82% done, ~5 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:27.633Z"
+    },
+    {
+      "turn": 471,
+      "detail": "Construction note: Actively constructing: 1 barracks [86% done, ~4 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:27.652Z"
+    },
+    {
+      "turn": 472,
+      "detail": "Construction note: Actively constructing: 1 barracks [90% done, ~3 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:27.676Z"
+    },
+    {
+      "turn": 473,
+      "detail": "Construction note: Actively constructing: 1 barracks [95% done, ~2 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:27.696Z"
+    },
+    {
+      "turn": 474,
+      "detail": "Construction note: Actively constructing: 1 barracks [99% done, ~1 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:27.715Z"
+    },
+    {
+      "turn": 475,
+      "detail": "Construction note: Actively constructing: 1 barracks [103% done, ~0 turns left] (Using 200 gc & 100 land). ⚠️ markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available. ⚠️ barracks paused — not enough wood.",
+      "data": {},
+      "at": "2026-07-02T05:53:27.739Z"
+    },
+    {
+      "turn": 476,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:37.143Z"
+    },
+    {
+      "turn": 477,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:37.161Z"
+    },
+    {
+      "turn": 478,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:37.177Z"
+    },
+    {
+      "turn": 479,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:37.194Z"
+    },
+    {
+      "turn": 480,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:37.209Z"
+    },
+    {
+      "turn": 481,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:37.225Z"
+    },
+    {
+      "turn": 482,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:37.241Z"
+    },
+    {
+      "turn": 483,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:37.256Z"
+    },
+    {
+      "turn": 484,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:37.272Z"
+    },
+    {
+      "turn": 485,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:37.287Z"
+    },
+    {
+      "turn": 486,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:37.303Z"
+    },
+    {
+      "turn": 487,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:37.320Z"
+    },
+    {
+      "turn": 488,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:37.335Z"
+    },
+    {
+      "turn": 489,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:37.350Z"
+    },
+    {
+      "turn": 490,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:37.366Z"
+    },
+    {
+      "turn": 491,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:37.384Z"
+    },
+    {
+      "turn": 492,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:37.400Z"
+    },
+    {
+      "turn": 493,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:37.418Z"
+    },
+    {
+      "turn": 494,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:37.439Z"
+    },
+    {
+      "turn": 495,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:37.461Z"
+    },
+    {
+      "turn": 496,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:37.479Z"
+    },
+    {
+      "turn": 497,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:37.496Z"
+    },
+    {
+      "turn": 498,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:37.512Z"
+    },
+    {
+      "turn": 499,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:37.529Z"
+    },
+    {
+      "turn": 500,
+      "detail": "Construction note: markets paused — no blueprints available. ⚠️ libraries paused — no scaffolding available.",
+      "data": {},
+      "at": "2026-07-02T05:53:37.544Z"
+    }
+  ],
+  "probes": [
+    {
+      "label": "expedition:mountains",
+      "data": {
+        "nodeId": 2,
+        "terrain": "mountains",
+        "travelTime": 8182,
+        "foodTaken": 83,
+        "arrive_at": 1782979799,
+        "distance": 7200,
+        "richness": 3,
+        "expectedExpSpeed": 0.8,
+        "expectedResourceYield": 1.05,
+        "note": "post-run expedition probe"
+      },
+      "at": "2026-07-02T05:53:37.719Z"
+    }
+  ],
+  "snapshots": [
+    {
+      "label": "Start",
+      "turn": 0,
+      "turns_stored": 500,
+      "gold": 65176114,
+      "food": 129690,
+      "land": 14226,
+      "population": 167363,
+      "happiness": 100,
+      "level": 51,
+      "score": 170095,
+      "school_of_magic": null,
+      "terrain": "plains",
+      "research_focus": [
+        "economy"
+      ],
+      "research": {
+        "economy": 191,
+        "construction": 100,
+        "military": 100,
+        "spellbook": 0,
+        "school_spellbook": 0
+      },
+      "buildings": {
+        "farms": 40,
+        "housing": 180,
+        "granaries": 6,
+        "markets": 1,
+        "schools": 3,
+        "libraries": 0,
+        "barracks": 3,
+        "mage_towers": 0,
+        "taverns": 0,
+        "vaults": 0,
+        "guard_towers": 0,
+        "walls": 0
+      },
+      "units": {
+        "researchers": 300,
+        "engineers": 179,
+        "mages": 0,
+        "rangers": 175,
+        "fighters": 200,
+        "scribes": 0
+      }
+    },
+    {
+      "label": "After 100 turns",
+      "turn": 100,
+      "turns_stored": 400,
+      "gold": 71214438,
+      "food": 128508,
+      "land": 14226,
+      "population": 173295,
+      "happiness": 100,
+      "level": 53,
+      "score": 179299,
+      "school_of_magic": null,
+      "terrain": null,
+      "research_focus": [
+        "economy"
+      ],
+      "research": {
+        "economy": 193,
+        "construction": 100,
+        "military": 100,
+        "spellbook": 0,
+        "school_spellbook": 0
+      },
+      "buildings": {
+        "farms": 40,
+        "housing": 180,
+        "granaries": 6,
+        "markets": 1,
+        "schools": 3,
+        "libraries": 0,
+        "barracks": 3,
+        "mage_towers": 0,
+        "taverns": 0,
+        "vaults": 0,
+        "guard_towers": 0,
+        "walls": 0
+      },
+      "units": {
+        "researchers": 300,
+        "engineers": 179,
+        "mages": 0,
+        "rangers": 175,
+        "fighters": 200,
+        "scribes": 0
+      }
+    },
+    {
+      "label": "After 200 turns",
+      "turn": 200,
+      "turns_stored": 300,
+      "gold": 63654103,
+      "food": 107503,
+      "land": 14226,
+      "population": 170536,
+      "happiness": 100,
+      "level": 55,
+      "score": 170513,
+      "school_of_magic": null,
+      "terrain": null,
+      "research_focus": [
+        "economy"
+      ],
+      "research": {
+        "economy": 194,
+        "construction": 100,
+        "military": 100,
+        "spellbook": 0,
+        "school_spellbook": 0
+      },
+      "buildings": {
+        "farms": 39,
+        "housing": 180,
+        "granaries": 6,
+        "markets": 1,
+        "schools": 3,
+        "libraries": 0,
+        "barracks": 2,
+        "mage_towers": 0,
+        "taverns": 0,
+        "vaults": 0,
+        "guard_towers": 0,
+        "walls": 0
+      },
+      "units": {
+        "researchers": 300,
+        "engineers": 179,
+        "mages": 0,
+        "rangers": 165,
+        "fighters": 189,
+        "scribes": 0
+      }
+    },
+    {
+      "label": "After 300 turns",
+      "turn": 300,
+      "turns_stored": 200,
+      "gold": 69699545,
+      "food": 116577,
+      "land": 14226,
+      "population": 176580,
+      "happiness": 67,
+      "level": 57,
+      "score": 179788,
+      "school_of_magic": null,
+      "terrain": null,
+      "research_focus": [
+        "economy"
+      ],
+      "research": {
+        "economy": 196,
+        "construction": 100,
+        "military": 100,
+        "spellbook": 0,
+        "school_spellbook": 0
+      },
+      "buildings": {
+        "farms": 39,
+        "housing": 180,
+        "granaries": 6,
+        "markets": 1,
+        "schools": 3,
+        "libraries": 0,
+        "barracks": 3,
+        "mage_towers": 0,
+        "taverns": 0,
+        "vaults": 0,
+        "guard_towers": 0,
+        "walls": 0
+      },
+      "units": {
+        "researchers": 300,
+        "engineers": 179,
+        "mages": 0,
+        "rangers": 165,
+        "fighters": 189,
+        "scribes": 0
+      }
+    },
+    {
+      "label": "After 400 turns",
+      "turn": 400,
+      "turns_stored": 100,
+      "gold": 68776643,
+      "food": 107036,
+      "land": 14226,
+      "population": 177223,
+      "happiness": 45,
+      "level": 58,
+      "score": 179281,
+      "school_of_magic": null,
+      "terrain": null,
+      "research_focus": [
+        "economy"
+      ],
+      "research": {
+        "economy": 197,
+        "construction": 100,
+        "military": 100,
+        "spellbook": 0,
+        "school_spellbook": 0
+      },
+      "buildings": {
+        "farms": 39,
+        "housing": 180,
+        "granaries": 6,
+        "markets": 0,
+        "schools": 3,
+        "libraries": 0,
+        "barracks": 3,
+        "mage_towers": 0,
+        "taverns": 0,
+        "vaults": 0,
+        "guard_towers": 0,
+        "walls": 0
+      },
+      "units": {
+        "researchers": 300,
+        "engineers": 179,
+        "mages": 0,
+        "rangers": 165,
+        "fighters": 189,
+        "scribes": 0
+      }
+    },
+    {
+      "label": "After 500 turns",
+      "turn": 500,
+      "turns_stored": 0,
+      "gold": 66825471,
+      "food": 102853,
+      "land": 14226,
+      "population": 176972,
+      "happiness": 53,
+      "level": 60,
+      "score": 177372,
+      "school_of_magic": null,
+      "terrain": null,
+      "research_focus": [
+        "economy"
+      ],
+      "research": {
+        "economy": 198,
+        "construction": 100,
+        "military": 100,
+        "spellbook": 0,
+        "school_spellbook": 0
+      },
+      "buildings": {
+        "farms": 37,
+        "housing": 180,
+        "granaries": 6,
+        "markets": 0,
+        "schools": 3,
+        "libraries": 0,
+        "barracks": 3,
+        "mage_towers": 0,
+        "taverns": 0,
+        "vaults": 0,
+        "guard_towers": 0,
+        "walls": 0
+      },
+      "units": {
+        "researchers": 300,
+        "engineers": 179,
+        "mages": 0,
+        "rangers": 157,
+        "fighters": 179,
+        "scribes": 0
+      }
+    }
+  ],
+  "actions": [
+    {
+      "turn": 0,
+      "type": "engineers",
+      "detail": "Assigned engineers to markets 89, libraries 90.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.175Z"
+    },
+    {
+      "turn": 25,
+      "type": "engineers",
+      "detail": "Assigned engineers to markets 89, libraries 90.",
+      "data": {},
+      "at": "2026-07-02T05:52:49.796Z"
+    },
+    {
+      "turn": 50,
+      "type": "engineers",
+      "detail": "Assigned engineers to markets 89, libraries 90.",
+      "data": {},
+      "at": "2026-07-02T05:52:50.496Z"
+    },
+    {
+      "turn": 75,
+      "type": "engineers",
+      "detail": "Assigned engineers to markets 89, libraries 90.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.181Z"
+    },
+    {
+      "turn": 100,
+      "type": "checkpoint",
+      "detail": "Checkpoint at 100 spent turns with 400 stored turns remaining.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.675Z"
+    },
+    {
+      "turn": 100,
+      "type": "engineers",
+      "detail": "Assigned engineers to markets 89, libraries 90.",
+      "data": {},
+      "at": "2026-07-02T05:52:51.813Z"
+    },
+    {
+      "turn": 125,
+      "type": "engineers",
+      "detail": "Assigned engineers to markets 89, libraries 90.",
+      "data": {},
+      "at": "2026-07-02T05:52:52.596Z"
+    },
+    {
+      "turn": 150,
+      "type": "engineers",
+      "detail": "Assigned engineers to markets 89, libraries 90.",
+      "data": {},
+      "at": "2026-07-02T05:52:53.439Z"
+    },
+    {
+      "turn": 175,
+      "type": "engineers",
+      "detail": "Assigned engineers to markets 89, libraries 90.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.097Z"
+    },
+    {
+      "turn": 200,
+      "type": "checkpoint",
+      "detail": "Checkpoint at 200 spent turns with 300 stored turns remaining.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.659Z"
+    },
+    {
+      "turn": 200,
+      "type": "build",
+      "detail": "Queued 1 barracks.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.753Z"
+    },
+    {
+      "turn": 200,
+      "type": "engineers",
+      "detail": "Assigned engineers to markets 59, libraries 59, barracks 61.",
+      "data": {},
+      "at": "2026-07-02T05:52:54.940Z"
+    },
+    {
+      "turn": 225,
+      "type": "engineers",
+      "detail": "Assigned engineers to markets 89, libraries 90.",
+      "data": {},
+      "at": "2026-07-02T05:52:55.597Z"
+    },
+    {
+      "turn": 250,
+      "type": "engineers",
+      "detail": "Assigned engineers to markets 89, libraries 90.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.216Z"
+    },
+    {
+      "turn": 275,
+      "type": "engineers",
+      "detail": "Assigned engineers to markets 89, libraries 90.",
+      "data": {},
+      "at": "2026-07-02T05:52:56.812Z"
+    },
+    {
+      "turn": 300,
+      "type": "checkpoint",
+      "detail": "Checkpoint at 300 spent turns with 200 stored turns remaining.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.321Z"
+    },
+    {
+      "turn": 300,
+      "type": "engineers",
+      "detail": "Assigned engineers to markets 89, libraries 90.",
+      "data": {},
+      "at": "2026-07-02T05:52:57.396Z"
+    },
+    {
+      "turn": 325,
+      "type": "build",
+      "detail": "Queued 1 housing, 1 markets.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.004Z"
+    },
+    {
+      "turn": 325,
+      "type": "engineers",
+      "detail": "Assigned engineers to housing 59, markets 59, libraries 61.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.099Z"
+    },
+    {
+      "turn": 350,
+      "type": "engineers",
+      "detail": "Assigned engineers to markets 89, libraries 90.",
+      "data": {},
+      "at": "2026-07-02T05:52:58.845Z"
+    },
+    {
+      "turn": 375,
+      "type": "engineers",
+      "detail": "Assigned engineers to markets 89, libraries 90.",
+      "data": {},
+      "at": "2026-07-02T05:52:59.538Z"
+    },
+    {
+      "turn": 400,
+      "type": "checkpoint",
+      "detail": "Checkpoint at 400 spent turns with 100 stored turns remaining.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.088Z"
+    },
+    {
+      "turn": 400,
+      "type": "engineers",
+      "detail": "Assigned engineers to markets 89, libraries 90.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.260Z"
+    },
+    {
+      "turn": 425,
+      "type": "build",
+      "detail": "Queued 1 barracks.",
+      "data": {},
+      "at": "2026-07-02T05:53:00.829Z"
+    },
+    {
+      "turn": 425,
+      "type": "engineers",
+      "detail": "Assigned engineers to markets 59, libraries 59, barracks 61.",
+      "data": {},
+      "at": "2026-07-02T05:53:01.003Z"
+    },
+    {
+      "turn": 475,
+      "type": "engineers",
+      "detail": "Assigned engineers to markets 89, libraries 90.",
+      "data": {},
+      "at": "2026-07-02T05:53:37.094Z"
+    },
+    {
+      "turn": 500,
+      "type": "checkpoint",
+      "detail": "Checkpoint at 500 spent turns with 0 stored turns remaining.",
+      "data": {},
+      "at": "2026-07-02T05:53:37.552Z"
+    }
+  ]
+}

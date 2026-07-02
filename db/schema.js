@@ -1890,6 +1890,10 @@ async function initDb(options = {}) {
   const resourceNodeCols = await getTableColumns('resource_nodes');
   if (!resourceNodeCols.includes('map_x')) await addColumn('resource_nodes', 'map_x', 'INTEGER', resourceNodeCols);
   if (!resourceNodeCols.includes('map_y')) await addColumn('resource_nodes', 'map_y', 'INTEGER', resourceNodeCols);
+  if (!resourceNodeCols.includes('terrain')) {
+    await addColumn('resource_nodes', 'terrain', 'TEXT', resourceNodeCols);
+    await _db.run(`UPDATE resource_nodes SET terrain = 'plains' WHERE terrain IS NULL OR terrain = ''`);
+  }
 
   // Admin goal definitions table (overrides defaults from game/goals.js)
   await _db.run(`
