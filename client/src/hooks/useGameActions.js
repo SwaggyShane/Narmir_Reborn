@@ -61,7 +61,10 @@ export function useGameActions() {
       }
       applyResult(data, 'turn');
       const updatedState = gameStateManager.getState();
-      useProfileStore.setState({ turn: updatedState.turn, turns_stored: updatedState.turns_stored });
+      useProfileStore.getState().receiveServerSnapshot({
+        turn: updatedState.turn,
+        turns_stored: updatedState.turns_stored
+      });
 
       let completedBuildingsMsg = '';
       if (Array.isArray(data.events)) {
