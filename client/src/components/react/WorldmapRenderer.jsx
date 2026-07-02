@@ -148,9 +148,25 @@ function hexPath(cx, cy, size) {
 }
 
 // odd-r offset neighbor directions (pointy-top hexes), indexed by row parity.
+// Direction order is E, NE, NW, W, SW, SE — this order is fixed regardless of
+// row parity, which is what makes DIRECTION_EDGE_CORNERS below valid for both.
 const ODDR_DIRECTIONS = [
   [[1, 0], [0, -1], [-1, -1], [-1, 0], [-1, 1], [0, 1]],
   [[1, 0], [1, -1], [0, -1], [-1, 0], [0, 1], [1, 1]],
+];
+
+// For hexCorners' angle formula (60*i - 30), corner i is: 0=E-ish upper,
+// 1=lower-right, 2=bottom, 3=lower-left, 4=upper-left, 5=top. Each of the six
+// neighbor directions above corresponds to exactly one edge (pair of adjacent
+// corners) — this lets us draw only the true shared edge between two
+// differently-raced cells instead of a whole hex ring per border cell.
+const DIRECTION_EDGE_CORNERS = [
+  [0, 1], // E
+  [5, 0], // NE
+  [4, 5], // NW
+  [3, 4], // W
+  [2, 3], // SW
+  [1, 2], // SE
 ];
 
 function hexNeighborKeys(col, row) {
@@ -374,20 +390,32 @@ export function renderWorldMap(
         });
         svg += '</g>';
 
-        // Region layer: colored hex outlines mark the edge of each race's
-        // territory (any cell with a neighbor of a different race, or no
-        // neighbor at all), giving a cohesive bordered-map look without any
-        // manual per-race polygon geometry.
+        // Region layer: draws only the true shared edge between two cells of
+        // different races (or the map's outer edge), as a continuous colored
+        // line in the owning race's color — not a full hex ring per border
+        // cell, which fragmented into disconnected arcs instead of one clean
+        // boundary. A dark underline is drawn first so the border reads
+        // clearly against any biome color it happens to sit on.
         svg += '<g class="wm-layer wm-layer-regions">';
+        var borderSegments = [];
         hexGrid.cells.forEach(function (cell) {
-          var meta = REGION_META[cell.race] || {};
           var neighborKeys = hexNeighborKeys(cell.col, cell.row);
-          var isBorder = neighborKeys.some(function (key) {
+          var corners = hexCorners(cell.x, cell.y, HEX_SIZE);
+          neighborKeys.forEach(function (key, dirIndex) {
             var neighbor = hexGrid.cellMap.get(key);
-            return !neighbor || neighbor.race !== cell.race;
+            if (neighbor && neighbor.race === cell.race) return;
+            var edge = DIRECTION_EDGE_CORNERS[dirIndex];
+            var p1 = corners[edge[0]];
+            var p2 = corners[edge[1]];
+            borderSegments.push({ race: cell.race, p1: p1, p2: p2 });
           });
-          if (!isBorder) return;
-          svg += '<path d="' + hexPath(cell.x, cell.y, HEX_SIZE) + '" fill="none" stroke="' + (meta.stroke || '#fff') + '" stroke-width="3" stroke-linejoin="round" class="region-shape wm-region" data-race="' + escapeHtml(cell.race) + '" style="transition:opacity 0.3s;opacity:' + regionOpacity(cell.race, highlightedRace) + '" pointer-events="none"/>';
+        });
+        borderSegments.forEach(function (seg) {
+          svg += '<line x1="' + seg.p1[0] + '" y1="' + seg.p1[1] + '" x2="' + seg.p2[0] + '" y2="' + seg.p2[1] + '" stroke="#000" stroke-width="5" stroke-linecap="round" opacity="0.5" pointer-events="none"/>';
+        });
+        borderSegments.forEach(function (seg) {
+          var meta = REGION_META[seg.race] || {};
+          svg += '<line x1="' + seg.p1[0] + '" y1="' + seg.p1[1] + '" x2="' + seg.p2[0] + '" y2="' + seg.p2[1] + '" stroke="' + (meta.stroke || '#fff') + '" stroke-width="2.5" stroke-linecap="round" class="region-shape wm-region" data-race="' + escapeHtml(seg.race) + '" style="transition:opacity 0.3s;opacity:' + regionOpacity(seg.race, highlightedRace) + '" pointer-events="none"/>';
         });
         svg += '</g>';
 
