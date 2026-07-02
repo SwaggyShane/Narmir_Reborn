@@ -78,6 +78,20 @@ function layerVisibilityStyle(enabled) {
   return enabled ? '' : 'opacity:0;pointer-events:none';
 }
 
+// Blends a hex color toward white by `amount` (0-1). Used so the terrain-off
+// region fill is a visibly lighter shade of the race color, distinct from the
+// brighter, unlightened stroke color used for borders. Only handles literal
+// #rrggbb strings (all REGION_META fill colors are); anything else (e.g. a
+// CSS var used for some stroke colors) is returned unchanged.
+function lightenHexColor(hex, amount) {
+  const match = /^#([0-9a-f]{6})$/i.exec(hex || '');
+  if (!match) return hex;
+  const num = parseInt(match[1], 16);
+  const channels = [(num >> 16) & 0xff, (num >> 8) & 0xff, num & 0xff]
+    .map((c) => Math.round(c + (255 - c) * amount));
+  return '#' + channels.map((c) => c.toString(16).padStart(2, '0')).join('');
+}
+
 // ── World map region layout ─────────────────────────────────────────────────
 // Every race's "home" seed point on the 900x650 canvas. The hex grid below
 // assigns each tile to whichever race's home is nearest, so regions tile the
@@ -379,23 +393,30 @@ export function renderWorldMap(
         var hexGrid = buildHexGrid(W, H);
 
         // Terrain layer: the fill of every hex. Toggling "terrain" off shows
-        // flat race-identity colors instead of biomes.
-        svg += '<g class="wm-layer wm-layer-terrain" style="' + layerVisibilityStyle(layers.terrain !== false) + '">';
+        // flat race-identity colors — lightened so the fill reads as its own
+        // shade, distinct from the (brighter, unlightened) border color below.
+        // Always visible: this layer now doubles as the flat race-color fill
+        // when the terrain toggle is off, so it must never be hidden outright
+        // (the toggle switches its fill color, not its visibility).
+        svg += '<g class="wm-layer wm-layer-terrain">';
         hexGrid.cells.forEach(function (cell) {
           var meta = REGION_META[cell.race] || {};
           var fill = (layers.terrain !== false)
             ? (TERRAIN_COLORS[cell.terrain] || TERRAIN_COLORS.plains)
-            : (meta.color || TERRAIN_COLORS.plains);
+            : lightenHexColor(meta.color || TERRAIN_COLORS.plains, 0.35);
           svg += '<path d="' + hexPath(cell.x, cell.y, HEX_SIZE + 0.6) + '" fill="' + fill + '" class="terrain-shape" data-terrain="' + escapeHtml(cell.terrain) + '" data-race="' + escapeHtml(cell.race) + '" style="transform-box:fill-box;transform-origin:center;cursor:default" pointer-events="none"><title>' + escapeHtml(terrainTooltip(cell.terrain)) + '</title></path>';
         });
         svg += '</g>';
 
         // Region layer: draws only the true shared edge between two cells of
         // different races (or the map's outer edge), as a continuous colored
-        // line in the owning race's color — not a full hex ring per border
-        // cell, which fragmented into disconnected arcs instead of one clean
-        // boundary. A dark underline is drawn first so the border reads
-        // clearly against any biome color it happens to sit on.
+        // line — not a full hex ring per border cell, which fragmented into
+        // disconnected arcs instead of one clean boundary. Each seam picks a
+        // single race deterministically (alphabetically first of the two)
+        // regardless of which cell is scanned first, so a whole boundary run
+        // renders as one consistent color instead of alternating depending on
+        // grid iteration order. A dark underline is drawn first so borders
+        // read clearly against any biome color they happen to sit on.
         svg += '<g class="wm-layer wm-layer-regions">';
         var borderSegments = [];
         hexGrid.cells.forEach(function (cell) {
@@ -404,10 +425,11 @@ export function renderWorldMap(
           neighborKeys.forEach(function (key, dirIndex) {
             var neighbor = hexGrid.cellMap.get(key);
             if (neighbor && neighbor.race === cell.race) return;
+            var borderRace = neighbor ? (cell.race < neighbor.race ? cell.race : neighbor.race) : cell.race;
             var edge = DIRECTION_EDGE_CORNERS[dirIndex];
             var p1 = corners[edge[0]];
             var p2 = corners[edge[1]];
-            borderSegments.push({ race: cell.race, p1: p1, p2: p2 });
+            borderSegments.push({ race: borderRace, p1: p1, p2: p2 });
           });
         });
         borderSegments.forEach(function (seg) {
