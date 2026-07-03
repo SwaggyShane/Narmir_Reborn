@@ -33,9 +33,9 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 - Slices complete: `/scout-area`, node reveal, world-map gating, trade routes gating, expedition ahead reveal (on launch + process), expeditions filter in world-map, client UI for area hex scout in ExplorationPanel (PR #769), validation matrix tests (PR #770), full endpoints gating (alliance-rankings/diplomacy) (PR #771).
 - Remaining: (none listed for this slice).
 
-**Phase 4: Fog Rendering** (slices complete)
+**Phase 4: Fog Rendering** — ✅ COMPLETE (PR #774 merged `f33e6b25`, PR #775 merged `d17e57b7` 2026-07-03; see ARCHIVAL.md)
 - SVG fog overlay in `WorldmapRenderer.jsx` (unseen/seen/current states, reduced-motion support)
-- fog_of_war debuff wired to reduce currentCells (total blind) in getKingdomVisibility (PR #775)
+- fog_of_war debuff wired to reduce currentCells (total blind) in getKingdomVisibility
 
 **Phase 5: Expansion Hooks** (deferred)
 - Special locations, map items, terrain-scoped discovery difficulty
