@@ -16,7 +16,7 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 
 ### Fog of War System (5 Phases)
 
-**Phase 1: Hex Foundation** (ready to start)
+**Phase 1: Hex Foundation** (IN PROGRESS)
 - Extract `hexCenter`, `hexNeighborKeys`, direction tables from `WorldmapRenderer.jsx` into shared `game/hex-utils.js`
 - Implement missing `pixelToHex(x, y)` using fractional axial → cube rounding
 - Validate all kingdoms/nodes land in correct visual hex cells (alignment check vs. REGION_SEEDS/RACE_HOMES)
