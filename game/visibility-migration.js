@@ -1,6 +1,12 @@
 // game/visibility-migration.js
 // Fog of War visibility schema versioning and migration logic
 
+// STORAGE FORMAT (Locked): BigInt bitmap
+// Each cell in the hex grid (~195 total) is represented by one bit in a BigInt.
+// Bit position = cell index; 1 = seen/visible, 0 = unseen/fogged.
+// Encode/decode functions convert between BigInt and array of cell indices.
+// Example: seen_cells = BigInt(0b101000010001) means cells [0, 4, 12] are seen.
+
 const VISIBILITY_SCHEMA_VERSION = 1;
 
 // Default visibility structure for new saves

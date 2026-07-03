@@ -10,8 +10,8 @@
 
 const SCOUT_ECONOMY = {
   // Vision baseline: how many hexes can a kingdom see without active scouting?
-  // (TBD: test with 3, 4, 5 to find strategic sweet spot)
-  baselineVisibilityRadius: 3,
+  // LOCKED: Home hex only (strict fog everywhere else)
+  baselineVisibilityRadius: 0, // only the kingdom's own hex is visible; all else is fogged
 
   // Spell debuff: fog_of_war spell reduces visibility to this many hexes
   // Creates a combat decision: "Do I blind them for 3 turns?"

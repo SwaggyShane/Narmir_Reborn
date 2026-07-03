@@ -65,6 +65,10 @@ Every open question here was carried unaddressed through Revisions 1–4; Revisi
 
 ## Phases
 
+**Initial Visibility (Locked):** Home hex only. Fog covers entire map except the kingdom's own hex cell. No baseline radius beyond home territory.
+
+---
+
 1. **Hex Foundation**
    - Extract `hexCenter`/`hexNeighborKeys`/direction tables from `WorldmapRenderer.jsx` into a shared `game/` module (do not reimplement independently — a second, subtly different hex system would visually misalign with the terrain tessellation already rendered).
    - Implement the missing `pixelToHex(x, y)` using fractional axial coordinates + cube rounding (naive rounding of offset coordinates directly fails near hex boundaries):
@@ -86,6 +90,23 @@ Every open question here was carried unaddressed through Revisions 1–4; Revisi
      ```
    - Validate current kingdoms and resource nodes against the hex helper output (spot-check that a kingdom's continuous coordinate lands in the hex cell it visually renders inside).
    - Tests: round-trip conversion (including near hex-boundary coordinates, where naive rounding breaks), neighbor/distance math, frontier detection.
+
+1.5. **Randomize World Generation** (deferred, explicit scope)
+
+   **Goal:** Remove deterministic seeding; prevent players from memorizing optimal routes across server resets.
+
+   **Scope (locked):**
+   - Kingdom placement: randomize within their race's region (keep RACE_HOMES gating for strategic structure, replace REGION_SEEDS determinism with RNG per reset)
+   - Node placement: completely random per server reset (no memorizable patterns)
+   - Terrain biome distribution: randomized per reset (changes which areas favor which biomes)
+   - Water prohibition: enforce that no kingdoms or nodes spawn in ocean/lake hexes
+
+   **Not in scope:**
+   - Visibility system (Phase 2)
+   - Scouting/exploration (Phase 3)
+   - Fog rendering (Phase 4)
+
+   **Status:** Documented here; implementation deferred post-Phase 1 fog-of-war v1 (may be inserted before Phase 2 if resources permit, or scheduled after Phase 4 ships).
 
 2. **Visibility Persistence**
    - Kingdom-scoped visibility storage using the repo's existing JSON-in-`TEXT` convention (not a separate table).
