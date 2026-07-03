@@ -10,6 +10,26 @@
 
 ### 2026-07-03
 
+- **Fog of War Phase 3: Scout Economy Formulas Locked** (PR #761, squash-merged as
+  `88590bf8`): Resolved all remaining Phase 3 balance decisions from
+  `FOG_OF_WAR_PLAN.md`'s "Still Open" list — fog_of_war debuff (total blind, no tick),
+  scout cost (rangers capped at 1,000/action, level improves both reveal radius and
+  food efficiency: `reveal_radius = floor(sqrt(effective_power)/12)`,
+  `food_cost = 50/level_multiplier` floored at 20), expedition reveal mode (`'ahead'`),
+  ranger/expedition allocation (player-assigned, matching the engineer-allocation
+  pattern), and node delivery turns (`ceil(distance^1.2)`, increasing cost-per-hex at
+  range). Implemented as `game/scout-economy.js` (config + formula functions) and
+  `game/ranger-allocation.js` (`validateRangerAllocation`), tested in
+  `test/scout-economy.test.js`.
+  - Gemini review (high-severity security finding, applied): `validateRangerAllocation`
+    had a real exploit — a negative `scouting` value combined with a positive
+    `expeditions` value could sum to a total that passed the `total<=totalRangers`
+    check while still allocating more rangers than the kingdom has. Fixed with
+    integer/non-negative validation before computing the total; also fixed 3
+    NaN-propagation gaps across the formula functions (any NaN input would eventually
+    reach `applyKingdomUpdates`, which rejects NaN and fails the write).
+  - Phase 3 (Scout Loop + Server Gating) is now unblocked and ready to start.
+
 - **Fog of War Phase 2: Visibility Persistence** (PR #760, squash-merged as `1727e39f`):
   Kingdom-scoped visibility storage — `seen_cells` authoritative, `current_cells`
   derived, BigInt hex-cell bitmaps serialized as decimal strings in a new
