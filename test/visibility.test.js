@@ -160,6 +160,33 @@ async function runDbPersistenceCheck() {
   }
 }
 
+// --- fog_of_war debuff override (Phase 4 slice) ---
+(async () => {
+  const { getKingdomVisibility: getVis } = require('../game/visibility');
+  const preSeen = '123456789012345';
+  const preVis = JSON.stringify({ seen_cells: preSeen, current_cells: preSeen, version: 1 });
+  const debuffRow = {
+    id: 42,
+    race: 'human',
+    visibility: preVis,
+    active_effects: JSON.stringify({ fog_of_war: { turns_left: 2, type: 'fog_of_war' } })
+  };
+  const visDebuff = await getVis(null, debuffRow); // active_effects present: no DB fetch path
+  const home = getInitialVisibility({ id: 42, race: 'human' });
+  assert.strictEqual(visDebuff.currentCells, home.currentCells, 'fog_of_war debuff must force currentCells to home-only initial');
+  assert.strictEqual(visDebuff.seenCells.toString(), preSeen, 'fog_of_war debuff must leave seenCells untouched');
+  console.log('getKingdomVisibility: fog_of_war debuff forces current to home, preserves seen');
+
+  // no debuff: keeps the passed current
+  const normalRow = { id: 42, race: 'human', visibility: preVis, active_effects: JSON.stringify({}) };
+  const visNormal = await getVis(null, normalRow);
+  assert.strictEqual(visNormal.currentCells.toString(), preSeen, 'absent fog_of_war must preserve the row currentCells');
+  console.log('getKingdomVisibility: no fog_of_war preserves currentCells from row');
+})().catch((err) => {
+  console.error('debuff visibility test failed:', err);
+  process.exit(1);
+});
+
 (async () => {
   await runDbPersistenceCheck();
   console.log('visibility checks passed');
