@@ -108,7 +108,7 @@ async function applyUpdates(db, kingdomId, updates) {
 
 module.exports = function (db) {
   router.get("/trade-routes/list", requireAuth, async (req, res) => {
-    const k = await db.get("SELECT id, visibility FROM kingdoms WHERE player_id=$1", [
+    const k = await db.get("SELECT id, race, visibility FROM kingdoms WHERE player_id=$1", [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -143,7 +143,7 @@ module.exports = function (db) {
       if (isNaN(targetId))
         return res.status(400).json({ error: "Invalid target kingdom" });
 
-      const k = await db.get("SELECT id, name, gold, market_upgrades, visibility FROM kingdoms WHERE player_id=$1", [
+      const k = await db.get("SELECT id, name, gold, market_upgrades, race, visibility FROM kingdoms WHERE player_id=$1", [
         req.player.playerId,
       ]);
       if (!k) return res.status(404).json({ error: "Kingdom not found" });

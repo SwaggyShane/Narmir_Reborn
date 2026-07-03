@@ -2627,14 +2627,19 @@ module.exports = function (db) {
       }
 
       // Expedition ahead reveal: reveal the target node's hex (per 'ahead' mode in plan)
-      const nodeHex = pixelToHex(node.map_x, node.map_y);
-      await updateKingdomVisibility(db, k.id, (current) => {
-        let seen = current.seenCells;
-        if (!safeBitmapHasCell(seen, nodeHex.col, nodeHex.row)) {
-          seen = safeBitmapAddCell(seen, nodeHex.col, nodeHex.row);
-        }
-        return { seenCells: seen, currentCells: seen, version: current.version || 1 };
-      });
+      try {
+        const nodeHex = pixelToHex(node.map_x, node.map_y);
+        await updateKingdomVisibility(db, k.id, (current) => {
+          let seen = current.seenCells;
+          if (!safeBitmapHasCell(seen, nodeHex.col, nodeHex.row)) {
+            seen = safeBitmapAddCell(seen, nodeHex.col, nodeHex.row);
+          }
+          return { seenCells: seen, currentCells: seen, version: current.version || 1 };
+        });
+      } catch (visErr) {
+        console.error('Failed to update visibility after expedition launch (non-fatal):', visErr);
+        // Continue to return success to avoid inconsistent client state; visibility can be refreshed on next load
+      }
 
       res.json({ ok: true, arrive_at, travelTime, foodTaken: foodNeeded });
     } catch (e) {
