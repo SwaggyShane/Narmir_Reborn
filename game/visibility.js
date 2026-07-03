@@ -90,32 +90,29 @@ async function getKingdomVisibility(db, kingdom) {
  * writes. `updater(current) -> next` receives and must return
  * { seenCells, currentCells, version } (BigInts).
  *
- * KNOWN LIMITATION: while building this, direct tracing (transactionStorage
- * .getStore() logged at each step) showed the BEGIN/FOR UPDATE/COMMIT
- * pattern's transaction context is not currently propagating correctly in
- * db/schema.js — even a single continuous function's sequential BEGIN ->
- * SELECT FOR UPDATE -> UPDATE -> COMMIT sees the context already gone by
- * the statement right after BEGIN, so each statement silently runs as its
- * own independent auto-committing query rather than one real transaction.
- * Single-request correctness is unaffected (each statement still applies
- * correctly on its own), but the row lock currently provides no actual
- * protection against two concurrent requests racing on the same kingdom.
- * This is a pre-existing bug in the shared transaction primitive, not
- * specific to this function — flagged separately for a dedicated fix
- * rather than worked around here, since every other route using this same
- * pattern has the identical gap.
+ * Uses db.withTransaction (not manual BEGIN/COMMIT db.run() calls) —
+ * withTransaction wraps its callback in transactionStorage.run(), which
+ * correctly scopes the AsyncLocalStorage context for the callback's full
+ * lifetime. The manual BEGIN/COMMIT string pattern (db.run('BEGIN
+ * TRANSACTION') ... db.run('COMMIT')) relies on transactionStorage
+ * .enterWith() instead, which does NOT reliably propagate — confirmed via
+ * direct tracing that the context is already lost by the very next
+ * statement after BEGIN, meaning FOR UPDATE provides no real mutual
+ * exclusion under that pattern. That's a pre-existing bug in the manual
+ * pattern itself (still used elsewhere: routes/hero.js, kingdom-build.js,
+ * kingdom-economy.js), flagged separately rather than fixed everywhere
+ * here — this function sidesteps it entirely by using the already-correct
+ * withTransaction helper instead.
  *
  * Returns the new visibility, or null if the kingdom doesn't exist.
  */
 async function updateKingdomVisibility(db, kingdomId, updater) {
-  await db.run('BEGIN TRANSACTION');
-  try {
+  return db.withTransaction(async () => {
     const row = await db.get(
       'SELECT id, race, visibility FROM kingdoms WHERE id = $1 FOR UPDATE',
       [kingdomId],
     );
     if (!row) {
-      await db.run('ROLLBACK');
       return null;
     }
     const current = await getKingdomVisibility(db, row);
@@ -124,12 +121,8 @@ async function updateKingdomVisibility(db, kingdomId, updater) {
       'UPDATE kingdoms SET visibility = $1 WHERE id = $2',
       [JSON.stringify(serializeVisibility(next)), kingdomId],
     );
-    await db.run('COMMIT');
     return next;
-  } catch (err) {
-    await db.run('ROLLBACK');
-    throw err;
-  }
+  });
 }
 
 module.exports = {

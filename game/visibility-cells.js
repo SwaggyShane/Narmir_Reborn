@@ -18,9 +18,21 @@ const CELL_INDEX_STRIDE = 32; // must exceed the largest possible (col + OFFSET)
 
 /**
  * Map a hex cell (col, row) to a unique non-negative bit index.
+ *
+ * Throws if the shifted column falls outside [0, CELL_INDEX_STRIDE) — that's
+ * the only way two different cells could collide on the same index (a
+ * col overflow bleeding into the next row's band), so it's the one bound
+ * that must be enforced. Guards against a future map expansion or a
+ * coordinate-generation bug silently corrupting the bitmap instead of
+ * failing loudly.
  */
 function cellIndex(col, row) {
-  return (row + CELL_INDEX_OFFSET) * CELL_INDEX_STRIDE + (col + CELL_INDEX_OFFSET);
+  const colShifted = col + CELL_INDEX_OFFSET;
+  const rowShifted = row + CELL_INDEX_OFFSET;
+  if (colShifted < 0 || colShifted >= CELL_INDEX_STRIDE || rowShifted < 0) {
+    throw new Error(`Invalid hex cell coordinates: (${col}, ${row})`);
+  }
+  return rowShifted * CELL_INDEX_STRIDE + colShifted;
 }
 
 /**

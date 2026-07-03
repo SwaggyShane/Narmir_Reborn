@@ -112,7 +112,7 @@ async function runDbPersistenceCheck() {
 
     // updateKingdomVisibility: read-modify-write under lock.
     const result = await updateKingdomVisibility(db, kingdomId, (current) => ({
-      seenCells: bitmapAddCell(current.seenCells, 99, 99),
+      seenCells: bitmapAddCell(current.seenCells, 5, 3),
       currentCells: current.currentCells,
       version: current.version,
     }));
@@ -121,30 +121,28 @@ async function runDbPersistenceCheck() {
     assert.strictEqual(JSON.parse(afterUpdate.visibility).seen_cells, result.seenCells.toString(), 'updateKingdomVisibility result must match what is actually in the DB');
     console.log('DB: updateKingdomVisibility persists a read-modify-write correctly');
 
-    // Two sequential read-modify-write calls must not lose either write —
-    // this is the correctness property updateKingdomVisibility itself is
-    // responsible for. NOT tested here as truly concurrent (Promise.all):
-    // doing so surfaced a separate, pre-existing bug in db/schema.js's
-    // shared transaction wrapper (two same-process BEGIN transactions
-    // started via Promise.all leak their pg client — activeTxns never
-    // clears them, confirmed via db.activeTxns.size staying at 2 after both
-    // "complete", forcing pool.end() to hang ~40s for the stale-transaction
-    // reaper). That bug is in the transaction primitive every route in the
-    // app shares, not in this module, and deserves its own dedicated fix —
-    // flagged separately rather than worked around silently here.
-    await updateKingdomVisibility(db, kingdomId, (current) => ({
-      ...current,
-      seenCells: bitmapAddCell(current.seenCells, 1, 1),
-    }));
-    await updateKingdomVisibility(db, kingdomId, (current) => ({
-      ...current,
-      seenCells: bitmapAddCell(current.seenCells, 2, 2),
-    }));
+    // Concurrent updates must not lose either write — the whole point of
+    // row-locking via db.withTransaction (which correctly scopes the
+    // AsyncLocalStorage context for its callback's full lifetime, unlike
+    // the manual BEGIN/COMMIT db.run() pattern still used elsewhere in the
+    // codebase — see updateKingdomVisibility's docstring).
+    const beforeConcurrent = db.activeTxns.size;
+    await Promise.all([
+      updateKingdomVisibility(db, kingdomId, (current) => ({
+        ...current,
+        seenCells: bitmapAddCell(current.seenCells, 1, 1),
+      })),
+      updateKingdomVisibility(db, kingdomId, (current) => ({
+        ...current,
+        seenCells: bitmapAddCell(current.seenCells, 2, 2),
+      })),
+    ]);
+    assert.strictEqual(db.activeTxns.size, beforeConcurrent, 'both transactions must be fully released, not leaked, after completing');
     const finalRow = await db.get('SELECT visibility FROM kingdoms WHERE id = $1', [kingdomId]);
     const finalSeen = BigInt(JSON.parse(finalRow.visibility).seen_cells);
-    assert.ok(bitmapHasCell(finalSeen, 1, 1), 'sequential update 1 must still be present after update 2');
-    assert.ok(bitmapHasCell(finalSeen, 2, 2), 'sequential update 2 must be added on top of update 1, not overwrite it');
-    console.log('DB: sequential updateKingdomVisibility calls correctly accumulate (read-modify-write is not lossy)');
+    assert.ok(bitmapHasCell(finalSeen, 1, 1), 'concurrent update 1 must not be lost to a race with update 2');
+    assert.ok(bitmapHasCell(finalSeen, 2, 2), 'concurrent update 2 must not be lost to a race with update 1');
+    console.log('DB: concurrent updateKingdomVisibility calls do not lose either write, and leak no connections');
   } finally {
     try {
       await db.run('DELETE FROM kingdoms WHERE name = $1', [kingdomName]);
