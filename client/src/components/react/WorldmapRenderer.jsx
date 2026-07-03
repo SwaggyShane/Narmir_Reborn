@@ -181,12 +181,30 @@ function oceanBandForColumn(col) {
 }
 
 // Deterministic per-cell "random" value so the map's biome mix is stable
-// across re-renders instead of reshuffling on every data refresh.
-function hexSeededRandom(col, row, salt) {
-  let t = (col * 374761393 + row * 668265263 + salt * 2654435761) | 0;
+// across re-renders instead of reshuffling on every data refresh. worldSeed
+// (Fog of War Phase 1.5) folds the current world's generation seed into the
+// mix so biome patterns differ across resets too, not just kingdom/node
+// placement — without it, every world would render the exact same terrain
+// layout even though kingdoms/nodes now randomize.
+function hexSeededRandom(col, row, salt, worldSeed = 0) {
+  let t = (col * 374761393 + row * 668265263 + salt * 2654435761 + worldSeed * 40503) | 0;
   t = Math.imul(t ^ (t >>> 15), t | 1);
   t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
   return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+
+// Folds a BigInt/string/number world seed (arbitrary precision, arrives
+// from the server as a string since JSON can't carry BigInt) into a 32-bit
+// safe integer for hexSeededRandom's mixing — same approach as
+// game/world-map-coords.js's seedAsInt32, kept independent here since this
+// file is a browser-only bundle that doesn't share code with the server.
+function seedToInt32(worldSeed) {
+  if (worldSeed === null || worldSeed === undefined) return 0;
+  try {
+    return Number(BigInt(worldSeed) % 2147483647n);
+  } catch {
+    return 0;
+  }
 }
 
 function hexCenter(col, row) {
@@ -257,7 +275,7 @@ function nearestRaceHome(x, y) {
 // Builds the full hex tessellation: every cell gets a race (for border/legend
 // coloring) and a terrain (dominant race biome, an occasional mixed-in
 // alternate, or a forced tundra/desert/volcanic band at the map's edges).
-function buildHexGrid(W, H) {
+function buildHexGrid(W, H, worldSeed = 0) {
   const cols = Math.ceil(W / HEX_W) + 2;
   const rows = Math.ceil(H / HEX_VERT) + 2;
   const cells = [];
@@ -276,14 +294,14 @@ function buildHexGrid(W, H) {
       } else if (row < oceanBand.end) {
         terrain = 'ocean';
       } else if (y > H * (1 - SOUTH_BAND_FRAC)) {
-        terrain = hexSeededRandom(col, row, 3) < 0.55 ? 'desert' : 'volcanic';
+        terrain = hexSeededRandom(col, row, 3, worldSeed) < 0.55 ? 'desert' : 'volcanic';
       } else {
         const dominant = RACE_TO_TERRAIN[race] || 'plains';
-        if (hexSeededRandom(col, row, 1) < 0.7) {
+        if (hexSeededRandom(col, row, 1, worldSeed) < 0.7) {
           terrain = dominant;
         } else {
           const alternates = BIOME_MIX_ALTERNATES[dominant] || ['plains'];
-          terrain = alternates[Math.floor(hexSeededRandom(col, row, 2) * alternates.length)];
+          terrain = alternates[Math.floor(hexSeededRandom(col, row, 2, worldSeed) * alternates.length)];
         }
       }
 
@@ -574,6 +592,7 @@ export function renderWorldMap(
   const nodes = options.nodes || [];
   const expeditions = options.expeditions || [];
   const layers = { ...DEFAULT_LAYERS, ...(options.layers || {}) };
+  const worldSeed = seedToInt32(options.worldSeed);
   const state = {
     kingdomId,
   };
@@ -712,7 +731,7 @@ export function renderWorldMap(
         // belongs to exactly one race (by nearest RACE_HOMES point) and one
         // terrain (dominant race biome, an occasional mixed alternate, or a
         // forced tundra/desert/volcanic band at the map's far north/south).
-        var hexGrid = buildHexGrid(W, H);
+        var hexGrid = buildHexGrid(W, H, worldSeed);
 
         // Terrain layer: the fill of every hex. Toggling "terrain" off shows
         // flat race-identity colors — lightened so the fill reads as its own

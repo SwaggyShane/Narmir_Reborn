@@ -32,7 +32,7 @@ const DEFAULT_LAYERS = {
   terrain: false,
 };
 
-export async function loadWorldMap({ setLoading, setError, setKingdoms, setTradeRoutes, setNodes, setExpeditions } = {}) {
+export async function loadWorldMap({ setLoading, setError, setKingdoms, setTradeRoutes, setNodes, setExpeditions, setWorldSeed } = {}) {
   if (typeof setLoading === 'function') setLoading(true);
   if (typeof setError === 'function') setError('');
   try {
@@ -47,6 +47,10 @@ export async function loadWorldMap({ setLoading, setError, setKingdoms, setTrade
     if (typeof setTradeRoutes === 'function') setTradeRoutes(tradeRoutes);
     if (typeof setNodes === 'function') setNodes(nodes);
     if (typeof setExpeditions === 'function') setExpeditions(expeditions);
+    // Fog of War Phase 1.5: worldSeed arrives as a string (BigInt can't be
+    // JSON-serialized) — passed through as-is, WorldmapRenderer.jsx parses
+    // it back to BigInt itself so terrain biome patterns change per world.
+    if (typeof setWorldSeed === 'function') setWorldSeed(data.worldSeed || null);
   } catch (err) {
     console.error('World map fail:', err);
     if (typeof setError === 'function') setError(err.message || 'Failed to load world map');
@@ -153,6 +157,7 @@ const WorldmapPanel = () => {
   const [tradeRoutes, setTradeRoutes] = useState([]);
   const [nodes, setNodes] = useState([]);
   const [expeditions, setExpeditions] = useState([]);
+  const [worldSeed, setWorldSeed] = useState(null);
   const [highlightedRace, setHighlightedRace] = useState(null);
   const [mapCard, setMapCard] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
@@ -170,8 +175,9 @@ const WorldmapPanel = () => {
       nodes,
       expeditions,
       layers,
+      worldSeed,
     });
-  }, [kingdoms, tradeRoutes, highlightedRace, currentKingdomId, nodes, expeditions, layers]);
+  }, [kingdoms, tradeRoutes, highlightedRace, currentKingdomId, nodes, expeditions, layers, worldSeed]);
 
   const mapDataKey = useMemo(
     () => `${kingdoms.length}:${nodes.length}:${expeditions.length}:${highlightedRace}:${currentKingdomId}`,
@@ -223,6 +229,7 @@ const WorldmapPanel = () => {
       setTradeRoutes,
       setNodes,
       setExpeditions,
+      setWorldSeed,
     }),
     [],
   );

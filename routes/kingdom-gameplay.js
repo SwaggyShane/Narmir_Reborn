@@ -20,6 +20,7 @@ const { EPOCH_NOW } = require("../lib/db-sql");
 const { pgInList, pgValueTuples } = require("../lib/pg-placeholders");
 const { getKingdomMapCoords, placeResourceNodeCoords } = require("../game/world-map-coords");
 const { getTerrainForRace, getTerrainModifiers } = require("../game/terrain");
+const { getWorldSeed } = require("../game/world-seed");
 
 const router = express.Router();
 
@@ -1982,7 +1983,11 @@ module.exports = function (db) {
         [k.id],
       );
 
-      res.json({ kingdoms: kingdomsWithCoords, tradeRoutes, nodes, expeditions });
+      // Fog of War Phase 1.5: BigInt can't be JSON-serialized directly, so
+      // the seed goes over the wire as a string; the client parses it back
+      // to BigInt before feeding it into the same seeded-random mixing the
+      // server uses, so terrain biome patterns change across resets too.
+      res.json({ kingdoms: kingdomsWithCoords, tradeRoutes, nodes, expeditions, worldSeed: getWorldSeed().toString() });
     } catch {
       // region column may not exist yet â€” fallback query
       try {
@@ -2038,7 +2043,11 @@ module.exports = function (db) {
             )
           : [];
 
-        res.json({ kingdoms: kingdomsWithCoords, tradeRoutes, nodes, expeditions });
+        // Fog of War Phase 1.5: BigInt can't be JSON-serialized directly, so
+      // the seed goes over the wire as a string; the client parses it back
+      // to BigInt before feeding it into the same seeded-random mixing the
+      // server uses, so terrain biome patterns change across resets too.
+      res.json({ kingdoms: kingdomsWithCoords, tradeRoutes, nodes, expeditions, worldSeed: getWorldSeed().toString() });
       } catch (err2) {
         console.error("[world-map]", err2.message);
         res.status(500).json({ error: "Failed to load map data" });
