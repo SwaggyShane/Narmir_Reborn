@@ -19,11 +19,19 @@ let cachedSeed = null;
  * Load the world seed from the DB and cache it. Call once at server boot,
  * after initDb(). If the row is somehow missing (should not happen — the
  * schema migration inserts a default row), falls back to a fixed seed
- * rather than throwing, so a missing row can't take down boot.
+ * rather than throwing, so a missing row can't take down boot — but logs a
+ * warning, since silently falling back would mean every world after that
+ * point renders with the exact same fixed layout, defeating the entire
+ * point of this phase without anyone noticing until a player mentions it.
  */
 async function loadWorldSeed(db) {
   const row = await db.get('SELECT seed FROM world_state WHERE id = 1');
-  cachedSeed = row ? BigInt(row.seed) : 1n;
+  if (!row) {
+    console.warn('[world-seed] world_state row (id=1) is missing — falling back to a fixed seed. Every kingdom/node placement will use the same deterministic layout until this is fixed. Check that the schema migration ran.');
+    cachedSeed = 1n;
+  } else {
+    cachedSeed = BigInt(row.seed);
+  }
   return cachedSeed;
 }
 
