@@ -33,12 +33,31 @@
 2. Run quality checks (lint → smoke → sanity) — see below
 3. Stage and commit: `git add <files>` → `git commit -m "..."`
 4. Confirm branch and commits (see above)
-5. Push: `git push -u PR <branch>`
-6. Create or update PR.
-7. Actively monitor PR to until Gemini comments.
-8. Address Gemini review feedback, 
-9. Update TODO.md / ARCHIVAL.md
-10. Self merge to main only after one, and ONLY ONE Gemini Review and PR is green
+5. Push: `git push`
+
+6. **Create or update PR**:
+   - If an open PR already exists for this branch: push to the existing PR (do not create a new one).
+   - If no open PR exists: create a **new draft PR immediately after the push**. Do not wait for the user to notice.
+
+7. **Actively monitor PR until Gemini comments**:
+   - Refresh the PR page / checks regularly.
+   - Wait (it can take a few minutes) until Gemini posts a review or comment.
+   - Do **not** merge or declare complete while waiting.
+
+8. **Address Gemini review feedback** (Gemini only ever comments **one time**):
+   - Make code fixes for valid feedback, commit, and push (updates the same PR).
+   - Or reply on the PR with a clear explanation if you are refuting the feedback.
+   - Re-monitor after addressing.
+
+9. **Update TODO.md / ARCHIVAL.md**:
+   - Move finished items to ARCHIVAL.md with a dated entry.
+   - Do this **before** any self-merge.
+
+10. **Self-merge to main only after**:
+    - Exactly **ONE** Gemini review has occurred (and been addressed or refuted).
+    - PR is fully green (all CI checks passing).
+    - TODO.md / ARCHIVAL.md has been updated.
+    - All other rules in this document have been followed.
 
 ## High Priority Issues
 
@@ -49,7 +68,11 @@ When fixing high-priority issues:
 - [ ] Critical performance bottlenecks
 - [ ] Code review feedback from automated tools
 
-Self merge only after: Gemini review fixed or refuted (step 7), TODO/ARCHIVAL updated (step 8), and PR is green + approved. Update docs (step 8) before self-merging (step 9).
+Self-merge only after:
+- Exactly one Gemini review has occurred and all feedback addressed or refuted (step 8).
+- TODO.md / ARCHIVAL.md has been updated (step 9).
+- PR is green + approved.
+Update docs (step 9) before self-merging (step 10).
 
 ---
 
