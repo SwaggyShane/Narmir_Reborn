@@ -39,8 +39,7 @@
 
 ### Merge Boundaries
 - Merge only at phase boundaries after the phase is complete and validated.
-- Keep local as truth while reconciling any remote Claude-lane work.
-- After each merge, fetch `origin` and check for Claude branch updates before starting the next merge.
+
 
 ---
 
@@ -231,7 +230,7 @@ When fixing high-priority issues:
 - [ ] Critical performance bottlenecks
 - [ ] Code review feedback from automated tools
 
-Always push as draft PRs. Never self-merge high-priority fixes.
+Self merge when Gemini review has been fixed, or refuted and PR is green.
 
 ---
 
@@ -259,7 +258,7 @@ After every PR merge to main:
 
 1. **Update TODO.md / ARCHIVAL.md** — When completing items: move entries from TODO.md to ARCHIVAL.md under a dated chronology section. Remove from TODO.
    - Commit message: `docs: Update TODO/ARCHIVAL — <item> complete`
-   - Create a draft PR immediately for the docs update
+   - Create a PR immediately for the docs update
    - Merge when CI passes
 
 2. **Delete the feature branch** — Clean up merged branches to keep repo tidy
