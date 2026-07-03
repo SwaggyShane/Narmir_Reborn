@@ -34,13 +34,39 @@
 3. Stage and commit: `git add <files>` → `git commit -m "..."`
 4. Confirm branch and commits (see above)
 5. Push: `git push -u PR <branch>`
-6. Create or update PR. Address review feedback with new commits
+6. Create or update PR. 
+7. Address Gemini review feedback, 
 7. Update TODO.md / ARCHIVAL.md
-8. Merge to main only after review approval
+8. Self merge to main only after review approval and PR is green
 
-### Merge Boundaries
-- Merge only at phase boundaries after the phase is complete and validated.
+## High Priority Issues
 
+When fixing high-priority issues:
+- [ ] Security vulnerabilities (SQL injection, XSS, etc.)
+- [ ] Race conditions / transaction safety
+- [ ] Memory leaks / resource management
+- [ ] Critical performance bottlenecks
+- [ ] Code review feedback from automated tools
+
+Self merge when Gemini review has been fixed, or refuted and PR is green.
+
+---
+
+## Code Review Feedback (Gemini / Automated Tools)
+
+Automated reviewers are helpful but sometimes wrong. Before applying any suggestion:
+
+1. **Understand what it's actually saying.** Don't apply it blindly.
+2. **Check if the suggestion would break existing behavior.** Especially around CSS variables, panel display systems, or React reconciliation.
+3. **If it conflicts with how the game's panel system works, reject it and explain why in a reply comment.**
+
+### Gemini Feedback Gate
+
+- If Gemini review is still pending on a high-risk change, wait for it before pushing, merging, or declaring the work complete.
+- If you already have a strong reason to proceed, document that reason in the commit or review reply before moving on.
+- For low-risk docs-only cleanup, proceed without waiting unless the user asked to hold.
+
+Example of a bad suggestion that was applied: removing `style={{ display: 'none' }}` from React panels. The game's `switchTab()` requires it. Applying it broke the forum panel entirely.
 
 ---
 
@@ -222,34 +248,7 @@ Always test schema changes against a local DB before pushing.
 
 ---
 
-## High Priority Issues
 
-When fixing high-priority issues:
-- [ ] Security vulnerabilities (SQL injection, XSS, etc.)
-- [ ] Race conditions / transaction safety
-- [ ] Memory leaks / resource management
-- [ ] Critical performance bottlenecks
-- [ ] Code review feedback from automated tools
-
-Self merge when Gemini review has been fixed, or refuted and PR is green.
-
----
-
-## Code Review Feedback (Gemini / Automated Tools)
-
-Automated reviewers are helpful but sometimes wrong. Before applying any suggestion:
-
-1. **Understand what it's actually saying.** Don't apply it blindly.
-2. **Check if the suggestion would break existing behavior.** Especially around CSS variables, panel display systems, or React reconciliation.
-3. **If it conflicts with how the game's panel system works, reject it and explain why in a reply comment.**
-
-### Gemini Feedback Gate
-
-- If Gemini review is still pending on a high-risk change, wait for it before pushing, merging, or declaring the work complete.
-- If you already have a strong reason to proceed, document that reason in the commit or review reply before moving on.
-- For low-risk docs-only cleanup, proceed without waiting unless the user asked to hold.
-
-Example of a bad suggestion that was applied: removing `style={{ display: 'none' }}` from React panels. The game's `switchTab()` requires it. Applying it broke the forum panel entirely.
 
 ---
 
