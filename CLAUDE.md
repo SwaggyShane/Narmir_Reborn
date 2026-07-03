@@ -48,7 +48,6 @@
 8. **Address Gemini review feedback** (Gemini only ever comments **one time**):
    - Make code fixes for valid feedback, commit, and push (updates the same PR).
    - Or reply on the PR with a clear explanation if you are refuting the feedback.
-   - Re-monitor after addressing.
 
 9. **Update TODO.md / ARCHIVAL.md**:
    - Move finished items to ARCHIVAL.md with a dated entry.
