@@ -29,23 +29,17 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 - ✅ `game/visibility-cells.js` (hex-cell/bit-index math), `game/visibility.js` (lazy home-hex init, row-locked read-modify-write via `db.withTransaction`)
 - ⚠️ Found and fixed (in this PR, not deferred): `db.withTransaction` required instead of the codebase's older manual `BEGIN`/`COMMIT` `db.run()` pattern, which does not reliably propagate transaction context (see "Known Technical Debt" below) — this PR's own code uses the correct helper throughout
 
-**Phase 3: Scout Loop + Server Gating** (blocked on cost formulas)
-- Implement `/scout-area` (frontier-only reveal, ranger/food costs, validation matrix)
+**Phase 3: Scout Loop + Server Gating** — ready to start (cost formulas locked 2026-07-03; see `FOG_OF_WAR_PLAN.md`)
+- Implement `/scout-area` (frontier-only reveal, ranger/food costs, validation matrix) using `game/scout-economy.js`'s formulas and `game/ranger-allocation.js`'s validation
 - Gate all kingdom/node/expedition endpoints by `seen_cells` (trade routes, diplomacy, /world-map, etc.)
-- Validate ranger/expedition allocation overlap
 - Auto-add kingdoms to `discovered_kingdoms` on first scout
+- Register `/scout-area` under the `turn` rate-limit category
 
-**Phase 4: Fog Rendering** (pending Phase 2)
+**Phase 4: Fog Rendering** (pending Phase 3)
 - SVG fog overlay in `WorldmapRenderer.jsx` (unseen/seen/current states, reduced-motion support)
 
 **Phase 5: Expansion Hooks** (deferred)
 - Special locations, map items, terrain-scoped discovery difficulty
-
-**Still open (Phase 3 blockers):**
-- Baseline visibility radius (hexes)
-- fog_of_war debuff radius
-- Scout cost formulas (ranger/food per hex, scaling, caps)
-- Expedition-as-reveal mechanics (one hex ahead, full route, current position only?)
 
 ---
 

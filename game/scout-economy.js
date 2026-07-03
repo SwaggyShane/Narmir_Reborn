@@ -1,50 +1,102 @@
 // game/scout-economy.js
-// Scouting and exploration economy balance tuning
-
-// TUNING NOTES:
-// These values are placeholders. Adjust after playtesting to achieve:
-// - ~500 turns for a casual player to explore entire map
-// - Fog feels strategic (reveals reward curiosity) not tedious (grindy)
-// - Ranger/food costs create meaningful trade-offs
-// - Spell debuff creates interesting combat risk/reward
+// Scouting and exploration economy — formulas locked 2026-07-03, values are
+// a starting point to be tuned via playtesting (target: ~500 turns for a
+// casual player to fully explore the map, see FOG_OF_WAR_PLAN.md).
 
 const SCOUT_ECONOMY = {
-  // Vision baseline: how many hexes can a kingdom see without active scouting?
-  // LOCKED: Home hex only (strict fog everywhere else)
-  baselineVisibilityRadius: 0, // only the kingdom's own hex is visible; all else is fogged
+  // Vision baseline: home hex only, fog everywhere else. Locked.
+  baselineVisibilityRadius: 0,
 
-  // Spell debuff: fog_of_war spell reduces visibility to this many hexes
-  // Creates a combat decision: "Do I blind them for 3 turns?"
-  debuffRadius: 0, // (0 = total blind; TBD)
+  // fog_of_war spell (enemy-cast debuff, game/config.js): reduces current
+  // visibility to this radius for its 3-turn duration. No tick — the
+  // debuff doesn't decay/reapply itself; it must be recast to reapply
+  // once it expires. Locked: total blind.
+  debuffRadius: 0,
 
-  // Exploration costs per hex scouted
-  // Rangers are the scout unit; food is consumed per action
-  rangerCostPerHex: 10, // (TBD: how many rangers per hex?)
-  foodCostPerHex: 50, // (TBD: food spent per hex)
+  // Hard cap on rangers a single scout action can use, regardless of how
+  // many the kingdom actually has.
+  MAX_SCOUTING_RANGERS: 1000,
 
-  // Scaling: how does visibility radius grow with ranger count?
-  // Linear: 1 ranger = 1 hex, 10 rangers = 10 hexes
-  // Diminishing: curves off (more realistic, strategic cap)
-  // (TBD: select + tune the formula)
-  scalingCurve: 'linear', // Options: 'linear', 'diminishing', 'exponential'
-  scalingFactor: 1, // hex-units per ranger (for linear)
+  // Ranger level improves both scouting radius AND food cost efficiency:
+  // +5% effective power per level above 1 (level 20 rangers ≈ 1.95x a
+  // level-1 ranger's effective scouting power).
+  RANGER_LEVEL_BONUS_PER_LEVEL: 0.05,
 
-  // Expedition reveal mechanics: how does an active expedition reveal the map?
-  // 'ahead': reveals hexes in front of the army (pre-move scouting)
-  // 'route': reveals every hex along the path
-  // 'current': reveals current hex + immediate neighbors
-  // (TBD: choose based on desired exploration pacing)
-  expeditionRevealMode: 'ahead', // Options: 'ahead', 'route', 'current'
+  // Reveal radius = floor(sqrt(effective_power) / this). Divisor chosen so
+  // a full 1000-ranger scout action (level 1) reveals ~2 hexes, scaling up
+  // modestly with ranger level — tune this divisor first if exploration
+  // feels too fast/slow relative to the ~500-turn target.
+  REVEAL_RADIUS_DIVISOR: 12,
 
-  // Depth penalty: how much harder is it to scout far from home?
-  // (TBD: e.g., "costs scale by distance", "reveal radius shrinks with distance")
-  depthScaling: 'linear', // (TBD: 'linear', 'quadratic', 'none')
+  // Food cost per hex scouted, reduced by ranger level (floor applied so
+  // it never goes to zero).
+  BASE_FOOD_COST_PER_HEX: 50,
+  MIN_FOOD_COST_PER_HEX: 20,
 
-  // Node discovery: how many turns to send a scouted node's population?
-  // (TBD: distance * multiplier?)
-  nodeDeliveryTurnsPerHex: 1, // turns per hex distance
+  // Node delivery: turns = ceil(distance_hexes ^ this). >1 means turns per
+  // hex INCREASE with distance (locked decision) — a node twice as far
+  // costs more than twice the turns, not the same rate.
+  NODE_DELIVERY_EXPONENT: 1.2,
+
+  // Active expeditions reveal fog ahead of their movement (pre-move
+  // scouting), not just their current tile or the full route retroactively.
+  // Locked.
+  expeditionRevealMode: 'ahead',
 };
+
+/**
+ * Effective power multiplier from ranger level (level 1 = 1.0x baseline).
+ */
+function levelMultiplier(rangerLevel) {
+  // Number(undefined) is NaN, but Number(NaN) || 1 is 1 — the || fallback
+  // catches NaN/0/undefined/null uniformly so a bad input can never
+  // propagate NaN into the formulas below and fail a downstream DB write
+  // (applyKingdomUpdates rejects NaN outright).
+  const level = Math.max(1, Math.floor(Number(rangerLevel) || 1));
+  return 1 + (level - 1) * SCOUT_ECONOMY.RANGER_LEVEL_BONUS_PER_LEVEL;
+}
+
+/**
+ * Effective scouting power for a given number of rangers sent (capped at
+ * MAX_SCOUTING_RANGERS) at a given level.
+ */
+function scoutEffectivePower(rangersSent, rangerLevel) {
+  const rangersUsed = Math.min(Math.max(0, Math.floor(Number(rangersSent) || 0)), SCOUT_ECONOMY.MAX_SCOUTING_RANGERS);
+  return rangersUsed * levelMultiplier(rangerLevel);
+}
+
+/**
+ * Reveal radius (in hexes) for a scout action with the given rangers/level.
+ */
+function scoutRevealRadius(rangersSent, rangerLevel) {
+  const power = scoutEffectivePower(rangersSent, rangerLevel);
+  return Math.floor(Math.sqrt(power) / SCOUT_ECONOMY.REVEAL_RADIUS_DIVISOR);
+}
+
+/**
+ * Food cost per hex scouted, discounted by ranger level, floored at
+ * MIN_FOOD_COST_PER_HEX.
+ */
+function scoutFoodCostPerHex(rangerLevel) {
+  const cost = SCOUT_ECONOMY.BASE_FOOD_COST_PER_HEX / levelMultiplier(rangerLevel);
+  return Math.max(SCOUT_ECONOMY.MIN_FOOD_COST_PER_HEX, Math.floor(cost));
+}
+
+/**
+ * Turns required to deliver population to a resource node at the given
+ * hex-unit distance. Turns-per-hex increases with distance (not a flat
+ * per-hex rate) — a node twice as far costs more than double the turns.
+ */
+function nodeDeliveryTurns(distanceHexes) {
+  const distance = Math.max(0, Number(distanceHexes) || 0);
+  return Math.ceil(Math.pow(distance, SCOUT_ECONOMY.NODE_DELIVERY_EXPONENT));
+}
 
 module.exports = {
   SCOUT_ECONOMY,
+  levelMultiplier,
+  scoutEffectivePower,
+  scoutRevealRadius,
+  scoutFoodCostPerHex,
+  nodeDeliveryTurns,
 };

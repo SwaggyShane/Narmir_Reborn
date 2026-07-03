@@ -169,20 +169,22 @@ Every open question here was carried unaddressed through Revisions 1–4; Revisi
 
 ---
 
-## Still Open — Phase 3 Blockers (Estimate After Phase 1 & 2)
+## Phase 3 Blockers — RESOLVED 2026-07-03
 
-Before Phase 3 (Scout Loop) can be estimated or started, these need concrete numbers:
+All previously-open scout-economy numbers are now locked. Implemented in `game/scout-economy.js` and `game/ranger-allocation.js`, tested in `test/scout-economy.test.js`. Values are a playtesting starting point, not final — tune via the constants in `game/scout-economy.js`, not by changing the formula shapes below without discussion.
 
-1. **Baseline current visibility radius** — How many hexes around a kingdom is visible by default? (e.g., 2 hexes, 3 hexes?)
-2. **fog_of_war debuff radius** — How much does the enemy spell reduce it? (e.g., "reduces to 0 hexes" = total blind, or "reduces by 1 hex"?)
+1. **Baseline current visibility radius** — 0 (home hex only, already locked in Phase 1/2).
+2. **fog_of_war debuff radius** — 0 (total blind for the spell's 3-turn duration, no tick — must be recast to reapply once it expires).
 3. **Scout cost formulas:**
-   - Ranger cost per hex revealed
-   - Food cost per hex revealed
-   - Reveal radius scaling with ranger count (e.g., "1 ranger = 1 hex, 2 rangers = 2 hexes, capped at 4")
-   - Turn cost (if any, separate from ranger/food)
-4. **Expedition-as-reveal mechanics** — Active expeditions remove fog as they cross; do they reveal one hex ahead, along the entire route, or only where they currently are? (Affects how "fog-breaking" feels in gameplay.)
+   - Ranger cost: `min(rangers_sent, 1000)` (hard cap) × a level multiplier (`1 + (level-1) × 0.05`) → "effective power"
+   - Reveal radius: `floor(sqrt(effective_power) / 12)` hexes of bonus splash around the targeted frontier hex (the targeted hex itself is always revealed regardless — radius 0 just means no bonus spread, not "nothing happens")
+   - Food cost per hex: `50 / level_multiplier`, floored at 20 (higher-level rangers scout more cheaply)
+   - No separate turn cost beyond the existing `turn` rate-limit category `/scout-area` will register under
+4. **Expedition-as-reveal mechanics** — `'ahead'`: expeditions reveal fog in front of their movement (pre-move scouting), not the full route retroactively or just their current tile.
+5. **Ranger/expedition allocation** — player-assigned (matches the existing engineer-allocation pattern: `validateRangerAllocation({ scouting, expeditions }, totalRangers)` in `game/ranger-allocation.js`), not an automatic priority system.
+6. **Node delivery turns** (bonus, was also a Phase 1 TBD) — `ceil(distance_hexes ^ 1.2)`: turns-per-hex *increases* with distance, not flat — a node 4x farther costs more than 4x the turns.
 
-These are balance decisions, not architectural — Phase 1 & 2 can run in parallel with design iteration on these numbers. Once locked, Phase 3 estimation becomes straightforward.
+Phase 3 (Scout Loop + Server Gating) is now unblocked and ready to estimate/start.
 
 ---
 
