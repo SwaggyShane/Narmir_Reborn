@@ -51,6 +51,8 @@
 
 - **Fog of War Phase 3: Full Endpoints Gating (diplomacy/etc.)** (PR #771): Gated `/alliance-rankings` (and related) so only visible kingdoms (via seen_cells) contribute to totals. Addressed Gemini performance review by caching coords with `rankingsCache` in follow-up. CI green. Full Claude.md compliance followed.
 
+- **Fog of War Phase 4: Fog Rendering start** (PR #772): Exposed visibility bitmaps (seen/current as strings) in /world-map response for client fog overlay. Added SVG fog layer in WorldmapRenderer (unseen obscured, seen dimmed, current visible). Fixed leak in fallback path per Gemini (filter expeditions by seenCells). Gemini addressed once. CI green. Full workflow followed.
+
 - **Fog of War Phase 2: Visibility Persistence** (PR #760, squash-merged as `1727e39f`):
   Kingdom-scoped visibility storage — `seen_cells` authoritative, `current_cells`
   derived, BigInt hex-cell bitmaps serialized as decimal strings in a new
