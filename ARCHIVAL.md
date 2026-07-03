@@ -49,6 +49,8 @@
 
 - **Fog of War Phase 3: Validation Matrix Tests** (PR #770): Added comprehensive validation matrix tests in `test/scout-economy.test.js` covering valid frontier reveal, non-frontier rejection, already-seen hex (zero cost), ranger-pool contention with active expeditions, and per-turn budget cap (per FOG_OF_WAR_PLAN.md). Extracted `isFrontier()` helper to production code in `game/hex-utils.js` (so tests validate real code, not duplication). Gemini review (inline logic, false-green tests, redundancy) addressed in follow-up commit before merge. CI green.
 
+- **Fog of War Phase 3: Full Endpoints Gating (diplomacy/etc.)** (PR #771): Gated `/alliance-rankings` (and related) so only visible kingdoms (via seen_cells) contribute to totals. Addressed Gemini performance review by caching coords with `rankingsCache` in follow-up. CI green. Full Claude.md compliance followed.
+
 - **Fog of War Phase 2: Visibility Persistence** (PR #760, squash-merged as `1727e39f`):
   Kingdom-scoped visibility storage — `seen_cells` authoritative, `current_cells`
   derived, BigInt hex-cell bitmaps serialized as decimal strings in a new
