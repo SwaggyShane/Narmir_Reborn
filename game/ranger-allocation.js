@@ -19,9 +19,25 @@
  * @returns {object} - { valid: boolean, reason: string }
  */
 function validateRangerAllocation(assignments, totalRangers) {
-  const { scouting = 0, expeditions = 0 } = assignments;
-  const total = scouting + expeditions;
+  if (!assignments || typeof assignments !== 'object') {
+    return { valid: false, reason: 'Assignments must be a valid object' };
+  }
 
+  const scouting = assignments.scouting ?? 0;
+  const expeditions = assignments.expeditions ?? 0;
+
+  // Reject non-integers (including NaN) up front, not just negatives — a
+  // negative value here would otherwise let a negative `scouting` cancel
+  // out a legitimate `expeditions` total, passing the total<=totalRangers
+  // check below while still allocating more rangers than actually exist.
+  if (!Number.isInteger(scouting) || !Number.isInteger(expeditions)) {
+    return { valid: false, reason: 'Ranger assignments must be integers' };
+  }
+  if (scouting < 0 || expeditions < 0) {
+    return { valid: false, reason: 'Ranger assignments cannot be negative' };
+  }
+
+  const total = scouting + expeditions;
   if (total > totalRangers) {
     return {
       valid: false,

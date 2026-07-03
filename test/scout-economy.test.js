@@ -68,4 +68,19 @@ const emptyAlloc = validateRangerAllocation({}, 1000);
 assert.strictEqual(emptyAlloc.valid, true, 'an empty allocation (0 rangers assigned anywhere) is trivially valid');
 console.log('validateRangerAllocation: accepts within-budget allocations, rejects over-budget ones, handles empty input');
 
+// --- Defensive programming: negative/NaN/malformed inputs must never
+// silently corrupt data or bypass validation ---
+assert.strictEqual(levelMultiplier(NaN), 1, 'NaN level clamps to level 1 baseline, does not propagate NaN');
+assert.strictEqual(scoutEffectivePower(NaN, 1), 0, 'NaN rangers sent yields 0 power, not NaN');
+assert.strictEqual(nodeDeliveryTurns(NaN), 0, 'NaN distance costs 0 turns, not NaN');
+
+// The exploit this guards against: a negative `scouting` cancels out a
+// legitimate `expeditions` total, which would otherwise pass the naive
+// total<=totalRangers check while still allocating more rangers than exist.
+const negativeExploit = validateRangerAllocation({ scouting: -1000, expeditions: 1000 }, 1000);
+assert.strictEqual(negativeExploit.valid, false, 'a negative scouting value must not be able to cancel out expeditions and bypass the total check');
+assert.strictEqual(validateRangerAllocation(null, 1000).valid, false, 'null allocation is rejected, not a thrown TypeError');
+assert.strictEqual(validateRangerAllocation({ scouting: 1.5 }, 1000).valid, false, 'a non-integer allocation is rejected');
+console.log('defensive programming: negative-value exploit, NaN propagation, and malformed input are all rejected');
+
 console.log('scout-economy checks passed');

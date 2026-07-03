@@ -48,7 +48,11 @@ const SCOUT_ECONOMY = {
  * Effective power multiplier from ranger level (level 1 = 1.0x baseline).
  */
 function levelMultiplier(rangerLevel) {
-  const level = Math.max(1, rangerLevel);
+  // Number(undefined) is NaN, but Number(NaN) || 1 is 1 — the || fallback
+  // catches NaN/0/undefined/null uniformly so a bad input can never
+  // propagate NaN into the formulas below and fail a downstream DB write
+  // (applyKingdomUpdates rejects NaN outright).
+  const level = Math.max(1, Math.floor(Number(rangerLevel) || 1));
   return 1 + (level - 1) * SCOUT_ECONOMY.RANGER_LEVEL_BONUS_PER_LEVEL;
 }
 
@@ -57,7 +61,7 @@ function levelMultiplier(rangerLevel) {
  * MAX_SCOUTING_RANGERS) at a given level.
  */
 function scoutEffectivePower(rangersSent, rangerLevel) {
-  const rangersUsed = Math.min(Math.max(0, rangersSent), SCOUT_ECONOMY.MAX_SCOUTING_RANGERS);
+  const rangersUsed = Math.min(Math.max(0, Math.floor(Number(rangersSent) || 0)), SCOUT_ECONOMY.MAX_SCOUTING_RANGERS);
   return rangersUsed * levelMultiplier(rangerLevel);
 }
 
@@ -84,7 +88,8 @@ function scoutFoodCostPerHex(rangerLevel) {
  * per-hex rate) — a node twice as far costs more than double the turns.
  */
 function nodeDeliveryTurns(distanceHexes) {
-  return Math.ceil(Math.pow(Math.max(0, distanceHexes), SCOUT_ECONOMY.NODE_DELIVERY_EXPONENT));
+  const distance = Math.max(0, Number(distanceHexes) || 0);
+  return Math.ceil(Math.pow(distance, SCOUT_ECONOMY.NODE_DELIVERY_EXPONENT));
 }
 
 module.exports = {
