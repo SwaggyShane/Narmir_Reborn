@@ -38,6 +38,13 @@
   - Gemini review comments (wrap in `db.withTransaction` for atomicity; safe wrappers for bitmap ops to avoid throws on bad coords) fixed in follow-up commit `0c7382c3` (included in merge).
   - Full Claude.md compliance for slice: feature branch, pre-push confirmations + open PR check, lint+smoke+sanity before commits, push to existing PR.
 
+- **Fog of War Phase 3 continuation: trade route gating, expedition ahead reveal, world-map expeditions filter** (PR #764, merged `7e93941d` 2026-07-03): 
+  - Gated `/trade-routes/list` and `/trade-routes/establish` to only visible (seen hex) partners/targets.
+  - Added ahead reveal for the target node hex on expedition launch, and in `processResourceExpeditionsDb` when outbound status changes.
+  - Filtered expeditions in `/world-map` to only those with seen node hex.
+  - Addressed Gemini review (missing `race` in queries, try-catch for visibility update) in follow-up commit `3cb86e91` (included in merge).
+  - Full Claude.md compliance: feature branch, pre-push checks (branch/commits/PR), lint+smoke+sanity before commits, push to existing PR, addressed review with commit + comment.
+
 - **Fog of War Phase 2: Visibility Persistence** (PR #760, squash-merged as `1727e39f`):
   Kingdom-scoped visibility storage — `seen_cells` authoritative, `current_cells`
   derived, BigInt hex-cell bitmaps serialized as decimal strings in a new
