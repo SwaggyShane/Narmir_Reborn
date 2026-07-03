@@ -91,9 +91,14 @@ function pixelToHex(x, y) {
     rz = -rx - ry;
   }
 
-  // 4. rounded cube -> odd-r offset (col, row), matching hexCenter's layout
-  const row = rz;
-  const col = rx + (rz - (rz & 1)) / 2;
+  // 4. rounded cube -> odd-r offset (col, row), matching hexCenter's layout.
+  // `+ 0` normalizes any -0 that integer arithmetic on rz/rx can produce
+  // (Math.round of a small negative fraction, or -0 - 0 in the correction
+  // step above) — -0 === 0 is true but Object.is(-0, 0) is false, and
+  // assert.strictEqual uses Object.is, so an un-normalized -0 here would
+  // silently fail round-trip equality checks for specific grid cells.
+  const row = rz + 0;
+  const col = rx + (rz - (rz & 1)) / 2 + 0;
   return { col, row };
 }
 

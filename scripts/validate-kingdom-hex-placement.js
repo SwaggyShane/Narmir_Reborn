@@ -49,11 +49,17 @@ function oceanBandForColumn(col) {
   return { start, end: start + OCEAN_THICKNESS };
 }
 
-// Mirrors WorldmapRenderer.jsx nearestRaceHome exactly.
+// Mirrors WorldmapRenderer.jsx nearestRaceHome exactly (logic-wise). Entries
+// precomputed once and iterated with a plain loop, not Object.entries().forEach,
+// since this runs once per kingdom (5,000+ in the local DB) and the array/
+// closure allocation on every call was a measurable, easy-to-avoid cost.
+const RACE_HOMES_ENTRIES = Object.entries(RACE_HOMES);
+
 function nearestRaceHome(x, y) {
   let best = null;
   let bestDist = Infinity;
-  Object.entries(RACE_HOMES).forEach(([race, home]) => {
+  for (let i = 0; i < RACE_HOMES_ENTRIES.length; i++) {
+    const [race, home] = RACE_HOMES_ENTRIES[i];
     const dx = x - home.x;
     const dy = y - home.y;
     const dist = dx * dx + dy * dy;
@@ -61,7 +67,7 @@ function nearestRaceHome(x, y) {
       bestDist = dist;
       best = race;
     }
-  });
+  }
   return best || 'human';
 }
 
