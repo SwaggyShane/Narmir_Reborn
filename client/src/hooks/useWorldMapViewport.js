@@ -144,7 +144,15 @@ export function useWorldMapViewport({ resetKey = '', enabled = true } = {}) {
         originY: stateRef.current.y,
         pointerId: event.pointerId,
       };
-      viewportEl.setPointerCapture(event.pointerId);
+      // Do NOT capture the pointer here. setPointerCapture on every mousedown
+      // (even a plain click with zero movement) makes the browser retarget the
+      // resulting pointerup/click to the capturing element (this viewport div)
+      // instead of whatever's actually under the cursor - confirmed by a live
+      // event-target dump: pointerdown hit the marker circle, pointerup/click
+      // both retargeted to the div at the exact same coordinates, no movement
+      // at all. That silently broke every click on a marker, independent of
+      // the drag-vs-click distance threshold. Capture is deferred to
+      // onPointerMove, once we've actually confirmed this is a drag.
       viewportEl.style.cursor = 'grabbing';
     };
 
@@ -160,6 +168,11 @@ export function useWorldMapViewport({ resetKey = '', enabled = true } = {}) {
       // intentional drag moves far more than this within the first few pixels,
       // so widening the threshold doesn't hurt drag detection.
       if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+        if (!dragRef.current.moved) {
+          // Only now, on confirmed drag intent, capture the pointer so drag
+          // tracking survives the cursor leaving the viewport mid-drag.
+          viewportEl.setPointerCapture(event.pointerId);
+        }
         dragRef.current.moved = true;
       }
       setViewport({
@@ -172,7 +185,11 @@ export function useWorldMapViewport({ resetKey = '', enabled = true } = {}) {
     const endDrag = (event) => {
       if (!dragRef.current.active || dragRef.current.pointerId !== event.pointerId) return;
       dragRef.current.active = false;
-      viewportEl.releasePointerCapture(event.pointerId);
+      // Only release if we actually captured (i.e. this ended up being a real
+      // drag) - releasing a pointer that was never captured throws.
+      if (viewportEl.hasPointerCapture(event.pointerId)) {
+        viewportEl.releasePointerCapture(event.pointerId);
+      }
       viewportEl.style.cursor = 'grab';
     };
 

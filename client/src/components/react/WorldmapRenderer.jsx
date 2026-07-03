@@ -1099,6 +1099,21 @@ export function renderWorldMap(
 
 
 
+          // Invisible larger hit area — the visible dot is as small as 4.5 SVG
+          // units (roughly 10px on screen), too small to reliably click with a
+          // real mouse. Same technique already used for resource node markers:
+          // a transparent circle with pointer-events:visiblePainted, sized well
+          // past the visible dot, carrying the same data-kingdom-id so
+          // handleMapClick's DOM walk-up still resolves it correctly.
+
+          svg +=
+
+            '<circle cx="' + jx + '" cy="' + jy + '" r="' + (r + 8) +
+
+            '" fill="transparent" style="pointer-events:visiblePainted;cursor:pointer" data-kingdom-id="' + escapeHtml(String(k.id)) + '"/>';
+
+
+
           svg +=
 
             '<circle cx="' +
