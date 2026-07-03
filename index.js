@@ -643,7 +643,11 @@ async function start() {
     let db = null;
     try {
       db = await initDb();
-      
+      // Note: the Fog of War world-generation seed (game/world-seed.js) is
+      // already loaded by this point — initDb() itself loads it, since one
+      // of its own steps (backfillResourceNodeMapCoords) needs it before
+      // this function even returns.
+
       await refreshLore(db);
       console.log('[lore] Lore and Random events refreshed');
 

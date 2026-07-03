@@ -19,11 +19,18 @@ const { Pool } = require('pg');
 const { hexCenter, pixelToHex } = require('../game/hex-utils');
 const { getKingdomMapCoords } = require('../game/world-map-coords');
 const { nearestRaceHome, isWaterPoint } = require('../game/world-regions');
+const { setWorldSeedForTests } = require('../game/world-seed');
 
 async function main() {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   let kingdoms;
   try {
+    const seedRow = await pool.query('SELECT seed FROM world_state WHERE id = 1');
+    // Primes the same in-memory cache the live server loads at boot — this
+    // is a standalone script, not the running server, so it has to load the
+    // current world's seed itself before calling getKingdomMapCoords.
+    setWorldSeedForTests(seedRow.rows[0]?.seed ?? 1n);
+
     const result = await pool.query('SELECT id, name, race FROM kingdoms');
     kingdoms = result.rows;
   } finally {
@@ -39,8 +46,9 @@ async function main() {
   const inWater = [];
 
   for (const k of kingdoms) {
-    // Kingdom map position is not stored — it's derived deterministically
-    // from id+race, same as every other place in the app that renders it.
+    // Kingdom map position is not stored — it's derived from the current
+    // world's seed plus id+race, same as every other place in the app that
+    // renders it.
     const { map_x, map_y } = getKingdomMapCoords(k);
     const hex = pixelToHex(map_x, map_y);
     const cellCenter = hexCenter(hex.col, hex.row);

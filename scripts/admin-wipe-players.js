@@ -94,6 +94,23 @@ async function wipePlayerAccounts() {
     await client.query('COMMIT');
     console.log(`\n🎉 Successfully wiped all human player accounts (${totalDeleted} total records deleted)`);
 
+    // Fog of War Phase 1.5: regenerate the world seed so kingdom/resource-node
+    // placement (game/world-map-coords.js) produces a different layout after
+    // this reset. The running server process caches the seed in memory and
+    // only reloads it at boot (game/world-seed.js), so this alone has no
+    // effect until the server is restarted — expected for this alpha, which
+    // resets via wipe + restart together, not a live reload.
+    const newSeed = await client.query(`
+      UPDATE world_state SET seed = FLOOR(RANDOM() * 9007199254740991)::BIGINT, generated_at = FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER
+      WHERE id = 1
+      RETURNING seed
+    `);
+    if (newSeed.rows.length) {
+      console.log(`🌱 World seed regenerated: ${newSeed.rows[0].seed} (restart the server to apply)`);
+    } else {
+      console.warn('⚠️  world_state row missing — world seed was not regenerated. Restart will keep the previous layout.');
+    }
+
     // Show remaining accounts
     const remaining = await client.query(`
       SELECT username, is_admin FROM players ORDER BY username

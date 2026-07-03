@@ -2012,6 +2012,15 @@ async function initDb(options = {}) {
     ON CONFLICT (id) DO NOTHING
   `);
 
+  // Load it into the in-memory cache immediately, here inside initDb() —
+  // not later in index.js's boot sequence — because backfillResourceNodeMapCoords()
+  // below (and anything else initDb() itself invokes) needs it via
+  // game/world-map-coords.js, which reads the cache synchronously and
+  // throws if it hasn't been loaded yet. Deferring this to after initDb()
+  // returns would crash boot the first time a fresh DB actually has
+  // resource_nodes rows needing a coordinate backfill.
+  await require('../game/world-seed').loadWorldSeed(_db);
+
   await _db.run(`
     CREATE TABLE IF NOT EXISTS discord_link_tokens (
       id SERIAL PRIMARY KEY,
