@@ -2,7 +2,7 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-01
+**Last updated:** 2026-07-03
 
 ---
 
@@ -16,13 +16,9 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 
 ### Fog of War System (5 Phases)
 
-**Phase 1: Hex Foundation** (IN PROGRESS)
-- Extract `hexCenter`, `hexNeighborKeys`, direction tables from `WorldmapRenderer.jsx` into shared `game/hex-utils.js`
-- Implement missing `pixelToHex(x, y)` using fractional axial → cube rounding
-- Validate all kingdoms/nodes land in correct visual hex cells (alignment check vs. REGION_SEEDS/RACE_HOMES)
-- Unit tests: round-trip conversion, boundary cases, neighbor/distance math, frontier detection
+**Phase 1: Hex Foundation** — ✅ COMPLETE (PR #757, merged `c3c44ceb` 2026-07-03; see ARCHIVAL.md)
 
-**Phase 1.5: Randomize World Generation** (pending Phase 1)
+**Phase 1.5: Randomize World Generation** (IN PROGRESS — next up)
 - Remove deterministic REGION_SEEDS; randomize kingdom placement within their race's region (gated by nearest RACE_HOMES)
 - Randomize node placement (completely random, different per reset)
 - Randomize terrain biome distribution (prevent memorization across resets)

@@ -8,6 +8,34 @@
 
 ## Recent Chronology
 
+### 2026-07-03
+
+- **Fog of War Phase 1: Hex Foundation** (PR #757, squash-merged as `c3c44ceb`): Added
+  `game/hex-utils.js`, a shared hex-grid math module built from the Red Blob Games hex
+  guide (primary reference), matching the odd-r offset pointy-top tessellation already
+  rendered by `WorldmapRenderer.jsx` exactly — `hexCenter`, `hexCorners`,
+  `hexNeighborKeys`, plus the previously-missing reverse direction `pixelToHex`
+  (fractional axial → cube rounding), `isPixelInHex`, and `hexUnitDistance` (the
+  scouting/expedition balance metric — the game world itself stays continuous x,y;
+  hexes are visual/measurement overlay only). Full unit test coverage in
+  `test/hex-utils.test.js` (round-trip, boundary cases, neighbor symmetry, distance,
+  frontier detection).
+  - Added `scripts/validate-kingdom-hex-placement.js`, a read-only validation script
+    run against the local dev DB's 5,000 kingdoms. **Confirmed concrete findings**:
+    only 47% of kingdoms land in a hex region matching their own race (systemic
+    misalignment concentrated in `human` kingdoms, whose region seeds sit close
+    enough to `dire_wolf`'s `RACE_HOMES` point that the Voronoi assignment
+    misclassifies them — not a rare edge case), and 6/5,000 kingdoms (including
+    kingdom #1 "Stolice") spawn in ocean/tundra hexes. Both findings confirm
+    Phase 1.5 (randomize world generation, region-seed realignment, water-spawn
+    prohibition) is required work, documented in `FOG_OF_WAR_PLAN.md`.
+  - Two medium-priority findings from automated Gemini review applied before merge:
+    normalized a `-0` edge case in `pixelToHex`'s cube-rounding output (Node's
+    `assert.strictEqual` uses `Object.is`, which distinguishes `-0` from `0`), and
+    replaced a per-call `Object.entries().forEach()` allocation in the validation
+    script's `nearestRaceHome` with a precomputed array + plain loop (runs 5,000
+    times per validation pass).
+
 ### 2026-07-02
 
 - **World Map Terrain System, Phase 1 + 2** (PR #751, squash-merged as `79a5ae72`): Added
