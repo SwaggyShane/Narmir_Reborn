@@ -25,7 +25,7 @@
    # owner: swaggyshane, repo: narmir_reborn, head: <branch>, state: open
    ```
    - If an open PR exists: push to it, no new PR needed.
-   - If no open PR exists (previous one was merged or never created): open a new draft PR **immediately after the push**. Do not wait for the user to notice.
+   - If no open PR exists (previous one was merged or never created): open a new PR **immediately after the push**. Do not wait for the user to notice.
    - "I forgot to check" is not valid. Run this before every push. No exceptions.
 
 ### Workflow Steps
@@ -37,7 +37,8 @@
 
 6. **Create or update PR**:
    - If an open PR already exists for this branch: push to the existing PR (do not create a new one).
-   - If no open PR exists: create a **new draft PR immediately after the push**. Do not wait for the user to notice.
+   - If no open PR exists: create a new PR **immediately after the push**. Do not wait for the user to notice.
+     (Note: creating as a draft is optional; it was previously required when using Claude due to PR tooling issues.)
 
 7. **Actively monitor PR until Gemini comments**:
    - Refresh the PR page / checks regularly.
