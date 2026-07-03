@@ -59,6 +59,21 @@ function hexNeighborKeys(col, row) {
 }
 
 /**
+ * Check if a hex (col, row) is on the frontier: not yet seen, but adjacent to at least one seen hex.
+ * `hasSeen(col, row)` must be a function that returns true if the cell is in seenCells (uses safeBitmapHasCell in prod).
+ * This is extracted so the scout-area logic and its tests validate the same production code.
+ */
+function isFrontier(col, row, hasSeen) {
+  if (hasSeen(col, row)) return false;
+  const neigh = hexNeighborKeys(col, row);
+  for (const key of neigh) {
+    const [c, r] = key.split(',').map(Number);
+    if (hasSeen(c, r)) return true;
+  }
+  return false;
+}
+
+/**
  * Convert pixel coordinates to the odd-r offset hex cell containing them.
  * Naive rounding of offset coordinates fails near hex boundaries, so this
  * goes through fractional axial -> cube -> rounded cube -> offset, per the
@@ -163,4 +178,5 @@ module.exports = {
   isPixelInHex,
   hexUnitDistance,
   getHexesInRadius,
+  isFrontier,
 };

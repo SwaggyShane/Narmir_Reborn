@@ -23,7 +23,7 @@ const { getTerrainForRace, getTerrainModifiers } = require("../game/terrain");
 const { getWorldSeed } = require("../game/world-seed");
 const { getKingdomVisibility, updateKingdomVisibility } = require('../game/visibility');
 const { safeBitmapHasCell, safeBitmapAddCell, isValidCell } = require('../game/visibility-cells');
-const { pixelToHex, getHexesInRadius, hexNeighborKeys } = require('../game/hex-utils');
+const { pixelToHex, getHexesInRadius, isFrontier } = require('../game/hex-utils');
 const { scoutRevealRadius, scoutFoodCostPerHex } = require('../game/scout-economy');
 const { validateRangerAllocation } = require('../game/ranger-allocation');
 const { parseTroopLevel } = require('../game/lib/troops');
@@ -2455,17 +2455,9 @@ module.exports = function (db) {
         return res.status(400).json({ error: 'Already scouted', alreadySeen: true });
       }
 
-      // Frontier check: target must be adjacent to at least one currently seen hex
-      const neigh = hexNeighborKeys(targetCol, targetRow);
-      let isAdjacentToSeen = false;
-      for (const nk of neigh) {
-        const [nc, nr] = nk.split(',').map(Number);
-        if (safeBitmapHasCell(vis.seenCells, nc, nr)) {
-          isAdjacentToSeen = true;
-          break;
-        }
-      }
-      if (!isAdjacentToSeen) {
+      // Frontier check: target must be adjacent to at least one currently seen hex.
+      // Uses extracted production helper from game/hex-utils (so tests validate real code, not inline duplication).
+      if (!isFrontier(targetCol, targetRow, (c, r) => safeBitmapHasCell(vis.seenCells, c, r))) {
         return res.status(400).json({ error: 'Target hex is not on the frontier (must be adjacent to known territory)' });
       }
 

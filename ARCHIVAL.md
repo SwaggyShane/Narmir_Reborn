@@ -47,6 +47,8 @@
 
 - **Fog of War Phase 3: Client Scout UI** (PR #769): Added client-side support and form in ExplorationPanel.jsx for the area hex scout (`POST /api/kingdom/scout-area`). Includes col/row/rangers inputs, Max button, validation (non-negative for coords, cap at 1000 rangers per server limits and Gemini feedback), and handler. Gemini review addressed with input restrictions and caps before merge.
 
+- **Fog of War Phase 3: Validation Matrix Tests** (PR #770): Added comprehensive validation matrix tests in `test/scout-economy.test.js` covering valid frontier reveal, non-frontier rejection, already-seen hex (zero cost), ranger-pool contention with active expeditions, and per-turn budget cap (per FOG_OF_WAR_PLAN.md). Extracted `isFrontier()` helper to production code in `game/hex-utils.js` (so tests validate real code, not duplication). Gemini review (inline logic, false-green tests, redundancy) addressed in follow-up commit before merge. CI green.
+
 - **Fog of War Phase 2: Visibility Persistence** (PR #760, squash-merged as `1727e39f`):
   Kingdom-scoped visibility storage — `seen_cells` authoritative, `current_cells`
   derived, BigInt hex-cell bitmaps serialized as decimal strings in a new

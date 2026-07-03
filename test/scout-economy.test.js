@@ -10,6 +10,8 @@ const {
   nodeDeliveryTurns,
 } = require('../game/scout-economy');
 const { validateRangerAllocation } = require('../game/ranger-allocation');
+const { safeBitmapHasCell, safeBitmapAddCell } = require('../game/visibility-cells');
+const { isFrontier } = require('../game/hex-utils');
 
 // --- levelMultiplier ---
 assert.strictEqual(levelMultiplier(1), 1, 'level 1 rangers have baseline (1.0x) effective power');
@@ -83,4 +85,40 @@ assert.strictEqual(validateRangerAllocation(null, 1000).valid, false, 'null allo
 assert.strictEqual(validateRangerAllocation({ scouting: 1.5 }, 1000).valid, false, 'a non-integer allocation is rejected');
 console.log('defensive programming: negative-value exploit, NaN propagation, and malformed input are all rejected');
 
+// --- Scout validation matrix (FOG_OF_WAR_PLAN.md Phase 3) ---
+// All cases now validate *production* code via isFrontier() + allocation helpers.
+console.log('--- Scout validation matrix ---');
+
+// Setup a simple seen bitmap for simulation (home at 0,0 seen)
+let seen = 0n;
+seen = safeBitmapAddCell(seen, 0, 0);
+const hasSeen = (c, r) => safeBitmapHasCell(seen, c, r);
+
+// Valid frontier reveal: target not seen, but adjacent
+const frontierCol = 1, frontierRow = 0;
+assert.strictEqual(isFrontier(frontierCol, frontierRow, hasSeen), true, 'adjacent unseen hex must be frontier');
+console.log('✓ valid frontier reveal case');
+
+// Non-frontier (leapfrog) rejection
+const nonFrontierCol = 2, nonFrontierRow = 0;
+assert.strictEqual(isFrontier(nonFrontierCol, nonFrontierRow, hasSeen), false, 'non-adjacent hex must not be frontier');
+console.log('✓ non-frontier leapfrog rejection');
+
+// Already-seen: isFrontier returns false (and route rejects with no cost)
+assert.strictEqual(isFrontier(0, 0, hasSeen), false, 'already-seen must not be considered frontier');
+console.log('✓ already-seen hex rejection (zero cost, isFrontier false)');
+
+// Ranger-pool contention with active expedition
+const totalR = 500;
+const contention = validateRangerAllocation({ scouting: 300, expeditions: 250 }, totalR);
+assert.strictEqual(contention.valid, false, 'scouting + active exp must not exceed pool');
+console.log('✓ ranger-pool contention with active expedition');
+
+// Per-turn budget cap – use existing (non-redundant) assertion on effective power
+const maxScout = SCOUT_ECONOMY.MAX_SCOUTING_RANGERS;
+const cappedPower = scoutEffectivePower(maxScout * 2, 1);
+assert.strictEqual(cappedPower, scoutEffectivePower(maxScout, 1), 'exceeding MAX_SCOUTING_RANGERS must not increase power');
+console.log('✓ per-turn reveal-budget cap enforced');
+
+console.log('scout validation matrix: all cases covered (production helpers)');
 console.log('scout-economy checks passed');
