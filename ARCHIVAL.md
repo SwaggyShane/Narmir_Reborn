@@ -10,6 +10,44 @@
 
 ### 2026-07-03
 
+- **Fog of War Phase 2: Visibility Persistence** (PR #760, squash-merged as `1727e39f`):
+  Kingdom-scoped visibility storage — `seen_cells` authoritative, `current_cells`
+  derived, BigInt hex-cell bitmaps serialized as decimal strings in a new
+  `kingdoms.visibility` TEXT column (registered in `JSON_REPAIR_SPECS` like every other
+  kingdom JSON column). `game/visibility-cells.js` (new): hex-cell ↔ bit-index mapping
+  + bitmap encode/decode, unit-tested independent of the DB. `game/visibility.js`
+  (new): `getInitialVisibility` (home hex only, the locked initial-visibility
+  decision), `getKingdomVisibility` (lazily seeds + persists home-hex visibility on
+  first read rather than touching the 3 kingdom-creation call sites in `routes/auth.js`
+  and `routes/admin.js` — also uniformly backfilled the ~5,000 pre-Phase-2 kingdoms in
+  the local dev DB with no separate migration script), `updateKingdomVisibility`
+  (row-locked read-modify-write).
+  - **Major finding, fixed within this PR, not deferred:** while verifying
+    `updateKingdomVisibility`'s row locking, direct tracing
+    (`transactionStorage.getStore()` logged at each step) showed the codebase's manual
+    `BEGIN TRANSACTION`/`db.run('COMMIT')` pattern does not reliably propagate
+    transaction context — confirmed the store is already `null` by the statement right
+    after `BEGIN`, in a single continuous function, no concurrency required. This means
+    `FOR UPDATE` row locking provides no actual mutual exclusion anywhere that manual
+    pattern is used (`routes/hero.js`, `kingdom-build.js`, `kingdom-economy.js` — all
+    pre-existing, untouched by this PR), and every such transaction leaks its
+    connection for ~40-50s until the stale-transaction reaper reclaims it.
+    `game/visibility.js`'s own `updateKingdomVisibility` was switched to the existing
+    (and already correct) `db.withTransaction()` helper instead — verified directly:
+    `RUN_DB_PERSISTENCE=1` dropped from ~50s per run to under 1s with zero leaked
+    connections, and a genuine concurrent `Promise.all` repro correctly serialized
+    with no lost writes. The pre-existing bug in the other 3 route files is
+    **not fixed** (out of scope for this PR, different call sites/blast radius) — see
+    `TODO.md`'s Known Technical Debt section.
+  - Gemini review (high + medium priority, both applied): use `db.withTransaction`
+    instead of manual BEGIN/COMMIT (see above); add bounds validation to `cellIndex`
+    to fail loudly instead of silently colliding bitmap bits on an out-of-range
+    coordinate — caught by this: my own test was using an out-of-range placeholder
+    (99, 99), fixed to a valid value.
+  - First two PRs (#759, #760) self-merged under the newly-updated `CLAUDE.md` rule
+    (self-merge authorized once Gemini review is addressed/refuted and the PR is
+    green).
+
 - **Fog of War Phase 1.5: Terrain Biome Randomization (final piece)** (PR #759,
   squash-merged as `049a3c52`): Completed Phase 1.5 by threading the world seed into
   client-side terrain generation. `GET /world-map` (`routes/kingdom-gameplay.js`) now
