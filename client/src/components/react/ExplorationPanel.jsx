@@ -294,15 +294,16 @@ const ExplorationPanel = () => {
   const handleScoutArea = useCallback(async () => {
     const col = parseInt(areaCol, 10);
     const row = parseInt(areaRow, 10);
-    const rangersSent = Number(areaRangers) || 0;
-    if (!Number.isFinite(col) || !Number.isFinite(row)) {
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Enter valid col and row for the target hex', 'error');
+    let rangersSent = Number(areaRangers) || 0;
+    if (!Number.isFinite(col) || !Number.isFinite(row) || col < 0 || row < 0) {
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Enter valid non-negative col and row for the target hex', 'error');
       return;
     }
     if (rangersSent < 1) {
       if (typeof window !== 'undefined' && typeof toast === 'function') toast('Send at least 1 ranger for area scout', 'error');
       return;
     }
+    if (rangersSent > 1000) rangersSent = 1000;
     if (rangersSent > availableRangers) {
       if (typeof window !== 'undefined' && typeof toast === 'function') toast('Not enough rangers', 'error');
       return;
@@ -730,11 +731,11 @@ const ExplorationPanel = () => {
                 <div className="mb-2 grid grid-cols-3 gap-2 text-[12px]">
                   <div>
                     <div className="name mb-0.5">Col</div>
-                    <input type="number" className="input w-full" value={areaCol} onChange={(e) => setAreaCol(e.target.value)} placeholder="e.g. 12" />
+                    <input type="number" className="input w-full" value={areaCol} onChange={(e) => setAreaCol(Math.max(0, parseInt(e.target.value, 10) || 0))} placeholder="e.g. 12" min="0" />
                   </div>
                   <div>
                     <div className="name mb-0.5">Row</div>
-                    <input type="number" className="input w-full" value={areaRow} onChange={(e) => setAreaRow(e.target.value)} placeholder="e.g. 7" />
+                    <input type="number" className="input w-full" value={areaRow} onChange={(e) => setAreaRow(Math.max(0, parseInt(e.target.value, 10) || 0))} placeholder="e.g. 7" min="0" />
                   </div>
                   <div>
                     <div className="name mb-0.5">Rangers</div>
@@ -743,11 +744,12 @@ const ExplorationPanel = () => {
                         type="number"
                         className="input w-full text-right"
                         value={areaRangers}
-                        onChange={(e) => setAreaRangers(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                        min="1"
+                        onChange={(e) => setAreaRangers(Math.max(0, Math.min(1000, parseInt(e.target.value, 10) || 0)))}
+                        min="0"
+                        max="1000"
                         placeholder="Qty"
                       />
-                      <button className="base-btn px-2 py-1 text-[10px]" onClick={() => setAreaRangers(availableRangers)}>Max</button>
+                      <button className="base-btn px-2 py-1 text-[10px]" onClick={() => setAreaRangers(Math.min(1000, availableRangers))}>Max</button>
                     </div>
                   </div>
                 </div>
