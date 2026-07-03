@@ -4,6 +4,9 @@ const { safeJsonParse } = require('../utils/helpers');
 const engine = require('../game/engine');
 const config = require('../game/config');
 const { rankingsCache } = require('../cache.js');
+const { getKingdomVisibility } = require('../game/visibility');
+const { safeBitmapHasCell } = require('../game/visibility-cells');
+const { getKingdomMapCoords, pixelToHex } = require('../game/world-map-coords');
 
 const JSON_FIELDS = {
   'research_allocation': {}, 'mage_tower_allocation': {}, 'shrine_allocation': {},
@@ -161,6 +164,11 @@ module.exports = function (db) {
 
   router.get('/alliance-rankings', requireAuth, async (req, res) => {
     try {
+      // Phase 3: load caller's visibility for gating (only visible kingdoms contribute to rankings)
+      const caller = await db.get("SELECT id, visibility, race FROM kingdoms WHERE player_id = $1", [req.player.playerId]);
+      if (!caller) return res.status(404).json({ error: "Kingdom not found" });
+      const vis = await getKingdomVisibility(db, caller);
+
       const allianceNames = await db.all(`SELECT id, name FROM alliances`);
       const memberRows = await db.all(`
         SELECT k.*, a.id as alliance_id
@@ -183,10 +191,16 @@ module.exports = function (db) {
 
       for (const k of memberRows) {
         if (allianceMap[k.alliance_id]) {
-          allianceMap[k.alliance_id].member_count++;
-          allianceMap[k.alliance_id].total_land += k.land || 0;
-          allianceMap[k.alliance_id].total_pop += k.population || 0;
-          allianceMap[k.alliance_id].total_score += engine.calculateScore(k);
+          // Gate: only include if self or visible via seen_cells
+          const coords = getKingdomMapCoords({ id: k.id, race: k.race });
+          const hex = pixelToHex(coords.map_x, coords.map_y);
+          const visible = (k.id === caller.id) || safeBitmapHasCell(vis.seenCells, hex.col, hex.row);
+          if (visible) {
+            allianceMap[k.alliance_id].member_count++;
+            allianceMap[k.alliance_id].total_land += k.land || 0;
+            allianceMap[k.alliance_id].total_pop += k.population || 0;
+            allianceMap[k.alliance_id].total_score += engine.calculateScore(k);
+          }
         }
       }
 
