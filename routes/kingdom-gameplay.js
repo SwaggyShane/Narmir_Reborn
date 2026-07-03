@@ -2107,6 +2107,12 @@ module.exports = function (db) {
             )
           : [];
 
+        // Phase 3 gating for fallback: filter expeditions by seen hex too.
+        const visibleExpeditions = expeditions.filter((e) => {
+          const h = pixelToHex(e.map_x, e.map_y);
+          return safeBitmapHasCell(seenCells, h.col, h.row);
+        });
+
         // Fog of War Phase 1.5: BigInt can't be JSON-serialized directly, so
       // the seed goes over the wire as a string; the client parses it back
       // to BigInt before feeding it into the same seeded-random mixing the
@@ -2115,7 +2121,7 @@ module.exports = function (db) {
         kingdoms: kingdomsWithCoords,
         tradeRoutes,
         nodes: visibleNodes,
-        expeditions,
+        expeditions: visibleExpeditions,
         worldSeed: getWorldSeed().toString(),
         visibility: {
           seenCells: seenCells.toString(),
