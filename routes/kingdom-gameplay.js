@@ -1912,6 +1912,17 @@ module.exports = function (db) {
         [req.params.name],
       );
       if (!k) return res.status(404).json({ error: "Kingdom not found" });
+
+      // Phase 3: gate profile to visible or self (only if authenticated)
+      if (req.player) {
+        const caller = await db.get("SELECT id, visibility, race FROM kingdoms WHERE player_id = $1", [req.player.playerId]);
+        const vis = await getKingdomVisibility(db, caller);
+        const targetCoords = getKingdomMapCoords({ id: k.id, race: k.race });
+        const targetHex = pixelToHex(targetCoords.map_x, targetCoords.map_y);
+        if (k.id !== caller.id && !safeBitmapHasCell(vis.seenCells, targetHex.col, targetHex.row)) {
+          return res.status(404).json({ error: "Kingdom not visible" });
+        }
+      }
       const alliance = await db.get(
         `
         SELECT a.name FROM alliances a JOIN alliance_members am ON a.id = am.alliance_id
