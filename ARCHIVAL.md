@@ -2,13 +2,47 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-02
+**Last updated:** 2026-07-03
 
 ---
 
 ## Recent Chronology
 
 ### 2026-07-03
+
+- **Fog of War Phase 1.5: Seeded World Randomization (partial)** (PR #758, squash-merged
+  as `c6c23c88`): Replaced the fully-deterministic `REGION_SEEDS` kingdom/node placement
+  (confirmed by Phase 1's validation to misalign 53% of kingdoms and spawn 6/5,000 in
+  water) with rejection-sampling placement seeded by a new per-world `world_state.seed`
+  (`db/schema.js`) — stable within a world, different across resets. Extracted
+  `RACE_HOMES`/`nearestRaceHome`/water-band logic into `game/world-regions.js` (was
+  duplicated between the renderer and the Phase 1 validation script). Added
+  `game/world-seed.js`, an in-memory seed cache loaded once at boot (kept
+  `getKingdomMapCoords`/`placeResourceNodeCoords` synchronous — no `.map()` →
+  `Promise.all()` rewrite needed on the `/world-map` hot path). `scripts/admin-wipe-
+  players.js` regenerates the seed on wipe (picked up on the next restart, matching how
+  this alpha resets).
+  - **Result on the local dev DB's 5,000 kingdoms: 100% region-aligned, 0% water spawns**
+    (was 47%/99.88%).
+  - Two bugs found and fixed via direct verification, not assumption: (1) validating a
+    candidate point as a float then returning `Math.round()` of it could shift it across
+    a hex boundary by up to half a pixel, silently invalidating the just-passed check —
+    caught by comparing the validation script's hex-cell-based alignment check against
+    the placement function's own (initially raw-point-based) check and finding
+    disagreement for `human` kingdoms near the `dire_wolf`/`vampire` region boundary; (2)
+    `db/schema.js`'s `initDb()` already calls `backfillResourceNodeMapCoords()`
+    internally, which now needs the world seed — but that runs before `initDb()` returns
+    to `index.js`, where the seed load was originally planned, which would have crashed
+    boot the first time a fresh DB had a resource node needing backfill. Verified by
+    forcing the exact scenario (inserted a node with `NULL` coords, re-ran `initDb()`
+    standalone) before and after the fix.
+  - Gemini review (medium): `loadWorldSeed()` silently fell back to a fixed seed if the
+    `world_state` row was missing, with no way to notice; added a `console.warn()` on
+    that path, verified directly by mocking the missing-row case.
+  - **Remaining in Phase 1.5 (not this PR):** terrain biome randomization —
+    `WorldmapRenderer.jsx`'s `hexSeededRandom` is client-side with no world-seed
+    dependency yet, so biome mix patterns still repeat identically across resets. Needs
+    the world seed exposed to the client first.
 
 - **Fog of War Phase 1: Hex Foundation** (PR #757, squash-merged as `c3c44ceb`): Added
   `game/hex-utils.js`, a shared hex-grid math module built from the Red Blob Games hex
