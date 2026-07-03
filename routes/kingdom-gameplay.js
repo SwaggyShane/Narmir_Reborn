@@ -22,7 +22,7 @@ const { getKingdomMapCoords, placeResourceNodeCoords } = require("../game/world-
 const { getTerrainForRace, getTerrainModifiers } = require("../game/terrain");
 const { getWorldSeed } = require("../game/world-seed");
 const { getKingdomVisibility, updateKingdomVisibility } = require('../game/visibility');
-const { bitmapHasCell, bitmapAddCell } = require('../game/visibility-cells');
+const { safeBitmapHasCell, safeBitmapAddCell, isValidCell } = require('../game/visibility-cells');
 const { pixelToHex, getHexesInRadius, hexNeighborKeys } = require('../game/hex-utils');
 const { scoutRevealRadius, scoutFoodCostPerHex } = require('../game/scout-economy');
 const { validateRangerAllocation } = require('../game/ranger-allocation');
@@ -1969,7 +1969,7 @@ module.exports = function (db) {
         // Phase 3 gating: even discovered kingdoms only visible if their hex is seen
         const coords = getKingdomMapCoords(r);
         const h = pixelToHex(coords.map_x, coords.map_y);
-        return bitmapHasCell(seenCells, h.col, h.row);
+        return safeBitmapHasCell(seenCells, h.col, h.row);
       });
 
       const kingdomsWithCoords = filtered.map((row) => {
@@ -1992,7 +1992,7 @@ module.exports = function (db) {
       // Scouting an area hex now makes nodes located there visible.
       const visibleNodes = nodes.filter((n) => {
         const h = pixelToHex(n.map_x, n.map_y);
-        return bitmapHasCell(seenCells, h.col, h.row);
+        return safeBitmapHasCell(seenCells, h.col, h.row);
       });
 
       const expeditions = await db.all(
@@ -2037,7 +2037,7 @@ module.exports = function (db) {
           if (!(discovered[r.id] && discovered[r.id].found)) return false;
           const coords = getKingdomMapCoords(r);
           const h = pixelToHex(coords.map_x, coords.map_y);
-          return bitmapHasCell(seenCells, h.col, h.row);
+          return safeBitmapHasCell(seenCells, h.col, h.row);
         });
 
         const kingdomsWithCoords = filtered.map((row) => {
@@ -2062,7 +2062,7 @@ module.exports = function (db) {
 
         const visibleNodes = nodes.filter((n) => {
           const h = pixelToHex(n.map_x, n.map_y);
-          return bitmapHasCell(seenCells, h.col, h.row);
+          return safeBitmapHasCell(seenCells, h.col, h.row);
         });
 
         const expeditions = k
@@ -2420,11 +2420,15 @@ module.exports = function (db) {
       // Ranger level from troop data (for power + food discount)
       const rangerLevel = parseTroopLevel(k.troop_levels || {}, 'rangers') || 1;
 
+      if (!isValidCell(targetCol, targetRow)) {
+        return res.status(400).json({ error: 'Invalid hex coordinates' });
+      }
+
       // Current visibility (lazy seeds home hex)
       const vis = await getKingdomVisibility(db, k);
 
       // Reject re-scout (no cost charged)
-      if (bitmapHasCell(vis.seenCells, targetCol, targetRow)) {
+      if (safeBitmapHasCell(vis.seenCells, targetCol, targetRow)) {
         return res.status(400).json({ error: 'Already scouted', alreadySeen: true });
       }
 
@@ -2433,7 +2437,7 @@ module.exports = function (db) {
       let isAdjacentToSeen = false;
       for (const nk of neigh) {
         const [nc, nr] = nk.split(',').map(Number);
-        if (bitmapHasCell(vis.seenCells, nc, nr)) {
+        if (safeBitmapHasCell(vis.seenCells, nc, nr)) {
           isAdjacentToSeen = true;
           break;
         }
@@ -2454,8 +2458,8 @@ module.exports = function (db) {
       let newSeen = vis.seenCells;
       const newlyRevealed = [];
       for (const cell of cellsToConsider) {
-        if (!bitmapHasCell(newSeen, cell.col, cell.row)) {
-          newSeen = bitmapAddCell(newSeen, cell.col, cell.row);
+        if (!safeBitmapHasCell(newSeen, cell.col, cell.row)) {
+          newSeen = safeBitmapAddCell(newSeen, cell.col, cell.row);
           newlyRevealed.push(cell);
         }
       }
@@ -2471,48 +2475,57 @@ module.exports = function (db) {
         return res.status(400).json({ error: `Not enough food (need ${foodCost})` });
       }
 
-      // Persist visibility update (seen + current for v1)
-      await updateKingdomVisibility(db, k.id, (current) => ({
-        seenCells: newSeen,
-        currentCells: newSeen,
-        version: current.version || 1,
-      }));
+      // === Critical section under single transaction for atomicity (concurrency safety) ===
+      await db.withTransaction(async () => {
+        // Persist visibility update (seen + current for v1) — helper also uses withTransaction internally but we are already in one
+        await updateKingdomVisibility(db, k.id, (current) => ({
+          seenCells: newSeen,
+          currentCells: newSeen,
+          version: current.version || 1,
+        }));
 
-      // Spend food
-      if (foodCost > 0) {
-        await db.run('UPDATE kingdoms SET food = food - $1 WHERE id = $2', [foodCost, k.id]);
-      }
-
-      // Auto-add kingdoms located in newly revealed hexes to discovered_kingdoms (plan rule)
-      let disc = safeJsonParse(k.discovered_kingdoms, {});
-      if (Object.prototype.toString.call(disc) !== '[object Object]') disc = {};
-      let discUpdated = false;
-      const otherKingdoms = await db.all('SELECT id, race FROM kingdoms WHERE id != $1', [k.id]);
-      for (const ok of otherKingdoms) {
-        const coords = getKingdomMapCoords({ id: ok.id, race: ok.race });
-        const h = pixelToHex(coords.map_x, coords.map_y);
-        const matchesNew = newlyRevealed.some((c) => c.col === h.col && c.row === h.row);
-        if (matchesNew && !disc[ok.id]) {
-          disc[ok.id] = { found: true };
-          discUpdated = true;
-        }
-      }
-      if (discUpdated) {
-        await db.run('UPDATE kingdoms SET discovered_kingdoms = $1 WHERE id = $2', [JSON.stringify(disc), k.id]);
-      }
-
-      // Explicitly surface nodes in the newly revealed hexes (user requirement: "Area scouting also reveals nodes in that hex")
-      const newlyKeys = new Set(newlyRevealed.map((c) => `${c.col},${c.row}`));
-      const playerNodes = await db.all('SELECT id, map_x, map_y FROM resource_nodes WHERE kingdom_id = $1', [k.id]);
-      for (const nd of playerNodes) {
-        const h = pixelToHex(nd.map_x, nd.map_y);
-        if (newlyKeys.has(`${h.col},${h.row}`)) {
-          await db.run(
-            'UPDATE resource_nodes SET discovered_at = COALESCE(discovered_at, ?) WHERE id = ?',
-            [Math.floor(Date.now() / 1000), nd.id]
+        // Spend food atomically with check
+        if (foodCost > 0) {
+          const foodResult = await db.run(
+            'UPDATE kingdoms SET food = food - $1 WHERE id = $2 AND food >= $1',
+            [foodCost, k.id]
           );
+          if (foodResult.changes === 0) {
+            throw new Error('Insufficient food (concurrent change)');
+          }
         }
-      }
+
+        // Auto-add kingdoms located in newly revealed hexes to discovered_kingdoms (plan rule)
+        let disc = safeJsonParse(k.discovered_kingdoms, {});
+        if (Object.prototype.toString.call(disc) !== '[object Object]') disc = {};
+        let discUpdated = false;
+        const otherKingdoms = await db.all('SELECT id, race FROM kingdoms WHERE id != $1', [k.id]);
+        for (const ok of otherKingdoms) {
+          const coords = getKingdomMapCoords({ id: ok.id, race: ok.race });
+          const h = pixelToHex(coords.map_x, coords.map_y);
+          const matchesNew = newlyRevealed.some((c) => c.col === h.col && c.row === h.row);
+          if (matchesNew && !disc[ok.id]) {
+            disc[ok.id] = { found: true };
+            discUpdated = true;
+          }
+        }
+        if (discUpdated) {
+          await db.run('UPDATE kingdoms SET discovered_kingdoms = $1 WHERE id = $2', [JSON.stringify(disc), k.id]);
+        }
+
+        // Explicitly surface nodes in the newly revealed hexes (user requirement)
+        const newlyKeys = new Set(newlyRevealed.map((c) => `${c.col},${c.row}`));
+        const playerNodes = await db.all('SELECT id, map_x, map_y FROM resource_nodes WHERE kingdom_id = $1', [k.id]);
+        for (const nd of playerNodes) {
+          const h = pixelToHex(nd.map_x, nd.map_y);
+          if (newlyKeys.has(`${h.col},${h.row}`)) {
+            await db.run(
+              'UPDATE resource_nodes SET discovered_at = COALESCE(discovered_at, ?) WHERE id = ?',
+              [Math.floor(Date.now() / 1000), nd.id]
+            );
+          }
+        }
+      });
 
       res.json({
         ok: true,
@@ -2524,6 +2537,9 @@ module.exports = function (db) {
       });
     } catch (e) {
       console.error('[scout-area] POST:', e.message);
+      if (e.message && e.message.includes('Insufficient food')) {
+        return res.status(400).json({ error: 'Not enough food (concurrent change)' });
+      }
       res.status(500).json({ error: 'Failed to scout area' });
     }
   });
