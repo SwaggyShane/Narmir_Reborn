@@ -787,7 +787,7 @@ export function renderWorldMap(
 
         // Phase 4: Fog of War overlay (above terrain, below rivers/regions/labels).
         // Unseen: heavily obscured; seen: dimmed; current: fully visible (no overlay).
-        // Reduced motion respected by using simple opacity (no heavy animations).
+        // Reduced motion: static (no transitions/animations), as SVG is rendered statically via dangerouslySetInnerHTML (transitions would not trigger anyway).
         svg += '<g class="wm-layer wm-layer-fog" style="pointer-events:none">';
         hexGrid.cells.forEach(function (cell) {
           const col = cell.col, row = cell.row;
@@ -795,11 +795,13 @@ export function renderWorldMap(
           if (isHexCurrent(col, row, currentBig)) fog = 'current';
           else if (isHexSeen(col, row, seenBig)) fog = 'seen';
           if (fog === 'current') return; // no overlay
-          let fogFill = 'rgba(0,0,0,0.85)'; // unseen
-          let fogOpacity = '0.85';
-          if (fog === 'seen') {
-            fogFill = 'rgba(20,20,30,0.55)';
-            fogOpacity = '0.55';
+          let fogFill, fogOpacity;
+          if (fog === 'unseen') {
+            fogFill = 'rgb(0,0,0)';
+            fogOpacity = '0.92';
+          } else {
+            fogFill = 'rgb(15,20,35)';
+            fogOpacity = '0.65';
           }
           svg += '<path d="' + hexPath(cell.x, cell.y, HEX_SIZE + 0.8) + '" fill="' + fogFill + '" opacity="' + fogOpacity + '" />';
         });
