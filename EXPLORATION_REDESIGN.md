@@ -49,7 +49,7 @@
 
 ### Regional Dungeons/Mountains (Future)
 - Dungeons and Mountains should be **one per region** (not global arbitrary expeditions)
-- Deferred to Phase 2 of this redesign
+- Deferred to Phase 4 of this redesign
 
 ---
 
@@ -92,7 +92,7 @@ All turn-based actions scale rewards by terrain modifier:
 
 ## Notes
 
-- All turn-based actions use the same `POST /expedition/launch` pattern as current expeditions
+- All turn-based actions use the same `POST /expedition/start` pattern as current expeditions
 - Rewards formulas should follow the existing pattern: `base * unit_count * level_multiplier * terrain_modifier`
 - Artifact/rare prize logic remains unchanged from current Deep Expedition
 - Equipment looting replaces current flat combat rewards for Dungeon Raid
