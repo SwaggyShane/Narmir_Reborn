@@ -32,7 +32,7 @@ Add hex-based fog of war and incremental scouting on top of the existing continu
   - Synchronous scouting only — no queue, no cancellation, no deferred jobs.
   - `fog_of_war` reduces current visibility only, never clears `seen_cells`.
 - Render fog as an SVG layer, above terrain/world geometry but below labels and UI; respect `prefers-reduced-motion`.
-- Gate hidden content so unrevealed map items stay hidden until discovered.
+- Gate hidden content **on the server**, not just visually: `GET /world-map` must not include kingdoms/nodes/expeditions outside `seen_cells` in the response payload at all — a client-side-only SVG hide is an information-disclosure bug, not fog.
 
 ## Scout Request Validation (resolved)
 
@@ -47,14 +47,31 @@ Every open question here was carried unaddressed through Revisions 1–4; Revisi
 
 1. **Hex Foundation**
    - Extract `hexCenter`/`hexNeighborKeys`/direction tables from `WorldmapRenderer.jsx` into a shared `game/` module (do not reimplement independently — a second, subtly different hex system would visually misalign with the terrain tessellation already rendered).
-   - Implement the missing `pixelToHex(x, y)`.
+   - Implement the missing `pixelToHex(x, y)` using fractional axial coordinates + cube rounding (naive rounding of offset coordinates directly fails near hex boundaries):
+     ```javascript
+     // 1. continuous (x, y) -> fractional axial (q, r)
+     const r = y / (HEX_SIZE * 1.5);
+     const q = (x / (HEX_SIZE * Math.sqrt(3))) - r / 2;
+     // 2. axial -> fractional cube
+     const cubeX = q, cubeZ = r, cubeY = -q - r;
+     // 3. round to nearest integer cube, fixing up the largest-error axis
+     let rx = Math.round(cubeX), ry = Math.round(cubeY), rz = Math.round(cubeZ);
+     const dx = Math.abs(rx - cubeX), dy = Math.abs(ry - cubeY), dz = Math.abs(rz - cubeZ);
+     if (dx > dy && dx > dz) rx = -ry - rz;
+     else if (dy > dz) ry = -rx - rz;
+     else rz = -rx - ry;
+     // 4. rounded cube -> odd-r offset (col, row), matching hexCenter's layout
+     const row = rz;
+     const col = rx + (rz - (rz & 1)) / 2;
+     ```
    - Validate current kingdoms and resource nodes against the hex helper output (spot-check that a kingdom's continuous coordinate lands in the hex cell it visually renders inside).
-   - Tests: round-trip conversion, neighbor/distance math, frontier detection.
+   - Tests: round-trip conversion (including near hex-boundary coordinates, where naive rounding breaks), neighbor/distance math, frontier detection.
 
 2. **Visibility Persistence**
    - Kingdom-scoped visibility storage using the repo's existing JSON-in-`TEXT` convention (not a separate table).
    - `seen_cells` authoritative, `current_cells` derived.
    - Row-locked (`FOR UPDATE`) writes — concurrency-safe, matching the pattern other kingdom-mutation routes in this codebase already use.
+   - Register the new column in `JSON_REPAIR_SPECS.kingdoms` (`db/schema.js`) with an object fallback (e.g. `{ seen_cells: [], current_cells: [], version: 1 }`), same as every other JSON-in-`TEXT` kingdom column — this repo already runs `repairJsonRows` on startup to auto-fix corrupted/missing JSON, and skipping registration would leave this one column unprotected.
    - **Open:** define what a `version` bump actually does (recompute-on-read vs. one-time migration script) — mentioned as a field and as a test case ("version bump handling") in every revision so far, never defined as a mechanism.
 
 3. **Scout Loop**
@@ -62,6 +79,7 @@ Every open question here was carried unaddressed through Revisions 1–4; Revisi
    - Apply turn/ranger/food costs. **Open:** no revision has stated concrete formulas — ranger cost per hex, food cost per hex, reveal-radius-per-ranger curve, and its cap all need real numbers before this phase can be estimated or balanced.
    - Apply the four validation rules above.
    - Register `POST /scout-area` (or equivalent) under the existing `turn` rate-limit category.
+   - **Server-side gating is mandatory, not optional.** `GET /world-map` (`routes/kingdom-gameplay.js`) must filter kingdoms, resource nodes, and active expeditions down to `seen_cells` before the response ever leaves the server. Hiding unseen items only in the SVG overlay (`WorldmapRenderer.jsx`) is not sufficient — the raw data would still be visible in the API response to anyone inspecting network traffic, defeating the fog entirely.
 
 4. **Fog Rendering**
    - SVG fog overlay in `WorldmapRenderer.jsx` (no canvas — matches how the rest of the map already renders).
