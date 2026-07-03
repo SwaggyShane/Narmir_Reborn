@@ -29,9 +29,9 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 - ✅ `game/visibility-cells.js` (hex-cell/bit-index math), `game/visibility.js` (lazy home-hex init, row-locked read-modify-write via `db.withTransaction`)
 - ⚠️ Found and fixed (in this PR, not deferred): `db.withTransaction` required instead of the codebase's older manual `BEGIN`/`COMMIT` `db.run()` pattern, which does not reliably propagate transaction context (see "Known Technical Debt" below) — this PR's own code uses the correct helper throughout
 
-**Phase 3: Scout Loop + Server Gating** — Partial (initial slice merged PR #762 2026-07-03; see ARCHIVAL.md)
-- Slice complete: `/scout-area` (frontier-only, costs, visibility), node reveal in hex, initial /world-map gating by seen_cells.
-- Remaining: full endpoints gating (trade routes, diplomacy, etc.), expedition 'ahead' reveal, client scout UI, validation matrix tests.
+**Phase 3: Scout Loop + Server Gating** — Partial (initial slice merged PR #762 2026-07-03; client UI PR #769; see ARCHIVAL.md)
+- Slice complete: `/scout-area` (frontier-only, costs, visibility), node reveal in hex, initial /world-map gating by seen_cells, client UI for area hex scout in ExplorationPanel (PR #769).
+- Remaining: full endpoints gating (trade routes, diplomacy, etc.), expedition 'ahead' reveal, validation matrix tests.
 
 **Phase 4: Fog Rendering** (pending Phase 3)
 - SVG fog overlay in `WorldmapRenderer.jsx` (unseen/seen/current states, reduced-motion support)
