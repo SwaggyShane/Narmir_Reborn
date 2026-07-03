@@ -35,6 +35,7 @@
 4. Confirm branch and commits (see above)
 5. Push: `git push -u PR <branch>`
 6. Create or update PR. Address review feedback with new commits
+7. Update TODO.md / ARCHIVAL.md
 8. Merge to main only after review approval
 
 ### Merge Boundaries
