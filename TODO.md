@@ -29,12 +29,9 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 - ✅ `game/visibility-cells.js` (hex-cell/bit-index math), `game/visibility.js` (lazy home-hex init, row-locked read-modify-write via `db.withTransaction`)
 - ⚠️ Found and fixed (in this PR, not deferred): `db.withTransaction` required instead of the codebase's older manual `BEGIN`/`COMMIT` `db.run()` pattern, which does not reliably propagate transaction context (see "Known Technical Debt" below) — this PR's own code uses the correct helper throughout
 
-**Phase 3: Scout Loop + Server Gating** — IN PROGRESS (started 2026-07-03 on feature/fog-of-war-phase-3)
-- `/scout-area` implemented: frontier-only (hex adj to seen), ranger validation + power/radius from scout-economy, food per new hex, visibility update (seen+current), auto discovered_kingdoms for kingdoms in new hexes.
-- Gating started: /world-map now filters kingdoms, nodes, expeditions by seen hexes (using visibility + pixelToHex + bitmap).
-- Area scouting explicitly reveals nodes in the hex (scout marks discovered_at for own nodes in area; /world-map gates on seen hex).
-- (remaining: full endpoints gating, expedition ahead reveal, client scout UI, more tests)
-- (rate limit auto via /kingdom turnLimiter)
+**Phase 3: Scout Loop + Server Gating** — Partial (initial slice merged PR #762 2026-07-03; see ARCHIVAL.md)
+- Slice complete: `/scout-area` (frontier-only, costs, visibility), node reveal in hex, initial /world-map gating by seen_cells.
+- Remaining: full endpoints gating (trade routes, diplomacy, etc.), expedition 'ahead' reveal, client scout UI, validation matrix tests.
 
 **Phase 4: Fog Rendering** (pending Phase 3)
 - SVG fog overlay in `WorldmapRenderer.jsx` (unseen/seen/current states, reduced-motion support)

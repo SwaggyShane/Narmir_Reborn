@@ -30,6 +30,14 @@
     reach `applyKingdomUpdates`, which rejects NaN and fails the write).
   - Phase 3 (Scout Loop + Server Gating) is now unblocked and ready to start.
 
+- **Fog of War Phase 3: Initial Implementation Slice** (PR #762, merged `54089e33` 2026-07-03): 
+  - Implemented `/scout-area` endpoint (frontier-only reveal, uses locked `scout-economy.js` + `ranger-allocation.js`, visibility updates via `updateKingdomVisibility`).
+  - Area scouting also reveals nodes in the hex (explicit `discovered_at` updates for own nodes in revealed hexes + server gating).
+  - Initial server-side gating in `/world-map` (filters kingdoms and nodes to only those with positions in `seen_cells`, using `pixelToHex` + bitmap checks).
+  - Added `getHexesInRadius` BFS helper in `hex-utils.js` for reveal splash.
+  - Gemini review comments (wrap in `db.withTransaction` for atomicity; safe wrappers for bitmap ops to avoid throws on bad coords) fixed in follow-up commit `0c7382c3` (included in merge).
+  - Full Claude.md compliance for slice: feature branch, pre-push confirmations + open PR check, lint+smoke+sanity before commits, push to existing PR.
+
 - **Fog of War Phase 2: Visibility Persistence** (PR #760, squash-merged as `1727e39f`):
   Kingdom-scoped visibility storage — `seen_cells` authoritative, `current_cells`
   derived, BigInt hex-cell bitmaps serialized as decimal strings in a new
