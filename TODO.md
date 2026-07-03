@@ -22,7 +22,14 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 - Validate all kingdoms/nodes land in correct visual hex cells (alignment check vs. REGION_SEEDS/RACE_HOMES)
 - Unit tests: round-trip conversion, boundary cases, neighbor/distance math, frontier detection
 
-**Phase 2: Visibility Persistence** (pending Phase 1)
+**Phase 1.5: Randomize World Generation** (pending Phase 1)
+- Remove deterministic REGION_SEEDS; randomize kingdom placement within their race's region (gated by nearest RACE_HOMES)
+- Randomize node placement (completely random, different per reset)
+- Randomize terrain biome distribution (prevent memorization across resets)
+- Enforce: no kingdoms/nodes spawn in water (ocean/lake hexes)
+- Goal: prevent players from memorizing optimal routes across resets
+
+**Phase 2: Visibility Persistence** (pending Phase 1.5)
 - Add `visibility` JSON column to `kingdoms` table (seen_cells, current_cells, version)
 - Register in `JSON_REPAIR_SPECS.kingdoms` for auto-repair on startup
 - Implement read/write with row-level `FOR UPDATE` locking (concurrency-safe)
