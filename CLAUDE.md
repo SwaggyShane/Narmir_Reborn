@@ -34,10 +34,11 @@
 3. Stage and commit: `git add <files>` → `git commit -m "..."`
 4. Confirm branch and commits (see above)
 5. Push: `git push -u PR <branch>`
-6. Create or update PR. 
-7. Address Gemini review feedback, 
-8. Update TODO.md / ARCHIVAL.md
-9. Self merge to main only after review approval and PR is green
+6. Create or update PR.
+7. Actively monitor PR to until Gemini comments.
+8. Address Gemini review feedback, 
+9. Update TODO.md / ARCHIVAL.md
+10. Self merge to main only after one, and ONLY ONE Gemini Review and PR is green
 
 ## High Priority Issues
 
