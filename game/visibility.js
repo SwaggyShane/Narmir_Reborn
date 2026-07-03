@@ -71,8 +71,9 @@ function getInitialVisibility(kingdom) {
  */
 async function getKingdomVisibility(db, kingdom) {
   const current = parseVisibility(kingdom.visibility);
+  let initial = null;
   if (current.seenCells === 0n) {
-    const initial = getInitialVisibility(kingdom);
+    initial = getInitialVisibility(kingdom);
     await db.run(
       'UPDATE kingdoms SET visibility = $1 WHERE id = $2',
       [JSON.stringify(serializeVisibility(initial)), kingdom.id],
@@ -89,12 +90,9 @@ async function getKingdomVisibility(db, kingdom) {
     const row = await db.get('SELECT active_effects FROM kingdoms WHERE id = $1', [kingdom.id]);
     activeEffectsStr = row ? row.active_effects : '{}';
   }
-  let effects = {};
-  try {
-    effects = safeJsonParse(activeEffectsStr || '{}', {}, 'auto:active_effects');
-  } catch {}
+  const effects = safeJsonParse(activeEffectsStr || '{}', {}, 'auto:active_effects');
   if (effects.fog_of_war) {
-    const initial = getInitialVisibility(kingdom);
+    if (!initial) initial = getInitialVisibility(kingdom);
     current.currentCells = initial.currentCells;
   }
 
