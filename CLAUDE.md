@@ -36,8 +36,8 @@
 5. Push: `git push -u PR <branch>`
 6. Create or update PR. 
 7. Address Gemini review feedback, 
-7. Update TODO.md / ARCHIVAL.md
-8. Self merge to main only after review approval and PR is green
+8. Update TODO.md / ARCHIVAL.md
+9. Self merge to main only after review approval and PR is green
 
 ## High Priority Issues
 
@@ -48,7 +48,7 @@ When fixing high-priority issues:
 - [ ] Critical performance bottlenecks
 - [ ] Code review feedback from automated tools
 
-Self merge when Gemini review has been fixed, or refuted and PR is green.
+Self merge only after: Gemini review fixed or refuted (step 7), TODO/ARCHIVAL updated (step 8), and PR is green + approved. Update docs (step 8) before self-merging (step 9).
 
 ---
 

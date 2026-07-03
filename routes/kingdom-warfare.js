@@ -5,6 +5,10 @@ const { progressGoal } = require('../game/goals');
 const { safeJsonParse } = require('../utils/helpers');
 const { applyKingdomUpdates } = require('../db/schema');
 const { pgInList } = require('../lib/pg-placeholders');
+const { getKingdomVisibility } = require('../game/visibility');
+const { safeBitmapHasCell } = require('../game/visibility-cells');
+const { pixelToHex } = require('../game/hex-utils');
+const { getKingdomMapCoords } = require('../game/world-map-coords');
 
 const router = express.Router();
 
@@ -156,11 +160,11 @@ module.exports = function (db) {
           throw httpError(400, `${target.name} is under newbie protection until Turn 400`);
         }
 
-        let atkDisc = {};
-        try {
-          atkDisc = safeJsonParse(k.discovered_kingdoms, {}, 'auto:discovered_kingdoms');
-        } catch {}
-        if (!atkDisc[targetIdNum] || !atkDisc[targetIdNum].mapped) {
+        // Phase 3: gate attack using seen_cells instead of discovered_kingdoms
+        const vis = await getKingdomVisibility(db, k);
+        const targetCoords = getKingdomMapCoords({ id: targetIdNum, race: target.race });
+        const targetHex = pixelToHex(targetCoords.map_x, targetCoords.map_y);
+        if (!safeBitmapHasCell(vis.seenCells, targetHex.col, targetHex.row)) {
           throw httpError(400, 'You need a location map for this target.');
         }
 
@@ -327,6 +331,16 @@ module.exports = function (db) {
           throw httpError(400, "targetId required for offensive spells");
         }
 
+        // Phase 3: gate offensive spells using seen_cells
+        if (!isFriendlySpell) {
+          const vis = await getKingdomVisibility(db, attackerK);
+          const targetCoords = getKingdomMapCoords({ id: targetIdNum, race: target.race });
+          const targetHex = pixelToHex(targetCoords.map_x, targetCoords.map_y);
+          if (!safeBitmapHasCell(vis.seenCells, targetHex.col, targetHex.row)) {
+            throw httpError(400, "You need a location map for this target.");
+          }
+        }
+
         const validation = engine.validateSpellTarget(attackerK, target, spellId);
         if (validation.error) throw httpError(400, validation.error);
 
@@ -434,12 +448,11 @@ module.exports = function (db) {
         }
 
         // AI vs AI only - no cross-faction covert ops
-        // Check map requirement
-        let atkDisc = {};
-        try {
-          atkDisc = safeJsonParse(attackerK.discovered_kingdoms, {}, "auto:discovered_kingdoms");
-        } catch {}
-        if (!atkDisc[targetId] || !atkDisc[targetId].mapped) {
+        // Phase 3: gate using seen_cells
+        const vis = await getKingdomVisibility(db, attackerK);
+        const targetCoords = getKingdomMapCoords({ id: targetId, race: target.race });
+        const targetHex = pixelToHex(targetCoords.map_x, targetCoords.map_y);
+        if (!safeBitmapHasCell(vis.seenCells, targetHex.col, targetHex.row)) {
           await db.run("ROLLBACK");
           return res.status(400).json({
             error: "You need a location map for this target.",

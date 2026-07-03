@@ -2416,9 +2416,14 @@ module.exports = function (db) {
       );
       if (!k) return res.status(404).json({ error: 'Kingdom not found' });
 
-      // Validate ranger allocation for this action (scouting pool)
+      // Validate ranger allocation for this action (scouting pool) - check against active expeditions
       const totalRangers = Number(k.rangers) || 0;
-      const allocCheck = validateRangerAllocation({ scouting: rangersSent, expeditions: 0 }, totalRangers);
+      const expRangersRow = await db.get(
+        `SELECT COALESCE(SUM(rangers), 0) as r FROM expeditions WHERE kingdom_id = $1 AND turns_left > 0`,
+        [k.id]
+      );
+      const currentExpRangers = Number(expRangersRow.r) || 0;
+      const allocCheck = validateRangerAllocation({ scouting: rangersSent, expeditions: currentExpRangers }, totalRangers);
       if (!allocCheck.valid) {
         return res.status(400).json({ error: allocCheck.reason });
       }
