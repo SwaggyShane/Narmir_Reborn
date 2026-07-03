@@ -53,6 +53,14 @@
 
 - **Fog of War Phase 4: Fog Rendering completion** (PR #774): Added explicit reduced-motion support (static styles) and improved fog visuals (solid rgb fills + opacity to fix double-transparency per Gemini; no transitions as SVG static). Gemini addressed once. CI green.
 
+- **Fog of War Phase 4: fog_of_war debuff effect to current visibility** (PR #775, merged `d17e57b7` 2026-07-03): 
+  - Wired the `fog_of_war` debuff (enemy-cast, 3-turn, locked total blind radius=0) into visibility: in `game/visibility.js` `getKingdomVisibility` now checks active_effects for `fog_of_war` and overrides `currentCells` to the home-hex initial bitmap (seenCells left untouched). Lazy home-hex seed + cached `getInitialVisibility`; direct `safeJsonParse` (no redundant try-catch).
+  - Debuff does not mutate stored data on write; dynamic override on read; no auto-tick/re-apply.
+  - The one Gemini review (cache + remove try-catch) addressed in follow-up commit before merge.
+  - All CI green (Lint/Test/Build, security checks). PR was MERGEABLE/CLEAN.
+  - Full CLAUDE.md compliance followed explicitly: correct feature branch, pre-push branch/commits/open-PR checks, lint+smoke (Windows fresh boot + baselines) + sanity before commits, pushed to open PR, responded to Gemini **ONCE** (fix), self-merged only after exactly one Gemini + green PR; post-merge docs housekeeping started immediately.
+  - Completes Phase 4 (see also PR #774 for the SVG fog layer).
+
 - **Fog of War Phase 2: Visibility Persistence** (PR #760, squash-merged as `1727e39f`):
   Kingdom-scoped visibility storage — `seen_cells` authoritative, `current_cells`
   derived, BigInt hex-cell bitmaps serialized as decimal strings in a new
