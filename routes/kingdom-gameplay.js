@@ -2027,7 +2027,19 @@ module.exports = function (db) {
       // the seed goes over the wire as a string; the client parses it back
       // to BigInt before feeding it into the same seeded-random mixing the
       // server uses, so terrain biome patterns change across resets too.
-      res.json({ kingdoms: kingdomsWithCoords, tradeRoutes, nodes: visibleNodes, expeditions: visibleExpeditions, worldSeed: getWorldSeed().toString() });
+      // Phase 4: also expose visibility bitmaps (as decimal strings) so client
+      // can render fog overlay (unseen/seen/current states).
+      res.json({
+        kingdoms: kingdomsWithCoords,
+        tradeRoutes,
+        nodes: visibleNodes,
+        expeditions: visibleExpeditions,
+        worldSeed: getWorldSeed().toString(),
+        visibility: {
+          seenCells: seenCells.toString(),
+          currentCells: (vis.currentCells || 0n).toString(),
+        },
+      });
     } catch {
       // region column may not exist yet â€” fallback query
       try {
@@ -2095,11 +2107,27 @@ module.exports = function (db) {
             )
           : [];
 
+        // Phase 3 gating for fallback: filter expeditions by seen hex too.
+        const visibleExpeditions = expeditions.filter((e) => {
+          const h = pixelToHex(e.map_x, e.map_y);
+          return safeBitmapHasCell(seenCells, h.col, h.row);
+        });
+
         // Fog of War Phase 1.5: BigInt can't be JSON-serialized directly, so
       // the seed goes over the wire as a string; the client parses it back
       // to BigInt before feeding it into the same seeded-random mixing the
       // server uses, so terrain biome patterns change across resets too.
-      res.json({ kingdoms: kingdomsWithCoords, tradeRoutes, nodes: visibleNodes, expeditions, worldSeed: getWorldSeed().toString() });
+      res.json({
+        kingdoms: kingdomsWithCoords,
+        tradeRoutes,
+        nodes: visibleNodes,
+        expeditions: visibleExpeditions,
+        worldSeed: getWorldSeed().toString(),
+        visibility: {
+          seenCells: seenCells.toString(),
+          currentCells: (vis.currentCells || 0n).toString(),
+        },
+      });
       } catch (err2) {
         console.error("[world-map]", err2.message);
         res.status(500).json({ error: "Failed to load map data" });
