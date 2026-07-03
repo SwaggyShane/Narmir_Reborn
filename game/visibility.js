@@ -71,15 +71,34 @@ function getInitialVisibility(kingdom) {
  */
 async function getKingdomVisibility(db, kingdom) {
   const current = parseVisibility(kingdom.visibility);
-  if (current.seenCells !== 0n) {
-    return current;
+  if (current.seenCells === 0n) {
+    const initial = getInitialVisibility(kingdom);
+    await db.run(
+      'UPDATE kingdoms SET visibility = $1 WHERE id = $2',
+      [JSON.stringify(serializeVisibility(initial)), kingdom.id],
+    );
+    current.seenCells = initial.seenCells;
+    current.currentCells = initial.currentCells;
+    current.version = initial.version;
   }
-  const initial = getInitialVisibility(kingdom);
-  await db.run(
-    'UPDATE kingdoms SET visibility = $1 WHERE id = $2',
-    [JSON.stringify(serializeVisibility(initial)), kingdom.id],
-  );
-  return initial;
+
+  // Apply fog_of_war debuff (if active): reduces currentCells to debuffRadius (locked 0 = home hex only).
+  // Does not touch seenCells. Fetch active_effects if missing from passed row.
+  let activeEffectsStr = kingdom.active_effects;
+  if (!activeEffectsStr && db && kingdom.id) {
+    const row = await db.get('SELECT active_effects FROM kingdoms WHERE id = $1', [kingdom.id]);
+    activeEffectsStr = row ? row.active_effects : '{}';
+  }
+  let effects = {};
+  try {
+    effects = safeJsonParse(activeEffectsStr || '{}', {}, 'auto:active_effects');
+  } catch {}
+  if (effects.fog_of_war) {
+    const initial = getInitialVisibility(kingdom);
+    current.currentCells = initial.currentCells;
+  }
+
+  return current;
 }
 
 /**
