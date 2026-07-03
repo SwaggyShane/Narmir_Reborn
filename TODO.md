@@ -18,13 +18,13 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 
 **Phase 1: Hex Foundation** — ✅ COMPLETE (PR #757, merged `c3c44ceb` 2026-07-03; see ARCHIVAL.md)
 
-**Phase 1.5: Randomize World Generation** — ⚠️ PARTIALLY COMPLETE (PR #758, merged `c6c23c88` 2026-07-03; see ARCHIVAL.md)
+**Phase 1.5: Randomize World Generation** — ✅ COMPLETE (PR #758 merged `c6c23c88`, PR #759 merged `049a3c52`, both 2026-07-03; see ARCHIVAL.md)
 - ✅ Kingdom placement randomized within race's region (seeded, gated by RACE_HOMES + hex-cell alignment) — 100% region-aligned, 0% water spawns (was 47%/99.88%)
 - ✅ Node placement randomized (seeded per world, water-avoiding)
-- ✅ Enforce: no kingdoms/nodes spawn in water — done, verified at 5,000-kingdom scale
-- ❌ **Remaining: randomize terrain biome distribution** — `WorldmapRenderer.jsx`'s `hexSeededRandom` is client-side with no world-seed dependency yet; needs the world seed exposed to the client (via `/world-map` or a dedicated endpoint) before biome mix patterns stop repeating identically across resets
+- ✅ Enforce: no kingdoms/nodes spawn in water — verified at 5,000-kingdom scale
+- ✅ Terrain biome distribution randomized — world seed exposed via `/world-map`, threaded into `WorldmapRenderer.jsx`'s `hexSeededRandom`; live-verified 31% of rendered hex fills differ between two seeds
 
-**Phase 2: Visibility Persistence** (pending Phase 1.5's remaining terrain-biome item, or can start in parallel)
+**Phase 2: Visibility Persistence** (ready to start)
 - Add `visibility` JSON column to `kingdoms` table (seen_cells, current_cells, version)
 - Register in `JSON_REPAIR_SPECS.kingdoms` for auto-repair on startup
 - Implement read/write with row-level `FOR UPDATE` locking (concurrency-safe)

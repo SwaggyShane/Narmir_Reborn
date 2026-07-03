@@ -10,8 +10,29 @@
 
 ### 2026-07-03
 
-- **Fog of War Phase 1.5: Seeded World Randomization (partial)** (PR #758, squash-merged
-  as `c6c23c88`): Replaced the fully-deterministic `REGION_SEEDS` kingdom/node placement
+- **Fog of War Phase 1.5: Terrain Biome Randomization (final piece)** (PR #759,
+  squash-merged as `049a3c52`): Completed Phase 1.5 by threading the world seed into
+  client-side terrain generation. `GET /world-map` (`routes/kingdom-gameplay.js`) now
+  includes `worldSeed` in its response (both query paths, serialized as a string since
+  JSON can't carry BigInt); `WorldmapPanel.jsx` threads it through `loadWorldMap` state
+  into `renderWorldMap`'s options; `WorldmapRenderer.jsx`'s `hexSeededRandom` takes an
+  additional seed parameter folded into its integer mix (default 0, backward compatible),
+  with a new `seedToInt32()` helper parsing the incoming seed independently from the
+  server's identical-purpose helper (this file is a browser-only bundle). Deliberately
+  left `oceanBandForColumn` (the tundra/ocean strait's shape) unseeded — Phase 1.5's
+  scope was biome *distribution*, not climate band *geometry*.
+  - Live-verified in browser, not just code-reviewed: extracted all 263 hex fill colors
+    from the rendered SVG at one world seed, changed `world_state.seed` directly in the
+    DB, restarted the server (seed loads at boot, not live), reloaded, and re-extracted
+    fills — **82/263 (31%) differed** between the two seeds, confirming the
+    randomization actually changes what renders.
+  - Gemini review: no feedback ("no review comments to address").
+  - Self-merged per the updated `CLAUDE.md` rule (self-merge authorized once Gemini
+    review is addressed/refuted and the PR is green) — the first PR merged under that
+    rule.
+
+- **Fog of War Phase 1.5: Seeded World Randomization (kingdom/node placement)** (PR #758,
+  squash-merged as `c6c23c88`): Replaced the fully-deterministic `REGION_SEEDS` kingdom/node placement
   (confirmed by Phase 1's validation to misalign 53% of kingdoms and spawn 6/5,000 in
   water) with rejection-sampling placement seeded by a new per-world `world_state.seed`
   (`db/schema.js`) — stable within a world, different across resets. Extracted
@@ -39,10 +60,8 @@
   - Gemini review (medium): `loadWorldSeed()` silently fell back to a fixed seed if the
     `world_state` row was missing, with no way to notice; added a `console.warn()` on
     that path, verified directly by mocking the missing-row case.
-  - **Remaining in Phase 1.5 (not this PR):** terrain biome randomization —
-    `WorldmapRenderer.jsx`'s `hexSeededRandom` is client-side with no world-seed
-    dependency yet, so biome mix patterns still repeat identically across resets. Needs
-    the world seed exposed to the client first.
+  - Terrain biome randomization (the remaining Phase 1.5 item at the time) completed
+    separately in PR #759, above.
 
 - **Fog of War Phase 1: Hex Foundation** (PR #757, squash-merged as `c3c44ceb`): Added
   `game/hex-utils.js`, a shared hex-grid math module built from the Red Blob Games hex
