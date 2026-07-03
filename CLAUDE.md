@@ -48,7 +48,7 @@ When fixing high-priority issues:
 - [ ] Critical performance bottlenecks
 - [ ] Code review feedback from automated tools
 
-Self merge when Gemini review has been fixed, or refuted and PR is green.
+Self merge only after: Gemini review fixed or refuted (step 7), TODO/ARCHIVAL updated (step 8), and PR is green + approved. Update docs (step 8) before self-merging (step 9).
 
 ---
 
