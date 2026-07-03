@@ -36,8 +36,8 @@
 5. Push: `git push -u PR <branch>`
 6. Create or update PR. 
 7. Address Gemini review feedback, 
-7. Update TODO.md / ARCHIVAL.md
-8. Self merge to main only after review approval and PR is green
+8. Update TODO.md / ARCHIVAL.md
+9. Self merge to main only after review approval and PR is green
 
 ## High Priority Issues
 
