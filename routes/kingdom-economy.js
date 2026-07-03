@@ -7,6 +7,10 @@ const engine = require('../game/engine');
 const config = require('../game/config');
 const { calculateTradeIncome } = require('../game/economy');
 const fragmentBonusManager = require('../game/fragment-bonus-manager');
+const { getKingdomVisibility } = require('../game/visibility');
+const { safeBitmapHasCell } = require('../game/visibility-cells');
+const { pixelToHex } = require('../game/hex-utils');
+const { getKingdomMapCoords } = require('../game/world-map-coords');
 
 const router = express.Router();
 
@@ -104,20 +108,34 @@ async function applyUpdates(db, kingdomId, updates) {
 
 module.exports = function (db) {
   router.get("/trade-routes/list", requireAuth, async (req, res) => {
-    const k = await db.get("SELECT id FROM kingdoms WHERE player_id=$1", [
+    const k = await db.get("SELECT id, race, visibility FROM kingdoms WHERE player_id=$1", [
       req.player.playerId,
     ]);
     if (!k) return res.status(404).json({ error: "Kingdom not found" });
+    const vis = await getKingdomVisibility(db, k);
     const routes = await db.all(
       `
-      SELECT tr.*, k.name as partner_name, k.race as partner_race, k.land as partner_land
+      SELECT tr.*, 
+             CASE WHEN tr.kingdom_id = $1 THEN k2.id ELSE k1.id END as partner_id,
+             CASE WHEN tr.kingdom_id = $1 THEN k2.name ELSE k1.name END as partner_name,
+             CASE WHEN tr.kingdom_id = $1 THEN k2.race ELSE k1.race END as partner_race,
+             CASE WHEN tr.kingdom_id = $1 THEN k2.land ELSE k1.land END as partner_land
       FROM trade_routes tr
-      JOIN kingdoms k ON (tr.partner_id = k.id OR tr.kingdom_id = k.id)
-      WHERE (tr.kingdom_id = $1 OR tr.partner_id = $2) AND k.id != $3
+      JOIN kingdoms k1 ON tr.kingdom_id = k1.id
+      JOIN kingdoms k2 ON tr.partner_id = k2.id
+      WHERE (tr.kingdom_id = $1 OR tr.partner_id = $1)
     `,
-      [k.id, k.id, k.id],
+      [k.id],
     );
-    res.json({ routes });
+    // Gate by seen_cells: only include routes where partner's hex is visible
+    const visibleRoutes = routes.filter((r) => {
+      const partnerRace = r.partner_race;
+      if (!partnerRace) return true; // fallback
+      const coords = getKingdomMapCoords({ id: r.partner_id, race: partnerRace });
+      const h = pixelToHex(coords.map_x, coords.map_y);
+      return safeBitmapHasCell(vis.seenCells, h.col, h.row);
+    });
+    res.json({ routes: visibleRoutes });
   });
   router.post("/trade-routes/establish", requireAuth, requireCsrfToken, async (req, res) => {
     try {
@@ -125,7 +143,7 @@ module.exports = function (db) {
       if (isNaN(targetId))
         return res.status(400).json({ error: "Invalid target kingdom" });
 
-      const k = await db.get("SELECT id, name, gold, market_upgrades FROM kingdoms WHERE player_id=$1", [
+      const k = await db.get("SELECT id, name, gold, market_upgrades, race, visibility FROM kingdoms WHERE player_id=$1", [
         req.player.playerId,
       ]);
       if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -148,10 +166,18 @@ module.exports = function (db) {
       if (k.id == targetId)
         return res.status(400).json({ error: "Cannot trade with yourself" });
 
-      const target = await db.get("SELECT id, turn FROM kingdoms WHERE id=$1", [
+      const target = await db.get("SELECT id, turn, race FROM kingdoms WHERE id=$1", [
         targetId,
       ]);
       if (!target) return res.status(404).json({ error: "Target not found" });
+
+      // Gate: target must be visible (in seen_cells) per Phase 3
+      const vis = await getKingdomVisibility(db, k);
+      const targetCoords = getKingdomMapCoords({ id: targetId, race: target.race });
+      const targetHex = pixelToHex(targetCoords.map_x, targetCoords.map_y);
+      if (!safeBitmapHasCell(vis.seenCells, targetHex.col, targetHex.row)) {
+        return res.status(400).json({ error: "Target kingdom is not visible (scout the area first)" });
+      }
 
       // Check caps (UNION allows index optimization vs OR)
       const routeCount = await db.get(

@@ -2005,11 +2005,17 @@ module.exports = function (db) {
         [k.id],
       );
 
+      // Gate expeditions by seen hex of their node (Phase 3)
+      const visibleExpeditions = expeditions.filter((e) => {
+        const h = pixelToHex(e.map_x, e.map_y);
+        return safeBitmapHasCell(seenCells, h.col, h.row);
+      });
+
       // Fog of War Phase 1.5: BigInt can't be JSON-serialized directly, so
       // the seed goes over the wire as a string; the client parses it back
       // to BigInt before feeding it into the same seeded-random mixing the
       // server uses, so terrain biome patterns change across resets too.
-      res.json({ kingdoms: kingdomsWithCoords, tradeRoutes, nodes: visibleNodes, expeditions, worldSeed: getWorldSeed().toString() });
+      res.json({ kingdoms: kingdomsWithCoords, tradeRoutes, nodes: visibleNodes, expeditions: visibleExpeditions, worldSeed: getWorldSeed().toString() });
     } catch {
       // region column may not exist yet â€” fallback query
       try {
@@ -2618,6 +2624,21 @@ module.exports = function (db) {
       } catch (txErr) {
         await db.run("ROLLBACK");
         throw txErr;
+      }
+
+      // Expedition ahead reveal: reveal the target node's hex (per 'ahead' mode in plan)
+      try {
+        const nodeHex = pixelToHex(node.map_x, node.map_y);
+        await updateKingdomVisibility(db, k.id, (current) => {
+          let seen = current.seenCells;
+          if (!safeBitmapHasCell(seen, nodeHex.col, nodeHex.row)) {
+            seen = safeBitmapAddCell(seen, nodeHex.col, nodeHex.row);
+          }
+          return { seenCells: seen, currentCells: seen, version: current.version || 1 };
+        });
+      } catch (visErr) {
+        console.error('Failed to update visibility after expedition launch (non-fatal):', visErr);
+        // Continue to return success to avoid inconsistent client state; visibility can be refreshed on next load
       }
 
       res.json({ ok: true, arrive_at, travelTime, foodTaken: foodNeeded });
