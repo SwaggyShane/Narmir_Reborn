@@ -230,6 +230,27 @@ function hexPath(cx, cy, size) {
   return 'M' + pts.map((p) => p.join(',')).join('L') + 'Z';
 }
 
+// Client-side copy of cellIndex logic (matches server game/visibility-cells.js)
+// for determining per-hex fog state from the visibility bitmaps provided by /world-map.
+const CLIENT_CELL_INDEX_OFFSET = 8;
+const CLIENT_CELL_INDEX_STRIDE = 32;
+function clientCellIndex(col, row) {
+  const colShifted = col + CLIENT_CELL_INDEX_OFFSET;
+  const rowShifted = row + CLIENT_CELL_INDEX_OFFSET;
+  if (colShifted < 0 || colShifted >= CLIENT_CELL_INDEX_STRIDE || rowShifted < 0) return -1;
+  return rowShifted * CLIENT_CELL_INDEX_STRIDE + colShifted;
+}
+function isHexSeen(col, row, seenBig) {
+  const idx = clientCellIndex(col, row);
+  if (idx < 0 || !seenBig) return false;
+  return (seenBig & (1n << BigInt(idx))) !== 0n;
+}
+function isHexCurrent(col, row, currentBig) {
+  const idx = clientCellIndex(col, row);
+  if (idx < 0 || !currentBig) return false;
+  return (currentBig & (1n << BigInt(idx))) !== 0n;
+}
+
 // odd-r offset neighbor directions (pointy-top hexes), indexed by row parity.
 // Direction order is E, NE, NW, W, SW, SE — this order is fixed regardless of
 // row parity, which is what makes DIRECTION_EDGE_CORNERS below valid for both.
@@ -593,6 +614,13 @@ export function renderWorldMap(
   const expeditions = options.expeditions || [];
   const layers = { ...DEFAULT_LAYERS, ...(options.layers || {}) };
   const worldSeed = seedToInt32(options.worldSeed);
+  const vis = options.visibility || null;
+  let seenBig = 0n;
+  let currentBig = 0n;
+  if (vis) {
+    try { seenBig = BigInt(vis.seenCells || '0'); } catch {}
+    try { currentBig = BigInt(vis.currentCells || '0'); } catch {}
+  }
   const state = {
     kingdomId,
   };
@@ -754,6 +782,26 @@ export function renderWorldMap(
             fill = lightenHexColor(meta.color || TERRAIN_COLORS.plains, 0.35);
           }
           svg += '<path d="' + hexPath(cell.x, cell.y, HEX_SIZE + 0.6) + '" fill="' + fill + '" class="terrain-shape" data-terrain="' + escapeHtml(cell.terrain) + '" data-race="' + escapeHtml(cell.race) + '" style="transform-box:fill-box;transform-origin:center;cursor:default" pointer-events="none"><title>' + escapeHtml(terrainTooltip(cell.terrain)) + '</title></path>';
+        });
+        svg += '</g>';
+
+        // Phase 4: Fog of War overlay (above terrain, below rivers/regions/labels).
+        // Unseen: heavily obscured; seen: dimmed; current: fully visible (no overlay).
+        // Reduced motion respected by using simple opacity (no heavy animations).
+        svg += '<g class="wm-layer wm-layer-fog" style="pointer-events:none">';
+        hexGrid.cells.forEach(function (cell) {
+          const col = cell.col, row = cell.row;
+          let fog = 'unseen';
+          if (isHexCurrent(col, row, currentBig)) fog = 'current';
+          else if (isHexSeen(col, row, seenBig)) fog = 'seen';
+          if (fog === 'current') return; // no overlay
+          let fogFill = 'rgba(0,0,0,0.85)'; // unseen
+          let fogOpacity = '0.85';
+          if (fog === 'seen') {
+            fogFill = 'rgba(20,20,30,0.55)';
+            fogOpacity = '0.55';
+          }
+          svg += '<path d="' + hexPath(cell.x, cell.y, HEX_SIZE + 0.8) + '" fill="' + fogFill + '" opacity="' + fogOpacity + '" />';
         });
         svg += '</g>';
 

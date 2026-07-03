@@ -32,7 +32,7 @@ const DEFAULT_LAYERS = {
   terrain: false,
 };
 
-export async function loadWorldMap({ setLoading, setError, setKingdoms, setTradeRoutes, setNodes, setExpeditions, setWorldSeed } = {}) {
+export async function loadWorldMap({ setLoading, setError, setKingdoms, setTradeRoutes, setNodes, setExpeditions, setWorldSeed, setVisibility } = {}) {
   if (typeof setLoading === 'function') setLoading(true);
   if (typeof setError === 'function') setError('');
   try {
@@ -51,6 +51,8 @@ export async function loadWorldMap({ setLoading, setError, setKingdoms, setTrade
     // JSON-serialized) — passed through as-is, WorldmapRenderer.jsx parses
     // it back to BigInt itself so terrain biome patterns change per world.
     if (typeof setWorldSeed === 'function') setWorldSeed(data.worldSeed || null);
+    // Phase 4: visibility bitmaps (decimal strings) for fog overlay.
+    if (typeof setVisibility === 'function') setVisibility(data.visibility || null);
   } catch (err) {
     console.error('World map fail:', err);
     if (typeof setError === 'function') setError(err.message || 'Failed to load world map');
@@ -158,6 +160,7 @@ const WorldmapPanel = () => {
   const [nodes, setNodes] = useState([]);
   const [expeditions, setExpeditions] = useState([]);
   const [worldSeed, setWorldSeed] = useState(null);
+  const [visibility, setVisibility] = useState(null);
   const [highlightedRace, setHighlightedRace] = useState(null);
   const [mapCard, setMapCard] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
@@ -176,8 +179,9 @@ const WorldmapPanel = () => {
       expeditions,
       layers,
       worldSeed,
+      visibility,
     });
-  }, [kingdoms, tradeRoutes, highlightedRace, currentKingdomId, nodes, expeditions, layers, worldSeed]);
+  }, [kingdoms, tradeRoutes, highlightedRace, currentKingdomId, nodes, expeditions, layers, worldSeed, visibility]);
 
   const mapDataKey = useMemo(
     () => `${kingdoms.length}:${nodes.length}:${expeditions.length}:${highlightedRace}:${currentKingdomId}`,
@@ -230,6 +234,7 @@ const WorldmapPanel = () => {
       setNodes,
       setExpeditions,
       setWorldSeed,
+      setVisibility,
     }),
     [],
   );
