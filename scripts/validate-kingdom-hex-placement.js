@@ -5,13 +5,9 @@
  * with the kingdom's own race color and (b) is not a water tile (ocean/
  * tundra-band ocean). Read-only — reports findings, changes nothing.
  *
- * Race-region assignment and water-band logic are intentionally reproduced
- * here rather than imported from WorldmapRenderer.jsx: that file is a
- * browser-only React component, and Phase 1 only extracted the generic hex
- * math (hexCenter/hexNeighborKeys/pixelToHex) into game/hex-utils.js, not
- * the terrain-assignment rules, which are render-specific and out of scope
- * for this validation pass. Kept in sync manually; source of truth is
- * WorldmapRenderer.jsx's RACE_HOMES / oceanBandForColumn / SOUTH_BAND_FRAC.
+ * Region/water logic now lives in game/world-regions.js (extracted here in
+ * Phase 1.5 to stop duplicating it a second time — game/world-map-coords.js
+ * needs the same logic to gate its own placement).
  *
  * Usage: node scripts/validate-kingdom-hex-placement.js
  */
@@ -22,66 +18,19 @@ require('dotenv').config();
 const { Pool } = require('pg');
 const { hexCenter, pixelToHex } = require('../game/hex-utils');
 const { getKingdomMapCoords } = require('../game/world-map-coords');
-
-// Mirrors WorldmapRenderer.jsx RACE_HOMES exactly.
-const RACE_HOMES = {
-  dwarf: { x: 180, y: 230 },
-  high_elf: { x: 520, y: 160 },
-  wood_elf: { x: 720, y: 220 },
-  vampire: { x: 420, y: 330 },
-  ogre: { x: 800, y: 390 },
-  dark_elf: { x: 560, y: 430 },
-  orc: { x: 700, y: 490 },
-  human: { x: 300, y: 430 },
-  dire_wolf: { x: 130, y: 400 },
-};
-
-const OCEAN_BASE_ROW = 2;
-const OCEAN_THICKNESS = 2;
-// Note: SOUTH_BAND_FRAC (desert/volcanic band) is deliberately not checked
-// here — that band never produces water terrain, only the ocean/tundra rows
-// at the top of the map matter for the no-water-spawn validation below.
-
-// Mirrors WorldmapRenderer.jsx oceanBandForColumn exactly.
-function oceanBandForColumn(col) {
-  const wave = Math.sin(col * 0.35) * 1.0 + Math.sin(col * 0.9 + 1.3) * 0.4;
-  const start = Math.round(OCEAN_BASE_ROW + wave);
-  return { start, end: start + OCEAN_THICKNESS };
-}
-
-// Mirrors WorldmapRenderer.jsx nearestRaceHome exactly (logic-wise). Entries
-// precomputed once and iterated with a plain loop, not Object.entries().forEach,
-// since this runs once per kingdom (5,000+ in the local DB) and the array/
-// closure allocation on every call was a measurable, easy-to-avoid cost.
-const RACE_HOMES_ENTRIES = Object.entries(RACE_HOMES);
-
-function nearestRaceHome(x, y) {
-  let best = null;
-  let bestDist = Infinity;
-  for (let i = 0; i < RACE_HOMES_ENTRIES.length; i++) {
-    const [race, home] = RACE_HOMES_ENTRIES[i];
-    const dx = x - home.x;
-    const dy = y - home.y;
-    const dist = dx * dx + dy * dy;
-    if (dist < bestDist) {
-      bestDist = dist;
-      best = race;
-    }
-  }
-  return best || 'human';
-}
-
-// Water bands only (tundra/ocean); the SOUTH_BAND_FRAC check never yields
-// water (desert/volcanic), so it's irrelevant to the water-spawn check.
-function isWaterCell(col, row) {
-  const oceanBand = oceanBandForColumn(col);
-  return row < oceanBand.end; // tundra rows also count as "too far north to be a valid spawn region"
-}
+const { nearestRaceHome, isWaterPoint } = require('../game/world-regions');
+const { setWorldSeedForTests } = require('../game/world-seed');
 
 async function main() {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   let kingdoms;
   try {
+    const seedRow = await pool.query('SELECT seed FROM world_state WHERE id = 1');
+    // Primes the same in-memory cache the live server loads at boot — this
+    // is a standalone script, not the running server, so it has to load the
+    // current world's seed itself before calling getKingdomMapCoords.
+    setWorldSeedForTests(seedRow.rows[0]?.seed ?? 1n);
+
     const result = await pool.query('SELECT id, name, race FROM kingdoms');
     kingdoms = result.rows;
   } finally {
@@ -97,8 +46,9 @@ async function main() {
   const inWater = [];
 
   for (const k of kingdoms) {
-    // Kingdom map position is not stored — it's derived deterministically
-    // from id+race, same as every other place in the app that renders it.
+    // Kingdom map position is not stored — it's derived from the current
+    // world's seed plus id+race, same as every other place in the app that
+    // renders it.
     const { map_x, map_y } = getKingdomMapCoords(k);
     const hex = pixelToHex(map_x, map_y);
     const cellCenter = hexCenter(hex.col, hex.row);
@@ -107,7 +57,7 @@ async function main() {
     if (cellRace !== k.race) {
       misaligned.push({ id: k.id, name: k.name, race: k.race, cellRace, hex });
     }
-    if (isWaterCell(hex.col, hex.row)) {
+    if (isWaterPoint(map_x, map_y)) {
       inWater.push({ id: k.id, name: k.name, race: k.race, hex });
     }
   }
