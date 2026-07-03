@@ -9,10 +9,12 @@
 
 const VISIBILITY_SCHEMA_VERSION = 1;
 
-// Default visibility structure for new saves
+// Default visibility structure for new saves. "0" (not null) so every
+// consumer can go straight to BigInt("0") without a null check — an empty
+// bitmap and "nothing seen yet" are the same thing.
 const DEFAULT_VISIBILITY = {
-  seen_cells: null, // BigInt bitmap: cells discovered (permanent memory)
-  current_cells: null, // BigInt bitmap: cells visible now (derived from active sources)
+  seen_cells: '0', // BigInt bitmap (decimal string): cells discovered (permanent memory)
+  current_cells: '0', // BigInt bitmap (decimal string): cells visible now (derived from active sources)
   version: VISIBILITY_SCHEMA_VERSION,
 };
 
@@ -46,8 +48,8 @@ function migrateVisibility(oldVisibility) {
 
   // Ensure all required fields exist
   return {
-    seen_cells: oldVisibility.seen_cells || null,
-    current_cells: oldVisibility.current_cells || null,
+    seen_cells: oldVisibility.seen_cells || '0',
+    current_cells: oldVisibility.current_cells || '0',
     version: VISIBILITY_SCHEMA_VERSION,
   };
 }

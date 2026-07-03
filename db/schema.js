@@ -474,7 +474,8 @@ const JSON_REPAIR_SPECS = {
     discovered_kingdoms: { kind: 'object', fallback: {} },
     location_maps_wip: { kind: 'array', fallback: [] },
     items: { kind: 'array', fallback: [] },
-    resource_sequence: { kind: 'object', fallback: {} }
+    resource_sequence: { kind: 'object', fallback: {} },
+    visibility: { kind: 'object', fallback: { seen_cells: '0', current_cells: '0', version: 1 } }
   },
   alliances: {
     projects: { kind: 'object', fallback: {} },
@@ -1578,6 +1579,13 @@ async function initDb(options = {}) {
   if (!kingdomsCols.includes('active_event'))          await addColumn('kingdoms', 'active_event',          "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('discovered_kingdoms'))   await addColumn('kingdoms', 'discovered_kingdoms',   "TEXT NOT NULL DEFAULT '{}'", kingdomsCols);
   if (!kingdomsCols.includes('location_maps_wip'))     await addColumn('kingdoms', 'location_maps_wip',     "TEXT NOT NULL DEFAULT '[]'", kingdomsCols);
+  // Fog of War Phase 2: seen_cells/current_cells store BigInt hex-cell
+  // bitmaps as decimal strings (JSON can't carry BigInt); "0" = no cells
+  // seen/visible yet. game/visibility.js lazily seeds the kingdom's home
+  // hex into both fields on first read, rather than requiring every
+  // kingdom-creation call site (routes/auth.js, routes/admin.js x2) to set
+  // it explicitly.
+  if (!kingdomsCols.includes('visibility'))            await addColumn('kingdoms', 'visibility',            "TEXT NOT NULL DEFAULT '{\"seen_cells\":\"0\",\"current_cells\":\"0\",\"version\":1}'", kingdomsCols);
 
   // Market Prices table procedural check
   await _db.exec(`
