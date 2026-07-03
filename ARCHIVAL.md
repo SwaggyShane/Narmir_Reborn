@@ -45,6 +45,8 @@
   - Addressed Gemini review (missing `race` in queries, try-catch for visibility update) in follow-up commit `3cb86e91` (included in merge).
   - Full Claude.md compliance: feature branch, pre-push checks (branch/commits/PR), lint+smoke+sanity before commits, push to existing PR, addressed review with commit + comment.
 
+- **Fog of War Phase 3: Client Scout UI** (PR #769): Added client-side support and form in ExplorationPanel.jsx for the area hex scout (`POST /api/kingdom/scout-area`). Includes col/row/rangers inputs, Max button, validation (non-negative for coords, cap at 1000 rangers per server limits and Gemini feedback), and handler. Gemini review addressed with input restrictions and caps before merge.
+
 - **Fog of War Phase 2: Visibility Persistence** (PR #760, squash-merged as `1727e39f`):
   Kingdom-scoped visibility storage — `seen_cells` authoritative, `current_cells`
   derived, BigInt hex-cell bitmaps serialized as decimal strings in a new

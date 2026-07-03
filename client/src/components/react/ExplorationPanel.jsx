@@ -90,6 +90,10 @@ const ExplorationPanel = () => {
   const [dungeonRangers, setDungeonRangers] = useState(0);
   const [dungeonFighters, setDungeonFighters] = useState(0);
   const [mountainRangers, setMountainRangers] = useState(0);
+  // Fog of War Phase 3: area hex scout (separate from old expedition scout types)
+  const [areaCol, setAreaCol] = useState('');
+  const [areaRow, setAreaRow] = useState('');
+  const [areaRangers, setAreaRangers] = useState(0);
   const [activeExpeditions, setActiveExpeditions] = useState([]);
   const [completedExpeditions, setCompletedExpeditions] = useState([]);
   const [instantEntries, setInstantEntries] = useState([]);
@@ -285,6 +289,44 @@ const ExplorationPanel = () => {
       if (typeof window !== 'undefined' && typeof toast === 'function') toast('Expedition failed — please try again', 'error');
     }
   }, [applyResult, availableFighters, availableFood, availableRangers, deepRangers, dungeonFighters, dungeonRangers, expeditionTurns, logInstantEntry, mountainRangers, refreshAll, scoutRangers]);
+
+  // Fog of War Phase 3 client support: call /scout-area for hex reveal (frontier only, costs rangers/food)
+  const handleScoutArea = useCallback(async () => {
+    const col = parseInt(areaCol, 10);
+    const row = parseInt(areaRow, 10);
+    let rangersSent = Number(areaRangers) || 0;
+    if (!Number.isFinite(col) || !Number.isFinite(row) || col < 0 || row < 0) {
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Enter valid non-negative col and row for the target hex', 'error');
+      return;
+    }
+    if (rangersSent < 1) {
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Send at least 1 ranger for area scout', 'error');
+      return;
+    }
+    if (rangersSent > 1000) rangersSent = 1000;
+    if (rangersSent > availableRangers) {
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Not enough rangers', 'error');
+      return;
+    }
+
+    try {
+      const result = await apiCall('/api/kingdom/scout-area', {
+        method: 'POST',
+        body: { col, row, rangers: rangersSent },
+      });
+      if (result?.error) {
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.error, 'error');
+        return;
+      }
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Hex area scouted — fog lifted!', 'success');
+      applyResult(result, 'scout-area');
+      // Refresh map data if the caller provided a way (parent usually reloads on turn/mutation events)
+      await refreshAll();
+    } catch (err) {
+      console.error('[scout-area] client failed:', err);
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Area scout failed — please try again', 'error');
+    }
+  }, [areaCol, areaRow, areaRangers, availableRangers, applyResult, refreshAll]);
 
   const clearExpeditionLog = useCallback(async () => {
     try {
@@ -673,6 +715,48 @@ const ExplorationPanel = () => {
                 <button className="base-btn variant-blue w-full bg-[#6b9bd1]" id="btn-exp-mountain" onClick={() => handleLaunchExpedition('mountain')}>
                   {TYPE_META.mountain.button}
                 </button>
+              </div>
+
+              {/* Fog of War Phase 3: Hex area scout UI (separate from expedition types; reveals frontier hexes) */}
+              <div className="card border-l-[3px] border-l-[var(--accent2)]">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <div className="card-title !mb-0">🗺️ Area Hex Scout</div>
+                  <span className="rounded-full bg-[rgba(120,120,200,0.15)] px-2 py-1 text-[11px] font-semibold text-[var(--accent2)]">
+                    Fog of War
+                  </span>
+                </div>
+                <div className="mb-3 text-[12px] leading-6 text-[var(--text3)]">
+                  Send rangers to reveal a frontier hex area (and any kingdoms/nodes inside). Must be adjacent to seen cells. Costs rangers + food.
+                </div>
+                <div className="mb-2 grid grid-cols-3 gap-2 text-[12px]">
+                  <div>
+                    <div className="name mb-0.5">Col</div>
+                    <input type="number" className="input w-full" value={areaCol} onChange={(e) => setAreaCol(Math.max(0, parseInt(e.target.value, 10) || 0))} placeholder="e.g. 12" min="0" />
+                  </div>
+                  <div>
+                    <div className="name mb-0.5">Row</div>
+                    <input type="number" className="input w-full" value={areaRow} onChange={(e) => setAreaRow(Math.max(0, parseInt(e.target.value, 10) || 0))} placeholder="e.g. 7" min="0" />
+                  </div>
+                  <div>
+                    <div className="name mb-0.5">Rangers</div>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        className="input w-full text-right"
+                        value={areaRangers}
+                        onChange={(e) => setAreaRangers(Math.max(0, Math.min(1000, parseInt(e.target.value, 10) || 0)))}
+                        min="0"
+                        max="1000"
+                        placeholder="Qty"
+                      />
+                      <button className="base-btn px-2 py-1 text-[10px]" onClick={() => setAreaRangers(Math.min(1000, availableRangers))}>Max</button>
+                    </div>
+                  </div>
+                </div>
+                <button className="base-btn variant-accent w-full" onClick={handleScoutArea}>
+                  Scout Area
+                </button>
+                <div className="mt-2 text-[10px] text-[var(--text3)]">Frontier only. Already-seen hexes are free (no cost) but do nothing.</div>
               </div>
             </div>
           </div>
