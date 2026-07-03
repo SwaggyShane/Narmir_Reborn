@@ -38,7 +38,7 @@
 7. Actively monitor PR to until Gemini comments.
 8. Address Gemini review feedback, 
 9. Update TODO.md / ARCHIVAL.md
-10. Self merge to main only after Gemini Review and PR is green
+10. Self merge to main only after one, and ONLY ONE Gemini Review and PR is green
 
 ## High Priority Issues
 
