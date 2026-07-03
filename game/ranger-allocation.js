@@ -15,13 +15,8 @@
  * FUTURE: May be refined based on playtesting to add soft caps, priority queues, penalties, etc.
  */
 function allocateRangers(taskType, amount, priority, kingdomState) {
-  const {
-    rangers_available = 0,
-    rangers_in_expeditions = 0,
-    rangers_scouting = 0,
-  } = kingdomState;
+  const { rangers_available = 0 } = kingdomState;
 
-  const totalRangers = rangers_available + rangers_in_expeditions + rangers_scouting;
   const allocated = Math.min(amount, rangers_available);
   const overflow = Math.max(0, amount - allocated);
 

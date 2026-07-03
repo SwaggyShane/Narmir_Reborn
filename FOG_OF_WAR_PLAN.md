@@ -108,6 +108,10 @@ Every open question here was carried unaddressed through Revisions 1–4; Revisi
 
    **Status:** Documented here; implementation deferred post-Phase 1 fog-of-war v1 (may be inserted before Phase 2 if resources permit, or scheduled after Phase 4 ships).
 
+   **Validation findings (2026-07-03, `scripts/validate-kingdom-hex-placement.js` against local DB, 5,000 kingdoms):**
+   - **Region alignment: only 2,333/5,000 (47%) land in a hex region matching their own race.** Not a rare edge case — systemic, and concentrated almost entirely in `human` kingdoms, whose region seeds sit close enough to `dire_wolf`'s RACE_HOMES point that `nearestRaceHome`'s Voronoi assignment routinely misclassifies them. **This moves Phase 1.5's REGION_SEEDS/RACE_HOMES realignment from "if common" to confirmed-required.**
+   - **Water spawns: 6/5,000 (0.12%) land in an ocean/tundra-band hex** — including kingdom #1 "Stolice" (dwarf) and the "AI Dwarf", "AI Wood Elf" kingdoms. Rare in proportion but real, and hits the primary reference kingdom used throughout dev/testing. Confirms Phase 1.5's water-spawn prohibition is necessary, not precautionary.
+
 2. **Visibility Persistence**
    - Kingdom-scoped visibility storage using the repo's existing JSON-in-`TEXT` convention (not a separate table).
    - `seen_cells` authoritative, `current_cells` derived.
