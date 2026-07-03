@@ -177,6 +177,15 @@ module.exports = function (db) {
         JOIN kingdoms k ON am.kingdom_id = k.id
       `);
 
+      // Cache kingdom map coords to avoid repeated heavy calculations in loop (per Gemini review)
+      let coordsCache = rankingsCache.get('kingdom_map_coords') || {};
+      for (const k of memberRows) {
+        if (!coordsCache[k.id]) {
+          coordsCache[k.id] = getKingdomMapCoords({ id: k.id, race: k.race });
+        }
+      }
+      rankingsCache.set('kingdom_map_coords', coordsCache, 60 * 60 * 1000); // 1 hour TTL
+
       const allianceMap = {};
       for (const alliance of allianceNames) {
         allianceMap[alliance.id] = {
@@ -192,7 +201,7 @@ module.exports = function (db) {
       for (const k of memberRows) {
         if (allianceMap[k.alliance_id]) {
           // Gate: only include if self or visible via seen_cells
-          const coords = getKingdomMapCoords({ id: k.id, race: k.race });
+          const coords = coordsCache[k.id];
           const hex = pixelToHex(coords.map_x, coords.map_y);
           const visible = (k.id === caller.id) || safeBitmapHasCell(vis.seenCells, hex.col, hex.row);
           if (visible) {
