@@ -1,6 +1,26 @@
 # Narmir Reborn — Fog of War + Incremental Scouting Plan
 
-**Status:** reviewer-verified draft (Revision 6), grounded against the codebase as of `main@71b07e2` (post PR #754). Not yet implemented — no branch or PR exists for this feature.
+**Status:** reviewer-verified draft (Revision 6), grounded against the codebase as of `main@71b07e2` (post PR #754). **Ready for Phase 1 implementation.** Five critical gaps resolved 2026-07-03; see "Assumptions & Decisions" and "Still Open — Phase 3 Blockers" below.
+
+---
+
+## Implementation Readiness — 2026-07-03
+
+Five design questions that blocked previous revisions have been locked:
+
+✅ **Scoped visibility systems:** Scouting a hex auto-adds any kingdoms/nodes in it to `discovered_kingdoms`. One integrated system, not parallel.
+
+✅ **Server-side gating:** ALL endpoints returning kingdom/node/expedition info (not just `/world-map`) must filter by `seen_cells`. Trade routes, diplomacy, expeditions — no leaks.
+
+✅ **Own territory rules:** Your kingdom always visible. Your resource nodes are NOT (must be discovered). Your expeditions actively remove fog as they cross hexes. Start state: fog everywhere except your kingdom hex.
+
+✅ **fog_of_war spell:** Enemy-cast debuff with a defined radius, no automatic tick (must be reapplied when it expires). Reduces `current` visibility, never clears `seen_cells`.
+
+✅ **REGION_SEEDS/RACE_HOMES alignment:** Defer until Phase 1 validation gives us data. If misalignment is rare, document it; if common, realign seeds.
+
+**Remaining open** (Phase 3 blockers, not architectural): baseline visibility radius, debuff target radius, scout cost formulas (rangers/food per hex, scaling curves), expedition reveal mechanics. Lock these after Phase 1 & 2 are complete.
+
+---
 
 ## Current Foundation (from code review)
 
@@ -74,12 +94,14 @@ Every open question here was carried unaddressed through Revisions 1–4; Revisi
    - Register the new column in `JSON_REPAIR_SPECS.kingdoms` (`db/schema.js`) with an object fallback (e.g. `{ seen_cells: [], current_cells: [], version: 1 }`), same as every other JSON-in-`TEXT` kingdom column — this repo already runs `repairJsonRows` on startup to auto-fix corrupted/missing JSON, and skipping registration would leave this one column unprotected.
    - **Open:** define what a `version` bump actually does (recompute-on-read vs. one-time migration script) — mentioned as a field and as a test case ("version bump handling") in every revision so far, never defined as a mechanism.
 
-3. **Scout Loop**
+3. **Scout Loop + Server Gating**
    - Reveal only frontier-adjacent cells; reject non-frontier targets.
-   - Apply turn/ranger/food costs. **Open:** no revision has stated concrete formulas — ranger cost per hex, food cost per hex, reveal-radius-per-ranger curve, and its cap all need real numbers before this phase can be estimated or balanced.
+   - Scouting a hex with kingdoms/nodes in it auto-adds them to `discovered_kingdoms`.
+   - **Server-side gating (locked):** `GET /world-map`, trade routes, diplomacy endpoints, and expedition routes must all filter by `seen_cells` before leaving the server. Hiding in SVG only is an information-disclosure bug.
+   - Apply turn/ranger/food costs. **Still open:** concrete formulas needed — ranger cost per hex, food cost per hex, reveal-radius-per-ranger curve, cap. These need real numbers before Phase 3 can be estimated.
    - Apply the four validation rules above.
    - Register `POST /scout-area` (or equivalent) under the existing `turn` rate-limit category.
-   - **Server-side gating is mandatory, not optional.** `GET /world-map` (`routes/kingdom-gameplay.js`) must filter kingdoms, resource nodes, and active expeditions down to `seen_cells` before the response ever leaves the server. Hiding unseen items only in the SVG overlay (`WorldmapRenderer.jsx`) is not sufficient — the raw data would still be visible in the API response to anyone inspecting network traffic, defeating the fog entirely.
+   - Validate ranger/expedition allocation overlap using the same pattern as engineer allocation (`allocValidation.rangers + expeditionRangers > k.rangers` check).
 
 4. **Fog Rendering**
    - SVG fog overlay in `WorldmapRenderer.jsx` (no canvas — matches how the rest of the map already renders).
@@ -98,13 +120,44 @@ Every open question here was carried unaddressed through Revisions 1–4; Revisi
 - World map render test: unseen/seen/current states, reduced-motion behavior (Phase 4).
 - Regression: existing mapped kingdom interactions, trade, spells, terrain rendering, and expeditions still behave normally under fog.
 
-## Assumptions
+## Assumptions & Decisions (Locked 2026-07-03)
 
+**Architecture:**
 - Kingdom/resource-node placement stays on the current continuous coordinate system in v1.
-- Visibility persists as a kingdom-scoped JSON-in-`TEXT` column, not a separate grid table, unless scale forces a change (at `HEX_SIZE = 34` over 900×650, the full map is only ~195 hex cells — a `Set` of short string keys, not a scale concern).
+- Visibility persists as a kingdom-scoped JSON-in-`TEXT` column, not a separate grid table (at `HEX_SIZE = 34` over 900×650, only ~195 hex cells total — no scale concern).
 - No dungeon raids, Mountain Hearts, or rare region item tables in v1.
 - No scout queue or cancellation in v1.
-- `fog_of_war` modifies `current` visibility only, is enemy-cast, and never clears `seen_cells`.
+
+**Visibility Rules:**
+- **Scouting a hex with kingdoms/nodes in it auto-adds them to `discovered_kingdoms`.** One system, not two; simplifies client logic.
+- **All endpoints returning kingdom/node/expedition data must filter by `seen_cells`.** Includes `/world-map`, trade routes, diplomacy, expedition routes — no exceptions. Server-side gating is mandatory.
+- **Own kingdom always visible.** Own resource nodes are NOT — must be discovered via scouting. Active expeditions reveal fog as they cross hexes (treat as mobile reveal sources, not permanent visibility).
+- **Fog of War initial state:** everywhere except own kingdom's hex.
+
+**Spell Mechanics:**
+- `fog_of_war` (enemy-cast debuff) reduces `current` visibility radius, does NOT clear `seen_cells`.
+- No tick-based degradation — debuff lasts until duration expires, then must be reapplied (no auto-renewal).
+- Debuff has a defined radius (e.g. "normal radius 2 hexes, debuff reduces to 0").
+
+**Phase 1 Alignment:**
+- REGION_SEEDS vs RACE_HOMES misalignment: defer decision until Phase 1 validation runs. If common, realign seeds; if rare, document as edge case.
+
+---
+
+## Still Open — Phase 3 Blockers (Estimate After Phase 1 & 2)
+
+Before Phase 3 (Scout Loop) can be estimated or started, these need concrete numbers:
+
+1. **Baseline current visibility radius** — How many hexes around a kingdom is visible by default? (e.g., 2 hexes, 3 hexes?)
+2. **fog_of_war debuff radius** — How much does the enemy spell reduce it? (e.g., "reduces to 0 hexes" = total blind, or "reduces by 1 hex"?)
+3. **Scout cost formulas:**
+   - Ranger cost per hex revealed
+   - Food cost per hex revealed
+   - Reveal radius scaling with ranger count (e.g., "1 ranger = 1 hex, 2 rangers = 2 hexes, capped at 4")
+   - Turn cost (if any, separate from ranger/food)
+4. **Expedition-as-reveal mechanics** — Active expeditions remove fog as they cross; do they reveal one hex ahead, along the entire route, or only where they currently are? (Affects how "fog-breaking" feels in gameplay.)
+
+These are balance decisions, not architectural — Phase 1 & 2 can run in parallel with design iteration on these numbers. Once locked, Phase 3 estimation becomes straightforward.
 
 ---
 

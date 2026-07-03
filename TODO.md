@@ -8,7 +8,42 @@
 
 ## Status
 
-Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 2026-06-28. No active sprint is currently in flight — this file tracks deferred/post-beta work only.
+Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 2026-06-28. **Active work: Fog of War implementation.** See `FOG_OF_WAR_PLAN.md` (Revision 6, design locked 2026-07-03).
+
+---
+
+## Active Work
+
+### Fog of War System (5 Phases)
+
+**Phase 1: Hex Foundation** (ready to start)
+- Extract `hexCenter`, `hexNeighborKeys`, direction tables from `WorldmapRenderer.jsx` into shared `game/hex-utils.js`
+- Implement missing `pixelToHex(x, y)` using fractional axial → cube rounding
+- Validate all kingdoms/nodes land in correct visual hex cells (alignment check vs. REGION_SEEDS/RACE_HOMES)
+- Unit tests: round-trip conversion, boundary cases, neighbor/distance math, frontier detection
+
+**Phase 2: Visibility Persistence** (pending Phase 1)
+- Add `visibility` JSON column to `kingdoms` table (seen_cells, current_cells, version)
+- Register in `JSON_REPAIR_SPECS.kingdoms` for auto-repair on startup
+- Implement read/write with row-level `FOR UPDATE` locking (concurrency-safe)
+
+**Phase 3: Scout Loop + Server Gating** (blocked on cost formulas)
+- Implement `/scout-area` (frontier-only reveal, ranger/food costs, validation matrix)
+- Gate all kingdom/node/expedition endpoints by `seen_cells` (trade routes, diplomacy, /world-map, etc.)
+- Validate ranger/expedition allocation overlap
+- Auto-add kingdoms to `discovered_kingdoms` on first scout
+
+**Phase 4: Fog Rendering** (pending Phase 2)
+- SVG fog overlay in `WorldmapRenderer.jsx` (unseen/seen/current states, reduced-motion support)
+
+**Phase 5: Expansion Hooks** (deferred)
+- Special locations, map items, terrain-scoped discovery difficulty
+
+**Still open (Phase 3 blockers):**
+- Baseline visibility radius (hexes)
+- fog_of_war debuff radius
+- Scout cost formulas (ranger/food per hex, scaling, caps)
+- Expedition-as-reveal mechanics (one hex ahead, full route, current position only?)
 
 ---
 
