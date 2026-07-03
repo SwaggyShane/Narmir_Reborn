@@ -88,6 +88,26 @@ function bitmapAddCell(bitmap, col, row) {
   return BigInt(bitmap) | (1n << BigInt(index));
 }
 
+/**
+ * Safe versions for use in user-facing paths (e.g. scouting).
+ * Return safe fallbacks instead of throwing on out-of-bounds hex coords.
+ */
+function isValidCell(col, row) {
+  const colShifted = col + CELL_INDEX_OFFSET;
+  const rowShifted = row + CELL_INDEX_OFFSET;
+  return colShifted >= 0 && colShifted < CELL_INDEX_STRIDE && rowShifted >= 0;
+}
+
+function safeBitmapHasCell(bitmap, col, row) {
+  if (!isValidCell(col, row)) return false;
+  return bitmapHasCell(bitmap, col, row);
+}
+
+function safeBitmapAddCell(bitmap, col, row) {
+  if (!isValidCell(col, row)) return BigInt(bitmap);
+  return bitmapAddCell(bitmap, col, row);
+}
+
 module.exports = {
   CELL_INDEX_OFFSET,
   CELL_INDEX_STRIDE,
@@ -97,4 +117,7 @@ module.exports = {
   decodeCellSet,
   bitmapHasCell,
   bitmapAddCell,
+  isValidCell,
+  safeBitmapHasCell,
+  safeBitmapAddCell,
 };

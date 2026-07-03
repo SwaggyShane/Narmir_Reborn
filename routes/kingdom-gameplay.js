@@ -21,6 +21,12 @@ const { pgInList, pgValueTuples } = require("../lib/pg-placeholders");
 const { getKingdomMapCoords, placeResourceNodeCoords } = require("../game/world-map-coords");
 const { getTerrainForRace, getTerrainModifiers } = require("../game/terrain");
 const { getWorldSeed } = require("../game/world-seed");
+const { getKingdomVisibility, updateKingdomVisibility } = require('../game/visibility');
+const { safeBitmapHasCell, safeBitmapAddCell, isValidCell } = require('../game/visibility-cells');
+const { pixelToHex, getHexesInRadius, hexNeighborKeys } = require('../game/hex-utils');
+const { scoutRevealRadius, scoutFoodCostPerHex } = require('../game/scout-economy');
+const { validateRangerAllocation } = require('../game/ranger-allocation');
+const { parseTroopLevel } = require('../game/lib/troops');
 
 const router = express.Router();
 
@@ -1939,7 +1945,7 @@ module.exports = function (db) {
   router.get("/world-map", requireAuth, async (req, res) => {
     try {
       const k = await db.get(
-        "SELECT id, discovered_kingdoms FROM kingdoms WHERE player_id = $1",
+        "SELECT id, discovered_kingdoms, visibility FROM kingdoms WHERE player_id = $1",
         [req.player.playerId],
       );
       if (!k) return res.status(404).json({ error: "Kingdom not found" });
@@ -1949,13 +1955,22 @@ module.exports = function (db) {
         discovered = safeJsonParse(k.discovered_kingdoms, {}, "auto:discovered_kingdoms");
       } catch {}
 
+      // Phase 3: load visibility for seen_cells gating (filter content to revealed hexes)
+      const vis = await getKingdomVisibility(db, k);
+      const seenCells = vis.seenCells;
+
       const kingdoms = await db.all(`
         SELECT k.id, k.name, k.race, k.region, k.land, k.level, k.turn        FROM kingdoms k JOIN players p ON k.player_id = p.id
         ORDER BY k.land DESC`);
 
-      const filtered = kingdoms.filter(
-        (r) => r.id === k.id || (discovered[r.id] && discovered[r.id].found),
-      );
+      const filtered = kingdoms.filter((r) => {
+        if (r.id === k.id) return true;
+        if (!(discovered[r.id] && discovered[r.id].found)) return false;
+        // Phase 3 gating: even discovered kingdoms only visible if their hex is seen
+        const coords = getKingdomMapCoords(r);
+        const h = pixelToHex(coords.map_x, coords.map_y);
+        return safeBitmapHasCell(seenCells, h.col, h.row);
+      });
 
       const kingdomsWithCoords = filtered.map((row) => {
         const coords = getKingdomMapCoords(row);
@@ -1973,6 +1988,13 @@ module.exports = function (db) {
         [k.id],
       );
 
+      // Phase 3 gating + explicit node reveal: only include nodes in scouted hexes.
+      // Scouting an area hex now makes nodes located there visible.
+      const visibleNodes = nodes.filter((n) => {
+        const h = pixelToHex(n.map_x, n.map_y);
+        return safeBitmapHasCell(seenCells, h.col, h.row);
+      });
+
       const expeditions = await db.all(
         `SELECT re.id, re.node_id, re.status, re.population_sent, re.depart_at, re.arrive_at, re.return_at,
                 rn.name AS node_name, rn.type AS node_type, rn.map_x, rn.map_y
@@ -1987,12 +2009,12 @@ module.exports = function (db) {
       // the seed goes over the wire as a string; the client parses it back
       // to BigInt before feeding it into the same seeded-random mixing the
       // server uses, so terrain biome patterns change across resets too.
-      res.json({ kingdoms: kingdomsWithCoords, tradeRoutes, nodes, expeditions, worldSeed: getWorldSeed().toString() });
+      res.json({ kingdoms: kingdomsWithCoords, tradeRoutes, nodes: visibleNodes, expeditions, worldSeed: getWorldSeed().toString() });
     } catch {
       // region column may not exist yet â€” fallback query
       try {
         const k = await db.get(
-          "SELECT id, discovered_kingdoms FROM kingdoms WHERE player_id = $1",
+          "SELECT id, discovered_kingdoms, visibility FROM kingdoms WHERE player_id = $1",
           [req.player.playerId],
         );
         let discovered = {};
@@ -2001,15 +2023,22 @@ module.exports = function (db) {
             discovered = safeJsonParse(k.discovered_kingdoms, {}, "auto:discovered_kingdoms");
           } catch {}
 
+        // Phase 3 fallback path: visibility for gating
+        const vis = k ? await getKingdomVisibility(db, k) : { seenCells: 0n };
+        const seenCells = vis.seenCells || 0n;
+
         const kingdoms = await db.all(`
           SELECT k.id, k.name, k.race, '' as region, k.land, k.level, k.turn          FROM kingdoms k JOIN players p ON k.player_id = p.id
           ORDER BY k.land DESC`);
 
-        const filtered = kingdoms.filter(
-          (r) =>
-            k &&
-            (r.id === k.id || (discovered[r.id] && discovered[r.id].found)),
-        );
+        const filtered = kingdoms.filter((r) => {
+          if (!k) return false;
+          if (r.id === k.id) return true;
+          if (!(discovered[r.id] && discovered[r.id].found)) return false;
+          const coords = getKingdomMapCoords(r);
+          const h = pixelToHex(coords.map_x, coords.map_y);
+          return safeBitmapHasCell(seenCells, h.col, h.row);
+        });
 
         const kingdomsWithCoords = filtered.map((row) => {
           const coords = getKingdomMapCoords(row);
@@ -2031,6 +2060,11 @@ module.exports = function (db) {
             )
           : [];
 
+        const visibleNodes = nodes.filter((n) => {
+          const h = pixelToHex(n.map_x, n.map_y);
+          return safeBitmapHasCell(seenCells, h.col, h.row);
+        });
+
         const expeditions = k
           ? await db.all(
               `SELECT re.id, re.node_id, re.status, re.population_sent, re.depart_at, re.arrive_at, re.return_at,
@@ -2047,7 +2081,7 @@ module.exports = function (db) {
       // the seed goes over the wire as a string; the client parses it back
       // to BigInt before feeding it into the same seeded-random mixing the
       // server uses, so terrain biome patterns change across resets too.
-      res.json({ kingdoms: kingdomsWithCoords, tradeRoutes, nodes, expeditions, worldSeed: getWorldSeed().toString() });
+      res.json({ kingdoms: kingdomsWithCoords, tradeRoutes, nodes: visibleNodes, expeditions, worldSeed: getWorldSeed().toString() });
       } catch (err2) {
         console.error("[world-map]", err2.message);
         res.status(500).json({ error: "Failed to load map data" });
@@ -2348,6 +2382,165 @@ module.exports = function (db) {
     } catch (e) {
       console.error('[scout-node] POST:', e.message);
       res.status(500).json({ error: 'Failed to scout node' });
+    }
+  });
+
+  // POST /scout-area — Fog of War Phase 3: frontier-only hex area scouting.
+  // Reveals the target hex + splash radius based on rangers/level.
+  // Area scouting reveals nodes whose positions fall inside the scouted hexes (user requirement).
+  // Auto-adds any kingdoms in newly revealed hexes to discovered_kingdoms.
+  router.post('/scout-area', requireAuth, requireCsrfToken, async (req, res) => {
+    try {
+      const { col, row, rangers } = req.body || {};
+      const targetCol = parseInt(col, 10);
+      const targetRow = parseInt(row, 10);
+      const rangersSent = parseInt(rangers, 10);
+
+      if (!Number.isInteger(targetCol) || !Number.isInteger(targetRow)) {
+        return res.status(400).json({ error: 'col and row (hex coordinates) required' });
+      }
+      if (!Number.isInteger(rangersSent) || rangersSent < 1) {
+        return res.status(400).json({ error: 'rangers (positive integer) required' });
+      }
+
+      // Load kingdom (include visibility + fields for costs/allocation)
+      const k = await db.get(
+        'SELECT id, player_id, race, food, rangers, troop_levels, visibility, discovered_kingdoms FROM kingdoms WHERE player_id = $1',
+        [req.player.playerId]
+      );
+      if (!k) return res.status(404).json({ error: 'Kingdom not found' });
+
+      // Validate ranger allocation for this action (scouting pool)
+      const totalRangers = Number(k.rangers) || 0;
+      const allocCheck = validateRangerAllocation({ scouting: rangersSent, expeditions: 0 }, totalRangers);
+      if (!allocCheck.valid) {
+        return res.status(400).json({ error: allocCheck.reason });
+      }
+
+      // Ranger level from troop data (for power + food discount)
+      const rangerLevel = parseTroopLevel(k.troop_levels || {}, 'rangers') || 1;
+
+      if (!isValidCell(targetCol, targetRow)) {
+        return res.status(400).json({ error: 'Invalid hex coordinates' });
+      }
+
+      // Current visibility (lazy seeds home hex)
+      const vis = await getKingdomVisibility(db, k);
+
+      // Reject re-scout (no cost charged)
+      if (safeBitmapHasCell(vis.seenCells, targetCol, targetRow)) {
+        return res.status(400).json({ error: 'Already scouted', alreadySeen: true });
+      }
+
+      // Frontier check: target must be adjacent to at least one currently seen hex
+      const neigh = hexNeighborKeys(targetCol, targetRow);
+      let isAdjacentToSeen = false;
+      for (const nk of neigh) {
+        const [nc, nr] = nk.split(',').map(Number);
+        if (safeBitmapHasCell(vis.seenCells, nc, nr)) {
+          isAdjacentToSeen = true;
+          break;
+        }
+      }
+      if (!isAdjacentToSeen) {
+        return res.status(400).json({ error: 'Target hex is not on the frontier (must be adjacent to known territory)' });
+      }
+
+      // Compute cells: target + splash
+      const radius = scoutRevealRadius(rangersSent, rangerLevel);
+      let cellsToConsider = getHexesInRadius(targetCol, targetRow, radius);
+      // Guarantee target
+      if (!cellsToConsider.some((c) => c.col === targetCol && c.row === targetRow)) {
+        cellsToConsider = cellsToConsider.concat([{ col: targetCol, row: targetRow }]);
+      }
+
+      // Apply reveals (only new)
+      let newSeen = vis.seenCells;
+      const newlyRevealed = [];
+      for (const cell of cellsToConsider) {
+        if (!safeBitmapHasCell(newSeen, cell.col, cell.row)) {
+          newSeen = safeBitmapAddCell(newSeen, cell.col, cell.row);
+          newlyRevealed.push(cell);
+        }
+      }
+      if (newlyRevealed.length === 0) {
+        return res.status(400).json({ error: 'No new hexes revealed' });
+      }
+
+      // Costs: food per *newly* revealed hex (per-hex model)
+      const foodPerHex = scoutFoodCostPerHex(rangerLevel);
+      const foodCost = foodPerHex * newlyRevealed.length;
+      const currentFood = Number(k.food) || 0;
+      if (currentFood < foodCost) {
+        return res.status(400).json({ error: `Not enough food (need ${foodCost})` });
+      }
+
+      // === Critical section under single transaction for atomicity (concurrency safety) ===
+      await db.withTransaction(async () => {
+        // Persist visibility update (seen + current for v1) — helper also uses withTransaction internally but we are already in one
+        await updateKingdomVisibility(db, k.id, (current) => ({
+          seenCells: newSeen,
+          currentCells: newSeen,
+          version: current.version || 1,
+        }));
+
+        // Spend food atomically with check
+        if (foodCost > 0) {
+          const foodResult = await db.run(
+            'UPDATE kingdoms SET food = food - $1 WHERE id = $2 AND food >= $1',
+            [foodCost, k.id]
+          );
+          if (foodResult.changes === 0) {
+            throw new Error('Insufficient food (concurrent change)');
+          }
+        }
+
+        // Auto-add kingdoms located in newly revealed hexes to discovered_kingdoms (plan rule)
+        let disc = safeJsonParse(k.discovered_kingdoms, {});
+        if (Object.prototype.toString.call(disc) !== '[object Object]') disc = {};
+        let discUpdated = false;
+        const otherKingdoms = await db.all('SELECT id, race FROM kingdoms WHERE id != $1', [k.id]);
+        for (const ok of otherKingdoms) {
+          const coords = getKingdomMapCoords({ id: ok.id, race: ok.race });
+          const h = pixelToHex(coords.map_x, coords.map_y);
+          const matchesNew = newlyRevealed.some((c) => c.col === h.col && c.row === h.row);
+          if (matchesNew && !disc[ok.id]) {
+            disc[ok.id] = { found: true };
+            discUpdated = true;
+          }
+        }
+        if (discUpdated) {
+          await db.run('UPDATE kingdoms SET discovered_kingdoms = $1 WHERE id = $2', [JSON.stringify(disc), k.id]);
+        }
+
+        // Explicitly surface nodes in the newly revealed hexes (user requirement)
+        const newlyKeys = new Set(newlyRevealed.map((c) => `${c.col},${c.row}`));
+        const playerNodes = await db.all('SELECT id, map_x, map_y FROM resource_nodes WHERE kingdom_id = $1', [k.id]);
+        for (const nd of playerNodes) {
+          const h = pixelToHex(nd.map_x, nd.map_y);
+          if (newlyKeys.has(`${h.col},${h.row}`)) {
+            await db.run(
+              'UPDATE resource_nodes SET discovered_at = COALESCE(discovered_at, ?) WHERE id = ?',
+              [Math.floor(Date.now() / 1000), nd.id]
+            );
+          }
+        }
+      });
+
+      res.json({
+        ok: true,
+        revealedHexes: newlyRevealed.length,
+        radius,
+        foodSpent: foodCost,
+        rangersUsed: rangersSent,
+        newlyRevealed,
+      });
+    } catch (e) {
+      console.error('[scout-area] POST:', e.message);
+      if (e.message && e.message.includes('Insufficient food')) {
+        return res.status(400).json({ error: 'Not enough food (concurrent change)' });
+      }
+      res.status(500).json({ error: 'Failed to scout area' });
     }
   });
 

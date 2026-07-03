@@ -1,6 +1,6 @@
 # Narmir Reborn — Fog of War + Incremental Scouting Plan
 
-**Status:** reviewer-verified draft (Revision 6), grounded against the codebase as of `main@71b07e2` (post PR #754). **Ready for Phase 1 implementation.** Five critical gaps resolved 2026-07-03; see "Assumptions & Decisions" and "Still Open — Phase 3 Blockers" below.
+**Status:** Phase 3 started 2026-07-03 on feature branch (after formulas locked in Rev6 + Ph1/Ph2 impl). Core /scout-area + basic /world-map gating + node reveal in hex implemented. See TODO.md.
 
 ---
 

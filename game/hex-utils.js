@@ -122,6 +122,35 @@ function hexUnitDistance(x1, y1, x2, y2) {
   return Math.hypot(x2 - x1, y2 - y1) / HEX_SIZE;
 }
 
+/**
+ * Return list of hex cells ( {col, row} ) within hex distance <= radius of the center.
+ * Uses BFS over neighbors for correct hex-grid distance (each step costs 1).
+ * Includes the center (radius 0).
+ */
+function getHexesInRadius(centerCol, centerRow, radius) {
+  const r = Math.max(0, Math.floor(Number(radius) || 0));
+  const result = [];
+  const visited = new Set();
+  const queue = [{ col: centerCol, row: centerRow, d: 0 }];
+  const k = (c, rr) => `${c},${rr}`;
+  visited.add(k(centerCol, centerRow));
+
+  while (queue.length > 0) {
+    const curr = queue.shift();
+    result.push({ col: curr.col, row: curr.row });
+    if (curr.d >= r) continue;
+    const neigh = hexNeighborKeys(curr.col, curr.row);
+    for (const nk of neigh) {
+      if (!visited.has(nk)) {
+        visited.add(nk);
+        const [nc, nr] = nk.split(',').map(Number);
+        queue.push({ col: nc, row: nr, d: curr.d + 1 });
+      }
+    }
+  }
+  return result;
+}
+
 module.exports = {
   HEX_SIZE,
   HEX_W,
@@ -133,4 +162,5 @@ module.exports = {
   pixelToHex,
   isPixelInHex,
   hexUnitDistance,
+  getHexesInRadius,
 };
