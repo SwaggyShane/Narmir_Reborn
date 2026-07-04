@@ -181,11 +181,8 @@ const HeroesPanel = () => {
             )}
             <div className="h-1 bg-[var(--bg3)] rounded-[2px] overflow-hidden">
               <div
-                className="h-full rounded-[2px]"
-                style={{
-                  width: `${isMaxLevel ? 100 : xpPct}%`,
-                  background: isMaxLevel ? 'var(--gold)' : levelReady ? 'var(--green)' : 'var(--gold)',
-                }}
+                className={clsx('h-full rounded-[2px]', !isMaxLevel && levelReady ? 'bg-[var(--green)]' : 'bg-[var(--gold)]')}
+                style={{ width: `${isMaxLevel ? 100 : xpPct}%` }}
               />
             </div>
           </div>
@@ -206,11 +203,8 @@ const HeroesPanel = () => {
     return recruitableClasses.map(([id, c]) => (
       <div
         key={id}
-        className="hero-class-opt flex flex-col gap-2.5 cursor-pointer p-3 bg-[var(--bg3)] rounded-[var(--radius)] border transition"
+        className={clsx('hero-class-opt flex flex-col gap-2.5 cursor-pointer p-3 bg-[var(--bg3)] rounded-[var(--radius)] border transition', selectedHeroClass === id ? 'border-[var(--accent1)]' : 'border-[var(--border)]')}
         onClick={() => selectHeroClass(id)}
-        style={{
-          borderColor: selectedHeroClass === id ? 'var(--accent1)' : 'var(--border)',
-        }}
       >
         <div className="flex w-full items-center justify-between">
           <div className="flex gap-2.5 items-center">
@@ -313,7 +307,7 @@ const HeroesPanel = () => {
             <div className="card-title mb-2">Hero Slots</div>
             <div className="mt-2 flex items-center justify-between"><span className="text-[13px] text-[var(--text2)]">Occupied</span><span id="hero-slots-used" className="font-bold text-[var(--text)]">{heroes.length}</span></div>
             <div className="mt-1 flex items-center justify-between"><span className="text-[13px] text-[var(--text2)]">Total available</span><span id="hero-slots-total" className="font-bold text-[var(--gold)]">{maxHeroes}</span></div>
-            <div className="mt-2.5 h-1.5 overflow-hidden rounded-[3px] bg-[var(--bg3)]"><div id="hero-slots-bar" className="h-full bg-[var(--accent1)]" style={{ width: `${maxHeroes > 0 ? Math.min(100, (heroes.length / maxHeroes) * 100) : 0}%`, transition: 'width 0.3s' }} /></div>
+            <div className="mt-2.5 h-1.5 overflow-hidden rounded-[3px] bg-[var(--bg3)]"><div id="hero-slots-bar" className="h-full bg-[var(--accent1)] transition-[width] duration-300" style={{ width: `${maxHeroes > 0 ? Math.min(100, (heroes.length / maxHeroes) * 100) : 0}%` }} /></div>
           </div>
         </div>
       </div>
