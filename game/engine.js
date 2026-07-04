@@ -19,6 +19,7 @@ const {
 const fragmentBonusManager = require("./fragment-bonus-manager");
 const effectsProcessor = require("./synergy-effects-processor");
 const { processScoutProgress } = require("./scout-progress");
+const { revealRingHexes } = require("./visibility");
 const { safeJsonParse, clearParseCache } = require('../utils/helpers');
 const { EPOCH_NOW } = require('../lib/db-sql');
 const { pgInList, pgSetClauseWithNextPlaceholder } = require('../lib/pg-placeholders');
@@ -562,6 +563,12 @@ function processTurn(k, db = null) {
           type: "system",
           message: `🔍 Scouts have completed Ring ${scoutResult.completed_ring_number}! ${scoutResult.new_total - scoutResult.progress_gained} → ${scoutResult.new_total} scout-turns.`,
         });
+        // Defer visibility update to happen after turn is processed (async, non-blocking)
+        if (db && k.id) {
+          revealRingHexes(db, k.id, { ...k, ...updates }, scoutResult.completed_ring_number).catch(err =>
+            console.error(`[engine] Failed to reveal scout ring ${scoutResult.completed_ring_number}: ${err.message}`)
+          );
+        }
       }
     }
   }
