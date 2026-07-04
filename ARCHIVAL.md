@@ -93,6 +93,65 @@
   - **Result:** Ring hexes now properly revealed on ring completion. No hexes lost to invalid filtering.
   - **CI:** All checks green after fixes. Ready for Phase 2E (UI integration).
 
+- **Exploration System Phase 3: Epic Trek Point-and-Go Exploration** (PR #788, merged 2026-07-04): Complete implementation of targeted long-distance expeditions with path revelation and discovery mechanics. Players select a destination on the worldmap, expedition reveals fog along the entire path, and discovers kingdoms/locations en route.
+  - **Phase 3A - Backend Foundation:**
+    - **game/epic-trek-paths.js** — Path calculation and distance metrics:
+      - Straight-line hex enumeration (Bresenham-style interpolation)
+      - Distance calculation in hex units
+      - Turn cost: 1.5 turns per hex distance
+      - Bounds validation (1999×1380 map)
+    - **game/epic-trek-discovery.js** — Location discovery mechanics:
+      - rollKingdomDiscovery: 30% chance per hex (seeded random)
+      - rollLocationDiscovery: 15% chance per hex (seeded random)
+      - processPathDiscoveries: batch discovery processing along entire path
+    - **routes/kingdom-gameplay.js** — POST `/expedition/epic-trek` endpoint:
+      - Ring 2 Scout completion gating (403 if not met)
+      - Target coordinate validation
+      - Turn cost calculation (1.5 per hex)
+      - Food cost calculation (Deep Expedition formula × ranger level)
+      - Creates expedition with path stored in `extra_data` JSON
+      - Atomic updates via db.withTransaction()
+    - **db/schema.js** — Schema migration for extra_data column
+    - **Gemini review (Phase 3A):** 4 critical issues identified and fixed:
+      - ✅ Missing expeditions.extra_data column (added migration)
+      - ✅ Incorrect kingdom property access (kingdom.id, not kingdom.kingdom_id)
+      - ✅ Ranger level parsing from troop_levels JSON
+      - ✅ HTTP status codes (404 for not found, not 500)
+  
+  - **Phase 3B - UI & Hex Click Coordination:**
+    - **client/src/components/react/ExplorationPanel.jsx**:
+      - Epic Trek card with coordinate inputs (X, Y)
+      - Launch button with turn/food validation
+      - Toast feedback on success
+      - Auto-populate from worldmap clicks via lifted state
+    - **client/src/GameShell.jsx**:
+      - Lifts selectedHex coordinates to parent state
+      - Passes to both WorldmapPanel and ExplorationPanel
+      - Enables hex click coordination across separate panels
+    - **client/src/components/react/WorldmapPanel.jsx**:
+      - Interactive hex layer with data attributes
+      - Calls onHexClick when hex clicked
+  
+  - **Phase 3C - Expedition Resolution:**
+    - **game/engine.js** — resolveEpicTrek function:
+      - Processes Epic Trek completion
+      - Reveals fog along entire path (updates seen_cells bitmap atomically)
+      - Queries database to find kingdoms at discovered coordinates
+      - Updates discovered_kingdoms JSON with actual kingdom IDs
+      - Generates reward messages
+      - Integrated into resolveExpeditions loop
+      - Graceful error handling
+  
+  - **Gemini review (Phase 3B/3C):** 6 critical issues identified and fixed:
+    - ✅ Property mismatch: path vs path_hexes in extra_data
+    - ✅ Undefined discovered.id: Added database lookup for kingdoms at coordinates
+    - ✅ React callback state bug: Lifted selectedHex coordinates instead of storing callback
+    - ✅ Updated GameShell props for ExplorationPanel and WorldmapPanel
+    - ✅ Removed unused handleHexClick function
+    - ✅ Added effect to auto-populate coordinates on hex selection
+  
+  - **Result:** Complete Epic Trek system. Player can click worldmap to select destination, expedition calculates path and cost, reveals fog en route, discovers kingdoms, stores results. All Gemini feedback addressed, CI green. Ready for Phase 4 (Regional dungeons/mountains).
+
 - **Exploration System Phase 2E: Scout Allocation UI & Progression Display** (PR #787, ready to merge 2026-07-04): Scout allocation interface and ring progress display in ExplorationPanel. Enables players to manage scout allocation from game UI.
   - **Client Store:** Added scout_allocation and scout_progress state to profileStore with server sync
   - **UI Card:** New Scout Allocation card in ExplorationPanel with:
