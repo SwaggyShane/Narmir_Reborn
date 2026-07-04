@@ -1047,7 +1047,410 @@ Before merge to main:
 
 ---
 
-## Status: Ready for Implementation
+---
+
+## Phase 0 Spike (Proof of Foundation)
+
+**Objective:** Validate hex-utils completeness BEFORE Phase 1 starts. Zero surprises.
+
+**Spike Tasks (2-3 hours):**
+1. Load `game/hex-utils.js` and verify all required functions exist
+2. Write unit tests for:
+   - `pixelToHex(x, y)` — Convert game coords to hex → verify round-trip consistency
+   - `hexUnitDistance(hex1, hex2)` — Distance calculation → verify symmetry
+   - `getHexesInRadius(center, radius)` — Ring enumeration → verify counts match Ring N ≈ 6N
+   - Performance: Ring 1-17 enumeration should all complete <1ms
+3. Test against known map bounds (1999×1380 pixels)
+4. Verify `visibility-cells.js` has: cellToBitIndex, bitIndexToCell, encodeBitmap, decodeBitmap
+
+**Success Criteria:**
+- [ ] All 5 functions present and working
+- [ ] Unit tests pass (round-trip, symmetry, ring counts)
+- [ ] Performance <1ms per ring enumeration
+- [ ] No surprises = Phase 1 can start immediately
+
+**Risk if Skipped:** Phase 1 discovers hex-utils missing functions mid-implementation (1-2 day delay)
+
+---
+
+## Example Code Skeletons (Implementation Blueprint)
+
+**These skeletons prove the plan is implementable and guide Phase 1-4 development.**
+
+### game/config.js (Reference Implementation)
+```javascript
+export const CONFIG = {
+  // Scout System
+  SCOUT_BASE_TURNS: 20,
+  SCOUT_RING_INCREMENT: 5,
+  SCOUT_MAX_RINGS: 17,
+  
+  // Epic Trek
+  EPIC_TREK_TURNS_PER_HEX: 1.5,
+  
+  // Resource Gathering
+  HUNTING_TURN_COST: 5,
+  HUNTING_FOOD_PER_RANGER_L1: 10,
+  HUNTING_BASE_FOOD_COST: 0,
+  
+  PROSPECTING_TURN_COST: 5,
+  PROSPECTING_GOLD_PER_ENGINEER_L1: 5,
+  PROSPECTING_FOOD_COST_PER_HEX: 50,
+  
+  LAND_EXPANSION_RANGERS_PER_LAND: 10,
+  LAND_EXPANSION_POP_COST_PER_LAND: 100,
+  LAND_EXPANSION_TURN_COST: 0,
+  
+  // Regional Expeditions
+  DUNGEON_BASE_TURNS: 50,
+  DUNGEON_TURNS_PER_HEX: 1.5,
+  
+  MOUNTAIN_BASE_TURNS: 100,
+  MOUNTAIN_TURNS_PER_HEX: 1.5,
+  
+  // Modifiers
+  RANGER_LEVEL_BONUS_PER_LEVEL: 0.05,
+};
+```
+
+### game/scout-rings.js (Phase 2B Implementation Blueprint)
+```javascript
+import { getHexesInRadius } from './hex-utils.js';
+import { CONFIG } from './config.js';
+import { levelMultiplier } from './scout-economy.js';
+
+/**
+ * Get all hexes in Ring N (concentric ring at distance N from home).
+ * Ring 0 = home only, Ring 1 = neighbors, Ring N ≈ 6N hexes
+ */
+export function getRingHexes(centerHex, ringNumber) {
+  if (ringNumber === 0) return [centerHex];
+  
+  const allInRadius = getHexesInRadius(centerHex, ringNumber);
+  const prevRadius = ringNumber > 1 ? getHexesInRadius(centerHex, ringNumber - 1) : [centerHex];
+  
+  // Ring N = all hexes at distance N (in radius but not in previous)
+  return allInRadius.filter(hex => !prevRadius.includes(hex));
+}
+
+/**
+ * Calculate turns required to complete Ring N at given ranger count/level/race.
+ * turns = (BASE + (N-1)*INCREMENT) / (rangers * levelMult * raceMod)
+ */
+export function calculateRingTurns(ringNumber, rangerCount, rangerLevel, raceMod) {
+  const baseTurns = CONFIG.SCOUT_BASE_TURNS + (ringNumber - 1) * CONFIG.SCOUT_RING_INCREMENT;
+  const effectivePower = rangerCount * levelMultiplier(rangerLevel) * raceMod;
+  
+  if (effectivePower === 0) return Infinity;
+  return Math.ceil(baseTurns / effectivePower);
+}
+
+/**
+ * Advance scout progression: increment highest_completed_ring if enough turns have elapsed.
+ * Called once per turn by processTurn().
+ */
+export function progressScoutRing(kingdom) {
+  const visibilityData = kingdom.visibility || {};
+  const currentRing = (visibilityData.highest_completed_ring || 0) + 1;
+  
+  if (currentRing > CONFIG.SCOUT_MAX_RINGS) return null; // Already complete
+  
+  const turnsNeeded = calculateRingTurns(
+    currentRing,
+    kingdom.scout_allocation || 0,
+    kingdom.ranger_level || 1,
+    getRaceModifier(kingdom.race)
+  );
+  
+  const turnsSpent = (visibilityData.scout_turns_spent || 0) + 1;
+  
+  if (turnsSpent >= turnsNeeded) {
+    // Ring complete: advance, reveal hexes, reset counter
+    return {
+      highest_completed_ring: currentRing,
+      scout_turns_spent: 0,
+      hexes_to_reveal: getRingHexes(getKingdomHex(kingdom), currentRing)
+    };
+  }
+  
+  return { scout_turns_spent: turnsSpent };
+}
+```
+
+### game/epic-trek-paths.js (Phase 3 Implementation Blueprint)
+```javascript
+import { pixelToHex, hexUnitDistance } from './hex-utils.js';
+import { CONFIG } from './config.js';
+
+/**
+ * Get ordered list of hexes from start to target (straight-line hex enumeration).
+ * No obstacles, no terrain penalties, unrestricted by region boundaries.
+ */
+export function getPathHexes(startX, startY, targetX, targetY) {
+  const startHex = pixelToHex(startX, startY);
+  const targetHex = pixelToHex(targetX, targetY);
+  
+  // Bresenham-style line of hexes
+  const path = [];
+  const steps = getDistanceInHexes(startX, startY, targetX, targetY);
+  
+  for (let i = 0; i <= steps; i++) {
+    const t = steps === 0 ? 0 : i / steps;
+    const x = startX + (targetX - startX) * t;
+    const y = startY + (targetY - startY) * t;
+    const hex = pixelToHex(x, y);
+    
+    if (!path.length || hex !== path[path.length - 1]) {
+      path.push(hex);
+    }
+  }
+  
+  return path;
+}
+
+/**
+ * Calculate turn cost for Epic Trek to target.
+ * cost = 1.5 turns per hex distance
+ */
+export function getEpicTrekTurns(startX, startY, targetX, targetY) {
+  const distance = getDistanceInHexes(startX, startY, targetX, targetY);
+  return Math.ceil(distance * CONFIG.EPIC_TREK_TURNS_PER_HEX);
+}
+
+export function getDistanceInHexes(startX, startY, targetX, targetY) {
+  const startHex = pixelToHex(startX, startY);
+  const targetHex = pixelToHex(targetX, targetY);
+  return hexUnitDistance(startHex, targetHex);
+}
+```
+
+### routes/kingdom-exploration.js (Phase 2A Endpoint Blueprint)
+```javascript
+/**
+ * POST /scout/allocate — Allocate rangers to scouting
+ * Body: { rangers: number }
+ * Enforces: rangers <= available, updateKingdomVisibility() called atomically
+ */
+router.post('/scout/allocate', requireAuth, requireCsrfToken, async (req, res) => {
+  const { rangers } = req.body;
+  const kingdomId = req.session.userId;
+  
+  // Validate
+  if (!Number.isInteger(rangers) || rangers < 0) {
+    return res.status(400).json({ error: 'Rangers must be non-negative integer' });
+  }
+  
+  // Load kingdom, check available rangers
+  const kingdom = await db.get('SELECT * FROM kingdoms WHERE id = ?', [kingdomId]);
+  const available = getTotalRangersAvailable(kingdom);
+  
+  if (rangers > available) {
+    return res.status(400).json({ error: 'Insufficient rangers' });
+  }
+  
+  // Update with atomicity
+  await db.withTransaction(async () => {
+    await db.run('UPDATE kingdoms SET scout_allocation = ? WHERE id = ?', 
+      [rangers, kingdomId]);
+    
+    // Trigger visibility update if needed
+    const visibility = getKingdomVisibility(kingdom);
+    await updateKingdomVisibility(kingdomId, visibility);
+  });
+  
+  return res.json({ success: true, allocated: rangers });
+});
+```
+
+---
+
+## UI Mockup (ExplorationPanel.jsx Layout)
+
+**The new exploration panel after all 4 phases:**
+
+```
+┌────────────────────────────────────────────────────┐
+│         EXPLORATION & REGIONAL EXPEDITIONS         │
+├────────────────────────────────────────────────────┤
+│                                                    │
+│ 🔍 SCOUT (Allocation-Based Ring Reveal)           │
+│ ├─ Status: Ring 4 of 17 Complete                  │
+│ ├─ Progress: [████░░░░░░░░░░░░░░░░░░░░] 24%      │
+│ ├─ ETA: ~18 turns remaining                       │
+│ ├─ Allocated Rangers: [Slider: 0 ←→ 50]           │
+│ ├─ [ Allocate ] [ Release All ]                   │
+│ └─ 📜 Scout Log: "Ring 3 completed" (Turn 142)   │
+│                                                    │
+│ 🗺️  EPIC TREK (Point-and-Go) [UNLOCK @ RING 2] ✅ │
+│ ├─ Instruction: Click target on map               │
+│ ├─ Target: (435, 890) — 12 hexes away            │
+│ ├─ Cost: 18 turns | 120 food                      │
+│ └─ [ LAUNCH ]                                     │
+│                                                    │
+│ ─────── RESOURCE GATHERING (5 TURNS EACH) ──────  │
+│                                                    │
+│ ⚔️  HUNTING (Rangers → Food)                       │
+│ ├─ Send Rangers: [Slider: 0 ←→ 100]               │
+│ ├─ Returns: ~500 food (terrain bonus active)      │
+│ └─ [ HUNT ]                                       │
+│                                                    │
+│ ⛏️  PROSPECTING (Engineers → Gold)                 │
+│ ├─ Send Engineers: [Slider: 0 ←→ 50]              │
+│ ├─ Food Cost: 75 | Returns: ~250 gold             │
+│ └─ [ PROSPECT ]                                   │
+│                                                    │
+│ 🏘️  LAND EXPANSION (Instant)                       │
+│ ├─ Send Rangers: [Slider: 0 ←→ 200]               │
+│ ├─ Population Cost: 500 | Gain: 5 lands           │
+│ └─ [ EXPAND ]                                     │
+│                                                    │
+│ ─────── REGIONAL COMBAT [GATED] ──────────────    │
+│                                                    │
+│ 🏰 DUNGEON RAID [UNLOCK @ FIRST DISCOVERED] ✅    │
+│ ├─ Nearby Dungeon: Cursed Vault (8 hexes)        │
+│ ├─ Cost: 62 turns | 90 food                       │
+│ ├─ Send: Fighters [0-50], Rangers [0-100]        │
+│ └─ [ RAID DUNGEON ]                               │
+│                                                    │
+│ ⛰️  MOUNTAIN'S HEART [UNLOCK @ FIRST DISCOVERED]  │
+│ ├─ Nearby Mountain: Ironpeak (15 hexes)           │
+│ ├─ Cost: 123 turns | 110 food                     │
+│ ├─ Send: Rangers only [0-200]                     │
+│ └─ [ ASCEND MOUNTAIN ]                            │
+│                                                    │
+└────────────────────────────────────────────────────┘
+```
+
+---
+
+## Monitoring & Alerting Strategy (Production Safety)
+
+**Metrics to track in real-time production (Phase 2 onward):**
+
+### Application Metrics
+
+| Metric | Target | Alert Threshold | Escalation |
+|--------|--------|-----------------|------------|
+| `processTurn()` p95 latency | <10ms | >15ms | Page on-call |
+| `processTurn()` p99 latency | <20ms | >30ms | Page on-call |
+| Scout allocation update latency | <5ms | >10ms | Log & monitor |
+| Ring completion rate (hexes/day) | TBD | >20% deviation | Investigate |
+| Epic Trek adoption (% of players) | TBD | Monitor trend | Dashboard |
+| Visibility bitmap corruption | 0 | 1+ detected | Rollback immediately |
+
+### Database Metrics
+
+| Metric | Target | Alert Threshold | Action |
+|--------|--------|-----------------|--------|
+| `INSERT kingdom_location_discoveries` latency | <5ms | >10ms | Index review |
+| `SELECT discovered_by kingdom_id` latency | <2ms | >5ms | Query plan review |
+| Visibility JSON size (bytes) | <10KB/kingdom | >20KB | Data corruption check |
+| World location cache hit rate | >99% | <95% | Cache eviction review |
+
+### Business Metrics
+
+| Metric | Purpose | Alert Threshold |
+|--------|---------|-----------------|
+| Scout allocation average | Usage pattern | If >50% kingdoms allocate 0 rangers → uptake issue |
+| Epic Trek vs Scout discovery ratio | Feature adoption | If Epic Trek < 10% of Scout → usability issue |
+| Ring 2 completion rate | Gating effectiveness | If <5% reach Ring 2 → balancing needed |
+| Dungeon first-discovery time (turns) | Progression pace | If >10K turns average → too slow or too hard |
+
+### Alerting Rules (Automated)
+
+```yaml
+alerts:
+  - name: "processTurn latency spike"
+    condition: "p95_latency > 15ms for 5min"
+    action: "page on-call + profile heap snapshot"
+  
+  - name: "visibility corruption detected"
+    condition: "visibility_bitmap_size > 20KB for any kingdom"
+    action: "immediate rollback + alert engineering"
+  
+  - name: "world location cache thrashing"
+    condition: "cache_hit_rate < 95% for 10min"
+    action: "log + investigate eviction policy"
+  
+  - name: "epic trek adoption too low"
+    condition: "epic_trek_discoveries / scout_discoveries < 0.05 for 7 days"
+    action: "dashboard alert + UX review"
+```
+
+---
+
+## Data Migration Validation Checklist (Phase 2A Deployment)
+
+**Zero surprises on deployment day. Validate everything before production push.**
+
+### Pre-Deployment Validation (Staging)
+
+**Database changes:**
+- [ ] Backup production `kingdoms` table to cold storage
+- [ ] Write idempotent migration script for `scout_allocation` (defaults to 0)
+- [ ] Write idempotent migration script for visibility JSON updates (highest_completed_ring defaults to 0)
+- [ ] Test migrations against 5K-kingdom staging DB replica
+- [ ] Measure migration runtime: should be <10 seconds for 5K kingdoms
+- [ ] Verify no queries fail post-migration ("column not found", JSON parse errors)
+
+**Data integrity:**
+- [ ] Spot-check 10 random kingdoms:
+  - `scout_allocation` is 0
+  - `visibility.highest_completed_ring` is 0 or absent
+  - All existing `visibility` fields (seen_cells, current_cells) unchanged
+- [ ] Verify no NULL values in `scout_allocation` column
+- [ ] Verify no corrupted JSON in `visibility` column
+
+**Functional tests (staging):**
+- [ ] Full test suite passes against migrated DB
+- [ ] `/turn` endpoint works for 100 test kingdoms
+- [ ] `/scout/allocate` endpoint rejects correctly (e.g., allocation > available)
+- [ ] `/scout/status` endpoint returns correct Ring 1 state
+- [ ] Fog of War Phase 4 visibility still works (fog_of_war spell still blinds correctly)
+
+### Deployment Day (Production)
+
+**Pre-push checklist:**
+- [ ] Maintenance window scheduled (30 min minimum)
+- [ ] Rollback plan communicated to team
+- [ ] On-call engineer on standby
+- [ ] Real-time monitoring dashboards open
+
+**Push steps:**
+1. [ ] Announce maintenance to players
+2. [ ] Stop application server (graceful shutdown)
+3. [ ] Run migration script (capture runtime & error log)
+4. [ ] Start application server
+5. [ ] Smoke test: `/turn`, `/scout/allocate`, `/scout/status` all respond
+6. [ ] Monitor processTurn() latency for first 100 turns
+7. [ ] Announce maintenance complete
+
+**Post-deployment validation (first hour):**
+- [ ] processTurn() p95 latency < 10ms (if >15ms, rollback)
+- [ ] No 500 errors on `/turn` endpoint
+- [ ] No visibility corruption detected (spot-check 5 random kingdoms)
+- [ ] /scout endpoints respond correctly
+- [ ] API error rate <0.1% (5-min window)
+
+### Rollback Triggers
+
+**If ANY of these occur, rollback immediately:**
+- [ ] processTurn() p95 latency >20ms
+- [ ] Any kingdom has `visibility.highest_completed_ring = NULL` 
+- [ ] Any query fails with "column not found"
+- [ ] Any API endpoint returns 500 for >1% of requests
+- [ ] Migration script returned non-zero exit code
+
+**Rollback procedure (documented separately):**
+1. Stop application server
+2. Restore `kingdoms` table from pre-deployment backup
+3. Restart application server
+4. Verify `/turn` endpoint works again
+5. Post-incident: RCA + PR to fix root cause
+
+---
+
+## Status: Ready for 10/10 Validation
 
 ✅ **Design locked** (EXPLORATION_SYSTEM_LOCKED.md)  
 ✅ **Plan complete** (IMPLEMENTATION_PLAN.md)  
@@ -1059,6 +1462,11 @@ Before merge to main:
 ✅ **Performance targets measurable** (concrete SLOs with thresholds)  
 ✅ **Rollback strategy documented** (production safety)  
 ✅ **ADRs recorded** (decisions for future maintenance)  
+✅ **Phase 0 spike plan** (proof of foundation)  
+✅ **Example code skeletons** (implementation blueprint)  
+✅ **UI mockup** (design validation)  
+✅ **Monitoring & alerting** (production telemetry)  
+✅ **Migration validation checklist** (deployment safety)  
 
-**Next Step:** Phase 0 verification (confirm hex-utils completeness, then proceed to Phase 1).
+**Next Step:** Final review with Grok, then Phase 0 spike (2-3 hours), then Phase 1 implementation.
 
