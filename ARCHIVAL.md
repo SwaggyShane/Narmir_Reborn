@@ -52,6 +52,29 @@
   - **Performance:** Ring enumeration <5ms even for Ring 17 (919 hexes); suitable for turn-based (Phase 0 validated)
   - **Gemini review:** None (force-push after branch rebase fixed inverted diff; new commit reviewed cleanly). CI green. Ready for Phase 2C (Engine integration).
 
+- **Exploration System Phase 2C: Engine Integration & Scout Progress Ticking** (PR #785, merged 2026-07-04): Turn-based scout ring progression with automatic advancement. Scouts allocated to scout pool accumulate progress each turn based on ranger level and race modifiers.
+  - **Database:** Added `scout_progress INT DEFAULT 0` column to kingdoms table for tracking cumulative scout-turns
+  - **New Module:** Created `game/scout-progress.js` with two core functions:
+    - `getScoutProgressThisTurn(kingdom)` — Calculate scout-turns gained this turn (rangers × level_multiplier × race_modifier)
+      - Level multiplier: 1 + (level-1) × 0.1 (L1=1x, L10=1.9x)
+      - Race modifiers: human 1.0, orc 1.1, high/dark/wood_elf 1.15, dwarf 0.9, dire_wolf/vampire/ogre 1.0
+      - Parses ranger_level from `troop_levels.rangers.level` JSON
+    - `processScoutProgress(kingdom, db)` — Detect ring completion and flag visibility updates
+      - Accumulates progress in `scout_progress` counter
+      - Determines completed ring via `getCompletedRing()`
+      - Returns {progress_gained, new_total, ring_completed, completed_ring_number, visibility_update_needed}
+  - **Engine Integration:** Wired scout progress into `processTurn()` (section 4e-i)
+    - Runs after active event tick-down
+    - Logs system event when rings complete
+    - Passes `db` parameter for future visibility updates
+  - **Gemini Review:** 5 critical issues identified on first commit; all fixed in follow-up commit
+    - ✅ Ranger level parsing (from troop_levels JSON)
+    - ✅ Race modifiers (corrected to actual database races)
+    - ✅ Coordinate extraction (getKingdomMapCoords + pixelToHex)
+    - ✅ DB parameter passing (for visibility updates)
+    - ✅ Error handling (try-catch for coordinate failures)
+  - **CI:** All checks green after fixes. Ready for Phase 2D (Visibility integration).
+
 - **Exploration System Redesign — Design Phase Complete** (PR #778, merged `977c712`): Complete locked specification and 4-phase implementation plan for exploration system transformation. Replaces instant single-turn searches + generic expeditions with turn-based, progression-gated actions:
   - **Scout (allocation-based):** Ring progression (Ring N = 20 + (N-1) × 5 turns), auto-advances through 17 rings, discovers locations/lore/junk, no food cost, greyed out at Ring 17 only, no hard cap on rangers
   - **Epic Trek (point-and-go):** 1.5 turns per hex distance, reveals fog en route, random discovery per hex, food cost scales by ranger count, hidden until Ring 2 Scout complete
