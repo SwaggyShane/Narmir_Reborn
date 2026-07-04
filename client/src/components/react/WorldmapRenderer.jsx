@@ -28,7 +28,7 @@ const RACE_TO_TERRAIN = {
   ogre: 'mountains',
 };
 
-const TERRAIN_COLORS = {
+export const TERRAIN_COLORS = {
   plains: '#556b2f',
   forest: '#2d4a2d',
   mountains: '#5c4033',
@@ -42,7 +42,7 @@ const TERRAIN_COLORS = {
   ocean: '#0d3a5c',
 };
 
-const TERRAIN_DISPLAY_NAMES = {
+export const TERRAIN_DISPLAY_NAMES = {
   plains: 'Plains',
   forest: 'Forest',
   mountains: 'Mountains',
@@ -58,7 +58,7 @@ const TERRAIN_DISPLAY_NAMES = {
 
 // Expedition speed modifier per terrain — kept in sync with game/terrain.js TERRAIN_DATA.
 // Shown in the map tooltip since it's the modifier Phase 2 actually wires into gameplay.
-const TERRAIN_EXP_SPEED = {
+export const TERRAIN_EXP_SPEED = {
   plains: 1.12,
   forest: 0.92,
   mountains: 0.80,
@@ -646,7 +646,7 @@ export function renderWorldMap(
           H +
 
           '" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;border-radius:12px;box-shadow:inset 0 0 40px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.5); background:#040710;">';
-        // Defs - filters and gradients
+        // Defs - filters, gradients, and terrain patterns
         svg +=
 
           "<defs>" +
@@ -660,6 +660,25 @@ export function renderWorldMap(
           '<filter id="softglow"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>' +
 
           '<filter id="uiShadow"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.9"/></filter>' +
+
+          // Terrain patterns for visual distinction
+          '<pattern id="pattern-plains" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M-2,2 l4,-4 M0,8 l8,-8 M6,10 l4,-4" stroke="rgba(255,255,255,0.15)" stroke-width="0.8" stroke-linecap="round"/></pattern>' +
+
+          '<pattern id="pattern-forest" x="0" y="0" width="6" height="6" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="1.5" fill="rgba(255,255,255,0.2)"/></pattern>' +
+
+          '<pattern id="pattern-mountains" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M0,8 l4,-6 l4,6" stroke="rgba(255,255,255,0.2)" stroke-width="1" fill="none"/></pattern>' +
+
+          '<pattern id="pattern-hills" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M0,6 Q2.5,4 5,6 T10,6" stroke="rgba(255,255,255,0.15)" stroke-width="1" fill="none"/></pattern>' +
+
+          '<pattern id="pattern-swamp" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="rgba(255,255,255,0.15)"/><circle cx="6" cy="5" r="0.8" fill="rgba(255,255,255,0.1)"/><circle cx="5" cy="7" r="0.9" fill="rgba(255,255,255,0.12)"/></pattern>' +
+
+          '<pattern id="pattern-desert" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M0,0 l8,8 M8,0 l-8,8 M0,4 l4,-4 M4,8 l4,-4" stroke="rgba(255,255,255,0.12)" stroke-width="0.8"/></pattern>' +
+
+          '<pattern id="pattern-coast" x="0" y="0" width="6" height="6" patternUnits="userSpaceOnUse"><path d="M0,3 Q1.5,1 3,3 T6,3" stroke="rgba(255,255,255,0.2)" stroke-width="1" fill="none"/></pattern>' +
+
+          '<pattern id="pattern-tundra" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="0.8" fill="rgba(255,255,255,0.15)"/><circle cx="8" cy="8" r="0.7" fill="rgba(255,255,255,0.1)"/><circle cx="7" cy="3" r="0.6" fill="rgba(255,255,255,0.12)"/></pattern>' +
+
+          '<pattern id="pattern-volcanic" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="1" fill="rgba(255,255,255,0.12)"/><circle cx="5.5" cy="4" r="0.7" fill="rgba(255,255,255,0.08)"/><circle cx="2" cy="6.5" r="0.8" fill="rgba(255,255,255,0.1)"/></pattern>' +
 
           "</defs>";
 
@@ -777,11 +796,20 @@ export function renderWorldMap(
             // toggle, the same way region borders always show.
             fill = TERRAIN_COLORS[cell.terrain];
           } else if (layers.terrain !== false) {
-            fill = TERRAIN_COLORS[cell.terrain] || TERRAIN_COLORS.plains;
+            var baseColor = TERRAIN_COLORS[cell.terrain] || TERRAIN_COLORS.plains;
+            // Use pattern fill with base color underneath for visual distinction
+            fill = baseColor;
           } else {
             fill = lightenHexColor(meta.color || TERRAIN_COLORS.plains, 0.35);
           }
-          svg += '<path d="' + hexPath(cell.x, cell.y, HEX_SIZE + 0.6) + '" fill="' + fill + '" class="terrain-shape" data-terrain="' + escapeHtml(cell.terrain) + '" data-race="' + escapeHtml(cell.race) + '" style="transform-box:fill-box;transform-origin:center;cursor:default" pointer-events="none"><title>' + escapeHtml(terrainTooltip(cell.terrain)) + '</title></path>';
+          // When terrain layer is on, layer pattern over base color using a group
+          var pathContent = '<path d="' + hexPath(cell.x, cell.y, HEX_SIZE + 0.6) + '" fill="' + fill + '" class="terrain-shape" data-terrain="' + escapeHtml(cell.terrain) + '" data-race="' + escapeHtml(cell.race) + '" style="transform-box:fill-box;transform-origin:center;cursor:default" pointer-events="none"><title>' + escapeHtml(terrainTooltip(cell.terrain)) + '</title></path>';
+          if (layers.terrain !== false && cell.terrain !== 'lake' && cell.terrain !== 'ocean') {
+            // Add pattern overlay hex
+            var patternId = 'pattern-' + cell.terrain;
+            pathContent += '<path d="' + hexPath(cell.x, cell.y, HEX_SIZE + 0.6) + '" fill="url(#' + patternId + ')" class="terrain-pattern" style="pointer-events:none;mix-blend-mode:overlay"/>';
+          }
+          svg += pathContent;
         });
         svg += '</g>';
 

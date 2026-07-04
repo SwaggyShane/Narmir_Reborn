@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { apiCall } from '../../utils/api';
 import { setWorldMapData } from '../../utils/worldMapData.js';
-import { renderWorldMap } from './WorldmapRenderer.jsx';
+import { renderWorldMap, TERRAIN_COLORS, TERRAIN_DISPLAY_NAMES, TERRAIN_EXP_SPEED } from './WorldmapRenderer.jsx';
 import { fmtShort } from '../../utils/numberFormat.js';
 import { repairMojibake } from '../../utils/repairMojibake.js';
 import { RACE_ICONS } from '../../utils/raceIcons.js';
@@ -30,48 +30,6 @@ const DEFAULT_LAYERS = {
   routes: true,
   expeditions: true,
   terrain: false,
-};
-
-const TERRAIN_COLORS = {
-  plains: '#556b2f',
-  forest: '#2d4a2d',
-  mountains: '#5c4033',
-  hills: '#6b5b3f',
-  swamp: '#3a3f2a',
-  desert: '#8b7355',
-  coast: '#3a5f7a',
-  tundra: '#7a8a94',
-  volcanic: '#7a2e1a',
-  lake: '#2a5f8a',
-  ocean: '#0d3a5c',
-};
-
-const TERRAIN_DISPLAY_NAMES = {
-  plains: 'Plains',
-  forest: 'Forest',
-  mountains: 'Mountains',
-  hills: 'Hills',
-  swamp: 'Swamp',
-  desert: 'Desert',
-  coast: 'Coast',
-  tundra: 'Tundra',
-  volcanic: 'Volcanic',
-  lake: 'Lake',
-  ocean: 'Ocean',
-};
-
-const TERRAIN_EXP_SPEED = {
-  plains: 1.12,
-  forest: 0.92,
-  mountains: 0.80,
-  hills: 0.95,
-  swamp: 0.78,
-  desert: 0.88,
-  coast: 1.05,
-  tundra: 0.75,
-  volcanic: 0.70,
-  lake: 0.60,
-  ocean: 0.55,
 };
 
 export async function loadWorldMap({ setLoading, setError, setKingdoms, setTradeRoutes, setNodes, setExpeditions, setWorldSeed, setVisibility } = {}) {
