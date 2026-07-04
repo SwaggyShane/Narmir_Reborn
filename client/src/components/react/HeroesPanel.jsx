@@ -181,7 +181,7 @@ const HeroesPanel = () => {
             )}
             <div className="h-1 bg-[var(--bg3)] rounded-[2px] overflow-hidden">
               <div
-                className={clsx('h-full rounded-[2px]', !isMaxLevel && levelReady ? 'bg-[var(--green)]' : 'bg-[var(--gold)]')}
+                className={clsx('h-full rounded-[2px]', levelReady ? 'bg-[var(--green)]' : 'bg-[var(--gold)]')}
                 style={{ width: `${isMaxLevel ? 100 : xpPct}%` }}
               />
             </div>
