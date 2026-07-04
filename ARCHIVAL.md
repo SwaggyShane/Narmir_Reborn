@@ -10,6 +10,16 @@
 
 ### 2026-07-04
 
+- **Dead Route Handlers Cleanup** (PR #791, merged 2026-07-04): Removed 17 duplicate unreachable route handlers from `kingdom-gameplay.js` (16 routes) and `kingdom-research.js` (1 route). These routes were previously moved to `kingdom-build.js` but remain as dead code since Express matches the first router that handles a given path+method on the same prefix.
+  - **Routes removed:**
+    - `kingdom-gameplay.js`: POST /build-queue, GET/POST /training-allocation, POST /build-allocation, POST /resource-build-allocation, POST /demolish, POST /build, POST /cancel-building, POST /smithy/buy-hammers, POST /smithy/buy-scaffolding, POST /smithy-allocation, POST /tower-craft, POST /tower-cancel, POST /shrine-allocation, POST /mausoleum-allocation, POST /buy-mausoleum-upgrade (16 total)
+    - `kingdom-research.js`: POST /school-allocation (1 total)
+  - **Code reduction:** ~600 lines removed (604 deletions, 2 additions net)
+  - **Cleanup:** Removed unused imports (`validateAllocationObject`, `validateNonNegativeInteger`) and dead constants (`_KINGDOM_RESOURCE`, `_KINGDOM_SMITHY`)
+  - **Gemini Review:** Feedback to remove dead constants entirely (not just prefix) was addressed immediately in follow-up commit. Review comment marked outdated after fix applied.
+  - **Testing:** Lint ✅ (0 errors), CI (Lint/Test/Build, Security, Text Encoding) ✅, Smoke test ✅
+  - **Impact:** No functional impact (dead routes never reached). Reduces maintenance surface area and codebase complexity.
+
 - **Transaction Context Safety Fix: db.withTransaction Migration** (PR #790, merged 2026-07-04): Critical race condition fix migrating all 13 transaction endpoints from manual `BEGIN TRANSACTION`/`ROLLBACK`/`COMMIT` pattern to `db.withTransaction()` helper. Ensures transaction context is properly propagated via `transactionStorage`, enabling reliable row-locking with `SELECT...FOR UPDATE` to prevent lost-update race conditions on concurrent requests.
   - **Problem:** Manual transaction pattern does not propagate transaction context correctly, causing `transactionStorage.getStore()` to return null after `BEGIN`, breaking `SELECT...FOR UPDATE` row locking. Concurrent requests on same row have no mutual exclusion, risking lost updates. Manual pattern also leaks connections (~40-50s until reaper reclaims).
   - **Solution:** `db.withTransaction(fn)` wraps callback in `transactionStorage.run()`, which propagates context correctly. Verified via testing: concurrent `Promise.all` repro drops from ~50s (waiting on reaper) to under 1s with zero leaked connections.
