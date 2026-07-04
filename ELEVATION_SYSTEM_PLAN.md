@@ -103,14 +103,129 @@ Worlds:
 - Precomputed once at world load, cached, never recomputed
 - Seeded with world seed for perfect reproducibility across resets
 
+**FBM Code Skeleton (Noise Generation Implementation):**
+
+```javascript
+// Pseudocode for seedable FBM elevation generation
+import SimplexNoise from 'simplex-noise';  // or use pure-JS Perlin
+
+function generateElevationGrid(worldSeed, hexGrid) {
+  // Initialize seeded noise generator
+  const noise = new SimplexNoise(worldSeed);
+  
+  const elevationMap = {};
+  const OCTAVES = 4;
+  const BASE_SCALE = 0.01;
+  const AMPLITUDE_DECAY = 0.5;
+  
+  hexGrid.forEach(hex => {
+    let elevation = 0;
+    let amplitude = 1.0;
+    let frequency = BASE_SCALE;
+    let maxValue = 0;
+    
+    // Multi-octave FBM loop
+    for (let i = 0; i < OCTAVES; i++) {
+      const x = hex.x * frequency;
+      const y = hex.y * frequency;
+      const value = noise.noise2D(x, y);  // -1 to +1
+      
+      elevation += value * amplitude;
+      maxValue += amplitude;
+      
+      amplitude *= AMPLITUDE_DECAY;
+      frequency *= 2.0;  // Lacunarity = 2
+    }
+    
+    // Normalize to 0-1 range
+    elevation = (elevation / maxValue + 1) / 2;  // Convert -1..1 to 0..1
+    
+    // Apply terrain-type correlation (biome-aware normalization)
+    const terrainBand = correlateTerrainElevation(hex.terrain, elevation);
+    
+    // Store as 0-255
+    elevationMap[hex.id] = Math.round(terrainBand * 255);
+  });
+  
+  return elevationMap;
+}
+
+function correlateTerrainElevation(terrain, noise01) {
+  // Apply biome rules to shape elevation (0.0-1.0)
+  switch (terrain) {
+    case 'ocean':
+      return 0.0;  // Ocean always lowest
+    case 'coast':
+      return noise01 * 0.12;  // Coast: 0-12% (maps to 0-30 in 0-255 scale)
+    case 'plains':
+      return 0.12 + (noise01 * 0.31);  // Plains: 12-43% (31-90 in 0-255)
+    case 'hills':
+      return 0.43 + (noise01 * 0.31);  // Hills: 43-74% (91-149 in 0-255)
+    case 'mountains':
+      return 0.58 + (noise01 * 0.42);  // Mountains: 58-100% (150-255 in 0-255)
+    default:
+      return noise01;  // Fallback: use raw noise
+  }
+}
+```
+
+**Key Implementation Notes:**
+- Use `simplex-noise` npm package (seedable, fast, widely tested)
+- Seeding with `worldSeed` ensures reproducibility
+- 4 octaves captures terrain detail (continents, hills, ridges)
+- Amplitude decay = 0.5 (each octave half the influence)
+- Frequency multiplier = 2 (each octave doubles frequency)
+- Biome correlation happens AFTER noise (don't use raw noise)
+
+**Data Storage Strategy:**
+
+Decision: **STORE elevation in database** (not regenerate on load).
+
+**Rationale:**
+- **Consistency**: Elevation is immutable once generated. If seeding ever drifts (noise library update, floating-point differences), regeneration breaks reproducibility. Storing prevents this.
+- **Performance**: Generation is ~100ms per world (acceptable one-time). Storing saves per-load compute.
+- **Migrations**: If elevation changes (e.g., bugfix to biome rules), stored DB allows targeted backfill vs. breaking all worlds.
+- **Rollback**: Easy to restore elevation from backup if corruption detected.
+
+**Implementation:**
+1. First world load: Generate elevation → Store in `world_elevation` table or `worlds.elevation_grid` column
+2. Subsequent loads: Read from DB (O(1) index lookup per hex)
+3. Fallback: If DB elevation missing (pre-elevation world), regenerate + store once
+
+**Migration Logic:**
+```javascript
+async function ensureWorldElevation(worldId) {
+  const stored = await db.query('SELECT elevation_grid FROM worlds WHERE id = ?', [worldId]);
+  
+  if (stored) return stored;  // Already generated, use it
+  
+  // First-time generation
+  const world = await db.query('SELECT seed FROM worlds WHERE id = ?', [worldId]);
+  const hexGrid = await loadHexGrid(worldId);
+  
+  const elevationMap = generateElevationGrid(world.seed, hexGrid);
+  
+  // Store atomically
+  await db.run('UPDATE worlds SET elevation_grid = ? WHERE id = ?',
+    [JSON.stringify(elevationMap), worldId]);
+  
+  return elevationMap;
+}
+```
+
 **Files to modify:**
 - Server-side world-generation pipeline — Add elevation generation with seeding
 - `client/src/components/react/WorldmapRenderer.jsx` — Consume elevation from pipeline (don't generate)
-- Database schema (if persisting elevation) — Store or regenerate from seeded pipeline
+- Database schema — Add `elevation_grid` JSON column to `worlds` table (or `world_elevation` table)
 
 **Critical:** Elevation must be fully seeded with world seed to guarantee consistency across resets and client/server sync. Store in DB after first generation; do not regenerate (seeding drift breaks reproducibility).
 
 **Performance Note:** Precompute during world generation; O(hex count) one-time cost, zero runtime cost during gameplay.
+
+**Optional Future Enhancement (Post-Launch):**
+Consider adding optional elevation tint layer in renderer (darkened mountains, brightened valleys) for visual pseudo-3D effect. Deferred to Phase 2 or post-launch to keep Phase 1 scope tight. If added: use semi-transparent overlay with blend mode (avoid performance hit).
+
+---
 
 **Rollback Strategy (Phase 1):**
 - If elevation generation causes world corruption or incorrect bands:
@@ -447,6 +562,125 @@ Never use unseeded randomness (Math.random()). Always derive seed from immutable
 - Phase 3C + Tests: 3-5 hours
 - Full Balance Pass: 4-6 hours
 - **Total: ~30-40 hours** (with playtesting; ~24-30 hours code/testing)
+
+---
+
+## Testing Strategy
+
+**All phases require explicit tests before merging. Tests are gated by feature flags.**
+
+### Phase 1: Elevation Data Generation Tests
+
+**Unit Tests:**
+- **Seed Determinism**: Generate elevation with same `worldSeed` twice → identical grids
+  ```javascript
+  const grid1 = generateElevationGrid(12345, hexesA);
+  const grid2 = generateElevationGrid(12345, hexesA);
+  assert(JSON.stringify(grid1) === JSON.stringify(grid2));
+  ```
+- **Band Correlation**: Verify terrain type matches elevation range
+  ```javascript
+  mountains.forEach(hex => assert(grid[hex.id] >= 150 && grid[hex.id] <= 255));
+  oceans.forEach(hex => assert(grid[hex.id] === 0));
+  ```
+- **Range Check**: All elevations in [0, 255]
+  ```javascript
+  Object.values(grid).forEach(elev => assert(elev >= 0 && elev <= 255));
+  ```
+- **Noise Variance**: Elevations are not all identical (noise is working)
+  ```javascript
+  const unique = new Set(Object.values(grid)).size;
+  assert(unique > hex.length * 0.5);  // At least 50% variety
+  ```
+
+**Integration Tests:**
+- Load world → generate elevation → store in DB → reload → verify identical
+- Verify migration: pre-elevation world gets default elevation on first load
+
+### Phase 2: River Flow (DAG) Tests
+
+**Unit Tests:**
+- **DAG Acyclicity**: No hex flows to itself transitively
+  ```javascript
+  const dag = buildDownhillGraph(elevationGrid);
+  dag.forEach(hex => {
+    assert(!canReachSelf(dag, hex));  // No cycles
+  });
+  ```
+- **Flow Conservation**: Inflow ≈ outflow (except at sinks)
+  ```javascript
+  dag.forEach(hex => {
+    const inflow = countUpstreamHexes(dag, hex);
+    const outflow = dag[hex].downhill ? 1 : 0;  // Sink = 0 outflow
+    assert(inflow >= outflow || hex.isOcean);
+  });
+  ```
+- **All Paths Reach Ocean**: Every non-ocean hex eventually flows to ocean
+  ```javascript
+  dag.forEach(hex => {
+    if (hex.terrain !== 'ocean') {
+      assert(reachesOcean(dag, hex));
+    }
+  });
+  ```
+
+**Integration Tests:**
+- River topology validated on world load
+- Rivers render without infinite loops or stuck graphics
+- Visual: tributaries merge at confluences, river width ∝ flow
+
+### Phase 3A: Combat Modifier Tests
+
+**Unit Tests:**
+- **Elevation Lookup**: `getElevationDifference(attacker, defender)` returns correct delta
+  ```javascript
+  assert(getElevationDifference(200, 150) === 50);
+  assert(getElevationDifference(100, 100) === 0);
+  ```
+- **Modifier Isolation**: +7% applied ONLY when flag enabled
+  ```javascript
+  // Flag disabled
+  setFeatureFlag('FEATURE_ELEVATION_COMBAT', false);
+  assert(calculateDamageBonus(attacker, defender) === 0);
+  
+  // Flag enabled, elevation diff > 0
+  setFeatureFlag('FEATURE_ELEVATION_COMBAT', true);
+  assert(calculateDamageBonus(attacker, defender) === 0.07);
+  ```
+- **Elevation Difference Threshold**: Bonus only applies if diff >= 1
+  ```javascript
+  assert(calculateDamageBonus(151, 150) === 0.07);  // diff=1 ✓
+  assert(calculateDamageBonus(150, 150) === 0);     // diff=0 ✗
+  ```
+
+**Integration Tests:**
+- Battle with elevation bonus: damage calculation correct, outcome logged
+- Crash during combat: transaction rolls back, no partial state
+- Feature flag toggle: disable mid-battle, bonus doesn't apply retroactively
+
+### Phase 3B/3C: Movement & Spell Tests
+
+**Unit Tests:**
+- **Movement Fatigue**: 1 point per 10 units uphill
+  ```javascript
+  assert(calculateFatigue(0, 20) === 2);      // Uphill 20 units = 2 fatigue
+  assert(calculateFatigue(20, 0) === 0);      // Downhill = no fatigue
+  ```
+- **Pathfinding No Dead Zones**: A* with elevation cost finds route or fails gracefully
+  ```javascript
+  const path = findPath(start, goal, elevationGrid);
+  assert(path !== null || isUnreachable(start, goal));  // Either finds path or flags unreachable
+  ```
+- **Spell LOS Block**: Elevation obstructs line-of-sight
+  ```javascript
+  assert(canCast(valley, peak) === false);  // Peak blocks valley
+  assert(canCast(peak, valley) === true);   // Valley doesn't block peak
+  ```
+
+**Integration Tests:**
+- Movement with elevation penalties doesn't break navigation UI
+- Spells blocked by elevation show proper error message
+- No edge cases where elevation creates invisible no-cast zones
 
 ---
 
