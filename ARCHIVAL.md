@@ -2,7 +2,7 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-04 (CSS Consolidation Phase 4H-4I: OptionsPanel PR #804, NewsPanel PR #805)
+**Last updated:** 2026-07-04 (CSS Consolidation Phase 4H-4J: OptionsPanel PR #804, NewsPanel PR #805, HeroesPanel PR #806)
 
 ---
 
@@ -159,6 +159,16 @@
   - **Approach:** Direct clsx conversion, no new variables needed since `clsx` was already imported and used elsewhere in the file.
   - **Gemini Review:** No feedback. Clean conversion, no issues identified.
   - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, all 4 baseline checks), Sanity ✅ (no logic changes, existing CSS vars reused), CI ✅ (all 3 checks green)
+  - **Code Quality:** All changes lint ✅. No functional regressions.
+
+- **Admin CSS Consolidation: Phase 4J (HeroesPanel)** (PR #806, merged 2026-07-04): Refactoring HeroesPanel component to convert 3 inline styles to Tailwind CSS classes via clsx. Hero cards, hero class recruitment options, and hero slots capacity bar.
+  - **Conversion Results:** 3 static/conditional styles converted (100% success). Dynamic width percentages kept inline in all three cases (runtime values, not statically analyzable by Tailwind).
+  - **Key Improvements:**
+    - Hero XP progress bar background color: `clsx('h-full rounded-[2px]', levelReady ? 'bg-[var(--green)]' : 'bg-[var(--gold)]')`, width remains inline
+    - Hero class option border color: `clsx('hero-class-opt ...', selectedHeroClass === id ? 'border-[var(--accent1)]' : 'border-[var(--border)]')`
+    - Hero slots bar: static `transition: 'width 0.3s'` converted to `transition-[width] duration-300` Tailwind class, width remains inline
+  - **Gemini Review:** 1 feedback item — redundant `!isMaxLevel && levelReady` condition simplified to `levelReady` (levelReady's definition already requires level < 25, the exact inverse of isMaxLevel). Addressed in follow-up commit.
+  - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, all 4 baseline checks), Sanity ✅ (no logic changes, existing CSS vars reused), CI ✅ (all 3 checks green after fix)
   - **Code Quality:** All changes lint ✅. No functional regressions.
 
 - **Dead Route Handlers Cleanup** (PR #791, merged 2026-07-04): Removed 17 duplicate unreachable route handlers from `kingdom-gameplay.js` (16 routes) and `kingdom-research.js` (1 route). These routes were previously moved to `kingdom-build.js` but remain as dead code since Express matches the first router that handles a given path+method on the same prefix.
