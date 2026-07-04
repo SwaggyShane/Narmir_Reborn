@@ -807,6 +807,14 @@ export function renderWorldMap(
         });
         svg += '</g>';
 
+        // Phase 3: Interactive hex layer for Epic Trek target selection
+        // Invisible clickable hexes (for exploration mode)
+        svg += '<g class="wm-layer wm-layer-hex-interact" style="pointer-events:auto">';
+        hexGrid.cells.forEach(function (cell) {
+          svg += '<path d="' + hexPath(cell.x, cell.y, HEX_SIZE + 0.6) + '" fill="transparent" stroke="none" data-hex-x="' + Math.round(cell.x) + '" data-hex-y="' + Math.round(cell.y) + '" style="cursor:crosshair;opacity:0" />';
+        });
+        svg += '</g>';
+
         // River network: overlaid directly on the terrain fill (not a gap
         // like region borders — rivers are a geographic feature painted on
         // top of whatever biome they cross, not a boundary carved out of it).

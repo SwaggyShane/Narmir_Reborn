@@ -532,6 +532,50 @@ const ExplorationPanel = () => {
     }
   }, [scout_allocation, applyResult, refreshAll]);
 
+  const handleHexClick = useCallback((hexX, hexY) => {
+    setEpicTrekTargetX(hexX);
+    setEpicTrekTargetY(hexY);
+    if (typeof window !== 'undefined' && typeof toast === 'function') {
+      toast(`Target set to (${hexX}, ${hexY})`, 'info');
+    }
+  }, []);
+
+  const handleEpicTrek = useCallback(async () => {
+    const x = Number(epicTrekTargetX);
+    const y = Number(epicTrekTargetY);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Enter valid target coordinates (click on map or type X,Y)', 'error');
+      return;
+    }
+
+    if ((turns_stored || 0) < 1) {
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Epic Trek requires turns', 'warn');
+      return;
+    }
+
+    try {
+      const result = await apiCall('/api/kingdom/expedition/epic-trek', {
+        method: 'POST',
+        body: { target_x: x, target_y: y },
+      });
+
+      if (result.error) {
+        if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.error, 'error');
+        return;
+      }
+
+      applyResult(result, 'epic-trek-start');
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast(result.message || 'Epic Trek launched!', 'success');
+      logInstantEntry('🗺️', 'Epic Trek', `Heading to (${x}, ${y}) — ${result.path_hexes} hexes, ${result.turns_left} turns`);
+      setEpicTrekTargetX('');
+      setEpicTrekTargetY('');
+      await refreshAll();
+    } catch (err) {
+      console.error('[expedition/epic-trek] failed:', err);
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Epic Trek failed — please try again', 'error');
+    }
+  }, [epicTrekTargetX, epicTrekTargetY, turns_stored, applyResult, logInstantEntry, refreshAll]);
+
   const renderRow = (entry, isCompleted = false) => {
     const rewards = isCompleted ? normalizeRewards(entry.rewards) : [];
     const troops = `${formatNum(entry.rangers)} rangers${entry.fighters > 0 ? `, ${formatNum(entry.fighters)} fighters` : ''}`;
