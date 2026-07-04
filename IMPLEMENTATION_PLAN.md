@@ -303,14 +303,22 @@ CREATE TABLE kingdom_location_discoveries (
   id SERIAL PRIMARY KEY,
   kingdom_id INT NOT NULL REFERENCES kingdoms(id) ON DELETE CASCADE,
   location_id INT NOT NULL REFERENCES world_locations(id) ON DELETE CASCADE,
+  discovered_via VARCHAR(20) NOT NULL DEFAULT 'unknown',
+    -- 'scout', 'epic-trek', 'manual' (for admin testing)
   discovered_turn INT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(kingdom_id, location_id),
   INDEX idx_kingdom_id (kingdom_id),
-  INDEX idx_location_id (location_id)
+  INDEX idx_location_id (location_id),
+  INDEX idx_discovered_via (discovered_via)
 );
 ```
-**Why:** Replaces `discovered_by_kingdom_ids TEXT[]` in world_locations. Avoids large array accumulation, enables proper indexing, supports analytics queries (e.g., "which kingdoms discovered this dungeon?"), and keeps query performance constant O(1) instead of O(array_length).
+**Why:** Replaces `discovered_by_kingdom_ids TEXT[]` in world_locations. Avoids large array accumulation, enables proper indexing, supports analytics queries (e.g., "which kingdoms discovered this dungeon?", "how many discoveries via Scout vs Epic Trek?"), and keeps query performance constant O(1) instead of O(array_length).
+
+**Analytics Benefits:**
+- Track discovery method distribution (Scout vs Epic Trek prevalence)
+- Measure Epic Trek adoption rate (% of dungeons found via Epic Trek)
+- Identify which discovery method is more efficient for players
 
 ### Migration Strategy
 - Phase 1: No migration (uses existing expeditions table)
@@ -361,6 +369,35 @@ CREATE TABLE kingdom_location_discoveries (
 - Ring 1 = 6 hexes (hex neighbors)
 - Ring N ≈ 6×N hexes (approximation; exact count varies at boundaries)
 - Max rings = 17 (covers full map, ~918 hexes at 34 pixels/hex = 1999×1380 map)
+
+### Visibility Interaction with Ring Completion (Fog Reveal Strategy)
+
+**How `seen_cells` / `current_cells` interact with scout ring progression:**
+
+- **seen_cells (canonical):** Cumulative set of all hexes ever revealed (never shrinks)
+  - Updated atomically when: (1) Ring completes, (2) Epic Trek path crossed, (3) fog_of_war debuff expires
+  - Persisted in `kingdoms.visibility.seen_cells` bitmask
+  - Represents "what the kingdom has discovered over all time"
+
+- **current_cells (derived):** Visible hexes right now (affected by active debuffs)
+  - Computed from `seen_cells` but may be temporarily reduced by fog_of_war spell (enemy-cast)
+  - fog_of_war debuff overrides to home-hex-only for 3 turns (locked from Fog of War Phase 4)
+  - After debuff expires, current_cells reverts to full seen_cells
+  - Does NOT update seen_cells (debuff is temporary vision loss, not permanent discovery loss)
+
+- **Ring completion fog reveal:**
+  - When ring N completes (highest_completed_ring increments), all hexes in Ring N are added to seen_cells
+  - Option A (preferred): Incremental reveal — hexes revealed gradually as ring progresses (0.25 hex per tick)
+  - Option B (fallback): Full ring reveal — all hexes in ring revealed atomically on completion
+  - Both approaches update seen_cells atomically via `updateKingdomVisibility()` with db.withTransaction
+  - Visibility JSON updated: `seen_cells` bitmap + `highest_completed_ring` counter
+
+- **Epic Trek fog reveal:**
+  - Each hex crossed on Epic Trek path is added to seen_cells
+  - Path hexes revealed atomically after expedition completes
+  - Kingdom auto-discovers any kingdoms in revealed hexes (added to discovered_kingdoms)
+
+**No conflict between systems:** seen_cells only grows; ring completion and Epic Trek both safely append to it.
 
 ### Gating & Validation (Server-Side Enforcement Required)
 
@@ -905,6 +942,7 @@ game/epic-trek-paths.js
 game/epic-trek-discovery.js
 game/world-locations.js
 game/location-distance.js
+game/visibility-utils.js — Bitmap encoding/decoding helpers (keeps visibility.js clean)
 routes/scout-allocation.js
 test/hunting-economy.test.js
 test/prospecting-economy.test.js
@@ -913,6 +951,8 @@ test/scout-allocation.test.js
 test/epic-trek-paths.test.js
 test/world-locations.test.js
 ```
+
+**Note on visibility-utils.js:** Bitmap math (cellToBitIndex, bitIndexToCell, encodeBitmap, decodeBitmap) is likely already in `game/visibility-cells.js` from Fog of War Phase 2. If not present, extract/create as new utility to keep visibility.js focused on logic, not bitwise operations.
 
 ### Modified Files
 ```
@@ -987,19 +1027,38 @@ Before merge to main:
 
 ---
 
-## Notes for Reviewers
+## Notes for Implementers
 
-1. **Path of Least Resistance:** Fog reveal via full-ring on Scout completion is acceptable if sub-hex incremental is too complex. Can iterate later.
+1. **Phase 0 is critical:** Verify hex-utils completeness before starting Phase 1. No showstoppers expected (Fog of War Phase 1 proved the foundation), but confirm all functions are tested.
 
-2. **Regional Locations:** Seeding can be simple (one per region at boot). Coordinates should be random within region bounds, validated against water hexes.
+2. **Phase 2 milestones are gated:** Each sub-phase (2A, 2B, 2C, 2D) must pass its gate before proceeding. This prevents massive integration surprises.
 
-3. **No New Hard Caps:** Scout allocation has unlimited ranger assignment (unlike Epic Trek). This is intentional for late-game progression.
+3. **Visibility interaction is delicate:** seen_cells (cumulative) and current_cells (temporary, debuff-aware) must stay synchronized. Use atomicity (db.withTransaction) strictly. See "Visibility Interaction with Ring Completion" section.
 
-4. **Achievement Compatibility:** Scout stays available after full reveal (Ring 1-16) for achievement hunters seeking junk prizes.
+4. **Analytics wins via discovered_via:** Track "scout" vs "epic-trek" discoveries. This data will inform future balancing and progression decisions.
 
-5. **Gating is Soft:** Epic Trek/Dungeon/Mountain are hidden in UI, but no server-side block. If player discovers location via other means, they can attempt expedition. UI gating is for UX, not security.
+5. **Performance targets are real SLOs:** processTurn() <10ms at 1000 kingdoms is not aspirational. If you hit >15ms during Phase 2B testing, stop and profile before proceeding.
+
+6. **No New Hard Caps (Scout):** Scout allocation has unlimited ranger assignment. This is intentional for late-game progression and allows creative player strategies.
+
+7. **Achievement Compatibility:** Scout stays available after Ring 17 (highest_completed_ring == 17) for completionists seeking junk prizes.
+
+8. **Server-Side Gating (Not UI):** Epic Trek/Dungeon/Mountain are hidden in UI for UX, but all gating is enforced server-side (403 responses). No exceptions.
 
 ---
 
-**Ready for review. Awaiting approval to begin Phase 1 coding.**
+## Status: Ready for Implementation
+
+✅ **Design locked** (EXPLORATION_SYSTEM_LOCKED.md)  
+✅ **Plan complete** (IMPLEMENTATION_PLAN.md)  
+✅ **Team feedback incorporated** (9.5/10 → production-ready)  
+✅ **All 4 phases detailed** (with Phase 2 broken into 4 testable milestones)  
+✅ **Config constants defined** (all magic numbers in one place)  
+✅ **Formulas canonical** (single source of truth)  
+✅ **State ownership clear** (architectural boundaries documented)  
+✅ **Performance targets measurable** (concrete SLOs with thresholds)  
+✅ **Rollback strategy documented** (production safety)  
+✅ **ADRs recorded** (decisions for future maintenance)  
+
+**Next Step:** Phase 0 verification (confirm hex-utils completeness, then proceed to Phase 1).
 
