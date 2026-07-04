@@ -705,10 +705,10 @@ const BuildPanel = () => {
               </div>
             </div>
             <div className="flex gap-1.5">
-              <button className="base-btn variant-accent flex-1 rounded-full px-3 py-1.5 text-[11px] font-semibold shadow-sm" style={{ background: 'var(--accent1)' }} onClick={distributeBuildEvenly}>
+              <button className="base-btn variant-accent flex-1 rounded-full px-3 py-1.5 text-[11px] font-semibold shadow-sm bg-[var(--accent1)]" onClick={distributeBuildEvenly}>
                 Distribute
               </button>
-              <button className="base-btn variant-red flex-1 rounded-full px-3 py-1.5 text-[11px] font-semibold shadow-sm" style={{ background: 'var(--red)' }} onClick={releaseAllEngineers}>
+              <button className="base-btn variant-red flex-1 rounded-full px-3 py-1.5 text-[11px] font-semibold shadow-sm bg-[var(--red)]" onClick={releaseAllEngineers}>
                 Release All
               </button>
               <button className="base-btn variant-gold flex-1 rounded-full px-3 py-1.5 text-[11px] font-semibold shadow-sm bg-[var(--gold)] text-black" onClick={saveBuildAllocation}>
@@ -733,8 +733,7 @@ const BuildPanel = () => {
           <div className="mb-3 border-b border-white/10 pb-3 pt-3">
             <button
               onClick={() => setShowBuildingRef(!showBuildingRef)}
-              className="w-full rounded-lg border-2 border-[var(--orange)] px-3 py-2 text-left transition-colors hover:bg-white/5"
-              style={{ marginBottom: showBuildingRef ? '8px' : '0' }}
+              className={'w-full rounded-lg border-2 border-[var(--orange)] px-3 py-2 text-left transition-colors hover:bg-white/5' + (showBuildingRef ? ' mb-2' : '')}
             >
               <div className="flex items-center gap-2 text-[13px] font-semibold text-text">
                 <span className="text-[10px]">{showBuildingRef ? '▼' : '▶'}</span>
@@ -823,7 +822,7 @@ const BuildPanel = () => {
                                   </div>
                                 )}
                                 {hint && (
-                                  <div className="mt-1.5 text-[10px] italic" style={{ color: RESONANCE_COLOR[tier] || 'var(--text3)', opacity: resonanceOpacity(contrib?.count || 1), letterSpacing: '0.2px' }}>
+                                  <div className={`mt-1.5 text-[10px] italic ${tier === 'convergence' ? 'text-[var(--gold)]' : tier === 'alignment' ? 'text-[var(--amber)]' : 'text-[var(--text3)]'}`} style={{ opacity: resonanceOpacity(contrib?.count || 1), letterSpacing: '0.2px' }}>
                                     <span className="mr-1">{RESONANCE_GLYPH[tier] || '.'}</span>{hint}
                                   </div>
                                 )}
@@ -1016,16 +1015,7 @@ const BuildPanel = () => {
               <div className="text-[18px] font-bold text-gold">{fmt(smithyDisplay.hammersStored)}</div>
               <div className="text-[11px] text-text3">/ {fmt(smithyDisplay.hammersCap)} cap</div>
               {hammerDurability !== null && (
-                <div
-                  className="text-[11px] mt-0.5"
-                  style={{
-                    color: hammerDurability > 50
-                      ? 'var(--green)'
-                      : hammerDurability > 20
-                        ? 'var(--amber)'
-                        : 'var(--red)',
-                  }}
-                >
+                <div className={'text-[11px] mt-0.5 ' + (hammerDurability > 50 ? 'text-[var(--green)]' : hammerDurability > 20 ? 'text-[var(--amber)]' : 'text-[var(--red)]')}>
                   {hammerDurability}% durability
                 </div>
               )}
