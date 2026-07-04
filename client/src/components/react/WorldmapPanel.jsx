@@ -24,6 +24,18 @@ import { useWorldMapViewport } from '../../hooks/useWorldMapViewport.js';
 
 const MAP_REGIONS = Object.keys(REGION_META);
 
+const RACE_COLORS = {
+  dwarf: { bg: '#8B6914', text: '#c8962a' },
+  high_elf: { bg: '#1a4a2e', text: '#4caf82' },
+  orc: { bg: '#4a1010', text: '#e05c5c' },
+  dark_elf: { bg: '#1a1030', text: 'var(--accent1)' },
+  human: { bg: '#1a2a10', text: '#8fb84a' },
+  dire_wolf: { bg: '#0d1a20', text: '#4a8fb8' },
+  vampire: { bg: '#2a0a1a', text: '#8b1a4a' },
+  ogre: { bg: '#3a2410', text: '#b8752a' },
+  wood_elf: { bg: '#0f3018', text: '#3fae5c' },
+};
+
 const DEFAULT_LAYERS = {
   kingdoms: true,
   nodes: true,
@@ -88,6 +100,7 @@ function RegionLegend({ kingdoms, highlightedRace, onHighlight }) {
     <div className="flex flex-col">
       {MAP_REGIONS.map((race) => {
         const meta = REGION_META[race] || {};
+        const colors = RACE_COLORS[race] || { bg: '#333', text: '#999' };
         const icon = RACE_ICONS[race] || '?';
         const count = kingdoms.filter((k) => k.race === race).length;
         const bonus = REGION_BONUSES[race] || '';
@@ -105,7 +118,7 @@ function RegionLegend({ kingdoms, highlightedRace, onHighlight }) {
           >
             <span
               className="inline-block h-3 w-3 shrink-0 rounded-sm border-[1.5px]"
-              style={{ background: meta.color, borderColor: meta.stroke }}
+              style={{ background: colors.bg, borderColor: colors.text }}
             />
             <span className="text-sm">{icon}</span>
             <div className="min-w-0 flex-1">
@@ -426,7 +439,7 @@ const WorldmapPanel = ({ onHexClick = null } = {}) => {
                   {mapCard.kingdom.is_ai && <span className="text-[10px] text-[var(--text3)]"> AI</span>}
                 </div>
                 <div className="text-[12px] text-[var(--text3)] mb-2">
-                  <span style={{ color: mapCard.meta.stroke || '#fff' }}>
+                  <span style={{ color: RACE_COLORS[mapCard.kingdom.region]?.text || '#fff' }}>
                     {mapCard.meta.name || mapCard.kingdom.region || '—'}
                   </span>{' '}
                   | Level {mapCard.kingdom.level || 1} | Turn {mapCard.kingdom.turn || 0}
