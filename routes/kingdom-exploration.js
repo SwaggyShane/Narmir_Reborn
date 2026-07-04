@@ -65,6 +65,18 @@ module.exports = function (db) {
           ]);
           if (!k) throw new Error('Kingdom not found');
 
+          // Validate unit availability
+          if (r > engine.getAvailableUnits(k, 'rangers')) {
+            const error = new Error('Not enough available rangers (some may be in training)');
+            error.statusCode = 400;
+            throw error;
+          }
+          if (f > engine.getAvailableUnits(k, 'fighters')) {
+            const error = new Error('Not enough available fighters (some may be in training)');
+            error.statusCode = 400;
+            throw error;
+          }
+
           // Get the location for this kingdom's region
           const location = getLocationByRegionAndType(k.race, type);
           if (!location) throw new Error(`No ${type} found in your region`);
@@ -79,22 +91,24 @@ module.exports = function (db) {
             throw error;
           }
 
+          const newTurnsStored = Math.max(0, k.turns_stored - turnCost);
+
           // Deduct turns and mark location discovered
           await db.run(
-            'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1) WHERE id = $2',
-            [turnCost, k.id]
+            'UPDATE kingdoms SET turns_stored = $1 WHERE id = $2',
+            [newTurnsStored, k.id]
           );
 
           await markLocationDiscovered(db, location.id, k.id);
 
-          // Track first discovery
-          if (type === 'dungeon' && !k.first_dungeon_found_turn) {
-            await db.run('UPDATE kingdoms SET first_dungeon_found_turn = $1 WHERE id = $2', [k.turn_num || 0, k.id]);
-          } else if (type === 'mountain' && !k.first_mountain_found_turn) {
-            await db.run('UPDATE kingdoms SET first_mountain_found_turn = $1 WHERE id = $2', [k.turn_num || 0, k.id]);
+          // Track first discovery (use === null to properly handle turn 0)
+          if (type === 'dungeon' && k.first_dungeon_found_turn === null) {
+            await db.run('UPDATE kingdoms SET first_dungeon_found_turn = $1 WHERE id = $2', [k.turn || 0, k.id]);
+          } else if (type === 'mountain' && k.first_mountain_found_turn === null) {
+            await db.run('UPDATE kingdoms SET first_mountain_found_turn = $1 WHERE id = $2', [k.turn || 0, k.id]);
           }
 
-          return { turnCost, distance };
+          return { turnCost, distance, newTurnsStored };
         });
 
         const label = type === 'dungeon' ? 'Dungeon' : 'Mountain';
@@ -103,9 +117,9 @@ module.exports = function (db) {
         res.json({
           ok: true,
           turns_left: 0,
-          turns_stored: 0,
+          turns_stored: result.newTurnsStored,
           distance: result.distance.toFixed(1),
-          updates: {},
+          updates: { turns_stored: result.newTurnsStored },
           events: [],
           message: repairMojibake(message),
         });

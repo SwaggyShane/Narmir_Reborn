@@ -5,7 +5,7 @@
 
 'use strict';
 
-const { pixelToHex, hexUnitDistance } = require('./hex-utils');
+const { hexUnitDistance } = require('./hex-utils');
 const { getKingdomMapCoords } = require('./world-map-coords');
 
 /**
@@ -19,15 +19,17 @@ function getDistanceToLocation(kingdom, location) {
     return 0;
   }
 
-  // Get kingdom home coordinates
+  // Get kingdom home coordinates and calculate distance directly using pixel coordinates
   const kingdomCoords = getKingdomMapCoords(kingdom);
-  const kingdomHex = pixelToHex(kingdomCoords.map_x, kingdomCoords.map_y);
 
-  // Get location hex coordinates
-  const locationHex = pixelToHex(location.x, location.y);
-
-  // Calculate hex distance
-  return hexUnitDistance(kingdomHex, locationHex);
+  // hexUnitDistance expects four numeric pixel coordinates (x1, y1, x2, y2)
+  // Location coordinates may be returned as strings from database, so wrap in Number()
+  return hexUnitDistance(
+    kingdomCoords.map_x,
+    kingdomCoords.map_y,
+    Number(location.x),
+    Number(location.y)
+  );
 }
 
 /**

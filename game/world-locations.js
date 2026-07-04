@@ -170,11 +170,8 @@ async function markLocationDiscovered(db, locationId, kingdomId) {
   try {
     await db.run(
       `UPDATE world_locations
-       SET discovered_by_kingdom_ids = array_append(
-         CASE WHEN discovered_by_kingdom_ids @> ARRAY[$2] THEN discovered_by_kingdom_ids
-              ELSE array_append(discovered_by_kingdom_ids, $2)
-         END, NULL)
-       WHERE id = $1 AND NOT (discovered_by_kingdom_ids @> ARRAY[$2])`,
+       SET discovered_by_kingdom_ids = array_append(COALESCE(discovered_by_kingdom_ids, '{}'), $2::integer)
+       WHERE id = $1 AND NOT (COALESCE(discovered_by_kingdom_ids, '{}') @> ARRAY[$2]::integer[])`,
       [locationId, kingdomId],
     );
   } catch (err) {
