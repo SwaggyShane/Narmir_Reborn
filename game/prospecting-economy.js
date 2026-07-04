@@ -66,7 +66,7 @@ function calculateFoodCost(engineerCount, engineerLevel) {
   const baseCost = config.PROSPECTING_CONSTANTS.BASE_FOOD_COST_PER_HEX;
   const minCost = config.PROSPECTING_CONSTANTS.MIN_FOOD_COST_PER_HEX;
 
-  const cost = Math.floor(baseCost * engineersUsed * (1 / mult));
+  const cost = Math.floor(baseCost * engineersUsed * mult);
   return Math.max(minCost, cost);
 }
 

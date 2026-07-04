@@ -159,8 +159,10 @@ module.exports = function (db) {
 
   // POST /expedition/hunting — Turn-based hunting for food
   router.post('/expedition/hunting', requireAuth, requireCsrfToken, async (req, res) => {
-    const { rangers } = req.body;
+    const { rangers, terrain } = req.body;
     const r = Math.max(0, parseInt(rangers) || 0);
+    const validTerrains = ['forest', 'grassland', 'mountain', 'water'];
+    const t = terrain && validTerrains.includes(terrain) ? terrain : 'forest';
 
     if (r < 1) return res.status(400).json({ error: 'Send at least 1 ranger' });
 
@@ -193,20 +195,19 @@ module.exports = function (db) {
           throw error;
         }
 
-        const reward = calculateHuntingReward(r, k.ranger_level || 1, 'grassland', k.race);
+        const reward = calculateHuntingReward(r, k.ranger_level || 1, t, k.race);
 
         await db.run(
-          'UPDATE kingdoms SET rangers = GREATEST(0, rangers - $1), turns_stored = GREATEST(0, turns_stored - $2), food = food + $3 WHERE id = $4',
-          [r, config.HUNTING_CONSTANTS.TURN_COST, reward.foodReward, k.id],
+          'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1), food = food + $2 WHERE id = $3',
+          [config.HUNTING_CONSTANTS.TURN_COST, reward.foodReward, k.id],
         );
 
         await db.run(
-          'INSERT INTO expeditions (kingdom_id, type, turns_left, rangers, food_taken, rewards) VALUES ($1, $2, $3, $4, $5, $6)',
-          [k.id, 'hunting', 0, r, 0, JSON.stringify({ food: reward.foodReward })],
+          'INSERT INTO expeditions (kingdom_id, type, turns_left, rangers, food_taken, rewards, rewards_claimed) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+          [k.id, 'hunting', 0, r, 0, JSON.stringify({ food: reward.foodReward }), 1],
         );
 
         let updates = {
-          rangers: Math.max(0, k.rangers - r),
           turns_stored: Math.max(0, k.turns_stored - config.HUNTING_CONSTANTS.TURN_COST),
           food: k.food + reward.foodReward,
         };
@@ -229,8 +230,10 @@ module.exports = function (db) {
 
   // POST /expedition/prospecting — Turn-based prospecting for gold
   router.post('/expedition/prospecting', requireAuth, requireCsrfToken, async (req, res) => {
-    const { engineers } = req.body;
+    const { engineers, terrain } = req.body;
     const e = Math.max(0, parseInt(engineers) || 0);
+    const validTerrains = ['forest', 'grassland', 'mountain', 'water'];
+    const t = terrain && validTerrains.includes(terrain) ? terrain : 'mountain';
 
     if (e < 1) return res.status(400).json({ error: 'Send at least 1 engineer' });
 
@@ -263,7 +266,7 @@ module.exports = function (db) {
           throw error;
         }
 
-        const reward = calculateProspectingReward(e, k.engineer_level || 1, 'grassland', k.race);
+        const reward = calculateProspectingReward(e, k.engineer_level || 1, t, k.race);
 
         if (k.food < reward.foodCost) {
           const error = new Error(`Prospecting requires ${reward.foodCost.toLocaleString()} food (you have ${k.food.toLocaleString()})`);
@@ -272,17 +275,16 @@ module.exports = function (db) {
         }
 
         await db.run(
-          'UPDATE kingdoms SET engineers = GREATEST(0, engineers - $1), turns_stored = GREATEST(0, turns_stored - $2), food = GREATEST(0, food - $3), gold = gold + $4 WHERE id = $5',
-          [e, config.PROSPECTING_CONSTANTS.TURN_COST, reward.foodCost, reward.goldReward, k.id],
+          'UPDATE kingdoms SET turns_stored = GREATEST(0, turns_stored - $1), food = GREATEST(0, food - $2), gold = gold + $3 WHERE id = $4',
+          [config.PROSPECTING_CONSTANTS.TURN_COST, reward.foodCost, reward.goldReward, k.id],
         );
 
         await db.run(
-          'INSERT INTO expeditions (kingdom_id, type, turns_left, fighters, food_taken, rewards) VALUES ($1, $2, $3, $4, $5, $6)',
-          [k.id, 'prospecting', 0, e, reward.foodCost, JSON.stringify({ gold: reward.goldReward })],
+          'INSERT INTO expeditions (kingdom_id, type, turns_left, engineers, food_taken, rewards, rewards_claimed) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+          [k.id, 'prospecting', 0, e, reward.foodCost, JSON.stringify({ gold: reward.goldReward }), 1],
         );
 
         let updates = {
-          engineers: Math.max(0, k.engineers - e),
           turns_stored: Math.max(0, k.turns_stored - config.PROSPECTING_CONSTANTS.TURN_COST),
           food: Math.max(0, k.food - reward.foodCost),
           gold: k.gold + reward.goldReward,
@@ -306,8 +308,10 @@ module.exports = function (db) {
 
   // POST /expedition/land-expansion — Instant land discovery
   router.post('/expedition/land-expansion', requireAuth, requireCsrfToken, async (req, res) => {
-    const { rangers } = req.body;
+    const { rangers, terrain } = req.body;
     const r = Math.max(0, parseInt(rangers) || 0);
+    const validTerrains = ['forest', 'grassland', 'mountain', 'water'];
+    const t = terrain && validTerrains.includes(terrain) ? terrain : 'grassland';
 
     if (r < 1) return res.status(400).json({ error: 'Send at least 1 ranger' });
 
@@ -324,7 +328,7 @@ module.exports = function (db) {
           throw error;
         }
 
-        const reward = calculateLandExpansionReward(r, k.ranger_level || 1, 'grassland', k.race, k.population);
+        const reward = calculateLandExpansionReward(r, k.ranger_level || 1, t, k.race, k.population);
 
         if (reward.landsDiscovered === 0) {
           const error = new Error('No land discovered (insufficient population or rangers)');

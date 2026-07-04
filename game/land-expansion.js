@@ -31,27 +31,18 @@ function landExpansionBaseReward(rangerCount, rangerLevel) {
 
 /**
  * Apply terrain modifier to land expansion discovery rate.
- * Varies by race preference (use RACE_BONUSES).
  */
-function applyTerrainModifier(baseLands, terrain, race) {
+function applyTerrainModifier(baseLands, terrain) {
   if (baseLands === 0) return 0;
 
-  // Default terrain modifiers (can be overridden by race preference)
-  const defaultMods = {
+  const mods = {
     forest: 1.0,
     grassland: 1.0,
     mountain: 0.8,
     water: 0.3,
   };
 
-  // Check if race has terrain preference (e.g., forest_yield)
-  const raceBonus = config.RACE_BONUSES[race];
-  const terrain_key = `${terrain}_yield`;
-  if (raceBonus && raceBonus[terrain_key]) {
-    return Math.max(0, Math.floor(baseLands * raceBonus[terrain_key]));
-  }
-
-  const mod = defaultMods[terrain] || 1.0;
+  const mod = mods[terrain] || 1.0;
   return Math.max(0, Math.floor(baseLands * mod));
 }
 
@@ -83,7 +74,7 @@ function calculatePopulationCost(landsDiscovered) {
  */
 function calculateLandExpansionReward(rangerCount, rangerLevel, terrain, race, availablePopulation) {
   const baseReward = landExpansionBaseReward(rangerCount, rangerLevel);
-  const withTerrain = applyTerrainModifier(baseReward, terrain, race);
+  const withTerrain = applyTerrainModifier(baseReward, terrain);
   const withRace = applyRaceModifier(withTerrain, race);
 
   let landsToDiscover = Math.max(0, withRace);
