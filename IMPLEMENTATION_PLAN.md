@@ -98,50 +98,52 @@ Transform exploration from instant single-turn searches + generic expeditions in
 
 ---
 
-### Phase 2: Scout System — Allocation Model (est. 10-12 files)
+### Phase 2: Scout System — Allocation Model (est. 10-12 files, 4 milestones)
 
 **Objective:** Implement Scout allocation pool with ring-based progression
 
-**Database:**
-- `kingdoms` table: Add `scout_allocation` INT DEFAULT 0 (rangers allocated to scouting)
-- `kingdoms.visibility` column: Update to track which rings are complete
-  - Add `completed_rings` array/bitmask to visibility JSON
-  - Add `current_ring` INT to track progression
+**BROKEN INTO 4 INTERNAL MILESTONES (testable checkpoints):**
 
-**Files to Create:**
-- `game/scout-rings.js` — Ring geometry, hex counts, completion tracking
-  - `getRingHexes(ring_number)` → list of hex coordinates
-  - `getTotalHexesInRings(ring_count)` → cumulative
-  - `calculateRingTurns(ring, rangers, level, race_mod)` → 20 + (ring-1)*5 scaled
-- `game/scout-allocation.js` — Allocation validation, progress tracking
-  - `allocateRangersToScout(kingdom, rangers)` → persist allocation
-  - `progressScoutRing(kingdom)` → advance ring when complete
-- `routes/scout-allocation.js` — New route file for scout allocation endpoints
+#### Phase 2A: Database & Allocation Persistence
+**Scope:** Schema migration + basic allocation API
+- `kingdoms` table: Add `scout_allocation INT DEFAULT 0`
+- `kingdoms.visibility`: Add `highest_completed_ring INT DEFAULT 0` (canonical storage; current ring derived)
+- Files: `game/scout-allocation.js`, `routes/kingdom-exploration.js` (new `/scout/allocate`, `/scout/release-all`)
+- Tests: Allocation validation, persistence
+- **Gate to 2B:** Allocation persists across restarts; can allocate/release without errors
 
-**Files to Modify:**
-- `routes/kingdom-exploration.js` — Add `/scout/allocate`, `/scout/release-all` endpoints
-- `client/src/components/react/ExplorationPanel.jsx` — Scout allocation UI (Allocate button, ranger slider, release all)
+#### Phase 2B: Engine Integration & Ring Progression
+**Scope:** Turn processing + ring advancement logic
+- `game/scout-rings.js` — Ring geometry (getRingHexes, getTotalHexesInRings, getNextRingTurnsRequired)
+- `game/engine.js` — processTurn() calls scout progress ticking
+- `game/visibility.js` — Ring completion → visibility update trigger
+- Tests: Ring progression math, turn costs, ring advancement logic
+- **Gate to 2C:** Rings advance on completion; processTurn() <2ms at 100 kingdoms baseline
+
+#### Phase 2C: Visibility Integration & Fog Reveal
+**Scope:** Visibility bitmap updates when rings complete
 - `game/visibility.js` — Integrate ring completion into visibility updates
-- `db/schema.js` — Add `scout_allocation` column, update visibility registration
-- `test/` — Scout ring math, allocation validation tests
+- Database: visibility JSON updates atomic
+- Tests: Visibility updates correct, no data loss
+- **Gate to 2D:** Fog reveal works correctly; visibility persists accurately
 
-**Endpoints New:**
-- `POST /scout/allocate` — Allocate N rangers to scouting
-- `POST /scout/release-all` — Release all scouts
-- `GET /scout/status` — Get current ring, completion %, ETA
+#### Phase 2D: UI & UX
+**Scope:** Frontend allocation interface + progress display
+- `client/src/components/react/ExplorationPanel.jsx` — Scout allocation UI (Allocate button, ranger slider, release all)
+- ETA calculation display
+- Status: "Ring 1 of 17 | 45% complete | ~15 turns remaining"
+- Tests: UI displays correct data, updates on state change
+- **Gate to Phase 3:** UI is responsive, calculations accurate
 
-**Engine Integration:**
-- Modify `processTurn()` in `game/engine.js` to tick scout progress per turn
-- Update visibility calculation to include completed rings
-
-**Completion Criteria:**
-- [ ] Scout allocation persists across turns
-- [ ] Rings auto-advance on completion
-- [ ] Ring turn costs scale: Ring N = 20 + (N-1) × 5
-- [ ] Fog reveals progressively (or full-ring on complete)
-- [ ] Scout greyed out only at Ring 17
+**All Phase 2 Milestones Completion Criteria:**
+- [ ] Scout allocation persists across server restarts
+- [ ] Rings auto-advance on completion (no manual trigger)
+- [ ] Ring turn costs scale: Ring N = 20 + (N-1) × 5 (via SCOUT_BASE_TURNS + SCOUT_RING_INCREMENT)
+- [ ] Fog reveals on ring completion (hexes in ring become visible)
+- [ ] Scout greyed out only at Ring 17 (highest_completed_ring == 17)
 - [ ] Scout discoveries (locations, lore, junk) show in log
 - [ ] Race modifiers apply to ring progression
+- [ ] processTurn() performance: <2ms @100 kingdoms → <10ms @1000 kingdoms → <40ms @5000 kingdoms
 
 **Dependencies:** Phase 1 (uses allocation pattern)
 
@@ -278,7 +280,8 @@ ALTER TABLE kingdoms ADD COLUMN first_dungeon_found_turn INT;
 ALTER TABLE kingdoms ADD COLUMN first_mountain_found_turn INT;
 
 -- visibility column (existing, needs updates)
--- Add to existing JSON: completed_rings (array), current_ring (int)
+-- Add to existing JSON: highest_completed_ring INT DEFAULT 0
+-- (DO NOT store current_ring separately; derive it as highest_completed_ring + 1)
 ```
 
 ### New Table (world_locations)
@@ -289,11 +292,25 @@ CREATE TABLE world_locations (
   region_name VARCHAR(50) NOT NULL,
   x NUMERIC NOT NULL,
   y NUMERIC NOT NULL,
-  discovered_by_kingdom_ids TEXT[] DEFAULT '{}',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(type, region_name)
 );
 ```
+
+### New Table (kingdom_location_discoveries) — Join table for scalability
+```sql
+CREATE TABLE kingdom_location_discoveries (
+  id SERIAL PRIMARY KEY,
+  kingdom_id INT NOT NULL REFERENCES kingdoms(id) ON DELETE CASCADE,
+  location_id INT NOT NULL REFERENCES world_locations(id) ON DELETE CASCADE,
+  discovered_turn INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(kingdom_id, location_id),
+  INDEX idx_kingdom_id (kingdom_id),
+  INDEX idx_location_id (location_id)
+);
+```
+**Why:** Replaces `discovered_by_kingdom_ids TEXT[]` in world_locations. Avoids large array accumulation, enables proper indexing, supports analytics queries (e.g., "which kingdoms discovered this dungeon?"), and keeps query performance constant O(1) instead of O(array_length).
 
 ### Migration Strategy
 - Phase 1: No migration (uses existing expeditions table)
@@ -311,21 +328,22 @@ CREATE TABLE world_locations (
 
 **Rationale:**
 - Fog of War Phase 2 already implemented `kingdoms.visibility` with seen_cells/current_cells bitmaps
-- Phase 2 adds `completed_rings` and `current_ring` to the same JSON column
+- Phase 2 adds scout progression tracking to the same JSON column
 - Dedicated `map_visibility` table would require refactoring Fog of War's existing visibility system (high risk, out of scope)
 - Kingdom-scoped JSON approach is proven to work (already in production via Fog of War phases)
 
-**Implementation Detail:**
-- `kingdoms.visibility` JSON structure:
+**Implementation Detail - NO DUPLICATED STATE:**
+- `kingdoms.visibility` JSON structure (canonical):
   ```json
   {
     "seen_cells": "1234567890...",
     "current_cells": "9876543210...",
-    "completed_rings": [1, 2, 3],
-    "current_ring": 4,
+    "highest_completed_ring": 3,
     "epic_trek_discovered_hexes": "..."
   }
   ```
+- **Current ring is DERIVED:** `current_ring = highest_completed_ring + 1` (not stored separately)
+- **Why:** Avoids data corruption from state divergence (if current_ring and highest_completed_ring disagree, which is authoritative?)
 - Use `db.withTransaction()` for atomic read-modify-write on visibility updates
 - Lazy initialization: backfill home-hex visibility on first read via `getInitialVisibility()` (proven pattern from Fog of War)
 
@@ -375,66 +393,164 @@ CREATE TABLE world_locations (
 
 ---
 
+## Configuration Constants (Canonical)
+
+**All magic numbers must be defined in `game/config.js` and imported by all game modules. Never hardcode numbers in code.**
+
+```javascript
+// game/config.js
+
+// Scout System
+SCOUT_BASE_TURNS: 20,              // Ring 1 cost
+SCOUT_RING_INCREMENT: 5,           // Per ring increase
+SCOUT_MAX_RINGS: 17,               // Maximum ring progression
+
+// Epic Trek
+EPIC_TREK_TURNS_PER_HEX: 1.5,      // Distance cost multiplier
+
+// Resource Gathering
+HUNTING_TURN_COST: 5,
+HUNTING_FOOD_PER_RANGER_L1: 10,
+HUNTING_BASE_FOOD_COST: 0,         // No food cost for hunting
+
+PROSPECTING_TURN_COST: 5,
+PROSPECTING_GOLD_PER_ENGINEER_L1: 5,
+PROSPECTING_FOOD_COST_PER_HEX: 50, // Deep Expedition formula
+
+LAND_EXPANSION_RANGERS_PER_LAND: 10,
+LAND_EXPANSION_POP_COST_PER_LAND: 100,
+LAND_EXPANSION_TURN_COST: 0,       // Instant
+
+// Regional Expeditions
+DUNGEON_BASE_TURNS: 50,
+DUNGEON_TURNS_PER_HEX: 1.5,
+
+MOUNTAIN_BASE_TURNS: 100,
+MOUNTAIN_TURNS_PER_HEX: 1.5,
+
+// Modifiers (locked)
+RANGER_LEVEL_BONUS_PER_LEVEL: 0.05, // Level 100 = 5.95x
+
+// Terrain Modifiers (examples; tune via playtesting)
+TERRAIN_MODIFIER_FOREST: 1.0,       // Hunting favorable
+TERRAIN_MODIFIER_MOUNTAIN: 1.0,     // Prospecting favorable
+TERRAIN_MODIFIER_OTHER: 0.8,
+```
+
+**Usage Example in Code:**
+```javascript
+// game/scout-rings.js
+function calculateRingTurns(ring, rangerCount, rangerLevel, raceMod) {
+  const baseTurns = CONFIG.SCOUT_BASE_TURNS + (ring - 1) * CONFIG.SCOUT_RING_INCREMENT;
+  return baseTurns / (rangerCount * levelMult(rangerLevel) * raceMod);
+}
+```
+
+**Benefits:**
+- Single source for all tunable values
+- Easy balancing (change one number, everywhere updates)
+- Prevents hardcoded value inconsistencies
+- Clear configuration surface for admins/balancers
+
+---
+
 ## Core Formulas Reference (Canonical)
 
 **Scout Ring Turn Cost (Allocation-Based):**
 ```
 turns_per_ring(ring_number, ranger_count, ranger_level, race_modifier) =
-  (20 + (ring_number - 1) × 5) ÷ (ranger_count × level_multiplier(ranger_level) × race_modifier)
+  (SCOUT_BASE_TURNS + (ring_number - 1) × SCOUT_RING_INCREMENT) 
+  ÷ (ranger_count × level_multiplier(ranger_level) × race_modifier)
   
 Where:
-  level_multiplier(L) = 1 + (L - 1) × 0.05  [L=1 → 1.0x, L=100 → 5.95x]
-  race_modifier = varies by race (e.g., 0.9–1.1x)
+  SCOUT_BASE_TURNS = 20 (config)
+  SCOUT_RING_INCREMENT = 5 (config)
+  level_multiplier(L) = 1 + (L - 1) × RANGER_LEVEL_BONUS_PER_LEVEL
+  RANGER_LEVEL_BONUS_PER_LEVEL = 0.05 (config) [L=1 → 1.0x, L=100 → 5.95x]
+  race_modifier = varies by race (e.g., 0.9–1.1x, from RACE_MODIFIERS config)
 ```
 
-**Hunting Reward (5 turns, no food cost):**
+**Hunting Reward (HUNTING_TURN_COST turns, no food cost):**
 ```
-food_reward = 10 × ranger_count × level_multiplier(ranger_level) × forest_terrain_modifier × race_modifier
-
-Where:
-  forest_terrain_modifier = 1.0 (forest), 0.8 (other biomes)
-  race_modifier = race-dependent bonuses/penalties
-```
-
-**Prospecting Reward (5 turns, deep expedition food cost):**
-```
-gold_reward = 5 × engineer_count × level_multiplier(engineer_level) × mountain_terrain_modifier × race_modifier
-food_cost = (engineer_count × level_multiplier(engineer_level)) × BASE_FOOD_COST_PER_HEX
+food_reward = HUNTING_FOOD_PER_RANGER_L1 
+            × ranger_count 
+            × level_multiplier(ranger_level) 
+            × terrain_modifier(biome) 
+            × race_modifier
 
 Where:
-  mountain_terrain_modifier = 1.0 (mountain), 0.8 (other biomes)
-  BASE_FOOD_COST_PER_HEX = floored per unit level, matches Deep Expedition formula
+  HUNTING_FOOD_PER_RANGER_L1 = 10 (config)
+  HUNTING_TURN_COST = 5 (config)
+  HUNTING_BASE_FOOD_COST = 0 (config) — no food cost
+  terrain_modifier = TERRAIN_MODIFIER_FOREST (1.0), TERRAIN_MODIFIER_OTHER (0.8)
+  race_modifier = from RACE_MODIFIERS config
 ```
 
-**Land Expansion Reward (Instant, 100 pop per land discovered):**
+**Prospecting Reward (PROSPECTING_TURN_COST turns, deep expedition food cost):**
 ```
-lands_discovered = (ranger_count ÷ 10) × level_multiplier(ranger_level) × race_modifier × terrain_modifier
-population_cost = lands_discovered × 100
+gold_reward = PROSPECTING_GOLD_PER_ENGINEER_L1 
+            × engineer_count 
+            × level_multiplier(engineer_level) 
+            × terrain_modifier(biome) 
+            × race_modifier
+
+food_cost = (engineer_count × level_multiplier(engineer_level)) 
+          × PROSPECTING_FOOD_COST_PER_HEX
 
 Where:
-  base_unit = 10 rangers L1 = 1 land
-  race_modifier = varies by race (e.g., humans 1.0x, elves 1.1x, etc.)
-  terrain_modifier = race-dependent biome preference
+  PROSPECTING_GOLD_PER_ENGINEER_L1 = 5 (config)
+  PROSPECTING_TURN_COST = 5 (config)
+  PROSPECTING_FOOD_COST_PER_HEX = 50 (config, matches Deep Expedition)
+  terrain_modifier = TERRAIN_MODIFIER_MOUNTAIN (1.0), TERRAIN_MODIFIER_OTHER (0.8)
+```
+
+**Land Expansion Reward (LAND_EXPANSION_TURN_COST, 100 pop per land):**
+```
+lands_discovered = (ranger_count ÷ LAND_EXPANSION_RANGERS_PER_LAND) 
+                 × level_multiplier(ranger_level) 
+                 × race_modifier 
+                 × terrain_modifier
+
+population_cost = lands_discovered × LAND_EXPANSION_POP_COST_PER_LAND
+
+Where:
+  LAND_EXPANSION_RANGERS_PER_LAND = 10 (config) — base unit
+  LAND_EXPANSION_POP_COST_PER_LAND = 100 (config)
+  LAND_EXPANSION_TURN_COST = 0 (config) — instant
+  race_modifier = from RACE_MODIFIERS config
+  terrain_modifier = race-dependent biome preference (config)
 ```
 
 **Epic Trek Turn Cost (Point-and-Go):**
 ```
-total_turns = 1.5 × hex_distance(kingdom_hex, target_hex)
-food_cost = (ranger_count × level_multiplier(ranger_level)) × BASE_FOOD_COST_PER_HEX
+total_turns = EPIC_TREK_TURNS_PER_HEX × hex_distance(kingdom_hex, target_hex)
+food_cost = (ranger_count × level_multiplier(ranger_level)) 
+          × PROSPECTING_FOOD_COST_PER_HEX
 
 Where:
+  EPIC_TREK_TURNS_PER_HEX = 1.5 (config)
   hex_distance = Manhattan/hex distance in hex units
-  BASE_FOOD_COST_PER_HEX = matches Deep Expedition formula
+  PROSPECTING_FOOD_COST_PER_HEX = 50 (config, matches Deep Expedition)
 ```
 
 **Dungeon Raid Turn Cost (Regional Location):**
 ```
-total_turns = 50 + (1.5 × hex_distance(kingdom, dungeon_location))
+total_turns = DUNGEON_BASE_TURNS + (DUNGEON_TURNS_PER_HEX × hex_distance)
+
+Where:
+  DUNGEON_BASE_TURNS = 50 (config)
+  DUNGEON_TURNS_PER_HEX = 1.5 (config)
+  hex_distance = from kingdom position to dungeon location
 ```
 
 **Mountain's Heart Turn Cost (Regional Location):**
 ```
-total_turns = 100 + (1.5 × hex_distance(kingdom, mountain_location))
+total_turns = MOUNTAIN_BASE_TURNS + (MOUNTAIN_TURNS_PER_HEX × hex_distance)
+
+Where:
+  MOUNTAIN_BASE_TURNS = 100 (config)
+  MOUNTAIN_TURNS_PER_HEX = 1.5 (config)
+  hex_distance = from kingdom position to mountain location
 ```
 
 ---
@@ -548,6 +664,231 @@ total_turns = 100 + (1.5 × hex_distance(kingdom, mountain_location))
 | Migration safety for existing kingdoms (visibility data) | Data corruption | Backfill kingdoms.visibility on first boot (lazy init in getKingdomVisibility); test against 5K+ kingdom DB |
 | Concurrency on scout allocation updates | Lost updates (race condition) | Use db.withTransaction for allocation updates; test concurrent updates in integration tests |
 | Hex coordinate system confusion (pixels vs hex vs game coords) | Integration bugs | Keep coords separate: X,Y continuous (game data), hex visual only; document clearly in Phase 0 |
+
+---
+
+## State Ownership & Architectural Boundaries
+
+**Critical for preventing concurrency bugs and architectural debt.** These rules must be enforced in code review.
+
+| Component | Owner | Allowed Mutations | Read-Only Access | Notes |
+|-----------|-------|-------------------|------------------|-------|
+| `scout_allocation` | `game/scout-allocation.js` via `/scout/*` routes | `/scout/allocate`, `/scout/release-all` | All routes via `validateRangerAllocation()` | No other route may mutate |
+| `highest_completed_ring` | `game/engine.js` processTurn() | processTurn() only via scout ticking | All modules via getter | UI/API may read only |
+| `kingdoms.visibility` | `game/visibility.js` | Only `updateKingdomVisibility()` | All modules via `getKingdomVisibility()` | Use db.withTransaction atomicity |
+| `world_locations` | Bootstrap @ server start | None (immutable after creation) | All modules via cache lookup | Discoveries tracked separately in `kingdom_location_discoveries` |
+| `kingdom_location_discoveries` | Routes discovering locations | INSERT only (no UPDATE/DELETE) | All modules via query | One entry per kingdom+location pair |
+
+---
+
+## Failure Cases & Edge Cases (Expected Behavior)
+
+These must be handled explicitly in code; no silent failures.
+
+### Scout System
+
+- **Rangers die while scouting:** Scout allocation decreases; progress ticks slower until restored
+- **Player reallocates units:** Allocation updates immediately; progress rate changes on next turn
+- **Allocation exceeds available rangers:** Route rejects with 400 + error message (enforced by validateRangerAllocation)
+- **Scout reaches Ring 17:** Scout becomes greyed out; no further progress; "Full map revealed" message in log
+- **Ring completion while offline:** Ring advances on next turn after login (processTurn catches up)
+- **Visibility corruption (highest_completed_ring incorrect):** On first getKingdomVisibility call, lazy backfill recomputes from seen_cells and corrects value
+
+### Epic Trek
+
+- **Destination becomes invalid (e.g., out of map bounds):** Route rejects target with 400 before expedition starts
+- **Kingdom destroyed mid-expedition:** Expedition completes normally (no special case); results delivered even if kingdom no longer exists (handled by engine)
+- **Food depletes mid-expedition:** Expedition completes (expedition food cost is pre-deducted); no interruption
+- **Player cancelled expedition:** Follow existing `DELETE /expedition/:id` pattern; turns refunded, no partial progress
+- **Pathfinding crosses own kingdom:** Normal behavior; path includes home hex if target is within one hex
+
+### Dungeon Raid / Mountain's Heart
+
+- **Dungeon/Mountain seeded in water:** Boot validation prevents this (collision detection + water-avoidance check)
+- **Region has no dungeon:** Endpoint returns 404 with message "Dungeon not discovered"; does not auto-create
+- **Distance calculation overflow (extreme map distance):** Turn cost capped at MAX_TURN_COST to prevent integer overflow
+- **Gating check race condition:** Server enforces at request time; two concurrent requests may both pass or both fail (consistent)
+
+---
+
+## Rollback Strategy (Production Safety)
+
+Every deployment must be reversible. If validation fails, rollback to previous stable state within **<5 minutes** of detection.
+
+### Rollback Actions (in order)
+
+1. **Disable new endpoints** (returns 403)
+   - Disable `/scout/allocate`, `/scout/release-all`, `/scout/status` routes
+   - Disable `/expedition/epic-trek` route
+   - Disable `/expedition/dungeon`, `/expedition/mountain` distance-based turn costs (revert to old formula if present)
+
+2. **Preserve existing data**
+   - Leave all `scout_allocation` and visibility JSON data untouched (can inspect later)
+   - Leave `world_locations` table untouched (no data loss)
+   - Existing kingdoms remain playable with pre-Phase features
+
+3. **Restore previous deployment**
+   - Redeploy previous container image
+   - Restart application server
+   - Clear any caches
+
+4. **Validate restoration**
+   - Confirm `/turn` endpoint still responds
+   - Confirm expeditions still work with old formula
+   - Confirm no 500 errors on login
+
+### Rollback Triggers
+
+- ❌ processTurn() average latency > 50ms (2x target)
+- ❌ Visibility data corruption detected (highest_completed_ring inconsistency)
+- ❌ World location seeding produces invalid coordinates (in-water, out-of-bounds)
+- ❌ Scout allocation total exceeds available rangers (concurrency bug)
+- ❌ API errors on `/turn` endpoint > 1% of requests (5-min window)
+
+### Validation Before Production
+
+- [ ] Load test: 1,000 concurrent kingdoms with scout allocations; processTurn() <10ms
+- [ ] Integrity check: Scan 5K+ kingdom DB for visibility corruption; all should match expectations
+- [ ] Functional test: Smoke test all 4 phases in staging replica
+- [ ] Gating test: Attempt Epic Trek/Dungeon/Mountain before gating conditions met; all should 403
+
+---
+
+## Measurable Performance Targets
+
+All metrics are per-kingdom, averaged over 100+ consecutive turns.
+
+### processTurn() Latency (CRITICAL)
+
+| Scenario | Target | Threshold | Action if Exceeded |
+|----------|--------|-----------|-------------------|
+| 100 kingdoms, no scouts | <2ms | >3ms | Investigate baseline |
+| 100 kingdoms, 50% with scout alloc | <2.5ms | >3.5ms | Profile scout tick code |
+| 1,000 kingdoms, 50% with scout alloc | <10ms | >15ms | Cache ring calculations |
+| 5,000 kingdoms, 50% with scout alloc | <40ms | >60ms | Consider batching or async |
+
+### Ring Calculation Performance
+
+| Operation | Target | Threshold |
+|-----------|--------|-----------|
+| getRingHexes(ring 1-17) | <1ms | >2ms |
+| Ring completion check | <100μs | >200μs |
+
+### World Location Lookup
+
+| Operation | Target | Threshold |
+|-----------|--------|-----------|
+| Boot cache load (all regions) | <250ms | >500ms |
+| Memory cache lookup | <1μs | >5μs |
+
+### Database Queries
+
+| Query | Target | Threshold |
+|-------|--------|-----------|
+| INSERT kingdom_location_discoveries | <5ms | >10ms |
+| SELECT discovered_by kingdom_id | <2ms | >5ms |
+
+---
+
+## Architecture Decision Records (ADR)
+
+Key decisions that influenced the design. Reference these in code reviews to maintain consistency.
+
+### ADR-001: kingdoms.visibility JSON Storage (Fog of War Phase 2)
+
+**Status:** Accepted  
+**Decided:** 2026-07-04  
+
+**Decision:** Store visibility in kingdoms.visibility JSON column, not dedicated map_visibility table.
+
+**Rationale:**
+- Fog of War Phase 2 already uses this structure
+- Avoids breaking existing visibility system
+- Kingdom-scoped data naturally fits kingdom row
+- Proven in production
+
+**Consequences:**
+- JSON updates must be atomic (use db.withTransaction)
+- Backfill required for new kingdoms
+- No visibility table normalization (acceptable trade-off)
+
+---
+
+### ADR-002: Canonical Scout State (highest_completed_ring)
+
+**Status:** Accepted  
+**Decided:** 2026-07-04  
+
+**Decision:** Store only `highest_completed_ring` in visibility JSON. Derive current_ring as `highest_completed_ring + 1`.
+
+**Rationale:**
+- Prevents state divergence (duplicated state = data corruption risk)
+- Single source of truth is always consistent
+- No need for migration if highest_completed_ring is missing (defaults to 0 = Ring 1)
+
+**Consequences:**
+- All code must use getter function, never hardcode `current_ring`
+- Ring display logic: `currentRing = visibility.highest_completed_ring + 1`
+- Adding ring 0 (home hex always visible) doesn't require schema change
+
+---
+
+### ADR-003: World Location Discoveries (Join Table)
+
+**Status:** Accepted  
+**Decided:** 2026-07-04  
+
+**Decision:** Use `kingdom_location_discoveries` join table instead of `discovered_by_kingdom_ids TEXT[]` array.
+
+**Rationale:**
+- Arrays grow unbounded (1000 kingdoms = 1000-element array per location)
+- Proper indexing enables fast queries (who discovered this dungeon?)
+- Analytics queries natural (e.g., discovery rates by region)
+- O(1) membership tests via database
+
+**Consequences:**
+- Requires separate table and schema migration for Phase 4
+- Queries use JOIN instead of array containment
+- Adds 2 indexes (by kingdom_id, by location_id)
+
+---
+
+### ADR-004: Configuration Constants in game/config.js
+
+**Status:** Accepted  
+**Decided:** 2026-07-04  
+
+**Decision:** All magic numbers (turn costs, food costs, etc.) defined as constants in game/config.js.
+
+**Rationale:**
+- Single source for all tunable values
+- Easy balancing (change one place, everywhere updates)
+- Prevents copy-paste errors
+- Clear configuration surface
+
+**Consequences:**
+- Import CONFIG from game/config.js in all game modules
+- Database migrations may reference constants
+- Admin tools can read CONFIG for display/validation
+
+---
+
+### ADR-005: Server-Side Gating (Not UI-Only)
+
+**Status:** Accepted  
+**Decided:** 2026-07-04  
+
+**Decision:** All progression gates enforced server-side with 403 responses. UI hiding is UX, not security.
+
+**Rationale:**
+- Prevents exploits (players can bypass UI)
+- Ensures consistent game state across all clients
+- Supports API-only clients (bots, scripts)
+
+**Consequences:**
+- Every gated action must validate server-side
+- UI is a reflection of server state, not a gatekeeper
+- Test concurrent requests for gate race conditions
 
 ---
 
