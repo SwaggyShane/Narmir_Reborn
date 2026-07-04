@@ -2,7 +2,7 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-04 (Elevation System Plan finalized: expert feedback + 17 robustness improvements + 3 polish sections integrated)
+**Last updated:** 2026-07-04 (CSS Consolidation Phase 4D: EconomyPanel 10 inline styles → Tailwind, PR #800 pending CI)
 
 ---
 
@@ -92,7 +92,8 @@ _None currently — see Known Technical Debt below for post-beta cleanup items._
   - **Phase 4 (TestingPanel):** 146 conversions, 17 dynamic, 14 edge cases. Gemini review feedback applied and fixes merged.
   - **Phase 4B (RankingsPanel):** 105 static styles converted, 0 dynamic, 0 unmapped. Gemini review feedback (10 items) applied and fixes merged.
   - **Phase 4C (DefensePanel):** 5 conversions, 0 dynamic. Gemini edge-case feedback (max=0 guard) applied, pending CI + merge.
-  - **Remaining:** ~110 styles across 21 panels (Tier 2-3). ~398 original total; ~70 remain after phases 1-4C (pending).
+  - **Phase 4D (EconomyPanel):** 10 conversions complete (PR #800 pending CI); 4 conditional colors, 2 static colors, 2 display states, dtColorClass + statusColorClass extracted. All smoke tests pass.
+  - **Remaining:** ~100 styles across 20 panels (Tier 2-3). ~398 original total; ~60 remain after phases 1-4D.
   - **Approach:** Python automation script with 95+ STYLE_MAPPINGS, batch conversion, clsx for conditional styling.
 - **Component test coverage expansion** — 57+ component tests exist; gaps remain in some panels
 
