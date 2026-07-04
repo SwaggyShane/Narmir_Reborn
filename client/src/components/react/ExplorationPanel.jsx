@@ -75,8 +75,6 @@ const ExplorationPanel = () => {
   const turns_stored = useProfileStore((state) => state.turns_stored);
   const scout_allocation = useProfileStore((state) => state.scout_allocation);
   const scout_progress = useProfileStore((state) => state.scout_progress);
-  const kingdom_level = useProfileStore((state) => state.level);
-  const race = useProfileStore((state) => state.race);
   useGameMutationEvents();
 
   const syncKingdomData = useCallback((kingdomData) => {
@@ -165,7 +163,7 @@ const ExplorationPanel = () => {
   );
 
   const inventoryCount = Object.keys(inventory).length;
-  const availableRangers = Number(rangers || 0);
+  const availableRangers = Math.max(0, Number(rangers || 0) - Number(scout_allocation || 0));
   const availableFighters = Number(fighters || 0);
   const availableEngineers = Number(engineers || 0);
   const availableFood = Number(food || 0);
@@ -475,12 +473,8 @@ const ExplorationPanel = () => {
   // Phase 2E: Scout allocation handlers
   const handleScoutAllocate = useCallback(async () => {
     const r = Number(scoutAllocationInput || 0);
-    if (r < 0) {
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Enter a valid ranger count', 'error');
-      return;
-    }
-    if (r === 0 && scout_allocation === 0) {
-      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Enter rangers to allocate (or 0 to release all)', 'warn');
+    if (r <= 0) {
+      if (typeof window !== 'undefined' && typeof toast === 'function') toast('Enter a valid ranger count greater than 0', 'error');
       return;
     }
 
@@ -497,11 +491,7 @@ const ExplorationPanel = () => {
 
       applyResult(result, 'scout-allocate');
       if (typeof window !== 'undefined' && typeof toast === 'function') {
-        if (r > 0) {
-          toast(`${formatNum(result.allocated || r)} rangers allocated to scouting`, 'success');
-        } else {
-          toast(`All rangers released from scouting`, 'success');
-        }
+        toast(`${formatNum(result.allocated || r)} rangers allocated to scouting`, 'success');
       }
       setScoutAllocationInput(0);
       await refreshAll();
@@ -509,7 +499,7 @@ const ExplorationPanel = () => {
       console.error('[scout/allocate] failed:', err);
       if (typeof window !== 'undefined' && typeof toast === 'function') toast('Allocation failed — please try again', 'error');
     }
-  }, [scoutAllocationInput, scout_allocation, applyResult, refreshAll]);
+  }, [scoutAllocationInput, applyResult, refreshAll]);
 
   const handleScoutReleaseAll = useCallback(async () => {
     if (scout_allocation === 0) {
@@ -850,7 +840,7 @@ const ExplorationPanel = () => {
               )}
 
               <div className="mb-3 flex items-center justify-between gap-3">
-                <span className="name text-[12px]">Rangers to allocate</span>
+                <span className="name text-[12px]">Rangers to add</span>
                 <span className="text-[11px] text-[var(--text3)]">
                   avail: <span>{availableRangers}</span>
                 </span>
@@ -873,9 +863,9 @@ const ExplorationPanel = () => {
                 <button
                   className="base-btn variant-accent flex-1 bg-[var(--accent2)]"
                   onClick={handleScoutAllocate}
-                  disabled={scoutAllocationInput === 0 && scout_allocation === 0}
+                  disabled={scoutAllocationInput === 0}
                 >
-                  {scout_allocation === 0 ? 'Start Allocation' : 'Update Allocation'}
+                  {scout_allocation === 0 ? 'Start Allocation' : 'Add to Allocation'}
                 </button>
                 {scout_allocation > 0 && (
                   <button
