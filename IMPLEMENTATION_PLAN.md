@@ -7,6 +7,18 @@
 
 ---
 
+## Non-Goals (Out of Scope)
+
+- Regional randomization or procedural generation (regions/locations are seeded deterministically at boot, not randomized per kingdom)
+- PvP-specific exploration gating (exploration gating is progression-based, not faction/alliance-based)
+- Persistent expedition state (expeditions are discrete turn-based actions; no pausing/resuming mid-journey)
+- Expedition waypoints or multi-step routes (Epic Trek is one-way; no mid-journey redirect)
+- Terrain-based movement penalties (hexes have equal cost; terrain affects reward yields, not travel time, except for region boundaries)
+- Expedition parties or fleet mechanics (single unit pool per action; no combined arms)
+- Discovery leaderboards or social sharing of artifacts (discoveries are kingdom-scoped; no cross-kingdom discovery sharing)
+
+---
+
 ## Overview
 
 Transform exploration from instant single-turn searches + generic expeditions into a rich, progression-gated system with:
@@ -145,8 +157,14 @@ Transform exploration from instant single-turn searches + generic expeditions in
 
 **Files to Create:**
 - `game/epic-trek-paths.js` — Path calculation, line-of-sight hex enumeration
-  - `getPathHexes(start_x, start_y, target_x, target_y)` → ordered hex list
+  - `getPathHexes(start_x, start_y, target_x, target_y)` → ordered hex list (straight-line, no obstacles, no terrain penalties)
   - `getDistanceInHexes(start, target)` → Manhattan/hex distance
+  - **Pathfinding Rules (LOCKED):** 
+    - Use straight-line hex enumeration (Bresenham or similar for hexes), NOT A* or obstacle avoidance
+    - No terrain-based movement penalties (all hexes cost 1.5 turns regardless of biome)
+    - Region boundaries do NOT block travel; pathfinding is unrestricted across regions
+    - Ocean hexes are crossed normally (no water-based obstacles; player can explore over ocean if within bounds)
+    - Path is direct line from start to target; no waypoints or intermediate stops
 - `game/epic-trek-discovery.js` — Random location discovery per hex crossed
   - `rollDiscovery(hex, terrain)` → { found: true, type: "kingdom"|"artifact", ... }
 
@@ -222,9 +240,19 @@ Transform exploration from instant single-turn searches + generic expeditions in
 - `POST /expedition/dungeon` → Include distance calc
 - `POST /expedition/mountain` → Include distance calc
 
-**Boot Sequence:**
+**Boot Sequence & Seeding Rules:**
 - On server start, seed one dungeon + one mountain per region (if not exists)
-- Load into memory cache for fast lookup
+- **Deterministic Seeding (LOCKED):** Use world_seed + region_name to generate reproducible coordinates (seeded random, not fully random)
+  - Seeding function: `getRegionLocationCoords(region_name, location_type, world_seed)` → (x, y)
+  - Ensures same region/world produces same location coordinates across restarts
+  - Use same seed mechanism as kingdom/node placement (world_state.seed)
+- **Collision & Validation Rules:**
+  - Generated coordinates must be within region bounds (use `RACE_HOMES` region geometry to validate)
+  - Generated coordinates must NOT be in water hexes (validate via `terrain.js` or `world-regions.js`)
+  - If collision detected (already occupied by kingdom/node), regenerate using next iteration of seeded random
+  - Max 10 retries per location; if all fail, log error and skip that region's location (acceptable fallback)
+- **Memory Cache:** Load all `world_locations` into memory at boot (full table scan on startup); maintain as in-memory map `{regionName: {dungeon: {...}, mountain: {...}}}`
+- **Discovery Tracking:** When kingdom discovers location (via Scout or Epic Trek), atomically update `discovered_by_kingdom_ids` array in `world_locations` row
 
 **Completion Criteria:**
 - [ ] One dungeon per region created/seeded at boot
@@ -316,6 +344,99 @@ CREATE TABLE world_locations (
 - Ring N ≈ 6×N hexes (approximation; exact count varies at boundaries)
 - Max rings = 17 (covers full map, ~918 hexes at 34 pixels/hex = 1999×1380 map)
 
+### Gating & Validation (Server-Side Enforcement Required)
+
+**All gating must be enforced on the server, not just UI-hidden.**
+
+- **Epic Trek Gating:** `/expedition/epic-trek` endpoint MUST check `kingdoms.visibility.completed_rings >= 2` before allowing launch. Return 403 if Ring 2 not complete.
+- **Dungeon Raid Gating:** `/expedition/dungeon` endpoint MUST check `kingdoms.first_dungeon_found_turn IS NOT NULL` before allowing launch. Return 403 if no dungeon discovered yet.
+- **Mountain's Heart Gating:** `/expedition/mountain` endpoint MUST check `kingdoms.first_mountain_found_turn IS NOT NULL` before allowing launch. Return 403 if no mountain discovered yet.
+- **Scout Allocation:** `/scout/allocate` MUST validate ranger count against total available rangers (via `validateRangerAllocation()`). Return 400 if insufficient.
+- **Land Expansion:** `/expedition/start` (land-expansion type) MUST validate population cost upfront (100 pop per land). Return 400 if cost exceeds available population.
+
+**Rationale:** UI hiding is UX; server validation is security. A determined player (or bot) can bypass UI, so all gating must be server-enforced to prevent exploits and maintain game integrity.
+
+### Naming Standardization (Enforce Across Implementation)
+
+**Action Names (consistent across UI, routes, and game logic):**
+- ✅ "Scout" (not "Scout Expedition", not "Scout Action")
+- ✅ "Epic Trek" (not "Deep Expedition", not "Extended Expedition")
+- ✅ "Hunting" (not "Hunt", not "Food Search")
+- ✅ "Prospecting" (not "Prospect", not "Gold Search")
+- ✅ "Land Expansion" (not "Land Search", not "Expand Land")
+- ✅ "Dungeon Raid" (not "Dungeon", not "Dungeon Combat")
+- ✅ "Mountain's Heart" (not "Mountains Heart", not "Mountain Heart")
+
+**File/Route Naming (snake_case for files, kebab-case for routes):**
+- Game logic files: `game/scout-allocation.js`, `game/scout-rings.js`, `game/epic-trek-paths.js`, `game/dungeon-locations.js`, `game/mountain-locations.js`
+- Routes: `POST /scout/allocate`, `POST /scout/release-all`, `POST /expedition/epic-trek`, `POST /expedition/dungeon`, `POST /expedition/mountain`
+- Database columns: `scout_allocation`, `completed_rings`, `current_ring`, `first_dungeon_found_turn`, `first_mountain_found_turn`
+- Config keys: `SCOUT_BASE_TURNS`, `EPIC_TREK_TURNS_PER_HEX`, `HUNTING_TURN_COST`, `PROSPECTING_TURN_COST`, etc.
+
+---
+
+## Core Formulas Reference (Canonical)
+
+**Scout Ring Turn Cost (Allocation-Based):**
+```
+turns_per_ring(ring_number, ranger_count, ranger_level, race_modifier) =
+  (20 + (ring_number - 1) × 5) ÷ (ranger_count × level_multiplier(ranger_level) × race_modifier)
+  
+Where:
+  level_multiplier(L) = 1 + (L - 1) × 0.05  [L=1 → 1.0x, L=100 → 5.95x]
+  race_modifier = varies by race (e.g., 0.9–1.1x)
+```
+
+**Hunting Reward (5 turns, no food cost):**
+```
+food_reward = 10 × ranger_count × level_multiplier(ranger_level) × forest_terrain_modifier × race_modifier
+
+Where:
+  forest_terrain_modifier = 1.0 (forest), 0.8 (other biomes)
+  race_modifier = race-dependent bonuses/penalties
+```
+
+**Prospecting Reward (5 turns, deep expedition food cost):**
+```
+gold_reward = 5 × engineer_count × level_multiplier(engineer_level) × mountain_terrain_modifier × race_modifier
+food_cost = (engineer_count × level_multiplier(engineer_level)) × BASE_FOOD_COST_PER_HEX
+
+Where:
+  mountain_terrain_modifier = 1.0 (mountain), 0.8 (other biomes)
+  BASE_FOOD_COST_PER_HEX = floored per unit level, matches Deep Expedition formula
+```
+
+**Land Expansion Reward (Instant, 100 pop per land discovered):**
+```
+lands_discovered = (ranger_count ÷ 10) × level_multiplier(ranger_level) × race_modifier × terrain_modifier
+population_cost = lands_discovered × 100
+
+Where:
+  base_unit = 10 rangers L1 = 1 land
+  race_modifier = varies by race (e.g., humans 1.0x, elves 1.1x, etc.)
+  terrain_modifier = race-dependent biome preference
+```
+
+**Epic Trek Turn Cost (Point-and-Go):**
+```
+total_turns = 1.5 × hex_distance(kingdom_hex, target_hex)
+food_cost = (ranger_count × level_multiplier(ranger_level)) × BASE_FOOD_COST_PER_HEX
+
+Where:
+  hex_distance = Manhattan/hex distance in hex units
+  BASE_FOOD_COST_PER_HEX = matches Deep Expedition formula
+```
+
+**Dungeon Raid Turn Cost (Regional Location):**
+```
+total_turns = 50 + (1.5 × hex_distance(kingdom, dungeon_location))
+```
+
+**Mountain's Heart Turn Cost (Regional Location):**
+```
+total_turns = 100 + (1.5 × hex_distance(kingdom, mountain_location))
+```
+
 ---
 
 ## API Endpoints Summary
@@ -384,21 +505,32 @@ CREATE TABLE world_locations (
 - Hunting/Prospecting/Land: economy formulas with level/race modifiers
 - Path calculation: hex enumeration, distance calcs
 - Location discovery: random chance, artifact tiers
+- World location seeding: deterministic generation, collision avoidance, bounds validation
 
 ### Integration Tests
 - Scout ring auto-advance on completion
 - Visibility update when ring completes
 - Epic Trek fog reveal along path
 - Location discovery during Epic Trek
-- Gating: Epic Trek at Ring 2, Dungeons/Mountains at first find
+- Gating: Epic Trek at Ring 2, Dungeons/Mountains at first find (server-side enforcement)
 - Turn deduction across all action types
+
+### **Performance Tests (CRITICAL for Phase 2)**
+- **processTurn() Impact:** Measure turn processing time before/after Phase 2 implementation
+  - Baseline: measure fresh run with no scout allocation
+  - Load: measure with 1,000 kingdoms each with active scout allocation
+  - Target: processTurn() should remain <10ms per turn at 1,000 concurrent allocations
+  - Mitigation if over: implement ring calculation caching, batch visibility updates, profile bottlenecks
+- **Ring Calculation Cost:** Unit test ring enumeration performance for Ring 1–17 (should be sub-millisecond)
+- **World Location Lookup:** Memory cache lookup should be O(1); verify <1ms boot and <1μs lookup
 
 ### Smoke Tests (after each phase)
 - Fresh server boot with test kingdom
 - Launch Hunting → verify 5 turns spent
-- Allocate to Scout → verify rangers persist
-- Epic Trek → verify path calculation
-- Dungeon Raid → verify distance calc
+- Allocate to Scout → verify rangers persist, turn processing doesn't lag
+- Epic Trek → verify path calculation, fog reveal
+- Dungeon Raid → verify distance calc, server-side gating enforced
+- World locations → verify seeding determinism (same seed = same coordinates)
 
 ---
 
