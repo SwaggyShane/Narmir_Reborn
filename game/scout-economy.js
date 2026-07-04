@@ -1,7 +1,7 @@
 // game/scout-economy.js
-// Scouting and exploration economy — formulas locked 2026-07-03, values are
-// a starting point to be tuned via playtesting (target: ~500 turns for a
-// casual player to fully explore the map, see FOG_OF_WAR_PLAN.md).
+// Scouting and exploration economy — formulas locked 2026-07-04.
+// Concentric ring model: progressive reveal outward from home kingdom.
+// Target: full map (195 hexes) in ~328 turns at level 100, ~500 turns casual play.
 
 const SCOUT_ECONOMY = {
   // Vision baseline: home hex only, fog everywhere else. Locked.
@@ -13,20 +13,19 @@ const SCOUT_ECONOMY = {
   // once it expires. Locked: total blind.
   debuffRadius: 0,
 
-  // Hard cap on rangers a single scout action can use, regardless of how
-  // many the kingdom actually has.
-  MAX_SCOUTING_RANGERS: 1000,
+  // Hard cap on rangers a single scout action can use.
+  // Locked 2026-07-04: 10,000 rangers (up from 1,000).
+  MAX_SCOUTING_RANGERS: 10000,
 
-  // Ranger level improves both scouting radius AND food cost efficiency:
-  // +5% effective power per level above 1 (level 20 rangers ≈ 1.95x a
-  // level-1 ranger's effective scouting power).
+  // Ranger level improves scouting power:
+  // +5% effective power per level above 1 (level 100 = 5.95x base).
   RANGER_LEVEL_BONUS_PER_LEVEL: 0.05,
 
-  // Reveal radius = floor(sqrt(effective_power) / this). Divisor chosen so
-  // a full 1000-ranger scout action (level 1) reveals ~2 hexes, scaling up
-  // modestly with ranger level — tune this divisor first if exploration
-  // feels too fast/slow relative to the ~500-turn target.
-  REVEAL_RADIUS_DIVISOR: 12,
+  // Base exploration unit: 1 ranger level 1 = 0.00001 hexes per action.
+  // Locked 2026-07-04 (replaces old REVEAL_RADIUS_DIVISOR model).
+  // 10,000 rangers level 1 = 0.1 hexes per action.
+  // 10,000 rangers level 100 = 0.595 hexes per action.
+  BASE_HEX_EXPLORATION_PER_RANGER: 0.00001,
 
   // Food cost per hex scouted, reduced by ranger level (floor applied so
   // it never goes to zero).
@@ -37,6 +36,11 @@ const SCOUT_ECONOMY = {
   // hex INCREASE with distance (locked decision) — a node twice as far
   // costs more than twice the turns, not the same rate.
   NODE_DELIVERY_EXPONENT: 1.2,
+
+  // DEPRECATED: Old frontier-based reveal radius divisor (replaced by
+  // BASE_HEX_EXPLORATION_PER_RANGER for concentric ring model).
+  // Kept for backward compatibility with scoutRevealRadius().
+  REVEAL_RADIUS_DIVISOR: 12,
 
   // Active expeditions reveal fog ahead of their movement (pre-move
   // scouting), not just their current tile or the full route retroactively.
@@ -66,7 +70,18 @@ function scoutEffectivePower(rangersSent, rangerLevel) {
 }
 
 /**
- * Reveal radius (in hexes) for a scout action with the given rangers/level.
+ * Hexes explored per scout action with the given rangers/level.
+ * Locked formula 2026-07-04: rangersSent × level multiplier × BASE_HEX_EXPLORATION_PER_RANGER
+ * (Replaces old scoutRevealRadius model for concentric ring design.)
+ */
+function hexesExploredPerAction(rangersSent, rangerLevel) {
+  const power = scoutEffectivePower(rangersSent, rangerLevel);
+  return power * SCOUT_ECONOMY.BASE_HEX_EXPLORATION_PER_RANGER;
+}
+
+/**
+ * DEPRECATED: Old frontier-based reveal radius formula.
+ * Kept for backward compatibility; use hexesExploredPerAction() for new code.
  */
 function scoutRevealRadius(rangersSent, rangerLevel) {
   const power = scoutEffectivePower(rangersSent, rangerLevel);
@@ -96,7 +111,8 @@ module.exports = {
   SCOUT_ECONOMY,
   levelMultiplier,
   scoutEffectivePower,
-  scoutRevealRadius,
+  hexesExploredPerAction,
+  scoutRevealRadius, // deprecated; use hexesExploredPerAction
   scoutFoodCostPerHex,
   nodeDeliveryTurns,
 };
