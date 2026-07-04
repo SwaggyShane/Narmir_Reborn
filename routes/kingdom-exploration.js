@@ -7,7 +7,6 @@ const { applyKingdomUpdates } = require('../db/schema');
 const { calculateHuntingReward } = require('../game/hunting-economy');
 const { calculateProspectingReward } = require('../game/prospecting-economy');
 const { calculateLandExpansionReward } = require('../game/land-expansion');
-const { validateAllocation, calculateAllocationResult, getAllocationStatus } = require('../game/scout-allocation');
 
 const MOJIBAKE_SIGNATURE = /[ÃÂâïðÅ�]/;
 
@@ -492,89 +491,6 @@ module.exports = function (db) {
     );
     await db.run('DELETE FROM expeditions WHERE kingdom_id = $1', [k.id]);
     res.json({ ok: true, cleared: exps.length });
-  });
-
-  router.post('/scout/allocate', requireAuth, requireCsrfToken, async (req, res) => {
-    const { rangers } = req.body;
-    const rangerCount = Math.max(0, parseInt(rangers) || 0);
-
-    try {
-      const k = await db.withTransaction(async () => {
-        const kingdom = await db.get('SELECT id, rangers, scout_allocation, training_allocation FROM kingdoms WHERE player_id = $1 FOR UPDATE', [
-          req.player.playerId,
-        ]);
-        if (!kingdom) {
-          throw new Error('Kingdom not found');
-        }
-
-        const validation = validateAllocation(kingdom, rangerCount);
-        if (!validation.valid) {
-          const err = new Error(validation.reason);
-          err.statusCode = 400;
-          throw err;
-        }
-
-        const result = calculateAllocationResult(kingdom, rangerCount);
-        await db.run(
-          'UPDATE kingdoms SET scout_allocation = $1 WHERE id = $2',
-          [result.newTotal, kingdom.id],
-        );
-
-        const updatedKingdom = { ...kingdom, scout_allocation: result.newTotal };
-        const status = getAllocationStatus(updatedKingdom);
-
-        return {
-          allocated: result.allocated,
-          scoutAllocation: status.allocated,
-          availableRangers: status.available,
-        };
-      });
-
-      res.json({
-        ok: true,
-        ...k,
-      });
-    } catch (err) {
-      console.error('[scout/allocate]', err.message);
-      const statusCode = err.statusCode || 500;
-      res.status(statusCode).json({ error: err.message });
-    }
-  });
-
-  router.post('/scout/release-all', requireAuth, requireCsrfToken, async (req, res) => {
-    try {
-      const k = await db.withTransaction(async () => {
-        const kingdom = await db.get('SELECT id, rangers, scout_allocation, training_allocation FROM kingdoms WHERE player_id = $1 FOR UPDATE', [
-          req.player.playerId,
-        ]);
-        if (!kingdom) {
-          throw new Error('Kingdom not found');
-        }
-
-        const released = Number(kingdom.scout_allocation || 0);
-        await db.run(
-          'UPDATE kingdoms SET scout_allocation = 0 WHERE id = $1',
-          [kingdom.id],
-        );
-
-        const updatedKingdom = { ...kingdom, scout_allocation: 0 };
-        const status = getAllocationStatus(updatedKingdom);
-
-        return {
-          released,
-          scoutAllocation: status.allocated,
-          availableRangers: status.available,
-        };
-      });
-
-      res.json({
-        ok: true,
-        ...k,
-      });
-    } catch (err) {
-      console.error('[scout/release-all]', err.message);
-      res.status(500).json({ error: err.message });
-    }
   });
 
   return router;

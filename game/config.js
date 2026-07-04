@@ -2049,12 +2049,6 @@ const config = {
     POPULATION_COST_PER_LAND: 100,
   },
 
-  SCOUT_CONSTANTS: {
-    SCOUT_BASE_TURNS: 20, // Ring 1 costs 20 turns
-    SCOUT_RING_INCREMENT: 5, // Each subsequent ring costs 5 more turns
-    MAX_RING: 17, // Hard cap on ring progression
-  },
-
   COMBAT_CONSTANTS: {
     baseAttackCost: 10,
     baseSpellCost: 5,

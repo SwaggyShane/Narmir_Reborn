@@ -15,7 +15,6 @@ const VISIBILITY_SCHEMA_VERSION = 1;
 const DEFAULT_VISIBILITY = {
   seen_cells: '0', // BigInt bitmap (decimal string): cells discovered (permanent memory)
   current_cells: '0', // BigInt bitmap (decimal string): cells visible now (derived from active sources)
-  highest_completed_ring: 0, // Highest scout ring completed (0 = no rings completed yet)
   version: VISIBILITY_SCHEMA_VERSION,
 };
 
@@ -51,7 +50,6 @@ function migrateVisibility(oldVisibility) {
   return {
     seen_cells: oldVisibility.seen_cells || '0',
     current_cells: oldVisibility.current_cells || '0',
-    highest_completed_ring: oldVisibility.highest_completed_ring || 0,
     version: VISIBILITY_SCHEMA_VERSION,
   };
 }
