@@ -105,6 +105,15 @@ const HappinessPanel = () => {
 
   const filteredEvents = filter ? events.filter((e) => e.component === filter) : events;
 
+  const happinessBarColorClass =
+    happiness >= 80
+      ? 'bg-[var(--green)]'
+      : happiness >= 50
+        ? 'bg-[var(--gold)]'
+        : happiness >= 30
+          ? 'bg-[var(--amber)]'
+          : 'bg-[var(--red)]';
+
   return (
     <div id="happiness" className="panel">
       <div className="space-y-6 p-4 md:p-5">
@@ -115,17 +124,9 @@ const HappinessPanel = () => {
           </div>
           <div className="overflow-hidden rounded-full border border-white/5 bg-bg3 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]">
             <div
-              className="h-6 transition-[width] duration-300"
+              className={`h-6 transition-[width] duration-300 ${happinessBarColorClass}`}
               style={{
                 width: `${Math.min(100, Math.max(0, (happiness / 120) * 100))}%`,
-                background:
-                  happiness >= 80
-                    ? 'var(--green)'
-                    : happiness >= 50
-                      ? 'var(--gold)'
-                      : happiness >= 30
-                        ? 'var(--amber)'
-                        : 'var(--red)',
               }}
             />
           </div>
