@@ -2,11 +2,25 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-03
+**Last updated:** 2026-07-04
 
 ---
 
 ## Recent Chronology
+
+### 2026-07-04
+
+- **Exploration System Redesign — Design Phase Complete** (PR #778, merged `977c712`): Complete locked specification and 4-phase implementation plan for exploration system transformation. Replaces instant single-turn searches + generic expeditions with turn-based, progression-gated actions:
+  - **Scout (allocation-based):** Ring progression (Ring N = 20 + (N-1) × 5 turns), auto-advances through 17 rings, discovers locations/lore/junk, no food cost, greyed out at Ring 17 only, no hard cap on rangers
+  - **Epic Trek (point-and-go):** 1.5 turns per hex distance, reveals fog en route, random discovery per hex, food cost scales by ranger count, hidden until Ring 2 Scout complete
+  - **Hunting:** 5 turns, 10 food per ranger L1, no food cost, forest terrain bonus
+  - **Prospecting:** 5 turns, 5 gold per engineer L1, deep expedition food cost, mountain terrain bonus
+  - **Land Expansion:** Instant, 10 rangers L1 = 1 land, 100 population per land, race modifiers apply
+  - **Dungeon Raid:** 50 + (distance × 1.5) turns, weapons/armor loot, hidden until first dungeon found
+  - **Mountain's Heart:** 100 + (distance × 1.5) turns, combat rewards, hidden until first mountain found
+  - Created: `EXPLORATION_REDESIGN.md` (high-level), `EXPLORATION_SYSTEM_LOCKED.md` (complete specification), `IMPLEMENTATION_PLAN.md` (4-phase roadmap with file manifest)
+  - Updated: `game/scout-economy.js` with new BASE_HEX_EXPLORATION_PER_RANGER formula (0.00001)
+  - All specs locked 2026-07-04; ready for Phase 1 implementation (Refactor Instant Searches → Turn-Based)
 
 ### 2026-07-03
 

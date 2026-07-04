@@ -2,7 +2,7 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-03
+**Last updated:** 2026-07-04
 
 ---
 
@@ -39,6 +39,23 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 
 **Phase 5: Expansion Hooks** (deferred)
 - Special locations, map items, terrain-scoped discovery difficulty
+
+---
+
+## Upcoming: Exploration System Redesign (4 Phases)
+
+**Status:** Design locked & merged (PR #778, 2026-07-04), awaiting Phase 1 implementation
+
+**Overview:** Transform instant single-turn searches + generic expeditions into turn-based, progression-gated exploration system (Scout allocation-based rings, Epic Trek point-and-go targeting, Hunting/Prospecting/Land Expansion resource gathering, regional Dungeon/Mountain locations).
+
+**Phase 1:** Refactor instant searches (land/gold/food) → turn-based actions (est. 8-10 files)
+**Phase 2:** Scout allocation system with ring progression (est. 10-12 files)
+**Phase 3:** Epic Trek point-and-go exploration (est. 8-10 files)
+**Phase 4:** Regional dungeon/mountain locations with distance-based turn costs (est. 6-8 files)
+
+**References:**
+- `EXPLORATION_SYSTEM_LOCKED.md` — Complete specification (all parameters locked)
+- `IMPLEMENTATION_PLAN.md` — Detailed 4-phase roadmap with file manifest, database schema changes, API endpoints, and testing strategy
 
 ---
 
