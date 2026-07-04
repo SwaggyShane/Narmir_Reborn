@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import { useActivePanel } from './hooks/useActivePanel.js';
 
@@ -58,6 +58,7 @@ const GameShell = () => {
   const { activePanel } = useActivePanel();
   const { isNight } = useNightCycle();
   const isFullBleedPanel = FULL_BLEED_SHELL_PANELS.has(activePanel);
+  const [onHexClick, setOnHexClick] = useState(null);
 
   useEffect(() => {
     restoreAuthSession().catch((err) => {
@@ -72,7 +73,7 @@ const GameShell = () => {
       case 'studies': return <StudiesPanel />;
       case 'build': return <BuildPanel />;
       case 'heroes': return <HeroesPanel />;
-      case 'exploration': return <ExplorationPanel />;
+      case 'exploration': return <ExplorationPanel onSetHexClick={setOnHexClick} />;
       case 'economy': return <EconomyPanel />;
       case 'resources': return <ResourcesPanel />;
       case 'market': return <MarketPanel />;
@@ -89,7 +90,7 @@ const GameShell = () => {
       case 'races': return <RacesPanel />;
       case 'changelog': return <ChangelogPanel />;
       case 'testing': return <TestingPanel />;
-      case 'worldmap': return <WorldmapPanel />;
+      case 'worldmap': return <WorldmapPanel onHexClick={onHexClick} />;
       case 'options': return <OptionsPanel />;
       case 'messages': return <MessagesPanel />;
       case 'forum':

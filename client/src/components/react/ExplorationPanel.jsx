@@ -67,7 +67,7 @@ const normalizeRewards = (rewards) => {
   return [];
 };
 
-const ExplorationPanel = () => {
+const ExplorationPanel = ({ onSetHexClick = null } = {}) => {
   const rangers = useMilitaryStore((state) => state.troops.rangers);
   const fighters = useMilitaryStore((state) => state.troops.fighters);
   const engineers = useMilitaryStore((state) => state.troops.engineers);
@@ -575,6 +575,18 @@ const ExplorationPanel = () => {
       if (typeof window !== 'undefined' && typeof toast === 'function') toast('Epic Trek failed — please try again', 'error');
     }
   }, [epicTrekTargetX, epicTrekTargetY, turns_stored, applyResult, logInstantEntry, refreshAll]);
+
+  // Register hex click handler with GameShell when this panel is active
+  useEffect(() => {
+    if (onSetHexClick) {
+      onSetHexClick(handleHexClick);
+    }
+    return () => {
+      if (onSetHexClick) {
+        onSetHexClick(null);
+      }
+    };
+  }, [handleHexClick, onSetHexClick]);
 
   const renderRow = (entry, isCompleted = false) => {
     const rewards = isCompleted ? normalizeRewards(entry.rewards) : [];
@@ -1136,6 +1148,48 @@ const ExplorationPanel = () => {
                 </button>
                 <div className="mt-2 text-[10px] text-[var(--text3)]">Frontier only. Already-seen hexes are free (no cost) but do nothing.</div>
               </div>
+            </div>
+
+            <div className="card">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <div className="card-title !mb-0">🛤️ Epic Trek</div>
+                <span className="rounded-full bg-[rgba(200,120,120,0.15)] px-2 py-1 text-[11px] font-semibold text-[var(--accent2)]">
+                  Phase 3
+                </span>
+              </div>
+              <div className="mb-3 text-[12px] leading-6 text-[var(--text3)]">
+                Send rangers on a long expedition to a chosen location. Reveals fog along the path and discovers kingdoms & locations en route.
+              </div>
+              <div className="mb-2 grid grid-cols-2 gap-2 text-[12px]">
+                <div>
+                  <div className="name mb-0.5">Target X</div>
+                  <input
+                    type="number"
+                    className="input w-full"
+                    value={epicTrekTargetX}
+                    onChange={(e) => setEpicTrekTargetX(e.target.value)}
+                    placeholder="e.g. 500"
+                    min="0"
+                    max="1999"
+                  />
+                </div>
+                <div>
+                  <div className="name mb-0.5">Target Y</div>
+                  <input
+                    type="number"
+                    className="input w-full"
+                    value={epicTrekTargetY}
+                    onChange={(e) => setEpicTrekTargetY(e.target.value)}
+                    placeholder="e.g. 300"
+                    min="0"
+                    max="1379"
+                  />
+                </div>
+              </div>
+              <button className="base-btn variant-accent w-full" onClick={handleEpicTrek}>
+                Launch Epic Trek
+              </button>
+              <div className="mt-2 text-[10px] text-[var(--text3)]">Click the worldmap to auto-fill coordinates, or enter them manually. Requires Ring 2 Scout completion.</div>
             </div>
           </div>
 
