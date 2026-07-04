@@ -88,6 +88,7 @@ _None currently — see Known Technical Debt below for post-beta cleanup items._
 ## Known Technical Debt (Post-Beta)
 
 - **Admin inline CSS consolidation (continued)** — 101 static usages converted to date (59 in `EvolutionPanel.jsx`/`ManagePanel.jsx` + 42 in Phase 1-3: TrainingPanel, BuildPanel, ResourcesPanel); ~398 remain across other panels. Phases 4+ deferred. Conditional styles and dynamic properties (ternaries, state-dependent) require more complex refactoring before the shared `BTN`/`INPUT`/`TD`-style constant objects can be converted.
+  - **Progress bars (200+ div pairs) eliminated via ProgressBar component extraction** (PR #794, merged 2026-07-04) — Architectural solution replaces scattered inline progress bars across TrainingPanel, StatusPanel, BuildPanel with single reusable component. No longer counted in individual style consolidation backlog.
 - **Component test coverage expansion** — 57+ component tests exist; gaps remain in some panels
 
 ---
