@@ -302,16 +302,22 @@ const TestingPanel = () => {
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex gap-2 mb-4 border-b border-b-border" style={{paddingBottom: '12px'}}>
+        <div className="flex gap-2 mb-4 border-b pb-3">
           <button
             onClick={() => setActiveTab('individual')}
-            className="text-sm border-none rounded-sm cursor-pointer" style={{padding: '8px 16px', fontWeight: activeTab === 'individual' ? 'bold' : 'normal', backgroundColor: activeTab === 'individual' ? 'var(--accent)' : 'transparent'}}
+            className={clsx(
+              "px-4 py-2 text-sm border-none rounded-sm cursor-pointer",
+              activeTab === 'individual' ? "font-bold bg-[var(--accent)] text-black" : "font-normal bg-transparent text-inherit"
+            )}
           >
             Individual Tests
           </button>
           <button
             onClick={() => setActiveTab('collaborative')}
-            className="text-sm border-none rounded-sm cursor-pointer" style={{padding: '8px 16px', fontWeight: activeTab === 'collaborative' ? 'bold' : 'normal', backgroundColor: activeTab === 'collaborative' ? 'var(--accent)' : 'transparent'}}
+            className={clsx(
+              "px-4 py-2 text-sm border-none rounded-sm cursor-pointer",
+              activeTab === 'collaborative' ? "font-bold bg-[var(--accent)] text-black" : "font-normal bg-transparent text-inherit"
+            )}
           >
             Collaborative Results {testSummary.length > 0 && `(${testSummary.length})`}
           </button>
@@ -321,7 +327,7 @@ const TestingPanel = () => {
         {activeTab === 'collaborative' && (
           <div>
             {/* Summary Stats */}
-            <div className="grid gap-3 mb-5">
+            <div className="grid grid-cols-4 gap-3 mb-5">
               <div className="p-3 bg-[var(--bg2)] rounded text-center">
                 <div className="text-3xl font-bold text-[#4ade80]">{stats.passed}</div>
                 <div className="text-[11px] text-[var(--text2)] mt-1">Tests Passed</div>
@@ -350,30 +356,30 @@ const TestingPanel = () => {
               return (
                 <div
                   key={group.id}
-                  className="mb-3 border border-border rounded-md"
+                  className="mb-3 border rounded-md"
                 >
                   <div
-                    className="p-3 bg-bg2 font-bold"
+                    className="p-3 bg-bg2 cursor-pointer flex justify-between items-center font-bold"
                   >
                     {group.name}
                   </div>
-                  <div className="p-3 bg-bg1">
+                  <div className="p-3 bg-bg">
                     {groupTests.map((testStat) => {
                       const total = (testStat.passed_count || 0) + (testStat.failed_count || 0) + (testStat.pending_count || 0);
                       const failureComments = getFailureComments(testStat.test_key);
 
                       return (
-                        <div key={testStat.test_key} className="border-b border-b-border" style={{marginBottom: '10px', paddingBottom: '10px'}}>
-                          <div className="flex justify-between items-center" style={{marginBottom: '6px'}}>
+                        <div key={testStat.test_key} className="border-b mb-2.5 pb-2.5">
+                          <div className="flex justify-between items-center mb-1.5">
                             <span className="font-medium flex-1">{testStat.test_name}</span>
-                            <div className="text-[11px] text-text2 mr-2">
+                            <div className="text-sm text-text2 mr-2">
                               {total > 0 ? `${testStat.unique_testers} tester${testStat.unique_testers !== 1 ? 's' : ''}` : 'No results'}
                             </div>
                           </div>
 
                           {/* Result Breakdown */}
                           {total > 0 ? (
-                            <div className="flex gap-1 h-[20px]" style={{marginBottom: '6px'}}>
+                            <div className="flex gap-1 h-5 mb-1.5">
                               {testStat.passed_count > 0 && (
                                 <div
                                   className="bg-[#4ade80] rounded-[3px] min-w-[20px]" style={{flex: testStat.passed_count}}
@@ -396,7 +402,7 @@ const TestingPanel = () => {
                           ) : null}
 
                           {/* Result Stats */}
-                          <div className="text-[11px] text-text2" style={{marginBottom: failureComments.length > 0 ? '8px' : '0'}}>
+                          <div className={clsx("text-sm text-text2", failureComments.length > 0 ? "mb-2" : "mb-0")}>
                             ✅ {testStat.passed_count || 0} | ❌ {testStat.failed_count || 0} | ⏳ {testStat.pending_count || 0}
                           </div>
 
@@ -404,7 +410,7 @@ const TestingPanel = () => {
                           {failureComments.length > 0 && (
                             <div className="ml-2 text-[10px] text-[#ef4444]">
                               {failureComments.map((fc, i) => (
-                                <div key={i} className="mb-1 rounded-[3px]" style={{padding: '4px 6px'}}>
+                                <div key={i} className="mb-1 rounded-[3px] px-1.5 py-1 bg-red/10">
                                   <strong>{fc.player}:</strong> {fc.comment}
                                 </div>
                               ))}
@@ -431,16 +437,16 @@ const TestingPanel = () => {
           return (
             <div
               key={group.id}
-              className="mb-3 border border-border rounded-md"
+              className="mb-3 border rounded-md"
             >
               {/* Group Header */}
               <div
                 onClick={() => setExpandedGroup(isExpanded ? null : group.id)}
-                className="p-3 bg-bg2 cursor-pointer flex justify-between"
+                className="p-3 bg-bg2 cursor-pointer flex justify-between items-center"
               >
                 <div>
                   <div className="font-bold mb-1">{group.name}</div>
-                  <div className="text-[11px] text-text2">
+                  <div className="text-sm text-text2">
                     ✓ {stats.finished}/{stats.total} | ✅ {stats.passed} | ❌ {stats.failed}
                   </div>
                 </div>
@@ -453,15 +459,15 @@ const TestingPanel = () => {
               </div>
 
               {/* Progress Bar */}
-              <div className="h-1 bg-border">
+              <div className="h-1 bg-[var(--border)]">
                 <div
-                  className="h-full" style={{backgroundColor: progressPercent === 100 ? '#4ade80' : '#fbbf24'}}
+                  className="h-full transition-all duration-300 ease-in-out" style={{width: `${progressPercent}%`, backgroundColor: progressPercent === 100 ? '#4ade80' : '#fbbf24'}}
                 />
               </div>
 
               {/* Tests List */}
               {isExpanded && (
-                <div className="p-3 bg-bg1">
+                <div className="p-3 bg-bg">
                   {group.tests.map((testName) => {
                     const key = getTestKey(group.id, testName);
                     const test = testStatus[key] || {};
@@ -471,7 +477,10 @@ const TestingPanel = () => {
                     return (
                       <div
                         key={key}
-                        className="p-2 rounded-sm" style={{marginBottom: '10px', borderLeft: isFailing ? '3px solid #ef4444' : 'none'}}
+                        className={clsx(
+                          "rounded-sm mb-2.5",
+                          isFailing ? "p-2 pl-1.5 bg-[#ef4444]/10 border-l-[3px] border-l-[#ef4444]" : "p-2 bg-transparent border-l-0"
+                        )}
                       >
                         <div className="flex items-center gap-2" style={{marginBottom: (TEST_DESCRIPTIONS[key] || isFailing) ? '6px' : '0'}}>
                           {/* Finished Checkbox */}
@@ -511,7 +520,7 @@ const TestingPanel = () => {
 
                         {/* Test Description */}
                         {TEST_DESCRIPTIONS[key] && (
-                          <div className="text-[11px] text-text2 mb-2 rounded-[3px] italic" style={{padding: '6px 8px', lineHeight: '1.4'}}>
+                          <div className="text-sm text-text2 mb-2 rounded-[3px] italic px-2 py-1.5 bg-white/[0.03] leading-[1.4]">
                             📋 {TEST_DESCRIPTIONS[key]}
                           </div>
                         )}
@@ -525,7 +534,7 @@ const TestingPanel = () => {
                                   value={failureComment}
                                   onChange={(e) => setFailureComment(e.target.value)}
                                   placeholder="Add failure notes..."
-                                  className="flex-1 p-1.5 text-[11px] rounded-sm border border-border bg-bg2" style={{color: 'inherit', minHeight: '60px', fontFamily: 'inherit'}}
+                                  className="flex-1 p-1.5 text-sm rounded-sm border bg-bg2 text-inherit min-h-[60px] font-inherit resize-y"
                                 />
                                 <div className="flex flex-col gap-1">
                                   <button
@@ -547,7 +556,7 @@ const TestingPanel = () => {
                               </div>
                             ) : test.comment ? (
                               <div
-                                className="p-1.5 bg-bg2 rounded-sm"
+                                className="p-1.5 bg-bg2 rounded-sm cursor-pointer"
                                 onClick={() => {
                                   setFailureComment(test.comment);
                                   setCommentingTest(key);
@@ -562,7 +571,7 @@ const TestingPanel = () => {
                                   setCommentingTest(key);
                                   setFailureComment('');
                                 }}
-                                className="px-2 py-1 text-[11px] bg-border border-none rounded-sm cursor-pointer"
+                                className="px-2 py-1 text-sm bg-[var(--border)] text-text2 border-none rounded-sm cursor-pointer"
                               >
                                 + Add failure notes
                               </button>
