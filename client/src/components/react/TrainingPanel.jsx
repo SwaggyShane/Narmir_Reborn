@@ -194,7 +194,7 @@ const TrainingPanel = () => {
             <div className="text-[12px] text-[var(--text3)]">
               {'Training fields: '}<span className="text-text">{fmt(buildTraining || 0)}</span>
               {' - Capacity: '}
-              <span style={{ color: totalAllocated > capacity ? 'var(--red)' : 'var(--gold)' }}>
+              <span className={totalAllocated > capacity ? 'text-[var(--red)]' : 'text-[var(--gold)]'}>
                 {fmt(capacity)}
               </span>
               {' troops/turn - Weapons: '}<span className="text-text">{fmt(weaponsStockpile)}</span>

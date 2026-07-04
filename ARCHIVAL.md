@@ -10,6 +10,16 @@
 
 ### 2026-07-04
 
+- **Admin CSS Consolidation: Phase 1-3** (PR #793, merged 2026-07-04): Batch refactoring of inline styles to Tailwind CSS classes across three React panels. Total: 42 static styles converted using Python automation script with regex pattern mapping.
+  - **Phase 1 - TrainingPanel:** 1 style converted (conditional capacity color from inline style to className with ternary logic). Dynamic width styles (progress bars) remain as inline (correct pattern).
+  - **Phase 2 - BuildPanel:** 1 style converted (demolish button color from inline style={{}} to className). Remaining styles are dynamic (dependent on state).
+  - **Phase 3 - ResourcesPanel:** 40 styles converted (batch refactoring via Python script targeting common patterns: color utilities, font-weight combinations, flex layouts, typography, card styling, grid layouts). Remaining ~51 styles are dynamic.
+  - **Approach:** Created Python automation script (`resources-panel-refactor.py`) with STYLE_MAPPINGS database containing 21 regex patterns for static-to-Tailwind conversions. Applied to identify and convert all matching patterns efficiently.
+  - **Testing:** Phase 1: Lint ✅, Smoke test ✅ (fresh PostgreSQL, all baseline checks). Phase 2-3: Included in same PR, monitoring scheduled.
+  - **Gemini Review:** Phase 1 reviewed cleanly — "no review comments, no additional feedback to provide."
+  - **Next Steps:** Phases 4+ (TestingPanel, RankingsPanel, remaining 15+ panels) deferred as continuation work. Conditional styles and dynamic properties require more complex refactoring (ternaries, state-dependent values).
+  - **Code Quality:** All changes lint ✅. No functional regressions (CSS consolidation only).
+
 - **Dead Route Handlers Cleanup** (PR #791, merged 2026-07-04): Removed 17 duplicate unreachable route handlers from `kingdom-gameplay.js` (16 routes) and `kingdom-research.js` (1 route). These routes were previously moved to `kingdom-build.js` but remain as dead code since Express matches the first router that handles a given path+method on the same prefix.
   - **Routes removed:**
     - `kingdom-gameplay.js`: POST /build-queue, GET/POST /training-allocation, POST /build-allocation, POST /resource-build-allocation, POST /demolish, POST /build, POST /cancel-building, POST /smithy/buy-hammers, POST /smithy/buy-scaffolding, POST /smithy-allocation, POST /tower-craft, POST /tower-cancel, POST /shrine-allocation, POST /mausoleum-allocation, POST /buy-mausoleum-upgrade (16 total)
