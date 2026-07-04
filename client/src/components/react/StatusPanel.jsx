@@ -453,7 +453,7 @@ const StatusPanel = () => {
                 className={clsx('trow', index === RESEARCH_ROWS.length - 1 && 'border-b-0')}
               >
                 <span className="name">{row.label}</span>
-                <ProgressBar percent={parseFloat(width)} variant={row.barClass.replace('bg-', '')} />
+                <ProgressBar id={barDomId} percent={width} variant={row.barClass} />
               </div>
             );
           })}

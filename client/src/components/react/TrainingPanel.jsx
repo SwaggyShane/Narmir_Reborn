@@ -160,21 +160,21 @@ const TrainingPanel = () => {
             <div className="text-[11px] text-[var(--text3)] mb-0.75">ENGINEERS</div>
             <div className="text-[18px] font-bold text-text">{fmt(engineers)}</div>
             <div className="text-[13px] font-semibold text-[var(--text3)] mt-0.5">Lv {engineerXpView.level}</div>
-            <ProgressBar percent={parseFloat(engineerXpView.barWidth)} variant="arm" />
+            <ProgressBar percent={engineerXpView.barWidth} variant="arm" className="mx-auto mt-2 max-w-[120px]" />
             <div className="text-[10px] text-[var(--text3)] mt-0.5">{engineerXpView.xpText}</div>
           </div>
           <div className="bg-bg3 rounded-lg p-2.5 text-center">
             <div className="text-[11px] text-[var(--text3)] mb-0.75">SCRIBES</div>
             <div className="text-[18px] font-bold text-text">{fmt(scribes)}</div>
             <div className="text-[13px] font-semibold text-[var(--text3)] mt-0.5">Lv {scribeXpView.level}</div>
-            <ProgressBar percent={parseFloat(scribeXpView.barWidth)} variant="arm" />
+            <ProgressBar percent={scribeXpView.barWidth} variant="arm" className="mx-auto mt-2 max-w-[120px]" />
             <div className="text-[10px] text-[var(--text3)] mt-0.5">{scribeXpView.xpText}</div>
           </div>
           <div className="bg-bg3 rounded-lg p-2.5 text-center">
             <div className="text-[11px] text-[var(--text3)] mb-0.75">RESEARCHERS</div>
             <div className="text-[18px] font-bold text-text">{fmt(researchers)}</div>
             <div className="text-[13px] font-semibold text-[var(--text3)] mt-0.5">Lv {researcherXpView.level}</div>
-            <ProgressBar percent={parseFloat(researcherXpView.barWidth)} variant="arm" />
+            <ProgressBar percent={researcherXpView.barWidth} variant="arm" className="mx-auto mt-2 max-w-[120px]" />
             <div className="text-[10px] text-[var(--text3)] mt-0.5">{researcherXpView.xpText}</div>
           </div>
         </div>
