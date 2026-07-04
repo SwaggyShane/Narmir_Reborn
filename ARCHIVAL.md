@@ -113,17 +113,34 @@
   - **CI Status:** All 3 checks passed ✅ (Validate Security Configuration, Validate Text Encoding, Lint/Test/Build)
   - **Code Quality:** All changes lint ✅. No functional regressions. Improved idiomatic React rendering patterns.
 
-- **Admin CSS Consolidation: Phase 4F (HappinessPanel)** (PR #802, merged 2026-07-04): Refactoring HappinessPanel component to convert 1 inline style to Tailwind CSS class. Happiness progress bar with conditional color based on happiness level.
-  - **Conversion Results:** 1 style converted (100% success — happiness bar background color), width calculation remains inline (dynamic state-dependent value).
+- **Admin CSS Consolidation: Phase 4F (HappinessPanel)** (PR #802, merged 2026-07-04): Refactoring HappinessPanel component to convert 1 inline happiness bar color style to Tailwind CSS class. Progress bar UI with dynamic color indicators based on happiness threshold.
+  - **Conversion Results:** 1 static/conditional style converted (100% success). Extracted conditional happiness bar background color from inline `style={{ ... }}` to className.
   - **Key Improvements:**
-    - Happiness bar background color: Extracted conditional logic (happiness >= 80/50/30) to `happinessBarColorClass` variable
-    - Applied Tailwind classes: `bg-[var(--green/gold/amber/red)]` based on happiness thresholds
-    - Width calculation remains inline (`width: ${Math.min(100, Math.max(0, (happiness / 120) * 100))}%`) — dynamic and state-dependent, correctly preserved
-  - **Approach:** Hybrid pattern — conditional colors to Tailwind className via computed variable, dynamic width remains inline
-  - **Gemini Review:** Clean. No feedback: "I have no feedback to provide."
-  - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, all 4 baseline checks: forum, auth, portal, game), Sanity ✅ (no logic changes, bar displays identically)
-  - **CI Status:** All 3 checks passed ✅ (Lint/Test/Build, Validate Text Encoding, Validate Security Configuration)
-  - **Code Quality:** All changes lint ✅. No functional regressions. Happiness bar renders with correct color based on happiness value.
+    - Happiness bar background color (lines 117-130): Extracted 4-tier conditional color logic to `happinessBarColorClass` variable, converted to className with ternary
+      - happiness >= 80: `bg-[var(--green)]`
+      - happiness >= 50: `bg-[var(--gold)]`
+      - happiness >= 30: `bg-[var(--amber)]`
+      - else: `bg-[var(--red)]`
+    - Width property remains inline (dynamic, computed per turn)
+  - **Approach:** Extracted conditional color logic to computed variable, direct className assignment with ternary operator
+  - **Gemini Review:** No feedback. Clean conversion, no issues identified.
+  - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, all 4 baseline checks: forum, auth, portal, game), Sanity ✅ (no logic changes, color thresholds preserved)
+  - **CI Status:** All 3 checks passed ✅ (Validate Security Configuration, Validate Text Encoding, Lint/Test/Build)
+  - **Code Quality:** All changes lint ✅. No functional regressions. Clean, single-pattern conversion.
+
+- **Admin CSS Consolidation: Phase 4G (MarketPanel)** (PR #803, merged 2026-07-04): Refactoring MarketPanel component to convert 1 inline trade status color style to Tailwind CSS class. Trade management UI with dynamic status indicators.
+  - **Conversion Results:** 1 static/conditional style converted (100% success). Extracted conditional trade status text color from inline `style={{ color: ... }}` to className.
+  - **Key Improvements:**
+    - Trade status color (lines 445-448): Extracted 3-tier conditional color logic to `statusColorClass` variable, converted to className with ternary
+      - status === 'accepted': `text-[var(--green)]`
+      - status === 'declined': `text-[var(--red)]`
+      - else (pending): `text-[var(--amber)]`
+    - Span element now uses className instead of style prop
+  - **Approach:** Extracted conditional color logic to computed variable, direct className assignment with ternary operator
+  - **Gemini Review:** No feedback. Clean conversion, no issues identified.
+  - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, all 4 baseline checks: forum, auth, portal, game), Sanity ✅ (no logic changes, status colors preserved)
+  - **CI Status:** Validate Security Configuration ✅, Lint/Test/Build ⏳ (in progress), Validate Text Encoding ⏳ (in progress)
+  - **Code Quality:** All changes lint ✅. No functional regressions. Clean, single-pattern conversion.
 
 - **Dead Route Handlers Cleanup** (PR #791, merged 2026-07-04): Removed 17 duplicate unreachable route handlers from `kingdom-gameplay.js` (16 routes) and `kingdom-research.js` (1 route). These routes were previously moved to `kingdom-build.js` but remain as dead code since Express matches the first router that handles a given path+method on the same prefix.
   - **Routes removed:**

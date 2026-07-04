@@ -2,7 +2,7 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-04 (CSS Consolidation Phase 4D-4E complete: EconomyPanel + BuildPanel merged PR #800, #801)
+**Last updated:** 2026-07-04 (CSS Consolidation Phase 4D-4G complete: EconomyPanel, BuildPanel, HappinessPanel, MarketPanel merged PR #800-#803)
 
 ---
 
@@ -94,8 +94,9 @@ _None currently — see Known Technical Debt below for post-beta cleanup items._
   - **Phase 4C (DefensePanel):** 5 conversions, 0 dynamic. Gemini edge-case feedback (max=0 guard) applied, merged 2026-07-04.
   - **Phase 4D (EconomyPanel):** 10 conversions, Gemini feedback (6 items) applied, merged 2026-07-04.
   - **Phase 4E (BuildPanel):** 4 conversions complete, Gemini feedback (IIFE → template literal) applied, merged 2026-07-04.
-  - **Phase 4F (HappinessPanel):** 1 conversion complete, Gemini feedback (clean review), merged 2026-07-04.
-  - **Phase 4G+ (Remaining panels):** ~89 styles across 18 panels (Tier 2-3). ~398 original total; ~59 remain after phases 1-4F.
+  - **Phase 4F (HappinessPanel):** 1 conversion (happiness bar background color), Gemini review clean, merged 2026-07-04.
+  - **Phase 4G (MarketPanel):** 1 conversion (trade status color), Gemini review clean, merged 2026-07-04.
+  - **Phase 4H+ (Remaining panels):** ~87 styles across 17 panels (Tier 2-3). ~398 original total; ~57 remain after phases 1-4G.
   - **Approach:** Python automation script with 95+ STYLE_MAPPINGS, batch conversion, direct ternaries/string concatenation for conditional styling.
 - **Component test coverage expansion** — 57+ component tests exist; gaps remain in some panels
 
