@@ -54,7 +54,7 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 - ✅ Performance: Ring 1-11 <1ms, Ring 12-17 <5ms (acceptable for turn-based)
 - ✅ Fixed blueprint code bugs identified by Gemini (ring formula, object reference equality, function signatures)
 
-**Phase 1: Refactor instant searches → turn-based actions** — ✅ COMPLETE (PR #780, merged 2026-07-04; see ARCHIVAL.md)
+**Phase 1: Refactor instant searches → turn-based actions** — ✅ COMPLETE (PR #780 backend + PR #781 UI, merged 2026-07-04; see ARCHIVAL.md)
 
 **Phase 2:** Scout allocation system with ring progression (est. 10-12 files)
 **Phase 3:** Epic Trek point-and-go exploration (est. 8-10 files)
