@@ -36,6 +36,41 @@
   - **Next Steps:** Phases 4+ (TestingPanel, RankingsPanel, remaining 15+ panels) deferred as continuation work. Conditional styles and dynamic properties require more complex refactoring (ternaries, state-dependent values).
   - **Code Quality:** All changes lint ✅. No functional regressions (CSS consolidation only).
 
+- **Admin CSS Consolidation: Phase 4 (TestingPanel)** (PR #795, merged 2026-07-04): Refactoring TestingPanel component to convert 146 static inline styles to Tailwind CSS classes. Complex testing dashboard UI with tabs, progress bars, test groups, and stats grid.
+  - **Conversion Results:** 146 static styles converted (82% success), 17 dynamic styles preserved inline (ternaries, state-dependent colors), 14 unmapped edge cases kept inline (complex rgba values, special grid patterns)
+  - **Key Improvements:**
+    - Tab navigation: Converted padding/fontSize/borders to Tailwind classes, preserved dynamic font-weight and background colors via clsx
+    - Progress bars: Converted padding/height/borders, preserved dynamic width calculations and color transitions
+    - Test grid: Converted spacing, sizing, typography to Tailwind, preserved dynamic row highlighting and test status colors
+    - Test descriptions: Converted backgrounds and text styling with conditional styling via clsx
+    - Failure comment boxes: Converted styling with preserved dynamic backgrounds (rgba colors)
+  - **Approach:** Python automation script with 95+ STYLE_MAPPINGS, 100% automated conversion with manual review of dynamic patterns
+  - **Gemini Review:** 15+ critical issues identified on first review (invalid Tailwind classes, dropped styles, missing styling). All addressed in follow-up commits:
+    - ✅ Fixed invalid classes: bg-border → bg-[var(--border)], border-border → border, bg-bg1 → bg-bg
+    - ✅ Restored dropped styles: progress bar width/transitions, grid layouts, alignments
+    - ✅ Restored visual styling: test descriptions (bg-white/[0.03]), failure comments (bg-red/10), active tabs (text-black)
+    - ✅ Restored accessibility: cursor-pointer, resize-y on textarea
+    - ✅ Conditional styling refactored to use clsx instead of inline ternaries
+  - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, all baseline checks), Sanity ✅ (no logic changes, no new CSS variables)
+  - **Code Quality:** All changes lint ✅. No functional regressions.
+
+- **Admin CSS Consolidation: Phase 4B (RankingsPanel)** (PR #796, merged 2026-07-04): Refactoring RankingsPanel component to convert 105 static inline styles to Tailwind CSS classes. Two ranking tables (kingdoms and alliances) with complex row styling and action buttons.
+  - **Conversion Results:** 105 static styles converted (100% success — pure static, no dynamic patterns), 2 dynamic styles preserved inline (rankColor, nameStyle), 10 unmapped edge cases kept inline (borderCollapse, letterSpacing, padding variants)
+  - **Key Improvements:**
+    - Table headers: Converted color/font/text styling to Tailwind, preserved uppercase/letter-spacing via tracking class
+    - Table rows: Converted padding/colors/alignment, preserved dynamic rank colors (gold/amber/text3) and name styling (accent1/white)
+    - Action buttons: Converted padding/fontSize to Tailwind classes with conditional visibility
+    - Tab buttons: Converted padding/font styling to classes, preserved active state styling
+    - Kingdom highlight: Restored missing background highlight for current user (isMe) with transition-colors
+    - Race icon sizing: Fixed font size from text-xl to text-lg (18px accuracy)
+  - **Gemini Review:** 10 feedback items identified on first review. All addressed in follow-up commits:
+    - ✅ Row background highlight and transition restored for isMe rows
+    - ✅ Converted remaining inline styles to Tailwind arbitrary classes (color, padding, margin, tracking)
+    - ✅ Fixed font size accuracy: text-lg (18px) instead of text-xl (20px)
+    - ✅ Removed all inline style={{}} blocks except for 2 dynamic patterns
+  - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, endpoints respond), Sanity ✅ (no logic changes)
+  - **Code Quality:** All changes lint ✅. No functional regressions. 100% style conversion (no unmapped mappable styles remain).
+
 - **Dead Route Handlers Cleanup** (PR #791, merged 2026-07-04): Removed 17 duplicate unreachable route handlers from `kingdom-gameplay.js` (16 routes) and `kingdom-research.js` (1 route). These routes were previously moved to `kingdom-build.js` but remain as dead code since Express matches the first router that handles a given path+method on the same prefix.
   - **Routes removed:**
     - `kingdom-gameplay.js`: POST /build-queue, GET/POST /training-allocation, POST /build-allocation, POST /resource-build-allocation, POST /demolish, POST /build, POST /cancel-building, POST /smithy/buy-hammers, POST /smithy/buy-scaffolding, POST /smithy-allocation, POST /tower-craft, POST /tower-cancel, POST /shrine-allocation, POST /mausoleum-allocation, POST /buy-mausoleum-upgrade (16 total)

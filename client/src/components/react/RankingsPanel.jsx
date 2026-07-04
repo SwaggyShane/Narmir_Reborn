@@ -144,24 +144,24 @@ const RankingsPanel = () => {
     const nameStyle = isMe
       ? { color: 'var(--accent1)', fontWeight: 700 }
       : { color: 'var(--text)', fontWeight: 600 };
-    const meTag = isMe ? <span style={{ fontSize: '10px', color: 'var(--accent1)', fontWeight: 400 }}> (you)</span> : null;
-    const aiTag = row.is_ai ? <span style={{ fontSize: '10px', color: 'var(--text3)' }}> 🤖</span> : null;
+    const meTag = isMe ? <span className="text-[10px] font-normal text-[var(--accent1)]"> (you)</span> : null;
+    const aiTag = row.is_ai ? <span className="text-[10px] text-text3"> 🤖</span> : null;
     const protTag = !isMe && (row.turn || 0) < 400
-      ? <span style={{ fontSize: '10px', color: 'var(--green)' }} title="Newbie protection — cannot be attacked until Turn 400"> 🛡️</span>
+      ? <span className="text-[10px] text-green" title="Newbie protection — cannot be attacked until Turn 400"> 🛡️</span>
       : null;
 
     const actionBtns = isMe
       ? <button className="btn btn-accent text-[11px] px-2 py-0.5" onClick={() => handleDirectMessage(row)}>✉️ Message</button>
       : (row.turn || 0) < 400
         ? (
-          <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+          <div className="flex gap-1 justify-center">
             <button className="btn text-[11px] px-2 py-0.5" title="Kingdom Profile" onClick={() => handleProfile(row)}>👤</button>
             <button className="btn btn-accent text-[11px] px-2 py-0.5" title="Send message" onClick={() => handleDirectMessage(row)}>✉️</button>
-            <span style={{ fontSize: '11px', color: 'var(--green)', marginLeft: '4px' }} title="Protected until Turn 400">🛡️</span>
+            <span className="text-[11px] text-green ml-1" title="Protected until Turn 400">🛡️</span>
           </div>
         )
         : (
-          <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+          <div className="flex gap-1 justify-center">
             <button className="btn text-[11px] px-2 py-0.5" title="Kingdom Profile" onClick={() => handleProfile(row)}>👤</button>
             <button className="btn btn-accent text-[11px] px-2 py-0.5" title="Send message" onClick={() => handleDirectMessage(row)}>✉️</button>
             {isMapped ? (
@@ -177,33 +177,33 @@ const RankingsPanel = () => {
         );
 
     return (
-      <tr key={row.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background .15s', ...(isMe ? { background: 'rgba(180, 60, 0,.08)' } : {}) }}>
+      <tr key={row.id} className={clsx("border-b border-b-border transition-colors duration-150", isMe && "bg-[rgba(180,60,0,0.08)]")}>
         <td style={{ padding: '10px 6px', ...rankColor }}>{rankBadge || row.rank}</td>
-        <td style={{ padding: '10px 6px', color: 'var(--text2)' }}>{row.username || '—'}</td>
-        <td style={{ padding: '10px 6px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '18px', flexShrink: 0 }}>{raceIcon}</span>
+        <td className="px-1.5 py-2.5 text-text2">{row.username || '—'}</td>
+        <td className="px-1.5 py-2.5">
+          <div className="flex items-center gap-2">
+            <span className="text-lg flex-shrink-0">{raceIcon}</span>
             <div>
               <div style={nameStyle}>{repairText(row.name || 'Unknown')}{meTag}{aiTag}{protTag}</div>
-              <div style={{ fontSize: '11px', color: 'var(--text3)', textTransform: 'capitalize', marginTop: '1px' }}>{repairText(raceKey).replace(/_/g, ' ')}</div>
+              <div className="text-[11px] text-text3 capitalize mt-[1px]">{repairText(raceKey).replace(/_/g, ' ')}</div>
             </div>
           </div>
         </td>
-        <td style={{ padding: '10px 6px', textAlign: 'right', color: 'var(--gold)', fontWeight: 600 }}>{fmt(row.score !== undefined ? row.score : row.land)}</td>
+        <td className="px-1.5 py-2.5 text-right text-gold font-semibold">{fmt(row.score !== undefined ? row.score : row.land)}</td>
         <td className="px-[6px] py-2.5 text-right text-[var(--text3)]">{row.level || 1}</td>
         <td className="px-[6px] py-2.5 text-right text-[var(--text3)]">{fmt(row.turn || 0)}</td>
-        <td style={{ padding: '10px 6px', textAlign: 'center', color: 'var(--text3)', fontSize: '11px' }}>{row.last_combat_at ? timeAgo(row.last_combat_at) : '—'}</td>
-        <td style={{ padding: '10px 8px', textAlign: 'center' }}>{actionBtns}</td>
+        <td className="px-1.5 py-2.5 text-center text-text3 text-[11px]">{row.last_combat_at ? timeAgo(row.last_combat_at) : '—'}</td>
+        <td className="px-2 py-2.5 text-center">{actionBtns}</td>
       </tr>
     );
   };
 
   const renderAllianceRow = (row) => (
-    <tr key={row.id} style={{ borderBottom: '1px solid var(--border)' }}>
-      <td style={{ padding: '10px 6px', color: 'var(--text3)' }}>{row.rank}</td>
-      <td style={{ padding: '10px 6px', color: 'var(--text)' }}>{repairText(row.name || '—')}</td>
+    <tr key={row.id} className="border-b border-b-border">
+      <td className="px-1.5 py-2.5 text-text3">{row.rank}</td>
+      <td className="px-1.5 py-2.5" style={{color: 'var(--text)'}}>{repairText(row.name || '—')}</td>
       <td className="px-[6px] py-2.5 text-right text-[var(--text3)]">{fmt(row.member_count)}</td>
-      <td style={{ padding: '10px 6px', textAlign: 'right', color: 'var(--gold)', fontWeight: 600 }}>{fmt(row.total_score)}</td>
+      <td className="px-1.5 py-2.5 text-right text-gold font-semibold">{fmt(row.total_score)}</td>
       <td className="px-[6px] py-2.5 text-right text-[var(--text3)]">{fmt(row.member_count ? row.total_score / row.member_count : 0)}</td>
       <td className="px-[6px] py-2.5 text-right text-[var(--text3)]">{fmt(row.total_pop)}</td>
     </tr>
@@ -212,39 +212,39 @@ const RankingsPanel = () => {
   return (
     <div id="rankings" className="panel">
       <div className="card mt-0">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div id="rankings-title" className="card-title" style={{ margin: 0 }}>Rankings</div>
-            <div style={{ display: 'flex', gap: '4px', background: 'var(--bg3)', padding: '4px', borderRadius: '8px' }}>
-              <button id="rank-tab-kingdoms" className={`base-btn ${activeTab === 'kingdoms' ? 'active' : ''}`} style={{ padding: '4px 12px', fontSize: '11px', height: 'auto' }} onClick={() => handleSetRankType('kingdoms')}>Kingdoms</button>
-              <button id="rank-tab-alliances" className={`base-btn ${activeTab === 'alliances' ? 'active' : ''}`} style={{ padding: '4px 12px', fontSize: '11px', height: 'auto' }} onClick={() => handleSetRankType('alliances')}>Alliance</button>
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <div className="flex items-center gap-4">
+            <div id="rankings-title" className="card-title m-0">Rankings</div>
+            <div className="flex gap-1 p-1 rounded-lg bg-[var(--bg3)]">
+              <button id="rank-tab-kingdoms" className={`base-btn ${activeTab === 'kingdoms' ? 'active' : ''} text-[11px] h-auto px-3 py-1`} onClick={() => handleSetRankType('kingdoms')}>Kingdoms</button>
+              <button id="rank-tab-alliances" className={`base-btn ${activeTab === 'alliances' ? 'active' : ''} text-[11px] h-auto px-3 py-1`} onClick={() => handleSetRankType('alliances')}>Alliance</button>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div className="flex gap-2 items-center">
             <input type="text" id="rank-search" className="input w-[180px]" placeholder="Search..." value={search} onChange={handleSearch} />
             <button className="base-btn" onClick={handleRefresh}>↻ Refresh</button>
           </div>
         </div>
 
         <div id="rank-view-kingdoms" className={clsx('overflow-x-auto', activeTab === 'kingdoms' ? 'block' : 'hidden')}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+          <table className="w-full text-[13px] border-collapse">
             <thead>
-              <tr style={{ color: 'var(--text3)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '2px solid var(--border2)' }}>
-                <th style={{ padding: '8px 6px', textAlign: 'left', width: '32px' }}>#</th>
+              <tr className="text-text3 text-[11px] uppercase border-b-2 border-b-border2 tracking-[0.5px]">
+                <th className="px-1.5 py-2 text-left w-[32px]">#</th>
                 <th className="px-[6px] py-2 text-left">Player</th>
                 <th className="px-[6px] py-2 text-left">Kingdom</th>
                 <th className="px-[6px] py-2 text-right">Score</th>
                 <th className="px-[6px] py-2 text-right">Level</th>
                 <th className="px-[6px] py-2 text-right">Turns Taken</th>
-                <th style={{ padding: '8px 6px', textAlign: 'center' }}>Combat</th>
-                <th style={{ padding: '8px 6px', textAlign: 'center' }}>Action</th>
+                <th className="px-1.5 py-2 text-center">Combat</th>
+                <th className="px-1.5 py-2 text-center">Action</th>
               </tr>
             </thead>
             <tbody id="rankings-list">
               {loadingKingdoms ? (
                 <tr><td colSpan="8" className="text-[var(--text3)] text-[13px] text-center py-6">Loading rankings...</td></tr>
               ) : error ? (
-                <tr><td colSpan="8" style={{ color: 'var(--red)', fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>{error}</td></tr>
+                <tr><td colSpan="8" className="text-red text-[13px] text-center" style={{padding: '24px 0'}}>{error}</td></tr>
               ) : filteredKingdoms.length === 0 ? (
                 <tr><td colSpan="8" className="text-[var(--text3)] text-[13px] text-center py-6">No kingdoms found.</td></tr>
               ) : filteredKingdoms.map(renderKingdomRow)}
@@ -253,10 +253,10 @@ const RankingsPanel = () => {
         </div>
 
         <div id="rank-view-alliances" className={clsx('overflow-x-auto', activeTab === 'alliances' ? 'block' : 'hidden')}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+          <table className="w-full text-[13px] border-collapse">
             <thead>
-              <tr style={{ color: 'var(--text3)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '2px solid var(--border2)' }}>
-                <th style={{ padding: '8px 6px', textAlign: 'left', width: '32px' }}>#</th>
+              <tr className="text-text3 text-[11px] uppercase border-b-2 border-b-border2 tracking-[0.5px]">
+                <th className="px-1.5 py-2 text-left w-[32px]">#</th>
                 <th className="px-[6px] py-2 text-left">Alliance</th>
                 <th className="px-[6px] py-2 text-right">Members</th>
                 <th className="px-[6px] py-2 text-right">Total Score</th>
