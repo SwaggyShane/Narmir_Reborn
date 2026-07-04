@@ -2,13 +2,13 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-04 (Phase 3 complete, PR #788 ready to merge)
+**Last updated:** 2026-07-04 (Phase 4 complete, PR #789 ready to merge)
 
 ---
 
 ## Status
 
-Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 2026-06-28. **Active work: Fog of War implementation.** See `FOG_OF_WAR_PLAN.md` (Revision 6, design locked 2026-07-03).
+Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 2026-06-28. **Active work: Exploration System Redesign (all 4 phases complete as of 2026-07-04).** Fog of War system also complete (5/5 phases). Awaiting final integration and launch. See `EXPLORATION_SYSTEM_LOCKED.md` and `FOG_OF_WAR_PLAN.md` for specifications.
 
 ---
 
@@ -66,9 +66,14 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 
 **Phase 2E: Scout allocation UI & progression display** — ✅ COMPLETE (PR #787, ready to merge 2026-07-04; see ARCHIVAL.md)
 
-**Phase 3: Epic Trek point-and-go exploration** — ✅ COMPLETE (PR #788, ready to merge 2026-07-04; see ARCHIVAL.md)
+**Phase 3: Epic Trek point-and-go exploration** — ✅ COMPLETE (PR #788, merged 2026-07-04; see ARCHIVAL.md)
 
-**Phase 4:** Regional dungeon/mountain locations with distance-based turn costs (est. 6-8 files)
+**Phase 4: Regional dungeon/mountain locations** — ✅ COMPLETE (PR #789, merged 2026-07-04)
+- ✅ world-locations.js: Deterministic seeding, discovery tracking, in-memory cache
+- ✅ location-distance.js: Hex distance and turn cost calculations
+- ✅ Database: world_locations table (18 locations), kingdom tracking columns
+- ✅ Server boot: Location seeding at startup
+- ✅ Expedition routes: Integrated dungeon/mountain into /expedition/start with location-based turn costs
 
 **References:**
 - `EXPLORATION_SYSTEM_LOCKED.md` — Complete specification (all parameters locked)
