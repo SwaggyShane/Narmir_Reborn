@@ -42,7 +42,7 @@ const DefensePanel = () => {
   const [activeTab, setActiveTab] = useState('walls');
   const [defenseData, setDefenseData] = useState({
     defense_rating: '—',
-    tierStatus: { text: 'Not fortified', color: 'var(--text3)' },
+    tierStatus: { text: 'Not fortified', colorClass: 'text-text3' },
     walls: 0, towers: 0, outposts: 0, castles: 0,
     targetWalls: 100, targetTowers: 10, targetOutposts: 10, targetCastles: 0,
     bld_walls: 0, wm_on_walls: 0, wall_power: 0, wall_race: 1,
@@ -54,10 +54,11 @@ const DefensePanel = () => {
     setActiveTab(tabId);
   };
 
-  const getStatColor = (val, max) => {
-    if (val >= max) return 'var(--gold)';
-    if (val >= Math.floor(max * 0.5)) return 'var(--green)';
-    return 'var(--text2)';
+  const getStatColorClass = (val, max) => {
+    if (!max || max <= 0) return 'text-text2';
+    if (val >= max) return 'text-gold';
+    if (val >= Math.floor(max * 0.5)) return 'text-green';
+    return 'text-text2';
   };
 
   const refreshDefense = useCallback(async () => {
@@ -71,7 +72,7 @@ const DefensePanel = () => {
     const du = data.defense_upgrades || {};
 
     let statusText = 'Not fortified';
-    let statusColor = 'var(--text3)';
+    let statusColorClass = 'text-text3';
     let targetWalls = 100;
     let targetTowers = 10;
     let targetOutposts = 10;
@@ -79,21 +80,21 @@ const DefensePanel = () => {
 
     if (du.citadel) {
       statusText = '👑 CITADEL ACHIEVED';
-      statusColor = 'var(--gold)';
+      statusColorClass = 'text-gold';
       targetWalls = 1000;
       targetTowers = 500;
       targetOutposts = 500;
       targetCastles = 1;
     } else if (du.keep) {
       statusText = '🏰 KEEP ACHIEVED';
-      statusColor = 'var(--gold)';
+      statusColorClass = 'text-gold';
       targetWalls = 1000;
       targetTowers = 500;
       targetOutposts = 500;
       targetCastles = 1;
     } else if (du.fortified) {
       statusText = '🛡️ FORTIFIED ACHIEVED';
-      statusColor = 'var(--gold)';
+      statusColorClass = 'text-gold';
       targetWalls = 500;
       targetTowers = 50;
       targetOutposts = 50;
@@ -102,7 +103,7 @@ const DefensePanel = () => {
 
     setDefenseData({
       defense_rating: data.defense_rating || '—',
-      tierStatus: { text: statusText, color: statusColor },
+      tierStatus: { text: statusText, colorClass: statusColorClass },
       walls: data.bld_walls || 0,
       towers: data.bld_guard_towers || 0,
       outposts: data.bld_outposts || 0,
@@ -182,7 +183,7 @@ const DefensePanel = () => {
       <div className="card mb-3 rounded-2xl border border-white/10 bg-zinc-950/80" id="defense-tiers-card">
         <div className="mb-2 flex items-center justify-between gap-3">
           <div className="card-title m-0">🛡️ Defense Tiers</div>
-          <span className="text-[12px]" style={{ color: defenseData.tierStatus.color }}>{defenseData.tierStatus.text}</span>
+          <span className={`text-[12px] ${defenseData.tierStatus.colorClass}`}>{defenseData.tierStatus.text}</span>
         </div>
         <div id="tier-desc" className="mb-3 text-[12px] text-[var(--text3)]">
           Build walls, guard towers, outposts, and castles to reach new tiers and
@@ -191,22 +192,22 @@ const DefensePanel = () => {
         <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
           <div className="rounded-lg border border-white/10 bg-[var(--bg3)] p-2 text-center">
             <div className="mb-1 text-[10px] text-[var(--text3)]">WALLS</div>
-            <div className="text-[16px] font-bold" style={{ color: getStatColor(defenseData.walls, defenseData.targetWalls) }}>{fmt(defenseData.walls)}</div>
+            <div className={`text-[16px] font-bold ${getStatColorClass(defenseData.walls, defenseData.targetWalls)}`}>{fmt(defenseData.walls)}</div>
             <div className="text-[10px] text-[var(--text3)]">/ {fmt(defenseData.targetWalls)}</div>
           </div>
           <div className="rounded-lg border border-white/10 bg-[var(--bg3)] p-2 text-center">
             <div className="mb-1 text-[10px] text-[var(--text3)]">TOWERS</div>
-            <div className="text-[16px] font-bold" style={{ color: getStatColor(defenseData.towers, defenseData.targetTowers) }}>{fmt(defenseData.towers)}</div>
+            <div className={`text-[16px] font-bold ${getStatColorClass(defenseData.towers, defenseData.targetTowers)}`}>{fmt(defenseData.towers)}</div>
             <div className="text-[10px] text-[var(--text3)]">/ {fmt(defenseData.targetTowers)}</div>
           </div>
           <div className="rounded-lg border border-white/10 bg-[var(--bg3)] p-2 text-center">
             <div className="mb-1 text-[10px] text-[var(--text3)]">OUTPOSTS</div>
-            <div className="text-[16px] font-bold" style={{ color: getStatColor(defenseData.outposts, defenseData.targetOutposts) }}>{fmt(defenseData.outposts)}</div>
+            <div className={`text-[16px] font-bold ${getStatColorClass(defenseData.outposts, defenseData.targetOutposts)}`}>{fmt(defenseData.outposts)}</div>
             <div className="text-[10px] text-[var(--text3)]">/ {fmt(defenseData.targetOutposts)}</div>
           </div>
           <div className="rounded-lg border border-white/10 bg-[var(--bg3)] p-2 text-center">
             <div className="mb-1 text-[10px] text-[var(--text3)]">CASTLE</div>
-            <div className="text-[16px] font-bold" style={{ color: getStatColor(defenseData.castles, defenseData.targetCastles) }}>{fmt(defenseData.castles)}</div>
+            <div className={`text-[16px] font-bold ${getStatColorClass(defenseData.castles, defenseData.targetCastles)}`}>{fmt(defenseData.castles)}</div>
             <div className="text-[10px] text-[var(--text3)]">/ {fmt(defenseData.targetCastles)}</div>
           </div>
         </div>
