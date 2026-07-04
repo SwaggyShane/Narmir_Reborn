@@ -38,104 +38,126 @@
 
 ---
 
-## 3. SCOUTING — CONCENTRIC RING MODEL (LOCKED)
+## 3. SCOUTING SYSTEM (LOCKED 2026-07-04)
 
-**System:** Progressive reveal outward from home kingdom (Ring 0 → Ring N)
+**Two separate scout systems:**
 
-### Scout Economy Constants
+### A. SCOUT — ALLOCATION-BASED (Passive Ring Reveal)
 
-```
-BASE_HEX_EXPLORATION_PER_RANGER: 0.00001
-MAX_SCOUTING_RANGERS: 10,000
-RANGER_LEVEL_BONUS_PER_LEVEL: 0.05 (level 100 = 5.95x)
-```
+**Mechanic:** Assign rangers to scouting pool; rings auto-advance over time
 
-### Scout Formulas
+**UI:**
+- Allocate button (like building)
+- Release All button
+- Greyed out when full map revealed
 
-**Hexes explored per action:**
-```
-hexes = rangers_sent × level_multiplier × 0.00001
-```
+**Behavior:**
+- Ring-based progression (Ring 1 = 6 hexes, Ring 2 = 12 hexes, Ring N ≈ 6N hexes)
+- Auto-advances to next ring when current completes
+- Discovers: locations, lore, junk prizes, kingdoms
+- Adds discovered kingdoms to `discovered_kingdoms`
 
-**Examples:**
-- 1 ranger level 1 = 0.00001 hexes per action
-- 10,000 rangers level 1 = 0.1 hexes per action
-- 10,000 rangers level 100 = 0.595 hexes per action
-- Full map (195 hexes visible) in ~328 turns at level 100
-
-**Food cost per hex:** 50 - (level_multiplier × 30), floored at 20
-
-### Scout Mechanics
-
-- No targeting UI (auto-advances to next unrevealed ring)
-- Each action reveals next concentric ring outward
-- Reveals locations and resource nodes in hexes
-- Auto-adds discovered kingdoms to `discovered_kingdoms`
-- **No turn cost** for scout action itself (not turn-based expedition)
+**TBD (before implementation):**
+- [ ] Rangers per turn to complete each ring
+- [ ] Food cost per ring (or free?)
+- [ ] Shortfall handling (not enough rangers mid-ring)
 
 ---
 
-## 4. HUNTING — TURN-BASED FOOD GATHERING
+### B. EPIC TREK — POINT-AND-GO (Active Exploration)
+
+**Mechanic:** Player selects target coordinate on map, expedition travels there revealing fog en route
+
+**Turn Cost Calculation (LOCKED):**
+- Map diagonal: ~41 hexes
+- Target: 41 hexes = 50 turns
+- **Formula: ~1.22 turns per hex distance traveled**
+
+**Behavior:**
+- One-way ticket (no mid-journey redirect)
+- Reveals only hexes in path (no corridor, just the cells crossed)
+- Discovers via random chance per hex (same as Deep Expedition)
+- Reveals: kingdoms, nodes, prices, artifacts
+- Adds kingdoms to `discovered_kingdoms`
+- Food cost: Same as Deep Expedition formula (scales by ranger count)
+
+**Discovery (LOCKED):**
+- Each hex crossed has random chance to find locations/artifacts
+- Same probabilities as previous Deep Expedition
+
+---
+
+## 4. HUNTING — TURN-BASED FOOD GATHERING (LOCKED)
 
 **Turn cost:** 5 turns per hunt  
 **Units:** Rangers  
-**Reward:** 10 food per ranger at level 1
+**Reward:** 10 food per ranger at level 1  
+**Food cost:** NONE (no food cost for hunting)  
+**Terrain:** Forest biome (forests are better for hunting)
 
 ### Formula
 ```
-food_reward = 10 × ranger_count × level_multiplier × terrain_modifier
+food_reward = 10 × ranger_count × level_multiplier × forest_terrain_modifier
 ```
 
-**Terrain scaling:** TBD by biome (forest better, desert worse, etc.)
-
-### Mechanics
-- Costs food to launch (TBD amount)
+**Mechanics:**
+- No food cost upfront
 - No population cost
 - Scales by ranger count and level
+- Terrain modifier: Forest bonus, other biomes penalty
 - Turn-based (takes 5 turns per action)
 
 ---
 
-## 5. PROSPECTING — TURN-BASED GOLD GATHERING
+## 5. PROSPECTING — TURN-BASED GOLD GATHERING (LOCKED)
 
 **Turn cost:** 5 turns per prospecting action  
 **Units:** Engineers  
-**Reward:** 5 gold per engineer at level 1
+**Reward:** 5 gold per engineer at level 1  
+**Food cost:** Same as Deep Expedition formula (scales by engineer count)  
+**Terrain:** Mountain biome (mountains are better for prospecting)
 
 ### Formula
 ```
-gold_reward = 5 × engineer_count × level_multiplier × terrain_modifier
+gold_reward = 5 × engineer_count × level_multiplier × mountain_terrain_modifier
+food_cost = (engineer_count × level_multiplier) × (Deep_Exp_base_per_unit)
 ```
 
-**Terrain scaling:** TBD by biome (mountains better, swamps worse, etc.)
-
-### Mechanics
-- Costs food to launch (TBD amount)
+**Mechanics:**
+- Food cost upfront (scales by engineers sent)
 - No population cost
 - Scales by engineer count and level
+- Terrain modifier: Mountain bonus, other biomes penalty
 - Turn-based (takes 5 turns per action)
 
 ---
 
-## 6. LAND EXPANSION — INSTANT LAND DISCOVERY
+## 6. LAND EXPANSION — INSTANT LAND DISCOVERY (LOCKED)
 
 **Turn cost:** None (instant)  
 **Units:** Population + Rangers  
-**Cost:** 100 population per land discovered  
+**Population cost:** 100 population per land discovered (deducted from kingdom pool)  
 **Reward:** Land (X,Y subsection within a hex)
 
 ### Formula
 ```
-lands_discovered = base_amount × (ranger_count × level_multiplier) × terrain_modifier
-base_amount = TBD (TBD how many lands per instant action)
+lands_discovered = (ranger_count / 10) × level_multiplier × race_modifier × terrain_modifier
+population_deducted = lands_discovered × 100
 ```
 
+**Base unit:** 10 rangers level 1 = 1 land discovered
+
+**Race modifiers:** Use same as current "search for land" formula (varies by race)
+
+**Terrain modifier:** Race-dependent biome preference
+
 **Mechanics:**
-- Instant action (no turn cost)
-- Costs population upfront
-- Rangers improve discovery rate (more lands per action)
-- Terrain affects efficiency
+- Instant action (no turn cost, no food cost)
+- Costs population upfront (100 per land, deducted immediately)
+- Rangers improve discovery rate
+- Race modifier affects efficiency
 - Discovers X,Y subsections within hexes
+- If population cost exceeds available population, action rejected
 
 ---
 
@@ -182,7 +204,19 @@ combat_reward = (ranger_count × level_multiplier) × terrain_modifier
 
 ---
 
-## 9. EXPEDITION MECHANICS (ALL TURN-BASED ACTIONS)
+## 9. LOCATION DISCOVERY (LOCKED)
+
+**Scout sources:**
+- Scout (allocation): Discovers locations, lore, junk prizes
+- Epic Trek (point-and-go): Discovers locations via random chance per hex crossed
+
+**Location handling:**
+- When Scout or Epic Trek reveals a hex containing a kingdom, it's auto-added to `discovered_kingdoms`
+- Same discovery mechanic as previous Scout/Deep Expedition
+
+---
+
+## 10. EXPEDITION MECHANICS (ALL TURN-BASED ACTIONS)
 
 **Endpoint:** `POST /expedition/start` (existing pattern)
 
@@ -201,29 +235,37 @@ floored at MIN_FOOD_COST
 
 ---
 
-## 10. IMPLEMENTATION PHASES
+## 11. IMPLEMENTATION PHASES
 
 ### Phase 1: Refactor Instant Searches → Turn-Based
-1. Convert `/search/land` → turn-based Land Expansion
-2. Convert `/search/gold` → turn-based Prospecting
-3. Convert `/search/food` → turn-based Hunting
+1. Convert `/search/land` → turn-based Land Expansion (instant action with population cost)
+2. Convert `/search/gold` → turn-based Prospecting (5 turns, food cost)
+3. Convert `/search/food` → turn-based Hunting (5 turns, no food cost)
 4. Update ExplorationPanel UI for turn-based actions
+5. Use same allocation validation as existing turn-based expeditions
 
-### Phase 2: Rename Scout/Deep → Scout/Epic Trek
-1. Rename Scout Expedition → Scout
-2. Rename Deep Expedition → Epic Trek
-3. Implement concentric ring model (remove col/row targeting)
-4. Update ExplorationPanel labels
+### Phase 2: Scout System — Allocation Model
+1. Implement Scout allocation pool (assign rangers to scouting)
+2. Ring-based reveal (Ring 1 → Ring 2 → etc. auto-advance)
+3. UI: Allocate/Release All buttons (matching building interface)
+4. Grey out when full map revealed
+5. Discovers same as previous Scout Expedition: locations, lore, junk prizes
 
-### Phase 3: Dungeon Raid + Mountain's Heart
-1. Update turn costs to 50 + distance and 100 + distance
-2. Implement distance calculation (hex units)
-3. Implement equipment looting per troop
+### Phase 3: Epic Trek — Point-and-Go Exploration
+1. Enable player to select target coordinate on map (X,Y)
+2. Calculate distance in hex units (1.22 turns per hex)
+3. Implement pathfinding along route
+4. Progressive fog reveal per hex crossed
+5. Random discovery chance per hex (same as Deep Expedition)
+6. Food cost: Deep Expedition formula, scaled by ranger count
+7. Adds discovered kingdoms to `discovered_kingdoms`
 
-### Phase 4: Regional Locations (Deferred)
-1. Define one Dungeon per region
-2. Define one Mountain per region
-3. Gate access by region discovery
+### Phase 4: Dungeon Raid + Mountain's Heart (Regional)
+1. Update turn costs: 50 + distance, 100 + distance
+2. Implement distance calculation (hex units from home)
+3. Implement equipment looting per troop type
+4. Define one Dungeon per region (deferred)
+5. Define one Mountain per region (deferred)
 
 ---
 
@@ -271,17 +313,43 @@ Before coding each phase:
 
 ---
 
-## REFERENCE
+## QUICK REFERENCE (LOCKED 2026-07-04)
 
-- Map: 1999 × 1380 pixels, 918 hexes
-- Scouts: 0.00001 hexes/ranger level 1, 10k cap, concentric rings
-- Hunting: 5 turns, 10 food/ranger level 1
-- Prospecting: 5 turns, 5 gold/engineer level 1
-- Land: instant, 100 population per land
-- Dungeon: 50 + distance turns, fighters + rangers
-- Mountain: 100 + distance turns, rangers only
-- 1 billion lands max (1000 players × 1M each)
-- ~1.09M lands per hex
+**Map & Scale:**
+- Size: 1999 × 1380 pixels, 918 hexes
+- Players: 1000 goal, 100 happy, 1M lands/player cap
+- Total lands: 1 billion max, ~1.09M per hex
 
-**This document is the source of truth. No more re-explaining.**
+**Scout System:**
+- Scout (allocation): Ring-based reveal, auto-advance, UI like building
+- Epic Trek (point-and-go): Pick target, travel there, reveal en route (~1.22 turns/hex)
+
+**Turn-Based Actions:**
+- Hunting: 5 turns, 10 food/ranger L1, Forest biome, NO food cost
+- Prospecting: 5 turns, 5 gold/engineer L1, Mountain biome, Deep-Exp food cost
+- Land Expansion: Instant, 10 rangers = 1 land, 100 pop/land, Race modifiers
+- Dungeon Raid: 50 + distance turns, ranger+fighter, same loot as previous
+- Mountain's Heart: 100 + distance turns, ranger only, same loot as previous
+
+**Discovery:**
+- Scout + Epic Trek both discover locations (added to discovered_kingdoms)
+- Same artifact/prize tiers as previous Deep Expedition
+- Same discovery mechanics (random chance per hex for Epic Trek)
+
+**Mapping (Complete):**
+- search for gold → Prospecting ✅
+- search for food → Hunting ✅
+- search for land → Land Expansion ✅
+- search for locations → Epic Trek + Scout ✅
+- Scout Expedition → Scout (allocation) ✅
+- Deep Expedition → Epic Trek (point-and-go) ✅
+- Dungeon Raid → Regional-specific locations ✅
+- Mountain's Heart → Regional-specific locations ✅
+
+**UNKNOWN (TBD before Phase 2 coding):**
+- [ ] Rangers per turn for Scout ring completion
+- [ ] Scout food cost (if any) per ring
+- [ ] Scout shortfall handling (insufficient rangers mid-ring)
+
+**This document is the source of truth. NO MORE RE-EXPLAINING.**
 
