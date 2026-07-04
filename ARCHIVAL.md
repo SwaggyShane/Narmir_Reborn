@@ -306,6 +306,17 @@
   - Updated: `game/scout-economy.js` with new BASE_HEX_EXPLORATION_PER_RANGER formula (0.00001)
   - All specs locked 2026-07-04; ready for Phase 1 implementation (Refactor Instant Searches → Turn-Based)
 
+- **Elevation System Plan: Post-Beta Architecture** (PR #799, merged 2026-07-04): Comprehensive deferred-work specification for elevation system enabling organic rivers and combat depth. Three-phase implementation (25-31 hours total) with expert assessment recommendations.
+  - **Phase 1 (Elevation Generation):** Multi-octave Perlin/Simplex FBM with world-seed seeding, terrain-type correlation (Mountains: 150-255, Hills: 80-150, Plains/Coasts: 20-80, Ocean: 0), precomputed at boot.
+  - **Phase 2 (Organic Rivers):** Gradient descent pathfinding with flow accumulation for variable river width, tributary merging, Bezier/Catmull-Rom spline rendering.
+  - **Phase 3 (Combat & Gameplay):** Conservative high-ground bonuses (Defender elevation > attacker → +12% defense reduction, -10% attacker damage), mountain movement penalties (-30%), elevation fatigue (1 per 10 units uphill), siege bonuses (+15% structure HP), spell LOS elevation blocking, expedition mountain costs (+50% turns).
+  - **Technical Considerations:** Client/server sync (deterministic seeding, cached on startup), performance (all precomputed, O(1) lookup during gameplay), debug mode (elevation heatmap visualization), React architecture (no state bloat).
+  - **Risks & Mitigations:** Seeding consistency (store in DB post-generation), combat balance (conservative bonuses to avoid PvP imbalance), pathfinding dead zones (test with elevation cost stacking), spell LOS edge cases (valley vs. peak testing), data migration (backfill script for pre-elevation worlds).
+  - **Suggested Implementation Order:** Phase 1 → Visualization layer → Phase 2 → Phase 3A (combat high ground) → Phase 3B (movement fatigue) → Phase 3C (spells/advanced) → Full balance pass.
+  - **Future Extensions:** Settlements on high ground, natural mountain chokepoints, weather system (snow, avalanche), dynamic erosion, scout discovery of mountain passes.
+  - **Gemini Review:** 1 feedback item: High ground condition logic contradiction (≥ vs. > elevation) resolved by updating main condition to ">" for clarity.
+  - **Status:** Design-locked, deferred post-Beta. Ready for Phase 1 when elevation system development begins.
+
 ### 2026-07-03
 
 - **Fog of War Phase 3: Scout Economy Formulas Locked** (PR #761, squash-merged as
