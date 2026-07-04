@@ -106,13 +106,9 @@ const DiscordSection = () => {
       </div>
 
       <div
-        className="mb-4 flex items-center justify-between gap-3 rounded-[var(--radius)] border px-4 py-3"
-        style={{
-          background: linkStatus?.linked ? 'rgba(88,166,255,0.12)' : 'var(--bg3)',
-          borderColor: linkStatus?.linked ? '#58a6ff' : 'var(--border)',
-        }}
+        className={`mb-4 flex items-center justify-between gap-3 rounded-[var(--radius)] border px-4 py-3 ${linkStatus?.linked ? 'border-[#58a6ff] bg-[rgba(88,166,255,0.12)]' : 'border-[var(--border)] bg-[var(--bg3)]'}`}
       >
-        <span className="text-[13px]" style={{ color: linkStatus?.linked ? '#58a6ff' : 'var(--text3)' }}>
+        <span className={`text-[13px] ${linkStatus?.linked ? 'text-[#58a6ff]' : 'text-[var(--text3)]'}`}>
           {linkStatus == null
             ? '⏳ Checking link status...'
             : linkStatus.linked
@@ -132,12 +128,7 @@ const DiscordSection = () => {
 
       {msg && (
         <div
-          className="mb-4 rounded-[var(--radius)] border px-3 py-2 text-[13px]"
-          style={{
-            background: msg.type === 'ok' ? 'rgba(63,185,80,0.15)' : 'rgba(248,81,73,0.15)',
-            color: msg.type === 'ok' ? 'var(--green)' : 'var(--red)',
-            borderColor: msg.type === 'ok' ? 'var(--green)' : 'var(--red)',
-          }}
+          className={`mb-4 rounded-[var(--radius)] border px-3 py-2 text-[13px] ${msg.type === 'ok' ? 'border-[var(--green)] bg-[rgba(63,185,80,0.15)] text-[var(--green)]' : 'border-[var(--red)] bg-[rgba(248,81,73,0.15)] text-[var(--red)]'}`}
         >
           {msg.text}
         </div>
