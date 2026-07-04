@@ -106,7 +106,7 @@ export default function KingdomXpModal({ open, onClose }) {
           </div>
           <div className="h-2.5 overflow-hidden rounded-md bg-[var(--bg4)]">
             <div
-              className="h-full rounded-md bg-[linear-gradient(90deg,var(--accent1),var(--gold))] transition-all duration-500"
+              className="h-full rounded-md bg-gradient-to-r from-[var(--accent1)] to-[var(--gold)] transition-[width] duration-500"
               style={{ width: `${pct}%` }}
             />
           </div>
