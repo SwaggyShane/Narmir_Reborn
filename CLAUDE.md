@@ -40,39 +40,43 @@
    - If no open PR exists: create a new PR **immediately after the push**. Do not wait for the user to notice.
      (Note: creating as a draft is optional; it was previously required when using Claude due to PR tooling issues.)
 
-7. **Actively monitor PR until Gemini comments**:
-   - Refresh the PR page / checks regularly.
-   - Wait (it can take a few minutes) until Gemini posts a review or comment.
-   - Do **not** merge or declare complete while waiting.
+7. **Wait for Gemini's ONE review**:
+   - Gemini will post a review once per PR. This is the only review you will ever receive.
+   - It may take a few minutes to appear.
+   - Do **not** merge or update docs while waiting for this review.
 
-8. **Address Gemini review feedback** (Gemini only ever comments **one time**):
+8. **Address Gemini's feedback and immediately move to step 9**:
    - Make code fixes for valid feedback, commit, and push (updates the same PR).
    - Or reply on the PR with a clear explanation if you are refuting the feedback.
+   - **IMPORTANT: Do NOT wait for Gemini to review your fixes. Gemini will never comment again on this PR.**
+   - Once you've addressed the feedback, move immediately to step 9.
 
 9. **Update TODO.md / ARCHIVAL.md**:
    - Move finished items to ARCHIVAL.md with a dated entry.
    - Do this **before** any self-merge.
+   - Commit and push the docs update.
 
-10. **Self-merge to main only after**:
-    - Exactly **ONE** Gemini review has occurred (and been addressed or refuted).
-    - PR is fully green (all CI checks passing).
-    - TODO.md / ARCHIVAL.md has been updated.
-    - All other rules in this document have been followed.
+10. **Self-merge to main**:
+    - Merge the PR to main. You have now addressed Gemini's ONE review, PR is green, and docs are updated.
+    - Delete the feature branch locally and remotely.
+    - **Done. Do not reopen the PR or wait for anything else.**
 
 ## High Priority Issues
 
-When fixing high-priority issues:
-- [ ] Security vulnerabilities (SQL injection, XSS, etc.)
-- [ ] Race conditions / transaction safety
-- [ ] Memory leaks / resource management
-- [ ] Critical performance bottlenecks
-- [ ] Code review feedback from automated tools
+Same workflow as normal PRs. When fixing high-priority issues:
+- Security vulnerabilities (SQL injection, XSS, etc.)
+- Race conditions / transaction safety
+- Memory leaks / resource management
+- Critical performance bottlenecks
+- Code review feedback from automated tools
 
-Self-merge only after:
-- Exactly one Gemini review has occurred and all feedback addressed or refuted (step 8).
-- TODO.md / ARCHIVAL.md has been updated (step 9).
-- PR is green + approved.
-Update docs (step 9) before self-merging (step 10).
+Follow the standard workflow (steps 1-10 above):
+- Gemini will review once and only once
+- Address their feedback (do not wait for them to review your fixes)
+- Update TODO.md / ARCHIVAL.md
+- Self-merge
+- Delete branch
+- Done
 
 ---
 
