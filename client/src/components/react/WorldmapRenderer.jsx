@@ -805,9 +805,9 @@ export function renderWorldMap(
           // When terrain layer is on, layer pattern over base color using a group
           var pathContent = '<path d="' + hexPath(cell.x, cell.y, HEX_SIZE + 0.6) + '" fill="' + fill + '" class="terrain-shape" data-terrain="' + escapeHtml(cell.terrain) + '" data-race="' + escapeHtml(cell.race) + '" style="transform-box:fill-box;transform-origin:center;cursor:default" pointer-events="none"><title>' + escapeHtml(terrainTooltip(cell.terrain)) + '</title></path>';
           if (layers.terrain !== false && cell.terrain !== 'lake' && cell.terrain !== 'ocean') {
-            // Add pattern overlay hex
+            // Add pattern overlay hex (semi-transparent patterns blend naturally without mix-blend-mode for cross-browser compatibility)
             var patternId = 'pattern-' + cell.terrain;
-            pathContent += '<path d="' + hexPath(cell.x, cell.y, HEX_SIZE + 0.6) + '" fill="url(#' + patternId + ')" class="terrain-pattern" style="pointer-events:none;mix-blend-mode:overlay"/>';
+            pathContent += '<path d="' + hexPath(cell.x, cell.y, HEX_SIZE + 0.6) + '" fill="url(#' + patternId + ')" class="terrain-pattern" style="pointer-events:none"/>';
           }
           svg += pathContent;
         });
