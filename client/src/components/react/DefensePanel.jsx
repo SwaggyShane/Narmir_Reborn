@@ -55,6 +55,7 @@ const DefensePanel = () => {
   };
 
   const getStatColorClass = (val, max) => {
+    if (!max || max <= 0) return 'text-text2';
     if (val >= max) return 'text-gold';
     if (val >= Math.floor(max * 0.5)) return 'text-green';
     return 'text-text2';
