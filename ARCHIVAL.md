@@ -2,7 +2,7 @@
 
 **Purpose:** Historical record of completed work and verification in chronological order.
 
-**Last updated:** 2026-07-04 (CSS Consolidation Phase 4H-4J: OptionsPanel PR #804, NewsPanel PR #805, HeroesPanel PR #806)
+**Last updated:** 2026-07-04 (CSS Consolidation Phase 4H-4K: OptionsPanel PR #804, NewsPanel PR #805, HeroesPanel PR #806, KingdomXpModal PR #807)
 
 ---
 
@@ -169,6 +169,15 @@
     - Hero slots bar: static `transition: 'width 0.3s'` converted to `transition-[width] duration-300` Tailwind class, width remains inline
   - **Gemini Review:** 1 feedback item — redundant `!isMaxLevel && levelReady` condition simplified to `levelReady` (levelReady's definition already requires level < 25, the exact inverse of isMaxLevel). Addressed in follow-up commit.
   - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, all 4 baseline checks), Sanity ✅ (no logic changes, existing CSS vars reused), CI ✅ (all 3 checks green after fix)
+  - **Code Quality:** All changes lint ✅. No functional regressions.
+
+- **Admin CSS Consolidation: Phase 4K (KingdomXpModal)** (PR #807, merged 2026-07-04): Refactoring KingdomXpModal component to convert 2 inline styles to Tailwind CSS classes. Kingdom level progress bar in the level-up modal.
+  - **Conversion Results:** 2 static styles converted (100% success). Dynamic width percentage kept inline (runtime value).
+  - **Key Improvements:**
+    - Progress bar track: fully static `{ height: 10, background: 'var(--bg4)' }` converted to `h-2.5 bg-[var(--bg4)]`
+    - Progress bar fill: static gradient background extracted to `bg-gradient-to-r from-[var(--accent1)] to-[var(--gold)]`, dynamic width remains inline
+  - **Gemini Review:** 2 feedback items — use Tailwind's built-in gradient utilities instead of an arbitrary `bg-[linear-gradient(...)]` value, and narrow `transition-all` to `transition-[width]` since only width animates on the element. Both addressed in follow-up commit.
+  - **Testing:** Lint ✅ (0 errors), Smoke test ✅ (fresh PostgreSQL, all 4 baseline checks), Sanity ✅ (no logic changes, gradient renders identically, `h-2.5` matches the original 10px exactly), CI ✅ (all 3 checks green after fix)
   - **Code Quality:** All changes lint ✅. No functional regressions.
 
 - **Dead Route Handlers Cleanup** (PR #791, merged 2026-07-04): Removed 17 duplicate unreachable route handlers from `kingdom-gameplay.js` (16 routes) and `kingdom-research.js` (1 route). These routes were previously moved to `kingdom-build.js` but remain as dead code since Express matches the first router that handles a given path+method on the same prefix.

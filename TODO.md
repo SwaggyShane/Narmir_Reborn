@@ -2,7 +2,7 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-04 (CSS Consolidation Phase 4D-4J complete: EconomyPanel, BuildPanel, HappinessPanel, MarketPanel, OptionsPanel, NewsPanel, HeroesPanel merged PR #800-#806)
+**Last updated:** 2026-07-04 (CSS Consolidation Phase 4D-4K complete: EconomyPanel, BuildPanel, HappinessPanel, MarketPanel, OptionsPanel, NewsPanel, HeroesPanel, KingdomXpModal merged PR #800-#807)
 
 ---
 
@@ -99,7 +99,8 @@ _None currently — see Known Technical Debt below for post-beta cleanup items._
   - **Phase 4H (OptionsPanel):** 3 conversions (Discord status box, status text, message box), Gemini feedback (use clsx) applied, merged 2026-07-04.
   - **Phase 4I (NewsPanel):** 1 conversion (news-body text color, via clsx), 1 correctly left inline (per-type border-left color is a runtime lookup value, not statically analyzable by Tailwind). Gemini review clean, merged 2026-07-04.
   - **Phase 4J (HeroesPanel):** 3 conversions (XP bar background color, hero-class-opt border color, hero-slots-bar transition property), all via clsx/direct className. Gemini feedback (1 item: simplified redundant `!isMaxLevel && levelReady` to `levelReady`) applied, merged 2026-07-04.
-  - **Phase 4K+ (Remaining panels):** ~80 styles across 14 panels (Tier 2-3). ~398 original total; ~50 remain after phases 1-4J.
+  - **Phase 4K (KingdomXpModal):** 2 conversions (progress bar track height/background fully static, progress bar fill gradient background). Gemini feedback (2 items: use Tailwind gradient utilities instead of arbitrary linear-gradient value, narrow transition-all to transition-[width]) applied, merged 2026-07-04.
+  - **Phase 4L+ (Remaining panels):** ~78 styles across 13 panels (Tier 2-3). ~398 original total; ~48 remain after phases 1-4K.
   - **Approach:** Python automation script with 95+ STYLE_MAPPINGS, batch conversion, direct ternaries/string concatenation for conditional styling.
 - **Component test coverage expansion** — 57+ component tests exist; gaps remain in some panels
 
