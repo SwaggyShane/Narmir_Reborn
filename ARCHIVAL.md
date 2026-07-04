@@ -75,6 +75,24 @@
     - ✅ Error handling (try-catch for coordinate failures)
   - **CI:** All checks green after fixes. Ready for Phase 2D (Visibility integration).
 
+- **Exploration System Phase 2D: Visibility Integration & Ring Hex Reveal** (PR #786, merged 2026-07-04): Fog reveal system for scout rings. When rings complete, all hexes at ring distance from home hex are automatically revealed in visibility bitmap (permanent discovery).
+  - **New Function:** Created `revealRingHexes(db, kingdomId, kingdom, ring)` in visibility.js
+    - Derives home hex from kingdom coordinates using getKingdomMapCoords() + pixelToHex()
+    - Calculates ring hexes using getRingHexes(homeHex, ring) from scout-rings module
+    - Adds all ring hex cells to seen_cells bitmap via cellIndex(col, row) 
+    - Handles both string ("col,row") and object ({col, row}) hex formats
+    - Updates visibility atomically via updateKingdomVisibility with db.withTransaction
+    - Error handling prevents visibility loss on failures
+  - **Engine Integration:** Updated processTurn() scout progress section (4e-i) in engine.js
+    - Ring completion defers async revealRingHexes() call (non-blocking)
+    - Fire-and-forget pattern with error logging
+    - Visibility update happens after turn processing
+  - **Gemini Review:** Identified 2 critical bugs; both fixed:
+    - ✅ cellIndex invocation — Now correctly extracts col and row before calling cellIndex(col, row)
+    - ✅ Boundary check — Removed incorrect `idx < 195` filter; now uses `idx >= 0`
+  - **Result:** Ring hexes now properly revealed on ring completion. No hexes lost to invalid filtering.
+  - **CI:** All checks green after fixes. Ready for Phase 2E (UI integration).
+
 - **Exploration System Redesign — Design Phase Complete** (PR #778, merged `977c712`): Complete locked specification and 4-phase implementation plan for exploration system transformation. Replaces instant single-turn searches + generic expeditions with turn-based, progression-gated actions:
   - **Scout (allocation-based):** Ring progression (Ring N = 20 + (N-1) × 5 turns), auto-advances through 17 rings, discovers locations/lore/junk, no food cost, greyed out at Ring 17 only, no hard cap on rangers
   - **Epic Trek (point-and-go):** 1.5 turns per hex distance, reveals fog en route, random discovery per hex, food cost scales by ranger count, hidden until Ring 2 Scout complete

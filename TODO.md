@@ -2,7 +2,7 @@
 
 **Purpose:** Live source of truth for active and deferred work. `ROADMAP.md` was retired 2026-07-01; completed work lives in [ARCHIVAL.md](ARCHIVAL.md).
 
-**Last updated:** 2026-07-04 (Phase 2C merged)
+**Last updated:** 2026-07-04 (Phase 2D merged)
 
 ---
 
@@ -62,7 +62,8 @@ Beta launch prerequisites are complete. Alpha phase (items 1–22) closed out 20
 
 **Phase 2C: Engine integration & ring progression** — ✅ COMPLETE (PR #785, merged 2026-07-04; see ARCHIVAL.md)
 
-**Phase 2D:** Visibility integration & fog reveal (est. 4-6 files)
+**Phase 2D: Visibility integration & fog reveal** — ✅ COMPLETE (PR #786, merged 2026-07-04; see ARCHIVAL.md)
+
 **Phase 2E:** UI & exploration panel (est. 4-6 files)
 **Phase 3:** Epic Trek point-and-go exploration (est. 8-10 files)
 **Phase 4:** Regional dungeon/mountain locations with distance-based turn costs (est. 6-8 files)
