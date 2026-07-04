@@ -32,9 +32,9 @@ for (let ring = 0; ring <= maxRing; ring++) {
 console.log('Ring sizes (cumulative):');
 for (let ring = 0; ring <= maxRing; ring++) {
   const count = ringCounts[ring];
-  const expected = ring === 0 ? 1 : 6 * ring;
-  const tolerance = ring === 0 ? 0 : ring * 0.5;
-  console.log(`  Ring ${ring}: ${count} hexes (expected ~${expected}, tolerance ±${tolerance})`);
+  const expected = 1 + 3 * ring * (ring + 1);
+  assert.strictEqual(count, expected, `Ring ${ring} count mismatch: got ${count}, expected ${expected}`);
+  console.log(`  Ring ${ring}: ${count} hexes (expected ${expected})`);
 }
 
 // Performance: measure time to enumerate each ring.
